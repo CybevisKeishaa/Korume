@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/vocab", label: "Vocab" },
   { href: "/grammar", label: "Grammar" },
   { href: "/videos", label: "Videos" },
+  { href: "/mining", label: "Mining" },
   { href: "/jlpt-test", label: "JLPT" },
   { href: "/community", label: "Community" },
   { href: "/profile", label: "Profile" },
