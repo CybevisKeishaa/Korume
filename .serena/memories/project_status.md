@@ -15,7 +15,8 @@ silently bump — see `nextjs-14-pin-decision`).
 
 ## Branching policy (user-set)
 One branch per layer `layer-<n>-<slug>` off master; merge `--no-ff` ONLY after DoD (tests pass +
-code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`.
+code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`,
+L3 `d6c2138`.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),
