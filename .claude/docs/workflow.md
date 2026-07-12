@@ -92,4 +92,4 @@ checklist AND `code-reviewer` has signed off on the integrated diff.
    shown output AND `code-reviewer` sign-off.
 3. Merge with `git merge --no-ff` so each layer stays a single visible unit in history.
 4. Do **not** push to any remote unless the user explicitly asks (per `CLAUDE.md` git rules).
-5. Layer history so far: Layer 1 → merged to `master` (merge `1d1628e`).
+5. Layer history so far: Layer 1 → merged (`1d1628e`); Layer 2 → merged (`618e1a4`).
