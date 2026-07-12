@@ -79,3 +79,17 @@ When an agent finishes its slice it reports back with:
 
 Inherited from `CLAUDE.md` §9. A layer is "done" only when every module in it meets that
 checklist AND `code-reviewer` has signed off on the integrated diff.
+
+---
+
+## 6. Branching & merge policy
+
+**One branch per layer; merge to `master` when the layer is done.**
+
+1. At the start of a layer, create a branch named `layer-<n>-<slug>` (e.g. `layer-2-static-content`)
+   off the current `master`. Do all of that layer's work there.
+2. A layer is merged **only after** it meets the Definition of Done (§5) — tests passing with
+   shown output AND `code-reviewer` sign-off.
+3. Merge with `git merge --no-ff` so each layer stays a single visible unit in history.
+4. Do **not** push to any remote unless the user explicitly asks (per `CLAUDE.md` git rules).
+5. Layer history so far: Layer 1 → merged to `master` (merge `1d1628e`).
