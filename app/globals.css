@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Design tokens — Nihongo Cinema.
+ * Values are HSL channels (no hsl() wrapper) so Tailwind's <alpha-value> works.
+ * Light is the default; dark applies under [data-theme="dark"].
+ * Contrast pairs are chosen for WCAG AA (CLAUDE.md §5).
+ */
+:root {
+  --background: 40 33% 98%; /* 生成り washi off-white */
+  --foreground: 220 26% 12%; /* 墨 sumi ink */
+  --card: 0 0% 100%;
+  --card-foreground: 220 26% 12%;
+  --muted: 40 12% 92%;
+  --muted-foreground: 220 12% 38%;
+  --border: 220 14% 86%;
+  --input: 220 14% 86%;
+  --ring: 4 74% 49%;
+  --primary: 4 74% 49%; /* 朱色 vermilion */
+  --primary-foreground: 40 33% 98%;
+  --accent: 218 46% 30%; /* 藍 indigo */
+  --accent-foreground: 40 33% 98%;
+  --success: 148 52% 34%;
+  --danger: 0 72% 44%;
+  --radius: 0.75rem;
+}
+
+[data-theme="dark"] {
+  --background: 224 32% 8%; /* cinematic near-black */
+  --foreground: 40 20% 94%;
+  --card: 224 26% 12%;
+  --card-foreground: 40 20% 94%;
+  --muted: 224 18% 18%;
+  --muted-foreground: 220 12% 66%;
+  --border: 224 16% 22%;
+  --input: 224 16% 22%;
+  --ring: 4 84% 60%;
+  --primary: 4 84% 60%;
+  --primary-foreground: 224 32% 8%;
+  --accent: 210 70% 66%;
+  --accent-foreground: 224 32% 8%;
+  --success: 148 46% 52%;
+  --danger: 0 72% 60%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+/**
+ * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
+ * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
+ * Animation must never block a repeated study loop.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-reduce-motion="true"] *,
+:root[data-reduce-motion="true"] *::before,
+:root[data-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
