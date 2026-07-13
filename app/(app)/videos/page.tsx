@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { listVideos } from "@/lib/data/videos";
 import { Container } from "@/components/ui/container";
 import { VideoImportForm } from "@/components/video/video-import-form";
 import { VideoCard } from "@/components/video/video-card";
+import { RecommendationSection } from "@/components/learning/recommendation-section";
 // lib/data/videos.ts's VideoRow is the same DB row shape as lib/video-types.ts's
 // client-safe VideoRow, just declared locally with a wider `string | null` for
 // jlpt_level_estimate instead of the `JlptLevel | null` union. The cast below is
@@ -30,7 +32,17 @@ export default async function VideosPage() {
 
       <VideoImportForm />
 
+      <section aria-labelledby="recommendations-heading" className="mt-8">
+        <h2 id="recommendations-heading" className="mb-3 text-lg font-semibold">
+          Recommended for you
+        </h2>
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Finding videos at your level…</p>}>
+          <RecommendationSection limit={8} />
+        </Suspense>
+      </section>
+
       <div className="mt-8">
+        <h2 className="mb-3 text-lg font-semibold">Your videos</h2>
         {videos.length === 0 ? (
           <p className="text-muted-foreground">
             No videos yet — paste a YouTube URL above to start.

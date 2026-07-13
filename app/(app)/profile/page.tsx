@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { getUserStats } from "@/lib/data/user-stats";
 
 export const metadata = { title: "Profile" };
 export const dynamic = "force-dynamic";
@@ -10,6 +12,9 @@ export default async function ProfilePage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const statsResult = await getUserStats();
+  const stats = statsResult.ok ? statsResult.data : null;
+  const earnedBadgeCount = stats?.badges.filter((b) => b.earnedAt).length ?? 0;
 
   return (
     <Container className="py-12">
@@ -23,11 +28,48 @@ export default async function ProfilePage() {
             <span className="text-muted-foreground">Email:</span>{" "}
             {user?.email ?? "—"}
           </p>
-          <p className="text-muted-foreground">
-            Stats, avatar and learning goals arrive with the dashboard modules.
-          </p>
         </CardContent>
       </Card>
+
+      {stats && (
+        <Card className="mt-6 max-w-md">
+          <CardHeader>
+            <CardTitle>Stats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <dt className="text-muted-foreground">Level</dt>
+                <dd className="text-lg font-semibold">{stats.level.level}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">XP</dt>
+                <dd className="text-lg font-semibold">{stats.xp.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Current streak</dt>
+                <dd className="text-lg font-semibold">{stats.streakCurrent} days</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Longest streak</dt>
+                <dd className="text-lg font-semibold">{stats.streakLongest} days</dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-muted-foreground">Badges earned</dt>
+                <dd className="text-lg font-semibold">
+                  {earnedBadgeCount} / {stats.badges.length}
+                </dd>
+              </div>
+            </dl>
+            <Link
+              href="/dashboard"
+              className="mt-4 inline-block text-sm font-medium text-primary underline underline-offset-2 hover:no-underline"
+            >
+              View full dashboard
+            </Link>
+          </CardContent>
+        </Card>
+      )}
     </Container>
   );
 }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -28,9 +29,12 @@ export function AppNav({ userEmail }: { userEmail: string }) {
       aria-label="Main"
       className="flex w-full shrink-0 flex-col gap-1 border-b border-border bg-card p-4 md:h-screen md:w-60 md:border-b-0 md:border-r"
     >
-      <Link href="/dashboard" className="mb-4 px-2 font-jp text-lg font-bold">
-        日本語シネマ
-      </Link>
+      <div className="mb-4 flex items-center justify-between gap-2 px-2">
+        <Link href="/dashboard" className="font-jp text-lg font-bold">
+          日本語シネマ
+        </Link>
+        <NotificationBell />
+      </div>
 
       <ul className="flex flex-1 flex-wrap gap-1 md:flex-col md:flex-nowrap">
         {NAV_ITEMS.map((item) => {
