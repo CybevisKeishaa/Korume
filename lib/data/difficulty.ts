@@ -52,8 +52,12 @@ export async function getVideoDifficulty(videoId: string): Promise<VideoDifficul
  * reading) the user has mastered — `srs_stage >= MASTERY_THRESHOLD` — used to
  * match against transcript content-word base forms. RLS confines the
  * `user_vocab_progress` read to rows owned by `userId`.
+ *
+ * Exported so `lib/data/recommendations.ts` (i+1 video recommendations, same
+ * "known vocab" definition) can fetch it once per request instead of
+ * re-deriving it per video — see that module's doc comment.
  */
-async function getKnownVocabLemmas(
+export async function getKnownVocabLemmas(
   supabase: ReturnType<typeof createClient>,
   userId: string,
 ): Promise<Set<string>> {
