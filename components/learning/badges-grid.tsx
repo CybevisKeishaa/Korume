@@ -13,17 +13,27 @@ export interface BadgesGridProps {
  * state + description, so a screen reader user gets the same information a
  * sighted user gets from the icon/label/date at a glance.
  *
- * Motion hook: a freshly-earned badge (or one within the celebration window)
- * can be flagged by the caller via `className` on the tile — the tile itself
- * exposes `data-celebrate="badge-earned"` on every earned tile for the
- * motion-engineer to key a one-shot celebration animation off of (e.g. only
- * animate the most-recently-earned one). No animation ships here beyond a
- * plain CSS opacity transition, kill-switched by `[data-reduce-motion]`.
+ * Motion (Layer 6, motion-engineer): every earned tile carries
+ * `data-celebrate="badge-earned"` and a `.badge-settle` class (see
+ * `app/globals.css`) — a one-shot CSS keyframe opacity/scale "pop" on mount,
+ * staggered a few ms per tile (capped, so a full grid still settles well
+ * under 1s) via an inline `animationDelay`. It never loops (default
+ * `animation-iteration-count: 1`) and is a plain CSS keyframe, so it needs no
+ * client component and is kill-switched globally by `[data-reduce-motion]` /
+ * `prefers-reduced-motion` (collapses `animation-duration`, so earned tiles
+ * just appear instantly). Unearned tiles are untouched beyond the existing
+ * opacity transition.
  */
 export function BadgesGrid({ badges }: BadgesGridProps) {
   if (badges.length === 0) {
     return <p className="text-sm text-muted-foreground">No badges in the catalog yet.</p>;
   }
+
+  // Stagger only counts earned tiles (the ones that animate), and is capped
+  // so a large grid still finishes settling in well under 1s.
+  const STAGGER_MS = 40;
+  const MAX_DELAY_MS = 320;
+  let earnedIndex = 0;
 
   return (
     <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -37,6 +47,8 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
         ]
           .filter(Boolean)
           .join(". ");
+        const delayMs = earned ? Math.min(earnedIndex * STAGGER_MS, MAX_DELAY_MS) : 0;
+        if (earned) earnedIndex += 1;
 
         return (
           <li key={badge.id}>
@@ -46,8 +58,10 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
               data-celebrate={earned ? "badge-earned" : undefined}
               className={cn(
                 "flex h-full flex-col items-center gap-1.5 rounded-lg border border-border p-3 text-center transition-opacity",
+                earned && "badge-settle",
                 !earned && "opacity-50",
               )}
+              style={earned ? { animationDelay: `${delayMs}ms` } : undefined}
             >
               <div
                 aria-hidden="true"

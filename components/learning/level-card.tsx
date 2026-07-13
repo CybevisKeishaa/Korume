@@ -12,10 +12,14 @@ export interface LevelCardProps {
  * percentage/xp-remaining text — progress is never conveyed by bar width or
  * color alone (CLAUDE.md §5/§9).
  *
- * Motion hook: the bar fill has `data-celebrate="level-progress"` for the
- * motion-engineer to attach a fill transition/celebration pulse to; this
- * component itself only ships a plain CSS `transition-[width]` (kill-switched
- * globally via `[data-reduce-motion]` / `prefers-reduced-motion` in globals.css).
+ * Motion (Layer 6, motion-engineer): the fill's `.level-fill` class (see
+ * `app/globals.css`) plays a one-shot CSS keyframe from 0% to `--level-target`
+ * on mount (≤600ms, ease-out) — a plain CSS `@keyframes`, so it needs no
+ * client component here and is kill-switched globally by
+ * `[data-reduce-motion]` / `prefers-reduced-motion` (collapses
+ * `animation-duration`, so the bar renders at final width effectively
+ * instantly). `transition-[width]` still smooths any later width change
+ * (e.g. a re-render with new XP) after the mount animation settles.
  */
 export function LevelCard({ xp, level }: LevelCardProps) {
   const percent = Math.round(level.progressRatio * 100);
@@ -39,8 +43,13 @@ export function LevelCard({ xp, level }: LevelCardProps) {
           className="h-2 w-full overflow-hidden rounded-full bg-muted"
         >
           <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300"
-            style={{ width: `${percent}%` }}
+            className="level-fill h-full rounded-full bg-primary transition-[width] duration-300"
+            style={
+              {
+                width: `${percent}%`,
+                "--level-target": `${percent}%`,
+              } as React.CSSProperties
+            }
           />
         </div>
 

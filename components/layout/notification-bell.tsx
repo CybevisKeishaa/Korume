@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { describeNotification, formatRelativeTime } from "@/lib/notification-format";
+import { useUnreadIncreasePulse } from "@/components/layout/use-unread-increase-pulse";
 import type { NotificationRow, NotificationsPage } from "@/lib/notification-types";
 
 const LIST_URL = "/api/notifications?limit=20";
@@ -38,6 +39,16 @@ function BellIcon() {
  * (`components/reading/word-lookup-popover.tsx`): Escape closes and returns
  * focus to the trigger, an outside click closes, and opening moves focus
  * into the panel.
+ *
+ * Motion (Layer 6, motion-engineer): the panel gets a light `.panel-in`
+ * fade + rise on open (plain CSS keyframe, see `app/globals.css`); it has no
+ * matching exit animation — closing is a plain unmount, which keeps this
+ * light rather than reaching for `AnimatePresence` for a repeated,
+ * low-stakes popover. The unread-count badge gets a single, non-looping
+ * `.badge-pulse` scale bump the moment the count *rises while mounted*
+ * (a new notification arriving) — never on the initial load's reveal — via
+ * `useUnreadIncreasePulse`. Both are plain CSS animations, so they're
+ * kill-switched globally by `[data-reduce-motion]` / `prefers-reduced-motion`.
  */
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -53,6 +64,7 @@ export function NotificationBell() {
   const closeRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const cooldownTimer = useRef<ReturnType<typeof setTimeout>>();
+  const pulseKey = useUnreadIncreasePulse(unreadCount);
 
   const load = useCallback(async () => {
     setLoadState({ status: "loading" });
@@ -183,8 +195,12 @@ export function NotificationBell() {
         <BellIcon />
         {unreadCount > 0 && (
           <span
+            key={pulseKey}
             aria-hidden="true"
-            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white"
+            className={cn(
+              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white",
+              pulseKey > 0 && "badge-pulse",
+            )}
           >
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
@@ -196,7 +212,7 @@ export function NotificationBell() {
           id={panelId}
           role="dialog"
           aria-labelledby={headingId}
-          className="absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-md"
+          className="panel-in absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-md"
         >
           <div className="flex items-center justify-between gap-2">
             <h2 id={headingId} className="text-sm font-semibold">
