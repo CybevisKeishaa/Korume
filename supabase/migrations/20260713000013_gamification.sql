@@ -128,3 +128,10 @@ on conflict (name) do nothing;
 -- rather than relying on the RLS gate alone — badge awarding happens only
 -- via the service role after criteria are verified server-side.
 revoke insert, update, delete on user_badges from authenticated;
+
+-- Same reasoning, same one-time-grant exposure, for user_stats — the XP /
+-- streak store and the highest-value fabrication target in this layer. Only
+-- stats_select_own (SELECT) exists in RLS, so writes are already denied, but
+-- close the table-level grant explicitly too: all XP/streak mutation goes
+-- through the service-role award pipeline (lib/data/gamification.ts).
+revoke insert, update, delete on user_stats from authenticated;
