@@ -1,13 +1,23 @@
 # JapanWeb+ — Business Model & Monetization Strategy
 
 > **Status:** Approved brainstorm → feeds **Layer 8 (Monetization & Polish)**.
-> **Scope:** Product philosophy, Free/Premium split, AI knowledge economy, cost architecture,
-> pricing, and conversion strategy. Named `business-model` (not `monetization`) so it can grow
-> to cover referrals, B2B, teacher plans, and marketplace without restructuring.
+> **Scope:** Long-term product manifesto — mission, North Star, moat, competitive & positioning
+> strategy, and decision framework — plus the operational model: Free/Premium split, AI knowledge
+> economy, cost architecture, pricing, and conversion. Named `business-model` (not `monetization`)
+> so it can grow to cover referrals, B2B, teacher plans, and marketplace without restructuring.
 > **Related:** root `CLAUDE.md` §2 (non-negotiables), main spec §3.12 (Free/Premium — the Stripe
 > part is superseded here), `docs/features/` (F-001..F-016), Serena memory `monetization_brainstorm`.
 
 ---
+
+## Mission — why we exist
+
+> **JapanWeb exists to help Vietnamese learners acquire Japanese naturally through real content —
+> and to make every learner's progress improve the platform for everyone who comes after.**
+
+Beyond profit: we turn the act of learning into a shared, compounding resource, so each person's
+study makes the next person's easier, richer, and cheaper. *(Mission = why we exist; North Star =
+where that takes us.)*
 
 ## North Star
 
@@ -52,6 +62,55 @@ What JapanWeb explicitly does **not** try to become — a guardrail against scop
 - **Not a YouTube replacement or video host.** We never store, re-host, or proxy video (`CLAUDE.md` §2);
   YouTube stays the player, we add the learning layer on top.
 - **Not an international product — yet.** Vietnam-first; no international GTM until traction justifies it.
+
+## Product moat — why this gets hard to copy
+
+**The moat is not the AI.** Models are a commodity any competitor can buy. The moat is the
+compounding *combination* of four things that only exist after time in the market:
+
+- **Personal learning history** accumulated over months per learner (weaknesses, progress, mistakes) —
+  cannot be back-filled.
+- **A continuously growing shared knowledge base** — every cache-miss generation enriches it permanently
+  (§4); years of it can't be re-created on day one.
+- **AI that understands both the learner AND the platform's accumulated knowledge** — the *intersection*,
+  not the model.
+- **Cost efficiency that compounds** — a late competitor pays full generation cost from zero while we
+  serve mostly from cache.
+
+Competitors can copy features in a week. They cannot copy years of accumulated learner history and shared
+knowledge. **The moat widens with time, not with spend.**
+
+## Competitive strategy — how we compete
+
+JapanWeb does **not** compete on: more AI models · more API requests · more tokens.
+
+It competes on: **personalization · knowledge accumulation · learning from real content · long-term
+learner memory.** Any rival can call the same APIs; none can instantly replicate a system that has been
+learning *with its users* for years. **The advantage is the learning system, not the AI model.**
+
+## Positioning — JapanWeb+ is a learning system, not "an AI"
+
+Users are not paying for AI. They are paying for an **Intelligent Learning System**, of which AI Sensei
+is only one component:
+
+> AI Sensei · Deep Breakdown · Personalized Roadmap · Weekly Coach · Pronunciation Analysis ·
+> Long-term Memory · Study Replay · Weakness Tracking.
+
+This positioning keeps the product **independent of whichever model powers it** (Claude, GPT, Gemini…)
+and builds equity in the **JapanWeb brand**, not the model vendor. The Free/Premium split in §2 is the
+boundary of this *system*, not a menu of AI features.
+
+## Product decision framework — the scope-creep guardrail
+
+Before building ANY new feature, ask:
+
+1. Does it improve learning?
+2. Does it increase the value of the shared knowledge base?
+3. Can it become cheaper as the community grows?
+4. Does it strengthen the personal learning experience?
+
+If most answers are **"No,"** the feature probably doesn't belong in JapanWeb. (This is the operational
+form of design principle 6 and the Non-goals guardrail.)
 
 ---
 
@@ -298,5 +357,6 @@ Supporting KPIs:
 ## Appendix — one-line summary
 
 > Free users always have a complete learning experience and own their data forever. JapanWeb+ *accelerates*
-> learning with a personal AI Sensei built on the learner's own data. AI is treated as an investment into a
-> growing shared knowledge base, so the platform becomes smarter and cheaper as the community grows.
+> learning with an **intelligent learning system** (AI Sensei, deep breakdown, coaching, roadmap,
+> pronunciation analysis, long-term memory…) built on the learner's own data. AI is treated as an investment
+> into a growing shared knowledge base, so the platform becomes smarter and cheaper as the community grows.
