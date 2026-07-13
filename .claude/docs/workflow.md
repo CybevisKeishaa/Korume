@@ -93,4 +93,6 @@ checklist AND `code-reviewer` has signed off on the integrated diff.
 3. Merge with `git merge --no-ff` so each layer stays a single visible unit in history.
 4. Do **not** push to any remote unless the user explicitly asks (per `CLAUDE.md` git rules).
 5. Layer history so far: Layer 1 → merged (`1d1628e`); Layer 2 → merged (`618e1a4`);
-   Layer 3 → merged (`d6c2138`); Layer 4 → merged (`63b965f`); Layer 5 → merged (`74514cd`).
+   Layer 3 → merged (`d6c2138`); Layer 4 → merged (`63b965f`); Layer 5 → merged (`74514cd`);
+   Layer 6 → merged (`3fe741b`). Leaderboard deliberately deferred to Layer 7 (principle G2,
+   `business-model.md` §1.1).
