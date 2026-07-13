@@ -9,6 +9,52 @@
 
 ---
 
+## North Star
+
+> **Become the definitive way Vietnamese learners reach Japanese fluency through real content —
+> a platform whose shared knowledge base compounds with every learner, so studying gets richer,
+> faster, and cheaper the more the community grows.**
+
+This is the direction for every product decision, beyond monetization: *does it help a Vietnamese
+learner reach fluency on real content, and does it make the shared knowledge base compound?* If a
+proposal does neither, reconsider it.
+
+## Flywheel
+
+The core engine — why the platform gets **more valuable AND more cost-efficient** as it grows:
+
+```
+        ┌──────────────►  Learners  ──────────────┐
+        │                                          │
+        │                                          ▼
+ Better Learning                                 Study
+   Experience                                      │
+        ▲                                          ▼
+        │                                  Generate Knowledge
+        │                                   (cache miss →
+        │                                    cached forever)
+        │                                          │
+        └────────  Knowledge Base Grows  ◄─────────┘
+```
+
+More learners → more study → more Serve/Generate-Knowledge → the shared base grows → cache-hit rate ↑,
+marginal AI cost ↓, answers richer & faster → better experience → more learners. Every turn lowers cost
+and raises value **at the same time** (mechanics in §4; measured by the Knowledge Reuse Ratio in §7).
+
+## Non-goals
+
+What JapanWeb explicitly does **not** try to become — a guardrail against scope creep:
+
+- **Not a general-purpose AI chatbot.** AI always serves Japanese learning tied to the knowledge base,
+  never open-ended Q&A (reinforces design principle 6: Serve/Generate-Knowledge only).
+- **Not a social network.** No feed / follower / social-graph core loop. Any community feature stays in
+  service of learning, never becomes the product.
+- **Not a YouTube replacement or video host.** We never store, re-host, or proxy video (`CLAUDE.md` §2);
+  YouTube stays the player, we add the learning layer on top.
+- **Not an international product — yet.** Vietnam-first; no international GTM until traction justifies it.
+
+---
+
 ## 0. Locked context (decided before this doc)
 
 - **Market:** Vietnam learners only (no international GTM yet).
@@ -221,7 +267,6 @@ Supporting KPIs:
 
 | KPI | What it tells us |
 |---|---|
-| Cache hit rate | health of the knowledge economy (§4) |
 | Knowledge generated / day | growth rate of the shared base + generation-cost driver |
 | AI cost per active user | must trend **down** over time |
 | Average AI cost per premium subscriber | margin safety on the unbounded-cost features |
@@ -229,6 +274,11 @@ Supporting KPIs:
 | Premium renewal rate | is the long-term moat real (§3 tier ③) |
 | Weekly active learners | top-of-funnel + free-tier stickiness |
 | Average learning streak | habit formation (the free-first bet) |
+
+> **Scope note:** pure AI *operational* metrics — latency, raw cache-hit rate, hallucination rate,
+> error/degradation rate — live in a separate **architecture/operations** document, not here. This
+> section tracks only business & unit-economics health. The Knowledge Reuse Ratio above is the one
+> economy metric kept here because it is the business north-star, not an ops gauge.
 
 ---
 
@@ -239,6 +289,8 @@ Supporting KPIs:
 - Decide the `verified` quality-gate workflow for `source='ai_generated'` knowledge (self-serve report →
   admin review; overlaps Layer-7 admin tools).
 - PayOS integration specifics (subscription/renewal handling, price-lock enforcement for Founding Members).
+- Write the separate **architecture/operations doc** owning operational metrics (latency, cache-hit
+  rate, hallucination rate, degradation rate) referenced in §7.
 - Future business-model extensions this doc is structured to absorb: referrals, B2B, teacher plans, marketplace.
 
 ---
