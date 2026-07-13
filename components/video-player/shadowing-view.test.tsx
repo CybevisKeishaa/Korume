@@ -70,6 +70,11 @@ function mockFetch(): FetchCall[] {
       method: init?.method,
       body: init?.body ? JSON.parse(init.body as string) : undefined,
     });
+    // The video summary panel (Layer 4) GETs its own endpoint on mount; every
+    // video in this suite has no summary generated yet.
+    if (url.endsWith("/summary") && (init?.method ?? "GET") === "GET") {
+      return { ok: false, status: 404, json: async () => ({ error: "No summary yet" }) } as Response;
+    }
     return { ok: true, json: async () => ({}) } as Response;
   });
   vi.stubGlobal("fetch", fn);

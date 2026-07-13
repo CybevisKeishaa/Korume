@@ -32,6 +32,17 @@ export interface VocabItem {
   part_of_speech: string | null;
 }
 
+/** One `vocab_examples` row — curated (seed content) or AI-generated (Layer 4,
+ * see `lib/data/vocab-examples.ts`). Both are readable by any authenticated
+ * user (`vocab_examples_read` RLS policy, `for select using (true)`), so this
+ * is a plain read like `getVocabList`/`getKanjiById` — no business logic. */
+export interface VocabExampleItem {
+  id: string;
+  sentence_jp: string;
+  sentence_translation: string | null;
+  source: "curated" | "ai_generated";
+}
+
 export interface GrammarItem {
   id: string;
   title: string;
@@ -80,6 +91,36 @@ export async function getVocabList(level?: JlptLevel): Promise<VocabItem[]> {
   const { data, error } = await query;
   if (error) throw error;
   return data ?? [];
+}
+
+export async function getVocabById(id: string): Promise<VocabItem | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("vocab")
+    .select("id, word, reading, meaning_en, meaning_vi, jlpt_level, part_of_speech")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as VocabItem | null) ?? null;
+}
+
+/** All example sentences for one vocab word (curated seed rows plus any
+ * already AI-generated ones) — curated first (matching the client-side order
+ * `VocabExamplesPanel` keeps after generating), in stable id order within
+ * each source (the table has no created_at column to sort by). AI generation
+ * of NEW examples is a POST to `/api/vocab/[id]/examples`
+ * (ai-engineer/backend-engineer's endpoint); this is only the read side. */
+export async function getVocabExamples(vocabId: string): Promise<VocabExampleItem[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("vocab_examples")
+    .select("id, sentence_jp, sentence_translation, source")
+    .eq("vocab_id", vocabId)
+    // Descending: "curated" sorts after "ai_generated" alphabetically.
+    .order("source", { ascending: false })
+    .order("id", { ascending: true });
+  if (error) throw error;
+  return (data as VocabExampleItem[]) ?? [];
 }
 
 export async function getGrammarList(level?: JlptLevel): Promise<GrammarItem[]> {

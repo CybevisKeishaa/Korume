@@ -19,21 +19,10 @@
  * Voicing is decided from a clarity score (`1 - d'(bestLag)`): silence and
  * noise never produce a confident dip, so they fall out as `hz: null`.
  *
- * ─────────────────────────────────────────────────────────────────────────
- * FUTURE SEAM (Layer 4 — NOT implemented here, do not stub with fake scores):
- *   Once reference pitch is available (TTS audio + accent data — CLAUDE.md §5,
- *   Layer 4; YouTube audio must NEVER be extracted, §2.1), pitch-accent scoring
- *   will live alongside this module as, roughly:
- *
- *     scorePitchAccent(user: PitchContour, reference: PitchContour): {
- *       score: number;                 // 0..1 intonation similarity
- *       alignment: Array<[ui: number, ri: number]>; // DTW frame pairing
- *     }
- *
- *   It would compare *shape* (semitone-relative, via `hzToSemitones`), align the
- *   two contours with DTW, and reduce the aligned distance to a score. Layer 3
- *   ships the user contour only — no reference exists yet, so no score is faked.
- * ─────────────────────────────────────────────────────────────────────────
+ * Reference-vs-user pitch-accent scoring (Layer 4) lives in `./score`
+ * (`scorePitchAccent`): it compares two contours by SHAPE in speaker-relative
+ * semitones. The reference contour is extracted client-side from TTS audio of
+ * the transcript line TEXT — YouTube audio is NEVER used (CLAUDE.md §2.1).
  */
 import type { F0Frame } from "./types";
 

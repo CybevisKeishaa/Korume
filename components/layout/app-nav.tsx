@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/grammar", label: "Grammar" },
   { href: "/videos", label: "Videos" },
   { href: "/mining", label: "Mining" },
+  { href: "/conversation", label: "Conversation" },
   { href: "/jlpt-test", label: "JLPT" },
   { href: "/community", label: "Community" },
   { href: "/profile", label: "Profile" },

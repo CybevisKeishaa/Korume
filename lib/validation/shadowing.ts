@@ -6,6 +6,12 @@ import { z } from "zod";
 export const shadowingSessionSchema = z.object({
   videoId: z.string().uuid(),
   lineId: z.string().uuid(),
+  /** Self-reported pitch-accent score (differentiator #1), computed
+   * client-side by `lib/pitch` by comparing the user's recording against a
+   * reference contour — the server never recomputes it, only clamps/
+   * validates the range before persisting. Optional: the pitch pipeline is
+   * newer than the base shadowing flow. */
+  pitchScore: z.coerce.number().min(0).max(100).optional(),
 });
 export type ShadowingSessionInput = z.infer<typeof shadowingSessionSchema>;
 

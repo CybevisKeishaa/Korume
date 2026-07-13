@@ -39,19 +39,24 @@ export default async function VocabPage({
 
       <ul className="divide-y divide-border rounded-lg border border-border">
         {vocab.map((v) => (
-          <li key={v.id} className="flex items-baseline justify-between gap-4 p-4">
-            <div>
-              <span className="font-jp text-lg">{v.word}</span>
-              {v.reading && (
-                <span className="ml-2 font-jp text-sm text-muted-foreground">
-                  {v.reading}
-                </span>
-              )}
-              <p className="text-sm text-muted-foreground">{v.meaning_en}</p>
-            </div>
-            <span className="shrink-0 text-xs text-muted-foreground">
-              {v.part_of_speech}
-            </span>
+          <li key={v.id}>
+            <Link
+              href={`/vocab/${v.id}`}
+              className="flex items-baseline justify-between gap-4 p-4 hover:bg-muted"
+            >
+              <div>
+                <span className="font-jp text-lg">{v.word}</span>
+                {v.reading && (
+                  <span className="ml-2 font-jp text-sm text-muted-foreground">
+                    {v.reading}
+                  </span>
+                )}
+                <p className="text-sm text-muted-foreground">{v.meaning_en}</p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {v.part_of_speech}
+              </span>
+            </Link>
           </li>
         ))}
       </ul>

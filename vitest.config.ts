@@ -15,6 +15,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./", import.meta.url)),
+      // `server-only` (used by lib/ai and lib/data) has no standalone package;
+      // Next.js resolves it at build time. Map it to an empty stub so Vitest
+      // can import server-only modules under test.
+      "server-only": fileURLToPath(
+        new URL("./test/stubs/server-only.ts", import.meta.url),
+      ),
     },
   },
 });

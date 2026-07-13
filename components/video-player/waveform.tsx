@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { readBlobAsArrayBuffer } from "@/lib/audio/read-blob";
 
 export interface WaveformProps {
   /** Recorded audio to visualize. Rendering is a no-op while null. */
@@ -16,21 +17,6 @@ type DecodeStatus = "idle" | "decoding" | "ready" | "unsupported";
 
 const BUCKET_COUNT = 96;
 const CANVAS_WIDTH = 600;
-
-/**
- * Reads a `Blob` as an `ArrayBuffer`. Prefers the modern `Blob.arrayBuffer()`
- * method, falling back to `FileReader` for environments that implement Blob
- * without it (older Safari; also jsdom in this project's test environment).
- */
-function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
-  if (typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as ArrayBuffer);
-    reader.onerror = () => reject(reader.error ?? new Error("Failed to read recording"));
-    reader.readAsArrayBuffer(blob);
-  });
-}
 
 /** Per-bucket peak amplitude (0..1) envelope from an AudioBuffer's first channel. */
 function computeEnvelope(buffer: AudioBuffer, buckets: number): number[] {
