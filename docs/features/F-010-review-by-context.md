@@ -1,5 +1,10 @@
 # Review by Context | ID: F-010
 
+> **⚠️ No-media rule (`CLAUDE.md` §2, business-model.md §2.1).** Thẻ mining lưu **text + `{video_id, start, end}`**,
+> KHÔNG lưu screenshot/audio. "Screenshot" dưới đây = **URL thumbnail YouTube** (`img.youtube.com/...`), một
+> tham chiếu — không lưu ảnh vào DB/Storage. Audio = seek YouTube IFrame player, không cắt/lưu clip. Cột
+> `screenshot_url` (nếu thêm) chỉ chứa URL tham chiếu, không phải blob.
+
 ## Overview
 Instead of isolated flashcards, SRS review shows the exact sentence and video clip where the word appeared, reinforcing memory through context.
 

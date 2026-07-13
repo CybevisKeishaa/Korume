@@ -16,7 +16,7 @@ AI: `@anthropic-ai/sdk` 0.111.0. Tests: Vitest+RTL (unit), Playwright (`tests/e2
 ## Branching policy (user-set)
 One branch per layer `layer-<n>-<slug>` off master; merge `--no-ff` ONLY after DoD (tests pass +
 code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`,
-L3 `d6c2138`, L4 `63b965f`.
+L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),
@@ -46,8 +46,8 @@ L3 `d6c2138`, L4 `63b965f`.
     system prompts first for prompt caching. Chatbot (scenario roleplay + corrections),
     video summaries, example-sentence generation.
   - `lib/speech-scoring`: Azure Speech pronunciation assessment (JA), STT, TTS — every entry
-    point degrades to a clean 503 "not configured" result when keys are absent (they ARE absent:
-    only `ANTHROPIC_API_KEY` is configured; Azure paths are latent).
+    point degrades to a clean 503 "not configured" result when keys are absent. (Keys WERE
+    absent during L4; Azure was configured at L5 start, 2026-07-13 — features now live.)
   - `lib/audio`: pure PCM/WAV encode (`pcm-encode.ts`) + decode (`wav-decode.ts`),
     `blobToWav16kMono` (`blob-to-wav.ts`), shared `read-blob.ts`. **Azure short-audio uploads
     must be WAV/PCM or OGG/Opus — recorder webm/opus is converted client-side before every
@@ -74,8 +74,36 @@ L3 `d6c2138`, L4 `63b965f`.
     display in recorder panel.
   - Test harness additions in `test/`: `claude-mock`, `azure-speech-mock`, `audio-context-mock`,
     `blob-utils` (`readBlobBytes` — jsdom Blob lacks `arrayBuffer()`), fixtures.
-- **Layers 5–8: NOT STARTED.** Next = **Layer 5 — JLPT test engine + Reading module**
-  (lead: backend + frontend). Start: `git checkout master`, branch `layer-5-<slug>`.
+- **Layer 5 (JLPT + Reading): DONE, APPROVED, merged (`74514cd`, 2026-07-13).**
+  - Migration 11: `reading_passages`/`reading_questions`/`user_reading_attempts` + JLPT hardening —
+    `jlpt_questions.correct_answer`+`explanation` UNREADABLE by authenticated (revoke SELECT then
+    column-scoped grant; CRITICAL: migration-6 default-privileges blanket-grants new tables, so
+    revoke-first or the column grant is a silent no-op); `user_test_attempts` += started_at/answers/
+    mode('full'|'section')/section. Migration 12: original content — 2 tests (N5+N4, 34 câu each,
+    12v/10g/6r/6l), 7 passages (4 N5 + 3 N4) + 21 questions; listening = `audio_text` in
+    question_data, played via `/api/speech/tts` (NO audio files); answers round-robined 0–3.
+  - `lib/jlpt`: deterministic scoring — pillar structure (N5/N4 combined LK+Reading 0-120 min 38 +
+    Listening 0-60 min 19; N3–N1 three pillars 0-60 min 19), pass thresholds N5 80/N4 90/N3 95/
+    N2 90/N1 100 (official), scaled = linear approx (labeled estimate), `passed: boolean|null`
+    (null = insufficient data or section mode), `weaknessStats` by question_type weakest-first.
+  - APIs: `/api/jlpt/tests{,/[id],/[id]/submit}`, `/api/jlpt/attempts`, `/api/reading{,/[id],
+    /[id]/submit}` — GET strips answers (column grant = backstop, `select *` would fail); submit
+    fetches answers via service-role, scores server-side, reveals correctAnswer+explanation only
+    post-submit; rate-limit 20/60s on submits. Logic lives in `lib/data/jlpt.ts`/`reading.ts`
+    (routes are thin, untested per repo convention; `test/supabase-mock.ts` = new reusable mock).
+    Score column: full mode → scaledTotal (nullable), section mode → totalPercent. `started_at`
+    client-supplied — timer is a study aid, NOT authoritative (commented in code).
+  - Reading furigana: lazy generate-on-first-read (kuromoji `toFurigana`) cached into
+    `furigana_json` via service client; failure → null, UI falls back to sentence-level lookup.
+  - UI: `/jlpt` (list + attempts history), `/jlpt/[id]` (pre-start → timed runner w/ navigator,
+    1–4 shortcuts, aria-live timer warnings, TTS listening + 503 degrade → results w/ pillar bars +
+    weakness links), `/reading` + `/reading/[id]` (furigana toggle, tap-to-lookup popover,
+    translation disclosure, quiz). ENGLISH shell (convention: shell EN, DB content VN). Old
+    `/jlpt-test` placeholder → redirect `/jlpt`; middleware protects `/jlpt` + `/reading`.
+  - code-reviewer: approve-with-nits, both fixed pre-merge (Reading shell VN→EN; timer comment).
+- **Layers 6–8: NOT STARTED.** Next = **Layer 6 — Gamification + Notifications** (XP, streak,
+  badges, SRS-due reminders, i+1 recommendation surfacing; lead: backend + frontend).
+  Start: `git checkout master`, branch `layer-6-<slug>`.
 
 - **Business model / monetization = DECIDED** → `docs/product/business-model.md` (product manifesto +
   operational model; commits `3fb3232`→`14aafba`). Layer 8 reference; supersedes spec §3.12 Stripe/trial.
@@ -108,19 +136,30 @@ L3 `d6c2138`, L4 `63b965f`.
 - jsdom quirks: Blob has no `arrayBuffer()` (use `@/test/blob-utils` `readBlobBytes` /
   `lib/audio/read-blob.ts`), no Web Audio (use `@/test/audio-context-mock`), no canvas 2D.
 
+## Deploy target (user-set)
+**Self-hosted at `almostgone.vn`** — a single long-running Node instance (NOT Vercel/serverless).
+Consequence: `lib/rate-limit.ts` in-memory sliding-window IS a real limiter here (state persists across
+requests, no per-cold-start reset) — the "per-instance / resets" caveat only bites if we later scale to
+multiple instances behind a load balancer (then → Redis). Cost-defense: user runs a low Anthropic Console
+spend cap (~$1–2) = a manual global kill-switch (defense layer #1); it's a monthly org budget, near-real-time
+(can slightly overshoot), and blunt (all-or-nothing app-wide, not per-user) — still need per-user Knowledge-Gen
+quota (L8) before opening to real users. Supersedes spec's "Deploy: Vercel". Payments = PayOS (not Stripe).
+
 ## DB / running locally
 Local Supabase (Docker) is the dev DB; `.env.local` points at it. Docker Desktop must be running
 (`npx supabase start`). `npm run dev` → localhost:3000. Studio :54323. `npx supabase db reset`
-re-applies migrations (now 10). Cloud move (still not done): create free project → swap 4
+re-applies migrations (now 12). Cloud move (still not done): create free project → swap 4
 `.env.local` values → `supabase link` + `supabase db push`; add Google OAuth creds in dashboard.
-Env keys: `ANTHROPIC_API_KEY` set; `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION` empty (features
-degrade to 503 by design).
+Env keys: `ANTHROPIC_API_KEY` set; `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION` **set as of
+2026-07-13** (region `southeastasia`) — speech features live; 503-degrade paths remain as
+fallback for keyless environments.
 
 ## Verify commands
-`npx tsc --noEmit` · `npm test` (**533 unit**) · `npm run lint` · `npm run build` ·
-`npx playwright test` (2 e2e) · `npx supabase db reset` (10 migrations). Shared test harness in
+`npx tsc --noEmit` · `npm test` (**685 unit**) · `npm run lint` · `npm run build` ·
+`npx playwright test` (2 e2e) · `npx supabase db reset` (12 migrations). Shared test harness in
 `test/` (`@/test/*`): media mocks, YouTube IFrame stub, Claude + Azure Speech + AudioContext
-mocks, tone-buffer/transcript/URL fixtures, blob utils.
+mocks, tone-buffer/transcript/URL fixtures, blob utils, `supabase-mock.ts` (chainable
+query-builder mock for lib/data tests).
 
 ## Deferred follow-ups
 From L1: GDPR delete-my-data; getUser() in middleware on all routes (perf); conditional
@@ -133,9 +172,17 @@ L8); `VideoRow` type duplication; Supabase-backed integration tests; difficulty 
 From L4 (review nits, non-blocking): persist voice-mode pronunciation score to
 `conversation_messages.pronunciation_score` (column exists, deliberately unwired — best-effort
 client-side only for now); human-review/publish gate for `source='ai_generated'` vocab examples
-(candidate for L7 admin tools).
+(candidate for L7 admin tools). From L5: "Add to flashcard" from reading passages is disabled —
+`/api/mining` requires `lineId` FK into `transcript_lines` (video-only); generalizing the mining
+schema (nullable lineId + source discriminator) is a future decision (fits F-010/F-014);
+listening weakness links route to `/videos?level=` (no dedicated listening drill module yet);
+site-wide i18n/VN-localization of the English shell = deliberate product decision, not per-module;
+`jlpt_questions.question_type` free-form text (add check constraint if vocabulary stabilizes);
+manual click-through of /jlpt + /reading in the browser not yet done (only unit/e2e-registration
+coverage) — worth doing before real users.
 
 ## Working agreements
 TDD-first, tests shown passing. code-reviewer signs off every non-trivial change before "done".
-Data flows down schema→API→UI. Never download/proxy video (YouTube IFrame only). Commit only
-when asked; branch-per-layer + merge-to-master-when-done.
+Data flows down schema→API→UI. Never download/proxy video (YouTube IFrame only). **Commit freely
+without asking** (user granted standing permission 2026-07-13 — supersedes old "commit only when
+asked"); push to remote still requires an explicit ask. Branch-per-layer + merge-to-master-when-done.

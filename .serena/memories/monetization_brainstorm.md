@@ -20,7 +20,10 @@ before any feature: improves learning? grows shared knowledge? cheaper as commun
 strengthens personal learning? mostly-No → doesn't belong).
 
 ## What was decided (all locked)
-- **Market VN only · PayOS (Stripe ruled out) · free-first launch.** Competitor corodomo.com
+- **Market VN only (for now — provisional, not permanent) · PayOS (Stripe ruled out) · free-first launch.**
+  VN-only reason = user has no foreign-marketing strategy yet (2026-07-13); "Vietnam-first, no international
+  GTM *until traction justifies it*" — revisit later, don't treat international as permanently off-limits or
+  strip i18n-friendly structure. Competitor corodomo.com
   gives core loop free → core loop = table stakes, never charge for it.
 - **6 design principles** (feature-review filter): (1) sell a personal learning experience not API
   requests; (2) users own data forever, premium unlocks intelligence OVER data not the data; (3)

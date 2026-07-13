@@ -48,8 +48,8 @@ If a task appears to require breaking one of these, STOP and surface it to the u
 - **AI**: Anthropic Claude API (conversation, summaries, example sentences, review hints)
 - **SRS**: self-built SM-2, state per (user, item)
 - **Storage**: Supabase Storage / S3 — recordings & avatars only, NEVER video
-- **Deploy**: Vercel (app + API), Supabase/Neon (DB)
-- **Payments**: Stripe subscriptions (7-day trial)
+- **Deploy**: self-hosted at **almostgone.vn** (single long-running Node instance; NOT Vercel) + Supabase/Neon (DB)
+- **Payments**: **PayOS** subscriptions, **no trial** (Stripe/7-day-trial superseded — see `docs/product/business-model.md`; conversion = Contextual Discovery)
 
 > ⚠️ **Current repo state**: this repo is still a Create React App (`react-scripts`, React 19).
 > The target is Next.js 14. Migration is handled deliberately in **Layer 1** by `tech-lead` —
