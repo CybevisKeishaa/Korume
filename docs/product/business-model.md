@@ -159,6 +159,30 @@ These are the decision filter for every future feature and every pricing change.
    No AI request may consume tokens without creating lasting value. This is a **feature-review gate**:
    if a proposed feature neither helps the current learner nor enriches the platform, question why it exists.
 
+### 1.1 Gamification & notification principles (G1–G3)
+
+Adopted at Layer 6 (2026-07-13). Same status as the six principles above: a decision filter,
+not a guideline. Any gamification or notification feature that fails these does not ship.
+
+- **G1 — Gamification reinforces learning; it never replaces it.**
+  Every XP point, badge, streak, or level must correspond to meaningful learning progress —
+  never to engagement tricks or repetitive UI actions. Concretely: **XP is awarded for
+  completed learning outcomes, not app activity.** A graded SRS review, a scored dictation,
+  a saved shadowing session, a submitted JLPT test or reading quiz earn XP; opening the app,
+  clicking around, or re-grinding the same item the same day do not.
+
+- **G2 — Self-improvement before social comparison.**
+  The product helps learners compare themselves with their *past selves* first (XP, streaks,
+  analytics, study replay). Social comparison (leaderboards, friend rankings) only appears once
+  a genuine social layer exists — this is why leaderboards live in Layer 7 (Community), as a
+  product decision, not a scheduling one.
+
+- **G3 — Notifications support learning, not attention.**
+  A notification exists to help the learner continue meaningful progress (SRS due, badge
+  earned, weekly report ready, new Sensei insight) — never to manufacture FOMO or farm
+  engagement. If a notification's primary job is to make someone open the app rather than
+  learn something, it does not ship.
+
 ---
 
 ## 2. Free vs Premium
