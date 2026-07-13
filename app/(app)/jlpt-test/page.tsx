@@ -1,7 +1,6 @@
-import { ComingSoon } from "@/components/learning/coming-soon";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "JLPT" };
-
-export default function JlptTestPage() {
-  return <ComingSoon title="JLPT Mock Tests" layer="Layer 5" />;
+/** Old placeholder route — the JLPT test engine now lives at `/jlpt` (Layer 5). */
+export default function JlptTestPageRedirect() {
+  redirect("/jlpt");
 }

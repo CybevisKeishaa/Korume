@@ -11,6 +11,7 @@ const PROTECTED_PREFIXES = [
   "/videos",
   "/reading",
   "/speaking",
+  "/jlpt",
   "/jlpt-test",
   "/community",
   "/profile",
