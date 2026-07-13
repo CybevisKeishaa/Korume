@@ -20,10 +20,12 @@ export async function POST(request: Request) {
   const videoId = form.get("videoId");
   const lineId = form.get("lineId");
   const audio = form.get("audio");
+  const pitchScore = form.get("pitchScore");
 
   const parsed = shadowingSessionSchema.safeParse({
     videoId: typeof videoId === "string" ? videoId : undefined,
     lineId: typeof lineId === "string" ? lineId : undefined,
+    pitchScore: typeof pitchScore === "string" ? pitchScore : undefined,
   });
   if (!parsed.success) {
     return NextResponse.json(
@@ -39,7 +41,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing audio file" }, { status: 400 });
   }
 
-  const result = await createSession({ videoId: parsed.data.videoId, lineId: parsed.data.lineId, audio });
+  const result = await createSession({
+    videoId: parsed.data.videoId,
+    lineId: parsed.data.lineId,
+    audio,
+    pitchScore: parsed.data.pitchScore,
+  });
   if (!result.ok) {
     if (result.status === 429) {
       return NextResponse.json(

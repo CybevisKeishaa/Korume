@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { extractF0, medianFilter, buildContour, hzToSemitones, medianVoicedHz } from "@/lib/pitch";
+import { contourFromSamples, hzToSemitones, medianVoicedHz } from "@/lib/pitch";
 import type { PitchContour as PitchContourData } from "@/lib/pitch";
+import { readBlobAsArrayBuffer } from "@/lib/audio/read-blob";
 
 export interface PitchContourProps {
   /** Recorded audio to visualize. Rendering is a no-op while null. */
@@ -24,34 +25,20 @@ const RANGE_PADDING_SEMITONES = 1;
 const POINT_RADIUS = 1.5;
 
 /**
- * Reads a `Blob` as an `ArrayBuffer`. Mirrors `waveform.tsx`: prefers
- * `Blob.arrayBuffer()`, falling back to `FileReader` for environments
- * (older Safari, jsdom in tests) that don't implement it.
- */
-function readBlobAsArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
-  if (typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as ArrayBuffer);
-    reader.onerror = () => reject(reader.error ?? new Error("Failed to read recording"));
-    reader.readAsArrayBuffer(blob);
-  });
-}
-
-/**
- * Runs the B1 pitch pipeline (extractF0 → medianFilter → buildContour) on a
- * decoded mono channel and derives the speaker-relative reference (median
- * voiced Hz). Returns `null` when the clip has no voiced frames at all (pure
- * silence/noise) — nothing meaningful to plot.
+ * Runs the B1 pitch pipeline (`contourFromSamples`) on a decoded mono channel
+ * and derives the speaker-relative reference (median voiced Hz). Returns
+ * `null` when the clip has no voiced frames at all (pure silence/noise) —
+ * nothing meaningful to plot.
  */
 function computePitchContour(
   samples: Float32Array,
   sampleRate: number,
 ): { contour: PitchContourData; refHz: number } | null {
-  const filtered = medianFilter(extractF0(samples, sampleRate));
-  const refHz = medianVoicedHz(filtered);
+  const contour = contourFromSamples(samples, sampleRate);
+  if (contour === null) return null;
+  const refHz = medianVoicedHz(contour.frames);
   if (refHz === null) return null;
-  return { contour: buildContour(filtered, sampleRate), refHz };
+  return { contour, refHz };
 }
 
 interface PlotPoint {

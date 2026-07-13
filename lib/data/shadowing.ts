@@ -14,6 +14,9 @@ export interface CreateSessionInput {
   videoId: string;
   lineId: string;
   audio: Blob;
+  /** Self-reported pitch-accent score (0-100), already validated/clamped by
+   * `shadowingSessionSchema` — see `lib/validation/shadowing.ts`. */
+  pitchScore?: number;
 }
 
 export type CreateSessionResult =
@@ -28,8 +31,11 @@ export type CreateSessionResult =
  * `storage.objects` requires that exact prefix (CLAUDE.md §2: recordings
  * belong to the user, encrypted at rest, never public) — insert the
  * `shadowing_sessions` row, and return a short-lived signed URL for
- * immediate playback. `pronunciation_score`/`rhythm_score`/`pitch_score` are
- * left null: Azure scoring is Layer 4, pitch-accent scoring is Phase B.
+ * immediate playback. `pronunciation_score`/`rhythm_score` are left null here
+ * — they're filled in later by `POST /api/pronunciation/score` (Azure
+ * scoring). `pitch_score` is accepted directly at creation when supplied:
+ * it's computed client-side (`lib/pitch`) from the same recording before
+ * upload, so no separate round-trip is needed to attach it.
  */
 export async function createSession(input: CreateSessionInput): Promise<CreateSessionResult> {
   const supabase = createClient();
@@ -61,6 +67,7 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
       video_id: input.videoId,
       transcript_line_id: input.lineId,
       recording_url: recordingPath,
+      ...(input.pitchScore !== undefined ? { pitch_score: input.pitchScore } : {}),
     })
     .select("id, created_at")
     .single();

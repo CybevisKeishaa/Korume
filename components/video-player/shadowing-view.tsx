@@ -17,6 +17,7 @@ import {
 import { TranscriptPane } from "./transcript-pane";
 import { FuriganaModeControl, LoopControls, SpeedControl, ToggleButton } from "./playback-controls";
 import { ShadowingRecorderPanel } from "./shadowing-recorder-panel";
+import { VideoSummaryPanel } from "./video-summary-panel";
 
 export interface ShadowingViewProps {
   video: VideoRow;
@@ -206,6 +207,8 @@ export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingV
             />
           </div>
         )}
+
+        <VideoSummaryPanel videoId={video.id} className="mt-4" />
       </div>
 
       <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-border p-3">
