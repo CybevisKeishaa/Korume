@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/data/videos";
+import { recordActivity } from "@/lib/data/gamification";
 import { reviewItem, type Quality, type SrsState } from "@/lib/srs";
 import type { CreateMiningCardInput, ReviewMiningCardInput } from "@/lib/validation/mining";
 
@@ -167,6 +168,10 @@ export async function reviewMiningCard(
   // any error here reflects a genuine write failure — still surfaced as 400
   // rather than a 500 to keep the endpoint's error contract simple.
   if (updateError) return { ok: false, status: 400 };
+
+  // Best-effort: gamification never fails a learning-flow request (see
+  // lib/data/gamification.ts::recordActivity).
+  await recordActivity({ userId: user.id, source: "mining_review", parts: { cardId: input.cardId }, now });
 
   return {
     ok: true,

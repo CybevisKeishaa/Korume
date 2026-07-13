@@ -71,6 +71,74 @@
 }
 
 /**
+ * Layer 6 gamification celebrations (motion-engineer, CLAUDE.md §2.4).
+ * All one-shot (no `infinite`), fast (<=600ms), and plain CSS so they need no
+ * client component on server-rendered dashboard tiles. All are kill-switched
+ * by the reduce-motion block below (it collapses `animation-duration`
+ * globally), same mechanism as `.stroke-draw` above.
+ */
+
+/* Level XP bar: fills 0 -> current progress on mount (level-card.tsx). */
+.level-fill {
+  animation: level-fill-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes level-fill-in {
+  from {
+    width: 0%;
+  }
+  to {
+    width: var(--level-target, 100%);
+  }
+}
+
+/* Earned badge tiles: subtle settle-in pop, staggered per tile (badges-grid.tsx). */
+.badge-settle {
+  animation: badge-settle-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes badge-settle-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Notification panel: light fade + rise on open (notification-bell.tsx). */
+.panel-in {
+  animation: panel-in 0.16s ease-out both;
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Unread count badge: one-shot pulse when the count increases while mounted
+   (notification-bell.tsx + use-unread-increase-pulse.ts). Never loops. */
+.badge-pulse {
+  animation: badge-pulse 0.35s ease-out;
+}
+@keyframes badge-pulse {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
  * Animation must never block a repeated study loop.

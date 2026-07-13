@@ -7,6 +7,12 @@ import { toFurigana } from "@/lib/japanese";
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/japanese", () => ({ toFurigana: vi.fn() }));
+// Gamification is a separate, already-unit-tested concern
+// (lib/data/gamification.test.ts) — mock it here so this file only exercises
+// reading scoring/persistence, not the award pipeline's own table reads/writes.
+vi.mock("@/lib/data/gamification", () => ({
+  recordActivity: vi.fn().mockResolvedValue({ ok: true, xpAwarded: 0, newBadges: [], leveledUp: false }),
+}));
 
 import { getReadingPassageDetail, listReadingPassages, submitReadingQuiz } from "./reading";
 import type { ReadingSubmitInput } from "@/lib/validation/reading";

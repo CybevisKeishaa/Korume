@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
+import { recordActivity } from "@/lib/data/gamification";
 import { scoreJlptAttempt, weaknessStats } from "@/lib/jlpt";
 import type { JlptAttemptResult, JlptLevel, JlptSection, ScoredQuestion, WeaknessStat } from "@/lib/jlpt";
 import type { JlptSubmitInput } from "@/lib/validation/jlpt";
@@ -226,6 +227,15 @@ export async function submitJlptTest(testId: string, input: JlptSubmitInput): Pr
     .select("id")
     .single();
   if (insertError) return { ok: false, status: 400 };
+
+  // Best-effort: gamification never fails a learning-flow request (see
+  // lib/data/gamification.ts::recordActivity).
+  await recordActivity({
+    userId: user.id,
+    source: "jlpt_submit",
+    parts: { testId },
+    jlptMode: input.mode,
+  });
 
   return {
     ok: true,

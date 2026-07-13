@@ -5,6 +5,12 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
+// Gamification is a separate, already-unit-tested concern
+// (lib/data/gamification.test.ts) — mock it here so this file only exercises
+// jlpt scoring/persistence, not the award pipeline's own table reads/writes.
+vi.mock("@/lib/data/gamification", () => ({
+  recordActivity: vi.fn().mockResolvedValue({ ok: true, xpAwarded: 0, newBadges: [], leveledUp: false }),
+}));
 
 // Imported after the mocks above are registered.
 import { getJlptTestDetail, listJlptAttempts, listJlptTests, submitJlptTest } from "./jlpt";

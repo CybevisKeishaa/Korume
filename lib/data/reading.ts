@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
+import { recordActivity } from "@/lib/data/gamification";
 import { scoreReadingQuiz } from "@/lib/jlpt";
 import type { JlptLevel, ReadingQuizResult, ScoredReadingQuestion } from "@/lib/jlpt";
 import type { ReadingSubmitInput } from "@/lib/validation/reading";
@@ -215,6 +216,10 @@ export async function submitReadingQuiz(passageId: string, input: ReadingSubmitI
     .select("id")
     .single();
   if (insertError) return { ok: false, status: 400 };
+
+  // Best-effort: gamification never fails a learning-flow request (see
+  // lib/data/gamification.ts::recordActivity).
+  await recordActivity({ userId: user.id, source: "reading_submit", parts: { passageId } });
 
   return {
     ok: true,

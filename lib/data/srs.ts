@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { reviewItem, INITIAL_STATE, type Quality, type SrsState } from "@/lib/srs";
 import { getKanjiList, getVocabList } from "@/lib/data/content";
+import { recordActivity } from "@/lib/data/gamification";
 import type { ReviewItem } from "@/lib/learning-types";
 import type { ItemType, JlptLevel, SrsReviewInput } from "@/lib/validation/content";
 
@@ -64,6 +65,15 @@ export async function submitReview(
   );
   // A bad itemId violates the FK — surface as a 400 rather than a 500.
   if (upsertError) return { ok: false, status: 400 };
+
+  // Best-effort: gamification never fails a learning-flow request (see
+  // lib/data/gamification.ts::recordActivity).
+  await recordActivity({
+    userId: user.id,
+    source: "srs_review",
+    parts: { itemType: input.itemType, itemId: input.itemId },
+    now,
+  });
 
   return {
     ok: true,

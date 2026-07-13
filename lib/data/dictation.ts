@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { scoreDictation, type DictationDiff } from "@/lib/dictation";
 import { rateLimit } from "@/lib/rate-limit";
+import { recordActivity } from "@/lib/data/gamification";
 import type { DictationAttemptInput } from "@/lib/validation/dictation";
 
 const ATTEMPT_LIMIT = { limit: 60, windowMs: 60_000 };
@@ -49,6 +50,10 @@ export async function submitAttempt(
   });
   // A bad videoId (FK violation) or other write failure — surface as 400.
   if (insertError) return { ok: false, status: 400 };
+
+  // Best-effort: gamification never fails a learning-flow request (see
+  // lib/data/gamification.ts::recordActivity).
+  await recordActivity({ userId: user.id, source: "dictation", parts: { lineId: input.lineId } });
 
   return { ok: true, data: { accuracy, diff } };
 }

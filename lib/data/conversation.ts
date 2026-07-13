@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
+import { recordActivity } from "@/lib/data/gamification";
 import {
   AiError,
   conversationReply,
@@ -275,6 +276,10 @@ export async function endConversationSession(
     .eq("id", sessionId)
     .eq("user_id", user.id);
   if (updateError) throw updateError;
+
+  // Best-effort: gamification never fails a learning-flow request (see
+  // lib/data/gamification.ts::recordActivity).
+  await recordActivity({ userId: user.id, source: "conversation", parts: { sessionId } });
 
   return { ok: true, data: result };
 }
