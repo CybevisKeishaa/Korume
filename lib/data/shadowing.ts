@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { recordActivity } from "@/lib/data/gamification";
 import { validateAudioFile, type AudioFileLike } from "@/lib/validation/shadowing";
 
 const SESSION_LIMIT = { limit: 30, windowMs: 60_000 };
@@ -83,6 +84,10 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
     .from(BUCKET)
     .createSignedUrl(recordingPath, SIGNED_URL_TTL_SECONDS);
   if (signError || !signed) return { ok: false, status: 400 };
+
+  // Best-effort: gamification never fails a learning-flow request (see
+  // lib/data/gamification.ts::recordActivity).
+  await recordActivity({ userId: user.id, source: "shadowing", parts: { lineId: input.lineId } });
 
   const row = inserted as { id: string; created_at: string };
   return {
