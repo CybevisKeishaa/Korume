@@ -170,7 +170,8 @@ and monetize depth, personalization, and live AI.
 |---|---|---|
 | Core loop: Video → Shadowing → Dictation → SRS → Sentence Mining | ✅ unlimited | — |
 | Own-voice pitch contour (client-side F0/YIN, $0) | ✅ unlimited | — |
-| Kanji / Vocab / Grammar / Adaptive Furigana / Dashboard | ✅ | — |
+| Kanji / Vocab / Grammar / Adaptive Furigana | ✅ | — |
+| Progress / immersion dashboards, comprehension & difficulty timelines, weakness **tracking** — all *computed from your own data* | ✅ | — |
 | JLPT | practice by individual section | **full mock exams** + detailed analysis |
 | AI explanations | **Lite** (cached) + **preview** (~15–20% teaser) of deep sections | **full cascade deep** |
 | Knowledge Generation (new/cache-miss sentences) | small quota (~2–3/day) | large / priority quota |
@@ -178,10 +179,34 @@ and monetize depth, personalization, and live AI.
 | AI Sensei (memory, coaching, weekly reports, personalized plan) | — | ✅ |
 | Azure pronunciation scoring (accuracy/fluency/completeness + native overlay + per-word) | — | ✅ (generous internal quota) |
 | Conversation partner (STT→Claude→TTS) | — | ✅ (generous monthly quota, not unlimited) |
-| Advanced & long-term analytics + WOW Study Replay | — | ✅ |
+| AI-**authored** intelligence over your data: weekly report, study plan, weakness explanation/coaching, WOW Study Replay narrative | — | ✅ |
 
 **Never behind the paywall:** the core learning experience, ownership/export of the user's own data,
 and the free unlimited own-voice pitch contour.
+
+**The dividing line is not "basic vs advanced."** It is **computed-from-your-data (free — even when
+advanced) vs AI-authored-over-your-data (premium)** — the operational form of principle 2. A $0 chart
+of the learner's own history is *never* gated.
+
+### 2.1 Where the feature registry (F-001..F-016) lands
+
+`docs/features/` was authored *after* Layers 3–4 shipped, so it is mapped onto this split here (full
+rationale = principle 2 above; status accuracy lives in `docs/features/README.md`):
+
+- **Free — computed from the user's own data ($0 or cached):** F-001 Active Listening · F-002
+  Unknown-Word Heatmap · F-003 Learning Journey · F-004 Difficulty Timeline · F-005 Learn Before Watching ·
+  F-006 Shadowing Replay Timeline · F-009 Shadowing Challenge · F-010 Review by Context · F-011 Progress on
+  Real Content · F-012 Smart Review Queue · F-014 Multi-video Mining · F-015 Immersion Dashboard
+  *(stats/charts)* · F-007 weakness **tracking**.
+- **Premium — AI-authored intelligence layered on top:** the AI narrative inside F-003 / F-015 (weekly
+  report) · F-007 weakness **explanation + drills** · F-016 Goal-based Learning Paths (the *Personalized
+  Roadmap* component) · deep cascade on any transcript line · Azure scoring inside F-006 / F-013 · conversation.
+- **Knowledge-base content (cached → free to read; generation metered, §4):** F-008 Vocabulary Network
+  relations · F-013 Accent Dictionary pitch patterns · cascade sections.
+
+Two non-negotiables these features must keep (`CLAUDE.md` §2, already enforced in L3/L4): pitch reference =
+TTS-of-text / curated data, **never** extracted YouTube audio (F-006, F-013); sentence mining stores **no
+media** — text + `{video_id, start, end}` only (F-010).
 
 ---
 
@@ -226,6 +251,9 @@ service-role write, `source='ai_generated'`, SELECT-only for `authenticated`) ge
 
 - **Cache by normalized sentence fingerprint, not by video ID** — identical sentences across different
   videos reuse the same knowledge.
+- **The base is not only sentences.** Sentence-level entries (cascade sections) sit beside word-level
+  entries — `vocab_examples`, F-013 pitch patterns, F-008 relations — each keyed by its own fingerprint
+  (sentence text, or headword+reading). "Sentence-keyed" is the primary case, not the only one.
 - **Cache each section independently** (grammar, culture, examples, quiz, conversation…) rather than one
   large blob — generate only the minimum section needed.
 - **Serve Knowledge (cached reads)** = effectively $0, unlimited for everyone including Free (previews).
