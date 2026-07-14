@@ -222,9 +222,11 @@ Local Supabase (Docker) is the dev DB; `.env.local` points at it. Docker Desktop
 (`npx supabase start`). `npm run dev` → localhost:3000. Studio :54323. `npx supabase db reset`
 re-applies migrations (now 13). Cloud move (still not done): create free project → swap 4
 `.env.local` values → `supabase link` + `supabase db push`; add Google OAuth creds in dashboard.
-Env keys: `ANTHROPIC_API_KEY` set; `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION` **set as of
-2026-07-13** (region `southeastasia`) — speech features live; 503-degrade paths remain as
-fallback for keyless environments.
+Env keys (AUDITED 2026-07-14, see `mem:product_readiness_audit_2026-07-14`):
+`ANTHROPIC_API_KEY` **NOT in .env.local** (earlier "set" claim stale) → all Claude features
+degrade to "not configured". `AZURE_SPEECH_KEY` present but **INVALID — Azure returns 401**
+(value looks like a GUID/resource-ID, not Key1/Key2) → TTS/STT/pronunciation all fail (502).
+`ADMIN_EMAILS="admin@almostgone.vn"` added 2026-07-14 (bootstrap admin exists locally).
 
 ## Verify commands
 `npx tsc --noEmit` · `npm test` (**1098 unit**) · `npm run lint` · `npm run build` ·

@@ -61,6 +61,19 @@ tech nits vẫn đọc ở project_status.
     Discovery UI (🔒 vs ⏳), sample weekly report, Study Replay. Extensions sau: referrals, B2B,
     teacher plans, marketplace.
 
+## Nguồn: Product Readiness Audit 2026-07-14 (`mem:product_readiness_audit_2026-07-14`) — LỌT SỔ từ L3/spec
+14. **User transcript ingestion UI** — CRITICAL. Backend hoàn chỉnh từ L3 (`POST
+    /api/videos/[id]/transcript`, owner RLS) nhưng UI cho user CHƯA TỒN TẠI (shadowing panel
+    ghi "Transcript submission is coming soon"). User import video xong là đường cụt; chỉ
+    admin attach được. Chặn toàn bộ core loop cho user thật. Deferred ở L3 mà không vào
+    backlog = đúng loại lỗi mandate này sinh ra để chặn. Fix TRƯỚC L8.
+15. **Dictionary meanings khi tap-to-lookup** — reading popover chỉ hiện word+reading (không
+    có nghĩa); mine popover không hiện nghĩa. Chưa có nguồn dictionary (JMdict/own vocab
+    join). Khớp F-010/adaptive furigana. Spec §5 "tap từ để tra" ngầm định có nghĩa.
+16. **Sentence-level grammar analysis / particle highlighting** — spec motion-engineer
+    differentiator ("Highlight particles with color + role arrows") chưa build ở đâu;
+    /grammar chỉ là thư viện tĩnh.
+
 ## Đã trả nợ (để đối chiếu, không cần làm lại)
 - Weekly leaderboard (L6→L7, ship `01ae59d`, opt-in + own-week-first).
 - Leaderboard đặt ở L7 thay vì L6 = đúng kế hoạch G2, không phải bỏ sót.
