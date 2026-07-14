@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/container";
 import { VideoImportForm } from "@/components/video/video-import-form";
 import { VideoCard } from "@/components/video/video-card";
 import { RecommendationSection } from "@/components/learning/recommendation-section";
+import { SaveToPlaylistButton } from "@/components/community/save-to-playlist-button";
 // lib/data/videos.ts's VideoRow is the same DB row shape as lib/video-types.ts's
 // client-safe VideoRow, just declared locally with a wider `string | null` for
 // jlpt_level_estimate instead of the `JlptLevel | null` union. The cast below is
@@ -48,11 +49,21 @@ export default async function VideosPage() {
             No videos yet — paste a YouTube URL above to start.
           </p>
         ) : (
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          // `role="list"`/`"listitem"` (rather than <ul>/<li>) because each
+          // item wraps VideoCard's own <li> together with an overlaid
+          // "Save to playlist" button as a sibling — nesting another <li>
+          // around VideoCard's would be invalid HTML, so ARIA restores the
+          // list semantics for assistive tech instead.
+          <div role="list" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {videos.map((video) => (
-              <VideoCard key={video.id} video={video} />
+              <div key={video.id} role="listitem" className="relative">
+                <VideoCard video={video} />
+                <div className="absolute right-2 top-2 z-10">
+                  <SaveToPlaylistButton videoId={video.id} />
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </Container>

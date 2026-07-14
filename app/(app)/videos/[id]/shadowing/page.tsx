@@ -4,6 +4,7 @@ import { getTranscript } from "@/lib/data/transcripts";
 import { getVocabMasteryMap } from "@/lib/data/vocab-progress";
 import { Container } from "@/components/ui/container";
 import { ShadowingView } from "@/components/video-player/shadowing-view";
+import { SaveToPlaylistButton } from "@/components/community/save-to-playlist-button";
 // lib/data/videos.ts's VideoRow is the same DB row shape as lib/video-types.ts's
 // client-safe VideoRow, just declared locally with a wider `string | null` for
 // jlpt_level_estimate instead of the `JlptLevel | null` union (see
@@ -28,7 +29,10 @@ export default async function ShadowingPage({ params }: { params: { id: string }
 
   return (
     <Container className="py-8">
-      <h1 className="text-2xl font-bold">{video.title}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-2xl font-bold">{video.title}</h1>
+        <SaveToPlaylistButton videoId={video.id} />
+      </div>
 
       <div className="mt-6">
         <ShadowingView video={video} transcript={transcript} masteryMap={masteryMap} />

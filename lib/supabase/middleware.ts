@@ -14,9 +14,19 @@ const PROTECTED_PREFIXES = [
   "/jlpt",
   "/jlpt-test",
   "/community",
+  "/playlists",
+  "/leaderboard",
   "/profile",
   "/content-manager",
   "/video-curator",
+  // Layer 7 admin CMS (`app/(admin)/admin/**`). Middleware only ensures the
+  // request is signed IN — it has no cheap way to check `users.is_admin`
+  // here (that requires a service-role DB read; see `lib/admin/guard.ts`),
+  // so a signed-in non-admin still reaches the route and is bounced to
+  // `/dashboard` by `app/(admin)/admin/layout.tsx`'s own server-side
+  // `isAdmin()` check. Treat this entry as "auth required", not "admin
+  // required" — the two checks are deliberately split across two layers.
+  "/admin",
 ];
 
 const AUTH_ROUTES = ["/login", "/register"];

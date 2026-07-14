@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeTranscriptText } from "./sanitize";
+import { sanitizeContentText, sanitizeTranscriptText } from "./sanitize";
 
 describe("sanitizeTranscriptText", () => {
   it("strips <script> tags entirely, leaving only inert text", () => {
@@ -44,5 +44,35 @@ describe("sanitizeTranscriptText", () => {
 
   it("handles an already-clean empty string", () => {
     expect(sanitizeTranscriptText("")).toBe("");
+  });
+});
+
+describe("sanitizeContentText", () => {
+  it("strips script tags and malformed markup, same as sanitizeTranscriptText", () => {
+    const result = sanitizeContentText('<script>alert(1)</script><img onerror=alert(1) src=x');
+    expect(result).not.toContain("<");
+    expect(result).not.toContain(">");
+  });
+
+  it("strips control characters", () => {
+    const withControlChar = "hello" + String.fromCharCode(0) + "world";
+    expect(sanitizeContentText(withControlChar)).toBe("hello world");
+  });
+
+  it("preserves internal newlines/paragraphs instead of collapsing them", () => {
+    expect(sanitizeContentText("line one\nline two")).toBe("line one\nline two");
+    expect(sanitizeContentText("段落一\n\n段落二")).toBe("段落一\n\n段落二");
+  });
+
+  it("trims only the outer edges", () => {
+    expect(sanitizeContentText("  hello world  \n")).toBe("hello world");
+  });
+
+  it("leaves normal Japanese text completely intact", () => {
+    expect(sanitizeContentText("今日はいい天気ですね。")).toBe("今日はいい天気ですね。");
+  });
+
+  it("handles an already-clean empty string", () => {
+    expect(sanitizeContentText("")).toBe("");
   });
 });

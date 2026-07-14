@@ -1,3 +1,3 @@
 export { parseTranscript } from "./parse";
-export { sanitizeTranscriptText } from "./sanitize";
+export { sanitizeTranscriptText, sanitizeContentText } from "./sanitize";
 export type { ParsedLine, TranscriptFormat } from "./types";
