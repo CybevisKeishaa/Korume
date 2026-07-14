@@ -16,7 +16,7 @@ AI: `@anthropic-ai/sdk` 0.111.0. Tests: Vitest+RTL (unit), Playwright (`tests/e2
 ## Branching policy (user-set)
 One branch per layer `layer-<n>-<slug>` off master; merge `--no-ff` ONLY after DoD (tests pass +
 code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`,
-L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`.
+L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),
@@ -101,9 +101,76 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`.
     translation disclosure, quiz). ENGLISH shell (convention: shell EN, DB content VN). Old
     `/jlpt-test` placeholder → redirect `/jlpt`; middleware protects `/jlpt` + `/reading`.
   - code-reviewer: approve-with-nits, both fixed pre-merge (Reading shell VN→EN; timer comment).
-- **Layers 6–8: NOT STARTED.** Next = **Layer 6 — Gamification + Notifications** (XP, streak,
-  badges, SRS-due reminders, i+1 recommendation surfacing; lead: backend + frontend).
-  Start: `git checkout master`, branch `layer-6-<slug>`.
+- **Layer 6 (Gamification + Notifications): DONE, APPROVED, merged (`3fe741b`, 2026-07-14).**
+  - **Principles G1–G3 formalized** in `business-model.md` §1.1 (decision filter, same rank as the 6):
+    G1 XP = completed learning outcomes not app activity; G2 self-improvement before social
+    comparison (→ leaderboard deferred to L7 as a PRODUCT decision); G3 notifications support
+    learning not attention (no FOMO copy anywhere).
+  - Migration 13: `xp_events` ledger (unique `(user_id, source_type, source_id)` = idempotency;
+    source_id = natural-unit-per-VN-day, e.g. `{lineId}:{yyyy-MM-dd}`; conversation = sessionId only),
+    `notifications` (type check badge_earned/level_up/srs_due; UPDATE grant column-scoped to
+    `read_at`), +8 badges (11 total), belt-and-suspenders revokes on user_badges AND user_stats
+    (the latter = review nit #1, fixed pre-merge). All writes service-role only.
+  - `lib/gamification` (pure, clock-injected): XP table (srs_review 5, mining 5, dictation 10,
+    shadowing 15, reading 20, conversation 25, jlpt section 30/full 50), triangular level curve
+    (threshold L = 100·L·(L−1)/2), streak in fixed UTC+7 (VN no DST since 1975 — hardcoded shift,
+    commented), badge evaluator zod-parses criteria jsonb and SKIPS malformed (forward-compat).
+  - `lib/data/gamification.ts` `recordActivity()`: service-role award pipeline — NEVER throws into
+    callers (best-effort), duplicate outcome = 0 XP but streak still advances, badge-snapshot
+    aggregate skipped on duplicate+unchanged-streak, "learned kanji" reuses MASTERY_THRESHOLD
+    (srs_stage>=2) from lib/data/difficulty.ts. Wired into all 7 lib/data write success paths.
+  - `lib/notifications`: emit/deliver split (deliberately minimal — emitNotification → deliverer
+    list, today only in-app insert; push/email later = new deliverer, zero business-logic change).
+    NO srs_due producer wired yet (UI computes due count live; producer comes with push/email).
+  - APIs: GET /api/user/stats (stats+level+badge catalog+srsDueCount), GET+PATCH /api/notifications
+    (limit≤50; mark-read ids|all, rate-limited 30/60s), GET /api/videos/recommendations (i+1:
+    known-vocab fetched ONCE, SCAN_LIMIT=100 approved videos, completed excluded, ideal→too-easy→
+    too-hard, insufficient-data dropped).
+  - UI: dashboard rebuild (level/streak/SRS-due/badges/recommendation rail), notification bell+
+    panel in app-nav (optimistic mark-read w/ rollback, 429-aware, focus-return Esc/outside-click),
+    profile stats, rail also on /videos. Client-safe type mirrors in lib/*-types.ts (repo
+    convention). Motion: 4 pure-CSS one-shot keyframes + useUnreadIncreasePulse hook (no pulse on
+    mount, only on live increase); all covered by existing reduced-motion kill-switch.
+  - code-reviewer: approve-with-nits; nit #1 (user_stats revoke) fixed pre-merge; #2 (mark-read
+    maps DB errors to 400 not 500) + #3 (recommendations tokenizes ≤100 transcripts/request,
+    no cache — fine behind Suspense) left as noted follow-ups.
+- **Layer 7 (Community + Admin CMS): DONE, APPROVED, merged (`01ae59d`, 2026-07-14).**
+  - Migration 14: `users.is_admin` (client CANNOT write — users UPDATE grant re-scoped to exactly
+    9 self-editable columns incl. new `leaderboard_opt_in`; email/created_at remain client-writable
+    = pre-existing carryover, flagged for hardening) · forum `topic` (check: general/grammar/vocab/
+    listening/speaking/jlpt/study-tips) + `updated_at` trigger · `user_playlists.is_public` +
+    `description` + public-read policies · `peer_review_shares` (unique session_id = one explicit
+    revocable consent per recording; owner INSERT/DELETE, no UPDATE anywhere) + `peer_reviews`
+    (unique (share_id, reviewer_id), RLS backstop blocks self-review) · `idx_xp_events_created_at`.
+  - Community backend: `lib/data/{forum,playlists,peer-review,leaderboard}.ts` + thin routes.
+    Peer-review audio = the ONLY cross-user recording read path: verify share row exists → mint
+    5-min service-role signed URL, rate-limited; storage policies untouched. Leaderboard = weekly
+    (Monday 00:00 UTC+7, `lib/leaderboard/week.ts` clock-injected), service-role aggregation of
+    xp_events, opt-in rows only, top 20, NO userId in payload (consent = name/avatar/weeklyXp only),
+    callerWeeklyXp always returned. G1 enforced: zero recordActivity in community code.
+  - Admin backend: `lib/admin/guard.ts` — `requireAdmin()` (401/403; DB `is_admin` = source of
+    truth; `ADMIN_EMAILS` env = bootstrap-only self-heal promotion, fires ONLY inside requireAdmin)
+    + side-effect-free `isAdmin()`. Video approve/reject/transcript-attach via service role
+    (reject = HARD DELETE — no 'rejected' enum value; reason not persisted). Generic content CRUD
+    `lib/data/admin-content.ts` (per-type config: kanji/vocab/grammar/jlpt_tests/reading_passages)
+    + dependency-free CSV parser `lib/csv/parse.ts` + per-row-error import. `admin-stats.ts` w/
+    labeled retention methodology, NO revenue (L8).
+  - UI: `/community` (forum board/thread/composer), `/community/peer-review` (queue/mine tabs,
+    on-demand signed-URL <audio>, share+revoke in shadowing recorder w/ consent copy), `/playlists`
+    (own + public browse + save-to-playlist popover on videos), `/leaderboard` (**own week FIRST,
+    then opt-in community ranking — user-mandated G2 UX order**), `app/(admin)/admin/**` (separate
+    AdminShell; layout gates via `requireAdmin()` — NOT `isAdmin()`, so the ADMIN_EMAILS bootstrap
+    completes on a plain /admin visit; this was review finding #1, fixed pre-merge). Middleware:
+    +/admin (auth-only, admin check in layout), +/playlists, +/leaderboard.
+  - code-reviewer: approve-with-nits; #1 (bootstrap reachability) + #2 (leaderboard userId leak)
+    fixed pre-merge; #3 (admin dialog focus trap) + #4 (stroke_order_svg raw SVG, admin-trust) +
+    #5 (users.email/created_at client-writable) = follow-ups below.
+  - **L6 flaky test RESOLVED**: it was `components/video-player/pitch-contour.test.tsx` — waitFor
+    1s default timeout under full-suite CPU contention; bumped to 5s.
+- **Layer 8: NOT STARTED.** Next = **Layer 8 — Billing (PayOS, per `business-model.md`: single
+  tier 49k/490k + Founding 39k, no trial, Contextual Discovery, Knowledge-Gen quotas + kill-switch
+  FIRST) + site-wide animation polish + performance audit.** Lead: tech-lead + motion + backend.
+  Start: `git checkout master`, branch `layer-8-<slug>`.
 
 - **Business model / monetization = DECIDED** → `docs/product/business-model.md` (product manifesto +
   operational model; commits `3fb3232`→`14aafba`). Layer 8 reference; supersedes spec §3.12 Stripe/trial.
@@ -133,6 +200,11 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`.
   client-side (`blobToWav16kMono`) before upload; keep stored recordings webm.
 - **Claude API**: official SDK only, `claude-opus-4-8`, no temperature/top_p, `messages.parse` +
   `zodOutputFormat`, no prefills, typed error handling (RateLimitError/AuthenticationError/…).
+- **Admin auth**: `users.is_admin` (DB) = source of truth; `ADMIN_EMAILS` = bootstrap-only, and
+  the promotion fires ONLY inside `requireAdmin()` — any server gate for admin surfaces must call
+  `requireAdmin()`, not `isAdmin()` (side-effect-free), or the first admin can never get in.
+- **Consent-scoped payloads**: what a user opted into showing defines the response shape —
+  leaderboard returns name/avatar/weeklyXp but NOT userId; peer-review authors never include email.
 - jsdom quirks: Blob has no `arrayBuffer()` (use `@/test/blob-utils` `readBlobBytes` /
   `lib/audio/read-blob.ts`), no Web Audio (use `@/test/audio-context-mock`), no canvas 2D.
 
@@ -148,15 +220,15 @@ quota (L8) before opening to real users. Supersedes spec's "Deploy: Vercel". Pay
 ## DB / running locally
 Local Supabase (Docker) is the dev DB; `.env.local` points at it. Docker Desktop must be running
 (`npx supabase start`). `npm run dev` → localhost:3000. Studio :54323. `npx supabase db reset`
-re-applies migrations (now 12). Cloud move (still not done): create free project → swap 4
+re-applies migrations (now 13). Cloud move (still not done): create free project → swap 4
 `.env.local` values → `supabase link` + `supabase db push`; add Google OAuth creds in dashboard.
 Env keys: `ANTHROPIC_API_KEY` set; `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION` **set as of
 2026-07-13** (region `southeastasia`) — speech features live; 503-degrade paths remain as
 fallback for keyless environments.
 
 ## Verify commands
-`npx tsc --noEmit` · `npm test` (**685 unit**) · `npm run lint` · `npm run build` ·
-`npx playwright test` (2 e2e) · `npx supabase db reset` (12 migrations). Shared test harness in
+`npx tsc --noEmit` · `npm test` (**1098 unit**) · `npm run lint` · `npm run build` ·
+`npx playwright test` (2 e2e) · `npx supabase db reset` (14 migrations). Shared test harness in
 `test/` (`@/test/*`): media mocks, YouTube IFrame stub, Claude + Azure Speech + AudioContext
 mocks, tone-buffer/transcript/URL fixtures, blob utils, `supabase-mock.ts` (chainable
 query-builder mock for lib/data tests).
@@ -179,7 +251,28 @@ listening weakness links route to `/videos?level=` (no dedicated listening drill
 site-wide i18n/VN-localization of the English shell = deliberate product decision, not per-module;
 `jlpt_questions.question_type` free-form text (add check constraint if vocabulary stabilizes);
 manual click-through of /jlpt + /reading in the browser not yet done (only unit/e2e-registration
-coverage) — worth doing before real users.
+coverage) — worth doing before real users. From L6: one intermittent unit-test failure observed
+once (822/823, then 823/823 twice; test unidentified, reviewer found no time-fragile test in the
+new code — watch for recurrence); markNotificationsRead maps DB errors to 400 (should split 500);
+recommendations tokenizes ≤100 transcripts/request with no cache (revisit with catalog growth or
+L3's deferred difficulty-cache); Supabase default grants give authenticated TRUNCATE/REFERENCES/
+TRIGGER repo-wide (not exploitable via PostgREST, hardening candidate); badge iconUrl all null
+(SVG fallback in UI — real icons = content task); srs_due notification producer unwired (needs
+scheduler, pairs with push/email deliverer later); manual browser click-through of dashboard/bell/
+recommendations not done (unit+build coverage only). From L7: admin `components/admin/dialog.tsx`
+lacks a focus trap (Tab escapes the modal; matches repo popover precedent but WCAG 2.4.3 wants a
+trap); `stroke_order_svg` stored/rendered as raw SVG (fine while only admins write — needs
+allowlist SVG sanitizer before less-trusted contributors); `users.email`/`created_at` still
+client-writable (hardening migration candidate); no 'rejected' video status (reject = hard delete,
+moderator reason logged not persisted) and no 'admin' transcript_source (admin-attached transcripts
+stored as 'user_submitted') — both need a migration if wanted; CSV import is flat rows only (nested
+kanji readings / test questions / passage questions via JSON create/update after import) and the
+table doesn't auto-refresh post-import; admin content edit form only pre-fills fields present in
+the list query (no GET-single endpoint); forum comment optimistic insert shows "You" until reload
+(cosmetic); save-to-playlist overlay on /videos uses ARIA role="list" wrapper (revisit if
+video-card gets a slot); community cursor pagination assumes distinct created_at at page
+boundaries; admin stats count ids in JS not count:'exact' (fine at current scale); manual browser
+click-through of /community, /playlists, /leaderboard, /admin not done (unit+build only).
 
 ## Working agreements
 TDD-first, tests shown passing. code-reviewer signs off every non-trivial change before "done".

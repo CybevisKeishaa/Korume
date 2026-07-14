@@ -176,6 +176,11 @@ not a guideline. Any gamification or notification feature that fails these does 
   analytics, study replay). Social comparison (leaderboards, friend rankings) only appears once
   a genuine social layer exists — this is why leaderboards live in Layer 7 (Community), as a
   product decision, not a scheduling one.
+  *As shipped in Layer 7 (2026-07-14):* the leaderboard is weekly, global, and **opt-in**, and
+  the `/leaderboard` page leads with the user's own week before the community ranking. The
+  **friends leaderboard is intentionally deferred until a real social graph exists** — a follow
+  system drags in profiles, privacy, moderation, and notifications, which is a product decision
+  in its own right, not a leaderboard feature.
 
 - **G3 — Notifications support learning, not attention.**
   A notification exists to help the learner continue meaningful progress (SRS due, badge
