@@ -1,19 +1,22 @@
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { hasPublicSupabaseEnv } from "@/lib/env";
-import { createClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/admin/guard";
+import { requireAdmin } from "@/lib/admin/guard";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Server-side gate for the whole `/admin` route group. Two checks, in order:
- * 1. Signed in at all (mirrors `app/(app)/layout.tsx`'s own defence-in-depth
- *    check — middleware already enforces this too, see `middleware.ts`).
- * 2. `isAdmin(user.id)` (`lib/admin/guard.ts`, NOT edited by this agent —
- *    read-only per this task's file ownership). A non-admin signed-in user
- *    is bounced to `/dashboard`, not `/login` (they ARE authenticated; they
- *    just aren't authorized for this section).
+ * Server-side gate for the whole `/admin` route group, delegating to
+ * `requireAdmin()` (`lib/admin/guard.ts`) — the same check every
+ * `/api/admin/*` route runs. Using `requireAdmin` (not the side-effect-free
+ * `isAdmin`) matters here: it is the ONLY place the `ADMIN_EMAILS` bootstrap
+ * promotion fires, so the very first admin's plain visit to `/admin`
+ * completes the bootstrap instead of bouncing them to `/dashboard` before
+ * any admin API was ever called.
+ *
+ * A signed-out visitor goes to `/login` (middleware already enforces this
+ * too — defence in depth); a signed-in non-admin goes to `/dashboard` (they
+ * ARE authenticated, just not authorized for this section).
  *
  * This is a separate, minimal admin shell (`AdminShell`) — deliberately NOT
  * the learner `AppNav` used by `app/(app)/layout.tsx`.
@@ -21,14 +24,8 @@ export const dynamic = "force-dynamic";
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   if (!hasPublicSupabaseEnv()) redirect("/login");
 
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const admin = await requireAdmin();
+  if (!admin.ok) redirect(admin.status === 401 ? "/login" : "/dashboard");
 
-  const admin = await isAdmin(user.id);
-  if (!admin) redirect("/dashboard");
-
-  return <AdminShell userEmail={user.email ?? ""}>{children}</AdminShell>;
+  return <AdminShell userEmail={admin.user.email}>{children}</AdminShell>;
 }

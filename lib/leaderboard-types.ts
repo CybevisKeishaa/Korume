@@ -4,7 +4,6 @@
  */
 export interface LeaderboardEntry {
   rank: number;
-  userId: string;
   name: string | null;
   avatarUrl: string | null;
   weeklyXp: number;

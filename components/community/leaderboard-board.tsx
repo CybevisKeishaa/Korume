@@ -68,7 +68,7 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
           <ol className="space-y-2">
             {page.leaderboard.map((entry) => (
               <li
-                key={entry.userId}
+                key={entry.rank}
                 aria-current={entry.isMe ? "true" : undefined}
                 className={cn(
                   "flex items-center justify-between gap-3 rounded-lg border p-3 text-sm",

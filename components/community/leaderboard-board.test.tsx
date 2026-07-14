@@ -16,8 +16,8 @@ afterEach(() => {
 
 const optedInPage: LeaderboardPage = {
   leaderboard: [
-    { rank: 1, userId: "user-1", name: "Alice", avatarUrl: null, weeklyXp: 500, isMe: false },
-    { rank: 2, userId: "me", name: "Me", avatarUrl: null, weeklyXp: 300, isMe: true },
+    { rank: 1, name: "Alice", avatarUrl: null, weeklyXp: 500, isMe: false },
+    { rank: 2, name: "Me", avatarUrl: null, weeklyXp: 300, isMe: true },
   ],
   callerWeeklyXp: 300,
   callerRank: 2,

@@ -22,7 +22,6 @@ const TOP_N = 20;
 
 export interface LeaderboardEntry {
   rank: number;
-  userId: string;
   name: string | null;
   avatarUrl: string | null;
   weeklyXp: number;
@@ -85,9 +84,11 @@ export async function getLeaderboard(now: Date = new Date()): Promise<GetLeaderb
     .map((u) => ({ userId: u.id, name: u.name, avatarUrl: u.avatar_url, weeklyXp: weeklyXpByUser.get(u.id) ?? 0 }))
     .sort((a, b) => b.weeklyXp - a.weeklyXp);
 
+  // Deliberately NO userId in the payload: opted-in users consent to showing
+  // {name, avatarUrl, weeklyXp}, not their internal id. `isMe` is computed
+  // server-side and `rank` is a sufficient list key for the UI.
   const leaderboard: LeaderboardEntry[] = ranked.slice(0, TOP_N).map((entry, index) => ({
     rank: index + 1,
-    userId: entry.userId,
     name: entry.name,
     avatarUrl: entry.avatarUrl,
     weeklyXp: entry.weeklyXp,

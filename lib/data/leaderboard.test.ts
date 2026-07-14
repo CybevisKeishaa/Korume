@@ -77,9 +77,9 @@ describe("getLeaderboard", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.leaderboard).toEqual([
-      { rank: 1, userId: OTHER_A.id, name: "Top", avatarUrl: null, weeklyXp: 50, isMe: false },
-      { rank: 2, userId: USER.id, name: "Me", avatarUrl: null, weeklyXp: 15, isMe: true },
-      { rank: 3, userId: OTHER_B.id, name: "Low", avatarUrl: null, weeklyXp: 1, isMe: false },
+      { rank: 1, name: "Top", avatarUrl: null, weeklyXp: 50, isMe: false },
+      { rank: 2, name: "Me", avatarUrl: null, weeklyXp: 15, isMe: true },
+      { rank: 3, name: "Low", avatarUrl: null, weeklyXp: 1, isMe: false },
     ]);
     expect(result.data.callerWeeklyXp).toBe(15);
     expect(result.data.callerRank).toBe(2);
@@ -98,7 +98,7 @@ describe("getLeaderboard", () => {
     if (!result.ok) return;
     expect(result.data.callerWeeklyXp).toBe(30);
     expect(result.data.callerRank).toBeNull();
-    expect(result.data.leaderboard.every((e) => e.userId !== USER.id)).toBe(true);
+    expect(result.data.leaderboard.every((e) => !e.isMe)).toBe(true);
   });
 
   it("caps the returned leaderboard at 20 entries", async () => {
