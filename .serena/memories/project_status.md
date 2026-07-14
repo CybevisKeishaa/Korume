@@ -234,6 +234,10 @@ mocks, tone-buffer/transcript/URL fixtures, blob utils, `supabase-mock.ts` (chai
 query-builder mock for lib/data tests).
 
 ## Deferred follow-ups
+
+**USER-FACING FEATURES đã hoãn nằm ở memory riêng `mem:feature_backlog_deferred` — PHẢI đọc nó
+khi plan bất kỳ layer mới nào (user mandate 2026-07-14: không bỏ sót chức năng đã brainstorm).**
+Mục dưới đây chỉ là engineering debt/nits.
 From L1: GDPR delete-my-data; getUser() in middleware on all routes (perf); conditional
 aria-describedby; users_update_own email/level column scope. From L2: `unique(word, reading)`
 won't dedupe reading-less vocab (NULLs distinct) — matters when admin CMS adds entries; add CI
