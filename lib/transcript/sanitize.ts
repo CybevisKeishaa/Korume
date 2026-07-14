@@ -33,3 +33,32 @@ export function sanitizeTranscriptText(s: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+/** Same as {@link isControlCharCode} but treats `\n` (0x0A) as legitimate
+ * whitespace rather than a control character to strip. */
+function isStrippableControlCharCode(code: number): boolean {
+  return code !== 0x0a && isControlCharCode(code);
+}
+
+function stripControlCharsPreservingNewlines(input: string): string {
+  let out = "";
+  for (const ch of input) {
+    const code = ch.codePointAt(0) ?? 0;
+    out += isStrippableControlCharCode(code) ? " " : ch;
+  }
+  return out;
+}
+
+/**
+ * Sanitizer for longer, admin-authored content bodies (kanji mnemonics,
+ * grammar explanations, reading passages, JLPT question stems) that
+ * legitimately contain internal newlines/paragraphs — unlike transcript
+ * lines, which are always single-line. Strips HTML-ish markup and control
+ * characters (same defense as `sanitizeTranscriptText`) but preserves
+ * newlines/paragraph structure instead of collapsing all whitespace to a
+ * single space, trimming only the outer edges. Used by
+ * `lib/data/admin-content.ts`.
+ */
+export function sanitizeContentText(s: string): string {
+  return stripControlCharsPreservingNewlines(s.replace(TAG_RE, "").replace(/\r\n/g, "\n")).trim();
+}
