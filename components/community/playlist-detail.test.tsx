@@ -48,8 +48,9 @@ describe("PlaylistDetail", () => {
     const fetchSpy = mockFetchOnce({ ok: true, status: 204 });
     render(<PlaylistDetail playlist={playlist} isOwner />);
 
-    const removeButtons = screen.getAllByRole("button", { name: /remove/i });
-    await userEvent.click(removeButtons[0]!);
+    const [firstRemoveButton] = screen.getAllByRole("button", { name: /remove/i });
+    if (!firstRemoveButton) throw new Error("expected a remove button");
+    await userEvent.click(firstRemoveButton);
 
     expect(fetchSpy).toHaveBeenCalledWith("/api/playlists/p1/items/v1", expect.objectContaining({ method: "DELETE" }));
     expect(await screen.findByText("Video B")).toBeInTheDocument();
@@ -60,7 +61,9 @@ describe("PlaylistDetail", () => {
     const fetchSpy = mockFetchOnce({ ok: true, status: 200, json: async () => ({ data: { videoId: "v1", orderIndex: 1 } }) });
     render(<PlaylistDetail playlist={playlist} isOwner />);
 
-    await userEvent.click(screen.getAllByRole("button", { name: /move down/i })[0]!);
+    const [firstMoveDownButton] = screen.getAllByRole("button", { name: /move down/i });
+    if (!firstMoveDownButton) throw new Error("expected a move-down button");
+    await userEvent.click(firstMoveDownButton);
 
     expect(fetchSpy).toHaveBeenCalledWith(
       "/api/playlists/p1/items",

@@ -97,8 +97,12 @@ describe("PitchContour", () => {
     vi.stubGlobal("AudioContext", ToneAudioContext);
     render(<PitchContour blob={makeBlob()} label="Take 1 pitch contour" />);
 
-    await waitFor(() =>
-      expect(screen.getByRole("img", { name: "Take 1 pitch contour" })).toBeInTheDocument(),
+    // Generous timeout: the async decode→extract→render pass can exceed the
+    // 1s default under full-suite CPU contention (intermittent failure first
+    // seen in Layer 6 integration runs).
+    await waitFor(
+      () => expect(screen.getByRole("img", { name: "Take 1 pitch contour" })).toBeInTheDocument(),
+      { timeout: 5000 },
     );
     // At least the baseline gridline + the contour line were stroked, and
     // voiced frames were marked with dots.
@@ -109,17 +113,20 @@ describe("PitchContour", () => {
   it("uses a sensible default accessible label", async () => {
     vi.stubGlobal("AudioContext", ToneAudioContext);
     render(<PitchContour blob={makeBlob()} />);
-    await waitFor(() =>
-      expect(
-        screen.getByRole("img", { name: "Your pitch contour for this take" }),
-      ).toBeInTheDocument(),
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole("img", { name: "Your pitch contour for this take" }),
+        ).toBeInTheDocument(),
+      { timeout: 5000 },
     );
   });
 
   it("falls back to a text message when Web Audio isn't available", async () => {
     render(<PitchContour blob={makeBlob()} />);
-    await waitFor(() =>
-      expect(screen.getByText(/pitch contour unavailable/i)).toBeInTheDocument(),
+    await waitFor(
+      () => expect(screen.getByText(/pitch contour unavailable/i)).toBeInTheDocument(),
+      { timeout: 5000 },
     );
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
@@ -127,16 +134,18 @@ describe("PitchContour", () => {
   it("falls back to a text message when decoding fails", async () => {
     vi.stubGlobal("AudioContext", FailingAudioContext);
     render(<PitchContour blob={makeBlob()} />);
-    await waitFor(() =>
-      expect(screen.getByText(/pitch contour unavailable/i)).toBeInTheDocument(),
+    await waitFor(
+      () => expect(screen.getByText(/pitch contour unavailable/i)).toBeInTheDocument(),
+      { timeout: 5000 },
     );
   });
 
   it("falls back to a text message when the clip is fully unvoiced (silence)", async () => {
     vi.stubGlobal("AudioContext", SilentAudioContext);
     render(<PitchContour blob={makeBlob()} />);
-    await waitFor(() =>
-      expect(screen.getByText(/pitch contour unavailable/i)).toBeInTheDocument(),
+    await waitFor(
+      () => expect(screen.getByText(/pitch contour unavailable/i)).toBeInTheDocument(),
+      { timeout: 5000 },
     );
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
