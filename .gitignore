@@ -23,8 +23,26 @@
 *.pem
 
 # env (never commit secrets — CLAUDE.md §6)
+# Broad match on purpose: every .env variant is ignored; only the
+# placeholder-only example file is whitelisted back in.
 .env
-.env*.local
+.env.*
+!.env.local.example
+
+# personal/local tool state (machine paths, per-user permissions, sessions)
+.claude/settings.local.json
+.vscode/
+.idea/
+
+# keys / certificates — belt & suspenders (*.pem already above)
+*.key
+*.p12
+*.pfx
+
+# user voice recordings / personal data exports must never enter the repo
+# (CLAUDE.md §2 — they live in Supabase Storage, encrypted, user-owned)
+/recordings/
+/exports/
 
 # debug
 npm-debug.log*
