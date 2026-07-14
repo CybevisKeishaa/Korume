@@ -18,6 +18,8 @@ const NAV_ITEMS = [
   { href: "/conversation", label: "Conversation" },
   { href: "/jlpt", label: "JLPT" },
   { href: "/community", label: "Community" },
+  { href: "/playlists", label: "Playlists" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/profile", label: "Profile" },
 ] as const;
 

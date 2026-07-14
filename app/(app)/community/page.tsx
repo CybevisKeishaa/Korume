@@ -1,7 +1,38 @@
-import { ComingSoon } from "@/components/learning/coming-soon";
+import { createClient } from "@/lib/supabase/server";
+import { listForumPosts } from "@/lib/data/forum";
+import { Container } from "@/components/ui/container";
+import { CommunityTabs } from "@/components/community/community-tabs";
+import { ForumBoard } from "@/components/community/forum-board";
 
 export const metadata = { title: "Community" };
+export const dynamic = "force-dynamic";
 
-export default function CommunityPage() {
-  return <ComingSoon title="Community" layer="Layer 7" />;
+export default async function CommunityPage() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const initialPage = await listForumPosts({ limit: 20 });
+
+  return (
+    <Container className="py-8">
+      <h1 className="text-2xl font-bold">Community</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Ask questions, share tips, and give each other feedback on shadowing recordings.
+      </p>
+
+      <div className="mt-6">
+        <CommunityTabs />
+      </div>
+
+      <div className="mt-6">
+        {user ? (
+          <ForumBoard initialPage={initialPage} />
+        ) : (
+          <p className="text-sm text-muted-foreground">Sign in to post or comment.</p>
+        )}
+      </div>
+    </Container>
+  );
 }

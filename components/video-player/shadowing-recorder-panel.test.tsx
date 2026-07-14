@@ -426,4 +426,98 @@ describe("ShadowingRecorderPanel", () => {
       expect(body.get("pitchScore")).toBeNull();
     });
   });
+
+  describe("peer review sharing", () => {
+    function routedFetch(
+      handlers: Record<string, () => Response | Promise<Response>>,
+    ): ReturnType<typeof vi.fn> {
+      return vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        const handler = handlers[url];
+        if (!handler) throw new Error(`No handler for ${url}`);
+        return handler();
+      });
+    }
+
+    const sessionCreated = () =>
+      jsonResponse(201, {
+        data: {
+          id: "rec-1",
+          recordingPath: "recordings/rec-1.webm",
+          signedUrl: "https://example.test/signed/rec-1.webm",
+          createdAt: "2026-07-12T00:00:00.000Z",
+        },
+      });
+
+    async function recordUploadAndFindShareButton() {
+      render(<ShadowingRecorderPanel videoId="video-1" lineId="line-1" lineText="こんにちは" />);
+      await recordAndStop();
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/saved/i));
+      return screen.findByRole("button", { name: /share for peer feedback/i });
+    }
+
+    it("explains consent before sharing", async () => {
+      fetchMock = routedFetch({ "/api/shadowing/session": sessionCreated });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await recordUploadAndFindShareButton();
+      expect(
+        screen.getByText(/shares this one recording publicly for feedback.*revoke anytime/i),
+      ).toBeInTheDocument();
+    });
+
+    it("shares the saved session for peer feedback", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () =>
+          jsonResponse(201, { data: { id: "share-1", createdAt: "2026-07-12T00:05:00.000Z" } }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+
+      await waitFor(() => expect(screen.getByText(/shared for peer feedback/i)).toBeInTheDocument());
+      const shareCall = fetchMock.mock.calls.find((c) => c[0] === "/api/peer-review/shares");
+      expect(shareCall).toBeDefined();
+      const [, init] = shareCall as [string, RequestInit];
+      expect(init.method).toBe("POST");
+      expect(JSON.parse(init.body as string)).toEqual({ sessionId: "rec-1" });
+      expect(screen.getByRole("button", { name: /revoke/i })).toBeInTheDocument();
+    });
+
+    it("revokes a share after confirming", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () =>
+          jsonResponse(201, { data: { id: "share-1", createdAt: "2026-07-12T00:05:00.000Z" } }),
+        "/api/peer-review/shares/share-1": () => jsonResponse(204, null),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+      await waitFor(() => expect(screen.getByRole("button", { name: /revoke/i })).toBeInTheDocument());
+
+      await userEvent.click(screen.getByRole("button", { name: /revoke/i }));
+      await userEvent.click(screen.getByRole("button", { name: /yes/i }));
+
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: /share for peer feedback/i })).toBeInTheDocument(),
+      );
+    });
+
+    it("shows a wait message when sharing is rate-limited", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () => jsonResponse(429, {}, { "Retry-After": "20" }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+
+      expect(await screen.findByText(/try again in 20s/i)).toBeInTheDocument();
+    });
+  });
 });

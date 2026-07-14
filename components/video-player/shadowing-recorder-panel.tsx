@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { PronunciationAssessmentResult } from "@/lib/speech-types";
 import { blobToWav16kMono } from "@/lib/audio/blob-to-wav";
 import type { PitchAccentScore } from "@/lib/pitch";
+import { ConfirmButton } from "@/components/community/confirm-button";
 import { useRecorder, type RecorderState } from "./recorder";
 import { Waveform } from "./waveform";
 import { PitchContour } from "./pitch-contour";
@@ -92,6 +93,22 @@ function friendlyUploadError(status: number, retryAfter: string | null): string 
   return "Something went wrong saving your recording.";
 }
 
+type ShareState =
+  | { status: "idle" }
+  | { status: "sharing" }
+  | { status: "shared"; shareId: string }
+  | { status: "error"; message: string };
+
+/** Maps a non-201, non-409 peer-review share response to a friendly message (CLAUDE.md §2/§5 — sharing is explicit, revocable consent). 409 (already shared) is handled specially by the caller, not through this message. */
+function friendlyShareError(status: number, retryAfter: string | null): string {
+  if (status === 429) {
+    return retryAfter
+      ? `Too many requests — try again in ${retryAfter}s.`
+      : "Too many requests — please wait a moment and try again.";
+  }
+  return "Couldn't share this recording — please try again.";
+}
+
 function describeStatus(
   recorderState: RecorderState,
   recorderError: string | null,
@@ -127,7 +144,48 @@ export function ShadowingRecorderPanel({
   const [upload, setUpload] = useState<UploadState>({ status: "idle" });
   const [score, setScore] = useState<ScoreState>({ status: "idle" });
   const [pitch, setPitch] = useState<PitchAccentScore | null>(null);
+  const [share, setShare] = useState<ShareState>({ status: "idle" });
   const uploadedBlobRef = useRef<Blob | null>(null);
+
+  const shareRecording = useCallback(async () => {
+    if (upload.status !== "success") return;
+    setShare({ status: "sharing" });
+    try {
+      const res = await fetch("/api/peer-review/shares", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: upload.recording.id }),
+      });
+      if (res.status === 201) {
+        const json = (await res.json()) as { data: { id: string; createdAt: string } };
+        setShare({ status: "shared", shareId: json.data.id });
+        return;
+      }
+      if (res.status === 409) {
+        // Already shared (e.g. a stale retry) — treat as shared rather than an error.
+        setShare({ status: "shared", shareId: upload.recording.id });
+        return;
+      }
+      setShare({ status: "error", message: friendlyShareError(res.status, res.headers.get("Retry-After")) });
+    } catch {
+      setShare({ status: "error", message: "Network error — check your connection and try again." });
+    }
+  }, [upload]);
+
+  const revokeShare = useCallback(async () => {
+    if (share.status !== "shared") return;
+    const shareId = share.shareId;
+    try {
+      const res = await fetch(`/api/peer-review/shares/${shareId}`, { method: "DELETE" });
+      if (res.ok || res.status === 204) {
+        setShare({ status: "idle" });
+        return;
+      }
+      setShare({ status: "error", message: "Couldn't revoke this share — please try again." });
+    } catch {
+      setShare({ status: "error", message: "Network error — check your connection and try again." });
+    }
+  }, [share]);
 
   const requestScore = useCallback(async () => {
     if (upload.status !== "success" || !lineText || !recorder.blob) return;
@@ -237,6 +295,7 @@ export function ShadowingRecorderPanel({
     }
     setUpload({ status: "idle" });
     setPitch(null);
+    setShare({ status: "idle" });
     // A fresh take gets a fresh score, except "unavailable" (503) — once
     // pronunciation scoring is known to be unconfigured, stay disabled for
     // this panel's lifetime instead of retrying a call that will only fail.
@@ -344,6 +403,41 @@ export function ShadowingRecorderPanel({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {upload.status === "success" && (
+        <div className="space-y-1.5 border-t border-border pt-2">
+          {share.status === "shared" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs text-success">Shared for peer feedback.</p>
+              <ConfirmButton
+                label="Revoke"
+                confirmLabel="Revoke this share? Others will no longer be able to hear or review it."
+                onConfirm={() => void revokeShare()}
+              />
+            </div>
+          ) : (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void shareRecording()}
+                disabled={share.status === "sharing"}
+              >
+                {share.status === "sharing" ? "Sharing…" : "Share for peer feedback"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Shares this one recording publicly for feedback. You can revoke anytime.
+              </p>
+            </>
+          )}
+          {share.status === "error" && (
+            <p role="alert" className="text-xs text-danger">
+              {share.message}
+            </p>
+          )}
         </div>
       )}
     </div>
