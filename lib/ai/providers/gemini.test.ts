@@ -79,11 +79,12 @@ describe("gemini adapter", () => {
     expect(result.model).toBe("model-fast");
   });
 
-  it("sends a responseSchema derived from the zod schema", async () => {
+  it("sends a responseJsonSchema derived from the zod schema, not responseSchema", async () => {
     generateContent.mockResolvedValue({ text: JSON.stringify({ n: 1 }) });
     const provider = createGeminiProvider(cfg);
     await provider.generateStructured(req, z.object({ n: z.number() }));
-    expect(generateContent.mock.calls[0]?.[0].config.responseSchema).toBeDefined();
+    expect(generateContent.mock.calls[0]?.[0].config.responseJsonSchema).toBeDefined();
+    expect(generateContent.mock.calls[0]?.[0].config.responseSchema).toBeUndefined();
   });
 
   it("maps a 429 onto the shared rate_limited kind", async () => {

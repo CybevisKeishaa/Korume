@@ -15,8 +15,8 @@
  *    `SystemBlock` is accepted by the port but has no effect here.
  *  - `reasoning: false` — no `thinkingConfig` is wired up; `req.reasoning` is
  *    ignored.
- *  - `structuredOutput: true` — implemented via `responseSchema` + JSON parse
- *    + zod validation (see `generateStructured` below).
+ *  - `structuredOutput: true` — implemented via `responseJsonSchema` + JSON
+ *    parse + zod validation (see `generateStructured` below).
  * A `false` here is not a bug: it surfaces as a startup capability-gap report
  * in dev and would block production, which is the designed outcome (Spec
  * §5.4). Never weaken the port to make a gap disappear.
@@ -149,7 +149,14 @@ export function createGeminiProvider(cfg: {
             systemInstruction: toSystemInstruction(req),
             maxOutputTokens: req.maxTokens,
             responseMimeType: "application/json",
-            responseSchema: z.toJSONSchema(schema),
+            // `responseJsonSchema` (not `responseSchema`) is the SDK's public,
+            // documented field for a JSON Schema produced by `z.toJSONSchema` —
+            // `responseSchema` expects its own `SchemaUnion` OpenAPI-subset
+            // shape and only works with a JSON Schema via an internal, private
+            // reroute. Passing it here directly avoids relying on that
+            // undocumented behavior. `responseSchema` must stay omitted: the
+            // SDK requires exactly one of the two.
+            responseJsonSchema: z.toJSONSchema(schema),
           },
         });
         const parsed = parseStructured(response.text, schema);
