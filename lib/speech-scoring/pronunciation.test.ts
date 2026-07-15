@@ -18,6 +18,7 @@ describe("assessPronunciation", () => {
   let azure: AzureSpeechMockHandle | undefined;
 
   beforeEach(() => {
+    process.env.SPEECH_PROVIDER = "azure";
     process.env.AZURE_SPEECH_KEY = "test-key";
     process.env.AZURE_SPEECH_REGION = "japaneast";
   });

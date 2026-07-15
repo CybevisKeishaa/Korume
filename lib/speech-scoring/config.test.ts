@@ -16,22 +16,34 @@ import { synthesizeSpeech } from "./tts";
 
 const KEY = "AZURE_SPEECH_KEY";
 const REGION = "AZURE_SPEECH_REGION";
+const PROVIDER = "SPEECH_PROVIDER";
 
 describe("isSpeechConfigured", () => {
-  const original = { key: process.env[KEY], region: process.env[REGION] };
+  const original = {
+    key: process.env[KEY],
+    region: process.env[REGION],
+    provider: process.env[PROVIDER],
+  };
 
   afterEach(() => {
     process.env[KEY] = original.key;
     process.env[REGION] = original.region;
+    process.env[PROVIDER] = original.provider;
   });
 
-  it("is true only when both key and region are present", () => {
+  // isSpeechConfigured now delegates to isSpeechEnabled (Spec D9): intent comes
+  // from SPEECH_PROVIDER, never inferred from which credentials happen to be
+  // set. Structural validity of the credentials is a startup-time concern
+  // (see env.test.ts), not this runtime gate's job.
+  it("is true when SPEECH_PROVIDER=azure, regardless of credential presence", () => {
+    process.env[PROVIDER] = "azure";
     process.env[KEY] = "k";
     process.env[REGION] = "japaneast";
     expect(isSpeechConfigured()).toBe(true);
   });
 
-  it("is false when either credential is missing", () => {
+  it("is false when speech is not the selected provider, even with credentials present", () => {
+    delete process.env[PROVIDER];
     delete process.env[KEY];
     process.env[REGION] = "japaneast";
     expect(isSpeechConfigured()).toBe(false);
