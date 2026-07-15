@@ -1,16 +1,16 @@
 /**
  * Scenario-based conversation chatbot and post-session grammar corrections.
  *
- * `conversationReply` is a simple generation (no thinking). `sessionCorrections`
- * asks for structured output and benefits from reasoning, so it enables
- * adaptive thinking.
+ * `conversationReply` is a simple generation (no reasoning). `sessionCorrections`
+ * asks for structured output and benefits from reasoning, so it requests it.
+ *
+ * Both speak the provider-agnostic port (`AiProvider`) — never a specific SDK.
+ * The active provider is injected via an optional last parameter defaulting to
+ * `getProvider()` (the repo's clock-injection convention, per `lib/gamification`).
  */
-import type Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { getClient } from "./client";
-import { AI_MODEL, MAX_TOKENS } from "./constants";
-import { toAiError } from "./errors";
-import { firstText, requireParsed } from "./run";
+import type { AiProvider } from "./port";
+import { MAX_TOKENS } from "./constants";
+import { getProvider } from "./registry";
 import { CorrectionsSchema } from "./schemas";
 import { levelGuidance, scenarioSystemPrompt } from "./scenarios";
 import type {
@@ -20,16 +20,6 @@ import type {
   SessionCorrectionsResult,
 } from "./types";
 
-/** Maps app turns (`ai`/`user`) to Anthropic message params (`assistant`/`user`). */
-function toApiMessages(
-  turns: ConversationTurn[],
-): Anthropic.Messages.MessageParam[] {
-  return turns.map((turn) => ({
-    role: turn.role === "ai" ? "assistant" : "user",
-    content: turn.content,
-  }));
-}
-
 /**
  * One turn of scenario conversation. The frozen scenario prompt goes in a
  * cached system block; the learner's level guidance in a second, uncached one.
@@ -37,34 +27,20 @@ function toApiMessages(
  */
 export async function conversationReply(
   input: ConversationReplyInput,
+  provider: AiProvider = getProvider(),
 ): Promise<ConversationReplyResult> {
-  const client = getClient();
+  const result = await provider.generateText({
+    tier: "deep", // conversation = Opus (business-model.md)
+    reasoning: false, // a reply is a simple generation
+    maxTokens: MAX_TOKENS.chat,
+    system: [
+      { text: scenarioSystemPrompt(input.scenario), cacheable: true },
+      { text: levelGuidance(input.level), cacheable: false },
+    ],
+    messages: input.messages,
+  });
 
-  const system: Anthropic.Messages.TextBlockParam[] = [
-    {
-      type: "text",
-      text: scenarioSystemPrompt(input.scenario),
-      cache_control: { type: "ephemeral" },
-    },
-    { type: "text", text: levelGuidance(input.level) },
-  ];
-
-  try {
-    const response = await client.messages.create({
-      model: AI_MODEL,
-      max_tokens: MAX_TOKENS.chat,
-      system,
-      messages: toApiMessages(input.messages),
-    });
-
-    return {
-      reply: firstText(response.content),
-      truncated: response.stop_reason === "max_tokens",
-      model: response.model,
-    };
-  } catch (err) {
-    throw toAiError(err);
-  }
+  return { reply: result.text, truncated: result.truncated, model: result.model };
 }
 
 const CORRECTIONS_SYSTEM =
@@ -81,9 +57,8 @@ const CORRECTIONS_SYSTEM =
  */
 export async function sessionCorrections(
   messages: ConversationTurn[],
+  provider: AiProvider = getProvider(),
 ): Promise<SessionCorrectionsResult> {
-  const client = getClient();
-
   const userLines = messages
     .filter((turn) => turn.role === "user")
     .map((turn, i) => `${i + 1}. ${turn.content}`)
@@ -94,29 +69,20 @@ export async function sessionCorrections(
       ? `Here are my Japanese sentences from the session:\n${userLines}`
       : "The learner did not produce any Japanese sentences this session.";
 
-  try {
-    const response = await client.messages.parse({
-      model: AI_MODEL,
-      max_tokens: MAX_TOKENS.corrections,
-      thinking: { type: "adaptive" },
-      system: [
-        {
-          type: "text",
-          text: CORRECTIONS_SYSTEM,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
+  const result = await provider.generateStructured(
+    {
+      tier: "fast",
+      reasoning: true,
+      maxTokens: MAX_TOKENS.corrections,
+      system: [{ text: CORRECTIONS_SYSTEM, cacheable: true }],
       messages: [{ role: "user", content: userContent }],
-      output_config: { format: zodOutputFormat(CorrectionsSchema) },
-    });
+    },
+    CorrectionsSchema,
+  );
 
-    const parsed = requireParsed(response.parsed_output);
-    return {
-      corrections: parsed.corrections,
-      encouragement: parsed.encouragement,
-      model: response.model,
-    };
-  } catch (err) {
-    throw toAiError(err);
-  }
+  return {
+    corrections: result.parsed.corrections,
+    encouragement: result.parsed.encouragement,
+    model: result.model,
+  };
 }
