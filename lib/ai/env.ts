@@ -9,6 +9,7 @@
  * audit.
  */
 import { z } from "zod";
+import type { EnvSource } from "@/lib/env/validate";
 
 export type AppEnv = "dev" | "staging" | "production";
 export type AiProviderName = "none" | "anthropic" | "gemini";
@@ -99,7 +100,7 @@ export interface AiEnv {
 }
 
 /** Reads the validated selection. Throws if unset/invalid — never guesses. */
-export function readAiEnv(env: NodeJS.ProcessEnv | Record<string, string> = process.env): AiEnv {
+export function readAiEnv(env: EnvSource = process.env): AiEnv {
   const parsed = aiEnvSchema.safeParse(env);
   if (!parsed.success) {
     throw new Error(

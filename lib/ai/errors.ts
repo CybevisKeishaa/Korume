@@ -37,7 +37,7 @@ export class AiError extends Error {
 /** Thrown when `ANTHROPIC_API_KEY` is absent — no request is ever attempted. */
 export class AiNotConfiguredError extends AiError {
   constructor(
-    message = "AI features are not configured: ANTHROPIC_API_KEY is not set.",
+    message = "AI features are disabled for this deployment (AI_PROVIDER=none).",
   ) {
     super("not_configured", message);
     this.name = "AiNotConfiguredError";

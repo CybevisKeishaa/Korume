@@ -16,6 +16,9 @@
  */
 import type { z } from "zod";
 
+/** A source of environment variables: the real process env, or a test literal. */
+export type EnvSource = NodeJS.ProcessEnv | Record<string, string>;
+
 export interface EnvCheckResult {
   errors?: string[];
   warnings?: string[];
@@ -54,7 +57,7 @@ export function resetEnvValidationForTesting(): void {
   validated = false;
 }
 
-export function validateEnv(env?: NodeJS.ProcessEnv | Record<string, string>): void {
+export function validateEnv(env?: EnvSource): void {
   if (validated) return;
   const envToValidate = env ?? process.env;
 
