@@ -1673,7 +1673,9 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST \
   "https://$AZ_REGION.api.cognitive.microsoft.com/sts/v1.0/issueToken"
 ```
 
-Expected: `200` and `length=32`. The audit's bug was a 36-character GUID (a resource id) returning `401`. If you get `401`, **stop and report** — that is scope B, and Task 12 must not encode a rule around a broken key.
+**Verified 2026-07-15 (spec §7 V6):** this returns **200** — the user's post-audit key fix worked. The real key is **84 characters, alphanumeric, no separators**. It is *not* the 32-hex classic Key1 an earlier draft of this plan assumed; Azure issues longer keys now.
+
+If you get `401`, **stop and report** — that is scope B, and this task must not encode a rule around a broken key.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -1682,8 +1684,10 @@ Expected: `200` and `length=32`. The audit's bug was a 36-character GUID (a reso
 import { describe, expect, it } from "vitest";
 import { speechEnvSchema } from "./env";
 
-// A fake key matching the verified structure. Never paste the real key here.
-const VALID_KEY = "0123456789abcdef0123456789abcdef";
+// Fake keys matching the two verified real shapes. Never paste the real key here.
+const VALID_KEY_LONG = "a".repeat(84);                    // the live 2026-07-15 shape
+const VALID_KEY_CLASSIC = "0123456789abcdef0123456789abcdef"; // classic 32-hex Key1
+const VALID_KEY = VALID_KEY_LONG;
 
 const issues = (env: Record<string, string>) => {
   const parsed = speechEnvSchema.safeParse(env);
@@ -1720,10 +1724,12 @@ describe("speechEnvSchema", () => {
     expect(found.join(" ")).not.toContain(guid); // redaction contract (Task 3)
   });
 
-  it("accepts a well-formed azure configuration", () => {
-    expect(
-      issues({ SPEECH_PROVIDER: "azure", AZURE_SPEECH_KEY: VALID_KEY, AZURE_SPEECH_REGION: "japanwest" }),
-    ).toEqual([]);
+  it("accepts both real Azure key shapes — the rule must not pin a single length", () => {
+    // An earlier draft pinned 32-hex from memory; the live key is 84 chars.
+    // A length-specific rule would have blocked boot on a working key.
+    const base = { SPEECH_PROVIDER: "azure", AZURE_SPEECH_REGION: "japanwest" };
+    expect(issues({ ...base, AZURE_SPEECH_KEY: VALID_KEY_LONG })).toEqual([]);
+    expect(issues({ ...base, AZURE_SPEECH_KEY: VALID_KEY_CLASSIC })).toEqual([]);
   });
 });
 ```
@@ -1752,12 +1758,21 @@ import type { EnvSpec } from "@/lib/env/validate";
 export type SpeechProviderName = "none" | "azure";
 
 /**
- * Azure Speech Key1/Key2 are 32 hex characters. The 2026-07-14 audit found a
- * 36-character GUID here — the resource id, copied instead of the key — which
- * returned 401 and silently killed TTS, STT, pronunciation scoring and the pitch
- * reference. Verified against the live key in Step 1 (spec §7 V6).
+ * Azure Speech keys are unseparated alphanumeric strings. Azure has issued both
+ * the classic 32-hex Key1/Key2 and, as here, longer keys (the live key verified
+ * on 2026-07-15 is 84 alphanumeric chars — spec §7 V6), so this rule matches the
+ * one stable property rather than a specific length.
+ *
+ * What it catches: the 2026-07-14 audit found a 36-character GUID here — the
+ * resource id, copied instead of the key — which returned 401 and silently
+ * killed TTS, STT, pronunciation scoring and the pitch reference for weeks. A
+ * GUID is hyphen-separated, so it fails this rule; both real key shapes pass.
+ *
+ * Deliberately loose on length: an earlier draft of this plan pinned it to 32
+ * hex from memory, which would have REJECTED the working 84-char key and blocked
+ * boot — the exact failure spec §8 predicts for unverified markers.
  */
-const AZURE_KEY_PATTERN = /^[0-9a-f]{32}$/i;
+const AZURE_KEY_PATTERN = /^[A-Za-z0-9]{32,}$/;
 
 export const speechEnvSchema = z
   .object({
