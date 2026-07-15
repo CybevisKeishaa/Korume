@@ -969,7 +969,10 @@ describe("anthropic adapter", () => {
     mock = installClaudeMock();
     mock.queueStatus(401);
     const provider = createAnthropicProvider("sk-ant-test");
-    await expect(provider.generateText(req)).rejects.toBeInstanceOf(AiError);
+    // Assert the KIND, not just the type: lib/http-status.ts maps kind → HTTP
+    // status, and ~10 downstream suites depend on that mapping. `toBeInstanceOf`
+    // would still pass if 401 regressed to "unknown".
+    await expect(provider.generateText(req)).rejects.toMatchObject({ kind: "auth" });
   });
 });
 ```
