@@ -131,7 +131,8 @@ export interface EnvSpec<T> {
   check?: (value: T) => EnvCheckResult;
 }
 export function registerEnvSpec<T>(spec: EnvSpec<T>): void
-export function validateEnv(env?: NodeJS.ProcessEnv): void   // throws EnvValidationError; memoized
+export function validateEnv(env?: EnvSource): void   // throws EnvValidationError; memoized
+export type EnvSource = NodeJS.ProcessEnv | Record<string, string>;
 export function resetEnvValidationForTesting(): void
 export class EnvValidationError extends Error {}
 ```
@@ -290,7 +291,7 @@ export function resetEnvValidationForTesting(): void {
   validated = false;
 }
 
-export function validateEnv(env: NodeJS.ProcessEnv = process.env): void {
+export function validateEnv(env: EnvSource = process.env): void {
   if (validated) return;
 
   const errors: string[] = [];
@@ -364,8 +365,10 @@ export type AiProviderName = "none" | "anthropic" | "gemini";
 export type AiEnvShape = z.infer<typeof aiEnvSchema>;
 export const aiEnvSchema: z.ZodType<AiEnvShape>
 export interface AiEnv { APP_ENV: AppEnv; AI_PROVIDER: AiProviderName; }
-export function readAiEnv(env?: NodeJS.ProcessEnv): AiEnv   // throws if unset/invalid
+export function readAiEnv(env?: EnvSource): AiEnv   // throws if unset/invalid
 ```
+
+**Env parameters take `EnvSource`, not `NodeJS.ProcessEnv`** — verified 2026-07-15: Next augments `ProcessEnv` with a **required** `readonly NODE_ENV` (`next/types/global.d.ts:22`), so a test literal like `{ APP_ENV: "dev", AI_PROVIDER: "none" }` fails typecheck against bare `ProcessEnv` (TS2345). Every `env?:` parameter in this plan means `EnvSource`.
 
 This module owns the **schema**, not the registered spec. The spec needs `capabilityGaps`, which lives in the registry — so `aiEnvSpec` is assembled in `lib/ai/registry.ts` (Task 8). That placement is deliberate: putting it here would make `env.ts` import `registry.ts`, which already imports `env.ts`.
 
@@ -562,7 +565,7 @@ export interface AiEnv {
 }
 
 /** Reads the validated selection. Throws if unset/invalid — never guesses. */
-export function readAiEnv(env: NodeJS.ProcessEnv = process.env): AiEnv {
+export function readAiEnv(env: EnvSource = process.env): AiEnv {
   const parsed = aiEnvSchema.safeParse(env);
   if (!parsed.success) {
     throw new Error(
@@ -1265,8 +1268,8 @@ Records V1/V2 findings in the spec."
 
 ```ts
 export const REQUIRED_CAPABILITIES: Capabilities   // in capabilities.ts
-export function getProvider(env?: NodeJS.ProcessEnv): AiProvider   // throws AiNotConfiguredError when AI_PROVIDER=none
-export function isAiEnabled(env?: NodeJS.ProcessEnv): boolean      // AI_PROVIDER !== "none"
+export function getProvider(env?: EnvSource): AiProvider   // throws AiNotConfiguredError when AI_PROVIDER=none
+export function isAiEnabled(env?: EnvSource): boolean      // AI_PROVIDER !== "none"
 export function capabilityGaps(provider: AiProvider): string[]
 export function setProviderForTesting(p: AiProvider | null): void
 export const aiEnvSpec: EnvSpec<AiEnvShape>   // assembled here; registered by Task 13
@@ -1364,11 +1367,11 @@ export function setProviderForTesting(provider: AiProvider | null): void {
   testProvider = provider;
 }
 
-export function isAiEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isAiEnabled(env: EnvSource = process.env): boolean {
   return readAiEnv(env).AI_PROVIDER !== "none";
 }
 
-export function getProvider(env: NodeJS.ProcessEnv = process.env): AiProvider {
+export function getProvider(env: EnvSource = process.env): AiProvider {
   if (testProvider) return testProvider;
 
   const parsed = aiEnvSchema.safeParse(env);
@@ -1418,7 +1421,7 @@ export const aiEnvSpec: EnvSpec<AiEnvShape> = {
   schema: aiEnvSchema,
   check: (env) => {
     if (env.AI_PROVIDER === "none") return {};
-    const gaps = capabilityGaps(getProvider(env as NodeJS.ProcessEnv));
+    const gaps = capabilityGaps(getProvider(env));
     if (gaps.length === 0) return {};
     return env.APP_ENV === "production" ? { errors: gaps } : { warnings: gaps };
   },
@@ -1788,7 +1791,7 @@ export const speechEnvSchema = z
 export type SpeechEnvShape = z.infer<typeof speechEnvSchema>;
 
 /** Whether speech is intentionally enabled. Never inferred from key presence. */
-export function isSpeechEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isSpeechEnabled(env: EnvSource = process.env): boolean {
   return env.SPEECH_PROVIDER === "azure";
 }
 
@@ -2034,7 +2037,7 @@ export interface SubsystemHealth {
 }
 
 export async function checkAiHealth(
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvSource = process.env,
 ): Promise<SubsystemHealth> {
   if (!isAiEnabled(env)) return { status: "disabled" };
 
