@@ -205,7 +205,10 @@ describe("validateEnv", () => {
   });
 
   it("logs warnings without throwing", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // `() => undefined`, not `() => {}` — the repo's eslint config errors on
+    // empty functions, and this matches the existing console-spy pattern in
+    // lib/data/gamification.test.ts and lib/data/reading.test.ts.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     registerEnvSpec({
       name: "gap",
       schema: z.object({ MODE: z.string() }),

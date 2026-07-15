@@ -60,7 +60,7 @@ describe("validateEnv", () => {
   });
 
   it("logs warnings without throwing", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     registerEnvSpec({
       name: "gap",
       schema: z.object({ MODE: z.string() }),
