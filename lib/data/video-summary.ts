@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser, selectVideoById } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
-import { AiError, isAiConfigured, summarizeTranscript, type KeyGrammar, type KeyVocab } from "@/lib/ai";
+import { AiError, isAiEnabled, summarizeTranscript, type KeyGrammar, type KeyVocab } from "@/lib/ai";
 import { aiErrorStatus } from "@/lib/http-status";
 
 const SUMMARY_LIMIT = { limit: 5, windowMs: 60_000 };
@@ -74,7 +74,7 @@ export async function generateVideoSummary(videoId: string): Promise<GenerateVid
   if (existingError) throw existingError;
   if (existing) return { ok: true, data: existing as VideoSummaryRow, cached: true };
 
-  if (!isAiConfigured()) return { ok: false, status: 503 };
+  if (!isAiEnabled()) return { ok: false, status: 503 };
 
   const { data: transcript, error: transcriptError } = await supabase
     .from("transcripts")

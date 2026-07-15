@@ -6,7 +6,7 @@ import { recordActivity } from "@/lib/data/gamification";
 import {
   AiError,
   conversationReply,
-  isAiConfigured,
+  isAiEnabled,
   sessionCorrections,
   type ConversationTurn,
   type JlptLevel,
@@ -178,7 +178,7 @@ export async function postConversationMessage(
   if (!session) return { ok: false, status: 404 };
   if (session.ended_at) return { ok: false, status: 400 };
 
-  if (!isAiConfigured()) return { ok: false, status: 503 };
+  if (!isAiEnabled()) return { ok: false, status: 503 };
 
   const { data: priorRows, error: priorError } = await supabase
     .from("conversation_messages")
@@ -249,7 +249,7 @@ export async function endConversationSession(
   if (!session) return { ok: false, status: 404 };
   if (session.ended_at) return { ok: false, status: 400 };
 
-  if (!isAiConfigured()) return { ok: false, status: 503 };
+  if (!isAiEnabled()) return { ok: false, status: 503 };
 
   const { data: rows, error: messagesError } = await supabase
     .from("conversation_messages")
