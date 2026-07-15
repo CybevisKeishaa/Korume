@@ -109,6 +109,6 @@ describe("anthropic adapter", () => {
     });
     const provider = createAnthropicProvider("sk-ant-test");
 
-    await expect(provider.generateText(req)).rejects.toBeInstanceOf(AiError);
+    await expect(provider.generateText(req)).rejects.toMatchObject({ kind: "auth" });
   });
 });
