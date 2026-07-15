@@ -444,9 +444,9 @@ Baseline to preserve: **1098 unit tests green**. Verify with `npx tsc --noEmit`,
 | --- | --- | --- |
 | V1 | Does `@google/genai` route through global `fetch`? | Decides whether the Gemini mock is fetch-level (like `claude-mock`) or module-level |
 | V2 | Which OpenAPI subset does Gemini `responseSchema` accept; does `z.toJSONSchema()` output need massaging? | `schemas.ts` uses `zod/v4`, so `z.toJSONSchema()` exists — **no new dependency needed**. The 3 schemas are flat, all-string, with no unions/refinements/recursion/numeric constraints (a deliberate L4 choice), so translation should be near 1:1 |
-| V3 | `GEMINI_API_KEY` liveness and real structure — the current value starts with `AQ.`, not the `AIza` this assistant expects | **Blocks writing the structural rule.** If `AQ.` is legitimate, a rule built on the assistant's assumption would reject a valid key |
+| V3 | ~~`GEMINI_API_KEY` liveness and real structure~~ **VERIFIED 2026-07-15** | **The assistant's assumption was wrong.** `GET /v1beta/models` with `x-goog-api-key` returns **200**: the key is valid. Its real shape is a **53-char `AQ.`-prefixed** key, *not* the 39-char `AIza` this assistant expected. A rule built on `AIza` would have rejected a working key and blocked boot — exactly the failure §8 predicts. **Both prefixes are legitimate Google API key formats; the structural rule must accept either.** |
 | V4 | `instrumentation.ts` behaviour under `next dev` on 14.2.35 | Determines whether dev fails at boot or at first request |
-| V5 | `gemini-3.1-flash-lite` exists and is in the free tier | Model id is post-cutoff for this assistant; unverified |
+| V5 | ~~`gemini-3.1-flash-lite` exists~~ **VERIFIED 2026-07-15** | Present in the live model list and supports `generateContent` — the configured id is correct despite being post-cutoff for this assistant. It also advertises `createCachedContent`, so Gemini can honour the port's `promptCaching` capability (D5/§5.4) |
 | V6 | `AZURE_SPEECH_KEY` liveness after the user's fix | Audit found it invalid; the fix is unverified (scope B) |
 
 ---

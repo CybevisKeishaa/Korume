@@ -433,7 +433,23 @@ describe("aiEnvSchema + policy", () => {
 });
 ```
 
-`VERIFIED_GEMINI_KEY_SAMPLE` must be a **fake string that matches the verified marker from Task 1** — e.g. if Task 1 proves the prefix is `AIza`, use `"AIza" + "x".repeat(35)`. Define it as a const at the top of the test file. Never paste the real key into a test.
+Define at the top of the test file — a **fake** string matching the marker Task 1 verified. Never paste the real key into a test.
+
+```ts
+// Matches the 53-char `AQ.` shape verified against the live API on 2026-07-15
+// (spec §7 V3). `AIza…` is equally valid and must also be accepted.
+const VERIFIED_GEMINI_KEY_SAMPLE = "AQ.Ab" + "x".repeat(48);
+```
+
+Add one more case proving the rule is not over-fitted to a single format:
+
+```ts
+it("accepts both documented Google key shapes", () => {
+  const base = { APP_ENV: "dev", AI_PROVIDER: "gemini", GEMINI_MODEL_FAST: "m", GEMINI_MODEL_DEEP: "m" };
+  expect(validate({ ...base, GEMINI_API_KEY: VERIFIED_GEMINI_KEY_SAMPLE })).toEqual([]);
+  expect(validate({ ...base, GEMINI_API_KEY: "AIza" + "x".repeat(35) })).toEqual([]);
+});
+```
 
 - [ ] **Step 2: Run the test and watch it fail**
 
@@ -468,10 +484,14 @@ export type AiProviderName = "none" | "anthropic" | "gemini";
  *
  * ANTHROPIC: unverifiable today — the user has no key, so this marker comes
  * from documentation, NOT from a real key. Most likely rule to false-crash.
- * GEMINI: verified against a live key in Task 1 — see spec §7 V3.
+ *
+ * GEMINI: verified against the live API on 2026-07-15 (spec §7 V3). Google
+ * issues BOTH shapes and both are valid, so accept either — the working key in
+ * use is the 53-char `AQ.` form, and a rule assuming only `AIza` would reject
+ * it and block boot. This is the whole reason Task 1 runs before this file.
  */
 const ANTHROPIC_KEY_PREFIX = "sk-ant-";
-const GEMINI_KEY_PREFIX = "AIza"; // ← REPLACE with Task 1's verified prefix.
+const GEMINI_KEY_PREFIXES = ["AIza", "AQ."] as const;
 
 const providerName = z.enum(["none", "anthropic", "gemini"]);
 const appEnv = z.enum(["dev", "staging", "production"]);
@@ -518,10 +538,10 @@ export const aiEnvSchema = z
     if (env.AI_PROVIDER === "gemini") {
       if (!env.GEMINI_API_KEY) {
         fail(requiredMsg("GEMINI_API_KEY", "AI_PROVIDER=gemini"), "GEMINI_API_KEY");
-      } else if (!env.GEMINI_API_KEY.startsWith(GEMINI_KEY_PREFIX)) {
+      } else if (!GEMINI_KEY_PREFIXES.some((p) => env.GEMINI_API_KEY?.startsWith(p))) {
         fail(
-          `GEMINI_API_KEY does not match the documented key structure ` +
-            `(expected it to begin with "${GEMINI_KEY_PREFIX}").`,
+          `GEMINI_API_KEY does not match a documented Google API key structure ` +
+            `(expected it to begin with one of: ${GEMINI_KEY_PREFIXES.join(", ")}).`,
           "GEMINI_API_KEY",
         );
       }
@@ -1211,7 +1231,9 @@ Expected: FAIL — cannot resolve `./gemini`.
 
 Convert the zod schema with `z.toJSONSchema(schema)` (verified available: zod 3.25.76, `zod/v4` subpath). Gemini's `responseSchema` accepts a subset of OpenAPI — check the produced JSON against it and massage if required. The three real schemas (`CorrectionsSchema`, `VideoSummarySchema`, `ExamplesSchema`) are flat, all-string, with no unions/refinements/recursion/numeric constraints, so the translation should be near 1:1. **Record what massaging was needed in spec §7 row V2.**
 
-Capabilities must be declared honestly — this is the whole point of the capability mechanism (Spec §5.4). If Gemini's caching or reasoning cannot be honoured through this adapter, declare `false`. **Do not weaken the port to make the gap disappear** (Spec §2): a `false` here surfaces as a startup gap report in dev and a hard failure in production, which is the designed outcome.
+Capabilities must be declared honestly — this is the whole point of the capability mechanism (Spec §5.4). **Declare what this adapter actually implements, not what the API is capable of in principle.** Task 1 verified that `gemini-3.1-flash-lite` advertises `createCachedContent`, so `promptCaching: true` is reachable — but only declare it `true` if this adapter really wires caching up; otherwise `false` is the honest answer and the gap report is working as designed.
+
+**Do not weaken the port to make a gap disappear** (Spec §2): a `false` surfaces as a startup gap report in dev and a hard failure in production, which is the designed outcome. Since Gemini never runs in production (D7), a `false` here costs nothing but honesty in dev.
 
 - [ ] **Step 5: Run the test and watch it pass**
 
