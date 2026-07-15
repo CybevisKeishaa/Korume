@@ -4,16 +4,11 @@
  *
  * Per the Anthropic API rules for these models: never send temperature/top_p/
  * top_k or a budget_tokens thinking config — they 400.
- *
- * `lib/ai/errors.ts` is not touched here: `toAiError` stays where it is and
- * this adapter just imports it. It relocates into this file in Task 10, once
- * the feature modules (conversation.ts, summary.ts, examples.ts) have moved
- * off the old code path and stopped importing it directly.
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod/v4";
-import { AiError, toAiError } from "../errors";
+import { AiError, type AiErrorKind } from "../errors";
 import type { AiProvider, AiRequest, AiResult, Tier, TokenUsage } from "../port";
 
 const MODEL_BY_TIER: Record<Tier, string> = {
@@ -44,6 +39,43 @@ function toUsage(usage: Anthropic.Messages.Usage | undefined): TokenUsage | null
     cacheReadTokens: usage.cache_read_input_tokens ?? 0,
     cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
   };
+}
+
+/**
+ * Maps any thrown value into a typed {@link AiError}. Uses the SDK's typed
+ * classes (never message string-matching), most-specific first:
+ *   RateLimitError (429) → AuthenticationError (401) → APIConnectionError →
+ *   APIError (5xx/429 → unavailable, else unknown) → AnthropicError base
+ *   (structured-output parse failures) → unknown.
+ */
+function toAiError(err: unknown): AiError {
+  if (err instanceof AiError) return err;
+
+  // RateLimitError is a subclass of APIError — check it first.
+  if (err instanceof Anthropic.RateLimitError) {
+    return new AiError("rate_limited", err.message, { cause: err });
+  }
+  if (err instanceof Anthropic.AuthenticationError) {
+    return new AiError("auth", err.message, { cause: err });
+  }
+  if (err instanceof Anthropic.APIConnectionError) {
+    return new AiError("unavailable", err.message, { cause: err });
+  }
+  if (err instanceof Anthropic.APIError) {
+    const status = err.status ?? 0;
+    const kind: AiErrorKind = status >= 500 || status === 429 ? "unavailable" : "unknown";
+    return new AiError(kind, err.message, { cause: err });
+  }
+  // Base AnthropicError that isn't an APIError = client-side failure, most
+  // notably `messages.parse()` failing to parse/validate structured output.
+  if (err instanceof Anthropic.AnthropicError) {
+    return new AiError("invalid_output", err.message, { cause: err });
+  }
+
+  const message = err instanceof Error ? err.message : String(err);
+  return new AiError("unknown", message, {
+    cause: err instanceof Error ? err : undefined,
+  });
 }
 
 function baseParams(req: AiRequest) {

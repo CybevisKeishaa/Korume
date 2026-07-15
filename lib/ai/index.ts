@@ -10,7 +10,7 @@ export { conversationReply, sessionCorrections } from "./conversation";
 export { summarizeTranscript } from "./summary";
 export { generateExamples } from "./examples";
 
-export { AI_MODEL, AI_SOURCE } from "./constants";
+export { AI_SOURCE } from "./constants";
 export { SCENARIO_IDS } from "./scenarios";
 export { AiError, AiNotConfiguredError, type AiErrorKind } from "./errors";
 

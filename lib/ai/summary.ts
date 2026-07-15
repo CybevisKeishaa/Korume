@@ -1,14 +1,17 @@
 /**
  * Video-transcript summarisation: produces a summary plus key vocab and grammar
  * for the `video_summaries` table. Transcript input is capped deterministically
- * and the model is told when it was truncated. Enables adaptive thinking (the
- * extraction benefits from reasoning) and uses the largest token budget.
+ * and the model is told when it was truncated. Requests reasoning (the
+ * extraction benefits from it) on the cacheable `fast` tier — tier and
+ * reasoning are independent axes (see `port.ts`).
+ *
+ * Speaks the provider-agnostic port (`AiProvider`) — never a specific SDK. The
+ * active provider is injected via an optional last parameter defaulting to
+ * `getProvider()` (the repo's clock-injection convention, per `lib/gamification`).
  */
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { getClient } from "./client";
-import { AI_MODEL, MAX_TOKENS, TRANSCRIPT_CHAR_CAP } from "./constants";
-import { toAiError } from "./errors";
-import { requireParsed } from "./run";
+import type { AiProvider } from "./port";
+import { MAX_TOKENS, TRANSCRIPT_CHAR_CAP } from "./constants";
+import { getProvider } from "./registry";
 import { VideoSummarySchema } from "./schemas";
 import type { SummarizeTranscriptInput, VideoSummaryResult } from "./types";
 
@@ -30,15 +33,15 @@ function capTranscript(lines: string[]): { text: string; truncated: boolean } {
 
 /**
  * Summarises transcript lines into `{summary, keyVocab, keyGrammar}`. Lines
- * are passed to Claude as-is (they were validated/sanitized at import time,
+ * are passed to the model as-is (they were validated/sanitized at import time,
  * and this module does not re-sanitize); XSS safety for the OUTPUT rests on
  * React text rendering at the display layer. Returns `inputTruncated` so the
  * caller knows whether the whole transcript was seen.
  */
 export async function summarizeTranscript(
   input: SummarizeTranscriptInput,
+  provider: AiProvider = getProvider(),
 ): Promise<VideoSummaryResult> {
-  const client = getClient();
   const { text, truncated } = capTranscript(input.lines);
 
   const truncationNote = truncated
@@ -46,31 +49,22 @@ export async function summarizeTranscript(
     : "";
   const userContent = `Title: ${input.title}\n\nTranscript:\n${text}${truncationNote}`;
 
-  try {
-    const response = await client.messages.parse({
-      model: AI_MODEL,
-      max_tokens: MAX_TOKENS.summary,
-      thinking: { type: "adaptive" },
-      system: [
-        {
-          type: "text",
-          text: SUMMARY_SYSTEM,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
+  const result = await provider.generateStructured(
+    {
+      tier: "fast", // cacheable — per the product's cost model
+      reasoning: true, // the extraction benefits from reasoning
+      maxTokens: MAX_TOKENS.summary,
+      system: [{ text: SUMMARY_SYSTEM, cacheable: true }],
       messages: [{ role: "user", content: userContent }],
-      output_config: { format: zodOutputFormat(VideoSummarySchema) },
-    });
+    },
+    VideoSummarySchema,
+  );
 
-    const parsed = requireParsed(response.parsed_output);
-    return {
-      summary: parsed.summary,
-      keyVocab: parsed.keyVocab,
-      keyGrammar: parsed.keyGrammar,
-      model: response.model,
-      inputTruncated: truncated,
-    };
-  } catch (err) {
-    throw toAiError(err);
-  }
+  return {
+    summary: result.parsed.summary,
+    keyVocab: result.parsed.keyVocab,
+    keyGrammar: result.parsed.keyGrammar,
+    model: result.model,
+    inputTruncated: truncated,
+  };
 }

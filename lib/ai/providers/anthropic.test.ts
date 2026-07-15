@@ -111,4 +111,12 @@ describe("anthropic adapter", () => {
 
     await expect(provider.generateText(req)).rejects.toMatchObject({ kind: "auth" });
   });
+
+  it("maps a 529 overloaded to the unavailable kind", async () => {
+    const fixture = claudeErrorResponse(529);
+    mock = installClaudeMock({ responses: [{ status: fixture.status, body: fixture.body }] });
+    const provider = createAnthropicProvider("sk-ant-test");
+
+    await expect(provider.generateText(req)).rejects.toMatchObject({ kind: "unavailable" });
+  });
 });
