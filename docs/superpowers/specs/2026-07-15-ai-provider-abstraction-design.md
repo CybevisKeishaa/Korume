@@ -72,6 +72,7 @@ names current mechanisms as current, so they can be replaced without touching th
 | Switching production to Anthropic | Blocked: the user has no Anthropic key |
 | Verifying `GEMINI_API_KEY` / `AZURE_SPEECH_KEY` liveness; transcript-ingestion UI; GDPR delete-my-data; register-page "7-day trial" copy | Scope B (pre-L8 blockers) |
 | Streaming responses | Not required by the specification (see D8) |
+| Registering Supabase env in the validator | **Removed from scope during planning (2026-07-15).** Supabase is not a swappable provider, had no audit bug, and `lib/env.ts` already ships `hasPublicSupabaseEnv()` — a deliberate degrade ("lets the app run (marketing + auth pages) before .env.local exists, instead of crashing every route", used by `app/(app)/layout.tsx`, `app/(admin)/admin/layout.tsx`, `lib/supabase/middleware.ts`). Requiring Supabase env at startup would destroy that shipped decision — the same collision D9 caught for speech. The shared runner remains open for Supabase to register later if ever wanted |
 | Changing `CLAUDE.md` §2 | §2 stands unchanged. Gemini is a dev-only provider *because* of §2, not an exception to it |
 
 ---
@@ -133,10 +134,15 @@ boot. Rejected for that reason.
 
 ### D3 — Shared validation module, per-consumer schemas
 
-`lib/env/validate.ts` is a shared runner. Each consumer owns and registers its own schema
-(`lib/ai/env.ts`, `lib/speech-scoring/env.ts`, `lib/supabase/env.ts`). The **extensible thing is
-the runner**, not a central list of every variable in the app — so this does not become a
-god-module, and PayOS can register itself in Layer 8 by adding one file.
+`lib/env/validate.ts` is a shared runner. Each consumer owns and registers its own schema — in
+Spec A that is `lib/ai/env.ts` and `lib/speech-scoring/env.ts`. The **extensible thing is the
+runner**, not a central list of every variable in the app — so this does not become a god-module,
+and PayOS can register itself in Layer 8 by adding one file.
+
+**Registration is opt-in, and Spec A registers only the two audited subsystems.** Supabase is
+deliberately not registered (see §3), because a subsystem that ships an intentional
+"run without this configured" path must not have that path deleted by making its env mandatory.
+D9 states the general rule; §3 records the two subsystems it excludes today.
 
 This is consistent with `CLAUDE.md` §6, which already requires validating every input with zod.
 Environment is input.
@@ -369,9 +375,12 @@ the message string will fail and must be audited during implementation.
 ### 5.6 File layout
 
 ```
-lib/env/validate.ts                shared runner (zod, idempotent, memoized, framework-agnostic)
-instrumentation.ts                 [NEW] one-line call; current mechanism only
-next.config.mjs                    + experimental.instrumentationHook: true   [verified absent]
+lib/env.ts        → lib/env/index.ts   [MOVE, git mv] existing requiredEnv/publicEnv/
+                                       hasPublicSupabaseEnv, unchanged. `@/lib/env` still
+                                       resolves (→ index.ts), so its 6 importers are untouched
+lib/env/validate.ts   [NEW]  shared runner (zod, idempotent, memoized, framework-agnostic)
+instrumentation.ts    [NEW]  one-line call; current mechanism only
+next.config.mjs       + experimental.instrumentationHook: true   [verified absent]
 
 lib/ai/
   env.ts            [NEW]  AI_PROVIDER + APP_ENV policy + per-provider credential schema
@@ -388,9 +397,18 @@ lib/ai/
     fake.ts         [NEW]  in-memory: queued responses, recorded requests
   conversation.ts | summary.ts | examples.ts   CHANGE  import the port only
 
-lib/speech-scoring/env.ts   [NEW]  SPEECH_PROVIDER + Azure credential schema
-lib/supabase/env.ts         [NEW]  URL + keys
+lib/speech-scoring/env.ts     [NEW]     SPEECH_PROVIDER + Azure credential schema
+lib/speech-scoring/config.ts  CHANGE    isSpeechConfigured() infers from key presence →
+                                        reads SPEECH_PROVIDER (D9); speechCredentials() stays
 ```
+
+**Also changed, discovered during planning:** `isAiConfigured()` is exported from `@/lib/ai` and
+gates the 503 path at four call sites — `lib/data/vocab-examples.ts:75`,
+`lib/data/video-summary.ts:77`, `lib/data/conversation.ts:181` and `:252`. It infers from key
+presence, which D1 abolishes. It is replaced by an `isAiEnabled()` (`AI_PROVIDER !== "none"`)
+exported from the registry; the four call sites keep their exact `return { ok: false, status: 503 }`
+behaviour. `isSpeechConfigured()` in `lib/speech-scoring/config.ts` is the same pattern and gets
+the same treatment against `SPEECH_PROVIDER`.
 
 **The one-line test for whether this abstraction is real:** after implementation, no file outside
 `lib/ai/providers/` imports `@anthropic-ai/sdk` or `@google/genai`. A lint rule should enforce it.
