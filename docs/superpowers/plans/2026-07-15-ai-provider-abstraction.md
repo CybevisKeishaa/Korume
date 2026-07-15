@@ -852,7 +852,8 @@ Moves the Anthropic-specific request shape and error mapping out of the feature 
 **Files:**
 - Create: `lib/ai/providers/anthropic.ts`
 - Test: `lib/ai/providers/anthropic.test.ts`
-- Modify: `lib/ai/errors.ts` (remove `toAiError`, keep `AiError`/`AiErrorKind`/`AiNotConfiguredError`)
+
+`lib/ai/errors.ts` is **not touched in this task.** `toAiError` stays where it is and this adapter imports it; it relocates in Task 10, once the three feature modules have stopped importing it. Moving it now would red-line typecheck for four commits and break `git bisect` across them, violating CLAUDE.md §9 at every one.
 
 **Interfaces:**
 - Consumes: `AiProvider`, `AiRequest`, `AiResult` (Task 5); `AiError`, `AiErrorKind` from `lib/ai/errors.ts`.
@@ -956,7 +957,7 @@ Expected: FAIL — cannot resolve `./anthropic`.
 
 - [ ] **Step 3: Implement the adapter**
 
-Move `toAiError` verbatim from `lib/ai/errors.ts` into this file (it is Anthropic-specific: it branches on `Anthropic.RateLimitError`, `Anthropic.AuthenticationError`, `Anthropic.APIConnectionError`, `Anthropic.APIError`, `Anthropic.AnthropicError`). Keep the mapping order — most specific first — and its doc comment. Then:
+Import `toAiError` from `../errors` — do **not** move or copy it here. It is Anthropic-specific and will relocate into this file in Task 10, after the feature modules stop importing it.
 
 ```ts
 // lib/ai/providers/anthropic.ts
@@ -970,15 +971,13 @@ Move `toAiError` verbatim from `lib/ai/errors.ts` into this file (it is Anthropi
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod/v4";
-import { AiError } from "../errors";
+import { AiError, toAiError } from "../errors";
 import type { AiProvider, AiRequest, AiResult, Tier, TokenUsage } from "../port";
 
 const MODEL_BY_TIER: Record<Tier, string> = {
   fast: "claude-haiku-4-5-20251001",
   deep: "claude-opus-4-8",
 };
-
-// ... toAiError moved here verbatim from lib/ai/errors.ts ...
 
 function toSystem(req: AiRequest): Anthropic.Messages.TextBlockParam[] {
   return req.system.map((block) => ({
@@ -1063,25 +1062,22 @@ export function createAnthropicProvider(apiKey: string): AiProvider {
 }
 ```
 
-- [ ] **Step 4: Strip `toAiError` from `lib/ai/errors.ts`**
+- [ ] **Step 4: Run the tests**
 
-Delete `toAiError` and the `import Anthropic from "@anthropic-ai/sdk"` line. Keep `AiError`, `AiErrorKind`, `AiNotConfiguredError` exactly as they are — **D1 depends on that union not changing**, and `lib/http-status.ts` consumes it. `errors.ts` must end up importing nothing from any SDK.
+Run: `npx vitest run lib/ai/providers/anthropic.test.ts && npm run typecheck && npm test`
+Expected: adapter tests PASS, typecheck clean, **full suite still green**. Nothing else changed yet — the feature modules keep working exactly as before, through the code path they already used.
 
-- [ ] **Step 5: Run the tests**
-
-Run: `npx vitest run lib/ai/providers/anthropic.test.ts && npm run typecheck`
-Expected: adapter tests PASS. Typecheck will now FAIL in `conversation.ts` / `summary.ts` / `examples.ts` — they still import the deleted `toAiError`. That is expected; Tasks 9–10 fix them. If you need a green tree at this commit, do Step 6 after Task 10 instead.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add lib/ai/providers/anthropic.ts lib/ai/providers/anthropic.test.ts lib/ai/errors.ts
+git add lib/ai/providers/anthropic.ts lib/ai/providers/anthropic.test.ts
 git commit -m "feat(ai): Anthropic adapter behind the port
 
-Moves Anthropic request shaping and typed-error mapping out of the feature
-modules. AiErrorKind and lib/http-status.ts are untouched: the adapter maps the
-SDK's typed errors onto the same union, so the ~10 suites asserting 503 stay
-green. Tier maps to model here — call sites never name a model."
+Adds the adapter alongside the existing code path; the feature modules move
+over in Tasks 9-10, so the tree stays green at every commit. AiErrorKind and
+lib/http-status.ts are untouched: the adapter maps the SDK's typed errors onto
+the same union, so the ~10 suites asserting 503 stay green. Tier maps to model
+here — call sites never name a model."
 ```
 
 ---
@@ -1514,7 +1510,7 @@ request-shape assertions moved to the adapter test where they belong."
 ### Task 10: Move `summary.ts` and `examples.ts` onto the port
 
 **Files:**
-- Modify: `lib/ai/summary.ts`, `lib/ai/examples.ts`, `lib/ai/content.test.ts`, `lib/ai/run.ts`, `lib/ai/constants.ts`
+- Modify: `lib/ai/summary.ts`, `lib/ai/examples.ts`, `lib/ai/content.test.ts`, `lib/ai/run.ts`, `lib/ai/constants.ts`, `lib/ai/errors.ts`, `lib/ai/providers/anthropic.ts`
 
 **Interfaces:**
 - Consumes: `getProvider` (Task 8); `AiProvider` (Task 5).
@@ -1528,9 +1524,11 @@ request-shape assertions moved to the adapter test where they belong."
 
 `generateExamples`: `tier: "fast"`, `reasoning: false`, `maxTokens: MAX_TOKENS.examples`, one cacheable system block (`EXAMPLES_SYSTEM`), the existing `userContent` string verbatim, `provider.generateStructured(req, ExamplesSchema)`. Keep `source: AI_SOURCE`.
 
-- [ ] **Step 2: Clean up `run.ts` and `constants.ts`**
+- [ ] **Step 2: Relocate `toAiError` and clean up `run.ts` / `constants.ts`**
 
-`run.ts`: delete `firstText` (Anthropic `ContentBlock[]` — adapter concern) and `requireParsed` (adapters raise `invalid_output` themselves now). If the file ends up empty, delete it and drop its imports.
+**`errors.ts`:** now that no feature module imports it, move `toAiError` into `lib/ai/providers/anthropic.ts` (delete it here along with the `import Anthropic from "@anthropic-ai/sdk"` line, and drop the `../errors` import of it in the adapter). Keep the mapping order — most specific first: `RateLimitError` → `AuthenticationError` → `APIConnectionError` → `APIError` → `AnthropicError` base → unknown — and bring its doc comment with it. Keep `AiError`, `AiErrorKind` and `AiNotConfiguredError` in `errors.ts` exactly as they are: **D1 depends on that union not changing**, and `lib/http-status.ts` consumes it. When you are done, `errors.ts` must import nothing from any SDK — that is what makes the Task 15 lint rule pass.
+
+**`run.ts`:** delete `firstText` (Anthropic `ContentBlock[]` — adapter concern) and `requireParsed` (adapters raise `invalid_output` themselves now). If the file ends up empty, delete it and drop its imports.
 
 `constants.ts`: delete `AI_MODEL` — tier→model now lives per adapter (D4). Keep `AI_SOURCE`, `MAX_TOKENS`, `TRANSCRIPT_CHAR_CAP`. Then confirm nothing outside referenced it:
 
@@ -1552,11 +1550,13 @@ Expected: PASS, and typecheck now clean again (Task 6 Step 5's expected breakage
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/ai/summary.ts lib/ai/examples.ts lib/ai/content.test.ts lib/ai/run.ts lib/ai/constants.ts lib/ai/index.ts
+git add lib/ai/summary.ts lib/ai/examples.ts lib/ai/content.test.ts lib/ai/run.ts lib/ai/constants.ts lib/ai/index.ts lib/ai/errors.ts lib/ai/providers/anthropic.ts
 git commit -m "refactor(ai): summary + examples speak the port
 
-Drops AI_MODEL: tier maps to a model inside each adapter now. Business logic
-(transcript capping, prompt wording, AI_SOURCE labelling) is unchanged."
+Relocates toAiError into the Anthropic adapter now that no feature module
+imports it, leaving errors.ts free of any SDK import. Drops AI_MODEL: tier maps
+to a model inside each adapter now. Business logic (transcript capping, prompt
+wording, AI_SOURCE labelling) is unchanged."
 ```
 
 ---
