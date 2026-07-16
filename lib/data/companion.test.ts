@@ -161,4 +161,100 @@ describe("captureCompanionMemories", () => {
       }),
     ).resolves.toBeUndefined();
   });
+
+  it("records first_shadow with the line pointer on a shadowing outcome", async () => {
+    let inserted: Record<string, unknown> | undefined;
+    const supabase = createMockSupabase({
+      tables: {
+        transcript_lines: () => ({ data: { text_jp: "逃げろ", start_time: 3.2, transcript_id: "T1" }, error: null }),
+        transcripts: () => ({ data: { video_id: "V1" }, error: null }),
+        companion_memories: (calls) => {
+          const upsert = calls.find((c) => c.op === "upsert");
+          if (upsert) {
+            inserted = upsert.values as Record<string, unknown>;
+            return { data: { id: "m1" }, error: null };
+          }
+          return { data: [], error: null };
+        },
+      },
+    });
+    await captureCompanionMemories(supabase as never, {
+      userId: USER_ID,
+      source: "shadowing",
+      parts: { lineId: "L1" },
+      prevXp: 10,
+      nextXp: 20,
+    });
+    expect(inserted).toMatchObject({
+      memory_type: "first_shadow",
+      dedupe_key: "first_shadow",
+      is_anchor: true,
+      transcript_line_id: "L1",
+      line_text_jp: "逃げろ",
+      video_id: "V1",
+    });
+  });
+
+  it("records mining_saved with the card pointer on a mining_review outcome", async () => {
+    let inserted: Record<string, unknown> | undefined;
+    const supabase = createMockSupabase({
+      tables: {
+        sentence_mining_cards: () => ({
+          data: { transcript_line_id: "L2", sentence_jp: "待って", start_time: 12.5, video_id: "V2" },
+          error: null,
+        }),
+        companion_memories: (calls) => {
+          const upsert = calls.find((c) => c.op === "upsert");
+          if (upsert) {
+            inserted = upsert.values as Record<string, unknown>;
+            return { data: { id: "m1" }, error: null };
+          }
+          return { data: [], error: null };
+        },
+      },
+    });
+    await captureCompanionMemories(supabase as never, {
+      userId: USER_ID,
+      source: "mining_review",
+      parts: { cardId: "C1" },
+      prevXp: 10,
+      nextXp: 20,
+    });
+    expect(inserted).toMatchObject({
+      memory_type: "mining_saved",
+      dedupe_key: "mining_saved:C1",
+      transcript_line_id: "L2",
+      line_text_jp: "待って",
+      video_id: "V2",
+    });
+  });
+
+  it("records jlpt_passed as an anchor on a jlpt_submit outcome", async () => {
+    let inserted: Record<string, unknown> | undefined;
+    const supabase = createMockSupabase({
+      tables: {
+        jlpt_tests: () => ({ data: { level: "N4" }, error: null }),
+        companion_memories: (calls) => {
+          const upsert = calls.find((c) => c.op === "upsert");
+          if (upsert) {
+            inserted = upsert.values as Record<string, unknown>;
+            return { data: { id: "m1" }, error: null };
+          }
+          return { data: [], error: null };
+        },
+      },
+    });
+    await captureCompanionMemories(supabase as never, {
+      userId: USER_ID,
+      source: "jlpt_submit",
+      parts: { testId: "T9" },
+      prevXp: 10,
+      nextXp: 20,
+    });
+    expect(inserted).toMatchObject({
+      memory_type: "jlpt_passed",
+      dedupe_key: "jlpt_passed:N4",
+      is_anchor: true,
+    });
+  });
 });

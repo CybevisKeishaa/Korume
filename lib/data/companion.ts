@@ -120,12 +120,35 @@ export interface CaptureInput {
   now?: Date;
 }
 
+/** Resolves a transcript line back to its video and Japanese text. Used by
+ * the `first_shadow` producer (and available to future line-pointer
+ * producers) to attach the pointer a discovered memory needs. */
+async function resolveLinePointer(
+  supabase: SupabaseClient,
+  lineId: string,
+): Promise<{ videoId: string | null; lineTextJp: string | null; timestampSeconds: number | null }> {
+  const { data: line } = await supabase
+    .from("transcript_lines")
+    .select("text_jp, start_time, transcript_id")
+    .eq("id", lineId)
+    .maybeSingle();
+  const row = line as { text_jp: string | null; start_time: number | null; transcript_id: string | null } | null;
+  let videoId: string | null = null;
+  if (row?.transcript_id) {
+    const { data: t } = await supabase.from("transcripts").select("video_id").eq("id", row.transcript_id).maybeSingle();
+    videoId = (t as { video_id: string | null } | null)?.video_id ?? null;
+  }
+  return { videoId, lineTextJp: row?.text_jp ?? null, timestampSeconds: row?.start_time ?? null };
+}
+
 /** The capture gate (spec §4.3). Observes a completed learning outcome and
  * records any milestone memory it produces. MUST NEVER throw into the caller —
  * it runs on the learning hot path and a memory hiccup must never fail study
- * (§6.5). Best-effort, mirroring recordActivity. This task wires the
- * self-contained `companion_grew` producer (needs only prevXp/nextXp);
- * source-specific producers are added in Task 8. */
+ * (§6.5). Best-effort, mirroring recordActivity. Wires the self-contained
+ * `companion_grew` producer plus the source-specific producers that key off
+ * `input.parts` (first_shadow, mining_saved, jlpt_passed). `line_mastered`
+ * and `first_video_completed` are deferred to Plan 2 — see the Task 7 scope
+ * note in the implementation plan. */
 export async function captureCompanionMemories(supabase: SupabaseClient, input: CaptureInput): Promise<void> {
   try {
     const prevPhase = relationshipPhaseForXp(input.prevXp);
@@ -138,6 +161,54 @@ export async function captureCompanionMemories(supabase: SupabaseClient, input: 
           userId: input.userId,
           memoryType: "companion_grew",
           ref: { phase: phase as 1 | 2 | 3 | 4 },
+          isAnchor: true,
+        });
+      }
+    }
+
+    // Source-specific milestone producers. Each is idempotent on its dedupe
+    // key; the first time it fires becomes a memory, repeats are no-ops.
+    if (input.source === "shadowing" && input.parts.lineId) {
+      const p = await resolveLinePointer(supabase, input.parts.lineId);
+      await recordDiscoveredMemory(supabase, {
+        userId: input.userId,
+        memoryType: "first_shadow",
+        isAnchor: true,
+        transcriptLineId: input.parts.lineId,
+        videoId: p.videoId,
+        lineTextJp: p.lineTextJp,
+        timestampSeconds: p.timestampSeconds,
+      });
+    }
+
+    if (input.source === "mining_review" && input.parts.cardId) {
+      const { data: card } = await supabase
+        .from("sentence_mining_cards")
+        .select("transcript_line_id, sentence_jp, start_time, video_id")
+        .eq("id", input.parts.cardId)
+        .maybeSingle();
+      const c = card as
+        | { transcript_line_id: string | null; sentence_jp: string | null; start_time: number | null; video_id: string | null }
+        | null;
+      await recordDiscoveredMemory(supabase, {
+        userId: input.userId,
+        memoryType: "mining_saved",
+        ref: { cardId: input.parts.cardId },
+        transcriptLineId: c?.transcript_line_id ?? null,
+        videoId: c?.video_id ?? null,
+        lineTextJp: c?.sentence_jp ?? null,
+        timestampSeconds: c?.start_time ?? null,
+      });
+    }
+
+    if (input.source === "jlpt_submit" && input.parts.testId) {
+      const { data: test } = await supabase.from("jlpt_tests").select("level").eq("id", input.parts.testId).maybeSingle();
+      const level = (test as { level: string | null } | null)?.level;
+      if (level) {
+        await recordDiscoveredMemory(supabase, {
+          userId: input.userId,
+          memoryType: "jlpt_passed",
+          ref: { jlptLevel: level },
           isAnchor: true,
         });
       }
