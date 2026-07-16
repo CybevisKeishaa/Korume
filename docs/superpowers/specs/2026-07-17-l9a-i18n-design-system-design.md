@@ -15,6 +15,79 @@
 
 ---
 
+## 0. North Star
+
+> **Layer 9a does not exist to make the application multilingual.**
+>
+> **Layer 9a exists to make localization and the design system foundational capabilities of the
+> platform.**
+>
+> After L9a, product features should never solve localization or visual-language infrastructure
+> again. They consume capabilities provided by the foundation and remain independent of the
+> technologies that implement them.
+
+Every architectural decision in this layer must move the platform closer to that outcome. The
+test to apply to any decision, now or later:
+
+> *Does this make localization and the design system a capability of the platform?*
+
+If a decision does not, it belongs to another layer — or nowhere.
+
+### 0.1 Ownership
+
+A capability is only real when ownership is unambiguous. This table is the review aid: a change
+that puts a responsibility in the wrong column is a defect regardless of whether it works.
+
+| Owner | Owns |
+|---|---|
+| **Localization Foundation** | locale negotiation · locale routing · locale persistence · catalog loading · message formatting · locale-aware navigation · localization contracts · localization testing |
+| **Design System Foundation** | design tokens · semantic tokens · typography · spacing · elevation · motion · primitive components · accessibility contracts · visual consistency |
+| **Feature** | business logic · page composition · feature copy · feature workflows · feature-specific layout |
+| **Feature explicitly does NOT own** | locale routing · translation loading · design tokens · primitive behaviour · accessibility infrastructure |
+
+Note the asymmetry in the third row: a feature owns its **copy** (the words) but not the
+**catalog machinery** (how words are loaded, formatted, or negotiated). That line is exactly P4.
+
+### 0.2 Capability boundary
+
+```
+Feature                          Feature
+   │                                │
+   ▼                                ▼
+Localization API                 Design System API
+   │                                │
+   ▼                                ▼
+Localization Foundation          Design Foundation
+   │                                │
+   ▼                                ▼
+next-intl                        Radix / CSS / Tailwind
+```
+
+The point of the diagram is not the technologies at the bottom. It is the line above them:
+
+> **A feature sees only the foundation's API. Implementation lives entirely below the boundary.**
+
+The two bottom rows are the only rows allowed to change without touching a feature — and §2.9's
+lint rules are what physically prevent a feature from reaching past the boundary.
+
+### 0.3 Non-goals
+
+L9a intentionally does **not** attempt to:
+
+- redesign the product UI
+- improve product conversion
+- redesign existing feature workflows
+- optimize runtime performance
+- introduce new animations
+- localize learning content
+- redesign the landing page
+- build new product surfaces
+
+Those belong to later layers (L9b surfaces, L9c polish + perf, L8 billing). Anything in this list
+appearing in an L9a diff is scope creep, and should be sent back.
+
+---
+
 ## 1. Problem
 
 The app is functionally complete through Layer 7 plus the Companion Core, but its **foundation
@@ -140,7 +213,7 @@ extraction); parity with `vi` is guaranteed by test, not by convention.
 
 Follows necessarily from "no schema change in L9a" (D8): a `users.locale` column is a schema
 change. Source of truth = URL prefix; `NEXT_LOCALE` cookie carries the preference across visits.
-Syncing locale into the DB profile is a **backlog item** (§8).
+Syncing locale into the DB profile is a **backlog item** (§9).
 
 ### D6 — Test strategy: regression suite runs on `en`
 
@@ -265,6 +338,17 @@ Required changes to `lib/supabase/middleware.ts`:
 
 ### 4.4 The design system capability
 
+**Philosophy.** The design system exists to create **consistency, not visual uniformity**. Its
+purpose is not to make every screen look identical. Its purpose is to ensure every feature
+expresses the same product language while remaining free to solve its own interaction problems.
+
+> **Features compose primitives. They do not invent new visual languages.**
+
+This is the line L9b should hold. A feature inventing a new spacing rhythm, a new accent colour,
+or a bespoke dialog is a defect. A feature composing existing primitives into a layout no one
+anticipated is the system working as intended — and if a genuinely new *primitive* is needed,
+it is added **to the foundation**, not to the feature.
+
 **Tokens.** Extend `globals.css` from four groups (colour, radius, font, one keyframe) to a full
 system: **spacing**, **typography** (size / line-height / weight / tracking), **elevation**,
 **motion** (duration + easing as tokens, instead of `0.6s cubic-bezier(...)` scattered through
@@ -341,6 +425,23 @@ Tokens → semantic layer → primitives → style guide. Runs in parallel after
 
 ---
 
+### 5.1 Architectural acceptance criteria
+
+The per-phase definitions of done above are about *work*. These are about the **layer**, and they
+are deliberately outcome-shaped rather than implementation-shaped. L9a is complete only when:
+
+1. features consume localization **without depending on the underlying library**;
+2. features consume UI primitives **without depending on their implementation**;
+3. **adding a locale is configuration**, not a feature change;
+4. **adding a feature requires no modification** to the localization or design-system foundations;
+5. architectural contracts are **enforced automatically** — compiler, lint, tests, or CI — not by
+   documentation or reviewer memory.
+
+Criterion 5 is the one that keeps 1–4 true after this layer ships. Without it, the rest degrade
+into aspiration (§2.9).
+
+---
+
 ## 6. Testing
 
 Three new foundation-level test kinds, all pure and deterministic (`CLAUDE.md` §7):
@@ -374,7 +475,40 @@ Phase 2.
 
 ---
 
-## 8. Out of scope (recorded, not forgotten)
+## 8. Future compatibility
+
+A good capability solves today's problem without locking tomorrow's. The architecture
+intentionally keeps the door open for:
+
+- additional locales
+- right-to-left languages
+- locale-specific typography
+- locale-specific assets
+- locale-aware formatting (date, number, currency)
+- locale-aware motion and animation
+- future content-localization layers
+
+**L9a does not implement these capabilities. It merely avoids preventing them.**
+
+**One of them, however, is not free — and the claim above would be false without a decision.**
+"Avoids preventing RTL" is testable, and today the honest answer is *no*: catalogs and
+`localePrefix` are RTL-agnostic and adding `dir` later is trivial, but a design system built on
+**physical properties** (`pl-4`, `margin-left`, `text-left`) locks the door on every component it
+touches — retrofitting RTL would then mean rewriting all of L9a and L9b's UI.
+
+Therefore L9a adopts one binding rule, at zero cost today:
+
+> **The design system uses CSS logical properties** (`ps-*`/`pe-*`, `ms-*`/`me-*`, `text-start`/
+> `text-end`, `border-s`/`border-e`) **rather than physical ones**, except where a property is
+> genuinely physical (e.g. a drop shadow's direction).
+
+This is not RTL support — no `dir` handling, no mirrored icons, no bidi testing ship in L9a. It is
+the difference between *not implementing* RTL and *precluding* it. Everything else in the list
+above is genuinely free: none of it requires a decision now.
+
+---
+
+## 9. Out of scope (recorded, not forgotten)
 
 Per the standing mandate (2026-07-14) that no brainstormed feature is silently dropped, these
 go to `mem:feature_backlog_deferred`:
@@ -385,7 +519,7 @@ go to `mem:feature_backlog_deferred`:
 - **Feature UIs, landing, tutorial, Companion surfaces** — L9b, consuming this foundation.
 - **Product-level polish, animation, perf audit** — L9c.
 
-### 8.1 One defect fixed in passing
+### 9.1 One defect fixed in passing
 
 The landing page reads **"Start free trial"**. The business model has **no trial**
 (`docs/product/business-model.md`; conversion is Contextual Discovery). Phase 2 corrects the copy
@@ -393,7 +527,7 @@ rather than faithfully translating a falsehood into Vietnamese.
 
 ---
 
-## 9. The outcome that matters
+## 10. The outcome that matters
 
 Not "the app supports two languages". The outcome is:
 
@@ -403,3 +537,14 @@ Not "the app supports two languages". The outcome is:
 
 Foundation provides capability; the layers above consume it without needing to know how it is
 implemented underneath.
+
+And the sharpest form of the same test:
+
+> **L9a is successful not when the application speaks multiple languages or exposes more UI
+> components.**
+>
+> **L9a is successful when future layers stop thinking about localization and design-system
+> infrastructure altogether. Those concerns become part of the platform itself.**
+
+If L9b, L10, or any later layer still has to reason about i18n plumbing or invent visual
+language, L9a did not finish its job — no matter how many locales the app speaks.
