@@ -48,23 +48,25 @@ This one sentence subsumes most of what follows: the learner is the protagonist 
 *keeps* memories rather than creating them (§4, §6.2), it is not the AI (P2), it grows alongside
 (P8/P12), and it is present to make the journey meaningful, not to draw attention (P0/P5).
 
-### 1.1 P0 — Raison d'être: the Companion never exists to increase engagement
+### 1.1 North Star (P0) — the axiom above all principles
 
-Above every principle in §2 stands the reason the Companion System exists at all. **P0 is not a design
-principle — it is the reason the rest have a subject.** It is stated here, before P1–P7, deliberately.
+P0 is **not a design principle — it is an axiom**. Everything in §2 is merely a *consequence* of it.
 
-The Companion exists **only** to make the learning journey more meaningful. It never exists to increase
-engagement, retention, session count, or any product metric.
+> **North Star.** The Companion exists **only** to make the learner feel their journey has meaning.
+> Every principle below is merely a consequence of this statement.
 
-The test is **subtraction**: if tomorrow you deleted all gamification, streaks, XP, Premium, and
-leaderboards, the Companion must still have a reason to exist. Concretely:
+This is the shortcut for every future argument. When someone asks *"should we add this animation / this
+notification / this feature?"*, no one needs to re-read the spec. They ask one question:
 
-- If the Companion's reason to exist depends on **retention** — the *Character* has failed.
-- If it depends on **AI** — the *Architecture* has failed.
-- If it depends on **UI** — the *Design* has failed.
+> **Does it make the journey more meaningful?** If not — cut it.
 
-The Companion must be strong enough that even if the entire product changes around it, it remains the
-learner's companion.
+Two ways to stress-test it:
+
+- **Subtraction.** If tomorrow you deleted all gamification, streaks, XP, Premium, and leaderboards, the
+  Companion must still have a reason to exist.
+- **Dependency.** If the Companion's reason to exist depends on **retention**, the *Character* has
+  failed; on **AI**, the *Architecture* has failed; on **UI**, the *Design* has failed. It must be
+  strong enough that even if the entire product changes around it, it remains the learner's companion.
 
 ### 1.2 P8 — The Companion has its own journey
 
@@ -75,21 +77,21 @@ The learner is not the only one who grows; the Companion grows too — but **not
 - The Companion grows through **the stories it is allowed to keep**.
 
 It does not become stronger. It does not become smarter. It has simply **witnessed more journeys**. So
-the final stage is not the strongest creature — it is the one that has **listened the most**:
+the final phase is not the strongest creature — it is the one that has **listened the most**:
 
-> The last stage is not Evolution. The last stage is **Wisdom**.
+> The last phase is not Evolution. The last phase is **Wisdom**.
 
 The two paths run in parallel and **never compete**: the learner grows by learning, the Companion grows
-by accompanying. This directly steers **Character Identity (Spec 2)**: at the final stage a more grown
-form, calmer gestures, fewer words, more comfortable silence, a deeper gaze — no longer the restless
-bouncing of the first stage.
+by accompanying. Mechanically, the final phase selects a **different behavior profile** — *what that
+profile looks like* (calmer, slower, quieter, or however Wisdom is rendered) is **Character Identity's
+(Spec 2)** to decide, not the System's. The System knows only that the profile changes.
 
 ### 1.3 P12 — It is not the Companion that grows; the relationship grows
 
-The four stages (Meeting → Companionship → Understanding → Storykeeper) are **not a pet levelling up**.
+The four phases (Meeting → Companionship → Understanding → Storykeeper) are **not a pet levelling up**.
 If only the Companion changed, this would be pet-raising. What actually matures is the **relationship**
 between the learner and the Companion. This is already visible in three places at once, with **no new
-data axis**: the learner's accumulating **Journal** (§4), the Companion's **stage** (§4.1), and the
+data axis**: the learner's accumulating **Journal** (§4), the Companion's **relationship_phase** (§4.1), and the
 **register** between them that shifts over time (§5.6 — how the two talk changes as the learner grows).
 Both parties have changed; neither grows by competing with the other (P8).
 
@@ -97,17 +99,18 @@ Both parties have changed; neither grows by competing with the other (P8).
 
 ## 2. Design principles
 
-The principles split into two groups: the **why** (§1 — the governing philosophy, **P0**, **P8**,
-**P12**) and the **how** (this section — **P1–P7, P9, P10, P11**). Numbering follows discovery order,
-not document order, so the index below is the source of truth for what each principle is and where it
-lives. Same status as the `business-model.md` principles and G1–G3: a **decision filter, not a
-guideline**. A feature that fails one does not ship.
+The principles split into two groups: the **why** (§1 — the **North Star** axiom (P0), plus **P8** and
+**P12**) and the **how** (this section — **P1–P7, P9, P10, P11**). The North Star is not a principle but
+the axiom the principles are consequences of. Numbering follows discovery order, not document order, so
+the index below is the source of truth for what each principle is and where it lives. Same status as the
+`business-model.md` principles and G1–G3: a **decision filter, not a guideline**. A feature that fails
+one does not ship.
 
 **Principle index**
 
 | # | Principle | Group / where |
 |---|---|---|
-| P0 | Never exists to increase engagement (raison d'être) | why — §1.1 |
+| P0 | **North Star** (axiom) — exists only to make the journey meaningful | why — §1.1 |
 | P1 | A part of the world, not a feature | how — §2 |
 | P2 | Represents the journey, not the AI | how — §2 |
 | P3 | Reads data, does not own business logic | how — §2 |
@@ -227,8 +230,8 @@ personal learning experience, principle 4), never an engagement trick (G1/G3).
 | Growth & Memory tracks | Name, written lore |
 | Discovered vs Gifted memories | Visual / shape / color / animation language |
 | Adaptive voice via `user_vocab_progress` | Expression set, gestures |
-| Appearance & silence rules | The *appearance* of the 4 stages |
-| 4 stages (mechanism + hidden thresholds) | — |
+| Appearance & silence rules | The *appearance* of the 4 phases |
+| 4 phases (mechanism + hidden thresholds) | — |
 | Free/Premium two-tier | — |
 
 ### 3.3 Architectural responsibility — and hard limits
@@ -256,11 +259,14 @@ personal learning experience, principle 4), never an engagement trick (G1/G3).
 
 ### 4.1 Growth track — no new table
 
-Stage is a pure function of existing XP: `stage = f(user_stats.xp)`, **4 stages**, thresholds in
-**code config, never surfaced to the user**. The UI renders the creature for the current `stage`.
-No new column, no user-visible progress bar.
+The relationship phase is a pure function of existing XP: `relationship_phase = f(user_stats.xp)`,
+**4 phases**, thresholds in **code config, never surfaced to the user**. No new column, no user-visible
+progress bar.
 
-The 4 stages are chapters of a *relationship*, not levels — it is the relationship that matures, not
+> **Naming rule.** In code this is `relationship_phase`, **never `stage`** — "stage" imports a game /
+> levelling mindset (`stage 2 unlocked`) that P12 explicitly rejects. This doc says *phase*.
+
+The 4 phases are chapters of a *relationship*, not levels — it is the relationship that matures, not
 just the creature (**P12**). Working names; final names are Spec 2:
 
 1. **Meeting** (Gặp gỡ)
@@ -268,16 +274,16 @@ just the creature (**P12**). Working names; final names are Spec 2:
 3. **Understanding** (Thấu hiểu)
 4. **Storykeeper** (Người lưu giữ câu chuyện)
 
-This is **P8's axis, not power**. Each stage has *listened to more* of the learner's journey than the
-last — Stage 4 is the creature that has heard the most, not the strongest one. The last stage is
-**Wisdom, not Evolution**; its concrete calmer/quieter/fewer-words expression is Character Identity's
-(Spec 2). XP is only the mechanism that measures how far the two have walked together — never a power
-score the user optimizes.
+This is **P8's axis, not power**. Each phase has *listened to more* of the learner's journey than the
+last — the final phase is the creature that has heard the most, not the strongest one; **Wisdom, not
+Evolution**. Each phase selects a **behavior profile** (its concrete look is Spec 2's, §1.2). XP is only
+the mechanism that measures how far the two have walked together — never a power score the user
+optimizes.
 
-Transitions are **organic**: no "Stage 2 unlocked" screen, no fireworks. A stage change is recorded
-only as a quiet Journal page (`companion_grew`, §4.4). Growth reflects *all* valid learning (SRS,
-kanji, JLPT included — no serious study feels "uncounted"), because XP already encodes G1 ("XP for
-completed learning outcomes, not app activity").
+Transitions are **organic**: no "phase unlocked" screen, no fireworks. A phase change is recorded only
+as a quiet Journal page (`companion_grew`, §4.4). Growth reflects *all* valid learning (SRS, kanji, JLPT
+included — no serious study feels "uncounted"), because XP already encodes G1 ("XP for completed
+learning outcomes, not app activity").
 
 ### 4.2 Memory track — one table: `companion_memories`
 
@@ -294,6 +300,10 @@ The only new data the system needs. One table holds **both kinds**, distinguishe
 | `note` | learner's own words (`gifted` only) | |
 | `is_anchor` | the Companion's **own** memory (P9) | a bounded few; drives reflection context (§6.4) |
 | `occurred_at`, `created_at` | when it happened / when recorded | |
+
+**Timeline order.** The Journal always sorts by **`occurred_at`**, never `created_at`. A memory belongs
+where the moment *happened* in the learner's journey, not when the row was written — so a later backfill
+or data migration can never reorder the story.
 
 **§2 no-media, made structural.** Rendering a "film keepsake" = seek the YouTube IFrame to
 `timestamp_seconds` + show `line_text_jp` + an optional YouTube thumbnail *reference*. No media byte
@@ -319,7 +329,7 @@ Candidate discovered `memory_type`s:
   ≥N attempts on the same `transcript_line_id`).
 - `mining_saved` — the learner *deliberately* creates a sentence-mining card.
 - `first_video_completed`, `jlpt_passed`.
-- `companion_grew` — XP crossed a stage threshold (a quiet Journal page, never a popup).
+- `companion_grew` — XP crossed a `relationship_phase` threshold (a quiet Journal page, never a popup).
 
 Frequent events (each correct review, each finished shadow, each XP tick) **never** auto-create a
 memory. *"A memory is what is memorable, not what just happened."*
@@ -358,8 +368,8 @@ is always the **same single creature**; only its state changes with context.
 
 The Companion is **not** a floating widget. It lives *in* the world:
 
-- **Ambient Layer** owns the creature's *existence and state* (which stage, current expression, is it
-  speaking).
+- **Ambient Layer** owns the creature's *existence and state* (which `relationship_phase`, state-machine
+  state, is it speaking).
 - Each surface declares an **anchor**: where the creature stands and a nominal pose — sitting beside
   the progress card on the Dashboard, standing center in an empty state, reading beside the learner in
   the Journal, running across and off the Landing, walking ahead to guide in the Tutorial.
@@ -408,14 +418,55 @@ proof that a living creature is here, not a widget waiting for input.
 
 Growth is expressed not only through appearance but through changes in **posture**, **behavior
 profile**, and the quiet way the Companion occupies the world. The Companion System defines only the
-*mechanism* that such behavior exists — that a stage selects a behavior profile, and that the Ambient
-Layer may render idle states on non-learning surfaces. The **concrete** behaviors, animations,
-expressions, and motion language belong to **Character Identity (Spec 2)**: Spec 1 says the Companion
-has a life; Spec 2 says what that life looks like.
+*mechanism* that such behavior exists — that a `relationship_phase` selects a behavior profile, and that
+the Ambient Layer may render idle states on non-learning surfaces. The **concrete** behaviors,
+animations, expressions, and motion language belong to **Character Identity (Spec 2)**: Spec 1 says the
+Companion has a life; Spec 2 says what that life looks like.
+
+**Frequency.** Idle behaviors should feel **incidental, not periodic**. No deterministic timer ("every
+N seconds") may drive them — a fixed cadence reads as mechanical and breaks the illusion of a living
+creature. Idle behavior is occasional and non-rhythmic; the concrete scheduling feel is Spec 2's, but
+the *no-fixed-timer* rule is a System constraint.
 
 Idle Life is bound by §5.4 — it exists only where the Ambient Layer is already active, never inside a
 learning loop — and by `CLAUDE.md` §2.4: idle motion must stay light and must never become
 focus-stealing autoplay.
+
+### 5.8 Companion state machine
+
+The Companion has a small, explicit **state machine** — no animation, just state. Motion (Spec 2) later
+maps each state to a look; the System only owns the states and the transitions between them.
+
+```
+Idle → Observing → Listening → Speaking → Silent → (Idle)
+```
+
+- **Idle** — simply existing (the default; §5.7).
+- **Observing** — aware of a context that just arrived on the bus (§5.3), not yet addressing.
+- **Listening** — the learner is acting / speaking and the Companion attends without interrupting.
+- **Speaking** — addressing the learner (only when *address is earned*).
+- **Silent** — deliberately quiet after/instead of speaking (P5; "knowing when to stay silent").
+
+Transitions are driven by the context bus and the address rules, never by a fixed timer. All five states
+exist **only** on non-learning surfaces — inside a learning loop the Ambient Layer is inactive (§5.4), so
+there is no state at all. `getCurrentState()` (§5.9) returns the current state alongside the
+`relationship_phase`.
+
+### 5.9 Companion API
+
+Surfaces never touch Companion data directly. The System exposes exactly **four** capabilities — a
+narrow, stable surface so future screens (§10) consume the Companion instead of querying its internals:
+
+| Capability | Purpose |
+|---|---|
+| `getCurrentState()` | read-only: current `relationship_phase` + state-machine state (§5.8) |
+| `emitContext(context)` | a surface reports an experience context onto the bus (§5.3) |
+| `openJournal()` | navigate to the Journal |
+| `requestReflection()` | ask for an AI reflection — subject to Premium + quota + graceful degradation (§6.3) |
+
+> **No surface accesses Companion data (memories, XP, phase thresholds) directly** — only through these
+> four. This keeps the frontend from growing ad-hoc queries into Companion internals, and lets the
+> System change its storage or logic without touching a single surface.
 
 ---
 
@@ -427,7 +478,7 @@ Per `business-model.md` §2.1 (*computed-from-your-data = free; AI-authored-over
 
 | Capability | Free (no AI) | Premium — AI Sensei (a capability the Companion *borrows*) |
 |---|---|---|
-| Presence, 4 stages, adaptive voice | ✅ | |
+| Presence, 4 phases, adaptive voice | ✅ | |
 | Journal: discovered + gifted memories, template titles | ✅ | |
 | Re-reading, seeking back to a moment | ✅ | |
 | AI Reflection (commentary over the Journal) | | ✅ |
@@ -464,12 +515,19 @@ AI Reflection is a **rate-limited, per-user-quota'd** endpoint (`CLAUDE.md` §6,
 
 ### 6.4 Bounded reflection context (P9)
 
-A reflection **never reads the entire Journal**. Its context is a *bounded* set — the Companion's
-anchor memories (`is_anchor`, §4.2) plus a small recent window — not an ever-growing dump. This is P9
-made concrete: the Companion has a memory, but a finite one, so it feels like a creature that
-*remembers what matters* rather than a query over a database. It also protects the AI cost defense
-(`business-model.md` §4.2): reflection token cost stays bounded as the Journal grows, instead of
-climbing with every memory the learner accumulates.
+A reflection **never reads the entire Journal**. Its context is a *bounded* set of exactly three layers:
+
+> **Anchor + Recent + Current Session.**
+
+- **Anchor** — the Companion's own milestone memories (`is_anchor`, §4.2).
+- **Recent** — a small recent window of memories.
+- **Current Session** — what the learner is doing *right now* (e.g. just studied 逃げる), so the
+  reflection speaks to the present moment, not only the past.
+
+Three layers, nothing more. This is P9 made concrete: the Companion has a memory, but a finite one, so
+it feels like a creature that *remembers what matters* rather than a query over a database. It also
+protects the AI cost defense (`business-model.md` §4.2): reflection token cost stays bounded as the
+Journal grows, instead of climbing with every memory the learner accumulates.
 
 ---
 
@@ -496,7 +554,6 @@ blocker into an ordinary schedule item.
 
 ## 8. Testing (TDD, deterministic — `CLAUDE.md` §7)
 
-- **Stage function** `f(xp)` → pure unit tests, exact threshold boundaries.
 - **Each capture-gate rule** → unit tests: a qualifying event *does* create a memory, a frequent event
   *does not*, and capture is **idempotent**. Most fragile part — test first.
 - **AI degradation** → tests: `AI_PROVIDER=none` / quota exhausted → Journal intact, no error, no
@@ -507,14 +564,22 @@ blocker into an ordinary schedule item.
   the Dashboard, the Journal, and the Tutorial are never three different Companions.
 - **Idle Life Boundary** (P7 + §5.7) → idle behaviors occur **only** on non-learning surfaces and
   **never** inside learning loops; idle behaviors never trigger focus-stealing animation, dialogue,
-  notifications, or interactions; a stage transition changes the *selected behavior profile*, while the
+  notifications, or interactions; a `relationship_phase` transition changes the *selected behavior profile*, while the
   concrete animation assets remain Character Identity's (Spec 2) responsibility.
 - **Anchor memory + bounded reflection** (P9 + §4.2/§6.4) → anchors are a bounded set of `discovered`
-  milestones; a reflection's context includes anchors + a recent window and **never** the whole
+  milestones; a reflection's context is exactly Anchor + Recent + Current Session and **never** the whole
   Journal; anchors exist and render with AI off.
+- **Journal timeline order** (§4.2) → the Journal sorts by `occurred_at`, never `created_at`; a row
+  inserted late (backfill) lands at its `occurred_at` position, not the end.
+- **Phase function + naming** (§4.1) → `relationship_phase = f(xp)` is pure with exact threshold
+  boundaries; the identifier is `relationship_phase`, never `stage`.
+- **State machine** (§5.8) → states exist only on non-learning surfaces; no transition is driven by a
+  fixed timer; `getCurrentState()` returns state + `relationship_phase`.
+- **Companion API surface** (§5.9) → surfaces reach Companion only via the four capabilities; no surface
+  reads memories/XP/thresholds directly.
 - **Imperfection boundary** (P11) → intentional imperfection is confined to the expressive/ambient
   layer; it **never** alters memory capture, growth/XP, scoring, or any stored data. Property-style
-  check: no code path in the capture gate, stage function, or data writes has a deliberate-inaccuracy
+  check: no code path in the capture gate, phase function, or data writes has a deliberate-inaccuracy
   branch — the Journal records only what truly happened regardless of expressive state.
 
 ---
@@ -524,7 +589,7 @@ blocker into an ordinary schedule item.
 Spec 1 decides **mechanism**, never **content**. It does **not** contain:
 
 - real dialogue, tutorial scripts, onboarding scripts, celebration copy, or AI Reflection prompts;
-- name, written lore, the 4-stage appearance, visual/shape/color/animation language, expression set,
+- name, written lore, the 4-phase appearance, visual/shape/color/animation language, expression set,
   and the **concrete preference list** (P10 — what it likes / shies from) → **Spec 2 (Character
   Identity)**;
 - real asset production (illustrator / SVG / AI-prototype) → **after Spec 2**, once resourcing is known.
@@ -540,13 +605,14 @@ keeps Spec 1 from swelling into a UX-writing document.
 The Companion System must let future surfaces join **without architectural change**. A new surface —
 Live Event, Community, Reading Mode, Mobile app, Apple Vision Pro, Watch companion — participates by:
 
-1. declaring an **anchor**,
-2. emitting **context** on the bus,
-3. consuming the **Companion API**.
+1. declaring an **anchor** (§5.2),
+2. emitting **context** on the bus (§5.3 / `emitContext`),
+3. consuming the **Companion API** (§5.9) — never touching Companion data directly.
 
 No rewrite of the system.
 
-> Companion is not designed for Layer 9. Companion is designed for the whole future of Nihongo Cinema.
+> **The Companion is not a Layer 9 feature. Layer 9 is simply the first place where the Companion
+> becomes visible.** It always belonged to the world; L9 is only where the learner first sees it.
 
 So that Character Identity, UI, Motion, Asset, AI Reflection, or any later feature all bind to one
 foundation instead of redefining the Companion their own way.
