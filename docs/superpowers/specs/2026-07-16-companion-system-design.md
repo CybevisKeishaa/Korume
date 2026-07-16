@@ -39,6 +39,15 @@ no FOMO, no engagement trick. Every appearance of the Companion must leave the l
 
 > *"Có một ai đó đã cùng mình đi qua chặng đường này."* — someone walked this road with me.
 
+A second line summarizes the whole system in one image:
+
+> **"Companion không phải nhân vật chính của câu chuyện. Nó là người sẽ còn nhớ câu chuyện ấy cùng bạn."**
+> *(The Companion is not the story. It is the one who remembers the story with you.)*
+
+This one sentence subsumes most of what follows: the learner is the protagonist (P4), the Companion
+*keeps* memories rather than creating them (§4, §6.2), it is not the AI (P2), it grows alongside
+(P8/P12), and it is present to make the journey meaningful, not to draw attention (P0/P5).
+
 ### 1.1 P0 — Raison d'être: the Companion never exists to increase engagement
 
 Above every principle in §2 stands the reason the Companion System exists at all. **P0 is not a design
@@ -75,14 +84,45 @@ by accompanying. This directly steers **Character Identity (Spec 2)**: at the fi
 form, calmer gestures, fewer words, more comfortable silence, a deeper gaze — no longer the restless
 bouncing of the first stage.
 
+### 1.3 P12 — It is not the Companion that grows; the relationship grows
+
+The four stages (Meeting → Companionship → Understanding → Storykeeper) are **not a pet levelling up**.
+If only the Companion changed, this would be pet-raising. What actually matures is the **relationship**
+between the learner and the Companion. This is already visible in three places at once, with **no new
+data axis**: the learner's accumulating **Journal** (§4), the Companion's **stage** (§4.1), and the
+**register** between them that shifts over time (§5.6 — how the two talk changes as the learner grows).
+Both parties have changed; neither grows by competing with the other (P8).
+
 ---
 
 ## 2. Design principles
 
-Seven behavioral pillars (**P1–P7**) — the *how*. They serve the two *why* statements in §1 (**P0**
-raison d'être, **P8** the Companion's own journey), which stand above them. Same status as the
-`business-model.md` principles and G1–G3: a **decision filter, not a guideline**. A feature that fails
-one does not ship.
+The principles split into two groups: the **why** (§1 — the governing philosophy, **P0**, **P8**,
+**P12**) and the **how** (this section — **P1–P7, P9, P10, P11**). Numbering follows discovery order,
+not document order, so the index below is the source of truth for what each principle is and where it
+lives. Same status as the `business-model.md` principles and G1–G3: a **decision filter, not a
+guideline**. A feature that fails one does not ship.
+
+**Principle index**
+
+| # | Principle | Group / where |
+|---|---|---|
+| P0 | Never exists to increase engagement (raison d'être) | why — §1.1 |
+| P1 | A part of the world, not a feature | how — §2 |
+| P2 | Represents the journey, not the AI | how — §2 |
+| P3 | Reads data, does not own business logic | how — §2 |
+| P4 | Never takes the learner's achievement | how — §2 |
+| P5 | Protects the learner's focus | how — §2 |
+| P6 | Never feels like talking to an AI | how — §2 |
+| P7 | A living creature, not merely a reaction | how — §2 |
+| P8 | Has its own journey (Wisdom, not Evolution) | why — §1.2 |
+| P9 | Has its own bounded memory | how — §2 |
+| P10 | Has its own preferences | how — §2 |
+| P11 | Is not perfect — but only in the expressive layer | how — §2 |
+| P12 | It is the relationship that grows | why — §1.3 |
+
+Supporting principles: *Existence is free, address must be earned* · *A memory is what is memorable,
+not what just happened* · *Each side records only what it truly knows*.
 Violating a principle is a **defect of the Character Bible**, not merely a UX nit.
 
 - **P1 — Companion is a part of the world, not a feature of the product.**
@@ -123,6 +163,36 @@ Violating a principle is a **defect of the Character Bible**, not merely a UX ni
   behavior, posture, and the quiet way it occupies the world. The learner is the protagonist; the
   Companion is another living being who chooses to walk beside them. This principle is made enforceable
   by the supporting principle below (existence vs address) — it is architecture, not just sentiment.
+
+- **P9 — Companion has its own memory, and it is bounded.**
+  The Journal keeps the *learner's* memories; P9 gives the Companion a small set of its **own** anchor
+  memories — the same objective milestones (first meeting, first successful shadow, first completed
+  anime, a JLPT milestone) held in the Companion's point of view: not "the user reached N4" but *"I
+  still remember the day you practiced that line until it finally came out."* This is POV narration of
+  an event that truly happened — it stays inside "each side records only what it truly knows" and P4
+  ("you did this, I was there"), never invented feeling. Its memory is **not infinite**: a reflection
+  reads a *bounded* set of anchor + recent memories, never the entire Journal — which keeps it feeling
+  like a living creature rather than a database query, and respects the AI cost defense
+  (`business-model.md` §4.2). Works fully with AI off: anchors are flagged existing rows, not a
+  generated artifact (P2). Mechanism detail in §4.2 / §6.4.
+
+- **P10 — Companion has its own preferences.**
+  A living creature has likings that serve no goal. The System defines only the **mechanism** — a
+  preference profile that can bias idle-behavior and light dialogue selection. The **concrete**
+  preferences (what it likes, what it shies from) belong to Character Identity (Spec 2) and are not
+  written here (§9). Preferences manifest only as Idle Life flavor (§5.7): they never create a task,
+  never optimize a metric, and never enter a learning loop (P5). They exist so the learner believes the
+  Companion truly lives in this world — nothing more.
+
+- **P11 — Companion is not perfect — but only in the expressive layer.**
+  A flawless creature quickly becomes a system; small harmless imperfections make it trustworthy. It
+  may misjudge a light preference, wait in the Journal while the learner is off studying Kanji, or
+  expect a line to be saved that the learner skips. These are **character, not bugs**. **Hard
+  boundary:** imperfection is permitted *only* in the expressive / ambient layer (idle behavior, light
+  non-factual dialogue). It must **never** touch anything factual — memory capture, growth / XP, data
+  integrity, scoring, or learning correctness. The Journal still records only what truly happened
+  (§4.3); the capture gate is never "charmingly wrong." Imperfection is a flavor of presence, never an
+  excuse for a defect.
 
 **Supporting principles:**
 
@@ -190,7 +260,8 @@ Stage is a pure function of existing XP: `stage = f(user_stats.xp)`, **4 stages*
 **code config, never surfaced to the user**. The UI renders the creature for the current `stage`.
 No new column, no user-visible progress bar.
 
-The 4 stages are chapters of a *relationship*, not levels (working names; final names are Spec 2):
+The 4 stages are chapters of a *relationship*, not levels — it is the relationship that matures, not
+just the creature (**P12**). Working names; final names are Spec 2:
 
 1. **Meeting** (Gặp gỡ)
 2. **Companionship** (Đồng hành)
@@ -221,11 +292,17 @@ The only new data the system needs. One table holds **both kinds**, distinguishe
 | `video_id`, `transcript_line_id`, `timestamp_seconds` | **pointer** to the moment | pointer only — **no media stored** |
 | `line_text_jp` | snapshot of the dialogue line | study text, allowed — NOT a scene image |
 | `note` | learner's own words (`gifted` only) | |
+| `is_anchor` | the Companion's **own** memory (P9) | a bounded few; drives reflection context (§6.4) |
 | `occurred_at`, `created_at` | when it happened / when recorded | |
 
 **§2 no-media, made structural.** Rendering a "film keepsake" = seek the YouTube IFrame to
 `timestamp_seconds` + show `line_text_jp` + an optional YouTube thumbnail *reference*. No media byte
 ever leaves YouTube; the schema has nowhere to store one.
+
+**Anchor memories (P9).** A small subset of `discovered` memories — the relationship's milestones
+(first meeting, first successful shadow, first completed anime, JLPT milestones) — carry `is_anchor`.
+These are the Companion's *own* memory: a bounded set it always holds. They are ordinary flagged rows
+(no new table, no AI), so the Companion's memory exists intact with AI off (P2).
 
 New memory kinds later (Seasonal, Event…) add a `kind`/`memory_type`, never a new table.
 
@@ -385,6 +462,15 @@ defense), or unconfigured. In **all three** the Companion must not break:
 AI Reflection is a **rate-limited, per-user-quota'd** endpoint (`CLAUDE.md` §6, spec §8,
 `business-model.md` §4.2), speaking the AI port (`lib/ai`) — never an SDK directly.
 
+### 6.4 Bounded reflection context (P9)
+
+A reflection **never reads the entire Journal**. Its context is a *bounded* set — the Companion's
+anchor memories (`is_anchor`, §4.2) plus a small recent window — not an ever-growing dump. This is P9
+made concrete: the Companion has a memory, but a finite one, so it feels like a creature that
+*remembers what matters* rather than a query over a database. It also protects the AI cost defense
+(`business-model.md` §4.2): reflection token cost stays bounded as the Journal grows, instead of
+climbing with every memory the learner accumulates.
+
 ---
 
 ## 7. Placeholder-first contract
@@ -423,6 +509,13 @@ blocker into an ordinary schedule item.
   **never** inside learning loops; idle behaviors never trigger focus-stealing animation, dialogue,
   notifications, or interactions; a stage transition changes the *selected behavior profile*, while the
   concrete animation assets remain Character Identity's (Spec 2) responsibility.
+- **Anchor memory + bounded reflection** (P9 + §4.2/§6.4) → anchors are a bounded set of `discovered`
+  milestones; a reflection's context includes anchors + a recent window and **never** the whole
+  Journal; anchors exist and render with AI off.
+- **Imperfection boundary** (P11) → intentional imperfection is confined to the expressive/ambient
+  layer; it **never** alters memory capture, growth/XP, scoring, or any stored data. Property-style
+  check: no code path in the capture gate, stage function, or data writes has a deliberate-inaccuracy
+  branch — the Journal records only what truly happened regardless of expressive state.
 
 ---
 
@@ -431,8 +524,9 @@ blocker into an ordinary schedule item.
 Spec 1 decides **mechanism**, never **content**. It does **not** contain:
 
 - real dialogue, tutorial scripts, onboarding scripts, celebration copy, or AI Reflection prompts;
-- name, written lore, the 4-stage appearance, visual/shape/color/animation language, expression set
-  → **Spec 2 (Character Identity)**;
+- name, written lore, the 4-stage appearance, visual/shape/color/animation language, expression set,
+  and the **concrete preference list** (P10 — what it likes / shies from) → **Spec 2 (Character
+  Identity)**;
 - real asset production (illustrator / SVG / AI-prototype) → **after Spec 2**, once resourcing is known.
 
 Spec 1 defines only: **when** the Companion appears, **how** it is allowed to speak, **where** it reads
