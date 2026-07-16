@@ -124,41 +124,9 @@ export const NAMESPACES = ["common", "nav"] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 ```
 
-- [ ] **Step 4: Create the seed catalogs**
+- [ ] **Step 4: Write the catalog-parity test — BEFORE the catalogs exist**
 
-`messages/en/common.json`:
-
-```json
-{
-  "appName": "Nihongo Cinema"
-}
-```
-
-`messages/en/nav.json`:
-
-```json
-{
-  "dashboard": "Dashboard"
-}
-```
-
-`messages/vi/common.json`:
-
-```json
-{
-  "appName": "Nihongo Cinema"
-}
-```
-
-`messages/vi/nav.json`:
-
-```json
-{
-  "dashboard": "Bảng điều khiển"
-}
-```
-
-- [ ] **Step 5: Write the failing catalog-parity test**
+> **Order matters, and this is not pedantry.** Write this test now, against catalogs that do not exist yet, so Step 5 can watch it fail for a real reason. If you create the catalogs first, "verify it fails" becomes impossible and the TDD step degrades into theatre — you would be asserting that a passing test passes.
 
 This is the mechanism that makes spec P5 and P7 true rather than hoped-for. It is generated from `routing.locales`, so a new locale is covered whether or not anyone remembers.
 
@@ -244,19 +212,61 @@ describe("catalog", () => {
 });
 ```
 
-- [ ] **Step 6: Run the test to verify it fails**
+- [ ] **Step 5: Run the test to verify it fails**
 
 Run: `npx vitest run lib/i18n/catalog.test.ts`
-Expected: FAIL — `Cannot find module './routing'` (the file exists only after Step 2; if you followed the order it will instead fail on the missing `messages/` files, which is equally acceptable). The point is that it fails before the catalogs exist.
+Expected: **FAIL** — `ENOENT: no such file or directory ... messages/vi`. The `messages/` tree does not exist yet. This is the real red state; do not proceed until you have seen it.
 
-- [ ] **Step 7: Run the test to verify it passes**
+- [ ] **Step 6: Create the seed catalogs**
 
-With Steps 2–4 in place:
+`messages/en/common.json`:
+
+```json
+{
+  "appName": "Nihongo Cinema"
+}
+```
+
+`messages/en/nav.json`:
+
+```json
+{
+  "dashboard": "Dashboard"
+}
+```
+
+`messages/vi/common.json`:
+
+```json
+{
+  "appName": "Nihongo Cinema"
+}
+```
+
+`messages/vi/nav.json`:
+
+```json
+{
+  "dashboard": "Bảng điều khiển"
+}
+```
+
+`appName` is identical in both locales on purpose — the product name is not translated. `nav.dashboard` is translated, so the seed proves the parity test compares *keys*, not values.
+
+- [ ] **Step 7: Run the test to verify it passes, then prove it can still fail**
 
 Run: `npx vitest run lib/i18n/catalog.test.ts`
 Expected: PASS — 3 tests.
 
-Sanity-check that the test can actually fail: temporarily add `"extra": "x"` to `messages/vi/nav.json`, re-run, confirm the key-set test FAILS, then remove it. A parity test that cannot fail is worse than no test.
+Now prove each assertion has teeth. A parity test that cannot fail is worse than no test, because it manufactures confidence. Make each mutation, confirm the expected failure, then revert:
+
+| Mutation | Must fail |
+|---|---|
+| Add `"extra": "x"` to `messages/vi/nav.json` | the key-set test |
+| Delete `messages/vi/nav.json` | the namespace-matches-disk test |
+| Change `messages/vi/common.json`'s `appName` to `"Xin chào {name}"` | the ICU-argument test |
+
+The third is the important one: it is the only check that catches a translator introducing a placeholder the other locales do not have — the failure mode that turns into a runtime error for one locale only.
 
 - [ ] **Step 8: Create the request config**
 
@@ -297,27 +307,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
 });
 ```
 
-- [ ] **Step 8a: Verify the dynamic imports are statically analyzable**
-
-Run: `npm run build`
-
-Expected: webpack resolves every `../../messages/${locale}/${namespace}.json` without emitting a context-module warning.
-
-If this repository's Next/Webpack configuration cannot statically analyse the import pattern, replace it with an explicit loader map rather than weakening type safety or silently accepting context imports. An explicit map looks like this — note it keeps `NAMESPACES` as the single source of truth by failing `tsc` if a namespace is missing a loader:
-
-```ts
-const LOADERS: Record<Locale, Record<Namespace, () => Promise<{ default: unknown }>>> = {
-  vi: {
-    common: () => import("../../messages/vi/common.json"),
-    nav: () => import("../../messages/vi/nav.json"),
-  },
-  en: {
-    common: () => import("../../messages/en/common.json"),
-    nav: () => import("../../messages/en/nav.json"),
-  },
-};
-```
-
 - [ ] **Step 9: Wire the plugin into next.config.js**
 
 Modify `next.config.js` — add the import at the top and wrap the export. **Keep the existing `webpack` edge-alias block untouched**; it exists because `@anthropic-ai/sdk` cannot be bundled for the edge runtime, and removing it breaks the build.
@@ -334,6 +323,33 @@ const nextConfig = {
 
 export default withNextIntl(nextConfig);
 ```
+
+- [ ] **Step 9a: Verify the dynamic imports are statically analyzable**
+
+> This check must run **after** Step 9, not before. Until the plugin points at `lib/i18n/request.ts`, nothing imports that module and webpack never sees the import pattern — running the build earlier would prove nothing while looking like it proved something.
+
+Run: `npm run build`
+
+Expected: build succeeds, and webpack resolves every `../../messages/${locale}/${namespace}.json` **without emitting a context-module warning** (`Critical dependency: the request of a dependency is an expression`).
+
+A context module means webpack gave up on static analysis and bundled the whole `messages/` directory as a runtime lookup — it still works, but every locale's catalog ships in every bundle, which quietly makes spec §7 risk 3 worse and defeats the per-namespace split.
+
+If this repository's Next/webpack configuration cannot statically analyse the pattern, replace it with an explicit loader map rather than weakening type safety or silently accepting a context import. The map keeps `NAMESPACES` as the single source of truth, because a missing entry is a `tsc` error:
+
+```ts
+const LOADERS: Record<Locale, Record<Namespace, () => Promise<{ default: unknown }>>> = {
+  vi: {
+    common: () => import("../../messages/vi/common.json"),
+    nav: () => import("../../messages/vi/nav.json"),
+  },
+  en: {
+    common: () => import("../../messages/en/common.json"),
+    nav: () => import("../../messages/en/nav.json"),
+  },
+};
+```
+
+Report which form you shipped — Plan 3 adds ~18 namespaces, and if the map is in play it must be extended for each one.
 
 - [ ] **Step 10: Add the barrel — the public contract**
 
@@ -1378,7 +1394,8 @@ Expected: FAIL — the three "forbids" tests fail because no rule exists yet. (T
       "rules": { "no-restricted-imports": "off" }
     },
     {
-      "files": ["lib/i18n/**", "app/[locale]/layout.tsx", "test/render.tsx"],
+      "comment": "app/[[]locale[]]/layout.tsx is the ESCAPED glob for the literal path app/[locale]/layout.tsx. ESLint globs are minimatch: an unescaped [locale] is a CHARACTER CLASS matching one of l,o,c,a,e — it does not match the literal directory name, and would instead match app/e/layout.tsx. Verified 2026-07-17. Do not 'simplify' this to app/**/layout.tsx: that would exempt every nested layout from the boundary rule.",
+      "files": ["lib/i18n/**", "app/[[]locale[]]/layout.tsx", "test/render.tsx"],
       "rules": { "no-restricted-imports": "off" }
     }
   ]
@@ -1397,7 +1414,7 @@ Expected: PASS — 5 tests.
 Run: `npm run lint`
 Expected: clean. A violation here means Task 6 missed a call site.
 
-- [ ] **Step 5a: Verify the escape hatch actually works**
+- [ ] **Step 5a: Verify the escape hatch actually works — both overrides**
 
 A restriction that also blocks the foundation is just as broken as one that never fires — it would push the next engineer to disable the rule entirely.
 
@@ -1411,7 +1428,17 @@ export const a = useTranslations;
 Run: `npm run lint`
 Expected: **no violation** for this file. Then delete it.
 
-The goal is to prove both directions: the restriction fires outside the boundary, **and** the intended escape hatch works inside it.
+**Then verify the layout override specifically**, because its glob is escaped and easy to get wrong:
+
+```bash
+npx eslint "app/[locale]/layout.tsx"
+```
+
+Expected: **no `no-restricted-imports` violation** — the layout legitimately imports `next-intl` to mount the provider.
+
+If it *does* report a violation, the `app/[[]locale[]]/layout.tsx` glob is not matching. Do **not** work around it by deleting the layout's import or widening the pattern to `app/**/layout.tsx` — the first breaks the app and the second exempts every nested layout from the boundary rule. Fix the glob.
+
+The goal is to prove both directions: the restriction fires outside the boundary, **and** each intended escape hatch actually works inside it.
 
 - [ ] **Step 6: Commit**
 
