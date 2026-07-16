@@ -3,6 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { dedupeKeyFor, relationshipPhaseForXp, titleFor, type CompanionMemory, type MemoryType } from "@/lib/companion";
 import type { MemoryRef } from "@/lib/companion/dedupe";
 import type { LearningOutcomeSource, SourceIdParts } from "@/lib/gamification";
+import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
+import { requireUser } from "@/lib/data/videos";
+import type { PinMemoryInput } from "@/lib/validation/companion";
 
 export interface DiscoveredMemoryInput {
   userId: string;
@@ -141,4 +145,62 @@ export async function captureCompanionMemories(supabase: SupabaseClient, input: 
   } catch (err) {
     console.error("[companion] captureCompanionMemories failed:", err);
   }
+}
+
+const PIN_LIMIT = { limit: 60, windowMs: 60_000 };
+
+export type PinMemoryResult =
+  | { ok: true }
+  | { ok: false; status: 401 | 400 | 500 }
+  | { ok: false; status: 429; retryAfter: number };
+
+export type GetJournalResult = { ok: true; data: CompanionMemory[] } | { ok: false; status: 401 };
+
+/** Pin a transcript line as a GIFTED memory. Goes through the USER's client so
+ * RLS enforces ownership and kind='gifted' (a learner can only ever create
+ * their own gifted memories). A duplicate pin (unique violation) is a no-op
+ * success, not an error. */
+export async function pinMemory(input: PinMemoryInput, now: Date = new Date()): Promise<PinMemoryResult> {
+  const supabase = createClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, status: 401 };
+
+  const limited = rateLimit(`companion:pin:${user.id}`, PIN_LIMIT, now.getTime());
+  if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
+
+  // RLS confines this to lines whose parent transcript's video is visible to
+  // the caller; a transcriptLineId that doesn't resolve (bad id, or not
+  // visible) is a 400, not a 500 — same pre-check `createMiningCard` does in
+  // lib/data/mining.ts before its insert.
+  const { data: line, error: lineError } = await supabase
+    .from("transcript_lines")
+    .select("id")
+    .eq("id", input.transcriptLineId)
+    .maybeSingle();
+  if (lineError) throw lineError;
+  if (!line) return { ok: false, status: 400 };
+
+  const { error } = await supabase.from("companion_memories").insert({
+    user_id: user.id,
+    kind: "gifted",
+    memory_type: "pinned_line",
+    title: null, // learner-supplied or blank (§4.4) — never AI
+    video_id: input.videoId ?? null,
+    transcript_line_id: input.transcriptLineId,
+    timestamp_seconds: input.timestampSeconds ?? null,
+    line_text_jp: input.lineTextJp ?? null,
+    note: input.note ?? null,
+    dedupe_key: dedupeKeyFor("pinned_line", { lineId: input.transcriptLineId }),
+  });
+  if (error && error.code !== "23505") return { ok: false, status: 500 };
+  return { ok: true };
+}
+
+/** The authed learner's Journal (owner-scoped, RLS → only their rows, §12.4). */
+export async function getJournal(): Promise<GetJournalResult> {
+  const supabase = createClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, status: 401 };
+  const data = await listJournal(supabase, user.id);
+  return { ok: true, data };
 }
