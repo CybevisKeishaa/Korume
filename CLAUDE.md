@@ -1,7 +1,8 @@
 # CLAUDE.md — Nihongo Cinema
 
 > Root rules for this repository. Every agent and every session MUST read and obey this file.
-> Source of truth for the product is `japanese-learning-app-spec.md` (in the parent folder).
+> Source of truth for the product is `japanese-learning-app-spec.md` (repo root, version-controlled
+> since 2026-07-16 — it used to live in the parent folder, outside git).
 
 ---
 

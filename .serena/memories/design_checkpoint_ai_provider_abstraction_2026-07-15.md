@@ -7,7 +7,11 @@
 
 - Spec: `docs/superpowers/specs/2026-07-15-ai-provider-abstraction-design.md`
 - Plan: `docs/superpowers/plans/2026-07-15-ai-provider-abstraction.md` (15 task TDD)
-- Ledger thi công đầy đủ (từng task, từng finding, từng quyết định): `.superpowers/sdd/progress.md`
+- Ledger thi công (từng task, từng finding): `.superpowers/sdd/progress.md` — **⚠️ KHÔNG BỀN.
+  `.superpowers/` bị gitignore (`*`), nên file này CHỈ tồn tại trên máy này và `git clean -fdx` xoá
+  sạch. Nó là scratch của skill subagent-driven-development, không phải bản ghi chính thức.**
+  → **Bản ghi BỀN của Spec A = memory này + `[[project_status]]` + `git log`.** Mọi thứ đáng giữ đã
+  được chép vào đây rồi; đừng coi ledger là nguồn chân lý, và đừng hoảng nếu nó biến mất.
 
 ## Bài học lớn nhất — nguyên tắc này cứu 6 lần
 

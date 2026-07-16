@@ -1,7 +1,8 @@
 # Nihongo Cinema — Project Status
 
-Read this first each session. Product spec: `../japanese-learning-app-spec.md`; root rules:
-`CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.claude/docs/workflow.md`.
+Read this first each session. Product spec: `japanese-learning-app-spec.md` (**repo root** — moved
+in from the parent folder and put under version control 2026-07-16; old references say `../`);
+root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.claude/docs/workflow.md`.
 
 ## What this is
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
