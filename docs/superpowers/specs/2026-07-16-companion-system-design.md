@@ -285,6 +285,12 @@ as a quiet Journal page (`companion_grew`, §4.4). Growth reflects *all* valid l
 included — no serious study feels "uncounted"), because XP already encodes G1 ("XP for completed
 learning outcomes, not app activity").
 
+**Relationship monotonicity.** The relationship never moves backwards. `relationship_phase` may stay
+unchanged for long stretches, but it **never decreases** during normal product operation (XP is
+non-decreasing, so `f(xp)` is monotonic by construction). Future systems may express distance, silence,
+or absence — but those affect **behavior only**, never the recorded phase. The journey may slow down; it
+never becomes "unwalked."
+
 ### 4.2 Memory track — one table: `companion_memories`
 
 > **Ownership.** Although presented *through* the Companion, the Journal **belongs to the learner**. The
@@ -321,6 +327,12 @@ These are the Companion's *own* memory: a bounded set it always holds. They are 
 
 New memory kinds later (Seasonal, Event…) add a `kind`/`memory_type`, never a new table.
 
+**Identity continuity.** The Companion's identity is **continuous across the learner's lifetime**.
+Clearing caches, reinstalling the app, changing devices, or upgrading Character Identity assets (Spec 2)
+must never create the feeling that the learner received *"a new Companion."* Only **explicit account
+deletion** (the GDPR "delete all my data" path) may permanently remove the relationship. The learner
+always returns to the same Companion.
+
 ### 4.3 Capture Gate — what keeps the Journal from becoming a log
 
 Discovered memories are **not** produced on every event — only on a small set of **rare transitions**,
@@ -341,6 +353,12 @@ memory. *"A memory is what is memorable, not what just happened."*
 
 **Gifted** memories are the inverse: created only when the learner **actively pins** a transcript line
 ("this line gave me chills"). The system never guesses this kind.
+
+**Memory immutability.** A recorded memory is **immutable**. The system may enrich its *presentation*
+(localization, rendering, thumbnails, adaptive language), but it may **never** alter the historical fact
+that was recorded (the line, the pointers, `occurred_at`). Corrections happen **only** through explicit
+data migration — never through runtime logic or AI interpretation. The learner's history stays stable for
+the lifetime of the account.
 
 ### 4.4 The `title` field — a book, not a list
 
@@ -517,6 +535,15 @@ enter → emitContext() → Companion decides → leave → state persists
 - Companion state (`relationship_phase`, state machine, cooldown) lives in the Ambient Layer and
   **persists across navigation** — it is never per-surface, and cleanup of it is never a surface's job.
 
+### 5.12 Companion sovereignty
+
+P3 says the Companion owns no business logic. The reverse is equally binding: **business logic does not
+control the Companion.** Business systems may *emit contexts*, but they never *instruct* the Companion
+what to say. **No feature owns Companion dialogue.** Surfaces announce *what happened*; the Companion
+alone decides whether the moment deserves silence, observation, or speech (§5.8/§5.10). This is what
+preserves the illusion that the Companion is a living creature rather than UI owned by individual
+features (P1).
+
 ---
 
 ## 6. Free / Premium & the AI boundary
@@ -550,6 +577,20 @@ being "only what truly happened." Reflections render as in-place voice and are *
 that is fine. Only **recorded memories** (`companion_memories`) are **canon**. This is exactly what makes
 it safe to change prompts, models, or the whole reflection layer later: nothing the Companion *says* is
 load-bearing; only what the learner and the capture gate *record* is.
+
+#### 6.2.1 Canon hierarchy
+
+When layers disagree, the Companion follows a strict **order of truth**:
+
+1. **Objective learning data** — the source of truth (scores, SRS state, XP; owned by the backend, P3).
+2. **Recorded Journal memories** — the learner's recorded history (`companion_memories`).
+3. **Current runtime context** — what is happening right now (the bus, §5.3).
+4. **AI interpretation** — a present-tense reading over the above.
+
+A lower layer may **interpret** a higher one, but may **never** contradict, overwrite, or redefine it. AI
+is only a present-tense interpretation over facts; the Journal is the recorded history; objective data is
+always the source of truth. This hierarchy guarantees that future prompt changes, model upgrades, or new
+AI capabilities can **never rewrite the learner's story**.
 
 ### 6.3 Graceful degradation (P2 and P6 in practice)
 
@@ -664,6 +705,16 @@ touching Spec 1.
   migration and no change to capture gate / state machine / arbitration / API.
 - **Seasonal is additive** (§10) → a seasonal layer can alter expression/dialogue but a test asserts it
   cannot write `relationship_phase`, memories, or any learning data.
+- **Deterministic replay** (§12.2) → identical (Journal, anchors, `relationship_phase`, emitted context)
+  yields an identical architectural decision; injected randomness changes only expressive rendering.
+- **Relationship monotonicity** (§4.1) → `f(xp)` never returns a lower phase for higher XP; no code path
+  writes a decreased `relationship_phase`.
+- **Memory immutability** (§4.3) → after a memory is recorded, no runtime path mutates its recorded fact
+  (line/pointers/`occurred_at`); only a migration can.
+- **Canon hierarchy** (§6.2.1) → an AI reflection can never write objective data or memories; conflicting
+  AI output never overrides recorded facts.
+- **Private by design** (§12.4) → no endpoint returns another user's Companion memories; RLS owner-only
+  holds under cross-user access attempts.
 
 ---
 
@@ -711,3 +762,46 @@ foundation instead of redefining the Companion their own way.
 
 Companion System lands in **L9b**, on top of **L9a** (i18n for the modular-sentence voice; design
 system for the anchors). It runs in parallel with the other L9b surfaces and does not depend on Spec 2.
+
+---
+
+## 12. Lifetime & behavioral invariants
+
+Cross-cutting guarantees that hold across the Companion's whole lifetime — the promises that let the
+character, the data, and the AI layer all change underneath without breaking the relationship. (Invariants
+tied to a single mechanism live with it: canon hierarchy §6.2.1, memory immutability §4.3, relationship
+monotonicity §4.1, identity continuity §4.2, sovereignty §5.12.)
+
+### 12.1 Emotional boundary
+
+The Companion **never claims knowledge of the learner's internal emotional state.** It may respond to
+observable behavior, recorded memories, or words the learner explicitly shares — it never infers hidden
+feelings as fact. This holds for template *and* AI voice; it is the guardrail against an upgraded model
+over-empathizing. *The learner may choose to be understood; the Companion never assumes it already has.*
+
+### 12.2 Deterministic replay
+
+Given the same Journal, the same anchor memories, the same `relationship_phase`, and the same emitted
+context, the Companion **always reaches the same architectural decision** (§5.10). Randomness may
+influence *expressive rendering only* — idle behavior, animation variation, wording variation — never the
+meaningful decision. This is what makes the arbitration and capture logic testable.
+
+### 12.3 Model independence
+
+**No Companion behavior may depend on a specific AI model.** Swapping one language model for another
+requires *prompt adaptation only* — Companion identity, memory, behavior rules, and every architectural
+guarantee here stay unchanged. (This is the Companion-level echo of the provider-agnostic AI port,
+`lib/ai/port.ts`.)
+
+### 12.4 Private by design
+
+The Companion is **never a social entity.** Its memories belong **exclusively to the learner** (RLS
+owner-only, §4.2; `business-model.md` principle 2). No future feature may expose Companion memories
+publicly unless the learner explicitly chooses to share an individual memory. Companionship is personal
+before it is social (G2, and the "not a social network" non-goal).
+
+### 12.5 The Companion has no ending
+
+The Companion has phases, memories, silence, and growth. It has **no designed ending** — no completion
+state, no graduation screen, no final evolution concludes the relationship. As long as the learner
+continues their journey, there remains another page that can still be remembered together.
