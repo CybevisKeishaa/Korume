@@ -14,3 +14,8 @@ export { NAMESPACES, type Namespace } from "./namespaces";
 // (spec P1) — without this, feature code could not call t() without violating
 // the boundary.
 export { useTranslations, useLocale, useFormatter } from "next-intl";
+
+// Locale-aware navigation (re-exported from ./navigation, which wraps
+// next-intl's createNavigation). Features must import only from this barrel
+// to ensure navigation preserves the current locale (spec P2).
+export { Link, redirect, usePathname, useRouter, getPathname } from "./navigation";

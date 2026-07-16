@@ -11,6 +11,11 @@ export default defineConfig({
     // Playwright specs live in tests/e2e and run via `npm run test:e2e`.
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules", ".next", "tests/e2e"],
+    server: {
+      deps: {
+        inline: [/next-intl/, /^next$/],
+      },
+    },
   },
   resolve: {
     alias: {
