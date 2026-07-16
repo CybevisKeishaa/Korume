@@ -44,8 +44,13 @@ If a task appears to require breaking one of these, STOP and surface it to the u
 - **Database**: PostgreSQL via Supabase (Auth + Storage included) or Neon
 - **Auth**: Supabase Auth / NextAuth.js (email + Google OAuth)
 - **Audio**: Web Audio API (client waveform + pitch/rhythm compare)
-- **Pronunciation**: Azure Speech Pronunciation Assessment (JA); Google STT fallback
-- **AI**: Anthropic Claude API (conversation, summaries, example sentences, review hints)
+- **Pronunciation**: Azure Speech Pronunciation Assessment (JA), selected by `SPEECH_PROVIDER`
+- **AI**: **provider-agnostic** — application code speaks the port (`lib/ai/port.ts`), never an SDK.
+  Adapters live in `lib/ai/providers/` (Anthropic = production; Gemini = **dev only**, its free tier
+  trains on submitted data so real user data must never reach it — §2). A lint rule forbids importing
+  a provider SDK anywhere else. Selection is explicit via `AI_PROVIDER`/`SPEECH_PROVIDER`/`APP_ENV`,
+  **never inferred from which keys exist**; `none` = intentionally off (503), unset/invalid = startup
+  failure. See `docs/superpowers/specs/2026-07-15-ai-provider-abstraction-design.md`.
 - **SRS**: self-built SM-2, state per (user, item)
 - **Storage**: Supabase Storage / S3 — recordings & avatars only, NEVER video
 - **Deploy**: self-hosted at **almostgone.vn** (single long-running Node instance; NOT Vercel) + Supabase/Neon (DB)

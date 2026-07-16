@@ -1,8 +1,15 @@
 # Spec A — AI Provider Abstraction & Startup Configuration Validation
 
-> **Status:** Design approved (2026-07-15). Not implemented. No code changed yet.
+> **Status:** **IMPLEMENTED and merged to master (`201a9b4`, 2026-07-16)** — 15 TDD tasks, 26
+> commits, 1098 → 1166 tests. Design approved 2026-07-15. This document is now the **as-built
+> record**: §7's V1–V6 hold what was actually measured (three of them refuted an assumption this
+> spec had asserted), and §3 carries the limits that were accepted rather than fixed. Where this
+> spec and the code disagree, **the code is right and this file is a bug** — say so.
 > **Scope:** Make `lib/ai` provider-agnostic, and make configuration errors fail at startup
 > instead of at request time. Prerequisite for Layer 8.
+> **Known limit, accepted (see §3):** "fails at startup" is verified true under `next dev` and
+> **false under `next start`**, which opens the port and then serves a permanent 500 without
+> exiting. Deferred to scope D (deploy).
 > **Related:** root `CLAUDE.md` §2 (non-negotiables) · `docs/product/business-model.md`
 > (Positioning — "model-independent"; Knowledge Economy; model tiering) ·
 > Serena `mem:product_readiness_audit_2026-07-14` (the two env bugs that motivate this) ·
@@ -402,21 +409,55 @@ next.config.mjs       + experimental.instrumentationHook: true   [verified absen
 lib/ai/
   env.ts            [NEW]  AI_PROVIDER + APP_ENV policy + per-provider credential schema
   port.ts           [NEW]  AiProvider, Tier, AiRequest, AiResult, Capabilities
-  registry.ts       [NEW]  explicit AI_PROVIDER → adapter; no inference, no fallback
+  registry.ts       [NEW]  explicit AI_PROVIDER → adapter; no inference, no fallback.
+                           AS BUILT: also carries `import "server-only"` (line 1) — see client.ts
   capabilities.ts   [NEW]  REQUIRED_CAPABILITIES (what the product needs)
   errors.ts         KEEP   AiError + AiErrorKind unchanged; toAiError moves out
   constants.ts      CHANGE AI_MODEL → per-adapter tier→model maps; MAX_TOKENS/AI_SOURCE stay
-  client.ts         DELETE getClient/isAiConfigured superseded by registry
-  run.ts            CHANGE firstText() is Anthropic-shaped → adapter; requireParsed stays
+  client.ts         DELETE getClient/isAiConfigured superseded by registry.
+                           ⚠️ THIS INVENTORY WAS INCOMPLETE AND IT COST US. client.ts line 1 was
+                           `import "server-only"` — a security guard, not an export, so listing
+                           only its two functions missed it. Task 11 deleted the file and the
+                           guard vanished with it: for 14 commits `lib/ai` read API keys and built
+                           SDK clients with nothing turning an accidental client-component import
+                           into a build error (CLAUDE.md §6). Caught by the final whole-branch
+                           review, restored on registry.ts. Not the barrel: lib/http-status.ts
+                           imports from `@/lib/ai` (type-only, so it erases — verified).
+                           Lesson: when deleting a file, inventory its SIDE EFFECTS, not just its
+                           exports.
+  run.ts            DELETE (spec originally said CHANGE — wrong). Both firstText() AND
+                           requireParsed turned out to be adapter concerns, so nothing was left
+                           to keep. Verified: the file is gone.
   providers/
     anthropic.ts    [NEW]  SDK + zodOutputFormat + cache_control + thinking + error mapping
     gemini.ts       [NEW]  @google/genai + responseSchema + error mapping
     fake.ts         [NEW]  in-memory: queued responses, recorded requests
   conversation.ts | summary.ts | examples.ts   CHANGE  import the port only
 
-lib/speech-scoring/env.ts     [NEW]     SPEECH_PROVIDER + Azure credential schema
+lib/speech-scoring/env.ts     [NEW]     SPEECH_PROVIDER + Azure credential schema.
+                                        AS BUILT: also exports readSpeechEnv(), deliberately
+                                        NARROWER than speechEnvSchema — it validates SELECTION
+                                        only, not credentials, so checkSpeechHealth can report
+                                        `not_configured` instead of throwing (D2: the health path
+                                        must never throw). The full credential gate stays in
+                                        speechEnvSpec at startup, so the two only ever disagree in
+                                        states startup already rejects. This is the one CONSCIOUS
+                                        departure from D9's "mirrors AI_PROVIDER exactly" — the
+                                        SELECTION lifecycle is identical; credential strictness is
+                                        per-subsystem. Do not "fix" it into a mirror.
 lib/speech-scoring/config.ts  CHANGE    isSpeechConfigured() infers from key presence →
                                         reads SPEECH_PROVIDER (D9); speechCredentials() stays
+
+lib/admin/health.ts           [NEW]     checkAiHealth / checkSpeechHealth / checkHealth — the D2
+                                        on-demand liveness logic. Both take injected (env,
+                                        fetchImpl) per the repo DI convention. Returns `kind` only,
+                                        never a credential value.
+app/api/admin/health/route.ts [NEW]     thin route behind requireAdmin() (NOT isAdmin() — only
+                                        requireAdmin carries the ADMIN_EMAILS bootstrap promotion)
+.eslintrc.json                CHANGE    no-restricted-imports: provider SDKs are importable ONLY
+                                        inside lib/ai/providers/. This is what makes the
+                                        abstraction enforceable instead of aspirational (§5.6's
+                                        one-line test). Verified firing, not merely present.
 ```
 
 **Also changed, discovered during planning:** `isAiConfigured()` is exported from `@/lib/ai` and

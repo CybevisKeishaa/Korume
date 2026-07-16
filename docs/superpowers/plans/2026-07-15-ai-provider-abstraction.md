@@ -1,5 +1,19 @@
 # AI Provider Abstraction Implementation Plan
 
+> ## ✅ EXECUTED — merged to master (`201a9b4`, 2026-07-16). Do not re-run this plan.
+>
+> All 15 tasks are complete: 26 commits, 1098 → 1166 tests. **The checkboxes below were never
+> ticked during execution** — they are left as written rather than back-filled, because a
+> retroactive tick would invent a tracking trail that did not happen. The real per-task record —
+> every finding, fix, review verdict and decision — is the ledger at `.superpowers/sdd/progress.md`.
+>
+> **This plan's text was wrong six times**, each caught only because a task verified instead of
+> assuming: two key-format rules that would each have rejected a *working* key and blocked boot
+> (V3 Gemini `AIza`→ real `AQ.`; V6 Azure 32-hex → real 84-alphanumeric), a claim that `next start`
+> validates at boot (V4 — backwards in both directions), two wrong function names, and a route
+> sample reading a field that does not exist. Read it as history, not instruction; the spec's §7
+> holds what was actually measured.
+>
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make `lib/ai` provider-agnostic and turn configuration mistakes into startup failures instead of silent runtime 503s.
