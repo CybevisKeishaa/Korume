@@ -43,7 +43,11 @@ describe("isSpeechConfigured", () => {
   });
 
   it("is false when speech is not the selected provider, even with credentials present", () => {
-    delete process.env[PROVIDER];
+    // Setup uses an explicit SPEECH_PROVIDER=none rather than an unset/deleted
+    // value: since Fix 3 (D9), an *unset* SPEECH_PROVIDER is a misconfiguration
+    // that throws (see env.test.ts), not a silent "off" — so this test now
+    // exercises the genuinely-disabled case instead of that removed inference.
+    process.env[PROVIDER] = "none";
     delete process.env[KEY];
     process.env[REGION] = "japaneast";
     expect(isSpeechConfigured()).toBe(false);
@@ -51,6 +55,11 @@ describe("isSpeechConfigured", () => {
     process.env[KEY] = "k";
     delete process.env[REGION];
     expect(isSpeechConfigured()).toBe(false);
+  });
+
+  it("throws when SPEECH_PROVIDER is unset — absence is a misconfiguration, never intentional off (D9)", () => {
+    delete process.env[PROVIDER];
+    expect(() => isSpeechConfigured()).toThrow();
   });
 });
 

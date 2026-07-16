@@ -47,8 +47,20 @@ export class EnvValidationError extends Error {
 const specs: EnvSpec<unknown>[] = [];
 let validated = false;
 
+/**
+ * Idempotent by `spec.name`: `next dev` HMR re-runs `register()` on every
+ * reload, and without this guard the `specs` array (and thus the aggregated
+ * report) grows unboundedly across reloads. Re-registering the same name
+ * replaces the earlier entry in place rather than appending, so the latest
+ * spec always wins and ordering is preserved.
+ */
 export function registerEnvSpec<T>(spec: EnvSpec<T>): void {
-  specs.push(spec as EnvSpec<unknown>);
+  const index = specs.findIndex((existing) => existing.name === spec.name);
+  if (index === -1) {
+    specs.push(spec as EnvSpec<unknown>);
+  } else {
+    specs[index] = spec as EnvSpec<unknown>;
+  }
 }
 
 /** Test-only: clears registrations and the memo. */

@@ -78,4 +78,33 @@ describe("validateEnv", () => {
     validateEnv({});
     expect(check).toHaveBeenCalledTimes(1);
   });
+
+  it("registerEnvSpec is idempotent by name — repeated registration (e.g. next dev HMR re-running register()) must not duplicate messages", () => {
+    registerEnvSpec({ name: "dup", schema: z.object({ FOO: z.string().min(1) }) });
+    registerEnvSpec({ name: "dup", schema: z.object({ FOO: z.string().min(1) }) });
+
+    let message = "";
+    try {
+      validateEnv({});
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    // Exactly one "1 problem(s)" and exactly one FOO line, not two.
+    expect(message).toContain("1 problem(s)");
+    expect(message.match(/FOO/g)).toHaveLength(1);
+  });
+
+  it("registerEnvSpec re-registration under the same name uses the latest spec, not a stale one", () => {
+    registerEnvSpec({ name: "dup", schema: z.object({ FOO: z.string().min(1) }) });
+    registerEnvSpec({ name: "dup", schema: z.object({ BAR: z.string().min(1) }) });
+
+    let message = "";
+    try {
+      validateEnv({ FOO: "irrelevant-now" });
+    } catch (err) {
+      message = (err as Error).message;
+    }
+    expect(message).toContain("BAR");
+    expect(message).not.toContain("FOO");
+  });
 });

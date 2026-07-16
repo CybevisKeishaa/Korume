@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { speechEnvSchema } from "./env";
+import { isSpeechEnabled, speechEnvSchema } from "./env";
 
 // Fake keys matching the two verified real shapes. Never paste the real key here.
 const VALID_KEY_LONG = "a".repeat(84); // the live 2026-07-15 shape
@@ -47,5 +47,30 @@ describe("speechEnvSchema", () => {
     const base = { SPEECH_PROVIDER: "azure", AZURE_SPEECH_REGION: "japanwest" };
     expect(issues({ ...base, AZURE_SPEECH_KEY: VALID_KEY_LONG })).toEqual([]);
     expect(issues({ ...base, AZURE_SPEECH_KEY: VALID_KEY_CLASSIC })).toEqual([]);
+  });
+});
+
+describe("isSpeechEnabled", () => {
+  // Same provider lifecycle as isAiEnabled (Spec D9): absence of SPEECH_PROVIDER
+  // is a misconfiguration, never read as "intentionally off".
+  it("throws when SPEECH_PROVIDER is unset — absence is not a decision", () => {
+    expect(() => isSpeechEnabled({})).toThrow();
+  });
+
+  it("throws when SPEECH_PROVIDER is a typo/garbage value", () => {
+    expect(() => isSpeechEnabled({ SPEECH_PROVIDER: "Azure" })).toThrow();
+    expect(() => isSpeechEnabled({ SPEECH_PROVIDER: "openai" })).toThrow();
+  });
+
+  it("is false when SPEECH_PROVIDER=none — the deliberate 503 path (D1)", () => {
+    expect(isSpeechEnabled({ SPEECH_PROVIDER: "none" })).toBe(false);
+  });
+
+  it("is true when SPEECH_PROVIDER=azure, regardless of credential presence", () => {
+    // Credential structure is validated separately by speechEnvSchema at
+    // startup; checkSpeechHealth relies on this runtime check staying narrow
+    // so it can report its own graceful "not_configured" diagnostic instead
+    // of throwing (lib/admin/health.test.ts).
+    expect(isSpeechEnabled({ SPEECH_PROVIDER: "azure" })).toBe(true);
   });
 });

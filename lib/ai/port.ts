@@ -44,7 +44,12 @@ export interface AiRequest {
 }
 
 export interface AiResult {
-  /** Resolved provider model id — CLAUDE.md §2.3 traceability. Always present. */
+  /**
+   * Resolved provider model id — traceability for CLAUDE.md §2 item 3 (all
+   * study content must be original and attributed; knowing which model
+   * produced a result is what makes it reviewable/attributable). Always
+   * present.
+   */
   model: string;
   truncated: boolean;
   usage: TokenUsage | null;

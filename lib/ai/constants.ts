@@ -6,7 +6,8 @@
 
 /**
  * Source tag written alongside AI-generated study content so it can be labelled
- * in the UI and gated behind human review before publish (CLAUDE.md §2.3, §3.3).
+ * in the UI and gated behind human review before publish (CLAUDE.md §2 item 3:
+ * all study content must be original, never copied verbatim, and attributed).
  */
 export const AI_SOURCE = "ai_generated" as const;
 

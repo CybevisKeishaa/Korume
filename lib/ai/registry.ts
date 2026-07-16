@@ -2,6 +2,7 @@
  * Explicit provider selection. No inference, no fallback (Spec §2): the app
  * never substitutes a provider, and absence of a key is never read as intent.
  */
+import "server-only";
 import type { EnvSource, EnvSpec } from "@/lib/env/validate";
 import { REQUIRED_CAPABILITIES } from "./capabilities";
 import { aiEnvSchema, readAiEnv, type AiEnvShape } from "./env";

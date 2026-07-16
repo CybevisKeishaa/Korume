@@ -15,7 +15,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod/v4";
 import { installClaudeMock, type ClaudeMockHandle } from "@/test/claude-mock";
 import { claudeErrorResponse, claudeTextResponse } from "@/test/fixtures/claude-responses";
-import { AiError } from "../errors";
 import { createAnthropicProvider } from "./anthropic";
 
 let mock: ClaudeMockHandle | undefined;

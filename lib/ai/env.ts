@@ -76,7 +76,12 @@ export const aiEnvSchema = z
     if (env.AI_PROVIDER === "gemini") {
       if (!env.GEMINI_API_KEY) {
         fail(requiredMsg("GEMINI_API_KEY", "AI_PROVIDER=gemini"), "GEMINI_API_KEY");
-      } else if (!GEMINI_KEY_PREFIXES.some((p) => env.GEMINI_API_KEY?.startsWith(p))) {
+      } else if (
+        // `?.` below is load-bearing, not redundant: TS narrows `env.GEMINI_API_KEY`
+        // truthy in this `else if`, but that narrowing does not survive into the
+        // `.some()` callback closure, so removing it is a TS18048 typecheck error.
+        !GEMINI_KEY_PREFIXES.some((p) => env.GEMINI_API_KEY?.startsWith(p))
+      ) {
         fail(
           `GEMINI_API_KEY does not match a documented Google API key structure ` +
             `(expected it to begin with one of: ${GEMINI_KEY_PREFIXES.join(", ")}).`,
