@@ -14,6 +14,7 @@ import {
   type StreakState,
 } from "@/lib/gamification";
 import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
+import { captureCompanionMemories } from "@/lib/data/companion";
 import { emitNotification } from "@/lib/notifications/emit";
 
 /**
@@ -138,6 +139,16 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
     { onConflict: "user_id" },
   );
   if (statsUpdateError) throw statsUpdateError;
+
+  // Companion capture gate (spec §4.3) — best-effort, never throws (§6.5).
+  await captureCompanionMemories(supabase, {
+    userId: input.userId,
+    source: input.source,
+    parts,
+    prevXp,
+    nextXp,
+    now,
+  });
 
   if (leveledUp) {
     await emitNotification(supabase, {

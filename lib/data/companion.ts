@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dedupeKeyFor, titleFor, type CompanionMemory, type MemoryType } from "@/lib/companion";
+import { dedupeKeyFor, relationshipPhaseForXp, titleFor, type CompanionMemory, type MemoryType } from "@/lib/companion";
 import type { MemoryRef } from "@/lib/companion/dedupe";
+import type { LearningOutcomeSource, SourceIdParts } from "@/lib/gamification";
 
 export interface DiscoveredMemoryInput {
   userId: string;
@@ -104,4 +105,40 @@ export async function getAnchorMemories(supabase: SupabaseClient, userId: string
     .order("occurred_at", { ascending: false });
   if (error) throw error;
   return ((data ?? []) as MemoryRow[]).map(toMemory);
+}
+
+export interface CaptureInput {
+  userId: string;
+  source: LearningOutcomeSource;
+  parts: SourceIdParts;
+  prevXp: number;
+  nextXp: number;
+  now?: Date;
+}
+
+/** The capture gate (spec §4.3). Observes a completed learning outcome and
+ * records any milestone memory it produces. MUST NEVER throw into the caller —
+ * it runs on the learning hot path and a memory hiccup must never fail study
+ * (§6.5). Best-effort, mirroring recordActivity. This task wires the
+ * self-contained `companion_grew` producer (needs only prevXp/nextXp);
+ * source-specific producers are added in Task 8. */
+export async function captureCompanionMemories(supabase: SupabaseClient, input: CaptureInput): Promise<void> {
+  try {
+    const prevPhase = relationshipPhaseForXp(input.prevXp);
+    const nextPhase = relationshipPhaseForXp(input.nextXp);
+    if (nextPhase > prevPhase) {
+      // Record one anchor memory per phase actually crossed (a big single
+      // award could cross more than one). Idempotent on dedupe_key.
+      for (let phase = prevPhase + 1; phase <= nextPhase; phase++) {
+        await recordDiscoveredMemory(supabase, {
+          userId: input.userId,
+          memoryType: "companion_grew",
+          ref: { phase: phase as 1 | 2 | 3 | 4 },
+          isAnchor: true,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[companion] captureCompanionMemories failed:", err);
+  }
 }

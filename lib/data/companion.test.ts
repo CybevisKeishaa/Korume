@@ -4,7 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 
-import { getAnchorMemories, listJournal, recordDiscoveredMemory } from "./companion";
+import { captureCompanionMemories, getAnchorMemories, listJournal, recordDiscoveredMemory } from "./companion";
+import { PHASE_THRESHOLDS } from "@/lib/companion";
 
 const USER_ID = "u1";
 
@@ -93,5 +94,71 @@ describe("getAnchorMemories", () => {
     });
     await getAnchorMemories(supabase as never, USER_ID);
     expect(filtered).toBe(true);
+  });
+});
+
+describe("captureCompanionMemories", () => {
+  it("records companion_grew as an anchor when XP crosses a phase threshold", async () => {
+    let inserted: Record<string, unknown> | undefined;
+    const supabase = createMockSupabase({
+      tables: {
+        companion_memories: (calls) => {
+          const upsert = calls.find((c) => c.op === "upsert");
+          if (upsert) {
+            inserted = upsert.values as Record<string, unknown>;
+            return { data: { id: "m1" }, error: null };
+          }
+          return { data: [], error: null };
+        },
+      },
+    });
+    await captureCompanionMemories(supabase as never, {
+      userId: USER_ID,
+      source: "srs_review",
+      parts: { itemType: "kanji", itemId: "k1" },
+      prevXp: PHASE_THRESHOLDS[1] - 10,
+      nextXp: PHASE_THRESHOLDS[1] + 10, // crosses into phase 2
+    });
+    expect(inserted).toMatchObject({
+      memory_type: "companion_grew",
+      dedupe_key: "companion_grew:2",
+      is_anchor: true,
+      kind: "discovered",
+    });
+  });
+
+  it("records nothing when XP stays inside the same phase", async () => {
+    let touched = false;
+    const supabase = createMockSupabase({
+      tables: {
+        companion_memories: (calls) => {
+          if (calls.some((c) => c.op === "upsert")) touched = true;
+          return { data: [], error: null };
+        },
+      },
+    });
+    await captureCompanionMemories(supabase as never, {
+      userId: USER_ID,
+      source: "srs_review",
+      parts: { itemType: "kanji", itemId: "k1" },
+      prevXp: 10,
+      nextXp: 20,
+    });
+    expect(touched).toBe(false);
+  });
+
+  it("never throws — a DB error is swallowed (failure isolation §6.5)", async () => {
+    const supabase = createMockSupabase({
+      tables: { companion_memories: () => ({ data: null, error: { message: "boom" } }) },
+    });
+    await expect(
+      captureCompanionMemories(supabase as never, {
+        userId: USER_ID,
+        source: "srs_review",
+        parts: {},
+        prevXp: PHASE_THRESHOLDS[1] - 1,
+        nextXp: PHASE_THRESHOLDS[1] + 1,
+      }),
+    ).resolves.toBeUndefined();
   });
 });
