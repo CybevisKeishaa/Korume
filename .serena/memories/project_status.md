@@ -8,6 +8,29 @@ root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.cl
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
 8 layers, one per session; all 8 = finished product. Use `/build-layer <n>`.
 
+## ⭐ ROADMAP SEQUENCING — decided 2026-07-16 (read before choosing what to build next)
+**User launch philosophy (explicit):** still in BUILD phase; publish ONLY after everything is
+complete, polished, and fully-featured. There is NO near-term launch, paid-beta, or revenue goal.
+This resolves the "L8 vs finish-L9" question decisively:
+
+**Order = finish L9 first, do L8 (billing) near the very end, right before publish:**
+1. **L9a — i18n + design system** (foundation; VN-first, replace English shell). Unblocks EVERYTHING
+   visual + Companion Plans 2/3. ← **NEXT ACTION.** Start with superpowers:brainstorming (scope the
+   design system, how adaptive-furigana/pitch reuse tokens, i18n strategy), then a plan.
+2. **L9b — surfaces**: Companion Plan 2 → Plan 3, the missing feature UIs, landing/cinematic, tutorial.
+   Fold the two launch-blocker debts in here (they count as "fully-featured"): **user transcript-submit
+   UI** (backend done since L3, UI missing = core loop dead-ends) and **GDPR delete-my-data** (§2
+   non-negotiable, owed since L1). Companion Plans 2/3 are HARD-BLOCKED on L9a.
+3. **L8 — billing (PayOS)**: subscription + Founding price-lock + per-user Knowledge-Gen quota + auto
+   kill-switch + Contextual Discovery UI nhúng vào L9b surfaces. Deferred to here because its conversion
+   mechanism needs surfaces to exist, and cost-defense isn't urgent while AI is off in prod.
+4. **L9c — polish + perf audit** on the final UI (why L9c was split out).
+
+**HARD CONSTRAINT that overrides the order:** L8's per-user quota + auto kill-switch MUST land BEFORE
+`ANTHROPIC_API_KEY` is added / AI is enabled for anyone (even mid-build end-to-end testing with other
+people) — today only a manual ~$1-2 spend-cap exists. Reasoning behind all of the above is in this
+session's discussion; flip to L8-first ONLY if the goal changes to open-paid/AI-to-real-users-soon.
+
 ## Stack
 Next.js **14.2.35** App Router + TS strict + Tailwind. React **18.3.1**. Supabase
 (Postgres + Auth + Storage) via `@supabase/ssr`. Zod. Motion: Lenis + Framer + GSAP.
@@ -272,8 +295,11 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`.
   above). Per `business-model.md`: single tier 49k/490k + Founding 39k, no trial, Contextual Discovery,
   Knowledge-Gen quotas + global kill-switch FIRST. Lead: backend (+ tech-lead). Start: `git checkout
   master`, branch `layer-8-<slug>`. **Spec A's port is the billing/AI-metering foundation**: model
-  tiering, the Knowledge Economy cache and the kill-switch all plug into `lib/ai/port.ts`. NOTE: L8 and
-  L9 are independent tracks — either can go first; UI (L9) is what the user is currently focused on.
+  tiering, the Knowledge Economy cache and the kill-switch all plug into `lib/ai/port.ts`. **SEQUENCING
+  (user decision 2026-07-16): L8 is DEFERRED to near the end — after L9a/L9b — right before publish. Do
+  NOT start L8 next; NEXT ACTION is L9a. See the ⭐ ROADMAP SEQUENCING block at the top.** Independence
+  still holds technically (L8 core only needs Spec A's port), but its conversion mechanism wants L9b
+  surfaces and cost-defense isn't urgent while AI is off in prod.
 
 - **Business model / monetization = DECIDED** → `docs/product/business-model.md` (product manifesto +
   operational model; commits `3fb3232`→`14aafba`). Layer 8 reference; supersedes spec §3.12 Stripe/trial.
