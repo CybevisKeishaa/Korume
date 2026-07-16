@@ -235,6 +235,7 @@ export async function submitJlptTest(testId: string, input: JlptSubmitInput): Pr
     source: "jlpt_submit",
     parts: { testId },
     jlptMode: input.mode,
+    passed: result.passed === true,
   });
 
   return {

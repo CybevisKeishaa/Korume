@@ -39,6 +39,10 @@ export interface RecordActivityInput {
    * 'full' if omitted so a caller that forgets it still gets *a* valid XP
    * amount rather than a thrown error. */
   jlptMode?: "section" | "full";
+  /** Only meaningful when `source === 'jlpt_submit'` — whether this attempt
+   * was a genuine pass. Forwarded to the companion capture gate, which only
+   * records `jlpt_passed` when this is `true`. */
+  passed?: boolean;
   now?: Date;
 }
 
@@ -147,6 +151,7 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
     parts,
     prevXp,
     nextXp,
+    passed: input.passed,
     now,
   });
 

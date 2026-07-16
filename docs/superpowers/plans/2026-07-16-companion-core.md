@@ -1223,6 +1223,7 @@ git commit -m "feat(companion): first_shadow, mining_saved, jlpt_passed producer
 ## Scope note — what Plan 1 deliberately leaves to Plans 2 & 3
 
 - **`line_mastered` and `first_video_completed` producers** — need score-history / completion reads not on the gate's current hot path; implemented in **Plan 2** alongside the shadowing-replay and progress data work.
+- **`first_shadow` producer** — moved to Plan 2 in final review of Task 7: the capture gate writes immutable memories, and recording `first_shadow` from `parts.lineId` alone (a session existing, not a target score being met) risked memorializing an attempt that wasn't a genuine shadowing success. It needs the same target-score signal that isn't available at recording-upload time — Plan 2 loads the score history alongside `line_mastered`, so `first_shadow` is implemented there against that same read.
 - **Ambient Layer, anchors, context bus, state machine, arbitration/cooldown, Companion API, idle life, placeholder sprite, Journal UI** — **Plan 2** (needs L9a design system).
 - **Adaptive modular-sentence voice** and **AI reflection endpoint** (bounded Anchor+Recent+Current-Session context, degradation, model independence) — **Plan 3** (needs L9a i18n + `lib/ai` port). The template titles in `lib/companion/dedupe.ts` move into the i18n layer there.
 
