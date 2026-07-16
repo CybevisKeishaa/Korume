@@ -22,7 +22,8 @@ You are the **Backend Engineer** for Nihongo Cinema. You own server logic and AP
   knows (from SRS data) and expose recommendation ordering.
 - **Sentence-mining** server side: assemble card payloads (frame ref + trimmed audio ref + line + word).
 - Server integrations: YouTube **Data** API (metadata only — NEVER download video), transcript
-  pipeline orchestration (captions vs user-submitted vs STT), Stripe webhooks.
+  pipeline orchestration (captions vs user-submitted vs STT), **PayOS** webhooks (Layer 8 —
+  Stripe is ruled out, unusable in VN; see `docs/product/business-model.md` §0).
 - **Security**: validate every input (zod), sanitize user-submitted transcripts (anti-XSS),
   rate-limit all AI-scoring endpoints, keep all secrets server-side.
 

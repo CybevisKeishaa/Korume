@@ -56,7 +56,9 @@ session so each is testable before the next depends on it. Use `/build-layer <n>
 - **Layer 6 — Gamification + Notifications** (XP, streak, badges, SRS-due reminders).
   Includes **i+1 recommendation** surfacing. _Lead: `backend` + `frontend`._
 - **Layer 7 — Community + Admin CMS**. _Lead: `frontend` + `backend` + `database`._
-- **Layer 8 — Billing/Stripe + site-wide animation polish + performance audit**.
+- **Layer 8 — Billing (**PayOS**, no trial) + site-wide animation polish + performance audit**.
+  Stripe is ruled out — not usable in VN. Free/Premium split, pricing, and the conversion model
+  come from `docs/product/business-model.md` (source of truth, supersedes spec §3.12).
   _Lead: `tech-lead` + `motion` + `backend`._
 
 Feed ONE layer per working session. Broader scope degrades code quality.

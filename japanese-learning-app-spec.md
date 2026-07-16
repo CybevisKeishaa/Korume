@@ -237,8 +237,12 @@ user_badges (user_id, badge_id, earned_at)
 forum_posts (id, user_id, title, content, created_at)
 forum_comments (id, post_id, user_id, content, created_at)
 
--- Billing
-subscriptions (id, user_id, stripe_customer_id, plan, status, current_period_end)
+-- Billing (PayOS — Stripe superseded, xem docs/product/business-model.md §0)
+-- PayOS KHÔNG có khái niệm "customer" thường trực như Stripe: mỗi lần thu tiền là một
+-- payment link mang `orderCode` riêng. Vì vậy không có cột `stripe_customer_id` tương đương.
+-- Cách liên kết giao dịch PayOS ↔ subscription (và renewal + price-lock cho Founding Member)
+-- là open follow-up, chốt khi lập kế hoạch Layer 8 — business-model.md §8.
+subscriptions (id, user_id, plan, status, current_period_end)
 ```
 
 ---

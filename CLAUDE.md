@@ -57,9 +57,10 @@ If a task appears to require breaking one of these, STOP and surface it to the u
 - **Deploy**: self-hosted at **almostgone.vn** (single long-running Node instance; NOT Vercel) + Supabase/Neon (DB)
 - **Payments**: **PayOS** subscriptions, **no trial** (Stripe/7-day-trial superseded — see `docs/product/business-model.md`; conversion = Contextual Discovery)
 
-> ⚠️ **Current repo state**: this repo is still a Create React App (`react-scripts`, React 19).
-> The target is Next.js 14. Migration is handled deliberately in **Layer 1** by `tech-lead` —
-> do not silently mix CRA and Next patterns. Confirm the migration step before scaffolding.
+> ✅ **Current repo state** (2026-07-16): the stack above is what actually runs — Next.js 14 App
+> Router, React 18, TypeScript strict, Tailwind, Vitest + Playwright. The CRA migration was
+> completed in Layer 1; Layers 1–7 are merged. Only **Layer 8** (PayOS billing, animation polish,
+> performance audit) remains — see `.claude/docs/workflow.md` §3.
 
 ---
 
