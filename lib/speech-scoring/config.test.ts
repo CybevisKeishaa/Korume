@@ -16,29 +16,49 @@ import { synthesizeSpeech } from "./tts";
 
 const KEY = "AZURE_SPEECH_KEY";
 const REGION = "AZURE_SPEECH_REGION";
+const PROVIDER = "SPEECH_PROVIDER";
 
 describe("isSpeechConfigured", () => {
-  const original = { key: process.env[KEY], region: process.env[REGION] };
+  const original = {
+    key: process.env[KEY],
+    region: process.env[REGION],
+    provider: process.env[PROVIDER],
+  };
 
   afterEach(() => {
     process.env[KEY] = original.key;
     process.env[REGION] = original.region;
+    process.env[PROVIDER] = original.provider;
   });
 
-  it("is true only when both key and region are present", () => {
+  // isSpeechConfigured now delegates to isSpeechEnabled (Spec D9): intent comes
+  // from SPEECH_PROVIDER, never inferred from which credentials happen to be
+  // set. Structural validity of the credentials is a startup-time concern
+  // (see env.test.ts), not this runtime gate's job.
+  it("is true when SPEECH_PROVIDER=azure, regardless of credential presence", () => {
+    process.env[PROVIDER] = "azure";
     process.env[KEY] = "k";
     process.env[REGION] = "japaneast";
     expect(isSpeechConfigured()).toBe(true);
   });
 
-  it("is false when either credential is missing", () => {
+  it("is false when SPEECH_PROVIDER=none", () => {
+    // Setup uses an explicit SPEECH_PROVIDER=none rather than an unset/deleted
+    // value: since Fix 3 (D9), an *unset* SPEECH_PROVIDER is a misconfiguration
+    // that throws (see env.test.ts), not a silent "off" — so this test
+    // exercises the genuinely-disabled case instead of that removed inference.
+    // Credential presence is irrelevant once provider is "none" — real
+    // credential-vs-result coverage lives at line 38 above (azure + creds ->
+    // true) and env.test.ts (azure, no creds -> true).
+    process.env[PROVIDER] = "none";
     delete process.env[KEY];
-    process.env[REGION] = "japaneast";
-    expect(isSpeechConfigured()).toBe(false);
-
-    process.env[KEY] = "k";
     delete process.env[REGION];
     expect(isSpeechConfigured()).toBe(false);
+  });
+
+  it("throws when SPEECH_PROVIDER is unset — absence is a misconfiguration, never intentional off (D9)", () => {
+    delete process.env[PROVIDER];
+    expect(() => isSpeechConfigured()).toThrow();
   });
 });
 

@@ -1,18 +1,13 @@
 /**
- * Shared constants for the server-only Claude wrapper (`lib/ai`).
- *
- * The default model lives in exactly one place (`AI_MODEL`) so a model bump is
- * a one-line change. Per the Anthropic API rules for Opus 4.8, we never send
- * `temperature`/`top_p`/`top_k` or a `budget_tokens` thinking config — those
- * 400 on this model.
+ * Shared constants for the server-only, provider-agnostic `lib/ai` wrapper.
+ * Tier→model mapping is a provider concern and lives per adapter (Spec D4) —
+ * there is no repo-wide model constant here.
  */
-
-/** The one model string every `lib/ai` call uses. No date suffix (Opus 4.8). */
-export const AI_MODEL = "claude-opus-4-8" as const;
 
 /**
  * Source tag written alongside AI-generated study content so it can be labelled
- * in the UI and gated behind human review before publish (CLAUDE.md §2.3, §3.3).
+ * in the UI and gated behind human review before publish (CLAUDE.md §2 item 3:
+ * all study content must be original, never copied verbatim, and attributed).
  */
 export const AI_SOURCE = "ai_generated" as const;
 

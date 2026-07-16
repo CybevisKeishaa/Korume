@@ -5,12 +5,14 @@
  * content" rule (line 317) and is what the UI's visible "AI-generated" badge
  * keys off; it also lets a future human-review/publish gate (not built yet —
  * candidate for the Layer 7 admin tools) find unreviewed rows.
+ *
+ * Speaks the provider-agnostic port (`AiProvider`) — never a specific SDK. The
+ * active provider is injected via an optional last parameter defaulting to
+ * `getProvider()` (the repo's clock-injection convention, per `lib/gamification`).
  */
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { getClient } from "./client";
-import { AI_MODEL, AI_SOURCE, MAX_TOKENS } from "./constants";
-import { toAiError } from "./errors";
-import { requireParsed } from "./run";
+import type { AiProvider } from "./port";
+import { AI_SOURCE, MAX_TOKENS } from "./constants";
+import { getProvider } from "./registry";
 import { ExamplesSchema } from "./schemas";
 import type { GenerateExamplesInput, GenerateExamplesResult } from "./types";
 
@@ -28,9 +30,8 @@ const EXAMPLES_SYSTEM =
  */
 export async function generateExamples(
   input: GenerateExamplesInput,
+  provider: AiProvider = getProvider(),
 ): Promise<GenerateExamplesResult> {
-  const client = getClient();
-
   const userContent =
     `Target word: ${input.word}\n` +
     `Reading: ${input.reading}\n` +
@@ -38,28 +39,20 @@ export async function generateExamples(
     `JLPT level: ${input.level}\n\n` +
     "Write exactly 3 original example sentences using this word.";
 
-  try {
-    const response = await client.messages.parse({
-      model: AI_MODEL,
-      max_tokens: MAX_TOKENS.examples,
-      system: [
-        {
-          type: "text",
-          text: EXAMPLES_SYSTEM,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
+  const result = await provider.generateStructured(
+    {
+      tier: "fast",
+      reasoning: false,
+      maxTokens: MAX_TOKENS.examples,
+      system: [{ text: EXAMPLES_SYSTEM, cacheable: true }],
       messages: [{ role: "user", content: userContent }],
-      output_config: { format: zodOutputFormat(ExamplesSchema) },
-    });
+    },
+    ExamplesSchema,
+  );
 
-    const parsed = requireParsed(response.parsed_output);
-    return {
-      examples: parsed.examples,
-      model: response.model,
-      source: AI_SOURCE,
-    };
-  } catch (err) {
-    throw toAiError(err);
-  }
+  return {
+    examples: result.parsed.examples,
+    model: result.model,
+    source: AI_SOURCE,
+  };
 }

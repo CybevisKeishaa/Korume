@@ -131,7 +131,8 @@ export interface EnvSpec<T> {
   check?: (value: T) => EnvCheckResult;
 }
 export function registerEnvSpec<T>(spec: EnvSpec<T>): void
-export function validateEnv(env?: NodeJS.ProcessEnv): void   // throws EnvValidationError; memoized
+export function validateEnv(env?: EnvSource): void   // throws EnvValidationError; memoized
+export type EnvSource = NodeJS.ProcessEnv | Record<string, string>;
 export function resetEnvValidationForTesting(): void
 export class EnvValidationError extends Error {}
 ```
@@ -204,7 +205,10 @@ describe("validateEnv", () => {
   });
 
   it("logs warnings without throwing", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // `() => undefined`, not `() => {}` — the repo's eslint config errors on
+    // empty functions, and this matches the existing console-spy pattern in
+    // lib/data/gamification.test.ts and lib/data/reading.test.ts.
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     registerEnvSpec({
       name: "gap",
       schema: z.object({ MODE: z.string() }),
@@ -290,7 +294,7 @@ export function resetEnvValidationForTesting(): void {
   validated = false;
 }
 
-export function validateEnv(env: NodeJS.ProcessEnv = process.env): void {
+export function validateEnv(env: EnvSource = process.env): void {
   if (validated) return;
 
   const errors: string[] = [];
@@ -364,8 +368,10 @@ export type AiProviderName = "none" | "anthropic" | "gemini";
 export type AiEnvShape = z.infer<typeof aiEnvSchema>;
 export const aiEnvSchema: z.ZodType<AiEnvShape>
 export interface AiEnv { APP_ENV: AppEnv; AI_PROVIDER: AiProviderName; }
-export function readAiEnv(env?: NodeJS.ProcessEnv): AiEnv   // throws if unset/invalid
+export function readAiEnv(env?: EnvSource): AiEnv   // throws if unset/invalid
 ```
+
+**Env parameters take `EnvSource`, not `NodeJS.ProcessEnv`** — verified 2026-07-15: Next augments `ProcessEnv` with a **required** `readonly NODE_ENV` (`next/types/global.d.ts:22`), so a test literal like `{ APP_ENV: "dev", AI_PROVIDER: "none" }` fails typecheck against bare `ProcessEnv` (TS2345). Every `env?:` parameter in this plan means `EnvSource`.
 
 This module owns the **schema**, not the registered spec. The spec needs `capabilityGaps`, which lives in the registry — so `aiEnvSpec` is assembled in `lib/ai/registry.ts` (Task 8). That placement is deliberate: putting it here would make `env.ts` import `registry.ts`, which already imports `env.ts`.
 
@@ -433,7 +439,23 @@ describe("aiEnvSchema + policy", () => {
 });
 ```
 
-`VERIFIED_GEMINI_KEY_SAMPLE` must be a **fake string that matches the verified marker from Task 1** — e.g. if Task 1 proves the prefix is `AIza`, use `"AIza" + "x".repeat(35)`. Define it as a const at the top of the test file. Never paste the real key into a test.
+Define at the top of the test file — a **fake** string matching the marker Task 1 verified. Never paste the real key into a test.
+
+```ts
+// Matches the 53-char `AQ.` shape verified against the live API on 2026-07-15
+// (spec §7 V3). `AIza…` is equally valid and must also be accepted.
+const VERIFIED_GEMINI_KEY_SAMPLE = "AQ.Ab" + "x".repeat(48);
+```
+
+Add one more case proving the rule is not over-fitted to a single format:
+
+```ts
+it("accepts both documented Google key shapes", () => {
+  const base = { APP_ENV: "dev", AI_PROVIDER: "gemini", GEMINI_MODEL_FAST: "m", GEMINI_MODEL_DEEP: "m" };
+  expect(validate({ ...base, GEMINI_API_KEY: VERIFIED_GEMINI_KEY_SAMPLE })).toEqual([]);
+  expect(validate({ ...base, GEMINI_API_KEY: "AIza" + "x".repeat(35) })).toEqual([]);
+});
+```
 
 - [ ] **Step 2: Run the test and watch it fail**
 
@@ -468,10 +490,14 @@ export type AiProviderName = "none" | "anthropic" | "gemini";
  *
  * ANTHROPIC: unverifiable today — the user has no key, so this marker comes
  * from documentation, NOT from a real key. Most likely rule to false-crash.
- * GEMINI: verified against a live key in Task 1 — see spec §7 V3.
+ *
+ * GEMINI: verified against the live API on 2026-07-15 (spec §7 V3). Google
+ * issues BOTH shapes and both are valid, so accept either — the working key in
+ * use is the 53-char `AQ.` form, and a rule assuming only `AIza` would reject
+ * it and block boot. This is the whole reason Task 1 runs before this file.
  */
 const ANTHROPIC_KEY_PREFIX = "sk-ant-";
-const GEMINI_KEY_PREFIX = "AIza"; // ← REPLACE with Task 1's verified prefix.
+const GEMINI_KEY_PREFIXES = ["AIza", "AQ."] as const;
 
 const providerName = z.enum(["none", "anthropic", "gemini"]);
 const appEnv = z.enum(["dev", "staging", "production"]);
@@ -518,10 +544,10 @@ export const aiEnvSchema = z
     if (env.AI_PROVIDER === "gemini") {
       if (!env.GEMINI_API_KEY) {
         fail(requiredMsg("GEMINI_API_KEY", "AI_PROVIDER=gemini"), "GEMINI_API_KEY");
-      } else if (!env.GEMINI_API_KEY.startsWith(GEMINI_KEY_PREFIX)) {
+      } else if (!GEMINI_KEY_PREFIXES.some((p) => env.GEMINI_API_KEY?.startsWith(p))) {
         fail(
-          `GEMINI_API_KEY does not match the documented key structure ` +
-            `(expected it to begin with "${GEMINI_KEY_PREFIX}").`,
+          `GEMINI_API_KEY does not match a documented Google API key structure ` +
+            `(expected it to begin with one of: ${GEMINI_KEY_PREFIXES.join(", ")}).`,
           "GEMINI_API_KEY",
         );
       }
@@ -542,7 +568,7 @@ export interface AiEnv {
 }
 
 /** Reads the validated selection. Throws if unset/invalid — never guesses. */
-export function readAiEnv(env: NodeJS.ProcessEnv = process.env): AiEnv {
+export function readAiEnv(env: EnvSource = process.env): AiEnv {
   const parsed = aiEnvSchema.safeParse(env);
   if (!parsed.success) {
     throw new Error(
@@ -852,7 +878,8 @@ Moves the Anthropic-specific request shape and error mapping out of the feature 
 **Files:**
 - Create: `lib/ai/providers/anthropic.ts`
 - Test: `lib/ai/providers/anthropic.test.ts`
-- Modify: `lib/ai/errors.ts` (remove `toAiError`, keep `AiError`/`AiErrorKind`/`AiNotConfiguredError`)
+
+`lib/ai/errors.ts` is **not touched in this task.** `toAiError` stays where it is and this adapter imports it; it relocates in Task 10, once the three feature modules have stopped importing it. Moving it now would red-line typecheck for four commits and break `git bisect` across them, violating CLAUDE.md §9 at every one.
 
 **Interfaces:**
 - Consumes: `AiProvider`, `AiRequest`, `AiResult` (Task 5); `AiError`, `AiErrorKind` from `lib/ai/errors.ts`.
@@ -942,7 +969,10 @@ describe("anthropic adapter", () => {
     mock = installClaudeMock();
     mock.queueStatus(401);
     const provider = createAnthropicProvider("sk-ant-test");
-    await expect(provider.generateText(req)).rejects.toBeInstanceOf(AiError);
+    // Assert the KIND, not just the type: lib/http-status.ts maps kind → HTTP
+    // status, and ~10 downstream suites depend on that mapping. `toBeInstanceOf`
+    // would still pass if 401 regressed to "unknown".
+    await expect(provider.generateText(req)).rejects.toMatchObject({ kind: "auth" });
   });
 });
 ```
@@ -956,7 +986,7 @@ Expected: FAIL — cannot resolve `./anthropic`.
 
 - [ ] **Step 3: Implement the adapter**
 
-Move `toAiError` verbatim from `lib/ai/errors.ts` into this file (it is Anthropic-specific: it branches on `Anthropic.RateLimitError`, `Anthropic.AuthenticationError`, `Anthropic.APIConnectionError`, `Anthropic.APIError`, `Anthropic.AnthropicError`). Keep the mapping order — most specific first — and its doc comment. Then:
+Import `toAiError` from `../errors` — do **not** move or copy it here. It is Anthropic-specific and will relocate into this file in Task 10, after the feature modules stop importing it.
 
 ```ts
 // lib/ai/providers/anthropic.ts
@@ -970,15 +1000,13 @@ Move `toAiError` verbatim from `lib/ai/errors.ts` into this file (it is Anthropi
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod/v4";
-import { AiError } from "../errors";
+import { AiError, toAiError } from "../errors";
 import type { AiProvider, AiRequest, AiResult, Tier, TokenUsage } from "../port";
 
 const MODEL_BY_TIER: Record<Tier, string> = {
   fast: "claude-haiku-4-5-20251001",
   deep: "claude-opus-4-8",
 };
-
-// ... toAiError moved here verbatim from lib/ai/errors.ts ...
 
 function toSystem(req: AiRequest): Anthropic.Messages.TextBlockParam[] {
   return req.system.map((block) => ({
@@ -1063,25 +1091,22 @@ export function createAnthropicProvider(apiKey: string): AiProvider {
 }
 ```
 
-- [ ] **Step 4: Strip `toAiError` from `lib/ai/errors.ts`**
+- [ ] **Step 4: Run the tests**
 
-Delete `toAiError` and the `import Anthropic from "@anthropic-ai/sdk"` line. Keep `AiError`, `AiErrorKind`, `AiNotConfiguredError` exactly as they are — **D1 depends on that union not changing**, and `lib/http-status.ts` consumes it. `errors.ts` must end up importing nothing from any SDK.
+Run: `npx vitest run lib/ai/providers/anthropic.test.ts && npm run typecheck && npm test`
+Expected: adapter tests PASS, typecheck clean, **full suite still green**. Nothing else changed yet — the feature modules keep working exactly as before, through the code path they already used.
 
-- [ ] **Step 5: Run the tests**
-
-Run: `npx vitest run lib/ai/providers/anthropic.test.ts && npm run typecheck`
-Expected: adapter tests PASS. Typecheck will now FAIL in `conversation.ts` / `summary.ts` / `examples.ts` — they still import the deleted `toAiError`. That is expected; Tasks 9–10 fix them. If you need a green tree at this commit, do Step 6 after Task 10 instead.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add lib/ai/providers/anthropic.ts lib/ai/providers/anthropic.test.ts lib/ai/errors.ts
+git add lib/ai/providers/anthropic.ts lib/ai/providers/anthropic.test.ts
 git commit -m "feat(ai): Anthropic adapter behind the port
 
-Moves Anthropic request shaping and typed-error mapping out of the feature
-modules. AiErrorKind and lib/http-status.ts are untouched: the adapter maps the
-SDK's typed errors onto the same union, so the ~10 suites asserting 503 stay
-green. Tier maps to model here — call sites never name a model."
+Adds the adapter alongside the existing code path; the feature modules move
+over in Tasks 9-10, so the tree stays green at every commit. AiErrorKind and
+lib/http-status.ts are untouched: the adapter maps the SDK's typed errors onto
+the same union, so the ~10 suites asserting 503 stay green. Tier maps to model
+here — call sites never name a model."
 ```
 
 ---
@@ -1215,7 +1240,9 @@ Expected: FAIL — cannot resolve `./gemini`.
 
 Convert the zod schema with `z.toJSONSchema(schema)` (verified available: zod 3.25.76, `zod/v4` subpath). Gemini's `responseSchema` accepts a subset of OpenAPI — check the produced JSON against it and massage if required. The three real schemas (`CorrectionsSchema`, `VideoSummarySchema`, `ExamplesSchema`) are flat, all-string, with no unions/refinements/recursion/numeric constraints, so the translation should be near 1:1. **Record what massaging was needed in spec §7 row V2.**
 
-Capabilities must be declared honestly — this is the whole point of the capability mechanism (Spec §5.4). If Gemini's caching or reasoning cannot be honoured through this adapter, declare `false`. **Do not weaken the port to make the gap disappear** (Spec §2): a `false` here surfaces as a startup gap report in dev and a hard failure in production, which is the designed outcome.
+Capabilities must be declared honestly — this is the whole point of the capability mechanism (Spec §5.4). **Declare what this adapter actually implements, not what the API is capable of in principle.** Task 1 verified that `gemini-3.1-flash-lite` advertises `createCachedContent`, so `promptCaching: true` is reachable — but only declare it `true` if this adapter really wires caching up; otherwise `false` is the honest answer and the gap report is working as designed.
+
+**Do not weaken the port to make a gap disappear** (Spec §2): a `false` surfaces as a startup gap report in dev and a hard failure in production, which is the designed outcome. Since Gemini never runs in production (D7), a `false` here costs nothing but honesty in dev.
 
 - [ ] **Step 5: Run the test and watch it pass**
 
@@ -1247,8 +1274,8 @@ Records V1/V2 findings in the spec."
 
 ```ts
 export const REQUIRED_CAPABILITIES: Capabilities   // in capabilities.ts
-export function getProvider(env?: NodeJS.ProcessEnv): AiProvider   // throws AiNotConfiguredError when AI_PROVIDER=none
-export function isAiEnabled(env?: NodeJS.ProcessEnv): boolean      // AI_PROVIDER !== "none"
+export function getProvider(env?: EnvSource): AiProvider   // throws AiNotConfiguredError when AI_PROVIDER=none
+export function isAiEnabled(env?: EnvSource): boolean      // AI_PROVIDER !== "none"
 export function capabilityGaps(provider: AiProvider): string[]
 export function setProviderForTesting(p: AiProvider | null): void
 export const aiEnvSpec: EnvSpec<AiEnvShape>   // assembled here; registered by Task 13
@@ -1346,11 +1373,11 @@ export function setProviderForTesting(provider: AiProvider | null): void {
   testProvider = provider;
 }
 
-export function isAiEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isAiEnabled(env: EnvSource = process.env): boolean {
   return readAiEnv(env).AI_PROVIDER !== "none";
 }
 
-export function getProvider(env: NodeJS.ProcessEnv = process.env): AiProvider {
+export function getProvider(env: EnvSource = process.env): AiProvider {
   if (testProvider) return testProvider;
 
   const parsed = aiEnvSchema.safeParse(env);
@@ -1400,7 +1427,7 @@ export const aiEnvSpec: EnvSpec<AiEnvShape> = {
   schema: aiEnvSchema,
   check: (env) => {
     if (env.AI_PROVIDER === "none") return {};
-    const gaps = capabilityGaps(getProvider(env as NodeJS.ProcessEnv));
+    const gaps = capabilityGaps(getProvider(env));
     if (gaps.length === 0) return {};
     return env.APP_ENV === "production" ? { errors: gaps } : { warnings: gaps };
   },
@@ -1514,7 +1541,7 @@ request-shape assertions moved to the adapter test where they belong."
 ### Task 10: Move `summary.ts` and `examples.ts` onto the port
 
 **Files:**
-- Modify: `lib/ai/summary.ts`, `lib/ai/examples.ts`, `lib/ai/content.test.ts`, `lib/ai/run.ts`, `lib/ai/constants.ts`
+- Modify: `lib/ai/summary.ts`, `lib/ai/examples.ts`, `lib/ai/content.test.ts`, `lib/ai/run.ts`, `lib/ai/constants.ts`, `lib/ai/errors.ts`, `lib/ai/providers/anthropic.ts`
 
 **Interfaces:**
 - Consumes: `getProvider` (Task 8); `AiProvider` (Task 5).
@@ -1528,9 +1555,11 @@ request-shape assertions moved to the adapter test where they belong."
 
 `generateExamples`: `tier: "fast"`, `reasoning: false`, `maxTokens: MAX_TOKENS.examples`, one cacheable system block (`EXAMPLES_SYSTEM`), the existing `userContent` string verbatim, `provider.generateStructured(req, ExamplesSchema)`. Keep `source: AI_SOURCE`.
 
-- [ ] **Step 2: Clean up `run.ts` and `constants.ts`**
+- [ ] **Step 2: Relocate `toAiError` and clean up `run.ts` / `constants.ts`**
 
-`run.ts`: delete `firstText` (Anthropic `ContentBlock[]` — adapter concern) and `requireParsed` (adapters raise `invalid_output` themselves now). If the file ends up empty, delete it and drop its imports.
+**`errors.ts`:** now that no feature module imports it, move `toAiError` into `lib/ai/providers/anthropic.ts` (delete it here along with the `import Anthropic from "@anthropic-ai/sdk"` line, and drop the `../errors` import of it in the adapter). Keep the mapping order — most specific first: `RateLimitError` → `AuthenticationError` → `APIConnectionError` → `APIError` → `AnthropicError` base → unknown — and bring its doc comment with it. Keep `AiError`, `AiErrorKind` and `AiNotConfiguredError` in `errors.ts` exactly as they are: **D1 depends on that union not changing**, and `lib/http-status.ts` consumes it. When you are done, `errors.ts` must import nothing from any SDK — that is what makes the Task 15 lint rule pass.
+
+**`run.ts`:** delete `firstText` (Anthropic `ContentBlock[]` — adapter concern) and `requireParsed` (adapters raise `invalid_output` themselves now). If the file ends up empty, delete it and drop its imports.
 
 `constants.ts`: delete `AI_MODEL` — tier→model now lives per adapter (D4). Keep `AI_SOURCE`, `MAX_TOKENS`, `TRANSCRIPT_CHAR_CAP`. Then confirm nothing outside referenced it:
 
@@ -1552,11 +1581,13 @@ Expected: PASS, and typecheck now clean again (Task 6 Step 5's expected breakage
 - [ ] **Step 5: Commit**
 
 ```bash
-git add lib/ai/summary.ts lib/ai/examples.ts lib/ai/content.test.ts lib/ai/run.ts lib/ai/constants.ts lib/ai/index.ts
+git add lib/ai/summary.ts lib/ai/examples.ts lib/ai/content.test.ts lib/ai/run.ts lib/ai/constants.ts lib/ai/index.ts lib/ai/errors.ts lib/ai/providers/anthropic.ts
 git commit -m "refactor(ai): summary + examples speak the port
 
-Drops AI_MODEL: tier maps to a model inside each adapter now. Business logic
-(transcript capping, prompt wording, AI_SOURCE labelling) is unchanged."
+Relocates toAiError into the Anthropic adapter now that no feature module
+imports it, leaving errors.ts free of any SDK import. Drops AI_MODEL: tier maps
+to a model inside each adapter now. Business logic (transcript capping, prompt
+wording, AI_SOURCE labelling) is unchanged."
 ```
 
 ---
@@ -1642,7 +1673,9 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST \
   "https://$AZ_REGION.api.cognitive.microsoft.com/sts/v1.0/issueToken"
 ```
 
-Expected: `200` and `length=32`. The audit's bug was a 36-character GUID (a resource id) returning `401`. If you get `401`, **stop and report** — that is scope B, and Task 12 must not encode a rule around a broken key.
+**Verified 2026-07-15 (spec §7 V6):** this returns **200** — the user's post-audit key fix worked. The real key is **84 characters, alphanumeric, no separators**. It is *not* the 32-hex classic Key1 an earlier draft of this plan assumed; Azure issues longer keys now.
+
+If you get `401`, **stop and report** — that is scope B, and this task must not encode a rule around a broken key.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -1651,8 +1684,10 @@ Expected: `200` and `length=32`. The audit's bug was a 36-character GUID (a reso
 import { describe, expect, it } from "vitest";
 import { speechEnvSchema } from "./env";
 
-// A fake key matching the verified structure. Never paste the real key here.
-const VALID_KEY = "0123456789abcdef0123456789abcdef";
+// Fake keys matching the two verified real shapes. Never paste the real key here.
+const VALID_KEY_LONG = "a".repeat(84);                    // the live 2026-07-15 shape
+const VALID_KEY_CLASSIC = "0123456789abcdef0123456789abcdef"; // classic 32-hex Key1
+const VALID_KEY = VALID_KEY_LONG;
 
 const issues = (env: Record<string, string>) => {
   const parsed = speechEnvSchema.safeParse(env);
@@ -1689,10 +1724,12 @@ describe("speechEnvSchema", () => {
     expect(found.join(" ")).not.toContain(guid); // redaction contract (Task 3)
   });
 
-  it("accepts a well-formed azure configuration", () => {
-    expect(
-      issues({ SPEECH_PROVIDER: "azure", AZURE_SPEECH_KEY: VALID_KEY, AZURE_SPEECH_REGION: "japanwest" }),
-    ).toEqual([]);
+  it("accepts both real Azure key shapes — the rule must not pin a single length", () => {
+    // An earlier draft pinned 32-hex from memory; the live key is 84 chars.
+    // A length-specific rule would have blocked boot on a working key.
+    const base = { SPEECH_PROVIDER: "azure", AZURE_SPEECH_REGION: "japanwest" };
+    expect(issues({ ...base, AZURE_SPEECH_KEY: VALID_KEY_LONG })).toEqual([]);
+    expect(issues({ ...base, AZURE_SPEECH_KEY: VALID_KEY_CLASSIC })).toEqual([]);
   });
 });
 ```
@@ -1721,12 +1758,21 @@ import type { EnvSpec } from "@/lib/env/validate";
 export type SpeechProviderName = "none" | "azure";
 
 /**
- * Azure Speech Key1/Key2 are 32 hex characters. The 2026-07-14 audit found a
- * 36-character GUID here — the resource id, copied instead of the key — which
- * returned 401 and silently killed TTS, STT, pronunciation scoring and the pitch
- * reference. Verified against the live key in Step 1 (spec §7 V6).
+ * Azure Speech keys are unseparated alphanumeric strings. Azure has issued both
+ * the classic 32-hex Key1/Key2 and, as here, longer keys (the live key verified
+ * on 2026-07-15 is 84 alphanumeric chars — spec §7 V6), so this rule matches the
+ * one stable property rather than a specific length.
+ *
+ * What it catches: the 2026-07-14 audit found a 36-character GUID here — the
+ * resource id, copied instead of the key — which returned 401 and silently
+ * killed TTS, STT, pronunciation scoring and the pitch reference for weeks. A
+ * GUID is hyphen-separated, so it fails this rule; both real key shapes pass.
+ *
+ * Deliberately loose on length: an earlier draft of this plan pinned it to 32
+ * hex from memory, which would have REJECTED the working 84-char key and blocked
+ * boot — the exact failure spec §8 predicts for unverified markers.
  */
-const AZURE_KEY_PATTERN = /^[0-9a-f]{32}$/i;
+const AZURE_KEY_PATTERN = /^[A-Za-z0-9]{32,}$/;
 
 export const speechEnvSchema = z
   .object({
@@ -1766,7 +1812,7 @@ export const speechEnvSchema = z
 export type SpeechEnvShape = z.infer<typeof speechEnvSchema>;
 
 /** Whether speech is intentionally enabled. Never inferred from key presence. */
-export function isSpeechEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+export function isSpeechEnabled(env: EnvSource = process.env): boolean {
   return env.SPEECH_PROVIDER === "azure";
 }
 
@@ -2012,7 +2058,7 @@ export interface SubsystemHealth {
 }
 
 export async function checkAiHealth(
-  env: NodeJS.ProcessEnv = process.env,
+  env: EnvSource = process.env,
 ): Promise<SubsystemHealth> {
   if (!isAiEnabled(env)) return { status: "disabled" };
 

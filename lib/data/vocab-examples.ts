@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
-import { AiError, generateExamples, isAiConfigured, type JlptLevel } from "@/lib/ai";
+import { AiError, generateExamples, isAiEnabled, type JlptLevel } from "@/lib/ai";
 import { aiErrorStatus } from "@/lib/http-status";
 import { shouldGenerateMoreExamples } from "@/lib/validation/vocab-examples";
 
@@ -72,7 +72,7 @@ export async function generateVocabExamples(
     return { ok: true, data: existing, cached: true };
   }
 
-  if (!isAiConfigured()) return { ok: false, status: 503 };
+  if (!isAiEnabled()) return { ok: false, status: 503 };
 
   const level = levelOverride ?? vocabRow.jlpt_level ?? "N5";
 

@@ -5,6 +5,7 @@
  * `AZURE_SPEECH_KEY` / `AZURE_SPEECH_REGION` from the server env and is only
  * imported by other server-side `lib/speech-scoring` modules.
  */
+import { isSpeechEnabled } from "./env";
 import { SpeechNotConfiguredError } from "./errors";
 
 /** Recognition + synthesis language for the whole app (Japanese). */
@@ -16,9 +17,14 @@ const REGION_VAR = "AZURE_SPEECH_REGION";
 /**
  * Whether Azure Speech is usable. Routes call this to return a clean 503 when
  * the feature is off, instead of throwing deep in a request. Never fakes creds.
+ *
+ * `isSpeechConfigured` used to infer "speech is on" from key presence. That
+ * inference is what let an invalid AZURE_SPEECH_KEY (a resource id, not Key1)
+ * sit live until the 2026-07-14 audit. Intent now comes from SPEECH_PROVIDER
+ * (Spec D9); structure is validated at startup (see `./env`).
  */
 export function isSpeechConfigured(): boolean {
-  return !!process.env[KEY_VAR] && !!process.env[REGION_VAR];
+  return isSpeechEnabled();
 }
 
 export interface SpeechCredentials {

@@ -5,12 +5,12 @@
  * typed {@link AiError} (inspect `.kind`). No HTTP route or rate-limiting lives
  * here — that is the backend-engineer's layer on top of these wrappers.
  */
-export { isAiConfigured } from "./client";
+export { isAiEnabled, setProviderForTesting } from "./registry";
 export { conversationReply, sessionCorrections } from "./conversation";
 export { summarizeTranscript } from "./summary";
 export { generateExamples } from "./examples";
 
-export { AI_MODEL, AI_SOURCE } from "./constants";
+export { AI_SOURCE } from "./constants";
 export { SCENARIO_IDS } from "./scenarios";
 export { AiError, AiNotConfiguredError, type AiErrorKind } from "./errors";
 

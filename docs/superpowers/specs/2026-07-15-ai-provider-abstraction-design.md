@@ -74,6 +74,7 @@ names current mechanisms as current, so they can be replaced without touching th
 | Streaming responses | Not required by the specification (see D8) |
 | Registering Supabase env in the validator | **Removed from scope during planning (2026-07-15).** Supabase is not a swappable provider, had no audit bug, and `lib/env.ts` already ships `hasPublicSupabaseEnv()` — a deliberate degrade ("lets the app run (marketing + auth pages) before .env.local exists, instead of crashing every route", used by `app/(app)/layout.tsx`, `app/(admin)/admin/layout.tsx`, `lib/supabase/middleware.ts`). Requiring Supabase env at startup would destroy that shipped decision — the same collision D9 caught for speech. The shared runner remains open for Supabase to register later if ever wanted |
 | Changing `CLAUDE.md` §2 | §2 stands unchanged. Gemini is a dev-only provider *because* of §2, not an exception to it |
+| Making `next start` **exit non-zero** on invalid configuration | **Scope D (deploy) — user decision, 2026-07-16, after V4.** V4 proved `next start` does not exit: it opens the port, prints "Ready", then serves a permanent HTTP 500 per request. So under the production runtime, invalid config is loud on every request but invisible to a crash-restart supervisor, which never sees a non-zero exit. Closing that gap is a **policy** choice (e.g. `process.exit(1)` from `register()`), not the wiring Task 13 owns, and its correct shape depends on the supervisor almostgone.vn actually runs — so it is decided when that supervisor is set up, not here. **Spec A therefore ships with a known limit: "fails at boot" is verified true for `next dev` and false for `next start`.** Until scope D resolves it, the production net is an HTTP-level health check (the admin liveness endpoint of D2) rather than process exit |
 
 ---
 
@@ -264,9 +265,14 @@ currently present**) and a `NEXT_RUNTIME === "nodejs"` guard, since the hook als
 If `instrumentation.ts` proves limited across runtimes or deployment targets, validation moves to
 another hook **without architectural change**.
 
-> Implementation note, unverified: on Next 14.2.35 `instrumentation.ts` may not execute under
-> `next dev` until the first request. If so, dev surfaces the crash on first request rather than
-> at "ready" — still fail-fast, one beat later. `next start` (production) runs it at boot. See V4.
+> Implementation note, **verified 2026-07-16 (Task 13, see V4)**: the prediction above was
+> backwards. Under `next dev` on 14.2.35, `instrumentation.ts` runs synchronously **before**
+> "Ready" and before the port opens — a bad config crashes the process with no listener ever
+> bound; dev fails at true boot, not "one beat later". `next start` is the one that defers:
+> it prints "Ready" and opens the port *before* running the hook, then throws
+> `EnvValidationError` lazily inside `prepareImpl` on the first request that reaches it — and
+> the underlying process does **not** exit. It keeps listening and re-throws the same error on
+> every subsequent request (500), forever, until something external kills it. See V4.
 
 ### 5.2 Env validation module
 
@@ -381,6 +387,17 @@ lib/env.ts        → lib/env/index.ts   [MOVE, git mv] existing requiredEnv/pub
 lib/env/validate.ts   [NEW]  shared runner (zod, idempotent, memoized, framework-agnostic)
 instrumentation.ts    [NEW]  one-line call; current mechanism only
 next.config.mjs       + experimental.instrumentationHook: true   [verified absent]
+                      + webpack() edge alias for @anthropic-ai/sdk → false. Not predicted by
+                        this design; discovered during Task 13. middleware.ts runs on the edge
+                        runtime, and Next also compiles instrumentation.ts's register() for
+                        that runtime even though its NEXT_RUNTIME guard makes it a no-op there.
+                        register() dynamically imports lib/ai/registry.ts, which imports
+                        providers/anthropic.ts, whose SDK statically imports node:fs/node:path
+                        — unbundleable on edge. Verified 2026-07-16 (Task 13): `npm run build`
+                        fails with `UnhandledSchemeError: node:fs` / `node:path` (import trace
+                        through @anthropic-ai/sdk → lib/ai/registry.ts) with the alias removed,
+                        and passes cleanly with it restored. The alias only affects edge
+                        bundling, not runtime behaviour on nodejs.
 
 lib/ai/
   env.ts            [NEW]  AI_PROVIDER + APP_ENV policy + per-provider credential schema
@@ -442,12 +459,12 @@ Baseline to preserve: **1098 unit tests green**. Verify with `npx tsc --noEmit`,
 
 | # | Item | Why it matters |
 | --- | --- | --- |
-| V1 | Does `@google/genai` route through global `fetch`? | Decides whether the Gemini mock is fetch-level (like `claude-mock`) or module-level |
-| V2 | Which OpenAPI subset does Gemini `responseSchema` accept; does `z.toJSONSchema()` output need massaging? | `schemas.ts` uses `zod/v4`, so `z.toJSONSchema()` exists — **no new dependency needed**. The 3 schemas are flat, all-string, with no unions/refinements/recursion/numeric constraints (a deliberate L4 choice), so translation should be near 1:1 |
-| V3 | `GEMINI_API_KEY` liveness and real structure — the current value starts with `AQ.`, not the `AIza` this assistant expects | **Blocks writing the structural rule.** If `AQ.` is legitimate, a rule built on the assistant's assumption would reject a valid key |
-| V4 | `instrumentation.ts` behaviour under `next dev` on 14.2.35 | Determines whether dev fails at boot or at first request |
-| V5 | `gemini-3.1-flash-lite` exists and is in the free tier | Model id is post-cutoff for this assistant; unverified |
-| V6 | `AZURE_SPEECH_KEY` liveness after the user's fix | Audit found it invalid; the fix is unverified (scope B) |
+| V1 | ~~Does `@google/genai` route through global `fetch`?~~ **VERIFIED 2026-07-15 (Task 7)** | **Yes.** A probe that swapped `globalThis.fetch` before calling `models.generateContent` observed a real `GLOBAL FETCH USED: https://generativelanguage.googleapis.com/...` log line. Recorded per spec even though it did not change the mocking strategy: Task 7 mocks the `@google/genai` module (not `fetch`), per D5/Step 2, because the adapter's job is mapping the port onto the SDK call shape, which a module mock observes directly. This does mean a fetch-level `test/gemini-mock.ts` (mirroring `test/claude-mock.ts`) **is possible** later, should a reason arise to want one. |
+| V2 | ~~Which OpenAPI subset does Gemini `responseSchema` accept; does `z.toJSONSchema()` output need massaging?~~ **VERIFIED 2026-07-15 (Task 7)** | **No massaging needed.** `z.toJSONSchema()` (zod 3.25.76, `zod/v4` subpath) emits standard draft-2020-12 JSON Schema, including a top-level `$schema` key. `@google/genai` v2.11.0's `Schema` type (used by `config.responseSchema`) is documented as "a select subset of an OpenAPI 3.0 schema object" — narrower than full JSON Schema — **but the installed SDK does not actually require pre-conversion**: its internal `maybeMoveToResponseJsonSchema()` (in `models.generateContent`) detects `Object.keys(responseSchema).includes('$schema')` and automatically reroutes the object from the restricted `responseSchema` field to the full-JSON-Schema `responseJsonSchema` field (added "since v1.9.0" per the SDK's own inline comment), which explicitly documents support for every keyword the three real schemas' `z.toJSONSchema()` output uses (`type`, `properties`, `required`, `additionalProperties`, `items`). **The adapter does NOT rely on that private reroute** (review finding, fixed in `6687192`): `maybeMoveToResponseJsonSchema` is `private` in the SDK's `.d.ts`, so an upgrade could change or drop it with no type error, and a module-mocked suite would never notice — it would surface only as a live failure in a developer's environment. The SDK exposes a **public, documented** `responseJsonSchema?: unknown` field for exactly this purpose (its `responseSchema` docs even say "if `response_schema` doesn't process your schema correctly, try using `response_json_schema` instead"). The adapter therefore passes `z.toJSONSchema(schema)` via `config.responseJsonSchema` (omitting `responseSchema`, as the SDK requires) plus `config.responseMimeType: "application/json"`. |
+| V3 | ~~`GEMINI_API_KEY` liveness and real structure~~ **VERIFIED 2026-07-15** | **The assistant's assumption was wrong.** `GET /v1beta/models` with `x-goog-api-key` returns **200**: the key is valid. Its real shape is a **53-char `AQ.`-prefixed** key, *not* the 39-char `AIza` this assistant expected. A rule built on `AIza` would have rejected a working key and blocked boot — exactly the failure §8 predicts. **Both prefixes are legitimate Google API key formats; the structural rule must accept either.** |
+| V4 | ~~`instrumentation.ts` behaviour under `next dev` on 14.2.35~~ **VERIFIED 2026-07-16 (Task 13)** | **The plan's own unverified prediction had it backwards.** With `APP_ENV=production AI_PROVIDER=gemini` (a deliberate violation), `next dev` logs `Compiling /instrumentation` then throws the aggregated `EnvValidationError` and exits — no "Ready" line, no port ever bound — confirmed by `netstat` showing no listener and no surviving node process. That is boot-time failure in the strictest sense: before the server is reachable at all. With the good config, the same ordering holds: `Environment warning: [ai] provider "gemini" does not support promptCaching/reasoning` print, **then** `✓ Ready in 3.9s`, and a follow-up request returns 200. So `validateEnv()` runs before "Ready" under `next dev`, not lazily on first request as the plan guessed. **`next start` is the surprise**: it prints `✓ Ready in 395ms` and opens the port *before* running the hook, then throws the same `EnvValidationError` lazily inside `prepareImpl`, returns 500, and **does not exit the process** — it stays listening and repeats the failure on every request until killed externally (verified: `netstat`/`tasklist` showed the node process still bound to :3000 after the error; had to `taskkill` it manually). No key values appeared in any of the logs. |
+| V5 | ~~`gemini-3.1-flash-lite` exists~~ **VERIFIED 2026-07-15** | Present in the live model list and supports `generateContent` — the configured id is correct despite being post-cutoff for this assistant. It also advertises `createCachedContent`, so Gemini can honour the port's `promptCaching` capability (D5/§5.4) |
+| V6 | ~~`AZURE_SPEECH_KEY` liveness after the user's fix~~ **VERIFIED 2026-07-15 (Task 12)** | **The user's fix worked**: the token endpoint returns **200** (the audit's key returned 401). **And the assistant's assumed marker was wrong again**: the real key is **84 alphanumeric characters**, not the 32-hex classic Key1 this plan assumed from memory — a `/^[0-9a-f]{32}$/` rule would have rejected a working key and blocked boot. Second time in this spec an unverified marker was wrong (see V3); both were caught only because the rule is written *after* checking. The encoded marker is therefore the one stable property — **unseparated alphanumeric, ≥32 chars** — which accepts both real key shapes and still rejects the audit's hyphenated 36-char resource-id GUID. |
 
 ---
 
