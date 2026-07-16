@@ -39,12 +39,50 @@ no FOMO, no engagement trick. Every appearance of the Companion must leave the l
 
 > *"Có một ai đó đã cùng mình đi qua chặng đường này."* — someone walked this road with me.
 
+### 1.1 P0 — Raison d'être: the Companion never exists to increase engagement
+
+Above every principle in §2 stands the reason the Companion System exists at all. **P0 is not a design
+principle — it is the reason the rest have a subject.** It is stated here, before P1–P7, deliberately.
+
+The Companion exists **only** to make the learning journey more meaningful. It never exists to increase
+engagement, retention, session count, or any product metric.
+
+The test is **subtraction**: if tomorrow you deleted all gamification, streaks, XP, Premium, and
+leaderboards, the Companion must still have a reason to exist. Concretely:
+
+- If the Companion's reason to exist depends on **retention** — the *Character* has failed.
+- If it depends on **AI** — the *Architecture* has failed.
+- If it depends on **UI** — the *Design* has failed.
+
+The Companion must be strong enough that even if the entire product changes around it, it remains the
+learner's companion.
+
+### 1.2 P8 — The Companion has its own journey
+
+The learner is not the only one who grows; the Companion grows too — but **not along the same axis**.
+(Numbered P8 because it emerged last, placed here because it is a *why*, not a *how*.)
+
+- The learner grows through **knowledge**.
+- The Companion grows through **the stories it is allowed to keep**.
+
+It does not become stronger. It does not become smarter. It has simply **witnessed more journeys**. So
+the final stage is not the strongest creature — it is the one that has **listened the most**:
+
+> The last stage is not Evolution. The last stage is **Wisdom**.
+
+The two paths run in parallel and **never compete**: the learner grows by learning, the Companion grows
+by accompanying. This directly steers **Character Identity (Spec 2)**: at the final stage a more grown
+form, calmer gestures, fewer words, more comfortable silence, a deeper gaze — no longer the restless
+bouncing of the first stage.
+
 ---
 
 ## 2. Design principles
 
-Seven pillars (**P1–P7**) plus three supporting principles. Same status as the `business-model.md`
-principles and G1–G3: a **decision filter, not a guideline**. A feature that fails one does not ship.
+Seven behavioral pillars (**P1–P7**) — the *how*. They serve the two *why* statements in §1 (**P0**
+raison d'être, **P8** the Companion's own journey), which stand above them. Same status as the
+`business-model.md` principles and G1–G3: a **decision filter, not a guideline**. A feature that fails
+one does not ship.
 Violating a principle is a **defect of the Character Bible**, not merely a UX nit.
 
 - **P1 — Companion is a part of the world, not a feature of the product.**
@@ -158,6 +196,12 @@ The 4 stages are chapters of a *relationship*, not levels (working names; final 
 2. **Companionship** (Đồng hành)
 3. **Understanding** (Thấu hiểu)
 4. **Storykeeper** (Người lưu giữ câu chuyện)
+
+This is **P8's axis, not power**. Each stage has *listened to more* of the learner's journey than the
+last — Stage 4 is the creature that has heard the most, not the strongest one. The last stage is
+**Wisdom, not Evolution**; its concrete calmer/quieter/fewer-words expression is Character Identity's
+(Spec 2). XP is only the mechanism that measures how far the two have walked together — never a power
+score the user optimizes.
 
 Transitions are **organic**: no "Stage 2 unlocked" screen, no fireworks. A stage change is recorded
 only as a quiet Journal page (`companion_grew`, §4.4). Growth reflects *all* valid learning (SRS,
