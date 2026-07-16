@@ -1,16 +1,22 @@
 /**
  * Speech provider selection and credential structure.
  *
- * This is the SAME provider lifecycle as lib/ai/env.ts, not a coincidental
+ * The SELECTION lifecycle is the SAME as lib/ai/env.ts, not a coincidental
  * resemblance (Spec D9): selection is explicit and required; `none` means
  * INTENTIONALLY DISABLED and preserves the SpeechNotConfiguredError → 503 path;
- * a named provider with missing or structurally invalid configuration is a
- * startup failure. A third subsystem should inherit this shape, not invent one.
+ * an unset/invalid value is a misconfiguration, never read as intent. A third
+ * subsystem should inherit THIS PART of the shape.
+ *
+ * Where this file's CREDENTIAL STRICTNESS deliberately differs from
+ * lib/ai/env.ts's `readAiEnv`, see `readSpeechEnv` below — that choice is
+ * per-subsystem, not part of the shape to inherit blindly.
  */
 import { z } from "zod";
 import type { EnvSource, EnvSpec } from "@/lib/env/validate";
 
-export type SpeechProviderName = "none" | "azure";
+const speechProviderName = z.enum(["none", "azure"]);
+
+export type SpeechProviderName = z.infer<typeof speechProviderName>;
 
 /**
  * Azure Speech keys are unseparated alphanumeric strings. Azure has issued both
@@ -31,7 +37,7 @@ const AZURE_KEY_PATTERN = /^[A-Za-z0-9]{32,}$/;
 
 export const speechEnvSchema = z
   .object({
-    SPEECH_PROVIDER: z.enum(["none", "azure"]),
+    SPEECH_PROVIDER: speechProviderName,
     AZURE_SPEECH_KEY: z.string().optional(),
     AZURE_SPEECH_REGION: z.string().optional(),
   })
@@ -66,9 +72,7 @@ export const speechEnvSchema = z
 
 export type SpeechEnvShape = z.infer<typeof speechEnvSchema>;
 
-const speechProviderName = z.enum(["none", "azure"]);
-
-export interface SpeechEnv {
+interface SpeechEnv {
   SPEECH_PROVIDER: SpeechProviderName;
 }
 
@@ -76,18 +80,19 @@ export interface SpeechEnv {
  * Reads just the provider selection — deliberately NOT the full
  * `speechEnvSchema` (which also demands valid AZURE_SPEECH_KEY/REGION
  * whenever azure is selected). Throws if SPEECH_PROVIDER is unset or not one
- * of the documented values: absence is never read as intent (Spec D9),
- * mirroring `readAiEnv`.
+ * of the documented values: absence is never read as intent (Spec D9) — same
+ * SELECTION lifecycle as `readAiEnv`.
  *
- * Kept narrow, unlike `readAiEnv`, because `checkSpeechHealth`
- * (lib/admin/health.ts) intentionally reports a graceful
+ * Kept narrow, UNLIKE `readAiEnv` (which parses the full schema), because
+ * `checkSpeechHealth` (lib/admin/health.ts) intentionally reports a graceful
  * `{status:"error", detail:"not_configured"}` when azure is selected but
  * credentials are incomplete, rather than throwing — that runtime diagnostic
  * path is a preserved D1 contract (lib/admin/health.test.ts), so credential
  * *structure* stays a startup-time concern (`speechEnvSchema`), not this
- * function's.
+ * function's. This is a deliberate per-subsystem choice, not a gap versus the
+ * AI side — a third subsystem should decide this independently too.
  */
-export function readSpeechEnv(env: EnvSource = process.env): SpeechEnv {
+function readSpeechEnv(env: EnvSource = process.env): SpeechEnv {
   const parsed = speechProviderName.safeParse(env.SPEECH_PROVIDER);
   if (!parsed.success) {
     throw new Error(
@@ -101,7 +106,9 @@ export function readSpeechEnv(env: EnvSource = process.env): SpeechEnv {
 /**
  * Whether speech is intentionally enabled. Never inferred from key presence —
  * throws on unset/invalid SPEECH_PROVIDER instead (misconfiguration), same
- * provider lifecycle as `isAiEnabled` (Spec D9).
+ * SELECTION lifecycle as `isAiEnabled` (Spec D9). Unlike `isAiEnabled`, this
+ * does NOT throw when a named provider is selected but its credentials are
+ * missing/invalid — see `readSpeechEnv` above for why.
  */
 export function isSpeechEnabled(env: EnvSource = process.env): boolean {
   return readSpeechEnv(env).SPEECH_PROVIDER !== "none";

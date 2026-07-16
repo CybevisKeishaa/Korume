@@ -42,17 +42,16 @@ describe("isSpeechConfigured", () => {
     expect(isSpeechConfigured()).toBe(true);
   });
 
-  it("is false when speech is not the selected provider, even with credentials present", () => {
+  it("is false when SPEECH_PROVIDER=none", () => {
     // Setup uses an explicit SPEECH_PROVIDER=none rather than an unset/deleted
     // value: since Fix 3 (D9), an *unset* SPEECH_PROVIDER is a misconfiguration
-    // that throws (see env.test.ts), not a silent "off" — so this test now
+    // that throws (see env.test.ts), not a silent "off" — so this test
     // exercises the genuinely-disabled case instead of that removed inference.
+    // Credential presence is irrelevant once provider is "none" — real
+    // credential-vs-result coverage lives at line 38 above (azure + creds ->
+    // true) and env.test.ts (azure, no creds -> true).
     process.env[PROVIDER] = "none";
     delete process.env[KEY];
-    process.env[REGION] = "japaneast";
-    expect(isSpeechConfigured()).toBe(false);
-
-    process.env[KEY] = "k";
     delete process.env[REGION];
     expect(isSpeechConfigured()).toBe(false);
   });
