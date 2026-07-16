@@ -29,7 +29,8 @@ Architecture, algorithms, and key implementation details.
 | GET    | /api/... | ... |
 
 ## AI Opportunities
-Where AI/ML can add value (Claude API, speech scoring, etc.)
+Where AI/ML can add value. Note the capability, not the vendor — AI goes through the port
+(`lib/ai/port.ts`), speech through `SPEECH_PROVIDER`; feature docs should never name an SDK.
 
 ## Integration Points
 - **Depends on:** F-XXX, F-YYY
