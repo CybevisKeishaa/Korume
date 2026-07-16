@@ -167,6 +167,48 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`.
     #5 (users.email/created_at client-writable) = follow-ups below.
   - **L6 flaky test RESOLVED**: it was `components/video-player/pitch-contour.test.tsx` — waitFor
     1s default timeout under full-suite CPU contention; bumped to 5s.
+- **Spec A (AI provider abstraction): DONE, APPROVED, merged (`201a9b4`, 2026-07-16).** 26 commits,
+  15 TDD tasks, 1098 → **1166 tests**. Details + full audit trail: `mem:design_checkpoint_ai_provider_abstraction_2026-07-15`.
+  - `lib/ai` speaks a **provider-agnostic port** (`lib/ai/port.ts`, 2 operations); adapters live in
+    `lib/ai/providers/` (`anthropic.ts`, `gemini.ts`, `fake.ts`). `client.ts` + `run.ts` deleted;
+    `toAiError` moved into the Anthropic adapter. `AiErrorKind` + `lib/http-status.ts` UNCHANGED (D1).
+  - **Provider selection is explicit, never inferred**: `AI_PROVIDER` (`none`|`anthropic`|`gemini`) +
+    `SPEECH_PROVIDER` (`none`|`azure`) + `APP_ENV` (`dev`|`production`) are all REQUIRED. `none` =
+    intentionally off → keeps the L4/L5 503 path byte-for-byte. Unset/invalid = **startup crash**.
+    `APP_ENV=production` + `gemini` = crash (free tier trains on data — CLAUDE.md §2).
+  - `instrumentation.ts` + `lib/env/validate.ts` validate ALL registered specs once at boot and report
+    ONE aggregated error (the 2026-07-14 audit found two bugs at once — stopping at the first hides
+    the second). `lib/env.ts` → `lib/env/index.ts` (`@/lib/env` still resolves).
+  - `GET /api/admin/health` = on-demand liveness (D2: boot NEVER depends on a third party's uptime).
+  - `.eslintrc.json` forbids provider-SDK imports outside `lib/ai/providers/` — verified the rule
+    actually fires, not just that it exists.
+  - **Env keys now (supersedes the audit rows below)**: `GEMINI_API_KEY` **VALID** (live 200; real
+    shape is 53-char `AQ.`-prefixed, NOT `AIza`). `AZURE_SPEECH_KEY` **VALID** (user's fix worked;
+    real shape 84 alphanumeric, NOT 32-hex). `ANTHROPIC_API_KEY` still absent → prod = `AI_PROVIDER=none`.
+  - **LAUNCH CONFIG BOOT-VERIFIED**: `APP_ENV=production AI_PROVIDER=none SPEECH_PROVIDER=none` →
+    Ready in 524ms, `GET /` → 200. almostgone.vn is deployable today with all AI intentionally off.
+  - **KNOWN LIMIT, accepted (spec §3), deferred to scope D**: "fails at boot" is TRUE for `next dev`
+    (crashes before the port opens) and **FALSE for `next start`** — it opens the port, prints Ready,
+    then serves a permanent HTTP 500 per request WITHOUT exiting. So a crash-restart supervisor never
+    sees a failure; only an HTTP health check would. Decide `process.exit(1)` when the almostgone.vn
+    supervisor is set up.
+  - **Deferred to a follow-up (final review finding, recorded)**: `gemini.test.ts` module-mocks the
+    whole SDK, so `toContents`' `role: "ai"→"model"` translation has NO assertion — emit the wrong
+    role and every test still passes while the live API 400s. V1 verified `@google/genai` routes
+    through global `fetch`, so a fetch-level `test/gemini-mock.ts` mirroring `test/claude-mock.ts`
+    IS possible. Gemini is dev-only, so this is low-risk but real.
+  - PayOS env (`CLIENT_ID`/`API_KEY`/`CHECKSUM_KEY`, should be `PAYOS_*`) stays **uncommitted** in
+    `.env.local.example` — out of scope A, belongs to L8.
+- **L6 flake NOT actually resolved** (project_status previously claimed it was): 
+  `components/video-player/pitch-contour.test.tsx` failed once again during the Spec A merge
+  verification, then passed in isolation AND on a full-suite re-run. The 5s `waitFor` bump reduced
+  but did not eliminate it — it is CPU-contention-sensitive under the full suite. Re-run before
+  believing it.
+- **Layer 8: NOT STARTED.** Next = **Layer 8 — Billing (PayOS, per `business-model.md`: single
+  tier 49k/490k + Founding 39k, no trial, Contextual Discovery, Knowledge-Gen quotas + kill-switch
+  FIRST) + site-wide animation polish + performance audit.** Lead: tech-lead + motion + backend.
+  Start: `git checkout master`, branch `layer-8-<slug>`. **Spec A's port is the foundation**: model
+  tiering, the Knowledge Economy cache and the kill-switch all plug into `lib/ai/port.ts`.
 - **Layer 8: NOT STARTED.** Next = **Layer 8 — Billing (PayOS, per `business-model.md`: single
   tier 49k/490k + Founding 39k, no trial, Contextual Discovery, Knowledge-Gen quotas + kill-switch
   FIRST) + site-wide animation polish + performance audit.** Lead: tech-lead + motion + backend.
