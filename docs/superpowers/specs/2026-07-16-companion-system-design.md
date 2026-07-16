@@ -43,7 +43,7 @@ no FOMO, no engagement trick. Every appearance of the Companion must leave the l
 
 ## 2. Design principles
 
-Six pillars (**P1–P6**) plus three supporting principles. Same status as the `business-model.md`
+Seven pillars (**P1–P7**) plus three supporting principles. Same status as the `business-model.md`
 principles and G1–G3: a **decision filter, not a guideline**. A feature that fails one does not ship.
 Violating a principle is a **defect of the Character Bible**, not merely a UX nit.
 
@@ -78,11 +78,24 @@ Violating a principle is a **defect of the Character Bible**, not merely a UX ni
   "this is a chatbot." AI is the technology behind; the Companion is the character the user builds a
   relationship with. This governs all future prompt design, tone of voice, and UI.
 
+- **P7 — Companion is a living creature, not merely a reaction.**
+  It has its own rhythm of life — it may rest, observe, play, read, wander, or simply exist without
+  reacting to the learner. Not every appearance is triggered by a user action; some moments exist only
+  as evidence that the Companion is alive in this world. Its growth shows not only in appearance but in
+  behavior, posture, and the quiet way it occupies the world. The learner is the protagonist; the
+  Companion is another living being who chooses to walk beside them. This principle is made enforceable
+  by the supporting principle below (existence vs address) — it is architecture, not just sentiment.
+
 **Supporting principles:**
 
-- **Presence must be earned.** *"Companion không xuất hiện vì hệ thống có cơ hội. Nó chỉ xuất hiện
-  khi sự hiện diện của nó làm trải nghiệm có ý nghĩa hơn."* The Companion does not appear because the
-  system has an opportunity; only when its presence makes the experience more meaningful.
+- **Existence is free. Address must be earned.**
+  The Companion is always allowed to *exist* in the world of Nihongo Cinema — to rest, read, observe,
+  play, watch the rain, or simply sit still on any surface where the Ambient Layer is already present.
+  These moments demand no attention, create no task, drive no behavior, and never enter a learning
+  loop; they are only evidence that the Companion is a living creature. **Address** is the opposite:
+  every time the Companion speaks, initiates an interaction, or actively reaches toward the learner, it
+  must be genuinely meaningful. If its presence does not make the learning better or the journey more
+  meaningful, the Companion must choose silence. *Existence is free; address must be earned.*
 - **A memory is what is memorable, not what just happened.** The Journal must stay *sparse* enough
   that opening it feels like revisiting a keepsake, never reading a log.
 - **Each side records only what it truly knows.** The system records objective facts; the learner
@@ -114,8 +127,8 @@ personal learning experience, principle 4), never an engagement trick (G1/G3).
 
 > **Companion reads data; it does not own business logic (P3).**
 
-- **May:** reflect progress, capture/keep memories, speak at rest points, adapt its language, open
-  the Journal.
+- **May:** exist idly in the world (§5.7 — existence is free), reflect progress, capture/keep memories,
+  speak at rest points, adapt its language, open the Journal.
 - **May not:** interrupt a learning loop (P5 / `CLAUDE.md` §2.4), pretend to understand emotion,
   compete for attention, grant its own rewards (P4), push FOMO notifications (G3), or speak about
   infrastructure (§6.3).
@@ -265,6 +278,24 @@ the learner already knows (`user_vocab_progress`) surface in Japanese — reusin
 Sentences are **composed from reusable parts**, never duplicated per level — this keeps i+1 while
 minimizing localization and maintenance load.
 
+### 5.7 Idle Life
+
+Outside learning loops, the Companion is allowed to simply exist. These idle behaviors are ambient
+world-building, not interactions: they never request attention, never interrupt the learner, and never
+imply a task. They are the concrete expression of **P7** and the "existence is free" principle — the
+proof that a living creature is here, not a widget waiting for input.
+
+Growth is expressed not only through appearance but through changes in **posture**, **behavior
+profile**, and the quiet way the Companion occupies the world. The Companion System defines only the
+*mechanism* that such behavior exists — that a stage selects a behavior profile, and that the Ambient
+Layer may render idle states on non-learning surfaces. The **concrete** behaviors, animations,
+expressions, and motion language belong to **Character Identity (Spec 2)**: Spec 1 says the Companion
+has a life; Spec 2 says what that life looks like.
+
+Idle Life is bound by §5.4 — it exists only where the Ambient Layer is already active, never inside a
+learning loop — and by `CLAUDE.md` §2.4: idle motion must stay light and must never become
+focus-stealing autoplay.
+
 ---
 
 ## 6. Free / Premium & the AI boundary
@@ -344,6 +375,10 @@ blocker into an ordinary schedule item.
 - **Presence Consistency** (experience test, not just UI) → across surfaces the Companion is always the
   **same individual**; only position, pose, expression, and dialogue change. Identity is continuous —
   the Dashboard, the Journal, and the Tutorial are never three different Companions.
+- **Idle Life Boundary** (P7 + §5.7) → idle behaviors occur **only** on non-learning surfaces and
+  **never** inside learning loops; idle behaviors never trigger focus-stealing animation, dialogue,
+  notifications, or interactions; a stage transition changes the *selected behavior profile*, while the
+  concrete animation assets remain Character Identity's (Spec 2) responsibility.
 
 ---
 
