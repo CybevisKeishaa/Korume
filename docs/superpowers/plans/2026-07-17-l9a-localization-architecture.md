@@ -27,6 +27,7 @@
 - **TypeScript strict.** No `any` without a justifying comment (`CLAUDE.md` §6).
 - **Commit after every task.** Standing permission granted; never push without an explicit ask.
 - **If reality contradicts this plan, reality wins.** Report it, fix the plan, do not force the code to match. (Spec Status line; Spec A's hardest-won lesson.)
+- **Do not mix tasks.** Each task must leave the repository in a buildable state (except where this plan explicitly expects a temporary compile failure, e.g. Task 4 before Task 5). Never start implementing the next task while the current task is incomplete.
 
 ---
 
@@ -66,7 +67,7 @@
 
 **Files:**
 - Modify: `package.json`, `next.config.js`
-- Create: `lib/i18n/routing.ts`, `lib/i18n/namespaces.ts`, `lib/i18n/request.ts`, `lib/i18n/index.ts`, `types/messages.d.ts`
+- Create: `lib/i18n/routing.ts`, `lib/i18n/namespaces.ts`, `lib/i18n/request.ts`, `lib/i18n/index.ts`, `lib/i18n/server.ts`, `types/messages.d.ts`
 - Create: `messages/en/common.json`, `messages/en/nav.json`, `messages/vi/common.json`, `messages/vi/nav.json`
 - Test: `lib/i18n/catalog.test.ts`
 
@@ -296,6 +297,27 @@ export default getRequestConfig(async ({ requestLocale }) => {
 });
 ```
 
+- [ ] **Step 8a: Verify the dynamic imports are statically analyzable**
+
+Run: `npm run build`
+
+Expected: webpack resolves every `../../messages/${locale}/${namespace}.json` without emitting a context-module warning.
+
+If this repository's Next/Webpack configuration cannot statically analyse the import pattern, replace it with an explicit loader map rather than weakening type safety or silently accepting context imports. An explicit map looks like this — note it keeps `NAMESPACES` as the single source of truth by failing `tsc` if a namespace is missing a loader:
+
+```ts
+const LOADERS: Record<Locale, Record<Namespace, () => Promise<{ default: unknown }>>> = {
+  vi: {
+    common: () => import("../../messages/vi/common.json"),
+    nav: () => import("../../messages/vi/nav.json"),
+  },
+  en: {
+    common: () => import("../../messages/en/common.json"),
+    nav: () => import("../../messages/en/nav.json"),
+  },
+};
+```
+
 - [ ] **Step 9: Wire the plugin into next.config.js**
 
 Modify `next.config.js` — add the import at the top and wrap the export. **Keep the existing `webpack` edge-alias block untouched**; it exists because `@anthropic-ai/sdk` cannot be bundled for the edge runtime, and removing it breaks the build.
@@ -328,7 +350,30 @@ export default withNextIntl(nextConfig);
  */
 export { routing, type Locale } from "./routing";
 export { NAMESPACES, type Namespace } from "./namespaces";
+
+// The translation API features consume. Re-exported here because ESLint
+// forbids feature code from importing `next-intl` (spec P1) — without this,
+// Plan 3 could not call t() without either violating the boundary or
+// deleting the rule that defines it.
+export { useTranslations, useLocale, useFormatter } from "next-intl";
 ```
+
+**This barrel must stay client-safe.** Never re-export `next-intl/server` from here: importing a server-only module into any of the 65 client components breaks the build. Server-side helpers get their own door.
+
+`lib/i18n/server.ts`:
+
+```ts
+import "server-only";
+
+/**
+ * The server half of the localization contract, for async Server Components,
+ * route handlers and metadata. Kept separate from `index.ts` so a client
+ * component importing the barrel can never pull server-only code in with it.
+ */
+export { getTranslations, getFormatter, getMessages, setRequestLocale } from "next-intl/server";
+```
+
+Note the repo already aliases `server-only` to a stub in `vitest.config.ts`, so this module is importable under test.
 
 - [ ] **Step 11: Add type-safe message keys**
 
@@ -358,6 +403,8 @@ Run: `npx tsc --noEmit && npx vitest run && npm run lint`
 Expected: tsc 0 errors; **1193 tests passing** (1190 + 3 new); lint clean.
 
 - [ ] **Step 13: Commit**
+
+Also update the File Structure list's `lib/i18n/index.ts` line if you changed the barrel's shape.
 
 ```bash
 git add package.json package-lock.json next.config.js lib/i18n types/messages.d.ts messages
@@ -412,6 +459,10 @@ export const { Link, redirect, usePathname, useRouter, getPathname } =
   createNavigation(routing);
 ```
 
+`createNavigation(routing)` is the only place that may know about routing.
+
+Feature code must never import `routing` merely to construct locale-prefixed URLs — no `` `/${locale}${href}` `` string-building in a feature, ever. Route construction remains the responsibility of the localization foundation. A feature that needs a URL asks for one; it does not assemble one.
+
 - [ ] **Step 2: Re-export from the barrel**
 
 Append to `lib/i18n/index.ts`:
@@ -444,6 +495,16 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 > **This is the highest-severity task in the plan.** Read spec §4.2 first.
 >
+**Security invariant**
+
+> The middleware must never make an authorization decision on a locale-prefixed pathname.
+>
+> Every authorization predicate MUST receive the output of `stripLocale()`.
+>
+> Passing a raw pathname into `isProtectedPath()` or `isAuthRoute()` is treated as a **security bug**, not merely a style violation.
+
+This is why both predicates carry a `@param` contract in their doc comments, and why the matrix test in Step 5 composes `stripLocale()` explicitly rather than hiding it inside the predicate: the caller's obligation must be visible at the call site, where it can be reviewed.
+
 > `lib/supabase/middleware.ts` matches `PROTECTED_PREFIXES` against
 > `pathname === "/dashboard"` / `startsWith("/dashboard/")`. The moment URLs become
 > `/vi/dashboard`, **no prefix matches** ⇒ `isProtected === false` ⇒ **no auth check, and a
@@ -745,6 +806,14 @@ import { isAuthRoute, isProtectedPath } from "./route-protection";
  * @param response The response from next-intl's routing middleware. Supabase's
  * refreshed cookies are written onto it, and it is returned untouched
  * otherwise — it carries the headers that tell the app which locale resolved.
+ *
+ * Do not recompute the active locale from cookies or request headers. Once
+ * middleware begins executing, the pathname (after `stripLocale`) is the
+ * canonical routing source of truth: next-intl has already negotiated the
+ * locale and encoded its decision in the URL. Re-deriving it here could
+ * disagree with the URL the user is actually on, and an authorization
+ * decision made against a different locale than the one being served is
+ * exactly the class of bug §4.2 exists to prevent.
  */
 export async function updateSession(
   request: NextRequest,
@@ -995,6 +1064,8 @@ export const config = {
 
 **`api` is newly excluded from the matcher.** API routes are not localized; letting the intl middleware redirect `/api/srs/review` to `/vi/api/srs/review` would break every client fetch. Losing `updateSession` on API routes is safe — routes authenticate via their own `requireUser()`/`createClient()` server-side.
 
+**Future localized API endpoints must opt in deliberately.** Expanding the matcher to include `/api` requires a dedicated design review: it changes every client fetch URL and invalidates the assumptions documented in this plan. It is an architectural change, not a refactor (see Architecture Invariants below).
+
 - [ ] **Step 4: Verify typecheck and the unit suite**
 
 Run: `npx tsc --noEmit && npx vitest run`
@@ -1150,6 +1221,14 @@ grep -rnE 'import \{[^}]*\b(redirect|useRouter|usePathname)\b[^}]*\} from "next/
 ```
 
 Expected: no output from either.
+
+- [ ] **Step 4a: Verify the architecture boundary holds**
+
+```bash
+grep -R 'next-intl' app components lib --include='*.ts' --include='*.tsx'
+```
+
+Expected: results only from `lib/i18n/**` and `app/[locale]/layout.tsx`. Any additional result is an **architecture-boundary violation** (spec P1) — fix it here rather than adding an ESLint override in Task 7 to accommodate it. The override list is a statement about what legitimately lives below the boundary, not a place to file exceptions.
 
 - [ ] **Step 5: Verify typecheck, suite and build**
 
@@ -1318,6 +1397,22 @@ Expected: PASS — 5 tests.
 Run: `npm run lint`
 Expected: clean. A violation here means Task 6 missed a call site.
 
+- [ ] **Step 5a: Verify the escape hatch actually works**
+
+A restriction that also blocks the foundation is just as broken as one that never fires — it would push the next engineer to disable the rule entirely.
+
+Temporarily create `lib/i18n/example.ts`:
+
+```ts
+import { useTranslations } from "next-intl";
+export const a = useTranslations;
+```
+
+Run: `npm run lint`
+Expected: **no violation** for this file. Then delete it.
+
+The goal is to prove both directions: the restriction fires outside the boundary, **and** the intended escape hatch works inside it.
+
 - [ ] **Step 6: Commit**
 
 ```bash
@@ -1362,6 +1457,17 @@ Expected: tsc 0 errors · lint clean · unit suite green (≥1190 baseline + the
 
 Record the **actual** unit-test count. If any command fails, stop and fix before proceeding — do not report Phase 1 done with a red command (`CLAUDE.md` §7: never claim something works without showing the command output).
 
+Record these metrics — they become the performance and regression baseline for Plans 2 and 3:
+
+| Metric | Value |
+|---|---|
+| Actual unit-test count | |
+| Lint result | |
+| Build duration | |
+| Playwright duration | |
+
+Baseline matters most for **build duration**: Plan 3 adds a catalog per module and Plan 2 adds primitives, and spec §7 risk 3 (the whole catalog shipping in the client payload) is a cost nobody has measured yet. Without a number recorded here, L9c's perf audit has nothing to compare against and the risk stays a guess.
+
 - [ ] **Step 2: Confirm the security boundary by hand, once more**
 
 Signed out, in a private window, against `npm run dev`, confirm each redirects to that locale's login:
@@ -1389,6 +1495,36 @@ Add to `mem:project_status` under Progress: L9a Plan 1 built, what shipped, the 
 
 ---
 
+## Architecture invariants
+
+The following are **architectural contracts rather than implementation details**.
+
+1. Feature code never imports `next-intl` directly.
+2. Feature code never imports `next/link`.
+3. Locale-aware navigation always flows through `lib/i18n/navigation`.
+4. Authorization decisions always operate on locale-stripped paths.
+5. `routing.ts` is the single source of truth for supported locales.
+6. Adding a locale requires configuration rather than feature refactoring.
+7. API routes remain outside locale routing unless a future design explicitly changes that contract.
+
+Any future change that violates one of these should be treated as an **architectural change requiring an explicit design decision**, not as an ordinary refactor.
+
+Each one has teeth — an invariant with no mechanism is a wish (spec §2.9):
+
+| Invariant | Mechanism | Task |
+|---|---|---|
+| 1 | ESLint `no-restricted-imports` (`next-intl`) + the Task 6 boundary grep | 6, 7 |
+| 2 | ESLint `no-restricted-imports` (`next/link`) | 7 |
+| 3 | ESLint restricted named imports from `next/navigation` | 7 |
+| 4 | `route-protection.test.ts` security matrix, generated from `routing.locales` | 3 |
+| 5 | `catalog.test.ts` — namespace list must match disk, for every locale in `routing.locales` | 1 |
+| 6 | `catalog.test.ts` parity — a new locale fails CI until its catalog is complete, and no feature file is touched | 1 |
+| 7 | The middleware `matcher` excludes `api`; changing it is called out as requiring design review | 5 |
+
+**Invariant 7 is the weakest of the seven, and this plan does not pretend otherwise.** It rests on a comment and a review convention, not a test. A regex in a `matcher` is easy to widen by accident. If it needs real teeth later, a test asserting `/api/srs/review` is untouched by the middleware would supply them — recorded here rather than silently assumed.
+
+---
+
 ## Self-Review
 
 **Spec coverage:**
@@ -1408,6 +1544,7 @@ Add to `mem:project_status` under Progress: L9a Plan 1 built, what shipped, the 
 | §2.9 P3 enforcement (security matrix) | 3 |
 | §2.9 P5/P7 enforcement (parity) | 1 |
 | §4.1 foundation module | 1, 2 |
+| §P1 translation API reachable without breaching the boundary | 1 (barrel re-exports `useTranslations`; `lib/i18n/server.ts` holds the server-only half) |
 | §4.2 middleware + security | 3, 4, 5 |
 | §4.3 navigation | 2, 6 |
 | §4.4/§4.5 design system | **Plan 2** |
