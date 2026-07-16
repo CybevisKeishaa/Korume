@@ -287,6 +287,11 @@ learning outcomes, not app activity").
 
 ### 4.2 Memory track — one table: `companion_memories`
 
+> **Ownership.** Although presented *through* the Companion, the Journal **belongs to the learner**. The
+> Companion is only its keeper (P4). **Persistence scope:** the Companion exists **per learner account**,
+> not per device or session — logging out and back in on another device restores the same Companion, the
+> same memories, and the same `relationship_phase`.
+
 The only new data the system needs. One table holds **both kinds**, distinguished by `kind`:
 
 | Column | Meaning | §2 note |
@@ -378,6 +383,11 @@ The Companion is **not** a floating widget. It lives *in* the world:
 
 Every surface keeps its own character while the user always feels there is exactly one Companion.
 
+**Presence resolution.** A surface that declares **no anchor** simply leaves the Companion **dormant**
+there — Settings, Admin, Billing, and every learning-loop route (§5.4). The Companion **never creates
+its own anchor**: if a surface has not invited it, it is not there. Dormant is not gone — its state
+persists (§5.11); it is only unrendered.
+
 ### 5.3 Context Bus — experience contexts, not business data
 
 Surfaces emit **experience contexts**, never business payloads (upholds P3). Examples:
@@ -468,6 +478,45 @@ narrow, stable surface so future screens (§10) consume the Companion instead of
 > four. This keeps the frontend from growing ad-hoc queries into Companion internals, and lets the
 > System change its storage or logic without touching a single surface.
 
+### 5.10 Context arbitration & experience cooldown
+
+Many contexts can arrive at once — e.g. `finished_shadowing` **+** `companion_stage_changed` **+** a new
+Journal memory **+** "today is Tanabata." The Companion speaks **at most once**; it resolves competing
+contexts through a **deterministic priority policy**, never by speaking several times.
+
+Priority order (highest first):
+
+1. **learner milestone** — a real learning achievement
+2. **relationship milestone** — a `relationship_phase` change
+3. **reflection** — Premium, when earned
+4. **seasonal event**
+5. **ambient flavor** — idle
+
+Lower-priority contexts may be **delayed or silently discarded** — never queued into a monologue. The
+policy is deterministic so every surface resolves identically; it is **not** left to each screen to
+invent.
+
+**Cooldown — by experience, not by screen.** Addresses are rate-limited by *experience*, not per route.
+Once the Companion has addressed the learner, further eligible contexts within a short experience window
+are **suppressed** unless their priority is significantly higher. So a burst of `finish_shadow →
+memory_created → dashboard → journal → home` yields **one** address, not five. No fixed number is fixed
+here — the window is a tuning constant, consistent with §5.7's no-mechanical-timer rule.
+
+### 5.11 Surface lifecycle contract
+
+A surface's contract with the Companion is minimal and uniform:
+
+```
+enter → emitContext() → Companion decides → leave → state persists
+```
+
+- On **enter**, the surface declares its anchor (§5.2) and emits its context (§5.3).
+- The **Companion decides** whether to observe, speak, or stay silent (§5.10) — the surface never
+  decides for it.
+- On **leave**, the surface tears down **its own anchor only**; it does **not** reset Companion state.
+- Companion state (`relationship_phase`, state machine, cooldown) lives in the Ambient Layer and
+  **persists across navigation** — it is never per-surface, and cleanup of it is never a surface's job.
+
 ---
 
 ## 6. Free / Premium & the AI boundary
@@ -496,6 +545,11 @@ AI reflection is **present-tense conversation**, not a Journal entry. Memories a
 if AI could author entries, the Companion would start taking the spotlight and the Journal would stop
 being "only what truly happened." Reflections render as in-place voice and are **never** written to
 `companion_memories`. AI may read the Journal; AI may not write the Journal.
+
+**Canon rule.** Companion dialogue is **ephemeral** — a reflection said today may be gone tomorrow, and
+that is fine. Only **recorded memories** (`companion_memories`) are **canon**. This is exactly what makes
+it safe to change prompts, models, or the whole reflection layer later: nothing the Companion *says* is
+load-bearing; only what the learner and the capture gate *record* is.
 
 ### 6.3 Graceful degradation (P2 and P6 in practice)
 
@@ -529,6 +583,15 @@ it feels like a creature that *remembers what matters* rather than a query over 
 protects the AI cost defense (`business-model.md` §4.2): reflection token cost stays bounded as the
 Journal grows, instead of climbing with every memory the learner accumulates.
 
+### 6.5 Failure isolation
+
+The Companion and its subsystems are **optional to the act of learning**. Failure of *any* optional
+subsystem — reflection, memory capture, Journal read, ambient rendering — must **never** prevent the
+learner from continuing to study. The core loop (Video → Shadowing → Dictation → SRS → Mining) does not
+depend on the Companion; if a Companion subsystem errors, it fails **silently and locally** (P6 — no
+infrastructure talk to the user) while study continues untouched. This is the runtime form of the North
+Star: the Companion serves the journey; it never stands in its way.
+
 ---
 
 ## 7. Placeholder-first contract
@@ -549,6 +612,13 @@ Everything else (both tracks, capture gate, Journal, context bus, AI degradation
 on the placeholder. When Spec 2 + assets arrive, they swap the sprite and pour expression/animation
 into the existing anchors — **no logic changes**. This turns "we don't yet know who draws it" from a
 blocker into an ordinary schedule item.
+
+**Character Swap Invariant.** Replacing the *entire* Character Identity (Spec 2) — name, look, every
+asset, expression set, behavior-profile rendering — must require **zero** migration of Companion data or
+behavior logic. Identity plugs into the placeholder contract; the System's schema, state machine, capture
+gate, arbitration policy, and API stay byte-for-byte the same. This is an architectural promise, not an
+aspiration — and it is what lets Spec 2 be brainstormed, redesigned, or replaced at any time without ever
+touching Spec 1.
 
 ---
 
@@ -581,6 +651,19 @@ blocker into an ordinary schedule item.
   layer; it **never** alters memory capture, growth/XP, scoring, or any stored data. Property-style
   check: no code path in the capture gate, phase function, or data writes has a deliberate-inaccuracy
   branch — the Journal records only what truly happened regardless of expressive state.
+- **Context arbitration + cooldown** (§5.10) → given several simultaneous contexts the Companion
+  addresses **at most once**, resolving by the fixed priority order (deterministic — same inputs, same
+  choice); a burst of eligible contexts inside one experience window yields a single address unless a
+  much higher priority arrives; discarded contexts never queue into a monologue.
+- **Presence resolution + persistence** (§5.2/§5.11) → a surface with no anchor leaves the Companion
+  dormant and never auto-anchors; Companion state survives navigation and is restored per account on a
+  new device/session, not per device.
+- **Failure isolation** (§6.5) → with reflection, memory capture, Journal read, or ambient rendering
+  forced to error, the core loop still completes and no error surfaces to the learner.
+- **Character Swap Invariant** (§7) → swapping every Character-Identity asset requires no schema
+  migration and no change to capture gate / state machine / arbitration / API.
+- **Seasonal is additive** (§10) → a seasonal layer can alter expression/dialogue but a test asserts it
+  cannot write `relationship_phase`, memories, or any learning data.
 
 ---
 
@@ -610,6 +693,11 @@ Live Event, Community, Reading Mode, Mobile app, Apple Vision Pro, Watch compani
 3. consuming the **Companion API** (§5.9) — never touching Companion data directly.
 
 No rewrite of the system.
+
+**Seasonal / event behavior is additive only.** A seasonal layer (Christmas, Tanabata, New Year) may
+affect **expression or dialogue** only. It must **never** touch `relationship_phase`, memories, or any
+learning logic. An event *dresses* the Companion; it never changes who it is or what it has recorded — so
+no seasonal feature can corrupt the character or the canon (§6.2).
 
 > **The Companion is not a Layer 9 feature. Layer 9 is simply the first place where the Companion
 > becomes visible.** It always belonged to the world; L9 is only where the learner first sees it.
