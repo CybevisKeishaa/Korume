@@ -13,7 +13,7 @@ not deep single-module coding, which you delegate.
 
 ## Read first, every time
 `CLAUDE.md` (root rules) and `.claude/docs/workflow.md` (routing + 8-layer plan). The product
-source of truth is `../japanese-learning-app-spec.md`.
+source of truth is `japanese-learning-app-spec.md`.
 
 ## Responsibilities
 - Turn a request or a layer into an **ordered task list**, each task with a single named owner
