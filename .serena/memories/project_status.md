@@ -169,7 +169,20 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`.
   - **L6 flaky test RESOLVED**: it was `components/video-player/pitch-contour.test.tsx` — waitFor
     1s default timeout under full-suite CPU contention; bumped to 5s.
 - **Spec A (AI provider abstraction): DONE, APPROVED, merged (`201a9b4`, 2026-07-16).** 26 commits,
-  15 TDD tasks, 1098 → **1166 tests**. Details + full audit trail: `mem:design_checkpoint_ai_provider_abstraction_2026-07-15`.
+  15 TDD tasks, 1098 → **1166 tests**. Design + D1–D9 decisions live in the version-controlled spec
+  `docs/superpowers/specs/2026-07-15-ai-provider-abstraction-design.md` (§3 known limits, §4 decisions);
+  plan `docs/superpowers/plans/2026-07-15-ai-provider-abstraction.md`. (The separate
+  `design_checkpoint_ai_provider_abstraction_2026-07-15` memory was pruned 2026-07-16 — merged work,
+  its content folded here.) **Binding L8 constraint** (user, spec §2): abstraction must NOT narrow the
+  product — deferring/disabling when `none` is fine, redesigning the AI API around Gemini-Free is NOT;
+  `REQUIRED_CAPABILITIES` deliberately demands `promptCaching`+`reasoning` the only runnable provider
+  (Gemini) reports false — that is correct, not a gap. Principle: **"Explicit config. Fail fast. Never
+  infer. Never silently fall back."** **Hardest-won lesson (saved 6 times):** *when reality contradicts
+  what a plan/spec/review says, the INSTRUCTION is wrong, not reality — verify, report, don't force.*
+  (e.g. real `GEMINI_API_KEY` is 53-char `AQ.`-prefixed not `AIza`; `AZURE_SPEECH_KEY` 84 alphanumeric
+  not 32-hex — both would have false-crashed boot if the rule had been written from memory.) Two
+  load-bearing constructs a review twice wrongly called "redundant" (`EnvSource` union; the `?.` in
+  `lib/ai/env.ts`) — do NOT "clean" them, removing them breaks typecheck.
   - `lib/ai` speaks a **provider-agnostic port** (`lib/ai/port.ts`, 2 operations); adapters live in
     `lib/ai/providers/` (`anthropic.ts`, `gemini.ts`, `fake.ts`). `client.ts` + `run.ts` deleted;
     `toAiError` moved into the Anthropic adapter. `AiErrorKind` + `lib/http-status.ts` UNCHANGED (D1).
@@ -198,22 +211,69 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`.
     role and every test still passes while the live API 400s. V1 verified `@google/genai` routes
     through global `fetch`, so a fetch-level `test/gemini-mock.ts` mirroring `test/claude-mock.ts`
     IS possible. Gemini is dev-only, so this is low-risk but real.
-  - PayOS env (`CLIENT_ID`/`API_KEY`/`CHECKSUM_KEY`, should be `PAYOS_*`) stays **uncommitted** in
-    `.env.local.example` — out of scope A, belongs to L8.
+  - PayOS env: renamed to `PAYOS_CLIENT_ID`/`PAYOS_API_KEY`/`PAYOS_CHECKSUM_KEY` and committed to
+    `.env.local.example` (2026-07-16, `c3bd686`) — this open item is now CLOSED. Actual PayOS wiring = L8.
 - **L6 flake NOT actually resolved** (project_status previously claimed it was): 
   `components/video-player/pitch-contour.test.tsx` failed once again during the Spec A merge
   verification, then passed in isolation AND on a full-suite re-run. The 5s `waitFor` bump reduced
   but did not eliminate it — it is CPU-contention-sensitive under the full suite. Re-run before
   believing it.
-- **Layer 8: NOT STARTED.** Next = **Layer 8 — Billing (PayOS, per `business-model.md`: single
-  tier 49k/490k + Founding 39k, no trial, Contextual Discovery, Knowledge-Gen quotas + kill-switch
-  FIRST) + site-wide animation polish + performance audit.** Lead: tech-lead + motion + backend.
-  Start: `git checkout master`, branch `layer-8-<slug>`. **Spec A's port is the foundation**: model
-  tiering, the Knowledge Economy cache and the kill-switch all plug into `lib/ai/port.ts`.
-- **Layer 8: NOT STARTED.** Next = **Layer 8 — Billing (PayOS, per `business-model.md`: single
-  tier 49k/490k + Founding 39k, no trial, Contextual Discovery, Knowledge-Gen quotas + kill-switch
-  FIRST) + site-wide animation polish + performance audit.** Lead: tech-lead + motion + backend.
-  Start: `git checkout master`, branch `layer-8-<slug>`.
+- **Session 2026-07-16 — doc reconciliation + Layer 9 (Companion) DESIGNED & PLANNED (not built).**
+  - **Doc fixes committed (`c3bd686`)**: CLAUDE.md §3 CRA→Next reality; workflow.md/backend-engineer
+    Stripe→PayOS; `.env.local.example` env renamed to `PAYOS_CLIENT_ID/PAYOS_API_KEY/PAYOS_CHECKSUM_KEY`
+    (the old bare `CLIENT_ID/…` open item is now CLOSED); spec §4 dropped `stripe_customer_id`; README
+    rewritten from CRA boilerplate. Spec now version-controlled at repo root.
+  - **L8/L9 RE-SCOPE (user decision)**: **L8 = PayOS billing ONLY.** "site-wide animation polish +
+    performance audit" and ALL new UI/UX MOVED OUT of L8 into a **new Layer 9**. Reason: the app is
+    functional but the UI is bare frames — landing/cinematic never built, F-002/004/006/010 UI orphaned,
+    12 of 16 F-00x features UI-less, shell still English. Polishing/auditing a UI that doesn't exist = wasted.
+  - **L9 split into 3 sequential specs (user-approved)**: **L9a** = foundation (i18n + design system) —
+    **NOT BUILT, and it is the prerequisite for L9b/L9c**; **L9b** = surfaces (landing, feature UIs,
+    tutorial) incl. the Companion; **L9c** = polish + perf audit (audit runs on the FINAL UI).
+  - **Companion System spec = DONE** (`docs/superpowers/specs/2026-07-16-companion-system-design.md`,
+    commits `24bbf1c`→`2773e8a`→`3d5a8c4`→`cd828dd`→`8ba42c1`→`10dae79`→`3eb0037`). The mascot as a
+    product mechanism, NOT decoration. Spec 1 of 2 = **mechanism**; Spec 2 (Character Identity: name,
+    lore, look) deliberately deferred so art never blocks engineering. Locks: North Star axiom (P0:
+    exists only to make the journey meaningful, never engagement) + P1–P12 + supporting principles;
+    two tracks — growth (`relationship_phase = f(xp)`, 4 phases, monotonic, hidden thresholds) vs memory
+    (`companion_memories`: discovered vs gifted, NO media §2, immutable, owner-only); capture gate
+    (idempotent, best-effort, hooks `recordActivity`); Ambient Layer + per-surface anchors + context bus
+    + state machine + arbitration/cooldown + 4-verb Companion API; Free/Premium AI boundary (AI reads
+    Journal never writes it; canon hierarchy; silent degradation with AI off = launch state; model
+    independence); placeholder-first + Character Swap Invariant (replace all of Spec 2 → zero data/logic
+    migration). Companion exists even with `AI_PROVIDER=none`.
+  - **Companion Core (Plan 1 of 3) = BUILT, MERGED** (`--no-ff` merge `9f09cf2` → master, 2026-07-16;
+    subagent-driven-development, 8 commits `d66c0c1`→`4183f73`). The data+logic core, deliberately
+    INDEPENDENT of the unbuilt L9a and of AI. Ships: **migration #15** `20260716000015_companion_memories`
+    (immutable via `revoke update from authenticated` — the migration-6 default-privileges gotcha bites,
+    plain grant is additive; owner-only RLS + gifted-only INSERT; no-media, pointers + line text only);
+    `lib/companion/*` (pure `relationshipPhaseForXp` w/ hidden `PHASE_THRESHOLDS=[0,500,2500,10000]` +
+    fast-check monotonicity property; `dedupeKeyFor`/`titleFor` non-AI VN template titles; types + barrel);
+    `lib/data/companion.ts` (`recordDiscoveredMemory` insert-or-ignore, `listJournal`/`getAnchorMemories`
+    ordered by `occurred_at`, the `captureCompanionMemories` gate, `pinMemory`/`getJournal`); gate wired
+    best-effort into `recordActivityInner` (service-role client, never throws — double-guarded); Zod
+    `pinMemorySchema` + `POST /api/companion/memories` (gifted pin, user-client/RLS, 400 on bad line
+    mirroring `createMiningCard`) + `GET /api/companion/journal`. Full suite **1190/1190**, tsc/lint/build 0.
+  - **Producers wired now:** `companion_grew` (anchor, on hidden phase-threshold crossing), `mining_saved`
+    (on mining_review), `jlpt_passed` (anchor, **gated on an actual pass** — `passed` threaded
+    RecordActivityInput→gate→jlpt.ts as `result.passed===true`; a FAILED/insufficient JLPT records NOTHING).
+    This gating was a **final-review catch** (`fix` commit `4183f73`): the plan's verbatim code fired
+    jlpt_passed on every submit incl. fails = a failed-N4→"N4 milestone" anchor = North-Star violation;
+    user chose fix-in-branch. **`first_shadow` DEFERRED to Plan 2** (fires only on first line to REACH
+    TARGET SCORE — the score isn't available at recording-upload time; `resolveLinePointer` removed with it).
+  - **Deferred to Plan 2/3:** `first_shadow` + `line_mastered` + `first_video_completed` producers (need
+    score/completion reads); Ambient Layer, anchors surfacing, context bus, state machine, arbitration,
+    Companion API, placeholder sprite, Journal UI (Plan 2, needs L9a); adaptive voice + AI reflection +
+    move template titles into i18n (Plan 3). Minor cleanups carried: dedupe.ts switch `never`-guard,
+    phase.ts redundant `!`, dead `@/lib/supabase/service` mock in companion.test, pinMemory 400/401/429
+    unit coverage (repo-wide gap — no harness for `createClient()`/`requireUser()`-style fns), and the
+    `companion_grew` title says "giai đoạn 2" (a raw phase index / "stage" — P12 forbids; fix in i18n Plan 3).
+- **Layer 8: NOT STARTED.** Now scoped to **Billing (PayOS) ONLY** (polish + perf audit moved to L9c
+  above). Per `business-model.md`: single tier 49k/490k + Founding 39k, no trial, Contextual Discovery,
+  Knowledge-Gen quotas + global kill-switch FIRST. Lead: backend (+ tech-lead). Start: `git checkout
+  master`, branch `layer-8-<slug>`. **Spec A's port is the billing/AI-metering foundation**: model
+  tiering, the Knowledge Economy cache and the kill-switch all plug into `lib/ai/port.ts`. NOTE: L8 and
+  L9 are independent tracks — either can go first; UI (L9) is what the user is currently focused on.
 
 - **Business model / monetization = DECIDED** → `docs/product/business-model.md` (product manifesto +
   operational model; commits `3fb3232`→`14aafba`). Layer 8 reference; supersedes spec §3.12 Stripe/trial.
@@ -263,7 +323,8 @@ quota (L8) before opening to real users. Supersedes spec's "Deploy: Vercel". Pay
 ## DB / running locally
 Local Supabase (Docker) is the dev DB; `.env.local` points at it. Docker Desktop must be running
 (`npx supabase start`). `npm run dev` → localhost:3000. Studio :54323. `npx supabase db reset`
-re-applies migrations (now 13). Cloud move (still not done): create free project → swap 4
+re-applies migrations (**15 built** — Companion migration #15 `20260716000015_companion_memories`
+merged 2026-07-16). Cloud move (still not done): create free project → swap 4
 `.env.local` values → `supabase link` + `supabase db push`; add Google OAuth creds in dashboard.
 Env keys (AUDITED 2026-07-14, see `mem:product_readiness_audit_2026-07-14`):
 `ANTHROPIC_API_KEY` **NOT in .env.local** (earlier "set" claim stale) → all Claude features
