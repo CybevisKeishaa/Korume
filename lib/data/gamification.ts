@@ -14,6 +14,7 @@ import {
   type StreakState,
 } from "@/lib/gamification";
 import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
+import { captureCompanionMemories } from "@/lib/data/companion";
 import { emitNotification } from "@/lib/notifications/emit";
 
 /**
@@ -38,6 +39,10 @@ export interface RecordActivityInput {
    * 'full' if omitted so a caller that forgets it still gets *a* valid XP
    * amount rather than a thrown error. */
   jlptMode?: "section" | "full";
+  /** Only meaningful when `source === 'jlpt_submit'` — whether this attempt
+   * was a genuine pass. Forwarded to the companion capture gate, which only
+   * records `jlpt_passed` when this is `true`. */
+  passed?: boolean;
   now?: Date;
 }
 
@@ -138,6 +143,17 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
     { onConflict: "user_id" },
   );
   if (statsUpdateError) throw statsUpdateError;
+
+  // Companion capture gate (spec §4.3) — best-effort, never throws (§6.5).
+  await captureCompanionMemories(supabase, {
+    userId: input.userId,
+    source: input.source,
+    parts,
+    prevXp,
+    nextXp,
+    passed: input.passed,
+    now,
+  });
 
   if (leveledUp) {
     await emitNotification(supabase, {
