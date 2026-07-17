@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { buttonStyles } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 

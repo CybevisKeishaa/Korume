@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test/render";
 import { ReadingDetail } from "./reading-detail";
 
 function jsonResponse(status: number, body: unknown): Response {

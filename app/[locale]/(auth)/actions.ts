@@ -1,12 +1,13 @@
 "use server";
 
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect } from "@/lib/i18n/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { loginSchema, registerSchema } from "@/lib/validation/auth";
 import { getLocale } from "@/lib/i18n/server";
+import { stripLocale } from "@/lib/i18n/locale-path";
 
 export interface AuthState {
   error?: string;
@@ -34,11 +35,16 @@ export async function login(
 
   revalidatePath("/", "layout");
   const redirectTo = safeRedirectPath(formData.get("redirectTo"));
+  const locale = await getLocale();
   // `redirectTo` (when present) already carries its own locale prefix — it is
-  // built by lib/supabase/middleware.ts's signed-out bounce. Only the
-  // fallback (no redirectTo, e.g. a direct GET /login) needs one added here;
-  // prefixing an already-prefixed redirectTo would double it ("/en/en/...").
-  redirect(redirectTo ?? `/${await getLocale()}/dashboard`);
+  // built by lib/supabase/middleware.ts's signed-out bounce. The locale-aware
+  // `redirect` below always adds its own prefix for the given `locale`, so an
+  // already-prefixed target must be stripped first (`stripLocale`, also used
+  // by the auth middleware) — passing it through unstripped would double the
+  // prefix ("/en/en/..."). The fallback (no redirectTo, e.g. a direct
+  // GET /login) has no prefix to strip.
+  const target = redirectTo ? stripLocale(redirectTo).pathname : "/dashboard";
+  redirect({ href: target, locale });
 }
 
 export async function register(
@@ -77,9 +83,10 @@ export async function register(
   revalidatePath("/", "layout");
   // If email confirmation is required, there is no session yet — send them to
   // sign in; otherwise they're already authenticated.
-  redirect(
-    data.session ? `/${locale}/dashboard` : `/${locale}/login?checkEmail=1`,
-  );
+  redirect({
+    href: data.session ? "/dashboard" : "/login?checkEmail=1",
+    locale,
+  });
 }
 
 export async function signInWithGoogle(): Promise<void> {
@@ -95,10 +102,12 @@ export async function signInWithGoogle(): Promise<void> {
     },
   });
   if (error) {
-    redirect(`/${locale}/login?error=oauth`);
+    redirect({ href: "/login?error=oauth", locale });
   }
   if (data.url) {
     // Absolute external URL (Google's consent screen) — no locale to add.
-    redirect(data.url);
+    // The locale-aware redirect leaves non-local hrefs (anything with a
+    // protocol) untouched, so passing it through here does not prefix it.
+    redirect({ href: data.url, locale });
   }
 }

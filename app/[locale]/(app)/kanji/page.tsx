@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { getKanjiList } from "@/lib/data/content";
 import { jlptLevelSchema } from "@/lib/validation/content";
 import { LevelTabs } from "@/components/learning/level-tabs";

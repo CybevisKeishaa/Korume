@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getKanjiById } from "@/lib/data/content";
 import { StrokeOrder } from "@/components/motion/stroke-order";

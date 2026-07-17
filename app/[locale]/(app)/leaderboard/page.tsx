@@ -1,8 +1,9 @@
-import { redirect } from "next/navigation";
+import { redirect } from "@/lib/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getLeaderboard } from "@/lib/data/leaderboard";
 import { Container } from "@/components/ui/container";
 import { LeaderboardBoard } from "@/components/community/leaderboard-board";
+import { getLocale } from "@/lib/i18n/server";
 
 export const metadata = { title: "Leaderboard" };
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export default async function LeaderboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
   // (app) layout already redirects unauthenticated users; this is defence in depth.
-  if (!user) redirect("/login");
+  if (!user) redirect({ href: "/login", locale: await getLocale() });
 
   const [result, { data: userRow }] = await Promise.all([
     getLeaderboard(),

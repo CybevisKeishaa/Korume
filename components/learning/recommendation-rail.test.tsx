@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import { RecommendationRail } from "./recommendation-rail";
 import type { VideoRecommendation } from "@/lib/recommendation-types";
 
@@ -25,7 +25,7 @@ describe("RecommendationRail", () => {
     expect(screen.getByText(/82% words you know/i)).toBeInTheDocument();
 
     const link = screen.getByRole("link", { name: /はじめての日本語/ });
-    expect(link).toHaveAttribute("href", "/videos/v1/shadowing");
+    expect(link).toHaveAttribute("href", "/en/videos/v1/shadowing");
   });
 
   it("labels the too-easy and too-hard bands distinctly", () => {
@@ -49,7 +49,7 @@ describe("RecommendationRail", () => {
   it("shows a friendly pointer to import videos when there are no recommendations yet", () => {
     render(<RecommendationRail recommendations={[]} />);
     expect(screen.getByText(/import/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /import a video/i })).toHaveAttribute("href", "/videos");
+    expect(screen.getByRole("link", { name: /import a video/i })).toHaveAttribute("href", "/en/videos");
   });
 
   it("omits the JLPT chip when the estimate is unknown", () => {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { PlaylistList } from "./playlist-list";
 import type { PlaylistListItem } from "@/lib/playlist-types";
@@ -26,7 +26,7 @@ const playlists: PlaylistListItem[] = [
 describe("PlaylistList", () => {
   it("renders playlists with name, description, and item count", () => {
     render(<PlaylistList playlists={playlists} />);
-    expect(screen.getByRole("link", { name: /N4 videos/i })).toHaveAttribute("href", "/playlists/p1");
+    expect(screen.getByRole("link", { name: /N4 videos/i })).toHaveAttribute("href", "/en/playlists/p1");
     expect(screen.getByText("For beginners")).toBeInTheDocument();
     expect(screen.getByText(/3 videos/i)).toBeInTheDocument();
   });

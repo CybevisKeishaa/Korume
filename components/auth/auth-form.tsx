@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import {
   login,
   register,

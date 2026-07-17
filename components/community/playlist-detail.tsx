@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import type { PlaylistDetail as PlaylistDetailType, PlaylistItemView } from "@/lib/playlist-types";
 
 export interface PlaylistDetailProps {

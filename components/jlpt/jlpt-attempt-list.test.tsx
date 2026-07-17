@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import type { JlptAttemptRow, JlptLevel } from "@/lib/jlpt-ui";
 import { JlptAttemptList } from "./jlpt-attempt-list";
 
@@ -48,6 +48,6 @@ describe("JlptAttemptList", () => {
 
   it("links each attempt back to its test", () => {
     render(<JlptAttemptList attempts={[fullAttempt()]} testsById={TESTS_BY_ID} />);
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/jlpt/test-1");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/en/jlpt/test-1");
   });
 });

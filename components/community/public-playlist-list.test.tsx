@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { PublicPlaylistList } from "./public-playlist-list";
 import type { PublicPlaylistsPage } from "@/lib/playlist-types";
@@ -31,7 +31,7 @@ const initialPage: PublicPlaylistsPage = {
 describe("PublicPlaylistList", () => {
   it("renders public playlists with owner name and item count, linking to detail", () => {
     render(<PublicPlaylistList initialPage={initialPage} />);
-    expect(screen.getByRole("link", { name: /Slow Japanese/i })).toHaveAttribute("href", "/playlists/p1");
+    expect(screen.getByRole("link", { name: /Slow Japanese/i })).toHaveAttribute("href", "/en/playlists/p1");
     expect(screen.getByText(/alice/i)).toBeInTheDocument();
     expect(screen.getByText(/5 videos/i)).toBeInTheDocument();
   });

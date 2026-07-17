@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CONTENT_TYPE_DESCRIPTIONS, CONTENT_TYPE_LABELS } from "./content-fields";
 import { CONTENT_TYPES } from "@/lib/admin-ui-types";

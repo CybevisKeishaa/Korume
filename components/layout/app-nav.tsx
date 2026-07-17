@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "@/lib/i18n/navigation";
+import { usePathname } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";

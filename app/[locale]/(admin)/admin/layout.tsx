@@ -1,7 +1,8 @@
-import { redirect } from "next/navigation";
+import { redirect } from "@/lib/i18n/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { hasPublicSupabaseEnv } from "@/lib/env";
 import { requireAdmin } from "@/lib/admin/guard";
+import { getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +23,11 @@ export const dynamic = "force-dynamic";
  * the learner `AppNav` used by `app/(app)/layout.tsx`.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  if (!hasPublicSupabaseEnv()) redirect("/login");
+  const locale = await getLocale();
+  if (!hasPublicSupabaseEnv()) redirect({ href: "/login", locale });
 
   const admin = await requireAdmin();
-  if (!admin.ok) redirect(admin.status === 401 ? "/login" : "/dashboard");
+  if (!admin.ok) redirect({ href: admin.status === 401 ? "/login" : "/dashboard", locale });
 
   return <AdminShell userEmail={admin.user.email}>{children}</AdminShell>;
 }

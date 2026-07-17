@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { buttonStyles } from "@/components/ui/button";
 import {
   PILLAR_LABELS,

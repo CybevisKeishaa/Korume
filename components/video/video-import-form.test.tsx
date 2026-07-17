@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { VideoImportForm } from "./video-import-form";
 
 const push = vi.fn();
 const refresh = vi.fn();
 
-vi.mock("next/navigation", () => ({
+vi.mock("@/lib/i18n/navigation", () => ({
   useRouter: () => ({ push, refresh }),
 }));
 

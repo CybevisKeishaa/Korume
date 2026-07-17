@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
+import { redirect } from "@/lib/i18n/navigation";
+import { getLocale } from "@/lib/i18n/server";
 import { listVideos } from "@/lib/data/videos";
 import { Container } from "@/components/ui/container";
 import { VideoImportForm } from "@/components/video/video-import-form";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 export default async function VideosPage() {
   const result = await listVideos();
   // (app) layout already redirects unauthenticated users; this is defence in depth.
-  if (!result.ok) redirect("/login");
+  if (!result.ok) redirect({ href: "/login", locale: await getLocale() });
 
   const videos = result.data as unknown as VideoRow[];
 

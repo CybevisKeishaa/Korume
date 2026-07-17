@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { notFound } from "next/navigation";
 import { getVocabById, getVocabExamples } from "@/lib/data/content";
 import { Container } from "@/components/ui/container";

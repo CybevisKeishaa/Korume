@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { listMiningCards } from "@/lib/data/mining";
 import { Container } from "@/components/ui/container";
 import { buttonStyles } from "@/components/ui/button";
