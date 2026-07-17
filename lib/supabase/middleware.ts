@@ -10,22 +10,22 @@ import { isAuthRoute, isProtectedPath } from "./route-protection";
  * signed-out users are bounced from protected routes to /login; signed-in
  * users are bounced from the auth pages to /dashboard.
  *
- * @param response The response from next-intl's routing middleware. Supabase's
- * refreshed cookies are written onto it, and it is returned untouched
- * otherwise — it carries the headers that tell the app which locale resolved.
+ * Runs BEFORE next-intl's middleware (see `middleware.ts`), so the request-cookie
+ * mutation below lands before next-intl builds the response that is ultimately
+ * returned. `NextResponse.next(init)` snapshots the forwarded
+ * `x-middleware-request-*` headers once, at construction — writing cookies onto
+ * an already-built response never refreshes that snapshot, and the current
+ * request's Server Components would then read a stale token. Measured:
+ * `.superpowers/sdd/cookie-forwarding-investigation.md`.
  *
- * Do not recompute the active locale from cookies or request headers. Once
- * middleware begins executing, the pathname (after `stripLocale`) is the
- * canonical routing source of truth: next-intl has already negotiated the
- * locale and encoded its decision in the URL. Re-deriving it here could
- * disagree with the URL the user is actually on, and an authorization
- * decision made against a different locale than the one being served is
- * exactly the class of bug §4.2 exists to prevent.
+ * Do not recompute the active locale from cookies or request headers. The
+ * pathname (after `stripLocale`) is the canonical routing source of truth; an
+ * authorization decision made against a different locale than the one being
+ * served is exactly the class of bug §4.2 exists to prevent.
  */
-export async function updateSession(
-  request: NextRequest,
-  response: NextResponse,
-): Promise<NextResponse> {
+export async function updateSession(request: NextRequest): Promise<NextResponse> {
+  let response = NextResponse.next({ request });
+
   // Before Supabase is configured, don't attempt auth — let the site run.
   if (!hasPublicSupabaseEnv()) {
     return response;
@@ -49,6 +49,9 @@ export async function updateSession(
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
+          // Rebuilt from the MUTATED request on purpose — this is what forwards
+          // the refreshed cookie to Server Components. Do not "simplify" it away.
+          response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
@@ -72,8 +75,9 @@ export async function updateSession(
   if (!user && isProtectedPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = `/${activeLocale}/login`;
-    // redirectTo carries the locale-stripped path; the login page redirects
-    // within the active locale.
+    // KNOWN GAP, closed in Task 5: redirectTo carries the locale-stripped path,
+    // and app/(auth)/actions.ts redirects to it unprefixed — which next-intl
+    // then routes to the DEFAULT locale, dropping an `en` user into `vi`.
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
