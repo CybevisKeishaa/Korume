@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import type { JlptTestListItem } from "@/lib/jlpt-ui";
 import { JlptTestList } from "./jlpt-test-list";
 
@@ -35,15 +35,15 @@ describe("JlptTestList", () => {
 
     expect(screen.getByRole("link", { name: /take full mock/i })).toHaveAttribute(
       "href",
-      "/jlpt/11111111-1111-1111-1111-111111111111",
+      "/en/jlpt/11111111-1111-1111-1111-111111111111",
     );
     expect(screen.getByRole("link", { name: /practice vocabulary/i })).toHaveAttribute(
       "href",
-      "/jlpt/11111111-1111-1111-1111-111111111111?section=vocab",
+      "/en/jlpt/11111111-1111-1111-1111-111111111111?section=vocab",
     );
     expect(screen.getByRole("link", { name: /practice listening/i })).toHaveAttribute(
       "href",
-      "/jlpt/11111111-1111-1111-1111-111111111111?section=listening",
+      "/en/jlpt/11111111-1111-1111-1111-111111111111?section=listening",
     );
   });
 
