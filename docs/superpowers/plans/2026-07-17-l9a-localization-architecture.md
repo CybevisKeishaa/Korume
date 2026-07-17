@@ -974,18 +974,23 @@ Expected: PASS at the current baseline. Record the real number you observe; if i
 
 ```bash
 git add lib/supabase/middleware.ts
-git commit -m "refactor(auth): updateSession takes the response and locale-stripped path
+git commit -m "refactor(auth): match route protection on the locale-stripped path
 
-Locale routing forces two changes: next-intl's response carries the
-resolved-locale headers, so updateSession must write Supabase's cookies
-onto that response instead of creating its own; and protection must match
-the locale-stripped pathname or every protected route silently reads as
-public (spec §4.2).
+PROTECTED_PREFIXES compares against '/dashboard'. Once locale routing
+lands, '/vi/dashboard' matches nothing, isProtected silently returns
+false, and a signed-out visitor reaches every protected route (spec
+§4.2). Protection now runs on the locale-stripped pathname, and
+redirects preserve the locale: /vi/dashboard bounces to /vi/login.
 
-Redirects are now locale-preserving: /vi/dashboard bounces to /vi/login.
+updateSession keeps its signature and keeps building its own response,
+including the NextResponse.next({request}) recreation inside setAll.
+That recreation is load-bearing: NextResponse.next(init) snapshots the
+forwarded x-middleware-request-* headers once, at construction, so
+without it a refreshed cookie never reaches the current request's
+Server Components. Measured, not assumed.
 
-middleware.ts does not compile until Task 5 composes the two — that is
-the compiler proving no caller was missed.
+Task 5 runs this before next-intl and merges the cookies onto its
+response.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
