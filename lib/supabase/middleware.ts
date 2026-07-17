@@ -1,44 +1,31 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasPublicSupabaseEnv, publicEnv } from "@/lib/env";
-
-/** Route prefixes that require an authenticated session. */
-const PROTECTED_PREFIXES = [
-  "/dashboard",
-  "/kanji",
-  "/vocab",
-  "/grammar",
-  "/videos",
-  "/reading",
-  "/speaking",
-  "/jlpt",
-  "/jlpt-test",
-  "/community",
-  "/playlists",
-  "/leaderboard",
-  "/profile",
-  "/content-manager",
-  "/video-curator",
-  // Layer 7 admin CMS (`app/(admin)/admin/**`). Middleware only ensures the
-  // request is signed IN — it has no cheap way to check `users.is_admin`
-  // here (that requires a service-role DB read; see `lib/admin/guard.ts`),
-  // so a signed-in non-admin still reaches the route and is bounced to
-  // `/dashboard` by `app/(admin)/admin/layout.tsx`'s own server-side
-  // `isAdmin()` check. Treat this entry as "auth required", not "admin
-  // required" — the two checks are deliberately split across two layers.
-  "/admin",
-];
-
-const AUTH_ROUTES = ["/login", "/register"];
+import { stripLocale } from "@/lib/i18n/locale-path";
+import { routing } from "@/lib/i18n/routing";
+import { isAuthRoute, isProtectedPath } from "./route-protection";
 
 /**
  * Refreshes the Supabase auth cookie on every request and enforces access:
  * signed-out users are bounced from protected routes to /login; signed-in
  * users are bounced from the auth pages to /dashboard.
+ *
+ * @param response The response from next-intl's routing middleware. Supabase's
+ * refreshed cookies are written onto it, and it is returned untouched
+ * otherwise — it carries the headers that tell the app which locale resolved.
+ *
+ * Do not recompute the active locale from cookies or request headers. Once
+ * middleware begins executing, the pathname (after `stripLocale`) is the
+ * canonical routing source of truth: next-intl has already negotiated the
+ * locale and encoded its decision in the URL. Re-deriving it here could
+ * disagree with the URL the user is actually on, and an authorization
+ * decision made against a different locale than the one being served is
+ * exactly the class of bug §4.2 exists to prevent.
  */
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
-
+export async function updateSession(
+  request: NextRequest,
+  response: NextResponse,
+): Promise<NextResponse> {
   // Before Supabase is configured, don't attempt auth — let the site run.
   if (!hasPublicSupabaseEnv()) {
     return response;
@@ -62,7 +49,6 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
-          response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
@@ -77,22 +63,24 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
-  );
-  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+  // CRITICAL: match on the locale-stripped path. "/vi/dashboard" does not
+  // start with "/dashboard", so matching the raw pathname would report every
+  // protected route as public (spec §4.2). Covered by route-protection.test.ts.
+  const { locale, pathname } = stripLocale(request.nextUrl.pathname);
+  const activeLocale = locale ?? routing.defaultLocale;
 
-  if (!user && isProtected) {
+  if (!user && isProtectedPath(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = `/${activeLocale}/login`;
+    // redirectTo carries the locale-stripped path; the login page redirects
+    // within the active locale.
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute) {
+  if (user && isAuthRoute(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = `/${activeLocale}/dashboard`;
     url.search = "";
     return NextResponse.redirect(url);
   }
