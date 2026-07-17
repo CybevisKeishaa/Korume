@@ -23,6 +23,26 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
+## ▶ NEXT ACTION (written 2026-07-18, after L9a Plan 1 merge)
+**Next session: write L9a Plan 2 (design system) and/or Plan 3 (string extraction + VN) with
+`superpowers:writing-plans`, off spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`
+— then execute with subagent-driven-development. Both are unblocked; either order OK; they may
+run in parallel (spec §4.5). Suggested: Plan 2 first (L9b surfaces want primitives), Plan 3 can
+follow or overlap.**
+MUST-DO khi viết các plan đó (đã cam kết trong final review — đừng bỏ sót):
+- **Plan 2, task ĐẦU TIÊN**: automated test cho top-level `middleware()` composition (mock
+  updateSession → Set-Cookie carried onto intl response + 3xx short-circuits before intl). Chỗ duy
+  nhất một refactor có thể lặng lẽ mở lại auth-cookie bug đã đo được.
+- **Plan 3**: re-prefix `app/auth/callback/route.ts` error branch (bare `/login?error=auth`);
+  OAuth + login-round-trip e2e; fix copy "Start free trial" (business model không có trial —
+  đừng dịch điều sai sang VN); move Companion template titles ("giai đoạn 2" P12 violation) vào i18n.
+- Đọc `mem:l9a_localization_run_state` TRƯỚC: load-bearing constructs (không được "dọn"), reuse
+  patterns (redirect `{href,locale}` + getLocale; `@/test/render`; 3-nơi-khi-thêm-namespace),
+  baseline để so (unit 1229/162 · build 52s · e2e 37s).
+- Đọc `mem:feature_backlog_deferred` khi plan (user mandate — item #10 đang dở).
+Sau L9a xong cả 3 plan → L9b surfaces (Companion Plans 2/3 + feature UIs + landing + transcript-
+submit UI + GDPR delete) → L8 PayOS → L9c polish/perf.
+
 ## ⭐ ROADMAP SEQUENCING — decided 2026-07-16 (read before choosing what to build next)
 **User launch philosophy (explicit):** still in BUILD phase; publish ONLY after everything is
 complete, polished, and fully-featured. There is NO near-term launch, paid-beta, or revenue goal.
@@ -30,11 +50,12 @@ This resolves the "L8 vs finish-L9" question decisively:
 
 **Order = finish L9 first, do L8 (billing) near the very end, right before publish:**
 1. **L9a — i18n + design system** (foundation; VN-first, replace English shell). Unblocks EVERYTHING
-   visual + Companion Plans 2/3. ← **STARTED 2026-07-17, IN PROGRESS — see the block above and
-   `mem:l9a_localization_run_state`.** Brainstormed + spec'd + split into 3 plans: Plan 1
-   localization architecture (in progress), Plan 2 design system (not written), Plan 3 string
-   extraction + Vietnamese (not written). Plans 2/3 both depend on Plan 1 and can then run in
-   parallel.
+   visual + Companion Plans 2/3. Split into 3 plans: **Plan 1 localization architecture = ✅ DONE,
+   MERGED `69f22e6` 2026-07-18** (see block above + `mem:l9a_localization_run_state`); **Plan 2
+   design system (spec §4.4/§4.5, D7/D9: tokens → semantic tokens → primitives → living style
+   guide) — NOT WRITTEN**; **Plan 3 string extraction EN-verbatim + Vietnamese (spec Phase 2/3) —
+   NOT WRITTEN**. Plans 2/3 are both UNBLOCKED now and can run in parallel (spec §4.5: independent
+   capabilities). ← **NEXT ACTION: see ▶ NEXT ACTION block above.**
 2. **L9b — surfaces**: Companion Plan 2 → Plan 3, the missing feature UIs, landing/cinematic, tutorial.
    Fold the two launch-blocker debts in here (they count as "fully-featured"): **user transcript-submit
    UI** (backend done since L3, UI missing = core loop dead-ends) and **GDPR delete-my-data** (§2
@@ -58,7 +79,8 @@ AI: `@anthropic-ai/sdk` 0.111.0. Tests: Vitest+RTL (unit), Playwright (`tests/e2
 ## Branching policy (user-set)
 One branch per layer `layer-<n>-<slug>` off master; merge `--no-ff` ONLY after DoD (tests pass +
 code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`,
-L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`.
+L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`, L7 `01ae59d`, Spec A `201a9b4`,
+Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),
@@ -377,8 +399,11 @@ degrade to "not configured". `AZURE_SPEECH_KEY` present but **INVALID — Azure 
 `ADMIN_EMAILS="admin@almostgone.vn"` added 2026-07-14 (bootstrap admin exists locally).
 
 ## Verify commands
-`npx tsc --noEmit` · `npm test` (**1098 unit**) · `npm run lint` · `npm run build` ·
-`npx playwright test` (2 e2e) · `npx supabase db reset` (14 migrations). Shared test harness in
+`npx tsc --noEmit` · `npx vitest run` (**1229 unit / 162 files** @ 2026-07-18) · `npm run lint` ·
+`npm run build` (~52s) · `npx playwright test` (2 e2e, ~37s; kill any stale node on :3000 first —
+reuseExistingServer picks it up) · `npx supabase db reset` (15 migrations).
+Known CPU-contention flakes (standalone-green): `pitch-contour.test.tsx`, `waveform.test.tsx`.
+Component tests import render from **`@/test/render`** (NextIntlClientProvider, locale="en"). Shared test harness in
 `test/` (`@/test/*`): media mocks, YouTube IFrame stub, Claude + Azure Speech + AudioContext
 mocks, tone-buffer/transcript/URL fixtures, blob utils, `supabase-mock.ts` (chainable
 query-builder mock for lib/data tests).
