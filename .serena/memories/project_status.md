@@ -8,13 +8,16 @@ root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.cl
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
 8 layers, one per session; all 8 = finished product. Use `/build-layer <n>`.
 
-## 🚧 IN PROGRESS RIGHT NOW — L9a Plan 1/3 (2026-07-17)
-**Branch `layer-9a-localization-architecture` (off master @ `0419c15`), tip `37e00de`. NOT merged.**
-Tasks 1–4 done+reviewed+committed (suite 1210). **Task 5 is ~85% done but UNCOMMITTED in the
-working tree** — a subagent was interrupted mid-task; `app/` is already moved to `app/[locale]/`,
-middleware is composed, tsc 0, suite 1216. **Do NOT redo Task 5 from scratch — finish and commit it.**
-Tasks 6–8 not started.
-**→ Full resumable detail is in `mem:l9a_localization_run_state`. READ THAT FIRST.**
+## ✅ L9a Plan 1/3 COMPLETE — READY TO MERGE, awaiting user decision (2026-07-18)
+**Branch `layer-9a-localization-architecture` (off master @ `0419c15`), tip `ceb7445`, 17 commits.
+NOT merged, NOT pushed.** All 8 tasks done + task-reviewed; final whole-branch review (opus):
+READY TO MERGE = YES, 0 Critical/Important. Shipped: `lib/i18n/**` foundation (next-intl 4.13.2,
+vi/en, prefix "always"), `app/`→`app/[locale]/`, Supabase-first middleware composition, locale-
+stripped route protection + security matrix, all feature code on `@/lib/i18n/navigation`, ESLint
+boundary (merged with AI-SDK guard, fire-tests). Zero user-visible change (shell still EN).
+Baseline @ ceb7445: **unit 1229/162 files · build 52s · playwright 2/2 37s · tsc 0 · lint 0**.
+Plans 2 (design system) & 3 (extraction + VN) both UNBLOCKED, not yet written.
+**→ Load-bearing constructs, reuse patterns, and review-assigned follow-ups: `mem:l9a_localization_run_state`. READ THAT before Plans 2/3 or touching middleware/i18n.**
 Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
