@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import type { JlptSubmitResult, JlptTestDetail } from "@/lib/jlpt-ui";
 import { JlptTestRunner } from "./jlpt-test-runner";

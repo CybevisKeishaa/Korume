@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import type { ItemType } from "@/lib/validation/content";
 import type { ReviewItem } from "@/lib/learning-types";
 import { Button, buttonStyles } from "@/components/ui/button";

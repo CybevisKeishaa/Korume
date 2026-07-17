@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
 import type { MiningQueueItem } from "@/lib/mining-types";

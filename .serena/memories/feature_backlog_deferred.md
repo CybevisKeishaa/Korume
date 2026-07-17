@@ -43,9 +43,11 @@ tech nits vẫn đọc ở project_status.
    discriminator. Khớp F-010/F-014 trong docs/features. Nhớ §2: mining không lưu media.
 9. **Listening drill module riêng** — weakness links của JLPT hiện route tạm về
    `/videos?level=`. Spec không bắt buộc module riêng nhưng đã bàn là gap.
-10. **VN-localize English shell (i18n site-wide)** — launch là VN-first (spec §8 đã sửa) nhưng
-    toàn bộ shell đang English (convention từ L5: shell EN, DB content VN). Đây là quyết định
-    sản phẩm một lần cho toàn site, không làm lẻ tẻ từng module. Cần chốt trước launch.
+10. **VN-localize English shell (i18n site-wide)** — **ĐANG LÀM DỞ (2026-07-18): L9a Plan 1
+    (localization ARCHITECTURE) hoàn tất trên branch `layer-9a-localization-architecture` —
+    app đã chạy dưới /vi|/en, nhưng shell VẪN English cho tới L9a Plan 3 (string extraction +
+    bản dịch VN, chưa viết plan).** Launch là VN-first (spec §8 đã sửa); convention cũ từ L5:
+    shell EN, DB content VN. KHÔNG đánh DONE cho tới khi Plan 3 ship.
 
 ## Nguồn: L7 (Community + Admin)
 11. **`rejected` video status + persist lý do reject** — hiện reject = HARD DELETE, reason chỉ

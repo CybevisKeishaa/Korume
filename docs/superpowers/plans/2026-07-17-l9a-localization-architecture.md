@@ -468,8 +468,8 @@ import { routing } from "./routing";
  * These are drop-in replacements for `next/link` and the locale-sensitive
  * half of `next/navigation`. `useSearchParams`, `useParams` and `notFound`
  * have nothing to do with locale — keep importing those from `next/navigation`
- * directly. That is why the ESLint rule restricts named imports rather than
- * the whole module (spec §2.9).
+ * directly. The boundary covers what carries a locale, not the whole module
+ * (spec §2.9).
  */
 export const { Link, redirect, usePathname, useRouter, getPathname } =
   createNavigation(routing);
@@ -487,20 +487,53 @@ Append to `lib/i18n/index.ts`:
 export { Link, redirect, usePathname, useRouter, getPathname } from "./navigation";
 ```
 
-- [ ] **Step 3: Verify typecheck**
+- [ ] **Step 3: Test that the prefix policy actually applies**
+
+This asserts **our configuration**, not the library's behaviour: that `localePrefix: "always"` really does put a prefix on every generated path. It is the single point of failure behind every navigation in the app, and `tsc` cannot see it — a wrong `localePrefix` typechecks perfectly and produces silently unprefixed URLs.
+
+`lib/i18n/navigation.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { getPathname } from "./navigation";
+import { routing } from "./routing";
+
+describe("navigation", () => {
+  it("prefixes generated paths for every locale, including the default", () => {
+    for (const locale of routing.locales) {
+      expect(getPathname({ href: "/foo", locale })).toBe(`/${locale}/foo`);
+    }
+  });
+
+  it("prefixes the root path", () => {
+    expect(getPathname({ href: "/", locale: routing.defaultLocale })).toBe(
+      `/${routing.defaultLocale}`,
+    );
+  });
+});
+```
+
+The first case covers the **default** locale deliberately: `localePrefix: "as-needed"` would leave `vi` unprefixed and still pass a test that only checked `en`. That is exactly the regression this guards.
+
+Run: `npx vitest run lib/i18n/navigation.test.ts`
+Expected: PASS — 2 tests.
+
+If `getPathname`'s root-path result is `/vi/` rather than `/vi`, **the library is right and this plan is wrong**: record the real shape and adjust the assertion.
+
+- [ ] **Step 4: Verify typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: 0 errors.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add lib/i18n/navigation.ts lib/i18n/index.ts
 git commit -m "feat(i18n): add locale-aware navigation to the foundation
 
 Link/redirect/useRouter/usePathname that preserve the current locale.
-Call sites move over in Task 7; the ESLint rule that forbids the raw
-imports lands in Task 8, once there are no violations left to report.
+Call sites move over in Task 6; the ESLint rule that forbids the raw
+imports lands in Task 7, once there are no violations left to report.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -791,20 +824,45 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ---
 
-## Task 4: updateSession composes with an incoming response
+## Task 4: updateSession matches the locale-stripped path
+
+> **REVISED 2026-07-17, after empirical investigation refuted this task's original design.**
+> The original plan had `updateSession(request, response)` take next-intl's response and write
+> Supabase's cookies onto it. **That is an auth bug**, proven by direct measurement against
+> `next@14.2.35` (`.superpowers/sdd/cookie-forwarding-investigation.md`):
+>
+> ```
+> response built BEFORE request.cookies.set() → x-middleware-request-cookie: sb-access-token=OLD
+> response built AFTER  request.cookies.set() → x-middleware-request-cookie: sb-access-token=NEW
+> ```
+>
+> `NextResponse.next(init)` bakes the forwarded `x-middleware-request-*` headers **once, at
+> construction**. `response.cookies.set()` afterwards writes into a throwaway cloned `Headers`
+> that is never assigned back. So on a request where Supabase rotates the token, the browser
+> gets the new cookie (correct for the *next* request) while the *current* request's Server
+> Components read the **stale** one via `next/headers` — and its refresh token may already be
+> consumed. Middleware admits the user; the page then renders them signed out.
+>
+> **Fix: Supabase runs FIRST and keeps building its own response.** Then next-intl's middleware,
+> called afterwards, bakes the already-mutated cookies into *its* response — verified. Cost: a
+> `getUser()` round-trip now also runs on bare URLs that intl will redirect. Accepted: correctness
+> over one saved round-trip on a redirect.
+>
+> Consequence: **`updateSession`'s signature does not change**, and this task shrinks to what it
+> should always have been — matching the locale-stripped path and preserving locale in redirects.
 
 **Files:**
 - Modify: `lib/supabase/middleware.ts`
 
 **Interfaces:**
 - Consumes: `stripLocale` (Task 3), `isProtectedPath`/`isAuthRoute` (Task 3).
-- Produces: `updateSession(request: NextRequest, response: NextResponse): Promise<NextResponse>` — **note the new second parameter**; `middleware.ts` (Task 5) passes next-intl's response in so Supabase's cookies land on it.
+- Produces: `updateSession(request: NextRequest): Promise<NextResponse>` — **signature unchanged**. It still creates and returns its own response, including the recreation inside `setAll`, which is load-bearing (see above). Task 5 merges its cookies onto next-intl's response.
 
 - [ ] **Step 1: Rewrite lib/supabase/middleware.ts**
 
-Two changes, both required by locale routing:
-1. It now **mutates a response handed to it** rather than creating its own — next-intl's response carries the rewrite headers that tell the app which locale was resolved, so discarding it would discard the locale.
-2. Protection matches the **locale-stripped** pathname, and redirects are **locale-preserving** (spec P2 — `/vi/dashboard` must bounce to `/vi/login`, not `/login`).
+**One change only:** protection matches the **locale-stripped** pathname, and redirects are **locale-preserving** (spec P2 — `/vi/dashboard` must bounce to `/vi/login`, not `/login`).
+
+Everything about response creation stays exactly as it is today, **including the `NextResponse.next({ request })` recreation inside `setAll`. Do not touch it.** It is what forwards the refreshed cookie to the current request's Server Components; removing it is a measured auth bug (see the note above this task).
 
 ```ts
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
@@ -819,22 +877,22 @@ import { isAuthRoute, isProtectedPath } from "./route-protection";
  * signed-out users are bounced from protected routes to /login; signed-in
  * users are bounced from the auth pages to /dashboard.
  *
- * @param response The response from next-intl's routing middleware. Supabase's
- * refreshed cookies are written onto it, and it is returned untouched
- * otherwise — it carries the headers that tell the app which locale resolved.
+ * Runs BEFORE next-intl's middleware (see `middleware.ts`), so the request-cookie
+ * mutation below lands before next-intl builds the response that is ultimately
+ * returned. `NextResponse.next(init)` snapshots the forwarded
+ * `x-middleware-request-*` headers once, at construction — writing cookies onto
+ * an already-built response never refreshes that snapshot, and the current
+ * request's Server Components would then read a stale token. Measured:
+ * `.superpowers/sdd/cookie-forwarding-investigation.md`.
  *
- * Do not recompute the active locale from cookies or request headers. Once
- * middleware begins executing, the pathname (after `stripLocale`) is the
- * canonical routing source of truth: next-intl has already negotiated the
- * locale and encoded its decision in the URL. Re-deriving it here could
- * disagree with the URL the user is actually on, and an authorization
- * decision made against a different locale than the one being served is
- * exactly the class of bug §4.2 exists to prevent.
+ * Do not recompute the active locale from cookies or request headers. The
+ * pathname (after `stripLocale`) is the canonical routing source of truth; an
+ * authorization decision made against a different locale than the one being
+ * served is exactly the class of bug §4.2 exists to prevent.
  */
-export async function updateSession(
-  request: NextRequest,
-  response: NextResponse,
-): Promise<NextResponse> {
+export async function updateSession(request: NextRequest): Promise<NextResponse> {
+  let response = NextResponse.next({ request });
+
   // Before Supabase is configured, don't attempt auth — let the site run.
   if (!hasPublicSupabaseEnv()) {
     return response;
@@ -858,6 +916,9 @@ export async function updateSession(
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
+          // Rebuilt from the MUTATED request on purpose — this is what forwards
+          // the refreshed cookie to Server Components. Do not "simplify" it away.
+          response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );
@@ -881,8 +942,9 @@ export async function updateSession(
   if (!user && isProtectedPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = `/${activeLocale}/login`;
-    // redirectTo carries the locale-stripped path; the login page redirects
-    // within the active locale.
+    // KNOWN GAP, closed in Task 5: redirectTo carries the locale-stripped path,
+    // and app/(auth)/actions.ts redirects to it unprefixed — which next-intl
+    // then routes to the DEFAULT locale, dropping an `en` user into `vi`.
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
@@ -898,32 +960,37 @@ export async function updateSession(
 }
 ```
 
-- [ ] **Step 2: Verify typecheck fails at the old call site**
+- [ ] **Step 2: Verify typecheck**
 
 Run: `npx tsc --noEmit`
-Expected: FAIL — `middleware.ts` calls `updateSession(request)` with 1 argument, expected 2. **This is the desired result**: the compiler is proving no other caller was missed. Task 5 fixes it.
+Expected: **0 errors.** The signature is unchanged, so `middleware.ts`'s existing call site still compiles. (An earlier revision of this plan deliberately broke the build here, to prove no caller was missed. That design was refuted by measurement — see the note above this task — and with the signature intact there is no call site to break.)
 
-- [ ] **Step 3: Verify the suite is otherwise unaffected**
+- [ ] **Step 3: Verify the suite is unaffected**
 
 Run: `npx vitest run`
-Expected: PASS — **1203** tests (1190 baseline + 3 catalog + 5 locale-path + 5 route-protection). Record the real number you observe; if it differs from this arithmetic, **the observed number is right and this plan's arithmetic is wrong** — note it and move on.
+Expected: PASS at the current baseline. Record the real number you observe; if it differs from this plan's arithmetic, **the observed number is right and this plan is wrong** — note it and move on.
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add lib/supabase/middleware.ts
-git commit -m "refactor(auth): updateSession takes the response and locale-stripped path
+git commit -m "refactor(auth): match route protection on the locale-stripped path
 
-Locale routing forces two changes: next-intl's response carries the
-resolved-locale headers, so updateSession must write Supabase's cookies
-onto that response instead of creating its own; and protection must match
-the locale-stripped pathname or every protected route silently reads as
-public (spec §4.2).
+PROTECTED_PREFIXES compares against '/dashboard'. Once locale routing
+lands, '/vi/dashboard' matches nothing, isProtected silently returns
+false, and a signed-out visitor reaches every protected route (spec
+§4.2). Protection now runs on the locale-stripped pathname, and
+redirects preserve the locale: /vi/dashboard bounces to /vi/login.
 
-Redirects are now locale-preserving: /vi/dashboard bounces to /vi/login.
+updateSession keeps its signature and keeps building its own response,
+including the NextResponse.next({request}) recreation inside setAll.
+That recreation is load-bearing: NextResponse.next(init) snapshots the
+forwarded x-middleware-request-* headers once, at construction, so
+without it a refreshed cookie never reaches the current request's
+Server Components. Measured, not assumed.
 
-middleware.ts does not compile until Task 5 composes the two — that is
-the compiler proving no caller was missed.
+Task 5 runs this before next-intl and merges the cookies onto its
+response.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -1047,6 +1114,12 @@ The metadata strings stay hardcoded English on purpose — localizing them is Pl
 
 `middleware.ts`:
 
+> **REVISED 2026-07-17.** The original composition ran intl first and handed its response to
+> `updateSession`. Measurement proved that forwards a stale auth cookie to Server Components
+> (see the note on Task 4). **Supabase must run first**, so that next-intl builds its response
+> from an already-mutated request. The cost — a `getUser()` round-trip on bare URLs that intl
+> would redirect anyway — is accepted; correctness outranks one saved round-trip on a redirect.
+
 ```ts
 import createMiddleware from "next-intl/middleware";
 import type { NextRequest } from "next/server";
@@ -1056,17 +1129,30 @@ import { updateSession } from "@/lib/supabase/middleware";
 const handleI18nRouting = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
-  const response = handleI18nRouting(request);
+  // Supabase FIRST. It mutates request.cookies when it refreshes the session,
+  // and next-intl's response must be built from the mutated request — a
+  // response built earlier bakes in the stale cookie and the current request's
+  // Server Components read an expired token. Measured, not assumed:
+  // .superpowers/sdd/cookie-forwarding-investigation.md
+  const authResponse = await updateSession(request);
 
-  // A 3xx here means the URL had no (or an unknown) locale prefix and intl is
-  // redirecting to a prefixed one. Return immediately: there is nothing to
-  // protect on a redirect, and this skips a supabase.auth.getUser() network
-  // round-trip on every bare URL (spec §4.2).
-  if (response.status >= 300 && response.status < 400) {
-    return response;
+  // A redirect from updateSession is an auth decision (signed-out on a
+  // protected route, or signed-in on an auth page). It is already
+  // locale-preserving, so intl has nothing to add.
+  if (authResponse.status >= 300 && authResponse.status < 400) {
+    return authResponse;
   }
 
-  return updateSession(request, response);
+  const intlResponse = handleI18nRouting(request);
+
+  // Carry Supabase's refreshed Set-Cookie onto whatever intl decided to return.
+  // Only the browser-facing cookies need copying: intl built its own forwarded
+  // request headers from the already-mutated request above.
+  authResponse.cookies.getAll().forEach((cookie) => {
+    intlResponse.cookies.set(cookie);
+  });
+
+  return intlResponse;
 }
 
 export const config = {
@@ -1082,10 +1168,42 @@ export const config = {
 
 **Future localized API endpoints must opt in deliberately.** Expanding the matcher to include `/api` requires a dedicated design review: it changes every client fetch URL and invalidates the assumptions documented in this plan. It is an architectural change, not a refactor (see Architecture Invariants below).
 
+- [ ] **Step 3a: Close the redirectTo locale gap**
+
+Task 4 left this deliberately, because it only becomes reachable once the app is prefixed — which is now.
+
+**The bug:** `updateSession` sets `redirectTo` to the locale-stripped path (`/dashboard`). The only consumer, `login()` in `app/(auth)/actions.ts`, calls `redirect(safeRedirectPath(...) ?? "/dashboard")` — a bare, unprefixed path. With `localePrefix: "always"`, next-intl routes that to the **default** locale. So: a signed-out user on `/en/dashboard` → bounced to `/en/login?redirectTo=/dashboard` → signs in → lands on **`/vi/dashboard`**, silently thrown out of English.
+
+**Fix it in the middleware, not in `actions.ts`** — spec P2 says a feature never decides what locale goes in a URL, and pushing the job into `actions.ts` would oblige every future `redirectTo` consumer to remember. In `lib/supabase/middleware.ts`, replace the `redirectTo` line and its comment:
+
+```ts
+    url.searchParams.set("redirectTo", `/${activeLocale}${pathname === "/" ? "" : pathname}`);
+```
+
+Then check `safeRedirectPath` in `app/(auth)/actions.ts`: it validates that the value is a safe internal path. A locale-prefixed path must still pass it. **Read the function** — if it rejects the prefixed form, or if it would now let an open redirect through, fix that and say so. Do not assume either way.
+
+- [ ] **Step 3b: Test the round trip**
+
+Add to `lib/supabase/route-protection.test.ts` (or a new test file if it fits better) a case asserting the redirect target and `redirectTo` for a signed-out hit on a protected route, for **every** locale — generated from `routing.locales`, like the rest of the matrix:
+
+```ts
+it("keeps the user in their locale across the login round trip", () => {
+  for (const locale of routing.locales) {
+    const { locale: parsed, pathname } = stripLocale(`/${locale}/dashboard`);
+    expect(parsed).toBe(locale);
+    expect(isProtectedPath(pathname)).toBe(true);
+    // The middleware builds: /<locale>/login?redirectTo=/<locale>/dashboard
+    expect(`/${parsed}${pathname}`).toBe(`/${locale}/dashboard`);
+  }
+});
+```
+
+This is a weaker test than the real thing — it asserts the pieces the pure layer owns, not the assembled URL. The assembled URL is covered by Step 8's manual pass. If you can test the composed middleware directly without heavy mocking, prefer that and say so.
+
 - [ ] **Step 4: Verify typecheck and the unit suite**
 
 Run: `npx tsc --noEmit && npx vitest run`
-Expected: tsc 0 errors (Task 4's deliberate error is now resolved); unit suite green at the number recorded in Task 4 Step 3.
+Expected: tsc 0 errors; unit suite green at the number recorded in Task 4 Step 3, plus your new test.
 
 - [ ] **Step 5: Verify the build**
 

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ReadingList } from "./reading-list";
 
@@ -36,7 +36,7 @@ describe("ReadingList", () => {
     expect(screen.getByText("120 words")).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /read passage/i })[0]).toHaveAttribute(
       "href",
-      "/reading/r1",
+      "/en/reading/r1",
     );
     expect(fetchMock).toHaveBeenCalledWith("/api/reading");
   });

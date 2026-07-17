@@ -8,6 +8,20 @@ root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.cl
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
 8 layers, one per session; all 8 = finished product. Use `/build-layer <n>`.
 
+## ✅ L9a Plan 1/3 COMPLETE — READY TO MERGE, awaiting user decision (2026-07-18)
+**Branch `layer-9a-localization-architecture` (off master @ `0419c15`), tip `ceb7445`, 17 commits.
+NOT merged, NOT pushed.** All 8 tasks done + task-reviewed; final whole-branch review (opus):
+READY TO MERGE = YES, 0 Critical/Important. Shipped: `lib/i18n/**` foundation (next-intl 4.13.2,
+vi/en, prefix "always"), `app/`→`app/[locale]/`, Supabase-first middleware composition, locale-
+stripped route protection + security matrix, all feature code on `@/lib/i18n/navigation`, ESLint
+boundary (merged with AI-SDK guard, fire-tests). Zero user-visible change (shell still EN).
+Baseline @ ceb7445: **unit 1229/162 files · build 52s · playwright 2/2 37s · tsc 0 · lint 0**.
+Plans 2 (design system) & 3 (extraction + VN) both UNBLOCKED, not yet written.
+**→ Load-bearing constructs, reuse patterns, and review-assigned follow-ups: `mem:l9a_localization_run_state`. READ THAT before Plans 2/3 or touching middleware/i18n.**
+Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
+plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
+SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
+
 ## ⭐ ROADMAP SEQUENCING — decided 2026-07-16 (read before choosing what to build next)
 **User launch philosophy (explicit):** still in BUILD phase; publish ONLY after everything is
 complete, polished, and fully-featured. There is NO near-term launch, paid-beta, or revenue goal.
@@ -15,8 +29,11 @@ This resolves the "L8 vs finish-L9" question decisively:
 
 **Order = finish L9 first, do L8 (billing) near the very end, right before publish:**
 1. **L9a — i18n + design system** (foundation; VN-first, replace English shell). Unblocks EVERYTHING
-   visual + Companion Plans 2/3. ← **NEXT ACTION.** Start with superpowers:brainstorming (scope the
-   design system, how adaptive-furigana/pitch reuse tokens, i18n strategy), then a plan.
+   visual + Companion Plans 2/3. ← **STARTED 2026-07-17, IN PROGRESS — see the block above and
+   `mem:l9a_localization_run_state`.** Brainstormed + spec'd + split into 3 plans: Plan 1
+   localization architecture (in progress), Plan 2 design system (not written), Plan 3 string
+   extraction + Vietnamese (not written). Plans 2/3 both depend on Plan 1 and can then run in
+   parallel.
 2. **L9b — surfaces**: Companion Plan 2 → Plan 3, the missing feature UIs, landing/cinematic, tutorial.
    Fold the two launch-blocker debts in here (they count as "fully-featured"): **user transcript-submit
    UI** (backend done since L3, UI missing = core loop dead-ends) and **GDPR delete-my-data** (§2

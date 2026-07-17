@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ForumThread } from "./forum-thread";
 import type { ForumPostDetail } from "@/lib/forum-types";
 
-vi.mock("next/navigation", () => ({
+vi.mock("@/lib/i18n/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 

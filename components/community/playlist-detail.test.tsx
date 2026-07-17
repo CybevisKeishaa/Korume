@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { PlaylistDetail } from "./playlist-detail";
 import type { PlaylistDetail as PlaylistDetailType } from "@/lib/playlist-types";
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
-}));
+vi.mock("@/lib/i18n/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/i18n/navigation")>();
+  return {
+    ...actual,
+    useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  };
+});
 
 function mockFetchOnce(response: { ok: boolean; status: number; json?: () => Promise<unknown> }): ReturnType<typeof vi.fn> {
   const fn = vi.fn().mockResolvedValue({ ok: response.ok, status: response.status, headers: new Headers(), json: response.json ?? (async () => ({})) } as Response);

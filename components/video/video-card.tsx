@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 // Type-only import: safe to reuse from a component that may later be pulled
 // into a client bundle (lib/data/videos.ts is "server-only" at runtime, but
 // its types are not — this is the client-safe mirror per lib/video-types.ts).

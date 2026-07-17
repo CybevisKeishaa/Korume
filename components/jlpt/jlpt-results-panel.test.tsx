@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import type { JlptAttemptResult, JlptQuestionPublic, JlptSubmitResult } from "@/lib/jlpt-ui";
 import { JlptResultsPanel } from "./jlpt-results-panel";
 
@@ -136,7 +136,7 @@ describe("JlptResultsPanel", () => {
     render(<JlptResultsPanel submitResult={submitResult()} questions={QUESTIONS} answers={{}} level="N5" />);
     expect(screen.getByText("point-comprehension")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: /suggested review/i });
-    expect(link).toHaveAttribute("href", "/videos?level=N5");
+    expect(link).toHaveAttribute("href", "/en/videos?level=N5");
   });
 
   it("renders the per-question review with your answer, correctness, and explanation", () => {

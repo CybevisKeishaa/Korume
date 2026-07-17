@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { RelativeTime } from "./relative-time";
 import type { ForumPostListItem, ForumTopic } from "@/lib/forum-types";
 
