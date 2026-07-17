@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/lib/i18n/navigation";
 import { Card } from "@/components/ui/card";
 import { buttonStyles } from "@/components/ui/button";
 import { SECTION_LABELS, parseSectionConfig, type JlptTestListItem } from "@/lib/jlpt-ui";
