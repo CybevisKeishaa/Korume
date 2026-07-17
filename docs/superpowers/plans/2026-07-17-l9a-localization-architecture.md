@@ -468,8 +468,8 @@ import { routing } from "./routing";
  * These are drop-in replacements for `next/link` and the locale-sensitive
  * half of `next/navigation`. `useSearchParams`, `useParams` and `notFound`
  * have nothing to do with locale — keep importing those from `next/navigation`
- * directly. That is why the ESLint rule restricts named imports rather than
- * the whole module (spec §2.9).
+ * directly. The boundary covers what carries a locale, not the whole module
+ * (spec §2.9).
  */
 export const { Link, redirect, usePathname, useRouter, getPathname } =
   createNavigation(routing);
@@ -487,20 +487,53 @@ Append to `lib/i18n/index.ts`:
 export { Link, redirect, usePathname, useRouter, getPathname } from "./navigation";
 ```
 
-- [ ] **Step 3: Verify typecheck**
+- [ ] **Step 3: Test that the prefix policy actually applies**
+
+This asserts **our configuration**, not the library's behaviour: that `localePrefix: "always"` really does put a prefix on every generated path. It is the single point of failure behind every navigation in the app, and `tsc` cannot see it — a wrong `localePrefix` typechecks perfectly and produces silently unprefixed URLs.
+
+`lib/i18n/navigation.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { getPathname } from "./navigation";
+import { routing } from "./routing";
+
+describe("navigation", () => {
+  it("prefixes generated paths for every locale, including the default", () => {
+    for (const locale of routing.locales) {
+      expect(getPathname({ href: "/foo", locale })).toBe(`/${locale}/foo`);
+    }
+  });
+
+  it("prefixes the root path", () => {
+    expect(getPathname({ href: "/", locale: routing.defaultLocale })).toBe(
+      `/${routing.defaultLocale}`,
+    );
+  });
+});
+```
+
+The first case covers the **default** locale deliberately: `localePrefix: "as-needed"` would leave `vi` unprefixed and still pass a test that only checked `en`. That is exactly the regression this guards.
+
+Run: `npx vitest run lib/i18n/navigation.test.ts`
+Expected: PASS — 2 tests.
+
+If `getPathname`'s root-path result is `/vi/` rather than `/vi`, **the library is right and this plan is wrong**: record the real shape and adjust the assertion.
+
+- [ ] **Step 4: Verify typecheck**
 
 Run: `npx tsc --noEmit`
 Expected: 0 errors.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add lib/i18n/navigation.ts lib/i18n/index.ts
 git commit -m "feat(i18n): add locale-aware navigation to the foundation
 
 Link/redirect/useRouter/usePathname that preserve the current locale.
-Call sites move over in Task 7; the ESLint rule that forbids the raw
-imports lands in Task 8, once there are no violations left to report.
+Call sites move over in Task 6; the ESLint rule that forbids the raw
+imports lands in Task 7, once there are no violations left to report.
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
