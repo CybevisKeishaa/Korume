@@ -1,9 +1,10 @@
-# L9a Plan 1/3 (Localization Architecture) — ✅ COMPLETE, READY TO MERGE (not merged)
+# L9a Plan 1/3 (Localization Architecture) — ✅ COMPLETE & MERGED (`69f22e6`, 2026-07-18)
 
 **Run finished 2026-07-18. All 8 tasks done + reviewed; final whole-branch review (opus) verdict:
-READY TO MERGE = YES, 0 Critical, 0 Important-blocking.** Branch
-`layer-9a-localization-architecture` (off master @ `0419c15`), tip **`ceb7445`**, 17 commits.
-NOT merged, NOT pushed — awaiting user decision. Method: subagent-driven-development; full
+READY TO MERGE = YES, 0 Critical, 0 Important-blocking. User chose merge --no-ff → master
+`69f22e6`; local branch deleted; post-merge verify tsc 0 + 1229/1229. NOT pushed
+(origin/layer-9a-... holds a stale pre-finish tip).** Was branch
+`layer-9a-localization-architecture` (off master @ `0419c15`), final tip `cddf961`, 18 commits. Method: subagent-driven-development; full
 per-task detail in `.superpowers/sdd/progress.md` (gitignored scratch; if gone, this + `git log`).
 
 ## What shipped (Plan 1 of 3)

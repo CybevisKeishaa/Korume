@@ -8,9 +8,10 @@ root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.cl
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
 8 layers, one per session; all 8 = finished product. Use `/build-layer <n>`.
 
-## ✅ L9a Plan 1/3 COMPLETE — READY TO MERGE, awaiting user decision (2026-07-18)
-**Branch `layer-9a-localization-architecture` (off master @ `0419c15`), tip `ceb7445`, 17 commits.
-NOT merged, NOT pushed.** All 8 tasks done + task-reviewed; final whole-branch review (opus):
+## ✅ L9a Plan 1/3 COMPLETE — MERGED to master (`69f22e6` --no-ff, 2026-07-18)
+**Branch `layer-9a-localization-architecture` merged & local branch deleted (user chose merge).
+NOT pushed (origin/layer-9a-... still holds a stale pre-finish tip — prune when pushing).
+Post-merge verify on master: tsc 0, 1229/1229.** All 8 tasks done + task-reviewed; final whole-branch review (opus):
 READY TO MERGE = YES, 0 Critical/Important. Shipped: `lib/i18n/**` foundation (next-intl 4.13.2,
 vi/en, prefix "always"), `app/`→`app/[locale]/`, Supabase-first middleware composition, locale-
 stripped route protection + security matrix, all feature code on `@/lib/i18n/navigation`, ESLint
