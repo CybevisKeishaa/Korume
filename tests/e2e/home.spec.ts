@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("landing page renders the hero and auth links", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/en");
   await expect(
     page.getByRole("heading", { name: /learn japanese/i }),
   ).toBeVisible();

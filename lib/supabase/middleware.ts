@@ -70,15 +70,28 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // start with "/dashboard", so matching the raw pathname would report every
   // protected route as public (spec §4.2). Covered by route-protection.test.ts.
   const { locale, pathname } = stripLocale(request.nextUrl.pathname);
+  // `locale` is null only for a bare ("/dashboard") or bad-prefix
+  // ("/fr/dashboard") URL — next-intl would negotiate those, but it runs after
+  // us and never gets the chance, because an auth redirect returns first.
+  // Defaulting is deliberate: reading the locale cookie here would be exactly
+  // the locale recomputation the doc comment above forbids, and a deterministic
+  // locale beats a guess. The cost is that a signed-out `en` user hitting bare
+  // /dashboard lands on /vi/login.
   const activeLocale = locale ?? routing.defaultLocale;
 
   if (!user && isProtectedPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = `/${activeLocale}/login`;
-    // KNOWN GAP, closed in Task 5: redirectTo carries the locale-stripped path,
-    // and app/(auth)/actions.ts redirects to it unprefixed — which next-intl
-    // then routes to the DEFAULT locale, dropping an `en` user into `vi`.
-    url.searchParams.set("redirectTo", pathname);
+    // redirectTo must carry the LOCALE-PREFIXED path. app/(auth)/actions.ts
+    // feeds it straight to redirect(), and with localePrefix: "always" an
+    // unprefixed target routes to the DEFAULT locale — dropping an `en` user
+    // into `vi` after login. Building the URL here (not in actions.ts) keeps
+    // locale out of feature code (spec P2). `pathname` is "" for the root after
+    // stripLocale, hence the guard against a trailing slash.
+    url.searchParams.set(
+      "redirectTo",
+      `/${activeLocale}${pathname === "/" ? "" : pathname}`,
+    );
     return NextResponse.redirect(url);
   }
 

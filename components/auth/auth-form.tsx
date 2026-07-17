@@ -7,7 +7,7 @@ import {
   register,
   signInWithGoogle,
   type AuthState,
-} from "@/app/(auth)/actions";
+} from "@/app/[locale]/(auth)/actions";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

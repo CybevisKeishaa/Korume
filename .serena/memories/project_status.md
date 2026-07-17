@@ -8,6 +8,17 @@ root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.cl
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
 8 layers, one per session; all 8 = finished product. Use `/build-layer <n>`.
 
+## 🚧 IN PROGRESS RIGHT NOW — L9a Plan 1/3 (2026-07-17)
+**Branch `layer-9a-localization-architecture` (off master @ `0419c15`), tip `37e00de`. NOT merged.**
+Tasks 1–4 done+reviewed+committed (suite 1210). **Task 5 is ~85% done but UNCOMMITTED in the
+working tree** — a subagent was interrupted mid-task; `app/` is already moved to `app/[locale]/`,
+middleware is composed, tsc 0, suite 1216. **Do NOT redo Task 5 from scratch — finish and commit it.**
+Tasks 6–8 not started.
+**→ Full resumable detail is in `mem:l9a_localization_run_state`. READ THAT FIRST.**
+Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
+plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
+SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
+
 ## ⭐ ROADMAP SEQUENCING — decided 2026-07-16 (read before choosing what to build next)
 **User launch philosophy (explicit):** still in BUILD phase; publish ONLY after everything is
 complete, polished, and fully-featured. There is NO near-term launch, paid-beta, or revenue goal.
@@ -15,8 +26,11 @@ This resolves the "L8 vs finish-L9" question decisively:
 
 **Order = finish L9 first, do L8 (billing) near the very end, right before publish:**
 1. **L9a — i18n + design system** (foundation; VN-first, replace English shell). Unblocks EVERYTHING
-   visual + Companion Plans 2/3. ← **NEXT ACTION.** Start with superpowers:brainstorming (scope the
-   design system, how adaptive-furigana/pitch reuse tokens, i18n strategy), then a plan.
+   visual + Companion Plans 2/3. ← **STARTED 2026-07-17, IN PROGRESS — see the block above and
+   `mem:l9a_localization_run_state`.** Brainstormed + spec'd + split into 3 plans: Plan 1
+   localization architecture (in progress), Plan 2 design system (not written), Plan 3 string
+   extraction + Vietnamese (not written). Plans 2/3 both depend on Plan 1 and can then run in
+   parallel.
 2. **L9b — surfaces**: Companion Plan 2 → Plan 3, the missing feature UIs, landing/cinematic, tutorial.
    Fold the two launch-blocker debts in here (they count as "fully-featured"): **user transcript-submit
    UI** (backend done since L3, UI missing = core loop dead-ends) and **GDPR delete-my-data** (§2

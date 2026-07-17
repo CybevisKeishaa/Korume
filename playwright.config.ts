@@ -11,6 +11,12 @@ export default defineConfig({
   reporter: "list",
   use: {
     baseURL,
+    // Pinned, not inherited. Playwright's Chrome happens to send
+    // Accept-Language: en-US, so next-intl would negotiate /en anyway — but
+    // that is incidental. The regression suite runs on `en` by design (spec
+    // D6), and must stay green once Plan 3 makes `vi` the fully-translated
+    // default.
+    locale: "en",
     trace: "on-first-retry",
   },
   projects: [
