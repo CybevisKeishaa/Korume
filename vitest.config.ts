@@ -11,9 +11,14 @@ export default defineConfig({
     // Playwright specs live in tests/e2e and run via `npm run test:e2e`.
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules", ".next", "tests/e2e"],
+    // `next@14.2.35` ships no `exports` map. `next-intl` imports
+    // `next/navigation` as a bare specifier without extension, causing Node's
+    // native ESM resolver to fail. Inlining `next-intl` routes it through
+    // Vite's resolver instead — critical for all ~62 test files using
+    // NextIntlClientProvider.
     server: {
       deps: {
-        inline: [/next-intl/, /^next$/],
+        inline: [/next-intl/],
       },
     },
   },
