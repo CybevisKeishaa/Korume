@@ -9,6 +9,38 @@ import {
 } from "./route-protection";
 
 describe("route protection", () => {
+  // Anchor test independent of the matrix below: the matrix iterates
+  // PROTECTED_PREFIXES/AUTH_ROUTES themselves, so silently *dropping* an
+  // entry (e.g. deleting "/profile") makes the matrix test one row fewer
+  // and all its assertions still pass. Pinning the literal contents here
+  // means a removed prefix fails loudly instead of vanishing unnoticed.
+  it("pins the exact set and order of PROTECTED_PREFIXES and AUTH_ROUTES", () => {
+    expect(PROTECTED_PREFIXES).toEqual([
+      "/dashboard",
+      "/kanji",
+      "/vocab",
+      "/grammar",
+      "/videos",
+      "/reading",
+      "/speaking",
+      "/jlpt",
+      "/jlpt-test",
+      "/community",
+      "/playlists",
+      "/leaderboard",
+      "/profile",
+      "/content-manager",
+      "/video-curator",
+      "/admin",
+    ]);
+    expect(AUTH_ROUTES).toEqual(["/login", "/register"]);
+  });
+
+  it("protects a mis-cased locale prefix (defence in depth, not reliance on next-intl's redirect)", () => {
+    expect(isProtectedPath(stripLocale("/VI/dashboard").pathname)).toBe(true);
+    expect(isProtectedPath(stripLocale("/En/profile").pathname)).toBe(true);
+  });
+
   it("protects every prefix under every locale", () => {
     for (const locale of routing.locales) {
       for (const prefix of PROTECTED_PREFIXES) {

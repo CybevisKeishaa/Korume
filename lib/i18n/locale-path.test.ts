@@ -43,4 +43,37 @@ describe("stripLocale", () => {
       });
     }
   });
+
+  it("matches a mis-cased locale prefix and returns the canonical lowercase locale", () => {
+    // next-intl matches locale prefixes case-insensitively and 307-redirects
+    // "/VI/..." to "/vi/...". This module must not rely on that redirect:
+    // a mis-cased path reaching this predicate must still resolve to its
+    // canonical locale, not fall through to "unprefixed" (locale: null).
+    expect(stripLocale("/VI/dashboard")).toEqual({
+      locale: "vi",
+      pathname: "/dashboard",
+    });
+    expect(stripLocale("/En/profile")).toEqual({
+      locale: "en",
+      pathname: "/profile",
+    });
+  });
+
+  it("collapses repeated slashes in the stripped pathname", () => {
+    expect(stripLocale("/vi//dashboard")).toEqual({
+      locale: "vi",
+      pathname: "/dashboard",
+    });
+    expect(stripLocale("/vi/dashboard//")).toEqual({
+      locale: "vi",
+      pathname: "/dashboard",
+    });
+  });
+
+  it("collapses repeated slashes even without a locale prefix", () => {
+    expect(stripLocale("//dashboard")).toEqual({
+      locale: null,
+      pathname: "/dashboard",
+    });
+  });
 });
