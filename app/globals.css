@@ -45,6 +45,83 @@
   --danger: 0 72% 60%;
 }
 
+/**
+ * Foundation tokens beyond colour (L9a Plan 2, spec §4.4).
+ * Theme-independent: neither light/dark nor locale changes these. Consumed via
+ * tailwind.config.ts (p-md, text-body, shadow-overlay, duration-fast, z-toast…).
+ */
+:root {
+  /* Font families (overridden by layout.tsx next/font configuration). */
+  --font-sans: system-ui, sans-serif;
+  --font-jp: system-ui, sans-serif;
+
+  /* Spacing rhythm. Tailwind's numeric scale stays available; this named scale
+     is the design system's own vocabulary for new UI. */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* Typography scale: size + line-height pairs. Body line-heights are
+     deliberately generous — Vietnamese stacks two tiers of diacritics (ắ ặ ễ)
+     and must not clip at any size (spec §4.5 touchpoint 1). */
+  --text-caption: 0.75rem;
+  --leading-caption: 1.125rem;
+  --text-body: 0.875rem;
+  --leading-body: 1.375rem;
+  --text-body-lg: 1rem;
+  --leading-body-lg: 1.625rem;
+  --text-heading: 1.25rem;
+  --leading-heading: 1.75rem;
+  --text-title: 1.75rem;
+  --leading-title: 2.25rem;
+  --text-display: 2.5rem;
+  --leading-display: 3rem;
+  /* Japanese line-height: kanji + furigana want more vertical room than Latin
+     script at the same size. Use with font-jp (leading-jp utility). */
+  --leading-jp: 1.8;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --tracking-tight: -0.025em;
+  --tracking-wide: 0.025em;
+
+  /* Elevation. Three steps are enough: resting card, dropdown/popover, modal. */
+  --elevation-raised: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --elevation-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --elevation-floating: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Motion. Durations + easings as tokens instead of literals scattered
+     through CSS (spec §4.4). --ease-out-expo is the curve the L6 celebration
+     keyframes already used twice as a literal. */
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 600ms;
+  --ease-standard: ease-out;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Z-index ladder. Fixed rungs so stacking is a decision made once, not a
+     bidding war of hardcoded z-40s. */
+  --z-nav: 30;
+  --z-overlay: 40;
+  --z-popover: 50;
+  --z-toast: 60;
+}
+
+[data-theme="dark"] {
+  /* Shadows need more weight against dark surfaces to read as elevation. */
+  --elevation-raised: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --elevation-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --elevation-floating: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -62,7 +139,7 @@
 .stroke-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: stroke-draw 0.6s ease forwards;
+  animation: stroke-draw var(--duration-slow) var(--ease-standard) forwards;
 }
 @keyframes stroke-draw {
   to {
@@ -80,7 +157,7 @@
 
 /* Level XP bar: fills 0 -> current progress on mount (level-card.tsx). */
 .level-fill {
-  animation: level-fill-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: level-fill-in var(--duration-slow) var(--ease-out-expo) both;
 }
 @keyframes level-fill-in {
   from {
@@ -93,7 +170,7 @@
 
 /* Earned badge tiles: subtle settle-in pop, staggered per tile (badges-grid.tsx). */
 .badge-settle {
-  animation: badge-settle-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: badge-settle-in var(--duration-base) var(--ease-out-expo) both;
 }
 @keyframes badge-settle-in {
   from {
@@ -108,7 +185,7 @@
 
 /* Notification panel: light fade + rise on open (notification-bell.tsx). */
 .panel-in {
-  animation: panel-in 0.16s ease-out both;
+  animation: panel-in var(--duration-fast) var(--ease-standard) both;
 }
 @keyframes panel-in {
   from {
@@ -124,7 +201,7 @@
 /* Unread count badge: one-shot pulse when the count increases while mounted
    (notification-bell.tsx + use-unread-increase-pulse.ts). Never loops. */
 .badge-pulse {
-  animation: badge-pulse 0.35s ease-out;
+  animation: badge-pulse var(--duration-base) var(--ease-standard);
 }
 @keyframes badge-pulse {
   0% {
