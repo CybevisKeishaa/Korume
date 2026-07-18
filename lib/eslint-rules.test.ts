@@ -71,4 +71,39 @@ describe("import boundary rules", () => {
     );
     expect(messages.join("\n")).not.toMatch(/lib\/i18n/);
   });
+
+  it("forbids feature code from importing Radix directly (P8)", async () => {
+    const messages = await lint(
+      `import * as RadixDialog from "@radix-ui/react-dialog";\nexport const a = RadixDialog;\n`,
+      "components/learning/example.tsx",
+    );
+    expect(messages.join("\n")).toMatch(/components\/ui/);
+  });
+
+  it("allows the design system to import Radix", async () => {
+    const messages = await lint(
+      `import * as RadixDialog from "@radix-ui/react-dialog";\nexport const a = RadixDialog;\n`,
+      "components/ui/dialog.tsx",
+    );
+    expect(messages.join("\n")).not.toMatch(/components\/ui/);
+  });
+
+  it("forbids feature code from deep-importing a Radix subpath (P8)", async () => {
+    // "@radix-ui/*" only matches one path segment past the scope, so a deep
+    // import like "@radix-ui/react-dialog/dist/index" would otherwise evade
+    // the rule (final review, Task 12, item 3a) — "@radix-ui/*/*" closes it.
+    const messages = await lint(
+      `import * as RadixDialog from "@radix-ui/react-dialog/dist/index";\nexport const a = RadixDialog;\n`,
+      "components/learning/example.tsx",
+    );
+    expect(messages.join("\n")).toMatch(/components\/ui/);
+  });
+
+  it("still forbids next/link inside components/ui (override must not gut the other rules)", async () => {
+    const messages = await lint(
+      `import Link from "next/link";\nexport const a = Link;\n`,
+      "components/ui/example.tsx",
+    );
+    expect(messages.join("\n")).toMatch(/lib\/i18n\/navigation/);
+  });
 });

@@ -39,6 +39,10 @@ const config: Config = {
         },
         success: "hsl(var(--success) / <alpha-value>)",
         danger: "hsl(var(--danger) / <alpha-value>)",
+        // Floating-panel surface (dialog/popover/select/toast) — semantic tier.
+        overlay: "hsl(var(--surface-overlay) / <alpha-value>)",
+        // Modal backdrop; use with alpha: bg-scrim/50.
+        scrim: "hsl(var(--scrim) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
@@ -49,6 +53,57 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      spacing: {
+        "2xs": "var(--space-2xs)",
+        xs: "var(--space-xs)",
+        sm: "var(--space-sm)",
+        md: "var(--space-md)",
+        lg: "var(--space-lg)",
+        xl: "var(--space-xl)",
+        "2xl": "var(--space-2xl)",
+        "3xl": "var(--space-3xl)",
+      },
+      fontSize: {
+        caption: ["var(--text-caption)", "var(--leading-caption)"],
+        body: ["var(--text-body)", "var(--leading-body)"],
+        "body-lg": ["var(--text-body-lg)", "var(--leading-body-lg)"],
+        heading: ["var(--text-heading)", "var(--leading-heading)"],
+        title: ["var(--text-title)", "var(--leading-title)"],
+        display: ["var(--text-display)", "var(--leading-display)"],
+      },
+      lineHeight: {
+        jp: "var(--leading-jp)",
+      },
+      fontWeight: {
+        regular: "var(--font-weight-regular)",
+        medium: "var(--font-weight-medium)",
+        semibold: "var(--font-weight-semibold)",
+        bold: "var(--font-weight-bold)",
+      },
+      letterSpacing: {
+        tight: "var(--tracking-tight)",
+        wide: "var(--tracking-wide)",
+      },
+      boxShadow: {
+        raised: "var(--elevation-raised)",
+        overlay: "var(--elevation-overlay)",
+        floating: "var(--elevation-floating)",
+      },
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        slow: "var(--duration-slow)",
+      },
+      transitionTimingFunction: {
+        standard: "var(--ease-standard)",
+        "out-expo": "var(--ease-out-expo)",
+      },
+      zIndex: {
+        nav: "var(--z-nav)",
+        overlay: "var(--z-overlay)",
+        popover: "var(--z-popover)",
+        toast: "var(--z-toast)",
+      },
       keyframes: {
         "fade-in": {
           from: { opacity: "0", transform: "translateY(8px)" },
@@ -56,7 +111,7 @@ const config: Config = {
         },
       },
       animation: {
-        "fade-in": "fade-in 0.4s ease-out both",
+        "fade-in": "fade-in var(--duration-base) var(--ease-standard) both",
       },
     },
   },
