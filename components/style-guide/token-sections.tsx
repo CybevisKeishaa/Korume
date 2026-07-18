@@ -1,6 +1,7 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 /** Token catalogues. Kept as plain data so the page IS the documentation —
  * a token added to globals.css without being listed here shows up in review. */
@@ -119,13 +120,24 @@ export function SpacingSection() {
   );
 }
 
+/**
+ * Literal map, not a template string: Tailwind's static extraction never
+ * emits a class name assembled at runtime (`shadow-${step}` produces no
+ * `shadow-raised` in the built CSS — final review, Task 12, item 2).
+ */
+const ELEVATION_CLASSES = {
+  raised: "shadow-raised",
+  overlay: "shadow-overlay",
+  floating: "shadow-floating",
+} as const;
+
 export function ElevationSection() {
   return (
     <section aria-labelledby="sg-elevation">
       <h2 id="sg-elevation" className="text-heading font-semibold">Elevation</h2>
       <div className="mt-md flex flex-wrap gap-lg">
         {(["raised", "overlay", "floating"] as const).map((step) => (
-          <Card key={step} className={`shadow-${step} p-md`}>
+          <Card key={step} className={cn(ELEVATION_CLASSES[step], "p-md")}>
             <code className="text-caption">shadow-{step}</code>
           </Card>
         ))}
