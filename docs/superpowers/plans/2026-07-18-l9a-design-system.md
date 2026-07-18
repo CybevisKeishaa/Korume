@@ -2852,6 +2852,23 @@ duplication and WHY it exists).
 - Out of scope, confirmed omitted on purpose: string extraction/VN (Plan 3), feature-UI
   migration onto primitives (L9b), new animations/surfaces (§0.3 non-goals).
 
+## Execution addendum (2026-07-18, post-implementation — "the code is right and this file is a bug")
+
+The branch executed all 12 tasks; the final whole-branch review found one **plan gap** worth
+recording permanently: this plan introduced custom Tailwind scale keys (`text-body`,
+`shadow-raised`, `p-md`, `z-overlay`, …) without accounting for the repo's `cn()` merge layer.
+`tailwind-merge` classifies unknown `text-*` values as text COLOURS, so `cn("text-body",
+"text-foreground")` silently dropped `text-body` — Badge/Select/Tabs rendered at inherited
+font size. Fix (`54d7c91`): `lib/utils.ts` now uses `extendTailwindMerge` configured with every
+custom scale, guarded by `lib/utils.test.ts`. **Any future token scale added to
+`tailwind.config.ts` MUST also be added to the `extendTailwindMerge` config, or `cn()` eats it.**
+
+Other reality-over-plan deviations (all task-reviewed): `:root` fallbacks for
+`--font-sans`/`--font-jp` (Task 2); explicit `aria-modal` + manual focus-restore in the dialog
+(Radix 1.1.19 reality, Task 5); toast dismiss test uses `waitFor` (jsdom-synchronous dismiss,
+Task 9); style-guide test wraps ThemeProvider too (useTheme throws unprovided, Task 11);
+style-guide elevation swatches use a literal class map (Tailwind static extraction).
+
 **Known judgment calls (flag to reviewer, not hidden):**
 - Tailwind `fontWeight`/`letterSpacing` defaults overridden with identical var() values —
   zero visual change, centralises the knobs.
