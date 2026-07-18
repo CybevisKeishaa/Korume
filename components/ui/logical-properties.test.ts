@@ -27,10 +27,26 @@ const FORBIDDEN = [
 
 const uiDir = path.join(process.cwd(), "components/ui");
 
+/** Recursively collects .ts/.tsx source files under `dir`, excluding *.test.*,
+ * and returns paths relative to `uiDir` (final review, Task 12, item 3c —
+ * the previous scan was a flat readdirSync(uiDir) over .tsx only, so it
+ * missed both subdirectories and .ts files). */
+function collectSources(dir: string): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectSources(fullPath));
+    } else if (/\.tsx?$/.test(entry.name) && !entry.name.includes(".test.")) {
+      files.push(path.relative(uiDir, fullPath));
+    }
+  }
+  return files;
+}
+
 describe("design-system logical properties (spec §8)", () => {
-  const sources = readdirSync(uiDir).filter(
-    (file) => file.endsWith(".tsx") && !file.endsWith(".test.tsx"),
-  );
+  const sources = collectSources(uiDir);
 
   it("scans a non-empty set of primitives", () => {
     expect(sources.length).toBeGreaterThan(0);
