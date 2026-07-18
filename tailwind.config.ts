@@ -39,6 +39,10 @@ const config: Config = {
         },
         success: "hsl(var(--success) / <alpha-value>)",
         danger: "hsl(var(--danger) / <alpha-value>)",
+        // Floating-panel surface (dialog/popover/select/toast) — semantic tier.
+        overlay: "hsl(var(--surface-overlay) / <alpha-value>)",
+        // Modal backdrop; use with alpha: bg-scrim/50.
+        scrim: "hsl(var(--scrim) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

@@ -41,6 +41,24 @@ const REQUIRED_TOKENS = [
   "--z-nav", "--z-overlay", "--z-popover", "--z-toast",
 ];
 
+const PRIMITIVE_TOKENS = [
+  "--washi-50", "--washi-100", "--white", "--sumi-900",
+  "--neutral-100", "--neutral-300", "--neutral-400", "--neutral-600",
+  "--ink-700", "--ink-800", "--ink-900", "--ink-950",
+  "--vermilion-400", "--vermilion-500",
+  "--indigo-300", "--indigo-600",
+  "--green-400", "--green-600", "--red-400", "--red-600",
+];
+
+// The semantic tier must be var() aliases of primitives in BOTH themes —
+// that indirection is the whole point (L9b restyles by remapping it).
+const SEMANTIC_COLOR_TOKENS = [
+  "--background", "--foreground", "--card", "--card-foreground",
+  "--muted", "--muted-foreground", "--border", "--input", "--ring",
+  "--primary", "--primary-foreground", "--accent", "--accent-foreground",
+  "--success", "--danger", "--surface-overlay",
+];
+
 describe("design tokens", () => {
   it("defines every required token in globals.css", () => {
     const missing = REQUIRED_TOKENS.filter(
@@ -66,5 +84,22 @@ describe("design tokens", () => {
     // Both blocks must keep collapsing animation AND transition durations.
     const matches = css.match(/animation-duration: 0\.001ms !important/g);
     expect(matches?.length).toBe(2);
+  });
+
+  it("defines the primitive colour palette", () => {
+    const missing = PRIMITIVE_TOKENS.filter(
+      (token) => !new RegExp(`${token}\\s*:`).test(css),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it("defines every semantic colour as a var() alias of a primitive, in both themes", () => {
+    const darkBlock = css.slice(css.indexOf('[data-theme="dark"]'));
+    for (const token of SEMANTIC_COLOR_TOKENS) {
+      expect(css).toMatch(new RegExp(`${token}:\\s*var\\(--`));
+      expect(darkBlock).toMatch(new RegExp(`${token}:\\s*var\\(--`));
+    }
+    // --scrim is theme-independent: defined once, not remapped in dark.
+    expect(css).toMatch(/--scrim:\s*0 0% 0%/);
   });
 });

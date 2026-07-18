@@ -3,46 +3,85 @@
 @tailwind utilities;
 
 /**
- * Design tokens — Nihongo Cinema.
- * Values are HSL channels (no hsl() wrapper) so Tailwind's <alpha-value> works.
- * Light is the default; dark applies under [data-theme="dark"].
- * Contrast pairs are chosen for WCAG AA (CLAUDE.md §5).
+ * Colour, two tiers (L9a Plan 2, spec §4.4).
+ *
+ * Primitive tier: raw palette. Named after the material, knows nothing about
+ * usage. Theme-independent — both themes draw from the same palette.
+ *
+ * Semantic tier: what features and primitives actually consume (via Tailwind:
+ * bg-primary, text-muted-foreground, bg-overlay…). Always a var() alias of a
+ * primitive. Dark theme = remapping the semantic tier, nothing else.
+ * L9b restyles the product by editing THIS mapping, not 131 files.
+ *
+ * Values are HSL channels (no hsl() wrapper) so Tailwind's <alpha-value>
+ * works. Contrast pairs unchanged from L1 — WCAG AA (CLAUDE.md §5).
  */
 :root {
-  --background: 40 33% 98%; /* 生成り washi off-white */
-  --foreground: 220 26% 12%; /* 墨 sumi ink */
-  --card: 0 0% 100%;
-  --card-foreground: 220 26% 12%;
-  --muted: 40 12% 92%;
-  --muted-foreground: 220 12% 38%;
-  --border: 220 14% 86%;
-  --input: 220 14% 86%;
-  --ring: 4 74% 49%;
-  --primary: 4 74% 49%; /* 朱色 vermilion */
-  --primary-foreground: 40 33% 98%;
-  --accent: 218 46% 30%; /* 藍 indigo */
-  --accent-foreground: 40 33% 98%;
-  --success: 148 52% 34%;
-  --danger: 0 72% 44%;
+  /* — primitive tier — */
+  --washi-50: 40 33% 98%; /* 生成り washi off-white */
+  --washi-100: 40 20% 94%;
+  --white: 0 0% 100%;
+  --sumi-900: 220 26% 12%; /* 墨 sumi ink */
+  --neutral-100: 40 12% 92%;
+  --neutral-300: 220 14% 86%;
+  --neutral-400: 220 12% 66%;
+  --neutral-600: 220 12% 38%;
+  --ink-700: 224 16% 22%; /* cinematic dark surfaces */
+  --ink-800: 224 18% 18%;
+  --ink-900: 224 26% 12%;
+  --ink-950: 224 32% 8%;
+  --vermilion-400: 4 84% 60%; /* 朱色 vermilion */
+  --vermilion-500: 4 74% 49%;
+  --indigo-300: 210 70% 66%; /* 藍 indigo */
+  --indigo-600: 218 46% 30%;
+  --green-400: 148 46% 52%;
+  --green-600: 148 52% 34%;
+  --red-400: 0 72% 60%;
+  --red-600: 0 72% 44%;
+
+  /* — semantic tier (light) — */
+  --background: var(--washi-50);
+  --foreground: var(--sumi-900);
+  --card: var(--white);
+  --card-foreground: var(--sumi-900);
+  --muted: var(--neutral-100);
+  --muted-foreground: var(--neutral-600);
+  --border: var(--neutral-300);
+  --input: var(--neutral-300);
+  --ring: var(--vermilion-500);
+  --primary: var(--vermilion-500);
+  --primary-foreground: var(--washi-50);
+  --accent: var(--indigo-600);
+  --accent-foreground: var(--washi-50);
+  --success: var(--green-600);
+  --danger: var(--red-600);
+  /* Surface a floating panel (dialog, popover, select menu, toast) sits on.
+     Same as --card today; a separate token so overlays can diverge in L9b. */
+  --surface-overlay: var(--white);
+  /* Backdrop behind modals, used with alpha (bg-scrim/50). Deliberately the
+     same in both themes — a scrim dims, it does not theme. */
+  --scrim: 0 0% 0%;
+
   --radius: 0.75rem;
 }
 
 [data-theme="dark"] {
-  --background: 224 32% 8%; /* cinematic near-black */
-  --foreground: 40 20% 94%;
-  --card: 224 26% 12%;
-  --card-foreground: 40 20% 94%;
-  --muted: 224 18% 18%;
-  --muted-foreground: 220 12% 66%;
-  --border: 224 16% 22%;
-  --input: 224 16% 22%;
-  --ring: 4 84% 60%;
-  --primary: 4 84% 60%;
-  --primary-foreground: 224 32% 8%;
-  --accent: 210 70% 66%;
-  --accent-foreground: 224 32% 8%;
-  --success: 148 46% 52%;
-  --danger: 0 72% 60%;
+  --background: var(--ink-950);
+  --foreground: var(--washi-100);
+  --card: var(--ink-900);
+  --card-foreground: var(--washi-100);
+  --muted: var(--ink-800);
+  --muted-foreground: var(--neutral-400);
+  --border: var(--ink-700);
+  --input: var(--ink-700);
+  --ring: var(--vermilion-400);
+  --primary: var(--vermilion-400);
+  --primary-foreground: var(--ink-950);
+  --accent: var(--indigo-300);
+  --accent-foreground: var(--ink-950);
+  --success: var(--green-400);
+  --danger: var(--red-400);
+  --surface-overlay: var(--ink-900);
 }
 
 /**
