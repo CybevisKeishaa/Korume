@@ -7,6 +7,7 @@ import {
   ThemeProvider,
   themeInitScript,
 } from "@/components/providers/theme-provider";
+import { ToastProvider } from "@/components/ui/toast";
 import { routing } from "@/lib/i18n/routing";
 import "../globals.css";
 
@@ -65,7 +66,9 @@ export default async function LocaleLayout({
       </head>
       <body className={`${inter.variable} ${notoJp.variable} font-sans`}>
         <NextIntlClientProvider messages={messages}>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>
