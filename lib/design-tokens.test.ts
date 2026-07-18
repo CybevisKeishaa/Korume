@@ -94,12 +94,82 @@ describe("design tokens", () => {
   });
 
   it("defines every semantic colour as a var() alias of a primitive, in both themes", () => {
-    const darkBlock = css.slice(css.indexOf('[data-theme="dark"]'));
-    for (const token of SEMANTIC_COLOR_TOKENS) {
-      expect(css).toMatch(new RegExp(`${token}:\\s*var\\(--`));
-      expect(darkBlock).toMatch(new RegExp(`${token}:\\s*var\\(--`));
+    // Exact mappings extracted from globals.css (source of truth).
+    // These enforce the contract: each semantic token must alias EXACTLY the correct primitive.
+    const lightMappings: Record<string, string> = {
+      "--background": "--washi-50",
+      "--foreground": "--sumi-900",
+      "--card": "--white",
+      "--card-foreground": "--sumi-900",
+      "--muted": "--neutral-100",
+      "--muted-foreground": "--neutral-600",
+      "--border": "--neutral-300",
+      "--input": "--neutral-300",
+      "--ring": "--vermilion-500",
+      "--primary": "--vermilion-500",
+      "--primary-foreground": "--washi-50",
+      "--accent": "--indigo-600",
+      "--accent-foreground": "--washi-50",
+      "--success": "--green-600",
+      "--danger": "--red-600",
+      "--surface-overlay": "--white",
+    };
+
+    const darkMappings: Record<string, string> = {
+      "--background": "--ink-950",
+      "--foreground": "--washi-100",
+      "--card": "--ink-900",
+      "--card-foreground": "--washi-100",
+      "--muted": "--ink-800",
+      "--muted-foreground": "--neutral-400",
+      "--border": "--ink-700",
+      "--input": "--ink-700",
+      "--ring": "--vermilion-400",
+      "--primary": "--vermilion-400",
+      "--primary-foreground": "--ink-950",
+      "--accent": "--indigo-300",
+      "--accent-foreground": "--ink-950",
+      "--success": "--green-400",
+      "--danger": "--red-400",
+      "--surface-overlay": "--ink-900",
+    };
+
+    // Extract light block (everything before first [data-theme="dark"])
+    const lightBlockEnd = css.indexOf('[data-theme="dark"]');
+    const lightBlock = css.substring(0, lightBlockEnd);
+
+    // Extract first [data-theme="dark"] colour block (not the elevation overrides block)
+    const darkStart = css.indexOf('[data-theme="dark"]');
+    const blockOpenBrace = css.indexOf("{", darkStart);
+    let braceCount = 1;
+    let endPos = blockOpenBrace + 1;
+    while (endPos < css.length && braceCount > 0) {
+      if (css[endPos] === "{") braceCount++;
+      if (css[endPos] === "}") braceCount--;
+      endPos++;
     }
-    // --scrim is theme-independent: defined once, not remapped in dark.
+    const darkBlock = css.substring(darkStart, endPos);
+
+    // Assert light theme: each semantic token aliases exactly the expected primitive
+    for (const [token, primitive] of Object.entries(lightMappings)) {
+      const pattern = new RegExp(String.raw`${token}:\s*var\(${primitive}\)`);
+      expect(lightBlock).toMatch(
+        pattern,
+        `Light theme: ${token} should alias ${primitive}`,
+      );
+    }
+
+    // Assert dark theme: each semantic token aliases exactly the expected primitive
+    for (const [token, primitive] of Object.entries(darkMappings)) {
+      const pattern = new RegExp(String.raw`${token}:\s*var\(${primitive}\)`);
+      expect(darkBlock).toMatch(
+        pattern,
+        `Dark theme: ${token} should alias ${primitive}`,
+      );
+    }
+
+    // --scrim is theme-independent: defined in light, NOT redefined in dark
     expect(css).toMatch(/--scrim:\s*0 0% 0%/);
+    expect(darkBlock).not.toMatch(/--scrim/);
   });
 });
