@@ -153,19 +153,13 @@ describe("design tokens", () => {
     // Assert light theme: each semantic token aliases exactly the expected primitive
     for (const [token, primitive] of Object.entries(lightMappings)) {
       const pattern = new RegExp(String.raw`${token}:\s*var\(${primitive}\)`);
-      expect(lightBlock).toMatch(
-        pattern,
-        `Light theme: ${token} should alias ${primitive}`,
-      );
+      expect(lightBlock, `Light theme: ${token} should alias ${primitive}`).toMatch(pattern);
     }
 
     // Assert dark theme: each semantic token aliases exactly the expected primitive
     for (const [token, primitive] of Object.entries(darkMappings)) {
       const pattern = new RegExp(String.raw`${token}:\s*var\(${primitive}\)`);
-      expect(darkBlock).toMatch(
-        pattern,
-        `Dark theme: ${token} should alias ${primitive}`,
-      );
+      expect(darkBlock, `Dark theme: ${token} should alias ${primitive}`).toMatch(pattern);
     }
 
     // --scrim is theme-independent: defined in light, NOT redefined in dark
