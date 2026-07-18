@@ -14,6 +14,10 @@
         {
           "group": ["next/link"],
           "message": "Use { Link } from '@/lib/i18n/navigation' so navigation preserves the active locale. See spec §P2."
+        },
+        {
+          "group": ["@radix-ui/*"],
+          "message": "Radix may only be imported inside components/ui/. Features consume the design-system primitives, never the headless library (spec §P8, D7)."
         }
       ],
       "paths": [
@@ -33,6 +37,34 @@
     {
       "files": ["lib/i18n/**", "app/[[]locale[]]/layout.tsx", "test/render.tsx"],
       "rules": { "no-restricted-imports": "off" }
+    },
+    {
+      "files": ["components/ui/**"],
+      "rules": {
+        "no-restricted-imports": ["error", {
+          "patterns": [
+            {
+              "group": ["@anthropic-ai/sdk", "@anthropic-ai/sdk/*", "@google/genai"],
+              "message": "Provider SDKs may only be imported inside lib/ai/providers/. Application code speaks the port (lib/ai/port.ts). See docs/superpowers/specs/2026-07-15-ai-provider-abstraction-design.md."
+            },
+            {
+              "group": ["next-intl", "next-intl/*"],
+              "message": "next-intl may only be imported inside lib/i18n/. Feature code consumes the localization capability via @/lib/i18n. See docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md §P1."
+            },
+            {
+              "group": ["next/link"],
+              "message": "Use { Link } from '@/lib/i18n/navigation' so navigation preserves the active locale. See spec §P2."
+            }
+          ],
+          "paths": [
+            {
+              "name": "next/navigation",
+              "importNames": ["redirect", "useRouter", "usePathname"],
+              "message": "Import redirect/useRouter/usePathname from '@/lib/i18n/navigation' so navigation preserves the active locale. useSearchParams, useParams and notFound are locale-irrelevant and stay here. See spec §P2."
+            }
+          ]
+        }]
+      }
     }
   ]
 }

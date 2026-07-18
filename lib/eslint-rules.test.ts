@@ -71,4 +71,28 @@ describe("import boundary rules", () => {
     );
     expect(messages.join("\n")).not.toMatch(/lib\/i18n/);
   });
+
+  it("forbids feature code from importing Radix directly (P8)", async () => {
+    const messages = await lint(
+      `import * as RadixDialog from "@radix-ui/react-dialog";\nexport const a = RadixDialog;\n`,
+      "components/learning/example.tsx",
+    );
+    expect(messages.join("\n")).toMatch(/components\/ui/);
+  });
+
+  it("allows the design system to import Radix", async () => {
+    const messages = await lint(
+      `import * as RadixDialog from "@radix-ui/react-dialog";\nexport const a = RadixDialog;\n`,
+      "components/ui/dialog.tsx",
+    );
+    expect(messages.join("\n")).not.toMatch(/components\/ui/);
+  });
+
+  it("still forbids next/link inside components/ui (override must not gut the other rules)", async () => {
+    const messages = await lint(
+      `import Link from "next/link";\nexport const a = Link;\n`,
+      "components/ui/example.tsx",
+    );
+    expect(messages.join("\n")).toMatch(/lib\/i18n\/navigation/);
+  });
 });
