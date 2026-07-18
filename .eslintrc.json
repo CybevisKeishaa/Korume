@@ -16,7 +16,7 @@
           "message": "Use { Link } from '@/lib/i18n/navigation' so navigation preserves the active locale. See spec §P2."
         },
         {
-          "group": ["@radix-ui/*"],
+          "group": ["@radix-ui/*", "@radix-ui/*/*"],
           "message": "Radix may only be imported inside components/ui/. Features consume the design-system primitives, never the headless library (spec §P8, D7)."
         }
       ],
