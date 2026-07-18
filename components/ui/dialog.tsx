@@ -77,9 +77,10 @@ export function Dialog({
             event.preventDefault();
             previouslyFocusedRef.current?.focus();
           }}
-          // Radix warns to console when Content has neither a Description nor
-          // an explicit aria-describedby={undefined}; spread the opt-out only
-          // when no description is given.
+          // When no description is given, RadixDialog.Description is never
+          // rendered, so Radix's default aria-describedby would still point
+          // at that (never-rendered) id. Spread aria-describedby={undefined}
+          // to override it and avoid a dangling reference.
           {...(description ? {} : { "aria-describedby": undefined })}
           className={cn(
             "fixed left-1/2 top-1/2 z-overlay max-h-[90vh] w-[calc(100%-2rem)] max-w-lg",
