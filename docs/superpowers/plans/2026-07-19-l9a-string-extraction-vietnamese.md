@@ -58,10 +58,12 @@ Twenty catalogs written across twenty independently-executed tasks will drift un
 | Peer review | Đánh giá chéo | |
 | Recording | Bản ghi âm | |
 | Show answer / Again / Hard / Good / Easy | Xem đáp án / Lại / Khó / Tốt / Dễ | SRS grade buttons |
-| Save / Cancel / Delete / Close / Back / Next | Lưu / Huỷ / Xoá / Đóng / Quay lại / Tiếp theo | promote to `common` |
+| Save / Cancel / Delete / Close / Back / Next | Lưu / Hủy / Xóa / Đóng / Quay lại / Tiếp theo | promote to `common` |
 | Loading… / Something went wrong | Đang tải… / Đã có lỗi xảy ra | promote to `common` |
 
 **Register:** address the learner as **"bạn"**, never "quý khách" or "các bạn". Imperative buttons are bare verbs ("Lưu", not "Hãy lưu"). No exclamation marks in VN copy — CLAUDE.md §2.4 and the Companion spec's P12 both reject hype. **Never translate `giai đoạn <number>` style raw stage indices into user copy** (P12); see Task 17.
+
+**Tone-mark placement (binding, decided 2026-07-20):** use the **modern convention — the mark sits on the main vowel**: `Hủy`, `Xóa`, `Thủy`, `Hòa`, `khóa`, `tùy`. Not `Huỷ`, `Xoá`, `Thuỷ`, `Hoà`, `khoá`, `tuỳ`. Both spellings are correct Vietnamese, but the modern placement is what Facebook, Google and Zalo ship in Vietnamese, so it is what this product's users read every day. Apply it to every catalog without exception.
 
 ### Key-naming convention (binding)
 
@@ -558,6 +560,10 @@ provider-wrapped render."
 The per-task procedure, restated compactly:
 
 1. Write/extend a test that **pins the current English output** of the module's main component(s), using `@/test/render`. Run it — it must pass while strings are still hardcoded.
+
+   **Pin every string you are about to extract, not a sample.** A test that spot-checks 3 of 13 labels goes green for a typo in the other 10, which defeats the entire point: this test is the only thing standing between a careless extraction and silently changed user-visible copy. Where the strings come from a list the component already iterates (nav items, variants, tabs), iterate the same list in the test rather than hand-picking entries — that way the test cannot fall behind the component. Include accessibility strings (`aria-label`, `alt`) in the pin; they are user-visible to anyone using a screen reader.
+
+   Where a component's strings are not enumerable that way, assert each extracted string explicitly. If the module is large enough that this feels tedious, that is the correct amount of work — 592 existing assertions are riding on English staying byte-identical.
 2. Register the namespace in **all three** places: `lib/i18n/namespaces.ts` (`NAMESPACES` array), `types/messages.d.ts` (`import type <ns> from "../messages/en/<ns>.json"` plus the `Messages` entry), and create both `messages/en/<ns>.json` and `messages/vi/<ns>.json`.
 3. Fill the EN catalog by copying strings **verbatim** out of the source files; fill VN using the glossary.
 4. Run `npx vitest run lib/i18n/catalog.test.ts` — parity must pass before you touch a component.
