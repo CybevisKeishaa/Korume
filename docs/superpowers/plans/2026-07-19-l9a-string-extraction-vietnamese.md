@@ -878,17 +878,25 @@ export function memoryTitleFor(
 
 **Module notes:**
 
-`export const metadata = { title: "Kanji" }` is a static export — it cannot call `getTranslations`. Each becomes `generateMetadata`:
+`export const metadata = { title: "Kanji" }` is a static export — it cannot call `getTranslations`. Each becomes `generateMetadata`.
+
+**It must take `params` and pass the locale explicitly.** `generateMetadata` runs in its own scope; a bare `await getTranslations("kanji")` there relies on ambient request state and will either throw or silently drop the page out of static rendering — spec §7 risk 2, the trap that produces no error, just a slower site. Pass the locale through:
 
 ```tsx
 import type { Metadata } from "next";
 import { getTranslations } from "@/lib/i18n/server";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("kanji");
+export async function generateMetadata({
+  params: { locale },
+}: {
+  params: { locale: string };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: "kanji" });
   return { title: t("title") };
 }
 ```
+
+After converting each route group, confirm in `npm run build`'s route table that pages which were `●` (SSG) are still `●`. A page that silently became `ƒ` means the locale was not threaded correctly.
 
 Reuse the namespace's existing `title` key — do not add a parallel `metaTitle` unless the page heading and the browser-tab title genuinely differ (the admin pages do: `"Admin — Content"` vs the page's own heading).
 
