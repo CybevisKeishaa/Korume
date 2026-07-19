@@ -1,0 +1,89 @@
+import { useState } from "react";
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@/test/render";
+import { AuthForm } from "./auth-form";
+
+// AuthForm wires its <form action={...}> straight to the server actions
+// module. Importing the real module here would pull in next/headers,
+// next/cache and the Supabase server client, none of which work outside a
+// request — mock it the same way app/[locale]/(auth)/actions.test.ts mocks
+// its own dependencies, one layer down.
+vi.mock("@/app/[locale]/(auth)/actions", () => ({
+  login: vi.fn(),
+  register: vi.fn(),
+  signInWithGoogle: vi.fn(),
+}));
+
+// Next.js aliases "react-dom" to its own canary build (the one that ships
+// useFormState/useFormStatus) at webpack build time. Vitest runs on Vite and
+// resolves the plain react-dom@18.3.1 from node_modules, which has neither —
+// so any render of AuthForm throws "useFormState is not a function" without
+// this shim. Scoped to this file only: it stands in for the two hooks with
+// enough behavior for a static-render pinning test (no reactive
+// pending/error state is asserted here).
+vi.mock("react-dom", async () => {
+  const actual = await vi.importActual<typeof import("react-dom")>("react-dom");
+  return {
+    ...actual,
+    useFormState: <S,>(_action: unknown, initialState: S) => {
+      const [state] = useState(initialState);
+      const noopFormAction = () => undefined;
+      return [state, noopFormAction, false] as const;
+    },
+    useFormStatus: () => ({ pending: false }),
+  };
+});
+
+/**
+ * Characterization test, written BEFORE the `auth` namespace exists — pins
+ * every static string AuthForm renders while it is still hardcoded, so
+ * extraction is proven behavior-preserving if this test stays green
+ * afterwards unchanged (see auth.json / vi/auth.json in the same commit).
+ */
+describe("AuthForm", () => {
+  describe("login mode", () => {
+    it("renders the sign-in fields and controls", () => {
+      render(<AuthForm mode="login" />);
+
+      expect(screen.getByLabelText("Email")).toBeInTheDocument();
+      expect(screen.getByLabelText("Password")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
+
+      expect(
+        screen.getByRole("button", { name: "Sign in" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("OR")).toBeInTheDocument();
+
+      expect(screen.getByText("New here?")).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Create an account" }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("register mode", () => {
+    it("renders the sign-up fields and controls", () => {
+      render(<AuthForm mode="register" />);
+
+      expect(screen.getByLabelText("Name")).toBeInTheDocument();
+      expect(screen.getByLabelText("Email")).toBeInTheDocument();
+      expect(screen.getByLabelText("Password")).toBeInTheDocument();
+
+      expect(
+        screen.getByRole("button", { name: "Create account" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Continue with Google" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("OR")).toBeInTheDocument();
+
+      expect(screen.getByText("Already have an account?")).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Sign in" }),
+      ).toBeInTheDocument();
+    });
+  });
+});

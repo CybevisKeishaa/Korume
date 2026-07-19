@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { loginSchema, registerSchema } from "@/lib/validation/auth";
-import { getLocale } from "@/lib/i18n/server";
+import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { stripLocale } from "@/lib/i18n/locale-path";
 
 export interface AuthState {
@@ -29,8 +29,11 @@ export async function login(
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
-    // Don't reveal which of email/password was wrong.
-    return { error: "Invalid email or password." };
+    // Don't reveal which of email/password was wrong. Translated at the
+    // point of return — the client receives display text, never a catalog
+    // key, so the error shape stays independent of the message catalog.
+    const t = await getTranslations("auth");
+    return { error: t("errors.invalidCredentials") };
   }
 
   revalidatePath("/", "layout");
