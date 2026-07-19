@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { render as rtlRender, type RenderOptions } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
+import { loadEnMessages } from "./messages";
 
 /**
  * `@testing-library/react`'s `render`, wrapped in `NextIntlClientProvider`.
@@ -11,19 +12,23 @@ import { NextIntlClientProvider } from "next-intl";
  * (directly or through a child) needs this wrapper, not the bare
  * `@testing-library/react` `render`.
  *
- * Locale is pinned to `en` (matches the e2e suite's D6 pin — Task 5). No
- * messages are supplied: Plan 3 (string extraction) hasn't landed yet, so
- * nothing under test calls `useTranslations()`.
+ * Locale is pinned to `en` (spec D6): the regression suite asserts on English
+ * user-visible text, and the EN catalog is extracted verbatim, so those
+ * assertions survive extraction unchanged. The real EN catalogs are supplied
+ * (see ./messages) — a component under test that calls t() must render the
+ * same text it rendered when the string was hardcoded.
  *
  * This file imports `next-intl` directly, which is otherwise forbidden for
  * feature code (spec P1) — it is exempted because it IS the test-side half
  * of the localization foundation's public surface, alongside
  * `lib/i18n/**` and `app/[locale]/layout.tsx`.
  */
+const messages = loadEnMessages();
+
 function customRender(ui: ReactElement, options?: RenderOptions) {
   return rtlRender(ui, {
     wrapper: ({ children }) => (
-      <NextIntlClientProvider locale="en" messages={{}}>
+      <NextIntlClientProvider locale="en" messages={messages}>
         {children}
       </NextIntlClientProvider>
     ),
