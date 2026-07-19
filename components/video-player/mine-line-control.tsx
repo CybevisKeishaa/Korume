@@ -170,7 +170,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
       <p
         role={status === "error" ? "alert" : "status"}
         aria-live={status === "error" ? "assertive" : "polite"}
-        className={cn("mt-1 max-w-40 text-right text-xs", status === "error" ? "text-danger" : "text-muted-foreground")}
+        className={cn("mt-1 max-w-40 text-right text-xs", status === "error" ? "text-danger-strong" : "text-muted-foreground")}
       >
         {message}
       </p>

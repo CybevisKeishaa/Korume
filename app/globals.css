@@ -30,14 +30,19 @@
   --ink-800: 224 18% 18%;
   --ink-900: 224 26% 12%;
   --ink-950: 224 32% 8%;
+  --vermilion-300: 6 90% 71%;
   --vermilion-400: 4 84% 60%; /* 朱色 vermilion */
   --vermilion-500: 4 74% 49%;
+  --vermilion-700: 4 76% 37%;
   --indigo-300: 210 70% 66%; /* 藍 indigo */
   --indigo-600: 218 46% 30%;
   --green-400: 148 46% 52%;
   --green-600: 148 52% 34%;
+  --green-700: 148 56% 27%;
+  --red-300: 0 84% 72%;
   --red-400: 0 72% 60%;
   --red-600: 0 72% 44%;
+  --red-700: 0 74% 38%;
 
   /* — semantic tier (light) — */
   --background: var(--washi-50);
@@ -55,6 +60,23 @@
   --accent-foreground: var(--washi-50);
   --success: var(--green-600);
   --danger: var(--red-600);
+  /* — text tones —
+     A semantic colour used as a FILL and the same colour used as TEXT have
+     different contrast requirements, and one value cannot satisfy both. The
+     tint pattern (`bg-primary/10 text-primary-strong`, used in 13 places)
+     paints text on what is effectively the bare surface, and measured below
+     4.5:1 for primary/success/danger when it reused --primary etc. directly.
+
+     So: --primary stays the brand vermilion and keeps driving fills, buttons
+     and the focus ring — unchanged. --primary-strong is the same hue pushed
+     to a legible tone for text and icons: darker in light, LIGHTER in dark
+     ("strong" means stronger contrast, which points opposite ways per theme).
+     Enforced by lib/design-tokens.contrast.test.ts — do not hand-tune these
+     without re-running it. */
+  --primary-strong: var(--vermilion-700);
+  --accent-strong: var(--indigo-600);
+  --success-strong: var(--green-700);
+  --danger-strong: var(--red-700);
   /* Surface a floating panel (dialog, popover, select menu, toast) sits on.
      Same as --card today; a separate token so overlays can diverge in L9b. */
   --surface-overlay: var(--white);
@@ -81,6 +103,13 @@
   --accent-foreground: var(--ink-950);
   --success: var(--green-400);
   --danger: var(--red-400);
+  /* Text tones invert direction here: on near-black surfaces legibility comes
+     from going LIGHTER. accent/success already clear 4.5:1 at their base tone,
+     so they alias it rather than inventing a primitive nothing else uses. */
+  --primary-strong: var(--vermilion-300);
+  --accent-strong: var(--indigo-300);
+  --success-strong: var(--green-400);
+  --danger-strong: var(--red-300);
   --surface-overlay: var(--ink-900);
 }
 

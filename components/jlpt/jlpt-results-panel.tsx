@@ -34,9 +34,9 @@ function PillarBar({ pillar }: { pillar: PillarScore }) {
         <span className="text-muted-foreground">
           {pillar.scaledScore} / {pillar.scaleMax}{" "}
           {pillar.meetsMinimum ? (
-            <span className="text-success">✓ meets minimum</span>
+            <span className="text-success-strong">✓ meets minimum</span>
           ) : (
-            <span className="text-danger">below minimum</span>
+            <span className="text-danger-strong">below minimum</span>
           )}
         </span>
       </div>
@@ -88,9 +88,9 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
             </p>
             <p className="mt-1 text-sm">
               {result.passed ? (
-                <span className="font-medium text-success">Estimated result: Pass</span>
+                <span className="font-medium text-success-strong">Estimated result: Pass</span>
               ) : (
-                <span className="font-medium text-danger">Estimated result: Not yet passing</span>
+                <span className="font-medium text-danger-strong">Estimated result: Not yet passing</span>
               )}
               <span className="ml-2 text-xs text-muted-foreground">
                 (unofficial estimate — not an official JLPT score)

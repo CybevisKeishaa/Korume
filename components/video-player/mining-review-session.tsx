@@ -121,7 +121,7 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
         <p className="font-jp text-2xl leading-relaxed">
           {splitSentenceForEmphasis(current!.sentenceJp, current!.targetWord).map((segment, i) =>
             segment.emphasized ? (
-              <strong key={i} className="text-primary underline decoration-2 underline-offset-2">
+              <strong key={i} className="text-primary-strong underline decoration-2 underline-offset-2">
                 {segment.text}
               </strong>
             ) : (
@@ -147,7 +147,7 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
       </Card>
 
       {error && (
-        <p role="alert" className="mt-3 text-center text-sm text-danger">
+        <p role="alert" className="mt-3 text-center text-sm text-danger-strong">
           {error}
         </p>
       )}

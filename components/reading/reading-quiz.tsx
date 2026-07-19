@@ -138,7 +138,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
                       />
                       <span className="font-jp">{option}</span>
                       {result && isCorrectChoice && (
-                        <span className="text-xs font-medium text-success">(Correct answer)</span>
+                        <span className="text-xs font-medium text-success-strong">(Correct answer)</span>
                       )}
                     </label>
                   );
@@ -149,7 +149,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
                 <p
                   className={cn(
                     "text-sm font-medium",
-                    result.correct ? "text-success" : "text-danger",
+                    result.correct ? "text-success-strong" : "text-danger-strong",
                   )}
                 >
                   {result.correct ? "Correct" : "Incorrect"}
@@ -177,7 +177,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
       </form>
 
       {state.status === "error" && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-sm text-danger-strong">
           {state.message}
         </p>
       )}

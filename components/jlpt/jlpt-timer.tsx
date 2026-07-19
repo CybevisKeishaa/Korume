@@ -63,10 +63,10 @@ export function JlptTimer({ deadline, onExpire, className }: JlptTimerProps) {
 
   return (
     <div className={cn("flex flex-col items-end gap-0.5", className)} role="timer" aria-label="Time remaining">
-      <span className={cn("text-lg font-semibold tabular-nums", urgent ? "text-danger" : "text-foreground")}>
+      <span className={cn("text-lg font-semibold tabular-nums", urgent ? "text-danger-strong" : "text-foreground")}>
         {formatRemaining(remainingMs)}
       </span>
-      {urgent && <span className="text-xs font-medium text-danger">Under 1 minute left</span>}
+      {urgent && <span className="text-xs font-medium text-danger-strong">Under 1 minute left</span>}
       <span className="sr-only" aria-live="polite" role="status">
         {announcement}
       </span>

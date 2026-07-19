@@ -105,7 +105,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
 
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mt-3 text-sm text-danger">
+          <p role="alert" className="mt-3 text-sm text-danger-strong">
             {error}
           </p>
         )}
@@ -149,7 +149,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     type="button"
                     onClick={() => void removeItem(item.videoId)}
                     disabled={busy[item.videoId] === "busy"}
-                    className="rounded-md px-2 py-1 text-xs font-medium text-danger hover:bg-danger/10 disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-md px-2 py-1 text-xs font-medium text-danger-strong hover:bg-danger/10 disabled:pointer-events-none disabled:opacity-40"
                   >
                     Remove
                   </button>

@@ -1,3 +1,58 @@
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged (manual style-guide pass still owed) · Plan 3 not written
+
+## Plan 2/3 (Design System Foundation) — ✅ MERGED to master (`fcd35af` --no-ff, 2026-07-18)
+
+All 12 tasks done via subagent-driven-development, every task review clean; final whole-branch
+review (fable): READY TO MERGE = YES. **User chose merge-now BEFORE the manual browser pass —
+that pass is STILL OWED on master** (checklist below). Local branch deleted; NOT pushed (remote
+holds stale `origin/layer-9a-design-system` — prune when pushing). Post-merge verify on master:
+tsc 0 · 1293/1293. Gates at tip: **tsc 0 · unit 1293/1293 (175 files) · lint exit 0 (80
+pre-existing warnings predate branch, 0 new) · build OK · playwright 2/2**. Plan doc (with
+execution addendum): `docs/superpowers/plans/2026-07-18-l9a-design-system.md`.
+
+**Shipped:** middleware-composition regression test (`middleware.test.ts` — auth 3xx
+short-circuit + Set-Cookie carry, mutation-proven); full token system in `app/globals.css` +
+`tailwind.config.ts` (spacing 2xs–3xl, type scale caption→display + `leading-jp`, elevation
+raised/overlay/floating w/ dark variants, motion duration/ease tokens, z ladder nav/overlay/
+popover/toast) guarded by `lib/design-tokens.test.ts`; primitive→semantic colour tiers
+(bit-identical values, exact-mapping test); Radix boundary (ESLint P8 + fire-tests incl.
+deep-import, jsdom polyfills, §8 logical-properties scan test); 8 primitives in
+`components/ui/` (dialog w/ real focus trap — admin dialog now a thin wrapper, L7 WCAG 2.4.3
+debt repaid; tabs; select flat-options; tooltip; popover; toast + `useToast` + ToastProvider
+mounted in `app/[locale]/layout.tsx`; badge; skeleton); living style guide at
+`/[locale]/admin/style-guide` behind requireAdmin (D9), nav item in AdminShell.
+
+**LOAD-BEARING new in Plan 2 — never "clean up":**
+1. **`lib/utils.ts` uses `extendTailwindMerge` configured with EVERY custom scale.** Plain
+   `twMerge` misclassifies `text-body`/`text-caption` as colours and silently STRIPS them in
+   `cn()` (the final review's one Critical — it corrupted Badge/Select/Tabs). **Any new token
+   scale added to tailwind.config.ts MUST also be added to this config**; `lib/utils.test.ts`
+   is the guard.
+2. `.eslintrc.json` `components/ui/**` override RESTATES the import rule minus the Radix
+   pattern (ESLint overrides replace wholesale — editing one copy requires editing both;
+   `lib/eslint-rules.test.ts` fire-tests are the net).
+3. Style-guide elevation swatches use a literal class map — dynamic `shadow-${x}` is never
+   emitted by Tailwind static extraction.
+4. Dialog: explicit `aria-modal` + manual focus capture/restore (Radix 1.1.19 doesn't provide
+   them for an external-trigger API); ordering is layout-effect-vs-passive-effect, verified.
+5. Tailwind `fontWeight`/`letterSpacing` overridden with identical-value var() refs (deliberate).
+
+**Manual browser pass STILL OWED on master (merge happened first, user's choice):** at `/vi/admin/style-guide` —
+(1) badge-variant AA contrast in both themes (reviewer estimates tinted variants may be near/
+below 4.5:1 — if failing, darken text tones), (2) three visibly distinct elevation shadows,
+(3) tab/select/badge text sizes match the type-scale section, (4) dialog focus trap, theme/
+reduce-motion/locale controls, toasts.
+
+**Deferred by final-review triage:** scrim-dark-check scope + popover vi.fn + tabs arrow
+coverage + select disabled/ref tests → Plan 3 or L9b; toast dismissLabel + viewport label
+i18n → Plan 3 (by design, P4); useToast fresh-object + toast queue cap + per-instance
+TooltipProvider skip-delay → L9b/L9c; JP colour comments cosmetic → L9b.
+
+**Plan 3 (string extraction + VN) remains NOT WRITTEN.** Its must-dos (from Plan 1 review)
+unchanged below, plus: pass translated `closeLabel`/`dismissLabel` into Dialog/ToastProvider.
+
+---
+
 # L9a Plan 1/3 (Localization Architecture) — ✅ COMPLETE & MERGED (`69f22e6`, 2026-07-18)
 
 **Run finished 2026-07-18. All 8 tasks done + reviewed; final whole-branch review (opus) verdict:

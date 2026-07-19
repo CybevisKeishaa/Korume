@@ -367,7 +367,7 @@ export function ShadowingRecorderPanel({
               <p className="text-xs text-muted-foreground">{SCORE_NOT_CONFIGURED_MESSAGE}</p>
             )}
             {score.status === "error" && (
-              <p role="alert" className="text-xs text-danger">
+              <p role="alert" className="text-xs text-danger-strong">
                 {score.message}
               </p>
             )}
@@ -390,8 +390,8 @@ export function ShadowingRecorderPanel({
                           className={cn(
                             "font-jp rounded px-1.5 py-0.5 text-xs",
                             w.errorType === "None"
-                              ? "bg-success/15 text-success"
-                              : "bg-danger/15 text-danger",
+                              ? "bg-success/15 text-success-strong"
+                              : "bg-danger/15 text-danger-strong",
                           )}
                         >
                           {w.word}
@@ -410,7 +410,7 @@ export function ShadowingRecorderPanel({
         <div className="space-y-1.5 border-t border-border pt-2">
           {share.status === "shared" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs text-success">Shared for peer feedback.</p>
+              <p className="text-xs text-success-strong">Shared for peer feedback.</p>
               <ConfirmButton
                 label="Revoke"
                 confirmLabel="Revoke this share? Others will no longer be able to hear or review it."
@@ -434,7 +434,7 @@ export function ShadowingRecorderPanel({
             </>
           )}
           {share.status === "error" && (
-            <p role="alert" className="text-xs text-danger">
+            <p role="alert" className="text-xs text-danger-strong">
               {share.message}
             </p>
           )}

@@ -57,7 +57,7 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
 
   if (state.status === "not-found") {
     return (
-      <p role="alert" className="text-sm text-danger">
+      <p role="alert" className="text-sm text-danger-strong">
         Passage not found.
       </p>
     );
@@ -65,7 +65,7 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
 
   if (state.status === "error") {
     return (
-      <p role="alert" className="text-sm text-danger">
+      <p role="alert" className="text-sm text-danger-strong">
         {state.message}
       </p>
     );

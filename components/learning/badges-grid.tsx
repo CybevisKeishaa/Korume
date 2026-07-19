@@ -67,7 +67,7 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
                 aria-hidden="true"
                 className={cn(
                   "flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold",
-                  earned ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+                  earned ? "bg-primary/10 text-primary-strong" : "bg-muted text-muted-foreground",
                 )}
               >
                 {badge.iconUrl ? (

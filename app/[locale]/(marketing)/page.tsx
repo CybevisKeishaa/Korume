@@ -6,7 +6,7 @@ export default function LandingPage() {
   return (
     <main>
       <Container className="flex min-h-[80vh] flex-col items-center justify-center py-24 text-center">
-        <p className="mb-4 font-jp text-sm tracking-widest text-primary">
+        <p className="mb-4 font-jp text-sm tracking-widest text-primary-strong">
           日本語シネマ
         </p>
         <h1 className="max-w-3xl text-balance text-4xl font-bold leading-tight sm:text-6xl">

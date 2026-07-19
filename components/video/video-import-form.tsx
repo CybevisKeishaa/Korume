@@ -110,7 +110,7 @@ export function VideoImportForm() {
         <p
           id="youtube-url-error"
           role="alert"
-          className="text-sm text-danger sm:basis-full"
+          className="text-sm text-danger-strong sm:basis-full"
         >
           {error}
         </p>

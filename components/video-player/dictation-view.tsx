@@ -75,7 +75,7 @@ function DiffChar({ item }: { item: DictationDiffPart }) {
     return (
       <span
         data-diff-type="wrong"
-        className="rounded bg-danger/10 px-0.5 text-danger underline decoration-wavy decoration-2"
+        className="rounded bg-danger/10 px-0.5 text-danger-strong underline decoration-wavy decoration-2"
       >
         <span aria-hidden="true">✕</span>
         {item.actual}
@@ -87,7 +87,7 @@ function DiffChar({ item }: { item: DictationDiffPart }) {
     return (
       <span
         data-diff-type="missing"
-        className="rounded border border-dashed border-accent px-0.5 text-accent"
+        className="rounded border border-dashed border-accent px-0.5 text-accent-strong"
       >
         <span aria-hidden="true">▢</span>
         {item.expected}
@@ -286,7 +286,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
       )}
 
       {errorMessage && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-sm text-danger-strong">
           {errorMessage}
         </p>
       )}

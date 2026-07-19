@@ -65,7 +65,7 @@ export function LeaderboardOptInToggle({ initialOptIn, onChanged, className }: L
         </label>
       </div>
       {error && (
-        <p role="alert" className="mt-1 text-xs text-danger">
+        <p role="alert" className="mt-1 text-xs text-danger-strong">
           {error}
         </p>
       )}

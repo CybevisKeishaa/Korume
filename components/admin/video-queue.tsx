@@ -196,7 +196,7 @@ export function VideoQueue() {
 
   if (loadState.status === "error") {
     return (
-      <p role="alert" className="rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-danger">
+      <p role="alert" className="rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-danger-strong">
         {loadState.message}
       </p>
     );
@@ -240,7 +240,7 @@ export function VideoQueue() {
                   </p>
                   <p className="mt-1 text-xs">
                     {v.hasTranscript ? (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary-strong">
                         Transcript: {v.transcriptLineCount} lines
                       </span>
                     ) : (
@@ -251,7 +251,7 @@ export function VideoQueue() {
                   </p>
 
                   {rowError?.id === v.id && (
-                    <p role="alert" className="mt-2 text-xs text-danger">
+                    <p role="alert" className="mt-2 text-xs text-danger-strong">
                       {rowError.message}
                     </p>
                   )}
@@ -272,7 +272,7 @@ export function VideoQueue() {
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="border-danger text-danger hover:bg-danger/10"
+                      className="border-danger text-danger-strong hover:bg-danger/10"
                       onClick={() => openReject(v.id)}
                       disabled={rateLimited}
                     >
@@ -347,7 +347,7 @@ export function VideoQueue() {
               />
             </div>
             {transcriptDialog.error && (
-              <p role="alert" className="text-sm text-danger">
+              <p role="alert" className="text-sm text-danger-strong">
                 {transcriptDialog.error}
               </p>
             )}

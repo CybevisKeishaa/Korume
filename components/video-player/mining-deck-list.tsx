@@ -34,7 +34,7 @@ export function MiningDeckList({ cards }: MiningDeckListProps) {
                 segment.emphasized ? (
                   <strong
                     key={index}
-                    className="text-primary underline decoration-2 underline-offset-2"
+                    className="text-primary-strong underline decoration-2 underline-offset-2"
                   >
                     {segment.text}
                   </strong>

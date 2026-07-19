@@ -10,7 +10,12 @@ describe("Badge", () => {
 
   it("applies the variant style", () => {
     render(<Badge variant="success">passed</Badge>);
-    expect(screen.getByText("passed").className).toContain("text-success");
+    // The `-strong` tone specifically: `text-success` alone would not meet
+    // WCAG AA on the 10% tint (lib/design-tokens.contrast.test.ts), and a
+    // substring match on "text-success" would pass for either.
+    const className = screen.getByText("passed").className;
+    expect(className).toContain("text-success-strong");
+    expect(className).toContain("text-caption");
   });
 
   it("defaults to the neutral variant and merges className", () => {

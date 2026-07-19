@@ -103,7 +103,7 @@ export function ConfirmButton({
       className={cn(
         "rounded-md px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-50",
         variant === "danger"
-          ? "text-danger hover:bg-danger/10"
+          ? "text-danger-strong hover:bg-danger/10"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
         className,
       )}

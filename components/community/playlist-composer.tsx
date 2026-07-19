@@ -80,7 +80,7 @@ export function PlaylistComposer({ onCreated, className }: PlaylistComposerProps
           {state.status === "submitting" ? "Creating…" : "Create playlist"}
         </Button>
         {state.status === "error" && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-sm text-danger-strong">
             {state.message}
           </p>
         )}

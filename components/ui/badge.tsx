@@ -10,10 +10,10 @@ export type BadgeVariant =
 
 const badgeVariants: Record<BadgeVariant, string> = {
   neutral: "bg-muted text-muted-foreground",
-  primary: "bg-primary/10 text-primary",
-  accent: "bg-accent/10 text-accent",
-  success: "bg-success/10 text-success",
-  danger: "bg-danger/10 text-danger",
+  primary: "bg-primary/10 text-primary-strong",
+  accent: "bg-accent/10 text-accent-strong",
+  success: "bg-success/10 text-success-strong",
+  danger: "bg-danger/10 text-danger-strong",
   outline: "border border-border text-foreground",
 };
 

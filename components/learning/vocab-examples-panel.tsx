@@ -99,7 +99,7 @@ export function VocabExamplesPanel({
       </div>
 
       {state.status === "error" && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-sm text-danger-strong">
           {state.message}
         </p>
       )}

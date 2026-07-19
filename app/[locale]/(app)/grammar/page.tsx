@@ -41,7 +41,7 @@ export default async function GrammarPage({
                 )}
               </div>
               {g.structure_pattern && (
-                <p className="font-jp text-sm text-primary">{g.structure_pattern}</p>
+                <p className="font-jp text-sm text-primary-strong">{g.structure_pattern}</p>
               )}
             </CardHeader>
             <CardContent className="space-y-3">

@@ -41,7 +41,7 @@ export function ConfirmDialog({
       <p className="text-sm text-muted-foreground">{description}</p>
       {children}
       {error && (
-        <p role="alert" className="mt-3 text-sm text-danger">
+        <p role="alert" className="mt-3 text-sm text-danger-strong">
           {error}
         </p>
       )}
@@ -52,7 +52,7 @@ export function ConfirmDialog({
         <Button
           type="button"
           variant={destructive ? "outline" : "primary"}
-          className={destructive ? "border-danger text-danger hover:bg-danger/10" : undefined}
+          className={destructive ? "border-danger text-danger-strong hover:bg-danger/10" : undefined}
           onClick={onConfirm}
           disabled={busy}
         >

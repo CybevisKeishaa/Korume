@@ -324,7 +324,7 @@ export function ConversationApp() {
           <h2 className="text-lg font-semibold">Start a conversation</h2>
           <ScenarioPicker onStart={startSession} />
           {pickerError && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-sm text-danger-strong">
               {pickerError}
             </p>
           )}
@@ -404,7 +404,7 @@ export function ConversationApp() {
             </p>
           )}
           {sendError && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-sm text-danger-strong">
               {sendError.message}
             </p>
           )}

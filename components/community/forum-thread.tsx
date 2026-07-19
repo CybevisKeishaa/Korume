@@ -252,7 +252,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
               </Button>
             </div>
             {postAction.status === "error" && (
-              <p role="alert" className="text-sm text-danger">
+              <p role="alert" className="text-sm text-danger-strong">
                 {postAction.message}
               </p>
             )}
@@ -261,7 +261,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
           <>
             <p className="whitespace-pre-line mt-4 text-foreground">{post.content}</p>
             {postAction.status === "error" && (
-              <p role="alert" className="mt-2 text-sm text-danger">
+              <p role="alert" className="mt-2 text-sm text-danger-strong">
                 {postAction.message}
               </p>
             )}
@@ -330,7 +330,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                         </Button>
                       </div>
                       {commentEditAction.status === "error" && (
-                        <p role="alert" className="text-sm text-danger">
+                        <p role="alert" className="text-sm text-danger-strong">
                           {commentEditAction.message}
                         </p>
                       )}
@@ -359,7 +359,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
             {commentAction.status === "submitting" ? "Posting…" : "Comment"}
           </Button>
           {commentAction.status === "error" && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-sm text-danger-strong">
               {commentAction.message}
             </p>
           )}

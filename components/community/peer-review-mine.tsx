@@ -46,7 +46,7 @@ export function PeerReviewMine({ shares: initialShares, className }: PeerReviewM
     <div className={className}>
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mb-2 text-sm text-danger">
+          <p role="alert" className="mb-2 text-sm text-danger-strong">
             {error}
           </p>
         )}

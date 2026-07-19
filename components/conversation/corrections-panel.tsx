@@ -33,7 +33,7 @@ export function CorrectionsPanel({ result, className }: CorrectionsPanelProps) {
           <ul className="mt-2 space-y-3">
             {result.corrections.map((c, i) => (
               <li key={i} className="rounded-lg border border-border p-3 text-sm">
-                <p className="font-jp text-danger line-through decoration-danger/60">
+                <p className="font-jp text-danger-strong line-through decoration-danger/60">
                   {c.original}
                 </p>
                 <p className="font-jp mt-1 font-medium text-foreground">{c.corrected}</p>

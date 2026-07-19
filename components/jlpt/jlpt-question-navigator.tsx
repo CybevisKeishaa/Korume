@@ -38,7 +38,7 @@ export function JlptQuestionNavigator({
               current
                 ? "border-primary bg-primary text-primary-foreground"
                 : answered
-                  ? "border-success/50 bg-success/10 text-success"
+                  ? "border-success/50 bg-success/10 text-success-strong"
                   : "border-border bg-muted text-muted-foreground hover:text-foreground",
             )}
           >

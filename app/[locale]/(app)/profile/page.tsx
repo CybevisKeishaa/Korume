@@ -63,7 +63,7 @@ export default async function ProfilePage() {
             </dl>
             <Link
               href="/dashboard"
-              className="mt-4 inline-block text-sm font-medium text-primary underline underline-offset-2 hover:no-underline"
+              className="mt-4 inline-block text-sm font-medium text-primary-strong underline underline-offset-2 hover:no-underline"
             >
               View full dashboard
             </Link>

@@ -122,7 +122,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
 
       <div aria-live="polite" className="mt-2">
         {listState.status === "error" && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-sm text-danger-strong">
             {listState.message}
           </p>
         )}

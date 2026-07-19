@@ -45,9 +45,10 @@ const PRIMITIVE_TOKENS = [
   "--washi-50", "--washi-100", "--white", "--sumi-900",
   "--neutral-100", "--neutral-300", "--neutral-400", "--neutral-600",
   "--ink-700", "--ink-800", "--ink-900", "--ink-950",
-  "--vermilion-400", "--vermilion-500",
+  "--vermilion-300", "--vermilion-400", "--vermilion-500", "--vermilion-700",
   "--indigo-300", "--indigo-600",
-  "--green-400", "--green-600", "--red-400", "--red-600",
+  "--green-400", "--green-600", "--green-700",
+  "--red-300", "--red-400", "--red-600", "--red-700",
 ];
 
 // The semantic tier must be var() aliases of primitives in BOTH themes —

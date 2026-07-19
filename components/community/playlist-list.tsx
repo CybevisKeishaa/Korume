@@ -145,7 +145,7 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
       </div>
 
       {action.status === "error" && (
-        <p role="alert" className="mt-2 text-sm text-danger">
+        <p role="alert" className="mt-2 text-sm text-danger-strong">
           {action.message}
         </p>
       )}

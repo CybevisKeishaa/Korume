@@ -8,7 +8,14 @@ root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.cl
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
 8 layers, one per session; all 8 = finished product. Use `/build-layer <n>`.
 
-## ✅ L9a Plan 1/3 COMPLETE — MERGED to master (`69f22e6` --no-ff, 2026-07-18)
+## ✅ L9a Plans 1/3 AND 2/3 COMPLETE — both MERGED to master (Plan 1 `69f22e6`, Plan 2 `fcd35af`, 2026-07-18)
+
+**Plan 2 (design system) merged `fcd35af` --no-ff same day** — full token system + semantic
+colour tiers + 8 Radix/in-house primitives + living style guide `/[locale]/admin/style-guide`
++ enforcement tests (P8 lint fire-tested, §8 logical-properties scan, token contract,
+middleware-composition guard). Post-merge: tsc 0 · **1293/1293 (174 files)**. Manual
+style-guide browser pass STILL OWED (checklist in `mem:l9a_localization_run_state`).
+Plan-1 details below unchanged:
 **Branch `layer-9a-localization-architecture` merged & local branch deleted (user chose merge).
 NOT pushed (origin/layer-9a-... still holds a stale pre-finish tip — prune when pushing).
 Post-merge verify on master: tsc 0, 1229/1229.** All 8 tasks done + task-reviewed; final whole-branch review (opus):
@@ -23,12 +30,21 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (written 2026-07-18, after L9a Plan 1 merge)
-**Next session: write L9a Plan 2 (design system) and/or Plan 3 (string extraction + VN) with
-`superpowers:writing-plans`, off spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`
-— then execute with subagent-driven-development. Both are unblocked; either order OK; they may
-run in parallel (spec §4.5). Suggested: Plan 2 first (L9b surfaces want primitives), Plan 3 can
-follow or overlap.**
+## ▶ NEXT ACTION (updated 2026-07-18, after L9a Plan 2 MERGE)
+**L9a Plan 2 (design system) = ✅ MERGED to master (`fcd35af` --no-ff, user chose merge-now;
+local branch deleted). Post-merge verify: tsc 0 · 1293/1293 (174 files). Gates: lint exit 0
+(80 pre-existing warnings, 0 new) · build OK · e2e 2/2.**
+**STILL OWED (user chose merge before doing it): the manual browser pass at
+`/vi/admin/style-guide`** — checklist in `mem:l9a_localization_run_state` Plan-2 block: badge
+AA contrast both themes (reviewer suspects tinted variants near/below 4.5:1 — if fail, darken
+text tones ON MASTER), 3 distinct elevations, text sizes, focus trap, theme/reduce-motion/
+locale controls. Do this pass early next session.
+**→ Then: write Plan 3 (string extraction + VN) with `superpowers:writing-plans` off the same
+spec.** NOTE: remote has STALE refs `origin/layer-9a-design-system` AND
+`origin/layer-9a-localization-architecture` — prune both when pushing (never push unasked).
+CRITICAL new gotcha (load-bearing): `lib/utils.ts` cn() = `extendTailwindMerge` configured with
+every custom token scale — plain twMerge silently STRIPS text-body/text-caption; any new
+Tailwind scale must be added there too (`lib/utils.test.ts` guards).
 MUST-DO khi viết các plan đó (đã cam kết trong final review — đừng bỏ sót):
 - **Plan 2, task ĐẦU TIÊN**: automated test cho top-level `middleware()` composition (mock
   updateSession → Set-Cookie carried onto intl response + 3xx short-circuits before intl). Chỗ duy
@@ -52,10 +68,10 @@ This resolves the "L8 vs finish-L9" question decisively:
 1. **L9a — i18n + design system** (foundation; VN-first, replace English shell). Unblocks EVERYTHING
    visual + Companion Plans 2/3. Split into 3 plans: **Plan 1 localization architecture = ✅ DONE,
    MERGED `69f22e6` 2026-07-18** (see block above + `mem:l9a_localization_run_state`); **Plan 2
-   design system (spec §4.4/§4.5, D7/D9: tokens → semantic tokens → primitives → living style
-   guide) — NOT WRITTEN**; **Plan 3 string extraction EN-verbatim + Vietnamese (spec Phase 2/3) —
-   NOT WRITTEN**. Plans 2/3 are both UNBLOCKED now and can run in parallel (spec §4.5: independent
-   capabilities). ← **NEXT ACTION: see ▶ NEXT ACTION block above.**
+   design system = ✅ DONE, MERGED `fcd35af` 2026-07-18** (plan doc w/ execution addendum:
+   `docs/superpowers/plans/2026-07-18-l9a-design-system.md`); **Plan 3 string extraction
+   EN-verbatim + Vietnamese (spec Phase 2/3) — NOT WRITTEN, THE LAST L9a PLAN**. ←
+   **NEXT ACTION: see ▶ NEXT ACTION block above (manual style-guide pass, then write Plan 3).**
 2. **L9b — surfaces**: Companion Plan 2 → Plan 3, the missing feature UIs, landing/cinematic, tutorial.
    Fold the two launch-blocker debts in here (they count as "fully-featured"): **user transcript-submit
    UI** (backend done since L3, UI missing = core loop dead-ends) and **GDPR delete-my-data** (§2
@@ -80,7 +96,7 @@ AI: `@anthropic-ai/sdk` 0.111.0. Tests: Vitest+RTL (unit), Playwright (`tests/e2
 One branch per layer `layer-<n>-<slug>` off master; merge `--no-ff` ONLY after DoD (tests pass +
 code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`,
 L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`, L7 `01ae59d`, Spec A `201a9b4`,
-Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`.
+Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),
@@ -376,6 +392,17 @@ Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`.
   leaderboard returns name/avatar/weeklyXp but NOT userId; peer-review authors never include email.
 - jsdom quirks: Blob has no `arrayBuffer()` (use `@/test/blob-utils` `readBlobBytes` /
   `lib/audio/read-blob.ts`), no Web Audio (use `@/test/audio-context-mock`), no canvas 2D.
+  Radix polyfills (ResizeObserver, pointer capture, scrollIntoView) live in `vitest.setup.ts`.
+- **`cn()` + custom Tailwind scales (L9a-Plan2)**: `lib/utils.ts` uses `extendTailwindMerge`
+  configured with every custom token scale. Plain twMerge misreads `text-body`/`text-caption`
+  as COLOURS and silently strips them. **Any new scale added to tailwind.config.ts MUST also be
+  added there** — `lib/utils.test.ts` is the guard. Also: dynamic class names (`shadow-${x}`)
+  are never emitted by Tailwind static extraction — use literal maps.
+- **Design-system boundaries (L9a-Plan2)**: `@radix-ui/*` imports only in `components/ui/**`
+  (ESLint, fire-tested); the `components/ui/**` ESLint override RESTATES the whole
+  no-restricted-imports rule minus Radix — editing one copy requires editing both. New ui
+  primitives must use CSS logical properties (ps-/pe-/ms-/me-/text-start…) — auto-enforced by
+  `components/ui/logical-properties.test.ts`.
 
 ## Deploy target (user-set)
 **Self-hosted at `almostgone.vn`** — a single long-running Node instance (NOT Vercel/serverless).
@@ -399,7 +426,9 @@ degrade to "not configured". `AZURE_SPEECH_KEY` present but **INVALID — Azure 
 `ADMIN_EMAILS="admin@almostgone.vn"` added 2026-07-14 (bootstrap admin exists locally).
 
 ## Verify commands
-`npx tsc --noEmit` · `npx vitest run` (**1229 unit / 162 files** @ 2026-07-18) · `npm run lint` ·
+`npx tsc --noEmit` · `npx vitest run` (**1293 unit / 174 files** @ 2026-07-18 post-L9a-Plan2;
+lint = exit 0 WITH 80 pre-existing warnings across 23 files — long-standing debt, "clean" means
+0 NEW) · `npm run lint` ·
 `npm run build` (~52s) · `npx playwright test` (2 e2e, ~37s; kill any stale node on :3000 first —
 reuseExistingServer picks it up) · `npx supabase db reset` (15 migrations).
 Known CPU-contention flakes (standalone-green): `pitch-contour.test.tsx`, `waveform.test.tsx`.
@@ -438,9 +467,8 @@ L3's deferred difficulty-cache); Supabase default grants give authenticated TRUN
 TRIGGER repo-wide (not exploitable via PostgREST, hardening candidate); badge iconUrl all null
 (SVG fallback in UI — real icons = content task); srs_due notification producer unwired (needs
 scheduler, pairs with push/email deliverer later); manual browser click-through of dashboard/bell/
-recommendations not done (unit+build coverage only). From L7: admin `components/admin/dialog.tsx`
-lacks a focus trap (Tab escapes the modal; matches repo popover precedent but WCAG 2.4.3 wants a
-trap); `stroke_order_svg` stored/rendered as raw SVG (fine while only admins write — needs
+recommendations not done (unit+build coverage only). From L7: ~~admin dialog focus trap~~ **REPAID in L9a-Plan2** (`components/admin/dialog.tsx` is
+now a thin wrapper over `components/ui/dialog.tsx`, Radix focus trap); `stroke_order_svg` stored/rendered as raw SVG (fine while only admins write — needs
 allowlist SVG sanitizer before less-trusted contributors); `users.email`/`created_at` still
 client-writable (hardening migration candidate); no 'rejected' video status (reject = hard delete,
 moderator reason logged not persisted) and no 'admin' transcript_source (admin-attached transcripts

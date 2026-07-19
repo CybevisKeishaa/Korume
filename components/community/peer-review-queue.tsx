@@ -119,7 +119,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
         )}
         <div aria-live="polite">
           {audio.status === "error" && (
-            <p role="alert" className="mt-1 text-xs text-danger">
+            <p role="alert" className="mt-1 text-xs text-danger-strong">
               {audio.message}
             </p>
           )}
@@ -127,7 +127,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
       </div>
 
       {share.alreadyReviewed ? (
-        <p className="mt-3 text-sm text-success">You&apos;ve already reviewed this recording.</p>
+        <p className="mt-3 text-sm text-success-strong">You&apos;ve already reviewed this recording.</p>
       ) : (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           <fieldset>
@@ -175,7 +175,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
             {reviewState.status === "submitting" ? "Submitting…" : "Submit review"}
           </Button>
           {reviewState.status === "error" && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-sm text-danger-strong">
               {reviewState.message}
             </p>
           )}
@@ -238,7 +238,7 @@ export function PeerReviewQueue({ initialPage, className }: PeerReviewQueueProps
 
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mt-2 text-sm text-danger">
+          <p role="alert" className="mt-2 text-sm text-danger-strong">
             {error}
           </p>
         )}

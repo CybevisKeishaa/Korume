@@ -27,18 +27,28 @@ const config: Config = {
         border: "hsl(var(--border) / <alpha-value>)",
         input: "hsl(var(--input) / <alpha-value>)",
         ring: "hsl(var(--ring) / <alpha-value>)",
-        // 朱色 — signature vermilion accent
+        // 朱色 — signature vermilion accent.
+        // `strong` = the legible-as-TEXT tone (see globals.css "text tones").
+        // Use `text-primary-strong` for words and icons, `bg-primary` for fills.
         primary: {
           DEFAULT: "hsl(var(--primary) / <alpha-value>)",
           foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
+          strong: "hsl(var(--primary-strong) / <alpha-value>)",
         },
         // 藍 — indigo secondary
         accent: {
           DEFAULT: "hsl(var(--accent) / <alpha-value>)",
           foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
+          strong: "hsl(var(--accent-strong) / <alpha-value>)",
         },
-        success: "hsl(var(--success) / <alpha-value>)",
-        danger: "hsl(var(--danger) / <alpha-value>)",
+        success: {
+          DEFAULT: "hsl(var(--success) / <alpha-value>)",
+          strong: "hsl(var(--success-strong) / <alpha-value>)",
+        },
+        danger: {
+          DEFAULT: "hsl(var(--danger) / <alpha-value>)",
+          strong: "hsl(var(--danger-strong) / <alpha-value>)",
+        },
         // Floating-panel surface (dialog/popover/select/toast) — semantic tier.
         overlay: "hsl(var(--surface-overlay) / <alpha-value>)",
         // Modal backdrop; use with alpha: bg-scrim/50.

@@ -60,7 +60,7 @@ export function PublicPlaylistList({ initialPage, className }: PublicPlaylistLis
 
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mt-2 text-sm text-danger">
+          <p role="alert" className="mt-2 text-sm text-danger-strong">
             {error}
           </p>
         )}

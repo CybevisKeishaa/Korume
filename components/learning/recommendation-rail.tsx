@@ -62,7 +62,7 @@ export function RecommendationRail({ recommendations }: RecommendationRailProps)
                     {rec.jlptLevelEstimate}
                   </span>
                 )}
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
                   {BAND_LABEL[rec.band]}
                 </span>
               </div>

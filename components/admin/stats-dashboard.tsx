@@ -68,7 +68,7 @@ export function StatsDashboard() {
 
   if (loadState.status === "error") {
     return (
-      <p role="alert" className="rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-danger">
+      <p role="alert" className="rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-danger-strong">
         {loadState.message}
       </p>
     );

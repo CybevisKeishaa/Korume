@@ -26,7 +26,7 @@ function SubmitButton({ label }: { label: string }) {
 function FieldError({ id, messages }: { id: string; messages?: string[] }) {
   if (!messages?.length) return null;
   return (
-    <p id={id} role="alert" className="text-sm text-danger">
+    <p id={id} role="alert" className="text-sm text-danger-strong">
       {messages[0]}
     </p>
   );
@@ -51,7 +51,7 @@ export function AuthForm({
         ) : null}
 
         {state.error ? (
-          <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger-strong">
             {state.error}
           </p>
         ) : null}
@@ -118,14 +118,14 @@ export function AuthForm({
         {isRegister ? (
           <>
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
+            <Link href="/login" className="font-medium text-primary-strong hover:underline">
               Sign in
             </Link>
           </>
         ) : (
           <>
             New here?{" "}
-            <Link href="/register" className="font-medium text-primary hover:underline">
+            <Link href="/register" className="font-medium text-primary-strong hover:underline">
               Create an account
             </Link>
           </>

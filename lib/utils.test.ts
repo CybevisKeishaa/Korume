@@ -34,6 +34,17 @@ describe("cn (tailwind-merge custom token config)", () => {
     expect(result).toContain("text-muted-foreground");
   });
 
+  it("keeps a custom font-size token alongside a -strong text tone", () => {
+    // The same misclassification hazard from the other direction: the semantic
+    // text tones (`text-primary-strong` etc.) are multi-segment names, and if
+    // tailwind-merge grouped them as font-size they would silently strip
+    // `text-caption` out of Badge — the exact corruption this config exists to
+    // prevent. Badge composes precisely these two classes.
+    const result = cn("text-caption font-medium", "bg-success/10 text-success-strong");
+    expect(result).toContain("text-caption");
+    expect(result).toContain("text-success-strong");
+  });
+
   it("resolves a real font-size conflict in favor of the later class", () => {
     const result = cn("text-sm", "text-body");
     expect(result).not.toContain("text-sm");

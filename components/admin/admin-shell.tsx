@@ -40,7 +40,7 @@ export function AdminShell({ userEmail, children }: { userEmail: string; childre
                 className={cn(
                   "block rounded-md px-3 py-2 text-sm font-medium",
                   isActive(pathname, item.href)
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-primary/10 text-primary-strong"
                     : "text-foreground hover:bg-muted",
                 )}
               >

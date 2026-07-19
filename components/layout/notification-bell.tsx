@@ -240,19 +240,19 @@ export function NotificationBell() {
               type="button"
               onClick={() => void markAll()}
               disabled={unreadCount === 0 || rateLimited}
-              className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-50"
+              className="rounded-md px-2 py-1 text-xs font-medium text-primary-strong hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-50"
             >
               Mark all as read
             </button>
           </div>
 
           {loadState.status === "error" && (
-            <p role="alert" className="mt-2 text-xs text-danger">
+            <p role="alert" className="mt-2 text-xs text-danger-strong">
               {loadState.message}
             </p>
           )}
           {mutateError && (
-            <p role="alert" className="mt-2 text-xs text-danger">
+            <p role="alert" className="mt-2 text-xs text-danger-strong">
               {mutateError}
             </p>
           )}
@@ -288,7 +288,7 @@ export function NotificationBell() {
                         </span>
                         <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                           <time dateTime={notification.createdAt}>{time}</time>
-                          {unread && <span className="font-medium text-primary">· Unread</span>}
+                          {unread && <span className="font-medium text-primary-strong">· Unread</span>}
                         </span>
                       </span>
                     </>

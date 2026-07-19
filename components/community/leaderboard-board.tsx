@@ -79,7 +79,7 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
                   <span className="w-6 text-right font-semibold text-muted-foreground">{entry.rank}</span>
                   <span className="font-medium">
                     {entry.name ?? "Deleted user"}
-                    {entry.isMe && <span className="ml-1 text-xs text-primary">(you)</span>}
+                    {entry.isMe && <span className="ml-1 text-xs text-primary-strong">(you)</span>}
                   </span>
                 </span>
                 <span className="font-semibold">{entry.weeklyXp} XP</span>

@@ -130,7 +130,7 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
               )}
               {field.helpText && <p className="mt-1 text-xs text-muted-foreground">{field.helpText}</p>}
               {fieldErrors[field.name] && (
-                <p role="alert" className="mt-1 text-xs text-danger">
+                <p role="alert" className="mt-1 text-xs text-danger-strong">
                   {fieldErrors[field.name]}
                 </p>
               )}
@@ -139,7 +139,7 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
         })}
 
         {formError && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-sm text-danger-strong">
             {formError}
           </p>
         )}

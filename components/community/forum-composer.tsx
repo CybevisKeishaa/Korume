@@ -121,11 +121,11 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
             {state.status === "submitting" ? "Posting…" : "Post"}
           </Button>
           <div aria-live="polite">
-            {state.status === "success" && <p className="text-sm text-success">Posted.</p>}
+            {state.status === "success" && <p className="text-sm text-success-strong">Posted.</p>}
           </div>
         </div>
         {state.status === "error" && (
-          <p role="alert" className="text-sm text-danger">
+          <p role="alert" className="text-sm text-danger-strong">
             {state.message}
           </p>
         )}

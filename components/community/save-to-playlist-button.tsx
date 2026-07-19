@@ -159,7 +159,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
         >
           {listState.status === "loading" && <p className="text-sm text-muted-foreground">Loading your playlists…</p>}
           {listState.status === "error" && (
-            <p role="alert" className="text-sm text-danger">
+            <p role="alert" className="text-sm text-danger-strong">
               {listState.message}
             </p>
           )}
@@ -206,7 +206,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
             </button>
           </form>
 
-          <p role={addState.status === "error" ? "alert" : "status"} aria-live="polite" className={cn("mt-1 text-xs", addState.status === "error" ? "text-danger" : "text-success")}>
+          <p role={addState.status === "error" ? "alert" : "status"} aria-live="polite" className={cn("mt-1 text-xs", addState.status === "error" ? "text-danger-strong" : "text-success-strong")}>
             {addState.status === "added" && "Added to playlist."}
             {addState.status === "error" && addState.message}
           </p>

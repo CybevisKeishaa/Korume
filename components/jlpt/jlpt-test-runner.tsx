@@ -216,13 +216,13 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
       </div>
 
       {confirmingSubmit && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-sm text-danger-strong">
           You have {unansweredCount} unanswered question{unansweredCount === 1 ? "" : "s"}. Click Submit again to
           submit anyway.
         </p>
       )}
       {submitError && (
-        <p role="alert" className="text-sm text-danger">
+        <p role="alert" className="text-sm text-danger-strong">
           {submitError}
         </p>
       )}

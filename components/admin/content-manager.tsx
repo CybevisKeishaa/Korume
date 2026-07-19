@@ -214,16 +214,16 @@ export function ContentManager({ type }: { type: ContentType }) {
               {importBusy ? "Uploading…" : "Upload"}
             </Button>
             {importError && (
-              <p role="alert" className="text-sm text-danger">
+              <p role="alert" className="text-sm text-danger-strong">
                 {importError}
               </p>
             )}
           </div>
           {importResult && (
             <div className="mt-3 text-sm">
-              <p className="font-medium text-primary">{importResult.inserted} inserted</p>
+              <p className="font-medium text-primary-strong">{importResult.inserted} inserted</p>
               {importResult.failed.length > 0 && (
-                <ul className="mt-1 space-y-1 text-danger">
+                <ul className="mt-1 space-y-1 text-danger-strong">
                   {importResult.failed.map((f) => (
                     <li key={f.row}>
                       Row {f.row}: {f.errors.join(", ")}
@@ -237,7 +237,7 @@ export function ContentManager({ type }: { type: ContentType }) {
       )}
 
       {loadState.status === "error" ? (
-        <p role="alert" className="rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-danger">
+        <p role="alert" className="rounded-md border border-danger/40 bg-danger/5 p-4 text-sm text-danger-strong">
           {loadState.message}
         </p>
       ) : loadState.status === "loading" && items.length === 0 ? (
@@ -290,7 +290,7 @@ export function ContentManager({ type }: { type: ContentType }) {
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="border-danger text-danger hover:bg-danger/10"
+                          className="border-danger text-danger-strong hover:bg-danger/10"
                           aria-label={`Delete ${label}`}
                           onClick={() => setDeleteTarget(item)}
                         >
