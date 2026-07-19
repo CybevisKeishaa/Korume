@@ -1,3 +1,20 @@
 {
-  "appName": "Nihongo Cinema"
+  "appName": "Nihongo Cinema",
+  "appNameJp": "日本語シネマ",
+  "auth": { "signIn": "Đăng nhập", "signOut": "Đăng xuất", "signUp": "Tạo tài khoản" },
+  "actions": {
+    "save": "Lưu",
+    "cancel": "Huỷ",
+    "delete": "Xoá",
+    "close": "Đóng",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "retry": "Thử lại"
+  },
+  "states": {
+    "loading": "Đang tải…",
+    "error": "Đã có lỗi xảy ra.",
+    "empty": "Chưa có gì ở đây."
+  },
+  "a11y": { "closeDialog": "Đóng hộp thoại", "dismissNotification": "Bỏ qua thông báo" }
 }

@@ -1,3 +1,16 @@
 {
-  "dashboard": "Dashboard"
+  "ariaLabel": "Main",
+  "dashboard": "Dashboard",
+  "kanji": "Kanji",
+  "vocab": "Vocab",
+  "grammar": "Grammar",
+  "videos": "Videos",
+  "mining": "Mining",
+  "reading": "Reading",
+  "conversation": "Conversation",
+  "jlpt": "JLPT",
+  "community": "Community",
+  "playlists": "Playlists",
+  "leaderboard": "Leaderboard",
+  "profile": "Profile"
 }

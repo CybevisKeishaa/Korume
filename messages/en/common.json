@@ -1,3 +1,20 @@
 {
-  "appName": "Nihongo Cinema"
+  "appName": "Nihongo Cinema",
+  "appNameJp": "日本語シネマ",
+  "auth": { "signIn": "Sign in", "signOut": "Sign out", "signUp": "Create account" },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "retry": "Try again"
+  },
+  "states": {
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "empty": "Nothing here yet."
+  },
+  "a11y": { "closeDialog": "Close dialog", "dismissNotification": "Dismiss notification" }
 }

@@ -1,3 +1,16 @@
 {
-  "dashboard": "Bảng điều khiển"
+  "ariaLabel": "Chính",
+  "dashboard": "Bảng điều khiển",
+  "kanji": "Kanji",
+  "vocab": "Từ vựng",
+  "grammar": "Ngữ pháp",
+  "videos": "Video",
+  "mining": "Thu thập câu",
+  "reading": "Đọc hiểu",
+  "conversation": "Hội thoại",
+  "jlpt": "JLPT",
+  "community": "Cộng đồng",
+  "playlists": "Danh sách phát",
+  "leaderboard": "Bảng xếp hạng",
+  "profile": "Hồ sơ"
 }
