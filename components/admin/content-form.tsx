@@ -9,6 +9,7 @@ import { Dialog } from "./dialog";
 import { buildContentPayload, ContentPayloadError } from "./content-payload";
 import { CONTENT_FIELDS, CONTENT_TYPE_LABELS, type ContentFieldConfig } from "./content-fields";
 import type { ContentRow, ContentType } from "@/lib/admin-ui-types";
+import { useTranslations } from "@/lib/i18n";
 
 export interface ContentFormProps {
   type: ContentType;
@@ -48,6 +49,10 @@ function initialValues(fields: ContentFieldConfig[], item: ContentRow | undefine
  * editor is a reasonable follow-up but out of scope here.
  */
 export function ContentForm({ type, mode, initialItem, knownFields, onCancel, onSubmit }: ContentFormProps) {
+  // Translates only the ui Dialog's closeLabel (P4) — the rest of this form's
+  // copy is still hardcoded English, extracted to the `admin` namespace by a
+  // later task (spec §7 plan, Task 17).
+  const tCommon = useTranslations("common");
   const fields = CONTENT_FIELDS[type];
   const [values, setValues] = useState<Record<string, string>>(() => initialValues(fields, initialItem));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -85,7 +90,7 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
   const title = mode === "create" ? `Add ${CONTENT_TYPE_LABELS[type]}` : `Edit ${CONTENT_TYPE_LABELS[type]}`;
 
   return (
-    <Dialog open title={title} onClose={onCancel}>
+    <Dialog open title={title} onClose={onCancel} closeLabel={tCommon("a11y.closeDialog")}>
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
         {fields.map((field) => {
           const inputId = `${formId}-${field.name}`;

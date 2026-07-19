@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useTranslations } from "@/lib/i18n";
 
 function Demo({ name, children }: { name: string; children: React.ReactNode }) {
   return (
@@ -24,6 +25,10 @@ export function PrimitiveSections() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [level, setLevel] = useState<string | undefined>();
   const { toast } = useToast();
+  // Translates only the ui Dialog's closeLabel (P4) — the demo's own copy
+  // ("Open dialog", "Example dialog", ...) stays hardcoded English, in scope
+  // for a later task (spec §7 plan, Task 17).
+  const tCommon = useTranslations("common");
 
   return (
     <section aria-labelledby="sg-primitives">
@@ -69,6 +74,7 @@ export function PrimitiveSections() {
             onClose={() => setDialogOpen(false)}
             title="Example dialog"
             description="Focus is trapped; Escape and backdrop close it."
+            closeLabel={tCommon("a11y.closeDialog")}
           >
             <Button onClick={() => setDialogOpen(false)}>Done</Button>
           </Dialog>

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Inter, Noto_Sans_JP } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import {
   ThemeProvider,
   themeInitScript,
@@ -53,6 +53,12 @@ export default async function LocaleLayout({
   // no error, just slower (spec §7 risk 2).
   setRequestLocale(locale);
 
+  // Foundation wiring for the ui/toast primitive's dismissLabel prop (P4):
+  // the primitive itself must not call useTranslations (design-system vs.
+  // localization independence, spec §4.5), so the translated label is
+  // resolved here, server-side, and passed down.
+  const t = await getTranslations("common");
+
   // Ships the whole catalog to the client. Deliberate for now: 65 client
   // components make per-namespace splitting a real design question, and
   // optimising before measuring would complicate the architecture. Filed as a
@@ -67,7 +73,9 @@ export default async function LocaleLayout({
       <body className={`${inter.variable} ${notoJp.variable} font-sans`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider dismissLabel={t("a11y.dismissNotification")}>
+              {children}
+            </ToastProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

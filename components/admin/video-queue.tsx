@@ -7,6 +7,7 @@ import { ConfirmDialog } from "./confirm-dialog";
 import { Dialog } from "./dialog";
 import { Textarea } from "./textarea";
 import type { ApiErrorBody, PendingVideoListItem, PendingVideosPage } from "@/lib/admin-ui-types";
+import { useTranslations } from "@/lib/i18n";
 
 const LIST_URL = "/api/admin/videos/pending";
 
@@ -51,6 +52,12 @@ async function readErrorMessage(res: Response, fallback: string): Promise<string
  * status) — the confirm dialog says so explicitly per this task's brief.
  */
 export function VideoQueue() {
+  // Translates only the ui Dialog's closeLabel (P4) for the "Attach
+  // transcript" dialog below — the rest of this component's copy is still
+  // hardcoded English, extracted to the `admin` namespace by a later task
+  // (spec §7 plan, Task 17). The reject dialog uses <ConfirmDialog>, which
+  // translates its own closeLabel internally.
+  const tCommon = useTranslations("common");
   const [items, setItems] = useState<PendingVideoListItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadState, setLoadState] = useState<LoadState>({ status: "idle" });
@@ -320,7 +327,12 @@ export function VideoQueue() {
       </ConfirmDialog>
 
       {transcriptDialog && (
-        <Dialog open title="Attach transcript" onClose={() => setTranscriptDialog(null)}>
+        <Dialog
+          open
+          title="Attach transcript"
+          onClose={() => setTranscriptDialog(null)}
+          closeLabel={tCommon("a11y.closeDialog")}
+        >
           <div className="space-y-3">
             <div>
               <Label htmlFor="transcript-format">Format</Label>

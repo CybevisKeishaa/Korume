@@ -11,6 +11,10 @@ export interface DialogProps {
   /** Element to focus when the dialog opens; defaults to the built-in close
    * (×) button. */
   initialFocusRef?: React.RefObject<HTMLElement>;
+  /** Accessible label for the × button, forwarded to the ui Dialog verbatim.
+   * Callers pass translated copy (P4); the ui Dialog's English default is
+   * the last-resort fallback. */
+  closeLabel?: string;
 }
 
 /**

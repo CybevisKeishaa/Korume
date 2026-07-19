@@ -67,4 +67,29 @@ describe("Toast", () => {
     expect(() => render(<Demo />)).toThrow(/ToastProvider/);
     spy.mockRestore();
   });
+
+  it("falls back to the English default dismiss label when dismissLabel is omitted", async () => {
+    const user = userEvent.setup();
+    render(
+      <ToastProvider>
+        <Demo />
+      </ToastProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: "save" }));
+    await screen.findByText("Card saved");
+    expect(screen.getByRole("button", { name: "Dismiss notification" })).toBeInTheDocument();
+  });
+
+  it("honours a passed dismissLabel as the dismiss control's accessible name", async () => {
+    const user = userEvent.setup();
+    render(
+      <ToastProvider dismissLabel="Bỏ qua thông báo">
+        <Demo />
+      </ToastProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: "save" }));
+    await screen.findByText("Card saved");
+    expect(screen.getByRole("button", { name: "Bỏ qua thông báo" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Dismiss notification" })).not.toBeInTheDocument();
+  });
 });

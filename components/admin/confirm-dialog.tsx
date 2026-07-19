@@ -2,6 +2,7 @@
 
 import { Dialog } from "./dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -36,8 +37,14 @@ export function ConfirmDialog({
   onCancel,
   children,
 }: ConfirmDialogProps) {
+  // This is a thin, client-side wrapper over the ui Dialog primitive, so it
+  // translates its own closeLabel directly rather than asking every caller to
+  // thread one through (P4) — the primitive still keeps its own English
+  // fallback for any caller that renders <Dialog> without one.
+  const t = useTranslations("common");
+
   return (
-    <Dialog open={open} title={title} onClose={onCancel}>
+    <Dialog open={open} title={title} onClose={onCancel} closeLabel={t("a11y.closeDialog")}>
       <p className="text-sm text-muted-foreground">{description}</p>
       {children}
       {error && (
