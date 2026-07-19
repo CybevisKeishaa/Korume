@@ -695,6 +695,20 @@ export async function GET(request: Request) {
 
 One error string must NOT be translated: `return { error: error.message }` in `register()` is Supabase's own message. Leave it — translating third-party error text is out of scope and would require mapping their error codes. Record it as a known gap.
 
+**Zod validation messages are in scope — the original plan missed them** (found in Task 4's review, 2026-07-20). `lib/validation/auth.ts` holds `"Enter a valid email address."`, `"Password is required."`, `"Name is required."`, `"Password must be at least 8 characters."`, `"Password is too long."`, and `components/auth/auth-form.tsx`'s `FieldError` renders them verbatim inside a `role="alert"`. They are user-visible copy; leaving them English ships an untranslated form.
+
+`loginSchema` and `registerSchema` are consumed by **`app/[locale]/(auth)/actions.ts` and nothing else** (verified) — no API route uses them — so the fix stays contained. Put catalog **keys** in the schema rather than English prose, and resolve them where the action builds `fieldErrors`, which already has the request locale:
+
+```ts
+// lib/validation/auth.ts — keys, not copy. The schema stays locale-free and
+// pure; the action owns turning a key into words.
+email: z.string().trim().email("validation.emailInvalid"),
+```
+
+The schema must NOT import `@/lib/i18n` — staying locale-free is what keeps it usable from any context. Put the strings under `auth.validation.*` in both catalogs.
+
+**The other `lib/validation/*.ts` files are NOT in scope**: their messages travel to API routes as JSON error bodies, not into rendered copy. If Task 19's sweep finds a UI rendering an API error message verbatim, record it as a gap rather than fixing it here.
+
 - [ ] Follow Task 2's nine steps, with the callback fix folded into the same task.
 - [ ] Extra step before committing: **write the e2e round-trip test** (carried follow-up). Add to `tests/e2e/` a spec that registers a user, lands on `/en/dashboard`, signs out, signs back in via the form, and asserts the URL is `/en/dashboard` — proving the locale survives the full login round trip and `actions.ts`'s strip/re-add logic does not double-prefix. Run `npx playwright test` and paste the output.
 - [ ] Commit: `feat(i18n): extract auth namespace; fix unprefixed callback error redirect`.
