@@ -700,13 +700,19 @@ One error string must NOT be translated: `return { error: error.message }` in `r
 
 **Module notes:**
 
-**The copy defect (spec §9.1).** The landing page CTA reads "Start free trial" and the header reads "Start free". **The business model has no trial** (`docs/product/business-model.md`; conversion is Contextual Discovery, single tier 49k/490k, Founding 39k). Translating that into Vietnamese would ship a falsehood in two languages. This is the **only** authorized EN copy change in this plan.
+**The copy defect (spec §9.1).** **The business model has no trial** (`docs/product/business-model.md`; conversion is Contextual Discovery, single tier 49k/490k, Founding 39k). Translating that into Vietnamese would ship a falsehood in two languages. This is the **only** authorized EN copy change in this plan.
 
-New copy:
-- Landing hero CTA: **"Get started free"** → VN **"Bắt đầu miễn phí"**
-- Header CTA: **"Get started"** → VN **"Bắt đầu"**
+There are **three** instances, not the one the spec mentions. The third was found during the 2026-07-19 style-guide browser pass and is the worst of them — a grep for `"free trial"` does not catch it:
 
-Both are true: the product genuinely has a free tier (value-based Free/Premium — computed-from-your-data is free), and neither implies a time-limited trial.
+| File | Current copy | New copy | VN |
+|---|---|---|---|
+| `app/[locale]/(marketing)/page.tsx:21` | "Start free trial" | "Get started free" | "Bắt đầu miễn phí" |
+| `components/layout/site-header.tsx:22` | "Start free" | "Get started" | "Bắt đầu" |
+| `app/[locale]/(auth)/register/page.tsx:9` | **"Start your 7-day trial"** | "Create your account" | "Tạo tài khoản của bạn" |
+
+The register page also carries the subtitle "No card required." — that one is **true** and stays (translate it normally; it belongs to the `auth` namespace, Task 4, not here).
+
+The replacements are all true: the product genuinely has a free tier (value-based Free/Premium — computed-from-your-data is free), and none implies a time-limited trial. Search `grep -rn "trial\|7-day" --include=*.tsx app components` and confirm zero non-test hits before closing this task.
 
 `tests/e2e/home.spec.ts` asserts `name: /start free trial/i` and **will go red** — that is correct and expected. Update it to `/get started free/i` in the same commit. This is the one place a red test is not a bug.
 

@@ -30,32 +30,29 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-18, after L9a Plan 2 MERGE)
-**L9a Plan 2 (design system) = ✅ MERGED to master (`fcd35af` --no-ff, user chose merge-now;
-local branch deleted). Post-merge verify: tsc 0 · 1293/1293 (174 files). Gates: lint exit 0
-(80 pre-existing warnings, 0 new) · build OK · e2e 2/2.**
-**STILL OWED (user chose merge before doing it): the manual browser pass at
-`/vi/admin/style-guide`** — checklist in `mem:l9a_localization_run_state` Plan-2 block: badge
-AA contrast both themes (reviewer suspects tinted variants near/below 4.5:1 — if fail, darken
-text tones ON MASTER), 3 distinct elevations, text sizes, focus trap, theme/reduce-motion/
-locale controls. Do this pass early next session.
-**→ Then: write Plan 3 (string extraction + VN) with `superpowers:writing-plans` off the same
-spec.** NOTE: remote has STALE refs `origin/layer-9a-design-system` AND
+## ▶ NEXT ACTION (updated 2026-07-20)
+**Style-guide manual pass = ✅ DONE (the debt Plan 2 left). Plan 3 = ✅ WRITTEN, NOT executed.**
+Three commits on master: `66ea4b7` (Plan 3 doc), `b4b4fcb` (contrast fix), `300ee94` (style-guide
+palette + enforcement). Gates: tsc 0 · **1305/1305 (175 files)** · lint 80 pre-existing warnings,
+0 new · build ✓.
+**→ NEXT: execute Plan 3** — `docs/superpowers/plans/2026-07-19-l9a-string-extraction-vietnamese.md`
+(19 tasks), via `superpowers:subagent-driven-development`. Branch off master as
+`layer-9a-string-extraction` per branching policy. **Task 1 first and non-negotiable**:
+`test/render.tsx` must serve the real EN catalogs or every later task breaks its own tests.
+**Full findings from the style-guide pass — READ `mem:l9a_localization_run_state` before touching
+colour tokens.** Headlines: a NEW `--*-strong` text-tone tier now exists (brand `--primary`
+deliberately UNCHANGED); 93 sites migrated `text-X` → `text-X-strong`; pitch-contour/waveform
+deliberately excluded (their `text-primary` is a CANVAS colour, not text — do not "finish" that
+migration); dark-theme elevation measured at 1.005:1 between levels = shadows convey nothing on
+ink-950, deferred to L9c as a design fix.
+NOTE: remote still has STALE refs `origin/layer-9a-design-system` AND
 `origin/layer-9a-localization-architecture` — prune both when pushing (never push unasked).
-CRITICAL new gotcha (load-bearing): `lib/utils.ts` cn() = `extendTailwindMerge` configured with
-every custom token scale — plain twMerge silently STRIPS text-body/text-caption; any new
-Tailwind scale must be added there too (`lib/utils.test.ts` guards).
-MUST-DO khi viết các plan đó (đã cam kết trong final review — đừng bỏ sót):
-- **Plan 2, task ĐẦU TIÊN**: automated test cho top-level `middleware()` composition (mock
-  updateSession → Set-Cookie carried onto intl response + 3xx short-circuits before intl). Chỗ duy
-  nhất một refactor có thể lặng lẽ mở lại auth-cookie bug đã đo được.
-- **Plan 3**: re-prefix `app/auth/callback/route.ts` error branch (bare `/login?error=auth`);
-  OAuth + login-round-trip e2e; fix copy "Start free trial" (business model không có trial —
-  đừng dịch điều sai sang VN); move Companion template titles ("giai đoạn 2" P12 violation) vào i18n.
-- Đọc `mem:l9a_localization_run_state` TRƯỚC: load-bearing constructs (không được "dọn"), reuse
-  patterns (redirect `{href,locale}` + getLocale; `@/test/render`; 3-nơi-khi-thêm-namespace),
-  baseline để so (unit 1229/162 · build 52s · e2e 37s).
-- Đọc `mem:feature_backlog_deferred` khi plan (user mandate — item #10 đang dở).
+Local dev: `admin@almostgone.vn` / `styleguide-local-dev-2026` now exists as the bootstrap admin;
+creating it signed the user's own `shamt2004@gmail.com` dev session out (just log back in).
+CRITICAL gotcha (unchanged, load-bearing): `lib/utils.ts` cn() = `extendTailwindMerge` configured
+with every custom token scale — plain twMerge silently STRIPS text-body/text-caption; any new
+Tailwind scale must be added there too (`lib/utils.test.ts` guards, now also covering the
+`-strong` tones from the opposite direction).
 Sau L9a xong cả 3 plan → L9b surfaces (Companion Plans 2/3 + feature UIs + landing + transcript-
 submit UI + GDPR delete) → L8 PayOS → L9c polish/perf.
 
