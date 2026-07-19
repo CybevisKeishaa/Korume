@@ -14,6 +14,50 @@ export interface AuthState {
   fieldErrors?: Record<string, string[] | undefined>;
 }
 
+type AuthTranslator = Awaited<ReturnType<typeof getTranslations<"auth">>>;
+
+/**
+ * `loginSchema`/`registerSchema` (lib/validation/auth.ts) are locale-free —
+ * their `.email()`/`.min()`/`.max()` messages are `auth.validation.*` catalog
+ * KEYS, not display text, so the schema can be reused from any context. By
+ * the time a key reaches here it has already been widened to a plain
+ * `string` (`ZodIssue.message`'s type), so it can't be handed to `t()`
+ * directly — `t` only accepts the literal union of known keys. Matching on a
+ * hardcoded literal per `case` (rather than casting `key` into the narrow
+ * type) is what keeps this exhaustive-by-construction: adding a new
+ * `validation.*` key without a case here falls through to `default` and
+ * leaks the raw key, which is a visible bug, not a silent one.
+ */
+function translateValidationKey(key: string, t: AuthTranslator): string {
+  switch (key) {
+    case "validation.emailInvalid":
+      return t("validation.emailInvalid");
+    case "validation.passwordRequired":
+      return t("validation.passwordRequired");
+    case "validation.nameRequired":
+      return t("validation.nameRequired");
+    case "validation.passwordTooShort":
+      return t("validation.passwordTooShort");
+    case "validation.passwordTooLong":
+      return t("validation.passwordTooLong");
+    default:
+      return key;
+  }
+}
+
+/** Resolves every zod-emitted catalog key in a `flatten().fieldErrors` map to display text. */
+function translateFieldErrors(
+  fieldErrors: Record<string, string[] | undefined>,
+  t: AuthTranslator,
+): Record<string, string[] | undefined> {
+  return Object.fromEntries(
+    Object.entries(fieldErrors).map(([field, keys]) => [
+      field,
+      keys?.map((key) => translateValidationKey(key, t)),
+    ]),
+  );
+}
+
 export async function login(
   _prev: AuthState,
   formData: FormData,
@@ -23,7 +67,10 @@ export async function login(
     password: formData.get("password"),
   });
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    const t = await getTranslations("auth");
+    return {
+      fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t),
+    };
   }
 
   const supabase = createClient();
@@ -60,7 +107,10 @@ export async function register(
     password: formData.get("password"),
   });
   if (!parsed.success) {
-    return { fieldErrors: parsed.error.flatten().fieldErrors };
+    const t = await getTranslations("auth");
+    return {
+      fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t),
+    };
   }
 
   const supabase = createClient();

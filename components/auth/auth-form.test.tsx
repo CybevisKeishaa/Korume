@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/test/render";
 import { AuthForm } from "./auth-form";
+import type { FormStatus } from "react-dom";
 
 // AuthForm wires its <form action={...}> straight to the server actions
 // module. Importing the real module here would pull in next/headers,
@@ -14,13 +15,37 @@ vi.mock("@/app/[locale]/(auth)/actions", () => ({
   signInWithGoogle: vi.fn(),
 }));
 
+// Overridable per test via `mockUseFormStatus.mockReturnValue(...)` (see the
+// "pending state" describe below, which sets it to a FormStatusPending value
+// for the duration of one test and resets it in `afterEach`). `vi.mock` calls
+// are hoisted above every other statement in the file, so the factory below
+// can only safely reference this if the variable itself is created through
+// `vi.hoisted` — a plain top-level `const` (even "mock"-prefixed) is still in
+// its temporal dead zone at that point and throws "Cannot access before
+// initialization".
+const { mockUseFormStatus } = vi.hoisted(() => ({
+  mockUseFormStatus: vi.fn<() => FormStatus>(() => ({
+    pending: false,
+    data: null,
+    method: null,
+    action: null,
+  })),
+}));
+
 // Next.js aliases "react-dom" to its own canary build (the one that ships
 // useFormState/useFormStatus) at webpack build time. Vitest runs on Vite and
 // resolves the plain react-dom@18.3.1 from node_modules, which has neither —
 // so any render of AuthForm throws "useFormState is not a function" without
 // this shim. Scoped to this file only: it stands in for the two hooks with
-// enough behavior for a static-render pinning test (no reactive
-// pending/error state is asserted here).
+// enough behavior for a static-render pinning test.
+//
+// This shim is a new pattern in the repo (later tasks may copy it for other
+// server-action forms) — one side effect to know about: because the real
+// `useFormState` never runs, `<form action={formAction}>` receives a plain
+// no-op function instead of the special hybrid React attaches for actions,
+// so React logs an expected `Warning: Invalid value for prop \`action\` on
+// <form> tag` for every render in this file. It's harmless test noise, not a
+// regression — don't go debugging it.
 vi.mock("react-dom", async () => {
   const actual = await vi.importActual<typeof import("react-dom")>("react-dom");
   return {
@@ -30,7 +55,7 @@ vi.mock("react-dom", async () => {
       const noopFormAction = () => undefined;
       return [state, noopFormAction, false] as const;
     },
-    useFormStatus: () => ({ pending: false }),
+    useFormStatus: mockUseFormStatus,
   };
 });
 
@@ -84,6 +109,35 @@ describe("AuthForm", () => {
       expect(
         screen.getByRole("link", { name: "Sign in" }),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe("pending state", () => {
+    afterEach(() => {
+      mockUseFormStatus.mockReturnValue({
+        pending: false,
+        data: null,
+        method: null,
+        action: null,
+      });
+    });
+
+    it("swaps the submit button's accessible name to the pending label while a submission is in flight", () => {
+      mockUseFormStatus.mockReturnValue({
+        pending: true,
+        data: new FormData(),
+        method: "post",
+        action: "",
+      });
+
+      render(<AuthForm mode="login" />);
+
+      expect(
+        screen.getByRole("button", { name: "Please wait…" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Sign in" }),
+      ).not.toBeInTheDocument();
     });
   });
 });
