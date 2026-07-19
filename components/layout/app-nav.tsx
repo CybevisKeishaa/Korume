@@ -8,7 +8,7 @@ import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
 /** href → nav catalog key. Keys, not labels: the words live in messages/. */
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
   { href: "/dashboard", key: "dashboard" },
   { href: "/kanji", key: "kanji" },
   { href: "/vocab", key: "vocab" },

@@ -4,8 +4,8 @@
   "auth": { "signIn": "Đăng nhập", "signOut": "Đăng xuất", "signUp": "Tạo tài khoản" },
   "actions": {
     "save": "Lưu",
-    "cancel": "Huỷ",
-    "delete": "Xoá",
+    "cancel": "Hủy",
+    "delete": "Xóa",
     "close": "Đóng",
     "back": "Quay lại",
     "next": "Tiếp theo",
