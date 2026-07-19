@@ -9,13 +9,20 @@ const PRIMITIVE_COLORS = [
   "--washi-50", "--washi-100", "--white", "--sumi-900",
   "--neutral-100", "--neutral-300", "--neutral-400", "--neutral-600",
   "--ink-700", "--ink-800", "--ink-900", "--ink-950",
-  "--vermilion-400", "--vermilion-500", "--indigo-300", "--indigo-600",
-  "--green-400", "--green-600", "--red-400", "--red-600",
+  "--vermilion-300", "--vermilion-400", "--vermilion-500", "--vermilion-700",
+  "--indigo-300", "--indigo-600",
+  "--green-400", "--green-600", "--green-700",
+  "--red-300", "--red-400", "--red-600", "--red-700",
 ];
 
 const SEMANTIC_COLORS = [
-  "--background", "--foreground", "--card", "--muted", "--muted-foreground",
-  "--border", "--primary", "--accent", "--success", "--danger",
+  "--background", "--foreground", "--card", "--card-foreground",
+  "--muted", "--muted-foreground", "--border", "--input", "--ring",
+  "--primary", "--primary-foreground", "--accent", "--accent-foreground",
+  "--success", "--danger",
+  // Text tones: the same hue tuned for legibility as TEXT rather than as a
+  // fill (see globals.css). Features use these for words and icons.
+  "--primary-strong", "--accent-strong", "--success-strong", "--danger-strong",
   "--surface-overlay", "--scrim",
 ];
 

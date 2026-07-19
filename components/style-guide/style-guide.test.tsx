@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -52,6 +54,35 @@ describe("StyleGuide", () => {
       screen.getAllByText(/Học tiếng Nhật qua phim/).length,
     ).toBeGreaterThan(0);
     expect(screen.getByText(/映画で日本語を学ぶ/)).toBeInTheDocument();
+  });
+
+  it("lists every colour token defined in globals.css", () => {
+    // token-sections.tsx claims "a token added to globals.css without being
+    // listed here shows up in review". That was only a comment, and it did
+    // silently drift when the -strong text tones landed. This makes the claim
+    // real: the executable spec (D9) cannot under-report the palette.
+    const css = readFileSync(
+      path.join(process.cwd(), "app/globals.css"),
+      "utf8",
+    );
+    // Colour tokens only: `H S% L%` triples (primitives) and var() aliases of
+    // them (semantics). Excludes spacing/type/elevation/motion/z, which the
+    // other sections own.
+    const colourTokens = new Set<string>();
+    for (const [, name] of css.matchAll(
+      /(--[a-z0-9-]+):\s*\d+(?:\.\d+)?\s+\d+(?:\.\d+)?%\s+\d+(?:\.\d+)?%/g,
+    )) {
+      if (name) colourTokens.add(name);
+    }
+    for (const [, name] of css.matchAll(/(--[a-z0-9-]+):\s*var\(--[a-z0-9-]+\)/g)) {
+      if (name) colourTokens.add(name);
+    }
+
+    renderGuide();
+    const missing = [...colourTokens].filter(
+      (token) => screen.queryAllByText(token).length === 0,
+    );
+    expect(missing, "colour tokens missing from the style guide").toEqual([]);
   });
 
   it("demos every primitive", () => {
