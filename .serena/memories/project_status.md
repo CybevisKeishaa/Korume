@@ -30,18 +30,33 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-21) — L9a Plan 3 executing, Tasks 1-5 done, Task 6 next
+## ▶ NEXT ACTION (updated 2026-07-21) — L9a Plan 3 executing, Tasks 1-8 + 6b done, Task 9 next
 **L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tasks 1-5 done + reviewed clean + committed
-(HEAD `462806e`). Working tree clean. NEXT = Task 6 (`dashboard` namespace), then Tasks 7-19.**
-The 2026-07-20 pause is RESOLVED: the uncommitted Task 5 draft was verified in place and kept
-(commit `6fa0c7a` + review nits `462806e`), not discarded.
-**Before resuming, read `mem:l9a_localization_run_state` "▶ Plan 3 EXECUTION IN PROGRESS" first** —
-it holds the 9 hard-won patterns (incl. two Criticals) Tasks 6-19 must keep following, the
-ThemeToggle a11y backlog item that NO task owns, and two debugging gotchas (Docker-off looks like
-an e2e regression; running vitest and playwright concurrently reproduces the waveform flake).
-Then the SDD ledger `.superpowers/sdd/progress.md`. Branch is NOT merged to master yet. Old superseded NEXT-ACTION detail below is still accurate for
-everything EXCEPT that Plan 3 is no longer "not executed":
+via `superpowers:subagent-driven-development`. **Tasks 1-8 plus an inserted Task 6b are done,
+reviewed clean and committed. HEAD `7790219`. Working tree clean. NOT pushed, NOT merged to master.
+NEXT = Task 9 (`grammar`), then Tasks 10-19 + a metadata sweep task.**
+Namespaces extracted so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`.
+The 2026-07-20 pause is long resolved (the Task 5 draft was verified in place and kept).
+**Before resuming, read `mem:l9a_localization_run_state` "▶ Plan 3 EXECUTION IN PROGRESS" FIRST** —
+it holds the patterns Tasks 9-19 must follow (two were Critical review findings), the three things
+Tasks 6/6b/7/8 settled, the review lesson about mutation-testing pins, the backlog items no task
+owns, and the debugging gotchas. Then the SDD ledger `.superpowers/sdd/progress.md` (gitignored;
+reconstruct from `git log` if lost), which carries the per-task detail and the carry-forward defects.
+
+**Cadence that is working (keep it):** one fresh implementer subagent per task (sonnet) → an
+independent code-review (opus) → one fix wave → controller marks complete. Every task so far needed
+exactly one fix wave and every finding was a real defect, not polish. The reviews have been worth
+more than the implementations: the three highest-value catches of the run all came from reviewers
+and all were invisible to a green test suite (ICU `#` silently reformatting 1234 → "1,234"; no
+Vietnamese message ever being ICU-parsed in CI; raw `Error.message` reaching the DOM and making the
+translated error string unreachable).
+
+**Two ROADMAP additions decided during execution:**
+1. **Task 6b (inserted, done)** — `lib/i18n/catalog.test.ts` now parses every message in every
+   locale as a real ICU AST instead of matching regexes.
+2. **A metadata sweep task (not yet written)** — 25 pages carry `export const metadata` in English;
+   the user chose one dedicated task near the end over doing it piecemeal. **Module tasks LEAVE
+   metadata in English.**
 
 ## ▶ (superseded) NEXT ACTION (2026-07-20, before execution began)
 **Style-guide manual pass = ✅ DONE (the debt Plan 2 left). Plan 3 = ✅ WRITTEN, NOT executed.**

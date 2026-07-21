@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ✅ WRITTEN, not executed
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-8 + 6b done, 9-19 remain)
 
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
@@ -63,7 +63,7 @@ CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
 ## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-8 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 9-19 remain
 
-**HEAD `8746dc5`. Next = Task 9 (`grammar`), which consumes `common.actions.review`,
+**HEAD `7790219`. Next = Task 9 (`grammar`), which consumes `common.actions.review`,
 `common.filters.all` and `common.a11y.levelFilter` — all now exist.**
 
 **REVIEW LESSON worth more than any single fix (Task 8):** the reviewer stopped arguing and ran a
@@ -103,7 +103,7 @@ master @ `e5893e9`. Durable ledger: `.superpowers/sdd/progress.md` (gitignored s
 gone, reconstruct from `git log` + this block). Each task = fresh implementer subagent +
 independent code-review + fix loop; only merged after review clean.
 
-**Tasks 1-5 DONE, reviewed clean, committed** (HEAD = `462806e`):
+**Tasks 1-8 + 6b DONE, each reviewed clean, all committed** (branch HEAD = `7790219`):
 - Task 1 (`b52a0d2`): test/render.tsx now serves the REAL EN catalogs via import.meta.glob (needs
   `/// <reference types="vite/client" />`). THE LINCHPIN — without it every t() call renders the
   key and breaks the module's own tests.
@@ -128,6 +128,29 @@ independent code-review + fix loop; only merged after review clean.
   (`app/[locale]/layout.tsx:52` still calls `setRequestLocale`). **Consequence for Tasks 6-19: a
   server component's strings can only be pinned in Playwright, so that surface is invisible to
   `npx vitest run`. Accept the trade; do NOT "fix" it by adding "use client".**
+- Task 6 (`86d9ecc` + fixes `cfb1e48`): `dashboard`. Review caught that the ICU plural — the one
+  piece of rewritten logic in the diff — had only a loose regex test, and that ICU `#` reformats
+  1234 as "1,234" (byte-identity break; now `{count}` everywhere). `messages/en/dashboard.pin.test.ts`
+  established the pin pattern for strings that live only in an async Server Component: the catalog
+  is the SUBJECT, expectations are LITERALS.
+- Task 6b (`b3b1dbc`..`b9a0d16`, INSERTED, 3 rounds): `lib/i18n/catalog.test.ts` rewritten to parse
+  ICU ASTs. R1's guard let three defect classes through green; R2 fixed those but introduced a
+  regression (rejected CORRECT `selectordinal` messages, because `@formatjs` parses them as
+  TYPE.plural with `pluralType: "ordinal"` while `Intl.PluralRules` defaults to cardinal); R3
+  carried `pluralType` + `offset` through. Controller verified R3 directly instead of a 4th review.
+- Task 7 (`567bf0a` + fixes `8ae225a`): `kanji` + the FIRST promotion of shared strings to `common`.
+  Review found `review-session.tsx` routed raw `Error.message` to the DOM, making the translated
+  error string unreachable — a VN learner saw "Review failed (500)" or the browser's own
+  "Failed to fetch". Two controller rulings reversed the controller's own brief: collapse
+  `srs.back`/`srs.error` into the existing `common` keys (DRIFT argument), and rename
+  `levelTabs.*` → `common.filters.all` + `common.a11y.levelFilter`. `coming-soon.tsx` deleted as
+  dead code.
+- Task 8 (`ae2bfce` + fixes `8746dc5`): `vocab`. User-approved decisions: stop rendering the API's
+  `body.error` (English, server-authored, untranslatable at the client), and promote "Review" to
+  `common.actions.review`. Review's mutation test exposed the unpinned AI-labeling compliance
+  surface. The long-claimed "no ICU `#`" rule did NOT exist in `catalog.test.ts` (a false claim the
+  controller had repeated in three briefs) — it exists now, verified to fire AND not to over-fire
+  on a literal `#` in ordinary text.
 
 **⚠ BACKLOG owned by NO task — close before the Task 19 gate:** `components/ui/theme-toggle.tsx:12-13`
 ships hardcoded English `aria-label`/`title` ("Switch to {light|dark} theme"). It renders in BOTH the
