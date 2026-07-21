@@ -47,6 +47,7 @@ Twenty catalogs written across twenty independently-executed tasks will drift un
 | Leaderboard | Bảng xếp hạng | |
 | Profile | Hồ sơ | |
 | Review (SRS) | Ôn tập | verb and noun |
+| Spaced repetition | Lặp lại ngắt quãng | coined in Task 5 (`marketing.hero.subtitle`); Tasks 6/8/12 reuse verbatim |
 | Due (for review) | Đến hạn | |
 | Card / Deck | Thẻ / Bộ thẻ | |
 | Streak | Chuỗi ngày học | never "streak" |

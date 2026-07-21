@@ -10,6 +10,7 @@ test("landing page renders the hero and auth links", async ({ page }) => {
 
   // Scope to the hero <main> — "Sign in" also appears in the header and footer.
   const hero = page.getByRole("main");
+  await expect(hero.getByText("日本語シネマ")).toBeVisible();
   await expect(
     hero.getByText(
       "Shadow real video, master kanji and grammar, and track it all with a spaced-repetition engine built for retention.",
