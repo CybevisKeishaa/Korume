@@ -30,12 +30,13 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-21) — L9a Plan 3 executing, Tasks 1-8 + 6b done, Task 9 next
+## ▶ NEXT ACTION (updated 2026-07-21) — L9a Plan 3 executing, Tasks 1-9 + 6b done, Task 10 next
 **L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tasks 1-8 plus an inserted Task 6b are done,
-reviewed clean and committed. HEAD `7790219`. Working tree clean. NOT pushed, NOT merged to master.
-NEXT = Task 9 (`grammar`), then Tasks 10-19 + a metadata sweep task.**
-Namespaces extracted so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`.
+via `superpowers:subagent-driven-development`. **Tasks 1-9 plus an inserted Task 6b are done,
+reviewed clean and committed. HEAD `8489db4`. NOT pushed, NOT merged to master.
+NEXT = Task 10 (`videos`), then Tasks 11-19 + a metadata sweep task.**
+Namespaces extracted so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`,
+`grammar`.
 The 2026-07-20 pause is long resolved (the Task 5 draft was verified in place and kept).
 **Before resuming, read `mem:l9a_localization_run_state` "▶ Plan 3 EXECUTION IN PROGRESS" FIRST** —
 it holds the patterns Tasks 9-19 must follow (two were Critical review findings), the three things

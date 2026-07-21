@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-8 + 6b done, 9-19 remain)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-9 + 6b done, 10-19 remain)
 
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
@@ -63,8 +63,20 @@ CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
 ## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-8 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 9-19 remain
 
-**HEAD `7790219`. Next = Task 9 (`grammar`), which consumes `common.actions.review`,
-`common.filters.all` and `common.a11y.levelFilter` — all now exist.**
+**HEAD `8489db4`. Next = Task 10 (`videos`) — the import form + its validation messages + the
+i+1 difficulty labels ("ideal / too easy / too hard"), plus `components/video/*` tests to move
+onto `@/test/render`.**
+
+**Task 9 (`grammar`) DONE `8489db4` — FIRST task of the run to need ZERO fix waves.** One page,
+three strings (`title`, `subtitleCount`, `empty`); nothing promoted to `common` because Task 7
+had already moved LevelTabs' two strings there. Pattern reused verbatim from Task 8's vocab page,
+which is a structural twin. **New binding glossary entry: grammar point = "mẫu ngữ pháp"** (user
+decision 2026-07-21; Task 13's JLPT weakness links should reuse it). The `· {level}` suffix stays
+a raw template literal in kanji/vocab/grammar alike — N5–N1 are data, not copy; do not "finish"
+extracting it. The reviewer mutation-tested all three EN values IN ISOLATION (each went red) and
+fired the vi plural rules in both directions — that is now the expected review depth, not extra
+credit. Gate at commit: tsc 0 · **1367 tests / 186 files** · lint exit 0 / 80 pre-existing
+warnings, 0 new.
 
 **REVIEW LESSON worth more than any single fix (Task 8):** the reviewer stopped arguing and ran a
 MUTATION TEST — it deleted "(AI)" from the AI-content-labeling button's catalog value and rewrote
