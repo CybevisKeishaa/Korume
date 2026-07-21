@@ -31,7 +31,7 @@
   },
   "srsDue": {
     "title": "Hàng đợi ôn tập",
-    "due": "{count, plural, one {{count} thẻ đến hạn ôn tập} other {{count} thẻ đến hạn ôn tập}}",
+    "due": "{count, plural, other {{count} thẻ đến hạn ôn tập}}",
     "reviewVocab": "Ôn tập từ vựng",
     "reviewKanji": "Ôn tập Kanji",
     "allCaughtUp": "Đã ôn tập hết — hiện không có thẻ nào đến hạn."
