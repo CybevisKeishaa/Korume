@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-9 + 6b done, 10-19 remain)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b done, 11-19 remain)
 
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
@@ -63,9 +63,57 @@ CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
 ## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-8 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 9-19 remain
 
-**HEAD `8489db4`. Next = Task 10 (`videos`) — the import form + its validation messages + the
-i+1 difficulty labels ("ideal / too easy / too hard"), plus `components/video/*` tests to move
-onto `@/test/render`.**
+**HEAD `cd000fc`. Next = Task 11 (`shadowing` + `dictation`) — the largest module in the app
+(~2839 LOC across `components/video-player/`, split with Task 12). Anything genuinely shared by
+both features (player controls, speed, A–B loop) goes to `common.player.*`.**
+
+**Task 10 (`videos`) DONE `cd000fc` — one fix wave, one Important finding.** Two rulings and one
+new pattern came out of it, all binding from here on:
+
+1. **⚠ NEW STANDING CONVENTION — `toHaveTextContent(string)` is a CONTAINMENT match, not equality.**
+   The reviewer mutated all six `videos.errors.*` by APPENDING and PREPENDING text: **all 8
+   mutations stayed GREEN.** Only mid-string edits went red. This is the Task 8 "a substring regex
+   is not a pin" lesson wearing a new costume. **Ruling: the pin is a literal `toBe` against the
+   catalog in `messages/en/<ns>.pin.test.ts`; RTL component tests prove WIRING, not copy. Every
+   leaf of an EN catalog needs a `toBe`.** Note `toHaveAttribute` and an exact-string `getByText`
+   ARE equality — only `toHaveTextContent` and unanchored regexes are the trap. `vocab.pin.test.ts`
+   had the identical hole (Task 8's five `errors.*`) and was closed in the same commit; new
+   `messages/en/common.pin.test.ts` covers Task 10's `common` additions.
+2. **The recommendation rail went to `common`, not `videos`.** It renders on `/dashboard` AND
+   `/videos`, and `dashboard.json` already owned `recommendationsHeading`/`recommendationsLoading`
+   which `/videos` hardcoded verbatim. Both keys MOVED to `common.recommendations.*` (heading,
+   loading, empty, knownWords, band.{ideal,tooEasy,tooHard}) plus `common.noThumbnail`; the
+   dashboard pins moved with them. Same P4/DRIFT ruling as Task 7 — later tasks touching
+   `/dashboard` should expect these to live in `common`.
+3. **FIRST rich-text message in the catalogs.** The rail's empty state has an inline `<Link>`, so
+   it uses `t.rich("recommendations.empty", { link: chunks => <Link…> })` over
+   `"… — <link>import a video</link> to get started."`. Byte-identity verified by rendering the old
+   JSX and the new component side by side (both `{" "}` spaces preserved). **`catalog.test.ts` now
+   compares TAG NAMES across locales** — nothing did before, so a vi message could silently drop
+   `<link>` and lose the link. That check must compare UNCONDITIONALLY: `routing.defaultLocale` is
+   **`"vi"`**, so the usual "reference locale" early-exit made vi its own trivially-matching
+   reference and went green with the tag deleted. The implementer hit this bug in its own draft.
+4. **Module-level constants that render copy cannot survive extraction** — no `t()` at module scope.
+   `BAND_LABEL` → `BAND_LABEL_KEY` mapping band → catalog key, kept `as const satisfies
+   Record<RecommendationBand, string>` (verified: a 4th band = 2 tsc errors). `messageForStatus` →
+   `descriptorForStatus` returning a descriptor union the component body resolves (verified: a
+   descriptor key with no catalog entry is a COMPILE error, not runtime). Expect the same shape in
+   Tasks 11-16 wherever a `Record<…, string>` of labels exists.
+
+**PIN AUDIT for the Task 19 gate (produced by Task 10's fix wave, report-only — DO NOT lose):**
+`grammar`, `kanji`, `videos`, `nav` fully pinned. `marketing` pinned only via Playwright
+(`tests/e2e/home.spec.ts`, exact matches — real pins but OUTSIDE the `npx vitest run` gate); its
+`footer.ariaLabel` ("Footer") is asserted nowhere. **`auth` has NO `auth.pin.test.ts`** —
+`login.{heading,subtitle,checkEmail}`, `register.{heading,subtitle}` asserted nowhere, and
+`errors.invalidCredentials` + `validation.passwordTooLong` have NO test exercising their paths at
+all. `dashboard` partial: `srsDue.{title,reviewVocab,reviewKanji,allCaughtUp}`,
+`a11y.{badgeEarned,badgeLocked}` and `level.xpToNext` are only touched by unanchored regexes
+(= containment). `common`'s pre-existing block was NOT exhaustively audited — spot checks found
+`states.error` and `srs.complete` containment-only and `appName`/`actions.save` with no test hit at
+all. **Task 19 should do a leaf-by-leaf pass over `common` and write `auth.pin.test.ts`.**
+
+Gate at commit: tsc 0 · **1397 tests / 189 files** · lint exit 0 / 80 pre-existing warnings across
+23 files, 0 new. (Controller re-ran all three independently, plus an append-mutation spot check.)
 
 **Task 9 (`grammar`) DONE `8489db4` — FIRST task of the run to need ZERO fix waves.** One page,
 three strings (`title`, `subtitleCount`, `empty`); nothing promoted to `common` because Task 7
