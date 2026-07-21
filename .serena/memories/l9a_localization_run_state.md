@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a done; 11b-11e + 12-19 remain)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a/11b/11c done; 11d, 11e + 12-19 remain)
 
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
@@ -61,10 +61,96 @@ warnings, 0 new · build ✓. One intermittent single-test failure appeared in o
 subsequent full runs were green; it was not captured by name, consistent with the documented
 CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
-## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-8 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 9-19 remain
+## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-10 + 6b + 11a/11b/11c ✅ done, reviewed, COMMITTED (2026-07-22)
 
-**HEAD `9d745bc`. Next = Task 11b (`dictation`) — `dictation-view.tsx` (323) + its page (34) + test
-(193) ≈ 550 LOC, the same size as Task 10.**
+## ▶ NEXT = **11d** (`shadowing` capture). Branch tip `da41411`, working tree CLEAN of task work.
+
+Gate at `da41411`: **tsc 0 · 1461 tests / 192 files · lint exit 0 / 80 pre-existing warnings across 23
+files, 0 new** — all three re-run by the controller itself, not taken from a subagent's report.
+(`MASCOT.md` untracked and the user's deleted `.docx` are deliberately still outside every commit.)
+
+Commits this session: `23a8f84` (11b) · `36534b0` (plan-doc file-list patch) · `da41411` (11c).
+
+**11d scope:** `components/video-player/{recorder,pitch-contour-overlay,pitch-contour}.tsx` + tests, 972
+LOC, into the **existing `shadowing`** namespace (11c created it — register nothing, just add keys).
+**Its one scouted hazard, tell the implementer up front:** `pitch-contour.tsx:148` carries
+`label = "Your pitch contour for this take"` — **a prop defaulting to English**, binding pattern 5. An
+EN-only assertion cannot distinguish a correctly-threaded label from the component's own fallback, so it
+needs TWO tests (one passing a deliberately non-English literal, one covering the default) and neither
+may mask the other. `pitch-contour.test.tsx` is also one of the two documented CPU-contention flakes.
+
+### Task 11c DONE `da41411` — one fix wave, 2 Important findings, both real
+
+Created the `shadowing` namespace + finished `common.player.*`. The review ran **95 mutations, 0
+survivors against the full test set** — but its second pass is the lesson:
+
+1. **⚠ NEW REVIEW TECHNIQUE, adopt it for 11d/11e and Tasks 12-19: run the mutation pass TWICE — once
+   against the full in-scope test set, once against the RTL component tests ONLY (pin tests excluded).**
+   Pass 1 found 0 survivors; **pass 2 found 5**. Those five strings had a correct catalog pin but *no
+   test rendered them at all*, so a catalog typo was caught while a **wiring** error was not — swapping
+   `t("summary.keyVocab")` and `t("summary.keyGrammar")` would have shipped silently. The pin proves
+   COPY, the RTL test proves WIRING, and only running them separately shows which one is missing. This
+   is the Task 10 `toHaveTextContent`-containment ruling one level up.
+2. **A `satisfies`-checked key map does NOT protect a parallel array of the same closed set.**
+   `FURIGANA_MODE_KEY` was correctly `as const satisfies Record<FuriganaDisplayMode, string>`, but
+   `const FURIGANA_MODES: FuriganaDisplayMode[] = [...]` sitting beside it was a plain annotated array —
+   a 4th mode would have compiled and rendered **no button at all**, worse than losing a label. Now
+   derived via `Object.keys(FURIGANA_MODE_KEY)`. **Verify exhaustiveness by adding a 4th member and
+   watching tsc fail — reading the `satisfies` is not verification.**
+3. **`video-summary-panel.tsx`'s `body.error` defect is FIXED** (3rd occurrence of this defect class,
+   after Task 7's `review-session.tsx` and Task 8's vocab panel). `friendlyError` → `classifySummaryError`
+   returning a descriptor. **`mining-review-session.tsx:61` is the LAST known instance — Task 12 owns it.**
+4. `"Loading…"` reads the existing `common.states.loading` rather than duplicating into `shadowing.json`
+   (byte-identical, verified at codepoint level → DRIFT ruling says reuse). Two near-identical entries
+   `errors.generic` ("Could not…") vs `errors.generateFailed` ("Couldn't…") are **deliberately kept
+   separate** — different code paths (non-2xx vs thrown fetch), English is frozen; their vi values are
+   identical, which is correct since the contraction distinction doesn't exist in Vietnamese.
+5. **Carried, unfixed:** two vi wording nits (`messages/vi/shadowing.json:3` "Video này không thể phát ở
+   đây." → "Không thể phát video này ở đây."; `:8`'s trailing `theo` is a literal carry-over of "to
+   shadow against") — **batch into the next vi pass**. And `playback-controls.tsx:59` has `aria-label` on
+   a **role-less `<div>`** (pre-existing, not a 11c defect): `aria-label` is IGNORED on a generic element
+   with no role, so "A–B loop" never reaches AT, which is why its test must use `container.querySelector`
+   instead of `getByRole`. Adding `role="group"` fixes both — **separate a11y follow-up, do not widen a
+   task diff for it.**
+6. `"No transcript yet"` is now byte-identical in BOTH `dictation.json` and `shadowing.json` (duplicated,
+   not promoted — 11b shipped it un-promoted first and 11c followed precedent rather than retroactively
+   refactoring a committed catalog). Bodies differ per module. **Task 19 should look at this alongside
+   the `common.player.*` demotion question.**
+
+### Task 11b DONE `23a8f84` — reviewed clean (0 Critical, 0 Important), 23/23 mutations red
+
+The `dictation` namespace; the controller-ruled promotion of `"Network error — check your connection and
+try again."` out of `vocab.json` into **`common.errors.network`** (it appears in **28 places across 8
+modules** and was never vocab-specific — the pin MOVED to `common.pin.test.ts`, `vocab-examples-panel.tsx`
+rewired; **the other ~26 call sites stay for Tasks 12–16 to consume, do not extract them**);
+`summarizeDiff` converted from a module-level string concatenator to a counts object formatted through
+ICU (3rd instance of that pattern); `t.rich` for the `<strike>extra</strike>` legend item.
+**`DiffCounts` is a `type` alias, NOT an `interface`** — the hand-written `[key: string]: number` an
+interface needs silently disabled typo checking, while a type alias gets an implicit one and still
+satisfies next-intl's values param. **Do NOT "tidy" it back**; the comment in the file says so.
+
+## ⚠ THE PLAN DOC'S TASK 11 FILE LIST WAS INCOMPLETE — patched `36534b0`, but keep auditing
+
+Scouting 11c found `shadowing-view.tsx:18` importing `./playback-controls`, a **166-LOC file with real
+strings that appeared in neither Task 11's nor Task 12's list**. A full audit of
+`components/video-player/` (controller re-verified it independently before editing the plan):
+
+| File | Verdict |
+|---|---|
+| `playback-controls.tsx` (166 LOC, had NO test file) | was UNASSIGNED → **done in 11c** |
+| `pitch-contour.tsx` (230) + test (152) | was UNASSIGNED → **assigned to 11d** |
+| `furigana-text.tsx` (55) + test, `pitch-comparison.ts`, `load-youtube-api.ts` | **zero strings — no action, don't re-audit** |
+
+**This was the THIRD time Task 11's plan metadata was wrong** — the LOC count was stale (real scope 6.9×
+Task 10), the "both surfaces render it" rationale was false (11a review disproved it), and the file list
+was short by two. **Treat every remaining task's file list as a starting hypothesis, not truth.**
+
+**USER DECISION (2026-07-21, honoured in `da41411`):** `playback-controls.tsx`'s strings went to
+**`common.player.*`**, joining 11a's, so the whole "player shell, shadowing-only today" cluster lives in
+one place and the **Task 19 gate makes ONE demotion decision for all of it**. Keys shipped:
+`common.player.a11y.{playbackSpeed,abLoop,furigana}`, `common.player.furigana.{adaptive,all,off}`,
+`common.player.loop.{setA,setB,clear}`. Still exactly one consuming surface — the demotion question is
+live and recorded in `messages/en/common.pin.test.ts:104-110`.
 
 **⚠ TASK 11 WAS SPLIT into 11a–11e (2026-07-21, plan commit `087b342`).** The plan had written it as
 one unit against a stale figure. **Measured: 1977 LOC source across 11 files + 1816 LOC of their
@@ -75,9 +161,9 @@ strings silently unpinned — the exact defect class only reviewers have caught.
 | Sub-task | Namespace | Files | LOC |
 |---|---|---|---|
 | **11a ✅ DONE `9d745bc`** | `common.player.*` | youtube-player, transcript-pane, waveform | 781 |
-| **11b ← NEXT** | `dictation` | dictation-view + page | 550 |
-| 11c | `shadowing` core | shadowing-view + page + video-summary-panel | 904 |
-| 11d | `shadowing` capture | recorder, pitch-contour-overlay | 590 |
+| **11b ✅ DONE, ⚠ UNCOMMITTED** | `dictation` (+ `common.errors.network`) | dictation-view + page | 550 |
+| **11c ← NEXT** | `shadowing` core (+ `common.player.*`) | shadowing-view + page + video-summary-panel + **playback-controls** | 1070 |
+| 11d | `shadowing` capture | recorder, pitch-contour-overlay, **pitch-contour** | 972 |
 | 11e | `shadowing` panel | shadowing-recorder-panel | 968 |
 
 **Task 11a DONE — SECOND task of the run with ZERO fix waves** (Task 9 was the first). Gate: tsc 0 ·
