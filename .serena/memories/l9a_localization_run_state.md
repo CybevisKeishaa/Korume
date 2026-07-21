@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b done, 11-19 remain)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a done; 11b-11e + 12-19 remain)
 
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
@@ -63,9 +63,52 @@ CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
 ## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-8 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 9-19 remain
 
-**HEAD `cd000fc`. Next = Task 11 (`shadowing` + `dictation`) — the largest module in the app
-(~2839 LOC across `components/video-player/`, split with Task 12). Anything genuinely shared by
-both features (player controls, speed, A–B loop) goes to `common.player.*`.**
+**HEAD `9d745bc`. Next = Task 11b (`dictation`) — `dictation-view.tsx` (323) + its page (34) + test
+(193) ≈ 550 LOC, the same size as Task 10.**
+
+**⚠ TASK 11 WAS SPLIT into 11a–11e (2026-07-21, plan commit `087b342`).** The plan had written it as
+one unit against a stale figure. **Measured: 1977 LOC source across 11 files + 1816 LOC of their
+tests = 3793 LOC = 6.9× Task 10** (Task 10 = ~550 LOC → 484K tokens / 118 tool-uses). One implementer
+would have hit ~800 tool-uses; the failure mode is not a crash but a task that LOOKS finished with
+strings silently unpinned — the exact defect class only reviewers have caught. Split:
+
+| Sub-task | Namespace | Files | LOC |
+|---|---|---|---|
+| **11a ✅ DONE `9d745bc`** | `common.player.*` | youtube-player, transcript-pane, waveform | 781 |
+| **11b ← NEXT** | `dictation` | dictation-view + page | 550 |
+| 11c | `shadowing` core | shadowing-view + page + video-summary-panel | 904 |
+| 11d | `shadowing` capture | recorder, pitch-contour-overlay | 590 |
+| 11e | `shadowing` panel | shadowing-recorder-panel | 968 |
+
+**Task 11a DONE — SECOND task of the run with ZERO fix waves** (Task 9 was the first). Gate: tsc 0 ·
+**1405 tests / 189 files** · lint 80 pre-existing warnings, 0 new. What it settled:
+
+1. **My split rationale was WRONG and the reviewer disproved it — the plan is corrected.** The claim
+   was "transcript-pane and waveform are rendered by both surfaces". **False.** `TranscriptPane` ←
+   only `shadowing-view.tsx:17`; `Waveform` ← only `shadowing-recorder-panel.tsx:11`. The one
+   component BOTH surfaces render is `youtube-player.tsx` — which has **no user-visible strings at
+   all** (just `displayName`) and needed zero changes. So **`common.player.*` has ONE consumer and is
+   pre-emptive placement, NOT a P4 promotion** like `common.recommendations.*` (Task 10, two real
+   consumers). Kept because re-shuffling namespaces mid-split costs a task; **flagged for demotion to
+   `shadowing.*` at the Task 19 gate if it still has one consumer.** Don't let a later reader mistake
+   it for observed sharing.
+2. **Prop-defaults-to-English is the case an EN-only suite structurally cannot check** (binding
+   pattern 5, now demonstrated). `waveform.tsx`'s `label = "Recording waveform"` → `label ?? t(...)`,
+   prop kept as optional override. TWO tests are required and neither can mask the other: one passes a
+   deliberately **non-English** literal, one covers the default. The reviewer broke the threading in
+   both directions and confirmed each test catches only its own case.
+3. **Promoting a shell string breaks every not-yet-migrated test that renders that shell as a CHILD** —
+   `useTranslations` needs the provider, so bare-RTL renders throw "context not found". 11a had to
+   import-swap `shadowing-view.test.tsx` and `shadowing-recorder-panel.test.tsx` (11c/11e files) to
+   `@/test/render`. **Expect this ripple in 11b–11e and in every later task that promotes to `common`;
+   keep the fix import-only.** Reviewer verified it was necessary (reverting each makes it fail),
+   minimal (1 line each, zero assertion changes), and complete (no other file renders these two).
+4. **Carry-forward for 11e:** `shadowing-recorder-panel.tsx:331` passes `label="Your recording
+   waveform"` — still hardcoded English, the ONLY remaining English leak from the shell.
+5. **Note for 11b:** there is NO dictation transcript pane — `dictation-view.tsx` imports only
+   `youtube-player`. Don't go looking for one.
+6. Minor, unfixed: `common` now has two a11y groups (top-level `common.a11y` + `common.player.a11y`);
+   nesting under `player` is right but 11b–11e should follow it rather than re-deciding.
 
 **Task 10 (`videos`) DONE `cd000fc` — one fix wave, one Important finding.** Two rulings and one
 new pattern came out of it, all binding from here on:
