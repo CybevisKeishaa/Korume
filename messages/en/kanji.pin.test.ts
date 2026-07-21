@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import en from "./kanji.json";
+import common from "./common.json";
 
 /**
  * Characterization test for the three kanji pages' strings
@@ -16,10 +17,13 @@ import en from "./kanji.json";
  * itself — binding pattern 2).
  */
 describe("kanji.json EN — page.tsx literals", () => {
-  it("pins the list page heading, review link, and empty state", () => {
+  it("pins the list page heading and empty state", () => {
     expect(en.title).toBe("Kanji");
-    expect(en.review).toBe("Review");
     expect(en.empty).toBe("No kanji at this level yet.");
+  });
+
+  it("pins the list page's Review link, promoted to common.actions.review (Task 8: vocab needs the identical string)", () => {
+    expect(common.actions.review).toBe("Review");
   });
 
   it("pins the list page's character-count subtitle as a real plural", () => {

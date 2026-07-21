@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { VocabExamplesPanel } from "./vocab-examples-panel";
 
@@ -13,8 +13,12 @@ function jsonResponse(status: number, body: unknown, headers: Record<string, str
 }
 
 describe("VocabExamplesPanel", () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it("shows curated examples plus a generate button, and appends AI examples on success", async () => {
@@ -93,5 +97,47 @@ describe("VocabExamplesPanel", () => {
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(/try again in 20s/i),
     );
+  });
+
+  it("shows a wait message on 429 with no Retry-After header", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(429, { error: "Too many example requests, slow down" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<VocabExamplesPanel vocabId="v-1" initialExamples={[]} />);
+    await userEvent.click(screen.getByRole("button", { name: /generate example sentences/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent("Too many example requests — please wait a moment and try again."),
+    );
+  });
+
+  it("never renders the API's own error field for a generic failure, showing a translated message and logging the status instead", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchMock = vi.fn(async () => jsonResponse(400, { error: "Invalid request" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<VocabExamplesPanel vocabId="v-1" initialExamples={[]} />);
+    await userEvent.click(screen.getByRole("button", { name: /generate example sentences/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Could not generate examples right now.");
+    expect(alert).not.toHaveTextContent("Invalid request");
+    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining("400"), "Invalid request");
+  });
+
+  it("shows a translated network-error message and logs the exception when the fetch itself throws", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchMock = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<VocabExamplesPanel vocabId="v-1" initialExamples={[]} />);
+    await userEvent.click(screen.getByRole("button", { name: /generate example sentences/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Network error — check your connection and try again.",
+    );
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 });

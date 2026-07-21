@@ -9,7 +9,8 @@
     "close": "Đóng",
     "back": "Quay lại",
     "next": "Tiếp theo",
-    "retry": "Thử lại"
+    "retry": "Thử lại",
+    "review": "Ôn tập"
   },
   "states": {
     "loading": "Đang tải…",

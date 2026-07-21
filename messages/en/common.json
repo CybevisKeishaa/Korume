@@ -9,7 +9,8 @@
     "close": "Close",
     "back": "Back",
     "next": "Next",
-    "retry": "Try again"
+    "retry": "Try again",
+    "review": "Review"
   },
   "states": {
     "loading": "Loading…",

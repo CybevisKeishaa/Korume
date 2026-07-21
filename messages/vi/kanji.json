@@ -1,7 +1,6 @@
 {
   "title": "Kanji",
   "subtitleCount": "{count, plural, other {{count} ký tự}}",
-  "review": "Ôn tập",
   "empty": "Chưa có Kanji nào ở cấp độ này.",
   "backToList": "← Tất cả Kanji",
   "strokeCount": "{count, plural, other {{count} nét}}",

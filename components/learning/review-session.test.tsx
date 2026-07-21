@@ -37,8 +37,15 @@ function mockFetch(ok = true): FetchCall[] {
  * `components/video-player/mining-review-session.tsx` (Task 12).
  */
 describe("ReviewSession", () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
+
   afterEach(() => {
     vi.unstubAllGlobals();
+    // A failing assertion inside a test body would skip an inline
+    // `spy.mockRestore()`, leaving console.error mocked for the rest of the
+    // file — restore unconditionally here instead (Task 8 carried nit).
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it("shows an empty-queue message with a Back link when there is nothing to review", () => {
@@ -89,8 +96,8 @@ describe("ReviewSession", () => {
     await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
   });
 
-  it("shows the translated generic error message when the review POST fails (never the raw status/exception text)", async () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  it("shows the translated generic error message when the review POST fails (never the raw status/exception text), and does not advance the session", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     mockFetch(false);
     render(<ReviewSession itemType="kanji" items={ITEMS} backHref="/kanji" />);
 
@@ -98,7 +105,9 @@ describe("ReviewSession", () => {
     await userEvent.click(screen.getByRole("button", { name: /^good/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong.");
-    spy.mockRestore();
+    // A failed grade must not advance the session — previously only
+    // verifiable by reading the code (Task 8 carried nit).
+    expect(screen.getByText("1 / 2")).toBeInTheDocument();
   });
 
   it("shows a completion message (singular) and a Done link after the last card", async () => {

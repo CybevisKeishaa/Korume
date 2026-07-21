@@ -1,7 +1,6 @@
 {
   "title": "Kanji",
   "subtitleCount": "{count, plural, one {{count} character} other {{count} characters}}",
-  "review": "Review",
   "empty": "No kanji at this level yet.",
   "backToList": "← All kanji",
   "strokeCount": "{count, plural, one {{count} stroke} other {{count} strokes}}",

@@ -15,6 +15,7 @@ export default async function KanjiPage({
   searchParams: { level?: string };
 }) {
   const t = await getTranslations("kanji");
+  const tCommon = await getTranslations("common");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
   const kanji = await getKanjiList(level);
 
@@ -34,7 +35,7 @@ export default async function KanjiPage({
             href={`/kanji/review${level ? `?level=${level}` : ""}`}
             className={buttonStyles({ size: "sm" })}
           >
-            {t("review")}
+            {tCommon("actions.review")}
           </Link>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { Link } from "@/lib/i18n/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { getVocabList } from "@/lib/data/content";
 import { jlptLevelSchema } from "@/lib/validation/content";
 import { LevelTabs } from "@/components/learning/level-tabs";
@@ -13,6 +14,8 @@ export default async function VocabPage({
 }: {
   searchParams: { level?: string };
 }) {
+  const t = await getTranslations("vocab");
+  const tCommon = await getTranslations("common");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
   const vocab = await getVocabList(level);
 
@@ -20,9 +23,9 @@ export default async function VocabPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Vocabulary</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {vocab.length} word{vocab.length === 1 ? "" : "s"}
+            {t("subtitleCount", { count: vocab.length })}
             {level ? ` · ${level}` : ""}
           </p>
         </div>
@@ -32,7 +35,7 @@ export default async function VocabPage({
             href={`/vocab/review${level ? `?level=${level}` : ""}`}
             className={buttonStyles({ size: "sm" })}
           >
-            Review
+            {tCommon("actions.review")}
           </Link>
         </div>
       </div>
@@ -62,7 +65,7 @@ export default async function VocabPage({
       </ul>
 
       {vocab.length === 0 && (
-        <p className="text-muted-foreground">No vocabulary at this level yet.</p>
+        <p className="text-muted-foreground">{t("empty")}</p>
       )}
     </Container>
   );
