@@ -41,4 +41,15 @@ describe("vocab.json EN — page.tsx literals", () => {
   it("pins the review page's heading", () => {
     expect(en.reviewTitle).toBe("Vocabulary review");
   });
+
+  it("pins the AI content-labeling surface (CLAUDE.md compliance — the '(AI)' disclosure and the row label)", () => {
+    expect(en.generateExamples).toBe("Generate example sentences (AI)");
+    expect(en.aiGenerated).toBe("AI-generated");
+  });
+
+  it("pins the examples panel's heading, empty state and pending label", () => {
+    expect(en.examplesHeading).toBe("Example sentences");
+    expect(en.noExamples).toBe("No example sentences yet.");
+    expect(en.generating).toBe("Generating…");
+  });
 });

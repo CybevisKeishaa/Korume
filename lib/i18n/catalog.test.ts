@@ -91,6 +91,27 @@ function walk(
 }
 
 /**
+ * True if the message contains an ICU `#` (pound, `TYPE.pound`) anywhere,
+ * including nested inside a plural/select branch or a tag. `#` inside a
+ * `{count, plural, ...}` branch silently runs the branch's count through
+ * `Intl.NumberFormat` (1234 -> "1,234"), which diverges from a plain
+ * `{count}` interpolation the moment a count reaches four digits and breaks
+ * byte-identity with a pre-extraction plain-number source string. The
+ * plan's binding convention (corrected 2026-07-21 after this exact
+ * regression shipped once in Task 6's `dashboard.json`) requires a named
+ * argument like `{count}` inside every plural branch instead — checked
+ * directly here so a `#` cannot silently reappear in any of the eleven
+ * catalogs still to come.
+ */
+function usesPound(elements: MessageFormatElement[]): boolean {
+  let found = false;
+  walk(elements, (el) => {
+    if (el.type === TYPE.pound) found = true;
+  });
+  return found;
+}
+
+/**
  * Argument names referenced anywhere in the message: plain `{name}` args,
  * and the driving argument of `number`/`date`/`time`/`select`/`plural`
  * formats. `#` (pound, `TYPE.pound`) carries no name of its own — it refers
@@ -316,6 +337,32 @@ describe("catalog", () => {
                 `(${JSON.stringify(requiredCategories)})`,
             ).toEqual(requiredCategories);
           }
+        }
+      }
+    }
+  });
+
+  it("forbids ICU `#` anywhere in a message — plural branches must use a named argument like {count} instead", () => {
+    // `#` is convenient shorthand but runs the enclosing plural's count
+    // through `Intl.NumberFormat` unconditionally (1234 -> "1,234" in en),
+    // which a plain `{count}` interpolation does not do. That silently
+    // breaks byte-identity with a pre-extraction source string the moment a
+    // real count reaches four digits, and it shipped once already
+    // undetected (Task 6, `dashboard.json`'s `srsDue.due`). Every catalog
+    // message in every namespace/locale is checked directly here, with a
+    // locus-precise failure message, rather than relying on a human
+    // reviewer to notice a bare `#` in a diff.
+    for (const namespace of NAMESPACES) {
+      for (const locale of routing.locales) {
+        const messages = flattenMessages(readCatalog(locale, namespace));
+        for (const [key, message] of Object.entries(messages)) {
+          const elements = parseMessage(locale, namespace, key, message);
+          expect(
+            usesPound(elements),
+            `${locale}/${namespace}.json → ${key}: ${JSON.stringify(message)} uses ICU "#" — ` +
+              `"#" runs through Intl.NumberFormat (1234 -> "1,234"); use a named argument like ` +
+              `{count} inside the plural branch instead`,
+          ).toBe(false);
         }
       }
     }

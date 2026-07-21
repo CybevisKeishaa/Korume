@@ -111,6 +111,22 @@ describe("VocabExamplesPanel", () => {
     );
   });
 
+  it("falls back to the generic wait message on 429 with a non-numeric Retry-After (e.g. an HTTP-date, RFC 9110), never rendering NaN", async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse(429, { error: "Too many example requests, slow down" }, {
+        "Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT",
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<VocabExamplesPanel vocabId="v-1" initialExamples={[]} />);
+    await userEvent.click(screen.getByRole("button", { name: /generate example sentences/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Too many example requests — please wait a moment and try again.");
+    expect(alert).not.toHaveTextContent(/NaN/);
+  });
+
   it("never renders the API's own error field for a generic failure, showing a translated message and logging the status instead", async () => {
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const fetchMock = vi.fn(async () => jsonResponse(400, { error: "Invalid request" }));

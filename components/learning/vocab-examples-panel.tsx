@@ -61,9 +61,16 @@ const examplesUrl = (vocabId: string) => `/api/vocab/${vocabId}/examples`;
 async function classifyError(res: Response): Promise<ErrorDescriptor> {
   if (res.status === 503) return { key: "unavailable" };
   if (res.status === 429) {
+    // RFC 9110 permits Retry-After to be an HTTP-date, not just delay-seconds
+    // (our own route.ts:52 always sends a numeric value, but a proxy/CDN in
+    // front of it could rewrite the header) — Number() on anything
+    // non-numeric is NaN, and IntlMessageFormat renders that straight into
+    // the message ("try again in NaNs."). Fall back to the generic wait
+    // message instead of trusting the header blindly.
     const retryAfter = res.headers.get("Retry-After");
-    return retryAfter
-      ? { key: "rateLimited", seconds: Number(retryAfter) }
+    const seconds = retryAfter === null ? NaN : Number(retryAfter);
+    return Number.isFinite(seconds)
+      ? { key: "rateLimited", seconds }
       : { key: "rateLimitedGeneric" };
   }
   try {

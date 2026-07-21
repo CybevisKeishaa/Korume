@@ -57,6 +57,7 @@ Twenty catalogs written across twenty independently-executed tasks will drift un
 | Furigana / Pitch accent | Furigana / Trọng âm cao thấp | |
 | Transcript | Phụ đề | |
 | Peer review | Đánh giá chéo | |
+| AI-generated | Do AI tạo | coined in Task 8; **compliance surface** (CLAUDE.md AI content labeling) — translate, never remove or weaken. Survives the badge's `uppercase` CSS. |
 | Recording | Bản ghi âm | |
 | Show answer / Again / Hard / Good / Easy | Xem đáp án / Lại / Khó / Tốt / Dễ | SRS grade buttons |
 | Save / Cancel / Delete / Close / Back / Next | Lưu / Hủy / Xóa / Đóng / Quay lại / Tiếp theo | promote to `common` |
