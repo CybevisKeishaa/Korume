@@ -747,6 +747,12 @@ The replacements are all true: the product genuinely has a free tier (value-base
 
 ---
 
+> **Added 2026-07-21 (user decision), binding on Tasks 6-17:** 25 pages carry
+> `export const metadata = { title: "..." }` in English. No task owned them. They are NOT extracted
+> per-module — a single dedicated sweep task near the end of the plan converts all 25 to
+> `generateMetadata` + `getTranslations`, so the root-layout title template is settled in one place
+> instead of drifting across twelve tasks. **Leave `metadata` in English in every module task.**
+
 ### Task 6: `dashboard` namespace
 
 **Files:** `app/[locale]/(app)/dashboard/page.tsx`, `app/[locale]/(app)/layout.tsx`, `components/learning/{level-card,streak-card,badges-grid}.tsx` and their siblings that the dashboard renders.
