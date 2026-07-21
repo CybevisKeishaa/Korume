@@ -19,9 +19,9 @@
   "a11y": {
     "closeDialog": "Close dialog",
     "dismissNotification": "Dismiss notification",
-    "jlptLevel": "JLPT level"
+    "levelFilter": "JLPT level"
   },
-  "levelTabs": { "all": "All" },
+  "filters": { "all": "All" },
   "srs": {
     "progress": "{current} / {total}",
     "showAnswer": "Show answer",
@@ -31,10 +31,8 @@
     "good": "Good",
     "easy": "Easy",
     "empty": "Nothing to review here yet.",
-    "back": "Back",
     "complete": "Session complete 🎉",
     "reviewedCount": "{count, plural, one {You reviewed {count} item.} other {You reviewed {count} items.}}",
-    "done": "Done",
-    "error": "Something went wrong."
+    "done": "Done"
   }
 }

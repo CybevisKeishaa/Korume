@@ -16,7 +16,11 @@ export type { ReviewItem };
  * `/vocab/review` (Task 8), which is why its strings live in `common`, not a
  * per-module namespace (CLAUDE.md P4). `components/video-player/
  * mining-review-session.tsx` (Task 12) mirrors this component and consumes
- * the same keys.
+ * the same keys. Its "Back" link and error fallback reuse the pre-existing
+ * `common.actions.back` / `common.states.error` rather than duplicating them
+ * under `srs.*` (review 2026-07-21 finding 2) — a drift risk (a translator
+ * fixing one copy silently leaves the other stale) outweighs the minor loss
+ * of "everything lives under one path" tidiness.
  */
 const GRADES = [
   { labelKey: "again", quality: 1, key: "1" },
@@ -66,7 +70,13 @@ export function ReviewSession({
         setRevealed(false);
         setIndex((i) => i + 1);
       } catch (e) {
-        setError(e instanceof Error ? e.message : t("srs.error"));
+        // The raw exception text (an HTTP status, a browser-locale network
+        // error like "Failed to fetch") must never reach the DOM — it can't
+        // be translated and leaks English/browser copy to VI users. Log it
+        // for support/debugging and show only the translated generic
+        // fallback (spec P1/CLAUDE.md §5, review 2026-07-21 finding 1).
+        console.error(e);
+        setError(t("states.error"));
       } finally {
         setSubmitting(false);
       }
@@ -100,7 +110,7 @@ export function ReviewSession({
       <div className="text-center">
         <p className="text-muted-foreground">{t("srs.empty")}</p>
         <Link href={backHref} className={buttonStyles({ className: "mt-4" })}>
-          {t("srs.back")}
+          {t("actions.back")}
         </Link>
       </div>
     );

@@ -20,8 +20,8 @@ export function LevelTabs({
 }) {
   const t = useTranslations("common");
   return (
-    <nav aria-label={t("a11y.jlptLevel")} className="flex flex-wrap gap-2">
-      <LevelTab href={basePath} label={t("levelTabs.all")} isActive={!active} />
+    <nav aria-label={t("a11y.levelFilter")} className="flex flex-wrap gap-2">
+      <LevelTab href={basePath} label={t("filters.all")} isActive={!active} />
       {LEVELS.map((level) => (
         <LevelTab
           key={level}

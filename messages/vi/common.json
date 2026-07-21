@@ -19,9 +19,9 @@
   "a11y": {
     "closeDialog": "Đóng hộp thoại",
     "dismissNotification": "Bỏ qua thông báo",
-    "jlptLevel": "Cấp độ JLPT"
+    "levelFilter": "Cấp độ JLPT"
   },
-  "levelTabs": { "all": "Tất cả" },
+  "filters": { "all": "Tất cả" },
   "srs": {
     "progress": "{current} / {total}",
     "showAnswer": "Xem đáp án",
@@ -31,10 +31,8 @@
     "good": "Tốt",
     "easy": "Dễ",
     "empty": "Chưa có gì để ôn tập.",
-    "back": "Quay lại",
     "complete": "Hoàn thành phiên ôn tập 🎉",
     "reviewedCount": "{count, plural, other {Bạn đã ôn tập {count} thẻ.}}",
-    "done": "Xong",
-    "error": "Đã có lỗi xảy ra."
+    "done": "Xong"
   }
 }

@@ -61,8 +61,11 @@ describe("ReviewSession", () => {
     mockFetch();
     render(<ReviewSession itemType="kanji" items={ITEMS} backHref="/kanji" />);
 
-    expect(screen.getByRole("button", { name: /show answer/i })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+    // Pins the full accessible name, including the "(Space)" keyboard hint —
+    // the /show answer/i regex used elsewhere in this file would pass even if
+    // that hint were typo'd (review 2026-07-21 finding 3).
+    const showAnswer = screen.getByRole("button", { name: "Show answer (Space)" });
+    await userEvent.click(showAnswer);
 
     expect(screen.getByText("water")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^again/i })).toBeInTheDocument();
@@ -86,14 +89,16 @@ describe("ReviewSession", () => {
     await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
   });
 
-  it("shows an error message when the review POST fails", async () => {
+  it("shows the translated generic error message when the review POST fails (never the raw status/exception text)", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     mockFetch(false);
     render(<ReviewSession itemType="kanji" items={ITEMS} backHref="/kanji" />);
 
     await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
     await userEvent.click(screen.getByRole("button", { name: /^good/i }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Review failed (500)");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong.");
+    spy.mockRestore();
   });
 
   it("shows a completion message (singular) and a Done link after the last card", async () => {
