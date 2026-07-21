@@ -13,7 +13,6 @@
     "unavailable": "Tính năng tạo câu ví dụ bằng AI chưa được thiết lập cho bản triển khai này.",
     "rateLimited": "Quá nhiều yêu cầu tạo câu ví dụ — thử lại sau {seconds} giây.",
     "rateLimitedGeneric": "Quá nhiều yêu cầu tạo câu ví dụ — vui lòng đợi một chút rồi thử lại.",
-    "generic": "Không thể tạo câu ví dụ lúc này.",
-    "network": "Lỗi kết nối mạng — kiểm tra kết nối và thử lại."
+    "generic": "Không thể tạo câu ví dụ lúc này."
   }
 }

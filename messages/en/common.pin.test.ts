@@ -78,3 +78,24 @@ describe("common.json EN — player shell literals (Task 11a)", () => {
     expect(en.player.waveformUnavailable).toBe("Waveform preview unavailable.");
   });
 });
+
+/**
+ * Task 11b promoted `errors.network` out of `messages/en/vocab.json` into
+ * `common.errors.network`. The identical string ("Network error — check
+ * your connection and try again.") appears across 8 modules (community,
+ * conversation, jlpt, reading, video-player, dictation); Task 8 had put it
+ * in `vocab.json` where it never belonged (P4 — a string needed by 2+
+ * modules is promoted to `common`, never duplicated). Only
+ * `vocab-examples-panel.tsx` and `dictation-view.tsx` consume it as of this
+ * task; the other ~26 call sites still hardcode their own copy and will
+ * consume this key when Tasks 12–16 extract their namespaces. This pin was
+ * moved from (not duplicated out of) `messages/en/vocab.pin.test.ts` — see
+ * the note left there.
+ */
+describe("common.json EN — network error (Task 11b promotion)", () => {
+  it("pins errors.network", () => {
+    expect(en.errors.network).toBe(
+      "Network error — check your connection and try again.",
+    );
+  });
+});

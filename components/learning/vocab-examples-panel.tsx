@@ -98,6 +98,10 @@ export function VocabExamplesPanel({
   className,
 }: VocabExamplesPanelProps) {
   const t = useTranslations("vocab");
+  // errors.network is promoted to `common` (Task 11b) — the identical string
+  // is needed by 2+ modules (P4), so it lives in `common.errors.network`,
+  // not duplicated here.
+  const tCommon = useTranslations("common");
   const [examples, setExamples] = useState<VocabExample[]>(initialExamples);
   const [state, setState] = useState<State>({ status: "idle" });
 
@@ -125,7 +129,7 @@ export function VocabExamplesPanel({
       // Same rule as the !res.ok branch: never surface a raw browser/network
       // exception (untranslatable, locale-dependent browser copy).
       console.error(e);
-      setState({ status: "error", message: t("errors.network") });
+      setState({ status: "error", message: tCommon("errors.network") });
     }
   }
 

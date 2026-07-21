@@ -17,6 +17,9 @@
     "error": "Something went wrong.",
     "empty": "Nothing here yet."
   },
+  "errors": {
+    "network": "Network error — check your connection and try again."
+  },
   "a11y": {
     "closeDialog": "Close dialog",
     "dismissNotification": "Dismiss notification",

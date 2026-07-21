@@ -17,6 +17,9 @@
     "error": "Đã có lỗi xảy ra.",
     "empty": "Chưa có gì ở đây."
   },
+  "errors": {
+    "network": "Lỗi kết nối mạng — kiểm tra kết nối và thử lại."
+  },
   "a11y": {
     "closeDialog": "Đóng hộp thoại",
     "dismissNotification": "Bỏ qua thông báo",

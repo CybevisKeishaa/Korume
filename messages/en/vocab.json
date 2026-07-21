@@ -13,7 +13,6 @@
     "unavailable": "AI example generation isn't set up yet for this deployment.",
     "rateLimited": "Too many example requests — try again in {seconds}s.",
     "rateLimitedGeneric": "Too many example requests — please wait a moment and try again.",
-    "generic": "Could not generate examples right now.",
-    "network": "Network error — check your connection and try again."
+    "generic": "Could not generate examples right now."
   }
 }

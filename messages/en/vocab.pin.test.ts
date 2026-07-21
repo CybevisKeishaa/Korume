@@ -88,9 +88,11 @@ describe("vocab.json EN — page.tsx literals", () => {
     expect(en.errors.generic).toBe("Could not generate examples right now.");
   });
 
-  it("pins errors.network (POST /api/vocab/[id]/examples request throws)", () => {
-    expect(en.errors.network).toBe(
-      "Network error — check your connection and try again.",
-    );
-  });
+  // errors.network used to be pinned here too, but it was never
+  // vocab-specific (Task 11b): the identical string appears across 8
+  // modules, so it was promoted out to `common.errors.network` (P4 — a
+  // string needed by 2+ modules is promoted, never duplicated) and
+  // `vocab-examples-panel.tsx` now reads it from there. The pin moved to
+  // `messages/en/common.pin.test.ts` alongside it — losing a pin during a
+  // promotion would be a defect.
 });
