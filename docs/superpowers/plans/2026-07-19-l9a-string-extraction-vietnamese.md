@@ -828,9 +828,42 @@ mistake this for a P4 promotion like `common.recommendations.*` (Task 10), which
 |---|---|---|---|
 | **11a** | `common.player.*` | `youtube-player`, `transcript-pane`, `waveform` | 781 |
 | **11b** | `dictation` | `dictation-view` + `videos/[id]/dictation/page.tsx` | 550 |
-| **11c** | `shadowing` (core) | `shadowing-view` + `videos/[id]/shadowing/page.tsx` + `video-summary-panel` | 904 |
-| **11d** | `shadowing` (capture) | `recorder`, `pitch-contour-overlay` | 590 |
+| **11c** | `shadowing` (core) + `common.player.*` | `shadowing-view` + `videos/[id]/shadowing/page.tsx` + `video-summary-panel` + **`playback-controls`** | 1 070 |
+| **11d** | `shadowing` (capture) | `recorder`, `pitch-contour-overlay`, **`pitch-contour`** | 972 |
 | **11e** | `shadowing` (panel) | `shadowing-recorder-panel` | 968 |
+
+**⚠ The file list above was INCOMPLETE until 2026-07-21 — audit, do not trust it.** Scouting 11c found
+`shadowing-view.tsx:18` importing `./playback-controls`, a **166-LOC file carrying three `aria-label`s and
+a set of rendered control labels**, listed under neither Task 11 nor Task 12. A full audit of
+`components/video-player/` then found `pitch-contour.tsx` (230 LOC) + its test (152) equally unassigned.
+Both rows above now include them. **This is the third time Task 11's metadata has been wrong** — the LOC
+figure was stale, the "both surfaces render it" ordering rationale was false (disproved by the 11a
+review), and the file list was short by two. Treat every remaining task's file list as a starting
+hypothesis to verify, not as truth.
+
+**String-free, verified — do NOT re-audit these:** `furigana-text.tsx` (+ its test),
+`pitch-comparison.ts`, `load-youtube-api.ts`. Zero user-visible strings; no action in any sub-task.
+
+**11c specifics.** `playback-controls.tsx`'s strings go to **`common.player.*`** (user decision
+2026-07-21), joining 11a's, so the whole "player shell, shadowing-only today" cluster sits in one place
+and the Task 19 gate makes a **single** demotion decision for all of it. Keys: `a11y.playbackSpeed`,
+`a11y.abLoop`, `a11y.furigana`, `furigana.{adaptive,all,off}`, `loop.{setA,setB,clear}`. Four hazards,
+all scouted: (1) the file has **no test file** — one must be created, and its pin must pass while the
+strings are still hardcoded (binding pattern 1); (2) `FURIGANA_MODES` (line 92) is a **module-level array
+of rendered labels**, and `t()` is not callable at module scope — convert to catalog keys resolved in the
+component behind an exhaustive `Record<FuriganaDisplayMode, string>` (third instance of this pattern,
+after Task 10's `BAND_LABEL` and 11b's `summarizeDiff`); (3) `Set A{loopA !== null ? " (time)" : ""}`
+composes a label with an optional suffix — verify byte-identity in **both** branches by rendering, not by
+reasoning; (4) `aria-label="A–B loop"` (line 52) contains an **EN DASH U+2013**, not a hyphen — check it
+at codepoint level. Additionally `video-summary-panel.tsx` is an **AI-labeling compliance surface**
+(`aria-label="AI video summary"` line 117, the `AI-generated` badge line 122 — exact literal `toBe`s,
+each mutated in isolation) **and carries a known defect: line 53 renders `body.error`**, the API's
+server-authored English, straight to the DOM — the exact defect Task 8 removed from the vocab panel,
+where it made the translated string unreachable. **Stop rendering `body.error`.**
+
+**11d specifics.** `pitch-contour.tsx:148` carries `label = "Your pitch contour for this take"` — a
+**prop defaulting to English**, the same binding-pattern-5 trap 11a hit in `waveform.tsx`. One test must
+pass a deliberately non-English literal and a second must cover the default; neither can mask the other.
 
 **11a specifics (verified against the source, not inferred).** `youtube-player.tsx` contains **no
 user-visible strings** — it is a `<div>` wrapper around the IFrame API, so it needs **no changes** and its
