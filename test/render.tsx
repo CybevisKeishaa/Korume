@@ -1,5 +1,10 @@
 import type { ReactElement } from "react";
-import { render as rtlRender, type RenderOptions } from "@testing-library/react";
+import {
+  render as rtlRender,
+  renderHook as rtlRenderHook,
+  type RenderOptions,
+  type RenderHookOptions,
+} from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { loadEnMessages } from "./messages";
 
@@ -36,5 +41,25 @@ function customRender(ui: ReactElement, options?: RenderOptions) {
   });
 }
 
+/**
+ * `renderHook`, wrapped the same way `render` above is. Any hook that calls
+ * `useTranslations` (e.g. `useRecorder`, Task 11d) throws "No intl context
+ * found" under the bare `@testing-library/react` `renderHook`, for the same
+ * reason components do — this supplies the same `en` provider.
+ */
+function customRenderHook<Result, Props>(
+  callback: (props: Props) => Result,
+  options?: Omit<RenderHookOptions<Props>, "wrapper">,
+) {
+  return rtlRenderHook(callback, {
+    wrapper: ({ children }) => (
+      <NextIntlClientProvider locale="en" messages={messages}>
+        {children}
+      </NextIntlClientProvider>
+    ),
+    ...options,
+  });
+}
+
 export * from "@testing-library/react";
-export { customRender as render };
+export { customRender as render, customRenderHook as renderHook };

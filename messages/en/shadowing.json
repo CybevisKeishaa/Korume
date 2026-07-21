@@ -27,5 +27,29 @@
       "generateFailed": "Couldn't generate a summary right now.",
       "loadFailed": "Couldn't load the summary."
     }
+  },
+  "recorder": {
+    "errors": {
+      "micDenied": "Microphone access was denied. Allow microphone access in your browser settings to record.",
+      "micNotFound": "No microphone was found. Connect a microphone and try again.",
+      "micUnavailable": "Couldn't access your microphone. Check your device and try again.",
+      "notSupported": "Recording isn't supported in this browser.",
+      "recordingFailed": "Recording failed. Try again."
+    }
+  },
+  "pitch": {
+    "contour": {
+      "a11y": { "label": "Your pitch contour for this take" },
+      "analyzing": "Analyzing pitch…",
+      "unavailable": "Pitch contour unavailable"
+    },
+    "overlay": {
+      "a11y": { "label": "Pitch comparison: reference (お手本) vs your take" },
+      "reference": "お手本",
+      "user": "あなた",
+      "lowConfidence": "Not enough voiced audio to compare reliably — try a longer take.",
+      "intonation": "イントネーション",
+      "scoreSuffix": " / 100"
+    }
   }
 }

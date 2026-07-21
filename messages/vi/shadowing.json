@@ -27,5 +27,29 @@
       "generateFailed": "Không thể tạo tóm tắt vào lúc này.",
       "loadFailed": "Không thể tải tóm tắt."
     }
+  },
+  "recorder": {
+    "errors": {
+      "micDenied": "Quyền truy cập micro đã bị từ chối. Hãy cho phép truy cập micro trong cài đặt trình duyệt để ghi âm.",
+      "micNotFound": "Không tìm thấy micro. Hãy kết nối micro rồi thử lại.",
+      "micUnavailable": "Không thể truy cập micro của bạn. Hãy kiểm tra thiết bị rồi thử lại.",
+      "notSupported": "Trình duyệt này không hỗ trợ ghi âm.",
+      "recordingFailed": "Ghi âm thất bại. Hãy thử lại."
+    }
+  },
+  "pitch": {
+    "contour": {
+      "a11y": { "label": "Đường cong cao độ giọng nói của bạn cho lượt ghi âm này" },
+      "analyzing": "Đang phân tích cao độ…",
+      "unavailable": "Hiện chưa có đường cong cao độ"
+    },
+    "overlay": {
+      "a11y": { "label": "So sánh cao độ: bản mẫu (お手本) so với lượt ghi của bạn" },
+      "reference": "お手本",
+      "user": "あなた",
+      "lowConfidence": "Không đủ âm thanh có giọng để so sánh chính xác — hãy thử ghi âm dài hơn.",
+      "intonation": "イントネーション",
+      "scoreSuffix": " / 100"
+    }
   }
 }

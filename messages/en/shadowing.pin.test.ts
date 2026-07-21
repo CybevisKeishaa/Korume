@@ -128,3 +128,104 @@ describe("shadowing.json EN — friendlyError status mapping", () => {
     expect(en.summary.errors.loadFailed).toBe("Couldn't load the summary.");
   });
 });
+
+/**
+ * Task 11d: `useRecorder` (`components/video-player/recorder.tsx`). Every
+ * expected value below is a literal copied verbatim from `recorder.tsx` on
+ * `layer-9a-string-extraction` before Task 11d (never derived from the
+ * catalog itself — binding pattern 2). Apostrophes are ASCII U+0027 in the
+ * source (`isn't`, `Couldn't`) — verified against the pre-extraction file
+ * with a codepoint dump, not eyeballed.
+ */
+describe("shadowing.json EN — recorder.tsx (useRecorder) error messages", () => {
+  it("pins the mic-permission-denied message", () => {
+    expect(en.recorder.errors.micDenied).toBe(
+      "Microphone access was denied. Allow microphone access in your browser settings to record.",
+    );
+  });
+
+  it("pins the no-microphone-found message", () => {
+    expect(en.recorder.errors.micNotFound).toBe(
+      "No microphone was found. Connect a microphone and try again.",
+    );
+  });
+
+  it("pins the generic getUserMedia-rejection fallback", () => {
+    expect(en.recorder.errors.micUnavailable).toBe(
+      "Couldn't access your microphone. Check your device and try again.",
+    );
+  });
+
+  it("pins the unsupported-browser message", () => {
+    expect(en.recorder.errors.notSupported).toBe(
+      "Recording isn't supported in this browser.",
+    );
+  });
+
+  it("pins the MediaRecorder onerror message", () => {
+    expect(en.recorder.errors.recordingFailed).toBe("Recording failed. Try again.");
+  });
+});
+
+/**
+ * Task 11d: `PitchContour` (`components/video-player/pitch-contour.tsx`).
+ * `a11y.label` is the component's default `label` prop value — binding
+ * pattern 5 requires this pin PLUS an RTL test proving the prop threads a
+ * non-English override (see `pitch-contour.test.tsx`), because an EN-only
+ * assertion can't distinguish correctly-threaded i18n from the component's
+ * own hardcoded English fallback.
+ */
+describe("shadowing.json EN — pitch-contour.tsx (PitchContour) literals", () => {
+  it("pins the default accessible label for the canvas image", () => {
+    expect(en.pitch.contour.a11y.label).toBe("Your pitch contour for this take");
+  });
+
+  it("pins the decoding-in-progress status text", () => {
+    expect(en.pitch.contour.analyzing).toBe("Analyzing pitch…");
+  });
+
+  it("pins the unavailable-fallback status text", () => {
+    expect(en.pitch.contour.unavailable).toBe("Pitch contour unavailable");
+  });
+});
+
+/**
+ * Task 11d: `PitchContourOverlay`
+ * (`components/video-player/pitch-contour-overlay.tsx`). `a11y.label` is
+ * this component's own default `label` prop — same binding-pattern-5
+ * requirement as `PitchContour` above, verified in
+ * `pitch-contour-overlay.test.tsx`.
+ *
+ * `reference` (お手本), `user` (あなた) and `intonation` (イントネーション) are
+ * Japanese-language UI labels by original design, not English strings
+ * needing translation — this is a Japanese-learning app, and showing the
+ * target-language terms directly (rather than "Reference"/"You"/
+ * "Intonation") is the same intentional design choice as leaving
+ * "shadowing" itself untranslated in the glossary. The Vietnamese catalog
+ * (see `messages/vi/shadowing.json`) therefore carries these three leaves
+ * byte-identically rather than translating them, for consistency with the
+ * decision on `overlay.a11y.label`'s embedded お手本 below.
+ */
+describe("shadowing.json EN — pitch-contour-overlay.tsx (PitchContourOverlay) literals", () => {
+  it("pins the default accessible label, including the embedded お手本", () => {
+    expect(en.pitch.overlay.a11y.label).toBe(
+      "Pitch comparison: reference (お手本) vs your take",
+    );
+  });
+
+  it("pins the reference/user legend labels", () => {
+    expect(en.pitch.overlay.reference).toBe("お手本");
+    expect(en.pitch.overlay.user).toBe("あなた");
+  });
+
+  it("pins the low-confidence explanation (em dash U+2014)", () => {
+    expect(en.pitch.overlay.lowConfidence).toBe(
+      "Not enough voiced audio to compare reliably — try a longer take.",
+    );
+  });
+
+  it("pins the intonation-score label and its aria-hidden ' / 100' suffix", () => {
+    expect(en.pitch.overlay.intonation).toBe("イントネーション");
+    expect(en.pitch.overlay.scoreSuffix).toBe(" / 100");
+  });
+});

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { contourFromSamples, hzToSemitones, medianVoicedHz } from "@/lib/pitch";
 import type { PitchContour as PitchContourData } from "@/lib/pitch";
@@ -9,7 +10,11 @@ import { readBlobAsArrayBuffer } from "@/lib/audio/read-blob";
 export interface PitchContourProps {
   /** Recorded audio to visualize. Rendering is a no-op while null. */
   blob: Blob | null;
-  /** Accessible label for the canvas image. Defaults to "Your pitch contour for this take". */
+  /**
+   * Accessible label for the canvas image. Optional override — omit it to
+   * fall back to the translated `shadowing.pitch.contour.a11y.label` string
+   * via `useTranslations`; pass it when a caller needs a more specific label.
+   */
   label?: string;
   className?: string;
   height?: number;
@@ -143,12 +148,8 @@ function drawContour(
  * Draws once, synchronously with the data — no drawing-in animation, so
  * there is nothing for `prefers-reduced-motion` to disable (CLAUDE.md §2.4).
  */
-export function PitchContour({
-  blob,
-  label = "Your pitch contour for this take",
-  className,
-  height = 96,
-}: PitchContourProps) {
+export function PitchContour({ blob, label, className, height = 96 }: PitchContourProps) {
+  const t = useTranslations("shadowing");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [plot, setPlot] = useState<{ points: (PlotPoint | null)[]; baselineY: number } | null>(
     null,
@@ -210,16 +211,16 @@ export function PitchContour({
   return (
     <div className={cn("text-primary", className)}>
       {status === "decoding" && (
-        <p className="text-xs text-muted-foreground">Analyzing pitch…</p>
+        <p className="text-xs text-muted-foreground">{t("pitch.contour.analyzing")}</p>
       )}
       {status === "unavailable" && (
-        <p className="text-xs text-muted-foreground">Pitch contour unavailable</p>
+        <p className="text-xs text-muted-foreground">{t("pitch.contour.unavailable")}</p>
       )}
       {status === "ready" && (
         <canvas
           ref={canvasRef}
           role="img"
-          aria-label={label}
+          aria-label={label ?? t("pitch.contour.a11y.label")}
           width={CANVAS_WIDTH}
           height={height}
           className="w-full"
