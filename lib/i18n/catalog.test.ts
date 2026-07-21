@@ -118,15 +118,34 @@ function argNames(elements: MessageFormatElement[]): string[] {
 interface PluralInfo {
   arg: string;
   branches: string[];
+  /** `@formatjs` parses `selectordinal` as `TYPE.plural` with
+   * `pluralType: "ordinal"` — there is no separate ordinal AST node. Cardinal
+   * and ordinal CLDR category sets genuinely differ per locale (e.g. `en`
+   * ordinal is `["one","two","few","other"]`, not `en` cardinal's
+   * `["one","other"]`), so callers MUST resolve `Intl.PluralRules` with this
+   * `type`, not assume the default `"cardinal"`. */
+  pluralType: Intl.PluralRulesOptions["type"];
+  /** `offset:N` shifts every branch's implicit count before CLDR category
+   * selection (`{count, plural, offset:1 one {...} other {...}}` selects
+   * `"one"` at `count = 2`, not `count = 1`). Two locales with the same
+   * branches but different offsets render different text at the same count
+   * — a silent per-locale off-by-one — so callers compare this too. */
+  offset: number;
 }
 
-/** Every `plural` element in the message (there can be more than one), each
- * with its driving argument name and the sorted set of its branch keys. */
+/** Every `plural`/`selectordinal` element in the message (there can be more
+ * than one), each with its driving argument name, sorted branch-key set,
+ * resolved plural type, and offset. */
 function plurals(elements: MessageFormatElement[]): PluralInfo[] {
   const found: PluralInfo[] = [];
   walk(elements, (el) => {
     if (el.type === TYPE.plural) {
-      found.push({ arg: el.value, branches: Object.keys(el.options).sort() });
+      found.push({
+        arg: el.value,
+        branches: Object.keys(el.options).sort(),
+        pluralType: el.pluralType,
+        offset: el.offset,
+      });
     }
   });
   return found;
@@ -142,18 +161,36 @@ function selectArgs(elements: MessageFormatElement[]): string[] {
   return found;
 }
 
+interface ArgShape {
+  kind: "plural" | "selectordinal" | "select";
+  /** Only meaningful for `kind: "plural" | "selectordinal"`; omitted for
+   * `"select"`, which has no offset concept. `toEqual` (used everywhere this
+   * is compared) treats a missing property and an `undefined` property as
+   * equal, so this doesn't need to be forced to a sentinel. */
+  offset?: number;
+}
+
 /**
- * For a message, which arguments are modeled as `plural` or `select`,
- * keyed by argument name — e.g. `[["count", "plural"], ["gender",
- * "select"]]`, sorted for stable comparison. Built from `plurals()` and
- * `selectArgs()` above rather than a fresh AST walk, since both already
- * collect exactly this.
+ * For a message, which arguments are modeled as `plural`, `selectordinal`,
+ * or `select`, keyed by argument name — e.g. `[["count", { kind: "plural",
+ * offset: 0 }], ["gender", { kind: "select" }]]`, sorted for stable
+ * comparison. Built from `plurals()` and `selectArgs()` above rather than a
+ * fresh AST walk, since both already collect exactly this.
+ *
+ * This keys by argument NAME only — nesting position and multiplicity (e.g.
+ * a `count` plural nested inside a `gender` select vs. the same two
+ * arguments placed side by side) are deliberately not compared. Translators
+ * legitimately restructure nesting to fit target-language word order, and
+ * both structures render correctly, so treating that as a mismatch would be
+ * a false positive, not a caught bug.
  */
-function argKinds(elements: MessageFormatElement[]): [string, "plural" | "select"][] {
-  const kinds = new Map<string, "plural" | "select">();
-  for (const { arg } of plurals(elements)) kinds.set(arg, "plural");
-  for (const arg of selectArgs(elements)) kinds.set(arg, "select");
-  return [...kinds.entries()].sort(([a], [b]) => a.localeCompare(b));
+function argShapes(elements: MessageFormatElement[]): [string, ArgShape][] {
+  const shapes = new Map<string, ArgShape>();
+  for (const { arg, pluralType, offset } of plurals(elements)) {
+    shapes.set(arg, { kind: pluralType === "ordinal" ? "selectordinal" : "plural", offset });
+  }
+  for (const arg of selectArgs(elements)) shapes.set(arg, { kind: "select" });
+  return [...shapes.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
 describe("catalog", () => {
@@ -197,7 +234,12 @@ describe("catalog", () => {
           `${locale}/${namespace}.json: contains a non-string leaf value`,
         ).toBe(Object.keys(messages).length);
         for (const [key, message] of Object.entries(messages)) {
-          expect(() => parseMessage(locale, namespace, key, message)).not.toThrow();
+          // Call directly rather than wrapping in `expect(fn).not.toThrow()`:
+          // vitest truncates a thrown Error's message when reporting a
+          // not.toThrow() failure ("...but 'Error: vi/dashboard.json →
+          // srsDue.tit…' was thrown"), while an uncaught throw here fails
+          // the test with parseMessage()'s full locus-precise message intact.
+          parseMessage(locale, namespace, key, message);
         }
       }
     }
@@ -243,25 +285,35 @@ describe("catalog", () => {
     // why `messages/vi/dashboard.json`'s `srsDue.due` used to carry a
     // duplicated `one` branch: CLDR `vi` never selects `one`.
     //
-    // Net effect: `branches \ {=N} === CLDR(locale)`, exactly (not a
+    // Net effect: `branches \ {=N} === CLDR(locale, type)`, exactly (not a
     // subset in either direction). Explicit exact-match branches (`=0`,
     // `=1`, ...) are exempt entirely — they're numeral literals, not
     // linguistic categories, so any locale may add them freely without
     // needing to match CLDR or match each other across locales.
+    //
+    // `type` matters: `@formatjs` parses `selectordinal` as `TYPE.plural`
+    // with `pluralType: "ordinal"`, and ordinal CLDR categories genuinely
+    // differ from cardinal ones per locale (`en` ordinal is
+    // `["one","two","few","other"]`; `en` cardinal is `["one","other"]`).
+    // Resolving `Intl.PluralRules` with the plural's own `pluralType` — not
+    // assuming the default `"cardinal"` — is what lets a correct `en`
+    // `selectordinal` ("1st", "2nd", "3rd", "4th day") coexist with `vi`'s
+    // cardinal-shaped `srsDue.due` in the same catalog.
     const EXACT_MATCH = /^=\d+$/;
     for (const namespace of NAMESPACES) {
       for (const locale of routing.locales) {
         const messages = flattenMessages(readCatalog(locale, namespace));
-        const requiredCategories = [
-          ...new Intl.PluralRules(locale).resolvedOptions().pluralCategories,
-        ].sort();
         for (const [key, message] of Object.entries(messages)) {
-          for (const { branches } of plurals(parseMessage(locale, namespace, key, message))) {
+          for (const { branches, pluralType } of plurals(parseMessage(locale, namespace, key, message))) {
+            const requiredCategories = [
+              ...new Intl.PluralRules(locale, { type: pluralType }).resolvedOptions().pluralCategories,
+            ].sort();
             const linguisticBranches = branches.filter((b) => !EXACT_MATCH.test(b)).sort();
             expect(
               linguisticBranches,
-              `${locale}/${namespace}.json → ${key}: plural branches must exactly match the ` +
-                `CLDR categories locale "${locale}" resolves (${JSON.stringify(requiredCategories)})`,
+              `${locale}/${namespace}.json → ${key}: ${pluralType} plural branches must exactly ` +
+                `match the CLDR ${pluralType} categories locale "${locale}" resolves ` +
+                `(${JSON.stringify(requiredCategories)})`,
             ).toEqual(requiredCategories);
           }
         }
@@ -269,36 +321,41 @@ describe("catalog", () => {
     }
   });
 
-  it("requires the same arguments to be modeled as plural/select across all locales", () => {
-    // A `plural` or `select` silently downgraded to a plain string
-    // interpolation in one locale still renders *something* for every real
-    // user — intl-messageformat doesn't throw, it just never selects a
-    // branch, so `{count, plural, one {...} other {...}}` rendered as
-    // `{count}` prints the bare count. That's invisible in `vi` today only
-    // because `vi` never selects more than one branch anyway; it is wrong
-    // in any locale (including future ones) with more than one category,
-    // and for `select` (e.g. `{gender, select, male {...} female {...}
-    // other {...}}` downgraded to `{gender}`) it's wrong immediately, since
-    // the raw selector value ("male") has no branch mapped to it at all.
-    // Either way the catalogs become structurally inconsistent — argument
-    // *names* can match (the "ICU argument names" test above would pass)
-    // while the shape translators must fill in silently diverges. Checked
-    // directly here rather than relying on rendering to surface it.
+  it("requires the same arguments to be modeled as plural/selectordinal/select across all locales", () => {
+    // A `plural`/`selectordinal`/`select` silently downgraded to a plain
+    // string interpolation in one locale still renders *something* for
+    // every real user — intl-messageformat doesn't throw, it just never
+    // selects a branch, so `{count, plural, one {...} other {...}}`
+    // rendered as `{count}` prints the bare count. That's invisible in `vi`
+    // today only because `vi` never selects more than one branch anyway; it
+    // is wrong in any locale (including future ones) with more than one
+    // category, and for `select` (e.g. `{gender, select, male {...} female
+    // {...} other {...}}` downgraded to `{gender}`) it's wrong immediately,
+    // since the raw selector value ("male") has no branch mapped to it at
+    // all. Either way the catalogs become structurally inconsistent —
+    // argument *names* can match (the "ICU argument names" test above would
+    // pass) while the shape translators must fill in silently diverges.
+    // Checked directly here rather than relying on rendering to surface it.
+    //
+    // A cardinal-in-one-locale / ordinal-in-the-other swap (both parse as
+    // `TYPE.plural`) and an `offset:` divergence (same branches, different
+    // count shift) are equally invisible to a bare kind check, so `argShapes`
+    // compares plural type and offset too, not just "is this a plural".
     const reference = routing.defaultLocale;
     for (const namespace of NAMESPACES) {
       const referenceMessages = flattenMessages(readCatalog(reference, namespace));
       for (const locale of routing.locales) {
         const messages = flattenMessages(readCatalog(locale, namespace));
         for (const [key, referenceMessage] of Object.entries(referenceMessages)) {
-          const referenceKinds = argKinds(parseMessage(reference, namespace, key, referenceMessage));
+          const referenceShapes = argShapes(parseMessage(reference, namespace, key, referenceMessage));
           const localeMessage = messages[key];
           if (localeMessage === undefined) {
             throw new Error(
               `${locale}/${namespace}.json → ${key}: message is missing (see "has identical key sets" failure)`,
             );
           }
-          const localeKinds = argKinds(parseMessage(locale, namespace, key, localeMessage));
-          expect(localeKinds, `${locale}/${namespace}.json → ${key}`).toEqual(referenceKinds);
+          const localeShapes = argShapes(parseMessage(locale, namespace, key, localeMessage));
+          expect(localeShapes, `${locale}/${namespace}.json → ${key}`).toEqual(referenceShapes);
         }
       }
     }
