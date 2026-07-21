@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import type {
   FuriganaDisplayMode,
   TranscriptLineRow,
@@ -63,6 +64,7 @@ async function patchJson(url: string, body: unknown): Promise<void> {
  * translation toggles, and duration/progress reporting to the API.
  */
 export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingViewProps) {
+  const t = useTranslations("shadowing");
   const playerRef = useRef<YouTubePlayerHandle>(null);
   const durationReportedRef = useRef(video.duration_seconds != null);
   const lastSavedTimeRef = useRef(0);
@@ -168,10 +170,8 @@ export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingV
               aria-live="assertive"
               className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/90 p-4 text-center text-white"
             >
-              <p className="font-medium">This video can&apos;t be played here.</p>
-              <p className="text-sm text-white/70">
-                It may be region-locked, private, or unavailable for embedding.
-              </p>
+              <p className="font-medium">{t("playerError.title")}</p>
+              <p className="text-sm text-white/70">{t("playerError.body")}</p>
             </div>
           )}
         </div>
@@ -193,7 +193,7 @@ export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingV
         <div className="mt-3 flex flex-wrap items-center gap-4">
           <FuriganaModeControl value={furiganaMode} onChange={setFuriganaMode} />
           <ToggleButton pressed={showTranslation} onClick={() => setShowTranslation((v) => !v)}>
-            Translation
+            {t("translationToggle")}
           </ToggleButton>
         </div>
 
@@ -223,11 +223,8 @@ export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingV
           />
         ) : (
           <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">No transcript yet</p>
-            <p className="mt-1">
-              This video doesn&apos;t have a transcript to shadow against yet. Transcript
-              submission is coming soon.
-            </p>
+            <p className="font-medium text-foreground">{t("noTranscript.title")}</p>
+            <p className="mt-1">{t("noTranscript.body")}</p>
           </div>
         )}
       </div>

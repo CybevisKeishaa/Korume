@@ -1,0 +1,31 @@
+{
+  "playerError": {
+    "title": "Video này không thể phát ở đây.",
+    "body": "Video có thể bị khóa theo khu vực, ở chế độ riêng tư, hoặc không cho phép nhúng."
+  },
+  "noTranscript": {
+    "title": "Chưa có phụ đề",
+    "body": "Video này chưa có phụ đề để luyện shadowing theo. Tính năng gửi phụ đề sẽ sớm ra mắt."
+  },
+  "translationToggle": "Bản dịch",
+  "summary": {
+    "heading": "Tóm tắt",
+    "aiGenerated": "Do AI tạo",
+    "a11y": { "region": "Tóm tắt video bằng AI" },
+    "empty": "Video này chưa có tóm tắt.",
+    "generate": "Tạo tóm tắt",
+    "generating": "Đang tạo tóm tắt…",
+    "inputTruncated": "Lưu ý: phụ đề đã được rút gọn để tóm tắt.",
+    "keyVocab": "Từ vựng chính",
+    "keyGrammar": "Ngữ pháp chính",
+    "errors": {
+      "noTranscript": "Video này chưa có phụ đề để tóm tắt.",
+      "unavailable": "Tính năng tóm tắt bằng AI chưa được thiết lập cho bản triển khai này.",
+      "rateLimited": "Quá nhiều yêu cầu tóm tắt — thử lại sau {seconds} giây.",
+      "rateLimitedGeneric": "Quá nhiều yêu cầu tóm tắt — vui lòng đợi một chút rồi thử lại.",
+      "generic": "Không thể tạo tóm tắt vào lúc này.",
+      "generateFailed": "Không thể tạo tóm tắt vào lúc này.",
+      "loadFailed": "Không thể tải tóm tắt."
+    }
+  }
+}

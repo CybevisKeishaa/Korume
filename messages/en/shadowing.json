@@ -1,0 +1,31 @@
+{
+  "playerError": {
+    "title": "This video can't be played here.",
+    "body": "It may be region-locked, private, or unavailable for embedding."
+  },
+  "noTranscript": {
+    "title": "No transcript yet",
+    "body": "This video doesn't have a transcript to shadow against yet. Transcript submission is coming soon."
+  },
+  "translationToggle": "Translation",
+  "summary": {
+    "heading": "Summary",
+    "aiGenerated": "AI-generated",
+    "a11y": { "region": "AI video summary" },
+    "empty": "No summary yet for this video.",
+    "generate": "Generate summary",
+    "generating": "Generating summary…",
+    "inputTruncated": "Note: the transcript was truncated to summarize it.",
+    "keyVocab": "Key vocab",
+    "keyGrammar": "Key grammar",
+    "errors": {
+      "noTranscript": "This video has no transcript to summarize yet.",
+      "unavailable": "AI summarization isn't set up yet for this deployment.",
+      "rateLimited": "Too many summary requests — try again in {seconds}s.",
+      "rateLimitedGeneric": "Too many summary requests — please wait a moment and try again.",
+      "generic": "Could not generate a summary right now.",
+      "generateFailed": "Couldn't generate a summary right now.",
+      "loadFailed": "Couldn't load the summary."
+    }
+  }
+}

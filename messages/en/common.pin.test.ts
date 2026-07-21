@@ -99,3 +99,55 @@ describe("common.json EN — network error (Task 11b promotion)", () => {
     );
   });
 });
+
+/**
+ * Task 11c extended `common.player.*` with `playback-controls.tsx`'s strings
+ * (user decision 2026-07-21: keep the whole player-shell cluster in one
+ * place so Task 19's demotion-to-`shadowing.*` gate, if it fires, is a
+ * single decision — see the plan's Task 11 section). Literal `toBe` pins per
+ * the standing Task 10 convention; `playback-controls.test.tsx` proves the
+ * RTL wiring.
+ *
+ * `a11y.abLoop` gets its own isolated `it()`, not folded into the others:
+ * hazard 4 is that this string carries an EN DASH (U+2013), not a hyphen,
+ * and a single shared `it()` would let an earlier assertion's failure
+ * short-circuit past this one, hiding a silent hyphen substitution.
+ */
+describe("common.json EN — playback-controls literals (Task 11c)", () => {
+  it("pins the speed control's accessible group name", () => {
+    expect(en.player.a11y.playbackSpeed).toBe("Playback speed");
+  });
+
+  it("pins the A–B loop group's accessible name (EN DASH U+2013, not a hyphen)", () => {
+    expect(en.player.a11y.abLoop).toBe("A–B loop");
+    expect(en.player.a11y.abLoop).not.toBe("A-B loop");
+  });
+
+  it("pins the furigana control's accessible group name", () => {
+    expect(en.player.a11y.furigana).toBe("Furigana");
+  });
+
+  it("pins the three furigana mode labels", () => {
+    expect(en.player.furigana.adaptive).toBe("Adaptive");
+    expect(en.player.furigana.all).toBe("All");
+    expect(en.player.furigana.off).toBe("Off");
+  });
+
+  it("pins the loop control labels", () => {
+    expect(en.player.loop.setA).toBe("Set A");
+    expect(en.player.loop.setB).toBe("Set B");
+    expect(en.player.loop.clear).toBe("Clear loop");
+  });
+});
+
+/**
+ * `states.loading` was added in Task 2 but had no consumer (and no literal
+ * pin) until Task 11c's `video-summary-panel.tsx`, whose own "Loading…" text
+ * is byte-identical to it — reused rather than duplicated into
+ * `shadowing.json` (P4). First real consumer, so this is the first pin.
+ */
+describe("common.json EN — states.loading (first consumed by Task 11c)", () => {
+  it("pins the generic loading message", () => {
+    expect(en.states.loading).toBe("Loading…");
+  });
+});

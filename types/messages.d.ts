@@ -8,6 +8,7 @@ import type vocab from "../messages/en/vocab.json";
 import type grammar from "../messages/en/grammar.json";
 import type videos from "../messages/en/videos.json";
 import type dictation from "../messages/en/dictation.json";
+import type shadowing from "../messages/en/shadowing.json";
 import type { routing } from "../lib/i18n/routing";
 
 declare module "next-intl" {
@@ -24,6 +25,7 @@ declare module "next-intl" {
       grammar: typeof grammar;
       videos: typeof videos;
       dictation: typeof dictation;
+      shadowing: typeof shadowing;
     };
   }
 }
