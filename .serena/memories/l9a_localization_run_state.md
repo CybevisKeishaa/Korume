@@ -61,9 +61,17 @@ warnings, 0 new · build ✓. One intermittent single-test failure appeared in o
 subsequent full runs were green; it was not captured by name, consistent with the documented
 CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
-## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-7 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 8-19 remain
+## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-8 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 9-19 remain
 
-**HEAD `8ae225a`. Next = Task 8 (`vocab`).** Tasks 6, 6b and 7 each needed exactly one fix wave;
+**HEAD `8746dc5`. Next = Task 9 (`grammar`), which consumes `common.actions.review`,
+`common.filters.all` and `common.a11y.levelFilter` — all now exist.**
+
+**REVIEW LESSON worth more than any single fix (Task 8):** the reviewer stopped arguing and ran a
+MUTATION TEST — it deleted "(AI)" from the AI-content-labeling button's catalog value and rewrote
+the row label, and the suite stayed 12/12 GREEN, because the only guards were substring regexes
+(`/ai-generated/i`). **A substring regex is not a pin.** Compliance surfaces need exact literal
+assertions, and when several assertions share one `it()` block, mutate each in ISOLATION — the
+first failure short-circuits the rest and hides the others' absence. Tasks 6, 6b and 7 each needed exactly one fix wave;
 every finding was a real defect, none was polish. Three things later tasks MUST inherit:
 
 1. **`useTranslations` works in NON-ASYNC Server Components** (confirmed by a real build, both
