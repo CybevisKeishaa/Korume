@@ -61,7 +61,94 @@ warnings, 0 new · build ✓. One intermittent single-test failure appeared in o
 subsequent full runs were green; it was not captured by name, consistent with the documented
 CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
-## ✅ Plan 3 WRITTEN 2026-07-19 (`66ea4b7`, updated `300ee94`+) — NOT executed
+## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-5 ✅ done + reviewed clean (2026-07-21); Tasks 6-19 remain
+
+Method: `superpowers:subagent-driven-development`. Branch **`layer-9a-string-extraction`** off
+master @ `e5893e9`. Durable ledger: `.superpowers/sdd/progress.md` (gitignored scratch — if it's
+gone, reconstruct from `git log` + this block). Each task = fresh implementer subagent +
+independent code-review + fix loop; only merged after review clean.
+
+**Tasks 1-5 DONE, reviewed clean, committed** (HEAD = `462806e`):
+- Task 1 (`b52a0d2`): test/render.tsx now serves the REAL EN catalogs via import.meta.glob (needs
+  `/// <reference types="vite/client" />`). THE LINCHPIN — without it every t() call renders the
+  key and breaks the module's own tests.
+- Task 2 (`52efa51`): pilot — extracted `nav` + `common`. Cost 3 review rounds; established the
+  patterns everything copies. Two Criticals caught & fixed (see below).
+- Task 3 (`e4da0f5`): dialog/toast a11y labels — primitives UNCHANGED (keep English-defaulted
+  props), CALLERS pass translated text (design-system/i18n independence, spec §4.5). Found a
+  second wrapper `components/admin/dialog.tsx` missing the prop.
+- Task 4 (`36d6529`): `auth` namespace + OAuth callback unprefixed-redirect fix + login round-trip
+  e2e. Pulled zod validation messages (`lib/validation/auth.ts`) into scope — they render to users
+  and NO task owned them; now catalog keys resolved in actions.ts.
+
+- Task 5 (`6fa0c7a` + nits `462806e`): `marketing` namespace + the 3 authorized false-"trial" copy
+  fixes. **The paused draft was VERIFIED IN PLACE, not discarded** — full gate green as-is.
+  Review: APPROVE WITH NITS, 0 Critical, 0 blocking; all 3 nits applied in `462806e`.
+  **One user-decided deviation from the draft:** the draft had made `components/layout/site-header.tsx`
+  `"use client"` purely so RTL could render it. Reverted to an **async server component** using
+  `getTranslations` (matching the marketing layout/page); `site-header.test.tsx` deleted, all 5 of
+  its pins moved into `tests/e2e/home.spec.ts`. Reason: the landing page is the most perf-sensitive
+  SSG surface and L9c runs a perf audit — don't hydrate a static header just to make it testable.
+  Reviewer ran `npm run build` and confirmed `/[locale]` is STILL prerendered for both locales
+  (`app/[locale]/layout.tsx:52` still calls `setRequestLocale`). **Consequence for Tasks 6-19: a
+  server component's strings can only be pinned in Playwright, so that surface is invisible to
+  `npx vitest run`. Accept the trade; do NOT "fix" it by adding "use client".**
+
+**⚠ BACKLOG owned by NO task — close before the Task 19 gate:** `components/ui/theme-toggle.tsx:12-13`
+ships hardcoded English `aria-label`/`title` ("Switch to {light|dark} theme"). It renders in BOTH the
+marketing header and the app-shell nav, so under live `vi` a screen-reader user hears English. Fix per
+Task 3's primitive rule: `common.a11y.toLightTheme`/`toDarkTheme` + a `label` prop threaded from
+`SiteHeader` and `AppNav` (pattern 5 applies — needs a non-English literal in one test).
+
+**GOTCHA that cost time this session (write it into your debugging reflex):** two e2e register-flow
+specs failed with "stuck on /en/register" — the cause was **Docker Desktop being OFF** (local Supabase
+down), NOT the code. `home.spec.ts` needs no auth and stayed green, which is the tell. **Run `docker ps`
+before debugging any e2e failure involving registration or sign-in.** Separately: running `npx vitest run`
+and `npx playwright test` CONCURRENTLY reproduces the documented `waveform.test.tsx` CPU-contention flake.
+Run the gates sequentially.
+
+**RESUME next session: Task 6 (`dashboard` namespace), then Tasks 7-19**, same cadence
+(fresh implementer subagent → independent code-review → fix loop → commit). Ledger:
+`.superpowers/sdd/progress.md`.
+
+**HARD-WON PATTERNS from Tasks 1-4 — every later task MUST follow (don't relearn the Criticals):**
+1. **Pin every extracted string BEFORE changing code; the test passes while strings are still
+   hardcoded** (characterization test for a behaviour-preserving refactor). Pin ALL strings incl.
+   aria-labels, not a sample. Iterate the component's own list where one exists.
+2. **NEVER derive a pinned expected value from the catalog under test.** `@/test/render` feeds the
+   component that same JSON, so `import enNav from messages/en/nav.json; expect(...name: enNav.x)`
+   compares the file to itself and stays green through a typo. Expected values = LITERAL strings in
+   the test. (This was a CRITICAL in Task 2, twice.) Importing a catalog only for `Object.keys`
+   structural parity is fine.
+3. **EN + VN land in the SAME commit** — catalog.test.ts asserts key + ICU-arg parity; an EN-only
+   commit is red. Register a namespace in 3 places: namespaces.ts, types/messages.d.ts, both dirs.
+4. **English byte-identical** (except Task 5's 3 authorized copy fixes). D6 safety net depends on it.
+5. **Prop-threaded copy needs a NON-English literal in one test** — an EN test can't tell a
+   correctly-threaded label from its own English fallback (both render the same). tsc catches a
+   missing prop, not a dropped one.
+6. A component rendering ThemeToggle/ReduceMotionToggle needs `<ThemeProvider>` in the test wrapper.
+7. Keep `text-*-strong` classes — plan snippets predate the WCAG fix (b4b4fcb) and would revert it.
+8. **VN tone marks = MODERN placement** (Hủy/Xóa, mark on main vowel) — user decision, binding.
+9. Client comps: `useTranslations` from `@/lib/i18n`. Server: `getTranslations` from
+   `@/lib/i18n/server`. NEVER import next-intl directly (ESLint-enforced, fire-tested).
+   Server-action i18n test = mock @/lib/i18n/server getTranslations w/ use-intl/core createTranslator
+   seeded from the real EN catalog. Form comps need the vi.mock("react-dom",...) shim (real
+   react-dom@18.3.1 lacks useFormState/useFormStatus) — causes an EXPECTED form-action warning.
+
+**Minor findings carried to the FINAL whole-branch review** (don't fix mid-stream unless trivial):
+(a) test/messages content-assert covers only `common`; (c) app-nav structural test hardcodes the
+"ariaLabel" key exclusion; (d) task-3 report test-count arithmetic off; (e) admin video-queue/
+content-form half-translated under live `vi` (Task 17 owns); (f) `use-intl/core` imported but not a
+declared dep AND not covered by the next-intl eslint boundary — add devDependency + shared test
+helper; (g) translateValidationKey switch hand-lists the 5 keys a 3rd time; (h) login/register
+page.tsx headings have no RTL pin; (i) /login never displays ?error=auth|oauth (dead query param).
+
+Plan-3 baseline (verified before Task 5): **1325 tests / 179 files · tsc 0 · lint exit 0 / 80
+pre-existing warnings across 23 files · playwright 3 specs green**.
+
+---
+
+## ✅ Plan 3 WRITTEN 2026-07-19 (`66ea4b7`, updated `300ee94`+) — now EXECUTING (see block above)
 `docs/superpowers/plans/2026-07-19-l9a-string-extraction-vietnamese.md`, 19 tasks.
 **Key deviation from the spec, forced by the repo:** spec §5 splits Phase 2 (extract EN) from
 Phase 3 (fill VN), but `lib/i18n/catalog.test.ts` ALREADY asserts identical key sets across
