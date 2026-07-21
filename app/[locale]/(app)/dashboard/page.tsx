@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Link } from "@/lib/i18n/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LevelCard } from "@/components/learning/level-card";
@@ -13,24 +14,25 @@ import { vnDateString } from "@/lib/gamification";
 export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
-const MODULES = [
-  { href: "/kanji", title: "Kanji", desc: "Stroke order, readings, SRS." },
-  { href: "/vocab", title: "Vocabulary", desc: "Words by level + flashcard review." },
-  { href: "/grammar", title: "Grammar", desc: "Patterns with examples." },
-] as const;
-
 export default async function DashboardPage() {
+  const t = await getTranslations("dashboard");
   const statsResult = await getUserStats();
   const stats = statsResult.ok ? statsResult.data : null;
   const today = vnDateString(new Date());
 
+  const MODULES = [
+    { href: "/kanji", title: t("modules.kanjiTitle"), desc: t("modules.kanjiDesc") },
+    { href: "/vocab", title: t("modules.vocabTitle"), desc: t("modules.vocabDesc") },
+    { href: "/grammar", title: t("modules.grammarTitle"), desc: t("modules.grammarDesc") },
+  ] as const;
+
   return (
     <Container className="py-12">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <p className="mt-1 text-muted-foreground">Pick a module to start studying.</p>
+      <h1 className="text-2xl font-bold">{t("title")}</h1>
+      <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
 
       {stats && (
-        <section aria-label="Your progress" className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section aria-label={t("a11y.progress")} className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <LevelCard xp={stats.xp} level={stats.level} />
           <StreakCard
             streakCurrent={stats.streakCurrent}
@@ -45,7 +47,7 @@ export default async function DashboardPage() {
       {stats && (
         <section aria-labelledby="badges-heading" className="mt-10">
           <h2 id="badges-heading" className="mb-3 text-lg font-semibold">
-            Badges
+            {t("badges.heading")}
           </h2>
           <BadgesGrid badges={stats.badges} />
         </section>
@@ -53,16 +55,16 @@ export default async function DashboardPage() {
 
       <section aria-labelledby="recommendations-heading" className="mt-10">
         <h2 id="recommendations-heading" className="mb-3 text-lg font-semibold">
-          Recommended for you
+          {t("recommendationsHeading")}
         </h2>
-        <Suspense fallback={<p className="text-sm text-muted-foreground">Finding videos at your level…</p>}>
+        <Suspense fallback={<p className="text-sm text-muted-foreground">{t("recommendationsLoading")}</p>}>
           <RecommendationSection limit={8} />
         </Suspense>
       </section>
 
       <section aria-labelledby="modules-heading" className="mt-10">
         <h2 id="modules-heading" className="mb-3 text-lg font-semibold">
-          Modules
+          {t("modules.heading")}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {MODULES.map((m) => (

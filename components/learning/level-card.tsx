@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "@/lib/i18n";
 import type { LevelInfo } from "@/lib/gamification";
 
 export interface LevelCardProps {
@@ -22,23 +23,24 @@ export interface LevelCardProps {
  * (e.g. a re-render with new XP) after the mount animation settles.
  */
 export function LevelCard({ xp, level }: LevelCardProps) {
+  const t = useTranslations("dashboard");
   const percent = Math.round(level.progressRatio * 100);
   const xpToNext = Math.max(0, level.nextLevelXp - xp);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Level {level.level}</CardTitle>
+        <CardTitle>{t("level.title", { level: level.level })}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">{xp.toLocaleString()} XP</p>
+        <p className="text-sm text-muted-foreground">{t("level.xp", { xp: xp.toLocaleString() })}</p>
 
         <div
           role="progressbar"
           aria-valuenow={percent}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`Progress to level ${level.level + 1}`}
+          aria-label={t("level.progressLabel", { level: level.level + 1 })}
           data-celebrate="level-progress"
           className="h-2 w-full overflow-hidden rounded-full bg-muted"
         >
@@ -56,7 +58,7 @@ export function LevelCard({ xp, level }: LevelCardProps) {
         <p className="text-xs text-muted-foreground">
           {percent}%
           {level.nextLevelXp > level.levelFloorXp
-            ? ` · ${xpToNext} XP to level ${level.level + 1}`
+            ? ` · ${t("level.xpToNext", { xp: xpToNext, level: level.level + 1 })}`
             : ""}
         </p>
       </CardContent>

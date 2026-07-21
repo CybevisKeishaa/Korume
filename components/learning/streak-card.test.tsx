@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import { StreakCard } from "./streak-card";
 
 describe("StreakCard", () => {
@@ -7,9 +7,10 @@ describe("StreakCard", () => {
     render(
       <StreakCard streakCurrent={5} streakLongest={9} lastActiveDate="2026-07-13" today="2026-07-13" />,
     );
+    expect(screen.getByRole("heading", { name: "Streak" })).toBeInTheDocument();
     expect(screen.getByText(/5/)).toBeInTheDocument();
-    expect(screen.getByText(/day streak/i)).toBeInTheDocument();
-    expect(screen.getByText(/longest: 9/i)).toBeInTheDocument();
+    expect(screen.getByText("day streak")).toBeInTheDocument();
+    expect(screen.getByText("Longest: 9 days")).toBeInTheDocument();
     expect(screen.queryByText(/keep it going today/i)).not.toBeInTheDocument();
   });
 
@@ -17,7 +18,9 @@ describe("StreakCard", () => {
     render(
       <StreakCard streakCurrent={5} streakLongest={9} lastActiveDate="2026-07-12" today="2026-07-13" />,
     );
-    expect(screen.getByText(/keep it going today/i)).toBeInTheDocument();
+    expect(
+      screen.getByText("Keep it going today — study one item to extend it."),
+    ).toBeInTheDocument();
     // No FOMO/guilt language.
     expect(screen.queryByText(/lose your streak/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/about to/i)).not.toBeInTheDocument();

@@ -1,0 +1,44 @@
+{
+  "title": "Bảng điều khiển",
+  "subtitle": "Chọn một học phần để bắt đầu học.",
+  "a11y": {
+    "progress": "Tiến độ của bạn"
+  },
+  "recommendationsHeading": "Đề xuất cho bạn",
+  "recommendationsLoading": "Đang tìm video phù hợp với trình độ của bạn…",
+  "modules": {
+    "heading": "Học phần",
+    "kanjiTitle": "Kanji",
+    "kanjiDesc": "Thứ tự nét viết, cách đọc, SRS.",
+    "vocabTitle": "Từ vựng",
+    "vocabDesc": "Từ vựng theo cấp độ, ôn tập bằng thẻ ghi nhớ.",
+    "grammarTitle": "Ngữ pháp",
+    "grammarDesc": "Mẫu ngữ pháp kèm ví dụ."
+  },
+  "level": {
+    "title": "Cấp độ {level}",
+    "xp": "{xp} XP",
+    "progressLabel": "Tiến độ đến cấp độ {level}",
+    "xpToNext": "Còn {xp} XP để đạt cấp độ {level}"
+  },
+  "streak": {
+    "title": "Chuỗi ngày học",
+    "dayStreak": "ngày liên tiếp",
+    "longest": "Dài nhất: {count} ngày",
+    "nudge": "Tiếp tục ngay hôm nay — học một mục để duy trì chuỗi ngày học của bạn."
+  },
+  "srsDue": {
+    "title": "Hàng đợi ôn tập",
+    "due": "{count, plural, other {# thẻ đến hạn ôn tập}}",
+    "reviewVocab": "Ôn tập từ vựng",
+    "reviewKanji": "Ôn tập Kanji",
+    "allCaughtUp": "Đã ôn tập hết — hiện không có thẻ nào đến hạn."
+  },
+  "badges": {
+    "heading": "Huy hiệu",
+    "empty": "Chưa có huy hiệu nào trong bộ sưu tập.",
+    "locked": "Đã khóa",
+    "earnedA11y": "đã đạt",
+    "lockedA11y": "đã khóa"
+  }
+}

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "@/lib/i18n";
 
 export interface StreakCardProps {
   streakCurrent: number;
@@ -17,20 +18,22 @@ export interface StreakCardProps {
  * be lost.
  */
 export function StreakCard({ streakCurrent, streakLongest, lastActiveDate, today }: StreakCardProps) {
+  const t = useTranslations("dashboard");
   const activeToday = lastActiveDate === today;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Streak</CardTitle>
+        <CardTitle>{t("streak.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
         <p className="text-3xl font-bold">
-          {streakCurrent} <span className="text-base font-normal text-muted-foreground">day streak</span>
+          {streakCurrent}{" "}
+          <span className="text-base font-normal text-muted-foreground">{t("streak.dayStreak")}</span>
         </p>
-        <p className="text-sm text-muted-foreground">Longest: {streakLongest} days</p>
+        <p className="text-sm text-muted-foreground">{t("streak.longest", { count: streakLongest })}</p>
         {!activeToday && (
-          <p className="text-sm text-muted-foreground">Keep it going today — study one item to extend it.</p>
+          <p className="text-sm text-muted-foreground">{t("streak.nudge")}</p>
         )}
       </CardContent>
     </Card>
