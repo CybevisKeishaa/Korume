@@ -1,3 +1,4 @@
+import { getTranslations } from "@/lib/i18n/server";
 import { getGrammarList } from "@/lib/data/content";
 import { jlptLevelSchema } from "@/lib/validation/content";
 import { LevelTabs } from "@/components/learning/level-tabs";
@@ -12,6 +13,7 @@ export default async function GrammarPage({
 }: {
   searchParams: { level?: string };
 }) {
+  const t = await getTranslations("grammar");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
   const grammar = await getGrammarList(level);
 
@@ -19,9 +21,9 @@ export default async function GrammarPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Grammar</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {grammar.length} point{grammar.length === 1 ? "" : "s"}
+            {t("subtitleCount", { count: grammar.length })}
             {level ? ` · ${level}` : ""}
           </p>
         </div>
@@ -62,7 +64,7 @@ export default async function GrammarPage({
       </div>
 
       {grammar.length === 0 && (
-        <p className="text-muted-foreground">No grammar at this level yet.</p>
+        <p className="text-muted-foreground">{t("empty")}</p>
       )}
     </Container>
   );

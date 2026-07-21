@@ -5,6 +5,7 @@ import type marketing from "../messages/en/marketing.json";
 import type dashboard from "../messages/en/dashboard.json";
 import type kanji from "../messages/en/kanji.json";
 import type vocab from "../messages/en/vocab.json";
+import type grammar from "../messages/en/grammar.json";
 import type { routing } from "../lib/i18n/routing";
 
 declare module "next-intl" {
@@ -18,6 +19,7 @@ declare module "next-intl" {
       dashboard: typeof dashboard;
       kanji: typeof kanji;
       vocab: typeof vocab;
+      grammar: typeof grammar;
     };
   }
 }
