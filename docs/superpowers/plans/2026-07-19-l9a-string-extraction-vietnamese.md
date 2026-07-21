@@ -81,7 +81,19 @@ Flat-ish, two levels maximum, `camelCase` leaves:
 
 - Page/section heading → `title`. Sub-heading → `subtitle`. Empty state → `empty`. Error → `error`.
 - Accessibility strings (`aria-label`, `alt`) → nested under `a11y`.
-- Pluralization uses real ICU, never string concatenation: `"{count, plural, =0 {No cards} one {# card} other {# cards}}"`. **VN has no plural inflection** — the VN form is the same text for every branch, but the branches must still exist so ICU argument parity passes: `"{count, plural, =0 {Chưa có thẻ nào} other {# thẻ}}"`.
+- Pluralization uses real ICU, never string concatenation: `"{count, plural, =0 {No cards} one {{count} card} other {{count} cards}}"`.
+  **Corrected 2026-07-21 after Task 6b hardened `lib/i18n/catalog.test.ts`** — the two rules below are
+  now enforced by a real ICU parser, and the original wording of this bullet would fail it:
+  - **VN has no plural inflection, and its VN message must therefore carry ONLY `other`** (plus any
+    `=N` exact matches). CLDR `vi` resolves exactly `["other"]`, so adding a `one` branch to match
+    EN's branch count is now a TEST FAILURE, not a parity requirement. Branch sets are compared
+    against each locale's own CLDR categories, resolved with the plural's own type (`cardinal` vs
+    `ordinal` — `selectordinal` differs). What must match across locales is the set of arguments
+    modeled as plural/selectordinal/select, and each plural's `offset`, not the branch keys.
+    Correct VN form: `"{count, plural, =0 {Chưa có thẻ nào} other {{count} thẻ}}"`.
+  - **Use a named argument (`{count}`) inside branches, never ICU's `#`.** `#` runs the value
+    through `Intl.NumberFormat`, so 1234 renders "1,234" where the pre-extraction template literal
+    produced "1234" — a byte-identity break that shipped undetected in Task 6 and had to be undone.
 
 ---
 

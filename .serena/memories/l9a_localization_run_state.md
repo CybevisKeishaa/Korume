@@ -61,7 +61,34 @@ warnings, 0 new · build ✓. One intermittent single-test failure appeared in o
 subsequent full runs were green; it was not captured by name, consistent with the documented
 CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
-## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-5 ✅ done + reviewed clean (2026-07-21); Tasks 6-19 remain
+## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-7 + inserted 6b ✅ done + reviewed clean (2026-07-21); Tasks 8-19 remain
+
+**HEAD `8ae225a`. Next = Task 8 (`vocab`).** Tasks 6, 6b and 7 each needed exactly one fix wave;
+every finding was a real defect, none was polish. Three things later tasks MUST inherit:
+
+1. **`useTranslations` works in NON-ASYNC Server Components** (confirmed by a real build, both
+   locales compiled). Only ASYNC server components need `getTranslations` from `@/lib/i18n/server`.
+   **Never add "use client" to make something translatable** — Task 5 removed exactly such a
+   conversion. This is what keeps presentational components renderable by RTL.
+2. **`lib/i18n/catalog.test.ts` now PARSES every message in every locale as an ICU AST** (Task 6b,
+   3 rounds). It compares parsed argument names, plural/selectordinal/select shapes, plural
+   `offset`, and CLDR branch sets resolved with each plural's own type. Consequences when writing a
+   plural: **`vi` carries ONLY `other`** (adding `one` to match EN's branch count is now a FAILURE),
+   and **use `{count}`, never ICU `#`** (`#` runs through Intl.NumberFormat, so 1234 renders
+   "1,234" — a byte-identity break that shipped undetected in Task 6). The plan doc's key-naming
+   section said the opposite on both counts and has been corrected.
+3. **Shared components' strings go to `common`, not a module namespace** — but do NOT duplicate keys
+   `common` already has. Task 7 promoted `common.srs.*` (Tasks 8/12 consume it),
+   `common.filters.all` and `common.a11y.levelFilter` (Tasks 8/9/13). Reason to prefer reuse over
+   pre-emptive duplication is DRIFT, not purity.
+
+**Carry-forward defects (in the SDD ledger too):** Task 12 must fix
+`components/video-player/mining-review-session.tsx:61`, which still routes raw `Error.message` to
+the DOM — the exact defect Task 7 removed from `review-session.tsx`, where it made the translated
+error string unreachable. A dedicated sweep task near the end converts all 25 pages'
+`export const metadata` to `generateMetadata` (user decision) — module tasks LEAVE metadata in
+English. `components/ui/theme-toggle.tsx` a11y copy is still hardcoded English and is owned by no
+task.
 
 Method: `superpowers:subagent-driven-development`. Branch **`layer-9a-string-extraction`** off
 master @ `e5893e9`. Durable ledger: `.superpowers/sdd/progress.md` (gitignored scratch — if it's
