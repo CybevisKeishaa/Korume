@@ -64,11 +64,18 @@ more than the implementations: the three highest-value catches of the run all ca
 and all were invisible to a green test suite (ICU `#` silently reformatting 1234 → "1,234"; no
 Vietnamese message ever being ICU-parsed in CI; raw `Error.message` reaching the DOM and making the
 translated error string unreachable).
-**Sharpened at 11c — use this from now on:** run the reviewer's mutation pass **TWICE**, once against
-the full in-scope test set and once against the **RTL component tests only** (pin tests excluded). At
-11c pass 1 found 0 survivors and pass 2 found 5 — five strings had a correct catalog pin but nothing
-rendered them in any test, so a catalog typo was caught while a **wiring** error (swapped `t()` keys)
-was not. The pin proves COPY, the RTL test proves WIRING; only separating them shows which is missing.
+**TWO STANDING REVIEW CONVENTIONS, binding from 11d on (user, 2026-07-22) — full text in
+`mem:l9a_localization_run_state`, put BOTH in every reviewer brief:**
+(A) Mutation testing has **two classes** and a review must report **separate survivor counts** for each:
+**catalog mutations** (append/prepend, punctuation, ICU placeholders, rich tags → prove the
+`messages/en/*.pin.test.ts` literal pins) and **wiring mutations** (swap two `t()` keys, swap the
+namespace, point two elements at one key, delete a translated prop → prove the RTL tests, and must run
+against the **RTL tests ONLY, pin tests excluded**). At 11c the blended number was 0 survivors while the
+RTL-only pass was 5 — the pin tests were masking the gap, and one number cannot show that.
+(B) When promoting into `common.*`, **record the actual consumer count, naming the unit** — importing
+FILES vs consuming SURFACES differ, and P4 tests MODULES. Measured: `common.player.*` = 3 files but
+**1 surface** (demotion candidate); `common.errors.network` = **2 consumers**, NOT the 28-places/8-modules
+figure, which counts un-migrated raw English literals (a backlog, not consumers).
 
 **Two ROADMAP additions decided during execution:**
 1. **Task 6b (inserted, done)** — `lib/i18n/catalog.test.ts` now parses every message in every

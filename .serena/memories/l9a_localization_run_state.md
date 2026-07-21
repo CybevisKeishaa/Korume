@@ -129,6 +129,42 @@ ICU (3rd instance of that pattern); `t.rich` for the `<strike>extra</strike>` le
 interface needs silently disabled typo checking, while a type alias gets an implicit one and still
 satisfies next-intl's values param. **Do NOT "tidy" it back**; the comment in the file says so.
 
+## ⚠⚠ TWO STANDING REVIEW CONVENTIONS — binding from Task 11d onward (user, 2026-07-22)
+
+Not new process; these codify what Tasks 8, 10, 11a and 11c already proved. **Put both in every
+reviewer brief, and require both numbers back in the verdict.**
+
+### A. Mutation testing has TWO CLASSES. Report them SEPARATELY, with separate survivor counts.
+
+A single blended "0 survivors" is misleading — at 11c the full suite returned 0 while the RTL-only pass
+returned 5, because **the pin tests were masking the wiring gap**. One number cannot show that.
+
+| Class | What it mutates | What it proves | Run against |
+|---|---|---|---|
+| **Catalog mutations** (copy integrity) | append / prepend text, punctuation, ICU placeholder names, rich-text tag names | the literal pins in `messages/en/*.pin.test.ts` | the pin tests |
+| **Wiring mutations** (component integrity) | swap two `t()` keys, swap the namespace, point two UI elements at the same key, delete a translated prop so the component falls back to its English default | the RTL/component tests | **the RTL tests ONLY — pin tests EXCLUDED** |
+
+Append/prepend stays mandatory in the catalog class: `toHaveTextContent(string)` is a **containment**
+match, so those mutations survive it while mid-string edits do not (Task 10). The wiring class exists
+because a correct pin plus no render assertion = a swapped key ships silently (11c, 5 survivors).
+**A review that reports one combined number is incomplete — send it back.**
+
+### B. When promoting a string into `common.*`, record the ACTUAL consumer count in the review.
+
+So the Task 19 demotion gate decides from evidence instead of re-deriving usage by hand.
+
+**State the unit explicitly — importing FILES vs consuming SURFACES/modules — because they differ and
+P4 ("shared by 2+ modules") is a test on MODULES.** Measured 2026-07-22:
+
+- **`common.player.*` — 3 importing files** (`playback-controls`, `transcript-pane`, `waveform`) but
+  **1 consuming surface** (shadowing only). By P4 this is a **demotion candidate**; reporting the bare
+  "3" would wrongly justify keeping it. This is the same trap 11a's review already sprang once.
+- **`common.errors.network` — 2 consuming components** (`vocab-examples-panel`, `dictation-view`).
+  **NOT 8.** The "28 places across 8 modules" figure counts the raw English **string literal** still
+  sitting in un-migrated code, which is a migration backlog, not consumers of the key. Tasks 12–16 will
+  raise the real count as they migrate. **Never conflate the two figures.**
+- `common.recommendations.*` — 2 consuming surfaces (`/dashboard`, `/videos`): a genuine P4 promotion.
+
 ## ⚠ THE PLAN DOC'S TASK 11 FILE LIST WAS INCOMPLETE — patched `36534b0`, but keep auditing
 
 Scouting 11c found `shadowing-view.tsx:18` importing `./playback-controls`, a **166-LOC file with real
