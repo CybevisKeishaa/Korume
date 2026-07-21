@@ -794,11 +794,48 @@ The replacements are all true: the product genuinely has a free tier (value-base
 **Tests to move:** `components/video/` tests.
 **Notes:** includes the import form and its validation messages, and the i+1 difficulty labels ("ideal / too easy / too hard").
 
-### Task 11: `shadowing` + `dictation` namespaces
+### Task 11 (SPLIT 2026-07-21 into 11a–11e): `shadowing` + `dictation` namespaces
 
-**Files:** `app/[locale]/(app)/videos/[id]/{shadowing,dictation}/page.tsx`, and the shadowing/dictation halves of `components/video-player/` — `shadowing-view.tsx`, `shadowing-recorder-panel.tsx`, `recorder.tsx`, `waveform.tsx`, `dictation-view.tsx`, `transcript-pane.tsx`, `pitch-contour-overlay.tsx`, `video-summary-panel.tsx`, `youtube-player.tsx`.
-**Tests to move:** the matching `.test.tsx` files in `components/video-player/` (9 of them).
-**Notes:** the largest module in the app (2 839 LOC across `components/video-player/`, split across this task and Task 12). Two namespaces because shadowing and dictation are distinct features with distinct owners (P4) even though they share the player shell; anything genuinely shared by both (player controls, speed, A–B loop) goes to `common.player.*`. Glossary: shadowing stays "Shadowing", dictation = "Nghe chép chính tả", transcript = "Phụ đề", pitch accent = "Trọng âm cao thấp". **Watch the two known flakes here** (`pitch-contour.test.tsx`, `waveform.test.tsx`) — re-run standalone before believing a failure.
+**Why this was split.** The original Task 11 was written as one unit against a stale figure ("2 839 LOC
+across `components/video-player/`"). Measured on the branch 2026-07-21, the real scope is **1 977 LOC of
+source across 11 files plus 1 816 LOC of their tests = 3 793 LOC** — **6.9×** Task 10 (~550 LOC → 484 K
+tokens / 118 tool-uses for its implementer). Scaled linearly that is ~800 tool-uses in a single agent run:
+the implementer would lose coherence, and the failure mode is not a crash but a task that *looks* finished
+with strings silently unpinned — exactly the defect class only the reviewer has been catching. So Task 11
+runs as **five sub-tasks**, each 1–2× Task 10, same cadence as every other task (fresh implementer →
+independent review → fix wave → commit). Reality outranks the plan: the LOC figure above is measured, the
+original was not.
+
+**Ordering is load-bearing — 11a first.** `youtube-player`, `transcript-pane` and `waveform` are the player
+*shell*, rendered by both the shadowing and the dictation surfaces. Under P4 their strings belong to
+**`common.player.*`**, not to either feature namespace. Extract them first or 11b/11c will hardcode the
+same strings and a later task will have to unpick them — the exact rework Task 10 hit with the
+recommendation rail.
+
+| Sub-task | Namespace | Files (source + test) | LOC |
+|---|---|---|---|
+| **11a** | `common.player.*` | `youtube-player`, `transcript-pane`, `waveform` | 781 |
+| **11b** | `dictation` | `dictation-view` + `videos/[id]/dictation/page.tsx` | 550 |
+| **11c** | `shadowing` (core) | `shadowing-view` + `videos/[id]/shadowing/page.tsx` + `video-summary-panel` | 904 |
+| **11d** | `shadowing` (capture) | `recorder`, `pitch-contour-overlay` | 590 |
+| **11e** | `shadowing` (panel) | `shadowing-recorder-panel` | 968 |
+
+**11a specifics (verified against the source, not inferred).** `youtube-player.tsx` contains **no
+user-visible strings** — it is a `<div>` wrapper around the IFrame API, so it needs **no changes** and its
+test may stay on bare RTL. The real 11a work is `transcript-pane.tsx` (`"This transcript has no lines
+yet."`, `aria-label="Transcript"`) and `waveform.tsx` (`"Processing recording…"`, `"Waveform preview
+unavailable."`, and the `label` **prop defaulting to `"Recording waveform"`**). That default makes
+**binding pattern 5 mandatory**: an EN-only assertion cannot distinguish a correctly threaded label from
+the component's own English fallback, so one test must pass a deliberately non-English literal.
+`transcript-pane.test.tsx` and `waveform.test.tsx` both still import from `@testing-library/react` and must
+move to `@/test/render`.
+
+**Notes for all five.** Glossary: shadowing stays "Shadowing", dictation = "Nghe chép chính tả",
+transcript = "Phụ đề", pitch accent = "Trọng âm cao thấp", recording = "Bản ghi âm". Anything genuinely
+shared by both features (player controls, speed, A–B loop) goes to `common.player.*` — promote, never
+duplicate (the Task 7/Task 10 DRIFT ruling). **The two known CPU-contention flakes live in this task** —
+`waveform.test.tsx` (11a) and `pitch-contour.test.tsx` (11d) — re-run standalone before believing a
+failure, and never run vitest and playwright concurrently.
 
 ### Task 12: `mining` namespace
 
