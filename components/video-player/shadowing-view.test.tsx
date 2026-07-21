@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import {

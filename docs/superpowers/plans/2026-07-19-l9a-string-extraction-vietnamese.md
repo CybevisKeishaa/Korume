@@ -806,11 +806,23 @@ runs as **five sub-tasks**, each 1–2× Task 10, same cadence as every other ta
 independent review → fix wave → commit). Reality outranks the plan: the LOC figure above is measured, the
 original was not.
 
-**Ordering is load-bearing — 11a first.** `youtube-player`, `transcript-pane` and `waveform` are the player
-*shell*, rendered by both the shadowing and the dictation surfaces. Under P4 their strings belong to
-**`common.player.*`**, not to either feature namespace. Extract them first or 11b/11c will hardcode the
-same strings and a later task will have to unpick them — the exact rework Task 10 hit with the
-recommendation rail.
+**Ordering — 11a first. (Rationale CORRECTED 2026-07-21 after the 11a review; the original was wrong.)**
+The split was written claiming `transcript-pane` and `waveform` are "rendered by both the shadowing and
+the dictation surfaces". **That is false on this branch**, and the 11a reviewer caught it. Measured:
+`TranscriptPane` is imported only by `shadowing-view.tsx:17`; `Waveform` only by
+`shadowing-recorder-panel.tsx:11`. The one component genuinely rendered by both surfaces is
+`youtube-player.tsx` — which carries **no user-visible strings at all**. So `common.player.*` today has
+exactly **one** consuming surface, and the P4 "shared by 2+ modules" argument does **not** apply to it.
+
+**`common.player.*` is kept anyway, on a narrower and honest argument:** these three files are the player
+*shell*, they sit together with the genuinely-shared `youtube-player`, and the dictation surface is a
+plausible future consumer of a transcript pane. That is weaker than the original claim — it is
+pre-emptive placement, not observed sharing. It survives because the cost of keeping it is zero while
+re-shuffling namespaces mid-split would cost a task. **If 11b–11e finish and `common.player.*` still has
+one consumer, demote it to `shadowing.*` in the Task 19 gate.** Recorded so a later reader does not
+mistake this for a P4 promotion like `common.recommendations.*` (Task 10), which had two real consumers.
+
+**11b's implementer must be told:** there is no dictation transcript pane — do not go looking for one.
 
 | Sub-task | Namespace | Files (source + test) | LOC |
 |---|---|---|---|

@@ -43,5 +43,11 @@
     "complete": "Session complete 🎉",
     "reviewedCount": "{count, plural, one {You reviewed {count} item.} other {You reviewed {count} items.}}",
     "done": "Done"
+  },
+  "player": {
+    "transcriptEmpty": "This transcript has no lines yet.",
+    "a11y": { "transcript": "Transcript", "waveform": "Recording waveform" },
+    "processingRecording": "Processing recording…",
+    "waveformUnavailable": "Waveform preview unavailable."
   }
 }

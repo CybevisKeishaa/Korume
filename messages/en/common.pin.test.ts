@@ -49,3 +49,32 @@ describe("common.json EN — recommendation-rail literals (Task 10)", () => {
     expect(en.recommendations.band.tooHard).toBe("Challenge");
   });
 });
+
+/**
+ * Task 11a promoted the video-player shell's strings (`transcript-pane.tsx`,
+ * `waveform.tsx` — shared by both the shadowing and dictation surfaces, P4)
+ * to `common.player.*` instead of duplicating them per feature namespace.
+ * Literal `toBe` pins here, per the standing Task 10 review convention;
+ * `transcript-pane.test.tsx` / `waveform.test.tsx` prove the RTL wiring.
+ */
+describe("common.json EN — player shell literals (Task 11a)", () => {
+  it("pins the empty-transcript message", () => {
+    expect(en.player.transcriptEmpty).toBe("This transcript has no lines yet.");
+  });
+
+  it("pins the transcript list's accessible name", () => {
+    expect(en.player.a11y.transcript).toBe("Transcript");
+  });
+
+  it("pins the waveform canvas's default accessible name", () => {
+    expect(en.player.a11y.waveform).toBe("Recording waveform");
+  });
+
+  it("pins the processing-recording message", () => {
+    expect(en.player.processingRecording).toBe("Processing recording…");
+  });
+
+  it("pins the waveform-unavailable fallback message", () => {
+    expect(en.player.waveformUnavailable).toBe("Waveform preview unavailable.");
+  });
+});

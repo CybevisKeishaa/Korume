@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { readBlobAsArrayBuffer } from "@/lib/audio/read-blob";
 
 export interface WaveformProps {
   /** Recorded audio to visualize. Rendering is a no-op while null. */
   blob: Blob | null;
-  /** Accessible label for the canvas image. Defaults to "Recording waveform". */
+  /**
+   * Accessible label for the canvas image. Optional override — omit it to
+   * fall back to the translated `common.player.a11y.waveform` string via
+   * `useTranslations`; pass it when a caller needs a more specific label
+   * (e.g. "Your recording waveform").
+   */
   label?: string;
   className?: string;
   height?: number;
@@ -43,12 +49,8 @@ function computeEnvelope(buffer: AudioBuffer, buckets: number): number[] {
  * it only ever reads a local `Blob` produced by `useRecorder`. The
  * cross-origin YouTube iframe's audio is inaccessible to Web Audio anyway.
  */
-export function Waveform({
-  blob,
-  label = "Recording waveform",
-  className,
-  height = 64,
-}: WaveformProps) {
+export function Waveform({ blob, label, className, height = 64 }: WaveformProps) {
+  const t = useTranslations("common");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [envelope, setEnvelope] = useState<number[] | null>(null);
   const [status, setStatus] = useState<DecodeStatus>("idle");
@@ -110,16 +112,16 @@ export function Waveform({
   return (
     <div className={cn("text-primary", className)}>
       {status === "decoding" && (
-        <p className="text-xs text-muted-foreground">Processing recording…</p>
+        <p className="text-xs text-muted-foreground">{t("player.processingRecording")}</p>
       )}
       {status === "unsupported" && (
-        <p className="text-xs text-muted-foreground">Waveform preview unavailable.</p>
+        <p className="text-xs text-muted-foreground">{t("player.waveformUnavailable")}</p>
       )}
       {status === "ready" && (
         <canvas
           ref={canvasRef}
           role="img"
-          aria-label={label}
+          aria-label={label ?? t("player.a11y.waveform")}
           width={CANVAS_WIDTH}
           height={height}
           className="w-full"

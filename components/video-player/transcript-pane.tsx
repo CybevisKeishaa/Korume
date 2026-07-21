@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import type { FuriganaDisplayMode, FuriganaSegment, TranscriptLineRow, VocabMasteryMap } from "@/lib/video-types";
@@ -42,6 +43,7 @@ export function TranscriptPane({
   showTranslation,
   className,
 }: TranscriptPaneProps) {
+  const t = useTranslations("common");
   const { reduceMotion } = useTheme();
   const activeRef = useRef<HTMLLIElement | null>(null);
 
@@ -54,11 +56,11 @@ export function TranscriptPane({
   }, [activeLineId, reduceMotion]);
 
   if (lines.length === 0) {
-    return <p className="text-sm text-muted-foreground">This transcript has no lines yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t("player.transcriptEmpty")}</p>;
   }
 
   return (
-    <ol className={cn("space-y-1", className)} aria-label="Transcript">
+    <ol className={cn("space-y-1", className)} aria-label={t("player.a11y.transcript")}>
       {lines.map((line) => {
         const isActive = line.id === activeLineId;
         return (

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test/render";
 import { Waveform } from "./waveform";
 
 /** Minimal fake `AudioBuffer` — just enough for `Waveform`'s envelope pass. */
@@ -61,20 +61,53 @@ describe("Waveform", () => {
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 
-  it("decodes the blob and draws the amplitude envelope", async () => {
+  it("decodes the blob and draws the amplitude envelope, using the default accessible label", async () => {
     vi.stubGlobal("AudioContext", FakeAudioContext);
-    render(<Waveform blob={makeBlob()} label="Take 1 waveform" />);
+    render(<Waveform blob={makeBlob()} />);
 
     await waitFor(() =>
-      expect(screen.getByRole("img", { name: "Take 1 waveform" })).toBeInTheDocument(),
+      expect(screen.getByRole("img", { name: "Recording waveform" })).toBeInTheDocument(),
     );
     expect(fillRectCalls).toBeGreaterThan(0);
+  });
+
+  it("uses a caller-supplied label instead of the default — proves the prop is threaded through, not silently dropped for the component's own default", async () => {
+    // Deliberately non-English literal (binding pattern 5): the default label
+    // and the EN catalog value are byte-identical ("Recording waveform"), so
+    // an EN-only assertion cannot tell "translation wired through correctly"
+    // from "the prop never arrived and the default rendered". Asserting a
+    // literal that could not possibly come from the default proves the
+    // `label` prop actually reaches the rendered aria-label.
+    vi.stubGlobal("AudioContext", FakeAudioContext);
+    render(<Waveform blob={makeBlob()} label="Dạng sóng bản ghi thử nghiệm" />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("img", { name: "Dạng sóng bản ghi thử nghiệm" }),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it("shows a processing message while the recording is still decoding", async () => {
+    class PendingAudioContext extends FakeAudioContext {
+      decodeAudioData(): Promise<AudioBuffer> {
+        return new Promise(() => {
+          // Deliberately never resolves — keeps status at "decoding" so the
+          // transient processing message can be observed.
+        });
+      }
+    }
+    vi.stubGlobal("AudioContext", PendingAudioContext);
+    render(<Waveform blob={makeBlob()} />);
+    await waitFor(() =>
+      expect(screen.getByText("Processing recording…")).toBeInTheDocument(),
+    );
   });
 
   it("falls back to a text message when Web Audio isn't available", async () => {
     render(<Waveform blob={makeBlob()} />);
     await waitFor(() =>
-      expect(screen.getByText(/waveform preview unavailable/i)).toBeInTheDocument(),
+      expect(screen.getByText("Waveform preview unavailable.")).toBeInTheDocument(),
     );
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
@@ -83,7 +116,7 @@ describe("Waveform", () => {
     vi.stubGlobal("AudioContext", FailingAudioContext);
     render(<Waveform blob={makeBlob()} />);
     await waitFor(() =>
-      expect(screen.getByText(/waveform preview unavailable/i)).toBeInTheDocument(),
+      expect(screen.getByText("Waveform preview unavailable.")).toBeInTheDocument(),
     );
   });
 });

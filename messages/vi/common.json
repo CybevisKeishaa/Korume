@@ -43,5 +43,11 @@
     "complete": "Hoàn thành phiên ôn tập 🎉",
     "reviewedCount": "{count, plural, other {Bạn đã ôn tập {count} thẻ.}}",
     "done": "Xong"
+  },
+  "player": {
+    "transcriptEmpty": "Chưa có dòng phụ đề nào.",
+    "a11y": { "transcript": "Phụ đề", "waveform": "Dạng sóng bản ghi âm" },
+    "processingRecording": "Đang xử lý bản ghi âm…",
+    "waveformUnavailable": "Không có bản xem trước dạng sóng."
   }
 }
