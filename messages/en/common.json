@@ -16,5 +16,25 @@
     "error": "Something went wrong.",
     "empty": "Nothing here yet."
   },
-  "a11y": { "closeDialog": "Close dialog", "dismissNotification": "Dismiss notification" }
+  "a11y": {
+    "closeDialog": "Close dialog",
+    "dismissNotification": "Dismiss notification",
+    "jlptLevel": "JLPT level"
+  },
+  "levelTabs": { "all": "All" },
+  "srs": {
+    "progress": "{current} / {total}",
+    "showAnswer": "Show answer",
+    "spaceHint": "(Space)",
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy",
+    "empty": "Nothing to review here yet.",
+    "back": "Back",
+    "complete": "Session complete 🎉",
+    "reviewedCount": "{count, plural, one {You reviewed {count} item.} other {You reviewed {count} items.}}",
+    "done": "Done",
+    "error": "Something went wrong."
+  }
 }

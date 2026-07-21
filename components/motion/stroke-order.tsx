@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "@/components/providers/theme-provider";
+import { useTranslations } from "@/lib/i18n";
 import { KANJI_STROKES } from "@/lib/kanji-strokes";
 
 const STROKE_DURATION = 0.6; // seconds per stroke
@@ -13,6 +14,7 @@ const STROKE_DURATION = 0.6; // seconds per stroke
  */
 export function StrokeOrder({ character }: { character: string }) {
   const { reduceMotion } = useTheme();
+  const t = useTranslations("kanji");
   const strokes = KANJI_STROKES[character];
 
   if (!strokes) {
@@ -30,7 +32,7 @@ export function StrokeOrder({ character }: { character: string }) {
     <svg
       viewBox="0 0 109 109"
       role="img"
-      aria-label={`Stroke order for ${character}`}
+      aria-label={t("a11y.strokeOrder", { character })}
       className="aspect-square w-full rounded-lg border border-border bg-card text-foreground"
     >
       {/* writing guide */}
