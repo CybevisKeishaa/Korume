@@ -63,21 +63,67 @@ CPU-contention flakes (`pitch-contour.test.tsx`, `waveform.test.tsx`).
 
 ## ▶ Plan 3 EXECUTION IN PROGRESS — Tasks 1-10 + 6b + 11a/11b/11c ✅ done, reviewed, COMMITTED (2026-07-22)
 
-## ▶ NEXT = **11d** (`shadowing` capture). Branch tip `da41411`, working tree CLEAN of task work.
+## ▶ NEXT = **11e** (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 
-Gate at `da41411`: **tsc 0 · 1461 tests / 192 files · lint exit 0 / 80 pre-existing warnings across 23
-files, 0 new** — all three re-run by the controller itself, not taken from a subagent's report.
-(`MASCOT.md` untracked and the user's deleted `.docx` are deliberately still outside every commit.)
+Gate at `9c9b3bf`: **tsc 0 · 1481 tests / 192 files · lint exit 0 / 80 pre-existing warnings across 23
+files, 0 new** — all three re-run by the controller itself, never taken from a subagent's report.
 
-Commits this session: `23a8f84` (11b) · `36534b0` (plan-doc file-list patch) · `da41411` (11c).
+Commits: `23a8f84` (11b) · `36534b0` (plan-doc patch) · `da41411` (11c) · `9c9b3bf` (11d).
+**NOTE the user made their own commit `3e4b4a3` "[LongTNP]: mascot" mid-run**, which committed the
+deleted `.docx` and added `MASCOT.md`. Those are now HANDLED — stop excluding them from commits.
 
-**11d scope:** `components/video-player/{recorder,pitch-contour-overlay,pitch-contour}.tsx` + tests, 972
-LOC, into the **existing `shadowing`** namespace (11c created it — register nothing, just add keys).
-**Its one scouted hazard, tell the implementer up front:** `pitch-contour.tsx:148` carries
-`label = "Your pitch contour for this take"` — **a prop defaulting to English**, binding pattern 5. An
-EN-only assertion cannot distinguish a correctly-threaded label from the component's own fallback, so it
-needs TWO tests (one passing a deliberately non-English literal, one covering the default) and neither
-may mask the other. `pitch-contour.test.tsx` is also one of the two documented CPU-contention flakes.
+**11e scope:** `components/video-player/shadowing-recorder-panel.tsx` (445) + its test (523) = 968 LOC,
+into the **existing `shadowing`** namespace (register nothing). Its test already imports `@/test/render`.
+Known carry-forwards for it:
+- **`shadowing-recorder-panel.tsx:331` passes `label="Your recording waveform"`** — the last hardcoded
+  English leak from the 11a player shell. 11d translated both pitch `label` defaults, but this one is an
+  explicit prop and must be rewired to a catalog string.
+- It has **4 call sites of `"Network error — check your connection and try again."`** (lines ~171, 186,
+  223, 251) → consume the existing **`common.errors.network`** (do not re-extract). This will raise that
+  key's consumer count from 2 to 3 — record it for the Task 19 gate.
+- `friendlyShareError` / the scoring-error mapper (lines 74–79) are **module-level string producers** —
+  4th instance of the pattern; convert to key-returning classifiers like 11d's `classifyMicError`.
+
+### Task 11d DONE `9c9b3bf` — one fix wave, 3 Important findings, all wiring gaps
+
+**The two-class mutation convention paid off on its first use:** catalog class **36 mutations / 0
+survivors**, wiring class **29 / 9 survivors**. A blended number would have reported 0 and hidden all
+nine. All three findings were strings with a correct pin that **no test rendered**. Keep demanding both.
+
+1. **A hook CAN call `useTranslations` — that is the right fix when the alternative crosses a task
+   boundary.** `useRecorder`'s error strings were module-scope. Option "return a descriptor and let the
+   consumer resolve it" was **rejected** because its only in-scope consumer is 11e's file. Instead
+   `describeMicError` → `classifyMicError` returning a key suffix, resolved inside the hook. **Public
+   contract `error: string | null` unchanged, zero 11e edits.** Use this shape whenever a hook owns copy.
+2. **A template-literal catalog key IS still compile-checked.** `t(\`recorder.errors.${classifyMicError(err)}\`)`
+   — the reviewer typo'd the suffix and deleted catalog leaves; **tsc errored every time**. So the Task 10
+   rule (a descriptor key with no catalog entry must be a COMPILE error) survives dynamic indexing. Don't
+   avoid the pattern out of caution, but do verify it by mutation each time.
+3. **THE PLAN'S FILE LIST WAS WRONG A FOURTH TIME — and this one crossed modules.** `useRecorder` has a
+   consumer nobody had listed: **`components/conversation/voice-recorder-button.tsx`**. Translating the
+   hook broke **13 tests across 2 conversation test files**. Fix was import-only (`@/test/render`),
+   verified necessary by stashing. **Lesson for every remaining task: grep the IMPORT GRAPH of anything
+   you translate, not just the directory you were handed.** `useRecorder` consumers = 3 files / 2 modules.
+4. **Both pitch components had a `label` prop defaulting to English** — memory had recorded only one.
+   Neither caller passes a label, so both aria-labels were English under live `vi`. Both now `label ?? t()`
+   with the mandatory pattern-5 test pair, broken in both directions by the reviewer.
+5. **お手本 / あなた / イントネーション stay byte-identical in BOTH locales** (reviewer concurred): they are
+   target-language UI labels in a Japanese-learning app, same class as leaving "shadowing" untranslated —
+   not English awaiting translation. Extracted rather than left hardcoded so `t()` stays the single
+   rendering path. `pitch.overlay.scoreSuffix` (" / 100") judged justified, not noise.
+6. **`test/render.tsx` gained a wrapped `renderHook` export** — purely additive, `customRender` byte-for-byte
+   unchanged (reviewer verified; this file is the run's LINCHPIN, a regression there corrupts every later
+   task). `export *` excludes names with an explicit export, so the wrapper wins.
+7. **Task 19 gate items added:** both pitch `label` props now have **zero production callers** (only the
+   pattern-5 tests exercise them) — CLAUDE.md §6 dead-code question, same class as the `common.player.*`
+   demotion. And **a glossary collision is coming**: 11d renders *pitch* as "cao độ" while the plan fixes
+   *pitch accent* = "Trọng âm cao thấp". Defensible (the EN copy says "pitch", and "đường cong trọng âm
+   cao thấp" is unreadable) but **must be decided explicitly before real "pitch accent" strings land**.
+8. Unfixed, carried: `voice-recorder-button.tsx:134` is a **mixed-locale surface** under `vi` (Vietnamese
+   recorder error beside its own hardcoded English "Requesting microphone access…"). Inherent to
+   incremental extraction — **Task 15 owns `conversation`**, do not mistake it for a regression.
+   Also `customRender` still takes a bare `RenderOptions` while the new `customRenderHook` correctly
+   `Omit`s `"wrapper"` — align in a later task.
 
 ### Task 11c DONE `da41411` — one fix wave, 2 Important findings, both real
 

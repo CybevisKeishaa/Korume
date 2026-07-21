@@ -30,26 +30,33 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-22) — Task **11d** is next; tree is clean, nothing owed
+## ▶ NEXT ACTION (updated 2026-07-22) — Task **11e** is next; tree is clean, nothing owed
 **L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tip `da41411`. Tasks 1-10, 11a, 11b, 11c all committed
-and reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 · 1461 tests /
+via `superpowers:subagent-driven-development`. **Tip `9c9b3bf`. Tasks 1-10, 11a-11d all committed and
+reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 · 1481 tests /
 192 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
 
 Commits 2026-07-22: `23a8f84` (11b `dictation`) · `36534b0` (plan-doc file-list patch) · `da41411`
-(11c `shadowing` + `common.player.*`). The user's deleted `.docx` and untracked `MASCOT.md` remain
-deliberately outside every commit — keep them out.
+(11c `shadowing` + `common.player.*`) · `9c9b3bf` (11d capture). **The user made their own commit
+`3e4b4a3` "[LongTNP]: mascot" mid-run** (deleted `.docx`, added `MASCOT.md`) — those files are handled,
+stop excluding them.
 
-**NEXT: Task 11d** (`shadowing` capture) — `components/video-player/{recorder,pitch-contour-overlay,
-pitch-contour}.tsx` + tests, 972 LOC, into the **existing** `shadowing` namespace (no registration
-needed, 11c did it). **Its scouted hazard: `pitch-contour.tsx:148` has `label = "Your pitch contour for
-this take"`, a prop defaulting to English (binding pattern 5) — needs TWO tests, one passing a
-non-English literal.** Read `mem:l9a_localization_run_state` top block first.
+**NEXT: Task 11e** (`shadowing` panel — the LAST 11x) — `components/video-player/
+shadowing-recorder-panel.tsx` + test, 968 LOC, into the **existing** `shadowing` namespace. Three
+carry-forwards are already recorded for it: the hardcoded `label="Your recording waveform"` at line 331
+(last English leak from the 11a shell), four call sites that must consume the existing
+`common.errors.network` rather than re-extract, and two module-level string producers to convert into
+key-returning classifiers. Read `mem:l9a_localization_run_state` top block first.
 
 **Task 11 was SPLIT into 11a-11e** (plan commit `087b342`) after measuring it at 3793 LOC = 6.9x Task 10.
-11a ✅ `9d745bc` · 11b ✅ `23a8f84` · 11c ✅ `da41411` · **11d NEXT** · 11e remains. Then Tasks 12-19 + a
-metadata sweep. Namespaces so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`,
+11a ✅ `9d745bc` · 11b ✅ `23a8f84` · 11c ✅ `da41411` · 11d ✅ `9c9b3bf` · **11e NEXT** — then Tasks 12-19 +
+a metadata sweep. Namespaces so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`,
 `grammar`, `videos`, `dictation`, `shadowing`.
+
+**⚠ The plan's file lists have now been wrong FOUR times, and 11d's miss crossed MODULES:** translating
+the `useRecorder` hook broke 13 tests in `components/conversation/` because `voice-recorder-button.tsx`
+consumes it and no list mentioned that. **Grep the IMPORT GRAPH of whatever you translate, not just the
+directory you were handed.**
 The 2026-07-20 pause is long resolved (the Task 5 draft was verified in place and kept).
 **Before resuming, read `mem:l9a_localization_run_state` "▶ Plan 3 EXECUTION IN PROGRESS" FIRST** —
 it holds the patterns Tasks 9-19 must follow (two were Critical review findings), the three things
