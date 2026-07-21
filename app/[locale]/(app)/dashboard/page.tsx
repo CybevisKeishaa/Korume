@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const t = await getTranslations("dashboard");
+  const tCommon = await getTranslations("common");
   const statsResult = await getUserStats();
   const stats = statsResult.ok ? statsResult.data : null;
   const today = vnDateString(new Date());
@@ -55,9 +56,9 @@ export default async function DashboardPage() {
 
       <section aria-labelledby="recommendations-heading" className="mt-10">
         <h2 id="recommendations-heading" className="mb-3 text-lg font-semibold">
-          {t("recommendationsHeading")}
+          {tCommon("recommendations.heading")}
         </h2>
-        <Suspense fallback={<p className="text-sm text-muted-foreground">{t("recommendationsLoading")}</p>}>
+        <Suspense fallback={<p className="text-sm text-muted-foreground">{tCommon("recommendations.loading")}</p>}>
           <RecommendationSection limit={8} />
         </Suspense>
       </section>

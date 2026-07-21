@@ -182,6 +182,29 @@ function selectArgs(elements: MessageFormatElement[]): string[] {
   return found;
 }
 
+/**
+ * Every rich-text tag name (`TYPE.tag`, e.g. `<link>` in
+ * `"…<link>import a video</link>…"`) referenced anywhere in the message,
+ * sorted. A tag is a placeholder a component fills with a React element via
+ * `t.rich()` — if a locale's translation drops the tag entirely (e.g. a
+ * translator flattens `<link>import a video</link>` down to plain text),
+ * `walk()` still parses the message fine (a message with fewer tags is
+ * valid ICU) and the "identical ICU argument names" test above doesn't catch
+ * it either (tag names carry no argument of their own). The result is a
+ * translated string that silently loses interactive content — e.g. a "click
+ * here to import a video" link that no longer links anywhere for that
+ * locale's users. Comparing tag NAME sets (not nesting position, which
+ * translators may legitimately reorder for target-language word order)
+ * catches exactly that.
+ */
+function tagNames(elements: MessageFormatElement[]): string[] {
+  const found: string[] = [];
+  walk(elements, (el) => {
+    if (el.type === TYPE.tag) found.push(el.value);
+  });
+  return found;
+}
+
 interface ArgShape {
   kind: "plural" | "selectordinal" | "select";
   /** Only meaningful for `kind: "plural" | "selectordinal"`; omitted for
@@ -403,6 +426,40 @@ describe("catalog", () => {
           }
           const localeShapes = argShapes(parseMessage(locale, namespace, key, localeMessage));
           expect(localeShapes, `${locale}/${namespace}.json → ${key}`).toEqual(referenceShapes);
+        }
+      }
+    }
+  });
+
+  it("requires the same rich-text tag names in every locale's message as the reference locale", () => {
+    // See `tagNames()` above: a locale can drop a `<link>...</link>` tag
+    // entirely while still parsing as valid ICU, silently losing whatever
+    // interactive content that tag rendered for that locale's users.
+    //
+    // `routing.defaultLocale` is `"vi"` (VN-first, spec D2) — NOT `"en"` —
+    // so the reference locale here can itself be the one missing a tag while
+    // a non-reference locale (`en`) has it. An early-exit on "reference has
+    // zero tags, skip this key" (the shape every other comparison in this
+    // file uses) would silently miss exactly that case: it did, in a draft
+    // of this test, when `vi`'s `common.recommendations.empty` was made to
+    // drop its `<link>` tag deliberately as a check and the suite still went
+    // green. Comparing unconditionally (no length-based skip) is what
+    // actually catches a tag dropped by either locale.
+    const reference = routing.defaultLocale;
+    for (const namespace of NAMESPACES) {
+      const referenceMessages = flattenMessages(readCatalog(reference, namespace));
+      for (const locale of routing.locales) {
+        const messages = flattenMessages(readCatalog(locale, namespace));
+        for (const [key, referenceMessage] of Object.entries(referenceMessages)) {
+          const referenceTags = tagNames(parseMessage(reference, namespace, key, referenceMessage)).sort();
+          const localeMessage = messages[key];
+          if (localeMessage === undefined) {
+            // The "identical key sets" test above already fails the suite
+            // for this.
+            continue;
+          }
+          const localeTags = tagNames(parseMessage(locale, namespace, key, localeMessage)).sort();
+          expect(localeTags, `${locale}/${namespace}.json → ${key}`).toEqual(referenceTags);
         }
       }
     }

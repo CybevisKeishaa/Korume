@@ -23,6 +23,14 @@
     "levelFilter": "Cấp độ JLPT"
   },
   "filters": { "all": "Tất cả" },
+  "noThumbnail": "Không có ảnh xem trước",
+  "recommendations": {
+    "heading": "Đề xuất cho bạn",
+    "loading": "Đang tìm video phù hợp với trình độ của bạn…",
+    "empty": "Chưa có đề xuất nào — <link>nhập video</link> để bắt đầu.",
+    "knownWords": "{percent}% số từ bạn đã biết",
+    "band": { "ideal": "Vừa sức", "tooEasy": "Ôn tập dễ", "tooHard": "Thử thách" }
+  },
   "srs": {
     "progress": "{current} / {total}",
     "showAnswer": "Xem đáp án",

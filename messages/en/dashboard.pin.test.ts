@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import en from "./dashboard.json";
+import common from "./common.json";
 
 /**
  * Characterization test for `app/[locale]/(app)/dashboard/page.tsx`'s strings.
@@ -12,6 +13,13 @@ import en from "./dashboard.json";
  * but every expected value below is a literal copied verbatim from
  * `git show 269b97f:app/[locale]/(app)/dashboard/page.tsx` (the pre-extraction
  * source), never derived from the catalog itself (binding pattern 2).
+ *
+ * `recommendationsHeading`/`recommendationsLoading` used to live here, but
+ * Task 10 found `app/[locale]/(app)/videos/page.tsx` hardcoding the identical
+ * two strings for its own recommendation rail. A string needed by two or more
+ * modules is promoted to `common` (CLAUDE.md P4 / Task 7's binding rule) — so
+ * both moved to `common.recommendations.heading`/`.loading`, and this pin
+ * moved with them rather than vanishing.
  */
 describe("dashboard.json EN — page.tsx literals", () => {
   it("pins the page heading and subtitle", () => {
@@ -27,9 +35,9 @@ describe("dashboard.json EN — page.tsx literals", () => {
     expect(en.badges.heading).toBe("Badges");
   });
 
-  it("pins the recommendations section heading and loading fallback", () => {
-    expect(en.recommendationsHeading).toBe("Recommended for you");
-    expect(en.recommendationsLoading).toBe("Finding videos at your level…");
+  it("pins the recommendations section heading and loading fallback, promoted to common.recommendations (shared with /videos)", () => {
+    expect(common.recommendations.heading).toBe("Recommended for you");
+    expect(common.recommendations.loading).toBe("Finding videos at your level…");
   });
 
   it("pins the modules section heading and all three module cards", () => {

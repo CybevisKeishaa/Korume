@@ -20,9 +20,22 @@ export interface VideoRecommendation {
   knownWords: number;
 }
 
-/** Short, non-alarming label for each i+1 band (CLAUDE.md §5.2). */
-export const BAND_LABEL: Record<RecommendationBand, string> = {
-  ideal: "Just right",
-  "too-easy": "Easy review",
-  "too-hard": "Challenge",
-};
+/**
+ * Maps each i+1 band to its `common.recommendations.band.*` catalog key
+ * (short, non-alarming label — CLAUDE.md §5.2). This used to be the
+ * rendered English label itself, but a module-level constant can't call
+ * `t()` — only a component body can — so it holds the catalog key instead,
+ * resolved by the sole consumer, `recommendation-rail.tsx`.
+ *
+ * `satisfies Record<RecommendationBand, string>` (rather than annotating the
+ * object literal with that type) keeps both properties this needs:
+ * exhaustiveness (a new `RecommendationBand` member that's missing here is a
+ * type error — a new band must not be able to silently lose its label) AND
+ * literal string types on the values (so `t(BAND_LABEL_KEY[band])` type-checks
+ * against next-intl's typed keys without a cast).
+ */
+export const BAND_LABEL_KEY = {
+  ideal: "recommendations.band.ideal",
+  "too-easy": "recommendations.band.tooEasy",
+  "too-hard": "recommendations.band.tooHard",
+} as const satisfies Record<RecommendationBand, string>;

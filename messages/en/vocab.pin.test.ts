@@ -17,6 +17,15 @@ import common from "./common.json";
  * verbatim from the pre-extraction source of the three page files on
  * `layer-9a-string-extraction` before Task 8 (never derived from the
  * catalog itself — binding pattern 2).
+ *
+ * `errors.*` (added 2026-07-21, closing a hole found reviewing Task 10):
+ * this block had no `toBe` pin here — only `vocab-examples-panel.test.tsx`'s
+ * `toHaveTextContent(...)` calls touched it, and `toHaveTextContent` given a
+ * string is a CONTAINMENT match, not equality, so those assertions stay
+ * green even if the catalog value is mutated by appending or prepending
+ * text. The five pins below are literal `toBe` checks against the values
+ * currently in `messages/en/vocab.json` (frozen English, spec D3/D6) —
+ * additive to an already-committed task's test file, which is fine.
  */
 describe("vocab.json EN — page.tsx literals", () => {
   it("pins the list page heading and empty state", () => {
@@ -51,5 +60,37 @@ describe("vocab.json EN — page.tsx literals", () => {
     expect(en.examplesHeading).toBe("Example sentences");
     expect(en.noExamples).toBe("No example sentences yet.");
     expect(en.generating).toBe("Generating…");
+  });
+
+  // Each `errors.*` pin gets its own `it()` — not grouped into one, so a
+  // single mutated value fails only its own assertion rather than the first
+  // failure short-circuiting the rest into a false "not yet checked" silence.
+
+  it("pins errors.unavailable (POST /api/vocab/[id]/examples 503)", () => {
+    expect(en.errors.unavailable).toBe(
+      "AI example generation isn't set up yet for this deployment.",
+    );
+  });
+
+  it("pins errors.rateLimited (POST /api/vocab/[id]/examples 429 with seconds)", () => {
+    expect(en.errors.rateLimited).toBe(
+      "Too many example requests — try again in {seconds}s.",
+    );
+  });
+
+  it("pins errors.rateLimitedGeneric (POST /api/vocab/[id]/examples 429 without seconds)", () => {
+    expect(en.errors.rateLimitedGeneric).toBe(
+      "Too many example requests — please wait a moment and try again.",
+    );
+  });
+
+  it("pins errors.generic (POST /api/vocab/[id]/examples other non-2xx)", () => {
+    expect(en.errors.generic).toBe("Could not generate examples right now.");
+  });
+
+  it("pins errors.network (POST /api/vocab/[id]/examples request throws)", () => {
+    expect(en.errors.network).toBe(
+      "Network error — check your connection and try again.",
+    );
   });
 });

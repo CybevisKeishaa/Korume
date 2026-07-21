@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Link } from "@/lib/i18n/navigation";
-import { BAND_LABEL, type VideoRecommendation } from "@/lib/recommendation-types";
+import { useTranslations } from "@/lib/i18n";
+import { BAND_LABEL_KEY, type VideoRecommendation } from "@/lib/recommendation-types";
 
 export interface RecommendationRailProps {
   recommendations: VideoRecommendation[];
@@ -17,16 +18,29 @@ export interface RecommendationRailProps {
  * Thumbnails only ever come from `thumbnailUrl` as already stored on the
  * video row — the YouTube thumbnail URL captured at import time (CLAUDE.md
  * §2.1: never re-host/proxy video or its assets).
+ *
+ * Strings live in `common.recommendations.*`, not a per-module namespace:
+ * this rail is rendered by both `/dashboard` and `/videos` (via
+ * `recommendation-section.tsx`), and CLAUDE.md P4 requires a string needed by
+ * two or more modules to be promoted to `common` rather than duplicated.
+ *
+ * A non-async Server Component — `useTranslations` from `@/lib/i18n` works
+ * here without `"use client"` (confirmed by a real build in Task 5), which
+ * keeps this RTL-renderable.
  */
 export function RecommendationRail({ recommendations }: RecommendationRailProps) {
+  const t = useTranslations("common");
+
   if (recommendations.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No recommendations yet —{" "}
-        <Link href="/videos" className="underline underline-offset-2 hover:text-foreground">
-          import a video
-        </Link>{" "}
-        to get started.
+        {t.rich("recommendations.empty", {
+          link: (chunks) => (
+            <Link href="/videos" className="underline underline-offset-2 hover:text-foreground">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
     );
   }
@@ -50,7 +64,7 @@ export function RecommendationRail({ recommendations }: RecommendationRailProps)
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  No thumbnail
+                  {t("noThumbnail")}
                 </div>
               )}
             </div>
@@ -63,11 +77,11 @@ export function RecommendationRail({ recommendations }: RecommendationRailProps)
                   </span>
                 )}
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
-                  {BAND_LABEL[rec.band]}
+                  {t(BAND_LABEL_KEY[rec.band])}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                {Math.round(rec.knownRatio * 100)}% words you know
+                {t("recommendations.knownWords", { percent: Math.round(rec.knownRatio * 100) })}
               </p>
             </div>
           </Link>

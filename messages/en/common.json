@@ -23,6 +23,14 @@
     "levelFilter": "JLPT level"
   },
   "filters": { "all": "All" },
+  "noThumbnail": "No thumbnail",
+  "recommendations": {
+    "heading": "Recommended for you",
+    "loading": "Finding videos at your level…",
+    "empty": "No recommendations yet — <link>import a video</link> to get started.",
+    "knownWords": "{percent}% words you know",
+    "band": { "ideal": "Just right", "tooEasy": "Easy review", "tooHard": "Challenge" }
+  },
   "srs": {
     "progress": "{current} / {total}",
     "showAnswer": "Show answer",
