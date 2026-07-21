@@ -1,30 +1,32 @@
 import { Link } from "@/lib/i18n/navigation";
 import { buttonStyles } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { getTranslations } from "@/lib/i18n/server";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const t = await getTranslations("marketing");
+  const tCommon = await getTranslations("common");
   return (
     <main>
       <Container className="flex min-h-[80vh] flex-col items-center justify-center py-24 text-center">
         <p className="mb-4 font-jp text-sm tracking-widest text-primary-strong">
-          日本語シネマ
+          {tCommon("appNameJp")}
         </p>
         <h1 className="max-w-3xl text-balance text-4xl font-bold leading-tight sm:text-6xl">
-          Learn Japanese the way it&rsquo;s actually spoken.
+          {t("hero.heading")}
         </h1>
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-          Shadow real video, master kanji and grammar, and track it all with a
-          spaced-repetition engine built for retention.
+          {t("hero.subtitle")}
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link href="/register" className={buttonStyles({ size: "lg" })}>
-            Start free trial
+            {t("hero.cta")}
           </Link>
           <Link
             href="/login"
             className={buttonStyles({ size: "lg", variant: "outline" })}
           >
-            Sign in
+            {tCommon("auth.signIn")}
           </Link>
         </div>
       </Container>

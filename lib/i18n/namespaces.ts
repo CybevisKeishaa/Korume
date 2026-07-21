@@ -5,6 +5,6 @@
  * Plan 3 adds a namespace per module as it extracts strings. `catalog.test.ts`
  * asserts this list matches the files on disk, so the two cannot drift.
  */
-export const NAMESPACES = ["common", "nav", "auth"] as const;
+export const NAMESPACES = ["common", "nav", "auth", "marketing"] as const;
 
 export type Namespace = (typeof NAMESPACES)[number];
