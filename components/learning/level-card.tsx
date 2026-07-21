@@ -40,7 +40,7 @@ export function LevelCard({ xp, level }: LevelCardProps) {
           aria-valuenow={percent}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={t("level.progressLabel", { level: level.level + 1 })}
+          aria-label={t("a11y.levelProgress", { level: level.level + 1 })}
           data-celebrate="level-progress"
           className="h-2 w-full overflow-hidden rounded-full bg-muted"
         >

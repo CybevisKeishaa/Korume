@@ -2,7 +2,10 @@
   "title": "Bảng điều khiển",
   "subtitle": "Chọn một học phần để bắt đầu học.",
   "a11y": {
-    "progress": "Tiến độ của bạn"
+    "progress": "Tiến độ của bạn",
+    "levelProgress": "Tiến độ đến cấp độ {level}",
+    "badgeEarned": "đã đạt",
+    "badgeLocked": "đã khóa"
   },
   "recommendationsHeading": "Đề xuất cho bạn",
   "recommendationsLoading": "Đang tìm video phù hợp với trình độ của bạn…",
@@ -18,18 +21,17 @@
   "level": {
     "title": "Cấp độ {level}",
     "xp": "{xp} XP",
-    "progressLabel": "Tiến độ đến cấp độ {level}",
     "xpToNext": "Còn {xp} XP để đạt cấp độ {level}"
   },
   "streak": {
     "title": "Chuỗi ngày học",
     "dayStreak": "ngày liên tiếp",
-    "longest": "Dài nhất: {count} ngày",
+    "longest": "Dài nhất: {days} ngày",
     "nudge": "Tiếp tục ngay hôm nay — học một mục để duy trì chuỗi ngày học của bạn."
   },
   "srsDue": {
     "title": "Hàng đợi ôn tập",
-    "due": "{count, plural, other {# thẻ đến hạn ôn tập}}",
+    "due": "{count, plural, one {{count} thẻ đến hạn ôn tập} other {{count} thẻ đến hạn ôn tập}}",
     "reviewVocab": "Ôn tập từ vựng",
     "reviewKanji": "Ôn tập Kanji",
     "allCaughtUp": "Đã ôn tập hết — hiện không có thẻ nào đến hạn."
@@ -37,8 +39,6 @@
   "badges": {
     "heading": "Huy hiệu",
     "empty": "Chưa có huy hiệu nào trong bộ sưu tập.",
-    "locked": "Đã khóa",
-    "earnedA11y": "đã đạt",
-    "lockedA11y": "đã khóa"
+    "locked": "Đã khóa"
   }
 }

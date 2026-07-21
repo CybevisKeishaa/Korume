@@ -31,7 +31,7 @@ export function StreakCard({ streakCurrent, streakLongest, lastActiveDate, today
           {streakCurrent}{" "}
           <span className="text-base font-normal text-muted-foreground">{t("streak.dayStreak")}</span>
         </p>
-        <p className="text-sm text-muted-foreground">{t("streak.longest", { count: streakLongest })}</p>
+        <p className="text-sm text-muted-foreground">{t("streak.longest", { days: streakLongest })}</p>
         {!activeToday && (
           <p className="text-sm text-muted-foreground">{t("streak.nudge")}</p>
         )}

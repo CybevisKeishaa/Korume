@@ -45,7 +45,7 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
         const earnedDate = badge.earnedAt ? new Date(badge.earnedAt).toLocaleDateString() : null;
         const label = [
           badge.name,
-          earned ? `${t("badges.earnedA11y")}${earnedDate ? ` ${earnedDate}` : ""}` : t("badges.lockedA11y"),
+          earned ? `${t("a11y.badgeEarned")}${earnedDate ? ` ${earnedDate}` : ""}` : t("a11y.badgeLocked"),
           badge.description ?? undefined,
         ]
           .filter(Boolean)

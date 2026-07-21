@@ -2,7 +2,10 @@
   "title": "Dashboard",
   "subtitle": "Pick a module to start studying.",
   "a11y": {
-    "progress": "Your progress"
+    "progress": "Your progress",
+    "levelProgress": "Progress to level {level}",
+    "badgeEarned": "earned",
+    "badgeLocked": "locked"
   },
   "recommendationsHeading": "Recommended for you",
   "recommendationsLoading": "Finding videos at your level…",
@@ -18,18 +21,17 @@
   "level": {
     "title": "Level {level}",
     "xp": "{xp} XP",
-    "progressLabel": "Progress to level {level}",
     "xpToNext": "{xp} XP to level {level}"
   },
   "streak": {
     "title": "Streak",
     "dayStreak": "day streak",
-    "longest": "Longest: {count} days",
+    "longest": "Longest: {days} days",
     "nudge": "Keep it going today — study one item to extend it."
   },
   "srsDue": {
     "title": "Review queue",
-    "due": "{count, plural, one {# card due for review} other {# cards due for review}}",
+    "due": "{count, plural, one {{count} card due for review} other {{count} cards due for review}}",
     "reviewVocab": "Review vocab",
     "reviewKanji": "Review kanji",
     "allCaughtUp": "All caught up — nothing due right now."
@@ -37,8 +39,6 @@
   "badges": {
     "heading": "Badges",
     "empty": "No badges in the catalog yet.",
-    "locked": "Locked",
-    "earnedA11y": "earned",
-    "lockedA11y": "locked"
+    "locked": "Locked"
   }
 }
