@@ -1,4 +1,17 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 done; 13-19 remain — NEXT = Task 13 `jlpt`)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 done; 14-19 remain — NEXT = Task 14 `reading`)
+
+## 🆕 TWO NEW STANDING LESSONS from Task 13 (binding, Tasks 14–19) — put in every brief
+- **Namespace wiring is a 5-STEP list, not 4.** In addition to (1) append to `NAMESPACES` in
+  `lib/i18n/namespaces.ts`, (2) `messages/en/<ns>.json` verbatim, (3) `messages/vi/<ns>.json` real VN,
+  (4) `messages/en/<ns>.pin.test.ts` literal pins — there is **(5) add the namespace to
+  `types/messages.d.ts`'s `AppConfig.Messages`**, or every `t()` call site fails `tsc`. Prior briefs
+  omitted step 5; it was discovered at Task 13.
+- **`useTranslations` for ALL synchronous components; `await getTranslations` ONLY for async server
+  components.** A component WITHOUT `"use client"` that is imported by a client component is bundled
+  client-side, and `getTranslations` (server-only, async) HARD-FAILS the build there. Do NOT infer
+  "no `use client` ⇒ server ⇒ getTranslations" — Task 13's audit made that mistake on 2 files and the
+  implementer correctly overrode it (verified via tsc + the RecommendationRail/Task-5 precedent). The only
+  jlpt file that genuinely needed `await getTranslations` was the async page `jlpt/page.tsx`.
 
 ## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22)
 Put ALL SIX in every implementer brief AND every reviewer brief. They are not new — Tasks 11–12
@@ -159,14 +172,30 @@ mutation there would survive; `4f9b473` added fetch-reject + non-ok-500 tests pr
 key swaps are wiring survivors (low value, pass-through pages). **Task 19 consumer counts:** `common.srs.*` and
 `common.states.error` each now = **2 consuming surfaces**.
 
-## ▶ NEXT = Task 13 (`jlpt` namespace). Tip `4f9b473`, tree clean.
-Files: `app/[locale]/(app)/jlpt/{page,[id]/page}.tsx`, `app/[locale]/(app)/jlpt-test/page.tsx`,
-`components/jlpt/*` (~965 LOC, 10 components). Tests to move: `components/jlpt/{jlpt-listening-play-button,
-jlpt-question-card,jlpt-timer}.test.tsx`. Notes: timer `aria-live` warnings → nest under `a11y`, keep ICU time
-args identical across locales; pillar names + pass/fail result copy live here; **N5–N1 level labels are NOT
-translated**; JLPT stays "JLPT". **AUDIT the file list + import graph FIRST (convention #2 — the plan list has
-been wrong 5×, incl. Task 12).** Same cadence (fresh sonnet implementer → opus review → fix wave; controller
-re-runs all three gates).
+## ✅ Task 13 DONE `763c884` — `jlpt` namespace. Tip `763c884`. ZERO fix waves (a run first).
+Gate (controller re-ran all three): **tsc 0 · 1581 tests / 194 files · lint 80 pre-existing / 23 files, 0 new.**
+81 new `jlpt.*` leaves across 10 components + 2 pages; 107-line en+vi catalogs; all pinned in
+`jlpt.pin.test.ts` → catalog 81/0 survivors, wiring 11/0 (RTL-only). **Import-graph audit was the run's FIRST
+fully-clean one** — all `components/jlpt/*` consumed only by the two jlpt pages, no cross-module surprise.
+**Convention-#2 HOTSPOT handled:** `lib/jlpt-ui.ts`'s `SECTION_LABELS`/`PILLAR_LABELS` (English maps = the
+section/pillar NAMES, consumed by attempt-list + pre-start-panel + results-panel) were DELETED and all 5 call
+sites rewired to `t(\`sections.${x}\`)`/`t(\`pillars.${x}\`)` (enum values become key suffixes). Safe delete:
+`lib/jlpt-ui.test.ts` only covers parse/sum helpers, no cross-module import. `jlpt-test/page.tsx` = pure
+redirect, no strings, untouched. metadata `{title:"JLPT"}` left for Task 18. Timer aria-live → `a11y`;
+pass/fail + pillar copy extracted; N5–N1 + "JLPT" left untranslated. **The implementer found & closed its own
+2 wiring survivors in-task** (pre-start mode-description + sr-only Correct./Incorrect. had no render assertion)
+→ why review came back 0-fix. Review (opus): Spec PASS · Quality PASS, 0 Critical/Important; verified EN
+byte-verbatim leaf-by-leaf, VN key-tree/ICU parity, and that the swap-proof assertions genuinely fail RED on a
+key swap. **Task 19 carries:** (a) `passUnavailableReason` — rendered in `jlpt-results-panel`, authored in
+`lib/jlpt/score.ts` (controlled backend copy, 3 unit-tested variants; NOT a diagnostic leak — convention #4
+stays closed — but English-untranslated in vi, a backend-engineer i18n gap outside this task); (b)
+`common.errors.network` now = **4 consuming surfaces** (+jlpt-test-runner); (c) `common.actions.next` reused.
+
+## ▶ NEXT = Task 14 (`reading` namespace). Tip `763c884`, tree clean. Plan line 898.
+**AUDIT the file list + import graph FIRST** (convention #2 — plan list wrong 5×, though Task 13 was clean).
+Put ALL SIX standing conventions + the **5-step namespace-wiring list** (incl. `types/messages.d.ts`) + the
+**`useTranslations`-for-all-synchronous-components** rule in the implementer AND reviewer briefs. Same cadence
+(fresh sonnet implementer → opus review → fix wave if needed; controller re-runs all three gates itself).
 
 ## (superseded) ▶ NEXT was 11e (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 

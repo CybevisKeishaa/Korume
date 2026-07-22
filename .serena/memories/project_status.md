@@ -30,11 +30,20 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-22) — Task **13** (`jlpt`) is next; tree is clean, nothing owed
+## ▶ NEXT ACTION (updated 2026-07-22) — Task **14** (`reading`) is next; tree is clean, nothing owed
 **L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tip `4f9b473`. Tasks 1-10 + 6b + 11a–11e + 12 ALL
+via `superpowers:subagent-driven-development`. **Tip `763c884`. Tasks 1-10 + 6b + 11a–11e + 12 + 13 ALL
 committed and reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 ·
-1546 tests / 193 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
+1581 tests / 194 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
+
+**Task 13 done `763c884`** (`jlpt` ns — 81 leaves, 107-line en+vi catalogs; the FIRST 0-fix-wave task of
+the run — the implementer found & closed its own 2 wiring survivors before review). Convention-#2 audit was
+CLEAN (no cross-module surprise). Handled the hotspot: `lib/jlpt-ui.ts`'s `SECTION_LABELS`/`PILLAR_LABELS`
+(English maps = section/pillar NAMES) DELETED, all 5 call sites rewired to `t()`. **TWO NEW standing lessons
+(full text in `mem:l9a_localization_run_state`):** (a) namespace wiring is a **5-step** list — `types/messages.d.ts`
+`AppConfig.Messages` also needs the namespace or tsc fails; (b) use `useTranslations` for ALL synchronous
+components (even without `"use client"`, if imported by a client component `getTranslations` hard-fails);
+`await getTranslations` only for genuinely-async server components. N5–N1 + "JLPT" left untranslated as required.
 
 **Task 12 done `5dde8c8` + error-path test `4f9b473`** (`mining` ns — 4 components + 2 pages, 18 leaves
 all pinned; the plan list omitted `mining-review-session.tsx` a 5TH time, controller audited it in and
@@ -59,7 +68,7 @@ here; **N5–N1 level labels NOT translated**; JLPT stays "JLPT". **AUDIT the fi
 **Task 11 was SPLIT into 11a-11e** (plan commit `087b342`) after measuring it at 3793 LOC = 6.9x Task 10.
 11a–11e ✅ (Task 11 DONE) · 12 ✅ `5dde8c8`+`4f9b473` (`mining`). **Tasks 13-19 + a metadata sweep (Task 18)
 remain**. Namespaces so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`, `grammar`,
-`videos`, `dictation`, `shadowing`, `mining` (12 done).
+`videos`, `dictation`, `shadowing`, `mining`, `jlpt` (13 done).
 
 **⚠ The plan's file lists have now been wrong FOUR times, and 11d's miss crossed MODULES:** translating
 the `useRecorder` hook broke 13 tests in `components/conversation/` because `voice-recorder-button.tsx`
