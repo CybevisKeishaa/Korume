@@ -280,10 +280,8 @@ describe("ShadowingRecorderPanel", () => {
       const scoreButton = await recordUploadAndScoreButton();
       await userEvent.click(scoreButton);
 
-      await waitFor(() => expect(screen.getByText(/発音/)).toBeInTheDocument());
-      expect(screen.getByText(/82/)).toBeInTheDocument();
-      expect(screen.getByText(/リズム/)).toBeInTheDocument();
-      expect(screen.getByText(/75/)).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByText("発音 82")).toBeInTheDocument());
+      expect(screen.getByText("リズム 75")).toBeInTheDocument();
       expect(screen.getByText("こんにちは", { selector: "span" })).toBeInTheDocument();
       expect(screen.getByText("です")).toBeInTheDocument();
 
