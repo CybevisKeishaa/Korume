@@ -884,9 +884,10 @@ failure, and never run vitest and playwright concurrently.
 
 ### Task 12: `mining` namespace
 
-**Files:** `app/[locale]/(app)/mining/{page,review/page}.tsx`, `components/video-player/{mine-line-control,mining-deck-list,mining-clip-player}.tsx`.
-**Tests to move:** the three matching test files.
-**Notes:** consumes `common.srs.*` from Task 7. Glossary: mining = "Thu thập câu".
+**Files:** `app/[locale]/(app)/mining/{page,review/page}.tsx`, `components/video-player/{mine-line-control,mining-deck-list,mining-clip-player,mining-review-session}.tsx`.
+**Tests to move:** the FOUR matching component test files.
+**⚠ File list corrected 2026-07-22 (controller audit, 5th time the plan metadata was wrong):** the original list omitted `mining-review-session.tsx` (179 LOC, the SRS review UI rendered by `mining/review/page.tsx`) — it carries the `body.error` defect at line 61. Audited via glob + import graph.
+**Notes:** consumes `common.srs.*` (again/hard/good/easy/complete/done/progress/showAnswer/spaceHint) AND `common.states.error` from Task 7. Glossary: mining = "Thu thập câu". `mining-review-session.tsx` mirrors `components/learning/review-session.tsx` (Task 7) — mirror its error fix (`console.error(e); setError(t("states.error"))`, raw exception never reaches the DOM) and its `labelKey`→`common.srs.*` GRADES map. Only the mining-specific empty state, "Back to deck", and the "sentence(s)" `reviewedCount` plural are new `mining.*` keys.
 
 ### Task 13: `jlpt` namespace
 

@@ -30,33 +30,36 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-22) — Task **12** (`mining`) is next; tree is clean, nothing owed
+## ▶ NEXT ACTION (updated 2026-07-22) — Task **13** (`jlpt`) is next; tree is clean, nothing owed
 **L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tip `faca02f`. Tasks 1-10 + 6b + 11a–11e ALL committed
-and reviewed clean — Task 11 (the 6.9× monster, split into 11a–11e) is DONE.** Gate at the tip, all
-three re-run by the controller itself: **tsc 0 · 1530 tests / 192 files · lint exit 0 / 80 pre-existing
-warnings across 23 files, 0 new.**
+via `superpowers:subagent-driven-development`. **Tip `4f9b473`. Tasks 1-10 + 6b + 11a–11e + 12 ALL
+committed and reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 ·
+1546 tests / 193 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
 
-**Task 11e done `1795471` + wiring fix `faca02f`** (`shadowing-recorder-panel` → `shadowing` ns; 41 leaves,
-all pinned; 3 carry-forwards handled; Azure `errorType` enum mapped via exhaustive `Record` so it's
-translated not leaked; review found + closed 1 wiring survivor — 発音/リズム labels not paired to scores).
-Details in `mem:l9a_localization_run_state`.
+**Task 12 done `5dde8c8` + error-path test `4f9b473`** (`mining` ns — 4 components + 2 pages, 18 leaves
+all pinned; the plan list omitted `mining-review-session.tsx` a 5TH time, controller audited it in and
+patched the plan doc; that file mirrors Task 7's `review-session.tsx`, reusing `common.srs.*` +
+`common.states.error`; the LAST `Error.message`→DOM defect CLOSED; 1 fix wave added the error-path RTL
+assertion). **Task 11e done `1795471` + `faca02f`** (`shadowing-recorder-panel`; 41 leaves; Azure
+`errorType` enum mapped via exhaustive `Record`; 1 wiring survivor 発音/リズム closed). Details in
+`mem:l9a_localization_run_state`.
 
 Commits 2026-07-22: `23a8f84` (11b `dictation`) · `36534b0` (plan-doc file-list patch) · `da41411`
 (11c `shadowing` + `common.player.*`) · `9c9b3bf` (11d capture). **The user made their own commit
 `3e4b4a3` "[LongTNP]: mascot" mid-run** (deleted `.docx`, added `MASCOT.md`) — those files are handled,
 stop excluding them.
 
-**NEXT: Task 12** (`mining` namespace) — `components/video-player/mining-review-session.tsx` (+ test) +
-`app/[locale]/(app)/mining/page.tsx`. Consumes `common.srs.*` (Task 7) + `common.errors.network` (Task
-11b/11e). Glossary: mining = "Thu thập câu". **Task 12 OWNS the LAST `body.error`/`Error.message` defect
-instance:** `mining-review-session.tsx:61` routes raw `Error.message` to the DOM — stop rendering it,
-classify to a descriptor. Read `mem:l9a_localization_run_state` top block first.
+**NEXT: Task 13** (`jlpt` namespace) — `app/[locale]/(app)/jlpt/{page,[id]/page}.tsx`,
+`app/[locale]/(app)/jlpt-test/page.tsx`, `components/jlpt/*` (~965 LOC, 10 components). Timer `aria-live`
+warnings → nest under `a11y`, ICU time args identical across locales; pillar names + pass/fail copy live
+here; **N5–N1 level labels NOT translated**; JLPT stays "JLPT". **AUDIT the file list + import graph FIRST
+(convention #2 — the plan list has been wrong 5×, incl. Task 12's missing `mining-review-session`).** Read
+`mem:l9a_localization_run_state` top "⭐⭐ STANDING CONVENTIONS" block first.
 
 **Task 11 was SPLIT into 11a-11e** (plan commit `087b342`) after measuring it at 3793 LOC = 6.9x Task 10.
-11a ✅ `9d745bc` · 11b ✅ `23a8f84` · 11c ✅ `da41411` · 11d ✅ `9c9b3bf` · 11e ✅ `1795471`+`faca02f` — Task 11
-DONE; **Tasks 12-19 + a metadata sweep (Task 18) remain**. Namespaces so far: `common`, `nav`, `auth`,
-`marketing`, `dashboard`, `kanji`, `vocab`, `grammar`, `videos`, `dictation`, `shadowing` (11 done).
+11a–11e ✅ (Task 11 DONE) · 12 ✅ `5dde8c8`+`4f9b473` (`mining`). **Tasks 13-19 + a metadata sweep (Task 18)
+remain**. Namespaces so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`, `grammar`,
+`videos`, `dictation`, `shadowing`, `mining` (12 done).
 
 **⚠ The plan's file lists have now been wrong FOUR times, and 11d's miss crossed MODULES:** translating
 the `useRecorder` hook broke 13 tests in `components/conversation/` because `voice-recorder-button.tsx`

@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e ALL done; 12-19 remain — NEXT = Task 12 `mining`)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 done; 13-19 remain — NEXT = Task 13 `jlpt`)
 
 ## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 12–19 (user-codified after Task 11, 2026-07-22)
 Put ALL of these in every implementer brief AND every reviewer brief. They are not new — Task 11
@@ -118,12 +118,33 @@ two `t()` keys would mislabel pronunciation↔rhythm undetected — closed by `f
 assertions; the swap was empirically verified RED then reverted). **This is the two-mutation-class convention
 doing exactly its job at 11e: catalog 0 / wiring 1, and the blended number would have hidden it.**
 
-## ▶ NEXT = Task 12 (`mining` namespace). Tip `faca02f`, tree clean.
-Files: `components/video-player/mining-review-session.tsx` (+ test) + `app/[locale]/(app)/mining/page.tsx`.
-Consumes `common.srs.*` (Task 7) + `common.errors.network` (Task 11b/11e). Glossary: mining = "Thu thập câu".
-**Task 12 OWNS the LAST `body.error`/`Error.message` defect instance:** `mining-review-session.tsx:61` routes
-raw `Error.message` to the DOM (Task 7 fixed review-session, Task 8 vocab panel, Task 11c video-summary-panel).
-Stop rendering it; classify to a descriptor. Same cadence (fresh sonnet implementer → opus review → fix wave).
+## ✅ Task 12 DONE `5dde8c8` + fix `4f9b473` — `mining` namespace. Tip `4f9b473`.
+Gate (controller re-ran all three): **tsc 0 · 1546 tests / 193 files · lint 80 pre-existing / 23 files, 0 new.**
+18 new `mining.*` leaves across 4 components (`mine-line-control`, `mining-deck-list`, `mining-clip-player`,
+`mining-review-session`) + 2 pages; all pinned in `mining.pin.test.ts` → catalog 0 survivors. **Plan file list
+was WRONG a 5TH TIME** — it omitted `mining-review-session.tsx` (the SRS review UI holding the defect);
+controller audited via glob + import-graph and PATCHED the plan doc. That file mirrors
+`components/learning/review-session.tsx` (Task 7): reuses `common.srs.*` (again/hard/good/easy/complete/done/
+progress/showAnswer/spaceHint) + `common.states.error`; only its empty-state, "Back to deck", and
+"sentence(s)" `reviewedCount` are new `mining.*` keys. **Owned defect (the LAST `Error.message`→DOM instance)
+CLOSED** by mirroring Task 7's fix. Import-graph CLEAN — `MineLineControl` is consumed only by `transcript-pane`
+(already on `@/test/render`); the `save-to-playlist-button`/`reading-body` grep hits were comment path-mentions,
+not imports (convention #2 paid off — no cross-module surprise this time). Review (opus): Approved, 0
+Critical/Important. **1 fix wave** closed Minor #1 — the owned error-path had NO RTL assertion, so a wiring
+mutation there would survive; `4f9b473` added fetch-reject + non-ok-500 tests proving the TRANSLATED
+`common.states.error` surfaces and the raw exception does NOT (verified RED-on-revert). **Carried Minor → Task
+19:** the 2 trivial mining pages have no render test, so page-level `deck.title`↔`deck.review`/`review.title`
+key swaps are wiring survivors (low value, pass-through pages). **Task 19 consumer counts:** `common.srs.*` and
+`common.states.error` each now = **2 consuming surfaces**.
+
+## ▶ NEXT = Task 13 (`jlpt` namespace). Tip `4f9b473`, tree clean.
+Files: `app/[locale]/(app)/jlpt/{page,[id]/page}.tsx`, `app/[locale]/(app)/jlpt-test/page.tsx`,
+`components/jlpt/*` (~965 LOC, 10 components). Tests to move: `components/jlpt/{jlpt-listening-play-button,
+jlpt-question-card,jlpt-timer}.test.tsx`. Notes: timer `aria-live` warnings → nest under `a11y`, keep ICU time
+args identical across locales; pillar names + pass/fail result copy live here; **N5–N1 level labels are NOT
+translated**; JLPT stays "JLPT". **AUDIT the file list + import graph FIRST (convention #2 — the plan list has
+been wrong 5×, incl. Task 12).** Same cadence (fresh sonnet implementer → opus review → fix wave; controller
+re-runs all three gates).
 
 ## (superseded) ▶ NEXT was 11e (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 
