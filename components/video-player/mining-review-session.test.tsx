@@ -50,6 +50,7 @@ function mockFetch(): FetchCall[] {
 
 describe("MiningReviewSession", () => {
   let yt: YouTubeStubHandle;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
 
   beforeEach(() => {
     yt = installYouTubeStub({ duration: 90 });
@@ -58,6 +59,11 @@ describe("MiningReviewSession", () => {
   afterEach(() => {
     yt.restore();
     vi.unstubAllGlobals();
+    // A failing assertion inside a test body would skip an inline
+    // `spy.mockRestore()`, leaving console.error mocked for the rest of the
+    // file — restore unconditionally here instead (mirrors review-session.test.tsx).
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it("shows an empty-queue message when there is nothing due", () => {
@@ -153,5 +159,41 @@ describe("MiningReviewSession", () => {
     expect(screen.getByRole("button", { name: /^hard/i })).toHaveTextContent("Hard2");
     expect(screen.getByRole("button", { name: /^good/i })).toHaveTextContent("Good3");
     expect(screen.getByRole("button", { name: /^easy/i })).toHaveTextContent("Easy4");
+  });
+
+  /**
+   * Reviewer-identified wiring gap (Task 12 fix wave): the catch block routes
+   * server-diagnostic text through `t("states.error")` so only translated,
+   * generic copy reaches the DOM (CLAUDE.md §5 differentiator note on the
+   * mirrored `review-session.tsx` fix). A mutation that reintroduces
+   * `setError(e.message)` — or points the key elsewhere — must turn this RED.
+   */
+  it("shows the translated generic error message when the review POST throws a network error (never the raw exception text)", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("boom")));
+    render(<MiningReviewSession items={ITEMS} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^good/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Something went wrong.");
+    expect(alert).not.toHaveTextContent("boom");
+  });
+
+  it("shows the translated generic error message when the review POST resolves not-ok (never the raw status text)", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) }) as Response),
+    );
+    render(<MiningReviewSession items={ITEMS} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^good/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Something went wrong.");
+    expect(alert).not.toHaveTextContent("Review failed (500)");
   });
 });
