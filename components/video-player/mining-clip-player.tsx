@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { YouTubePlayer, type YouTubePlayerHandle } from "./youtube-player";
 
@@ -21,6 +22,7 @@ export interface MiningClipPlayerProps {
 export function MiningClipPlayer({ videoId, startTime, endTime }: MiningClipPlayerProps) {
   const [mounted, setMounted] = useState(false);
   const playerRef = useRef<YouTubePlayerHandle>(null);
+  const t = useTranslations("mining");
 
   const seekAndPlay = useCallback(() => {
     const handle = playerRef.current;
@@ -43,7 +45,7 @@ export function MiningClipPlayer({ videoId, startTime, endTime }: MiningClipPlay
   if (!mounted) {
     return (
       <Button type="button" variant="outline" size="sm" onClick={() => setMounted(true)}>
-        Play clip
+        {t("clip.play")}
       </Button>
     );
   }
@@ -60,7 +62,7 @@ export function MiningClipPlayer({ videoId, startTime, endTime }: MiningClipPlay
         />
       </div>
       <Button type="button" variant="outline" size="sm" className="mt-2" onClick={seekAndPlay}>
-        Replay clip
+        {t("clip.replay")}
       </Button>
     </div>
   );

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import type { TranscriptLineRow } from "@/lib/video-types";
 import { MineLineControl } from "./mine-line-control";
@@ -55,6 +55,7 @@ describe("MineLineControl", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /mine/i }));
 
+    expect(screen.getByRole("group", { name: "Pick a word to mine" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /私/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /学校/ })).toBeInTheDocument();
   });
