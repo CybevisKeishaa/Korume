@@ -11,6 +11,7 @@ import type dictation from "../messages/en/dictation.json";
 import type shadowing from "../messages/en/shadowing.json";
 import type mining from "../messages/en/mining.json";
 import type jlpt from "../messages/en/jlpt.json";
+import type reading from "../messages/en/reading.json";
 import type { routing } from "../lib/i18n/routing";
 
 declare module "next-intl" {
@@ -30,6 +31,7 @@ declare module "next-intl" {
       shadowing: typeof shadowing;
       mining: typeof mining;
       jlpt: typeof jlpt;
+      reading: typeof reading;
     };
   }
 }

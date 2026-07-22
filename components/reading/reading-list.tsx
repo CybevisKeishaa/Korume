@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { Card } from "@/components/ui/card";
 import { buttonStyles } from "@/components/ui/button";
@@ -22,8 +23,9 @@ function LevelFilter({
   active: JlptLevel | undefined;
   onChange: (level: JlptLevel | undefined) => void;
 }) {
+  const t = useTranslations("reading");
   return (
-    <div role="group" aria-label="Filter by JLPT level" className="flex flex-wrap gap-2">
+    <div role="group" aria-label={t("list.filterAria")} className="flex flex-wrap gap-2">
       <button
         type="button"
         aria-pressed={!active}
@@ -33,7 +35,7 @@ function LevelFilter({
           !active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
         )}
       >
-        All
+        {t("list.all")}
       </button>
       {JLPT_LEVELS.map((level) => (
         <button
@@ -62,6 +64,7 @@ function LevelFilter({
  * while it's still under active development in this same branch.
  */
 export function ReadingList() {
+  const t = useTranslations("reading");
   const [level, setLevel] = useState<JlptLevel | undefined>(undefined);
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
@@ -78,13 +81,17 @@ export function ReadingList() {
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ status: "error", message: "Could not load reading passages. Please try again." });
+          setState({ status: "error", message: t("list.errorLoad") });
         }
       });
 
     return () => {
       cancelled = true;
     };
+    // `t` intentionally omitted below: it is stable for the component's
+    // lifetime (locale never changes mid-render) and adding it would
+    // re-trigger this fetch effect whenever `t`'s identity happens to change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
 
   return (
@@ -92,7 +99,7 @@ export function ReadingList() {
       <LevelFilter active={level} onChange={setLevel} />
 
       {state.status === "loading" && (
-        <p className="text-sm text-muted-foreground">Loading reading passages…</p>
+        <p className="text-sm text-muted-foreground">{t("list.loading")}</p>
       )}
 
       {state.status === "error" && (
@@ -103,7 +110,7 @@ export function ReadingList() {
 
       {state.status === "loaded" && state.passages.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No reading passages{level ? ` at this level` : ""} yet.
+          {level ? t("list.emptyAtLevel") : t("list.emptyAll")}
         </p>
       )}
 
@@ -119,13 +126,15 @@ export function ReadingList() {
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {passage.word_count != null ? `${passage.word_count} words` : "Word count unknown"}
+                  {passage.word_count != null
+                    ? t("wordCount", { count: passage.word_count })
+                    : t("wordCountUnknown")}
                 </p>
                 <Link
                   href={`/reading/${passage.id}`}
                   className={cn(buttonStyles({ variant: "outline", size: "sm" }), "mt-auto")}
                 >
-                  Read passage
+                  {t("list.readPassage")}
                 </Link>
               </Card>
             </li>

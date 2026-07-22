@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export interface WordLookupPopoverProps {
@@ -29,6 +30,7 @@ export interface WordLookupPopoverProps {
  * explanation rather than firing a request that would always fail.
  */
 export function WordLookupPopover({ word, reading, children, className }: WordLookupPopoverProps) {
+  const t = useTranslations("reading");
   const [open, setOpen] = useState(false);
   const popoverId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -87,7 +89,7 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
         <span
           id={popoverId}
           role="group"
-          aria-label={`Look up: ${word}`}
+          aria-label={t("wordLookup.lookUp", { word })}
           className="absolute left-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-card p-3 text-left shadow-md"
         >
           <span className="flex items-start justify-between gap-2">
@@ -104,7 +106,7 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
                 setOpen(false);
                 triggerRef.current?.focus();
               }}
-              aria-label="Close"
+              aria-label={t("wordLookup.close")}
               className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               ×
@@ -117,11 +119,10 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
               disabled
               className="w-full rounded-md bg-muted px-2 py-1.5 text-sm font-medium text-muted-foreground disabled:cursor-not-allowed"
             >
-              Add to flashcard
+              {t("wordLookup.addToFlashcard")}
             </button>
             <span className="mt-1 block text-xs text-muted-foreground">
-              Adding flashcards from reading passages isn&apos;t supported yet — this currently
-              only works when looking up words in a video.
+              {t("wordLookup.addToFlashcardExplanation")}
             </span>
           </span>
         </span>

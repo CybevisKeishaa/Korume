@@ -1,0 +1,58 @@
+{
+  "page": {
+    "title": "Reading passages",
+    "subtitle": "Practice Japanese reading comprehension by JLPT level, with quiz questions and tap-to-lookup right in the passage."
+  },
+  "list": {
+    "filterAria": "Filter by JLPT level",
+    "all": "All",
+    "loading": "Loading reading passages…",
+    "errorLoad": "Could not load reading passages. Please try again.",
+    "emptyAll": "No reading passages yet.",
+    "emptyAtLevel": "No reading passages at this level yet.",
+    "readPassage": "Read passage"
+  },
+  "detail": {
+    "back": "← All reading passages",
+    "loading": "Loading passage…",
+    "notFound": "Passage not found.",
+    "errorLoad": "Could not load this passage. Please try again.",
+    "quizHeading": "Comprehension quiz"
+  },
+  "wordCount": "{count} words",
+  "wordCountUnknown": "Word count unknown",
+  "body": {
+    "heading": "Passage",
+    "noFurigana": "No furigana data for this passage — look up by sentence instead of by word."
+  },
+  "furigana": {
+    "show": "Show furigana",
+    "hide": "Hide furigana",
+    "unavailable": "Furigana unavailable",
+    "unavailableTitle": "No furigana data for this passage"
+  },
+  "translation": {
+    "show": "Show translation"
+  },
+  "wordLookup": {
+    "lookUp": "Look up: {word}",
+    "close": "Close",
+    "addToFlashcard": "Add to flashcard",
+    "addToFlashcardExplanation": "Adding flashcards from reading passages isn't supported yet — this currently only works when looking up words in a video."
+  },
+  "quiz": {
+    "noQuestions": "This passage has no questions yet.",
+    "questionLabel": "Question {index}.",
+    "questionAriaLabel": "Question {index}",
+    "correctAnswerBadge": "(Correct answer)",
+    "correct": "Correct",
+    "incorrect": "Incorrect",
+    "submitting": "Submitting…",
+    "submit": "Submit answers",
+    "answeredCount": "Answered {answered}/{total} questions",
+    "resultSummary": "{correct} / {total} correct ({percent}%)",
+    "errorRateLimitWithSeconds": "Too many submissions — try again in {seconds}s.",
+    "errorRateLimit": "Too many submissions — please wait a moment and try again.",
+    "errorSubmitFallback": "Could not submit your answers. Please try again."
+  }
+}

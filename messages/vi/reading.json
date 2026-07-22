@@ -1,0 +1,58 @@
+{
+  "page": {
+    "title": "Bài đọc",
+    "subtitle": "Luyện đọc hiểu tiếng Nhật theo cấp độ JLPT, với câu hỏi trắc nghiệm và tra từ ngay trong bài đọc."
+  },
+  "list": {
+    "filterAria": "Lọc theo cấp độ JLPT",
+    "all": "Tất cả",
+    "loading": "Đang tải bài đọc…",
+    "errorLoad": "Không thể tải bài đọc. Vui lòng thử lại.",
+    "emptyAll": "Chưa có bài đọc nào.",
+    "emptyAtLevel": "Chưa có bài đọc nào ở cấp độ này.",
+    "readPassage": "Đọc bài"
+  },
+  "detail": {
+    "back": "← Tất cả bài đọc",
+    "loading": "Đang tải bài đọc…",
+    "notFound": "Không tìm thấy bài đọc.",
+    "errorLoad": "Không thể tải bài đọc này. Vui lòng thử lại.",
+    "quizHeading": "Câu hỏi đọc hiểu"
+  },
+  "wordCount": "{count} từ",
+  "wordCountUnknown": "Không rõ số từ",
+  "body": {
+    "heading": "Bài đọc",
+    "noFurigana": "Bài đọc này không có dữ liệu furigana — hãy tra theo câu thay vì theo từ."
+  },
+  "furigana": {
+    "show": "Hiện furigana",
+    "hide": "Ẩn furigana",
+    "unavailable": "Không có furigana",
+    "unavailableTitle": "Bài đọc này không có dữ liệu furigana"
+  },
+  "translation": {
+    "show": "Hiện bản dịch"
+  },
+  "wordLookup": {
+    "lookUp": "Tra: {word}",
+    "close": "Đóng",
+    "addToFlashcard": "Thêm vào thẻ ghi nhớ",
+    "addToFlashcardExplanation": "Chưa hỗ trợ thêm thẻ ghi nhớ từ bài đọc — tính năng này hiện chỉ hoạt động khi tra từ trong video."
+  },
+  "quiz": {
+    "noQuestions": "Bài đọc này chưa có câu hỏi nào.",
+    "questionLabel": "Câu {index}.",
+    "questionAriaLabel": "Câu {index}",
+    "correctAnswerBadge": "(Đáp án đúng)",
+    "correct": "Đúng",
+    "incorrect": "Sai",
+    "submitting": "Đang nộp…",
+    "submit": "Nộp bài",
+    "answeredCount": "Đã trả lời {answered}/{total} câu",
+    "resultSummary": "{correct} / {total} câu đúng ({percent}%)",
+    "errorRateLimitWithSeconds": "Bạn đã nộp quá nhiều lần — thử lại sau {seconds} giây.",
+    "errorRateLimit": "Bạn đã nộp quá nhiều lần — vui lòng đợi một chút rồi thử lại.",
+    "errorSubmitFallback": "Không thể nộp câu trả lời. Vui lòng thử lại."
+  }
+}

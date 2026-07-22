@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import type { ReadingQuestionPublic } from "@/lib/reading-types";
 import { ReadingQuiz } from "./reading-quiz";
@@ -57,8 +57,22 @@ describe("ReadingQuiz", () => {
       expect(screen.getByText(/1 \/ 2 correct \(50%\)/i)).toBeInTheDocument(),
     );
 
-    expect(screen.getByText("Correct")).toBeInTheDocument();
-    expect(screen.getByText("Incorrect")).toBeInTheDocument();
+    // Swap-proof: q1 (correct: true) must render the "Correct" feedback line
+    // and q2 (correct: false) must render "Incorrect" — not merely that both
+    // strings exist somewhere, which would still pass if the two catalog
+    // keys were swapped. Scoped to each fieldset's feedback `<p>` specifically
+    // via `p.text-sm.font-medium` — the legend also matches `.text-sm.font-medium`
+    // and the "(Correct answer)" badge contains the word "Correct" too via
+    // `.text-xs.font-medium`, so both would otherwise create a wrong/ambiguous
+    // match — and anchored so "Incorrect" can never satisfy a "starts with
+    // Correct" match by accident.
+    const groups = screen.getAllByRole("group");
+    expect(groups).toHaveLength(2);
+    const [q1Group, q2Group] = groups as [HTMLElement, HTMLElement];
+    const q1Feedback = q1Group.querySelector("p.text-sm.font-medium");
+    const q2Feedback = q2Group.querySelector("p.text-sm.font-medium");
+    expect(q1Feedback).toHaveTextContent(/^Correct\b/);
+    expect(q2Feedback).toHaveTextContent(/^Incorrect\b/);
     expect(screen.getByText(/花子が主人公です/)).toBeInTheDocument();
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];

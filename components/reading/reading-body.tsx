@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import type { FuriganaSegment } from "@/lib/reading-types";
 import { splitIntoSentences } from "@/lib/reading-format";
 import { FuriganaToggle } from "./furigana-toggle";
@@ -29,6 +30,7 @@ function isLookupable(text: string): boolean {
  * the passage fully inert.
  */
 export function ReadingBody({ bodyJp, furiganaJson }: ReadingBodyProps) {
+  const t = useTranslations("reading");
   const segments = furiganaJson ?? [];
   const hasFurigana = segments.length > 0;
   const [showFurigana, setShowFurigana] = useState(hasFurigana);
@@ -36,7 +38,7 @@ export function ReadingBody({ bodyJp, furiganaJson }: ReadingBodyProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground">Passage</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground">{t("body.heading")}</h2>
         <FuriganaToggle
           pressed={hasFurigana && showFurigana}
           onToggle={() => setShowFurigana((v) => !v)}
@@ -76,9 +78,7 @@ export function ReadingBody({ bodyJp, furiganaJson }: ReadingBodyProps) {
       </p>
 
       {!hasFurigana && (
-        <p className="text-xs text-muted-foreground">
-          No furigana data for this passage — look up by sentence instead of by word.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("body.noFurigana")}</p>
       )}
     </div>
   );
