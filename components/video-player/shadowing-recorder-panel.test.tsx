@@ -94,6 +94,40 @@ describe("ShadowingRecorderPanel", () => {
     expect(audioEl).toHaveAttribute("src", "https://example.test/signed/rec-1.webm");
   });
 
+  it("labels the panel for screen readers with the active line's text", () => {
+    fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <ShadowingRecorderPanel videoId="video-1" lineId="line-1" lineText="こんにちは" />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: 'Shadowing recorder for "こんにちは"' }),
+    ).toBeInTheDocument();
+  });
+
+  it("labels the waveform preview once a take is recorded — carry-forward #1 from the 11a player shell", async () => {
+    fetchMock = vi.fn(async () =>
+      jsonResponse(201, {
+        data: {
+          id: "rec-1",
+          recordingPath: "recordings/rec-1.webm",
+          signedUrl: "https://example.test/signed/rec-1.webm",
+          createdAt: "2026-07-12T00:00:00.000Z",
+        },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ShadowingRecorderPanel videoId="video-1" lineId="line-1" />);
+    await recordAndStop();
+
+    await waitFor(() =>
+      expect(screen.getByRole("img", { name: "Your recording waveform" })).toBeInTheDocument(),
+    );
+  });
+
   it("shows a friendly message when microphone permission is denied", async () => {
     gum.restore();
     gum = mockGetUserMedia({
@@ -133,6 +167,64 @@ describe("ShadowingRecorderPanel", () => {
 
     await waitFor(() =>
       expect(screen.getByRole("status")).toHaveTextContent(/couldn't be saved/i),
+    );
+  });
+
+  it("shows a friendly message when saving requires signing in (401)", async () => {
+    fetchMock = vi.fn(async () => jsonResponse(401, { error: "unauthorized" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ShadowingRecorderPanel videoId="video-1" lineId="line-1" />);
+    await recordAndStop();
+
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Sign in to save your recordings.",
+      ),
+    );
+  });
+
+  it("falls back to a generic wait message when the upload is rate-limited without a usable Retry-After", async () => {
+    fetchMock = vi.fn(async () => jsonResponse(429, {}));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ShadowingRecorderPanel videoId="video-1" lineId="line-1" />);
+    await recordAndStop();
+
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Too many recordings — please wait a moment and try again.",
+      ),
+    );
+  });
+
+  it("shows the generic saving-failed message on an unmapped status", async () => {
+    fetchMock = vi.fn(async () => jsonResponse(500, { error: "boom" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ShadowingRecorderPanel videoId="video-1" lineId="line-1" />);
+    await recordAndStop();
+
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Something went wrong saving your recording.",
+      ),
+    );
+  });
+
+  it("shows the promoted common.errors.network message when the upload fetch itself throws", async () => {
+    fetchMock = vi.fn(async () => {
+      throw new Error("offline");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ShadowingRecorderPanel videoId="video-1" lineId="line-1" />);
+    await recordAndStop();
+
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Network error — check your connection and try again.",
+      ),
     );
   });
 
@@ -306,6 +398,242 @@ describe("ShadowingRecorderPanel", () => {
       );
       expect(scoreButton).toBeDisabled();
       expect(scoreButton).toHaveAttribute("title", expect.stringMatching(/isn't set up yet/i));
+    });
+
+    it("shows a translated tooltip for each word's error type and accuracy score", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () =>
+          jsonResponse(200, {
+            data: {
+              recognizedText: "こんにちは",
+              pronunciationScore: 82,
+              fluencyScore: 75,
+              accuracyScore: 90,
+              completenessScore: 100,
+              words: [
+                { word: "こんにちは", accuracyScore: 82, errorType: "None" },
+                { word: "です", accuracyScore: 40, errorType: "Mispronunciation" },
+              ],
+            },
+          }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByText("こんにちは", { selector: "span" })).toHaveAttribute(
+          "title",
+          "Correct (82)",
+        ),
+      );
+      expect(screen.getByText("です")).toHaveAttribute("title", "Mispronunciation (40)");
+      expect(
+        screen.getByRole("list", { name: "Word-level pronunciation" }),
+      ).toBeInTheDocument();
+    });
+
+    it("shows the exact 'Scoring…' busy label while the score request is in flight", async () => {
+      let resolveScore: (value: Response) => void = () => undefined;
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () =>
+          new Promise<Response>((resolve) => {
+            resolveScore = resolve;
+          }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Scoring…" })).toBeInTheDocument(),
+      );
+
+      resolveScore(
+        jsonResponse(200, {
+          data: {
+            recognizedText: "こんにちは",
+            pronunciationScore: 82,
+            fluencyScore: 75,
+            accuracyScore: 90,
+            completenessScore: 100,
+            words: [],
+          },
+        }),
+      );
+      await waitFor(() => expect(screen.getByText(/発音/)).toBeInTheDocument());
+    });
+
+    it("shows a wait message when scoring is rate-limited with a numeric Retry-After", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () => jsonResponse(429, {}, { "Retry-After": "42" }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "Too many scoring requests — try again in 42s.",
+        ),
+      );
+    });
+
+    it("falls back to a generic wait message when scoring is rate-limited without a usable Retry-After", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () => jsonResponse(429, {}),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "Too many scoring requests — please wait a moment and try again.",
+        ),
+      );
+    });
+
+    it("shows a friendly message when the recording can no longer be found to score (404)", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () => jsonResponse(404, {}),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "That recording could no longer be found to score.",
+        ),
+      );
+    });
+
+    it("shows a friendly message when the recording fails validation (422)", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () => jsonResponse(422, {}),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "That recording couldn't be scored — try recording again.",
+        ),
+      );
+    });
+
+    it("shows the generic scoring-failed message on an unmapped status", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () => jsonResponse(500, {}),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "Something went wrong scoring your pronunciation.",
+        ),
+      );
+    });
+
+    it("shows the promoted common.errors.network message when the score fetch itself throws", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": () =>
+          jsonResponse(201, {
+            data: {
+              id: "rec-1",
+              recordingPath: "recordings/rec-1.webm",
+              signedUrl: "https://example.test/signed/rec-1.webm",
+              createdAt: "2026-07-12T00:00:00.000Z",
+            },
+          }),
+        "/api/pronunciation/score": () => {
+          throw new Error("offline");
+        },
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const scoreButton = await recordUploadAndScoreButton();
+      await userEvent.click(scoreButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("alert")).toHaveTextContent(
+          "Network error — check your connection and try again.",
+        ),
+      );
     });
   });
 
@@ -518,6 +846,131 @@ describe("ShadowingRecorderPanel", () => {
       await userEvent.click(shareButton);
 
       expect(await screen.findByText(/try again in 20s/i)).toBeInTheDocument();
+    });
+
+    it("falls back to a generic wait message when sharing is rate-limited without a usable Retry-After", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () => jsonResponse(429, {}),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+
+      expect(
+        await screen.findByText("Too many requests — please wait a moment and try again."),
+      ).toBeInTheDocument();
+    });
+
+    it("shows the generic share-failed message on an unmapped status", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () => jsonResponse(500, {}),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+
+      expect(
+        await screen.findByText("Couldn't share this recording — please try again."),
+      ).toBeInTheDocument();
+    });
+
+    it("shows the promoted common.errors.network message when the share fetch itself throws", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () => {
+          throw new Error("offline");
+        },
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+
+      expect(
+        await screen.findByText("Network error — check your connection and try again."),
+      ).toBeInTheDocument();
+    });
+
+    it("shows the exact 'Sharing…' busy label while the share request is in flight", async () => {
+      let resolveShare: (value: Response) => void = () => undefined;
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () =>
+          new Promise<Response>((resolve) => {
+            resolveShare = resolve;
+          }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Sharing…" })).toBeInTheDocument(),
+      );
+
+      resolveShare(
+        jsonResponse(201, { data: { id: "share-1", createdAt: "2026-07-12T00:05:00.000Z" } }),
+      );
+      await waitFor(() =>
+        expect(screen.getByText("Shared for peer feedback.")).toBeInTheDocument(),
+      );
+    });
+
+    it("shows a friendly message when revoking a share fails", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () =>
+          jsonResponse(201, { data: { id: "share-1", createdAt: "2026-07-12T00:05:00.000Z" } }),
+        "/api/peer-review/shares/share-1": () => jsonResponse(500, {}),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: /revoke/i })).toBeInTheDocument(),
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: /revoke/i }));
+      await userEvent.click(screen.getByRole("button", { name: /yes/i }));
+
+      await waitFor(() =>
+        expect(
+          screen.getByText("Couldn't revoke this share — please try again."),
+        ).toBeInTheDocument(),
+      );
+    });
+
+    it("shows the promoted common.errors.network message when revoking a share's fetch itself throws", async () => {
+      fetchMock = routedFetch({
+        "/api/shadowing/session": sessionCreated,
+        "/api/peer-review/shares": () =>
+          jsonResponse(201, { data: { id: "share-1", createdAt: "2026-07-12T00:05:00.000Z" } }),
+        "/api/peer-review/shares/share-1": () => {
+          throw new Error("offline");
+        },
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const shareButton = await recordUploadAndFindShareButton();
+      await userEvent.click(shareButton);
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: /revoke/i })).toBeInTheDocument(),
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: /revoke/i }));
+      await userEvent.click(screen.getByRole("button", { name: /yes/i }));
+
+      await waitFor(() =>
+        expect(
+          screen.getByText("Network error — check your connection and try again."),
+        ).toBeInTheDocument(),
+      );
     });
   });
 });

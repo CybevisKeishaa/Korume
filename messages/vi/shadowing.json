@@ -35,6 +35,67 @@
       "micUnavailable": "Không thể truy cập micro của bạn. Hãy kiểm tra thiết bị rồi thử lại.",
       "notSupported": "Trình duyệt này không hỗ trợ ghi âm.",
       "recordingFailed": "Ghi âm thất bại. Hãy thử lại."
+    },
+    "toggle": {
+      "record": "Ghi âm",
+      "stop": "Dừng ghi âm"
+    },
+    "status": {
+      "requestingPermission": "Đang yêu cầu quyền truy cập micro…",
+      "recording": "Đang ghi âm…",
+      "saving": "Đang lưu bản ghi âm…",
+      "saved": "Đã lưu.",
+      "captured": "Đã ghi âm xong."
+    },
+    "a11y": {
+      "panel": "Trình ghi âm Shadowing cho \"{lineText}\"",
+      "waveformLabel": "Dạng sóng bản ghi âm của bạn",
+      "playback": "Phát bản ghi âm đã lưu của bạn",
+      "wordScores": "Phát âm theo từng từ"
+    },
+    "score": {
+      "action": "Chấm điểm phát âm của bạn",
+      "actionBusy": "Đang chấm điểm…",
+      "notConfigured": "Tính năng chấm điểm phát âm chưa được thiết lập.",
+      "conversionFailed": "Không thể xử lý bản ghi âm này. Vui lòng thử lại.",
+      "pronunciationLabel": "発音",
+      "fluencyLabel": "リズム",
+      "errors": {
+        "rateLimited": "Quá nhiều yêu cầu chấm điểm — thử lại sau {seconds} giây.",
+        "rateLimitedGeneric": "Quá nhiều yêu cầu chấm điểm — vui lòng đợi một chút rồi thử lại.",
+        "notFound": "Không còn tìm thấy bản ghi âm này để chấm điểm.",
+        "invalid": "Không thể chấm điểm bản ghi âm này — hãy thử ghi âm lại.",
+        "generic": "Đã xảy ra lỗi khi chấm điểm phát âm của bạn."
+      }
+    },
+    "upload": {
+      "errors": {
+        "unauthorized": "Hãy đăng nhập để lưu bản ghi âm của bạn.",
+        "rateLimited": "Quá nhiều bản ghi âm — thử lại sau {seconds} giây.",
+        "rateLimitedGeneric": "Quá nhiều bản ghi âm — vui lòng đợi một chút rồi thử lại.",
+        "invalid": "Không thể lưu bản ghi âm này. Vui lòng thử ghi âm lại.",
+        "generic": "Đã xảy ra lỗi khi lưu bản ghi âm của bạn."
+      }
+    },
+    "share": {
+      "action": "Chia sẻ để nhận đánh giá chéo",
+      "actionBusy": "Đang chia sẻ…",
+      "explain": "Chia sẻ công khai bản ghi âm này để nhận phản hồi. Bạn có thể thu hồi bất cứ lúc nào.",
+      "shared": "Đã chia sẻ để nhận đánh giá chéo.",
+      "revoke": "Thu hồi",
+      "revokeConfirm": "Thu hồi lượt chia sẻ này? Người khác sẽ không còn nghe hoặc đánh giá được nữa.",
+      "errors": {
+        "rateLimited": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
+        "rateLimitedGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút rồi thử lại.",
+        "generic": "Không thể chia sẻ bản ghi âm này — vui lòng thử lại.",
+        "revokeFailed": "Không thể thu hồi lượt chia sẻ này — vui lòng thử lại."
+      }
+    },
+    "wordError": {
+      "none": "Đúng",
+      "omission": "Thiếu âm",
+      "insertion": "Thừa âm",
+      "mispronunciation": "Phát âm sai"
     }
   },
   "pitch": {

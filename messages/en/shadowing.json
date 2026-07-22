@@ -35,6 +35,67 @@
       "micUnavailable": "Couldn't access your microphone. Check your device and try again.",
       "notSupported": "Recording isn't supported in this browser.",
       "recordingFailed": "Recording failed. Try again."
+    },
+    "toggle": {
+      "record": "Record",
+      "stop": "Stop recording"
+    },
+    "status": {
+      "requestingPermission": "Requesting microphone access…",
+      "recording": "Recording…",
+      "saving": "Saving recording…",
+      "saved": "Saved.",
+      "captured": "Recording captured."
+    },
+    "a11y": {
+      "panel": "Shadowing recorder for \"{lineText}\"",
+      "waveformLabel": "Your recording waveform",
+      "playback": "Play your saved recording",
+      "wordScores": "Word-level pronunciation"
+    },
+    "score": {
+      "action": "Score my pronunciation",
+      "actionBusy": "Scoring…",
+      "notConfigured": "Pronunciation scoring isn't set up yet.",
+      "conversionFailed": "We couldn't process that recording. Please try again.",
+      "pronunciationLabel": "発音",
+      "fluencyLabel": "リズム",
+      "errors": {
+        "rateLimited": "Too many scoring requests — try again in {seconds}s.",
+        "rateLimitedGeneric": "Too many scoring requests — please wait a moment and try again.",
+        "notFound": "That recording could no longer be found to score.",
+        "invalid": "That recording couldn't be scored — try recording again.",
+        "generic": "Something went wrong scoring your pronunciation."
+      }
+    },
+    "upload": {
+      "errors": {
+        "unauthorized": "Sign in to save your recordings.",
+        "rateLimited": "Too many recordings — try again in {seconds}s.",
+        "rateLimitedGeneric": "Too many recordings — please wait a moment and try again.",
+        "invalid": "That recording couldn't be saved. Please try recording again.",
+        "generic": "Something went wrong saving your recording."
+      }
+    },
+    "share": {
+      "action": "Share for peer feedback",
+      "actionBusy": "Sharing…",
+      "explain": "Shares this one recording publicly for feedback. You can revoke anytime.",
+      "shared": "Shared for peer feedback.",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke this share? Others will no longer be able to hear or review it.",
+      "errors": {
+        "rateLimited": "Too many requests — try again in {seconds}s.",
+        "rateLimitedGeneric": "Too many requests — please wait a moment and try again.",
+        "generic": "Couldn't share this recording — please try again.",
+        "revokeFailed": "Couldn't revoke this share — please try again."
+      }
+    },
+    "wordError": {
+      "none": "Correct",
+      "omission": "Omission",
+      "insertion": "Insertion",
+      "mispronunciation": "Mispronunciation"
     }
   },
   "pitch": {

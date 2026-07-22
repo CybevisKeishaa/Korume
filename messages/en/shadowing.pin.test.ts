@@ -229,3 +229,200 @@ describe("shadowing.json EN — pitch-contour-overlay.tsx (PitchContourOverlay) 
     expect(en.pitch.overlay.scoreSuffix).toBe(" / 100");
   });
 });
+
+/**
+ * Task 11e: `ShadowingRecorderPanel`
+ * (`components/video-player/shadowing-recorder-panel.tsx`). Every expected
+ * value below is a literal copied verbatim from that file's pre-extraction
+ * source on `layer-9a-string-extraction` before Task 11e (never derived from
+ * the catalog itself — binding pattern 2). `recorder.errors.*` is Task 11d's
+ * (`useRecorder`) and is pinned above — not touched here.
+ */
+describe("shadowing.json EN — shadowing-recorder-panel.tsx toggle/status/a11y literals", () => {
+  it("pins the record/stop toggle button labels", () => {
+    expect(en.recorder.toggle.record).toBe("Record");
+    expect(en.recorder.toggle.stop).toBe("Stop recording");
+  });
+
+  it("pins the transient recorder status messages", () => {
+    expect(en.recorder.status.requestingPermission).toBe("Requesting microphone access…");
+    expect(en.recorder.status.recording).toBe("Recording…");
+    expect(en.recorder.status.saving).toBe("Saving recording…");
+    expect(en.recorder.status.saved).toBe("Saved.");
+    expect(en.recorder.status.captured).toBe("Recording captured.");
+  });
+
+  it("pins the sr-only panel heading ICU message, including the embedded quotes", () => {
+    expect(en.recorder.a11y.panel).toBe('Shadowing recorder for "{lineText}"');
+  });
+
+  it("pins the waveform label — carry-forward #1 from the 11a player shell", () => {
+    expect(en.recorder.a11y.waveformLabel).toBe("Your recording waveform");
+  });
+
+  it("pins the saved-recording playback aria-label", () => {
+    expect(en.recorder.a11y.playback).toBe("Play your saved recording");
+  });
+
+  it("pins the word-level pronunciation list's aria-label", () => {
+    expect(en.recorder.a11y.wordScores).toBe("Word-level pronunciation");
+  });
+});
+
+/**
+ * `friendlyScoreError`'s status-mapped messages (lines 63–80 pre-extraction).
+ * 503 stays a bare `{status:"unavailable"}` with no message — pinned via
+ * `recorder.score.notConfigured` (the module-level constant) instead, below.
+ */
+describe("shadowing.json EN — shadowing-recorder-panel.tsx friendlyScoreError mapping", () => {
+  it("pins the score action button and its busy label", () => {
+    expect(en.recorder.score.action).toBe("Score my pronunciation");
+    expect(en.recorder.score.actionBusy).toBe("Scoring…");
+  });
+
+  it("pins the score-not-configured (503) message, used as both the tooltip title and the inline text", () => {
+    expect(en.recorder.score.notConfigured).toBe("Pronunciation scoring isn't set up yet.");
+  });
+
+  it("pins the WAV-conversion-failure message", () => {
+    expect(en.recorder.score.conversionFailed).toBe(
+      "We couldn't process that recording. Please try again.",
+    );
+  });
+
+  it("pins the 発音/リズム score labels — byte-identical in vi (target-language UI labels, 11d ruling)", () => {
+    expect(en.recorder.score.pronunciationLabel).toBe("発音");
+    expect(en.recorder.score.fluencyLabel).toBe("リズム");
+  });
+
+  it("pins the 429 message with a numeric Retry-After", () => {
+    expect(en.recorder.score.errors.rateLimited).toBe(
+      "Too many scoring requests — try again in {seconds}s.",
+    );
+  });
+
+  it("pins the 429 message without a usable Retry-After", () => {
+    expect(en.recorder.score.errors.rateLimitedGeneric).toBe(
+      "Too many scoring requests — please wait a moment and try again.",
+    );
+  });
+
+  it("pins the 404 (recording no longer found) message", () => {
+    expect(en.recorder.score.errors.notFound).toBe(
+      "That recording could no longer be found to score.",
+    );
+  });
+
+  it("pins the 422 (couldn't be scored) message", () => {
+    expect(en.recorder.score.errors.invalid).toBe(
+      "That recording couldn't be scored — try recording again.",
+    );
+  });
+
+  it("pins the default fallback message", () => {
+    expect(en.recorder.score.errors.generic).toBe(
+      "Something went wrong scoring your pronunciation.",
+    );
+  });
+});
+
+/** `friendlyUploadError`'s status-mapped messages (lines 83–94 pre-extraction). */
+describe("shadowing.json EN — shadowing-recorder-panel.tsx friendlyUploadError mapping", () => {
+  it("pins the 401 (sign in) message", () => {
+    expect(en.recorder.upload.errors.unauthorized).toBe("Sign in to save your recordings.");
+  });
+
+  it("pins the 429 message with a numeric Retry-After", () => {
+    expect(en.recorder.upload.errors.rateLimited).toBe(
+      "Too many recordings — try again in {seconds}s.",
+    );
+  });
+
+  it("pins the 429 message without a usable Retry-After", () => {
+    expect(en.recorder.upload.errors.rateLimitedGeneric).toBe(
+      "Too many recordings — please wait a moment and try again.",
+    );
+  });
+
+  it("pins the 400/422 (couldn't be saved) message", () => {
+    expect(en.recorder.upload.errors.invalid).toBe(
+      "That recording couldn't be saved. Please try recording again.",
+    );
+  });
+
+  it("pins the default fallback message", () => {
+    expect(en.recorder.upload.errors.generic).toBe(
+      "Something went wrong saving your recording.",
+    );
+  });
+});
+
+/**
+ * `friendlyShareError`'s status-mapped messages (lines 103–110
+ * pre-extraction), plus the surrounding share/revoke chrome.
+ */
+describe("shadowing.json EN — shadowing-recorder-panel.tsx friendlyShareError mapping + share chrome", () => {
+  it("pins the share action button and its busy label", () => {
+    expect(en.recorder.share.action).toBe("Share for peer feedback");
+    expect(en.recorder.share.actionBusy).toBe("Sharing…");
+  });
+
+  it("pins the consent-explanation copy shown before sharing", () => {
+    expect(en.recorder.share.explain).toBe(
+      "Shares this one recording publicly for feedback. You can revoke anytime.",
+    );
+  });
+
+  it("pins the shared-confirmation message", () => {
+    expect(en.recorder.share.shared).toBe("Shared for peer feedback.");
+  });
+
+  it("pins the ConfirmButton's label and confirmLabel for revoking a share", () => {
+    expect(en.recorder.share.revoke).toBe("Revoke");
+    expect(en.recorder.share.revokeConfirm).toBe(
+      "Revoke this share? Others will no longer be able to hear or review it.",
+    );
+  });
+
+  it("pins the 429 message with a numeric Retry-After", () => {
+    expect(en.recorder.share.errors.rateLimited).toBe(
+      "Too many requests — try again in {seconds}s.",
+    );
+  });
+
+  it("pins the 429 message without a usable Retry-After", () => {
+    expect(en.recorder.share.errors.rateLimitedGeneric).toBe(
+      "Too many requests — please wait a moment and try again.",
+    );
+  });
+
+  it("pins the default fallback (share) message", () => {
+    expect(en.recorder.share.errors.generic).toBe(
+      "Couldn't share this recording — please try again.",
+    );
+  });
+
+  it("pins the revoke-failure message", () => {
+    expect(en.recorder.share.errors.revokeFailed).toBe(
+      "Couldn't revoke this share — please try again.",
+    );
+  });
+});
+
+/**
+ * `errorType` tooltip labels (line 389 pre-extraction) — `errorType` is the
+ * closed union `"None" | "Omission" | "Insertion" | "Mispronunciation"`
+ * (`lib/speech-types.ts`), mapped via an exhaustive
+ * `Record<..., string> as const satisfies` (same pattern as Task 10's
+ * `BAND_LABEL_KEY`). `"None"` renders as "Correct" (the pre-extraction
+ * ternary's `w.errorType === "None" ? "Correct" : w.errorType`); the other
+ * three reuse Azure's own English words verbatim.
+ */
+describe("shadowing.json EN — shadowing-recorder-panel.tsx word errorType labels", () => {
+  it("pins all four errorType labels", () => {
+    expect(en.recorder.wordError.none).toBe("Correct");
+    expect(en.recorder.wordError.omission).toBe("Omission");
+    expect(en.recorder.wordError.insertion).toBe("Insertion");
+    expect(en.recorder.wordError.mispronunciation).toBe("Mispronunciation");
+  });
+});
