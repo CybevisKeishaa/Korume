@@ -1,5 +1,40 @@
 # L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e ALL done; 12-19 remain — NEXT = Task 12 `mining`)
 
+## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 12–19 (user-codified after Task 11, 2026-07-22)
+Put ALL of these in every implementer brief AND every reviewer brief. They are not new — Task 11
+rediscovered each the hard way; this block exists so no later task rediscovers them a fifth time.
+
+1. **Report mutation testing in TWO LAYERS, never one number.** Always split:
+   `Catalog: N mutations / X survivors` (literal-pin proof — append/prepend/punct/placeholder vs the
+   `*.pin.test.ts` `toBe`s) AND `Wiring: M mutations / Y survivors` (key/namespace swap, point-two-at-one,
+   drop-a-threaded-prop — **run against the RTL tests ONLY, pin tests DISABLED**). A blended "0 survivors"
+   hid 5 wiring defects at 11c, 9 at 11d, 1 at 11e. Catalog proves COPY STABILITY; wiring proves the UI
+   RENDERS THE CORRECT KEY. Different properties — one number cannot show both.
+
+2. **Audit the IMPORT GRAPH, not the folder. Translate exported APIs, not directories.** Before freezing
+   a task's scope: audit the assigned directory, THEN grep the import graph of every exported
+   hook/component/helper being localized. The plan's file lists have been wrong FOUR times; 11d's
+   `useRecorder` had a consumer under `components/conversation/` on no list, breaking 13 tests.
+
+3. **NEW BINDING PATTERN — label↔value PAIRING (existence assertions are insufficient).** For any paired
+   UI — legends, badges, swatches, score labels, grade buttons — the test must prove `label A ↔ value A`
+   AND `label B ↔ value B`, NOT merely "label A exists / label B exists". Swapping two `t()` keys can
+   silently teach the WRONG thing while every catalog pin still passes (11d お手本/あなた; 11e 発音/リズム).
+   Assert the composed node, e.g. `getByText("発音 82")`, or scope each label+value to one element.
+
+4. **Server-authored diagnostics NEVER reach the learner-facing DOM.** `body.error`, `error.message`,
+   raw status text — classify to a descriptor/catalog key instead (Task 8, 11c, 11e all hit this).
+   Pass-through is acceptable ONLY for genuine user-authored content (transcripts, filenames), never
+   backend diagnostics. **Task 12's `mining-review-session.tsx:61` is the LAST known instance — follow the
+   precedent, do not reopen the discussion.**
+
+5. **Task 19 exit criterion for `common.player.*` (make the temporary decision explicit).** It was placed
+   proactively, not via a real multi-consumer promotion. At Task 19, re-audit its consumers BY SURFACE:
+   if only the `shadowing` surface consumes it → DEMOTE back under `shadowing.*`; if another surface
+   genuinely consumes it → keep in `common`. This is a gate criterion, not a matter of convention.
+   (Same audit, evidence-based, for every string promoted to `common.*` — record consumer counts per the
+   convention-B tables below.)
+
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
 Ran at `/vi|/en/admin/style-guide`, both themes, measuring on the LIVE DOM rather than by eye.

@@ -76,8 +76,13 @@ more than the implementations: the three highest-value catches of the run all ca
 and all were invisible to a green test suite (ICU `#` silently reformatting 1234 → "1,234"; no
 Vietnamese message ever being ICU-parsed in CI; raw `Error.message` reaching the DOM and making the
 translated error string unreachable).
-**TWO STANDING REVIEW CONVENTIONS, binding from 11d on (user, 2026-07-22) — full text in
-`mem:l9a_localization_run_state`, put BOTH in every reviewer brief:**
+**FIVE STANDING CONVENTIONS, binding for Tasks 12–19 (user-codified after Task 11, 2026-07-22) — full
+text in `mem:l9a_localization_run_state` top block "⭐⭐ STANDING CONVENTIONS", put ALL in every implementer
+AND reviewer brief:** (1) report mutation in TWO layers — catalog vs wiring — never one number; (2) audit
+the IMPORT GRAPH not the folder (translate exported APIs); (3) NEW binding pattern — label↔value PAIRING,
+existence assertions insufficient; (4) server-authored diagnostics (`body.error`/`error.message`) NEVER
+reach the DOM — Task 12 owns the last instance; (5) Task 19 exit criterion — re-audit `common.player.*`
+consumers by surface, demote to `shadowing.*` if still single-surface. The original two below are (1)+(B):
 (A) Mutation testing has **two classes** and a review must report **separate survivor counts** for each:
 **catalog mutations** (append/prepend, punctuation, ICU placeholders, rich tags → prove the
 `messages/en/*.pin.test.ts` literal pins) and **wiring mutations** (swap two `t()` keys, swap the
