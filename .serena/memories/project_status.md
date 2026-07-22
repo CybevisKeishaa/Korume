@@ -30,11 +30,21 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-22) — Task **14** (`reading`) is next; tree is clean, nothing owed
+## ▶ NEXT ACTION (updated 2026-07-23) — Task **15** (`conversation`) is next; tree is clean, nothing owed
 **L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tip `763c884`. Tasks 1-10 + 6b + 11a–11e + 12 + 13 ALL
+via `superpowers:subagent-driven-development`. **Tip `ac29966`. Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 ALL
 committed and reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 ·
-1581 tests / 194 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
+1594 tests / 195 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
+
+**Task 14 done `ac29966`** (`reading` ns — 39 leaves; 2nd consecutive 0-fix-wave task). Import graph clean.
+**The D8 content/chrome boundary was the risk and was drawn exactly right** — reading passages, their
+translations, Japanese words, and furigana are CONTENT (not localized); only chrome extracted. NEW
+Convention-4 instance found & fixed (`reading-quiz` `friendlyErrorFrom` leaked raw `body.error` to a
+`role="alert"` node → now logged + translated fallback). `common.errors.network` now = 5 surfaces.
+**Refined getTranslations rule:** wire a translator ONLY where chrome strings actually exist — `reading/[id]/
+page.tsx` is a 12-line pass-through with zero chrome, correctly left unwired (a `t` there = dead code + lint
+warning). The audit's "pages fetch data → async → getTranslations" premise was factually wrong (children own
+the fetch); the implementer overrode it correctly. Full detail in `mem:l9a_localization_run_state`.
 
 **Task 13 done `763c884`** (`jlpt` ns — 81 leaves, 107-line en+vi catalogs; the FIRST 0-fix-wave task of
 the run — the implementer found & closed its own 2 wiring survivors before review). Convention-#2 audit was
@@ -68,7 +78,7 @@ here; **N5–N1 level labels NOT translated**; JLPT stays "JLPT". **AUDIT the fi
 **Task 11 was SPLIT into 11a-11e** (plan commit `087b342`) after measuring it at 3793 LOC = 6.9x Task 10.
 11a–11e ✅ (Task 11 DONE) · 12 ✅ `5dde8c8`+`4f9b473` (`mining`). **Tasks 13-19 + a metadata sweep (Task 18)
 remain**. Namespaces so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`, `grammar`,
-`videos`, `dictation`, `shadowing`, `mining`, `jlpt` (13 done).
+`videos`, `dictation`, `shadowing`, `mining`, `jlpt`, `reading` (14 done).
 
 **⚠ The plan's file lists have now been wrong FOUR times, and 11d's miss crossed MODULES:** translating
 the `useRecorder` hook broke 13 tests in `components/conversation/` because `voice-recorder-button.tsx`

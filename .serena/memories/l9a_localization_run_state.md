@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 done; 14-19 remain — NEXT = Task 14 `reading`)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 done; 15-19 remain — NEXT = Task 15 `conversation`)
 
 ## 🆕 TWO NEW STANDING LESSONS from Task 13 (binding, Tasks 14–19) — put in every brief
 - **Namespace wiring is a 5-STEP list, not 4.** In addition to (1) append to `NAMESPACES` in
@@ -191,11 +191,40 @@ key swap. **Task 19 carries:** (a) `passUnavailableReason` — rendered in `jlpt
 stays closed — but English-untranslated in vi, a backend-engineer i18n gap outside this task); (b)
 `common.errors.network` now = **4 consuming surfaces** (+jlpt-test-runner); (c) `common.actions.next` reused.
 
-## ▶ NEXT = Task 14 (`reading` namespace). Tip `763c884`, tree clean. Plan line 898.
-**AUDIT the file list + import graph FIRST** (convention #2 — plan list wrong 5×, though Task 13 was clean).
-Put ALL SIX standing conventions + the **5-step namespace-wiring list** (incl. `types/messages.d.ts`) + the
-**`useTranslations`-for-all-synchronous-components** rule in the implementer AND reviewer briefs. Same cadence
-(fresh sonnet implementer → opus review → fix wave if needed; controller re-runs all three gates itself).
+## ✅ Task 14 DONE `ac29966` — `reading` namespace. Tip `ac29966`. ZERO fix waves (2nd in a row).
+Gate (controller re-ran all three): **tsc 0 · 1594 tests / 195 files · lint 80 pre-existing / 23 files, 0 new.**
+39 new `reading.*` leaves across 7 components + 1 page; 58-line en+vi catalogs; pinned in `reading.pin.test.ts`
+→ catalog 4/4 killed, wiring 5/5 killed (1 survivor on reading-list emptyAll/emptyAtLevel swap, fixed in-task
+by the implementer). **Import graph CLEAN** — 7 components consumed only by the 2 reading pages; the
+community/layout grep hits were JSDoc comment mentions of `word-lookup-popover`, not imports. `lib/reading-
+format.ts` (`splitIntoSentences`) + `reading-types.ts` = no chrome, left untouched (NO label-map to delete,
+unlike jlpt-ui).
+**THE D8 content/chrome boundary was the highest-risk part and was drawn EXACTLY right** (reviewer verified
+leaf-by-leaf: no passage/translation/Japanese-word/furigana leaked into the catalog, no chrome left hardcoded).
+`translation-disclosure` extracts only "Show translation" (NOT the `{translation}` passage text);
+`word-lookup-popover` extracts "Look up: {word}" (`{word}` raw ICU arg carrying Japanese content), "Close",
+"Add to flashcard", the disabled-explanation — NOT `{word}`/`{reading}`. Passage titles, JLPT levels, quiz
+stems/choices, explanations = CONTENT, left raw.
+**NEW Convention-4 instance found & fixed:** `reading-quiz.tsx` `friendlyErrorFrom` was returning the
+submit-API's raw `body.error` ("Invalid submission"/"Unauthorized"/"Not found") into a `role="alert"` node →
+now `console.error`s it and returns the TRANSLATED fallback (vocab-examples-panel precedent). Both branches
+converge on `return fallback`. `common.errors.network` now = **5 consuming surfaces** (+reading-quiz).
+**🆕 THIRD standing lesson — REFINES the getTranslations rule (binding, Tasks 15–19):** wire a translator
+ONLY where chrome strings actually EXIST. The audit wrongly assumed both reading pages "fetch data → async →
+getTranslations"; in fact NEITHER page fetches (client children own the fetch). `reading/page.tsx` got
+`await getTranslations` (2 real chrome strings + genuinely async). `reading/[id]/page.tsx` was CORRECTLY left
+UNWIRED — a 12-line pass-through rendering `<ReadingDetail passageId={params.id}/>` with ZERO chrome of its
+own; a `t` there = dead code + a new lint warning. Do NOT reflexively wire every page; a pass-through page
+with no literal chrome gets no translator. The implementer flagged the audit contradiction instead of guessing.
+Review (opus): Spec PASS · Quality PASS, 0 Critical/Important, no carried Minors.
+
+## ▶ NEXT = Task 15 (`conversation` namespace). Tip `ac29966`, tree clean. Plan line 904.
+**AUDIT the file list + import graph FIRST** (convention #2). Put ALL SIX standing conventions + the **5-step
+namespace-wiring list** (incl. `types/messages.d.ts`) + the **`useTranslations`-for-all-synchronous-components**
+rule + the **refined getTranslations rule** (only where chrome strings exist) in the implementer AND reviewer
+briefs. Same cadence (fresh sonnet implementer → opus review → fix wave if needed; controller re-runs all
+three gates itself). Note: conversation is an AI feature (voice mode, corrections, scenarios) — expect
+error-state copy, scenario labels, and pronunciation-score UI; watch for server-diagnostic leaks (convention #4).
 
 ## (superseded) ▶ NEXT was 11e (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 
