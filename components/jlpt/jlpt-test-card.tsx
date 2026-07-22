@@ -1,15 +1,21 @@
 import { Link } from "@/lib/i18n/navigation";
 import { Card } from "@/components/ui/card";
 import { buttonStyles } from "@/components/ui/button";
-import { SECTION_LABELS, parseSectionConfig, type JlptTestListItem } from "@/lib/jlpt-ui";
+import { useTranslations } from "@/lib/i18n";
+import { parseSectionConfig, type JlptTestListItem } from "@/lib/jlpt-ui";
 
 export interface JlptTestCardProps {
   test: JlptTestListItem;
 }
 
-/** One JLPT mock test: level, title, per-section counts/time limits, and
- * links into a full mock or per-section practice (spec §5.7). */
+/**
+ * One JLPT mock test: level, title, per-section counts/time limits, and
+ * links into a full mock or per-section practice (spec §5.7). A non-async
+ * Server Component — `useTranslations` works here without `"use client"`
+ * (same precedent as `components/learning/recommendation-rail.tsx`).
+ */
 export function JlptTestCard({ test }: JlptTestCardProps) {
+  const t = useTranslations("jlpt");
   const sections = parseSectionConfig(test.section_config);
 
   return (
@@ -25,9 +31,9 @@ export function JlptTestCard({ test }: JlptTestCardProps) {
         <ul className="space-y-1 text-sm text-muted-foreground">
           {sections.map((s) => (
             <li key={s.section} className="flex items-center justify-between gap-4">
-              <span>{SECTION_LABELS[s.section]}</span>
+              <span>{t(`sections.${s.section}`)}</span>
               <span>
-                {s.question_count} questions · {s.time_limit_minutes} min
+                {t("testCard.sectionSummary", { count: s.question_count, minutes: s.time_limit_minutes })}
               </span>
             </li>
           ))}
@@ -36,7 +42,7 @@ export function JlptTestCard({ test }: JlptTestCardProps) {
 
       <div className="mt-auto flex flex-wrap gap-2 pt-2">
         <Link href={`/jlpt/${test.id}`} className={buttonStyles({ size: "sm" })}>
-          Take full mock
+          {t("testCard.takeFullMock")}
         </Link>
         {sections.map((s) => (
           <Link
@@ -44,7 +50,7 @@ export function JlptTestCard({ test }: JlptTestCardProps) {
             href={`/jlpt/${test.id}?section=${s.section}`}
             className={buttonStyles({ variant: "outline", size: "sm" })}
           >
-            Practice {SECTION_LABELS[s.section]}
+            {t("testCard.practiceSection", { section: t(`sections.${s.section}`) })}
           </Link>
         ))}
       </div>

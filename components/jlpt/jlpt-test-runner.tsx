@@ -2,8 +2,8 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 import {
-  SECTION_LABELS,
   isAnswerValue,
   parseSectionConfig,
   totalMinutes,
@@ -43,6 +43,8 @@ const FALLBACK_MINUTES = 999;
  * transitions); section mode counts down just that section's limit.
  */
 export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
+  const t = useTranslations("jlpt");
+  const tCommon = useTranslations("common");
   const mode: "full" | "section" = initialSection ? "section" : "full";
   const sectionEntries = useMemo(() => parseSectionConfig(test.section_config), [test.section_config]);
   const questions = useMemo(
@@ -107,18 +109,23 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
       });
       const json = (await res.json().catch(() => null)) as { data?: JlptSubmitResult; error?: string } | null;
       if (!res.ok || !json?.data) {
-        setSubmitError(json?.error ?? "Could not submit your test. Please try again.");
+        setSubmitError(json?.error ?? t("testRunner.submitFailedGeneric"));
         setPhase("in-progress");
         return;
       }
       setSubmitResult(json.data);
       setPhase("results");
     } catch {
-      setSubmitError("Network error — check your connection and try again.");
+      // Byte-identical to the pre-extraction source — reused from `common`
+      // rather than duplicated (CLAUDE.md §6 P4); see `common.errors.network`.
+      setSubmitError(tCommon("errors.network"));
       setPhase("in-progress");
     } finally {
       submittingRef.current = false;
     }
+    // `t`/`tCommon` intentionally omitted below (stable for the component's lifetime; see the same
+    // note in jlpt-timer.tsx).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers, mode, initialSection, startedAt, test.id]);
 
   const handleExpire = useCallback(() => {
@@ -136,7 +143,7 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
   }
 
   if (questions.length === 0) {
-    return <p className="text-muted-foreground">This test has no questions to practice yet.</p>;
+    return <p className="text-muted-foreground">{t("testRunner.noQuestions")}</p>;
   }
 
   if (phase === "pre-start") {
@@ -167,7 +174,9 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
         <div>
           <h1 className="font-jp text-xl font-bold">{test.title}</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === "full" ? "Full mock test" : `Section practice · ${initialSection ? SECTION_LABELS[initialSection] : ""}`}
+            {mode === "full"
+              ? t("testRunner.fullMockTest")
+              : t("testRunner.sectionPractice", { section: initialSection ? t(`sections.${initialSection}`) : "" })}
           </p>
         </div>
         {deadline !== null && <JlptTimer deadline={deadline} onExpire={handleExpire} />}
@@ -199,7 +208,7 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
             onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
             disabled={currentIndex === 0}
           >
-            Previous
+            {t("testRunner.previous")}
           </Button>
           <Button
             type="button"
@@ -207,18 +216,17 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
             onClick={() => setCurrentIndex((i) => Math.min(questions.length - 1, i + 1))}
             disabled={currentIndex === questions.length - 1}
           >
-            Next
+            {tCommon("actions.next")}
           </Button>
         </div>
         <Button type="button" onClick={handleSubmitClick} disabled={phase === "submitting"}>
-          {phase === "submitting" ? "Submitting…" : "Submit test"}
+          {phase === "submitting" ? t("testRunner.submitting") : t("testRunner.submitTest")}
         </Button>
       </div>
 
       {confirmingSubmit && (
         <p role="alert" className="text-sm text-danger-strong">
-          You have {unansweredCount} unanswered question{unansweredCount === 1 ? "" : "s"}. Click Submit again to
-          submit anyway.
+          {t("testRunner.confirmSubmit", { count: unansweredCount })}
         </p>
       )}
       {submitError && (

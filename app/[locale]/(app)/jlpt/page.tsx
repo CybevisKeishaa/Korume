@@ -1,3 +1,4 @@
+import { getTranslations } from "@/lib/i18n/server";
 import { listJlptAttempts, listJlptTests } from "@/lib/data/jlpt";
 import { jlptLevelSchema } from "@/lib/validation/content";
 import { LevelTabs } from "@/components/learning/level-tabs";
@@ -14,6 +15,7 @@ export default async function JlptPage({
 }: {
   searchParams: { level?: string };
 }) {
+  const t = await getTranslations("jlpt");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
 
   // Fetch the full (unfiltered) test list once so attempt history can resolve
@@ -32,9 +34,9 @@ export default async function JlptPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">JLPT mock tests</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {tests.length} test{tests.length === 1 ? "" : "s"}
+            {t("subtitleCount", { count: tests.length })}
             {level ? ` · ${level}` : ""}
           </p>
         </div>
@@ -43,8 +45,8 @@ export default async function JlptPage({
 
       <JlptTestList tests={tests} />
 
-      <section className="mt-10" aria-label="Recent attempts">
-        <h2 className="mb-3 text-lg font-semibold">Recent attempts</h2>
+      <section className="mt-10" aria-label={t("recentAttempts")}>
+        <h2 className="mb-3 text-lg font-semibold">{t("recentAttempts")}</h2>
         <JlptAttemptList attempts={attempts} testsById={testsById} />
       </section>
     </Container>

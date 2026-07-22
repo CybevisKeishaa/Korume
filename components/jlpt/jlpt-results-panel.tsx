@@ -3,9 +3,8 @@
 import { useMemo } from "react";
 import { Link } from "@/lib/i18n/navigation";
 import { buttonStyles } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 import {
-  PILLAR_LABELS,
-  SECTION_LABELS,
   reviewHrefForSection,
   type JlptLevel,
   type JlptQuestionPublic,
@@ -23,20 +22,21 @@ export interface JlptResultsPanelProps {
 /** Scaled-score progress bar with a sectional-minimum marker. The pass/fail
  * signal is never color-only: the numeric score, "/ scaleMax", and a
  * "meets/below minimum" text label are always shown alongside the bar. */
-function PillarBar({ pillar }: { pillar: PillarScore }) {
+function PillarBar({ pillar, t }: { pillar: PillarScore; t: ReturnType<typeof useTranslations<"jlpt">> }) {
   const pct = pillar.scaleMax === 0 ? 0 : Math.round((pillar.scaledScore / pillar.scaleMax) * 100);
   const minPct = pillar.scaleMax === 0 ? 0 : Math.round((pillar.sectionalMinimum / pillar.scaleMax) * 100);
+  const pillarLabel = t(`pillars.${pillar.pillar}`);
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span className="font-medium">{PILLAR_LABELS[pillar.pillar]}</span>
+        <span className="font-medium">{pillarLabel}</span>
         <span className="text-muted-foreground">
           {pillar.scaledScore} / {pillar.scaleMax}{" "}
           {pillar.meetsMinimum ? (
-            <span className="text-success-strong">✓ meets minimum</span>
+            <span className="text-success-strong">{t("resultsPanel.meetsMinimum")}</span>
           ) : (
-            <span className="text-danger-strong">below minimum</span>
+            <span className="text-danger-strong">{t("resultsPanel.belowMinimum")}</span>
           )}
         </span>
       </div>
@@ -45,13 +45,13 @@ function PillarBar({ pillar }: { pillar: PillarScore }) {
         aria-valuenow={pillar.scaledScore}
         aria-valuemin={0}
         aria-valuemax={pillar.scaleMax}
-        aria-label={`${PILLAR_LABELS[pillar.pillar]} scaled score`}
+        aria-label={t("resultsPanel.pillarScaledScoreAria", { pillar: pillarLabel })}
         className="relative mt-1 h-3 overflow-hidden rounded-full bg-muted"
       >
         <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
         <div
           aria-hidden="true"
-          title={`Sectional minimum: ${pillar.sectionalMinimum}`}
+          title={t("resultsPanel.sectionalMinimum", { value: pillar.sectionalMinimum })}
           className="absolute top-0 h-full w-0.5 bg-foreground/60"
           style={{ left: `${minPct}%` }}
         />
@@ -66,58 +66,68 @@ function PillarBar({ pillar }: { pillar: PillarScore }) {
  * breakdown with "Suggested review" links, and a full per-question review.
  */
 export function JlptResultsPanel({ submitResult, questions, answers, level }: JlptResultsPanelProps) {
+  const t = useTranslations("jlpt");
   const { result, weakness, perQuestion } = submitResult;
   const questionsById = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Results</h1>
+        <h1 className="text-2xl font-bold">{t("resultsPanel.title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {result.totalCorrect} / {result.totalQuestions} correct ({result.totalPercent}%)
+          {t("resultsPanel.scoreLine", {
+            correct: result.totalCorrect,
+            total: result.totalQuestions,
+            percent: result.totalPercent,
+          })}
         </p>
       </div>
 
-      <section aria-label="Pass estimate" className="rounded-lg border border-border p-5">
+      <section aria-label={t("resultsPanel.passEstimateAria")} className="rounded-lg border border-border p-5">
         {result.scaledTotal != null && result.pillars ? (
           <>
-            <p className="text-sm text-muted-foreground">Estimated scaled score</p>
+            <p className="text-sm text-muted-foreground">{t("resultsPanel.estimatedScaledScore")}</p>
             <p className="text-3xl font-bold">
               {result.scaledTotal}{" "}
               <span className="text-base font-normal text-muted-foreground">/ {result.scaledTotalMax}</span>
             </p>
             <p className="mt-1 text-sm">
               {result.passed ? (
-                <span className="font-medium text-success-strong">Estimated result: Pass</span>
+                <span className="font-medium text-success-strong">{t("resultsPanel.resultPass")}</span>
               ) : (
-                <span className="font-medium text-danger-strong">Estimated result: Not yet passing</span>
+                <span className="font-medium text-danger-strong">{t("resultsPanel.resultNotPassed")}</span>
               )}
               <span className="ml-2 text-xs text-muted-foreground">
-                (unofficial estimate — not an official JLPT score)
+                {t("resultsPanel.unofficialEstimate")}
               </span>
             </p>
             <div className="mt-4 space-y-4">
               {result.pillars.map((p) => (
-                <PillarBar key={p.pillar} pillar={p} />
+                <PillarBar key={p.pillar} pillar={p} t={t} />
               ))}
             </div>
           </>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Pass/fail estimate unavailable
+            {t("resultsPanel.passUnavailable")}
+            {/* `result.passUnavailableReason` is controlled business copy authored in
+                `lib/jlpt/score.ts` (one of 3 fixed variants, one with an interpolated
+                pillar-name list) — not a caught exception's raw `.message` — so it is
+                rendered as server data here, same as `error.message` in the submit-failure
+                branch below; it is not (yet) i18n'd on the backend (see report). */}
             {result.passUnavailableReason ? `: ${result.passUnavailableReason}` : "."}
           </p>
         )}
       </section>
 
-      <section aria-label="Section scores">
-        <h2 className="mb-3 text-lg font-semibold">Section scores</h2>
+      <section aria-label={t("resultsPanel.sectionScores")}>
+        <h2 className="mb-3 text-lg font-semibold">{t("resultsPanel.sectionScores")}</h2>
         <ul className="grid gap-3 sm:grid-cols-2">
           {result.sections.map((s) => (
             <li key={s.section} className="rounded-md border border-border p-3 text-sm">
-              <p className="font-medium">{SECTION_LABELS[s.section]}</p>
+              <p className="font-medium">{t(`sections.${s.section}`)}</p>
               <p className="text-muted-foreground">
-                {s.correct} / {s.total} ({s.percent}%)
+                {t("resultsPanel.sectionScoreLine", { correct: s.correct, total: s.total, percent: s.percent })}
               </p>
             </li>
           ))}
@@ -125,8 +135,8 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
       </section>
 
       {weakness.length > 0 && (
-        <section aria-label="Weakness breakdown">
-          <h2 className="mb-3 text-lg font-semibold">Where to focus</h2>
+        <section aria-label={t("resultsPanel.weaknessBreakdownAria")}>
+          <h2 className="mb-3 text-lg font-semibold">{t("resultsPanel.whereToFocus")}</h2>
           <ul className="space-y-2">
             {weakness.map((w) => (
               <li
@@ -136,14 +146,19 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
                 <div>
                   <p className="font-medium">{w.questionType}</p>
                   <p className="text-muted-foreground">
-                    {SECTION_LABELS[w.section]} · {w.correct} / {w.total} correct ({w.percent}%)
+                    {t("resultsPanel.weaknessLine", {
+                      section: t(`sections.${w.section}`),
+                      correct: w.correct,
+                      total: w.total,
+                      percent: w.percent,
+                    })}
                   </p>
                 </div>
                 <Link
                   href={reviewHrefForSection(w.section, level)}
                   className={buttonStyles({ variant: "outline", size: "sm" })}
                 >
-                  Suggested review
+                  {t("resultsPanel.suggestedReview")}
                 </Link>
               </li>
             ))}
@@ -151,8 +166,8 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
         </section>
       )}
 
-      <section aria-label="Question review">
-        <h2 className="mb-3 text-lg font-semibold">Question review</h2>
+      <section aria-label={t("resultsPanel.questionReview")}>
+        <h2 className="mb-3 text-lg font-semibold">{t("resultsPanel.questionReview")}</h2>
         <ol className="space-y-4">
           {perQuestion.map((pq, i) => {
             const q = questionsById.get(pq.id);
@@ -162,16 +177,18 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
             const correctAnswerText = q ? q.question_data.choices[Number(pq.correctAnswer)] : undefined;
             return (
               <li key={pq.id} className="rounded-md border border-border p-4">
-                <p className="text-xs text-muted-foreground">Question {i + 1}</p>
+                <p className="text-xs text-muted-foreground">{t("resultsPanel.questionNumber", { index: i + 1 })}</p>
                 {q && <p className="font-jp mt-1 text-sm">{q.question_data.stem}</p>}
                 <p className="mt-2 text-sm">
                   <span aria-hidden="true">{pq.correct ? "✓" : "✕"}</span>
-                  <span className="sr-only">{pq.correct ? "Correct." : "Incorrect."}</span>{" "}
-                  Your answer: {yourAnswerText ?? "Not answered"}
+                  <span className="sr-only">
+                    {pq.correct ? t("resultsPanel.correct") : t("resultsPanel.incorrect")}
+                  </span>{" "}
+                  {t("resultsPanel.yourAnswer", { answer: yourAnswerText ?? t("resultsPanel.notAnswered") })}
                 </p>
                 {!pq.correct && (
                   <p className="text-sm text-muted-foreground">
-                    Correct answer: {correctAnswerText ?? "—"}
+                    {t("resultsPanel.correctAnswer", { answer: correctAnswerText ?? "—" })}
                   </p>
                 )}
                 {pq.explanation && <p className="mt-2 text-sm text-muted-foreground">{pq.explanation}</p>}
@@ -182,7 +199,7 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
       </section>
 
       <Link href="/jlpt" className={buttonStyles({ variant: "outline" })}>
-        Back to JLPT tests
+        {t("resultsPanel.backToTests")}
       </Link>
     </div>
   );

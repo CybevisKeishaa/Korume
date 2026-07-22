@@ -1,17 +1,26 @@
 import { Link } from "@/lib/i18n/navigation";
-import { SECTION_LABELS, type JlptAttemptRow, type JlptLevel } from "@/lib/jlpt-ui";
+import { useTranslations } from "@/lib/i18n";
+import type { JlptAttemptRow, JlptLevel } from "@/lib/jlpt-ui";
 
 export interface JlptAttemptListProps {
   attempts: JlptAttemptRow[];
   testsById: Record<string, { title: string; level: JlptLevel }>;
 }
 
-/** Score history for the current user (spec §5.7): title, mode/section, date, score. */
+/**
+ * Score history for the current user (spec §5.7): title, mode/section, date,
+ * score. A non-async Server Component — `useTranslations` from `@/lib/i18n`
+ * works here without `"use client"` (same precedent as
+ * `components/learning/recommendation-rail.tsx`, confirmed by a real build
+ * in Task 5), which also keeps this RTL-renderable.
+ */
 export function JlptAttemptList({ attempts, testsById }: JlptAttemptListProps) {
+  const t = useTranslations("jlpt");
+
   if (attempts.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No attempts yet — take a test above to see your score history here.
+        {t("attemptList.empty")}
       </p>
     );
   }
@@ -24,13 +33,15 @@ export function JlptAttemptList({ attempts, testsById }: JlptAttemptListProps) {
           <li key={attempt.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
             <Link href={`/jlpt/${attempt.test_id}`} className="hover:underline">
               <p className="font-jp font-medium">
-                {test?.title ?? "Unknown test"}
+                {test?.title ?? t("attemptList.unknownTest")}
                 {test && <span className="ml-2 text-xs text-muted-foreground">{test.level}</span>}
               </p>
               <p className="text-xs text-muted-foreground">
                 {attempt.mode === "full"
-                  ? "Full mock"
-                  : `Section: ${attempt.section ? SECTION_LABELS[attempt.section] : "—"}`}{" "}
+                  ? t("attemptList.fullMock")
+                  : t("attemptList.sectionLabel", {
+                      section: attempt.section ? t(`sections.${attempt.section}`) : "—",
+                    })}{" "}
                 · {new Date(attempt.completed_at ?? attempt.started_at).toLocaleDateString()}
               </p>
             </Link>

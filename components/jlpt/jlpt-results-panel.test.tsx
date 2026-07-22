@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@/test/render";
+import { render, screen, within } from "@/test/render";
 import type { JlptAttemptResult, JlptQuestionPublic, JlptSubmitResult } from "@/lib/jlpt-ui";
 import { JlptResultsPanel } from "./jlpt-results-panel";
+
+/** `Element.closest()` is typed nullable; the swap-guard tests below need a
+ * non-null `HTMLElement` to hand to `within()`, so this fails loudly (not a
+ * `!` non-null assertion — CLAUDE.md §6 lint discipline) if the selector
+ * doesn't match, which would itself mean the test fixture changed shape. */
+function closestOrThrow(el: Element, selector: string): HTMLElement {
+  const found = el.closest(selector);
+  if (!found) throw new Error(`Expected an ancestor matching "${selector}"`);
+  return found as HTMLElement;
+}
 
 const QUESTIONS: JlptQuestionPublic[] = [
   {
@@ -106,6 +116,39 @@ describe("JlptResultsPanel", () => {
     expect(screen.getByText("below minimum")).toBeInTheDocument();
   });
 
+  it("pairs each pillar's translated name with ITS OWN score and minimum-status, not the other pillar's (swap guard)", () => {
+    // Task 13: `t(\`pillars.${pillar.pillar}\`)` is resolved per-bar from data, not
+    // a hardcoded literal — a key/wiring swap (e.g. both bars accidentally
+    // reading `pillars.listening`, or a pillar's status crossed with the
+    // other pillar's row) would still make every individual `getByText`
+    // assertion above pass, since both label strings and both status strings
+    // exist SOMEWHERE in the document. Scoping to each bar's own row is what
+    // actually catches that class of bug.
+    render(
+      <JlptResultsPanel submitResult={submitResult()} questions={QUESTIONS} answers={{}} level="N5" />,
+    );
+    // Scoped to the "Pass estimate" region: "Listening" is also the pillar's
+    // NAME (not just the pillar bar's label) and also appears in the Section
+    // scores region below for the same fixture, so an unscoped `getByText`
+    // would be ambiguous.
+    const passEstimate = screen.getByRole("region", { name: "Pass estimate" });
+    const languageKnowledgeRow = closestOrThrow(
+      within(passEstimate).getByText("Language knowledge + Reading"),
+      "div",
+    );
+    expect(within(languageKnowledgeRow).getByText("120 / 120")).toBeInTheDocument();
+    expect(within(languageKnowledgeRow).getByText("✓ meets minimum")).toBeInTheDocument();
+    expect(within(languageKnowledgeRow).queryByText("below minimum")).not.toBeInTheDocument();
+
+    const listeningRow = closestOrThrow(within(passEstimate).getByText("Listening"), "div");
+    expect(within(listeningRow).getByText("0 / 60")).toBeInTheDocument();
+    expect(within(listeningRow).getByText("below minimum")).toBeInTheDocument();
+    expect(within(listeningRow).queryByText("✓ meets minimum")).not.toBeInTheDocument();
+
+    expect(screen.getByRole("progressbar", { name: "Language knowledge + Reading scaled score" })).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Listening scaled score" })).toBeInTheDocument();
+  });
+
   it("handles the section-mode / passed:null case without crashing and explains why", () => {
     const result = submitResult({
       result: {
@@ -130,6 +173,19 @@ describe("JlptResultsPanel", () => {
     render(<JlptResultsPanel submitResult={submitResult()} questions={QUESTIONS} answers={{}} level="N5" />);
     expect(screen.getByText("1 / 1 (100%)")).toBeInTheDocument();
     expect(screen.getByText("0 / 1 (0%)")).toBeInTheDocument();
+  });
+
+  it("pairs each section's translated name with ITS OWN score line, not the other section's (swap guard)", () => {
+    render(<JlptResultsPanel submitResult={submitResult()} questions={QUESTIONS} answers={{}} level="N5" />);
+    // Scoped to the "Section scores" region: "Listening" is also this fixture's
+    // pillar name (rendered in the "Pass estimate" region above), so an
+    // unscoped `getByText("Listening")` would be ambiguous.
+    const sectionScores = screen.getByRole("region", { name: "Section scores" });
+    const vocabItem = closestOrThrow(within(sectionScores).getByText("Vocabulary"), "li");
+    expect(within(vocabItem).getByText("1 / 1 (100%)")).toBeInTheDocument();
+
+    const listeningItem = closestOrThrow(within(sectionScores).getByText("Listening"), "li");
+    expect(within(listeningItem).getByText("0 / 1 (0%)")).toBeInTheDocument();
   });
 
   it("lists weakness stats weakest-first with a review link scoped to the section and level", () => {
@@ -157,5 +213,30 @@ describe("JlptResultsPanel", () => {
   it("shows 'Not answered' for a question the user skipped", () => {
     render(<JlptResultsPanel submitResult={submitResult()} questions={QUESTIONS} answers={{}} level="N5" />);
     expect(screen.getAllByText(/your answer: not answered/i).length).toBeGreaterThan(0);
+  });
+
+  it("pairs each question's sr-only correctness announcement with ITS OWN outcome, not the other question's (swap guard)", () => {
+    // Task 13: q-1 is correct, q-2 is not (see `submitResult()`'s `perQuestion`
+    // fixture above). A swap of `resultsPanel.correct`/`resultsPanel.incorrect`
+    // (or of which question's `pq.correct` drives which label) would announce
+    // the WRONG outcome to a screen-reader user, who has no other way to tell
+    // — the ✓/✕ glyph beside it is `aria-hidden`. Scoping each assertion to
+    // its own question's <li> is what catches that, not merely that both
+    // strings exist somewhere on the page.
+    render(
+      <JlptResultsPanel
+        submitResult={submitResult()}
+        questions={QUESTIONS}
+        answers={{ "q-1": "0", "q-2": "0" }}
+        level="N5"
+      />,
+    );
+    const q1Item = closestOrThrow(screen.getByText("Question 1"), "li");
+    expect(within(q1Item).getByText("Correct.")).toBeInTheDocument();
+    expect(within(q1Item).queryByText("Incorrect.")).not.toBeInTheDocument();
+
+    const q2Item = closestOrThrow(screen.getByText("Question 2"), "li");
+    expect(within(q2Item).getByText("Incorrect.")).toBeInTheDocument();
+    expect(within(q2Item).queryByText("Correct.")).not.toBeInTheDocument();
   });
 });

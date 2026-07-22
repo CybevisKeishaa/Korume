@@ -77,6 +77,22 @@ describe("JlptTestRunner", () => {
     expect(screen.getByText("Question 1 / 2")).toBeInTheDocument();
   });
 
+  it("shows the full-mock description in full mode, and the section-practice description naming the RIGHT section in section mode", () => {
+    // Task 13: no test previously asserted on `jlpt-pre-start-panel.tsx`'s mode
+    // description at all — a dropped `section` prop, or the full/section
+    // branches swapped, would have shipped silently. `initialSection` decides
+    // `mode` inside `JlptTestRunner` (`section` iff `initialSection` is set),
+    // so this exercises both branches through the real prop, not a mock.
+    const { unmount } = render(<JlptTestRunner test={TEST} />);
+    expect(screen.getByText("Full mock test — all sections.")).toBeInTheDocument();
+    expect(screen.queryByText(/section practice/i)).not.toBeInTheDocument();
+    unmount();
+
+    render(<JlptTestRunner test={TEST} initialSection="vocab" />);
+    expect(screen.getByText("Section practice — Vocabulary.")).toBeInTheDocument();
+    expect(screen.queryByText("Full mock test — all sections.")).not.toBeInTheDocument();
+  });
+
   it("navigates between questions via Next/Previous and the navigator, tracking answered state", async () => {
     render(<JlptTestRunner test={TEST} />);
     await userEvent.click(screen.getByRole("button", { name: "Start" }));
