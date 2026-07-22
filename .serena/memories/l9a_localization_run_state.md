@@ -1,8 +1,9 @@
 # L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 done; 13-19 remain — NEXT = Task 13 `jlpt`)
 
-## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 12–19 (user-codified after Task 11, 2026-07-22)
-Put ALL of these in every implementer brief AND every reviewer brief. They are not new — Task 11
-rediscovered each the hard way; this block exists so no later task rediscovers them a fifth time.
+## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22)
+Put ALL SIX in every implementer brief AND every reviewer brief. They are not new — Tasks 11–12
+rediscovered each the hard way; this block exists so no later task rediscovers them again. Task 12
+reinforced #2 (dependency-graph audit) and closed the #4 defect class; #6 (proportionality) is new.
 
 1. **Report mutation testing in TWO LAYERS, never one number.** Always split:
    `Catalog: N mutations / X survivors` (literal-pin proof — append/prepend/punct/placeholder vs the
@@ -11,29 +12,50 @@ rediscovered each the hard way; this block exists so no later task rediscovers t
    hid 5 wiring defects at 11c, 9 at 11d, 1 at 11e. Catalog proves COPY STABILITY; wiring proves the UI
    RENDERS THE CORRECT KEY. Different properties — one number cannot show both.
 
-2. **Audit the IMPORT GRAPH, not the folder. Translate exported APIs, not directories.** Before freezing
-   a task's scope: audit the assigned directory, THEN grep the import graph of every exported
-   hook/component/helper being localized. The plan's file lists have been wrong FOUR times; 11d's
-   `useRecorder` had a consumer under `components/conversation/` on no list, breaking 13 tests.
+2. **Audit scope from the DEPENDENCY GRAPH, not the plan. Translate exported APIs, not directories.**
+   Before freezing EVERY remaining task's scope, do THREE things: (a) audit the assigned directory,
+   (b) grep the import graph of every exported hook/component/helper being localized, (c) verify each
+   consumer. **The plan's file list has now been wrong FIVE separate times** — treat it as a starting
+   hypothesis, never ground truth. 11d's `useRecorder` had a consumer under `components/conversation/` on
+   no list (broke 13 tests); **Task 12's `mining-review-session.tsx` — the file holding the owned defect —
+   was absent from the plan's own list**, so the defect would have shipped untouched. The audit, not the
+   plan, is what caught it.
 
-3. **NEW BINDING PATTERN — label↔value PAIRING (existence assertions are insufficient).** For any paired
-   UI — legends, badges, swatches, score labels, grade buttons — the test must prove `label A ↔ value A`
-   AND `label B ↔ value B`, NOT merely "label A exists / label B exists". Swapping two `t()` keys can
-   silently teach the WRONG thing while every catalog pin still passes (11d お手本/あなた; 11e 発音/リズム).
-   Assert the composed node, e.g. `getByText("発音 82")`, or scope each label+value to one element.
+3. **BINDING PATTERN — swap-proof render assertions for TYPE-INTERCHANGEABLE values.** Literal catalog
+   pins prove COPY; they do NOT prove the component renders the correct KEY. **Whenever two translated
+   values are interchangeable in type (same shape, same placeholder set) — legends, badges, swatches,
+   score labels, grade buttons, paired label↔value UI — add a render assertion that FAILS if the two
+   `t(...)` calls are swapped.** Prove `label A ↔ value A` AND `label B ↔ value B`, not merely that each
+   exists. Swapping two keys can silently teach the WRONG thing while every catalog pin still passes
+   (11d お手本/あなた; 11e 発音/リズム; 12 Again/Hard/Good/Easy ↔ their 1/2/3/4 shortcuts — all done right).
+   Assert the composed node, e.g. `getByText("発音 82")` / `toHaveTextContent("Again1")`, or scope each
+   label+value to one element.
 
-4. **Server-authored diagnostics NEVER reach the learner-facing DOM.** `body.error`, `error.message`,
-   raw status text — classify to a descriptor/catalog key instead (Task 8, 11c, 11e all hit this).
-   Pass-through is acceptable ONLY for genuine user-authored content (transcripts, filenames), never
-   backend diagnostics. **Task 12's `mining-review-session.tsx:61` is the LAST known instance — follow the
-   precedent, do not reopen the discussion.**
+4. **Server-authored diagnostics NEVER reach the learner-facing DOM — DEFECT CLASS CLOSED after Task 12.**
+   The rule stands: `body.error` / `error.message` / raw status text must be LOGGED for developers
+   (`console.error(...)`) and the DOM must show a TRANSLATED user-facing state instead. Pass-through is
+   acceptable ONLY for genuine user-authored content (transcripts, filenames), never backend diagnostics.
+   Five instances belonged to this family and are all fixed: Task 7 (`review-session`), Task 8 (vocab
+   examples), 11c (`video-summary-panel`), 11e (recorder), 12 (`mining-review-session`). **Consider the
+   class CLOSED — Tasks 13–19 should NOT hunt for it, but MUST still apply the rule to any new instance the
+   dependency-graph audit surfaces.**
 
 5. **Task 19 exit criterion for `common.player.*` (make the temporary decision explicit).** It was placed
    proactively, not via a real multi-consumer promotion. At Task 19, re-audit its consumers BY SURFACE:
    if only the `shadowing` surface consumes it → DEMOTE back under `shadowing.*`; if another surface
    genuinely consumes it → keep in `common`. This is a gate criterion, not a matter of convention.
-   (Same audit, evidence-based, for every string promoted to `common.*` — record consumer counts per the
-   convention-B tables below.)
+   (Same audit, evidence-based, for every string promoted to `common.*` — RECORD its current consumer count
+   at promotion time so Task 19 audits from records, not memory. Counts so far: `common.player.*` = 1
+   surface (demotion candidate); `common.srs.*` = 2; `common.states.error` = 2; `common.errors.network` = 3;
+   `common.recommendations.*` = 2.)
+
+6. **Spend review effort on NEW defect classes, not assertion count — proportionality/triage rule.** If a
+   missing render test would catch ONLY an accidental key swap on pass-through copy (a trivial page whose
+   only job is to render a heading/link), with NO user-visible behavioral regression at stake, RECORD it as
+   a carried Minor for the Task 19 audit — do NOT expand the current task to cover it. Fix-in-task is for
+   defects on correctness/compliance-sensitive paths (e.g. 11e's mislabeled pronunciation score, 12's owned
+   error-path); low-value wiring gaps on inert surfaces go to the final audit. Task 12 applied this: its two
+   trivial `mining` pages' `<h1>`/link key swaps are carried to Task 19, not fixed in-task.
 
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
