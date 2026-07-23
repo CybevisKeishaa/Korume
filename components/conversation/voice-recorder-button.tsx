@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRecorder } from "@/components/video-player/recorder";
@@ -24,24 +25,31 @@ export interface VoiceRecorderButtonProps {
 type Phase = "idle" | "transcribing";
 
 const STT_ENDPOINT = "/api/speech/stt";
-const NOT_CONFIGURED_MESSAGE =
-  "Voice input isn't set up yet. You can still type your message.";
 
-/** Maps a non-200 STT response to a friendly, non-technical message. */
-function friendlySttError(status: number, retryAfter: string | null): { message: string; unavailable: boolean } {
-  if (status === 503) return { message: NOT_CONFIGURED_MESSAGE, unavailable: true };
+/**
+ * Which `conversation.voiceRecorder.*` catalog entry a non-200 STT response
+ * maps to — a key descriptor, not a resolved string, because this is a
+ * module-level function and `t()` is only callable from within component
+ * render (same shape as `shadowing-recorder-panel.tsx`'s
+ * `classifyScoreError`). `notConfigured` is the STT-specific 503 degrade —
+ * distinct from `message-bubble.tsx`'s TTS one.
+ */
+type SttErrorDescriptor =
+  | { key: "notConfigured"; unavailable: true }
+  | { key: "tooManyWithSeconds"; seconds: string; unavailable: false }
+  | { key: "tooManyGeneric"; unavailable: false }
+  | { key: "transcribeFailed"; unavailable: false }
+  | { key: "genericError"; unavailable: false };
+
+function classifySttError(status: number, retryAfter: string | null): SttErrorDescriptor {
+  if (status === 503) return { key: "notConfigured", unavailable: true };
   if (status === 429) {
-    return {
-      message: retryAfter
-        ? `Too many voice requests — try again in ${retryAfter}s.`
-        : "Too many voice requests — please wait a moment and try again.",
-      unavailable: false,
-    };
+    return retryAfter
+      ? { key: "tooManyWithSeconds", seconds: retryAfter, unavailable: false }
+      : { key: "tooManyGeneric", unavailable: false };
   }
-  if (status === 422) {
-    return { message: "That recording couldn't be transcribed. Try again.", unavailable: false };
-  }
-  return { message: "Something went wrong transcribing your voice. Please try again.", unavailable: false };
+  if (status === 422) return { key: "transcribeFailed", unavailable: false };
+  return { key: "genericError", unavailable: false };
 }
 
 /**
@@ -61,6 +69,8 @@ export function VoiceRecorderButton({
   disabled = false,
   className,
 }: VoiceRecorderButtonProps) {
+  const t = useTranslations("conversation");
+  const tCommon = useTranslations("common");
   const recorder = useRecorder();
   const [phase, setPhase] = useState<Phase>("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -79,7 +89,7 @@ export function VoiceRecorderButton({
       try {
         wav = await blobToWav16kMono(blob);
       } catch {
-        setMessage("We couldn't process that recording. Please try again.");
+        setMessage(t("voiceRecorder.conversionFailed"));
         setPhase("idle");
         return;
       }
@@ -95,19 +105,22 @@ export function VoiceRecorderButton({
           setPhase("idle");
           return;
         }
-        const { message: friendly, unavailable: nowUnavailable } = friendlySttError(
-          res.status,
-          res.headers.get("Retry-After"),
+        const descriptor = classifySttError(res.status, res.headers.get("Retry-After"));
+        setMessage(
+          descriptor.key === "tooManyWithSeconds"
+            ? t("voiceRecorder.tooManyWithSeconds", { seconds: descriptor.seconds })
+            : t(`voiceRecorder.${descriptor.key}`),
         );
-        setMessage(friendly);
-        if (nowUnavailable) setUnavailable(true);
+        if (descriptor.unavailable) setUnavailable(true);
       } catch {
-        setMessage("Network error — check your connection and try again.");
+        // Reuses common.errors.network (P4) — byte-identical to the network
+        // message every other module's fetch-throw path already shows.
+        setMessage(tCommon("errors.network"));
       } finally {
         setPhase("idle");
       }
     },
-    [onTranscribed],
+    [onTranscribed, t, tCommon],
   );
 
   useEffect(() => {
@@ -131,10 +144,10 @@ export function VoiceRecorderButton({
   }, [isRecording, recorder]);
 
   let statusMessage = "";
-  if (recorder.state === "requesting-permission") statusMessage = "Requesting microphone access…";
-  else if (isRecording) statusMessage = "Recording…";
+  if (recorder.state === "requesting-permission") statusMessage = t("voiceRecorder.requestingPermission");
+  else if (isRecording) statusMessage = t("voiceRecorder.recording");
   else if (recorder.state === "error" && recorder.error) statusMessage = recorder.error;
-  else if (phase === "transcribing") statusMessage = "Transcribing…";
+  else if (phase === "transcribing") statusMessage = t("voiceRecorder.transcribing");
   else if (message) statusMessage = message;
 
   return (
@@ -146,10 +159,10 @@ export function VoiceRecorderButton({
         onClick={handleToggle}
         disabled={disabled || unavailable || isBusy}
         aria-pressed={isRecording}
-        title={unavailable ? NOT_CONFIGURED_MESSAGE : undefined}
+        title={unavailable ? t("voiceRecorder.notConfigured") : undefined}
         className={isRecording ? "bg-danger text-white hover:bg-danger/90" : undefined}
       >
-        {isRecording ? "Stop recording" : "Record voice message"}
+        {isRecording ? t("voiceRecorder.stopRecording") : t("voiceRecorder.recordVoiceMessage")}
       </Button>
       <p role="status" className="text-xs text-muted-foreground">
         {statusMessage}

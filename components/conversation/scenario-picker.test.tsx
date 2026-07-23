@@ -1,13 +1,39 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ScenarioPicker } from "./scenario-picker";
 
+/** Each scenario's own label paired with its own description — swap-proof
+ * (Task 15 audit convention #3): asserts e.g. restaurant's card carries
+ * restaurant's description, not any other scenario's, which a plain
+ * "does this text exist somewhere" assertion would miss if two `t()` keys
+ * were swapped. */
+const SCENARIOS_IN_ORDER: { name: RegExp; description: string }[] = [
+  { name: /restaurant/i, description: "Order food, ask about the menu, and pay the bill." },
+  { name: /interview/i, description: "Answer common interview questions in polite Japanese." },
+  { name: /shopping/i, description: "Ask about sizes, prices, and try things on at a store." },
+  { name: /directions/i, description: "Ask how to get somewhere and understand the reply." },
+  { name: /free talk/i, description: "An open-ended chat about anything you like." },
+];
+
 describe("ScenarioPicker", () => {
-  it("lists all five scenarios with a label and description each", () => {
+  it("lists the five scenarios in display order, each paired with its own description", () => {
     render(<ScenarioPicker onStart={vi.fn()} />);
-    for (const name of [/restaurant/i, /interview/i, /shopping/i, /directions/i, /free talk/i]) {
-      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(SCENARIOS_IN_ORDER.length);
+
+    // Display order: the button at each position has that position's scenario
+    // name (swap-proof — a reordering would fail this even though every name
+    // still appears somewhere in the list).
+    SCENARIOS_IN_ORDER.forEach((scenario, index) => {
+      expect(buttons[index]).toHaveAccessibleName(scenario.name);
+    });
+
+    // Pairing: each scenario's own card carries its own description, not any
+    // other scenario's.
+    for (const { name, description } of SCENARIOS_IN_ORDER) {
+      const button = screen.getByRole("button", { name });
+      expect(within(button).getByText(description)).toBeInTheDocument();
     }
   });
 

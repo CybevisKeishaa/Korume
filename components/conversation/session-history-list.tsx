@@ -1,8 +1,9 @@
 "use client";
 
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ConversationSessionRow } from "@/lib/conversation-types";
-import { SCENARIOS } from "./scenario-picker";
+import { scenarioLabel } from "./scenario-picker";
 
 export interface SessionHistoryListProps {
   sessions: ConversationSessionRow[];
@@ -10,17 +11,13 @@ export interface SessionHistoryListProps {
   className?: string;
 }
 
-function scenarioLabel(scenarioType: string | null): string {
-  return SCENARIOS.find((s) => s.id === scenarioType)?.label ?? scenarioType ?? "Conversation";
-}
-
 /** Past-session list (read-only entry point to a session's transcript). */
 export function SessionHistoryList({ sessions, onSelect, className }: SessionHistoryListProps) {
+  const t = useTranslations("conversation");
+
   if (sessions.length === 0) {
     return (
-      <p className={cn("text-sm text-muted-foreground", className)}>
-        No past sessions yet — start one above.
-      </p>
+      <p className={cn("text-sm text-muted-foreground", className)}>{t("history.empty")}</p>
     );
   }
 
@@ -33,9 +30,9 @@ export function SessionHistoryList({ sessions, onSelect, className }: SessionHis
             onClick={() => onSelect(session.id)}
             className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm hover:bg-muted"
           >
-            <span className="font-jp">{scenarioLabel(session.scenario_type)}</span>
+            <span className="font-jp">{scenarioLabel(t, session.scenario_type)}</span>
             <span className="shrink-0 text-xs text-muted-foreground">
-              {session.ended_at ? "Ended" : "In progress"} ·{" "}
+              {session.ended_at ? t("history.ended") : t("history.inProgress")} ·{" "}
               {new Date(session.started_at).toLocaleDateString()}
             </span>
           </button>

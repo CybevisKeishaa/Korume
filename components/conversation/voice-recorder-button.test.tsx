@@ -130,15 +130,24 @@ describe("VoiceRecorderButton", () => {
     render(<VoiceRecorderButton onTranscribed={onTranscribed} />);
     await recordAndStop();
 
+    // Swap-proof (Task 15 audit convention #3): this must be the STT/"voice
+    // input" wording specifically, not message-bubble's distinct TTS/
+    // "voice playback" 503 message — a bare /isn't set up yet/i substring
+    // would pass for either and miss the two keys being swapped.
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(/isn't set up yet/i),
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Voice input isn't set up yet. You can still type your message.",
+      ),
     );
     expect(onTranscribed).not.toHaveBeenCalled();
 
     // Persistently disabled afterwards, with an explanatory tooltip.
     const micButton = screen.getByRole("button", { name: /record voice message/i });
     expect(micButton).toBeDisabled();
-    expect(micButton).toHaveAttribute("title", expect.stringMatching(/isn't set up yet/i));
+    expect(micButton).toHaveAttribute(
+      "title",
+      expect.stringMatching(/voice input isn't set up yet/i),
+    );
   });
 
   it("shows a wait message on 429 with Retry-After", async () => {
