@@ -29,7 +29,7 @@ export function AdminShell({ userEmail, children }: { userEmail: string; childre
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <nav aria-label="Admin" className="shrink-0 border-b border-border bg-card md:w-56 md:border-b-0 md:border-r">
+      <nav aria-label={t("shell.navAria")} className="shrink-0 border-b border-border bg-card md:w-56 md:border-b-0 md:border-r">
         <div className="p-4">
           <p className="text-sm font-semibold">{tCommon("appName")}</p>
           <p className="text-xs text-muted-foreground">{t("shell.tagline")}</p>

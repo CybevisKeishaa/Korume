@@ -21,6 +21,7 @@ describe("admin.json EN — admin-shell.tsx", () => {
     expect(en.shell.nav.content).toBe("Content");
     expect(en.shell.nav.styleGuide).toBe("Style guide");
     expect(en.shell.backToApp).toBe("Back to app");
+    expect(en.shell.navAria).toBe("Admin");
   });
 });
 

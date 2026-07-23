@@ -43,7 +43,7 @@ export function TranscriptPane({
   showTranslation,
   className,
 }: TranscriptPaneProps) {
-  const t = useTranslations("common");
+  const t = useTranslations("shadowing");
   const { reduceMotion } = useTheme();
   const activeRef = useRef<HTMLLIElement | null>(null);
 

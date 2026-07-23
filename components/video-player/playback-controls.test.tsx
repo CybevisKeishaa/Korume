@@ -5,8 +5,10 @@ import { FuriganaModeControl, LoopControls, SpeedControl } from "./playback-cont
 /**
  * Characterization test for `playback-controls.tsx` (Task 11c) — the file had
  * no test file at all before this task (binding hazard 1). Written BEFORE the
- * strings are extracted to `common.player.*`; it must pass while the strings
- * are still hardcoded, then again unchanged once `t()` replaces the literals
+ * strings are extracted to `shadowing.player.*` (Task 11c promoted them to
+ * `common.player.*`; Task 19's by-surface audit demoted them back to
+ * `shadowing.*`); it must pass while the strings are still hardcoded, then
+ * again unchanged once `t()` replaces the literals
  * — a failure after extraction means the extraction changed user-visible
  * copy, not that the test needs updating (binding pattern 1).
  *

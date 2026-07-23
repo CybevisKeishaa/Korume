@@ -112,5 +112,19 @@
       "intonation": "イントネーション",
       "scoreSuffix": " / 100"
     }
+  },
+  "player": {
+    "transcriptEmpty": "Chưa có dòng phụ đề nào.",
+    "a11y": {
+      "transcript": "Phụ đề",
+      "waveform": "Dạng sóng bản ghi âm",
+      "playbackSpeed": "Tốc độ phát",
+      "abLoop": "Lặp A–B",
+      "furigana": "Furigana"
+    },
+    "processingRecording": "Đang xử lý bản ghi âm…",
+    "waveformUnavailable": "Không có bản xem trước dạng sóng.",
+    "furigana": { "adaptive": "Thích ứng", "all": "Tất cả", "off": "Tắt" },
+    "loop": { "setA": "Đặt A", "setB": "Đặt B", "clear": "Xóa vòng lặp" }
   }
 }

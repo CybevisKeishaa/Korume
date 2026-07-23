@@ -13,7 +13,7 @@ export interface SpeedControlProps {
 
 /** Playback-speed picker. A `radiogroup` of toggle buttons, one active at a time. */
 export function SpeedControl({ value, onChange }: SpeedControlProps) {
-  const t = useTranslations("common");
+  const t = useTranslations("shadowing");
   return (
     <div
       role="radiogroup"
@@ -54,7 +54,7 @@ export interface LoopControlsProps {
 
 /** A–B loop controls: set the loop start/end at the current playhead, or clear it. */
 export function LoopControls({ loopA, loopB, onSetA, onSetB, onClear }: LoopControlsProps) {
-  const t = useTranslations("common");
+  const t = useTranslations("shadowing");
   return (
     <div className="flex items-center gap-1" aria-label={t("player.a11y.abLoop")}>
       <button
@@ -99,7 +99,7 @@ export function LoopControls({ loopA, loopB, onSetA, onSetB, onClear }: LoopCont
 }
 
 /**
- * Furigana mode -> `common.player.furigana.*` catalog key. This used to be
+ * Furigana mode -> `shadowing.player.furigana.*` catalog key. This used to be
  * the rendered English label itself, in a module-level array — but a
  * module-level constant can't call `t()` (only a component body can), so it
  * holds the catalog key instead, resolved by the sole consumer below.
@@ -144,7 +144,7 @@ export interface FuriganaModeControlProps {
  * are the old hard on/off states, kept for readers who want either extreme.
  */
 export function FuriganaModeControl({ value, onChange }: FuriganaModeControlProps) {
-  const t = useTranslations("common");
+  const t = useTranslations("shadowing");
   return (
     <div role="radiogroup" aria-label={t("player.a11y.furigana")} className="flex items-center gap-1">
       {FURIGANA_MODES.map((mode) => {

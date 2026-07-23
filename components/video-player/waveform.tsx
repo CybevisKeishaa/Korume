@@ -10,7 +10,7 @@ export interface WaveformProps {
   blob: Blob | null;
   /**
    * Accessible label for the canvas image. Optional override — omit it to
-   * fall back to the translated `common.player.a11y.waveform` string via
+   * fall back to the translated `shadowing.player.a11y.waveform` string via
    * `useTranslations`; pass it when a caller needs a more specific label
    * (e.g. "Your recording waveform").
    */
@@ -50,7 +50,7 @@ function computeEnvelope(buffer: AudioBuffer, buckets: number): number[] {
  * cross-origin YouTube iframe's audio is inaccessible to Web Audio anyway.
  */
 export function Waveform({ blob, label, className, height = 64 }: WaveformProps) {
-  const t = useTranslations("common");
+  const t = useTranslations("shadowing");
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [envelope, setEnvelope] = useState<number[] | null>(null);
   const [status, setStatus] = useState<DecodeStatus>("idle");

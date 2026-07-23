@@ -51,35 +51,6 @@ describe("common.json EN — recommendation-rail literals (Task 10)", () => {
 });
 
 /**
- * Task 11a promoted the video-player shell's strings (`transcript-pane.tsx`,
- * `waveform.tsx` — shared by both the shadowing and dictation surfaces, P4)
- * to `common.player.*` instead of duplicating them per feature namespace.
- * Literal `toBe` pins here, per the standing Task 10 review convention;
- * `transcript-pane.test.tsx` / `waveform.test.tsx` prove the RTL wiring.
- */
-describe("common.json EN — player shell literals (Task 11a)", () => {
-  it("pins the empty-transcript message", () => {
-    expect(en.player.transcriptEmpty).toBe("This transcript has no lines yet.");
-  });
-
-  it("pins the transcript list's accessible name", () => {
-    expect(en.player.a11y.transcript).toBe("Transcript");
-  });
-
-  it("pins the waveform canvas's default accessible name", () => {
-    expect(en.player.a11y.waveform).toBe("Recording waveform");
-  });
-
-  it("pins the processing-recording message", () => {
-    expect(en.player.processingRecording).toBe("Processing recording…");
-  });
-
-  it("pins the waveform-unavailable fallback message", () => {
-    expect(en.player.waveformUnavailable).toBe("Waveform preview unavailable.");
-  });
-});
-
-/**
  * Task 11b promoted `errors.network` out of `messages/en/vocab.json` into
  * `common.errors.network`. The identical string ("Network error — check
  * your connection and try again.") appears across 8 modules (community,
@@ -97,46 +68,6 @@ describe("common.json EN — network error (Task 11b promotion)", () => {
     expect(en.errors.network).toBe(
       "Network error — check your connection and try again.",
     );
-  });
-});
-
-/**
- * Task 11c extended `common.player.*` with `playback-controls.tsx`'s strings
- * (user decision 2026-07-21: keep the whole player-shell cluster in one
- * place so Task 19's demotion-to-`shadowing.*` gate, if it fires, is a
- * single decision — see the plan's Task 11 section). Literal `toBe` pins per
- * the standing Task 10 convention; `playback-controls.test.tsx` proves the
- * RTL wiring.
- *
- * `a11y.abLoop` gets its own isolated `it()`, not folded into the others:
- * hazard 4 is that this string carries an EN DASH (U+2013), not a hyphen,
- * and a single shared `it()` would let an earlier assertion's failure
- * short-circuit past this one, hiding a silent hyphen substitution.
- */
-describe("common.json EN — playback-controls literals (Task 11c)", () => {
-  it("pins the speed control's accessible group name", () => {
-    expect(en.player.a11y.playbackSpeed).toBe("Playback speed");
-  });
-
-  it("pins the A–B loop group's accessible name (EN DASH U+2013, not a hyphen)", () => {
-    expect(en.player.a11y.abLoop).toBe("A–B loop");
-    expect(en.player.a11y.abLoop).not.toBe("A-B loop");
-  });
-
-  it("pins the furigana control's accessible group name", () => {
-    expect(en.player.a11y.furigana).toBe("Furigana");
-  });
-
-  it("pins the three furigana mode labels", () => {
-    expect(en.player.furigana.adaptive).toBe("Adaptive");
-    expect(en.player.furigana.all).toBe("All");
-    expect(en.player.furigana.off).toBe("Off");
-  });
-
-  it("pins the loop control labels", () => {
-    expect(en.player.loop.setA).toBe("Set A");
-    expect(en.player.loop.setB).toBe("Set B");
-    expect(en.player.loop.clear).toBe("Clear loop");
   });
 });
 

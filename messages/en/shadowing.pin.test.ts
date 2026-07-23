@@ -426,3 +426,62 @@ describe("shadowing.json EN — shadowing-recorder-panel.tsx word errorType labe
     expect(en.recorder.wordError.mispronunciation).toBe("Mispronunciation");
   });
 });
+
+/**
+ * The player-shell strings (`transcript-pane.tsx`, `waveform.tsx`,
+ * `playback-controls.tsx`) were promoted to `common.player.*` in Tasks
+ * 11a/11c, provisionally, ahead of a real multi-surface consumer. Task 19's
+ * `common.*` audit BY SURFACE found all three components serve ONLY the
+ * shadowing surface (dictation-view.tsx consumes none of them), so the whole
+ * `player.*` block was DEMOTED back under `shadowing.*` per the standing
+ * gate criterion (run-state convention #5). These pins moved with it — from
+ * `common.pin.test.ts` — and now assert against `shadowing.json`;
+ * `transcript-pane.test.tsx` / `waveform.test.tsx` / `playback-controls.test.tsx`
+ * prove the RTL wiring. Values are unchanged, byte-for-byte.
+ */
+describe("shadowing.json EN — player shell literals (demoted from common in Task 19)", () => {
+  it("pins the empty-transcript message", () => {
+    expect(en.player.transcriptEmpty).toBe("This transcript has no lines yet.");
+  });
+
+  it("pins the transcript list's accessible name", () => {
+    expect(en.player.a11y.transcript).toBe("Transcript");
+  });
+
+  it("pins the waveform canvas's default accessible name", () => {
+    expect(en.player.a11y.waveform).toBe("Recording waveform");
+  });
+
+  it("pins the processing-recording message", () => {
+    expect(en.player.processingRecording).toBe("Processing recording…");
+  });
+
+  it("pins the waveform-unavailable fallback message", () => {
+    expect(en.player.waveformUnavailable).toBe("Waveform preview unavailable.");
+  });
+
+  it("pins the speed control's accessible group name", () => {
+    expect(en.player.a11y.playbackSpeed).toBe("Playback speed");
+  });
+
+  it("pins the A–B loop group's accessible name (EN DASH U+2013, not a hyphen)", () => {
+    expect(en.player.a11y.abLoop).toBe("A–B loop");
+    expect(en.player.a11y.abLoop).not.toBe("A-B loop");
+  });
+
+  it("pins the furigana control's accessible group name", () => {
+    expect(en.player.a11y.furigana).toBe("Furigana");
+  });
+
+  it("pins the three furigana mode labels", () => {
+    expect(en.player.furigana.adaptive).toBe("Adaptive");
+    expect(en.player.furigana.all).toBe("All");
+    expect(en.player.furigana.off).toBe("Off");
+  });
+
+  it("pins the loop control labels", () => {
+    expect(en.player.loop.setA).toBe("Set A");
+    expect(en.player.loop.setB).toBe("Set B");
+    expect(en.player.loop.clear).toBe("Clear loop");
+  });
+});

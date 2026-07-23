@@ -52,19 +52,5 @@
     "complete": "Session complete 🎉",
     "reviewedCount": "{count, plural, one {You reviewed {count} item.} other {You reviewed {count} items.}}",
     "done": "Done"
-  },
-  "player": {
-    "transcriptEmpty": "This transcript has no lines yet.",
-    "a11y": {
-      "transcript": "Transcript",
-      "waveform": "Recording waveform",
-      "playbackSpeed": "Playback speed",
-      "abLoop": "A–B loop",
-      "furigana": "Furigana"
-    },
-    "processingRecording": "Processing recording…",
-    "waveformUnavailable": "Waveform preview unavailable.",
-    "furigana": { "adaptive": "Adaptive", "all": "All", "off": "Off" },
-    "loop": { "setA": "Set A", "setB": "Set B", "clear": "Clear loop" }
   }
 }
