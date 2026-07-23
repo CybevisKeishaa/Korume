@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15 done; 16-19 remain — NEXT = Task 16 `community`+`playlists`+`leaderboard`+`profile`)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15 + 16 done; 17-19 remain — NEXT = Task 17)
 
 ## 🔒 FROZEN EXECUTION CHECKLIST — Tasks 16–19 (canonical; briefs REFERENCE this, do NOT re-paste it)
 Controller directive (user, 2026-07-23): stop re-transmitting the full rulebook each task. The workflow is
@@ -41,8 +41,16 @@ the task log / Task 19 audit. Permanent practice REPLACES prior wording here —
 green; `npm run lint` **EXIT 0 with 0 new** — check the exit code + error count, not just the 80-warning/23-file
 baseline (an ERROR like `no-empty-function` does not move the 80 but breaks the gate — the Task 15 catch).
 
-**common.* consumer counts (running, for Task 19):** `errors.network`=7 · `states.error`=2 · `srs.*`=2 ·
-`states.loading`=2 · `recommendations.*`=2 · `player.*`=1 (demotion candidate).
+**common.* consumer counts (running, for Task 19):** `errors.network`=15 (+forum-board, +forum-composer,
++forum-thread, +peer-review-mine, +peer-review-queue, +playlist-composer, +playlist-detail, +playlist-list,
++public-playlist-list, +save-to-playlist-button, +leaderboard-opt-in-toggle — Task 16, 11 new surfaces) ·
+`states.error`=2 · `srs.*`=2 · `states.loading`=5 (+forum-board, +peer-review-queue, +public-playlist-list —
+Task 16) · `recommendations.*`=2 · `player.*`=1 (demotion candidate) · `actions.cancel`=4 (+forum-board,
++forum-thread, +playlist-list, +playlists-page — Task 16, new promotion) · `actions.save`=2 (+forum-thread,
++playlist-list — Task 16, new promotion) · `actions.delete`=1 (+playlist-list — Task 16, new promotion) ·
+`actions.loadMore`=3 (forum-board, peer-review-queue, public-playlist-list — Task 16, new promotion) ·
+`actions.confirmYes`=1 surface but 3 feature namespaces (community, playlists, shadowing — confirm-button.tsx
+is the sole consumer, promoted straight to common since no single namespace owns it — Task 16, new promotion).
 
 
 ## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22)
