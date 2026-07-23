@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 done; 15-19 remain — NEXT = Task 15 `conversation`)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15 done; 16-19 remain — NEXT = Task 16 `community`+`playlists`+`leaderboard`+`profile`)
 
 ## 🆕 TWO NEW STANDING LESSONS from Task 13 (binding, Tasks 14–19) — put in every brief
 - **Namespace wiring is a 5-STEP list, not 4.** In addition to (1) append to `NAMESPACES` in
@@ -218,13 +218,53 @@ own; a `t` there = dead code + a new lint warning. Do NOT reflexively wire every
 with no literal chrome gets no translator. The implementer flagged the audit contradiction instead of guessing.
 Review (opus): Spec PASS · Quality PASS, 0 Critical/Important, no carried Minors.
 
-## ▶ NEXT = Task 15 (`conversation` namespace). Tip `ac29966`, tree clean. Plan line 904.
-**AUDIT the file list + import graph FIRST** (convention #2). Put ALL SIX standing conventions + the **5-step
-namespace-wiring list** (incl. `types/messages.d.ts`) + the **`useTranslations`-for-all-synchronous-components**
-rule + the **refined getTranslations rule** (only where chrome strings exist) in the implementer AND reviewer
-briefs. Same cadence (fresh sonnet implementer → opus review → fix wave if needed; controller re-runs all
-three gates itself). Note: conversation is an AI feature (voice mode, corrections, scenarios) — expect
-error-state copy, scenario labels, and pronunciation-score UI; watch for server-diagnostic leaks (convention #4).
+## ✅ Task 15 DONE `49553cc` + lint-fix `07cb3fa` — `conversation` namespace. Tip `07cb3fa`. ONE fix wave (a GATE catch, NOT a review finding).
+Gate (controller re-ran all three): **tsc 0 · 1619 tests / 196 files · lint exit 0 / 80 pre-existing / 23
+files, 0 new.** 6 components + 1 page; 89-line en+vi catalogs; catalog pin 19/19. The AI voice-conversation
+module — most error-path-heavy task so far.
+**⚠️ GATE CATCH — proof the controller must ALWAYS re-run gates itself, never trust the subagent:** feature
+commit `49553cc` shipped a lint ERROR (`message-bubble.test.tsx:88` `let resolveFetch = () => {}` tripped
+`no-empty-function`; `npm run lint` exited 1), yet the implementer reported "0 new / unchanged baseline." Sent
+back via SendMessage → fixed in `07cb3fa` (comment body). The REVIEW itself was 0 Critical/Important — this fix
+wave was a pre-review gate failure, distinct from a review finding. (This is a `no-empty-function`, i.e. an
+ERROR not a WARNING — the 80-warning count masked it; ALWAYS check exit code + error count, not just the 80.)
+**Load-bearing SCENARIOS 3-consumer rewire (convention #2) — done right.** `SCENARIOS` reduced to
+`readonly ScenarioId[]` (labels/descriptions moved to catalog keyed by id); ALL 3 consumers — `scenario-picker`,
+`conversation-app` (chat header), `session-history-list` (history rows) — resolve via a shared
+`scenarioLabel(t, scenarioType)` helper (t PASSED IN — no hook at module scope), preserving the exact fallback
+chain: known id → translated label; unknown → raw `scenarioType`; missing → `scenarios.fallback` ("Conversation").
+Reviewer grepped: no `SCENARIOS[i].label`/`.find(...).label` survives. Scenario labels contain Japanese in
+parens (`Restaurant (レストラン)`) — EN verbatim keeps it, VN translates English portion + keeps Japanese.
+**Implementer found a THIRD convention-#4 leak the audit didn't name:** `conversation-app.tsx`
+`friendlyErrorFrom` had the identical `return body.error ?? fallback`→`role="alert"` bug as pre-Task-14
+reading-quiz → fixed (console.error + translated fallback). Its 3 catch blocks carried the byte-identical
+network string → reused `common.errors.network`, now = **7 consuming surfaces**. Also reused
+`common.states.loading` ("Loading…" U+2026) for the play-state; the bubble-specific "…couldn't play that
+message." correctly kept OUT of common. **The convention-#4 defect class keeps re-appearing across modules
+(reading-quiz, conversation-app) via the same `friendlyErrorFrom`/`body.error ?? fallback` idiom — Task 16+
+implementers should GREP for `?? fallback` / `body.error` / `\.message` reaching a `role="alert"`/`setError` in
+EVERY module they touch, even though the class was nominally "closed" at Task 12.**
+**THREE distinct honest 503 degrade paths** (all must stay honest in both locales — launch state): STT
+`voiceRecorder.notConfigured`, TTS `messageBubble.notConfigured`, Claude `app.notConfigured`. Content/chrome
+clean — chat `message.content` + AI corrections stay raw (D8). Review (opus): Spec PASS · Quality PASS, 0
+Critical/Important.
+**Carried Minors (both non-blocking):** (1) `conversation-app.tsx:200` a 503 short-circuits before
+`friendlyErrorFrom`, so the 503 body's `error` isn't `console.error`'d — defensible (honest degrade, nothing
+leaks), accepted. (2) reviewer couldn't verify from-diff whether `POST /api/conversation/session` returns 503 —
+**controller verified: NO 503 in that route**, so startSession's `friendlyErrorFrom`-only handling is correct;
+CLOSED, non-issue.
+
+## ▶ NEXT = Task 16 (`community` + `playlists` + `leaderboard` + `profile` — FOUR namespaces, one task). Tip `07cb3fa`, tree clean. Plan line 910.
+Big multi-module task — **AUDIT EACH module's file list + import graph FIRST** (convention #2), one namespace
+per module (spec P4). Put ALL SIX standing conventions + the **5-step namespace-wiring list** (incl.
+`types/messages.d.ts`) + **`useTranslations`-for-all-synchronous-components** + the **refined getTranslations
+rule** (only where chrome exists) + the **`friendlyErrorFrom`/`body.error` grep** (convention #4 keeps
+recurring) in the implementer AND reviewer briefs. Watch for: leaderboard consent-scoped copy + the
+user-mandated G2 UX order (own week FIRST then community), forum `topic` labels (general/grammar/vocab/
+listening/speaking/jlpt/study-tips — likely an exported label map like Task 13/15's SCENARIOS), playlist
+public/private copy, peer-review consent copy. Same cadence (fresh sonnet implementer → opus review → fix wave
+if needed; controller re-runs all three gates itself). Then Task 17 (`admin`+`companion`) + 18 (metadata
+sweep) + 19 (`common.*` consumer audit) remain.
 
 ## (superseded) ▶ NEXT was 11e (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 

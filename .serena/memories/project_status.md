@@ -30,11 +30,20 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-23) — Task **15** (`conversation`) is next; tree is clean, nothing owed
+## ▶ NEXT ACTION (updated 2026-07-23) — Task **16** (`community`+`playlists`+`leaderboard`+`profile`) is next; tree clean, nothing owed
 **L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tip `ac29966`. Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 ALL
-committed and reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 ·
-1594 tests / 195 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
+via `superpowers:subagent-driven-development`. **Tip `07cb3fa`. Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15
+ALL committed and reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 ·
+1619 tests / 196 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
+
+**Task 15 done `49553cc` + lint-fix `07cb3fa`** (`conversation` ns — AI voice module, most error-path-heavy so
+far). ONE fix wave, but it was a GATE catch not a review finding: the feature commit shipped a lint ERROR
+(`no-empty-function` in a test) that the controller's own gate re-run caught (impl's "0 new" claim was false)
+— fixed via SendMessage. Review itself came back 0 Critical/Important. Load-bearing SCENARIOS 3-consumer label
+rewire done right (shared `scenarioLabel(t,...)` helper, fallback chain preserved). Implementer found a THIRD
+convention-#4 leak (conversation-app `friendlyErrorFrom`) → `common.errors.network` now = **7 surfaces**; also
+reused `common.states.loading`. Three distinct honest 503 degrade paths (STT/TTS/Claude). Detail +2 carried
+Minors in `mem:l9a_localization_run_state`.
 
 **Task 14 done `ac29966`** (`reading` ns — 39 leaves; 2nd consecutive 0-fix-wave task). Import graph clean.
 **The D8 content/chrome boundary was the risk and was drawn exactly right** — reading passages, their
@@ -78,7 +87,7 @@ here; **N5–N1 level labels NOT translated**; JLPT stays "JLPT". **AUDIT the fi
 **Task 11 was SPLIT into 11a-11e** (plan commit `087b342`) after measuring it at 3793 LOC = 6.9x Task 10.
 11a–11e ✅ (Task 11 DONE) · 12 ✅ `5dde8c8`+`4f9b473` (`mining`). **Tasks 13-19 + a metadata sweep (Task 18)
 remain**. Namespaces so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`, `grammar`,
-`videos`, `dictation`, `shadowing`, `mining`, `jlpt`, `reading` (14 done).
+`videos`, `dictation`, `shadowing`, `mining`, `jlpt`, `reading`, `conversation` (15 done).
 
 **⚠ The plan's file lists have now been wrong FOUR times, and 11d's miss crossed MODULES:** translating
 the `useRecorder` hook broke 13 tests in `components/conversation/` because `voice-recorder-button.tsx`
