@@ -23,6 +23,17 @@ subagents (the Agent tool's `model` param accepts `opus` / `fable` / `sonnet` / 
 - Everything else in L9b (feature UIs, GDPR delete-my-data, transcript-submit UI, restyle via the
   semantic-colour tier, tutorial) → **stay on Opus 4.8**, no ask needed.
 
+### ⭐ REFINEMENT (user-approved 2026-07-24, after the L9b Companion Presence brainstorm+plan ran on Fable)
+**The Fable trigger is the DESIGN/DECOMPOSITION phase, not the BUILD phase — even for a subject the
+list above names as "hardest".** Once a plan doc exists with per-task tests, code, commands and
+commit messages, the hard reasoning has been *extracted into the plan*; executing those tasks is
+Opus work and Fable would be 2× cost for no gain. Worked example: "companion state machine" is
+listed as a Fable candidate, but after decomposition Task 1 of
+`docs/superpowers/plans/2026-07-24-l9b-companion-presence.md` is a ~30-line pure function with its
+transition table and tests already written — no long horizon left. So: run brainstorm + plan-writing
+on Fable (after asking), then **drop back to Opus 4.8 for execution**, including subagents.
+Do not re-litigate this per task in L8/L9c.
+
 ## ⚠ Money caveat — verify before assuming Fable is "free"
 User has **$100 free Fable credit**. It only offsets cost if Claude Code bills through the SAME
 API account/key that holds the credit. If Claude Code runs on a **subscription (Max/Pro)**, it does
