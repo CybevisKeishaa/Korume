@@ -85,7 +85,7 @@ describe("MessageBubble", () => {
   });
 
   it("shows the shared common.states.loading text (not its own '▶ Play' label) while the TTS fetch is in flight — swap-proof play-state check", async () => {
-    let resolveFetch: (value: Response) => void = () => {};
+    let resolveFetch: (value: Response) => void = () => undefined;
     fetchMock = vi.fn(
       () =>
         new Promise<Response>((resolve) => {
