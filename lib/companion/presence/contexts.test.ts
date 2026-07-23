@@ -8,6 +8,10 @@ describe("CONTEXT_PRIORITY (spec 1 §5.10 bands)", () => {
     for (const [, priority] of entries) expect(priority).toBeGreaterThanOrEqual(50);
   });
 
+  it("assigns every context a distinct priority so arbitration is deterministic (§5.10)", () => {
+    expect(new Set(Object.values(CONTEXT_PRIORITY)).size).toBe(4);
+  });
+
   it("post-session address outranks empty-state guidance", () => {
     expect(CONTEXT_PRIORITY.finished_shadowing).toBeLessThan(CONTEXT_PRIORITY.empty_library);
   });

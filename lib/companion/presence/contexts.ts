@@ -1,9 +1,10 @@
 /**
  * Experience contexts (Spec 1 §5.3): surfaces announce WHAT HAPPENED, never
- * business payloads and never what to say (§5.12). Every context in this
- * union is addressable — a surface merely being visited is presence (an
- * anchor), not a context: "a rest point with nothing meaningful to say gets
- * silence, not a scripted greeting" (Spec 1 §3.4).
+ * business payloads and never what to say (§5.12). The spec's context
+ * vocabulary is broader than this union and does include visit-style contexts
+ * (e.g. `entering_dashboard`); this plan deliberately emits none of them,
+ * because "a rest point with nothing meaningful to say gets silence, not a
+ * scripted greeting" (Spec 1 §3.4).
  */
 export type ExperienceContext =
   | "finished_shadowing"
