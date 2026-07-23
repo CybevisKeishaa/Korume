@@ -3,7 +3,7 @@ import { speechKeyFor } from "./speech";
 import type { ExperienceContext } from "./contexts";
 
 describe("speechKeyFor", () => {
-  it("maps every context to a distinct companion.* key", () => {
+  it("maps every context to a distinct speech.* key", () => {
     const contexts: ExperienceContext[] = ["finished_shadowing", "memory_created", "empty_library", "empty_mining_deck"];
     const keys = contexts.map((c) => speechKeyFor(c, 1));
     expect(keys).toEqual([

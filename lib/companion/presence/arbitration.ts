@@ -19,6 +19,23 @@ export function prunePending(pending: PendingContext[], now: number): PendingCon
 }
 
 /**
+ * Deterministic total order over pending contexts: priority (lower wins), then
+ * earlier `emittedAt`, then context name. Negative if `a` wins, positive if `b`
+ * wins, 0 only when both fields and the context are identical.
+ *
+ * Exported so levels 2 and 3 are testable — they are unobservable through
+ * `resolve` while `CONTEXT_PRIORITY` is injective (equal priority implies the
+ * same context, and `Resolution` carries only the context, not `emittedAt`).
+ */
+export function comparePending(a: PendingContext, b: PendingContext): number {
+  const byPriority = CONTEXT_PRIORITY[a.context] - CONTEXT_PRIORITY[b.context];
+  if (byPriority !== 0) return byPriority;
+  const byEmittedAt = a.emittedAt - b.emittedAt;
+  if (byEmittedAt !== 0) return byEmittedAt;
+  return a.context.localeCompare(b.context);
+}
+
+/**
  * Deterministic arbitration (Spec 1 §5.10): at most one address. Order:
  * priority (lower wins) → emittedAt (earlier wins) → context name. An active
  * experience cooldown suppresses everything except milestone-band priorities
@@ -30,14 +47,13 @@ export function resolve(pending: PendingContext[], cooldown: CooldownState, now:
 
   // Reduce rather than sort()[0]: on a non-empty array it is total, so the
   // winner needs no undefined-narrowing under `noUncheckedIndexedAccess`.
-  // Picking the first minimum matches a stable sort's leading element.
-  const best = live.reduce((a, b) => {
-    const byPriority = CONTEXT_PRIORITY[a.context] - CONTEXT_PRIORITY[b.context];
-    if (byPriority !== 0) return byPriority <= 0 ? a : b;
-    if (a.emittedAt !== b.emittedAt) return a.emittedAt <= b.emittedAt ? a : b;
-    return a.context.localeCompare(b.context) <= 0 ? a : b;
-  });
+  // Keeping the incumbent on ties picks the FIRST minimum, matching a stable
+  // sort's leading element.
+  const best = live.reduce((a, b) => (comparePending(a, b) <= 0 ? a : b));
 
+  // Clock skew / a future `lastAddressAt` makes this delta negative, so the
+  // cooldown reads as active and the Companion stays silent — deliberately the
+  // safe direction: silence rather than a spurious address.
   const cooldownActive = cooldown.lastAddressAt != null && now - cooldown.lastAddressAt <= COOLDOWN_WINDOW_MS;
   if (cooldownActive && CONTEXT_PRIORITY[best.context] > COOLDOWN_OVERRIDE_MAX_PRIORITY) {
     return { kind: "silence" };
