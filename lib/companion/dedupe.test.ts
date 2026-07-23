@@ -18,8 +18,9 @@ describe("dedupeKeyFor", () => {
   it("first_meeting and first_video_completed are once-per-lifetime constants", () => {
     expect(dedupeKeyFor("first_meeting")).toBe("first_meeting");
     // Constant (not per-video): the (user_id, dedupe_key) unique upsert is
-    // what enforces "first EVER completed video" race-free at the DB.
-    expect(dedupeKeyFor("first_video_completed", { videoId: "v1" })).toBe("first_video_completed");
+    // what enforces "first EVER completed video" race-free at the DB. Since
+    // no ref can influence the key, `MemoryRef` no longer carries a videoId.
+    expect(dedupeKeyFor("first_video_completed")).toBe("first_video_completed");
   });
   it("throws when a required ref is missing", () => {
     expect(() => dedupeKeyFor("line_mastered")).toThrow();

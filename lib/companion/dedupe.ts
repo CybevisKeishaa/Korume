@@ -3,7 +3,6 @@ import type { MemoryType, RelationshipPhase } from "./types";
 export interface MemoryRef {
   lineId?: string;
   cardId?: string;
-  videoId?: string;
   jlptLevel?: string;
   phase?: RelationshipPhase;
 }

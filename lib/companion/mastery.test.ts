@@ -18,6 +18,14 @@ describe("qualifiesAsLineMastered (spec D5 — deterministic, honest)", () => {
     expect(qualifiesAsLineMastered([90, 85], 88)).toBe(false); // no earlier struggle
   });
 
+  it("a score of exactly TARGET_SCORE qualifies (the boundary is inclusive)", () => {
+    expect(qualifiesAsLineMastered([60, 75], 80)).toBe(true);
+  });
+
+  it("an earlier attempt of exactly TARGET_SCORE is not a struggle", () => {
+    expect(qualifiesAsLineMastered([80, 85], 90)).toBe(false);
+  });
+
   it("constants are the spec's (hidden tuning, not UI)", () => {
     expect(TARGET_SCORE).toBe(80);
     expect(MASTERY_ATTEMPTS).toBe(3);
