@@ -9,12 +9,17 @@ describe("dedupeKeyFor", () => {
     expect(dedupeKeyFor("companion_grew", { phase: 2 })).toBe("companion_grew:2");
     expect(dedupeKeyFor("companion_grew", { phase: 3 })).toBe("companion_grew:3");
   });
-  it("scopes line/card/video/jlpt types by their ref", () => {
+  it("scopes line/card/jlpt types by their ref", () => {
     expect(dedupeKeyFor("line_mastered", { lineId: "L1" })).toBe("line_mastered:L1");
     expect(dedupeKeyFor("mining_saved", { cardId: "C1" })).toBe("mining_saved:C1");
-    expect(dedupeKeyFor("first_video_completed", { videoId: "V1" })).toBe("first_video_completed:V1");
     expect(dedupeKeyFor("jlpt_passed", { jlptLevel: "N4" })).toBe("jlpt_passed:N4");
     expect(dedupeKeyFor("pinned_line", { lineId: "L9" })).toBe("pinned_line:L9");
+  });
+  it("first_meeting and first_video_completed are once-per-lifetime constants", () => {
+    expect(dedupeKeyFor("first_meeting")).toBe("first_meeting");
+    // Constant (not per-video): the (user_id, dedupe_key) unique upsert is
+    // what enforces "first EVER completed video" race-free at the DB.
+    expect(dedupeKeyFor("first_video_completed", { videoId: "v1" })).toBe("first_video_completed");
   });
   it("throws when a required ref is missing", () => {
     expect(() => dedupeKeyFor("line_mastered")).toThrow();
@@ -30,6 +35,10 @@ describe("memoryTitleFor", () => {
       key: "memoryTitle.firstVideoCompleted",
       values: {},
     });
+  });
+
+  it("first_meeting maps to its own descriptor", () => {
+    expect(memoryTitleFor("first_meeting")).toEqual({ key: "memoryTitle.firstMeeting", values: {} });
   });
 
   it("keys jlpt_passed off {level}", () => {

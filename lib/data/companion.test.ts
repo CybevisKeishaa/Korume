@@ -1,8 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
-import { createServiceClient } from "@/lib/supabase/service";
-
-vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 
 import { captureCompanionMemories, getAnchorMemories, listJournal, recordDiscoveredMemory } from "./companion";
 import { PHASE_THRESHOLDS } from "@/lib/companion";
@@ -12,10 +9,6 @@ const USER_ID = "u1";
 function hasOp(calls: QueryCall[], op: QueryCall["op"]) {
   return calls.some((c) => c.op === op);
 }
-
-beforeEach(() => {
-  vi.mocked(createServiceClient).mockReset();
-});
 
 describe("recordDiscoveredMemory", () => {
   it("returns true when a new row is inserted", async () => {

@@ -12,7 +12,8 @@ export type MemoryType =
   | "first_video_completed"
   | "jlpt_passed"
   | "companion_grew"
-  | "pinned_line";
+  | "pinned_line"
+  | "first_meeting";
 
 export interface CompanionMemory {
   id: string;

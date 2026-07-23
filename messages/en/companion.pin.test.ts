@@ -26,6 +26,7 @@ describe("companion.json EN — memoryTitleFor descriptors (spec §4.4)", () => 
     expect(en.memoryTitle.lineMastered).toBe("The line you practiced until you could finally say it.");
     expect(en.memoryTitle.miningSaved).toBe("A line you decided to save.");
     expect(en.memoryTitle.firstVideoCompleted).toBe("The first video you finished.");
+    expect(en.memoryTitle.firstMeeting).toBe("The day the two of you met.");
   });
 
   it("pins the jlptPassed template with its {level} placeholder", () => {
@@ -53,13 +54,19 @@ describe("companion.json EN — memoryTitleFor descriptors (spec §4.4)", () => 
  * VI `companionGrew` copy is what actually ships to the learner, and the
  * original P12 violation lived in Vietnamese ("...bước sang giai đoạn 2").
  * An EN-only guard would not fail if a future VI edit reintroduced a stage
- * digit — so guard VI explicitly. (Pins stay EN-only by convention; this is a
- * semantic P12 check on the VI catalog, co-located with the EN guard.)
+ * digit — so guard VI explicitly. (Pins are EN-only by convention, with one
+ * exception below: `firstMeeting` is VI-pinned too, because its VI copy is
+ * deliberately distinct from `companionGrew.1`'s near-identical phrasing and
+ * a silent copy/paste of one over the other would otherwise go unnoticed.)
  */
 describe("companion.json VI — P12 stage-number guard (primary learner locale)", () => {
   it("no companionGrew phrasing contains a bare digit-as-stage", () => {
     for (const phrase of Object.values(vi.memoryTitle.companionGrew)) {
       expect(phrase).not.toMatch(/\d/);
     }
+  });
+
+  it("pins the firstMeeting phrasing", () => {
+    expect(vi.memoryTitle.firstMeeting).toBe("Ngày hai bạn gặp nhau.");
   });
 });

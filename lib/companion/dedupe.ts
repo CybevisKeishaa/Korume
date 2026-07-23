@@ -27,11 +27,19 @@ export function dedupeKeyFor(type: MemoryType, ref: MemoryRef = {}): string {
     case "mining_saved":
       return `mining_saved:${need(ref.cardId, type, "cardId")}`;
     case "first_video_completed":
-      return `first_video_completed:${need(ref.videoId, type, "videoId")}`;
+      // Constant on purpose: "first EVER completed video" is enforced by the
+      // (user_id, dedupe_key) unique upsert itself — race-free at the DB.
+      return "first_video_completed";
+    case "first_meeting":
+      return "first_meeting";
     case "jlpt_passed":
       return `jlpt_passed:${need(ref.jlptLevel, type, "jlptLevel")}`;
     case "pinned_line":
       return `pinned_line:${need(ref.lineId, type, "lineId")}`;
+    default: {
+      const exhaustive: never = type;
+      throw new TypeError(`dedupeKeyFor: unhandled memory type ${String(exhaustive)}`);
+    }
   }
 }
 
@@ -67,6 +75,8 @@ export function memoryTitleFor(
       return { key: "memoryTitle.jlptPassed", values: { level: ref.jlptLevel ?? "" } };
     case "companion_grew":
       return { key: `memoryTitle.companionGrew.${ref.phase ?? 1}`, values: {} };
+    case "first_meeting":
+      return { key: "memoryTitle.firstMeeting", values: {} };
     case "pinned_line":
       return null;
   }
