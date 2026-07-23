@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Inter, Noto_Sans_JP } from "next/font/google";
-import { NextIntlClientProvider, hasLocale } from "next-intl";
+import { NextIntlClientProvider, hasLocale, type Locale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import {
   ThemeProvider,
@@ -18,14 +18,25 @@ const notoJp = Noto_Sans_JP({
   variable: "--font-jp",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Nihongo Cinema — Learn Japanese through video",
-    template: "%s · Nihongo Cinema",
-  },
-  description:
-    "Learn Japanese through video shadowing, kanji, vocab, grammar and JLPT prep.",
-};
+// `generateMetadata` runs in its own scope, so the locale must be threaded in
+// explicitly — a bare `getTranslations("common")` here would rely on ambient
+// request state and can silently drop the page out of static rendering
+// (spec §7 risk 2). The `"%s · Nihongo Cinema"` template stays a literal: the
+// separator and brand are not translated.
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "common" });
+  return {
+    title: {
+      default: t("meta.defaultTitle"),
+      template: "%s · Nihongo Cinema",
+    },
+    description: t("meta.description"),
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [

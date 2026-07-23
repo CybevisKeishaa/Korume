@@ -2,6 +2,10 @@
   "appName": "Nihongo Cinema",
   "appNameJp": "日本語シネマ",
   "auth": { "signIn": "Sign in", "signOut": "Sign out", "signUp": "Create account" },
+  "meta": {
+    "defaultTitle": "Nihongo Cinema — Learn Japanese through video",
+    "description": "Learn Japanese through video shadowing, kanji, vocab, grammar and JLPT prep."
+  },
   "actions": {
     "save": "Save",
     "cancel": "Cancel",

@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { AuthForm } from "@/components/auth/auth-form";
 import { Container } from "@/components/ui/container";
 import { getTranslations } from "@/lib/i18n/server";
 
-export const metadata = { title: "Sign in" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "common" });
+  return { title: t("auth.signIn") };
+}
 
 export default async function LoginPage({
   searchParams,
