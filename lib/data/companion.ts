@@ -1,9 +1,17 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dedupeKeyFor, relationshipPhaseForXp, type CompanionMemory, type MemoryType } from "@/lib/companion";
+import {
+  dedupeKeyFor,
+  qualifiesAsLineMastered,
+  relationshipPhaseForXp,
+  TARGET_SCORE,
+  type CompanionMemory,
+  type MemoryType,
+} from "@/lib/companion";
 import type { MemoryRef } from "@/lib/companion/dedupe";
 import type { LearningOutcomeSource, SourceIdParts } from "@/lib/gamification";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/data/videos";
 import type { PinMemoryInput } from "@/lib/validation/companion";
@@ -191,6 +199,86 @@ export async function captureCompanionMemories(supabase: SupabaseClient, input: 
     }
   } catch (err) {
     console.error("[companion] captureCompanionMemories failed:", err);
+  }
+}
+
+export interface ShadowScoreCaptureInput {
+  userId: string;
+  sessionId: string;
+  videoId: string | null;
+  transcriptLineId: string | null;
+  pronunciationScore: number;
+}
+
+/**
+ * `first_shadow` + `line_mastered` producers (spec §6). Hooks the pronunciation
+ * score WRITE, not session creation — scores don't exist yet when a shadowing
+ * session row is inserted; Azure fills them in later (see
+ * `lib/data/pronunciation.ts::scorePronunciation`).
+ *
+ * Best-effort and idempotent: it MUST NEVER throw into the scoring request
+ * (§6.5), and the dedupe keys make repeats no-ops — `first_shadow` is a
+ * constant key (the first line the learner ever shadows to target, DB-enforced
+ * by the unique upsert), `line_mastered` is keyed per line.
+ */
+export async function captureShadowScoreMemories(input: ShadowScoreCaptureInput): Promise<void> {
+  try {
+    if (input.pronunciationScore < TARGET_SCORE) return;
+    // Service role: discovered memories have a gifted-only RLS insert policy,
+    // so the capture gate writes with the same client `recordDiscoveredMemory`
+    // documents.
+    const service = createServiceClient();
+
+    let lineTextJp: string | null = null;
+    let timestampSeconds: number | null = null;
+    if (input.transcriptLineId) {
+      const { data: line } = await service
+        .from("transcript_lines")
+        .select("text_jp, start_time")
+        .eq("id", input.transcriptLineId)
+        .maybeSingle();
+      const l = line as { text_jp: string | null; start_time: number | null } | null;
+      lineTextJp = l?.text_jp ?? null;
+      timestampSeconds = l?.start_time ?? null;
+    }
+
+    await recordDiscoveredMemory(service, {
+      userId: input.userId,
+      memoryType: "first_shadow",
+      isAnchor: true,
+      videoId: input.videoId,
+      transcriptLineId: input.transcriptLineId,
+      lineTextJp,
+      timestampSeconds,
+    });
+
+    if (input.transcriptLineId) {
+      // This learner's OTHER scored attempts on this same line — the struggle
+      // history `qualifiesAsLineMastered` arbitrates on.
+      const { data: rows } = await service
+        .from("shadowing_sessions")
+        .select("pronunciation_score")
+        .eq("user_id", input.userId)
+        .eq("transcript_line_id", input.transcriptLineId)
+        .neq("id", input.sessionId)
+        .not("pronunciation_score", "is", null);
+      const previous = ((rows ?? []) as { pronunciation_score: number | null }[])
+        .map((r) => r.pronunciation_score)
+        .filter((score): score is number => score != null);
+      if (qualifiesAsLineMastered(previous, input.pronunciationScore)) {
+        await recordDiscoveredMemory(service, {
+          userId: input.userId,
+          memoryType: "line_mastered",
+          ref: { lineId: input.transcriptLineId },
+          videoId: input.videoId,
+          transcriptLineId: input.transcriptLineId,
+          lineTextJp,
+          timestampSeconds,
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[companion] captureShadowScoreMemories failed:", err);
   }
 }
 

@@ -33,6 +33,10 @@
  * backend: the pending-videos queue pages forward with `gt` on `created_at`,
  * content-CRUD search uses `ilike`, and content-CRUD list pagination uses
  * `range`) — additive only, no existing behavior changed.
+ *
+ * `not` was added in Layer 9b (the Companion `line_mastered` producer reads a
+ * line's earlier *scored* attempts via `.not("pronunciation_score", "is",
+ * null)`) — additive only, no existing behavior changed.
  */
 
 export type QueryCall =
@@ -48,6 +52,7 @@ export type QueryCall =
   | { op: "gt"; column: string; value: unknown }
   | { op: "lt"; column: string; value: unknown }
   | { op: "is"; column: string; value: unknown }
+  | { op: "not"; column: string; operator: string; value: unknown }
   | { op: "ilike"; column: string; pattern: string }
   | { op: "order"; column: string; ascending: boolean }
   | { op: "limit"; count: number }
@@ -151,6 +156,10 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
       },
       is(column: string, value: unknown) {
         calls.push({ op: "is", column, value });
+        return builder;
+      },
+      not(column: string, operator: string, value: unknown) {
+        calls.push({ op: "not", column, operator, value });
         return builder;
       },
       ilike(column: string, pattern: string) {

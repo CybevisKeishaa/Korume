@@ -10,6 +10,7 @@ import {
 } from "@/lib/speech-scoring";
 import { speechErrorStatus, SPEECH_THROTTLE_RETRY_AFTER_MS } from "@/lib/http-status";
 import { validateAudioSize } from "@/lib/validation/audio";
+import { captureShadowScoreMemories } from "@/lib/data/companion";
 
 /**
  * Pronunciation scoring (differentiator #1 support, CLAUDE.md §5). The most
@@ -22,6 +23,13 @@ export interface ScorePronunciationInput {
   referenceText: string;
   /** When present, the scores are persisted onto this (owned) session row. */
   shadowingSessionId?: string;
+}
+
+/** The caller's own session row, as selected by the ownership lookup. */
+interface OwnedSession {
+  id: string;
+  video_id: string | null;
+  transcript_line_id: string | null;
 }
 
 export type ScorePronunciationResult =
@@ -53,15 +61,19 @@ export async function scorePronunciation(
   const sizeCheck = validateAudioSize({ size: input.audio.size });
   if (!sizeCheck.ok) return { ok: false, status: 422 };
 
+  // Kept beyond the ownership check: the Companion capture below needs the
+  // session's video/line pointers, and this is the only lookup that has them.
+  let ownedSession: OwnedSession | null = null;
   if (input.shadowingSessionId) {
     const { data: session, error: lookupError } = await supabase
       .from("shadowing_sessions")
-      .select("id")
+      .select("id, video_id, transcript_line_id")
       .eq("id", input.shadowingSessionId)
       .eq("user_id", user.id)
       .maybeSingle();
     if (lookupError) throw lookupError;
     if (!session) return { ok: false, status: 404 };
+    ownedSession = session as OwnedSession;
   }
 
   const audioBuffer = await input.audio.arrayBuffer();
@@ -90,6 +102,20 @@ export async function scorePronunciation(
       .eq("id", input.shadowingSessionId)
       .eq("user_id", user.id);
     if (updateError) throw updateError;
+
+    if (ownedSession) {
+      // The Companion's score-based producers hook HERE — this is the moment a
+      // pronunciation score first exists. Best-effort:
+      // `captureShadowScoreMemories` never throws (§6.5), so a memory hiccup
+      // can never fail the learner's scoring request.
+      await captureShadowScoreMemories({
+        userId: user.id,
+        sessionId: ownedSession.id,
+        videoId: ownedSession.video_id,
+        transcriptLineId: ownedSession.transcript_line_id,
+        pronunciationScore: result.pronunciationScore,
+      });
+    }
   }
 
   return { ok: true, data: result };

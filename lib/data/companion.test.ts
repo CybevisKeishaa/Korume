@@ -1,14 +1,50 @@
-import { describe, expect, it } from "vitest";
-import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createMockSupabase, type MockResult, type QueryCall } from "@/test/supabase-mock";
+import { createServiceClient } from "@/lib/supabase/service";
 
-import { captureCompanionMemories, getAnchorMemories, listJournal, recordDiscoveredMemory } from "./companion";
-import { PHASE_THRESHOLDS } from "@/lib/companion";
+vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
+
+import {
+  captureCompanionMemories,
+  captureShadowScoreMemories,
+  getAnchorMemories,
+  listJournal,
+  recordDiscoveredMemory,
+} from "./companion";
+import { PHASE_THRESHOLDS, TARGET_SCORE } from "@/lib/companion";
 
 const USER_ID = "u1";
+const SESSION_ID = "s1";
+const LINE_ID = "l1";
+const VIDEO_ID = "v1";
 
 function hasOp(calls: QueryCall[], op: QueryCall["op"]) {
   return calls.some((c) => c.op === op);
 }
+
+/** Point `createServiceClient()` at a mock client (the capture gate always
+ * writes with the service role — see `recordDiscoveredMemory`). */
+function mockService(tables: Parameters<typeof createMockSupabase>[0]["tables"]) {
+  const supabase = createMockSupabase({ tables });
+  vi.mocked(createServiceClient).mockReturnValue(supabase as unknown as ReturnType<typeof createServiceClient>);
+  return supabase;
+}
+
+/** `companion_memories` resolver that records every upserted row, in order. */
+function collectUpserts(into: Record<string, unknown>[]) {
+  return (calls: QueryCall[]): MockResult => {
+    const upsert = calls.find((c): c is Extract<QueryCall, { op: "upsert" }> => c.op === "upsert");
+    if (upsert) {
+      into.push(upsert.values as Record<string, unknown>);
+      return { data: { id: `m${into.length}` }, error: null };
+    }
+    return { data: [], error: null };
+  };
+}
+
+beforeEach(() => {
+  vi.mocked(createServiceClient).mockReset();
+});
 
 describe("recordDiscoveredMemory", () => {
   it("returns true when a new row is inserted", async () => {
@@ -260,5 +296,177 @@ describe("captureCompanionMemories", () => {
       passed: false,
     });
     expect(touched).toBe(false);
+  });
+});
+
+describe("captureShadowScoreMemories", () => {
+  it("does nothing below TARGET_SCORE", async () => {
+    // No tables registered: any `.from()` on the mock throws loudly, so the
+    // guard has to short-circuit BEFORE the service client is even created.
+    mockService({});
+    await expect(
+      captureShadowScoreMemories({
+        userId: USER_ID,
+        sessionId: SESSION_ID,
+        videoId: VIDEO_ID,
+        transcriptLineId: LINE_ID,
+        pronunciationScore: TARGET_SCORE - 1,
+      }),
+    ).resolves.toBeUndefined();
+    expect(vi.mocked(createServiceClient)).not.toHaveBeenCalled();
+  });
+
+  it("records first_shadow (anchor) with line pointers when the score reaches target", async () => {
+    const upserts: Record<string, unknown>[] = [];
+    let lineCalls: QueryCall[] = [];
+    mockService({
+      transcript_lines: (calls) => {
+        lineCalls = calls;
+        return { data: { text_jp: "こんにちは", start_time: 12.5 }, error: null };
+      },
+      // No earlier scored attempts on this line.
+      shadowing_sessions: () => ({ data: [], error: null }),
+      companion_memories: collectUpserts(upserts),
+    });
+
+    await captureShadowScoreMemories({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      videoId: VIDEO_ID,
+      transcriptLineId: LINE_ID,
+      pronunciationScore: TARGET_SCORE + 5,
+    });
+
+    // The line pointers come from the transcript line the session is on.
+    expect(lineCalls).toEqual(
+      expect.arrayContaining([{ op: "eq", column: "id", value: LINE_ID } as QueryCall]),
+    );
+    // A first-try success is `first_shadow` only — never also `line_mastered`.
+    expect(upserts).toHaveLength(1);
+    expect(upserts[0]).toMatchObject({
+      user_id: USER_ID,
+      kind: "discovered",
+      memory_type: "first_shadow",
+      dedupe_key: "first_shadow",
+      is_anchor: true,
+      video_id: VIDEO_ID,
+      transcript_line_id: LINE_ID,
+      line_text_jp: "こんにちは",
+      timestamp_seconds: 12.5,
+      title: null,
+    });
+  });
+
+  it("records line_mastered when the line finally reaches target after falling short", async () => {
+    const upserts: Record<string, unknown>[] = [];
+    let historyCalls: QueryCall[] = [];
+    mockService({
+      transcript_lines: () => ({ data: { text_jp: "こんにちは", start_time: 12.5 }, error: null }),
+      shadowing_sessions: (calls) => {
+        historyCalls = calls;
+        // Two earlier scored attempts, both short of target → the struggle rule holds.
+        return { data: [{ pronunciation_score: 60 }, { pronunciation_score: 75 }], error: null };
+      },
+      companion_memories: collectUpserts(upserts),
+    });
+
+    await captureShadowScoreMemories({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      videoId: VIDEO_ID,
+      transcriptLineId: LINE_ID,
+      pronunciationScore: TARGET_SCORE + 5,
+    });
+
+    // History is this learner's OTHER scored attempts on this same line.
+    expect(historyCalls).toEqual(
+      expect.arrayContaining([
+        { op: "eq", column: "user_id", value: USER_ID },
+        { op: "eq", column: "transcript_line_id", value: LINE_ID },
+        { op: "neq", column: "id", value: SESSION_ID },
+      ] as QueryCall[]),
+    );
+    expect(upserts).toHaveLength(2);
+    expect(upserts[1]).toMatchObject({
+      user_id: USER_ID,
+      kind: "discovered",
+      memory_type: "line_mastered",
+      dedupe_key: `line_mastered:${LINE_ID}`,
+      is_anchor: false,
+      video_id: VIDEO_ID,
+      transcript_line_id: LINE_ID,
+      line_text_jp: "こんにちは",
+      timestamp_seconds: 12.5,
+    });
+  });
+
+  it("does not record line_mastered when no earlier attempt fell short", async () => {
+    const upserts: Record<string, unknown>[] = [];
+    mockService({
+      transcript_lines: () => ({ data: { text_jp: "こんにちは", start_time: 12.5 }, error: null }),
+      // Both earlier attempts already hit target — nothing was ever a struggle.
+      shadowing_sessions: () => ({ data: [{ pronunciation_score: 90 }, { pronunciation_score: 85 }], error: null }),
+      companion_memories: collectUpserts(upserts),
+    });
+
+    await captureShadowScoreMemories({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      videoId: VIDEO_ID,
+      transcriptLineId: LINE_ID,
+      pronunciationScore: TARGET_SCORE + 5,
+    });
+
+    expect(upserts.map((row) => row.memory_type)).toEqual(["first_shadow"]);
+  });
+
+  it("records first_shadow with null line pointers when the session has no linked line", async () => {
+    const upserts: Record<string, unknown>[] = [];
+    // Only `companion_memories` is registered: touching `transcript_lines` or
+    // `shadowing_sessions` would throw, proving neither lookup runs.
+    mockService({ companion_memories: collectUpserts(upserts) });
+
+    await captureShadowScoreMemories({
+      userId: USER_ID,
+      sessionId: SESSION_ID,
+      videoId: VIDEO_ID,
+      transcriptLineId: null,
+      pronunciationScore: TARGET_SCORE,
+    });
+
+    expect(upserts).toHaveLength(1);
+    expect(upserts[0]).toMatchObject({
+      memory_type: "first_shadow",
+      is_anchor: true,
+      transcript_line_id: null,
+      line_text_jp: null,
+      timestamp_seconds: null,
+      video_id: VIDEO_ID,
+    });
+  });
+
+  it("never throws — a failing insert only console.errors (failure isolation §6.5)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockService({
+      transcript_lines: () => ({ data: { text_jp: "こんにちは", start_time: 12.5 }, error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+      companion_memories: () => ({ data: null, error: { message: "boom" } }),
+    });
+
+    await expect(
+      captureShadowScoreMemories({
+        userId: USER_ID,
+        sessionId: SESSION_ID,
+        videoId: VIDEO_ID,
+        transcriptLineId: LINE_ID,
+        pronunciationScore: TARGET_SCORE + 5,
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[companion] captureShadowScoreMemories failed:",
+      expect.objectContaining({ message: "boom" }),
+    );
+    errorSpy.mockRestore();
   });
 });
