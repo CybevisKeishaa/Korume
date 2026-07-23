@@ -357,8 +357,9 @@ dynamic ones (incl. `admin/content/[type]`, `reading/[id]`). Key decisions:
 
 ## ✅ Task 19 DONE — final gate, Plan 3 CLOSED. Commit `0cea7bf` (code) + memory commit. Tip after memory commit.
 Gate (controller re-ran ALL): tsc 0 · vitest **1731/1731 / 202 files** (standalone) · lint exit 0 / 80-23 / 0 new ·
-`npm run build` EXIT 0 (25 pages SSG per-locale) · playwright **4/5** (`review.spec` fails: register→dashboard
-needs a LIVE Supabase + seed vocab — environment dependency, NOT a regression; file unchanged since Layer 2).
+`npm run build` EXIT 0 (25 pages SSG per-locale) · playwright **5/5** (was 4/5 until local Supabase was set up:
+`npx supabase db reset` re-applied all 15 migrations incl. grants + N5/N4 content (vocab 60/kanji 45/grammar 10),
+which the register→review round-trip needs; NOT a code regression — the local DB had simply not been migrated).
 **Direct verification of the Task 18 deliverable:** started prod `next start`, curled `<title>` — `/vi/login`
 ="Đăng nhập · Nihongo Cinema", `/vi/register`="Tạo tài khoản · Nihongo Cinema", `/vi`="Nihongo Cinema — Học tiếng
 Nhật qua video", EN equivalents correct → generateMetadata + VI catalog render end-to-end, template applied.

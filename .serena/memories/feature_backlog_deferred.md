@@ -48,7 +48,7 @@ tech nits vẫn đọc ở project_status.
     `69f22e6`) · Plan 2 (design system, đã merge `fcd35af`) · Plan 3 (trích 21 namespace + bản dịch VN
     đầy đủ + metadata per-page, Tasks 1–19). Toàn shell giờ chạy VN dưới `/vi` và EN dưới `/en`.
     Baseline khi đóng Plan 3: tsc 0 · vitest **1731/1731 / 202 files** · lint exit 0 · build OK (25 trang
-    SSG per-locale) · e2e 4/5 (`review.spec` cần Supabase live — lỗi môi trường, không phải regression).
+    SSG per-locale) · e2e 5/5 (sau khi `npx supabase db reset` migrate+seed DB local).
     Launch VN-first (spec §8). → Khi branch merge vào master, cập nhật commit merge tại đây.
 
 ## Nguồn: L7 (Community + Admin)

@@ -37,7 +37,7 @@ VN under `/vi` and EN under `/en`, and every page's `<title>` is localized via p
 (Task 18). Task 19 closed the plan: string sweep clean (1 genuine miss fixed = admin nav aria), `common.player.*`
 demoted to `shadowing.*` (by-surface audit), `common.errors.network`/`states.loading` kept. Final baseline:
 **tsc 0 · vitest 1731/1731 / 202 files · lint exit 0 (80-23 baseline, 0 new) · build OK (25 pages SSG per-locale)
-· e2e 4/5** (`review.spec` needs live Supabase — env, not a regression). Details in
+· e2e 5/5** (needed `npx supabase db reset` to migrate+seed the local DB; not a code regression). Details in
 `mem:l9a_localization_run_state` (Task 18 + Task 19 blocks). **NEXT = the merge decision (finishing-a-development-
 branch, user's call); after merge, record the SHA here + in `mem:feature_backlog_deferred` #10, then L9b.**
 
