@@ -30,16 +30,22 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-23) — Task **16** (`community`+`playlists`+`leaderboard`+`profile`) is next; tree clean, nothing owed
-**✅ L9a Plan 3 COMPLETE (Tasks 1–19 ALL done) on branch `layer-9a-string-extraction` — ⏳ CHỜ MERGE to master
-(2026-07-23).** All 21 namespaces extracted + fully translated to VN, adaptive-furigana/mining/etc. shell now runs
+## ▶ NEXT ACTION (updated 2026-07-24) — **L9a fully DONE + MERGED. NEXT = L9b (surfaces).** Tree clean.
+**✅✅ ALL OF L9a COMPLETE — Plan 3 MERGED to master `--no-ff` `d7b158c` (2026-07-24).** Branch
+`layer-9a-string-extraction` merged then deleted (user chose local merge, branching policy). NOT pushed
+(origin/master 78 commits behind — never push unasked; prune stale origin/layer-9a-* refs when a push happens).
+All 21 namespaces extracted + fully translated to VN, adaptive-furigana/mining/etc. shell now runs
 VN under `/vi` and EN under `/en`, and every page's `<title>` is localized via per-page `generateMetadata`
 (Task 18). Task 19 closed the plan: string sweep clean (1 genuine miss fixed = admin nav aria), `common.player.*`
-demoted to `shadowing.*` (by-surface audit), `common.errors.network`/`states.loading` kept. Final baseline:
+demoted to `shadowing.*` (by-surface audit), `common.errors.network`/`states.loading` kept. Pre-merge baseline
+(tree identical to merge result, master had not diverged from fork-point e5893e9):
 **tsc 0 · vitest 1731/1731 / 202 files · lint exit 0 (80-23 baseline, 0 new) · build OK (25 pages SSG per-locale)
 · e2e 5/5** (needed `npx supabase db reset` to migrate+seed the local DB; not a code regression). Details in
-`mem:l9a_localization_run_state` (Task 18 + Task 19 blocks). **NEXT = the merge decision (finishing-a-development-
-branch, user's call); after merge, record the SHA here + in `mem:feature_backlog_deferred` #10, then L9b.**
+`mem:l9a_localization_run_state` (Task 18 + Task 19 blocks).
+**→ NEXT = L9b surfaces** (Companion Plans 2/3 + missing feature UIs + landing/cinematic + transcript-submit UI
++ GDPR delete-my-data + tutorial). Start with `superpowers:brainstorming` before plan mode. ⚠ Model policy
+(`mem:model_selection_policy`): default Opus 4.8, but PAUSE + ASK before Fable for the L9b brainstorm,
+plan-decomposition, or the hardest long-horizon builds (cinematic scroll orchestration, companion state machine).
 
 <details><summary>(historical) Plan 3 mid-execution snapshot — superseded by the COMPLETE line above</summary>
 
@@ -210,7 +216,7 @@ AI: `@anthropic-ai/sdk` 0.111.0. Tests: Vitest+RTL (unit), Playwright (`tests/e2
 One branch per layer `layer-<n>-<slug>` off master; merge `--no-ff` ONLY after DoD (tests pass +
 code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`,
 L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`, L7 `01ae59d`, Spec A `201a9b4`,
-Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`.
+Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`, L9a-Plan3 `d7b158c`.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),

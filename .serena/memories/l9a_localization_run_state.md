@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ✅ COMPLETE on branch `layer-9a-string-extraction` (Tasks 1–19 ALL done) — ⏳ CHỜ MERGE to master (finishing decision is the user's)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ✅ MERGED to master `--no-ff` `d7b158c` (2026-07-24; branch `layer-9a-string-extraction` deleted). ALL OF L9a DONE. NEXT = L9b.
 
 ## 🔒 FROZEN EXECUTION CHECKLIST — Tasks 16–19 (canonical; briefs REFERENCE this, do NOT re-paste it)
 Controller directive (user, 2026-07-23; reaffirmed after Task 16 — the frozen-brief approach worked, keep
