@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/test/render";
+import { render, screen, within } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ForumBoard } from "./forum-board";
 import type { ForumPostListItem, ForumPostsPage } from "@/lib/forum-types";
@@ -89,6 +89,31 @@ describe("ForumBoard", () => {
   it("shows an empty state when there are no posts", () => {
     render(<ForumBoard initialPage={{ posts: [], nextCursor: null }} />);
     expect(screen.getByText(/no posts yet/i)).toBeInTheDocument();
+  });
+
+  // Swap-proof (Task 16 audit convention #3): each chip's visible label must
+  // drive that same topic's fetch — a swapped label/value pairing would
+  // still pass a plain "does this text exist" check but would filter the
+  // wrong topic when clicked.
+  it("lists the eight topic chips in order, each label driving its own topic's fetch", async () => {
+    const fetchSpy = mockFetchJson({ data: { posts: [], nextCursor: null } });
+    render(<ForumBoard initialPage={initialPage} />);
+
+    const group = screen.getByRole("group", { name: /filter by topic/i });
+    const chips = within(group).getAllByRole("button");
+    expect(chips.map((c) => c.textContent)).toEqual([
+      "All",
+      "General",
+      "Grammar",
+      "Vocab",
+      "Listening",
+      "Speaking",
+      "JLPT",
+      "Study tips",
+    ]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Speaking" }));
+    expect(fetchSpy).toHaveBeenCalledWith("/api/forum/posts?topic=speaking");
   });
 
   it("shows an error message when a topic re-fetch fails", async () => {

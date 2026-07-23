@@ -2,19 +2,21 @@
 
 import { Link } from "@/lib/i18n/navigation";
 import { usePathname } from "@/lib/i18n/navigation";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-
-const TABS = [
-  { href: "/community", label: "Forum" },
-  { href: "/community/peer-review", label: "Peer review" },
-] as const;
 
 /** Section-level tab strip inside the community area (Forum vs. Peer review). */
 export function CommunityTabs() {
   const pathname = usePathname();
+  const t = useTranslations("community");
+
+  const TABS = [
+    { href: "/community", label: t("tabs.forum") },
+    { href: "/community/peer-review", label: t("tabs.peerReview") },
+  ] as const;
 
   return (
-    <nav aria-label="Community sections" className="flex gap-2 border-b border-border">
+    <nav aria-label={t("tabs.sectionsAriaLabel")} className="flex gap-2 border-b border-border">
       {TABS.map((tab) => {
         const active = tab.href === "/community" ? pathname === "/community" : pathname.startsWith(tab.href);
         return (

@@ -1,0 +1,18 @@
+{
+  "title": "Videos",
+  "subtitle": "Shadow and study Japanese YouTube videos. Paste a link to add one.",
+  "yourVideos": "Your videos",
+  "empty": "No videos yet — paste a YouTube URL above to start.",
+  "pendingReview": "Pending review",
+  "urlLabel": "YouTube URL",
+  "import": "Import video",
+  "importing": "Importing…",
+  "errors": {
+    "invalidUrl": "That doesn't look like a valid YouTube URL.",
+    "sessionExpired": "Your session expired — please sign in again.",
+    "fetchFailed": "We couldn't fetch details for that video. Double-check the link and try again.",
+    "rateLimited": "Too many imports — please wait {seconds}s and try again.",
+    "rateLimitedGeneric": "Too many imports — please wait a moment and try again.",
+    "generic": "Something went wrong importing that video. Please try again."
+  }
+}

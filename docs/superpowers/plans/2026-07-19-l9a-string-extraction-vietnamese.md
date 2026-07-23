@@ -47,6 +47,7 @@ Twenty catalogs written across twenty independently-executed tasks will drift un
 | Leaderboard | Bảng xếp hạng | |
 | Profile | Hồ sơ | |
 | Review (SRS) | Ôn tập | verb and noun |
+| Spaced repetition | Lặp lại ngắt quãng | coined in Task 5 (`marketing.hero.subtitle`); Tasks 6/8/12 reuse verbatim |
 | Due (for review) | Đến hạn | |
 | Card / Deck | Thẻ / Bộ thẻ | |
 | Streak | Chuỗi ngày học | never "streak" |
@@ -56,12 +57,15 @@ Twenty catalogs written across twenty independently-executed tasks will drift un
 | Furigana / Pitch accent | Furigana / Trọng âm cao thấp | |
 | Transcript | Phụ đề | |
 | Peer review | Đánh giá chéo | |
+| AI-generated | Do AI tạo | coined in Task 8; **compliance surface** (CLAUDE.md AI content labeling) — translate, never remove or weaken. Survives the badge's `uppercase` CSS. |
 | Recording | Bản ghi âm | |
 | Show answer / Again / Hard / Good / Easy | Xem đáp án / Lại / Khó / Tốt / Dễ | SRS grade buttons |
-| Save / Cancel / Delete / Close / Back / Next | Lưu / Huỷ / Xoá / Đóng / Quay lại / Tiếp theo | promote to `common` |
+| Save / Cancel / Delete / Close / Back / Next | Lưu / Hủy / Xóa / Đóng / Quay lại / Tiếp theo | promote to `common` |
 | Loading… / Something went wrong | Đang tải… / Đã có lỗi xảy ra | promote to `common` |
 
 **Register:** address the learner as **"bạn"**, never "quý khách" or "các bạn". Imperative buttons are bare verbs ("Lưu", not "Hãy lưu"). No exclamation marks in VN copy — CLAUDE.md §2.4 and the Companion spec's P12 both reject hype. **Never translate `giai đoạn <number>` style raw stage indices into user copy** (P12); see Task 17.
+
+**Tone-mark placement (binding, decided 2026-07-20):** use the **modern convention — the mark sits on the main vowel**: `Hủy`, `Xóa`, `Thủy`, `Hòa`, `khóa`, `tùy`. Not `Huỷ`, `Xoá`, `Thuỷ`, `Hoà`, `khoá`, `tuỳ`. Both spellings are correct Vietnamese, but the modern placement is what Facebook, Google and Zalo ship in Vietnamese, so it is what this product's users read every day. Apply it to every catalog without exception.
 
 ### Key-naming convention (binding)
 
@@ -78,7 +82,19 @@ Flat-ish, two levels maximum, `camelCase` leaves:
 
 - Page/section heading → `title`. Sub-heading → `subtitle`. Empty state → `empty`. Error → `error`.
 - Accessibility strings (`aria-label`, `alt`) → nested under `a11y`.
-- Pluralization uses real ICU, never string concatenation: `"{count, plural, =0 {No cards} one {# card} other {# cards}}"`. **VN has no plural inflection** — the VN form is the same text for every branch, but the branches must still exist so ICU argument parity passes: `"{count, plural, =0 {Chưa có thẻ nào} other {# thẻ}}"`.
+- Pluralization uses real ICU, never string concatenation: `"{count, plural, =0 {No cards} one {{count} card} other {{count} cards}}"`.
+  **Corrected 2026-07-21 after Task 6b hardened `lib/i18n/catalog.test.ts`** — the two rules below are
+  now enforced by a real ICU parser, and the original wording of this bullet would fail it:
+  - **VN has no plural inflection, and its VN message must therefore carry ONLY `other`** (plus any
+    `=N` exact matches). CLDR `vi` resolves exactly `["other"]`, so adding a `one` branch to match
+    EN's branch count is now a TEST FAILURE, not a parity requirement. Branch sets are compared
+    against each locale's own CLDR categories, resolved with the plural's own type (`cardinal` vs
+    `ordinal` — `selectordinal` differs). What must match across locales is the set of arguments
+    modeled as plural/selectordinal/select, and each plural's `offset`, not the branch keys.
+    Correct VN form: `"{count, plural, =0 {Chưa có thẻ nào} other {{count} thẻ}}"`.
+  - **Use a named argument (`{count}`) inside branches, never ICU's `#`.** `#` runs the value
+    through `Intl.NumberFormat`, so 1234 renders "1,234" where the pre-extraction template literal
+    produced "1234" — a byte-identity break that shipped undetected in Task 6 and had to be undone.
 
 ---
 
@@ -558,6 +574,14 @@ provider-wrapped render."
 The per-task procedure, restated compactly:
 
 1. Write/extend a test that **pins the current English output** of the module's main component(s), using `@/test/render`. Run it — it must pass while strings are still hardcoded.
+
+   **Pin every string you are about to extract, not a sample.** A test that spot-checks 3 of 13 labels goes green for a typo in the other 10, which defeats the entire point: this test is the only thing standing between a careless extraction and silently changed user-visible copy. Where the strings come from a list the component already iterates (nav items, variants, tabs), iterate the same list in the test rather than hand-picking entries — that way the test cannot fall behind the component. Include accessibility strings (`aria-label`, `alt`) in the pin; they are user-visible to anyone using a screen reader.
+
+   **The expected values MUST be literal strings written in the test. Never import the catalog you are pinning and assert against its values.** `@/test/render` feeds the component that very same JSON file, so an assertion sourced from it compares the file to itself: introduce a typo in `messages/en/nav.json` and both the rendered output and the expected value change together, and the test stays green. This mistake is easy to make and looks *more* rigorous than the thing it replaces — the pilot task made it, the review caught it, and it would otherwise have been copied 14 times. Iterating the component's list for *coverage* is right; deriving the *expected text* from the catalog is not. Importing the catalog solely to assert its key set matches the component's list is fine — that is a structural check, not a content check.
+
+   Where a component's strings are not enumerable that way, assert each extracted string explicitly. If the module is large enough that this feels tedious, that is the correct amount of work — 592 existing assertions are riding on English staying byte-identical.
+
+   **Known blind spot of the EN-pinned suite (D6), found in Task 3.** The whole suite runs on `en`, and the EN catalog is byte-identical to the English that was hardcoded. So when a component receives translated text through a *prop* whose default is that same English, a passing test cannot distinguish "the translation was threaded through correctly" from "the prop never arrived and the default rendered". Both produce identical output. Where you are threading a label through props or a wrapper — as opposed to calling `t()` in the component itself — add one assertion that passes a deliberately non-English literal and checks it appears. That is the only thing that proves the wiring. TypeScript catches a missing prop on the type; it does not catch a prop that is declared, accepted, and then dropped.
 2. Register the namespace in **all three** places: `lib/i18n/namespaces.ts` (`NAMESPACES` array), `types/messages.d.ts` (`import type <ns> from "../messages/en/<ns>.json"` plus the `Messages` entry), and create both `messages/en/<ns>.json` and `messages/vi/<ns>.json`.
 3. Fill the EN catalog by copying strings **verbatim** out of the source files; fill VN using the glossary.
 4. Run `npx vitest run lib/i18n/catalog.test.ts` — parity must pass before you touch a component.
@@ -685,6 +709,20 @@ export async function GET(request: Request) {
 
 One error string must NOT be translated: `return { error: error.message }` in `register()` is Supabase's own message. Leave it — translating third-party error text is out of scope and would require mapping their error codes. Record it as a known gap.
 
+**Zod validation messages are in scope — the original plan missed them** (found in Task 4's review, 2026-07-20). `lib/validation/auth.ts` holds `"Enter a valid email address."`, `"Password is required."`, `"Name is required."`, `"Password must be at least 8 characters."`, `"Password is too long."`, and `components/auth/auth-form.tsx`'s `FieldError` renders them verbatim inside a `role="alert"`. They are user-visible copy; leaving them English ships an untranslated form.
+
+`loginSchema` and `registerSchema` are consumed by **`app/[locale]/(auth)/actions.ts` and nothing else** (verified) — no API route uses them — so the fix stays contained. Put catalog **keys** in the schema rather than English prose, and resolve them where the action builds `fieldErrors`, which already has the request locale:
+
+```ts
+// lib/validation/auth.ts — keys, not copy. The schema stays locale-free and
+// pure; the action owns turning a key into words.
+email: z.string().trim().email("validation.emailInvalid"),
+```
+
+The schema must NOT import `@/lib/i18n` — staying locale-free is what keeps it usable from any context. Put the strings under `auth.validation.*` in both catalogs.
+
+**The other `lib/validation/*.ts` files are NOT in scope**: their messages travel to API routes as JSON error bodies, not into rendered copy. If Task 19's sweep finds a UI rendering an API error message verbatim, record it as a gap rather than fixing it here.
+
 - [ ] Follow Task 2's nine steps, with the callback fix folded into the same task.
 - [ ] Extra step before committing: **write the e2e round-trip test** (carried follow-up). Add to `tests/e2e/` a spec that registers a user, lands on `/en/dashboard`, signs out, signs back in via the form, and asserts the URL is `/en/dashboard` — proving the locale survives the full login round trip and `actions.ts`'s strip/re-add logic does not double-prefix. Run `npx playwright test` and paste the output.
 - [ ] Commit: `feat(i18n): extract auth namespace; fix unprefixed callback error redirect`.
@@ -722,6 +760,12 @@ The replacements are all true: the product genuinely has a free tier (value-base
 
 ---
 
+> **Added 2026-07-21 (user decision), binding on Tasks 6-17:** 25 pages carry
+> `export const metadata = { title: "..." }` in English. No task owned them. They are NOT extracted
+> per-module — a single dedicated sweep task near the end of the plan converts all 25 to
+> `generateMetadata` + `getTranslations`, so the root-layout title template is settled in one place
+> instead of drifting across twelve tasks. **Leave `metadata` in English in every module task.**
+
 ### Task 6: `dashboard` namespace
 
 **Files:** `app/[locale]/(app)/dashboard/page.tsx`, `app/[locale]/(app)/layout.tsx`, `components/learning/{level-card,streak-card,badges-grid}.tsx` and their siblings that the dashboard renders.
@@ -750,17 +794,100 @@ The replacements are all true: the product genuinely has a free tier (value-base
 **Tests to move:** `components/video/` tests.
 **Notes:** includes the import form and its validation messages, and the i+1 difficulty labels ("ideal / too easy / too hard").
 
-### Task 11: `shadowing` + `dictation` namespaces
+### Task 11 (SPLIT 2026-07-21 into 11a–11e): `shadowing` + `dictation` namespaces
 
-**Files:** `app/[locale]/(app)/videos/[id]/{shadowing,dictation}/page.tsx`, and the shadowing/dictation halves of `components/video-player/` — `shadowing-view.tsx`, `shadowing-recorder-panel.tsx`, `recorder.tsx`, `waveform.tsx`, `dictation-view.tsx`, `transcript-pane.tsx`, `pitch-contour-overlay.tsx`, `video-summary-panel.tsx`, `youtube-player.tsx`.
-**Tests to move:** the matching `.test.tsx` files in `components/video-player/` (9 of them).
-**Notes:** the largest module in the app (2 839 LOC across `components/video-player/`, split across this task and Task 12). Two namespaces because shadowing and dictation are distinct features with distinct owners (P4) even though they share the player shell; anything genuinely shared by both (player controls, speed, A–B loop) goes to `common.player.*`. Glossary: shadowing stays "Shadowing", dictation = "Nghe chép chính tả", transcript = "Phụ đề", pitch accent = "Trọng âm cao thấp". **Watch the two known flakes here** (`pitch-contour.test.tsx`, `waveform.test.tsx`) — re-run standalone before believing a failure.
+**Why this was split.** The original Task 11 was written as one unit against a stale figure ("2 839 LOC
+across `components/video-player/`"). Measured on the branch 2026-07-21, the real scope is **1 977 LOC of
+source across 11 files plus 1 816 LOC of their tests = 3 793 LOC** — **6.9×** Task 10 (~550 LOC → 484 K
+tokens / 118 tool-uses for its implementer). Scaled linearly that is ~800 tool-uses in a single agent run:
+the implementer would lose coherence, and the failure mode is not a crash but a task that *looks* finished
+with strings silently unpinned — exactly the defect class only the reviewer has been catching. So Task 11
+runs as **five sub-tasks**, each 1–2× Task 10, same cadence as every other task (fresh implementer →
+independent review → fix wave → commit). Reality outranks the plan: the LOC figure above is measured, the
+original was not.
+
+**Ordering — 11a first. (Rationale CORRECTED 2026-07-21 after the 11a review; the original was wrong.)**
+The split was written claiming `transcript-pane` and `waveform` are "rendered by both the shadowing and
+the dictation surfaces". **That is false on this branch**, and the 11a reviewer caught it. Measured:
+`TranscriptPane` is imported only by `shadowing-view.tsx:17`; `Waveform` only by
+`shadowing-recorder-panel.tsx:11`. The one component genuinely rendered by both surfaces is
+`youtube-player.tsx` — which carries **no user-visible strings at all**. So `common.player.*` today has
+exactly **one** consuming surface, and the P4 "shared by 2+ modules" argument does **not** apply to it.
+
+**`common.player.*` is kept anyway, on a narrower and honest argument:** these three files are the player
+*shell*, they sit together with the genuinely-shared `youtube-player`, and the dictation surface is a
+plausible future consumer of a transcript pane. That is weaker than the original claim — it is
+pre-emptive placement, not observed sharing. It survives because the cost of keeping it is zero while
+re-shuffling namespaces mid-split would cost a task. **If 11b–11e finish and `common.player.*` still has
+one consumer, demote it to `shadowing.*` in the Task 19 gate.** Recorded so a later reader does not
+mistake this for a P4 promotion like `common.recommendations.*` (Task 10), which had two real consumers.
+
+**11b's implementer must be told:** there is no dictation transcript pane — do not go looking for one.
+
+| Sub-task | Namespace | Files (source + test) | LOC |
+|---|---|---|---|
+| **11a** | `common.player.*` | `youtube-player`, `transcript-pane`, `waveform` | 781 |
+| **11b** | `dictation` | `dictation-view` + `videos/[id]/dictation/page.tsx` | 550 |
+| **11c** | `shadowing` (core) + `common.player.*` | `shadowing-view` + `videos/[id]/shadowing/page.tsx` + `video-summary-panel` + **`playback-controls`** | 1 070 |
+| **11d** | `shadowing` (capture) | `recorder`, `pitch-contour-overlay`, **`pitch-contour`** | 972 |
+| **11e** | `shadowing` (panel) | `shadowing-recorder-panel` | 968 |
+
+**⚠ The file list above was INCOMPLETE until 2026-07-21 — audit, do not trust it.** Scouting 11c found
+`shadowing-view.tsx:18` importing `./playback-controls`, a **166-LOC file carrying three `aria-label`s and
+a set of rendered control labels**, listed under neither Task 11 nor Task 12. A full audit of
+`components/video-player/` then found `pitch-contour.tsx` (230 LOC) + its test (152) equally unassigned.
+Both rows above now include them. **This is the third time Task 11's metadata has been wrong** — the LOC
+figure was stale, the "both surfaces render it" ordering rationale was false (disproved by the 11a
+review), and the file list was short by two. Treat every remaining task's file list as a starting
+hypothesis to verify, not as truth.
+
+**String-free, verified — do NOT re-audit these:** `furigana-text.tsx` (+ its test),
+`pitch-comparison.ts`, `load-youtube-api.ts`. Zero user-visible strings; no action in any sub-task.
+
+**11c specifics.** `playback-controls.tsx`'s strings go to **`common.player.*`** (user decision
+2026-07-21), joining 11a's, so the whole "player shell, shadowing-only today" cluster sits in one place
+and the Task 19 gate makes a **single** demotion decision for all of it. Keys: `a11y.playbackSpeed`,
+`a11y.abLoop`, `a11y.furigana`, `furigana.{adaptive,all,off}`, `loop.{setA,setB,clear}`. Four hazards,
+all scouted: (1) the file has **no test file** — one must be created, and its pin must pass while the
+strings are still hardcoded (binding pattern 1); (2) `FURIGANA_MODES` (line 92) is a **module-level array
+of rendered labels**, and `t()` is not callable at module scope — convert to catalog keys resolved in the
+component behind an exhaustive `Record<FuriganaDisplayMode, string>` (third instance of this pattern,
+after Task 10's `BAND_LABEL` and 11b's `summarizeDiff`); (3) `Set A{loopA !== null ? " (time)" : ""}`
+composes a label with an optional suffix — verify byte-identity in **both** branches by rendering, not by
+reasoning; (4) `aria-label="A–B loop"` (line 52) contains an **EN DASH U+2013**, not a hyphen — check it
+at codepoint level. Additionally `video-summary-panel.tsx` is an **AI-labeling compliance surface**
+(`aria-label="AI video summary"` line 117, the `AI-generated` badge line 122 — exact literal `toBe`s,
+each mutated in isolation) **and carries a known defect: line 53 renders `body.error`**, the API's
+server-authored English, straight to the DOM — the exact defect Task 8 removed from the vocab panel,
+where it made the translated string unreachable. **Stop rendering `body.error`.**
+
+**11d specifics.** `pitch-contour.tsx:148` carries `label = "Your pitch contour for this take"` — a
+**prop defaulting to English**, the same binding-pattern-5 trap 11a hit in `waveform.tsx`. One test must
+pass a deliberately non-English literal and a second must cover the default; neither can mask the other.
+
+**11a specifics (verified against the source, not inferred).** `youtube-player.tsx` contains **no
+user-visible strings** — it is a `<div>` wrapper around the IFrame API, so it needs **no changes** and its
+test may stay on bare RTL. The real 11a work is `transcript-pane.tsx` (`"This transcript has no lines
+yet."`, `aria-label="Transcript"`) and `waveform.tsx` (`"Processing recording…"`, `"Waveform preview
+unavailable."`, and the `label` **prop defaulting to `"Recording waveform"`**). That default makes
+**binding pattern 5 mandatory**: an EN-only assertion cannot distinguish a correctly threaded label from
+the component's own English fallback, so one test must pass a deliberately non-English literal.
+`transcript-pane.test.tsx` and `waveform.test.tsx` both still import from `@testing-library/react` and must
+move to `@/test/render`.
+
+**Notes for all five.** Glossary: shadowing stays "Shadowing", dictation = "Nghe chép chính tả",
+transcript = "Phụ đề", pitch accent = "Trọng âm cao thấp", recording = "Bản ghi âm". Anything genuinely
+shared by both features (player controls, speed, A–B loop) goes to `common.player.*` — promote, never
+duplicate (the Task 7/Task 10 DRIFT ruling). **The two known CPU-contention flakes live in this task** —
+`waveform.test.tsx` (11a) and `pitch-contour.test.tsx` (11d) — re-run standalone before believing a
+failure, and never run vitest and playwright concurrently.
 
 ### Task 12: `mining` namespace
 
-**Files:** `app/[locale]/(app)/mining/{page,review/page}.tsx`, `components/video-player/{mine-line-control,mining-deck-list,mining-clip-player}.tsx`.
-**Tests to move:** the three matching test files.
-**Notes:** consumes `common.srs.*` from Task 7. Glossary: mining = "Thu thập câu".
+**Files:** `app/[locale]/(app)/mining/{page,review/page}.tsx`, `components/video-player/{mine-line-control,mining-deck-list,mining-clip-player,mining-review-session}.tsx`.
+**Tests to move:** the FOUR matching component test files.
+**⚠ File list corrected 2026-07-22 (controller audit, 5th time the plan metadata was wrong):** the original list omitted `mining-review-session.tsx` (179 LOC, the SRS review UI rendered by `mining/review/page.tsx`) — it carries the `body.error` defect at line 61. Audited via glob + import graph.
+**Notes:** consumes `common.srs.*` (again/hard/good/easy/complete/done/progress/showAnswer/spaceHint) AND `common.states.error` from Task 7. Glossary: mining = "Thu thập câu". `mining-review-session.tsx` mirrors `components/learning/review-session.tsx` (Task 7) — mirror its error fix (`console.error(e); setError(t("states.error"))`, raw exception never reaches the DOM) and its `labelKey`→`common.srs.*` GRADES map. Only the mining-specific empty state, "Back to deck", and the "sentence(s)" `reviewedCount` plural are new `mining.*` keys.
 
 ### Task 13: `jlpt` namespace
 

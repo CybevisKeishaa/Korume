@@ -1,0 +1,34 @@
+{
+  "title": "Dictation practice",
+  "noTranscript": {
+    "title": "No transcript yet",
+    "body": "This video doesn't have a transcript to dictate yet. Transcript submission is coming soon."
+  },
+  "lineCount": "Line {current} of {total}",
+  "controls": {
+    "previous": "Previous line",
+    "replay": "Replay line",
+    "next": "Next line"
+  },
+  "inputLabel": "Type what you hear (Japanese)",
+  "submit": "Submit",
+  "submitting": "Scoring...",
+  "reveal": "Reveal answer",
+  "hide": "Hide answer",
+  "errors": {
+    "signIn": "Sign in to submit a dictation attempt.",
+    "scoreFailed": "That attempt couldn't be scored. Please try again."
+  },
+  "accuracy": "Accuracy: {accuracy}%",
+  "diff": {
+    "wrongSr": " wrong, expected {expected}",
+    "missingSr": " missing",
+    "extraSr": " extra, not scored",
+    "summary": "{match} correct, {wrong} wrong, {missing} missing, {extra} extra characters (extra characters are shown but not scored)."
+  },
+  "legend": {
+    "wrong": "wrong",
+    "missing": "missing (counted)",
+    "extra": "<strike>extra</strike> — shown, not scored"
+  }
+}

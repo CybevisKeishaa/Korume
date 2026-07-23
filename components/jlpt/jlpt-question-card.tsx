@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/lib/i18n";
 import type { JlptQuestionPublic } from "@/lib/jlpt-ui";
 import { JlptListeningPlayButton } from "./jlpt-listening-play-button";
 
@@ -27,6 +28,7 @@ const CHOICE_KEYS = ["1", "2", "3", "4"];
  * of a stale, now-hidden radio.
  */
 export function JlptQuestionCard({ question, index, total, selected, onSelect }: JlptQuestionCardProps) {
+  const t = useTranslations("jlpt");
   const { stem, passage, audio_text, choices } = question.question_data;
   const headingRef = useRef<HTMLHeadingElement>(null);
   const radioRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -68,13 +70,13 @@ export function JlptQuestionCard({ question, index, total, selected, onSelect }:
         tabIndex={-1}
         className="font-jp text-base font-semibold outline-none"
       >
-        {`Question ${index + 1} / ${total}`}
+        {t("questionCard.heading", { index: index + 1, total })}
       </h2>
 
       {passage &&
         (passage.length > PASSAGE_COLLAPSE_THRESHOLD ? (
           <details className="rounded-md border border-border p-3">
-            <summary className="cursor-pointer text-sm font-medium">Reading passage</summary>
+            <summary className="cursor-pointer text-sm font-medium">{t("questionCard.readingPassage")}</summary>
             <p className="font-jp mt-2 whitespace-pre-wrap text-base leading-relaxed">{passage}</p>
           </details>
         ) : (
@@ -89,7 +91,7 @@ export function JlptQuestionCard({ question, index, total, selected, onSelect }:
 
       <div
         role="radiogroup"
-        aria-label={`Answer choices for question ${index + 1}`}
+        aria-label={t("questionCard.answerChoicesAria", { index: index + 1 })}
         onKeyDown={handleGroupKeyDown}
         className="space-y-2"
       >
@@ -125,7 +127,7 @@ export function JlptQuestionCard({ question, index, total, selected, onSelect }:
                 {i + 1}
               </span>
               <span className="font-jp">{choice}</span>
-              {checked && <span className="sr-only"> (selected)</span>}
+              {checked && <span className="sr-only">{t("questionCard.selected")}</span>}
             </button>
           );
         })}

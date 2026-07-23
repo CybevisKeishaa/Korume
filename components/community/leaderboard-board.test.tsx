@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardBoard } from "./leaderboard-board";
 import type { LeaderboardPage } from "@/lib/leaderboard-types";
@@ -50,6 +50,15 @@ describe("LeaderboardBoard", () => {
   it("shows a zero-XP message when the caller has no weekly XP yet", () => {
     render(<LeaderboardBoard initialPage={{ leaderboard: [], callerWeeklyXp: 0, callerRank: null }} initialOptIn={false} />);
     expect(screen.getByText(/study something this week/i)).toBeInTheDocument();
+  });
+
+  // G2 (docs/product/business-model.md §1.1): "Your week" must render before
+  // the community list in DOM order — a progress screen first, a ranking
+  // second — not merely be present somewhere on the page.
+  it("renders 'Your week' before the community heading (G2 order)", () => {
+    render(<LeaderboardBoard initialPage={optedInPage} initialOptIn />);
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(headings).toEqual(["Your week", "This week's top learners"]);
   });
 
   it("refreshes the board after opting in", async () => {

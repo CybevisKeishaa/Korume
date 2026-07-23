@@ -1,0 +1,106 @@
+{
+  "page": {
+    "heading": "Cộng đồng",
+    "subtitle": "Đặt câu hỏi, chia sẻ mẹo học, và cùng nhau góp ý cho bản ghi âm shadowing.",
+    "signInPrompt": "Đăng nhập để đăng bài hoặc bình luận."
+  },
+  "peerReviewPage": {
+    "subtitle": "Nghe một bản ghi âm shadowing do người học khác chia sẻ và để lại đánh giá cùng nhận xét, hoặc quản lý các bản ghi âm bạn đã chia sẻ."
+  },
+  "postPage": {
+    "back": "← Quay lại cộng đồng"
+  },
+  "tabs": {
+    "sectionsAriaLabel": "Các mục trong cộng đồng",
+    "forum": "Diễn đàn",
+    "peerReview": "Đánh giá chéo"
+  },
+  "topics": {
+    "all": "Tất cả",
+    "general": "Chung",
+    "grammar": "Ngữ pháp",
+    "vocab": "Từ vựng",
+    "listening": "Nghe",
+    "speaking": "Nói",
+    "jlpt": "JLPT",
+    "study-tips": "Mẹo học tập"
+  },
+  "deletedUser": "Người dùng đã xóa",
+  "board": {
+    "topicFilterAriaLabel": "Lọc theo chủ đề",
+    "newPost": "Bài viết mới",
+    "empty": "Chưa có bài viết nào trong chủ đề này — hãy là người đầu tiên khởi tạo cuộc thảo luận.",
+    "loadError": "Không thể tải bài viết — vui lòng thử lại."
+  },
+  "postItem": {
+    "commentCount": "{count, plural, other {{count} bình luận}}"
+  },
+  "composer": {
+    "titleLabel": "Tiêu đề",
+    "topicLabel": "Chủ đề",
+    "contentLabel": "Nội dung",
+    "post": "Đăng bài",
+    "posting": "Đang đăng…",
+    "posted": "Đã đăng.",
+    "tooManyWithSeconds": "Bạn đã đăng quá nhiều bài viết — thử lại sau {seconds} giây.",
+    "tooManyGeneric": "Bạn đã đăng quá nhiều bài viết — vui lòng đợi một chút rồi thử lại.",
+    "postError": "Không thể đăng bài — vui lòng thử lại."
+  },
+  "thread": {
+    "editPost": "Sửa bài viết",
+    "deletePost": "Xóa bài viết",
+    "deletePostConfirm": "Xóa bài viết này? Không thể hoàn tác.",
+    "you": "Bạn",
+    "saveChangesError": "Không thể lưu thay đổi của bạn — vui lòng thử lại.",
+    "deletePostError": "Không thể xóa bài viết của bạn — vui lòng thử lại.",
+    "postCommentError": "Không thể đăng bình luận của bạn — vui lòng thử lại.",
+    "saving": "Đang lưu…",
+    "commentsHeading": "Bình luận",
+    "noComments": "Chưa có bình luận nào — hãy là người đầu tiên trả lời.",
+    "editComment": "Sửa bình luận",
+    "deleteComment": "Xóa bình luận",
+    "deleteCommentConfirm": "Xóa bình luận này?",
+    "editCommentAriaLabel": "Sửa nội dung bình luận",
+    "commentLabel": "Bình luận",
+    "commentPlaceholder": "Viết một câu trả lời…",
+    "commentButton": "Bình luận",
+    "posting": "Đang đăng…",
+    "tooManyRequestsWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
+    "tooManyRequestsGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút rồi thử lại.",
+    "tooManyCommentsWithSeconds": "Bạn đã bình luận quá nhiều — thử lại sau {seconds} giây.",
+    "tooManyCommentsGeneric": "Bạn đã bình luận quá nhiều — vui lòng đợi một chút rồi thử lại."
+  },
+  "peerReviewMine": {
+    "empty": "Bạn chưa chia sẻ bản ghi âm nào để nhận góp ý.",
+    "revoke": "Thu hồi",
+    "revokeConfirm": "Thu hồi lượt chia sẻ này? Thao tác này cũng xóa luôn các đánh giá, và không thể hoàn tác.",
+    "sharedPrefix": "Đã chia sẻ",
+    "noReviews": "Chưa có đánh giá nào.",
+    "starsAriaLabel": "{rating} trên 5 sao",
+    "revokeError": "Không thể thu hồi lượt chia sẻ đó — vui lòng thử lại."
+  },
+  "peerReviewQueue": {
+    "reviewCount": "{count, plural, other {{count} đánh giá}}",
+    "listen": "Nghe",
+    "recordingAriaLabel": "Bản ghi âm của {name}",
+    "thisUser": "Người dùng này",
+    "loadRecordingError": "Không thể tải bản ghi âm này — vui lòng thử lại.",
+    "expiredError": "Liên kết đã hết hạn — hãy thử nghe lại.",
+    "alreadyReviewed": "Bạn đã đánh giá bản ghi âm này rồi.",
+    "ratingLegend": "Đánh giá",
+    "commentLabel": "Bình luận",
+    "submitReview": "Gửi đánh giá",
+    "submitting": "Đang gửi…",
+    "ownShareError": "Bạn không thể đánh giá lượt chia sẻ của chính mình.",
+    "submitError": "Không thể gửi đánh giá của bạn — vui lòng thử lại.",
+    "tooManyRequestsWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
+    "tooManyRequestsGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút rồi thử lại.",
+    "empty": "Hiện chưa có gì để đánh giá — hãy quay lại sau.",
+    "loadMoreError": "Không thể tải thêm — vui lòng thử lại."
+  },
+  "peerReviewTabs": {
+    "tablistAriaLabel": "Đánh giá chéo",
+    "queue": "Hàng chờ",
+    "mine": "Của tôi"
+  }
+}

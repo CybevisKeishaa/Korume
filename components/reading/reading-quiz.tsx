@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
@@ -23,13 +24,22 @@ type SubmitState =
 
 const ANSWER_VALUES: ReadingAnswerValue[] = ["0", "1", "2", "3"];
 
+/**
+ * `res`'s body may carry a server-authored `error` string (e.g. `submit/route.ts`'s
+ * "Invalid submission" / "Unauthorized" / "Not found") — an untranslated
+ * developer diagnostic, never meant for the learner-facing DOM (CLAUDE.md §5,
+ * standing convention #4, mirroring `vocab-examples-panel.tsx`'s
+ * `classifyError`). It is logged for support/debugging; the caller always
+ * gets back the translated `fallback` instead.
+ */
 async function friendlyErrorFrom(res: Response, fallback: string): Promise<string> {
   try {
     const body = (await res.json()) as { error?: string };
-    return body.error ?? fallback;
+    if (body.error) console.error(`reading quiz submit failed (${res.status})`, body.error);
   } catch {
-    return fallback;
+    console.error(`reading quiz submit failed (${res.status})`);
   }
+  return fallback;
 }
 
 /**
@@ -42,6 +52,11 @@ async function friendlyErrorFrom(res: Response, fallback: string): Promise<strin
  * also labeled "Correct"/"Incorrect" in text.
  */
 export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
+  const t = useTranslations("reading");
+  // errors.network is consumed from `common` (promoted in Task 11b) — the
+  // identical string is needed by multiple modules (P4), so it lives in
+  // `common.errors.network`, not duplicated here.
+  const tCommon = useTranslations("common");
   const [answers, setAnswers] = useState<Record<string, ReadingAnswerValue>>({});
   const [state, setState] = useState<SubmitState>({ status: "idle" });
 
@@ -63,14 +78,14 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
           setState({
             status: "error",
             message: retryAfter
-              ? `Too many submissions — try again in ${retryAfter}s.`
-              : "Too many submissions — please wait a moment and try again.",
+              ? t("quiz.errorRateLimitWithSeconds", { seconds: retryAfter })
+              : t("quiz.errorRateLimit"),
           });
           return;
         }
         setState({
           status: "error",
-          message: await friendlyErrorFrom(res, "Could not submit your answers. Please try again."),
+          message: await friendlyErrorFrom(res, t("quiz.errorSubmitFallback")),
         });
         return;
       }
@@ -81,13 +96,13 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
     } catch {
       setState({
         status: "error",
-        message: "Network error — check your connection and try again.",
+        message: tCommon("errors.network"),
       });
     }
   }
 
   if (questions.length === 0) {
-    return <p className="text-sm text-muted-foreground">This passage has no questions yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t("quiz.noQuestions")}</p>;
   }
 
   const resultById =
@@ -101,9 +116,13 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
           return (
             <fieldset key={question.id} className="space-y-2 rounded-lg border border-border p-4">
               <legend className="px-1 text-sm font-medium">
-                Question {qIndex + 1}. {question.question}
+                {t("quiz.questionLabel", { index: qIndex + 1 })} {question.question}
               </legend>
-              <div role="radiogroup" aria-label={`Question ${qIndex + 1}`} className="space-y-1.5">
+              <div
+                role="radiogroup"
+                aria-label={t("quiz.questionAriaLabel", { index: qIndex + 1 })}
+                className="space-y-1.5"
+              >
                 {question.options.map((option, optionIndex) => {
                   // `options` is always exactly 4 entries per the API contract
                   // (`ReadingQuestionPublic.options: string[4]`); the `?? "0"`
@@ -138,7 +157,9 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
                       />
                       <span className="font-jp">{option}</span>
                       {result && isCorrectChoice && (
-                        <span className="text-xs font-medium text-success-strong">(Correct answer)</span>
+                        <span className="text-xs font-medium text-success-strong">
+                          {t("quiz.correctAnswerBadge")}
+                        </span>
                       )}
                     </label>
                   );
@@ -152,7 +173,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
                     result.correct ? "text-success-strong" : "text-danger-strong",
                   )}
                 >
-                  {result.correct ? "Correct" : "Incorrect"}
+                  {result.correct ? t("quiz.correct") : t("quiz.incorrect")}
                   {result.explanation && (
                     <span className="ml-1 font-normal text-muted-foreground">
                       — {result.explanation}
@@ -167,10 +188,10 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
         {state.status !== "done" && (
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={state.status === "submitting"}>
-              {state.status === "submitting" ? "Submitting…" : "Submit answers"}
+              {state.status === "submitting" ? t("quiz.submitting") : t("quiz.submit")}
             </Button>
             <p className="text-sm text-muted-foreground">
-              Answered {answeredCount}/{questions.length} questions
+              {t("quiz.answeredCount", { answered: answeredCount, total: questions.length })}
             </p>
           </div>
         )}
@@ -185,7 +206,11 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
       <div aria-live="polite">
         {state.status === "done" && (
           <p className="text-lg font-semibold">
-            {`${state.result.correct} / ${state.result.total} correct (${state.result.percent}%)`}
+            {t("quiz.resultSummary", {
+              correct: state.result.correct,
+              total: state.result.total,
+              percent: state.result.percent,
+            })}
           </p>
         )}
       </div>

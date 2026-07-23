@@ -22,7 +22,7 @@ describe("RecommendationRail", () => {
     expect(screen.getByText("はじめての日本語")).toBeInTheDocument();
     expect(screen.getByText("N5")).toBeInTheDocument();
     expect(screen.getByText("Just right")).toBeInTheDocument();
-    expect(screen.getByText(/82% words you know/i)).toBeInTheDocument();
+    expect(screen.getByText("82% words you know")).toBeInTheDocument();
 
     const link = screen.getByRole("link", { name: /はじめての日本語/ });
     expect(link).toHaveAttribute("href", "/en/videos/v1/shadowing");
@@ -43,13 +43,25 @@ describe("RecommendationRail", () => {
 
   it("renders alt text for the thumbnail and a fallback when there is none", () => {
     render(<RecommendationRail recommendations={[{ ...base, thumbnailUrl: null }]} />);
-    expect(screen.getByText(/no thumbnail/i)).toBeInTheDocument();
+    expect(screen.getByText("No thumbnail")).toBeInTheDocument();
   });
 
-  it("shows a friendly pointer to import videos when there are no recommendations yet", () => {
+  it("shows a friendly pointer to import videos when there are no recommendations yet, byte-identical to the pre-extraction text", () => {
     render(<RecommendationRail recommendations={[]} />);
-    expect(screen.getByText(/import/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /import a video/i })).toHaveAttribute("href", "/en/videos");
+
+    const link = screen.getByRole("link", { name: "import a video" });
+    expect(link).toHaveAttribute("href", "/en/videos");
+
+    // The link's English text was threaded through next-intl's rich-text
+    // t.rich() (binding pattern: EN copy is frozen, so the sentence can't be
+    // restructured to avoid the tag) — assert the WHOLE paragraph's raw
+    // textContent, not a normalized/regex match, so a stray or missing space
+    // around the link (the pre-extraction JSX used `{" "}` expressions on
+    // both sides of the <Link>) would be caught here.
+    const paragraph = link.closest("p");
+    expect(paragraph?.textContent).toBe(
+      "No recommendations yet — import a video to get started.",
+    );
   });
 
   it("omits the JLPT chip when the estimate is unknown", () => {

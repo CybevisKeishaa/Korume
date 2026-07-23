@@ -1,4 +1,5 @@
 import { Link } from "@/lib/i18n/navigation";
+import { useTranslations } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonStyles } from "@/components/ui/button";
 
@@ -15,28 +16,29 @@ export interface SrsDueCardProps {
  * principle G3).
  */
 export function SrsDueCard({ srsDueCount }: SrsDueCardProps) {
+  const t = useTranslations("dashboard");
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Review queue</CardTitle>
+        <CardTitle>{t("srsDue.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {srsDueCount > 0 ? (
           <>
             <p className="text-sm text-muted-foreground">
-              {srsDueCount} card{srsDueCount === 1 ? "" : "s"} due for review
+              {t("srsDue.due", { count: srsDueCount })}
             </p>
             <div className="flex flex-wrap gap-2">
               <Link href="/vocab/review" className={buttonStyles({ variant: "outline", size: "sm" })}>
-                Review vocab
+                {t("srsDue.reviewVocab")}
               </Link>
               <Link href="/kanji/review" className={buttonStyles({ variant: "outline", size: "sm" })}>
-                Review kanji
+                {t("srsDue.reviewKanji")}
               </Link>
             </div>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">All caught up — nothing due right now.</p>
+          <p className="text-sm text-muted-foreground">{t("srsDue.allCaughtUp")}</p>
         )}
       </CardContent>
     </Card>

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardOptInToggle } from "./leaderboard-opt-in-toggle";
 
@@ -23,6 +23,20 @@ describe("LeaderboardOptInToggle", () => {
     mockFetchOnce({ ok: true, status: 200 });
     render(<LeaderboardOptInToggle initialOptIn={false} onChanged={vi.fn()} />);
     expect(screen.getByText(/your name and weekly xp will be visible/i)).toBeInTheDocument();
+  });
+
+  // Swap-proof (Task 16 audit convention #3): the bold consent QUESTION and
+  // the muted-text explanation are two adjacent, same-shape spans — a plain
+  // "does this text exist" check (above) still passes even if their content
+  // is swapped, since both strings still render somewhere in the label. This
+  // pins each string to its own element by class, catching that swap.
+  it("renders the consent question in the bold span and the explanation in the muted span (not swapped)", () => {
+    mockFetchOnce({ ok: true, status: 200 });
+    const { container } = render(<LeaderboardOptInToggle initialOptIn={false} onChanged={vi.fn()} />);
+    expect(container.querySelector(".font-medium")).toHaveTextContent("Appear on the leaderboard?");
+    expect(container.querySelector(".text-xs.text-muted-foreground")).toHaveTextContent(
+      "Your name and weekly XP will be visible to other users.",
+    );
   });
 
   it("PATCHes optIn: true when toggled on and notifies the parent", async () => {

@@ -1,3 +1,56 @@
 {
-  "appName": "Nihongo Cinema"
+  "appName": "Nihongo Cinema",
+  "appNameJp": "日本語シネマ",
+  "auth": { "signIn": "Đăng nhập", "signOut": "Đăng xuất", "signUp": "Tạo tài khoản" },
+  "meta": {
+    "defaultTitle": "Nihongo Cinema — Học tiếng Nhật qua video",
+    "description": "Học tiếng Nhật qua shadowing video, kanji, từ vựng, ngữ pháp và luyện thi JLPT."
+  },
+  "actions": {
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "close": "Đóng",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "retry": "Thử lại",
+    "review": "Ôn tập",
+    "loadMore": "Tải thêm",
+    "confirmYes": "Có, {label}"
+  },
+  "states": {
+    "loading": "Đang tải…",
+    "error": "Đã có lỗi xảy ra.",
+    "empty": "Chưa có gì ở đây."
+  },
+  "errors": {
+    "network": "Lỗi kết nối mạng — kiểm tra kết nối và thử lại."
+  },
+  "a11y": {
+    "closeDialog": "Đóng hộp thoại",
+    "dismissNotification": "Bỏ qua thông báo",
+    "levelFilter": "Cấp độ JLPT"
+  },
+  "filters": { "all": "Tất cả" },
+  "noThumbnail": "Không có ảnh xem trước",
+  "recommendations": {
+    "heading": "Đề xuất cho bạn",
+    "loading": "Đang tìm video phù hợp với trình độ của bạn…",
+    "empty": "Chưa có đề xuất nào — <link>nhập video</link> để bắt đầu.",
+    "knownWords": "{percent}% số từ bạn đã biết",
+    "band": { "ideal": "Vừa sức", "tooEasy": "Ôn tập dễ", "tooHard": "Thử thách" }
+  },
+  "srs": {
+    "progress": "{current} / {total}",
+    "showAnswer": "Xem đáp án",
+    "spaceHint": "(Space)",
+    "again": "Lại",
+    "hard": "Khó",
+    "good": "Tốt",
+    "easy": "Dễ",
+    "empty": "Chưa có gì để ôn tập.",
+    "complete": "Hoàn thành phiên ôn tập 🎉",
+    "reviewedCount": "{count, plural, other {Bạn đã ôn tập {count} thẻ.}}",
+    "done": "Xong"
+  }
 }

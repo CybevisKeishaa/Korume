@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
+import { render } from "@/test/render";
 import type { PitchAccentScore, PitchOverlayPoint } from "@/lib/pitch";
 import { PitchContourOverlay } from "./pitch-contour-overlay";
 
@@ -34,11 +35,62 @@ describe("PitchContourOverlay", () => {
     expect(screen.getByText(/あなた/)).toBeInTheDocument();
   });
 
-  it("shows the rounded intonation score", () => {
+  it("pairs each legend label with its own swatch — catches a reference/user key swap the plain getByText checks above cannot", () => {
+    // Both swatches are aria-hidden, so nothing but the label-to-swatch
+    // pairing itself ties お手本 to the dashed line and あなた to the solid
+    // one; a `getByText` for each string anywhere in the document would still
+    // pass if the two keys were swapped. Scoping the query to each legend
+    // item's own container is what actually catches that swap (review
+    // finding, Important 1).
+    render(<PitchContourOverlay score={makeScore()} />);
+
+    expect(
+      within(screen.getByTestId("reference-legend")).getByText("お手本"),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("user-legend")).getByText("あなた"),
+    ).toBeInTheDocument();
+  });
+
+  it("uses the translated default accessible label when no override is passed — proves shadowing.pitch.overlay.a11y.label is wired", () => {
+    render(<PitchContourOverlay score={makeScore()} />);
+
+    expect(
+      screen.getByRole("img", {
+        name: "Pitch comparison: reference (お手本) vs your take",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("uses a caller-supplied label instead of the default — proves the prop is threaded through, not silently dropped for the component's own default", () => {
+    // Deliberately non-English literal (binding pattern 5, per waveform.test.tsx
+    // and pitch-contour.test.tsx): the default label and the EN catalog value
+    // are byte-identical, so an EN-only assertion can't tell "translation
+    // wired through correctly" from "the prop never arrived and the default
+    // rendered". A literal that could not possibly come from the default
+    // proves the `label` prop actually reaches the rendered aria-label.
+    render(
+      <PitchContourOverlay
+        score={makeScore()}
+        label="So sánh cao độ của lượt thử nghiệm"
+      />,
+    );
+
+    expect(
+      screen.getByRole("img", { name: "So sánh cao độ của lượt thử nghiệm" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the rounded intonation score and its ' / 100' suffix", () => {
     render(<PitchContourOverlay score={makeScore({ score: 82.4 })} />);
 
     expect(screen.getByText(/イントネーション/)).toBeInTheDocument();
-    expect(screen.getByText("82")).toBeInTheDocument();
+    const scoreEl = screen.getByText("82");
+    expect(scoreEl).toBeInTheDocument();
+    // pitch.overlay.scoreSuffix ("/ 100") had a correct pin but no render
+    // assertion (review finding, Important 3) — assert it on the aria-hidden
+    // sibling span immediately after the score itself.
+    expect(scoreEl.nextElementSibling).toHaveTextContent("/ 100");
   });
 
   it("reveals the user contour with the shared stroke-draw animation", () => {

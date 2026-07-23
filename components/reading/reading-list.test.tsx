@@ -56,12 +56,35 @@ describe("ReadingList", () => {
     expect(screen.getByRole("button", { name: "N4" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("shows an empty state when there are no passages", async () => {
+  it("shows the no-filter empty state when there are no passages and no level is selected", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(200, { data: [] })));
 
     render(<ReadingList />);
 
     await waitFor(() => expect(screen.getByText(/no reading passages/i)).toBeInTheDocument());
+    // Swap-proof: with no level filter active, the copy must NOT claim "at
+    // this level" — this is a distinct string (`list.emptyAll`) from the
+    // level-scoped one (`list.emptyAtLevel`) below, not the same message
+    // conditionally worded. A swap of the two keys would still satisfy the
+    // loose `/no reading passages/i` match above, so this asserts the exact
+    // text instead.
+    expect(screen.getByText("No reading passages yet.")).toBeInTheDocument();
+  });
+
+  it("shows the level-scoped empty state when a level filter has no passages", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(200, { data: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ReadingList />);
+    await waitFor(() => expect(screen.getByText(/no reading passages/i)).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "N4" }));
+
+    await waitFor(() =>
+      expect(screen.getByText("No reading passages at this level yet.")).toBeInTheDocument(),
+    );
+    // Swap-proof: the generic no-filter message must not also be showing.
+    expect(screen.queryByText("No reading passages yet.")).not.toBeInTheDocument();
   });
 
   it("shows a friendly error state when the request fails", async () => {

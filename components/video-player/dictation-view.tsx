@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,9 +31,20 @@ interface DictationResult {
   diff: DictationDiffPart[];
 }
 
+/**
+ * Which catalog entry a failed attempt maps to — a descriptor, not a
+ * resolved string, because this is a module-level function and `t()` is
+ * only callable from within component render (same shape as
+ * `vocab-examples-panel.tsx`'s `ErrorDescriptor`). `network` resolves from
+ * `common.errors.network` (promoted there in Task 11b — the identical
+ * string is needed by 2+ modules, P4); `signIn`/`scoreFailed` resolve from
+ * this module's own `dictation.errors.*`.
+ */
+type AttemptError = { key: "network" } | { key: "signIn" } | { key: "scoreFailed" };
+
 type AttemptOutcome =
   | { ok: true; data: DictationResult }
-  | { ok: false; message: string };
+  | { ok: false; error: AttemptError };
 
 async function submitDictationAttempt(
   videoId: string,
@@ -47,7 +59,7 @@ async function submitDictationAttempt(
       body: JSON.stringify({ videoId, lineId, userInput }),
     });
   } catch {
-    return { ok: false, message: "Network error — check your connection and try again." };
+    return { ok: false, error: { key: "network" } };
   }
 
   const json = (await res.json().catch(() => null)) as
@@ -55,11 +67,7 @@ async function submitDictationAttempt(
     | null;
 
   if (!res.ok || !json?.data) {
-    const message =
-      res.status === 401
-        ? "Sign in to submit a dictation attempt."
-        : "That attempt couldn't be scored. Please try again.";
-    return { ok: false, message };
+    return { ok: false, error: { key: res.status === 401 ? "signIn" : "scoreFailed" } };
   }
 
   return { ok: true, data: json.data };
@@ -71,6 +79,7 @@ async function submitDictationAttempt(
  * text describing what happened.
  */
 function DiffChar({ item }: { item: DictationDiffPart }) {
+  const t = useTranslations("dictation");
   if (item.type === "wrong") {
     return (
       <span
@@ -79,7 +88,7 @@ function DiffChar({ item }: { item: DictationDiffPart }) {
       >
         <span aria-hidden="true">✕</span>
         {item.actual}
-        <span className="sr-only"> wrong, expected {item.expected}</span>
+        <span className="sr-only">{t("diff.wrongSr", { expected: item.expected ?? "" })}</span>
       </span>
     );
   }
@@ -91,7 +100,7 @@ function DiffChar({ item }: { item: DictationDiffPart }) {
       >
         <span aria-hidden="true">▢</span>
         {item.expected}
-        <span className="sr-only"> missing</span>
+        <span className="sr-only">{t("diff.missingSr")}</span>
       </span>
     );
   }
@@ -99,20 +108,37 @@ function DiffChar({ item }: { item: DictationDiffPart }) {
     return (
       <span data-diff-type="extra" className="px-0.5 text-muted-foreground line-through">
         {item.actual}
-        <span className="sr-only"> extra, not scored</span>
+        <span className="sr-only">{t("diff.extraSr")}</span>
       </span>
     );
   }
   return <span data-diff-type="match">{item.expected}</span>;
 }
 
-function summarizeDiff(diff: DictationDiffPart[]): string {
-  const counts = { match: 0, wrong: 0, missing: 0, extra: 0 };
+// Must be a `type`, not an `interface` — a type alias gets an implicit
+// index signature and is assignable to next-intl's `t(key, values)` values
+// parameter (`Record<string, string | number | Date>`) without a cast; an
+// `interface` does not, and adding one by hand (`[key: string]: number`)
+// silently disables typo checking on the four field names below. Do not
+// "tidy" this back to an `interface`.
+type DiffCounts = {
+  match: number;
+  wrong: number;
+  missing: number;
+  extra: number;
+};
+
+/**
+ * Returns the raw counts rather than a formatted string — this is a
+ * module-level function, and `t()` is only callable from within component
+ * render (same shape as Task 10's `BAND_LABEL`/`messageForStatus`). The
+ * component formats these via one ICU message (`dictation.diff.summary`)
+ * with four named arguments.
+ */
+function summarizeDiff(diff: DictationDiffPart[]): DiffCounts {
+  const counts: DiffCounts = { match: 0, wrong: 0, missing: 0, extra: 0 };
   for (const item of diff) counts[item.type] += 1;
-  return (
-    `${counts.match} correct, ${counts.wrong} wrong, ${counts.missing} missing, ` +
-    `${counts.extra} extra characters (extra characters are shown but not scored).`
-  );
+  return counts;
 }
 
 /**
@@ -121,6 +147,8 @@ function summarizeDiff(diff: DictationDiffPart[]): string {
  * `/api/dictation/attempt`, and render the character-level diff.
  */
 export function DictationView({ video, transcript }: DictationViewProps) {
+  const t = useTranslations("dictation");
+  const tCommon = useTranslations("common");
   const playerRef = useRef<YouTubePlayerHandle>(null);
   const [playerReady, setPlayerReady] = useState(false);
   const [lineIndex, setLineIndex] = useState(0);
@@ -179,12 +207,14 @@ export function DictationView({ video, transcript }: DictationViewProps) {
       const outcome = await submitDictationAttempt(video.id, currentLine.id, userInput);
       setSubmitting(false);
       if (!outcome.ok) {
-        setErrorMessage(outcome.message);
+        setErrorMessage(
+          outcome.error.key === "network" ? tCommon("errors.network") : t(`errors.${outcome.error.key}`),
+        );
         return;
       }
       setResult(outcome.data);
     },
-    [currentLine, submitting, userInput, video.id],
+    [currentLine, submitting, userInput, video.id, t, tCommon],
   );
 
   if (lines.length === 0) {
@@ -198,11 +228,8 @@ export function DictationView({ video, transcript }: DictationViewProps) {
           />
         </div>
         <div className="text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">No transcript yet</p>
-          <p className="mt-1">
-            This video doesn&apos;t have a transcript to dictate yet. Transcript submission is
-            coming soon.
-          </p>
+          <p className="font-medium text-foreground">{t("noTranscript.title")}</p>
+          <p className="mt-1">{t("noTranscript.body")}</p>
         </div>
       </div>
     );
@@ -223,7 +250,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Line {lineIndex + 1} of {lines.length}
+          {t("lineCount", { current: lineIndex + 1, total: lines.length })}
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -233,10 +260,10 @@ export function DictationView({ video, transcript }: DictationViewProps) {
             onClick={handlePrev}
             disabled={lineIndex === 0}
           >
-            Previous line
+            {t("controls.previous")}
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={handleReplay}>
-            Replay line
+            {t("controls.replay")}
           </Button>
           <Button
             type="button"
@@ -245,14 +272,14 @@ export function DictationView({ video, transcript }: DictationViewProps) {
             onClick={handleNext}
             disabled={lineIndex === lines.length - 1}
           >
-            Next line
+            {t("controls.next")}
           </Button>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
-          <Label htmlFor="dictation-input">Type what you hear (Japanese)</Label>
+          <Label htmlFor="dictation-input">{t("inputLabel")}</Label>
           <Input
             id="dictation-input"
             value={userInput}
@@ -265,7 +292,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Scoring..." : "Submit"}
+            {submitting ? t("submitting") : t("submit")}
           </Button>
           <Button
             type="button"
@@ -274,7 +301,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
             aria-pressed={revealed}
             onClick={() => setRevealed((v) => !v)}
           >
-            {revealed ? "Hide answer" : "Reveal answer"}
+            {revealed ? t("hide") : t("reveal")}
           </Button>
         </div>
       </form>
@@ -294,7 +321,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
       <div aria-live="polite">
         {result && (
           <div className="space-y-2 rounded-lg border border-border p-4">
-            <p className="text-lg font-semibold">{`Accuracy: ${result.accuracy}%`}</p>
+            <p className="text-lg font-semibold">{t("accuracy", { accuracy: result.accuracy })}</p>
             <p className="font-jp text-lg leading-loose" lang="ja">
               {result.diff.map((item, index) => (
                 // Diff is a fixed, ordered character array from one scoring
@@ -303,16 +330,18 @@ export function DictationView({ video, transcript }: DictationViewProps) {
                 <DiffChar key={index} item={item} />
               ))}
             </p>
-            <p className="sr-only">{summarizeDiff(result.diff)}</p>
+            <p className="sr-only">{t("diff.summary", summarizeDiff(result.diff))}</p>
             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <li>
-                <span aria-hidden="true">✕</span> wrong
+                <span aria-hidden="true">✕</span> {t("legend.wrong")}
               </li>
               <li>
-                <span aria-hidden="true">▢</span> missing (counted)
+                <span aria-hidden="true">▢</span> {t("legend.missing")}
               </li>
               <li>
-                <span className="line-through">extra</span> — shown, not scored
+                {t.rich("legend.extra", {
+                  strike: (chunks) => <span className="line-through">{chunks}</span>,
+                })}
               </li>
             </ul>
           </div>

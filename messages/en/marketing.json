@@ -1,0 +1,16 @@
+{
+  "hero": {
+    "heading": "Learn Japanese the way it’s actually spoken.",
+    "subtitle": "Shadow real video, master kanji and grammar, and track it all with a spaced-repetition engine built for retention.",
+    "cta": "Get started free"
+  },
+  "header": {
+    "ariaLabel": "Primary",
+    "cta": "Get started"
+  },
+  "footer": {
+    "ariaLabel": "Footer",
+    "copyright": "© {year} Nihongo Cinema",
+    "cta": "Get started"
+  }
+}

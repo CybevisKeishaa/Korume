@@ -50,6 +50,7 @@ function mockFetch(): FetchCall[] {
 
 describe("MiningReviewSession", () => {
   let yt: YouTubeStubHandle;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
 
   beforeEach(() => {
     yt = installYouTubeStub({ duration: 90 });
@@ -58,6 +59,11 @@ describe("MiningReviewSession", () => {
   afterEach(() => {
     yt.restore();
     vi.unstubAllGlobals();
+    // A failing assertion inside a test body would skip an inline
+    // `spy.mockRestore()`, leaving console.error mocked for the rest of the
+    // file — restore unconditionally here instead (mirrors review-session.test.tsx).
+    consoleErrorSpy?.mockRestore();
+    consoleErrorSpy = undefined;
   });
 
   it("shows an empty-queue message when there is nothing due", () => {
@@ -102,19 +108,92 @@ describe("MiningReviewSession", () => {
     await waitFor(() => expect(screen.getByText("猫", { selector: "strong" })).toBeInTheDocument());
   });
 
-  it("shows a completion message once every card has been reviewed", async () => {
+  it("shows a completion message (singular) once every card has been reviewed", async () => {
     mockFetch();
     render(<MiningReviewSession items={[ITEMS[0]!]} />);
 
     await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
     await userEvent.click(screen.getByRole("button", { name: /^good/i }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(/session complete/i);
+    const status = await screen.findByRole("status");
+    expect(status).toHaveTextContent(/session complete/i);
+    // Mining's copy ("sentence(s)") is distinct from
+    // `common.srs.reviewedCount`'s "item(s)" wording (Task 12 brief) — pin
+    // that this component renders ITS OWN key, not the shared one.
+    expect(status).toHaveTextContent("You reviewed 1 sentence.");
+  });
+
+  it("shows a completion message (plural) after reviewing more than one card", async () => {
+    mockFetch();
+    render(<MiningReviewSession items={ITEMS} />);
+
+    for (let i = 0; i < ITEMS.length; i++) {
+      await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^good/i }));
+    }
+
+    expect(await screen.findByRole("status")).toHaveTextContent("You reviewed 2 sentences.");
   });
 
   it("offers a Play clip control on the front of the card", () => {
     mockFetch();
     render(<MiningReviewSession items={ITEMS} />);
     expect(screen.getByRole("button", { name: /play clip/i })).toBeInTheDocument();
+  });
+
+  /**
+   * Binding convention #3 (Task 12 brief): the grade buttons render
+   * `{t(srs.label)}` next to the shortcut `{g.key}` from the SAME `GRADES`
+   * entry. Asserting each button's own accessible name pairs with its own
+   * number — not merely that all four labels and all four numbers exist
+   * somewhere on the page — is what makes swapping two `labelKey`s (e.g.
+   * "again" and "hard" trade places while their `key`s stay put) turn this
+   * test RED instead of green.
+   */
+  it("pairs each grade label with its own keyboard-shortcut number", async () => {
+    mockFetch();
+    render(<MiningReviewSession items={ITEMS} />);
+    await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+
+    expect(screen.getByRole("button", { name: /^again/i })).toHaveTextContent("Again1");
+    expect(screen.getByRole("button", { name: /^hard/i })).toHaveTextContent("Hard2");
+    expect(screen.getByRole("button", { name: /^good/i })).toHaveTextContent("Good3");
+    expect(screen.getByRole("button", { name: /^easy/i })).toHaveTextContent("Easy4");
+  });
+
+  /**
+   * Reviewer-identified wiring gap (Task 12 fix wave): the catch block routes
+   * server-diagnostic text through `t("states.error")` so only translated,
+   * generic copy reaches the DOM (CLAUDE.md §5 differentiator note on the
+   * mirrored `review-session.tsx` fix). A mutation that reintroduces
+   * `setError(e.message)` — or points the key elsewhere — must turn this RED.
+   */
+  it("shows the translated generic error message when the review POST throws a network error (never the raw exception text)", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("boom")));
+    render(<MiningReviewSession items={ITEMS} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^good/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Something went wrong.");
+    expect(alert).not.toHaveTextContent("boom");
+  });
+
+  it("shows the translated generic error message when the review POST resolves not-ok (never the raw status text)", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) }) as Response),
+    );
+    render(<MiningReviewSession items={ITEMS} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^good/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Something went wrong.");
+    expect(alert).not.toHaveTextContent("Review failed (500)");
   });
 });

@@ -1,0 +1,17 @@
+{
+  "page": {
+    "heading": "Hồ sơ",
+    "accountHeading": "Tài khoản",
+    "emailLabel": "Email:",
+    "emailFallback": "—",
+    "statsHeading": "Thống kê",
+    "levelLabel": "Cấp độ",
+    "xpLabel": "XP",
+    "currentStreakLabel": "Chuỗi ngày hiện tại",
+    "longestStreakLabel": "Chuỗi ngày dài nhất",
+    "streakDays": "{count} ngày",
+    "badgesEarnedLabel": "Huy hiệu đã đạt được",
+    "badgesCount": "{earned} / {total}",
+    "viewDashboard": "Xem toàn bộ bảng điều khiển"
+  }
+}

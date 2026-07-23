@@ -3,11 +3,11 @@ import { buildContentPayload, ContentPayloadError } from "./content-payload";
 import type { ContentFieldConfig } from "./content-fields";
 
 const fields: ContentFieldConfig[] = [
-  { name: "word", label: "Word", kind: "text", required: true },
-  { name: "reading", label: "Reading", kind: "text", nullable: true },
-  { name: "count", label: "Count", kind: "number", nullable: true },
-  { name: "jlpt_level", label: "JLPT level", kind: "select", nullable: true, options: ["N5", "N4"] },
-  { name: "readings", label: "Readings", kind: "json" },
+  { name: "word", kind: "text", required: true },
+  { name: "reading", kind: "text", nullable: true },
+  { name: "count", kind: "number", nullable: true },
+  { name: "jlpt_level", kind: "select", nullable: true, options: ["N5", "N4"] },
+  { name: "readings", kind: "json" },
 ];
 
 describe("buildContentPayload", () => {
@@ -26,10 +26,15 @@ describe("buildContentPayload", () => {
     expect(payload).toEqual({ word: "犬", reading: null, count: null, jlpt_level: null });
   });
 
-  it("throws for an empty required field", () => {
-    expect(() =>
-      buildContentPayload(fields, { word: "", reading: "", count: "", jlpt_level: "", readings: "" }, "create", new Set()),
-    ).toThrow(ContentPayloadError);
+  it("throws for an empty required field, with reason 'required'", () => {
+    try {
+      buildContentPayload(fields, { word: "", reading: "", count: "", jlpt_level: "", readings: "" }, "create", new Set());
+      expect.unreachable();
+    } catch (err) {
+      expect(err).toBeInstanceOf(ContentPayloadError);
+      expect((err as ContentPayloadError).field).toBe("word");
+      expect((err as ContentPayloadError).reason).toBe("required");
+    }
   });
 
   it("parses a non-empty JSON field", () => {
@@ -42,20 +47,26 @@ describe("buildContentPayload", () => {
     expect(payload.readings).toEqual([{ reading: "いぬ", reading_type: "kun" }]);
   });
 
-  it("throws ContentPayloadError with the field name for invalid JSON", () => {
+  it("throws ContentPayloadError with the field name and reason 'invalidJson' for invalid JSON", () => {
     try {
       buildContentPayload(fields, { word: "犬", reading: "", count: "", jlpt_level: "", readings: "{not json" }, "create", new Set());
       expect.unreachable();
     } catch (err) {
       expect(err).toBeInstanceOf(ContentPayloadError);
       expect((err as ContentPayloadError).field).toBe("readings");
+      expect((err as ContentPayloadError).reason).toBe("invalidJson");
     }
   });
 
-  it("throws for a non-numeric value in a number field", () => {
-    expect(() =>
-      buildContentPayload(fields, { word: "犬", reading: "", count: "abc", jlpt_level: "", readings: "" }, "create", new Set()),
-    ).toThrow(ContentPayloadError);
+  it("throws for a non-numeric value in a number field, with reason 'invalidNumber'", () => {
+    try {
+      buildContentPayload(fields, { word: "犬", reading: "", count: "abc", jlpt_level: "", readings: "" }, "create", new Set());
+      expect.unreachable();
+    } catch (err) {
+      expect(err).toBeInstanceOf(ContentPayloadError);
+      expect((err as ContentPayloadError).field).toBe("count");
+      expect((err as ContentPayloadError).reason).toBe("invalidNumber");
+    }
   });
 
   it("omits a blank JSON field entirely (leaves children untouched on edit, none created on create)", () => {

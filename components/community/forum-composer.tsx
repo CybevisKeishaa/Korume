@@ -1,9 +1,11 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FORUM_TOPICS, topicLabel } from "./forum-post-item";
 import type { ForumTopic } from "@/lib/forum-types";
 
 export interface ForumComposerProps {
@@ -12,20 +14,16 @@ export interface ForumComposerProps {
   className?: string;
 }
 
-const TOPIC_OPTIONS: { value: ForumTopic; label: string }[] = [
-  { value: "general", label: "General" },
-  { value: "grammar", label: "Grammar" },
-  { value: "vocab", label: "Vocab" },
-  { value: "listening", label: "Listening" },
-  { value: "speaking", label: "Speaking" },
-  { value: "jlpt", label: "JLPT" },
-  { value: "study-tips", label: "Study tips" },
-];
-
 type SubmitState = { status: "idle" | "submitting" | "success" } | { status: "error"; message: string };
 
 /** Post-creation form for the forum board — title, topic, and plain-text content (whitespace-pre-line on render). */
 export function ForumComposer({ onCreated, className }: ForumComposerProps) {
+  const t = useTranslations("community");
+  const tCommon = useTranslations("common");
+  const TOPIC_OPTIONS: { value: ForumTopic; label: string }[] = FORUM_TOPICS.map((value) => ({
+    value,
+    label: topicLabel(t, value),
+  }));
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState<ForumTopic>("general");
   const [content, setContent] = useState("");
@@ -61,14 +59,14 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
         setState({
           status: "error",
           message: retryAfter
-            ? `Too many posts — try again in ${retryAfter}s.`
-            : "Too many posts — please wait a moment and try again.",
+            ? t("composer.tooManyWithSeconds", { seconds: retryAfter })
+            : t("composer.tooManyGeneric"),
         });
         return;
       }
-      setState({ status: "error", message: "Couldn't post — please try again." });
+      setState({ status: "error", message: t("composer.postError") });
     } catch {
-      setState({ status: "error", message: "Network error — check your connection and try again." });
+      setState({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -76,7 +74,7 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
     <form onSubmit={handleSubmit} className={className}>
       <div className="space-y-3">
         <div>
-          <Label htmlFor={titleId}>Title</Label>
+          <Label htmlFor={titleId}>{t("composer.titleLabel")}</Label>
           <Input
             id={titleId}
             value={title}
@@ -88,7 +86,7 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
         </div>
 
         <div>
-          <Label htmlFor={topicId}>Topic</Label>
+          <Label htmlFor={topicId}>{t("composer.topicLabel")}</Label>
           <select
             id={topicId}
             value={topic}
@@ -104,7 +102,7 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
         </div>
 
         <div>
-          <Label htmlFor={contentId}>Content</Label>
+          <Label htmlFor={contentId}>{t("composer.contentLabel")}</Label>
           <textarea
             id={contentId}
             value={content}
@@ -118,10 +116,10 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
 
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={state.status === "submitting" || !title.trim() || !content.trim()}>
-            {state.status === "submitting" ? "Posting…" : "Post"}
+            {state.status === "submitting" ? t("composer.posting") : t("composer.post")}
           </Button>
           <div aria-live="polite">
-            {state.status === "success" && <p className="text-sm text-success-strong">Posted.</p>}
+            {state.status === "success" && <p className="text-sm text-success-strong">{t("composer.posted")}</p>}
           </div>
         </div>
         {state.status === "error" && (

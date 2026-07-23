@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/i18n/navigation";
+import { useTranslations } from "@/lib/i18n";
 import type { ItemType } from "@/lib/validation/content";
 import type { ReviewItem } from "@/lib/learning-types";
 import { Button, buttonStyles } from "@/components/ui/button";
@@ -9,12 +10,23 @@ import { Card } from "@/components/ui/card";
 
 export type { ReviewItem };
 
-/** Anki-style grades mapped to SM-2 quality (0–5). */
+/**
+ * Anki-style grades mapped to SM-2 quality (0–5). `labelKey` is the leaf
+ * under `common.srs.*` — this component is shared by `/kanji/review` and
+ * `/vocab/review` (Task 8), which is why its strings live in `common`, not a
+ * per-module namespace (CLAUDE.md P4). `components/video-player/
+ * mining-review-session.tsx` (Task 12) mirrors this component and consumes
+ * the same keys. Its "Back" link and error fallback reuse the pre-existing
+ * `common.actions.back` / `common.states.error` rather than duplicating them
+ * under `srs.*` (review 2026-07-21 finding 2) — a drift risk (a translator
+ * fixing one copy silently leaves the other stale) outweighs the minor loss
+ * of "everything lives under one path" tidiness.
+ */
 const GRADES = [
-  { label: "Again", quality: 1, key: "1" },
-  { label: "Hard", quality: 3, key: "2" },
-  { label: "Good", quality: 4, key: "3" },
-  { label: "Easy", quality: 5, key: "4" },
+  { labelKey: "again", quality: 1, key: "1" },
+  { labelKey: "hard", quality: 3, key: "2" },
+  { labelKey: "good", quality: 4, key: "3" },
+  { labelKey: "easy", quality: 5, key: "4" },
 ] as const;
 
 export function ReviewSession({
@@ -32,6 +44,7 @@ export function ReviewSession({
   const [error, setError] = useState<string | null>(null);
   const [reviewed, setReviewed] = useState(0);
   const firstGradeRef = useRef<HTMLButtonElement>(null);
+  const t = useTranslations("common");
 
   const current = items[index];
   const done = index >= items.length;
@@ -57,12 +70,18 @@ export function ReviewSession({
         setRevealed(false);
         setIndex((i) => i + 1);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong.");
+        // The raw exception text (an HTTP status, a browser-locale network
+        // error like "Failed to fetch") must never reach the DOM — it can't
+        // be translated and leaks English/browser copy to VI users. Log it
+        // for support/debugging and show only the translated generic
+        // fallback (spec P1/CLAUDE.md §5, review 2026-07-21 finding 1).
+        console.error(e);
+        setError(t("states.error"));
       } finally {
         setSubmitting(false);
       }
     },
-    [current, itemType, submitting],
+    [current, itemType, submitting, t],
   );
 
   // Keyboard: Space/Enter reveals; 1–4 grade once revealed.
@@ -89,9 +108,9 @@ export function ReviewSession({
   if (items.length === 0) {
     return (
       <div className="text-center">
-        <p className="text-muted-foreground">Nothing to review here yet.</p>
+        <p className="text-muted-foreground">{t("srs.empty")}</p>
         <Link href={backHref} className={buttonStyles({ className: "mt-4" })}>
-          Back
+          {t("actions.back")}
         </Link>
       </div>
     );
@@ -100,12 +119,12 @@ export function ReviewSession({
   if (done) {
     return (
       <div className="text-center" role="status">
-        <p className="text-2xl font-bold">Session complete 🎉</p>
+        <p className="text-2xl font-bold">{t("srs.complete")}</p>
         <p className="mt-2 text-muted-foreground">
-          You reviewed {reviewed} item{reviewed === 1 ? "" : "s"}.
+          {t("srs.reviewedCount", { count: reviewed })}
         </p>
         <Link href={backHref} className={buttonStyles({ className: "mt-6" })}>
-          Done
+          {t("srs.done")}
         </Link>
       </div>
     );
@@ -114,7 +133,7 @@ export function ReviewSession({
   return (
     <div>
       <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
-        {index + 1} / {items.length}
+        {t("srs.progress", { current: index + 1, total: items.length })}
       </p>
 
       <Card className="flex min-h-56 flex-col items-center justify-center gap-3 p-8 text-center">
@@ -143,19 +162,19 @@ export function ReviewSession({
             onClick={() => setRevealed(true)}
             autoFocus
           >
-            Show answer <span className="ml-2 text-xs opacity-70">(Space)</span>
+            {t("srs.showAnswer")} <span className="ml-2 text-xs opacity-70">{t("srs.spaceHint")}</span>
           </Button>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {GRADES.map((g, i) => (
               <Button
-                key={g.label}
+                key={g.labelKey}
                 ref={i === 0 ? firstGradeRef : undefined}
                 variant="outline"
                 onClick={() => grade(g.quality)}
                 disabled={submitting}
               >
-                {g.label}
+                {t(`srs.${g.labelKey}`)}
                 <span className="ml-1 text-xs opacity-70">{g.key}</span>
               </Button>
             ))}

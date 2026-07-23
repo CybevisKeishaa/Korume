@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { FuriganaSegment, TranscriptLineRow } from "@/lib/video-types";
 
@@ -40,6 +41,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
   const inputId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstOptionRef = useRef<HTMLButtonElement | HTMLInputElement>(null);
+  const t = useTranslations("mining");
 
   const kanjiSegments = kanjiSegmentsOf(line);
 
@@ -72,7 +74,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
 
       if (res.status === 201) {
         setStatus("success");
-        setMessage(`Added "${targetWord}" to your mining deck.`);
+        setMessage(t("mine.added", { word: targetWord }));
         setOpen(false);
         setManualWord("");
         triggerRef.current?.focus();
@@ -83,16 +85,16 @@ export function MineLineControl({ line }: MineLineControlProps) {
         setStatus("error");
         setMessage(
           retryAfter
-            ? `Too many cards — please wait ${retryAfter}s and try again.`
-            : "Too many cards — please wait a moment and try again.",
+            ? t("mine.rateLimited", { seconds: retryAfter })
+            : t("mine.rateLimitedGeneric"),
         );
         return;
       }
       setStatus("error");
-      setMessage("Couldn't add that word. Please try again.");
+      setMessage(t("mine.error"));
     } catch {
       setStatus("error");
-      setMessage("Couldn't add that word. Please try again.");
+      setMessage(t("mine.error"));
     }
   }
 
@@ -113,14 +115,14 @@ export function MineLineControl({ line }: MineLineControlProps) {
         aria-controls={popoverId}
         className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
       >
-        Mine
+        {t("mine.trigger")}
       </button>
 
       {open && (
         <div
           id={popoverId}
           role="group"
-          aria-label="Pick a word to mine"
+          aria-label={t("mine.a11y.pickWord")}
           className="absolute right-0 z-10 mt-1 w-56 rounded-md border border-border bg-card p-2 shadow-md"
         >
           {kanjiSegments.length > 0 ? (
@@ -143,7 +145,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
           ) : (
             <form onSubmit={handleManualSubmit} className="flex items-center gap-1">
               <label className="sr-only" htmlFor={inputId}>
-                Word to mine
+                {t("mine.a11y.wordLabel")}
               </label>
               <input
                 ref={firstOptionRef as React.RefObject<HTMLInputElement>}
@@ -151,7 +153,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
                 type="text"
                 value={manualWord}
                 onChange={(event) => setManualWord(event.target.value)}
-                placeholder="Type a word"
+                placeholder={t("mine.placeholder")}
                 disabled={status === "submitting"}
                 className="w-full rounded border border-input bg-card px-2 py-1 text-sm font-jp"
               />
@@ -160,7 +162,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
                 disabled={status === "submitting" || !manualWord.trim()}
                 className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
               >
-                Add
+                {t("mine.add")}
               </button>
             </form>
           )}

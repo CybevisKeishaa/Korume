@@ -1,12 +1,22 @@
 import Image from "next/image";
 import { Link } from "@/lib/i18n/navigation";
+import { useTranslations } from "@/lib/i18n";
 // Type-only import: safe to reuse from a component that may later be pulled
 // into a client bundle (lib/data/videos.ts is "server-only" at runtime, but
 // its types are not — this is the client-safe mirror per lib/video-types.ts).
 import type { VideoRow } from "@/lib/video-types";
 
-/** A single video's card in the /videos grid. Links to its shadowing page. */
+/**
+ * A single video's card in the /videos grid. Links to its shadowing page.
+ *
+ * A non-async Server Component — `useTranslations` from `@/lib/i18n` works
+ * here without `"use client"`, same as `recommendation-rail.tsx` (Task 5).
+ * `noThumbnail` reads from `common` (shared verbatim with the recommendation
+ * rail's fallback, CLAUDE.md P4); `pendingReview` is this module's own.
+ */
 export function VideoCard({ video }: { video: VideoRow }) {
+  const t = useTranslations("videos");
+  const tCommon = useTranslations("common");
   return (
     <li>
       <Link
@@ -24,12 +34,12 @@ export function VideoCard({ video }: { video: VideoRow }) {
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              No thumbnail
+              {tCommon("noThumbnail")}
             </div>
           )}
           {video.status === "pending" && (
             <span className="absolute right-2 top-2 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-              Pending review
+              {t("pendingReview")}
             </span>
           )}
         </div>

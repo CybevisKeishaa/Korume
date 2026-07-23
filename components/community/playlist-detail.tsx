@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import type { PlaylistDetail as PlaylistDetailType, PlaylistItemView } from "@/lib/playlist-types";
 
@@ -21,6 +22,8 @@ type ItemAction = Record<string, "idle" | "busy">;
  * users, but only the owner can edit them — enforced server-side by RLS too).
  */
 export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailProps) {
+  const t = useTranslations("playlists");
+  const tCommon = useTranslations("common");
   const [items, setItems] = useState<PlaylistItemView[]>(playlist.items);
   const [busy, setBusy] = useState<ItemAction>({});
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +41,9 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
         setItems((prev) => prev.filter((it) => it.videoId !== videoId));
         return;
       }
-      setError("Couldn't remove that video — please try again.");
+      setError(t("detail.removeError"));
     } catch {
-      setError("Network error — check your connection and try again.");
+      setError(tCommon("errors.network"));
     } finally {
       setItemBusy(videoId, false);
     }
@@ -80,7 +83,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
           return [...next].sort((x, y) => x.orderIndex - y.orderIndex);
         });
       } else {
-        setError("Couldn't reorder — please try again.");
+        setError(t("detail.reorderError"));
       }
     } finally {
       setItemBusy(a.videoId, false);
@@ -95,11 +98,13 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
           <h1 className="text-2xl font-bold">{playlist.name}</h1>
           {playlist.description && <p className="mt-1 text-muted-foreground">{playlist.description}</p>}
           {playlist.owner && (
-            <p className="mt-1 text-sm text-muted-foreground">By {playlist.owner.name ?? "Deleted user"}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("byOwner", { name: playlist.owner.name ?? t("deletedUser") })}
+            </p>
           )}
         </div>
         <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {playlist.isPublic ? "Public" : "Private"}
+          {playlist.isPublic ? t("detail.public") : t("detail.private")}
         </span>
       </div>
 
@@ -112,7 +117,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">No videos in this playlist yet.</p>
+        <p className="mt-6 text-sm text-muted-foreground">{t("detail.empty")}</p>
       ) : (
         <ul className="mt-6 space-y-3">
           {items.map((item, index) => (
@@ -131,19 +136,19 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     type="button"
                     onClick={() => void move(index, -1)}
                     disabled={index === 0 || busy[item.videoId] === "busy"}
-                    aria-label={`Move up: ${item.title}`}
+                    aria-label={t("detail.moveUpAriaLabel", { title: item.title })}
                     className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
-                    Move up
+                    {t("detail.moveUp")}
                   </button>
                   <button
                     type="button"
                     onClick={() => void move(index, 1)}
                     disabled={index === items.length - 1 || busy[item.videoId] === "busy"}
-                    aria-label={`Move down: ${item.title}`}
+                    aria-label={t("detail.moveDownAriaLabel", { title: item.title })}
                     className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
-                    Move down
+                    {t("detail.moveDown")}
                   </button>
                   <button
                     type="button"
@@ -151,7 +156,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     disabled={busy[item.videoId] === "busy"}
                     className="rounded-md px-2 py-1 text-xs font-medium text-danger-strong hover:bg-danger/10 disabled:pointer-events-none disabled:opacity-40"
                   >
-                    Remove
+                    {t("detail.remove")}
                   </button>
                 </div>
               )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { LeaderboardOptInToggle } from "./leaderboard-opt-in-toggle";
 import type { LeaderboardPage } from "@/lib/leaderboard-types";
@@ -18,6 +19,7 @@ export interface LeaderboardBoardProps {
  * product decision: this is a progress screen first, a ranking second.
  */
 export function LeaderboardBoard({ initialPage, initialOptIn, className }: LeaderboardBoardProps) {
+  const t = useTranslations("leaderboard");
   const [page, setPage] = useState(initialPage);
   const [optIn, setOptIn] = useState(initialOptIn);
 
@@ -37,18 +39,14 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
     <div className={className}>
       <section aria-labelledby="your-week-heading" className="rounded-lg border border-border bg-card p-4">
         <h2 id="your-week-heading" className="text-lg font-semibold">
-          Your week
+          {t("board.yourWeekHeading")}
         </h2>
         <p className="mt-2 text-3xl font-bold">
-          {page.callerWeeklyXp} <span className="text-base font-normal text-muted-foreground">XP this week</span>
+          {page.callerWeeklyXp} <span className="text-base font-normal text-muted-foreground">{t("board.xpThisWeek")}</span>
         </p>
-        {page.callerWeeklyXp === 0 && (
-          <p className="mt-1 text-sm text-muted-foreground">
-            Study something this week to start earning XP.
-          </p>
-        )}
+        {page.callerWeeklyXp === 0 && <p className="mt-1 text-sm text-muted-foreground">{t("board.zeroXp")}</p>}
         <p className="mt-1 text-sm text-muted-foreground">
-          {page.callerRank !== null ? `Rank ${page.callerRank}` : "Opt in to see your rank among other learners."}
+          {page.callerRank !== null ? t("board.rank", { rank: page.callerRank }) : t("board.notOptedInRank")}
         </p>
 
         <div className="mt-4 border-t border-border pt-4">
@@ -58,12 +56,10 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
 
       <section aria-labelledby="community-heading" className="mt-6">
         <h2 id="community-heading" className="mb-3 text-lg font-semibold">
-          This week&apos;s top learners
+          {t("board.communityHeading")}
         </h2>
         {page.leaderboard.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No one has opted in yet — opt in above to be the first to appear.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("board.empty")}</p>
         ) : (
           <ol className="space-y-2">
             {page.leaderboard.map((entry) => (
@@ -78,11 +74,13 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
                 <span className="flex items-center gap-3">
                   <span className="w-6 text-right font-semibold text-muted-foreground">{entry.rank}</span>
                   <span className="font-medium">
-                    {entry.name ?? "Deleted user"}
-                    {entry.isMe && <span className="ml-1 text-xs text-primary-strong">(you)</span>}
+                    {entry.name ?? t("board.deletedUser")}
+                    {entry.isMe && <span className="ml-1 text-xs text-primary-strong">{t("board.youSuffix")}</span>}
                   </span>
                 </span>
-                <span className="font-semibold">{entry.weeklyXp} XP</span>
+                <span className="font-semibold">
+                  {entry.weeklyXp} {t("board.xpSuffix")}
+                </span>
               </li>
             ))}
           </ol>

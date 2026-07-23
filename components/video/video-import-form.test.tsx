@@ -40,6 +40,36 @@ afterEach(() => {
 });
 
 describe("VideoImportForm", () => {
+  it("renders the URL label and import button", () => {
+    render(<VideoImportForm />);
+    expect(screen.getByLabelText("YouTube URL")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Import video" })).toBeInTheDocument();
+  });
+
+  it("shows the importing state while the request is in flight, then restores it", async () => {
+    let resolveFetch!: (value: unknown) => void;
+    const pending = new Promise((resolve) => {
+      resolveFetch = resolve;
+    });
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(pending));
+
+    render(<VideoImportForm />);
+    await userEvent.type(screen.getByLabelText("YouTube URL"), "https://www.youtube.com/watch?v=abc123");
+    await userEvent.click(screen.getByRole("button", { name: "Import video" }));
+
+    const importingButton = await screen.findByRole("button", { name: "Importing…" });
+    expect(importingButton).toBeDisabled();
+
+    resolveFetch({
+      ok: true,
+      status: 201,
+      headers: new Headers(),
+      json: async () => ({ data: { id: "abc123" } }),
+    });
+
+    expect(await screen.findByRole("button", { name: "Import video" })).not.toBeDisabled();
+  });
+
   it("imports a video, refreshes the list, and navigates to its shadowing page", async () => {
     mockFetchOnce({
       ok: true,
@@ -75,7 +105,19 @@ describe("VideoImportForm", () => {
     await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      /couldn't fetch details for that video/i,
+      "We couldn't fetch details for that video. Double-check the link and try again.",
+    );
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("shows a session-expired message on 401", async () => {
+    mockFetchOnce({ ok: false, status: 401 });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Your session expired — please sign in again.",
     );
     expect(push).not.toHaveBeenCalled();
   });
@@ -86,7 +128,9 @@ describe("VideoImportForm", () => {
     render(<VideoImportForm />);
     await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/wait 30s/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Too many imports — please wait 30s and try again.",
+    );
   });
 
   it("falls back to a generic wait message on 429 with no Retry-After header", async () => {
@@ -95,7 +139,9 @@ describe("VideoImportForm", () => {
     render(<VideoImportForm />);
     await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/wait a moment/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Too many imports — please wait a moment and try again.",
+    );
   });
 
   it("shows an invalid-URL message on 400", async () => {
@@ -105,7 +151,7 @@ describe("VideoImportForm", () => {
     await fillAndSubmit("not a real url");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      /doesn't look like a valid youtube url/i,
+      "That doesn't look like a valid YouTube URL.",
     );
   });
 
@@ -117,8 +163,19 @@ describe("VideoImportForm", () => {
     await userEvent.click(screen.getByRole("button", { name: /import video/i }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      /doesn't look like a valid youtube url/i,
+      "That doesn't look like a valid YouTube URL.",
     );
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows a generic error message when the request throws (network failure)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Something went wrong importing that video. Please try again.",
+    );
   });
 });

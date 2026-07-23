@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export interface FuriganaToggleProps {
@@ -17,13 +18,14 @@ export interface FuriganaToggleProps {
  * changes so the state is legible without any styling at all.
  */
 export function FuriganaToggle({ pressed, onToggle, disabled, className }: FuriganaToggleProps) {
+  const t = useTranslations("reading");
   return (
     <button
       type="button"
       aria-pressed={pressed}
       disabled={disabled}
       onClick={onToggle}
-      title={disabled ? "No furigana data for this passage" : undefined}
+      title={disabled ? t("furigana.unavailableTitle") : undefined}
       className={cn(
         "rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors",
         pressed
@@ -33,7 +35,7 @@ export function FuriganaToggle({ pressed, onToggle, disabled, className }: Furig
         className,
       )}
     >
-      {disabled ? "Furigana unavailable" : pressed ? "Hide furigana" : "Show furigana"}
+      {disabled ? t("furigana.unavailable") : pressed ? t("furigana.hide") : t("furigana.show")}
     </button>
   );
 }

@@ -1,3 +1,4 @@
+import { useTranslations } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { splitSentenceForEmphasis } from "@/lib/mining-format";
 import type { MiningCardListItem } from "@/lib/mining-types";
@@ -15,13 +16,10 @@ export interface MiningDeckListProps {
  * YouTube embed — a card stores no media of its own.
  */
 export function MiningDeckList({ cards }: MiningDeckListProps) {
+  const t = useTranslations("mining");
+
   if (cards.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No mined sentences yet. While shadowing a video, tap &quot;Mine&quot; on a transcript line
-        to add one.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">{t("deck.empty")}</p>;
   }
 
   return (

@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import type { TranscriptLineRow } from "@/lib/video-types";
@@ -67,8 +67,13 @@ afterEach(() => {
 describe("TranscriptPane", () => {
   it("shows an empty-state message when there are no lines yet", () => {
     renderPane({ lines: [] });
-    expect(screen.getByText(/no lines yet/i)).toBeInTheDocument();
+    expect(screen.getByText("This transcript has no lines yet.")).toBeInTheDocument();
     expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+
+  it("labels the transcript list for assistive tech", () => {
+    renderPane();
+    expect(screen.getByRole("list", { name: "Transcript" })).toBeInTheDocument();
   });
 
   it("marks only the active line with aria-current", () => {

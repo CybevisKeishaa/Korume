@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 
 export interface LeaderboardOptInToggleProps {
   initialOptIn: boolean;
@@ -12,9 +13,13 @@ export interface LeaderboardOptInToggleProps {
 /**
  * G2 (docs/product/business-model.md §1.1): the leaderboard is opt-in only —
  * this toggle is the explicit, revocable consent to appear in it, with the
- * consequence stated plainly rather than buried.
+ * consequence stated plainly rather than buried. Its question/explanation
+ * copy is a privacy surface (Task 16): the `vi` translation must state
+ * exactly what the learner is agreeing to, never softened or broadened.
  */
 export function LeaderboardOptInToggle({ initialOptIn, onChanged, className }: LeaderboardOptInToggleProps) {
+  const t = useTranslations("leaderboard");
+  const tCommon = useTranslations("common");
   const [optIn, setOptIn] = useState(initialOptIn);
   const [error, setError] = useState<string | null>(null);
   const inputId = useId();
@@ -36,13 +41,17 @@ export function LeaderboardOptInToggle({ initialOptIn, onChanged, className }: L
       setOptIn(!next);
       if (res.status === 429) {
         const retryAfter = res.headers.get("Retry-After");
-        setError(retryAfter ? `Too many requests — try again in ${retryAfter}s.` : "Too many requests — please wait a moment.");
+        setError(
+          retryAfter
+            ? t("optIn.tooManyWithSeconds", { seconds: retryAfter })
+            : t("optIn.tooManyGeneric"),
+        );
         return;
       }
-      setError("Couldn't update that — please try again.");
+      setError(t("optIn.updateError"));
     } catch {
       setOptIn(!next);
-      setError("Network error — check your connection and try again.");
+      setError(tCommon("errors.network"));
     }
   }
 
@@ -54,14 +63,12 @@ export function LeaderboardOptInToggle({ initialOptIn, onChanged, className }: L
           type="checkbox"
           checked={optIn}
           onChange={() => void toggle()}
-          aria-label="Appear on the leaderboard"
+          aria-label={t("optIn.ariaLabel")}
           className="mt-0.5 h-4 w-4 accent-primary"
         />
         <label htmlFor={inputId} className="text-sm">
-          <span className="font-medium">Appear on the leaderboard?</span>
-          <span className="block text-xs text-muted-foreground">
-            Your name and weekly XP will be visible to other users.
-          </span>
+          <span className="font-medium">{t("optIn.question")}</span>
+          <span className="block text-xs text-muted-foreground">{t("optIn.explanation")}</span>
         </label>
       </div>
       {error && (

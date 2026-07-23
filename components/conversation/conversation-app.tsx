@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type {
@@ -11,13 +12,14 @@ import type {
   SessionEndResult,
 } from "@/lib/conversation-types";
 import { MessageBubble } from "./message-bubble";
-import { ScenarioPicker, SCENARIOS } from "./scenario-picker";
+import { ScenarioPicker, scenarioLabel } from "./scenario-picker";
 import { SessionHistoryList } from "./session-history-list";
 import { CorrectionsPanel } from "./corrections-panel";
 import { blobToWav16kMono } from "@/lib/audio/blob-to-wav";
 import { VoiceRecorderButton, type TranscribedVoiceMessage } from "./voice-recorder-button";
 
 type View = "picker" | "chat";
+type Translator = ReturnType<typeof useTranslations<"conversation">>;
 
 interface SendError {
   message: string;
@@ -45,12 +47,36 @@ const SESSION_ENDPOINT = "/api/conversation/session";
 const MESSAGE_ENDPOINT = "/api/conversation/message";
 const PRONUNCIATION_ENDPOINT = "/api/pronunciation/score";
 
-function scenarioLabel(scenarioType: string | null): string {
-  return SCENARIOS.find((s) => s.id === scenarioType)?.label ?? scenarioType ?? "Conversation";
+/**
+ * `res`'s body may carry a server-authored `error` string (e.g. the
+ * `STATUS_MESSAGES` tables in `app/api/conversation/*`) — an untranslated
+ * developer diagnostic, never meant for the learner-facing DOM (CLAUDE.md
+ * §5, standing convention #4, mirroring `reading-quiz.tsx`'s
+ * `friendlyErrorFrom`, fixed there in Task 14 after the same leak). It's
+ * logged for support/debugging; the caller always gets back the translated
+ * `fallback` instead. 503 ("AI not configured") is handled separately by
+ * each caller, before this ever runs — see `notConfiguredOr` below.
+ */
+async function friendlyErrorFrom(res: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    if (body.error) console.error(`conversation request failed (${res.status})`, body.error);
+  } catch {
+    console.error(`conversation request failed (${res.status})`);
+  }
+  return fallback;
 }
 
-function retryMessage(seconds: number): string {
-  return `Too many messages — try again in ${seconds}s.`;
+/**
+ * Message-send and end-session both hit Claude and can 503 when
+ * `AI_PROVIDER=none` — the launch-state degrade path (CLAUDE.md §2/§9,
+ * task-15-brief.md). That's an honest, distinct state (the whole feature is
+ * off), not a generic "something went wrong" — never routed through
+ * `friendlyErrorFrom`'s raw-diagnostic-log-and-fallback path.
+ */
+function notConfiguredOr(status: number, t: Translator, otherwise: () => Promise<string>): Promise<string> {
+  if (status === 503) return Promise.resolve(t("app.notConfigured"));
+  return otherwise();
 }
 
 /**
@@ -62,6 +88,8 @@ function retryMessage(seconds: number): string {
  * this component owns no business logic of its own.
  */
 export function ConversationApp() {
+  const t = useTranslations("conversation");
+  const tCommon = useTranslations("common");
   const [view, setView] = useState<View>("picker");
   const [sessions, setSessions] = useState<ConversationSessionRow[]>([]);
   const [sessionsLoaded, setSessionsLoaded] = useState(false);
@@ -110,7 +138,7 @@ export function ConversationApp() {
 
   function startCountdown(seconds: number) {
     if (countdownRef.current) clearInterval(countdownRef.current);
-    setSendError({ message: retryMessage(seconds), retryAfterSeconds: seconds });
+    setSendError({ message: t("app.tooManyMessagesWithSeconds", { seconds }), retryAfterSeconds: seconds });
     countdownRef.current = setInterval(() => {
       setSendError((prev) => {
         if (!prev || prev.retryAfterSeconds == null) return prev;
@@ -122,7 +150,7 @@ export function ConversationApp() {
           }
           return null;
         }
-        return { message: retryMessage(next), retryAfterSeconds: next };
+        return { message: t("app.tooManyMessagesWithSeconds", { seconds: next }), retryAfterSeconds: next };
       });
     }, 1000);
   }
@@ -140,12 +168,12 @@ export function ConversationApp() {
           const retryAfter = res.headers.get("Retry-After");
           setPickerError(
             retryAfter
-              ? `Too many sessions — try again in ${retryAfter}s.`
-              : "Too many sessions — please wait a moment and try again.",
+              ? t("app.tooManySessionsWithSeconds", { seconds: retryAfter })
+              : t("app.tooManySessionsGeneric"),
           );
           return;
         }
-        setPickerError(await friendlyErrorFrom(res, "Could not start a session."));
+        setPickerError(await friendlyErrorFrom(res, t("app.errorStartSession")));
         return;
       }
       const json = (await res.json()) as { data: ConversationSessionRow };
@@ -162,7 +190,7 @@ export function ConversationApp() {
       setPendingVoice(null);
       setView("chat");
     } catch {
-      setPickerError("Network error — check your connection and try again.");
+      setPickerError(tCommon("errors.network"));
     }
   }
 
@@ -249,7 +277,11 @@ export function ConversationApp() {
           const retryAfter = Number(res.headers.get("Retry-After") ?? "60") || 60;
           startCountdown(retryAfter);
         } else {
-          setSendError({ message: await friendlyErrorFrom(res, "Could not send message.") });
+          setSendError({
+            message: await notConfiguredOr(res.status, t, () =>
+              friendlyErrorFrom(res, t("app.errorSendMessage")),
+            ),
+          });
         }
         return;
       }
@@ -275,7 +307,7 @@ export function ConversationApp() {
       if (json.data.truncated) setTruncatedNotice(true);
       if (voice) void scoreVoiceMessage(userMessage.id, voice);
     } catch {
-      setSendError({ message: "Network error — check your connection and try again." });
+      setSendError({ message: tCommon("errors.network") });
     } finally {
       setSending(false);
     }
@@ -293,12 +325,16 @@ export function ConversationApp() {
           const retryAfter = res.headers.get("Retry-After");
           setSendError({
             message: retryAfter
-              ? `Too many requests — try again in ${retryAfter}s.`
-              : "Too many requests — please wait a moment and try again.",
+              ? t("app.tooManyRequestsWithSeconds", { seconds: retryAfter })
+              : t("app.tooManyRequestsGeneric"),
           });
           return;
         }
-        setSendError({ message: await friendlyErrorFrom(res, "Could not end the session.") });
+        setSendError({
+          message: await notConfiguredOr(res.status, t, () =>
+            friendlyErrorFrom(res, t("app.errorEndSession")),
+          ),
+        });
         return;
       }
       const json = (await res.json()) as { data: SessionEndResult };
@@ -308,7 +344,7 @@ export function ConversationApp() {
       void loadSessions();
     } catch {
       setEndState("idle");
-      setSendError({ message: "Network error — check your connection and try again." });
+      setSendError({ message: tCommon("errors.network") });
     }
   }
 
@@ -320,8 +356,8 @@ export function ConversationApp() {
   if (view === "picker") {
     return (
       <div className="space-y-10">
-        <section aria-label="Start a conversation" className="space-y-4">
-          <h2 className="text-lg font-semibold">Start a conversation</h2>
+        <section aria-label={t("app.startHeading")} className="space-y-4">
+          <h2 className="text-lg font-semibold">{t("app.startHeading")}</h2>
           <ScenarioPicker onStart={startSession} />
           {pickerError && (
             <p role="alert" className="text-sm text-danger-strong">
@@ -330,12 +366,12 @@ export function ConversationApp() {
           )}
         </section>
 
-        <section aria-label="Past sessions" className="space-y-4">
-          <h2 className="text-lg font-semibold">Past sessions</h2>
+        <section aria-label={t("app.pastSessionsHeading")} className="space-y-4">
+          <h2 className="text-lg font-semibold">{t("app.pastSessionsHeading")}</h2>
           {sessionsLoaded ? (
             <SessionHistoryList sessions={sessions} onSelect={openHistorySession} />
           ) : (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{tCommon("states.loading")}</p>
           )}
         </section>
       </div>
@@ -345,9 +381,9 @@ export function ConversationApp() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-jp text-lg font-semibold">{scenarioLabel(activeScenario)}</h2>
+        <h2 className="font-jp text-lg font-semibold">{scenarioLabel(t, activeScenario)}</h2>
         <Button type="button" variant="ghost" size="sm" onClick={resetToPicker}>
-          ← Back
+          {t("app.back")}
         </Button>
       </div>
 
@@ -357,7 +393,7 @@ export function ConversationApp() {
       >
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            {readOnly ? "This session has no messages." : "Say hello to get started."}
+            {readOnly ? t("app.noMessagesReadOnly") : t("app.noMessagesStart")}
           </p>
         )}
         {messages.map((m) => (
@@ -367,14 +403,14 @@ export function ConversationApp() {
 
       {truncatedNotice && (
         <p role="status" className="text-xs text-muted-foreground">
-          The AI reply was shortened to fit — it may be cut off.
+          {t("app.truncatedNotice")}
         </p>
       )}
 
       {!ended && (
         <form onSubmit={sendMessage} className="space-y-2">
           <Label htmlFor="conversation-message" className="sr-only">
-            Message
+            {t("app.messageLabel")}
           </Label>
           <div className="flex items-end gap-2">
             <textarea
@@ -387,7 +423,7 @@ export function ConversationApp() {
               }}
               rows={2}
               disabled={sending}
-              placeholder="Type your reply in Japanese…"
+              placeholder={t("app.messagePlaceholder")}
               className="flex-1 rounded-md border border-input bg-card px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             />
             <VoiceRecorderButton onTranscribed={handleTranscribed} disabled={sending} />
@@ -395,13 +431,11 @@ export function ConversationApp() {
               type="submit"
               disabled={sending || !input.trim() || Boolean(sendError?.retryAfterSeconds)}
             >
-              Send
+              {t("app.send")}
             </Button>
           </div>
           {pendingVoice && (
-            <p className="text-xs text-muted-foreground">
-              AI transcription — check before sending.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("app.voicePendingNotice")}</p>
           )}
           {sendError && (
             <p role="alert" className="text-sm text-danger-strong">
@@ -413,24 +447,11 @@ export function ConversationApp() {
 
       {!ended && !readOnly && (
         <Button type="button" variant="outline" onClick={endSession} disabled={endState === "ending"}>
-          {endState === "ending" ? "Ending…" : "End session"}
+          {endState === "ending" ? t("app.ending") : t("app.endSession")}
         </Button>
       )}
 
       {ended && corrections && <CorrectionsPanel result={corrections} />}
     </div>
   );
-}
-
-/** Reads `{error}` off a JSON error response, falling back to `fallback` when
- * the body is missing/unparsable. Server error strings (see the route
- * `STATUS_MESSAGES` tables in `app/api/conversation/*`) are already
- * friendly/non-technical, so they're shown as-is. */
-async function friendlyErrorFrom(res: Response, fallback: string): Promise<string> {
-  try {
-    const body = (await res.json()) as { error?: string };
-    return body.error ?? fallback;
-  } catch {
-    return fallback;
-  }
 }

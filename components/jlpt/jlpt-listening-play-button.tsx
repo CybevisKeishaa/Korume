@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "@/lib/i18n";
 
 export interface JlptListeningPlayButtonProps {
   text: string;
@@ -11,16 +12,18 @@ export interface JlptListeningPlayButtonProps {
 type PlayState = "idle" | "loading" | "playing" | "unavailable";
 
 const TTS_ENDPOINT = "/api/speech/tts";
-const NOT_CONFIGURED_MESSAGE = "Audio playback isn't set up yet.";
 
 /** Maps a non-200 TTS response to a friendly message, flagging 503 as a
  * persistent "not configured" state (never retried again this question). */
-function friendlyTtsError(status: number): { message: string; unavailable: boolean } {
-  if (status === 503) return { message: NOT_CONFIGURED_MESSAGE, unavailable: true };
+function friendlyTtsError(
+  status: number,
+  t: ReturnType<typeof useTranslations<"jlpt">>,
+): { message: string; unavailable: boolean } {
+  if (status === 503) return { message: t("listeningPlayButton.notConfigured"), unavailable: true };
   if (status === 429) {
-    return { message: "Too many audio requests — try again shortly.", unavailable: false };
+    return { message: t("listeningPlayButton.rateLimited"), unavailable: false };
   }
-  return { message: "Couldn't play the audio.", unavailable: false };
+  return { message: t("listeningPlayButton.genericError"), unavailable: false };
 }
 
 /**
@@ -31,6 +34,7 @@ function friendlyTtsError(status: number): { message: string; unavailable: boole
  * import that component to stay out of the conversation feature's files.
  */
 export function JlptListeningPlayButton({ text, className }: JlptListeningPlayButtonProps) {
+  const t = useTranslations("jlpt");
   const [playState, setPlayState] = useState<PlayState>("idle");
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -52,7 +56,7 @@ export function JlptListeningPlayButton({ text, className }: JlptListeningPlayBu
         body: JSON.stringify({ text }),
       });
       if (!res.ok) {
-        const { message, unavailable } = friendlyTtsError(res.status);
+        const { message, unavailable } = friendlyTtsError(res.status, t);
         setError(message);
         setPlayState(unavailable ? "unavailable" : "idle");
         return;
@@ -66,9 +70,12 @@ export function JlptListeningPlayButton({ text, className }: JlptListeningPlayBu
       }
       setPlayState("playing");
     } catch {
-      setError("Network error — couldn't play the audio.");
+      setError(t("listeningPlayButton.networkError"));
       setPlayState("idle");
     }
+    // `t` intentionally omitted below (stable for the component's lifetime; see the same note in
+    // jlpt-timer.tsx).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
   return (
@@ -79,13 +86,13 @@ export function JlptListeningPlayButton({ text, className }: JlptListeningPlayBu
         size="sm"
         onClick={handlePlay}
         disabled={playState === "loading" || playState === "unavailable"}
-        title={playState === "unavailable" ? NOT_CONFIGURED_MESSAGE : undefined}
+        title={playState === "unavailable" ? t("listeningPlayButton.notConfigured") : undefined}
       >
         {playState === "loading"
-          ? "Loading audio…"
+          ? t("listeningPlayButton.loading")
           : playState === "playing"
-            ? "▶ Replay audio"
-            : "▶ Play audio"}
+            ? t("listeningPlayButton.replay")
+            : t("listeningPlayButton.play")}
       </Button>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption -- short synthesized speech clip, no captions to add */}
       <audio ref={audioRef} onEnded={() => setPlayState("idle")} aria-hidden="true" className="hidden" />

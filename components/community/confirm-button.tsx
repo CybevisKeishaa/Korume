@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export interface ConfirmButtonProps {
@@ -21,6 +22,14 @@ export interface ConfirmButtonProps {
  * Escape or Cancel returns focus to the original trigger, matching the
  * Escape-returns-focus convention used by this repo's popovers
  * (`components/layout/notification-bell.tsx`, `components/reading/word-lookup-popover.tsx`).
+ *
+ * `label`/`confirmLabel` are supplied pre-translated by the caller (they vary
+ * per call site and per feature). This component's OWN chrome — "Cancel" and
+ * the "Yes, {label}" confirm text — is translated from `common.actions.*`
+ * rather than a feature namespace: this file lives under
+ * `components/community/` but is also consumed from `playlist-list.tsx`
+ * (playlists) and `shadowing-recorder-panel.tsx` (shadowing), so no single
+ * feature namespace can own its copy without being arbitrary (Task 16 audit).
  */
 export function ConfirmButton({
   label,
@@ -30,6 +39,7 @@ export function ConfirmButton({
   className,
   variant = "danger",
 }: ConfirmButtonProps) {
+  const t = useTranslations("common");
   const [confirming, setConfirming] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const yesRef = useRef<HTMLButtonElement>(null);
@@ -81,14 +91,14 @@ export function ConfirmButton({
           }}
           className="rounded-md bg-danger px-2 py-1 text-xs font-medium text-white hover:bg-danger/90"
         >
-          Yes, {label.toLowerCase()}
+          {t("actions.confirmYes", { label: label.toLowerCase() })}
         </button>
         <button
           type="button"
           onClick={cancel}
           className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
         >
-          Cancel
+          {t("actions.cancel")}
         </button>
       </span>
     );

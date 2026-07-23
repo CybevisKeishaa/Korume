@@ -1,0 +1,107 @@
+{
+  "title": "Đề thi thử JLPT",
+  "subtitleCount": "{count, plural, other {{count} đề thi}}",
+  "recentAttempts": "Lượt làm bài gần đây",
+  "sections": {
+    "vocab": "Từ vựng",
+    "grammar": "Ngữ pháp",
+    "reading": "Đọc hiểu",
+    "listening": "Nghe hiểu"
+  },
+  "pillars": {
+    "language_knowledge": "Kiến thức ngôn ngữ",
+    "reading": "Đọc hiểu",
+    "listening": "Nghe hiểu",
+    "language_knowledge_reading": "Kiến thức ngôn ngữ + Đọc hiểu"
+  },
+  "attemptList": {
+    "empty": "Chưa có lượt làm bài nào — hãy làm một đề ở trên để xem lịch sử điểm số tại đây.",
+    "unknownTest": "Đề không xác định",
+    "fullMock": "Thi thử toàn bộ",
+    "sectionLabel": "Phần: {section}"
+  },
+  "preStart": {
+    "fullMockDescription": "Bài thi thử toàn bộ — tất cả các phần.",
+    "sectionPracticeDescription": "Luyện tập theo phần — {section}.",
+    "questionsLabel": "Số câu hỏi",
+    "timeLimitLabel": "Thời gian làm bài",
+    "durationMinutes": "{minutes} phút",
+    "instructions": "Đồng hồ đếm ngược bắt đầu ngay khi bạn nhấn Bắt đầu và tự động nộp bài khi hết giờ. Bạn có thể di chuyển tự do giữa các câu hỏi và thay đổi câu trả lời cho đến khi nộp bài.",
+    "start": "Bắt đầu"
+  },
+  "testCard": {
+    "sectionSummary": "{count} câu hỏi · {minutes} phút",
+    "takeFullMock": "Làm bài thi thử toàn bộ",
+    "practiceSection": "Luyện tập {section}"
+  },
+  "testList": {
+    "empty": "Chưa có đề thi JLPT nào ở cấp độ này."
+  },
+  "questionCard": {
+    "heading": "Câu {index} / {total}",
+    "readingPassage": "Đoạn văn đọc hiểu",
+    "answerChoicesAria": "Các phương án trả lời cho câu {index}",
+    "selected": " (đã chọn)"
+  },
+  "navigator": {
+    "aria": "Điều hướng câu hỏi",
+    "item": "Câu {index}",
+    "current": "hiện tại",
+    "answered": "đã trả lời",
+    "notAnswered": "chưa trả lời"
+  },
+  "resultsPanel": {
+    "title": "Kết quả",
+    "scoreLine": "{correct} / {total} đúng ({percent}%)",
+    "passEstimateAria": "Ước tính đậu/rớt",
+    "estimatedScaledScore": "Điểm quy đổi ước tính",
+    "resultPass": "Kết quả ước tính: Đậu",
+    "resultNotPassed": "Kết quả ước tính: Chưa đạt",
+    "unofficialEstimate": "(ước tính không chính thức — không phải điểm JLPT chính thức)",
+    "meetsMinimum": "✓ đạt mức tối thiểu",
+    "belowMinimum": "dưới mức tối thiểu",
+    "pillarScaledScoreAria": "Điểm quy đổi của {pillar}",
+    "sectionalMinimum": "Mức tối thiểu theo phần: {value}",
+    "passUnavailable": "Không thể ước tính đậu/rớt",
+    "sectionScores": "Điểm theo từng phần",
+    "sectionScoreLine": "{correct} / {total} ({percent}%)",
+    "weaknessBreakdownAria": "Phân tích điểm yếu",
+    "whereToFocus": "Nên tập trung vào đâu",
+    "weaknessLine": "{section} · {correct} / {total} đúng ({percent}%)",
+    "suggestedReview": "Gợi ý ôn tập",
+    "questionReview": "Xem lại câu hỏi",
+    "questionNumber": "Câu {index}",
+    "correct": "Đúng.",
+    "incorrect": "Sai.",
+    "yourAnswer": "Câu trả lời của bạn: {answer}",
+    "notAnswered": "Chưa trả lời",
+    "correctAnswer": "Đáp án đúng: {answer}",
+    "backToTests": "Quay lại danh sách đề JLPT"
+  },
+  "a11y": {
+    "timeRemaining": "Thời gian còn lại",
+    "fiveMinutesRemaining": "Còn 5 phút.",
+    "oneMinuteRemaining": "Còn 1 phút.",
+    "timeUp": "Đã hết giờ — đang tự động nộp bài của bạn.",
+    "underOneMinuteLeft": "Còn dưới 1 phút"
+  },
+  "listeningPlayButton": {
+    "notConfigured": "Chức năng phát âm thanh chưa được thiết lập.",
+    "loading": "Đang tải âm thanh…",
+    "play": "▶ Phát âm thanh",
+    "replay": "▶ Phát lại âm thanh",
+    "rateLimited": "Quá nhiều yêu cầu âm thanh — vui lòng thử lại sau ít phút.",
+    "genericError": "Không thể phát âm thanh.",
+    "networkError": "Lỗi kết nối mạng — không thể phát âm thanh."
+  },
+  "testRunner": {
+    "fullMockTest": "Thi thử toàn bộ",
+    "sectionPractice": "Luyện tập theo phần · {section}",
+    "previous": "Trước",
+    "submitTest": "Nộp bài",
+    "submitting": "Đang nộp bài…",
+    "confirmSubmit": "{count, plural, other {Bạn còn {count} câu chưa trả lời. Nhấn Nộp bài một lần nữa để nộp.}}",
+    "submitFailedGeneric": "Không thể nộp bài của bạn. Vui lòng thử lại.",
+    "noQuestions": "Đề này chưa có câu hỏi để luyện tập."
+  }
+}

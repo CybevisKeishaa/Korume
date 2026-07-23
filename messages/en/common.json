@@ -1,3 +1,56 @@
 {
-  "appName": "Nihongo Cinema"
+  "appName": "Nihongo Cinema",
+  "appNameJp": "日本語シネマ",
+  "auth": { "signIn": "Sign in", "signOut": "Sign out", "signUp": "Create account" },
+  "meta": {
+    "defaultTitle": "Nihongo Cinema — Learn Japanese through video",
+    "description": "Learn Japanese through video shadowing, kanji, vocab, grammar and JLPT prep."
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "retry": "Try again",
+    "review": "Review",
+    "loadMore": "Load more",
+    "confirmYes": "Yes, {label}"
+  },
+  "states": {
+    "loading": "Loading…",
+    "error": "Something went wrong.",
+    "empty": "Nothing here yet."
+  },
+  "errors": {
+    "network": "Network error — check your connection and try again."
+  },
+  "a11y": {
+    "closeDialog": "Close dialog",
+    "dismissNotification": "Dismiss notification",
+    "levelFilter": "JLPT level"
+  },
+  "filters": { "all": "All" },
+  "noThumbnail": "No thumbnail",
+  "recommendations": {
+    "heading": "Recommended for you",
+    "loading": "Finding videos at your level…",
+    "empty": "No recommendations yet — <link>import a video</link> to get started.",
+    "knownWords": "{percent}% words you know",
+    "band": { "ideal": "Just right", "tooEasy": "Easy review", "tooHard": "Challenge" }
+  },
+  "srs": {
+    "progress": "{current} / {total}",
+    "showAnswer": "Show answer",
+    "spaceHint": "(Space)",
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy",
+    "empty": "Nothing to review here yet.",
+    "complete": "Session complete 🎉",
+    "reviewedCount": "{count, plural, one {You reviewed {count} item.} other {You reviewed {count} items.}}",
+    "done": "Done"
+  }
 }

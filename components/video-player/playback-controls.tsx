@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { FuriganaDisplayMode } from "@/lib/video-types";
 
@@ -12,8 +13,13 @@ export interface SpeedControlProps {
 
 /** Playback-speed picker. A `radiogroup` of toggle buttons, one active at a time. */
 export function SpeedControl({ value, onChange }: SpeedControlProps) {
+  const t = useTranslations("shadowing");
   return (
-    <div role="radiogroup" aria-label="Playback speed" className="flex items-center gap-1">
+    <div
+      role="radiogroup"
+      aria-label={t("player.a11y.playbackSpeed")}
+      className="flex items-center gap-1"
+    >
       {SPEEDS.map((speed) => {
         const active = value === speed;
         return (
@@ -48,8 +54,9 @@ export interface LoopControlsProps {
 
 /** A–B loop controls: set the loop start/end at the current playhead, or clear it. */
 export function LoopControls({ loopA, loopB, onSetA, onSetB, onClear }: LoopControlsProps) {
+  const t = useTranslations("shadowing");
   return (
-    <div className="flex items-center gap-1" aria-label="A–B loop">
+    <div className="flex items-center gap-1" aria-label={t("player.a11y.abLoop")}>
       <button
         type="button"
         onClick={onSetA}
@@ -61,7 +68,8 @@ export function LoopControls({ loopA, loopB, onSetA, onSetB, onClear }: LoopCont
             : "bg-muted text-muted-foreground hover:text-foreground",
         )}
       >
-        Set A{loopA !== null ? ` (${formatTime(loopA)})` : ""}
+        {t("player.loop.setA")}
+        {loopA !== null ? ` (${formatTime(loopA)})` : ""}
       </button>
       <button
         type="button"
@@ -74,7 +82,8 @@ export function LoopControls({ loopA, loopB, onSetA, onSetB, onClear }: LoopCont
             : "bg-muted text-muted-foreground hover:text-foreground",
         )}
       >
-        Set B{loopB !== null ? ` (${formatTime(loopB)})` : ""}
+        {t("player.loop.setB")}
+        {loopB !== null ? ` (${formatTime(loopB)})` : ""}
       </button>
       {(loopA !== null || loopB !== null) && (
         <button
@@ -82,18 +91,47 @@ export function LoopControls({ loopA, loopB, onSetA, onSetB, onClear }: LoopCont
           onClick={onClear}
           className="rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
-          Clear loop
+          {t("player.loop.clear")}
         </button>
       )}
     </div>
   );
 }
 
-const FURIGANA_MODES: { value: FuriganaDisplayMode; label: string }[] = [
-  { value: "adaptive", label: "Adaptive" },
-  { value: "all", label: "All" },
-  { value: "off", label: "Off" },
-];
+/**
+ * Furigana mode -> `shadowing.player.furigana.*` catalog key. This used to be
+ * the rendered English label itself, in a module-level array — but a
+ * module-level constant can't call `t()` (only a component body can), so it
+ * holds the catalog key instead, resolved by the sole consumer below.
+ *
+ * `as const satisfies Record<FuriganaDisplayMode, string>` (rather than
+ * annotating the object literal with that type) keeps both properties this
+ * needs: exhaustiveness (a new `FuriganaDisplayMode` member missing here is a
+ * type error — a 4th mode must not be able to silently lose its label) AND
+ * literal string types on the values (so `t(FURIGANA_MODE_KEY[mode])`
+ * type-checks against next-intl's typed keys without a cast). Third instance
+ * of this pattern, after Task 10's `BAND_LABEL_KEY` and 11b's
+ * `summarizeDiff`.
+ */
+const FURIGANA_MODE_KEY = {
+  adaptive: "player.furigana.adaptive",
+  all: "player.furigana.all",
+  off: "player.furigana.off",
+} as const satisfies Record<FuriganaDisplayMode, string>;
+
+/**
+ * Derived from `FURIGANA_MODE_KEY`'s own keys rather than re-listed as a
+ * second literal array. A second array (`["adaptive", "all", "off"]`
+ * annotated `FuriganaDisplayMode[]`) is NOT exhaustiveness-checked by that
+ * annotation — TS widens a `string[]`-shaped literal against it without
+ * complaint, so a 4th `FuriganaDisplayMode` member could be added to
+ * `lib/video-types.ts` and this array would keep compiling, silently
+ * rendering no button at all for it (worse than losing just its label).
+ * Deriving from the `satisfies`-checked map means there is exactly one
+ * source of truth for the closed set, and it inherits that map's
+ * exhaustiveness guarantee.
+ */
+const FURIGANA_MODES = Object.keys(FURIGANA_MODE_KEY) as FuriganaDisplayMode[];
 
 export interface FuriganaModeControlProps {
   value: FuriganaDisplayMode;
@@ -106,17 +144,18 @@ export interface FuriganaModeControlProps {
  * are the old hard on/off states, kept for readers who want either extreme.
  */
 export function FuriganaModeControl({ value, onChange }: FuriganaModeControlProps) {
+  const t = useTranslations("shadowing");
   return (
-    <div role="radiogroup" aria-label="Furigana" className="flex items-center gap-1">
+    <div role="radiogroup" aria-label={t("player.a11y.furigana")} className="flex items-center gap-1">
       {FURIGANA_MODES.map((mode) => {
-        const active = value === mode.value;
+        const active = value === mode;
         return (
           <button
-            key={mode.value}
+            key={mode}
             type="button"
             role="radio"
             aria-checked={active}
-            onClick={() => onChange(mode.value)}
+            onClick={() => onChange(mode)}
             className={cn(
               "rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
               active
@@ -124,7 +163,7 @@ export function FuriganaModeControl({ value, onChange }: FuriganaModeControlProp
                 : "bg-muted text-muted-foreground hover:text-foreground",
             )}
           >
-            {mode.label}
+            {t(FURIGANA_MODE_KEY[mode])}
           </button>
         );
       })}

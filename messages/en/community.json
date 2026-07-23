@@ -1,0 +1,106 @@
+{
+  "page": {
+    "heading": "Community",
+    "subtitle": "Ask questions, share tips, and give each other feedback on shadowing recordings.",
+    "signInPrompt": "Sign in to post or comment."
+  },
+  "peerReviewPage": {
+    "subtitle": "Listen to a shadowing take shared by another learner and leave a rating and comment, or manage the recordings you've shared."
+  },
+  "postPage": {
+    "back": "← Back to community"
+  },
+  "tabs": {
+    "sectionsAriaLabel": "Community sections",
+    "forum": "Forum",
+    "peerReview": "Peer review"
+  },
+  "topics": {
+    "all": "All",
+    "general": "General",
+    "grammar": "Grammar",
+    "vocab": "Vocab",
+    "listening": "Listening",
+    "speaking": "Speaking",
+    "jlpt": "JLPT",
+    "study-tips": "Study tips"
+  },
+  "deletedUser": "Deleted user",
+  "board": {
+    "topicFilterAriaLabel": "Filter by topic",
+    "newPost": "New post",
+    "empty": "No posts yet in this topic — be the first to start a discussion.",
+    "loadError": "Couldn't load posts — please try again."
+  },
+  "postItem": {
+    "commentCount": "{count, plural, one {{count} comment} other {{count} comments}}"
+  },
+  "composer": {
+    "titleLabel": "Title",
+    "topicLabel": "Topic",
+    "contentLabel": "Content",
+    "post": "Post",
+    "posting": "Posting…",
+    "posted": "Posted.",
+    "tooManyWithSeconds": "Too many posts — try again in {seconds}s.",
+    "tooManyGeneric": "Too many posts — please wait a moment and try again.",
+    "postError": "Couldn't post — please try again."
+  },
+  "thread": {
+    "editPost": "Edit post",
+    "deletePost": "Delete post",
+    "deletePostConfirm": "Delete this post? This can't be undone.",
+    "you": "You",
+    "saveChangesError": "Couldn't save your changes — please try again.",
+    "deletePostError": "Couldn't delete your post — please try again.",
+    "postCommentError": "Couldn't post your comment — please try again.",
+    "saving": "Saving…",
+    "commentsHeading": "Comments",
+    "noComments": "No comments yet — be the first to reply.",
+    "editComment": "Edit comment",
+    "deleteComment": "Delete comment",
+    "deleteCommentConfirm": "Delete this comment?",
+    "editCommentAriaLabel": "Edit comment content",
+    "commentLabel": "Comment",
+    "commentPlaceholder": "Write a reply…",
+    "commentButton": "Comment",
+    "posting": "Posting…",
+    "tooManyRequestsWithSeconds": "Too many requests — try again in {seconds}s.",
+    "tooManyRequestsGeneric": "Too many requests — please wait a moment and try again.",
+    "tooManyCommentsWithSeconds": "Too many comments — try again in {seconds}s.",
+    "tooManyCommentsGeneric": "Too many comments — please wait a moment and try again."
+  },
+  "peerReviewMine": {
+    "empty": "You haven't shared any recordings for peer feedback yet.",
+    "revoke": "Revoke",
+    "revokeConfirm": "Revoke this share? This deletes the reviews too, and can't be undone.",
+    "sharedPrefix": "Shared",
+    "noReviews": "No reviews yet.",
+    "starsAriaLabel": "{rating} out of 5 stars",
+    "revokeError": "Couldn't revoke that share — please try again."
+  },
+  "peerReviewQueue": {
+    "reviewCount": "{count, plural, one {{count} review} other {{count} reviews}}",
+    "listen": "Listen",
+    "recordingAriaLabel": "{name}'s recording",
+    "thisUser": "This user",
+    "loadRecordingError": "Couldn't load this recording — please try again.",
+    "expiredError": "That link expired — try listening again.",
+    "alreadyReviewed": "You've already reviewed this recording.",
+    "ratingLegend": "Rating",
+    "commentLabel": "Comment",
+    "submitReview": "Submit review",
+    "submitting": "Submitting…",
+    "ownShareError": "You cannot review your own share.",
+    "submitError": "Couldn't submit your review — please try again.",
+    "tooManyRequestsWithSeconds": "Too many requests — try again in {seconds}s.",
+    "tooManyRequestsGeneric": "Too many requests — please wait a moment and try again.",
+    "empty": "Nothing to review right now — check back later.",
+    "loadMoreError": "Couldn't load more — please try again."
+  },
+  "peerReviewTabs": {
+    "tablistAriaLabel": "Peer review",
+    "queue": "Queue",
+    "mine": "Mine"
+  }
+}

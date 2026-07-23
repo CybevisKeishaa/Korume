@@ -1,12 +1,17 @@
 "use client";
 
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { PitchAccentScore, PitchOverlayPoint } from "@/lib/pitch";
 
 export interface PitchContourOverlayProps {
   /** Aligned comparison from `scorePitchAccent` (overlay + score + confidence). */
   score: PitchAccentScore;
-  /** Accessible label for the plot. */
+  /**
+   * Accessible label for the plot. Optional override — omit it to fall back
+   * to the translated `shadowing.pitch.overlay.a11y.label` string via
+   * `useTranslations`; pass it when a caller needs a more specific label.
+   */
   label?: string;
   className?: string;
   height?: number;
@@ -56,10 +61,11 @@ function seriesPath(
  */
 export function PitchContourOverlay({
   score,
-  label = "Pitch comparison: reference (お手本) vs your take",
+  label,
   className,
   height = 96,
 }: PitchContourOverlayProps) {
+  const t = useTranslations("shadowing");
   const { overlay } = score;
 
   const voiced: number[] = [];
@@ -85,7 +91,7 @@ export function PitchContourOverlay({
     <div className={cn("space-y-1", className)}>
       <svg
         role="img"
-        aria-label={label}
+        aria-label={label ?? t("pitch.overlay.a11y.label")}
         viewBox={`0 0 ${VIEW_WIDTH} ${height}`}
         preserveAspectRatio="none"
         className="w-full"
@@ -114,21 +120,21 @@ export function PitchContourOverlay({
       </svg>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
+        <span data-testid="reference-legend" className="inline-flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-0 w-5 border-t-2 border-dashed border-muted-foreground/70" />
-          お手本
+          {t("pitch.overlay.reference")}
         </span>
-        <span className="inline-flex items-center gap-1.5">
+        <span data-testid="user-legend" className="inline-flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-0.5 w-5 rounded bg-primary" />
-          あなた
+          {t("pitch.overlay.user")}
         </span>
         {score.lowConfidence ? (
-          <span>Not enough voiced audio to compare reliably — try a longer take.</span>
+          <span>{t("pitch.overlay.lowConfidence")}</span>
         ) : (
           <span className="text-foreground">
-            イントネーション{" "}
+            {t("pitch.overlay.intonation")}{" "}
             <strong className="text-sm font-semibold">{Math.round(score.score)}</strong>
-            <span aria-hidden> / 100</span>
+            <span aria-hidden>{t("pitch.overlay.scoreSuffix")}</span>
           </span>
         )}
       </div>

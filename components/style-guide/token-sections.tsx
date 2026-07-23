@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/lib/i18n";
 
 /** Token catalogues. Kept as plain data so the page IS the documentation —
  * a token added to globals.css without being listed here shows up in review. */
@@ -58,20 +59,18 @@ function Swatch({ token }: { token: string }) {
 }
 
 export function ColorSection() {
+  const t = useTranslations("admin");
   return (
     <section aria-labelledby="sg-colour">
-      <h2 id="sg-colour" className="text-heading font-semibold">Colour</h2>
-      <h3 className="mt-md text-body-lg font-medium">Primitive tier</h3>
+      <h2 id="sg-colour" className="text-heading font-semibold">{t("styleGuide.sections.colour.heading")}</h2>
+      <h3 className="mt-md text-body-lg font-medium">{t("styleGuide.sections.colour.primitiveTier")}</h3>
       <div className="mt-xs grid grid-cols-2 gap-xs sm:grid-cols-3 lg:grid-cols-4">
         {PRIMITIVE_COLORS.map((token) => (
           <Swatch key={token} token={token} />
         ))}
       </div>
-      <h3 className="mt-md text-body-lg font-medium">Semantic tier</h3>
-      <p className="text-body text-muted-foreground">
-        Features consume ONLY this tier. Dark theme remaps it; L9b restyles by editing the
-        mapping, not the features.
-      </p>
+      <h3 className="mt-md text-body-lg font-medium">{t("styleGuide.sections.colour.semanticTier")}</h3>
+      <p className="text-body text-muted-foreground">{t("styleGuide.sections.colour.semanticNote")}</p>
       <div className="mt-xs grid grid-cols-2 gap-xs sm:grid-cols-3 lg:grid-cols-4">
         {SEMANTIC_COLORS.map((token) => (
           <Swatch key={token} token={token} />
@@ -82,35 +81,39 @@ export function ColorSection() {
 }
 
 export function TypographySection() {
+  const t = useTranslations("admin");
   return (
     <section aria-labelledby="sg-typography">
-      <h2 id="sg-typography" className="text-heading font-semibold">Typography</h2>
+      <h2 id="sg-typography" className="text-heading font-semibold">{t("styleGuide.sections.typography.heading")}</h2>
       <div className="mt-md space-y-sm">
         {TYPE_SCALE.map(({ cls, name }) => (
           <div key={name}>
             <code className="text-caption text-muted-foreground">{name}</code>
+            {/* Locale-stress demo line — always the same Vietnamese sample
+                regardless of UI locale (D8: content, not chrome — the whole
+                point is showing how real VN diacritics render at every type
+                scale step). Never run through t(). */}
             <p className={cls}>Học tiếng Nhật qua phim — ắ ặ ễ ỡ ườ</p>
           </div>
         ))}
         <div>
           <code className="text-caption text-muted-foreground">font-jp + leading-jp</code>
+          {/* Same D8 exemption as above, for Japanese. */}
           <p lang="ja" className="font-jp text-body-lg leading-jp">
             映画で日本語を学ぶ — 振り仮名のための行間。
           </p>
         </div>
-        <p className="text-body text-muted-foreground">
-          Body line-heights are sized for stacked Vietnamese diacritics; Japanese text takes
-          leading-jp (spec §4.5 touchpoint 1).
-        </p>
+        <p className="text-body text-muted-foreground">{t("styleGuide.sections.typography.note")}</p>
       </div>
     </section>
   );
 }
 
 export function SpacingSection() {
+  const t = useTranslations("admin");
   return (
     <section aria-labelledby="sg-spacing">
-      <h2 id="sg-spacing" className="text-heading font-semibold">Spacing</h2>
+      <h2 id="sg-spacing" className="text-heading font-semibold">{t("styleGuide.sections.spacing.heading")}</h2>
       <div className="mt-md space-y-xs">
         {SPACING.map((step) => (
           <div key={step} className="flex items-center gap-sm">
@@ -139,9 +142,10 @@ const ELEVATION_CLASSES = {
 } as const;
 
 export function ElevationSection() {
+  const t = useTranslations("admin");
   return (
     <section aria-labelledby="sg-elevation">
-      <h2 id="sg-elevation" className="text-heading font-semibold">Elevation</h2>
+      <h2 id="sg-elevation" className="text-heading font-semibold">{t("styleGuide.sections.elevation.heading")}</h2>
       <div className="mt-md flex flex-wrap gap-lg">
         {(["raised", "overlay", "floating"] as const).map((step) => (
           <Card key={step} className={cn(ELEVATION_CLASSES[step], "p-md")}>
@@ -154,9 +158,10 @@ export function ElevationSection() {
 }
 
 export function MotionSection() {
+  const t = useTranslations("admin");
   return (
     <section aria-labelledby="sg-motion">
-      <h2 id="sg-motion" className="text-heading font-semibold">Motion</h2>
+      <h2 id="sg-motion" className="text-heading font-semibold">{t("styleGuide.sections.motion.heading")}</h2>
       <ul className="mt-md space-y-2xs">
         {MOTION_TOKENS.map((token) => (
           <li key={token}>
@@ -165,17 +170,17 @@ export function MotionSection() {
         ))}
       </ul>
       <p className="mt-xs animate-fade-in text-body text-muted-foreground">
-        This line uses animate-fade-in (duration-base × ease-standard). With reduce motion
-        on — toggle above — it must appear instantly.
+        {t("styleGuide.sections.motion.note")}
       </p>
     </section>
   );
 }
 
 export function ZIndexSection() {
+  const t = useTranslations("admin");
   return (
     <section aria-labelledby="sg-zindex">
-      <h2 id="sg-zindex" className="text-heading font-semibold">Z-index</h2>
+      <h2 id="sg-zindex" className="text-heading font-semibold">{t("styleGuide.sections.zIndex.heading")}</h2>
       <ul className="mt-md space-y-2xs">
         {Z_TOKENS.map((token) => (
           <li key={token}>

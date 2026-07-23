@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import { CorrectionsPanel } from "./corrections-panel";
 
 describe("CorrectionsPanel", () => {
@@ -21,6 +21,7 @@ describe("CorrectionsPanel", () => {
     expect(screen.getByText(/past tense needed here/i)).toBeInTheDocument();
     expect(screen.getByText(/great effort today/i)).toBeInTheDocument();
     expect(screen.getByText(/ai-generated/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/session results/i)).toBeInTheDocument();
   });
 
   it("shows a message when there are no corrections", () => {

@@ -1,0 +1,130 @@
+{
+  "playerError": {
+    "title": "This video can't be played here.",
+    "body": "It may be region-locked, private, or unavailable for embedding."
+  },
+  "noTranscript": {
+    "title": "No transcript yet",
+    "body": "This video doesn't have a transcript to shadow against yet. Transcript submission is coming soon."
+  },
+  "translationToggle": "Translation",
+  "summary": {
+    "heading": "Summary",
+    "aiGenerated": "AI-generated",
+    "a11y": { "region": "AI video summary" },
+    "empty": "No summary yet for this video.",
+    "generate": "Generate summary",
+    "generating": "Generating summary…",
+    "inputTruncated": "Note: the transcript was truncated to summarize it.",
+    "keyVocab": "Key vocab",
+    "keyGrammar": "Key grammar",
+    "errors": {
+      "noTranscript": "This video has no transcript to summarize yet.",
+      "unavailable": "AI summarization isn't set up yet for this deployment.",
+      "rateLimited": "Too many summary requests — try again in {seconds}s.",
+      "rateLimitedGeneric": "Too many summary requests — please wait a moment and try again.",
+      "generic": "Could not generate a summary right now.",
+      "generateFailed": "Couldn't generate a summary right now.",
+      "loadFailed": "Couldn't load the summary."
+    }
+  },
+  "recorder": {
+    "errors": {
+      "micDenied": "Microphone access was denied. Allow microphone access in your browser settings to record.",
+      "micNotFound": "No microphone was found. Connect a microphone and try again.",
+      "micUnavailable": "Couldn't access your microphone. Check your device and try again.",
+      "notSupported": "Recording isn't supported in this browser.",
+      "recordingFailed": "Recording failed. Try again."
+    },
+    "toggle": {
+      "record": "Record",
+      "stop": "Stop recording"
+    },
+    "status": {
+      "requestingPermission": "Requesting microphone access…",
+      "recording": "Recording…",
+      "saving": "Saving recording…",
+      "saved": "Saved.",
+      "captured": "Recording captured."
+    },
+    "a11y": {
+      "panel": "Shadowing recorder for \"{lineText}\"",
+      "waveformLabel": "Your recording waveform",
+      "playback": "Play your saved recording",
+      "wordScores": "Word-level pronunciation"
+    },
+    "score": {
+      "action": "Score my pronunciation",
+      "actionBusy": "Scoring…",
+      "notConfigured": "Pronunciation scoring isn't set up yet.",
+      "conversionFailed": "We couldn't process that recording. Please try again.",
+      "pronunciationLabel": "発音",
+      "fluencyLabel": "リズム",
+      "errors": {
+        "rateLimited": "Too many scoring requests — try again in {seconds}s.",
+        "rateLimitedGeneric": "Too many scoring requests — please wait a moment and try again.",
+        "notFound": "That recording could no longer be found to score.",
+        "invalid": "That recording couldn't be scored — try recording again.",
+        "generic": "Something went wrong scoring your pronunciation."
+      }
+    },
+    "upload": {
+      "errors": {
+        "unauthorized": "Sign in to save your recordings.",
+        "rateLimited": "Too many recordings — try again in {seconds}s.",
+        "rateLimitedGeneric": "Too many recordings — please wait a moment and try again.",
+        "invalid": "That recording couldn't be saved. Please try recording again.",
+        "generic": "Something went wrong saving your recording."
+      }
+    },
+    "share": {
+      "action": "Share for peer feedback",
+      "actionBusy": "Sharing…",
+      "explain": "Shares this one recording publicly for feedback. You can revoke anytime.",
+      "shared": "Shared for peer feedback.",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke this share? Others will no longer be able to hear or review it.",
+      "errors": {
+        "rateLimited": "Too many requests — try again in {seconds}s.",
+        "rateLimitedGeneric": "Too many requests — please wait a moment and try again.",
+        "generic": "Couldn't share this recording — please try again.",
+        "revokeFailed": "Couldn't revoke this share — please try again."
+      }
+    },
+    "wordError": {
+      "none": "Correct",
+      "omission": "Omission",
+      "insertion": "Insertion",
+      "mispronunciation": "Mispronunciation"
+    }
+  },
+  "pitch": {
+    "contour": {
+      "a11y": { "label": "Your pitch contour for this take" },
+      "analyzing": "Analyzing pitch…",
+      "unavailable": "Pitch contour unavailable"
+    },
+    "overlay": {
+      "a11y": { "label": "Pitch comparison: reference (お手本) vs your take" },
+      "reference": "お手本",
+      "user": "あなた",
+      "lowConfidence": "Not enough voiced audio to compare reliably — try a longer take.",
+      "intonation": "イントネーション",
+      "scoreSuffix": " / 100"
+    }
+  },
+  "player": {
+    "transcriptEmpty": "This transcript has no lines yet.",
+    "a11y": {
+      "transcript": "Transcript",
+      "waveform": "Recording waveform",
+      "playbackSpeed": "Playback speed",
+      "abLoop": "A–B loop",
+      "furigana": "Furigana"
+    },
+    "processingRecording": "Processing recording…",
+    "waveformUnavailable": "Waveform preview unavailable.",
+    "furigana": { "adaptive": "Adaptive", "all": "All", "off": "Off" },
+    "loop": { "setA": "Set A", "setB": "Set B", "clear": "Clear loop" }
+  }
+}

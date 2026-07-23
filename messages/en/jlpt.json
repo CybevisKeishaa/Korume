@@ -1,0 +1,107 @@
+{
+  "title": "JLPT mock tests",
+  "subtitleCount": "{count, plural, one {{count} test} other {{count} tests}}",
+  "recentAttempts": "Recent attempts",
+  "sections": {
+    "vocab": "Vocabulary",
+    "grammar": "Grammar",
+    "reading": "Reading",
+    "listening": "Listening"
+  },
+  "pillars": {
+    "language_knowledge": "Language knowledge",
+    "reading": "Reading",
+    "listening": "Listening",
+    "language_knowledge_reading": "Language knowledge + Reading"
+  },
+  "attemptList": {
+    "empty": "No attempts yet — take a test above to see your score history here.",
+    "unknownTest": "Unknown test",
+    "fullMock": "Full mock",
+    "sectionLabel": "Section: {section}"
+  },
+  "preStart": {
+    "fullMockDescription": "Full mock test — all sections.",
+    "sectionPracticeDescription": "Section practice — {section}.",
+    "questionsLabel": "Questions",
+    "timeLimitLabel": "Time limit",
+    "durationMinutes": "{minutes} min",
+    "instructions": "The timer starts as soon as you click Start and submits automatically when it runs out. You can move between questions freely and change your answers until you submit.",
+    "start": "Start"
+  },
+  "testCard": {
+    "sectionSummary": "{count} questions · {minutes} min",
+    "takeFullMock": "Take full mock",
+    "practiceSection": "Practice {section}"
+  },
+  "testList": {
+    "empty": "No JLPT tests at this level yet."
+  },
+  "questionCard": {
+    "heading": "Question {index} / {total}",
+    "readingPassage": "Reading passage",
+    "answerChoicesAria": "Answer choices for question {index}",
+    "selected": " (selected)"
+  },
+  "navigator": {
+    "aria": "Question navigator",
+    "item": "Question {index}",
+    "current": "current",
+    "answered": "answered",
+    "notAnswered": "not answered"
+  },
+  "resultsPanel": {
+    "title": "Results",
+    "scoreLine": "{correct} / {total} correct ({percent}%)",
+    "passEstimateAria": "Pass estimate",
+    "estimatedScaledScore": "Estimated scaled score",
+    "resultPass": "Estimated result: Pass",
+    "resultNotPassed": "Estimated result: Not yet passing",
+    "unofficialEstimate": "(unofficial estimate — not an official JLPT score)",
+    "meetsMinimum": "✓ meets minimum",
+    "belowMinimum": "below minimum",
+    "pillarScaledScoreAria": "{pillar} scaled score",
+    "sectionalMinimum": "Sectional minimum: {value}",
+    "passUnavailable": "Pass/fail estimate unavailable",
+    "sectionScores": "Section scores",
+    "sectionScoreLine": "{correct} / {total} ({percent}%)",
+    "weaknessBreakdownAria": "Weakness breakdown",
+    "whereToFocus": "Where to focus",
+    "weaknessLine": "{section} · {correct} / {total} correct ({percent}%)",
+    "suggestedReview": "Suggested review",
+    "questionReview": "Question review",
+    "questionNumber": "Question {index}",
+    "correct": "Correct.",
+    "incorrect": "Incorrect.",
+    "yourAnswer": "Your answer: {answer}",
+    "notAnswered": "Not answered",
+    "correctAnswer": "Correct answer: {answer}",
+    "backToTests": "Back to JLPT tests"
+  },
+  "a11y": {
+    "timeRemaining": "Time remaining",
+    "fiveMinutesRemaining": "5 minutes remaining.",
+    "oneMinuteRemaining": "1 minute remaining.",
+    "timeUp": "Time is up — submitting your answers now.",
+    "underOneMinuteLeft": "Under 1 minute left"
+  },
+  "listeningPlayButton": {
+    "notConfigured": "Audio playback isn't set up yet.",
+    "loading": "Loading audio…",
+    "play": "▶ Play audio",
+    "replay": "▶ Replay audio",
+    "rateLimited": "Too many audio requests — try again shortly.",
+    "genericError": "Couldn't play the audio.",
+    "networkError": "Network error — couldn't play the audio."
+  },
+  "testRunner": {
+    "fullMockTest": "Full mock test",
+    "sectionPractice": "Section practice · {section}",
+    "previous": "Previous",
+    "submitTest": "Submit test",
+    "submitting": "Submitting…",
+    "confirmSubmit": "{count, plural, one {You have {count} unanswered question. Click Submit again to submit anyway.} other {You have {count} unanswered questions. Click Submit again to submit anyway.}}",
+    "submitFailedGeneric": "Could not submit your test. Please try again.",
+    "noQuestions": "This test has no questions to practice yet."
+  }
+}

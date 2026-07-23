@@ -1,0 +1,5 @@
+{
+  "title": "Grammar",
+  "subtitleCount": "{count, plural, one {{count} point} other {{count} points}}",
+  "empty": "No grammar at this level yet."
+}

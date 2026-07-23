@@ -1,0 +1,68 @@
+{
+  "page": {
+    "heading": "Playlists",
+    "subtitle": "Organize videos into a study playlist, or browse what other learners have made public."
+  },
+  "detailPage": {
+    "back": "← Back to playlists"
+  },
+  "tabs": {
+    "ariaLabel": "Playlists",
+    "mine": "My playlists",
+    "public": "Browse public",
+    "newPlaylist": "New playlist"
+  },
+  "composer": {
+    "nameLabel": "Name",
+    "descriptionLabel": "Description (optional)",
+    "create": "Create playlist",
+    "creating": "Creating…",
+    "tooManyWithSeconds": "Too many playlists — try again in {seconds}s.",
+    "tooManyGeneric": "Too many playlists — please wait a moment and try again.",
+    "createError": "Couldn't create your playlist — please try again."
+  },
+  "deletedUser": "Deleted user",
+  "byOwner": "By {name}",
+  "itemCount": "{count, plural, one {{count} video} other {{count} videos}}",
+  "detail": {
+    "public": "Public",
+    "private": "Private",
+    "empty": "No videos in this playlist yet.",
+    "moveUp": "Move up",
+    "moveUpAriaLabel": "Move up: {title}",
+    "moveDown": "Move down",
+    "moveDownAriaLabel": "Move down: {title}",
+    "remove": "Remove",
+    "removeError": "Couldn't remove that video — please try again.",
+    "reorderError": "Couldn't reorder — please try again."
+  },
+  "list": {
+    "descriptionLabel": "Description",
+    "edit": "Edit",
+    "deleteConfirm": "Delete this playlist? This can't be undone.",
+    "makePublicAriaLabel": "Make public",
+    "publicLabel": "Public",
+    "publicDescription": "Public playlists are visible to all signed-in users.",
+    "empty": "No playlists yet — create one to start organizing videos.",
+    "tooManyWithSeconds": "Too many requests — try again in {seconds}s.",
+    "tooManyGeneric": "Too many requests — please wait a moment.",
+    "saveError": "Couldn't save your changes — please try again."
+  },
+  "publicList": {
+    "empty": "No public playlists yet.",
+    "loadMoreError": "Couldn't load more — please try again."
+  },
+  "saveButton": {
+    "trigger": "Save to playlist",
+    "loadingPlaylists": "Loading your playlists…",
+    "loadListError": "Couldn't load your playlists.",
+    "alreadyInPlaylist": "This video is already in that playlist.",
+    "tooManyWithSeconds": "Too many requests — try again in {seconds}s.",
+    "tooManyGeneric": "Too many requests — please wait a moment.",
+    "addError": "Couldn't add this video — please try again.",
+    "createError": "Couldn't create that playlist — please try again.",
+    "newPlaylistNameLabel": "New playlist name",
+    "createAndAdd": "Create & add",
+    "added": "Added to playlist."
+  }
+}

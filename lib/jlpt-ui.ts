@@ -16,7 +16,7 @@ export type {
   SectionScore,
   WeaknessStat,
 } from "@/lib/jlpt";
-import type { JlptLevel, JlptPillar, JlptSection } from "@/lib/jlpt";
+import type { JlptLevel, JlptSection } from "@/lib/jlpt";
 
 /** A `jlpt_tests` row as the list/detail endpoints return it. */
 export interface JlptTestListItem {
@@ -119,20 +119,6 @@ export function totalMinutes(entries: JlptSectionConfigEntry[]): number {
 export function totalQuestionCount(entries: JlptSectionConfigEntry[]): number {
   return entries.reduce((n, e) => n + e.question_count, 0);
 }
-
-export const SECTION_LABELS: Record<JlptSection, string> = {
-  vocab: "Vocabulary",
-  grammar: "Grammar",
-  reading: "Reading",
-  listening: "Listening",
-};
-
-export const PILLAR_LABELS: Record<JlptPillar, string> = {
-  language_knowledge: "Language knowledge",
-  reading: "Reading",
-  listening: "Listening",
-  language_knowledge_reading: "Language knowledge + Reading",
-};
 
 /**
  * Where the "Suggested review" link for a weak section lands (CLAUDE.md §5

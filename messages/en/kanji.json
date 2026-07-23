@@ -1,0 +1,14 @@
+{
+  "title": "Kanji",
+  "subtitleCount": "{count, plural, one {{count} character} other {{count} characters}}",
+  "empty": "No kanji at this level yet.",
+  "backToList": "← All kanji",
+  "strokeCount": "{count, plural, one {{count} stroke} other {{count} strokes}}",
+  "onReading": "On",
+  "kunReading": "Kun",
+  "mnemonic": "Mnemonic",
+  "reviewTitle": "Kanji review",
+  "a11y": {
+    "strokeOrder": "Stroke order for {character}"
+  }
+}

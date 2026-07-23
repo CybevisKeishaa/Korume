@@ -1,11 +1,21 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { getKanjiList } from "@/lib/data/content";
 import { jlptLevelSchema } from "@/lib/validation/content";
 import { LevelTabs } from "@/components/learning/level-tabs";
 import { Container } from "@/components/ui/container";
 import { buttonStyles } from "@/components/ui/button";
 
-export const metadata = { title: "Kanji" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "kanji" });
+  return { title: t("title") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function KanjiPage({
@@ -13,6 +23,8 @@ export default async function KanjiPage({
 }: {
   searchParams: { level?: string };
 }) {
+  const t = await getTranslations("kanji");
+  const tCommon = await getTranslations("common");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
   const kanji = await getKanjiList(level);
 
@@ -20,9 +32,9 @@ export default async function KanjiPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Kanji</h1>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {kanji.length} character{kanji.length === 1 ? "" : "s"}
+            {t("subtitleCount", { count: kanji.length })}
             {level ? ` · ${level}` : ""}
           </p>
         </div>
@@ -32,7 +44,7 @@ export default async function KanjiPage({
             href={`/kanji/review${level ? `?level=${level}` : ""}`}
             className={buttonStyles({ size: "sm" })}
           >
-            Review
+            {tCommon("actions.review")}
           </Link>
         </div>
       </div>
@@ -54,7 +66,7 @@ export default async function KanjiPage({
       </ul>
 
       {kanji.length === 0 && (
-        <p className="text-muted-foreground">No kanji at this level yet.</p>
+        <p className="text-muted-foreground">{t("empty")}</p>
       )}
     </Container>
   );

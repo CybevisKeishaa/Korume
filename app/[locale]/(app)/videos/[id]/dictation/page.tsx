@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { getVideo } from "@/lib/data/videos";
 import { getTranscript } from "@/lib/data/transcripts";
 import { Container } from "@/components/ui/container";
@@ -11,6 +12,7 @@ import type { TranscriptWithLines, VideoRow } from "@/lib/video-types";
 export const dynamic = "force-dynamic";
 
 export default async function DictationPage({ params }: { params: { id: string } }) {
+  const t = await getTranslations("dictation");
   const videoResult = await getVideo(params.id);
   if (!videoResult.ok) notFound();
 
@@ -24,7 +26,7 @@ export default async function DictationPage({ params }: { params: { id: string }
   return (
     <Container className="py-8">
       <h1 className="text-2xl font-bold">{video.title}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Dictation practice</p>
+      <p className="mt-1 text-sm text-muted-foreground">{t("title")}</p>
 
       <div className="mt-6">
         <DictationView video={video} transcript={transcript} />

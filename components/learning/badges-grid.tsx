@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/lib/i18n";
 import type { BadgeSummary } from "@/lib/user-stats-types";
 
 export interface BadgesGridProps {
@@ -25,8 +26,10 @@ export interface BadgesGridProps {
  * opacity transition.
  */
 export function BadgesGrid({ badges }: BadgesGridProps) {
+  const t = useTranslations("dashboard");
+
   if (badges.length === 0) {
-    return <p className="text-sm text-muted-foreground">No badges in the catalog yet.</p>;
+    return <p className="text-sm text-muted-foreground">{t("badges.empty")}</p>;
   }
 
   // Stagger only counts earned tiles (the ones that animate), and is capped
@@ -42,7 +45,7 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
         const earnedDate = badge.earnedAt ? new Date(badge.earnedAt).toLocaleDateString() : null;
         const label = [
           badge.name,
-          earned ? `earned${earnedDate ? ` ${earnedDate}` : ""}` : "locked",
+          earned ? `${t("a11y.badgeEarned")}${earnedDate ? ` ${earnedDate}` : ""}` : t("a11y.badgeLocked"),
           badge.description ?? undefined,
         ]
           .filter(Boolean)
@@ -91,7 +94,9 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
               {earned ? (
                 earnedDate && <p className="text-[11px] text-muted-foreground">{earnedDate}</p>
               ) : (
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Locked</p>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {t("badges.locked")}
+                </p>
               )}
             </div>
           </li>

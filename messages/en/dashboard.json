@@ -1,0 +1,42 @@
+{
+  "title": "Dashboard",
+  "subtitle": "Pick a module to start studying.",
+  "a11y": {
+    "progress": "Your progress",
+    "levelProgress": "Progress to level {level}",
+    "badgeEarned": "earned",
+    "badgeLocked": "locked"
+  },
+  "modules": {
+    "heading": "Modules",
+    "kanjiTitle": "Kanji",
+    "kanjiDesc": "Stroke order, readings, SRS.",
+    "vocabTitle": "Vocabulary",
+    "vocabDesc": "Words by level + flashcard review.",
+    "grammarTitle": "Grammar",
+    "grammarDesc": "Patterns with examples."
+  },
+  "level": {
+    "title": "Level {level}",
+    "xp": "{xp} XP",
+    "xpToNext": "{xp} XP to level {level}"
+  },
+  "streak": {
+    "title": "Streak",
+    "dayStreak": "day streak",
+    "longest": "Longest: {days} days",
+    "nudge": "Keep it going today — study one item to extend it."
+  },
+  "srsDue": {
+    "title": "Review queue",
+    "due": "{count, plural, one {{count} card due for review} other {{count} cards due for review}}",
+    "reviewVocab": "Review vocab",
+    "reviewKanji": "Review kanji",
+    "allCaughtUp": "All caught up — nothing due right now."
+  },
+  "badges": {
+    "heading": "Badges",
+    "empty": "No badges in the catalog yet.",
+    "locked": "Locked"
+  }
+}

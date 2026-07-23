@@ -1,0 +1,18 @@
+{
+  "title": "Video",
+  "subtitle": "Luyện shadowing và học tiếng Nhật qua video YouTube. Dán liên kết để thêm video.",
+  "yourVideos": "Video của bạn",
+  "empty": "Chưa có video nào — dán URL YouTube ở trên để bắt đầu.",
+  "pendingReview": "Đang chờ duyệt",
+  "urlLabel": "URL YouTube",
+  "import": "Nhập video",
+  "importing": "Đang nhập…",
+  "errors": {
+    "invalidUrl": "Đây không phải là URL YouTube hợp lệ.",
+    "sessionExpired": "Phiên đăng nhập của bạn đã hết hạn — vui lòng đăng nhập lại.",
+    "fetchFailed": "Không thể lấy thông tin video đó. Kiểm tra lại liên kết rồi thử lại.",
+    "rateLimited": "Quá nhiều lượt nhập video — thử lại sau {seconds} giây.",
+    "rateLimitedGeneric": "Quá nhiều lượt nhập video — vui lòng đợi một chút rồi thử lại.",
+    "generic": "Đã có lỗi khi nhập video đó. Vui lòng thử lại."
+  }
+}

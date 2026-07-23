@@ -1,0 +1,18 @@
+{
+  "title": "Vocabulary",
+  "subtitleCount": "{count, plural, one {{count} word} other {{count} words}}",
+  "empty": "No vocabulary at this level yet.",
+  "backToList": "← All vocabulary",
+  "reviewTitle": "Vocabulary review",
+  "examplesHeading": "Example sentences",
+  "generateExamples": "Generate example sentences (AI)",
+  "generating": "Generating…",
+  "noExamples": "No example sentences yet.",
+  "aiGenerated": "AI-generated",
+  "errors": {
+    "unavailable": "AI example generation isn't set up yet for this deployment.",
+    "rateLimited": "Too many example requests — try again in {seconds}s.",
+    "rateLimitedGeneric": "Too many example requests — please wait a moment and try again.",
+    "generic": "Could not generate examples right now."
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Từ vựng",
+  "subtitleCount": "{count, plural, other {{count} từ}}",
+  "empty": "Chưa có từ vựng nào ở cấp độ này.",
+  "backToList": "← Tất cả từ vựng",
+  "reviewTitle": "Ôn tập từ vựng",
+  "examplesHeading": "Câu ví dụ",
+  "generateExamples": "Tạo câu ví dụ (AI)",
+  "generating": "Đang tạo…",
+  "noExamples": "Chưa có câu ví dụ nào.",
+  "aiGenerated": "Do AI tạo",
+  "errors": {
+    "unavailable": "Tính năng tạo câu ví dụ bằng AI chưa được thiết lập cho bản triển khai này.",
+    "rateLimited": "Quá nhiều yêu cầu tạo câu ví dụ — thử lại sau {seconds} giây.",
+    "rateLimitedGeneric": "Quá nhiều yêu cầu tạo câu ví dụ — vui lòng đợi một chút rồi thử lại.",
+    "generic": "Không thể tạo câu ví dụ lúc này."
+  }
+}

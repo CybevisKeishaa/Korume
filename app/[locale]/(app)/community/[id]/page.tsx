@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { Link } from "@/lib/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getForumPost } from "@/lib/data/forum";
@@ -8,6 +9,7 @@ import { ForumThread } from "@/components/community/forum-thread";
 export const dynamic = "force-dynamic";
 
 export default async function ForumPostPage({ params }: { params: { id: string } }) {
+  const t = await getTranslations("community");
   const post = await getForumPost(params.id);
   if (!post) notFound();
 
@@ -19,7 +21,7 @@ export default async function ForumPostPage({ params }: { params: { id: string }
   return (
     <Container className="py-8">
       <Link href="/community" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
-        ← Back to community
+        {t("postPage.back")}
       </Link>
 
       <div className="mt-4">

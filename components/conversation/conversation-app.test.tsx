@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
+import { render } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import {
   mockGetUserMedia,
@@ -173,7 +174,7 @@ describe("ConversationApp", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: /^send$/i })).toBeEnabled());
   });
 
-  it("shows a friendly message and no crash when the conversation API is not configured (503)", async () => {
+  it("shows the honest, translated AI-not-configured message (not the raw server diagnostic) and no crash on 503", async () => {
     const router = makeRouter([
       {
         match: (url, init) => url === "/api/conversation/session" && methodOf(init) === "GET",
@@ -186,6 +187,9 @@ describe("ConversationApp", () => {
       },
       {
         match: (url, init) => url === "/api/conversation/message" && methodOf(init) === "POST",
+        // Server sends its own untranslated diagnostic ("Conversation is not
+        // configured") — convention #4 requires this NEVER reach the DOM
+        // verbatim; only the translated, honest `app.notConfigured` copy may.
         handle: () => jsonResponse(503, { error: "Conversation is not configured" }),
       },
     ]);
@@ -200,8 +204,12 @@ describe("ConversationApp", () => {
     await userEvent.click(screen.getByRole("button", { name: /^send$/i }));
 
     await waitFor(() =>
-      expect(screen.getByRole("alert")).toHaveTextContent(/not configured/i),
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "AI conversation isn't set up yet. Please try again later.",
+      ),
     );
+    // The raw server diagnostic must never reach the DOM.
+    expect(screen.queryByText(/is not configured/i)).not.toBeInTheDocument();
     // Text chat input itself remains usable, not crashed/removed.
     expect(screen.getByRole("textbox", { name: /message/i })).toBeEnabled();
   });

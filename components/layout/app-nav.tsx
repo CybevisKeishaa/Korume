@@ -1,39 +1,42 @@
 "use client";
 
-import { Link } from "@/lib/i18n/navigation";
-import { usePathname } from "@/lib/i18n/navigation";
+import { Link, usePathname } from "@/lib/i18n/navigation";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/kanji", label: "Kanji" },
-  { href: "/vocab", label: "Vocab" },
-  { href: "/grammar", label: "Grammar" },
-  { href: "/videos", label: "Videos" },
-  { href: "/mining", label: "Mining" },
-  { href: "/reading", label: "Reading" },
-  { href: "/conversation", label: "Conversation" },
-  { href: "/jlpt", label: "JLPT" },
-  { href: "/community", label: "Community" },
-  { href: "/playlists", label: "Playlists" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/profile", label: "Profile" },
+/** href → nav catalog key. Keys, not labels: the words live in messages/. */
+export const NAV_ITEMS = [
+  { href: "/dashboard", key: "dashboard" },
+  { href: "/kanji", key: "kanji" },
+  { href: "/vocab", key: "vocab" },
+  { href: "/grammar", key: "grammar" },
+  { href: "/videos", key: "videos" },
+  { href: "/mining", key: "mining" },
+  { href: "/reading", key: "reading" },
+  { href: "/conversation", key: "conversation" },
+  { href: "/jlpt", key: "jlpt" },
+  { href: "/community", key: "community" },
+  { href: "/playlists", key: "playlists" },
+  { href: "/leaderboard", key: "leaderboard" },
+  { href: "/profile", key: "profile" },
 ] as const;
 
 export function AppNav({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
+  const t = useTranslations("nav");
+  const tCommon = useTranslations("common");
 
   return (
     <nav
-      aria-label="Main"
+      aria-label={t("ariaLabel")}
       className="flex w-full shrink-0 flex-col gap-1 border-b border-border bg-card p-4 md:h-screen md:w-60 md:border-b-0 md:border-r"
     >
       <div className="mb-4 flex items-center justify-between gap-2 px-2">
         <Link href="/dashboard" className="font-jp text-lg font-bold">
-          日本語シネマ
+          {tCommon("appNameJp")}
         </Link>
         <NotificationBell />
       </div>
@@ -54,7 +57,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
-                {item.label}
+                {t(item.key)}
               </Link>
             </li>
           );
@@ -74,7 +77,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
             type="submit"
             className="w-full rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >
-            Sign out
+            {tCommon("auth.signOut")}
           </button>
         </form>
       </div>

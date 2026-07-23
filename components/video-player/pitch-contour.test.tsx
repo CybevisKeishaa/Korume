@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
+import { render } from "@/test/render";
 import { PitchContour } from "./pitch-contour";
 import { makeToneBuffer, makeSilenceBuffer } from "@/test/audio-fixtures";
 
@@ -39,6 +40,20 @@ class SilentAudioContext {
 class FailingAudioContext {
   async decodeAudioData(): Promise<AudioBuffer> {
     throw new Error("bad data");
+  }
+  async close(): Promise<void> {
+    // no-op
+  }
+}
+
+class PendingAudioContext {
+  decodeAudioData(): Promise<AudioBuffer> {
+    return new Promise(() => {
+      // Deliberately never resolves — keeps status at "decoding" so the
+      // transient "Analyzing pitch…" message can be observed (review
+      // finding, Important 3: this string had a correct pin but no render
+      // assertion).
+    });
   }
   async close(): Promise<void> {
     // no-op
@@ -95,13 +110,16 @@ describe("PitchContour", () => {
 
   it("decodes the blob, extracts F0, and draws the semitone contour", async () => {
     vi.stubGlobal("AudioContext", ToneAudioContext);
-    render(<PitchContour blob={makeBlob()} label="Take 1 pitch contour" />);
+    render(<PitchContour blob={makeBlob()} />);
 
     // Generous timeout: the async decode→extract→render pass can exceed the
     // 1s default under full-suite CPU contention (intermittent failure first
     // seen in Layer 6 integration runs).
     await waitFor(
-      () => expect(screen.getByRole("img", { name: "Take 1 pitch contour" })).toBeInTheDocument(),
+      () =>
+        expect(
+          screen.getByRole("img", { name: "Your pitch contour for this take" }),
+        ).toBeInTheDocument(),
       { timeout: 5000 },
     );
     // At least the baseline gridline + the contour line were stroked, and
@@ -110,7 +128,7 @@ describe("PitchContour", () => {
     expect(arcCalls).toBeGreaterThan(0);
   });
 
-  it("uses a sensible default accessible label", async () => {
+  it("uses the translated default accessible label when no override is passed — proves shadowing.pitch.contour.a11y.label is wired", async () => {
     vi.stubGlobal("AudioContext", ToneAudioContext);
     render(<PitchContour blob={makeBlob()} />);
     await waitFor(
@@ -120,6 +138,31 @@ describe("PitchContour", () => {
         ).toBeInTheDocument(),
       { timeout: 5000 },
     );
+  });
+
+  it("uses a caller-supplied label instead of the default — proves the prop is threaded through, not silently dropped for the component's own default", async () => {
+    // Deliberately non-English literal (binding pattern 5, per waveform.test.tsx):
+    // the default label and the EN catalog value are byte-identical ("Your
+    // pitch contour for this take"), so an EN-only assertion can't tell
+    // "translation wired through correctly" from "the prop never arrived and
+    // the default rendered". A literal that could not possibly come from the
+    // default proves the `label` prop actually reaches the rendered aria-label.
+    vi.stubGlobal("AudioContext", ToneAudioContext);
+    render(<PitchContour blob={makeBlob()} label="Đường cong cao độ của lượt thử nghiệm" />);
+
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole("img", { name: "Đường cong cao độ của lượt thử nghiệm" }),
+        ).toBeInTheDocument(),
+      { timeout: 5000 },
+    );
+  });
+
+  it("shows an analyzing message while the recording is still decoding", async () => {
+    vi.stubGlobal("AudioContext", PendingAudioContext);
+    render(<PitchContour blob={makeBlob()} />);
+    await waitFor(() => expect(screen.getByText("Analyzing pitch…")).toBeInTheDocument());
   });
 
   it("falls back to a text message when Web Audio isn't available", async () => {

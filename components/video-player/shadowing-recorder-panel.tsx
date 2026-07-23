@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { PronunciationAssessmentResult } from "@/lib/speech-types";
+import type { PronunciationAssessmentResult, WordPronunciationScore } from "@/lib/speech-types";
 import { blobToWav16kMono } from "@/lib/audio/blob-to-wav";
 import type { PitchAccentScore } from "@/lib/pitch";
 import { ConfirmButton } from "@/components/community/confirm-button";
-import { useRecorder, type RecorderState } from "./recorder";
+import { useRecorder } from "./recorder";
 import { Waveform } from "./waveform";
 import { PitchContour } from "./pitch-contour";
 import { PitchContourOverlay } from "./pitch-contour-overlay";
@@ -47,7 +48,6 @@ export interface ShadowingRecorderPanelProps {
 
 const SESSION_ENDPOINT = "/api/shadowing/session";
 const SCORE_ENDPOINT = "/api/pronunciation/score";
-const SCORE_NOT_CONFIGURED_MESSAGE = "Pronunciation scoring isn't set up yet.";
 const DEFAULT_PITCH_SCORE_UPLOAD_BUDGET_MS = 3000;
 
 type ScoreState =
@@ -57,40 +57,56 @@ type ScoreState =
   | { status: "error"; message: string }
   | { status: "unavailable" };
 
-/** Maps a non-200 pronunciation-score response to a friendly message. 503
- * ("unavailable") persists for the rest of this panel's lifetime instead of
- * being retried, per CLAUDE.md §9's 503-degrade requirement. */
-function friendlyScoreError(status: number, retryAfter: string | null): ScoreState {
+/**
+ * Which `shadowing.recorder.score.errors.*` catalog entry a non-200
+ * pronunciation-score response maps to. A descriptor, not a resolved string
+ * — this is a module-level function and `t()` is only callable from within
+ * component render (same shape as `video-summary-panel.tsx`'s
+ * `classifySummaryError`, Task 11c). 503 ("unavailable") persists for the
+ * rest of this panel's lifetime instead of being retried, per CLAUDE.md §9's
+ * 503-degrade requirement, and carries no message to resolve.
+ */
+type ScoreErrorDescriptor =
+  | { key: "rateLimited"; seconds: string }
+  | { key: "rateLimitedGeneric" }
+  | { key: "notFound" }
+  | { key: "invalid" }
+  | { key: "generic" };
+
+type ClassifiedScore = { status: "unavailable" } | { status: "error"; descriptor: ScoreErrorDescriptor };
+
+function classifyScoreError(status: number, retryAfter: string | null): ClassifiedScore {
   if (status === 503) return { status: "unavailable" };
   if (status === 429) {
     return {
       status: "error",
-      message: retryAfter
-        ? `Too many scoring requests — try again in ${retryAfter}s.`
-        : "Too many scoring requests — please wait a moment and try again.",
+      descriptor: retryAfter ? { key: "rateLimited", seconds: retryAfter } : { key: "rateLimitedGeneric" },
     };
   }
-  if (status === 404) {
-    return { status: "error", message: "That recording could no longer be found to score." };
-  }
-  if (status === 422) {
-    return { status: "error", message: "That recording couldn't be scored — try recording again." };
-  }
-  return { status: "error", message: "Something went wrong scoring your pronunciation." };
+  if (status === 404) return { status: "error", descriptor: { key: "notFound" } };
+  if (status === 422) return { status: "error", descriptor: { key: "invalid" } };
+  return { status: "error", descriptor: { key: "generic" } };
 }
 
-/** Maps a non-201 session API response to a friendly, non-technical message. */
-function friendlyUploadError(status: number, retryAfter: string | null): string {
-  if (status === 401) return "Sign in to save your recordings.";
+/**
+ * Which `shadowing.recorder.upload.errors.*` catalog entry a non-201 session
+ * API response maps to. Same module-scope-can't-call-t() shape as
+ * `classifyScoreError` above.
+ */
+type UploadErrorDescriptor =
+  | { key: "unauthorized" }
+  | { key: "rateLimited"; seconds: string }
+  | { key: "rateLimitedGeneric" }
+  | { key: "invalid" }
+  | { key: "generic" };
+
+function classifyUploadError(status: number, retryAfter: string | null): UploadErrorDescriptor {
+  if (status === 401) return { key: "unauthorized" };
   if (status === 429) {
-    return retryAfter
-      ? `Too many recordings — try again in ${retryAfter}s.`
-      : "Too many recordings — please wait a moment and try again.";
+    return retryAfter ? { key: "rateLimited", seconds: retryAfter } : { key: "rateLimitedGeneric" };
   }
-  if (status === 400 || status === 422) {
-    return "That recording couldn't be saved. Please try recording again.";
-  }
-  return "Something went wrong saving your recording.";
+  if (status === 400 || status === 422) return { key: "invalid" };
+  return { key: "generic" };
 }
 
 type ShareState =
@@ -99,30 +115,41 @@ type ShareState =
   | { status: "shared"; shareId: string }
   | { status: "error"; message: string };
 
-/** Maps a non-201, non-409 peer-review share response to a friendly message (CLAUDE.md §2/§5 — sharing is explicit, revocable consent). 409 (already shared) is handled specially by the caller, not through this message. */
-function friendlyShareError(status: number, retryAfter: string | null): string {
+/**
+ * Which `shadowing.recorder.share.errors.*` catalog entry a non-201, non-409
+ * peer-review share response maps to (CLAUDE.md §2/§5 — sharing is explicit,
+ * revocable consent). 409 (already shared) is handled specially by the
+ * caller, not through this descriptor.
+ */
+type ShareErrorDescriptor =
+  | { key: "rateLimited"; seconds: string }
+  | { key: "rateLimitedGeneric" }
+  | { key: "generic" };
+
+function classifyShareError(status: number, retryAfter: string | null): ShareErrorDescriptor {
   if (status === 429) {
-    return retryAfter
-      ? `Too many requests — try again in ${retryAfter}s.`
-      : "Too many requests — please wait a moment and try again.";
+    return retryAfter ? { key: "rateLimited", seconds: retryAfter } : { key: "rateLimitedGeneric" };
   }
-  return "Couldn't share this recording — please try again.";
+  return { key: "generic" };
 }
 
-function describeStatus(
-  recorderState: RecorderState,
-  recorderError: string | null,
-  upload: UploadState,
-): string {
-  if (recorderState === "requesting-permission") return "Requesting microphone access…";
-  if (recorderState === "recording") return "Recording…";
-  if (recorderState === "error" && recorderError) return recorderError;
-  if (upload.status === "uploading") return "Saving recording…";
-  if (upload.status === "success") return "Saved.";
-  if (upload.status === "error") return upload.message;
-  if (recorderState === "recorded") return "Recording captured.";
-  return "";
-}
+/**
+ * `errorType` is the closed union `"None" | "Omission" | "Insertion" |
+ * "Mispronunciation"` (`lib/speech-types.ts`). `as const satisfies
+ * Record<...>` (rather than annotating the object literal with that type)
+ * keeps both exhaustiveness (a new `errorType` member missing here is a type
+ * error) and literal string types on the values (so
+ * `t(WORD_ERROR_LABEL_KEY[errorType])` type-checks against next-intl's typed
+ * keys without a cast) — same pattern as Task 10's `BAND_LABEL_KEY`. `"None"`
+ * resolves to "Correct" (the pre-extraction ternary); the other three reuse
+ * Azure's own English words verbatim.
+ */
+const WORD_ERROR_LABEL_KEY = {
+  None: "recorder.wordError.none",
+  Omission: "recorder.wordError.omission",
+  Insertion: "recorder.wordError.insertion",
+  Mispronunciation: "recorder.wordError.mispronunciation",
+} as const satisfies Record<WordPronunciationScore["errorType"], string>;
 
 /**
  * Record → auto-upload → playback for the currently active transcript line.
@@ -140,6 +167,12 @@ export function ShadowingRecorderPanel({
   pitchScoreUploadBudgetMs = DEFAULT_PITCH_SCORE_UPLOAD_BUDGET_MS,
   className,
 }: ShadowingRecorderPanelProps) {
+  const t = useTranslations("shadowing");
+  // errors.network is consumed from `common` (promoted there in Task 11b) —
+  // the identical string is needed by 2+ modules (P4), so it lives in
+  // `common.errors.network`, not duplicated here. This raises that key's
+  // consumer count to 3 (vocab-examples-panel, dictation-view, this panel).
+  const tCommon = useTranslations("common");
   const recorder = useRecorder();
   const [upload, setUpload] = useState<UploadState>({ status: "idle" });
   const [score, setScore] = useState<ScoreState>({ status: "idle" });
@@ -166,11 +199,18 @@ export function ShadowingRecorderPanel({
         setShare({ status: "shared", shareId: upload.recording.id });
         return;
       }
-      setShare({ status: "error", message: friendlyShareError(res.status, res.headers.get("Retry-After")) });
+      const descriptor = classifyShareError(res.status, res.headers.get("Retry-After"));
+      setShare({
+        status: "error",
+        message:
+          descriptor.key === "rateLimited"
+            ? t("recorder.share.errors.rateLimited", { seconds: descriptor.seconds })
+            : t(`recorder.share.errors.${descriptor.key}`),
+      });
     } catch {
-      setShare({ status: "error", message: "Network error — check your connection and try again." });
+      setShare({ status: "error", message: tCommon("errors.network") });
     }
-  }, [upload]);
+  }, [upload, t, tCommon]);
 
   const revokeShare = useCallback(async () => {
     if (share.status !== "shared") return;
@@ -181,11 +221,11 @@ export function ShadowingRecorderPanel({
         setShare({ status: "idle" });
         return;
       }
-      setShare({ status: "error", message: "Couldn't revoke this share — please try again." });
+      setShare({ status: "error", message: t("recorder.share.errors.revokeFailed") });
     } catch {
-      setShare({ status: "error", message: "Network error — check your connection and try again." });
+      setShare({ status: "error", message: tCommon("errors.network") });
     }
-  }, [share]);
+  }, [share, t, tCommon]);
 
   const requestScore = useCallback(async () => {
     if (upload.status !== "success" || !lineText || !recorder.blob) return;
@@ -199,7 +239,7 @@ export function ShadowingRecorderPanel({
     } catch {
       setScore({
         status: "error",
-        message: "We couldn't process that recording. Please try again.",
+        message: t("recorder.score.conversionFailed"),
       });
       return;
     }
@@ -216,14 +256,26 @@ export function ShadowingRecorderPanel({
         setScore({ status: "ready", result: json.data });
         return;
       }
-      setScore(friendlyScoreError(res.status, res.headers.get("Retry-After")));
+      const classified = classifyScoreError(res.status, res.headers.get("Retry-After"));
+      if (classified.status === "unavailable") {
+        setScore({ status: "unavailable" });
+        return;
+      }
+      const { descriptor } = classified;
+      setScore({
+        status: "error",
+        message:
+          descriptor.key === "rateLimited"
+            ? t("recorder.score.errors.rateLimited", { seconds: descriptor.seconds })
+            : t(`recorder.score.errors.${descriptor.key}`),
+      });
     } catch {
       setScore({
         status: "error",
-        message: "Network error — check your connection and try again.",
+        message: tCommon("errors.network"),
       });
     }
-  }, [upload, lineText, recorder.blob]);
+  }, [upload, lineText, recorder.blob, t, tCommon]);
 
   const uploadRecording = useCallback(
     async (blob: Blob, pitchScore?: number) => {
@@ -241,18 +293,22 @@ export function ShadowingRecorderPanel({
           setUpload({ status: "success", recording: json.data });
           return;
         }
+        const descriptor = classifyUploadError(res.status, res.headers.get("Retry-After"));
         setUpload({
           status: "error",
-          message: friendlyUploadError(res.status, res.headers.get("Retry-After")),
+          message:
+            descriptor.key === "rateLimited"
+              ? t("recorder.upload.errors.rateLimited", { seconds: descriptor.seconds })
+              : t(`recorder.upload.errors.${descriptor.key}`),
         });
       } catch {
         setUpload({
           status: "error",
-          message: "Network error — check your connection and try again.",
+          message: tCommon("errors.network"),
         });
       }
     },
-    [videoId, lineId],
+    [videoId, lineId, t, tCommon],
   );
 
   // Auto-upload the moment a take finishes recording (once per blob). The
@@ -303,12 +359,35 @@ export function ShadowingRecorderPanel({
     void recorder.start();
   }, [isRecording, recorder]);
 
-  const statusMessage = describeStatus(recorder.state, recorder.error, upload);
+  // Which `shadowing.recorder.status.*` catalog entry (or already-resolved
+  // pass-through) describes the panel's current state. `recorderError`
+  // (`recorder.error`) and `upload.message` are already-translated strings
+  // resolved at the point they were set — do not re-wrap them in `t()` here.
+  let statusMessage: string;
+  if (recorder.state === "requesting-permission") {
+    statusMessage = t("recorder.status.requestingPermission");
+  } else if (recorder.state === "recording") {
+    statusMessage = t("recorder.status.recording");
+  } else if (recorder.state === "error" && recorder.error) {
+    statusMessage = recorder.error;
+  } else if (upload.status === "uploading") {
+    statusMessage = t("recorder.status.saving");
+  } else if (upload.status === "success") {
+    statusMessage = t("recorder.status.saved");
+  } else if (upload.status === "error") {
+    statusMessage = upload.message;
+  } else if (recorder.state === "recorded") {
+    statusMessage = t("recorder.status.captured");
+  } else {
+    statusMessage = "";
+  }
+
+  const scoreNotConfiguredMessage = t("recorder.score.notConfigured");
 
   return (
     <div className={cn("space-y-2", className)}>
       {lineText && (
-        <h3 className="sr-only">{`Shadowing recorder for "${lineText}"`}</h3>
+        <h3 className="sr-only">{t("recorder.a11y.panel", { lineText })}</h3>
       )}
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -319,7 +398,7 @@ export function ShadowingRecorderPanel({
           size="sm"
           className={isRecording ? "bg-danger text-white hover:bg-danger/90" : undefined}
         >
-          {isRecording ? "Stop recording" : "Record"}
+          {isRecording ? t("recorder.toggle.stop") : t("recorder.toggle.record")}
         </Button>
         <p role="status" className="text-xs text-muted-foreground">
           {statusMessage}
@@ -328,7 +407,7 @@ export function ShadowingRecorderPanel({
 
       {recorder.blob && (
         <>
-          <Waveform blob={recorder.blob} label="Your recording waveform" />
+          <Waveform blob={recorder.blob} label={t("recorder.a11y.waveformLabel")} />
           {pitch ? (
             <PitchContourOverlay score={pitch} />
           ) : (
@@ -342,7 +421,7 @@ export function ShadowingRecorderPanel({
         <audio
           controls
           src={upload.recording.signedUrl}
-          aria-label="Play your saved recording"
+          aria-label={t("recorder.a11y.playback")}
           className="w-full"
         />
       )}
@@ -356,15 +435,15 @@ export function ShadowingRecorderPanel({
               size="sm"
               onClick={requestScore}
               disabled={score.status === "scoring" || score.status === "unavailable"}
-              title={score.status === "unavailable" ? SCORE_NOT_CONFIGURED_MESSAGE : undefined}
+              title={score.status === "unavailable" ? scoreNotConfiguredMessage : undefined}
             >
-              {score.status === "scoring" ? "Scoring…" : "Score my pronunciation"}
+              {score.status === "scoring" ? t("recorder.score.actionBusy") : t("recorder.score.action")}
             </Button>
           </div>
 
           <div aria-live="polite">
             {score.status === "unavailable" && (
-              <p className="text-xs text-muted-foreground">{SCORE_NOT_CONFIGURED_MESSAGE}</p>
+              <p className="text-xs text-muted-foreground">{scoreNotConfiguredMessage}</p>
             )}
             {score.status === "error" && (
               <p role="alert" className="text-xs text-danger-strong">
@@ -375,18 +454,18 @@ export function ShadowingRecorderPanel({
               <div className="space-y-2 text-sm">
                 <div className="flex flex-wrap gap-3">
                   <span className="rounded-full bg-accent/20 px-2 py-1 text-xs font-medium">
-                    発音 {Math.round(score.result.pronunciationScore)}
+                    {t("recorder.score.pronunciationLabel")} {Math.round(score.result.pronunciationScore)}
                   </span>
                   <span className="rounded-full bg-accent/20 px-2 py-1 text-xs font-medium">
-                    リズム {Math.round(score.result.fluencyScore)}
+                    {t("recorder.score.fluencyLabel")} {Math.round(score.result.fluencyScore)}
                   </span>
                 </div>
                 {score.result.words.length > 0 && (
-                  <ul className="flex flex-wrap gap-1.5" aria-label="Word-level pronunciation">
+                  <ul className="flex flex-wrap gap-1.5" aria-label={t("recorder.a11y.wordScores")}>
                     {score.result.words.map((w, i) => (
                       <li key={i}>
                         <span
-                          title={`${w.errorType === "None" ? "Correct" : w.errorType} (${Math.round(w.accuracyScore)})`}
+                          title={`${t(WORD_ERROR_LABEL_KEY[w.errorType])} (${Math.round(w.accuracyScore)})`}
                           className={cn(
                             "font-jp rounded px-1.5 py-0.5 text-xs",
                             w.errorType === "None"
@@ -410,10 +489,10 @@ export function ShadowingRecorderPanel({
         <div className="space-y-1.5 border-t border-border pt-2">
           {share.status === "shared" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs text-success-strong">Shared for peer feedback.</p>
+              <p className="text-xs text-success-strong">{t("recorder.share.shared")}</p>
               <ConfirmButton
-                label="Revoke"
-                confirmLabel="Revoke this share? Others will no longer be able to hear or review it."
+                label={t("recorder.share.revoke")}
+                confirmLabel={t("recorder.share.revokeConfirm")}
                 onConfirm={() => void revokeShare()}
               />
             </div>
@@ -426,10 +505,10 @@ export function ShadowingRecorderPanel({
                 onClick={() => void shareRecording()}
                 disabled={share.status === "sharing"}
               >
-                {share.status === "sharing" ? "Sharing…" : "Share for peer feedback"}
+                {share.status === "sharing" ? t("recorder.share.actionBusy") : t("recorder.share.action")}
               </Button>
               <p className="text-xs text-muted-foreground">
-                Shares this one recording publicly for feedback. You can revoke anytime.
+                {t("recorder.share.explain")}
               </p>
             </>
           )}

@@ -1,0 +1,89 @@
+{
+  "page": {
+    "heading": "Conversation practice",
+    "subtitle": "Practice real scenarios with an AI conversation partner — by text or voice."
+  },
+  "picker": {
+    "levelLabel": "Level (optional — defaults to your profile)",
+    "useProfileLevel": "Use my profile level"
+  },
+  "scenarios": {
+    "restaurant": {
+      "label": "Restaurant (レストラン)",
+      "description": "Order food, ask about the menu, and pay the bill."
+    },
+    "interview": {
+      "label": "Job interview (面接)",
+      "description": "Answer common interview questions in polite Japanese."
+    },
+    "shopping": {
+      "label": "Shopping (買い物)",
+      "description": "Ask about sizes, prices, and try things on at a store."
+    },
+    "directions": {
+      "label": "Asking directions (道案内)",
+      "description": "Ask how to get somewhere and understand the reply."
+    },
+    "free-talk": {
+      "label": "Free talk (フリートーク)",
+      "description": "An open-ended chat about anything you like."
+    },
+    "fallback": "Conversation"
+  },
+  "app": {
+    "startHeading": "Start a conversation",
+    "pastSessionsHeading": "Past sessions",
+    "back": "← Back",
+    "noMessagesReadOnly": "This session has no messages.",
+    "noMessagesStart": "Say hello to get started.",
+    "truncatedNotice": "The AI reply was shortened to fit — it may be cut off.",
+    "messageLabel": "Message",
+    "messagePlaceholder": "Type your reply in Japanese…",
+    "voicePendingNotice": "AI transcription — check before sending.",
+    "send": "Send",
+    "endSession": "End session",
+    "ending": "Ending…",
+    "notConfigured": "AI conversation isn't set up yet. Please try again later.",
+    "tooManyMessagesWithSeconds": "Too many messages — try again in {seconds}s.",
+    "tooManySessionsWithSeconds": "Too many sessions — try again in {seconds}s.",
+    "tooManySessionsGeneric": "Too many sessions — please wait a moment and try again.",
+    "tooManyRequestsWithSeconds": "Too many requests — try again in {seconds}s.",
+    "tooManyRequestsGeneric": "Too many requests — please wait a moment and try again.",
+    "errorStartSession": "Could not start a session.",
+    "errorSendMessage": "Could not send message.",
+    "errorEndSession": "Could not end the session."
+  },
+  "history": {
+    "empty": "No past sessions yet — start one above.",
+    "ended": "Ended",
+    "inProgress": "In progress"
+  },
+  "voiceRecorder": {
+    "notConfigured": "Voice input isn't set up yet. You can still type your message.",
+    "tooManyWithSeconds": "Too many voice requests — try again in {seconds}s.",
+    "tooManyGeneric": "Too many voice requests — please wait a moment and try again.",
+    "transcribeFailed": "That recording couldn't be transcribed. Try again.",
+    "genericError": "Something went wrong transcribing your voice. Please try again.",
+    "conversionFailed": "We couldn't process that recording. Please try again.",
+    "requestingPermission": "Requesting microphone access…",
+    "recording": "Recording…",
+    "transcribing": "Transcribing…",
+    "stopRecording": "Stop recording",
+    "recordVoiceMessage": "Record voice message"
+  },
+  "messageBubble": {
+    "notConfigured": "Voice playback isn't set up yet.",
+    "tooManyVoice": "Too many voice requests — try again shortly.",
+    "playFailed": "Couldn't play that message aloud.",
+    "networkError": "Network error — couldn't play that message.",
+    "play": "▶ Play",
+    "pronunciationScoreTitle": "Pronunciation score for this message",
+    "pronunciationLabel": "発音"
+  },
+  "corrections": {
+    "aiGenerated": "AI-generated",
+    "heading": "Corrections",
+    "empty": "No corrections this time — nice and clean!",
+    "resultsAriaLabel": "Session results"
+  }
+}

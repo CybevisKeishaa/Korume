@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import { StatsDashboard } from "./stats-dashboard";
 import type { AdminStats } from "@/lib/admin-ui-types";
 
@@ -79,6 +79,32 @@ describe("StatsDashboard", () => {
     expect(await screen.findByText("200")).toBeInTheDocument(); // kanji count
     expect(screen.getByText("shadowing")).toBeInTheDocument();
     expect(screen.getByText("srs_review")).toBeInTheDocument();
+  });
+
+  it("pairs each content-count label with ITS OWN value, not a swapped one (would still pass a bare presence check)", async () => {
+    // CONTENT_COUNT_KEYS -> contentCountLabel is a label/value pair map (Kanji
+    // 200, Vocabulary 800, Videos pending 3, Videos approved 50, ...) — every
+    // pair is type-interchangeable, so a key swap between two entries would
+    // still pass "the text exists somewhere on the page". Scoping each
+    // label's own StatCard element and asserting ITS value catches that.
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(200, { data: stats() })));
+    render(<StatsDashboard />);
+
+    const kanjiCard = (await screen.findByText("Kanji")).closest("div");
+    expect(kanjiCard).toHaveTextContent("200");
+    expect(kanjiCard).not.toHaveTextContent("800");
+
+    const vocabCard = screen.getByText("Vocabulary").closest("div");
+    expect(vocabCard).toHaveTextContent("800");
+    expect(vocabCard).not.toHaveTextContent("200");
+
+    const pendingCard = screen.getByText("Videos pending").closest("div");
+    expect(pendingCard).toHaveTextContent("3");
+    expect(pendingCard).not.toHaveTextContent("50");
+
+    const approvedCard = screen.getByText("Videos approved").closest("div");
+    expect(approvedCard).toHaveTextContent("50");
+    expect(approvedCard).not.toHaveTextContent("3");
   });
 
   it("shows an error state when the fetch fails", async () => {

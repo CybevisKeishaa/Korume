@@ -30,7 +30,124 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-20)
+## ▶ NEXT ACTION (updated 2026-07-23) — Task **16** (`community`+`playlists`+`leaderboard`+`profile`) is next; tree clean, nothing owed
+**✅ L9a Plan 3 COMPLETE (Tasks 1–19 ALL done) on branch `layer-9a-string-extraction` — ⏳ CHỜ MERGE to master
+(2026-07-23).** All 21 namespaces extracted + fully translated to VN, adaptive-furigana/mining/etc. shell now runs
+VN under `/vi` and EN under `/en`, and every page's `<title>` is localized via per-page `generateMetadata`
+(Task 18). Task 19 closed the plan: string sweep clean (1 genuine miss fixed = admin nav aria), `common.player.*`
+demoted to `shadowing.*` (by-surface audit), `common.errors.network`/`states.loading` kept. Final baseline:
+**tsc 0 · vitest 1731/1731 / 202 files · lint exit 0 (80-23 baseline, 0 new) · build OK (25 pages SSG per-locale)
+· e2e 5/5** (needed `npx supabase db reset` to migrate+seed the local DB; not a code regression). Details in
+`mem:l9a_localization_run_state` (Task 18 + Task 19 blocks). **NEXT = the merge decision (finishing-a-development-
+branch, user's call); after merge, record the SHA here + in `mem:feature_backlog_deferred` #10, then L9b.**
+
+<details><summary>(historical) Plan 3 mid-execution snapshot — superseded by the COMPLETE line above</summary>
+
+**L9a Plan 3 WAS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
+via `superpowers:subagent-driven-development`. Tasks 1-10 + 6b + 11a–11e + 12–15 committed/reviewed clean;
+gate then: tsc 0 · 1619 tests / 196 files · lint exit 0 / 80-23 / 0 new. (Tasks 16–19 landed after this.)
+</details>
+
+**Task 15 done `49553cc` + lint-fix `07cb3fa`** (`conversation` ns — AI voice module, most error-path-heavy so
+far). ONE fix wave, but it was a GATE catch not a review finding: the feature commit shipped a lint ERROR
+(`no-empty-function` in a test) that the controller's own gate re-run caught (impl's "0 new" claim was false)
+— fixed via SendMessage. Review itself came back 0 Critical/Important. Load-bearing SCENARIOS 3-consumer label
+rewire done right (shared `scenarioLabel(t,...)` helper, fallback chain preserved). Implementer found a THIRD
+convention-#4 leak (conversation-app `friendlyErrorFrom`) → `common.errors.network` now = **7 surfaces**; also
+reused `common.states.loading`. Three distinct honest 503 degrade paths (STT/TTS/Claude). Detail +2 carried
+Minors in `mem:l9a_localization_run_state`.
+
+**Task 14 done `ac29966`** (`reading` ns — 39 leaves; 2nd consecutive 0-fix-wave task). Import graph clean.
+**The D8 content/chrome boundary was the risk and was drawn exactly right** — reading passages, their
+translations, Japanese words, and furigana are CONTENT (not localized); only chrome extracted. NEW
+Convention-4 instance found & fixed (`reading-quiz` `friendlyErrorFrom` leaked raw `body.error` to a
+`role="alert"` node → now logged + translated fallback). `common.errors.network` now = 5 surfaces.
+**Refined getTranslations rule:** wire a translator ONLY where chrome strings actually exist — `reading/[id]/
+page.tsx` is a 12-line pass-through with zero chrome, correctly left unwired (a `t` there = dead code + lint
+warning). The audit's "pages fetch data → async → getTranslations" premise was factually wrong (children own
+the fetch); the implementer overrode it correctly. Full detail in `mem:l9a_localization_run_state`.
+
+**Task 13 done `763c884`** (`jlpt` ns — 81 leaves, 107-line en+vi catalogs; the FIRST 0-fix-wave task of
+the run — the implementer found & closed its own 2 wiring survivors before review). Convention-#2 audit was
+CLEAN (no cross-module surprise). Handled the hotspot: `lib/jlpt-ui.ts`'s `SECTION_LABELS`/`PILLAR_LABELS`
+(English maps = section/pillar NAMES) DELETED, all 5 call sites rewired to `t()`. **TWO NEW standing lessons
+(full text in `mem:l9a_localization_run_state`):** (a) namespace wiring is a **5-step** list — `types/messages.d.ts`
+`AppConfig.Messages` also needs the namespace or tsc fails; (b) use `useTranslations` for ALL synchronous
+components (even without `"use client"`, if imported by a client component `getTranslations` hard-fails);
+`await getTranslations` only for genuinely-async server components. N5–N1 + "JLPT" left untranslated as required.
+
+**Task 12 done `5dde8c8` + error-path test `4f9b473`** (`mining` ns — 4 components + 2 pages, 18 leaves
+all pinned; the plan list omitted `mining-review-session.tsx` a 5TH time, controller audited it in and
+patched the plan doc; that file mirrors Task 7's `review-session.tsx`, reusing `common.srs.*` +
+`common.states.error`; the LAST `Error.message`→DOM defect CLOSED; 1 fix wave added the error-path RTL
+assertion). **Task 11e done `1795471` + `faca02f`** (`shadowing-recorder-panel`; 41 leaves; Azure
+`errorType` enum mapped via exhaustive `Record`; 1 wiring survivor 発音/リズム closed). Details in
+`mem:l9a_localization_run_state`.
+
+Commits 2026-07-22: `23a8f84` (11b `dictation`) · `36534b0` (plan-doc file-list patch) · `da41411`
+(11c `shadowing` + `common.player.*`) · `9c9b3bf` (11d capture). **The user made their own commit
+`3e4b4a3` "[LongTNP]: mascot" mid-run** (deleted `.docx`, added `MASCOT.md`) — those files are handled,
+stop excluding them.
+
+**NEXT: Task 13** (`jlpt` namespace) — `app/[locale]/(app)/jlpt/{page,[id]/page}.tsx`,
+`app/[locale]/(app)/jlpt-test/page.tsx`, `components/jlpt/*` (~965 LOC, 10 components). Timer `aria-live`
+warnings → nest under `a11y`, ICU time args identical across locales; pillar names + pass/fail copy live
+here; **N5–N1 level labels NOT translated**; JLPT stays "JLPT". **AUDIT the file list + import graph FIRST
+(convention #2 — the plan list has been wrong 5×, incl. Task 12's missing `mining-review-session`).** Read
+`mem:l9a_localization_run_state` top "⭐⭐ STANDING CONVENTIONS" block first.
+
+**Task 11 was SPLIT into 11a-11e** (plan commit `087b342`) after measuring it at 3793 LOC = 6.9x Task 10.
+11a–11e ✅ (Task 11 DONE) · 12 ✅ `5dde8c8`+`4f9b473` (`mining`). **Tasks 13-19 + a metadata sweep (Task 18)
+remain**. Namespaces so far: `common`, `nav`, `auth`, `marketing`, `dashboard`, `kanji`, `vocab`, `grammar`,
+`videos`, `dictation`, `shadowing`, `mining`, `jlpt`, `reading`, `conversation` (15 done).
+
+**⚠ The plan's file lists have now been wrong FOUR times, and 11d's miss crossed MODULES:** translating
+the `useRecorder` hook broke 13 tests in `components/conversation/` because `voice-recorder-button.tsx`
+consumes it and no list mentioned that. **Grep the IMPORT GRAPH of whatever you translate, not just the
+directory you were handed.**
+The 2026-07-20 pause is long resolved (the Task 5 draft was verified in place and kept).
+**Before resuming, read `mem:l9a_localization_run_state` "▶ Plan 3 EXECUTION IN PROGRESS" FIRST** —
+it holds the patterns Tasks 9-19 must follow (two were Critical review findings), the three things
+Tasks 6/6b/7/8 settled, the review lesson about mutation-testing pins, the backlog items no task
+owns, and the debugging gotchas. Then the SDD ledger `.superpowers/sdd/progress.md` (gitignored;
+reconstruct from `git log` if lost), which carries the per-task detail and the carry-forward defects.
+
+**Cadence that is working (keep it):** one fresh implementer subagent per task (sonnet) → an
+independent code-review (opus) → one fix wave → controller marks complete. Every task so far needed
+exactly one fix wave and every finding was a real defect, not polish. The reviews have been worth
+more than the implementations: the three highest-value catches of the run all came from reviewers
+and all were invisible to a green test suite (ICU `#` silently reformatting 1234 → "1,234"; no
+Vietnamese message ever being ICU-parsed in CI; raw `Error.message` reaching the DOM and making the
+translated error string unreachable).
+**SIX STANDING CONVENTIONS, binding for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22) — full
+text in `mem:l9a_localization_run_state` top block "⭐⭐ STANDING CONVENTIONS", put ALL in every implementer
+AND reviewer brief:** (1) report mutation in TWO layers — catalog vs wiring — never one number; (2) audit
+the DEPENDENCY GRAPH not the plan — the plan list has been wrong 5× (translate exported APIs, verify every
+consumer); (3) swap-proof render assertion for any TYPE-INTERCHANGEABLE values (label↔value pairing);
+(4) server-authored diagnostics NEVER reach the DOM — **defect class CLOSED after Task 12** (5 instances all
+fixed; apply the rule to any NEW instance the audit finds, don't hunt); (5) Task 19 exit criterion —
+re-audit `common.*` consumer counts by surface (demote `common.player.*` to `shadowing.*` if still
+single-surface); (6) NEW — proportionality: low-value wiring gaps on pass-through surfaces (key-swap-only,
+no behavioral regression) go to the Task 19 audit, don't expand the current task. The original two are (1)+(5B):
+(A) Mutation testing has **two classes** and a review must report **separate survivor counts** for each:
+**catalog mutations** (append/prepend, punctuation, ICU placeholders, rich tags → prove the
+`messages/en/*.pin.test.ts` literal pins) and **wiring mutations** (swap two `t()` keys, swap the
+namespace, point two elements at one key, delete a translated prop → prove the RTL tests, and must run
+against the **RTL tests ONLY, pin tests excluded**). At 11c the blended number was 0 survivors while the
+RTL-only pass was 5 — the pin tests were masking the gap, and one number cannot show that.
+(B) When promoting into `common.*`, **record the actual consumer count, naming the unit** — importing
+FILES vs consuming SURFACES differ, and P4 tests MODULES. Measured: `common.player.*` = 3 files but
+**1 surface** (demotion candidate); `common.errors.network` = **2 consumers**, NOT the 28-places/8-modules
+figure, which counts un-migrated raw English literals (a backlog, not consumers).
+
+**Two ROADMAP additions decided during execution:**
+1. **Task 6b (inserted, done)** — `lib/i18n/catalog.test.ts` now parses every message in every
+   locale as a real ICU AST instead of matching regexes.
+2. **A metadata sweep task (not yet written)** — 25 pages carry `export const metadata` in English;
+   the user chose one dedicated task near the end over doing it piecemeal. **Module tasks LEAVE
+   metadata in English.**
+
+## ▶ (superseded) NEXT ACTION (2026-07-20, before execution began)
 **Style-guide manual pass = ✅ DONE (the debt Plan 2 left). Plan 3 = ✅ WRITTEN, NOT executed.**
 Three commits on master: `66ea4b7` (Plan 3 doc), `b4b4fcb` (contrast fix), `300ee94` (style-guide
 palette + enforcement). Gates: tsc 0 · **1305/1305 (175 files)** · lint 80 pre-existing warnings,

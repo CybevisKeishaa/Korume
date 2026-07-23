@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { ConfirmButton } from "./confirm-button";
 import { RelativeTime } from "./relative-time";
 import type { MyShareWithReviews } from "@/lib/peer-review-types";
@@ -17,6 +18,8 @@ export interface PeerReviewMineProps {
  * confirm copy says so up front.
  */
 export function PeerReviewMine({ shares: initialShares, className }: PeerReviewMineProps) {
+  const t = useTranslations("community");
+  const tCommon = useTranslations("common");
   const [shares, setShares] = useState(initialShares);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,18 +31,14 @@ export function PeerReviewMine({ shares: initialShares, className }: PeerReviewM
         setShares((prev) => prev.filter((s) => s.id !== shareId));
         return;
       }
-      setError("Couldn't revoke that share — please try again.");
+      setError(t("peerReviewMine.revokeError"));
     } catch {
-      setError("Network error — check your connection and try again.");
+      setError(tCommon("errors.network"));
     }
   }
 
   if (shares.length === 0) {
-    return (
-      <p className={className ?? "text-sm text-muted-foreground"}>
-        You haven&apos;t shared any recordings for peer feedback yet.
-      </p>
-    );
+    return <p className={className ?? "text-sm text-muted-foreground"}>{t("peerReviewMine.empty")}</p>;
   }
 
   return (
@@ -59,26 +58,26 @@ export function PeerReviewMine({ shares: initialShares, className }: PeerReviewM
                 {share.lineText}
               </p>
               <ConfirmButton
-                label="Revoke"
-                confirmLabel="Revoke this share? This deletes the reviews too, and can't be undone."
+                label={t("peerReviewMine.revoke")}
+                confirmLabel={t("peerReviewMine.revokeConfirm")}
                 onConfirm={() => void revoke(share.id)}
               />
             </div>
             {share.note && <p className="mt-1 text-sm text-muted-foreground">{share.note}</p>}
             <p className="mt-1 text-xs text-muted-foreground">
-              Shared <RelativeTime dateTime={share.createdAt} />
+              {t("peerReviewMine.sharedPrefix")} <RelativeTime dateTime={share.createdAt} />
             </p>
 
             <div className="mt-3 border-t border-border pt-3">
               {share.reviews.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No reviews yet.</p>
+                <p className="text-sm text-muted-foreground">{t("peerReviewMine.noReviews")}</p>
               ) : (
                 <ul className="space-y-2">
                   {share.reviews.map((review) => (
                     <li key={review.id} className="text-sm">
                       <div className="flex flex-wrap items-center gap-x-2 text-muted-foreground">
-                        <span aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
-                        <span>{review.reviewer?.name ?? "Deleted user"}</span>
+                        <span aria-label={t("peerReviewMine.starsAriaLabel", { rating: review.rating })}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                        <span>{review.reviewer?.name ?? t("deletedUser")}</span>
                         <span aria-hidden="true">·</span>
                         <RelativeTime dateTime={review.createdAt} />
                       </div>

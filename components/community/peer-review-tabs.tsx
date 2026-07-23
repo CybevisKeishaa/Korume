@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { PeerReviewQueue } from "./peer-review-queue";
 import { PeerReviewMine } from "./peer-review-mine";
@@ -16,11 +17,12 @@ type Tab = "queue" | "mine";
 
 /** "Queue" (others' shares to review) vs. "Mine" (my shares + reviews received) sub-tabs. */
 export function PeerReviewTabs({ initialQueue, initialMine }: PeerReviewTabsProps) {
+  const t = useTranslations("community");
   const [tab, setTab] = useState<Tab>("queue");
 
   return (
     <div>
-      <div role="tablist" aria-label="Peer review" className="flex gap-2">
+      <div role="tablist" aria-label={t("peerReviewTabs.tablistAriaLabel")} className="flex gap-2">
         <button
           type="button"
           role="tab"
@@ -33,7 +35,7 @@ export function PeerReviewTabs({ initialQueue, initialMine }: PeerReviewTabsProp
             tab === "queue" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >
-          Queue
+          {t("peerReviewTabs.queue")}
         </button>
         <button
           type="button"
@@ -47,7 +49,7 @@ export function PeerReviewTabs({ initialQueue, initialMine }: PeerReviewTabsProp
             tab === "mine" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >
-          Mine
+          {t("peerReviewTabs.mine")}
         </button>
       </div>
 

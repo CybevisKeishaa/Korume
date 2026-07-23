@@ -2,18 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/i18n/navigation";
+import { useTranslations } from "@/lib/i18n";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { MiningQueueItem } from "@/lib/mining-types";
 import { splitSentenceForEmphasis } from "@/lib/mining-format";
 import { MiningClipPlayer } from "./mining-clip-player";
 
-/** Anki-style grades mapped to SM-2 quality (0–5) — mirrors `components/learning/review-session.tsx`. */
+/**
+ * Anki-style grades mapped to SM-2 quality (0–5) — mirrors
+ * `components/learning/review-session.tsx`. `labelKey` is the leaf under
+ * `common.srs.*`, resolved via `t(\`srs.${g.labelKey}\`)` in render (no
+ * `t()` at module scope).
+ */
 const GRADES = [
-  { label: "Again", quality: 1, key: "1" },
-  { label: "Hard", quality: 3, key: "2" },
-  { label: "Good", quality: 4, key: "3" },
-  { label: "Easy", quality: 5, key: "4" },
+  { labelKey: "again", quality: 1, key: "1" },
+  { labelKey: "hard", quality: 3, key: "2" },
+  { labelKey: "good", quality: 4, key: "3" },
+  { labelKey: "easy", quality: 5, key: "4" },
 ] as const;
 
 export interface MiningReviewSessionProps {
@@ -34,6 +40,8 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
   const [error, setError] = useState<string | null>(null);
   const [reviewed, setReviewed] = useState(0);
   const firstGradeRef = useRef<HTMLButtonElement>(null);
+  const t = useTranslations("common");
+  const tMining = useTranslations("mining");
 
   const current = items[index];
   const done = index >= items.length;
@@ -58,12 +66,19 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
         setRevealed(false);
         setIndex((i) => i + 1);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong.");
+        // The raw exception text (an HTTP status, a browser-locale network
+        // error like "Failed to fetch") must never reach the DOM — it can't
+        // be translated and leaks English/browser copy to VI users. Log it
+        // for support/debugging and show only the translated generic
+        // fallback (spec P1/CLAUDE.md §5; mirrors Task 7's
+        // `components/learning/review-session.tsx` fix).
+        console.error(e);
+        setError(t("states.error"));
       } finally {
         setSubmitting(false);
       }
     },
-    [current, submitting],
+    [current, submitting, t],
   );
 
   useEffect(() => {
@@ -89,9 +104,9 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
   if (items.length === 0) {
     return (
       <div className="text-center">
-        <p className="text-muted-foreground">Nothing due — mine some sentences!</p>
+        <p className="text-muted-foreground">{tMining("review.empty")}</p>
         <Link href="/mining" className={buttonStyles({ className: "mt-4" })}>
-          Back to deck
+          {tMining("review.backToDeck")}
         </Link>
       </div>
     );
@@ -100,12 +115,12 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
   if (done) {
     return (
       <div className="text-center" role="status">
-        <p className="text-2xl font-bold">Session complete 🎉</p>
+        <p className="text-2xl font-bold">{t("srs.complete")}</p>
         <p className="mt-2 text-muted-foreground">
-          You reviewed {reviewed} sentence{reviewed === 1 ? "" : "s"}.
+          {tMining("review.reviewedCount", { count: reviewed })}
         </p>
         <Link href="/mining" className={buttonStyles({ className: "mt-6" })}>
-          Done
+          {t("srs.done")}
         </Link>
       </div>
     );
@@ -114,7 +129,7 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
   return (
     <div>
       <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
-        {index + 1} / {items.length}
+        {t("srs.progress", { current: index + 1, total: items.length })}
       </p>
 
       <Card className="flex min-h-56 flex-col items-center justify-center gap-3 p-8 text-center">
@@ -155,19 +170,19 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
       <div className="mt-6">
         {!revealed ? (
           <Button size="lg" className="w-full" onClick={() => setRevealed(true)} autoFocus>
-            Show answer <span className="ml-2 text-xs opacity-70">(Space)</span>
+            {t("srs.showAnswer")} <span className="ml-2 text-xs opacity-70">{t("srs.spaceHint")}</span>
           </Button>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {GRADES.map((g, i) => (
               <Button
-                key={g.label}
+                key={g.labelKey}
                 ref={i === 0 ? firstGradeRef : undefined}
                 variant="outline"
                 onClick={() => grade(g.quality)}
                 disabled={submitting}
               >
-                {g.label}
+                {t(`srs.${g.labelKey}`)}
                 <span className="ml-1 text-xs opacity-70">{g.key}</span>
               </Button>
             ))}

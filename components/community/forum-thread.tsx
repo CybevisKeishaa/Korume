@@ -1,12 +1,14 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { useRouter } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ConfirmButton } from "./confirm-button";
 import { RelativeTime } from "./relative-time";
+import { FORUM_TOPICS, topicLabel } from "./forum-post-item";
 import type { ForumCommentItem, ForumPostDetail, ForumTopic } from "@/lib/forum-types";
 
 export interface ForumThreadProps {
@@ -15,22 +17,29 @@ export interface ForumThreadProps {
   currentUserId: string | null;
 }
 
-const TOPIC_OPTIONS: { value: ForumTopic; label: string }[] = [
-  { value: "general", label: "General" },
-  { value: "grammar", label: "Grammar" },
-  { value: "vocab", label: "Vocab" },
-  { value: "listening", label: "Listening" },
-  { value: "speaking", label: "Speaking" },
-  { value: "jlpt", label: "JLPT" },
-  { value: "study-tips", label: "Study tips" },
-];
-
 type ActionState = { status: "idle" | "submitting" } | { status: "error"; message: string };
 
-function friendlyRateLimit(retryAfter: string | null, action: string): string {
+type RateLimitAction = "requests" | "comments";
+
+/**
+ * Resolves a `RateLimitAction` to its translated "Too many X — ..." message.
+ * Two explicit branches (not a templated key) so the two catalog entries can
+ * be worded naturally per locale instead of forcing a single English noun
+ * ("requests"/"comments") into every language's sentence structure.
+ */
+function friendlyRateLimit(
+  t: ReturnType<typeof useTranslations<"community">>,
+  retryAfter: string | null,
+  action: RateLimitAction,
+): string {
+  if (action === "requests") {
+    return retryAfter
+      ? t("thread.tooManyRequestsWithSeconds", { seconds: retryAfter })
+      : t("thread.tooManyRequestsGeneric");
+  }
   return retryAfter
-    ? `Too many ${action} — try again in ${retryAfter}s.`
-    : `Too many ${action} — please wait a moment and try again.`;
+    ? t("thread.tooManyCommentsWithSeconds", { seconds: retryAfter })
+    : t("thread.tooManyCommentsGeneric");
 }
 
 /**
@@ -43,6 +52,8 @@ function friendlyRateLimit(retryAfter: string | null, action: string): string {
  * locally-known values are applied directly instead).
  */
 export function ForumThread({ post: initialPost, currentUserId }: ForumThreadProps) {
+  const t = useTranslations("community");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const [post, setPost] = useState(initialPost);
   const [comments, setComments] = useState<ForumCommentItem[]>(initialPost.comments);
@@ -66,6 +77,11 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
   const commentBoxId = useId();
 
   const isOwnPost = currentUserId !== null && post.author?.id === currentUserId;
+
+  const TOPIC_OPTIONS: { value: ForumTopic; label: string }[] = FORUM_TOPICS.map((value) => ({
+    value,
+    label: topicLabel(t, value),
+  }));
 
   function startEditPost(): void {
     setEditTitle(post.title);
@@ -91,12 +107,12 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
         return;
       }
       if (res.status === 429) {
-        setPostAction({ status: "error", message: friendlyRateLimit(res.headers.get("Retry-After"), "requests") });
+        setPostAction({ status: "error", message: friendlyRateLimit(t, res.headers.get("Retry-After"), "requests") });
         return;
       }
-      setPostAction({ status: "error", message: "Couldn't save your changes — please try again." });
+      setPostAction({ status: "error", message: t("thread.saveChangesError") });
     } catch {
-      setPostAction({ status: "error", message: "Network error — check your connection and try again." });
+      setPostAction({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -106,7 +122,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
       router.push("/community");
       return;
     }
-    setPostAction({ status: "error", message: "Couldn't delete your post — please try again." });
+    setPostAction({ status: "error", message: t("thread.deletePostError") });
   }
 
   async function submitComment(event: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -127,7 +143,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
             id: json.data.id,
             content: commentText,
             createdAt: json.data.createdAt,
-            author: currentUserId ? { id: currentUserId, name: "You", avatarUrl: null } : null,
+            author: currentUserId ? { id: currentUserId, name: t("thread.you"), avatarUrl: null } : null,
           },
         ]);
         setCommentText("");
@@ -135,12 +151,12 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
         return;
       }
       if (res.status === 429) {
-        setCommentAction({ status: "error", message: friendlyRateLimit(res.headers.get("Retry-After"), "comments") });
+        setCommentAction({ status: "error", message: friendlyRateLimit(t, res.headers.get("Retry-After"), "comments") });
         return;
       }
-      setCommentAction({ status: "error", message: "Couldn't post your comment — please try again." });
+      setCommentAction({ status: "error", message: t("thread.postCommentError") });
     } catch {
-      setCommentAction({ status: "error", message: "Network error — check your connection and try again." });
+      setCommentAction({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -166,12 +182,12 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
         return;
       }
       if (res.status === 429) {
-        setCommentEditAction({ status: "error", message: friendlyRateLimit(res.headers.get("Retry-After"), "requests") });
+        setCommentEditAction({ status: "error", message: friendlyRateLimit(t, res.headers.get("Retry-After"), "requests") });
         return;
       }
-      setCommentEditAction({ status: "error", message: "Couldn't save your changes — please try again." });
+      setCommentEditAction({ status: "error", message: t("thread.saveChangesError") });
     } catch {
-      setCommentEditAction({ status: "error", message: "Network error — check your connection and try again." });
+      setCommentEditAction({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -194,15 +210,15 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                 onClick={startEditPost}
                 className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                Edit post
+                {t("thread.editPost")}
               </button>
-              <ConfirmButton label="Delete post" confirmLabel="Delete this post? This can't be undone." onConfirm={() => void deletePost()} />
+              <ConfirmButton label={t("thread.deletePost")} confirmLabel={t("thread.deletePostConfirm")} onConfirm={() => void deletePost()} />
             </div>
           )}
         </div>
 
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-          <span>{post.author?.name ?? "Deleted user"}</span>
+          <span>{post.author?.name ?? t("deletedUser")}</span>
           <span aria-hidden="true">·</span>
           <RelativeTime dateTime={post.createdAt} />
         </div>
@@ -210,11 +226,11 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
         {editingPost ? (
           <div className="mt-4 space-y-3 rounded-lg border border-border bg-card p-4">
             <div>
-              <Label htmlFor={titleId}>Title</Label>
+              <Label htmlFor={titleId}>{t("composer.titleLabel")}</Label>
               <Input id={titleId} value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <Label htmlFor={topicId}>Topic</Label>
+              <Label htmlFor={topicId}>{t("composer.topicLabel")}</Label>
               <select
                 id={topicId}
                 value={editTopic}
@@ -229,7 +245,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
               </select>
             </div>
             <div>
-              <Label htmlFor={contentId}>Content</Label>
+              <Label htmlFor={contentId}>{t("composer.contentLabel")}</Label>
               <textarea
                 id={contentId}
                 value={editContent}
@@ -245,10 +261,10 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                 onClick={() => void saveEditPost()}
                 disabled={postAction.status === "submitting" || !editTitle.trim() || !editContent.trim()}
               >
-                {postAction.status === "submitting" ? "Saving…" : "Save"}
+                {postAction.status === "submitting" ? t("thread.saving") : tCommon("actions.save")}
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => setEditingPost(false)}>
-                Cancel
+                {tCommon("actions.cancel")}
               </Button>
             </div>
             {postAction.status === "error" && (
@@ -271,11 +287,11 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
 
       <section aria-labelledby="comments-heading">
         <h2 id="comments-heading" className="mb-3 text-lg font-semibold">
-          Comments
+          {t("thread.commentsHeading")}
         </h2>
 
         {comments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No comments yet — be the first to reply.</p>
+          <p className="text-sm text-muted-foreground">{t("thread.noComments")}</p>
         ) : (
           <ul className="space-y-3">
             {comments.map((comment) => {
@@ -285,7 +301,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                 <li key={comment.id} className="rounded-lg border border-border bg-card p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-                      <span>{comment.author?.name ?? "Deleted user"}</span>
+                      <span>{comment.author?.name ?? t("deletedUser")}</span>
                       <span aria-hidden="true">·</span>
                       <RelativeTime dateTime={comment.createdAt} />
                     </div>
@@ -296,11 +312,11 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                           onClick={() => startEditComment(comment)}
                           className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                         >
-                          Edit comment
+                          {t("thread.editComment")}
                         </button>
                         <ConfirmButton
-                          label="Delete comment"
-                          confirmLabel="Delete this comment?"
+                          label={t("thread.deleteComment")}
+                          confirmLabel={t("thread.deleteCommentConfirm")}
                           onConfirm={() => void deleteComment(comment.id)}
                         />
                       </div>
@@ -313,7 +329,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                         value={editCommentText}
                         onChange={(e) => setEditCommentText(e.target.value)}
                         rows={3}
-                        aria-label="Edit comment content"
+                        aria-label={t("thread.editCommentAriaLabel")}
                         className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
                       />
                       <div className="flex items-center gap-2">
@@ -323,10 +339,10 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                           onClick={() => void saveEditComment(comment.id)}
                           disabled={commentEditAction.status === "submitting" || !editCommentText.trim()}
                         >
-                          Save
+                          {tCommon("actions.save")}
                         </Button>
                         <Button type="button" size="sm" variant="outline" onClick={() => setEditingCommentId(null)}>
-                          Cancel
+                          {tCommon("actions.cancel")}
                         </Button>
                       </div>
                       {commentEditAction.status === "error" && (
@@ -345,18 +361,18 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
         )}
 
         <form onSubmit={submitComment} className="mt-4 space-y-2">
-          <Label htmlFor={commentBoxId}>Comment</Label>
+          <Label htmlFor={commentBoxId}>{t("thread.commentLabel")}</Label>
           <textarea
             id={commentBoxId}
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             rows={3}
             maxLength={5000}
-            placeholder="Write a reply…"
+            placeholder={t("thread.commentPlaceholder")}
             className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
           />
           <Button type="submit" size="sm" disabled={commentAction.status === "submitting" || !commentText.trim()}>
-            {commentAction.status === "submitting" ? "Posting…" : "Comment"}
+            {commentAction.status === "submitting" ? t("thread.posting") : t("thread.commentButton")}
           </Button>
           {commentAction.status === "error" && (
             <p role="alert" className="text-sm text-danger-strong">

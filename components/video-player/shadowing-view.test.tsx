@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import {
@@ -112,7 +112,14 @@ describe("ShadowingView", () => {
   it("shows a no-transcript hint when the video has no transcript yet", async () => {
     renderView(VIDEO, null);
     await waitFor(() => expect(yt.players).toHaveLength(1));
-    expect(screen.getByText(/no transcript yet/i)).toBeInTheDocument();
+    // Exact-text match (not the regex containment check below) so this
+    // proves the wired copy, not just a substring survives.
+    expect(screen.getByText("No transcript yet")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "This video doesn't have a transcript to shadow against yet. Transcript submission is coming soon.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /こんにちは/ })).not.toBeInTheDocument();
   });
 
@@ -315,6 +322,14 @@ describe("ShadowingView", () => {
 
     act(() => player.triggerError(150));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/can't be played here/i);
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(/can't be played here/i);
+    // Exact-text matches for both lines of the alert — the toHaveTextContent
+    // check above is a containment match (binding pattern), so it alone
+    // cannot prove the second sentence made it through unmutated.
+    expect(screen.getByText("This video can't be played here.")).toBeInTheDocument();
+    expect(
+      screen.getByText("It may be region-locked, private, or unavailable for embedding."),
+    ).toBeInTheDocument();
   });
 });

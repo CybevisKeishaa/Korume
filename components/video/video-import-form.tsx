@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "@/lib/i18n/navigation";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,21 +14,34 @@ function isKnownErrorStatus(status: number): status is KnownErrorStatus {
   return status === 400 || status === 401 || status === 422 || status === 429;
 }
 
-/** Maps a POST /api/videos/import failure to a user-facing message. */
-function messageForStatus(status: KnownErrorStatus | "unknown", retryAfterSeconds?: number): string {
+/**
+ * Which `videos.errors.*` catalog entry a failed POST /api/videos/import maps
+ * to. A descriptor, not a resolved string, because `descriptorForStatus` is a
+ * module-level function and cannot call `t()` itself — only the component
+ * body (inside render) has translation context. Mirrors
+ * `components/learning/vocab-examples-panel.tsx`'s `ErrorDescriptor` pattern.
+ */
+type ErrorDescriptor =
+  | { key: "invalidUrl" }
+  | { key: "sessionExpired" }
+  | { key: "fetchFailed" }
+  | { key: "rateLimited"; seconds: number }
+  | { key: "rateLimitedGeneric" }
+  | { key: "generic" };
+
+/** Maps a POST /api/videos/import failure to a `videos.errors.*` descriptor. */
+function descriptorForStatus(status: KnownErrorStatus | "unknown", retryAfterSeconds?: number): ErrorDescriptor {
   switch (status) {
     case 400:
-      return "That doesn't look like a valid YouTube URL.";
+      return { key: "invalidUrl" };
     case 401:
-      return "Your session expired — please sign in again.";
+      return { key: "sessionExpired" };
     case 422:
-      return "We couldn't fetch details for that video. Double-check the link and try again.";
+      return { key: "fetchFailed" };
     case 429:
-      return retryAfterSeconds
-        ? `Too many imports — please wait ${retryAfterSeconds}s and try again.`
-        : "Too many imports — please wait a moment and try again.";
+      return retryAfterSeconds ? { key: "rateLimited", seconds: retryAfterSeconds } : { key: "rateLimitedGeneric" };
     default:
-      return "Something went wrong importing that video. Please try again.";
+      return { key: "generic" };
   }
 }
 
@@ -37,10 +51,17 @@ function messageForStatus(status: KnownErrorStatus | "unknown", retryAfterSecond
  * takes the user straight to the new video's shadowing page.
  */
 export function VideoImportForm() {
+  const t = useTranslations("videos");
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorDescriptor | null>(null);
+
+  function errorMessage(descriptor: ErrorDescriptor): string {
+    return descriptor.key === "rateLimited"
+      ? t("errors.rateLimited", { seconds: descriptor.seconds })
+      : t(`errors.${descriptor.key}`);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,7 +69,7 @@ export function VideoImportForm() {
 
     const trimmed = url.trim();
     if (!trimmed) {
-      setError(messageForStatus(400));
+      setError(descriptorForStatus(400));
       return;
     }
 
@@ -65,7 +86,7 @@ export function VideoImportForm() {
         const retryAfterHeader = res.headers.get("Retry-After");
         const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : undefined;
         const status = isKnownErrorStatus(res.status) ? res.status : "unknown";
-        setError(messageForStatus(status, retryAfterSeconds));
+        setError(descriptorForStatus(status, retryAfterSeconds));
         return;
       }
 
@@ -74,7 +95,7 @@ export function VideoImportForm() {
       router.refresh();
       router.push(`/videos/${body.data.id}/shadowing`);
     } catch {
-      setError(messageForStatus("unknown"));
+      setError(descriptorForStatus("unknown"));
     } finally {
       setLoading(false);
     }
@@ -87,7 +108,7 @@ export function VideoImportForm() {
       className="flex flex-col gap-3 sm:flex-row sm:items-end"
     >
       <div className="flex-1">
-        <Label htmlFor="youtube-url">YouTube URL</Label>
+        <Label htmlFor="youtube-url">{t("urlLabel")}</Label>
         <Input
           id="youtube-url"
           name="youtubeUrl"
@@ -104,7 +125,7 @@ export function VideoImportForm() {
         />
       </div>
       <Button type="submit" disabled={loading}>
-        {loading ? "Importing…" : "Import video"}
+        {loading ? t("importing") : t("import")}
       </Button>
       {error && (
         <p
@@ -112,7 +133,7 @@ export function VideoImportForm() {
           role="alert"
           className="text-sm text-danger-strong sm:basis-full"
         >
-          {error}
+          {errorMessage(error)}
         </p>
       )}
     </form>

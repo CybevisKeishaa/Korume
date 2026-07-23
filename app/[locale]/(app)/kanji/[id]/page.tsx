@@ -1,4 +1,5 @@
 import { Link } from "@/lib/i18n/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { getKanjiById } from "@/lib/data/content";
 import { StrokeOrder } from "@/components/motion/stroke-order";
@@ -11,6 +12,7 @@ export default async function KanjiDetailPage({
 }: {
   params: { id: string };
 }) {
+  const t = await getTranslations("kanji");
   const kanji = await getKanjiById(params.id);
   if (!kanji) notFound();
 
@@ -23,14 +25,14 @@ export default async function KanjiDetailPage({
         href="/kanji"
         className="text-sm text-muted-foreground hover:text-foreground"
       >
-        ← All kanji
+        {t("backToList")}
       </Link>
 
       <div className="mt-6 grid gap-8 md:grid-cols-[240px_1fr]">
         <div className="w-full max-w-[240px]">
           <StrokeOrder character={kanji.character} />
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            {kanji.stroke_count} stroke{kanji.stroke_count === 1 ? "" : "s"}
+            {t("strokeCount", { count: kanji.stroke_count ?? 0 })}
             {kanji.jlpt_level ? ` · ${kanji.jlpt_level}` : ""}
           </p>
         </div>
@@ -46,13 +48,13 @@ export default async function KanjiDetailPage({
 
           <dl className="mt-6 space-y-2 text-sm">
             <div className="flex gap-3">
-              <dt className="w-16 shrink-0 text-muted-foreground">On</dt>
+              <dt className="w-16 shrink-0 text-muted-foreground">{t("onReading")}</dt>
               <dd className="font-jp">
                 {on.length ? on.map((r) => r.reading).join("、") : "—"}
               </dd>
             </div>
             <div className="flex gap-3">
-              <dt className="w-16 shrink-0 text-muted-foreground">Kun</dt>
+              <dt className="w-16 shrink-0 text-muted-foreground">{t("kunReading")}</dt>
               <dd className="font-jp">
                 {kun.length ? kun.map((r) => r.reading).join("、") : "—"}
               </dd>
@@ -62,7 +64,7 @@ export default async function KanjiDetailPage({
           {kanji.mnemonic_text && (
             <div className="mt-6 rounded-lg bg-muted p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Mnemonic
+                {t("mnemonic")}
               </p>
               <p className="mt-1 text-sm">{kanji.mnemonic_text}</p>
             </div>

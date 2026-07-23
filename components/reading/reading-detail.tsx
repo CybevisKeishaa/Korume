@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import type { ReadingPassageDetail } from "@/lib/reading-types";
 import { ReadingBody } from "./reading-body";
@@ -24,6 +25,7 @@ type LoadState =
  * `components/reading/reading-list.tsx` for why (no `lib/data` import).
  */
 export function ReadingDetail({ passageId }: ReadingDetailProps) {
+  const t = useTranslations("reading");
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
@@ -42,23 +44,27 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ status: "error", message: "Could not load this passage. Please try again." });
+          setState({ status: "error", message: t("detail.errorLoad") });
         }
       });
 
     return () => {
       cancelled = true;
     };
+    // `t` intentionally omitted below: it is stable for the component's
+    // lifetime (locale never changes mid-render) and adding it would
+    // re-trigger this fetch effect whenever `t`'s identity happens to change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [passageId]);
 
   if (state.status === "loading") {
-    return <p className="text-sm text-muted-foreground">Loading passage…</p>;
+    return <p className="text-sm text-muted-foreground">{t("detail.loading")}</p>;
   }
 
   if (state.status === "not-found") {
     return (
       <p role="alert" className="text-sm text-danger-strong">
-        Passage not found.
+        {t("detail.notFound")}
       </p>
     );
   }
@@ -77,7 +83,7 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
     <div className="space-y-8">
       <div>
         <Link href="/reading" className="text-sm text-muted-foreground hover:text-foreground">
-          ← All reading passages
+          {t("detail.back")}
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold">{passage.title}</h1>
@@ -86,7 +92,9 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
           </span>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {passage.word_count != null ? `${passage.word_count} words` : "Word count unknown"}
+          {passage.word_count != null
+            ? t("wordCount", { count: passage.word_count })
+            : t("wordCountUnknown")}
         </p>
       </div>
 
@@ -95,7 +103,7 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
       <TranslationDisclosure translation={passage.body_translation} />
 
       <div>
-        <h2 className="mb-4 text-lg font-semibold">Comprehension quiz</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t("detail.quizHeading")}</h2>
         <ReadingQuiz passageId={passage.id} questions={passage.questions} />
       </div>
     </div>

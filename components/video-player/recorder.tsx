@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 
 /** Lifecycle of a single shadowing recording attempt. */
 export type RecorderState = "idle" | "requesting-permission" | "recording" | "recorded" | "error";
@@ -27,16 +28,25 @@ function pickMimeType(): string | undefined {
   return PREFERRED_MIME_TYPES.find((type) => MediaRecorder.isTypeSupported(type));
 }
 
-/** Maps a getUserMedia rejection to a friendly, non-technical message. */
-function describeMicError(err: unknown): string {
+/**
+ * Which `shadowing.recorder.errors.*` catalog entry a getUserMedia rejection
+ * maps to. A descriptor key, not a resolved string, because this is a
+ * module-level function and `t()` is only callable from within component/hook
+ * render (same shape as `video-summary-panel.tsx`'s `classifySummaryError`,
+ * Task 11c, and the vocab examples panel's `classifyError`, Task 8). The hook
+ * below resolves the key via `t(\`recorder.errors.${key}\`)`.
+ */
+type MicErrorKey = "micDenied" | "micNotFound" | "micUnavailable";
+
+function classifyMicError(err: unknown): MicErrorKey {
   const name = err instanceof DOMException ? err.name : undefined;
   if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-    return "Microphone access was denied. Allow microphone access in your browser settings to record.";
+    return "micDenied";
   }
   if (name === "NotFoundError" || name === "DevicesNotFoundError") {
-    return "No microphone was found. Connect a microphone and try again.";
+    return "micNotFound";
   }
-  return "Couldn't access your microphone. Check your device and try again.";
+  return "micUnavailable";
 }
 
 /**
@@ -47,6 +57,7 @@ function describeMicError(err: unknown): string {
  * `useRecorder` again for its own capture without touching upload/UI code.
  */
 export function useRecorder(): UseRecorderResult {
+  const t = useTranslations("shadowing");
   const [state, setState] = useState<RecorderState>("idle");
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +90,7 @@ export function useRecorder(): UseRecorderResult {
     setState("requesting-permission");
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      setError("Recording isn't supported in this browser.");
+      setError(t("recorder.errors.notSupported"));
       setState("error");
       return;
     }
@@ -89,7 +100,7 @@ export function useRecorder(): UseRecorderResult {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(describeMicError(err));
+      setError(t(`recorder.errors.${classifyMicError(err)}`));
       setState("error");
       return;
     }
@@ -118,14 +129,14 @@ export function useRecorder(): UseRecorderResult {
     recorder.onerror = () => {
       cleanupStream();
       if (!mountedRef.current) return;
-      setError("Recording failed. Try again.");
+      setError(t("recorder.errors.recordingFailed"));
       setState("error");
     };
 
     recorderRef.current = recorder;
     recorder.start();
     setState("recording");
-  }, [cleanupStream]);
+  }, [cleanupStream, t]);
 
   const stop = useCallback(() => {
     if (stateRef.current !== "recording") return;

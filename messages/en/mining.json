@@ -1,0 +1,30 @@
+{
+  "deck": {
+    "title": "Mining deck",
+    "review": "Review",
+    "empty": "No mined sentences yet. While shadowing a video, tap \"Mine\" on a transcript line to add one."
+  },
+  "clip": {
+    "play": "Play clip",
+    "replay": "Replay clip"
+  },
+  "mine": {
+    "trigger": "Mine",
+    "a11y": {
+      "pickWord": "Pick a word to mine",
+      "wordLabel": "Word to mine"
+    },
+    "placeholder": "Type a word",
+    "add": "Add",
+    "added": "Added \"{word}\" to your mining deck.",
+    "rateLimited": "Too many cards — please wait {seconds}s and try again.",
+    "rateLimitedGeneric": "Too many cards — please wait a moment and try again.",
+    "error": "Couldn't add that word. Please try again."
+  },
+  "review": {
+    "title": "Mining review",
+    "empty": "Nothing due — mine some sentences!",
+    "backToDeck": "Back to deck",
+    "reviewedCount": "{count, plural, one {You reviewed {count} sentence.} other {You reviewed {count} sentences.}}"
+  }
+}

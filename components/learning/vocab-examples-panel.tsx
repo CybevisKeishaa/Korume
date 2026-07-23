@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { JlptLevel } from "@/lib/validation/content";
@@ -28,31 +29,67 @@ export interface VocabExamplesPanelProps {
 
 type State = { status: "idle" } | { status: "generating" } | { status: "error"; message: string };
 
+/**
+ * Which `vocab.errors.*` catalog entry a failed `generate()` request maps
+ * to. A descriptor, not a resolved string, because `classifyError` is a
+ * module-level function and cannot call `t()` itself — only the component
+ * body (inside render) has translation context. The component resolves the
+ * descriptor to text after calling this.
+ */
+type ErrorDescriptor =
+  | { key: "unavailable" }
+  | { key: "rateLimited"; seconds: number }
+  | { key: "rateLimitedGeneric" }
+  | { key: "generic" };
+
 const examplesUrl = (vocabId: string) => `/api/vocab/${vocabId}/examples`;
 
-/** Maps a non-2xx examples response to a friendly message. */
-async function friendlyError(res: Response): Promise<string> {
-  if (res.status === 503) return "AI example generation isn't set up yet for this deployment.";
+/**
+ * Classifies a non-2xx `/api/vocab/[id]/examples` response into a
+ * translated-message descriptor.
+ *
+ * The API's own `error` field (`app/api/vocab/[id]/examples/route.ts`:
+ * "Invalid id", "Invalid JSON", "Invalid request", "Too many example
+ * requests, slow down") is English, server-authored, and mostly describes a
+ * bug a learner can't act on — it is intentionally never rendered to the
+ * DOM (CLAUDE.md §2/§5, mirroring the Task 7 review-session.tsx ruling on
+ * raw exception text). Instead it's logged for support/debugging, and the
+ * UI shows a translated generic message. The 503 (not configured) and 429
+ * (rate limited) cases are actionable, so they keep their own dedicated,
+ * always-translated copy regardless of what the server's `error` text says.
+ */
+async function classifyError(res: Response): Promise<ErrorDescriptor> {
+  if (res.status === 503) return { key: "unavailable" };
   if (res.status === 429) {
+    // RFC 9110 permits Retry-After to be an HTTP-date, not just delay-seconds
+    // (our own route.ts:52 always sends a numeric value, but a proxy/CDN in
+    // front of it could rewrite the header) — Number() on anything
+    // non-numeric is NaN, and IntlMessageFormat renders that straight into
+    // the message ("try again in NaNs."). Fall back to the generic wait
+    // message instead of trusting the header blindly.
     const retryAfter = res.headers.get("Retry-After");
-    return retryAfter
-      ? `Too many example requests — try again in ${retryAfter}s.`
-      : "Too many example requests — please wait a moment and try again.";
+    const seconds = retryAfter === null ? NaN : Number(retryAfter);
+    return Number.isFinite(seconds)
+      ? { key: "rateLimited", seconds }
+      : { key: "rateLimitedGeneric" };
   }
   try {
     const body = (await res.json()) as { error?: string };
-    return body.error ?? "Could not generate examples right now.";
+    console.error(`vocab examples request failed (${res.status})`, body.error);
   } catch {
-    return "Could not generate examples right now.";
+    console.error(`vocab examples request failed (${res.status})`);
   }
+  return { key: "generic" };
 }
 
 /**
  * Curated example sentences + an on-demand "Generate example sentences (AI)"
- * action (CLAUDE.md §5/§9). AI-generated rows are always visibly labeled;
- * a `cached: true` response (the word already hit its generation cap) just
- * replaces the AI section with the authoritative set — no separate
- * "freshly generated" spinner/story to distinguish it from a new batch.
+ * action (CLAUDE.md §5/§9). AI-generated rows are always visibly labeled —
+ * this is a compliance surface (AI content labeling) and must keep
+ * rendering regardless of locale; a `cached: true` response (the word
+ * already hit its generation cap) just replaces the AI section with the
+ * authoritative set — no separate "freshly generated" spinner/story to
+ * distinguish it from a new batch.
  */
 export function VocabExamplesPanel({
   vocabId,
@@ -60,6 +97,11 @@ export function VocabExamplesPanel({
   level,
   className,
 }: VocabExamplesPanelProps) {
+  const t = useTranslations("vocab");
+  // errors.network is promoted to `common` (Task 11b) — the identical string
+  // is needed by 2+ modules (P4), so it lives in `common.errors.network`,
+  // not duplicated here.
+  const tCommon = useTranslations("common");
   const [examples, setExamples] = useState<VocabExample[]>(initialExamples);
   const [state, setState] = useState<State>({ status: "idle" });
 
@@ -72,21 +114,29 @@ export function VocabExamplesPanel({
         body: JSON.stringify(level ? { level } : {}),
       });
       if (!res.ok) {
-        setState({ status: "error", message: await friendlyError(res) });
+        const descriptor = await classifyError(res);
+        const message =
+          descriptor.key === "rateLimited"
+            ? t("errors.rateLimited", { seconds: descriptor.seconds })
+            : t(`errors.${descriptor.key}`);
+        setState({ status: "error", message });
         return;
       }
       const json = (await res.json()) as { data: VocabExample[]; cached: boolean };
       setExamples((prev) => [...prev.filter((e) => e.source === "curated"), ...json.data]);
       setState({ status: "idle" });
-    } catch {
-      setState({ status: "error", message: "Network error — check your connection and try again." });
+    } catch (e) {
+      // Same rule as the !res.ok branch: never surface a raw browser/network
+      // exception (untranslatable, locale-dependent browser copy).
+      console.error(e);
+      setState({ status: "error", message: tCommon("errors.network") });
     }
   }
 
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Example sentences</h3>
+        <h3 className="text-sm font-semibold">{t("examplesHeading")}</h3>
         <Button
           type="button"
           variant="outline"
@@ -94,7 +144,7 @@ export function VocabExamplesPanel({
           onClick={generate}
           disabled={state.status === "generating"}
         >
-          {state.status === "generating" ? "Generating…" : "Generate example sentences (AI)"}
+          {state.status === "generating" ? t("generating") : t("generateExamples")}
         </Button>
       </div>
 
@@ -105,7 +155,7 @@ export function VocabExamplesPanel({
       )}
 
       {examples.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No example sentences yet.</p>
+        <p className="text-sm text-muted-foreground">{t("noExamples")}</p>
       ) : (
         <ul className="space-y-3">
           {examples.map((example) => (
@@ -116,7 +166,7 @@ export function VocabExamplesPanel({
               )}
               {example.source === "ai_generated" && (
                 <p className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  AI-generated
+                  {t("aiGenerated")}
                 </p>
               )}
             </li>

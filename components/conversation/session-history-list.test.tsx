@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { SessionHistoryList } from "./session-history-list";
 import type { ConversationSessionRow } from "@/lib/conversation-types";
@@ -16,6 +16,34 @@ describe("SessionHistoryList", () => {
     expect(screen.getByRole("button", { name: /free talk/i })).toBeInTheDocument();
     expect(screen.getByText(/ended/i)).toBeInTheDocument();
     expect(screen.getByText(/in progress/i)).toBeInTheDocument();
+  });
+
+  it("pairs each row's own scenario label with its own ended/in-progress status — not swapped", () => {
+    render(<SessionHistoryList sessions={SESSIONS} onSelect={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /restaurant/i })).toHaveTextContent(/ended/i);
+    expect(screen.getByRole("button", { name: /free talk/i })).toHaveTextContent(/in progress/i);
+  });
+
+  it("resolves an unknown scenario id to itself, raw", () => {
+    render(
+      <SessionHistoryList
+        sessions={[
+          { id: "s-3", scenario_type: "mystery-scenario", started_at: "2026-07-12T09:00:00.000Z", ended_at: null },
+        ]}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /mystery-scenario/i })).toBeInTheDocument();
+  });
+
+  it("resolves a missing scenario id to the translated fallback label", () => {
+    render(
+      <SessionHistoryList
+        sessions={[{ id: "s-4", scenario_type: null, started_at: "2026-07-12T09:00:00.000Z", ended_at: null }]}
+        onSelect={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /^conversation/i })).toBeInTheDocument();
   });
 
   it("calls onSelect with the session id when clicked", async () => {

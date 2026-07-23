@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
@@ -136,6 +136,37 @@ describe("DictationView", () => {
     expect(await screen.findByText(/wrong, expected は/i)).toBeInTheDocument();
     expect(screen.getByText(/^missing$/i)).toBeInTheDocument();
     expect(screen.getByText(/extra, not scored/i)).toBeInTheDocument();
+
+    // sr-only scored summary (hazard: built by module-scope `summarizeDiff`,
+    // invisible to a sighted manual check — pinned here byte-identical).
+    // This attempt's diff is one of each non-match type, zero matches.
+    expect(
+      screen.getByText(
+        "0 correct, 1 wrong, 1 missing, 1 extra characters (extra characters are shown but not scored).",
+      ),
+    ).toBeInTheDocument();
+
+    // Legend: the two symbol-prefixed items keep their `aria-hidden` glyph
+    // as JSX and translate only the trailing word. `toHaveTextContent` given
+    // a string is a CONTAINMENT match (survives stray appended/prepended
+    // text), so exact spacing is pinned via raw `.textContent` equality
+    // instead, same as `recommendation-rail.test.tsx`'s rich-text pin.
+    // Both the scored diff (data-diff-type="wrong"/"missing") and the legend
+    // render the same aria-hidden glyph, so scope to the legend's <li>.
+    const wrongGlyph = screen
+      .getAllByText("✕", { selector: "span[aria-hidden]" })
+      .find((el) => el.closest("li"));
+    expect(wrongGlyph?.closest("li")?.textContent).toBe("✕ wrong");
+    const missingGlyph = screen
+      .getAllByText("▢", { selector: "span[aria-hidden]" })
+      .find((el) => el.closest("li"));
+    expect(missingGlyph?.closest("li")?.textContent).toBe("▢ missing (counted)");
+
+    // The "extra" legend item is rich text (`t.rich`) — the word "extra" sits
+    // inside a styled <span> mid-sentence. Verify the rendered textContent is
+    // byte-identical to the pre-extraction JSX output, spacing included.
+    const extraLegendWord = screen.getByText("extra", { selector: ".line-through" });
+    expect(extraLegendWord.closest("li")?.textContent).toBe("extra — shown, not scored");
   });
 
   it("shows a friendly message on a 401 response", async () => {
@@ -156,6 +187,23 @@ describe("DictationView", () => {
     await userEvent.click(screen.getByRole("button", { name: "Submit" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/couldn't be scored/i);
+  });
+
+  it("shows the promoted common.errors.network message when the fetch itself throws", async () => {
+    renderView();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const fetchMock = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    // Exact equality, not `toHaveTextContent` (a containment match that
+    // would stay green even if the promoted string were mutated) — mirrors
+    // `vocab-examples-panel.test.tsx`'s network-error assertion.
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe("Network error — check your connection and try again.");
   });
 
   it("hides the answer text until Reveal is pressed, and Hide re-hides it", async () => {

@@ -1,4 +1,5 @@
 import { Link } from "@/lib/i18n/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { getVocabById, getVocabExamples } from "@/lib/data/content";
 import { Container } from "@/components/ui/container";
@@ -7,6 +8,7 @@ import { VocabExamplesPanel } from "@/components/learning/vocab-examples-panel";
 export const dynamic = "force-dynamic";
 
 export default async function VocabDetailPage({ params }: { params: { id: string } }) {
+  const t = await getTranslations("vocab");
   const vocab = await getVocabById(params.id);
   if (!vocab) notFound();
 
@@ -15,7 +17,7 @@ export default async function VocabDetailPage({ params }: { params: { id: string
   return (
     <Container className="py-10">
       <Link href="/vocab" className="text-sm text-muted-foreground hover:text-foreground">
-        ← All vocabulary
+        {t("backToList")}
       </Link>
 
       <div className="mt-6">

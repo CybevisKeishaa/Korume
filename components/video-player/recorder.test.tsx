@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, waitFor } from "@testing-library/react";
+import { renderHook } from "@/test/render";
 import {
   mockGetUserMedia,
   mockMediaRecorder,
@@ -100,6 +101,59 @@ describe("useRecorder", () => {
     expect(result.current.state).toBe("error");
     expect(result.current.error).toMatch(/microphone access was denied/i);
     expect(result.current.blob).toBeNull();
+  });
+
+  it("surfaces a friendly message when no microphone is found", async () => {
+    // review finding, Important 2: micNotFound had a correct pin but no test
+    // ever rendered/asserted it.
+    mr = mockMediaRecorder();
+    gum = mockGetUserMedia({
+      rejectWith: new DOMException("nope", "NotFoundError"),
+    });
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.state).toBe("error");
+    expect(result.current.error).toMatch(/no microphone was found/i);
+  });
+
+  it("surfaces a generic friendly message for any other getUserMedia rejection", async () => {
+    // review finding, Important 2: the generic micUnavailable fallback is the
+    // one no test would catch resolving to the wrong catalog entry — a plain
+    // Error (not a DOMException with a recognized `name`) exercises it.
+    mr = mockMediaRecorder();
+    gum = mockGetUserMedia({ rejectWith: new Error("boom") });
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.state).toBe("error");
+    expect(result.current.error).toMatch(/couldn't access your microphone/i);
+  });
+
+  it("surfaces a friendly message when the MediaRecorder itself errors mid-recording", async () => {
+    // review finding, Important 2: recordingFailed (the MediaRecorder
+    // onerror path) had a correct pin but no test ever rendered/asserted it.
+    mr = mockMediaRecorder();
+    gum = mockGetUserMedia();
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(result.current.state).toBe("recording");
+
+    act(() => {
+      mr?.instances[0]?.onerror?.(new Event("error"));
+    });
+
+    expect(result.current.state).toBe("error");
+    expect(result.current.error).toMatch(/recording failed/i);
   });
 
   it("reset clears the blob/error and returns to idle", async () => {

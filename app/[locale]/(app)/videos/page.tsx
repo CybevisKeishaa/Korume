@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import type { Locale } from "@/lib/i18n";
 import { redirect } from "@/lib/i18n/navigation";
-import { getLocale } from "@/lib/i18n/server";
+import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { listVideos } from "@/lib/data/videos";
 import { Container } from "@/components/ui/container";
 import { VideoImportForm } from "@/components/video/video-import-form";
@@ -13,10 +15,19 @@ import { SaveToPlaylistButton } from "@/components/community/save-to-playlist-bu
 // a type-only reconciliation of that duplication, not a runtime-unsafe one.
 import type { VideoRow } from "@/lib/video-types";
 
-export const metadata = { title: "Videos" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "videos" });
+  return { title: t("title") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function VideosPage() {
+  const t = await getTranslations("videos");
+  const tCommon = await getTranslations("common");
   const result = await listVideos();
   // (app) layout already redirects unauthenticated users; this is defence in depth.
   if (!result.ok) redirect({ href: "/login", locale: await getLocale() });
@@ -26,9 +37,9 @@ export default async function VideosPage() {
   return (
     <Container className="py-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Videos</h1>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Shadow and study Japanese YouTube videos. Paste a link to add one.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -36,18 +47,18 @@ export default async function VideosPage() {
 
       <section aria-labelledby="recommendations-heading" className="mt-8">
         <h2 id="recommendations-heading" className="mb-3 text-lg font-semibold">
-          Recommended for you
+          {tCommon("recommendations.heading")}
         </h2>
-        <Suspense fallback={<p className="text-sm text-muted-foreground">Finding videos at your level…</p>}>
+        <Suspense fallback={<p className="text-sm text-muted-foreground">{tCommon("recommendations.loading")}</p>}>
           <RecommendationSection limit={8} />
         </Suspense>
       </section>
 
       <div className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold">Your videos</h2>
+        <h2 className="mb-3 text-lg font-semibold">{t("yourVideos")}</h2>
         {videos.length === 0 ? (
           <p className="text-muted-foreground">
-            No videos yet — paste a YouTube URL above to start.
+            {t("empty")}
           </p>
         ) : (
           // `role="list"`/`"listitem"` (rather than <ul>/<li>) because each

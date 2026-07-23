@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@/test/render";
 import { JlptTimer } from "./jlpt-timer";
 
 describe("JlptTimer", () => {

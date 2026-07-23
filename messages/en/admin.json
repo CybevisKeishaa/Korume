@@ -1,0 +1,295 @@
+{
+  "shell": {
+    "tagline": "Admin CMS",
+    "nav": {
+      "dashboard": "Dashboard",
+      "videos": "Video queue",
+      "content": "Content",
+      "styleGuide": "Style guide"
+    },
+    "backToApp": "Back to app",
+    "navAria": "Admin"
+  },
+  "meta": {
+    "dashboard": "Admin — Dashboard",
+    "videos": "Admin — Video Queue",
+    "content": "Admin — Content",
+    "contentType": "Admin — {label}"
+  },
+  "dashboard": {
+    "heading": "Dashboard",
+    "subtitle": "Users, retention and content at a glance.",
+    "loading": "Loading stats…",
+    "error": "Could not load the stats dashboard.",
+    "sections": {
+      "users": "Users",
+      "retention": "Retention",
+      "content": "Content",
+      "activity": "Top activity (last 7 days)"
+    },
+    "stats": {
+      "totalUsers": "Total users",
+      "new7d": "New (7d)",
+      "new30d": "New (30d)",
+      "active7d": "Active (7d)",
+      "active30d": "Active (30d)"
+    },
+    "retention": {
+      "noCohortData": "No cohort data yet",
+      "summary": "{activeCount} of {cohortSize} in cohort still active in the last 7 days."
+    },
+    "contentCounts": {
+      "videosPending": "Videos pending",
+      "videosApproved": "Videos approved",
+      "kanji": "Kanji",
+      "vocab": "Vocabulary",
+      "grammar": "Grammar points",
+      "jlptTests": "JLPT tests",
+      "readingPassages": "Reading passages"
+    },
+    "activityEmpty": "No activity recorded yet.",
+    "generatedAt": "Generated {date}"
+  },
+  "content": {
+    "landing": {
+      "heading": "Content",
+      "subtitle": "Pick a content type to manage."
+    },
+    "types": {
+      "kanji": {
+        "label": "Kanji",
+        "description": "Characters, readings, meanings, mnemonics and stroke order.",
+        "searchLabel": "Search by character"
+      },
+      "vocab": {
+        "label": "Vocabulary",
+        "description": "Words, readings and meanings by JLPT level.",
+        "searchLabel": "Search by word"
+      },
+      "grammar": {
+        "label": "Grammar",
+        "description": "Grammar points, explanations and example sentences.",
+        "searchLabel": "Search by title"
+      },
+      "jlpt_tests": {
+        "label": "JLPT Tests",
+        "description": "Full JLPT mock tests with nested questions.",
+        "searchLabel": "Search by title"
+      },
+      "reading_passages": {
+        "label": "Reading Passages",
+        "description": "Reading comprehension passages with questions.",
+        "searchLabel": "Search by title"
+      }
+    },
+    "columns": {
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "fields": {
+      "kanji": {
+        "character": { "label": "Character" },
+        "jlpt_level": { "label": "JLPT level" },
+        "stroke_count": { "label": "Stroke count" },
+        "radical_id": { "label": "Radical ID (uuid)" },
+        "meaning_en": { "label": "Meaning (EN)" },
+        "meaning_vi": { "label": "Meaning (VI)" },
+        "mnemonic_text": { "label": "Mnemonic" },
+        "mnemonic_image_url": { "label": "Mnemonic image URL" },
+        "stroke_order_svg": { "label": "Stroke order SVG" },
+        "readings": { "label": "Readings (JSON)" }
+      },
+      "vocab": {
+        "word": { "label": "Word" },
+        "reading": { "label": "Reading" },
+        "meaning_en": { "label": "Meaning (EN)" },
+        "meaning_vi": { "label": "Meaning (VI)" },
+        "jlpt_level": { "label": "JLPT level" },
+        "audio_url": { "label": "Audio URL" },
+        "part_of_speech": { "label": "Part of speech" }
+      },
+      "grammar": {
+        "title": { "label": "Title" },
+        "jlpt_level": { "label": "JLPT level" },
+        "explanation": { "label": "Explanation" },
+        "structure_pattern": { "label": "Structure pattern" },
+        "example_sentences": { "label": "Example sentences (JSON)" }
+      },
+      "jlpt_tests": {
+        "level": { "label": "JLPT level" },
+        "title": { "label": "Title" },
+        "section_config": { "label": "Section config (JSON object)" },
+        "questions": { "label": "Questions (JSON)" }
+      },
+      "reading_passages": {
+        "title": { "label": "Title" },
+        "jlpt_level": { "label": "JLPT level" },
+        "body_jp": { "label": "Body (Japanese)" },
+        "body_translation": { "label": "Body (translation)" },
+        "word_count": { "label": "Word count" },
+        "questions": { "label": "Questions (JSON)" }
+      }
+    },
+    "manager": {
+      "search": "Search",
+      "importCsv": "Import CSV",
+      "add": "Add {type}",
+      "pasteCsvLabel": "Paste CSV (header row + up to 500 data rows, max ~1MB)",
+      "uploading": "Uploading…",
+      "upload": "Upload",
+      "importResult": {
+        "inserted": "{count} inserted",
+        "rowError": "Row {row}: {errors}"
+      },
+      "empty": "No {type} yet.",
+      "previous": "Previous",
+      "next": "Next",
+      "pageLabel": "Page {page}",
+      "editAria": "Edit {label}",
+      "deleteAria": "Delete {label}",
+      "edit": "Edit",
+      "deleteDialog": {
+        "title": "Delete {type} item",
+        "description": "Permanently delete \"{label}\"? This cannot be undone."
+      },
+      "error": {
+        "load": "Could not load this content list.",
+        "create": "Could not create this item.",
+        "save": "Could not save this item.",
+        "delete": "Could not delete this item.",
+        "import": "Could not import this CSV.",
+        "tooManyImports": "Too many import attempts — please wait a moment and try again."
+      }
+    },
+    "form": {
+      "addTitle": "Add {type}",
+      "editTitle": "Edit {type}",
+      "selectNone": "(none)",
+      "selectPlaceholder": "Select…",
+      "saving": "Saving…"
+    },
+    "errors": {
+      "required": "{label} is required.",
+      "invalidNumber": "{label} must be a number.",
+      "invalidJson": "{label} must be valid JSON.",
+      "validationFailed": "Something went wrong validating this form."
+    }
+  },
+  "videos": {
+    "page": {
+      "heading": "Video queue",
+      "subtitle": "Review, approve, reject, and attach transcripts to submitted videos."
+    },
+    "loading": "Loading the video queue…",
+    "error": {
+      "load": "Could not load the video queue.",
+      "approve": "Could not approve this video.",
+      "reject": "Could not reject this video.",
+      "transcript": "Could not save this transcript."
+    },
+    "rateLimited": "Please wait a moment before submitting more moderation actions.",
+    "empty": "No videos are waiting for review right now.",
+    "submittedBy": "Submitted by {name}",
+    "submittedByUnknown": "Submitted by an unknown user",
+    "estimate": "Est. {level}",
+    "transcriptBadge": "Transcript: {count} lines",
+    "noTranscript": "No transcript",
+    "approve": "Approve",
+    "approving": "Approving…",
+    "attachTranscript": "Attach transcript",
+    "reject": "Reject",
+    "loadingMore": "Loading…",
+    "rejectDialog": {
+      "title": "Reject video",
+      "description": "The video will be permanently removed, along with its transcript and any progress users have made on it. This cannot be undone.",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "Not persisted publicly — logged for moderators only."
+    },
+    "transcriptDialog": {
+      "title": "Attach transcript",
+      "formatLabel": "Format",
+      "formatPlain": "Plain text",
+      "contentLabel": "Content",
+      "save": "Save transcript",
+      "saving": "Saving…"
+    }
+  },
+  "styleGuide": {
+    "heading": "Style guide",
+    "subtitle": "Executable spec — tokens and primitives rendered from the live implementation.",
+    "localeNavAria": "Style guide locale",
+    "sections": {
+      "colour": {
+        "heading": "Colour",
+        "primitiveTier": "Primitive tier",
+        "semanticTier": "Semantic tier",
+        "semanticNote": "Features consume ONLY this tier. Dark theme remaps it; L9b restyles by editing the mapping, not the features."
+      },
+      "typography": {
+        "heading": "Typography",
+        "note": "Body line-heights are sized for stacked Vietnamese diacritics; Japanese text takes leading-jp (spec §4.5 touchpoint 1)."
+      },
+      "spacing": { "heading": "Spacing" },
+      "elevation": { "heading": "Elevation" },
+      "motion": {
+        "heading": "Motion",
+        "note": "This line uses animate-fade-in (duration-base × ease-standard). With reduce motion on — toggle above — it must appear instantly."
+      },
+      "zIndex": { "heading": "Z-index" },
+      "primitives": { "heading": "Primitives" }
+    },
+    "primitives": {
+      "demo": {
+        "button": "Button",
+        "badge": "Badge",
+        "skeleton": "Skeleton",
+        "dialog": "Dialog",
+        "tabs": "Tabs",
+        "select": "Select",
+        "tooltip": "Tooltip",
+        "popover": "Popover",
+        "toast": "Toast"
+      },
+      "button": {
+        "primary": "Primary",
+        "secondary": "Secondary",
+        "outline": "Outline",
+        "ghost": "Ghost",
+        "disabled": "Disabled",
+        "small": "Small",
+        "large": "Large"
+      },
+      "dialog": {
+        "open": "Open dialog",
+        "title": "Example dialog",
+        "description": "Focus is trapped; Escape and backdrop close it.",
+        "done": "Done"
+      },
+      "tabs": {
+        "ariaLabel": "Example tabs",
+        "first": "First",
+        "second": "Second",
+        "firstPanel": "First panel — arrow keys move selection.",
+        "secondPanel": "Second panel."
+      },
+      "select": {
+        "placeholder": "Choose a level"
+      },
+      "tooltip": {
+        "content": "Shown on hover and on keyboard focus",
+        "trigger": "Focus or hover me"
+      },
+      "popover": {
+        "trigger": "Open popover",
+        "content": "Interactive floating content."
+      },
+      "toast": {
+        "success": "Success toast",
+        "danger": "Danger toast",
+        "savedTitle": "Saved",
+        "failedTitle": "Something failed",
+        "failedDescription": "With a description line."
+      }
+    }
+  }
+}
