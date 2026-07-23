@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { listMiningCards } from "@/lib/data/mining";
@@ -6,7 +8,14 @@ import { buttonStyles } from "@/components/ui/button";
 import { MiningDeckList } from "@/components/video-player/mining-deck-list";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Mining deck" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "mining" });
+  return { title: t("deck.title") };
+}
 
 export default async function MiningDeckPage() {
   const t = await getTranslations("mining");

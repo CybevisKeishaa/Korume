@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { listJlptAttempts, listJlptTests } from "@/lib/data/jlpt";
 import { jlptLevelSchema } from "@/lib/validation/content";
@@ -7,7 +9,14 @@ import { JlptTestList } from "@/components/jlpt/jlpt-test-list";
 import { JlptAttemptList } from "@/components/jlpt/jlpt-attempt-list";
 import type { JlptLevel } from "@/lib/jlpt-ui";
 
-export const metadata = { title: "JLPT" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "jlpt" });
+  return { title: t("title") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function JlptPage({

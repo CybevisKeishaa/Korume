@@ -1,8 +1,17 @@
-import { useTranslations } from "@/lib/i18n";
+import type { Metadata } from "next";
+import { useTranslations, type Locale } from "@/lib/i18n";
+import { getTranslations } from "@/lib/i18n/server";
 import { Container } from "@/components/ui/container";
 import { ConversationApp } from "@/components/conversation/conversation-app";
 
-export const metadata = { title: "Conversation" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "conversation" });
+  return { title: t("page.heading") };
+}
 
 export default function ConversationPage() {
   const t = useTranslations("conversation");

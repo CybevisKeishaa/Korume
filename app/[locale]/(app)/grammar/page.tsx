@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { getGrammarList } from "@/lib/data/content";
 import { jlptLevelSchema } from "@/lib/validation/content";
@@ -5,7 +7,14 @@ import { LevelTabs } from "@/components/learning/level-tabs";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const metadata = { title: "Grammar" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "grammar" });
+  return { title: t("title") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function GrammarPage({

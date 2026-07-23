@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 import { listForumPosts } from "@/lib/data/forum";
@@ -5,7 +7,14 @@ import { Container } from "@/components/ui/container";
 import { CommunityTabs } from "@/components/community/community-tabs";
 import { ForumBoard } from "@/components/community/forum-board";
 
-export const metadata = { title: "Community" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "community" });
+  return { title: t("page.heading") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function CommunityPage() {

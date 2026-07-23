@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { getKanjiList } from "@/lib/data/content";
@@ -6,7 +8,14 @@ import { LevelTabs } from "@/components/learning/level-tabs";
 import { Container } from "@/components/ui/container";
 import { buttonStyles } from "@/components/ui/button";
 
-export const metadata = { title: "Kanji" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "kanji" });
+  return { title: t("title") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function KanjiPage({

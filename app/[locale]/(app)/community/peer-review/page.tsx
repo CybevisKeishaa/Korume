@@ -1,10 +1,19 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { listQueue, listMine } from "@/lib/data/peer-review";
 import { Container } from "@/components/ui/container";
 import { CommunityTabs } from "@/components/community/community-tabs";
 import { PeerReviewTabs } from "@/components/community/peer-review-tabs";
 
-export const metadata = { title: "Peer review" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "community" });
+  return { title: t("tabs.peerReview") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function PeerReviewPage() {

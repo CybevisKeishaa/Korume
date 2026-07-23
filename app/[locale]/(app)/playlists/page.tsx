@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
+import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { listPlaylists, listPublicPlaylists } from "@/lib/data/playlists";
 import { Container } from "@/components/ui/container";
 import { PlaylistsPage as PlaylistsPageView } from "@/components/community/playlists-page";
 
-export const metadata = { title: "Playlists" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "playlists" });
+  return { title: t("page.heading") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function PlaylistsRoutePage() {

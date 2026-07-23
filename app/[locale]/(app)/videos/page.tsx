@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import type { Locale } from "@/lib/i18n";
 import { redirect } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { listVideos } from "@/lib/data/videos";
@@ -13,7 +15,14 @@ import { SaveToPlaylistButton } from "@/components/community/save-to-playlist-bu
 // a type-only reconciliation of that duplication, not a runtime-unsafe one.
 import type { VideoRow } from "@/lib/video-types";
 
-export const metadata = { title: "Videos" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "videos" });
+  return { title: t("title") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function VideosPage() {

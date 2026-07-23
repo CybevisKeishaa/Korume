@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
+import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { Container } from "@/components/ui/container";
@@ -11,7 +13,14 @@ import { RecommendationSection } from "@/components/learning/recommendation-sect
 import { getUserStats } from "@/lib/data/user-stats";
 import { vnDateString } from "@/lib/gamification";
 
-export const metadata = { title: "Dashboard" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "dashboard" });
+  return { title: t("title") };
+}
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
