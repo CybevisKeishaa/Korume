@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { PeerReviewMine } from "./peer-review-mine";
 import type { MyShareWithReviews } from "@/lib/peer-review-types";

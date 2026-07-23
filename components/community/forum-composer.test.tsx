@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ForumComposer } from "./forum-composer";
 
@@ -97,5 +97,23 @@ describe("ForumComposer", () => {
   it("disables Post while title or content is empty", () => {
     render(<ForumComposer onCreated={vi.fn()} />);
     expect(screen.getByRole("button", { name: /post/i })).toBeDisabled();
+  });
+
+  // Swap-proof (Task 16 audit convention #3): the seven topic <option>s must
+  // appear in this exact order with each value paired to its own label — a
+  // reorder or a mislabeled option would fail this even though every label
+  // still appears somewhere in the <select>.
+  it("lists the seven topics in order, each option's value paired with its own label", () => {
+    render(<ForumComposer onCreated={vi.fn()} />);
+    const options = screen.getAllByRole("option") as HTMLOptionElement[];
+    expect(options.map((o) => [o.value, o.textContent])).toEqual([
+      ["general", "General"],
+      ["grammar", "Grammar"],
+      ["vocab", "Vocab"],
+      ["listening", "Listening"],
+      ["speaking", "Speaking"],
+      ["jlpt", "JLPT"],
+      ["study-tips", "Study tips"],
+    ]);
   });
 });

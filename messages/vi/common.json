@@ -10,7 +10,9 @@
     "back": "Quay lại",
     "next": "Tiếp theo",
     "retry": "Thử lại",
-    "review": "Ôn tập"
+    "review": "Ôn tập",
+    "loadMore": "Tải thêm",
+    "confirmYes": "Có, {label}"
   },
   "states": {
     "loading": "Đang tải…",

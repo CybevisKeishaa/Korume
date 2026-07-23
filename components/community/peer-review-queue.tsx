@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { RelativeTime } from "./relative-time";
 import type { PeerReviewQueuePage, PeerReviewShareListItem } from "@/lib/peer-review-types";
@@ -20,13 +21,15 @@ type ReviewState = { status: "idle" | "submitting" } | { status: "error"; messag
 
 const RATINGS = [1, 2, 3, 4, 5];
 
-function friendlyRateLimit(retryAfter: string | null): string {
+function friendlyRateLimit(t: ReturnType<typeof useTranslations<"community">>, retryAfter: string | null): string {
   return retryAfter
-    ? `Too many requests — try again in ${retryAfter}s.`
-    : "Too many requests — please wait a moment and try again.";
+    ? t("peerReviewQueue.tooManyRequestsWithSeconds", { seconds: retryAfter })
+    : t("peerReviewQueue.tooManyRequestsGeneric");
 }
 
 function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onReviewed: (shareId: string) => void }) {
+  const t = useTranslations("community");
+  const tCommon = useTranslations("common");
   const [audio, setAudio] = useState<AudioState>({ status: "idle" });
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
@@ -39,17 +42,17 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
     try {
       const res = await fetch(`/api/peer-review/shares/${share.id}/audio`);
       if (res.status === 429) {
-        setAudio({ status: "error", message: friendlyRateLimit(res.headers.get("Retry-After")) });
+        setAudio({ status: "error", message: friendlyRateLimit(t, res.headers.get("Retry-After")) });
         return;
       }
       if (!res.ok) {
-        setAudio({ status: "error", message: "Couldn't load this recording — please try again." });
+        setAudio({ status: "error", message: t("peerReviewQueue.loadRecordingError") });
         return;
       }
       const json = (await res.json()) as { data: { signedUrl: string; expiresInSeconds: number } };
       setAudio({ status: "ready", url: json.data.signedUrl });
     } catch {
-      setAudio({ status: "error", message: "Network error — check your connection and try again." });
+      setAudio({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -68,7 +71,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
         return;
       }
       if (res.status === 429) {
-        setReviewState({ status: "error", message: friendlyRateLimit(res.headers.get("Retry-After")) });
+        setReviewState({ status: "error", message: friendlyRateLimit(t, res.headers.get("Retry-After")) });
         return;
       }
       if (res.status === 409) {
@@ -77,12 +80,12 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
         return;
       }
       if (res.status === 403) {
-        setReviewState({ status: "error", message: "You cannot review your own share." });
+        setReviewState({ status: "error", message: t("peerReviewQueue.ownShareError") });
         return;
       }
-      setReviewState({ status: "error", message: "Couldn't submit your review — please try again." });
+      setReviewState({ status: "error", message: t("peerReviewQueue.submitError") });
     } catch {
-      setReviewState({ status: "error", message: "Network error — check your connection and try again." });
+      setReviewState({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -93,13 +96,11 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
       </p>
       {share.note && <p className="mt-1 text-sm text-muted-foreground">{share.note}</p>}
       <div className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-        <span>{share.sharedBy?.name ?? "Deleted user"}</span>
+        <span>{share.sharedBy?.name ?? t("deletedUser")}</span>
         <span aria-hidden="true">·</span>
         <RelativeTime dateTime={share.createdAt} />
         <span aria-hidden="true">·</span>
-        <span>
-          {share.reviewCount} {share.reviewCount === 1 ? "review" : "reviews"}
-        </span>
+        <span>{t("peerReviewQueue.reviewCount", { count: share.reviewCount })}</span>
       </div>
 
       <div className="mt-3">
@@ -108,13 +109,13 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
           <audio
             controls
             src={audio.url}
-            aria-label={`${share.sharedBy?.name ?? "This user"}'s recording`}
-            onError={() => setAudio({ status: "error", message: "That link expired — try listening again." })}
+            aria-label={t("peerReviewQueue.recordingAriaLabel", { name: share.sharedBy?.name ?? t("peerReviewQueue.thisUser") })}
+            onError={() => setAudio({ status: "error", message: t("peerReviewQueue.expiredError") })}
             className="w-full"
           />
         ) : (
           <Button type="button" variant="outline" size="sm" onClick={() => void loadAudio()} disabled={audio.status === "loading"}>
-            {audio.status === "loading" ? "Loading…" : "Listen"}
+            {audio.status === "loading" ? tCommon("states.loading") : t("peerReviewQueue.listen")}
           </Button>
         )}
         <div aria-live="polite">
@@ -127,12 +128,12 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
       </div>
 
       {share.alreadyReviewed ? (
-        <p className="mt-3 text-sm text-success-strong">You&apos;ve already reviewed this recording.</p>
+        <p className="mt-3 text-sm text-success-strong">{t("peerReviewQueue.alreadyReviewed")}</p>
       ) : (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           <fieldset>
-            <legend className="text-sm font-medium">Rating</legend>
-            <div role="radiogroup" aria-label="Rating" id={groupId} className="mt-1 flex gap-2">
+            <legend className="text-sm font-medium">{t("peerReviewQueue.ratingLegend")}</legend>
+            <div role="radiogroup" aria-label={t("peerReviewQueue.ratingLegend")} id={groupId} className="mt-1 flex gap-2">
               {RATINGS.map((value) => (
                 <label
                   key={value}
@@ -154,7 +155,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
 
           <div>
             <label htmlFor={commentId} className="text-sm font-medium">
-              Comment
+              {t("peerReviewQueue.commentLabel")}
             </label>
             <textarea
               id={commentId}
@@ -172,7 +173,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
             onClick={() => void submitReview()}
             disabled={!rating || !comment.trim() || reviewState.status === "submitting"}
           >
-            {reviewState.status === "submitting" ? "Submitting…" : "Submit review"}
+            {reviewState.status === "submitting" ? t("peerReviewQueue.submitting") : t("peerReviewQueue.submitReview")}
           </Button>
           {reviewState.status === "error" && (
             <p role="alert" className="text-sm text-danger-strong">
@@ -192,6 +193,8 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
  * the only consent), and a 1-5 star rating + comment form.
  */
 export function PeerReviewQueue({ initialPage, className }: PeerReviewQueueProps) {
+  const t = useTranslations("community");
+  const tCommon = useTranslations("common");
   const [shares, setShares] = useState<PeerReviewShareListItem[]>(initialPage.shares);
   const [nextCursor, setNextCursor] = useState<string | null>(initialPage.nextCursor);
   const [loading, setLoading] = useState(false);
@@ -211,14 +214,14 @@ export function PeerReviewQueue({ initialPage, className }: PeerReviewQueueProps
       const params = new URLSearchParams({ cursor: nextCursor });
       const res = await fetch(`/api/peer-review/queue?${params.toString()}`);
       if (!res.ok) {
-        setError("Couldn't load more — please try again.");
+        setError(t("peerReviewQueue.loadMoreError"));
         return;
       }
       const json = (await res.json()) as { data: PeerReviewQueuePage };
       setShares((prev) => [...prev, ...json.data.shares]);
       setNextCursor(json.data.nextCursor);
     } catch {
-      setError("Network error — check your connection and try again.");
+      setError(tCommon("errors.network"));
     } finally {
       setLoading(false);
     }
@@ -227,7 +230,7 @@ export function PeerReviewQueue({ initialPage, className }: PeerReviewQueueProps
   return (
     <div className={className}>
       {shares.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing to review right now — check back later.</p>
+        <p className="text-sm text-muted-foreground">{t("peerReviewQueue.empty")}</p>
       ) : (
         <ul className="space-y-4">
           {shares.map((share) => (
@@ -247,7 +250,7 @@ export function PeerReviewQueue({ initialPage, className }: PeerReviewQueueProps
       {nextCursor && (
         <div className="mt-4 flex justify-center">
           <Button type="button" variant="outline" size="sm" onClick={() => void loadMore()} disabled={loading}>
-            {loading ? "Loading…" : "Load more"}
+            {loading ? tCommon("states.loading") : tCommon("actions.loadMore")}
           </Button>
         </div>
       )}

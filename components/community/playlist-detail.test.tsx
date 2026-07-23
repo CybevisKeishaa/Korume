@@ -83,6 +83,19 @@ describe("PlaylistDetail", () => {
     expect(downButtons[1]).toBeDisabled();
   });
 
+  // Swap-proof (Task 16 audit convention #3): `aria-label` overrides visible
+  // text for accessible-name matching, so `getByRole(..., { name: /move
+  // down/i })` above would still resolve correctly even if the VISIBLE
+  // button text were swapped with "Move up" — a sighted user would see the
+  // wrong label. This pins each button's rendered textContent directly.
+  it("shows 'Move up'/'Move down' as the buttons' own visible text, not just their accessible name", () => {
+    render(<PlaylistDetail playlist={playlist} isOwner />);
+    const [firstUpButton] = screen.getAllByRole("button", { name: /move up/i });
+    const [firstDownButton] = screen.getAllByRole("button", { name: /move down/i });
+    expect(firstUpButton).toHaveTextContent("Move up");
+    expect(firstDownButton).toHaveTextContent("Move down");
+  });
+
   it("shows an empty state when the playlist has no items", () => {
     render(<PlaylistDetail playlist={{ ...playlist, items: [] }} isOwner />);
     expect(screen.getByText(/no videos in this playlist/i)).toBeInTheDocument();

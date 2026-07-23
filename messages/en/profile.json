@@ -1,0 +1,17 @@
+{
+  "page": {
+    "heading": "Profile",
+    "accountHeading": "Account",
+    "emailLabel": "Email:",
+    "emailFallback": "—",
+    "statsHeading": "Stats",
+    "levelLabel": "Level",
+    "xpLabel": "XP",
+    "currentStreakLabel": "Current streak",
+    "longestStreakLabel": "Longest streak",
+    "streakDays": "{count} days",
+    "badgesEarnedLabel": "Badges earned",
+    "badgesCount": "{earned} / {total}",
+    "viewDashboard": "View full dashboard"
+  }
+}

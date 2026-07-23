@@ -1,0 +1,68 @@
+{
+  "page": {
+    "heading": "Danh sách phát",
+    "subtitle": "Sắp xếp video thành danh sách phát để học, hoặc khám phá những danh sách người học khác đã công khai."
+  },
+  "detailPage": {
+    "back": "← Quay lại danh sách phát"
+  },
+  "tabs": {
+    "ariaLabel": "Danh sách phát",
+    "mine": "Danh sách của tôi",
+    "public": "Khám phá công khai",
+    "newPlaylist": "Danh sách phát mới"
+  },
+  "composer": {
+    "nameLabel": "Tên",
+    "descriptionLabel": "Mô tả (tùy chọn)",
+    "create": "Tạo danh sách phát",
+    "creating": "Đang tạo…",
+    "tooManyWithSeconds": "Bạn đã tạo quá nhiều danh sách phát — thử lại sau {seconds} giây.",
+    "tooManyGeneric": "Bạn đã tạo quá nhiều danh sách phát — vui lòng đợi một chút rồi thử lại.",
+    "createError": "Không thể tạo danh sách phát của bạn — vui lòng thử lại."
+  },
+  "deletedUser": "Người dùng đã xóa",
+  "byOwner": "Bởi {name}",
+  "itemCount": "{count, plural, other {{count} video}}",
+  "detail": {
+    "public": "Công khai",
+    "private": "Riêng tư",
+    "empty": "Danh sách phát này chưa có video nào.",
+    "moveUp": "Di chuyển lên",
+    "moveUpAriaLabel": "Di chuyển lên: {title}",
+    "moveDown": "Di chuyển xuống",
+    "moveDownAriaLabel": "Di chuyển xuống: {title}",
+    "remove": "Xóa khỏi danh sách",
+    "removeError": "Không thể xóa video đó — vui lòng thử lại.",
+    "reorderError": "Không thể sắp xếp lại — vui lòng thử lại."
+  },
+  "list": {
+    "descriptionLabel": "Mô tả",
+    "edit": "Sửa",
+    "deleteConfirm": "Xóa danh sách phát này? Không thể hoàn tác.",
+    "makePublicAriaLabel": "Công khai danh sách này",
+    "publicLabel": "Công khai",
+    "publicDescription": "Danh sách phát công khai hiển thị với mọi người dùng đã đăng nhập.",
+    "empty": "Chưa có danh sách phát nào — tạo một danh sách để bắt đầu sắp xếp video.",
+    "tooManyWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
+    "tooManyGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút.",
+    "saveError": "Không thể lưu thay đổi của bạn — vui lòng thử lại."
+  },
+  "publicList": {
+    "empty": "Chưa có danh sách phát công khai nào.",
+    "loadMoreError": "Không thể tải thêm — vui lòng thử lại."
+  },
+  "saveButton": {
+    "trigger": "Lưu vào danh sách phát",
+    "loadingPlaylists": "Đang tải danh sách phát của bạn…",
+    "loadListError": "Không thể tải danh sách phát của bạn.",
+    "alreadyInPlaylist": "Video này đã có trong danh sách phát đó.",
+    "tooManyWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
+    "tooManyGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút.",
+    "addError": "Không thể thêm video này — vui lòng thử lại.",
+    "createError": "Không thể tạo danh sách phát đó — vui lòng thử lại.",
+    "newPlaylistNameLabel": "Tên danh sách phát mới",
+    "createAndAdd": "Tạo & thêm",
+    "added": "Đã lưu vào danh sách phát."
+  }
+}

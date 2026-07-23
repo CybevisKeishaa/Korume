@@ -13,6 +13,10 @@ import type mining from "../messages/en/mining.json";
 import type jlpt from "../messages/en/jlpt.json";
 import type reading from "../messages/en/reading.json";
 import type conversation from "../messages/en/conversation.json";
+import type community from "../messages/en/community.json";
+import type playlists from "../messages/en/playlists.json";
+import type leaderboard from "../messages/en/leaderboard.json";
+import type profile from "../messages/en/profile.json";
 import type { routing } from "../lib/i18n/routing";
 
 declare module "next-intl" {
@@ -34,6 +38,10 @@ declare module "next-intl" {
       jlpt: typeof jlpt;
       reading: typeof reading;
       conversation: typeof conversation;
+      community: typeof community;
+      playlists: typeof playlists;
+      leaderboard: typeof leaderboard;
+      profile: typeof profile;
     };
   }
 }

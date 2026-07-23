@@ -151,3 +151,27 @@ describe("common.json EN — states.loading (first consumed by Task 11c)", () =>
     expect(en.states.loading).toBe("Loading…");
   });
 });
+
+/**
+ * Task 16 adds two new `actions.*` promotions:
+ * - `loadMore` ("Load more"): byte-identical across `forum-board.tsx`,
+ *   `peer-review-queue.tsx` (community) and `public-playlist-list.tsx`
+ *   (playlists) — a 3-surface, 2-namespace duplication, textbook P4.
+ * - `confirmYes` ("Yes, {label}"): `confirm-button.tsx`'s own confirm-step
+ *   copy. That component is `components/community/confirm-button.tsx` by
+ *   path but is consumed across three namespaces (community, playlists via
+ *   `playlist-list.tsx`, and shadowing via
+ *   `components/video-player/shadowing-recorder-panel.tsx`, Task 11e) — its
+ *   own chrome can't live in any single feature namespace without an
+ *   arbitrary owner, so it promotes straight to `common` rather than
+ *   picking one.
+ */
+describe("common.json EN — actions.loadMore / actions.confirmYes (Task 16 promotion)", () => {
+  it("pins the shared 'Load more' button label", () => {
+    expect(en.actions.loadMore).toBe("Load more");
+  });
+
+  it("pins ConfirmButton's own 'Yes, {label}' confirm-step copy", () => {
+    expect(en.actions.confirmYes).toBe("Yes, {label}");
+  });
+});

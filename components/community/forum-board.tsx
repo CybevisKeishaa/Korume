@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ForumComposer } from "./forum-composer";
-import { ForumPostItem } from "./forum-post-item";
+import { ForumPostItem, FORUM_TOPICS, topicLabel } from "./forum-post-item";
 import type { ForumPostListItem, ForumPostsPage, ForumTopic } from "@/lib/forum-types";
 
 export interface ForumBoardProps {
@@ -14,17 +15,6 @@ export interface ForumBoardProps {
 }
 
 type TopicFilter = "all" | ForumTopic;
-
-const TOPIC_CHIPS: { value: TopicFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "general", label: "General" },
-  { value: "grammar", label: "Grammar" },
-  { value: "vocab", label: "Vocab" },
-  { value: "listening", label: "Listening" },
-  { value: "speaking", label: "Speaking" },
-  { value: "jlpt", label: "JLPT" },
-  { value: "study-tips", label: "Study tips" },
-];
 
 type ListState = { status: "idle" | "loading" } | { status: "error"; message: string };
 
@@ -46,18 +36,25 @@ function buildUrl(topic: TopicFilter, cursor?: string | null): string {
  * comment count) needed to render a real list row.
  */
 export function ForumBoard({ initialPage, className }: ForumBoardProps) {
+  const t = useTranslations("community");
+  const tCommon = useTranslations("common");
   const [topic, setTopic] = useState<TopicFilter>("all");
   const [posts, setPosts] = useState<ForumPostListItem[]>(initialPage.posts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialPage.nextCursor);
   const [listState, setListState] = useState<ListState>({ status: "idle" });
   const [composerOpen, setComposerOpen] = useState(false);
 
+  const TOPIC_CHIPS: { value: TopicFilter; label: string }[] = [
+    { value: "all", label: t("topics.all") },
+    ...FORUM_TOPICS.map((value) => ({ value, label: topicLabel(t, value) })),
+  ];
+
   async function fetchPage(nextTopic: TopicFilter, opts: { cursor?: string | null; append?: boolean } = {}): Promise<void> {
     setListState({ status: "loading" });
     try {
       const res = await fetch(buildUrl(nextTopic, opts.cursor));
       if (!res.ok) {
-        setListState({ status: "error", message: "Couldn't load posts — please try again." });
+        setListState({ status: "error", message: t("board.loadError") });
         return;
       }
       const json = (await res.json()) as { data: ForumPostsPage };
@@ -65,7 +62,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
       setNextCursor(json.data.nextCursor);
       setListState({ status: "idle" });
     } catch {
-      setListState({ status: "error", message: "Network error — check your connection and try again." });
+      setListState({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -87,7 +84,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
   return (
     <div className={className}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div role="group" aria-label="Filter by topic" className="flex flex-wrap gap-2">
+        <div role="group" aria-label={t("board.topicFilterAriaLabel")} className="flex flex-wrap gap-2">
           {TOPIC_CHIPS.map((chip) => {
             const active = chip.value === topic;
             return (
@@ -110,7 +107,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
         </div>
 
         <Button type="button" variant="outline" size="sm" onClick={() => setComposerOpen((v) => !v)}>
-          {composerOpen ? "Cancel" : "New post"}
+          {composerOpen ? tCommon("actions.cancel") : t("board.newPost")}
         </Button>
       </div>
 
@@ -129,9 +126,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
       </div>
 
       {posts.length === 0 && listState.status !== "loading" ? (
-        <p className="mt-6 text-sm text-muted-foreground">
-          No posts yet in this topic — be the first to start a discussion.
-        </p>
+        <p className="mt-6 text-sm text-muted-foreground">{t("board.empty")}</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {posts.map((p) => (
@@ -143,7 +138,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
       {nextCursor && (
         <div className="mt-4 flex justify-center">
           <Button type="button" variant="outline" size="sm" onClick={handleLoadMore} disabled={listState.status === "loading"}>
-            {listState.status === "loading" ? "Loading…" : "Load more"}
+            {listState.status === "loading" ? tCommon("states.loading") : tCommon("actions.loadMore")}
           </Button>
         </div>
       )}

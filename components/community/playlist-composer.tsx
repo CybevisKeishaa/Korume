@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,8 @@ type SubmitState = { status: "idle" | "submitting" } | { status: "error"; messag
 
 /** Create-playlist form: name (required) + optional description. Public/private is set later via the toggle on the playlist itself. */
 export function PlaylistComposer({ onCreated, className }: PlaylistComposerProps) {
+  const t = useTranslations("playlists");
+  const tCommon = useTranslations("common");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [state, setState] = useState<SubmitState>({ status: "idle" });
@@ -47,14 +50,14 @@ export function PlaylistComposer({ onCreated, className }: PlaylistComposerProps
         setState({
           status: "error",
           message: retryAfter
-            ? `Too many playlists — try again in ${retryAfter}s.`
-            : "Too many playlists — please wait a moment and try again.",
+            ? t("composer.tooManyWithSeconds", { seconds: retryAfter })
+            : t("composer.tooManyGeneric"),
         });
         return;
       }
-      setState({ status: "error", message: "Couldn't create your playlist — please try again." });
+      setState({ status: "error", message: t("composer.createError") });
     } catch {
-      setState({ status: "error", message: "Network error — check your connection and try again." });
+      setState({ status: "error", message: tCommon("errors.network") });
     }
   }
 
@@ -62,11 +65,11 @@ export function PlaylistComposer({ onCreated, className }: PlaylistComposerProps
     <form onSubmit={handleSubmit} className={className}>
       <div className="space-y-3">
         <div>
-          <Label htmlFor={nameId}>Name</Label>
+          <Label htmlFor={nameId}>{t("composer.nameLabel")}</Label>
           <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} maxLength={100} required className="mt-1" />
         </div>
         <div>
-          <Label htmlFor={descriptionId}>Description (optional)</Label>
+          <Label htmlFor={descriptionId}>{t("composer.descriptionLabel")}</Label>
           <textarea
             id={descriptionId}
             value={description}
@@ -77,7 +80,7 @@ export function PlaylistComposer({ onCreated, className }: PlaylistComposerProps
           />
         </div>
         <Button type="submit" size="sm" disabled={state.status === "submitting" || !name.trim()}>
-          {state.status === "submitting" ? "Creating…" : "Create playlist"}
+          {state.status === "submitting" ? t("composer.creating") : t("composer.create")}
         </Button>
         {state.status === "error" && (
           <p role="alert" className="text-sm text-danger-strong">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,8 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
   onChanged: (id: string, patch: Partial<PlaylistListItem>) => void;
   onDeleted: (id: string) => void;
 }) {
+  const t = useTranslations("playlists");
+  const tCommon = useTranslations("common");
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(playlist.name);
   const [description, setDescription] = useState(playlist.description ?? "");
@@ -44,14 +47,16 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
         const retryAfter = res.headers.get("Retry-After");
         setAction({
           status: "error",
-          message: retryAfter ? `Too many requests — try again in ${retryAfter}s.` : "Too many requests — please wait a moment.",
+          message: retryAfter
+            ? t("list.tooManyWithSeconds", { seconds: retryAfter })
+            : t("list.tooManyGeneric"),
         });
         return false;
       }
-      setAction({ status: "error", message: "Couldn't save your changes — please try again." });
+      setAction({ status: "error", message: t("list.saveError") });
       return false;
     } catch {
-      setAction({ status: "error", message: "Network error — check your connection and try again." });
+      setAction({ status: "error", message: tCommon("errors.network") });
       return false;
     }
   }
@@ -81,11 +86,11 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
       {editing ? (
         <div className="space-y-3">
           <div>
-            <Label htmlFor={nameId}>Name</Label>
+            <Label htmlFor={nameId}>{t("composer.nameLabel")}</Label>
             <Input id={nameId} value={name} onChange={(e) => setName(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <Label htmlFor={descriptionId}>Description</Label>
+            <Label htmlFor={descriptionId}>{t("list.descriptionLabel")}</Label>
             <textarea
               id={descriptionId}
               value={description}
@@ -96,10 +101,10 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
           </div>
           <div className="flex gap-2">
             <Button type="button" size="sm" onClick={() => void saveEdit()} disabled={action.status === "saving" || !name.trim()}>
-              Save
+              {tCommon("actions.save")}
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => setEditing(false)}>
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
           </div>
         </div>
@@ -110,9 +115,7 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
               {playlist.name}
             </Link>
             {playlist.description && <p className="mt-1 text-sm text-muted-foreground">{playlist.description}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">
-              {playlist.itemCount} {playlist.itemCount === 1 ? "video" : "videos"}
-            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("itemCount", { count: playlist.itemCount })}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
@@ -120,9 +123,9 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
               onClick={() => setEditing(true)}
               className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              Edit
+              {t("list.edit")}
             </button>
-            <ConfirmButton label="Delete" confirmLabel="Delete this playlist? This can't be undone." onConfirm={() => void deletePlaylist()} />
+            <ConfirmButton label={tCommon("actions.delete")} confirmLabel={t("list.deleteConfirm")} onConfirm={() => void deletePlaylist()} />
           </div>
         </div>
       )}
@@ -133,14 +136,12 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
           type="checkbox"
           checked={playlist.isPublic}
           onChange={() => void togglePublic()}
-          aria-label="Make public"
+          aria-label={t("list.makePublicAriaLabel")}
           className="mt-0.5 h-4 w-4 accent-primary"
         />
         <label htmlFor={publicId} className="text-sm">
-          <span className="font-medium">Public</span>
-          <span className="block text-xs text-muted-foreground">
-            Public playlists are visible to all signed-in users.
-          </span>
+          <span className="font-medium">{t("list.publicLabel")}</span>
+          <span className="block text-xs text-muted-foreground">{t("list.publicDescription")}</span>
         </label>
       </div>
 
@@ -155,6 +156,7 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
 
 /** The caller's own playlists: rename/description edit, public toggle (with explicit explanation), delete. */
 export function PlaylistList({ playlists: initialPlaylists, className }: PlaylistListProps) {
+  const t = useTranslations("playlists");
   const [playlists, setPlaylists] = useState(initialPlaylists);
 
   function handleChanged(id: string, patch: Partial<PlaylistListItem>): void {
@@ -166,7 +168,7 @@ export function PlaylistList({ playlists: initialPlaylists, className }: Playlis
   }
 
   if (playlists.length === 0) {
-    return <p className={className ?? "text-sm text-muted-foreground"}>No playlists yet — create one to start organizing videos.</p>;
+    return <p className={className ?? "text-sm text-muted-foreground"}>{t("list.empty")}</p>;
   }
 
   return (

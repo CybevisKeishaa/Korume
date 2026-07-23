@@ -1,0 +1,26 @@
+{
+  "page": {
+    "heading": "Leaderboard",
+    "subtitle": "A weekly snapshot of your progress, and (if you opt in) how you compare with other learners."
+  },
+  "board": {
+    "yourWeekHeading": "Your week",
+    "xpThisWeek": "XP this week",
+    "zeroXp": "Study something this week to start earning XP.",
+    "rank": "Rank {rank}",
+    "notOptedInRank": "Opt in to see your rank among other learners.",
+    "communityHeading": "This week's top learners",
+    "empty": "No one has opted in yet — opt in above to be the first to appear.",
+    "deletedUser": "Deleted user",
+    "youSuffix": "(you)",
+    "xpSuffix": "XP"
+  },
+  "optIn": {
+    "ariaLabel": "Appear on the leaderboard",
+    "question": "Appear on the leaderboard?",
+    "explanation": "Your name and weekly XP will be visible to other users.",
+    "tooManyWithSeconds": "Too many requests — try again in {seconds}s.",
+    "tooManyGeneric": "Too many requests — please wait a moment.",
+    "updateError": "Couldn't update that — please try again."
+  }
+}

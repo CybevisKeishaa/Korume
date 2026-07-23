@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { PlaylistComposer } from "./playlist-composer";
@@ -17,6 +18,8 @@ type Tab = "mine" | "public";
 
 /** "My playlists" (create/rename/delete/public toggle) vs. "Browse public" tabs for /playlists. */
 export function PlaylistsPage({ initialMine, initialPublic }: PlaylistsPageProps) {
+  const t = useTranslations("playlists");
+  const tCommon = useTranslations("common");
   const [tab, setTab] = useState<Tab>("mine");
   const [mine, setMine] = useState(initialMine);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -45,7 +48,7 @@ export function PlaylistsPage({ initialMine, initialPublic }: PlaylistsPageProps
 
   return (
     <div>
-      <div role="tablist" aria-label="Playlists" className="flex gap-2">
+      <div role="tablist" aria-label={t("tabs.ariaLabel")} className="flex gap-2">
         <button
           type="button"
           role="tab"
@@ -58,7 +61,7 @@ export function PlaylistsPage({ initialMine, initialPublic }: PlaylistsPageProps
             tab === "mine" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >
-          My playlists
+          {t("tabs.mine")}
         </button>
         <button
           type="button"
@@ -72,14 +75,14 @@ export function PlaylistsPage({ initialMine, initialPublic }: PlaylistsPageProps
             tab === "public" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >
-          Browse public
+          {t("tabs.public")}
         </button>
       </div>
 
       <div role="tabpanel" id="playlists-panel-mine" aria-labelledby="playlists-tab-mine" hidden={tab !== "mine"} className="mt-4">
         <div className="mb-4 flex justify-end">
           <Button type="button" variant="outline" size="sm" onClick={() => setComposerOpen((v) => !v)}>
-            {composerOpen ? "Cancel" : "New playlist"}
+            {composerOpen ? tCommon("actions.cancel") : t("tabs.newPlaylist")}
           </Button>
         </div>
         {composerOpen && (

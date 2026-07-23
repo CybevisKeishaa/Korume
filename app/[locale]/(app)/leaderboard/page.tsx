@@ -3,12 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getLeaderboard } from "@/lib/data/leaderboard";
 import { Container } from "@/components/ui/container";
 import { LeaderboardBoard } from "@/components/community/leaderboard-board";
-import { getLocale } from "@/lib/i18n/server";
+import { getLocale, getTranslations } from "@/lib/i18n/server";
 
 export const metadata = { title: "Leaderboard" };
 export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
+  const t = await getTranslations("leaderboard");
   const supabase = createClient();
   const {
     data: { user },
@@ -26,10 +27,8 @@ export default async function LeaderboardPage() {
 
   return (
     <Container className="py-8">
-      <h1 className="text-2xl font-bold">Leaderboard</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        A weekly snapshot of your progress, and (if you opt in) how you compare with other learners.
-      </p>
+      <h1 className="text-2xl font-bold">{t("page.heading")}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{t("page.subtitle")}</p>
 
       <div className="mt-6">
         <LeaderboardBoard initialPage={page} initialOptIn={initialOptIn} />

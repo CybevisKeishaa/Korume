@@ -10,7 +10,9 @@
     "back": "Back",
     "next": "Next",
     "retry": "Try again",
-    "review": "Review"
+    "review": "Review",
+    "loadMore": "Load more",
+    "confirmYes": "Yes, {label}"
   },
   "states": {
     "loading": "Loading…",

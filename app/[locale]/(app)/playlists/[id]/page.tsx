@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "@/lib/i18n/server";
 import { Link } from "@/lib/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getPlaylist } from "@/lib/data/playlists";
@@ -8,6 +9,7 @@ import { PlaylistDetail } from "@/components/community/playlist-detail";
 export const dynamic = "force-dynamic";
 
 export default async function PlaylistDetailPage({ params }: { params: { id: string } }) {
+  const t = await getTranslations("playlists");
   const playlist = await getPlaylist(params.id);
   if (!playlist) notFound();
 
@@ -21,7 +23,7 @@ export default async function PlaylistDetailPage({ params }: { params: { id: str
   return (
     <Container className="py-8">
       <Link href="/playlists" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
-        ← Back to playlists
+        {t("detailPage.back")}
       </Link>
 
       <div className="mt-4">
