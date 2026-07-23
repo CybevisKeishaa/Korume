@@ -1,17 +1,49 @@
 # L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15 done; 16-19 remain — NEXT = Task 16 `community`+`playlists`+`leaderboard`+`profile`)
 
-## 🆕 TWO NEW STANDING LESSONS from Task 13 (binding, Tasks 14–19) — put in every brief
-- **Namespace wiring is a 5-STEP list, not 4.** In addition to (1) append to `NAMESPACES` in
-  `lib/i18n/namespaces.ts`, (2) `messages/en/<ns>.json` verbatim, (3) `messages/vi/<ns>.json` real VN,
-  (4) `messages/en/<ns>.pin.test.ts` literal pins — there is **(5) add the namespace to
-  `types/messages.d.ts`'s `AppConfig.Messages`**, or every `t()` call site fails `tsc`. Prior briefs
-  omitted step 5; it was discovered at Task 13.
-- **`useTranslations` for ALL synchronous components; `await getTranslations` ONLY for async server
-  components.** A component WITHOUT `"use client"` that is imported by a client component is bundled
-  client-side, and `getTranslations` (server-only, async) HARD-FAILS the build there. Do NOT infer
-  "no `use client` ⇒ server ⇒ getTranslations" — Task 13's audit made that mistake on 2 files and the
-  implementer correctly overrode it (verified via tsc + the RecommendationRail/Task-5 precedent). The only
-  jlpt file that genuinely needed `await getTranslations` was the async page `jlpt/page.tsx`.
+## 🔒 FROZEN EXECUTION CHECKLIST — Tasks 16–19 (canonical; briefs REFERENCE this, do NOT re-paste it)
+Controller directive (user, 2026-07-23): stop re-transmitting the full rulebook each task. The workflow is
+frozen — this block is the single source. A task brief cites ONLY the 2–3 conventions that actually bite that
+module + the module-specific audit; it assumes the implementer knows the established workflow. New GLOBAL
+conventions are added here ONLY if they change the localization architecture; module-specific findings stay in
+the task log / Task 19 audit. Permanent practice REPLACES prior wording here — it does not accumulate beside it.
+
+**Permanent invariants (every extraction task):**
+- Namespace registration = 5 steps: (1) `NAMESPACES` in `lib/i18n/namespaces.ts`; (2) `messages/en/<ns>.json`
+  EN verbatim; (3) `messages/vi/<ns>.json` real VN — identical key tree + identical ICU placeholders per key;
+  (4) `messages/en/<ns>.pin.test.ts` literal `toBe` pins from the PRE-extraction source (never from the
+  catalog); (5) `types/messages.d.ts` `AppConfig.Messages`. `request.ts` auto-merges — no loader edit. EN + VN
+  + pin ship in the SAME commit.
+- vi plural = CLDR cardinal `other` only (no `one`); en keeps `one`/`other`.
+- Translator idiom: `useTranslations(ns)` for ALL synchronous components (client OR non-async server).
+  `await getTranslations(ns)` ONLY for a genuinely-async server component. Wire a translator ONLY where literal
+  chrome strings exist (a pass-through file with none gets none).
+- Content vs chrome (D8): DB/prop/AI-authored content (passages, translations, Japanese words, furigana, chat
+  text, AI corrections, user transcripts, filenames) stays RAW; only JSX literal chrome is extracted. Japanese
+  inside a chrome string stays in both locales (EN verbatim; VN translates the English part, keeps the Japanese).
+- Module-level English string producers (`friendlyXError`, `body.error ?? fallback`, status/enum maps) →
+  key-returning classifiers resolved with `t()` in the render body.
+
+**The six standing conventions (review rubric — terse):**
+1. Mutation testing reported in TWO layers: `Catalog: N/X` (pin-only) + `Wiring: M/Y` (RTL-only, pin disabled).
+   Never blended.
+2. Audit the DEPENDENCY GRAPH, not the plan list: grep the import graph of every exported API you localize;
+   verify each consumer (the plan file list has been wrong 5×; exported label maps like SCENARIOS/jlpt-ui bite).
+3. Swap-proof render assertions for type-interchangeable values (label↔value pairs, enum sets): must FAIL if two
+   `t()` keys are swapped, not merely assert presence.
+4. Server diagnostics never reach the learner DOM. **Recurs across modules via the `friendlyErrorFrom` /
+   `body.error ?? fallback` idiom — in EVERY module you touch, grep for `body.error` / `.message` / `?? fallback`
+   reaching a `role="alert"` / `setError` / DOM node → `console.error(...)` for devs + render a TRANSLATED state.**
+5. Record every `common.*` reuse/promotion's consumer count BY SURFACE (for the Task 19 audit).
+6. Proportionality: low-value wiring gaps on inert pass-through surfaces → carried Minor for Task 19; fix-in-task
+   only on correctness/compliance paths.
+
+**Gates (controller re-runs ALL three ITSELF, never trusts the report):** `tsc --noEmit` clean; `vitest run`
+green; `npm run lint` **EXIT 0 with 0 new** — check the exit code + error count, not just the 80-warning/23-file
+baseline (an ERROR like `no-empty-function` does not move the 80 but breaks the gate — the Task 15 catch).
+
+**common.* consumer counts (running, for Task 19):** `errors.network`=7 · `states.error`=2 · `srs.*`=2 ·
+`states.loading`=2 · `recommendations.*`=2 · `player.*`=1 (demotion candidate).
+
 
 ## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22)
 Put ALL SIX in every implementer brief AND every reviewer brief. They are not new — Tasks 11–12
