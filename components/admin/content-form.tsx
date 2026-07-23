@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "./textarea";
 import { Dialog } from "./dialog";
 import { buildContentPayload, ContentPayloadError } from "./content-payload";
-import { CONTENT_FIELDS, CONTENT_TYPE_LABELS, type ContentFieldConfig } from "./content-fields";
+import { CONTENT_FIELDS, contentTypeLabel, fieldLabel, type ContentFieldConfig } from "./content-fields";
 import type { ContentRow, ContentType } from "@/lib/admin-ui-types";
 import { useTranslations } from "@/lib/i18n";
 
@@ -49,9 +49,7 @@ function initialValues(fields: ContentFieldConfig[], item: ContentRow | undefine
  * editor is a reasonable follow-up but out of scope here.
  */
 export function ContentForm({ type, mode, initialItem, knownFields, onCancel, onSubmit }: ContentFormProps) {
-  // Translates only the ui Dialog's closeLabel (P4) — the rest of this form's
-  // copy is still hardcoded English, extracted to the `admin` namespace by a
-  // later task (spec §7 plan, Task 17).
+  const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const fields = CONTENT_FIELDS[type];
   const [values, setValues] = useState<Record<string, string>>(() => initialValues(fields, initialItem));
@@ -74,9 +72,11 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
       payload = buildContentPayload(fields, values, mode, knownFields);
     } catch (err) {
       if (err instanceof ContentPayloadError) {
-        setFieldErrors({ [err.field]: err.message });
+        setFieldErrors({
+          [err.field]: t(`content.errors.${err.reason}`, { label: fieldLabel(t, type, err.field) }),
+        });
       } else {
-        setFormError("Something went wrong validating this form.");
+        setFormError(t("content.errors.validationFailed"));
       }
       return;
     }
@@ -87,7 +87,8 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
     if (!result.ok) setFormError(result.error);
   }
 
-  const title = mode === "create" ? `Add ${CONTENT_TYPE_LABELS[type]}` : `Edit ${CONTENT_TYPE_LABELS[type]}`;
+  const typeLabel = contentTypeLabel(t, type);
+  const title = mode === "create" ? t("content.form.addTitle", { type: typeLabel }) : t("content.form.editTitle", { type: typeLabel });
 
   return (
     <Dialog open title={title} onClose={onCancel} closeLabel={tCommon("a11y.closeDialog")}>
@@ -97,7 +98,7 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
           return (
             <div key={field.name}>
               <Label htmlFor={inputId}>
-                {field.label}
+                {fieldLabel(t, type, field.name)}
                 {field.required ? " *" : ""}
               </Label>
               {field.kind === "select" ? (
@@ -108,7 +109,7 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
                   required={field.required}
                   onChange={(e) => setValue(field.name, e.target.value)}
                 >
-                  <option value="">{field.nullable ? "(none)" : "Select…"}</option>
+                  <option value="">{field.nullable ? t("content.form.selectNone") : t("content.form.selectPlaceholder")}</option>
                   {field.options?.map((opt) => (
                     <option key={opt} value={opt}>
                       {opt}
@@ -151,10 +152,10 @@ export function ContentForm({ type, mode, initialItem, knownFields, onCancel, on
 
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
-            Cancel
+            {tCommon("actions.cancel")}
           </Button>
           <Button type="submit" disabled={busy}>
-            {busy ? "Saving…" : "Save"}
+            {busy ? t("content.form.saving") : tCommon("actions.save")}
           </Button>
         </div>
       </form>

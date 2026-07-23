@@ -13,6 +13,7 @@ import {
   ZIndexSection,
 } from "./token-sections";
 import { PrimitiveSections } from "./primitive-sections";
+import { useTranslations } from "@/lib/i18n";
 
 /**
  * D9: the design-system laboratory. Not documentation ABOUT the system — it
@@ -24,17 +25,16 @@ import { PrimitiveSections } from "./primitive-sections";
  * the exception that proves P2, same as lib/i18n's own internals.
  */
 export function StyleGuide() {
+  const t = useTranslations("admin");
   return (
     <div className="space-y-2xl">
       <header className="flex flex-wrap items-center justify-between gap-md">
         <div>
-          <h1 className="text-title font-semibold">Style guide</h1>
-          <p className="text-body text-muted-foreground">
-            Executable spec — tokens and primitives rendered from the live implementation.
-          </p>
+          <h1 className="text-title font-semibold">{t("styleGuide.heading")}</h1>
+          <p className="text-body text-muted-foreground">{t("styleGuide.subtitle")}</p>
         </div>
         <div className="flex items-center gap-md">
-          <nav aria-label="Style guide locale">
+          <nav aria-label={t("styleGuide.localeNavAria")}>
             <ul className="flex items-center gap-xs">
               {routing.locales.map((locale) => (
                 <li key={locale}>

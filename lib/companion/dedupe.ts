@@ -35,24 +35,38 @@ export function dedupeKeyFor(type: MemoryType, ref: MemoryRef = {}): string {
   }
 }
 
-/** Template title (spec §4.4) — NEVER AI-generated. Gifted pins return null;
- * the learner supplies their own title. Copy is intentionally VN-first but
- * these strings move to the i18n layer in Plan 3 (L9a) — keep them here for
- * now so Plan 1 has no L9a dependency. */
-export function titleFor(type: MemoryType, ref: MemoryRef = {}): string | null {
+export interface MemoryTitleDescriptor {
+  /** Key within the `companion` namespace. */
+  key: string;
+  /** ICU values for that message. */
+  values: Record<string, string | number>;
+}
+
+/** The message descriptor for a discovered memory's title (spec §4.4) — NEVER
+ * AI-generated. Returns null for gifted pins: the learner supplies their own
+ * title, and their words are never translated.
+ *
+ * Returns a descriptor rather than a string because titles are rendered at
+ * READ time, in the reader's locale. Rendering at capture time would freeze
+ * one locale's copy into the database (the capture gate is a service-role
+ * write path with no request locale in scope). */
+export function memoryTitleFor(
+  type: MemoryType,
+  ref: MemoryRef = {},
+): MemoryTitleDescriptor | null {
   switch (type) {
     case "first_shadow":
-      return "Câu thoại đầu tiên bạn shadowing thành công.";
+      return { key: "memoryTitle.firstShadow", values: {} };
     case "line_mastered":
-      return "Câu bạn luyện mãi rồi cuối cùng cũng nói được.";
+      return { key: "memoryTitle.lineMastered", values: {} };
     case "mining_saved":
-      return "Câu bạn quyết định lưu lại.";
+      return { key: "memoryTitle.miningSaved", values: {} };
     case "first_video_completed":
-      return "Video đầu tiên bạn hoàn thành.";
+      return { key: "memoryTitle.firstVideoCompleted", values: {} };
     case "jlpt_passed":
-      return `Cột mốc JLPT ${ref.jlptLevel ?? ""}`.trim();
+      return { key: "memoryTitle.jlptPassed", values: { level: ref.jlptLevel ?? "" } };
     case "companion_grew":
-      return `Ngày người bạn đồng hành của bạn bước sang giai đoạn ${ref.phase ?? ""}`.trim();
+      return { key: `memoryTitle.companionGrew.${ref.phase ?? 1}`, values: {} };
     case "pinned_line":
       return null;
   }

@@ -1,0 +1,15 @@
+{
+  "memoryTitle": {
+    "firstShadow": "The first line you shadowed successfully.",
+    "lineMastered": "The line you practiced until you could finally say it.",
+    "miningSaved": "A line you decided to save.",
+    "firstVideoCompleted": "The first video you finished.",
+    "jlptPassed": "JLPT {level} milestone",
+    "companionGrew": {
+      "1": "The day the two of you met.",
+      "2": "The day your companion started to feel closer.",
+      "3": "The day your companion truly came to understand you.",
+      "4": "The day your companion had been with you long enough to remember the whole journey."
+    }
+  }
+}

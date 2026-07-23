@@ -17,6 +17,8 @@ import type community from "../messages/en/community.json";
 import type playlists from "../messages/en/playlists.json";
 import type leaderboard from "../messages/en/leaderboard.json";
 import type profile from "../messages/en/profile.json";
+import type admin from "../messages/en/admin.json";
+import type companion from "../messages/en/companion.json";
 import type { routing } from "../lib/i18n/routing";
 
 declare module "next-intl" {
@@ -42,6 +44,8 @@ declare module "next-intl" {
       playlists: typeof playlists;
       leaderboard: typeof leaderboard;
       profile: typeof profile;
+      admin: typeof admin;
+      companion: typeof companion;
     };
   }
 }

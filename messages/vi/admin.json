@@ -1,0 +1,288 @@
+{
+  "shell": {
+    "tagline": "Hệ thống quản trị nội dung",
+    "nav": {
+      "dashboard": "Tổng quan",
+      "videos": "Hàng đợi video",
+      "content": "Nội dung",
+      "styleGuide": "Hướng dẫn giao diện"
+    },
+    "backToApp": "Quay lại ứng dụng"
+  },
+  "dashboard": {
+    "heading": "Tổng quan",
+    "subtitle": "Người dùng, tỷ lệ giữ chân và nội dung trong một cái nhìn tổng quan.",
+    "loading": "Đang tải số liệu thống kê…",
+    "error": "Không thể tải bảng thống kê.",
+    "sections": {
+      "users": "Người dùng",
+      "retention": "Tỷ lệ giữ chân",
+      "content": "Nội dung",
+      "activity": "Hoạt động nhiều nhất (7 ngày qua)"
+    },
+    "stats": {
+      "totalUsers": "Tổng người dùng",
+      "new7d": "Mới (7 ngày)",
+      "new30d": "Mới (30 ngày)",
+      "active7d": "Hoạt động (7 ngày)",
+      "active30d": "Hoạt động (30 ngày)"
+    },
+    "retention": {
+      "noCohortData": "Chưa có dữ liệu nhóm",
+      "summary": "{activeCount}/{cohortSize} người trong nhóm vẫn hoạt động trong 7 ngày qua."
+    },
+    "contentCounts": {
+      "videosPending": "Video chờ duyệt",
+      "videosApproved": "Video đã duyệt",
+      "kanji": "Kanji",
+      "vocab": "Từ vựng",
+      "grammar": "Điểm ngữ pháp",
+      "jlptTests": "Đề thi JLPT",
+      "readingPassages": "Bài đọc"
+    },
+    "activityEmpty": "Chưa có hoạt động nào được ghi nhận.",
+    "generatedAt": "Đã tạo lúc {date}"
+  },
+  "content": {
+    "landing": {
+      "heading": "Nội dung",
+      "subtitle": "Chọn một loại nội dung để quản lý."
+    },
+    "types": {
+      "kanji": {
+        "label": "Kanji",
+        "description": "Chữ Hán, cách đọc, nghĩa, mẹo ghi nhớ và thứ tự nét.",
+        "searchLabel": "Tìm theo chữ Hán"
+      },
+      "vocab": {
+        "label": "Từ vựng",
+        "description": "Từ vựng, cách đọc và nghĩa theo cấp độ JLPT.",
+        "searchLabel": "Tìm theo từ"
+      },
+      "grammar": {
+        "label": "Ngữ pháp",
+        "description": "Điểm ngữ pháp, giải thích và câu ví dụ.",
+        "searchLabel": "Tìm theo tiêu đề"
+      },
+      "jlpt_tests": {
+        "label": "Đề thi JLPT",
+        "description": "Đề thi thử JLPT đầy đủ kèm câu hỏi.",
+        "searchLabel": "Tìm theo tiêu đề"
+      },
+      "reading_passages": {
+        "label": "Bài đọc hiểu",
+        "description": "Bài đọc hiểu kèm câu hỏi.",
+        "searchLabel": "Tìm theo tiêu đề"
+      }
+    },
+    "columns": {
+      "created": "Ngày tạo",
+      "actions": "Thao tác"
+    },
+    "fields": {
+      "kanji": {
+        "character": { "label": "Chữ Hán" },
+        "jlpt_level": { "label": "Cấp độ JLPT" },
+        "stroke_count": { "label": "Số nét" },
+        "radical_id": { "label": "ID bộ thủ (uuid)" },
+        "meaning_en": { "label": "Nghĩa (EN)" },
+        "meaning_vi": { "label": "Nghĩa (VI)" },
+        "mnemonic_text": { "label": "Mẹo ghi nhớ" },
+        "mnemonic_image_url": { "label": "URL ảnh mẹo ghi nhớ" },
+        "stroke_order_svg": { "label": "SVG thứ tự nét" },
+        "readings": { "label": "Cách đọc (JSON)" }
+      },
+      "vocab": {
+        "word": { "label": "Từ" },
+        "reading": { "label": "Cách đọc" },
+        "meaning_en": { "label": "Nghĩa (EN)" },
+        "meaning_vi": { "label": "Nghĩa (VI)" },
+        "jlpt_level": { "label": "Cấp độ JLPT" },
+        "audio_url": { "label": "URL âm thanh" },
+        "part_of_speech": { "label": "Từ loại" }
+      },
+      "grammar": {
+        "title": { "label": "Tiêu đề" },
+        "jlpt_level": { "label": "Cấp độ JLPT" },
+        "explanation": { "label": "Giải thích" },
+        "structure_pattern": { "label": "Cấu trúc" },
+        "example_sentences": { "label": "Câu ví dụ (JSON)" }
+      },
+      "jlpt_tests": {
+        "level": { "label": "Cấp độ JLPT" },
+        "title": { "label": "Tiêu đề" },
+        "section_config": { "label": "Cấu hình phần thi (đối tượng JSON)" },
+        "questions": { "label": "Câu hỏi (JSON)" }
+      },
+      "reading_passages": {
+        "title": { "label": "Tiêu đề" },
+        "jlpt_level": { "label": "Cấp độ JLPT" },
+        "body_jp": { "label": "Nội dung (Tiếng Nhật)" },
+        "body_translation": { "label": "Nội dung (bản dịch)" },
+        "word_count": { "label": "Số từ" },
+        "questions": { "label": "Câu hỏi (JSON)" }
+      }
+    },
+    "manager": {
+      "search": "Tìm kiếm",
+      "importCsv": "Nhập CSV",
+      "add": "Thêm {type}",
+      "pasteCsvLabel": "Dán CSV (dòng tiêu đề + tối đa 500 dòng dữ liệu, tối đa ~1MB)",
+      "uploading": "Đang tải lên…",
+      "upload": "Tải lên",
+      "importResult": {
+        "inserted": "{count} đã thêm",
+        "rowError": "Dòng {row}: {errors}"
+      },
+      "empty": "Chưa có {type} nào.",
+      "previous": "Trước",
+      "next": "Tiếp",
+      "pageLabel": "Trang {page}",
+      "editAria": "Sửa {label}",
+      "deleteAria": "Xóa {label}",
+      "edit": "Sửa",
+      "deleteDialog": {
+        "title": "Xóa mục {type}",
+        "description": "Xóa vĩnh viễn \"{label}\"? Hành động này không thể hoàn tác."
+      },
+      "error": {
+        "load": "Không thể tải danh sách nội dung này.",
+        "create": "Không thể tạo mục này.",
+        "save": "Không thể lưu mục này.",
+        "delete": "Không thể xóa mục này.",
+        "import": "Không thể nhập tệp CSV này.",
+        "tooManyImports": "Quá nhiều lần nhập — vui lòng đợi một chút rồi thử lại."
+      }
+    },
+    "form": {
+      "addTitle": "Thêm {type}",
+      "editTitle": "Sửa {type}",
+      "selectNone": "(không có)",
+      "selectPlaceholder": "Chọn…",
+      "saving": "Đang lưu…"
+    },
+    "errors": {
+      "required": "{label} là bắt buộc.",
+      "invalidNumber": "{label} phải là một số.",
+      "invalidJson": "{label} phải là JSON hợp lệ.",
+      "validationFailed": "Đã có lỗi khi xác thực biểu mẫu này."
+    }
+  },
+  "videos": {
+    "page": {
+      "heading": "Hàng đợi video",
+      "subtitle": "Xem xét, duyệt, từ chối và đính kèm phụ đề cho các video đã gửi."
+    },
+    "loading": "Đang tải hàng đợi video…",
+    "error": {
+      "load": "Không thể tải hàng đợi video.",
+      "approve": "Không thể duyệt video này.",
+      "reject": "Không thể từ chối video này.",
+      "transcript": "Không thể lưu phụ đề này."
+    },
+    "rateLimited": "Vui lòng đợi một chút trước khi thực hiện thêm thao tác kiểm duyệt.",
+    "empty": "Hiện không có video nào đang chờ xét duyệt.",
+    "submittedBy": "Gửi bởi {name}",
+    "submittedByUnknown": "Gửi bởi người dùng không xác định",
+    "estimate": "Ước tính {level}",
+    "transcriptBadge": "Phụ đề: {count} dòng",
+    "noTranscript": "Chưa có phụ đề",
+    "approve": "Duyệt",
+    "approving": "Đang duyệt…",
+    "attachTranscript": "Đính kèm phụ đề",
+    "reject": "Từ chối",
+    "loadingMore": "Đang tải…",
+    "rejectDialog": {
+      "title": "Từ chối video",
+      "description": "Video sẽ bị xóa vĩnh viễn, cùng với phụ đề và mọi tiến trình học tập liên quan. Hành động này không thể hoàn tác.",
+      "reasonLabel": "Lý do (không bắt buộc)",
+      "reasonPlaceholder": "Không hiển thị công khai — chỉ ghi lại cho người kiểm duyệt."
+    },
+    "transcriptDialog": {
+      "title": "Đính kèm phụ đề",
+      "formatLabel": "Định dạng",
+      "formatPlain": "Văn bản thuần",
+      "contentLabel": "Nội dung",
+      "save": "Lưu phụ đề",
+      "saving": "Đang lưu…"
+    }
+  },
+  "styleGuide": {
+    "heading": "Hướng dẫn giao diện",
+    "subtitle": "Đặc tả thực thi — token và thành phần cơ bản được hiển thị từ mã nguồn thực tế.",
+    "localeNavAria": "Ngôn ngữ hướng dẫn giao diện",
+    "sections": {
+      "colour": {
+        "heading": "Màu sắc",
+        "primitiveTier": "Tầng màu gốc",
+        "semanticTier": "Tầng màu ngữ nghĩa",
+        "semanticNote": "Các tính năng chỉ dùng tầng này. Giao diện tối ánh xạ lại nó; L9b đổi phong cách bằng cách sửa phần ánh xạ, không sửa tính năng."
+      },
+      "typography": {
+        "heading": "Kiểu chữ",
+        "note": "Chiều cao dòng của phần thân được đo cho dấu tiếng Việt xếp chồng; văn bản tiếng Nhật dùng leading-jp (spec §4.5 mục 1)."
+      },
+      "spacing": { "heading": "Khoảng cách" },
+      "elevation": { "heading": "Độ nổi" },
+      "motion": {
+        "heading": "Chuyển động",
+        "note": "Dòng này dùng animate-fade-in (duration-base × ease-standard). Khi bật giảm chuyển động — nút bật ở trên — nó phải xuất hiện ngay lập tức."
+      },
+      "zIndex": { "heading": "Z-index" },
+      "primitives": { "heading": "Thành phần cơ bản" }
+    },
+    "primitives": {
+      "demo": {
+        "button": "Nút",
+        "badge": "Huy hiệu",
+        "skeleton": "Khung chờ",
+        "dialog": "Hộp thoại",
+        "tabs": "Thẻ",
+        "select": "Chọn",
+        "tooltip": "Chú giải",
+        "popover": "Cửa sổ nổi",
+        "toast": "Thông báo nổi"
+      },
+      "button": {
+        "primary": "Chính",
+        "secondary": "Phụ",
+        "outline": "Viền",
+        "ghost": "Trong suốt",
+        "disabled": "Vô hiệu",
+        "small": "Nhỏ",
+        "large": "Lớn"
+      },
+      "dialog": {
+        "open": "Mở hộp thoại",
+        "title": "Hộp thoại ví dụ",
+        "description": "Tiêu điểm bị khóa bên trong; Escape và nền sau đóng nó lại.",
+        "done": "Xong"
+      },
+      "tabs": {
+        "ariaLabel": "Thẻ ví dụ",
+        "first": "Thứ nhất",
+        "second": "Thứ hai",
+        "firstPanel": "Bảng thứ nhất — dùng phím mũi tên để di chuyển lựa chọn.",
+        "secondPanel": "Bảng thứ hai."
+      },
+      "select": {
+        "placeholder": "Chọn một cấp độ"
+      },
+      "tooltip": {
+        "content": "Hiện khi di chuột qua hoặc lấy tiêu điểm bàn phím",
+        "trigger": "Lấy tiêu điểm hoặc di chuột vào đây"
+      },
+      "popover": {
+        "trigger": "Mở cửa sổ nổi",
+        "content": "Nội dung nổi có thể tương tác."
+      },
+      "toast": {
+        "success": "Thông báo thành công",
+        "danger": "Thông báo lỗi",
+        "savedTitle": "Đã lưu",
+        "failedTitle": "Đã xảy ra lỗi",
+        "failedDescription": "Kèm theo một dòng mô tả."
+      }
+    }
+  }
+}

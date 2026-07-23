@@ -1,14 +1,26 @@
 import type { ContentFieldConfig } from "./content-fields";
 
+/** Which `admin.content.errors.*` template applies — resolved to actual
+ * translated copy by the caller (`content-form.tsx`, which has a
+ * translator; this module does not — it stays a plain, i18n-free unit under
+ * `content-payload.test.ts`, per the L9a "module-level English string
+ * producer -> key-returning classifier resolved with t() in the render body"
+ * convention). */
+export type ContentPayloadErrorReason = "required" | "invalidNumber" | "invalidJson";
+
 /** Raised by `buildContentPayload` for one bad field; carries the field name
  * so the form can attach the message to the right input (`aria-describedby`)
- * instead of a generic top-of-form error. */
+ * instead of a generic top-of-form error, plus a `reason` the caller
+ * resolves to translated copy via `t(\`content.errors.${reason}\`, {label})`. */
 export class ContentPayloadError extends Error {
   constructor(
     public readonly field: string,
-    message: string,
+    public readonly reason: ContentPayloadErrorReason,
   ) {
-    super(message);
+    // Error.message is a dev-facing fallback only (e.g. an uncaught rethrow
+    // in a log) — the learner/admin-facing DOM always renders the caller's
+    // translated `t(...)` copy instead, never this string directly.
+    super(`content field "${field}" failed validation: ${reason}`);
     this.name = "ContentPayloadError";
   }
 }
@@ -49,7 +61,7 @@ export function buildContentPayload(
       try {
         payload[field.name] = JSON.parse(raw);
       } catch {
-        throw new ContentPayloadError(field.name, `${field.label} must be valid JSON.`);
+        throw new ContentPayloadError(field.name, "invalidJson");
       }
       continue;
     }
@@ -58,14 +70,14 @@ export function buildContentPayload(
 
     if (raw === "") {
       if (!known) continue;
-      if (field.required) throw new ContentPayloadError(field.name, `${field.label} is required.`);
+      if (field.required) throw new ContentPayloadError(field.name, "required");
       if (field.nullable) payload[field.name] = null;
       continue;
     }
 
     if (field.kind === "number") {
       const n = Number(raw);
-      if (!Number.isFinite(n)) throw new ContentPayloadError(field.name, `${field.label} must be a number.`);
+      if (!Number.isFinite(n)) throw new ContentPayloadError(field.name, "invalidNumber");
       payload[field.name] = n;
       continue;
     }

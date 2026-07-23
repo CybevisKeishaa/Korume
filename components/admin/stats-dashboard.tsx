@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminStats } from "@/lib/admin-ui-types";
+import { useTranslations } from "@/lib/i18n";
 
 type LoadState = { status: "loading" } | { status: "idle" } | { status: "error"; message: string };
+type Translator = ReturnType<typeof useTranslations<"admin">>;
 
 const STATS_URL = "/api/admin/stats";
 
@@ -19,15 +21,23 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-const CONTENT_COUNT_LABELS: { key: keyof AdminStats["contentCounts"]; label: string }[] = [
-  { key: "videosPending", label: "Videos pending" },
-  { key: "videosApproved", label: "Videos approved" },
-  { key: "kanji", label: "Kanji" },
-  { key: "vocab", label: "Vocabulary" },
-  { key: "grammar", label: "Grammar points" },
-  { key: "jlptTests", label: "JLPT tests" },
-  { key: "readingPassages", label: "Reading passages" },
+/** `key`s match `AdminStats["contentCounts"]`'s own field names, distinct
+ * from `ContentType` (`jlptTests`/`readingPassages` here vs `jlpt_tests`/
+ * `reading_passages` there) — kept as its own catalog branch
+ * (`dashboard.contentCounts.*`) rather than reusing `content.types.*`. */
+const CONTENT_COUNT_KEYS: (keyof AdminStats["contentCounts"])[] = [
+  "videosPending",
+  "videosApproved",
+  "kanji",
+  "vocab",
+  "grammar",
+  "jlptTests",
+  "readingPassages",
 ];
+
+function contentCountLabel(t: Translator, key: keyof AdminStats["contentCounts"]): string {
+  return t(`dashboard.contentCounts.${key}`);
+}
 
 /**
  * Admin stats dashboard (`/admin`). Fetches `GET /api/admin/stats`
@@ -40,6 +50,7 @@ const CONTENT_COUNT_LABELS: { key: keyof AdminStats["contentCounts"]; label: str
  * a raw percentage with no stated cohort definition is misleading.
  */
 export function StatsDashboard() {
+  const t = useTranslations("admin");
   const [data, setData] = useState<AdminStats | null>(null);
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
 
@@ -49,7 +60,7 @@ export function StatsDashboard() {
       try {
         const res = await fetch(STATS_URL);
         if (!res.ok) {
-          if (!cancelled) setLoadState({ status: "error", message: "Could not load the stats dashboard." });
+          if (!cancelled) setLoadState({ status: "error", message: t("dashboard.error") });
           return;
         }
         const body = (await res.json()) as { data: AdminStats };
@@ -57,13 +68,14 @@ export function StatsDashboard() {
         setData(body.data);
         setLoadState({ status: "idle" });
       } catch {
-        if (!cancelled) setLoadState({ status: "error", message: "Could not load the stats dashboard." });
+        if (!cancelled) setLoadState({ status: "error", message: t("dashboard.error") });
       }
     }
     void load();
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `t` is stable for the lifetime of this component (locale is fixed per route render, per the project's translator idiom).
   }, []);
 
   if (loadState.status === "error") {
@@ -75,7 +87,7 @@ export function StatsDashboard() {
   }
 
   if (loadState.status === "loading" || !data) {
-    return <p className="text-sm text-muted-foreground">Loading stats…</p>;
+    return <p className="text-sm text-muted-foreground">{t("dashboard.loading")}</p>;
   }
 
   const maxActivity = Math.max(1, ...data.topActivity.map((a) => a.count));
@@ -84,26 +96,26 @@ export function StatsDashboard() {
     <div className="space-y-8">
       <section aria-labelledby="users-heading">
         <h2 id="users-heading" className="mb-3 text-lg font-semibold">
-          Users
+          {t("dashboard.sections.users")}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <StatCard label="Total users" value={data.totalUsers} />
-          <StatCard label="New (7d)" value={data.newUsers7d} />
-          <StatCard label="New (30d)" value={data.newUsers30d} />
-          <StatCard label="Active (7d)" value={data.activeUsers7d} />
-          <StatCard label="Active (30d)" value={data.activeUsers30d} />
+          <StatCard label={t("dashboard.stats.totalUsers")} value={data.totalUsers} />
+          <StatCard label={t("dashboard.stats.new7d")} value={data.newUsers7d} />
+          <StatCard label={t("dashboard.stats.new30d")} value={data.newUsers30d} />
+          <StatCard label={t("dashboard.stats.active7d")} value={data.activeUsers7d} />
+          <StatCard label={t("dashboard.stats.active30d")} value={data.activeUsers30d} />
         </div>
       </section>
 
       <section aria-labelledby="retention-heading">
         <h2 id="retention-heading" className="mb-3 text-lg font-semibold">
-          Retention
+          {t("dashboard.sections.retention")}
         </h2>
         <Card>
           <CardHeader>
             <CardTitle>
               {data.retention.retentionPercent === null ? (
-                <span className="text-muted-foreground">No cohort data yet</span>
+                <span className="text-muted-foreground">{t("dashboard.retention.noCohortData")}</span>
               ) : (
                 <span className="tabular-nums">{data.retention.retentionPercent}%</span>
               )}
@@ -111,7 +123,10 @@ export function StatsDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {data.retention.activeCount} of {data.retention.cohortSize} in cohort still active in the last 7 days.
+              {t("dashboard.retention.summary", {
+                activeCount: data.retention.activeCount,
+                cohortSize: data.retention.cohortSize,
+              })}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">{data.retention.methodology}</p>
           </CardContent>
@@ -120,21 +135,21 @@ export function StatsDashboard() {
 
       <section aria-labelledby="content-heading">
         <h2 id="content-heading" className="mb-3 text-lg font-semibold">
-          Content
+          {t("dashboard.sections.content")}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {CONTENT_COUNT_LABELS.map(({ key, label }) => (
-            <StatCard key={key} label={label} value={data.contentCounts[key]} />
+          {CONTENT_COUNT_KEYS.map((key) => (
+            <StatCard key={key} label={contentCountLabel(t, key)} value={data.contentCounts[key]} />
           ))}
         </div>
       </section>
 
       <section aria-labelledby="activity-heading">
         <h2 id="activity-heading" className="mb-3 text-lg font-semibold">
-          Top activity (last 7 days)
+          {t("dashboard.sections.activity")}
         </h2>
         {data.topActivity.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+          <p className="text-sm text-muted-foreground">{t("dashboard.activityEmpty")}</p>
         ) : (
           <ul className="space-y-2">
             {data.topActivity.map((activity) => (
@@ -155,7 +170,9 @@ export function StatsDashboard() {
         )}
       </section>
 
-      <p className="text-xs text-muted-foreground">Generated {new Date(data.generatedAt).toLocaleString()}</p>
+      <p className="text-xs text-muted-foreground">
+        {t("dashboard.generatedAt", { date: new Date(data.generatedAt).toLocaleString() })}
+      </p>
     </div>
   );
 }

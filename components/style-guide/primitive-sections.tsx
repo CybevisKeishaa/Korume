@@ -25,28 +25,29 @@ export function PrimitiveSections() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [level, setLevel] = useState<string | undefined>();
   const { toast } = useToast();
-  // Translates only the ui Dialog's closeLabel (P4) — the demo's own copy
-  // ("Open dialog", "Example dialog", ...) stays hardcoded English, in scope
-  // for a later task (spec §7 plan, Task 17).
+  const t = useTranslations("admin");
   const tCommon = useTranslations("common");
 
   return (
     <section aria-labelledby="sg-primitives">
-      <h2 id="sg-primitives" className="text-heading font-semibold">Primitives</h2>
+      <h2 id="sg-primitives" className="text-heading font-semibold">{t("styleGuide.sections.primitives.heading")}</h2>
       <div className="mt-md grid gap-md lg:grid-cols-2">
-        <Demo name="Button">
+        <Demo name={t("styleGuide.primitives.demo.button")}>
           <div className="flex flex-wrap items-center gap-xs">
-            <Button>Primary</Button>
-            <Button variant="secondary">Secondary</Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="ghost">Ghost</Button>
-            <Button disabled>Disabled</Button>
-            <Button size="sm">Small</Button>
-            <Button size="lg">Large</Button>
+            <Button>{t("styleGuide.primitives.button.primary")}</Button>
+            <Button variant="secondary">{t("styleGuide.primitives.button.secondary")}</Button>
+            <Button variant="outline">{t("styleGuide.primitives.button.outline")}</Button>
+            <Button variant="ghost">{t("styleGuide.primitives.button.ghost")}</Button>
+            <Button disabled>{t("styleGuide.primitives.button.disabled")}</Button>
+            <Button size="sm">{t("styleGuide.primitives.button.small")}</Button>
+            <Button size="lg">{t("styleGuide.primitives.button.large")}</Button>
           </div>
         </Demo>
 
-        <Demo name="Badge">
+        <Demo name={t("styleGuide.primitives.demo.badge")}>
+          {/* Variant NAMES, not chrome (D8): each badge demos its own variant
+              identifier, the same way PRIMITIVE_COLORS' "--washi-50" etc. stay
+              untranslated in token-sections.tsx. */}
           <div className="flex flex-wrap items-center gap-xs">
             <Badge>neutral</Badge>
             <Badge variant="primary">primary</Badge>
@@ -57,7 +58,7 @@ export function PrimitiveSections() {
           </div>
         </Demo>
 
-        <Demo name="Skeleton">
+        <Demo name={t("styleGuide.primitives.demo.skeleton")}>
           <div className="space-y-xs">
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-4 w-32" />
@@ -65,36 +66,39 @@ export function PrimitiveSections() {
           </div>
         </Demo>
 
-        <Demo name="Dialog">
+        <Demo name={t("styleGuide.primitives.demo.dialog")}>
           <Button variant="outline" onClick={() => setDialogOpen(true)}>
-            Open dialog
+            {t("styleGuide.primitives.dialog.open")}
           </Button>
           <Dialog
             open={dialogOpen}
             onClose={() => setDialogOpen(false)}
-            title="Example dialog"
-            description="Focus is trapped; Escape and backdrop close it."
+            title={t("styleGuide.primitives.dialog.title")}
+            description={t("styleGuide.primitives.dialog.description")}
             closeLabel={tCommon("a11y.closeDialog")}
           >
-            <Button onClick={() => setDialogOpen(false)}>Done</Button>
+            <Button onClick={() => setDialogOpen(false)}>{t("styleGuide.primitives.dialog.done")}</Button>
           </Dialog>
         </Demo>
 
-        <Demo name="Tabs">
+        <Demo name={t("styleGuide.primitives.demo.tabs")}>
           <Tabs defaultValue="one">
-            <TabsList aria-label="Example tabs">
-              <TabsTrigger value="one">First</TabsTrigger>
-              <TabsTrigger value="two">Second</TabsTrigger>
+            <TabsList aria-label={t("styleGuide.primitives.tabs.ariaLabel")}>
+              <TabsTrigger value="one">{t("styleGuide.primitives.tabs.first")}</TabsTrigger>
+              <TabsTrigger value="two">{t("styleGuide.primitives.tabs.second")}</TabsTrigger>
             </TabsList>
-            <TabsContent value="one">First panel — arrow keys move selection.</TabsContent>
-            <TabsContent value="two">Second panel.</TabsContent>
+            <TabsContent value="one">{t("styleGuide.primitives.tabs.firstPanel")}</TabsContent>
+            <TabsContent value="two">{t("styleGuide.primitives.tabs.secondPanel")}</TabsContent>
           </Tabs>
         </Demo>
 
-        <Demo name="Select">
+        <Demo name={t("styleGuide.primitives.demo.select")}>
+          {/* aria-label reuses common.a11y.levelFilter — the same "JLPT level"
+              copy already used by the learner-facing level filter. JLPT N5/
+              N4/N3 option labels stay untranslated (D8: exam level codes). */}
           <Select
-            aria-label="JLPT level"
-            placeholder="Choose a level"
+            aria-label={tCommon("a11y.levelFilter")}
+            placeholder={t("styleGuide.primitives.select.placeholder")}
             value={level}
             onValueChange={setLevel}
             options={[
@@ -105,37 +109,37 @@ export function PrimitiveSections() {
           />
         </Demo>
 
-        <Demo name="Tooltip">
-          <Tooltip content="Shown on hover and on keyboard focus">
-            <Button variant="outline">Focus or hover me</Button>
+        <Demo name={t("styleGuide.primitives.demo.tooltip")}>
+          <Tooltip content={t("styleGuide.primitives.tooltip.content")}>
+            <Button variant="outline">{t("styleGuide.primitives.tooltip.trigger")}</Button>
           </Tooltip>
         </Demo>
 
-        <Demo name="Popover">
-          <Popover trigger={<Button variant="outline">Open popover</Button>}>
-            <p className="text-body">Interactive floating content.</p>
+        <Demo name={t("styleGuide.primitives.demo.popover")}>
+          <Popover trigger={<Button variant="outline">{t("styleGuide.primitives.popover.trigger")}</Button>}>
+            <p className="text-body">{t("styleGuide.primitives.popover.content")}</p>
           </Popover>
         </Demo>
 
-        <Demo name="Toast">
+        <Demo name={t("styleGuide.primitives.demo.toast")}>
           <div className="flex flex-wrap gap-xs">
             <Button
               variant="outline"
-              onClick={() => toast({ title: "Saved", variant: "success" })}
+              onClick={() => toast({ title: t("styleGuide.primitives.toast.savedTitle"), variant: "success" })}
             >
-              Success toast
+              {t("styleGuide.primitives.toast.success")}
             </Button>
             <Button
               variant="outline"
               onClick={() =>
                 toast({
-                  title: "Something failed",
-                  description: "With a description line.",
+                  title: t("styleGuide.primitives.toast.failedTitle"),
+                  description: t("styleGuide.primitives.toast.failedDescription"),
                   variant: "danger",
                 })
               }
             >
-              Danger toast
+              {t("styleGuide.primitives.toast.danger")}
             </Button>
           </div>
         </Demo>

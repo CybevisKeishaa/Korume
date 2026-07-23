@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { dedupeKeyFor, relationshipPhaseForXp, titleFor, type CompanionMemory, type MemoryType } from "@/lib/companion";
+import { dedupeKeyFor, relationshipPhaseForXp, type CompanionMemory, type MemoryType } from "@/lib/companion";
 import type { MemoryRef } from "@/lib/companion/dedupe";
 import type { LearningOutcomeSource, SourceIdParts } from "@/lib/gamification";
 import { createClient } from "@/lib/supabase/server";
@@ -66,7 +66,15 @@ export async function recordDiscoveredMemory(
         user_id: input.userId,
         kind: "discovered",
         memory_type: input.memoryType,
-        title: titleFor(input.memoryType, input.ref),
+        // Discovered memories persist NO rendered title (L9a, spec §4.4):
+        // this is a service-role write path with no request locale in
+        // scope, so freezing one locale's copy here would be wrong for
+        // every reader in every other locale. `memoryTitleFor()`
+        // (lib/companion/dedupe.ts) resolves the descriptor {key, values}
+        // this memory_type + ref maps to; the Journal (L9b) renders it at
+        // READ time via `t(descriptor.key, descriptor.values)`, in the
+        // reader's own locale.
+        title: null,
         video_id: input.videoId ?? null,
         transcript_line_id: input.transcriptLineId ?? null,
         timestamp_seconds: input.timestampSeconds ?? null,

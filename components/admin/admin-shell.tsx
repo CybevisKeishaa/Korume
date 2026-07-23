@@ -3,13 +3,7 @@
 import { Link } from "@/lib/i18n/navigation";
 import { usePathname } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
-
-const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/videos", label: "Video queue" },
-  { href: "/admin/content", label: "Content" },
-  { href: "/admin/style-guide", label: "Style guide" },
-] as const;
+import { useTranslations } from "@/lib/i18n";
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/admin") return pathname === "/admin";
@@ -23,16 +17,25 @@ function isActive(pathname: string, href: string): boolean {
  */
 export function AdminShell({ userEmail, children }: { userEmail: string; children: React.ReactNode }) {
   const pathname = usePathname();
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
+
+  const navItems = [
+    { href: "/admin", label: t("shell.nav.dashboard") },
+    { href: "/admin/videos", label: t("shell.nav.videos") },
+    { href: "/admin/content", label: t("shell.nav.content") },
+    { href: "/admin/style-guide", label: t("shell.nav.styleGuide") },
+  ] as const;
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <nav aria-label="Admin" className="shrink-0 border-b border-border bg-card md:w-56 md:border-b-0 md:border-r">
         <div className="p-4">
-          <p className="text-sm font-semibold">Nihongo Cinema</p>
-          <p className="text-xs text-muted-foreground">Admin CMS</p>
+          <p className="text-sm font-semibold">{tCommon("appName")}</p>
+          <p className="text-xs text-muted-foreground">{t("shell.tagline")}</p>
         </div>
         <ul className="space-y-1 px-2 pb-4">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
@@ -52,7 +55,7 @@ export function AdminShell({ userEmail, children }: { userEmail: string; childre
         <div className="border-t border-border p-4 text-xs text-muted-foreground">
           <p className="truncate">{userEmail}</p>
           <Link href="/dashboard" className="mt-1 inline-block underline hover:no-underline">
-            Back to app
+            {t("shell.backToApp")}
           </Link>
         </div>
       </nav>
