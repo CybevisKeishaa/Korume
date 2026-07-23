@@ -9,6 +9,12 @@
     },
     "backToApp": "Back to app"
   },
+  "meta": {
+    "dashboard": "Admin — Dashboard",
+    "videos": "Admin — Video Queue",
+    "content": "Admin — Content",
+    "contentType": "Admin — {label}"
+  },
   "dashboard": {
     "heading": "Dashboard",
     "subtitle": "Users, retention and content at a glance.",

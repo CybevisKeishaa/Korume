@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { Container } from "@/components/ui/container";
 import { ContentTypeCards } from "@/components/admin/content-type-cards";
-import { useTranslations } from "@/lib/i18n";
+import { useTranslations, type Locale } from "@/lib/i18n";
+import { getTranslations } from "@/lib/i18n/server";
 
-export const metadata = { title: "Admin — Content" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "admin" });
+  return { title: t("meta.content") };
+}
 
 export default function AdminContentLandingPage() {
   const t = useTranslations("admin");

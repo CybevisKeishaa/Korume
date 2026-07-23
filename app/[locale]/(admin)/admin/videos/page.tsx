@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { Container } from "@/components/ui/container";
 import { VideoQueue } from "@/components/admin/video-queue";
-import { useTranslations } from "@/lib/i18n";
+import { useTranslations, type Locale } from "@/lib/i18n";
+import { getTranslations } from "@/lib/i18n/server";
 
-export const metadata = { title: "Admin — Video Queue" };
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: Locale };
+}): Promise<Metadata> {
+  const t = await getTranslations({ locale: params.locale, namespace: "admin" });
+  return { title: t("meta.videos") };
+}
 
 export default function AdminVideosPage() {
   const t = useTranslations("admin");

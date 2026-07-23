@@ -271,6 +271,15 @@ describe("admin.json EN — admin/videos/page.tsx + video-queue.tsx", () => {
   });
 });
 
+describe("admin.json EN — page-metadata document titles (Task 18)", () => {
+  it("pins the four admin browser-tab titles (the 'Admin — ' prefix differs from each page heading)", () => {
+    expect(en.meta.dashboard).toBe("Admin — Dashboard");
+    expect(en.meta.videos).toBe("Admin — Video Queue");
+    expect(en.meta.content).toBe("Admin — Content");
+    expect(en.meta.contentType).toBe("Admin — {label}");
+  });
+});
+
 describe("admin.json EN — style-guide.tsx", () => {
   it("pins the page heading, subtitle, and locale-nav aria-label", () => {
     expect(en.styleGuide.heading).toBe("Style guide");

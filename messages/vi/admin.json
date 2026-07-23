@@ -9,6 +9,12 @@
     },
     "backToApp": "Quay lại ứng dụng"
   },
+  "meta": {
+    "dashboard": "Quản trị — Tổng quan",
+    "videos": "Quản trị — Hàng đợi video",
+    "content": "Quản trị — Nội dung",
+    "contentType": "Quản trị — {label}"
+  },
   "dashboard": {
     "heading": "Tổng quan",
     "subtitle": "Người dùng, tỷ lệ giữ chân và nội dung trong một cái nhìn tổng quan.",
