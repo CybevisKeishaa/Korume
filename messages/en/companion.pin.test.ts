@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import en from "./companion.json";
+import vi from "../vi/companion.json";
 
 /**
  * Characterization test for `companion.json` (Task 17). Unlike every other
@@ -42,6 +43,22 @@ describe("companion.json EN — memoryTitleFor descriptors (spec §4.4)", () => 
 
   it("P12 guard: no companionGrew phrasing contains a bare digit-as-stage", () => {
     for (const phrase of Object.values(en.memoryTitle.companionGrew)) {
+      expect(phrase).not.toMatch(/\d/);
+    }
+  });
+});
+
+/**
+ * The P12 guard must hold on the PRIMARY LEARNER LOCALE too, not just EN.
+ * VI `companionGrew` copy is what actually ships to the learner, and the
+ * original P12 violation lived in Vietnamese ("...bước sang giai đoạn 2").
+ * An EN-only guard would not fail if a future VI edit reintroduced a stage
+ * digit — so guard VI explicitly. (Pins stay EN-only by convention; this is a
+ * semantic P12 check on the VI catalog, co-located with the EN guard.)
+ */
+describe("companion.json VI — P12 stage-number guard (primary learner locale)", () => {
+  it("no companionGrew phrasing contains a bare digit-as-stage", () => {
+    for (const phrase of Object.values(vi.memoryTitle.companionGrew)) {
       expect(phrase).not.toMatch(/\d/);
     }
   });
