@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12–17 done; 18-19 remain — NEXT = Task 18 metadata sweep)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12–18 done; ONLY 19 remains — NEXT = Task 19 final gate + common.* audit)
 
 ## 🔒 FROZEN EXECUTION CHECKLIST — Tasks 16–19 (canonical; briefs REFERENCE this, do NOT re-paste it)
 Controller directive (user, 2026-07-23; reaffirmed after Task 16 — the frozen-brief approach worked, keep
@@ -332,16 +332,39 @@ primitives stay English-defaulted (callers pass `t()`); half-vi `content-form`/`
   (link target uses `type`, not the label; a swap is cosmetic only).
 - **`companion` namespace = 0 UI consumers at ship** (consumed at L9b read time). Do NOT flag as dead in Task 19.
 
-## ▶ NEXT = Task 18 (page metadata sweep — `generateMetadata`). Tip `939b60c`, tree clean. Plan §"Task 18".
-Convert all 25 `export const metadata` + root layout to `generateMetadata({ params:{ locale } })` passing the
-locale EXPLICITLY to `getTranslations({ locale, namespace })` (spec §7 risk 2: a bare ambient call silently drops
-the page from SSG — no error, just slower). After each route group, confirm the `npm run build` route table keeps
-`●` (SSG) pages `●`, not `ƒ`. Reuse each namespace's existing `title` key; add a `meta.*` key only where the tab
-title genuinely differs from the heading (admin pages do: "Admin — Content" vs the heading). Keep the
-`"%s · Nihongo Cinema"` template (separator + brand not translated). `admin/content/[type]/page.tsx` already has a
-`generateMetadata` taking `params` — EXTEND it. Commit one route group at a time (marketing/auth → (app) →
-(admin)) so a build failure localizes. Same cadence; brief = the 5 sections only (scope/decisions/hazards/carries/
-acceptance), no rulebook re-paste. Then Task 19 (`common.*` consumer audit + demotions) closes Plan 3.
+## ✅ Task 18 DONE — page metadata sweep. 3 commits `e1b3d36` (root+auth 1/3) · `f9f7573` ((app) 2/3) · `0ab5587` (admin 3/3). Tip `0ab5587`, tree clean.
+All 25 `export const metadata` + root layout now `generateMetadata({params:{locale}})` → `getTranslations({locale,
+namespace})` with the locale threaded EXPLICITLY (spec §7 risk 2). Gate (controller re-ran ALL): tsc 0 · **1731/1731
+/ 202 files** (standalone) · lint exit 0 / 80-23 / 0 new · `npm run build` EXIT 0 — route table verified per group:
+every one of the 25 pages stays `●` (SSG), the only `ƒ` locale routes are the 9 pre-existing `[id]`/`[type]`
+dynamic ones (incl. `admin/content/[type]`, `reading/[id]`). Key decisions:
+- **(app) reused each page's own existing `title`/heading key — ZERO new keys.** This normalized a few EN tab
+  strings to match the heading: "Vocab"→"Vocabulary", "Review vocab"→"Vocabulary review", "Review kanji"→"Kanji
+  review", "Review mined sentences"→"Mining review", "JLPT"→"JLPT mock tests", "Reading"→"Reading passages",
+  "Conversation"→"Conversation practice". peer-review reused `community.tabs.peerReview` (its `<h1>` is "Community").
+- **auth tabs reused `common.auth.signIn`/`.signUp`** — no `auth.meta` keys, no auth pin file needed.
+- **New keys only where the tab genuinely differs:** `common.meta.{defaultTitle,description}` (root layout; kept the
+  literal `"%s · Nihongo Cinema"` template) + `admin.meta.{dashboard,videos,content,contentType}` ("Admin — X" /
+  VI "Quản trị — X" prefix ≠ heading). EN+VI+`toBe` pins shipped in-commit (common.pin.test + admin.pin.test).
+  style-guide reused `admin.styleGuide.heading` (tab == heading).
+- **HAZARD RESOLVED — P1 import boundary:** `Locale` must come from `@/lib/i18n` (barrel), NOT `next-intl` — feature
+  pages are not whitelisted (only root `layout.tsx` is). First attempt imported from `next-intl` and the build's
+  ESLint gate (no-restricted-imports) failed; fixed to the barrel. `params.locale` must be typed `Locale`, not
+  `string`, or `getTranslations` overload-2 rejects it (tsc TS2769) — the plan's example under-specified this.
+- `admin/content/[type]` generateMetadata EXTENDED (not replaced): threads locale + localizes the label via
+  `contentTypeLabel(t, …)` — the awaited `getTranslations` translator IS assignable to the helper's
+  `ReturnType<useTranslations<"admin">>` param (tsc clean), dropped the English-only `CONTENT_TYPE_LABELS` fallback.
+
+## ▶ NEXT = Task 19 (final gate — closes Plan 3). Tip `0ab5587`, tree clean. Plan §"Task 19".
+Verifies + records only (no new namespaces). Steps: (1) sweep for residual hardcoded JSX/attribute English (grep in
+plan §"Task 19"), each hit a fix or a justified exception listed in the commit; (2) `common.*` consumer audit BY
+SURFACE + demotions — DEMOTE `common.player.*` back under `shadowing.*` if only the shadowing surface consumes it
+(running counts are in the "common.* consumer counts" block above); (3) full regression (tsc/vitest/lint/build/
+playwright); (4) manual VI browser pass `/vi` + spot-check `/en`; (5) update `mem:project_status` (L9a complete,
+new baselines) + this memory + mark `mem:feature_backlog_deferred` item #10 DONE with the merge commit. Carries to
+fold in: admin `readErrorMessage` EN-only (ACCEPTABLE — operator tooling), `confirm-dialog` "Working…" EN default,
+`content-type-cards` label/desc no swap-proof test (low-stakes), `lib/notification-format.ts` needs a future
+`notifications` namespace. L9b carry (not Task 19): companion journal read-model needs `ref` from `dedupe_key`.
 
 ## (superseded) ▶ NEXT was 11e (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 
