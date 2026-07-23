@@ -31,10 +31,22 @@ plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
 ## ▶ NEXT ACTION (updated 2026-07-23) — Task **16** (`community`+`playlists`+`leaderboard`+`profile`) is next; tree clean, nothing owed
-**L9a Plan 3 IS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
-via `superpowers:subagent-driven-development`. **Tip `07cb3fa`. Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15
-ALL committed and reviewed clean.** Gate at the tip, all three re-run by the controller itself: **tsc 0 ·
-1619 tests / 196 files · lint exit 0 / 80 pre-existing warnings across 23 files, 0 new.**
+**✅ L9a Plan 3 COMPLETE (Tasks 1–19 ALL done) on branch `layer-9a-string-extraction` — ⏳ CHỜ MERGE to master
+(2026-07-23).** All 21 namespaces extracted + fully translated to VN, adaptive-furigana/mining/etc. shell now runs
+VN under `/vi` and EN under `/en`, and every page's `<title>` is localized via per-page `generateMetadata`
+(Task 18). Task 19 closed the plan: string sweep clean (1 genuine miss fixed = admin nav aria), `common.player.*`
+demoted to `shadowing.*` (by-surface audit), `common.errors.network`/`states.loading` kept. Final baseline:
+**tsc 0 · vitest 1731/1731 / 202 files · lint exit 0 (80-23 baseline, 0 new) · build OK (25 pages SSG per-locale)
+· e2e 4/5** (`review.spec` needs live Supabase — env, not a regression). Details in
+`mem:l9a_localization_run_state` (Task 18 + Task 19 blocks). **NEXT = the merge decision (finishing-a-development-
+branch, user's call); after merge, record the SHA here + in `mem:feature_backlog_deferred` #10, then L9b.**
+
+<details><summary>(historical) Plan 3 mid-execution snapshot — superseded by the COMPLETE line above</summary>
+
+**L9a Plan 3 WAS BEING EXECUTED** on branch **`layer-9a-string-extraction`** (off master @ `e5893e9`)
+via `superpowers:subagent-driven-development`. Tasks 1-10 + 6b + 11a–11e + 12–15 committed/reviewed clean;
+gate then: tsc 0 · 1619 tests / 196 files · lint exit 0 / 80-23 / 0 new. (Tasks 16–19 landed after this.)
+</details>
 
 **Task 15 done `49553cc` + lint-fix `07cb3fa`** (`conversation` ns — AI voice module, most error-path-heavy so
 far). ONE fix wave, but it was a GATE catch not a review finding: the feature commit shipped a lint ERROR

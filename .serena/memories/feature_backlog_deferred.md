@@ -43,11 +43,13 @@ tech nits vẫn đọc ở project_status.
    discriminator. Khớp F-010/F-014 trong docs/features. Nhớ §2: mining không lưu media.
 9. **Listening drill module riêng** — weakness links của JLPT hiện route tạm về
    `/videos?level=`. Spec không bắt buộc module riêng nhưng đã bàn là gap.
-10. **VN-localize English shell (i18n site-wide)** — **ĐANG LÀM DỞ (2026-07-18): L9a Plan 1
-    (localization ARCHITECTURE) hoàn tất trên branch `layer-9a-localization-architecture` —
-    app đã chạy dưới /vi|/en, nhưng shell VẪN English cho tới L9a Plan 3 (string extraction +
-    bản dịch VN, chưa viết plan).** Launch là VN-first (spec §8 đã sửa); convention cũ từ L5:
-    shell EN, DB content VN. KHÔNG đánh DONE cho tới khi Plan 3 ship.
+10. **VN-localize English shell (i18n site-wide)** — ✅ **DONE trên branch `layer-9a-string-extraction`
+    (2026-07-23), CHỜ MERGE vào master.** Cả 3 Plan L9a xong: Plan 1 (kiến trúc next-intl, đã merge
+    `69f22e6`) · Plan 2 (design system, đã merge `fcd35af`) · Plan 3 (trích 21 namespace + bản dịch VN
+    đầy đủ + metadata per-page, Tasks 1–19). Toàn shell giờ chạy VN dưới `/vi` và EN dưới `/en`.
+    Baseline khi đóng Plan 3: tsc 0 · vitest **1731/1731 / 202 files** · lint exit 0 · build OK (25 trang
+    SSG per-locale) · e2e 4/5 (`review.spec` cần Supabase live — lỗi môi trường, không phải regression).
+    Launch VN-first (spec §8). → Khi branch merge vào master, cập nhật commit merge tại đây.
 
 ## Nguồn: L7 (Community + Admin)
 11. **`rejected` video status + persist lý do reject** — hiện reject = HARD DELETE, reason chỉ

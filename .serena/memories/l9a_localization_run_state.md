@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12–18 done; ONLY 19 remains — NEXT = Task 19 final gate + common.* audit)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ✅ COMPLETE on branch `layer-9a-string-extraction` (Tasks 1–19 ALL done) — ⏳ CHỜ MERGE to master (finishing decision is the user's)
 
 ## 🔒 FROZEN EXECUTION CHECKLIST — Tasks 16–19 (canonical; briefs REFERENCE this, do NOT re-paste it)
 Controller directive (user, 2026-07-23; reaffirmed after Task 16 — the frozen-brief approach worked, keep
@@ -355,16 +355,35 @@ dynamic ones (incl. `admin/content/[type]`, `reading/[id]`). Key decisions:
   `contentTypeLabel(t, …)` — the awaited `getTranslations` translator IS assignable to the helper's
   `ReturnType<useTranslations<"admin">>` param (tsc clean), dropped the English-only `CONTENT_TYPE_LABELS` fallback.
 
-## ▶ NEXT = Task 19 (final gate — closes Plan 3). Tip `0ab5587`, tree clean. Plan §"Task 19".
-Verifies + records only (no new namespaces). Steps: (1) sweep for residual hardcoded JSX/attribute English (grep in
-plan §"Task 19"), each hit a fix or a justified exception listed in the commit; (2) `common.*` consumer audit BY
-SURFACE + demotions — DEMOTE `common.player.*` back under `shadowing.*` if only the shadowing surface consumes it
-(running counts are in the "common.* consumer counts" block above); (3) full regression (tsc/vitest/lint/build/
-playwright); (4) manual VI browser pass `/vi` + spot-check `/en`; (5) update `mem:project_status` (L9a complete,
-new baselines) + this memory + mark `mem:feature_backlog_deferred` item #10 DONE with the merge commit. Carries to
-fold in: admin `readErrorMessage` EN-only (ACCEPTABLE — operator tooling), `confirm-dialog` "Working…" EN default,
-`content-type-cards` label/desc no swap-proof test (low-stakes), `lib/notification-format.ts` needs a future
-`notifications` namespace. L9b carry (not Task 19): companion journal read-model needs `ref` from `dedupe_key`.
+## ✅ Task 19 DONE — final gate, Plan 3 CLOSED. Commit `0cea7bf` (code) + memory commit. Tip after memory commit.
+Gate (controller re-ran ALL): tsc 0 · vitest **1731/1731 / 202 files** (standalone) · lint exit 0 / 80-23 / 0 new ·
+`npm run build` EXIT 0 (25 pages SSG per-locale) · playwright **4/5** (`review.spec` fails: register→dashboard
+needs a LIVE Supabase + seed vocab — environment dependency, NOT a regression; file unchanged since Layer 2).
+**Direct verification of the Task 18 deliverable:** started prod `next start`, curled `<title>` — `/vi/login`
+="Đăng nhập · Nihongo Cinema", `/vi/register`="Tạo tài khoản · Nihongo Cinema", `/vi`="Nihongo Cinema — Học tiếng
+Nhật qua video", EN equivalents correct → generateMetadata + VI catalog render end-to-end, template applied.
+- **STRING SWEEP (plan Step 1):** 0 hardcoded JSX text nodes app-wide. 3 attribute hits: (a) admin-shell nav
+  `aria-label="Admin"` = the ONE genuine miss → FIXED (`admin.shell.navAria`, EN "Admin"/VI "Quản trị", pinned +
+  wired); (b) `video-import-form` YouTube-URL placeholder = justified (technical, D8); (c) `notification-bell`
+  aria-labels = the notifications feature, NEVER in Plan 3 scope → deferred to a future `notifications` namespace
+  (with `lib/notification-format.ts`). Recorded, not fixed.
+- **common.* AUDIT + DEMOTION (convention #5 gate):** `common.player.*` consumers (transcript-pane, waveform,
+  playback-controls) ALL serve ONLY shadowing (dictation-view uses none) → DEMOTED to `shadowing.player.*`
+  (values byte-identical; 3 components switched ns to "shadowing"; Task 11a/11c pins moved common→shadowing
+  pin-test). `common.errors.network` + `common.states.loading` KEPT in common (genuinely multi-surface). No other
+  `common.*` leaf needed demotion.
+- **Carries that remain open** (recorded acceptable / out of scope, NOT defects): admin `readErrorMessage` EN-only
+  (operator tooling), `confirm-dialog` "Working…" EN default, `content-type-cards` label/desc no swap-proof test
+  (low-stakes), `lib/notification-format.ts` + `notification-bell` need a future `notifications` namespace.
+- **L9b carry (backend-engineer):** companion journal read-model can't render `companion_grew`/`jlpt_passed`
+  titles — `memoryTitleFor` needs `ref` from the `dedupe_key` column (see Task 17 IMPORTANT-1 above).
+
+## ▶ NEXT = FINISH Plan 3 (branch `layer-9a-string-extraction`). All 19 tasks committed, tree clean, every gate green.
+The remaining action is the MERGE decision (superpowers:finishing-a-development-branch) — user's call. On merge:
+update `mem:project_status` (L9a fully complete/merged, new baseline 1731/202) and `mem:feature_backlog_deferred`
+item #10 with the merge commit SHA. `feature_backlog` #10 already flipped to DONE-on-branch. After L9a merges, the
+next layer is L9b (visual restyle — consumes the semantic-colour tier the design system exposed) then L9c (perf +
+animation polish). Full branch commit list for Plan 3 in `git log`.
 
 ## (superseded) ▶ NEXT was 11e (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 
