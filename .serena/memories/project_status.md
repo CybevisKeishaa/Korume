@@ -30,7 +30,39 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-24) — **L9a fully DONE + MERGED. NEXT = L9b (surfaces).** Tree clean.
+## ▶ NEXT ACTION (updated 2026-07-24 evening) — **L9b Plan 2 (Companion Presence) IN PROGRESS, session paused at Task 4/13**
+
+**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), 8 commits, HEAD **`415ba14`**, NOT pushed.
+Spec `docs/superpowers/specs/2026-07-24-l9b-companion-presence-design.md` (D1–D9) ·
+plan `docs/superpowers/plans/2026-07-24-l9b-companion-presence.md` (13 tasks) ·
+**live run state + every carried item: `.superpowers/sdd/progress.md`** (gitignored scratch —
+if lost, reconstruct from `git log`; the "SESSION PAUSED" block at its end is the resume point).
+Executed via `superpowers:subagent-driven-development`, one implementer + one independent reviewer per task.
+
+**Done:** Tasks 1–3 complete (presence pure core: contexts/state-machine/config/arbitration/speech-key;
+`first_meeting` memory type + mastery rule + 3 carried Core cleanups). **Task 4 done but ⏳ RE-REVIEW OWED**
+(producers `first_shadow` + `line_mastered`, hooked on the pronunciation-score WRITE in
+`lib/data/pronunciation.ts` — scores don't exist at session creation). **FIRST ACTION NEXT SESSION:
+review `f762a58`..`415ba14`, then Task 5.**
+
+**🔴 The review caught a CRITICAL plan gap already fixed — remember the lesson:** the plan had NO
+migrations, but `companion_memories.memory_type` has a CHECK enumerating its 7 values and `first_meeting`
+was not one. Since every Companion write is best-effort/never-throw, it would have failed SILENTLY
+(23514) forever. Fixed = **migration #16** `20260724000016_companion_first_meeting.sql`.
+**Migration count is now 16** (the "15 built" line below is stale). Any further enum/column/grant change
+in this plan needs its own migration — the plan does not anticipate them.
+
+**Current gates on the branch:** unit **1810 / 208 files** green · tsc 0 · lint exit 0 at a **NEW baseline
+of 77 warnings / 22 files** (was 80/23 — Task 3 removed three `!`s that were themselves warnings).
+
+**🔷 ONE OPEN DECISION FOR THE USER** (raise before finishing L9b; not silently changed): the shipped
+`line_mastered` rule (user-approved D5: ≥3 attempts, current ≥80, *some* earlier <80) diverges from design
+spec §4.3's "score trend **up**". History `[90, 60]` → 85 fires the memory on a line already mastered at 90.
+One-line tightening available (`&& !previousScores.some(s => s >= TARGET_SCORE)`); no test contradicts it.
+
+<details><summary>(superseded) previous NEXT ACTION — L9a merge, 2026-07-24 morning</summary>
+
+## ▶ (superseded) — **L9a fully DONE + MERGED.** Tree clean.
 **✅✅ ALL OF L9a COMPLETE — Plan 3 MERGED to master `--no-ff` `d7b158c` (2026-07-24).** Branch
 `layer-9a-string-extraction` merged then deleted (user chose local merge, branching policy). NOT pushed
 (origin/master 78 commits behind — never push unasked; prune stale origin/layer-9a-* refs when a push happens).
@@ -46,6 +78,21 @@ demoted to `shadowing.*` (by-surface audit), `common.errors.network`/`states.loa
 + GDPR delete-my-data + tutorial). Start with `superpowers:brainstorming` before plan mode. ⚠ Model policy
 (`mem:model_selection_policy`): default Opus 4.8, but PAUSE + ASK before Fable for the L9b brainstorm,
 plan-decomposition, or the hardest long-horizon builds (cinematic scroll orchestration, companion state machine).
+
+</details>
+
+## ⭐ L9b DECOMPOSITION — user-approved 2026-07-24 (4 sequential plans, brainstormed on Fable)
+L9b was too large for one spec, so it was split. Order and rationale:
+1. **Plan 1 — launch-blocker debt:** transcript-submit UI (backlog #14, CRITICAL — core loop dead-ends
+   without it) + GDPR delete-my-data (backlog #5, §2 non-negotiable, owed since L1) + small items
+   (#6 persist voice pronunciation score, #4 badge icons). **NOT STARTED.**
+2. **Plan 2 — Companion Presence** = Companion Plan 2 of 3. **IN PROGRESS — see NEXT ACTION above.**
+3. **Plan 3 — missing feature UIs:** dictionary meanings on tap-to-lookup (#15), "add to flashcard" from
+   reading (#8), particle highlighting (#16), listening drill (#9)? — scope to be brainstormed. **NOT STARTED.**
+4. **Plan 4 — landing/cinematic + tutorial + Companion Plan 3** (adaptive voice, AI reflection).
+   Tutorial deliberately AFTER Companion Presence: per `MASCOT.md` the companion is the tutorial's guide.
+   **NOT STARTED.** Character Identity (Spec 2 — name/lore/art) should be brainstormed right before this.
+Then → **L8** (PayOS billing) → **L9c** (polish + perf audit).
 
 <details><summary>(historical) Plan 3 mid-execution snapshot — superseded by the COMPLETE line above</summary>
 
