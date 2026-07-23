@@ -74,6 +74,29 @@ describe("recordDiscoveredMemory", () => {
     });
     expect(created).toBe(false);
   });
+
+  it("upserts insert-or-ignore on (user_id, dedupe_key) — the idempotency contract", async () => {
+    // These two options together are what make every producer idempotent:
+    // `onConflict` names the natural key, `ignoreDuplicates` makes the FIRST
+    // write win so a later repeat is a true no-op. Drop or flip either one and
+    // a once-in-a-lifetime anchor like `first_shadow` would silently re-date
+    // itself (fresh occurred_at, overwritten pointers) on every later score.
+    let upsertCall: Extract<QueryCall, { op: "upsert" }> | undefined;
+    const supabase = createMockSupabase({
+      tables: {
+        companion_memories: (calls) => {
+          upsertCall = calls.find((c): c is Extract<QueryCall, { op: "upsert" }> => c.op === "upsert");
+          return upsertCall ? { data: { id: "m1" }, error: null } : { data: [], error: null };
+        },
+      },
+    });
+    await recordDiscoveredMemory(supabase as never, {
+      userId: USER_ID,
+      memoryType: "first_shadow",
+      isAnchor: true,
+    });
+    expect(upsertCall?.options).toEqual({ onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+  });
 });
 
 describe("listJournal", () => {
@@ -464,8 +487,83 @@ describe("captureShadowScoreMemories", () => {
     ).resolves.toBeUndefined();
 
     expect(errorSpy).toHaveBeenCalledWith(
-      "[companion] captureShadowScoreMemories failed:",
+      "[companion] captureShadowScoreMemories first_shadow failed:",
       expect.objectContaining({ message: "boom" }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("abandons the capture when the line lookup errors — never freezes a pointer-less anchor", async () => {
+    // `first_shadow`'s dedupe key is a constant and duplicates are ignored, so
+    // an anchor written with null pointers because the lookup blipped would be
+    // frozen FOREVER. A missed memory is recoverable on the next at-target
+    // score; a frozen degraded one is not. So: no upsert at all.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const upserts: Record<string, unknown>[] = [];
+    mockService({
+      transcript_lines: () => ({ data: null, error: { message: "lookup boom" } }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+      companion_memories: collectUpserts(upserts),
+    });
+
+    await expect(
+      captureShadowScoreMemories({
+        userId: USER_ID,
+        sessionId: SESSION_ID,
+        videoId: VIDEO_ID,
+        transcriptLineId: LINE_ID,
+        pronunciationScore: TARGET_SCORE + 5,
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(upserts).toEqual([]);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[companion] captureShadowScoreMemories line lookup failed:",
+      expect.objectContaining({ message: "lookup boom" }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("still evaluates line_mastered when the first_shadow upsert fails (per-producer isolation)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const upserts: Record<string, unknown>[] = [];
+    mockService({
+      transcript_lines: () => ({ data: { text_jp: "こんにちは", start_time: 12.5 }, error: null }),
+      // Two earlier attempts, both short of target → the struggle rule holds,
+      // so `line_mastered` genuinely qualifies on this score.
+      shadowing_sessions: () => ({ data: [{ pronunciation_score: 60 }, { pronunciation_score: 75 }], error: null }),
+      companion_memories: (calls) => {
+        const upsert = calls.find((c): c is Extract<QueryCall, { op: "upsert" }> => c.op === "upsert");
+        if (!upsert) return { data: [], error: null };
+        const values = upsert.values as Record<string, unknown>;
+        if (values.memory_type === "first_shadow") return { data: null, error: { message: "first_shadow boom" } };
+        upserts.push(values);
+        return { data: { id: `m${upserts.length}` }, error: null };
+      },
+    });
+
+    await expect(
+      captureShadowScoreMemories({
+        userId: USER_ID,
+        sessionId: SESSION_ID,
+        videoId: VIDEO_ID,
+        transcriptLineId: LINE_ID,
+        pronunciationScore: TARGET_SCORE + 5,
+      }),
+    ).resolves.toBeUndefined();
+
+    // The failing anchor must not swallow the other producer's evaluation.
+    expect(upserts.map((row) => row.memory_type)).toEqual(["line_mastered"]);
+    expect(upserts[0]).toMatchObject({
+      user_id: USER_ID,
+      dedupe_key: `line_mastered:${LINE_ID}`,
+      transcript_line_id: LINE_ID,
+      line_text_jp: "こんにちは",
+      timestamp_seconds: 12.5,
+    });
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[companion] captureShadowScoreMemories first_shadow failed:",
+      expect.objectContaining({ message: "first_shadow boom" }),
     );
     errorSpy.mockRestore();
   });

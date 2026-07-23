@@ -42,7 +42,7 @@
 export type QueryCall =
   | { op: "select"; columns: string }
   | { op: "insert"; values: unknown }
-  | { op: "upsert"; values: unknown; options?: { onConflict?: string } }
+  | { op: "upsert"; values: unknown; options?: { onConflict?: string; ignoreDuplicates?: boolean } }
   | { op: "update"; values: unknown }
   | { op: "delete" }
   | { op: "eq"; column: string; value: unknown }
@@ -118,7 +118,7 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
         calls.push({ op: "insert", values });
         return builder;
       },
-      upsert(values: unknown, options?: { onConflict?: string }) {
+      upsert(values: unknown, options?: { onConflict?: string; ignoreDuplicates?: boolean }) {
         calls.push({ op: "upsert", values, options });
         return builder;
       },

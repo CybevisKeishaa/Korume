@@ -222,26 +222,43 @@ export interface ShadowScoreCaptureInput {
  * by the unique upsert), `line_mastered` is keyed per line.
  */
 export async function captureShadowScoreMemories(input: ShadowScoreCaptureInput): Promise<void> {
-  try {
-    if (input.pronunciationScore < TARGET_SCORE) return;
-    // Service role: discovered memories have a gifted-only RLS insert policy,
-    // so the capture gate writes with the same client `recordDiscoveredMemory`
-    // documents.
-    const service = createServiceClient();
+  if (input.pronunciationScore < TARGET_SCORE) return;
 
-    let lineTextJp: string | null = null;
-    let timestampSeconds: number | null = null;
+  // Service role: discovered memories have a gifted-only RLS insert policy,
+  // so the capture gate writes with the same client `recordDiscoveredMemory`
+  // documents.
+  let service: SupabaseClient;
+  let lineTextJp: string | null = null;
+  let timestampSeconds: number | null = null;
+  try {
+    service = createServiceClient();
     if (input.transcriptLineId) {
-      const { data: line } = await service
+      const { data: line, error: lineError } = await service
         .from("transcript_lines")
         .select("text_jp, start_time")
         .eq("id", input.transcriptLineId)
         .maybeSingle();
+      // A FAILED lookup abandons the whole capture. `first_shadow`'s dedupe
+      // key is a constant and duplicates are ignored, so an anchor written
+      // now with null pointers because the lookup blipped would be frozen
+      // forever — the learner's first-shadow memory could never link back to
+      // the moment. A missed memory is recoverable on the next at-target
+      // score; a frozen degraded one is not. A row that simply isn't there
+      // (`line` null, no error) is NOT a failure — null pointers are correct.
+      if (lineError) throw lineError;
       const l = line as { text_jp: string | null; start_time: number | null } | null;
       lineTextJp = l?.text_jp ?? null;
       timestampSeconds = l?.start_time ?? null;
     }
+  } catch (err) {
+    console.error("[companion] captureShadowScoreMemories line lookup failed:", err);
+    return;
+  }
 
+  // Each producer gets its OWN try/catch: they are independent milestones, so
+  // one failing must never prevent the other from being evaluated. Neither may
+  // throw into the scoring request (§6.5).
+  try {
     await recordDiscoveredMemory(service, {
       userId: input.userId,
       memoryType: "first_shadow",
@@ -251,7 +268,11 @@ export async function captureShadowScoreMemories(input: ShadowScoreCaptureInput)
       lineTextJp,
       timestampSeconds,
     });
+  } catch (err) {
+    console.error("[companion] captureShadowScoreMemories first_shadow failed:", err);
+  }
 
+  try {
     if (input.transcriptLineId) {
       // This learner's OTHER scored attempts on this same line — the struggle
       // history `qualifiesAsLineMastered` arbitrates on.
@@ -278,7 +299,7 @@ export async function captureShadowScoreMemories(input: ShadowScoreCaptureInput)
       }
     }
   } catch (err) {
-    console.error("[companion] captureShadowScoreMemories failed:", err);
+    console.error("[companion] captureShadowScoreMemories line_mastered failed:", err);
   }
 }
 
