@@ -1,11 +1,16 @@
 # L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15 + 16 done; 17-19 remain — NEXT = Task 17)
 
 ## 🔒 FROZEN EXECUTION CHECKLIST — Tasks 16–19 (canonical; briefs REFERENCE this, do NOT re-paste it)
-Controller directive (user, 2026-07-23): stop re-transmitting the full rulebook each task. The workflow is
-frozen — this block is the single source. A task brief cites ONLY the 2–3 conventions that actually bite that
-module + the module-specific audit; it assumes the implementer knows the established workflow. New GLOBAL
-conventions are added here ONLY if they change the localization architecture; module-specific findings stay in
-the task log / Task 19 audit. Permanent practice REPLACES prior wording here — it does not accumulate beside it.
+Controller directive (user, 2026-07-23; reaffirmed after Task 16 — the frozen-brief approach worked, keep
+using it): stop re-transmitting the full rulebook each task. The workflow is frozen — this block is the single
+source; assume it is already established and DO NOT re-explain it. **A task brief (17–19) contains ONLY five
+things: (1) today's scope, (2) today's architectural decisions, (3) today's known hazards, (4) today's
+carry-forwards, (5) today's acceptance criteria.** Do NOT pad the brief with historical lessons unless today's
+module genuinely depends on them. Everything else stays in this memory or the task ledger.
+**Separate three classes of finding, always:** permanent architecture → this memory; module-local discovery →
+task log / Task 19 audit; implementation detail → commit message only. Do NOT promote a local discovery into a
+new STANDING CONVENTION unless it has already appeared in multiple independent modules. Permanent practice
+REPLACES prior wording here — it does not accumulate beside it.
 
 **Permanent invariants (every extraction task):**
 - Namespace registration = 5 steps: (1) `NAMESPACES` in `lib/i18n/namespaces.ts`; (2) `messages/en/<ns>.json`
