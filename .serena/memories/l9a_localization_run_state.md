@@ -1,4 +1,4 @@
-# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12 + 13 + 14 + 15 + 16 done; 17-19 remain — NEXT = Task 17)
+# L9a run state — Plan 1 ✅ merged · Plan 2 ✅ merged · style-guide pass ✅ DONE · Plan 3 ▶ EXECUTING (Tasks 1-10 + 6b + 11a–11e + 12–17 done; 18-19 remain — NEXT = Task 18 metadata sweep)
 
 ## 🔒 FROZEN EXECUTION CHECKLIST — Tasks 16–19 (canonical; briefs REFERENCE this, do NOT re-paste it)
 Controller directive (user, 2026-07-23; reaffirmed after Task 16 — the frozen-brief approach worked, keep
@@ -56,6 +56,10 @@ Task 16) · `recommendations.*`=2 · `player.*`=1 (demotion candidate) · `actio
 `actions.loadMore`=3 (forum-board, peer-review-queue, public-playlist-list — Task 16, new promotion) ·
 `actions.confirmYes`=1 surface but 3 feature namespaces (community, playlists, shadowing — confirm-button.tsx
 is the sole consumer, promoted straight to common since no single namespace owns it — Task 16, new promotion).
+**Task 17 adds:** `appName` +admin-shell · `actions.cancel` +content-manager +video-queue (→6) · `actions.delete`
++content-manager (→2) · `actions.save` +content-form (→3) · `actions.loadMore` +video-queue (→4) ·
+`states.loading` +content-manager (→6) · `a11y.levelFilter` +primitive-sections (reuses "JLPT level" copy) ·
+`companion.*`=0 UI consumers at ship (L9b read-time — NOT dead).
 
 
 ## ⭐⭐ STANDING CONVENTIONS — BINDING for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22)
@@ -299,17 +303,45 @@ leaks), accepted. (2) reviewer couldn't verify from-diff whether `POST /api/conv
 **controller verified: NO 503 in that route**, so startSession's `friendlyErrorFrom`-only handling is correct;
 CLOSED, non-issue.
 
-## ▶ NEXT = Task 16 (`community` + `playlists` + `leaderboard` + `profile` — FOUR namespaces, one task). Tip `07cb3fa`, tree clean. Plan line 910.
-Big multi-module task — **AUDIT EACH module's file list + import graph FIRST** (convention #2), one namespace
-per module (spec P4). Put ALL SIX standing conventions + the **5-step namespace-wiring list** (incl.
-`types/messages.d.ts`) + **`useTranslations`-for-all-synchronous-components** + the **refined getTranslations
-rule** (only where chrome exists) + the **`friendlyErrorFrom`/`body.error` grep** (convention #4 keeps
-recurring) in the implementer AND reviewer briefs. Watch for: leaderboard consent-scoped copy + the
-user-mandated G2 UX order (own week FIRST then community), forum `topic` labels (general/grammar/vocab/
-listening/speaking/jlpt/study-tips — likely an exported label map like Task 13/15's SCENARIOS), playlist
-public/private copy, peer-review consent copy. Same cadence (fresh sonnet implementer → opus review → fix wave
-if needed; controller re-runs all three gates itself). Then Task 17 (`admin`+`companion`) + 18 (metadata
-sweep) + 19 (`common.*` consumer audit) remain.
+## ✅ Task 16 DONE `884ec34` — `community`+`playlists`+`leaderboard`+`profile` (4 ns, one task). Opus review: 0 findings.
+Gate: tsc 0 · 1682 tests / 200 files · lint exit 0 / 80-23 baseline / 0 new. Dependency-graph audit caught 2
+consumers off the plan list (`save-to-playlist-button` used by `videos`; `confirm-button` used by `shadowing`).
+Swap-proof: forum `topic` map (`FORUM_TOPICS`/`topicLabel`), leaderboard G2 order ("Your week" first). New
+`common` leaves: `actions.loadMore` (3 surfaces/2 ns), `actions.confirmYes` (`confirm-button`, spans
+community+playlists+shadowing). **Task 19 carry:** `lib/notification-format.ts` still hardcodes EN ("just now",
+"Xm ago") — belongs to a future `notifications` namespace, out of Task 16 scope.
+
+## ✅ Task 17 DONE `cd7bc1a` (+ `939b60c` MINOR-2 fix) — `admin`+`companion`. Opus review: READY=YES, 0 Crit / 1 Imp / 3 Min.
+Gate (controller re-ran): tsc 0 · **1728 tests / 202 files** (1 fail under CONCURRENT tsc+vitest+lint load = the
+documented waveform/pitch-contour CPU-contention flake; **1728/1728 standalone** — never run vitest beside other
+CPU-heavy gates) · lint exit 0 / 80-23 / 0 new. Companion titles now render at READ time: `titleFor`→
+`memoryTitleFor` returning `{key,values}` descriptors, `lib/data/companion.ts` persists `title: null` for
+discovered memories (gifted pins keep the learner's own words), P12 four phase phrasings carry no digit. Admin
+primitives stay English-defaulted (callers pass `t()`); half-vi `content-form`/`video-queue` finished.
+- **MINOR-2 FIXED `939b60c`:** P12 no-digit guard now also runs over `vi/companion.json` (the locale that ships;
+  the original violation was Vietnamese). Co-located in `messages/en/companion.pin.test.ts`.
+- **⚠ IMPORTANT-1 → L9b CARRY (architecture, no data lost):** the journal read model can't render
+  `companion_grew`/`jlpt_passed` titles at read time — `memoryTitleFor` needs `ref` (phase/level), which survives
+  ONLY in the `dedupe_key` column (`companion_grew:2`, `jlpt_passed:N4`); `MEMORY_COLUMNS` + the `CompanionMemory`
+  interface omit it. Before L9b builds the Journal: expose the ref (parse `dedupe_key`, or persist
+  `relationship_phase`/`jlpt_level`). Owner: backend-engineer (`lib/data/companion.ts`).
+- **Task 19 carries:** (a) admin `readErrorMessage()` in `content-manager`/`video-queue` passes `body.error`
+  through untranslated — ruled ACCEPTABLE (operator tooling, curated EN constants only, NOT learner DOM; not a #4
+  violation), residual = EN-only for a VI operator. (b) `confirm-dialog.tsx` `busy` default "Working…" renders EN
+  in admin dialogs. (c) `content-type-cards` label/description pairs have no swap-proof test — ruled low-stakes
+  (link target uses `type`, not the label; a swap is cosmetic only).
+- **`companion` namespace = 0 UI consumers at ship** (consumed at L9b read time). Do NOT flag as dead in Task 19.
+
+## ▶ NEXT = Task 18 (page metadata sweep — `generateMetadata`). Tip `939b60c`, tree clean. Plan §"Task 18".
+Convert all 25 `export const metadata` + root layout to `generateMetadata({ params:{ locale } })` passing the
+locale EXPLICITLY to `getTranslations({ locale, namespace })` (spec §7 risk 2: a bare ambient call silently drops
+the page from SSG — no error, just slower). After each route group, confirm the `npm run build` route table keeps
+`●` (SSG) pages `●`, not `ƒ`. Reuse each namespace's existing `title` key; add a `meta.*` key only where the tab
+title genuinely differs from the heading (admin pages do: "Admin — Content" vs the heading). Keep the
+`"%s · Nihongo Cinema"` template (separator + brand not translated). `admin/content/[type]/page.tsx` already has a
+`generateMetadata` taking `params` — EXTEND it. Commit one route group at a time (marketing/auth → (app) →
+(admin)) so a build failure localizes. Same cadence; brief = the 5 sections only (scope/decisions/hazards/carries/
+acceptance), no rulebook re-paste. Then Task 19 (`common.*` consumer audit + demotions) closes Plan 3.
 
 ## (superseded) ▶ NEXT was 11e (`shadowing` panel — the LAST 11x sub-task). Tip `9c9b3bf`, tree clean.
 
