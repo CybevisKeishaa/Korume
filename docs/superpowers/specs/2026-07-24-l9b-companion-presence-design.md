@@ -142,12 +142,13 @@ Server-side, inside the existing capture gate (best-effort, never-throw — the 
 
 | Producer | Trigger | `is_anchor` | Dedupe |
 |---|---|---|---|
-| `first_shadow` | shadowing session write with `pronunciation_score ≥ TARGET_SCORE` | ✅ | once per lifetime |
+| `first_shadow` | the pronunciation-score **write** (`scorePronunciation`, `lib/data/pronunciation.ts`) persists `pronunciation_score ≥ TARGET_SCORE` onto a session — scores do not exist at session creation (Azure fills them in later), so the score write is the real domain event | ✅ | once per lifetime |
 | `line_mastered` | a write reaching 80 **and** the same `transcript_line_id` has ≥`MASTERY_ATTEMPTS` attempts **and** at least one earlier attempt scored <80 (it *finally* got there — first-try success is `first_shadow`'s territory, not mastery-through-struggle) | — | per line |
 | `first_video_completed` | progress write marking the first-ever completed video | ✅ | once per lifetime |
-| `first_meeting` | `POST /api/companion/meet` — fired (fire-and-forget) every time the Journal opens; server dedupe makes the first call win | ✅ | once per lifetime |
+| `first_meeting` | the Journal page's server render calls `recordFirstMeeting()` (best-effort, idempotent — the first open wins). Planning-time simplification of D8's `POST /api/companion/meet`: same domain event ("the learner opens the Journal"), same idempotent server-side capture, but no extra HTTP round-trip and the first view already contains the page. Precedent: L5's lazy furigana cache writes on read | ✅ | once per lifetime |
 
-- Scores are threaded into `RecordActivityInput` following the `jlpt_passed` precedent.
+- `first_shadow`/`line_mastered` hook the score write in `scorePronunciation` (NOT `recordActivity`,
+  which fires at session creation before any score exists — verified at planning time).
 - `line_mastered` queries line history **only when** the current attempt reaches 80 (cheap guard).
 - The video-progress write path is verified at plan time; if it does not pass through
   `recordActivity`, the capture call hooks that write path directly with the same never-throw
@@ -197,7 +198,7 @@ All per the L9a permanent invariants. All Companion copy obeys D9 (forward-looki
 2. `lib/companion/phase.ts` — drop the redundant `!`.
 3. `lib/companion/companion.test` — remove the dead `@/lib/supabase/service` mock.
 4. `pinMemory` — add 400/401/429 unit coverage.
-5. **`companion_grew` stored-title template** — currently "giai đoạn 2" (a raw phase index; P12
-   forbids stage-thinking, and stored titles are immutable, so every day this waits accrues
-   unfixable rows). New template references neither number nor phase name — safe under any future
-   Spec 2 naming: *"Ngày mối quan hệ bước sang một chương mới."*
+5. ~~**`companion_grew` stored-title template**~~ — **already repaid during L9a Plan 3** (found at
+   planning time): discovered memories now persist `title: null`; `memoryTitleFor()` returns an
+   i18n descriptor rendered at READ time in the reader's locale, and the `companionGrew.*` catalog
+   copy contains no phase index (a pin test guards this). Nothing to do.
