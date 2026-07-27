@@ -209,8 +209,19 @@ export async function updateProgress(
     // a second copy of this module bound to the unmocked companion, so the hook
     // silently calls the wrong instance). A dynamic import is not a static
     // graph edge, so there is no cycle to resolve at load time.
-    const { captureFirstVideoCompleted } = await import("@/lib/data/companion");
-    await captureFirstVideoCompleted(user.id, videoId);
+    //
+    // The try/catch wraps the IMPORT as well as the call. `captureFirstVideoCompleted`
+    // guards its own body, but evaluating the module is itself an awaited
+    // operation that a static import would have failed at boot instead of
+    // per-request — a bad chunk or a future top-level side effect in
+    // `companion.ts` would otherwise reject straight into a learner's progress
+    // PATCH. Never-throw is absolute, so the load is inside the guard too.
+    try {
+      const { captureFirstVideoCompleted } = await import("@/lib/data/companion");
+      await captureFirstVideoCompleted(user.id, videoId);
+    } catch (err) {
+      console.error("[companion] first_video_completed hook failed:", err);
+    }
   }
 
   return { ok: true, data: data as VideoProgressRow };
