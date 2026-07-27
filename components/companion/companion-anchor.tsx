@@ -50,9 +50,13 @@ export function CompanionAnchor({ surface, pose, context }: CompanionAnchorProps
   const { speechKey, dismiss } = registration.rendered;
 
   return (
-    <div className="flex items-end gap-xs" data-companion-surface={surface}>
+    // No `gap` here: SpeechBubble owns its own inline offset, so the always-
+    // mounted-but-silent live region contributes no phantom spacing.
+    <div className="flex items-end" data-companion-surface={surface}>
       <CompanionSprite pose={pose} onActivate={companion.openJournal} />
-      {speechKey ? <SpeechBubble speechKey={speechKey} onDismiss={dismiss} /> : null}
+      {/* Rendered unconditionally — see SpeechBubble: the live region has to
+          outlive the address for a screen reader to announce it at all. */}
+      <SpeechBubble speechKey={speechKey} onDismiss={dismiss} />
     </div>
   );
 }

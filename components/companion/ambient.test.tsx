@@ -93,6 +93,38 @@ describe("Ambient shell", () => {
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 
+  /**
+   * A live region that is mounted together with its text is commonly NOT
+   * announced (NVDA/JAWS/VoiceOver): the reliable pattern is a region that is
+   * already in the accessibility tree and whose CONTENTS change. So the
+   * `role="status"` element must outlive the address, not arrive with it.
+   */
+  it("keeps the speech live region mounted and changes its text in place", async () => {
+    const user = userEvent.setup();
+    renderAmbient(
+      <>
+        <CompanionAnchor surface="dashboard" pose="sitting" />
+        <Probe context="finished_shadowing" />
+      </>,
+    );
+
+    // Present and EMPTY before anything has been said.
+    const region = screen.getByRole("status");
+    expect(region).toHaveTextContent("");
+
+    await user.click(screen.getByText("emit"));
+
+    // The very same node now carries the address — it was not remounted.
+    expect(screen.getByRole("status")).toBe(region);
+    expect(region).toHaveTextContent(/journey/i);
+
+    await user.click(screen.getByRole("button", { name: /dismiss/i }));
+
+    // …and it survives the dismissal too, ready for the next address.
+    expect(screen.getByRole("status")).toBe(region);
+    expect(region).toHaveTextContent("");
+  });
+
   it("an anchor's own `context` prop is announced once on mount", async () => {
     renderAmbient(<CompanionAnchor surface="videos" pose="standing" context="empty_library" />);
     expect(await screen.findByRole("status")).toHaveTextContent(/chapter/i);
@@ -123,7 +155,10 @@ describe("Ambient shell", () => {
     expect(await screen.findByRole("status")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /dismiss/i }));
-    expect(screen.queryByRole("status")).toBeNull();
+    // The live region stays mounted (see the live-region test above); what
+    // goes away is the address itself and the chrome around it.
+    expect(screen.getByRole("status")).toHaveTextContent("");
+    expect(screen.queryByRole("button", { name: /dismiss/i })).toBeNull();
     expect(screen.getByTestId("state")).toHaveTextContent("idle");
   });
 
@@ -145,12 +180,12 @@ describe("Ambient shell", () => {
       act(() => {
         screen.getByText("emit").click();
       });
-      expect(screen.getByRole("status")).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent(/journey/i);
 
       act(() => {
         vi.advanceTimersByTime(SPEECH_AUTO_FADE_MS);
       });
-      expect(screen.queryByRole("status")).toBeNull();
+      expect(screen.getByRole("status")).toHaveTextContent("");
       expect(screen.getByTestId("state")).toHaveTextContent("idle");
     } finally {
       vi.useRealTimers();
