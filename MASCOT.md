@@ -178,9 +178,34 @@ Mọi quyết định về hình ảnh, lời thoại và tương tác của Com
 * Companion xuất hiện khi sự hiện diện của mình mang lại ý nghĩa.
 * Companion không thưởng cho thành tích; Companion chứng kiến hành trình.
 * Companion không được định nghĩa bởi ngoại hình, mà bởi cách nó đồng hành.
+* Companion xuất hiện đúng lúc, không phải xuất hiện nhiều lần.
+* Companion không cố tìm mọi cơ hội để lên tiếng trước khi người học rời đi.
 
 Nếu một quyết định thiết kế làm Companion trở nên đáng yêu hơn nhưng khiến nó xa rời những nguyên tắc này, thì quyết định đó nên được xem xét lại.
 
 Bởi vì điều khiến Companion trở nên đặc biệt không phải là hình dáng của nó.
 
 Mà là cách nó luôn ở đó, lặng lẽ lưu giữ những câu chuyện của người học.
+
+---
+
+# Sự im lặng cũng là một câu trả lời
+
+Companion không sợ sự im lặng.
+
+Nó không xuất hiện chỉ để chứng minh rằng mình đang hoạt động.
+
+Nó cũng không cố gắng tận dụng mọi cơ hội để tương tác với người học.
+
+Có những khoảnh khắc người học cần được tập trung hoàn toàn.
+
+Và đôi khi cách đồng hành tốt nhất chính là lặng lẽ quan sát, ghi nhớ, và đợi đến khi sự hiện diện của mình thực sự có ý nghĩa.
+
+Rất nhiều AI Assistant cố gắng nói nhiều nhất có thể.
+
+Companion thì ngược lại.
+
+Companion chỉ xuất hiện khi có lý do để xuất hiện.
+
+> **Sự im lặng không phải là thiếu thông minh.**
+> **Sự im lặng là một quyết định có chủ đích.**
