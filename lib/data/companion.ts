@@ -331,6 +331,40 @@ export async function captureFirstVideoCompleted(userId: string, videoId: string
   }
 }
 
+/**
+ * `first_meeting` producer (spec D8): the domain event is "the learner opens
+ * the Journal" — the Journal page's server render calls this before reading the
+ * journal, so the very first view already contains the first page. There is
+ * deliberately no HTTP route: same event, same idempotent server-side capture,
+ * one fewer round-trip (precedent: L5's lazy furigana cache writes on read).
+ *
+ * Auth-aware, so unlike the other producers it resolves the caller itself off
+ * the REQUEST-scoped client; the write still goes through the service role,
+ * since discovered memories have a gifted-only RLS insert policy. Signed out is
+ * a silent no-op, not an error.
+ *
+ * The dedupe key is a constant, so the first open wins and its `occurred_at` is
+ * that moment — every later open is an ignored duplicate. Best-effort and never
+ * throws (§6.5): the WHOLE body is guarded, not just the write, because this
+ * runs inside the Journal's render and a failure must only mean the page shows
+ * up on the next open — never a blank Journal.
+ */
+export async function recordFirstMeeting(): Promise<void> {
+  try {
+    const supabase = createClient();
+    const user = await requireUser(supabase);
+    if (!user) return;
+    const service = createServiceClient();
+    await recordDiscoveredMemory(service, {
+      userId: user.id,
+      memoryType: "first_meeting",
+      isAnchor: true,
+    });
+  } catch (err) {
+    console.error("[companion] recordFirstMeeting failed:", err);
+  }
+}
+
 const PIN_LIMIT = { limit: 60, windowMs: 60_000 };
 
 export type PinMemoryResult =

@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type MockResult, type QueryCall } from "@/test/supabase-mock";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
+vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 
 import {
@@ -10,7 +12,9 @@ import {
   captureShadowScoreMemories,
   getAnchorMemories,
   listJournal,
+  pinMemory,
   recordDiscoveredMemory,
+  recordFirstMeeting,
 } from "./companion";
 import { PHASE_THRESHOLDS, TARGET_SCORE } from "@/lib/companion";
 
@@ -31,6 +35,19 @@ function mockService(tables: Parameters<typeof createMockSupabase>[0]["tables"])
   return supabase;
 }
 
+/** Point `createClient()` at a REQUEST-SCOPED mock client. Used by the
+ * auth-aware entry points (`pinMemory`, `recordFirstMeeting`), which resolve
+ * the caller via `requireUser` → `supabase.auth.getUser()`; `user: null` is a
+ * signed-out caller. */
+function mockClient(
+  tables: Parameters<typeof createMockSupabase>[0]["tables"],
+  user: { id: string } | null = { id: USER_ID },
+) {
+  const supabase = createMockSupabase({ user, tables });
+  vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
+  return supabase;
+}
+
 /** `companion_memories` resolver that records every upserted row, in order. */
 function collectUpserts(into: Record<string, unknown>[]) {
   return (calls: QueryCall[]): MockResult => {
@@ -44,6 +61,7 @@ function collectUpserts(into: Record<string, unknown>[]) {
 }
 
 beforeEach(() => {
+  vi.mocked(createClient).mockReset();
   vi.mocked(createServiceClient).mockReset();
 });
 
@@ -621,5 +639,131 @@ describe("captureFirstVideoCompleted", () => {
       expect.objectContaining({ message: "boom" }),
     );
     errorSpy.mockRestore();
+  });
+});
+
+describe("recordFirstMeeting", () => {
+  it("records the anchor memory for the signed-in user", async () => {
+    const upserts: Record<string, unknown>[] = [];
+    // Auth resolves off the REQUEST-scoped client; the write still goes
+    // through the service role (discovered memories are gifted-only under RLS).
+    // No tables on the request client: touching one would throw.
+    mockClient({});
+    mockService({ companion_memories: collectUpserts(upserts) });
+
+    await recordFirstMeeting();
+
+    expect(vi.mocked(createServiceClient)).toHaveBeenCalledTimes(1);
+    expect(upserts).toHaveLength(1);
+    expect(upserts[0]).toMatchObject({
+      user_id: USER_ID,
+      kind: "discovered",
+      memory_type: "first_meeting",
+      // Constant key — "the first time the learner ever opened the Journal" is
+      // enforced by the (user_id, dedupe_key) unique upsert, so every later
+      // open is an ignored duplicate that preserves the original occurred_at.
+      dedupe_key: "first_meeting",
+      is_anchor: true,
+      video_id: null,
+      transcript_line_id: null,
+      line_text_jp: null,
+      timestamp_seconds: null,
+      title: null,
+    });
+  });
+
+  it("upserts insert-or-ignore so a later Journal open never re-dates the anchor", async () => {
+    let upsertCall: Extract<QueryCall, { op: "upsert" }> | undefined;
+    mockClient({});
+    mockService({
+      companion_memories: (calls) => {
+        upsertCall = calls.find((c): c is Extract<QueryCall, { op: "upsert" }> => c.op === "upsert");
+        // `null` data = the dedupe key already existed and the write was ignored.
+        return { data: null, error: null };
+      },
+    });
+
+    await recordFirstMeeting();
+
+    expect(upsertCall?.options).toEqual({ onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+  });
+
+  it("is a silent no-op when signed out", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockClient({}, null);
+
+    await expect(recordFirstMeeting()).resolves.toBeUndefined();
+
+    // No anonymous memory, and no noise in the logs — signing out is not an error.
+    expect(vi.mocked(createServiceClient)).not.toHaveBeenCalled();
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it("never throws when the write fails (failure isolation §6.5)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockClient({});
+    mockService({ companion_memories: () => ({ data: null, error: { message: "boom" } }) });
+
+    await expect(recordFirstMeeting()).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[companion] recordFirstMeeting failed:",
+      expect.objectContaining({ message: "boom" }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it("never throws when resolving the caller itself fails", async () => {
+    // Every awaited call must sit inside the guard, not just the final write:
+    // the Journal's server render calls this before reading the journal, so a
+    // throw here would blank the page the memory is meant to appear on.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(createClient).mockImplementation(() => {
+      throw new Error("no cookies");
+    });
+
+    await expect(recordFirstMeeting()).resolves.toBeUndefined();
+
+    expect(vi.mocked(createServiceClient)).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[companion] recordFirstMeeting failed:",
+      expect.objectContaining({ message: "no cookies" }),
+    );
+    errorSpy.mockRestore();
+  });
+});
+
+describe("pinMemory statuses (carried Core cleanup #4)", () => {
+  const PIN_INPUT = { transcriptLineId: LINE_ID, videoId: VIDEO_ID, lineTextJp: "逃げろ" };
+
+  it("returns 401 when signed out", async () => {
+    // No tables registered: a signed-out caller must never reach the DB.
+    mockClient({}, null);
+
+    await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: false, status: 401 });
+  });
+
+  it("returns 429 with retryAfter when the pin rate limit trips", async () => {
+    // Its own user id so the exhausted bucket can't leak into another test —
+    // `rateLimit` state is module-level and keyed per user.
+    const user = { id: "u-pin-limit" };
+    mockClient({}, user);
+    const { rateLimit } = await import("@/lib/rate-limit");
+    // Burn the whole PIN_LIMIT budget (60/min) on this user's key first.
+    for (let i = 0; i < 100; i++) rateLimit(`companion:pin:${user.id}`, { limit: 60, windowMs: 60_000 });
+
+    const result = await pinMemory(PIN_INPUT);
+
+    expect(result).toEqual({ ok: false, status: 429, retryAfter: expect.any(Number) });
+  });
+
+  it("returns 400 for a transcript line that does not resolve", async () => {
+    // RLS confines the lookup to lines the caller can see, so "no row" covers
+    // both a bad id and one the caller isn't allowed to pin — a 400, not a 500.
+    // Only `transcript_lines` is registered: reaching the insert would throw.
+    mockClient({ transcript_lines: () => ({ data: null, error: null }) }, { id: "u-pin-400" });
+
+    await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: false, status: 400 });
   });
 });
