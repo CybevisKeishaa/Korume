@@ -50,6 +50,66 @@ describe("companion.json EN — memoryTitleFor descriptors (spec §4.4)", () => 
 });
 
 /**
+ * The Companion's speech templates (L9b Presence, Task 7). Same situation as
+ * `memoryTitle` above: these strings never existed as hardcoded JSX, so the
+ * plan is the source of truth and the pins are literal.
+ *
+ * `speechKeyFor` (lib/companion/presence/speech.ts) returns exactly these four
+ * keys as a literal union, so the mapping is type-checked; these pins are what
+ * stop the COPY drifting from the authored voice underneath it.
+ */
+describe("companion.json EN — speech templates (spec 1 §5.12)", () => {
+  it("pins the four ambient address templates", () => {
+    expect(en.speech.finishedShadowing).toBe("Another line has become part of your journey.");
+    expect(en.speech.memoryCreated).toBe("That moment is safe in the journal now.");
+    expect(en.speech.emptyLibrary).toBe("The first video you bring here will start a new chapter.");
+    expect(en.speech.emptyMiningDeck).toBe("Lines you save will gather here, ready to be remembered.");
+  });
+
+  it("pins the two a11y labels the ambient shell renders", () => {
+    expect(en.a11y.sprite).toBe("Your companion — open the journal");
+    expect(en.a11y.dismissSpeech).toBe("Dismiss");
+  });
+
+  /**
+   * Copy rule D9 (binding): every Companion line looks FORWARD and never
+   * apologizes for the present. The two "empty state" contexts are where that
+   * rule is easiest to break — `empty_library` must not say "you have no
+   * videos yet". Guarded as a rule, not just as a pin, so a future rewrite
+   * that legitimately changes the wording still cannot reintroduce the
+   * apology.
+   */
+  it("D9 guard: no speech template apologizes for an empty present", () => {
+    for (const line of Object.values(en.speech)) {
+      expect(line).not.toMatch(/\b(no|none|nothing|empty|yet|sorry)\b/i);
+    }
+  });
+});
+
+describe("companion.json VI — speech templates (primary learner locale)", () => {
+  it("pins the four ambient address templates", () => {
+    expect(vi.speech.finishedShadowing).toBe(
+      "Thêm một câu thoại nữa đã thành một phần hành trình của bạn.",
+    );
+    expect(vi.speech.memoryCreated).toBe("Khoảnh khắc ấy đã được giữ lại trong nhật ký.");
+    expect(vi.speech.emptyLibrary).toBe("Video đầu tiên bạn mang về đây sẽ mở ra một chương mới.");
+    expect(vi.speech.emptyMiningDeck).toBe("Những câu bạn lưu sẽ tụ về đây, chờ được ghi nhớ.");
+  });
+
+  it("pins the two a11y labels", () => {
+    expect(vi.a11y.sprite).toBe("Bạn đồng hành của bạn — mở nhật ký");
+    expect(vi.a11y.dismissSpeech).toBe("Đóng lời nhắn");
+  });
+
+  /** D9 in Vietnamese: "chưa có" / "không có" is the apology to avoid. */
+  it("D9 guard: no speech template apologizes for an empty present", () => {
+    for (const line of Object.values(vi.speech)) {
+      expect(line).not.toMatch(/chưa có|không có|trống/i);
+    }
+  });
+});
+
+/**
  * The P12 guard must hold on the PRIMARY LEARNER LOCALE too, not just EN.
  * VI `companionGrew` copy is what actually ships to the learner, and the
  * original P12 violation lived in Vietnamese ("...bước sang giai đoạn 2").

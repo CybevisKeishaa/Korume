@@ -12,5 +12,15 @@
       "3": "Ngày người bạn đồng hành của bạn thật sự hiểu bạn.",
       "4": "Ngày người bạn đồng hành của bạn đi cùng bạn đủ lâu để nhớ hết chặng đường."
     }
+  },
+  "speech": {
+    "finishedShadowing": "Thêm một câu thoại nữa đã thành một phần hành trình của bạn.",
+    "memoryCreated": "Khoảnh khắc ấy đã được giữ lại trong nhật ký.",
+    "emptyLibrary": "Video đầu tiên bạn mang về đây sẽ mở ra một chương mới.",
+    "emptyMiningDeck": "Những câu bạn lưu sẽ tụ về đây, chờ được ghi nhớ."
+  },
+  "a11y": {
+    "sprite": "Bạn đồng hành của bạn — mở nhật ký",
+    "dismissSpeech": "Đóng lời nhắn"
   }
 }

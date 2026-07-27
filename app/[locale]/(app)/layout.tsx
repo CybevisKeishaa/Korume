@@ -1,5 +1,6 @@
 import { redirect } from "@/lib/i18n/navigation";
 import { AppNav } from "@/components/layout/app-nav";
+import { AmbientProvider } from "@/components/companion/ambient-provider";
 import { hasPublicSupabaseEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import { getLocale } from "@/lib/i18n/server";
@@ -24,7 +25,14 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <AppNav userEmail={user.email ?? ""} />
-      <main className="flex-1">{children}</main>
+      {/* Mounted ONCE, above every (app) surface, so the Companion's state —
+          pending contexts, cooldown, machine — survives client-side
+          navigation (spec 1 §5.11). It renders nothing on its own: a surface
+          without a CompanionAnchor is dormant, and the provider makes no
+          network call until an anchor mounts. */}
+      <AmbientProvider>
+        <main className="flex-1">{children}</main>
+      </AmbientProvider>
     </div>
   );
 }

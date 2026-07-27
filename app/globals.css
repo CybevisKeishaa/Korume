@@ -284,6 +284,28 @@
 }
 
 /**
+ * Companion idle breathe (components/companion/companion-sprite.tsx).
+ * The only LOOPING animation in the app — it reads as presence, not as
+ * celebration, so it is slow (4.5s) and tiny (3%). It never runs inside a
+ * learning loop because the Companion cannot be anchored there at all
+ * (spec 1 §5.4, enforced by anchor-boundary.test.ts). Kill-switched twice:
+ * the reduce-motion block below collapses it globally, AND the sprite omits
+ * the class entirely when the app toggle is on.
+ */
+.companion-breathe {
+  animation: companion-breathe 4.5s var(--ease-standard) infinite;
+}
+@keyframes companion-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
  * Animation must never block a repeated study loop.
