@@ -197,5 +197,21 @@ export async function updateProgress(
   // A bad videoId violates the FK — surface as a 400 rather than a 500.
   if (error) return { ok: false, status: 400 };
 
+  if (input.completed) {
+    // Best-effort Companion capture — never fails the progress request (§6.5).
+    // Only a PATCH that actually marks completion is a milestone; a plain
+    // position ping is not.
+    //
+    // Imported LAZILY on purpose: `lib/data/companion.ts` imports `requireUser`
+    // from this module, so a top-level import here would close a static
+    // videos ⇄ companion cycle. That cycle is not theoretical — it already
+    // breaks module identity under Vitest (the real `companion` module pulls in
+    // a second copy of this module bound to the unmocked companion, so the hook
+    // silently calls the wrong instance). A dynamic import is not a static
+    // graph edge, so there is no cycle to resolve at load time.
+    const { captureFirstVideoCompleted } = await import("@/lib/data/companion");
+    await captureFirstVideoCompleted(user.id, videoId);
+  }
+
   return { ok: true, data: data as VideoProgressRow };
 }

@@ -6,6 +6,7 @@ vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 
 import {
   captureCompanionMemories,
+  captureFirstVideoCompleted,
   captureShadowScoreMemories,
   getAnchorMemories,
   listJournal,
@@ -564,6 +565,60 @@ describe("captureShadowScoreMemories", () => {
     expect(errorSpy).toHaveBeenCalledWith(
       "[companion] captureShadowScoreMemories first_shadow failed:",
       expect.objectContaining({ message: "first_shadow boom" }),
+    );
+    errorSpy.mockRestore();
+  });
+});
+
+describe("captureFirstVideoCompleted", () => {
+  it("records the anchor memory via the service client with the video pointer", async () => {
+    const upserts: Record<string, unknown>[] = [];
+    mockService({ companion_memories: collectUpserts(upserts) });
+
+    await captureFirstVideoCompleted(USER_ID, VIDEO_ID);
+
+    expect(vi.mocked(createServiceClient)).toHaveBeenCalledTimes(1);
+    expect(upserts).toHaveLength(1);
+    expect(upserts[0]).toMatchObject({
+      user_id: USER_ID,
+      kind: "discovered",
+      memory_type: "first_video_completed",
+      // Constant key — "first EVER completed video" is enforced by the
+      // (user_id, dedupe_key) unique upsert, not by a pre-check.
+      dedupe_key: "first_video_completed",
+      is_anchor: true,
+      video_id: VIDEO_ID,
+      transcript_line_id: null,
+      line_text_jp: null,
+      timestamp_seconds: null,
+      title: null,
+    });
+  });
+
+  it("upserts insert-or-ignore so a later completion never re-dates the anchor", async () => {
+    let upsertCall: Extract<QueryCall, { op: "upsert" }> | undefined;
+    mockService({
+      companion_memories: (calls) => {
+        upsertCall = calls.find((c): c is Extract<QueryCall, { op: "upsert" }> => c.op === "upsert");
+        // `null` data = the dedupe key already existed and the write was ignored.
+        return { data: null, error: null };
+      },
+    });
+
+    await captureFirstVideoCompleted(USER_ID, VIDEO_ID);
+
+    expect(upsertCall?.options).toEqual({ onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+  });
+
+  it("never throws when the write fails (failure isolation §6.5)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockService({ companion_memories: () => ({ data: null, error: { message: "boom" } }) });
+
+    await expect(captureFirstVideoCompleted(USER_ID, VIDEO_ID)).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[companion] captureFirstVideoCompleted failed:",
+      expect.objectContaining({ message: "boom" }),
     );
     errorSpy.mockRestore();
   });

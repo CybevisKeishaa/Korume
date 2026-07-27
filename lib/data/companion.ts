@@ -303,6 +303,34 @@ export async function captureShadowScoreMemories(input: ShadowScoreCaptureInput)
   }
 }
 
+/**
+ * `first_video_completed` producer (spec §6). Hooks the video-progress WRITE in
+ * `lib/data/videos.ts::updateProgress`, which does NOT go through
+ * `recordActivity` — finishing a video is not an XP outcome (G1), so the
+ * capture gate has to observe the progress row directly.
+ *
+ * The dedupe key is a constant, so "the first video the learner EVER finishes"
+ * is enforced by the `(user_id, dedupe_key)` unique upsert — race-free at the
+ * DB, no pre-check. Every later completion (and every re-completion of the same
+ * video) is an ignored duplicate, which also preserves the original
+ * `occurred_at`. Never throws (§6.5): a memory hiccup must not fail the
+ * learner's progress request.
+ */
+export async function captureFirstVideoCompleted(userId: string, videoId: string): Promise<void> {
+  try {
+    // Service role: discovered memories have a gifted-only RLS insert policy.
+    const service = createServiceClient();
+    await recordDiscoveredMemory(service, {
+      userId,
+      memoryType: "first_video_completed",
+      isAnchor: true,
+      videoId,
+    });
+  } catch (err) {
+    console.error("[companion] captureFirstVideoCompleted failed:", err);
+  }
+}
+
 const PIN_LIMIT = { limit: 60, windowMs: 60_000 };
 
 export type PinMemoryResult =
