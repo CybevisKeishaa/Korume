@@ -1,6 +1,8 @@
 # Review
 ## Revisiting Memories
 
+> **Status:** Approved
+
 > Review is not an exam.
 >
 > It is a quiet return to conversations you've already lived through.

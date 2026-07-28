@@ -1,6 +1,6 @@
 # Study Modes Pattern
 
-> **Status:** Design System Pattern  
+> **Status:** Approved  
 > **Layer:** Learning Experience  
 > **Applies to:** Shadowing Workspace, Review Workspace, Reading Workspace  
 > **Related:** `learning-surfaces.md`, `workspace-patterns.md`, `screen-shadowing-detail.md`, `screen-review.md`, `interaction-principles.md`
@@ -166,11 +166,9 @@ No looping emphasis.
 
 ## Companion Behavior
 
-Almost invisible.
-
-Occasionally observes quietly.
-
-Never interrupts reading.
+✕ Not Supported. Study Modes operate inside the Shadowing/Review/Reading learning-loop workspace
+(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden across
+every mode in this document, the same as Shadowing Mode below.
 
 ---
 
@@ -341,15 +339,8 @@ Video becomes less visually important.
 
 ## Companion Behavior
 
-May occasionally leave a quiet observation.
-
-Example:
-
-> "This expression appears quite often."
-
-Never explains grammar directly.
-
-The learning tools do that.
+✕ Not Supported. Same Learning Loop Boundary as every other mode in this document
+(`docs/design/design-reconciliation.md` §4) — Companion stays Hidden, even while analyzing grammar.
 
 ---
 

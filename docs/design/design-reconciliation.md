@@ -198,3 +198,31 @@ support are the interaction *contract* and stay fixed under any restyle.
 > A change to *how something is presented* is a design-doc edit. A change to *what is true about the
 > product* is a spec edit — proposed against the Authority Order (§1), not slipped into a pattern or
 > screen file.
+
+---
+
+## 12. Backlog
+
+Screen documents not yet written. Each, when written, starts at Draft (§7) and must follow the
+Screen Documentation Rules (§8) and the Learning Loop Boundary general form (§4) from creation —
+not retrofitted later.
+
+- `screen-journal.md`
+- `screen-leaderboard.md`
+- `screen-community.md`
+- `screen-conversation.md`
+- `screen-kanji.md`
+- `screen-vocabulary.md`
+- `screen-grammar.md`
+- `screen-jlpt.md`
+- `screen-playlists.md`
+- `screen-profile.md`
+- `screen-settings.md`
+
+**§8 compliance for existing screen docs.** The seven screen docs edited during the initial
+reconciliation pass (`screen-architecture.md`, `screen-dashboard.md`, `screen-video-library.md`,
+`screen-review.md`, `screen-shadowing-detail.md`, `screen-mining.md`, `screen-video-detail.md`)
+predate the full §8 checklist and do not yet define every required state (Loading, Success, Error
+states in particular). §8 is mandatory for every *new* screen doc from the moment it's created.
+Bringing the seven existing docs into full compliance is a separate, deferred follow-up — not done
+in this pass — tracked here so the gap is visible rather than silently assumed.

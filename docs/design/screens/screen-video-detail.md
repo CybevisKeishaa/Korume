@@ -1,6 +1,8 @@
 # Video Detail
 ## The Learning Overview
 
+> **Status:** Approved
+
 > Every video is the beginning of a learning journey.
 
 This page introduces a learning experience.
@@ -277,17 +279,10 @@ It simply leaves thoughtful notes.
 
 # Progress
 
-Avoid
-
-XP
-
-Percent bars
-
-Achievements
-
-Instead communicate
-
-Your journey with this lesson.
+Gamification numbers (XP, Percent bars, Achievements) are not avoided at the product level — they
+belong to the Gamification Layer, not to this understanding surface
+(`docs/design/design-reconciliation.md` §3). This screen simply communicates the learner's
+relationship with the lesson instead:
 
 Examples
 

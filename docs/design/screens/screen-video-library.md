@@ -1,6 +1,8 @@
 # Video Library
 ## The Story Collection
 
+> **Status:** Approved
+
 > Every video is not content.
 >
 > Every video is a story waiting to become part of someone's Japanese journey.

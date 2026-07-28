@@ -1,6 +1,8 @@
 # Dashboard
 ## The Learning Home
 
+> **Status:** Approved
+
 > The place that quietly welcomes the learner back.
 
 This is not a productivity dashboard.

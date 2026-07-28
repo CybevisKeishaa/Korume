@@ -1,5 +1,7 @@
 # Screen Architecture
 
+> **Status:** Approved
+
 > **Purpose**
 >
 > This document defines the architectural philosophy behind every screen in Nihongo Cinema.

@@ -1,6 +1,6 @@
 # Empty States Pattern
 
-> **Status:** Design System Pattern  
+> **Status:** Approved  
 > **Layer:** Experience Architecture  
 > **Applies to:** Entire Product  
 > **Related:** `feedback-patterns.md`, `companion-patterns.md`, `screen-video-library.md`, `screen-dashboard.md`, `microcopy-guidelines.md`, `emotion-design.md`, `docs/design/design-reconciliation.md`

@@ -1,6 +1,8 @@
 # Shadowing Detail
 ## The Adaptive Learning Workspace
 
+> **Status:** Approved
+
 > The heart of Nihongo Cinema.
 
 This is not a video page.

@@ -6,7 +6,7 @@
 > **Layer:** Experience Architecture  
 > **Applies to:** Entire Product (future)  
 > **Related:** `screen-settings.md` (not yet written — see `docs/design/design-reconciliation.md`
-> Phase 4 backlog), `workspace-patterns.md`, `overlays-and-drawers.md`, `navigation-system.md`,
+> §12 Backlog), `workspace-patterns.md`, `overlays-and-drawers.md`, `navigation-system.md`,
 > `interaction-principles.md`, `design-language.md`, `docs/design/design-reconciliation.md`
 
 ---

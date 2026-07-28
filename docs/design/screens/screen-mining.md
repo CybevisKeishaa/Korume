@@ -1,5 +1,7 @@
 # screen-mining.md
 
+> **Status:** Approved
+
 > The Mining page is not a vocabulary database.
 >
 > It is a personal collection of language moments.

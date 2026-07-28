@@ -1,6 +1,6 @@
 # Feedback Patterns
 
-> **Status:** Design System Pattern  
+> **Status:** Approved  
 > **Layer:** Learning Experience  
 > **Applies to:** Entire Product  
 > **Related:** `companion-patterns.md`, `study-modes.md`, `interaction-principles.md`, `motion-principles.md`, `microcopy-guidelines.md`
