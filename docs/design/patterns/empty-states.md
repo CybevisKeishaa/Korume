@@ -39,12 +39,17 @@ The absence of content is an opportunity to create direction, curiosity, and con
 
 Empty states are not achievements.
 
-Avoid:
+Avoid, specifically in an empty state itself:
 
 - Congratulations
 - Achievement animations
 - Rewards
-- Gamification
+- Gamification language (XP counters, streak prompts, badge unlocks)
+
+This is scoped to the empty state moment, not a product-wide ban — Gamification (XP, Streak,
+Leaderboard, Badge) is a real, shipped layer per G1–G3
+(`docs/design/design-reconciliation.md` §3, Layer Responsibility Rule) that simply never speaks
+through an empty state's voice.
 
 The goal is not to make emptiness exciting.
 
