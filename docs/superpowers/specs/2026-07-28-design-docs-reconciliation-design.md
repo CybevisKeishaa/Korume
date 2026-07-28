@@ -1,6 +1,8 @@
 # Design Docs Reconciliation — Design Spec
 
-> **Status:** Approved (brainstorm, 2026-07-28) → feeds the doc-fix implementation plan.
+> **Status:** LOCKED (brainstorm approved, 2026-07-28, after two revision rounds) → feeds the doc-fix
+> implementation plan. Further changes to the *decisions* in this spec go through a new revision, not
+> an edit in place.
 > **Trigger:** `docs/design/patterns/*.md` (9 files) and `docs/design/screens/*.md` (13 files, 1 empty)
 > were drafted as a standalone UI/UX layer *after* the product spec and the Companion System specs
 > already existed. They were written without full cross-reference to `japanese-learning-app-spec.md`,
@@ -68,7 +70,8 @@ the opening section of the new `docs/design/design-reconciliation.md` (§8).
 **Authority Order.** When two documents disagree, resolve by this order (highest wins):
 
 1. Product specification (`japanese-learning-app-spec.md`)
-2. Layer implementation specification (`docs/superpowers/specs/*-l*-design.md`, e.g. L9b)
+2. Layer/System specifications (`docs/superpowers/specs/*-l*-design.md`, e.g. L9b) — these define
+   architecture, behavior, and product rules, not just implementation shape
 3. Business model principles (`docs/product/business-model.md`)
 4. Design system rules (`docs/design/design-reconciliation.md` and its children)
 5. Screen specifications (`docs/design/screens/*.md`)
@@ -120,8 +123,9 @@ The two layers are complementary, addressed to different moments:
 Design docs must stop prohibiting XP/streak/leaderboard/badge outright. Instead they define
 *placement, tone, and the relationship with learning* — and keep Companion silent about the numbers.
 
-**Screen ownership rule.** Every screen that carries both layers must state, explicitly, what each
-layer is allowed to say. Example (Dashboard):
+**Layer Responsibility Rule** (not "Screen Ownership" — the rule doesn't say a screen owns a layer, it
+says each layer owns a category of information, on any screen where both appear). Every screen that
+carries both layers must state, explicitly, what each layer is responsible for. Example (Dashboard):
 
 | Layer | Allowed | Forbidden |
 |---|---|---|
@@ -165,6 +169,19 @@ which is Companion noticing a context that already happened. Collapsing them now
 distinction the state machine already models, right before voice/conversation surfaces are built out.
 Keep both rows even though they render the same way today.
 
+**Dormant is not Silent.** These read as similar ("Companion isn't saying anything") but are two
+different axes and must not be collapsed into one idea:
+
+- **Presence existence** — Dormant vs. Active. Dormant means no anchor was declared on this surface;
+  the Companion has no way to appear here at all (§7's "Not Supported"/no-anchor case).
+- **Interaction state** — Idle / Observing / Listening / Speaking / Silent. All five only apply once
+  presence is Active. `Silent` specifically means: a context was emitted, the Companion evaluated it,
+  and *chose* not to speak (§5.10 arbitration in Spec 1) — a decision, not an absence.
+
+A surface that is Dormant never reaches the interaction-state axis at all. A surface that is Active and
+`Silent` had a real decision made and rejected. Documenting both under "Hidden" would erase that
+distinction and make silence look like a bug instead of a deliberate P0 outcome.
+
 ---
 
 ## 5. Resolved conflict: Learning Loop Boundary (Shadowing / Review)
@@ -185,9 +202,13 @@ doc that touches a learning-loop surface):
 > Companion xuất hiện **sau khi hoàn thành loop**, không phải **trong** loop.
 >
 > **General form (covers screens not yet built):** Companion does not appear inside active
-> acquisition loops. Any future screen under `/grammar`, `/vocab`, `/kanji`, `/conversation` (or any
-> other active-practice surface) inherits Hidden by default — a screen must justify an exception, an
-> exception does not need to justify Hidden.
+> acquisition loops. **The boundary is conceptual, not route-based** — the named list (Shadowing,
+> Dictation, SRS review, Mining review session, Pronunciation evaluation, JLPT practice, Grammar
+> practice, Vocabulary review, Kanji practice, Conversation drills) is illustrative, not exhaustive.
+> **Any future active acquisition loop inherits Hidden by default.** A screen must justify an
+> exception to appear; an exception does not need to justify staying Hidden. This exists specifically
+> so a new route that isn't on the list is never read as "therefore Companion is allowed" — the test
+> is "is this an active acquisition loop," not "is this route named in the boundary doc."
 
 Action: replace the "# Companion" sections in `screen-shadowing-detail.md` and `screen-review.md`,
 and the Review Mode "Companion Behavior" subsection in `study-modes.md`, with a short "✕ Not
@@ -225,6 +246,10 @@ affordance.
 > `companion-patterns.md`, or a future engineer reading "Handwritten Note" will reasonably assume
 > "Handwritten Note = drop the dismiss button" and regress accessibility while trying to match the
 > new visual spec.
+>
+> **Visual simplification must not remove semantic functionality.** The dismiss affordance, the
+> accessibility behavior, the live region, and keyboard support are the interaction *contract* — they
+> stay fixed under any future restyle. Only the visual treatment is free to change.
 
 **Scope note:** actually restyling `speech-bubble.tsx` (CSS/visual only) is *not* part of this
 reconciliation pass — it's a follow-up implementation task once the doc correction ships.
@@ -244,18 +269,22 @@ differently. Three states:
 - **Not Supported** — forbidden by the Learning Loop Boundary (§5). Not a backlog item; adding an
   anchor here would need the *boundary rule itself* to change, not just a build.
 
-| Surface | Status |
-|---|---|
-| Dashboard | Available |
-| `/journal` | Available |
-| Video Library (empty state) | Available |
-| Mining deck (empty state) | Available |
-| Video Detail | Planned |
-| Mining Browse (non-empty) | Planned |
-| Video Library (non-empty) | Planned |
-| Shadowing | Not Supported |
-| Review | Not Supported |
-| Dictation / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported |
+| Surface | Status | Reason |
+|---|---|---|
+| Dashboard | Available | L9b shipped this anchor (D3) |
+| `/journal` | Available | L9b shipped this anchor (D3) |
+| Video Library (empty state) | Available | L9b shipped this anchor (D3) |
+| Mining deck (empty state) | Available | L9b shipped this anchor (D3) |
+| Video Detail | Planned | Architecture allows it (Spec 1 §5.2); not yet built |
+| Mining Browse (non-empty) | Planned | Architecture allows it (Spec 1 §5.2); not yet built |
+| Video Library (non-empty) | Planned | Architecture allows it (Spec 1 §5.2); not yet built |
+| Shadowing | Not Supported | Active acquisition loop (Learning Loop Boundary, §5) |
+| Review | Not Supported | Active acquisition loop (Learning Loop Boundary, §5) |
+| Dictation / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (Learning Loop Boundary, §5) |
+
+**Not Supported is a restriction, not a status.** Unlike Planned, it does not mean "not built yet" —
+it means the Learning Loop Boundary forbids the anchor from existing at all. Moving a row from Not
+Supported to Available requires changing the boundary rule itself (§5), not just shipping a feature.
 
 Companion mentions in `screen-video-detail.md`, `screen-video-library.md`, and the non-empty part of
 `screen-mining.md` get an explicit "○ Planned — chưa implement (L9b chỉ có 4 anchor)" marker so a
@@ -280,7 +309,7 @@ written when the file is created):
    not own gamification; does not replace progress systems.
 3. **Gamification Rules** — exists per G1–G3; design docs must not prohibit XP/streak/leaderboard/
    badge; they define placement, tone, relationship with learning instead; every screen carrying both
-   layers documents a Screen Ownership table (§3 above).
+   layers documents a Layer Responsibility table (§3 above).
 4. **Screen Documentation Rules** — every screen spec must define: Purpose, User state, Primary
    action, Secondary actions, Empty states, Loading states, **Success states** (distinct from empty —
    completing a video, finishing shadowing, hitting a milestone, unlocking content), Error states,
@@ -298,6 +327,22 @@ written when the file is created):
    > A change to *how something is presented* is a design-doc edit. A change to *what is true about
    > the product* is a spec edit — proposed against the Authority Order (§1), not slipped into a
    > pattern or screen file.
+
+7. **Design Document Lifecycle** — every design document (pattern or screen doc) declares exactly one
+   of four states, stated at the top of the file next to its version:
+
+   | State | Meaning |
+   |---|---|
+   | Draft | Exploration only. Cannot override existing rules; cannot be cited by other docs as settled. |
+   | Approved | Defines UX behavior for its scope. Citable by other docs. |
+   | Canonical | Referenced by other docs as source of truth for its topic (e.g. `companion-patterns.md` for Companion presence). |
+   | Deprecated | Historical reference only; superseded content, kept for context, not followed. |
+
+   This is the mechanism that caused the original problem: `docs/design/patterns/*` and
+   `docs/design/screens/*` were created and read as settled the moment they existed, with no marker
+   distinguishing "someone's draft" from "the team's ratified rule" — so a Draft-quality document
+   silently outranked the product spec in practice. Every design doc touched in Phases 2–3 gets a
+   state header; every new doc in Phase 4 starts at Draft and is promoted explicitly, never by default.
 
 This file becomes the doc that `companion-patterns.md`, `feedback-patterns.md`, and every `screens/*`
 file link back to, instead of restating the rules inline each time.
@@ -320,7 +365,7 @@ file link back to, instead of restating the rules inline each time.
    to; correct the Speech Bubble framing (§6 — "correct behavior, wrong visual language," plus the
    "visual pattern, not a replacement interaction pattern" line).
 3. `docs/design/patterns/feedback-patterns.md` — remove the blanket rankings/leaderboard ban; replace
-   with the Gamification Layer / Companion Layer split + Screen Ownership table (§3).
+   with the Gamification Layer / Companion Layer split + Layer Responsibility table (§3).
 4. `docs/design/patterns/study-modes.md` — replace the Review Mode "Companion Behavior" subsection
    with a "✕ Not Supported" statement (§5, §7); link to Learning Loop Boundary.
 5. `docs/design/patterns/empty-states.md` — fix reference `screen-library.md` →
@@ -333,7 +378,7 @@ file link back to, instead of restating the rules inline each time.
 7. `docs/design/screens/screen-architecture.md` — fix the "Avoid: gamification/achievement/streak"
    line per §3.
 8. `docs/design/screens/screen-dashboard.md` — fix the "# Progress" section (currently "Avoid XP/
-   Level/Streak") to match the shipped `StreakCard`; add the Screen Ownership table (§3).
+   Level/Streak") to match the shipped `StreakCard`; add the Layer Responsibility table (§3).
 9. `docs/design/screens/screen-video-library.md` — same Progress-section fix as #8, plus mark its
    Companion section "○ Planned" (§7) in the same pass.
 10. `docs/design/screens/screen-review.md` — replace the "# Companion" section with "✕ Not
@@ -353,6 +398,14 @@ Recorded here so it isn't lost, not scheduled: `screen-journal.md`, `screen-lead
 `screen-settings.md`. Each, when written, must follow the Screen Documentation Rules (§8.4) and the
 Learning Loop Boundary general form (§5) from day one — this is what makes Phase 4 a follow-on rather
 than another reconciliation pass.
+
+Every item in this backlog is, until written: **Not implemented** (no corresponding doc exists) and
+**Not reviewed** (no reconciliation pass has looked at it, unlike the Phase 2/3 files).
+`screen-settings.md` in particular is not "an existing feature that lacks documentation" — there is no
+`/settings` route in code at all (confirmed during the audit) — it is a **design concept awaiting
+implementation**. Whoever picks up Phase 4 must not treat any backlog item as already-approved just
+because it's named here; it inherits the governance rules current at the time it's written, and goes
+through the same Draft → Approved → Canonical lifecycle as any other design doc (§8.7).
 
 Also out of scope for this plan: restyling `speech-bubble.tsx` (visual chrome only, §6). An explicit
 follow-up, not silently folded in here.
