@@ -1,4 +1,3 @@
-```markdown id="espty92"
 # Empty States Pattern
 
 > **Status:** Design System Pattern  
@@ -650,4 +649,3 @@ The first step of a Japanese journey.
 The learner should feel:
 
 > **"This place will slowly become mine."**
-```

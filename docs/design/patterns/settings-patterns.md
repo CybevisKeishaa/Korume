@@ -1,4 +1,3 @@
-```markdown
 # Settings Patterns
 
 > **Status:** Draft — roadmap, not current state. No `/settings` route exists in code yet
@@ -827,4 +826,3 @@ Choosing the atmosphere.
 The learner is not managing software.
 
 They are creating the environment where their Japanese journey continues.
-```
