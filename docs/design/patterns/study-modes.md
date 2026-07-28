@@ -236,9 +236,10 @@ Repeat.
 
 ## Companion Behavior
 
-Silent.
-
-Learning requires complete concentration.
+✕ Not Supported. Shadowing is an active acquisition loop
+(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden
+throughout Shadowing, the same as every other mode in this document. Learning requires complete
+concentration.
 
 ---
 
@@ -296,9 +297,9 @@ Looping available but visually de-emphasized.
 
 ## Companion Behavior
 
-Invisible.
-
-Immersion should feel uninterrupted.
+✕ Not Supported. Immersion Mode is an active acquisition loop
+(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden, the
+same as every other mode in this document. Immersion should feel uninterrupted.
 
 ---
 
@@ -441,9 +442,9 @@ remain visible.
 
 ## Companion Behavior
 
-Absent.
-
-Silence is intentional.
+✕ Not Supported. Focus Mode is an active acquisition loop
+(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden, the
+same as every other mode in this document. Silence is intentional.
 
 ---
 
