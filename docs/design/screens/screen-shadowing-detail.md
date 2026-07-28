@@ -155,7 +155,9 @@ Contains only
 
 No colorful actions.
 
-No gamification.
+This header itself doesn't display Gamification (XP, Streak, Leaderboard, Badge) — that's a real,
+shipped layer that lives elsewhere (Dashboard, post-session summaries), not banned product-wide
+(`docs/design/design-reconciliation.md` §3). This header just isn't where it speaks.
 
 No progress indicators.
 
