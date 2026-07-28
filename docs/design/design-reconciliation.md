@@ -1,9 +1,9 @@
 # Design System Governance & Reconciliation
 
 > **Status:** Canonical
-> **Version:** 1.0 (2026-07-28)
-> **Applies to:** `docs/design/patterns/*.md`, `docs/design/screens/*.md`, and every future design
-> document in this repo.
+> **Version:** 1.1 (2026-07-29)
+> **Applies to:** `docs/design/patterns/*.md`, `docs/design/screens/*.md`, every root-level
+> `docs/design/*.md` philosophy document, and every future design document in this repo.
 > **Decision record:** `docs/superpowers/specs/2026-07-28-design-docs-reconciliation-design.md`
 
 ---
@@ -226,3 +226,21 @@ predate the full §8 checklist and do not yet define every required state (Loadi
 states in particular). §8 is mandatory for every *new* screen doc from the moment it's created.
 Bringing the seven existing docs into full compliance is a separate, deferred follow-up — not done
 in this pass — tracked here so the gap is visible rather than silently assumed.
+
+---
+
+## 13. Naming Is Local, Not Global
+
+Several documents describe their own progression of concentration/focus/immersion levels (e.g.
+`docs/design/screens/screen-architecture.md`'s Focus States, `docs/design/screens/learning-surfaces.md`'s
+Reading States, `docs/design/screens/adaptive-layouts.md`'s several internal gradients,
+`docs/design/patterns/study-modes.md`'s mode names). These are related in spirit — deeper focus, less
+chrome — but are not one shared, product-wide taxonomy, and no document's local names bind another's.
+
+A document defining such a progression names it as its own, scoped to what it actually governs, and may
+note that sibling documents use their own different names for their own related-but-distinct concept —
+it should not imply, and no other document should assume, that these names are interchangeable or that
+one document's list is authoritative over another's.
+
+This does not apply to Companion Presence Levels (§5) or Anchor Availability (§6), which remain the
+single shared vocabulary for Companion state specifically, wherever it is discussed.
