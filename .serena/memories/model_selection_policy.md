@@ -51,3 +51,14 @@ treating Fable work as covered.
 When one of the "consider Fable" tasks above is about to start, **PAUSE and ASK** the user whether to
 switch the model (and, for a subagent, whether to pass `model: "fable"`). Never silently switch, and
 never silently proceed on the default for a Fable-candidate task. Roadmap order: L9b → L8 → L9c.
+
+### ⭐ L8 and L9c are pre-decided: Opus throughout, no ask (user, 2026-07-27)
+Asked proactively before L9b Task 4 (Companion Presence): neither L8 (PayOS billing) nor L9c (polish +
+perf audit) contains anything on the "hardest long-horizon" list (cinematic scroll orchestration,
+companion state machine) — they're routine billing integration and a final-UI audit. User chose to
+lock this in now rather than re-litigate when we get there: **run Opus 4.8 for L8's and L9c's
+brainstorm, plan-decomposition, AND build — do not stop to ask for either layer.**
+Still-open ask points remain: L9b Plan 3 brainstorm+plan (feature UIs, scope not yet brainstormed),
+L9b Plan 4 brainstorm+plan (landing/cinematic + tutorial + Companion Plan 3 — contains the
+cinematic-scroll and AI-reflection items from the original hardest-list), and the Character Identity
+(Spec 2) brainstorm that precedes Plan 4.
