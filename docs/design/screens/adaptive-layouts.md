@@ -400,9 +400,27 @@ It expands vertically.
 
 # Navigation Adaptation
 
-Navigation Adaptation: Expanded → Collapsed → Icon rail → Hidden — this progression is Planned target
-design (`docs/design/screens/navigation-system.md` § Navigation States); only Expanded (desktop) and
-Wrapped (mobile) are shipped today. The learner always controls whether navigation is visible
+Navigation should progressively disappear during study.
+
+The progression below (Expanded sidebar → Collapsed sidebar → Icon rail → Hidden) is Planned target design; currently only Expanded (desktop) and Wrapped (mobile) are shipped. See `docs/design/screens/navigation-system.md` § Navigation States.
+
+Desktop
+
+Expanded sidebar.
+
+↓
+
+Collapsed sidebar.
+
+↓
+
+Icon rail.
+
+↓
+
+Hidden.
+
+The learner always controls whether navigation is visible.
 
 ---
 
