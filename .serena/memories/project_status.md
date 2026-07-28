@@ -30,20 +30,36 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-24 evening) — **L9b Plan 2 (Companion Presence) IN PROGRESS, session paused at Task 4/13**
+## ▶ NEXT ACTION (updated 2026-07-28) — **L9b Plan 2 (Companion Presence) IN PROGRESS, session paused after Task 7/13**
 
-**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), 8 commits, HEAD **`415ba14`**, NOT pushed.
+**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), HEAD **`242818c`**, NOT pushed.
 Spec `docs/superpowers/specs/2026-07-24-l9b-companion-presence-design.md` (D1–D9) ·
 plan `docs/superpowers/plans/2026-07-24-l9b-companion-presence.md` (13 tasks) ·
 **live run state + every carried item: `.superpowers/sdd/progress.md`** (gitignored scratch —
-if lost, reconstruct from `git log`; the "SESSION PAUSED" block at its end is the resume point).
-Executed via `superpowers:subagent-driven-development`, one implementer + one independent reviewer per task.
+if lost, reconstruct from `git log`; the "SESSION PAUSED 2026-07-28" block at its end is the resume point).
+Executed via `superpowers:subagent-driven-development`, one implementer + one independent reviewer per
+task, both on **Opus 4.8** (this plan is the named "hardest long-horizon" exception in
+`mem:model_selection_policy` — brainstorm/plan-decomposition already ran on Fable, execution stays Opus).
 
-**Done:** Tasks 1–3 complete (presence pure core: contexts/state-machine/config/arbitration/speech-key;
-`first_meeting` memory type + mastery rule + 3 carried Core cleanups). **Task 4 done but ⏳ RE-REVIEW OWED**
-(producers `first_shadow` + `line_mastered`, hooked on the pronunciation-score WRITE in
-`lib/data/pronunciation.ts` — scores don't exist at session creation). **FIRST ACTION NEXT SESSION:
-review `f762a58`..`415ba14`, then Task 5.**
+**Done: Tasks 1–8 complete**, each task-reviewed clean (Task 3 had 1 Critical migration gap fixed in-task;
+Tasks 4/5/7 each needed one fix round + scoped re-review for a single Important finding; Tasks 6 and 8
+clean with zero fix rounds). Shipped: presence pure core (state machine/arbitration/speech-key), companion
+domain prep (`first_meeting` type, mastery rule), 3 new server-side producers (`first_shadow`,
+`line_mastered`, `first_video_completed`, `recordFirstMeeting`), the full Ambient Layer React shell
+(provider, 4-verb `useCompanion()` hook, anchor slot, placeholder sprite, speech bubble with a fixed
+live-region a11y pattern, §5.4 import-boundary scan, `companion.speech.*`/`companion.a11y.*` catalog
+en+vi+pins) mounted once in the `(app)` layout, and Task 8's Journal read-side plumbing
+(`refFromDedupeKey`, `CompanionMemory.dedupeKey`, `dedupe_key` column threaded through
+`MEMORY_COLUMNS`/`MemoryRow`/`toMemory` — closes the L9a Task 17 IMPORTANT-1 carry). Full suite
+**211 files / 1853 tests green** · tsc 0 · lint 77 warnings/22 files (unchanged since Task 3) ·
+**16 migrations**.
+**NEXT ACTION: Task 9** (shadowing deep link `?line=<id>` selects and seeks — `shadowing-view.tsx`) →
+Tasks 10–13.
+**Task 13 needs the `line_mastered` open decision raised with the user first** (unchanged since Task 4 —
+see the ledger's "OPEN DECISION FOR THE USER" block). **Several carried items span Tasks 8–13** (multi-
+anchor duplication owed by Tasks 10/12, a doubled-auth-round-trip design call owed by Task 10, and the
+`companion.ts ⇄ videos.ts` import-cycle trap that will recur on any producer hooking a module
+`companion.ts` transitively imports) — full detail in the ledger's SESSION PAUSED block, not repeated here.
 
 **🔴 The review caught a CRITICAL plan gap already fixed — remember the lesson:** the plan had NO
 migrations, but `companion_memories.memory_type` has a CHECK enumerating its 7 values and `first_meeting`
