@@ -56,3 +56,6 @@ next-env.d.ts
 # supabase local
 /supabase/.branches
 /supabase/.temp
+
+# subagent-driven-development scratch workspace (ledgers, briefs, review packages)
+/.superpowers/
