@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "@/lib/i18n";
 import type {
   FuriganaDisplayMode,
@@ -65,9 +66,15 @@ async function patchJson(url: string, body: unknown): Promise<void> {
  */
 export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingViewProps) {
   const t = useTranslations("shadowing");
+  const searchParams = useSearchParams();
   const playerRef = useRef<YouTubePlayerHandle>(null);
   const durationReportedRef = useRef(video.duration_seconds != null);
   const lastSavedTimeRef = useRef(0);
+  /**
+   * `?line=<transcriptLineId>` — the Journal's "return to this moment" target.
+   * Held in a ref because it is consumed once, when the player becomes ready.
+   */
+  const deepLinkLineIdRef = useRef(searchParams.get("line"));
 
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -92,13 +99,28 @@ export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingV
   );
 
   const handleReady = useCallback(() => {
-    if (durationReportedRef.current) return;
-    const duration = playerRef.current?.getDuration() ?? 0;
-    if (duration > 0) {
-      durationReportedRef.current = true;
-      void patchJson(`/api/videos/${video.id}`, { durationSeconds: Math.round(duration) });
+    if (!durationReportedRef.current) {
+      const duration = playerRef.current?.getDuration() ?? 0;
+      if (duration > 0) {
+        durationReportedRef.current = true;
+        void patchJson(`/api/videos/${video.id}`, { durationSeconds: Math.round(duration) });
+      }
     }
-  }, [video.id]);
+
+    // A deep link is an arrival, not a mode: consume it once (clearing the ref
+    // before the lookup, so an unknown id is spent too) and let the user drive
+    // from there. An absent or unknown `?line=` leaves playback exactly where
+    // a plain arrival would.
+    const deepLinkLineId = deepLinkLineIdRef.current;
+    if (deepLinkLineId) {
+      deepLinkLineIdRef.current = null;
+      const target = lines.find((line) => line.id === deepLinkLineId);
+      if (target) {
+        playerRef.current?.seekTo(target.start_time);
+        setCurrentTime(target.start_time);
+      }
+    }
+  }, [video.id, lines]);
 
   const handleStateChange = useCallback(
     (state: YtPlayerStateValue) => {

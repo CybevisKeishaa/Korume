@@ -1,14 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
+import { ReadonlyURLSearchParams, useSearchParams } from "next/navigation";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import {
+  FakeYtPlayer,
   installYouTubeStub,
   YT_PLAYER_STATE,
   type YouTubeStubHandle,
 } from "@/test/youtube-stub";
 import type { TranscriptWithLines, VideoRow } from "@/lib/video-types";
 import { ShadowingView } from "./shadowing-view";
+
+// Only `useSearchParams` is faked — the rest of `next/navigation` (including
+// the real `ReadonlyURLSearchParams` used below) stays intact so nothing else
+// in the render tree loses its navigation module.
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useSearchParams: vi.fn(),
+}));
+
+/** What `useSearchParams()` returns on the next render. Defaults to no params. */
+function setSearchParams(query = ""): void {
+  vi.mocked(useSearchParams).mockReturnValue(new ReadonlyURLSearchParams(query));
+}
 
 const VIDEO: VideoRow = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -99,6 +114,9 @@ describe("ShadowingView", () => {
 
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
+    // No `?line=` unless a test opts in — every assertion below the deep-link
+    // ones describes the plain-arrival behavior.
+    setSearchParams();
     yt = installYouTubeStub({ duration: 90 });
     fetchCalls = mockFetch();
   });
@@ -331,5 +349,48 @@ describe("ShadowingView", () => {
     expect(
       screen.getByText("It may be region-locked, private, or unavailable for embedding."),
     ).toBeInTheDocument();
+  });
+
+  it("seeks to the ?line= target once the player is ready (journal deep link)", async () => {
+    setSearchParams("line=line-2");
+    renderView();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+
+    expect(yt.players[0]?.getCurrentTime()).toBe(3);
+    expect(screen.getByRole("button", { name: /学校/ })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("button", { name: /こんにちは/ })).not.toHaveAttribute("aria-current");
+  });
+
+  it("follows the ?line= deep link even when the video already reported a duration", async () => {
+    // The duration report is a one-shot that used to return early out of the
+    // ready handler — a deep link into an already-measured video (i.e. every
+    // video the Journal can link to) must still land on its line.
+    setSearchParams("line=line-3");
+    renderView({ ...VIDEO, duration_seconds: 120 }, TRANSCRIPT);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+
+    expect(yt.players[0]?.getCurrentTime()).toBe(6);
+    expect(screen.getByRole("button", { name: /さようなら/ })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
+  it("ignores an unknown ?line= id", async () => {
+    setSearchParams("line=no-such-line");
+    const seekSpy = vi.spyOn(FakeYtPlayer.prototype, "seekTo");
+    try {
+      renderView();
+      await waitFor(() => expect(yt.players).toHaveLength(1));
+
+      expect(seekSpy).not.toHaveBeenCalled();
+      expect(yt.players[0]?.getCurrentTime()).toBe(0);
+      expect(screen.getByRole("button", { name: /こんにちは/ })).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
+    } finally {
+      seekSpy.mockRestore();
+    }
   });
 });
