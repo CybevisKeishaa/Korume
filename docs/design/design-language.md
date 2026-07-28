@@ -1,6 +1,6 @@
 # Design Language
 
-> Status: Living Design Document
+> **Status:** Approved
 >
 > Defines how the interface should feel,
 > not how individual screens should look.
@@ -34,8 +34,12 @@ Never:
 - Loud
 - Busy
 - Hyperactive
-- Gamified
 - Distracting
+
+This is a statement about *tone* — quiet, unhurried, non-manipulative — not a ban on the
+Gamification Layer itself. XP, Streak, Leaderboard, and Badge are a real, shipped product layer per
+G1–G3 (`docs/design/design-reconciliation.md` §3); they simply present calmly rather than loudly,
+consistent with every other principle in this document.
 
 ---
 
@@ -118,11 +122,15 @@ Avoid:
 
 ✗ celebration explosions
 
-✗ flashing badges
+✗ flashing notification badges
 
 ✗ aggressive confetti
 
 ✗ noisy success screens
+
+This governs how a badge (or any notification indicator) *animates* — no flashing/explosive motion —
+not whether the Gamification Layer's Badge primitive may exist or be shown at all
+(`docs/design/design-reconciliation.md` §3).
 
 ---
 
