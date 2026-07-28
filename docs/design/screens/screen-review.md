@@ -118,11 +118,9 @@ Contains
 - Search
 - Settings
 
-No session timer.
-
-No daily target.
-
-No streak counter.
+This header itself doesn't display a session timer, a daily target, or a streak counter — those are
+Gamification-owned (`docs/design/design-reconciliation.md` §3) and real, shipped elsewhere (Dashboard);
+this header just isn't where they speak.
 
 No motivational banners.
 
@@ -374,7 +372,7 @@ not a database.
 
 # Gentle Progress
 
-Avoid
+Avoid, on this screen specifically
 
 Cards Due
 
@@ -383,6 +381,10 @@ Completion %
 Accuracy
 
 Daily Quota
+
+These are real Gamification-owned metrics elsewhere (Dashboard) — this screen just doesn't repeat
+them here, the same way `docs/design/screens/screen-video-library.md`'s Progress section handles it
+(`docs/design/design-reconciliation.md` §3).
 
 Instead communicate
 
@@ -492,7 +494,9 @@ No confetti.
 
 No sound effects.
 
-No achievement popups.
+No achievement popups — not because achievements are banned (Gamification's badge/streak moments are
+real and shipped elsewhere, `docs/design/design-reconciliation.md` §3), but because this particular
+save/favorite feedback is a small Feedback-layer moment, not a milestone.
 
 ---
 
