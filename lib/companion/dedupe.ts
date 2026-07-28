@@ -80,3 +80,33 @@ export function memoryTitleFor(
       return null;
   }
 }
+
+/**
+ * Read-time inverse of `dedupeKeyFor` for the types whose titles carry ICU
+ * values. Rows persist no ref (titles render at READ time, in the reader's
+ * locale) — the dedupe key is the one place the value survives. Total and
+ * forgiving: anything malformed yields {} and the title falls back to its
+ * value-less rendering.
+ */
+export function refFromDedupeKey(type: MemoryType, dedupeKey: string | null): MemoryRef {
+  if (!dedupeKey) return {};
+  const separator = dedupeKey.indexOf(":");
+  const value = separator === -1 ? "" : dedupeKey.slice(separator + 1);
+  switch (type) {
+    case "jlpt_passed":
+      return value ? { jlptLevel: value } : {};
+    case "companion_grew": {
+      const phase = Number(value);
+      return phase === 1 || phase === 2 || phase === 3 || phase === 4 ? { phase } : {};
+    }
+    case "line_mastered":
+    case "pinned_line":
+      return value ? { lineId: value } : {};
+    case "mining_saved":
+      return value ? { cardId: value } : {};
+    case "first_shadow":
+    case "first_video_completed":
+    case "first_meeting":
+      return {};
+  }
+}

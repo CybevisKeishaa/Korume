@@ -26,5 +26,8 @@ export interface CompanionMemory {
   lineTextJp: string | null;
   note: string | null;
   isAnchor: boolean;
+  /** Raw idempotency key — read-time source for title ICU values (see
+   * refFromDedupeKey); never rendered directly. */
+  dedupeKey: string | null;
   occurredAt: string;
 }

@@ -40,6 +40,7 @@ interface MemoryRow {
   note: string | null;
   is_anchor: boolean;
   occurred_at: string;
+  dedupe_key: string | null;
 }
 
 function toMemory(row: MemoryRow): CompanionMemory {
@@ -54,6 +55,7 @@ function toMemory(row: MemoryRow): CompanionMemory {
     lineTextJp: row.line_text_jp,
     note: row.note,
     isAnchor: row.is_anchor,
+    dedupeKey: row.dedupe_key,
     occurredAt: row.occurred_at,
   };
 }
@@ -100,7 +102,7 @@ export async function recordDiscoveredMemory(
 }
 
 const MEMORY_COLUMNS =
-  "id, kind, memory_type, title, video_id, transcript_line_id, timestamp_seconds, line_text_jp, note, is_anchor, occurred_at";
+  "id, kind, memory_type, title, video_id, transcript_line_id, timestamp_seconds, line_text_jp, note, is_anchor, occurred_at, dedupe_key";
 
 /** The learner's Journal, newest moment first. ALWAYS ordered by occurred_at,
  * never created_at (§4.2). Pass an owner-scoped client so RLS returns only the

@@ -118,6 +118,22 @@ describe("recordDiscoveredMemory", () => {
   });
 });
 
+/** One stored journal row, as Postgres returns it. */
+const JOURNAL_ROW = {
+  id: "m1",
+  kind: "discovered",
+  memory_type: "jlpt_passed",
+  title: null,
+  video_id: null,
+  transcript_line_id: "L1",
+  timestamp_seconds: null,
+  line_text_jp: "逃げろ",
+  note: null,
+  is_anchor: true,
+  occurred_at: "2026-07-16T00:00:00Z",
+  dedupe_key: "jlpt_passed:N4",
+};
+
 describe("listJournal", () => {
   it("maps rows to CompanionMemory and is ordered by occurred_at", async () => {
     let orderCall: QueryCall | undefined;
@@ -125,30 +141,35 @@ describe("listJournal", () => {
       tables: {
         companion_memories: (calls) => {
           orderCall = calls.find((c) => c.op === "order");
-          return {
-            data: [
-              {
-                id: "m1",
-                kind: "discovered",
-                memory_type: "first_shadow",
-                title: "t",
-                video_id: null,
-                transcript_line_id: "L1",
-                timestamp_seconds: null,
-                line_text_jp: "逃げろ",
-                note: null,
-                is_anchor: true,
-                occurred_at: "2026-07-16T00:00:00Z",
-              },
-            ],
-            error: null,
-          };
+          return { data: [JOURNAL_ROW], error: null };
         },
       },
     });
     const journal = await listJournal(supabase as never, USER_ID);
-    expect(journal[0]).toMatchObject({ id: "m1", memoryType: "first_shadow", isAnchor: true });
+    expect(journal[0]).toMatchObject({ id: "m1", memoryType: "jlpt_passed", isAnchor: true });
     expect(orderCall).toMatchObject({ column: "occurred_at", ascending: false });
+  });
+
+  it("selects dedupe_key and exposes it as dedupeKey — the read-time source for title ICU values", async () => {
+    // Discovered rows persist NO ref: the JLPT level / phase a title needs
+    // survives ONLY inside the dedupe key (see refFromDedupeKey). Drop the
+    // column from the select and the field silently reads `undefined`, so the
+    // Journal would render "You passed !" — hence asserting the SELECT too,
+    // not just the mapping.
+    let selectedColumns: string | undefined;
+    const supabase = createMockSupabase({
+      tables: {
+        companion_memories: (calls) => {
+          selectedColumns = calls.find(
+            (c): c is Extract<QueryCall, { op: "select" }> => c.op === "select",
+          )?.columns;
+          return { data: [JOURNAL_ROW], error: null };
+        },
+      },
+    });
+    const journal = await listJournal(supabase as never, USER_ID);
+    expect(selectedColumns).toContain("dedupe_key");
+    expect(journal[0]?.dedupeKey).toBe("jlpt_passed:N4");
   });
 });
 

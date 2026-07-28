@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dedupeKeyFor, memoryTitleFor } from "./dedupe";
+import { dedupeKeyFor, memoryTitleFor, refFromDedupeKey } from "./dedupe";
 
 describe("dedupeKeyFor", () => {
   it("is constant for once-in-a-lifetime types", () => {
@@ -91,5 +91,25 @@ describe("memoryTitleFor", () => {
 
   it("returns null for gifted pins (learner supplies their own title, never translated)", () => {
     expect(memoryTitleFor("pinned_line")).toBeNull();
+  });
+});
+
+describe("refFromDedupeKey (read-time inverse for title values)", () => {
+  it("recovers the JLPT level and the phase", () => {
+    expect(refFromDedupeKey("jlpt_passed", "jlpt_passed:N4")).toEqual({ jlptLevel: "N4" });
+    expect(refFromDedupeKey("companion_grew", "companion_grew:3")).toEqual({ phase: 3 });
+  });
+
+  it("is total: null, malformed, and value-less keys yield {}", () => {
+    expect(refFromDedupeKey("jlpt_passed", null)).toEqual({});
+    expect(refFromDedupeKey("companion_grew", "companion_grew:9")).toEqual({});
+    expect(refFromDedupeKey("first_meeting", "first_meeting")).toEqual({});
+  });
+
+  it("round-trips with dedupeKeyFor for the value-carrying types", () => {
+    expect(refFromDedupeKey("jlpt_passed", dedupeKeyFor("jlpt_passed", { jlptLevel: "N2" }))).toEqual({
+      jlptLevel: "N2",
+    });
+    expect(refFromDedupeKey("companion_grew", dedupeKeyFor("companion_grew", { phase: 2 }))).toEqual({ phase: 2 });
   });
 });
