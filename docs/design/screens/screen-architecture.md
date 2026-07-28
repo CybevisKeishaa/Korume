@@ -140,7 +140,9 @@ Mining
 
 Settings
 
-→ Configuration Workspace
+→ Configuration Workspace (target design — no `/settings` route ships today; see
+`docs/design/patterns/settings-patterns.md`, Draft/roadmap, and
+`docs/design/screens/navigation-system.md` § Settings Entry Point)
 
 The Workspace should visually occupy most of the screen.
 
@@ -365,6 +367,11 @@ Immersive
 
 Minimal
 
+This is this document's own screen-chrome-density progression — a related but distinct axis from
+`adaptive-layouts.md`'s Companion Adaptation gradient or `learning-surfaces.md`'s Reading States;
+none of these documents share one unified naming scheme, and none should be read as if they do (see
+`docs/design/design-reconciliation.md` §13).
+
 The transition between these states should be smooth.
 
 No page reloads.
@@ -435,7 +442,7 @@ Every screen should communicate one primary emotion.
 | Shadowing | Practice |
 | Mining | Collection |
 | Journal | Reflection |
-| Settings | Preparation |
+| Settings | Preparation (target design — not yet a shipped route, see `settings-patterns.md`) |
 
 Visual design should reinforce these emotional roles.
 
