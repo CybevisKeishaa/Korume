@@ -19,6 +19,15 @@
     "emptyLibrary": "Video đầu tiên bạn mang về đây sẽ mở ra một chương mới.",
     "emptyMiningDeck": "Những câu bạn lưu sẽ tụ về đây, chờ được ghi nhớ."
   },
+  "journal": {
+    "metaTitle": "Nhật ký",
+    "title": "Nhật ký",
+    "empty": "Trang đầu tiên đang chờ những câu chuyện chúng ta sẽ cùng khám phá.",
+    "returnToMoment": "Quay lại khoảnh khắc này",
+    "giftedMarker": "Ký ức bạn trao gửi",
+    "discoveredMarker": "Ký ức được phát hiện trên đường đi",
+    "untitledGifted": "Một câu thoại bạn đã giữ lại."
+  },
   "a11y": {
     "sprite": "Bạn đồng hành của bạn — mở nhật ký",
     "dismissSpeech": "Đóng lời nhắn"

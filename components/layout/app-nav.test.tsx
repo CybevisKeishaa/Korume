@@ -30,6 +30,9 @@ const EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string> = {
   community: "Community",
   playlists: "Playlists",
   leaderboard: "Leaderboard",
+  // Added by L9b Presence Task 10 — the Journal surface. Literal for the same
+  // reason as every entry above; the EN copy is authored in the plan.
+  journal: "Journal",
   profile: "Profile",
 };
 const EXPECTED_ARIA_LABEL = "Main";
@@ -77,6 +80,17 @@ describe("AppNav", () => {
         screen.getByRole("link", { name: expectedLabel }),
       ).toBeInTheDocument();
     }
+  });
+
+  it("routes the Journal entry at /journal (L9b Presence Task 10)", () => {
+    // The loop above pins every LABEL; this pins the one destination whose
+    // href is itself a deliverable of Task 10 — the Journal has no other
+    // entry point in the chrome.
+    renderNav();
+    expect(screen.getByRole("link", { name: EXPECTED_LABELS.journal })).toHaveAttribute(
+      "href",
+      "/en/journal",
+    );
   });
 
   it("names the nav landmark via the catalog's aria-label", () => {

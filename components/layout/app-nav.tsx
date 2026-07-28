@@ -21,6 +21,7 @@ export const NAV_ITEMS = [
   { href: "/community", key: "community" },
   { href: "/playlists", key: "playlists" },
   { href: "/leaderboard", key: "leaderboard" },
+  { href: "/journal", key: "journal" },
   { href: "/profile", key: "profile" },
 ] as const;
 

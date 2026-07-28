@@ -19,6 +19,15 @@
     "emptyLibrary": "The first video you bring here will start a new chapter.",
     "emptyMiningDeck": "Lines you save will gather here, ready to be remembered."
   },
+  "journal": {
+    "metaTitle": "Journal",
+    "title": "Journal",
+    "empty": "The first page is waiting for the stories we'll discover together.",
+    "returnToMoment": "Return to this moment",
+    "giftedMarker": "A memory you gifted",
+    "discoveredMarker": "A memory discovered along the way",
+    "untitledGifted": "A line you kept."
+  },
   "a11y": {
     "sprite": "Your companion — open the journal",
     "dismissSpeech": "Dismiss"

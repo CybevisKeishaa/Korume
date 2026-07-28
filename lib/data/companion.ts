@@ -345,16 +345,26 @@ export async function captureFirstVideoCompleted(userId: string, videoId: string
  * since discovered memories have a gifted-only RLS insert policy. Signed out is
  * a silent no-op, not an error.
  *
+ * `resolved` lets a caller that has ALREADY resolved the request-scoped client
+ * and its user hand both over, so the Journal's render costs exactly one
+ * Supabase auth round-trip instead of two (the page needs the same pair for its
+ * own guard and for `listJournal`). Omitting it self-resolves, exactly as
+ * before — the resolution deliberately stays INSIDE the guard, so a client that
+ * fails to construct is still caught rather than thrown at the render.
+ *
  * The dedupe key is a constant, so the first open wins and its `occurred_at` is
  * that moment — every later open is an ignored duplicate. Best-effort and never
  * throws (§6.5): the WHOLE body is guarded, not just the write, because this
  * runs inside the Journal's render and a failure must only mean the page shows
  * up on the next open — never a blank Journal.
  */
-export async function recordFirstMeeting(): Promise<void> {
+export async function recordFirstMeeting(resolved?: {
+  supabase: SupabaseClient;
+  user: NonNullable<Awaited<ReturnType<typeof requireUser>>>;
+}): Promise<void> {
   try {
-    const supabase = createClient();
-    const user = await requireUser(supabase);
+    const supabase = resolved?.supabase ?? createClient();
+    const user = resolved?.user ?? (await requireUser(supabase));
     if (!user) return;
     const service = createServiceClient();
     await recordDiscoveredMemory(service, {

@@ -735,6 +735,49 @@ describe("recordFirstMeeting", () => {
     errorSpy.mockRestore();
   });
 
+  it("reuses a pre-resolved caller instead of resolving auth a second time", async () => {
+    // The Journal page already holds a request-scoped client and the resolved
+    // user (it needs both for its own guard + `listJournal`). Handing them over
+    // keeps the Journal render to exactly ONE Supabase auth round-trip — so
+    // `createClient()` must not be called again here.
+    const upserts: Record<string, unknown>[] = [];
+    mockService({ companion_memories: collectUpserts(upserts) });
+    const resolved = {
+      supabase: createMockSupabase({ user: { id: USER_ID }, tables: {} }),
+      user: { id: USER_ID },
+    } as unknown as NonNullable<Parameters<typeof recordFirstMeeting>[0]>;
+
+    await recordFirstMeeting(resolved);
+
+    expect(vi.mocked(createClient)).not.toHaveBeenCalled();
+    expect(upserts).toHaveLength(1);
+    expect(upserts[0]).toMatchObject({
+      user_id: USER_ID,
+      memory_type: "first_meeting",
+      dedupe_key: "first_meeting",
+      is_anchor: true,
+    });
+  });
+
+  it("never throws when the write fails for a pre-resolved caller (failure isolation §6.5)", async () => {
+    // The pre-resolved path skips auth but must stay inside the same guard:
+    // it runs inside the Journal's render, where a throw blanks the page.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mockService({ companion_memories: () => ({ data: null, error: { message: "boom" } }) });
+    const resolved = {
+      supabase: createMockSupabase({ user: { id: USER_ID }, tables: {} }),
+      user: { id: USER_ID },
+    } as unknown as NonNullable<Parameters<typeof recordFirstMeeting>[0]>;
+
+    await expect(recordFirstMeeting(resolved)).resolves.toBeUndefined();
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[companion] recordFirstMeeting failed:",
+      expect.objectContaining({ message: "boom" }),
+    );
+    errorSpy.mockRestore();
+  });
+
   it("never throws when resolving the caller itself fails", async () => {
     // Every awaited call must sit inside the guard, not just the final write:
     // the Journal's server render calls this before reading the journal, so a

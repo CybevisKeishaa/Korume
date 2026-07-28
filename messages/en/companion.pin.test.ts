@@ -86,6 +86,38 @@ describe("companion.json EN — speech templates (spec 1 §5.12)", () => {
   });
 });
 
+/**
+ * The Journal surface's own copy (L9b Presence, Task 10). Same situation as
+ * the blocks above: authored in the plan, never extracted from JSX, so the
+ * pins are literal.
+ *
+ * `empty` carries the D9 rule the whole surface is judged on — the Journal a
+ * learner opens on day one is EMPTY, and that first impression must look
+ * forward ("the first page is waiting") rather than apologize for having
+ * nothing in it. Guarded as a rule below, not only as a pin, so a legitimate
+ * rewrite still cannot reintroduce the apology.
+ */
+describe("companion.json EN — Journal surface (spec §5)", () => {
+  it("pins the Journal's chrome and per-memory affordances", () => {
+    expect(en.journal.metaTitle).toBe("Journal");
+    expect(en.journal.title).toBe("Journal");
+    expect(en.journal.returnToMoment).toBe("Return to this moment");
+    expect(en.journal.giftedMarker).toBe("A memory you gifted");
+    expect(en.journal.discoveredMarker).toBe("A memory discovered along the way");
+    expect(en.journal.untitledGifted).toBe("A line you kept.");
+  });
+
+  it("pins the forward-looking empty state", () => {
+    expect(en.journal.empty).toBe(
+      "The first page is waiting for the stories we'll discover together.",
+    );
+  });
+
+  it("D9 guard: the empty state never apologizes for an empty present", () => {
+    expect(en.journal.empty).not.toMatch(/\b(no|none|nothing|empty|yet|sorry)\b/i);
+  });
+});
+
 describe("companion.json VI — speech templates (primary learner locale)", () => {
   it("pins the four ambient address templates", () => {
     expect(vi.speech.finishedShadowing).toBe(
@@ -128,5 +160,32 @@ describe("companion.json VI — P12 stage-number guard (primary learner locale)"
 
   it("pins the firstMeeting phrasing", () => {
     expect(vi.memoryTitle.firstMeeting).toBe("Ngày hai bạn gặp nhau.");
+  });
+});
+
+/**
+ * The Journal is the one Companion surface a learner reads at length, so its
+ * VI copy — what actually ships to this product's primary audience — is
+ * pinned in full rather than left to the EN pins plus a key-set check.
+ */
+describe("companion.json VI — Journal surface (primary learner locale)", () => {
+  it("pins the Journal's chrome and per-memory affordances", () => {
+    expect(vi.journal.metaTitle).toBe("Nhật ký");
+    expect(vi.journal.title).toBe("Nhật ký");
+    expect(vi.journal.returnToMoment).toBe("Quay lại khoảnh khắc này");
+    expect(vi.journal.giftedMarker).toBe("Ký ức bạn trao gửi");
+    expect(vi.journal.discoveredMarker).toBe("Ký ức được phát hiện trên đường đi");
+    expect(vi.journal.untitledGifted).toBe("Một câu thoại bạn đã giữ lại.");
+  });
+
+  it("pins the forward-looking empty state", () => {
+    expect(vi.journal.empty).toBe(
+      "Trang đầu tiên đang chờ những câu chuyện chúng ta sẽ cùng khám phá.",
+    );
+  });
+
+  /** D9 in Vietnamese: "chưa có" / "không có" / "trống" is the apology to avoid. */
+  it("D9 guard: the empty state never apologizes for an empty present", () => {
+    expect(vi.journal.empty).not.toMatch(/chưa có|không có|trống/i);
   });
 });
