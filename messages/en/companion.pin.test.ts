@@ -118,6 +118,58 @@ describe("companion.json EN — Journal surface (spec §5)", () => {
   });
 });
 
+/**
+ * The gifted-pin control's copy (L9b Presence, Task 11) — the affordance that
+ * lets a learner keep a transcript line from shadowing or dictation. Authored
+ * in the plan like the blocks above, so the pins are literal.
+ *
+ * `tooMany` is the 429 surface. Spec §5 boundary: this is ORDINARY learner UI
+ * (the learner writing in their own book), not the Companion speaking — but
+ * the voice still may not scold, so it is guarded as a rule below and not only
+ * pinned. The failure copy the learner sees for every other failure mode comes
+ * from `common.errors.network` (a +1 consumer for this surface), never from a
+ * server diagnostic (convention #4).
+ */
+describe("companion.json EN — gifted-pin control (spec D6)", () => {
+  it("pins the pin control's trigger, dialog and note affordances", () => {
+    expect(en.pin.trigger).toBe("Pin to journal");
+    expect(en.pin.dialogTitle).toBe("Keep this line in your journal");
+    expect(en.pin.noteLabel).toBe("A few words of your own (optional)");
+  });
+
+  it("pins the four outcome messages", () => {
+    expect(en.pin.success).toBe("Kept. It's in your journal now.");
+    expect(en.pin.alreadyKept).toBe("You already kept this line — a saved note can't be changed.");
+    expect(en.pin.tooMany).toBe(
+      "You're pinning fast — take a breath and try again shortly.",
+    );
+    expect(en.pin.signedOut).toBe("You've been signed out. Please log in again to keep this.");
+  });
+
+  it("voice guard: the rate-limit message never blames or forbids the learner", () => {
+    expect(en.pin.tooMany).not.toMatch(/\b(too many|stop|don't|error|denied|limit)\b/i);
+  });
+});
+
+describe("companion.json VI — gifted-pin control (primary learner locale)", () => {
+  it("pins the pin control's trigger, dialog and note affordances", () => {
+    expect(vi.pin.trigger).toBe("Ghim vào nhật ký");
+    expect(vi.pin.dialogTitle).toBe("Giữ câu thoại này trong nhật ký của bạn");
+    expect(vi.pin.noteLabel).toBe("Đôi lời của riêng bạn (tùy chọn)");
+  });
+
+  it("pins the four outcome messages", () => {
+    expect(vi.pin.success).toBe("Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.");
+    expect(vi.pin.alreadyKept).toBe(
+      "Bạn đã ghim câu này rồi — ghi chú đã lưu thì không đổi được nữa.",
+    );
+    expect(vi.pin.tooMany).toBe("Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.");
+    expect(vi.pin.signedOut).toBe(
+      "Phiên đăng nhập đã kết thúc. Đăng nhập lại để giữ câu này nhé.",
+    );
+  });
+});
+
 describe("companion.json VI — speech templates (primary learner locale)", () => {
   it("pins the four ambient address templates", () => {
     expect(vi.speech.finishedShadowing).toBe(
@@ -151,6 +203,27 @@ describe("companion.json VI — speech templates (primary learner locale)", () =
  * deliberately distinct from `companionGrew.1`'s near-identical phrasing and
  * a silent copy/paste of one over the other would otherwise go unnoticed.)
  */
+/**
+ * VI `memoryTitle`'s non-`companionGrew` leaves (Task 13 mutation check): the
+ * P12 guard below only ever inspects `companionGrew`, so the other five
+ * `memoryTitle` leaves had no literal VI pin and no test caught an append/
+ * punctuation mutation on them — a real catalog-mutation gap on the primary
+ * learner locale, confirmed by manual mutation during whole-branch
+ * verification. Pinned literally here to close it, mirroring the EN block.
+ */
+describe("companion.json VI — memoryTitle descriptors (primary learner locale)", () => {
+  it("pins the once-in-a-lifetime discovered-memory titles", () => {
+    expect(vi.memoryTitle.firstShadow).toBe("Câu thoại đầu tiên bạn shadowing thành công.");
+    expect(vi.memoryTitle.lineMastered).toBe("Câu bạn luyện mãi rồi cuối cùng cũng nói được.");
+    expect(vi.memoryTitle.miningSaved).toBe("Câu bạn quyết định lưu lại.");
+    expect(vi.memoryTitle.firstVideoCompleted).toBe("Video đầu tiên bạn hoàn thành.");
+  });
+
+  it("pins the jlptPassed template with its {level} placeholder", () => {
+    expect(vi.memoryTitle.jlptPassed).toBe("Cột mốc JLPT {level}");
+  });
+});
+
 describe("companion.json VI — P12 stage-number guard (primary learner locale)", () => {
   it("no companionGrew phrasing contains a bare digit-as-stage", () => {
     for (const phrase of Object.values(vi.memoryTitle.companionGrew)) {
@@ -160,6 +233,26 @@ describe("companion.json VI — P12 stage-number guard (primary learner locale)"
 
   it("pins the firstMeeting phrasing", () => {
     expect(vi.memoryTitle.firstMeeting).toBe("Ngày hai bạn gặp nhau.");
+  });
+
+  /**
+   * Task 13 mutation check: the digit guard above only catches a mutation
+   * that inserts a bare digit — an append/punctuation mutation to any of the
+   * four phasings survived every other test (confirmed by manual mutation
+   * during whole-branch verification). Literal pins close that gap, same as
+   * the EN block already does for its own companionGrew phasings.
+   */
+  it("pins all four companionGrew phasings, keyed by phase", () => {
+    expect(vi.memoryTitle.companionGrew["1"]).toBe("Ngày hai đứa mình gặp nhau.");
+    expect(vi.memoryTitle.companionGrew["2"]).toBe(
+      "Ngày người bạn đồng hành của bạn thấy gần gũi hơn.",
+    );
+    expect(vi.memoryTitle.companionGrew["3"]).toBe(
+      "Ngày người bạn đồng hành của bạn thật sự hiểu bạn.",
+    );
+    expect(vi.memoryTitle.companionGrew["4"]).toBe(
+      "Ngày người bạn đồng hành của bạn đi cùng bạn đủ lâu để nhớ hết chặng đường.",
+    );
   });
 });
 

@@ -380,7 +380,7 @@ export async function recordFirstMeeting(resolved?: {
 const PIN_LIMIT = { limit: 60, windowMs: 60_000 };
 
 export type PinMemoryResult =
-  | { ok: true }
+  | { ok: true; duplicate: boolean }
   | { ok: false; status: 401 | 400 | 500 }
   | { ok: false; status: 429; retryAfter: number };
 
@@ -388,8 +388,20 @@ export type GetJournalResult = { ok: true; data: CompanionMemory[] } | { ok: fal
 
 /** Pin a transcript line as a GIFTED memory. Goes through the USER's client so
  * RLS enforces ownership and kind='gifted' (a learner can only ever create
- * their own gifted memories). A duplicate pin (unique violation) is a no-op
- * success, not an error. */
+ * their own gifted memories). Only `transcriptLineId` + the learner's own
+ * `note` come from the request — `videoId`/`lineTextJp`/`timestampSeconds`
+ * are derived from the line itself (below), never trusted from the client:
+ * a memory is supposed to record what truly happened (§4.3), and a crafted
+ * `lineTextJp` would let a learner assert a line said something it never did.
+ * Mirrors the precedent `createMiningCard` already set in lib/data/mining.ts.
+ *
+ * A duplicate pin (unique violation on `(user_id, dedupe_key)`) is reported
+ * as `{ ok: true, duplicate: true }`, NOT a plain success — memories are
+ * immutable (no UPDATE grant on `companion_memories`), so a second pin on an
+ * already-kept line can never actually save a new note. Silently reporting
+ * `{ ok: true }` here would tell the learner their note was kept when it was
+ * discarded.
+ */
 export async function pinMemory(input: PinMemoryInput, now: Date = new Date()): Promise<PinMemoryResult> {
   const supabase = createClient();
   const user = await requireUser(supabase);
@@ -404,26 +416,39 @@ export async function pinMemory(input: PinMemoryInput, now: Date = new Date()): 
   // lib/data/mining.ts before its insert.
   const { data: line, error: lineError } = await supabase
     .from("transcript_lines")
-    .select("id")
+    .select("transcript_id, start_time, text_jp")
     .eq("id", input.transcriptLineId)
     .maybeSingle();
   if (lineError) throw lineError;
   if (!line) return { ok: false, status: 400 };
+  const lineRow = line as { transcript_id: string; start_time: number | null; text_jp: string | null };
+
+  const { data: transcript, error: transcriptError } = await supabase
+    .from("transcripts")
+    .select("video_id")
+    .eq("id", lineRow.transcript_id)
+    .maybeSingle();
+  if (transcriptError) throw transcriptError;
+  if (!transcript) return { ok: false, status: 400 };
+  const videoId = (transcript as { video_id: string }).video_id;
 
   const { error } = await supabase.from("companion_memories").insert({
     user_id: user.id,
     kind: "gifted",
     memory_type: "pinned_line",
     title: null, // learner-supplied or blank (§4.4) — never AI
-    video_id: input.videoId ?? null,
+    video_id: videoId,
     transcript_line_id: input.transcriptLineId,
-    timestamp_seconds: input.timestampSeconds ?? null,
-    line_text_jp: input.lineTextJp ?? null,
+    timestamp_seconds: lineRow.start_time,
+    line_text_jp: lineRow.text_jp,
     note: input.note ?? null,
     dedupe_key: dedupeKeyFor("pinned_line", { lineId: input.transcriptLineId }),
   });
-  if (error && error.code !== "23505") return { ok: false, status: 500 };
-  return { ok: true };
+  if (error) {
+    if (error.code === "23505") return { ok: true, duplicate: true };
+    return { ok: false, status: 500 };
+  }
+  return { ok: true, duplicate: false };
 }
 
 /** The authed learner's Journal (owner-scoped, RLS → only their rows, §12.4). */

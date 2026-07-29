@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase, type MockResult, type QueryCall } from "@/test/supabase-mock";
+import { createMockSupabase, eqValue, type MockResult, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -799,7 +799,9 @@ describe("recordFirstMeeting", () => {
 });
 
 describe("pinMemory statuses (carried Core cleanup #4)", () => {
-  const PIN_INPUT = { transcriptLineId: LINE_ID, videoId: VIDEO_ID, lineTextJp: "逃げろ" };
+  const PIN_INPUT = { transcriptLineId: LINE_ID, note: "chills" };
+  const LINE_ROW = { transcript_id: "t1", start_time: 12.5, text_jp: "逃げろ" };
+  const TRANSCRIPT_ROW = { video_id: VIDEO_ID };
 
   it("returns 401 when signed out", async () => {
     // No tables registered: a signed-out caller must never reach the DB.
@@ -825,9 +827,90 @@ describe("pinMemory statuses (carried Core cleanup #4)", () => {
   it("returns 400 for a transcript line that does not resolve", async () => {
     // RLS confines the lookup to lines the caller can see, so "no row" covers
     // both a bad id and one the caller isn't allowed to pin — a 400, not a 500.
-    // Only `transcript_lines` is registered: reaching the insert would throw.
+    // Only `transcript_lines` is registered: reaching the transcripts lookup
+    // or the insert would throw.
     mockClient({ transcript_lines: () => ({ data: null, error: null }) }, { id: "u-pin-400" });
 
     await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: false, status: 400 });
+  });
+
+  it("returns 400 when the line's parent transcript does not resolve", async () => {
+    mockClient(
+      {
+        transcript_lines: () => ({ data: LINE_ROW, error: null }),
+        transcripts: () => ({ data: null, error: null }),
+      },
+      { id: "u-pin-400b" },
+    );
+
+    await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: false, status: 400 });
+  });
+
+  it("derives video_id/timestamp/text server-side from the line — never from client input (review finding #1)", async () => {
+    let insertedValues: Record<string, unknown> | undefined;
+    let transcriptsCalls: QueryCall[] = [];
+    mockClient(
+      {
+        transcript_lines: () => ({ data: LINE_ROW, error: null }),
+        transcripts: (calls) => {
+          transcriptsCalls = calls;
+          return { data: TRANSCRIPT_ROW, error: null };
+        },
+        companion_memories: (calls) => {
+          const insert = calls.find((c): c is Extract<QueryCall, { op: "insert" }> => c.op === "insert");
+          insertedValues = insert?.values as Record<string, unknown>;
+          return { data: null, error: null };
+        },
+      },
+      { id: "u-pin-ok" },
+    );
+
+    // Defense in depth: even a caller that bypassed pinMemorySchema (which
+    // no longer accepts these fields at all) and asserted a DIFFERENT video/
+    // text/timestamp than the line actually has must still be ignored at
+    // this layer — the data layer, not just the schema, is what proves
+    // finding #1 is closed.
+    const forged = { ...PIN_INPUT, videoId: "attacker-video", lineTextJp: "嘘", timestampSeconds: 999 } as unknown as
+      typeof PIN_INPUT;
+    await expect(pinMemory(forged)).resolves.toEqual({ ok: true, duplicate: false });
+
+    expect(insertedValues).toMatchObject({
+      video_id: VIDEO_ID,
+      transcript_line_id: LINE_ID,
+      timestamp_seconds: 12.5,
+      line_text_jp: "逃げろ",
+      note: "chills",
+      kind: "gifted",
+      memory_type: "pinned_line",
+    });
+    // The transcripts lookup is filtered by the LINE's own transcript_id, not
+    // by anything client-supplied.
+    expect(eqValue(transcriptsCalls, "id")).toBe(LINE_ROW.transcript_id);
+  });
+
+  it("reports a duplicate pin as ok+duplicate, not a plain success (review finding #2)", async () => {
+    mockClient(
+      {
+        transcript_lines: () => ({ data: LINE_ROW, error: null }),
+        transcripts: () => ({ data: TRANSCRIPT_ROW, error: null }),
+        companion_memories: () => ({ data: null, error: { message: "duplicate key", code: "23505" } }),
+      },
+      { id: "u-pin-dup" },
+    );
+
+    await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: true, duplicate: true });
+  });
+
+  it("returns 500 on a non-duplicate insert error", async () => {
+    mockClient(
+      {
+        transcript_lines: () => ({ data: LINE_ROW, error: null }),
+        transcripts: () => ({ data: TRANSCRIPT_ROW, error: null }),
+        companion_memories: () => ({ data: null, error: { message: "boom" } }),
+      },
+      { id: "u-pin-500" },
+    );
+
+    await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: false, status: 500 });
   });
 });

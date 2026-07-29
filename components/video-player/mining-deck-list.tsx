@@ -2,6 +2,7 @@ import { useTranslations } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { splitSentenceForEmphasis } from "@/lib/mining-format";
 import type { MiningCardListItem } from "@/lib/mining-types";
+import { CompanionAnchor } from "@/components/companion/companion-anchor";
 import { MiningClipPlayer } from "./mining-clip-player";
 
 export interface MiningDeckListProps {
@@ -19,7 +20,14 @@ export function MiningDeckList({ cards }: MiningDeckListProps) {
   const t = useTranslations("mining");
 
   if (cards.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t("deck.empty")}</p>;
+    // An empty deck is a rest point, not a learning loop — the one place in
+    // this module the Companion may stand (spec 1 §5.2/§5.4).
+    return (
+      <div className="flex flex-col items-center gap-3">
+        <CompanionAnchor surface="mining-empty" pose="standing" context="empty_mining_deck" />
+        <p className="text-sm text-muted-foreground">{t("deck.empty")}</p>
+      </div>
+    );
   }
 
   return (

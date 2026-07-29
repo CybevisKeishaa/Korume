@@ -143,6 +143,16 @@ describe("TranscriptPane", () => {
     }
   });
 
+  it("mounts a Pin control beside the Mine control on every line — video/text/timestamp are derived server-side, not threaded through props", () => {
+    renderPane();
+    const items = screen.getAllByRole("listitem");
+    expect(items).toHaveLength(LINES.length);
+    for (const item of items) {
+      expect(within(item).getByRole("button", { name: /mine/i })).toBeInTheDocument();
+      expect(within(item).getByRole("button", { name: /pin to journal/i })).toBeInTheDocument();
+    }
+  });
+
   it("mining a word from a line posts that line's id to /api/mining", async () => {
     mockFetchOnce({ ok: true, status: 201 });
     renderPane();

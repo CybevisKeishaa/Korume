@@ -12,6 +12,7 @@ import { readBlobBytes } from "@/test/blob-utils";
 import { makeToneBuffer } from "@/test/audio-fixtures";
 import { encodeWavPCM16, floatTo16BitPCM } from "@/lib/audio/pcm-encode";
 import { clearReferenceContourCache } from "@/lib/pitch/reference";
+import { CompanionContext, type CompanionApi } from "@/components/companion/use-companion";
 import { ShadowingRecorderPanel } from "./shadowing-recorder-panel";
 
 function jsonResponse(
@@ -969,6 +970,81 @@ describe("ShadowingRecorderPanel", () => {
           screen.getByText("Network error — check your connection and try again."),
         ).toBeInTheDocument(),
       );
+    });
+  });
+
+  describe("companion presence", () => {
+    /**
+     * Spec 1 §5.5: the shadowing route carries NO anchor — the Companion must
+     * never appear inside the learning loop — so a finished take only ANNOUNCES
+     * what happened; the Ambient Layer holds the context (TTL-bounded) until the
+     * learner reaches an anchored rest point.
+     *
+     * The panel is therefore observed through the public 4-verb API it actually
+     * uses (`CompanionContext`), not through a rendered anchor: this file is a
+     * learning-loop surface, and `anchor-boundary.test.ts` scans SOURCE TEXT, so
+     * importing the anchor module here — even only in a test probe — would make
+     * this file a boundary offender. Delivery of a pending context to a later
+     * anchored surface is already covered end-to-end in
+     * `components/companion/ambient.test.tsx`.
+     */
+    function companionSpy() {
+      const emitContext = vi.fn();
+      const api: CompanionApi = {
+        getCurrentState: () => ({ state: "idle", phase: null }),
+        emitContext,
+        openJournal: vi.fn(),
+        requestReflection: async () => ({ available: false }),
+      };
+      return { api, emitContext };
+    }
+
+    it("announces finished_shadowing after a successful session save", async () => {
+      fetchMock = vi.fn(async () =>
+        jsonResponse(201, {
+          data: {
+            id: "rec-1",
+            recordingPath: "recordings/rec-1.webm",
+            signedUrl: "https://example.test/signed/rec-1.webm",
+            createdAt: "2026-07-12T00:00:00.000Z",
+          },
+        }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const { api, emitContext } = companionSpy();
+
+      render(
+        <CompanionContext.Provider value={api}>
+          <ShadowingRecorderPanel videoId="video-1" lineId="line-1" />
+        </CompanionContext.Provider>,
+      );
+
+      expect(emitContext).not.toHaveBeenCalled();
+      await recordAndStop();
+
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(/saved/i));
+      expect(emitContext).toHaveBeenCalledTimes(1);
+      expect(emitContext).toHaveBeenCalledWith("finished_shadowing");
+    });
+
+    it("stays silent when the save fails — nothing was finished", async () => {
+      fetchMock = vi.fn(async () => jsonResponse(500, { error: "boom" }));
+      vi.stubGlobal("fetch", fetchMock);
+      const { api, emitContext } = companionSpy();
+
+      render(
+        <CompanionContext.Provider value={api}>
+          <ShadowingRecorderPanel videoId="video-1" lineId="line-1" />
+        </CompanionContext.Provider>,
+      );
+      await recordAndStop();
+
+      await waitFor(() =>
+        expect(screen.getByRole("status")).toHaveTextContent(
+          "Something went wrong saving your recording.",
+        ),
+      );
+      expect(emitContext).not.toHaveBeenCalled();
     });
   });
 });

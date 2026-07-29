@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { TranscriptWithLines, VideoRow } from "@/lib/video-types";
+import { PinLineControl } from "./pin-line-control";
 import { YouTubePlayer, type YouTubePlayerHandle } from "./youtube-player";
 
 export interface DictationViewProps {
@@ -306,10 +307,17 @@ export function DictationView({ video, transcript }: DictationViewProps) {
         </div>
       </form>
 
-      {revealed && (
-        <p className="font-jp rounded-md border border-border bg-muted px-3 py-2 text-base">
-          {currentLine?.text_jp}
-        </p>
+      {/* The pin control rides with the revealed answer, never beside the
+          hidden one: its dialog shows the line's Japanese text, so offering it
+          before Reveal would hand the learner a spoiler route around the
+          exercise. */}
+      {revealed && currentLine && (
+        <div className="flex items-start gap-1">
+          <p className="font-jp flex-1 rounded-md border border-border bg-muted px-3 py-2 text-base">
+            {currentLine.text_jp}
+          </p>
+          <PinLineControl line={currentLine} />
+        </div>
       )}
 
       {errorMessage && (

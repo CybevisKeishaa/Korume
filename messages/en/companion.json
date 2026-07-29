@@ -28,6 +28,15 @@
     "discoveredMarker": "A memory discovered along the way",
     "untitledGifted": "A line you kept."
   },
+  "pin": {
+    "trigger": "Pin to journal",
+    "dialogTitle": "Keep this line in your journal",
+    "noteLabel": "A few words of your own (optional)",
+    "success": "Kept. It's in your journal now.",
+    "alreadyKept": "You already kept this line — a saved note can't be changed.",
+    "tooMany": "You're pinning fast — take a breath and try again shortly.",
+    "signedOut": "You've been signed out. Please log in again to keep this."
+  },
   "a11y": {
     "sprite": "Your companion — open the journal",
     "dismissSpeech": "Dismiss"

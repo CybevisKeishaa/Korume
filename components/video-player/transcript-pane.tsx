@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { FuriganaDisplayMode, FuriganaSegment, TranscriptLineRow, VocabMasteryMap } from "@/lib/video-types";
 import { FuriganaText } from "./furigana-text";
 import { MineLineControl } from "./mine-line-control";
+import { PinLineControl } from "./pin-line-control";
 
 export interface TranscriptPaneProps {
   lines: TranscriptLineRow[];
@@ -101,6 +102,7 @@ export function TranscriptPane({
               )}
             </button>
             <MineLineControl line={line} />
+            <PinLineControl line={line} />
           </li>
         );
       })}
