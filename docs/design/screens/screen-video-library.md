@@ -116,7 +116,7 @@ No statistics.
 
 No counters.
 
-No badges.
+No notification badges.
 
 ---
 

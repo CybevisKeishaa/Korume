@@ -1,7 +1,7 @@
 # Companion Patterns
 
 > Design Pattern
-> Status: Approved
+> **Status:** Approved
 > Version 1.1
 > Depends on:
 > - docs/design/design-reconciliation.md
@@ -498,7 +498,8 @@ This sentence seems difficult.
 
 ━━━━━━━━━━━━
 
-This only ever appears where Companion has an anchor at all (Available/Planned per §6) — it is not
+This only ever appears where Companion has an anchor at all (Available/Planned per
+`docs/design/design-reconciliation.md` §6) — it is not
 the same thing as `transcript-patterns.md`'s inline "✨ Difficult grammar" content indicator, which is
 a separate system that appears specifically during Shadowing/Dictation/Reading, where Companion is
 Not Supported (`docs/design/patterns/transcript-patterns.md` § AI Integration).

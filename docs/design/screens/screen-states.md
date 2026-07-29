@@ -307,6 +307,9 @@ You're offline.
 
 Everything already downloaded is still available.
 
+This means transcripts, decks, and user recordings only — video is always streamed live through
+the YouTube IFrame Player API, never downloaded or cached (`CLAUDE.md` §2 Rule 1).
+
 Offer retry quietly.
 
 Never interrupt the session.
@@ -336,6 +339,9 @@ Disappears automatically.
 # Downloading
 
 Downloads happen in background.
+
+This is transcripts, decks, and user recordings only — video is never downloaded, only ever
+streamed live through the YouTube IFrame Player API (`CLAUDE.md` §2 Rule 1).
 
 Only show:
 
@@ -517,8 +523,8 @@ No suggested prompts.
 
 Silence is acceptable.
 
-This state only ever renders where Companion has an anchor at all — Available today at Dashboard and
-`/journal` (`docs/design/design-reconciliation.md` §6). On a surface where Companion is Not Supported,
+This state only ever renders where Companion has an anchor at all — at Companion's four shipped
+anchors today (`docs/design/design-reconciliation.md` §6). On a surface where Companion is Not Supported,
 there is no Empty Companion state to render, because there is no Companion anchor to be empty in the
 first place.
 

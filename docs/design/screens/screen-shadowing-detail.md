@@ -150,7 +150,7 @@ Contains only
 - Source
 - JLPT level
 - Bookmark
-- Download
+- Download transcript
 - Overflow menu
 
 No colorful actions.

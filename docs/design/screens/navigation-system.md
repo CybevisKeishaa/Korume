@@ -101,10 +101,10 @@ temporary layer — it does not open, close, or slide over content the way a dra
 - Companion presence is controlled by the Ambient Layer per screen
   (`docs/design/design-reconciliation.md` §2), never by the navigation component. The nav does not
   gain or lose a "Companion tab" or indicator based on which screen is active.
-- Anchor availability today (`design-reconciliation.md` §6) is Available only at Dashboard and
-  `/journal` among the items in this inventory; all other nav destinations are Planned or Not
-  Supported for Companion. The nav item itself looks identical either way — availability is a
-  property of the destination screen, not of the nav link.
+- Anchor availability today (`design-reconciliation.md` §6) is Available at Dashboard, `/journal`,
+  and — in their empty states specifically — `/videos` and `/mining`; all other nav destinations
+  are Planned or Not Supported for Companion. The nav item itself looks identical either way —
+  availability is a property of the destination screen, not of the nav link.
 
 ---
 

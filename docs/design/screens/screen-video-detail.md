@@ -108,7 +108,7 @@ Reading Mode
 
 Vocabulary
 
-Download
+Download Transcript
 
 Bookmark
 

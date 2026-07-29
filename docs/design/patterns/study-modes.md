@@ -484,6 +484,14 @@ The learner remains in control.
 
 ---
 
+## Companion Behavior
+
+✕ Not Supported. Adaptive Mode still resolves to one of the active-acquisition-loop modes above
+(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden, the
+same as every other mode in this document.
+
+---
+
 # Mode Selection
 
 Study Modes should be accessible from a compact segmented control.
