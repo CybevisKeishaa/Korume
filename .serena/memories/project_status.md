@@ -30,9 +30,78 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-29) — **L9b Plan 2 (Companion Presence) IN PROGRESS, Task 11/13 done**
+## ▶ NEXT ACTION (updated 2026-07-29) — **L9b Plan 2 (Companion Presence) COMPLETE — all 13 tasks done, branch ready to merge, merge decision is the user's**
 
-**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), HEAD **`d3945f1`**, NOT pushed.
+**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), HEAD **`dcc1338`**. NOT pushed (verify
+actual push state before assuming — this note has been stale before).
+
+**Task 13 (whole-branch verification) done this session, same day as the Task 1–12 work below.**
+Full gates: `tsc --noEmit` 0 · `npx vitest run` **213 files / 1901 tests green** · `npm run lint` exit 0
+at **77 warnings / 22 files, 0 new** vs repo baseline · `npm run build` OK (`/journal` present in both
+`/vi` and `/en` manifests) · `npx playwright test` 6/6 (a NEW standing flake was found and confirmed
+non-regression: under 6-way parallelism, one of the three register→dashboard e2e specs
+(`auth-locale-round-trip`/`journal`/`review`) intermittently times out waiting for the post-register
+redirect right after a fresh `npx supabase db reset` restarts containers — always green standalone,
+serial, or at `--workers=2`; add to the known-flake list alongside `pitch-contour.test.tsx`/
+`waveform.test.tsx`/`lib/japanese/furigana.test.ts`, which is CPU-contention not auth-related).
+Spec-coverage sweep: every §1 in-scope item + §9 test-list item mapped to a shipped task; 2 pre-existing
+Minors confirmed harmless (`anchor-boundary.test.ts` stale allowlist entry; untested one-line
+`requestReflection()` stub — proportionate, not fixed). Mutation-testing report (catalog + wiring, the
+plan's own convention #1): found and fixed 2 real survivors — 9 unpinned `companion.json` VI leaves
+(5 fully unpinned + 4 `companionGrew` phasings only digit-guarded) closed to 29/29 exact pins on both
+locales, and the `videoId` thread from `TranscriptPane`→`PinLineControl` had NO test proving it actually
+reached the POST payload through the real parent (only the leaf component was tested directly) — commit
+`97e46e5`.
+
+**Whole-branch independent review (scoped to `ca0f5cf..dcc1338`, excluding ~25 unrelated interleaved
+`docs/design/` commits from a separately-merged effort): verdict READY TO MERGE = YES-WITH-FIXES.**
+No §2 non-negotiable violation, §5.4 boundary traced and held, pure core (arbitration/state-machine)
+mechanically correct, failure isolation verified end-to-end. **2 Major findings, both fixed**
+(commit `c35d095`): (1) `pinMemory` trusted client-supplied `videoId`/`lineTextJp`/`timestampSeconds`
+instead of deriving them from the `transcriptLineId` lookup the way `createMiningCard` already does —
+a learner could assert a line said something it never said, violating §4.3 "the Journal records only
+what truly happened." Fixed: `pinMemorySchema` now only accepts `transcriptLineId`+`note`; `pinMemory`
+looks up `transcript_lines`→`transcripts` server-side for `video_id`/`timestamp`/`text`; the now-dead
+`videoId` prop threading through `TranscriptPane`/`PinLineControl`/`shadowing-view.tsx`/
+`dictation-view.tsx` was removed entirely. (2) Re-pinning an already-kept line reported plain success
+while silently discarding the learner's new note (memories are immutable, no UPDATE grant) — the app
+was lying about the learner's own keepsake. Fixed: a `23505` unique-conflict on insert now returns
+`{ok:true, duplicate:true}`, surfaced in `PinLineControl` as its own `pin.alreadyKept` status/copy
+(en+vi) instead of reusing `pin.success`, and `emitContext("memory_created")` is skipped on a duplicate
+since no new memory actually exists. 10 Minor/Nit findings recorded, not fixed (all pre-existing-quality
+or genuinely low-value — see the review transcript if resuming this exact thread; not re-summarized here
+to avoid drift from the source).
+
+**Scoped re-review of `c35d095` (the fix above): verdict APPROVE WITH NITS / safe to merge
+YES-WITH-FIXES.** Confirmed both Majors genuinely closed in production code (line-by-line against the
+`createMiningCard` precedent and the actual RLS policies) but flagged the fix itself was under-guarded
+by tests — closed in commit `dcc1338`: `pinMemorySchema` is now `.strict()` (a stale client sending the
+removed fields now gets a 400, not a silent strip) with a test asserting the parsed OUTPUT not just
+`.success`; `pin-line-control.test.tsx` now asserts `emitContext("memory_created")` fires on a genuine
+new pin and does NOT fire on a duplicate (via `CompanionContext.Provider`, mirroring
+`shadowing-recorder-panel.test.tsx`'s pattern); a duplicate pin's HTTP status is `200` not `201`
+(nothing was created); the `companion.test.ts` server-derivation test now uses an adversarial payload
+(forged `videoId`/`lineTextJp`/`timestampSeconds`) and asserts the `transcripts` lookup is filtered by
+the LINE's own `transcript_id`, not anything client-supplied. Re-verified after this round: tsc 0 ·
+**1901/1901 tests** (net +1 from this round's new schema test) · lint 77/22 unchanged · build OK ·
+e2e 6/6 (confirmed clean at reduced parallelism per the flake note above).
+
+**Branch is DONE and gate-clean. Nothing further blocks merge — it is purely the user's call whether to
+merge now or later.** If resuming cold: read this block, confirm `git log --oneline -5` still shows
+`dcc1338` as HEAD (if the user merged since, this whole block is superseded — check `git log master` for
+a Companion Presence merge commit first), then ask the user directly rather than re-deriving state.
+
+<details><summary>(historical) Task 1–12 narrative — kept for detail, superseded by the Task 13 completion above</summary>
+
+**🔷 OPEN DECISION RESOLVED (2026-07-29):** the `line_mastered` divergence from spec §4.3 flagged since
+Task 4 is closed. User chose spec-alignment: `line_mastered` is a ONE-TIME milestone per transcript
+line, not a repeatable recovery event; a future "relearning after regression" moment, if ever wanted,
+should be a separate producer. Fixed in `lib/companion/mastery.ts` (commit `0223a3a`, controller-applied
+directly — one-line, already fully scoped by an earlier task's review, no existing test contradicted
+it): `qualifiesAsLineMastered` now also requires the line has never been at target before. New
+regression test pins the exact carried scenario (`[90, 60]` then 85 → now correctly does NOT fire).
+`lib/companion` + `lib/data/companion.test.ts` re-verified 118/8 green, tsc 0; no consumer test needed
+changes. **NEXT ACTION is now purely Task 13 — nothing else blocks it.**
 Spec `docs/superpowers/specs/2026-07-24-l9b-companion-presence-design.md` (D1–D9) ·
 plan `docs/superpowers/plans/2026-07-24-l9b-companion-presence.md` (13 tasks) ·
 **live run state + every carried item: `.superpowers/sdd/progress.md`** (gitignored scratch —
@@ -41,9 +110,22 @@ Executed via `superpowers:subagent-driven-development`, one implementer + one in
 task, both on **Opus 5** (was Opus 4.8 — session default moved to Opus 5 2026-07-29, no change to the
 plan's model policy otherwise; see `mem:model_selection_policy`).
 
-**Done: Tasks 1–11 complete**, each task-reviewed clean (Task 3 had 1 Critical migration gap fixed
-in-task; Tasks 4/5/7/11 each needed one fix round + scoped re-review for a single Important finding;
-Tasks 6, 8, 9, 10 clean with zero fix rounds — each had Minors parked instead). Shipped since Task 8:
+**Done: Tasks 1–12 complete**, each task-reviewed clean (Task 3 had 1 Critical migration gap fixed
+in-task; Tasks 4/5/7/11/12 each needed one fix round + scoped re-review for a single Important/behavioral
+finding; Tasks 6, 8, 9, 10 clean with zero fix rounds — each had Minors parked instead). **Task 12**
+(commits `4fa72fa`..`9e76fb5`) shipped the live Ambient-Layer anchors: dashboard (sitting), videos
+empty-state (standing, `empty_library`), mining-deck empty-state (standing, `empty_mining_deck`), plus
+`shadowing-recorder-panel.tsx` emitting `finished_shadowing` on session-save success (no anchor on the
+shadowing route itself — the context waits, TTL-bounded, for the next anchored surface, per §5.4/§5.5).
+Review: Approve-with-nits, 6 Minor; 1 fixed in-round (dashboard anchor was nested inside `{stats && …}`,
+so a stats-fetch failure silently vanished the Companion from its landing surface — contradicting the
+provider's own "a stats outage must not make the creature vanish" invariant; hoisted above the
+conditional). 5 Minors parked to Task 13 (empty-state `items-start`/`items-center` inconsistency vs
+mining deck; anchor `<button>` precedes actionable copy in DOM/tab order on both empty states; two
+comments cite §5.5 instead of §5.4 for the loop-boundary rule; `anchor-boundary.test.ts`'s allowlist
+still carries a stale `journal/page.tsx` entry — Task 10 put the anchor in `journal-view.tsx` instead;
+no page-level render test for dashboard/videos pages, anchors verified only by tsc + the boundary scan).
+Shipped since Task 8:
 **Task 9** — shadowing `?line=<id>` deep link seeks + activates the line (`shadowing-view.tsx`); the
 implementer caught a real bug the brief's own snippet would have shipped (`handleReady`'s early-return
 would have made the deep link dead on every video with an already-reported duration — restructured,
@@ -65,11 +147,10 @@ new message appears and the generic one doesn't. Fix round 1/1 addressed, no new
 parked (untested `emitContext` call; Save stays clickable + note doesn't clear post-success; dictation
 pin could show after a scored attempt too, not just after `revealed`; N identically-labeled pin
 buttons per pane, same shape as `MineLineControl`; report-quality nit).
-Full suite **213 files / 1888 tests green** · tsc 0 · lint exit 0, 0 new (5 pre-existing warnings on
-touched files, independently confirmed) · e2e 6/6 · **16 migrations**.
-**NEXT ACTION: Task 12** (plan lines ~2187+, right after Task 11) → Task 13.
-**Task 13 needs the `line_mastered` open decision raised with the user first** (unchanged since Task 4 —
-see the ledger's "OPEN DECISION FOR THE USER" block). **Carried item still open for Task 12**
+Full suite **213 files / 1891 tests green** (post-Task-12) · tsc 0 · lint exit 0 at **77 warnings /
+22 files, 0 new** · e2e 6/6 (not re-run since Task 10; Task 13 should) · **16 migrations**.
+~~**NEXT ACTION: Task 13**~~ — DONE, see the top of this memory; this paragraph is a historical
+snapshot from before Task 13 ran. **Carried item still open for Task 12**
 (multi-anchor duplication — Task 10 mounted only one anchor on `/journal`, no conflict there; Task 12
 must resolve it if it mounts a second simultaneously-visible `CompanionAnchor` — full detail in the
 ledger, not repeated here). The `companion.ts ⇄ videos.ts` import-cycle trap (Task 5) remains a
@@ -82,15 +163,13 @@ was not one. Since every Companion write is best-effort/never-throw, it would ha
 **Migration count is now 16** (the "15 built" line below is stale). Any further enum/column/grant change
 in this plan needs its own migration — the plan does not anticipate them.
 
-**Current gates on the branch:** unit **1875 / 212 files** green · tsc 0 · lint exit 0 at a **NEW baseline
-of 77 warnings / 22 files** (was 80/23 — Task 3 removed three `!`s that were themselves warnings) ·
-e2e 6/6. Local Supabase now needs `npx supabase db reset` again if picking this up cold — Task 10's e2e
-run wiped and reseeded local dev data.
+(Historical gate snapshot as of Task 12, since superseded by Task 13's final numbers at the top of this
+memory: unit 1891/213 · tsc 0 · lint 77/22 · e2e 6/6 not re-run since Task 10.)
 
-**🔷 ONE OPEN DECISION FOR THE USER** (raise before finishing L9b; not silently changed): the shipped
-`line_mastered` rule (user-approved D5: ≥3 attempts, current ≥80, *some* earlier <80) diverges from design
-spec §4.3's "score trend **up**". History `[90, 60]` → 85 fires the memory on a line already mastered at 90.
-One-line tightening available (`&& !previousScores.some(s => s >= TARGET_SCORE)`); no test contradicts it.
+~~**🔷 ONE OPEN DECISION FOR THE USER**~~ — RESOLVED 2026-07-29, see the top of this memory
+("OPEN DECISION RESOLVED" above); this paragraph is the historical open-question snapshot.
+
+</details>
 
 <details><summary>(superseded) previous NEXT ACTION — L9a merge, 2026-07-24 morning</summary>
 
