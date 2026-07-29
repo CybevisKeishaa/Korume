@@ -1,5 +1,7 @@
 # Motion System
 
+> **Status:** Approved
+
 ---
 
 # Motion Philosophy

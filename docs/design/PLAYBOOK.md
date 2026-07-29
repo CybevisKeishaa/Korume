@@ -1,6 +1,7 @@
 # Nihongo Cinema Design Playbook
 
-Version: 1.0
+> **Status:** Approved
+> Version: 1.0
 
 ---
 

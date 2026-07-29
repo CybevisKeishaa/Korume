@@ -1,6 +1,6 @@
 # Interaction Principles
 
-Status: Living Document
+> **Status:** Approved
 
 Purpose:
 Define how every interaction should feel.
