@@ -118,6 +118,50 @@ describe("companion.json EN — Journal surface (spec §5)", () => {
   });
 });
 
+/**
+ * The gifted-pin control's copy (L9b Presence, Task 11) — the affordance that
+ * lets a learner keep a transcript line from shadowing or dictation. Authored
+ * in the plan like the blocks above, so the pins are literal.
+ *
+ * `tooMany` is the 429 surface. Spec §5 boundary: this is ORDINARY learner UI
+ * (the learner writing in their own book), not the Companion speaking — but
+ * the voice still may not scold, so it is guarded as a rule below and not only
+ * pinned. The failure copy the learner sees for every other failure mode comes
+ * from `common.errors.network` (a +1 consumer for this surface), never from a
+ * server diagnostic (convention #4).
+ */
+describe("companion.json EN — gifted-pin control (spec D6)", () => {
+  it("pins the pin control's trigger, dialog and note affordances", () => {
+    expect(en.pin.trigger).toBe("Pin to journal");
+    expect(en.pin.dialogTitle).toBe("Keep this line in your journal");
+    expect(en.pin.noteLabel).toBe("A few words of your own (optional)");
+  });
+
+  it("pins the two outcome messages", () => {
+    expect(en.pin.success).toBe("Kept. It's in your journal now.");
+    expect(en.pin.tooMany).toBe(
+      "You're pinning fast — take a breath and try again shortly.",
+    );
+  });
+
+  it("voice guard: the rate-limit message never blames or forbids the learner", () => {
+    expect(en.pin.tooMany).not.toMatch(/\b(too many|stop|don't|error|denied|limit)\b/i);
+  });
+});
+
+describe("companion.json VI — gifted-pin control (primary learner locale)", () => {
+  it("pins the pin control's trigger, dialog and note affordances", () => {
+    expect(vi.pin.trigger).toBe("Ghim vào nhật ký");
+    expect(vi.pin.dialogTitle).toBe("Giữ câu thoại này trong nhật ký của bạn");
+    expect(vi.pin.noteLabel).toBe("Đôi lời của riêng bạn (tùy chọn)");
+  });
+
+  it("pins the two outcome messages", () => {
+    expect(vi.pin.success).toBe("Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.");
+    expect(vi.pin.tooMany).toBe("Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.");
+  });
+});
+
 describe("companion.json VI — speech templates (primary learner locale)", () => {
   it("pins the four ambient address templates", () => {
     expect(vi.speech.finishedShadowing).toBe(

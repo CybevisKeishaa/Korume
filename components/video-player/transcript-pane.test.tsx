@@ -143,6 +143,23 @@ describe("TranscriptPane", () => {
     }
   });
 
+  it("mounts a Pin control beside the Mine control on every line when videoId is supplied", () => {
+    renderPane({ videoId: "video-1" });
+    const items = screen.getAllByRole("listitem");
+    expect(items).toHaveLength(LINES.length);
+    for (const item of items) {
+      expect(within(item).getByRole("button", { name: /mine/i })).toBeInTheDocument();
+      expect(within(item).getByRole("button", { name: /pin to journal/i })).toBeInTheDocument();
+    }
+  });
+
+  it("still mounts the Pin control without a videoId — the id is merely optional in the payload", () => {
+    renderPane();
+    for (const item of screen.getAllByRole("listitem")) {
+      expect(within(item).getByRole("button", { name: /pin to journal/i })).toBeInTheDocument();
+    }
+  });
+
   it("mining a word from a line posts that line's id to /api/mining", async () => {
     mockFetchOnce({ ok: true, status: 201 });
     renderPane();

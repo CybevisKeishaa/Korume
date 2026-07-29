@@ -219,6 +219,16 @@ describe("DictationView", () => {
     expect(screen.queryByText("こんにちは")).not.toBeInTheDocument();
   });
 
+  it("offers the journal pin only once the answer is revealed — the pin dialog would spoil it", async () => {
+    renderView();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+
+    expect(screen.queryByRole("button", { name: /pin to journal/i })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /reveal answer/i }));
+    expect(screen.getByRole("button", { name: /pin to journal/i })).toBeInTheDocument();
+  });
+
   it("moves to the next line, resetting the input and hiding the previous result", async () => {
     renderView();
     await waitFor(() => expect(yt.players).toHaveLength(1));

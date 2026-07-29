@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { FuriganaDisplayMode, FuriganaSegment, TranscriptLineRow, VocabMasteryMap } from "@/lib/video-types";
 import { FuriganaText } from "./furigana-text";
 import { MineLineControl } from "./mine-line-control";
+import { PinLineControl } from "./pin-line-control";
 
 export interface TranscriptPaneProps {
   lines: TranscriptLineRow[];
@@ -21,6 +22,9 @@ export interface TranscriptPaneProps {
   /** word/reading -> srs_stage for mastered vocab; consulted only in "adaptive" mode. */
   masteryMap: VocabMasteryMap;
   showTranslation: boolean;
+  /** DB video id, threaded into a gifted pin's payload. Optional — a pin is
+   * anchored by its transcript line id, so the pin control renders either way. */
+  videoId?: string;
   className?: string;
 }
 
@@ -41,6 +45,7 @@ export function TranscriptPane({
   furiganaMode,
   masteryMap,
   showTranslation,
+  videoId,
   className,
 }: TranscriptPaneProps) {
   const t = useTranslations("shadowing");
@@ -101,6 +106,7 @@ export function TranscriptPane({
               )}
             </button>
             <MineLineControl line={line} />
+            <PinLineControl line={line} videoId={videoId} />
           </li>
         );
       })}

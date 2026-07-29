@@ -28,6 +28,13 @@
     "discoveredMarker": "Ký ức được phát hiện trên đường đi",
     "untitledGifted": "Một câu thoại bạn đã giữ lại."
   },
+  "pin": {
+    "trigger": "Ghim vào nhật ký",
+    "dialogTitle": "Giữ câu thoại này trong nhật ký của bạn",
+    "noteLabel": "Đôi lời của riêng bạn (tùy chọn)",
+    "success": "Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.",
+    "tooMany": "Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé."
+  },
   "a11y": {
     "sprite": "Bạn đồng hành của bạn — mở nhật ký",
     "dismissSpeech": "Đóng lời nhắn"
