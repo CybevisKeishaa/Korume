@@ -430,7 +430,7 @@ export async function pinMemory(input: PinMemoryInput, now: Date = new Date()): 
     .maybeSingle();
   if (transcriptError) throw transcriptError;
   if (!transcript) return { ok: false, status: 400 };
-  const videoId = (transcript as { video_id: string | null }).video_id;
+  const videoId = (transcript as { video_id: string }).video_id;
 
   const { error } = await supabase.from("companion_memories").insert({
     user_id: user.id,

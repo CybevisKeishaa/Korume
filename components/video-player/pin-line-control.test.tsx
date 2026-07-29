@@ -2,7 +2,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import type { TranscriptLineRow } from "@/lib/video-types";
+import { CompanionContext, type CompanionApi } from "@/components/companion/use-companion";
 import { PinLineControl } from "./pin-line-control";
+
+/** Spy on the 4-verb API, same pattern as
+ * shadowing-recorder-panel.test.tsx — a stub provider, not a rendered
+ * anchor, since this file is a learning-loop surface (§5.4). */
+function companionSpy() {
+  const emitContext = vi.fn();
+  const api: CompanionApi = {
+    getCurrentState: () => ({ state: "idle", phase: null }),
+    emitContext,
+    openJournal: vi.fn(),
+    requestReflection: async () => ({ available: false }),
+  };
+  return { api, emitContext };
+}
 
 const line: TranscriptLineRow = {
   id: "l1",
@@ -34,7 +49,12 @@ describe("PinLineControl", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, duplicate: false }) });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<PinLineControl line={line} />);
+    const { api, emitContext } = companionSpy();
+    render(
+      <CompanionContext.Provider value={api}>
+        <PinLineControl line={line} />
+      </CompanionContext.Provider>,
+    );
     await user.click(screen.getByRole("button", { name: /pin to journal/i }));
     await user.type(screen.getByLabelText(/a few words/i), "chills");
     await user.click(screen.getByRole("button", { name: /^save$/i }));
@@ -49,20 +69,30 @@ describe("PinLineControl", () => {
       }),
     );
     expect(await screen.findByText(/it's in your journal now/i)).toBeInTheDocument();
+    // A genuinely NEW memory tells the Companion (§5's context bus).
+    expect(emitContext).toHaveBeenCalledTimes(1);
+    expect(emitContext).toHaveBeenCalledWith("memory_created");
   });
 
-  it("reports 'already kept' instead of success when the pin is a duplicate — a saved note can't be replaced", async () => {
+  it("reports 'already kept' instead of success when the pin is a duplicate — a saved note can't be replaced, and the Companion is not told (review finding #2)", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, duplicate: true }) }),
     );
     const user = userEvent.setup();
-    render(<PinLineControl line={line} />);
+    const { api, emitContext } = companionSpy();
+    render(
+      <CompanionContext.Provider value={api}>
+        <PinLineControl line={line} />
+      </CompanionContext.Provider>,
+    );
     await user.click(screen.getByRole("button", { name: /pin to journal/i }));
     await user.type(screen.getByLabelText(/a few words/i), "a new note that will not be saved");
     await user.click(screen.getByRole("button", { name: /^save$/i }));
     expect(await screen.findByText(/already kept this line/i)).toBeInTheDocument();
     expect(screen.queryByText(/it's in your journal now/i)).toBeNull();
+    // No NEW memory was created, so the Companion must not react to one.
+    expect(emitContext).not.toHaveBeenCalled();
   });
 
   it("shows the translated network error on fetch failure — no raw diagnostics (convention #4)", async () => {

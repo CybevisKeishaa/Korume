@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase, type MockResult, type QueryCall } from "@/test/supabase-mock";
+import { createMockSupabase, eqValue, type MockResult, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -846,12 +846,16 @@ describe("pinMemory statuses (carried Core cleanup #4)", () => {
     await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: false, status: 400 });
   });
 
-  it("derives video_id/timestamp/text server-side from the line — never from client input (review finding #2)", async () => {
+  it("derives video_id/timestamp/text server-side from the line — never from client input (review finding #1)", async () => {
     let insertedValues: Record<string, unknown> | undefined;
+    let transcriptsCalls: QueryCall[] = [];
     mockClient(
       {
         transcript_lines: () => ({ data: LINE_ROW, error: null }),
-        transcripts: () => ({ data: TRANSCRIPT_ROW, error: null }),
+        transcripts: (calls) => {
+          transcriptsCalls = calls;
+          return { data: TRANSCRIPT_ROW, error: null };
+        },
         companion_memories: (calls) => {
           const insert = calls.find((c): c is Extract<QueryCall, { op: "insert" }> => c.op === "insert");
           insertedValues = insert?.values as Record<string, unknown>;
@@ -861,10 +865,14 @@ describe("pinMemory statuses (carried Core cleanup #4)", () => {
       { id: "u-pin-ok" },
     );
 
-    // A crafted payload asserting a DIFFERENT video/text/timestamp than the
-    // line actually has — pinMemorySchema no longer even accepts these
-    // fields, but the point stands: only transcriptLineId + note reach here.
-    await expect(pinMemory(PIN_INPUT)).resolves.toEqual({ ok: true, duplicate: false });
+    // Defense in depth: even a caller that bypassed pinMemorySchema (which
+    // no longer accepts these fields at all) and asserted a DIFFERENT video/
+    // text/timestamp than the line actually has must still be ignored at
+    // this layer — the data layer, not just the schema, is what proves
+    // finding #1 is closed.
+    const forged = { ...PIN_INPUT, videoId: "attacker-video", lineTextJp: "嘘", timestampSeconds: 999 } as unknown as
+      typeof PIN_INPUT;
+    await expect(pinMemory(forged)).resolves.toEqual({ ok: true, duplicate: false });
 
     expect(insertedValues).toMatchObject({
       video_id: VIDEO_ID,
@@ -875,9 +883,12 @@ describe("pinMemory statuses (carried Core cleanup #4)", () => {
       kind: "gifted",
       memory_type: "pinned_line",
     });
+    // The transcripts lookup is filtered by the LINE's own transcript_id, not
+    // by anything client-supplied.
+    expect(eqValue(transcriptsCalls, "id")).toBe(LINE_ROW.transcript_id);
   });
 
-  it("reports a duplicate pin as ok+duplicate, not a plain success (review finding #1)", async () => {
+  it("reports a duplicate pin as ok+duplicate, not a plain success (review finding #2)", async () => {
     mockClient(
       {
         transcript_lines: () => ({ data: LINE_ROW, error: null }),

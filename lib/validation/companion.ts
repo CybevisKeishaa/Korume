@@ -6,9 +6,15 @@ import { z } from "zod";
  * NOT accepted from the client — `pinMemory` derives them itself from the
  * `transcriptLineId` lookup (same precedent as `createMiningCard`), so a
  * caller can never assert a line said something it never said. */
-export const pinMemorySchema = z.object({
-  transcriptLineId: z.string().uuid(),
-  note: z.string().max(500).optional(),
-});
+export const pinMemorySchema = z
+  .object({
+    transcriptLineId: z.string().uuid(),
+    note: z.string().max(500).optional(),
+  })
+  // `.strict()`, not the zod default of silently stripping unknown keys: a
+  // client that still sends videoId/lineTextJp/timestampSeconds earns a 400,
+  // not a quiet no-op, so a regression that reintroduces trusting those
+  // fields would be caught at the boundary immediately.
+  .strict();
 
 export type PinMemoryInput = z.infer<typeof pinMemorySchema>;
