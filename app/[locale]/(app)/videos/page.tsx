@@ -9,6 +9,7 @@ import { VideoImportForm } from "@/components/video/video-import-form";
 import { VideoCard } from "@/components/video/video-card";
 import { RecommendationSection } from "@/components/learning/recommendation-section";
 import { SaveToPlaylistButton } from "@/components/community/save-to-playlist-button";
+import { CompanionAnchor } from "@/components/companion/companion-anchor";
 // lib/data/videos.ts's VideoRow is the same DB row shape as lib/video-types.ts's
 // client-safe VideoRow, just declared locally with a wider `string | null` for
 // jlpt_level_estimate instead of the `JlptLevel | null` union. The cast below is
@@ -57,9 +58,14 @@ export default async function VideosPage() {
       <div className="mt-8">
         <h2 className="mb-3 text-lg font-semibold">{t("yourVideos")}</h2>
         {videos.length === 0 ? (
-          <p className="text-muted-foreground">
-            {t("empty")}
-          </p>
+          // An empty library is a rest point (§5.2/§5.4); the anchor states
+          // WHAT HAPPENED and the Ambient Layer decides whether to speak.
+          <div className="flex flex-col items-start gap-3">
+            <CompanionAnchor surface="videos-empty" pose="standing" context="empty_library" />
+            <p className="text-muted-foreground">
+              {t("empty")}
+            </p>
+          </div>
         ) : (
           // `role="list"`/`"listitem"` (rather than <ul>/<li>) because each
           // item wraps VideoCard's own <li> together with an overlaid

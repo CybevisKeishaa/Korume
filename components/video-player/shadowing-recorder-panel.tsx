@@ -8,6 +8,7 @@ import type { PronunciationAssessmentResult, WordPronunciationScore } from "@/li
 import { blobToWav16kMono } from "@/lib/audio/blob-to-wav";
 import type { PitchAccentScore } from "@/lib/pitch";
 import { ConfirmButton } from "@/components/community/confirm-button";
+import { useCompanion } from "@/components/companion/use-companion";
 import { useRecorder } from "./recorder";
 import { Waveform } from "./waveform";
 import { PitchContour } from "./pitch-contour";
@@ -174,6 +175,10 @@ export function ShadowingRecorderPanel({
   // consumer count to 3 (vocab-examples-panel, dictation-view, this panel).
   const tCommon = useTranslations("common");
   const recorder = useRecorder();
+  // The shadowing route carries NO anchor: emitting is not appearing. The
+  // Ambient Layer holds this context (TTL-bounded) until the learner reaches
+  // an anchored rest point — the Companion never interrupts the loop (§5.5).
+  const companion = useCompanion();
   const [upload, setUpload] = useState<UploadState>({ status: "idle" });
   const [score, setScore] = useState<ScoreState>({ status: "idle" });
   const [pitch, setPitch] = useState<PitchAccentScore | null>(null);
@@ -291,6 +296,7 @@ export function ShadowingRecorderPanel({
         if (res.status === 201) {
           const json = (await res.json()) as { data: SavedRecording };
           setUpload({ status: "success", recording: json.data });
+          companion.emitContext("finished_shadowing");
           return;
         }
         const descriptor = classifyUploadError(res.status, res.headers.get("Retry-After"));
@@ -308,7 +314,7 @@ export function ShadowingRecorderPanel({
         });
       }
     },
-    [videoId, lineId, t, tCommon],
+    [videoId, lineId, t, tCommon, companion],
   );
 
   // Auto-upload the moment a take finishes recording (once per blob). The

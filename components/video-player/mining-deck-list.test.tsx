@@ -1,7 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/test/render";
 import type { MiningCardListItem } from "@/lib/mining-types";
+import { AmbientProvider } from "@/components/companion/ambient-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { MiningDeckList } from "./mining-deck-list";
+
+// AmbientProvider calls `useRouter()` unconditionally (it is the door to the
+// journal). Under jsdom there is no App Router context, so next-intl's client
+// router throws "invariant expected app router to be mounted" — verified by
+// running this file without the mock. Same shape as `components/companion/
+// ambient.test.tsx`.
+vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
 const CARD: MiningCardListItem = {
   id: "card-1",
@@ -21,6 +33,10 @@ const CARD: MiningCardListItem = {
 };
 
 describe("MiningDeckList", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("shows an empty state when there are no cards", () => {
     render(<MiningDeckList cards={[]} />);
     expect(screen.getByText(/no mined sentences yet/i)).toBeInTheDocument();
@@ -44,5 +60,40 @@ describe("MiningDeckList", () => {
   it("renders one card per item in a list", () => {
     render(<MiningDeckList cards={[CARD, { ...CARD, id: "card-2" }]} />);
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+
+  /**
+   * Spec 1 §5.2/§5.4: the empty deck is a rest point, so it INVITES the
+   * Companion; a populated deck is the study surface itself and must stay
+   * dormant. The anchor only renders inside the Ambient Layer, so the
+   * provider — mounted for real in the (app) layout — is supplied here.
+   */
+  it("invites the Companion only in the empty state", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { xp: 0 } }) }),
+    );
+
+    // ThemeProvider: the sprite reads `reduceMotion` from it (CLAUDE.md §2.4).
+    const { unmount } = render(
+      <ThemeProvider>
+        <AmbientProvider>
+          <MiningDeckList cards={[]} />
+        </AmbientProvider>
+      </ThemeProvider>,
+    );
+    expect(document.querySelector('[data-companion-surface="mining-empty"]')).not.toBeNull();
+    // The empty state itself survives beside the invitation.
+    expect(screen.getByText(/no mined sentences yet/i)).toBeInTheDocument();
+    unmount();
+
+    render(
+      <ThemeProvider>
+        <AmbientProvider>
+          <MiningDeckList cards={[CARD]} />
+        </AmbientProvider>
+      </ThemeProvider>,
+    );
+    expect(document.querySelector('[data-companion-surface="mining-empty"]')).toBeNull();
   });
 });

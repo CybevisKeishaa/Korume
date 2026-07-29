@@ -10,6 +10,7 @@ import { StreakCard } from "@/components/learning/streak-card";
 import { SrsDueCard } from "@/components/learning/srs-due-card";
 import { BadgesGrid } from "@/components/learning/badges-grid";
 import { RecommendationSection } from "@/components/learning/recommendation-section";
+import { CompanionAnchor } from "@/components/companion/companion-anchor";
 import { getUserStats } from "@/lib/data/user-stats";
 import { vnDateString } from "@/lib/gamification";
 
@@ -43,6 +44,9 @@ export default async function DashboardPage() {
 
       {stats && (
         <section aria-label={t("a11y.progress")} className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* The Dashboard is a rest point, not a learning loop — one of the
+              surfaces that may invite the Companion (spec 1 §5.2/§5.4). */}
+          <CompanionAnchor surface="dashboard" pose="sitting" />
           <LevelCard xp={stats.xp} level={stats.level} />
           <StreakCard
             streakCurrent={stats.streakCurrent}
