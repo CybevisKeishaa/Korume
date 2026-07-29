@@ -199,6 +199,27 @@ describe("companion.json VI — speech templates (primary learner locale)", () =
  * deliberately distinct from `companionGrew.1`'s near-identical phrasing and
  * a silent copy/paste of one over the other would otherwise go unnoticed.)
  */
+/**
+ * VI `memoryTitle`'s non-`companionGrew` leaves (Task 13 mutation check): the
+ * P12 guard below only ever inspects `companionGrew`, so the other five
+ * `memoryTitle` leaves had no literal VI pin and no test caught an append/
+ * punctuation mutation on them — a real catalog-mutation gap on the primary
+ * learner locale, confirmed by manual mutation during whole-branch
+ * verification. Pinned literally here to close it, mirroring the EN block.
+ */
+describe("companion.json VI — memoryTitle descriptors (primary learner locale)", () => {
+  it("pins the once-in-a-lifetime discovered-memory titles", () => {
+    expect(vi.memoryTitle.firstShadow).toBe("Câu thoại đầu tiên bạn shadowing thành công.");
+    expect(vi.memoryTitle.lineMastered).toBe("Câu bạn luyện mãi rồi cuối cùng cũng nói được.");
+    expect(vi.memoryTitle.miningSaved).toBe("Câu bạn quyết định lưu lại.");
+    expect(vi.memoryTitle.firstVideoCompleted).toBe("Video đầu tiên bạn hoàn thành.");
+  });
+
+  it("pins the jlptPassed template with its {level} placeholder", () => {
+    expect(vi.memoryTitle.jlptPassed).toBe("Cột mốc JLPT {level}");
+  });
+});
+
 describe("companion.json VI — P12 stage-number guard (primary learner locale)", () => {
   it("no companionGrew phrasing contains a bare digit-as-stage", () => {
     for (const phrase of Object.values(vi.memoryTitle.companionGrew)) {
@@ -208,6 +229,26 @@ describe("companion.json VI — P12 stage-number guard (primary learner locale)"
 
   it("pins the firstMeeting phrasing", () => {
     expect(vi.memoryTitle.firstMeeting).toBe("Ngày hai bạn gặp nhau.");
+  });
+
+  /**
+   * Task 13 mutation check: the digit guard above only catches a mutation
+   * that inserts a bare digit — an append/punctuation mutation to any of the
+   * four phasings survived every other test (confirmed by manual mutation
+   * during whole-branch verification). Literal pins close that gap, same as
+   * the EN block already does for its own companionGrew phasings.
+   */
+  it("pins all four companionGrew phasings, keyed by phase", () => {
+    expect(vi.memoryTitle.companionGrew["1"]).toBe("Ngày hai đứa mình gặp nhau.");
+    expect(vi.memoryTitle.companionGrew["2"]).toBe(
+      "Ngày người bạn đồng hành của bạn thấy gần gũi hơn.",
+    );
+    expect(vi.memoryTitle.companionGrew["3"]).toBe(
+      "Ngày người bạn đồng hành của bạn thật sự hiểu bạn.",
+    );
+    expect(vi.memoryTitle.companionGrew["4"]).toBe(
+      "Ngày người bạn đồng hành của bạn đi cùng bạn đủ lâu để nhớ hết chặng đường.",
+    );
   });
 });
 

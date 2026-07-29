@@ -160,6 +160,30 @@ describe("TranscriptPane", () => {
     }
   });
 
+  it("threads its own videoId prop into the pinned line's POST payload (Task 13 mutation check)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    renderPane({ videoId: "video-1" });
+    const [, secondLine] = screen.getAllByRole("listitem");
+    if (!secondLine) throw new Error("expected a second transcript line");
+
+    await user.click(within(secondLine).getByRole("button", { name: /pin to journal/i }));
+    await user.click(screen.getByRole("button", { name: /^save$/i }));
+
+    // A PinLineControl rendered directly with videoId="v1" already proves the
+    // control itself serializes videoId correctly (pin-line-control.test.tsx).
+    // What THAT test cannot catch is TranscriptPane silently dropping its own
+    // videoId prop before it ever reaches PinLineControl — only mounting
+    // through the real parent closes that gap.
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/companion/memories",
+      expect.objectContaining({
+        body: expect.stringContaining('"videoId":"video-1"'),
+      }),
+    );
+  });
+
   it("mining a word from a line posts that line's id to /api/mining", async () => {
     mockFetchOnce({ ok: true, status: 201 });
     renderPane();
