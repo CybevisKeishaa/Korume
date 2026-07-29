@@ -423,6 +423,11 @@ The screen should feel hopeful,
 
 never empty.
 
+This empty state is one of L9b (D3)'s four shipped Companion anchors — Available today
+(`docs/design/design-reconciliation.md` §6). Unlike the non-empty view below (Planned), Companion may
+appear here now; see `docs/design/patterns/companion-patterns.md` § Declare Anchor for the
+presence-level and copy conventions it follows.
+
 ---
 
 # Companion
