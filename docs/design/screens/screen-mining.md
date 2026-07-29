@@ -124,7 +124,9 @@ No review counts.
 
 No overdue cards.
 
-No red badges.
+No red notification badges (the small numeric "overdue count" chip pattern) — this is about that UI
+chrome specifically, not the Gamification Layer's Badge primitive
+(`docs/design/design-reconciliation.md` §3), which is a separate, real, shipped concept.
 
 ---
 

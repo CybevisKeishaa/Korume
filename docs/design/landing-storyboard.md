@@ -1,5 +1,7 @@
 # Landing Storyboard
 
+> **Status:** Approved
+
 Landing page là một câu chuyện.
 
 Không phải danh sách tính năng.

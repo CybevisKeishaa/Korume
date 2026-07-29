@@ -1,7 +1,7 @@
 # Companion Patterns
 
 > Design Pattern
-> Status: Approved
+> **Status:** Approved
 > Version 1.1
 > Depends on:
 > - docs/design/design-reconciliation.md
@@ -158,7 +158,26 @@ không làm gì cả.
 
 ---
 
-## Level 3 — Address
+## Level 3 — Listening
+
+Companion vẫn hiện diện trong khi người học đang thao tác.
+
+Không nói.
+
+Không gián đoạn.
+
+Ví dụ:
+
+- learner đang gõ một ghi chú
+- learner đang chọn một từ để tra cứu
+- learner đang cuộn qua Journal
+
+Khác với Ambient (Level 1) — Companion không chỉ "ở đó", mà đang chú ý đến hành động cụ thể đang
+diễn ra. Khác với Observe (Level 2) — sự kiện chưa hoàn tất, Companion không chờ để phản hồi.
+
+---
+
+## Level 4 — Address
 
 Đây là mức hiếm nhất.
 
@@ -478,6 +497,12 @@ Ví dụ:
 This sentence seems difficult.
 
 ━━━━━━━━━━━━
+
+This only ever appears where Companion has an anchor at all (Available/Planned per
+`docs/design/design-reconciliation.md` §6) — it is not
+the same thing as `transcript-patterns.md`'s inline "✨ Difficult grammar" content indicator, which is
+a separate system that appears specifically during Shadowing/Dictation/Reading, where Companion is
+Not Supported (`docs/design/patterns/transcript-patterns.md` § AI Integration).
 
 Interaction behavior giữ nguyên — accessibility-driven, xem
 `docs/design/design-reconciliation.md` §10:

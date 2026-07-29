@@ -1,5 +1,6 @@
 # Nihongo Cinema Landing Page Playbook
 
+> **Status:** Approved
 > Version: 1.0
 >
 > Đây không phải guideline về UI.

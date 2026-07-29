@@ -1,6 +1,6 @@
 # AI Writing Principles
 
-Status: Living Document
+> **Status:** Approved
 
 Purpose:
 Define how AI communicates.

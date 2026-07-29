@@ -1,5 +1,8 @@
 # Learning Surfaces
 
+> **Status:** Approved
+> **Related:** `docs/design/patterns/companion-patterns.md`, `docs/design/design-reconciliation.md`
+
 > Purpose
 >
 > This document defines the primary learning surfaces used throughout Nihongo Cinema.
@@ -242,6 +245,11 @@ Immersive
 
 Analysis
 
+This is this document's own Reading-Surface-specific progression — related to but not identical
+with other documents' similarly-shaped state gradients (e.g. `adaptive-layouts.md`'s Companion
+Adaptation, `screen-architecture.md`'s Focus States). None of these share one unified naming scheme
+(`docs/design/design-reconciliation.md` §13).
+
 The transition between states should never interrupt reading.
 
 ---
@@ -454,13 +462,12 @@ where to continue.
 
 Avoid
 
-KPIs
+Enterprise-style KPI walls, dense statistics grids, charts, and productivity-metrics dashboards.
 
-Statistics
-
-Charts
-
-Productivity metrics
+This is not a ban on the Gamification Layer's own Progress/Streak display — Dashboard (which composes
+from this surface) legitimately shows a Gamification Progress section per the Layer Responsibility
+Rule (`docs/design/design-reconciliation.md` §3, `docs/design/screens/screen-dashboard.md` § Progress).
+What's avoided here is a productivity-software aesthetic, not the Gamification Layer's existence.
 
 ---
 

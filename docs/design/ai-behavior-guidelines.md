@@ -1,6 +1,6 @@
 # AI Behavior Guidelines
 
-> Status: Living Design Document
+> **Status:** Approved
 >
 > Defines how AI behaves throughout the product.
 >

@@ -1,6 +1,6 @@
 # Motion Principles
 
-Status: Living Document
+> **Status:** Approved
 
 Purpose:
 Define how motion should feel across the product.

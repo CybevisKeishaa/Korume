@@ -2,7 +2,7 @@
 
 **Project:** Nihongo Cinema / AI Language OS  
 **Version:** 1.0  
-**Status:** Living Document
+**Status:** Approved
 
 ---
 
@@ -15,7 +15,7 @@ It does not define:
 - Companion personality (see `MASCOT.md`)
 - AI behavior (see `ai-behavior-guidelines.md`)
 - Product philosophy (see Product Philosophy / Spec 1)
-- Experience mechanics (see `experience-architecture.md`)
+- Experience mechanics (see `docs/architecture/experience-architecture.md`)
 
 ---
 

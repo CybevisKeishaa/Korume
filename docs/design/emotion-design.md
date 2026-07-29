@@ -1,6 +1,6 @@
 # Emotion Design
 
-Status: Living Document
+> **Status:** Approved
 
 Purpose:
 Define what users should feel while using the product.
@@ -49,7 +49,8 @@ The user learns.
 
 "I want to come back."
 
-Not because of streaks.
+Not *only* because of streaks — Streak is a real, shipped Gamification reinforcement mechanic
+(G1–G3, `docs/design/design-reconciliation.md` §3), not banned or devalued here.
 
 Because the experience felt good.
 

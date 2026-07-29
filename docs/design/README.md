@@ -1,6 +1,6 @@
 # docs/design/ — How To Read These Documents
 
-Status: Governing Note
+> **Status:** Approved
 
 ---
 
