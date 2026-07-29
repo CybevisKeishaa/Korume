@@ -30,20 +30,19 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-28) — **L9b Plan 2 (Companion Presence) IN PROGRESS, Task 10/13 done**
+## ▶ NEXT ACTION (updated 2026-07-29) — **L9b Plan 2 (Companion Presence) IN PROGRESS, Task 11/13 done**
 
-**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), HEAD **`f654c58`**, NOT pushed.
+**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), HEAD **`d3945f1`**, NOT pushed.
 Spec `docs/superpowers/specs/2026-07-24-l9b-companion-presence-design.md` (D1–D9) ·
 plan `docs/superpowers/plans/2026-07-24-l9b-companion-presence.md` (13 tasks) ·
 **live run state + every carried item: `.superpowers/sdd/progress.md`** (gitignored scratch —
-if lost, reconstruct from `git log`; the "SESSION STATE 2026-07-28 (continued) — Task 10 done" block
-at its end is the resume point).
+if lost, reconstruct from `git log`; the "Task 11: complete" block at its end is the resume point).
 Executed via `superpowers:subagent-driven-development`, one implementer + one independent reviewer per
-task, both on **Opus 4.8** (this plan is the named "hardest long-horizon" exception in
-`mem:model_selection_policy` — brainstorm/plan-decomposition already ran on Fable, execution stays Opus).
+task, both on **Opus 5** (was Opus 4.8 — session default moved to Opus 5 2026-07-29, no change to the
+plan's model policy otherwise; see `mem:model_selection_policy`).
 
-**Done: Tasks 1–10 complete**, each task-reviewed clean (Task 3 had 1 Critical migration gap fixed
-in-task; Tasks 4/5/7 each needed one fix round + scoped re-review for a single Important finding;
+**Done: Tasks 1–11 complete**, each task-reviewed clean (Task 3 had 1 Critical migration gap fixed
+in-task; Tasks 4/5/7/11 each needed one fix round + scoped re-review for a single Important finding;
 Tasks 6, 8, 9, 10 clean with zero fix rounds — each had Minors parked instead). Shipped since Task 8:
 **Task 9** — shadowing `?line=<id>` deep link seeks + activates the line (`shadowing-view.tsx`); the
 implementer caught a real bug the brief's own snippet would have shipped (`handleReady`'s early-return
@@ -57,14 +56,24 @@ zero production callers yet, making it the cheap side to widen. Page now makes e
 auth round-trip per render. The implementer also caught a second real bug beyond the brief: an
 unpinned `format.dateTime()` timezone would have hit next-intl's `ENVIRONMENT_FALLBACK` path — a
 genuine server/client hydration mismatch — fixed with the repo's existing VN-timezone convention.
-Full suite **212 files / 1875 tests green** · tsc 0 · lint 77 warnings/22 files (unchanged since Task 3)
-· e2e 6/6 · **16 migrations**.
-**NEXT ACTION: Task 11** (plan lines ~1940+, right after Task 10) → Tasks 12–13.
+**Task 11** — gifted-pin UI (`pin-line-control.tsx`) in shadowing + dictation transcripts, POSTing to
+the already-shipped `POST /api/companion/memories`. Review approved but flagged the brief's own
+non-429→generic-network-error mapping as an Important, plan-mandated gap (a 401 from an expired
+session was indistinguishable from a network failure); **user chose to fix rather than ship the
+brief's copy as-is** — added a `pin.signedOut` catalog leaf (en+vi) + a swap-proof test proving the
+new message appears and the generic one doesn't. Fix round 1/1 addressed, no new breakage. 5 Minors
+parked (untested `emitContext` call; Save stays clickable + note doesn't clear post-success; dictation
+pin could show after a scored attempt too, not just after `revealed`; N identically-labeled pin
+buttons per pane, same shape as `MineLineControl`; report-quality nit).
+Full suite **213 files / 1888 tests green** · tsc 0 · lint exit 0, 0 new (5 pre-existing warnings on
+touched files, independently confirmed) · e2e 6/6 · **16 migrations**.
+**NEXT ACTION: Task 12** (plan lines ~2187+, right after Task 11) → Task 13.
 **Task 13 needs the `line_mastered` open decision raised with the user first** (unchanged since Task 4 —
-see the ledger's "OPEN DECISION FOR THE USER" block). **Carried items still open for Tasks 12–13**
-(multi-anchor duplication owed by Task 12 — Task 10 mounted only one anchor on `/journal`, no conflict
-there — and the `companion.ts ⇄ videos.ts` import-cycle trap that will recur on any producer hooking a
-module `companion.ts` transitively imports) — full detail in the ledger, not repeated here.
+see the ledger's "OPEN DECISION FOR THE USER" block). **Carried item still open for Task 12**
+(multi-anchor duplication — Task 10 mounted only one anchor on `/journal`, no conflict there; Task 12
+must resolve it if it mounts a second simultaneously-visible `CompanionAnchor` — full detail in the
+ledger, not repeated here). The `companion.ts ⇄ videos.ts` import-cycle trap (Task 5) remains a
+standing risk for any future producer hooking a module `companion.ts` transitively imports.
 
 **🔴 The review caught a CRITICAL plan gap already fixed — remember the lesson:** the plan had NO
 migrations, but `companion_memories.memory_type` has a CHECK enumerating its 7 values and `first_meeting`
@@ -670,6 +679,14 @@ the list query (no GET-single endpoint); forum comment optimistic insert shows "
 video-card gets a slot); community cursor pagination assumes distinct created_at at page
 boundaries; admin stats count ids in JS not count:'exact' (fine at current scale); manual browser
 click-through of /community, /playlists, /leaderboard, /admin not done (unit+build only).
+
+## Parked (not blocking L9b)
+
+**Shadowing Hub Consolidation IA spec** — approved-in-conversation 2026-07-29, spec written and
+revised at `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md`, **NOT yet
+executed** (user explicitly deferred execution to finish L9b first: "tôi sẽ làm cái khác trước, task
+l9b của tôi vẫn chưa xong"). The design itself is fully settled, not paused — only §6's 17-file
+execution list is pending. Full state, why, and resume point: `mem:shadowing_hub_consolidation_status`.
 
 ## Working agreements
 TDD-first, tests shown passing. code-reviewer signs off every non-trivial change before "done".
