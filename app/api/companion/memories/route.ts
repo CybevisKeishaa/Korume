@@ -25,5 +25,5 @@ export async function POST(request: Request) {
       result.status === 401 ? "Unauthorized" : result.status === 400 ? "Invalid transcript line" : "Could not pin";
     return NextResponse.json({ error: message }, { status: result.status });
   }
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({ ok: true, duplicate: result.duplicate }, { status: 201 });
 }

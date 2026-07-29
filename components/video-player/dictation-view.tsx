@@ -316,7 +316,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
           <p className="font-jp flex-1 rounded-md border border-border bg-muted px-3 py-2 text-base">
             {currentLine.text_jp}
           </p>
-          <PinLineControl line={currentLine} videoId={video.id} />
+          <PinLineControl line={currentLine} />
         </div>
       )}
 

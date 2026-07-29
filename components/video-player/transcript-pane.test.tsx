@@ -143,45 +143,14 @@ describe("TranscriptPane", () => {
     }
   });
 
-  it("mounts a Pin control beside the Mine control on every line when videoId is supplied", () => {
-    renderPane({ videoId: "video-1" });
+  it("mounts a Pin control beside the Mine control on every line — video/text/timestamp are derived server-side, not threaded through props", () => {
+    renderPane();
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(LINES.length);
     for (const item of items) {
       expect(within(item).getByRole("button", { name: /mine/i })).toBeInTheDocument();
       expect(within(item).getByRole("button", { name: /pin to journal/i })).toBeInTheDocument();
     }
-  });
-
-  it("still mounts the Pin control without a videoId — the id is merely optional in the payload", () => {
-    renderPane();
-    for (const item of screen.getAllByRole("listitem")) {
-      expect(within(item).getByRole("button", { name: /pin to journal/i })).toBeInTheDocument();
-    }
-  });
-
-  it("threads its own videoId prop into the pinned line's POST payload (Task 13 mutation check)", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
-    vi.stubGlobal("fetch", fetchMock);
-    const user = userEvent.setup();
-    renderPane({ videoId: "video-1" });
-    const [, secondLine] = screen.getAllByRole("listitem");
-    if (!secondLine) throw new Error("expected a second transcript line");
-
-    await user.click(within(secondLine).getByRole("button", { name: /pin to journal/i }));
-    await user.click(screen.getByRole("button", { name: /^save$/i }));
-
-    // A PinLineControl rendered directly with videoId="v1" already proves the
-    // control itself serializes videoId correctly (pin-line-control.test.tsx).
-    // What THAT test cannot catch is TranscriptPane silently dropping its own
-    // videoId prop before it ever reaches PinLineControl — only mounting
-    // through the real parent closes that gap.
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/companion/memories",
-      expect.objectContaining({
-        body: expect.stringContaining('"videoId":"video-1"'),
-      }),
-    );
   });
 
   it("mining a word from a line posts that line's id to /api/mining", async () => {

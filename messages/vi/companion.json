@@ -33,6 +33,7 @@
     "dialogTitle": "Giữ câu thoại này trong nhật ký của bạn",
     "noteLabel": "Đôi lời của riêng bạn (tùy chọn)",
     "success": "Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.",
+    "alreadyKept": "Bạn đã ghim câu này rồi — ghi chú đã lưu thì không đổi được nữa.",
     "tooMany": "Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.",
     "signedOut": "Phiên đăng nhập đã kết thúc. Đăng nhập lại để giữ câu này nhé."
   },

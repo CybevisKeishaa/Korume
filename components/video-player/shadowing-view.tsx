@@ -242,7 +242,6 @@ export function ShadowingView({ video, transcript, masteryMap = {} }: ShadowingV
             furiganaMode={furiganaMode}
             masteryMap={masteryMap}
             showTranslation={showTranslation}
-            videoId={video.id}
           />
         ) : (
           <div className="text-sm text-muted-foreground">

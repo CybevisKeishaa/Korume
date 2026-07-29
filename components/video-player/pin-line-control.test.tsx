@@ -30,11 +30,11 @@ describe("PinLineControl", () => {
     consoleErrorSpy = undefined;
   });
 
-  it("opens the dialog and POSTs the pin with pointers + note", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+  it("opens the dialog and POSTs only the line pointer + note — video/text/timestamp are derived server-side", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, duplicate: false }) });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<PinLineControl line={line} videoId="v1" />);
+    render(<PinLineControl line={line} />);
     await user.click(screen.getByRole("button", { name: /pin to journal/i }));
     await user.type(screen.getByLabelText(/a few words/i), "chills");
     await user.click(screen.getByRole("button", { name: /^save$/i }));
@@ -44,14 +44,25 @@ describe("PinLineControl", () => {
         method: "POST",
         body: JSON.stringify({
           transcriptLineId: "l1",
-          videoId: "v1",
-          lineTextJp: "逃げるは恥だが役に立つ",
-          timestampSeconds: 12.5,
           note: "chills",
         }),
       }),
     );
     expect(await screen.findByText(/it's in your journal now/i)).toBeInTheDocument();
+  });
+
+  it("reports 'already kept' instead of success when the pin is a duplicate — a saved note can't be replaced", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, duplicate: true }) }),
+    );
+    const user = userEvent.setup();
+    render(<PinLineControl line={line} />);
+    await user.click(screen.getByRole("button", { name: /pin to journal/i }));
+    await user.type(screen.getByLabelText(/a few words/i), "a new note that will not be saved");
+    await user.click(screen.getByRole("button", { name: /^save$/i }));
+    expect(await screen.findByText(/already kept this line/i)).toBeInTheDocument();
+    expect(screen.queryByText(/it's in your journal now/i)).toBeNull();
   });
 
   it("shows the translated network error on fetch failure — no raw diagnostics (convention #4)", async () => {
@@ -94,22 +105,20 @@ describe("PinLineControl", () => {
     expect(screen.queryByText(/network error/i)).toBeNull();
   });
 
-  it("omits videoId and note from the payload when neither is supplied", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+  it("omits note from the payload when none is supplied", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, duplicate: false }) });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
     render(<PinLineControl line={line} />);
     await user.click(screen.getByRole("button", { name: /pin to journal/i }));
     await user.click(screen.getByRole("button", { name: /^save$/i }));
-    // Exact serialized body, so an absent videoId/note is asserted as ABSENT
-    // rather than merely undefined — the zod schema rejects `videoId: null`.
+    // Exact serialized body, so an absent note is asserted as ABSENT rather
+    // than merely undefined.
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/companion/memories",
       expect.objectContaining({
         body: JSON.stringify({
           transcriptLineId: "l1",
-          lineTextJp: "逃げるは恥だが役に立つ",
-          timestampSeconds: 12.5,
         }),
       }),
     );

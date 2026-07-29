@@ -137,8 +137,9 @@ describe("companion.json EN — gifted-pin control (spec D6)", () => {
     expect(en.pin.noteLabel).toBe("A few words of your own (optional)");
   });
 
-  it("pins the three outcome messages", () => {
+  it("pins the four outcome messages", () => {
     expect(en.pin.success).toBe("Kept. It's in your journal now.");
+    expect(en.pin.alreadyKept).toBe("You already kept this line — a saved note can't be changed.");
     expect(en.pin.tooMany).toBe(
       "You're pinning fast — take a breath and try again shortly.",
     );
@@ -157,8 +158,11 @@ describe("companion.json VI — gifted-pin control (primary learner locale)", ()
     expect(vi.pin.noteLabel).toBe("Đôi lời của riêng bạn (tùy chọn)");
   });
 
-  it("pins the three outcome messages", () => {
+  it("pins the four outcome messages", () => {
     expect(vi.pin.success).toBe("Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.");
+    expect(vi.pin.alreadyKept).toBe(
+      "Bạn đã ghim câu này rồi — ghi chú đã lưu thì không đổi được nữa.",
+    );
     expect(vi.pin.tooMany).toBe("Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.");
     expect(vi.pin.signedOut).toBe(
       "Phiên đăng nhập đã kết thúc. Đăng nhập lại để giữ câu này nhé.",

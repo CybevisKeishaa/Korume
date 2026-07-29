@@ -8,11 +8,9 @@ import type { TranscriptLineRow } from "@/lib/video-types";
 
 export interface PinLineControlProps {
   line: TranscriptLineRow;
-  /** Optional in the API payload too — a pin is anchored by its line id. */
-  videoId?: string;
 }
 
-type Status = "idle" | "submitting" | "success" | "error" | "tooMany" | "signedOut";
+type Status = "idle" | "submitting" | "success" | "alreadyKept" | "error" | "tooMany" | "signedOut";
 
 /**
  * Which failure copy a non-ok response earns. A 401 is called out because its
@@ -33,7 +31,7 @@ function statusForResponse(httpStatus: number): Status {
  * stays dormant on learning surfaces (§5.4), so this file imports the
  * `useCompanion` API (to report the new memory) and never an anchor.
  */
-export function PinLineControl({ line, videoId }: PinLineControlProps) {
+export function PinLineControl({ line }: PinLineControlProps) {
   const t = useTranslations("companion");
   const tCommon = useTranslations("common");
   const companion = useCompanion();
@@ -50,15 +48,20 @@ export function PinLineControl({ line, videoId }: PinLineControlProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           transcriptLineId: line.id,
-          ...(videoId ? { videoId } : {}),
-          lineTextJp: line.text_jp,
-          timestampSeconds: line.start_time,
           ...(note.trim() ? { note: note.trim() } : {}),
         }),
       });
       if (res.ok) {
-        setStatus("success");
-        companion.emitContext("memory_created");
+        // A duplicate pin (line already kept) never actually saves a new
+        // note — memories are immutable — so it earns its own status rather
+        // than reusing "success" and letting the learner believe otherwise.
+        const body = (await res.json()) as { duplicate?: boolean };
+        if (body.duplicate) {
+          setStatus("alreadyKept");
+        } else {
+          setStatus("success");
+          companion.emitContext("memory_created");
+        }
       } else {
         setStatus(statusForResponse(res.status));
       }
@@ -123,6 +126,7 @@ export function PinLineControl({ line, videoId }: PinLineControlProps) {
         </div>
         <p role="status" className="mt-2 min-h-5 text-sm">
           {status === "success" ? t("pin.success") : null}
+          {status === "alreadyKept" ? t("pin.alreadyKept") : null}
           {status === "error" ? tCommon("errors.network") : null}
           {status === "tooMany" ? t("pin.tooMany") : null}
           {status === "signedOut" ? t("pin.signedOut") : null}
