@@ -137,11 +137,12 @@ describe("companion.json EN — gifted-pin control (spec D6)", () => {
     expect(en.pin.noteLabel).toBe("A few words of your own (optional)");
   });
 
-  it("pins the two outcome messages", () => {
+  it("pins the three outcome messages", () => {
     expect(en.pin.success).toBe("Kept. It's in your journal now.");
     expect(en.pin.tooMany).toBe(
       "You're pinning fast — take a breath and try again shortly.",
     );
+    expect(en.pin.signedOut).toBe("You've been signed out. Please log in again to keep this.");
   });
 
   it("voice guard: the rate-limit message never blames or forbids the learner", () => {
@@ -156,9 +157,12 @@ describe("companion.json VI — gifted-pin control (primary learner locale)", ()
     expect(vi.pin.noteLabel).toBe("Đôi lời của riêng bạn (tùy chọn)");
   });
 
-  it("pins the two outcome messages", () => {
+  it("pins the three outcome messages", () => {
     expect(vi.pin.success).toBe("Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.");
     expect(vi.pin.tooMany).toBe("Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.");
+    expect(vi.pin.signedOut).toBe(
+      "Phiên đăng nhập đã kết thúc. Đăng nhập lại để giữ câu này nhé.",
+    );
   });
 });
 

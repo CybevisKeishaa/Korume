@@ -79,6 +79,21 @@ describe("PinLineControl", () => {
     expect(await screen.findByText(/take a breath/i)).toBeInTheDocument();
   });
 
+  it("maps 401 to the signed-out message, not the generic network error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) }),
+    );
+    const user = userEvent.setup();
+    render(<PinLineControl line={line} />);
+    await user.click(screen.getByRole("button", { name: /pin to journal/i }));
+    await user.click(screen.getByRole("button", { name: /^save$/i }));
+    // An expired session is a different recovery path from a flaky connection:
+    // log in again, don't retry the same request.
+    expect(await screen.findByText(/signed out/i)).toBeInTheDocument();
+    expect(screen.queryByText(/network error/i)).toBeNull();
+  });
+
   it("omits videoId and note from the payload when neither is supplied", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);

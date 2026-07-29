@@ -12,7 +12,20 @@ export interface PinLineControlProps {
   videoId?: string;
 }
 
-type Status = "idle" | "submitting" | "success" | "error" | "tooMany";
+type Status = "idle" | "submitting" | "success" | "error" | "tooMany" | "signedOut";
+
+/**
+ * Which failure copy a non-ok response earns. A 401 is called out because its
+ * recovery path is different in kind: an expired session is fixed by logging
+ * in again, not by retrying the same request, and "network error" would send
+ * the learner down the wrong road. Every other status stays generic — the
+ * server's own diagnostic is never surfaced (convention #4).
+ */
+function statusForResponse(httpStatus: number): Status {
+  if (httpStatus === 401) return "signedOut";
+  if (httpStatus === 429) return "tooMany";
+  return "error";
+}
 
 /**
  * Gifted pin (spec D6): the learner keeps a line in their own journal.
@@ -47,7 +60,7 @@ export function PinLineControl({ line, videoId }: PinLineControlProps) {
         setStatus("success");
         companion.emitContext("memory_created");
       } else {
-        setStatus(res.status === 429 ? "tooMany" : "error");
+        setStatus(statusForResponse(res.status));
       }
     } catch (err) {
       // Diagnostics stay in the developer console; the learner only ever sees
@@ -112,6 +125,7 @@ export function PinLineControl({ line, videoId }: PinLineControlProps) {
           {status === "success" ? t("pin.success") : null}
           {status === "error" ? tCommon("errors.network") : null}
           {status === "tooMany" ? t("pin.tooMany") : null}
+          {status === "signedOut" ? t("pin.signedOut") : null}
         </p>
       </Dialog>
     </>

@@ -33,7 +33,8 @@
     "dialogTitle": "Giữ câu thoại này trong nhật ký của bạn",
     "noteLabel": "Đôi lời của riêng bạn (tùy chọn)",
     "success": "Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.",
-    "tooMany": "Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé."
+    "tooMany": "Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.",
+    "signedOut": "Phiên đăng nhập đã kết thúc. Đăng nhập lại để giữ câu này nhé."
   },
   "a11y": {
     "sprite": "Bạn đồng hành của bạn — mở nhật ký",
