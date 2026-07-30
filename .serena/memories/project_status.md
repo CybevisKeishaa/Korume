@@ -30,10 +30,97 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-29) — **L9b Plan 2 (Companion Presence) COMPLETE — all 13 tasks done, branch ready to merge, merge decision is the user's**
+## ▶ NEXT ACTION (updated 2026-07-30) — **L9b Plan 2 MERGED to master. L9b Plan 1 brainstorm IN PROGRESS (mid-session, not yet written to a spec file) — resume there.**
 
-**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), HEAD **`dcc1338`**. NOT pushed (verify
-actual push state before assuming — this note has been stale before).
+**Merge done 2026-07-30**: `layer-9b-companion-presence` → `master` `--no-ff` at `61416bd` (message:
+"Merge branch 'layer-9b-companion-presence' (L9b Plan 2 — Companion Presence)"). Post-merge re-verify:
+tsc 0, **213 files / 1901 tests green** (unchanged from pre-merge — clean merge, no conflicts, `master`
+was already an ancestor of the branch via an earlier in-branch merge). Local branch and its earlier
+divergent Korume-mascot commit (`bb69897`, added out-of-scope sphere/ring/orb props) were reconciled —
+`master`'s disciplined 9-task Korume build won; the leftover `phase2_final.png` preview was removed
+(`bee2b8f`). **Master is 16 commits ahead of `origin/master`, NOT pushed** (never push unasked).
+
+**⚠ Session-start hazard, seen this session, worth knowing if resuming cold:** while working on this
+branch, another concurrent process/session was observed switching branches and committing directly
+(`729e1cc "[LongTNP]: mascot"`, an in-branch `Merge branch 'master' into layer-9b-companion-presence`)
+— all already reconciled and merged, nothing broken, but if `git status`/`git log` looks different than
+this memory expects, check for a concurrent session before assuming corruption.
+
+### L9b Plan 1 (launch-blocker debt) — brainstorm in progress, NOT yet written to `docs/superpowers/specs/`
+
+Using `superpowers:brainstorming`. Scope (user confirmed keep all 4, don't split out badge icons):
+transcript-submit UI, GDPR delete-all-my-data, persist voice pronunciation score, badge icons.
+**Decisions locked in so far (all user-approved, do not re-litigate without new information):**
+
+1. **Transcript sourcing — pivoted away from user-paste.** User corrected the initial plan (a paste
+   textarea) after pointing at `transcript_source` enum already having 3 values since the first
+   migration (`youtube_caption | user_submitted | ai_generated`) — `youtube_caption` was never
+   implemented. **Decision: build ONLY auto-fetch `youtube_caption` now** (best-effort, never-throw,
+   hooked into `lib/data/videos.ts::importVideo` right after the video row insert; reuses the existing
+   `parseTranscript`/furigana pipeline via a new shared ingest helper, `source: 'youtube_caption'`).
+   No fetch mechanism exists keylessly via the official Data API (`captions.download` needs OAuth as
+   the content owner) — the only keyless option is YouTube's unofficial public `timedtext` endpoint;
+   flagged to the user as a stability risk (Google could change/block it), not a §2 legal risk (text
+   only, no video). **`ai_generated` (paid/AI transcript generation) explicitly deferred to L8** —
+   ties into the Knowledge Generation quota (`business-model.md` §4), not built now.
+2. **Empty-state copy** (no transcript available) follows `empty-states.md`'s **Content Error** pattern
+   (Acknowledge → Explain → Offer recovery — link back to browse other lessons), replacing the old
+   dead-promise "Transcript submission is coming soon" copy. **No Companion** in this state — Learning
+   Loop Boundary (`design-reconciliation.md` §4) overrides `empty-states.md`'s general Companion-in-
+   empty-state allowance. **No "Generate subtitles" button** — `screen-shadowing-detail.md`'s existing
+   Empty States section describes that as the eventual (L8 `ai_generated`) state, not Plan 1's.
+3. **GDPR delete-my-data — 3-stage lifecycle, user-specified, more complex than a simple confirm dialog:**
+   Day 0 request → **7-day cancelable grace window** (banner + Cancel, app usable normally) → Day 7
+   (if not canceled) hard-delete all user-owned data (recordings storage, shadowing/mining/conversation/
+   SRS/xp_events/notifications/peer-review/companion/journal/reading/JLPT tables; forum posts →
+   `user_id = null`, existing convention) + **ban** (not delete) the Supabase auth user, keep a
+   `public.users` tombstone (id + deleted_at only) → **Day 97 (90 days after the data purge)**: hard-
+   delete the auth user for real, freeing the email for reuse. Needs a **new in-process scheduler**
+   (`setInterval` in the existing long-running almostgone.vn Node process, hourly sweep, two jobs:
+   purge-at-day-7, release-email-at-day-97) — first user of infra that `srs_due`/push notifications
+   (`feature_backlog_deferred.md` items 2/3) were already waiting on; treat as durable infra, not
+   throwaway. **UI location corrected mid-brainstorm**: NOT a card in `/profile` (first answer) —
+   `settings-patterns.md`'s "Dangerous Settings Separation" rule (never mix learning prefs/account
+   info with account destruction) plus `navigation-system.md`'s existing "Settings Entry Point" section
+   (already anticipates a future `/settings` top-level nav item near `profile`) means **a genuinely
+   new `/settings` route**, linked from `/profile`, not a section within it.
+4. **Persist pronunciation score** — trivial, mechanical. `conversation-app.tsx` already updates
+   `pronunciation_score` into CLIENT state after scoring but never PATCHes `conversation_messages`
+   (column exists, unused). Fix = add the PATCH call, best-effort like the rest of that flow.
+5. **Badge icons** — content/asset work only (`badges.icon_url` all null, SVG fallback fine today);
+   kept in Plan 1's scope per user's explicit choice, no design questions needed.
+
+**Doc-update tasks Plan 1 must carry (not just code), per "Documentation follows reality"
+(`docs/design/README.md`):** edit `screen-shadowing-detail.md` Empty States section (real Plan 1
+copy, note the "Generate subtitles" offer is L8-future); **write new** `screen-settings.md` (backlog
+item in `design-reconciliation.md` §12 — must follow full §8 Screen Documentation Rules; scope it to
+what Plan 1 actually ships — Account + Privacy/Danger-Zone — mark Preferences/Subscription/Device
+settings Planned); add `settings` to `navigation-system.md`'s `NAV_ITEMS` table (#15, `/settings`),
+remove its "no route yet" caveat; remove the matching stale caveat in `screen-architecture.md`'s
+Settings row; `settings-patterns.md` stays Draft (Plan 1 only ships a slice of its full vision).
+
+**🔷 OPEN QUESTION FOR THE USER, asked, not yet answered — resume here:** a documentation-alignment
+pass (triggered by the user, see below) surfaced `docs/superpowers/specs/2026-07-29-shadowing-hub-
+consolidation-design.md` (Draft, decided-with-user-but-**unexecuted** — verified zero of its 17 file
+edits have landed: `screen-video-library.md`/`screen-video-detail.md`/`screen-shadowing-detail.md`
+all still under old names/titles/Approved status). That spec renames `screen-shadowing-detail.md` →
+`screen-shadowing-practice.md` (among other IA changes: Video Library/Detail → Shadowing Hub, nav
+`videos`→`shadowing`, **docs-only, explicitly defers actual route/code renames to a separate later
+task**). Plan 1 independently already plans to edit `screen-shadowing-detail.md`'s Empty States
+section (point 2 above) — same file, two separate efforts. **Asked the user: land the consolidation's
+docs-only pass (17 files, no code/build/test dependency) FIRST to avoid a double-edit, before writing
+Plan 1's spec? Answer pending — ask again on resume, don't assume.** Everything else substantive
+holds regardless of this answer (points 1–5 above are unaffected either way).
+
+**Full alignment-pass findings (authority order, principles discovered, conflict list) were delivered
+in-conversation, not written to a file** — if resuming in a fresh session where that message is gone,
+either re-run the same alignment pass (governance → architecture/navigation → patterns → screens, per
+`design-reconciliation.md` §1) or ask the user to confirm the open question above stands.
+
+**Original Plan 2 (Companion Presence) completion detail below, kept for history:**
+
+**Branch `layer-9b-companion-presence`** (off master `ca0f5cf`), merged as `61416bd` above. Its own
+HEAD before merge was **`dcc1338`**.
 
 **Task 13 (whole-branch verification) done this session, same day as the Task 1–12 work below.**
 Full gates: `tsc --noEmit` 0 · `npx vitest run` **213 files / 1901 tests green** · `npm run lint` exit 0
@@ -195,9 +282,12 @@ plan-decomposition, or the hardest long-horizon builds (cinematic scroll orchest
 ## ⭐ L9b DECOMPOSITION — user-approved 2026-07-24 (4 sequential plans, brainstormed on Fable)
 L9b was too large for one spec, so it was split. Order and rationale:
 1. **Plan 1 — launch-blocker debt:** transcript-submit UI (backlog #14, CRITICAL — core loop dead-ends
-   without it) + GDPR delete-my-data (backlog #5, §2 non-negotiable, owed since L1) + small items
-   (#6 persist voice pronunciation score, #4 badge icons). **NOT STARTED.**
-2. **Plan 2 — Companion Presence** = Companion Plan 2 of 3. **IN PROGRESS — see NEXT ACTION above.**
+   without it, scope pivoted to auto-fetch not user-paste) + GDPR delete-my-data (backlog #5, §2
+   non-negotiable, owed since L1, now a 3-stage grace-period design) + small items (#6 persist voice
+   pronunciation score, #4 badge icons). **BRAINSTORM IN PROGRESS — see NEXT ACTION above, spec not
+   yet written.**
+2. **Plan 2 — Companion Presence** = Companion Plan 2 of 3. **DONE, merged to master `61416bd`
+   2026-07-30.**
 3. **Plan 3 — missing feature UIs:** dictionary meanings on tap-to-lookup (#15), "add to flashcard" from
    reading (#8), particle highlighting (#16), listening drill (#9)? — scope to be brainstormed. **NOT STARTED.**
 4. **Plan 4 — landing/cinematic + tutorial + Companion Plan 3** (adaptive voice, AI reflection).
