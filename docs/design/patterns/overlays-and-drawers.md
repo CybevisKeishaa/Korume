@@ -3,7 +3,7 @@
 > **Status:** Approved  
 > **Layer:** Experience Architecture  
 > **Applies to:** Entire Product  
-> **Related:** `workspace-patterns.md`, `learning-surfaces.md`, `navigation-system.md`, `screen-shadowing-detail.md`, `screen-review.md`, `docs/design/design-reconciliation.md`
+> **Related:** `workspace-patterns.md`, `learning-surfaces.md`, `navigation-system.md`, `screen-shadowing-practice.md`, `screen-review.md`, `docs/design/design-reconciliation.md`
 
 ---
 
@@ -27,7 +27,7 @@ Drawer and overlay state is independent of Companion presence. A drawer opening 
 changes whether Companion is Hidden or Available on the underlying screen — Companion's presence is
 still governed only by the Learning Loop Boundary and Anchor Availability of that screen
 (`docs/design/design-reconciliation.md` §4, §6), never by which drawer happens to be open. This
-matters most on `screen-shadowing-detail.md` and `screen-review.md`, where Companion stays Hidden
+matters most on `screen-shadowing-practice.md` and `screen-review.md`, where Companion stays Hidden
 regardless of any drawer opened during the session.
 
 ---
