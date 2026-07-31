@@ -26,7 +26,7 @@ const MAX_TRANSCRIPT_LINES = 2000;
 const PENDING_COLUMNS =
   "id, youtube_video_id, title, duration_seconds, thumbnail_url, jlpt_level_estimate, added_by_user_id, library_access, promotion_starred, created_at";
 
-interface PendingVideoRow {
+export interface PendingVideoRow {
   id: string;
   youtube_video_id: string;
   title: string;
@@ -301,7 +301,18 @@ export function computePromotionScore(inputs: PromotionScoreInputs): number {
   return inputs.libraryCount * 3 + inputs.studySessionCount * 1 + inputs.completedCount * 2;
 }
 
-export type ListTrendingResult = { ok: true; data: (PendingVideoListItem & { score: number })[] } | GuardFailure;
+/**
+ * Cap on how many PRIVATE lessons `listTrendingLessons` scores in one call.
+ * Every new user import defaults to PRIVATE now (not a small moderation
+ * queue like the old pending-only model), so the driving query is unbounded
+ * by construction without this — an unbounded row set would also blow past
+ * PostgREST's server-side row cap on the four `.in()` follow-up queries,
+ * silently truncating and mis-ranking scores rather than erroring. 200 is a
+ * tunable starting point, not a precisely-derived number.
+ */
+const TRENDING_LESSON_LIMIT = 200;
+
+export type ListTrendingResult = { ok: true; data: (PendingVideoRow & { score: number })[] } | GuardFailure;
 
 /** PRIVATE lessons ranked by Promotion Score, highest first (spec §4.2). */
 export async function listTrendingLessons(): Promise<ListTrendingResult> {
@@ -312,7 +323,8 @@ export async function listTrendingLessons(): Promise<ListTrendingResult> {
   const { data: privateLessons, error } = await service
     .from("videos")
     .select(PENDING_COLUMNS)
-    .eq("library_access", "PRIVATE");
+    .eq("library_access", "PRIVATE")
+    .limit(TRENDING_LESSON_LIMIT);
   if (error) throw error;
 
   const lessons = (privateLessons as PendingVideoRow[]) ?? [];
@@ -350,9 +362,6 @@ export async function listTrendingLessons(): Promise<ListTrendingResult> {
 
   const scored = lessons.map((lesson) => ({
     ...lesson,
-    importerName: null,
-    hasTranscript: false,
-    transcriptLineCount: 0,
     score: computePromotionScore({
       libraryCount: libraryCounts.get(lesson.id) ?? 0,
       studySessionCount: (shadowingCounts.get(lesson.id) ?? 0) + (dictationCounts.get(lesson.id) ?? 0),
@@ -364,7 +373,7 @@ export async function listTrendingLessons(): Promise<ListTrendingResult> {
   return { ok: true, data: scored };
 }
 
-export type ListReadyToPromoteResult = { ok: true; data: PendingVideoListItem[] } | GuardFailure;
+export type ListReadyToPromoteResult = { ok: true; data: PendingVideoRow[] } | GuardFailure;
 
 /** Admin's own starred shortlist of PRIVATE lessons (spec §4.2). */
 export async function listReadyToPromote(): Promise<ListReadyToPromoteResult> {
@@ -379,14 +388,10 @@ export async function listReadyToPromote(): Promise<ListReadyToPromoteResult> {
     .eq("promotion_starred", true);
   if (error) throw error;
 
-  const rows = (data as PendingVideoRow[]) ?? [];
-  return {
-    ok: true,
-    data: rows.map((v) => ({ ...v, importerName: null, hasTranscript: false, transcriptLineCount: 0 })),
-  };
+  return { ok: true, data: (data as PendingVideoRow[]) ?? [] };
 }
 
-export type ListPublishedResult = { ok: true; data: PendingVideoListItem[] } | GuardFailure;
+export type ListPublishedResult = { ok: true; data: PendingVideoRow[] } | GuardFailure;
 
 /** FREE/PLUS lessons, for re-tier/demote management (spec §4.2). */
 export async function listPublishedLessons(): Promise<ListPublishedResult> {
@@ -401,11 +406,7 @@ export async function listPublishedLessons(): Promise<ListPublishedResult> {
     .order("created_at", { ascending: false });
   if (error) throw error;
 
-  const rows = (data as PendingVideoRow[]) ?? [];
-  return {
-    ok: true,
-    data: rows.map((v) => ({ ...v, importerName: null, hasTranscript: false, transcriptLineCount: 0 })),
-  };
+  return { ok: true, data: (data as PendingVideoRow[]) ?? [] };
 }
 
 export type ReplaceTranscriptResult =
