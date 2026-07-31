@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase, eqValue, type QueryCall } from "@/test/supabase-mock";
+import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -49,7 +49,8 @@ describe("getRecommendations", () => {
     mockClient({
       user_video_progress: () => ({ data: [], error: null }),
       videos: (calls: QueryCall[]) => {
-        expect(eqValue(calls, "status")).toBe("approved");
+        const inCall = calls.find((c): c is Extract<QueryCall, { op: "in" }> => c.op === "in" && c.column === "library_access");
+        expect(inCall?.values).toEqual(["FREE", "PLUS"]);
         return { data: [VIDEO_A], error: null };
       },
       transcripts: (calls: QueryCall[]) => {

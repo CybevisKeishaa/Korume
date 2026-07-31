@@ -31,3 +31,15 @@ export const adminTranscriptSchema = z.object({
     .max(200_000, "Transcript is too long (max 200,000 characters)."),
 });
 export type AdminTranscriptInput = z.infer<typeof adminTranscriptSchema>;
+
+/** POST /api/admin/videos/[id]/approve body — tier defaults to FREE for the existing single-button UI. */
+export const promoteVideoSchema = z.object({
+  tier: z.enum(["FREE", "PLUS"]).default("FREE"),
+});
+export type PromoteVideoInput = z.infer<typeof promoteVideoSchema>;
+
+/** POST /api/admin/videos/[id]/star body. */
+export const starVideoSchema = z.object({
+  starred: z.boolean(),
+});
+export type StarVideoInput = z.infer<typeof starVideoSchema>;

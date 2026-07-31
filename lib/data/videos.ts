@@ -1,11 +1,11 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { parseVideoId, fetchOembed, OembedFetchError } from "@/lib/youtube";
-import { rateLimit } from "@/lib/rate-limit";
-import type { ImportVideoInput, ProgressInput } from "@/lib/validation/video";
+import type { ProgressInput } from "@/lib/validation/video";
 
 export const VIDEO_COLUMNS =
-  "id, youtube_video_id, title, duration_seconds, thumbnail_url, jlpt_level_estimate, added_by_user_id, status, created_at";
+  "id, youtube_video_id, title, duration_seconds, thumbnail_url, jlpt_level_estimate, added_by_user_id, library_access, promotion_starred, created_at";
+
+export type LibraryAccess = "PRIVATE" | "FREE" | "PLUS";
 
 export interface VideoRow {
   id: string;
@@ -15,7 +15,8 @@ export interface VideoRow {
   thumbnail_url: string | null;
   jlpt_level_estimate: string | null;
   added_by_user_id: string | null;
-  status: "pending" | "approved";
+  library_access: LibraryAccess;
+  promotion_starred: boolean;
   created_at: string;
 }
 
@@ -25,8 +26,6 @@ export interface VideoProgressRow {
   last_watched_position: number;
   completed_at: string | null;
 }
-
-const IMPORT_LIMIT = { limit: 20, windowMs: 60_000 };
 
 /** Shared by every `lib/data/videos*` module — resolves the signed-in user, or `null`. */
 export async function requireUser(supabase: ReturnType<typeof createClient>) {
@@ -48,70 +47,6 @@ export async function selectVideoById(
     .maybeSingle();
   if (error) throw error;
   return (data as VideoRow | null) ?? null;
-}
-
-export type ImportVideoResult =
-  | { ok: true; data: VideoRow }
-  | { ok: false; status: 401 | 400 | 422 }
-  | { ok: false; status: 429; retryAfter: number };
-
-/**
- * Import (or re-resolve) a video by YouTube URL/ID. Idempotent: if the video
- * was already imported, its existing row is returned rather than re-fetching
- * metadata. Metadata only — never touches video bytes (CLAUDE.md §2).
- */
-export async function importVideo(input: ImportVideoInput): Promise<ImportVideoResult> {
-  const supabase = createClient();
-  const user = await requireUser(supabase);
-  if (!user) return { ok: false, status: 401 };
-
-  const limited = rateLimit(`videos:import:${user.id}`, IMPORT_LIMIT);
-  if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
-
-  const videoId = parseVideoId(input.youtubeUrl);
-  if (!videoId) return { ok: false, status: 400 };
-
-  const { data: existing, error: lookupError } = await supabase
-    .from("videos")
-    .select(VIDEO_COLUMNS)
-    .eq("youtube_video_id", videoId)
-    .maybeSingle();
-  if (lookupError) throw lookupError;
-  if (existing) return { ok: true, data: existing as VideoRow };
-
-  let meta;
-  try {
-    meta = await fetchOembed(videoId);
-  } catch (err) {
-    if (err instanceof OembedFetchError) return { ok: false, status: 422 };
-    throw err;
-  }
-
-  const { data: inserted, error: insertError } = await supabase
-    .from("videos")
-    .insert({
-      youtube_video_id: videoId,
-      title: meta.title,
-      thumbnail_url: meta.thumbnailUrl,
-      added_by_user_id: user.id,
-    })
-    .select(VIDEO_COLUMNS)
-    .single();
-
-  if (insertError) {
-    // Unique-violation race: another request imported the same video first.
-    if (insertError.code === "23505") {
-      const { data: raced } = await supabase
-        .from("videos")
-        .select(VIDEO_COLUMNS)
-        .eq("youtube_video_id", videoId)
-        .maybeSingle();
-      if (raced) return { ok: true, data: raced as VideoRow };
-    }
-    return { ok: false, status: 400 };
-  }
-
-  return { ok: true, data: inserted as VideoRow };
 }
 
 export type ListVideosResult = { ok: true; data: VideoRow[] } | { ok: false; status: 401 };

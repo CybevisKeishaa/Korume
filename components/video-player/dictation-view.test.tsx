@@ -14,7 +14,8 @@ const VIDEO: VideoRow = {
   thumbnail_url: null,
   jlpt_level_estimate: null,
   added_by_user_id: "user-1",
-  status: "approved",
+  library_access: "FREE",
+  promotion_starred: false,
   created_at: "2026-01-01T00:00:00.000Z",
 };
 

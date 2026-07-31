@@ -99,7 +99,7 @@ export async function getAdminStats(now: Date = new Date()): Promise<GetAdminSta
     service.from("xp_events").select("user_id").gte("created_at", cutoff7),
     service.from("xp_events").select("user_id").gte("created_at", cutoff30),
     service.from("users").select("id, created_at").gte("created_at", cutoff60).lt("created_at", cutoff30),
-    service.from("videos").select("status"),
+    service.from("videos").select("library_access"),
     service.from("kanji").select("id"),
     service.from("vocab").select("id"),
     service.from("grammar_points").select("id"),
@@ -138,7 +138,7 @@ export async function getAdminStats(now: Date = new Date()): Promise<GetAdminSta
     retentionActive = distinctUserCount(retentionRows);
   }
 
-  const videoStatuses = (videosRes.data as { status: string }[] | null) ?? [];
+  const videoAccessLevels = (videosRes.data as { library_access: string }[] | null) ?? [];
 
   const topCounts = new Map<string, number>();
   for (const row of (topActivityRes.data as { source_type: string }[] | null) ?? []) {
@@ -163,8 +163,8 @@ export async function getAdminStats(now: Date = new Date()): Promise<GetAdminSta
         methodology: RETENTION_METHODOLOGY,
       },
       contentCounts: {
-        videosPending: videoStatuses.filter((v) => v.status === "pending").length,
-        videosApproved: videoStatuses.filter((v) => v.status === "approved").length,
+        videosPending: videoAccessLevels.filter((v) => v.library_access === "PRIVATE").length,
+        videosApproved: videoAccessLevels.filter((v) => v.library_access === "FREE" || v.library_access === "PLUS").length,
         kanji: countRows(kanjiRes.data),
         vocab: countRows(vocabRes.data),
         grammar: countRows(grammarRes.data),
