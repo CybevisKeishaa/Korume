@@ -11,7 +11,7 @@ export type { FuriganaSegment } from "@/lib/japanese/types";
 import type { FuriganaSegment } from "@/lib/japanese/types";
 
 export type JlptLevel = "N5" | "N4" | "N3" | "N2" | "N1";
-export type VideoStatus = "pending" | "approved";
+export type LibraryAccess = "PRIVATE" | "FREE" | "PLUS";
 export type TranscriptSource =
   | "youtube_caption"
   | "user_submitted"
@@ -25,7 +25,8 @@ export interface VideoRow {
   thumbnail_url: string | null;
   jlpt_level_estimate: JlptLevel | null;
   added_by_user_id: string | null;
-  status: VideoStatus;
+  library_access: LibraryAccess;
+  promotion_starred: boolean;
   created_at: string;
 }
 
