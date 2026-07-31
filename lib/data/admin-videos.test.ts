@@ -12,7 +12,14 @@ vi.mock("@/lib/admin/guard", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/lib/japanese", () => ({ toFurigana: vi.fn() }));
 
 // Imported after the mocks above are registered.
-import { approveVideo, listPendingVideos, rejectVideo, replaceVideoTranscript } from "./admin-videos";
+import {
+  demoteVideo,
+  listNeedsReview,
+  promoteVideo,
+  rejectVideo,
+  replaceVideoTranscript,
+  starVideo,
+} from "./admin-videos";
 
 const ADMIN = { id: "admin-1", email: "admin@example.com" };
 const VIDEO_ID = "a0000000-0000-0000-0000-000000000001";
@@ -31,17 +38,17 @@ beforeEach(() => {
   vi.mocked(toFurigana).mockResolvedValue([]);
 });
 
-describe("listPendingVideos", () => {
+describe("listNeedsReview", () => {
   it("passes through a guard failure", async () => {
     vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 403 });
-    const result = await listPendingVideos();
+    const result = await listNeedsReview();
     expect(result).toEqual({ ok: false, status: 403 });
   });
 
   it("returns pending videos with importer name and transcript presence/line-count", async () => {
     mockService({
       videos: (calls: QueryCall[]) => {
-        expect(eqValue(calls, "status")).toBe("pending");
+        expect(eqValue(calls, "library_access")).toBe("PRIVATE");
         return {
           data: [
             {
@@ -52,6 +59,7 @@ describe("listPendingVideos", () => {
               thumbnail_url: null,
               jlpt_level_estimate: "N4",
               added_by_user_id: "u1",
+              library_access: "PRIVATE",
               created_at: "2026-07-01T00:00:00Z",
             },
           ],
@@ -66,7 +74,7 @@ describe("listPendingVideos", () => {
       transcript_lines: () => ({ data: [{ transcript_id: "t1" }, { transcript_id: "t1" }], error: null }),
     });
 
-    const result = await listPendingVideos();
+    const result = await listNeedsReview();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.items).toEqual([
@@ -92,6 +100,7 @@ describe("listPendingVideos", () => {
             thumbnail_url: null,
             jlpt_level_estimate: null,
             added_by_user_id: null,
+            library_access: "PRIVATE",
             created_at: "2026-07-01T00:00:00Z",
           },
         ],
@@ -101,7 +110,7 @@ describe("listPendingVideos", () => {
       transcript_lines: () => ({ data: [], error: null }),
     });
 
-    const result = await listPendingVideos();
+    const result = await listNeedsReview();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.items[0]).toEqual(
@@ -118,6 +127,7 @@ describe("listPendingVideos", () => {
       thumbnail_url: null,
       jlpt_level_estimate: null,
       added_by_user_id: null,
+      library_access: "PRIVATE",
       created_at: `2026-07-01T00:00:${String(i).padStart(2, "0")}Z`,
     }));
 
@@ -134,7 +144,7 @@ describe("listPendingVideos", () => {
       transcript_lines: () => ({ data: [], error: null }),
     });
 
-    const result = await listPendingVideos("2026-07-01T00:00:05Z");
+    const result = await listNeedsReview("2026-07-01T00:00:05Z");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.items).toHaveLength(20);
@@ -142,31 +152,56 @@ describe("listPendingVideos", () => {
   });
 });
 
-describe("approveVideo", () => {
+describe("promoteVideo", () => {
   it("passes through a guard failure", async () => {
-    vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 401 });
-    const result = await approveVideo(VIDEO_ID);
-    expect(result).toEqual({ ok: false, status: 401 });
+    vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 403 });
+    const result = await promoteVideo(VIDEO_ID, "FREE");
+    expect(result).toEqual({ ok: false, status: 403 });
   });
 
-  it("returns 404 when the video is not pending (or does not exist)", async () => {
-    mockService({ videos: () => ({ data: null, error: null }) });
-    const result = await approveVideo(VIDEO_ID);
-    expect(result).toEqual({ ok: false, status: 404 });
+  it("refuses to promote a lesson with no transcript", async () => {
+    mockService({
+      transcripts: () => ({ data: [], error: null }),
+    });
+    const result = await promoteVideo(VIDEO_ID, "FREE");
+    expect(result).toEqual({ ok: false, status: 422 });
   });
 
-  it("sets status to approved via the service role", async () => {
+  it("promotes a lesson with a transcript to the requested tier", async () => {
+    mockService({
+      transcripts: () => ({ data: [{ id: "t1" }], error: null }),
+      videos: () => ({ data: { id: VIDEO_ID, library_access: "FREE" }, error: null }),
+    });
+    const result = await promoteVideo(VIDEO_ID, "FREE");
+    expect(result).toEqual({ ok: true, data: { id: VIDEO_ID, library_access: "FREE" } });
+  });
+});
+
+describe("demoteVideo", () => {
+  it("sets library_access back to PRIVATE", async () => {
     mockService({
       videos: (calls: QueryCall[]) => {
-        expect(eqValue(calls, "id")).toBe(VIDEO_ID);
-        expect(eqValue(calls, "status")).toBe("pending");
-        const updateCall = calls.find((c): c is Extract<QueryCall, { op: "update" }> => c.op === "update");
-        expect(updateCall?.values).toEqual({ status: "approved" });
-        return { data: { id: VIDEO_ID, status: "approved" }, error: null };
+        const update = calls.find((c): c is Extract<QueryCall, { op: "update" }> => c.op === "update");
+        expect(update?.values).toEqual({ library_access: "PRIVATE" });
+        return { data: { id: VIDEO_ID, library_access: "PRIVATE" }, error: null };
       },
     });
-    const result = await approveVideo(VIDEO_ID);
-    expect(result).toEqual({ ok: true, data: { id: VIDEO_ID, status: "approved" } });
+    const result = await demoteVideo(VIDEO_ID);
+    expect(result).toEqual({ ok: true, data: { id: VIDEO_ID, library_access: "PRIVATE" } });
+  });
+});
+
+describe("starVideo", () => {
+  it("toggles promotion_starred", async () => {
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        const update = calls.find((c): c is Extract<QueryCall, { op: "update" }> => c.op === "update");
+        expect(update?.values).toEqual({ promotion_starred: true });
+        return { data: { id: VIDEO_ID, promotion_starred: true }, error: null };
+      },
+    });
+    const result = await starVideo(VIDEO_ID, true);
+    expect(result).toEqual({ ok: true, data: { id: VIDEO_ID, promotion_starred: true } });
   });
 });
 
@@ -187,7 +222,7 @@ describe("rejectVideo", () => {
     mockService({
       videos: (calls: QueryCall[]) => {
         expect(calls.some((c) => c.op === "delete")).toBe(true);
-        expect(eqValue(calls, "status")).toBe("pending");
+        expect(eqValue(calls, "library_access")).toBe("PRIVATE");
         return { data: { id: VIDEO_ID }, error: null };
       },
     });

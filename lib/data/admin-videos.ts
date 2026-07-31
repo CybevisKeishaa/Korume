@@ -24,7 +24,7 @@ const TRANSCRIPT_LIMIT = { limit: 10, windowMs: 60_000 };
 const MAX_TRANSCRIPT_LINES = 2000;
 
 const PENDING_COLUMNS =
-  "id, youtube_video_id, title, duration_seconds, thumbnail_url, jlpt_level_estimate, added_by_user_id, created_at";
+  "id, youtube_video_id, title, duration_seconds, thumbnail_url, jlpt_level_estimate, added_by_user_id, library_access, promotion_starred, created_at";
 
 interface PendingVideoRow {
   id: string;
@@ -34,6 +34,8 @@ interface PendingVideoRow {
   thumbnail_url: string | null;
   jlpt_level_estimate: string | null;
   added_by_user_id: string | null;
+  library_access: "PRIVATE" | "FREE" | "PLUS";
+  promotion_starred: boolean;
   created_at: string;
 }
 
@@ -63,7 +65,7 @@ export type ListPendingVideosResult = { ok: true; data: PendingVideosPage } | Gu
  * a real multi-level PostgREST embed can't be exercised deterministically
  * here) and the pending queue is expected to be small.
  */
-export async function listPendingVideos(cursor?: string): Promise<ListPendingVideosResult> {
+export async function listNeedsReview(cursor?: string): Promise<ListPendingVideosResult> {
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
 
@@ -71,7 +73,7 @@ export async function listPendingVideos(cursor?: string): Promise<ListPendingVid
   let query = service
     .from("videos")
     .select(PENDING_COLUMNS)
-    .eq("status", "pending")
+    .eq("library_access", "PRIVATE")
     .order("created_at", { ascending: true })
     .limit(PAGE_SIZE + 1);
   if (cursor) query = query.gt("created_at", cursor);
@@ -139,35 +141,92 @@ export async function listPendingVideos(cursor?: string): Promise<ListPendingVid
   return { ok: true, data: { items, nextCursor } };
 }
 
-export type ApproveVideoResult =
-  | { ok: true; data: { id: string; status: "approved" } }
+export type PromoteVideoResult =
+  | { ok: true; data: { id: string; library_access: "FREE" | "PLUS" } }
   | GuardFailure
-  | { ok: false; status: 404 }
+  | { ok: false; status: 404 | 422 }
   | { ok: false; status: 429; retryAfter: number };
 
-/** Approve a pending video (`videos.status: 'pending' -> 'approved'`). The
- * `.eq("status", "pending")` guard makes this idempotent-safe: re-approving
- * an already-approved id, or approving a nonexistent id, both come back as a
- * plain 404 rather than a silent no-op update. */
-export async function approveVideo(id: string): Promise<ApproveVideoResult> {
+/**
+ * Promote a PRIVATE lesson to FREE or PLUS. Requires a transcript to already
+ * exist (spec §4.1 — "a lesson only reaches FREE/PLUS with a transcript
+ * already attached," decided 2026-07-31): otherwise a published lesson could
+ * have no studyable content, which the domain model treats as impossible.
+ */
+export async function promoteVideo(id: string, tier: "FREE" | "PLUS"): Promise<PromoteVideoResult> {
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
 
-  const limited = rateLimit(`admin:videos:approve:${admin.user.id}`, APPROVE_LIMIT);
+  const limited = rateLimit(`admin:videos:promote:${admin.user.id}`, APPROVE_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
 
   const service = createServiceClient();
+  const { data: transcripts, error: transcriptError } = await service
+    .from("transcripts")
+    .select("id")
+    .eq("video_id", id);
+  if (transcriptError) throw transcriptError;
+  if (((transcripts as { id: string }[] | null) ?? []).length === 0) {
+    return { ok: false, status: 422 };
+  }
+
   const { data, error } = await service
     .from("videos")
-    .update({ status: "approved" })
+    .update({ library_access: tier })
     .eq("id", id)
-    .eq("status", "pending")
-    .select("id, status")
+    .eq("library_access", "PRIVATE")
+    .select("id, library_access")
     .maybeSingle();
   if (error) throw error;
   if (!data) return { ok: false, status: 404 };
 
-  return { ok: true, data: data as { id: string; status: "approved" } };
+  return { ok: true, data: data as { id: string; library_access: "FREE" | "PLUS" } };
+}
+
+export type DemoteVideoResult =
+  | { ok: true; data: { id: string; library_access: "PRIVATE" } }
+  | GuardFailure
+  | { ok: false; status: 404 };
+
+/** Demote a published lesson back to PRIVATE (spec §4.2 "management" view). */
+export async function demoteVideo(id: string): Promise<DemoteVideoResult> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const service = createServiceClient();
+  const { data, error } = await service
+    .from("videos")
+    .update({ library_access: "PRIVATE" })
+    .eq("id", id)
+    .select("id, library_access")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return { ok: false, status: 404 };
+
+  return { ok: true, data: data as { id: string; library_access: "PRIVATE" } };
+}
+
+export type StarVideoResult =
+  | { ok: true; data: { id: string; promotion_starred: boolean } }
+  | GuardFailure
+  | { ok: false; status: 404 };
+
+/** Toggle a PRIVATE lesson's "Ready to Promote" shortlist flag (spec §4.2). */
+export async function starVideo(id: string, starred: boolean): Promise<StarVideoResult> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const service = createServiceClient();
+  const { data, error } = await service
+    .from("videos")
+    .update({ promotion_starred: starred })
+    .eq("id", id)
+    .select("id, promotion_starred")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return { ok: false, status: 404 };
+
+  return { ok: true, data: data as { id: string; promotion_starred: boolean } };
 }
 
 export type RejectVideoResult =
@@ -177,17 +236,17 @@ export type RejectVideoResult =
   | { ok: false; status: 429; retryAfter: number };
 
 /**
- * Reject a pending video. `video_status` (migration
- * 20260712000001_schema.sql) is only `'pending' | 'approved'` — there is no
- * `'rejected'` value to flip to, and adding one is a schema change out of
- * scope here (owned by `database-engineer`; no migration added per this
- * task's constraints). Reject is therefore implemented as a hard DELETE of
- * the video row via the service role, which cascades to
- * `transcripts`/`transcript_lines`/`user_video_progress`/
- * `user_playlist_items` (all `on delete cascade`) and nulls out `video_id` on
- * `shadowing_sessions`/`dictation_attempts` and `source_video_id` on
- * `vocab_examples` (all `on delete set null`) — see that schema migration for
- * the FK definitions.
+ * Reject a PRIVATE lesson. `lesson_access_level` (migration
+ * 20260731000017_lesson_access_level.sql) is only `'PRIVATE' | 'FREE' |
+ * 'PLUS'` — there is no `'rejected'` value to flip to, and adding one is a
+ * schema change out of scope here (owned by `database-engineer`; no
+ * migration added per this task's constraints). Reject is therefore
+ * implemented as a hard DELETE of the video row via the service role, which
+ * cascades to `transcripts`/`transcript_lines`/`user_video_progress`/
+ * `user_playlist_items`/`user_lesson_library` (all `on delete cascade`) and
+ * nulls out `video_id` on `shadowing_sessions`/`dictation_attempts` and
+ * `source_video_id` on `vocab_examples` (all `on delete set null`) — see
+ * migration 20260712000001_schema.sql for the FK definitions.
  *
  * `reason` is accepted for the moderator's own record (logged server-side)
  * but is NOT persisted anywhere — there is no row left to attach it to after
@@ -217,13 +276,136 @@ export async function rejectVideo(id: string, reason?: string): Promise<RejectVi
     .from("videos")
     .delete()
     .eq("id", id)
-    .eq("status", "pending")
+    .eq("library_access", "PRIVATE")
     .select("id")
     .maybeSingle();
   if (error) throw error;
   if (!data) return { ok: false, status: 404 };
 
   return { ok: true, data: { id: (data as { id: string }).id } };
+}
+
+export interface PromotionScoreInputs {
+  libraryCount: number;
+  studySessionCount: number;
+  completedCount: number;
+}
+
+/**
+ * Initial Promotion Score weights (spec §4.2 explicitly leaves these as an
+ * implementation-time decision, not fixed). Bookmark count is OMITTED: no
+ * `bookmarks` table exists anywhere in this schema yet, so there is nothing
+ * to weigh — add it here if/when a bookmarks feature ships.
+ */
+export function computePromotionScore(inputs: PromotionScoreInputs): number {
+  return inputs.libraryCount * 3 + inputs.studySessionCount * 1 + inputs.completedCount * 2;
+}
+
+export type ListTrendingResult = { ok: true; data: (PendingVideoListItem & { score: number })[] } | GuardFailure;
+
+/** PRIVATE lessons ranked by Promotion Score, highest first (spec §4.2). */
+export async function listTrendingLessons(): Promise<ListTrendingResult> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const service = createServiceClient();
+  const { data: privateLessons, error } = await service
+    .from("videos")
+    .select(PENDING_COLUMNS)
+    .eq("library_access", "PRIVATE");
+  if (error) throw error;
+
+  const lessons = (privateLessons as PendingVideoRow[]) ?? [];
+  const lessonIds = lessons.map((l) => l.id);
+  if (lessonIds.length === 0) return { ok: true, data: [] };
+
+  const [libraryRes, shadowingRes, dictationRes, progressRes] = await Promise.all([
+    service.from("user_lesson_library").select("lesson_id").in("lesson_id", lessonIds),
+    service.from("shadowing_sessions").select("video_id").in("video_id", lessonIds),
+    service.from("dictation_attempts").select("video_id").in("video_id", lessonIds),
+    service.from("user_video_progress").select("video_id, completed_at").in("video_id", lessonIds),
+  ]);
+  if (libraryRes.error) throw libraryRes.error;
+  if (shadowingRes.error) throw shadowingRes.error;
+  if (dictationRes.error) throw dictationRes.error;
+  if (progressRes.error) throw progressRes.error;
+
+  const countBy = (rows: { lesson_id?: string; video_id?: string }[], key: "lesson_id" | "video_id") => {
+    const map = new Map<string, number>();
+    for (const row of rows) {
+      const id = row[key];
+      if (!id) continue;
+      map.set(id, (map.get(id) ?? 0) + 1);
+    }
+    return map;
+  };
+
+  const libraryCounts = countBy((libraryRes.data as { lesson_id: string }[]) ?? [], "lesson_id");
+  const shadowingCounts = countBy((shadowingRes.data as { video_id: string }[]) ?? [], "video_id");
+  const dictationCounts = countBy((dictationRes.data as { video_id: string }[]) ?? [], "video_id");
+  const completedCounts = countBy(
+    ((progressRes.data as { video_id: string; completed_at: string | null }[]) ?? []).filter((r) => r.completed_at),
+    "video_id",
+  );
+
+  const scored = lessons.map((lesson) => ({
+    ...lesson,
+    importerName: null,
+    hasTranscript: false,
+    transcriptLineCount: 0,
+    score: computePromotionScore({
+      libraryCount: libraryCounts.get(lesson.id) ?? 0,
+      studySessionCount: (shadowingCounts.get(lesson.id) ?? 0) + (dictationCounts.get(lesson.id) ?? 0),
+      completedCount: completedCounts.get(lesson.id) ?? 0,
+    }),
+  }));
+  scored.sort((a, b) => b.score - a.score);
+
+  return { ok: true, data: scored };
+}
+
+export type ListReadyToPromoteResult = { ok: true; data: PendingVideoListItem[] } | GuardFailure;
+
+/** Admin's own starred shortlist of PRIVATE lessons (spec §4.2). */
+export async function listReadyToPromote(): Promise<ListReadyToPromoteResult> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const service = createServiceClient();
+  const { data, error } = await service
+    .from("videos")
+    .select(PENDING_COLUMNS)
+    .eq("library_access", "PRIVATE")
+    .eq("promotion_starred", true);
+  if (error) throw error;
+
+  const rows = (data as PendingVideoRow[]) ?? [];
+  return {
+    ok: true,
+    data: rows.map((v) => ({ ...v, importerName: null, hasTranscript: false, transcriptLineCount: 0 })),
+  };
+}
+
+export type ListPublishedResult = { ok: true; data: PendingVideoListItem[] } | GuardFailure;
+
+/** FREE/PLUS lessons, for re-tier/demote management (spec §4.2). */
+export async function listPublishedLessons(): Promise<ListPublishedResult> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const service = createServiceClient();
+  const { data, error } = await service
+    .from("videos")
+    .select(PENDING_COLUMNS)
+    .in("library_access", ["FREE", "PLUS"])
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  const rows = (data as PendingVideoRow[]) ?? [];
+  return {
+    ok: true,
+    data: rows.map((v) => ({ ...v, importerName: null, hasTranscript: false, transcriptLineCount: 0 })),
+  };
 }
 
 export type ReplaceTranscriptResult =
