@@ -147,8 +147,7 @@ These are the decision filter for every future feature and every pricing change.
    feature restrictions. Premium expands the library and the ability to create new lessons, rather
    than fragmenting the learning experience.**
 
-   **What is/isn't the core loop** (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-
-   workspace-design.md` §3.4 — read this precisely, "never lock the core loop" is easy to misread as
+   **What is/isn't the core loop** (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §3.4 — read this precisely, "never lock the core loop" is easy to misread as
    "the entire library is free," which is the opposite of what it means):
 
    ```

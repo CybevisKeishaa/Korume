@@ -133,7 +133,7 @@ Understanding Japanese.
 
 Ideal for:
 
-Shadowing (Reading Mode)
+Shadowing Practice (Reading View Mode)
 
 Transcript
 

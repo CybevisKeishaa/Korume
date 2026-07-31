@@ -65,8 +65,7 @@ are reached by drilling into their parent item (e.g. `/shadowing/[id]`), never l
 top-level nav entry — this keeps the acquisition loops off the persistent chrome, consistent with
 the Learning Loop Boundary (`docs/design/design-reconciliation.md` §4). "Shadowing" as a top-level
 nav entry names the **Shadowing Hub** (`screen-shadowing-hub.md`) — the learner's home for browsing
-and resuming lessons, itself not an acquisition loop; **Shadowing Practice** (`screen-shadowing-
-practice.md`), reached by drilling into a specific lesson, is the acquisition loop this paragraph's
+and resuming lessons, itself not an acquisition loop; **Shadowing Practice** (`screen-shadowing-practice.md`), reached by drilling into a specific lesson, is the acquisition loop this paragraph's
 ban is about. The two are not the same destination and must not be conflated when reading "Shadowing"
 elsewhere in this document. There is no dedicated Search entry in this list — Search is a persistent
 affordance inside the Nav Column chrome itself, not a separate destination

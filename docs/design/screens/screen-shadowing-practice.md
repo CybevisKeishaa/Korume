@@ -2,8 +2,7 @@
 ## The Adaptive Learning Workspace
 
 > **Status:** Approved
-> Replaces `screen-shadowing-detail.md` per `docs/superpowers/specs/2026-07-29-shadowing-hub-
-> consolidation-design.md` §0/§2/§5. **The route (`/shadowing/[id]`) represents the Lesson, not
+> Replaces `screen-shadowing-detail.md` per `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §0/§2/§5. **The route (`/shadowing/[id]`) represents the Lesson, not
 > "the Practice screen."** Shadowing Practice — everything this document specifies — is the primary
 > experience rendered at that route today, but it is one experience *within* the Lesson, not the
 > route's identity: three other Learning Modes (Pronunciation, Dictation, Summary) are siblings of

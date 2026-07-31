@@ -2,9 +2,7 @@
 ## The Learner's Home for Shadowing
 
 > **Status:** Approved
-> Replaces `screen-video-library.md` per `docs/superpowers/specs/2026-07-29-shadowing-hub-
-> consolidation-design.md` §0/§5 and `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-
-> workspace-design.md` §5. **The primary product domain is Shadowing, not Video** — this screen is
+> Replaces `screen-video-library.md` per `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §0/§5 and `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §5. **The primary product domain is Shadowing, not Video** — this screen is
 > not "a library that also does other things"; it is the learner's home for the Shadowing domain,
 > answering "What should I practice next?" through browse/discover, search/filter, recommendations
 > — **and** continuing an unfinished session, seeing weekly progress, resuming where they left off.
@@ -43,7 +41,7 @@ Every lesson should invite exploration rather than compete for attention.
 
 # Core Philosophy
 
-The library exists to answer one simple question:
+The Hub exists to answer one simple question:
 
 > "What story do I want to spend time with today?"
 
@@ -188,8 +186,7 @@ Instead of technical categories,
 present meaningful groups.
 
 The grid is entirely collection-driven, ordered by each collection's stored display order — no
-hardcoded sections in code (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-
-design.md` §5). Three computed (virtual) collections are always prepended, in this order:
+hardcoded sections in code (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §5). Three computed (virtual) collections are always prepended, in this order:
 
 Continue Learning
 
@@ -263,8 +260,6 @@ Hover reveals
 
 Continue Learning
 
-Open Lesson
-
 Start Shadowing
 
 The interface never feels button-heavy.
@@ -334,7 +329,7 @@ what it contains.
 
 Gamification numbers (XP, Level) are not avoided at the product level — they belong to the
 Gamification Layer, not to this discovery surface (`docs/design/design-reconciliation.md` §3).
-This screen simply doesn't repeat them here: it shows continuity instead, because the Library's
+This screen simply doesn't repeat them here: it shows continuity instead, because the Hub's
 job is discovery, not status.
 
 Show
@@ -570,7 +565,7 @@ Reading preferences
 
 across sessions.
 
-The Library should always feel familiar when the learner returns.
+The Hub should always feel familiar when the learner returns.
 
 ---
 
