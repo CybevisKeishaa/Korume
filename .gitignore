@@ -60,3 +60,6 @@ next-env.d.ts
 # subagent-driven-development scratch workspace (ledgers, briefs, review packages)
 /.superpowers/
 *.blend1
+
+# git worktrees for isolated plan execution
+/.worktrees/
