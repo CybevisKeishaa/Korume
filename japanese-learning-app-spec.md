@@ -181,7 +181,7 @@
 > (JapanWeb+) mở khóa *intelligence AI-authored trên data của bạn*, KHÔNG khóa core loop; **PayOS**;
 > **không trial** (conversion = Contextual Discovery); giá 49k/490k/39k founding. Chi tiết ở business-model.md §2/§5/§6.
 
-- ~~Free tier: giới hạn số video/ngày, số lần chấm phát âm AI/ngày~~ → core loop free & unlimited; chỉ metered việc *tạo* knowledge mới (quota Knowledge Generation)
+- ~~Free tier: giới hạn số video/ngày, số lần chấm phát âm AI/ngày~~ → core loop free & unlimited; chỉ metered việc *tạo* knowledge mới (quota Knowledge Generation). **Cập nhật 2026-07-31:** "free & unlimited" chỉ đúng cho *core loop bên trong một Lesson đã mở* (Reading → Shadowing → Pronunciation → Dictation → Mining → Review) — độ rộng thư viện (Free chỉ mở lessons `FREE`-tier) và số Lesson tự tạo mỗi tháng (Free giới hạn 3/tháng) KHÔNG nằm trong "unlimited" này. Xem `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §3.4.
 - Premium (JapanWeb+): full cascade deep, AI Sensei memory/coaching, Azure pronunciation, conversation, full JLPT mock
 - ~~Stripe subscription, trial 7 ngày~~ → **PayOS**, không trial
 
