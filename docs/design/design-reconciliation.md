@@ -1,7 +1,7 @@
 # Design System Governance & Reconciliation
 
 > **Status:** Canonical
-> **Version:** 1.1 (2026-07-29)
+> **Version:** 1.2 (2026-07-31)
 > **Applies to:** `docs/design/patterns/*.md`, `docs/design/screens/*.md`, every root-level
 > `docs/design/*.md` philosophy document, and every future design document in this repo.
 > **Decision record:** `docs/superpowers/specs/2026-07-28-design-docs-reconciliation-design.md`
@@ -36,6 +36,11 @@ When two documents disagree, resolve by this order (highest wins):
   (`components/companion/ambient-provider.tsx`), never by an individual screen.
 - Companion does not own gamification and never narrates it (§3).
 - Companion does not replace progress systems — it sits beside them, not instead of them.
+- **Removing a screen does not imply moving its responsibilities into Companion.** Companion
+  provides context only where it already would have, on surfaces where it already speaks. It does
+  not exist to backfill a screen that was just removed, and a missing UI is never, by itself, a
+  reason to add a new Companion touchpoint
+  (`docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §3).
 
 ---
 
@@ -66,6 +71,20 @@ Every screen that shows both layers documents which layer owns which information
 |---|---|---|
 | Gamification | XP, Streak, Progress, Goal completion | — |
 | Companion | Memory, Reflection, Journey meaning | Reacting to XP/streak/leaderboard changes |
+
+**Shadowing Hub vs. Dashboard split.** Both surfaces show progress-shaped Gamification content;
+without an explicit split, "where does streak / current session / weekly progress live" gets
+re-litigated every time either screen is touched
+(`docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §4):
+
+> **Shadowing Hub owns learning continuity** — current session (in progress, resume action), weekly
+> record framed as "how is my practice going right now," the immediate next step.
+>
+> **Dashboard owns long-term progress** — arrival/overview, historical trends, milestones over time,
+> the broader relationship with the whole product, not just Shadowing.
+
+Both are Gamification-Layer content — this split is about *which screen*, never about *whether* the
+information is shown.
 
 Example — Dashboard:
 
@@ -114,7 +133,7 @@ show Companion; it never needs to justify staying Hidden.
 
 Three states — do not collapse into two:
 
-- **Available** — shipped today (L9b D3: Dashboard, `/journal`, Video Library empty state, Mining
+- **Available** — shipped today (L9b D3: Dashboard, `/journal`, Shadowing Hub empty state, Mining
   deck empty state).
 - **Planned** — architecture allows it (Spec 1 §5.2, any surface may declare an anchor), not yet
   built. Adding it later needs no architecture change.
@@ -125,12 +144,11 @@ Three states — do not collapse into two:
 |---|---|---|
 | Dashboard | Available | L9b shipped this anchor |
 | `/journal` | Available | L9b shipped this anchor |
-| Video Library (empty state) | Available | L9b shipped this anchor |
+| Shadowing Hub (empty state) | Available | L9b shipped this anchor |
 | Mining deck (empty state) | Available | L9b shipped this anchor |
-| Video Detail | Planned | Architecture allows it; not yet built |
 | Mining Browse (non-empty) | Planned | Architecture allows it; not yet built |
-| Video Library (non-empty) | Planned | Architecture allows it; not yet built |
-| Shadowing / Review / Dictation / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
+| Shadowing Hub (non-empty) | Planned | Architecture allows it; not yet built |
+| Shadowing Practice / Pronunciation / Dictation / Summary / Review / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
 
 ---
 
@@ -219,13 +237,14 @@ not retrofitted later.
 - `screen-profile.md`
 - `screen-settings.md`
 
-**§8 compliance for existing screen docs.** The seven screen docs edited during the initial
-reconciliation pass (`screen-architecture.md`, `screen-dashboard.md`, `screen-video-library.md`,
-`screen-review.md`, `screen-shadowing-detail.md`, `screen-mining.md`, `screen-video-detail.md`)
-predate the full §8 checklist and do not yet define every required state (Loading, Success, Error
-states in particular). §8 is mandatory for every *new* screen doc from the moment it's created.
-Bringing the seven existing docs into full compliance is a separate, deferred follow-up — not done
-in this pass — tracked here so the gap is visible rather than silently assumed.
+**§8 compliance for existing screen docs.** The six screen docs edited during the initial
+reconciliation pass (`screen-architecture.md`, `screen-dashboard.md`, `screen-shadowing-hub.md`,
+`screen-review.md`, `screen-shadowing-practice.md`, `screen-mining.md`) predate the full §8
+checklist and do not yet define every required state (Loading, Success, Error states in
+particular). §8 is mandatory for every *new* screen doc from the moment it's created. Bringing the
+six existing docs into full compliance is a separate, deferred follow-up — not done in this pass —
+tracked here so the gap is visible rather than silently assumed. `screen-video-detail.md` is
+excluded from this list: it is Deprecated (§7), and deprecated docs are not held to §8 compliance.
 
 ---
 
