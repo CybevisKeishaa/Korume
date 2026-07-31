@@ -68,11 +68,54 @@ describe("createLesson (user mode)", () => {
         data: { id: LESSON_ID, youtube_video_id: VIDEO_ID, library_access: "FREE", promotion_starred: false },
         error: null,
       }),
+      transcripts: () => ({ data: [{ id: "t1" }], error: null }), // already has a transcript
     });
 
     const result = await createLesson({ youtubeUrl: YOUTUBE_URL });
 
     expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "existing" });
+    expect(fetchOembed).not.toHaveBeenCalled();
+    expect(youtubeCaptionProvider.fetch).not.toHaveBeenCalled();
+  });
+
+  it("does NOT blindly report 'existing' for a published lesson with no transcript yet — attempts the fetch and reports 'fetched' on success", async () => {
+    mockClient(USER);
+    vi.mocked(youtubeCaptionProvider.fetch).mockResolvedValue({
+      source: "youtube_caption",
+      lines: [{ startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: null }],
+    });
+    mockService({
+      videos: () => ({
+        data: { id: LESSON_ID, youtube_video_id: VIDEO_ID, library_access: "FREE", promotion_starred: false },
+        error: null,
+      }),
+      transcripts: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "insert")) return { data: { id: "t-new" }, error: null };
+        return { data: [], error: null }; // hasTranscript: no rows yet
+      },
+      transcript_lines: () => ({ data: null, error: null }),
+    });
+
+    const result = await createLesson({ youtubeUrl: YOUTUBE_URL });
+
+    expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "fetched" });
+    expect(fetchOembed).not.toHaveBeenCalled();
+  });
+
+  it("does NOT blindly report 'existing' for a published lesson with no transcript yet — reports 'missing' on caption failure", async () => {
+    mockClient(USER);
+    vi.mocked(youtubeCaptionProvider.fetch).mockResolvedValue(null);
+    mockService({
+      videos: () => ({
+        data: { id: LESSON_ID, youtube_video_id: VIDEO_ID, library_access: "FREE", promotion_starred: false },
+        error: null,
+      }),
+      transcripts: () => ({ data: [], error: null }), // hasTranscript: no rows yet
+    });
+
+    const result = await createLesson({ youtubeUrl: YOUTUBE_URL });
+
+    expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "missing" });
     expect(fetchOembed).not.toHaveBeenCalled();
   });
 
@@ -99,6 +142,84 @@ describe("createLesson (user mode)", () => {
     expect(libraryUpserted).toBe(true);
     expect(fetchOembed).not.toHaveBeenCalled();
     expect(youtubeCaptionProvider.fetch).not.toHaveBeenCalled();
+  });
+
+  it("reuses an orphaned PRIVATE lesson (no transcript yet) instead of inserting a new videos row, and adds the library row on caption success", async () => {
+    mockClient(USER);
+    vi.mocked(youtubeCaptionProvider.fetch).mockResolvedValue({
+      source: "youtube_caption",
+      lines: [{ startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: null }],
+    });
+    let insertedOnVideos = false;
+    let libraryUpserted = false;
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "insert")) {
+          insertedOnVideos = true;
+          return {
+            data: { id: LESSON_ID, youtube_video_id: VIDEO_ID, library_access: "PRIVATE", promotion_starred: false },
+            error: null,
+          };
+        }
+        return {
+          data: { id: LESSON_ID, youtube_video_id: VIDEO_ID, library_access: "PRIVATE", promotion_starred: false },
+          error: null,
+        };
+      },
+      transcripts: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "insert")) return { data: { id: "t-new" }, error: null };
+        return { data: [], error: null }; // hasTranscript: no rows yet — the orphan
+      },
+      transcript_lines: () => ({ data: null, error: null }),
+      subscriptions: () => ({ data: null, error: null }),
+      user_lesson_library: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "upsert")) libraryUpserted = true;
+        if (calls.some((c) => c.op === "gte")) return { data: [], error: null }; // 0 so far this month
+        return { data: null, error: null };
+      },
+    });
+
+    const result = await createLesson({ youtubeUrl: YOUTUBE_URL });
+
+    expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "fetched" });
+    expect(fetchOembed).not.toHaveBeenCalled();
+    expect(insertedOnVideos).toBe(false);
+    expect(libraryUpserted).toBe(true);
+  });
+
+  it("reuses an orphaned PRIVATE lesson (no transcript yet), checks quota, but does NOT add the library row on repeat caption failure", async () => {
+    mockClient(USER);
+    vi.mocked(youtubeCaptionProvider.fetch).mockResolvedValue(null);
+    let insertedOnVideos = false;
+    let quotaChecked = false;
+    let libraryTouched = false;
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "insert")) insertedOnVideos = true;
+        return {
+          data: { id: LESSON_ID, youtube_video_id: VIDEO_ID, library_access: "PRIVATE", promotion_starred: false },
+          error: null,
+        };
+      },
+      transcripts: () => ({ data: [], error: null }), // hasTranscript: no rows yet — the orphan
+      subscriptions: () => ({ data: null, error: null }),
+      user_lesson_library: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "gte")) {
+          quotaChecked = true;
+          return { data: [], error: null }; // 0 so far this month — under quota
+        }
+        if (calls.some((c) => c.op === "upsert")) libraryTouched = true;
+        return { data: null, error: null };
+      },
+    });
+
+    const result = await createLesson({ youtubeUrl: YOUTUBE_URL });
+
+    expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "missing" });
+    expect(fetchOembed).not.toHaveBeenCalled();
+    expect(insertedOnVideos).toBe(false);
+    expect(quotaChecked).toBe(true);
+    expect(libraryTouched).toBe(false);
   });
 
   it("blocks a Free user already at quota from creating a brand-new lesson", async () => {

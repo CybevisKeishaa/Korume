@@ -129,8 +129,14 @@ export async function createLesson(input: CreateLessonInput): Promise<CreateLess
   const existing = await findExistingLesson(videoId);
 
   // Already published: no quota, no library row — the learner just gets in (spec §2.1 step 3).
+  // Still must confirm the transcript actually exists (an admin-seeded row can be published with
+  // captions still missing) rather than blindly reporting "existing" — mirrors the same check
+  // `createLessonAsAdmin`'s existing-lesson branch already does.
   if (existing && existing.library_access !== "PRIVATE") {
-    return { ok: true, data: existing, alreadyInLibrary: false, transcriptStatus: "existing" };
+    const transcriptStatus = (await hasTranscript(existing.id))
+      ? "existing"
+      : await attemptCaptionFetch(existing.id, videoId);
+    return { ok: true, data: existing, alreadyInLibrary: false, transcriptStatus };
   }
 
   // Existing PRIVATE lesson that already has a transcript: dedup hit (spec §2.1 step 4).
