@@ -2,7 +2,7 @@
 
 > **Status:** Approved  
 > **Layer:** Experience Architecture  
-> **Applies to:** Entire Product (Video Detail, Shadowing, Dictation, Reading, Mining)  
+> **Applies to:** Entire Product (Shadowing Practice, Dictation, Reading, Mining)  
 > **Related:** `reading-patterns.md`, `video-patterns.md`, `docs/design/patterns/companion-patterns.md`, `docs/design/design-reconciliation.md`
 
 > The transcript is the heart of Nihongo Cinema.
