@@ -106,242 +106,39 @@ The learner should continue exactly where they left off.
 
 # Available Study Modes
 
----
-
-# Reading Mode
-
-## Purpose
-
-Comfortable transcript reading.
-
-Ideal for first exposure to a dialogue.
-
----
-
-## Primary Focus
-
-Understanding.
-
-Reading rhythm.
-
-Natural pacing.
-
----
-
-## Layout
-
-Video:
-
-Medium size.
-
-Transcript:
-
-Maximum readability.
-
-Large typography.
-
-Wide spacing.
-
-Translation:
-
-Visible.
-
-Vocabulary chips:
-
-Visible.
-
-Grammar:
-
-Available inside drawer.
-
----
-
-## Playback
-
-Normal controls.
-
-No looping emphasis.
-
----
-
-## Companion Behavior
-
-✕ Not Supported. Study Modes operate inside the Shadowing/Review/Reading learning-loop workspace
-(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden across
-every mode in this document, the same as Shadowing Mode below.
-
----
-
-# Shadowing Mode
-
-## Purpose
-
-Listening and speaking.
-
-Training pronunciation and rhythm.
-
----
-
-## Primary Focus
-
-The current sentence.
-
-Everything else becomes secondary.
-
----
-
-## Layout
-
-Transcript:
-
-Current sentence strongly emphasized.
-
-Previous sentences softly faded.
-
-Future sentences neutral.
-
-Translation:
-
-Hidden by default.
-
-Video:
-
-Smaller.
-
-Playback controls:
-
-Prominent.
-
-Loop button:
-
-Always visible.
-
----
-
-## Playback
-
-Sentence looping.
-
-Auto pause.
-
-Speed adjustment.
-
-Previous sentence.
-
-Next sentence.
-
-Repeat.
-
----
-
-## Companion Behavior
-
-✕ Not Supported. Shadowing is an active acquisition loop
-(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden
-throughout Shadowing, the same as every other mode in this document. Learning requires complete
-concentration.
-
----
-
-# Immersion Mode
-
-## Purpose
-
-Experience Japanese naturally.
-
-Minimize assistance.
-
----
-
-## Primary Focus
-
-Japanese only.
-
----
-
-## Layout
-
-Video:
-
-Larger.
-
-Transcript:
-
-Japanese only.
-
-Translation:
-
-Hidden.
-
-Vocabulary:
-
-Hidden.
-
-Grammar:
-
-Hidden.
-
-Interface chrome:
-
-Minimal.
-
----
-
-## Playback
-
-Continuous playback encouraged.
-
-Looping available but visually de-emphasized.
-
----
-
-## Companion Behavior
-
-✕ Not Supported. Immersion Mode is an active acquisition loop
-(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden, the
-same as every other mode in this document. Immersion should feel uninterrupted.
-
----
-
-# Analysis Mode
-
-## Purpose
-
-Understand difficult language.
-
-Ideal after repeated listening.
-
----
-
-## Primary Focus
-
-Breaking down the language.
-
----
-
-## Layout
-
-Transcript remains central.
-
-Bottom drawer becomes the primary supporting workspace.
-
-Available tools:
-
-- Grammar
-- Vocabulary
-- AI Explanation
-- Notes
-- Mining
-- Sentence Breakdown
-
-Video becomes less visually important.
-
----
-
-## Companion Behavior
-
-✕ Not Supported. Same Learning Loop Boundary as every other mode in this document
-(`docs/design/design-reconciliation.md` §4) — Companion stays Hidden, even while analyzing grammar.
+**Superseded inside the Shadowing Lesson Workspace.** The four modes this section originally
+described — Reading, Shadowing, Immersion, Analysis — were restructured by
+`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.1/§6.4/§6.6 into
+the Three-Layer Model now documented canonically in `screen-shadowing-practice.md`:
+
+```
+Lesson
+├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Dictation / Summary
+├── View Mode         "How do I want to see it?"       — exists only inside Shadowing: Reading / Normal / Immersion
+├── Reading Settings  "How should the UI behave?"      — Font, Subtitle Size, Subtitle Color, Speed, Auto Pause, Repeat, ...
+└── Analysis          a per-sentence utility (highlight → Analyze), not a mode at any layer
+```
+
+Mapping from this document's old names to the new model:
+
+| Old name (this document) | New home |
+|---|---|
+| Reading Mode | View Mode → **Reading** (`screen-shadowing-practice.md` § View Mode) |
+| Shadowing Mode | View Mode → **Normal** ("today's default balance") |
+| Immersion Mode | View Mode → **Immersion** |
+| Analysis Mode | **Analysis**, a per-sentence utility — not a View Mode option, not a fourth mode |
+
+`screen-shadowing-practice.md` § Three-Layer Model / § View Mode / § Analysis is now the canonical
+description of each — this document no longer duplicates their Purpose/Layout/Companion Behavior
+detail below.
+
+**Review Mode, Focus Mode, and Adaptive Mode are unaffected** by this restructuring — they describe
+different surfaces/axes, not the Shadowing Learning Mode's internal View Mode split: Review Mode is
+the separate SRS review workspace (`screen-review.md`); Focus Mode is the general
+concentration-density axis shared with `screen-architecture.md` § Focus States and
+`adaptive-layouts.md` § Focus Modes (related in spirit, not the same concept —
+`docs/design/design-reconciliation.md` §13, "Naming Is Local, Not Global"); Adaptive Mode is this
+document's own auto-adjustment behavior. All three remain documented below, unchanged.
 
 ---
 
@@ -393,8 +190,8 @@ Optional.
 
 ✕ Not Supported. Review is an active acquisition loop
 (`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden
-throughout Review, the same as Shadowing Mode above. It may address the learner after the review
-session ends, never during it.
+throughout Review, the same as the Shadowing Learning Mode (`screen-shadowing-practice.md` §
+Companion). It may address the learner after the review session ends, never during it.
 
 ---
 
@@ -462,19 +259,19 @@ Reading for several minutes
 
 ↓
 
-Workspace gradually emphasizes Reading Mode.
+Workspace gradually emphasizes View Mode → Reading.
 
 Repeated sentence looping
 
 ↓
 
-Workspace gradually resembles Shadowing Mode.
+Workspace gradually resembles View Mode → Normal.
 
 Extended grammar exploration
 
 ↓
 
-Workspace gently shifts toward Analysis Mode.
+Workspace gently surfaces the Analysis utility.
 
 The transition should be subtle.
 
@@ -494,27 +291,26 @@ same as every other mode in this document.
 
 # Mode Selection
 
-Study Modes should be accessible from a compact segmented control.
-
-Example:
+Within Shadowing, View Mode should be accessible from a compact segmented control
+(`screen-shadowing-practice.md` § View Mode):
 
 ```
-Read
+Reading
 
-Shadow
+Normal
 
-Immerse
-
-Analyze
-
-Review
+Immersion
 ```
+
+Analysis is not part of this control — it triggers from selecting text, not from switching modes
+(see § Available Study Modes above). Review is a separate workspace reached by navigating away from
+the Lesson entirely, not a mode switch within it.
 
 Avoid dropdown menus.
 
 Avoid nested settings.
 
-Changing modes should require only one click.
+Changing View Mode should require only one click.
 
 ---
 
@@ -581,8 +377,8 @@ No mode should rely solely on color to communicate its purpose.
 
 The workspace should remember:
 
-- last selected Study Mode
-- per-video preference (optional)
+- last selected View Mode
+- per-lesson preference (optional)
 - global default preference
 
 The learner should not need to reconfigure the workspace every session.

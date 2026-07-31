@@ -21,7 +21,9 @@ When two documents disagree, resolve by this order (highest wins):
 1. Product specification (`japanese-learning-app-spec.md`)
 2. Layer/System specifications (`docs/superpowers/specs/*-l*-design.md`) — these define architecture,
    behavior, and product rules, not just implementation shape
-3. Business model principles (`docs/product/business-model.md`)
+3. Business model principles (`docs/product/business-model.md`) and domain terminology
+   (`docs/product/domain-model.md` — the canonical glossary for Video/Lesson/Library/Collection/
+   Learning Mode/View Mode/Analysis; every document uses these terms as defined there)
 4. Design system rules (this file and its children)
 5. Screen specifications (`docs/design/screens/*.md`)
 6. Implementation details (code, component comments)
