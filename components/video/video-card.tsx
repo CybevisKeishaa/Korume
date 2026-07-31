@@ -37,7 +37,7 @@ export function VideoCard({ video }: { video: VideoRow }) {
               {tCommon("noThumbnail")}
             </div>
           )}
-          {video.status === "pending" && (
+          {video.library_access === "PRIVATE" && (
             <span className="absolute right-2 top-2 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
               {t("pendingReview")}
             </span>

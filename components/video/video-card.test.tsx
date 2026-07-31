@@ -11,7 +11,8 @@ const base: VideoRow = {
   thumbnail_url: "https://i.ytimg.com/vi/yt1/hqdefault.jpg",
   jlpt_level_estimate: "N5",
   added_by_user_id: null,
-  status: "approved",
+  library_access: "FREE",
+  promotion_starred: false,
   created_at: "2026-01-01T00:00:00.000Z",
 };
 
@@ -33,12 +34,12 @@ describe("VideoCard", () => {
   });
 
   it("shows a Pending review badge for a pending video", () => {
-    render(<VideoCard video={{ ...base, status: "pending" }} />);
+    render(<VideoCard video={{ ...base, library_access: "PRIVATE" }} />);
     expect(screen.getByText("Pending review")).toBeInTheDocument();
   });
 
   it("does not show the Pending review badge for an approved video", () => {
-    render(<VideoCard video={{ ...base, status: "approved" }} />);
+    render(<VideoCard video={{ ...base, library_access: "FREE" }} />);
     expect(screen.queryByText("Pending review")).not.toBeInTheDocument();
   });
 

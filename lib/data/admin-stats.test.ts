@@ -74,7 +74,14 @@ describe("getAdminStats", () => {
         }
         return { data: [{ user_id: "u1" }, { user_id: "u2" }, { user_id: "u3" }], error: null }; // activeUsers30d
       },
-      videos: () => ({ data: [{ status: "pending" }, { status: "approved" }, { status: "approved" }], error: null }),
+      videos: () => ({
+        data: [
+          { library_access: "PRIVATE" },
+          { library_access: "FREE" },
+          { library_access: "PLUS" },
+        ],
+        error: null,
+      }),
       kanji: () => ({ data: [{ id: "k1" }], error: null }),
       vocab: () => ({ data: [{ id: "v1" }, { id: "v2" }], error: null }),
       grammar_points: () => ({ data: [], error: null }),

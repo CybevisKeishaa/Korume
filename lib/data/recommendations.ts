@@ -101,7 +101,7 @@ export async function getRecommendations(query: RecommendationsQuery): Promise<G
   const { data: videoRows, error: videoError } = await supabase
     .from("videos")
     .select("id, youtube_video_id, title, thumbnail_url, jlpt_level_estimate")
-    .eq("status", "approved")
+    .in("library_access", ["FREE", "PLUS"])
     .order("created_at", { ascending: false })
     .limit(SCAN_LIMIT);
   if (videoError) throw videoError;
