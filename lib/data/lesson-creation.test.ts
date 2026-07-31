@@ -286,6 +286,7 @@ describe("createLesson (user mode)", () => {
         return { data: null, error: null };
       },
       subscriptions: () => ({ data: null, error: null }),
+      transcripts: () => ({ data: [], error: null }), // hasTranscript: freshly inserted, no rows yet
       user_lesson_library: (calls: QueryCall[]) => {
         if (calls.some((c) => c.op === "gte")) return { data: [], error: null };
         if (calls.some((c) => c.op === "upsert")) libraryTouched = true;
@@ -297,6 +298,71 @@ describe("createLesson (user mode)", () => {
 
     expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "missing" });
     expect(libraryTouched).toBe(false);
+  });
+
+  it("recovers from a 23505 unique-violation race by re-selecting the winning row instead of throwing", async () => {
+    // Two concurrent requests paste the same brand-new URL: the loser's
+    // insert hits videos.youtube_video_id's unique constraint. The old
+    // importVideo() (deleted by Task 8) re-selected the winner's row instead
+    // of throwing; insertLessonAndFetchTranscript must do the same (final
+    // whole-branch review, 2026-08-01).
+    mockClient(USER);
+    vi.mocked(fetchOembed).mockResolvedValue({ title: "Test", thumbnailUrl: "t.jpg", authorName: "A" });
+    let insertAttempted = false;
+    let selectCount = 0;
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "insert")) {
+          insertAttempted = true;
+          return { data: null, error: { message: "duplicate key value violates unique constraint", code: "23505" } };
+        }
+        selectCount += 1;
+        if (selectCount === 1) {
+          // createLesson's initial dedup lookup: nothing exists yet.
+          return { data: null, error: null };
+        }
+        // insertLessonAndFetchTranscript's re-select after the race: another
+        // concurrent request already won and inserted the row.
+        return {
+          data: { id: LESSON_ID, youtube_video_id: VIDEO_ID, library_access: "PRIVATE", promotion_starred: false },
+          error: null,
+        };
+      },
+      subscriptions: () => ({ data: null, error: null }),
+      user_lesson_library: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "gte")) return { data: [], error: null };
+        return { data: null, error: null };
+      },
+      transcripts: () => ({ data: [{ id: "t1" }], error: null }), // the winning row already has a transcript
+    });
+
+    const result = await createLesson({ youtubeUrl: YOUTUBE_URL });
+
+    expect(insertAttempted).toBe(true);
+    expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "existing" });
+    expect(youtubeCaptionProvider.fetch).not.toHaveBeenCalled();
+  });
+
+  it("re-throws a non-23505 insert error rather than treating it as a race", async () => {
+    mockClient(USER);
+    vi.mocked(fetchOembed).mockResolvedValue({ title: "Test", thumbnailUrl: "t.jpg", authorName: "A" });
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "insert")) {
+          return { data: null, error: { message: "connection reset", code: "08006" } };
+        }
+        return { data: null, error: null };
+      },
+      subscriptions: () => ({ data: null, error: null }),
+      user_lesson_library: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "gte")) return { data: [], error: null };
+        return { data: null, error: null };
+      },
+    });
+
+    await expect(createLesson({ youtubeUrl: YOUTUBE_URL })).rejects.toEqual(
+      expect.objectContaining({ code: "08006" }),
+    );
   });
 
   it("maps an oEmbed failure to a 422", async () => {

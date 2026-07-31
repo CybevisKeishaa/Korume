@@ -33,7 +33,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
         { status: 429, headers: { "Retry-After": String(Math.ceil(result.retryAfter / 1000)) } },
       );
     }
-    const message = result.status === 401 ? "Unauthorized" : result.status === 403 ? "Forbidden" : "Not found";
+    const message =
+      result.status === 401
+        ? "Unauthorized"
+        : result.status === 403
+          ? "Forbidden"
+          : result.status === 409
+            ? "This lesson is in a learner's library and can't be deleted"
+            : "Not found";
     return NextResponse.json({ error: message }, { status: result.status });
   }
 

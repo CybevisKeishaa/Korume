@@ -233,6 +233,7 @@ export type RejectVideoResult =
   | { ok: true; data: { id: string } }
   | GuardFailure
   | { ok: false; status: 404 }
+  | { ok: false; status: 409 }
   | { ok: false; status: 429; retryAfter: number };
 
 /**
@@ -252,6 +253,17 @@ export type RejectVideoResult =
  * but is NOT persisted anywhere — there is no row left to attach it to after
  * delete, and no `rejected_videos`-style audit table exists.
  *
+ * SAFETY GUARD (final whole-branch review, 2026-08-01): under the old
+ * `status` model this only ever deleted an unapproved 'pending' submission
+ * with essentially zero investment. Under `library_access`, every user
+ * import defaults to `PRIVATE`, so this same hard-delete could otherwise
+ * destroy a lesson someone is actively studying. A lesson only gets a
+ * `user_lesson_library` row once its creator's own Create Lesson pipeline
+ * confirms a transcript exists, so "zero library rows" reliably means
+ * "orphaned, never became studyable" — reject refuses (409) whenever ANY
+ * user (not just the video's creator) already holds the lesson in their
+ * library.
+ *
  * OPEN ITEM (flagged in the Layer 7 handoff rather than resolved here): a
  * genuine `'rejected'` status — keeping the row, hiding it from
  * `videos_read`, and storing `reason` — would give an audit trail and let a
@@ -266,12 +278,26 @@ export async function rejectVideo(id: string, reason?: string): Promise<RejectVi
   const limited = rateLimit(`admin:videos:reject:${admin.user.id}`, REJECT_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
 
+  const service = createServiceClient();
+
+  // Safety guard (final whole-branch review, 2026-08-01): refuse to
+  // hard-delete a lesson that ANY user (not just its creator) already holds
+  // in their personal library — see the doc comment above for why "zero
+  // library rows" is the correct signal for "safe to delete."
+  const { data: libraryRows, error: libraryError } = await service
+    .from("user_lesson_library")
+    .select("user_id")
+    .eq("lesson_id", id);
+  if (libraryError) throw libraryError;
+  if (((libraryRows as { user_id: string }[] | null) ?? []).length > 0) {
+    return { ok: false, status: 409 };
+  }
+
   if (reason) {
     // eslint-disable-next-line no-console -- deliberate moderation audit log; not persisted anywhere else (see doc comment above).
     console.log(`[admin] video ${id} rejected by ${admin.user.email}: ${reason}`);
   }
 
-  const service = createServiceClient();
   const { data, error } = await service
     .from("videos")
     .delete()

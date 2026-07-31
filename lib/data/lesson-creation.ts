@@ -68,10 +68,28 @@ async function insertLessonAndFetchTranscript(
     })
     .select(VIDEO_COLUMNS)
     .single();
-  if (insertError) throw insertError;
 
-  const lesson = inserted as VideoRow;
-  const transcriptStatus = await attemptCaptionFetch(lesson.id, videoId);
+  let lesson: VideoRow;
+  if (insertError) {
+    // Unique-violation race: another request inserted the same
+    // youtube_video_id first. The deleted importVideo() (Task 8) handled
+    // this by re-selecting the winning row; the replacement pipeline
+    // silently dropped that recovery (final whole-branch review, 2026-08-01).
+    // Re-select rather than throwing a 500.
+    if (insertError.code === "23505") {
+      const raced = await findExistingLesson(videoId);
+      if (!raced) throw insertError; // shouldn't happen; don't swallow a real error
+      lesson = raced;
+    } else {
+      throw insertError;
+    }
+  } else {
+    lesson = inserted as VideoRow;
+  }
+
+  const transcriptStatus = (await hasTranscript(lesson.id))
+    ? "existing"
+    : await attemptCaptionFetch(lesson.id, videoId);
   return { lesson, transcriptStatus };
 }
 

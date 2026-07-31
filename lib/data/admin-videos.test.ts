@@ -357,7 +357,10 @@ describe("rejectVideo", () => {
   });
 
   it("returns 404 when the video is not pending (or does not exist)", async () => {
-    mockService({ videos: () => ({ data: null, error: null }) });
+    mockService({
+      videos: () => ({ data: null, error: null }),
+      user_lesson_library: () => ({ data: [], error: null }),
+    });
     const result = await rejectVideo(VIDEO_ID, "spam");
     expect(result).toEqual({ ok: false, status: 404 });
   });
@@ -369,6 +372,36 @@ describe("rejectVideo", () => {
         expect(eqValue(calls, "library_access")).toBe("PRIVATE");
         return { data: { id: VIDEO_ID }, error: null };
       },
+      user_lesson_library: () => ({ data: [], error: null }),
+    });
+    const result = await rejectVideo(VIDEO_ID);
+    expect(result).toEqual({ ok: true, data: { id: VIDEO_ID } });
+  });
+
+  it("refuses to delete (409) a lesson that a learner already holds in their library, without attempting the delete", async () => {
+    let deleteAttempted = false;
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "delete")) deleteAttempted = true;
+        return { data: { id: VIDEO_ID }, error: null };
+      },
+      user_lesson_library: (calls: QueryCall[]) => {
+        expect(eqValue(calls, "lesson_id")).toBe(VIDEO_ID);
+        return { data: [{ user_id: "some-learner" }], error: null };
+      },
+    });
+    const result = await rejectVideo(VIDEO_ID, "spam");
+    expect(result).toEqual({ ok: false, status: 409 });
+    expect(deleteAttempted).toBe(false);
+  });
+
+  it("proceeds to delete as before when zero users hold the lesson in their library", async () => {
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        expect(calls.some((c) => c.op === "delete")).toBe(true);
+        return { data: { id: VIDEO_ID }, error: null };
+      },
+      user_lesson_library: () => ({ data: [], error: null }),
     });
     const result = await rejectVideo(VIDEO_ID);
     expect(result).toEqual({ ok: true, data: { id: VIDEO_ID } });
