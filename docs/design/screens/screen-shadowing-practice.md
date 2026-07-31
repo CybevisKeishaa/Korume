@@ -243,6 +243,7 @@ Contains only
 - Back
 - Title
 - Source
+- Learning Mode tabs
 - JLPT level
 - Bookmark
 - Download transcript
