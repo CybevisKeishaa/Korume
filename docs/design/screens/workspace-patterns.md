@@ -29,9 +29,7 @@ Instead of designing:
 
 Dashboard
 
-Video Detail
-
-Shadowing
+Shadowing Practice
 
 Journal
 
@@ -135,7 +133,7 @@ Understanding Japanese.
 
 Ideal for:
 
-Video Detail
+Shadowing (Reading Mode)
 
 Transcript
 
@@ -600,7 +598,7 @@ Complex screens combine multiple patterns.
 
 Example
 
-Shadowing Detail
+Shadowing Practice
 
 Split Workspace
 
@@ -622,7 +620,7 @@ Focus Workspace
 
 ---
 
-Video Detail
+Shadowing Practice (Reading View Mode)
 
 Reading Workspace
 
