@@ -673,7 +673,7 @@ Reflection Surface
 
 ---
 
-Videos Library
+Shadowing Hub
 
 Discovery Surface
 
@@ -683,21 +683,11 @@ Collection Surface
 
 ---
 
-Video Detail
+Shadowing Practice
 
 Reading Surface
 
 +
-
-Media Surface
-
-+
-
-Utility Surface
-
----
-
-Shadowing
 
 Shadowing Surface
 
@@ -707,10 +697,17 @@ Media Surface
 
 +
 
+Utility Surface
+
++
+
 Bottom Utility Surface
 
-Companion Surface is intentionally absent here — Shadowing is a Not Supported active acquisition
-loop (`docs/design/design-reconciliation.md` §4, Learning Loop Boundary).
+Merged from the former separate "Video Detail" entry (Reading Surface + Media Surface + Utility
+Surface) — Video Detail is deprecated and its composition folds into this one screen's Reading View
+Mode (`docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §5). Companion
+Surface is intentionally absent here — Shadowing Practice is a Not Supported active acquisition loop
+(`docs/design/design-reconciliation.md` §4, Learning Loop Boundary).
 
 ---
 
