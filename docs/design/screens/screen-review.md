@@ -383,7 +383,7 @@ Accuracy
 Daily Quota
 
 These are real Gamification-owned metrics elsewhere (Dashboard) — this screen just doesn't repeat
-them here, the same way `docs/design/screens/screen-video-library.md`'s Progress section handles it
+them here, the same way `docs/design/screens/screen-shadowing-hub.md`'s Progress section handles it
 (`docs/design/design-reconciliation.md` §3).
 
 Instead communicate
@@ -464,7 +464,7 @@ Why not revisit a favorite story?
 
 Offer
 
-Browse Library
+Browse Shadowing Hub
 
 Open Journal
 
