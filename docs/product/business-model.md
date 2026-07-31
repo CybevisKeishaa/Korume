@@ -7,9 +7,9 @@
 > so it can grow to cover referrals, B2B, teacher plans, and marketplace without restructuring.
 > **Related:** root `CLAUDE.md` §2 (non-negotiables), main spec §3.12 (Free/Premium — the Stripe
 > part is superseded here), `docs/features/` (F-001..F-016), Serena memory `monetization_brainstorm`,
-> `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §3 (Lesson domain
-> model + Create Lesson pipeline — rewrites Principle 3 below and adds library-breadth/lesson-
-> creation rows to the §2 table).
+> `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §3 (Monetization
+> model — §3.4 rewrites Principle 3 below and adds library-breadth/lesson-creation rows to the §2
+> table; §1-§2 define the Lesson domain model and Create Lesson pipeline these edits assume).
 
 ---
 
