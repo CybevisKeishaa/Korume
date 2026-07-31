@@ -55,6 +55,7 @@ tech nits vẫn đọc ở project_status.
 11. **`rejected` video status + persist lý do reject** — hiện reject = HARD DELETE, reason chỉ
     log không lưu. Cần migration (enum value + cột reason) nếu muốn moderation tử tế. Cùng lúc:
     `transcript_source` thêm giá trị `'admin'` (hiện admin-attach lưu là 'user_submitted').
+    **✅ RESOLVED DIFFERENTLY** — Shadowing Hub Lesson Workspace Plan B: PRIVATE lessons block no one, so there is no more approval gate to reject FROM. `rejectVideo` (hard-delete) is kept as an admin housekeeping action on unpublished lessons, not a moderation gate.
 12. **CSV import cho nested children** (kanji readings, jlpt/reading questions) — hiện chỉ
     import flat rows, children phải qua JSON create/update. Nâng cấp khi admin nhập liệu nhiều.
 
@@ -71,6 +72,7 @@ tech nits vẫn đọc ở project_status.
     ghi "Transcript submission is coming soon"). User import video xong là đường cụt; chỉ
     admin attach được. Chặn toàn bộ core loop cho user thật. Deferred ở L3 mà không vào
     backlog = đúng loại lỗi mandate này sinh ra để chặn. Fix TRƯỚC L8.
+    **✅ DONE** — superseded by the Create Lesson pipeline (Shadowing Hub Lesson Workspace Plan B, merged with final backend commits). Caption auto-fetch (YouTube timedtext) replaces the old "coming soon" ingestion panel; manual paste (admin SRT attach) still exists unchanged.
 15. **Dictionary meanings khi tap-to-lookup** — reading popover chỉ hiện word+reading (không
     có nghĩa); mine popover không hiện nghĩa. Chưa có nguồn dictionary (JMdict/own vocab
     join). Khớp F-010/adaptive furigana. Spec §5 "tap từ để tra" ngầm định có nghĩa.
