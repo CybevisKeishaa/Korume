@@ -464,7 +464,7 @@ evaluation, JLPT/Grammar/Vocabulary/Kanji practice, Conversation drills —
 at Presentation Mode. This matches "1. Immersive Workspace" above, which already lists "Companion
 hidden" as a Characteristic whenever that workspace hosts Shadowing, Reading, Listening, or Review.
 
-**On surfaces where Companion is Available or Planned** (§6 — Dashboard, `/journal`, Video Library,
+**On surfaces where Companion is Available or Planned** (§6 — Dashboard, `/journal`, Shadowing Hub,
 Mining browse/collection), the Companion behaves differently depending on focus:
 
 Normal

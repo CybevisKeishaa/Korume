@@ -6,7 +6,10 @@
 > economy, cost architecture, pricing, and conversion. Named `business-model` (not `monetization`)
 > so it can grow to cover referrals, B2B, teacher plans, and marketplace without restructuring.
 > **Related:** root `CLAUDE.md` §2 (non-negotiables), main spec §3.12 (Free/Premium — the Stripe
-> part is superseded here), `docs/features/` (F-001..F-016), Serena memory `monetization_brainstorm`.
+> part is superseded here), `docs/features/` (F-001..F-016), Serena memory `monetization_brainstorm`,
+> `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §3 (Monetization
+> model — §3.4 rewrites Principle 3 below and adds library-breadth/lesson-creation rows to the §2
+> table; §1-§2 define the Lesson domain model and Create Lesson pipeline these edits assume).
 
 ---
 
@@ -139,8 +142,23 @@ These are the decision filter for every future feature and every pricing change.
    *value the system creates from* the data, never the data. (Reinforces `CLAUDE.md` §2 + the GDPR
    "delete-all-my-data" obligation → a legal duty becomes a trust-selling point.)
 
-3. **Never lock the core loop. Premium *accelerates* learning, it does not *enable* learning.**
-   The complete Video → Shadowing → Dictation → SRS → Mining loop is free and unlimited.
+3. **Never lock the core learning experience. Once a learner has access to a lesson, the complete
+   learning loop (Reading → Shadowing → Dictation → Review → Mining) is always available without
+   feature restrictions. Premium expands the library and the ability to create new lessons, rather
+   than fragmenting the learning experience.**
+
+   **What is/isn't the core loop** (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §3.4 — read this precisely, "never lock the core loop" is easy to misread as
+   "the entire library is free," which is the opposite of what it means):
+
+   ```
+   Core loop (free & unlimited, once a lesson is open):
+     Create Lesson → Open Lesson → Shadowing → Pronunciation → Dictation → Mining → Review
+
+   NOT the core loop (this is what Plus expands):
+     Entire Library (breadth of which lessons can be opened)
+     Unlimited Create Lesson (Free is capped at 3/month)
+     AI Transcript Generation
+   ```
 
 4. **Premium should be discovered, not advertised.**
    The best upgrade prompt is not a pricing page — it's the moment a learner genuinely wants to
@@ -158,6 +176,12 @@ These are the decision filter for every future feature and every pricing change.
 
    No AI request may consume tokens without creating lasting value. This is a **feature-review gate**:
    if a proposed feature neither helps the current learner nor enriches the platform, question why it exists.
+
+> **Nihongo Cinema does not sell lesson quality. It sells library breadth and the ability to
+> create new lessons.** (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md`
+> §0.3) Once a learner can open a lesson, Free and Plus get the identical learning experience inside
+> it — full transcript, every Learning Mode, every Reading Setting. The difference is how many
+> lessons a learner can open, and whether they can mint new ones from their own YouTube links.
 
 ### 1.1 Gamification & notification principles (G1–G3)
 
@@ -197,10 +221,13 @@ and monetize depth, personalization, and live AI.
 
 | Capability | Free | JapanWeb+ |
 |---|---|---|
-| Core loop: Video → Shadowing → Dictation → SRS → Sentence Mining | ✅ unlimited | — |
+| Core loop, once a lesson is open: Reading → Shadowing → Pronunciation → Dictation → Mining → Review | ✅ unlimited | — |
 | Own-voice pitch contour (client-side F0/YIN, $0) | ✅ unlimited | — |
 | Kanji / Vocab / Grammar / Adaptive Furigana | ✅ | — |
 | Progress / immersion dashboards, comprehension & difficulty timelines, weakness **tracking** — all *computed from your own data* | ✅ | — |
+| Public library breadth (which lessons can be opened) | subset (`FREE`-tier lessons only) | entire library (`FREE` + `PLUS`) |
+| Personal lesson creation (Create Lesson, `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §2) | 3/month | unlimited |
+| AI Transcript Generation (no-caption fallback) | — | ✅ |
 | JLPT | practice by individual section | **full mock exams** + detailed analysis |
 | AI explanations | **Lite** (cached) + **preview** (~15–20% teaser) of deep sections | **full cascade deep** |
 | Knowledge Generation (new/cache-miss sentences) | small quota (~2–3/day) | large / priority quota |

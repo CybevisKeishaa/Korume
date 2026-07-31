@@ -1,7 +1,14 @@
 # Video Detail
 ## The Learning Overview
 
-> **Status:** Approved
+> **Status:** Deprecated
+> The standalone Video Detail concept was removed
+> (`docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §0, §5): opening a
+> lesson from the Shadowing Hub now enters the learning environment (Shadowing Practice) directly,
+> no intermediate detail page. Essential metadata (title, JLPT level, source) already lives on the
+> Hub's lesson card and the Lesson header; the rest is explicitly **not** transferred to Companion as
+> a replacement responsibility (`docs/design/design-reconciliation.md` §2). **This screen is
+> retained only for historical documentation and migration traceability. It must not be used as the basis for future UI work.**
 
 > Every video is the beginning of a learning journey.
 

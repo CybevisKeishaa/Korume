@@ -292,7 +292,7 @@ Tiny waveform icon
 
 Clicking opens
 
-Shadowing Detail
+Shadowing Practice
 
 at exactly that sentence.
 
@@ -361,7 +361,7 @@ Feels like reopening a memory.
 # Companion Result
 
 ○ Planned — chưa implement. Search is not one of L9b (D3)'s four shipped Companion anchors (Dashboard,
-`/journal`, Video Library empty state, Mining deck empty state) — see
+`/journal`, Shadowing Hub empty state, Mining deck empty state) — see
 `docs/design/design-reconciliation.md` §6. The behavior below describes the target design once this
 anchor is built, not current behavior.
 
@@ -777,11 +777,11 @@ Dashboard
 
 ↓
 
-Videos
+Shadowing Hub
 
 ↓
 
-Shadowing
+Shadowing Practice
 
 ↓
 

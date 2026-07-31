@@ -22,6 +22,21 @@ display, and not a place where Companion or Gamification speak. Its only job is:
 
 ---
 
+# Naming Principle
+
+> **Product-facing destinations are named after learner intent, never implementation.**
+
+This is an architectural invariant, not a one-off naming preference
+(`docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §1) — the rule that makes
+`videos` → `shadowing` more than a cosmetic rename, and the rule any future nav item or screen name
+must pass before it ships. Applied retroactively, it disqualifies an entire class of names without
+needing a fresh argument each time: "Videos," "Clips," "Media," "Assets" — anything named for the
+content type backing a feature rather than the learner's reason for being there. It already governs
+why `/mining` is not called `/clips` or `/flashcard-export`, even though no one wrote that rule down
+until now.
+
+---
+
 # Navigation Inventory
 
 The shipped navigation (`components/layout/app-nav.tsx`, `NAV_ITEMS`) is a single ordered list, no
@@ -33,7 +48,7 @@ grouping, no nesting:
 | 2 | `kanji` | `/kanji` |
 | 3 | `vocab` | `/vocab` |
 | 4 | `grammar` | `/grammar` |
-| 5 | `videos` | `/videos` |
+| 5 | `shadowing` | `/shadowing` |
 | 6 | `mining` | `/mining` |
 | 7 | `reading` | `/reading` |
 | 8 | `conversation` | `/conversation` |
@@ -45,11 +60,15 @@ grouping, no nesting:
 | 14 | `profile` | `/profile` |
 
 All 14 are shipped today — none are Planned or aspirational. Active acquisition-loop sub-routes
-(Shadowing, Dictation, JLPT test-taking, SRS review, Mining review session) are reached by drilling
-into their parent item (e.g. `/videos/[id]/shadowing`), never listed as their own top-level nav entry
-— this keeps the acquisition loops off the persistent chrome, consistent with the Learning Loop
-Boundary (`docs/design/design-reconciliation.md` §4). There is no dedicated Search entry in this list
-— Search is a persistent affordance inside the Nav Column chrome itself, not a separate destination
+(Shadowing Practice, Pronunciation, Dictation, JLPT test-taking, SRS review, Mining review session)
+are reached by drilling into their parent item (e.g. `/shadowing/[id]`), never listed as their own
+top-level nav entry — this keeps the acquisition loops off the persistent chrome, consistent with
+the Learning Loop Boundary (`docs/design/design-reconciliation.md` §4). "Shadowing" as a top-level
+nav entry names the **Shadowing Hub** (`screen-shadowing-hub.md`) — the learner's home for browsing
+and resuming lessons, itself not an acquisition loop; **Shadowing Practice** (`screen-shadowing-practice.md`), reached by drilling into a specific lesson, is the acquisition loop this paragraph's
+ban is about. The two are not the same destination and must not be conflated when reading "Shadowing"
+elsewhere in this document. There is no dedicated Search entry in this list — Search is a persistent
+affordance inside the Nav Column chrome itself, not a separate destination
 (see `docs/design/screens/screen-search.md` § Entry Points).
 
 ---
@@ -102,7 +121,7 @@ temporary layer — it does not open, close, or slide over content the way a dra
   (`docs/design/design-reconciliation.md` §2), never by the navigation component. The nav does not
   gain or lose a "Companion tab" or indicator based on which screen is active.
 - Anchor availability today (`design-reconciliation.md` §6) is Available at Dashboard, `/journal`,
-  and — in their empty states specifically — `/videos` and `/mining`; all other nav destinations
+  and — in their empty states specifically — `/shadowing` and `/mining`; all other nav destinations
   are Planned or Not Supported for Companion. The nav item itself looks identical either way —
   availability is a property of the destination screen, not of the nav link.
 

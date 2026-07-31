@@ -16,7 +16,10 @@ As a learner, I want to review the 18 unfamiliar words in a video before I watch
 4. The previewed words are marked as "learning" in SRS with initial ease factor, and the video's heatmap updates accordingly.
 
 ## UI / UX
-- A prominent button on video detail page.
+- A prominent action, surfaced on the Shadowing Hub's lesson card or the Lesson header
+  (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.7) — the standalone
+  Video Detail page this button originally lived on is deprecated with no replacement
+  (`docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §0).
 - A quick onboarding card showing word count and estimated time.
 - Preview interface: minimal, swipeable, with audio and context sentence if available.
 - Progress indicator (x/18).

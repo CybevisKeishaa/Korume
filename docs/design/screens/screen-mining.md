@@ -629,14 +629,13 @@ comfortable.
 
 Mining receives vocabulary from
 
-- Shadowing Detail
-- Video Detail
+- Shadowing Practice
 - Dictionary
 - AI Suggestions
 
 Mining sends learners back to
 
-- Shadowing
+- Shadowing Practice
 - Original Scene
 - Review
 

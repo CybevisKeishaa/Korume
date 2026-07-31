@@ -10,7 +10,7 @@ Shadowing can become monotonous. Challenges add fun, measurable goals and a sens
 As a learner, I want to challenge myself to shadow a 10-second anime clip at native speed and earn a badge, so that I'm motivated to practice speaking every day.
 
 ## Workflow
-1. User enters "Challenge Mode" from video or dashboard.
+1. User enters "Challenge Mode" from a lesson's Shadowing mode, or Dashboard.
 2. System presents a random line from a video appropriate to their level (based on heatmap/difficulty).
 3. Difficulty tiers: Easy (short, slow), Normal, Hard (long, native speed), Expert (long, fast, complex).
 4. User records shadowing, gets score.

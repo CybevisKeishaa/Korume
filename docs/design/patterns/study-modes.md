@@ -3,7 +3,7 @@
 > **Status:** Approved  
 > **Layer:** Learning Experience  
 > **Applies to:** Shadowing Workspace, Review Workspace, Reading Workspace  
-> **Related:** `learning-surfaces.md`, `workspace-patterns.md`, `screen-shadowing-detail.md`, `screen-review.md`, `interaction-principles.md`
+> **Related:** `learning-surfaces.md`, `workspace-patterns.md`, `screen-shadowing-practice.md`, `screen-review.md`, `interaction-principles.md`
 
 ---
 

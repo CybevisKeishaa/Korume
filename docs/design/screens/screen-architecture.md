@@ -122,11 +122,7 @@ Dashboard
 
 → Learning Overview
 
-Video Detail
-
-→ Reading Workspace
-
-Shadowing
+Shadowing Practice
 
 → Transcript Workspace
 
@@ -143,6 +139,12 @@ Settings
 → Configuration Workspace (target design — no `/settings` route ships today; see
 `docs/design/patterns/settings-patterns.md`, Draft/roadmap, and
 `docs/design/screens/navigation-system.md` § Settings Entry Point)
+
+**One Lesson route now hosts one workspace *per Learning Mode*** (Shadowing / Pronunciation /
+Dictation / Summary, `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md`
+§6.1–§6.2), all sharing one lesson. This rule — "every screen has exactly one primary workspace" —
+still holds *per Learning Mode*; it no longer holds *per route* the way this list implied when
+Video Detail was still a separate screen.
 
 The Workspace should visually occupy most of the screen.
 
@@ -205,9 +207,13 @@ Not:
 
 Examples:
 
-The Shadowing screen is about speaking.
+The Shadowing mode is about speaking.
 
-The Video Detail screen is about understanding.
+The Pronunciation mode is about speaking accuracy.
+
+The Dictation mode is about focused listening.
+
+The Summary mode is about remembering.
 
 The Journal is about remembering.
 
@@ -437,12 +443,16 @@ Every screen should communicate one primary emotion.
 | Screen | Emotional Purpose |
 |---------|-------------------|
 | Dashboard | Arrival |
-| Videos Library | Discovery |
-| Video Detail | Understanding |
-| Shadowing | Practice |
+| Shadowing Hub | Discovery |
+| Shadowing Practice | Practice |
 | Mining | Collection |
 | Journal | Reflection |
 | Settings | Preparation (target design — not yet a shipped route, see `settings-patterns.md`) |
+
+Pronunciation, Dictation, and Summary do **not** each get their own row — they are modes within the
+one "Shadowing Practice | Practice" row above, not separate screens with separate emotional
+categories (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §8.1). This
+is stated explicitly so a future editor does not fragment this table as more Learning Modes ship.
 
 Visual design should reinforce these emotional roles.
 
@@ -461,6 +471,8 @@ Across the product:
 - Beauty over decoration.
 - Atmosphere over visual effects.
 - Consistency over novelty.
+- Learner intent over implementation (`docs/design/screens/navigation-system.md` § Naming
+  Principle — product-facing destinations are named after learner intent, never implementation).
 
 These principles should guide every design decision.
 

@@ -232,7 +232,10 @@ not a report.
 # Progress
 
 The Dashboard shows both layers side by side — each owns different information
-(`docs/design/design-reconciliation.md` §3, Layer Responsibility Rule):
+(`docs/design/design-reconciliation.md` §3, Layer Responsibility Rule). Dashboard owns long-term
+progress specifically — arrival/overview, historical trends, milestones over time — as distinct from
+`screen-shadowing-hub.md`, which owns learning *continuity* (current session, weekly record); see
+that file's own Layer Responsibility table for the Hub-side half of this split:
 
 | Layer | Allowed | Forbidden |
 |---|---|---|
