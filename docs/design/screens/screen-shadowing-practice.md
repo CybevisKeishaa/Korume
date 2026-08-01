@@ -46,23 +46,22 @@ Everything patiently waits.
 
 ---
 
-# Three-Layer Model
+# Two-Layer Model
 
-Not one flat set of tabs — three independent axes, each with a single responsibility
-(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.1):
+Not one flat set of tabs — two independent axes, each with a single responsibility:
 
 ```
 Lesson
-├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Dictation / Summary
-├── View Mode         "How do I want to see it?"       — exists only inside Shadowing: Reading / Normal / Immersion
+├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Listening Practice / Summary
 ├── Reading Settings  "How should the UI behave?"       — Font, Subtitle Size, Subtitle Color, Speed, Auto Pause, Repeat, ...
 └── Analysis          a per-sentence utility (highlight → Analyze), not a mode at any layer
 ```
 
-This resolves what would otherwise be a collision between this document's own Reading/Shadowing/
-Immersion/Analysis progression (a **display-style axis**, now called View Mode, § View Mode below)
-and the four Learning Modes below (a **practice-type axis**): they were never the same axis, so they
-nest rather than merge.
+Shadowing renders with one fixed presentation, the same as Pronunciation, Listening Practice, and
+Summary — there is no in-mode display-style switcher. An earlier design used a third axis, View
+Mode (Reading / Normal / Immersion, existing only inside Shadowing), to let the learner switch
+between display styles; it added complexity without enough learner value to keep and was retired
+(`docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2).
 
 ---
 
@@ -395,56 +394,6 @@ Changes happen instantly.
 No modal.
 
 No settings page.
-
----
-
-# View Mode (inside Shadowing only)
-
-Exists only inside the Shadowing Learning Mode — Pronunciation, Dictation, and Summary each have
-their own fixed presentation, not a View Mode selector
-(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.4).
-
-## Reading
-
-Large typography.
-
-Many visible sentences.
-
-Translation visible.
-
-Comfortable reading.
-
-The old "Reading Mode" — unchanged in substance, now correctly scoped as a display preset of
-Shadowing rather than a sibling of Dictation.
-
----
-
-## Normal
-
-Current sentence emphasized.
-
-Translation hidden.
-
-Playback controls prioritized.
-
-Loop enabled.
-
-Today's default balance.
-
----
-
-## Immersion
-
-Japanese only.
-
-Minimal interface.
-
-Video slightly larger.
-
-Maximum focus.
-
-The old "Immersion Mode" — unchanged in substance, now correctly scoped as a display preset of
-Shadowing.
 
 ---
 
