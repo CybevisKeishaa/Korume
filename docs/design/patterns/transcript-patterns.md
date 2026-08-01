@@ -2,7 +2,7 @@
 
 > **Status:** Approved  
 > **Layer:** Experience Architecture  
-> **Applies to:** Entire Product (Shadowing Practice, Dictation, Reading, Mining)  
+> **Applies to:** Entire Product (Shadowing Practice, Listening Practice, Reading, Mining)  
 > **Related:** `reading-patterns.md`, `video-patterns.md`, `docs/design/patterns/companion-patterns.md`, `docs/design/design-reconciliation.md`
 
 > The transcript is the heart of Nihongo Cinema.
@@ -331,7 +331,7 @@ Selecting the note reveals more information.
 Ignoring it changes nothing.
 
 **This is not the Companion.** These are content-difficulty annotations attached to the transcript
-itself — they appear during Shadowing, Dictation, and Reading precisely because those are Not
+itself — they appear during Shadowing, Listening Practice, and Reading precisely because those are Not
 Supported for Companion (`docs/design/design-reconciliation.md` §4). The visual language happens to
 share the `✨` mark with Companion's Handwritten Notes
 (`docs/design/patterns/companion-patterns.md` § Companion Notes), but the two are unrelated systems

@@ -80,6 +80,20 @@ tech nits vẫn đọc ở project_status.
     differentiator ("Highlight particles with color + role arrows") chưa build ở đâu;
     /grammar chỉ là thư viện tĩnh.
 
+## Nguồn: shadowing-practice-figma-reconciliation-design (2026-08-01) — final whole-branch review
+17. **`docs/product/domain-model.md` cần rewrite Learning Mode / View Mode** — file này đứng cao hơn
+    screen spec trong Authority Order (`design-reconciliation.md`) nhưng vẫn định nghĩa Learning Mode
+    = Shadowing/Pronunciation/Dictation/Summary và mô tả View Mode như đang tồn tại — cả hai đều đã
+    bị retire/rename bởi `docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md`
+    §1/§2. Đã gắn marker "⚠ Superseded" inline tại 2 dòng đó để không còn mâu thuẫn ngầm, nhưng file
+    cần một lần rewrite đầy đủ (không chỉ patch dòng) để khớp lại với mô hình Learning Mode /
+    Reading Settings / Analysis hiện tại — chưa làm ở fix wave này, chỉ đánh dấu.
+18. **`docs/design/patterns/reading-patterns.md` § Reading Modes cần restructure** — Guided /
+    Shadowing / Immersion / Analysis Reading vẫn mô tả trục display-style đã bị retire (cùng đợt với
+    View Mode). Khác với 11 chỗ "Dictation" → "Listening Practice" (chỉ đổi tên cơ học), chỗ này cần
+    restructure thật sự nên nằm ngoài phạm vi fix wave 2026-08-01 — cố tình không đụng vào
+    `reading-patterns.md:5` hay § Reading Modes trong lần fix này.
+
 ## Đã trả nợ (để đối chiếu, không cần làm lại)
 - Weekly leaderboard (L6→L7, ship `01ae59d`, opt-in + own-week-first).
 - Leaderboard đặt ở L7 thay vì L6 = đúng kế hoạch G2, không phải bỏ sót.

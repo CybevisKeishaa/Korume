@@ -97,7 +97,7 @@ Example — Dashboard:
 
 ## 4. Learning Loop Boundary
 
-> Companion không tồn tại trong các active acquisition loop: Shadowing practice, Dictation, SRS
+> Companion không tồn tại trong các active acquisition loop: Shadowing practice, Listening Practice, SRS
 > review, Mining review session, Pronunciation evaluation, JLPT practice, Grammar practice,
 > Vocabulary review, Kanji practice, Conversation drills.
 >
@@ -150,7 +150,7 @@ Three states — do not collapse into two:
 | Mining deck (empty state) | Available | L9b shipped this anchor |
 | Mining Browse (non-empty) | Planned | Architecture allows it; not yet built |
 | Shadowing Hub (non-empty) | Planned | Architecture allows it; not yet built |
-| Shadowing Practice / Pronunciation / Dictation / Summary / Review / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
+| Shadowing Practice / Pronunciation / Listening Practice / Summary / Review / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
 
 ---
 

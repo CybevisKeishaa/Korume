@@ -99,7 +99,7 @@ Companion không được render.
 
 - Shadowing
 - Review
-- Dictation
+- Listening Practice
 - Speaking
 - JLPT
 - Typing
@@ -376,7 +376,7 @@ Trong các active acquisition loop, Companion luôn Hidden (Dormant — không c
 Bao gồm (danh sách minh hoạ, không đầy đủ — xem §4 "conceptual, not route-based"):
 
 - Shadowing practice
-- Dictation
+- Listening Practice
 - SRS review
 - Mining review session
 - Pronunciation evaluation
@@ -501,7 +501,7 @@ This sentence seems difficult.
 This only ever appears where Companion has an anchor at all (Available/Planned per
 `docs/design/design-reconciliation.md` §6) — it is not
 the same thing as `transcript-patterns.md`'s inline "✨ Difficult grammar" content indicator, which is
-a separate system that appears specifically during Shadowing/Dictation/Reading, where Companion is
+a separate system that appears specifically during Shadowing/Listening Practice/Reading, where Companion is
 Not Supported (`docs/design/patterns/transcript-patterns.md` § AI Integration).
 
 Interaction behavior giữ nguyên — accessibility-driven, xem

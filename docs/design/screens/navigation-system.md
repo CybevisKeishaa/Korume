@@ -99,6 +99,10 @@ Two states exist today; a third is a documented direction, not yet shipped:
 | Wrapped (mobile) | Available | Top bar, items wrap to fill width, full labels. |
 | Collapsed / Icon rail | Planned | `adaptive-layouts.md` § Navigation Adaptation describes a future Expanded → Collapsed → Icon rail → Hidden progression during deep focus. Not implemented in `app-nav.tsx` today — treat any icon-rail or auto-hide description elsewhere as target design, not current behavior. |
 
+What happens to the Nav footer's streak indicator and Rain Sound toggle (§ Gamification & Navigation,
+§ Settings Entry Point) in the Collapsed/Icon-rail state is unspecified — to be defined when that
+state ships, not silently assumed to carry over unchanged.
+
 Per `screen-architecture.md` § Navigation Philosophy, navigation is expected to recede during focused
 study. Today that reduction happens by leaving the nav screen entirely (drilling into Shadowing/
 Listening Practice/Review, which render outside the persistent nav chrome context for that flow) rather than
@@ -133,14 +137,28 @@ temporary layer — it does not open, close, or slide over content the way a dra
 
 `/leaderboard` is a real, shipped nav item. It belongs entirely to the Gamification Layer
 (`design-reconciliation.md` §3, Layer Responsibility Rule: Gamification owns XP, Streak, Progress,
-Goal completion). The Nav Column carries one deliberate Gamification exception, added
+Goal completion). The Nav Column carries one deliberate Gamification exception
 (`docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §5): a compact
 streak indicator (e.g. flame + day count) in the Nav footer, reusing the same streak data the
 Gamification Layer already tracks — no new schema. It is a glance-level indicator only; the fuller
 session/goal/hours detail stays where it already lives (Shadowing Hub's Current Session rail,
 Dashboard) and is not duplicated here. Beyond this one indicator, the Nav Column stays neutral — no
 live XP counter, no rank badge next to any nav item — and Companion must never narrate the streak
-indicator from within navigation, per the same Layer Responsibility Rule.
+indicator from within navigation, per the same Layer Responsibility Rule. Because the Nav Column is
+persistent chrome (§ Layout Regions), this streak indicator is visible from all 14 `NAV_ITEMS`
+destinations, not just Shadowing.
+
+The Nav footer also carries a "Rain Sound" ambient-audio toggle (§ Settings Entry Point). This is
+**not** part of the Gamification exception above: ambient audio is not XP, Streak, Progress, or Goal
+completion, so it falls outside Gamification scope entirely (`design-reconciliation.md` §3) — it
+simply happens to render in the same footer region as the streak indicator. Rain Sound is a
+lightweight, always-on-demand global control, independent from Study Atmosphere's "🌧 Rainy Day"
+preset (`screen-shadowing-practice.md` § Study Atmosphere): Rainy Day is a fuller visual + mood
+preset (glow, color temperature, glass tint, shadow softness, ambient particles) scoped to the
+Shadowing Practice workspace, while Rain Sound is only an ambient audio layer, reachable from
+anywhere in the app. The two do not stack or conflict by design — a learner can enable Rain Sound
+under any Study Atmosphere selection, or none at all. Like the streak indicator, Rain Sound is
+available from all 14 nav destinations. It defaults to off and never autoplays.
 
 ---
 
@@ -152,9 +170,10 @@ conflated:
 
 1. **Nav footer controls** (shipped): `ThemeToggle`, `ReduceMotionToggle`, sign-out, a streak
    indicator, and a single "Rain Sound" ambient-audio toggle, rendered below the nav list in
-   `app-nav.tsx`. The streak indicator and Rain Sound toggle are the Gamification exception
-   documented in § Gamification & Navigation above; the rest remain global, low-frequency toggles —
-   not a settings screen.
+   `app-nav.tsx`. The streak indicator is the Gamification exception documented in § Gamification &
+   Navigation above; Rain Sound is a separate, non-Gamification global ambient-audio control
+   (also described there, alongside its relationship to Study Atmosphere's Rainy Day preset); the
+   rest remain global, low-frequency toggles — not a settings screen.
 2. **`settings-patterns.md`'s dedicated Settings screen** (Draft/roadmap per
    `design-reconciliation.md` §7 — see that file's Status header): a future `/settings` route with
    the categories that file describes. When built, its nav entry point is a new top-level `NAV_ITEMS`

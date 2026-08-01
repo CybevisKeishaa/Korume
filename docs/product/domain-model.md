@@ -25,15 +25,15 @@ doesn't define, add it here first — don't coin a new synonym for an existing t
 
 | Term | Meaning |
 |---|---|
-| **Learning Mode** | *What skill am I practicing?* One of Shadowing / Pronunciation / Dictation / Summary. Each is a full route inside the Lesson (`/shadowing/[id]`, `/shadowing/[id]/pronunciation`, …), sharing one transcript, one timeline, one progress record. |
-| **View Mode** | *How do I want to see it?* Exists only inside the Shadowing Learning Mode: Reading / Normal / Immersion. |
+| **Learning Mode** | *What skill am I practicing?* One of Shadowing / Pronunciation / Dictation / Summary. Each is a full route inside the Lesson (`/shadowing/[id]`, `/shadowing/[id]/pronunciation`, …), sharing one transcript, one timeline, one progress record. **⚠ Superseded** — "Dictation" was restructured into "Listening Practice"; see `docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §1 and `docs/design/screens/screen-shadowing-practice.md` § Learning Modes for the current definition. |
+| **View Mode** | *How do I want to see it?* Exists only inside the Shadowing Learning Mode: Reading / Normal / Immersion. **⚠ Superseded** — View Mode was retired outright, not merely renamed; see `docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2 and `docs/design/screens/screen-shadowing-practice.md` § Two-Layer Model for the current model. |
 | **Reading Settings** | *How should the UI behave?* Font, subtitle size/color, speed, auto-pause, repeat count, etc. — persisted per learner, not a mode. |
-| **Analysis** | A per-sentence utility (select text → Analyze), not a mode at any layer — not a View Mode option, not a Learning Mode, not a tab. |
+| **Analysis** | A per-sentence utility (select text → Analyze), not a mode at any layer — not a View Mode option, not a Learning Mode, not a tab. (The "View Mode" reference here is to the now-retired term above, kept for historical context.) |
 
 ## Explicitly not part of this model
 
 - **Review** (`screen-review.md`) — the SRS review workspace. A separate surface entirely, not a Learning Mode or View Mode inside a Lesson.
-- **Focus Mode** — a general concentration-density axis shared across several screens (`screen-architecture.md` § Focus States, `adaptive-layouts.md` § Focus Modes, `study-modes.md` § Focus Mode). Related in spirit to View Mode but not the same concept and not scoped to Lessons — see `design-reconciliation.md` §13, "Naming Is Local, Not Global."
+- **Focus Mode** — a general concentration-density axis shared across several screens (`screen-architecture.md` § Focus States, `adaptive-layouts.md` § Focus Modes, `study-modes.md` § Focus Mode). Related in spirit to View Mode (now-retired, see above) but not the same concept and not scoped to Lessons — see `design-reconciliation.md` §13, "Naming Is Local, Not Global."
 
 ## The one-sentence test
 

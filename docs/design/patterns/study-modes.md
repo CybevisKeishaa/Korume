@@ -31,10 +31,8 @@ Study Modes describe intentions.
 
 Examples:
 
-- I want to read.
 - I want to shadow.
 - I want to analyze.
-- I want to immerse myself.
 - I want to review.
 
 Not:
@@ -345,9 +343,8 @@ No mode should rely solely on color to communicate its purpose.
 
 The workspace should remember:
 
-- last selected Reading Settings
-- per-lesson preference (optional)
-- global default preference
+- per-lesson Reading Settings preference (optional)
+- global default Reading Settings preference
 
 The learner should not need to reconfigure the workspace every session.
 

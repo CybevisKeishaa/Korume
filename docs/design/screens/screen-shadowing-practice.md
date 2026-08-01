@@ -90,7 +90,8 @@ Context & Progress below uses for per-sentence Learning Status, no new schema.
 **Listening Practice** — same lesson, transcript hidden or partially hidden depending on sub-mode,
 video loops only the current line's clip (`start_time → end_time`) and stops — the learner's
 attention never drifts past the sentence they're working on. A compact sub-mode selector inside
-this Learning Mode switches between three practice types, all writing to the same
+this Learning Mode — rendered as a small control near the top of the Listening Practice workspace,
+just below the Header's Learning Mode tab row (§ Header) — switches between three practice types, all writing to the same
 `dictation_attempts` table with a `practice_type` discriminator (`dictation | fill_blank |
 translation`):
 
@@ -406,7 +407,7 @@ No settings page.
 
 # Analysis
 
-A per-sentence **utility**, not a mode at any layer — not a fourth View Mode option, not a tab, not
+A per-sentence **utility**, not a mode at any layer — not a Learning Mode, not a tab, not
 a screen (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.6).
 Extends the existing Sentence Actions rather than replacing them: free-form text selection (not just
 whole-sentence tap) opens a popover at the selection.
@@ -544,7 +545,7 @@ Ideal for
 
 - repetitive shadowing
 - intensive reading
-- listening practice
+- intensive listening
 
 The learner should feel like reading a novel while hearing the original voice.
 
@@ -635,6 +636,11 @@ Changes are almost imperceptible.
 The learner chooses a place to study,
 
 not a theme.
+
+"🌧 Rainy Day" here is a full visual + mood preset, separate from the Nav Column's "Rain Sound"
+ambient-audio toggle (`docs/design/screens/navigation-system.md` § Gamification & Navigation) — the
+two are independent, don't stack or conflict, and Rain Sound is reachable from anywhere in the app
+regardless of which Study Atmosphere (if any) is active here.
 
 ---
 

@@ -618,6 +618,10 @@ Floating Controls
 
 Focus Workspace
 
++
+
+Inspector
+
 ---
 
 Journal

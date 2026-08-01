@@ -141,7 +141,7 @@ Settings
 `docs/design/screens/navigation-system.md` § Settings Entry Point)
 
 **One Lesson route now hosts one workspace *per Learning Mode*** (Shadowing / Pronunciation /
-Dictation / Summary, `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md`
+Listening Practice / Summary, `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md`
 §6.1–§6.2), all sharing one lesson. This rule — "every screen has exactly one primary workspace" —
 still holds *per Learning Mode*; it no longer holds *per route* the way this list implied when
 Video Detail was still a separate screen.
@@ -211,7 +211,7 @@ The Shadowing mode is about speaking.
 
 The Pronunciation mode is about speaking accuracy.
 
-The Dictation mode is about focused listening.
+The Listening Practice mode is about focused listening.
 
 The Summary mode is about remembering.
 
@@ -449,7 +449,7 @@ Every screen should communicate one primary emotion.
 | Journal | Reflection |
 | Settings | Preparation (target design — not yet a shipped route, see `settings-patterns.md`) |
 
-Pronunciation, Dictation, and Summary do **not** each get their own row — they are modes within the
+Pronunciation, Listening Practice, and Summary do **not** each get their own row — they are modes within the
 one "Shadowing Practice | Practice" row above, not separate screens with separate emotional
 categories (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §8.1). This
 is stated explicitly so a future editor does not fragment this table as more Learning Modes ship.
