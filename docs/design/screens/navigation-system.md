@@ -9,16 +9,18 @@
 > — `screen-architecture.md` § Navigation Philosophy
 
 This document defines the navigation chrome itself: what's in it, where it lives, how it degrades
-under focus, and the boundary between navigation and the two layers that must never bleed into it —
-Companion and Gamification.
+under focus, and the boundary between navigation and Companion — a layer that must never bleed into
+it. Gamification is normally held to the same boundary, with one narrow, deliberate exception
+(§ Gamification & Navigation).
 
 ---
 
 # Purpose
 
-Navigation is a single, low-noise surface for arriving somewhere. It is not a dashboard, not a status
-display, and not a place where Companion or Gamification speak. Its only job is: get the learner from
-"I want to do X" to the screen for X, with the least visual weight possible.
+Navigation is a single, low-noise surface for arriving somewhere. It is not a dashboard and not a
+place where Companion speaks. Its only job is: get the learner from "I want to do X" to the screen
+for X, with the least visual weight possible. Gamification is a narrow, deliberate exception to this
+neutrality — see § Gamification & Navigation — not a general invitation for status displays.
 
 ---
 
@@ -131,10 +133,14 @@ temporary layer — it does not open, close, or slide over content the way a dra
 
 `/leaderboard` is a real, shipped nav item. It belongs entirely to the Gamification Layer
 (`design-reconciliation.md` §3, Layer Responsibility Rule: Gamification owns XP, Streak, Progress,
-Goal completion). The Nav Column itself stays neutral chrome — it does not display a live XP counter,
-streak flame, or rank badge next to any nav item. Any such indicator, if added later, would be a
-Gamification-owned addition to the Nav Column, and Companion must never narrate it from within
-navigation, per the same Layer Responsibility Rule.
+Goal completion). The Nav Column carries one deliberate Gamification exception, added
+(`docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §5): a compact
+streak indicator (e.g. flame + day count) in the Nav footer, reusing the same streak data the
+Gamification Layer already tracks — no new schema. It is a glance-level indicator only; the fuller
+session/goal/hours detail stays where it already lives (Shadowing Hub's Current Session rail,
+Dashboard) and is not duplicated here. Beyond this one indicator, the Nav Column stays neutral — no
+live XP counter, no rank badge next to any nav item — and Companion must never narrate the streak
+indicator from within navigation, per the same Layer Responsibility Rule.
 
 ---
 
@@ -144,9 +150,11 @@ There is no `/settings` route today (confirmed absent from `NAV_ITEMS` and from 
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 
-1. **Nav footer controls** (shipped): `ThemeToggle`, `ReduceMotionToggle`, and sign-out, rendered
-   below the nav list in `app-nav.tsx`. These are global, low-frequency toggles — not a settings
-   screen.
+1. **Nav footer controls** (shipped): `ThemeToggle`, `ReduceMotionToggle`, sign-out, a streak
+   indicator, and a single "Rain Sound" ambient-audio toggle, rendered below the nav list in
+   `app-nav.tsx`. The streak indicator and Rain Sound toggle are the Gamification exception
+   documented in § Gamification & Navigation above; the rest remain global, low-frequency toggles —
+   not a settings screen.
 2. **`settings-patterns.md`'s dedicated Settings screen** (Draft/roadmap per
    `design-reconciliation.md` §7 — see that file's Status header): a future `/settings` route with
    the categories that file describes. When built, its nav entry point is a new top-level `NAV_ITEMS`
