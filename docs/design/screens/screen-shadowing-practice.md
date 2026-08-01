@@ -118,24 +118,26 @@ cascade free/deep line (`business-model.md` §2/§3.1) — no new gating mechani
 # Shared Context & Progress
 
 Switching Learning Mode never resets position: on sentence 24 in Shadowing, switch to Pronunciation
-→ opens on sentence 24; switch to Dictation → same; return to Shadowing → video resumes exactly
-where it was. All modes write to the same per-sentence progress surface (shadowing completion,
-pronunciation score, dictation accuracy, bookmarks, review-due), so Hub-level views ("Continue
-Learning," "Needs Review," "Weak Pronunciation") never need cross-system sync — they read one
-source.
+→ opens on sentence 24; switch to Listening Practice → same; return to Shadowing → video resumes
+exactly where it was. All modes write to the same per-sentence progress surface (shadowing
+completion, pronunciation score, listening practice accuracy, bookmarks, review-due), so Hub-level
+views ("Continue Learning," "Needs Review," "Weak Pronunciation") never need cross-system sync — they
+read one source.
 
-**No mode ordering is enforced.** Watch → Shadowing → Pronunciation → Dictation → Summary is one
-valid path; Watch → Shadowing → Summary → continue tomorrow is another; Dictation-only is equally
-valid. The four modes are not a wizard and never gate one another.
+**No mode ordering is enforced.** Watch → Shadowing → Pronunciation → Listening Practice → Summary
+is one valid path; Watch → Shadowing → Summary → continue tomorrow is another; Listening-Practice-
+only is equally valid. The four modes are not a wizard and never gate one another.
 
 **Progress is tracked per mode, not as one aggregate bar.** A lesson card shows independent progress
-for each — e.g. "Shadowing 100% · Pronunciation 63% · Dictation 28%" — rather than a single blended
-percentage that hides which skill is actually behind.
+for each — e.g. "Shadowing 100% · Pronunciation 63% · Listening Practice 28%" — rather than a single
+blended percentage that hides which skill is actually behind.
 
 **Each sentence carries its own Learning Status** across the three practice modes: a
-listening/shadowing signal, a pronunciation score, a dictation accuracy score, and a derived
-"difficult" flag from repeated low scores or repeated replays — all read directly off existing
-per-sentence rows, no new table, no AI involved.
+listening/shadowing signal, a pronunciation score, three `practice_type`-keyed Listening Practice
+accuracy scores (dictation / fill_blank / translation), and a derived "difficult" flag from repeated
+low scores or repeated replays — all read directly off existing per-sentence rows, no new table
+(Translation's accuracy score is AI-derived, the other two are not, but all three live in the same
+`dictation_attempts` row shape).
 
 ---
 
@@ -358,6 +360,11 @@ Each sentence supports
 - Grammar
 - Mining
 - AI explanation
+- Toggle furigana — a shortcut to the global Reading Settings furigana setting (Always / Adaptive /
+  Hidden); flipping it here changes the same global setting, there is no separate per-sentence
+  furigana state
+- Practice this sentence — opens Pronunciation mode with the target sentence pre-selected and
+  playback positioned at that sentence
 
 These actions remain hidden until hover or focus.
 
@@ -560,10 +567,10 @@ Never distract.
 
 # Companion
 
-✕ Not Supported, across all four Learning Modes (Shadowing, Pronunciation, Dictation, Summary) —
-each is an active acquisition loop (`docs/design/design-reconciliation.md` §4, Learning Loop
-Boundary), Companion is Dormant throughout. This is structurally enforced: no `CompanionAnchor` may
-mount anywhere in the `/shadowing/[id]/**` route group (L9b scan test). Companion does not appear
+✕ Not Supported, across all four Learning Modes (Shadowing, Pronunciation, Listening Practice,
+Summary) — each is an active acquisition loop (`docs/design/design-reconciliation.md` §4, Learning
+Loop Boundary), Companion is Dormant throughout. This is structurally enforced: no `CompanionAnchor`
+may mount anywhere in the `/shadowing/[id]/**` route group (L9b scan test). Companion does not appear
 during any session; any reflection it has about a completed session surfaces later, on a surface
 where Companion is Available (Dashboard, `/journal`) — never inside the Lesson itself.
 
