@@ -74,11 +74,12 @@ Route shape: shared layout + nested segments, one Lesson hosting four sibling wo
 |---|---|
 | `/shadowing/[id]` | Shadowing (default) |
 | `/shadowing/[id]/pronunciation` | Pronunciation |
-| `/shadowing/[id]/dictation` | Dictation |
+| `/shadowing/[id]/listening` | Listening Practice (Dictation sub-mode, default) |
+| `/shadowing/[id]/listening/fill-blank` | Listening Practice (Fill-in-the-blank sub-mode) |
+| `/shadowing/[id]/listening/translation` | Listening Practice (Translation sub-mode) |
 | `/shadowing/[id]/summary` | Summary |
 
-**Shadowing** — everything else in this document: continuous-playback, transcript-first workspace,
-View Modes live here.
+**Shadowing** — everything else in this document: continuous-playback, transcript-first workspace.
 
 **Pronunciation** — same lesson, same transcript, re-framed per-sentence: the video stops behaving
 as continuous playback and becomes one exercise per line. Replay a clip cut purely from
@@ -87,11 +88,24 @@ three columns `shadowing_sessions` already has (`pronunciation_score`, `rhythm_s
 `pitch_score`) → Retry → next sentence. History of scores per sentence is the same data § Shared
 Context & Progress below uses for per-sentence Learning Status, no new schema.
 
-**Dictation** — same lesson, but the transcript text is **hidden** until the learner checks their
-answer, and the video does not play continuously: it loops only the current line's clip
-(`start_time → end_time`) and stops, so the learner's attention never drifts past the sentence
-they're working on. Play → blank input → Check → accuracy + which words/kana/kanji were wrong +
-correction hint (against `dictation_attempts.accuracy_score`/`user_input`) → next sentence.
+**Listening Practice** — same lesson, transcript hidden or partially hidden depending on sub-mode,
+video loops only the current line's clip (`start_time → end_time`) and stops — the learner's
+attention never drifts past the sentence they're working on. A compact sub-mode selector inside
+this Learning Mode switches between three practice types, all writing to the same
+`dictation_attempts` table with a `practice_type` discriminator (`dictation | fill_blank |
+translation`):
+
+- **Dictation** (default sub-mode) — transcript fully hidden. Play → blank input → Check → accuracy
+  + which words/kana/kanji were wrong + correction hint, against `dictation_attempts.accuracy_score`
+  / `user_input`.
+- **Fill-in-the-blank** — transcript shown with its most important words (content words, not
+  particles) blanked. Play → fill the missing words → Check → accuracy scored against the blanked
+  tokens, same `accuracy_score`/`user_input` columns.
+- **Translation** — transcript shown in Japanese. Play → write a natural Vietnamese translation →
+  Check. Scored via the existing Lite → Deep AI cascade (`business-model.md` §2/§3.1) rather than
+  deterministic matching — same quota/fallback behavior as Analysis, no new gating mechanism.
+
+Next sentence after Check, same as before, regardless of sub-mode.
 
 **Summary** — read-only aggregation of *this lesson's own* data: AI summary, main points, vocabulary
 highlights, grammar highlights, expressions, culture notes, difficulty, related lessons, the
