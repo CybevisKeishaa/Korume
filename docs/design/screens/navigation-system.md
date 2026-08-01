@@ -9,16 +9,18 @@
 > — `screen-architecture.md` § Navigation Philosophy
 
 This document defines the navigation chrome itself: what's in it, where it lives, how it degrades
-under focus, and the boundary between navigation and the two layers that must never bleed into it —
-Companion and Gamification.
+under focus, and the boundary between navigation and Companion — a layer that must never bleed into
+it. Gamification is normally held to the same boundary, with one narrow, deliberate exception
+(§ Gamification & Navigation).
 
 ---
 
 # Purpose
 
-Navigation is a single, low-noise surface for arriving somewhere. It is not a dashboard, not a status
-display, and not a place where Companion or Gamification speak. Its only job is: get the learner from
-"I want to do X" to the screen for X, with the least visual weight possible.
+Navigation is a single, low-noise surface for arriving somewhere. It is not a dashboard and not a
+place where Companion speaks. Its only job is: get the learner from "I want to do X" to the screen
+for X, with the least visual weight possible. Gamification is a narrow, deliberate exception to this
+neutrality — see § Gamification & Navigation — not a general invitation for status displays.
 
 ---
 
@@ -60,7 +62,7 @@ grouping, no nesting:
 | 14 | `profile` | `/profile` |
 
 All 14 are shipped today — none are Planned or aspirational. Active acquisition-loop sub-routes
-(Shadowing Practice, Pronunciation, Dictation, JLPT test-taking, SRS review, Mining review session)
+(Shadowing Practice, Pronunciation, Listening Practice, JLPT test-taking, SRS review, Mining review session)
 are reached by drilling into their parent item (e.g. `/shadowing/[id]`), never listed as their own
 top-level nav entry — this keeps the acquisition loops off the persistent chrome, consistent with
 the Learning Loop Boundary (`docs/design/design-reconciliation.md` §4). "Shadowing" as a top-level
@@ -97,9 +99,13 @@ Two states exist today; a third is a documented direction, not yet shipped:
 | Wrapped (mobile) | Available | Top bar, items wrap to fill width, full labels. |
 | Collapsed / Icon rail | Planned | `adaptive-layouts.md` § Navigation Adaptation describes a future Expanded → Collapsed → Icon rail → Hidden progression during deep focus. Not implemented in `app-nav.tsx` today — treat any icon-rail or auto-hide description elsewhere as target design, not current behavior. |
 
+What happens to the Nav footer's streak indicator and Rain Sound toggle (§ Gamification & Navigation,
+§ Settings Entry Point) in the Collapsed/Icon-rail state is unspecified — to be defined when that
+state ships, not silently assumed to carry over unchanged.
+
 Per `screen-architecture.md` § Navigation Philosophy, navigation is expected to recede during focused
 study. Today that reduction happens by leaving the nav screen entirely (drilling into Shadowing/
-Dictation/Review, which render outside the persistent nav chrome context for that flow) rather than
+Listening Practice/Review, which render outside the persistent nav chrome context for that flow) rather than
 by the nav column collapsing in place. The Collapsed/Icon-rail state in `adaptive-layouts.md` is the
 planned refinement of this same philosophy, not a contradiction of it.
 
@@ -131,10 +137,28 @@ temporary layer — it does not open, close, or slide over content the way a dra
 
 `/leaderboard` is a real, shipped nav item. It belongs entirely to the Gamification Layer
 (`design-reconciliation.md` §3, Layer Responsibility Rule: Gamification owns XP, Streak, Progress,
-Goal completion). The Nav Column itself stays neutral chrome — it does not display a live XP counter,
-streak flame, or rank badge next to any nav item. Any such indicator, if added later, would be a
-Gamification-owned addition to the Nav Column, and Companion must never narrate it from within
-navigation, per the same Layer Responsibility Rule.
+Goal completion). The Nav Column carries one deliberate Gamification exception
+(`docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §5): a compact
+streak indicator (e.g. flame + day count) in the Nav footer, reusing the same streak data the
+Gamification Layer already tracks — no new schema. It is a glance-level indicator only; the fuller
+session/goal/hours detail stays where it already lives (Shadowing Hub's Current Session rail,
+Dashboard) and is not duplicated here. Beyond this one indicator, the Nav Column stays neutral — no
+live XP counter, no rank badge next to any nav item — and Companion must never narrate the streak
+indicator from within navigation, per the same Layer Responsibility Rule. Because the Nav Column is
+persistent chrome (§ Layout Regions), this streak indicator is visible from all 14 `NAV_ITEMS`
+destinations, not just Shadowing.
+
+The Nav footer also carries a "Rain Sound" ambient-audio toggle (§ Settings Entry Point). This is
+**not** part of the Gamification exception above: ambient audio is not XP, Streak, Progress, or Goal
+completion, so it falls outside Gamification scope entirely (`design-reconciliation.md` §3) — it
+simply happens to render in the same footer region as the streak indicator. Rain Sound is a
+lightweight, always-on-demand global control, independent from Study Atmosphere's "🌧 Rainy Day"
+preset (`screen-shadowing-practice.md` § Study Atmosphere): Rainy Day is a fuller visual + mood
+preset (glow, color temperature, glass tint, shadow softness, ambient particles) scoped to the
+Shadowing Practice workspace, while Rain Sound is only an ambient audio layer, reachable from
+anywhere in the app. The two do not stack or conflict by design — a learner can enable Rain Sound
+under any Study Atmosphere selection, or none at all. Like the streak indicator, Rain Sound is
+available from all 14 nav destinations. It defaults to off and never autoplays.
 
 ---
 
@@ -144,9 +168,12 @@ There is no `/settings` route today (confirmed absent from `NAV_ITEMS` and from 
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 
-1. **Nav footer controls** (shipped): `ThemeToggle`, `ReduceMotionToggle`, and sign-out, rendered
-   below the nav list in `app-nav.tsx`. These are global, low-frequency toggles — not a settings
-   screen.
+1. **Nav footer controls** (shipped): `ThemeToggle`, `ReduceMotionToggle`, sign-out, a streak
+   indicator, and a single "Rain Sound" ambient-audio toggle, rendered below the nav list in
+   `app-nav.tsx`. The streak indicator is the Gamification exception documented in § Gamification &
+   Navigation above; Rain Sound is a separate, non-Gamification global ambient-audio control
+   (also described there, alongside its relationship to Study Atmosphere's Rainy Day preset); the
+   rest remain global, low-frequency toggles — not a settings screen.
 2. **`settings-patterns.md`'s dedicated Settings screen** (Draft/roadmap per
    `design-reconciliation.md` §7 — see that file's Status header): a future `/settings` route with
    the categories that file describes. When built, its nav entry point is a new top-level `NAV_ITEMS`

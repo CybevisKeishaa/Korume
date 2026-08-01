@@ -458,7 +458,7 @@ The header should never compete with learning.
 
 # Companion Adaptation
 
-**On Learning Loop surfaces** (Shadowing, Dictation, SRS review, Mining review session, Pronunciation
+**On Learning Loop surfaces** (Shadowing, Listening Practice, SRS review, Mining review session, Pronunciation
 evaluation, JLPT/Grammar/Vocabulary/Kanji practice, Conversation drills —
 `docs/design/design-reconciliation.md` §4), Companion is Hidden at every focus level below, not only
 at Presentation Mode. This matches "1. Immersive Workspace" above, which already lists "Companion

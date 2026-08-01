@@ -5,7 +5,7 @@
 > Replaces `screen-shadowing-detail.md` per `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §0/§2/§5. **The route (`/shadowing/[id]`) represents the Lesson, not
 > "the Practice screen."** Shadowing Practice — everything this document specifies — is the primary
 > experience rendered at that route today, but it is one experience *within* the Lesson, not the
-> route's identity: three other Learning Modes (Pronunciation, Dictation, Summary) are siblings of
+> route's identity: three other Learning Modes (Pronunciation, Listening Practice, Summary) are siblings of
 > Shadowing within the same Lesson Workspace, sharing one transcript, one timeline, one progress
 > record (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6). No
 > standalone Lesson Detail page and no Lesson Info Panel exist inside Practice — both were proposed
@@ -46,23 +46,22 @@ Everything patiently waits.
 
 ---
 
-# Three-Layer Model
+# Two-Layer Model
 
-Not one flat set of tabs — three independent axes, each with a single responsibility
-(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.1):
+Not one flat set of tabs — two independent axes, each with a single responsibility:
 
 ```
 Lesson
-├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Dictation / Summary
-├── View Mode         "How do I want to see it?"       — exists only inside Shadowing: Reading / Normal / Immersion
+├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Listening Practice / Summary
 ├── Reading Settings  "How should the UI behave?"       — Font, Subtitle Size, Subtitle Color, Speed, Auto Pause, Repeat, ...
 └── Analysis          a per-sentence utility (highlight → Analyze), not a mode at any layer
 ```
 
-This resolves what would otherwise be a collision between this document's own Reading/Shadowing/
-Immersion/Analysis progression (a **display-style axis**, now called View Mode, § View Mode below)
-and the four Learning Modes below (a **practice-type axis**): they were never the same axis, so they
-nest rather than merge.
+Shadowing renders with one fixed presentation, the same as Pronunciation, Listening Practice, and
+Summary — there is no in-mode display-style switcher. An earlier design used a third axis, View
+Mode (Reading / Normal / Immersion, existing only inside Shadowing), to let the learner switch
+between display styles; it added complexity without enough learner value to keep and was retired
+(`docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2).
 
 ---
 
@@ -74,11 +73,12 @@ Route shape: shared layout + nested segments, one Lesson hosting four sibling wo
 |---|---|
 | `/shadowing/[id]` | Shadowing (default) |
 | `/shadowing/[id]/pronunciation` | Pronunciation |
-| `/shadowing/[id]/dictation` | Dictation |
+| `/shadowing/[id]/listening` | Listening Practice (Dictation sub-mode, default) |
+| `/shadowing/[id]/listening/fill-blank` | Listening Practice (Fill-in-the-blank sub-mode) |
+| `/shadowing/[id]/listening/translation` | Listening Practice (Translation sub-mode) |
 | `/shadowing/[id]/summary` | Summary |
 
-**Shadowing** — everything else in this document: continuous-playback, transcript-first workspace,
-View Modes live here.
+**Shadowing** — everything else in this document: continuous-playback, transcript-first workspace.
 
 **Pronunciation** — same lesson, same transcript, re-framed per-sentence: the video stops behaving
 as continuous playback and becomes one exercise per line. Replay a clip cut purely from
@@ -87,11 +87,25 @@ three columns `shadowing_sessions` already has (`pronunciation_score`, `rhythm_s
 `pitch_score`) → Retry → next sentence. History of scores per sentence is the same data § Shared
 Context & Progress below uses for per-sentence Learning Status, no new schema.
 
-**Dictation** — same lesson, but the transcript text is **hidden** until the learner checks their
-answer, and the video does not play continuously: it loops only the current line's clip
-(`start_time → end_time`) and stops, so the learner's attention never drifts past the sentence
-they're working on. Play → blank input → Check → accuracy + which words/kana/kanji were wrong +
-correction hint (against `dictation_attempts.accuracy_score`/`user_input`) → next sentence.
+**Listening Practice** — same lesson, transcript hidden or partially hidden depending on sub-mode,
+video loops only the current line's clip (`start_time → end_time`) and stops — the learner's
+attention never drifts past the sentence they're working on. A compact sub-mode selector inside
+this Learning Mode — rendered as a small control near the top of the Listening Practice workspace,
+just below the Header's Learning Mode tab row (§ Header) — switches between three practice types, all writing to the same
+`dictation_attempts` table with a `practice_type` discriminator (`dictation | fill_blank |
+translation`):
+
+- **Dictation** (default sub-mode) — transcript fully hidden. Play → blank input → Check → accuracy
+  + which words/kana/kanji were wrong + correction hint, against `dictation_attempts.accuracy_score`
+  / `user_input`.
+- **Fill-in-the-blank** — transcript shown with its most important words (content words, not
+  particles) blanked. Play → fill the missing words → Check → accuracy scored against the blanked
+  tokens, same `accuracy_score`/`user_input` columns.
+- **Translation** — transcript shown in Japanese. Play → write a natural Vietnamese translation →
+  Check. Scored via the existing Lite → Deep AI cascade (`business-model.md` §2/§3.1) rather than
+  deterministic matching — same quota/fallback behavior as Analysis, no new gating mechanism.
+
+Next sentence after Check, same as before, regardless of sub-mode.
 
 **Summary** — read-only aggregation of *this lesson's own* data: AI summary, main points, vocabulary
 highlights, grammar highlights, expressions, culture notes, difficulty, related lessons, the
@@ -105,24 +119,26 @@ cascade free/deep line (`business-model.md` §2/§3.1) — no new gating mechani
 # Shared Context & Progress
 
 Switching Learning Mode never resets position: on sentence 24 in Shadowing, switch to Pronunciation
-→ opens on sentence 24; switch to Dictation → same; return to Shadowing → video resumes exactly
-where it was. All modes write to the same per-sentence progress surface (shadowing completion,
-pronunciation score, dictation accuracy, bookmarks, review-due), so Hub-level views ("Continue
-Learning," "Needs Review," "Weak Pronunciation") never need cross-system sync — they read one
-source.
+→ opens on sentence 24; switch to Listening Practice → same; return to Shadowing → video resumes
+exactly where it was. All modes write to the same per-sentence progress surface (shadowing
+completion, pronunciation score, listening practice accuracy, bookmarks, review-due), so Hub-level
+views ("Continue Learning," "Needs Review," "Weak Pronunciation") never need cross-system sync — they
+read one source.
 
-**No mode ordering is enforced.** Watch → Shadowing → Pronunciation → Dictation → Summary is one
-valid path; Watch → Shadowing → Summary → continue tomorrow is another; Dictation-only is equally
-valid. The four modes are not a wizard and never gate one another.
+**No mode ordering is enforced.** Watch → Shadowing → Pronunciation → Listening Practice → Summary
+is one valid path; Watch → Shadowing → Summary → continue tomorrow is another; Listening-Practice-
+only is equally valid. The four modes are not a wizard and never gate one another.
 
 **Progress is tracked per mode, not as one aggregate bar.** A lesson card shows independent progress
-for each — e.g. "Shadowing 100% · Pronunciation 63% · Dictation 28%" — rather than a single blended
-percentage that hides which skill is actually behind.
+for each — e.g. "Shadowing 100% · Pronunciation 63% · Listening Practice 28%" — rather than a single
+blended percentage that hides which skill is actually behind.
 
 **Each sentence carries its own Learning Status** across the three practice modes: a
-listening/shadowing signal, a pronunciation score, a dictation accuracy score, and a derived
-"difficult" flag from repeated low scores or repeated replays — all read directly off existing
-per-sentence rows, no new table, no AI involved.
+listening/shadowing signal, a pronunciation score, three `practice_type`-keyed Listening Practice
+accuracy scores (dictation / fill_blank / translation), and a derived "difficult" flag from repeated
+low scores or repeated replays — all read directly off existing per-sentence rows, no new table
+(Translation's accuracy score is AI-derived, the other two are not, but all three live in the same
+`dictation_attempts` row shape).
 
 ---
 
@@ -345,6 +361,11 @@ Each sentence supports
 - Grammar
 - Mining
 - AI explanation
+- Toggle furigana — a shortcut to the global Reading Settings furigana setting (Always / Adaptive /
+  Hidden); flipping it here changes the same global setting, there is no separate per-sentence
+  furigana state
+- Practice this sentence — opens Pronunciation mode with the target sentence pre-selected and
+  playback positioned at that sentence
 
 These actions remain hidden until hover or focus.
 
@@ -384,59 +405,9 @@ No settings page.
 
 ---
 
-# View Mode (inside Shadowing only)
-
-Exists only inside the Shadowing Learning Mode — Pronunciation, Dictation, and Summary each have
-their own fixed presentation, not a View Mode selector
-(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.4).
-
-## Reading
-
-Large typography.
-
-Many visible sentences.
-
-Translation visible.
-
-Comfortable reading.
-
-The old "Reading Mode" — unchanged in substance, now correctly scoped as a display preset of
-Shadowing rather than a sibling of Dictation.
-
----
-
-## Normal
-
-Current sentence emphasized.
-
-Translation hidden.
-
-Playback controls prioritized.
-
-Loop enabled.
-
-Today's default balance.
-
----
-
-## Immersion
-
-Japanese only.
-
-Minimal interface.
-
-Video slightly larger.
-
-Maximum focus.
-
-The old "Immersion Mode" — unchanged in substance, now correctly scoped as a display preset of
-Shadowing.
-
----
-
 # Analysis
 
-A per-sentence **utility**, not a mode at any layer — not a fourth View Mode option, not a tab, not
+A per-sentence **utility**, not a mode at any layer — not a Learning Mode, not a tab, not
 a screen (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.6).
 Extends the existing Sentence Actions rather than replacing them: free-form text selection (not just
 whole-sentence tap) opens a popover at the selection.
@@ -574,7 +545,7 @@ Ideal for
 
 - repetitive shadowing
 - intensive reading
-- listening practice
+- intensive listening
 
 The learner should feel like reading a novel while hearing the original voice.
 
@@ -597,10 +568,10 @@ Never distract.
 
 # Companion
 
-✕ Not Supported, across all four Learning Modes (Shadowing, Pronunciation, Dictation, Summary) —
-each is an active acquisition loop (`docs/design/design-reconciliation.md` §4, Learning Loop
-Boundary), Companion is Dormant throughout. This is structurally enforced: no `CompanionAnchor` may
-mount anywhere in the `/shadowing/[id]/**` route group (L9b scan test). Companion does not appear
+✕ Not Supported, across all four Learning Modes (Shadowing, Pronunciation, Listening Practice,
+Summary) — each is an active acquisition loop (`docs/design/design-reconciliation.md` §4, Learning
+Loop Boundary), Companion is Dormant throughout. This is structurally enforced: no `CompanionAnchor`
+may mount anywhere in the `/shadowing/[id]/**` route group (L9b scan test). Companion does not appear
 during any session; any reflection it has about a completed session surfaces later, on a surface
 where Companion is Available (Dashboard, `/journal`) — never inside the Lesson itself.
 
@@ -665,6 +636,11 @@ Changes are almost imperceptible.
 The learner chooses a place to study,
 
 not a theme.
+
+"🌧 Rainy Day" here is a full visual + mood preset, separate from the Nav Column's "Rain Sound"
+ambient-audio toggle (`docs/design/screens/navigation-system.md` § Gamification & Navigation) — the
+two are independent, don't stack or conflict, and Rain Sound is reachable from anywhere in the app
+regardless of which Study Atmosphere (if any) is active here.
 
 ---
 

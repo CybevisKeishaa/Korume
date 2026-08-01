@@ -133,7 +133,7 @@ Understanding Japanese.
 
 Ideal for:
 
-Shadowing Practice (Reading View Mode)
+Shadowing Practice
 
 Transcript
 
@@ -618,19 +618,9 @@ Floating Controls
 
 Focus Workspace
 
----
-
-Shadowing Practice (Reading View Mode)
-
-Reading Workspace
-
 +
 
 Inspector
-
-+
-
-Floating Controls
 
 ---
 

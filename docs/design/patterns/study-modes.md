@@ -31,10 +31,8 @@ Study Modes describe intentions.
 
 Examples:
 
-- I want to read.
 - I want to shadow.
 - I want to analyze.
-- I want to immerse myself.
 - I want to review.
 
 Not:
@@ -108,13 +106,13 @@ The learner should continue exactly where they left off.
 
 **Superseded inside the Shadowing Lesson Workspace.** The four modes this section originally
 described — Reading, Shadowing, Immersion, Analysis — were restructured by
-`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.1/§6.4/§6.6 into
-the Three-Layer Model now documented canonically in `screen-shadowing-practice.md`:
+`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.1/§6.4/§6.6, and
+later `2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2, into a Learning Mode /
+Reading Settings model now documented canonically in `screen-shadowing-practice.md`:
 
 ```
 Lesson
-├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Dictation / Summary
-├── View Mode         "How do I want to see it?"       — exists only inside Shadowing: Reading / Normal / Immersion
+├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Listening Practice / Summary
 ├── Reading Settings  "How should the UI behave?"      — Font, Subtitle Size, Subtitle Color, Speed, Auto Pause, Repeat, ...
 └── Analysis          a per-sentence utility (highlight → Analyze), not a mode at any layer
 ```
@@ -123,22 +121,27 @@ Mapping from this document's old names to the new model:
 
 | Old name (this document) | New home |
 |---|---|
-| Reading Mode | View Mode → **Reading** (`screen-shadowing-practice.md` § View Mode) |
-| Shadowing Mode | View Mode → **Normal** ("today's default balance") |
-| Immersion Mode | View Mode → **Immersion** |
-| Analysis Mode | **Analysis**, a per-sentence utility — not a View Mode option, not a fourth mode |
+| Reading Mode | Retired — Shadowing now has one fixed presentation, no display-style switcher |
+| Shadowing Mode | Retired the same way — its behavior ("today's default balance") is simply how Shadowing always renders now |
+| Immersion Mode | Retired the same way |
+| Analysis Mode | **Analysis**, a per-sentence utility — not a mode, not a tab, unaffected by this retirement |
 
-`screen-shadowing-practice.md` § Three-Layer Model / § View Mode / § Analysis is now the canonical
-description of each — this document no longer duplicates their Purpose/Layout/Companion Behavior
-detail below.
+An intermediate step briefly gave Reading/Shadowing/Immersion Mode a new home, View Mode
+(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.1/§6.4); View Mode
+itself was later retired outright
+(`docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2), so those
+three old names have no new home to point to anymore.
+
+`screen-shadowing-practice.md` § Two-Layer Model / § Analysis is now the canonical description of
+each — this document no longer duplicates their Purpose/Layout/Companion Behavior detail below.
 
 **Review Mode, Focus Mode, and Adaptive Mode are unaffected** by this restructuring — they describe
-different surfaces/axes, not the Shadowing Learning Mode's internal View Mode split: Review Mode is
-the separate SRS review workspace (`screen-review.md`); Focus Mode is the general
-concentration-density axis shared with `screen-architecture.md` § Focus States and
-`adaptive-layouts.md` § Focus Modes (related in spirit, not the same concept —
+different surfaces/axes: Review Mode is the separate SRS review workspace (`screen-review.md`);
+Focus Mode is the general concentration-density axis shared with `screen-architecture.md` § Focus
+States and `adaptive-layouts.md` § Focus Modes (related in spirit, not the same concept —
 `docs/design/design-reconciliation.md` §13, "Naming Is Local, Not Global"); Adaptive Mode is this
-document's own auto-adjustment behavior. All three remain documented below, unchanged.
+document's own auto-adjustment behavior. All three remain documented below, unchanged (Adaptive
+Mode's own examples are trimmed separately, see § Adaptive Mode below).
 
 ---
 
@@ -255,18 +258,6 @@ The system observes the learner's current activity.
 
 Examples:
 
-Reading for several minutes
-
-↓
-
-Workspace gradually emphasizes View Mode → Reading.
-
-Repeated sentence looping
-
-↓
-
-Workspace gradually resembles View Mode → Normal.
-
 Extended grammar exploration
 
 ↓
@@ -286,31 +277,6 @@ The learner remains in control.
 ✕ Not Supported. Adaptive Mode still resolves to one of the active-acquisition-loop modes above
 (`docs/design/design-reconciliation.md` §4, Learning Loop Boundary) — Companion stays Hidden, the
 same as every other mode in this document.
-
----
-
-# Mode Selection
-
-Within Shadowing, View Mode should be accessible from a compact segmented control
-(`screen-shadowing-practice.md` § View Mode):
-
-```
-Reading
-
-Normal
-
-Immersion
-```
-
-Analysis is not part of this control — it triggers from selecting text, not from switching modes
-(see § Available Study Modes above). Review is a separate workspace reached by navigating away from
-the Lesson entirely, not a mode switch within it.
-
-Avoid dropdown menus.
-
-Avoid nested settings.
-
-Changing View Mode should require only one click.
 
 ---
 
@@ -377,9 +343,8 @@ No mode should rely solely on color to communicate its purpose.
 
 The workspace should remember:
 
-- last selected View Mode
-- per-lesson preference (optional)
-- global default preference
+- per-lesson Reading Settings preference (optional)
+- global default Reading Settings preference
 
 The learner should not need to reconfigure the workspace every session.
 
