@@ -5,7 +5,7 @@
 > Replaces `screen-shadowing-detail.md` per `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §0/§2/§5. **The route (`/shadowing/[id]`) represents the Lesson, not
 > "the Practice screen."** Shadowing Practice — everything this document specifies — is the primary
 > experience rendered at that route today, but it is one experience *within* the Lesson, not the
-> route's identity: three other Learning Modes (Pronunciation, Dictation, Summary) are siblings of
+> route's identity: three other Learning Modes (Pronunciation, Listening Practice, Summary) are siblings of
 > Shadowing within the same Lesson Workspace, sharing one transcript, one timeline, one progress
 > record (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6). No
 > standalone Lesson Detail page and no Lesson Info Panel exist inside Practice — both were proposed

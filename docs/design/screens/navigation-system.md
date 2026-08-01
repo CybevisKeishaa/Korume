@@ -62,7 +62,7 @@ grouping, no nesting:
 | 14 | `profile` | `/profile` |
 
 All 14 are shipped today — none are Planned or aspirational. Active acquisition-loop sub-routes
-(Shadowing Practice, Pronunciation, Dictation, JLPT test-taking, SRS review, Mining review session)
+(Shadowing Practice, Pronunciation, Listening Practice, JLPT test-taking, SRS review, Mining review session)
 are reached by drilling into their parent item (e.g. `/shadowing/[id]`), never listed as their own
 top-level nav entry — this keeps the acquisition loops off the persistent chrome, consistent with
 the Learning Loop Boundary (`docs/design/design-reconciliation.md` §4). "Shadowing" as a top-level
@@ -101,7 +101,7 @@ Two states exist today; a third is a documented direction, not yet shipped:
 
 Per `screen-architecture.md` § Navigation Philosophy, navigation is expected to recede during focused
 study. Today that reduction happens by leaving the nav screen entirely (drilling into Shadowing/
-Dictation/Review, which render outside the persistent nav chrome context for that flow) rather than
+Listening Practice/Review, which render outside the persistent nav chrome context for that flow) rather than
 by the nav column collapsing in place. The Collapsed/Icon-rail state in `adaptive-layouts.md` is the
 planned refinement of this same philosophy, not a contradiction of it.
 
