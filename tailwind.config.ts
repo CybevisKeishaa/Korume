@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Nihongo Cinema design tokens.
+ * Korume design tokens.
  * Colours are driven by CSS variables (see app/globals.css) so the same
  * scale serves light + dark themes and keeps WCAG AA contrast (CLAUDE.md §5).
  */

@@ -21,7 +21,7 @@ const notoJp = Noto_Sans_JP({
 // `generateMetadata` runs in its own scope, so the locale must be threaded in
 // explicitly — a bare `getTranslations("common")` here would rely on ambient
 // request state and can silently drop the page out of static rendering
-// (spec §7 risk 2). The `"%s · Nihongo Cinema"` template stays a literal: the
+// (spec §7 risk 2). The `"%s · Korume"` template stays a literal: the
 // separator and brand are not translated.
 export async function generateMetadata({
   params,
@@ -32,7 +32,7 @@ export async function generateMetadata({
   return {
     title: {
       default: t("meta.defaultTitle"),
-      template: "%s · Nihongo Cinema",
+      template: "%s · Korume",
     },
     description: t("meta.description"),
   };

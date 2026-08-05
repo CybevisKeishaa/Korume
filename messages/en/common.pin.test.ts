@@ -111,7 +111,7 @@ describe("common.json EN — actions.loadMore / actions.confirmYes (Task 16 prom
  * Task 18 moved the root layout's document `title.default` and `description`
  * (`app/[locale]/layout.tsx`) out of a static `export const metadata` and into
  * a locale-threaded `generateMetadata` reading `common.meta.*`. The
- * `"%s · Nihongo Cinema"` title template stays a literal in the layout — the
+ * `"%s · Korume"` title template stays a literal in the layout — the
  * separator and brand are not translated — so only these two leaves route
  * through the catalog. Literals copied verbatim from the pre-Task-18 layout
  * source (binding pattern 2), never derived from the catalog.
