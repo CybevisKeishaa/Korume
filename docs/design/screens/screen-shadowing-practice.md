@@ -270,7 +270,11 @@ This header itself doesn't display Gamification (XP, Streak, Leaderboard, Badge)
 shipped layer that lives elsewhere (Dashboard, post-session summaries), not banned product-wide
 (`docs/design/design-reconciliation.md` §3). This header just isn't where it speaks.
 
-No progress indicators.
+No progress indicators — e.g. no lesson-level completion percentage
+(`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md` §6). A
+sentence position counter (e.g. "Sentence 3 / 18") is not a progress indicator in this sense — it's
+orientation context (which sentence the learner is on), not a measure of how much of the lesson
+remains, and is fine to show.
 
 No unnecessary controls.
 
