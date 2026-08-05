@@ -36,12 +36,26 @@ transition table and tests already written — no long horizon left. So: run bra
 on Fable (after asking), then **drop back to Opus 5 (was Opus 4.8) for execution**, including
 subagents. Do not re-litigate this per task in L8/L9c.
 
-## ⚠ Money caveat — verify before assuming Fable is "free"
-User has **$100 free Fable credit**. It only offsets cost if Claude Code bills through the SAME
-API account/key that holds the credit. If Claude Code runs on a **subscription (Max/Pro)**, it does
-NOT draw from API credits — the $100 is spent via API/Console instead, not via these layers. At the
-$10/$50 Fable rate, $100 does not go far across a multi-plan layer. Confirm the billing path before
-treating Fable work as covered.
+## ✅ Money — RESOLVED 2026-08-05 by running `/status` (supersedes the old "$100 credit" caveat)
+
+**Verified facts, not assumptions:**
+- **Login method: Claude Pro account** (org `shamt2004@gmail.com's Organization`). Not an API key.
+- **Fable is NOT covered by the subscription.** It draws from a separate **"Usage credits"** pool
+  that is metered in dollars, even on Pro. Observed: session Fable spend `$6.09` matched the
+  Usage-credits line `$6.09 / $50.00 spent` exactly.
+- **Pool is $50.00, resets monthly** (next reset Sep 1, Asia/Saigon) — NOT the "$100 one-time"
+  figure this memory previously claimed. Treat **$50/month** as the verified number.
+- **Opus / Sonnet / Haiku do NOT touch that pool.** They count against the session and weekly
+  rate-limit bars instead. So the practical tradeoff is: Fable spends real dollars from a finite
+  monthly pool; the others spend rate-limit headroom.
+
+**The old caveat's claim that "a subscription does NOT draw from credits" was WRONG** — corrected
+here after direct observation. Do not restore it.
+
+**Cost calibration (real datapoint, 2026-08-05):** one Fable plan-writing pass (Korume Plan B,
+~5-task code plan, 29 tool uses, 146k cache write) cost **$6.09 ≈ 12% of the monthly $50 pool**.
+Budget roughly 8 Fable plan-writing passes per month at that size. This is the number to reason
+with when deciding whether a given brainstorm/decomposition is worth Fable.
 
 ## Working-style notes for Fable (if/when used)
 - Thinking is always on; a single hard request can run **many minutes** (long turns) — normal, not a hang.

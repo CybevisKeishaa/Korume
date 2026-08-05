@@ -36,17 +36,37 @@ SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
 **Deferred to Plan B or a later docs cleanup (ruled non-blocking by the final reviewer, not yet actioned):** `screen-search.md:110` stale "14-item inventory" count; `navigation-system.md` two "all 14 NAV_ITEMS" mentions now ambiguous next to the 22-row table; `companion-patterns.md` § Learning Boundary still repeats the pre-narrowing loop list (same fix as design-reconciliation.md §4, not yet propagated there); `learning-surfaces.md:709` "Shadowing Practice is Not Supported" now true only of Shadowing mode, not the whole Lesson screen; nav table rows 9/12 (review/challenges) lack the "(Planned)" marker other unwired rows have; `lessons`→`/shadowing` vs. shipped `/videos` route drift (pre-existing, not a regression); §6 Anchor Availability row ordering no longer groups by status (looks deliberate).
 
-**Plan B (Code) — NOT YET WRITTEN.** Everything the docs-only Plan A explicitly excluded: i18n
-catalog rename (`messages/{en,vi}/{common,marketing}.json` + `messages/en/common.pin.test.ts` — must
-update the pin test in the SAME commit as the catalog per the L9a catalog-mutation lesson,
-`mem:l9a_localization_run_state`), `test/messages.test.ts`, `tests/e2e/home.spec.ts` (asserts the
-string on the rendered page), `app/[locale]/layout.tsx` metadata, `tailwind.config.ts` (verify at
-execution time whether it's load-bearing or just a comment), `components/layout/app-nav.tsx` (actual
-5-group `NAV_ITEMS` restructure + visibility toggle — this is what makes Plan A's "canonical/target"
-nav-structure wording become "shipped"), `components/companion/anchor-boundary.test.ts`
-(narrow its scan from "no CompanionAnchor anywhere in `/shadowing/[id]/**`" to just the
-`/shadowing/[id]` Shadowing-mode route). Write this plan via `superpowers:writing-plans` now that Plan A
-has landed on master.
+**Plan B (Code) — WRITTEN & COMMITTED (`851f653`), EXECUTION NOT STARTED (0 of 5 tasks).**
+`docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-b-code.md` —
+written via `superpowers:writing-plans` on **Fable** (user-approved model choice; cost $6.09).
+5 tasks: (1) i18n catalog rename + `common.pin.test.ts` + `test/messages.test.ts` +
+`tests/e2e/home.spec.ts` in ONE commit (L9a catalog-mutation rule), (2) `app/[locale]/layout.tsx`
+title template + `tailwind.config.ts` comment, (3) `NAV_ITEMS` → 5-group `NAV_GROUPS` (14 shipped
+destinations only; `videos`→`lessons`, `conversation`→`speaking`, `journal`→`journey`),
+(4) Nav Column visibility toggle (built fresh, visible-by-default — user-resolved), (5) narrow
+`components/companion/anchor-boundary.test.ts` to Shadowing-mode-only.
+
+**Two user decisions already baked into the plan file (committed, don't re-ask):** `appNameJp`
+becomes romaji **"Korume"** (not katakana コルメ); Nav Column default visibility **outside** the
+Lesson Workspace is **visible**.
+
+**Fable's reality-check findings written into the plan (read its "Reality-check findings" §):** the
+shipped Hub route is **`/videos`, not `/shadowing`** — Plan B renames the key/label only and keeps
+`href: "/videos"`, route rename deferred to the Hub UI plan; **no Lesson-Workspace nav-hide
+mechanism exists in code** (doc-only mandate), so Task 4 builds the toggle fresh; `tailwind.config.ts`
+confirmed comment-only; INSIGHTS group renders nothing yet (all 3 rows unbuilt).
+
+**Execution state (resume point):** worktree `.worktrees/korume-rebrand-plan-b` on branch
+`korume-rebrand-plan-b-code`, `npm install` DONE, baseline `npm run typecheck` CLEAN. No SDD ledger
+created yet and no task dispatched — start from `scripts/sdd-workspace` + Task 1.
+
+**⚠ WORKTREE TEST GOTCHA — do not chase this as a regression:** running `npm test` *from inside*
+`.worktrees/**` produces **11 failures in `lib/eslint-rules.test.ts`** with
+`Plugin "@next/next" was conflicted between ".eslintrc.json" and "..\..\.eslintrc.json"`. Cause:
+the worktree is nested inside the parent repo, so ESLint's `lintText` config resolution walks up and
+finds two `.eslintrc.json` files. **Verified NOT a regression** — the same test passes 22/22 when run
+from the main repo root (which picks up both trees). Every "run full suite" step in Plan B will hit
+this; tell implementers and reviewers up front so nobody debugs a phantom bug.
 
 **Not done / explicitly deferred:** only Shadowing Hub + Shadowing Practice were reviewed against the
 ~20-screen Figma file — the other ~18 screens are unreviewed, a natural follow-up once this
