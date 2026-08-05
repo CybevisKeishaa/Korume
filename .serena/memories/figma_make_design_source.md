@@ -143,10 +143,27 @@ adding to it, so a snapshot decays — and a stale snapshot posing as canonical 
 failure mode Plan A just cleaned up. If copied, stamp it `snapshot as of <date>` and record where to
 re-fetch.
 
-**Order agreed:** finish Plan B (Tasks 2–5) first — it is mid-branch, mostly mechanical, and Task 3/4's
-`NAV_GROUPS` restructure is the foundation every ported screen will sit inside. Plan B is insulated from
-all of the above: Tasks 2–5 touch i18n strings, nav structure and tests, no colour work. THEN open a
-`superpowers:brainstorming` + spec pass for the Figma Make adoption, with A/B/C above as the agenda.
+**Order agreed:** finish Plan B first, THEN open a `superpowers:brainstorming` + spec pass for the
+Figma Make adoption, with A/B/C above as the agenda.
+
+✅ **GATE CLEARED (2026-08-06): Plan B is EXECUTED and MERGED to master `--no-ff` at `44521bc`.** The
+Figma Make brainstorm is now the next action. Nothing in Plan B touched colour or tokens, so every
+decision recorded above still stands unchanged.
+
+**What Plan B left for ported screens to sit inside** (read before porting anything):
+- `components/layout/app-nav.tsx` now exports **`NAV_GROUPS`** (grouped, `as const`) with `NAV_ITEMS`
+  re-derived as its flat view. Four groups render today — LEARN (8), STUDY (4), PROGRESS (1),
+  ACCOUNT (1) = the 14 shipped destinations. **INSIGHTS renders nothing** (all 3 rows unbuilt), which
+  matters because several Figma screens show it populated.
+- Three destination renames are live: `videos`→`lessons`, `conversation`→`speaking`,
+  `journal`→`journey`. **The routes did NOT change** — `lessons` still points at `/videos`. Any ported
+  screen linking to the Hub must use `/videos`; the `/shadowing` rename is Plan C's call.
+- The Nav Column has a **visibility toggle**, visible by default, session-scoped (`useState(true)`,
+  not persisted). Group headings are `hidden md:block` — deliberately suppressed on mobile.
+- `/videos` page copy now reads **"Lessons"** (EN) / **"Bài học"** (VI), not "Videos".
+- ⚠️ Any label rename in a ported screen must sweep **`tests/e2e/`** by hand: `vitest.config.ts`
+  excludes `tests/e2e`, so `npm test` cannot catch a broken Playwright selector. This exact gap
+  produced Plan B's only Critical finding.
 
 ## Stack alignment (bundle → repo)
 
