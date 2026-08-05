@@ -91,8 +91,13 @@ destination (see `docs/design/screens/screen-search.md` § Entry Points).
 The Nav Column is **toggleable** (show/hide via a small edge affordance) rather than an
 always-fixed 240px column — generalizing the hidden-by-default behavior
 `screen-shadowing-practice.md` § Sidebar already mandates inside the Lesson Workspace to the whole
-product. The default visibility state outside the Lesson Workspace is not decided by this document —
-see the source spec's §7. Toggling only adds a show/hide affordance on top of the column described
+product. **The default visibility state outside the Lesson Workspace is RESOLVED (2026-08-05): the
+column is visible by default, product-wide.** It is session-scoped React state
+(`useState(true)` in `app-nav.tsx`), deliberately not persisted across reloads. The toggle shipped in
+Korume rebrand Plan B (Code) Task 4; the source spec's §7 recorded this as undecided and is superseded
+on this point. Making the Lesson Workspace hidden-by-default — the behavior
+`screen-shadowing-practice.md` § Sidebar mandates — is still unbuilt and belongs to whichever plan
+builds that route group. Toggling only adds a show/hide affordance on top of the column described
 elsewhere in this document: when shown, it is still the same fixed 240px, full-label, persistent-chrome
 column described in § Layout Regions, § Navigation States (Expanded), and § Nav vs. Drawer Boundary —
 those sections describe the column's shape and semantics while visible and are unaffected by this
@@ -196,12 +201,14 @@ section's lead sentence).
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 
-1. **Nav footer controls** (shipped): `ThemeToggle`, `ReduceMotionToggle`, sign-out, a streak
-   indicator, and a single "Rain Sound" ambient-audio toggle, rendered below the nav list in
-   `app-nav.tsx`. The streak indicator is the Gamification exception documented in § Gamification &
-   Navigation above; Rain Sound is a separate, non-Gamification global ambient-audio control
-   (also described there, alongside its relationship to Study Atmosphere's Rainy Day preset); the
-   rest remain global, low-frequency toggles — not a settings screen.
+1. **Nav footer controls.** *Shipped today* in `app-nav.tsx`: `ThemeToggle`, `ReduceMotionToggle`,
+   the signed-in email, and sign-out. *Planned, NOT built* (verified against the code 2026-08-05 —
+   neither exists, and `grep -i "rain ?sound"` over `app/`, `components/`, `lib/`, `messages/`
+   returns zero hits): a streak indicator, and a single "Rain Sound" ambient-audio toggle. The
+   streak indicator would be the Gamification exception documented in § Gamification & Navigation
+   above; Rain Sound would be a separate, non-Gamification global ambient-audio control (also
+   described there, alongside its relationship to Study Atmosphere's Rainy Day preset). Whether
+   shipped or planned, all of these are global, low-frequency toggles — not a settings screen.
 2. **`settings-patterns.md`'s dedicated Settings screen** (Draft/roadmap per
    `design-reconciliation.md` §7 — see that file's Status header): a future `/settings` route with
    the categories that file describes. When built, its nav entry point is a new top-level `NAV_ITEMS`
