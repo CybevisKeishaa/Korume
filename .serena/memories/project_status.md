@@ -30,7 +30,172 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-07-30) — **L9b Plan 2 MERGED to master. L9b Plan 1 brainstorm IN PROGRESS (mid-session, not yet written to a spec file) — resume there.**
+## ▶ NEXT ACTION (updated 2026-08-05) — **Korume rebrand + Shadowing Hub/Practice Figma reconciliation: spec + Plan A (Docs) written & committed, NOT YET EXECUTED. Resume by executing Plan A.**
+
+User shared a Figma file (~20 screens, `https://www.figma.com/design/IwFHZDZdHW7qsSFiNbWrkd/Kurome`)
+and asked for a review of the 2 screens flagged as changed (Shadowing Hub `90:1985`, Shadowing
+Practice `105:3088`) against the locked design docs, to catch mistakes before implementation. Review
+surfaced real divergences (stale View-Mode-era 8-tab bar, sidebar shown-by-default inside the Lesson
+Workspace, a header progress %, Companion widget on the non-empty Hub, a 5-group nav redesign,
+collection-order changes) plus a much bigger decision mid-conversation: **product rename Nihongo
+Cinema → Korume** (Korume was already the mascot's internal 3D-asset codename since
+`2026-07-30-korume-3d-mascot-base-design.md`; now promoted to the official product AND Companion
+character name, closing the deferred Character Identity half of the Companion System spec).
+
+**Resolved via `superpowers:brainstorming`, all decisions locked** — full detail + rationale in
+`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md`
+(committed `826126a`, amended `a412ba0` for an INSIGHTS nav-group rename). Key decisions: (1) rebrand
+touches ~40 living files, NOT the ~20 historical dated specs/plans/journal/migrations which stay
+as-is; (2) nav restructures to 5 groups (LEARN/STUDY/INSIGHTS/PROGRESS/ACCOUNT) + becomes toggleable,
+Community+Leaderboard re-added (Figma omission, confirmed oversight — see below); (3) the 4-mode
+Learning Mode tab bar from the 2026-08-01 reconciliation is UNCHANGED — the reviewed Figma frame is
+just stale and needs redrawing, not the docs; (4) Companion Learning Loop Boundary narrows from "Not
+Supported in all 4 Learning Modes" to "Not Supported in Shadowing mode only" (Pronunciation/Listening
+Practice/Summary become Planned); (5) Hub collection order relaxes to allow editorial-before-computed;
+filter pills kept as "quick collection shortcuts"; My Lessons stays its own section (unchanged, after
+one back-and-forth); (6) header drops "72% complete," keeps "Sentence 3/18."
+
+**Plan A (Docs) — WRITTEN & COMMITTED (`13a92ce`), NOT YET EXECUTED.**
+`docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-a-docs.md` — 8
+tasks / 4 phases, docs-only (zero code/i18n/tests). Phase 1 (Tasks 1-3): mechanical "Nihongo
+Cinema"→"Korume" rebrand across 36 living files (core identity: CLAUDE.md/README/spec/business-model/
+MASCOT; 20 design governance/pattern docs; 11 `.claude/**` operational docs) — exact per-file
+occurrence counts already audited into the plan. Phase 2 (Task 4): `navigation-system.md` §
+Navigation Inventory full rewrite to the 5-group table. Phase 3 (Tasks 5-6):
+`screen-shadowing-practice.md` § Companion narrowing + `design-reconciliation.md` §6 table split +
+version bump 1.2→1.3. Phase 4 (Tasks 7-8): `screen-shadowing-hub.md` § Collections (ordering +
+filter-pill note) + `screen-shadowing-practice.md` § Header clarification. **→ NEXT: execute this
+plan**, recommended via `superpowers:subagent-driven-development` per the plan's own execution-
+handoff (one task per subagent, review between tasks) — matches this project's established pattern
+for docs-only passes (c.f. Plan A of the Shadowing Hub Lesson Workspace spec below).
+
+**Plan B (Code) — NOT YET WRITTEN.** Everything the docs-only Plan A explicitly excludes: i18n
+catalog rename (`messages/{en,vi}/{common,marketing}.json` + `messages/en/common.pin.test.ts` — must
+update the pin test in the SAME commit as the catalog per the L9a catalog-mutation lesson,
+`mem:l9a_localization_run_state`), `test/messages.test.ts`, `tests/e2e/home.spec.ts` (asserts the
+string on the rendered page), `app/[locale]/layout.tsx` metadata, `tailwind.config.ts` (verify at
+execution time whether it's load-bearing or just a comment), `components/layout/app-nav.tsx` (actual
+5-group `NAV_ITEMS` restructure + visibility toggle), `components/companion/anchor-boundary.test.ts`
+(narrow its scan from "no CompanionAnchor anywhere in `/shadowing/[id]/**`" to just the
+`/shadowing/[id]` Shadowing-mode route). Write this plan via `superpowers:writing-plans` once Plan A
+has landed on master — sequencing Plan A first avoids Plan B's code work being built against a
+still-inconsistent doc set.
+
+**Not done / explicitly deferred:** only Shadowing Hub + Shadowing Practice were reviewed against the
+~20-screen Figma file — the other ~18 screens are unreviewed, a natural follow-up once this
+reconciliation lands (spec §7). Filename `docs/design/nihongo_page_playbook.md` and classification of
+`docs/reference/GRAND_PLAYBOOK.md` (historical vs. living) are open, not resolved by this spec or Plan
+A. Community/Leaderboard omission from the Figma nav redraw — confirmed an oversight by the user,
+also tracked in Claude's own cross-session memory system (`figma-nav-redesign-community-leaderboard-gap`,
+not a Serena memory) — Plan A Task 4 already re-adds both to the STUDY group, so this is resolved by
+executing Plan A, not a separate action item.
+
+**Shadowing Hub Lesson Workspace Plan C (Hub UI) — still pending, paused (not superseded), resume
+after this reconciliation lands** so Plan C is built against the new nav/branding instead of needing a
+second pass. Detail below unchanged.
+
+## ▶ (paused 2026-08-05) NEXT ACTION (updated 2026-07-31) — **Shadowing Hub Lesson Workspace Plan A (Docs) MERGED to master `a6a7617`, plus a small follow-up alignment commit `b9873ab`. Resume with Plan B (Backend).**
+
+**What happened 2026-07-31 (supersedes the L9b Plan 1 brainstorm block below — that item was absorbed, see next paragraph):** A new spec
+`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` (LOCKED, committed
+`249c442`) extends the still-unexecuted 2026-07-29 Shadowing Hub Consolidation spec with a full
+Lesson domain model (§1: `library_access`, `user_lesson_library`, `collections`), a Create Lesson
+pipeline (§2, supersedes L9b Plan 1's "transcript-submit UI" item — backlog #14 in
+`mem:feature_backlog_deferred` is now resolved BY THIS SPEC, not by Plan 1), a monetization model
+(§3), and the Lesson Workspace itself (§6: three-layer model — Learning Mode ×4 / View Mode ×3 /
+Reading Settings / Analysis). L9b Plan 1 narrows to just: GDPR delete-all-my-data, persist voice
+pronunciation score, badge icons (see `mem:l9b_plan1_launch_blocker_debt_status`, updated
+separately). The spec split into **4 plans: A Docs / B Backend / C Hub UI / D Lesson UI.**
+
+**Plan A (Docs) — DONE, executed via `superpowers:subagent-driven-development` in a git worktree**
+(`docs/superpowers/plans/2026-07-31-shadowing-hub-lesson-workspace-plan-a-docs.md`, 22 tasks, one
+implementer+one reviewer per task on Opus 5 for complex tasks / Haiku for mechanical ones). Renamed
+`screen-video-library.md`→`screen-shadowing-hub.md`, `screen-shadowing-detail.md`→
+`screen-shadowing-practice.md`, deprecated `screen-video-detail.md`, executed the Consolidation
+spec's full 17-file change list AND layered in the Lesson Workspace spec's new content + its own
+7-file gap audit in the same pass. Final whole-branch review (opus): 0 Critical, 4 Important
+(1 mechanical fix wave applied+re-reviewed clean; 3 surfaced to user, not silently patched — bare
+"Videos" strings outside plan scope, a spec-level core-loop wording self-contradiction, a
+spec-verbatim citation nit). Merged `--no-ff` `a6a7617`.
+**⚠ Incident, resolved:** one subagent (Task 20) briefly committed onto `master` in the main checkout
+instead of the worktree branch (relative-path/cwd confusion in its Edit/git-commit calls) — caught
+before proceeding (review-package showed BASE==HEAD), user confirmed cleanup, content
+cherry-picked onto the worktree branch cleanly, master fully restored (`git reset --hard`), verified
+clean by both the controller and the final review. **Mitigation that worked for the rest of the
+plan:** every subsequent dispatch prompt required an explicit `cd "<worktree>" &&` prefix on EVERY
+Bash command, absolute paths for Edit/Write/Read, and a self-verification step
+(`git rev-parse --show-toplevel && git branch --show-current`) pasted into the report BEFORE
+committing — zero recurrences after adopting this. **Apply this prompt pattern from the start next
+time a worktree-based SDD run dispatches implementers**, not only after a first incident.
+
+**Follow-up commit `b9873ab` (same day, small branch `domain-model-alignment`, no SDD machinery —
+direct edit + one code-reviewer pass):** user picked 3 of the final review's surfaced items to fix
+immediately (their own scoped decision, explicitly declining the rest to avoid scope creep):
+(1) rewrote `docs/design/patterns/study-modes.md`'s stale flat 7-mode taxonomy to point at the new
+Three-Layer Model, propagated through every cross-reference in the file; (2) synced the core-loop
+wording in `business-model.md` (3 disagreeing occurrences → 1); (3) created
+**`docs/product/domain-model.md`** — new canonical glossary (Video/Lesson/My Lessons/Library/
+Collection/Learning Mode/View Mode/Analysis + the "Lesson is canonical, everything else is a
+projection" test), registered in `design-reconciliation.md`'s Authority Order alongside
+business-model.md. Deliberately NOT touched: leftover bare "Videos" strings in
+`adaptive-layouts.md`/`learning-surfaces.md`/`screen-search.md`, the `§2/§3.1`→`§2/§5` citation nit,
+anything in Search/Dashboard/Adaptive Layout beyond what's needed — all still open, low-priority,
+candidates for whenever those files are next touched (not blocking).
+
+**Plan B (Backend) — DONE, merged `master` `b36c455` (2026-08-01), pushed to origin.** Executed via
+`superpowers:writing-plans` → `superpowers:subagent-driven-development` in a git worktree
+(`docs/superpowers/plans/2026-07-31-shadowing-hub-lesson-workspace-plan-b-backend.md`, 18 tasks,
+2 required a fix round — Task 13 Create Lesson pipeline, Task 16 Promotion Queue backend — plus a
+final whole-branch review on Opus with one combined fix wave, re-reviewed clean). Delivered: 6
+migrations (`lesson_access_level` enum replacing `status`, `user_lesson_library` dedup/quota ledger,
+`collections`/`lesson_collections`, RLS rewrite, `promotion_starred`, plus 2 more from the final
+review — widened `videos_read` PLUS-metadata visibility, restored indexes Task 6 silently dropped);
+`lib/data/subscriptions.ts`, `lib/data/lesson-library.ts`, `lib/data/lesson-creation.ts` (the Create
+Lesson pipeline, both learner + admin-seed entry points), `lib/data/transcript-providers.ts`
+(`youtubeCaptionProvider` real, `aiTranscriptProvider` a deliberate 501 stub — real AI transcription
+deferred pending a CLAUDE.md §2 audio-access decision, per the user's explicit call during
+brainstorming), `lib/youtube/timedtext.ts`; `lib/data/admin-videos.ts` rebuilt as the Promotion Queue
+backend (`listNeedsReview`/`promoteVideo`/`demoteVideo`/`starVideo`/`listTrendingLessons`/
+`listReadyToPromote`/`listPublishedLessons`/`computePromotionScore`) + 7 admin routes. Final state:
+tsc 0, vitest **1954/1954, 218/218 files** (verified from the clean main checkout post-worktree-
+cleanup — an 11-test ESLint-plugin-conflict failure seen mid-session was a nested-worktree artifact,
+not a real regression, confirmed gone once the worktree was removed).
+**Deferred, tracked here for the next plan that touches this area (not silently dropped):** Free-tier
+quota is enforced only in app code, not at the DB/RLS level (a client with its own JWT could in
+principle bypass `createLesson`'s quota check via direct PostgREST calls) — real enforcement belongs
+with Layer 8 (PayOS billing), not bolted on early. `promoteVideo`'s PRIVATE-only guard makes direct
+FREE↔PLUS re-tiering impossible (only demote-then-promote works, with an access-loss window) —
+belongs to the future Promotion Queue UI plan. `createLessonAsAdmin` (spec §4.1 Phase 1's admin-seed
+entry point) has zero route/caller yet — intentionally parked like `aiTranscriptProvider`'s stub,
+needs a minimal admin route when that UI plan starts.
+**⚠ Incident, resolved (recurred despite the Plan A mitigation, then fixed harder):** one Task 9
+implementer (haiku-tier) committed its `lib/video-types.ts` change straight onto `master` in the main
+checkout instead of the worktree branch, AND its report file, DESPITE the exact `cd`+absolute-path+
+self-verification prompt pattern Plan A's incident taught. Caught immediately by the controller
+independently running `git worktree list`/`git log` after every dispatch rather than trusting the
+implementer's self-report — cherry-picked the commit onto the worktree branch, restored master via
+`git reset --soft` + single-file `git checkout` (not `--hard`, to avoid destroying this file's own
+pre-existing uncommitted edit that was sitting in the main checkout the whole time). **Mitigation
+escalated for the rest of the plan:** implementer model floor raised from haiku to sonnet, AND the
+controller independently re-verified `git worktree list`+`git log` after every single dispatch for
+the remaining 9 tasks, not just when something looked off — zero recurrences after both changes
+landed together. **Apply both from the start next time**, not just the prompt-pattern half — a
+strengthened prompt alone was not sufficient to prevent a repeat.
+
+**→ NEXT: Plan C (Hub UI).** Needs its own `superpowers:writing-plans` pass building the learner-
+facing Shadowing Hub screen (`screen-shadowing-hub.md`, collection-driven grid, My Lessons section,
+Create Lesson modal) against Plan B's now-live API surface. Then **Plan D (Lesson UI)** (the
+three-layer Lesson Workspace: Learning Mode / View Mode / Reading Settings / Analysis). The deferred
+items above (quota DB-enforcement, FREE↔PLUS re-tiering, admin-seed route) are NOT Plan C's job
+unless Plan C's own design surfaces a hard dependency on one of them — read this block fresh before
+assuming otherwise. `mem:shadowing_hub_consolidation_status` remains stale (superseded by Plan A,
+now also by Plan B) — read this memory (`mem:project_status`) as current.
+
+<details><summary>(superseded 2026-07-31) L9b Plan 1 brainstorm block — historical, mostly absorbed above</summary>
+
+## (superseded) L9b Plan 2 MERGED to master. L9b Plan 1 brainstorm IN PROGRESS (mid-session, not yet written to a spec file) — resume there.</details>
+
+<details><summary>(historical) original NEXT ACTION detail, 2026-07-30, kept for context</summary>
 
 **Merge done 2026-07-30**: `layer-9b-companion-presence` → `master` `--no-ff` at `61416bd` (message:
 "Merge branch 'layer-9b-companion-presence' (L9b Plan 2 — Companion Presence)"). Post-merge re-verify:
@@ -276,6 +441,9 @@ demoted to `shadowing.*` (by-surface audit), `common.errors.network`/`states.loa
 + GDPR delete-my-data + tutorial). Start with `superpowers:brainstorming` before plan mode. ⚠ Model policy
 (`mem:model_selection_policy`): default Opus 4.8, but PAUSE + ASK before Fable for the L9b brainstorm,
 plan-decomposition, or the hardest long-horizon builds (cinematic scroll orchestration, companion state machine).
+
+</details>
+
 
 </details>
 
