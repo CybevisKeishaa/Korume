@@ -104,6 +104,16 @@ Example — Dashboard:
 > Không phải vì Companion "không muốn" — vì focus của learner là nhân vật chính trong loop đó.
 > Companion xuất hiện **sau khi hoàn thành loop**, không phải **trong** loop.
 
+**Scoping carve-out (2026-08-05).** Listening Practice and Pronunciation evaluation are listed above
+as standalone loops, and that listing stands for every context where they occur on their own. Inside
+a Lesson specifically (`/shadowing/[id]/pronunciation`, `/shadowing/[id]/listening`,
+`/shadowing/[id]/summary`), these three surfaces were narrowed from Not Supported to **Planned**
+Companion anchor availability — see §6's Anchor Availability table, which treats each as a discrete
+per-sentence or read-only unit rather than continuous playback. This carve-out is scoped to those
+three Lesson-internal surfaces only; every other loop named above — SRS review, Mining review
+session, JLPT practice, Grammar practice, Vocabulary review, Kanji practice, Conversation drills, and
+Shadowing practice itself — remains unchanged and Not Supported under this boundary.
+
 **The boundary is conceptual, not route-based.** The list above is illustrative, not exhaustive. Any
 future active acquisition loop inherits Hidden by default — a screen must justify an exception to
 show Companion; it never needs to justify staying Hidden.

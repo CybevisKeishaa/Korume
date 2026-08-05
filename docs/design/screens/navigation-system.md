@@ -41,8 +41,8 @@ until now.
 
 # Navigation Inventory
 
-The shipped navigation (`components/layout/app-nav.tsx`, `NAV_ITEMS`) is **5 named groups**, each an
-ordered list (`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md`
+The canonical navigation structure (target for `components/layout/app-nav.tsx`, `NAV_ITEMS`) is
+**5 named groups**, each an ordered list (`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md`
 §2 — supersedes the earlier "single ordered list, no grouping" model):
 
 | Group | Order | Label key | Route |
@@ -92,7 +92,11 @@ The Nav Column is **toggleable** (show/hide via a small edge affordance) rather 
 always-fixed 240px column — generalizing the hidden-by-default behavior
 `screen-shadowing-practice.md` § Sidebar already mandates inside the Lesson Workspace to the whole
 product. The default visibility state outside the Lesson Workspace is not decided by this document —
-see the source spec's §7.
+see the source spec's §7. Toggling only adds a show/hide affordance on top of the column described
+elsewhere in this document: when shown, it is still the same fixed 240px, full-label, persistent-chrome
+column described in § Layout Regions, § Navigation States (Expanded), and § Nav vs. Drawer Boundary —
+those sections describe the column's shape and semantics while visible and are unaffected by this
+paragraph; toggling its visibility does not turn it into a drawer or overlay.
 
 ---
 
@@ -185,7 +189,10 @@ available from all 14 nav destinations. It defaults to off and never autoplays.
 
 # Settings Entry Point
 
-There is no `/settings` route today (confirmed absent from `NAV_ITEMS` and from the app route tree).
+There is no `/settings` route today. It is not implemented in the shipped `app-nav.tsx`/`NAV_ITEMS`
+code or in the app route tree — it appears in § Navigation Inventory's table only as row 22 of the
+canonical/target structure, not as a shipped entry (same shipped-vs-canonical distinction as that
+section's lead sentence).
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 
