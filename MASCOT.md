@@ -1,4 +1,4 @@
-# Nihongo Cinema Companion Character Bible (Draft)
+# Korume Companion Character Bible (Draft)
 
 ---
 
@@ -29,7 +29,7 @@ Companion cũng không phải chatbot, AI assistant hay mascot được tạo ra
 
 Companion là một người bạn đồng hành.
 
-Nó xuất hiện xuyên suốt hành trình học tập của Nihongo Cinema: từ lần gặp đầu tiên, tutorial, những bài học hằng ngày, các thành tựu cho tới Journal.
+Nó xuất hiện xuyên suốt hành trình học tập của Korume: từ lần gặp đầu tiên, tutorial, những bài học hằng ngày, các thành tựu cho tới Journal.
 
 Tuy nhiên, Companion không bao giờ cố gắng trở thành trung tâm của trải nghiệm.
 
