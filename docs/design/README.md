@@ -7,7 +7,7 @@
 ## What This Folder Is
 
 This folder captures **product taste, design philosophy, and creative direction** — the feel we
-want Nihongo Cinema to gradually evolve toward. These documents are closer to a **shared design
+want Korume to gradually evolve toward. These documents are closer to a **shared design
 language** than a specification.
 
 ## What This Folder Is Not
@@ -51,7 +51,7 @@ example written down here.
 That document reuses **craft** — storytelling, visual rhythm, motion language, composition,
 cinematic pacing, transition ideas, interaction patterns — distilled from a different project.
 It never carries over that project's product decisions, technology stack, or domain content.
-Whenever something there conflicts with Nihongo Cinema's philosophy, architecture, specs, or
+Whenever something there conflicts with Korume's philosophy, architecture, specs, or
 actual stack, discard that part.
 
 We reuse experience, not products.

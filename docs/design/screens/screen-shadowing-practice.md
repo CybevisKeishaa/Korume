@@ -11,7 +11,7 @@
 > standalone Lesson Detail page and no Lesson Info Panel exist inside Practice — both were proposed
 > and explicitly rejected (Consolidation spec §2).
 
-> The heart of Nihongo Cinema.
+> The heart of Korume.
 
 This is not a video page.
 
@@ -270,7 +270,11 @@ This header itself doesn't display Gamification (XP, Streak, Leaderboard, Badge)
 shipped layer that lives elsewhere (Dashboard, post-session summaries), not banned product-wide
 (`docs/design/design-reconciliation.md` §3). This header just isn't where it speaks.
 
-No progress indicators.
+No progress indicators — e.g. no lesson-level completion percentage
+(`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md` §6). A
+sentence position counter (e.g. "Sentence 3 / 18") is not a progress indicator in this sense — it's
+orientation context (which sentence the learner is on), not a measure of how much of the lesson
+remains, and is fine to show.
 
 No unnecessary controls.
 
@@ -568,17 +572,29 @@ Never distract.
 
 # Companion
 
-✕ Not Supported, across all four Learning Modes (Shadowing, Pronunciation, Listening Practice,
-Summary) — each is an active acquisition loop (`docs/design/design-reconciliation.md` §4, Learning
-Loop Boundary), Companion is Dormant throughout. This is structurally enforced: no `CompanionAnchor`
-may mount anywhere in the `/shadowing/[id]/**` route group (L9b scan test). Companion does not appear
-during any session; any reflection it has about a completed session surfaces later, on a surface
-where Companion is Available (Dashboard, `/journal`) — never inside the Lesson itself.
+**Narrowed 2026-08-05** (`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md`
+§4 — supersedes the "all four Learning Modes" rule below in full for Pronunciation, Listening
+Practice, and Summary; Shadowing mode is unchanged):
 
-Summary Mode was explicitly considered as a possible Companion touchpoint and rejected — Summary
-understands the lesson, Companion understands the learner; keeping this boundary intact lets future
-Learning Modes be added indefinitely without ever touching Companion's architecture
-(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §0.5, §6.8).
+- **Shadowing mode: ✕ Not Supported.** Continuous video playback requiring full learner attention —
+  an active acquisition loop (`docs/design/design-reconciliation.md` §4, Learning Loop Boundary),
+  Companion is Dormant throughout. Structurally enforced: no `CompanionAnchor` may mount on the
+  `/shadowing/[id]` route itself.
+- **Pronunciation, Listening Practice, Summary: ○ Planned.** Architecture allows a Companion anchor
+  on these three routes, not yet built. Rationale: Pronunciation and Listening Practice are already
+  broken into discrete per-sentence units (record → score → next; play → check → next), not
+  continuous playback — a Companion presence between units doesn't interrupt an in-progress action
+  the way it would during Shadowing's continuous playback. Summary is read-only aggregation, not a
+  playback experience at all.
+
+This reopens and partially supersedes an earlier decision: Summary Mode was previously considered as
+a possible Companion touchpoint and rejected outright, to keep the boundary simple as future Learning
+Modes are added (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §0.5,
+§6.8). That concern — a clean per-mode boundary that never needs architecture changes — still holds;
+only the *value* assigned to Summary (and Pronunciation/Listening Practice) changed, not the shape of
+the rule itself. Any reflection Companion has about a completed session may still also surface later
+on Dashboard or `/journal`, as before — this narrowing adds a possible touchpoint during three of the
+four modes, it does not remove the existing post-session ones.
 
 ---
 

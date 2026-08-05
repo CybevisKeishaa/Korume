@@ -41,37 +41,62 @@ until now.
 
 # Navigation Inventory
 
-The shipped navigation (`components/layout/app-nav.tsx`, `NAV_ITEMS`) is a single ordered list, no
-grouping, no nesting:
+The canonical navigation structure (target for `components/layout/app-nav.tsx`, `NAV_ITEMS`) is
+**5 named groups**, each an ordered list (`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md`
+§2 — supersedes the earlier "single ordered list, no grouping" model):
 
-| Order | Label key | Route |
-|---|---|---|
-| 1 | `dashboard` | `/dashboard` |
-| 2 | `kanji` | `/kanji` |
-| 3 | `vocab` | `/vocab` |
-| 4 | `grammar` | `/grammar` |
-| 5 | `shadowing` | `/shadowing` |
-| 6 | `mining` | `/mining` |
-| 7 | `reading` | `/reading` |
-| 8 | `conversation` | `/conversation` |
-| 9 | `jlpt` | `/jlpt` |
-| 10 | `community` | `/community` |
-| 11 | `playlists` | `/playlists` |
-| 12 | `leaderboard` | `/leaderboard` |
-| 13 | `journal` | `/journal` |
-| 14 | `profile` | `/profile` |
+| Group | Order | Label key | Route |
+|---|---|---|---|
+| LEARN | 1 | `dashboard` | `/dashboard` |
+| LEARN | 2 | `lessons` | `/shadowing` |
+| LEARN | 3 | `kanji` | `/kanji` |
+| LEARN | 4 | `vocab` | `/vocab` |
+| LEARN | 5 | `grammar` | `/grammar` |
+| LEARN | 6 | `reading` | `/reading` |
+| LEARN | 7 | `speaking` | `/conversation` |
+| LEARN | 8 | `jlpt` | `/jlpt` |
+| STUDY | 9 | `review` | `/review` |
+| STUDY | 10 | `mining` | `/mining` |
+| STUDY | 11 | `playlists` | `/playlists` |
+| STUDY | 12 | `challenges` | `/challenges` |
+| STUDY | 13 | `community` | `/community` |
+| STUDY | 14 | `leaderboard` | `/leaderboard` |
+| INSIGHTS | 15 | `korume` | *(Companion surface, e.g. `/journal` or a future chat route — not decided by this plan)* |
+| INSIGHTS | 16 | `roadmap` | *(existing Roadmap screen; route not yet mapped to `NAV_ITEMS` — decided by whichever plan implements this group)* |
+| INSIGHTS | 17 | `weeklyReport` | *(Planned — `business-model.md` §8 "sample weekly report," not yet built)* |
+| PROGRESS | 18 | `journey` | `/journal` |
+| PROGRESS | 19 | `statistics` | *(not yet built — spec §7 leaves its source data undecided)* |
+| PROGRESS | 20 | `achievements` | *(not yet built — spec §7 leaves its source data undecided)* |
+| ACCOUNT | 21 | `profile` | `/profile` |
+| ACCOUNT | 22 | `settings` | `/settings` *(Planned — L9b Plan 1, `mem:l9b_plan1_launch_blocker_debt_status`)* |
 
-All 14 are shipped today — none are Planned or aspirational. Active acquisition-loop sub-routes
-(Shadowing Practice, Pronunciation, Listening Practice, JLPT test-taking, SRS review, Mining review session)
-are reached by drilling into their parent item (e.g. `/shadowing/[id]`), never listed as their own
-top-level nav entry — this keeps the acquisition loops off the persistent chrome, consistent with
-the Learning Loop Boundary (`docs/design/design-reconciliation.md` §4). "Shadowing" as a top-level
-nav entry names the **Shadowing Hub** (`screen-shadowing-hub.md`) — the learner's home for browsing
-and resuming lessons, itself not an acquisition loop; **Shadowing Practice** (`screen-shadowing-practice.md`), reached by drilling into a specific lesson, is the acquisition loop this paragraph's
-ban is about. The two are not the same destination and must not be conflated when reading "Shadowing"
-elsewhere in this document. There is no dedicated Search entry in this list — Search is a persistent
-affordance inside the Nav Column chrome itself, not a separate destination
-(see `docs/design/screens/screen-search.md` § Entry Points).
+14 of these 22 rows are shipped today (`dashboard`, `lessons`/was `shadowing`, `kanji`, `vocab`,
+`grammar`, `reading`, `speaking`/was `conversation`, `jlpt`, `mining`, `playlists`, `community`,
+`leaderboard`, `journey`/was `journal`, `profile`) — the remaining 8 (`review`, `challenges`,
+`korume`, `roadmap`, `weeklyReport`, `statistics`, `achievements`, `settings`) are new nav-level
+entries this restructure surfaces; each is Planned/not-yet-wired except where noted, and none of
+this plan's tasks build them. Active acquisition-loop sub-routes (Shadowing Practice, Pronunciation,
+Listening Practice, JLPT test-taking, SRS review, Mining review session) are still reached by
+drilling into their parent item (e.g. `/shadowing/[id]`), never listed as their own top-level nav
+entry — this still keeps the acquisition loops off the persistent chrome, consistent with the
+Learning Loop Boundary (`docs/design/design-reconciliation.md` §4). "Lessons" (was "Shadowing") as a
+top-level nav entry names the **Shadowing Hub** (`screen-shadowing-hub.md`) — the learner's home for
+browsing and resuming lessons, itself not an acquisition loop; **Shadowing Practice**
+(`screen-shadowing-practice.md`), reached by drilling into a specific lesson, is the acquisition loop
+this paragraph's ban is about. The two are not the same destination and must not be conflated when
+reading "Lessons"/"Shadowing" elsewhere in this document. There is no dedicated Search entry in this
+list — Search is a persistent affordance inside the Nav Column chrome itself, not a separate
+destination (see `docs/design/screens/screen-search.md` § Entry Points).
+
+The Nav Column is **toggleable** (show/hide via a small edge affordance) rather than an
+always-fixed 240px column — generalizing the hidden-by-default behavior
+`screen-shadowing-practice.md` § Sidebar already mandates inside the Lesson Workspace to the whole
+product. The default visibility state outside the Lesson Workspace is not decided by this document —
+see the source spec's §7. Toggling only adds a show/hide affordance on top of the column described
+elsewhere in this document: when shown, it is still the same fixed 240px, full-label, persistent-chrome
+column described in § Layout Regions, § Navigation States (Expanded), and § Nav vs. Drawer Boundary —
+those sections describe the column's shape and semantics while visible and are unaffected by this
+paragraph; toggling its visibility does not turn it into a drawer or overlay.
 
 ---
 
@@ -164,7 +189,10 @@ available from all 14 nav destinations. It defaults to off and never autoplays.
 
 # Settings Entry Point
 
-There is no `/settings` route today (confirmed absent from `NAV_ITEMS` and from the app route tree).
+There is no `/settings` route today. It is not implemented in the shipped `app-nav.tsx`/`NAV_ITEMS`
+code or in the app route tree — it appears in § Navigation Inventory's table only as row 22 of the
+canonical/target structure, not as a shipped entry (same shipped-vs-canonical distinction as that
+section's lead sentence).
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 

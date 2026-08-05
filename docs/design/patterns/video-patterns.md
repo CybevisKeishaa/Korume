@@ -7,7 +7,7 @@
 >
 > It is not the destination of the learning experience.
 
-In Nihongo Cinema, learners are not here to watch videos.
+In Korume, learners are not here to watch videos.
 
 They are here to understand Japanese through authentic media.
 
@@ -21,7 +21,7 @@ The transcript remains the primary learning surface.
 
 A traditional video platform is designed around watching.
 
-Nihongo Cinema is designed around learning.
+Korume is designed around learning.
 
 Therefore:
 

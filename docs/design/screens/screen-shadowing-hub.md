@@ -186,7 +186,7 @@ Instead of technical categories,
 present meaningful groups.
 
 The grid is entirely collection-driven, ordered by each collection's stored display order — no
-hardcoded sections in code (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §5). Three computed (virtual) collections are always prepended, in this order:
+hardcoded sections in code (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §5). Three computed (virtual) collections always exist:
 
 Continue Learning
 
@@ -194,7 +194,12 @@ My Lessons
 
 Recently Added
 
-Then editorial collections follow in their stored order (Featured typically first among those).
+Editorial collections are no longer required to follow after all three — per
+`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md` §5.1, an
+editorial collection (e.g. a "Popular Lessons" row) may render before some or all of the computed
+collections. The three computed collections keep their order relative to *each other*
+(Continue Learning, then My Lessons, then Recently Added, wherever they appear in the overall grid) —
+only their position relative to editorial collections is no longer fixed-first.
 Editorial examples
 
 Slice of Life
@@ -216,6 +221,16 @@ query, not a stored row), same as Continue Learning/My Lessons/Recently Added ab
 Each collection feels like a bookshelf.
 
 Not a filter menu.
+
+## Filter Pills as Collection Shortcuts
+
+A compact, always-visible row of pills (e.g. All / Conversation / Business / Travel / Restaurant /
+Daily Life / Anime / Podcast / News / Office / Cafe) may sit directly under Search as a quick jump
+into the Collection grid below — this is a shortcut *into* the Collection model, not a second,
+competing categorization system. The pill labels are the same kind of names already used as
+Collection examples above (Anime, Slice of Life, …), not technical filter criteria (resolution,
+duration, date) — so this pattern does not reopen "Collections replace traditional filters... not a
+filter menu" above (`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md` §5.2).
 
 ---
 

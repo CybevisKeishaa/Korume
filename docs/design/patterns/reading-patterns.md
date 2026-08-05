@@ -5,7 +5,7 @@
 > **Applies to:** Reading screen, Reading mode within Shadowing/Dictation  
 > **Related:** `transcript-patterns.md`, `docs/design/design-reconciliation.md`
 
-> Reading is the primary interaction model of Nihongo Cinema.
+> Reading is the primary interaction model of Korume.
 
 Users should never feel like they are operating software.
 They should feel like they are sitting in a quiet place reading Japanese.

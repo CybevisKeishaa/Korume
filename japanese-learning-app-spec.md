@@ -1,4 +1,4 @@
-# Nihongo Cinema — Product & Technical Specification
+# Korume — Product & Technical Specification
 
 > Web học tiếng Nhật qua video (shadowing/dictation), kanji, vocab, grammar, JLPT — với UI cinematic/scroll-driven làm điểm khác biệt. Tài liệu này là spec đầy đủ cho toàn bộ sản phẩm, dùng làm input cho Claude Code.
 

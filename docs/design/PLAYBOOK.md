@@ -1,4 +1,4 @@
-# Nihongo Cinema Design Playbook
+# Korume Design Playbook
 
 > **Status:** Approved
 > Version: 1.0
@@ -7,7 +7,7 @@
 
 ## Scope
 
-Đây là **Design Principles** — trả lời câu hỏi: một landing page của Nihongo Cinema nên **tạo cảm giác
+Đây là **Design Principles** — trả lời câu hỏi: một landing page của Korume nên **tạo cảm giác
 gì**.
 
 Không chứa:

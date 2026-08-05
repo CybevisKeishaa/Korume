@@ -1,4 +1,4 @@
-# Nihongo Cinema (JapanWeb)
+# Korume
 
 Web học tiếng Nhật qua video — shadowing/dictation, kanji, vocab, grammar, JLPT — với UI
 cinematic/scroll-driven làm điểm khác biệt. Vietnam-first.

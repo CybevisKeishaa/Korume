@@ -11,7 +11,7 @@ This is not a statistics page.
 
 This is not an administration panel.
 
-It is the front door of Nihongo Cinema.
+It is the front door of Korume.
 
 Every time the learner returns, the interface should gently say
 

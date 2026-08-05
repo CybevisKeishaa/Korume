@@ -5,7 +5,7 @@
 
 > Purpose
 >
-> This document defines the reusable workspace patterns used throughout Nihongo Cinema.
+> This document defines the reusable workspace patterns used throughout Korume.
 >
 > A workspace pattern is not tied to a specific screen.
 >
@@ -19,7 +19,7 @@
 
 # Philosophy
 
-Nihongo Cinema is not built from pages.
+Korume is not built from pages.
 
 It is built from workspaces.
 

@@ -179,7 +179,7 @@ Behavior:
 - workspace keeps its layout
 - easy to dismiss
 
-This is the preferred interaction model for Nihongo Cinema.
+This is the preferred interaction model for Korume.
 
 ---
 

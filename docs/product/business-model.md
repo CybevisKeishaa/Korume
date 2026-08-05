@@ -177,7 +177,7 @@ These are the decision filter for every future feature and every pricing change.
    No AI request may consume tokens without creating lasting value. This is a **feature-review gate**:
    if a proposed feature neither helps the current learner nor enriches the platform, question why it exists.
 
-> **Nihongo Cinema does not sell lesson quality. It sells library breadth and the ability to
+> **Korume does not sell lesson quality. It sells library breadth and the ability to
 > create new lessons.** (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md`
 > §0.3) Once a learner can open a lesson, Free and Plus get the identical learning experience inside
 > it — full transcript, every Learning Mode, every Reading Setting. The difference is how many

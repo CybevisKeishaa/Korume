@@ -1,4 +1,4 @@
-# CLAUDE.md — Nihongo Cinema
+# CLAUDE.md — Korume
 
 > Root rules for this repository. Every agent and every session MUST read and obey this file.
 > Source of truth for the product is `japanese-learning-app-spec.md` (repo root, version-controlled
@@ -8,7 +8,7 @@
 
 ## 1. What we are building
 
-**Nihongo Cinema** — a web app for learning Japanese through video (shadowing / dictation),
+**Korume** — a web app for learning Japanese through video (shadowing / dictation),
 kanji, vocab, grammar, and JLPT prep, with a cinematic / scroll-driven UI as its signature.
 The core differentiator is the **video shadowing** experience plus a small set of features
 almost no competitor ships well (see §5).

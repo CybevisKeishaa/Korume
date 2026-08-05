@@ -1,4 +1,4 @@
-# Nihongo Cinema — Feature Registry
+# Korume — Feature Registry
 
 This document serves as the master index for all feature specifications. Each feature has its own detailed spec file in this directory.
 

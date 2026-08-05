@@ -3,7 +3,7 @@ description: Plan and build one of the 8 implementation layers with the right ag
 argument-hint: <layer number 1-8>
 ---
 
-Build **Layer $1** of Nihongo Cinema.
+Build **Layer $1** of Korume.
 
 First, act as (or delegate to) the `tech-lead`:
 

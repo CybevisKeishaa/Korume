@@ -21,7 +21,7 @@ Not:
 
 > "How can we make this feel exciting?"
 
-Nihongo Cinema values calm progress over emotional highs.
+Korume values calm progress over emotional highs.
 
 A learner should finish a session feeling:
 

@@ -1,7 +1,7 @@
 # Design System Governance & Reconciliation
 
 > **Status:** Canonical
-> **Version:** 1.2 (2026-07-31)
+> **Version:** 1.3 (2026-08-05)
 > **Applies to:** `docs/design/patterns/*.md`, `docs/design/screens/*.md`, every root-level
 > `docs/design/*.md` philosophy document, and every future design document in this repo.
 > **Decision record:** `docs/superpowers/specs/2026-07-28-design-docs-reconciliation-design.md`
@@ -104,6 +104,16 @@ Example — Dashboard:
 > Không phải vì Companion "không muốn" — vì focus của learner là nhân vật chính trong loop đó.
 > Companion xuất hiện **sau khi hoàn thành loop**, không phải **trong** loop.
 
+**Scoping carve-out (2026-08-05).** Listening Practice and Pronunciation evaluation are listed above
+as standalone loops, and that listing stands for every context where they occur on their own. Inside
+a Lesson specifically (`/shadowing/[id]/pronunciation`, `/shadowing/[id]/listening`,
+`/shadowing/[id]/summary`), these three surfaces were narrowed from Not Supported to **Planned**
+Companion anchor availability — see §6's Anchor Availability table, which treats each as a discrete
+per-sentence or read-only unit rather than continuous playback. This carve-out is scoped to those
+three Lesson-internal surfaces only; every other loop named above — SRS review, Mining review
+session, JLPT practice, Grammar practice, Vocabulary review, Kanji practice, Conversation drills, and
+Shadowing practice itself — remains unchanged and Not Supported under this boundary.
+
 **The boundary is conceptual, not route-based.** The list above is illustrative, not exhaustive. Any
 future active acquisition loop inherits Hidden by default — a screen must justify an exception to
 show Companion; it never needs to justify staying Hidden.
@@ -150,7 +160,9 @@ Three states — do not collapse into two:
 | Mining deck (empty state) | Available | L9b shipped this anchor |
 | Mining Browse (non-empty) | Planned | Architecture allows it; not yet built |
 | Shadowing Hub (non-empty) | Planned | Architecture allows it; not yet built |
-| Shadowing Practice / Pronunciation / Listening Practice / Summary / Review / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
+| Shadowing Practice | Not Supported | Active acquisition loop, continuous video playback requiring full attention (§4) |
+| Pronunciation / Listening Practice / Summary (inside a Lesson) | Planned | Architecture allows it; not yet built. Each is a discrete per-sentence or read-only unit, not continuous playback (§4) |
+| Review / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
 
 ---
 
