@@ -59,7 +59,7 @@ export async function synthesizeSpeech(params: SynthesizeSpeechParams): Promise<
         "Content-Type": "application/ssml+xml",
         "Ocp-Apim-Subscription-Key": key,
         "X-Microsoft-OutputFormat": format,
-        "User-Agent": "nihongo-cinema",
+        "User-Agent": "korume",
       },
       body: buildSsml(params.text, voice),
     });
