@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AppNav, NAV_GROUPS, NAV_ITEMS } from "./app-nav";
@@ -163,5 +164,42 @@ describe("AppNav", () => {
   it("renders the sign-out control from the shared namespace", () => {
     renderNav();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+  });
+});
+
+describe("AppNav visibility toggle", () => {
+  // Pinned literals (same rule as EXPECTED_LABELS): EN copy authored in
+  // Plan B Task 4 alongside nav.toggle.* in messages/en/nav.json.
+  const HIDE_LABEL = "Hide navigation";
+  const SHOW_LABEL = "Show navigation";
+
+  it("is visible by default, with an expanded hide affordance", () => {
+    renderNav();
+    expect(
+      screen.getByRole("navigation", { name: EXPECTED_ARIA_LABEL }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: HIDE_LABEL })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
+
+  it("hides the whole nav on toggle and restores it on a second toggle", async () => {
+    const user = userEvent.setup();
+    renderNav();
+    await user.click(screen.getByRole("button", { name: HIDE_LABEL }));
+    expect(
+      screen.queryByRole("navigation", { name: EXPECTED_ARIA_LABEL }),
+    ).not.toBeInTheDocument();
+    const show = screen.getByRole("button", { name: SHOW_LABEL });
+    expect(show).toHaveAttribute("aria-expanded", "false");
+    await user.click(show);
+    expect(
+      screen.getByRole("navigation", { name: EXPECTED_ARIA_LABEL }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: HIDE_LABEL })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
   });
 });

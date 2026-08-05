@@ -19,5 +19,9 @@
   "community": "Community",
   "leaderboard": "Leaderboard",
   "journey": "Journey",
-  "profile": "Profile"
+  "profile": "Profile",
+  "toggle": {
+    "show": "Show navigation",
+    "hide": "Hide navigation"
+  }
 }

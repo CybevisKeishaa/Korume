@@ -19,5 +19,9 @@
   "community": "Cộng đồng",
   "leaderboard": "Bảng xếp hạng",
   "journey": "Hành trình",
-  "profile": "Hồ sơ"
+  "profile": "Hồ sơ",
+  "toggle": {
+    "show": "Hiện điều hướng",
+    "hide": "Ẩn điều hướng"
+  }
 }
