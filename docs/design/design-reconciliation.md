@@ -1,7 +1,7 @@
 # Design System Governance & Reconciliation
 
 > **Status:** Canonical
-> **Version:** 1.2 (2026-07-31)
+> **Version:** 1.3 (2026-08-05)
 > **Applies to:** `docs/design/patterns/*.md`, `docs/design/screens/*.md`, every root-level
 > `docs/design/*.md` philosophy document, and every future design document in this repo.
 > **Decision record:** `docs/superpowers/specs/2026-07-28-design-docs-reconciliation-design.md`
@@ -150,7 +150,9 @@ Three states — do not collapse into two:
 | Mining deck (empty state) | Available | L9b shipped this anchor |
 | Mining Browse (non-empty) | Planned | Architecture allows it; not yet built |
 | Shadowing Hub (non-empty) | Planned | Architecture allows it; not yet built |
-| Shadowing Practice / Pronunciation / Listening Practice / Summary / Review / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
+| Shadowing Practice | Not Supported | Active acquisition loop, continuous video playback requiring full attention (§4) |
+| Pronunciation / Listening Practice / Summary (inside a Lesson) | Planned | Architecture allows it; not yet built. Each is a discrete per-sentence or read-only unit, not continuous playback (§4) |
+| Review / SRS review / JLPT / Grammar / Vocab / Kanji / Conversation | Not Supported | Active acquisition loop (§4) |
 
 ---
 
