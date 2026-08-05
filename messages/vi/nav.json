@@ -1,17 +1,27 @@
 {
   "ariaLabel": "Điều hướng chính",
+  "groups": {
+    "learn": "Học",
+    "study": "Ôn luyện",
+    "progress": "Tiến trình",
+    "account": "Tài khoản"
+  },
   "dashboard": "Bảng điều khiển",
+  "lessons": "Bài học",
   "kanji": "Kanji",
   "vocab": "Từ vựng",
   "grammar": "Ngữ pháp",
-  "videos": "Video",
-  "mining": "Thu thập câu",
   "reading": "Đọc hiểu",
-  "conversation": "Hội thoại",
+  "speaking": "Luyện nói",
   "jlpt": "JLPT",
-  "community": "Cộng đồng",
+  "mining": "Thu thập câu",
   "playlists": "Danh sách phát",
+  "community": "Cộng đồng",
   "leaderboard": "Bảng xếp hạng",
-  "journal": "Nhật ký",
-  "profile": "Hồ sơ"
+  "journey": "Hành trình",
+  "profile": "Hồ sơ",
+  "toggle": {
+    "show": "Hiện điều hướng",
+    "hide": "Ẩn điều hướng"
+  }
 }

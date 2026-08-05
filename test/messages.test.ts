@@ -10,6 +10,6 @@ describe("loadEnMessages", () => {
 
   it("returns real message content, not empty objects", () => {
     const messages = loadEnMessages();
-    expect(messages.common).toMatchObject({ appName: "Nihongo Cinema" });
+    expect(messages.common).toMatchObject({ appName: "Korume" });
   });
 });

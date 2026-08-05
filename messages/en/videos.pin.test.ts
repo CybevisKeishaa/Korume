@@ -37,7 +37,7 @@ import en from "./videos.json";
  */
 describe("videos.json EN — literals", () => {
   it("pins the page heading and subtitle", () => {
-    expect(en.title).toBe("Videos");
+    expect(en.title).toBe("Lessons");
     expect(en.subtitle).toBe(
       "Shadow and study Japanese YouTube videos. Paste a link to add one.",
     );

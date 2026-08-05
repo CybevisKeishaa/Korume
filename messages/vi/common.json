@@ -1,9 +1,9 @@
 {
-  "appName": "Nihongo Cinema",
-  "appNameJp": "日本語シネマ",
+  "appName": "Korume",
+  "appNameJp": "Korume",
   "auth": { "signIn": "Đăng nhập", "signOut": "Đăng xuất", "signUp": "Tạo tài khoản" },
   "meta": {
-    "defaultTitle": "Nihongo Cinema — Học tiếng Nhật qua video",
+    "defaultTitle": "Korume — Học tiếng Nhật qua video",
     "description": "Học tiếng Nhật qua shadowing video, kanji, từ vựng, ngữ pháp và luyện thi JLPT."
   },
   "actions": {
