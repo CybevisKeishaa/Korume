@@ -55,8 +55,7 @@ export const NAV_GROUPS = [
   },
 ] as const;
 
-/** Flat view of every shipped destination, for consumers that don't care
- * about grouping (and the catalog parity test). */
+/** Flat view kept for the catalog-parity test; no production consumer today. */
 export const NAV_ITEMS = NAV_GROUPS.map((group) => group.items).flat();
 
 export function AppNav({ userEmail }: { userEmail: string }) {
@@ -93,7 +92,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
               <div key={group.key} className="mb-2">
                 <p
                   id={`app-nav-group-${group.key}`}
-                  className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  className="hidden px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:block"
                 >
                   {t(`groups.${group.key}`)}
                 </p>
@@ -149,7 +148,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
         type="button"
         aria-expanded={visible}
         onClick={() => setVisible((current) => !current)}
-        className="flex items-center justify-center border-b border-border bg-card py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:h-screen md:w-5 md:border-b-0 md:border-r md:py-0"
+        className="flex items-center justify-center border-b border-border bg-card py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:h-screen md:w-6 md:border-b-0 md:border-r md:py-0"
       >
         <span aria-hidden="true">{visible ? "‹" : "›"}</span>
         <span className="sr-only">

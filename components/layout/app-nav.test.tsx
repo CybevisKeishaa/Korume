@@ -48,8 +48,8 @@ const EXPECTED_GROUP_LABELS: Record<(typeof NAV_GROUPS)[number]["key"], string> 
 const EXPECTED_ARIA_LABEL = "Main";
 
 // Catalog keys that are nav chrome, not destinations. "toggle" is the
-// visibility-toggle namespace Plan B Task 4 adds — listed here up front so
-// the parity check below stays destination-only.
+// visibility-toggle namespace Plan B Task 4 added, so the parity check below
+// stays destination-only.
 const CHROME_KEYS = new Set(["ariaLabel", "groups", "toggle"]);
 
 vi.mock("@/lib/i18n/navigation", async () => {

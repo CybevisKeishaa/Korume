@@ -29,7 +29,11 @@ test("a brand-new learner opens the Journal and finds the first page already wri
 
   // Through the real chrome, not a direct goto: the nav entry is part of what
   // Task 10 ships, so a Journal that exists but is unreachable must fail here.
-  await page.getByRole("link", { name: "Journal", exact: true }).click();
+  // The nav link and the page heading are deliberately different words: Plan
+  // B Task 3 renamed the nav entry to "Journey" (messages/en/nav.json) while
+  // the surface itself is still titled "Journal" (messages/en/companion.json)
+  // — don't "fix" one of them into agreement with the other.
+  await page.getByRole("link", { name: "Journey", exact: true }).click();
 
   await expect(page).toHaveURL(/\/en\/journal$/, { timeout: 15000 });
   await expect(page.getByRole("heading", { name: "Journal", level: 1 })).toBeVisible();
