@@ -10,7 +10,7 @@ test("landing page renders the hero and auth links", async ({ page }) => {
 
   // Scope to the hero <main> — "Sign in" also appears in the header and footer.
   const hero = page.getByRole("main");
-  await expect(hero.getByText("日本語シネマ")).toBeVisible();
+  await expect(hero.getByText("Korume")).toBeVisible();
   await expect(
     hero.getByText(
       "Shadow real video, master kanji and grammar, and track it all with a spaced-repetition engine built for retention.",
@@ -38,7 +38,7 @@ test("marketing header renders the brand, nav landmark and auth links", async ({
 }) => {
   await page.goto("/en");
   const header = page.getByRole("banner");
-  await expect(header.getByRole("link", { name: "日本語シネマ" })).toHaveAttribute(
+  await expect(header.getByRole("link", { name: "Korume" })).toHaveAttribute(
     "href",
     "/en",
   );
@@ -62,7 +62,7 @@ test("marketing footer renders the copyright and auth links", async ({
   await page.goto("/en");
   const footer = page.getByRole("contentinfo");
   const year = new Date().getFullYear();
-  await expect(footer.getByText(`© ${year} Nihongo Cinema`)).toBeVisible();
+  await expect(footer.getByText(`© ${year} Korume`)).toBeVisible();
   await expect(footer.getByRole("link", { name: "Sign in" })).toBeVisible();
   await expect(
     footer.getByRole("link", { name: "Get started" }),

@@ -118,7 +118,7 @@ describe("common.json EN — actions.loadMore / actions.confirmYes (Task 16 prom
  */
 describe("common.json EN — root-layout document metadata (Task 18)", () => {
   it("pins the default document title and the site description", () => {
-    expect(en.meta.defaultTitle).toBe("Nihongo Cinema — Learn Japanese through video");
+    expect(en.meta.defaultTitle).toBe("Korume — Learn Japanese through video");
     expect(en.meta.description).toBe(
       "Learn Japanese through video shadowing, kanji, vocab, grammar and JLPT prep.",
     );
