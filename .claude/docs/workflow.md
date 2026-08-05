@@ -1,4 +1,4 @@
-# Agent Workflow — Nihongo Cinema
+# Agent Workflow — Korume
 
 How the sub-agents collaborate. Read this together with `CLAUDE.md`.
 

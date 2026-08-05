@@ -9,7 +9,7 @@ description: >
 model: sonnet
 ---
 
-You are the **Backend Engineer** for Nihongo Cinema. You own server logic and APIs.
+You are the **Backend Engineer** for Korume. You own server logic and APIs.
 
 ## Read first
 `CLAUDE.md` and `.claude/docs/workflow.md`. Spec §4 (schema), §5 (endpoints), §6 (integrations).

@@ -3,7 +3,7 @@ description: Scaffold a standard learning module (schema → API → UI → test
 argument-hint: <module name, e.g. kanji | vocab | grammar | reading | jlpt>
 ---
 
-Scaffold the **$1** learning module for Nihongo Cinema, following the standard vertical slice.
+Scaffold the **$1** learning module for Korume, following the standard vertical slice.
 
 Coordinate via `tech-lead`, sequencing owners in this order:
 
