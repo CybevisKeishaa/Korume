@@ -7,23 +7,56 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
-/** href → nav catalog key. Keys, not labels: the words live in messages/. */
-export const NAV_ITEMS = [
-  { href: "/dashboard", key: "dashboard" },
-  { href: "/kanji", key: "kanji" },
-  { href: "/vocab", key: "vocab" },
-  { href: "/grammar", key: "grammar" },
-  { href: "/videos", key: "videos" },
-  { href: "/mining", key: "mining" },
-  { href: "/reading", key: "reading" },
-  { href: "/conversation", key: "conversation" },
-  { href: "/jlpt", key: "jlpt" },
-  { href: "/community", key: "community" },
-  { href: "/playlists", key: "playlists" },
-  { href: "/leaderboard", key: "leaderboard" },
-  { href: "/journal", key: "journal" },
-  { href: "/profile", key: "profile" },
+/**
+ * href → nav catalog key, in the 5-group structure from
+ * `docs/design/screens/navigation-system.md` § Navigation Inventory. Keys,
+ * not labels: the words live in messages/. Group `key` doubles as the
+ * heading catalog key (`nav.groups.*`).
+ *
+ * Only the 14 SHIPPED destinations are wired. The 8 canonical-but-unbuilt
+ * rows (review, challenges, korume, roadmap, weeklyReport, statistics,
+ * achievements, settings) have no route yet and get no entry — a group
+ * gains its rows (and INSIGHTS appears at all) only when a destination
+ * ships. NOTE: `lessons` points at `/videos`, the shipped Shadowing Hub
+ * route; the doc-canonical `/shadowing` path is a route rename deferred to
+ * the Hub UI plan (see app-nav.test.tsx's "route rename deferred" pin).
+ */
+export const NAV_GROUPS = [
+  {
+    key: "learn",
+    items: [
+      { href: "/dashboard", key: "dashboard" },
+      { href: "/videos", key: "lessons" },
+      { href: "/kanji", key: "kanji" },
+      { href: "/vocab", key: "vocab" },
+      { href: "/grammar", key: "grammar" },
+      { href: "/reading", key: "reading" },
+      { href: "/conversation", key: "speaking" },
+      { href: "/jlpt", key: "jlpt" },
+    ],
+  },
+  {
+    key: "study",
+    items: [
+      { href: "/mining", key: "mining" },
+      { href: "/playlists", key: "playlists" },
+      { href: "/community", key: "community" },
+      { href: "/leaderboard", key: "leaderboard" },
+    ],
+  },
+  {
+    key: "progress",
+    items: [{ href: "/journal", key: "journey" }],
+  },
+  {
+    key: "account",
+    items: [{ href: "/profile", key: "profile" }],
+  },
 ] as const;
+
+/** Flat view of every shipped destination, for consumers that don't care
+ * about grouping (and the catalog parity test). */
+export const NAV_ITEMS = NAV_GROUPS.map((group) => group.items).flat();
 
 export function AppNav({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
@@ -42,28 +75,43 @@ export function AppNav({ userEmail }: { userEmail: string }) {
         <NotificationBell />
       </div>
 
-      <ul className="flex flex-1 flex-wrap gap-1 md:flex-col md:flex-nowrap">
-        {NAV_ITEMS.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-primary/10 text-primary-strong"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {t(item.key)}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="flex-1 md:overflow-y-auto">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.key} className="mb-2">
+            <p
+              id={`app-nav-group-${group.key}`}
+              className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+            >
+              {t(`groups.${group.key}`)}
+            </p>
+            <ul
+              aria-labelledby={`app-nav-group-${group.key}`}
+              className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap"
+            >
+              {group.items.map((item) => {
+                const active =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-primary/10 text-primary-strong"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      )}
+                    >
+                      {t(item.key)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
 
       <div className="mt-4 space-y-3 border-t border-border pt-4">
         <div className="flex items-center justify-between">

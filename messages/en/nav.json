@@ -1,17 +1,23 @@
 {
   "ariaLabel": "Main",
+  "groups": {
+    "learn": "Learn",
+    "study": "Study",
+    "progress": "Progress",
+    "account": "Account"
+  },
   "dashboard": "Dashboard",
+  "lessons": "Lessons",
   "kanji": "Kanji",
   "vocab": "Vocab",
   "grammar": "Grammar",
-  "videos": "Videos",
-  "mining": "Mining",
   "reading": "Reading",
-  "conversation": "Conversation",
+  "speaking": "Speaking",
   "jlpt": "JLPT",
-  "community": "Community",
+  "mining": "Mining",
   "playlists": "Playlists",
+  "community": "Community",
   "leaderboard": "Leaderboard",
-  "journal": "Journal",
+  "journey": "Journey",
   "profile": "Profile"
 }
