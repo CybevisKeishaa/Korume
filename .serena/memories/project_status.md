@@ -30,13 +30,13 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-05, execution complete) — **Korume rebrand + Shadowing Hub/Practice Figma reconciliation Plan A (Docs): EXECUTED + MERGED to master `--no-ff` `69c4685`. Resume with Plan B (Code).**
+## ▶ NEXT ACTION (updated 2026-08-05) — **Plan A (Docs) MERGED `69c4685`. Plan B (Code) IN PROGRESS: Tasks 1–2 committed, resume at Task 3 (`NAV_ITEMS` → `NAV_GROUPS`).**
 
 **What happened:** All 8 tasks of `docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-a-docs.md` executed via `superpowers:subagent-driven-development` (fresh implementer + task reviewer per task, cheap-tier models for the mechanical transcription work, sonnet-tier reviewers). All 8 task reviews clean (0 Critical/Important; 2 pre-existing report-narrative Minors ruled non-blocking). Final whole-branch review (opus) found 3 NEW Important findings only visible at whole-branch scope — cross-file contradictions the per-task lens structurally could not see: (1) `design-reconciliation.md` §4 prose not updated to match §6's Companion-boundary narrowing from Task 6; (2) the new "toggleable Nav Column" paragraph in `navigation-system.md` (Task 4) contradicted 3 other sections asserting a fixed 240px always-visible column; (3) "the shipped navigation... is 5 named groups" overclaimed shipped status the code doesn't have (still a flat 14-item list; Plan B builds the real 5-group `NAV_ITEMS`). One fix-wave commit resolved all 3 (scoped re-review: all ADDRESSED, no new breakage). Merged to master `--no-ff` at `69c4685` 2026-08-05 (branch `korume-rebrand-plan-a-docs` deleted, worktree removed). Product is now renamed Nihongo Cinema → **Korume** across all 36 living files that were in scope; ~20 historical dated specs/plans/journal/migrations correctly untouched.
 
 **Deferred to Plan B or a later docs cleanup (ruled non-blocking by the final reviewer, not yet actioned):** `screen-search.md:110` stale "14-item inventory" count; `navigation-system.md` two "all 14 NAV_ITEMS" mentions now ambiguous next to the 22-row table; `companion-patterns.md` § Learning Boundary still repeats the pre-narrowing loop list (same fix as design-reconciliation.md §4, not yet propagated there); `learning-surfaces.md:709` "Shadowing Practice is Not Supported" now true only of Shadowing mode, not the whole Lesson screen; nav table rows 9/12 (review/challenges) lack the "(Planned)" marker other unwired rows have; `lessons`→`/shadowing` vs. shipped `/videos` route drift (pre-existing, not a regression); §6 Anchor Availability row ordering no longer groups by status (looks deliberate).
 
-**Plan B (Code) — WRITTEN & COMMITTED (`851f653`), EXECUTION NOT STARTED (0 of 5 tasks).**
+**Plan B (Code) — WRITTEN & COMMITTED (`851f653`), EXECUTION IN PROGRESS: Tasks 1–2 DONE, 3–5 remain.**
 `docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-b-code.md` —
 written via `superpowers:writing-plans` on **Fable** (user-approved model choice; cost $6.09).
 5 tasks: (1) i18n catalog rename + `common.pin.test.ts` + `test/messages.test.ts` +
@@ -56,9 +56,30 @@ shipped Hub route is **`/videos`, not `/shadowing`** — Plan B renames the key/
 mechanism exists in code** (doc-only mandate), so Task 4 builds the toggle fresh; `tailwind.config.ts`
 confirmed comment-only; INSIGHTS group renders nothing yet (all 3 rows unbuilt).
 
-**Execution state (resume point):** worktree `.worktrees/korume-rebrand-plan-b` on branch
-`korume-rebrand-plan-b-code`, `npm install` DONE, baseline `npm run typecheck` CLEAN. No SDD ledger
-created yet and no task dispatched — start from `scripts/sdd-workspace` + Task 1.
+**Execution state (resume point, updated 2026-08-05):** worktree `.worktrees/korume-rebrand-plan-b` on
+branch `korume-rebrand-plan-b-code`, `npm install` DONE, tree clean, branch = master + 2 commits.
+No SDD ledger was ever created — Tasks 1–2 were executed **inline in the main session** (no subagents;
+user directed "chạy task 2 xong đi"), which is fine for the mechanical string tasks. **Task 3 is the
+first non-mechanical one (`NAV_GROUPS` restructure + RTL tests) — consider SDD/`code-reviewer` from
+there on.**
+
+- ✅ **Task 1 — `f8690c8`** `feat(rebrand): rename runtime brand strings to Korume across i18n catalogs,
+  pins, and e2e`.
+- ✅ **Task 2 — `1e920f3`** `feat(rebrand): rename brand literal in root layout title template and
+  tailwind comment`. 4 literal edits across 3 files (`app/[locale]/layout.tsx` ×2 = the
+  `"%s · Korume"` template + its comment; `tailwind.config.ts` header comment;
+  `messages/en/common.pin.test.ts` comment). Verified: plan Step-4 grep for
+  `Nihongo Cinema|日本語シネマ` over `app components lib messages test tests tailwind.config.ts`
+  returns **no output**; `npm run typecheck` exit 0; `npx vitest run messages/ test/messages.test.ts
+  lib/i18n/catalog.test.ts` = **20 files / 330 tests passed**.
+- ⬜ Tasks 3 (NAV_GROUPS), 4 (Nav Column toggle), 5 (anchor-boundary narrowing) — not started.
+
+**⚠ Open finding from Task 2 (NOT actioned — out of the plan's declared file list):** root
+`package.json` still has `"name": "nihongo-cinema"` (visible in every `npm run` banner). Plan B's File
+Structure table does not include `package.json` and its Step-4 grep does not cover the repo root, so
+this was deliberately left alone rather than silently widening scope. Renaming it touches
+`package-lock.json` too. **Decide separately** — either a small follow-up commit on this branch or a
+later cleanup.
 
 **⚠ WORKTREE TEST GOTCHA — do not chase this as a regression:** running `npm test` *from inside*
 `.worktrees/**` produces **11 failures in `lib/eslint-rules.test.ts`** with
