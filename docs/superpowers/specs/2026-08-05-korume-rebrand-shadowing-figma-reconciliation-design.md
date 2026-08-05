@@ -41,7 +41,7 @@
 | # | Area | Decision |
 |---|---|---|
 | 1 | Product & Companion name | Rename product **Nihongo Cinema → Korume**, everywhere it currently appears in *living* docs and *runtime* strings. The Companion character is also officially named **Korume** — closes the deferred Character Identity decision (Companion System spec Spec 2). Historical dated artifacts (specs, plans, journals, migrations, memory snapshots) are **not** rewritten — see §1.3. |
-| 2 | Nav Column structure | Replace the flat, ungrouped 14-item `NAV_ITEMS` list with **5 named groups** (LEARN / STUDY / AI KORUME / PROGRESS / ACCOUNT), matching Figma. Nav becomes **toggleable** (show/hide via edge affordance) rather than always-fixed. Three items renamed: `shadowing`→**Lessons**, `conversation`→**Speaking**, `journal`→**Journey**. Community and Leaderboard — omitted from the current Figma draft by oversight, confirmed by the user, already saved to `mem:figma-nav-redesign-community-leaderboard-gap` — are placed in the STUDY group. The Companion nav item ("Sensei" in the current Figma label) is renamed **Korume** for character-name consistency with #1. |
+| 2 | Nav Column structure | Replace the flat, ungrouped 14-item `NAV_ITEMS` list with **5 named groups** (LEARN / STUDY / INSIGHTS / PROGRESS / ACCOUNT), matching Figma. Nav becomes **toggleable** (show/hide via edge affordance) rather than always-fixed. Three items renamed: `shadowing`→**Lessons**, `conversation`→**Speaking**, `journal`→**Journey**. Community and Leaderboard — omitted from the current Figma draft by oversight, confirmed by the user, already saved to `mem:figma-nav-redesign-community-leaderboard-gap` — are placed in the STUDY group. The Companion nav item ("Sensei" in the current Figma label) is renamed **Korume** for character-name consistency with #1. |
 | 3 | Shadowing Practice Learning Mode tabs | **No change.** The 4-mode Two-Layer Model locked by `2026-08-01-shadowing-practice-figma-reconciliation-design.md` stands. The Figma frame reviewed here is stale (pre-dates that reconciliation) and must be redrawn to match the doc — Reading/Immersion (retired View Mode) and Dictation/Mining/Review (never valid as top-level Learning Mode tabs) are dropped from the tab row. |
 | 4 | Companion Learning Loop Boundary (Lesson Workspace only) | Narrowed from "Not Supported across all four Learning Modes" to **"Not Supported in Shadowing mode only."** Pronunciation, Listening Practice, and Summary move from Not Supported to **Planned**. Rationale: Shadowing is continuous video playback requiring full attention; the other three modes are already broken into discrete per-sentence or read-only units, so a Companion presence doesn't compete with an in-progress continuous action the way it would during Shadowing. Scope is limited to the Lesson Workspace's four Learning Modes — Review, SRS review, JLPT, Grammar, Vocab, Kanji, Conversation are untouched, still Not Supported. |
 | 5 | Shadowing Hub — Collection order | Editorial collections (e.g. Popular Lessons) may render **before** the three computed collections (Continue Learning / My Lessons / Recently Added), matching Figma. Reverses the current doc's "computed collections always prepended" ordering rule. |
@@ -136,7 +136,7 @@ Shadowing Practice frame (`105:3088`):
 |---|---|
 | LEARN | Dashboard, **Lessons** (was `shadowing` — Shadowing Hub entry point), Kanji, Vocabulary, Grammar, Reading, **Speaking** (was `conversation`), JLPT |
 | STUDY | Review, Mining, Playlists, Challenges, **Community**, **Leaderboard** |
-| AI KORUME | **Korume** (was "Sensei" in the Figma draft — renamed for character-name consistency, §1.4), Roadmap, Weekly Report |
+| INSIGHTS | **Korume** (was "Sensei" in the Figma draft — renamed for character-name consistency, §1.4), Roadmap, Weekly Report |
 | PROGRESS | **Journey** (was `journal`), Statistics, Achievements |
 | ACCOUNT | Profile, Settings |
 
@@ -170,7 +170,7 @@ here** — flagged for the execution plan.
 ### 2.3 What does not change
 
 - **Layout Regions** (Nav Column vs. Content Region), **Nav vs. Drawer Boundary**, **Companion &
-  Navigation** (no anchor may render inside the Nav Column — still true, the AI KORUME group's
+  Navigation** (no anchor may render inside the Nav Column — still true, the INSIGHTS group's
   "Korume" item is a navigation *link* to the Companion surface, not a rendered Companion anchor
   itself), and **Accessibility** requirements are all unaffected and must hold under the new grouped
   structure — landmark + `aria-label`, `aria-current`, native link semantics, same as today.
