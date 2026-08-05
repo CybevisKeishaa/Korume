@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { katakanaToHiragana, toFurigana } from "./furigana";
 
 // kuromoji dictionary build is a real (slow-ish) disk load; give it room.
-const KUROMOJI_TIMEOUT = 20000;
+// Raised 20s -> 60s on 2026-08-05: this load measures 16-20s under full-suite
+// parallel contention, so 20s sat right on the edge and flaked. It is a
+// one-time dictionary read, not a behavioural assertion — extra headroom costs
+// nothing when the test passes (it runs in ~400ms in isolation).
+const KUROMOJI_TIMEOUT = 60000;
 
 describe("katakanaToHiragana", () => {
   it("converts a full katakana word", () => {

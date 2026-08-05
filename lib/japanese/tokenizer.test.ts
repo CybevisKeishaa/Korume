@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { getTokenizer, tokenize } from "./tokenizer";
 
-const KUROMOJI_TIMEOUT = 20000;
+// See furigana.test.ts for why this is 60s rather than 20s: the kuromoji
+// dictionary load measures 16-20s under full-suite parallel contention.
+const KUROMOJI_TIMEOUT = 60000;
 
 describe(
   "tokenize",
