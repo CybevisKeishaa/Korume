@@ -1,6 +1,6 @@
 # Microcopy Guidelines
 
-**Project:** Nihongo Cinema / AI Language OS  
+**Project:** Korume / AI Language OS  
 **Version:** 1.0  
 **Status:** Approved
 

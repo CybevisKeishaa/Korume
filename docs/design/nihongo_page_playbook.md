@@ -1,4 +1,4 @@
-# Nihongo Cinema Landing Page Playbook
+# Korume Landing Page Playbook
 
 > **Status:** Approved
 > Version: 1.0

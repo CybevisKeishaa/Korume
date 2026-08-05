@@ -3,7 +3,7 @@
 > **Status:** Approved
 > **Related:** `docs/design/patterns/companion-patterns.md`, `docs/design/design-reconciliation.md`
 
-> Every screen in Nihongo Cinema should feel calm—even when something is loading, syncing, or unavailable.
+> Every screen in Korume should feel calm—even when something is loading, syncing, or unavailable.
 
 The interface should never punish waiting.
 
@@ -29,7 +29,7 @@ Offline.
 
 Instead of treating these as interruptions,
 
-Nihongo Cinema treats them as natural moments inside the learning journey.
+Korume treats them as natural moments inside the learning journey.
 
 Nothing should flash.
 

@@ -45,7 +45,7 @@ Traditional SRS asks
 
 > "Can you remember this?"
 
-Nihongo Cinema asks
+Korume asks
 
 > "Would you like to revisit this?"
 

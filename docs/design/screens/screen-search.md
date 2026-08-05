@@ -15,7 +15,7 @@
 
 # Purpose
 
-Search is the universal gateway to Nihongo Cinema.
+Search is the universal gateway to Korume.
 
 It should allow learners to instantly find:
 

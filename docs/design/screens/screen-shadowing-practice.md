@@ -11,7 +11,7 @@
 > standalone Lesson Detail page and no Lesson Info Panel exist inside Practice — both were proposed
 > and explicitly rejected (Consolidation spec §2).
 
-> The heart of Nihongo Cinema.
+> The heart of Korume.
 
 This is not a video page.
 

@@ -16,7 +16,7 @@
 
 Companion Patterns không mô tả Companion là ai.
 
-Companion Patterns mô tả cách mọi screen trong Nihongo Cinema nên tương tác với Companion.
+Companion Patterns mô tả cách mọi screen trong Korume nên tương tác với Companion.
 
 Companion luôn là cùng một thực thể.
 

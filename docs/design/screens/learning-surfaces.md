@@ -5,7 +5,7 @@
 
 > Purpose
 >
-> This document defines the primary learning surfaces used throughout Nihongo Cinema.
+> This document defines the primary learning surfaces used throughout Korume.
 >
 > A learning surface is the canvas where a learner interacts with knowledge.
 >
@@ -19,7 +19,7 @@
 
 Most software is built from components.
 
-Nihongo Cinema is built from learning surfaces.
+Korume is built from learning surfaces.
 
 A button performs an action.
 
@@ -171,7 +171,7 @@ Purpose
 
 Understand Japanese naturally.
 
-The Reading Surface is the heart of Nihongo Cinema.
+The Reading Surface is the heart of Korume.
 
 It should feel closer to
 

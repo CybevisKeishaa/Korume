@@ -4,7 +4,7 @@
 
 > **Purpose**
 >
-> This document defines the architectural philosophy behind every screen in Nihongo Cinema.
+> This document defines the architectural philosophy behind every screen in Korume.
 >
 > It is not a UI specification.
 >
@@ -16,7 +16,7 @@
 
 # Core Philosophy
 
-Nihongo Cinema is not designed as a collection of application pages.
+Korume is not designed as a collection of application pages.
 
 It is designed as a collection of places.
 
@@ -175,7 +175,7 @@ Users should always feel that the workspace owns the screen.
 
 # Reading First
 
-Nihongo Cinema is fundamentally a reading application enhanced with media.
+Korume is fundamentally a reading application enhanced with media.
 
 Whenever a layout decision must be made, prioritize readability over controls.
 
@@ -480,7 +480,7 @@ These principles should guide every design decision.
 
 # What We Avoid
 
-Nihongo Cinema intentionally avoids patterns commonly found in productivity software.
+Korume intentionally avoids patterns commonly found in productivity software.
 
 Avoid:
 
@@ -510,7 +510,7 @@ A screen is successful if someone enjoys staying inside it even when they are no
 
 The interface should quietly encourage longer, more comfortable study sessions.
 
-When a learner opens Nihongo Cinema, they should feel:
+When a learner opens Korume, they should feel:
 
 > "This is a beautiful place to study Japanese."
 

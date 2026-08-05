@@ -5,7 +5,7 @@
 > **Applies to:** Entire Product (Shadowing Practice, Listening Practice, Reading, Mining)  
 > **Related:** `reading-patterns.md`, `video-patterns.md`, `docs/design/patterns/companion-patterns.md`, `docs/design/design-reconciliation.md`
 
-> The transcript is the heart of Nihongo Cinema.
+> The transcript is the heart of Korume.
 
 Everything else—video, AI, dictionary, grammar, playback, notes—exists to support the transcript.
 

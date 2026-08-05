@@ -10,7 +10,7 @@
 
 > Purpose
 >
-> This document defines how Nihongo Cinema adapts across different screen sizes, workspace configurations and study modes.
+> This document defines how Korume adapts across different screen sizes, workspace configurations and study modes.
 >
 > Adaptation is not only about responsiveness.
 >
@@ -24,7 +24,7 @@
 
 Most applications adapt to the device.
 
-Nihongo Cinema adapts to the learner.
+Korume adapts to the learner.
 
 A learner watching a difficult scene needs a different workspace than someone reviewing vocabulary.
 
@@ -82,7 +82,7 @@ Traditional responsive design asks:
 
 > "How many pixels are available?"
 
-Nihongo Cinema asks:
+Korume asks:
 
 > "How much space does the learner need?"
 
