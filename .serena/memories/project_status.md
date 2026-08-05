@@ -30,13 +30,74 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-05) — **Plan A (Docs) MERGED `69c4685`. Plan B (Code) IN PROGRESS: Tasks 1–2 committed, resume at Task 3 (`NAV_ITEMS` → `NAV_GROUPS`).**
+## ▶ NEXT ACTION (updated 2026-08-06) — **Korume rebrand COMPLETE. Plan A (Docs) `69c4685` + Plan B (Code) `44521bc` both MERGED to master. Next: the Figma Make adoption brainstorm (see `mem:figma_make_design_source`), then Shadowing Hub Plan C (Hub UI).**
+
+### ✅ Plan B (Code) — EXECUTED + MERGED `--no-ff` at `44521bc` (2026-08-06). Branch + worktree deleted.
+
+All 5 tasks via `superpowers:subagent-driven-development` (fresh implementer + independent reviewer
+per task, sonnet tier; opus for the final whole-branch review). **Every task review: spec-compliant,
+0 Critical / 0 Important.** Tasks 1–2 were done inline in the controller session before the SDD ledger
+existed; Tasks 3–5 went through the full loop.
+
+| | Commit | What |
+|---|---|---|
+| T1 | `f8690c8` | runtime brand strings — i18n catalogs, pin tests, e2e |
+| T2 | `1e920f3` | root layout `"%s · Korume"` title template + tailwind comment |
+| T3 | `55a8773` | `NAV_ITEMS` → 5-group `NAV_GROUPS` (14 shipped; videos→lessons, conversation→speaking, journal→journey) |
+| T4 | `d46f0f9` | Nav Column visibility toggle, visible by default |
+| T5 | `c80829b` | `CompanionAnchor` boundary narrowed to Shadowing mode only |
+
+**The final whole-branch review earned its keep again — 1 Critical + 4 Important that no per-task
+diff could reveal.** Third plan running where this is true; treat the final review as mandatory.
+- `ef564c7` **Critical:** `tests/e2e/journal.spec.ts` still clicked a link named `"Journal"` after T3
+  renamed the nav label to `"Journey"`. Invisible because **`vitest.config.ts:13` excludes
+  `tests/e2e`** — `npm test` structurally cannot run Playwright specs, so no task run could catch it.
+  **Lesson: any nav/label rename must sweep `tests/e2e/` by hand.** T1 remembered to; T3 did not.
+  Same commit also fixed mobile top-bar heading overflow, a sub-24px touch target, 2 stale comments.
+- `d5f08b8` **Important:** nav said "Lessons" but `/videos` page `h1` + document title still said
+  "Videos" — a label `navigation-system.md:29-38` disqualifies **by architectural invariant**. The
+  branch fixed the nav half and thereby *introduced* the mismatch. EN→"Lessons", VI→"Bài học", pin updated.
+- `422af2d` **Important:** two `navigation-system.md` claims the code now contradicted — toggle default
+  still recorded as "not decided" (branch decided + shipped it), and a streak indicator + "Rain Sound"
+  toggle listed as "(shipped)" when neither exists (grep: 0 hits). Landed as its own commit since
+  Plan B's Global Constraints forbid `docs/` edits during task execution.
+
+**Out-of-plan fixes folded in:**
+- `5924603` kebab-case slug `nihongo-cinema` → `korume` in `package.json`/`package-lock.json` and the
+  **Azure Speech TTS `User-Agent`** (a real runtime brand string). They survived because the plan's
+  grep pattern was title-case `Nihongo Cinema` only. **`supabase/config.toml` `project_id` deliberately
+  NOT renamed** — it drives the local Docker container names (`supabase_db_nihongo-cinema`, referenced
+  by a `.claude/settings.local.json` permission), so renaming orphans the local DB volume. Open infra cleanup.
+- `cad2cb8` **`.eslintrc.json` now declares `"root": true`.** ⚠️ **THE NESTED-WORKTREE ESLINT GOTCHA IS
+  DEAD — stop warning implementers about it.** Root cause was that neither the worktree nor the parent
+  config declared `root`, so ESLint's resolution walked up and loaded both. Verified from inside a
+  worktree afterwards: `lib/eslint-rules.test.ts` 11/11 (was 11 failures), `npm test` 1960/1960 (was
+  1949/1960), `npm run lint` exit 0 (was unrunnable).
+- `d37ca58` kuromoji dictionary-load timeout 20s → 60s in `lib/japanese/{furigana,tokenizer}.test.ts`.
+  The load measures 16–20s under parallel contention and flaked. **Note for future debugging:** those
+  flakes only appeared while a second `vitest` process ran concurrently — three consecutive quiet runs
+  were 1960/1960. Don't chase suite flakes without checking what else is running.
+
+**Verified before merge** (from the worktree, all previously impossible there): `npm test` 218 files /
+1960 tests, **three consecutive clean runs**; `npm run typecheck` exit 0; `npm run lint` exit 0, 0
+errors + 78 warnings = master's pre-existing count. **Re-verified on master after merge: 1960/1960,
+typecheck 0, lint 0.**
+⚠️ **`npm run test:e2e` NOT run** (needs live dev server + Supabase). The Critical fix in
+`journal.spec.ts` is therefore verified by reading the catalogs, not by execution — **run it when a
+dev environment is up.**
+
+⚠️ **Gotcha for anyone running the suite from the MAIN repo root:** `vitest.config.ts` excludes
+`node_modules`, `.next`, `tests/e2e` — **but NOT `.worktrees/`**. With a worktree present, a root
+`npm test` scans both trees (observed: 594 files / 5440 tests instead of 218 / 1960, with dozens of
+bogus failures). Pass `--exclude ".worktrees/**"` or remove the worktree first. Not yet fixed in config.
+
+### (historical) Plan A (Docs)
 
 **What happened:** All 8 tasks of `docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-a-docs.md` executed via `superpowers:subagent-driven-development` (fresh implementer + task reviewer per task, cheap-tier models for the mechanical transcription work, sonnet-tier reviewers). All 8 task reviews clean (0 Critical/Important; 2 pre-existing report-narrative Minors ruled non-blocking). Final whole-branch review (opus) found 3 NEW Important findings only visible at whole-branch scope — cross-file contradictions the per-task lens structurally could not see: (1) `design-reconciliation.md` §4 prose not updated to match §6's Companion-boundary narrowing from Task 6; (2) the new "toggleable Nav Column" paragraph in `navigation-system.md` (Task 4) contradicted 3 other sections asserting a fixed 240px always-visible column; (3) "the shipped navigation... is 5 named groups" overclaimed shipped status the code doesn't have (still a flat 14-item list; Plan B builds the real 5-group `NAV_ITEMS`). One fix-wave commit resolved all 3 (scoped re-review: all ADDRESSED, no new breakage). Merged to master `--no-ff` at `69c4685` 2026-08-05 (branch `korume-rebrand-plan-a-docs` deleted, worktree removed). Product is now renamed Nihongo Cinema → **Korume** across all 36 living files that were in scope; ~20 historical dated specs/plans/journal/migrations correctly untouched.
 
 **Deferred to Plan B or a later docs cleanup (ruled non-blocking by the final reviewer, not yet actioned):** `screen-search.md:110` stale "14-item inventory" count; `navigation-system.md` two "all 14 NAV_ITEMS" mentions now ambiguous next to the 22-row table; `companion-patterns.md` § Learning Boundary still repeats the pre-narrowing loop list (same fix as design-reconciliation.md §4, not yet propagated there); `learning-surfaces.md:709` "Shadowing Practice is Not Supported" now true only of Shadowing mode, not the whole Lesson screen; nav table rows 9/12 (review/challenges) lack the "(Planned)" marker other unwired rows have; `lessons`→`/shadowing` vs. shipped `/videos` route drift (pre-existing, not a regression); §6 Anchor Availability row ordering no longer groups by status (looks deliberate).
 
-**Plan B (Code) — WRITTEN & COMMITTED (`851f653`), EXECUTION IN PROGRESS: Tasks 1–2 DONE, 3–5 remain.**
+**Plan B (Code) — WRITTEN `851f653`, EXECUTED + MERGED `44521bc`. See the block at the top of this section for the outcome; the description below is the pre-execution plan text.**
 `docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-b-code.md` —
 written via `superpowers:writing-plans` on **Fable** (user-approved model choice; cost $6.09).
 5 tasks: (1) i18n catalog rename + `common.pin.test.ts` + `test/messages.test.ts` +
@@ -56,38 +117,12 @@ shipped Hub route is **`/videos`, not `/shadowing`** — Plan B renames the key/
 mechanism exists in code** (doc-only mandate), so Task 4 builds the toggle fresh; `tailwind.config.ts`
 confirmed comment-only; INSIGHTS group renders nothing yet (all 3 rows unbuilt).
 
-**Execution state (resume point, updated 2026-08-05):** worktree `.worktrees/korume-rebrand-plan-b` on
-branch `korume-rebrand-plan-b-code`, `npm install` DONE, tree clean, branch = master + 2 commits.
-No SDD ledger was ever created — Tasks 1–2 were executed **inline in the main session** (no subagents;
-user directed "chạy task 2 xong đi"), which is fine for the mechanical string tasks. **Task 3 is the
-first non-mechanical one (`NAV_GROUPS` restructure + RTL tests) — consider SDD/`code-reviewer` from
-there on.**
-
-- ✅ **Task 1 — `f8690c8`** `feat(rebrand): rename runtime brand strings to Korume across i18n catalogs,
-  pins, and e2e`.
-- ✅ **Task 2 — `1e920f3`** `feat(rebrand): rename brand literal in root layout title template and
-  tailwind comment`. 4 literal edits across 3 files (`app/[locale]/layout.tsx` ×2 = the
-  `"%s · Korume"` template + its comment; `tailwind.config.ts` header comment;
-  `messages/en/common.pin.test.ts` comment). Verified: plan Step-4 grep for
-  `Nihongo Cinema|日本語シネマ` over `app components lib messages test tests tailwind.config.ts`
-  returns **no output**; `npm run typecheck` exit 0; `npx vitest run messages/ test/messages.test.ts
-  lib/i18n/catalog.test.ts` = **20 files / 330 tests passed**.
-- ⬜ Tasks 3 (NAV_GROUPS), 4 (Nav Column toggle), 5 (anchor-boundary narrowing) — not started.
-
-**⚠ Open finding from Task 2 (NOT actioned — out of the plan's declared file list):** root
-`package.json` still has `"name": "nihongo-cinema"` (visible in every `npm run` banner). Plan B's File
-Structure table does not include `package.json` and its Step-4 grep does not cover the repo root, so
-this was deliberately left alone rather than silently widening scope. Renaming it touches
-`package-lock.json` too. **Decide separately** — either a small follow-up commit on this branch or a
-later cleanup.
-
-**⚠ WORKTREE TEST GOTCHA — do not chase this as a regression:** running `npm test` *from inside*
-`.worktrees/**` produces **11 failures in `lib/eslint-rules.test.ts`** with
-`Plugin "@next/next" was conflicted between ".eslintrc.json" and "..\..\.eslintrc.json"`. Cause:
-the worktree is nested inside the parent repo, so ESLint's `lintText` config resolution walks up and
-finds two `.eslintrc.json` files. **Verified NOT a regression** — the same test passes 22/22 when run
-from the main repo root (which picks up both trees). Every "run full suite" step in Plan B will hit
-this; tell implementers and reviewers up front so nobody debugs a phantom bug.
+**(superseded) Execution state:** the resume-point / open-finding / worktree-gotcha blocks that used
+to sit here described mid-execution state and are now all resolved by the `44521bc` merge — see the
+outcome block at the top of this NEXT ACTION section. Three points worth carrying forward:
+`package.json` was renamed to `korume` in `5924603`; the **nested-worktree ESLint gotcha is FIXED**
+(`cad2cb8`, `"root": true`) so do not warn implementers about it any more; and Tasks 1–2 were run
+inline while Tasks 3–5 went through the full SDD loop.
 
 **Not done / explicitly deferred:** only Shadowing Hub + Shadowing Practice were reviewed against the
 ~20-screen Figma file — the other ~18 screens are unreviewed, a natural follow-up once this
