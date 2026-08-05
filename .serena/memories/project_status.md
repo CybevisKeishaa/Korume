@@ -1,4 +1,4 @@
-# Nihongo Cinema — Project Status
+# Korume (was Nihongo Cinema) — Project Status
 
 Read this first each session. Product spec: `japanese-learning-app-spec.md` (**repo root** — moved
 in from the parent folder and put under version control 2026-07-16; old references say `../`);
@@ -30,56 +30,23 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-05) — **Korume rebrand + Shadowing Hub/Practice Figma reconciliation: spec + Plan A (Docs) written & committed, NOT YET EXECUTED. Resume by executing Plan A.**
+## ▶ NEXT ACTION (updated 2026-08-05, execution complete) — **Korume rebrand + Shadowing Hub/Practice Figma reconciliation Plan A (Docs): EXECUTED + MERGED to master `--no-ff` `69c4685`. Resume with Plan B (Code).**
 
-User shared a Figma file (~20 screens, `https://www.figma.com/design/IwFHZDZdHW7qsSFiNbWrkd/Kurome`)
-and asked for a review of the 2 screens flagged as changed (Shadowing Hub `90:1985`, Shadowing
-Practice `105:3088`) against the locked design docs, to catch mistakes before implementation. Review
-surfaced real divergences (stale View-Mode-era 8-tab bar, sidebar shown-by-default inside the Lesson
-Workspace, a header progress %, Companion widget on the non-empty Hub, a 5-group nav redesign,
-collection-order changes) plus a much bigger decision mid-conversation: **product rename Nihongo
-Cinema → Korume** (Korume was already the mascot's internal 3D-asset codename since
-`2026-07-30-korume-3d-mascot-base-design.md`; now promoted to the official product AND Companion
-character name, closing the deferred Character Identity half of the Companion System spec).
+**What happened:** All 8 tasks of `docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-a-docs.md` executed via `superpowers:subagent-driven-development` (fresh implementer + task reviewer per task, cheap-tier models for the mechanical transcription work, sonnet-tier reviewers). All 8 task reviews clean (0 Critical/Important; 2 pre-existing report-narrative Minors ruled non-blocking). Final whole-branch review (opus) found 3 NEW Important findings only visible at whole-branch scope — cross-file contradictions the per-task lens structurally could not see: (1) `design-reconciliation.md` §4 prose not updated to match §6's Companion-boundary narrowing from Task 6; (2) the new "toggleable Nav Column" paragraph in `navigation-system.md` (Task 4) contradicted 3 other sections asserting a fixed 240px always-visible column; (3) "the shipped navigation... is 5 named groups" overclaimed shipped status the code doesn't have (still a flat 14-item list; Plan B builds the real 5-group `NAV_ITEMS`). One fix-wave commit resolved all 3 (scoped re-review: all ADDRESSED, no new breakage). Merged to master `--no-ff` at `69c4685` 2026-08-05 (branch `korume-rebrand-plan-a-docs` deleted, worktree removed). Product is now renamed Nihongo Cinema → **Korume** across all 36 living files that were in scope; ~20 historical dated specs/plans/journal/migrations correctly untouched.
 
-**Resolved via `superpowers:brainstorming`, all decisions locked** — full detail + rationale in
-`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md`
-(committed `826126a`, amended `a412ba0` for an INSIGHTS nav-group rename). Key decisions: (1) rebrand
-touches ~40 living files, NOT the ~20 historical dated specs/plans/journal/migrations which stay
-as-is; (2) nav restructures to 5 groups (LEARN/STUDY/INSIGHTS/PROGRESS/ACCOUNT) + becomes toggleable,
-Community+Leaderboard re-added (Figma omission, confirmed oversight — see below); (3) the 4-mode
-Learning Mode tab bar from the 2026-08-01 reconciliation is UNCHANGED — the reviewed Figma frame is
-just stale and needs redrawing, not the docs; (4) Companion Learning Loop Boundary narrows from "Not
-Supported in all 4 Learning Modes" to "Not Supported in Shadowing mode only" (Pronunciation/Listening
-Practice/Summary become Planned); (5) Hub collection order relaxes to allow editorial-before-computed;
-filter pills kept as "quick collection shortcuts"; My Lessons stays its own section (unchanged, after
-one back-and-forth); (6) header drops "72% complete," keeps "Sentence 3/18."
+**Deferred to Plan B or a later docs cleanup (ruled non-blocking by the final reviewer, not yet actioned):** `screen-search.md:110` stale "14-item inventory" count; `navigation-system.md` two "all 14 NAV_ITEMS" mentions now ambiguous next to the 22-row table; `companion-patterns.md` § Learning Boundary still repeats the pre-narrowing loop list (same fix as design-reconciliation.md §4, not yet propagated there); `learning-surfaces.md:709` "Shadowing Practice is Not Supported" now true only of Shadowing mode, not the whole Lesson screen; nav table rows 9/12 (review/challenges) lack the "(Planned)" marker other unwired rows have; `lessons`→`/shadowing` vs. shipped `/videos` route drift (pre-existing, not a regression); §6 Anchor Availability row ordering no longer groups by status (looks deliberate).
 
-**Plan A (Docs) — WRITTEN & COMMITTED (`13a92ce`), NOT YET EXECUTED.**
-`docs/superpowers/plans/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-plan-a-docs.md` — 8
-tasks / 4 phases, docs-only (zero code/i18n/tests). Phase 1 (Tasks 1-3): mechanical "Nihongo
-Cinema"→"Korume" rebrand across 36 living files (core identity: CLAUDE.md/README/spec/business-model/
-MASCOT; 20 design governance/pattern docs; 11 `.claude/**` operational docs) — exact per-file
-occurrence counts already audited into the plan. Phase 2 (Task 4): `navigation-system.md` §
-Navigation Inventory full rewrite to the 5-group table. Phase 3 (Tasks 5-6):
-`screen-shadowing-practice.md` § Companion narrowing + `design-reconciliation.md` §6 table split +
-version bump 1.2→1.3. Phase 4 (Tasks 7-8): `screen-shadowing-hub.md` § Collections (ordering +
-filter-pill note) + `screen-shadowing-practice.md` § Header clarification. **→ NEXT: execute this
-plan**, recommended via `superpowers:subagent-driven-development` per the plan's own execution-
-handoff (one task per subagent, review between tasks) — matches this project's established pattern
-for docs-only passes (c.f. Plan A of the Shadowing Hub Lesson Workspace spec below).
-
-**Plan B (Code) — NOT YET WRITTEN.** Everything the docs-only Plan A explicitly excludes: i18n
+**Plan B (Code) — NOT YET WRITTEN.** Everything the docs-only Plan A explicitly excluded: i18n
 catalog rename (`messages/{en,vi}/{common,marketing}.json` + `messages/en/common.pin.test.ts` — must
 update the pin test in the SAME commit as the catalog per the L9a catalog-mutation lesson,
 `mem:l9a_localization_run_state`), `test/messages.test.ts`, `tests/e2e/home.spec.ts` (asserts the
 string on the rendered page), `app/[locale]/layout.tsx` metadata, `tailwind.config.ts` (verify at
 execution time whether it's load-bearing or just a comment), `components/layout/app-nav.tsx` (actual
-5-group `NAV_ITEMS` restructure + visibility toggle), `components/companion/anchor-boundary.test.ts`
+5-group `NAV_ITEMS` restructure + visibility toggle — this is what makes Plan A's "canonical/target"
+nav-structure wording become "shipped"), `components/companion/anchor-boundary.test.ts`
 (narrow its scan from "no CompanionAnchor anywhere in `/shadowing/[id]/**`" to just the
-`/shadowing/[id]` Shadowing-mode route). Write this plan via `superpowers:writing-plans` once Plan A
-has landed on master — sequencing Plan A first avoids Plan B's code work being built against a
-still-inconsistent doc set.
+`/shadowing/[id]` Shadowing-mode route). Write this plan via `superpowers:writing-plans` now that Plan A
+has landed on master.
 
 **Not done / explicitly deferred:** only Shadowing Hub + Shadowing Practice were reviewed against the
 ~20-screen Figma file — the other ~18 screens are unreviewed, a natural follow-up once this
@@ -87,12 +54,11 @@ reconciliation lands (spec §7). Filename `docs/design/nihongo_page_playbook.md`
 `docs/reference/GRAND_PLAYBOOK.md` (historical vs. living) are open, not resolved by this spec or Plan
 A. Community/Leaderboard omission from the Figma nav redraw — confirmed an oversight by the user,
 also tracked in Claude's own cross-session memory system (`figma-nav-redesign-community-leaderboard-gap`,
-not a Serena memory) — Plan A Task 4 already re-adds both to the STUDY group, so this is resolved by
-executing Plan A, not a separate action item.
+not a Serena memory) — Plan A Task 4 already re-added both to the STUDY group, resolved.
 
-**Shadowing Hub Lesson Workspace Plan C (Hub UI) — still pending, paused (not superseded), resume
-after this reconciliation lands** so Plan C is built against the new nav/branding instead of needing a
-second pass. Detail below unchanged.
+**Shadowing Hub Lesson Workspace Plan C (Hub UI) — still pending, now UNBLOCKED.** This reconciliation
+has landed, so Plan C can now be built against the new nav/branding without needing a second pass.
+Detail below unchanged.
 
 ## ▶ (paused 2026-08-05) NEXT ACTION (updated 2026-07-31) — **Shadowing Hub Lesson Workspace Plan A (Docs) MERGED to master `a6a7617`, plus a small follow-up alignment commit `b9873ab`. Resume with Plan B (Backend).**
 
