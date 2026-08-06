@@ -74,8 +74,21 @@ describe("StyleGuide", () => {
     )) {
       if (name) colourTokens.add(name);
     }
-    for (const [, name] of css.matchAll(/(--[a-z0-9-]+):\s*var\(--[a-z0-9-]+\)/g)) {
-      if (name) colourTokens.add(name);
+    // The alias pass must check its TARGET, not just its shape: `--x: var(--y)`
+    // is not colour-specific syntax — the foundation block uses the exact same
+    // pattern for non-colour fallbacks (e.g. `--font-display: var(--font-sans)`
+    // in the typography system, spec 2026-08-06 §4). Only count an alias whose
+    // target already landed in colourTokens from the primitive pass above, so
+    // a future non-colour var() alias doesn't silently get treated as a colour
+    // and fail this test for the wrong reason. Every current semantic aliases
+    // a PRIMITIVE directly (verified against app/globals.css, 2026-08-06) —
+    // none aliases another semantic — so one pass over colourTokens as it
+    // stood after the primitive loop is sufficient; if that ever changes, this
+    // needs to iterate to a fixed point instead of a single pass.
+    for (const [, name, target] of css.matchAll(
+      /(--[a-z0-9-]+):\s*var\((--[a-z0-9-]+)\)/g,
+    )) {
+      if (name && target && colourTokens.has(target)) colourTokens.add(name);
     }
 
     renderGuide();
