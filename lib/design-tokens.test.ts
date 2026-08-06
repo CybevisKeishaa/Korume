@@ -24,6 +24,9 @@ const REQUIRED_TOKENS = [
   // spacing
   "--space-2xs", "--space-xs", "--space-sm", "--space-md",
   "--space-lg", "--space-xl", "--space-2xl", "--space-3xl",
+  // radius — declared absolutely, never derived. A calc()-chained scale means
+  // one edit to the base silently skews every other step.
+  "--radius", "--radius-sm", "--radius-md", "--radius-lg", "--radius-xl",
   // typography
   "--text-caption", "--text-body", "--text-body-lg", "--text-heading",
   "--text-title", "--text-display",

@@ -82,7 +82,16 @@
      alias — a scrim dims, it does not theme. */
   --scrim: 0 0% 0%;
 
-  --radius: 0.75rem;
+  /* Radius. Base moves 12px -> 20px to match the Figma cards (the design draws
+     rounded-[22px] and its DNA states "20-24px"). Steps are ABSOLUTE, not
+     calc()-derived, so changing one rung cannot skew the others. `sm` is kept
+     because chips, badges and field interiors need a radius well below the
+     card value; the point is that the scale is fixed, not that it has 3 rungs. */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius: 20px; /* compatibility default */
 }
 
 /**
