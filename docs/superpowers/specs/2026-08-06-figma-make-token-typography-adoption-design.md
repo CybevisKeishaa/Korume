@@ -8,8 +8,8 @@
 > visual language shares nothing with the shipped L9a-Plan-2 palette. Before any of those screens can
 > be ported, the token layer has to stop disagreeing with them.
 >
-> **Amends** `app/globals.css` (both colour tiers, radius, font tokens), `tailwind.config.ts`
-> (radius scale, font families, one new colour), `lib/design-tokens.test.ts`,
+> **Amends** `app/globals.css` (both colour tiers, radius, elevation, font tokens),
+> `tailwind.config.ts` (radius scale, font families, one new colour), `lib/design-tokens.test.ts`,
 > `lib/design-tokens.contrast.test.ts`, `components/ui/button.tsx`, `components/ui/badge.tsx`,
 > `app/[locale]/layout.tsx`.
 >
@@ -23,13 +23,20 @@
 
 ## 1. Scope
 
-This spec closes exactly two of the five steps the user sequenced:
+This spec closes the first two steps of the sequence the user set:
 
-1. **Chốt token dark Korume** ← this spec
+1. **Chốt token dark Korume** (colour, radius, elevation) ← this spec
 2. **Chốt font có tiếng Việt** ← this spec
-3. Port shared shell / AppNav ← next spec
-4. Port screen theo từng nhóm ← later
-5. Polish ← later
+3. Verify the 8 `components/ui/**` primitives against the new tokens ← next spec
+4. Layout primitives + shared shell / AppNav ← next spec
+5. Port screens by group ← later
+6. Polish ← later
+
+The user's ordering rationale, recorded because it changes how the porting spec is written:
+**Token → Component → Layout primitives → Pages**, *not* screen-by-screen (Hub → Practice →
+Companion → …). Once tokens and the shared primitives are correct, most of the 29 screens reduce to
+layout work. Porting screen-first would re-litigate the same button, card and badge decisions 29
+times.
 
 **Explicitly out of scope**, and deferred to the screen-port workflow spec that follows this one:
 porting any screen; an `AppShell` / navigation-mode contract; the four-way screen classification
@@ -52,6 +59,13 @@ Recorded now so the porting work cannot drift from them:
   mechanism shipped in `44521bc`. If a `navigation="app" | "none" | "focus"` distinction is needed,
   it must be expressed through the existing governance point or upgrade it there — not by inventing
   a second layout API.
+
+**Recorded intent, no action here (user, 2026-08-06):** once the ~30 screens settle, Figma should be
+promoted from a pile of screen mockups to a *design-system file* — colours, typography, spacing,
+elevation, radius, and the component set (buttons, cards, inputs, sidebar, dialogs, drawers, empty
+states, loading, charts, Companion/Lesson/Study components) extracted as reusable library entries.
+New screens then get assembled from components instead of re-prompted from scratch. This is work
+inside Figma, not in this repo; it is noted so the sequencing is not lost.
 
 ---
 
@@ -263,6 +277,47 @@ skew the others:
 **Not** `calc()`, and **not** `@theme inline` — that is Tailwind v4 syntax and this repo is Tailwind
 v3 with `tailwind.config.ts`. (The bundle is Vite + Tailwind v4; do not copy its idioms.)
 
+Four steps, not three: `sm 8px` is retained because it is what Figma's own `@theme` block declares
+(`--radius-sm: calc(var(--radius) - 12px)`) and because chips, badges and field interiors need a
+radius well below the 20px card value. The point of the change is that the scale is *fixed and
+small* — no 10/12/16/18 improvisation — not that it has exactly three rungs.
+
+### 3.5 Elevation
+
+The design's shadows show the same category-A drift as its oranges. One "floating" shadow is written
+five ways — `0 18px 40px rgb(0 0 0 /.18)` ×5, `0 16px 34px /.16` ×3, `0 18px 42px /.18` ×2,
+`0 18px 42px /.2` ×2, `0 15px 32px /.14` ×2 — and 137 shadow usages are dominated by raw Tailwind
+defaults (`shadow-lg` ×11, `shadow-md` ×8, `shadow-xl` ×4, `shadow-2xl` ×3) that never passed through
+a token at all.
+
+The three existing tokens are re-valued to the design's intent — *almost invisible, soft, premium;
+never Material*:
+
+| Token | Value |
+|---|---|
+| `--elevation-raised` | `0 1px 2px 0 rgb(0 0 0 / 0.24)` |
+| `--elevation-overlay` | `0 8px 20px -4px rgb(0 0 0 / 0.32)` |
+| `--elevation-floating` | `0 18px 40px -8px rgb(0 0 0 / 0.18)` — the canonical form of the five near-misses |
+
+The `[data-theme="dark"]` shadow override block in `globals.css` is deleted along with the rest of
+the dark block; these values *are* the dark values now.
+
+**Depth comes from surface lightness, not from shadow.** A black shadow on `#0b0d11` is nearly
+invisible by construction, which is precisely the "almost invisible" quality asked for. The real
+elevation ladder is `--background #0b0d11` → `--card #171a20` → `--secondary #20242c`; shadow only
+assists. Ported screens must not reach for a heavier shadow to create separation that belongs to the
+surface step.
+
+**Repo-side drift to sweep in the same pass:** 8 usages of raw `shadow-sm` / `shadow-md` in
+`components/` and `app/` bypass the `raised/overlay/floating` scale. Move them onto the tokens.
+
+⚠️ **One design element is held back deliberately.** `shadow-[0_0_12px_#FF8A3D]` (×3) is an orange
+glow, which contradicts the Design DNA's own "**No neon**" rule. Two inset uses —
+`inset 0 0 0 1px rgba(242,138,69,0.55)` and `inset 0 -2px 0 #FF8A3D` — are a selection ring and an
+active-tab underline, i.e. not elevation at all. None of the three becomes an elevation token here;
+they are per-screen decisions for the porting spec, where the glow-vs-no-neon conflict gets one
+recorded ruling.
+
 ---
 
 ## 4. Typography
@@ -332,9 +387,22 @@ Ordered by how silently each one fails.
    no light block, it must be rewritten to verify a single theme. Its HSL-triplet parser keeps
    working unchanged (§2.4) — only the block-finding logic changes. The pairs in §3.3 are the new
    expected set.
-2. **`lib/design-tokens.test.ts`** — replace `PRIMITIVE_TOKENS` wholesale; add `--secondary`,
-   `--secondary-foreground`, `--input-background` to the semantic list and the four radius steps to
-   `REQUIRED_TOKENS`.
+2. **`lib/design-tokens.test.ts`** — replace `PRIMITIVE_TOKENS` wholesale, and bring the contract up
+   to cover the **whole** semantic table of §3.2, not just the tokens that happen to be listed today.
+   A partially-updated list is worse than none: it reads as protection while leaving new tokens
+   unguarded. Explicit closure list —
+
+   - `SEMANTIC_COLOR_TOKENS` must include every row of §3.2: `--background`, `--foreground`, `--card`,
+     `--card-foreground`, `--muted`, `--muted-foreground`, `--border`, `--input`, **`--input-background`**,
+     `--ring`, `--primary`, `--primary-foreground`, **`--primary-strong`**, **`--secondary`**,
+     **`--secondary-foreground`**, `--accent`, `--accent-foreground`, **`--accent-strong`**,
+     `--success`, **`--success-strong`**, `--danger`, **`--danger-strong`**, **`--surface-overlay`**.
+   - `REQUIRED_TOKENS` must gain the four radius steps `--radius-sm|md|lg|xl` (plus `--radius`).
+   - Bolded entries are the ones either newly introduced by this spec or already present in
+     `globals.css` but **never asserted** by the contract — both categories are how a token silently
+     falls back to `unset` in the browser.
+   - The existing "every semantic token is a `var()` alias of a primitive" assertion still holds for
+     all of them except `--scrim`, which stays a literal by design (a scrim dims, it does not theme).
 3. **`components/ui/button.tsx` + `components/ui/badge.tsx`** — the `accent` variant is a CTA and
    must become `secondary` (`--void-800`), while `--accent` becomes warm sand for tags/status. Rename
    the variant rather than leaving an API whose name no longer describes it; update both tests and
@@ -392,7 +460,9 @@ Ordered by how silently each one fails.
 ## 8. Definition of Done
 
 - [ ] `app/globals.css`: primitives renamed + re-valued, semantic tier remapped, dark in `:root`,
-      no light block, four absolute radius steps, five font tokens
+      no light block (including the dark elevation override), four absolute radius steps,
+      three re-valued elevation tokens, five font tokens
+- [ ] 8 raw `shadow-sm` / `shadow-md` usages swept onto the elevation scale
 - [ ] `tailwind.config.ts`: `--secondary` colour, four radius steps via `var()`, four new font
       families — Tailwind **v3** syntax
 - [ ] `ThemeToggle` unmounted from app-nav + site-header, retained in the style guide; provider and
