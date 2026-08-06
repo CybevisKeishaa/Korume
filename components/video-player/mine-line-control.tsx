@@ -113,7 +113,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={popoverId}
-        className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
       >
         {t("mine.trigger")}
       </button>
@@ -134,7 +134,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
                     type="button"
                     onClick={() => void mine(segment.text, segment.reading)}
                     disabled={status === "submitting"}
-                    className="w-full rounded px-2 py-1 text-left font-jp text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                    className="w-full rounded px-2 py-1 text-left font-jp text-sm hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
                   >
                     {segment.text}
                     <span className="ml-1 text-xs text-muted-foreground">{segment.reading}</span>

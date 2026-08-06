@@ -107,7 +107,7 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
                 triggerRef.current?.focus();
               }}
               aria-label={t("wordLookup.close")}
-              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               ×
             </button>

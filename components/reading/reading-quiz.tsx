@@ -135,7 +135,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
                       key={value}
                       htmlFor={inputId}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm hover:bg-muted",
+                        "flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm hover:bg-secondary",
                         result && isCorrectChoice && "border-success bg-success/10",
                       )}
                     >

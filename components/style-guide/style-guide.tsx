@@ -42,7 +42,7 @@ export function StyleGuide() {
                   <Link
                     href="/admin/style-guide"
                     locale={locale}
-                    className="rounded-md border border-border px-xs py-2xs text-caption uppercase hover:bg-muted"
+                    className="rounded-md border border-border px-xs py-2xs text-caption uppercase hover:bg-secondary"
                   >
                     {locale}
                   </Link>
@@ -50,7 +50,12 @@ export function StyleGuide() {
               ))}
             </ul>
           </nav>
-          <ThemeToggle />
+          <div className="flex items-center gap-xs">
+            <ThemeToggle />
+            <span className="max-w-[16rem] text-caption text-muted-foreground">
+              {t("styleGuide.themeTogglePreviewNote")}
+            </span>
+          </div>
           <ReduceMotionToggle />
         </div>
       </header>

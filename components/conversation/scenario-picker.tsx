@@ -80,7 +80,7 @@ export function ScenarioPicker({ onStart, className }: ScenarioPickerProps) {
               onClick={() => onStart(id, level === "" ? undefined : level)}
               className="w-full"
             >
-              <Card className="h-full p-4 text-left transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+              <Card className="h-full p-4 text-left transition-colors hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
                 <p className="font-jp font-semibold">{t(`scenarios.${id}.label`)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {t(`scenarios.${id}.description`)}

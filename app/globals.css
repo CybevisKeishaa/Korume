@@ -21,6 +21,12 @@
  * Every pairing is WCAG AA — enforced by lib/design-tokens.contrast.test.ts.
  */
 :root {
+  /* Tells the UA to render its own chrome (scrollbars, form-field autofill,
+     native <select> popups, checkboxes — incl. the reduce-motion toggle,
+     CLAUDE.md §2.4) dark instead of defaulting to light. Korume ships
+     dark-only (see below), so this is unconditional, not media-gated. */
+  color-scheme: dark;
+
   /* — primitive tier — */
   --void-950: 220 21% 5%; /* #0b0d11 page */
   --void-900: 220 20% 9%; /* #12151b recessed */
@@ -83,16 +89,16 @@
      alias — a scrim dims, it does not theme. */
   --scrim: 0 0% 0%;
 
-  /* Radius. Base moves 12px -> 20px to match the Figma cards (the design draws
+  /* Radius. `lg` moves 12px -> 20px to match the Figma cards (the design draws
      rounded-[22px] and its DNA states "20-24px"). Steps are ABSOLUTE, not
      calc()-derived, so changing one rung cannot skew the others. `sm` is kept
      because chips, badges and field interiors need a radius well below the
-     card value; the point is that the scale is fixed, not that it has 3 rungs. */
+     card value; the point is that the scale is fixed, not that it has 3 rungs.
+     No unqualified `--radius` compatibility default: nothing consumed it. */
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-xl: 28px;
-  --radius: 20px; /* compatibility default */
 }
 
 /**

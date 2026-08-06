@@ -208,7 +208,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
               <button
                 type="button"
                 onClick={startEditPost}
-                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 {t("thread.editPost")}
               </button>
@@ -310,7 +310,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                         <button
                           type="button"
                           onClick={() => startEditComment(comment)}
-                          className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                          className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
                         >
                           {t("thread.editComment")}
                         </button>

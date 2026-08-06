@@ -137,7 +137,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     onClick={() => void move(index, -1)}
                     disabled={index === 0 || busy[item.videoId] === "busy"}
                     aria-label={t("detail.moveUpAriaLabel", { title: item.title })}
-                    className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
                     {t("detail.moveUp")}
                   </button>
@@ -146,7 +146,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     onClick={() => void move(index, 1)}
                     disabled={index === items.length - 1 || busy[item.videoId] === "busy"}
                     aria-label={t("detail.moveDownAriaLabel", { title: item.title })}
-                    className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
                     {t("detail.moveDown")}
                   </button>

@@ -79,7 +79,7 @@ export function TranscriptPane({
                 "flex-1 rounded-md px-3 py-2 text-left transition-colors",
                 isActive
                   ? "bg-primary/10 text-foreground ring-1 ring-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
               )}
             >
               <span className="font-jp block text-base leading-relaxed">

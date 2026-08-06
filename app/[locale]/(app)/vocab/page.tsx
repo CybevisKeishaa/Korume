@@ -54,7 +54,7 @@ export default async function VocabPage({
           <li key={v.id}>
             <Link
               href={`/vocab/${v.id}`}
-              className="flex items-baseline justify-between gap-4 p-4 hover:bg-muted"
+              className="flex items-baseline justify-between gap-4 p-4 hover:bg-secondary"
             >
               <div>
                 <span className="font-jp text-lg">{v.word}</span>

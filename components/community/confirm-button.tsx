@@ -96,7 +96,7 @@ export function ConfirmButton({
         <button
           type="button"
           onClick={cancel}
-          className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
           {t("actions.cancel")}
         </button>
@@ -114,7 +114,7 @@ export function ConfirmButton({
         "rounded-md px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-50",
         variant === "danger"
           ? "text-danger-strong hover:bg-danger/10"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          : "text-muted-foreground hover:bg-secondary hover:text-foreground",
         className,
       )}
     >

@@ -111,7 +111,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
                             "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
                             active
                               ? "bg-primary/10 text-primary-strong"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                           )}
                         >
                           {t(item.key)}
@@ -134,7 +134,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="w-full rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="w-full rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 {tCommon("auth.signOut")}
               </button>
@@ -146,7 +146,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
         type="button"
         aria-expanded={visible}
         onClick={() => setVisible((current) => !current)}
-        className="flex items-center justify-center border-b border-border bg-card py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:h-screen md:w-6 md:border-b-0 md:border-r md:py-0"
+        className="flex items-center justify-center border-b border-border bg-card py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:h-screen md:w-6 md:border-b-0 md:border-r md:py-0"
       >
         <span aria-hidden="true">{visible ? "‹" : "›"}</span>
         <span className="sr-only">

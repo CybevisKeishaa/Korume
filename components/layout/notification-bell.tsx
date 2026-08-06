@@ -190,7 +190,7 @@ export function NotificationBell() {
         aria-haspopup="dialog"
         aria-controls={open ? panelId : undefined}
         aria-label={`Notifications, ${unreadCount} unread`}
-        className="relative rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <BellIcon />
         {unreadCount > 0 && (
@@ -226,7 +226,7 @@ export function NotificationBell() {
                 triggerRef.current?.focus();
               }}
               aria-label="Close notifications"
-              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               ×
             </button>
@@ -302,7 +302,7 @@ export function NotificationBell() {
                           onClick={() => void markOne(notification.id)}
                           disabled={rateLimited}
                           aria-label={`${description}, unread`}
-                          className="flex w-full items-start gap-2 rounded-md p-2 text-left hover:bg-muted disabled:pointer-events-none disabled:opacity-60"
+                          className="flex w-full items-start gap-2 rounded-md p-2 text-left hover:bg-secondary disabled:pointer-events-none disabled:opacity-60"
                         >
                           {content}
                         </button>

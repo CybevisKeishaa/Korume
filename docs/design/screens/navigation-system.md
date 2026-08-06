@@ -201,8 +201,11 @@ section's lead sentence).
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 
-1. **Nav footer controls.** *Shipped today* in `app-nav.tsx`: `ThemeToggle`, `ReduceMotionToggle`,
-   the signed-in email, and sign-out. *Planned, NOT built* (verified against the code 2026-08-05 —
+1. **Nav footer controls.** *Shipped today* in `app-nav.tsx`: `ReduceMotionToggle`, the signed-in
+   email, and sign-out. `ThemeToggle` is NOT in the nav footer — Korume ships dark-only (2026-08-06
+   token adoption), and the toggle is retained only in the admin style guide
+   (`components/style-guide/style-guide.tsx`) as the future light-mode preview point.
+   *Planned, NOT built* (verified against the code 2026-08-05 —
    neither exists, and `grep -i "rain ?sound"` over `app/`, `components/`, `lib/`, `messages/`
    returns zero hits): a streak indicator, and a single "Rain Sound" ambient-audio toggle. The
    streak indicator would be the Gamification exception documented in § Gamification & Navigation

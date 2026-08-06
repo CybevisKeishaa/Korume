@@ -10,8 +10,8 @@ const variants: Record<Variant, string> = {
   secondary:
     "bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-raised",
   outline:
-    "border border-border bg-transparent text-foreground hover:bg-muted",
-  ghost: "bg-transparent text-foreground hover:bg-muted",
+    "border border-border bg-transparent text-foreground hover:bg-secondary",
+  ghost: "bg-transparent text-foreground hover:bg-secondary",
 };
 
 const sizes: Record<Size, string> = {

@@ -156,7 +156,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={open ? popoverId : undefined}
-        className="rounded-md bg-card/90 px-2 py-1 text-xs font-medium text-foreground shadow-raised hover:bg-muted"
+        className="rounded-md bg-card/90 px-2 py-1 text-xs font-medium text-foreground shadow-raised hover:bg-secondary"
       >
         {t("saveButton.trigger")}
       </button>
@@ -184,7 +184,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
                     type="button"
                     onClick={() => void addToPlaylist(playlist.id)}
                     disabled={addState.status === "adding"}
-                    className="w-full rounded px-2 py-1 text-left text-sm hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+                    className="w-full rounded px-2 py-1 text-left text-sm hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
                   >
                     {playlist.name}
                   </button>

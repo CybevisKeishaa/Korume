@@ -289,6 +289,12 @@ describe("admin.json EN — style-guide.tsx", () => {
     );
     expect(en.styleGuide.localeNavAria).toBe("Style guide locale");
   });
+
+  it("pins the ThemeToggle no-op preview note", () => {
+    expect(en.styleGuide.themeTogglePreviewNote).toBe(
+      "Retained as the future light-palette preview point. Korume ships dark-only today, so this toggle is currently a no-op.",
+    );
+  });
 });
 
 describe("admin.json EN — token-sections.tsx", () => {
@@ -306,7 +312,7 @@ describe("admin.json EN — token-sections.tsx", () => {
     expect(en.styleGuide.sections.colour.primitiveTier).toBe("Primitive tier");
     expect(en.styleGuide.sections.colour.semanticTier).toBe("Semantic tier");
     expect(en.styleGuide.sections.colour.semanticNote).toBe(
-      "Features consume ONLY this tier. Dark theme remaps it; L9b restyles by editing the mapping, not the features.",
+      "Features consume ONLY this tier. Korume ships dark-only; a future light theme returns as one added block, not a rebuild. L9b restyles by editing the mapping, not the features.",
     );
   });
 

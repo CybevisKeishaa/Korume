@@ -25,8 +25,9 @@ const REQUIRED_TOKENS = [
   "--space-2xs", "--space-xs", "--space-sm", "--space-md",
   "--space-lg", "--space-xl", "--space-2xl", "--space-3xl",
   // radius — declared absolutely, never derived. A calc()-chained scale means
-  // one edit to the base silently skews every other step.
-  "--radius", "--radius-sm", "--radius-md", "--radius-lg", "--radius-xl",
+  // one edit to the base silently skews every other step. No unqualified
+  // `--radius`: it had zero consumers outside docs/ and was deleted.
+  "--radius-sm", "--radius-md", "--radius-lg", "--radius-xl",
   // typography
   "--text-caption", "--text-body", "--text-body-lg", "--text-heading",
   "--text-title", "--text-display",
@@ -53,8 +54,9 @@ const PRIMITIVE_TOKENS = [
 ];
 
 // The semantic tier must be a var() alias of a primitive. This list is the
-// WHOLE table from the adoption spec §3.2 — a half-updated list reads as
-// protection while leaving new tokens unguarded.
+// table from the adoption spec §3.2 plus `--danger-foreground`, added during
+// execution — see §3.3. A half-updated list reads as protection while
+// leaving new tokens unguarded.
 const SEMANTIC_COLOR_TOKENS = [
   "--background", "--foreground", "--card", "--card-foreground",
   "--muted", "--muted-foreground", "--input-background",
@@ -147,6 +149,13 @@ describe("design tokens", () => {
     // the contrast test must both go back to asserting two themes.
     expect(css).not.toContain('[data-theme="light"]');
     expect(css).not.toContain('[data-theme="dark"]');
+  });
+
+  it("declares color-scheme: dark so UA-rendered chrome matches the palette", () => {
+    // Without this, scrollbars, autofill backgrounds, native <select> popups
+    // and checkboxes (incl. the reduce-motion toggle, CLAUDE.md §2.4) render
+    // light by default even though the whole app is dark.
+    expect(css).toMatch(/:root\s*\{[^}]*color-scheme:\s*dark;/);
   });
 
   it("defines all five typeface roles", () => {

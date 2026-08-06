@@ -93,7 +93,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
     <div
       className={cn(
         "max-w-[85%] rounded-lg px-4 py-2 text-sm",
-        isAi ? "self-start bg-muted text-foreground" : "self-end bg-primary/10 text-foreground",
+        isAi ? "self-start bg-secondary text-foreground" : "self-end bg-primary/10 text-foreground",
         className,
       )}
     >

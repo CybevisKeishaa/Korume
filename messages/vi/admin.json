@@ -218,12 +218,13 @@
     "heading": "Hướng dẫn giao diện",
     "subtitle": "Đặc tả thực thi — token và thành phần cơ bản được hiển thị từ mã nguồn thực tế.",
     "localeNavAria": "Ngôn ngữ hướng dẫn giao diện",
+    "themeTogglePreviewNote": "Giữ lại làm điểm xem trước cho giao diện sáng trong tương lai. Korume hiện chỉ có giao diện tối nên nút này hiện chưa có tác dụng.",
     "sections": {
       "colour": {
         "heading": "Màu sắc",
         "primitiveTier": "Tầng màu gốc",
         "semanticTier": "Tầng màu ngữ nghĩa",
-        "semanticNote": "Các tính năng chỉ dùng tầng này. Giao diện tối ánh xạ lại nó; L9b đổi phong cách bằng cách sửa phần ánh xạ, không sửa tính năng."
+        "semanticNote": "Các tính năng chỉ sử dụng tầng này. Korume hiện chỉ có giao diện tối; giao diện sáng trong tương lai sẽ là một khối bổ sung, không phải xây lại từ đầu. L9b đổi phong cách bằng cách sửa phần ánh xạ, không sửa tính năng."
       },
       "typography": {
         "heading": "Kiểu chữ",

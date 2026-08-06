@@ -218,12 +218,13 @@
     "heading": "Style guide",
     "subtitle": "Executable spec — tokens and primitives rendered from the live implementation.",
     "localeNavAria": "Style guide locale",
+    "themeTogglePreviewNote": "Retained as the future light-palette preview point. Korume ships dark-only today, so this toggle is currently a no-op.",
     "sections": {
       "colour": {
         "heading": "Colour",
         "primitiveTier": "Primitive tier",
         "semanticTier": "Semantic tier",
-        "semanticNote": "Features consume ONLY this tier. Dark theme remaps it; L9b restyles by editing the mapping, not the features."
+        "semanticNote": "Features consume ONLY this tier. Korume ships dark-only; a future light theme returns as one added block, not a rebuild. L9b restyles by editing the mapping, not the features."
       },
       "typography": {
         "heading": "Typography",

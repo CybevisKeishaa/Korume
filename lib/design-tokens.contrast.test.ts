@@ -107,7 +107,7 @@ function alphaBlend(fg: Rgb, bg: Rgb, alpha: number): Rgb {
 }
 
 /** Surfaces a tinted element can actually sit on in this app. */
-const SURFACES = ["--card", "--background", "--muted"] as const;
+const SURFACES = ["--card", "--background", "--muted", "--secondary"] as const;
 
 /** The four semantic colours used with the `bg-X/10 text-X-strong` pattern. */
 const TINTED = ["primary", "accent", "success", "danger"] as const;
