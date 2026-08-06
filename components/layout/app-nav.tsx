@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Link, usePathname } from "@/lib/i18n/navigation";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
 import { NotificationBell } from "@/components/layout/notification-bell";
 
@@ -126,8 +125,7 @@ export function AppNav({ userEmail }: { userEmail: string }) {
           </div>
 
           <div className="mt-4 space-y-3 border-t border-border pt-4">
-            <div className="flex items-center justify-between">
-              <ThemeToggle />
+            <div className="flex items-center justify-end">
               <ReduceMotionToggle />
             </div>
             <p className="truncate px-1 text-xs text-muted-foreground" title={userEmail}>

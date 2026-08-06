@@ -63,10 +63,10 @@ vi.mock("@/components/layout/notification-bell", () => ({
   NotificationBell: () => null,
 }));
 
-// AppNav renders ThemeToggle + ReduceMotionToggle, both of which call
-// useTheme() and throw outside a <ThemeProvider> (see
-// components/ui/reduce-motion-toggle.test.tsx for the same pattern). @/test/render
-// only supplies the i18n provider, so this test supplies ThemeProvider itself.
+// AppNav renders ReduceMotionToggle, which calls useTheme() and throws
+// outside a <ThemeProvider> (see components/ui/reduce-motion-toggle.test.tsx
+// for the same pattern). @/test/render only supplies the i18n provider, so
+// this test supplies ThemeProvider itself.
 function renderNav(userEmail = "learner@example.com") {
   return render(
     <ThemeProvider>
@@ -164,6 +164,11 @@ describe("AppNav", () => {
   it("renders the sign-out control from the shared namespace", () => {
     renderNav();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+  });
+
+  it("does not offer a theme toggle — Korume ships dark-only", () => {
+    renderNav();
+    expect(screen.queryByRole("button", { name: /theme|giao diện/i })).toBeNull();
   });
 });
 

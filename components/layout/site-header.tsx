@@ -2,7 +2,6 @@ import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { buttonStyles } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export async function SiteHeader() {
   const t = await getTranslations("marketing");
@@ -15,7 +14,6 @@ export async function SiteHeader() {
           {tCommon("appNameJp")}
         </Link>
         <nav aria-label={t("header.ariaLabel")} className="flex items-center gap-2">
-          <ThemeToggle />
           <Link
             href="/login"
             className={buttonStyles({ variant: "ghost", size: "sm" })}

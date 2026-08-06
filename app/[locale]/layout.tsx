@@ -80,11 +80,9 @@ export async function generateMetadata({
   };
 }
 
+/** Korume ships dark-only, so the browser chrome does not vary by preference. */
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafaf7" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f1420" },
-  ],
+  themeColor: "#0b0d11",
 };
 
 /** Enables static rendering for every locale (spec §7 risk 2). */
