@@ -63,7 +63,7 @@ const SEMANTIC_COLOR_TOKENS = [
   "--secondary", "--secondary-foreground",
   "--accent", "--accent-foreground", "--accent-strong",
   "--success", "--success-strong",
-  "--danger", "--danger-strong",
+  "--danger", "--danger-foreground", "--danger-strong",
   "--surface-overlay",
 ];
 
@@ -126,6 +126,7 @@ describe("design tokens", () => {
       "--success": "--mint-400",
       "--success-strong": "--mint-400",
       "--danger": "--coral-400",
+      "--danger-foreground": "--ink-950",
       "--danger-strong": "--coral-300",
       "--surface-overlay": "--void-850",
     };

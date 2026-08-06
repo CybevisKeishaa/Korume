@@ -53,6 +53,7 @@ const config: Config = {
         },
         danger: {
           DEFAULT: "hsl(var(--danger) / <alpha-value>)",
+          foreground: "hsl(var(--danger-foreground) / <alpha-value>)",
           strong: "hsl(var(--danger-strong) / <alpha-value>)",
         },
         // Floating-panel surface (dialog/popover/select/toast) — semantic tier.

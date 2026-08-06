@@ -156,6 +156,7 @@ describe("design token contrast (WCAG AA)", () => {
       ["--primary", "--primary-foreground"],
       ["--accent", "--accent-foreground"],
       ["--secondary", "--secondary-foreground"],
+      ["--danger", "--danger-foreground"],
     ] as const) {
       const ratio = contrastRatio(hslToRgb(resolve(foreground)), hslToRgb(resolve(fill)));
       if (ratio < AA_NORMAL_TEXT) failures.push(`${foreground} on ${fill}: ${ratio.toFixed(2)}:1`);

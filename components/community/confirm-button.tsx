@@ -89,7 +89,7 @@ export function ConfirmButton({
             setConfirming(false);
             onConfirm();
           }}
-          className="rounded-md bg-danger px-2 py-1 text-xs font-medium text-white hover:bg-danger/90"
+          className="rounded-md bg-danger px-2 py-1 text-xs font-medium text-danger-foreground hover:bg-danger/90"
         >
           {t("actions.confirmYes", { label: label.toLowerCase() })}
         </button>

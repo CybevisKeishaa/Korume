@@ -20,7 +20,7 @@ const SEMANTIC_COLORS = [
   "--border", "--input", "--ring",
   "--primary", "--primary-foreground", "--secondary", "--secondary-foreground",
   "--accent", "--accent-foreground",
-  "--success", "--danger",
+  "--success", "--danger", "--danger-foreground",
   // Text tones: the same hue tuned for legibility as TEXT rather than as a
   // fill (see globals.css). Features use these for words and icons.
   "--primary-strong", "--accent-strong", "--success-strong", "--danger-strong",

@@ -63,6 +63,7 @@
   --accent-foreground: var(--ink-950);
   --success: var(--mint-400);
   --danger: var(--coral-400);
+  --danger-foreground: var(--ink-950);
   /* — text tones —
      A semantic colour used as a FILL and the same colour used as TEXT have
      different contrast requirements. The tint pattern (`bg-primary/10
