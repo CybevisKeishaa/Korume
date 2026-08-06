@@ -100,8 +100,12 @@
  * tailwind.config.ts (p-md, text-body, shadow-overlay, duration-fast, z-toast…).
  */
 :root {
-  /* Font families (overridden by layout.tsx next/font configuration). */
+  /* Font families. next/font in app/[locale]/layout.tsx sets these at runtime;
+     the values here are only the pre-hydration fallback. */
   --font-sans: system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-serif: Georgia, serif;
+  --font-mono: ui-monospace, monospace;
   --font-jp: system-ui, sans-serif;
 
   /* Spacing rhythm. Tailwind's numeric scale stays available; this named scale

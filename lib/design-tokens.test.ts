@@ -148,6 +148,12 @@ describe("design tokens", () => {
     expect(css).not.toContain('[data-theme="dark"]');
   });
 
+  it("defines all five typeface roles", () => {
+    for (const token of ["--font-sans", "--font-display", "--font-serif", "--font-mono", "--font-jp"]) {
+      expect(css, `${token} must be defined`).toMatch(new RegExp(`${token}\\s*:`));
+    }
+  });
+
   it("keeps elevation single-theme and Korume-soft", () => {
     // Depth in Korume comes from the surface ladder (--background -> --card ->
     // --secondary), not from shadow: a black shadow on #0b0d11 is nearly
