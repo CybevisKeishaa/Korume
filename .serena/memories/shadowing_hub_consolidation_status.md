@@ -1,68 +1,46 @@
-# Shadowing Hub Consolidation — status
+# Shadowing Hub Consolidation — status: ✅ EXECUTED (corrected 2026-08-06)
 
-**Spec:** `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` — Status: Draft,
-content fully approved by the user after two review rounds, **execution not started**.
+**Spec:** `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md`.
+**Status: DECIDED *and* EXECUTED.** Its §6 17-file change list was carried out — not as its own
+branch, but folded into **Shadowing Hub Lesson Workspace Plan A (Docs)**, merged `--no-ff`
+**`a6a7617` (2026-07-31)**, plus alignment commit `b9873ab`.
 
-## What it decides
+> ⚠ This memory previously said "execution not started / parked". That was **wrong** as of
+> 2026-07-31 and stayed wrong until 2026-08-06. Quick proof it is done:
+> `docs/design/screens/screen-shadowing-hub.md` and `screen-shadowing-practice.md` both exist;
+> `screen-video-detail.md` survives only as the deprecated file.
+> **`mem:project_status` is the current authority for this whole area — read it, not this file.**
 
-Replaces the video-centric IA (`videos` nav item, `screen-video-library.md`, `screen-video-detail.md`,
-`screen-shadowing-detail.md` as three separate stops: Library → Detail → Shadowing) with a two-level
-model: **Shadowing Hub → Shadowing Lesson** (`/shadowing`, `/shadowing/[id]`). Shadowing Practice is the
-primary workspace rendered *within* the lesson route, not the route's identity — this framing matters
-for future extensibility (Dictation/Vocabulary/Grammar as sibling workspaces later, no new IA fight
-needed). Core principle stated as an ADR in the spec: **"The primary product domain is Shadowing, not
-Video."** No standalone Lesson Detail page, no Lesson Info Panel inside Practice — both were proposed
-and explicitly rejected during the brainstorm (see spec §2 for the full "how we got here" history).
-Companion's Learning Loop Boundary (`docs/design/design-reconciliation.md` §4/§6) is explicitly **not**
-touched — Companion still Dormant/Not Supported throughout Shadowing Practice, unchanged. New governance
-rule added by this spec: removing a screen must never be read as "Companion now covers this."
+## What it decided (still the live IA authority)
 
-## Trigger
+Replaced the video-centric IA (`videos` nav item, `screen-video-library.md`, `screen-video-detail.md`,
+`screen-shadowing-detail.md` as three separate stops) with a two-level model:
+**Shadowing Hub → Shadowing Lesson**. Shadowing Practice is the primary workspace rendered *within*
+the lesson route, not the route's identity — which is what lets Dictation/Vocabulary/Grammar arrive
+later as sibling workspaces with no new IA fight. Core ADR: **"The primary product domain is
+Shadowing, not Video."** No standalone Lesson Detail page, no Lesson Info Panel inside Practice —
+both proposed and explicitly rejected during the brainstorm (spec §2 has the full history).
+Companion's Learning Loop Boundary was explicitly **not** touched by this spec; new governance rule
+it added: removing a screen must never be read as "Companion now covers this."
 
-User shared two Figma exports (`public/demo/image.png` — matches `screen-shadowing-detail.md` well;
-`image1.png` — a "Shadowing Study Room" hub screen with session/streak rail) and asked whether work
-could proceed based on the already-reconciled `docs/design/` screens (see `mem:project_status` /
-[[design-docs-reconciliation-status]] in Claude's own memory — that reconciliation is a separate,
-already-complete piece of work; this spec builds on top of it, not instead of it). The images surfaced
-that Video Library / Video Detail / Shadowing Detail were three disconnected screens for what should be
-one learner journey.
+## What has changed *since*, that this spec did not anticipate
 
-## Execution plan (spec §6) — NOT STARTED
+- **Extended, not just executed.** `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md`
+  (LOCKED, `249c442`) layered a full Lesson domain model, Create Lesson pipeline, monetization model,
+  and the Lesson Workspace on top, and split delivery into **4 plans: A Docs / B Backend / C Hub UI /
+  D Lesson UI**.
+- **Plan B (Backend) DONE**, merged `b36c455` (2026-08-01), pushed. Lesson access levels, library/quota
+  ledger, collections, Create Lesson pipeline, Promotion Queue backend + 7 admin routes are live.
+- **View Mode was later retired** — Shadowing Practice is now a **Two-Layer Model** (`6ce08f9`,
+  branch merged `b56bba1`), superseding the three-layer framing in the 2026-07-31 spec §6.
+- **The route rename never happened.** This spec's own "out of scope" list deferred
+  `app/[locale]/(app)/videos` → `.../shadowing` and the `app-nav.tsx` change. The nav half landed in
+  the Korume rebrand Plan B (`44521bc`): the key/label is now `lessons`, but **`href` is still
+  `/videos`**. Anything linking to the Hub must use `/videos`; the route rename is **Plan C's call**.
 
-17 files, 4 phases:
+## Next
 
-1. `git mv` two renames: `screen-video-library.md`→`screen-shadowing-hub.md`,
-   `screen-shadowing-detail.md`→`screen-shadowing-practice.md`.
-2. Rewrite the two renamed files (Hub gains a Current-Session/streak rail + Layer Responsibility table;
-   Practice gets a one-line Lesson-vs-Practice clarifying note); mark `screen-video-detail.md`
-   **Deprecated** with an explicit "not the basis for future UI work" line.
-3. Governance docs: `navigation-system.md` (NAV_ITEMS swap + new Naming Principle section),
-   `design-reconciliation.md` (§2 Companion Rules bullet, §3 Gamification Hub/Dashboard split, §6 Anchor
-   table, §12 backlog list), `screen-architecture.md` (2 tables + Naming Principle bullet),
-   `screen-dashboard.md` (one cross-reference line).
-4. Terminology sweep, cross-references only: `workspace-patterns.md`, `learning-surfaces.md`,
-   `screen-mining.md`, `screen-review.md`, `screen-search.md`, `adaptive-layouts.md`,
-   `docs/design/patterns/empty-states.md`, `docs/design/patterns/transcript-patterns.md`.
-
-Exact per-file edits are written out in the spec's §6 — read it fresh rather than trusting this summary;
-this memory is a pointer, the spec is the source of truth.
-
-**Explicitly out of scope for this spec:** actual Next.js route/folder rename
-(`app/[locale]/(app)/videos` → `.../shadowing`) and `components/layout/app-nav.tsx` changes — deferred
-to a separate later implementation task, same pattern the prior design-docs-reconciliation spec used for
-deferring the speech-bubble visual restyle.
-
-## Why paused
-
-User said (2026-07-29): "tôi sẽ làm cái khác trước, task l9b của tôi vẫn chưa xong" — L9b (Companion
-Presence surfaces) takes priority; see `mem:project_status` NEXT ACTION block. This spec is fully
-designed and approved; only *execution* was deferred, not the decision itself.
-
-## How to apply next session
-
-Before touching `docs/design/` nav/video/shadowing screens, or before creating any new screen doc that
-would reference "Video Library"/"Video Detail"/"videos" as a concept, read the spec file fresh and
-check whether §6 has been executed (quick check: does `docs/design/screens/screen-shadowing-hub.md`
-exist? If not, the spec is still pending). Don't re-run the brainstorming conversation — the design is
-settled. Only re-confirm with the user if enough time or other changes have passed that an assumption in
-the spec (e.g. the Figma direction, or L9b's own IA) might have shifted underneath it.
+**Plan C (Hub UI)** — needs its own `superpowers:writing-plans` pass against Plan B's live API surface.
+Sequenced *after* the Figma Make adoption brainstorm (`mem:figma_make_design_source`), because the Hub
+screen is one of the 29 designed frames and `Shadowing hub after changes` (149:2, the 1536px one) is
+the newest iteration Plan C should build against.

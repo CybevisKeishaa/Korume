@@ -136,7 +136,9 @@ not a Serena memory) — Plan A Task 4 already re-added both to the STUDY group,
 has landed, so Plan C can now be built against the new nav/branding without needing a second pass.
 Detail below unchanged.
 
-## ▶ (paused 2026-08-05) NEXT ACTION (updated 2026-07-31) — **Shadowing Hub Lesson Workspace Plan A (Docs) MERGED to master `a6a7617`, plus a small follow-up alignment commit `b9873ab`. Resume with Plan B (Backend).**
+## ▶ (superseded 2026-08-05) — **Shadowing Hub Lesson Workspace: Plan A (Docs) MERGED `a6a7617` + alignment `b9873ab`; Plan B (Backend) MERGED `b36c455` (pushed). NEXT = Plan C (Hub UI), after the Figma Make brainstorm. Detail below.**
+> ⚠ The old heading here said "Resume with Plan B" — stale since 2026-08-01, corrected 2026-08-06.
+> Plan B is done (see its block below). Plan C and Plan D are what remain.
 
 **What happened 2026-07-31 (supersedes the L9b Plan 1 brainstorm block below — that item was absorbed, see next paragraph):** A new spec
 `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` (LOCKED, committed
@@ -1059,13 +1061,17 @@ video-card gets a slot); community cursor pagination assumes distinct created_at
 boundaries; admin stats count ids in JS not count:'exact' (fine at current scale); manual browser
 click-through of /community, /playlists, /leaderboard, /admin not done (unit+build only).
 
-## Parked (not blocking L9b)
+## Parked
 
-**Shadowing Hub Consolidation IA spec** — approved-in-conversation 2026-07-29, spec written and
-revised at `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md`, **NOT yet
-executed** (user explicitly deferred execution to finish L9b first: "tôi sẽ làm cái khác trước, task
-l9b của tôi vẫn chưa xong"). The design itself is fully settled, not paused — only §6's 17-file
-execution list is pending. Full state, why, and resume point: `mem:shadowing_hub_consolidation_status`.
+*(nothing currently parked — the one entry that lived here is resolved, see below)*
+
+**~~Shadowing Hub Consolidation IA spec~~ — ✅ EXECUTED, no longer parked (corrected 2026-08-06).**
+`docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §6's 17-file change list was
+carried out inside **Lesson Workspace Plan A (Docs)**, merged `a6a7617` (2026-07-31) — not as its own
+branch, which is why this section wrongly still read "NOT yet executed" for a week. Proof: both
+`docs/design/screens/screen-shadowing-hub.md` and `screen-shadowing-practice.md` exist.
+The old "user deferred it to finish L9b first" note is historical only.
+`mem:shadowing_hub_consolidation_status` has been rewritten to match.
 
 ## Working agreements
 TDD-first, tests shown passing. code-reviewer signs off every non-trivial change before "done".

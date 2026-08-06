@@ -1,5 +1,16 @@
 # Figma Make design source — the real UI source of truth (probed 2026-08-05)
 
+> ⚠️ **The local bundle at `C:\Users\tplon\Downloads\Design Shadowing Page UI` is a STALE SNAPSHOT.**
+> Proven 2026-08-06, after ONE day: its `src/styles/fonts.css` imports only Plus Jakarta Sans + DM Mono,
+> while the user reports the live project now also loads Noto Serif JP. **Treat the live Figma Make
+> project as authoritative and re-verify any value before relying on it.** This is the concrete
+> evidence behind the rule against committing snapshots into the repo.
+>
+> **Agenda A/B (style drift → tokens, palette) is now SPECCED and locked:**
+> `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` (`f728731`).
+> It supersedes the primitive-naming and font paragraphs below — corrections are marked inline.
+> Agenda C (per-screen divergence) is still deferred and still handled lazily, one screen at a time.
+
 Supersedes the earlier assumption that `docs/design/` screens + PNG exports (`public/demo/image.png`,
 `image1.png`) were the only design input. There is a **Figma Make code bundle** that is a far better
 source than anything reachable through the Figma MCP.
@@ -77,7 +88,16 @@ shipped L9a Plan 2 light-first palette.
 | Format | HSL triplets, **Tailwind v3** + `tailwind.config.ts` | hex, `@theme inline`, **Tailwind v4** |
 | Extra | `--font-jp`, `--space-*` scale, primitive tier | `--sidebar-*`, `--chart-1..5`, `--switch-background` |
 
-**Cheapest implementation path (agreed): keep the two-tier architecture AND the Japanese primitive
+⚠️ **SUPERSEDED 2026-08-06 by `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md`
+(committed `f728731`). Read that spec, not the paragraph below.** The user overruled the "keep the
+Japanese names" half: `#ff8a3d` is a warm orange, not 朱色, and indigo 藍 is deleted from the system
+outright as contradicting the Korume DNA. Primitives are renamed to neutral material names
+(`void / paper / ink / slate / ember / sand / mint / coral`). **The cost warning below was simply
+wrong** — measured, primitive names appear in exactly TWO places (`app/globals.css` and the
+`PRIMITIVE_TOKENS` array in `lib/design-tokens.test.ts`); `components/style-guide/style-guide.tsx`
+and every component reference them ZERO times. Renaming forfeits no enforcement whatsoever.
+
+(historical) **Cheapest implementation path (agreed): keep the two-tier architecture AND the Japanese primitive
 names — only re-VALUE the primitive tier from the Figma palette.** The semantic tiers match
 name-for-name (both follow the shadcn convention: `--background`, `--foreground`, `--card`,
 `--card-foreground`, `--muted`, `--muted-foreground`, `--border`, `--input`, `--ring`, `--primary`,
@@ -87,13 +107,32 @@ the style guide `/[locale]/admin/style-guide` structural, requires no component 
 makes the radius change a one-liner. Replacing the naming scheme instead would forfeit all of that
 for nothing.
 
-**Still open (user chose "hoãn — quyết khi làm token", 2026-08-05): light mode.** Figma is dark-only;
+✅ **RESOLVED 2026-08-06 (this was the deferred "quyết khi làm token" decision): dark-only values in
+`:root`, NO light block written, but the `data-theme` mechanism + `ThemeProvider` + the `ThemeToggle`
+component and its tests are all RETAINED. Only the mount points change — removed from `app-nav.tsx`
+and `site-header.tsx`, KEPT in `style-guide.tsx` (the admin surface is where a future light palette
+would be previewed). Restoring light mode later = writing one block of values.** Original framing below.
+
+(historical) **Still open (user chose "hoãn — quyết khi làm token", 2026-08-05): light mode.** Figma is dark-only;
 the repo ships both plus a **ThemeToggle already live in the app-nav footer**. Options were: drop light
 mode entirely (ThemeToggle becomes dead UI and must be removed), or keep a derived light mode (risk:
 no one has checked the 29 screens in light). **Dark-first is locked; the light-mode question is
 deferred to the token-writing task.** WCAG AA (CLAUDE.md §2 rule 5) applies either way.
 
-**Fonts:** repo has `--font-sans: system-ui` and `--font-jp: system-ui` — both placeholders, never set.
+**Fonts — ⚠️ THE CLAIM BELOW IS WRONG, corrected 2026-08-06.** The repo does NOT run on `system-ui`
+placeholders: `app/[locale]/layout.tsx:14-19` loads **Inter** (`--font-sans`) + **Noto Sans JP**
+(`--font-jp`) via `next/font/google`. The `system-ui` in `globals.css` is only the pre-`next/font`
+fallback. **Also: the design prompts name NO font at all** — grep of
+`Jakarta|Outfit|M PLUS|Noto|Inter|DM Mono|Mincho|Gothic` over all 21 tier-A `*.md` returns 0 hits, so
+the bundle's faces were the Make generator's choice, not design intent. **And three of them cannot
+render Vietnamese** (checked against Next's own `font-data.json`): Outfit, Noto Serif JP, DM Mono all
+lack the `vietnamese` subset — fatal in a VN-first app where they were assigned the headings and the
+whole Diary prose. Decided roles: `--font-sans` Plus Jakarta Sans · `--font-display` **Be Vietnam Pro**
+(replaces Outfit) · `--font-serif` **Noto Serif** (replaces Noto Serif JP) · `--font-mono` **IBM Plex
+Mono** (replaces DM Mono) · `--font-jp` **Noto Sans JP unchanged** (it carries furigana at tiny sizes,
+where mincho serifs break first).
+
+(historical, INCORRECT) **Fonts:** repo has `--font-sans: system-ui` and `--font-jp: system-ui` — both placeholders, never set.
 Design uses `Plus Jakarta Sans` (Latin) + `M PLUS Rounded 1c` (Japanese glyphs like 話) + `DM Mono` +
 `Outfit`. Proposal (not yet ratified): adopt Plus Jakarta Sans → `--font-sans`, M PLUS Rounded 1c →
 `--font-jp`. **Bug in the bundle:** `src/styles/fonts.css` imports ONLY Plus Jakarta Sans + DM Mono, so
