@@ -109,7 +109,10 @@ export function Waveform({ blob, label, className, height = 64 }: WaveformProps)
     // fails (e.g. a detached canvas in a test environment); it mirrors
     // --primary/--ember-500 (#ff8a3d), the one accent colour left in the
     // palette after this migration deleted the old indigo (#4f46e5,
-    // --indigo-600) it used to be.
+    // --indigo-600) it used to be. Canvas cannot parse var(--primary)
+    // directly, so this literal has to be hand-kept in sync with
+    // --ember-500 — if that primitive is ever re-valued, this line goes
+    // stale exactly the way the indigo one did.
     ctx.fillStyle = getComputedStyle(canvas).color || "#ff8a3d";
     envelope.forEach((amp, i) => {
       const barHeight = Math.max(1, amp * mid);
