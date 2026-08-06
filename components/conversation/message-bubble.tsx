@@ -125,7 +125,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
 
         {!isAi && message.pronunciation_score !== null && (
           <span
-            className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-foreground"
+            className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-strong"
             title={t("messageBubble.pronunciationScoreTitle")}
           >
             {t("messageBubble.pronunciationLabel")} {Math.round(message.pronunciation_score)}
