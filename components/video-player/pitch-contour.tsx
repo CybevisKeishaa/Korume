@@ -97,14 +97,26 @@ function drawContour(
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Reference baseline (the speaker's own median pitch — semitone 0).
-  ctx.strokeStyle = "rgba(148, 163, 184, 0.4)"; // light, decorative gridline
+  // Was rgba(148, 163, 184, 0.4) — a mid-grey that read as a dim line against
+  // a light card. Same 40% opacity, base colour flipped to white so it reads
+  // as a faint hairline on the Korume dark surface instead (composites to
+  // ~rgb(115,118,121) on --card #171a20, ~3.8:1 against it — clearly present
+  // without competing with the ember contour line below).
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(0, baselineY);
   ctx.lineTo(canvas.width, baselineY);
   ctx.stroke();
 
-  const lineColor = getComputedStyle(canvas).color || "#4f46e5";
+  // getComputedStyle(canvas).color resolves the inherited `text-primary`
+  // class (hsl(var(--primary)) = ember-500) into a literal the canvas 2D
+  // context can use directly — canvas does not resolve CSS custom properties
+  // itself. The literal fallback only fires if that resolution fails (e.g. a
+  // detached canvas in a test environment); it mirrors --primary/--ember-500
+  // (#ff8a3d), the one accent colour left in the palette after this
+  // migration deleted the old indigo (#4f46e5, --indigo-600) it used to be.
+  const lineColor = getComputedStyle(canvas).color || "#ff8a3d";
 
   // Contour line — a new subpath starts after every gap so unvoiced spans
   // never get bridged by a straight line.
