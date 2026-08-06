@@ -227,9 +227,11 @@
       },
       "typography": {
         "heading": "Kiểu chữ",
-        "note": "Chiều cao dòng của phần thân được đo cho dấu tiếng Việt xếp chồng; văn bản tiếng Nhật dùng leading-jp (spec §4.5 mục 1)."
+        "note": "Chiều cao dòng của phần thân được đo cho dấu tiếng Việt xếp chồng; văn bản tiếng Nhật dùng leading-jp (spec §4.5 mục 1).",
+        "rolesHeading": "Vai trò phông chữ"
       },
       "spacing": { "heading": "Khoảng cách" },
+      "radius": { "heading": "Độ bo góc" },
       "elevation": { "heading": "Độ nổi" },
       "motion": {
         "heading": "Chuyển động",

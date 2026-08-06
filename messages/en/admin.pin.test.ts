@@ -318,6 +318,11 @@ describe("admin.json EN — token-sections.tsx", () => {
       "This line uses animate-fade-in (duration-base × ease-standard). With reduce motion on — toggle above — it must appear instantly.",
     );
   });
+
+  it("pins the typography roles subheading and the radius section heading (Task 8)", () => {
+    expect(en.styleGuide.sections.typography.rolesHeading).toBe("Font roles");
+    expect(en.styleGuide.sections.radius.heading).toBe("Radius");
+  });
 });
 
 describe("admin.json EN — primitive-sections.tsx", () => {

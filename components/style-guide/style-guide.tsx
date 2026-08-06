@@ -8,6 +8,7 @@ import {
   ColorSection,
   ElevationSection,
   MotionSection,
+  RadiusSection,
   SpacingSection,
   TypographySection,
   ZIndexSection,
@@ -56,6 +57,7 @@ export function StyleGuide() {
       <ColorSection />
       <TypographySection />
       <SpacingSection />
+      <RadiusSection />
       <ElevationSection />
       <MotionSection />
       <ZIndexSection />

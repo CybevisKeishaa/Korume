@@ -227,9 +227,11 @@
       },
       "typography": {
         "heading": "Typography",
-        "note": "Body line-heights are sized for stacked Vietnamese diacritics; Japanese text takes leading-jp (spec §4.5 touchpoint 1)."
+        "note": "Body line-heights are sized for stacked Vietnamese diacritics; Japanese text takes leading-jp (spec §4.5 touchpoint 1).",
+        "rolesHeading": "Font roles"
       },
       "spacing": { "heading": "Spacing" },
+      "radius": { "heading": "Radius" },
       "elevation": { "heading": "Elevation" },
       "motion": {
         "heading": "Motion",

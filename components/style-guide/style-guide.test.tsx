@@ -33,6 +33,7 @@ describe("StyleGuide", () => {
       "Colour",
       "Typography",
       "Spacing",
+      "Radius",
       "Elevation",
       "Motion",
       "Z-index",
@@ -54,6 +55,31 @@ describe("StyleGuide", () => {
       screen.getAllByText(/Học tiếng Nhật qua phim/).length,
     ).toBeGreaterThan(0);
     expect(screen.getByText(/映画で日本語を学ぶ/)).toBeInTheDocument();
+  });
+
+  it("shows all five font-role samples, each carrying a two-tier-diacritic VN sample (or JP for font-jp)", () => {
+    renderGuide();
+    // The four Latin roles (font-sans/display/serif/mono) share one VN
+    // stress string — repeated once per role, so getAllByText.
+    expect(
+      screen.getAllByText(/Học tiếng Nhật cùng Korume/).length,
+    ).toBe(4);
+    expect(screen.getByText(/日本語 · 話す · ひらがな/)).toBeInTheDocument();
+    for (const cls of ["font-sans", "font-display", "font-serif", "font-mono", "font-jp"]) {
+      expect(screen.getByText(cls)).toBeInTheDocument();
+    }
+  });
+
+  it("shows all four radius steps with their pixel values", () => {
+    renderGuide();
+    for (const [cls, px] of [
+      ["rounded-sm", 8],
+      ["rounded-md", 14],
+      ["rounded-lg", 20],
+      ["rounded-xl", 28],
+    ] as const) {
+      expect(screen.getByText(new RegExp(`${cls} · ${px}px`))).toBeInTheDocument();
+    }
   });
 
   it("lists every colour token defined in globals.css", () => {
