@@ -6,10 +6,27 @@
 > project as authoritative and re-verify any value before relying on it.** This is the concrete
 > evidence behind the rule against committing snapshots into the repo.
 >
-> **Agenda A/B (style drift → tokens, palette) is now SPECCED and locked:**
-> `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` (`f728731`).
-> It supersedes the primitive-naming and font paragraphs below — corrections are marked inline.
-> Agenda C (per-screen divergence) is still deferred and still handled lazily, one screen at a time.
+> ✅ **Agenda A/B (style drift → tokens, palette, fonts) is BUILT AND MERGED** — spec
+> `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` (`f728731`),
+> plan `.../plans/2026-08-06-figma-make-token-typography-foundation.md`, merged `--no-ff` at
+> **`86328bc` (2026-08-07)**. It supersedes the primitive-naming and font paragraphs below —
+> corrections are marked inline. Post-merge: 218 files / 1966 tests, tsc 0, lint 77 warnings.
+> **Agenda C (per-screen divergence) is still deferred and still handled lazily, one screen at a time.**
+>
+> **What the token layer now gives a ported screen** (read before porting anything):
+> semantic names are unchanged shadcn (`bg-primary`, `text-muted-foreground`, …) so imports don't
+> change; ONE ember accent `#ff8a3d`; `--secondary` `#20242c` for secondary CTAs and for **hover**;
+> warm sand `--accent` `#e8a05d` for tags/status only, never a CTA; radius 8/14/20/28; elevation is
+> deliberately almost invisible because **depth comes from the surface ladder**
+> `--background #0b0d11 → --card #171a20 → --secondary #20242c`, not from shadow.
+> ⚠️ The design's orange glow `shadow-[0_0_12px_#FF8A3D]` was **deliberately NOT adopted** — it
+> contradicts the Design DNA's own "No neon" rule, and per the one-directional rule the fix belongs
+> in Figma. It is an open category-C ruling for the porting spec.
+>
+> **NOT verified and owed by a human:** `/dashboard` and `/admin/style-guide` were never opened in a
+> browser — both are auth-gated and the assistant may not create accounts or enter passwords. Only
+> `/vi` and `/vi/login` were visually checked. Spec §6 asked for a dense real screen; that is still
+> outstanding, and it is exactly the check that would have caught the `--muted` hover problem earlier.
 
 Supersedes the earlier assumption that `docs/design/` screens + PNG exports (`public/demo/image.png`,
 `image1.png`) were the only design input. There is a **Figma Make code bundle** that is a far better

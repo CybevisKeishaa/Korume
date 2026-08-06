@@ -731,12 +731,25 @@ Next.js **14.2.35** App Router + TS strict + Tailwind. React **18.3.1**. Supabas
 (Postgres + Auth + Storage) via `@supabase/ssr`. Zod. Motion: Lenis + Framer + GSAP.
 AI: `@anthropic-ai/sdk` 0.111.0. Tests: Vitest+RTL (unit), Playwright (`tests/e2e`). Staying on
 **Next 14** (revisit L8; don't silently bump — see `nextjs-14-pin-decision`).
+**Fonts (since `86328bc`, five roles via `next/font/google`):** `--font-sans` Plus Jakarta Sans ·
+`--font-display` Be Vietnam Pro · `--font-serif` Noto Serif · `--font-mono` IBM Plex Mono ·
+`--font-jp` Noto Sans JP. **Only sans + jp preload**; the other three are `preload: false` +
+`display:"swap"`. Outfit / Noto Serif JP / DM Mono were REJECTED — none has a `vietnamese` subset and
+they had been assigned the headings and the Companion Diary prose in a VN-first app. `--font-jp`
+stays a sans because it carries furigana at very small sizes, where mincho serifs break first.
+⚠️ **`subsets: ["latin"]` does NOT suppress CJK** — Noto Sans JP still emits 373 unicode-range
+`@font-face` rules and the browser fetches the needed slice. Verified in-browser. Also: **width
+comparison cannot detect CJK fallback** (both real and fallback render full-width at exactly 1em) —
+inspect `@font-face` unicode-ranges instead.
 
 ## Branching policy (user-set)
 One branch per layer `layer-<n>-<slug>` off master; merge `--no-ff` ONLY after DoD (tests pass +
 code-reviewer sign-off); never push unless asked. History: L1 `1d1628e`, L2 `618e1a4`,
 L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`, L7 `01ae59d`, Spec A `201a9b4`,
-Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`, L9a-Plan3 `d7b158c`.
+Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`, L9a-Plan3 `d7b158c`,
+Design-docs reconciliation `20d6eed`, Shadowing Hub Lesson Workspace Plan A `a6a7617` / Plan B
+`b36c455`, Shadowing Practice Figma reconciliation `b56bba1`, Korume rebrand Plan A `69c4685` /
+Plan B `44521bc`, **Figma token + typography foundation `86328bc` (2026-08-07)**.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),
@@ -1038,6 +1051,30 @@ Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`, L9a-Plan3 `d
   as COLOURS and silently strips them. **Any new scale added to tailwind.config.ts MUST also be
   added there** — `lib/utils.test.ts` is the guard. Also: dynamic class names (`shadow-${x}`)
   are never emitted by Tailwind static extraction — use literal maps.
+- **Design tokens are DARK-ONLY since `86328bc`.** Values live in `:root`; there is **no
+  `[data-theme]` block at all**, and `lib/design-tokens.test.ts` asserts the string is absent.
+  `ThemeProvider` + `data-theme` + `components/ui/theme-toggle.tsx` are all retained on purpose, so
+  light mode returns as ONE added block. The toggle is mounted only in the admin style guide.
+  `color-scheme: dark` is declared in `:root` and pinned by test — without it the UA keeps rendering
+  scrollbars, autofill, native `<select>`s and checkboxes in the light scheme.
+- **Primitive names are `void / paper / ink / slate / ember / sand / mint / coral`** — the Japanese
+  scheme (`vermilion`/`indigo`/`washi`/`sumi`) is gone, and indigo was deleted outright. Primitives
+  are referenced in exactly THREE places: `app/globals.css`, `PRIMITIVE_TOKENS` in
+  `lib/design-tokens.test.ts`, and `PRIMITIVE_COLORS` in `components/style-guide/token-sections.tsx`.
+  A **fourth** location must stay in sync for semantics: `tailwind.config.ts`. A token present in
+  three of four is the classic drift.
+- **`-foreground` is for SOLID fills; `-strong` is for text on an alpha tint.** Pairing `-foreground`
+  with `bg-<c>/<alpha>` is a real bug that shipped twice. And structural correctness is not enough —
+  the pairing must actually measure ≥4.5:1. `--paper-50` on `--accent` is 1.98:1 and on `--danger`
+  2.98:1, so **text on a warm fill is always `--ink-950`**.
+- **Auditing colour usage needs MORE than one grep.** This bit twice in one branch:
+  `bg-<c>/<alpha>` missed `notification-bell` (no alpha suffix), and `hover:bg-muted` missed
+  `select.tsx`'s `data-[highlighted]:bg-muted` — the keyboard-nav indicator, i.e. CLAUDE.md §2 rule 5.
+  Always sweep variants (`data-[…]`, `focus`, `focus-visible`, `group-hover`, `aria-*`, `peer-*`)
+  AND hardcoded colours (`text-white`, `text-black`, `text-[#…]`) on solid fills.
+- **`--muted` is a RECESSED surface (1.07:1 vs background), not a hover surface.** Hover uses
+  `--secondary` (`--void-800`, 1.26:1). `bg-muted` as the resting colour of an unselected tab/pill
+  with `hover:text-foreground` is a different, legitimate pattern — leave those alone.
 - **Design-system boundaries (L9a-Plan2)**: `@radix-ui/*` imports only in `components/ui/**`
   (ESLint, fire-tested); the `components/ui/**` ESLint override RESTATES the whole
   no-restricted-imports rule minus Radix — editing one copy requires editing both. New ui
@@ -1066,9 +1103,16 @@ degrade to "not configured". `AZURE_SPEECH_KEY` present but **INVALID — Azure 
 `ADMIN_EMAILS="admin@almostgone.vn"` added 2026-07-14 (bootstrap admin exists locally).
 
 ## Verify commands
-`npx tsc --noEmit` · `npx vitest run` (**1293 unit / 174 files** @ 2026-07-18 post-L9a-Plan2;
-lint = exit 0 WITH 80 pre-existing warnings across 23 files — long-standing debt, "clean" means
-0 NEW) · `npm run lint` ·
+`npx tsc --noEmit` · `npx vitest run` (**1966 unit / 218 files** @ 2026-08-07 post-token-foundation
+`86328bc`; lint = exit 0 WITH **77** pre-existing warnings — long-standing debt, "clean" means
+0 NEW, and compare the RULE MIX not the count: `54 no-non-null-assertion + 23 no-unused-vars`) ·
+`npm run lint` ·
+⚠️ **With a worktree present, `npm test` from the repo root scans it too** — `vitest.config.ts`
+excludes `node_modules`, `.next`, `tests/e2e` but NOT `.worktrees/`. Pass `--exclude ".worktrees/**"`
+or remove the worktree first. Still not fixed in config.
+⚠️ **A worktree has NO `.env.local`** (gitignored, not copied). Without the full env, every
+auth-dependent Playwright spec fails in a way that looks exactly like a code regression. Copy
+`.env.local` from the main checkout before trusting an e2e run there, then remove the secrets.
 `npm run build` (~52s) · `npx playwright test` (2 e2e, ~37s; kill any stale node on :3000 first —
 reuseExistingServer picks it up) · `npx supabase db reset` (15 migrations).
 Known CPU-contention flakes (standalone-green): `pitch-contour.test.tsx`, `waveform.test.tsx`.
