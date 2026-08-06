@@ -123,7 +123,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
           id={popoverId}
           role="group"
           aria-label={t("mine.a11y.pickWord")}
-          className="absolute right-0 z-10 mt-1 w-56 rounded-md border border-border bg-card p-2 shadow-md"
+          className="absolute right-0 z-10 mt-1 w-56 rounded-md border border-border bg-card p-2 shadow-overlay"
         >
           {kanjiSegments.length > 0 ? (
             <ul className="space-y-1">

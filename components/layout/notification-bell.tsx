@@ -212,7 +212,7 @@ export function NotificationBell() {
           id={panelId}
           role="dialog"
           aria-labelledby={headingId}
-          className="panel-in absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-md"
+          className="panel-in absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
           <div className="flex items-center justify-between gap-2">
             <h2 id={headingId} className="text-sm font-semibold">

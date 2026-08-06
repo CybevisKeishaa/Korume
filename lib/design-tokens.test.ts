@@ -147,4 +147,19 @@ describe("design tokens", () => {
     expect(css).not.toContain('[data-theme="light"]');
     expect(css).not.toContain('[data-theme="dark"]');
   });
+
+  it("keeps elevation single-theme and Korume-soft", () => {
+    // Depth in Korume comes from the surface ladder (--background -> --card ->
+    // --secondary), not from shadow: a black shadow on #0b0d11 is nearly
+    // invisible by construction, which is the "almost invisible" quality the
+    // design asks for. These three tokens only assist.
+    expect(css).toMatch(/--elevation-raised:\s*0 1px 2px 0 rgb\(0 0 0 \/ 0\.24\)/);
+    expect(css).toMatch(/--elevation-overlay:\s*0 8px 20px -4px rgb\(0 0 0 \/ 0\.32\)/);
+    expect(css).toMatch(/--elevation-floating:\s*0 18px 40px -8px rgb\(0 0 0 \/ 0\.18\)/);
+    // Each elevation token is defined exactly once — the dark override block is
+    // gone with the rest of the two-theme structure.
+    for (const token of ["--elevation-raised", "--elevation-overlay", "--elevation-floating"]) {
+      expect(css.match(new RegExp(`${token}\\s*:`, "g"))?.length).toBe(1);
+    }
+  });
 });

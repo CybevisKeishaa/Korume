@@ -156,7 +156,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={open ? popoverId : undefined}
-        className="rounded-md bg-card/90 px-2 py-1 text-xs font-medium text-foreground shadow-sm hover:bg-muted"
+        className="rounded-md bg-card/90 px-2 py-1 text-xs font-medium text-foreground shadow-raised hover:bg-muted"
       >
         {t("saveButton.trigger")}
       </button>
@@ -166,7 +166,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
           id={popoverId}
           role="group"
           aria-label={t("saveButton.trigger")}
-          className="absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-card p-3 text-left shadow-md"
+          className="absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
           {listState.status === "loading" && <p className="text-sm text-muted-foreground">{t("saveButton.loadingPlaylists")}</p>}
           {listState.status === "error" && (

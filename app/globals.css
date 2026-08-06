@@ -142,10 +142,13 @@
   --tracking-tight: -0.025em;
   --tracking-wide: 0.025em;
 
-  /* Elevation. Three steps are enough: resting card, dropdown/popover, modal. */
-  --elevation-raised: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --elevation-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --elevation-floating: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  /* Elevation. Almost invisible, soft, premium — never Material. The design's
+     one "floating" shadow appears five ways (0 18px 40px /.18, 0 16px 34px /.16,
+     0 18px 42px /.18, 0 18px 42px /.2, 0 15px 32px /.14); this is its canonical
+     form. Real depth comes from the surface ladder, not from these. */
+  --elevation-raised: 0 1px 2px 0 rgb(0 0 0 / 0.24);
+  --elevation-overlay: 0 8px 20px -4px rgb(0 0 0 / 0.32);
+  --elevation-floating: 0 18px 40px -8px rgb(0 0 0 / 0.18);
 
   /* Motion. Durations + easings as tokens instead of literals scattered
      through CSS (spec §4.4). --ease-out-expo is the curve the L6 celebration
