@@ -30,7 +30,10 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-07) — **Figma Make token + typography foundation BUILT on branch `figma-token-typography-foundation` (15 commits, 51 files), final review clean, AWAITING MERGE DECISION. Next after merge: the screen-port workflow spec, then Shadowing Hub Plan C.**
+## ▶ NEXT ACTION (updated 2026-08-07) — **Figma Make token + typography foundation MERGED to master `--no-ff` at `86328bc` (15 commits, 51 files). Branch + worktree deleted. NEXT: the screen-port workflow spec (spec §1 steps 3-4), then Shadowing Hub Plan C.**
+
+Post-merge verified on master: **218 files / 1966 tests**, tsc 0. Branching history gains
+`figma-token-foundation 86328bc`.
 
 Spec `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` (`f728731`),
 plan `docs/superpowers/plans/2026-08-06-figma-make-token-typography-foundation.md` (`99f8978`),
