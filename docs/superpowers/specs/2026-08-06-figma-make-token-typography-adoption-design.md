@@ -403,10 +403,22 @@ Ordered by how silently each one fails.
      falls back to `unset` in the browser.
    - The existing "every semantic token is a `var()` alias of a primitive" assertion still holds for
      all of them except `--scrim`, which stays a literal by design (a scrim dims, it does not theme).
-3. **`components/ui/button.tsx` + `components/ui/badge.tsx`** — the `accent` variant is a CTA and
-   must become `secondary` (`--void-800`), while `--accent` becomes warm sand for tags/status. Rename
-   the variant rather than leaving an API whose name no longer describes it; update both tests and
-   the 8 call sites. This is the only component code this spec touches.
+3. **`components/ui/button.tsx` — repoint one variant. No API rename needed.**
+   ⚠️ Corrected after reading the files: `Button` **already** exposes
+   `primary | secondary | outline | ghost`, and its `secondary` variant merely points at the wrong
+   token (`bg-accent text-accent-foreground`). It becomes `bg-secondary text-secondary-foreground`.
+   The public API does not change, no call site changes, and `badge.tsx`'s `accent` variant is
+   **correct as written** — a Badge is a tag, which is exactly what warm sand is for. It simply
+   inherits the new value.
+
+   **The real find in this area is a latent AA failure, not a rename.**
+   `components/conversation/message-bubble.tsx:128` pairs `bg-accent/20` with
+   `text-accent-foreground`. `*-foreground` is the tone for a *solid* fill; on a 20% tint the surface
+   stays dark, so the pairing measures **1.59:1**. It must become `text-accent-strong` (**5.43:1**).
+   This is already broken in today's dark theme (indigo/20 + ink-950) and went unseen only because
+   nobody uses dark — a concrete instance of risk §7.2. Audit every `bg-<c>/<alpha>` site for the
+   same `-foreground`-instead-of-`-strong` mistake while here; the other six accent call sites were
+   checked and are correct.
 4. **`app/[locale]/layout.tsx`** — the `theme-color` meta is a light hex; it must become `#0b0d11`
    or the mobile browser chrome will clash with the app.
 5. **Three canvas/SVG files carry raw hex and do not flow through tokens** —
@@ -468,7 +480,9 @@ Ordered by how silently each one fails.
 - [ ] `ThemeToggle` unmounted from app-nav + site-header, retained in the style guide; provider and
       component untouched
 - [ ] Both token tests rewritten and passing; contrast table reproduced from CSS
-- [ ] `accent` → `secondary` variant migrated across `button.tsx`, `badge.tsx`, tests, 8 call sites
+- [ ] `button.tsx` `secondary` variant repointed to `--secondary`; `message-bubble.tsx:128` fixed
+      from `text-accent-foreground` to `text-accent-strong`; every `bg-<c>/<alpha>` site audited for
+      the same mistake
 - [ ] `theme-color` meta, three raw-hex canvas files, and `extendTailwindMerge` all reviewed
 - [ ] `npx tsc --noEmit` 0 · `npm run lint` 0 errors (78 warnings = the pre-existing baseline) ·
       `npm test` green · **`npm run test:e2e` run, not skipped**
