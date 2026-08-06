@@ -42,22 +42,26 @@ const REQUIRED_TOKENS = [
 ];
 
 const PRIMITIVE_TOKENS = [
-  "--washi-50", "--washi-100", "--white", "--sumi-900",
-  "--neutral-100", "--neutral-300", "--neutral-400", "--neutral-600",
-  "--ink-700", "--ink-800", "--ink-900", "--ink-950",
-  "--vermilion-300", "--vermilion-400", "--vermilion-500", "--vermilion-700",
-  "--indigo-300", "--indigo-600",
-  "--green-400", "--green-600", "--green-700",
-  "--red-300", "--red-400", "--red-600", "--red-700",
+  "--void-950", "--void-900", "--void-850", "--void-800",
+  "--slate-800", "--slate-400",
+  "--paper-50", "--ink-950",
+  "--ember-500", "--sand-400",
+  "--mint-400", "--coral-400", "--coral-300",
 ];
 
-// The semantic tier must be var() aliases of primitives in BOTH themes —
-// that indirection is the whole point (L9b restyles by remapping it).
+// The semantic tier must be a var() alias of a primitive. This list is the
+// WHOLE table from the adoption spec §3.2 — a half-updated list reads as
+// protection while leaving new tokens unguarded.
 const SEMANTIC_COLOR_TOKENS = [
   "--background", "--foreground", "--card", "--card-foreground",
-  "--muted", "--muted-foreground", "--border", "--input", "--ring",
-  "--primary", "--primary-foreground", "--accent", "--accent-foreground",
-  "--success", "--danger", "--surface-overlay",
+  "--muted", "--muted-foreground", "--input-background",
+  "--border", "--input", "--ring",
+  "--primary", "--primary-foreground", "--primary-strong",
+  "--secondary", "--secondary-foreground",
+  "--accent", "--accent-foreground", "--accent-strong",
+  "--success", "--success-strong",
+  "--danger", "--danger-strong",
+  "--surface-overlay",
 ];
 
 describe("design tokens", () => {
@@ -94,77 +98,50 @@ describe("design tokens", () => {
     expect(missing).toEqual([]);
   });
 
-  it("defines every semantic colour as a var() alias of a primitive, in both themes", () => {
-    // Exact mappings extracted from globals.css (source of truth).
-    // These enforce the contract: each semantic token must alias EXACTLY the correct primitive.
-    const lightMappings: Record<string, string> = {
-      "--background": "--washi-50",
-      "--foreground": "--sumi-900",
-      "--card": "--white",
-      "--card-foreground": "--sumi-900",
-      "--muted": "--neutral-100",
-      "--muted-foreground": "--neutral-600",
-      "--border": "--neutral-300",
-      "--input": "--neutral-300",
-      "--ring": "--vermilion-500",
-      "--primary": "--vermilion-500",
-      "--primary-foreground": "--washi-50",
-      "--accent": "--indigo-600",
-      "--accent-foreground": "--washi-50",
-      "--success": "--green-600",
-      "--danger": "--red-600",
-      "--surface-overlay": "--white",
-    };
-
-    const darkMappings: Record<string, string> = {
-      "--background": "--ink-950",
-      "--foreground": "--washi-100",
-      "--card": "--ink-900",
-      "--card-foreground": "--washi-100",
-      "--muted": "--ink-800",
-      "--muted-foreground": "--neutral-400",
-      "--border": "--ink-700",
-      "--input": "--ink-700",
-      "--ring": "--vermilion-400",
-      "--primary": "--vermilion-400",
+  it("defines every semantic colour as a var() alias of the correct primitive", () => {
+    // Exact mappings from the adoption spec §3.2. Korume is dark-only, so there
+    // is one block: `:root`. `--scrim` is deliberately a literal, not an alias.
+    const mappings: Record<string, string> = {
+      "--background": "--void-950",
+      "--foreground": "--paper-50",
+      "--card": "--void-850",
+      "--card-foreground": "--paper-50",
+      "--muted": "--void-900",
+      "--muted-foreground": "--slate-400",
+      "--input-background": "--void-900",
+      "--border": "--slate-800",
+      "--input": "--slate-800",
+      "--ring": "--ember-500",
+      "--primary": "--ember-500",
       "--primary-foreground": "--ink-950",
-      "--accent": "--indigo-300",
+      "--primary-strong": "--ember-500",
+      "--secondary": "--void-800",
+      "--secondary-foreground": "--paper-50",
+      "--accent": "--sand-400",
       "--accent-foreground": "--ink-950",
-      "--success": "--green-400",
-      "--danger": "--red-400",
-      "--surface-overlay": "--ink-900",
+      "--accent-strong": "--sand-400",
+      "--success": "--mint-400",
+      "--success-strong": "--mint-400",
+      "--danger": "--coral-400",
+      "--danger-strong": "--coral-300",
+      "--surface-overlay": "--void-850",
     };
 
-    // Extract light block (everything before first [data-theme="dark"])
-    const lightBlockEnd = css.indexOf('[data-theme="dark"]');
-    const lightBlock = css.substring(0, lightBlockEnd);
+    expect(Object.keys(mappings).sort()).toEqual([...SEMANTIC_COLOR_TOKENS].sort());
 
-    // Extract first [data-theme="dark"] colour block (not the elevation overrides block)
-    const darkStart = css.indexOf('[data-theme="dark"]');
-    const blockOpenBrace = css.indexOf("{", darkStart);
-    let braceCount = 1;
-    let endPos = blockOpenBrace + 1;
-    while (endPos < css.length && braceCount > 0) {
-      if (css[endPos] === "{") braceCount++;
-      if (css[endPos] === "}") braceCount--;
-      endPos++;
-    }
-    const darkBlock = css.substring(darkStart, endPos);
-
-    // Assert light theme: each semantic token aliases exactly the expected primitive
-    for (const [token, primitive] of Object.entries(lightMappings)) {
+    for (const [token, primitive] of Object.entries(mappings)) {
       const pattern = new RegExp(String.raw`${token}:\s*var\(${primitive}\)`);
-      expect(lightBlock, `Light theme: ${token} should alias ${primitive}`).toMatch(pattern);
+      expect(css, `${token} should alias ${primitive}`).toMatch(pattern);
     }
 
-    // Assert dark theme: each semantic token aliases exactly the expected primitive
-    for (const [token, primitive] of Object.entries(darkMappings)) {
-      const pattern = new RegExp(String.raw`${token}:\s*var\(${primitive}\)`);
-      expect(darkBlock, `Dark theme: ${token} should alias ${primitive}`).toMatch(pattern);
-    }
-
-    // --scrim is theme-independent: defined in light, NOT redefined in dark
     expect(css).toMatch(/--scrim:\s*0 0% 0%/);
-    expect(darkBlock).not.toMatch(/--scrim/);
+  });
+
+  it("ships dark-only: no light theme block exists", () => {
+    // The data-theme MECHANISM is retained (provider + toggle component stay);
+    // only the values are single-theme. Adding a light block means this test and
+    // the contrast test must both go back to asserting two themes.
+    expect(css).not.toContain('[data-theme="light"]');
+    expect(css).not.toContain('[data-theme="dark"]');
   });
 });
