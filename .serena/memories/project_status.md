@@ -30,7 +30,64 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-06) — **Korume rebrand COMPLETE. Plan A (Docs) `69c4685` + Plan B (Code) `44521bc` both MERGED to master. Next: the Figma Make adoption brainstorm (see `mem:figma_make_design_source`), then Shadowing Hub Plan C (Hub UI).**
+## ▶ NEXT ACTION (updated 2026-08-07) — **Figma Make token + typography foundation BUILT on branch `figma-token-typography-foundation` (15 commits, 51 files), final review clean, AWAITING MERGE DECISION. Next after merge: the screen-port workflow spec, then Shadowing Hub Plan C.**
+
+Spec `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` (`f728731`),
+plan `docs/superpowers/plans/2026-08-06-figma-make-token-typography-foundation.md` (`99f8978`),
+9 tasks via `superpowers:subagent-driven-development` in a worktree.
+
+**Delivered:** dark-only Korume palette in `:root` (no `[data-theme]` blocks); primitives renamed off
+the Japanese scheme to `void/paper/ink/slate/ember/sand/mint/coral`; indigo deleted; new `--secondary`,
+`--danger-foreground`, `--input-background`; absolute 8/14/20/28 radius; re-valued elevation; five
+`next/font` roles (Plus Jakarta Sans / Be Vietnam Pro / Noto Serif / IBM Plex Mono / Noto Sans JP);
+ThemeToggle unmounted from the shell but retained in the admin style guide.
+
+**Final state:** unit 1966/1966 · tsc 0 · lint 0 errors, 77 warnings (78 baseline, rule mix identical,
+none new) · Playwright **6/6** · LCP warm **300ms → 220ms** · font bytes fetched on `/vi`
+**169 KB → 82 KB** (only sans + jp preload).
+
+### Lessons worth carrying (the SDD ledger is deleted; these are the parts that generalise)
+
+1. **The final whole-branch review earned its keep for the 4th consecutive plan** — 5 Important that
+   no per-task review could see, because each was a contradiction only visible across files:
+   `color-scheme: dark` never declared (so scrollbars/autofill/native selects/the reduce-motion
+   checkbox all stayed light); `--muted` at 1.072:1 used as the hover surface in 34 places and as the
+   resting AI-bubble surface; and two claims the branch itself falsified — one in
+   `navigation-system.md`, one in an i18n string that a **pin test was guarding as correct**.
+2. **A single grep pattern is never a sufficient audit.** This bit twice: Task 6's
+   `bg-<c>/<alpha>` sweep missed `notification-bell` (no alpha suffix), and the fix wave's
+   `hover:bg-muted` sweep missed `select.tsx`'s `data-[highlighted]:bg-muted` — which is the
+   **keyboard-navigation indicator**, so it engaged CLAUDE.md §2 rule 5. Always sweep variants
+   (`data-[…]`, `focus`, `group-hover`, `aria-*`) and hardcoded colours (`text-white`), not one shape.
+3. **Verify subagent claims independently — three of the most consequential findings came from that,
+   not from the reports.** A "3 sites out of scope/correct" note turned out to be 4 sites failing AA
+   at 3.28:1; a contrast figure in a report was arithmetically impossible; a "1 flaky test" needed the
+   flake identified, not assumed.
+4. **A worktree has no `.env.local`** (gitignored). A hand-built stub silently fails every
+   auth-dependent Playwright spec in a way that looks exactly like a code regression — I wrongly
+   suspected the environment, then the branch, before isolating it. Copy the full env before trusting
+   an e2e result, and remove the secrets afterwards.
+5. **`EnterWorktree` was NOT usable here:** its default `worktree.baseRef: fresh` branches from
+   `origin/<default>`, and this repo never pushes, so master runs ahead — the worktree would have
+   lacked the plan and spec. Used `git worktree add` instead. Consider setting `worktree.baseRef: head`.
+6. **Width comparison cannot detect CJK font fallback** — Noto Sans JP and the system fallback both
+   render full-width at exactly 1em. Inspect `@font-face` unicode-ranges instead. Doing so CLOSED
+   spec risk §7.3: despite `subsets: ["latin"]`, Noto Sans JP emits 373 sliced faces, 4 covering
+   U+65E5, 2 reaching `loaded`. CJK is genuinely served.
+7. **The 5-font payload fear did not materialise** — build assets +430 KB, but the page *fetches*
+   half what master did and LCP improved, because only sans + jp preload.
+
+### Open, deliberately deferred
+- ⚠️ **Not verified: `/dashboard` and `/admin/style-guide` in a browser.** Spec §6 asked for a dense
+  real screen; both are auth-gated and account creation is not something the assistant may do. Only
+  `/vi` and `/vi/login` were checked visually. **Ask the user to click through those two.**
+- `bg-inputBackground` is camelCase where the repo otherwise uses kebab Tailwind classes. Parked for
+  the component-verification spec (spec §1 step 3).
+- `--slate-800` hue is 217° where its hex rounds to 218°; contrast figures quoted from hex comments
+  run ~0.08 higher than the HSL the tests actually evaluate. Both pre-existing-style rounding nits.
+- `theme-toggle.tsx` hardcodes an English `aria-label` in an i18n'd app (pre-existing, not this branch).
+
+## ▶ (superseded) NEXT ACTION (2026-08-06) — **Korume rebrand COMPLETE. Plan A (Docs) `69c4685` + Plan B (Code) `44521bc` both MERGED to master. Next: the Figma Make adoption brainstorm (see `mem:figma_make_design_source`), then Shadowing Hub Plan C (Hub UI).**
 
 ### ✅ Plan B (Code) — EXECUTED + MERGED `--no-ff` at `44521bc` (2026-08-06). Branch + worktree deleted.
 
