@@ -7,20 +7,20 @@ import { useTranslations } from "@/lib/i18n";
 /** Token catalogues. Kept as plain data so the page IS the documentation —
  * a token added to globals.css without being listed here shows up in review. */
 const PRIMITIVE_COLORS = [
-  "--washi-50", "--washi-100", "--white", "--sumi-900",
-  "--neutral-100", "--neutral-300", "--neutral-400", "--neutral-600",
-  "--ink-700", "--ink-800", "--ink-900", "--ink-950",
-  "--vermilion-300", "--vermilion-400", "--vermilion-500", "--vermilion-700",
-  "--indigo-300", "--indigo-600",
-  "--green-400", "--green-600", "--green-700",
-  "--red-300", "--red-400", "--red-600", "--red-700",
+  "--void-950", "--void-900", "--void-850", "--void-800",
+  "--slate-800", "--slate-400",
+  "--paper-50", "--ink-950",
+  "--ember-500", "--sand-400",
+  "--mint-400", "--coral-400", "--coral-300",
 ];
 
 const SEMANTIC_COLORS = [
   "--background", "--foreground", "--card", "--card-foreground",
-  "--muted", "--muted-foreground", "--border", "--input", "--ring",
-  "--primary", "--primary-foreground", "--accent", "--accent-foreground",
-  "--success", "--danger",
+  "--muted", "--muted-foreground", "--input-background",
+  "--border", "--input", "--ring",
+  "--primary", "--primary-foreground", "--secondary", "--secondary-foreground",
+  "--accent", "--accent-foreground",
+  "--success", "--danger", "--danger-foreground",
   // Text tones: the same hue tuned for legibility as TEXT rather than as a
   // fill (see globals.css). Features use these for words and icons.
   "--primary-strong", "--accent-strong", "--success-strong", "--danger-strong",
@@ -36,6 +36,30 @@ const TYPE_SCALE = [
   { cls: "text-body-lg", name: "body-lg" },
   { cls: "text-body", name: "body" },
   { cls: "text-caption", name: "caption" },
+] as const;
+
+/** The four absolute radius steps (app/globals.css). Pixel values are
+ * labelled directly, not derived, so a rung change in globals.css shows up
+ * here as a real mismatch to fix rather than silently relabelling itself. */
+const RADIUS_STEPS = [
+  { cls: "rounded-sm", px: 8 },
+  { cls: "rounded-md", px: 14 },
+  { cls: "rounded-lg", px: 20 },
+  { cls: "rounded-xl", px: 28 },
+] as const;
+
+/** The five typeface roles (app/globals.css --font-*, tailwind.config.ts).
+ * The four Latin roles share one Vietnamese sample carrying two-tier
+ * diacritics (ắ ặ ễ ộ ữ) — three of the design's original faces shipped with
+ * no Vietnamese subset, and a plain-ASCII sample would hide that class of
+ * bug. font-jp gets a Japanese sample instead. */
+const VN_SAMPLE = "Học tiếng Nhật cùng Korume — ắ ặ ễ ộ ữ";
+const FONT_ROLES = [
+  { cls: "font-sans", lang: undefined, sample: VN_SAMPLE },
+  { cls: "font-display", lang: undefined, sample: VN_SAMPLE },
+  { cls: "font-serif", lang: undefined, sample: VN_SAMPLE },
+  { cls: "font-mono", lang: undefined, sample: VN_SAMPLE },
+  { cls: "font-jp", lang: "ja", sample: "日本語 · 話す · ひらがな" },
 ] as const;
 
 const MOTION_TOKENS = [
@@ -105,6 +129,19 @@ export function TypographySection() {
         </div>
         <p className="text-body text-muted-foreground">{t("styleGuide.sections.typography.note")}</p>
       </div>
+      <h3 className="mt-md text-body-lg font-medium">{t("styleGuide.sections.typography.rolesHeading")}</h3>
+      <div className="mt-xs space-y-sm">
+        {FONT_ROLES.map(({ cls, lang, sample }) => (
+          <div key={cls}>
+            <code className="text-caption text-muted-foreground">{cls}</code>
+            {/* Same D8 exemption as the size-scale demo above: a fixed
+                locale-stress sample, never run through t(). */}
+            <p lang={lang} className={cn(cls, "text-body-lg")}>
+              {sample}
+            </p>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -123,6 +160,25 @@ export function SpacingSection() {
               className="h-4 rounded-sm bg-primary"
               style={{ width: `var(--space-${step})` }}
             />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function RadiusSection() {
+  const t = useTranslations("admin");
+  return (
+    <section aria-labelledby="sg-radius">
+      <h2 id="sg-radius" className="text-heading font-semibold">{t("styleGuide.sections.radius.heading")}</h2>
+      <div className="mt-md flex flex-wrap gap-lg">
+        {RADIUS_STEPS.map(({ cls, px }) => (
+          <div key={cls} className="flex flex-col items-center gap-2xs">
+            <span aria-hidden="true" className={cn("h-16 w-16 border border-border bg-primary", cls)} />
+            <code className="text-caption">
+              {cls} · {px}px
+            </code>
           </div>
         ))}
       </div>

@@ -83,7 +83,7 @@ export function PinLineControl({ line }: PinLineControlProps) {
         }}
         aria-label={t("pin.trigger")}
         title={t("pin.trigger")}
-        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
       >
         <span aria-hidden="true">✎</span>
       </button>

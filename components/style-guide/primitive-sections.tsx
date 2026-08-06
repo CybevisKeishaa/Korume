@@ -46,7 +46,7 @@ export function PrimitiveSections() {
 
         <Demo name={t("styleGuide.primitives.demo.badge")}>
           {/* Variant NAMES, not chrome (D8): each badge demos its own variant
-              identifier, the same way PRIMITIVE_COLORS' "--washi-50" etc. stay
+              identifier, the same way PRIMITIVE_COLORS' "--void-950" etc. stay
               untranslated in token-sections.tsx. */}
           <div className="flex flex-wrap items-center gap-xs">
             <Badge>neutral</Badge>

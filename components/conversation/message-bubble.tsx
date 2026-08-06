@@ -93,7 +93,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
     <div
       className={cn(
         "max-w-[85%] rounded-lg px-4 py-2 text-sm",
-        isAi ? "self-start bg-muted text-foreground" : "self-end bg-primary/10 text-foreground",
+        isAi ? "self-start bg-secondary text-foreground" : "self-end bg-primary/10 text-foreground",
         className,
       )}
     >
@@ -125,7 +125,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
 
         {!isAi && message.pronunciation_score !== null && (
           <span
-            className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-foreground"
+            className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-strong"
             title={t("messageBubble.pronunciationScoreTitle")}
           >
             {t("messageBubble.pronunciationLabel")} {Math.round(message.pronunciation_score)}

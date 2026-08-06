@@ -43,7 +43,7 @@ export function Select({
         aria-label={ariaLabel}
         className={cn(
           "flex h-10 w-full items-center justify-between gap-xs rounded-md border border-input",
-          "bg-card px-sm text-body text-foreground",
+          "bg-inputBackground px-sm text-body text-foreground",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "data-[placeholder]:text-muted-foreground",
           className,
@@ -72,7 +72,7 @@ export function Select({
                 className={cn(
                   "flex cursor-default select-none items-center justify-between gap-xs rounded-sm",
                   "px-sm py-2xs text-body text-foreground outline-none",
-                  "data-[highlighted]:bg-muted data-[disabled]:opacity-50",
+                  "data-[highlighted]:bg-secondary data-[disabled]:opacity-50",
                 )}
               >
                 <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>

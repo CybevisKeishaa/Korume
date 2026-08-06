@@ -160,7 +160,7 @@ export function VoiceRecorderButton({
         disabled={disabled || unavailable || isBusy}
         aria-pressed={isRecording}
         title={unavailable ? t("voiceRecorder.notConfigured") : undefined}
-        className={isRecording ? "bg-danger text-white hover:bg-danger/90" : undefined}
+        className={isRecording ? "bg-danger text-danger-foreground hover:bg-danger/90" : undefined}
       >
         {isRecording ? t("voiceRecorder.stopRecording") : t("voiceRecorder.recordVoiceMessage")}
       </Button>

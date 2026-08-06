@@ -30,7 +30,7 @@ export function FuriganaToggle({ pressed, onToggle, disabled, className }: Furig
         "rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors",
         pressed
           ? "bg-primary text-primary-foreground"
-          : "bg-transparent text-foreground hover:bg-muted",
+          : "bg-transparent text-foreground hover:bg-secondary",
         "disabled:pointer-events-none disabled:opacity-50",
         className,
       )}

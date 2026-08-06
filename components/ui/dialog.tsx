@@ -95,7 +95,7 @@ export function Dialog({
             </RadixDialog.Title>
             <RadixDialog.Close
               aria-label={closeLabel}
-              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               ×
             </RadixDialog.Close>

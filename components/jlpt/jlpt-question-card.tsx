@@ -112,7 +112,7 @@ export function JlptQuestionCard({ question, index, total, selected, onSelect }:
               onClick={() => onSelect(value)}
               className={cn(
                 "flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left text-sm transition-colors",
-                checked ? "border-primary bg-primary/10" : "border-border hover:bg-muted",
+                checked ? "border-primary bg-primary/10" : "border-border hover:bg-secondary",
               )}
             >
               <span

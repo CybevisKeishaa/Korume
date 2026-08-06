@@ -207,6 +207,7 @@ needed**, with its contrast measured then:
 | `--accent-foreground` | `--ink-950` | |
 | `--success`, `--success-strong` | `--mint-400` | |
 | `--danger` | `--coral-400` | fills |
+| `--danger-foreground` **(added during execution — see §3.3)** | `--ink-950` | text on danger fills |
 | `--danger-strong` | `--coral-300` | danger as text (see §3.3) |
 | `--scrim` | `0 0% 0%` | unchanged — a scrim dims, it does not theme |
 
@@ -270,8 +271,11 @@ skew the others:
 --radius-md: 14px;
 --radius-lg: 20px;
 --radius-xl: 28px;
---radius:    20px;   /* compatibility / default */
 ```
+
+An earlier draft also kept an unqualified `--radius: 20px` "compatibility default." It was deleted
+during the final fix wave (2026-08-07): `grep -- "var(--radius)"` returned zero hits outside
+`docs/`, so it was a token nothing read — forbidden by §3.1.1.
 
 ⚠️ Mapped in `tailwind.config.ts` → `theme.extend.borderRadius` as `var(--radius-sm|md|lg|xl)`.
 **Not** `calc()`, and **not** `@theme inline` — that is Tailwind v4 syntax and this repo is Tailwind

@@ -3,114 +3,102 @@
 @tailwind utilities;
 
 /**
- * Colour, two tiers (L9a Plan 2, spec §4.4).
+ * Colour, two tiers (adoption spec 2026-08-06 §2).
  *
- * Primitive tier: raw palette. Named after the material, knows nothing about
- * usage. Theme-independent — both themes draw from the same palette.
+ * Primitive tier: the raw Korume palette taken from the Figma Make design.
+ * Named after the material, knows nothing about usage.
  *
  * Semantic tier: what features and primitives actually consume (via Tailwind:
- * bg-primary, text-muted-foreground, bg-overlay…). Always a var() alias of a
- * primitive. Dark theme = remapping the semantic tier, nothing else.
- * L9b restyles the product by editing THIS mapping, not 131 files.
+ * bg-primary, text-muted-foreground, bg-secondary…). Always a var() alias of a
+ * primitive. Restyling the product means editing THIS mapping, not 131 files.
+ *
+ * Korume ships DARK-ONLY. These values live in :root, and there is no light
+ * block. The data-theme mechanism, ThemeProvider and the ThemeToggle component
+ * are all retained, so light mode returns as one added block — not a rebuild.
  *
  * Values are HSL channels (no hsl() wrapper) so Tailwind's <alpha-value>
- * works. Contrast pairs unchanged from L1 — WCAG AA (CLAUDE.md §5).
+ * works. Trailing hex comments are the design values; they are NOT the format.
+ * Every pairing is WCAG AA — enforced by lib/design-tokens.contrast.test.ts.
  */
 :root {
-  /* — primitive tier — */
-  --washi-50: 40 33% 98%; /* 生成り washi off-white */
-  --washi-100: 40 20% 94%;
-  --white: 0 0% 100%;
-  --sumi-900: 220 26% 12%; /* 墨 sumi ink */
-  --neutral-100: 40 12% 92%;
-  --neutral-300: 220 14% 86%;
-  --neutral-400: 220 12% 66%;
-  --neutral-600: 220 12% 38%;
-  --ink-700: 224 16% 22%; /* cinematic dark surfaces */
-  --ink-800: 224 18% 18%;
-  --ink-900: 224 26% 12%;
-  --ink-950: 224 32% 8%;
-  --vermilion-300: 6 90% 71%;
-  --vermilion-400: 4 84% 60%; /* 朱色 vermilion */
-  --vermilion-500: 4 74% 49%;
-  --vermilion-700: 4 76% 37%;
-  --indigo-300: 210 70% 66%; /* 藍 indigo */
-  --indigo-600: 218 46% 30%;
-  --green-400: 148 46% 52%;
-  --green-600: 148 52% 34%;
-  --green-700: 148 56% 27%;
-  --red-300: 0 84% 72%;
-  --red-400: 0 72% 60%;
-  --red-600: 0 72% 44%;
-  --red-700: 0 74% 38%;
+  /* Tells the UA to render its own chrome (scrollbars, form-field autofill,
+     native <select> popups, checkboxes — incl. the reduce-motion toggle,
+     CLAUDE.md §2.4) dark instead of defaulting to light. Korume ships
+     dark-only (see below), so this is unconditional, not media-gated. */
+  color-scheme: dark;
 
-  /* — semantic tier (light) — */
-  --background: var(--washi-50);
-  --foreground: var(--sumi-900);
-  --card: var(--white);
-  --card-foreground: var(--sumi-900);
-  --muted: var(--neutral-100);
-  --muted-foreground: var(--neutral-600);
-  --border: var(--neutral-300);
-  --input: var(--neutral-300);
-  --ring: var(--vermilion-500);
-  --primary: var(--vermilion-500);
-  --primary-foreground: var(--washi-50);
-  --accent: var(--indigo-600);
-  --accent-foreground: var(--washi-50);
-  --success: var(--green-600);
-  --danger: var(--red-600);
+  /* — primitive tier — */
+  --void-950: 220 21% 5%; /* #0b0d11 page */
+  --void-900: 220 20% 9%; /* #12151b recessed */
+  --void-850: 220 16% 11%; /* #171a20 card */
+  --void-800: 220 16% 15%; /* #20242c secondary surface */
+  /* Figma draws hairlines as rgba(255,255,255,.065). Tailwind's <alpha-value>
+     cannot carry a non-1 default alpha, so this is that colour composited over
+     --card, where hairlines overwhelmingly appear. Legitimate only because the
+     app is dark-only and the backdrop is therefore known. The design's separate
+     .07 value for inputs flattens to within 1% lightness — export noise, not a
+     design signal, so both share this primitive (spec §2.5). */
+  --slate-800: 217 10% 16%; /* #26292e hairline */
+  --slate-400: 221 10% 58%; /* #89909f metadata */
+  --paper-50: 48 20% 95%; /* #f5f4f0 */
+  --ink-950: 24 29% 7%; /* #16100c text on warm fills */
+  --ember-500: 24 100% 62%; /* #ff8a3d the one accent */
+  --sand-400: 29 75% 64%; /* #e8a05d tags/status — never a CTA */
+  --mint-400: 155 53% 65%; /* #75d5ad */
+  --coral-400: 6 75% 62%; /* #e76557 */
+  --coral-300: 9 100% 70%; /* #ff7e67 */
+
+  /* — semantic tier — */
+  --background: var(--void-950);
+  --foreground: var(--paper-50);
+  --card: var(--void-850);
+  --card-foreground: var(--paper-50);
+  --muted: var(--void-900);
+  --muted-foreground: var(--slate-400);
+  --input-background: var(--void-900);
+  --border: var(--slate-800);
+  --input: var(--slate-800);
+  --ring: var(--ember-500);
+  --primary: var(--ember-500);
+  --primary-foreground: var(--ink-950);
+  /* Secondary CTA surface (Later / Preview / View Details), per Figma's own
+     --secondary. Warm sand is NOT a CTA colour — it is for tags and status. */
+  --secondary: var(--void-800);
+  --secondary-foreground: var(--paper-50);
+  --accent: var(--sand-400);
+  --accent-foreground: var(--ink-950);
+  --success: var(--mint-400);
+  --danger: var(--coral-400);
+  --danger-foreground: var(--ink-950);
   /* — text tones —
      A semantic colour used as a FILL and the same colour used as TEXT have
-     different contrast requirements, and one value cannot satisfy both. The
-     tint pattern (`bg-primary/10 text-primary-strong`, used in 13 places)
-     paints text on what is effectively the bare surface, and measured below
-     4.5:1 for primary/success/danger when it reused --primary etc. directly.
-
-     So: --primary stays the brand vermilion and keeps driving fills, buttons
-     and the focus ring — unchanged. --primary-strong is the same hue pushed
-     to a legible tone for text and icons: darker in light, LIGHTER in dark
-     ("strong" means stronger contrast, which points opposite ways per theme).
-     Enforced by lib/design-tokens.contrast.test.ts — do not hand-tune these
-     without re-running it. */
-  --primary-strong: var(--vermilion-700);
-  --accent-strong: var(--indigo-600);
-  --success-strong: var(--green-700);
-  --danger-strong: var(--red-700);
-  /* Surface a floating panel (dialog, popover, select menu, toast) sits on.
-     Same as --card today; a separate token so overlays can diverge in L9b. */
-  --surface-overlay: var(--white);
-  /* Backdrop behind modals, used with alpha (bg-scrim/50). Deliberately the
-     same in both themes — a scrim dims, it does not theme. */
+     different contrast requirements. The tint pattern (`bg-primary/10
+     text-primary-strong`) paints text on what is effectively the bare surface.
+     "-strong" means stronger CONTRAST, which on dark surfaces means lighter.
+     Ember, sand and mint already clear 4.5:1 at their base tone, so they alias
+     it; only danger needs a lighter step (coral-400 measures 4.69:1 in the tint
+     pattern — passing but with no headroom; coral-300 measures 6.03:1).
+     Enforced by lib/design-tokens.contrast.test.ts — do not hand-tune. */
+  --primary-strong: var(--ember-500);
+  --accent-strong: var(--sand-400);
+  --success-strong: var(--mint-400);
+  --danger-strong: var(--coral-300);
+  /* Surface a floating panel (dialog, popover, select menu, toast) sits on. */
+  --surface-overlay: var(--void-850);
+  /* Backdrop behind modals, used with alpha (bg-scrim/50). A literal, not an
+     alias — a scrim dims, it does not theme. */
   --scrim: 0 0% 0%;
 
-  --radius: 0.75rem;
-}
-
-[data-theme="dark"] {
-  --background: var(--ink-950);
-  --foreground: var(--washi-100);
-  --card: var(--ink-900);
-  --card-foreground: var(--washi-100);
-  --muted: var(--ink-800);
-  --muted-foreground: var(--neutral-400);
-  --border: var(--ink-700);
-  --input: var(--ink-700);
-  --ring: var(--vermilion-400);
-  --primary: var(--vermilion-400);
-  --primary-foreground: var(--ink-950);
-  --accent: var(--indigo-300);
-  --accent-foreground: var(--ink-950);
-  --success: var(--green-400);
-  --danger: var(--red-400);
-  /* Text tones invert direction here: on near-black surfaces legibility comes
-     from going LIGHTER. accent/success already clear 4.5:1 at their base tone,
-     so they alias it rather than inventing a primitive nothing else uses. */
-  --primary-strong: var(--vermilion-300);
-  --accent-strong: var(--indigo-300);
-  --success-strong: var(--green-400);
-  --danger-strong: var(--red-300);
-  --surface-overlay: var(--ink-900);
+  /* Radius. `lg` moves 12px -> 20px to match the Figma cards (the design draws
+     rounded-[22px] and its DNA states "20-24px"). Steps are ABSOLUTE, not
+     calc()-derived, so changing one rung cannot skew the others. `sm` is kept
+     because chips, badges and field interiors need a radius well below the
+     card value; the point is that the scale is fixed, not that it has 3 rungs.
+     No unqualified `--radius` compatibility default: nothing consumed it. */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
 }
 
 /**
@@ -119,8 +107,12 @@
  * tailwind.config.ts (p-md, text-body, shadow-overlay, duration-fast, z-toast…).
  */
 :root {
-  /* Font families (overridden by layout.tsx next/font configuration). */
+  /* Font families. next/font in app/[locale]/layout.tsx sets these at runtime;
+     the values here are only the pre-hydration fallback. */
   --font-sans: system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-serif: Georgia, serif;
+  --font-mono: ui-monospace, monospace;
   --font-jp: system-ui, sans-serif;
 
   /* Spacing rhythm. Tailwind's numeric scale stays available; this named scale
@@ -161,10 +153,13 @@
   --tracking-tight: -0.025em;
   --tracking-wide: 0.025em;
 
-  /* Elevation. Three steps are enough: resting card, dropdown/popover, modal. */
-  --elevation-raised: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --elevation-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --elevation-floating: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  /* Elevation. Almost invisible, soft, premium — never Material. The design's
+     one "floating" shadow appears five ways (0 18px 40px /.18, 0 16px 34px /.16,
+     0 18px 42px /.18, 0 18px 42px /.2, 0 15px 32px /.14); this is its canonical
+     form. Real depth comes from the surface ladder, not from these. */
+  --elevation-raised: 0 1px 2px 0 rgb(0 0 0 / 0.24);
+  --elevation-overlay: 0 8px 20px -4px rgb(0 0 0 / 0.32);
+  --elevation-floating: 0 18px 40px -8px rgb(0 0 0 / 0.18);
 
   /* Motion. Durations + easings as tokens instead of literals scattered
      through CSS (spec §4.4). --ease-out-expo is the curve the L6 celebration
@@ -181,13 +176,6 @@
   --z-overlay: 40;
   --z-popover: 50;
   --z-toast: 60;
-}
-
-[data-theme="dark"] {
-  /* Shadows need more weight against dark surfaces to read as elevation. */
-  --elevation-raised: 0 1px 2px 0 rgb(0 0 0 / 0.4);
-  --elevation-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45);
-  --elevation-floating: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
 }
 
 @layer base {

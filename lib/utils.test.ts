@@ -74,4 +74,12 @@ describe("cn (tailwind-merge custom token config)", () => {
     expect(result).not.toContain("bg-primary");
     expect(result).toContain("bg-accent");
   });
+
+  it("keeps custom font-family utilities out of the font-weight group", () => {
+    // twMerge classifies bare `font-*` ambiguously. Without registration it can
+    // treat `font-display`/`font-jp` as weights and drop them next to a real one.
+    expect(cn("font-jp", "font-medium")).toBe("font-jp font-medium");
+    expect(cn("font-display", "font-semibold")).toBe("font-display font-semibold");
+    expect(cn("font-sans", "font-display")).toBe("font-display");
+  });
 });

@@ -97,7 +97,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
                   "rounded-full px-3 py-1 text-sm font-medium transition-colors",
                   active
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                    : "bg-muted text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
               >
                 {chip.label}

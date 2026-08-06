@@ -90,7 +90,7 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
           id={popoverId}
           role="group"
           aria-label={t("wordLookup.lookUp", { word })}
-          className="absolute left-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-card p-3 text-left shadow-md"
+          className="absolute left-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
           <span className="flex items-start justify-between gap-2">
             <span className="font-jp block text-base" lang="ja">
@@ -107,7 +107,7 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
                 triggerRef.current?.focus();
               }}
               aria-label={t("wordLookup.close")}
-              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               ×
             </button>

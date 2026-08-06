@@ -28,7 +28,7 @@ export function SessionHistoryList({ sessions, onSelect, className }: SessionHis
           <button
             type="button"
             onClick={() => onSelect(session.id)}
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm hover:bg-muted"
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm hover:bg-secondary"
           >
             <span className="font-jp">{scenarioLabel(t, session.scenario_type)}</span>
             <span className="shrink-0 text-xs text-muted-foreground">

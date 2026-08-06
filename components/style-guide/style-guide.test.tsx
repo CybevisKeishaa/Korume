@@ -33,6 +33,7 @@ describe("StyleGuide", () => {
       "Colour",
       "Typography",
       "Spacing",
+      "Radius",
       "Elevation",
       "Motion",
       "Z-index",
@@ -56,6 +57,31 @@ describe("StyleGuide", () => {
     expect(screen.getByText(/映画で日本語を学ぶ/)).toBeInTheDocument();
   });
 
+  it("shows all five font-role samples, each carrying a two-tier-diacritic VN sample (or JP for font-jp)", () => {
+    renderGuide();
+    // The four Latin roles (font-sans/display/serif/mono) share one VN
+    // stress string — repeated once per role, so getAllByText.
+    expect(
+      screen.getAllByText(/Học tiếng Nhật cùng Korume/).length,
+    ).toBe(4);
+    expect(screen.getByText(/日本語 · 話す · ひらがな/)).toBeInTheDocument();
+    for (const cls of ["font-sans", "font-display", "font-serif", "font-mono", "font-jp"]) {
+      expect(screen.getByText(cls)).toBeInTheDocument();
+    }
+  });
+
+  it("shows all four radius steps with their pixel values", () => {
+    renderGuide();
+    for (const [cls, px] of [
+      ["rounded-sm", 8],
+      ["rounded-md", 14],
+      ["rounded-lg", 20],
+      ["rounded-xl", 28],
+    ] as const) {
+      expect(screen.getByText(new RegExp(`${cls} · ${px}px`))).toBeInTheDocument();
+    }
+  });
+
   it("lists every colour token defined in globals.css", () => {
     // token-sections.tsx claims "a token added to globals.css without being
     // listed here shows up in review". That was only a comment, and it did
@@ -74,8 +100,21 @@ describe("StyleGuide", () => {
     )) {
       if (name) colourTokens.add(name);
     }
-    for (const [, name] of css.matchAll(/(--[a-z0-9-]+):\s*var\(--[a-z0-9-]+\)/g)) {
-      if (name) colourTokens.add(name);
+    // The alias pass must check its TARGET, not just its shape: `--x: var(--y)`
+    // is not colour-specific syntax — the foundation block uses the exact same
+    // pattern for non-colour fallbacks (e.g. `--font-display: var(--font-sans)`
+    // in the typography system, spec 2026-08-06 §4). Only count an alias whose
+    // target already landed in colourTokens from the primitive pass above, so
+    // a future non-colour var() alias doesn't silently get treated as a colour
+    // and fail this test for the wrong reason. Every current semantic aliases
+    // a PRIMITIVE directly (verified against app/globals.css, 2026-08-06) —
+    // none aliases another semantic — so one pass over colourTokens as it
+    // stood after the primitive loop is sufficient; if that ever changes, this
+    // needs to iterate to a fixed point instead of a single pass.
+    for (const [, name, target] of css.matchAll(
+      /(--[a-z0-9-]+):\s*var\((--[a-z0-9-]+)\)/g,
+    )) {
+      if (name && target && colourTokens.has(target)) colourTokens.add(name);
     }
 
     renderGuide();

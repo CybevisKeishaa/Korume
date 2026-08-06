@@ -33,4 +33,13 @@ describe("Button", () => {
     expect(buttonStyles({ variant: "outline" })).toContain("border");
     expect(buttonStyles({ variant: "primary" })).toContain("bg-primary");
   });
+
+  it("paints the secondary variant with the secondary surface, not the accent", () => {
+    // Warm sand (--accent) is for tags and status. A secondary CTA is a quiet
+    // dark plane (--secondary), per the adoption spec §3.2.
+    render(<Button variant="secondary">Later</Button>);
+    const button = screen.getByRole("button", { name: "Later" });
+    expect(button.className).toContain("bg-secondary");
+    expect(button.className).not.toContain("bg-accent");
+  });
 });

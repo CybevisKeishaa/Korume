@@ -402,7 +402,7 @@ export function ShadowingRecorderPanel({
           disabled={isBusy}
           aria-pressed={isRecording}
           size="sm"
-          className={isRecording ? "bg-danger text-white hover:bg-danger/90" : undefined}
+          className={isRecording ? "bg-danger text-danger-foreground hover:bg-danger/90" : undefined}
         >
           {isRecording ? t("recorder.toggle.stop") : t("recorder.toggle.record")}
         </Button>

@@ -102,7 +102,18 @@ export function Waveform({ blob, label, className, height = 64 }: WaveformProps)
     const barWidth = canvas.width / envelope.length;
     const mid = canvas.height / 2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = getComputedStyle(canvas).color || "#4f46e5";
+    // getComputedStyle(canvas).color resolves the inherited `text-primary`
+    // class (hsl(var(--primary)) = ember-500) into a literal the canvas 2D
+    // context can use directly — canvas does not resolve CSS custom
+    // properties itself. The literal fallback only fires if that resolution
+    // fails (e.g. a detached canvas in a test environment); it mirrors
+    // --primary/--ember-500 (#ff8a3d), the one accent colour left in the
+    // palette after this migration deleted the old indigo (#4f46e5,
+    // --indigo-600) it used to be. Canvas cannot parse var(--primary)
+    // directly, so this literal has to be hand-kept in sync with
+    // --ember-500 — if that primitive is ever re-valued, this line goes
+    // stale exactly the way the indigo one did.
+    ctx.fillStyle = getComputedStyle(canvas).color || "#ff8a3d";
     envelope.forEach((amp, i) => {
       const barHeight = Math.max(1, amp * mid);
       ctx.fillRect(i * barWidth, mid - barHeight, Math.max(1, barWidth - 1), barHeight * 2);

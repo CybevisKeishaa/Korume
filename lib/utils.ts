@@ -21,6 +21,7 @@ const twMerge = extendTailwindMerge({
       shadow: [{ shadow: ["raised", "overlay", "floating"] }],
       leading: [{ leading: ["jp"] }],
       "font-weight": [{ font: ["regular"] }],
+      "font-family": [{ font: ["sans", "display", "serif", "mono", "jp"] }],
       duration: [{ duration: ["fast", "base", "slow"] }],
       ease: [{ ease: ["standard", "out-expo"] }],
       z: [{ z: ["nav", "overlay", "popover", "toast"] }],

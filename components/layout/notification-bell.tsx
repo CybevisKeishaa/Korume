@@ -190,7 +190,7 @@ export function NotificationBell() {
         aria-haspopup="dialog"
         aria-controls={open ? panelId : undefined}
         aria-label={`Notifications, ${unreadCount} unread`}
-        className="relative rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <BellIcon />
         {unreadCount > 0 && (
@@ -198,7 +198,7 @@ export function NotificationBell() {
             key={pulseKey}
             aria-hidden="true"
             className={cn(
-              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white",
+              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-danger-foreground",
               pulseKey > 0 && "badge-pulse",
             )}
           >
@@ -212,7 +212,7 @@ export function NotificationBell() {
           id={panelId}
           role="dialog"
           aria-labelledby={headingId}
-          className="panel-in absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-md"
+          className="panel-in absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
           <div className="flex items-center justify-between gap-2">
             <h2 id={headingId} className="text-sm font-semibold">
@@ -226,7 +226,7 @@ export function NotificationBell() {
                 triggerRef.current?.focus();
               }}
               aria-label="Close notifications"
-              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               ×
             </button>
@@ -302,7 +302,7 @@ export function NotificationBell() {
                           onClick={() => void markOne(notification.id)}
                           disabled={rateLimited}
                           aria-label={`${description}, unread`}
-                          className="flex w-full items-start gap-2 rounded-md p-2 text-left hover:bg-muted disabled:pointer-events-none disabled:opacity-60"
+                          className="flex w-full items-start gap-2 rounded-md p-2 text-left hover:bg-secondary disabled:pointer-events-none disabled:opacity-60"
                         >
                           {content}
                         </button>

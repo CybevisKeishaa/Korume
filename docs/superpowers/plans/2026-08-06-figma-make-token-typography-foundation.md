@@ -189,24 +189,14 @@ describe("design token contrast (WCAG AA)", () => {
     }
     expect(failures).toEqual([]);
   });
-
-  /**
-   * A `*-foreground` tone is for a SOLID fill. Pairing it with a low-alpha tint
-   * leaves the text sitting on a near-surface background — `--accent-foreground`
-   * on `bg-accent/20` measures 1.59:1. This guard states the rule that Task 6's
-   * message-bubble fix follows.
-   */
-  it("warm fills pair with ink, not paper", () => {
-    const paper = hslToRgb(resolve("--foreground"));
-    for (const fill of ["--accent", "--danger"] as const) {
-      const ratio = contrastRatio(paper, hslToRgb(resolve(fill)));
-      expect(ratio, `--foreground on ${fill} must be too weak to tempt anyone`).toBeLessThan(
-        AA_NORMAL_TEXT,
-      );
-    }
-  });
 });
 ```
+
+⚠️ **Do not add a test asserting that `--foreground` is *illegible* on `--accent` / `--danger`.**
+An earlier draft of this plan did; it was removed before execution by the human partner's ruling.
+Such a test encodes an incidental fact about the current palette rather than an invariant, so
+darkening `--accent` later would fail it with nothing actually broken. The real protection is the
+`solid fills keep their paired foreground legible` test above, plus Task 6's component fix.
 
 Also update the doc comment on line 36 from `--vermilion-500: 4 74% 49%` to `--ember-500: 24 100% 62%`.
 
@@ -387,7 +377,14 @@ Replace `app/globals.css` lines 5-114 (the doc comment, the `:root` colour block
 }
 ```
 
-⚠️ Leave `--radius: 0.75rem` alone here — Task 2 owns it. Delete nothing below line 114.
+⚠️ Leave `--radius: 0.75rem` alone here — Task 2 owns it.
+
+**Then delete the second `[data-theme="dark"]` block too** — the elevation override at (currently)
+lines 186-191, its comment included. Both dark blocks must go in this task, because Step 2's
+`ships dark-only` test asserts the string `[data-theme="dark"]` appears nowhere in the file. Task 3
+re-values what those overrides used to say; it does not remove them.
+
+Everything else below line 114 stays.
 
 - [ ] **Step 5: Add the `secondary` colour to tailwind.config.ts**
 
@@ -570,9 +567,10 @@ Add to `lib/design-tokens.test.ts` inside `describe("design tokens", …)`:
 Run: `npx vitest run lib/design-tokens.test.ts -t "elevation"`
 Expected: FAIL — values still `0.05`/`0.1`, and each token defined twice.
 
-- [ ] **Step 3: Re-value elevation and delete the dark override block**
+- [ ] **Step 3: Re-value elevation**
 
-In `app/globals.css`, replace the three `--elevation-*` lines (currently 164-167) with:
+Task 1 already deleted the `[data-theme="dark"]` elevation override block, so each token is defined
+once. Replace the three `--elevation-*` lines with:
 
 ```css
   /* Elevation. Almost invisible, soft, premium — never Material. The design's
@@ -583,9 +581,6 @@ In `app/globals.css`, replace the three `--elevation-*` lines (currently 164-167
   --elevation-overlay: 0 8px 20px -4px rgb(0 0 0 / 0.32);
   --elevation-floating: 0 18px 40px -8px rgb(0 0 0 / 0.18);
 ```
-
-Then delete the entire `[data-theme="dark"]` elevation block (currently lines 186-191, comment
-included) — these values are the dark values now.
 
 - [ ] **Step 4: Sweep the five raw shadow usages onto the scale**
 

@@ -33,7 +33,7 @@ const AA_NORMAL_TEXT = 4.5;
 type Hsl = readonly [number, number, number];
 type Rgb = readonly [number, number, number];
 
-/** Parses `--vermilion-500: 4 74% 49%;` definitions into an HSL lookup. */
+/** Parses `--ember-500: 24 100% 62%;` definitions into an HSL lookup. */
 function parsePrimitives(source: string): Map<string, Hsl> {
   const primitives = new Map<string, Hsl>();
   const pattern = /(--[a-z0-9-]+):\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%/g;
@@ -44,26 +44,9 @@ function parsePrimitives(source: string): Map<string, Hsl> {
   return primitives;
 }
 
-/** Extracts one balanced `{ … }` block starting at `startIndex`. */
-function blockAt(source: string, startIndex: number): string {
-  const open = source.indexOf("{", startIndex);
-  let depth = 1;
-  let cursor = open + 1;
-  while (cursor < source.length && depth > 0) {
-    if (source[cursor] === "{") depth++;
-    if (source[cursor] === "}") depth--;
-    cursor++;
-  }
-  return source.slice(startIndex, cursor);
-}
-
-const darkStart = css.indexOf('[data-theme="dark"]');
-const lightSource = css.slice(0, darkStart);
-const darkSource = blockAt(css, darkStart);
-
 const primitives = parsePrimitives(css);
 
-/** Parses `--primary: var(--vermilion-500)` aliases within one theme block. */
+/** Parses `--primary: var(--ember-500)` aliases. */
 function parseAliases(source: string): Map<string, string> {
   const aliases = new Map<string, string>();
   for (const match of source.matchAll(/(--[a-z0-9-]+):\s*var\((--[a-z0-9-]+)\)/g)) {
@@ -73,18 +56,19 @@ function parseAliases(source: string): Map<string, string> {
   return aliases;
 }
 
-const themes = {
-  light: parseAliases(lightSource),
-  // Dark only overrides some tokens; anything it does not redefine inherits
-  // the light value, exactly as the cascade does in the browser.
-  dark: new Map([...parseAliases(lightSource), ...parseAliases(darkSource)]),
-};
+/**
+ * Korume ships dark-only (2026-08-06 adoption spec §2.2): every semantic value
+ * lives in `:root` and there is no second theme block to diff against. The
+ * `data-theme` mechanism is retained, so if a light block is ever added this
+ * file must go back to asserting both.
+ */
+const theme = parseAliases(css);
 
-function resolve(theme: keyof typeof themes, token: string): Hsl {
-  const target = themes[theme].get(token);
-  if (!target) throw new Error(`${theme}: ${token} is not defined as a var() alias`);
+function resolve(token: string): Hsl {
+  const target = theme.get(token);
+  if (!target) throw new Error(`${token} is not defined as a var() alias`);
   const hsl = primitives.get(target);
-  if (!hsl) throw new Error(`${theme}: ${token} aliases ${target}, which has no HSL definition`);
+  if (!hsl) throw new Error(`${token} aliases ${target}, which has no HSL definition`);
   return hsl;
 }
 
@@ -123,87 +107,69 @@ function alphaBlend(fg: Rgb, bg: Rgb, alpha: number): Rgb {
 }
 
 /** Surfaces a tinted element can actually sit on in this app. */
-const SURFACES = ["--card", "--background", "--muted"] as const;
+const SURFACES = ["--card", "--background", "--muted", "--secondary"] as const;
 
 /** The four semantic colours used with the `bg-X/10 text-X-strong` pattern. */
 const TINTED = ["primary", "accent", "success", "danger"] as const;
 
-const THEMES = ["light", "dark"] as const;
-
 describe("design token contrast (WCAG AA)", () => {
-  it.each(THEMES)("defines a -strong text tone for every tinted colour (%s)", (theme) => {
-    const missing = TINTED.filter((name) => !themes[theme].has(`--${name}-strong`));
+  it("defines a -strong text tone for every tinted colour", () => {
+    const missing = TINTED.filter((name) => !theme.has(`--${name}-strong`));
     expect(missing).toEqual([]);
   });
 
-  it.each(THEMES)(
-    "tinted pattern (bg-X/10 + text-X-strong) meets 4.5:1 on every surface (%s)",
-    (theme) => {
-      const failures: string[] = [];
-      for (const name of TINTED) {
-        const fill = hslToRgb(resolve(theme, `--${name}`));
-        const text = hslToRgb(resolve(theme, `--${name}-strong`));
-        for (const surface of SURFACES) {
-          const blended = alphaBlend(fill, hslToRgb(resolve(theme, surface)), 0.1);
-          const ratio = contrastRatio(text, blended);
-          if (ratio < AA_NORMAL_TEXT) {
-            failures.push(
-              `${name}-strong on ${surface} tint: ${ratio.toFixed(2)}:1 (needs ${AA_NORMAL_TEXT})`,
-            );
-          }
-        }
-      }
-      expect(failures).toEqual([]);
-    },
-  );
-
-  it.each(THEMES)(
-    "plain -strong text meets 4.5:1 on every surface (%s)",
-    (theme) => {
-      const failures: string[] = [];
-      for (const name of TINTED) {
-        const text = hslToRgb(resolve(theme, `--${name}-strong`));
-        for (const surface of SURFACES) {
-          const ratio = contrastRatio(text, hslToRgb(resolve(theme, surface)));
-          if (ratio < AA_NORMAL_TEXT) {
-            failures.push(
-              `${name}-strong on ${surface}: ${ratio.toFixed(2)}:1 (needs ${AA_NORMAL_TEXT})`,
-            );
-          }
-        }
-      }
-      expect(failures).toEqual([]);
-    },
-  );
-
-  it.each(THEMES)("solid fills keep their paired foreground legible (%s)", (theme) => {
+  it("tinted pattern (bg-X/10 + text-X-strong) meets 4.5:1 on every surface", () => {
     const failures: string[] = [];
-    for (const [fill, foreground] of [
-      ["--primary", "--primary-foreground"],
-      ["--accent", "--accent-foreground"],
-    ] as const) {
-      const ratio = contrastRatio(
-        hslToRgb(resolve(theme, foreground)),
-        hslToRgb(resolve(theme, fill)),
-      );
-      if (ratio < AA_NORMAL_TEXT) {
-        failures.push(`${foreground} on ${fill}: ${ratio.toFixed(2)}:1`);
+    for (const name of TINTED) {
+      const fill = hslToRgb(resolve(`--${name}`));
+      const text = hslToRgb(resolve(`--${name}-strong`));
+      for (const surface of SURFACES) {
+        const blended = alphaBlend(fill, hslToRgb(resolve(surface)), 0.1);
+        const ratio = contrastRatio(text, blended);
+        if (ratio < AA_NORMAL_TEXT) {
+          failures.push(
+            `${name}-strong on ${surface} tint: ${ratio.toFixed(2)}:1 (needs ${AA_NORMAL_TEXT})`,
+          );
+        }
       }
     }
     expect(failures).toEqual([]);
   });
 
-  it.each(THEMES)("body and muted text meet 4.5:1 on every surface (%s)", (theme) => {
+  it("plain -strong text meets 4.5:1 on every surface", () => {
+    const failures: string[] = [];
+    for (const name of TINTED) {
+      const text = hslToRgb(resolve(`--${name}-strong`));
+      for (const surface of SURFACES) {
+        const ratio = contrastRatio(text, hslToRgb(resolve(surface)));
+        if (ratio < AA_NORMAL_TEXT) {
+          failures.push(`${name}-strong on ${surface}: ${ratio.toFixed(2)}:1`);
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it("solid fills keep their paired foreground legible", () => {
+    const failures: string[] = [];
+    for (const [fill, foreground] of [
+      ["--primary", "--primary-foreground"],
+      ["--accent", "--accent-foreground"],
+      ["--secondary", "--secondary-foreground"],
+      ["--danger", "--danger-foreground"],
+    ] as const) {
+      const ratio = contrastRatio(hslToRgb(resolve(foreground)), hslToRgb(resolve(fill)));
+      if (ratio < AA_NORMAL_TEXT) failures.push(`${foreground} on ${fill}: ${ratio.toFixed(2)}:1`);
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it("body and muted text meet 4.5:1 on every surface", () => {
     const failures: string[] = [];
     for (const text of ["--foreground", "--muted-foreground"] as const) {
       for (const surface of SURFACES) {
-        const ratio = contrastRatio(
-          hslToRgb(resolve(theme, text)),
-          hslToRgb(resolve(theme, surface)),
-        );
-        if (ratio < AA_NORMAL_TEXT) {
-          failures.push(`${text} on ${surface}: ${ratio.toFixed(2)}:1`);
-        }
+        const ratio = contrastRatio(hslToRgb(resolve(text)), hslToRgb(resolve(surface)));
+        if (ratio < AA_NORMAL_TEXT) failures.push(`${text} on ${surface}: ${ratio.toFixed(2)}:1`);
       }
     }
     expect(failures).toEqual([]);
