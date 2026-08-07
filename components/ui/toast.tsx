@@ -83,14 +83,14 @@ export function ToastProvider({
                 {item.title}
               </RadixToast.Title>
               {item.description ? (
-                <RadixToast.Description className="mt-1 text-body text-muted-foreground">
+                <RadixToast.Description className="mt-2xs text-body text-muted-foreground">
                   {item.description}
                 </RadixToast.Description>
               ) : null}
             </div>
             <RadixToast.Close
               aria-label={dismissLabel}
-              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="shrink-0 rounded px-2xs text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               ×
             </RadixToast.Close>
