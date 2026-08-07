@@ -4,9 +4,9 @@ import { getVideo } from "@/lib/data/videos";
 import { getTranscript } from "@/lib/data/transcripts";
 import { Container } from "@/components/ui/container";
 import { DictationView } from "@/components/video-player/dictation-view";
-// See app/(app)/videos/[id]/shadowing/page.tsx for why this cast is a
-// type-only reconciliation of lib/data's wider VideoRow shape, not a
-// runtime-unsafe one.
+// See app/[locale]/(protected)/(focus)/videos/[id]/shadowing/page.tsx for why
+// this cast is a type-only reconciliation of lib/data's wider VideoRow shape,
+// not a runtime-unsafe one.
 import type { TranscriptWithLines, VideoRow } from "@/lib/video-types";
 
 export const dynamic = "force-dynamic";

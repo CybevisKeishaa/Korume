@@ -90,7 +90,7 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
                   </svg>
                 )}
               </div>
-              <p className="text-xs font-medium">{badge.name}</p>
+              <p className="text-caption font-medium">{badge.name}</p>
               {earned ? (
                 earnedDate && <p className="text-caption text-muted-foreground">{earnedDate}</p>
               ) : (

@@ -8,8 +8,9 @@ import { SaveToPlaylistButton } from "@/components/community/save-to-playlist-bu
 // lib/data/videos.ts's VideoRow is the same DB row shape as lib/video-types.ts's
 // client-safe VideoRow, just declared locally with a wider `string | null` for
 // jlpt_level_estimate instead of the `JlptLevel | null` union (see
-// app/(app)/videos/page.tsx for the same reconciliation). The cast below is a
-// type-only reconciliation of that duplication, not a runtime-unsafe one.
+// app/[locale]/(protected)/(app)/videos/page.tsx for the same reconciliation).
+// The cast below is a type-only reconciliation of that duplication, not a
+// runtime-unsafe one.
 import type { TranscriptWithLines, VideoRow } from "@/lib/video-types";
 
 export const dynamic = "force-dynamic";
