@@ -1,7 +1,8 @@
 # Screen-Port Workflow — Primitive Verification & Chrome Architecture — Design
 
-> **Status:** Approved by user (Trần Nguyễn Phi Long) on 2026-08-07, brainstormed in conversation.
-> Ready for `superpowers:writing-plans`.
+> **Status:** Approved
+> **Decision date:** 2026-08-07
+> **Next:** `superpowers:writing-plans`
 >
 > **Trigger:** The token + typography foundation merged (`86328bc`), closing steps 1–2 of the
 > sequence the user set. This spec closes steps **3** (verify `components/ui/**` against the new
@@ -9,11 +10,11 @@
 > Screens cannot be ported until both a porting *rule* and a chrome *contract* exist; without them,
 > the same button/card/nav decisions get re-litigated 29 times.
 >
-> **Amends** `app/globals.css` (one typography step), `tailwind.config.ts`,
+> **Expected implementation scope** — `app/globals.css` (one typography step), `tailwind.config.ts`,
 > `lib/design-tokens.test.ts`, eight files under `components/ui/**`, two files under
 > `components/layout/**` and `components/learning/**` (three sites), the `app/[locale]/` route-group
-> structure,
-> `lib/data/videos.ts` (moves one function out), and `docs/design/screens/navigation-system.md`.
+> structure, `lib/data/videos.ts` (moves one function out), and
+> `docs/design/screens/navigation-system.md`.
 >
 > **Closes** the open category-C ruling left by
 > `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` §3 (the orange
@@ -60,6 +61,8 @@ later reader does not read their absence as an oversight:
 > **Pixel values in Figma are not an API.** Every value must be mapped to a semantic token. Where
 > Figma and the token layer disagree, the token layer is the source of truth for implementation.
 > Any exception must be justified by **semantic role**, never by copying a pixel.
+>
+> **Semantic tokens are the public design API. Figma is an authoring tool, not a runtime contract.**
 
 This is the first rule of the screen-port workflow and it outranks every per-screen decision. It
 applies uniformly to typography, spacing, radius, elevation, and shell geometry.
@@ -120,11 +123,10 @@ a size at or above 36px. Classified by role, they are not one group but four:
 | **Not typography** | 2 | `EditProfileScreen`, `ProfileOverviewScreen` — an avatar initial inside a `rounded-full` | Belongs to the Avatar primitive (§1.1), not to the type scale. |
 | **Oversized section heading** | 1 | `KanjiStudyScreen` 38px `<h2>` "affinity" — the kanji's meaning, set in Latin inside a study card | A single site, and a card heading rather than a page opener. It maps onto `title` / `display`; a lone occurrence does not earn a step. |
 
-Only the first group survives the role test — and it survives it on role, not on being the largest:
-the 62px watermark and the 128/150px glyphs are bigger and still do not qualify. Its three true
-`<h1>`s measure 44/48/54px in design
-space; `4rem` sits inside that cluster once mapped, and gives a 1.6× step over `display`, which is a
-legible jump rather than a near-duplicate.
+`hero` is the only semantic group that survives classification — and it survives on role, not on
+being the largest: the 62px watermark and the 128/150px glyphs are bigger and still do not qualify.
+Its three true `<h1>`s measure 44/48/54px in design space, and `4rem` gives a 1.6× step over
+`display` — a legible jump rather than a near-duplicate.
 
 Note that all four hero sites live in **marketing / auth / about / faq** surfaces. `hero` is an
 editorial token. Nothing in `(app)` uses it today.
@@ -221,6 +223,8 @@ app/[locale]/
 └── (admin)/                own shell                 → out of scope
 ```
 
+> **Child layouts may differ; parent layout identity must not.**
+
 `(protected)` is a shared segment for all three children, so its layout instance — and the provider
 inside it — persists across navigation between them. Only the child layout swaps, which is exactly
 what should swap: the nav. **No URL changes**, because route groups do not appear in the path —
@@ -277,12 +281,12 @@ the porting checklist enforces, not something the group layout can supply.
 
 ## 6. Governance amendments
 
-### 6.1 A claim in `navigation-system.md` is currently false
+### 6.1 A claim in `navigation-system.md` no longer matches the implementation
 
 `docs/design/screens/navigation-system.md:136-140` states that navigation recedes during focused
 study because those flows *"render outside the persistent nav chrome context for that flow"*.
 
-Verified against code, this is not true today:
+Verified against code, this is currently inconsistent with the implementation:
 
 - `app/[locale]/(app)/videos/[id]/shadowing/page.tsx` and `.../dictation/page.tsx` are both inside
   `(app)`, which mounts `AppNav`.
@@ -291,9 +295,9 @@ Verified against code, this is not true today:
   a full-screen surface.
 
 The paragraph is amended to describe the route-group mechanism, and the amendment is labelled in the
-plan as **correcting a false claim**, not as documenting existing behaviour. This is the same defect
-class the token foundation's whole-branch review caught twice, and it is why the correction is
-recorded rather than quietly rewritten.
+plan as **bringing the document back into agreement with the code**, not as documenting existing
+behaviour. This is the same defect class the token foundation's whole-branch review caught twice, and
+it is why the reconciliation is recorded rather than quietly rewritten.
 
 ### 6.2 `navigation-system.md` § Navigation States
 
@@ -349,6 +353,10 @@ Rule #0 is worthless as prose. It ships as a test, in the same family as the exi
   (`min-w-[--radix-select-trigger-width]`), viewport units (`h-[80vh]`, `max-w-[90vw]`), `calc()`,
   and percentages. These express relationships, not copied pixels, and the distinction is the point
   of the rule.
+- **Exceptions require an inline comment** stating why no semantic token can express the value. This
+  is not an invitation — the comment is the cost, and it exists so that a genuinely special case is
+  documented at the call site rather than resolved by deleting the test. A pull request that
+  disables the rule instead of writing the comment is rejected.
 - **Widening the scope to all of `components/**`** is deliberately not done here. The tree currently
   holds a handful of `h-[8rem]`-style values that each need a judgement call, and mixing that into
   this spec would blur its boundary. It is a step-5 decision.
