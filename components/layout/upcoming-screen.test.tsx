@@ -27,6 +27,19 @@ describe("UpcomingScreen", () => {
     expect(screen.getByText("Keep studying.")).toBeInTheDocument();
   });
 
+  it("states what is missing, and labels the unlocks section", () => {
+    render(
+      <UpcomingScreen
+        title="Roadmap"
+        body="The path…"
+        unlocks="Keep studying."
+        unlocksLabel="What fills this"
+      />,
+    );
+    expect(screen.getByText("The path…")).toBeInTheDocument();
+    expect(screen.getByText("What fills this")).toBeInTheDocument();
+  });
+
   it("renders no chart, meter or progress element", () => {
     // The whole point of an honest empty state: a placeholder visualisation
     // would render data the system does not have.
