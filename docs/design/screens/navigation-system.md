@@ -92,11 +92,16 @@ The Nav Column is **toggleable** (show/hide via a small edge affordance) rather 
 always-fixed 240px column — generalizing the hidden-by-default behavior
 `screen-shadowing-practice.md` § Sidebar already mandates inside the Lesson Workspace to the whole
 product. **The default visibility state is RESOLVED (2026-08-05, refined 2026-08-07): it is a
-per-route-group chrome contract, not one product-wide default.** `(app)` — every destination in
-§ Navigation Inventory except the Lesson Workspace — defaults to visible; `(focus)` — Shadowing
-Practice, Dictation, Pronunciation Studio (Planned) — defaults to hidden, which is exactly the
-Lesson Workspace behavior this paragraph originally deferred (see § Navigation States' contract
-table below; that mandate is now built, not still unbuilt). Both defaults are session-scoped React
+per-route-group chrome contract, not one product-wide default.** `(app)` defaults to visible, with
+two exceptions: the Lesson Workspace routes — Shadowing Practice, Dictation, Pronunciation Studio
+(Planned); not themselves § Navigation Inventory rows, per that section's own note that
+acquisition-loop sub-routes are reached by drilling into a parent item, never listed as their own
+top-level entry — default to hidden under `(focus)` instead, which is exactly the Lesson Workspace
+behavior this paragraph originally deferred (that mandate is now built, not still unbuilt); and
+`/journal` (`journey`, a real § Navigation Inventory row) mounts no Nav Column at all under
+`(immersive)` instead — a harder exception than `(focus)`'s: there is no toggle to restore it, only
+the per-screen back affordance (see § Navigation States' contract table below — the same exception
+F3 recorded there). The `(app)`/`(focus)` default is session-scoped React
 state (`useState(defaultVisible)` in `app-nav.tsx`, with `defaultVisible` supplied per chrome
 contract by each route group's `layout.tsx`), deliberately not persisted across reloads. The
 toggle itself shipped in Korume rebrand Plan B (Code) Task 4; the per-group default it now reads
@@ -240,8 +245,11 @@ section's lead sentence).
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 
-1. **Nav footer controls.** *Shipped today* in `app-nav.tsx`: `ReduceMotionToggle`, the signed-in
-   email, and sign-out. `ThemeToggle` is NOT in the nav footer — Korume ships dark-only (2026-08-06
+1. **Nav footer controls.** *Shipped today* in `app-nav.tsx`: the signed-in email and sign-out.
+   `ReduceMotionToggle` is NOT a nav footer control — since F1 (final whole-branch review,
+   2026-08-07) it renders `compact` in the edge-chrome rail outside the `<nav>` element itself, so
+   it stays mounted and reachable even while `(focus)` hides the column (see § Navigation States).
+   `ThemeToggle` is NOT in the nav footer either — Korume ships dark-only (2026-08-06
    token adoption), and the toggle is retained only in the admin style guide
    (`components/style-guide/style-guide.tsx`) as the future light-mode preview point.
    *Planned, NOT built* (verified against the code 2026-08-05 —

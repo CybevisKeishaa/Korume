@@ -150,8 +150,16 @@ export function AppNav({
         <div>, not a second <nav>: `route-group-provider-identity.spec.ts`
         asserts `getByRole("navigation")` stays at 0 on chrome-less surfaces,
         and this rail must not become a second landmark on `(app)` either.
+
+        `md:w-6` is restored here (NB-1, 2026-08-07, final whole-branch
+        review round 2): `(focus)` exists precisely so navigation recedes to
+        a narrow strip during focused study, and the first F1 pass widened
+        this rail to ~130px by rendering `ReduceMotionToggle`'s caption
+        on-screen. `compact` keeps the control mounted and reachable (still
+        the point of F1) without re-widening the rail — see
+        `reduce-motion-toggle.tsx`.
       */}
-      <div className="flex flex-col items-stretch gap-2 border-b border-border bg-card px-2 py-2 md:h-screen md:w-auto md:border-b-0 md:border-r md:py-3">
+      <div className="flex flex-col items-center gap-2 border-b border-border bg-card py-2 md:h-screen md:w-6 md:border-b-0 md:border-r md:py-3">
         <button
           type="button"
           aria-expanded={visible}
@@ -164,7 +172,7 @@ export function AppNav({
           </span>
         </button>
         <div className="border-t border-border pt-2 text-muted-foreground">
-          <ReduceMotionToggle />
+          <ReduceMotionToggle compact />
         </div>
       </div>
     </div>
