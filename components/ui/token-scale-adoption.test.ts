@@ -47,3 +47,14 @@ describe("primitives use the design system's own scales (spec §4)", () => {
     expect(hits).toEqual([]);
   });
 });
+
+it("uses the kebab-case field-fill utility, not the camelCase outlier", () => {
+  for (const file of ["input.tsx", "select.tsx"]) {
+    const text = readFileSync(
+      path.join(process.cwd(), "components/ui", file),
+      "utf8",
+    );
+    expect(text).not.toContain("bg-inputBackground");
+    expect(text).toContain("bg-input-background");
+  }
+});

@@ -43,7 +43,7 @@ export function Select({
         aria-label={ariaLabel}
         className={cn(
           "flex h-10 w-full items-center justify-between gap-xs rounded-md border border-input",
-          "bg-inputBackground px-sm text-body text-foreground",
+          "bg-input-background px-sm text-body text-foreground",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "data-[placeholder]:text-muted-foreground",
           className,
