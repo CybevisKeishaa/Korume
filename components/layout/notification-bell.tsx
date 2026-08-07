@@ -198,7 +198,7 @@ export function NotificationBell() {
             key={pulseKey}
             aria-hidden="true"
             className={cn(
-              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-danger-foreground",
+              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-caption font-bold text-danger-foreground",
               pulseKey > 0 && "badge-pulse",
             )}
           >

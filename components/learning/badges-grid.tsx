@@ -92,9 +92,9 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
               </div>
               <p className="text-xs font-medium">{badge.name}</p>
               {earned ? (
-                earnedDate && <p className="text-[11px] text-muted-foreground">{earnedDate}</p>
+                earnedDate && <p className="text-caption text-muted-foreground">{earnedDate}</p>
               ) : (
-                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                <p className="text-caption font-medium uppercase tracking-wide text-muted-foreground">
                   {t("badges.locked")}
                 </p>
               )}
