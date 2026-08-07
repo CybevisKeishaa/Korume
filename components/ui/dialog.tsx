@@ -95,13 +95,13 @@ export function Dialog({
             </RadixDialog.Title>
             <RadixDialog.Close
               aria-label={closeLabel}
-              className="shrink-0 rounded px-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="shrink-0 rounded px-2xs text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               ×
             </RadixDialog.Close>
           </div>
           {description ? (
-            <RadixDialog.Description className="mt-1 text-body text-muted-foreground">
+            <RadixDialog.Description className="mt-2xs text-body text-muted-foreground">
               {description}
             </RadixDialog.Description>
           ) : null}

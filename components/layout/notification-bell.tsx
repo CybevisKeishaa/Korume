@@ -198,7 +198,16 @@ export function NotificationBell() {
             key={pulseKey}
             aria-hidden="true"
             className={cn(
-              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-danger-foreground",
+              // `leading-none` (final whole-branch review F7, 2026-08-07):
+              // `text-caption` is a paired size+line-height token
+              // (`tailwind.config.ts`), so it also pulls in `--leading-caption`
+              // (18px) — inside this fixed `h-4` (16px) pill that line box no
+              // longer fits. The token-adoption pass that moved this off the
+              // old arbitrary 10px font size only reasoned about the width
+              // axis (`min-w-4` already flexes for 2-digit counts); the
+              // height was pinned and needs the line-height silenced, not
+              // grown, to stay a true circle at the 1-digit count.
+              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-caption font-bold leading-none text-danger-foreground",
               pulseKey > 0 && "badge-pulse",
             )}
           >

@@ -6,13 +6,18 @@ export const PROTECTED_PREFIXES = [
   "/grammar",
   "/videos",
   "/reading",
-  "/speaking",
+  // Note: the Korume rebrand renamed the nav LABEL "conversation" -> "speaking"
+  // but deliberately kept the ROUTE at /conversation (see
+  // korume-rebrand-plan-a-status). Protect the real route, not the label.
+  "/conversation",
   "/jlpt",
   "/jlpt-test",
   "/community",
   "/playlists",
   "/leaderboard",
   "/profile",
+  "/journal",
+  "/mining",
   "/content-manager",
   "/video-curator",
   // Layer 7 admin CMS (`app/[locale]/(admin)/admin/**`). Middleware only ensures

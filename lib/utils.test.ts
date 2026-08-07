@@ -82,4 +82,11 @@ describe("cn (tailwind-merge custom token config)", () => {
     expect(cn("font-display", "font-semibold")).toBe("font-display font-semibold");
     expect(cn("font-sans", "font-display")).toBe("font-display");
   });
+
+  it("keeps text-hero in the font-size group, not the colour group", () => {
+    // Stock tailwind-merge classifies unknown `text-*` as a COLOUR utility and
+    // drops it when a real colour follows. A new scale in tailwind.config.ts
+    // that is not also registered in lib/utils.ts fails exactly here.
+    expect(cn("text-hero", "text-foreground")).toBe("text-hero text-foreground");
+  });
 });

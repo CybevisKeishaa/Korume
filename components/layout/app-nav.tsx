@@ -57,20 +57,21 @@ export const NAV_GROUPS = [
 /** Flat view kept for the catalog-parity test; no production consumer today. */
 export const NAV_ITEMS = NAV_GROUPS.map((group) => group.items).flat();
 
-export function AppNav({ userEmail }: { userEmail: string }) {
+export function AppNav({
+  userEmail,
+  defaultVisible = true,
+}: {
+  userEmail: string;
+  defaultVisible?: boolean;
+}) {
   const pathname = usePathname();
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
-  // Visible by default everywhere the (app) shell renders — the toggle is a
-  // new optional affordance, not a change to default visibility
-  // (navigation-system.md § Navigation Inventory; 2026-08-05 spec §2.2).
-  // The Lesson Workspace's hidden-by-default mandate
-  // (screen-shadowing-practice.md § Sidebar) applies to the /shadowing/[id]
-  // route group, which does not exist yet — wiring that default is the job
-  // of the plan that builds it, not this component's. Deliberately not
-  // persisted: session-scoped state, survives client-side navigation
-  // because AppNav lives in the (app) layout.
-  const [visible, setVisible] = useState(true);
+  // Not persisted: session-scoped state. It survives client-side navigation
+  // WITHIN a chrome group, because AppNav lives in that group's layout —
+  // crossing into another group is a chrome change, and resetting to the new
+  // group's default is the intended behaviour, not a bug.
+  const [visible, setVisible] = useState(defaultVisible);
 
   return (
     <div className="flex w-full shrink-0 flex-col md:w-auto md:flex-row">
@@ -125,9 +126,6 @@ export function AppNav({ userEmail }: { userEmail: string }) {
           </div>
 
           <div className="mt-4 space-y-3 border-t border-border pt-4">
-            <div className="flex items-center justify-end">
-              <ReduceMotionToggle />
-            </div>
             <p className="truncate px-1 text-xs text-muted-foreground" title={userEmail}>
               {userEmail}
             </p>
@@ -142,17 +140,41 @@ export function AppNav({ userEmail }: { userEmail: string }) {
           </div>
         </nav>
       ) : null}
-      <button
-        type="button"
-        aria-expanded={visible}
-        onClick={() => setVisible((current) => !current)}
-        className="flex items-center justify-center border-b border-border bg-card py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:h-screen md:w-6 md:border-b-0 md:border-r md:py-0"
-      >
-        <span aria-hidden="true">{visible ? "‹" : "›"}</span>
-        <span className="sr-only">
-          {visible ? t("toggle.hide") : t("toggle.show")}
-        </span>
-      </button>
+      {/*
+        Deliberately OUTSIDE the `visible` conditional above (final
+        whole-branch review F1, 2026-08-07): this is the only edge-chrome
+        rail (button + reduce-motion control) `(focus)` routes render when
+        `defaultVisible={false}`, and CLAUDE.md §2 rule 4 requires the
+        reduce-motion control to be globally reachable — including on
+        Shadowing/Dictation, the app's heaviest repeated study loops. A plain
+        <div>, not a second <nav>: `route-group-provider-identity.spec.ts`
+        asserts `getByRole("navigation")` stays at 0 on chrome-less surfaces,
+        and this rail must not become a second landmark on `(app)` either.
+
+        `md:w-6` is restored here (NB-1, 2026-08-07, final whole-branch
+        review round 2): `(focus)` exists precisely so navigation recedes to
+        a narrow strip during focused study, and the first F1 pass widened
+        this rail to ~130px by rendering `ReduceMotionToggle`'s caption
+        on-screen. `compact` keeps the control mounted and reachable (still
+        the point of F1) without re-widening the rail — see
+        `reduce-motion-toggle.tsx`.
+      */}
+      <div className="flex flex-col items-center gap-2 border-b border-border bg-card py-2 md:h-screen md:w-6 md:border-b-0 md:border-r md:py-3">
+        <button
+          type="button"
+          aria-expanded={visible}
+          onClick={() => setVisible((current) => !current)}
+          className="flex items-center justify-center rounded py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <span aria-hidden="true">{visible ? "‹" : "›"}</span>
+          <span className="sr-only">
+            {visible ? t("toggle.hide") : t("toggle.show")}
+          </span>
+        </button>
+        <div className="border-t border-border pt-2 text-muted-foreground">
+          <ReduceMotionToggle compact />
+        </div>
+      </div>
     </div>
   );
 }

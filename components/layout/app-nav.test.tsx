@@ -207,4 +207,55 @@ describe("AppNav visibility toggle", () => {
       "true",
     );
   });
+
+  // ThemeProvider mirrors the file's existing render helper (line ~71) — AppNav
+  // is rendered inside it everywhere else in this suite.
+  it("starts hidden when the chrome contract asks for it", () => {
+    render(
+      <ThemeProvider>
+        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+      </ThemeProvider>,
+    );
+
+    // The destinations are gone…
+    expect(screen.queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
+    // …but the column is only hidden, not absent: the learner can bring it back.
+    // The toggle's accessible name is its text content, messages/en/nav.json
+    // nav.toggle.show = "Show navigation".
+    expect(screen.getByRole("button", { name: /show navigation/i })).toBeInTheDocument();
+  });
+
+  it("still starts visible by default", () => {
+    render(
+      <ThemeProvider>
+        <AppNav userEmail="learner@example.com" />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+  });
+
+  // Final whole-branch review F1 (2026-08-07): the reduce-motion control used
+  // to live only inside the `visible` nav footer, so `(focus)` routes
+  // (`defaultVisible={false}`) mounted it nowhere at all until the learner
+  // found the edge strip and expanded the column — a CLAUDE.md §2 rule 4
+  // regression on Shadowing/Dictation, the heaviest repeated study loops.
+  it("keeps the reduce-motion control reachable even while the nav is hidden", () => {
+    render(
+      <ThemeProvider>
+        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+      </ThemeProvider>,
+    );
+    expect(
+      screen.getByRole("checkbox", { name: /reduce motion/i }),
+    ).toBeInTheDocument();
+    // And it must not smuggle in a second nav landmark to do it.
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("does not duplicate the reduce-motion control while the nav is visible", () => {
+    renderNav();
+    expect(
+      screen.getAllByRole("checkbox", { name: /reduce motion/i }),
+    ).toHaveLength(1);
+  });
 });

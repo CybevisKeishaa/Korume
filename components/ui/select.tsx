@@ -43,7 +43,7 @@ export function Select({
         aria-label={ariaLabel}
         className={cn(
           "flex h-10 w-full items-center justify-between gap-xs rounded-md border border-input",
-          "bg-inputBackground px-sm text-body text-foreground",
+          "bg-input-background px-sm text-body text-foreground",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "data-[placeholder]:text-muted-foreground",
           className,
@@ -59,6 +59,12 @@ export function Select({
           position="popper"
           sideOffset={4}
           className={cn(
+            // `max-h-72` is a raw Tailwind height, deliberately left alone
+            // (final whole-branch review F6, 2026-08-07): heights are
+            // explicitly out of scope for the token-adoption plan this test
+            // enforces, and there is no height token scale to move it onto —
+            // `token-scale-adoption.test.ts`'s RAW patterns intentionally
+            // don't scan sizing for the same reason.
             "z-popover max-h-72 min-w-[--radix-select-trigger-width] overflow-y-auto",
             "rounded-md border border-border bg-overlay shadow-overlay",
           )}

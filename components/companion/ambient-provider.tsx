@@ -23,8 +23,9 @@ import {
 /**
  * The Ambient Layer (spec 1 §5.1): owns the creature's existence and state;
  * surfaces only declare where it stands (CompanionAnchor). Mounted once in
- * the (app) layout, so state — pending contexts, cooldown, machine —
- * persists across client-side navigation (§5.11). Dialogue is ephemeral by
+ * the (protected) layout, above the chrome groups, so state — pending
+ * contexts, cooldown, machine — persists across client-side navigation and
+ * across a chrome boundary (§5.11). Dialogue is ephemeral by
  * design: a full reload clears pending contexts; only recorded memories are
  * canon (§6.2).
  *

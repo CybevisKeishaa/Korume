@@ -265,20 +265,45 @@ export default async function AppChromeLayout({
 
 Create `app/[locale]/(protected)/(immersive)/layout.tsx`:
 
+> **Correction (2026-08-07, final whole-branch review F4).** The block below originally read "Chrome
+> contract: no nav. Not 'nav hidden' — not mounted at all, and there is no toggle," with a layout body
+> containing no `ReduceMotionToggle`. That was wrong and was fixed in the spec + `navigation-system.md`
+> at commit `91d9084` but never carried back to this plan. The immersive contract is **no Nav Column**,
+> not **no chrome**: every immersive screen still carries a back affordance (per-screen) plus a global
+> `ReduceMotionToggle` (CLAUDE.md §2 rules 4 and 5 — a globally reachable reduce-motion control with
+> full keyboard reach, and immersive is where motion is heaviest). This reflects the user's ruling of
+> 2026-08-07 that the immersive contract is back affordance PLUS reduce-motion control. The code block
+> below is corrected to match what actually shipped (`app/[locale]/(protected)/(immersive)/layout.tsx`);
+> the surrounding narrative is intentionally left as-is elsewhere in this plan except where this
+> correction required touching it.
+
 ```tsx
 /**
- * Chrome contract: no nav. Not "nav hidden" — not mounted at all, and there is
- * no toggle. Companion Diary and onboarding are rooms, not destinations.
+ * Chrome contract: no nav. Not "nav hidden" — the Nav Column is not mounted at
+ * all, and there is no toggle. Companion Diary and onboarding are rooms, not
+ * destinations. This is "no Nav Column", not "no chrome" — see the correction
+ * above and `docs/design/screens/navigation-system.md` § Navigation States.
  *
  * Consequence (spec §5.6): there is no `<nav>` landmark here, so every
- * immersive screen must carry its own labelled way back.
+ * immersive screen must carry its own labelled way back. CLAUDE.md §2 rules 4
+ * and 5 additionally require a globally reachable, keyboard-reachable
+ * reduce-motion control at all times — immersive is where motion is heaviest,
+ * so this layout mounts `ReduceMotionToggle` directly, independent of both the
+ * Nav Column (not mounted here) and Companion state.
  */
 export default function ImmersiveChromeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <main className="min-h-screen">{children}</main>;
+  return (
+    <main className="min-h-screen">
+      <div className="flex justify-end p-md text-muted-foreground">
+        <ReduceMotionToggle />
+      </div>
+      {children}
+    </main>
+  );
 }
 ```
 

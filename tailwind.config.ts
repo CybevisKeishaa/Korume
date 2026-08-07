@@ -31,7 +31,7 @@ const config: Config = {
         // Field-interior fill, distinct from `input` (the border colour). Was
         // declared in globals.css but never wired to a Tailwind utility, so
         // Input.tsx fell back to bg-card, the wrong colour per the design.
-        inputBackground: "hsl(var(--input-background) / <alpha-value>)",
+        "input-background": "hsl(var(--input-background) / <alpha-value>)",
         ring: "hsl(var(--ring) / <alpha-value>)",
         // The single Korume accent — warm ember. `strong` = the legible-as-TEXT
         // tone. Use `text-primary-strong` for words and icons, `bg-primary` for
@@ -95,6 +95,7 @@ const config: Config = {
         heading: ["var(--text-heading)", "var(--leading-heading)"],
         title: ["var(--text-title)", "var(--leading-title)"],
         display: ["var(--text-display)", "var(--leading-display)"],
+        hero: ["var(--text-hero)", "var(--leading-hero)"],
       },
       lineHeight: {
         jp: "var(--leading-jp)",

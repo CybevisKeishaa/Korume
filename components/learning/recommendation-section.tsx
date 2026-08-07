@@ -10,7 +10,8 @@ export interface RecommendationSectionProps {
  * rail — CLAUDE.md §5.2). Calls `getRecommendations()` directly rather than
  * `fetch`ing `GET /api/videos/recommendations`, matching this repo's
  * established pattern of server components calling `lib/data/*` straight
- * (see `app/(app)/videos/page.tsx`'s `listVideos()`, `app/(app)/jlpt/page.tsx`).
+ * (see `app/[locale]/(protected)/(app)/videos/page.tsx`'s `listVideos()`,
+ * `app/[locale]/(protected)/(app)/jlpt/page.tsx`).
  *
  * Callers (`/dashboard`, `/videos`) wrap this in `<Suspense>` so scoring every
  * candidate video (a real, non-trivial amount of tokenization work — see

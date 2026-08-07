@@ -15,9 +15,9 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
-  lg: "h-12 px-6 text-base",
+  sm: "h-9 px-sm text-body",
+  md: "h-10 px-md text-body",
+  lg: "h-12 px-lg text-body-lg",
 };
 
 /**
@@ -34,7 +34,7 @@ export function buttonStyles({
   className?: string;
 } = {}): string {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors",
+    "inline-flex items-center justify-center gap-xs rounded-md font-medium transition-colors",
     "disabled:pointer-events-none disabled:opacity-50",
     variants[variant],
     sizes[size],

@@ -24,8 +24,9 @@ type AddState = { status: "idle" } | { status: "adding"; playlistId: string } | 
  * Translated from `playlists.*` (not `community.*`, despite the file's
  * `components/community/` path): it's a playlist feature, and per the Task
  * 16 dependency-graph audit it's also consumed from the `videos` surface
- * (`app/[locale]/(app)/videos/page.tsx`, `.../videos/[id]/shadowing/page.tsx`)
- * — ownership follows the feature, not the directory.
+ * (`app/[locale]/(protected)/(app)/videos/page.tsx`,
+ * `app/[locale]/(protected)/(focus)/videos/[id]/shadowing/page.tsx`) —
+ * ownership follows the feature, not the directory.
  */
 export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButtonProps) {
   const t = useTranslations("playlists");
