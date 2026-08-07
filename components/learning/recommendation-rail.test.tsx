@@ -25,7 +25,7 @@ describe("RecommendationRail", () => {
     expect(screen.getByText("82% words you know")).toBeInTheDocument();
 
     const link = screen.getByRole("link", { name: /はじめての日本語/ });
-    expect(link).toHaveAttribute("href", "/en/videos/v1/shadowing");
+    expect(link).toHaveAttribute("href", "/en/shadowing/v1");
   });
 
   it("labels the too-easy and too-hard bands distinctly", () => {
@@ -50,7 +50,7 @@ describe("RecommendationRail", () => {
     render(<RecommendationRail recommendations={[]} />);
 
     const link = screen.getByRole("link", { name: "import a video" });
-    expect(link).toHaveAttribute("href", "/en/videos");
+    expect(link).toHaveAttribute("href", "/en/shadowing");
 
     // The link's English text was threaded through next-intl's rich-text
     // t.rich() (binding pattern: EN copy is frozen, so the sentence can't be

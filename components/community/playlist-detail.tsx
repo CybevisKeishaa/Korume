@@ -127,7 +127,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                   <Image src={item.thumbnailUrl} alt="" fill sizes="80px" className="object-cover" />
                 )}
               </div>
-              <Link href={`/videos/${item.videoId}/shadowing`} className="min-w-0 flex-1 truncate font-medium hover:underline">
+              <Link href={`/shadowing/${item.videoId}`} className="min-w-0 flex-1 truncate font-medium hover:underline">
                 {item.title}
               </Link>
               {isOwner && (

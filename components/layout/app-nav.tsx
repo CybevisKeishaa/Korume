@@ -17,16 +17,16 @@ import { NotificationBell } from "@/components/layout/notification-bell";
  * rows (review, challenges, korume, roadmap, weeklyReport, statistics,
  * achievements, settings) have no route yet and get no entry — a group
  * gains its rows (and INSIGHTS appears at all) only when a destination
- * ships. NOTE: `lessons` points at `/videos`, the shipped Shadowing Hub
- * route; the doc-canonical `/shadowing` path is a route rename deferred to
- * the Hub UI plan (see app-nav.test.tsx's "route rename deferred" pin).
+ * ships. `lessons` points at `/shadowing`, the canonical route
+ * (navigation-system.md § Navigation Inventory) — Plan C1 executed the rename
+ * from the formerly-shipped `/videos` directory.
  */
 export const NAV_GROUPS = [
   {
     key: "learn",
     items: [
       { href: "/dashboard", key: "dashboard" },
-      { href: "/videos", key: "lessons" },
+      { href: "/shadowing", key: "lessons" },
       { href: "/kanji", key: "kanji" },
       { href: "/vocab", key: "vocab" },
       { href: "/grammar", key: "grammar" },

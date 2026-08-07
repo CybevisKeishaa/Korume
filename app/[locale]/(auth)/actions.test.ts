@@ -81,11 +81,11 @@ describe("login() redirect target (spec P2 — no double-prefixing)", () => {
       loginFormData({
         email: "a@b.com",
         password: "secret",
-        redirectTo: "/en/videos/v1/shadowing",
+        redirectTo: "/en/shadowing/v1",
       }),
     ).catch((e: unknown) => e);
 
-    expect(redirectDestination(error)).toBe("/en/videos/v1/shadowing");
+    expect(redirectDestination(error)).toBe("/en/shadowing/v1");
     expect(redirectDestination(error)).not.toContain("/en/en/");
   });
 

@@ -4,7 +4,7 @@ export const PROTECTED_PREFIXES = [
   "/kanji",
   "/vocab",
   "/grammar",
-  "/videos",
+  "/shadowing",
   "/reading",
   // Note: the Korume rebrand renamed the nav LABEL "conversation" -> "speaking"
   // but deliberately kept the ROUTE at /conversation (see

@@ -20,7 +20,7 @@ describe("route protection", () => {
       "/kanji",
       "/vocab",
       "/grammar",
-      "/videos",
+      "/shadowing",
       "/reading",
       "/conversation",
       "/jlpt",
@@ -83,7 +83,7 @@ describe("route protection", () => {
   });
 
   it("does not protect a path that merely starts with a prefix's characters", () => {
-    // "/videosomething" must not be swallowed by the "/videos" prefix.
-    expect(isProtectedPath("/videosomething")).toBe(false);
+    // "/shadowingsomething" must not be swallowed by the "/shadowing" prefix.
+    expect(isProtectedPath("/shadowingsomething")).toBe(false);
   });
 });

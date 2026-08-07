@@ -134,15 +134,14 @@ describe("AppNav", () => {
     );
   });
 
-  it("routes Lessons at the shipped Hub route /videos (route rename deferred)", () => {
-    // navigation-system.md's canonical table says `/shadowing`, but the
-    // shipped Hub route is `/videos` — renaming the route directory is a
-    // Hub-UI-plan-sized change Plan B is not authorized to make. This pin
-    // records the deferral so the eventual rename is a conscious test edit.
+  it("routes Lessons at /shadowing", () => {
+    // The deferral pin this replaced recorded that `lessons` pointed at the
+    // shipped `/videos` route while navigation-system.md's canonical table said
+    // `/shadowing`. Plan C1 executes the rename, so the deferral is over.
     renderNav();
     expect(screen.getByRole("link", { name: EXPECTED_LABELS.lessons })).toHaveAttribute(
       "href",
-      "/en/videos",
+      "/en/shadowing",
     );
   });
 

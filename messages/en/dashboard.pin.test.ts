@@ -35,7 +35,7 @@ describe("dashboard.json EN — page.tsx literals", () => {
     expect(en.badges.heading).toBe("Badges");
   });
 
-  it("pins the recommendations section heading and loading fallback, promoted to common.recommendations (shared with /videos)", () => {
+  it("pins the recommendations section heading and loading fallback, promoted to common.recommendations (shared with /shadowing)", () => {
     expect(common.recommendations.heading).toBe("Recommended for you");
     expect(common.recommendations.loading).toBe("Finding videos at your level…");
   });

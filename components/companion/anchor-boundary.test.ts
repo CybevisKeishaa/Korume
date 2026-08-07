@@ -26,17 +26,17 @@ import { describe, expect, it } from "vitest";
 const ALLOWLIST = new Set([
   "app/[locale]/(protected)/(app)/dashboard/page.tsx",
   "app/[locale]/(protected)/(immersive)/journal/page.tsx",
-  "app/[locale]/(protected)/(app)/videos/page.tsx",
+  "app/[locale]/(protected)/(app)/shadowing/page.tsx",
   "components/companion/journal-view.tsx",
   "components/companion/ambient.test.tsx",
   // This scan itself names the module it forbids.
   "components/companion/anchor-boundary.test.ts",
   "components/video-player/mining-deck-list.tsx",
-  "app/[locale]/(app)/shadowing/[id]/pronunciation/page.tsx",
-  "app/[locale]/(app)/shadowing/[id]/listening/page.tsx",
-  "app/[locale]/(app)/shadowing/[id]/listening/fill-blank/page.tsx",
-  "app/[locale]/(app)/shadowing/[id]/listening/translation/page.tsx",
-  "app/[locale]/(app)/shadowing/[id]/summary/page.tsx",
+  "app/[locale]/(protected)/(focus)/shadowing/[id]/pronunciation/page.tsx",
+  "app/[locale]/(protected)/(focus)/shadowing/[id]/listening/page.tsx",
+  "app/[locale]/(protected)/(focus)/shadowing/[id]/listening/fill-blank/page.tsx",
+  "app/[locale]/(protected)/(focus)/shadowing/[id]/listening/translation/page.tsx",
+  "app/[locale]/(protected)/(focus)/shadowing/[id]/summary/page.tsx",
 ]);
 
 /** The anchor module is allowed to be itself. */
@@ -90,37 +90,37 @@ describe("CompanionAnchor import boundary (spec 1 §5.4)", () => {
       'import { CompanionAnchor } from "@/components/companion/companion-anchor";';
     // Shadowing mode itself: continuous playback, still Not Supported.
     expect(
-      isOffender("app/[locale]/(app)/shadowing/[id]/page.tsx", importLine),
+      isOffender("app/[locale]/(protected)/(focus)/shadowing/[id]/page.tsx", importLine),
     ).toBe(true);
     // Pronunciation / Listening Practice (incl. sub-modes) / Summary:
     // Planned — architecture allows an anchor, none is built yet.
     expect(
       isOffender(
-        "app/[locale]/(app)/shadowing/[id]/pronunciation/page.tsx",
+        "app/[locale]/(protected)/(focus)/shadowing/[id]/pronunciation/page.tsx",
         importLine,
       ),
     ).toBe(false);
     expect(
       isOffender(
-        "app/[locale]/(app)/shadowing/[id]/listening/page.tsx",
+        "app/[locale]/(protected)/(focus)/shadowing/[id]/listening/page.tsx",
         importLine,
       ),
     ).toBe(false);
     expect(
       isOffender(
-        "app/[locale]/(app)/shadowing/[id]/listening/fill-blank/page.tsx",
+        "app/[locale]/(protected)/(focus)/shadowing/[id]/listening/fill-blank/page.tsx",
         importLine,
       ),
     ).toBe(false);
     expect(
       isOffender(
-        "app/[locale]/(app)/shadowing/[id]/listening/translation/page.tsx",
+        "app/[locale]/(protected)/(focus)/shadowing/[id]/listening/translation/page.tsx",
         importLine,
       ),
     ).toBe(false);
     expect(
       isOffender(
-        "app/[locale]/(app)/shadowing/[id]/summary/page.tsx",
+        "app/[locale]/(protected)/(focus)/shadowing/[id]/summary/page.tsx",
         importLine,
       ),
     ).toBe(false);

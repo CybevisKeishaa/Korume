@@ -7,7 +7,7 @@ import { useTranslations } from "@/lib/i18n";
 import type { VideoRow } from "@/lib/video-types";
 
 /**
- * A single video's card in the /videos grid. Links to its shadowing page.
+ * A single video's card in the /shadowing grid. Links to its shadowing page.
  *
  * A non-async Server Component — `useTranslations` from `@/lib/i18n` works
  * here without `"use client"`, same as `recommendation-rail.tsx` (Task 5).
@@ -20,7 +20,7 @@ export function VideoCard({ video }: { video: VideoRow }) {
   return (
     <li>
       <Link
-        href={`/videos/${video.id}/shadowing`}
+        href={`/shadowing/${video.id}`}
         className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-muted">

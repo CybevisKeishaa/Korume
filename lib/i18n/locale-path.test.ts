@@ -8,9 +8,9 @@ describe("stripLocale", () => {
       locale: "vi",
       pathname: "/dashboard",
     });
-    expect(stripLocale("/en/videos/abc/shadowing")).toEqual({
+    expect(stripLocale("/en/shadowing/abc")).toEqual({
       locale: "en",
-      pathname: "/videos/abc/shadowing",
+      pathname: "/shadowing/abc",
     });
   });
 

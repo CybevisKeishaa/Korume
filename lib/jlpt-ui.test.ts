@@ -65,7 +65,7 @@ describe("reviewHrefForSection", () => {
     expect(reviewHrefForSection("vocab", "N4")).toBe("/vocab?level=N4");
     expect(reviewHrefForSection("grammar", "N4")).toBe("/grammar?level=N4");
     expect(reviewHrefForSection("reading", "N4")).toBe("/reading?level=N4");
-    expect(reviewHrefForSection("listening", "N4")).toBe("/videos?level=N4");
+    expect(reviewHrefForSection("listening", "N4")).toBe("/shadowing?level=N4");
   });
 });
 

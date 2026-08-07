@@ -95,7 +95,7 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
               {m.note ? <p className="mt-2 text-sm">{m.note}</p> : null}
               {m.videoId && m.transcriptLineId ? (
                 <Link
-                  href={`/videos/${m.videoId}/shadowing?line=${m.transcriptLineId}`}
+                  href={`/shadowing/${m.videoId}?line=${m.transcriptLineId}`}
                   className="mt-3 inline-block text-sm text-primary underline"
                 >
                   {t("journal.returnToMoment")}

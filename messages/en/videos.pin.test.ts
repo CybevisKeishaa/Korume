@@ -33,7 +33,7 @@ import en from "./videos.json";
  * valid content pins. The shared recommendation rail's heading/loading
  * fallback are pinned against `common.json` in
  * `messages/en/dashboard.pin.test.ts` (Task 10 promoted them there, since
- * both `/dashboard` and `/videos` render the same rail — CLAUDE.md P4).
+ * both `/dashboard` and `/shadowing` render the same rail — CLAUDE.md P4).
  */
 describe("videos.json EN — literals", () => {
   it("pins the page heading and subtitle", () => {

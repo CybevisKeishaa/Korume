@@ -192,7 +192,7 @@ describe("JlptResultsPanel", () => {
     render(<JlptResultsPanel submitResult={submitResult()} questions={QUESTIONS} answers={{}} level="N5" />);
     expect(screen.getByText("point-comprehension")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: /suggested review/i });
-    expect(link).toHaveAttribute("href", "/en/videos?level=N5");
+    expect(link).toHaveAttribute("href", "/en/shadowing?level=N5");
   });
 
   it("renders the per-question review with your answer, correctness, and explanation", () => {

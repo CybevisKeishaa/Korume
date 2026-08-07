@@ -100,7 +100,7 @@ test("Companion state survives the (app) <-> (immersive) boundary", async ({ pag
  * still be reachable, and the show/hide toggle must recover the column
  * without ever registering as a second `<nav>` landmark.
  *
- * Reaching a real `(focus)/videos/[id]/shadowing` route needs a real video
+ * Reaching a real `(focus)/shadowing/[id]` route needs a real video
  * row: `getVideo()` 404s (and, since no `not-found.tsx` exists anywhere in
  * the app, that 404 renders the framework default page OUTSIDE this whole
  * layout tree, defeating the crossing entirely) unless one exists. Creating
@@ -144,9 +144,9 @@ test("Companion state survives the (app) -> (focus) boundary, and the hidden nav
   // still lives in `(app)`; the seeded video card IS the shadowing link
   // (`components/video/video-card.tsx`).
   await page.getByRole("link", { name: "Lessons", exact: true }).click();
-  await expect(page).toHaveURL(/\/en\/videos$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/shadowing$/, { timeout: 15000 });
   await page.getByRole("link", { name: /E2E Seed Video/ }).click();
-  await expect(page).toHaveURL(/\/en\/videos\/.+\/shadowing$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/en\/shadowing\/.+$/, { timeout: 15000 });
 
   // 1. The navigation stayed client-side.
   expect(
