@@ -13,6 +13,20 @@
 > corrections are marked inline. Post-merge: 218 files / 1966 tests, tsc 0, lint 77 warnings.
 > **Agenda C (per-screen divergence) is still deferred and still handled lazily, one screen at a time.**
 >
+> ✅ **ALSO DONE (2026-08-07, `7277ac1`): the screen-port workflow** — spec
+> `docs/superpowers/specs/2026-08-07-screen-port-workflow-design.md`. It closed steps 3–4 of the
+> user's sequence: the `components/ui/**` primitives are now genuinely on the token scales (only 5 of
+> 13 were, and button/card/input used none of it), and the chrome architecture exists —
+> `app/[locale]/(protected)/` owns the session lifetime and mounts `AmbientProvider`, with `(app)` /
+> `(focus)` / `(immersive)` beneath it. **A ported screen now has a chrome contract to declare and a
+> token vocabulary that is enforced by test.** Read `mem:project_status` § NEXT ACTION for the five
+> rules that bind every port, and `mem:plan_c_hub_ui_inputs` before building the Hub.
+>
+> ⚠️ **Rule #0 supersedes any instinct to copy values out of this bundle.** Measured here: the
+> design's dominant body size is **10px** across 883 sites, roughly ×1.4 off the shipped scale, and
+> its radii are six values inside a 12px band rather than a scale. The bundle is read and compared
+> against — never transcribed.
+>
 > **What the token layer now gives a ported screen** (read before porting anything):
 > semantic names are unchanged shadcn (`bg-primary`, `text-muted-foreground`, …) so imports don't
 > change; ONE ember accent `#ff8a3d`; `--secondary` `#20242c` for secondary CTAs and for **hover**;

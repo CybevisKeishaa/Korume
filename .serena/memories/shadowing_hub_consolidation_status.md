@@ -40,7 +40,14 @@ it added: removing a screen must never be read as "Companion now covers this."
 
 ## Next
 
-**Plan C (Hub UI)** — needs its own `superpowers:writing-plans` pass against Plan B's live API surface.
-Sequenced *after* the Figma Make adoption brainstorm (`mem:figma_make_design_source`), because the Hub
-screen is one of the 29 designed frames and `Shadowing hub after changes` (149:2, the 1536px one) is
-the newest iteration Plan C should build against.
+**Plan C (Hub UI) — ALL GATES NOW CLEARED (2026-08-07). It is the next build.**
+Everything it was sequenced behind has landed: the Figma Make token + typography foundation
+(`86328bc`) and the screen-port workflow, which shipped the primitives and the chrome architecture
+(`7277ac1`). Plan C still needs its own `superpowers:writing-plans` pass against Plan B's live API
+surface.
+
+👉 **`mem:plan_c_hub_ui_inputs` collects everything it needs** — the chrome contract the Hub sits in
+(`(app)`, nav visible), the token rules that bind the port, which Figma frame to build against
+(`Shadowing hub after changes`, 149:2, the 1536px one), the three open decisions it must make
+including the deferred `/videos` → `/shadowing` rename, and the warning that shell geometry must be
+measured from the LIVE Figma rather than the local bundle. Read that first.
