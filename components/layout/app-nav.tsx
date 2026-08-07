@@ -57,20 +57,21 @@ export const NAV_GROUPS = [
 /** Flat view kept for the catalog-parity test; no production consumer today. */
 export const NAV_ITEMS = NAV_GROUPS.map((group) => group.items).flat();
 
-export function AppNav({ userEmail }: { userEmail: string }) {
+export function AppNav({
+  userEmail,
+  defaultVisible = true,
+}: {
+  userEmail: string;
+  defaultVisible?: boolean;
+}) {
   const pathname = usePathname();
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
-  // Visible by default everywhere the (app) shell renders — the toggle is a
-  // new optional affordance, not a change to default visibility
-  // (navigation-system.md § Navigation Inventory; 2026-08-05 spec §2.2).
-  // The Lesson Workspace's hidden-by-default mandate
-  // (screen-shadowing-practice.md § Sidebar) applies to the /shadowing/[id]
-  // route group, which does not exist yet — wiring that default is the job
-  // of the plan that builds it, not this component's. Deliberately not
-  // persisted: session-scoped state, survives client-side navigation
-  // because AppNav lives in the (app) layout.
-  const [visible, setVisible] = useState(true);
+  // Not persisted: session-scoped state. It survives client-side navigation
+  // WITHIN a chrome group, because AppNav lives in that group's layout —
+  // crossing into another group is a chrome change, and resetting to the new
+  // group's default is the intended behaviour, not a bug.
+  const [visible, setVisible] = useState(defaultVisible);
 
   return (
     <div className="flex w-full shrink-0 flex-col md:w-auto md:flex-row">

@@ -207,4 +207,30 @@ describe("AppNav visibility toggle", () => {
       "true",
     );
   });
+
+  // ThemeProvider mirrors the file's existing render helper (line ~71) — AppNav
+  // is rendered inside it everywhere else in this suite.
+  it("starts hidden when the chrome contract asks for it", () => {
+    render(
+      <ThemeProvider>
+        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+      </ThemeProvider>,
+    );
+
+    // The destinations are gone…
+    expect(screen.queryByRole("link", { name: "Dashboard" })).not.toBeInTheDocument();
+    // …but the column is only hidden, not absent: the learner can bring it back.
+    // The toggle's accessible name is its text content, messages/en/nav.json
+    // nav.toggle.show = "Show navigation".
+    expect(screen.getByRole("button", { name: /show navigation/i })).toBeInTheDocument();
+  });
+
+  it("still starts visible by default", () => {
+    render(
+      <ThemeProvider>
+        <AppNav userEmail="learner@example.com" />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
+  });
 });
