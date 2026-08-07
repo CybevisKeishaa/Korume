@@ -56,13 +56,15 @@ test("the rules are not over-broad: /en/videosomething is not swallowed into /sh
 }) => {
   // Mirrors the prefix-swallowing guard in route-protection.test.ts
   // ("/shadowingsomething must not be swallowed by the /shadowing prefix").
-  // A loose prefix match on "/videos" would incorrectly rewrite this into
-  // "/en/shadowingsomething" or similar; Next's exact-segment `:locale/videos`
-  // source must not match it at all.
+  // "/videosomething" is not in PROTECTED_PREFIXES and matches none of the
+  // three explicit redirect sources (Next's `/:locale/videos` source is an
+  // exact segment, not a prefix), so nothing should redirect it at all — it
+  // should 404. Asserted unconditionally, not branched on the status: a
+  // branch that only checks the `location` header inside an `if (was a
+  // redirect)` lets an `else` arm assert something already true by
+  // construction, so an over-broad rule that redirects with some other
+  // status (e.g. a stray 302/303 from middleware, not next.config.mjs)
+  // would pass with the `location` header never inspected.
   const res = await request.get("/en/videosomething", { maxRedirects: 0 });
-  if (res.status() === 307 || res.status() === 308) {
-    expect(locationPathname(res.headers()["location"]).startsWith("/en/shadowing")).toBe(false);
-  } else {
-    expect([307, 308]).not.toContain(res.status());
-  }
+  expect([301, 302, 303, 307, 308]).not.toContain(res.status());
 });
