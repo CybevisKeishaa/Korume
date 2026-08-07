@@ -595,9 +595,12 @@ git commit -m "feat(routes): add temporary redirects from the old /videos paths"
     title: string;
     body: string;
     unlocks: string;
+    unlocksLabel: string;
   }): JSX.Element;
   ```
   Task 6 renders one per route.
+
+**Synchronous, and all four strings arrive as props.** An earlier draft had this component `async` so it could read `unlocksLabel` itself — which would have made it untestable: this repo runs React 18.3.1, `@/test/render` is plain RTL, and **no test in the codebase renders an async server component**, because React 18 cannot. The page is already async and already holds a translator, so it resolves all four strings and this component stays a pure function of its props.
 
 An empty state states **what is missing and what would fill it**. It never promises a date and never renders a fake chart.
 
@@ -727,12 +730,12 @@ import { UpcomingScreen } from "@/components/layout/upcoming-screen";
 
 describe("UpcomingScreen", () => {
   it("names the screen as a level-1 heading", () => {
-    render(<UpcomingScreen title="Roadmap" body="The path…" unlocks="Keep studying." />);
+    render(<UpcomingScreen title="Roadmap" body="The path…" unlocks="Keep studying." unlocksLabel="What fills this" />);
     expect(screen.getByRole("heading", { level: 1, name: "Roadmap" })).toBeInTheDocument();
   });
 
   it("states what would fill the screen, not a delivery promise", () => {
-    render(<UpcomingScreen title="Roadmap" body="The path…" unlocks="Keep studying." />);
+    render(<UpcomingScreen title="Roadmap" body="The path…" unlocks="Keep studying." unlocksLabel="What fills this" />);
     expect(screen.getByText("Keep studying.")).toBeInTheDocument();
   });
 
@@ -740,7 +743,7 @@ describe("UpcomingScreen", () => {
     // The whole point of an honest empty state: a placeholder visualisation
     // would render data the system does not have.
     const { container } = render(
-      <UpcomingScreen title="Statistics" body="The numbers…" unlocks="Nothing yet." />,
+      <UpcomingScreen title="Statistics" body="The numbers…" unlocks="Nothing yet." unlocksLabel="What fills this" />,
     );
     expect(container.querySelector("svg, canvas, progress, meter")).toBeNull();
   });
@@ -757,7 +760,6 @@ Expected: FAIL — module not found.
 Create `components/layout/upcoming-screen.tsx`:
 
 ```tsx
-import { getTranslations } from "@/lib/i18n/server";
 import { Container } from "@/components/ui/container";
 
 /**
@@ -768,19 +770,22 @@ import { Container } from "@/components/ui/container";
  * chart, meter or progress element — a placeholder visualisation would be
  * showing data the system does not have.
  *
- * Async because it reads the shared `unlocksLabel`; the three strings a caller
- * passes are already resolved by the page.
+ * Synchronous on purpose: every string arrives as a prop from the page, which
+ * is already async and already holds a translator. Reading one string here
+ * would make the component async, and React 18 + RTL cannot render an async
+ * component — it would be untestable for no gain.
  */
-export async function UpcomingScreen({
+export function UpcomingScreen({
   title,
   body,
   unlocks,
+  unlocksLabel,
 }: {
   title: string;
   body: string;
   unlocks: string;
+  unlocksLabel: string;
 }) {
-  const t = await getTranslations("upcoming");
   return (
     <Container className="py-3xl">
       <div className="max-w-[60ch]">
@@ -788,7 +793,7 @@ export async function UpcomingScreen({
         <p className="mt-md text-body text-muted-foreground">{body}</p>
         <div className="mt-xl rounded-md border border-border bg-card p-lg">
           <p className="text-caption font-semibold uppercase tracking-wide text-accent-strong">
-            {t("unlocksLabel")}
+            {unlocksLabel}
           </p>
           <p className="mt-xs text-body text-muted-foreground">{unlocks}</p>
         </div>
@@ -797,8 +802,6 @@ export async function UpcomingScreen({
   );
 }
 ```
-
-The test renders it as an async server component; `@/test/render` handles that already for the other async components in the repo. If it does not, await the element in the test: `render(await UpcomingScreen({ … }))`.
 
 - [ ] **Step 6: Run tests**
 
@@ -883,6 +886,7 @@ export default async function RoadmapPage() {
       title={t("roadmap.title")}
       body={t("roadmap.body")}
       unlocks={t("roadmap.unlocks")}
+      unlocksLabel={t("unlocksLabel")}
     />
   );
 }
