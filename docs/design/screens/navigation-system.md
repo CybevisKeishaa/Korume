@@ -117,6 +117,10 @@ Two named regions the rest of this document — and Companion's declared anchors
   within. An anchor position is always relative to the Content Region, never to the Nav Column —
   Companion never anchors inside navigation chrome itself.
 
+Both regions exist only under a chrome contract that mounts the Nav Column. In `(immersive)` there is
+no Nav Column and therefore no Nav Column region; the whole viewport is Content Region, and Companion
+anchors are positioned within it exactly as elsewhere.
+
 ---
 
 # Navigation States
@@ -127,17 +131,34 @@ Two states exist today; a third is a documented direction, not yet shipped:
 |---|---|---|
 | Expanded (desktop) | Available | Fixed left column, full labels, always visible. |
 | Wrapped (mobile) | Available | Top bar, items wrap to fill width, full labels. |
-| Collapsed / Icon rail | Planned | `adaptive-layouts.md` § Navigation Adaptation describes a future Expanded → Collapsed → Icon rail → Hidden progression during deep focus. Not implemented in `app-nav.tsx` today — treat any icon-rail or auto-hide description elsewhere as target design, not current behavior. |
+| Collapsed / Icon rail | Planned | `adaptive-layouts.md` § Navigation Adaptation describes a future Expanded → Collapsed → Icon rail → Hidden progression during deep focus. Not implemented in `app-nav.tsx` today — treat any icon-rail or auto-hide description elsewhere as target design, not current behavior. Distinct from `(focus)`'s hidden-by-default contract, which ships in the same plan — hidden is a visibility default, collapsed is a different rendering of the column. |
 
 What happens to the Nav footer's streak indicator and Rain Sound toggle (§ Gamification & Navigation,
 § Settings Entry Point) in the Collapsed/Icon-rail state is unspecified — to be defined when that
 state ships, not silently assumed to carry over unchanged.
 
 Per `screen-architecture.md` § Navigation Philosophy, navigation is expected to recede during focused
-study. Today that reduction happens by leaving the nav screen entirely (drilling into Shadowing/
-Listening Practice/Review, which render outside the persistent nav chrome context for that flow) rather than
-by the nav column collapsing in place. The Collapsed/Icon-rail state in `adaptive-layouts.md` is the
-planned refinement of this same philosophy, not a contradiction of it.
+study. That reduction is expressed by the **chrome contract of the route group a screen lives in**
+(`docs/superpowers/specs/2026-08-07-screen-port-workflow-design.md` §5):
+
+| Group | Contract |
+|---|---|
+| `(app)` | Nav Column mounted and visible. The default for every destination in § Navigation Inventory. |
+| `(focus)` | Nav Column mounted, **hidden by default**, recoverable by the learner. Lesson workspaces — Shadowing Practice, Dictation, Pronunciation Studio. |
+| `(immersive)` | Nav Column **not mounted**. No toggle. Companion Diary, onboarding. |
+
+Route groups express chrome contracts, not feature categories: features churn, chrome contracts do
+not. All three sit beneath `(protected)`, which owns the authenticated session's lifetime and mounts
+the Ambient Layer — so moving between contracts changes the chrome without resetting Companion state.
+
+The Collapsed / Icon-rail state in `adaptive-layouts.md` is a further refinement of this same
+philosophy and remains planned. **`(focus)`'s "hidden" is not "collapsed"** — hidden removes the
+column and leaves a way back; collapsed keeps a narrow rail. Do not conflate them.
+
+> **Reconciliation note (2026-08-07).** This paragraph previously stated that Shadowing / Listening
+> Practice / Review "render outside the persistent nav chrome context for that flow." That was not
+> what the code did: those routes were inside `(app)`, which mounts the Nav Column, and no nested
+> layout removed it. The mechanism above is what makes the original intent true.
 
 ---
 
