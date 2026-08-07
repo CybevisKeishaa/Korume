@@ -1,7 +1,20 @@
-# Screen-port workflow — inputs for the spec that comes NEXT (captured 2026-08-07)
+# Screen-port workflow — inputs (captured 2026-08-07)
 
-**Status:** NOT yet a spec. This is the raw material for it. The token+typography foundation it
-depends on is merged (`86328bc`); this is the next piece of work.
+> ✅ **SPEC WRITTEN AND EXECUTED.** Spec
+> `docs/superpowers/specs/2026-08-07-screen-port-workflow-design.md`, plan
+> `docs/superpowers/plans/2026-08-07-screen-port-workflow.md`, merged `--no-ff` at **`7277ac1`**
+> (2026-08-07). **`mem:project_status` is the authority for what shipped and for the rules it
+> established** — read that, not this file, before porting anything.
+>
+> What this file still adds: the user's own reasoning, which the spec compressed. Steps 3 and 4 of
+> the sequence below are DONE (primitive verification + chrome architecture); steps 5 and 6 (port
+> screens by group, polish) are not. The four screen types and the five-step per-screen checklist
+> below are still the working method. The `AppShell` idea was resolved: it became App Router route
+> groups — `(protected)` for session lifetime, `(app)`/`(focus)`/`(immersive)` for chrome — so there
+> is no parallel layout API, exactly as the user required. The orange-glow ruling is also closed:
+> fixed upstream in `figma-prompt-style.md` at `fc33e90`, since the glow never reached the repo.
+
+**Status:** the spec this file fed is written, executed and merged.
 
 The user proposed this workflow in conversation on 2026-08-06. The token spec
 (`docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` §1.1) recorded

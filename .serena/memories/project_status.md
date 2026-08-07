@@ -30,7 +30,82 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-07) — **Figma Make token + typography foundation MERGED to master `--no-ff` at `86328bc` (15 commits, 51 files). Branch + worktree deleted. NEXT: the screen-port workflow spec (spec §1 steps 3-4), then Shadowing Hub Plan C.**
+## ▶ NEXT ACTION (updated 2026-08-07, later) — **Screen-port workflow MERGED to master `--no-ff` at `7277ac1` (17 commits). Branch deleted, not pushed. NEXT: Shadowing Hub Plan C (Hub UI), then port screens by group.**
+
+Spec `docs/superpowers/specs/2026-08-07-screen-port-workflow-design.md`,
+plan `docs/superpowers/plans/2026-08-07-screen-port-workflow.md`, 7 tasks (an 8th was dropped).
+Post-merge verified ON MASTER: **unit 2007/2007 across 221 files · tsc 0 · lint 0 errors + 77
+warnings (mix `54 no-non-null-assertion + 23 no-unused-vars`) · Playwright 8/8.**
+
+**Delivered — the token half:** `Rule #0` (Figma pixels are not an API; every value maps to a semantic
+token) is enforced by `components/ui/token-scale.test.ts`, and `token-scale-adoption.test.ts` bans raw
+numeric Tailwind in `components/ui/**`. One typography step added, `hero` = `4rem/4.25rem`. Seven
+primitives moved onto `--space-*`. `bg-inputBackground` → `bg-input-background`.
+
+**Delivered — the chrome half:** `app/[locale]/(protected)/` owns the authenticated session's lifetime
+and mounts `AmbientProvider`; `(app)` (nav visible) / `(focus)` (nav mounted, hidden by default) /
+`(immersive)` (no nav landmark) sit beneath it. `/journal` is immersive; `videos/[id]/shadowing` and
+`.../dictation` are focus. **URLs did not change** — route groups never enter the path.
+`lib/auth/current-user.ts` exports `getCurrentUser()`, `cache()`-wrapped and `server-only`.
+
+### Rules this branch established — they bind every screen port from here on
+- **Rule #0: semantic tokens are the public design API; Figma is an authoring tool, not a runtime
+  contract.** Never port a px value. Measured evidence: the design's dominant body size is 10px
+  across 883 sites, ≈×1.4 off the shipped scale. That ratio is an observation about one snapshot,
+  NOT an invariant — do not build on it.
+- **Large Japanese glyphs are content presentation, not interface typography.** 104/128/150px are
+  never tokenised; no `kanji-xl`.
+- **Provider lifetime > layout lifetime.** A state owner must outlive every chrome change. Future
+  session-scoped owners (AI conversation, study queue, draft journal, mining selection) belong in
+  `(protected)`, not in a chrome group.
+- **Route groups express chrome contracts, not feature categories.** `(learning)`/`(study)` would be
+  wrong; features churn, chrome contracts do not.
+- **Overlay is presentation, not navigation.** A Figma modal becomes a dialog/drawer component, never
+  a `page.tsx`, unless the URL must be shareable or state-recoverable — and then it is justified in
+  writing, per screen.
+- **`figma-prompt-style.md` (repo root) is authoritative for INTENT and for nothing numeric.** Its
+  colour and font sections match the code; every geometry number in it is approximate. Measured:
+  sidebar 224 vs real 220, collapsed 62 vs 68, content 1500 vs 1180, and its radius scale lists 12px,
+  which appears nowhere in the design.
+
+### Still deferred, by decision
+- **All shell geometry** (sidebar width, collapsed width, toolbar height, right column, content
+  max-width, gutters). `components/ui/container.tsx` still has Tailwind defaults (`max-w-6xl`,
+  `px-4/6/8`) that were never compared against the design. Measure against the LIVE Figma at the
+  moment the first screen in a group is ported — the local bundle decays, proven within one day.
+- **Avatar primitive** — the design has one (initial letter in a `rounded-full`), `components/ui/`
+  does not.
+- Widening the Rule #0 scan beyond `components/ui/**`; `collectPrimitives` in
+  `token-scale-adoption.test.ts` drops directory prefixes (fails loudly, no subdirs today);
+  `anchor-boundary.test.ts` still pre-declares `(app)/shadowing/[id]/…` paths that now belong under
+  `(focus)`; `supabase db reset` is not wired into `test:e2e`, so a fresh machine needs it before the
+  new e2e can reach its seeded video.
+- **Task 8 was DROPPED, not deferred** (user, 2026-08-07): moving `requireUser` out of
+  `lib/data/videos.ts`. The spec's rationale was measured false — protected layouts use
+  `getCurrentUser()`, and `requireUser`'s 22 importers are all in `lib/data/**`. Do not re-derive
+  this question from spec §5.5.
+
+### Lessons worth carrying
+1. **The final whole-branch review earned its keep for the 5th consecutive plan.** It alone caught
+   that the `(focus)` contract had *removed* the reduce-motion control (CLAUDE.md §2 rule 4) — no
+   per-task review could see it, because each task was individually correct.
+2. **Then the fix for that regression broke the contract the branch existed to build:** mounting the
+   toggle outside the nav turned a 24px strip into a ~130px labelled rail on every authenticated
+   screen. Fixed with a `compact` prop that `sr-only`s the caption. A fix wave needs its own review.
+3. **The three worst defects originated in the spec/plan, not in any subagent.** The plan told the
+   gate to assert `getByRole("navigation", {name: /main/i})` — renaming one i18n string would have
+   greened it forever; it assumed rather than asserted that `/journal` mounts a CompanionAnchor,
+   without which the whole proxy is vacuous; and it described `(immersive)` as having "no toggle"
+   after the user had ruled otherwise.
+4. **Reviewers were wrong twice, both caught by re-measuring.** One reported "7 lint errors,
+   pre-existing" (actual: 0 — it ran `npx eslint` directly over paths `next lint` excludes; always use
+   `npm run lint`). One called a correction note dishonest for crediting a user ruling that had in
+   fact happened.
+5. **A test can prove architecture with zero production instrumentation.** `phaseRequestedRef` makes
+   the Companion phase read fire once per provider lifetime, so counting `/api/user/stats` across a
+   route-group boundary distinguishes a surviving provider from a rebuilt one.
+
+
 
 Post-merge verified on master: **218 files / 1966 tests**, tsc 0. Branching history gains
 `figma-token-foundation 86328bc`.
@@ -749,7 +824,8 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`, L7 `01ae59d`, Spec A `20
 Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`, L9a-Plan3 `d7b158c`,
 Design-docs reconciliation `20d6eed`, Shadowing Hub Lesson Workspace Plan A `a6a7617` / Plan B
 `b36c455`, Shadowing Practice Figma reconciliation `b56bba1`, Korume rebrand Plan A `69c4685` /
-Plan B `44521bc`, **Figma token + typography foundation `86328bc` (2026-08-07)**.
+Plan B `44521bc`, Figma token + typography foundation `86328bc`, **Screen-port workflow `7277ac1`
+(2026-08-07)**.
 
 ## Progress
 - **Layer 1 (Foundation): DONE, merged.** Next 14 migration, full spec §4 schema (RLS on all),
