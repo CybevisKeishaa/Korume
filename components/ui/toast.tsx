@@ -98,7 +98,7 @@ export function ToastProvider({
         ))}
         <RadixToast.Viewport
           className={cn(
-            "fixed bottom-4 end-4 z-toast flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-xs",
+            "fixed bottom-md end-md z-toast flex w-80 max-w-[calc(100vw-2rem)] flex-col gap-xs",
             "outline-none",
           )}
         />

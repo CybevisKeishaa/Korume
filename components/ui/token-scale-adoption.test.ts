@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -20,29 +20,67 @@ import { describe, expect, it } from "vitest";
 //   - `pt-0` is legitimate — zero needs no token, and card.tsx keeps it. Hence
 //     the numeric alternation, which accepts 0.5 but not a bare 0.
 const RAW = [
-  /\b[pm][trblxy]?-(0\.\d+|[1-9][\d.]*)(?![\w-])/, // p-6 / px-3 / py-2 / py-0.5
+  // `[trblxyse]`, not `[trblxy]` (final whole-branch review F6, 2026-08-07):
+  // `logical-properties.test.ts` already bans the physical `pl-`/`pr-`/`ml-`/
+  // `mr-` forms in this directory, so the old `[trblxy]` class only ever
+  // caught spacing this file's own sibling test already forbade — it never
+  // covered the logical `ps-`/`pe-`/`ms-`/`me-` forms this codebase actually
+  // uses (see `toast.tsx`'s `end-4`, an inset rather than padding/margin, but
+  // the same logical-direction gap). Adding `s`/`e` closes it.
+  /\b[pm][trblxyse]?-(0\.\d+|[1-9][\d.]*)(?![\w-])/, // p-6 / px-3 / py-2 / ps-4 / py-0.5
   /\bgap(-[xy])?-(0\.\d+|[1-9][\d.]*)(?![\w-])/, // gap-2
   /\bspace-[xy]-(0\.\d+|[1-9][\d.]*)(?![\w-])/, // space-y-1.5
   /\btext-(xs|sm|base|lg|xl|\dxl)\b/, // text-sm / text-lg / text-base
+  // Insets (final whole-branch review F6): `top-`/`bottom-`/`start-`/`end-`/
+  // `inset-` never went through `[pm]…`, so `toast.tsx`'s `bottom-4 end-4`
+  // (16px = `--space-md`) sailed past every existing pattern undetected. The
+  // trailing `(?![\w/-])` also excludes the `/` a fractional inset like
+  // `inset-1/2` would introduce — fractions aren't part of the spacing
+  // token scale and aren't what this rule is about.
+  /\b(?:top|bottom|start|end|inset(?:-[xy])?)-(0\.\d+|[1-9][\d.]*)(?![\w/-])/, // bottom-4 / end-4 / inset-2
 ];
 
-const FILES = [
-  "button.tsx",
-  "card.tsx",
-  "input.tsx",
-  "label.tsx",
-  "badge.tsx",
-  "dialog.tsx",
-  "toast.tsx",
-  "select.tsx",
-];
+// Directory-scanned, not hardcoded (final whole-branch review F6): the
+// original 8-name list meant a NEW primitive dropped into `components/ui/`
+// was free to use `px-4 text-sm` and nothing here would ever see it — and
+// `tabs.tsx`/`tooltip.tsx`/`popover.tsx`/`skeleton.tsx` were already sitting
+// in the directory, clean today, but unpinned. Mirrors
+// `token-scale.test.ts`'s `collectSources` so both enforcement tests read the
+// same primitive set.
+const EXCLUDED = new Set([
+  // Shell geometry, explicitly out of scope for this token-adoption plan
+  // (final-fix-wave DO NOT FIX list) — every number in it is a deliberate
+  // layout measurement, not a spacing/type-scale primitive.
+  "container.tsx",
+]);
+
+const uiDir = path.join(process.cwd(), "components/ui");
+
+function collectPrimitives(dir: string): string[] {
+  const entries = readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      files.push(...collectPrimitives(path.join(dir, entry.name)));
+      continue;
+    }
+    if (!/\.tsx?$/.test(entry.name)) continue;
+    if (entry.name.includes(".test.")) continue;
+    if (EXCLUDED.has(entry.name)) continue;
+    files.push(entry.name);
+  }
+  return files;
+}
+
+const FILES = collectPrimitives(uiDir);
 
 describe("primitives use the design system's own scales (spec §4)", () => {
+  it("scans a non-empty set of primitives", () => {
+    expect(FILES.length).toBeGreaterThan(0);
+  });
+
   it.each(FILES)("%s uses no raw Tailwind spacing or font size", (file) => {
-    const text = readFileSync(
-      path.join(process.cwd(), "components/ui", file),
-      "utf8",
-    );
+    const text = readFileSync(path.join(uiDir, file), "utf8");
     const hits = RAW.filter((pattern) => pattern.test(text));
     expect(hits).toEqual([]);
   });

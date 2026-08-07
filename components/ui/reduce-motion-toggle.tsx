@@ -11,7 +11,7 @@ export function ReduceMotionToggle() {
   const { reduceMotion, setReduceMotion } = useTheme();
   const id = useId();
   return (
-    <label htmlFor={id} className="flex items-center gap-2 text-sm">
+    <label htmlFor={id} className="flex items-center gap-xs text-body">
       <input
         id={id}
         type="checkbox"
