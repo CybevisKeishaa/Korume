@@ -395,10 +395,12 @@ git commit -m "feat(layout): add TwoColumnShell with an optional sticky companio
 
 - [ ] **Step 1: Find every link that must change**
 
-Run:
+Run (use `grep`, **not** `npx rg` — `rg` is not on npm and `npx rg` installs an unrelated stub package):
 
 ```bash
-npx rg -n --glob '!**/*.md' '"/videos|`/videos|href="/videos|/videos/\$\{|videos/\[id\]' -g '!supabase/**'
+grep -rnE '"/videos|`/videos|href="/videos|/videos/\$\{' \
+  --include='*.ts' --include='*.tsx' . \
+  | grep -v node_modules | grep -v '/api/'
 ```
 
 Then narrow to **user-visible route strings only**. Do **not** touch:
