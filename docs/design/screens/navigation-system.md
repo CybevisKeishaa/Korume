@@ -117,9 +117,9 @@ Two named regions the rest of this document — and Companion's declared anchors
   within. An anchor position is always relative to the Content Region, never to the Nav Column —
   Companion never anchors inside navigation chrome itself.
 
-Both regions exist only under a chrome contract that mounts the Nav Column. In `(immersive)` there is
-no Nav Column and therefore no Nav Column region; the whole viewport is Content Region, and Companion
-anchors are positioned within it exactly as elsewhere.
+The Nav Column region exists only under a chrome contract that mounts the Nav Column. Content Region
+exists regardless: in `(immersive)`, where no Nav Column is mounted, Content Region simply occupies the
+whole viewport, and Companion anchors are positioned within it exactly as elsewhere.
 
 ---
 
@@ -144,8 +144,15 @@ study. That reduction is expressed by the **chrome contract of the route group a
 | Group | Contract |
 |---|---|
 | `(app)` | Nav Column mounted and visible. The default for every destination in § Navigation Inventory. |
-| `(focus)` | Nav Column mounted, **hidden by default**, recoverable by the learner. Lesson workspaces — Shadowing Practice, Dictation, Pronunciation Studio. |
-| `(immersive)` | Nav Column **not mounted**. No toggle. Companion Diary, onboarding. |
+| `(focus)` | Nav Column mounted, **hidden by default**, recoverable by the learner. Lesson workspaces — Shadowing Practice, Dictation, Pronunciation Studio (Planned). |
+| `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding. |
+
+**Chrome in `(immersive)` routes:** While the Nav Column is not mounted, `(immersive)` is not chrome-less.
+Every immersive screen carries its own labelled back affordance (see `docs/design/screens/screen-journal-view.md`,
+the Diary's journaling surface). Additionally, all immersive routes mount a global `ReduceMotionToggle`
+(CLAUDE.md §2 rules 4 and 5 require a globally reachable reduced-motion control and keyboard reach at all times,
+and immersive surfaces are where motion is heaviest). This toggle is positioned outside the (non-existent)
+Nav Column region — it is part of the Ambient Layer and visible regardless of route.
 
 Route groups express chrome contracts, not feature categories: features churn, chrome contracts do
 not. All three sit beneath `(protected)`, which owns the authenticated session's lifetime and mounts

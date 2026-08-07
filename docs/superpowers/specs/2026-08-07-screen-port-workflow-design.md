@@ -244,10 +244,15 @@ moving `videos/[id]/shadowing/` out of `(app)` and into `(focus)` leaves it serv
   Lesson Workspace, and `docs/design/screens/navigation-system.md:98-99` records that this behaviour
   *"is still unbuilt and belongs to whichever plan builds that route group"*. "Hidden by default"
   presupposes it can be shown, so `AppNav` stays mounted; only its initial visibility state differs.
-  Members: Shadowing Practice, Dictation, Pronunciation Studio.
-- **`(immersive)` — no nav at all.** No mount, no toggle, no chrome. The user's worked example:
-  Companion Diary having no navbar is *correct*, not an omission. Members: Companion Diary,
-  onboarding.
+  Members: Shadowing Practice, Dictation, Pronunciation Studio (Planned).
+- **`(immersive)` — no nav landmark.** The Nav Column is not mounted. Every immersive screen carries a
+  labelled back affordance (per-screen), and all immersive routes mount a global `ReduceMotionToggle`
+  (CLAUDE.md §2 rules 4 and 5 require a global toggle and keyboard reach; immersive is where motion is
+  heaviest). The user's worked example: Companion Diary having no navbar is *correct*, not an omission.
+  **Reconciliation (2026-08-07):** earlier text said "no toggle, no chrome"; the code mounts
+  `ReduceMotionToggle` per-route and a per-screen back affordance, and this correction reflects the
+  user's ruling that the immersive contract includes these accessibility and recovery affordances.
+  Members: Companion Diary, onboarding.
 
 Collapsing them would forfeit the hidden-but-recoverable mandate. They stay separate.
 
