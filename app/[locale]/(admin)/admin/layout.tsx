@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  * ARE authenticated, just not authorized for this section).
  *
  * This is a separate, minimal admin shell (`AdminShell`) — deliberately NOT
- * the learner `AppNav` used by `app/(app)/layout.tsx`.
+ * the learner `AppNav` used by `app/[locale]/(protected)/(app)/layout.tsx`.
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();

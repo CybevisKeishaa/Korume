@@ -62,7 +62,7 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
         href="/dashboard"
         className="mb-lg inline-flex items-center gap-2xs text-caption text-muted-foreground hover:text-foreground"
       >
-        ← {t("backToDashboard")}
+        <span aria-hidden="true">←</span> {t("backToDashboard")}
       </Link>
       <header className="flex items-end justify-between gap-4">
         <h1 className="text-2xl font-bold">{t("journal.title")}</h1>

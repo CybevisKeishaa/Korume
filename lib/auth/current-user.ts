@@ -1,4 +1,6 @@
+import "server-only";
 import { cache } from "react";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -9,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
  * footer, and a child layout cannot receive props from its parent. Without
  * dedupe that is two `auth.getUser()` round trips on every protected render.
  */
-export const getCurrentUser = cache(async () => {
+export const getCurrentUser = cache(async (): Promise<User | null> => {
   const supabase = createClient();
   const {
     data: { user },
