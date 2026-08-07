@@ -31,6 +31,7 @@ describe("TwoColumnShell", () => {
     );
     const rail = screen.getByRole("complementary", { name: "Companion" });
     expect(rail.className).toContain("sticky");
+    expect(rail.className).toContain("xl:top-md-lg");
     expect(rail.className).toContain("xl:w-companion");
   });
 
