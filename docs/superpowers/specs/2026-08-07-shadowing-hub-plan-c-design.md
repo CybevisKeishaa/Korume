@@ -53,8 +53,8 @@ wants to revisit one should read the evidence first, not re-derive the question.
 | D8 | Companion rail width = **340px**. | Measured 339.35 in frame `149:2`. |
 | D9 | Nav gets `overflow-y-auto`. | 22 rows do not fit 682px. This restores design intent; the clipping in every frame is a Make-export artifact, not a design choice (§7.2). |
 | D10 | "Building lesson" shows the **current step label only — no fabricated percentage or ETA**. | `createLesson()` is synchronous and returns no step state (§4.2.3). A client-side 72% would be the UI lying. |
-| D11 | **No `videos.situation` single column.** `situation_id` **and** `source_id` both exist from day one. | The Figma chip row mixes two taxonomies (`Restaurant`/`Office` vs `Anime`/`Podcast`/`News`). The tier-A prompt had them as two separate sections; the build collapsed them. One column would freeze that error into the schema. (User correction.) |
-| D12 | **"Popular" is a ranking function, not a fixed formula.** Initial implementation ranks by library count. | Ranking is a business decision that will change (completion rate, retention, recency). The UI must not depend on the algorithm. (User correction.) |
+| D11 | **Two axes, not one.** `situation_id` **and** `source_id` both exist from day one. FK columns are the minimal implementation for the UI that exists; **the two-axis separation is the architectural commitment, the cardinality is not.** | The Figma chip row mixes two taxonomies (`Restaurant`/`Office` vs `Anime`/`Podcast`/`News`). The tier-A prompt had them as two separate sections; the build collapsed them. One column would freeze that error into the schema. (User correction.) |
+| D12 | **"Popular" is a ranking strategy behind an interface, not a formula in the page.** `PopularStrategyV1` ranks by library count. | Ranking is a business decision that will change (completion rate, retention, recency, AI). Swapping it must not require touching the Hub. (User correction.) |
 | D13 | Grammar count is **omitted** from lesson cards. | No lesson↔`grammar_points` link exists, and creating one is content tagging, not porting. Rule: no data, no UI. |
 | D14 | Explore has **no Companion rail**, contradicting its own tier-A prompt. | The built frame `200:7705` is one full-width column. Frame beats prompt. |
 | D15 | Quick Preview drawer ships **in C3**, not deferred. | It is an Explore interaction, not a backend feature. Deferring it means editing the lesson card twice. (User ruling.) |
@@ -85,6 +85,27 @@ The two focus screens are **moved with their UI untouched**. Plan D restyles the
 `(app)/shadowing/[id]/…` paths that belong under `(focus)`. This move makes those paths real, so the
 test must be corrected in the same commit rather than accidentally starting to pass for the wrong reason.
 
+#### 3.1.1 Redirect policy for the old routes
+
+Three explicit rules in `next.config.js`. A single wildcard is wrong here, because one of the three
+mappings **collapses a segment** rather than renaming a prefix:
+
+| From | To |
+|---|---|
+| `/:locale/videos` | `/:locale/shadowing` |
+| `/:locale/videos/:id/shadowing` | `/:locale/shadowing/:id` — segment dropped |
+| `/:locale/videos/:id/dictation` | `/:locale/shadowing/:id/dictation` |
+
+**Temporary (307), not permanent (308).** The reasoning matters more than the number: these routes are
+still moving — Plan D restructures the lesson workspace into four Learning Modes — and a 308 is cached
+aggressively by browsers, which turns a later change into a debugging trap that presents as a routing bug
+in the app. There is no SEO argument on the other side: every one of these routes is auth-gated, so
+search engines never see them, and the app has never been published, so no external inbound link exists
+to preserve. Revisit at launch, once the shape has settled.
+
+All three rules get e2e assertions (§6), precisely because the middle one is the easy one to get wrong,
+and getting it wrong sends a learner silently into the wrong lesson mode instead of to an error.
+
 ### 3.2 Layout tokens
 
 A new group in `app/globals.css`, deliberately **not** part of `--space-*`:
@@ -94,7 +115,14 @@ A new group in `app/globals.css`, deliberately **not** part of `--space-*`:
 --layout-sidebar-collapsed: 68px;
 --layout-content-max: 1240px;
 --layout-companion-width: 340px;
+--layout-gutter: var(--space-xl);      /* 32 — measured 36/40, rounded per D7 */
+--layout-column-gap: var(--space-lg);  /* 24 — measured 28,    rounded per D7 */
 ```
+
+The last two exist so the `layout` namespace is complete: once shell structure has its own namespace,
+leaving gutter and column gap in `space-*` splits one concept across two vocabularies. They **reference**
+spacing steps rather than carrying raw numbers, so the namespace is whole and D7 still holds — no new
+value enters the system.
 
 Plus one spacing step, inserted without renaming anything:
 
@@ -106,9 +134,6 @@ Plus one spacing step, inserted without renaming anything:
 `p-md-lg` / `gap-md-lg`. Verify `lib/utils.ts`'s `extendTailwindMerge` still resolves the spacing group
 correctly — `lib/utils.test.ts` is the guard, and the repo has been bitten before by a new scale that
 `twMerge` silently misread.
-
-Gutters use `--space-xl` (32, measured 36) and the two-column gap uses `--space-lg` (24, measured 28),
-per D7.
 
 ### 3.3 `TwoColumnShell`
 
@@ -160,6 +185,11 @@ service-role). A seed migration creates the five level collections Explore is bu
 `featured` already has a defined meaning per the migration's own comment (Featured is a collections row
 with `slug = 'featured'`, not a boolean column) and is seeded alongside them.
 
+**This seed is editorial content, not taxonomy.** A collection is a curated set that *contains* lessons;
+it is not an attribute *of* a lesson. The five rows above are named after level bands only because the
+curator chose to shelve by level — `lesson.level` and `collection` remain independent, and a later
+collection may cut across levels entirely. Do not derive one from the other.
+
 **Situations and sources** (D11) — two reference tables plus two FK columns:
 
 ```sql
@@ -169,10 +199,19 @@ alter table videos add column situation_id uuid references lesson_situations (id
 alter table videos add column source_id    uuid references lesson_sources (id);
 ```
 
-**Recorded consequence of the FK-column shape:** a lesson has **at most one** situation and **at most
-one** source. Single-valued is natural for source; for situation it means a lesson that is both
-"Restaurant" and "Daily Life" must pick one. If multi-valued situations are ever needed, that is a join
-table — a second migration. This is stated so spec review can reject it now rather than discover it later.
+**Cardinality is provisional, and deliberately so (D11).** FK columns are the minimum that serves the UI
+that exists: a single-select chip row. They are **not** a claim that a lesson has only one situation or
+one source. Real content already argues against it — NHK News is plausibly News *and* Business; an anime
+scene is School *and* Daily Life; a podcast is Daily Life *and* Conversation.
+
+What C1 commits to permanently is **the separation of the two axes**. What it does not commit to is
+one-to-one. Two consequences follow, and both are requirements, not observations:
+
+- Consumers read situation and source through `lib/data/` functions that return arrays, never by
+  selecting `videos.situation_id` directly in a component or page. Going many-to-many then changes one
+  query body and one migration, not every call site.
+- The migration that would introduce `lesson_situations_assignments` is a foreseen evolution, not a
+  design failure. Whoever writes it should not treat this section as a mistake to apologise for.
 
 **Name collision, flagged:** `source_id` here means content origin (NHK, Podcast, Anime, Drama, Vlog,
 News, Creator). It is unrelated to the existing `transcript_source` column, which records how a
@@ -223,19 +262,29 @@ honest inventory.
 
 #### 4.2.1 Popular (D12)
 
-The Hub calls a **ranking function**, not a formula:
+Ranking is behind an interface, so that changing how "popular" is computed never touches the Hub (D12):
 
 ```ts
-listPopularLessons(limit: number): Promise<VideoRow[]>
+// lib/data/lesson-ranking.ts
+export interface LessonRankingStrategy {
+  readonly id: string;
+  rank(input: { userId: string; limit: number }): Promise<VideoRow[]>;
+}
+
+export const PopularStrategyV1: LessonRankingStrategy;
 ```
 
-**Popular v1 ranks by the number of distinct learner libraries containing the lesson**
-(`count(*) from user_lesson_library group by lesson_id`). This is the only real signal the system has —
-there is no view count, no completion rate, no rating.
+The Hub depends on `LessonRankingStrategy` only. It never sees the formula, never names it, and never
+renders the underlying number.
 
-This is a **product decision recorded as v1, not an implementation placeholder.** A v2 may weight
-completions, retention, recency, or restrict to a time window ("trending"). The UI must not encode the
-formula, must not name it "trending", and must not display the raw count.
+**`PopularStrategyV1` ranks by the count of distinct learner libraries containing the lesson**
+(`count(*) from user_lesson_library group by lesson_id`). That is the only real signal the system has
+today — there is no view count, no completion rate, no rating.
+
+**This is a product decision recorded as v1, not an implementation placeholder.** Later strategies
+(`TrendingStrategy` over a time window, `RetentionStrategy`, `AIRecommendedStrategy`) drop in behind the
+same interface. The one thing the UI must never do is call the section "Trending" while a
+library-count strategy is installed — the label belongs to the strategy, not to the layout.
 
 #### 4.2.2 Failed imports
 
@@ -316,6 +365,9 @@ component, **not a route** — its state is neither shareable nor recoverable, s
 - The nav list region is scrollable, and the reduce-motion control remains reachable by keyboard in both
   expanded and collapsed states.
 - `lib/data/collections.ts`, situations, and sources tested with `test/supabase-mock.ts`.
+- All three redirects from §3.1.1 assert their destination, especially the segment-collapsing one.
+- `PopularStrategyV1` has a deterministic unit test over a fixed `user_lesson_library` fixture, and the
+  Hub is tested against a stub `LessonRankingStrategy` so the page never depends on the ranking formula.
 
 **C2 / C3**
 - RTL per section; the **three MyLessons states** get explicit assertions, including that Building
@@ -434,7 +486,7 @@ D3 obliges the losing side to be corrected, so only one source of truth survives
   `/achievements`, `/settings` — empty states only.
 - `JLPT → Certification Practice`, and the removal of `Reading` from LEARN (D16).
 - Restyling the two focus screens (Plan D).
-- Multi-valued situations (§3.5).
+- Multi-valued situations and sources — **foreseen and planned for, not ruled out** (§3.5, D11).
 - Renaming the spacing scale — "Spacing System v2", if ever (D6).
 - Widening the Rule #0 token scan beyond `components/ui/**`.
 
@@ -447,5 +499,9 @@ D3 obliges the losing side to be corrected, so only one source of truth survives
    has caught findings no per-task review could see, on five consecutive plans.
 3. **`--layout-*` and `--space-*` can drift.** The token test must assert the separation, not just the
    values, or a later contributor will add a layout dimension to the spacing scale.
-4. **The live Figma keeps moving.** It gained 30 frames since the last survey. Re-measure at the start of
-   C2 and again at C3; do not trust §7 as a permanent record.
+4. **The live Figma keeps moving.** It gained 30 frames between the last survey and this one.
+   **Re-measure only the frames a plan actually builds against, and only if they changed since
+   2026-08-07** — check `get_metadata` on that frame's node id and compare its child dimensions against
+   §7 before re-deriving anything. Re-surveying all 59 frames at the start of every plan costs hours and
+   changes almost nothing. §7 is a dated record, not a permanent one; treat a mismatch as the signal to
+   re-measure that frame, not the whole file.
