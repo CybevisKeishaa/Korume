@@ -26,12 +26,28 @@
 - **Lint baseline is 0 errors + 77 warnings** (`54 no-non-null-assertion + 23 no-unused-vars`). "Clean" means 0 new; compare the rule mix, not the count.
 - **Test baseline before this plan: 2007 unit tests across 221 files, tsc 0, Playwright 8/8.**
 
+## Review Checkpoints
+
+Execution is subagent-driven: one fresh subagent per task. Review gates cluster where a reviewer can judge a coherent whole, rather than after every task.
+
+| Checkpoint | Tasks | Why these belong together |
+|---|---|---|
+| **A — Foundation** | 1, 2 | Tokens and the shell that consumes them. Nothing user-visible changes; the question a reviewer answers is whether the two namespaces are genuinely separate and whether the shell owns its measure. |
+| **B — Routing** | 3, 4, 5, 6 | The route move, its redirects, and the nine destinations that must exist before the nav can point at them. Judged as one story: no dead links, no missed call site, no page left behind. |
+| **C — Navigation** | 7 | Alone, because it is the only change that touches every authenticated screen. A reviewer should look at it without four other tasks in the same diff. |
+| **D — Data** | 8, 9, 10, 11 | Schema, repositories and the ranking strategy are consistent or they are not — reviewing them together is the only way to see that. The verification gate closes the branch. |
+
+Between checkpoints, run `npx tsc --noEmit && npx vitest run && npm run lint` before handing to review. **No worktree for C1** — this repo has never been pushed, so `EnterWorktree`'s default `baseRef` branches from a stale `origin`, and a worktree has no `.env.local`, which makes every auth-dependent Playwright spec fail in a way that looks exactly like a code regression. Twelve sequential tasks on one branch do not need the isolation.
+
 ---
 
 ## File Structure
 
+**Deliberately NOT modified**
+- `components/ui/container.tsx` — keeps `max-w-6xl`. `--layout-content-max` is the Shadowing shell's measure, not a claim that every page in the app is 1240px wide; Pricing, Settings and Auth will each want their own. Screens adopt `TwoColumnShell` when a spec says they share that shell. Widening `Container` here would turn an infrastructure plan into an app-wide visual redesign.
+
 **Created**
-- `components/layout/two-column-shell.tsx` — main column + sticky companion rail; the only place rail geometry lives.
+- `components/layout/two-column-shell.tsx` — main column + sticky companion rail; the only place shell measure, gutters and rail geometry live.
 - `components/layout/two-column-shell.test.tsx`
 - `components/layout/upcoming-screen.tsx` — the shared honest empty state for routes whose feature is not built.
 - `components/layout/upcoming-screen.test.tsx`
@@ -52,7 +68,6 @@
 - `app/globals.css` — `--layout-*` block, `--space-md-lg`
 - `tailwind.config.ts` — spacing `md-lg`; `width`/`maxWidth` entries for layout tokens
 - `lib/design-tokens.test.ts` — token pins + namespace-separation assertion
-- `components/ui/container.tsx` — adopts `--layout-content-max`
 - `components/layout/app-nav.tsx` — `NAV_GROUPS` to 22 rows, scrollable list region
 - `components/layout/app-nav.test.tsx` — retire the "route rename deferred" pin, add the href-resolves test
 - `messages/{en,vi}/nav.json` — `insights` group heading + 8 row labels
@@ -200,78 +215,14 @@ git commit -m "feat(tokens): add the --layout-* namespace and the 20px spacing s
 
 ---
 
-## Task 2: `Container` adopts the content-max token
-
-**Files:**
-- Modify: `components/ui/container.tsx:10`
-- Test: `components/ui/container.test.tsx`
-
-**Interfaces:**
-- Consumes: `maxWidth.content` from Task 1.
-- Produces: unchanged `Container` API.
-
-A layout token nothing consumes is dead code (CLAUDE.md §6). `Container` is the app's only content wrapper, so it is where `--layout-content-max` belongs. **This is a visible change: every page using `Container` widens from `max-w-6xl` (1152px) to 1240px.** That is the point — the app gets one content width, and it is the design's.
-
-- [ ] **Step 1: Write the failing test**
-
-Create `components/ui/container.test.tsx`:
-
-```tsx
-import { render, screen } from "@/test/render";
-import { Container } from "@/components/ui/container";
-
-describe("Container", () => {
-  it("uses the layout content-max token, not a Tailwind default", () => {
-    // Spec D5: one content width for the whole app, sourced from
-    // --layout-content-max (1240px, measured from Figma frame 149:2).
-    render(<Container data-testid="c">body</Container>);
-    const el = screen.getByTestId("c");
-    expect(el.className).toContain("max-w-content");
-    expect(el.className).not.toContain("max-w-6xl");
-  });
-
-  it("still merges a caller's className", () => {
-    render(<Container data-testid="c" className="py-10">body</Container>);
-    expect(screen.getByTestId("c").className).toContain("py-10");
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx vitest run components/ui/container.test.tsx`
-Expected: FAIL — `max-w-6xl` present, `max-w-content` absent.
-
-- [ ] **Step 3: Implement**
-
-`components/ui/container.tsx` line 10:
-
-```tsx
-      className={cn("mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8", className)}
-```
-
-- [ ] **Step 4: Run the full suite**
-
-Run: `npx vitest run` then `npx tsc --noEmit`
-Expected: PASS, no new failures. Any snapshot asserting `max-w-6xl` is updated to `max-w-content` — that is a real, intended change, not a snapshot to blindly refresh.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add components/ui/container.tsx components/ui/container.test.tsx
-git commit -m "feat(layout): Container adopts --layout-content-max"
-```
-
----
-
-## Task 3: `TwoColumnShell`
+## Task 2: `TwoColumnShell`
 
 **Files:**
 - Create: `components/layout/two-column-shell.tsx`
 - Test: `components/layout/two-column-shell.test.tsx`
 
 **Interfaces:**
-- Consumes: `width.companion`, `--layout-column-gap` from Task 1.
+- Consumes: `width.companion`, `maxWidth.content`, `--layout-column-gap`, `--layout-gutter` from Task 1.
 - Produces:
   ```ts
   export function TwoColumnShell(props: {
@@ -282,6 +233,8 @@ git commit -m "feat(layout): Container adopts --layout-content-max"
   }): JSX.Element;
   ```
   C2 renders the Hub inside it with a rail; C3 renders Explore inside it with `rail` omitted (D14).
+
+**This component is where `--layout-content-max` and `--layout-gutter` are consumed — and the only place.** `components/ui/container.tsx` is deliberately **not** changed: `--layout-content-max` is the Shadowing shell's width, not a claim that every page in the app should be 1240px wide. Pricing, Settings and Auth will each want their own measure, and widening all of them here would turn an infrastructure plan into an app-wide visual redesign. Screens migrate to this shell when a spec says they share it; until then `Container`'s `max-w-6xl` stands.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -332,6 +285,21 @@ describe("TwoColumnShell", () => {
     expect(screen.getByRole("complementary", { name: "Companion" }).className).toContain("hidden");
     expect(screen.getByRole("complementary", { name: "Companion" }).className).toContain("xl:block");
   });
+
+  it("owns the shell measure, so pages inside it need no Container", () => {
+    // --layout-content-max is the SHADOWING SHELL's width, consumed here and
+    // nowhere else. components/ui/container.tsx keeps max-w-6xl on purpose:
+    // Pricing, Settings and Auth will each want their own measure, and this
+    // token is not a claim that every page should be 1240px.
+    render(
+      <TwoColumnShell railLabel="Companion" data-testid="shell">
+        <p>main</p>
+      </TwoColumnShell>,
+    );
+    const shell = screen.getByTestId("shell");
+    expect(shell.className).toContain("max-w-content");
+    expect(shell.className).toContain("mx-auto");
+  });
 });
 ```
 
@@ -359,14 +327,24 @@ export function TwoColumnShell({
   rail,
   railLabel,
   className,
+  ...props
 }: {
   children: React.ReactNode;
   rail?: React.ReactNode;
   railLabel: string;
-  className?: string;
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("flex flex-col gap-[--layout-column-gap] xl:flex-row", className)}>
+    <div
+      className={cn(
+        // The shell owns its own measure and gutters — pages inside it do not
+        // wrap themselves in <Container>. `--layout-content-max` is consumed
+        // HERE and nowhere else; container.tsx keeps max-w-6xl on purpose.
+        "mx-auto w-full max-w-content px-[--layout-gutter]",
+        "flex flex-col gap-[--layout-column-gap] xl:flex-row",
+        className,
+      )}
+      {...props}
+    >
       <div className="min-w-0 flex-1">{children}</div>
       {rail ? (
         // `hidden xl:block`, not `xl:w-0`: an empty-but-present complementary
@@ -397,7 +375,7 @@ git commit -m "feat(layout): add TwoColumnShell with an optional sticky companio
 
 ---
 
-## Task 4: Move the route family to `/shadowing`
+## Task 3: Move the route family to `/shadowing`
 
 **Files:**
 - Move: `app/[locale]/(protected)/(app)/videos/page.tsx` → `app/[locale]/(protected)/(app)/shadowing/page.tsx`
@@ -512,14 +490,14 @@ git commit -m "refactor(routes): move the lesson route family from /videos to /s
 
 ---
 
-## Task 5: Temporary redirects for the old routes
+## Task 4: Temporary redirects for the old routes
 
 **Files:**
 - Modify: `next.config.mjs`
 - Create: `tests/e2e/route-rename-redirects.spec.ts`
 
 **Interfaces:**
-- Consumes: the routes from Task 4.
+- Consumes: the routes from Task 3.
 - Produces: three 307 redirects.
 
 - [ ] **Step 1: Write the failing test**
@@ -602,7 +580,7 @@ git commit -m "feat(routes): add temporary redirects from the old /videos paths"
 
 ---
 
-## Task 6: The `upcoming` namespace and `UpcomingScreen`
+## Task 5: The `upcoming` namespace and `UpcomingScreen`
 
 **Files:**
 - Create: `messages/en/upcoming.json`, `messages/vi/upcoming.json`, `messages/en/upcoming.pin.test.ts`
@@ -610,7 +588,7 @@ git commit -m "feat(routes): add temporary redirects from the old /videos paths"
 - Modify: `lib/i18n/namespaces.ts:8`, `types/messages.d.ts`
 
 **Interfaces:**
-- Consumes: `Container` (Task 2).
+- Consumes: `Container` (unchanged by this plan).
 - Produces:
   ```ts
   export function UpcomingScreen(props: {
@@ -619,7 +597,7 @@ git commit -m "feat(routes): add temporary redirects from the old /videos paths"
     unlocks: string;
   }): JSX.Element;
   ```
-  Task 7 renders one per route.
+  Task 6 renders one per route.
 
 An empty state states **what is missing and what would fill it**. It never promises a date and never renders a fake chart.
 
@@ -836,15 +814,15 @@ git commit -m "feat(i18n): add the upcoming namespace and the UpcomingScreen emp
 
 ---
 
-## Task 7: Nine placeholder routes
+## Task 6: Nine placeholder routes
 
 **Files:**
 - Create: `app/[locale]/(protected)/(app)/{review,challenges,sensei,roadmap,weekly-report,statistics,achievements,settings}/page.tsx`
 - Create: `app/[locale]/(protected)/(app)/shadowing/explore/page.tsx`
 
 **Interfaces:**
-- Consumes: `UpcomingScreen` (Task 6), the `upcoming` catalog.
-- Produces: nine routes that resolve, which Task 8's href test depends on.
+- Consumes: `UpcomingScreen` (Task 5), the `upcoming` catalog.
+- Produces: nine routes that resolve, which Task 7's href test depends on.
 
 `/sensei` rather than `/companion` — Companion is cross-cutting and a `/companion` route would attract everything AI (spec D17).
 
@@ -856,7 +834,7 @@ Create `app/[locale]/(protected)/(app)/upcoming-routes.test.tsx`:
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-// Task 8's nav test asserts every href resolves to a route. That test cannot
+// Task 7's nav test asserts every href resolves to a route. That test cannot
 // distinguish "route missing" from "nav wrong", so this one pins the routes
 // themselves.
 const ROUTES = [
@@ -940,7 +918,7 @@ git commit -m "feat(routes): add nine honest empty-state routes for unbuilt dest
 
 ---
 
-## Task 8: `NAV_GROUPS` to 22 rows, with a scrollable list and an href guard
+## Task 7: `NAV_GROUPS` to 22 rows, with a scrollable list and an href guard
 
 **Files:**
 - Modify: `components/layout/app-nav.tsx:24-58, 90`
@@ -949,7 +927,7 @@ git commit -m "feat(routes): add nine honest empty-state routes for unbuilt dest
 - Modify: `components/layout/app-nav.test.tsx`
 
 **Interfaces:**
-- Consumes: the nine routes from Task 7.
+- Consumes: the nine routes from Task 6.
 - Produces: `NAV_GROUPS` with 5 groups / 22 rows; `NAV_ITEMS` unchanged in shape.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1131,7 +1109,7 @@ git commit -m "feat(nav): complete NAV_GROUPS to its 22 canonical rows and let t
 
 ---
 
-## Task 9: Lesson taxonomy — situations and sources
+## Task 8: Lesson taxonomy — situations and sources
 
 **Files:**
 - Create: `supabase/migrations/20260807000025_lesson_taxonomy.sql`
@@ -1387,7 +1365,7 @@ git commit -m "feat(data): add the situation/source taxonomy behind an array-ret
 
 ---
 
-## Task 10: Collections read path and seed
+## Task 9: Collections read path and seed
 
 **Files:**
 - Create: `supabase/migrations/20260807000026_collections_seed.sql`
@@ -1622,7 +1600,7 @@ git commit -m "feat(data): add the collections read path and seed the six editor
 
 ---
 
-## Task 11: `LessonRankingStrategy` and `PopularStrategyV1`
+## Task 10: `LessonRankingStrategy` and `PopularStrategyV1`
 
 **Files:**
 - Create: `lib/data/lesson-ranking.ts`, `lib/data/lesson-ranking.test.ts`
@@ -1854,7 +1832,7 @@ git commit -m "feat(data): rank lessons behind LessonRankingStrategy with Popula
 
 ---
 
-## Task 12: Full verification gate
+## Task 11: Full verification gate
 
 **Files:** none — this task only runs commands and records their output.
 
@@ -1890,7 +1868,8 @@ Start `npm run dev`, sign in, and check:
 2. The nav shows five groups and scrolls; **Sensei**, **Lộ trình**, **Cài đặt** are reachable and land on their empty states.
 3. With the nav list scrolled to the bottom, the collapse button and the reduce-motion control in the edge rail are still reachable **by keyboard** (CLAUDE.md §2 rules 4 and 5).
 4. `/vi/videos` redirects to `/vi/shadowing`.
-5. Content is visibly wider than before (1240 vs 1152) and nothing overflows horizontally at 1280px or on a phone viewport.
+5. Page widths are **unchanged** from before this plan — `Container` was not touched, so `/vi/dashboard` and friends still measure `max-w-6xl`. A width change anywhere outside a `TwoColumnShell` is a defect in this plan, not an improvement.
+6. Nothing overflows horizontally at 1280px or on a phone viewport.
 
 Record what you saw. This step is not optional: the token branch shipped a `--muted` contrast defect that only a real screen in a real browser would have caught.
 
@@ -1905,12 +1884,12 @@ git commit -m "chore: Plan C1 verification gate"
 
 ## Self-Review
 
-**Spec coverage.** §3.1 route move → Task 4. §3.1.1 redirects → Task 5. §3.2 tokens → Task 1, with the consumer in Task 2. §3.3 `TwoColumnShell` → Task 3. §3.4 nav and the eight routes → Tasks 6, 7, 8. §3.5 collections → Task 10; situations/sources → Task 9. §4.2.1's ranking interface is foundation, not Hub UI, so it lands here as Task 11. §6's C1 testing list is distributed across the tasks that create each unit, with the gate in Task 12.
+**Spec coverage.** §3.1 route move → Task 3. §3.1.1 redirects → Task 4. §3.2 tokens → Task 1, consumed by Task 2. §3.3 `TwoColumnShell` → Task 2. §3.4 nav and the eight routes → Tasks 5, 6, 7. §3.5 collections → Task 9; situations/sources → Task 8. §4.2.1's ranking interface is foundation, not Hub UI, so it lands here as Task 10. §6's C1 testing list is distributed across the tasks that create each unit, with the gate in Task 11.
 
 **Deliberately not in this plan:** everything in spec §9, plus the Hub and Explore screens themselves. `/shadowing` keeps rendering the old `videos/page.tsx` body under a new path until C2 replaces it — that is intended, and C2's first task is where it changes.
 
-**Type consistency.** `LessonTag`, `Collection`, and `LessonRankingStrategy` are each defined in the task that creates them and referenced by name afterwards. `VideoRow` and `VIDEO_COLUMNS` come from the existing `lib/data/videos.ts` and are not redefined. The `test/supabase-mock.ts` API used in Tasks 9-11 was read from the file, not assumed: it is `createMockSupabase({ user, tables })` where each table maps to a `TableResolver` receiving the ordered `QueryCall[]` for that chain — there is no `setResult` or `reset`. `eqValue(calls, column)` and `hasCall(calls, op)` are the two exported helpers.
+**Type consistency.** `LessonTag`, `Collection`, and `LessonRankingStrategy` are each defined in the task that creates them and referenced by name afterwards. `VideoRow` and `VIDEO_COLUMNS` come from the existing `lib/data/videos.ts` and are not redefined. The `test/supabase-mock.ts` API used in Tasks 8-10 was read from the file, not assumed: it is `createMockSupabase({ user, tables })` where each table maps to a `TableResolver` receiving the ordered `QueryCall[]` for that chain — there is no `setResult` or `reset`. `eqValue(calls, column)` and `hasCall(calls, op)` are the two exported helpers.
 
-**One behaviour worth knowing before writing Tasks 9-11:** the mock **throws for a table with no resolver**. Three tests exploit this deliberately, asserting a follow-up query is skipped by simply not providing its resolver. Do not "fix" those by adding one.
+**One behaviour worth knowing before writing Tasks 8-10:** the mock **throws for a table with no resolver**. Three tests exploit this deliberately, asserting a follow-up query is skipped by simply not providing its resolver. Do not "fix" those by adding one.
 
 **Step-4 verification counts** (`17 migrations`, `18 migrations`, `11 e2e`, `2007` unit baseline) are what the plan expects, not what it asserts. If a number differs, find out why rather than editing the plan to match.
