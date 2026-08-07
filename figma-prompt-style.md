@@ -39,6 +39,7 @@ Hard visual rules
 No glassmorphism.
 No gradients.
 No neon.
+No coloured glow — shadows are always black, orange is never light.
 No blue-led visual language.
 No floating action button.
 No excessive pills.
@@ -113,7 +114,15 @@ Avoid card-inside-card-inside-card compositions.
 A card may lift subtly on hover:
 translateY(-2px) to translateY(-4px)
 warmer border
-soft shadow
+soft shadow (black elevation only — never a coloured glow)
+Elevation values
+Depth comes from the surface step, not from light. Shadows are black and nearly invisible by design.
+
+raised:    0 1px 2px 0 rgba(0,0,0,0.24)
+overlay:   0 8px 20px -4px rgba(0,0,0,0.32)
+floating:  0 18px 40px -8px rgba(0,0,0,0.18)
+Never emit a coloured shadow. If a surface must read as lifted, step it up the ladder
+#0B0D11 → #171A20 → #20242C before reaching for a heavier shadow.
 Do not scale cards dramatically.
 Do not use heavy outlines by default.
 Do not use strong tinted backgrounds across an entire card unless it represents a special state.
@@ -199,6 +208,9 @@ Token	Use
 Color constraints
 Orange is intentional; it is not decoration.
 Orange must not fill the whole page.
+Orange never appears as a shadow or glow — never 0 0 12px #FF8A3D. Lift is the surface ladder plus a
+black shadow. A thin orange inset ring (focus / selection) and a 2px orange underline (active tab)
+stay allowed: those are state indicators, not elevation.
 Warm sand is not a CTA color.
 Mint should never become neon green.
 Coral should appear only for real warnings/errors.
@@ -263,6 +275,7 @@ Material Design
 Glassmorphism
 Blue accent
 Neon
+Orange glow / coloured shadow
 Cyberpunk
 Gradient mesh
 Floating action button
@@ -437,6 +450,7 @@ No glassmorphism.
 No gradients.
 No blue.
 No neon.
+No coloured glow or orange shadow.
 No FAB.
 No dense KPI blocks.
 No generic SaaS cards.
