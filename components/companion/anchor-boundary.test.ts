@@ -24,9 +24,9 @@ import { describe, expect, it } from "vitest";
  * same commit that creates the routes.
  */
 const ALLOWLIST = new Set([
-  "app/[locale]/(app)/dashboard/page.tsx",
-  "app/[locale]/(app)/journal/page.tsx",
-  "app/[locale]/(app)/videos/page.tsx",
+  "app/[locale]/(protected)/(app)/dashboard/page.tsx",
+  "app/[locale]/(protected)/(immersive)/journal/page.tsx",
+  "app/[locale]/(protected)/(app)/videos/page.tsx",
   "components/companion/journal-view.tsx",
   "components/companion/ambient.test.tsx",
   // This scan itself names the module it forbids.
@@ -137,7 +137,7 @@ describe("CompanionAnchor import boundary (spec 1 §5.4)", () => {
     // …while an allowlisted surface with the same import is fine.
     expect(
       isOffender(
-        "app/[locale]/(app)/dashboard/page.tsx",
+        "app/[locale]/(protected)/(app)/dashboard/page.tsx",
         'import { CompanionAnchor } from "@/components/companion/companion-anchor";',
       ),
     ).toBe(false);

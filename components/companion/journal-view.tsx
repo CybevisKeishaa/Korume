@@ -58,6 +58,12 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
+      <Link
+        href="/dashboard"
+        className="mb-lg inline-flex items-center gap-2xs text-caption text-muted-foreground hover:text-foreground"
+      >
+        ← {t("backToDashboard")}
+      </Link>
       <header className="flex items-end justify-between gap-4">
         <h1 className="text-2xl font-bold">{t("journal.title")}</h1>
         {/* The Journal is where the Companion belongs: a reflective surface,
