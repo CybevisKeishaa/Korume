@@ -91,17 +91,24 @@ destination (see `docs/design/screens/screen-search.md` § Entry Points).
 The Nav Column is **toggleable** (show/hide via a small edge affordance) rather than an
 always-fixed 240px column — generalizing the hidden-by-default behavior
 `screen-shadowing-practice.md` § Sidebar already mandates inside the Lesson Workspace to the whole
-product. **The default visibility state outside the Lesson Workspace is RESOLVED (2026-08-05): the
-column is visible by default, product-wide.** It is session-scoped React state
-(`useState(true)` in `app-nav.tsx`), deliberately not persisted across reloads. The toggle shipped in
-Korume rebrand Plan B (Code) Task 4; the source spec's §7 recorded this as undecided and is superseded
-on this point. Making the Lesson Workspace hidden-by-default — the behavior
-`screen-shadowing-practice.md` § Sidebar mandates — is still unbuilt and belongs to whichever plan
-builds that route group. Toggling only adds a show/hide affordance on top of the column described
-elsewhere in this document: when shown, it is still the same fixed 240px, full-label, persistent-chrome
-column described in § Layout Regions, § Navigation States (Expanded), and § Nav vs. Drawer Boundary —
-those sections describe the column's shape and semantics while visible and are unaffected by this
-paragraph; toggling its visibility does not turn it into a drawer or overlay.
+product. **The default visibility state is RESOLVED (2026-08-05, refined 2026-08-07): it is a
+per-route-group chrome contract, not one product-wide default.** `(app)` — every destination in
+§ Navigation Inventory except the Lesson Workspace — defaults to visible; `(focus)` — Shadowing
+Practice, Dictation, Pronunciation Studio (Planned) — defaults to hidden, which is exactly the
+Lesson Workspace behavior this paragraph originally deferred (see § Navigation States' contract
+table below; that mandate is now built, not still unbuilt). Both defaults are session-scoped React
+state (`useState(defaultVisible)` in `app-nav.tsx`, with `defaultVisible` supplied per chrome
+contract by each route group's `layout.tsx`), deliberately not persisted across reloads. The
+toggle itself shipped in Korume rebrand Plan B (Code) Task 4; the per-group default it now reads
+shipped in the screen-port-workflow plan (Task 2) — the source spec's §7 recorded the default as
+undecided and both are superseded on this point. Toggling only adds a show/hide affordance on top
+of the column described elsewhere in this document: when shown, it is still the same fixed 240px,
+full-label, persistent-chrome column described in § Layout Regions, § Navigation States (Expanded),
+and § Nav vs. Drawer Boundary — those sections describe the column's shape and semantics while
+visible and are unaffected by this paragraph; toggling its visibility does not turn it into a
+drawer or overlay. The reduce-motion control that lives in the same edge-chrome rail as the toggle
+button is NOT gated by `visible` — it renders unconditionally so it survives in `(focus)` even
+while the column itself is hidden (CLAUDE.md §2 rule 4; final whole-branch review F1, 2026-08-07).
 
 ---
 
@@ -143,9 +150,9 @@ study. That reduction is expressed by the **chrome contract of the route group a
 
 | Group | Contract |
 |---|---|
-| `(app)` | Nav Column mounted and visible. The default for every destination in § Navigation Inventory. |
-| `(focus)` | Nav Column mounted, **hidden by default**, recoverable by the learner. Lesson workspaces — Shadowing Practice, Dictation, Pronunciation Studio (Planned). |
-| `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding. |
+| `(app)` | Nav Column mounted and visible. The default for every destination in § Navigation Inventory except `/journal` (see `(immersive)` row below). |
+| `(focus)` | Nav Column mounted, **hidden by default**, recoverable by the learner. Lesson workspaces — Shadowing Practice, Dictation, Pronunciation Studio (Planned). The reduce-motion control in the same edge-chrome rail as the show/hide button is NOT part of the hidden column — it renders unconditionally (`app-nav.tsx`, outside the `visible` check), so CLAUDE.md §2 rule 4's globally-reachable requirement holds even while the column itself is hidden (final whole-branch review F1, 2026-08-07). |
+| `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding, and `/journal` — one of the 14 shipped § Navigation Inventory destinations (`journey`) lives here, so it is reachable from the `(app)` Nav Column but is itself chrome-less once opened (final whole-branch review F3, 2026-08-07). |
 
 **Chrome in `(immersive)` routes:** While the Nav Column is not mounted, `(immersive)` is not chrome-less.
 Every immersive screen carries its own labelled back affordance (see `components/companion/journal-view.tsx`,
@@ -203,8 +210,11 @@ session/goal/hours detail stays where it already lives (Shadowing Hub's Current 
 Dashboard) and is not duplicated here. Beyond this one indicator, the Nav Column stays neutral — no
 live XP counter, no rank badge next to any nav item — and Companion must never narrate the streak
 indicator from within navigation, per the same Layer Responsibility Rule. Because the Nav Column is
-persistent chrome (§ Layout Regions), this streak indicator is visible from all 14 `NAV_ITEMS`
-destinations, not just Shadowing.
+persistent chrome (§ Layout Regions), this streak indicator is visible from every `(app)` `NAV_ITEMS`
+destination, not just Shadowing — 13 of the 14 shipped destinations. The 14th, `/journal`
+(`journey`), is `(immersive)` and mounts no Nav Column at all (§ Navigation States' contract table),
+so the streak indicator is not visible there; that surface has its own Companion-driven presentation
+instead (`design-reconciliation.md` §2), not a gap this document leaves unaddressed.
 
 The Nav footer also carries a "Rain Sound" ambient-audio toggle (§ Settings Entry Point). This is
 **not** part of the Gamification exception above: ambient audio is not XP, Streak, Progress, or Goal
@@ -216,7 +226,8 @@ preset (glow, color temperature, glass tint, shadow softness, ambient particles)
 Shadowing Practice workspace, while Rain Sound is only an ambient audio layer, reachable from
 anywhere in the app. The two do not stack or conflict by design — a learner can enable Rain Sound
 under any Study Atmosphere selection, or none at all. Like the streak indicator, Rain Sound is
-available from all 14 nav destinations. It defaults to off and never autoplays.
+available from every `(app)` nav destination — the same 13-of-14 scope, and the same `/journal`
+exception, described just above. It defaults to off and never autoplays.
 
 ---
 
