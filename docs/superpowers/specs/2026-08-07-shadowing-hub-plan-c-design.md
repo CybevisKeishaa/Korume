@@ -1,6 +1,8 @@
 # Shadowing Hub — Plan C design (Hub UI, Explore, and the foundation both need)
 
-> **Status:** design approved 2026-08-07, not yet planned.
+> **Status: LOCKED 2026-08-07** after two review rounds. C1 is planned next; C2 and C3 get their plans
+> only after the plan before them has merged, so each is written against a real foundation rather than a
+> predicted one.
 > **Parent spec:** `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` (LOCKED,
 > `249c442`), which split delivery into A Docs / B Backend / **C Hub UI** / D Lesson UI. A and B are
 > merged (`a6a7617`, `b36c455`). This spec is C.
@@ -59,6 +61,7 @@ wants to revisit one should read the evidence first, not re-derive the question.
 | D14 | Explore has **no Companion rail**, contradicting its own tier-A prompt. | The built frame `200:7705` is one full-width column. Frame beats prompt. |
 | D15 | Quick Preview drawer ships **in C3**, not deferred. | It is an Explore interaction, not a backend feature. Deferring it means editing the lesson card twice. (User ruling.) |
 | D16 | `JLPT → Certification Practice` and the removal of `Reading` are **recorded, not acted on**. | Observed only in the newest JLPT frames. Whichever plan ports those screens rules on it. Changing a nav label before knowing the destination is backwards. |
+| D17 | The `sensei` nav row routes to **`/sensei`**, not `/companion`. | Companion is a cross-cutting concept — it appears in the Hub rail, AI Suggestion, Growth Areas, Weekly Report, and Roadmap. A `/companion` route would attract "everything AI" and sprawl. INSIGHTS lists Sensei, Roadmap and Weekly Report as three peers, so the route matches the nav label and stays one thing. `/companion` is left free to become a landing page *over* them later (`/companion` → sensei · roadmap · growth) rather than a bucket. |
 
 ---
 
@@ -238,7 +241,7 @@ iteration; the older `90:1985` "Shadowing Hub" (1278×2299) is superseded and mu
 |---|---|---|---|
 | 1 | Grid entirely collection-driven, ordered by `display_order`; virtual collections prepended Continue Learning → My Lessons → Recently Added | A fixed editorial layout of 8 named sections | **Figma.** The Hub is an authored page, not a rendered list. |
 | 2 | "Create Lesson" is a header button opening a modal that shows quota first | An inline import block in the page body: visible URL field, quota box, upgrade link | **Figma.** |
-| 3 | §2.2: user-facing progress is 3 lines, explicitly *not* the 6-step backend | 6 named steps, 72%, "est. 1m 20s" | **Figma in principle, constrained by D10** — the UI may show real per-step progress, but C2 must not invent numbers the backend cannot produce. |
+| 3 | §2.2: user-facing progress is 3 lines, explicitly *not* the 6-step backend | 6 named steps, 72%, "est. 1m 20s" | **Figma defines the interaction model; D10 constrains the initial implementation until C4 provides authoritative job progress.** Building is a first-class state and the multi-step pipeline is what the learner sees — the old 3-line UI is retired. What C2 may not do is invent numbers the backend cannot produce. |
 | 4 | Not mentioned | "Recommended For You", driven by weaknesses | **Figma.** The engine already exists. |
 
 ### 4.2 Sections, and what real data backs each
