@@ -95,6 +95,7 @@ const config: Config = {
         heading: ["var(--text-heading)", "var(--leading-heading)"],
         title: ["var(--text-title)", "var(--leading-title)"],
         display: ["var(--text-display)", "var(--leading-display)"],
+        hero: ["var(--text-hero)", "var(--leading-hero)"],
       },
       lineHeight: {
         jp: "var(--leading-jp)",

@@ -141,6 +141,13 @@
   --leading-title: 2.25rem;
   --text-display: 2.5rem;
   --leading-display: 3rem;
+  /* Editorial hero — the largest headline, and the only step above display.
+     Earned by semantic role, not size: the four sites are page-opening <h1>s
+     and one pull-quote, all in the display face (spec §3.2). The 62px
+     watermark and the 128/150px kanji are larger and deliberately excluded —
+     large Japanese glyphs are content presentation, not interface typography. */
+  --text-hero: 4rem;
+  --leading-hero: 4.25rem;
   /* Japanese line-height: kanji + furigana want more vertical room than Latin
      script at the same size. Use with font-jp (leading-jp utility). */
   --leading-jp: 1.8;

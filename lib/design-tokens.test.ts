@@ -30,9 +30,10 @@ const REQUIRED_TOKENS = [
   "--radius-sm", "--radius-md", "--radius-lg", "--radius-xl",
   // typography
   "--text-caption", "--text-body", "--text-body-lg", "--text-heading",
-  "--text-title", "--text-display",
+  "--text-title", "--text-display", "--text-hero",
   "--leading-caption", "--leading-body", "--leading-body-lg",
-  "--leading-heading", "--leading-title", "--leading-display", "--leading-jp",
+  "--leading-heading", "--leading-title", "--leading-display", "--leading-hero",
+  "--leading-jp",
   "--font-weight-regular", "--font-weight-medium", "--font-weight-semibold",
   "--font-weight-bold",
   "--tracking-tight", "--tracking-wide",
