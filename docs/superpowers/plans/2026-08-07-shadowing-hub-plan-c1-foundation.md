@@ -513,30 +513,44 @@ import { test, expect } from "@playwright/test";
 // COLLAPSES a segment (`/videos/:id/shadowing` → `/shadowing/:id`) rather than
 // renaming a prefix. Getting that one wrong sends a learner silently into the
 // wrong lesson mode instead of to an error, which is why it is asserted here.
+//
+// Asserted at the HTTP level with `maxRedirects: 0`, NOT by navigating:
+// `/shadowing` is in PROTECTED_PREFIXES, so following the redirect chains into
+// `/login?redirectTo=…` and the assertion would be testing auth rather than the
+// rename. Checking the response directly also lets us assert the 307 itself —
+// and 307-vs-308 is the central decision of this task, so it must be pinned.
 const ID = "00000000-0000-0000-0000-000000000000";
 
-test("hub route redirects", async ({ page }) => {
-  await page.goto("/en/videos");
-  await expect(page).toHaveURL(/\/en\/shadowing(\?|$)/);
-});
+const CASES: ReadonlyArray<readonly [from: string, to: string]> = [
+  ["/en/videos", "/en/shadowing"],
+  [`/en/videos/${ID}/shadowing`, `/en/shadowing/${ID}`], // segment dropped
+  [`/en/videos/${ID}/dictation`, `/en/shadowing/${ID}/dictation`],
+];
 
-test("lesson route redirects and drops the trailing segment", async ({ page }) => {
-  await page.goto(`/en/videos/${ID}/shadowing`);
-  await expect(page).toHaveURL(new RegExp(`/en/shadowing/${ID}(\\?|$)`));
-});
+for (const [from, to] of CASES) {
+  test(`${from} redirects to ${to} with a temporary 307`, async ({ request }) => {
+    const res = await request.get(from, { maxRedirects: 0 });
+    expect(res.status()).toBe(307);
+    // Full path, never `toContain` — a substring assertion would stop testing
+    // the segment collapse.
+    expect(new URL(res.headers()["location"], "http://localhost:3000").pathname).toBe(to);
+  });
+}
 
-test("dictation route redirects and keeps its segment", async ({ page }) => {
-  await page.goto(`/en/videos/${ID}/dictation`);
-  await expect(page).toHaveURL(new RegExp(`/en/shadowing/${ID}/dictation(\\?|$)`));
+test("the rules do not swallow a longer prefix", async ({ request }) => {
+  // Mirrors the guard in lib/supabase/route-protection.test.ts: `/videosomething`
+  // must not be caught by the `/videos` rule.
+  const res = await request.get("/en/videosomething", { maxRedirects: 0 });
+  expect(res.status()).not.toBe(307);
 });
 ```
 
-These assert the final URL, so they pass whether or not the target requires auth — the redirect is what is under test, not the page.
+Four specs, not three: the fourth proves the rules are not over-broad.
 
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `npx playwright test tests/e2e/route-rename-redirects.spec.ts`
-Expected: FAIL — `/en/videos` 404s.
+Expected: FAIL — `/en/videos` 404s, so the status is 404 rather than 307.
 
 - [ ] **Step 3: Implement**
 
@@ -571,7 +585,7 @@ In `next.config.mjs`, add to `nextConfig`:
 - [ ] **Step 4: Run the e2e suite**
 
 Run: `npx supabase db reset && npx playwright test`
-Expected: PASS, 11 tests (8 existing + 3 new). Kill any stale node on :3000 first — `reuseExistingServer` will otherwise silently test a stale build. `db reset` is required because `route-group-provider-identity.spec.ts` needs the seeded free-tier video.
+Expected: PASS, 12 tests (8 existing + 4 new). Kill any stale node on :3000 first — `reuseExistingServer` will otherwise silently test a stale build. `db reset` is required because `route-group-provider-identity.spec.ts` needs the seeded free-tier video.
 
 - [ ] **Step 5: Commit**
 
@@ -1865,7 +1879,7 @@ Expected: succeeds (~52s) and the route list shows `/[locale]/shadowing`, `/[loc
 - [ ] **Step 5: End-to-end**
 
 Run: `npx playwright test`
-Expected: 11 pass. Kill any stale node on :3000 first.
+Expected: 12 pass. Kill any stale node on :3000 first.
 
 - [ ] **Step 6: Browser pass by hand**
 
@@ -1898,4 +1912,4 @@ git commit -m "chore: Plan C1 verification gate"
 
 **One behaviour worth knowing before writing Tasks 8-10:** the mock **throws for a table with no resolver**. Three tests exploit this deliberately, asserting a follow-up query is skipped by simply not providing its resolver. Do not "fix" those by adding one.
 
-**Step-4 verification counts** (`17 migrations`, `18 migrations`, `11 e2e`, `2007` unit baseline) are what the plan expects, not what it asserts. If a number differs, find out why rather than editing the plan to match.
+**Step-4 verification counts** (`17 migrations`, `18 migrations`, `12 e2e`, `2007` unit baseline) are what the plan expects, not what it asserts. If a number differs, find out why rather than editing the plan to match.
