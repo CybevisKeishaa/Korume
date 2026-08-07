@@ -26,6 +26,29 @@ const nextConfig = {
     }
     return config;
   },
+  // Spec §3.1.1. TEMPORARY (307), not permanent: these routes still move —
+  // Plan D restructures the lesson workspace into four Learning Modes — and a
+  // 308 is cached hard by browsers, turning a later change into a debugging
+  // trap that presents as an app routing bug. No SEO argument on the other
+  // side: every one of these routes is auth-gated, and the app has never been
+  // published, so no external inbound link exists to preserve. Revisit at
+  // launch. A wildcard is wrong here because the second rule COLLAPSES a
+  // segment rather than renaming a prefix.
+  async redirects() {
+    return [
+      { source: "/:locale/videos", destination: "/:locale/shadowing", permanent: false },
+      {
+        source: "/:locale/videos/:id/shadowing",
+        destination: "/:locale/shadowing/:id",
+        permanent: false,
+      },
+      {
+        source: "/:locale/videos/:id/dictation",
+        destination: "/:locale/shadowing/:id/dictation",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);
