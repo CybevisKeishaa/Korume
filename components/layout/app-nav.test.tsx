@@ -233,4 +233,29 @@ describe("AppNav visibility toggle", () => {
     );
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
   });
+
+  // Final whole-branch review F1 (2026-08-07): the reduce-motion control used
+  // to live only inside the `visible` nav footer, so `(focus)` routes
+  // (`defaultVisible={false}`) mounted it nowhere at all until the learner
+  // found the edge strip and expanded the column — a CLAUDE.md §2 rule 4
+  // regression on Shadowing/Dictation, the heaviest repeated study loops.
+  it("keeps the reduce-motion control reachable even while the nav is hidden", () => {
+    render(
+      <ThemeProvider>
+        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+      </ThemeProvider>,
+    );
+    expect(
+      screen.getByRole("checkbox", { name: /reduce motion/i }),
+    ).toBeInTheDocument();
+    // And it must not smuggle in a second nav landmark to do it.
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+  });
+
+  it("does not duplicate the reduce-motion control while the nav is visible", () => {
+    renderNav();
+    expect(
+      screen.getAllByRole("checkbox", { name: /reduce motion/i }),
+    ).toHaveLength(1);
+  });
 });

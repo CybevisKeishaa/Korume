@@ -126,9 +126,6 @@ export function AppNav({
           </div>
 
           <div className="mt-4 space-y-3 border-t border-border pt-4">
-            <div className="flex items-center justify-end">
-              <ReduceMotionToggle />
-            </div>
             <p className="truncate px-1 text-xs text-muted-foreground" title={userEmail}>
               {userEmail}
             </p>
@@ -143,17 +140,33 @@ export function AppNav({
           </div>
         </nav>
       ) : null}
-      <button
-        type="button"
-        aria-expanded={visible}
-        onClick={() => setVisible((current) => !current)}
-        className="flex items-center justify-center border-b border-border bg-card py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:h-screen md:w-6 md:border-b-0 md:border-r md:py-0"
-      >
-        <span aria-hidden="true">{visible ? "‹" : "›"}</span>
-        <span className="sr-only">
-          {visible ? t("toggle.hide") : t("toggle.show")}
-        </span>
-      </button>
+      {/*
+        Deliberately OUTSIDE the `visible` conditional above (final
+        whole-branch review F1, 2026-08-07): this is the only edge-chrome
+        rail (button + reduce-motion control) `(focus)` routes render when
+        `defaultVisible={false}`, and CLAUDE.md §2 rule 4 requires the
+        reduce-motion control to be globally reachable — including on
+        Shadowing/Dictation, the app's heaviest repeated study loops. A plain
+        <div>, not a second <nav>: `route-group-provider-identity.spec.ts`
+        asserts `getByRole("navigation")` stays at 0 on chrome-less surfaces,
+        and this rail must not become a second landmark on `(app)` either.
+      */}
+      <div className="flex flex-col items-stretch gap-2 border-b border-border bg-card px-2 py-2 md:h-screen md:w-auto md:border-b-0 md:border-r md:py-3">
+        <button
+          type="button"
+          aria-expanded={visible}
+          onClick={() => setVisible((current) => !current)}
+          className="flex items-center justify-center rounded py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <span aria-hidden="true">{visible ? "‹" : "›"}</span>
+          <span className="sr-only">
+            {visible ? t("toggle.hide") : t("toggle.show")}
+          </span>
+        </button>
+        <div className="border-t border-border pt-2 text-muted-foreground">
+          <ReduceMotionToggle />
+        </div>
+      </div>
     </div>
   );
 }
