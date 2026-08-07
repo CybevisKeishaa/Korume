@@ -126,6 +126,25 @@
   --space-2xl: 3rem;
   --space-3xl: 4rem;
 
+  /* Measured across the live Figma design file (59 frames): 20px is 12.0% of
+     all spacing and had no step. 28px (2.5%) and 36px (0.7%) are noise and
+     round to --space-lg / --space-xl. Inserted WITHOUT renaming any existing
+     step — renaming the scale is its own spec ("Spacing System v2"), not this
+     plan. Spec D6/D7. */
+  --space-md-lg: 1.25rem;
+
+  /* Shell structure. Deliberately NOT --space-*: spacing is distance between
+     elements, these are the dimensions of the application shell. Measured from
+     Figma frame 149:2 (Shadowing hub after changes, 1536 canvas). The two
+     distances reference spacing steps rather than carrying raw numbers, so the
+     namespace is complete without a new value entering the system. Spec D5/D8. */
+  --layout-sidebar-width: 224px;
+  --layout-sidebar-collapsed: 68px;
+  --layout-content-max: 1240px;
+  --layout-companion-width: 340px;
+  --layout-gutter: var(--space-xl);
+  --layout-column-gap: var(--space-lg);
+
   /* Typography scale: size + line-height pairs. Body line-heights are
      deliberately generous — Vietnamese stacks two tiers of diacritics (ắ ặ ễ)
      and must not clip at any size (spec §4.5 touchpoint 1). */

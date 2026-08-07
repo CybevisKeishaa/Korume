@@ -89,4 +89,10 @@ describe("cn (tailwind-merge custom token config)", () => {
     // that is not also registered in lib/utils.ts fails exactly here.
     expect(cn("text-hero", "text-foreground")).toBe("text-hero text-foreground");
   });
+
+  it("does not strip the new layout and spacing scales", () => {
+    expect(cn("gap-md", "gap-md-lg")).toBe("gap-md-lg");
+    expect(cn("max-w-6xl", "max-w-content")).toBe("max-w-content");
+    expect(cn("w-60", "w-sidebar")).toBe("w-sidebar");
+  });
 });

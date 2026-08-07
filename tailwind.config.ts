@@ -83,10 +83,19 @@ const config: Config = {
         xs: "var(--space-xs)",
         sm: "var(--space-sm)",
         md: "var(--space-md)",
+        "md-lg": "var(--space-md-lg)",
         lg: "var(--space-lg)",
         xl: "var(--space-xl)",
         "2xl": "var(--space-2xl)",
         "3xl": "var(--space-3xl)",
+      },
+      width: {
+        sidebar: "var(--layout-sidebar-width)",
+        "sidebar-collapsed": "var(--layout-sidebar-collapsed)",
+        companion: "var(--layout-companion-width)",
+      },
+      maxWidth: {
+        content: "var(--layout-content-max)",
       },
       fontSize: {
         caption: ["var(--text-caption)", "var(--leading-caption)"],
