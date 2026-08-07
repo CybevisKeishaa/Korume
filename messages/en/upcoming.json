@@ -1,0 +1,48 @@
+{
+  "unlocksLabel": "What fills this",
+  "review": {
+    "title": "Review",
+    "body": "Your due cards from every module gather here — kanji, vocabulary and mined sentences in one queue.",
+    "unlocks": "Study anything with a card, and the queue starts filling itself."
+  },
+  "challenges": {
+    "title": "Challenges",
+    "body": "Short, timed sets that push one skill harder than a normal session does.",
+    "unlocks": "Nothing yet. This screen arrives with the challenge engine."
+  },
+  "sensei": {
+    "title": "Sensei",
+    "body": "A place to ask about anything you have studied, in your own words.",
+    "unlocks": "Nothing yet. Conversation practice already lives under Speaking."
+  },
+  "roadmap": {
+    "title": "Roadmap",
+    "body": "The path your Companion is drawing from what you actually study, not from a fixed syllabus.",
+    "unlocks": "Keep studying. A roadmap needs a few weeks of real sessions before it says anything true."
+  },
+  "weeklyReport": {
+    "title": "Weekly Report",
+    "body": "One honest summary a week: what moved, what did not, and what your Companion adjusted.",
+    "unlocks": "Finish a week of sessions and the first report writes itself."
+  },
+  "statistics": {
+    "title": "Statistics",
+    "body": "The numbers behind your sessions — time, accuracy and coverage over time.",
+    "unlocks": "Nothing yet. This screen arrives once session history is being aggregated."
+  },
+  "achievements": {
+    "title": "Achievements",
+    "body": "Badges you have earned, and the ones within reach.",
+    "unlocks": "Badges are awarded already; this screen is where they will be shown."
+  },
+  "settings": {
+    "title": "Settings",
+    "body": "Account, language, motion, and control over your own data.",
+    "unlocks": "Nothing yet. Data export and deletion land with this screen."
+  },
+  "explore": {
+    "title": "Explore Lessons",
+    "body": "Every lesson in Korume, arranged for discovery rather than for your own library.",
+    "unlocks": "Nothing yet. This screen is being built."
+  }
+}
