@@ -148,11 +148,11 @@ study. That reduction is expressed by the **chrome contract of the route group a
 | `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding. |
 
 **Chrome in `(immersive)` routes:** While the Nav Column is not mounted, `(immersive)` is not chrome-less.
-Every immersive screen carries its own labelled back affordance (see `docs/design/screens/screen-journal-view.md`,
+Every immersive screen carries its own labelled back affordance (see `components/companion/journal-view.tsx`,
 the Diary's journaling surface). Additionally, all immersive routes mount a global `ReduceMotionToggle`
 (CLAUDE.md §2 rules 4 and 5 require a globally reachable reduced-motion control and keyboard reach at all times,
-and immersive surfaces are where motion is heaviest). This toggle is positioned outside the (non-existent)
-Nav Column region — it is part of the Ambient Layer and visible regardless of route.
+and immersive surfaces are where motion is heaviest). This toggle is rendered directly by `ImmersiveChromeLayout`, independent of both the Nav Column and
+Companion state, and is visible regardless of route.
 
 Route groups express chrome contracts, not feature categories: features churn, chrome contracts do
 not. All three sit beneath `(protected)`, which owns the authenticated session's lifetime and mounts
