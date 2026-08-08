@@ -1,48 +1,48 @@
 {
-  "unlocksLabel": "Điều gì lấp đầy trang này",
+  "unlocksLabel": "Điều gì đang chờ bạn ở đây",
   "review": {
     "title": "Ôn tập",
-    "body": "Thẻ đến hạn từ mọi phần gom về đây — kanji, từ vựng và câu bạn đã thu thập, chung một hàng đợi.",
-    "unlocks": "Cứ học bất cứ thứ gì có thẻ, hàng đợi sẽ tự đầy lên."
+    "body": "Những thẻ đến hạn từ các buổi học sẽ tìm về đây — kanji, từ vựng và những câu bạn từng giữ lại.",
+    "unlocks": "Cứ học như bình thường. Khi có điều cần ôn, hàng đợi sẽ tự xuất hiện."
   },
   "challenges": {
     "title": "Thử thách",
-    "body": "Những lượt ngắn có giờ, đẩy một kỹ năng mạnh hơn buổi học thường.",
-    "unlocks": "Chưa có gì. Trang này xuất hiện cùng bộ máy thử thách."
+    "body": "Những lượt luyện tập ngắn để bạn dành thêm một chút thời gian cho một kỹ năng.",
+    "unlocks": "Chưa có gì ở đây. Thử thách sẽ xuất hiện khi hệ thống này sẵn sàng."
   },
   "sensei": {
     "title": "Sensei",
-    "body": "Nơi hỏi về bất cứ điều gì bạn đã học, bằng lời của chính bạn.",
-    "unlocks": "Chưa có gì. Luyện hội thoại hiện nằm ở mục Luyện nói."
+    "body": "Một nơi để hỏi, nghĩ thành lời, và nhìn lại những gì bạn đã học theo cách của riêng mình.",
+    "unlocks": "Chưa có gì ở đây. Những cuộc luyện nói hiện vẫn ở mục Luyện nói."
   },
   "roadmap": {
     "title": "Lộ trình",
-    "body": "Con đường Companion vẽ ra từ những gì bạn thật sự học, không phải từ một giáo trình cố định.",
-    "unlocks": "Cứ học tiếp. Một lộ trình cần vài tuần buổi học thật trước khi nói được điều gì đúng."
+    "body": "Một con đường được Korume dần vẽ nên từ chính những gì bạn học, thay vì một giáo trình có sẵn.",
+    "unlocks": "Cứ học tiếp. Cần một chút thời gian học thật để con đường này bắt đầu hiện rõ."
   },
   "weeklyReport": {
     "title": "Báo cáo tuần",
-    "body": "Mỗi tuần một bản tóm tắt thành thật: điều gì tiến lên, điều gì chưa, và Companion đã điều chỉnh gì.",
-    "unlocks": "Học trọn một tuần, bản báo cáo đầu tiên sẽ tự viết ra."
+    "body": "Một lần nhìn lại thật nhẹ vào cuối tuần — điều gì đã tiến lên, điều gì còn dang dở, và Korume đã nhận ra điều gì.",
+    "unlocks": "Học trọn một tuần. Bản báo cáo đầu tiên sẽ tự tìm đến đây."
   },
   "statistics": {
     "title": "Thống kê",
-    "body": "Những con số phía sau các buổi học — thời lượng, độ chính xác và độ phủ theo thời gian.",
-    "unlocks": "Chưa có gì. Trang này xuất hiện khi lịch sử buổi học được tổng hợp."
+    "body": "Những con số nhỏ phía sau hành trình học — thời gian bạn dành ra, độ chính xác và những gì đang dần phủ rộng theo thời gian.",
+    "unlocks": "Chưa có gì ở đây. Khi lịch sử học tập đủ đầy, những con số này sẽ bắt đầu có ý nghĩa."
   },
   "achievements": {
     "title": "Thành tựu",
-    "body": "Những huy hiệu bạn đã đạt, và những cái đang trong tầm với.",
-    "unlocks": "Huy hiệu đã được trao rồi; đây sẽ là nơi hiển thị chúng."
+    "body": "Những dấu mốc bạn đã đi qua, cùng những điều có thể một ngày nào đó trở thành một phần trong hành trình của bạn.",
+    "unlocks": "Những huy hiệu đầu tiên sẽ xuất hiện khi có điều thật sự đáng để lưu lại."
   },
   "settings": {
     "title": "Cài đặt",
-    "body": "Tài khoản, ngôn ngữ, chuyển động, và quyền kiểm soát dữ liệu của chính bạn.",
-    "unlocks": "Chưa có gì. Xuất và xoá dữ liệu sẽ về cùng trang này."
+    "body": "Tài khoản, ngôn ngữ, chuyển động và những lựa chọn giúp bạn giữ Korume theo cách mình muốn.",
+    "unlocks": "Chưa có gì ở đây. Các lựa chọn về dữ liệu, xuất và xoá dữ liệu sẽ được gom về cùng một nơi."
   },
   "explore": {
     "title": "Khám phá bài học",
-    "body": "Toàn bộ bài học trong Korume, sắp xếp để khám phá thay vì cho thư viện riêng của bạn.",
-    "unlocks": "Chưa có gì. Trang này đang được xây."
+    "body": "Những bài học trong Korume, được sắp xếp để bạn tình cờ tìm thấy một điều mình muốn học tiếp.",
+    "unlocks": "Chưa có gì ở đây. Không gian khám phá bài học đang được chuẩn bị."
   }
 }
