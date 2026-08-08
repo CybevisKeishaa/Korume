@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -19,6 +21,10 @@ import navMessages from "@/messages/en/nav.json";
 // were renamed with fresh EN copy by the 2026-08-05 Korume reconciliation
 // (spec §2): lessons (was videos), speaking (was conversation), journey
 // (was journal) — those literals are authored in Plan B (Code) Task 3.
+// Plan C1 Task 7 adds the eight canonical-but-unbuilt destinations (review,
+// challenges, sensei, roadmap, weeklyReport, statistics, achievements,
+// settings), now real routes rendering an honest empty state — literals
+// copied verbatim from the Task 7 brief / messages/en/nav.pin.test.ts.
 const EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string> = {
   dashboard: "Dashboard",
   lessons: "Lessons",
@@ -28,20 +34,29 @@ const EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string> = {
   reading: "Reading",
   speaking: "Speaking",
   jlpt: "JLPT",
+  review: "Review",
   mining: "Mining",
   playlists: "Playlists",
+  challenges: "Challenges",
   community: "Community",
   leaderboard: "Leaderboard",
+  sensei: "Sensei",
+  roadmap: "Roadmap",
+  weeklyReport: "Weekly Report",
   journey: "Journey",
+  statistics: "Statistics",
+  achievements: "Achievements",
   profile: "Profile",
+  settings: "Settings",
 };
 // Group headings, same pinning rule. EN copy authored in Plan B Task 3
 // (navigation-system.md § Navigation Inventory names the groups LEARN /
-// STUDY / PROGRESS / ACCOUNT; the catalog stores title case, the uppercase
-// treatment is CSS).
+// STUDY / INSIGHTS / PROGRESS / ACCOUNT; the catalog stores title case, the
+// uppercase treatment is CSS). INSIGHTS ("Insights") added by Task 7.
 const EXPECTED_GROUP_LABELS: Record<(typeof NAV_GROUPS)[number]["key"], string> = {
   learn: "Learn",
   study: "Study",
+  insights: "Insights",
   progress: "Progress",
   account: "Account",
 };
@@ -103,16 +118,16 @@ describe("AppNav", () => {
     }
   });
 
-  it("renders the four shipped group headings and groups items under them", () => {
+  it("renders the five canonical group headings and groups items under them", () => {
     renderNav();
-    // Shipped counts per navigation-system.md § Navigation Inventory: only
-    // the 14 shipped rows are wired; the 8 canonical-but-unbuilt rows (and
-    // with them the whole INSIGHTS group) have no entry yet.
+    // All 22 canonical destinations are wired (Plan C1 Task 7). Counts per
+    // the NAV_GROUPS structure in app-nav.tsx.
     const expectedCounts: Record<(typeof NAV_GROUPS)[number]["key"], number> = {
       learn: 8,
-      study: 4,
-      progress: 1,
-      account: 1,
+      study: 6,
+      insights: 3,
+      progress: 3,
+      account: 2,
     };
     for (const group of NAV_GROUPS) {
       const list = screen.getByRole("list", {
@@ -122,6 +137,44 @@ describe("AppNav", () => {
         expectedCounts[group.key],
       );
     }
+  });
+
+  it("renders all five canonical groups in order", () => {
+    // navigation-system.md § Navigation Inventory. INSIGHTS sits between STUDY
+    // and PROGRESS.
+    renderNav();
+    const headings = screen.getAllByText(
+      /^(Learn|Study|Insights|Progress|Account)$/,
+    ).map((el) => el.textContent);
+    expect(headings).toEqual(["Learn", "Study", "Insights", "Progress", "Account"]);
+  });
+
+  it("ships all 22 canonical destinations", () => {
+    expect(NAV_ITEMS).toHaveLength(22);
+  });
+
+  it("points every nav href at a route that exists", () => {
+    // The regression that makes a future rename fail loudly instead of shipping
+    // a dead nav row. Plan C1 exists partly because eight rows had no route.
+    const missing = NAV_ITEMS.filter((item) => {
+      const segments = item.href.replace(/^\//, "");
+      const candidates = [
+        path.join(process.cwd(), "app", "[locale]", "(protected)", "(app)", segments, "page.tsx"),
+        path.join(process.cwd(), "app", "[locale]", "(protected)", "(immersive)", segments, "page.tsx"),
+      ];
+      return !candidates.some(existsSync);
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it("lets the nav list scroll when it is taller than the viewport", () => {
+    // 22 rows do not fit the sidebar. Every Figma frame shows the list clipped
+    // at 585-682px with no scroll region — an export artifact, not a design
+    // decision (spec §7.2, D9).
+    renderNav();
+    const list = document.querySelector("[data-nav-scroll]");
+    expect(list).not.toBeNull();
+    expect(list?.className).toContain("overflow-y-auto");
   });
 
   it("routes the Journey entry at /journal (was `journal`; renamed by spec §2)", () => {

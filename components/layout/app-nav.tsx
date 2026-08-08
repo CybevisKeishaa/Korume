@@ -13,13 +13,12 @@ import { NotificationBell } from "@/components/layout/notification-bell";
  * not labels: the words live in messages/. Group `key` doubles as the
  * heading catalog key (`nav.groups.*`).
  *
- * Only the 14 SHIPPED destinations are wired. The 8 canonical-but-unbuilt
- * rows (review, challenges, korume, roadmap, weeklyReport, statistics,
- * achievements, settings) have no route yet and get no entry — a group
- * gains its rows (and INSIGHTS appears at all) only when a destination
- * ships. `lessons` points at `/shadowing`, the canonical route
- * (navigation-system.md § Navigation Inventory) — Plan C1 executed the rename
- * from the formerly-shipped `/videos` directory.
+ * All 22 canonical destinations are wired (Plan C1). Eight of them —
+ * review, challenges, sensei, roadmap, weeklyReport, statistics,
+ * achievements, settings — are real routes rendering an honest empty state
+ * rather than a built feature; a nav row that 404s is worse than one that
+ * explains itself. `app-nav.test.tsx` asserts every href resolves to a page
+ * file, so a future route rename fails loudly instead of shipping a dead row.
  */
 export const NAV_GROUPS = [
   {
@@ -38,19 +37,36 @@ export const NAV_GROUPS = [
   {
     key: "study",
     items: [
+      { href: "/review", key: "review" },
       { href: "/mining", key: "mining" },
       { href: "/playlists", key: "playlists" },
+      { href: "/challenges", key: "challenges" },
       { href: "/community", key: "community" },
       { href: "/leaderboard", key: "leaderboard" },
     ],
   },
   {
+    key: "insights",
+    items: [
+      { href: "/sensei", key: "sensei" },
+      { href: "/roadmap", key: "roadmap" },
+      { href: "/weekly-report", key: "weeklyReport" },
+    ],
+  },
+  {
     key: "progress",
-    items: [{ href: "/journal", key: "journey" }],
+    items: [
+      { href: "/journal", key: "journey" },
+      { href: "/statistics", key: "statistics" },
+      { href: "/achievements", key: "achievements" },
+    ],
   },
   {
     key: "account",
-    items: [{ href: "/profile", key: "profile" }],
+    items: [
+      { href: "/profile", key: "profile" },
+      { href: "/settings", key: "settings" },
+    ],
   },
 ] as const;
 
@@ -87,7 +103,7 @@ export function AppNav({
             <NotificationBell />
           </div>
 
-          <div className="flex-1 md:overflow-y-auto">
+          <div data-nav-scroll className="flex-1 overflow-y-auto">
             {NAV_GROUPS.map((group) => (
               <div key={group.key} className="mb-2">
                 <p
