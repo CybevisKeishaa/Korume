@@ -127,10 +127,17 @@ Seven, derived from the ~45 measured items. Navigation only (G3):
 6. **Auditing & search** — how a sweep misses things.
 7. **Sources of truth** — duplication, derived facts, and ordering of record-keeping.
 
-### 3.4 The four rules, stated in the file itself
+### 3.4 The four lesson-entry rules, stated in the file itself
 
-`docs/lessons.md` opens with a short `## Rules` section carrying G4, G5, G6+G7, and G8 in the imperative.
-They govern edits to the file, so they belong in it — the spec is not consulted at edit time.
+`docs/lessons.md` opens with a short `## Lesson-entry rules` section carrying **G4, G5, G6+G7 and G8** in
+the imperative. They govern edits to the file, so they belong in it — the spec is not consulted at edit
+time.
+
+The qualifier **lesson-entry** is load-bearing. These four are the rules an author obeys when adding or
+changing an entry. `G9` (read contract vs write contract) and `G10` (scan boundary) are equally binding
+**governance and enforcement decisions**, but they govern the *system around* the file, not the shape of
+an entry — so they live in this spec and in `CLAUDE.md`, not in the file's own rules section. Calling all
+ten "the rules" would leave an author unsure which ones apply at edit time.
 
 ---
 
@@ -297,8 +304,8 @@ readback ↔ *a tool reporting success is not evidence it worked*.
 ### 6.2 New §9 line — the write contract
 
 ```markdown
-- [ ] Lessons from this work recorded in `docs/lessons.md` per its four rules — merged into an
-      existing entry where one applies, not appended as a new one
+- [ ] Lessons from this work recorded in `docs/lessons.md` per its four lesson-entry rules — merged
+      into an existing entry where one applies, not appended as a new one
 ```
 
 This is the survival mechanism, not documentation polish. The behaviour that produced today's
@@ -324,8 +331,8 @@ lesson, which becomes law in `CLAUDE.md` while `docs/lessons.md` retains only th
 
 ## 7. Scope and acceptance
 
-**In scope:** the file, its four rules, ~22–26 merged entries, the integrity test, the source cuts, and
-the two `CLAUDE.md` edits.
+**In scope:** the file, its four lesson-entry rules, ~22–26 merged entries, the integrity test, the
+source cuts, and the two `CLAUDE.md` edits.
 
 **Out of scope:**
 
