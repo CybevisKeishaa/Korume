@@ -38,15 +38,26 @@ Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` **LOCKED
 screens' worth of work, not one. Only C1 is planned so far, deliberately: C2 and C3 get their plans
 after the plan before them merges, so each is written against a real foundation.
 
-**C1 is mid-flight.** 13 commits on the branch (never pushed), Checkpoints A and B done, C (Task 7,
-nav to 22 rows) and D (Tasks 8–11, data layer) remain. Gate at pause, controller-measured: tsc 0 ·
-lint 0 errors / 77 warnings (mix unchanged) · unit 2038/2038 across 225 files · Playwright 12/12.
-**Two things are owed to the user: Checkpoint B approval, and a ruling on 4 Vietnamese strings in
-`messages/vi/upcoming.json` that a reviewer judged to be literal gloss.**
+**C1 is CODE-COMPLETE and awaiting whole-branch review round 2, then merge.** 36 commits on the branch
+(never pushed, count measured with `git rev-list --count`, not added up from a list). All 11 tasks done;
+all four human gates approved, D on 2026-08-08. Gate, controller-measured after round 1's fixes: tsc 0 ·
+lint 0 errors / 77 warnings (mix unchanged) · unit **2064/2064 across 230 files** · build ✓ · Playwright
+**13/13** · browser pass 6/6. Both earlier open items are closed: Checkpoint B was approved, and the
+Vietnamese copy ruling landed when the user rewrote the catalogs themselves (`d7ac610`, `60abdef`).
 
-Everything else — commit list, decisions amended during execution, seven carry-forward lessons, the
-plan defects the controller authored, deferred minors, and one honest gap where a failing test's name
-was lost — is in `mem:shadowing_hub_plan_c_run_state`.
+**Round 1 of the whole-branch review returned CHANGES REQUIRED and was right — five for five.** Its two
+blockers (a redirect rule swallowing `/api/videos`; eight protected routes missing from middleware) are
+fixed at `b4d624b` and `65ebb4c`. Two ranking defects are deferred to C2 by user ruling, one of them
+carrying a product question that must be answered before a fix shape is chosen.
+
+**⚠️ A green C1 does NOT mean the product's IA is settled.** The 22 NAV rows, 9 empty-state routes and 6
+seeded collections are **provisional**; confirming them is Screen Registry Phase 2 —
+`docs/superpowers/specs/2026-08-08-screen-registry-design.md` (untracked on purpose until C1 merges).
+
+Everything else — the full commit list, decisions amended during execution, the carry-forward lessons,
+the plan defects the controller authored, and the deferred minors — is in
+`mem:shadowing_hub_plan_c_run_state`, which was itself corrected on 2026-08-08 after the review found it
+stale.
 
 <details><summary>(superseded) previous NEXT ACTION — screen-port workflow, merged `7277ac1`</summary>
 
