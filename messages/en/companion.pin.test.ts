@@ -153,19 +153,21 @@ describe("companion.json EN — gifted-pin control (spec D6)", () => {
 
 describe("companion.json VI — gifted-pin control (primary learner locale)", () => {
   it("pins the pin control's trigger, dialog and note affordances", () => {
-    expect(vi.pin.trigger).toBe("Ghim vào nhật ký");
-    expect(vi.pin.dialogTitle).toBe("Giữ câu thoại này trong nhật ký của bạn");
+    expect(vi.pin.trigger).toBe("Giữ lại trong nhật ký");
+    expect(vi.pin.dialogTitle).toBe("Giữ câu này lại nhé?");
     expect(vi.pin.noteLabel).toBe("Đôi lời của riêng bạn (tùy chọn)");
   });
 
   it("pins the four outcome messages", () => {
-    expect(vi.pin.success).toBe("Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.");
+    expect(vi.pin.success).toBe("Được rồi. Mình đã giữ câu này lại cho bạn.");
     expect(vi.pin.alreadyKept).toBe(
-      "Bạn đã ghim câu này rồi — ghi chú đã lưu thì không đổi được nữa.",
+      "Câu này đã được giữ lại rồi. Ghi chú cũng đã nằm yên ở đó nhé.",
     );
-    expect(vi.pin.tooMany).toBe("Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.");
+    expect(vi.pin.tooMany).toBe(
+      "Từ từ thôi nào. Bạn đang giữ lại hơi nhiều rồi đó — nghỉ một chút rồi quay lại nhé.",
+    );
     expect(vi.pin.signedOut).toBe(
-      "Phiên đăng nhập đã kết thúc. Đăng nhập lại để giữ câu này nhé.",
+      "Hình như bạn vừa đăng xuất rồi. Đăng nhập lại nhé, mình sẽ giữ câu này cho bạn.",
     );
   });
 });
@@ -173,15 +175,21 @@ describe("companion.json VI — gifted-pin control (primary learner locale)", ()
 describe("companion.json VI — speech templates (primary learner locale)", () => {
   it("pins the four ambient address templates", () => {
     expect(vi.speech.finishedShadowing).toBe(
-      "Thêm một câu thoại nữa đã thành một phần hành trình của bạn.",
+      "Thêm một câu nữa nhé. Vậy là nó đã thuộc về hành trình của bạn rồi.",
     );
-    expect(vi.speech.memoryCreated).toBe("Khoảnh khắc ấy đã được giữ lại trong nhật ký.");
-    expect(vi.speech.emptyLibrary).toBe("Video đầu tiên bạn mang về đây sẽ mở ra một chương mới.");
-    expect(vi.speech.emptyMiningDeck).toBe("Những câu bạn lưu sẽ tụ về đây, chờ được ghi nhớ.");
+    expect(vi.speech.memoryCreated).toBe(
+      "Ừm, câu này đáng được giữ lại. Mình đã cất nó vào nhật ký rồi.",
+    );
+    expect(vi.speech.emptyLibrary).toBe(
+      "Khi bạn mang video đầu tiên về đây, mình sẽ ở đây để cùng bạn bắt đầu.",
+    );
+    expect(vi.speech.emptyMiningDeck).toBe(
+      "Những câu bạn giữ lại sẽ tụ về đây. Đến lúc gặp lại chúng, đừng giả vờ là không nhớ nhé.",
+    );
   });
 
   it("pins the two a11y labels", () => {
-    expect(vi.a11y.sprite).toBe("Bạn đồng hành của bạn — mở nhật ký");
+    expect(vi.a11y.sprite).toBe("Người bạn đồng hành của bạn — mở nhật ký");
     expect(vi.a11y.dismissSpeech).toBe("Đóng lời nhắn");
   });
 
@@ -199,9 +207,15 @@ describe("companion.json VI — speech templates (primary learner locale)", () =
  * original P12 violation lived in Vietnamese ("...bước sang giai đoạn 2").
  * An EN-only guard would not fail if a future VI edit reintroduced a stage
  * digit — so guard VI explicitly. (Pins are EN-only by convention, with one
- * exception below: `firstMeeting` is VI-pinned too, because its VI copy is
- * deliberately distinct from `companionGrew.1`'s near-identical phrasing and
- * a silent copy/paste of one over the other would otherwise go unnoticed.)
+ * exception below: `firstMeeting` is VI-pinned too.
+ *
+ * That exception's ORIGINAL reason was that the VI copy was deliberately
+ * distinct from `companionGrew.1`. As of the 2026-08-08 native-speaker rewrite
+ * it no longer is — both now read "Ngày chúng ta gặp nhau.", which matches what
+ * EN has always done ("The day the two of you met." in both). The pin is kept
+ * anyway, on a different and still-valid rationale: two keys holding the same
+ * string by intent need a literal pin each, or a rewrite of one silently drags
+ * the other along unnoticed.)
  */
 /**
  * VI `memoryTitle`'s non-`companionGrew` leaves (Task 13 mutation check): the
@@ -213,10 +227,10 @@ describe("companion.json VI — speech templates (primary learner locale)", () =
  */
 describe("companion.json VI — memoryTitle descriptors (primary learner locale)", () => {
   it("pins the once-in-a-lifetime discovered-memory titles", () => {
-    expect(vi.memoryTitle.firstShadow).toBe("Câu thoại đầu tiên bạn shadowing thành công.");
-    expect(vi.memoryTitle.lineMastered).toBe("Câu bạn luyện mãi rồi cuối cùng cũng nói được.");
-    expect(vi.memoryTitle.miningSaved).toBe("Câu bạn quyết định lưu lại.");
-    expect(vi.memoryTitle.firstVideoCompleted).toBe("Video đầu tiên bạn hoàn thành.");
+    expect(vi.memoryTitle.firstShadow).toBe("Câu thoại đầu tiên bạn shadowing được.");
+    expect(vi.memoryTitle.lineMastered).toBe("Câu bạn luyện mãi, rồi cuối cùng cũng nói được.");
+    expect(vi.memoryTitle.miningSaved).toBe("Câu bạn nghe xong và quyết định giữ lại.");
+    expect(vi.memoryTitle.firstVideoCompleted).toBe("Video đầu tiên bạn cùng mình đi hết.");
   });
 
   it("pins the jlptPassed template with its {level} placeholder", () => {
@@ -232,7 +246,7 @@ describe("companion.json VI — P12 stage-number guard (primary learner locale)"
   });
 
   it("pins the firstMeeting phrasing", () => {
-    expect(vi.memoryTitle.firstMeeting).toBe("Ngày hai bạn gặp nhau.");
+    expect(vi.memoryTitle.firstMeeting).toBe("Ngày chúng ta gặp nhau.");
   });
 
   /**
@@ -243,15 +257,11 @@ describe("companion.json VI — P12 stage-number guard (primary learner locale)"
    * the EN block already does for its own companionGrew phasings.
    */
   it("pins all four companionGrew phasings, keyed by phase", () => {
-    expect(vi.memoryTitle.companionGrew["1"]).toBe("Ngày hai đứa mình gặp nhau.");
-    expect(vi.memoryTitle.companionGrew["2"]).toBe(
-      "Ngày người bạn đồng hành của bạn thấy gần gũi hơn.",
-    );
-    expect(vi.memoryTitle.companionGrew["3"]).toBe(
-      "Ngày người bạn đồng hành của bạn thật sự hiểu bạn.",
-    );
+    expect(vi.memoryTitle.companionGrew["1"]).toBe("Ngày chúng ta gặp nhau.");
+    expect(vi.memoryTitle.companionGrew["2"]).toBe("Ngày mình bắt đầu hiểu bạn hơn một chút.");
+    expect(vi.memoryTitle.companionGrew["3"]).toBe("Ngày mình thật sự hiểu cách bạn học.");
     expect(vi.memoryTitle.companionGrew["4"]).toBe(
-      "Ngày người bạn đồng hành của bạn đi cùng bạn đủ lâu để nhớ hết chặng đường.",
+      "Ngày mình đã đi cùng bạn đủ lâu để nhớ cả một chặng đường.",
     );
   });
 });
@@ -266,14 +276,14 @@ describe("companion.json VI — Journal surface (primary learner locale)", () =>
     expect(vi.journal.metaTitle).toBe("Nhật ký");
     expect(vi.journal.title).toBe("Nhật ký");
     expect(vi.journal.returnToMoment).toBe("Quay lại khoảnh khắc này");
-    expect(vi.journal.giftedMarker).toBe("Ký ức bạn trao gửi");
-    expect(vi.journal.discoveredMarker).toBe("Ký ức được phát hiện trên đường đi");
-    expect(vi.journal.untitledGifted).toBe("Một câu thoại bạn đã giữ lại.");
+    expect(vi.journal.giftedMarker).toBe("Ký ức bạn trao lại cho mình");
+    expect(vi.journal.discoveredMarker).toBe("Ký ức mình cùng bạn tìm thấy trên đường đi");
+    expect(vi.journal.untitledGifted).toBe("Một câu thoại bạn đã quyết định giữ lại.");
   });
 
   it("pins the forward-looking empty state", () => {
     expect(vi.journal.empty).toBe(
-      "Trang đầu tiên đang chờ những câu chuyện chúng ta sẽ cùng khám phá.",
+      "Từ hôm nay, mình cùng bắt đầu viết những trang đầu tiên nhé.",
     );
   });
 
