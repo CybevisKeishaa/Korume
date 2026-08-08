@@ -54,7 +54,28 @@ source than anything reachable through the Figma MCP.
 - **Figma *design* file** (user copied the Make output into it): file key `IwFHZDZdHW7qsSFiNbWrkd`,
   titled "Kurome" — 29 top-level frames, ONE page (`0:1`).
 
-## ⚠ Do NOT use the Figma MCP route for UI work — it is strictly worse
+## ⚠️ CORRECTED 2026-08-08 — the two claims below are STALE
+
+Measured directly through the Figma MCP while writing the Plan C spec:
+
+- **The design file has 59 top-level frames, not 29.** It gained ~30 since this file was written,
+  including `Explore Lessons` (`200:7705`, 1536×5833), `Explore Lessons (with preview)`,
+  `Search lesson`, `Loading state`, `Error state`, `Empty state (Companion home)`, `Global setting`,
+  `Footer`, `Checkout`, the whole JLPT practice family and `Review mistake`. It is NOT stale.
+- **The MCP is good for exactly two things and should be used for them:** `get_metadata` (positions
+  and sizes — this is how the Hub's geometry and the spacing histogram were measured) and
+  `get_screenshot` (visual truth). The paragraph below remains correct only about
+  `get_design_context`, which returns untokenized hardcoded values unfit to paste.
+- Practical note: `get_metadata` on the whole page returns ~4.4M characters. Query a specific frame
+  node id, or parse the saved dump with a script rather than reading it.
+- Measuring spacing from this file requires reading the `*:margin` wrapper frames, NOT gaps between
+  sibling nodes — it is an HTML import, so spacing lives inside wrapper heights and a sibling-gap
+  measurement produces garbage (a meaningless 47px spike).
+
+Dead frames, never build against: `Unuse` (`5:1718`), `Pricing-remove` (`71:2`), and the superseded
+`Shadowing Hub` (`90:1985` — build against `149:2` "Shadowing hub after changes" instead).
+
+## ⚠ (historical, partly wrong — see the correction above) Do NOT use the Figma MCP route for UI work
 
 Verified by probe, not assumption:
 - **Code Connect is unavailable**: Figma returns "You need a Dev or Full seat on an Organization or

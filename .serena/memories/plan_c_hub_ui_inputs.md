@@ -1,8 +1,14 @@
 # Plan C (Shadowing Hub UI) — everything it needs, gathered 2026-08-07
 
-**Status: NOT started. Every gate it was waiting on is now cleared.** This is the next build.
-It has no spec of its own yet — the parent spec is locked and Plan C needs its own
-`superpowers:writing-plans` pass. Read this file, then `mem:project_status` § NEXT ACTION.
+> ⚠️ **SUPERSEDED AS A STATUS FILE (2026-08-08). Plan C now HAS its own locked spec and is IN
+> EXECUTION — read `mem:shadowing_hub_plan_c_run_state` for where the run stands.** This file is kept
+> for the *inputs* it gathered (design source, chrome contract, token rules, open questions), all of
+> which the spec consumed. The three "open decisions" at the bottom are all now ruled: the
+> `/videos`→`/shadowing` rename was TAKEN and has shipped; INSIGHTS was populated and the nav went to
+> its full 22 rows; per-screen divergence was adjudicated for the Hub (Figma wins all four conflicts).
+
+**Status (historical): NOT started. Every gate it was waiting on is now cleared.** This was the next
+build. Read this file, then `mem:project_status` § NEXT ACTION.
 
 ## Why it was blocked, and why it is not any more
 
