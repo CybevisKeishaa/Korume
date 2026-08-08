@@ -455,11 +455,9 @@ degrade to "not configured". `AZURE_SPEECH_KEY` present but **INVALID — Azure 
 ⚠️ **With a worktree present, `npm test` from the repo root scans it too** — `vitest.config.ts`
 excludes `node_modules`, `.next`, `tests/e2e` but NOT `.worktrees/`. Pass `--exclude ".worktrees/**"`
 or remove the worktree first. Still not fixed in config.
-⚠️ **A worktree has NO `.env.local`** (gitignored, not copied). Without the full env, every
-auth-dependent Playwright spec fails in a way that looks exactly like a code regression. Copy
-`.env.local` from the main checkout before trusting an e2e run there, then remove the secrets.
-`npm run build` (~52s) · `npx playwright test` (**8 e2e**, ~50s; kill any stale node on :3000 first —
-reuseExistingServer picks it up, and it will silently test a stale build) · `npx supabase db reset`
+⚠️ **A worktree has NO `.env.local`** — read `docs/lessons.md` L-020 before trusting any e2e run there.
+`npm run build` (~52s) · `npx playwright test` (**8 e2e**, ~50s; free `:3000` first — `docs/lessons.md`
+L-017) · `npx supabase db reset`
 (15 migrations). ⚠️ `tests/e2e/route-group-provider-identity.spec.ts` needs the seeded FREE-tier video
 in `supabase/seed.sql`, so a fresh machine must run `db reset` before that spec can pass; nothing
 wires the two together.
