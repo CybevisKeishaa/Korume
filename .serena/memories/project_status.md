@@ -30,7 +30,40 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-08) — **Shadowing Hub Plan C is IN EXECUTION on branch `shadowing-hub-plan-c`. Read `mem:shadowing_hub_plan_c_run_state` FIRST — it is the authority for where the run stands.**
+## ▶ NEXT ACTION (updated 2026-08-08) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
+
+Spec **approved and committed**: `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (`e861150`),
+12 decisions R1–R13. **Nothing is implemented yet — the next step is `superpowers:writing-plans` against
+that spec**, then execution.
+
+The measurement that drives it: **44 routes in the repo vs ~56 live Figma frames, diverging in BOTH
+directions.** Figma has Pricing/FAQ/Checkout/Onboarding/Pronunciation-library/FlashCard with no route;
+the repo has community/peer-review/playlists/mining/jlpt-test/leaderboard/reading with no frame.
+
+**The boundary the user set, and it is binding:** the registry is a **derived identity/structure index**,
+never a second Figma. Phase 1 answers only
+`Figma screen ↔ screenId ↔ route ↔ IA/nav ↔ implementation`, plus `kind`/`impl` and the declared
+`repo-only` exceptions. **Phase 1 does NOT fix catalog, copy, data, components or responsive just because
+the inventory surfaces them** — that is Phase 2 adjudication. Acceptance is **zero visual diff**, with the
+derived `NAV_GROUPS` deep-equalling a snapshot of today's literal captured BEFORE the refactor.
+
+**Frame this correctly or the whole thing goes wrong:** merging C1 does NOT mean "the repo is now correct
+against the product". It means "the implementation meets C1's contract; the registry will now say where it
+matches the product and where it diverges." So when the inventory finds Pricing/FAQ/Checkout designed but
+unbuilt, that is a **reconciliation finding, not new scope**.
+
+Open items carried forward:
+- **⚑ Product question the user must answer before C2 touches ranking:** may "Popular" render fewer than
+  `limit` lessons when RLS hides some, or must the strategy over-fetch and backfill? Two deferred
+  `lib/data/lesson-ranking.ts` defects wait on that answer (unbounded read vs `max_rows = 1000`, and
+  `.slice(0, limit)` running before the RLS-filtered `videos` read).
+- Two copy items parked for the localization/copy pass: the hardcoded English `"Reduce motion"` label with
+  no catalog key in either locale, and `"Chưa có gì ở đây"` opening 5 of 10 `vi/upcoming.json` entries
+  while `/vi/roadmap` does the same job forward-lookingly.
+
+<details><summary>(completed) Shadowing Hub Plan C1 — merged `bd7f574`, 2026-08-08</summary>
+
+Read `mem:shadowing_hub_plan_c_run_state` for the full record.
 
 Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` **LOCKED** at `22c9d18`
 (17 decisions D1–D17 + a measured evidence appendix). Plan C was split into three sequential plans —
@@ -38,10 +71,10 @@ Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` **LOCKED
 screens' worth of work, not one. Only C1 is planned so far, deliberately: C2 and C3 get their plans
 after the plan before them merges, so each is written against a real foundation.
 
-**C1 is CODE-COMPLETE, whole-branch review round 2 returned APPROVE, and it is ready to merge.** The
-branch has never been pushed; for its commit count run `git rev-list --count 3ca9966..HEAD` rather than
-trusting a written figure — see `mem:shadowing_hub_plan_c_run_state` correction 1 for why no number is
-recorded here. All 11 tasks done;
+**C1 MERGED at `bd7f574` (`--no-ff`), 2026-08-08.** Post-merge on master: tsc 0, unit 2064/2064 across
+230 files. The branch was KEPT, matching this repo's convention of retaining merged feature branches.
+Never record a commit count — run `git rev-list --count`; see
+`mem:shadowing_hub_plan_c_run_state` correction 1 for why. All 11 tasks done;
 all four human gates approved, D on 2026-08-08. Gate, controller-measured after round 1's fixes: tsc 0 ·
 lint 0 errors / 77 warnings (mix unchanged) · unit **2064/2064 across 230 files** · build ✓ · Playwright
 **13/13** · browser pass 6/6. Both earlier open items are closed: Checkpoint B was approved, and the
@@ -54,12 +87,14 @@ carrying a product question that must be answered before a fix shape is chosen.
 
 **⚠️ A green C1 does NOT mean the product's IA is settled.** The 22 NAV rows, 9 empty-state routes and 6
 seeded collections are **provisional**; confirming them is Screen Registry Phase 2 —
-`docs/superpowers/specs/2026-08-08-screen-registry-design.md` (untracked on purpose until C1 merges).
+`docs/superpowers/specs/2026-08-08-screen-registry-design.md`, committed at `e861150`.
 
 Everything else — the full commit list, decisions amended during execution, the carry-forward lessons,
 the plan defects the controller authored, and the deferred minors — is in
 `mem:shadowing_hub_plan_c_run_state`, which was itself corrected on 2026-08-08 after the review found it
 stale.
+
+</details>
 
 <details><summary>(superseded) previous NEXT ACTION — screen-port workflow, merged `7277ac1`</summary>
 

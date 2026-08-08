@@ -1,7 +1,25 @@
-# Shadowing Hub Plan C — run state (2026-08-08)
+# Shadowing Hub Plan C — run state (C1 MERGED 2026-08-08)
 
-**Read this before touching branch `shadowing-hub-plan-c`.** Spec LOCKED, C1 plan fully executed, all
-four human gates approved, whole-branch review round 1 done and its two blockers fixed.
+> ✅ **C1 IS DONE AND MERGED.** `--no-ff` merge commit **`bd7f574`** on master; the Screen Registry spec
+> landed right after at **`e861150`**. Post-merge verification on master: `tsc` 0, unit **2064/2064
+> across 230 files**. Whole-branch review round 2 returned **APPROVE**.
+>
+> The branch `shadowing-hub-plan-c` was **KEPT, not deleted** — this repo keeps every merged feature
+> branch (`layer-1-foundation` … `layer-9b-companion-presence` are all still present and all in
+> `git branch --merged master`). Follow that convention.
+>
+> ⚠️ **CORRECTION: this file previously said the branch was "never pushed". That was WRONG.**
+> `refs/remotes/origin/shadowing-hub-plan-c` exists at `60abdef` (the user's own "catalog" commit), so
+> the branch WAS pushed at least once. `git branch -d` refusing to delete it is what surfaced this.
+> **`master` itself has never been pushed** — it is ~40 ahead of `origin/master` (`3ca9966`). Do not
+> reason from "this has never been pushed" without running `git show-ref` first; that assumption was
+> used to justify editing a migration in place.
+>
+> Everything below is the historical record of the run. Next action is NOT here — see
+> `mem:project_status` § NEXT ACTION (Screen Registry Phase 1).
+
+**Historical record of the C1 run.** Spec LOCKED, plan fully executed, all four human gates approved,
+whole-branch review rounds 1 and 2 complete.
 
 ## ⚠️ Corrections to the previous version of this file
 
@@ -34,12 +52,10 @@ each one is a reusable lesson, not just a typo:
 |---|---|
 | Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` | **LOCKED** at `22c9d18`, D1–D17 |
 | Plan `docs/superpowers/plans/2026-08-07-shadowing-hub-plan-c1-foundation.md` | 11 tasks, **all complete** |
-| Branch `shadowing-hub-plan-c` | off master `3ca9966` (= master head). **Never pushed.** Count with `git rev-list --count 3ca9966..HEAD` — deliberately not written down, see correction 1. |
+| Branch `shadowing-hub-plan-c` | forked from master `3ca9966`, **merged at `bd7f574`**, branch kept. Pushed to origin at `60abdef` (see the correction at the top — the old "never pushed" claim was false). Count commits with `git rev-list --count 3ca9966..bd7f574^2`, never from a written figure. |
 | Gates | A (1–2) ✅ · B (3–6) ✅ · C (7) ✅ · **D (8–11) ✅ approved 2026-08-08** |
+| Reviews | round 1 CHANGES REQUIRED (1 Critical + 3 Important) → both blockers fixed → round 2 **APPROVE** |
 | Ledger | `.superpowers/sdd/2026-08-07-shadowing-hub-plan-c1-foundation/progress.md` (gitignored) — per-task detail, every fix round, every deferred minor |
-
-**Remaining before merge:** whole-branch review **round 2** (round 1's blockers are fixed), then
-`superpowers:finishing-a-development-branch`.
 
 ## Verification, controller-measured after the round-1 fixes
 
