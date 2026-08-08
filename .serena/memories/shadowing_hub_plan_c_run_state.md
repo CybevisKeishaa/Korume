@@ -24,15 +24,18 @@ every auth-dependent Playwright spec fail in a way that looks exactly like a cod
 The user grouped the 11 tasks into 4 human-review gates:
 
 - **A — Tasks 1–2** ✅ approved by user
-- **B — Tasks 3–6** ✅ complete, **approval not yet given when the session paused**
+- **B — Tasks 3–6** ✅ complete and **approved by the user 2026-08-08**
 - **C — Task 7** (NAV_GROUPS to 22 rows + scroll + href-resolves test) — alone, because it is the only
   change touching every authenticated screen
 - **D — Tasks 8–11** (taxonomy, collections, ranking strategy, verification gate)
 
-### Two things owed to the user before/at resume
+### One thing still owed by the user at resume
 
-1. **Checkpoint B approval** was requested and not answered.
-2. **Vietnamese copy decision, blocking Task 7's neighbours.** A reviewer judged 4 strings in
+**Checkpoint B is approved (2026-08-08); the session was paused there by the user, to resume at
+Checkpoint C.** One ruling remains open — do not treat the B approval as covering it, and do not let a
+later task ship more Vietnamese copy before asking again:
+
+1. **Vietnamese copy decision.** A reviewer judged 4 strings in
    `messages/vi/upcoming.json` to be literal gloss rather than native copy — `challenges.body`
    ("Những lượt ngắn có giờ, đẩy một kỹ năng mạnh hơn buổi học thường"), `roadmap.unlocks`
    ("…trước khi nói được điều gì đúng"), `settings.unlocks` ("…sẽ về cùng trang này"), `explore.body`.
