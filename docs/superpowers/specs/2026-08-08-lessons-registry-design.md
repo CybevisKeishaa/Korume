@@ -43,14 +43,17 @@ files, but they are not 9 duplications:
 So the corpus is already doing the right thing in the plans, and the wrong thing in the memories. The
 same split holds for `verify subagent claims` and `one grep is never an audit`.
 
-The sharpest instance is inside a single file. `.serena/memories/project_status.md` contains, 43 lines
-apart:
+The sharpest instance is one lesson written **three times, in three files, each carrying a different
+derived count of the same fact**:
 
-- line 156: *"The final whole-branch review earned its keep for the **5th** consecutive plan"*
-- line 199: *"The final whole-branch review earned its keep for the **4th** consecutive plan"*
+- `project_status_archive.md:31` — *"**Third plan running** where this is true; treat the final review as mandatory"*
+- `project_status.md:199` — *"earned its keep for the **4th** consecutive plan"*
+- `project_status.md:156` — *"earned its keep for the **5th** consecutive plan"*
 
-One lesson, written twice, each carrying a **derived count** — the exact practice this project already
-banned (`mem:feedback-never-record-derived-counts`). The lesson corpus is violating its own lessons.
+The last two sit 43 lines apart in a single file. Each count is a **derived figure** — the exact practice
+this project already banned (`mem:feedback-never-record-derived-counts`), and each is falsified by the
+next plan. The lesson corpus is violating its own lessons, three times over, about its own most-cited
+lesson.
 
 This is also the failure mode this project has recorded as its most expensive: two silently-disagreeing
 sources of truth. Plan A spent an entire plan cleaning one up; Screen Registry §7 risk 1 names it again.
@@ -226,10 +229,15 @@ clean on day one. Cost: one human decision per item, ~45 decisions.
 
 ### 5.2 The merge rule fires immediately, on real data
 
-The two `project_status.md` lines quoted in §1.1 collapse into **one entry with two evidence lines**, and
-both derived counts ("4th", "5th") disappear because the length of the evidence list already carries that
-information. The same collapse applies to `verify subagent claims` (2 sources), `one grep is never an
-audit` (2), and `mutation-check` (5).
+The three lines quoted in §1.1 collapse into **one entry with three evidence lines**, and all three
+derived counts ("Third", "4th", "5th") disappear — the length of the evidence list already carries that
+information, and unlike the counts it cannot go stale. The same collapse applies to `verify subagent
+claims` (2 sources), `one grep is never an audit` (2), and `mutation-check` (5).
+
+Two source items also **split** rather than merge, which the classification pass must catch: STANDING
+CONVENTION #6 (general triage rule vs its Task-19 application), and "reviewers were wrong twice"
+(the general *verify by re-measuring* lesson vs the specific `npm run lint` ≠ `npx eslint` fact).
+Splitting is as much a part of §5.1 as merging.
 
 **Measured expectation: ~45 raw items → roughly 22–26 real entries.** This is an observation about
 today's corpus, **not a target** (G8), and not an invariant to preserve later.
@@ -244,8 +252,8 @@ This also gives the migration a pass/fail test of the design itself:
 |---|---|
 | `project_status.md` — "Lessons worth carrying" ×2 | Body deleted, replaced by one line: `Lessons from this branch: L-003, L-007, L-011 — docs/lessons.md` |
 | `shadowing_hub_plan_c_run_state.md` — "Standing lessons from this run" (8) | Same |
-| `l9a_localization_run_state.md` — "STANDING CONVENTIONS" (6) | **Split**: #1, #2, #3 migrate; #4, #5, #6 stay (run-scoped, §5.1) |
-| `project_status_archive.md` — 1 block | Same |
+| `l9a_localization_run_state.md` — "STANDING CONVENTIONS" (6) | **Split**: #1, #2, #3 migrate. #6 **splits within itself** — its general triage rule migrates, its Task-12→Task-19 application stays. #4 and #5 stay whole (run-scoped, §5.1) |
+| `project_status_archive.md` — **2 inline items, not a block** | Line 31 (third instance of the whole-branch-review lesson, §1.1) merges into that entry. Line 35 (*"any nav/label rename must sweep `tests/e2e/` by hand"*, with its mechanism: `vitest.config.ts` excludes `tests/e2e`, so `npm test` structurally cannot catch it) migrates as its own lesson. No block to cut — extract two sentences, leave the surrounding review record intact |
 | `project_status.md` — § Key gotchas (~14) | **Untouched** — out of scope by G1 |
 | 6 × `feedback-*.md` (auto-memory) | Reduced to a **2-line stub**: the `Rule` sentence plus a pointer to `L-NNN` |
 
