@@ -20,7 +20,7 @@ export interface RecommendationRailProps {
  * §2.1: never re-host/proxy video or its assets).
  *
  * Strings live in `common.recommendations.*`, not a per-module namespace:
- * this rail is rendered by both `/dashboard` and `/videos` (via
+ * this rail is rendered by both `/dashboard` and `/shadowing` (via
  * `recommendation-section.tsx`), and CLAUDE.md P4 requires a string needed by
  * two or more modules to be promoted to `common` rather than duplicated.
  *
@@ -36,7 +36,7 @@ export function RecommendationRail({ recommendations }: RecommendationRailProps)
       <p className="text-sm text-muted-foreground">
         {t.rich("recommendations.empty", {
           link: (chunks) => (
-            <Link href="/videos" className="underline underline-offset-2 hover:text-foreground">
+            <Link href="/shadowing" className="underline underline-offset-2 hover:text-foreground">
               {chunks}
             </Link>
           ),
@@ -50,7 +50,7 @@ export function RecommendationRail({ recommendations }: RecommendationRailProps)
       {recommendations.map((rec) => (
         <li key={rec.videoId}>
           <Link
-            href={`/videos/${rec.videoId}/shadowing`}
+            href={`/shadowing/${rec.videoId}`}
             className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-muted">

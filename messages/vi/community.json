@@ -1,19 +1,19 @@
 {
   "page": {
     "heading": "Cộng đồng",
-    "subtitle": "Đặt câu hỏi, chia sẻ mẹo học, và cùng nhau góp ý cho bản ghi âm shadowing.",
-    "signInPrompt": "Đăng nhập để đăng bài hoặc bình luận."
+    "subtitle": "Đặt câu hỏi, chia sẻ cách học, và cùng nhau góp ý cho những bản ghi âm shadowing.",
+    "signInPrompt": "Đăng nhập để chia sẻ bài viết hoặc tham gia cuộc trò chuyện."
   },
   "peerReviewPage": {
-    "subtitle": "Nghe một bản ghi âm shadowing do người học khác chia sẻ và để lại đánh giá cùng nhận xét, hoặc quản lý các bản ghi âm bạn đã chia sẻ."
+    "subtitle": "Lắng nghe một bản ghi âm shadowing từ người học khác, để lại nhận xét và đánh giá, hoặc xem lại những bản ghi âm bạn đã chia sẻ."
   },
   "postPage": {
-    "back": "← Quay lại cộng đồng"
+    "back": "← Về cộng đồng"
   },
   "tabs": {
     "sectionsAriaLabel": "Các mục trong cộng đồng",
     "forum": "Diễn đàn",
-    "peerReview": "Đánh giá chéo"
+    "peerReview": "Góp ý"
   },
   "topics": {
     "all": "Tất cả",
@@ -28,9 +28,9 @@
   "deletedUser": "Người dùng đã xóa",
   "board": {
     "topicFilterAriaLabel": "Lọc theo chủ đề",
-    "newPost": "Bài viết mới",
-    "empty": "Chưa có bài viết nào trong chủ đề này — hãy là người đầu tiên khởi tạo cuộc thảo luận.",
-    "loadError": "Không thể tải bài viết — vui lòng thử lại."
+    "newPost": "Viết bài",
+    "empty": "Chưa có bài viết nào trong chủ đề này. Có lẽ bạn sẽ là người mở đầu?",
+    "loadError": "Chưa thể tải các bài viết. Bạn thử lại nhé."
   },
   "postItem": {
     "commentCount": "{count, plural, other {{count} bình luận}}"
@@ -42,65 +42,65 @@
     "post": "Đăng bài",
     "posting": "Đang đăng…",
     "posted": "Đã đăng.",
-    "tooManyWithSeconds": "Bạn đã đăng quá nhiều bài viết — thử lại sau {seconds} giây.",
-    "tooManyGeneric": "Bạn đã đăng quá nhiều bài viết — vui lòng đợi một chút rồi thử lại.",
-    "postError": "Không thể đăng bài — vui lòng thử lại."
+    "tooManyWithSeconds": "Bạn đã đăng khá nhiều bài trong một lúc. Thử lại sau {seconds} giây nhé.",
+    "tooManyGeneric": "Bạn đã đăng khá nhiều bài trong một lúc. Đợi một chút rồi thử lại nhé.",
+    "postError": "Chưa thể đăng bài. Bạn thử lại nhé."
   },
   "thread": {
     "editPost": "Sửa bài viết",
     "deletePost": "Xóa bài viết",
-    "deletePostConfirm": "Xóa bài viết này? Không thể hoàn tác.",
+    "deletePostConfirm": "Xóa bài viết này? Bạn sẽ không thể hoàn tác.",
     "you": "Bạn",
-    "saveChangesError": "Không thể lưu thay đổi của bạn — vui lòng thử lại.",
-    "deletePostError": "Không thể xóa bài viết của bạn — vui lòng thử lại.",
-    "postCommentError": "Không thể đăng bình luận của bạn — vui lòng thử lại.",
+    "saveChangesError": "Chưa thể lưu thay đổi. Bạn thử lại nhé.",
+    "deletePostError": "Chưa thể xóa bài viết. Bạn thử lại nhé.",
+    "postCommentError": "Chưa thể đăng bình luận. Bạn thử lại nhé.",
     "saving": "Đang lưu…",
     "commentsHeading": "Bình luận",
-    "noComments": "Chưa có bình luận nào — hãy là người đầu tiên trả lời.",
+    "noComments": "Chưa có bình luận nào. Bạn muốn là người đầu tiên chia sẻ suy nghĩ?",
     "editComment": "Sửa bình luận",
     "deleteComment": "Xóa bình luận",
     "deleteCommentConfirm": "Xóa bình luận này?",
     "editCommentAriaLabel": "Sửa nội dung bình luận",
     "commentLabel": "Bình luận",
-    "commentPlaceholder": "Viết một câu trả lời…",
+    "commentPlaceholder": "Chia sẻ suy nghĩ của bạn…",
     "commentButton": "Bình luận",
     "posting": "Đang đăng…",
-    "tooManyRequestsWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
-    "tooManyRequestsGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút rồi thử lại.",
-    "tooManyCommentsWithSeconds": "Bạn đã bình luận quá nhiều — thử lại sau {seconds} giây.",
-    "tooManyCommentsGeneric": "Bạn đã bình luận quá nhiều — vui lòng đợi một chút rồi thử lại."
+    "tooManyRequestsWithSeconds": "Có hơi nhiều yêu cầu trong một lúc. Thử lại sau {seconds} giây nhé.",
+    "tooManyRequestsGeneric": "Có hơi nhiều yêu cầu trong một lúc. Đợi một chút rồi thử lại nhé.",
+    "tooManyCommentsWithSeconds": "Bạn đã gửi khá nhiều bình luận trong một lúc. Thử lại sau {seconds} giây nhé.",
+    "tooManyCommentsGeneric": "Bạn đã gửi khá nhiều bình luận trong một lúc. Đợi một chút rồi thử lại nhé."
   },
   "peerReviewMine": {
-    "empty": "Bạn chưa chia sẻ bản ghi âm nào để nhận góp ý.",
+    "empty": "Bạn chưa chia sẻ bản ghi âm nào. Khi sẵn sàng, hãy chia sẻ một bản để nhận góp ý nhé.",
     "revoke": "Thu hồi",
-    "revokeConfirm": "Thu hồi lượt chia sẻ này? Thao tác này cũng xóa luôn các đánh giá, và không thể hoàn tác.",
+    "revokeConfirm": "Thu hồi lượt chia sẻ này? Các đánh giá hiện có cũng sẽ được xóa và không thể hoàn tác.",
     "sharedPrefix": "Đã chia sẻ",
-    "noReviews": "Chưa có đánh giá nào.",
+    "noReviews": "Chưa có góp ý nào.",
     "starsAriaLabel": "{rating} trên 5 sao",
-    "revokeError": "Không thể thu hồi lượt chia sẻ đó — vui lòng thử lại."
+    "revokeError": "Chưa thể thu hồi lượt chia sẻ này. Bạn thử lại nhé."
   },
   "peerReviewQueue": {
     "reviewCount": "{count, plural, other {{count} đánh giá}}",
     "listen": "Nghe",
     "recordingAriaLabel": "Bản ghi âm của {name}",
-    "thisUser": "Người dùng này",
-    "loadRecordingError": "Không thể tải bản ghi âm này — vui lòng thử lại.",
-    "expiredError": "Liên kết đã hết hạn — hãy thử nghe lại.",
-    "alreadyReviewed": "Bạn đã đánh giá bản ghi âm này rồi.",
+    "thisUser": "Người học này",
+    "loadRecordingError": "Chưa thể tải bản ghi âm này. Bạn thử lại nhé.",
+    "expiredError": "Lượt chia sẻ này đã hết hạn. Hãy thử tải lại bản ghi âm nhé.",
+    "alreadyReviewed": "Bạn đã góp ý cho bản ghi âm này rồi.",
     "ratingLegend": "Đánh giá",
-    "commentLabel": "Bình luận",
-    "submitReview": "Gửi đánh giá",
+    "commentLabel": "Nhận xét",
+    "submitReview": "Gửi góp ý",
     "submitting": "Đang gửi…",
-    "ownShareError": "Bạn không thể đánh giá lượt chia sẻ của chính mình.",
-    "submitError": "Không thể gửi đánh giá của bạn — vui lòng thử lại.",
-    "tooManyRequestsWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
-    "tooManyRequestsGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút rồi thử lại.",
-    "empty": "Hiện chưa có gì để đánh giá — hãy quay lại sau.",
-    "loadMoreError": "Không thể tải thêm — vui lòng thử lại."
+    "ownShareError": "Bạn không thể đánh giá bản ghi âm của chính mình.",
+    "submitError": "Chưa thể gửi góp ý. Bạn thử lại nhé.",
+    "tooManyRequestsWithSeconds": "Có hơi nhiều yêu cầu trong một lúc. Thử lại sau {seconds} giây nhé.",
+    "tooManyRequestsGeneric": "Có hơi nhiều yêu cầu trong một lúc. Đợi một chút rồi thử lại nhé.",
+    "empty": "Hiện chưa có bản ghi âm nào để góp ý. Quay lại sau nhé.",
+    "loadMoreError": "Chưa thể tải thêm bản ghi âm. Bạn thử lại nhé."
   },
   "peerReviewTabs": {
-    "tablistAriaLabel": "Đánh giá chéo",
-    "queue": "Hàng chờ",
+    "tablistAriaLabel": "Các mục góp ý",
+    "queue": "Đang chờ",
     "mine": "Của tôi"
   }
 }

@@ -3,6 +3,7 @@
   "groups": {
     "learn": "Learn",
     "study": "Study",
+    "insights": "Insights",
     "progress": "Progress",
     "account": "Account"
   },
@@ -14,12 +15,20 @@
   "reading": "Reading",
   "speaking": "Speaking",
   "jlpt": "JLPT",
+  "review": "Review",
   "mining": "Mining",
   "playlists": "Playlists",
+  "challenges": "Challenges",
   "community": "Community",
   "leaderboard": "Leaderboard",
+  "sensei": "Sensei",
+  "roadmap": "Roadmap",
+  "weeklyReport": "Weekly Report",
   "journey": "Journey",
+  "statistics": "Statistics",
+  "achievements": "Achievements",
   "profile": "Profile",
+  "settings": "Settings",
   "toggle": {
     "show": "Show navigation",
     "hide": "Hide navigation"

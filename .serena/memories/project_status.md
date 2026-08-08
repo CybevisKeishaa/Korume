@@ -30,7 +30,40 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-07, later) — **Screen-port workflow MERGED to master `--no-ff` at `7277ac1` (17 commits). Branch deleted, not pushed. NEXT: Shadowing Hub Plan C (Hub UI), then port screens by group.**
+## ▶ NEXT ACTION (updated 2026-08-08) — **Shadowing Hub Plan C is IN EXECUTION on branch `shadowing-hub-plan-c`. Read `mem:shadowing_hub_plan_c_run_state` FIRST — it is the authority for where the run stands.**
+
+Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` **LOCKED** at `22c9d18`
+(17 decisions D1–D17 + a measured evidence appendix). Plan C was split into three sequential plans —
+**C1 Foundation / C2 Shadowing Hub / C3 Explore Lessons** — because measurement showed it was three
+screens' worth of work, not one. Only C1 is planned so far, deliberately: C2 and C3 get their plans
+after the plan before them merges, so each is written against a real foundation.
+
+**C1 is CODE-COMPLETE, whole-branch review round 2 returned APPROVE, and it is ready to merge.** The
+branch has never been pushed; for its commit count run `git rev-list --count 3ca9966..HEAD` rather than
+trusting a written figure — see `mem:shadowing_hub_plan_c_run_state` correction 1 for why no number is
+recorded here. All 11 tasks done;
+all four human gates approved, D on 2026-08-08. Gate, controller-measured after round 1's fixes: tsc 0 ·
+lint 0 errors / 77 warnings (mix unchanged) · unit **2064/2064 across 230 files** · build ✓ · Playwright
+**13/13** · browser pass 6/6. Both earlier open items are closed: Checkpoint B was approved, and the
+Vietnamese copy ruling landed when the user rewrote the catalogs themselves (`d7ac610`, `60abdef`).
+
+**Round 1 of the whole-branch review returned CHANGES REQUIRED and was right — five for five.** Its two
+blockers (a redirect rule swallowing `/api/videos`; eight protected routes missing from middleware) are
+fixed at `b4d624b` and `65ebb4c`. Two ranking defects are deferred to C2 by user ruling, one of them
+carrying a product question that must be answered before a fix shape is chosen.
+
+**⚠️ A green C1 does NOT mean the product's IA is settled.** The 22 NAV rows, 9 empty-state routes and 6
+seeded collections are **provisional**; confirming them is Screen Registry Phase 2 —
+`docs/superpowers/specs/2026-08-08-screen-registry-design.md` (untracked on purpose until C1 merges).
+
+Everything else — the full commit list, decisions amended during execution, the carry-forward lessons,
+the plan defects the controller authored, and the deferred minors — is in
+`mem:shadowing_hub_plan_c_run_state`, which was itself corrected on 2026-08-08 after the review found it
+stale.
+
+<details><summary>(superseded) previous NEXT ACTION — screen-port workflow, merged `7277ac1`</summary>
+
+## ▶ (done 2026-08-07) — **Screen-port workflow MERGED to master `--no-ff` at `7277ac1` (17 commits). Branch deleted, not pushed.**
 
 Spec `docs/superpowers/specs/2026-08-07-screen-port-workflow-design.md`,
 plan `docs/superpowers/plans/2026-08-07-screen-port-workflow.md`, 7 tasks (an 8th was dropped).
@@ -106,6 +139,8 @@ and mounts `AmbientProvider`; `(app)` (nav visible) / `(focus)` (nav mounted, hi
    route-group boundary distinguishes a surviving provider from a rebuilt one.
 
 
+
+</details>
 
 ## ▶ (superseded 2026-08-07) — **Figma Make token + typography foundation MERGED at `86328bc`.** Kept because its lessons and its two open browser-pass items are still live.
 

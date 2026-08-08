@@ -2,17 +2,17 @@
   "title": "Từ vựng",
   "subtitleCount": "{count, plural, other {{count} từ}}",
   "empty": "Chưa có từ vựng nào ở cấp độ này.",
-  "backToList": "← Tất cả từ vựng",
+  "backToList": "← Quay lại danh sách từ vựng",
   "reviewTitle": "Ôn tập từ vựng",
   "examplesHeading": "Câu ví dụ",
-  "generateExamples": "Tạo câu ví dụ (AI)",
-  "generating": "Đang tạo…",
+  "generateExamples": "Để Korume đặt câu (AI)",
+  "generating": "Đang nghĩ câu…",
   "noExamples": "Chưa có câu ví dụ nào.",
   "aiGenerated": "Do AI tạo",
   "errors": {
-    "unavailable": "Tính năng tạo câu ví dụ bằng AI chưa được thiết lập cho bản triển khai này.",
-    "rateLimited": "Quá nhiều yêu cầu tạo câu ví dụ — thử lại sau {seconds} giây.",
-    "rateLimitedGeneric": "Quá nhiều yêu cầu tạo câu ví dụ — vui lòng đợi một chút rồi thử lại.",
-    "generic": "Không thể tạo câu ví dụ lúc này."
+    "unavailable": "Tính năng tạo câu ví dụ bằng AI chưa sẵn sàng ở đây.",
+    "rateLimited": "Bạn yêu cầu hơi nhanh rồi — thử lại sau {seconds} giây nhé.",
+    "rateLimitedGeneric": "Bạn yêu cầu hơi nhanh rồi — đợi một chút rồi thử lại nhé.",
+    "generic": "Korume chưa nghĩ ra câu lúc này. Thử lại nhé."
   }
 }

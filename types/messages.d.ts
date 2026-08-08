@@ -19,6 +19,7 @@ import type leaderboard from "../messages/en/leaderboard.json";
 import type profile from "../messages/en/profile.json";
 import type admin from "../messages/en/admin.json";
 import type companion from "../messages/en/companion.json";
+import type upcoming from "../messages/en/upcoming.json";
 import type { routing } from "../lib/i18n/routing";
 
 declare module "next-intl" {
@@ -46,6 +47,7 @@ declare module "next-intl" {
       profile: typeof profile;
       admin: typeof admin;
       companion: typeof companion;
+      upcoming: typeof upcoming;
     };
   }
 }

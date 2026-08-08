@@ -1,17 +1,17 @@
 {
   "page": {
     "heading": "Hồ sơ",
-    "accountHeading": "Tài khoản",
-    "emailLabel": "Email:",
-    "emailFallback": "—",
-    "statsHeading": "Thống kê",
+    "accountHeading": "Tài khoản của bạn",
+    "emailLabel": "Email",
+    "emailFallback": "Chưa có",
+    "statsHeading": "Một chút về hành trình của bạn",
     "levelLabel": "Cấp độ",
     "xpLabel": "XP",
     "currentStreakLabel": "Chuỗi ngày hiện tại",
     "longestStreakLabel": "Chuỗi ngày dài nhất",
     "streakDays": "{count} ngày",
-    "badgesEarnedLabel": "Huy hiệu đã đạt được",
+    "badgesEarnedLabel": "Huy hiệu đã đạt",
     "badgesCount": "{earned} / {total}",
-    "viewDashboard": "Xem toàn bộ bảng điều khiển"
+    "viewDashboard": "Xem hành trình của bạn"
   }
 }

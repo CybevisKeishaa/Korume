@@ -3,10 +3,11 @@
   "groups": {
     "learn": "Học",
     "study": "Ôn luyện",
+    "insights": "Insight",
     "progress": "Tiến trình",
     "account": "Tài khoản"
   },
-  "dashboard": "Bảng điều khiển",
+  "dashboard": "Tổng quan",
   "lessons": "Bài học",
   "kanji": "Kanji",
   "vocab": "Từ vựng",
@@ -14,12 +15,20 @@
   "reading": "Đọc hiểu",
   "speaking": "Luyện nói",
   "jlpt": "JLPT",
+  "review": "Ôn tập",
   "mining": "Thu thập câu",
   "playlists": "Danh sách phát",
+  "challenges": "Thử thách",
   "community": "Cộng đồng",
   "leaderboard": "Bảng xếp hạng",
+  "sensei": "Sensei",
+  "roadmap": "Lộ trình",
+  "weeklyReport": "Báo cáo tuần",
   "journey": "Hành trình",
+  "statistics": "Thống kê",
+  "achievements": "Thành tựu",
   "profile": "Hồ sơ",
+  "settings": "Cài đặt",
   "toggle": {
     "show": "Hiện điều hướng",
     "hide": "Ẩn điều hướng"

@@ -1,16 +1,16 @@
 {
   "hero": {
-    "heading": "Học tiếng Nhật đúng như cách người ta thực sự nói.",
-    "subtitle": "Luyện shadowing với video thực tế, nắm vững kanji và ngữ pháp, và theo dõi tất cả bằng một hệ thống lặp lại ngắt quãng được xây dựng để giúp bạn ghi nhớ lâu dài.",
+    "heading": "Học tiếng Nhật như cách người Nhật thực sự nói.",
+    "subtitle": "Luyện shadowing với những video thật, học kanji và ngữ pháp trong đúng ngữ cảnh, rồi để Korume giúp bạn nhớ lại những gì đã học — đúng lúc bạn cần.",
     "cta": "Bắt đầu miễn phí"
   },
   "header": {
     "ariaLabel": "Điều hướng chính",
-    "cta": "Bắt đầu"
+    "cta": "Bắt đầu học"
   },
   "footer": {
     "ariaLabel": "Chân trang",
     "copyright": "© {year} Korume",
-    "cta": "Bắt đầu"
+    "cta": "Bắt đầu học"
   }
 }

@@ -24,7 +24,7 @@ describe("VideoCard", () => {
     expect(screen.getByText("N5")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /はじめての日本語/ })).toHaveAttribute(
       "href",
-      "/en/videos/v1/shadowing",
+      "/en/shadowing/v1",
     );
   });
 

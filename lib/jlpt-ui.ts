@@ -135,7 +135,7 @@ export function reviewHrefForSection(section: JlptSection, level: JlptLevel): st
     case "reading":
       return `/reading?level=${level}`;
     case "listening":
-      return `/videos?level=${level}`;
+      return `/shadowing?level=${level}`;
   }
 }
 

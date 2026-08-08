@@ -4,7 +4,7 @@ export const PROTECTED_PREFIXES = [
   "/kanji",
   "/vocab",
   "/grammar",
-  "/videos",
+  "/shadowing",
   "/reading",
   // Note: the Korume rebrand renamed the nav LABEL "conversation" -> "speaking"
   // but deliberately kept the ROUTE at /conversation (see
@@ -18,6 +18,20 @@ export const PROTECTED_PREFIXES = [
   "/profile",
   "/journal",
   "/mining",
+  // Plan C1 Task 6's honest empty-state routes. They render an "upcoming"
+  // screen today, but they live under `(protected)/(app)/` and are real
+  // protected destinations, so middleware must cover them — otherwise
+  // `redirectTo` is dropped and a shared link bounces the learner to
+  // /dashboard after login instead of to the page they opened. Enforced by
+  // the filesystem-driven coverage test in route-protection.test.ts.
+  "/achievements",
+  "/challenges",
+  "/review",
+  "/roadmap",
+  "/sensei",
+  "/settings",
+  "/statistics",
+  "/weekly-report",
   "/content-manager",
   "/video-curator",
   // Layer 7 admin CMS (`app/[locale]/(admin)/admin/**`). Middleware only ensures

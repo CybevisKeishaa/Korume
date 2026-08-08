@@ -1,13 +1,13 @@
 {
   "title": "Kanji",
-  "subtitleCount": "{count, plural, other {{count} ký tự}}",
+  "subtitleCount": "{count, plural, other {{count} chữ Kanji}}",
   "empty": "Chưa có Kanji nào ở cấp độ này.",
-  "backToList": "← Tất cả Kanji",
+  "backToList": "← Danh sách Kanji",
   "strokeCount": "{count, plural, other {{count} nét}}",
   "onReading": "Âm On",
   "kunReading": "Âm Kun",
   "mnemonic": "Mẹo ghi nhớ",
-  "reviewTitle": "Ôn tập Kanji",
+  "reviewTitle": "Ôn lại Kanji",
   "a11y": {
     "strokeOrder": "Thứ tự nét của {character}"
   }

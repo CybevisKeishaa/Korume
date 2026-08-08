@@ -1,42 +1,42 @@
 {
   "title": "Bảng điều khiển",
-  "subtitle": "Chọn một học phần để bắt đầu học.",
+  "subtitle": "Hôm nay mình học gì nhỉ? Chọn một học phần để bắt đầu nhé.",
   "a11y": {
-    "progress": "Tiến độ của bạn",
+    "progress": "Tiến độ học tập của bạn",
     "levelProgress": "Tiến độ đến cấp độ {level}",
     "badgeEarned": "đã đạt",
-    "badgeLocked": "đã khóa"
+    "badgeLocked": "chưa mở khóa"
   },
   "modules": {
     "heading": "Học phần",
     "kanjiTitle": "Kanji",
-    "kanjiDesc": "Thứ tự nét viết, cách đọc, SRS.",
+    "kanjiDesc": "Học cách viết, cách đọc và ôn lại bằng SRS.",
     "vocabTitle": "Từ vựng",
-    "vocabDesc": "Từ vựng theo cấp độ, ôn tập bằng thẻ ghi nhớ.",
+    "vocabDesc": "Học từ theo cấp độ và ôn lại bằng thẻ ghi nhớ.",
     "grammarTitle": "Ngữ pháp",
-    "grammarDesc": "Mẫu ngữ pháp kèm ví dụ."
+    "grammarDesc": "Học các mẫu ngữ pháp qua những câu ví dụ dễ hiểu."
   },
   "level": {
     "title": "Cấp độ {level}",
     "xp": "{xp} XP",
-    "xpToNext": "Còn {xp} XP để đạt cấp độ {level}"
+    "xpToNext": "Còn {xp} XP nữa để lên cấp {level}"
   },
   "streak": {
     "title": "Chuỗi ngày học",
     "dayStreak": "ngày liên tiếp",
     "longest": "Dài nhất: {days} ngày",
-    "nudge": "Tiếp tục ngay hôm nay — học một mục để duy trì chuỗi ngày học của bạn."
+    "nudge": "Hôm nay học một chút nhé — giữ chuỗi này lại nào."
   },
   "srsDue": {
-    "title": "Hàng đợi ôn tập",
-    "due": "{count, plural, other {{count} thẻ đến hạn ôn tập}}",
+    "title": "Ôn tập hôm nay",
+    "due": "{count, plural, other {{count} thẻ đang chờ bạn ôn}}",
     "reviewVocab": "Ôn tập từ vựng",
     "reviewKanji": "Ôn tập Kanji",
-    "allCaughtUp": "Đã ôn tập hết — hiện không có thẻ nào đến hạn."
+    "allCaughtUp": "Xong hết rồi — hiện không còn thẻ nào cần ôn."
   },
   "badges": {
     "heading": "Huy hiệu",
-    "empty": "Chưa có huy hiệu nào trong bộ sưu tập.",
-    "locked": "Đã khóa"
+    "empty": "Chưa có huy hiệu nào — cứ học tiếp, rồi sẽ có thôi.",
+    "locked": "Chưa mở khóa"
   }
 }

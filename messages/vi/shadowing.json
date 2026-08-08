@@ -1,47 +1,49 @@
 {
   "playerError": {
-    "title": "Video này không thể phát ở đây.",
-    "body": "Video có thể bị khóa theo khu vực, ở chế độ riêng tư, hoặc không cho phép nhúng."
+    "title": "Video này chưa thể phát ở đây.",
+    "body": "Video có thể bị giới hạn theo khu vực, đặt ở chế độ riêng tư hoặc không cho phép nhúng."
   },
   "noTranscript": {
-    "title": "Chưa có phụ đề",
-    "body": "Video này chưa có phụ đề để luyện shadowing theo. Tính năng gửi phụ đề sẽ sớm ra mắt."
+    "title": "Video này chưa có phụ đề.",
+    "body": "Hiện chưa có phụ đề để luyện shadowing theo. Tính năng thêm phụ đề sẽ sớm có mặt."
   },
   "translationToggle": "Bản dịch",
   "summary": {
     "heading": "Tóm tắt",
-    "aiGenerated": "Do AI tạo",
-    "a11y": { "region": "Tóm tắt video bằng AI" },
+    "aiGenerated": "Tạo bởi AI",
+    "a11y": {
+      "region": "Tóm tắt video bằng AI"
+    },
     "empty": "Video này chưa có tóm tắt.",
     "generate": "Tạo tóm tắt",
     "generating": "Đang tạo tóm tắt…",
-    "inputTruncated": "Lưu ý: phụ đề đã được rút gọn để tóm tắt.",
+    "inputTruncated": "Một phần phụ đề đã được rút gọn để tạo tóm tắt.",
     "keyVocab": "Từ vựng chính",
     "keyGrammar": "Ngữ pháp chính",
     "errors": {
       "noTranscript": "Video này chưa có phụ đề để tóm tắt.",
-      "unavailable": "Tính năng tóm tắt bằng AI chưa được thiết lập cho bản triển khai này.",
-      "rateLimited": "Quá nhiều yêu cầu tóm tắt — thử lại sau {seconds} giây.",
-      "rateLimitedGeneric": "Quá nhiều yêu cầu tóm tắt — vui lòng đợi một chút rồi thử lại.",
-      "generic": "Không thể tạo tóm tắt vào lúc này.",
-      "generateFailed": "Không thể tạo tóm tắt vào lúc này.",
-      "loadFailed": "Không thể tải tóm tắt."
+      "unavailable": "Tính năng tóm tắt bằng AI hiện chưa khả dụng.",
+      "rateLimited": "Có khá nhiều yêu cầu tóm tắt lúc này — bạn thử lại sau {seconds} giây nhé.",
+      "rateLimitedGeneric": "Có khá nhiều yêu cầu tóm tắt lúc này — bạn thử lại sau một chút nhé.",
+      "generic": "Chưa thể tạo tóm tắt lúc này. Bạn thử lại sau nhé.",
+      "generateFailed": "Chưa thể tạo tóm tắt lúc này. Bạn thử lại sau nhé.",
+      "loadFailed": "Chưa thể tải tóm tắt lúc này."
     }
   },
   "recorder": {
     "errors": {
-      "micDenied": "Quyền truy cập micro đã bị từ chối. Hãy cho phép truy cập micro trong cài đặt trình duyệt để ghi âm.",
-      "micNotFound": "Không tìm thấy micro. Hãy kết nối micro rồi thử lại.",
-      "micUnavailable": "Không thể truy cập micro của bạn. Hãy kiểm tra thiết bị rồi thử lại.",
-      "notSupported": "Trình duyệt này không hỗ trợ ghi âm.",
-      "recordingFailed": "Ghi âm thất bại. Hãy thử lại."
+      "micDenied": "Korume chưa thể dùng micro. Hãy cho phép truy cập micro trong cài đặt trình duyệt rồi thử lại.",
+      "micNotFound": "Không tìm thấy micro. Hãy kiểm tra thiết bị rồi thử lại.",
+      "micUnavailable": "Chưa thể truy cập micro. Hãy kiểm tra thiết bị rồi thử lại.",
+      "notSupported": "Trình duyệt này chưa hỗ trợ ghi âm.",
+      "recordingFailed": "Bản ghi chưa được tạo. Bạn thử lại nhé."
     },
     "toggle": {
       "record": "Ghi âm",
       "stop": "Dừng ghi âm"
     },
     "status": {
-      "requestingPermission": "Đang yêu cầu quyền truy cập micro…",
+      "requestingPermission": "Đang xin quyền truy cập micro…",
       "recording": "Đang ghi âm…",
       "saving": "Đang lưu bản ghi âm…",
       "saved": "Đã lưu.",
@@ -50,65 +52,69 @@
     "a11y": {
       "panel": "Trình ghi âm Shadowing cho \"{lineText}\"",
       "waveformLabel": "Dạng sóng bản ghi âm của bạn",
-      "playback": "Phát bản ghi âm đã lưu của bạn",
+      "playback": "Phát bản ghi âm của bạn",
       "wordScores": "Phát âm theo từng từ"
     },
     "score": {
-      "action": "Chấm điểm phát âm của bạn",
-      "actionBusy": "Đang chấm điểm…",
-      "notConfigured": "Tính năng chấm điểm phát âm chưa được thiết lập.",
-      "conversionFailed": "Không thể xử lý bản ghi âm này. Vui lòng thử lại.",
+      "action": "Đánh giá phát âm",
+      "actionBusy": "Đang lắng nghe…",
+      "notConfigured": "Tính năng đánh giá phát âm hiện chưa khả dụng.",
+      "conversionFailed": "Chưa thể xử lý bản ghi âm này. Bạn thử ghi lại nhé.",
       "pronunciationLabel": "発音",
       "fluencyLabel": "リズム",
       "errors": {
-        "rateLimited": "Quá nhiều yêu cầu chấm điểm — thử lại sau {seconds} giây.",
-        "rateLimitedGeneric": "Quá nhiều yêu cầu chấm điểm — vui lòng đợi một chút rồi thử lại.",
-        "notFound": "Không còn tìm thấy bản ghi âm này để chấm điểm.",
-        "invalid": "Không thể chấm điểm bản ghi âm này — hãy thử ghi âm lại.",
-        "generic": "Đã xảy ra lỗi khi chấm điểm phát âm của bạn."
+        "rateLimited": "Có khá nhiều yêu cầu đánh giá lúc này — bạn thử lại sau {seconds} giây nhé.",
+        "rateLimitedGeneric": "Có khá nhiều yêu cầu đánh giá lúc này — bạn thử lại sau một chút nhé.",
+        "notFound": "Không còn tìm thấy bản ghi âm này để đánh giá.",
+        "invalid": "Bản ghi âm này chưa thể được đánh giá. Bạn thử ghi lại nhé.",
+        "generic": "Chưa thể đánh giá phát âm lúc này. Bạn thử lại sau nhé."
       }
     },
     "upload": {
       "errors": {
         "unauthorized": "Hãy đăng nhập để lưu bản ghi âm của bạn.",
-        "rateLimited": "Quá nhiều bản ghi âm — thử lại sau {seconds} giây.",
-        "rateLimitedGeneric": "Quá nhiều bản ghi âm — vui lòng đợi một chút rồi thử lại.",
-        "invalid": "Không thể lưu bản ghi âm này. Vui lòng thử ghi âm lại.",
-        "generic": "Đã xảy ra lỗi khi lưu bản ghi âm của bạn."
+        "rateLimited": "Bạn đã ghi âm khá nhiều lần — thử lại sau {seconds} giây nhé.",
+        "rateLimitedGeneric": "Bạn đã ghi âm khá nhiều lần — thử lại sau một chút nhé.",
+        "invalid": "Bản ghi âm này chưa thể được lưu. Bạn thử ghi lại nhé.",
+        "generic": "Chưa thể lưu bản ghi âm lúc này. Bạn thử lại sau nhé."
       }
     },
     "share": {
-      "action": "Chia sẻ để nhận đánh giá chéo",
+      "action": "Chia sẻ để nhận đánh giá",
       "actionBusy": "Đang chia sẻ…",
-      "explain": "Chia sẻ công khai bản ghi âm này để nhận phản hồi. Bạn có thể thu hồi bất cứ lúc nào.",
-      "shared": "Đã chia sẻ để nhận đánh giá chéo.",
+      "explain": "Bạn có thể chia sẻ bản ghi âm này để nhận phản hồi từ người khác. Khi nào muốn, bạn có thể thu hồi lượt chia sẻ.",
+      "shared": "Đã chia sẻ để nhận đánh giá.",
       "revoke": "Thu hồi",
-      "revokeConfirm": "Thu hồi lượt chia sẻ này? Người khác sẽ không còn nghe hoặc đánh giá được nữa.",
+      "revokeConfirm": "Thu hồi lượt chia sẻ này? Người khác sẽ không còn nghe hoặc đánh giá bản ghi âm nữa.",
       "errors": {
-        "rateLimited": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
-        "rateLimitedGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút rồi thử lại.",
-        "generic": "Không thể chia sẻ bản ghi âm này — vui lòng thử lại.",
-        "revokeFailed": "Không thể thu hồi lượt chia sẻ này — vui lòng thử lại."
+        "rateLimited": "Có khá nhiều yêu cầu lúc này — bạn thử lại sau {seconds} giây nhé.",
+        "rateLimitedGeneric": "Có khá nhiều yêu cầu lúc này — bạn thử lại sau một chút nhé.",
+        "generic": "Chưa thể chia sẻ bản ghi âm này. Bạn thử lại sau nhé.",
+        "revokeFailed": "Chưa thể thu hồi lượt chia sẻ này. Bạn thử lại sau nhé."
       }
     },
     "wordError": {
       "none": "Đúng",
       "omission": "Thiếu âm",
       "insertion": "Thừa âm",
-      "mispronunciation": "Phát âm sai"
+      "mispronunciation": "Phát âm chưa đúng"
     }
   },
   "pitch": {
     "contour": {
-      "a11y": { "label": "Đường cong cao độ giọng nói của bạn cho lượt ghi âm này" },
-      "analyzing": "Đang phân tích cao độ…",
-      "unavailable": "Hiện chưa có đường cong cao độ"
+      "a11y": {
+        "label": "Đường cong cao độ giọng nói của bạn cho lượt ghi âm này"
+      },
+      "analyzing": "Đang lắng nghe cao độ…",
+      "unavailable": "Hiện chưa có đường cong cao độ."
     },
     "overlay": {
-      "a11y": { "label": "So sánh cao độ: bản mẫu (お手本) so với lượt ghi của bạn" },
+      "a11y": {
+        "label": "So sánh cao độ: bản mẫu (お手本) và bản ghi của bạn"
+      },
       "reference": "お手本",
       "user": "あなた",
-      "lowConfidence": "Không đủ âm thanh có giọng để so sánh chính xác — hãy thử ghi âm dài hơn.",
+      "lowConfidence": "Chưa có đủ âm thanh rõ để so sánh chính xác. Bạn thử ghi âm dài hơn nhé.",
       "intonation": "イントネーション",
       "scoreSuffix": " / 100"
     }
@@ -123,8 +129,16 @@
       "furigana": "Furigana"
     },
     "processingRecording": "Đang xử lý bản ghi âm…",
-    "waveformUnavailable": "Không có bản xem trước dạng sóng.",
-    "furigana": { "adaptive": "Thích ứng", "all": "Tất cả", "off": "Tắt" },
-    "loop": { "setA": "Đặt A", "setB": "Đặt B", "clear": "Xóa vòng lặp" }
+    "waveformUnavailable": "Chưa có bản xem trước dạng sóng.",
+    "furigana": {
+      "adaptive": "Thích ứng",
+      "all": "Tất cả",
+      "off": "Tắt"
+    },
+    "loop": {
+      "setA": "Đặt A",
+      "setB": "Đặt B",
+      "clear": "Xóa vòng lặp"
+    }
   }
 }

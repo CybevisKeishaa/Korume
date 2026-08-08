@@ -1,30 +1,30 @@
 {
   "deck": {
-    "title": "Bộ thẻ thu thập",
-    "review": "Ôn tập",
-    "empty": "Chưa có câu nào được thu thập. Khi đang luyện shadowing một video, hãy chạm \"Thu thập\" trên một dòng phụ đề để thêm câu."
+    "title": "Những câu bạn đã thu thập",
+    "review": "Ôn lại",
+    "empty": "Chưa có câu nào được giữ lại. Khi shadowing một video, thấy câu nào đáng nhớ thì chạm \"Thu thập\" nhé. Korume sẽ giữ nó giúp bạn."
   },
   "clip": {
     "play": "Phát đoạn clip",
-    "replay": "Phát lại đoạn clip"
+    "replay": "Nghe lại đoạn clip"
   },
   "mine": {
     "trigger": "Thu thập",
     "a11y": {
       "pickWord": "Chọn một từ để thu thập",
-      "wordLabel": "Từ cần thu thập"
+      "wordLabel": "Từ muốn thu thập"
     },
-    "placeholder": "Nhập một từ",
+    "placeholder": "Nhập từ bạn muốn giữ lại",
     "add": "Thêm",
-    "added": "Đã thêm \"{word}\" vào bộ thẻ thu thập của bạn.",
-    "rateLimited": "Quá nhiều thẻ — thử lại sau {seconds} giây.",
-    "rateLimitedGeneric": "Quá nhiều thẻ — vui lòng đợi một chút rồi thử lại.",
-    "error": "Không thể thêm từ đó. Hãy thử lại."
+    "added": "Đã giữ \"{word}\" lại cho bạn.",
+    "rateLimited": "Từ từ thôi nào — bạn đang thu thập hơi nhanh đấy. Thử lại sau {seconds} giây nhé.",
+    "rateLimitedGeneric": "Từ từ thôi nào — bạn đang thu thập hơi nhanh đấy. Đợi một chút rồi thử lại nhé.",
+    "error": "Chưa giữ được từ này. Thử lại nhé."
   },
   "review": {
-    "title": "Ôn tập câu đã thu thập",
-    "empty": "Chưa có câu nào đến hạn — hãy thu thập thêm câu.",
+    "title": "Ôn lại những câu bạn đã thu thập",
+    "empty": "Chưa có câu nào đến hạn. Có vẻ hôm nay Korume chưa bắt bạn học gì thêm đâu.",
     "backToDeck": "Quay lại bộ thẻ",
-    "reviewedCount": "{count, plural, other {Bạn đã ôn tập {count} câu.}}"
+    "reviewedCount": "{count, plural, other {Hôm nay bạn đã ôn lại {count} câu.}}"
   }
 }

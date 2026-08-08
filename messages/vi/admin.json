@@ -1,6 +1,6 @@
 {
   "shell": {
-    "tagline": "Hệ thống quản trị nội dung",
+    "tagline": "Quản lý nội dung Korume",
     "nav": {
       "dashboard": "Tổng quan",
       "videos": "Hàng đợi video",
@@ -8,38 +8,38 @@
       "styleGuide": "Hướng dẫn giao diện"
     },
     "backToApp": "Quay lại ứng dụng",
-    "navAria": "Quản trị"
+    "navAria": "Quản lý"
   },
   "meta": {
-    "dashboard": "Quản trị — Tổng quan",
-    "videos": "Quản trị — Hàng đợi video",
-    "content": "Quản trị — Nội dung",
-    "contentType": "Quản trị — {label}"
+    "dashboard": "Quản lý — Tổng quan",
+    "videos": "Quản lý — Hàng đợi video",
+    "content": "Quản lý — Nội dung",
+    "contentType": "Quản lý — {label}"
   },
   "dashboard": {
     "heading": "Tổng quan",
-    "subtitle": "Người dùng, tỷ lệ giữ chân và nội dung trong một cái nhìn tổng quan.",
-    "loading": "Đang tải số liệu thống kê…",
-    "error": "Không thể tải bảng thống kê.",
+    "subtitle": "Một góc nhìn nhanh về người học, nội dung và hoạt động gần đây.",
+    "loading": "Đang tải số liệu…",
+    "error": "Chưa thể tải số liệu lúc này.",
     "sections": {
       "users": "Người dùng",
-      "retention": "Tỷ lệ giữ chân",
+      "retention": "Mức độ gắn bó",
       "content": "Nội dung",
-      "activity": "Hoạt động nhiều nhất (7 ngày qua)"
+      "activity": "Hoạt động nổi bật · 7 ngày qua"
     },
     "stats": {
       "totalUsers": "Tổng người dùng",
-      "new7d": "Mới (7 ngày)",
-      "new30d": "Mới (30 ngày)",
-      "active7d": "Hoạt động (7 ngày)",
-      "active30d": "Hoạt động (30 ngày)"
+      "new7d": "Người dùng mới · 7 ngày",
+      "new30d": "Người dùng mới · 30 ngày",
+      "active7d": "Hoạt động · 7 ngày",
+      "active30d": "Hoạt động · 30 ngày"
     },
     "retention": {
       "noCohortData": "Chưa có dữ liệu nhóm",
       "summary": "{activeCount}/{cohortSize} người trong nhóm vẫn hoạt động trong 7 ngày qua."
     },
     "contentCounts": {
-      "videosPending": "Video chờ duyệt",
+      "videosPending": "Video đang chờ duyệt",
       "videosApproved": "Video đã duyệt",
       "kanji": "Kanji",
       "vocab": "Từ vựng",
@@ -47,38 +47,38 @@
       "jlptTests": "Đề thi JLPT",
       "readingPassages": "Bài đọc"
     },
-    "activityEmpty": "Chưa có hoạt động nào được ghi nhận.",
-    "generatedAt": "Đã tạo lúc {date}"
+    "activityEmpty": "Chưa có hoạt động nào gần đây.",
+    "generatedAt": "Cập nhật lúc {date}"
   },
   "content": {
     "landing": {
       "heading": "Nội dung",
-      "subtitle": "Chọn một loại nội dung để quản lý."
+      "subtitle": "Chọn một loại nội dung để xem và quản lý."
     },
     "types": {
       "kanji": {
         "label": "Kanji",
-        "description": "Chữ Hán, cách đọc, nghĩa, mẹo ghi nhớ và thứ tự nét.",
+        "description": "Chữ Hán, cách đọc, ý nghĩa, mẹo ghi nhớ và thứ tự nét.",
         "searchLabel": "Tìm theo chữ Hán"
       },
       "vocab": {
         "label": "Từ vựng",
-        "description": "Từ vựng, cách đọc và nghĩa theo cấp độ JLPT.",
+        "description": "Từ vựng, cách đọc và ý nghĩa theo từng cấp độ JLPT.",
         "searchLabel": "Tìm theo từ"
       },
       "grammar": {
         "label": "Ngữ pháp",
-        "description": "Điểm ngữ pháp, giải thích và câu ví dụ.",
+        "description": "Điểm ngữ pháp, cách giải thích và các câu ví dụ.",
         "searchLabel": "Tìm theo tiêu đề"
       },
       "jlpt_tests": {
         "label": "Đề thi JLPT",
-        "description": "Đề thi thử JLPT đầy đủ kèm câu hỏi.",
+        "description": "Các đề luyện JLPT hoàn chỉnh cùng hệ thống câu hỏi.",
         "searchLabel": "Tìm theo tiêu đề"
       },
       "reading_passages": {
         "label": "Bài đọc hiểu",
-        "description": "Bài đọc hiểu kèm câu hỏi.",
+        "description": "Bài đọc hiểu cùng các câu hỏi đi kèm.",
         "searchLabel": "Tìm theo tiêu đề"
       }
     },
@@ -88,57 +88,121 @@
     },
     "fields": {
       "kanji": {
-        "character": { "label": "Chữ Hán" },
-        "jlpt_level": { "label": "Cấp độ JLPT" },
-        "stroke_count": { "label": "Số nét" },
-        "radical_id": { "label": "ID bộ thủ (uuid)" },
-        "meaning_en": { "label": "Nghĩa (EN)" },
-        "meaning_vi": { "label": "Nghĩa (VI)" },
-        "mnemonic_text": { "label": "Mẹo ghi nhớ" },
-        "mnemonic_image_url": { "label": "URL ảnh mẹo ghi nhớ" },
-        "stroke_order_svg": { "label": "SVG thứ tự nét" },
-        "readings": { "label": "Cách đọc (JSON)" }
+        "character": {
+          "label": "Chữ Hán"
+        },
+        "jlpt_level": {
+          "label": "Cấp độ JLPT"
+        },
+        "stroke_count": {
+          "label": "Số nét"
+        },
+        "radical_id": {
+          "label": "ID bộ thủ (uuid)"
+        },
+        "meaning_en": {
+          "label": "Nghĩa (EN)"
+        },
+        "meaning_vi": {
+          "label": "Nghĩa (VI)"
+        },
+        "mnemonic_text": {
+          "label": "Mẹo ghi nhớ"
+        },
+        "mnemonic_image_url": {
+          "label": "URL ảnh mẹo ghi nhớ"
+        },
+        "stroke_order_svg": {
+          "label": "SVG thứ tự nét"
+        },
+        "readings": {
+          "label": "Cách đọc (JSON)"
+        }
       },
       "vocab": {
-        "word": { "label": "Từ" },
-        "reading": { "label": "Cách đọc" },
-        "meaning_en": { "label": "Nghĩa (EN)" },
-        "meaning_vi": { "label": "Nghĩa (VI)" },
-        "jlpt_level": { "label": "Cấp độ JLPT" },
-        "audio_url": { "label": "URL âm thanh" },
-        "part_of_speech": { "label": "Từ loại" }
+        "word": {
+          "label": "Từ"
+        },
+        "reading": {
+          "label": "Cách đọc"
+        },
+        "meaning_en": {
+          "label": "Nghĩa (EN)"
+        },
+        "meaning_vi": {
+          "label": "Nghĩa (VI)"
+        },
+        "jlpt_level": {
+          "label": "Cấp độ JLPT"
+        },
+        "audio_url": {
+          "label": "URL âm thanh"
+        },
+        "part_of_speech": {
+          "label": "Từ loại"
+        }
       },
       "grammar": {
-        "title": { "label": "Tiêu đề" },
-        "jlpt_level": { "label": "Cấp độ JLPT" },
-        "explanation": { "label": "Giải thích" },
-        "structure_pattern": { "label": "Cấu trúc" },
-        "example_sentences": { "label": "Câu ví dụ (JSON)" }
+        "title": {
+          "label": "Tiêu đề"
+        },
+        "jlpt_level": {
+          "label": "Cấp độ JLPT"
+        },
+        "explanation": {
+          "label": "Giải thích"
+        },
+        "structure_pattern": {
+          "label": "Cấu trúc"
+        },
+        "example_sentences": {
+          "label": "Câu ví dụ (JSON)"
+        }
       },
       "jlpt_tests": {
-        "level": { "label": "Cấp độ JLPT" },
-        "title": { "label": "Tiêu đề" },
-        "section_config": { "label": "Cấu hình phần thi (đối tượng JSON)" },
-        "questions": { "label": "Câu hỏi (JSON)" }
+        "level": {
+          "label": "Cấp độ JLPT"
+        },
+        "title": {
+          "label": "Tiêu đề"
+        },
+        "section_config": {
+          "label": "Cấu hình phần thi (đối tượng JSON)"
+        },
+        "questions": {
+          "label": "Câu hỏi (JSON)"
+        }
       },
       "reading_passages": {
-        "title": { "label": "Tiêu đề" },
-        "jlpt_level": { "label": "Cấp độ JLPT" },
-        "body_jp": { "label": "Nội dung (Tiếng Nhật)" },
-        "body_translation": { "label": "Nội dung (bản dịch)" },
-        "word_count": { "label": "Số từ" },
-        "questions": { "label": "Câu hỏi (JSON)" }
+        "title": {
+          "label": "Tiêu đề"
+        },
+        "jlpt_level": {
+          "label": "Cấp độ JLPT"
+        },
+        "body_jp": {
+          "label": "Nội dung (Tiếng Nhật)"
+        },
+        "body_translation": {
+          "label": "Nội dung (bản dịch)"
+        },
+        "word_count": {
+          "label": "Số từ"
+        },
+        "questions": {
+          "label": "Câu hỏi (JSON)"
+        }
       }
     },
     "manager": {
       "search": "Tìm kiếm",
       "importCsv": "Nhập CSV",
       "add": "Thêm {type}",
-      "pasteCsvLabel": "Dán CSV (dòng tiêu đề + tối đa 500 dòng dữ liệu, tối đa ~1MB)",
+      "pasteCsvLabel": "Dán CSV (dòng tiêu đề + tối đa 500 dòng dữ liệu, khoảng 1MB)",
       "uploading": "Đang tải lên…",
       "upload": "Tải lên",
       "importResult": {
-        "inserted": "{count} đã thêm",
+        "inserted": "Đã thêm {count} mục",
         "rowError": "Dòng {row}: {errors}"
       },
       "empty": "Chưa có {type} nào.",
@@ -149,21 +213,21 @@
       "deleteAria": "Xóa {label}",
       "edit": "Sửa",
       "deleteDialog": {
-        "title": "Xóa mục {type}",
-        "description": "Xóa vĩnh viễn \"{label}\"? Hành động này không thể hoàn tác."
+        "title": "Xóa {type}",
+        "description": "Bạn có chắc muốn xóa vĩnh viễn \"{label}\"? Hành động này không thể hoàn tác."
       },
       "error": {
-        "load": "Không thể tải danh sách nội dung này.",
-        "create": "Không thể tạo mục này.",
-        "save": "Không thể lưu mục này.",
-        "delete": "Không thể xóa mục này.",
-        "import": "Không thể nhập tệp CSV này.",
-        "tooManyImports": "Quá nhiều lần nhập — vui lòng đợi một chút rồi thử lại."
+        "load": "Chưa thể tải danh sách nội dung.",
+        "create": "Chưa thể tạo mục này.",
+        "save": "Chưa thể lưu thay đổi.",
+        "delete": "Chưa thể xóa mục này.",
+        "import": "Chưa thể nhập tệp CSV này.",
+        "tooManyImports": "Có khá nhiều yêu cầu cùng lúc — hãy đợi một chút rồi thử lại."
       }
     },
     "form": {
       "addTitle": "Thêm {type}",
-      "editTitle": "Sửa {type}",
+      "editTitle": "Chỉnh sửa {type}",
       "selectNone": "(không có)",
       "selectPlaceholder": "Chọn…",
       "saving": "Đang lưu…"
@@ -172,41 +236,41 @@
       "required": "{label} là bắt buộc.",
       "invalidNumber": "{label} phải là một số.",
       "invalidJson": "{label} phải là JSON hợp lệ.",
-      "validationFailed": "Đã có lỗi khi xác thực biểu mẫu này."
+      "validationFailed": "Có một vài chỗ cần được kiểm tra lại."
     }
   },
   "videos": {
     "page": {
       "heading": "Hàng đợi video",
-      "subtitle": "Xem xét, duyệt, từ chối và đính kèm phụ đề cho các video đã gửi."
+      "subtitle": "Xem lại video đã gửi, duyệt nội dung và bổ sung phụ đề khi cần."
     },
     "loading": "Đang tải hàng đợi video…",
     "error": {
-      "load": "Không thể tải hàng đợi video.",
-      "approve": "Không thể duyệt video này.",
-      "reject": "Không thể từ chối video này.",
-      "transcript": "Không thể lưu phụ đề này."
+      "load": "Chưa thể tải hàng đợi video.",
+      "approve": "Chưa thể duyệt video này.",
+      "reject": "Chưa thể từ chối video này.",
+      "transcript": "Chưa thể lưu phụ đề này."
     },
-    "rateLimited": "Vui lòng đợi một chút trước khi thực hiện thêm thao tác kiểm duyệt.",
-    "empty": "Hiện không có video nào đang chờ xét duyệt.",
+    "rateLimited": "Bạn thực hiện hơi nhiều thao tác trong thời gian ngắn — hãy đợi một chút rồi thử lại.",
+    "empty": "Hiện chưa có video nào đang chờ xét duyệt.",
     "submittedBy": "Gửi bởi {name}",
     "submittedByUnknown": "Gửi bởi người dùng không xác định",
     "estimate": "Ước tính {level}",
-    "transcriptBadge": "Phụ đề: {count} dòng",
+    "transcriptBadge": "Phụ đề · {count} dòng",
     "noTranscript": "Chưa có phụ đề",
     "approve": "Duyệt",
     "approving": "Đang duyệt…",
-    "attachTranscript": "Đính kèm phụ đề",
+    "attachTranscript": "Thêm phụ đề",
     "reject": "Từ chối",
-    "loadingMore": "Đang tải…",
+    "loadingMore": "Đang tải thêm…",
     "rejectDialog": {
       "title": "Từ chối video",
       "description": "Video sẽ bị xóa vĩnh viễn, cùng với phụ đề và mọi tiến trình học tập liên quan. Hành động này không thể hoàn tác.",
       "reasonLabel": "Lý do (không bắt buộc)",
-      "reasonPlaceholder": "Không hiển thị công khai — chỉ ghi lại cho người kiểm duyệt."
+      "reasonPlaceholder": "Lý do này không hiển thị công khai — chỉ dùng để ghi chú cho người kiểm duyệt."
     },
     "transcriptDialog": {
-      "title": "Đính kèm phụ đề",
+      "title": "Thêm phụ đề",
       "formatLabel": "Định dạng",
       "formatPlain": "Văn bản thuần",
       "contentLabel": "Nội dung",
@@ -216,30 +280,40 @@
   },
   "styleGuide": {
     "heading": "Hướng dẫn giao diện",
-    "subtitle": "Đặc tả thực thi — token và thành phần cơ bản được hiển thị từ mã nguồn thực tế.",
+    "subtitle": "Các token và thành phần cơ bản, được lấy trực tiếp từ hệ thống giao diện hiện tại.",
     "localeNavAria": "Ngôn ngữ hướng dẫn giao diện",
-    "themeTogglePreviewNote": "Giữ lại làm điểm xem trước cho giao diện sáng trong tương lai. Korume hiện chỉ có giao diện tối nên nút này hiện chưa có tác dụng.",
+    "themeTogglePreviewNote": "Giữ lại để xem trước giao diện sáng trong tương lai. Korume hiện chỉ có giao diện tối nên nút này chưa có tác dụng.",
     "sections": {
       "colour": {
         "heading": "Màu sắc",
         "primitiveTier": "Tầng màu gốc",
         "semanticTier": "Tầng màu ngữ nghĩa",
-        "semanticNote": "Các tính năng chỉ sử dụng tầng này. Korume hiện chỉ có giao diện tối; giao diện sáng trong tương lai sẽ là một khối bổ sung, không phải xây lại từ đầu. L9b đổi phong cách bằng cách sửa phần ánh xạ, không sửa tính năng."
+        "semanticNote": "Các tính năng chỉ sử dụng tầng màu ngữ nghĩa. Korume hiện chỉ có giao diện tối; khi có giao diện sáng, đây sẽ là một lớp ánh xạ bổ sung thay vì phải xây dựng lại từng tính năng."
       },
       "typography": {
         "heading": "Kiểu chữ",
-        "note": "Chiều cao dòng của phần thân được đo cho dấu tiếng Việt xếp chồng; văn bản tiếng Nhật dùng leading-jp (spec §4.5 mục 1).",
+        "note": "Chiều cao dòng của phần thân được tối ưu để dấu tiếng Việt hiển thị thoáng và rõ; văn bản tiếng Nhật sử dụng leading-jp (spec §4.5 mục 1).",
         "rolesHeading": "Vai trò phông chữ"
       },
-      "spacing": { "heading": "Khoảng cách" },
-      "radius": { "heading": "Độ bo góc" },
-      "elevation": { "heading": "Độ nổi" },
+      "spacing": {
+        "heading": "Khoảng cách"
+      },
+      "radius": {
+        "heading": "Độ bo góc"
+      },
+      "elevation": {
+        "heading": "Độ nổi"
+      },
       "motion": {
         "heading": "Chuyển động",
-        "note": "Dòng này dùng animate-fade-in (duration-base × ease-standard). Khi bật giảm chuyển động — nút bật ở trên — nó phải xuất hiện ngay lập tức."
+        "note": "Dòng này sử dụng animate-fade-in (duration-base × ease-standard). Khi bật giảm chuyển động — nút bật ở trên — nội dung sẽ xuất hiện ngay lập tức."
       },
-      "zIndex": { "heading": "Z-index" },
-      "primitives": { "heading": "Thành phần cơ bản" }
+      "zIndex": {
+        "heading": "Z-index"
+      },
+      "primitives": {
+        "heading": "Thành phần cơ bản"
+      }
     },
     "primitives": {
       "demo": {
@@ -265,7 +339,7 @@
       "dialog": {
         "open": "Mở hộp thoại",
         "title": "Hộp thoại ví dụ",
-        "description": "Tiêu điểm bị khóa bên trong; Escape và nền sau đóng nó lại.",
+        "description": "Tiêu điểm được giữ trong hộp thoại; nhấn Escape hoặc chọn nền phía sau để đóng.",
         "done": "Xong"
       },
       "tabs": {
@@ -279,7 +353,7 @@
         "placeholder": "Chọn một cấp độ"
       },
       "tooltip": {
-        "content": "Hiện khi di chuột qua hoặc lấy tiêu điểm bàn phím",
+        "content": "Hiển thị khi di chuột qua hoặc lấy tiêu điểm bằng bàn phím",
         "trigger": "Lấy tiêu điểm hoặc di chuột vào đây"
       },
       "popover": {

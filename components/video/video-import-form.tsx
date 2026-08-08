@@ -46,7 +46,7 @@ function descriptorForStatus(status: KnownErrorStatus | "unknown", retryAfterSec
 }
 
 /**
- * Import form for the /videos page. POSTs a YouTube URL to
+ * Import form for the /shadowing page. POSTs a YouTube URL to
  * /api/videos/import; on success refreshes the server-rendered list and
  * takes the user straight to the new video's shadowing page.
  */
@@ -93,7 +93,7 @@ export function VideoImportForm() {
       const body = (await res.json()) as { data: VideoRow };
       setUrl("");
       router.refresh();
-      router.push(`/videos/${body.data.id}/shadowing`);
+      router.push(`/shadowing/${body.data.id}`);
     } catch {
       setError(descriptorForStatus("unknown"));
     } finally {

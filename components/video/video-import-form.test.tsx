@@ -81,7 +81,7 @@ describe("VideoImportForm", () => {
     await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
 
     expect(refresh).toHaveBeenCalledOnce();
-    expect(push).toHaveBeenCalledWith("/videos/abc123/shadowing");
+    expect(push).toHaveBeenCalledWith("/shadowing/abc123");
   });
 
   it("clears the input on success", async () => {

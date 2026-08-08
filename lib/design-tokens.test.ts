@@ -23,7 +23,12 @@ const tailwind = readFileSync(
 const REQUIRED_TOKENS = [
   // spacing
   "--space-2xs", "--space-xs", "--space-sm", "--space-md",
+  "--space-md-lg",
   "--space-lg", "--space-xl", "--space-2xl", "--space-3xl",
+  // layout shell structure
+  "--layout-sidebar-width", "--layout-sidebar-collapsed",
+  "--layout-content-max", "--layout-companion-width",
+  "--layout-gutter", "--layout-column-gap",
   // radius — declared absolutely, never derived. A calc()-chained scale means
   // one edit to the base silently skews every other step. No unqualified
   // `--radius`: it had zero consumers outside docs/ and was deleted.
@@ -178,5 +183,26 @@ describe("design tokens", () => {
     for (const token of ["--elevation-raised", "--elevation-overlay", "--elevation-floating"]) {
       expect(css.match(new RegExp(`${token}\\s*:`, "g"))?.length).toBe(1);
     }
+  });
+
+  it("keeps layout structure tokens out of the spacing namespace", () => {
+    // --space-* is distance between elements; --layout-* is shell structure.
+    // A structural dimension declared as a spacing step would let a later
+    // contributor use `p-sidebar`, which is meaningless. Plan C1, spec D5.
+    const layoutNames = css.match(/--layout-[a-z-]+(?=:)/g) ?? [];
+    expect(layoutNames.length).toBeGreaterThanOrEqual(6);
+    expect(layoutNames.filter((name) => name.startsWith("--layout-space"))).toEqual([]);
+
+    const spacingNames = css.match(/--space-[a-z0-9-]+(?=:)/g) ?? [];
+    expect(spacingNames).toContain("--space-md-lg");
+    expect(spacingNames.some((name) => /sidebar|companion|content|gutter/.test(name))).toBe(false);
+  });
+
+  it("declares layout distances by reference to the spacing scale, never as raw px", () => {
+    // D7: no new value may enter the system. --layout-gutter and
+    // --layout-column-gap hold measured 36/28 rounded to existing steps, and
+    // they must say so by referencing the step, not by restating a number.
+    expect(css).toMatch(/--layout-gutter:\s*var\(--space-xl\)/);
+    expect(css).toMatch(/--layout-column-gap:\s*var\(--space-lg\)/);
   });
 });

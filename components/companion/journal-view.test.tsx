@@ -102,7 +102,7 @@ describe("JournalView (spec §5 — a keepsake, never a log)", () => {
       />,
     );
     const link = screen.getByRole("link", { name: /return to this moment/i });
-    expect(link).toHaveAttribute("href", expect.stringContaining("/videos/v1/shadowing?line=l1"));
+    expect(link).toHaveAttribute("href", expect.stringContaining("/shadowing/v1?line=l1"));
   });
 
   it("offers no return link when the pointer is incomplete", () => {

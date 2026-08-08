@@ -1,45 +1,45 @@
 {
   "backToDashboard": "Về bảng điều khiển",
   "memoryTitle": {
-    "firstShadow": "Câu thoại đầu tiên bạn shadowing thành công.",
-    "lineMastered": "Câu bạn luyện mãi rồi cuối cùng cũng nói được.",
-    "miningSaved": "Câu bạn quyết định lưu lại.",
-    "firstVideoCompleted": "Video đầu tiên bạn hoàn thành.",
-    "firstMeeting": "Ngày hai bạn gặp nhau.",
+    "firstShadow": "Câu thoại đầu tiên bạn shadowing được.",
+    "lineMastered": "Câu bạn luyện mãi, rồi cuối cùng cũng nói được.",
+    "miningSaved": "Câu bạn nghe xong và quyết định giữ lại.",
+    "firstVideoCompleted": "Video đầu tiên bạn cùng mình đi hết.",
+    "firstMeeting": "Ngày chúng ta gặp nhau.",
     "jlptPassed": "Cột mốc JLPT {level}",
     "companionGrew": {
-      "1": "Ngày hai đứa mình gặp nhau.",
-      "2": "Ngày người bạn đồng hành của bạn thấy gần gũi hơn.",
-      "3": "Ngày người bạn đồng hành của bạn thật sự hiểu bạn.",
-      "4": "Ngày người bạn đồng hành của bạn đi cùng bạn đủ lâu để nhớ hết chặng đường."
+      "1": "Ngày chúng ta gặp nhau.",
+      "2": "Ngày mình bắt đầu hiểu bạn hơn một chút.",
+      "3": "Ngày mình thật sự hiểu cách bạn học.",
+      "4": "Ngày mình đã đi cùng bạn đủ lâu để nhớ cả một chặng đường."
     }
   },
   "speech": {
-    "finishedShadowing": "Thêm một câu thoại nữa đã thành một phần hành trình của bạn.",
-    "memoryCreated": "Khoảnh khắc ấy đã được giữ lại trong nhật ký.",
-    "emptyLibrary": "Video đầu tiên bạn mang về đây sẽ mở ra một chương mới.",
-    "emptyMiningDeck": "Những câu bạn lưu sẽ tụ về đây, chờ được ghi nhớ."
+    "finishedShadowing": "Thêm một câu nữa nhé. Vậy là nó đã thuộc về hành trình của bạn rồi.",
+    "memoryCreated": "Ừm, câu này đáng được giữ lại. Mình đã cất nó vào nhật ký rồi.",
+    "emptyLibrary": "Khi bạn mang video đầu tiên về đây, mình sẽ ở đây để cùng bạn bắt đầu.",
+    "emptyMiningDeck": "Những câu bạn giữ lại sẽ tụ về đây. Đến lúc gặp lại chúng, đừng giả vờ là không nhớ nhé."
   },
   "journal": {
     "metaTitle": "Nhật ký",
     "title": "Nhật ký",
-    "empty": "Trang đầu tiên đang chờ những câu chuyện chúng ta sẽ cùng khám phá.",
+    "empty": "Từ hôm nay, mình cùng bắt đầu viết những trang đầu tiên nhé.",
     "returnToMoment": "Quay lại khoảnh khắc này",
-    "giftedMarker": "Ký ức bạn trao gửi",
-    "discoveredMarker": "Ký ức được phát hiện trên đường đi",
-    "untitledGifted": "Một câu thoại bạn đã giữ lại."
+    "giftedMarker": "Ký ức bạn trao lại cho mình",
+    "discoveredMarker": "Ký ức mình cùng bạn tìm thấy trên đường đi",
+    "untitledGifted": "Một câu thoại bạn đã quyết định giữ lại."
   },
   "pin": {
-    "trigger": "Ghim vào nhật ký",
-    "dialogTitle": "Giữ câu thoại này trong nhật ký của bạn",
+    "trigger": "Giữ lại trong nhật ký",
+    "dialogTitle": "Giữ câu này lại nhé?",
     "noteLabel": "Đôi lời của riêng bạn (tùy chọn)",
-    "success": "Đã giữ lại. Câu này giờ nằm trong nhật ký của bạn.",
-    "alreadyKept": "Bạn đã ghim câu này rồi — ghi chú đã lưu thì không đổi được nữa.",
-    "tooMany": "Bạn đang ghim nhanh quá — nghỉ một nhịp rồi thử lại nhé.",
-    "signedOut": "Phiên đăng nhập đã kết thúc. Đăng nhập lại để giữ câu này nhé."
+    "success": "Được rồi. Mình đã giữ câu này lại cho bạn.",
+    "alreadyKept": "Câu này đã được giữ lại rồi. Ghi chú cũng đã nằm yên ở đó nhé.",
+    "tooMany": "Từ từ thôi nào. Bạn đang giữ lại hơi nhiều rồi đó — nghỉ một chút rồi quay lại nhé.",
+    "signedOut": "Hình như bạn vừa đăng xuất rồi. Đăng nhập lại nhé, mình sẽ giữ câu này cho bạn."
   },
   "a11y": {
-    "sprite": "Bạn đồng hành của bạn — mở nhật ký",
+    "sprite": "Người bạn đồng hành của bạn — mở nhật ký",
     "dismissSpeech": "Đóng lời nhắn"
   }
 }
