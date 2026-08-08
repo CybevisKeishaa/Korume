@@ -289,20 +289,13 @@ Vietnamese message ever being ICU-parsed in CI; raw `Error.message` reaching the
 translated error string unreachable).
 **SIX STANDING CONVENTIONS, binding for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22) — full
 text in `mem:l9a_localization_run_state` top block "⭐⭐ STANDING CONVENTIONS", put ALL in every implementer
-AND reviewer brief:** (1) report mutation in TWO layers — catalog vs wiring — never one number; (2) audit
-the DEPENDENCY GRAPH not the plan — the plan list has been wrong 5× (translate exported APIs, verify every
-consumer); (3) swap-proof render assertion for any TYPE-INTERCHANGEABLE values (label↔value pairing);
-(4) server-authored diagnostics NEVER reach the DOM — **defect class CLOSED after Task 12** (5 instances all
-fixed; apply the rule to any NEW instance the audit finds, don't hunt); (5) Task 19 exit criterion —
-re-audit `common.*` consumer counts by surface (demote `common.player.*` to `shadowing.*` if still
-single-surface); (6) NEW — proportionality: low-value wiring gaps on pass-through surfaces (key-swap-only,
-no behavioral regression) go to the Task 19 audit, don't expand the current task. The original two are (1)+(5B):
-(A) Mutation testing has **two classes** and a review must report **separate survivor counts** for each:
-**catalog mutations** (append/prepend, punctuation, ICU placeholders, rich tags → prove the
-`messages/en/*.pin.test.ts` literal pins) and **wiring mutations** (swap two `t()` keys, swap the
-namespace, point two elements at one key, delete a translated prop → prove the RTL tests, and must run
-against the **RTL tests ONLY, pin tests excluded**). At 11c the blended number was 0 survivors while the
-RTL-only pass was 5 — the pin tests were masking the gap, and one number cannot show that.
+AND reviewer brief:** (1) mutation in TWO layers → `docs/lessons.md` L-007; (2) audit the DEPENDENCY GRAPH
+not the plan → `docs/lessons.md` L-023; (3) swap-proof render assertion for TYPE-INTERCHANGEABLE values →
+`docs/lessons.md` L-008; (4) server-authored diagnostics NEVER reach the DOM — **defect class CLOSED after
+Task 12** (5 instances all fixed; apply the rule to any NEW instance the audit finds, don't hunt); (5) Task
+19 exit criterion — re-audit `common.*` consumer counts by surface (demote `common.player.*` to
+`shadowing.*` if still single-surface); (6) proportionality → `docs/lessons.md` L-014. The original two are
+(1)+(5B): (A) mutation's two-class separate-survivor-count reporting rule → `docs/lessons.md` L-007.
 (B) When promoting into `common.*`, **record the actual consumer count, naming the unit** — importing
 FILES vs consuming SURFACES differ, and P4 tests MODULES. Measured: `common.player.*` = 3 files but
 **1 surface** (demotion candidate); `common.errors.network` = **2 consumers**, NOT the 28-places/8-modules

@@ -29,18 +29,15 @@ REPLACES prior wording here — it does not accumulate beside it.
   key-returning classifiers resolved with `t()` in the render body.
 
 **The six standing conventions (review rubric — terse):**
-1. Mutation testing reported in TWO layers: `Catalog: N/X` (pin-only) + `Wiring: M/Y` (RTL-only, pin disabled).
-   Never blended.
-2. Audit the DEPENDENCY GRAPH, not the plan list: grep the import graph of every exported API you localize;
-   verify each consumer (the plan file list has been wrong 5×; exported label maps like SCENARIOS/jlpt-ui bite).
-3. Swap-proof render assertions for type-interchangeable values (label↔value pairs, enum sets): must FAIL if two
-   `t()` keys are swapped, not merely assert presence.
+1. Mutation testing reported in TWO layers → `docs/lessons.md` L-007.
+2. Audit the DEPENDENCY GRAPH, not the plan list → `docs/lessons.md` L-023.
+3. Swap-proof render assertions for type-interchangeable values → `docs/lessons.md` L-008.
 4. Server diagnostics never reach the learner DOM. **Recurs across modules via the `friendlyErrorFrom` /
    `body.error ?? fallback` idiom — in EVERY module you touch, grep for `body.error` / `.message` / `?? fallback`
    reaching a `role="alert"` / `setError` / DOM node → `console.error(...)` for devs + render a TRANSLATED state.**
 5. Record every `common.*` reuse/promotion's consumer count BY SURFACE (for the Task 19 audit).
-6. Proportionality: low-value wiring gaps on inert pass-through surfaces → carried Minor for Task 19; fix-in-task
-   only on correctness/compliance paths.
+6. Proportionality — the general rule is `docs/lessons.md` L-014. Run-scoped: low-value wiring gaps on
+   inert pass-through surfaces → carried Minor for Task 19; fix-in-task only on correctness/compliance paths.
 
 **Gates (controller re-runs ALL three ITSELF, never trusts the report):** `tsc --noEmit` clean; `vitest run`
 green; `npm run lint` **EXIT 0 with 0 new** — check the exit code + error count, not just the 80-warning/23-file
@@ -399,8 +396,7 @@ nine. All three findings were strings with a correct pin that **no test rendered
 3. **THE PLAN'S FILE LIST WAS WRONG A FOURTH TIME — and this one crossed modules.** `useRecorder` has a
    consumer nobody had listed: **`components/conversation/voice-recorder-button.tsx`**. Translating the
    hook broke **13 tests across 2 conversation test files**. Fix was import-only (`@/test/render`),
-   verified necessary by stashing. **Lesson for every remaining task: grep the IMPORT GRAPH of anything
-   you translate, not just the directory you were handed.** `useRecorder` consumers = 3 files / 2 modules.
+   verified necessary by stashing. Rule: `docs/lessons.md` L-023. `useRecorder` consumers = 3 files / 2 modules.
 4. **Both pitch components had a `label` prop defaulting to English** — memory had recorded only one.
    Neither caller passes a label, so both aria-labels were English under live `vi`. Both now `label ?? t()`
    with the mandatory pattern-5 test pair, broken in both directions by the reviewer.
@@ -477,20 +473,7 @@ satisfies next-intl's values param. **Do NOT "tidy" it back**; the comment in th
 Not new process; these codify what Tasks 8, 10, 11a and 11c already proved. **Put both in every
 reviewer brief, and require both numbers back in the verdict.**
 
-### A. Mutation testing has TWO CLASSES. Report them SEPARATELY, with separate survivor counts.
-
-A single blended "0 survivors" is misleading — at 11c the full suite returned 0 while the RTL-only pass
-returned 5, because **the pin tests were masking the wiring gap**. One number cannot show that.
-
-| Class | What it mutates | What it proves | Run against |
-|---|---|---|---|
-| **Catalog mutations** (copy integrity) | append / prepend text, punctuation, ICU placeholder names, rich-text tag names | the literal pins in `messages/en/*.pin.test.ts` | the pin tests |
-| **Wiring mutations** (component integrity) | swap two `t()` keys, swap the namespace, point two UI elements at the same key, delete a translated prop so the component falls back to its English default | the RTL/component tests | **the RTL tests ONLY — pin tests EXCLUDED** |
-
-Append/prepend stays mandatory in the catalog class: `toHaveTextContent(string)` is a **containment**
-match, so those mutations survive it while mid-string edits do not (Task 10). The wiring class exists
-because a correct pin plus no render assertion = a swapped key ships silently (11c, 5 survivors).
-**A review that reports one combined number is incomplete — send it back.**
+### A. Mutation testing has TWO CLASSES — general rule now `docs/lessons.md` L-007.
 
 ### B. When promoting a string into `common.*`, record the ACTUAL consumer count in the review.
 
@@ -522,7 +505,7 @@ strings that appeared in neither Task 11's nor Task 12's list**. A full audit of
 
 **This was the THIRD time Task 11's plan metadata was wrong** — the LOC count was stale (real scope 6.9×
 Task 10), the "both surfaces render it" rationale was false (11a review disproved it), and the file list
-was short by two. **Treat every remaining task's file list as a starting hypothesis, not truth.**
+was short by two. Rule: `docs/lessons.md` L-023.
 
 **USER DECISION (2026-07-21, honoured in `da41411`):** `playback-controls.tsx`'s strings went to
 **`common.player.*`**, joining 11a's, so the whole "player shell, shadowing-only today" cluster lives in
