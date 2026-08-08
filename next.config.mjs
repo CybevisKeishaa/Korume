@@ -34,16 +34,27 @@ const nextConfig = {
   // published, so no external inbound link exists to preserve. Revisit at
   // launch. A wildcard is wrong here because the second rule COLLAPSES a
   // segment rather than renaming a prefix.
+  //
+  // `:locale` MUST stay constrained to the real locales. An unconstrained
+  // `/:locale/videos` matches ANY first segment — including `api`, which made
+  // the real endpoint `app/api/videos/route.ts` answer `307 -> /api/shadowing`
+  // and then 404, in direct contradiction of spec §3.1 ("Not renamed:
+  // /api/videos/**"). `redirects()` runs BEFORE the filesystem, so no route
+  // handler and no middleware matcher can save it.
+  //
+  // The alternation duplicates `routing.locales` from `lib/i18n/routing.ts`,
+  // because this file cannot import a `.ts` module. `next.config.test.ts`
+  // asserts the two agree — add a locale there and that test fails here.
   async redirects() {
     return [
-      { source: "/:locale/videos", destination: "/:locale/shadowing", permanent: false },
+      { source: "/:locale(vi|en)/videos", destination: "/:locale/shadowing", permanent: false },
       {
-        source: "/:locale/videos/:id/shadowing",
+        source: "/:locale(vi|en)/videos/:id/shadowing",
         destination: "/:locale/shadowing/:id",
         permanent: false,
       },
       {
-        source: "/:locale/videos/:id/dictation",
+        source: "/:locale(vi|en)/videos/:id/dictation",
         destination: "/:locale/shadowing/:id/dictation",
         permanent: false,
       },

@@ -68,3 +68,27 @@ test("the rules are not over-broad: /en/videosomething is not swallowed into /sh
   const res = await request.get("/en/videosomething", { maxRedirects: 0 });
   expect([301, 302, 303, 307, 308]).not.toContain(res.status());
 });
+
+test("the rules do not swallow the /api namespace: GET /api/videos still reaches its route handler", async ({
+  request,
+}) => {
+  // The defect this asserts against, found by Plan C1's whole-branch review:
+  // `source: "/:locale/videos"` left `:locale` unconstrained, so it matched the
+  // literal segment `api`. `redirects()` runs BEFORE the filesystem, so the real
+  // endpoint app/api/videos/route.ts was answered `307 -> /api/shadowing`, which
+  // then 404s because LocaleLayout calls notFound() for locale="api". That
+  // contradicted the LOCKED spec §3.1 ("Not renamed: /api/videos/**").
+  //
+  // Nothing in-repo called the bare endpoint, so eleven tasks, every per-task
+  // review and a fully green gate all missed it. The sibling case
+  // /api/videos/recommendations was unaffected (three segments), which is
+  // exactly the kind of partial symptom that makes such a bug look like
+  // "the API is flaky" rather than a routing defect.
+  //
+  // Asserted as "not a redirect" rather than as a specific status: this route
+  // requires auth and answers 401 unauthenticated today, but the contract Task 4
+  // owns is only that next.config.mjs must not intercept it. Pinning 401 here
+  // would couple a redirect test to the endpoint's auth behaviour.
+  const res = await request.get("/api/videos", { maxRedirects: 0 });
+  expect([301, 302, 303, 307, 308]).not.toContain(res.status());
+});
