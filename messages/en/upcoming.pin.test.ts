@@ -49,7 +49,7 @@ describe("upcoming.json EN — catalog literals", () => {
   it("pins the roadmap screen copy", () => {
     expect(en.roadmap.title).toBe("Roadmap");
     expect(en.roadmap.body).toBe(
-      "The path your Companion is drawing from what you actually study, not from a fixed syllabus.",
+      "The path Korume is drawing from what you actually study, not from a fixed syllabus.",
     );
     expect(en.roadmap.unlocks).toBe(
       "Keep studying. A roadmap needs a few weeks of real sessions before it says anything true.",
@@ -59,7 +59,7 @@ describe("upcoming.json EN — catalog literals", () => {
   it("pins the weekly report screen copy", () => {
     expect(en.weeklyReport.title).toBe("Weekly Report");
     expect(en.weeklyReport.body).toBe(
-      "One honest summary a week: what moved, what did not, and what your Companion adjusted.",
+      "One honest summary a week: what moved, what did not, and what Korume adjusted.",
     );
     expect(en.weeklyReport.unlocks).toBe(
       "Finish a week of sessions and the first report writes itself.",

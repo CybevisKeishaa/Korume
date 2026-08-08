@@ -17,12 +17,12 @@
   },
   "roadmap": {
     "title": "Roadmap",
-    "body": "The path your Companion is drawing from what you actually study, not from a fixed syllabus.",
+    "body": "The path Korume is drawing from what you actually study, not from a fixed syllabus.",
     "unlocks": "Keep studying. A roadmap needs a few weeks of real sessions before it says anything true."
   },
   "weeklyReport": {
     "title": "Weekly Report",
-    "body": "One honest summary a week: what moved, what did not, and what your Companion adjusted.",
+    "body": "One honest summary a week: what moved, what did not, and what Korume adjusted.",
     "unlocks": "Finish a week of sessions and the first report writes itself."
   },
   "statistics": {
