@@ -28,11 +28,11 @@ existed; Tasks 3–5 went through the full loop.
 | T5 | `c80829b` | `CompanionAnchor` boundary narrowed to Shadowing mode only |
 
 **The final whole-branch review earned its keep again — 1 Critical + 4 Important that no per-task
-diff could reveal.** Third plan running where this is true; treat the final review as mandatory.
+diff could reveal.** See docs/lessons.md L-011.
 - `ef564c7` **Critical:** `tests/e2e/journal.spec.ts` still clicked a link named `"Journal"` after T3
   renamed the nav label to `"Journey"`. Invisible because **`vitest.config.ts:13` excludes
   `tests/e2e`** — `npm test` structurally cannot run Playwright specs, so no task run could catch it.
-  **Lesson: any nav/label rename must sweep `tests/e2e/` by hand.** T1 remembered to; T3 did not.
+  See docs/lessons.md L-025. T1 remembered to; T3 did not.
   Same commit also fixed mobile top-bar heading overflow, a sub-24px touch target, 2 stale comments.
 - `d5f08b8` **Important:** nav said "Lessons" but `/videos` page `h1` + document title still said
   "Videos" — a label `navigation-system.md:29-38` disqualifies **by architectural invariant**. The

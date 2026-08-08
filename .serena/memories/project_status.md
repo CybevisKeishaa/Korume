@@ -154,26 +154,7 @@ and mounts `AmbientProvider`; `(app)` (nav visible) / `(focus)` (nav mounted, hi
   this question from spec §5.5.
 
 ### Lessons worth carrying
-1. **The final whole-branch review earned its keep for the 5th consecutive plan.** It alone caught
-   that the `(focus)` contract had *removed* the reduce-motion control (CLAUDE.md §2 rule 4) — no
-   per-task review could see it, because each task was individually correct.
-2. **Then the fix for that regression broke the contract the branch existed to build:** mounting the
-   toggle outside the nav turned a 24px strip into a ~130px labelled rail on every authenticated
-   screen. Fixed with a `compact` prop that `sr-only`s the caption. A fix wave needs its own review.
-3. **The three worst defects originated in the spec/plan, not in any subagent.** The plan told the
-   gate to assert `getByRole("navigation", {name: /main/i})` — renaming one i18n string would have
-   greened it forever; it assumed rather than asserted that `/journal` mounts a CompanionAnchor,
-   without which the whole proxy is vacuous; and it described `(immersive)` as having "no toggle"
-   after the user had ruled otherwise.
-4. **Reviewers were wrong twice, both caught by re-measuring.** One reported "7 lint errors,
-   pre-existing" (actual: 0 — it ran `npx eslint` directly over paths `next lint` excludes; always use
-   `npm run lint`). One called a correction note dishonest for crediting a user ruling that had in
-   fact happened.
-5. **A test can prove architecture with zero production instrumentation.** `phaseRequestedRef` makes
-   the Companion phase read fire once per provider lifetime, so counting `/api/user/stats` across a
-   route-group boundary distinguishes a surviving provider from a rebuilt one.
-
-
+Migrated to `docs/lessons.md`: L-003, L-010, L-011, L-012, L-013, L-018.
 
 </details>
 
@@ -197,35 +178,7 @@ none new) · Playwright **6/6** · LCP warm **300ms → 220ms** · font bytes fe
 **169 KB → 82 KB** (only sans + jp preload).
 
 ### Lessons worth carrying (the SDD ledger is deleted; these are the parts that generalise)
-
-1. **The final whole-branch review earned its keep for the 4th consecutive plan** — 5 Important that
-   no per-task review could see, because each was a contradiction only visible across files:
-   `color-scheme: dark` never declared (so scrollbars/autofill/native selects/the reduce-motion
-   checkbox all stayed light); `--muted` at 1.072:1 used as the hover surface in 34 places and as the
-   resting AI-bubble surface; and two claims the branch itself falsified — one in
-   `navigation-system.md`, one in an i18n string that a **pin test was guarding as correct**.
-2. **A single grep pattern is never a sufficient audit.** This bit twice: Task 6's
-   `bg-<c>/<alpha>` sweep missed `notification-bell` (no alpha suffix), and the fix wave's
-   `hover:bg-muted` sweep missed `select.tsx`'s `data-[highlighted]:bg-muted` — which is the
-   **keyboard-navigation indicator**, so it engaged CLAUDE.md §2 rule 5. Always sweep variants
-   (`data-[…]`, `focus`, `group-hover`, `aria-*`) and hardcoded colours (`text-white`), not one shape.
-3. **Verify subagent claims independently — three of the most consequential findings came from that,
-   not from the reports.** A "3 sites out of scope/correct" note turned out to be 4 sites failing AA
-   at 3.28:1; a contrast figure in a report was arithmetically impossible; a "1 flaky test" needed the
-   flake identified, not assumed.
-4. **A worktree has no `.env.local`** (gitignored). A hand-built stub silently fails every
-   auth-dependent Playwright spec in a way that looks exactly like a code regression — I wrongly
-   suspected the environment, then the branch, before isolating it. Copy the full env before trusting
-   an e2e result, and remove the secrets afterwards.
-5. **`EnterWorktree` was NOT usable here:** its default `worktree.baseRef: fresh` branches from
-   `origin/<default>`, and this repo never pushes, so master runs ahead — the worktree would have
-   lacked the plan and spec. Used `git worktree add` instead. Consider setting `worktree.baseRef: head`.
-6. **Width comparison cannot detect CJK font fallback** — Noto Sans JP and the system fallback both
-   render full-width at exactly 1em. Inspect `@font-face` unicode-ranges instead. Doing so CLOSED
-   spec risk §7.3: despite `subsets: ["latin"]`, Noto Sans JP emits 373 sliced faces, 4 covering
-   U+65E5, 2 reaching `loaded`. CJK is genuinely served.
-7. **The 5-font payload fear did not materialise** — build assets +430 KB, but the page *fetches*
-   half what master did and LCP improved, because only sans + jp preload.
+Migrated to `docs/lessons.md`: L-003, L-011, L-020, L-021, L-022.
 
 ### Open, deliberately deferred
 - ⚠️ **Not verified: `/dashboard` and `/admin/style-guide` in a browser.** Spec §6 asked for a dense

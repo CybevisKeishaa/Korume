@@ -67,31 +67,9 @@ Put ALL SIX in every implementer brief AND every reviewer brief. They are not ne
 rediscovered each the hard way; this block exists so no later task rediscovers them again. Task 12
 reinforced #2 (dependency-graph audit) and closed the #4 defect class; #6 (proportionality) is new.
 
-1. **Report mutation testing in TWO LAYERS, never one number.** Always split:
-   `Catalog: N mutations / X survivors` (literal-pin proof — append/prepend/punct/placeholder vs the
-   `*.pin.test.ts` `toBe`s) AND `Wiring: M mutations / Y survivors` (key/namespace swap, point-two-at-one,
-   drop-a-threaded-prop — **run against the RTL tests ONLY, pin tests DISABLED**). A blended "0 survivors"
-   hid 5 wiring defects at 11c, 9 at 11d, 1 at 11e. Catalog proves COPY STABILITY; wiring proves the UI
-   RENDERS THE CORRECT KEY. Different properties — one number cannot show both.
-
-2. **Audit scope from the DEPENDENCY GRAPH, not the plan. Translate exported APIs, not directories.**
-   Before freezing EVERY remaining task's scope, do THREE things: (a) audit the assigned directory,
-   (b) grep the import graph of every exported hook/component/helper being localized, (c) verify each
-   consumer. **The plan's file list has now been wrong FIVE separate times** — treat it as a starting
-   hypothesis, never ground truth. 11d's `useRecorder` had a consumer under `components/conversation/` on
-   no list (broke 13 tests); **Task 12's `mining-review-session.tsx` — the file holding the owned defect —
-   was absent from the plan's own list**, so the defect would have shipped untouched. The audit, not the
-   plan, is what caught it.
-
-3. **BINDING PATTERN — swap-proof render assertions for TYPE-INTERCHANGEABLE values.** Literal catalog
-   pins prove COPY; they do NOT prove the component renders the correct KEY. **Whenever two translated
-   values are interchangeable in type (same shape, same placeholder set) — legends, badges, swatches,
-   score labels, grade buttons, paired label↔value UI — add a render assertion that FAILS if the two
-   `t(...)` calls are swapped.** Prove `label A ↔ value A` AND `label B ↔ value B`, not merely that each
-   exists. Swapping two keys can silently teach the WRONG thing while every catalog pin still passes
-   (11d お手本/あなた; 11e 発音/リズム; 12 Again/Hard/Good/Easy ↔ their 1/2/3/4 shortcuts — all done right).
-   Assert the composed node, e.g. `getByText("発音 82")` / `toHaveTextContent("Again1")`, or scope each
-   label+value to one element.
+1. Report mutation testing in TWO LAYERS, never one number → `docs/lessons.md` L-007.
+2. Audit scope from the DEPENDENCY GRAPH, not the plan → `docs/lessons.md` L-023.
+3. Swap-proof render assertions for TYPE-INTERCHANGEABLE values → `docs/lessons.md` L-008.
 
 4. **Server-authored diagnostics NEVER reach the learner-facing DOM — DEFECT CLASS CLOSED after Task 12.**
    The rule stands: `body.error` / `error.message` / raw status text must be LOGGED for developers
@@ -111,13 +89,9 @@ reinforced #2 (dependency-graph audit) and closed the #4 defect class; #6 (propo
    surface (demotion candidate); `common.srs.*` = 2; `common.states.error` = 2; `common.errors.network` = 3;
    `common.recommendations.*` = 2.)
 
-6. **Spend review effort on NEW defect classes, not assertion count — proportionality/triage rule.** If a
-   missing render test would catch ONLY an accidental key swap on pass-through copy (a trivial page whose
-   only job is to render a heading/link), with NO user-visible behavioral regression at stake, RECORD it as
-   a carried Minor for the Task 19 audit — do NOT expand the current task to cover it. Fix-in-task is for
-   defects on correctness/compliance-sensitive paths (e.g. 11e's mislabeled pronunciation score, 12's owned
-   error-path); low-value wiring gaps on inert surfaces go to the final audit. Task 12 applied this: its two
-   trivial `mining` pages' `<h1>`/link key swaps are carried to Task 19, not fixed in-task.
+6. **Proportionality/triage — the general rule is `docs/lessons.md` L-014.** Run-scoped application:
+   Task 12's two trivial `mining` `<h1>`/link key swaps are carried to the Task 19 audit, not fixed
+   in-task.
 
 ## ✅ Manual style-guide pass DONE 2026-07-19/20 (the debt Plan 2 left) — 2 commits on master
 
