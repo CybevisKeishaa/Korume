@@ -32,8 +32,8 @@ create table lesson_sources (
 alter table videos add column situation_id uuid references lesson_situations (id);
 alter table videos add column source_id uuid references lesson_sources (id);
 
-create index videos_situation_id_idx on videos (situation_id);
-create index videos_source_id_idx on videos (source_id);
+create index idx_videos_situation_id on videos (situation_id);
+create index idx_videos_source_id on videos (source_id);
 
 alter table lesson_situations enable row level security;
 alter table lesson_sources enable row level security;
