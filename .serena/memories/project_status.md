@@ -30,7 +30,28 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-08) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
+## ▶ NEXT ACTION (updated 2026-08-09) — **Finish the Lessons Registry. It is PAUSED mid-execution on an unmerged branch.**
+
+Branch **`lessons-registry`** (off master `c1a8fa2`), HEAD **`1728eb4`**, working tree clean, **not merged**.
+Tasks 1 and 2 are complete and reviewed; **Task 3's fix round 3 is committed but its scoped re-review has
+not been run** — that is the exact resumption point. Tasks 4, 5 and 6 have not started, then a final
+whole-branch review.
+
+**→ Read `mem:lessons_registry_run_state` before touching anything.** It carries the resumption point, the
+five execution decisions not to re-litigate, the four upstream plan defects this run exposed, and the one
+generalizable lesson still owed to the registry.
+
+Spec `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` · plan
+`docs/superpowers/plans/2026-08-08-lessons-registry.md` · ledger
+`.superpowers/sdd/2026-08-08-lessons-registry/progress.md` (gitignored).
+
+**What already changed on that branch, and matters repo-wide:** `docs/lessons.md` now exists as the single
+canonical home for process lessons (`L-001`–`L-028`), guarded by `docs/lessons.test.ts`, and the lesson
+bodies in this file, `project_status_archive.md`, `l9a_localization_run_state.md` and
+`shadowing_hub_plan_c_run_state.md` have been cut to `L-NNN` pointers. Count entries with
+`grep -c "^### L-" docs/lessons.md`, never from a written figure.
+
+## ▶ THEN (was the next action, still queued) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
 
 Spec **approved and committed**: `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (`e861150`),
 12 decisions R1–R13. **Nothing is implemented yet — the next step is `superpowers:writing-plans` against
