@@ -473,7 +473,8 @@ Update the remaining call sites from Step 1. The common shapes are:
 Run:
 
 ```bash
-npx rg -n --glob '!**/*.md' -g '!supabase/**' '"/videos|`/videos|href="/videos'
+grep -rn --include='*.ts' --include='*.tsx' --include='*.mjs' -E '"/videos|`/videos|href="/videos' . \
+  | grep -v node_modules | grep -v '\.next'
 ```
 
 Expected: only `/api/videos` matches remain. Confirm `git diff --stat` touches no file under `app/api/`, `lib/data/`, or `supabase/`.
