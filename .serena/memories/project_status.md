@@ -38,8 +38,10 @@ Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` **LOCKED
 screens' worth of work, not one. Only C1 is planned so far, deliberately: C2 and C3 get their plans
 after the plan before them merges, so each is written against a real foundation.
 
-**C1 is CODE-COMPLETE and awaiting whole-branch review round 2, then merge.** 36 commits on the branch
-(never pushed, count measured with `git rev-list --count`, not added up from a list). All 11 tasks done;
+**C1 is CODE-COMPLETE, whole-branch review round 2 returned APPROVE, and it is ready to merge.** The
+branch has never been pushed; for its commit count run `git rev-list --count 3ca9966..HEAD` rather than
+trusting a written figure — see `mem:shadowing_hub_plan_c_run_state` correction 1 for why no number is
+recorded here. All 11 tasks done;
 all four human gates approved, D on 2026-08-08. Gate, controller-measured after round 1's fixes: tsc 0 ·
 lint 0 errors / 77 warnings (mix unchanged) · unit **2064/2064 across 230 files** · build ✓ · Playwright
 **13/13** · browser pass 6/6. Both earlier open items are closed: Checkpoint B was approved, and the

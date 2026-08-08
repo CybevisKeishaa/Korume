@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 // `tsconfig.json` sets `allowJs: false`, and next.config.mjs is plain JS whose
 // only typing is a JSDoc `@type` annotation — so TS cannot produce a declaration
-// for it. Suppressed narrowly here, with the shape asserted explicitly below,
-// rather than widening anything to `any` (CLAUDE.md §6).
+// for it. The suppressed binding IS `any`; it is narrowed back at its single use
+// below by an explicit `RedirectRule` cast plus runtime assertions on `source`
+// and `permanent`, so nothing untyped escapes this file (CLAUDE.md §6).
+//
+// `@ts-expect-error` rather than `@ts-ignore` deliberately: it self-destructs.
+// If `allowJs` is ever enabled or a declaration appears, TS raises TS2578 for
+// the now-unused directive, so the suppression fails loudly instead of rotting.
 // @ts-expect-error -- untyped .mjs config module, shape asserted via RedirectRule
 import nextConfig from "./next.config.mjs";
 import { routing } from "@/lib/i18n/routing";

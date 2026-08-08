@@ -8,12 +8,19 @@ four human gates approved, whole-branch review round 1 done and its two blockers
 The earlier version of this memory was stale in ways the whole-branch review caught. Recorded because
 each one is a reusable lesson, not just a typo:
 
-1. **It said "23 commits off master". Never measured.** The real count is **35** (`git rev-list --count
-   3ca9966..HEAD`). The 23 came from counting this file's own commit LIST, which deliberately recorded
-   only implementation commits and omitted the 5 spec/plan commits at the head of the branch and 2
-   `docs(memory)` commits. Worse: the controller put the unmeasured number into the reviewer's dispatch
-   prompt and the reviewer echoed it, so an unverified figure came back looking independently confirmed.
-   **Count, do not add up. And never seed a reviewer with a number you have not measured.**
+1. **It said "23 commits off master". Never measured.** The 23 came from counting this file's own commit
+   LIST, which deliberately recorded only implementation commits and omitted the 5 spec/plan commits at
+   the head of the branch and 2 `docs(memory)` commits. Worse: the controller put the unmeasured number
+   into the reviewer's dispatch prompt and the reviewer echoed it, so an unverified figure came back
+   looking independently confirmed. **Count, do not add up. And never seed a reviewer with a number you
+   have not measured.**
+
+   **This file no longer states a commit count at all — run `git rev-list --count 3ca9966..HEAD`.** The
+   first correction replaced 23 with a measured number and was stale within two commits, because a count
+   is falsified by every commit that follows it, including the merge commit itself. Review round 2 caught
+   that: this file said 35 and `project_status` said 36 while HEAD was 37 — each measured, each measured
+   just before the commit that carried it. A recorded count can never stay right, so recording the
+   *command* is the only version of this fact that keeps its value.
 2. **It said "Task 11 is blocked — do not run it".** Done; Task 11 shipped clean.
 3. **It said "never commit anything under `messages/`".** That rule's premise expired — the user committed
    all 22 VI catalogs themselves at `60abdef`. That commit was load-bearing for a non-obvious reason:
@@ -27,7 +34,7 @@ each one is a reusable lesson, not just a typo:
 |---|---|
 | Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` | **LOCKED** at `22c9d18`, D1–D17 |
 | Plan `docs/superpowers/plans/2026-08-07-shadowing-hub-plan-c1-foundation.md` | 11 tasks, **all complete** |
-| Branch `shadowing-hub-plan-c` | **35 commits** off master `3ca9966`. **Never pushed.** |
+| Branch `shadowing-hub-plan-c` | off master `3ca9966` (= master head). **Never pushed.** Count with `git rev-list --count 3ca9966..HEAD` — deliberately not written down, see correction 1. |
 | Gates | A (1–2) ✅ · B (3–6) ✅ · C (7) ✅ · **D (8–11) ✅ approved 2026-08-08** |
 | Ledger | `.superpowers/sdd/2026-08-07-shadowing-hub-plan-c1-foundation/progress.md` (gitignored) — per-task detail, every fix round, every deferred minor |
 
