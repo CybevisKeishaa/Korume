@@ -105,6 +105,38 @@ describe("PopularStrategyV1", () => {
     expect(await PopularStrategyV1.rank({ userId: "u1", limit: 10 })).toEqual([]);
   });
 
+  it("breaks a genuine tie deterministically, by lesson id ascending", async () => {
+    // Ranking feeds a UI list. Two runs over the exact same underlying data
+    // must render lessons in the exact same order, or the learner sees rows
+    // reshuffle between visits for no reason they can perceive (CLAUDE.md §7:
+    // this logic family — SRS/pitch/difficulty/ranking — requires
+    // deterministic unit tests, not "probably stable" ones).
+    //
+    // "z" and "a" are constructed to tie on the ONLY scoring term this
+    // strategy uses (2 distinct learners each) — so nothing but the
+    // tie-break can decide their order. "z"'s rows are listed FIRST in the
+    // ledger on purpose: a bare `Array.prototype.sort`, which is stable and
+    // would leave equal-scoring entries in their original (insertion) order
+    // if the tie-break comparator term were removed, would then emit
+    // ["z", "a"] — the WRONG order — making this fixture strong enough to
+    // catch a dropped tie-break, not just a coincidentally-correct one.
+    useTables({
+      user_lesson_library: () => ({
+        data: [
+          { lesson_id: "z", user_id: "u1" },
+          { lesson_id: "z", user_id: "u2" },
+          { lesson_id: "a", user_id: "u1" },
+          { lesson_id: "a", user_id: "u2" },
+        ],
+        error: null,
+      }),
+      videos: echoVideos,
+    });
+    const { PopularStrategyV1 } = await import("@/lib/data/lesson-ranking");
+    const result = await PopularStrategyV1.rank({ userId: "u1", limit: 10 });
+    expect(result.map((v) => v.id)).toEqual(["a", "z"]);
+  });
+
   it("identifies itself so a later strategy swap is visible", async () => {
     const { PopularStrategyV1 } = await import("@/lib/data/lesson-ranking");
     expect(PopularStrategyV1.id).toBe("popular-v1");
