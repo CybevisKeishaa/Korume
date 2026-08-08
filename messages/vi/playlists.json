@@ -1,68 +1,68 @@
 {
   "page": {
     "heading": "Danh sách phát",
-    "subtitle": "Sắp xếp video thành danh sách phát để học, hoặc khám phá những danh sách người học khác đã công khai."
+    "subtitle": "Gom những video bạn muốn học thành từng danh sách riêng, hoặc ghé xem những danh sách mà người học khác đã chia sẻ."
   },
   "detailPage": {
     "back": "← Quay lại danh sách phát"
   },
   "tabs": {
     "ariaLabel": "Danh sách phát",
-    "mine": "Danh sách của tôi",
-    "public": "Khám phá công khai",
-    "newPlaylist": "Danh sách phát mới"
+    "mine": "Của tôi",
+    "public": "Khám phá",
+    "newPlaylist": "Tạo danh sách mới"
   },
   "composer": {
-    "nameLabel": "Tên",
+    "nameLabel": "Tên danh sách",
     "descriptionLabel": "Mô tả (tùy chọn)",
-    "create": "Tạo danh sách phát",
+    "create": "Tạo danh sách",
     "creating": "Đang tạo…",
-    "tooManyWithSeconds": "Bạn đã tạo quá nhiều danh sách phát — thử lại sau {seconds} giây.",
-    "tooManyGeneric": "Bạn đã tạo quá nhiều danh sách phát — vui lòng đợi một chút rồi thử lại.",
-    "createError": "Không thể tạo danh sách phát của bạn — vui lòng thử lại."
+    "tooManyWithSeconds": "Bạn tạo hơi nhanh rồi — nghỉ một chút, thử lại sau {seconds} giây nhé.",
+    "tooManyGeneric": "Bạn tạo hơi nhanh rồi — đợi một chút rồi thử lại nhé.",
+    "createError": "Không thể tạo danh sách lúc này. Thử lại nhé."
   },
   "deletedUser": "Người dùng đã xóa",
-  "byOwner": "Bởi {name}",
+  "byOwner": "Của {name}",
   "itemCount": "{count, plural, other {{count} video}}",
   "detail": {
     "public": "Công khai",
     "private": "Riêng tư",
-    "empty": "Danh sách phát này chưa có video nào.",
-    "moveUp": "Di chuyển lên",
-    "moveUpAriaLabel": "Di chuyển lên: {title}",
-    "moveDown": "Di chuyển xuống",
-    "moveDownAriaLabel": "Di chuyển xuống: {title}",
-    "remove": "Xóa khỏi danh sách",
-    "removeError": "Không thể xóa video đó — vui lòng thử lại.",
-    "reorderError": "Không thể sắp xếp lại — vui lòng thử lại."
+    "empty": "Danh sách này vẫn đang trống — thêm vài video vào nhé.",
+    "moveUp": "Đưa lên",
+    "moveUpAriaLabel": "Đưa lên: {title}",
+    "moveDown": "Đưa xuống",
+    "moveDownAriaLabel": "Đưa xuống: {title}",
+    "remove": "Bỏ khỏi danh sách",
+    "removeError": "Không thể bỏ video này khỏi danh sách. Thử lại nhé.",
+    "reorderError": "Không thể sắp xếp lại lúc này. Thử lại nhé."
   },
   "list": {
     "descriptionLabel": "Mô tả",
     "edit": "Sửa",
-    "deleteConfirm": "Xóa danh sách phát này? Không thể hoàn tác.",
+    "deleteConfirm": "Xóa danh sách này nhé? Sau khi xóa sẽ không thể hoàn tác.",
     "makePublicAriaLabel": "Công khai danh sách này",
     "publicLabel": "Công khai",
-    "publicDescription": "Danh sách phát công khai hiển thị với mọi người dùng đã đăng nhập.",
-    "empty": "Chưa có danh sách phát nào — tạo một danh sách để bắt đầu sắp xếp video.",
-    "tooManyWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
-    "tooManyGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút.",
-    "saveError": "Không thể lưu thay đổi của bạn — vui lòng thử lại."
+    "publicDescription": "Danh sách công khai có thể được mọi người dùng đã đăng nhập nhìn thấy.",
+    "empty": "Chưa có danh sách nào — tạo một danh sách để bắt đầu gom những video bạn muốn học nhé.",
+    "tooManyWithSeconds": "Bạn thao tác hơi nhanh rồi — thử lại sau {seconds} giây nhé.",
+    "tooManyGeneric": "Bạn thao tác hơi nhanh rồi — đợi một chút rồi thử lại nhé.",
+    "saveError": "Không thể lưu thay đổi lúc này. Thử lại nhé."
   },
   "publicList": {
-    "empty": "Chưa có danh sách phát công khai nào.",
-    "loadMoreError": "Không thể tải thêm — vui lòng thử lại."
+    "empty": "Chưa có danh sách công khai nào để khám phá.",
+    "loadMoreError": "Không thể tải thêm danh sách. Thử lại nhé."
   },
   "saveButton": {
-    "trigger": "Lưu vào danh sách phát",
-    "loadingPlaylists": "Đang tải danh sách phát của bạn…",
-    "loadListError": "Không thể tải danh sách phát của bạn.",
-    "alreadyInPlaylist": "Video này đã có trong danh sách phát đó.",
-    "tooManyWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
-    "tooManyGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút.",
-    "addError": "Không thể thêm video này — vui lòng thử lại.",
-    "createError": "Không thể tạo danh sách phát đó — vui lòng thử lại.",
-    "newPlaylistNameLabel": "Tên danh sách phát mới",
+    "trigger": "Lưu vào danh sách",
+    "loadingPlaylists": "Đang tìm danh sách của bạn…",
+    "loadListError": "Không thể tải danh sách của bạn. Thử lại nhé.",
+    "alreadyInPlaylist": "Video này đã có trong danh sách đó rồi.",
+    "tooManyWithSeconds": "Bạn thao tác hơi nhanh rồi — thử lại sau {seconds} giây nhé.",
+    "tooManyGeneric": "Bạn thao tác hơi nhanh rồi — đợi một chút rồi thử lại nhé.",
+    "addError": "Không thể thêm video này. Thử lại nhé.",
+    "createError": "Không thể tạo danh sách mới. Thử lại nhé.",
+    "newPlaylistNameLabel": "Tên danh sách mới",
     "createAndAdd": "Tạo & thêm",
-    "added": "Đã lưu vào danh sách phát."
+    "added": "Đã lưu vào danh sách rồi."
   }
 }

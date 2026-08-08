@@ -2,47 +2,47 @@
   "unlocksLabel": "Điều gì đang chờ bạn ở đây",
   "review": {
     "title": "Ôn tập",
-    "body": "Những thẻ đến hạn từ các buổi học sẽ tìm về đây — kanji, từ vựng và những câu bạn từng giữ lại.",
-    "unlocks": "Cứ học như bình thường. Khi có điều cần ôn, hàng đợi sẽ tự xuất hiện."
+    "body": "Những thẻ đến hạn từ các buổi học sẽ tìm về đây — kanji, từ vựng và cả những câu bạn từng giữ lại.",
+    "unlocks": "Cứ học như bình thường. Khi có điều cần ôn, Korume sẽ mang chúng về đây."
   },
   "challenges": {
     "title": "Thử thách",
-    "body": "Những lượt luyện tập ngắn để bạn dành thêm một chút thời gian cho một kỹ năng.",
-    "unlocks": "Chưa có gì ở đây. Thử thách sẽ xuất hiện khi hệ thống này sẵn sàng."
+    "body": "Những lượt luyện tập ngắn, vừa đủ để bạn thử sức thêm một chút ở một kỹ năng nào đó.",
+    "unlocks": "Chưa có gì ở đây cả. Khi hệ thống thử thách sẵn sàng, nó sẽ tự xuất hiện."
   },
   "sensei": {
     "title": "Sensei",
-    "body": "Một nơi để hỏi, nghĩ thành lời, và nhìn lại những gì bạn đã học theo cách của riêng mình.",
-    "unlocks": "Chưa có gì ở đây. Những cuộc luyện nói hiện vẫn ở mục Luyện nói."
+    "body": "Một nơi để hỏi, nghĩ thành lời, và nhìn lại những gì bạn đã học — theo cách của riêng bạn.",
+    "unlocks": "Chưa có gì ở đây. Những cuộc luyện nói hiện vẫn ở mục Luyện nói nhé."
   },
   "roadmap": {
     "title": "Lộ trình",
-    "body": "Một con đường được Korume dần vẽ nên từ chính những gì bạn học, thay vì một giáo trình có sẵn.",
-    "unlocks": "Cứ học tiếp. Cần một chút thời gian học thật để con đường này bắt đầu hiện rõ."
+    "body": "Một con đường Korume dần vẽ nên từ chính những gì bạn thật sự học, chứ không phải từ một giáo trình có sẵn.",
+    "unlocks": "Cứ học tiếp đã. Khi có đủ những buổi học thật, con đường của bạn sẽ bắt đầu hiện rõ."
   },
   "weeklyReport": {
     "title": "Báo cáo tuần",
-    "body": "Một lần nhìn lại thật nhẹ vào cuối tuần — điều gì đã tiến lên, điều gì còn dang dở, và Korume đã nhận ra điều gì.",
-    "unlocks": "Học trọn một tuần. Bản báo cáo đầu tiên sẽ tự tìm đến đây."
+    "body": "Một lần nhìn lại thật nhẹ vào cuối tuần — điều gì đã tiến lên, điều gì còn dang dở, và Korume đã nhận ra điều gì về hành trình của bạn.",
+    "unlocks": "Học trọn một tuần trước nhé. Bản báo cáo đầu tiên sẽ tự tìm đến đây."
   },
   "statistics": {
     "title": "Thống kê",
-    "body": "Những con số nhỏ phía sau hành trình học — thời gian bạn dành ra, độ chính xác và những gì đang dần phủ rộng theo thời gian.",
-    "unlocks": "Chưa có gì ở đây. Khi lịch sử học tập đủ đầy, những con số này sẽ bắt đầu có ý nghĩa."
+    "body": "Những con số phía sau hành trình học — thời gian bạn dành ra, độ chính xác và những gì đang dần rộng hơn theo thời gian.",
+    "unlocks": "Chưa có gì ở đây. Khi lịch sử học tập đủ đầy, những con số này sẽ bắt đầu kể được một câu chuyện."
   },
   "achievements": {
     "title": "Thành tựu",
-    "body": "Những dấu mốc bạn đã đi qua, cùng những điều có thể một ngày nào đó trở thành một phần trong hành trình của bạn.",
-    "unlocks": "Những huy hiệu đầu tiên sẽ xuất hiện khi có điều thật sự đáng để lưu lại."
+    "body": "Những dấu mốc bạn đã đi qua, cùng những điều vẫn đang ở phía trước — biết đâu một ngày nào đó sẽ thành huy hiệu.",
+    "unlocks": "Huy hiệu đầu tiên sẽ xuất hiện khi bạn làm được điều gì đó thật sự đáng để Korume nhớ."
   },
   "settings": {
     "title": "Cài đặt",
     "body": "Tài khoản, ngôn ngữ, chuyển động và những lựa chọn giúp bạn giữ Korume theo cách mình muốn.",
-    "unlocks": "Chưa có gì ở đây. Các lựa chọn về dữ liệu, xuất và xoá dữ liệu sẽ được gom về cùng một nơi."
+    "unlocks": "Chưa có gì ở đây. Các lựa chọn về dữ liệu, xuất và xóa dữ liệu sẽ được gom về cùng một nơi."
   },
   "explore": {
     "title": "Khám phá bài học",
-    "body": "Những bài học trong Korume, được sắp xếp để bạn tình cờ tìm thấy một điều mình muốn học tiếp.",
-    "unlocks": "Chưa có gì ở đây. Không gian khám phá bài học đang được chuẩn bị."
+    "body": "Những bài học trong Korume, được sắp xếp để bạn có thể tình cờ tìm thấy một điều mình muốn học tiếp.",
+    "unlocks": "Chưa có gì ở đây. Không gian khám phá bài học vẫn đang được chuẩn bị."
   }
 }

@@ -1,34 +1,34 @@
 {
-  "title": "Luyện tập nghe chép chính tả",
+  "title": "Luyện nghe chép chính tả",
   "noTranscript": {
-    "title": "Chưa có phụ đề nào",
+    "title": "Chưa có phụ đề",
     "body": "Video này chưa có phụ đề để luyện nghe chép chính tả. Tính năng gửi phụ đề sẽ sớm ra mắt."
   },
   "lineCount": "Dòng {current}/{total}",
   "controls": {
-    "previous": "Dòng trước",
-    "replay": "Phát lại dòng",
-    "next": "Dòng tiếp theo"
+    "previous": "Câu trước",
+    "replay": "Nghe lại câu này",
+    "next": "Câu tiếp theo"
   },
-  "inputLabel": "Gõ lại những gì bạn nghe được (tiếng Nhật)",
-  "submit": "Nộp bài",
-  "submitting": "Đang chấm điểm…",
+  "inputLabel": "Gõ lại những gì bạn nghe được bằng tiếng Nhật",
+  "submit": "Kiểm tra bài",
+  "submitting": "Đang kiểm tra…",
   "reveal": "Xem đáp án",
   "hide": "Ẩn đáp án",
   "errors": {
-    "signIn": "Đăng nhập để nộp bài nghe chép chính tả.",
-    "scoreFailed": "Không thể chấm điểm bài này. Vui lòng thử lại."
+    "signIn": "Đăng nhập để kiểm tra bài nghe chép chính tả của bạn.",
+    "scoreFailed": "Không thể kiểm tra bài này lúc này. Thử lại nhé."
   },
   "accuracy": "Độ chính xác: {accuracy}%",
   "diff": {
     "wrongSr": " sai, đáp án đúng là {expected}",
     "missingSr": " thiếu",
     "extraSr": " thừa, không tính điểm",
-    "summary": "{match} đúng, {wrong} sai, {missing} thiếu, {extra} ký tự thừa (ký tự thừa được hiển thị nhưng không tính điểm)."
+    "summary": "{match} đúng, {wrong} sai, {missing} thiếu, {extra} ký tự thừa (ký tự thừa vẫn được hiển thị nhưng không tính điểm)."
   },
   "legend": {
     "wrong": "sai",
-    "missing": "thiếu (được tính)",
-    "extra": "<strike>thừa</strike> — được hiển thị, không tính điểm"
+    "missing": "thiếu — vẫn được tính",
+    "extra": "<strike>thừa</strike> — được hiển thị nhưng không tính điểm"
   }
 }

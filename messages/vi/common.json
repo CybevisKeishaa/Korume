@@ -1,13 +1,17 @@
 {
   "appName": "Korume",
   "appNameJp": "Korume",
-  "auth": { "signIn": "Đăng nhập", "signOut": "Đăng xuất", "signUp": "Tạo tài khoản" },
+  "auth": {
+    "signIn": "Đăng nhập",
+    "signOut": "Đăng xuất",
+    "signUp": "Tạo tài khoản"
+  },
   "meta": {
-    "defaultTitle": "Korume — Học tiếng Nhật qua video",
-    "description": "Học tiếng Nhật qua shadowing video, kanji, từ vựng, ngữ pháp và luyện thi JLPT."
+    "defaultTitle": "Korume — Học tiếng Nhật qua những điều bạn yêu thích",
+    "description": "Học tiếng Nhật qua shadowing, video thực tế, kanji, từ vựng, ngữ pháp và luyện thi JLPT."
   },
   "actions": {
-    "save": "Lưu",
+    "save": "Lưu lại",
     "cancel": "Hủy",
     "delete": "Xóa",
     "close": "Đóng",
@@ -15,42 +19,48 @@
     "next": "Tiếp theo",
     "retry": "Thử lại",
     "review": "Ôn tập",
-    "loadMore": "Tải thêm",
+    "loadMore": "Xem thêm",
     "confirmYes": "Có, {label}"
   },
   "states": {
     "loading": "Đang tải…",
-    "error": "Đã có lỗi xảy ra.",
+    "error": "Có gì đó chưa đúng.",
     "empty": "Chưa có gì ở đây."
   },
   "errors": {
-    "network": "Lỗi kết nối mạng — kiểm tra kết nối và thử lại."
+    "network": "Kết nối có vẻ đang gặp chút vấn đề. Hãy thử lại nhé."
   },
   "a11y": {
     "closeDialog": "Đóng hộp thoại",
     "dismissNotification": "Bỏ qua thông báo",
-    "levelFilter": "Cấp độ JLPT"
+    "levelFilter": "Lọc theo cấp độ JLPT"
   },
-  "filters": { "all": "Tất cả" },
-  "noThumbnail": "Không có ảnh xem trước",
+  "filters": {
+    "all": "Tất cả"
+  },
+  "noThumbnail": "Chưa có ảnh xem trước",
   "recommendations": {
-    "heading": "Đề xuất cho bạn",
-    "loading": "Đang tìm video phù hợp với trình độ của bạn…",
-    "empty": "Chưa có đề xuất nào — <link>nhập video</link> để bắt đầu.",
-    "knownWords": "{percent}% số từ bạn đã biết",
-    "band": { "ideal": "Vừa sức", "tooEasy": "Ôn tập dễ", "tooHard": "Thử thách" }
+    "heading": "Có thể bạn sẽ thích",
+    "loading": "Đang tìm những video vừa sức với bạn…",
+    "empty": "Chưa có đề xuất nào — <link>thêm một video</link> để bắt đầu.",
+    "knownWords": "{percent}% từ bạn đã biết",
+    "band": {
+      "ideal": "Vừa sức",
+      "tooEasy": "Nhẹ nhàng",
+      "tooHard": "Thử sức"
+    }
   },
   "srs": {
     "progress": "{current} / {total}",
     "showAnswer": "Xem đáp án",
     "spaceHint": "(Space)",
-    "again": "Lại",
+    "again": "Xem lại",
     "hard": "Khó",
-    "good": "Tốt",
+    "good": "Ổn",
     "easy": "Dễ",
-    "empty": "Chưa có gì để ôn tập.",
-    "complete": "Hoàn thành phiên ôn tập 🎉",
-    "reviewedCount": "{count, plural, other {Bạn đã ôn tập {count} thẻ.}}",
+    "empty": "Chưa có gì cần ôn lúc này.",
+    "complete": "Vậy là xong phiên ôn tập.",
+    "reviewedCount": "{count, plural, other {Bạn đã ôn lại {count} thẻ.}}",
     "done": "Xong"
   }
 }

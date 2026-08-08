@@ -1,18 +1,18 @@
 {
   "title": "Bài học",
-  "subtitle": "Luyện shadowing và học tiếng Nhật qua video YouTube. Dán liên kết để thêm video.",
+  "subtitle": "Mang một video YouTube về đây để shadowing và học tiếng Nhật từ những gì bạn thật sự muốn xem.",
   "yourVideos": "Video của bạn",
-  "empty": "Chưa có video nào — dán URL YouTube ở trên để bắt đầu.",
+  "empty": "Chưa có video nào ở đây — dán một URL YouTube vào để bắt đầu nhé.",
   "pendingReview": "Riêng tư",
   "urlLabel": "URL YouTube",
-  "import": "Nhập video",
-  "importing": "Đang nhập…",
+  "import": "Mang video về",
+  "importing": "Đang mang video về…",
   "errors": {
-    "invalidUrl": "Đây không phải là URL YouTube hợp lệ.",
-    "sessionExpired": "Phiên đăng nhập của bạn đã hết hạn — vui lòng đăng nhập lại.",
-    "fetchFailed": "Không thể lấy thông tin video đó. Kiểm tra lại liên kết rồi thử lại.",
-    "rateLimited": "Quá nhiều lượt nhập video — thử lại sau {seconds} giây.",
-    "rateLimitedGeneric": "Quá nhiều lượt nhập video — vui lòng đợi một chút rồi thử lại.",
-    "generic": "Đã có lỗi khi nhập video đó. Vui lòng thử lại."
+    "invalidUrl": "Hmm, hình như đây chưa phải là một URL YouTube hợp lệ.",
+    "sessionExpired": "Phiên đăng nhập của bạn đã hết hạn — đăng nhập lại rồi mình tiếp tục nhé.",
+    "fetchFailed": "Korume không lấy được thông tin video này. Kiểm tra lại liên kết rồi thử lại nhé.",
+    "rateLimited": "Bạn mang video về hơi nhanh rồi — thử lại sau {seconds} giây nhé.",
+    "rateLimitedGeneric": "Bạn mang video về hơi nhanh rồi — nghỉ một chút rồi thử lại nhé.",
+    "generic": "Có chút trục trặc khi mang video này về. Thử lại nhé."
   }
 }

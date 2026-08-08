@@ -1,32 +1,32 @@
 {
   "page": {
     "heading": "Luyện hội thoại",
-    "subtitle": "Luyện tập các tình huống thực tế cùng bạn hội thoại AI — bằng chữ hoặc bằng giọng nói."
+    "subtitle": "Thử những tình huống đời thường cùng bạn hội thoại AI — bạn có thể gõ hoặc nói."
   },
   "picker": {
     "levelLabel": "Cấp độ (tùy chọn — mặc định theo hồ sơ của bạn)",
-    "useProfileLevel": "Dùng cấp độ trong hồ sơ của tôi"
+    "useProfileLevel": "Dùng cấp độ trong hồ sơ"
   },
   "scenarios": {
     "restaurant": {
       "label": "Nhà hàng (レストラン)",
-      "description": "Gọi món, hỏi về thực đơn, và thanh toán hóa đơn."
+      "description": "Gọi món, hỏi về thực đơn và thanh toán — cứ thử như đang ngồi trong một nhà hàng thật."
     },
     "interview": {
       "label": "Phỏng vấn xin việc (面接)",
-      "description": "Trả lời các câu hỏi phỏng vấn thường gặp bằng tiếng Nhật lịch sự."
+      "description": "Luyện trả lời những câu hỏi thường gặp trong một buổi phỏng vấn bằng tiếng Nhật lịch sự."
     },
     "shopping": {
       "label": "Mua sắm (買い物)",
-      "description": "Hỏi về kích cỡ, giá cả, và thử đồ tại cửa hàng."
+      "description": "Hỏi về kích cỡ, giá cả và thử đồ — giống như một buổi mua sắm thật."
     },
     "directions": {
       "label": "Hỏi đường (道案内)",
-      "description": "Hỏi đường đến một nơi nào đó và hiểu câu trả lời."
+      "description": "Hỏi đường đến một nơi nào đó, rồi thử nghe và hiểu câu trả lời."
     },
     "free-talk": {
       "label": "Trò chuyện tự do (フリートーク)",
-      "description": "Một cuộc trò chuyện mở về bất cứ điều gì bạn thích."
+      "description": "Không cần kịch bản. Muốn nói gì thì nói, chủ đề nào cũng được."
     },
     "fallback": "Hội thoại"
   },
@@ -35,37 +35,37 @@
     "pastSessionsHeading": "Các phiên trước",
     "back": "← Quay lại",
     "noMessagesReadOnly": "Phiên này chưa có tin nhắn nào.",
-    "noMessagesStart": "Hãy chào hỏi để bắt đầu.",
-    "truncatedNotice": "Câu trả lời của AI đã được rút gọn cho vừa — có thể bị cắt ngắn.",
+    "noMessagesStart": "Bắt đầu bằng một lời chào nhé.",
+    "truncatedNotice": "Câu trả lời của AI đã được rút gọn cho vừa màn hình — một phần có thể đã bị cắt.",
     "messageLabel": "Tin nhắn",
-    "messagePlaceholder": "Nhập câu trả lời của bạn bằng tiếng Nhật…",
-    "voicePendingNotice": "Bản nhận dạng giọng nói của AI — hãy kiểm tra trước khi gửi.",
+    "messagePlaceholder": "Nhập câu trả lời bằng tiếng Nhật…",
+    "voicePendingNotice": "Đây là nội dung được nhận dạng từ giọng nói — kiểm tra lại một chút trước khi gửi nhé.",
     "send": "Gửi",
     "endSession": "Kết thúc phiên",
     "ending": "Đang kết thúc…",
-    "notConfigured": "Tính năng hội thoại AI chưa được thiết lập. Vui lòng thử lại sau.",
-    "tooManyMessagesWithSeconds": "Bạn đã gửi quá nhiều tin nhắn — thử lại sau {seconds} giây.",
-    "tooManySessionsWithSeconds": "Bạn đã tạo quá nhiều phiên — thử lại sau {seconds} giây.",
-    "tooManySessionsGeneric": "Bạn đã tạo quá nhiều phiên — vui lòng đợi một chút rồi thử lại.",
-    "tooManyRequestsWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
-    "tooManyRequestsGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút rồi thử lại.",
-    "errorStartSession": "Không thể bắt đầu phiên hội thoại.",
-    "errorSendMessage": "Không thể gửi tin nhắn.",
-    "errorEndSession": "Không thể kết thúc phiên hội thoại."
+    "notConfigured": "Tính năng hội thoại AI chưa được thiết lập. Hãy thử lại sau nhé.",
+    "tooManyMessagesWithSeconds": "Bạn gửi hơi nhanh — chậm lại một chút rồi thử lại sau {seconds} giây nhé.",
+    "tooManySessionsWithSeconds": "Bạn tạo phiên hơi nhanh đấy — thử lại sau {seconds} giây nhé.",
+    "tooManySessionsGeneric": "Bạn tạo khá nhiều phiên rồi — nghỉ một chút rồi quay lại nhé.",
+    "tooManyRequestsWithSeconds": "Có hơi nhiều yêu cầu cùng lúc — thử lại sau {seconds} giây nhé.",
+    "tooManyRequestsGeneric": "Có hơi nhiều yêu cầu cùng lúc — đợi một chút rồi thử lại nhé.",
+    "errorStartSession": "Không thể bắt đầu phiên hội thoại. Thử lại nhé.",
+    "errorSendMessage": "Không thể gửi tin nhắn. Thử lại nhé.",
+    "errorEndSession": "Không thể kết thúc phiên hội thoại. Thử lại nhé."
   },
   "history": {
-    "empty": "Chưa có phiên nào trước đây — hãy bắt đầu một phiên ở trên.",
+    "empty": "Chưa có phiên nào — bắt đầu một phiên ở trên nhé.",
     "ended": "Đã kết thúc",
     "inProgress": "Đang diễn ra"
   },
   "voiceRecorder": {
-    "notConfigured": "Tính năng nhập bằng giọng nói chưa được thiết lập. Bạn vẫn có thể gõ tin nhắn.",
-    "tooManyWithSeconds": "Quá nhiều yêu cầu giọng nói — thử lại sau {seconds} giây.",
-    "tooManyGeneric": "Quá nhiều yêu cầu giọng nói — vui lòng đợi một chút rồi thử lại.",
-    "transcribeFailed": "Không thể nhận dạng bản ghi âm này. Hãy thử lại.",
-    "genericError": "Đã xảy ra lỗi khi nhận dạng giọng nói của bạn. Vui lòng thử lại.",
-    "conversionFailed": "Chúng tôi không thể xử lý bản ghi âm này. Vui lòng thử lại.",
-    "requestingPermission": "Đang yêu cầu quyền truy cập micro…",
+    "notConfigured": "Tính năng nhập bằng giọng nói chưa được thiết lập. Bạn vẫn có thể gõ tin nhắn như bình thường.",
+    "tooManyWithSeconds": "Có hơi nhiều yêu cầu giọng nói — thử lại sau {seconds} giây nhé.",
+    "tooManyGeneric": "Có hơi nhiều yêu cầu giọng nói — đợi một chút rồi thử lại nhé.",
+    "transcribeFailed": "Không thể nhận dạng bản ghi âm này. Thử lại một lần nữa nhé.",
+    "genericError": "Có lỗi khi nhận dạng giọng nói. Hãy thử lại nhé.",
+    "conversionFailed": "Không thể xử lý bản ghi âm này. Hãy thử lại nhé.",
+    "requestingPermission": "Đang xin quyền truy cập micro…",
     "recording": "Đang ghi âm…",
     "transcribing": "Đang nhận dạng giọng nói…",
     "stopRecording": "Dừng ghi âm",
@@ -73,9 +73,9 @@
   },
   "messageBubble": {
     "notConfigured": "Tính năng phát giọng nói chưa được thiết lập.",
-    "tooManyVoice": "Quá nhiều yêu cầu giọng nói — thử lại sau ít phút.",
+    "tooManyVoice": "Có hơi nhiều yêu cầu giọng nói — đợi một chút rồi thử lại nhé.",
     "playFailed": "Không thể phát tin nhắn này.",
-    "networkError": "Lỗi kết nối mạng — không thể phát tin nhắn này.",
+    "networkError": "Kết nối mạng có vấn đề — không thể phát tin nhắn này.",
     "play": "▶ Phát",
     "pronunciationScoreTitle": "Điểm phát âm cho tin nhắn này",
     "pronunciationLabel": "発音"
@@ -83,7 +83,7 @@
   "corrections": {
     "aiGenerated": "Do AI tạo",
     "heading": "Sửa lỗi",
-    "empty": "Lần này không có lỗi nào — rất tốt!",
+    "empty": "Lần này không có lỗi nào — tốt lắm!",
     "resultsAriaLabel": "Kết quả phiên hội thoại"
   }
 }

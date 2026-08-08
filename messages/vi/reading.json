@@ -1,58 +1,58 @@
 {
   "page": {
     "title": "Bài đọc",
-    "subtitle": "Luyện đọc hiểu tiếng Nhật theo cấp độ JLPT, với câu hỏi trắc nghiệm và tra từ ngay trong bài đọc."
+    "subtitle": "Đọc những đoạn tiếng Nhật vừa sức theo từng cấp độ JLPT, rồi thử xem mình hiểu được đến đâu."
   },
   "list": {
     "filterAria": "Lọc theo cấp độ JLPT",
     "all": "Tất cả",
-    "loading": "Đang tải bài đọc…",
-    "errorLoad": "Không thể tải bài đọc. Vui lòng thử lại.",
-    "emptyAll": "Chưa có bài đọc nào.",
-    "emptyAtLevel": "Chưa có bài đọc nào ở cấp độ này.",
+    "loading": "Đang tìm bài đọc…",
+    "errorLoad": "Không thể tải bài đọc lúc này. Thử lại nhé.",
+    "emptyAll": "Chưa có bài đọc nào ở đây.",
+    "emptyAtLevel": "Cấp độ này chưa có bài đọc nào.",
     "readPassage": "Đọc bài"
   },
   "detail": {
-    "back": "← Tất cả bài đọc",
-    "loading": "Đang tải bài đọc…",
-    "notFound": "Không tìm thấy bài đọc.",
-    "errorLoad": "Không thể tải bài đọc này. Vui lòng thử lại.",
-    "quizHeading": "Câu hỏi đọc hiểu"
+    "back": "← Quay lại bài đọc",
+    "loading": "Đang mở bài đọc…",
+    "notFound": "Không tìm thấy bài đọc này.",
+    "errorLoad": "Không thể mở bài đọc này. Thử lại nhé.",
+    "quizHeading": "Thử xem mình hiểu đến đâu"
   },
   "wordCount": "{count} từ",
-  "wordCountUnknown": "Không rõ số từ",
+  "wordCountUnknown": "Chưa rõ số từ",
   "body": {
     "heading": "Bài đọc",
-    "noFurigana": "Bài đọc này không có dữ liệu furigana — hãy tra theo câu thay vì theo từ."
+    "noFurigana": "Bài đọc này chưa có dữ liệu furigana — nếu gặp chữ khó, bạn có thể tra theo câu nhé."
   },
   "furigana": {
     "show": "Hiện furigana",
     "hide": "Ẩn furigana",
-    "unavailable": "Không có furigana",
-    "unavailableTitle": "Bài đọc này không có dữ liệu furigana"
+    "unavailable": "Chưa có furigana",
+    "unavailableTitle": "Bài đọc này chưa có dữ liệu furigana"
   },
   "translation": {
-    "show": "Hiện bản dịch"
+    "show": "Xem bản dịch"
   },
   "wordLookup": {
-    "lookUp": "Tra: {word}",
+    "lookUp": "Tra từ: {word}",
     "close": "Đóng",
     "addToFlashcard": "Thêm vào thẻ ghi nhớ",
-    "addToFlashcardExplanation": "Chưa hỗ trợ thêm thẻ ghi nhớ từ bài đọc — tính năng này hiện chỉ hoạt động khi tra từ trong video."
+    "addToFlashcardExplanation": "Tính năng lưu từ trực tiếp từ bài đọc vẫn chưa có. Hiện bạn có thể lưu từ khi tra trong video."
   },
   "quiz": {
-    "noQuestions": "Bài đọc này chưa có câu hỏi nào.",
+    "noQuestions": "Bài đọc này chưa có câu hỏi.",
     "questionLabel": "Câu {index}.",
     "questionAriaLabel": "Câu {index}",
     "correctAnswerBadge": "(Đáp án đúng)",
     "correct": "Đúng",
     "incorrect": "Sai",
-    "submitting": "Đang nộp…",
+    "submitting": "Đang chấm…",
     "submit": "Nộp bài",
     "answeredCount": "Đã trả lời {answered}/{total} câu",
     "resultSummary": "{correct} / {total} câu đúng ({percent}%)",
-    "errorRateLimitWithSeconds": "Bạn đã nộp quá nhiều lần — thử lại sau {seconds} giây.",
-    "errorRateLimit": "Bạn đã nộp quá nhiều lần — vui lòng đợi một chút rồi thử lại.",
-    "errorSubmitFallback": "Không thể nộp câu trả lời. Vui lòng thử lại."
+    "errorRateLimitWithSeconds": "Bạn nộp hơi nhanh rồi — thử lại sau {seconds} giây nhé.",
+    "errorRateLimit": "Bạn nộp hơi nhanh rồi — đợi một chút rồi thử lại nhé.",
+    "errorSubmitFallback": "Không thể nộp câu trả lời lúc này. Thử lại nhé."
   }
 }

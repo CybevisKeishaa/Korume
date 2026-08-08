@@ -1,26 +1,26 @@
 {
   "page": {
     "heading": "Bảng xếp hạng",
-    "subtitle": "Tổng quan tiến độ hằng tuần của bạn, và (nếu bạn tham gia) cách bạn so sánh với những người học khác."
+    "subtitle": "Xem tuần này bạn đã đi được bao xa — và nếu muốn, thử xem mình đang ở đâu giữa những người học khác."
   },
   "board": {
-    "yourWeekHeading": "Tuần của bạn",
+    "yourWeekHeading": "Tuần này của bạn",
     "xpThisWeek": "XP tuần này",
-    "zeroXp": "Học điều gì đó trong tuần này để bắt đầu kiếm XP.",
+    "zeroXp": "Tuần mới bắt đầu rồi. Học một chút để kiếm XP đầu tiên nhé.",
     "rank": "Hạng {rank}",
-    "notOptedInRank": "Tham gia để xem thứ hạng của bạn giữa những người học khác.",
-    "communityHeading": "Người học dẫn đầu tuần này",
-    "empty": "Chưa có ai tham gia — hãy tham gia ở trên để trở thành người đầu tiên xuất hiện.",
+    "notOptedInRank": "Tham gia bảng xếp hạng nếu bạn muốn xem mình đang đứng ở đâu.",
+    "communityHeading": "Những người học nổi bật tuần này",
+    "empty": "Chưa có ai tham gia cả — nếu muốn, bạn có thể là người đầu tiên xuất hiện ở đây.",
     "deletedUser": "Người dùng đã xóa",
     "youSuffix": "(bạn)",
     "xpSuffix": "XP"
   },
   "optIn": {
     "ariaLabel": "Hiển thị trên bảng xếp hạng",
-    "question": "Hiển thị trên bảng xếp hạng?",
-    "explanation": "Tên và điểm XP hàng tuần của bạn sẽ hiển thị với những người dùng khác.",
-    "tooManyWithSeconds": "Quá nhiều yêu cầu — thử lại sau {seconds} giây.",
-    "tooManyGeneric": "Quá nhiều yêu cầu — vui lòng đợi một chút.",
-    "updateError": "Không thể cập nhật — vui lòng thử lại."
+    "question": "Muốn xuất hiện trên bảng xếp hạng không?",
+    "explanation": "Tên và XP bạn kiếm được trong tuần sẽ được hiển thị với những người học khác.",
+    "tooManyWithSeconds": "Bạn thao tác hơi nhanh — thử lại sau {seconds} giây nhé.",
+    "tooManyGeneric": "Bạn thao tác hơi nhanh — đợi một chút rồi thử lại nhé.",
+    "updateError": "Chưa thể cập nhật lựa chọn này. Thử lại nhé."
   }
 }

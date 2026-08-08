@@ -1,7 +1,7 @@
 {
   "title": "Đề thi thử JLPT",
   "subtitleCount": "{count, plural, other {{count} đề thi}}",
-  "recentAttempts": "Lượt làm bài gần đây",
+  "recentAttempts": "Những lần làm gần đây",
   "sections": {
     "vocab": "Từ vựng",
     "grammar": "Ngữ pháp",
@@ -15,24 +15,24 @@
     "language_knowledge_reading": "Kiến thức ngôn ngữ + Đọc hiểu"
   },
   "attemptList": {
-    "empty": "Chưa có lượt làm bài nào — hãy làm một đề ở trên để xem lịch sử điểm số tại đây.",
-    "unknownTest": "Đề không xác định",
+    "empty": "Chưa có lần làm nào. Chọn một đề ở trên và thử sức nhé — kết quả sẽ được lưu lại ở đây.",
+    "unknownTest": "Đề thi chưa xác định",
     "fullMock": "Thi thử toàn bộ",
     "sectionLabel": "Phần: {section}"
   },
   "preStart": {
-    "fullMockDescription": "Bài thi thử toàn bộ — tất cả các phần.",
-    "sectionPracticeDescription": "Luyện tập theo phần — {section}.",
+    "fullMockDescription": "Một lượt thi thử đầy đủ — đi qua tất cả các phần của đề.",
+    "sectionPracticeDescription": "Tập trung vào một phần — {section}.",
     "questionsLabel": "Số câu hỏi",
     "timeLimitLabel": "Thời gian làm bài",
     "durationMinutes": "{minutes} phút",
-    "instructions": "Đồng hồ đếm ngược bắt đầu ngay khi bạn nhấn Bắt đầu và tự động nộp bài khi hết giờ. Bạn có thể di chuyển tự do giữa các câu hỏi và thay đổi câu trả lời cho đến khi nộp bài.",
+    "instructions": "Đồng hồ sẽ bắt đầu ngay khi bạn nhấn Bắt đầu. Hết giờ, bài sẽ được tự động nộp. Bạn có thể thoải mái chuyển qua lại giữa các câu và thay đổi câu trả lời trước khi nộp.",
     "start": "Bắt đầu"
   },
   "testCard": {
     "sectionSummary": "{count} câu hỏi · {minutes} phút",
-    "takeFullMock": "Làm bài thi thử toàn bộ",
-    "practiceSection": "Luyện tập {section}"
+    "takeFullMock": "Làm thử toàn bộ đề",
+    "practiceSection": "Luyện {section}"
   },
   "testList": {
     "empty": "Chưa có đề thi JLPT nào ở cấp độ này."
@@ -53,26 +53,26 @@
   "resultsPanel": {
     "title": "Kết quả",
     "scoreLine": "{correct} / {total} đúng ({percent}%)",
-    "passEstimateAria": "Ước tính đậu/rớt",
+    "passEstimateAria": "Ước tính kết quả đậu hoặc chưa đạt",
     "estimatedScaledScore": "Điểm quy đổi ước tính",
-    "resultPass": "Kết quả ước tính: Đậu",
-    "resultNotPassed": "Kết quả ước tính: Chưa đạt",
-    "unofficialEstimate": "(ước tính không chính thức — không phải điểm JLPT chính thức)",
+    "resultPass": "Ước tính kết quả: Đậu",
+    "resultNotPassed": "Ước tính kết quả: Chưa đạt",
+    "unofficialEstimate": "(chỉ là ước tính — không phải điểm JLPT chính thức)",
     "meetsMinimum": "✓ đạt mức tối thiểu",
-    "belowMinimum": "dưới mức tối thiểu",
+    "belowMinimum": "chưa đạt mức tối thiểu",
     "pillarScaledScoreAria": "Điểm quy đổi của {pillar}",
     "sectionalMinimum": "Mức tối thiểu theo phần: {value}",
-    "passUnavailable": "Không thể ước tính đậu/rớt",
-    "sectionScores": "Điểm theo từng phần",
+    "passUnavailable": "Chưa thể ước tính kết quả đậu hoặc chưa đạt",
+    "sectionScores": "Điểm từng phần",
     "sectionScoreLine": "{correct} / {total} ({percent}%)",
-    "weaknessBreakdownAria": "Phân tích điểm yếu",
+    "weaknessBreakdownAria": "Phân tích những phần cần cải thiện",
     "whereToFocus": "Nên tập trung vào đâu",
     "weaknessLine": "{section} · {correct} / {total} đúng ({percent}%)",
     "suggestedReview": "Gợi ý ôn tập",
     "questionReview": "Xem lại câu hỏi",
     "questionNumber": "Câu {index}",
-    "correct": "Đúng.",
-    "incorrect": "Sai.",
+    "correct": "Đúng rồi.",
+    "incorrect": "Chưa đúng.",
     "yourAnswer": "Câu trả lời của bạn: {answer}",
     "notAnswered": "Chưa trả lời",
     "correctAnswer": "Đáp án đúng: {answer}",
@@ -82,26 +82,26 @@
     "timeRemaining": "Thời gian còn lại",
     "fiveMinutesRemaining": "Còn 5 phút.",
     "oneMinuteRemaining": "Còn 1 phút.",
-    "timeUp": "Đã hết giờ — đang tự động nộp bài của bạn.",
-    "underOneMinuteLeft": "Còn dưới 1 phút"
+    "timeUp": "Hết giờ rồi — bài của bạn đang được tự động nộp.",
+    "underOneMinuteLeft": "Còn chưa đến 1 phút"
   },
   "listeningPlayButton": {
-    "notConfigured": "Chức năng phát âm thanh chưa được thiết lập.",
+    "notConfigured": "Tính năng phát âm thanh chưa được thiết lập.",
     "loading": "Đang tải âm thanh…",
     "play": "▶ Phát âm thanh",
     "replay": "▶ Phát lại âm thanh",
-    "rateLimited": "Quá nhiều yêu cầu âm thanh — vui lòng thử lại sau ít phút.",
-    "genericError": "Không thể phát âm thanh.",
-    "networkError": "Lỗi kết nối mạng — không thể phát âm thanh."
+    "rateLimited": "Âm thanh đang được yêu cầu hơi nhiều — đợi một chút rồi thử lại nhé.",
+    "genericError": "Không thể phát âm thanh lúc này.",
+    "networkError": "Kết nối mạng có vấn đề — không thể phát âm thanh."
   },
   "testRunner": {
     "fullMockTest": "Thi thử toàn bộ",
-    "sectionPractice": "Luyện tập theo phần · {section}",
+    "sectionPractice": "Luyện theo phần · {section}",
     "previous": "Trước",
     "submitTest": "Nộp bài",
     "submitting": "Đang nộp bài…",
-    "confirmSubmit": "{count, plural, other {Bạn còn {count} câu chưa trả lời. Nhấn Nộp bài một lần nữa để nộp.}}",
-    "submitFailedGeneric": "Không thể nộp bài của bạn. Vui lòng thử lại.",
+    "confirmSubmit": "{count, plural, other {Bạn còn {count} câu chưa trả lời. Nếu chắc chắn muốn nộp, nhấn Nộp bài một lần nữa nhé.}}",
+    "submitFailedGeneric": "Chưa thể nộp bài lúc này. Thử lại nhé.",
     "noQuestions": "Đề này chưa có câu hỏi để luyện tập."
   }
 }
