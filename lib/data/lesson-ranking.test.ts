@@ -1,13 +1,34 @@
 import { describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type TableResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
+
+/**
+ * `user_lesson_library`'s only SELECT policy is owner-only (`user_id =
+ * auth.uid()`), so the ledger read MUST go through the service-role client
+ * — see the "reads the popularity ledger through the service-role client"
+ * test below. Every other table in this file (`videos`) stays behind the
+ * caller-scoped client on purpose, since RLS on `videos` is a feature the
+ * "drops a ranked lesson RLS hid" test below depends on.
+ */
+const SERVICE_TABLES = new Set(["user_lesson_library"]);
 
 function useTables(tables: Record<string, TableResolver>) {
-  const supabase = createMockSupabase({ user: { id: "u1" }, tables });
+  const clientTables: Record<string, TableResolver> = {};
+  const serviceTables: Record<string, TableResolver> = {};
+  for (const [name, resolver] of Object.entries(tables)) {
+    (SERVICE_TABLES.has(name) ? serviceTables : clientTables)[name] = resolver;
+  }
+  const client = createMockSupabase({ user: { id: "u1" }, tables: clientTables });
+  const service = createMockSupabase({ tables: serviceTables });
   vi.mocked(createClient).mockReturnValue(
-    supabase as unknown as ReturnType<typeof createClient>,
+    client as unknown as ReturnType<typeof createClient>,
+  );
+  vi.mocked(createServiceClient).mockReturnValue(
+    service as unknown as ReturnType<typeof createServiceClient>,
   );
 }
 
@@ -135,6 +156,48 @@ describe("PopularStrategyV1", () => {
     const { PopularStrategyV1 } = await import("@/lib/data/lesson-ranking");
     const result = await PopularStrategyV1.rank({ userId: "u1", limit: 10 });
     expect(result.map((v) => v.id)).toEqual(["a", "z"]);
+  });
+
+  it("reads the popularity ledger through the service-role client, never the caller-scoped one", async () => {
+    // user_lesson_library_read (20260731000018_user_lesson_library.sql) is
+    // `user_id = auth.uid()` — owner-only. A caller-scoped client here would
+    // see only the caller's own rows, so "popular" would silently collapse
+    // into "lessons in my library" for every real user (Task 10 review,
+    // Item 1). This asserts the ledger read at the FACTORY level, not just
+    // that the resulting numbers look right, so a regression back to
+    // `createClient()` for this call is caught even if some fixture happens
+    // to produce a plausible-looking count.
+    let serviceReadLedger = false;
+    const service = createMockSupabase({
+      tables: {
+        user_lesson_library: () => {
+          serviceReadLedger = true;
+          return {
+            data: [
+              { lesson_id: "a", user_id: "u1" },
+              { lesson_id: "a", user_id: "u2" },
+            ],
+            error: null,
+          };
+        },
+      },
+    });
+    vi.mocked(createServiceClient).mockReturnValue(
+      service as unknown as ReturnType<typeof createServiceClient>,
+    );
+
+    // The caller-scoped client has NO resolver for user_lesson_library at
+    // all: if the implementation reads the ledger through it instead, the
+    // mock throws immediately (`no resolver registered for table
+    // "user_lesson_library"`) rather than silently returning RLS-filtered
+    // data that could coincidentally look plausible.
+    const client = createMockSupabase({ user: { id: "u1" }, tables: { videos: echoVideos } });
+    vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
+
+    const { PopularStrategyV1 } = await import("@/lib/data/lesson-ranking");
+    await PopularStrategyV1.rank({ userId: "u1", limit: 10 });
+
+    expect(serviceReadLedger).toBe(true);
   });
 
   it("identifies itself so a later strategy swap is visible", async () => {

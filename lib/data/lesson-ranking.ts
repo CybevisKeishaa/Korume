@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 
 /**
@@ -30,9 +31,19 @@ export const PopularStrategyV1: LessonRankingStrategy = {
   id: "popular-v1",
 
   async rank({ limit }): Promise<VideoRow[]> {
-    const supabase = createClient();
-
-    const { data: ledger, error: ledgerError } = await supabase
+    // `user_lesson_library`'s only SELECT policy is owner-only
+    // (`user_lesson_library_read`: `user_id = auth.uid()`, see
+    // 20260731000018_user_lesson_library.sql). Popularity is an aggregate OVER
+    // ALL LEARNERS' libraries, which the caller-scoped (RLS-governed) client
+    // cannot see — it would silently return only the calling user's own rows,
+    // collapsing "popular" into "lessons in my library" for every real user.
+    // This is the same sanctioned exception `lib/data/leaderboard.ts` takes
+    // for `xp_events`: nothing per-user crosses the function boundary (the
+    // ledger rows are folded into counts and discarded immediately below),
+    // and `rank()`'s return type is `VideoRow[]` — no user id, no membership
+    // list ever leaves this function. Deliberate RLS bypass, not an oversight.
+    const service = createServiceClient();
+    const { data: ledger, error: ledgerError } = await service
       .from("user_lesson_library")
       .select("lesson_id, user_id");
     if (ledgerError) throw ledgerError;
@@ -52,8 +63,11 @@ export const PopularStrategyV1: LessonRankingStrategy = {
       .slice(0, limit)
       .map(([lessonId]) => lessonId);
 
-    // RLS still applies: a PLUS lesson the viewer cannot read is filtered by
-    // the database, so the returned array may be shorter than `limit`.
+    // Caller-scoped client on purpose here, unlike the ledger read above: RLS
+    // on `videos` is the feature, not the obstacle — a PLUS lesson the
+    // viewer cannot read must still be filtered by the database, so the
+    // returned array may legitimately be shorter than `limit`.
+    const supabase = createClient();
     const { data, error } = await supabase.from("videos").select(VIDEO_COLUMNS).in("id", ranked);
     if (error) throw error;
 
