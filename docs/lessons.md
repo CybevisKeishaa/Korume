@@ -49,7 +49,7 @@ count it cannot go stale.
 
 **Rule:** Recompute any number a decision rests on. When a report says "out of scope", "pre-existing" or "environmental", isolate the variable and prove it.
 **Why:** Reports are written in good faith from a narrower view, and a plausible classification is exactly where a real defect hides. A number costs seconds to recompute and ships if wrong.
-**Evidence:** Token foundation `86328bc` — "3 `text-white` sites, out of scope" was 4 sites at 3.28:1 failing AA, and the pre-branch value had passed at 6.03:1; a reported contrast figure was arithmetically impossible; "1 flaky test" was reported unnamed. · Screen-port workflow `7277ac1` — a reviewer reported "7 lint errors, pre-existing"; the real count was 0 (`L-018`).
+**Evidence:** Token foundation `86328bc` — "3 `text-white` sites, out of scope" was 4 sites at 3.28:1 failing AA, and the pre-branch value had passed at 6.03:1; a reported contrast figure was arithmetically impossible; "1 flaky test" was reported unnamed. · Screen-port workflow `7277ac1` — a reviewer reported "7 lint errors, pre-existing" when the real count was 0 (`L-018`), and a second reviewer called a correction note dishonest for crediting a user ruling that had in fact happened.
 **Applies to:** every subagent report and every review finding, in both directions.
 
 ---

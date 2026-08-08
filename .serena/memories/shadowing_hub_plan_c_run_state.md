@@ -36,7 +36,7 @@ each one is a reusable lesson, not just a typo:
    first correction replaced 23 with a measured number and was stale within two commits, because a count
    is falsified by every commit that follows it, including the merge commit itself. Review round 2 caught
    that: this file said 35 and `project_status` said 36 while HEAD was 37 — each measured, each measured
-   just before the commit that carried it. Rule: `docs/lessons.md` L-002.
+   just before the commit that carried it. Rule: `docs/lessons.md` L-002, L-015.
 2. **It said "Task 11 is blocked — do not run it".** Done; Task 11 shipped clean.
 3. **It said "never commit anything under `messages/`".** That rule's premise expired — the user committed
    all 22 VI catalogs themselves at `60abdef`. That commit was load-bearing for a non-obvious reason:
