@@ -11,28 +11,24 @@ const REFERENCE_PATTERN = /\bL-\d{3}\b/g;
 /** A lesson *definition*. Only headings define ids. */
 const HEADING_PATTERN = /^### (L-\d{3}) — /gm;
 
-const BINARY_EXTENSIONS = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg",
-  ".woff", ".woff2", ".ttf", ".otf", ".eot",
-  ".pdf", ".blend", ".blend1", ".mp3", ".wav", ".webm", ".mp4",
-]);
+/** How many leading bytes to sniff for a NUL byte when classifying binary vs text. */
+const BINARY_SNIFF_BYTES = 8192;
 
 /**
- * Scan source is `git ls-files`, not a directory glob (spec G10). Git already
- * answers "which files belong to this repo", so no exclusion list is needed
- * and gitignored paths — node_modules, .next, .worktrees, .superpowers — are
- * excluded for free.
+ * `git ls-files` is the sole membership boundary (spec G10): it already
+ * answers "which files belong to this repo", so no exclusion list exists to
+ * drift, and gitignored paths — node_modules, .next, .worktrees,
+ * .superpowers — are excluded for free. Binary files are detected by
+ * content, not by a maintained extension list: a NUL byte within the first
+ * BINARY_SNIFF_BYTES bytes marks a file binary, and it is skipped.
  */
-function trackedTextFiles(): string[] {
+function trackedFiles(): string[] {
   const stdout = execFileSync("git", ["ls-files", "-z"], {
     cwd: REPO_ROOT,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
   });
-  return stdout
-    .split("\0")
-    .filter(Boolean)
-    .filter((file) => !BINARY_EXTENSIONS.has(path.extname(file).toLowerCase()));
+  return stdout.split("\0").filter(Boolean);
 }
 
 function definedIds(): string[] {
@@ -45,13 +41,16 @@ describe("lessons registry integrity", () => {
     const defined = new Set(definedIds());
     const dangling: string[] = [];
 
-    for (const file of trackedTextFiles()) {
-      let contents: string;
+    for (const file of trackedFiles()) {
+      let buffer: Buffer;
       try {
-        contents = readFileSync(path.join(REPO_ROOT, file), "utf8");
+        buffer = readFileSync(path.join(REPO_ROOT, file));
       } catch {
         continue; // unreadable or deleted-but-staged; not this guard's concern
       }
+      if (buffer.subarray(0, BINARY_SNIFF_BYTES).includes(0)) continue; // binary
+
+      const contents = buffer.toString("utf8");
       for (const [id] of contents.matchAll(REFERENCE_PATTERN)) {
         if (!defined.has(id)) dangling.push(`${file}: ${id}`);
       }
