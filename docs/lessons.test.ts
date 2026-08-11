@@ -18,9 +18,7 @@ const BINARY_SNIFF_BYTES = 8192;
  * `git ls-files` is the sole membership boundary (spec G10): it already
  * answers "which files belong to this repo", so no exclusion list exists to
  * drift, and gitignored paths — node_modules, .next, .worktrees,
- * .superpowers — are excluded for free. Binary files are detected by
- * content, not by a maintained extension list: a NUL byte within the first
- * BINARY_SNIFF_BYTES bytes marks a file binary, and it is skipped.
+ * .superpowers — are excluded for free.
  */
 function trackedFiles(): string[] {
   const stdout = execFileSync("git", ["ls-files", "-z"], {
@@ -54,6 +52,9 @@ describe("lessons registry integrity", () => {
       } catch {
         continue; // unreadable or deleted-but-staged; not this guard's concern
       }
+      // Binary files are detected by content, not by a maintained extension
+      // list: a NUL byte within the first BINARY_SNIFF_BYTES bytes marks a
+      // file binary, and it is skipped.
       if (buffer.subarray(0, BINARY_SNIFF_BYTES).includes(0)) continue; // binary
 
       const contents = buffer.toString("utf8");

@@ -1,5 +1,7 @@
 # Lessons Registry Implementation Plan
 
+> **Note (added post-merge review, final fix wave):** The lesson bodies below are the as-written-at-planning-time draft. `docs/lessons.md` is authoritative; entries here have since diverged.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give this project's operational lessons one canonical home — `docs/lessons.md`, one entry per lesson under a stable `L-NNN` id — and cut every duplicate restatement down to a pointer.

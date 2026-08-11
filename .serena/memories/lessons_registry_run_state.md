@@ -2,7 +2,7 @@
 
 > **Resume here.** Branch `lessons-registry`, HEAD `1728eb4`, working tree clean, NOT merged.
 > Spec `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` (approved, G1–G10).
-> Plan `docs/superpowers/plans/2026-08-08-lessons-registry.md` (6 tasks, 28 entries written out in full).
+> Plan `docs/superpowers/plans/2026-08-08-lessons-registry.md` (6 tasks; entries written out in full — count with `grep -c "^### L-" docs/superpowers/plans/2026-08-08-lessons-registry.md`, never from a written figure).
 > SDD ledger `.superpowers/sdd/2026-08-08-lessons-registry/progress.md` — **gitignored**; if lost,
 > reconstruct from `git log` and this file. Per-task briefs and reports live beside it.
 
@@ -23,7 +23,7 @@ two findings below as ADDRESSED / NOT ADDRESSED. Then Tasks 4, 5, 6, then the fi
 
 | Task | State |
 |---|---|
-| 1 — registry, 28 entries | ✅ complete, review clean (byte-level diff brief↔file was empty) |
+| 1 — registry, entries per `grep -c "^### L-" docs/lessons.md` | ✅ complete, review clean (byte-level diff brief↔file was empty) |
 | 2 — integrity guard + mutation checks | ✅ complete, 1 fix round, re-review APPROVE |
 | 3 — cut memory sources to pointers | ⏸ **fix round 3 committed, scoped re-review OWED** |
 | 4 — auto-memory stubs (6 files, outside repo) | not started. Produces **no commit** by design |

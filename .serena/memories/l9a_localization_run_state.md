@@ -65,6 +65,14 @@ rediscovered each the hard way; this block exists so no later task rediscovers t
 reinforced #2 (dependency-graph audit) and closed the #4 defect class; #6 (proportionality) is new.
 
 1. Report mutation testing in TWO LAYERS, never one number → `docs/lessons.md` L-007.
+
+   Run-scoped operators for this i18n extraction (i18n-specific detail; the general rule is L-007's):
+
+   | Class | What it mutates | Run against |
+   |---|---|---|
+   | **Catalog mutations** (copy integrity) | append / prepend text, punctuation, ICU placeholder names, rich-text tag names | the pin tests (`messages/en/*.pin.test.ts`) |
+   | **Wiring mutations** (component integrity) | swap two `t()` keys, swap the namespace, point two UI elements at the same key, delete a translated prop so the component falls back to its English default | the RTL tests ONLY — pin tests EXCLUDED |
+
 2. Audit scope from the DEPENDENCY GRAPH, not the plan → `docs/lessons.md` L-023.
 3. Swap-proof render assertions for TYPE-INTERCHANGEABLE values → `docs/lessons.md` L-008.
 
