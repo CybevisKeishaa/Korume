@@ -81,14 +81,31 @@ never leave the route.
 | Figma frame | screenId | route | impl |
 |---|---|---|---|
 | Welcome Companion page | `companion-welcome` | — | none |
-| Companion home | `companion-home` | ❓ `/dashboard`? | built? ❓ |
+| Companion home | `companion-home` | — | none |
 | Companion Diary | `companion-diary` | `/journal` | built |
 | Companion Knowledge Assistant | `companion-knowledge-assistant` | ❓ `/sensei`? | **placeholder** |
-| Learning memory | `learning-memory` | — | none ❓ |
-| Conversation memory | `conversation-memory` | — | none ❓ |
-| Growth Areas | `growth-areas` | — | none ❓ |
+| Learning memory | `learning-memory` | — | none |
+| Conversation memory | `conversation-memory` | — | none |
+| Growth Areas | `growth-areas` | — | none |
 | Roadmap | `roadmap` | `/roadmap` | built |
 | Roadmap detail | `roadmap-detail` | — | none |
+
+**`Companion home` is a separate screen from `/dashboard`, decided 2026-08-11 from the user's
+reference render** (`public/demo/image.png`). Evidence in the render itself: its left nav lists
+**`Dashboard` as its own item**, so the two cannot be the same screen. `/dashboard` stays a
+`repo-only` entry (§3).
+
+The render also settles the companion sub-screens. `companion-home` is a **panel host**, and the
+panels carry `See all →` affordances — so `Learning memory`, `Conversation memory` and
+`Growth Areas` (rendered as *Language Growth*) are each **both** a panel on `companion-home` **and**
+a full screen behind its `See all`. They stay `kind: 'screen'` with no route yet. Panels observed:
+Today's Reflection · Learning Memory · Gentle Suggestions · Language Growth · Personal Vocabulary
+Shelf · Conversation Memories · Things We're Still Practicing · Today's Small Victory · Weekly
+Journey · Companion Diary.
+
+⚠️ The render carries **pre-rebrand branding** — "JapanWeb+" and "NIHONGO CINEMA" — while the code
+rebranded to Korume some time ago. Treat its *structure* as current intent and its *wordmark* as
+stale.
 
 ### Conversation
 | Figma frame | screenId | route | impl |
@@ -117,27 +134,39 @@ never leave the route.
 | Review mistake (after JLPT practice) | `jlpt-phase-test` |
 | Review mistake (more detail) | `jlpt-phase-test` |
 | Empty state (Companion home) | `companion-home` |
-| Today's reflection (panel, fade around) | `companion-home` ❓ |
-| Gentle suggestion drawer | `companion-home` ❓ |
+| Today's reflection (panel, fade around) | `companion-home` ✅ confirmed by the render |
+| Gentle suggestion drawer | `companion-home` ✅ confirmed by the render |
 | Popup create conversation | `conversation-practice` |
 | Quick preview: Conversation practice | `conversation-practice` ❓ |
 | Generate sensei | `companion-knowledge-assistant` ❓ |
 | Generate done | `companion-knowledge-assistant` ❓ |
 | Panel | ❓ **unidentifiable from the name — needs the user** |
 
-### ⚠️ `Loading state` and `Error state` break R11 as written
+### `Loading state` and `Error state` — proposed rule, still under discussion
 
 `T4` requires every `state-variant` to carry a `variantOf` naming an existing `kind: 'screen'`.
 `Empty state (Companion home)` names its parent and is fine. **`Loading state` and `Error state` do
-not** — they read as *global* design-system states belonging to no single screen.
+not** — they are *global* states belonging to no single screen.
 
-Three ways out, and this is a **spec-level call, not an implementation detail**:
-1. They are design-system documentation, not product screens → **excluded from the registry**.
-2. `variantOf` becomes nullable for global states → **amends R11/T4**.
-3. They are arbitrarily parented to one screen → dishonest, records something false.
+The user's clarification (2026-08-11): those two frames have **already been styled to the system's
+colours, type and language**, and are meant as **descriptions of the states**, not destinations. So
+they are a real implementation input — you can cut production markup from them — but nobody ever
+navigates to them.
 
-Recommendation: **option 1**. They document a shared component's states, which is exactly the kind of
-thing R1 says the repo owns. No spec amendment needed.
+**Proposed rule, generalising past these two frames:**
+
+> A state frame belongs to the **screen registry** when it is a state *of one named screen*
+> (`Empty state (Companion home)`). It belongs to the **style guide** when it describes a state that
+> any screen can enter (`Loading state`, `Error state`).
+
+Their home already exists: `/admin/style-guide`, the living style guide built in L9a Plan 2. That is
+where a shared component's states are documented, and R1 puts exactly that class of thing on the repo
+side of the line. **No spec amendment is needed and no dishonest parent is recorded.**
+
+The two rejected alternatives, for the record: making `variantOf` nullable would amend R11/T4 to
+admit a parentless variant; parenting them arbitrarily to one screen would record something false.
+
+⚠️ **Open — the user asked to discuss this further before it is settled.**
 
 ---
 
@@ -147,17 +176,18 @@ thing R1 says the repo owns. No spec amendment needed.
 
 **Already adjudicated by the user 2026-08-11** (see `mem:screen_registry_inputs`) — hide in Phase 2,
 keep the code, do not build further: `/reading`, `/reading/[id]`, `/leaderboard`, `/community`,
-`/community/[id]`, `/community/peer-review`.
+`/community/[id]`, `/community/peer-review`, and **`/vocab`, `/vocab/[id]`, `/vocab/review`**
+("không cần vocab nữa, hoặc ẩn nó đi, có thể sau sẽ dùng" — explicitly reversible). **But see the
+conflict in §4 before acting on the vocab half.**
 
 **Not yet adjudicated:**
 
 | Route | Note |
 |---|---|
 | `/register` | Figma has `Login` but no register frame |
-| `/dashboard` | real screen (`LevelCard`/`StreakCard`/`SrsDueCard`/`BadgesGrid`/`RecommendationSection`) — is `Companion home` this, or a separate screen? |
-| `/vocab`, `/vocab/[id]`, `/vocab/review` | **see §4** |
+| `/dashboard` | real screen (`LevelCard`/`StreakCard`/`SrsDueCard`/`BadgesGrid`/`RecommendationSection`). Confirmed **separate** from `Companion home` (§1) and still frameless |
 | `/review` | the cross-type SRS review hub |
-| `/grammar` | the grammar list (vs `Grammar analysis`, §1) |
+| `/grammar` | the grammar list. `Grammar analysis` is a **new, deliberately unbuilt** feature (§1), so this list stays frameless |
 | `/mining`, `/mining/review` | sentence mining |
 | `/playlists`, `/playlists/[id]` | IA question still open |
 | `/achievements`, `/challenges`, `/statistics` | gamification surfaces |
@@ -168,30 +198,55 @@ keep the code, do not build further: `/reading`, `/reading/[id]`, `/leaderboard`
 
 ---
 
-## 4. ⚠️ The finding that matters most: **Vocab has no design**
+## 4. ⚠️ Vocab: no frame of its own, but the companion design leans on it
 
 `/vocab`, `/vocab/[id]` and `/vocab/review` are built and are a core module in CLAUDE.md §4, and
-**not one frame in this pass covers them.** Kanji has three frames; Grammar has one; Vocab has zero.
+**not one frame in this pass covers them.** Kanji has three frames; Vocab has zero. The user's ruling
+was to hide it, reversibly (§3).
 
-This is the payoff of working Figma-first: one pass over the confirmed list surfaces a real hole in
-the design in a way that route-string matching never did. It is a **finding, not new scope** — the
-ruling (design it, fold it into Kanji, or drop it) is the user's.
+**The conflict, found in the same render that settled Companion home:**
 
-Same shape, lower stakes: `/review`, `/achievements`, `/challenges`, `/statistics` and `/register`.
+1. Its left nav carries a **`Vocabulary`** item, under `LEARN`, between Kanji and Grammar.
+2. `companion-home` hosts a **`PERSONAL VOCABULARY SHELF`** panel with real cards
+   (失礼します · 丁寧 · お疲れ様です · お願いします) and a `See all →`.
+
+So the design that is *most current* treats vocabulary as a first-class part of the product, while
+the ruling hides it. Both cannot hold as stated.
+
+**A plausible reconciliation, needing the user's confirmation, not assumption:** the shelf's cards
+show a **`Confidence` meter** (High / Medium), which the `/vocab` module does not model — its state
+is SM-2 (`srs_stage`, `interval_days`, `ease_factor`). So the shelf is plausibly **companion-owned
+data, not the `/vocab` module**, in which case hiding `/vocab` costs the shelf nothing. If instead
+the shelf reads from `/vocab`, hiding the module breaks a panel on the flagship screen.
+
+The same render also shows **`Reading`** in the nav, which the user separately ruled hidden. Lower
+stakes — no panel depends on it — but it is the same class of conflict.
+
+Frameless with no such conflict: `/review`, `/achievements`, `/challenges`, `/statistics`,
+`/register`.
 
 ---
 
-## 5. Open questions for the user
+## 5. Questions
 
-1. **Vocab** — design it, merge into the Kanji module, or drop it? (§4)
-2. **`Grammar analysis`** — is it a detail screen for a grammar point (no route today), and does the
-   `/grammar` list have a frame at all? (§1)
-3. **`Companion home` vs `/dashboard`** — one screen or two?
-4. **`Companion Knowledge Assistant` → `/sensei`, `Growth Areas` → `/weekly-report`?** Both routes
-   are placeholders today, so this is a mapping question, not an implementation one.
-5. **`Panel`** — which screen is it a state of?
-6. **`Learning memory` / `Conversation memory`** — separate screens, or panels inside
-   `companion-home`?
-7. **`Loading state` / `Error state`** — confirm option 1 in §2 (exclude from the registry).
-8. **`Pronunciation (in shadowing)`** — a state of `shadowing-practice`, or its own route?
-9. **`/playlists`** — own screen, or a tab inside Explore? (carried over)
+### Answered 2026-08-11
+- ~~**Vocab**~~ → hide, reversibly. **Conflict outstanding — §4.**
+- ~~**`Grammar analysis`**~~ → a **new feature, deliberately not built**; the existing `/grammar`
+  list is enough. Entry stays `kind: 'screen'` + `impl: 'none'`. *(Confirm the reading — see below.)*
+- ~~**`Companion home` vs `/dashboard`**~~ → **two separate screens** (§1).
+- ~~**`Learning memory` / `Conversation memory` / `Growth Areas`**~~ → **both** a panel on
+  `companion-home` and a `See all` destination screen (§1).
+- ~~**`Today's reflection` / `Gentle suggestion`**~~ → state-variants of `companion-home` (§2).
+
+### Still open
+1. **§4's vocab conflict** — does the `PERSONAL VOCABULARY SHELF` read from the `/vocab` module, or
+   is it companion-owned data? Decides whether hiding `/vocab` is free or breaks a flagship panel.
+2. **Confirm the `Grammar analysis` reading**: "it's a new feature, we don't need to build it, the
+   existing grammar module is enough" — is that right?
+3. **`Loading state` / `Error state`** — the §2 rule, which the user asked to discuss further.
+4. **`Companion Knowledge Assistant` → `/sensei`? `Growth Areas` → `/weekly-report`?** Both routes
+   are placeholders today, so this is mapping, not implementation.
+5. **`Panel`** — which screen is it a state of? Unidentifiable from the name alone.
+6. **`Pronunciation (in shadowing)`** — a state of `shadowing-practice`, or its own route?
+7. **`/playlists`** — own screen, or a tab inside Explore? (carried over)
+8. **`QuickStart`, `Edit profile`** — screens of their own, or states?
