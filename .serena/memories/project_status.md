@@ -30,11 +30,12 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-08) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
+## ▶ NEXT ACTION (updated 2026-08-11) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
 
 Spec **approved and committed**: `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (`e861150`),
 12 decisions R1–R13. **Nothing is implemented yet — the next step is `superpowers:writing-plans` against
-that spec**, then execution.
+that spec**, then execution. This becomes the live next action once the Lessons Registry (below) merges;
+until then it queues behind that branch's final review.
 
 The measurement that drives it: **44 routes in the repo vs ~56 live Figma frames, diverging in BOTH
 directions.** Figma has Pricing/FAQ/Checkout/Onboarding/Pronunciation-library/FlashCard with no route;
@@ -60,6 +61,33 @@ Open items carried forward:
 - Two copy items parked for the localization/copy pass: the hardcoded English `"Reduce motion"` label with
   no catalog key in either locale, and `"Chưa có gì ở đây"` opening 5 of 10 `vi/upcoming.json` entries
   while `/vi/roadmap` does the same job forward-lookingly.
+
+<details><summary>(delivered, not yet merged) Lessons Registry — branch <code>lessons-registry</code>, final whole-branch review and merge still pending</summary>
+
+All 6 tasks done. `docs/lessons.md` is now the single canonical home for process lessons, guarded by
+`docs/lessons.test.ts` (I1: every `L-NNN` reference in a tracked file resolves to a defined lesson; I2:
+every id is defined exactly once). `CLAUDE.md` §10 (read contract) and §9 (write contract) now govern when
+to consult and when to add to the registry — note `CLAUDE.md` itself carries zero `L-NNN` tokens today, so
+the guard covers it in principle but is not yet exercised by it. Lesson bodies elsewhere — this file,
+`project_status_archive.md`, `l9a_localization_run_state.md`, `shadowing_hub_plan_c_run_state.md` — are cut
+to `L-NNN` pointers. Count entries with `grep -c "^### L-" docs/lessons.md`, never from a written figure.
+
+`L-011` (final-whole-branch-review) is the first entry to reach lesson-entry rule 3's three-evidence
+promotion-*review* threshold and is deliberately not promoted — promotion stays out of this work's scope;
+see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
+
+**Branch is NOT merged.** A final whole-branch review still has to run. → Read `mem:lessons_registry_run_state`
+for the full record, including the two upstream plan-authored defects this run caught — both are now
+Evidence on `L-023`, one of them a restore at `1728eb4`.
+
+**Task 6 gate: tsc/lint/unit all green**, lint matching the pre-branch baseline mix and unit adding exactly
+one test file (`docs/lessons.test.ts`). Task 6 round 1 found and fixed a real `tsc` failure in
+`docs/lessons.test.ts` (`noUncheckedIndexedAccess` on a `matchAll` capture group) that had shipped
+undetected since Task 2, which never ran `tsc`; fixed with a type-guard filter, not a non-null assertion or
+a fallback default, so the guard's detection is unchanged — both mutation checks (I1, I2) were re-proven
+red then green against the fix.
+
+</details>
 
 <details><summary>(completed) Shadowing Hub Plan C1 — merged `bd7f574`, 2026-08-08</summary>
 
@@ -154,26 +182,7 @@ and mounts `AmbientProvider`; `(app)` (nav visible) / `(focus)` (nav mounted, hi
   this question from spec §5.5.
 
 ### Lessons worth carrying
-1. **The final whole-branch review earned its keep for the 5th consecutive plan.** It alone caught
-   that the `(focus)` contract had *removed* the reduce-motion control (CLAUDE.md §2 rule 4) — no
-   per-task review could see it, because each task was individually correct.
-2. **Then the fix for that regression broke the contract the branch existed to build:** mounting the
-   toggle outside the nav turned a 24px strip into a ~130px labelled rail on every authenticated
-   screen. Fixed with a `compact` prop that `sr-only`s the caption. A fix wave needs its own review.
-3. **The three worst defects originated in the spec/plan, not in any subagent.** The plan told the
-   gate to assert `getByRole("navigation", {name: /main/i})` — renaming one i18n string would have
-   greened it forever; it assumed rather than asserted that `/journal` mounts a CompanionAnchor,
-   without which the whole proxy is vacuous; and it described `(immersive)` as having "no toggle"
-   after the user had ruled otherwise.
-4. **Reviewers were wrong twice, both caught by re-measuring.** One reported "7 lint errors,
-   pre-existing" (actual: 0 — it ran `npx eslint` directly over paths `next lint` excludes; always use
-   `npm run lint`). One called a correction note dishonest for crediting a user ruling that had in
-   fact happened.
-5. **A test can prove architecture with zero production instrumentation.** `phaseRequestedRef` makes
-   the Companion phase read fire once per provider lifetime, so counting `/api/user/stats` across a
-   route-group boundary distinguishes a surviving provider from a rebuilt one.
-
-
+Migrated to `docs/lessons.md`: L-003, L-010, L-011, L-012, L-013, L-018.
 
 </details>
 
@@ -197,35 +206,7 @@ none new) · Playwright **6/6** · LCP warm **300ms → 220ms** · font bytes fe
 **169 KB → 82 KB** (only sans + jp preload).
 
 ### Lessons worth carrying (the SDD ledger is deleted; these are the parts that generalise)
-
-1. **The final whole-branch review earned its keep for the 4th consecutive plan** — 5 Important that
-   no per-task review could see, because each was a contradiction only visible across files:
-   `color-scheme: dark` never declared (so scrollbars/autofill/native selects/the reduce-motion
-   checkbox all stayed light); `--muted` at 1.072:1 used as the hover surface in 34 places and as the
-   resting AI-bubble surface; and two claims the branch itself falsified — one in
-   `navigation-system.md`, one in an i18n string that a **pin test was guarding as correct**.
-2. **A single grep pattern is never a sufficient audit.** This bit twice: Task 6's
-   `bg-<c>/<alpha>` sweep missed `notification-bell` (no alpha suffix), and the fix wave's
-   `hover:bg-muted` sweep missed `select.tsx`'s `data-[highlighted]:bg-muted` — which is the
-   **keyboard-navigation indicator**, so it engaged CLAUDE.md §2 rule 5. Always sweep variants
-   (`data-[…]`, `focus`, `group-hover`, `aria-*`) and hardcoded colours (`text-white`), not one shape.
-3. **Verify subagent claims independently — three of the most consequential findings came from that,
-   not from the reports.** A "3 sites out of scope/correct" note turned out to be 4 sites failing AA
-   at 3.28:1; a contrast figure in a report was arithmetically impossible; a "1 flaky test" needed the
-   flake identified, not assumed.
-4. **A worktree has no `.env.local`** (gitignored). A hand-built stub silently fails every
-   auth-dependent Playwright spec in a way that looks exactly like a code regression — I wrongly
-   suspected the environment, then the branch, before isolating it. Copy the full env before trusting
-   an e2e result, and remove the secrets afterwards.
-5. **`EnterWorktree` was NOT usable here:** its default `worktree.baseRef: fresh` branches from
-   `origin/<default>`, and this repo never pushes, so master runs ahead — the worktree would have
-   lacked the plan and spec. Used `git worktree add` instead. Consider setting `worktree.baseRef: head`.
-6. **Width comparison cannot detect CJK font fallback** — Noto Sans JP and the system fallback both
-   render full-width at exactly 1em. Inspect `@font-face` unicode-ranges instead. Doing so CLOSED
-   spec risk §7.3: despite `subsets: ["latin"]`, Noto Sans JP emits 373 sliced faces, 4 covering
-   U+65E5, 2 reaching `loaded`. CJK is genuinely served.
-7. **The 5-font payload fear did not materialise** — build assets +430 KB, but the page *fetches*
-   half what master did and LCP improved, because only sans + jp preload.
+Migrated to `docs/lessons.md`: L-003, L-011, L-020, L-021, L-022.
 
 ### Open, deliberately deferred
 - ⚠️ **Not verified: `/dashboard` and `/admin/style-guide` in a browser.** Spec §6 asked for a dense
@@ -336,20 +317,13 @@ Vietnamese message ever being ICU-parsed in CI; raw `Error.message` reaching the
 translated error string unreachable).
 **SIX STANDING CONVENTIONS, binding for Tasks 13–19 (user-codified after Tasks 11–12, 2026-07-22) — full
 text in `mem:l9a_localization_run_state` top block "⭐⭐ STANDING CONVENTIONS", put ALL in every implementer
-AND reviewer brief:** (1) report mutation in TWO layers — catalog vs wiring — never one number; (2) audit
-the DEPENDENCY GRAPH not the plan — the plan list has been wrong 5× (translate exported APIs, verify every
-consumer); (3) swap-proof render assertion for any TYPE-INTERCHANGEABLE values (label↔value pairing);
-(4) server-authored diagnostics NEVER reach the DOM — **defect class CLOSED after Task 12** (5 instances all
-fixed; apply the rule to any NEW instance the audit finds, don't hunt); (5) Task 19 exit criterion —
-re-audit `common.*` consumer counts by surface (demote `common.player.*` to `shadowing.*` if still
-single-surface); (6) NEW — proportionality: low-value wiring gaps on pass-through surfaces (key-swap-only,
-no behavioral regression) go to the Task 19 audit, don't expand the current task. The original two are (1)+(5B):
-(A) Mutation testing has **two classes** and a review must report **separate survivor counts** for each:
-**catalog mutations** (append/prepend, punctuation, ICU placeholders, rich tags → prove the
-`messages/en/*.pin.test.ts` literal pins) and **wiring mutations** (swap two `t()` keys, swap the
-namespace, point two elements at one key, delete a translated prop → prove the RTL tests, and must run
-against the **RTL tests ONLY, pin tests excluded**). At 11c the blended number was 0 survivors while the
-RTL-only pass was 5 — the pin tests were masking the gap, and one number cannot show that.
+AND reviewer brief:** (1) mutation in TWO layers → `docs/lessons.md` L-007; (2) audit the DEPENDENCY GRAPH
+not the plan → `docs/lessons.md` L-023; (3) swap-proof render assertion for TYPE-INTERCHANGEABLE values →
+`docs/lessons.md` L-008; (4) server-authored diagnostics NEVER reach the DOM — **defect class CLOSED after
+Task 12** (5 instances all fixed; apply the rule to any NEW instance the audit finds, don't hunt); (5) Task
+19 exit criterion — re-audit `common.*` consumer counts by surface (demote `common.player.*` to
+`shadowing.*` if still single-surface); (6) proportionality → `docs/lessons.md` L-014. The original two are
+(1)+(5B): (A) mutation's two-class separate-survivor-count reporting rule → `docs/lessons.md` L-007.
 (B) When promoting into `common.*`, **record the actual consumer count, naming the unit** — importing
 FILES vs consuming SURFACES differ, and P4 tests MODULES. Measured: `common.player.*` = 3 files but
 **1 surface** (demotion candidate); `common.errors.network` = **2 consumers**, NOT the 28-places/8-modules
@@ -509,11 +483,9 @@ degrade to "not configured". `AZURE_SPEECH_KEY` present but **INVALID — Azure 
 ⚠️ **With a worktree present, `npm test` from the repo root scans it too** — `vitest.config.ts`
 excludes `node_modules`, `.next`, `tests/e2e` but NOT `.worktrees/`. Pass `--exclude ".worktrees/**"`
 or remove the worktree first. Still not fixed in config.
-⚠️ **A worktree has NO `.env.local`** (gitignored, not copied). Without the full env, every
-auth-dependent Playwright spec fails in a way that looks exactly like a code regression. Copy
-`.env.local` from the main checkout before trusting an e2e run there, then remove the secrets.
-`npm run build` (~52s) · `npx playwright test` (**8 e2e**, ~50s; kill any stale node on :3000 first —
-reuseExistingServer picks it up, and it will silently test a stale build) · `npx supabase db reset`
+⚠️ **A worktree has NO `.env.local`** — read `docs/lessons.md` L-020 before trusting any e2e run there.
+`npm run build` (~52s) · `npx playwright test` (**8 e2e**, ~50s; free `:3000` first — `docs/lessons.md`
+L-017) · `npx supabase db reset`
 (15 migrations). ⚠️ `tests/e2e/route-group-provider-identity.spec.ts` needs the seeded FREE-tier video
 in `supabase/seed.sql`, so a fresh machine must run `db reset` before that spec can pass; nothing
 wires the two together.

@@ -30,21 +30,18 @@ each one is a reusable lesson, not just a typo:
    LIST, which deliberately recorded only implementation commits and omitted the 5 spec/plan commits at
    the head of the branch and 2 `docs(memory)` commits. Worse: the controller put the unmeasured number
    into the reviewer's dispatch prompt and the reviewer echoed it, so an unverified figure came back
-   looking independently confirmed. **Count, do not add up. And never seed a reviewer with a number you
-   have not measured.**
+   looking independently confirmed.
 
    **This file no longer states a commit count at all — run `git rev-list --count 3ca9966..HEAD`.** The
    first correction replaced 23 with a measured number and was stale within two commits, because a count
    is falsified by every commit that follows it, including the merge commit itself. Review round 2 caught
    that: this file said 35 and `project_status` said 36 while HEAD was 37 — each measured, each measured
-   just before the commit that carried it. A recorded count can never stay right, so recording the
-   *command* is the only version of this fact that keeps its value.
+   just before the commit that carried it. Rule: `docs/lessons.md` L-002, L-015.
 2. **It said "Task 11 is blocked — do not run it".** Done; Task 11 shipped clean.
 3. **It said "never commit anything under `messages/`".** That rule's premise expired — the user committed
    all 22 VI catalogs themselves at `60abdef`. That commit was load-bearing for a non-obvious reason:
    the 9 pins assert *Vietnamese* strings, so updating them against an uncommitted catalog would be green
-   locally and **red on every clean checkout**. **Copy must be committed BEFORE the pins that
-   characterize it.**
+   locally and **red on every clean checkout**. Rule: `docs/lessons.md` L-027.
 
 ## Where things stand
 
@@ -98,25 +95,7 @@ The user's reasoning for deferring both together: fixing 1 alone would make the 
 safer while the ranking contract is still undecided — false confidence.
 
 ## Standing lessons from this run
-
-1. **An assertion nobody has seen fail is not yet a test.** Three rounds shipped assertions that could not
-   go red. Mutation check is the standing bar: delete the thing, watch it fail, restore.
-2. **The Supabase mock models no RLS**, so every RLS mistake is invisible to the suite. On any query that
-   aggregates across users the check is *which client factory, and what does that table's policy say* —
-   never *is the test green*. Task 10 shipped a cross-user read through `createClient()`; fixed at
-   `84a7c71` by moving **only** the aggregating read to `createServiceClient()`.
-3. **`route-protection.ts` is security-load-bearing on any route rename**, and a test that iterates the
-   list cannot detect a route missing from it. Drive such guards from the filesystem.
-4. **A tool reporting success is not evidence it worked.** `resize_window` returned success twice while
-   `innerWidth` never left 1280. Read the value back.
-5. **Kill `:3000` BEFORE Playwright.** A stale `node.exe` once served a pre-rename build and looked exactly
-   like an auth regression.
-6. **`npx rg` is NOT ripgrep** — it installs an unrelated stub. Use `grep`.
-7. **A plan's file list is a claim, not a fact.** Check existence before trusting "Modify X".
-8. **Diagnose flakes, never wave them through.** After the fixes, `review.spec.ts` failed once — and
-   `/review` was one of the prefixes just added, so a self-inflicted regression had to be excluded, not
-   assumed. Excluded three ways: passes standalone in 3.9s; full suite re-ran 13/13; the failure happens
-   at `/register`, before `/review` is reached. Documented PGRST303 clock-skew flake under parallel load.
+Migrated to `docs/lessons.md`: L-001, L-004, L-005, L-006, L-009, L-017, L-019, L-023.
 
 ## ⚠️ Not proven by any of this
 

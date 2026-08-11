@@ -101,7 +101,7 @@ the root because the harness injects it.
 Fixed, and capped at roughly six lines. Longer than that means two lessons wearing one id.
 
 ```markdown
-### L-014 — An assertion nobody has seen fail is not yet a test
+### L-004 — An assertion nobody has seen fail is not yet a test
 
 **Rule:** Delete the thing the assertion protects, watch the test go red, restore it.
 **Why:** Three separate rounds of Plan C1 shipped assertions that could not go red while the suite stayed green.
@@ -187,7 +187,7 @@ one exclusion that would otherwise be needed, by design rather than by list.
 
 **Both assertions must be mutation-checked** — delete an entry and watch I1 go red; duplicate a heading
 and watch I2 go red; restore. An integrity test for the lesson system that has never been seen to fail
-would be the system's own first violation (L-014).
+would be the system's own first violation (L-004).
 
 Baseline measured 2026-08-08: `git grep -nE "\bL-[0-9]{3}\b"` returns **0 hits**. Every reference that
 ever exists is created by this work or after it, so I1 starts from a clean floor. The sibling convention
