@@ -1,99 +1,107 @@
-# Lessons Registry — run state (PAUSED mid-Task-3, 2026-08-09)
+# Lessons Registry — run state (COMPLETE, awaiting merge, 2026-08-11)
 
-> **Resume here.** Branch `lessons-registry`, HEAD `1728eb4`, working tree clean, NOT merged.
+> Branch `lessons-registry`, off master `c1a8fa2`, HEAD `75fd516`, working tree clean, **not merged**.
+> All 6 tasks done and reviewed. Final whole-branch review + its one fix wave done; re-review returned
+> READY TO MERGE = YES, 0 Critical / 0 Important open.
 > Spec `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` (approved, G1–G10).
-> Plan `docs/superpowers/plans/2026-08-08-lessons-registry.md` (6 tasks; entries written out in full — count with `grep -c "^### L-" docs/superpowers/plans/2026-08-08-lessons-registry.md`, never from a written figure).
-> SDD ledger `.superpowers/sdd/2026-08-08-lessons-registry/progress.md` — **gitignored**; if lost,
-> reconstruct from `git log` and this file. Per-task briefs and reports live beside it.
+> Plan `docs/superpowers/plans/2026-08-08-lessons-registry.md`.
+> SDD ledger `.superpowers/sdd/2026-08-08-lessons-registry/progress.md` — **gitignored**, and deleted at
+> finish by the skill. If it is gone, this file plus `git log` is the record.
 
-## What this is
+## What shipped
 
-`docs/lessons.md` becomes the single canonical home for the project's **process** lessons, one entry per
-lesson under a stable `L-NNN` id; every other artifact references the id and restates nothing. Technical
-gotchas stay in `mem:project_status` § Key gotchas (G1). Four lesson-entry rules keep it from bloating:
-evidence must be an openable artifact; a variant merges into an existing entry's evidence list rather than
-becoming a new entry; three evidence entries trigger a promotion *review*, not a promotion; entry count is
-never a target.
+`docs/lessons.md` is now the single canonical home for the project's **process** lessons, one entry per
+lesson under a stable `L-NNN` id, in seven navigation groups, each entry `Rule` / `Why` / `Evidence` /
+`Applies to`. Everything else references the id and restates nothing. Technical gotchas about this
+codebase stay in `mem:project_status` § Key gotchas (G1) — they were deliberately not migrated.
 
-## Exact resumption point
+Count entries with `grep -c "^### L-" docs/lessons.md`. **Never record that number as a durable fact**
+(`L-002`); this file used to write it and that was itself a violation, fixed at `75fd516`.
 
-**Task 3's fix round 3 is committed at `1728eb4`. Its scoped re-review has NOT been run.** That is the
-next action — `scripts/review-package <plan> c479047 1728eb4`, then `re-review-prompt.md` verdicting the
-two findings below as ADDRESSED / NOT ADDRESSED. Then Tasks 4, 5, 6, then the final whole-branch review.
+- `docs/lessons.test.ts` — the integrity guard. **I1**: every `L-NNN` in any tracked file resolves to a
+  defined entry. **I2**: every id defined exactly once, and at least one exists. Walks `git ls-files`;
+  binary files are detected by sniffing for a NUL byte, **not** by a maintained extension list (G10).
+- In-repo memory sources (`.serena/memories/*.md`) cut from lesson bodies to `L-NNN` pointers.
+- Six auto-memory `feedback-*.md` files outside the repo cut to pointer stubs, plus their `MEMORY.md`
+  index lines. **No test can reach these** (spec §4.2) — verification there is by reading, permanently.
+- `CLAUDE.md` **§10** = the read contract (four concrete moments to read the registry). **§9** gains the
+  write contract as a Definition-of-Done line.
 
-| Task | State |
-|---|---|
-| 1 — registry, entries per `grep -c "^### L-" docs/lessons.md` | ✅ complete, review clean (byte-level diff brief↔file was empty) |
-| 2 — integrity guard + mutation checks | ✅ complete, 1 fix round, re-review APPROVE |
-| 3 — cut memory sources to pointers | ⏸ **fix round 3 committed, scoped re-review OWED** |
-| 4 — auto-memory stubs (6 files, outside repo) | not started. Produces **no commit** by design |
-| 5 — CLAUDE.md §10 read contract + §9 DoD write contract | not started |
-| 6 — full verification + status update | not started |
+## Two emergent guard properties nobody designed but that are worth knowing
 
-Never write a commit count here — run `git rev-list --count c1a8fa2..HEAD` (`mem:project_status` L-002).
+Found by the final review, verified: (a) a malformed heading (`-` for `—`, `##` for `###`) does **not**
+silently un-define an id — the heading line is itself a reference and `docs/lessons.md` is tracked, so
+I1 goes red; (b) deleting an entry that any memory points at also goes red.
 
-## Commits (SHAs are stable facts; the count is not)
-
-`f168ef2` registry · `7529587` guard · `00660bb` guard fix · `e6a987a` cut memories ·
-`2296d1e` cut 2nd/3rd restatement blocks · `c479047` cut Verify-commands restatements ·
-`1728eb4` restore deleted incident + missing L-015 pointer
+**The guard's real blind spot is a correct-but-wrong id.** `Migrated to …: L-003` typed as `L-004` is
+green and the pointer lies. All ~30 hand-written pointers in this branch were checked by the final
+reviewer and are right; nothing automated will check the next thirty.
 
 ## Decisions taken during execution — do not re-litigate
 
-1. **No worktree, by user ruling.** A plain branch off master. Reasoning: the stray-commit failure mode
-   recorded in `docs/lessons.md` L-016 is *worktree-induced*, and this work is docs + one test with no
-   `.env.local` or e2e dependency, so the worktree's main benefit does not apply.
-2. **`BINARY_EXTENSIONS` was deleted, not re-worded** (user adjudication). The guard's binary detection is
-   a NUL-byte content sniff over the first 8192 bytes. `git ls-files` stays the sole membership boundary
-   and there is now genuinely no exclusion list, so **G10 needed no amendment**. The user's reasoning is
-   worth keeping: do not amend a spec to legitimise an implementation that fails its invariant.
+1. **No worktree, by user ruling.** A plain branch off master: `L-016`'s stray-commit failure mode is
+   worktree-induced, and this work is docs + one test with no `.env.local` or e2e dependency.
+2. **`BINARY_EXTENSIONS` was deleted, not re-worded** (user adjudication). Keep the reasoning: do not
+   amend a spec to legitimise an implementation that fails its invariant. G10 needed no amendment.
 3. **`plan_c_hub_ui_inputs.md:36` stays untouched** — conditional advice scoped to one decision is an
-   *application* of a lesson, which spec §1.1 rules is correct usage, not duplication.
-4. **`project_status.md` § Verify commands keeps its warning cues, cut to pointers.** The body lives once;
-   the trigger survives at the point of use. Same shape as the §5.4 auto-memory stub ruling.
-5. **Promotion of L-011 to CLAUDE.md law is deliberately deferred** (spec §7). It qualified for a
-   promotion review on day one with four evidence entries. That review is the user's first call after merge.
+   *application* of a lesson, which spec §1.1 rules correct usage, not duplication.
+4. **`project_status.md` § Verify commands keeps its warning cues, cut to pointers.** The body lives
+   once; the trigger survives at the point of use.
+5. **Promotion to `CLAUDE.md` law is deferred out of scope** (spec §7) — see the open item below.
+6. **User ruling 2026-08-11:** when a cut would orphan content, place it inside the task that found it
+   rather than deferring. This overrode Task 4's "no commit" step and produced `f4991ee`.
 
-## The finding that matters most, and it is not closed
+## What this run actually taught, and it is not what the plan expected
 
-Task 3's review caught a **Critical content-loss defect**: the sentence *"One called a correction note
-dishonest for crediting a user ruling that had in fact happened"* was deleted from `project_status.md`
-and `git grep dishonest` returned **zero hits repo-wide**. Restored at `1728eb4` as a second instance on
-`L-003`'s evidence entry (merge rule — not a new id).
+**Every defect of consequence originated upstream in the plan, none in an implementer.** That is
+`L-013` five times in one branch:
 
-**The generalizable lesson is not yet in the registry:** cutting sources against a written list deletes
-whatever the classification pass missed, and no guard can see it because no id is malformed. This belongs
-as a new **Evidence entry on `L-023`**, not a new entry — add it in Task 6.
+1. Task 2's plan text mandated an exclusion list the spec forbade.
+2. Task 3's plan named one restatement site per file; the real count was five across two files.
+3. Task 3's acceptance grep was too broad and matched a factual record the plan itself said to keep —
+   a false positive inside the plan's own verification step.
+4. Task 1's classification gave one incident no home, so Task 3's pre-written replacement line erased
+   it. **This became a real Critical content loss** — `git grep dishonest` returned zero hits repo-wide
+   before it was restored at `1728eb4`.
+5. Task 4's pre-written stub table assumed six files were fully covered; three were not.
 
-## Plan defects found during execution — all four upstream, none from an implementer
+**The mitigation that worked is now `L-023`'s `Applies to`:** before cutting any source against a
+pre-written list, classify every claim in it to a destination first — anything with no destination is
+an orphan to be placed, never deleted. Added to Task 4's dispatch after defect 4; it caught defect 5
+*before* deletion. Both incidents are `L-023` evidence.
 
-This is `docs/lessons.md` L-013 four times over in one branch, and it is the run's main finding:
+**The other structural finding became `L-029`:** the plan named `npx tsc --noEmit` binding in its Global
+Constraints but scheduled it in exactly one task, the last. Task 2 shipped the guard with `tsc` red;
+Tasks 3, 4 and 5 each passed review on `vitest` alone. It surfaced only at Task 6's gate. A gate a plan
+names but never schedules is a gate nobody runs, and no per-task review can see it.
 
-1. Task 2's plan text mandated an exclusion list while the spec it implemented forbade one.
-2. Task 3's plan named **one** restatement site per file; the real count was **five across two files**
-   (the implementer's own wider search found three of them after the controller found the first).
-3. Task 3's acceptance grep pattern `"earned its keep"` was too broad and matched a factual record the
-   plan itself said to keep — a false positive in the plan's own verification step.
-4. Task 1's classification gave one incident no home, so Task 3's pre-written replacement line erased it.
+## Open, for the user
 
-## Deferred minor (for the final whole-branch review to triage)
-
-Pointer phrasing is inconsistent across the migrated files: `Migrated to docs/lessons.md: …`,
-`Rule: docs/lessons.md L-NNN.`, `See docs/lessons.md L-NNN.`, and `→ docs/lessons.md L-NNN`. Cosmetic;
-deliberately not fixed mid-loop.
+- **`L-011`'s promotion review** (spec §7) — it qualified on day one. The final review found three more
+  entries at or over lesson-entry rule 3's threshold (`L-016`, `L-023`, `L-026`); all four now carry a
+  `Status:` deferral line. **Four parked promotion reviews are the input to that post-merge conversation.**
+- Two spec notes for whenever §4.2/§4.3 is next touched: the correct-but-wrong-id blind spot above, and
+  that `REFERENCE_PATTERN` matches any `L-###` token, so a future unrelated token shaped like one (an
+  error code, a migration label) fails I1 with no exemption short of changing the pattern. Baseline is
+  genuinely 0 today.
+- Deliberately NOT fixed: pointer phrasing varies across migrated files (`Migrated to …` / `Rule:` /
+  `See` / `→`). The final review inventoried all 26 sites, found every one unambiguous, and ruled
+  convergence not worth re-editing the exact lines where this run already lost content once.
 
 ## Environment facts measured this run
 
-- Baseline at `c1a8fa2`: `npx vitest run` → 2064 tests, 2063 pass + **1 known CPU-contention flake**,
-  `components/video-player/pitch-contour.test.tsx`, proven standalone-green 8/8 in 200ms. Not a regression.
+- Baseline at `c1a8fa2`: 2064 unit tests, 2063 pass + **1 known CPU-contention flake**,
+  `components/video-player/pitch-contour.test.tsx`, standalone-green 8/8 in 200ms. Not a regression.
+  HEAD adds this branch's two guard tests; test **file** count up by exactly one.
+- Lint held at 0 errors / 77 warnings, mix `54 no-non-null-assertion + 23 no-unused-vars`, all run.
 - `docs/lessons.test.ts` is picked up with no config change — `vitest.config.ts` includes
   `**/*.test.{ts,tsx}` and does not exclude `docs/`.
-- The guard scans `git ls-files`; at the time of measuring, 916 tracked files, 891 scanned, 25 skipped as
-  binary. `data/state_store.db/mem%3Ahealth.bin` is tracked and genuinely contains NUL bytes.
 - ⚠️ **`grep -qP '\x00'` does NOT reliably detect NUL bytes.** The controller used it, got a false
   negative, and briefly reported "no tracked binaries are scanned" — which was wrong. Use `od -An -tx1`.
   A measurement method that cannot detect the negative case is not a measurement.
 
 ## Related
 
-`mem:project_status` · `mem:shadowing_hub_plan_c_run_state` · the registry itself at `docs/lessons.md`
+`mem:project_status` · `mem:l9a_localization_run_state` (its restored mutation taxonomy is load-bearing
+for L9a Plan 3 Tasks 14–19) · `mem:shadowing_hub_plan_c_run_state` · the registry itself at
+`docs/lessons.md`, which is now the authority for everything this file used to restate.
