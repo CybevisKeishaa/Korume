@@ -34,8 +34,8 @@ SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
 Spec **approved and committed**: `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (`e861150`),
 12 decisions R1–R13. **Nothing is implemented yet — the next step is `superpowers:writing-plans` against
-that spec**, then execution. This becomes the live next action once the Lessons Registry (below) merges;
-until then it queues behind that branch's final review.
+that spec**, then execution. The Lessons Registry that used to queue ahead of this is **merged** (`88c1301`,
+2026-08-11), so this is now live with nothing in front of it.
 
 The measurement that drives it: **44 routes in the repo vs ~56 live Figma frames, diverging in BOTH
 directions.** Figma has Pricing/FAQ/Checkout/Onboarding/Pronunciation-library/FlashCard with no route;
@@ -62,7 +62,7 @@ Open items carried forward:
   no catalog key in either locale, and `"Chưa có gì ở đây"` opening 5 of 10 `vi/upcoming.json` entries
   while `/vi/roadmap` does the same job forward-lookingly.
 
-<details><summary>(delivered, not yet merged) Lessons Registry — branch <code>lessons-registry</code>, final whole-branch review and merge still pending</summary>
+<details><summary>(completed) Lessons Registry — MERGED <code>88c1301</code> --no-ff, 2026-08-11</summary>
 
 All 6 tasks done. `docs/lessons.md` is now the single canonical home for process lessons, guarded by
 `docs/lessons.test.ts` (I1: every `L-NNN` reference in a tracked file resolves to a defined lesson; I2:
@@ -72,13 +72,29 @@ the guard covers it in principle but is not yet exercised by it. Lesson bodies e
 `project_status_archive.md`, `l9a_localization_run_state.md`, `shadowing_hub_plan_c_run_state.md` — are cut
 to `L-NNN` pointers. Count entries with `grep -c "^### L-" docs/lessons.md`, never from a written figure.
 
-`L-011` (final-whole-branch-review) is the first entry to reach lesson-entry rule 3's three-evidence
-promotion-*review* threshold and is deliberately not promoted — promotion stays out of this work's scope;
-see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
+**⚑ FOUR parked promotion reviews are the user's call, and they are the only open item this work leaves.**
+`L-011`, `L-016`, `L-023` and `L-026` have each crossed lesson-entry rule 3's three-evidence
+promotion-*review* threshold; all four carry a `Status:` line deferring the decision. Promotion to
+`CLAUDE.md` law stayed out of this work's scope by design — see
+`docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7. Only `L-011` was known during
+execution; the final review found the other three, and this branch's own edits pushed `L-023` from two
+evidence entries to four.
 
-**Branch is NOT merged.** A final whole-branch review still has to run. → Read `mem:lessons_registry_run_state`
-for the full record, including the two upstream plan-authored defects this run caught — both are now
-Evidence on `L-023`, one of them a restore at `1728eb4`.
+**Merged `88c1301` `--no-ff`.** Post-merge verified ON MASTER: tsc 0 · unit 2066/2066 across 231 files ·
+lint 0 errors / 77 warnings, mix `54 no-non-null-assertion + 23 no-unused-vars` identical to baseline.
+Branch retained, per this repo's convention of keeping merged feature branches. → Read
+`mem:lessons_registry_run_state` for the full record, including all five upstream plan-authored defects
+this run caught and the mitigation that closed them.
+
+**The final review's two findings worth remembering, because both are the disease inside the cure:**
+(a) the plan itself is a tracked, already-diverged second copy of every entry, while `docs/lessons.md`
+claims to be the only place a lesson is written out — resolved with a banner line, since spec §7 forbids
+rewriting a committed plan; (b) the l9a **mutation taxonomy** (which operator lists run against which test
+layer) had been cut with no destination and existed nowhere, while its consumer is live — L9a Plan 3 Tasks
+14–19 are pending and this file still tells their briefs to take its full text from that memory. It was a
+run-scoped *instruction*, not a lesson, and the classification pass swept it up with the body around it.
+Restored byte-identical under the `L-007` pointer. **That distinction — instruction vs lesson — is the one
+to hold on to the next time anything is cut down to pointers.**
 
 **Task 6 gate: tsc/lint/unit all green**, lint matching the pre-branch baseline mix and unit adding exactly
 one test file (`docs/lessons.test.ts`). Task 6 round 1 found and fixed a real `tsc` failure in
@@ -386,8 +402,8 @@ L3 `d6c2138`, L4 `63b965f`, L5 `74514cd`, L6 `3fe741b`, L7 `01ae59d`, Spec A `20
 Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`, L9a-Plan3 `d7b158c`,
 Design-docs reconciliation `20d6eed`, Shadowing Hub Lesson Workspace Plan A `a6a7617` / Plan B
 `b36c455`, Shadowing Practice Figma reconciliation `b56bba1`, Korume rebrand Plan A `69c4685` /
-Plan B `44521bc`, Figma token + typography foundation `86328bc`, **Screen-port workflow `7277ac1`
-(2026-08-07)**.
+Plan B `44521bc`, Figma token + typography foundation `86328bc`, Screen-port workflow `7277ac1`
+(2026-08-07), Shadowing Hub Plan C1 `bd7f574` (2026-08-08), **Lessons Registry `88c1301` (2026-08-11)**.
 
 ## Progress
 **The layer-by-layer build log for L1–L7 lives in `mem:project_status_archive`** — it is a
