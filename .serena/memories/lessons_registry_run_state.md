@@ -1,12 +1,17 @@
-# Lessons Registry — run state (COMPLETE, awaiting merge, 2026-08-11)
+# Lessons Registry — run state (DONE and MERGED, 2026-08-11)
 
-> Branch `lessons-registry`, off master `c1a8fa2`, HEAD `75fd516`, working tree clean, **not merged**.
-> All 6 tasks done and reviewed. Final whole-branch review + its one fix wave done; re-review returned
-> READY TO MERGE = YES, 0 Critical / 0 Important open.
+> **MERGED to master at `88c1301` `--no-ff`**, from branch `lessons-registry` (off `c1a8fa2`, tip
+> `75fd516`). Branch retained, per this repo's convention of keeping merged feature branches. Nothing
+> pushed — master runs ahead of origin, as usual here.
+> All 6 tasks done and reviewed; final whole-branch review + its one fix wave closed with
+> READY TO MERGE = YES, 0 Critical / 0 Important.
+> **Post-merge gate measured ON MASTER:** tsc 0 · unit all green · lint 0 errors with the rule mix
+> unchanged from baseline (`54 no-non-null-assertion + 23 no-unused-vars`). Run the commands, don't
+> quote counts from here (`L-002`).
 > Spec `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` (approved, G1–G10).
-> Plan `docs/superpowers/plans/2026-08-08-lessons-registry.md`.
-> SDD ledger `.superpowers/sdd/2026-08-08-lessons-registry/progress.md` — **gitignored**, and deleted at
-> finish by the skill. If it is gone, this file plus `git log` is the record.
+> Plan `docs/superpowers/plans/2026-08-08-lessons-registry.md` — ⚠️ it contains a full, now-diverged
+> **draft copy** of every entry; a banner at its top says so. `docs/lessons.md` is authoritative.
+> The SDD ledger has been **deleted** at finish, as designed. This file plus `git log` is the record.
 
 ## What shipped
 
@@ -16,7 +21,9 @@ lesson under a stable `L-NNN` id, in seven navigation groups, each entry `Rule` 
 codebase stay in `mem:project_status` § Key gotchas (G1) — they were deliberately not migrated.
 
 Count entries with `grep -c "^### L-" docs/lessons.md`. **Never record that number as a durable fact**
-(`L-002`); this file used to write it and that was itself a violation, fixed at `75fd516`.
+(`L-002`); this file used to write it and that was itself a violation, fixed at `75fd516`. The same
+defect was then found a third time in `mem:project_status` § Verify commands, which had gone stale
+twice — fixed at `df7bc30`. Treat a written count anywhere in these memories as suspect on sight.
 
 - `docs/lessons.test.ts` — the integrity guard. **I1**: every `L-NNN` in any tracked file resolves to a
   defined entry. **I2**: every id defined exactly once, and at least one exists. Walks `git ls-files`;
