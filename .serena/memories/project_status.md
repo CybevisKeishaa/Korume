@@ -80,10 +80,12 @@ see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
 for the full record, including the two upstream plan-authored defects this run caught — both are now
 Evidence on `L-023`, one of them a restore at `1728eb4`.
 
-**Task 6 gate:** lint and unit are green and match the pre-branch baseline shape (unit green, exactly one
-test file added — `docs/lessons.test.ts`). **`tsc` is NOT clean** — `docs/lessons.test.ts` fails
-`noUncheckedIndexedAccess` (`match[1]` on a `matchAll` result narrows to `string | undefined`), a gap from
-Task 2, which never ran `tsc`. Unfixed; flag for the final whole-branch review before merge.
+**Task 6 gate: tsc/lint/unit all green**, lint matching the pre-branch baseline mix and unit adding exactly
+one test file (`docs/lessons.test.ts`). Task 6 round 1 found and fixed a real `tsc` failure in
+`docs/lessons.test.ts` (`noUncheckedIndexedAccess` on a `matchAll` capture group) that had shipped
+undetected since Task 2, which never ran `tsc`; fixed with a type-guard filter, not a non-null assertion or
+a fallback default, so the guard's detection is unchanged — both mutation checks (I1, I2) were re-proven
+red then green against the fix.
 
 </details>
 
