@@ -30,32 +30,12 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-09) — **Finish the Lessons Registry. It is PAUSED mid-execution on an unmerged branch.**
-
-Branch **`lessons-registry`** (off master `c1a8fa2`), HEAD **`1728eb4`**, working tree clean, **not merged**.
-Tasks 1 and 2 are complete and reviewed; **Task 3's fix round 3 is committed but its scoped re-review has
-not been run** — that is the exact resumption point. Tasks 4, 5 and 6 have not started, then a final
-whole-branch review.
-
-**→ Read `mem:lessons_registry_run_state` before touching anything.** It carries the resumption point, the
-five execution decisions not to re-litigate, the four upstream plan defects this run exposed, and the one
-generalizable lesson still owed to the registry.
-
-Spec `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` · plan
-`docs/superpowers/plans/2026-08-08-lessons-registry.md` · ledger
-`.superpowers/sdd/2026-08-08-lessons-registry/progress.md` (gitignored).
-
-**What already changed on that branch, and matters repo-wide:** `docs/lessons.md` now exists as the single
-canonical home for process lessons (`L-001`–`L-028`), guarded by `docs/lessons.test.ts`, and the lesson
-bodies in this file, `project_status_archive.md`, `l9a_localization_run_state.md` and
-`shadowing_hub_plan_c_run_state.md` have been cut to `L-NNN` pointers. Count entries with
-`grep -c "^### L-" docs/lessons.md`, never from a written figure.
-
-## ▶ THEN (was the next action, still queued) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
+## ▶ NEXT ACTION (updated 2026-08-11) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
 
 Spec **approved and committed**: `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (`e861150`),
 12 decisions R1–R13. **Nothing is implemented yet — the next step is `superpowers:writing-plans` against
-that spec**, then execution.
+that spec**, then execution. This becomes the live next action once the Lessons Registry (below) merges;
+until then it queues behind that branch's final review.
 
 The measurement that drives it: **44 routes in the repo vs ~56 live Figma frames, diverging in BOTH
 directions.** Figma has Pricing/FAQ/Checkout/Onboarding/Pronunciation-library/FlashCard with no route;
@@ -81,6 +61,31 @@ Open items carried forward:
 - Two copy items parked for the localization/copy pass: the hardcoded English `"Reduce motion"` label with
   no catalog key in either locale, and `"Chưa có gì ở đây"` opening 5 of 10 `vi/upcoming.json` entries
   while `/vi/roadmap` does the same job forward-lookingly.
+
+<details><summary>(delivered, not yet merged) Lessons Registry — branch <code>lessons-registry</code>, final whole-branch review and merge still pending</summary>
+
+All 6 tasks done. `docs/lessons.md` is now the single canonical home for process lessons, guarded by
+`docs/lessons.test.ts` (I1: every `L-NNN` reference in a tracked file resolves to a defined lesson; I2:
+every id is defined exactly once). `CLAUDE.md` §10 (read contract) and §9 (write contract) now govern when
+to consult and when to add to the registry — note `CLAUDE.md` itself carries zero `L-NNN` tokens today, so
+the guard covers it in principle but is not yet exercised by it. Lesson bodies elsewhere — this file,
+`project_status_archive.md`, `l9a_localization_run_state.md`, `shadowing_hub_plan_c_run_state.md` — are cut
+to `L-NNN` pointers. Count entries with `grep -c "^### L-" docs/lessons.md`, never from a written figure.
+
+`L-011` (final-whole-branch-review) is the first entry to reach lesson-entry rule 3's three-evidence
+promotion-*review* threshold and is deliberately not promoted — promotion stays out of this work's scope;
+see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
+
+**Branch is NOT merged.** A final whole-branch review still has to run. → Read `mem:lessons_registry_run_state`
+for the full record, including the two upstream plan-authored defects this run caught — both are now
+Evidence on `L-023`, one of them a restore at `1728eb4`.
+
+**Task 6 gate:** lint and unit are green and match the pre-branch baseline shape (unit green, exactly one
+test file added — `docs/lessons.test.ts`). **`tsc` is NOT clean** — `docs/lessons.test.ts` fails
+`noUncheckedIndexedAccess` (`match[1]` on a `matchAll` result narrows to `string | undefined`), a gap from
+Task 2, which never ran `tsc`. Unfixed; flag for the final whole-branch review before merge.
+
+</details>
 
 <details><summary>(completed) Shadowing Hub Plan C1 — merged `bd7f574`, 2026-08-08</summary>
 
