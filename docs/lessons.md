@@ -210,8 +210,8 @@ count it cannot go stale.
 
 **Rule:** Before freezing a task's scope, audit the assigned directory, grep the import graph of every exported symbol involved, and verify each consumer. Treat a plan's file list as a starting hypothesis.
 **Why:** A plan's file list is a claim, not a fact — and a wrong one ships silently because the missing file is never opened.
-**Evidence:** L9a Plan 3 — the file list was wrong five separate times; 11d's `useRecorder` had a consumer under `components/conversation/` on no list, breaking 13 tests; Task 12's `mining-review-session.tsx`, the file holding the owned defect, was absent from its own task's list. · Plan C1 — "check existence before trusting *Modify X*".
-**Applies to:** every task scoping step, and every "modify these N files" instruction.
+**Evidence:** L9a Plan 3 — the file list was wrong five separate times; 11d's `useRecorder` had a consumer under `components/conversation/` on no list, breaking 13 tests; Task 12's `mining-review-session.tsx`, the file holding the owned defect, was absent from its own task's list. · Plan C1 — "check existence before trusting *Modify X*". · Lessons Registry Task 3 — memory sources were cut against a pre-written list of replacement lines; a sentence the classification pass had never assigned a home ("one reviewer called a correction note dishonest for crediting a user ruling that had in fact happened") was deleted outright, invisible to the integrity guard because no id was malformed. Restored `1728eb4`. · Lessons Registry Task 4 — the same plan handed a pre-written stub table for six memory files, assuming full coverage; a classification pass run *before* any cutting found three of them held content with no home anywhere in the registry, and placed it on `L-005`, `L-016`, `L-024` at `f4991ee` before anything was lost.
+**Applies to:** every task scoping step, and every "modify these N files" instruction. Before cutting any source against a pre-written list, classify every claim in it to a destination first — anything with no destination is an orphan to be placed, never deleted.
 
 ### L-024 — Reconcile the whole dependent system, not just the flagged files
 
