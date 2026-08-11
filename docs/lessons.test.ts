@@ -33,7 +33,13 @@ function trackedFiles(): string[] {
 
 function definedIds(): string[] {
   const source = readFileSync(LESSONS_PATH, "utf8");
-  return [...source.matchAll(HEADING_PATTERN)].map((match) => match[1]);
+  // HEADING_PATTERN has one mandatory capturing group, so match[1] is always
+  // defined whenever the whole pattern matches — `noUncheckedIndexedAccess`
+  // can't see that, so this filter narrows the type without ever dropping a
+  // real match. It is a no-op at runtime, not a fallback and not an escape hatch.
+  return [...source.matchAll(HEADING_PATTERN)]
+    .map((match) => match[1])
+    .filter((id): id is string => id !== undefined);
 }
 
 describe("lessons registry integrity", () => {
