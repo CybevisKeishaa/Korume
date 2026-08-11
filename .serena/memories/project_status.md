@@ -492,10 +492,12 @@ degrade to "not configured". `AZURE_SPEECH_KEY` present but **INVALID — Azure 
 `ADMIN_EMAILS="admin@almostgone.vn"` added 2026-07-14 (bootstrap admin exists locally).
 
 ## Verify commands
-`npx tsc --noEmit` · `npx vitest run` (**2007 unit / 221 files** @ 2026-08-07 post-screen-port-workflow
-`7277ac1`; lint = exit 0 WITH **77** pre-existing warnings — long-standing debt, "clean" means
-0 NEW, and compare the RULE MIX not the count: `54 no-non-null-assertion + 23 no-unused-vars`) ·
-`npm run lint` ·
+`npx tsc --noEmit` · `npx vitest run` · `npm run lint` — **never quote a test or file count from this
+file; run the command.** (`docs/lessons.md` L-002. The figure that used to sit here went stale twice.)
+The one number worth pinning is the lint debt, because it is a *comparison baseline*, not a measurement
+of today: lint exits 0 with long-standing warnings, and "clean" means **0 NEW errors and an unchanged
+RULE MIX** — `54 no-non-null-assertion + 23 no-unused-vars`. Compare the mix, never the total.
+Last full gate on master: `88c1301`, 2026-08-11 — tsc 0, unit all green, lint mix as above.
 ⚠️ **With a worktree present, `npm test` from the repo root scans it too** — `vitest.config.ts`
 excludes `node_modules`, `.next`, `tests/e2e` but NOT `.worktrees/`. Pass `--exclude ".worktrees/**"`
 or remove the worktree first. Still not fixed in config.
