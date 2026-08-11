@@ -150,3 +150,21 @@ a task spans roles, `tech-lead` decomposes it and sequences the specialists. See
 - [ ] a11y: keyboard-navigable, WCAG AA, respects reduced-motion
 - [ ] No secrets client-side; inputs validated; user content sanitized
 - [ ] `code-reviewer` has reviewed the diff for anything non-trivial
+- [ ] Lessons from this work recorded in `docs/lessons.md` per its four lesson-entry rules — merged
+      into an existing entry where one applies, not appended as a new one
+
+---
+
+## 10. Operational lessons
+
+`docs/lessons.md` is the single source of truth for lessons this project has already paid for.
+Every lesson lives there once, under a stable `L-NNN` id. Everywhere else references the id;
+nothing restates the rule.
+
+**Read it before:** writing a spec or a plan · dispatching a subagent · running a completion
+gate or claiming work done · reading back a subagent's or a reviewer's report.
+
+**Write to it at the end of every branch** — in place of a "lessons" block anywhere else.
+
+CLAUDE.md holds **law**: breaking a rule here is a defect. `docs/lessons.md` holds **experience**:
+ignoring it costs time. A lesson promoted to law moves here and leaves a pointer behind.
