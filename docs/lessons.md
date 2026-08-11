@@ -138,6 +138,13 @@ count it cannot go stale.
 **Evidence:** L9a Plan 3 standing convention #6 — Task 12 carried two trivial `mining` `<h1>`/link key swaps to the Task 19 audit rather than fixing in-task, while 11e's mislabeled pronunciation score and 12's owned error path were fixed immediately.
 **Applies to:** review triage during plan execution.
 
+### L-029 — A plan-wide gate must be scheduled in a task, not only named in Global Constraints
+
+**Rule:** Every verification command a plan declares binding must be named in the steps of a specific task — the first task that can break it, not only the last one. A gate listed in Global Constraints and scheduled nowhere is a gate nobody runs.
+**Why:** Per-task reviews verify what the task's own steps name. A constraint stated once at the top of a plan is read as context, not as an action, so a regression it would catch survives every review by construction.
+**Evidence:** Lessons Registry — Task 2 shipped `docs/lessons.test.ts` with `npx tsc --noEmit` failing (`TS2322` under `noUncheckedIndexedAccess`); Tasks 3, 4 and 5 each passed review on `vitest` alone; the failure surfaced only at Task 6 and was fixed at `736d3bc`. The plan listed `tsc` in Global Constraints and invoked it in one task of six.
+**Applies to:** plan authoring — Global Constraints sections; and the first task that introduces a file of a new type.
+
 ---
 
 ## Subagent dispatch
@@ -155,6 +162,7 @@ count it cannot go stale.
 **Why:** Requiring `cd` + absolute paths + a pre-commit branch self-check measurably reduces stray commits but does not prevent them: a tool call can resolve against a different cwd than the Bash calls that were correctly `cd`ed, so the agent's self-check runs in the wrong place too and its report is internally consistent and wrong.
 **Evidence:** Lesson Workspace Plan A — Task 20 of 22 committed to `master`; caught by the controller's review-package showing `BASE==HEAD`, not by the self-report, which carried a real sha on the wrong branch. · Plan B — recurred at Task 9 *with* the full prompt pattern in place, on a haiku-tier implementer; the remaining tasks escalated the model floor to sonnet, bundled with controller verification as a paired mitigation not proven causally responsible on its own. · Token foundation `86328bc` — controller verification after all 9 tasks and 4 fix rounds, zero incidents.
 **Applies to:** every worktree-based subagent run. Recovery: `git cherry-pick` onto the correct branch, then on the polluted branch prefer soft-reset + single-file checkout over `git reset --hard` if any unrelated uncommitted change exists — and surface it to the user before any reset on a shared branch.
+**Status:** Promotion candidate under lesson-entry rule 3. Not promoted — review deferred, see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
 
 ---
 
@@ -212,6 +220,7 @@ count it cannot go stale.
 **Why:** A plan's file list is a claim, not a fact — and a wrong one ships silently because the missing file is never opened.
 **Evidence:** L9a Plan 3 — the file list was wrong five separate times; 11d's `useRecorder` had a consumer under `components/conversation/` on no list, breaking 13 tests; Task 12's `mining-review-session.tsx`, the file holding the owned defect, was absent from its own task's list. · Plan C1 — "check existence before trusting *Modify X*". · Lessons Registry Task 3 — memory sources were cut against a pre-written list of replacement lines; a sentence the classification pass had never assigned a home ("one reviewer called a correction note dishonest for crediting a user ruling that had in fact happened") was deleted outright, invisible to the integrity guard because no id was malformed. Restored `1728eb4`. · Lessons Registry Task 4 — the same plan handed a pre-written stub table for six memory files, assuming full coverage; a classification pass run *before* any cutting found three of them held content with no home anywhere in the registry, and placed it on `L-005`, `L-016`, `L-024` at `f4991ee` before anything was lost.
 **Applies to:** every task scoping step, and every "modify these N files" instruction. Before cutting any source against a pre-written list, classify every claim in it to a destination first — anything with no destination is an orphan to be placed, never deleted.
+**Status:** Promotion candidate under lesson-entry rule 3. Not promoted — review deferred, see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
 
 ### L-024 — Reconcile the whole dependent system, not just the flagged files
 
@@ -237,6 +246,7 @@ count it cannot go stale.
 **Why:** Divergence is discovered late, one instance at a time, always as rework.
 **Evidence:** Lesson Workspace Plan A spent an entire plan cleaning up one instance. · `docs/superpowers/specs/2026-08-08-screen-registry-design.md` §7 names it risk 1 and builds R1+R12 to guard it. · This registry exists because the lesson corpus itself had four owners.
 **Applies to:** docs, catalogs, registries, memories, constants.
+**Status:** Promotion candidate under lesson-entry rule 3. Not promoted — review deferred, see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
 
 ### L-027 — Commit the content before the test that pins it
 
