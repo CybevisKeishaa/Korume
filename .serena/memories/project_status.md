@@ -71,10 +71,13 @@ avoid this. Re-derive from screen identity; inherit no count (`L-002`).
 - **Do NOT use `get_metadata` in Phase 0.** It is a *geometry* tool; the whole page is ~4.4M chars.
   Phase 0 asks about purpose and flow, which a screenshot plus the prose prompts answer far better.
 - **`figma-mcp-go` returns `plugin not connected`** — that route needs the user to run the plugin.
-- **Frame enumeration is the one unsolved input.** No complete name→nodeId map exists (docs hold only
-  scattered ids: `149:2`, `200:7705`, `90:1985`, `5:1718`, `71:2`). Cheapest fix: **the user selects
-  all top-level frames in Figma**, then `get_metadata` prepends a "Currently selected nodes" block
-  listing every selection by guid and name.
+- ✅ **Frame enumeration is SOLVED. `docs/product/figma-frame-map.md` (`9af7d7a`) holds all 57
+  frames, name → node id.** Method, if it ever needs redoing: the user selects frames in Figma, then
+  `get_metadata` with **no `nodeId`** prepends a `Currently selected nodes` block — it prints at most
+  16, so capture in runs of ≤15.
+
+**▶ Execution state and the concrete next action live in `mem:phase0_figma_inventory_run_state`.
+READ THAT FIRST when resuming.** Frame map done; the per-frame inventory analysis has not started.
 - **Richest un-read source: the Figma Make bundle's tier-A prose prompts** —
   `C:\Users\tplon\Downloads\Design Shadowing Page UI\src\imports\pasted_text\`, 21 files, 208 KB of
   design intent in words (`companion-home-design.md`, `kanji-explorer-screen.md`,
