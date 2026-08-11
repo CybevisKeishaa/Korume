@@ -30,16 +30,65 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-11) — **Screen Registry Phase 1. C1 is merged; this is a NEW piece of work and it needs a plan.**
+## ▶ NEXT ACTION (updated 2026-08-11, REPLACES the "write the Phase 1 plan" instruction) — **Phase 0: Figma Product Inventory. Do NOT start Screen Registry Phase 1.**
 
-Spec **approved and committed**: `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (`e861150`),
-12 decisions R1–R13. **Nothing is implemented yet — the next step is `superpowers:writing-plans` against
-that spec**, then execution. The Lessons Registry that used to queue ahead of this is **merged** (`88c1301`,
-2026-08-11), so this is now live with nothing in front of it.
+**User ruling 2026-08-11.** Screen Registry Phase 1 is still correct and its spec is still approved —
+it just is **not next**. A new stage runs before it, because Phase 1 was about to be fed by guesswork:
 
-The measurement that drives it: **44 routes in the repo vs ~56 live Figma frames, diverging in BOTH
-directions.** Figma has Pricing/FAQ/Checkout/Onboarding/Pronunciation-library/FlashCard with no route;
-the repo has community/peer-review/playlists/mining/jlpt-test/leaderboard/reading with no frame.
+```
+Figma → Product Inventory → Capability Map → IA/Navigation → Screen Registry
+      → Route/API reconciliation → UI implementation → L8 → L9
+```
+
+**The rule that drives it: navigation is an OUTPUT of the analysis, never an input.** Both navbars in
+play are demos, not IA — the repo's `NAV_GROUPS` (provisional since C1) *and* the one in the user's
+reference render. Judging Figma against either is a method error; the controller made exactly that
+error on 2026-08-11 and it is what triggered this restructure.
+
+Phase 0 answers, per frame: screen or state? · which capability? · entered from where? · exits to
+where? · what actions? · what data? · API exists? · route exists? · related screens? Then capabilities
+aggregate into product areas, and **IA is designed from those** — with a **human checkpoint before IA
+is locked** (user requirement: never let the assistant settle IA and navbar unreviewed).
+
+**Two artifacts, not one — this is load-bearing.** The analysis is prose/tables and one-time; the
+registry is 12 typed fields and durable. `ScreenEntry` has no `purpose`/`entryPoints`/`actions`/
+`dataNeeds`/`api` and must not grow them, or it becomes the "product ontology system" the user
+explicitly forbade. Phase 0's doc *produces* decisions; the registry *holds* them.
+
+Live inventory draft: `docs/product/screen-inventory.md` (`9580ad5`, `6074024`) — the frame list
+classified into screens vs state-variants, plus the user's rulings. Product inputs and adjudications:
+`mem:screen_registry_inputs`.
+
+⚠️ **The 44↔56 divergence figure is DISCREDITED as a starting point.** It was produced by matching
+route strings to frame names, which counted JLPT — fully designed *and* fully built — as a gap purely
+because a dead `/jlpt-test` redirect stub has no frame. `R3` makes `screenId` the join key precisely to
+avoid this. Re-derive from screen identity; inherit no count (`L-002`).
+
+### Verified input path (probed 2026-08-11, use this, don't re-derive it)
+- **Figma desktop MCP is live.** File key `IwFHZDZdHW7qsSFiNbWrkd`, one page `0:1`.
+- **`get_screenshot` is the Phase 0 workhorse and is cheap** — it returns a short-lived URL (~80
+  tokens), not an inline image. `curl` it, then Read the file. Verified on `149:2` (1536×2746).
+- **Do NOT use `get_metadata` in Phase 0.** It is a *geometry* tool; the whole page is ~4.4M chars.
+  Phase 0 asks about purpose and flow, which a screenshot plus the prose prompts answer far better.
+- **`figma-mcp-go` returns `plugin not connected`** — that route needs the user to run the plugin.
+- **Frame enumeration is the one unsolved input.** No complete name→nodeId map exists (docs hold only
+  scattered ids: `149:2`, `200:7705`, `90:1985`, `5:1718`, `71:2`). Cheapest fix: **the user selects
+  all top-level frames in Figma**, then `get_metadata` prepends a "Currently selected nodes" block
+  listing every selection by guid and name.
+- **Richest un-read source: the Figma Make bundle's tier-A prose prompts** —
+  `C:\Users\tplon\Downloads\Design Shadowing Page UI\src\imports\pasted_text\`, 21 files, 208 KB of
+  design intent in words (`companion-home-design.md`, `kanji-explorer-screen.md`,
+  `pronunciation-studio.md`, `about-philosophy.md`, …). Never read. It is a decaying snapshot for
+  *numbers* (proven within a day) but far more stable for *intent*; cross-check against live
+  screenshots. See `mem:figma_make_design_source`.
+
+### Figma cleanup ordering — the circular dependency, resolved
+The user was advised to delete obsolete frames *before* the analysis, while also wanting the assistant
+to flag `CONFIRMED / LIKELY / AMBIGUOUS / OBSOLETE / STATE-VARIANT`. Doing the deletion first discards
+the very frames the flagging would have identified. **Order: inventory pass first with every frame
+tagged → the user deletes using the OBSOLETE list → only AMBIGUOUS gets discussed.** Exception: three
+frames are already known dead and can go now — `Unuse` (`5:1718`), `Pricing-remove` (`71:2`), and the
+superseded `Shadowing Hub` (`90:1985`, build against `149:2` instead).
 
 **The boundary the user set, and it is binding:** the registry is a **derived identity/structure index**,
 never a second Figma. Phase 1 answers only
