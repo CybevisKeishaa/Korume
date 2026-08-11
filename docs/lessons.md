@@ -68,7 +68,7 @@ count it cannot go stale.
 **Rule:** On any query that aggregates across users, ask *which client factory, and what does that table's SELECT policy say* — never *is the test green*.
 **Why:** RLS is enforced by Postgres and no unit test reaches Postgres. `test/supabase-mock.ts` returns whatever a resolver returns.
 **Evidence:** Plan C1 Task 10 — `PopularStrategyV1` read `user_lesson_library` through the cookie-bound `createClient()` while that table's only SELECT policy is `using (user_id = auth.uid())`; in production every learner set tops out at size 1. All 7 tests and all 4 mutation checks were green; a reviewer caught it by reading the migration. Fixed `84a7c71`.
-**Applies to:** cross-user aggregates. Pattern to copy: `lib/data/leaderboard.ts:68` — `createServiceClient()` for the aggregate, `createClient()` kept for caller-scoped reads. Swap **only** the aggregating read.
+**Applies to:** cross-user aggregates. Pattern to copy: `lib/data/leaderboard.ts:68` — `createServiceClient()` for the aggregate, `createClient()` kept for caller-scoped reads. Swap **only** the aggregating read. Comment every deliberate service-role read with why it is safe (aggregate only, no per-user field crosses the function boundary). To test it, mock both `@/lib/supabase/service` and `@/lib/supabase/server` and register no resolver for the table on the wrong one, so the mock's throw-on-unregistered-table fires.
 
 ### L-006 — A guard driven by the list it protects cannot detect an omission from that list
 
@@ -153,7 +153,7 @@ count it cannot go stale.
 
 **Rule:** After **every** dispatch, run `git worktree list` + `git log --oneline -3` in the worktree and `git log --oneline -1` + `git status --short` in the main checkout. Unconditionally, not when a report looks off.
 **Why:** Requiring `cd` + absolute paths + a pre-commit branch self-check measurably reduces stray commits but does not prevent them: a tool call can resolve against a different cwd than the Bash calls that were correctly `cd`ed, so the agent's self-check runs in the wrong place too and its report is internally consistent and wrong.
-**Evidence:** Lesson Workspace Plan A — Task 20 of 22 committed to `master`; caught by the controller's review-package showing `BASE==HEAD`, not by the self-report, which carried a real sha on the wrong branch. · Plan B — recurred at Task 9 *with* the full prompt pattern in place. · Token foundation `86328bc` — controller verification after all 9 tasks and 4 fix rounds, zero incidents.
+**Evidence:** Lesson Workspace Plan A — Task 20 of 22 committed to `master`; caught by the controller's review-package showing `BASE==HEAD`, not by the self-report, which carried a real sha on the wrong branch. · Plan B — recurred at Task 9 *with* the full prompt pattern in place, on a haiku-tier implementer; the remaining tasks escalated the model floor to sonnet, bundled with controller verification as a paired mitigation not proven causally responsible on its own. · Token foundation `86328bc` — controller verification after all 9 tasks and 4 fix rounds, zero incidents.
 **Applies to:** every worktree-based subagent run. Recovery: `git cherry-pick` onto the correct branch, then on the polluted branch prefer soft-reset + single-file checkout over `git reset --hard` if any unrelated uncommitted change exists — and surface it to the user before any reset on a shared branch.
 
 ---
@@ -218,7 +218,7 @@ count it cannot go stale.
 **Rule:** When reconciling against a governance document, audit every file that depends on the same facts — including files a previous pass marked done.
 **Why:** Fixing only the named files leaves latent contradictions that resurface later, which is the confusing state the reconciliation existed to remove.
 **Evidence:** `docs/design/` reconciliation (2026-07-29, merged `20d6eed`) — a repo-wide audit found real contradictions in files a prior "Wave 1" had already signed off, turning a 9-file task into a 22-task plan.
-**Applies to:** doc/config reconciliation against any source of truth.
+**Applies to:** doc/config reconciliation against any source of truth. Use parallel research/audit agents to keep a widened audit affordable.
 
 ### L-025 — A nav or label rename must sweep `tests/e2e/` by hand
 
