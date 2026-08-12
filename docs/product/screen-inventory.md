@@ -2100,3 +2100,133 @@ pitch contour rendering** · slow playback and speed control · daily improvemen
 notes · **free-text and voice sentence analysis** · role-labelled sentence structure · token-level
 part-of-speech breakdown · grammar-point extraction linking into the catalogue · *what to notice*
 pragmatic explanation · analysis writing back into Companion memory.
+
+---
+
+## 18. Cluster: Account — 4 frames, analysed 2026-08-12
+
+**Rule 3:** `docs/design/patterns/settings-patterns.md` is substantial layer-A authority — Philosophy,
+*Personalization Over Configuration*, *Instant Feedback*, *Contextual Settings*, *Progressive
+Disclosure*, plus specified sections for Learning Environment, Study Atmosphere, **Reading Settings
+(Typography / Furigana / Translation / Translation Language)** and **Playback (Speed / Auto Pause /
+Loop)**.
+
+**Repo, measured:** `/login` ✅ `(auth)` · `/profile` ✅ `(app)` · `/settings` ✅ `(app)`. No
+edit-profile route.
+
+### 18.1 `65:2` — **Login** · `CONFIRMED` screen
+
+Split layout: a cinematic left panel (`STORIES, SCENES, VOICES` · *"Learn Japanese through stories
+worth remembering."* · a quote captioned `RAIN, LATE EVENING · TOKYO`) beside the form card —
+**`Continue with Google` · `Continue with Apple` · `Continue with GitHub`**, an OR divider, email +
+password with a reveal toggle and `Forgot password?`, `Continue →`, `Create one`, and the
+Terms/Privacy line.
+
+**⚠️ Three OAuth providers.** CLAUDE.md §3 specifies *email + Google OAuth*. **Apple and GitHub are new
+scope** — each is a real integration with its own review requirements (Apple in particular). Product
+question, not a defect.
+
+### 18.2 `66:166` — **Profile / "Your learning identity"** · `CONFIRMED` screen
+
+`PERSONAL ARCHIVE` · avatar with an upload badge · display name + handle · then an identity block:
+**Country `Vietnam` · Timezone `UTC+7` · Learning Japanese since `March 2026` · JLPT Goal `N2` ·
+Native Language `Vietnamese` · Current Interface `English` · Current Subtitle `Japanese + Furigana`** ·
+`Edit Profile`.
+
+`QUICK STATS` (Study Streak · Current Level **`N5 · Explorer`** · Total XP · **Movies Completed** ·
+Words Learned · Hours Studied) · **`LEARNING JOURNEY — "The road you have made"`**, a milestone
+timeline with a written line each (*"Your Name, watched without giving up."*) ·
+`FAVORITE LEARNING CONTENT` chips · **`PERSONAL GOAL`** — *"I want to speak naturally during my future
+trip to Japan."* · rail: `COMPANION — Companionship` (*"We've been walking together for 6 months."*),
+**`TODAY'S MEMORY`** (a line practised until it felt like the learner's own) and `ACHIEVEMENTS`.
+
+**⭐⭐ Three independent language settings, and they are not the same field:**
+`Native Language` (L1) · `Current Interface` (UI locale) · `Current Subtitle` (rendering mode).
+The repo's i18n handles the middle one. **L1 is a product concept** — it is what makes the Companion's
+*"without thinking in Vietnamese"* (§13.4) possible — and it has no home in the schema.
+
+**⚠️ "Goal" now has a third meaning** (after §16.3's two): `JLPT Goal N2` is a **target level**, and
+`PERSONAL GOAL` is a **written intention**. With F-016's domain goals and Figma's skill goals, the word
+carries four senses across the product.
+
+### 18.3 `67:595` — **Edit Profile / "Shape your learning identity"** · `CONFIRMED` screen
+
+A **live-preview** editor: the left column renders the profile as it will look (including
+`CURRENT COMPANION` and `RELATIONSHIP — "We've been walking together for 6 months."*`) while the right
+column edits.
+
+- **Basic Information** — display name · username · bio · country · timezone · **native language** ·
+  **target JLPT** · **preferred study time** · **daily goal** · **learning goal** (free text).
+- **Learning Preferences** — interface language · **subtitle style** · **`Default Furigana: Always on`**
+  · **`Preferred Practice`** chips (Conversation · Shadowing · Vocabulary · Grammar · Listening).
+- **Privacy** — **`Profile Visibility: Private / Friends / Public`** · **`Journal Visibility`**
+  (*"Let friends see moments you choose to share."*) · Show achievements · **Show companion** ·
+  Receive weekly report email · Receive learning reminders.
+- Footer `Cancel` / `Save`, with the Companion saying *"I'll remember these changes."*
+
+**⚠️⚠️ `Friends` implies a social graph that does not exist.** Measured: no friend/follow concept in any
+migration. The repo has community surfaces (forum, public playlists, leaderboard opt-in) but **no
+friendship edge**. `Profile Visibility` and `Journal Visibility` both depend on one.
+
+**⚠️ `Default Furigana: Always on` needs checking against CLAUDE.md §5 #4**, which requires **adaptive**
+furigana — shown only for words the learner has not mastered, fading as they learn, and explicitly
+*"not a hard on/off toggle"*. The control here is a select whose other values are not visible, so this
+is **not yet a conflict**: if `Adaptive` is one of the options the two are compatible.
+`settings-patterns.md` has its own § Furigana — **reconcile all three before building this control.**
+
+### 18.4 `220:16032` — **Settings** · `CONFIRMED` screen (1167×3762, read in three bands)
+
+`PERSONAL SPACE` · *"A quiet place to make Korume feel more like yours."* Five sections:
+
+| Section | Contents |
+|---|---|
+| **Learning** | Interface Language · Daily Learning Goal · Study Reminder Time · Learning Schedule (`Every Day / Weekdays / Custom`) · **Review Frequency** (`Normal / More Reviews / Relaxed`) · **Difficulty Preference** (`Adaptive / Easy / Challenge Me`) |
+| **Learning Reminders** | Daily · Review · Streak · Weekly Reflection · **`Sensei Generation Finished`** — *"When a new study companion is ready."* |
+| **Appearance** | **Theme `Dark / System / Light`** · **Accent Color `Warm Orange`** · Display Scale (`Normal / Large / Extra Large`) · **Reduced Motion** |
+| **Privacy & Data** | Microphone Permission · **Camera Permission** · **AI Training** (*"Help improve Korume using your learning patterns."*) · **Export Data** · **Download Learning History** |
+| **Danger Zone** | **Delete Companion Memory** · **Delete Account** |
+| **About** | Version · **Discord · Facebook · TikTok** · Privacy Policy · Terms of Service · Send Feedback |
+
+Closing: `COMPANION SUPPORT — "Need a hand?"` with `Talk with Companion` / `Contact Support`, and a
+footer reading *"Built quietly in Vietnam. Crafted for lifelong learners."*
+
+**⭐⭐⭐ `Delete Companion Memory` is a genuine design contribution to a §2 debt.** Its copy:
+
+> *"Erase everything Korume has remembered about your learning journey. **Learning progress remains.**
+> Companion memories, diary entries, reflections, observations, conversation memories, recommendations
+> and personal learning history will be permanently removed."*
+
+CLAUDE.md §2 rule 2 requires a full *"delete all my data"* — owed since L1 and still unbuilt (measured:
+nothing matching `delete-account|gdpr|erase` exists). The design supplies a **two-tier** model: erase
+what the Companion *remembers* while keeping what the learner *achieved*, as a separate operation from
+closing the account. **That is finer than the non-negotiable requires and worth keeping** — the
+non-negotiable is still satisfied by `Delete Account`.
+
+**⭐ `AI Training` is the §2 rule-2 consent toggle**, made explicit: *"never used to train models
+without explicit consent."* Here is the consent. Note it is drawn **off by default**.
+
+**⭐ `Reduced Motion` is the CLAUDE.md §2 rule-4 global toggle**, present as designed.
+
+**⚠️ Three settings contradict shipped decisions and need rulings:**
+1. **`Theme: Dark / System / Light`** — the repo is **dark-only** since `86328bc`; `lib/design-tokens.test.ts` asserts no `[data-theme]` block exists. The mechanism was deliberately retained so light returns as one added block, so this is *restorable*, not blocked — but it is a decision to re-open, not a build task.
+2. **`Accent Color: Warm Orange`** as a *choice* — the token system ships **one** ember accent. A user-selectable accent means theming the semantic tier.
+3. **`Camera Permission`** — no camera capability exists anywhere else in the inventory or the repo. What is it for?
+
+### 18.5 Cluster verdict
+
+| Node id | Name | Kind | Route | Verdict |
+|---|---|---|---|---|
+| `65:2` | Login | screen | `/login` ✅ | built; Apple + GitHub OAuth are new scope |
+| `66:166` | Profile | screen | `/profile` ✅ | built far simpler; L1, journey timeline, personal goal absent |
+| `67:595` | Edit Profile | screen | ❌ none | live-preview editor; **Friends visibility needs a social graph** |
+| `220:16032` | Settings | screen | `/settings` ✅ | built far simpler; **two-tier deletion** and **AI-training consent** are the valuable parts |
+
+**Capabilities added:** third-party sign-in (**Google / Apple / GitHub**) · **native language as a
+profile field** · target JLPT level · preferred study time · a **written personal goal** · a milestone
+**learning-journey timeline** · favourite content types · achievements · **live-preview profile
+editing** · **profile & journal visibility with a Friends tier** · preferred-practice selection ·
+learning schedule / review frequency / difficulty preference · reminder channels incl. **companion-
+generation notification** · theme, accent and display-scale choice · **reduced motion** ·
+microphone / camera permissions · **AI-training consent** · **data export and learning-history
+download** · **two-tier deletion (companion memory vs account)** · community links · in-app support
+routed **through the Companion**.
