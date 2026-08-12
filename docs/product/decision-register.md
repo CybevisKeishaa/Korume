@@ -75,6 +75,24 @@ These cost real effort to learn. Breaking one repeats a mistake already paid for
 | M11 | **A user's "I fixed it" is a claim about intent, not file state.** Read it back when cheap | `L-003` · `screen-inventory.md` §20 |
 | M12 | **`public/demo/**` is not a design source.** Only a live Figma screenshot is authoritative | `mem:phase0_figma_inventory_run_state` |
 
+## 3b. ⚠️ `OPEN` — what approving the IA does **not** settle
+
+**Approving A1–A13 does not make Screen Registry Phase 1 encode them.** Phase 1's approved spec
+(`2026-08-08-screen-registry-design.md` R8/T6, §5) requires the derived `NAV_GROUPS` to be
+**byte-for-byte identical to today's literal**, and lists *"changing any navigation label, order, or
+grouping"* as explicitly out of scope. It was written before this IA existed.
+
+**Decision needed from the user, and it changes what approval buys:**
+
+| Option | Phase 1 encodes | Cost |
+|---|---|---|
+| **Keep the spec as written** | today's 22 rows | the IA waits for Phase 2 |
+| **Split 1a / 1b** (recommended) | 1a today's rows (proves the derivation), then **1b: one data-only commit** to the approved IA | amends an approved spec; keeps R8's safety net intact |
+
+Full reasoning: `ia-proposal.md` §5 § *Approving this IA does not make Phase 1 encode it*.
+
+---
+
 ## 4. Still `OPEN`
 
 **Structure — must be answered before or during the IA review:** none. All four IA blockers and all

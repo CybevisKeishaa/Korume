@@ -360,13 +360,49 @@ Today's literal is five groups: `learn · study · insights · progress · accou
 - **`/certification` carries a migration** — `jlpt_section`'s enum cannot be the shared abstraction
   across three exam families with different section structures. ⇒ **Phase 2, not Phase 1.**
 
-### ⚠️ Phase 1 is unaffected by all of this, and that is deliberate
+### ⚠️⚠️ Approving this IA does **not** make Phase 1 encode it — read this before approving
 
-Screen Registry Phase 1's acceptance is **zero visual diff**, machine-checked as *derived
-`NAV_GROUPS` deep-equals a snapshot of today's literal*. Every row change on this page therefore
-**fails Phase 1 by construction** and belongs to Phase 2. Phase 1 inventories these routes with their
-nav rows **unchanged**, using `kind:'repo-only'` + `repoOnlyReason:'legacy-unreviewed'` to make the
-debt named and countable. **This IA is the content of that Phase 2 ruling, decided ahead of time.**
+**The user's stated expectation (2026-08-12):** *"Screen Registry không nên được dùng để 'phát minh'
+IA lần nữa. Nó phải là bản typed/structured hóa của IA đã quyết định."* — the registry should be the
+typed form of the **decided** IA.
+
+**That is the right principle, and Phase 1 as specified does not deliver it.** Measured against
+`docs/superpowers/specs/2026-08-08-screen-registry-design.md`:
+
+- **R8 / T6**: the derived `NAV_GROUPS` must be **byte-for-byte identical** to the literal shipping
+  today, deep-equal to a snapshot frozen *before* the refactor.
+- **§5 out-of-scope, verbatim**: *"Changing any navigation label, order, or grouping."*
+- **§5 acceptance 2**: *"Zero visual diff. No component's rendered output changes."*
+
+**So Phase 1 would type up TODAY'S 22 rows in the old five groups — not the IA approved above.** The
+spec was written 2026-08-08, before this IA existed, when the plan was "re-index what exists."
+Nothing is wrong with the spec; it is simply answering an older question.
+
+**Why R8 is worth keeping anyway:** it proves the *derivation function* is faithful. If Phase 1 both
+refactored the mechanism and changed the IA, a red test could mean "the derivation is broken" **or**
+"the IA moved it" — two failure modes tangled into one signal, in the one step whose whole purpose is
+mechanical correctness.
+
+### The resolution that satisfies both — split Phase 1 in two
+
+| Step | What it does | How it is proven |
+|---|---|---|
+| **Phase 1a** | Build the registry, derive `NAV_GROUPS` from it, change nothing visible | **R8/T6 exactly as specified** — byte-identical to today's literal. Proves the derivation |
+| **Phase 1b** | **One data-only commit** flipping registry rows to the approved IA | T6's snapshot re-frozen to this document's §2 tables. The diff is pure data — reviewable line by line, revertible in one commit |
+
+**This is what "the registry is the typed form of the decided IA" actually looks like in practice:**
+the registry never *invents* an IA (1b only transcribes a ruling that already exists on this page),
+and the mechanism is proven correct before the content moves.
+
+**⚑ Consequence for Phase 2, worth noticing now:** the spec's Phase 2 is *"Reconciliation — adjudicate
+the Figma↔repo gap, one recorded ruling per divergence."* **Phase 0 has already made most of those
+rulings**, so Phase 2 shrinks a great deal — it inherits `decision-register.md` instead of starting
+from an unadjudicated gap. What remains for it is the work with migrations attached (A9
+`/certification`) and the schema-level items in §7.
+
+⚠️ **This needs the user's call, and it is a change to an approved spec — not something to assume.**
+Either Phase 1 stays as written and the IA lands later, or it splits as above. Recorded here rather
+than decided.
 
 ---
 
