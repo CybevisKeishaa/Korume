@@ -93,18 +93,26 @@ above it — implying a `(protected)`-level state owner nothing in Part I mentio
 came back 1278–1536 wide, all legible), `curl` to scratchpad, `Read` the PNG. Four frames in one
 batch was comfortable; **do not batch many more than that per turn** — images dominate context.
 
-## ⚠️ Frame renames — the user renamed frames on 2026-08-12, and the map's NAME column is now UNVERIFIED
+## ✅ Frame renames — APPLIED AND VERIFIED 2026-08-12 (`docs/product/figma-frame-map.md` is current)
 
-The user accepted the rename list in `docs/product/figma-frame-map.md` and applied it in Figma
-(11 frames: 3 typos, 4 duplicate-name collisions, 2 version artifacts, 2 cosmetic). **Node ids are
-unaffected**, so every id in the map and in Part II is still correct and all analysis stands.
+Read back from Figma, not assumed: the user selected the renamed frames, `get_metadata` was called
+with **no `nodeId`**, and the `Currently selected nodes` block gave the real strings. **10 of 11
+landed; both duplicate-name collisions are gone.** The map's name column now holds verified values.
 
-**Not yet verified: the exact new strings**, and they matter because `screenId` derives from them
-(capitalisation included — `To phase 2 (ready)` vs `(Ready)`, `Kanji explorer` vs `Kanji Explorer`).
-To sync: ask the user to select the renamed frames in the Layers panel, then call `get_metadata` with
-**no `nodeId`** and read the `Currently selected nodes` block (≤16 printed). Also confirm whether the
-dead `90:1985 Shadowing Hub` was deleted — if it was, the page holds **56** frames, not 57, and the
-map's count line needs re-deriving (`L-002`: run it, never carry it).
+**Two residuals, neither blocking:**
+1. **`149:2` was NOT renamed and `90:1985` was NOT deleted** — the selection held `90:1985` where
+   `149:2` should have been. That pair had to move together and did not move at all. So the live hub
+   is still `Shadowing hub after changes`, the dead frame is still on the page, and **the page still
+   holds 57 frames**. Raise it once more when the Shadowing cluster runs, since that is when both
+   frames are in front of the user anyway.
+2. **Five names carry invisible leading/trailing whitespace.** Do NOT send the user hunting for
+   them — **`screenId` derivation must `trim()` before slugifying** (note for Phase 1 `R3`), or
+   `· Kanji library` yields a leading-dash id.
+
+**⭐ Method rule this bought:** a user saying "I renamed them as you asked" is a claim about intent,
+not about file state. Reading back cost one cheap tool call and caught a substitution the user did
+not know they had made. `L-003` generalises past subagents: **verify by measurement, whoever the
+claimant is.**
 
 ## ▶ NEXT ACTION for the session that picks this up
 
