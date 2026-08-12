@@ -312,13 +312,20 @@ Worked example — lesson import:
 
 **There is no contradiction here.** A contradiction arises *only* if layer B is mistaken for layer C.
 
-**Two consequences that bind the rest of this inventory:**
+**Three consequences that bind the rest of this inventory:**
 1. **Do not "fix" a Figma frame against the current implementation.** The repo is layer C; it has no
    authority over layers A and B. The purpose of this pass is to see how large Korume was *designed*
    to be — letting today's code narrow that is the single biggest failure mode available here.
 2. **Do not promote something to a new capability just because Figma gave it its own word.** Check
    first whether it belongs to a family that already exists (see `Favorites` → the mining family,
    §7.2).
+3. ⭐ **Do not let a stale Figma frame reopen a settled product decision.** `docs/design/screens/`
+   holds written **layer-A** authority; a Figma frame is layer B and is only a *snapshot*, which can
+   lag a decision by months. **Read the module's doc in `docs/design/screens/` before treating any
+   Figma detail as product intent.** Rule 3 was bought the same way rule 1 was: batch 3 read an
+   eight-tab row as the mode set when a committed doc defined four and explained why two of the extras
+   had been retired (§9.0). Rules 1 and 3 are the same error pointing in opposite directions — taking
+   one layer's artifact as another layer's truth.
 
 ---
 
@@ -785,36 +792,56 @@ and the §2 embed-only rule's surface area.
 
 ## 9. Cluster: Shadowing — batch 3 of 3 (the in-lesson practice family), 4 frames, analysed 2026-08-12
 
-### 9.0 The structural finding: the lesson is **one workspace with eight modes**, not four screens
+### 9.0 The lesson is one workspace with **FOUR** Learning Modes — and the docs already said so
 
-`105:3088` carries a tab row directly under the lesson header:
+⚠️ **CORRECTED 2026-08-12. Batch 3 first reported "eight modes" by reading the tab row in `105:3088`
+literally. That was wrong**, and the authority that already settled it is committed in this repo:
+`docs/design/screens/screen-shadowing-practice.md` § *Two-Layer Model*.
 
-> **`Reading` · `Shadowing` · `Listening` · `Pronunciation` · `Dictation` · `Immersion` · `Mining` · `Review`**
+```
+Lesson
+├── Learning Mode     "What skill am I practicing?"  — Shadowing / Pronunciation / Listening Practice / Summary
+├── Reading Settings  "How should the UI behave?"    — font, subtitle size/colour, speed, auto-pause, repeat…
+└── Analysis          a per-sentence utility (highlight → Analyze), not a mode at any layer
+```
 
-The other three frames in this batch are **modes inside that workspace**, not siblings of it — each
-opens with `← Back to Shadowing` (or `← Back to Lesson`) and repeats the same shell: the video player
-on the left, a lesson/stat block beneath it, an `OPTIONAL REPORTS` strip at the bottom, and a working
-rail on the right. Only the rail changes per mode.
+**Every extra tab in the Figma row is explained, and none of them is a fifth mode:**
 
-**Measured against the repo, the gap is the shell, not the engine:**
+| Figma tab | What it actually is |
+|---|---|
+| `Shadowing` · `Pronunciation` · `Summary` | three of the four real Learning Modes |
+| `Dictation` | **the default sub-mode of Listening Practice**, not a mode — so `Listening` + `Dictation` are one mode, which resolves the `AMBIGUOUS` flag batch 3 raised |
+| `Reading` · `Immersion` | the **retired View Mode axis** (Reading / Normal / Immersion). It was dropped for adding complexity without enough learner value — spec `2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2. **The frame simply predates the retirement.** |
+| `Mining` · `Review` | separate surfaces with their own routes; never lesson-scoped tabs |
 
-| | Figma | Repo |
+**Canonical route shape (doc §Learning Modes) — one Lesson hosting four sibling workspaces:**
+
+| Route | Learning Mode | Repo |
 |---|---|---|
-| Modes | 8 tabs | **2 routes** — `/shadowing/[id]` and `/shadowing/[id]/dictation`, both `(focus)` |
-| Pronunciation | a full mode | no route; **`/api/pronunciation/score` exists** |
-| Listening / Dictation | a full mode | `/shadowing/[id]/dictation`; **`/api/dictation/attempt` exists** |
-| Summary | a full screen | no route; **`/api/videos/[id]/summary` exists** |
-| Session | — | **`/api/shadowing/session` exists** |
-| Mining / Review | tabs | separate top-level routes today, not lesson-scoped tabs |
+| `/shadowing/[id]` | Shadowing (default) | ✅ built |
+| `/shadowing/[id]/pronunciation` | Pronunciation | ❌ no route; `/api/pronunciation/score` ✅ |
+| `/shadowing/[id]/listening` | Listening Practice — **Dictation sub-mode, default** | ⚠️ shipped as `/shadowing/[id]/dictation` |
+| `/shadowing/[id]/listening/fill-blank` | Listening Practice — Fill-in-the-blank | ❌ |
+| `/shadowing/[id]/listening/translation` | Listening Practice — Translation | ❌ |
+| `/shadowing/[id]/summary` | Summary | ❌ no route; `/api/videos/[id]/summary` ✅ |
 
-So four of the eight modes have working API surface and no screen. **The unbuilt part is the workspace
-shell that hosts them**, plus Immersion, which appears nowhere in the repo.
+**So the real gap is: two of four modes have no screen, Listening Practice has one of three sub-modes,
+and the shipped listening route is named for the sub-mode rather than the mode.** The engines exist —
+`/api/pronunciation/score`, `/api/dictation/attempt`, `/api/shadowing/session`,
+`/api/videos/[id]/summary` were all measured present.
 
-⚠️ **`AMBIGUOUS`: `Listening` and `Dictation` may be one mode, not two.** The frame *named* `Dictation
-(in shadowing)` carries the eyebrow **`LISTENING PRACTICE`**, its stat block reads `Listening 14 min`,
-and its reports strip is titled *"Your listening patterns"* — yet its rail is a dictation puzzle. Either
-the tab row has one row too many, or Dictation is Listening's exercise. **Needs a user ruling**; do not
-resolve it from the tab row alone.
+**⭐⭐ The method lesson, and it is the mirror image of the one §7.0 taught.** That one said: *never let
+the current implementation narrow the design.* This one says: **never let a stale Figma frame reopen a
+settled product decision.** `docs/design/` carries written **layer-A** authority. A Figma frame is
+layer B and is a *snapshot* — it can lag a decision by months, exactly as this tab row lagged the View
+Mode retirement. **Consult `docs/design/screens/` for the module before treating any Figma detail as
+product intent.** Both failures have the same shape: taking one layer's artifact as another layer's
+truth.
+
+**Scoring stays, and it already has a home.** The doc pins pronunciation scoring to three columns
+`shadowing_sessions` already has — `pronunciation_score`, `rhythm_score`, `pitch_score` — with no new
+schema, and per-sentence score history feeding the per-sentence Learning Status. Nothing in this
+correction removes a score.
 
 ### 9.1 `105:3088` — **Shadowing Practice** (the Lesson Workspace) · `CONFIRMED` screen
 
@@ -822,7 +849,7 @@ The frame is 1278×585 and **cut off at the bottom** — it shows the workspace'
 
 | | |
 |---|---|
-| **Capability** | The lesson workspace: one video, eight ways to work on it. |
+| **Capability** | The lesson workspace: one video, **four** Learning Modes (§9.0). This frame is the Shadowing mode — continuous playback, transcript-first. |
 | **Chrome** | No left-nav suppression is drawn, but the header carries `Study Environment`, `Focus Mode`, expand and settings — the frame provides its *own* focus affordances. Repo already has it right: `/shadowing/[id]` is `(focus)`. |
 | **Header** | `Business Japanese` · `JLPT N4` · `72% complete` · `Sentence 3 / 18`; subtitle `Lesson 8 · Meeting Introductions`. |
 | **Left column** | Video player with an **in-frame subtitle overlay**, scrubber, transport, a **`Sentence` loop chip**, `1×` speed, volume, a transcript toggle, expand. Below it a `LIVE SENTENCE` card with a hide toggle, an AI sparkle action, and the sentence set in large type **with per-word furigana**. |
@@ -841,7 +868,7 @@ two *named* presentation modes not present anywhere in the repo.
 | **Rail** | `SENTENCE NAVIGATOR` — numbered chips `46…53` with the current one active, four tool icons (transcript, audio, waveform, **bookmark**) · furigana + the sentence + its translation · a large **mic button** · a coaching line (*"Great work. Try it once more."*) · `▶ Replay Native` · `‹ Previous` · `Next ›` · `LIVE FEEDBACK` with a verdict (`Excellent`) and a **score badge `86`** · a per-attempt note (*"Your rhythm became smoother today."*) closing with **"Saved to your personal pronunciation memory."** |
 | **Left / below** | Player · `CURRENT LESSON` (`NHK Easy News · JLPT N3`, `TIMESTAMP 08:43`, `SENTENCE 5.8s`) · stats `Lesson 26% · Sentence 51/194 · Speaking 18 min · Accuracy 84%` · a session bar · `OPTIONAL REPORTS — Your speaking patterns`. |
 | **Reports** | `Recent Pronunciation History` · `Most Improved Words` (ありがとうございます · 失礼します) · ⭐ **`Pitch Accent Trend`** — *"Your sentence endings are more natural."* |
-| **API** | `/api/pronunciation/score` ✅ · `/api/speech/tts` ✅ (this is the legal source for `Replay Native`: TTS of the transcript **text**, never YouTube audio). |
+| **API** | `/api/pronunciation/score` ✅. ⚠️ **Correction:** `Replay Native` is **not** TTS. `screen-shadowing-practice.md` specifies replaying a clip cut purely from `transcript_lines.start_time`/`end_time` — i.e. seeking the YouTube IFrame, **no new media and no AI cutting**. TTS (`/api/speech/tts` ✅) is the separate §2-legal source for the *pitch reference*, which is synthesised from the line's **text**. Two different mechanisms; batch 3 conflated them. |
 
 **⭐ Two findings that matter beyond this screen.** `Pitch Accent Trend` is CLAUDE.md §5 differentiator
 #1 appearing as a **longitudinal report**, not just an in-the-moment overlay — that implies pitch
@@ -859,16 +886,22 @@ Same shell; the rail is the exercise.
 | **Reports** | `Recent Dictation Accuracy` · `Most Forgotten Vocabulary` · `Listening Improvement Timeline`. |
 | **API** | `/api/dictation/attempt` ✅, and `lib/dictation/{normalize,score}.ts` hold the scoring logic. |
 
-**⚠️⚠️ Layer B ↔ layer C divergence, and per the governing method it is recorded, not "fixed".**
-Figma's dictation is a **word-bank assembly puzzle** — pick tiles, remove, hint, check. The repo's
-dictation is **free typing**: `components/video-player/dictation-view.tsx:284` renders an `<Input>`.
-These are different exercises with different difficulty and different pedagogy — assembly scaffolds
-recognition, typing tests production and recall.
+**✅ RESOLVED 2026-08-12 — batch 3 raised this as an open layer-A question; the user answered it.**
+Batch 3 read Figma's word-bank tiles as a *replacement* for typing and asked which exercise Korume
+wanted. **The answer: typing is the normal mode; the puzzle is a hint.**
 
-**Neither side is authoritative here.** `lib/dictation/normalize.ts` + `score.ts` survive either input
-model, so the engine is not the obstacle. **This is a layer-A question for the user:** assembly,
-typing, or both as difficulty levels? The partially-visible `Slots · Grammar · Kanji · Recall`
-breakdown suggests the design already scores more dimensions than the current scorer does.
+That matches both authorities. `screen-shadowing-practice.md` defines the Dictation sub-mode as
+*"transcript fully hidden. Play → blank input → Check → accuracy"*, and the repo already implements
+exactly that — `components/video-player/dictation-view.tsx:284` renders an `<Input>`.
+
+**So there is no conflict, and the repo is not wrong. What is missing is the assist layer:** the
+`WORD BANK` of candidate tiles, `Show Hint`, `Remove Selected Word`, and the `n words remaining`
+counter — a scaffold the learner reaches for when stuck, sitting beside the typed input rather than
+instead of it. Note the frame draws it as the *primary* affordance, which is what caused the misread.
+
+**Still open and genuinely new:** the partially-drawn `Slots · Grammar · Kanji · Recall` breakdown
+scores more dimensions than `lib/dictation/score.ts` does today. And per the doc, Listening Practice
+has **two further sub-modes that exist nowhere** — Fill-in-the-blank and Translation.
 
 ### 9.4 `125:1030` — **Summary (in shadowing)** · `CONFIRMED` screen
 
@@ -897,16 +930,16 @@ generated production prompt, distinct from the example sentence the lesson suppl
 
 | Node id | Name | Tag | Route | Verdict |
 |---|---|---|---|---|
-| `105:3088` | Shadowing Practice | `CONFIRMED` | `/shadowing/[id]` ✅ `(focus)` | built as a single mode; the **8-mode workspace shell is unbuilt**; frame is cropped |
+| `105:3088` | Shadowing Practice | `CONFIRMED` | `/shadowing/[id]` ✅ `(focus)` | the Shadowing mode, built; the **4-mode workspace shell is unbuilt**; frame is cropped |
 | `120:2027` | Pronunciation (in shadowing) | `STATE-VARIANT` (mode) | none; API ✅ | unbuilt screen over a working engine |
-| `123:2835` | Dictation / Listening practice | `STATE-VARIANT` (mode) | `/shadowing/[id]/dictation` ✅ | built with a **different exercise model** — user ruling needed |
+| `123:2835` | Dictation / Listening practice | `STATE-VARIANT` (mode) | `/shadowing/[id]/dictation` ✅ | built and **correct** — typing is the mode; the word bank is a missing **hint** layer |
 | `125:1030` | Summary (in shadowing) | `CONFIRMED` | none; API ✅ | unbuilt; closes the learning loop |
 
 **Cluster Shadowing is COMPLETE — 9 frames across 3 batches.** Screens: `149:2`, `200:7705`,
 `105:3088`, `125:1030`, `212:14610`. State-variants: `200:10726`, `212:14753`, `120:2027`, `123:2835`.
 Nothing `OBSOLETE`. (`90:1985`, the dead hub, is not part of this cluster — see the frame map.)
 
-**Capabilities added by batch 3:** a **lesson workspace with 8 modes** · in-lesson transcript search ·
+**Capabilities added by batch 3:** a **lesson workspace with 4 Learning Modes** · in-lesson transcript search ·
 per-word furigana in the live sentence · A–B sentence looping and speed control · a sentence navigator ·
 per-sentence recording with a live score and a coaching line · **pitch-accent trend as a longitudinal
 report** · dictation as **word-bank assembly** · multi-dimension dictation scoring
@@ -915,7 +948,18 @@ report** · dictation as **word-bank assembly** · multi-dimension dictation sco
 per-skill lesson scoring + **retention** · **saved-knowledge counters and memory growth** · a
 Companion reflection at lesson end · next-lesson proposal with a reason.
 
-**⚑ Questions this cluster leaves for the user:** (1) is `Listening` a mode distinct from `Dictation`?
-(2) dictation as assembly, typing, or both? (3) is `Immersion` a real mode, and what is it?
-(4) should `Mining` and `Review` be lesson-scoped tabs as well as top-level routes? (5) Vimeo /
-multi-platform import (§8.3).
+**⚑ Questions this cluster leaves for the user.** Four of the five batch-3 questions were answered on
+2026-08-12 and are struck through here so the record shows what was asked and what came back:
+
+1. ~~Is `Listening` a mode distinct from `Dictation`?~~ **No** — Dictation is Listening Practice's
+   default sub-mode (§9.0).
+2. ~~Dictation as assembly, typing, or both?~~ **Typing is the mode; the word bank is a hint** (§9.3).
+3. ~~Is `Immersion` a real mode?~~ **No** — it belongs to the retired View Mode axis, along with
+   `Reading` (§9.0).
+4. ~~Should `Mining` and `Review` be lesson-scoped tabs?~~ **No** — separate surfaces, not modes.
+5. **Still open: Vimeo / multi-platform import** (§8.3).
+
+**Newly open, from the correction:** the `Slots · Grammar · Kanji · Recall` scoring breakdown exceeds
+what `lib/dictation/score.ts` computes, and Listening Practice's other two sub-modes —
+**Fill-in-the-blank** and **Translation** — are specified in `screen-shadowing-practice.md` but have
+no frame in this cluster and no code. Both are build scope, not identity questions.
