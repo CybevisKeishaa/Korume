@@ -339,6 +339,68 @@ Worked example — lesson import:
 questions, write the evidence, move on. Where the user rules on something mid-cluster, the ruling is
 recorded as an *input to a later spec*, never as a spec.
 
+### ⭐⭐ Amendment, 2026-08-12 — two corrections the user made after the inventory finished
+
+**A. Layer B splits in two, and only one half is authoritative.**
+
+| Sub-layer | What it is | Authority |
+|---|---|---|
+| **B-design** | structure, layout, flow, affordances, what exists and how it connects | ✅ **authoritative — the design is right** |
+| **B-content** | copy, labels, sample values, brand names, third-party names | ⚠️ **may be wrong — report every conflict to the user** |
+
+Worked example, and it is the case that produced the rule: **Checkout** (§19.3). *B-design* — three
+membership options → choose a payment method → order summary → confirm — is **correct and stays**.
+*B-content* — *"powered by Stripe"*, Visa / Mastercard / Apple Pay / Google Pay / PayPal — is
+**wrong**. ✅ **User ruling: the payment method is PayOS. There is no Stripe, no Visa, no Apple Pay.**
+The frame's content needs fixing; its design does not.
+
+**So the correct output for a content conflict is a report, not a redesign and not a shrug.** A
+running list lives in §20.
+
+**B. ⭐⭐⭐ Layer C is NOT a baseline. Stop measuring the design against the existing API.**
+
+The user's ruling, and it reverses a habit this document had picked up: *"the APIs we built in the
+backend may not fit and cannot cover everything, so don't keep pointing out that something differs
+from the API — the system designed in Figma is much larger and considerably more correct. The old API
+is small."*
+
+**Therefore:**
+- When a designed capability has no endpoint, that is **the design being larger**, not the design
+  being wrong — and not a defect report against the backend either. **Record the capability. Do not
+  frame it as a divergence.**
+- Measuring the repo stays useful for exactly two things: knowing **what already exists** so it can be
+  reused, and knowing **what a later plan must build**. It is never the standard the design is judged
+  against.
+- Phrases like *"the gap is X"* or *"unbuilt"* are fine as **status**. Phrases like *"conflicts with
+  the API"* or *"the schema says otherwise"* are the error — the schema was written for a smaller
+  product.
+
+**The one exception, unchanged: layer D still binds absolutely.** CLAUDE.md §2 is not a baseline that
+the design outgrows; it is a constraint on every implementation regardless of how large the design is.
+
+---
+
+## 20. Content conflicts to fix in Figma (user-reportable, running list)
+
+Per the amendment above: **design correct, content wrong.** These need the user's edit in Figma; none
+of them changes a screen's structure.
+
+| # | Frame | Content as drawn | Should be |
+|---|---|---|---|
+| 1 | `209:14032` Checkout | *"Secure payments powered by **Stripe**"*; methods Visa · Mastercard · Apple Pay · Google Pay · PayPal | **PayOS only** — ✅ ruled 2026-08-12. PayOS's real flow (VN bank transfer / QR) replaces the five card-and-wallet tiles. |
+| 2 | `74:564` Pricing · `75:1424` FAQ · `111:1877`/`111:1963` Generate · `111:1556` QuickStart · `111:515` Dashboard · `37:4955`/`28:2041`/`149:2`/`200:7705` and others | brand reads **`JapanWeb+`** / eyebrow `JAPANWEB+` | **Korume** — these frames pre-date the rebrand |
+| 3 | `156:1310` Companion home | rail titled **`NIHONGO CINEMA`** | **Korume** |
+| 4 | `66:166` Profile | **`Nihongo Cinema · since March 2026`** | **Korume** |
+| 5 | `156:1310` · `180:1129` · `215:15164` · `184:3974` | Companion named **`Storykeeper`** / **`Hikari`** / **`Korume`** in different frames | one answer needed — see §15.5; if the companion is user-nameable these are placeholders and only need to be consistent |
+| 6 | `187:6556` Growth Areas | literal `You&apos;re` / `Let&apos;s` rendered as text | HTML entities that survived the import |
+| 7 | `28:2041` Kanji inspect | badge says `14 strokes`, meaning card says `Total Strokes: 11` | 緑 has 14 |
+| 8 | `29:2890` Kanji Explorer | `緑` labelled *affinity / えん* in Recently viewed | that reading belongs to `縁` |
+| 9 | `203:13813` Footer | **App Store / Google Play** badges | Korume is a web app — content claim, unless native apps are actually planned |
+| 10 | `65:2` Login | `Continue with Apple` · `Continue with GitHub` | scope question, not a typo — but if only Google is intended, the tiles are content to remove |
+
+**Not a content conflict — a real gap the user confirmed:** ✅ *"I don't have a landing page / gateway
+page yet; I'll create it later."* So §19.0's finding stands as **known and accepted**, not as an error.
+
 ---
 
 ## 6. Cluster: Kanji — 4 frames, analysed 2026-08-12
