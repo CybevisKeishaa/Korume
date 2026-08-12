@@ -234,9 +234,36 @@ header reads `Korume | Diary`; add to the rename list).
 **Batch 2 done (`68ff609`):** `182:3859` Today's Reflection (**interaction**, overlay) · `181:3525`
 Gentle Suggestion drawer (**interaction**) · `180:1770` Learning Memory (**screen**) · `187:6556`
 Growth Areas (**screen**).
-**Remaining 6 — batch 3 = Roadmap** (`64:2061`, `180:2`; read as a **learning-state output**, not a
-static screen), **batch 4 = onboarding + the last memory surface** (`220:16766` Welcome Companion,
-`111:1877` Generate sensei, `111:1963` Generate done, `184:3974` Conversation memory).
+**Batch 3 done (`2866de5`):** `64:2061` Roadmap (**screen**) · `180:2` Roadmap detail (**screen**) ·
+`184:3974` Conversation Memories (**screen**).
+**Remaining 3 = batch 4, onboarding:** `220:16766` Welcome Companion · `111:1877` Generate sensei ·
+`111:1963` Generate done. **Then the Companion cluster is done and Conversation (4) is next.**
+
+**⭐⭐⭐ Batch 3's headline: the Roadmap is a MISSION SYSTEM, not a screen showing a plan.**
+`Journey → Chapter (1 of 6) → Mission → {required lessons · measurable practice gates · skills built}
+→ Unlocks → next Mission`, with a **Companion-authored rationale per mission**. It is the **write
+target** of the Learning Intelligence loop — JLPT's `UPCOMING ADJUSTMENTS` is an edit to *this*
+structure. Measured: `/roadmap` exists and renders `UpcomingScreen`.
+
+**⚑⚑ TWO THINGS THIS BATCH HANDS TO THE IA/CAPABILITY STEP — neither is resolvable inside a cluster:**
+
+1. **The `Journey` label collision, live in the repo.** `app-nav.tsx:59` is
+   `{ href: "/journal", key: "journey" }` → the **Diary**. But every Figma usage of "Journey" means the
+   **Roadmap** (`Your Japanese Journey`, `JOURNEY MAP`, `← Back to Journey`, `JOURNEY CONNECTION`), and
+   `/roadmap` is a *separate* nav row (`:52`). The rebrand renamed the label without checking what the
+   design meant by the word. **Invisible from either artifact alone** — exactly what the inventory is for.
+2. **No canonical skill taxonomy.** `64:2061`'s `AI WEAKNESS EXPLORER` = Listening/**Grammar**/
+   **Vocabulary**/**Speaking**/Kanji; `187:6556`'s `AREAS STILL GROWING` = Listening/**Pronunciation**/
+   **Conversation**/**Particles**/Kanji. Only 2 overlap. Percentages are placeholder noise; **the
+   differing sets are not** — one is coarse skill areas, the other mixes a skill, a modality and a
+   grammar topic. The growth map, weakness explorer, mission `SKILLS YOU'LL BUILD`, suggestion tags and
+   JLPT `section_scores` **all claim to measure "how good are you at X"**. Needed before either builds.
+
+Also: `184:3974` is a **sibling archive** to `180:1770` — the memory store is **split by type**
+(learning moments vs conversations). A conversation memory is a *living object*: replayable,
+re-practisable, `Practiced 4 times`, holding a transcript excerpt and its own growth timeline. Its
+reflection is **L1-aware** (*"without thinking in Vietnamese"*) — a localisation requirement in a
+VN-first product, not decoration.
 
 **⭐⭐ Batch 2's pattern — `provenance-attached companion claim`.** Three frames independently attach
 the *evidence* to what the Companion asserts: `INSPIRED BY` (*"3 pronunciation sessions · 8 careful
