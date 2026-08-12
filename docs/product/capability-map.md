@@ -251,21 +251,87 @@ lesson results · SRS state · mistakes · answer revisions · recordings · con
 
 ---
 
-## 3. What blocks the IA step
+## 3. ✅ The four IA blockers — ALL RULED by the user, 2026-08-12
 
-Four questions must be answered before an information architecture can be honest. They are not
-build-order questions; each one changes what the *nouns* of the product are.
+These were the four questions that had to be answered before an information architecture could be
+honest, because each one changes what the *nouns* of the product are. **All four are now decided.
+They are binding: do not re-litigate them, and do not let a later Figma frame reopen one** (the
+inventory's method rule 3 — a frame is a layer-B snapshot and can lag a ruling by months).
 
-| # | Question | Why it blocks IA |
+### 3.1 One intelligent presence, not two — `Sensei` is a Companion **mode**
+
+`/sensei` is the **Companion Knowledge Assistant** (`215:15164`). *"AI Sensei"* is the pre-rebrand
+name for the same entity, not a second character.
+
+**Consequences that bind the IA:**
+- The IA has **one** intelligent presence. There is no second persona to place, no arbitration rule
+  needed between a "teacher" and a "companion", and no second voice to write.
+- `/sensei` keeps its route because a knowledge conversation is a real destination with recoverable
+  state — but it is grouped as a Companion surface, not as a peer of the Companion.
+- The `Application → Companion → Current Screen` layering in `companion-patterns.md` stands
+  unamended; §2.9's four manifestations already describe everything Sensei does.
+- ⚑ **Still open, and it is naming rather than structure:** the Companion's three in-frame names
+  (`Storykeeper` / `Korume` / `Hikari`) and whether the learner names it at onboarding. This no
+  longer blocks the IA — one entity with an unsettled name is still one entity.
+
+### 3.2 One skill taxonomy, in **two tiers**
+
+The three conflicting sets (`64:2061` weakness explorer · `187:6556` growth areas · `111:515`
+dashboard) are reconciled by reading them as two different tiers rather than three rival lists.
+
+| Tier | Members | What it is for |
 |---|---|---|
-| **1** | **Is `AI Sensei` the Companion, or a second entity?** | decides whether the IA has one intelligent presence or two, and whether `/sensei` is a Companion mode or its own destination |
-| **2** | **One canonical skill taxonomy** — three different sets exist across `64:2061`, `187:6556`, `111:515` | six surfaces claim to measure "how good are you at X"; without one list they cannot agree, and `Practice by Goal` cannot be named |
-| **3** | **`Journey` names two things** — nav maps it to the Diary, the design means the Roadmap | a nav label cannot point at the wrong concept |
-| **4** | **Does Korume ship both kanji surfaces** — discovery *and* curriculum? | decides whether Kanji is one destination or two |
+| **Tier 1 — canonical skills** | **Listening · Speaking · Reading · Grammar · Vocabulary · Kanji** | scoring, the Roadmap, nav-visible progress, anything that must aggregate or compare |
+| **Tier 2 — sub-skills** | **Pronunciation** and **Pitch Accent** under Speaking · **Particles** under Grammar · further diagnostic leaves as evidence demands | diagnosis, `Practice by Goal` targets, the Companion's "areas still growing", mission `SKILLS YOU'LL BUILD` |
 
-**Everything else is scope, not structure**, and can be answered after the IA: Vimeo import ·
-`JLPT Speaking` as a cross-module edge · `AI Coach` flag vs tier · Apple/GitHub sign-in · native mobile
-apps · theme & accent · camera permission · the social graph · the L1 field.
+**Consequences that bind the IA and the model:**
+- **`Conversation` is not a skill.** It is a *context* in which Speaking is practised — which is why
+  it kept appearing beside skills and never fitting. Same for `Listening Practice`: a mode, not a
+  skill.
+- Tier 1 is what `jlpt_attempts.section_scores` and any cross-module comparison may use. **Tier 2 may
+  never be summed into a score** — a sub-skill reports its own diagnosis and rolls up to its parent.
+- This is the list §2.7's per-skill proficiency model was missing, so the ⚑ on that row is cleared.
+- Both existing Figma sets are now *explained* rather than contradicted: `64:2061` drew tier 1 (minus
+  Reading), `187:6556` mixed tiers on one plane.
+- ⚑ **Reading is in tier 1 on product grounds, not frame evidence** — no frame drew it as a skill,
+  but JLPT scores it, `/reading` exists, and a taxonomy that scores five of the six things the exam
+  measures is not usable. Flagged rather than hidden.
+
+### 3.3 `Journey` means the **Roadmap**; the Diary gets its own name
+
+The design is consistent and the nav is wrong: `Your Japanese Journey`, `JOURNEY MAP`,
+`← Back to Journey`, `JOURNEY CONNECTION` all point at the mission system.
+
+**Consequences:**
+- `app-nav.tsx:59` — `{ href: "/journal", key: "journey" }` — is a **defect to fix**: `Journey` moves
+  to `/roadmap`, and `/journal` takes a `diary` key.
+- The Roadmap deserves the stronger word on its merits: it is the **write target** of Learning
+  Intelligence (§2.7, §2.8), not a passive plan view.
+- ⚠️ **`L-025` applies to this rename** — `vitest.config.ts:13` excludes `tests/e2e`, so no unit run
+  can catch a stale label there. Grep `tests/e2e/` for `Journey` **by hand** when the fix lands; this
+  exact rename already broke `tests/e2e/journal.spec.ts` once.
+
+### 3.4 Both kanji surfaces ship — under **one** nav row
+
+Discovery (`29:2890`) and curriculum (`280:3`) are both kept, but Kanji is **one destination**.
+`/kanji` defaults to the curriculum surface (it has ordering and progress, so it is the answer to
+*"what do I do next"*); the explorer is a **browse mode inside it**.
+
+**Consequences:**
+- **Browse-by-radical survives**, and it is the cheapest capability in this document to add: the
+  `radicals` table, `kanji.radical_id`, `idx_kanji_radical` and its RLS read policy all already
+  exist. It is a UI + endpoint gap, not a schema gap.
+- **Curated thematic collections survive** and do have a schema gap — repo `collections` is a
+  *lesson* concept whose join table hits `videos`.
+- The four new domain nouns `280:3` introduces — *learning path · course · kanji lesson · study
+  material* — are kept and still need naming decisions before anything is built.
+- Kanji gets **one** nav row, so §2.6's ⚑ is cleared.
+
+### 3.5 Deferred — scope questions, answerable after the IA is locked
+
+**Everything else is scope, not structure:** Vimeo import · `JLPT Speaking` as a cross-module edge ·
+`AI Coach` flag vs tier · Apple/GitHub sign-in · native mobile apps · theme & accent · camera
+permission · the social graph · the L1 field · the Companion's name.
 
 ---
 
