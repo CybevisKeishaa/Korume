@@ -976,7 +976,7 @@ carries more weight here than it did for Shadowing.
 
 Two of the ten frames (`234:1639`, `234:1667`) were read earlier while resolving their duplicate names.
 
-### 10.0 The module is **`Certification Practice`**, and JLPT is one of three exams
+### 10.0 The module is **`Certification Practice`**, and JLPT is one of three exams — ✅ **CONFIRMED by the user 2026-08-12** (see §10.9)
 
 `232:2` is not titled "JLPT". It is **`Certification Practice`** — the nav row is `Certification
 Practice` (replacing `JLPT`), the breadcrumb reads `Learning › Certification Practice`, and the page
@@ -1097,6 +1097,9 @@ nowhere to put**, and it is the same reason-carrying recommendation contract fou
 
 **⚠️ One insight implies telemetry nothing records:** *"Trusting your instincts — You rarely changed
 answers after reviewing."* That requires storing **answer revisions**, not just final answers.
+✅ **The user ruled revisions ARE recorded, and asked for a whole family of insights built on them —
+the contract and seven variants are designed in §10.9.** The card the frame drew turns out to be the
+*null* case of that family: it only fires when the learner barely changed anything.
 
 ### 10.6 `243:14899` + `243:15364` — **Review Mistakes** · `CONFIRMED` screen + `STATE-VARIANT`
 
@@ -1118,10 +1121,11 @@ expander.
 Then **`COMPANION OBSERVATION`**: *"You solved this instantly. I won't spend as much time reviewing
 this vocabulary anymore. We'll move forward together."*
 
-**⭐⭐ The result writes back into the plan.** That observation, plus the rail's **`UPCOMING
-ADJUSTMENTS — Your roadmap has already been updated`** (*more particle review · restaurant
-conversations · faster listening*), means a JLPT attempt **mutates the learner's roadmap and review
-scheduling**. The repo stores attempts and section scores; nothing consumes them to adjust anything.
+**⭐⭐ The result writes back into the plan — ✅ CONFIRMED by the user 2026-08-12.** That observation,
+plus the rail's **`UPCOMING ADJUSTMENTS — Your roadmap has already been updated`** (*more particle
+review · restaurant conversations · faster listening*), is **real behaviour, not reassuring copy**: a
+certification attempt mutates the learner's roadmap and review scheduling. The repo stores attempts
+and section scores; nothing consumes them to adjust anything. See §10.9.
 
 ### 10.7 ⭐⭐⭐ The Companion boundary: the design **enforces** it, and states it more precisely than the doc
 
@@ -1167,7 +1171,80 @@ reasons** · per-question mistake review with `WHY THIS ANSWER` + vocabulary + *
 practice** · **roadmap and review-schedule write-back from an exam result** · quiet milestones ·
 Companion diary entries · **an explicit Companion silence window scoped to the exam itself**.
 
-**⚑ Questions for the user:** (1) **Is the module `Certification Practice` with three exam families,
-or JLPT only?** — it renames a module, a route, a nav row and a schema. (2) Should answer *revisions*
-be recorded, given an insight card depends on them? (3) Does a JLPT result really write back into the
-roadmap, and if so is that the same engine as the shadowing recommendation reasons?
+### 10.9 ✅ User rulings, 2026-08-12 — all three cluster questions answered
+
+| Question | Ruling |
+|---|---|
+| Is the module `Certification Practice` with three exam families, or JLPT only? | **Three families.** `JLPT` · `BJT` · `Tokutei Ginou` are real. The module is `Certification Practice`; JLPT is one member. |
+| Should answer *revisions* be recorded? | **Yes** — and the user extended the ask: revisions should power **a family of insights**, not just the one card the frame drew. |
+| Does the result write back into the roadmap? | **Yes.** |
+
+**Consequences of ruling 1, so they are not rediscovered later.** `jlpt_tests` / `jlpt_questions` /
+`jlpt_section` / `/api/jlpt/*` / `/jlpt` are all named for one member of a three-member family. The
+registry should name the **module** `certification-practice` and treat JLPT as a family value, not as
+the module identity. ⚠️ **This is a rename with a migration behind it — it is Phase 2 reconciliation
+work, not something Phase 1 performs.** Also note BJT and Tokutei Ginou have **different section
+structures** from JLPT, so `jlpt_section`'s four-value enum cannot be the shared abstraction; the
+per-family structure belongs in `section_config`-style data, not in an enum.
+
+#### The answer-revision contract (ruling 2)
+
+**Record per question, per attempt, an ordered list of answer events** — enough to reconstruct the
+learner's path, not just the destination:
+
+```
+answer_event(attempt_id, question_id, from_choice | null, to_choice, changed_at, phase, was_flagged)
+```
+
+From that, four derived counts and their signs:
+
+| Derived | Meaning |
+|---|---|
+| `first_right → final_wrong` | talked themselves out of a correct answer |
+| `first_wrong → final_right` | reviewing rescued it |
+| `first_wrong → final_wrong` | churn with no gain |
+| `never_changed` | stability |
+
+**net = (wrong→right) − (right→wrong)** is the single number that decides which insight fires.
+
+#### Insight family (ruling 2, extended — the user invited more)
+
+The frame drew only the null case (*"You rarely changed answers after reviewing"*). Seven variants,
+each with the condition that must hold before it may be shown:
+
+| # | Fires when | The insight, in the Companion's voice |
+|---|---|---|
+| 1 | `right→wrong` dominates | *"You changed 6 answers today, and 4 of them were right the first time. Your first instinct is reading better than your second guess."* |
+| 2 | `wrong→right` dominates | *"Going back was worth it. Reviewing rescued 5 questions you would otherwise have lost."* |
+| 3 | changes ≈ 0 **and** accuracy high | *"You rarely changed an answer. You knew what you knew."* (the drawn case) |
+| 4 | `wrong→wrong` dominates | *"You changed 3 answers and none of them landed. When a question resists you twice, flag it and move — the time is worth more elsewhere."* |
+| 5 | the pattern splits by section | *"In Reading you changed almost nothing. In Grammar you changed a third of your answers — that is where the uncertainty lives."* |
+| 6 | changes concentrate on **flagged** questions | *"Every answer you changed was one you had flagged. Your flagging is doing its job."* — and its inverse: changes on unflagged questions read as drift, not triage |
+| 7 | changes cluster in the **final minutes** | *"The three answers you changed in the last five minutes all moved the wrong way. Late doubt is expensive."* |
+
+**Two rules that keep these honest, and they are not optional:**
+1. **A minimum sample.** Below ~4 changes the sign of `net` is noise, and an insight asserting a
+   *habit* from two data points is simply false. Under the floor, fall back to variant 3 or show
+   nothing.
+2. **Never assert a cause.** *"4 of them were right the first time"* is a fact. *"You don't trust
+   yourself"* is a diagnosis the data cannot support. Insight #6's inverse is the easiest one to get
+   wrong.
+
+**Placement respects the Companion boundary (§10.7):** every one of these is post-submission, shown in
+the result or review screens. None can appear during the exam.
+
+#### Roadmap write-back (ruling 3)
+
+Confirmed: a certification result **mutates the learner's plan**. That makes `UPCOMING ADJUSTMENTS`
+(*"Your roadmap has already been updated"*) and the per-question `COMPANION OBSERVATION` (*"I won't
+spend as much time reviewing this vocabulary anymore"*) real behaviour rather than reassuring copy.
+
+**⚑ Still open, and it is an architecture question rather than a product one:** is this the *same*
+engine that produces the shadowing recommendation reasons (§7.1)? Both consume learning history and
+emit a ranked next-thing plus a derived reason. If they are one engine, the certification result is
+simply another input to it; if they are two, Korume will have two things that both claim to know what
+the learner should do next. **Do not decide this inside the inventory** — it belongs to the capability
+map, where every producer and consumer of "what next" can be seen at once.
+
+> These rulings are **inputs to a later spec, not a spec**. Recorded here because the analysis is where
+> they were produced; the schema, the endpoint shapes and the copy all belong to Phase 2 and beyond.
