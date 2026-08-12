@@ -68,13 +68,51 @@ right.
 or its canvas size.** Two capabilities surfaced here that no repo route covers: browse-by-radical and
 curated thematic collections.
 
+## ✅ Cluster 1 of 10 DONE — Kanji, committed `4973dd6` (2026-08-12)
+
+All 4 frames read from live Figma screenshots. `docs/product/screen-inventory.md` now has a **Part II**
+holding the per-frame analysis; Part I's name-based tables are marked superseded where they disagree.
+Headline: **`/kanji` matches NEITHER designed kanji surface** — measured from the page body, it is a
+flat grid + JLPT tabs + one Review link. Both library frames are substantially unbuilt, so the
+"explorer or library" question costs nothing either way.
+
+**The find that closes a standing open question:** `28:2041 Kanji inspect` carries `♡ Favorite` **and**
+`+ Add to Review`. That is the frame `mem:screen_registry_inputs` was looking for when it asked "which
+Figma frame carries the save/flashcard idea?" — and it maps to the SRS side, not `/mining`, exactly as
+predicted. Grep confirms the repo has neither control. Design implies **two** collections, not one.
+
+Also measured, and both change cost estimates: **browse-by-radical is a UI+endpoint gap, NOT a schema
+gap** (`radicals` table + `kanji.radical_id` + `idx_kanji_radical` + RLS read policy all exist);
+**curated kanji collections have no schema** (`collections` is a *lesson* concept — join table hits
+`videos`). `280:3` introduces four new domain nouns (learning path / course / kanji lesson / study
+material). `280:1314` implies `(focus)`-or-`(immersive)` chrome while `/kanji/review` is `(app)` today.
+`28:2041` is a modal in Figma but a page in the repo, and a **persistent mini video player** is drawn
+above it — implying a `(protected)`-level state owner nothing in Part I mentions.
+
+**Method that worked, reuse it:** `get_screenshot` at `maxDimension: 1600` for full screens (the four
+came back 1278–1536 wide, all legible), `curl` to scratchpad, `Read` the PNG. Four frames in one
+batch was comfortable; **do not batch many more than that per turn** — images dominate context.
+
+## ⚠️ Frame renames — the user renamed frames on 2026-08-12, and the map's NAME column is now UNVERIFIED
+
+The user accepted the rename list in `docs/product/figma-frame-map.md` and applied it in Figma
+(11 frames: 3 typos, 4 duplicate-name collisions, 2 version artifacts, 2 cosmetic). **Node ids are
+unaffected**, so every id in the map and in Part II is still correct and all analysis stands.
+
+**Not yet verified: the exact new strings**, and they matter because `screenId` derives from them
+(capitalisation included — `To phase 2 (ready)` vs `(Ready)`, `Kanji explorer` vs `Kanji Explorer`).
+To sync: ask the user to select the renamed frames in the Layers panel, then call `get_metadata` with
+**no `nodeId`** and read the `Currently selected nodes` block (≤16 printed). Also confirm whether the
+dead `90:1985 Shadowing Hub` was deleted — if it was, the page holds **56** frames, not 57, and the
+map's count line needs re-deriving (`L-002`: run it, never carry it).
+
 ## ▶ NEXT ACTION for the session that picks this up
 
-Run the inventory **cluster by cluster**, writing each into `docs/product/screen-inventory.md` and
-committing per cluster — the whole thing does not fit one session, and per-cluster commits mean a
-crash loses nothing. Suggested order, Kanji first because its open question is the hottest:
+Run the inventory **cluster by cluster**, writing each into `docs/product/screen-inventory.md` Part II
+and committing per cluster — the whole thing does not fit one session, and per-cluster commits mean a
+crash loses nothing. **Kanji is done (`4973dd6`); resume at Shadowing.**
 
-**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`) → **Shadowing** (`149:2`, `105:3088`,
+~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ → **Shadowing** (`149:2`, `105:3088`,
 `200:7705`, `200:10726`, `212:14610`, `212:14753`, `125:1030`, `123:2835`, `120:2027`) →
 **JLPT** (`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`,
 `242:14234`, `243:14899`, `243:15364`) → **Companion** (`156:1310`, `220:16766`, `190:7376`,
