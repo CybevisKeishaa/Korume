@@ -17,10 +17,10 @@ takes several selections of ≤15. **One Ctrl+A selected 57 frames.**
 | Node id | Frame name |
 |---|---|
 | `28:2041` | Kanji inspect |
-| `29:2890` | Kanji library ⚠️ see duplicate note |
+| `29:2890` | **Kanji explorer** — the discovery surface (renamed 2026-08-12) |
 | `36:4117` | Pronunciation detail |
 | `37:4955` | Pronunciation library |
-| `44:7289` | Conversation pratice *(sic — typo in the frame name)* |
+| `44:7289` | Conversation practice |
 | `46:2` | Popup create conversation |
 | `64:2061` | Roadmap |
 | `65:2` | Login |
@@ -28,7 +28,7 @@ takes several selections of ≤15. **One Ctrl+A selected 57 frames.**
 | `67:595` | Edit profile |
 | `74:564` | Pricing |
 | `75:1424` | FAQ |
-| `90:1985` | Shadowing Hub ⚠️ **superseded — dead frame, build against `149:2`** |
+| `90:1985` | Shadowing Hub ⚠️ **superseded — dead frame, build against `149:2`. Still on the page as of 2026-08-12; the delete-plus-rename pair was not carried out** |
 | `105:3088` | Shadowing Practice |
 | `111:515` | Homepage |
 | `111:1556` | QuickStart |
@@ -38,14 +38,14 @@ takes several selections of ≤15. **One Ctrl+A selected 57 frames.**
 | `123:2835` | Dictation (in shadowing) |
 | `125:1030` | Summary (in shadowing) |
 | `149:2` | **Shadowing hub after changes** — the live hub; the calibration frame the shell tokens were measured from (`app/globals.css:136`) |
-| `156:1310` | Companion home after change |
+| `156:1310` | Companion home |
 | `170:9364` | Conversation practice library |
 | `180:2` | Roadmap detail |
-| `180:1129` | **Panel Quick preview: Conversation practice** — see note below |
+| `180:1129` | Quick preview panel: Conversation practice — see note below |
 | `180:1770` | Learning memory |
 | `181:3525` | Gentle suggestion drawer |
 | `182:3859` | Today's reflection (panel, fade around) |
-| `184:3974` | Conversation memorry *(sic — typo in the frame name)* |
+| `184:3974` | Conversation memory |
 | `187:6556` | Growth Areas |
 | `190:7376` | Companion Diary |
 | `200:7705` | Explore Lessons |
@@ -58,20 +58,20 @@ takes several selections of ≤15. **One Ctrl+A selected 57 frames.**
 | `215:15164` | Companion Knowledge Assistant |
 | `216:15648` | Empty state (Companion home) |
 | `218:15740` | Error state |
-| `220:16032` | Global setting |
+| `220:16032` | Global settings |
 | `220:16766` | Welcome Companion page |
 | `232:2` | JLPT Practice |
 | `234:618` | JLPT Phase test |
-| `234:1639` | To phase 2 — the **`Begin Listening` gate** (rename pending, see below) |
-| `234:1667` | To phase 2 — the **countdown** (rename pending, see below) |
+| `234:1639` | To phase 2 (ready) — the `Begin Listening` gate |
+| `234:1667` | To phase 2 (countdown) — the auto-advancing 3→2→1 |
 | `237:1690` | JLPT practice (phase 1) |
 | `237:6708` | Finish phase 1 |
 | `240:12992` | JLPT practice (phase 2) |
 | `242:14234` | Practice result |
 | `243:14899` | Review mistake (after JLPT practice) |
 | `243:15364` | Review mistake (more detail) |
-| `280:3` | Kanji library (choose lesson, choose book mimikara,...) ⚠️ see duplicate note |
-| `280:1314` | Kanji lesson practice( flashcard) |
+| `280:3` | **Kanji library** — the curriculum surface (renamed 2026-08-12) |
+| `280:1314` | Kanji lesson practice (flashcard) |
 | `284:1464` | Grammar analysis |
 
 ### ⚠️ Two real duplicate pairs, confirmed by node id
@@ -111,6 +111,13 @@ typing slips:
    Capability side-findings from `29:2890` that no repo route covers: **browse kanji by radical**, and
    **curated thematic collections**. Both are real capabilities, not decoration.
 
+   ⚠️ **Refined 2026-08-12 by the full cluster analysis — read
+   `docs/product/screen-inventory.md` §6, which supersedes this box.** Two corrections: the two
+   capabilities cost very different amounts (radicals already have a table, an FK and an index;
+   curated collections have no schema at all, because `collections` is a *lesson* concept), and the
+   framing above is itself too narrow — **`/kanji` implements neither frame**, so the question is not
+   which one wins but whether Korume ships both surfaces.
+
 **Method note worth keeping:** name-matching said "duplicate", canvas width said "newer iteration",
 and the screenshot said "two different products". Only the picture was right.
 
@@ -133,65 +140,52 @@ confirmed by the name itself.
 `105:3088` and `200:10726` were both unidentified spec ids; this capture resolved them as
 `Shadowing Practice` and `Explore Lessons (with preview)`.
 
-## Rename list — hand to the user, fix in Figma in ONE pass
+## Rename pass — DONE and VERIFIED 2026-08-12
 
-Compiled 2026-08-12 at the user's request (*"cho tôi những màn hình với tên đang bị sai chính tả,
-tôi sẽ sửa lại"*), by scanning all 57 names. **Node ids are stable across a rename**, so this map's
-id column survives; only the name column needs re-syncing afterwards.
+The user applied the rename list, and the result was **read back from Figma**, not assumed: the user
+selected the frames and `get_metadata` was called with **no `nodeId`**, whose response prepends a
+`Currently selected nodes` block. The name column above now carries those verified strings.
 
-Why it matters beyond tidiness: `screenId` derives from the frame name (spec `R3`), so a typo, a
-trailing description, or a duplicate name becomes a permanent identifier — or, for duplicates, an
-outright collision.
-
-### A. Typos — unambiguous, 3 frames
-
-| Node id | Current name | Should be |
-|---|---|---|
-| `44:7289` | Conversation **pratice** | Conversation practice |
-| `184:3974` | Conversation **memorry** | Conversation memory |
-| `280:1314` | Kanji lesson practice**( flashcard)** | Kanji lesson practice (flashcard) |
-
-### B. Duplicate names — these collide as `screenId`, 4 frames in 2 pairs
-
-| Node id | Current name | Proposed | Why |
+| Node id | Was | Now | |
 |---|---|---|---|
-| `234:1639` | To phase 2 | **To phase 2 (ready)** | the `Begin Listening` gate |
-| `234:1667` | To phase 2 | **To phase 2 (countdown)** | the auto-advancing 3→2→1 |
-| `29:2890` | Kanji library | **Kanji explorer** | measured: it is the *discovery* surface (browse by radical, curated paths) — see the comparison above |
-| `280:3` | Kanji library (choose lesson, choose book mimikara,...) | **Kanji library** | it is the *curriculum* surface; the trailing description would land inside the id |
+| `44:7289` | Conversation **pratice** | Conversation practice | ✅ |
+| `184:3974` | Conversation **memorry** | Conversation memory | ✅ |
+| `280:1314` | Kanji lesson practice**( flashcard)** | Kanji lesson practice (flashcard) | ✅ |
+| `234:1639` | To phase 2 | To phase 2 (ready) | ✅ |
+| `234:1667` | To phase 2 | To phase 2 (countdown) | ✅ |
+| `29:2890` | Kanji library | Kanji explorer | ✅ |
+| `280:3` | Kanji library (choose lesson, choose book mimikara,...) | Kanji library | ✅ |
+| `156:1310` | Companion home **after change** | Companion home | ✅ |
+| `180:1129` | Panel Quick preview: Conversation practice | Quick preview panel: Conversation practice | ✅ |
+| `220:16032` | Global setting | Global settings | ✅ |
+| `149:2` | Shadowing hub **after changes** | — | ❌ **not renamed** |
 
-⚠️ **`29:2890` is a rename PLUS an open product question.** Renaming it makes the two frames
-distinguishable either way, so it is safe to do now — but whether Korume ships both a discovery and
-a curriculum surface for kanji is still the user's call (open question 1 in
-`mem:phase0_figma_inventory_run_state`).
+Both duplicate-name collisions are gone: `Kanji explorer` / `Kanji library` are now distinct, and so
+are the two `To phase 2` frames.
 
-### C. Version artifacts in names — the "which one is live" trap, 2 frames
+### ⚠️ Two things the read-back caught that the user did not intend
 
-| Node id | Current name | Proposed |
-|---|---|---|
-| `149:2` | Shadowing hub **after changes** | Shadowing hub |
-| `156:1310` | Companion home **after change** | Companion home |
+**1. `149:2` was not renamed, and `90:1985` was not deleted.** The selection contained `90:1985`
+(still named `Shadowing Hub`) in `149:2`'s place — 11 frames, but one substitution. So the pair that
+had to move together did not move at all: the live hub is still called `Shadowing hub after changes`,
+and the dead frame it supersedes is still on the page. **The page therefore still holds 57 frames.**
+Nothing downstream is blocked — node ids are what the analysis keys on — but this is the one rename
+that also retires a dead frame, so it is worth finishing.
 
-`149:2` can only take the plain name once the dead `90:1985 Shadowing Hub` is deleted — do the
-delete and the rename together, or the collision just moves. (`156:1310` has no rival frame, so its
-rename is unconditional.) Note the two also disagree with each other, "changes" vs "change".
+**2. Five of the new names carry invisible leading or trailing whitespace**, exactly as Figma
+returned them: `To phase 2 (ready)·`, `·Global settings`, `·Kanji library`,
+`·Quick preview panel: Conversation practice`, `Shadowing Hub·` (`·` marks the space).
 
-### D. Cosmetic / grammar — low priority, 2 frames
+**Do not send the user back into Figma to hunt invisible spaces.** The correct fix is downstream:
+**`screenId` derivation MUST trim before it slugifies**, or `·Kanji library` yields a leading-dash id.
+This is a note for Phase 1's `R3` — the derivation is the right place to be tolerant, because a
+whitespace-only difference is not a naming decision. The name column above is recorded **trimmed**.
 
-| Node id | Current name | Proposed |
-|---|---|---|
-| `180:1129` | Panel Quick preview: Conversation practice | Quick preview panel: Conversation practice |
-| `220:16032` | Global setting | Global settings |
+### Not requested, mentioned once: casing is still mixed
 
-`180:1129` reads as two names run together with no separator — which is exactly why an earlier pass
-mistook it for two frames.
-
-### Not requested, mentioned once: casing is mixed
-
-Roughly half the names are Title Case (`Shadowing Practice`, `Explore Lessons`, `Growth Areas`) and
-half sentence case (`Kanji inspect`, `Pronunciation detail`, `Roadmap detail`). This does **not**
-break `screenId` — derivation kebab-cases anyway — so it is genuinely optional. Raised only because
-the user is opening the file to rename regardless.
+Roughly half the names are Title Case (`Shadowing Practice`, `Explore Lessons`), half sentence case
+(`Kanji explorer`, `Pronunciation detail`). This does **not** break `screenId` — derivation
+kebab-cases anyway — so it stays optional.
 
 ## The arithmetic closes, and it tells us something
 
