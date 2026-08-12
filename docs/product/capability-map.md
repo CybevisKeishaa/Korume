@@ -270,9 +270,13 @@ name for the same entity, not a second character.
   state — but it is grouped as a Companion surface, not as a peer of the Companion.
 - The `Application → Companion → Current Screen` layering in `companion-patterns.md` stands
   unamended; §2.9's four manifestations already describe everything Sensei does.
-- ⚑ **Still open, and it is naming rather than structure:** the Companion's three in-frame names
-  (`Storykeeper` / `Korume` / `Hikari`) and whether the learner names it at onboarding. This no
-  longer blocks the IA — one entity with an unsettled name is still one entity.
+- ✅ **CLOSED 2026-08-12 — the Companion is named `Korume`, fixed and branded.** `Hikari` was
+  corrected in Figma; **`Storykeeper` is a screen name, not a companion name**, so it never belonged
+  in the contradiction. The "learner names it at onboarding" hypothesis is **not supported** — no
+  naming step exists in any frame, and the user resolved the divergence by unifying the name.
+  (`screen-inventory.md` §15.5, §20.)
+  ⚑ Carried, and it is a copywriting question only: the companion and the product share a word, so
+  *"Korume noticed…"* is ambiguous between the two readings.
 
 ### 3.2 One skill taxonomy, in **two tiers**
 
@@ -329,9 +333,16 @@ Discovery (`29:2890`) and curriculum (`280:3`) are both kept, but Kanji is **one
 
 ### 3.5 Deferred — scope questions, answerable after the IA is locked
 
-**Everything else is scope, not structure:** Vimeo import · `JLPT Speaking` as a cross-module edge ·
-`AI Coach` flag vs tier · Apple/GitHub sign-in · native mobile apps · theme & accent · camera
-permission · the social graph · the L1 field · the Companion's name.
+**Still open:** Vimeo import · `JLPT Speaking` as a cross-module edge · `AI Coach` flag vs tier ·
+theme & accent · camera permission · the social graph · the L1 field.
+
+### ✅ Closed 2026-08-12 — three of the deferred questions were answered early
+
+| Question | Ruling | Consequence |
+|---|---|---|
+| **Apple / GitHub sign-in** | **Apple yes, GitHub no.** Auth is **email + Google + Apple** | Widens `CLAUDE.md` §3's *email + Google*. Apple Sign-In has real obligations — Supabase Auth supports it, but it needs an Apple Developer account and Apple's *"Sign in with Apple"* is **mandatory on iOS** for apps offering third-party sign-in, which the row below makes relevant |
+| **Native mobile apps** | **Planned** — *"tôi sẽ làm app sau"*. The footer's App Store / Google Play badges are a roadmap statement, not a false claim | Not this product cycle, and it does **not** change the web IA. But it is why Apple sign-in matters, and it is a reason not to design the web nav into a shape a mobile tab bar can never mirror |
+| **The Companion's name** | **`Korume`, fixed and branded** (§3.1) | Reduces to a copywriting concern |
 
 ---
 

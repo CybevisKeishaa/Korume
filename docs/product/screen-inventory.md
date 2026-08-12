@@ -357,6 +357,28 @@ The frame's content needs fixing; its design does not.
 **So the correct output for a content conflict is a report, not a redesign and not a shrug.** A
 running list lives in §20.
 
+### ⭐⭐ Refinement A-bis, 2026-08-12 — **sample data is a field list, not content**
+
+**User ruling:** *"Dữ liệu mẫu là để bạn biết cần có những dữ liệu gì trên màn hình, đừng quan trọng
+nó."* — sample values exist to tell you **which fields the screen needs**; the values themselves carry
+no authority and are not errors to report.
+
+**So B-content splits again, and only one half is worth a user's time:**
+
+| B-content kind | Examples | Report it? |
+|---|---|---|
+| **Identity content** | brand names, third-party/vendor names, product names, legal claims, feature names | ✅ **yes** — a wrong vendor name is a wrong product decision on screen |
+| **Sample content** | a stroke count, a kanji's reading, a learner's name, a date, a percentage, an escaped HTML entity | ❌ **no** — read it as *"this screen needs a stroke-count field"* and move on |
+
+**This cost real effort to learn: three of §20's ten rows were sample-data noise** (a stroke count
+that disagreed with itself, a reading attached to the wrong kanji, a stray `&apos;`). Each was
+correctly observed and each was worthless to the user, who cannot act on them and did not put the
+values there as claims. **The signal in `Total Strokes: 11` is the label, never the 11.**
+
+**Generalised rule for any future inventory pass:** when a frame shows a value, record the **field**
+in `Data needed` — which the inventory already does — and do **not** also open a content ticket
+because the value is wrong. A rendering bug (`&apos;`) is the same class: known artifact, skip it.
+
 **B. ⭐⭐⭐ Layer C is NOT a baseline. Stop measuring the design against the existing API.**
 
 The user's ruling, and it reverses a habit this document had picked up: *"the APIs we built in the
@@ -382,21 +404,70 @@ the design outgrows; it is a constraint on every implementation regardless of ho
 
 ## 20. Content conflicts to fix in Figma (user-reportable, running list)
 
-Per the amendment above: **design correct, content wrong.** These need the user's edit in Figma; none
-of them changes a screen's structure.
+Per the amendment above: **design correct, content wrong.** ✅ **The user went through this entire
+list on 2026-08-12. Every row is now closed** — nothing here is outstanding, and the rows that turned
+out not to be conflicts at all are the more useful half.
 
-| # | Frame | Content as drawn | Should be |
+### ✅ Fixed by the user in Figma
+
+| # | Was | Now | Verified? |
 |---|---|---|---|
-| 1 | `209:14032` Checkout | *"Secure payments powered by **Stripe**"*; methods Visa · Mastercard · Apple Pay · Google Pay · PayPal | **PayOS only** — ✅ ruled 2026-08-12. PayOS's real flow (VN bank transfer / QR) replaces the five card-and-wallet tiles. |
-| 2 | `74:564` Pricing · `75:1424` FAQ · `111:1877`/`111:1963` Generate · `111:1556` QuickStart · `111:515` Dashboard · `37:4955`/`28:2041`/`149:2`/`200:7705` and others | brand reads **`JapanWeb+`** / eyebrow `JAPANWEB+` | **Korume** — these frames pre-date the rebrand |
-| 3 | `156:1310` Companion home | rail titled **`NIHONGO CINEMA`** | **Korume** |
-| 4 | `66:166` Profile | **`Nihongo Cinema · since March 2026`** | **Korume** |
-| 5 | `156:1310` · `180:1129` · `215:15164` · `184:3974` | Companion named **`Storykeeper`** / **`Hikari`** / **`Korume`** in different frames | one answer needed — see §15.5; if the companion is user-nameable these are placeholders and only need to be consistent |
-| 6 | `187:6556` Growth Areas | literal `You&apos;re` / `Let&apos;s` rendered as text | HTML entities that survived the import |
-| 7 | `28:2041` Kanji inspect | badge says `14 strokes`, meaning card says `Total Strokes: 11` | 緑 has 14 |
-| 8 | `29:2890` Kanji Explorer | `緑` labelled *affinity / えん* in Recently viewed | that reading belongs to `縁` |
-| 9 | `203:13813` Footer | **App Store / Google Play** badges | Korume is a web app — content claim, unless native apps are actually planned |
-| 10 | `65:2` Login | `Continue with Apple` · `Continue with GitHub` | scope question, not a typo — but if only Google is intended, the tiles are content to remove |
+| 2 | brand `JapanWeb+` / `JAPANWEB+` across Pricing, FAQ, Generate, QuickStart, Dashboard, Kanji, Shadowing hub, Explore… | **Korume** | ⚠️ user-reported, not read back |
+| 3 | `156:1310` rail titled `NIHONGO CINEMA` | **Korume** | ⚠️ user-reported |
+| 4 | `66:166` `Nihongo Cinema · since March 2026` | **Korume** | ⚠️ user-reported |
+| 5 | Companion named `Hikari` in `180:1129` | **Korume** | ⚠️ user-reported |
+
+> ⚠️ **Not yet read back from Figma**, and this project has already paid once for the difference: a
+> user saying *"I renamed them"* is a claim about intent, not about file state — the frame-rename pass
+> earlier in Phase 0 found a substitution the user did not know they had made. **Verify these when
+> those frames are next in front of us**, which is cheap then and pointless now. None of it blocks
+> the IA. (`L-003`.)
+
+### ✅ RESOLVED — the Companion's name is **Korume**
+
+**Row 5 is fully closed, and it closes §15.5's `AMBIGUOUS` finding with it.**
+
+- `Hikari` → corrected to **Korume**.
+- **`Storykeeper` was never a companion name — it is a screen name** (user, 2026-08-12). The
+  inventory read it as the companion's identity in §11.1's `Data` row; that reading was wrong.
+  Note it is *not* a Figma frame name either (`figma-frame-map.md` has no such entry) — it is a
+  title rendered **inside** `156:1310`.
+
+**So: one companion, named Korume, the same word as the product.** The "user-nameable companion"
+hypothesis in §15.5 is **not supported** — no naming step was ever found, and the user resolved the
+divergence by unifying the name rather than by declaring it a placeholder. ⇒ `capability-map.md`
+§3.1's remaining ⚑ is cleared.
+
+### ✅ NOT conflicts — scope questions, now answered
+
+| # | Question | ✅ Ruling, 2026-08-12 |
+|---|---|---|
+| 9 | `203:13813` Footer's **App Store / Google Play** badges | **Keep them. Native apps are planned** — *"tôi sẽ làm app sau"*. The badges are a roadmap statement, not a false claim |
+| 10 | `65:2` Login's `Continue with Apple` · `Continue with GitHub` | **Apple: yes. GitHub: no** — remove only the GitHub tile. Auth becomes **email + Google + Apple** |
+
+### ❌ WITHDRAWN — sample data, not content conflicts
+
+Rows 6, 7 and 8 (`&apos;` entities · `14 strokes` vs `Total Strokes: 11` · `緑` labelled with `縁`'s
+reading) are **withdrawn per refinement A-bis above**. They were correctly observed and were never
+actionable: sample values tell the inventory *which field the screen needs*, and nothing more. The
+user cannot act on them and did not intend them as claims. **Do not re-report this class.**
+
+### ⭐ Row 1 — Checkout: a **structural** ruling, not just a content fix
+
+The content half is unchanged (**PayOS**; no Stripe, no Visa, no Apple Pay). The user added a
+constraint that is **layer B-design and therefore authoritative**:
+
+> *"Có thể không có các Apple Pay hay gì, thế nhưng nó vẫn phải có phần khung cho nó."*
+
+**The payment-method selection region stays in the design as a region**, even though the tiles inside
+it will be PayOS's real methods (VN bank transfer / QR) rather than the five card-and-wallet brands
+drawn today. The user cannot edit the frame right now, so **the frame keeps its wrong tiles and the
+inventory carries the correction** — when Checkout is eventually ported, build the section, not the
+brands.
+
+**Why this matters beyond Checkout:** it is the cleanest example so far of B-design and B-content
+disagreeing *within a single component*. The **slot** is design (authoritative); the **contents of
+the slot** are content (correctable). Do not delete a region because its sample contents are wrong.
 
 **Not a content conflict — a real gap the user confirmed:** ✅ *"I don't have a landing page / gateway
 page yet; I'll create it later."* So §19.0's finding stands as **known and accepted**, not as an error.
@@ -1993,7 +2064,20 @@ exchange) · and **`CONVERSATION TRAITS`** — `Formality` (a 5-dot meter) · `S
 wizard's eight categorical choices. Whether traits are *derived from* the wizard or *authored
 alongside* it is unresolved and affects the schema.
 
-### 15.5 ⚠️⚠️ `AMBIGUOUS`: the Companion has **three different names** across frames
+### 15.5 ✅ **RESOLVED 2026-08-12** — the Companion is named **Korume**
+
+> **User ruling.** `Hikari` was corrected to `Korume` in Figma. **`Storykeeper` is a screen name, not
+> a companion name** — so it never belonged in this table, and §11.1's `Data` row misread it as the
+> companion's identity. The three-name contradiction below is closed: there is **one** companion,
+> named **Korume**, and the user-nameable hypothesis is **not supported**. See §20.
+>
+> The original finding is kept verbatim below because it is what prompted the ruling.
+
+---
+
+<details><summary>Original finding (superseded)</summary>
+
+### ⚠️⚠️ `AMBIGUOUS`: the Companion has **three different names** across frames
 
 | Frame | Name shown |
 |---|---|
@@ -2011,6 +2095,17 @@ identity at all** (§14). But no frame in the inventory shows a naming step, so 
 **This compounds §14.3.** Together the open identity questions are: is `AI Sensei` the Companion or a
 second entity, and **is the Companion's name fixed, branded, or chosen by the learner?** Both must be
 answered before the IA can say what "the Companion" *is*.
+
+</details>
+
+**✅ Both of those questions are now answered** (2026-08-12): `AI Sensei` is the Companion's
+knowledge-answering **mode**, not a second entity (`capability-map.md` §3.1), and the name is
+**fixed and branded — Korume**, not chosen by the learner. The IA can say what the Companion is.
+
+⚑ **One consequence worth carrying:** the companion and the product share a name. That is the user's
+decision and it is coherent (the Companion *is* the product's voice), but any copy that says
+*"Korume noticed…"* is ambiguous between the two readings. A naming/voice question for whoever writes
+the strings — **not** an IA or schema question.
 
 ### 15.6 Cluster verdict
 
