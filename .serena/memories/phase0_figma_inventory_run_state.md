@@ -226,6 +226,41 @@ reason per card (an IA edge today's nav has nowhere to put), and the result **wr
 roadmap and review schedule** (`UPCOMING ADJUSTMENTS`, `COMPANION OBSERVATION`) — nothing consumes
 attempts that way today. One insight card needs **answer-revision telemetry** that is not recorded.
 
+## ▶ Cluster 4 IN PROGRESS — Companion, batch 1 of 4 done (`a3aa216`)
+
+**Done:** `156:1310` Companion home · `190:7376` Diary · `215:15164` Knowledge Assistant ·
+`216:15648` (misnamed — it is the **Diary's** empty state, header reads `Korume | Diary`; add to the
+rename list). **Remaining 10, in batches of ≤4:** `220:16766` Welcome Companion · `180:1770` Learning
+memory · `184:3974` Conversation memory · `187:6556` Growth Areas · `182:3859` Today's reflection
+(panel) · `181:3525` Gentle suggestion drawer · `64:2061` Roadmap · `180:2` Roadmap detail ·
+`111:1877` Generate sensei · `111:1963` Generate done.
+
+**⭐ The four-way taxonomy the user requires, with the doc's own blade.**
+`companion-patterns.md` § *The Companion Never Belongs To A Screen*: `Application → Companion →
+Current Screen`. Plus presence levels `0 Hidden · 1 Ambient · 2 Observe · 3 Listening · 4 Address ·
+Silent`, mapped to `CompanionState` in `design-reconciliation.md` §5.
+
+| Kind | Test |
+|---|---|
+| **screen** | learner navigates to it; Companion is the subject |
+| **panel** | a region inside another screen; Companion is a guest |
+| **interaction** | a transient presence event — arrives, speaks/offers, leaves |
+| **generated content** | a persisting artifact with its own retrieval (diary letters, memories, suggestions) |
+
+Generated content is **orthogonal** to the other three — the same letter appears as content in a
+panel, in an interaction, and on its own screen.
+
+**Measured: the presence system ALREADY EXISTS in code** —
+`lib/companion/presence/{state-machine,arbitration,contexts,speech,config}.ts`,
+`lib/companion/{dedupe,mastery,phase}.ts`, `components/companion/use-companion.ts`,
+`/api/companion/{journal,memories}`. Routes `/journal` `(immersive)` ≈ Diary and `/sensei` `(app)` ≈
+Knowledge Assistant already match. **No Companion home route.**
+
+**Resolved:** the `PERSONAL VOCABULARY SHELF` sits inside Companion home ⇒ **companion-owned**, and its
+`Confidence` is a Companion concept, not an SRS interval. (Open since 2026-08-11, `screen-inventory.md`
+§4.) **First rule-4 clarification:** presence levels are an internal state machine in the doc; the frame
+renders one as **user-visible copy** (*"Listening quietly…"*). Neither side edited.
+
 ## 📐 Method for TALL frames — needed from here on
 
 `200:7705` (1536×5836) and `200:10726` (1582×5906) reduce to ~425px wide at `maxDimension: 1600` —
