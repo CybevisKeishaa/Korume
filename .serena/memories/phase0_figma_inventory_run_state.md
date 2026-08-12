@@ -93,6 +93,33 @@ above it — implying a `(protected)`-level state owner nothing in Part I mentio
 came back 1278–1536 wide, all legible), `curl` to scratchpad, `Read` the PNG. Four frames in one
 batch was comfortable; **do not batch many more than that per turn** — images dominate context.
 
+## ⛔ THE FINDING THAT OUTRANKS EVERYTHING ELSE SO FAR — §2 violation in the hub's import pipeline
+
+`149:2` draws the lesson-import job as a six-step checklist whose **first two steps are `Download
+Video` and `Extract Audio`** — named violations of CLAUDE.md §2 rule 1, rendered as **user-facing
+copy**. Read from a 2× crop of the full-res render, not a thumbnail, because the claim is too serious
+to guess at. Full write-up: `docs/product/screen-inventory.md` §7.0 (`98655c0`).
+
+**The code is clean.** No downloader exists anywhere in application code;
+`lib/data/transcript-providers.ts` already names this exact gray area in a comment and deliberately
+leaves `aiTranscriptProvider` a stub. Shipped path = `youtubeCaptionProvider` → captions only.
+
+**The design contradicts itself and the self-consistent reading is the legal one:** a sibling row
+fails with `Transcript unavailable`, which could not happen if the pipeline really downloaded video and
+ran STT. The two steps are stray labels. **Remedy is copy-level** (rename to `Fetch transcript` /
+`Check captions`) and is explicitly NOT a licence to resolve the deferred STT question.
+**Awaiting the user's ruling — do not port this screen until it is answered.**
+
+## 📐 Method for TALL frames — needed from here on
+
+`200:7705` (1536×5836) and `200:10726` (1582×5906) reduce to ~425px wide at `maxDimension: 1600` —
+**unreadable**. Raising `maxDimension` does not help: the PNG is downsampled again on read, so the long
+edge lands in the same place. **The working method is: request at full height, `curl` the PNG, then
+crop locally** — PowerShell + `System.Drawing`, `DrawImage` into a larger destination rect to upscale
+a band. Proven on `149:2`, where a 900×200 source region rendered at 1800×400 made 10px design text
+perfectly legible. Budget ~4 bands per tall frame, and **do not read more than ~3 full screens per
+turn** — images dominate context far more than text does.
+
 ## ✅ Frame renames — APPLIED AND VERIFIED 2026-08-12 (`docs/product/figma-frame-map.md` is current)
 
 Read back from Figma, not assumed: the user selected the renamed frames, `get_metadata` was called
@@ -120,7 +147,10 @@ Run the inventory **cluster by cluster**, writing each into `docs/product/screen
 and committing per cluster — the whole thing does not fit one session, and per-cluster commits mean a
 crash loses nothing. **Kanji is done (`4973dd6`); resume at Shadowing.**
 
-~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ → **Shadowing** (`149:2`, `105:3088`,
+~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ `4973dd6` →
+**Shadowing** — batch 1 ✅ `98655c0` (`149:2`, `212:14610`, `212:14753`); **batch 2 = the Explore pair
+`200:7705` + `200:10726` (tall, band-read)**; batch 3 = the practice family `105:3088`, `120:2027`,
+`123:2835`, `125:1030`. Full original cluster order below — (`149:2`, `105:3088`,
 `200:7705`, `200:10726`, `212:14610`, `212:14753`, `125:1030`, `123:2835`, `120:2027`) →
 **JLPT** (`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`,
 `242:14234`, `243:14899`, `243:15364`) → **Companion** (`156:1310`, `220:16766`, `190:7376`,
