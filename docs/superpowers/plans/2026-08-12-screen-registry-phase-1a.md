@@ -825,7 +825,28 @@ Expected: **PASS, with zero edits to that file so far.** Every existing assertio
 
 ⚠️ **This is the real acceptance gate for Phase 1a.** If any of these fail, the derivation is wrong. **Do not adjust the expectations to match.**
 
-- [ ] **Step 7: Fold the old href guard into T1**
+- [ ] **Step 7: Restore the label-exhaustiveness guarantee the refactor weakens**
+
+⚠️ **A type-precision loss the derivation causes, found in the pre-flight scan.** Today `NAV_GROUPS` is a `const` literal, so `(typeof NAV_ITEMS)[number]["key"]` is a union of 22 string literals, and `app-nav.test.tsx:28`'s `EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string>` is **exhaustive** — omit a label and `tsc` fails.
+
+After Task 5 Step 5, `deriveNavGroups` returns `{ href: string; key: string }[]`, so that type widens to `Record<string, string>` and the compile-time exhaustiveness is gone. `expectedCounts` and `EXPECTED_GROUP_LABELS` are unaffected — they key off `NavGroupId`, which stays a union.
+
+Do **not** fix this with `as const satisfies` gymnastics on the registry; that fights the derivation for little gain. Restore the guarantee as a runtime assertion instead — add to `components/layout/app-nav.test.tsx`:
+
+```ts
+  it("has a pinned label for every nav destination", () => {
+    // Restores the exhaustiveness that `NAV_GROUPS`-as-a-literal used to give
+    // at compile time. Once NAV_GROUPS is derived from the registry, the key
+    // type widens to `string`, so a missing EXPECTED_LABELS entry would no
+    // longer be a tsc error — this makes it a test failure instead.
+    const missing = NAV_ITEMS.filter((item) => !(item.key in EXPECTED_LABELS));
+    expect(missing).toEqual([]);
+  });
+```
+
+Mutation-check it: delete one key from `EXPECTED_LABELS`, confirm **FAIL**, restore.
+
+- [ ] **Step 8: Fold the old href guard into T1**
 
 `components/layout/app-nav.test.tsx:156-168` (`"points every nav href at a route that exists"`) hardcodes only `(app)` and `(immersive)` candidate paths. T1 now covers this properly for every route and every chrome group (spec §4.1: *"should be folded in, not duplicated"*). Delete that `it(...)` block and replace it with a pointer:
 
@@ -835,18 +856,18 @@ Expected: **PASS, with zero edits to that file so far.** Every existing assertio
   // nav hrefs under (app)/(immersive). Spec §4.1: folded in, not duplicated.
 ```
 
-- [ ] **Step 8: Verify the whole suite and the types**
+- [ ] **Step 9: Verify the whole suite and the types**
 
 ```bash
 npx tsc --noEmit && npx vitest run && npx next lint
 ```
 Expected: `tsc` 0 errors · every test green · lint error count equal to the Global Constraints baseline.
 
-- [ ] **Step 9: Mutation-check T6 — the most important one in the plan**
+- [ ] **Step 10: Mutation-check T6 — the most important one in the plan**
 
 Change one registry entry's `navOrder` so two rows swap within a group. **T6 must go red**, and so must `app-nav.test.tsx`'s group-order assertions. Restore, confirm green. If T6 stays green while rows move, R8 is not actually enforced and Phase 1a has failed its one job.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add lib/product/nav-derivation.ts lib/product/nav-derivation.test.ts components/layout/app-nav.tsx components/layout/app-nav.test.tsx
