@@ -1,8 +1,80 @@
-# Phase 0 — Figma Product Inventory — run state (IN PROGRESS, paused 2026-08-11)
+# Phase 0 — Figma Product Inventory — run state (⭐ ALL 57 FRAMES READ, 2026-08-12)
 
-> **Where it stands:** the **frame map is DONE (57/57)**. The **inventory analysis has NOT started.**
-> No code touched, no branch cut — everything so far is docs + memory, committed straight to master.
-> Read `mem:project_status` § NEXT ACTION first for why this stage exists at all.
+> **Where it stands:** frame map DONE (57/57) **and the per-frame inventory analysis is DONE (57/57).**
+> `docs/product/screen-inventory.md` Part II holds it, §6–§19, committed per cluster.
+> No code touched, no branch cut — everything is docs + memory, committed straight to master.
+>
+> **▶ NEXT: the aggregation step, not another cluster.** Capabilities → capability map → propose IA →
+> **STOP for the user's review** → lock IA → Screen Registry Phase 1. The user has stated they will
+> **not** settle navbar / route map / registry from a partial read — that gate is now clear.
+>
+> **⚠️ Do NOT port any screen yet.** The user's standing instruction: this is the stage that digs up
+> what the repo does not know it is missing.
+
+## Cluster completion log
+
+| Cluster | Frames | Commit |
+|---|---|---|
+| Kanji | 4 | `4973dd6` |
+| Shadowing | 9 | `98655c0` · `a6b0045` · `77476a6` (+ correction `1eb4b05`) |
+| JLPT | 10 | `815b4a7` (+ rulings `ca8b433`) |
+| Companion | 14 | `a3aa216` · `68ff609` · `2866de5` · `f8724ba` |
+| Conversation | 4 | `8907d9b` |
+| Pronunciation + Grammar | 3 | `feec99a` |
+| Account | 4 | `5087f38` |
+| Marketing + global states | 8 | `ed28484` |
+| **Total** | **57** | |
+
+## ⭐ The four names the PICTURE corrected (the method rule, paying off four times)
+
+`29:2890` "Kanji library" → **Kanji explorer** · `216:15648` "Empty state (Companion home)" → **the
+Diary's empty state** · `111:515` **"Homepage" → the authenticated Dashboard** · plus the `To phase 2`
+pair, which names alone could not separate. **Never infer a frame's identity from its name.**
+
+## ⚑ THE OPEN QUESTIONS, consolidated for the aggregation step
+
+**Identity / naming**
+1. **`AI Sensei` vs the Companion** — one entity or two? (§14.3)
+2. **The Companion has three names** — `Storykeeper` / `Korume` / `Hikari`. User-nameable? (§15.5)
+3. **`Journey` collision** — `app-nav.tsx:59` maps it to the Diary; Figma means the Roadmap. (§13.0)
+4. **"Goal" carries four senses** — F-016 domain · Figma skill · `JLPT Goal` level · `PERSONAL GOAL`
+   text. (§16.3, §18.2)
+
+**Model gaps that block building**
+5. **No canonical skill taxonomy — and now THREE different sets** (§13.3 two + §19.1's
+   `WEAKNESS SNAPSHOT`). Growth Areas, weakness explorer, mission skills, suggestion tags, JLPT
+   `section_scores` and the dashboard all claim to measure the same thing.
+6. **Conversation scenario model**: 8 wizard dimensions + a 6-dial traits model vs **one text column**.
+7. **No social graph** — `Profile Visibility: Friends` and `Journal Visibility` need one. (§18.3)
+8. **No L1 (native language) field** — required by the Companion's *"without thinking in Vietnamese"*.
+
+**Decided-stack conflicts needing a ruling (all L8-adjacent)**
+9. **Checkout says "powered by Stripe"** + Visa/MC/Apple Pay/Google Pay/PayPal — the decision is
+   **PayOS**. (§19.3)
+10. **`Theme: Dark/System/Light`** vs a dark-only token system · **user-selectable Accent Color** vs one
+    ember accent · **`Camera Permission`** for no known capability. (§18.4)
+11. **Apple + GitHub OAuth** beyond *email + Google*. (§18.1)
+12. **App Store / Google Play badges** in the footer — native mobile apps for a web app. (§19.5)
+
+**Product scope**
+13. **Certification Practice = 3 exam families** ✅ ruled; repo implements 1. Migration is Phase 2.
+14. **Vimeo / multi-platform import** (§8.3) · **`JLPT Speaking`** as a Certification↔Conversation edge ·
+    **`AI Coach Available`** = feature flag or paid tier?
+15. **No marketing landing page exists in the design**, and four footer pages (Blog/About/Careers/
+    Contact) have no frames. (§19.0, §19.5)
+16. **Kanji: discovery + curriculum both?** (§6.5) — still unanswered.
+
+## ⭐⭐ THE HYPOTHESIS THE AGGREGATION MUST TEST
+
+**Learning Intelligence** as a core capability, not a per-module feature. Evidence gathered from
+**six independent directions**: shadowing recommendations carry derived reasons (§7.1) · the lesson
+summary writes to memory and proposes the next lesson with a reason (§9.4) · a certification result
+rewrites the roadmap (§10.5–10.6) · Growth Areas diagnoses per skill and names lessons (§12.4) ·
+the Roadmap is the **write target** and is *generated at onboarding* (§13.1, §14.2) · sentence analysis
+writes back (§17.1). **Pitch accent** appeared in **four** independent surfaces and the **mining /
+save-and-collect family** in **six** — both behave like core capabilities too.
+
+
 
 ## Why this stage exists (do not re-litigate)
 
@@ -393,6 +465,40 @@ names *Analysis* as a **per-sentence utility inside a lesson**; Figma shows the 
 as a standalone destination with its own nav row. **Utility inside a lesson, screen outside one** —
 extension, not conflict. Its `LEARNING MEMORY` card writes back to Companion memory (**5th** direction
 into Learning Intelligence) and `Add to Vocabulary` is the mining family's **6th** surface.
+
+## ✅ Cluster 8 of 10 DONE — Account, 4 frames (`5087f38`)
+
+`65:2` Login (`/login` ✅) · `66:166` Profile (`/profile` ✅) · `67:595` Edit Profile (❌ no route) ·
+`220:16032` Settings (`/settings` ✅, 1167×3762, read in 3 bands). Rule 3: **`settings-patterns.md` is
+strong layer-A authority** (Personalization Over Configuration · Instant Feedback · Contextual Settings
+· Progressive Disclosure, + specified Furigana/Translation/Playback sections).
+
+**⭐⭐⭐ `Delete Companion Memory` is a real design contribution to a §2 debt.** *"Erase everything Korume
+has remembered … **Learning progress remains.**"* — memories, diary, reflections, observations,
+conversation memories, recommendations, personal learning history — sitting **beside** a separate
+`Delete Account`. **Two-tier deletion**, finer than the non-negotiable requires, and the non-negotiable
+is still met by tier 2. Measured: nothing matching `delete-account|gdpr|erase` exists in the repo.
+**`AI Training` is the §2 rule-2 consent toggle** (drawn **off by default**); **`Reduced Motion`** is
+the §2 rule-4 toggle.
+
+**⚠️ Three settings contradict shipped decisions — rulings, not build tasks:** `Theme Dark/System/Light`
+(repo is **dark-only** since `86328bc`; `lib/design-tokens.test.ts` asserts no `[data-theme]` block —
+restorable as one added block, but a decision to re-open) · **user-selectable `Accent Color`** (system
+ships ONE ember accent) · **`Camera Permission`** (no camera capability anywhere else).
+
+**⚠️⚠️ `Friends` implies a social graph that does not exist.** `Profile Visibility Private/Friends/
+Public` + `Journal Visibility` both need a friendship edge; measured — **no friend/follow concept in any
+migration**. Repo has forum / public playlists / leaderboard opt-in only.
+
+**⚠️ Three independent language fields** on the profile: **Native Language (L1)** · Interface Language ·
+Subtitle Style. Only the middle exists in the repo. **L1 is what makes the Companion's *"without
+thinking in Vietnamese"* possible** and has no schema. Also: `Default Furigana: Always on` — **not yet a
+conflict** with §5 #4 adaptive furigana (other option values not visible), but reconcile Figma +
+`settings-patterns.md` § Furigana + §5 #4 before building that control.
+
+**⚠️ "Goal" now carries FOUR senses** product-wide: F-016 domain goal · Figma skill goal (§16.3) ·
+`JLPT Goal` target level · `PERSONAL GOAL` written intention. Login also adds **Apple + GitHub** OAuth
+beyond the stack's *email + Google*.
 
 ## 📐 Method for TALL frames — needed from here on
 
