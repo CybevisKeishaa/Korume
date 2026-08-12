@@ -963,3 +963,211 @@ Companion reflection at lesson end · next-lesson proposal with a reason.
 what `lib/dictation/score.ts` computes, and Listening Practice's other two sub-modes —
 **Fill-in-the-blank** and **Translation** — are specified in `screen-shadowing-practice.md` but have
 no frame in this cluster and no code. Both are build scope, not identity questions.
+
+---
+
+## 10. Cluster: JLPT — 10 frames, analysed 2026-08-12
+
+Rule 3 applied first: **there is no `docs/design/screens/screen-jlpt*.md`.** JLPT is built (Layer 5)
+but has **no written layer-A screen authority** — the only design-doc mentions are in
+`navigation-system.md`, `adaptive-layouts.md`, `companion-patterns.md` and `design-reconciliation.md`.
+That absence is itself a finding: for this module, Figma is the *only* layer-B/A artifact, so it
+carries more weight here than it did for Shadowing.
+
+Two of the ten frames (`234:1639`, `234:1667`) were read earlier while resolving their duplicate names.
+
+### 10.0 The module is **`Certification Practice`**, and JLPT is one of three exams
+
+`232:2` is not titled "JLPT". It is **`Certification Practice`** — the nav row is `Certification
+Practice` (replacing `JLPT`), the breadcrumb reads `Learning › Certification Practice`, and the page
+carries an exam-family selector:
+
+> **`JLPT`** (active) · **`BJT`** · **`Tokutei Ginou`**
+
+BJT (Business Japanese Proficiency Test) and Tokutei Ginou (Specified Skilled Worker) are separate
+certifications with their own formats. **The repo is JLPT-only end to end** — `/jlpt`, `/jlpt/[id]`,
+`jlpt_tests`, `jlpt_questions`, `/api/jlpt/*`, and a `jlpt_section` enum. This is the largest naming
+and scope divergence found in the inventory so far, and it is a **layer-A question for the user**:
+is the certification module genuinely three exam families, or is JLPT the product and the other two
+chips aspiration? It decides a module name, a route, a nav label and a schema shape, so it should be
+answered before the registry names anything.
+
+### 10.1 `232:2` — **Certification Practice** (the lobby) · `CONFIRMED` screen
+
+Eyebrow `PRACTICE ROOM` · *"Practice full-length certification exams and build confidence through real
+exam experiences."* · exam-family selector · a `CONTINUE LEARNING` resume card (`JLPT N3 Practice Set
+22–07`, 45%, *"72% current score · 99 questions remaining"*) · `JLPT EXAMS — Practice Library`, a
+paginated list of practice sets, each `105 Minutes · 180 Questions · Estimated Level N3` with state
+`Resume` / `Start` / `Completed + Score 86% + Review`.
+
+Rail: **`COMPANION — Today's Recommendation`** (*"I think today's N3 practice is a good challenge for
+you."*) · `CURRENT GOAL` (`JLPT N3 · Your current certification path`, Practice Completed 12, Average
+Score 84%) · `A SMALL NOTE` (*"One practice exam today is better than waiting for the perfect day."*).
+
+**Repo:** `/jlpt` renders a test list + attempt history + level tabs — the same *idea*, without the
+exam-family axis, the resume card, the pagination or the rail. `/api/jlpt/tests` ✅, `/api/jlpt/attempts` ✅.
+
+### 10.2 `234:618` — **Practice set detail / Exam Structure** · `CONFIRMED` screen
+
+*(Frame name `JLPT Phase test`.)* A pre-flight screen, and the most specification-dense frame in the
+cluster.
+
+- Set card: `Estimated Duration 105 minutes · Questions 180 · Previous Attempts 3 · Best Score 86%`,
+  footer `Last score 84% · Resume from question 41 / 180`, CTA `Resume Practice`.
+- **`PRACTICE FLOW — Exam Structure`**, drawn as a vertical timeline:
+  - **`PHASE 1 — Language Knowledge`** · 60 min · 70 questions · `● Ready` · chips `Vocabulary`,
+    `Grammar`, `Reading` · `Begin Phase 1`
+  - **`BETWEEN PHASES — Take a short break.`** — *"The listening section will begin after your break.
+    Prepare your headphones. Relax your eyes. Drink some water."* · `I'm Ready`
+  - **`PHASE 2 — Listening`** 🔒 *"Locked until Phase 1 is submitted."* · *"Audio will play
+    automatically. Playback cannot be paused or restarted during practice. Just like the real
+    examination."* · 45 min · 30 questions
+- **`EXAM RULES`**, four cards: `No Pause` · **`No Companion`** · `Resume Available` (*"If you leave
+  during Language Knowledge, you may continue later"*) · `Listening` (*"Once Listening begins, audio
+  continues exactly like the real examination"*).
+
+**⭐ The two phases map cleanly onto the repo's existing enum.** `jlpt_section` is
+`vocab | grammar | reading | listening`; Phase 1 is exactly the first three and Phase 2 is the fourth.
+`jlpt_tests.section_config jsonb` can already express the phase grouping and the per-phase timing, so
+**phases are a grouping over what exists, not a new axis.**
+
+**What has no schema:** per-phase locking, resume-from-question, `Previous Attempts` / `Best Score`
+rollups on the set, and the break step.
+
+### 10.3 `237:1690` — **Exam runner, Phase 1** · `CONFIRMED` screen, immersive
+
+**No left nav** — the strictest chrome in the whole inventory. Top bar carries only the set name, the
+phase, `REMAINING TIME 58:24` and `ANSWERED 34 / 70`.
+
+- **Left — `QUESTION NAVIGATOR`** grouped by section *and* **mondai**: `Vocabulary MONDAI 1` (1–10),
+  `Vocabulary MONDAI 2` (11–20), `Grammar MONDAI 3` (21–35), `Reading MONDAI 4` (36–48)… Chips are
+  colour-coded answered / current / untouched and carry a small **flag** marker.
+- **Centre** — `GRAMMAR · MONDAI 3`, *"Select one answer. Your answer is saved immediately."*, a `⚑ Flag`
+  control, then questions in a continuous scroll, each showing `✓ Saved` and four options A–D.
+- **Right — `FULL ANSWER SHEET`**: `Answered 34/70 · Remaining 36 · Flagged 5`, then an **OMR-style
+  grid** — one row per question, four radio bubbles plus a flag — grouped by mondai. Footer
+  `Continue Reviewing` · `Finish Phase ›`.
+
+**⭐ This is a real exam simulator, not a quiz.** Mondai grouping, per-question flagging, an answer
+sheet that mirrors the paper form, immediate autosave, and a countdown. **None of the four mechanics
+exists in the repo:** there is no mondai level below `jlpt_section`, no flag state, no timer, no
+answer-sheet surface. `jlpt_questions.question_type` is free-form text and is the closest thing to a
+mondai concept today.
+
+**State-variants of this screen** (three frames, all already read):
+
+| Frame | State |
+|---|---|
+| `237:6708` `Finish phase 1` | a modal over the runner — *"Ready to finish this phase? You can still return and review unanswered or flagged questions before submitting."* · `Review` / `Submit Phase` |
+| `234:1639` `To phase 2 (ready)` | the between-phases gate — `Begin Listening` |
+| `234:1667` `To phase 2 (countdown)` | the auto-advancing countdown into Phase 2 |
+
+### 10.4 `240:12992` — **Exam runner, Phase 2 (Listening)** · `STATE-VARIANT` of `237:1690`
+
+Same shell, retuned for audio. Top bar gains `CURRENT MONDAI` and `CURRENT AUDIO`. The centre leads
+with a **`NOW PLAYING`** card — *"Question 7 · Conversation"* with a **waveform** and a volume control
+but, deliberately, **no transport** — matching the `No Pause` rule. Mondai now carry descriptive names
+(`Quick Response`, `Situation Response`, `Long Conversation`, `Information`, `Comprehension`), the
+guidance changes to *"Read ahead while the audio plays"*, and options drop from four to **three** —
+which is correct for real JLPT listening.
+
+Classified as a state-variant because the repo already models this as one runner with a `section`
+search param (`/jlpt/[id]?section=`). ⚠️ But note the design adds a **flow constraint** a param cannot
+express: Phase 2 is *locked until Phase 1 is submitted*.
+
+### 10.5 `242:14234` — **Practice Complete** · `CONFIRMED` screen
+
+`PRACTICE SCORE 84%` with `ESTIMATED PASSING LINE 95/180` vs `YOUR SCORE 152/180` and a `Passed`
+badge · `Review Mistakes` / `Return to Library` · `Today's Performance` per section (Overall 84,
+Vocabulary 89, Grammar 82, Reading 86, Listening 79) · **`Companion Insights`** (`STRONGEST AREA`,
+`STILL GROWING`, `OBSERVATION`) · **`Continue Your Journey`** · `Mistake Distribution` ·
+`Today's Journey` (a timestamped timeline: started 10:04 → finished Language Knowledge 11:06 →
+listening completed 11:48 → practice finished 11:52) · `TODAY'S NOTE` · **`QUIET MILESTONE — First Full
+Practice`**. Rail: `TODAY'S REFLECTION` · `AREAS STILL GROWING` · `RECENTLY IMPROVED` ·
+`COMPANION DIARY`.
+
+**⭐ Per-section scoring already exists** — `jlpt_attempts.section_scores jsonb`. The passing line,
+the mistake distribution, the timeline and the milestone do not.
+
+**⭐⭐ `Continue Your Journey` routes OUT of JLPT into three other modules**, each with a reason:
+`SHADOWING — Restaurant Conversation` (*"Recommended because listening confidence needs
+improvement."*), `GRAMMAR REVIEW — Particles` (*"Review today's mistakes."*), `CONVERSATION — Ordering
+Food` (*"Practice using what you learned."*). **This is a real IA edge the current navigation has
+nowhere to put**, and it is the same reason-carrying recommendation contract found in §7.1.
+
+**⚠️ One insight implies telemetry nothing records:** *"Trusting your instincts — You rarely changed
+answers after reviewing."* That requires storing **answer revisions**, not just final answers.
+
+### 10.6 `243:14899` + `243:15364` — **Review Mistakes** · `CONFIRMED` screen + `STATE-VARIANT`
+
+`243:14899` is the collapsed list; `243:15364` is the same screen with one question expanded.
+
+Header `18 / 30 Reviewed` · *"Let's understand every answer together."* · `Correct 152 · Incorrect 28 ·
+Skipped 0` · *"Today you learned much more than today's score."* · filter chips
+`All / Incorrect / Correct / Skipped / Vocabulary / Grammar / Reading / Listening` · a question
+navigator · rows grouped by mondai, each `Correct` / `Incorrect` / `Skipped` with a `Review ⌄`
+expander.
+
+**Expanded, one question contains four teaching blocks:**
+1. **`ORIGINAL QUESTION`** with all options and the correct one marked.
+2. **`WHY THIS ANSWER`** — a written contrast of the right answer against the distractors
+   (送る vs 運ぶ, and why each other option fails).
+3. **`VOCABULARY`** — the target word, reading, gloss, an example sentence, `🔊 Listen`.
+4. **`MINI PRACTICE`** — a fresh generated question using the same point.
+
+Then **`COMPANION OBSERVATION`**: *"You solved this instantly. I won't spend as much time reviewing
+this vocabulary anymore. We'll move forward together."*
+
+**⭐⭐ The result writes back into the plan.** That observation, plus the rail's **`UPCOMING
+ADJUSTMENTS — Your roadmap has already been updated`** (*more particle review · restaurant
+conversations · faster listening*), means a JLPT attempt **mutates the learner's roadmap and review
+scheduling**. The repo stores attempts and section scores; nothing consumes them to adjust anything.
+
+### 10.7 ⭐⭐⭐ The Companion boundary: the design **enforces** it, and states it more precisely than the doc
+
+`design-reconciliation.md` lists JLPT practice as an active acquisition loop where the Companion is
+**`Not Supported`**. The Figma frames do not merely comply — they make the rule visible to the learner,
+three times over:
+
+- an `EXAM RULES` card titled **`No Companion`** — *"The Companion remains silent during practice."*
+- the pre-flight rail note — **"Once the exam starts, the Companion disappears."**
+- and, after submission, the Companion's first words are **"I've been waiting."**
+
+**The design refines the doc rather than contradicting it.** The doc draws the boundary around "JLPT
+practice"; the frames locate the **exact edges**: the Companion is *present* in the lobby (`232:2`),
+in pre-flight (`234:618`), in the result (`242:14234`) and throughout review (`243:*`) — and *absent*
+only between `Begin Phase 1` and submission. **This is the clearest layer-A/layer-D agreement found in
+the inventory**, and it should be lifted into the design docs, because the docs' own JLPT row is less
+precise than the frames.
+
+### 10.8 Cluster verdict
+
+| Node id | Name | Tag | Route | Verdict |
+|---|---|---|---|---|
+| `232:2` | Certification Practice | `CONFIRMED` | `/jlpt` ≈ | built as JLPT-only; no exam-family axis, resume card or rail |
+| `234:618` | Practice set detail / Exam Structure | `CONFIRMED` | none | unbuilt; phases map onto the existing section enum |
+| `237:1690` | Exam runner (Phase 1) | `CONFIRMED` | `/jlpt/[id]` ≈ | built as a quiz; **mondai, flagging, timer and answer sheet are all absent** |
+| `237:6708` | Finish phase 1 | `STATE-VARIANT` | — | — |
+| `234:1639` | To phase 2 (ready) | `STATE-VARIANT` | — | — |
+| `234:1667` | To phase 2 (countdown) | `STATE-VARIANT` | — | — |
+| `240:12992` | Exam runner (Phase 2 · Listening) | `STATE-VARIANT` | `?section=` ≈ | phase locking is a flow the param cannot express |
+| `242:14234` | Practice Complete | `CONFIRMED` | none | `section_scores` exists; everything else unbuilt |
+| `243:14899` | Review Mistakes | `CONFIRMED` | none | wholly unbuilt |
+| `243:15364` | Review Mistakes (expanded) | `STATE-VARIANT` | — | — |
+
+**5 screens, 5 state-variants, none obsolete.**
+
+**Capabilities added:** multi-certification practice (`JLPT` / `BJT` / `Tokutei Ginou`) · full-length
+timed mock exams · **two-phase exam flow with a between-phase break and phase locking** · mondai-level
+question grouping · per-question flagging · an **OMR-style answer sheet** · immediate autosave and
+resume-from-question · exam-accurate listening constraints (no pause, no restart, 3 options) ·
+estimated passing line and pass/fail · per-section scoring · mistake distribution · a session
+timeline · behavioural insight from answer-revision telemetry · **cross-module next steps carrying
+reasons** · per-question mistake review with `WHY THIS ANSWER` + vocabulary + **generated mini
+practice** · **roadmap and review-schedule write-back from an exam result** · quiet milestones ·
+Companion diary entries · **an explicit Companion silence window scoped to the exam itself**.
+
+**⚑ Questions for the user:** (1) **Is the module `Certification Practice` with three exam families,
+or JLPT only?** — it renames a module, a route, a nav row and a schema. (2) Should answer *revisions*
+be recorded, given an insight card depends on them? (3) Does a JLPT result really write back into the
+roadmap, and if so is that the same engine as the shadowing recommendation reasons?
