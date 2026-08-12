@@ -364,6 +364,36 @@ placeholders. Fits: `220:16766` says *"Meet My Companion"* without naming one, a
 §14.3** — together: is `AI Sensei` the Companion or a second entity, and is the Companion's name
 fixed, branded, or chosen? Both block the IA from saying what "the Companion" *is*.
 
+## ✅ Clusters 6 & 7 DONE — Pronunciation (2) + Grammar (1), `feec99a`
+
+**Pronunciation is NOT a leaf module.** `37:4955` Pronunciation Studio borrows content from two others
+— **`JLPT Speaking`** (2nd sighting, after `170:9364`) and **`Shadowing Collections`** — on top of its
+own `Popular Learning Paths` / `Practice by Situation` / `Practice by Goal` shelves. No
+`/pronunciation` route exists; `/api/pronunciation/score` + `/api/speech/{stt,tts}` do.
+
+**⭐⭐⭐ `36:4117` draws CLAUDE.md §5 #1 in full**: `REFERENCE` vs `YOUR VOICE` waveforms, a 5-bar score
+(Accuracy/Rhythm/**Pitch Accent**/Fluency/Confidence), and **`Word Analysis`** isolating the failing
+word (天気⚠) into a `Pitch focus` card that **draws Expected vs Yours contours**. **Pitch accent has now
+appeared in FOUR independent surfaces** (in-lesson `120:2027`, its trend report, per-utterance
+`44:7289`, and here as score + a whole `Practice by Goal` track) ⇒ **core capability, not one module's
+feature.** §2 note (no violation): `REFERENCE` must be **TTS of the sentence text** — never extracted
+media.
+
+**⚠️ Rule-4: `goal` is overloaded.** `docs/features/F-016-goal-based-learning-paths.md` defines a goal
+as a **life domain** picked at onboarding (Anime/JLPT/Business/Travel). Figma splits that across
+`Popular Learning Paths` (= F-016's domains) **and** `Practice by Goal` (= **skill** targets like
+*Improve Pitch Accent*). Neither edited; feeds §13.3's missing skill taxonomy.
+
+**⭐⭐ `284:1464` Sentence Analysis resolves the old §5 question** — *"is `/grammar` enough?"* **The two
+are not comparable.** `/grammar` is a real catalogue (measured, not a placeholder); this frame is a
+**sentence parser**: paste **or speak** a sentence → labelled role structure · token-level POS/reading/
+gloss · the key grammar point with its **form** and a link *into* the catalogue · key vocabulary ·
+a `WHAT TO NOTICE` pragmatic note. **Rule-4 clarification:** `screen-shadowing-practice.md` already
+names *Analysis* as a **per-sentence utility inside a lesson**; Figma shows the same utility **also**
+as a standalone destination with its own nav row. **Utility inside a lesson, screen outside one** —
+extension, not conflict. Its `LEARNING MEMORY` card writes back to Companion memory (**5th** direction
+into Learning Intelligence) and `Add to Vocabulary` is the mining family's **6th** surface.
+
 ## 📐 Method for TALL frames — needed from here on
 
 `200:7705` (1536×5836) and `200:10726` (1582×5906) reduce to ~425px wide at `maxDimension: 1600` —
@@ -403,10 +433,11 @@ crash loses nothing. **Kanji is done (`4973dd6`); resume at Shadowing.**
 
 ~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ `4973dd6` →
 ~~**Shadowing** (9)~~ ✅ · ~~**JLPT** (10)~~ ✅ · ~~**Companion** (14)~~ ✅ `f8724ba` →
-~~**Conversation** (4)~~ ✅ `8907d9b` → **RESUME AT `Pronunciation` (2)**: `37:4955` library,
-`36:4117` detail. Then: **Grammar** (1) `284:1464` → **Account** (4) `65:2`, `66:166`, `67:595`,
-`220:16032` → **Marketing** (6) `111:515`, `74:564`, `209:14032`, `75:1424`, `111:1556`, `203:13813`
-→ **global states** (2) `210:14338`, `218:15740`. **41/57 done.** Full original cluster order below — (`149:2`, `105:3088`,
+~~**Conversation** (4)~~ ✅ · ~~**Pronunciation** (2)~~ ✅ · ~~**Grammar** (1)~~ ✅ `feec99a` →
+**RESUME AT `Account` (4)**: `65:2` Login · `66:166` Profile · `67:595` Edit profile · `220:16032`
+Global settings. Then: **Marketing** (6) `111:515` Homepage, `74:564` Pricing, `209:14032` Checkout,
+`75:1424` FAQ, `111:1556` QuickStart, `203:13813` Footer → **global states** (2) `210:14338` Loading,
+`218:15740` Error. **44/57 done — 13 left.** Full original cluster order below — (`149:2`, `105:3088`,
 `200:7705`, `200:10726`, `212:14610`, `212:14753`, `125:1030`, `123:2835`, `120:2027`) →
 **JLPT** (`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`,
 `242:14234`, `243:14899`, `243:15364`) → **Companion** (`156:1310`, `220:16766`, `190:7376`,
