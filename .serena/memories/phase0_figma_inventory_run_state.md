@@ -226,7 +226,33 @@ reason per card (an IA edge today's nav has nowhere to put), and the result **wr
 roadmap and review schedule** (`UPCOMING ADJUSTMENTS`, `COMPANION OBSERVATION`) — nothing consumes
 attempts that way today. One insight card needs **answer-revision telemetry** that is not recorded.
 
-## ▶ Cluster 4 IN PROGRESS — Companion, batch 1 of 4 done (`a3aa216`)
+## ✅ Cluster 4 of 10 DONE — Companion, all 14 frames (`a3aa216` · `68ff609` · `2866de5` · `f8724ba`)
+
+**10 screens · 2 interactions · 2 state-variants · 0 obsolete.** Panels never appear as frames of
+their own (they live *inside* other frames); generated content is not a frame kind at all — it is the
+payload of the other four. `180:1770` holds three kinds at once, which is the proof the split is real.
+**Routes: 2 of 10 screens exist** (`/journal` immersive ≈ Diary, `/sensei` app ≈ Knowledge Assistant);
+`/roadmap` is a placeholder; the other seven have none.
+
+**Batch 4 (onboarding) — measured: the entire flow is unbuilt.** No onboarding/welcome/quickstart/setup
+route or component; **no companion identity persisted anywhere** (no `Storykeeper`, no `companion_name`).
+Two findings: the introduction is **declinable twice** (`Skip` + `Maybe later`) ⇒ *"presence is
+optional"* enforced at first contact ⇒ **every Companion surface needs a companion-less fallback**; and
+onboarding **generates the Roadmap** (*"Creating your personal roadmap"* is step 2), which closes the
+loop — the mission system is *born* at onboarding and *rewritten* by Learning Intelligence.
+
+**⚑ WHAT THE CLUSTER HANDS UPWARD, in priority order:**
+1. **`Journey` label collision** (§13.0) — live in `app-nav.tsx:59`.
+2. **No canonical skill taxonomy** (§13.3) — blocks Growth Areas, weakness explorer, mission skills,
+   suggestion tags, JLPT `section_scores`; all claim to measure the same thing.
+3. **`AI Sensei` vs the Companion** (§14.3) — one entity or two? Hypothesis (not a ruling): `Sensei` is
+   the Companion's knowledge-answering *mode* and `AI Sensei` is its pre-rebrand name.
+4. **Companion-less fallback required on every Companion surface.**
+5. **The Companion has no persisted identity in the repo** — name, tenure, voice exist only in Figma.
+
+<details><summary>Per-batch detail</summary>
+
+## Companion cluster — batch log
 
 **Batch 1 done (`a3aa216`):** `156:1310` Companion home (screen) · `190:7376` Diary (screen) ·
 `215:15164` Knowledge Assistant (screen) · `216:15648` (misnamed — it is the **Diary's** empty state,
@@ -304,6 +330,8 @@ Knowledge Assistant already match. **No Companion home route.**
 §4.) **First rule-4 clarification:** presence levels are an internal state machine in the doc; the frame
 renders one as **user-visible copy** (*"Listening quietly…"*). Neither side edited.
 
+</details>
+
 ## 📐 Method for TALL frames — needed from here on
 
 `200:7705` (1536×5836) and `200:10726` (1582×5906) reduce to ~425px wide at `maxDimension: 1600` —
@@ -342,12 +370,11 @@ and committing per cluster — the whole thing does not fit one session, and per
 crash loses nothing. **Kanji is done (`4973dd6`); resume at Shadowing.**
 
 ~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ `4973dd6` →
-~~**Shadowing** (9)~~ ✅ · ~~**JLPT** (10)~~ ✅ `815b4a7` → **RESUME AT `Companion` (14 frames, the
-largest remaining cluster)**: `156:1310`, `220:16766`, `190:7376`, `215:15164`, `180:1770`, `184:3974`,
-`187:6556`, `182:3859`, `181:3525`, `64:2061`, `180:2`, `111:1877`, `111:1963`, `216:15648`.
-⚠️ Split it into batches of ≤4 and **read `docs/design/patterns/companion-patterns.md` +
-`design-reconciliation.md` §4/§6 FIRST** (rule 3) — the Companion boundary is heavily specified and
-JLPT already proved the frames refine it. Full original cluster order below — (`149:2`, `105:3088`,
+~~**Shadowing** (9)~~ ✅ · ~~**JLPT** (10)~~ ✅ · ~~**Companion** (14)~~ ✅ `f8724ba` →
+**RESUME AT `Conversation` (4 frames)**: `44:7289` Conversation practice · `170:9364` Conversation
+practice library · `46:2` Popup create conversation · `180:1129` Quick preview panel: Conversation
+practice. Then: **Pronunciation** (2) → **Grammar** (1) → **Account** (4) → **Marketing** (6) →
+**global states** (2). **37/57 done.** Full original cluster order below — (`149:2`, `105:3088`,
 `200:7705`, `200:10726`, `212:14610`, `212:14753`, `125:1030`, `123:2835`, `120:2027`) →
 **JLPT** (`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`,
 `242:14234`, `243:14899`, `243:15364`) → **Companion** (`156:1310`, `220:16766`, `190:7376`,
