@@ -660,3 +660,123 @@ what you don't know).
 
 *Not added: "favourites". It joins the existing mining / learning-collection family per the user's
 ruling — see §7.2.*
+
+---
+
+## 8. Cluster: Shadowing — batch 2 of 3 (the Explore pair), 2 frames, analysed 2026-08-12
+
+Both frames are ~5,850px tall, so they were read as four upscaled horizontal bands plus one 2× crop of
+the preview panel, per the tall-frame method. `200:7705` is **the largest frame in the file so far**.
+
+### 8.1 `200:7705` — **Explore Lessons** · `CONFIRMED` screen
+
+| | |
+|---|---|
+| **Screen or state** | Screen. `(app)` chrome, **plus a secondary top bar** the hub does not have: `← Back` · `Explore Lessons` · a centred search field · bell / settings / avatar. |
+| **Capability** | Browse the entire catalogue. Header copy: *"Browse every lesson in Korume. Or narrow everything by situation."* |
+| **Entered from** | Hub → `View All` on Popular Lessons; nav; `← Back` implies a caller. |
+| **Exits to** | A lesson (`Start` / `Continue`) · `Import a lesson` · `Browse shelf` ×2 · `All lessons` · the quiet suggestion's lesson · a shelf page (pagination). |
+| **Actions** | Search · pick 1 of 16 situation chips · paginate within any shelf · open / retry / **delete** an imported lesson · start or continue a lesson. |
+| **Data needed** | See the section list below — this is the densest data contract in the inventory so far. |
+| **API exists** | Partly, and the taxonomy half is genuinely good — see below. |
+| **Route exists** | ⚠️ `/shadowing/explore` exists but is a **pure placeholder**: measured, its `page.tsx` renders `UpcomingScreen` and nothing else. |
+| **Related** | Hub (`149:2`) · search panel (`212:*`) · the preview variant (`200:10726`) · Companion. |
+
+**Page structure, top to bottom:**
+
+1. Hero — eyebrow `SHADOWING LIBRARY`, title, subtitle.
+2. **Search field** with the helper *"Search by title, topic, grammar, vocabulary, creator, JLPT,
+   situation or tag."* — **eight facets**, two of which (`creator`, `tag`) exist nowhere else.
+3. **`MY IMPORTED LESSONS`** — *"The material you chose to bring with you."* + `Import a lesson ›`.
+   Three cards, one per import state: `72% complete · Ready`, `Preparing transcript…`,
+   `Import failed · Retry`. Each has a delete affordance.
+4. **`RECENTLY ADDED`** — *"New official Korume scenes, released this week."* + `Browse shelf ›`.
+5. **`RECOMMENDED FOR YOU`** — *"A few directions your Companion thinks may feel good next."*
+6. **`BROWSE BY SITUATION`** — 16 chips + `All`, under the line *"This selection becomes the context
+   for every bookshelf below."*
+7. **`A quiet suggestion`** — *"You recently practiced Restaurant conversations. Maybe try the N4–N3
+   version next."* Another reason-carrying recommendation (§7.1).
+8. **Five shelves**, each `JLPT band · name · 8 lessons · blurb · Shelf n of 5`, a 4×2 card grid, and
+   **its own pagination** `‹ 1 2 3 4 ›`:
+
+   | Band | Shelf | Blurb |
+   |---|---|---|
+   | N5–N4 | Beginner Foundation | *"Start with the phrases that make every familiar moment feel possible."* |
+   | N4–N3 | Daily Conversation | *"Build confidence in everyday spoken Japanese with more room to respond."* |
+   | N3–N2 | Natural Japanese | *"Notice the pace, shorthand and small expressions people use naturally."* |
+   | N2–N1 | Advanced Expression | *"Stay present through nuance, preferences and unexpected turns."* |
+   | N1 | Native Fluency | *"Step into full-speed scenes, podcasts and the details between the words."* |
+
+**Card anatomy** (consistent across every grid): cover · JLPT-band badge · **series eyebrow**
+(`SCENE NOTES` / `TOKYO TABLE` / `EVERYDAY JAPANESE`) · title · one-line blurb · progress bar ·
+`n min` + `n lines` · `n grammar · n words` · `Start ›` / `Continue ›` · an optional `Recommended`
+ribbon.
+
+**⭐ Findings**
+
+- **Two content origins are named for the first time.** *"New **official Korume scenes**"* sits
+  against *"**My imported lessons** — the material you chose to bring with you."* First-party catalogue
+  and user-imported material are different things with different copy. The repo has a video **owner**
+  concept and an approval/status flow, so the distinction is expressible; whether an explicit
+  "official" origin flag exists is **not measured**.
+- ⚠️ **`Vimeo` appears as an import source** (`Vimeo · Food in Japan`), alongside `YouTube · TokyoWalk`.
+  The repo is YouTube-only — `lib/youtube/**`, and `lesson_sources` seeds `youtube` among content
+  origins. **Multi-platform import is a layer-A product question for the user**, and it is the one
+  place in this frame where CLAUDE.md §2 genuinely does apply: the no-download rule is written as
+  *"YouTube or any platform"*, so a second platform must also be embed-only.
+- **Creator / channel attribution** (`TokyoWalk`, `Food in Japan`) is displayed and is a search facet.
+  No schema holds it.
+- **A third taxonomy axis appears: the series eyebrow.** `TOKYO TABLE`, `SCENE NOTES`,
+  `EVERYDAY JAPANESE` are neither situation nor source. The `collections` table
+  (`slug · title · description · cover_image_url · display_order` + `lesson_collections`) is the
+  natural home, and the five shelves fit it too.
+- ⭐⭐ **The situation chip row has already been adjudicated in this repo — do not re-open it.**
+  `supabase/migrations/20260807000025_lesson_taxonomy.sql` opens with exactly this analysis:
+
+  > *"TWO axes, not one: the Figma chip row mixes situations (Restaurant, Office) with sources (Anime,
+  > Podcast, News), while the original design prompt kept them as separate sections. One column would
+  > freeze that collapse into the schema."*
+
+  It shipped `lesson_situations` (8 seeded: conversation, restaurant, business, daily-life, travel,
+  office, shopping, cafe) and `lesson_sources` (7 seeded: youtube, nhk, podcast, drama, anime, vlog,
+  news) as separate tables, with FK columns on `videos` and arrays returned from day one so
+  many-to-many is a foreseen evolution. **This is the four-layer method applied correctly before it
+  was named** — layer B collapsed two axes into one chip row, and layer C refused to inherit the
+  collapse. The measurable delta is only coverage: Figma shows 16 chips, the repo seeds 8 + 7.
+- **Vocabulary drift worth fixing in the domain model:** the cards say `n lines`, the preview panel
+  says `SENTENCES`. Same quantity, two nouns.
+- Nav noise again: brand mark `JapanWeb+` while body copy says *"every lesson in **Korume**"*, and
+  `Kanji` is drawn as the active nav row on an Explore screen.
+
+### 8.2 `200:10726` — **Explore Lessons (with preview)** · `STATE-VARIANT` of `200:7705`
+
+Identical page with a **lesson preview panel** overlaid at the top right. Contents, read from a 2× crop:
+
+cover image · `✕` · series eyebrow `SCENE NOTES` · title *"A table for two"* · blurb · a 2×2 metadata
+block — **`JLPT` N5–N4 · `DURATION` 7 min · `VOCABULARY` 14 words · `SENTENCES` 20** — then
+**`▶ Start Lesson`** and, beside it, a **bookmark icon button**.
+
+- **Presentation, not navigation** → a dialog/drawer component, no route, no registry screen of its own.
+- **The bookmark is the third sighting of save-and-collect** (after `28:2041`'s `♡ Favorite` and the
+  search panel's `Favorites` facet). Per the user's ruling it stays inside the **mining /
+  learning-collection family** and is *not* counted as a new capability — recorded here only because
+  three independent sightings tell us the family needs a real home.
+- Note the panel is the only place a lesson's **vocabulary count** is promoted to a headline metric.
+
+### 8.3 Batch 2 verdict
+
+| Node id | Name | Tag | Route | Verdict |
+|---|---|---|---|---|
+| `200:7705` | Explore Lessons | `CONFIRMED` | `/shadowing/explore` = **placeholder** | designed in full, unbuilt; taxonomy backend partly exists and is well-modelled |
+| `200:10726` | Explore Lessons (with preview) | `STATE-VARIANT` of `200:7705` | — | — |
+
+**Capabilities added to the map:** full-catalogue browse · **faceted search including `creator` and
+`tag`** · situation-as-page-context filtering · **curated shelves banded by JLPT** · per-shelf
+pagination · separation of **official catalogue vs user-imported material** · per-lesson import state
+with delete/retry · **creator/channel attribution** · a **series/collection axis** distinct from
+situation and source · lesson preview before commitment · Companion-authored suggestions carrying
+their reason.
+
+**⚑ New question for the user:** *Vimeo* appears as an import platform. Is multi-platform import
+intended, or is that card placeholder dressing? It changes `lib/youtube`'s scope, the import schema,
+and the §2 embed-only rule's surface area.
