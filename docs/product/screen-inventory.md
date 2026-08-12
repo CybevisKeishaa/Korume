@@ -326,6 +326,18 @@ Worked example — lesson import:
    eight-tab row as the mode set when a committed doc defined four and explained why two of the extras
    had been retired (§9.0). Rules 1 and 3 are the same error pointing in opposite directions — taking
    one layer's artifact as another layer's truth.
+4. ⭐⭐ **When the docs say A and Figma shows A *plus a more specific boundary*, change neither side.**
+   Rule 3 covers Figma being *stale*. This covers Figma being **more precise** — which JLPT proved is
+   also possible: `design-reconciliation.md` says the Companion is `Not Supported` during JLPT
+   practice, and the frames located the exact edges of that silence (§10.7). Record it as a
+   **`design clarification / reconciliation finding`** and carry it to the capability map. Do **not**
+   edit the doc to match the frame, or the frame to match the doc, mid-inventory. **This is the whole
+   reason the inventory runs before the Screen Registry.**
+
+**And one prohibition that applies to every remaining cluster:** the inventory **records**; it does not
+**design**. Do not begin redesigning a module because reading it revealed something. Answer the
+questions, write the evidence, move on. Where the user rules on something mid-cluster, the ruling is
+recorded as an *input to a later spec*, never as a spec.
 
 ---
 
@@ -1179,13 +1191,25 @@ Companion diary entries · **an explicit Companion silence window scoped to the 
 | Should answer *revisions* be recorded? | **Yes** — and the user extended the ask: revisions should power **a family of insights**, not just the one card the frame drew. |
 | Does the result write back into the roadmap? | **Yes.** |
 
-**Consequences of ruling 1, so they are not rediscovered later.** `jlpt_tests` / `jlpt_questions` /
-`jlpt_section` / `/api/jlpt/*` / `/jlpt` are all named for one member of a three-member family. The
-registry should name the **module** `certification-practice` and treat JLPT as a family value, not as
-the module identity. ⚠️ **This is a rename with a migration behind it — it is Phase 2 reconciliation
-work, not something Phase 1 performs.** Also note BJT and Tokutei Ginou have **different section
-structures** from JLPT, so `jlpt_section`'s four-value enum cannot be the shared abstraction; the
-per-family structure belongs in `section_config`-style data, not in an enum.
+**The shape to hold, confirmed by the user 2026-08-12:**
+
+```
+Certification Practice          ← capability / module
+  ├── JLPT                      ← exam family (the only one the repo implements)
+  ├── BJT
+  └── Tokutei Ginou
+```
+
+**Do not force Figma into the repo's current ontology.** `jlpt_tests` / `jlpt_questions` /
+`jlpt_section` / `/api/jlpt/*` / `/jlpt` are all named for one member of a three-member family — that
+is a *finding about the product*, and the inventory's job is to state it, not to fix it. ⚠️ **No schema
+migration is triggered by this discovery.** Implementation handles it in a later phase; the user was
+explicit. What the inventory records is: the module is `Certification Practice`, JLPT is a family
+value, and **the repo has implemented exactly one family so far**.
+
+One structural note worth carrying, because it constrains whoever does the later work: BJT and Tokutei
+Ginou have **different section structures** from JLPT, so `jlpt_section`'s four-value enum cannot be
+the shared abstraction — per-family structure belongs in data, not in an enum.
 
 #### The answer-revision contract (ruling 2)
 
@@ -1222,13 +1246,23 @@ each with the condition that must hold before it may be shown:
 | 6 | changes concentrate on **flagged** questions | *"Every answer you changed was one you had flagged. Your flagging is doing its job."* — and its inverse: changes on unflagged questions read as drift, not triage |
 | 7 | changes cluster in the **final minutes** | *"The three answers you changed in the last five minutes all moved the wrong way. Late doubt is expensive."* |
 
-**Two rules that keep these honest, and they are not optional:**
-1. **A minimum sample.** Below ~4 changes the sign of `net` is noise, and an insight asserting a
-   *habit* from two data points is simply false. Under the floor, fall back to variant 3 or show
-   nothing.
-2. **Never assert a cause.** *"4 of them were right the first time"* is a fact. *"You don't trust
-   yourself"* is a diagnosis the data cannot support. Insight #6's inverse is the easiest one to get
-   wrong.
+**⭐⭐ Two rules that keep these honest — and the user has promoted them to govern ALL Companion
+intelligence, not just this card:**
+
+1. **Not enough sample → no conclusion.** Below ~4 changes the sign of `net` is noise, and an insight
+   asserting a *habit* from two data points is simply false. Under the floor, fall back to variant 3
+   or show nothing.
+2. **Never infer psychology from telemetry.**
+   - ❌ *"You changed your answer because you lack confidence."* — a diagnosis the data cannot support.
+   - ✅ *"Of the 8 answers you changed, 6 were right to begin with."* — an observation the data carries.
+
+   Insight #6's inverse is the easiest one to get wrong.
+
+**The reframe that makes this worth the schema, in the user's words:** the point is not that Korume
+stores answer changes. It is that **Korume can learn the learner's decision-making pattern from how
+they work, not only from what they got wrong.** Most study products can say *where* you failed; very
+few can say whether going back helped you, whether your flags pointed at the right questions, or
+whether your instinct outperforms your revision.
 
 **Placement respects the Companion boundary (§10.7):** every one of these is post-submission, shown in
 the result or review screens. None can appear during the exam.
@@ -1239,12 +1273,37 @@ Confirmed: a certification result **mutates the learner's plan**. That makes `UP
 (*"Your roadmap has already been updated"*) and the per-question `COMPANION OBSERVATION` (*"I won't
 spend as much time reviewing this vocabulary anymore"*) real behaviour rather than reassuring copy.
 
-**⚑ Still open, and it is an architecture question rather than a product one:** is this the *same*
-engine that produces the shadowing recommendation reasons (§7.1)? Both consume learning history and
-emit a ranked next-thing plus a derived reason. If they are one engine, the certification result is
-simply another input to it; if they are two, Korume will have two things that both claim to know what
-the learner should do next. **Do not decide this inside the inventory** — it belongs to the capability
-map, where every producer and consumer of "what next" can be seen at once.
+**⭐ The Roadmap is therefore not a static screen — it is a learning-state OUTPUT.** The user's framing,
+and it changes how `64:2061 Roadmap` / `180:2 Roadmap detail` must be read when the Companion cluster
+reaches them:
+
+```
+Practice → Result → Learning analysis → Recommendation / Insight
+        → Roadmap adjustment → Companion explanation
+```
+
+**⚑ Still open, deliberately — and it is an architecture question, not a product one.** Is this the
+*same* engine that produces the shadowing recommendation reasons (§7.1)? Both consume learning history
+and emit a ranked next-thing plus a derived reason. **Do not decide it here.** The suspicion to test
+once all 57 frames are read — the user's hypothesis, and the inventory is already three clusters into
+supporting it:
+
+```
+Shadowing ─┐
+JLPT ──────┤
+Mistakes ──┤
+Vocabulary ─┼──→  Learning Intelligence  ──→ "What next?" ──→ Roadmap ──→ Companion
+Grammar ───┤
+Companion ─┤
+Conversation ─┘
+```
+
+**If that holds, it is one of Korume's core capabilities — not a JLPT feature and not a Shadowing
+feature.** Evidence so far: §7.1 (recommendations carry derived reasons), §9.4 (the lesson summary
+writes to memory and proposes the next lesson with a reason), §10.5–10.6 (a certification result
+routes into three other modules and rewrites the roadmap). Three independent modules already feed the
+same shape. **The capability map is where this gets decided, because that is the only place every
+producer and consumer of "what next" is visible at once.**
 
 > These rulings are **inputs to a later spec, not a spec**. Recorded here because the analysis is where
 > they were produced; the schema, the endpoint shapes and the copy all belong to Phase 2 and beyond.
