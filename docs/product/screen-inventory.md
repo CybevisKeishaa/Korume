@@ -1307,3 +1307,148 @@ producer and consumer of "what next" is visible at once.**
 
 > These rulings are **inputs to a later spec, not a spec**. Recorded here because the analysis is where
 > they were produced; the schema, the endpoint shapes and the copy all belong to Phase 2 and beyond.
+
+---
+
+## 11. Cluster: Companion — batch 1 of 4 (the three destinations + one empty state)
+
+14 frames, the largest remaining cluster, run in batches of ≤4. **Rule 3 applied first**, and this
+module has the strongest layer-A authority in the repo: `docs/design/patterns/companion-patterns.md`
+(611 lines) plus `design-reconciliation.md` §4/§5/§6.
+
+### 11.0 The four things that must not be conflated
+
+The user's requirement, and the doc supplies the blade for it. `companion-patterns.md` § *The
+Companion Never Belongs To A Screen*:
+
+```
+Wrong:  Dashboard → Companion,  Library → Companion,  Shadowing → Companion
+Right:  Application → Companion → Current Screen
+```
+
+*"Companion không thuộc về Dashboard. Không thuộc Library. Không thuộc Shadowing. Mọi screen chỉ
+'đón' Companion ghé qua."* On top of that sits a **presence-level** system — `Level 0 Hidden ·
+1 Ambient · 2 Observe · 3 Listening · 4 Address · Silent` — mapped to a runtime `CompanionState`
+machine in `design-reconciliation.md` §5.
+
+**So the four kinds, with the test that separates them:**
+
+| Kind | Test | This batch |
+|---|---|---|
+| **Companion screen** | the learner *navigates to it*; the Companion is the subject | `156:1310` · `190:7376` · `215:15164` |
+| **Companion panel** | a region **inside another screen's** layout; the Companion is a guest | the rail cards already found on the hub (§7.1), the JLPT lobby (§10.1) and the result (§10.5) |
+| **Companion interaction** | a **transient presence event** — it arrives, speaks or offers, and leaves | `181:3525` drawer, `182:3859` reflection panel (batch 2) |
+| **Companion-generated content** | an **artifact** the Companion produces that persists and has its own retrieval | diary letters, learning memories, gentle suggestions, insights, reflections |
+
+**Why the separation is load-bearing** (the user's warning, and it is correct): without it, Companion
+becomes a pile of routes and components and it stops being clear whether it is *a world* or *a
+chatbot*. Note the asymmetry the doc forces — **panels and interactions are the Companion visiting a
+screen it does not belong to; only the three destinations are screens.** And generated content is
+orthogonal to all three: the same diary letter appears as content in a panel, in an interaction, and
+on its own screen.
+
+**Repo, measured:** the presence system **already exists** —
+`lib/companion/presence/{state-machine,arbitration,contexts,speech,config}.ts`, plus
+`lib/companion/{dedupe,mastery,phase}.ts`, `components/companion/use-companion.ts`,
+`/api/companion/journal` and `/api/companion/memories`. Routes: **`/journal` (immersive)** and
+**`/sensei` (app)**. There is **no Companion home route.**
+
+### 11.1 `156:1310` — **Companion home** · `CONFIRMED` screen
+
+| | |
+|---|---|
+| **Kind** | Companion **screen** — the Companion is the subject, not a guest. |
+| **Capability** | The Companion's own room: what it has noticed, what it suggests, what you and it are working on. |
+| **Entered from** | Not determinable from the frame; no nav row points at it (the visible nav has no Companion entry). **Open.** |
+| **Exits to** | `See all` ×5 (memory, suggestions, vocabulary shelf, conversation memories, still-practicing) · `Practice together` ×4 → a practice surface · `Read more` → reflection · `View full journey` · `View diary` → `190:7376`. |
+| **Actions** | Read; `See all`; `Practice together`; **edit today's reflection** (a pencil icon); switch the journey range `Today / Week / Month / Journey`. |
+| **Data** | companion identity + tenure (`Storykeeper`, *"Studying together for 126 days"*) · a **presence indicator rendered as copy** (*"Listening quietly…"*) · `LEARNING MEMORY` (dated observations) · `GENTLE SUGGESTIONS` (observation + a soft proposal) · `LANGUAGE GROWTH` (qualitative claims) · **`PERSONAL VOCABULARY SHELF`** (word, gloss, date, **Confidence** level + meter) · `CONVERSATION MEMORIES` (milestone cards with images and dates) · `THINGS WE'RE STILL PRACTICING` (skill, focus, Confidence: *Growing / Improving / Still exploring*) · `TODAY'S SMALL VICTORY` · rail: reflection, weekly journey timeline, diary excerpt. |
+| **API** | `/api/companion/memories` ✅ · `/api/companion/journal` ✅. Nothing serves the vocabulary shelf, the growth claims, the still-practicing list or the journey timeline. |
+| **Route** | ❌ none. |
+
+**⭐ This frame resolves an open question carried since 2026-08-11.** §4 asked whether the
+`PERSONAL VOCABULARY SHELF` reads from `/vocab` or is companion-owned, and noted its `Confidence`
+meter is not something `/vocab`'s SM-2 models. **It sits inside Companion home** — so it is
+companion-owned, and `Confidence` is a Companion concept, not an SRS interval. The same vocabulary
+*word* may appear in both places under two different models of "how well do you know this".
+
+**⭐ Rule-4 clarification, not a conflict.** The doc defines presence levels as an internal state
+machine. The frame renders one **as user-visible copy** — *"🎙 Listening quietly…"* under the
+Companion's name. That is `Level 3 — Listening` surfaced to the learner. The doc never says the level
+is displayable. **Record as a design clarification; do not edit either side.**
+
+**Two artifacts, not product:** the hero image is a **mascot pose sheet** with Vietnamese labels
+(`NGỒI YÊN`, `NẰM THƯ GIÃN`, `CHÀO HỎI`…) — design scaffolding pasted into the frame, not UI. And the
+rail is titled **`NIHONGO CINEMA`**, a pre-rebrand name.
+
+### 11.2 `190:7376` — **Companion Diary** · `CONFIRMED` screen, immersive
+
+*"Letters I've written while walking beside you."* No nav; a warm lamp-and-desk illustration bleeds in
+from the edge.
+
+Each entry: a **mood glyph** (moon / sun / rain / leaf / sparkle / sprout) · a date · a 2–4 line letter
+in the Companion's voice · a closing line in amber (*"Until tomorrow." · "I'll be here." · "It felt
+like a beginning."*) · a **`♡ Remember This`** action. A right-hand **time rail** navigates
+`Today · July · June · May · April · March · Earlier memories`. Header carries `Search a memory…` and
+**`Favorite Letters ♡`**.
+
+- **Kind:** screen, and its entries are the purest example of **Companion-generated content** — dated,
+  mood-tagged, individually favouritable, searchable, and addressable by time period.
+- **Repo:** `/journal` exists and is `(immersive)` ✅ — the chrome contract already matches.
+  `/api/companion/journal` ✅. **Not modelled:** mood glyph, favourite/remember, search, time-rail
+  navigation.
+- ⚠️ The letters are strikingly specific (*"You replayed one sentence eight times. Not because you
+  couldn't say it. Because you wanted to say it beautifully."*). That is generated from behavioural
+  telemetry of the same class §10.9 just designed for answer revisions.
+
+### 11.3 `215:15164` — **Companion Knowledge Assistant** · `CONFIRMED` screen
+
+Header `Companion / Japanese Knowledge`, badge `Learning with you`, right-hand `Conversation Memory`.
+
+**This is not a generic chatbot, and the difference is the whole point:**
+- It **opens by grounding itself in the learner's history** — ✨ *"You've already encountered particles
+  in **three Shadowing lessons**. I'll build from there."*
+- Answers embed a **furigana example card** with `🔊 Listen` and a gloss.
+- **Suggested continuations** are pedagogical: `Give another example` · `Practice together` ·
+  `Compare に / で`.
+- The composer is in **correction mode** — *"Paste a Japanese sentence to correct…"*, footnoted
+  *"Correction mode · Companion remembers your progress"* — plus a mic.
+- Rail `LEARNING CONTEXT`: *"You're strongest when examples come first. So I'll keep the grammar close
+  to something you can say."* — a stated **teaching strategy derived from the learner**.
+- Rail `IN THIS CONVERSATION`: entities raised, with **exposure counts** — は *"Topic particle · JLPT N5
+  · **Seen 31 times**"* — and a link to the lesson that teaches them.
+- Rail `A SMALL MEMORY`: *"Last month you asked about 失礼します. Today you naturally used it correctly."*
+
+- **Repo:** `/sensei` exists (`(app)` chrome) ✅. `lib/ai` + the conversation module exist. **Not
+  modelled:** cross-module grounding, per-entity exposure counts, correction mode, in-conversation
+  entity extraction, or the strategy statement.
+- ⭐ This is the destination the search panel's `Ask Companion` branch points at (§7.2) — the edge is
+  now confirmed at both ends.
+
+### 11.4 `216:15648` — ⚠️ the frame name is wrong: this is the **Diary's** empty state
+
+Named `Empty state (Companion home)`. The picture says otherwise: the header reads **`Korume | Diary`**
+and the copy is *"**Our diary hasn't begun yet.** Every lesson. Every conversation. Every quiet little
+victory. I'll remember them here."* with `Start Today's Lesson ↗` and `Explore Lessons`.
+
+**Classification: `STATE-VARIANT` of `190:7376 Companion Diary`, not of `156:1310`.** Add to the
+rename list — `Empty state (Companion Diary)`. This is the method rule earning its keep for the third
+time: the name said one screen, the picture said another.
+
+### 11.5 Batch 1 verdict
+
+| Node id | Name | Kind | Route | Verdict |
+|---|---|---|---|---|
+| `156:1310` | Companion home | **screen** | ❌ none | unbuilt; resolves the vocabulary-shelf ownership question |
+| `190:7376` | Companion Diary | **screen** | `/journal` ✅ `(immersive)` | chrome already correct; mood/favourite/search/time-rail unmodelled |
+| `215:15164` | Companion Knowledge Assistant | **screen** | `/sensei` ✅ `(app)` | grounding, exposure counts and correction mode all unbuilt |
+| `216:15648` | *"Empty state (Companion home)"* | `STATE-VARIANT` of `190:7376` | — | **misnamed frame** |
+
+**Capabilities added:** a companion identity with tenure · **presence surfaced as copy** · dated
+learning memories · gentle suggestions pairing an observation with a soft proposal · qualitative
+language-growth claims · a **companion-owned vocabulary shelf with a Confidence model distinct from
+SRS** · milestone conversation memories · a still-practicing list with confidence bands · an editable
+daily reflection · a journey timeline with range switching · **diary letters with mood, favourites,
+search and time navigation** · a knowledge assistant that **grounds answers in the learner's own
+lesson history**, tracks **per-entity exposure counts**, offers pedagogical continuations, and runs a
+**sentence-correction mode**.
