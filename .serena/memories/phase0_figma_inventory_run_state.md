@@ -131,6 +131,37 @@ absolutely — the backend must never download or proxy video — but a *label* 
   `learning history → SRS/progress/mistakes → Companion memory → analysis → recommendation → reason`.
   The ranking API owes a derived reason per item.
 
+## ✅ Cluster 2 of 10 DONE — Shadowing, all 9 frames (`98655c0` · `a6b0045` · `77476a6`)
+
+5 screens (`149:2`, `200:7705`, `105:3088`, `125:1030`, `212:14610`), 4 state-variants (`200:10726`,
+`212:14753`, `120:2027`, `123:2835`), none obsolete. Full write-up: `screen-inventory.md` §7–§9.
+
+**The structural finding: the lesson is ONE workspace with EIGHT modes**, not four screens —
+`Reading · Shadowing · Listening · Pronunciation · Dictation · Immersion · Mining · Review`. The other
+three frames are modes inside it (each opens `← Back to Shadowing`, same shell, only the right rail
+changes). **Measured: the gap is the shell, not the engine.** `/api/pronunciation/score`,
+`/api/dictation/attempt`, `/api/shadowing/session`, `/api/videos/[id]/summary` all exist; only 2 of 8
+modes have a route; **Summary has a working endpoint and nothing renders it.**
+
+**Recorded and deliberately NOT resolved** (four-layer method): Figma's dictation is a **word-bank
+assembly puzzle**, the repo types free text (`dictation-view.tsx:284` `<Input>`); `lib/dictation`'s
+normalize+score survive either, so it is a layer-A question, not a defect. And the frame *named*
+`Dictation` carries the eyebrow `LISTENING PRACTICE` + listening stats → `Listening` and `Dictation`
+may be one mode. `AMBIGUOUS`.
+
+**`125:1030 Summary` is where the product loop closes** and is the highest-value unbuilt screen found
+so far: lesson ends → AI keeps only what was worth keeping → written to Companion memory + notebook →
+per-skill scores + a `Retention` level → next lesson proposed **with its reason**. `Retention`,
+`Memory growth` and the `Try it` production prompt exist nowhere in the repo.
+
+**Explore (`200:7705`) is designed in full and is a bare placeholder** (`UpcomingScreen`). Its
+situation chip row was **already adjudicated correctly** by migration `20260807000025` (two axes —
+situations vs sources — refusing to freeze Figma's collapse into schema); do not re-open it.
+
+**⚑ Open questions this cluster leaves the user:** Listening vs Dictation · dictation assembly vs
+typing vs both · what `Immersion` is · whether `Mining`/`Review` are lesson-scoped tabs as well as
+top-level routes · **Vimeo / multi-platform import** (would widen §2's embed-only surface).
+
 ## 📐 Method for TALL frames — needed from here on
 
 `200:7705` (1536×5836) and `200:10726` (1582×5906) reduce to ~425px wide at `maxDimension: 1600` —
@@ -169,9 +200,9 @@ and committing per cluster — the whole thing does not fit one session, and per
 crash loses nothing. **Kanji is done (`4973dd6`); resume at Shadowing.**
 
 ~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ `4973dd6` →
-**Shadowing** — batch 1 ✅ `98655c0` (`149:2`, `212:14610`, `212:14753`); **batch 2 = the Explore pair
-`200:7705` + `200:10726` (tall, band-read)**; batch 3 = the practice family `105:3088`, `120:2027`,
-`123:2835`, `125:1030`. Full original cluster order below — (`149:2`, `105:3088`,
+~~**Shadowing** (9 frames)~~ ✅ `98655c0` + `a6b0045` + `77476a6` → **RESUME AT `JLPT`**
+(`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`, `242:14234`,
+`243:14899`, `243:15364`). Full original cluster order below — (`149:2`, `105:3088`,
 `200:7705`, `200:10726`, `212:14610`, `212:14753`, `125:1030`, `123:2835`, `120:2027`) →
 **JLPT** (`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`,
 `242:14234`, `243:14899`, `243:15364`) → **Companion** (`156:1310`, `220:16766`, `190:7376`,
