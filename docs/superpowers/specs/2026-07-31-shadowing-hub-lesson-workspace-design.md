@@ -14,6 +14,11 @@
 >   pronunciation score, badge icons.
 > - **Amends** `business-model.md` — Principle 3 rewrite (§3.4 below), a new import/library-access
 >   row in the Free/Premium table, and a new philosophy statement on what Nihongo Cinema sells.
+> ⚠️ **Editorial note added 2026-08-12: `public/demo/` was deleted** (user ruling — the images were
+> throwaway, never design artifacts). The paths below no longer resolve; the trigger is left written
+> as it happened. Same open question as the Consolidation spec: this work is merged, and whether its
+> conclusions need re-checking against live Figma is the user's call.
+>
 > **Trigger:** User provided two Figma reference exports (`public/demo/image.png`,
 > `public/demo/image1.png` — the same references that triggered the Consolidation spec) and asked
 > to correct the assistant's understanding of the video-import/transcript mechanism, which grew

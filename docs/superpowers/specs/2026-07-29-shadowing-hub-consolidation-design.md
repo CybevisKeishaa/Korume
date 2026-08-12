@@ -2,6 +2,13 @@
 
 > **Status:** Draft — brainstormed in conversation 2026-07-29, revised after written-spec review,
 > awaiting final sign-off before execution.
+> ⚠️ **Editorial note added 2026-08-12: `public/demo/` was deleted.** The user ruled that everything
+> in it was throwaway — images edited ad hoc to show the assistant something, never design artifacts —
+> so the folder is gone as of this date and the paths below no longer resolve. The trigger is left
+> written as it happened. **Open, for the user: this spec's conclusions were derived from those
+> images, and it has already been executed and merged (`a6a7617`). Whether that makes any of its IA
+> decisions worth re-checking against live Figma is a product call, not an editorial one.**
+>
 > **Trigger:** Two Figma exports (`public/demo/image.png`, `image1.png`) proposed a "Shadowing Study
 > Room" screen and surfaced that the shipped IA treats video as a first-class navigation concept
 > (`videos` nav item, `screen-video-library.md`, `screen-video-detail.md`) parallel to — and
