@@ -1,5 +1,49 @@
 # Phase 0 — Figma Product Inventory — run state (⭐ ALL 57 FRAMES READ, 2026-08-12)
 
+# ▶▶ RESUME HERE — read this block, then §"Cluster completion log" and §"THE OPEN QUESTIONS"
+
+**Paused 2026-08-12 at the IA checkpoint. Working tree clean, everything committed to master.**
+
+**Done:** all 57 Figma frames read and analysed (`docs/product/screen-inventory.md`, ~1,900 lines,
+Part II §6–§20) **and** aggregated (`docs/product/capability-map.md`, 12 capability areas). Last
+commit `5dfe498`.
+
+**Not done — and it is ONE step, not a cluster:** propose the IA → **STOP for the user's review** →
+lock IA → Screen Registry Phase 1.
+
+**⛔ TWO THINGS BLOCK THAT STEP. Do not start the IA proposal until both are answered:**
+
+1. **The four IA-blocking questions** (`capability-map.md` §3) — each changes what the product's
+   *nouns* are, so guessing produces a dishonest IA:
+   - **`AI Sensei` vs the Companion** — one intelligent presence or two? Is `/sensei` a Companion mode?
+   - **One canonical skill taxonomy** — three different sets exist (`64:2061` / `187:6556` / `111:515`)
+     and six surfaces claim to measure "how good are you at X".
+   - **`Journey` points at the wrong concept** — `app-nav.tsx:59` maps it to the Diary; the design
+     means the Roadmap.
+   - **Both kanji surfaces?** — discovery (`29:2890`) *and* curriculum (`280:3`), or one?
+2. **The model decision.** `mem:model_selection_policy` requires STOP-and-ASK before IA synthesis, and
+   the user's standing rule is *ask every time Fable is proposed*. **Asked; not yet answered.**
+   **Controller's recommendation on record: stay on Opus 5 — no Fable.** The hard reasoning was spread
+   across the 8 clusters and is already written down; the IA step is applying `capability-map.md` §4's
+   four rules to an already-classified set of destinations.
+
+**⚠️ Standing user instructions that survive the pause:**
+- **Do NOT port any screen yet.** This stage exists to dig up what the repo does not know it is missing.
+- **Do NOT settle navbar / route map / registry** from anything less than the full picture. (That gate
+  is now clear — all 57 are read — but the *checkpoint* still applies: IA is **proposed**, reviewed by
+  the user, and only then locked.)
+- The inventory **records**; it does not **design**.
+
+**Where everything lives:**
+| File | What |
+|---|---|
+| `docs/product/screen-inventory.md` | Part I = old name-based draft (superseded where marked) · **Part II §6–§19 = the per-frame analysis** · **§20 = content conflicts for the user to fix in Figma** |
+| `docs/product/capability-map.md` | 12 capability areas · the six cross-cutting systems · §3 the four IA blockers · §4 how the IA proposal must be built |
+| `docs/product/figma-frame-map.md` | name → node id for all 57, post-rename and verified |
+| `docs/superpowers/specs/2026-08-08-screen-registry-design.md` | Phase 1's approved spec, untouched, still correct |
+
+
+
 > **Where it stands:** frame map DONE (57/57) **and the per-frame inventory analysis is DONE (57/57).**
 > `docs/product/screen-inventory.md` Part II holds it, §6–§19, committed per cluster.
 > No code touched, no branch cut — everything is docs + memory, committed straight to master.
@@ -165,7 +209,34 @@ above it — implying a `(protected)`-level state owner nothing in Part I mentio
 came back 1278–1536 wide, all legible), `curl` to scratchpad, `Read` the PNG. Four frames in one
 batch was comfortable; **do not batch many more than that per turn** — images dominate context.
 
+## ✅ USER RULINGS made during this run — all binding, do not re-litigate
+
+| Ruling | Date |
+|---|---|
+| Import pipeline's 6 stages + failure state: **keep as drawn**; it is a progress narrative, and failure's main cause is **quota exhaustion** (an early sighting of L8's UX) | 08-12 |
+| Recommendation **reasons are required** — an output of learning intelligence, not copy | 08-12 |
+| **Search is a global panel**, not a screen; `Ask Companion` branches to `215:15164` | 08-12 |
+| **`Favorites` is the mining family**, not a new capability | 08-12 |
+| Lesson workspace has **FOUR** Learning Modes (Shadowing / Pronunciation / Listening Practice / Summary) — the 8-tab row was misread | 08-12 |
+| Dictation: **typing is the mode, the word bank is a hint** | 08-12 |
+| **Certification Practice** = module; **JLPT · BJT · Tokutei Ginou** = exam families; repo implements 1; **no migration triggered now** | 08-12 |
+| **Answer revisions are recorded**, and power a **family of insights** (7 variants + 2 honesty guards, `screen-inventory.md` §10.9) | 08-12 |
+| **Roadmap write-back is real** | 08-12 |
+| **Payment = PayOS.** No Stripe, no Visa, no Apple Pay | 08-12 |
+| **No landing/gateway page exists yet** — known and accepted, the user will design it later | 08-12 |
+| **Figma content may be wrong; the DESIGN is right.** Report content conflicts | 08-12 |
+| **Don't judge the design against the existing API** — the backend was built for a smaller product | 08-12 |
+
 ## ⭐⭐ THE GOVERNING METHOD — four layers, never collapsed (user ruling 2026-08-12)
+
+**⚠️ Amended 2026-08-12 — read `screen-inventory.md` Part II § "Amendment" for the full text:**
+- **Layer B splits**: **B-design** (structure/flow/affordances) is **authoritative**; **B-content**
+  (copy, labels, sample values, brand and third-party names) **may be wrong → report it** (§20 list).
+- **Layer C is NOT a baseline.** A designed capability with no endpoint = **the design is larger**, not
+  wrong, and not a defect report against the backend. Never phrase a finding as "conflicts with the
+  API" or "the schema says otherwise".
+- **Layer D still binds absolutely** — `CLAUDE.md` §2 is not something the design outgrows.
+
 
 Bought by getting it wrong. Batch 1 reported the hub's import pipeline (`Download Video` /
 `Extract Audio`) as a CLAUDE.md §2 violation. **The user ruled there is no violation: those steps are a

@@ -30,7 +30,51 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-11, REPLACES the "write the Phase 1 plan" instruction) — **Phase 0: Figma Product Inventory. Do NOT start Screen Registry Phase 1.**
+## ▶ NEXT ACTION (updated 2026-08-12) — **Phase 0's INVENTORY is COMPLETE (57/57 frames). The next step is the IA proposal, and it is BLOCKED on 5 answers from the user.**
+
+**Read `mem:phase0_figma_inventory_run_state` § "▶▶ RESUME HERE" first — it is the authority.**
+
+**Delivered 2026-08-12, all committed to master (working tree clean, last commit `5dfe498`):**
+- `docs/product/screen-inventory.md` — **all 57 Figma frames read and analysed**, Part II §6–§19,
+  ~1,900 lines, committed cluster by cluster. **§20 lists 10 content conflicts for the user to fix in
+  Figma.**
+- `docs/product/capability-map.md` — the aggregation: **12 capability areas**, the **six cross-cutting
+  systems**, §3's four IA blockers, §4's rules for building the IA proposal.
+- `docs/product/figma-frame-map.md` — name → node id, post-rename and read back from Figma.
+
+**⛔ The IA proposal must not start until the user answers:**
+1. `AI Sensei` vs the Companion — one intelligent presence or two?
+2. One canonical **skill taxonomy** — three conflicting sets exist today.
+3. **`Journey`** — the nav label points at the Diary; the design means the Roadmap.
+4. **Both kanji surfaces** (discovery + curriculum) or one?
+5. **Model choice** — policy requires asking before IA synthesis. **Recommendation on record: stay on
+   Opus 5, no Fable** (the hard reasoning is already written down across the 8 clusters).
+
+Then: propose IA → **STOP for the user's review** → lock IA → Screen Registry Phase 1 →
+route/API reconciliation → UI implementation → L8 → L9.
+
+**⚠️ Standing instructions: do NOT port any screen yet, and do NOT settle navbar/routes/registry
+without the user's review.**
+
+### The six cross-cutting systems the inventory found (this is the headline result)
+A capability sighted in 3+ independent modules is **not a feature of any of them**:
+**Learning Intelligence** (6 sightings) · **Companion presence** (all modules) · **save & collect /
+mining** (6) · **pitch accent** (4) · **provenance-attached claims** (3+) · **progress narrative** (3).
+**None of them may take a nav row** — they surface *inside* destinations.
+
+### Method corrections that now bind all downstream work
+- **Four layers, never collapsed:** A product intent · B UX representation · C implementation ·
+  D constraint. A contradiction exists only when B is mistaken for C.
+- **B splits:** **B-design is authoritative; B-content may be wrong** (report it).
+- **⭐ Layer C is NOT a baseline.** The backend was built for a smaller product — a designed capability
+  with no endpoint means *the design is larger*, never that the design is wrong. Do not phrase findings
+  as "conflicts with the API".
+- **Layer D still binds absolutely** (`CLAUDE.md` §2).
+- **Never infer a frame's identity from its name** — the picture corrected four names this run.
+
+<details><summary>(superseded 2026-08-12) the instruction that started this stage — Phase 0: Figma Product Inventory, Do NOT start Screen Registry Phase 1</summary>
+
+## ▶ (historical) NEXT ACTION (2026-08-11) — **Phase 0: Figma Product Inventory. Do NOT start Screen Registry Phase 1.**
 
 **User ruling 2026-08-11.** Screen Registry Phase 1 is still correct and its spec is still approved —
 it just is **not next**. A new stage runs before it, because Phase 1 was about to be fed by guesswork:
@@ -77,7 +121,11 @@ avoid this. Re-derive from screen identity; inherit no count (`L-002`).
   16, so capture in runs of ≤15.
 
 **▶ Execution state and the concrete next action live in `mem:phase0_figma_inventory_run_state`.
-READ THAT FIRST when resuming.** Frame map done; the per-frame inventory analysis has not started.
+READ THAT FIRST when resuming.** ✅ *(superseded 2026-08-12: the frame map AND the per-frame inventory
+are both complete — see the current NEXT ACTION block above.)*
+
+</details>
+
 - **Richest un-read source: the Figma Make bundle's tier-A prose prompts** —
   `C:\Users\tplon\Downloads\Design Shadowing Page UI\src\imports\pasted_text\`, 21 files, 208 KB of
   design intent in words (`companion-home-design.md`, `kanji-explorer-screen.md`,
