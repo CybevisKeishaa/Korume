@@ -182,6 +182,38 @@ situations vs sources — refusing to freeze Figma's collapse into schema); do n
 typing vs both · what `Immersion` is · whether `Mining`/`Review` are lesson-scoped tabs as well as
 top-level routes · **Vimeo / multi-platform import** (would widen §2's embed-only surface).
 
+## ✅ Cluster 3 of 10 DONE — JLPT, all 10 frames (`815b4a7`)
+
+5 screens (`232:2`, `234:618`, `237:1690`, `242:14234`, `243:14899`), 5 state-variants (`237:6708`,
+`234:1639`, `234:1667`, `240:12992`, `243:15364`). Write-up: `screen-inventory.md` §10.
+
+**⚑ THE BIG ONE: the module is `Certification Practice`, not `JLPT`** — `232:2` carries an exam-family
+selector `JLPT · BJT · Tokutei Ginou`, and the nav row reads `Certification Practice`. The repo is
+JLPT-only from route to schema enum. **Largest naming/scope divergence in the inventory so far**;
+answering it renames a module, a route, a nav row and a schema. **User ruling needed before the
+registry names anything.**
+
+**Rule 3 returned a finding on its first use:** there is **no `docs/design/screens/screen-jlpt*.md`** —
+JLPT is built (L5) but has no written layer-A screen authority, so Figma carries more weight here.
+
+**The runner is an exam simulator, not a quiz:** mondai grouping *below* `jlpt_section`, per-question
+flagging, an **OMR-style answer sheet**, autosave, a countdown, and phase-2-locked-until-phase-1.
+None of those four exist in the repo. **Phases are free**, though — Phase 1 = vocab+grammar+reading,
+Phase 2 = listening, so the existing enum expresses them and `jlpt_tests.section_config jsonb` can
+hold the grouping. `jlpt_attempts.section_scores jsonb` already matches the per-section result cards.
+
+**⭐⭐⭐ The Companion boundary — cleanest layer-A/layer-D agreement found.** `design-reconciliation.md`
+marks JLPT practice `Not Supported`; the frames **enforce** it (`EXAM RULES` card `No Companion`; rail
+note *"Once the exam starts, the Companion disappears"*; post-submit greeting *"I've been waiting"*)
+**and locate the exact edges** — present in lobby / pre-flight / result / review, absent only between
+`Begin Phase 1` and submission. **The frames are more precise than the doc; lift this back into
+`docs/design/`.**
+
+**Two more to carry:** the result screen routes **out** into Shadowing / Grammar / Conversation with a
+reason per card (an IA edge today's nav has nowhere to put), and the result **writes back into the
+roadmap and review schedule** (`UPCOMING ADJUSTMENTS`, `COMPANION OBSERVATION`) — nothing consumes
+attempts that way today. One insight card needs **answer-revision telemetry** that is not recorded.
+
 ## 📐 Method for TALL frames — needed from here on
 
 `200:7705` (1536×5836) and `200:10726` (1582×5906) reduce to ~425px wide at `maxDimension: 1600` —
@@ -220,9 +252,12 @@ and committing per cluster — the whole thing does not fit one session, and per
 crash loses nothing. **Kanji is done (`4973dd6`); resume at Shadowing.**
 
 ~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ `4973dd6` →
-~~**Shadowing** (9 frames)~~ ✅ `98655c0` + `a6b0045` + `77476a6` → **RESUME AT `JLPT`**
-(`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`, `242:14234`,
-`243:14899`, `243:15364`). Full original cluster order below — (`149:2`, `105:3088`,
+~~**Shadowing** (9)~~ ✅ · ~~**JLPT** (10)~~ ✅ `815b4a7` → **RESUME AT `Companion` (14 frames, the
+largest remaining cluster)**: `156:1310`, `220:16766`, `190:7376`, `215:15164`, `180:1770`, `184:3974`,
+`187:6556`, `182:3859`, `181:3525`, `64:2061`, `180:2`, `111:1877`, `111:1963`, `216:15648`.
+⚠️ Split it into batches of ≤4 and **read `docs/design/patterns/companion-patterns.md` +
+`design-reconciliation.md` §4/§6 FIRST** (rule 3) — the Companion boundary is heavily specified and
+JLPT already proved the frames refine it. Full original cluster order below — (`149:2`, `105:3088`,
 `200:7705`, `200:10726`, `212:14610`, `212:14753`, `125:1030`, `123:2835`, `120:2027`) →
 **JLPT** (`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`,
 `242:14234`, `243:14899`, `243:15364`) → **Companion** (`156:1310`, `220:16766`, `190:7376`,
