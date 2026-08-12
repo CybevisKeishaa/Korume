@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -153,17 +151,16 @@ describe("AppNav", () => {
     expect(NAV_ITEMS).toHaveLength(22);
   });
 
-  it("points every nav href at a route that exists", () => {
-    // The regression that makes a future rename fail loudly instead of shipping
-    // a dead nav row. Plan C1 exists partly because eight rows had no route.
-    const missing = NAV_ITEMS.filter((item) => {
-      const segments = item.href.replace(/^\//, "");
-      const candidates = [
-        path.join(process.cwd(), "app", "[locale]", "(protected)", "(app)", segments, "page.tsx"),
-        path.join(process.cwd(), "app", "[locale]", "(protected)", "(immersive)", segments, "page.tsx"),
-      ];
-      return !candidates.some(existsSync);
-    });
+  // The href-resolves guard moved to lib/product/screen-registry.routes.test.ts
+  // (T1), which checks EVERY page.tsx against the registry rather than only
+  // nav hrefs under (app)/(immersive). Spec §4.1: folded in, not duplicated.
+
+  it("has a pinned label for every nav destination", () => {
+    // Restores the exhaustiveness that `NAV_GROUPS`-as-a-literal used to give
+    // at compile time. Once NAV_GROUPS is derived from the registry, the key
+    // type widens to `string`, so a missing EXPECTED_LABELS entry would no
+    // longer be a tsc error — this makes it a test failure instead.
+    const missing = NAV_ITEMS.filter((item) => !(item.key in EXPECTED_LABELS));
     expect(missing).toEqual([]);
   });
 
