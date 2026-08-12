@@ -1452,3 +1452,133 @@ daily reflection · a journey timeline with range switching · **diary letters w
 search and time navigation** · a knowledge assistant that **grounds answers in the learner's own
 lesson history**, tracks **per-entity exposure counts**, offers pedagogical continuations, and runs a
 **sentence-correction mode**.
+
+---
+
+## 12. Cluster: Companion — batch 2 of 4 (two visiting surfaces, two destinations)
+
+Chosen to test the taxonomy where it is hardest: two frames that should be **interactions** and two
+that should be **screens**. The split held.
+
+### 12.0 ⭐⭐ The pattern this batch found: **provenance-attached claims**
+
+Three frames, independently, attach the **evidence** to whatever the Companion asserts:
+
+| Frame | The mechanism |
+|---|---|
+| `182:3859` | **`INSPIRED BY`** — *"• 3 pronunciation sessions · 8 careful replays"* printed beneath the reflection |
+| `181:3525` | **`Observed from`** — *"Restaurant Conversation · Yesterday"*, *"Detected across your last three listening sessions"*, *"Observed in your recent replies"* |
+| `180:1770` | each memory card carries the **source lesson** it came from, and `Replay lesson →` |
+
+**This is the §10.9 honesty guard rendered as UI.** The rule was *never infer psychology from
+telemetry — state the observation the data carries*. These frames go one step further: they **show the
+data**. The learner can see that *"Curiosity is stronger than talent"* rests on *8 careful replays*,
+and can disagree with the reading while accepting the fact.
+
+**Recorded as a capability: `provenance-attached companion claim`.** It is not decoration — it
+constrains the data model, because every Companion statement must retain a link to the events that
+produced it. Note the repo already has the substrate: `lib/companion/presence/contexts.ts` and
+`/api/companion/memories`.
+
+### 12.1 `182:3859` — **Today's Reflection** · Companion **interaction** (overlay panel)
+
+A centred card over a dimmed page — the frame name's *"fade around"* is the dimming. No nav, no
+header, no chrome.
+
+Eyebrow `COMPANION REFLECTION` · title · date `May 28, 2026` · a card tagged `🎙 PRONUNCIATION`
+carrying the reflection (*"You replayed one difficult sentence eight times. Curiosity is stronger than
+talent."*) · signed **`Korume · Listening quietly`** (presence as copy again, §11.1) · footer nav
+`‹ Previous · Today · Next ›` · a **date rail** `May 27 · May 28 · May 29 · Today` · **`INSPIRED BY`** ·
+closing line *"Some days only leave a small trace. It still counts."*
+
+- **Kind: interaction**, and a navigable one — it browses across dates without becoming a screen.
+  Presentation, not navigation → a dialog/drawer component, **no route**.
+- **Entered from** the `TODAY'S REFLECTION` rail card on Companion home (`Read more ›`) — the panel
+  ↔ interaction relationship the taxonomy predicts: the rail card is the **panel**, opening it is the
+  **interaction**, the reflection text is the **generated content**.
+- **Unbuilt.** Nothing in the repo renders a reflection, and `date` navigation over reflections has no
+  endpoint.
+
+### 12.2 `181:3525` — **Gentle Suggestion drawer** · Companion **interaction** (drawer)
+
+550×1070 — a narrow side drawer, which the geometry alone already tells us.
+
+Header ✨ `GENTLE SUGGESTIONS` · *"Based on how you've been learning recently."* · an opening line in
+the Companion's voice. Then suggestion cards, each carrying: a **category** (Pronunciation / Listening
+/ Grammar / Conversation) · a **classification tag** — `Recently struggled` · `Matches your pace` ·
+**`From Companion memory`** · `Getting better` · a title · **a reason** · **`Observed from`
+provenance** · a **target lesson with duration and JLPT level** · and two actions, **`Dismiss`** and
+**`Practice Now →`**. Between cards the Companion interjects: ♡ *"I think this one would feel
+satisfying today."* Footer: **`↻ Refresh Suggestions`** · *"Suggestions update naturally as you
+study."*
+
+- **Kind: interaction.** Presentation, not navigation → **no route**.
+- ⭐ **`Dismiss` is a real state-changing action** — the learner can reject a suggestion, which implies
+  per-suggestion persistence and feeds the arbitration the repo already has in
+  `lib/companion/presence/arbitration.ts`.
+- ⭐ The four tags are a **taxonomy of why a suggestion exists** (struggle · pace-match · memory ·
+  improvement). That is the Learning Intelligence hypothesis (§10.9) showing its reasoning categories.
+- **Unbuilt** as a surface; the presence/arbitration substrate exists.
+
+### 12.3 `180:1770` — **Learning Memory** · `CONFIRMED` screen
+
+`← Back to Companion`, so it is entered *from* Companion home — the **archive** behind that screen's
+`LEARNING MEMORY` panel.
+
+`Search memories` · `Filter` · `Newest ⌄` · category chips `All / Shadowing / Pronunciation /
+Conversation / Vocabulary / Grammar / Listening / Achievements / `**`Companion Notes`** · entries
+**grouped by month** on a vertical timeline · each card: category · date · a headline · a body line ·
+a **source-lesson chip** · a **bookmark** · `Open memory →`. An expanded card adds longer prose, a
+**`COMPANION'S NOTE`** block, and `Replay lesson →`. Rail: **`PINNED MEMORIES`** (*"The pages you chose
+to keep close."*) and **`A SMALL OBSERVATION`**.
+
+- **Kind: screen**; its entries are **generated content**; the rail cards inside it are **panels**.
+  All three kinds appear in one frame, which is exactly why the taxonomy is needed.
+- **Repo:** `/api/companion/memories` ✅ and `lib/data/companion.ts` ✅. **No route.** Unmodelled:
+  pinning, category filter, search, sort, month grouping, source-lesson linkage, `Companion Notes` as
+  a category of its own.
+- ⭐ `Companion Notes` being a *filterable category* means the Companion's own writing is stored
+  alongside observations about the learner — one archive, two authors.
+
+### 12.4 `187:6556` — **Growth Areas** · `CONFIRMED` screen
+
+Eyebrow `LEARNING JOURNEY` · *"Let's look at where you're quietly becoming stronger."*
+
+- **`AREAS STILL GROWING`** — *"Not problems to solve. Just places with room to become familiar."*
+  Five **selectable** skill cards with percentages: Listening 64 (selected) · Pronunciation 72 ·
+  Conversation 58 · Particles 49 · Kanji 45.
+- Selecting one reveals **`LISTENING · YOUR NEXT GENTLE STEP`**: a diagnosis (*"You're beginning to
+  recognise complete phrases, but fast conversations still make you hesitate."*) and **two concrete
+  lessons** — `Podcast Lesson 5 →`, `Shadowing Lesson 12 →`.
+- `RECENTLY IMPROVED` (Long vowels · Pitch accent · Business greetings · Listening confidence, each
+  with a qualitative note) · `THIS WEEK` (18 Lessons · 4 Conversations · **126 Shadowed sentences** ·
+  2h Practice) · **`SUGGESTED FOCUS`** — three lessons, each with a reason.
+- Rail: a two-paragraph **`COMPANION REFLECTION`** and `A quiet note from Korume`.
+
+- ⭐⭐ **This is the consumer end of the Learning Intelligence hypothesis** (§10.9): a skill map, a
+  diagnosis per skill, and a route from the diagnosis into specific lessons. It is the same
+  `analysis → what next → reason` shape as the shadowing recommendations and the JLPT result, arriving
+  from a third direction.
+- **⚑ Resolves an earlier mapping guess as wrong.** §5 asked *"`Growth Areas` → `/weekly-report`?"*
+  **No.** This is a persistent skill-progress map, not a periodic report — and this frame's own nav
+  lists `Roadmap` and `Weekly Report` as separate rows while showing neither as active.
+- **Unbuilt**; no route, and no endpoint produces per-skill percentages or a next-step diagnosis.
+
+**Design noise, not product:** the frame renders `You&apos;re` and `Let&apos;s` as literal text —
+HTML entities that survived the import. Same class as the pose sheets in §11.1.
+
+### 12.5 Batch 2 verdict
+
+| Node id | Name | Kind | Route | Verdict |
+|---|---|---|---|---|
+| `182:3859` | Today's Reflection | **interaction** (overlay panel) | none, correctly | unbuilt |
+| `181:3525` | Gentle Suggestion drawer | **interaction** (drawer) | none, correctly | unbuilt; arbitration substrate exists |
+| `180:1770` | Learning Memory | **screen** | ❌ none | memories API exists; pin/filter/search/source-link unmodelled |
+| `187:6556` | Growth Areas | **screen** | ❌ none | not `/weekly-report`; wholly unbuilt |
+
+**Capabilities added:** **provenance-attached companion claims** · date-navigable daily reflections ·
+dismissible suggestions with a **why-this-exists taxonomy** (struggle / pace / memory / improvement) ·
+suggestion refresh · a **searchable, filterable, pinnable memory archive** grouped by time and linked
+to source lessons · `Companion Notes` as a first-class memory category · a **per-skill growth map with
+percentages** · a per-skill **next gentle step** that names specific lessons · qualitative
+"recently improved" tracking · weekly activity totals · reason-carrying suggested focus.
