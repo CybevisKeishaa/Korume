@@ -1973,3 +1973,130 @@ per-scenario capability/tier flag · speaking-progress telemetry with a **pronun
 **⚑ Handed upward:** the **companion-naming question** (§15.5) · **`JLPT Speaking` as a
 Certification↔Conversation edge** that neither module's frames own · whether **`AI Coach`** is a
 feature flag or a paid tier (an L8 input).
+
+---
+
+## 16. Cluster: Pronunciation — 2 frames, analysed 2026-08-12
+
+**Rule 3:** no pronunciation screen doc, but there *is* a feature doc —
+`docs/features/F-016-goal-based-learning-paths.md` — and it matters (§16.3).
+**Repo:** `/api/pronunciation/score` ✅ and `/api/speech/{stt,tts}` ✅ exist; **no `/pronunciation`
+route of any kind.**
+
+### 16.1 `37:4955` — **Pronunciation Studio** (library) · `CONFIRMED` screen
+
+`SPEAK WITH CONTEXT` · *"Master Japanese pronunciation through carefully designed speaking courses and
+real-world scenarios."* · a `FEATURED COURSE` (**Japanese Business Communication** — 120 lessons ·
+Intermediate · 8 hours · JLPT N3–N2 · 67% · 80/120) · a `CONTINUE WHERE YOU LEFT OFF` bar. Then **five
+shelves**:
+
+| Shelf | Content |
+|---|---|
+| **Popular Learning Paths** | Everyday Conversation · Business Japanese · IT Engineer Communication · Travel in Japan — each with lesson count and total hours |
+| **Practice by Situation** | 8 situations (Ordering Coffee · Convenience Store · Train Station · Office Meeting · Phone Call · Hospital · School · Renting Apartment) |
+| **Practice by Goal** | **Improve Pitch Accent** · Improve Fluency · Native Rhythm Training — each a multi-hour track |
+| **JLPT Speaking** | N5–N1 with completion % and **average score** |
+| **Shadowing Collections** | Anime · News · Podcasts · Business Meetings, with sentence counts |
+
+Rail: `TODAY'S SPEAKING` · **`WEEKLY IMPROVEMENT`** (Accuracy +8% · **Pitch Accent +13%** · Rhythm +6%
+· Confidence +11%, with a trend line) · `AI SENSEI RECOMMENDATION` (*"You often flatten pitch in long
+compound nouns."*) · `RECENTLY PRACTICED` with per-session scores.
+
+**⭐ Two cross-module edges appear here, both second sightings:** `JLPT Speaking` (also in
+`170:9364`, §15.2) and `Shadowing Collections` (shadowing content surfaced inside Pronunciation).
+Pronunciation is not a leaf module — it **borrows content from two others**.
+
+### 16.2 `36:4117` — **Pronunciation Studio** (per-sentence practice) · `CONFIRMED` screen
+
+`SPEAK • LISTEN • IMPROVE` · *"…one sentence at a time through AI-powered speech analysis."*
+
+Card: `SENTENCE 3 / 18` · `N3 · Everyday conversation` · the sentence in large type with a romaji line ·
+toggles `Show Furigana` · `Translation` · **`Slow Playback`** · a waveform player with `0.75× / 1× /
+1.25×` · a large **`Tap to Speak`** mic · **`REFERENCE`** and **`YOUR VOICE`** waveforms side by side ·
+`Analyze Pronunciation` + `↻ Try Again` · sentence pager `‹ Previous · 3/18 · Next ›`.
+
+Rail: `TODAY'S SESSION` · **`TODAY'S IMPROVEMENT`** (Yesterday 86 → Today **92 (+6)**) · a score ring
+**92 Excellent** over five bars (Accuracy 96 · Rhythm 91 · **Pitch Accent 89** · Fluency 94 ·
+Confidence 93) · `AI Sensei Feedback` · **`Word Analysis`** — per-word chips こんにちは✓ 今日は✓ いい✓
+**天気⚠** ですね✓ — expanding into a `Pitch focus` card that **draws the Expected and Yours pitch
+contours** with `Play Native` / `Play Yours` / `Practice Again` · `COMMON MISTAKE` · `AI TIP`.
+
+**⭐⭐⭐ This is CLAUDE.md §5 differentiator #1 drawn in full**: F0 contour extracted from the learner's
+recording, overlaid against a reference, scored, and localised **to the failing word**. The inventory
+has now met pitch accent in **four independent surfaces** (`120:2027` in-lesson, its trend report,
+`44:7289` per-utterance, and here as both a score and a whole `Practice by Goal` track). **It is a core
+capability, not a feature of one module.**
+
+**§2 note, not a violation:** `REFERENCE` must be **TTS of the sentence text**, per the project's
+standing rule that pitch reference is synthesised and never extracted from source media. Nothing here
+contradicts that — recorded so a later implementer does not reach for video audio.
+
+### 16.3 ⚠️ Rule-4 finding: **"goal" means two different things**
+
+`F-016-goal-based-learning-paths.md` defines a **goal** as a life-domain chosen at onboarding —
+*Anime · JLPT · Business · Travel* — which then tags content and biases recommendations.
+
+Figma splits that idea across **two different shelves**:
+- **`Popular Learning Paths`** = Everyday Conversation / **Business Japanese** / IT Engineer /
+  **Travel in Japan** → these are F-016's domain goals.
+- **`Practice by Goal`** = **Improve Pitch Accent / Improve Fluency / Native Rhythm** → these are
+  **skill** targets, a different axis entirely.
+
+**Neither side is wrong; the word is overloaded.** Record as a `design clarification` per rule 4 —
+and note it feeds §13.3's missing skill taxonomy, because *Improve Pitch Accent* is a skill goal whose
+name must come from that same taxonomy.
+
+---
+
+## 17. Cluster: Grammar — 1 frame, analysed 2026-08-12
+
+### 17.1 `284:1464` — **Sentence Analysis** · `CONFIRMED` screen — and it is **not** a grammar list
+
+**⭐⭐ This resolves an open question from §5**, which asked whether *"Grammar analysis is a new feature,
+deliberately unbuilt, and the existing `/grammar` list is enough."* **The picture says the two are not
+comparable.** `/grammar` is a **catalogue of grammar points** (measured: `app/[locale]/(protected)/
+(app)/grammar/page.tsx` exists and is real, not a placeholder). This frame is a **sentence parser**.
+
+The nav names it as its own row — `Sentence Analysis` — and the screen works like this: paste **or
+speak** any Japanese sentence → `Analyze` → and it returns
+
+- **`SENTENCE`** re-rendered with furigana and colour-coded, underlined segments;
+- **`MEANING`** — a literal reading plus a natural translation;
+- **`STRUCTURE`** — the sentence as labelled roles: 先生に *recipient* → 日本語を *object* →
+  教えていただきました *main predicate*, with `Deeper structure →`;
+- **`DETAILED ANALYSIS`** — every token with part of speech, reading and gloss;
+- **`KEY GRAMMAR`** — the point (〜ていただく `N3`), its meaning, its **form** (`Vて + いただく`), the
+  instance in this sentence, and `View grammar →` **into the existing catalogue**;
+- **`KEY VOCABULARY`** with audio;
+- rail: `ANALYSIS SUMMARY` · **`SELECTED COMPONENT`** (click a token, inspect it) · **`WHAT TO NOTICE`**
+  (*"The person marked with に performs the favor. The speaker stays humble by receiving it."*).
+
+Footer actions: `Replay Pronunciation` · **`Add to Vocabulary`** · `Practice Sentence` ·
+*"Still unclear? Ask Companion →"* · `Practice This Sentence →`.
+
+**⭐ Rule-4 clarification, and a clean one.** `screen-shadowing-practice.md`'s Two-Layer Model already
+names **Analysis** — *"a per-sentence utility (highlight → Analyze), not a mode at any layer"*. Figma
+does not contradict that; it shows the **same utility also existing as a standalone destination** with
+free-text and voice input and its own nav row. **Utility inside a lesson, screen outside one.** Record
+as an extension, not a conflict.
+
+**⭐ Two loop connections:** the rail's **`LEARNING MEMORY`** card writes back — *"You often confuse
+〜てもらう and 〜ていただく. Korume will keep this in mind for future lessons."* — which is the Learning
+Intelligence loop arriving from a **fifth** direction; and **`Add to Vocabulary`** puts the
+mining/collection family in a **sixth** surface.
+
+### 17.2 Verdict — Pronunciation + Grammar
+
+| Node id | Name | Kind | Route | Verdict |
+|---|---|---|---|---|
+| `37:4955` | Pronunciation Studio (library) | screen | ❌ none | unbuilt; borrows content from Certification and Shadowing |
+| `36:4117` | Pronunciation Studio (practice) | screen | ❌ none; `/api/pronunciation/score` ✅ | pitch-contour comparison and word-level analysis unbuilt |
+| `284:1464` | Sentence Analysis | screen | ❌ none; `/grammar` is a different thing | a parser, not a list |
+
+**Capabilities added:** pronunciation **courses and learning paths** · practice by **situation** ·
+practice by **skill goal** · **pitch-accent training as a first-class track** · per-sentence practice
+with reference-vs-user waveform comparison · **word-level pronunciation scoring** · **expected-vs-actual
+pitch contour rendering** · slow playback and speed control · daily improvement deltas · common-mistake
+notes · **free-text and voice sentence analysis** · role-labelled sentence structure · token-level
+part-of-speech breakdown · grammar-point extraction linking into the catalogue · *what to notice*
+pragmatic explanation · analysis writing back into Companion memory.
