@@ -36,7 +36,30 @@ transition table and tests already written — no long horizon left. So: run bra
 on Fable (after asking), then **drop back to Opus 5 (was Opus 4.8) for execution**, including
 subagents. Do not re-litigate this per task in L8/L9c.
 
-## ✅ Money — RESOLVED 2026-08-05 by running `/status` (supersedes the old "$100 credit" caveat)
+## ⭐ STANDING RULE (user, 2026-08-12) — ASK EVERY TIME, no exceptions
+
+**Whenever the assistant proposes switching to Fable — for any reason, at any point — it must ASK
+the user first.** This is broader than the "when to CONSIDER Fable" list below: that list says when
+Fable is *worth* proposing; this rule says a proposal is never self-approving. The user gave the
+reason plainly: they are managing a finite Fable balance themselves and want the spend decision.
+Never switch silently, never pass `model: "fable"` to a subagent without asking.
+
+## 💰 Fable balance — the user reports $100 free (2026-08-12), which does NOT match the $50 measured below
+
+**User statement, 2026-08-12:** *"tôi đang có $100 fable free"*. This is **user-reported, not
+measured** — and it contradicts the `/status` reading taken on 2026-08-05, which showed a **$50.00
+monthly** Usage-credits pool (`$6.09 / $50.00 spent`, resetting Sep 1). Both are recorded rather than
+one silently overwriting the other, because either could be true: a promotional grant may have landed
+since, or the figure may be a recollection of the old "$100 one-time" claim this memory had already
+disproved once.
+
+**Resolve it by running `/status` before the first Fable pass** — the assistant cannot run `/status`
+itself (it is a CLI command; the user types it, or `! `-prefixes a command). Until then, treat the
+budget as unknown-but-generous and still ask per the standing rule above. The cost calibration below
+($6.09 for one plan-writing pass) is the number that actually matters for the decision, and it is
+unaffected by which pool figure is right.
+
+## ✅ Money — measured 2026-08-05 by running `/status` (see the 2026-08-12 update directly above)
 
 **Verified facts, not assumptions:**
 - **Login method: Claude Pro account** (org `shamt2004@gmail.com's Organization`). Not an API key.

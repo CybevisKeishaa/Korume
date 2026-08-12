@@ -104,12 +104,36 @@ or by the user explicitly asking for a `model: "fable"` subagent — and the ses
 better shape here, because a subagent starts cold and **cannot hold the IA checkpoint conversation**
 the user requires.
 
+## 🚫 `public/demo/**` is NOT a design source — user ruling 2026-08-12
+
+**"Ảnh đó chỉ là ảnh rác"** — the PNGs in `public/demo/` are throwaway images the user edited ad hoc
+to show the assistant a demo. They are **not** a reference render, not a design artifact, and carry
+no authority about nav, IA, or any screen. (This is why the working tree showed `image.png` modified
+and `image1.png` deleted with no explanation — nothing to investigate.)
+
+**One conclusion already rested on them and has been withdrawn:** `docs/product/screen-inventory.md`
+had ruled `Companion home` a separate screen from `/dashboard` by reading the render's left nav.
+That paragraph is now marked WITHDRAWN in place; the claim must be re-derived from `156:1310` /
+`216:15648` during the Companion cluster. Commit `6074024`'s message ("read Companion home off the
+reference render") is therefore a record of a method error, not of a finding.
+
+**Generalised:** the only authoritative visual source for Phase 0 is a **live Figma screenshot**.
+Not the render, not the local Figma Make bundle (a decaying snapshot, `mem:figma_make_design_source`),
+not a frame name. See the ⭐ method rule above — it now has two independent pieces of evidence.
+
 ## ⚑ Open questions the user owes
 
 **New, from this stage:**
 1. **Kanji Explorer vs Kanji Library** — does Korume want both a discovery surface and a curriculum
    surface, or did the curriculum design replace the exploratory one?
-2. `234:1639` vs `234:1667`, both named `To phase 2` — not yet compared visually. May resolve itself.
+2. ✅ **RESOLVED 2026-08-12 — `234:1639` vs `234:1667` are two sequential steps, not a duplicate.**
+   User: "To phase 2 là màn hình chuyển của phần JLPT practice." Screenshots confirm and separate them:
+   `234:1639` = `PHASE 2 / Listening Section`, illustration + prep copy + a **`Begin Listening` button**
+   (waits for a click); `234:1667` = `CERTIFICATION PRACTICE / "Please prepare your headphones."` + a
+   large orange **countdown numeral** and no button (auto-advances). Flow: Finish phase 1 → gate →
+   countdown → `JLPT practice (phase 2)`. Both are `state-variant`s of the JLPT practice flow, and the
+   countdown frame is itself one tick of an animated 3→2→1. Rename proposed to the user:
+   `To phase 2 (ready)` / `To phase 2 (countdown)`.
 3. `243:14906` — a node id recorded in a spec that matches no frame name.
 4. Three frame names carry typos and `screenId` derives from names, so fix before the registry:
    `44:7289` "Conversation **pratice**", `184:3974` "Conversation **memorry**",
