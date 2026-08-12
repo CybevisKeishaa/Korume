@@ -228,12 +228,28 @@ attempts that way today. One insight card needs **answer-revision telemetry** th
 
 ## ▶ Cluster 4 IN PROGRESS — Companion, batch 1 of 4 done (`a3aa216`)
 
-**Done:** `156:1310` Companion home · `190:7376` Diary · `215:15164` Knowledge Assistant ·
-`216:15648` (misnamed — it is the **Diary's** empty state, header reads `Korume | Diary`; add to the
-rename list). **Remaining 10, in batches of ≤4:** `220:16766` Welcome Companion · `180:1770` Learning
-memory · `184:3974` Conversation memory · `187:6556` Growth Areas · `182:3859` Today's reflection
-(panel) · `181:3525` Gentle suggestion drawer · `64:2061` Roadmap · `180:2` Roadmap detail ·
-`111:1877` Generate sensei · `111:1963` Generate done.
+**Batch 1 done (`a3aa216`):** `156:1310` Companion home (screen) · `190:7376` Diary (screen) ·
+`215:15164` Knowledge Assistant (screen) · `216:15648` (misnamed — it is the **Diary's** empty state,
+header reads `Korume | Diary`; add to the rename list).
+**Batch 2 done (`68ff609`):** `182:3859` Today's Reflection (**interaction**, overlay) · `181:3525`
+Gentle Suggestion drawer (**interaction**) · `180:1770` Learning Memory (**screen**) · `187:6556`
+Growth Areas (**screen**).
+**Remaining 6 — batch 3 = Roadmap** (`64:2061`, `180:2`; read as a **learning-state output**, not a
+static screen), **batch 4 = onboarding + the last memory surface** (`220:16766` Welcome Companion,
+`111:1877` Generate sensei, `111:1963` Generate done, `184:3974` Conversation memory).
+
+**⭐⭐ Batch 2's pattern — `provenance-attached companion claim`.** Three frames independently attach
+the *evidence* to what the Companion asserts: `INSPIRED BY` (*"3 pronunciation sessions · 8 careful
+replays"*), `Observed from` (*"Detected across your last three listening sessions"*), and per-memory
+**source-lesson chips** with `Replay lesson →`. **This is the §10.9 honesty guard rendered as UI** —
+and it constrains the data model: every Companion statement must retain a link to the events that
+produced it. Substrate exists (`lib/companion/presence/contexts.ts`, `/api/companion/memories`).
+
+Other batch-2 finds: the suggestion drawer tags **why each suggestion exists** (`Recently struggled` ·
+`Matches your pace` · `From Companion memory` · `Getting better`) = the Learning-Intelligence reasoning
+categories made visible; `Dismiss` is a real state change feeding `lib/companion/presence/arbitration.ts`;
+and **`Growth Areas` is NOT `/weekly-report`** (an earlier guess in `screen-inventory.md` §5, now
+corrected) — it is a persistent per-skill map with a diagnosis and named lessons per skill.
 
 **⭐ The four-way taxonomy the user requires, with the doc's own blade.**
 `companion-patterns.md` § *The Companion Never Belongs To A Screen*: `Application → Companion →
