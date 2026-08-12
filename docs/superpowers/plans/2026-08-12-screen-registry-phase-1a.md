@@ -326,14 +326,30 @@ export function resolvePageRoute(relativePath: string): {
   return { route: `/${routeSegments.join("/")}`.replace(/\/$/, "") || "/", chrome };
 }
 
+/** Recursive walk, not a glob — see the warning below. Returns repo-relative
+ *  POSIX-ish paths, which is what `resolvePageRoute` expects. */
+function walkPages(dir: string, rootDir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walkPages(full, rootDir, out);
+    else if (entry.name === "page.tsx") out.push(path.relative(rootDir, full));
+  }
+  return out;
+}
+
 export function listPageRoutes(rootDir: string) {
-  return globSync("app/[locale]/**/page.tsx", { cwd: rootDir })
+  return walkPages(path.join(rootDir, "app"), rootDir)
     .map((file) => ({ file, ...resolvePageRoute(file) }))
     .sort((a, b) => a.route.localeCompare(b.route));
 }
 ```
 
-> ⚠️ **If `node:fs`'s `globSync` is unavailable on this Node version**, swap to a recursive `readdirSync` walk filtering `page.tsx` — do **not** add a glob dependency for this. Verify with `node -e "console.log(typeof require('node:fs').globSync)"`.
+> ⚠️⚠️ **Do NOT use `fs.globSync` here, and do not "simplify" this walk back into one.** Two independent reasons, both measured:
+>
+> 1. **The obvious pattern silently matches nothing.** `globSync("app/[locale]/**/page.tsx")` returns **0 files** — glob reads `[locale]` as a character class, not a literal directory name. Escaping it (`app/[[]locale[]]/**/page.tsx`) returns 44. **A resolver that returns `[]` makes Task 4's T1 compare an empty set and pass while asserting nothing** — the exact failure `L-004` exists for, and one this repo has already shipped three times.
+> 2. **Version floor.** `fs.globSync` landed in Node 22. This repo pins `@types/node@^20` and declares no `engines` field, so `tsc` does not even know the function exists (forcing a `declare module` augmentation) and it crashes outright on Node 20.
+>
+> The `readdirSync` walk has neither problem: no augmentation, no dependency, no version floor. Import `readdirSync` from `node:fs` and `path` from `node:path`.
 
 - [ ] **Step 5: Run tests to verify they pass**
 
@@ -477,7 +493,7 @@ Run these to produce the working set:
 ```bash
 grep -nE '^### .*`CONFIRMED` screen' docs/product/screen-inventory.md
 grep -nE '^### .*(STATE-VARIANT|interaction|MODAL|NOT screens|component)' docs/product/screen-inventory.md
-node -e "console.log(require('node:fs').globSync('app/[locale]/**/page.tsx').join('\n'))"
+node -e "const{readdirSync}=require('node:fs'),p=require('node:path');(function w(d){for(const e of readdirSync(d,{withFileTypes:true}))e.isDirectory()?w(p.join(d,e.name)):e.name==='page.tsx'&&console.log(p.join(d,e.name))})('app')"
 ```
 
 **Population rules:**
