@@ -2230,3 +2230,141 @@ generation notification** · theme, accent and display-scale choice · **reduced
 microphone / camera permissions · **AI-training consent** · **data export and learning-history
 download** · **two-tier deletion (companion memory vs account)** · community links · in-app support
 routed **through the Companion**.
+
+---
+
+## 19. Clusters: Marketing + global states — 8 frames, analysed 2026-08-12 (Phase 0 complete)
+
+### 19.0 ⚠️ Two frames are filed in the wrong cluster, and one of them changes the map
+
+**`111:515` is named `Homepage`. It is the authenticated Dashboard.** The picture shows the app nav,
+`TUESDAY · LATE EVENING`, a streak chip and an avatar — this is **"Welcome back"**, not a landing page.
+**Fourth time the picture has corrected a frame name.**
+
+**Consequence: there is NO marketing landing frame anywhere in the 57.** Part I mapped
+`Homepage → / → built`; that mapping is wrong on both ends. The public front door of Korume is
+**undesigned**, while `/` in the repo renders a marketing page nothing in Figma describes.
+
+**`111:1556 QuickStart` belongs to onboarding, not marketing.** It is explicitly **`Step 2 of 5`** and
+sits in the same flow as `220:16766`, `111:1877` and `111:1963` (§14).
+
+### 19.1 `111:515` — **Dashboard** · `CONFIRMED` screen *(rename the frame)*
+
+`CONTINUE LEARNING` (lesson, %, minutes remaining, tags) · **`TODAY'S MISSION — "Three small
+promises"`** (three checkable targets with counters and a reward of **`+120 XP · +1 Journey Point`**) ·
+`AI SENSEI` coaching line · **`LEARNING JOURNEY`** (N5 Completed → N4 82% → N3 Locked, with the next
+milestone named) · **`WEAKNESS SNAPSHOT`** · `WEEKLY EVOLUTION` · `LEARNING ACTIVITY` heatmap ·
+`RECENT ACHIEVEMENT` · `QUICK ACCESS` (Review · Mining · Vocabulary · Roadmap · Conversation · Lesson
+Library).
+
+- ⭐ **`Journey Point` is a second currency** beside XP, and it appears nowhere else.
+- ⚠️ **A third skill taxonomy.** `WEAKNESS SNAPSHOT` measures **Listening · Grammar · Pitch Accent** —
+  different again from §13.3's two sets. **Three frames, three taxonomies.**
+
+### 19.2 `74:564` — **Pricing** · `CONFIRMED` screen
+
+Pre-rebrand throughout (`JapanWeb+`). Two tiers plus three billing shapes:
+
+- **FREE — `ALWAYS FREE`**: Reading · Shadowing · Pronunciation Practice · Dictation · Vocabulary
+  Mining · Review Center · Progress Dashboard · Export Your Data · **Adaptive Furigana** ·
+  Kanji & Grammar Support · **Personal Lesson Creation · 3 lessons/month** · Public Lesson Library.
+- **Plus — `REMEMBER MORE`**: AI Sensei Companion · Personalized Roadmap · Weekly AI Report · Deep AI
+  Breakdown · **Unlimited Lesson Creation** · Full Lesson Library · **AI Transcript Generation** ·
+  **Full JLPT Mock Exams** · Native Pronunciation Analysis · AI Conversation Partner · **Long-term
+  Learning Memory** · **Weakness Coaching** · Intelligent Review Planning.
+- Billing: Monthly **49.000đ** · Annual **490.000đ** (*Save 2 Months*) · **Founding Member
+  39.000đ/month** with a `Founder's Badge` and *"Price locked forever while subscribed"*.
+- Positioning: **"We don't sell AI."** — *"Your notes are always yours. Your progress is always
+  yours."* Closing: *"You can continue learning for free forever."*
+
+**⭐ Three confirmations the rest of the inventory needed:**
+1. **`Adaptive Furigana` is named as such, and it is FREE** — which settles the §18.3 worry in the
+   right direction: the product does mean CLAUDE.md §5 #4's adaptive behaviour, not an on/off toggle.
+2. **`Personal Lesson Creation · 3 lessons/month`** matches the measured `createLesson()` quota exactly
+   (§7.1), and **`Unlimited Lesson Creation`** is what the paid tier buys.
+3. **`AI Transcript Generation` is a paid feature** — i.e. the deliberately-stubbed
+   `aiTranscriptProvider` (§7.0) is *monetised*, which raises the stakes on the deferred STT question.
+
+**Founding-member price-lock matches the L8 plan** already recorded in the roadmap.
+
+### 19.3 `209:14032` — **Checkout** · `CONFIRMED` screen
+
+Post-rebrand (`Become Korume+`). Three membership cards → payment method → card fields → an order
+summary with `Renews August 2027` and the included list, `Become Korume+`, and a Companion line
+*"I've been waiting. Let's remember the rest of your journey together."*
+
+**⚠️⚠️ Layer-B ↔ layer-D conflict, and it is a decided-stack conflict.** The footer reads **"Secure
+payments powered by Stripe"** and the methods are **Visa · Mastercard · Apple Pay · Google Pay ·
+PayPal**. CLAUDE.md §3 states payments are **PayOS** — *"Stripe/7-day-trial superseded"*. **None of the
+five drawn methods is PayOS**, and PayOS's actual flow (Vietnamese bank transfer / QR) is not drawn at
+all.
+
+**Per rule 1 this is recorded, not fixed** — but unlike a stale label this one contradicts a *decided*
+stack choice, so it needs a ruling before L8, exactly like the `Theme` and `Accent Color` items in
+§18.4. ✅ **One thing the design gets right:** there is **no free-trial anywhere**, matching the
+no-trial decision.
+
+### 19.4 `75:1424` — **FAQ** · `CONFIRMED` screen (in-app, not marketing)
+
+`JAPANWEB+ HANDBOOK` · a search field · six topic cards (Learning · AI Sensei · Plus · Account ·
+Billing · Privacy) · a 10-question accordion · a rail of three principles · `Contact Support` /
+`Documentation`.
+
+**⭐⭐⭐ The §2 non-negotiable appears as a public FAQ answer:** *"Why doesn't JapanWeb+ host YouTube
+videos?"* The constraint is presented to learners as a **product explanation**, not hidden as an
+engineering rule. That is layer D surfacing into layer B in the healthy direction.
+
+**⭐⭐ `KNOWLEDGE ECONOMY`** — *"Every AI explanation generated becomes reusable knowledge for future
+learners."* This is `business-model.md`'s Knowledge-Gen concept rendered, and it is the economic
+argument behind the per-user Knowledge-Gen quota the roadmap requires **before AI is enabled**.
+**`YOUR DATA`** states the ownership stance plainly: *"We never lock your learning data. Premium
+unlocks intelligence, not ownership."*
+
+### 19.5 `203:13813` — **Footer** · **component**, not a screen — plus a closing hero
+
+Above the footer sits a closing statement (*"A quieter way to keep going."*). The footer itself:
+brand · **EXPLORE** (Home · Pricing · FAQ · **Blog** · Roadmap · **About** · **Careers** · **Contact**)
+· **COMMUNITY** (Discord · Facebook · TikTok) · **SUPPORT** (`admin@almostgone.vn` ✅ matches the deploy
+target) · **LEGAL** · and **`CONTINUE LEARNING ANYWHERE`** with **App Store and Google Play badges** and
+a **newsletter email capture**.
+
+**⚠️ Two scope claims hide in a footer:** **native mobile apps** (Korume is a Next.js web app — nothing
+else in the inventory or the repo implies iOS/Android), and **four unbuilt marketing pages** —
+`Blog`, `About`, `Careers`, `Contact` — none of which has a frame.
+
+### 19.6 `210:14338` + `218:15740` — **Loading states** and **Error states** · **NOT screens**
+
+Both are **pattern catalogues**, laid out as design-system pages:
+
+| Frame | Title | Contents |
+|---|---|---|
+| `210:14338` | *"Loading states, quietly at work."* | 8 patterns — global · **AI generation** · lesson · **companion thinking** · **payment processing** · success transition · dashboard skeleton · library skeleton — plus a **`LOADING LANGUAGE`** rule: *"Never technical. Never urgent. Always companion-led."* |
+| `218:15740` | *"Error states, gently handled."* | 8 patterns — connection · **companion unavailable** · lesson gone · video failed · **access/paywall** · 404 · dashboard partial-failure · library partial-failure — plus an **`ERROR LANGUAGE`** rule: *"Never blaming. Never alarming. Always companion-led."* |
+
+**⭐⭐ This settles the open question carried since §2 of Part I.** The proposed rule was: *a state of one
+named screen → registry; a state any screen can enter → `/admin/style-guide`*. These two frames are
+unambiguously the second kind — they are **not states of a screen at all**, they are the **system's
+state vocabulary**. **They belong in the style guide and must not become registry entries or routes.**
+
+Three details worth carrying: `02 / COMPANION` (*"Sensei is taking a short break. The AI isn't
+responding right now. Everything else is still here."*) is exactly the **honest AI-degrade** the repo
+already implements as 503 paths; `05 / ACCESS` is a **paywall state** (L8); and both catalogues insist
+every message be **companion-led**, which makes error and loading copy a Companion surface — and
+therefore subject to §14.1's companion-less fallback requirement.
+
+### 19.7 Verdict
+
+| Node id | Name | Kind | Route | Verdict |
+|---|---|---|---|---|
+| `111:515` | *"Homepage"* → **Dashboard** | screen | `/dashboard` | **misnamed frame**; `Journey Point` and a third skill taxonomy |
+| `74:564` | Pricing | screen | ❌ none (L8) | the business model, rendered |
+| `209:14032` | Checkout | screen | ❌ none (L8) | **Stripe vs the PayOS decision** needs a ruling |
+| `75:1424` | FAQ | screen | ❌ none | §2 as a public answer; Knowledge Economy |
+| `111:1556` | QuickStart | screen (**onboarding**, step 2 of 5) | ❌ none | feeds roadmap generation |
+| `203:13813` | Footer | **component** | — | excluded from the registry; hides two scope claims |
+| `210:14338` | Loading states | **style-guide catalogue** | — | not a screen |
+| `218:15740` | Error states | **style-guide catalogue** | — | not a screen |
+
+**⚑ Handed upward:** **no marketing landing page exists in the design** · **Stripe vs PayOS** ·
+**mobile apps in the footer** · four unbuilt marketing pages · a **third** skill taxonomy ·
+`Journey Point` as a second currency.
