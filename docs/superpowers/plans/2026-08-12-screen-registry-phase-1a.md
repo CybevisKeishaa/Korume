@@ -269,7 +269,7 @@ Expected: FAIL — `Failed to resolve import "./route-resolver"`.
 - [ ] **Step 4: Write the implementation**
 
 ```ts
-import { globSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import path from "node:path";
 import type { ScreenChrome } from "./screen-registry-types";
 
