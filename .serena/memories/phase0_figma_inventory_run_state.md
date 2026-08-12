@@ -332,6 +332,38 @@ renders one as **user-visible copy** (*"Listening quietly…"*). Neither side ed
 
 </details>
 
+## ✅ Cluster 5 of 10 DONE — Conversation, 4 frames (`8907d9b`)
+
+`170:9364` library (**screen**, `/conversation` ≈ built but far simpler) · `44:7289` live session
+(**screen**, immersive) · `46:2` create wizard (**interaction**, modal) · `180:1129` preview
+(**state-variant**). Rule 3 returned nothing — **no conversation screen doc**, same as JLPT.
+
+**⚠️ The gap is the DATA MODEL, not the UI.** `conversation_sessions.scenario_type` is **one free-form
+text column**; the wizard defines **8 dimensions** (start mode · free-text situation · difficulty incl.
+`Native` · learner role · AI role · style · learning focus · length incl. `Adaptive`) with a live
+preview estimating vocabulary/grammar counts — and `180:1129` adds a **second, finer 6-dial model**
+(`Formality · Speaking Speed · Native Difficulty · Emotion · Vocabulary Density · Humor`). Whether
+traits derive from the wizard or are authored beside it is unresolved and changes the schema.
+
+**Three genuinely new capabilities:** (1) **user-generated scenarios shared with attribution**
+(*"created by Mika"*) — UGC for conversations, which the repo has for playlists/forum but not here;
+(2) **`JLPT Speaking`** — the real JLPT has no speaking section, so this is a Korume construct creating
+a **Certification ↔ Conversation edge neither cluster's frames own**; (3) **`AI Coach Available`** as a
+per-scenario badge — feature flag or paid tier? **an L8 input.**
+
+Live session: **voice-first, chat explicitly optional**; assigns learner role + AI role + a goal;
+budgets turns (`5/12`); scores **each utterance** on Pronunciation / Fluency / **Pitch Accent** /
+Naturalness with a concrete `Try:` rewrite. Pitch accent now in a **third** independent surface;
+`Save Mistake` puts the mining family in a **fifth**.
+
+**⚠️⚠️ THE COMPANION HAS THREE NAMES** — `Storykeeper` (`156:1310`), `Korume` (`215:15164`,
+`184:3974`), **`Hikari`** (`180:1129`) — all for the same mock learner `Yuki Tanaka`.
+**Hypothesis (not a ruling): the companion is user-nameable**, set at onboarding, so these are
+placeholders. Fits: `220:16766` says *"Meet My Companion"* without naming one, and the repo persists
+**no companion identity at all**. But **no frame shows a naming step** ⇒ unconfirmed. **Compounds
+§14.3** — together: is `AI Sensei` the Companion or a second entity, and is the Companion's name
+fixed, branded, or chosen? Both block the IA from saying what "the Companion" *is*.
+
 ## 📐 Method for TALL frames — needed from here on
 
 `200:7705` (1536×5836) and `200:10726` (1582×5906) reduce to ~425px wide at `maxDimension: 1600` —
@@ -371,10 +403,10 @@ crash loses nothing. **Kanji is done (`4973dd6`); resume at Shadowing.**
 
 ~~**Kanji** (`29:2890`, `280:3`, `280:1314`, `28:2041`)~~ ✅ `4973dd6` →
 ~~**Shadowing** (9)~~ ✅ · ~~**JLPT** (10)~~ ✅ · ~~**Companion** (14)~~ ✅ `f8724ba` →
-**RESUME AT `Conversation` (4 frames)**: `44:7289` Conversation practice · `170:9364` Conversation
-practice library · `46:2` Popup create conversation · `180:1129` Quick preview panel: Conversation
-practice. Then: **Pronunciation** (2) → **Grammar** (1) → **Account** (4) → **Marketing** (6) →
-**global states** (2). **37/57 done.** Full original cluster order below — (`149:2`, `105:3088`,
+~~**Conversation** (4)~~ ✅ `8907d9b` → **RESUME AT `Pronunciation` (2)**: `37:4955` library,
+`36:4117` detail. Then: **Grammar** (1) `284:1464` → **Account** (4) `65:2`, `66:166`, `67:595`,
+`220:16032` → **Marketing** (6) `111:515`, `74:564`, `209:14032`, `75:1424`, `111:1556`, `203:13813`
+→ **global states** (2) `210:14338`, `218:15740`. **41/57 done.** Full original cluster order below — (`149:2`, `105:3088`,
 `200:7705`, `200:10726`, `212:14610`, `212:14753`, `125:1030`, `123:2835`, `120:2027`) →
 **JLPT** (`232:2`, `234:618`, `237:1690`, `240:12992`, `237:6708`, `234:1639`, `234:1667`,
 `242:14234`, `243:14899`, `243:15364`) → **Companion** (`156:1310`, `220:16766`, `190:7376`,
