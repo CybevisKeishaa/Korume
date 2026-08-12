@@ -15,8 +15,12 @@ improvised:
 1. Destinations come only from frames classified `screen`.
 2. Panels, interactions and generated content never earn a nav row.
 3. Overlays are presentation; a route only where the URL must be shareable or state-recoverable.
-4. Grouping follows capability areas, **not** the current sidebar. Both existing navbars are demos.
-5. The four §3 questions are answered first — ✅ all four ruled 2026-08-12.
+4. Grouping follows capability areas, **not** the current sidebar. ~~Both existing navbars are
+   demos.~~ ⚠️ **Half of that rule is wrong and §6 corrects it** — only the reference render is a
+   demo. `NAV_GROUPS` implements an **Approved** design doc, so this proposal is an *amendment*.
+   The grouping instruction stands; the dismissal of the existing navbar does not.
+5. The four `capability-map.md` §3 questions are answered first — ✅ all four ruled 2026-08-12.
+   Three further rulings (§3.2, §3.3, §3.4 of this document) followed on the same day.
 
 To re-derive the inputs rather than trust a number in this file (`L-002`):
 
@@ -45,6 +49,27 @@ design file instead of the learner's intent. Two disciplines cut it down:
 
 So the structure is **destination → surfaces within it**, and the navbar lists destinations only.
 
+### ⭐ The principle that resolves the hardest cases: **Taxonomy ≠ Navigation**
+
+*(User, 2026-08-12, ruling on Pronunciation — named here because it generalises well beyond it.)*
+
+**A thing's position in the data model does not determine its position in the navbar.** The two
+answer different questions:
+
+| | Question it answers | Governed by |
+|---|---|---|
+| **Taxonomy** | *what kind of thing is this, and what does it roll up into?* | the skill model (`capability-map.md` §3.2) |
+| **Navigation** | *is this somewhere a learner deliberately goes?* | the size and independence of its surface |
+
+**Worked example, and the reason the principle exists:** Pronunciation is a **tier-2 sub-skill under
+Speaking** in the taxonomy — it may never be summed into a score of its own. It is simultaneously a
+**top-level destination** in the IA, because `37:4955` draws a library big enough to go to on purpose.
+Both are true at once, and neither weakens the other.
+
+**Applied in the other direction it is just as useful:** `Challenges` and `Achievements` are
+first-class *concepts* in the gamification model and get **no nav row at all** (§3.4, §3.3), because
+neither has an independent surface. A concept's importance is not a claim on the sidebar.
+
 **The shape that results** maps to the learning loop rather than to a feature list:
 
 ```
@@ -66,9 +91,9 @@ ACCOUNT    you                         →  Profile · Settings
 
 | Row | Route | Frame | Change | Note |
 |---|---|---|---|---|
-| **Dashboard** | `/dashboard` | `111:515` | `KEEP` | Absorbs Statistics and Achievements — see §3.2 |
+| **Dashboard** | `/dashboard` | `111:515` | `KEEP` | Absorbs Statistics; carries an Achievements *summary* — see §3.3 |
 | **Lessons** | `/shadowing` | `149:2` | `KEEP` | The hub: resume · import · recommendations |
-| **Kanji** | `/kanji` | `280:3` + `29:2890` | `KEEP` | One row, two surfaces — ruling §3.4 |
+| **Kanji** | `/kanji` | `280:3` + `29:2890` | `KEEP` | One row, two surfaces — ruling `capability-map.md` §3.4 |
 | **Grammar** | `/grammar` | repo + `284:1464` | `KEEP` | Catalogue + Sentence Analysis |
 
 ### Group `practice` — produce language yourself
@@ -76,7 +101,7 @@ ACCOUNT    you                         →  Profile · Settings
 | Row | Route | Frame | Change | Note |
 |---|---|---|---|---|
 | **Speaking** | `/conversation` | `170:9364` | `KEEP` | Scenario library → live session |
-| **Pronunciation** | `/pronunciation` | `37:4955` | `NEW` | Not a leaf of Shadowing — see §3.3 |
+| **Pronunciation** | `/pronunciation` | `37:4955` | `NEW` | Not a leaf of Shadowing — see §3.5 |
 | **Certification** | `/certification` | `232:2` | `RENAME` | Was `/jlpt`. Migration ⇒ **Phase 2** |
 
 ### Group `remember` — keep what you met
@@ -84,14 +109,14 @@ ACCOUNT    you                         →  Profile · Settings
 | Row | Route | Frame | Change | Note |
 |---|---|---|---|---|
 | **Review** | `/review` | — | `KEEP` | SRS across kanji/vocab/mining |
-| **Collection** | `/mining` | `28:2041` et al. | `RENAME` | The mining family's home — see §3.4 |
+| **Collection** | `/mining` | `28:2041` et al. | `RENAME` | The mining family's home — see §3.6 |
 | **Playlists** | `/playlists` | — | `KEEP` | Ordered, shareable lesson collections |
 
 ### Group `journey` — see yourself change
 
 | Row | Route | Frame | Change | Note |
 |---|---|---|---|---|
-| **Journey** | `/roadmap` | `64:2061` | ⭐ `RENAME` | The label moves here from `/journal` — ruling §3.3 |
+| **Journey** | `/roadmap` | `64:2061` | ⭐ `RENAME` | The label moves here from `/journal` — ruling `capability-map.md` §3.3 |
 | **Companion** | `/companion` | `156:1310` | `NEW` | Hub over six Companion screens — see §3.1 |
 
 ### Group `account`
@@ -114,11 +139,11 @@ ACCOUNT    you                         →  Profile · Settings
 | Companion home | `156:1310` | `/companion` | ❌ none |
 | Diary | `190:7376` | `/companion/diary` | `/journal` `(immersive)` ✅ |
 | Knowledge assistant (**Sensei**) | `215:15164` | `/companion/sensei` | `/sensei` ✅ |
-| Learning memory | `180:1770` | `/companion/memory` | ❌ none |
-| Conversation memories | `184:3974` | `/companion/memory?type=conversation` | ❌ none |
+| Learning memory | `180:1770` | `/companion/memory` (`Learning`) | ❌ none |
+| Conversation memories | `184:3974` | `/companion/memory` (`Conversations`) | ❌ none |
 | Growth areas | `187:6556` | `/companion/growth` | `/weekly-report` (placeholder) |
 
-**Why this is not just tidying:** ruling §3.1 settled that Sensei and the Companion are one presence.
+**Why this is not just tidying:** the `capability-map.md` §3.1 ruling settled that Sensei and the Companion are one presence.
 An IA that lists `Sensei` beside `Companion` in the sidebar re-creates the two-entity confusion the
 ruling just removed — the nav would be asserting a product fact that is false.
 
@@ -130,21 +155,84 @@ survive; §5 covers how without breaking links.
   the `(protected)/(app)/(focus)/(immersive)` contracts are route-group-based, so `/companion/diary`
   must still resolve into `(immersive)`. Check this against `route-group-provider-identity.spec.ts`
   before implementing.
-- `184:3974` as a query param on `/companion/memory` is a judgment call. The frames are siblings with
-  the archive **split by type**; a param keeps one screen honest about that, but two routes would
-  also be defensible. Flagged, not silently resolved.
+- ~~`184:3974` as a query param is a judgment call.~~ ✅ **RULED — see §3.2.**
 
-### 3.2 Statistics and Achievements are **panels on the Dashboard**, not destinations
+### ✅ 3.2 Memory is **one surface with two types** — user ruling, 2026-08-12
+
+Conversation Memories does **not** become a route beside Learning Memory. Both are types within
+`/companion/memory`:
+
+```
+Companion
+└── Memory
+    ├── Learning        180:1770
+    └── Conversations   184:3974
+```
+
+**The user's reasoning, and it is the stronger version of my own:** the Companion holds *many* kinds
+of memory — Learning Memory, Conversation Memories, the Vocabulary Shelf, `THINGS WE'RE STILL
+PRACTICING`. Promote one to a destination and there is no principled reason to refuse the others, and
+the sidebar drifts toward:
+
+```
+Companion · Conversation Memories · Learning Memory · Growth Areas · …
+```
+
+— which flattens into peers exactly what `156:1310` drew as **depth**. The archive being split by
+type is a fact about the *content*, not a claim to a route.
+
+**Consequence for the model:** the type is a first-class attribute of a memory, not two tables that
+happen to look alike. Whether the switch is a query param, a tab, or client state is an
+implementation choice this IA deliberately does not make.
+
+### 3.3 Statistics folds into the Dashboard; Achievements splits **summary vs gallery**
 
 `111:515` already draws `WEEKLY EVOLUTION`, a `LEARNING ACTIVITY` heatmap, `RECENT ACHIEVEMENT`,
-`LEARNING JOURNEY` and `WEAKNESS SNAPSHOT` — the whole content of both routes, in the place a learner
-already looks first. Both are `UpcomingScreen` placeholders today, so nothing built is lost.
+`LEARNING JOURNEY` and `WEAKNESS SNAPSHOT` — the whole content of `/statistics`, in the place a
+learner already looks first. Both routes are `UpcomingScreen` placeholders today, so nothing built
+is lost.
 
-**⚑ One real loss:** an achievements *gallery* (all badges, including unearned ones) has no home on a
-dashboard card. If Korume wants that, it belongs under `/profile` — `66:166` already draws a
-**learning-journey milestone timeline**, which is the same idea in the same place.
+**✅ Achievements — user ruling, 2026-08-12.** I flagged that a *gallery* (all badges, including
+unearned) has no home on a dashboard card. The ruling splits it by job rather than duplicating it:
 
-### 3.3 Pronunciation earns its own row; it is not part of Shadowing
+```
+Dashboard
+└── Achievement summary        "8 / 24 achievements  [View all]"
+        ↓
+Profile
+└── Achievements
+    ├── Earned
+    └── Locked
+```
+
+**Why this is right and not merely tidy:** a summary answers *"am I making progress?"* — a glance,
+which belongs on the Dashboard. A gallery answers *"who am I as a learner?"* — browsing, which
+belongs on the Profile. `66:166` already draws a **learning-journey milestone timeline**, so the
+gallery joins an identity surface that exists rather than inventing one. **No nav row is spent on a
+destination whose only job is to open a gallery** — an application of Taxonomy ≠ Navigation (§1).
+
+⚑ **Note for whoever builds it:** the `Locked` half means the achievement *catalogue* must be
+readable independently of what the learner has earned. Not a schema claim — I have not measured the
+gamification tables — but the shape to check first.
+
+### ✅ 3.4 `/challenges` is a Roadmap surface, not a destination — user ruling, 2026-08-12
+
+**No nav row.** Challenges are a capability of the Journey/Mission system.
+
+**The evidence the ruling rests on:** the inventory established that the Roadmap *is* a mission
+system — `Journey → Chapter → Mission → {required lessons · measurable practice gates · skills
+built} → Unlocks → next Mission` (`64:2061`, `180:2`). A challenge is a measurable gate with a
+reward. That is a mission, described in different words.
+
+**The user's rule, which is the durable part:** *do not create a destination merely because the repo
+has a route.* `/challenges` has **no Figma frame** and no prior ruling; it is a C1 placeholder. An
+IA derived from the design must not inherit structure from an accident of the codebase.
+
+**Reversible on evidence:** if Figma later designs a standalone challenge hub, reopen this. The
+route itself stays (`app-nav.test.tsx` asserts every href resolves to a page file, and the honest
+`UpcomingScreen` pattern is already established) — only the nav row goes.
+
+### 3.5 Pronunciation earns its own row; it is not part of Shadowing
 
 The tempting read is "pronunciation is one of the four Learning Modes, so it lives inside a lesson".
 The frames say otherwise: `37:4955` **borrows content from two other modules** — `JLPT Speaking` and
@@ -154,7 +242,13 @@ The frames say otherwise: `37:4955` **borrows content from two other modules** �
 This is also where **pitch accent** — sighted in four independent surfaces — has a home without
 becoming a nav row itself, satisfying §1 of the capability map.
 
-### 3.4 `Collection` — one word for a family sighted six times
+**✅ Confirmed by the user, 2026-08-12, and it is what named the §1 principle.** Pronunciation is a
+**tier-2 sub-skill under Speaking** in the taxonomy (`capability-map.md` §3.2) *and* a top-level
+destination in the IA. Those two facts do not compete: the taxonomy governs what may be scored and
+rolled up, the IA governs where a learner goes. **A thing can be a sub-skill in the data model and a
+destination in the UX.** See §1 § *Taxonomy ≠ Navigation*.
+
+### 3.6 `Collection` — one word for a family sighted six times
 
 `/mining` is built and is sentence mining specifically. But the save-and-collect family shows up in
 six unrelated places (kanji `Add to Review`/`Favorite`, search `Favorites`, lesson preview bookmark,
@@ -177,7 +271,7 @@ precisely, because the two have very different costs:
 So unblocking needs a source discriminator and an alternate derivation path — carried as F-010/F-014
 — **not a column migration**. **The IA reserves the place; it does not authorise the build.**
 
-### 3.5 The four rulings, applied
+### 3.7 The four rulings, applied
 
 | Ruling | Where it lands in this IA |
 |---|---|
@@ -236,21 +330,21 @@ Today's literal is five groups: `learn · study · insights · progress · accou
 | `/conversation` `learn` | → `practice`, label **Speaking** | It is production, not consumption |
 | `/jlpt` `learn` | → `practice`, `/certification` | ✅ ruled: the module is Certification Practice; JLPT is one of three exam families |
 | `/review` `study` | → `remember` | — |
-| `/mining` `study` | → `remember`, label **Collection** | §3.4 |
+| `/mining` `study` | → `remember`, label **Collection** | §3.6 |
 | `/playlists` `study` | → `remember` | Answers the open question in `mem:screen_registry_inputs`: **keep it as its own screen.** It is user-curated and shareable; Explore is the catalogue. Different jobs |
-| `/challenges` `study` | ⚑ **needs a ruling** | Placeholder, **no Figma frame**. Not covered by any existing ruling — see §7 |
+| `/challenges` `study` | **`ABSORB`** → Roadmap / Mission | ✅ ruled 2026-08-12. A challenge is a mission's measurable gate. No frame ⇒ no destination invented from a repo route (§3.4) |
 | `/community` `study` | **`HIDE`** | ✅ ruled 2026-08-11 |
 | `/leaderboard` `study` | **`HIDE`** | ✅ ruled 2026-08-11 |
 | `/sensei` `insights` | **`ABSORB`** → `/companion/sensei` | §3.1 |
-| `/roadmap` `insights` | → `journey`, label **Journey** | ⭐ ruling §3.3 |
+| `/roadmap` `insights` | → `journey`, label **Journey** | ⭐ ruling `capability-map.md` §3.3 |
 | `/weekly-report` `insights` | **`ABSORB`** → `/companion/growth` | `187:6556` is a persistent per-skill map, not a weekly digest |
 | `/journal` `progress` | **`ABSORB`** → `/companion/diary` | Loses the `journey` label to `/roadmap` |
-| `/statistics` `progress` | **`ABSORB`** → `/dashboard` | §3.2 |
-| `/achievements` `progress` | **`ABSORB`** → `/dashboard` | §3.2 |
+| `/statistics` `progress` | **`ABSORB`** → `/dashboard` | §3.3 |
+| `/achievements` `progress` | **`ABSORB`** → summary on `/dashboard`, gallery on `/profile` | ✅ ruled 2026-08-12. Split by job: glance vs browse (§3.3) |
 | `/profile` `account` | `account` | — |
 | `/settings` `account` | `account` | — |
 | — | **`/companion`** `NEW` | §3.1 |
-| — | **`/pronunciation`** `NEW` | §3.3 |
+| — | **`/pronunciation`** `NEW` | §3.5 |
 
 ### What this costs to implement — measured, so the review can price it
 
@@ -299,9 +393,9 @@ and it must be reviewed as one.** Locking this IA requires updating `navigation-
 | Row | What `navigation-system.md` says | What this IA decides |
 |---|---|---|
 | 15 `korume` | *"(Companion surface, e.g. `/journal` or a future chat route — **not decided by this plan**)"* | ✅ `/companion` — `156:1310` is that surface, and it is a hub over six Companion screens (§3.1) |
-| 16 `roadmap` | *"(existing Roadmap screen; **route not yet mapped** to `NAV_ITEMS` — decided by whichever plan implements this group)"* | ✅ `/roadmap`, and it takes the `Journey` label (§3.3) |
+| 16 `roadmap` | *"(existing Roadmap screen; **route not yet mapped** to `NAV_ITEMS` — decided by whichever plan implements this group)"* | ✅ `/roadmap`, and it takes the `Journey` label (§3.5 of this doc; ruling `capability-map.md` §3.3) |
 
-So §3.1 and §3.3 are **not** overriding a settled decision; they are supplying one the doc asked a
+So the `/companion` and `/roadmap` rows are **not** overriding a settled decision; they are supplying one the doc asked a
 later plan to make. That is the strongest part of this proposal.
 
 ### What genuinely conflicts, and must be amended if this IA is locked
@@ -323,23 +417,23 @@ just the flagged sections — `screen-architecture.md`, `design-reconciliation.m
 
 ## 7. What this proposal does NOT decide
 
-Honest gaps, so review can catch a silent resolution:
+The three gaps this section originally listed were **all ruled by the user on 2026-08-12** and have
+moved into §3.2 (memory), §3.3 (achievements) and §3.4 (challenges). What remains:
 
-1. **`/challenges`** — a C1 placeholder with no frame and no ruling. Hide it with the other
-   community surfaces (it has the same empty-product problem), or does it belong to the Roadmap's
-   mission system, which is the same idea done better?
-2. **`/kanji/[id]` as modal-over-list** — proposed in §4, not verified against the repo's current
+1. **`/kanji/[id]` as modal-over-list** — proposed in §4, not verified against the repo's current
    page implementation.
-3. **Conversation memories as a query param vs its own route** (§3.1).
-4. **An achievements gallery** has no home if `/achievements` is absorbed (§3.2).
-5. **Route naming for the Companion's children** — `/companion/diary` reads well but breaks the
+2. **Route naming for the Companion's children** — `/companion/diary` reads well but breaks the
    existing `/journal` URL. A redirect is cheap; whether the user wants the URL churn is not the
-   assistant's call.
-6. **Everything in `capability-map.md` §3.5** — scope questions that do not touch structure: Vimeo
+   assistant's call. Same question for `/sensei` → `/companion/sensei`.
+3. **How the Memory type switch is expressed** — query param, tab, or client state (§3.2). An
+   implementation choice, deliberately left open.
+4. **Whether the achievement catalogue is readable independently of what a learner earned** — the
+   `Locked` half of the gallery needs it (§3.3). Flagged as a shape to check, **not measured**.
+5. **Everything in `capability-map.md` §3.5** — scope questions that do not touch structure: Vimeo
    import · `JLPT Speaking` as a cross-module edge · `AI Coach` flag vs tier · Apple/GitHub sign-in ·
    native mobile apps · theme & accent · camera permission · the social graph · the L1 field · the
    Companion's name.
-7. **No marketing/landing IA is proposed** — ✅ the user has ruled that gap known and accepted, and
+6. **No marketing/landing IA is proposed** — ✅ the user has ruled that gap known and accepted, and
    will design the gateway later. `/pricing`, `/checkout` and `/faq` (`74:564`, `209:14032`,
    `75:1424`) are real screens but sit outside the authenticated shell this document describes.
 
