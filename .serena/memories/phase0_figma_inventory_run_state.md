@@ -187,11 +187,23 @@ top-level routes · **Vimeo / multi-platform import** (would widen §2's embed-o
 5 screens (`232:2`, `234:618`, `237:1690`, `242:14234`, `243:14899`), 5 state-variants (`237:6708`,
 `234:1639`, `234:1667`, `240:12992`, `243:15364`). Write-up: `screen-inventory.md` §10.
 
-**⚑ THE BIG ONE: the module is `Certification Practice`, not `JLPT`** — `232:2` carries an exam-family
-selector `JLPT · BJT · Tokutei Ginou`, and the nav row reads `Certification Practice`. The repo is
-JLPT-only from route to schema enum. **Largest naming/scope divergence in the inventory so far**;
-answering it renames a module, a route, a nav row and a schema. **User ruling needed before the
-registry names anything.**
+**⚑ THE BIG ONE — ✅ RULED 2026-08-12: the module is `Certification Practice` and there are THREE exam
+families** (`JLPT` · `BJT` · `Tokutei Ginou`). The repo is JLPT-only from route to schema enum, so the
+registry must name the module `certification-practice` with JLPT as a *family value*, not the identity.
+⚠️ **BJT and Tokutei Ginou have different section structures**, so `jlpt_section`'s four-value enum
+cannot be the shared abstraction — per-family structure belongs in data (`section_config`-style), not
+an enum. The rename carries a migration ⇒ **Phase 2 work, not Phase 1.**
+
+**✅ Also ruled: answer revisions ARE recorded, and roadmap write-back IS real.** The user extended the
+revision ask into **a family of insights** and invited more. Designed in `screen-inventory.md` §10.9:
+an `answer_event(attempt, question, from_choice, to_choice, changed_at, phase, was_flagged)` contract;
+four derived counts whose **net = (wrong→right) − (right→wrong)** picks the variant; **seven variants**
+(instinct beats second-guessing · reviewing rescued you · the stable case the frame drew · churn with
+no gain · section-split · flag-correlated triage · late-change cluster). **Two non-optional guards:**
+a minimum sample (~4 changes; below that the sign is noise and a "habit" claim is false) and never
+assert a cause (state the fact, not the diagnosis). All post-submission, so §10.7's silence window
+holds. **Still open — architecture, not product:** is roadmap write-back the *same* engine as the
+shadowing recommendation reasons? Decide it in the capability map, not the inventory.
 
 **Rule 3 returned a finding on its first use:** there is **no `docs/design/screens/screen-jlpt*.md`** —
 JLPT is built (L5) but has no written layer-A screen authority, so Figma carries more weight here.
