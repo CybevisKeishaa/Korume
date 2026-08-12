@@ -62,8 +62,8 @@ takes several selections of ≤15. **One Ctrl+A selected 57 frames.**
 | `220:16766` | Welcome Companion page |
 | `232:2` | JLPT Practice |
 | `234:618` | JLPT Phase test |
-| `234:1639` | To phase 2 ⚠️ see duplicate note |
-| `234:1667` | To phase 2 ⚠️ see duplicate note |
+| `234:1639` | To phase 2 — the **`Begin Listening` gate** (rename pending, see below) |
+| `234:1667` | To phase 2 — the **countdown** (rename pending, see below) |
 | `237:1690` | JLPT practice (phase 1) |
 | `237:6708` | Finish phase 1 |
 | `240:12992` | JLPT practice (phase 2) |
@@ -79,8 +79,21 @@ takes several selections of ≤15. **One Ctrl+A selected 57 frames.**
 These were suspected from the frame-name list and are now **proven to be distinct frames**, not
 typing slips:
 
-1. **`234:1639` and `234:1667` are both named `To phase 2`.** Identical names, different nodes.
-   Still `AMBIGUOUS` — not yet compared visually.
+1. ✅ **`234:1639` and `234:1667` — RESOLVED 2026-08-12. Two sequential steps, not a duplicate.**
+   The user confirmed the pair is *"màn hình chuyển của phần JLPT practice"* (the JLPT practice
+   transition), and screenshots separate them cleanly — both 1536×682:
+
+   | | `234:1639` **the gate** | `234:1667` **the countdown** |
+   |---|---|---|
+   | Eyebrow | `PHASE 2` | `CERTIFICATION PRACTICE` |
+   | Headline | **Listening Section** | **Please prepare your headphones.** |
+   | Body | "The listening section will begin automatically. Please prepare your headphones. Drink some water if needed." | "The listening audio will begin automatically." |
+   | Figure | framed illustration | large orange numeral (captured at **1**) |
+   | Action | **`Begin Listening` button** — waits for a click | none — auto-advances |
+
+   Flow: `Finish phase 1` (`237:6708`) → gate → countdown → `JLPT practice (phase 2)` (`240:12992`).
+   Both are `state-variant`s of the JLPT practice flow; the countdown frame is one tick of an
+   animated 3→2→1, so it is a single frame standing for a sequence.
 2. **`29:2890` vs `280:3` — NOT a duplicate. Two different screens.** Checked visually 2026-08-11,
    and the "newer iteration supersedes older" guess was **wrong**:
 
@@ -120,7 +133,17 @@ confirmed by the name itself.
 `105:3088` and `200:10726` were both unidentified spec ids; this capture resolved them as
 `Shadowing Practice` and `Explore Lessons (with preview)`.
 
-## Frame names carrying typos — fix in Figma in one pass
+## Rename list — hand to the user, fix in Figma in ONE pass
+
+Compiled 2026-08-12 at the user's request (*"cho tôi những màn hình với tên đang bị sai chính tả,
+tôi sẽ sửa lại"*), by scanning all 57 names. **Node ids are stable across a rename**, so this map's
+id column survives; only the name column needs re-syncing afterwards.
+
+Why it matters beyond tidiness: `screenId` derives from the frame name (spec `R3`), so a typo, a
+trailing description, or a duplicate name becomes a permanent identifier — or, for duplicates, an
+outright collision.
+
+### A. Typos — unambiguous, 3 frames
 
 | Node id | Current name | Should be |
 |---|---|---|
@@ -128,8 +151,47 @@ confirmed by the name itself.
 | `184:3974` | Conversation **memorry** | Conversation memory |
 | `280:1314` | Kanji lesson practice**( flashcard)** | Kanji lesson practice (flashcard) |
 
-Cosmetic, but `screenId` derives from these names, so fixing them before the registry is written
-avoids a rename later.
+### B. Duplicate names — these collide as `screenId`, 4 frames in 2 pairs
+
+| Node id | Current name | Proposed | Why |
+|---|---|---|---|
+| `234:1639` | To phase 2 | **To phase 2 (ready)** | the `Begin Listening` gate |
+| `234:1667` | To phase 2 | **To phase 2 (countdown)** | the auto-advancing 3→2→1 |
+| `29:2890` | Kanji library | **Kanji explorer** | measured: it is the *discovery* surface (browse by radical, curated paths) — see the comparison above |
+| `280:3` | Kanji library (choose lesson, choose book mimikara,...) | **Kanji library** | it is the *curriculum* surface; the trailing description would land inside the id |
+
+⚠️ **`29:2890` is a rename PLUS an open product question.** Renaming it makes the two frames
+distinguishable either way, so it is safe to do now — but whether Korume ships both a discovery and
+a curriculum surface for kanji is still the user's call (open question 1 in
+`mem:phase0_figma_inventory_run_state`).
+
+### C. Version artifacts in names — the "which one is live" trap, 2 frames
+
+| Node id | Current name | Proposed |
+|---|---|---|
+| `149:2` | Shadowing hub **after changes** | Shadowing hub |
+| `156:1310` | Companion home **after change** | Companion home |
+
+`149:2` can only take the plain name once the dead `90:1985 Shadowing Hub` is deleted — do the
+delete and the rename together, or the collision just moves. (`156:1310` has no rival frame, so its
+rename is unconditional.) Note the two also disagree with each other, "changes" vs "change".
+
+### D. Cosmetic / grammar — low priority, 2 frames
+
+| Node id | Current name | Proposed |
+|---|---|---|
+| `180:1129` | Panel Quick preview: Conversation practice | Quick preview panel: Conversation practice |
+| `220:16032` | Global setting | Global settings |
+
+`180:1129` reads as two names run together with no separator — which is exactly why an earlier pass
+mistook it for two frames.
+
+### Not requested, mentioned once: casing is mixed
+
+Roughly half the names are Title Case (`Shadowing Practice`, `Explore Lessons`, `Growth Areas`) and
+half sentence case (`Kanji inspect`, `Pronunciation detail`, `Roadmap detail`). This does **not**
+break `screenId` — derivation kebab-cases anyway — so it is genuinely optional. Raised only because
+the user is opening the file to rename regardless.
 
 ## The arithmetic closes, and it tells us something
 

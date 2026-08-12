@@ -90,10 +90,18 @@ never leave the route.
 | Roadmap | `roadmap` | `/roadmap` | built |
 | Roadmap detail | `roadmap-detail` | — | none |
 
-**`Companion home` is a separate screen from `/dashboard`, decided 2026-08-11 from the user's
-reference render** (`public/demo/image.png`). Evidence in the render itself: its left nav lists
-**`Dashboard` as its own item**, so the two cannot be the same screen. `/dashboard` stays a
-`repo-only` entry (§3).
+⚠️ **WITHDRAWN 2026-08-12 — this ruling rested on a source the user has since disavowed.**
+It read: *"`Companion home` is a separate screen from `/dashboard`, decided 2026-08-11 from the
+user's reference render (`public/demo/image.png`) — its left nav lists `Dashboard` as its own item,
+so the two cannot be the same screen."* The user stated on 2026-08-12 that **everything in
+`public/demo/` is throwaway (`ảnh rác`) — images edited ad hoc to show the assistant a demo, never a
+design artifact.** So the nav it shows is not evidence of anything, and neither is any other detail
+in it.
+
+**The conclusion may well still be right — it just has no support yet.** Re-derive it from Figma
+during the Companion cluster, off `156:1310` (`Companion home after change`) and `216:15648`
+(`Empty state (Companion home)`), and record the frame id that settles it. `/dashboard` stays a
+`repo-only` entry (§3) either way, because that part came from the repo, not from the render.
 
 The render also settles the companion sub-screens. `companion-home` is a **panel host**, and the
 panels carry `See all →` affordances — so `Learning memory`, `Conversation memory` and
