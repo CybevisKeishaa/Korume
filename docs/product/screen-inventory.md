@@ -780,3 +780,142 @@ their reason.
 **⚑ New question for the user:** *Vimeo* appears as an import platform. Is multi-platform import
 intended, or is that card placeholder dressing? It changes `lib/youtube`'s scope, the import schema,
 and the §2 embed-only rule's surface area.
+
+---
+
+## 9. Cluster: Shadowing — batch 3 of 3 (the in-lesson practice family), 4 frames, analysed 2026-08-12
+
+### 9.0 The structural finding: the lesson is **one workspace with eight modes**, not four screens
+
+`105:3088` carries a tab row directly under the lesson header:
+
+> **`Reading` · `Shadowing` · `Listening` · `Pronunciation` · `Dictation` · `Immersion` · `Mining` · `Review`**
+
+The other three frames in this batch are **modes inside that workspace**, not siblings of it — each
+opens with `← Back to Shadowing` (or `← Back to Lesson`) and repeats the same shell: the video player
+on the left, a lesson/stat block beneath it, an `OPTIONAL REPORTS` strip at the bottom, and a working
+rail on the right. Only the rail changes per mode.
+
+**Measured against the repo, the gap is the shell, not the engine:**
+
+| | Figma | Repo |
+|---|---|---|
+| Modes | 8 tabs | **2 routes** — `/shadowing/[id]` and `/shadowing/[id]/dictation`, both `(focus)` |
+| Pronunciation | a full mode | no route; **`/api/pronunciation/score` exists** |
+| Listening / Dictation | a full mode | `/shadowing/[id]/dictation`; **`/api/dictation/attempt` exists** |
+| Summary | a full screen | no route; **`/api/videos/[id]/summary` exists** |
+| Session | — | **`/api/shadowing/session` exists** |
+| Mining / Review | tabs | separate top-level routes today, not lesson-scoped tabs |
+
+So four of the eight modes have working API surface and no screen. **The unbuilt part is the workspace
+shell that hosts them**, plus Immersion, which appears nowhere in the repo.
+
+⚠️ **`AMBIGUOUS`: `Listening` and `Dictation` may be one mode, not two.** The frame *named* `Dictation
+(in shadowing)` carries the eyebrow **`LISTENING PRACTICE`**, its stat block reads `Listening 14 min`,
+and its reports strip is titled *"Your listening patterns"* — yet its rail is a dictation puzzle. Either
+the tab row has one row too many, or Dictation is Listening's exercise. **Needs a user ruling**; do not
+resolve it from the tab row alone.
+
+### 9.1 `105:3088` — **Shadowing Practice** (the Lesson Workspace) · `CONFIRMED` screen
+
+The frame is 1278×585 and **cut off at the bottom** — it shows the workspace's top half only.
+
+| | |
+|---|---|
+| **Capability** | The lesson workspace: one video, eight ways to work on it. |
+| **Chrome** | No left-nav suppression is drawn, but the header carries `Study Environment`, `Focus Mode`, expand and settings — the frame provides its *own* focus affordances. Repo already has it right: `/shadowing/[id]` is `(focus)`. |
+| **Header** | `Business Japanese` · `JLPT N4` · `72% complete` · `Sentence 3 / 18`; subtitle `Lesson 8 · Meeting Introductions`. |
+| **Left column** | Video player with an **in-frame subtitle overlay**, scrubber, transport, a **`Sentence` loop chip**, `1×` speed, volume, a transcript toggle, expand. Below it a `LIVE SENTENCE` card with a hide toggle, an AI sparkle action, and the sentence set in large type **with per-word furigana**. |
+| **Right column** | `TRANSCRIPT` — `18 sentences · 6 min`, a visibility toggle, **`Search transcript`**, then numbered lines with Japanese + English, the current line highlighted. |
+| **API** | `/api/videos/[id]/transcript` ✅ · `/api/shadowing/session` ✅. |
+
+**Findings:** furigana is rendered per word, which is where CLAUDE.md §5 #4 (adaptive furigana) lives ·
+transcript **search** inside a lesson is a capability no route has · the `Sentence` loop chip is A–B
+repeat, matching the `AB` button seen floating in `28:2041` · `Study Environment` and `Focus Mode` are
+two *named* presentation modes not present anywhere in the repo.
+
+### 9.2 `120:2027` — **Pronunciation (in shadowing)** · `STATE-VARIANT` (a mode of the workspace)
+
+| | |
+|---|---|
+| **Rail** | `SENTENCE NAVIGATOR` — numbered chips `46…53` with the current one active, four tool icons (transcript, audio, waveform, **bookmark**) · furigana + the sentence + its translation · a large **mic button** · a coaching line (*"Great work. Try it once more."*) · `▶ Replay Native` · `‹ Previous` · `Next ›` · `LIVE FEEDBACK` with a verdict (`Excellent`) and a **score badge `86`** · a per-attempt note (*"Your rhythm became smoother today."*) closing with **"Saved to your personal pronunciation memory."** |
+| **Left / below** | Player · `CURRENT LESSON` (`NHK Easy News · JLPT N3`, `TIMESTAMP 08:43`, `SENTENCE 5.8s`) · stats `Lesson 26% · Sentence 51/194 · Speaking 18 min · Accuracy 84%` · a session bar · `OPTIONAL REPORTS — Your speaking patterns`. |
+| **Reports** | `Recent Pronunciation History` · `Most Improved Words` (ありがとうございます · 失礼します) · ⭐ **`Pitch Accent Trend`** — *"Your sentence endings are more natural."* |
+| **API** | `/api/pronunciation/score` ✅ · `/api/speech/tts` ✅ (this is the legal source for `Replay Native`: TTS of the transcript **text**, never YouTube audio). |
+
+**⭐ Two findings that matter beyond this screen.** `Pitch Accent Trend` is CLAUDE.md §5 differentiator
+#1 appearing as a **longitudinal report**, not just an in-the-moment overlay — that implies pitch
+scores are persisted per attempt. And **"Saved to your personal pronunciation memory"** wires practice
+output into Companion memory (`/api/companion/memories` exists), which is the same loop the
+recommendation `reason` depends on (§7.1).
+
+### 9.3 `123:2835` — **Dictation / Listening practice** · `STATE-VARIANT` (a mode of the workspace)
+
+Same shell; the rail is the exercise.
+
+| | |
+|---|---|
+| **Rail** | `SENTENCE NAVIGATOR` · `▶ Replay audio` with a **`Loop` toggle, `0.75×` and `1×` speeds** and a headphones icon · **`DICTATION PUZZLE`** — `4 words remaining` + `☀ Show Hint` · the answer area as **tappable tiles** (ご / あ / が / ざ / とう, one selected) · `🗑 Remove Selected Word` · a **`WORD BANK`** of unused tiles (り / い / ました / 。) · **`Check Answer ✓`** · `LIVE FEEDBACK` — *"Very close — listen once more."* with **`91%`** · a partially-drawn breakdown `Slots · Grammar · Kanji · Recall` · **"Saved to your personal listening memory."** |
+| **Reports** | `Recent Dictation Accuracy` · `Most Forgotten Vocabulary` · `Listening Improvement Timeline`. |
+| **API** | `/api/dictation/attempt` ✅, and `lib/dictation/{normalize,score}.ts` hold the scoring logic. |
+
+**⚠️⚠️ Layer B ↔ layer C divergence, and per the governing method it is recorded, not "fixed".**
+Figma's dictation is a **word-bank assembly puzzle** — pick tiles, remove, hint, check. The repo's
+dictation is **free typing**: `components/video-player/dictation-view.tsx:284` renders an `<Input>`.
+These are different exercises with different difficulty and different pedagogy — assembly scaffolds
+recognition, typing tests production and recall.
+
+**Neither side is authoritative here.** `lib/dictation/normalize.ts` + `score.ts` survive either input
+model, so the engine is not the obstacle. **This is a layer-A question for the user:** assembly,
+typing, or both as difficulty levels? The partially-visible `Slots · Grammar · Kanji · Recall`
+breakdown suggests the design already scores more dimensions than the current scorer does.
+
+### 9.4 `125:1030` — **Summary (in shadowing)** · `CONFIRMED` screen
+
+The end-of-lesson screen, and the densest AI-authored surface in the inventory so far.
+
+| | |
+|---|---|
+| **Header** | `← Back to Lesson` · lesson title · `194 / 194` · eyebrow `SUMMARY`. |
+| **Hero** | `LESSON COMPLETE` · title · reflective blurb · `JLPT N5 · 18 Sentences · 6 Minutes · Completed` · `▶ Replay Lesson` · `Return to Shadowing →`. |
+| **Body** | **`Words Worth Remembering`** — *"Not every word from the lesson—only the ones you'll naturally use again"*: word · reading · gloss · frequency tag (`Daily`/`Common`) · part of speech · an example sentence · `🔊 Native pronunciation` · a **bookmark**. **`Natural Japanese`** — native expressions with `MEANING & USE` and a **`NATIVE NUANCE`** column. **`Grammar Used in this Lesson`** — pattern · JLPT level · gloss · explanation · **`From lesson`** (the real sentence it appeared in) · **`Try it`** (a new sentence to produce). **`Culture Behind the Conversation`** — cultural notes. **`Things You Should Review`** — AI-picked items, each with a reason and `Review Again`. |
+| **Rail** | `AI COMPANION — A quiet reflection` (*"I saved three expressions into your personal memory."*) with `Open Memory` / `Review Tomorrow` · `LESSON STATUS` (`Shadowing Complete`, `Pronunciation 82`, `Listening 76`, **`Retention High`**) · `SAVED KNOWLEDGE` (`12 Vocabulary`, `5 Expressions`, `3 Grammar patterns`, **`+8% Memory growth`**, *"Saved to your personal notebook"*) · `WHERE TO GO NEXT` with its reason and `Start Next Lesson →`. |
+| **API** | `/api/videos/[id]/summary` ✅ exists; nothing renders it. `/api/companion/memories` ✅. |
+| **Route** | ❌ none. |
+
+**⭐ This screen is where the whole product's loop closes**, and it is worth naming precisely: a lesson
+ends → the AI selects what was *worth* keeping (not everything) → items are written to Companion
+memory and the personal notebook → per-skill scores and a retention estimate are recorded → the next
+lesson is proposed **with its reason**. That is exactly the chain the user described for recommendation
+reasons (§7.1), seen from the producing end rather than the consuming end.
+
+**Two new metrics appear here and exist nowhere in the repo:** `Retention` as a qualitative level, and
+`Memory growth` as a percentage delta. Both are Companion-layer concepts. **`Try it` is also new** — a
+generated production prompt, distinct from the example sentence the lesson supplied.
+
+### 9.5 Batch 3 verdict, and the cluster total
+
+| Node id | Name | Tag | Route | Verdict |
+|---|---|---|---|---|
+| `105:3088` | Shadowing Practice | `CONFIRMED` | `/shadowing/[id]` ✅ `(focus)` | built as a single mode; the **8-mode workspace shell is unbuilt**; frame is cropped |
+| `120:2027` | Pronunciation (in shadowing) | `STATE-VARIANT` (mode) | none; API ✅ | unbuilt screen over a working engine |
+| `123:2835` | Dictation / Listening practice | `STATE-VARIANT` (mode) | `/shadowing/[id]/dictation` ✅ | built with a **different exercise model** — user ruling needed |
+| `125:1030` | Summary (in shadowing) | `CONFIRMED` | none; API ✅ | unbuilt; closes the learning loop |
+
+**Cluster Shadowing is COMPLETE — 9 frames across 3 batches.** Screens: `149:2`, `200:7705`,
+`105:3088`, `125:1030`, `212:14610`. State-variants: `200:10726`, `212:14753`, `120:2027`, `123:2835`.
+Nothing `OBSOLETE`. (`90:1985`, the dead hub, is not part of this cluster — see the frame map.)
+
+**Capabilities added by batch 3:** a **lesson workspace with 8 modes** · in-lesson transcript search ·
+per-word furigana in the live sentence · A–B sentence looping and speed control · a sentence navigator ·
+per-sentence recording with a live score and a coaching line · **pitch-accent trend as a longitudinal
+report** · dictation as **word-bank assembly** · multi-dimension dictation scoring
+(`Slots/Grammar/Kanji/Recall`) · per-mode "optional reports" · **AI-curated end-of-lesson summary**
+(worth-keeping vocabulary, native nuance, grammar with `From lesson` + `Try it`, cultural notes) ·
+per-skill lesson scoring + **retention** · **saved-knowledge counters and memory growth** · a
+Companion reflection at lesson end · next-lesson proposal with a reason.
+
+**⚑ Questions this cluster leaves for the user:** (1) is `Listening` a mode distinct from `Dictation`?
+(2) dictation as assembly, typing, or both? (3) is `Immersion` a real mode, and what is it?
+(4) should `Mining` and `Review` be lesson-scoped tabs as well as top-level routes? (5) Vimeo /
+multi-platform import (§8.3).
