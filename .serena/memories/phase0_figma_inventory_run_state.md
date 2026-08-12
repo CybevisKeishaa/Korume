@@ -111,12 +111,18 @@ implementation.
 **A contradiction exists only if layer B is mistaken for layer C.** Constraint D still binds C
 absolutely — the backend must never download or proxy video — but a *label* binds nothing.
 
-**Two binding consequences:**
+**Three binding consequences:**
 1. **Never "fix" a Figma frame against the current implementation.** The repo is layer C and has no
    authority over A or B. The point of this pass is to see how large Korume was *designed* to be;
    letting today's code narrow that is the biggest failure mode available here.
 2. **Never promote something to a new capability because Figma gave it its own word.** Check whether
    it joins an existing family first.
+3. ⭐ **Never let a stale Figma frame reopen a settled product decision.** `docs/design/screens/`
+   holds written **layer-A** authority; a Figma frame is layer B and only a *snapshot* that can lag a
+   ruling by months. **READ `docs/design/screens/<module>.md` BEFORE treating any Figma detail as
+   product intent** — this cost a wrong "eight modes" finding when a committed doc said four and
+   named the retired axis the extras came from. Rules 1 and 3 are the same error in opposite
+   directions: taking one layer's artifact as another layer's truth.
 
 **Both rulings this produced, applied in `docs/product/screen-inventory.md` §7.0/§7.2:**
 - **Import pipeline + failure state: KEEP AS DRAWN.** Failure is real and its main cause is **quota
@@ -136,18 +142,32 @@ absolutely — the backend must never download or proxy video — but a *label* 
 5 screens (`149:2`, `200:7705`, `105:3088`, `125:1030`, `212:14610`), 4 state-variants (`200:10726`,
 `212:14753`, `120:2027`, `123:2835`), none obsolete. Full write-up: `screen-inventory.md` §7–§9.
 
-**The structural finding: the lesson is ONE workspace with EIGHT modes**, not four screens —
-`Reading · Shadowing · Listening · Pronunciation · Dictation · Immersion · Mining · Review`. The other
-three frames are modes inside it (each opens `← Back to Shadowing`, same shell, only the right rail
-changes). **Measured: the gap is the shell, not the engine.** `/api/pronunciation/score`,
-`/api/dictation/attempt`, `/api/shadowing/session`, `/api/videos/[id]/summary` all exist; only 2 of 8
-modes have a route; **Summary has a working endpoint and nothing renders it.**
+**The lesson is ONE workspace with FOUR Learning Modes** — Shadowing / Pronunciation / Listening
+Practice / Summary. ⚠️ Batch 3 first reported **eight**, reading the tab row in `105:3088` literally.
+**Corrected 2026-08-12 (`1eb4b05`)** against the authority already committed in this repo:
+`docs/design/screens/screen-shadowing-practice.md` § Two-Layer Model. Every extra tab is explained —
+`Dictation` is Listening Practice's **default sub-mode**; `Reading` + `Immersion` are the **retired
+View Mode axis** (dropped by the 2026-08-01 reconciliation spec, so the frame predates the
+retirement); `Mining` + `Review` are separate surfaces.
 
-**Recorded and deliberately NOT resolved** (four-layer method): Figma's dictation is a **word-bank
-assembly puzzle**, the repo types free text (`dictation-view.tsx:284` `<Input>`); `lib/dictation`'s
-normalize+score survive either, so it is a layer-A question, not a defect. And the frame *named*
-`Dictation` carries the eyebrow `LISTENING PRACTICE` + listening stats → `Listening` and `Dictation`
-may be one mode. `AMBIGUOUS`.
+Canonical routes per the doc: `/shadowing/[id]` ✅ · `/shadowing/[id]/pronunciation` ❌ ·
+`/shadowing/[id]/listening` (+ `/fill-blank`, `/translation` sub-modes) — shipped as
+`/shadowing/[id]/dictation`, i.e. **named for the sub-mode rather than the mode** · `/shadowing/[id]/
+summary` ❌. **The gap is the shell, not the engine:** `/api/pronunciation/score`,
+`/api/dictation/attempt`, `/api/shadowing/session`, `/api/videos/[id]/summary` all exist, and
+**Summary has a working endpoint with nothing rendering it.**
+
+**Dictation — RESOLVED, not open:** typing is the mode, the word bank is a **hint**. The repo is
+correct as built (`dictation-view.tsx:284` `<Input>`, matching the doc's "Play → blank input → Check");
+what is missing is the assist layer (word bank, `Show Hint`, `Remove Selected Word`, words-remaining).
+Still genuinely new: the `Slots · Grammar · Kanji · Recall` breakdown exceeds `lib/dictation/score.ts`,
+and the Fill-in-the-blank + Translation sub-modes have no frame and no code.
+**Scoring stays** — the doc pins pronunciation to `shadowing_sessions`' existing `pronunciation_score`
+/ `rhythm_score` / `pitch_score`.
+
+⚠️ Also corrected: `Replay Native` is **not** TTS. The doc specifies replaying a clip cut from
+`transcript_lines` timings (no new media); TTS is the separate legal source for the **pitch
+reference**, synthesised from the line's text.
 
 **`125:1030 Summary` is where the product loop closes** and is the highest-value unbuilt screen found
 so far: lesson ends → AI keeps only what was worth keeping → written to Companion memory + notebook →
