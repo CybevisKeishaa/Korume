@@ -1582,3 +1582,151 @@ suggestion refresh · a **searchable, filterable, pinnable memory archive** grou
 to source lessons · `Companion Notes` as a first-class memory category · a **per-skill growth map with
 percentages** · a per-skill **next gentle step** that names specific lessons · qualitative
 "recently improved" tracking · weekly activity totals · reason-carrying suggested focus.
+
+---
+
+## 13. Cluster: Companion — batch 3 of 4 (the Roadmap pair + Conversation Memories)
+
+### 13.0 ⚠️⚠️ `Journey` names two different things, and the collision is live in the repo
+
+**Measured.** `components/layout/app-nav.tsx:52` and `:59`:
+
+```ts
+{ href: "/roadmap", key: "roadmap" },
+{ href: "/journal", key: "journey"  },   // ← the Companion Diary, labelled "Journey"
+```
+
+**In Figma, "Journey" is the Roadmap.** `64:2061` is titled **"Your Japanese Journey"**; its map is the
+`JOURNEY MAP`; its memories are `JOURNEY MEMORIES`; `180:2` opens with `← Back to Journey` and its rail
+shows `JOURNEY CONNECTION`. Meanwhile `190:7376` — the thing `/journal` actually renders — is titled
+**"Companion Diary"** and never uses the word.
+
+So the label `Journey` currently points at the **Diary**, while the design uses it for the **Roadmap**,
+and both appear as separate nav rows. This came from the rebrand's `journal → journey` rename, which
+renamed the *label* without checking what the design meant by the word.
+
+**This is a naming collision to resolve in the IA step, not now.** Recorded because it is exactly the
+class of error the whole inventory exists to catch — and because it cannot be seen from either artifact
+alone.
+
+### 13.1 `64:2061` — **Roadmap / "Your Japanese Journey"** · `CONFIRMED` screen
+
+*"A personalized path designed by your Companion, based on your goals and progress."* — the subtitle
+states the authorship outright.
+
+- **`Journey Map` / `List View`** toggle · category tabs `Overall Journey · Conversation · Listening ·
+  Grammar · Vocabulary · Kanji · Culture · Anime`.
+- **`JOURNEY MAP`** — a **spatial map**, not a list: named destinations on a winding path
+  (`Beginner Village` → `First Anime` → `Speak First Sentence` → **`Listening Foundation`** carrying a
+  **`YOU ARE HERE`** badge and 72% → `Travel to Tokyo` 🔒 → `Finish N5` 🔒 → `N4 Adventure`), with zoom
+  controls and `View Full Journey ↗`.
+- `JOURNEY MEMORIES` (3 milestones with kanji-glyph avatars) · `RECOMMENDED FOR YOU` — *"Based on your
+  weakness in Listening"* — 4 lessons, each tagged `Listening Focus` · a `Companion's Note` bar with
+  **`Talk with Companion`**.
+- Rail: **`CURRENT MISSION`** (`Listening Foundation`, `Chapter 2 · Scene 4`, 72%, three **tasks** with
+  counters — `Shadow 25 lines 12/25`, `Practice with 15 listening cards 8/15`, `Watch 1 anime scene
+  1/1 ✓` — and `▶ Continue Mission`) · **`AI WEAKNESS EXPLORER`** (5 skills with percentages,
+  `View Analysis ↗`) · **`NEXT DESTINATION`** with what it **`Unlocks`**.
+
+**Repo:** `/roadmap` exists and is **a placeholder** — measured, its `page.tsx` renders
+`UpcomingScreen`.
+
+### 13.2 `180:2` — **Roadmap detail / mission** · `CONFIRMED` screen
+
+`← Back to Journey` · breadcrumb `Journey › Listening › Listening Foundation` · `Overall Journey
+Progress` · **`Chapter 2 of 6`**.
+
+- Hero: cover · `🎧 LISTENING` · title · goal statement · and a **quoted Companion rationale**:
+  *"I noticed that you often understand the vocabulary, but lose confidence once native speakers speed
+  up. This mission is designed to help with that."*
+- Stats: `Mission Completion 72% · Time Invested 3h 42m · Lessons Finished 7/10 · Current Streak 5 days
+  · Estimated Remaining 1h 30m`.
+- **`REQUIRED LESSONS`** — five lesson cards with per-lesson state (`Completed ✓` / `Continue lesson →`
+  / 🔒 *"Complete previous lesson to unlock"*).
+- **`PRACTICE REQUIREMENTS`** — four measurable gates, each with a counter and a trophy:
+  *Complete 3 Shadowing lessons 3/3 · Reach 80 pronunciation score 68/80 · Finish 20 listening cards
+  20/20 · Review vocabulary twice 1/2*.
+- **`SKILLS YOU'LL BUILD`** — six named skills (Natural Listening · Native Rhythm · Fast Word
+  Segmentation · Conversation Confidence · Understanding Fillers · **Pitch Awareness**).
+- **`MISSION REFLECTION`** — collapsed: *"Why this mission matters · a small Companion memory, study
+  tip, and cultural note."*
+- Rail: `COMPANION INSIGHTS` (Current Strength / Current Weakness / Suggested Focus / Recent
+  Observation) · **`UNLOCKS`** — five locked rewards of three kinds (`Conversation Pack`,
+  `Roadmap Level`, `4 New Lessons`, `Next Mission`) · **`JOURNEY CONNECTION`** — Chapter 1 ✓ →
+  Chapter 2 (current) → Chapter 3 🔒 · `▶ Continue Mission`.
+
+**⭐⭐⭐ The Roadmap is a mission system, and that is bigger than "a screen that shows a plan".**
+
+```
+Journey → Chapter (1 of 6) → Mission → { required lessons · practice requirements · skills } → Unlocks → next Mission
+```
+
+It has **gates** (a mission completes only when measurable requirements are met), **locking**
+(lessons, missions and content packs unlock in order), **rewards**, and a **Companion-authored
+rationale per mission**. The user's reframe — *the Roadmap is a learning-state output, not a static
+screen* — is confirmed and then some: it is the **write target** of the Learning Intelligence loop
+(§10.9), and the `UPCOMING ADJUSTMENTS` seen in the JLPT review (§10.6) is an edit to *this* structure.
+
+Nothing of this exists in the repo beyond a nav row and a placeholder page.
+
+### 13.3 ⚠️ `AMBIGUOUS`: two different skill taxonomies, in two frames, for the same idea
+
+| Frame | Skill set |
+|---|---|
+| `64:2061` `AI WEAKNESS EXPLORER` | Listening 72 · **Grammar** 58 · **Vocabulary** 63 · **Speaking** 45 · Kanji 40 |
+| `187:6556` `AREAS STILL GROWING` | Listening 64 · **Pronunciation** 72 · **Conversation** 58 · **Particles** 49 · Kanji 45 |
+
+Only *Listening* and *Kanji* are shared, and even those disagree numerically. **The percentages are
+placeholder noise and can be ignored; the differing sets cannot.** One is coarse skill areas
+(Grammar/Vocabulary/Speaking), the other mixes a skill (Pronunciation), a modality (Conversation) and
+a grammar topic (Particles).
+
+**A canonical skill taxonomy is required before either screen can be built**, because both the growth
+map, the weakness explorer, the mission's `SKILLS YOU'LL BUILD`, the suggestion tags and the JLPT
+section scores all claim to measure "how good are you at X". **Flagged for the capability map, not
+resolved here.**
+
+### 13.4 `184:3974` — **Conversation Memories** · `CONFIRMED` screen
+
+`← Back to Companion Home` · `COMPANION MEMORY` · *"Every meaningful conversation we've shared
+together."* · search + filter · category chips (`All · Restaurant · Cafe · Travel · Business ·
+Shopping · Daily Life · Airport · Anime · Interview`).
+
+A card grid — cover, category badge, headline, date, a body line, a **status dot** `● Completed` /
+`● Still Growing`, a play button, some bookmarked — beside **one expanded memory**:
+`📅 May 20, 2026 · ⏱ 14 min · 🎧 JLPT N3 · `**`Practiced 4 times`** · actions **`▶ Replay
+Conversation`** / `Practice Again` / `Open Lesson` / bookmark ·
+**`✨ Memorable moments`** quoting the **actual transcript** with the learner's own line highlighted ·
+**`Korume remembers…`** *"This was the first time you replied naturally without translating in your
+head."*
+
+Rail: `YOUR COMPANION — Korume` · **`Korume's reflection`** · **`⭐ Why this memory matters`** ·
+**`Your growth in this conversation`** — a four-point timeline `May 20 First attempt → May 24 Better
+pronunciation → Jun 02 Natural response → Today Confident`.
+
+- **Kind:** screen; a sibling of `180:1770 Learning Memory` — **the memory archive is split by type**,
+  learning moments in one, conversations in another.
+- ⭐ **A conversation memory is a living object, not a log line:** it is replayable, re-practisable,
+  counted (`Practiced 4 times`), and carries its own **growth timeline** across dates.
+- ⭐⭐ **The reflection is L1-aware:** *"you answered naturally without thinking in **Vietnamese**."*
+  In a VN-first product the Companion references the learner's native language — a real localisation
+  requirement, not decoration.
+
+### 13.5 Batch 3 verdict
+
+| Node id | Name | Kind | Route | Verdict |
+|---|---|---|---|---|
+| `64:2061` | Roadmap / Your Japanese Journey | **screen** | `/roadmap` = **placeholder** | a full mission system; unbuilt |
+| `180:2` | Roadmap detail (mission) | **screen** | ❌ none | unbuilt |
+| `184:3974` | Conversation Memories | **screen** | ❌ none | unbuilt; sibling archive to `180:1770` |
+
+**Capabilities added:** a **spatial journey map** with named destinations, progress and locking ·
+`YOU ARE HERE` positioning · **chapters → missions** · missions with **measurable completion gates** ·
+**unlockable** lessons / content packs / roadmap levels / next missions · **skills a mission builds** ·
+Companion-authored **mission rationale** · a weakness explorer with `View Analysis` · list-vs-map views
+of the same plan · per-category journey filtering · **conversation memories that are replayable,
+re-practisable and counted** · transcript excerpts preserved as memory · **per-memory growth timelines**
+· **L1-aware companion reflection**.
+
+**⚑ Two things this batch hands to the IA/capability step, neither resolvable inside a cluster:**
+the **`Journey` label collision** (§13.0) and the **absence of a canonical skill taxonomy** (§13.3).
