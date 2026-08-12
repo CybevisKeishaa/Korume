@@ -1826,3 +1826,150 @@ real and not bookkeeping.
 3. **`AI Sensei` vs the Companion** (§14.3) — one entity or two.
 4. **Every Companion surface needs a companion-less fallback** (§14.1) — the introduction is declinable.
 5. **The Companion has no persisted identity in the repo** — name, tenure and voice all exist only in Figma.
+
+---
+
+## 15. Cluster: Conversation — 4 frames, analysed 2026-08-12
+
+**Rule 3:** no `docs/design/screens/screen-conversation*.md`. The only design-doc coverage is the
+Companion boundary (`design-reconciliation.md` lists *Conversation drills* as an active acquisition
+loop where the Companion is `Not Supported`) and layout notes. Like JLPT, this module has **no written
+layer-A screen authority**.
+
+**Repo, measured:** `/conversation` exists (`(app)`), `components/conversation/**`,
+`/api/conversation/{message,session,session/[id],session/[id]/end}`, `/api/speech/{stt,tts}`, and
+`conversation_sessions.scenario_type text` — a **free-form string**, which is the whole scenario model
+today.
+
+### 15.1 `44:7289` — **Conversation practice** (live session) · `CONFIRMED` screen, immersive
+
+Top bar: `SCENARIO` **Restaurant Conversation** · **`You are` Customer** · **`AI is` Restaurant
+Staff** · **`Goal` Order dinner naturally** · `Difficulty N4` · `Time 8 min` · `Progress 5/12` ·
+`End session`.
+
+Main: `🎙 Live voice conversation`, *"All messages saved to this session"*. AI turns carry `🔊 Replay`;
+the learner's turns carry `▷ Play Recording`, a duration, and **`✨ Analyze`**.
+
+Right panel — **`SELECTED MESSAGE / AI Analyze`**, a **per-utterance** score card:
+**Pronunciation 93% · Fluency 91% · Pitch Accent 84% · Naturalness 90%**, then `Main correction`
+(*"Let the final ですか rise a little less to sound more relaxed."*) with a concrete
+**`Try:`** rewrite, and five actions: `Listen Native` · `Listen Yours` · `Repeat` · **`Save Mistake`** ·
+**`Practice Again`**.
+
+Bottom: the goal restated · `💡 Hint` · `💬 Chat` · **`🎙 Hold to Speak`** · *"Voice first · Chat is
+optional"*.
+
+- ⭐ **Voice-first is stated as a product stance**, with chat as the fallback. The repo's conversation
+  module is text-first with voice added.
+- ⭐ **Per-message scoring on four dimensions including Pitch Accent** — CLAUDE.md §5 #1 appearing in a
+  third place (after `120:2027` and its trend report).
+- ⭐ **`Save Mistake`** is the mining/learning-collection family again (§7.2), now in a fifth surface.
+
+### 15.2 `170:9364` — **Conversation practice library** · `CONFIRMED` screen
+
+`VOICE-FIRST LEARNING` · **`+ Create AI Scenario`** · `Continue Last Session` · a `CONTINUE LEARNING`
+resume card (73%, *last practiced Yesterday*, *5 minutes remaining*).
+
+Four shelves, each `Explore all →`:
+
+| Shelf | Content |
+|---|---|
+| **Popular Scenarios** | 8 situations (Convenience Store · Restaurant · Café · Train Station · Hotel · Hospital · Airport · Apartment Rental), each with JLPT level, minutes, **expression count**, the skills it trains, and per-scenario progress |
+| **Business Japanese** | 6 scenarios, each badged **`AI Coach Available`** |
+| **JLPT Speaking** | N5–N2, each with a **conversation-task count** and the bullets `Listening · Response · Role Play` |
+| **AI Generated Scenarios** | 4 scenarios **created by other users** — *created by Mika · Yuki · Ren · Hana* |
+
+Then **`Create Your Own Scenario`**: *"Describe any real-life situation and AI will instantly build a
+complete role-play with characters, goals, vocabulary, and speaking objectives."*
+
+Rail: `TODAY'S SPEAKING PROGRESS` (18 min · 5 voice conversations · 89% avg confidence · 16 new
+expressions · **+12% pronunciation trend**) · `AI Recommendations` (*"You recently struggled with
+polite expressions."*) · `READY TO SPEAK`.
+
+**⭐⭐ Three things here are new capabilities, not variations:**
+1. **User-generated scenarios, shared between users.** *"created by Mika"* is UGC with attribution —
+   a community dimension the repo has for playlists and forum posts but **not** for conversations.
+2. **`JLPT Speaking`.** The real JLPT has **no speaking section** — this is Korume's own construct, and
+   it creates an edge between **Certification Practice and Conversation** that neither cluster's own
+   frames show.
+3. **`AI Coach Available`** as a per-scenario badge — a capability flag or a tier marker; which one is
+   unresolved and matters for L8.
+
+### 15.3 `46:2` — **Create New Conversation** · Companion-adjacent **interaction** (modal wizard)
+
+An **eight-step** generator, and the steps *are* the scenario data model:
+
+| Step | Field |
+|---|---|
+| 1 | how to start — `Popular Scenarios` / **`Generate with AI`** (recommended) / `Quick Start` |
+| 2 | free-text situation + `Magic Suggestions` chips |
+| 3 | difficulty — N5…N1 · **Native** |
+| 4 | **your role** — 9 presets + `Custom Role` |
+| 5 | **AI role** — 10 presets + `Custom Role` |
+| 6 | style — Friendly · Professional · Casual · Formal · Business · Polite · Natural · Difficult |
+| 7 | **learning focus** — Speaking Fluency · Pronunciation · **Pitch Accent** · Business Japanese · **Keigo** · Grammar · Vocabulary · Listening · Confidence · Natural Expressions |
+| 8 | length — 5/10/15/20 min · **Adaptive** |
+
+Rail: **`LIVE PREVIEW`** recomputing as you choose — including **`Estimated Vocabulary 38 words`** and
+**`Estimated Grammar 6 patterns`** — plus an `AI Sensei note` and a **`Surprise Me`**.
+
+- ⚠️ **`conversation_sessions.scenario_type` is a single free-form text column.** This wizard defines
+  **eight** dimensions. The gap is not a UI gap — it is a **data-model gap**.
+- ⭐ Step 7 names **Keigo** and **Pitch Accent** — CLAUDE.md §5 differentiators #6 and #1 — as
+  first-class, selectable practice targets.
+
+### 15.4 `180:1129` — **Quick preview panel: Conversation practice** · `STATE-VARIANT` (preview overlay)
+
+A pre-session briefing: hero (`CONVERSATION · KYOTO, JAPAN` · **Restaurant** · `JLPT N4 · 12 Turns ·
+Estimated 8 min · Speaking Practice`) · **`SCENARIO`** prose · **`CHARACTERS`** (Waitress —
+*Friendly · Polite Japanese*; You — *Traveler · Ordering dinner*) · **`YOU'LL PRACTICE`** chips ·
+**`USEFUL EXPRESSIONS`** (4 phrases with gloss and JLPT level) · **`CONVERSATION PREVIEW`** (a sample
+exchange) · and **`CONVERSATION TRAITS`** — `Formality` (a 5-dot meter) · `Speaking Speed Medium` ·
+`Native Difficulty Low` · `Emotion Relaxed` · `Vocabulary Density Medium` · `Humor Low`.
+
+**⭐ `CONVERSATION TRAITS` is a second, finer scenario model** — six graded dials, distinct from the
+wizard's eight categorical choices. Whether traits are *derived from* the wizard or *authored
+alongside* it is unresolved and affects the schema.
+
+### 15.5 ⚠️⚠️ `AMBIGUOUS`: the Companion has **three different names** across frames
+
+| Frame | Name shown |
+|---|---|
+| `156:1310` Companion home | **Storykeeper** |
+| `215:15164` Knowledge Assistant · `184:3974` Conversation Memories | **Korume** |
+| `180:1129` this frame's rail | **Hikari** *"Quietly alongside you"* |
+
+All three frames show the same mock learner (`Yuki Tanaka`), so these are not different users.
+
+**Hypothesis, offered as a hypothesis:** the companion is **user-nameable**, set during onboarding —
+which would make three names three placeholder values rather than a contradiction. Two facts fit:
+`220:16766` says *"Meet My Companion"* rather than naming one, and **the repo persists no companion
+identity at all** (§14). But no frame in the inventory shows a naming step, so this is unconfirmed.
+
+**This compounds §14.3.** Together the open identity questions are: is `AI Sensei` the Companion or a
+second entity, and **is the Companion's name fixed, branded, or chosen by the learner?** Both must be
+answered before the IA can say what "the Companion" *is*.
+
+### 15.6 Cluster verdict
+
+| Node id | Name | Kind | Route | Verdict |
+|---|---|---|---|---|
+| `170:9364` | Conversation practice library | **screen** | `/conversation` ≈ | built as a much simpler surface; 4 shelves, UGC and JLPT Speaking all absent |
+| `44:7289` | Conversation practice (live session) | **screen**, immersive | none (session UI exists in-page) | per-utterance 4-dimension analysis unbuilt |
+| `46:2` | Create New Conversation | **interaction** (modal wizard) | none, correctly | 8-dimension scenario model vs one text column |
+| `180:1129` | Quick preview panel | `STATE-VARIANT` of `170:9364` | — | traits model unbuilt |
+
+**3 screens-and-interactions + 1 state-variant. Nothing obsolete.**
+
+**Capabilities added:** voice-first conversation with chat as fallback · explicit **role assignment**
+(learner role + AI role) and a per-session **goal** · turn budgeting (`Progress 5/12`, `12 Turns`) ·
+**per-utterance analysis on four dimensions** with a concrete rewrite · `Listen Native` / `Listen
+Yours` comparison · **AI-generated scenarios from a free-text description** · an **8-dimension scenario
+generator** · a **6-dial conversation-traits model** · pre-session briefing with characters, useful
+expressions and a sample exchange · **user-generated scenarios shared with attribution** ·
+**JLPT Speaking** as a Korume-invented certification-speaking track · `AI Coach Available` as a
+per-scenario capability/tier flag · speaking-progress telemetry with a **pronunciation trend**.
+
+**⚑ Handed upward:** the **companion-naming question** (§15.5) · **`JLPT Speaking` as a
+Certification↔Conversation edge** that neither module's frames own · whether **`AI Coach`** is a
+feature flag or a paid tier (an L8 input).
