@@ -1,48 +1,103 @@
-# Phase 0 — Figma Product Inventory — run state (⭐ ALL 57 FRAMES READ, 2026-08-12)
+# Phase 0 — Figma Product Inventory — run state (⭐ IA PROPOSED, AWAITING USER REVIEW, 2026-08-12)
 
-# ▶▶ RESUME HERE — read this block, then §"Cluster completion log" and §"THE OPEN QUESTIONS"
+# ▶▶ RESUME HERE — the IA is written and the ball is in the USER's court
 
-**Paused 2026-08-12 at the IA checkpoint. Working tree clean, everything committed to master.**
+**Paused 2026-08-12 at the IA review checkpoint. Working tree clean. Last commit `a4361ab`.**
 
-**Done:** all 57 Figma frames read and analysed (`docs/product/screen-inventory.md`, ~1,900 lines,
-Part II §6–§20) **and** aggregated (`docs/product/capability-map.md`, 12 capability areas). Last
-commit `5dfe498`.
+**Done since the last save:**
+1. **All four IA blockers are RULED by the user** (2026-08-12). `capability-map.md` §3 was rewritten
+   from open questions into binding rulings — **do not re-litigate, and do not let a later Figma
+   frame reopen one** (method rule 3):
+   - **Sensei is a Companion MODE, not a second entity.** One intelligent presence in the IA.
+   - **Skill taxonomy is TWO TIERS.** Tier 1 (scoreable/comparable): Listening · Speaking · Reading ·
+     Grammar · Vocabulary · Kanji. Tier 2 (diagnostic, **never summed**): Pronunciation + Pitch Accent
+     under Speaking, Particles under Grammar. **`Conversation` is a context, not a skill**; that is
+     why it never fitted. This *explains* both conflicting Figma sets instead of picking a winner.
+     ⚑ Reading is in tier 1 on product grounds — no frame drew it as a skill.
+   - **`Journey` = the Roadmap.** `app-nav.tsx:59` is a defect. ⚠️ `L-025` applies to the rename.
+   - **Both kanji surfaces ship, ONE nav row** — curriculum default, explorer as a browse mode.
+2. **The IA proposal is written**: `docs/product/ia-proposal.md`. **PROPOSED, NOT LOCKED.**
 
-**Not done — and it is ONE step, not a cluster:** propose the IA → **STOP for the user's review** →
-lock IA → Screen Registry Phase 1.
+**▶ THE NEXT ACTION IS THE USER'S: a FULL review of `docs/product/ia-proposal.md` before locking.**
+Until they respond: **do not edit `app-nav.tsx`, do not port any screen, do not touch the API, do
+not start Screen Registry Phase 1.**
 
-**⛔ TWO THINGS BLOCK THAT STEP. Do not start the IA proposal until both are answered:**
+### ✅ ROUND 2 — the user reviewed and ruled all three open gaps (2026-08-12, commit `d4fa9da`)
 
-1. **The four IA-blocking questions** (`capability-map.md` §3) — each changes what the product's
-   *nouns* are, so guessing produces a dishonest IA:
-   - **`AI Sensei` vs the Companion** — one intelligent presence or two? Is `/sensei` a Companion mode?
-   - **One canonical skill taxonomy** — three different sets exist (`64:2061` / `187:6556` / `111:515`)
-     and six surfaces claim to measure "how good are you at X".
-   - **`Journey` points at the wrong concept** — `app-nav.tsx:59` maps it to the Diary; the design
-     means the Roadmap.
-   - **Both kanji surfaces?** — discovery (`29:2890`) *and* curriculum (`280:3`), or one?
-2. **The model decision.** `mem:model_selection_policy` requires STOP-and-ASK before IA synthesis, and
-   the user's standing rule is *ask every time Fable is proposed*. **Asked; not yet answered.**
-   **Controller's recommendation on record: stay on Opus 5 — no Fable.** The hard reasoning was spread
-   across the 8 clusters and is already written down; the IA step is applying `capability-map.md` §4's
-   four rules to an already-classified set of destinations.
+They called the checkpoint "đang đúng hướng", explicitly withheld permission to touch code or lock
+the IA, and closed the three gaps at product level:
 
-**⚠️ Standing user instructions that survive the pause:**
-- **Do NOT port any screen yet.** This stage exists to dig up what the repo does not know it is missing.
-- **Do NOT settle navbar / route map / registry** from anything less than the full picture. (That gate
-  is now clear — all 57 are read — but the *checkpoint* still applies: IA is **proposed**, reviewed by
-  the user, and only then locked.)
-- The inventory **records**; it does not **design**.
+| Gap | Ruling | Where |
+|---|---|---|
+| `/challenges` | **Roadmap/Mission surface, NO nav row.** A challenge is a mission's measurable gate | `ia-proposal.md` §3.4 |
+| Conversation Memories | **One `/companion/memory` surface, two types** (`Learning` / `Conversations`) | §3.2 |
+| Achievements | **Summary on Dashboard, gallery on `/profile`** — split by job, not duplicated | §3.3 |
 
-**Where everything lives:**
-| File | What |
-|---|---|
-| `docs/product/screen-inventory.md` | Part I = old name-based draft (superseded where marked) · **Part II §6–§19 = the per-frame analysis** · **§20 = content conflicts for the user to fix in Figma** |
-| `docs/product/capability-map.md` | 12 capability areas · the six cross-cutting systems · §3 the four IA blockers · §4 how the IA proposal must be built |
-| `docs/product/figma-frame-map.md` | name → node id for all 57, post-rename and verified |
-| `docs/superpowers/specs/2026-08-08-screen-registry-design.md` | Phase 1's approved spec, untouched, still correct |
+**⭐⭐ The durable rule the user stated, worth more than the three rulings: `TAXONOMY ≠ NAVIGATION`.**
+Now a named principle in `ia-proposal.md` §1. Pronunciation is a **tier-2 sub-skill under Speaking**
+in the data model **and** a top-level destination in the IA — the two answer different questions
+(*what kind of thing is this?* vs *is this somewhere a learner goes?*) and neither weakens the other.
+**It runs in reverse too:** Challenges and Achievements are first-class gamification *concepts* that
+get **no nav row**, because a concept's importance is not a claim on the sidebar.
 
+**A second durable rule from the same message:** *do NOT create a destination merely because the repo
+has a route.* `/challenges` has no Figma frame; it is a C1 placeholder. An IA derived from the design
+must not inherit structure from an accident of the codebase. **Reversible on evidence** — reopen if
+Figma later designs a standalone challenge hub.
 
+**The IA the user has now endorsed** (their own words: "IA đề xuất hiện tại của tôi") is exactly the
+five-group shape below. That is agreement on the *shape*, **not** the lock — they asked for one more
+full review pass first.
+
+## ⚠️⚠️ TWO CORRECTIONS THIS RUN MADE — both by measuring, both load-bearing (`L-003`)
+
+1. **`NAV_GROUPS` is NOT provisional, and this memory previously said it was.** The old line —
+   *"both navbars in play are demos — the repo's `NAV_GROUPS` (provisional since C1)"* — **is wrong
+   on the repo half.** `NAV_GROUPS` implements `docs/design/screens/navigation-system.md`
+   § Navigation Inventory, marked **`Status: Approved`**, citing two approved specs. Only the
+   reference render is garbage. **So the IA is an AMENDMENT to layer-A authority, not greenfield**,
+   and locking it means updating that doc too. `ia-proposal.md` §6 lists the fallout — the
+   § Gamification & Navigation section's whole premise dies with `/leaderboard`, and `L-024` says
+   sweep every dependent doc, not just the flagged ones.
+   ⭐ **The doc left rows 15 (`korume`) and 16 (`roadmap`) explicitly "not decided by this plan" —
+   the IA supplies exactly those two answers.** That is its strongest part, not its riskiest.
+2. **The mining blocker is at the API layer, NOT the schema.**
+   `sentence_mining_cards.transcript_line_id` is **nullable**
+   (`20260712000008_sentence_mining_cards.sql:11`). What blocks a reading passage from minting a card
+   is `createMiningCardSchema`'s required `lineId` (`lib/validation/mining.ts:10`) plus
+   `createMiningCard` deriving the sentence server-side from that row. **Needs a source
+   discriminator, not a column migration** — a much cheaper fix than previously recorded.
+
+## The IA proposal in one screen (detail in `docs/product/ia-proposal.md`)
+
+Five groups, mapped to the learning loop rather than to a feature list:
+
+```
+LEARN      Dashboard · Lessons · Kanji · Grammar
+PRACTICE   Speaking · Pronunciation(NEW) · Certification(was /jlpt)
+REMEMBER   Review · Collection(was /mining) · Playlists
+JOURNEY    Journey(/roadmap ⭐) · Companion(NEW hub)
+ACCOUNT    Profile · Settings
+```
+
+**The one idea it rests on: a screen is not a destination.** `156:1310` carries five `See all` links
+plus `View diary` and `View full journey` — so **six Companion screens are ONE destination with
+depth**, and `/sensei`, `/journal`, `/weekly-report` absorb into `/companion`. `/statistics` and
+`/achievements` absorb into `/dashboard`, which already draws both. `/vocab` `/reading`
+`/leaderboard` `/community` hide per the 2026-08-11 rulings — **and §4's old vocab conflict is now
+RESOLVED in the "hiding is free" direction**: `156:1310` puts the vocabulary shelf inside Companion
+home, so it is companion-owned and hiding `/vocab` costs the flagship panel nothing.
+
+⚠️ **Every row change fails Screen Registry Phase 1 by construction** (its acceptance is zero visual
+diff vs a snapshot of today's literal) ⇒ all of it is **Phase 2**. Phase 1 still runs unchanged.
+
+## Model decision — SETTLED for this step
+
+Ran on **Opus 5, no Fable**, per the controller's recorded recommendation; the user did not object.
+The IA step was applying `capability-map.md` §4's four rules to an already-classified set, not fresh
+long-horizon reasoning. `mem:model_selection_policy`'s ask-every-time rule was not triggered because
+Fable was never proposed. The `$100 free` vs `$50/month` disagreement is **still unresolved** — the
+user must run `/status`.
 
 > **Where it stands:** frame map DONE (57/57) **and the per-frame inventory analysis is DONE (57/57).**
 > `docs/product/screen-inventory.md` Part II holds it, §6–§19, committed per cluster.
