@@ -1,16 +1,6 @@
-import { globSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import type { ScreenChrome } from "./screen-registry-types";
-
-// `@types/node` in this repo is pinned to v20 (package.json), which predates
-// `fs.globSync` (stabilized in Node 22). The runtime here is Node 24 and the
-// function exists — this augmentation only fills the missing type, matching
-// the real signature (https://nodejs.org/api/fs.html#fsglobsyncpattern-options).
-declare module "node:fs" {
-  export function globSync(
-    pattern: string | string[],
-    options?: { cwd?: string },
-  ): string[];
-}
 
 const CHROME_GROUPS: Record<string, ScreenChrome> = {
   "(app)": "app",
@@ -65,14 +55,22 @@ export function resolvePageRoute(relativePath: string): {
   return { route: `/${routeSegments.join("/")}`.replace(/\/$/, "") || "/", chrome };
 }
 
+/** Recursive walk, not a glob. Returns repo-relative paths, which is what
+ *  `resolvePageRoute` expects. Deliberately not `fs.globSync`: that needs
+ *  Node 22+, this repo pins @types/node@^20 with no engines field, and the
+ *  obvious pattern `app/[locale]/**` silently matches nothing because glob
+ *  reads `[locale]` as a character class. */
+function walkPages(dir: string, rootDir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walkPages(full, rootDir, out);
+    else if (entry.name === "page.tsx") out.push(path.relative(rootDir, full));
+  }
+  return out;
+}
+
 export function listPageRoutes(rootDir: string) {
-  // `[locale]` must be bracket-escaped (`[[]locale[]]`) — glob syntax treats a
-  // literal `[locale]` as a character class matching any single one of
-  // l/o/c/a/e, not the literal directory name, so the unescaped pattern
-  // silently matches zero files. Verified against this repo's real
-  // `app/[locale]/**` tree: the escaped form finds all page.tsx files, the
-  // unescaped form (as written in the source brief) finds none.
-  return globSync("app/[[]locale[]]/**/page.tsx", { cwd: rootDir })
+  return walkPages(path.join(rootDir, "app"), rootDir)
     .map((file) => ({ file, ...resolvePageRoute(file) }))
     .sort((a, b) => a.route.localeCompare(b.route));
 }

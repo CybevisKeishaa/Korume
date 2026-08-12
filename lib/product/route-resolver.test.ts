@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePageRoute } from "./route-resolver";
+import { listPageRoutes, resolvePageRoute } from "./route-resolver";
 
 const P = "app/[locale]";
 
@@ -36,5 +36,17 @@ describe("resolvePageRoute", () => {
   it("accepts Windows-style separators", () => {
     // Glob results on win32 arrive backslashed; the resolver must not care.
     expect(resolvePageRoute(`app\\[locale]\\(protected)\\(app)\\vocab\\page.tsx`).route).toBe("/vocab");
+  });
+});
+
+describe("listPageRoutes", () => {
+  it("finds real page.tsx files under app/[locale] — never silently empty", () => {
+    // A resolver that walks nothing would make Task 4's "every page has a
+    // registry entry" check pass vacuously, agreeing with an empty registry.
+    // This asserts the walk actually found the real app tree, not that it
+    // ran without throwing.
+    const routes = listPageRoutes(process.cwd());
+    expect(routes.length).toBeGreaterThan(0);
+    expect(routes.some((r) => r.route === "/dashboard")).toBe(true);
   });
 });
