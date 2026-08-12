@@ -35,10 +35,14 @@ the user's approval · `OPEN` = not decided.
 | P15 | **Native mobile apps are planned** — store badges are a roadmap statement | `capability-map.md` §3.5 |
 | P16 | **No landing/gateway page exists yet** — known and accepted, user will design it later | `screen-inventory.md` §19.0 |
 
-## 2. Information architecture — `PROPOSED`, awaiting approval
+## 2. Information architecture — ✅ `LOCKED` (user approval, 2026-08-12)
 
-⚠️ **Nothing in this section is locked.** It is the content of `ia-proposal.md`, listed here only so
-the review has a checklist. **Approving the IA locks this whole block at once.**
+**The user reviewed A1–A13 and approved the block.** These are now as binding as §1 — do not
+re-litigate, and do not let Phase 1, a later Figma frame, or the shape of the existing API reopen
+one.
+
+⚠️ **The registry does not get to re-decide any of this.** Phase 1b transcribes these rows; it never
+derives them. See §3b.
 
 | # | Decision | Where |
 |---|---|---|
@@ -75,21 +79,32 @@ These cost real effort to learn. Breaking one repeats a mistake already paid for
 | M11 | **A user's "I fixed it" is a claim about intent, not file state.** Read it back when cheap | `L-003` · `screen-inventory.md` §20 |
 | M12 | **`public/demo/**` is not a design source.** Only a live Figma screenshot is authoritative | `mem:phase0_figma_inventory_run_state` |
 
-## 3b. ⚠️ `OPEN` — what approving the IA does **not** settle
+## 3b. Sequencing — ✅ `LOCKED` (user, 2026-08-12): Phase 1 splits into **1a / 1b**
 
-**Approving A1–A13 does not make Screen Registry Phase 1 encode them.** Phase 1's approved spec
-(`2026-08-08-screen-registry-design.md` R8/T6, §5) requires the derived `NAV_GROUPS` to be
-**byte-for-byte identical to today's literal**, and lists *"changing any navigation label, order, or
-grouping"* as explicitly out of scope. It was written before this IA existed.
+Phase 1's approved spec (`2026-08-08-screen-registry-design.md` R8/T6, §5) requires the derived
+`NAV_GROUPS` to be **byte-for-byte identical to today's literal** and puts *"changing any navigation
+label, order, or grouping"* out of scope — it was written before this IA existed. Rather than weaken
+R8, the phase splits:
 
-**Decision needed from the user, and it changes what approval buys:**
+| Step | Changes | Proven by | Rule |
+|---|---|---|---|
+| **1a — the engine** | nothing visible | **R8/T6 exactly as specified** — derived `NAV_GROUPS` byte-identical to today | no IA change, no visual change, no screen ported |
+| **1b — the data** | registry rows → the `LOCKED` IA | T6's snapshot re-frozen to `ia-proposal.md` §2 | **a data migration of navigation only.** The registry must never *infer* or invent structure |
 
-| Option | Phase 1 encodes | Cost |
-|---|---|---|
-| **Keep the spec as written** | today's 22 rows | the IA waits for Phase 2 |
-| **Split 1a / 1b** (recommended) | 1a today's rows (proves the derivation), then **1b: one data-only commit** to the approved IA | amends an approved spec; keeps R8's safety net intact |
+> ⭐ **The reason the split exists, in the user's words:** *"1a chứng minh engine đúng; 1b thay đổi
+> product decision. Hai loại diff không nên nằm chung commit."* A red test in a combined step could
+> mean *the derivation is broken* **or** *the IA moved it* — two failure modes in one signal, in the
+> one step whose entire purpose is mechanical correctness.
 
-Full reasoning: `ia-proposal.md` §5 § *Approving this IA does not make Phase 1 encode it*.
+**Consequence for Phase 2 — ✅ its job is redefined.** The spec's Phase 2 was *"adjudicate the
+Figma↔repo gap; find which side is right."* **Phase 0 already did that.** Phase 2 is now:
+
+> **Decision Register + `LOCKED` IA → reconcile the implementation with the settled product model.**
+
+Only genuinely new divergences need a fresh ruling; the rest is migration and schema/domain work.
+**It must not re-open the investigation.**
+
+Full reasoning: `ia-proposal.md` §5.
 
 ---
 

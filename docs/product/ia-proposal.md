@@ -1,9 +1,18 @@
-# Korume — Information Architecture · PROPOSAL
+# Korume — Information Architecture · ✅ **LOCKED**
 
-> **STATUS: PROPOSED, NOT LOCKED.** This document exists to be argued with. The user's standing
-> instruction is that the assistant may *propose* an IA but must **stop for human review before the
-> IA and navbar are locked**, and that Screen Registry Phase 1 begins only after the lock.
-> **Nothing here has been implemented. No screen has been ported. `app-nav.tsx` is untouched.**
+> **STATUS: APPROVED AND LOCKED — user review, 2026-08-12.** The checkpoint this document was written
+> for has been cleared: the IA was proposed, reviewed by the user against the five questions they set
+> (is it really a destination · is it confusing capability/screen/destination/nav item · does it break
+> `Taxonomy ≠ Navigation` · does it lose a Figma capability · does it have surprising cross-module
+> consequences), and approved as **A1–A13** in `decision-register.md` §2.
+>
+> **Do not re-litigate A1–A13.** A later Figma frame, a Phase 1 convenience, or a gap in the existing
+> API is **not** grounds to reopen one — that last case is method rule **M5**, and it is the whole
+> reason this document exists.
+>
+> **Still true, and still binding:** `app-nav.tsx` is untouched, no screen has been ported, and
+> **Phase 1a must change nothing visible.** The IA lands in **Phase 1b**, as a data-only commit.
+> See §5.
 
 **Derived 2026-08-12** from `docs/product/capability-map.md` (12 capability areas, six cross-cutting
 systems, the four rulings in §3) and `docs/product/screen-inventory.md` Part II (§6–§20, every Figma
@@ -475,14 +484,21 @@ moved into §3.2 (memory), §3.3 (achievements) and §3.4 (challenges). What rem
 
 ---
 
-## 8. The checkpoint
-
-**Next action is the user's, not the assistant's.** Per the ruling of 2026-08-11 the order is:
+## 8. The checkpoint — ✅ CLEARED 2026-08-12
 
 ```
-Figma → Product Inventory ✅ → Capability Map ✅ → IA/Navigation ◀ YOU ARE HERE (proposed)
-      → Screen Registry → Route/API reconciliation → UI implementation → L8 → L9
+Figma → Product Inventory ✅ → Capability Map ✅ → IA/Navigation ✅ LOCKED
+      → Phase 1a (engine) ◀ NEXT  → Phase 1b (data)  → Route/Domain/API reconciliation
+      → UI implementation → L8 → L9
 ```
 
-The IA is **locked only after human review**. Until then: **do not port any screen, do not edit
-`app-nav.tsx`, and do not begin Screen Registry Phase 1.**
+**What is now permitted:** Phase 1a — build the registry, derive `NAV_GROUPS` from it, prove
+byte-identical to today's literal.
+
+**What is still forbidden until 1a is green:** editing `app-nav.tsx`'s rows, porting any screen,
+touching the API, and — most importantly — **letting the registry decide anything.** A1–A13 are
+already decided; 1b transcribes them.
+
+> ⭐ **The order the user set, and the reason it is worth holding:**
+> *Phase 0 finds out what Korume is. The IA decides how a learner moves through it. The Registry
+> records that decision as machine-readable structure. Only then is code allowed to follow it.*
