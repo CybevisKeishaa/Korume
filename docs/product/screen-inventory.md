@@ -284,6 +284,42 @@ node id, or its canvas size. Only the picture is evidence. This rule was bought 
 **Repo claims in this part are measured, not recalled** — routes via `git ls-files`, page content via
 the symbol body, schema via the migration text. Anything not measured is marked as such.
 
+## ⭐⭐ The governing method: separate every finding into four layers (user ruling, 2026-08-12)
+
+This rule was bought by getting it wrong. Batch 1 of the Shadowing cluster reported the hub's import
+pipeline as a CLAUDE.md §2 violation because its steps read `Download Video` / `Extract Audio`. The
+user's ruling: those are a **progress narrative** — deliberately showing the learner that the system is
+doing careful work — and some stages may be presentational rather than literal. Nothing was violated,
+because nothing in the design ever claimed to be an implementation.
+
+**Every finding is therefore classified into four layers, and they are never collapsed:**
+
+| Layer | Question | Authority |
+|---|---|---|
+| **A. Product intent** | What experience does the learner need? | the user |
+| **B. UX representation** | How does Figma express that experience? | the Figma frame |
+| **C. Technical implementation** | What does the repo actually do? | measured code |
+| **D. Contract / constraint** | Does any rule forbid a given implementation? | `CLAUDE.md` §2 |
+
+Worked example — lesson import:
+
+| Layer | Conclusion |
+|---|---|
+| A | Importing a lesson has visible, structured progress |
+| B | 6 stages + % + ETA + a failure state |
+| C | caption fetch + AI enrichment |
+| D | never download, re-host or proxy video |
+
+**There is no contradiction here.** A contradiction arises *only* if layer B is mistaken for layer C.
+
+**Two consequences that bind the rest of this inventory:**
+1. **Do not "fix" a Figma frame against the current implementation.** The repo is layer C; it has no
+   authority over layers A and B. The purpose of this pass is to see how large Korume was *designed*
+   to be — letting today's code narrow that is the single biggest failure mode available here.
+2. **Do not promote something to a new capability just because Figma gave it its own word.** Check
+   first whether it belongs to a family that already exists (see `Favorites` → the mining family,
+   §7.2).
+
 ---
 
 ## 6. Cluster: Kanji — 4 frames, analysed 2026-08-12
@@ -455,44 +491,56 @@ only `admin/videos` still carries the old noun:
 | `/shadowing/[id]` | `(focus)` | built |
 | `/shadowing/[id]/dictation` | `(focus)` | built |
 
-### 7.0 ⛔ STOP-AND-SURFACE: the import pipeline as drawn breaks CLAUDE.md §2 non-negotiable #1
+### 7.0 The import pipeline — raised as a §2 violation, **ruled otherwise, and the ruling is the lesson**
 
-In `149:2`, the second `My Lessons` row (*Tokyo Street Interview – Daily Life*, badge `Building
-Lesson`, status `Importing now`) renders a six-step progress checklist. Read at 2× on a full-resolution
-crop, because the claim is too serious to make from a downscaled thumbnail:
+**What was reported.** In `149:2`, the second `My Lessons` row (*Tokyo Street Interview – Daily Life*,
+badge `Building Lesson`, status `Importing now`) renders a six-step progress checklist, read from a 2×
+crop of the full-resolution render:
 
 > ✅ **Download Video**  ✅ **Extract Audio**  ✅ Split Sentences
 > ⏳ Generate Vocabulary  ○ Grammar  ○ AI Summary — `72%`, `est. 1m 20s`
 
-**CLAUDE.md §2 rule 1** is *"Never download, re-host, or proxy video from YouTube or any platform… No
-`youtube-dl`, `ytdl`, or any downloader — ever."* The project's own operating note extends it to audio:
-*never extract or compare YouTube source audio.* The first two steps are named violations, and they are
-**user-facing copy** — shipping this screen would have Korume advertise, in its product UI, that it does
-the one thing the repo forbids.
+Batch 1 flagged the first two steps as violating CLAUDE.md §2 rule 1 (*never download, re-host or proxy
+video… no downloader, ever*) and recommended renaming them.
 
-**The code is clean — this is a design defect, not a code defect.** Measured: a grep for
-`ytdl|youtube-dl|yt-dlp|downloadVideo|extractAudio` across application code returns **no
-implementation**. The only source hit is `lib/data/transcript-providers.ts`, whose comment names this
-exact gray area and deliberately leaves `aiTranscriptProvider` a stub:
+**✅ User ruling, 2026-08-12: keep the pipeline exactly as drawn. There is no violation.** The six
+steps are a **progress narrative** — they exist so the learner sees the system doing careful,
+structured work on their lesson (*"thể hiện để cho người dùng thấy chúng ta đang rất kì công"*), and
+**some stages may be presentational rather than literal**. That is a legitimate UX device, not an
+architectural claim.
 
-> *"Real AI transcript generation … needs a way to get the video's audio to a speech-to-text backend,
-> which is a gray area against CLAUDE.md §2's 'never download video from YouTube' rule and was
-> deliberately NOT resolved when this plan was written (2026-07-31)."*
+**The correct record, in four layers:**
 
-The shipped path is `youtubeCaptionProvider` → `fetchJapaneseCaptions(videoId)` — **captions only, no
-media**.
+| Layer | |
+|---|---|
+| **A. Intent** | importing a lesson should feel like real, structured work is happening |
+| **B. UX** | 6 named stages + % + ETA, plus ready / building / failed states |
+| **C. Implementation** | `youtubeCaptionProvider` → `fetchJapaneseCaptions(videoId)` (captions only, no media), then AI enrichment. `aiTranscriptProvider` is a deliberate stub whose comment names the STT gray area and leaves it unresolved. |
+| **D. Constraint** | never download, re-host or proxy video; never extract YouTube source audio |
 
-**⭐ The design contradicts itself, and the self-consistent reading is the legal one.** The third
-library row is an `Import Failed` state whose reason is **`Transcript unavailable`**. A pipeline that
-truly downloaded the video and extracted its audio could run speech-to-text and would never fail for a
-missing transcript. So the failure state the designer drew only makes sense on the caption-fetch
-pipeline the repo already implements — the two forbidden steps are stray labels, not a considered
-architecture.
+**A stage label is layer B and binds nothing.** `Download Video` as *copy* does not oblige the backend
+to download anything — and the measured code downloads nothing: a grep for
+`ytdl|youtube-dl|yt-dlp|downloadVideo|extractAudio` across application code returns no implementation.
+**Constraint D still binds layer C absolutely.** If a future implementer reads these labels as a work
+order, that is the defect — not the labels.
 
-**Recommended remedy (cheap, copy-level, user's call):** rename the first two steps to what actually
-happens — `Fetch transcript` / `Check captions` — leaving `Split Sentences → Generate Vocabulary →
-Grammar → AI Summary` untouched. **Do not treat this as a licence to resolve the STT question**; that
-decision is still deferred and belongs in its own spec, not in a screen port.
+**The failure state is real, and batch 1 misread why.** It argued that `Import Failed — Transcript
+unavailable` could not coexist with a download-and-STT pipeline. The user's ruling reframes it
+entirely: **failure is genuine, and its most important cause is quota exhaustion.** When the system's
+daily/monthly allowance is spent, the import legitimately reports failure:
+
+```
+Free user → Import lesson → quota available?
+                              ├── yes → process
+                              └── no  → failed / unavailable
+```
+
+**⭐ This makes the frame an early sighting of L8's UX, not a design slip.** The chain
+`quota → kill-switch → AI usage → billing` is exactly the cost-defence architecture the roadmap
+already requires before `ANTHROPIC_API_KEY` is ever enabled, and here it is drawn as a user-visible
+state. The hub's `FREE PLAN · 2 / 3 imports remaining · Upgrade →` chip is the same mechanism seen
+from the other side. Copy for the failed state should name the real cause — e.g. *"Import
+unavailable — monthly lesson quota reached"* — rather than implying the video was defective.
 
 ### 7.1 `149:2` — **Shadowing hub** · `CONFIRMED` screen
 
@@ -514,10 +562,21 @@ decision is still deferred and belongs in its own spec, not in a screen port.
   (6 sub-steps, % and ETA) / `failed` (with a reason). Nothing in the inventory so far has needed
   progress transport; this row does. Whether that is polling or a subscription is an engineering
   question the design implies but does not answer.
-- **Every recommendation carries its reason as copy** — *"You struggle with Passive Form."*,
+- ⭐⭐ **Every recommendation carries its reason as copy** — *"You struggle with Passive Form."*,
   *"Because you use formal booking in your request patterns."*, *"Builds around the vocabulary you
-  already know."* That is the i+1 / weakness engine (CLAUDE.md §5 #2) surfacing its rationale, and it
-  is a real requirement: the API must return a reason, not just a ranked list.
+  already know."* **User ruling 2026-08-12: this is required, and it is not cosmetic copy — it is an
+  output of learning intelligence.** A bare `Passive Form` is an ordinary recommender; `Passive Form —
+  you struggle with Passive Form` is the Companion demonstrating that it remembers the learner's
+  history. The chain the user named:
+
+  ```
+  learning history → SRS / progress / mistakes → Companion memory
+                   → learning analysis → recommendation → reason
+  ```
+
+  **Consequence for the API contract: the ranking endpoint owes a `reason` per item, not just an
+  order** — and the reason has to be derived from real history, not templated. This is CLAUDE.md §5 #2
+  (i+1 comprehensible input) joined to the Companion memory that already exists in migration #15.
 - **The free-plan chip is L8 surfacing early.** `FREE PLAN · 2 / 3 imports remaining · Upgrade →` is
   Contextual Discovery placed exactly where the business model says it belongs.
 - **Nav inconsistency, again:** this frame's left nav has no `PROGRESS` or `ACCOUNT` group, while
@@ -544,16 +603,40 @@ as a floating panel over a dimmed backdrop with an `✕` and a `⌘K` badge. **T
 | **Route exists** | n/a by design (modal). |
 | **Related** | Hub · Explore · Companion. |
 
-**⭐ The design writes down an IA ruling, and it is worth honouring:** the rail says *"Looking for
-grammar or kanji? **Ask Companion instead. Search is here only to help you find a lesson
-immediately.**"* That is a deliberate scope boundary — search is lesson-scoped, and open-ended
-questions route to the Companion. It answers a question the IA synthesis would otherwise have to
-invent.
+**⭐ The design writes down an IA ruling, and the user has confirmed it (2026-08-12):**
 
-**⭐⭐ `Favorites` appears as a filter facet here — the second sighting of a favourites concept**, after
-`♡ Favorite` in `28:2041 Kanji inspect`. Two different modules, one missing capability. It has now
-graduated from "a kanji feature" to **a cross-cutting one**, and it strengthens the earlier finding
-that the repo has no explicit save action anywhere.
+```
+any screen → ⌘K / Search → search panel → lesson results → open lesson
+                                 └── "Ask Companion" → Companion Knowledge Assistant → AI conversation
+```
+
+The rail states it in copy: *"Looking for grammar or kanji? **Ask Companion instead. Search is here
+only to help you find a lesson immediately.**"* The user's framing: **search helps a learner find what
+they want to learn; the Companion helps them ask what they don't yet know.** The two must not be fused
+into one giant search engine.
+
+**Classification, per that ruling: this is a global interaction surface — a panel — not a canonical
+screen.** It gets no route, and in the registry it is not a nav destination. The `Ask Companion`
+branch is a real edge to another frame: `215:15164 Companion Knowledge Assistant`.
+
+**`Favorites` is a filter facet here, and it is NOT a new capability.** ⚠️ Batch 1 originally promoted
+it to a cross-cutting "favourites system" on the strength of a second sighting (after `♡ Favorite` in
+`28:2041 Kanji inspect`). **User ruling 2026-08-12: treat favourite as the same family as mining.**
+The product concept is one thing, not several: *the learner meets something → collects it into a
+personal collection → studies it later.*
+
+```
+Learning collection
+  ├── save / mine        (sentence mining from video)
+  ├── personal vocabulary
+  ├── saved kanji
+  └── …
+```
+
+**The method error worth remembering: Figma giving something its own word is not evidence that it is
+its own capability.** Check whether it joins an existing family before promoting it. This is the same
+class of mistake as reading a progress label as an implementation contract (§7.0) — both take a
+layer-B surface detail and treat it as a layer-A product concept.
 
 **Keyboard-first, which the a11y non-negotiable likes:** `⌘K` to open, a `⌘K` affordance inside the
 field, a visibly focused result row, and a tip teaching the shortcut.
@@ -562,12 +645,18 @@ field, a visibly focused result row, and a tip teaching the shortcut.
 
 | Node id | Name | Tag | Route | Verdict |
 |---|---|---|---|---|
-| `149:2` | Shadowing hub | `CONFIRMED` | `/shadowing` ✅ `(app)` | built; **⛔ pipeline copy violates §2**; recommendation *reasons* and import *progress* are unbuilt |
+| `149:2` | Shadowing hub | `CONFIRMED` | `/shadowing` ✅ `(app)` | built; pipeline narrative **ruled correct as drawn** (§7.0); recommendation *reasons*, import *progress* and the quota-failure state are unbuilt |
 | `212:14610` | Search lesson | `CONFIRMED` | none (modal, correct) | wholly unbuilt |
 | `212:14753` | Search lesson (searched) | `STATE-VARIANT` of `212:14610` | — | — |
 
-**Capabilities added to the map:** lesson import from YouTube (caption-legal) · import job progress +
-failure recovery · import quota + upgrade prompt · lesson library · featured lesson · category
-filtering · popular / recently-added / weakness-based recommendation **with stated reasons** ·
-current-path resume carrying sentence position · **global lesson command palette (`⌘K`)** · faceted
-lesson search · **favourites (2nd sighting)** · companion activity surfaced inside a learning screen.
+**Capabilities added to the map:** lesson import from YouTube · **import progress narrative** (a
+presentation-level stage model, §7.0) · **quota-driven failure state** (the visible end of
+`quota → kill-switch → AI usage → billing`) · import quota + upgrade prompt · lesson library ·
+featured lesson · category filtering · popular / recently-added / **weakness-based recommendation
+carrying a derived reason** · current-path resume carrying sentence position · **global lesson command
+palette (`⌘K`), a panel and not a screen** · faceted lesson search · companion activity surfaced inside
+a learning screen · an explicit **search ↔ Companion boundary** (find what you want to learn vs ask
+what you don't know).
+
+*Not added: "favourites". It joins the existing mining / learning-collection family per the user's
+ruling — see §7.2.*

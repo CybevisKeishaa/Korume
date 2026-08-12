@@ -93,22 +93,43 @@ above it — implying a `(protected)`-level state owner nothing in Part I mentio
 came back 1278–1536 wide, all legible), `curl` to scratchpad, `Read` the PNG. Four frames in one
 batch was comfortable; **do not batch many more than that per turn** — images dominate context.
 
-## ⛔ THE FINDING THAT OUTRANKS EVERYTHING ELSE SO FAR — §2 violation in the hub's import pipeline
+## ⭐⭐ THE GOVERNING METHOD — four layers, never collapsed (user ruling 2026-08-12)
 
-`149:2` draws the lesson-import job as a six-step checklist whose **first two steps are `Download
-Video` and `Extract Audio`** — named violations of CLAUDE.md §2 rule 1, rendered as **user-facing
-copy**. Read from a 2× crop of the full-res render, not a thumbnail, because the claim is too serious
-to guess at. Full write-up: `docs/product/screen-inventory.md` §7.0 (`98655c0`).
+Bought by getting it wrong. Batch 1 reported the hub's import pipeline (`Download Video` /
+`Extract Audio`) as a CLAUDE.md §2 violation. **The user ruled there is no violation: those steps are a
+progress narrative** — deliberately showing the learner the system is doing careful work — and some
+stages may be presentational rather than literal. Nothing in a Figma frame ever claimed to be an
+implementation.
 
-**The code is clean.** No downloader exists anywhere in application code;
-`lib/data/transcript-providers.ts` already names this exact gray area in a comment and deliberately
-leaves `aiTranscriptProvider` a stub. Shipped path = `youtubeCaptionProvider` → captions only.
+| Layer | Question | Authority |
+|---|---|---|
+| **A. Product intent** | what experience does the learner need? | the user |
+| **B. UX representation** | how does Figma express it? | the frame |
+| **C. Technical implementation** | what does the repo do? | measured code |
+| **D. Contract / constraint** | does a rule forbid an implementation? | `CLAUDE.md` §2 |
 
-**The design contradicts itself and the self-consistent reading is the legal one:** a sibling row
-fails with `Transcript unavailable`, which could not happen if the pipeline really downloaded video and
-ran STT. The two steps are stray labels. **Remedy is copy-level** (rename to `Fetch transcript` /
-`Check captions`) and is explicitly NOT a licence to resolve the deferred STT question.
-**Awaiting the user's ruling — do not port this screen until it is answered.**
+**A contradiction exists only if layer B is mistaken for layer C.** Constraint D still binds C
+absolutely — the backend must never download or proxy video — but a *label* binds nothing.
+
+**Two binding consequences:**
+1. **Never "fix" a Figma frame against the current implementation.** The repo is layer C and has no
+   authority over A or B. The point of this pass is to see how large Korume was *designed* to be;
+   letting today's code narrow that is the biggest failure mode available here.
+2. **Never promote something to a new capability because Figma gave it its own word.** Check whether
+   it joins an existing family first.
+
+**Both rulings this produced, applied in `docs/product/screen-inventory.md` §7.0/§7.2:**
+- **Import pipeline + failure state: KEEP AS DRAWN.** Failure is real and its main cause is **quota
+  exhaustion** (daily/monthly allowance spent → import reports unavailable). That makes the frame an
+  early sighting of **L8's UX**: `quota → kill-switch → AI usage → billing`.
+- **`Favorites` is NOT a separate capability — it is the mining family.** One concept: the learner
+  meets something → collects it → studies it later (save/mine · personal vocabulary · saved kanji).
+- **Search is a global panel, not a canonical screen** — no route, not a nav destination. Confirmed
+  branch: `Ask Companion` → `215:15164 Companion Knowledge Assistant` → AI conversation. The boundary
+  the user stated: *search finds what you want to learn; the Companion answers what you don't know.*
+- **Recommendation `reason` is required and is an output of learning intelligence**, not copy:
+  `learning history → SRS/progress/mistakes → Companion memory → analysis → recommendation → reason`.
+  The ranking API owes a derived reason per item.
 
 ## 📐 Method for TALL frames — needed from here on
 
