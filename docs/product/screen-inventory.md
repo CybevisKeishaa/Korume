@@ -1730,3 +1730,99 @@ re-practisable and counted** · transcript excerpts preserved as memory · **per
 
 **⚑ Two things this batch hands to the IA/capability step, neither resolvable inside a cluster:**
 the **`Journey` label collision** (§13.0) and the **absence of a canonical skill taxonomy** (§13.3).
+
+---
+
+## 14. Cluster: Companion — batch 4 of 4 (onboarding), and the cluster total
+
+**Rule 3 returned nothing:** `MASCOT.md` has no onboarding, welcome, naming or companion-creation
+content, and `docs/design/` has no onboarding screen doc. For this flow Figma is the only artifact.
+
+**Repo, measured: the entire flow is unbuilt.** `git ls-files` finds no onboarding / welcome /
+quickstart / setup route or component, and **no companion identity is persisted anywhere** — no
+`Storykeeper`, no `companion_name`, nothing.
+
+### 14.1 `220:16766` — **Welcome Companion** · `CONFIRMED` screen, immersive
+
+Full-bleed, brand `Korume` top-left (post-rebrand ✅), `Skip` top-right.
+
+A speech bubble beside the mascot — *"I won't judge mistakes. I only remember growth."* — then the
+serif headline **"Nice to finally meet you."** and *"I've been watching every lesson, every
+pronunciation, every quiet little victory. From today, I'll remember them with you."* Three promise
+chips follow: ✨ `I remember your journey` · `I notice your growth` · `I help you continue tomorrow`.
+CTA **`Meet My Companion →`**, secondary **`Maybe later`**.
+
+**⭐ The introduction is declinable — twice.** `Skip` in the corner *and* `Maybe later` under the CTA.
+That is `companion-patterns.md`'s core principle enforced at the first possible moment: *"Presence is
+optional. Meaning is mandatory."* A learner can use Korume without ever meeting the Companion, which
+means **every Companion surface needs a companion-less fallback** — a constraint the rest of this
+cluster does not show.
+
+**⭐ The three promises are a contract, and they map to real machinery:** *remember your journey* →
+the memory archives (§11.1, §12.3, §13.4); *notice your growth* → Growth Areas and the diary
+(§12.4, §11.2); *help you continue tomorrow* → suggestions and the Roadmap (§12.2, §13.1).
+
+### 14.2 `111:1877` — **Generate sensei** · `CONFIRMED` screen · + `111:1963` **Generate done** · `STATE-VARIANT`
+
+947×585 — smaller than a page, so this is a **modal or a partial**, not a full screen layout.
+
+Eyebrow `JAPANWEB+ · A QUIET BEGINNING` (pre-rebrand) · headline **"Building your Study Sanctuary…"** ·
+*"Every learner is different. I'm preparing your first journey based on everything you've shared."* ·
+a left panel with a glowing companion silhouette, floating kanji (語 · 日 · あ) and a chip
+`✨ AI Sensei is here` · and a **staged checklist with a progress bar**:
+
+> ✅ Understanding your current level ✅ **Creating your personal roadmap**
+> ○ Choosing your first lessons ○ Preparing AI Sensei
+
+`111:1963` is the same frame completed: **"Everything is ready."** · *"Welcome. Your journey begins
+today."* · CTA `Enter JapanWeb+ →`.
+
+**⭐⭐ This closes the Roadmap loop.** Step 2 is *"Creating your personal roadmap"* — so the mission
+system of §13.1–13.2 is **generated at onboarding** from what the learner shared, and then
+continuously rewritten by the Learning Intelligence loop (§10.9). Origin and mutation are now both
+accounted for.
+
+**Same progress-narrative pattern as the import pipeline (§7.0), and the same reading applies.** Named
+stages with checkmarks are a **presentation-level stage model**; the user already ruled on this class.
+Do not treat *"Preparing AI Sensei"* as an implementation requirement.
+
+### 14.3 ⚠️ `AMBIGUOUS`: is **AI Sensei** the Companion, or a second entity?
+
+The evidence pulls both ways and this cluster cannot settle it:
+
+| For "same" | For "different" |
+|---|---|
+| the onboarding illustration is a companion silhouette | `Preparing AI Sensei` is listed as a **separate step** from the roadmap and the lessons |
+| `215:15164`'s Q&A replies are signed **`KORUME`** | the nav carries a **`Sensei`** row (`/sensei`) *and* the Companion appears everywhere without it |
+| `212:14610`'s `Ask Companion` opens `215:15164`, whose route is `/sensei` | the Companion is a persistent character with a name and tenure; `AI Sensei` reads like a service |
+
+**Best current reading, offered as a hypothesis and not a ruling:** `Sensei` is the Companion's
+**knowledge-answering mode**, and `AI Sensei` is the older name for it — note the eyebrow on this very
+frame is the pre-rebrand `JAPANWEB+`. If so, the naming is a rebrand leftover rather than a second
+character. **Needs the user; it decides whether the IA has one Companion entity or two.**
+
+### 14.4 Cluster verdict — Companion, all 14 frames
+
+| Kind | Count | Frames |
+|---|---|---|
+| **screen** | 10 | `156:1310` home · `190:7376` diary · `215:15164` knowledge assistant · `180:1770` learning memory · `184:3974` conversation memories · `187:6556` growth areas · `64:2061` roadmap · `180:2` roadmap detail · `220:16766` welcome · `111:1877` generate |
+| **interaction** | 2 | `182:3859` reflection overlay · `181:3525` suggestion drawer |
+| **state-variant** | 2 | `216:15648` diary empty *(misnamed)* · `111:1963` generate done |
+| **panel** | — | none as a frame of its own; panels appear **inside** other frames, in this cluster and in Shadowing/JLPT |
+| **generated content** | — | not a frame kind at all; it is the payload of the other four |
+
+**Nothing obsolete. Routes: 2 of 10 screens exist** (`/journal` immersive ≈ Diary, `/sensei` app ≈
+Knowledge Assistant); `/roadmap` exists as a placeholder; the other seven have no route.
+
+**⭐ The taxonomy earned its keep.** Without it, this cluster reads as "14 Companion screens" and the
+Companion becomes a pile of routes. With it: the Companion **owns 10 destinations**, **visits every
+other screen** as panels and interactions, and **produces content** that flows through all three.
+`180:1770` alone contains all three kinds simultaneously (§12.3) — which is the proof the split is
+real and not bookkeeping.
+
+**⚑ What this cluster hands upward, in priority order:**
+1. **The `Journey` label collision** (§13.0) — live in `app-nav.tsx`, invisible from either artifact alone.
+2. **No canonical skill taxonomy** (§13.3) — blocks Growth Areas, the weakness explorer, mission skills, suggestion tags and JLPT section scores, all of which claim to measure the same thing.
+3. **`AI Sensei` vs the Companion** (§14.3) — one entity or two.
+4. **Every Companion surface needs a companion-less fallback** (§14.1) — the introduction is declinable.
+5. **The Companion has no persisted identity in the repo** — name, tenure and voice all exist only in Figma.
