@@ -45,6 +45,41 @@ has a route.* `/challenges` has no Figma frame; it is a C1 placeholder. An IA de
 must not inherit structure from an accident of the codebase. **Reversible on evidence** — reopen if
 Figma later designs a standalone challenge hub.
 
+### ✅ ROUND 3 — every §20 content conflict closed (2026-08-12, commit `3af7c45`)
+
+**⭐⭐ New method rule — `sample data is a FIELD LIST, not content`** (`screen-inventory.md`
+refinement A-bis). User: *"dữ liệu mẫu là để bạn biết cần có những dữ liệu gì trên màn hình, đừng
+quan trọng nó."* **B-content splits again:**
+
+| kind | examples | report? |
+|---|---|---|
+| **identity content** | brand · vendor · product · feature names | ✅ yes |
+| **sample content** | a stroke count · a kanji reading · a date · a stray `&apos;` | ❌ **never** |
+
+**Three of §20's ten rows were noise** — correctly observed, worthless to the user. **The signal in
+`Total Strokes: 11` is the label, never the 11.** Rows 6/7/8 withdrawn.
+
+**⭐ Checkout is a STRUCTURAL ruling, not a content fix.** *"Nó vẫn phải có phần khung cho nó."* The
+payment-method **region stays** even though its tiles are wrong. **The SLOT is authoritative design;
+the CONTENTS of the slot are correctable content.** Never delete a region because its sample contents
+are wrong. The frame keeps its wrong tiles (the user cannot edit it yet); the inventory carries the
+correction, and a future port builds the section, not the brands.
+
+**✅ Companion name RESOLVED → `Korume`, fixed and branded.** `Hikari` corrected in Figma;
+**`Storykeeper` is a SCREEN name, not a companion name** — §11.1's `Data` row misread it, so there was
+never a real third name. User-nameable hypothesis **not supported**. Clears the last ⚑ on
+`capability-map.md` §3.1. ⚑ Carried as copywriting only: companion and product share a word.
+
+**✅ Two deferred scope questions answered early:** **Apple sign-in YES, GitHub NO** (auth = email +
+Google + Apple) · **native mobile apps PLANNED** (*"tôi sẽ làm app sau"*), so the footer store badges
+are a roadmap statement, not a false claim. They interact — Sign in with Apple is mandatory on iOS for
+apps offering third-party sign-in.
+
+**⚠️ Rebrand fixes are USER-REPORTED, NOT READ BACK.** `JapanWeb+` / `Nihongo Cinema` → `Korume`
+across many frames. Phase 0 already paid once for this exact distinction (the frame-rename pass caught
+a substitution the user did not know they had made). **Verify when those frames are next on screen** —
+cheap then, pointless now, and it blocks nothing. (`L-003`.)
+
 **The IA the user has now endorsed** (their own words: "IA đề xuất hiện tại của tôi") is exactly the
 five-group shape below. That is agreement on the *shape*, **not** the lock — they asked for one more
 full review pass first.
