@@ -436,3 +436,138 @@ the two library frames is right" — `/kanji` implements neither, so nothing is 
 **does Korume ship a discovery surface AND a curriculum surface for kanji?** The evidence that they
 were designed to coexist is that the flashcard runner's deck (`Tokyo Everyday Life`) is the Explorer's
 featured collection, so the discovery surface feeds a runner the curriculum surface also feeds.
+
+---
+
+## 7. Cluster: Shadowing — batch 1 of 3 (hub + search), 3 frames, analysed 2026-08-12
+
+The cluster is 9 frames and runs in three batches, because two of them (`200:7705`, `200:10726`) are
+**~5,850px tall** and have to be read in horizontal bands to be legible at all. Batch 1 is the hub and
+the search modal; batch 2 is the Explore pair; batch 3 is the in-lesson practice family.
+
+Repo side, measured with `git ls-files` — the `/videos` → `/shadowing` rename **was taken** in C1, so
+only `admin/videos` still carries the old noun:
+
+| Route | Chrome group | State |
+|---|---|---|
+| `/shadowing` | `(app)` | built |
+| `/shadowing/explore` | `(app)` | **placeholder** (`UpcomingScreen`) |
+| `/shadowing/[id]` | `(focus)` | built |
+| `/shadowing/[id]/dictation` | `(focus)` | built |
+
+### 7.0 ⛔ STOP-AND-SURFACE: the import pipeline as drawn breaks CLAUDE.md §2 non-negotiable #1
+
+In `149:2`, the second `My Lessons` row (*Tokyo Street Interview – Daily Life*, badge `Building
+Lesson`, status `Importing now`) renders a six-step progress checklist. Read at 2× on a full-resolution
+crop, because the claim is too serious to make from a downscaled thumbnail:
+
+> ✅ **Download Video**  ✅ **Extract Audio**  ✅ Split Sentences
+> ⏳ Generate Vocabulary  ○ Grammar  ○ AI Summary — `72%`, `est. 1m 20s`
+
+**CLAUDE.md §2 rule 1** is *"Never download, re-host, or proxy video from YouTube or any platform… No
+`youtube-dl`, `ytdl`, or any downloader — ever."* The project's own operating note extends it to audio:
+*never extract or compare YouTube source audio.* The first two steps are named violations, and they are
+**user-facing copy** — shipping this screen would have Korume advertise, in its product UI, that it does
+the one thing the repo forbids.
+
+**The code is clean — this is a design defect, not a code defect.** Measured: a grep for
+`ytdl|youtube-dl|yt-dlp|downloadVideo|extractAudio` across application code returns **no
+implementation**. The only source hit is `lib/data/transcript-providers.ts`, whose comment names this
+exact gray area and deliberately leaves `aiTranscriptProvider` a stub:
+
+> *"Real AI transcript generation … needs a way to get the video's audio to a speech-to-text backend,
+> which is a gray area against CLAUDE.md §2's 'never download video from YouTube' rule and was
+> deliberately NOT resolved when this plan was written (2026-07-31)."*
+
+The shipped path is `youtubeCaptionProvider` → `fetchJapaneseCaptions(videoId)` — **captions only, no
+media**.
+
+**⭐ The design contradicts itself, and the self-consistent reading is the legal one.** The third
+library row is an `Import Failed` state whose reason is **`Transcript unavailable`**. A pipeline that
+truly downloaded the video and extracted its audio could run speech-to-text and would never fail for a
+missing transcript. So the failure state the designer drew only makes sense on the caption-fetch
+pipeline the repo already implements — the two forbidden steps are stray labels, not a considered
+architecture.
+
+**Recommended remedy (cheap, copy-level, user's call):** rename the first two steps to what actually
+happens — `Fetch transcript` / `Check captions` — leaving `Split Sentences → Generate Vocabulary →
+Grammar → AI Summary` untouched. **Do not treat this as a licence to resolve the STT question**; that
+decision is still deferred and belongs in its own spec, not in a screen port.
+
+### 7.1 `149:2` — **Shadowing hub** · `CONFIRMED` screen
+
+| | |
+|---|---|
+| **Screen or state** | Screen. `(app)` chrome — full left nav visible. |
+| **Capability** | The lesson home: discover, **import**, and resume. Header copy: *"A quiet place to discover, import, and continue your Japanese lessons."* |
+| **Entered from** | Left nav → `Lessons`. |
+| **Exits to** | Featured lesson (continue / preview) · a library lesson · Explore (`View All`) · a popular lesson · resume the current path · a recommended lesson · `Upgrade` · the search modal. |
+| **Actions** | Continue / Preview the featured lesson · **paste a YouTube URL and import** · open / retry / delete a library lesson · search · filter by 11 category chips · `View All` ×2 · resume · start a recommended lesson · upgrade. |
+| **Data needed** | Featured lesson (cover, title, blurb, JLPT, sentence count, minutes, category, % done) · **import quota** (`2 / 3 imports remaining`, plan name) · library rows with a **live pipeline state machine** (ready / building + 6 sub-steps + % + ETA / failed + reason) · 11 category chips · popular lessons (cover, JLPT, category, sentences, minutes, % done) · current-path resume pointer incl. **the current sentence text** and "last studied" · recently added · weakness-based recommendations **with a stated reason per card** · right rail: companion activity, today's goal, 7-day bar chart + 4 stats, an AI suggestion with its reason. |
+| **API exists** | Substantially ✅. `app/api/videos/import/route.ts`, `/api/videos`, `/api/videos/recommendations`, `/api/videos/[id]/{transcript,progress,summary,difficulty}` all exist, and `lib/data/lesson-{creation,library,ranking,taxonomy}.ts` back them. **The quota is real** — `createLesson()` already returns 403 `Monthly lesson quota reached`, which is what the `2 / 3` chip renders. |
+| **Route exists** | ✅ `/shadowing`, `(app)` — matches the frame's chrome. |
+| **Related** | Explore (`200:7705`) · search modal (`212:*`) · practice (`105:3088`) · Companion (owns two of the four rail cards). |
+
+**Findings beyond the §2 one:**
+
+- **The import pipeline is a long-running job with a visible state machine** — `ready` / `building`
+  (6 sub-steps, % and ETA) / `failed` (with a reason). Nothing in the inventory so far has needed
+  progress transport; this row does. Whether that is polling or a subscription is an engineering
+  question the design implies but does not answer.
+- **Every recommendation carries its reason as copy** — *"You struggle with Passive Form."*,
+  *"Because you use formal booking in your request patterns."*, *"Builds around the vocabulary you
+  already know."* That is the i+1 / weakness engine (CLAUDE.md §5 #2) surfacing its rationale, and it
+  is a real requirement: the API must return a reason, not just a ranked list.
+- **The free-plan chip is L8 surfacing early.** `FREE PLAN · 2 / 3 imports remaining · Upgrade →` is
+  Contextual Discovery placed exactly where the business model says it belongs.
+- **Nav inconsistency, again:** this frame's left nav has no `PROGRESS` or `ACCOUNT` group, while
+  `29:2890`'s does, and `Kanji` is drawn as the active row **on the Shadowing hub**. Placeholder noise —
+  more evidence that no frame's navbar is IA (the rule this whole phase exists to protect).
+- Brand mark reads `JapanWeb+` and the eyebrow `JAPANWEB · LESSON LIBRARY` — pre-rebrand, like
+  `29:2890`.
+
+### 7.2 `212:14610` + `212:14753` — **Search Lessons** · one modal, two states
+
+`212:14610` is the resting state and `212:14753` is the same modal with a query typed. Both are drawn
+as a floating panel over a dimmed backdrop with an `✕` and a `⌘K` badge. **Tag: `212:14610`
+`CONFIRMED` (the screen of record), `212:14753` `STATE-VARIANT` of it.**
+
+| | |
+|---|---|
+| **Screen or state** | A **command palette**, not a page. Overlay is presentation, not navigation — so this is a dialog component, and it should have no route unless the user wants a shareable search URL. |
+| **Capability** | Jump to a lesson fast, from anywhere. |
+| **Entered from** | `⌘K` from anywhere; the hub's search field. |
+| **Exits to** | A lesson (`Continue` / `Open`) · resume the current path · **`Open Companion`**. |
+| **Actions** | Type a query · pick from `RECENTLY OPENED` (4 chips) or `POPULAR SEARCHES` (8 chips) · resume · filter results by `All / Situation / JLPT / Duration / Completed / Not Started / `**`Favorites`**` / `**`Imported`** · open a result · `✕` close. |
+| **Data needed** | Resume pointer (`Business Japanese`, `Current sentence 51 / 194`) · recently opened · popular searches · result rows (cover, title, JLPT, one-line blurb, category, minutes, sentence count, **% completed**) · the eight filter facets. |
+| **API exists** | ❌ **No search endpoint and no search component exist** — `git ls-files` finds nothing matching `search`/`palette`/`command` under `components/`. `/api/videos` can list, but faceted search over title/topic/JLPT/situation is unbuilt. |
+| **Route exists** | n/a by design (modal). |
+| **Related** | Hub · Explore · Companion. |
+
+**⭐ The design writes down an IA ruling, and it is worth honouring:** the rail says *"Looking for
+grammar or kanji? **Ask Companion instead. Search is here only to help you find a lesson
+immediately.**"* That is a deliberate scope boundary — search is lesson-scoped, and open-ended
+questions route to the Companion. It answers a question the IA synthesis would otherwise have to
+invent.
+
+**⭐⭐ `Favorites` appears as a filter facet here — the second sighting of a favourites concept**, after
+`♡ Favorite` in `28:2041 Kanji inspect`. Two different modules, one missing capability. It has now
+graduated from "a kanji feature" to **a cross-cutting one**, and it strengthens the earlier finding
+that the repo has no explicit save action anywhere.
+
+**Keyboard-first, which the a11y non-negotiable likes:** `⌘K` to open, a `⌘K` affordance inside the
+field, a visibly focused result row, and a tip teaching the shortcut.
+
+### 7.3 Batch 1 verdict
+
+| Node id | Name | Tag | Route | Verdict |
+|---|---|---|---|---|
+| `149:2` | Shadowing hub | `CONFIRMED` | `/shadowing` ✅ `(app)` | built; **⛔ pipeline copy violates §2**; recommendation *reasons* and import *progress* are unbuilt |
+| `212:14610` | Search lesson | `CONFIRMED` | none (modal, correct) | wholly unbuilt |
+| `212:14753` | Search lesson (searched) | `STATE-VARIANT` of `212:14610` | — | — |
+
+**Capabilities added to the map:** lesson import from YouTube (caption-legal) · import job progress +
+failure recovery · import quota + upgrade prompt · lesson library · featured lesson · category
+filtering · popular / recently-added / weakness-based recommendation **with stated reasons** ·
+current-path resume carrying sentence position · **global lesson command palette (`⌘K`)** · faceted
+lesson search · **favourites (2nd sighting)** · companion activity surfaced inside a learning screen.
