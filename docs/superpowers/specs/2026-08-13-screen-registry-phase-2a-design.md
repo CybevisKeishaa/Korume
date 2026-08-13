@@ -92,7 +92,11 @@ Amendments required, and the phrasing is load-bearing:
 must disappear.** A backlog is never generated from the name of an enum member again.
 
 **The backlog predicate becomes evidence-based:** the set still needing a Figma pass is
-`figmaCheckedAt === null`, not any value of `repoOnlyReason`.
+`figmaCheckedAt === null`, excluding the permanent `out-of-design-scope` cases where applicable —
+those carry no stamp by design, not because a pass is outstanding — rather than any value of
+`repoOnlyReason` used as the generator. ⚠️ **Correction, fix round 1 on Task 4 (2026-08-13):** the
+original wording here omitted the `out-of-design-scope` exclusion; the user's ruling on that fix
+round is the semantics recorded above.
 
 ### 3a.2 — Evidence and the `figmaCheckedAt` backfill
 

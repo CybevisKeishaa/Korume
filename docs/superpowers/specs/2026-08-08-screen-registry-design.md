@@ -301,17 +301,30 @@ divergence gets exactly **one recorded ruling** so only one source of truth surv
 C1's provisional outputs (the nine empty-state screens, `NAV_GROUPS`' 22 rows, the six seeded collections,
 the `upcoming` catalog) are confirmed or corrected.
 
-Phase 2's work list is generated, not guessed: every entry whose `figmaCheckedAt` is null or stale,
-and every `impl: 'none'`. Phase 1's output *is* Phase 2's backlog.
+Phase 2's work list has two axes, and the registry can generate only one of them:
+
+- **Registry-generated backlog = survey backlog only:** entries with `figmaCheckedAt === null`,
+  excluding the permanent `out-of-design-scope` cases where applicable — those carry no stamp by
+  design (R13), not because a Figma pass is outstanding.
+- **Decision backlog is not derivable from the registry.** Whether an already-surveyed entry still
+  needs a product ruling is a decision, not an observation, and the registry has no field for a
+  decision (R12). That backlog is owned by the decision register and must be enumerated there.
+
+Phase 1's output *is* the registry-generated half of Phase 2's backlog.
 
 > **2026-08-13 note.** The clause above used to name the `repoOnlyReason` enum member directly as
 > the generator (the one renamed in Phase 2a — see that phase's design spec for the old name).
 > Phase 2a measured that clause against the registry and found 21 of its 23 entries already carried
 > a governing product ruling in their own comment (A2, A4, A5, A7, A10, A11, P16, or an explicit
 > judgement call); they were never debt, just unlabeled as resolved. Only `jlpt-test` and `register`
-> remain genuinely open. The generator above is corrected to what actually needs surveying —
-> staleness — rather than the enum, which records an observation (R6), not a work-list membership
-> test.
+> remain genuinely open. The generator above is corrected to what the registry can actually
+> observe — whether an entry has been surveyed at all — rather than the enum, which records an
+> observation (R6), not a work-list membership test. ⚠️ **Correction, same-day fix round:** an
+> earlier version of this generator read "`figmaCheckedAt` is null **or stale**." That could not be
+> evaluated — every `no-frame-at-last-pass` entry carries the identical `2026-08-12` stamp after
+> Task 2, and staleness is defined nowhere (R7, §7 risk 2: staleness is *reported*, never
+> automated). The two-axis split above is the fix: the registry answers *"has this been compared,
+> and when,"* never *"does this still need a ruling."*
 
 **Phase 3 — Per-screen adjudication, lazily.** Data, components, states, responsive, copy, behaviour —
 decided immediately before a screen becomes implementation, never weeks ahead. Unchanged from the

@@ -99,18 +99,38 @@ describe("screen registry invariants", () => {
     // `repo-only`. Every entry the Phase 0 pass demonstrably examined carries
     // that pass's own date, 2026-08-12.
     //
-    // The five /admin/* routes deliberately keep `null`: `out-of-design-scope`
+    // The /admin/* routes deliberately keep `null`: `out-of-design-scope`
     // means Figma will never cover them, so "compared against Figma at time X"
     // (R7) is not a claim that can honestly be made about them. A null here
     // therefore means one of two true things — never compared, or never
     // comparable — and never "we forgot".
     //
-    // Asserted as a SET, not a count: a blanket stamp that happened to hit the
-    // right total would pass a count assertion and fail this one.
+    // The exception set is DERIVED from `repoOnlyReason === "out-of-design-scope"`,
+    // never hardcoded as a literal id list (fix round 1 on Task 4: a hardcoded
+    // list is a magic number that silently stops protecting this invariant the
+    // moment the admin route count changes; deriving it means the test keeps
+    // checking the actual relationship, not today's headcount). Asserted as a
+    // SET, not a count: a blanket stamp that happened to hit the right total
+    // would pass a count assertion and fail this one.
+    const outOfScopeIds = SCREEN_REGISTRY.filter(
+      (e) => e.repoOnlyReason === "out-of-design-scope",
+    )
+      .map((e) => e.screenId)
+      .sort();
+    // Non-vacuity: without this, an empty derived set makes the equality below
+    // unconditionally true (CLAUDE.md §7).
+    expect(outOfScopeIds.length).toBeGreaterThan(0);
+
     const unstamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt === null)
       .map((e) => e.screenId)
       .sort();
-    expect(unstamped).toEqual([
+    expect(unstamped).toEqual(outOfScopeIds);
+
+    // Today's state, pinned on top of the semantic check above: a later
+    // change to the admin route count must force a conscious update here,
+    // not pass silently because the set-equality check above already covers
+    // "whatever the exception set is."
+    expect(outOfScopeIds).toEqual([
       "admin",
       "admin-content",
       "admin-content-type",
