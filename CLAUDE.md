@@ -114,6 +114,9 @@ learners. Treat them as first-class, not add-ons:
 - **Small units**: one clear purpose per file/module; extract when a file grows past ~300 lines
   or takes on a second responsibility.
 - **No dead code / no TODO left behind** in merged work.
+- **One fact, one home.** If a fact would live in two places, make one derive from the other or
+  delete one — "both, kept in sync by hand" is a defect, not a trade-off. (Promoted from
+  `docs/lessons.md` L-026, which keeps the evidence.)
 
 ---
 
@@ -124,6 +127,12 @@ tests. Never claim something works without running the relevant command and seei
 - Unit/integration: the framework configured in the repo (Jest + RTL today; Vitest/Playwright
   as we move to Next.js — decided in Layer 1).
 - The SRS engine and pitch/difficulty logic MUST have deterministic unit tests.
+
+**A guard or invariant test written over code that already exists cannot fail first — mutation-check
+it instead:** break the thing it guards, watch it go red, restore, and report both outputs. And any
+assertion whose subject is a **collection gathered by a pattern** must additionally assert that the
+collection is non-empty and of the size you expect — otherwise an empty match makes it
+unconditionally green. (Promoted from `docs/lessons.md` L-004, which keeps the evidence.)
 
 ---
 
@@ -149,7 +158,8 @@ a task spans roles, `tech-lead` decomposes it and sequences the specialists. See
 - [ ] Tests written first and passing (command output shown, not assumed)
 - [ ] a11y: keyboard-navigable, WCAG AA, respects reduced-motion
 - [ ] No secrets client-side; inputs validated; user content sanitized
-- [ ] `code-reviewer` has reviewed the diff for anything non-trivial
+- [ ] `code-reviewer` has reviewed the diff for anything non-trivial, **and a whole-branch review has
+      run before merge** — even when every task was already reviewed on its own (`docs/lessons.md` L-011)
 - [ ] Lessons from this work recorded in `docs/lessons.md` per its four lesson-entry rules — merged
       into an existing entry where one applies, not appended as a new one
 

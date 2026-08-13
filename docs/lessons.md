@@ -58,10 +58,9 @@ count it cannot go stale.
 
 ### L-004 — An assertion nobody has seen fail is not yet a test
 
-**Rule:** Delete the thing the assertion guards, run it, watch it go red, restore. Report both outcomes with real output.
-**Why:** An assertion can be structurally incapable of failing while looking correct on inspection, and a green suite says nothing about it.
+**Status:** Promoted to `CLAUDE.md` §7 (2026-08-13) — retained here as historical evidence.
 **Evidence:** Plan C1 `bd7f574`, three separate rounds — a test titled "sticks the rail" asserted `sticky` and a width class but not the inset class, so it passed against a rail that did not stick; an over-breadth test's `else` arm re-asserted the negation of its own guard, so that path always passed; a four-required-prop component asserted two, leaving the paragraph it existed for untested across nine routes. · Screen registry Phase 1a `0059385` — the glob `app/[locale]/**/page.tsx` matched **zero** files, because a glob reads `[locale]` as a character class, not a literal directory name; escaped, the same walk matched 44. The assertion it fed (T1, "every `page.tsx` has a registry entry") would have compared an empty set against the registry and passed while asserting nothing — the vacuous-pass case, caught only because the count was measured rather than assumed.
-**Applies to:** every new assertion, including ones written to close a review finding. `toContain` on a class name is especially prone — it constrains a substring, not behaviour. So is any assertion whose subject is a *collection gathered by a pattern*: check the collection is non-empty and the size is what you expect, or an empty input makes the test unconditionally green.
+**Note (kept here — too narrow to be law):** `toContain` on a class name is especially prone to this — it constrains a substring, not behaviour.
 
 ### L-005 — The Supabase mock models no RLS, so RLS mistakes are invisible to the suite
 
@@ -111,11 +110,8 @@ count it cannot go stale.
 
 ### L-011 — The final whole-branch review catches what no per-task review can
 
-**Rule:** Run a whole-branch review before merging, even when every task was individually reviewed and the gate is green.
-**Why:** The defects it finds are contradictions *between* correct changes. No per-task diff contains them.
+**Status:** Promoted to `CLAUDE.md` §9 (2026-08-13) — retained here as historical evidence.
 **Evidence:** Lesson Workspace Plan A — 1 Critical + 4 Important, incl. an e2e spec still clicking a renamed nav label. · Token foundation `86328bc` — 5 Important, incl. `color-scheme: dark` never declared. · Screen-port workflow `7277ac1` — caught that the `(focus)` contract had removed the reduce-motion control, breaking `CLAUDE.md` §2 rule 4. · Plan C1 `bd7f574` — round 1 returned CHANGES REQUIRED and was right five for five, incl. a redirect swallowing `/api/videos`.
-**Applies to:** every branch before merge.
-**Status:** Promotion candidate under lesson-entry rule 3 (four evidence entries). Not promoted — review deferred, see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
 
 ### L-012 — A fix wave needs its own review
 
@@ -162,7 +158,7 @@ count it cannot go stale.
 **Why:** Requiring `cd` + absolute paths + a pre-commit branch self-check measurably reduces stray commits but does not prevent them: a tool call can resolve against a different cwd than the Bash calls that were correctly `cd`ed, so the agent's self-check runs in the wrong place too and its report is internally consistent and wrong.
 **Evidence:** Lesson Workspace Plan A — Task 20 of 22 committed to `master`; caught by the controller's review-package showing `BASE==HEAD`, not by the self-report, which carried a real sha on the wrong branch. · Plan B — recurred at Task 9 *with* the full prompt pattern in place, on a haiku-tier implementer; the remaining tasks escalated the model floor to sonnet, bundled with controller verification as a paired mitigation not proven causally responsible on its own. · Token foundation `86328bc` — controller verification after all 9 tasks and 4 fix rounds, zero incidents.
 **Applies to:** every worktree-based subagent run. Recovery: `git cherry-pick` onto the correct branch, then on the polluted branch prefer soft-reset + single-file checkout over `git reset --hard` if any unrelated uncommitted change exists — and surface it to the user before any reset on a shared branch.
-**Status:** Promotion candidate under lesson-entry rule 3. Not promoted — review deferred, see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
+**Status:** Promotion review completed 2026-08-13 — **declined**, and not on evidence count. Two reasons, either sufficient: it binds only worktree-based subagent runs while `CLAUDE.md` binds every session, and compliance is observable only in the controller's own transcript — never in a diff, a command output, or an artifact a reviewer can open, so it cannot be restated as the checkable invariant G6 requires. Stays a lesson, cited by id from dispatch procedure. Do not re-open on a further evidence entry alone.
 
 ---
 
@@ -220,7 +216,7 @@ count it cannot go stale.
 **Why:** A plan's file list is a claim, not a fact — and a wrong one ships silently because the missing file is never opened.
 **Evidence:** L9a Plan 3 — the file list was wrong five separate times; 11d's `useRecorder` had a consumer under `components/conversation/` on no list, breaking 13 tests; Task 12's `mining-review-session.tsx`, the file holding the owned defect, was absent from its own task's list. · Plan C1 — "check existence before trusting *Modify X*". · Lessons Registry Task 3 — memory sources were cut against a pre-written list of replacement lines; a sentence the classification pass had never assigned a home ("one reviewer called a correction note dishonest for crediting a user ruling that had in fact happened") was deleted outright, invisible to the integrity guard because no id was malformed. Restored `1728eb4`. · Lessons Registry Task 4 — the same plan handed a pre-written stub table for six memory files, assuming full coverage; a classification pass run *before* any cutting found three of them held content with no home anywhere in the registry, and placed it on `L-005`, `L-016`, `L-024` at `f4991ee` before anything was lost.
 **Applies to:** every task scoping step, and every "modify these N files" instruction. Before cutting any source against a pre-written list, classify every claim in it to a destination first — anything with no destination is an orphan to be placed, never deleted.
-**Status:** Promotion candidate under lesson-entry rule 3. Not promoted — review deferred, see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
+**Status:** Promotion review completed 2026-08-13 — **declined** under G6, despite being the highest-frequency entry here. "Audit the dependency graph" has no binary outcome and no bounded depth: nothing in a diff distinguishes an audit that was done from one that was skipped, so as law it would be unenforceable ceremony. Stays a lesson and a standing convention in implementer dispatch briefs, where it is actually actionable. Do not re-open on a further evidence entry alone.
 
 ### L-024 — Reconcile the whole dependent system, not just the flagged files
 
@@ -242,11 +238,8 @@ count it cannot go stale.
 
 ### L-026 — Two silently-disagreeing sources is this project's most expensive failure mode
 
-**Rule:** When a fact appears in two places, make one derive from the other or delete one. A ruling of "the other one is right, amend this" is valid; leaving both is not.
-**Why:** Divergence is discovered late, one instance at a time, always as rework.
+**Status:** Promoted to `CLAUDE.md` §6 (2026-08-13) — retained here as historical evidence.
 **Evidence:** Lesson Workspace Plan A spent an entire plan cleaning up one instance. · `docs/superpowers/specs/2026-08-08-screen-registry-design.md` §7 names it risk 1 and builds R1+R12 to guard it. · This registry exists because the lesson corpus itself had four owners.
-**Applies to:** docs, catalogs, registries, memories, constants.
-**Status:** Promotion candidate under lesson-entry rule 3. Not promoted — review deferred, see `docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7.
 
 ### L-027 — Commit the content before the test that pins it
 
