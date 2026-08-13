@@ -125,12 +125,29 @@ Three names exist for one thing, which is why this is a reconciliation item and 
 `japanese-learning-app-spec.md:76` says `/jlpt-test`, the repo runs `/jlpt`, and **A9** locks
 `/certification`.
 
-⚠️ **2a rules; 2b executes.** Phase 2b performs exactly four edits: delete
-`app/[locale]/(protected)/(app)/jlpt-test/page.tsx`; delete `/jlpt-test` from `PROTECTED_PREFIXES`
+⚠️ **2a rules; 2b executes.** Phase 2b performs exactly five edits: delete
+`app/[locale]/(protected)/(app)/jlpt-test/page.tsx`; delete the `screenId: "jlpt-test"` entry
+(`lib/product/screen-registry.ts:787-800`) from `SCREEN_REGISTRY` — required, not cosmetic. Once the
+page is gone, that entry's `route: "/jlpt-test"` + `impl: "built"` makes it "lying" under **T2**
+(`lib/product/screen-registry.routes.test.ts:17-23`), which walks the real filesystem for
+`derivedRoutes` and fails on any entry claiming a route that no longer resolves there. Deletion is
+the recommended fix over setting `route: null` + `impl: "none"`: the screen ceases to exist, and
+**R5** only requires that every *page* have a registry entry, never that every entry have a page —
+either satisfies T2, and 2b makes the final call; delete `/jlpt-test` from `PROTECTED_PREFIXES`
 (`lib/supabase/route-protection.ts:14`); amend `japanese-learning-app-spec.md:76`; and
-**mutation-check** `lib/supabase/route-protection.test.ts` — its filesystem-driven coverage test is
-the existing guard for this class, and 2b must prove it goes RED on a prefix left behind for a
-deleted route rather than run it green and call that evidence.
+**mutation-check** the pin test at `lib/supabase/route-protection.test.ts:19-53` — it hardcodes the
+literal `PROTECTED_PREFIXES` array, so editing the array without updating the pin is what goes RED,
+and 2b must prove that rather than run the suite green and call it evidence.
+
+⚠️ **No existing test guards the reverse direction — a prefix left behind for a deleted route.** An
+earlier draft of this ruling named `route-protection.test.ts`'s filesystem-driven coverage test
+(`:120-154`, *"covers every page under (protected)"*) as that guard; it is not. That test walks the
+`page.tsx` files that **exist** and asserts each has a covering prefix — it catches a page with no
+prefix, never the reverse. Deleting a page only shrinks its walk; it cannot make the test's
+`unprotected` array non-empty, so the test stays green no matter what 2b leaves behind in
+`PROTECTED_PREFIXES`. The pin test above is the real forcing function here, and only because it
+forces a *conscious* edit to the array — not because it detects an orphaned prefix on its own. 2b
+**may** add a guard for the reverse direction; this ruling does not mandate one.
 
 **No `kind: 'redirect'` was added.** Doing so in 2a would model a hypothetical 2b redirect. If 2b
 genuinely needs `/jlpt` → `/certification` to survive as one, that is a real artifact with a real
