@@ -1,6 +1,28 @@
-# Phase 0 — Figma Product Inventory — run state (⭐ IA PROPOSED, AWAITING USER REVIEW, 2026-08-12)
+# Phase 0 — Figma Product Inventory — ✅ COMPLETE AND CLOSED (2026-08-13)
 
-# ▶▶ RESUME HERE — the IA is written and the ball is in the USER's court
+# ⛔ DO NOT RESUME THIS. Phase 0 is finished. → `mem:screen_registry_run_state`
+
+**This memory is now HISTORY, not a next action.** Everything below describes how Phase 0 was run and
+what it found. It is worth reading for its **method rules** and its **per-cluster findings**, which
+still bind — but there is nothing left to execute here.
+
+**What finished it:**
+- All 57 Figma frames read and analysed → `docs/product/screen-inventory.md` (Part II §6–§20)
+- Aggregated → `docs/product/capability-map.md` (12 capability areas, six cross-cutting systems)
+- The four IA blockers → **all ruled by the user** (`capability-map.md` §3)
+- Every §20 content conflict → **all closed**
+- IA proposed, reviewed by the user, and **LOCKED** → `docs/product/ia-proposal.md`
+- Screen Registry **Phase 1a MERGED to master at `fff90fa`**
+
+**⭐ The single index of every ruling this stage produced: `docs/product/decision-register.md`.**
+It separates `LOCKED` (16 product rulings + 12 method rules) from `PROPOSED` from `OPEN`, one line
+each with a pointer to where the reasoning lives. Read that before re-reading this file.
+
+**▶ The live next action lives in `mem:screen_registry_run_state` — Phase 1b.**
+
+---
+
+<details><summary>Phase 0 execution history (kept for its method rules and cluster findings)</summary>
 
 **Paused 2026-08-12 at the IA review checkpoint. Working tree clean. Last commit `a4361ab`.**
 
@@ -798,3 +820,5 @@ shell geometry measured from `149:2`, recorded in `app/globals.css:128-146` and 
 `mem:project_status` · `mem:screen_registry_inputs` · `mem:figma_make_design_source` ·
 `mem:model_selection_policy` · `mem:shadowing_hub_plan_c_run_state` (C3 owns Explore) ·
 `docs/lessons.md` (`L-002` never record derived counts; `L-013` upstream defects)
+
+</details>
