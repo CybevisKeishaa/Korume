@@ -145,7 +145,7 @@ reads, and the two are not the same string:
 | `learn` | Learn | Học |
 | `practice` | Practice | Luyện tập |
 | `remember` | Remember | Ghi nhớ |
-| `journey` | **Growth** | **Trưởng thành** |
+| `journey` | **Growth** | **Tiến trình** |
 | `account` | Account | Tài khoản |
 
 `journey` is the one that is not its id capitalised. A8 puts the **"Journey"** label on the

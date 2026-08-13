@@ -27,10 +27,11 @@ describe("nav.json VI — the literals Phase 1b authors", () => {
   it("pins the three new group headings", () => {
     expect(vi.groups.practice).toBe("Luyện tập");
     expect(vi.groups.remember).toBe("Ghi nhớ");
-    // "Trưởng thành", not "Hành trình": the /roadmap row inside this group
-    // owns "Hành trình" (A8), and a heading repeating it would read as a
-    // duplicate. User ruling, 2026-08-13.
-    expect(vi.groups.journey).toBe("Trưởng thành");
+    // "Tiến trình", not "Hành trình": the /roadmap row inside this group owns
+    // "Hành trình" (A8), and a heading repeating it would read as a duplicate.
+    // User ruling 2026-08-13, revised the same day from "Trưởng thành" —
+    // which leaned "maturity/adulthood" rather than plain progression.
+    expect(vi.groups.journey).toBe("Tiến trình");
   });
 
   it("pins the two labels that carry a product decision", () => {
@@ -40,6 +41,10 @@ describe("nav.json VI — the literals Phase 1b authors", () => {
 
   it("pins the two new destinations, whose keys are screenIds not words", () => {
     expect(vi["pronunciation-library"]).toBe("Phát âm");
-    expect(vi["companion-home"]).toBe("Đồng hành");
+    // "Linh thú của tôi" — user ruling 2026-08-13. Names the companion as an
+    // entity, which "Đồng hành" (a quality) did not. ⚠️ This is a TERMINOLOGY
+    // decision that has not yet propagated: `messages/vi/companion.json` and
+    // `MASCOT.md` still say "Người bạn đồng hành". See A15.
+    expect(vi["companion-home"]).toBe("Linh thú của tôi");
   });
 });

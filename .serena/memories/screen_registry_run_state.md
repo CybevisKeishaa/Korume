@@ -2,24 +2,32 @@
 
 # ▶▶ RESUME HERE
 
-**Phase 1b is COMMITTED on branch `screen-registry-phase-1b` at `276d0ac`
-(branched from master `c000242`). NOT yet merged — it has had no whole-branch
-review, which `CLAUDE.md` §9 now requires before merge (L-011 was promoted to law
-the same day).**
+**Phase 1b is COMPLETE and REVIEWED on branch `screen-registry-phase-1b` (off master `c000242`).
+NOT merged — the user stopped here on 2026-08-13 and will continue next session.**
 
-Gate at the commit: `tsc` 0 · `vitest` 235 files / 2100 tests all passing ·
-`lint` 0 errors, mix `54 no-non-null-assertion + 23 no-unused-vars` · `next build` OK.
+Commits: `276d0ac` (the IA change) · `4db8e7b` (memory) · `7ba870a` (fix wave closing the
+whole-branch review) · plus the VN copy commit that follows it.
 
-**▶ NEXT: whole-branch review of `screen-registry-phase-1b`, then merge.**
-Two things the reviewer should be pointed at specifically:
-1. The **Vietnamese copy 1b authored** — the user asked to review it themselves.
-   New strings: `groups.practice` "Luyện tập" · `groups.remember` "Ghi nhớ" ·
-   `groups.journey` "Trưởng thành" · `mining` "Bộ sưu tập" ·
-   `pronunciation-library` "Phát âm" · `companion-home` "Đồng hành" · plus the
-   `pronunciation` and `companion` blocks in `vi/upcoming.json`.
-2. **`messages/en/nav.pin.test.ts` was DELETED**, replaced by
-   `messages/vi/nav.pin.test.ts`. Reasoning is in the commit message; it is a
-   judgement call and the easiest thing in this branch to disagree with.
+Gate at the last run: `tsc` 0 · `vitest` 235 files / 2102 tests all passing · `lint` 0 errors, mix
+`54 no-non-null-assertion + 23 no-unused-vars` · `next build` OK.
+
+## ▶ NEXT SESSION — do these in order
+
+1. **Decide A15's propagation.** The user renamed the companion in Vietnamese to **"Linh thú"**
+   (`nav.companion-home` = "Linh thú của tôi", and `/companion`'s page title matches). It has NOT
+   propagated: `messages/vi/companion.json` (`a11y.sprite`), `MASCOT.md`, and the companion's whole
+   first-person voice still say **"Người bạn đồng hành"**. Two names for one character is the
+   `CLAUDE.md` §6 defect. Either propagate or scope A15 explicitly — **the user owns this, do not
+   guess.** Full statement in `docs/product/decision-register.md` §2 under A15.
+2. **Decide the English `journey` heading.** EN still reads **"Growth"** while VI is now
+   **"Tiến trình"** (≈ Progress) — they no longer mean the same thing. Moving EN to "Progress" would
+   also dissolve the known collision with the Companion's own `Growth Areas` surface (`187:6556`),
+   which sits inside that very group.
+3. **`L-012` — the fix wave has not been reviewed.** `docs/lessons.md` L-012 says a fix wave needs
+   its own review; `7ba870a` touched 13 files including a Critical fix and the removal of a table
+   from an **Approved** layer-A document. A narrow review of `4db8e7b..HEAD` was recommended and
+   not run.
+4. Then merge to master `--no-ff` (repo keeps merged branches).
 
 ---
 
@@ -86,12 +94,46 @@ mounts on `/dashboard` and `/shadowing`. Both e2e specs now navigate that way, w
 reachability check than the nav link was. Do not "restore" a Diary nav row on the assumption it is
 unreachable.
 
+### What the whole-branch review found (verdict: "with fixes", all closed in `7ba870a`)
+
+Every finding was real. Two were defects the implementer introduced; one was an overstated claim.
+
+- **⭐ CRITICAL — both e2e specs 1b rewrote were BROKEN, and nothing here could have said so.** They
+  click the companion sprite, which carries `companion-breathe` (`4.5s scale(1→1.03) infinite`,
+  applied whenever reduce-motion is off = the default). **Playwright's click actionability waits for
+  a STABLE bounding box; an infinitely animating element never has one.** Reproduced independently in
+  an isolated harness: **FAILED after 8017ms by default, CLICKED in 63ms with
+  `page.emulateMedia({ reducedMotion: "reduce" })`.** Fixed per-spec, not in `playwright.config.ts`
+  (global would silently remove the motion path from the whole suite) and not with `force: true`
+  (skips the hit-target check the specs exist to exercise).
+  **This is `L-025`'s second half and it is now written into that lesson: sweeping `tests/e2e/` finds
+  the break, but the REPLACEMENT is equally unrunnable here — prove it with a repro.**
+- **An Approved layer-A doc outranked the truth.** `docs/design/screens/navigation-system.md` still
+  declared the old 22-row table canonical. `ia-proposal.md:434` had named that amendment as a
+  precondition of locking the IA and it was skipped. Table replaced by a pointer to the registry; the
+  Gamification section rewritten (its "13 of the 14 shipped destinations" arithmetic died with the
+  table); an L-024 sweep caught one more falsehood in the same file (`/settings` "does not exist" —
+  it has since Plan C1).
+- **Registry header contradicted itself 50 lines apart** — still sourcing `navGroup` from
+  `app-nav.tsx`. `app-nav.tsx` has held no nav data since 1a; do not reinstate that.
+- `upcoming-routes.test.tsx` keeps a **hand-written** route list that 1b added two routes to and did
+  not update — an `L-023` miss.
+- ⚠️ **Correction to `276d0ac`'s own commit message**, which cannot be edited: it says the missing
+  `PROTECTED_PREFIXES` entries meant "middleware would have skipped auth". **That overstates it.**
+  `app/[locale]/(protected)/layout.tsx:28-29` does its own server-side `getCurrentUser()` redirect, so
+  access control held; the real symptom is a dropped `redirectTo`. Believe
+  `lib/supabase/route-protection.test.ts`'s comment, not that message.
+
 ### Decisions taken during 1b that are not in the locked IA
 
 - **Group HEADINGS were a genuine gap.** A1 locks group *ids* and §2 locks row labels; neither says
   what a group heading reads. Capitalising the id would have printed a heading "Journey" directly
-  above an item "Journey". **User ruling 2026-08-13: keep id `journey`, display "Growth" /
-  "Trưởng thành".**
+  above an item "Journey". **User ruling 2026-08-13: keep id `journey`, display "Growth" (EN).**
+  Recorded as **A14**. The Vietnamese was revised the same day: **"Tiến trình"**, not "Trưởng thành"
+  (which leaned *maturity/adulthood*). `/roadmap` keeps **"Hành trình"**.
+- **The companion's Vietnamese name is "Linh thú"** (**A15**, user ruling 2026-08-13) — nav row
+  "Linh thú của tôi", with `/companion`'s page title matched to it so the destination has one name.
+  **Its propagation is unresolved and is item 1 of the next session.**
 - **`screenId` doubles as the catalog key** (R9 + `deriveNavGroups` maps `key: entry.screenId`), so
   the catalog gained `pronunciation-library` / `companion-home`, not `pronunciation` / `companion`.
   Identity was NOT renamed to prettify a key — `weeklyReport` is the precedent in the other direction.
