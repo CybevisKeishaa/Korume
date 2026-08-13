@@ -271,8 +271,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: "remember",
     navOrder: 2,
   },
-  // remember/3 — built, no frame at this pass (R6) — named debt for Phase 2.
-  // A11 keeps this its own screen rather than folding it into Explore.
+  // remember/3 — built, no frame at this pass (R6). A11 keeps this its own
+  // screen rather than folding it into Explore.
   {
     screenId: "playlists",
     name: "Playlists",
@@ -651,7 +651,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ===================================================================
 
   // §19.0 — "there is NO marketing landing frame anywhere in the 57... the
-  // public front door of Korume is undesigned."
+  // public front door of Korume is undesigned." P16 records this as known
+  // and accepted — the user will design it later.
   {
     screenId: "landing-page",
     name: "Landing Page",
@@ -738,6 +739,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
+  // Not an independent decision — a community sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
   {
     screenId: "community-detail",
     name: "Community — Detail",
@@ -752,6 +757,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
+  // Not an independent decision — a community sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
   {
     screenId: "community-peer-review",
     name: "Community — Peer Review",
@@ -787,6 +796,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /mining's ruling (A7): a label change to `Collection`, not an
+  // identity change — screenId stays `mining`-scoped. Not an independent
+  // decision: reached by drilling into its parent, never a nav row of its
+  // own. Frameless per `screen-inventory.md:205`.
   {
     screenId: "mining-review",
     name: "Mining — Review",
@@ -801,6 +814,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /playlists's ruling (A11): stays its own screen, not folded
+  // into Explore. Not an independent decision — reached by drilling into
+  // its parent, never a nav row of its own. Frameless per
+  // `screen-inventory.md:206` ("IA question still open" before A11 settled it).
   {
     screenId: "playlists-detail",
     name: "Playlists — Detail",
@@ -815,6 +832,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /reading's ruling (A10): hidden, code kept, not deprecated.
+  // Not an independent decision — a reading sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
   {
     screenId: "reading-detail",
     name: "Reading — Detail",
@@ -829,6 +850,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // `screen-inventory.md:201` — "Figma has `Login` but no register frame".
+  // `:239-240` lists it frameless with no conflict, unlike vocab/reading (§4).
   {
     screenId: "register",
     name: "Register",
@@ -843,6 +866,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
+  // not an independent decision — an acquisition-loop sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
   {
     screenId: "vocab-detail",
     name: "Vocabulary — Detail",
@@ -857,6 +884,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
+  // not an independent decision — an acquisition-loop sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
   {
     screenId: "vocab-review",
     name: "Vocabulary — Review",
