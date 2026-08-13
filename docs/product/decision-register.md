@@ -37,7 +37,9 @@ the user's approval · `OPEN` = not decided.
 
 ## 2. Information architecture — ✅ `LOCKED` (user approval, 2026-08-12)
 
-**The user reviewed A1–A13 and approved the block.** These are now as binding as §1 — do not
+**The user reviewed A1–A13 and approved the block on 2026-08-12.** A14 and A15 were added the
+following day, during Phase 1b, and carry their own individual user rulings (dated in the table) —
+the 08-12 approval does not cover them and does not need to. Cite this section, not a letter range. These are now as binding as §1 — do not
 re-litigate, and do not let Phase 1, a later Figma frame, or the shape of the existing API reopen
 one.
 
@@ -95,8 +97,17 @@ required a distinction the ruling did not state — recorded here because it gov
 > figure you did not measure.)
 >
 > `MASCOT.md` § Danh tính now carries A15, and states what the ruling implies but does not say:
-> **"Linh thú" is the Vietnamese noun for the creature, not its proper name.** That section still
-> lists Korume/Koru/Hibi/… as undecided *proper*-name candidates, and A15 does not resolve them.
+> **"Linh thú" is the Vietnamese noun for the creature, not its proper name.** The proper name is
+> **`Korume`** and was already settled by **P2** above — A15, ruled one day later, deliberately puts
+> a common noun on the nav row rather than the proper name, exactly as "my cat" does not displace
+> the cat's name. The two rulings compose; neither overrides the other.
+>
+> ⚠️ **`MASCOT.md` contradicted P2 and was reconciled to it, not the reverse.** Its § Danh tính
+> still read "Tên của Companion sẽ được xác định trong Character Identity Spec" with six open
+> candidates — text that **predates P2's LOCK (2026-08-12)** and had simply never been swept.
+> `screen-inventory.md:436-438` records that the user closed it by *unifying* the name with the
+> product's, not by declaring it a placeholder, so this was applying a ruling the user had already
+> given, not choosing between two live answers. The candidate list is kept as marked-historical.
 
 **The English `journey` heading stays "Growth" — user ruling 2026-08-13.** EN and VI are therefore
 deliberately not literal equivalents: VI reads "Tiến trình" (≈ *Progress*). The user considered
@@ -179,5 +190,5 @@ lesson · study material).
 | `docs/design/screens/*.md` | **layer-A** written product authority per module | anything Figma-current |
 | `docs/product/screen-inventory.md` | per-frame observation + the method rules | design; it records, it does not design |
 | `docs/product/capability-map.md` | what Korume can do, and the §3 rulings | screen identity |
-| `docs/product/ia-proposal.md` | destinations and grouping — **proposed** | anything locked |
+| `docs/product/ia-proposal.md` | destinations and grouping, and the **reasoning** behind §2's LOCKED rulings (the name says "proposal"; it stopped being one on 2026-08-12) | implementation detail — the rows that actually ship are `lib/product/screen-registry.ts` |
 | **this file** | an index of decisions | **the reasoning behind any of them** |

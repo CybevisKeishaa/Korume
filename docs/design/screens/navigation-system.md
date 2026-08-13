@@ -52,10 +52,12 @@ would outrank the truth.
 | Question | Where it is answered |
 |---|---|
 | Which rows exist, in which group, in what order | `lib/product/screen-registry.ts` — `navGroup` / `navOrder` per entry |
-| *Why* those rows | `docs/product/ia-proposal.md` §2, indexed as **A1–A14** in `docs/product/decision-register.md` |
+| *Why* those rows | `docs/product/ia-proposal.md` §2, indexed in `docs/product/decision-register.md` **§2** (cite the section, never a range — `A1–A14` went stale the day A15 landed) |
 | What actually ships | `NAV_GROUPS`, derived by `lib/product/nav-derivation.ts`. `app-nav.tsx` renders it and holds no nav data of its own. |
 
-Read the current rows with a command, never from a table in a document (`docs/lessons.md` L-002):
+Read the current rows from `lib/product/screen-registry.ts` — the `navGroup` / `navOrder` fields
+ARE the data — never from a table in a document (`docs/lessons.md` L-002). To *verify* that what
+ships still matches the LOCKED IA (this reports pass/fail, it does not print the rows):
 
 ```bash
 npx vitest run lib/product/nav-derivation.test.ts   # T6 pins the derivation to the LOCKED IA
@@ -97,8 +99,8 @@ two exceptions: the Lesson Workspace routes — Shadowing Practice, Dictation, P
 acquisition-loop sub-routes are reached by drilling into a parent item, never listed as their own
 top-level entry — default to hidden under `(focus)` instead, which is exactly the Lesson Workspace
 behavior this paragraph originally deferred (that mandate is now built, not still unbuilt); and
-`/journal` (`journey`, a real § Navigation Inventory row) mounts no Nav Column at all under
-`(immersive)` instead — a harder exception than `(focus)`'s: there is no toggle to restore it, only
+`/journal` mounts no Nav Column at all under `(immersive)` instead — a harder exception than
+`(focus)`'s: there is no toggle to restore it, only
 the per-screen back affordance (see § Navigation States' contract table below — the same exception
 F3 recorded there). The `(app)`/`(focus)` default is session-scoped React
 state (`useState(defaultVisible)` in `app-nav.tsx`, with `defaultVisible` supplied per chrome
@@ -154,9 +156,9 @@ study. That reduction is expressed by the **chrome contract of the route group a
 
 | Group | Contract |
 |---|---|
-| `(app)` | Nav Column mounted and visible. The default for every destination in § Navigation Inventory except `/journal` (see `(immersive)` row below). |
+| `(app)` | Nav Column mounted and visible. The default for **every** nav destination — post-1b there is no exception, because `/journal` is no longer one (see the `(immersive)` row below). |
 | `(focus)` | Nav Column mounted, **hidden by default**, recoverable by the learner. Lesson workspaces — Shadowing Practice, Dictation, Pronunciation Studio (Planned). The reduce-motion control in the same edge-chrome rail as the show/hide button is NOT part of the hidden column — it renders unconditionally (`app-nav.tsx`, outside the `visible` check), so CLAUDE.md §2 rule 4's globally-reachable requirement holds even while the column itself is hidden (final whole-branch review F1, 2026-08-07). |
-| `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding, and `/journal` — one of the 14 shipped § Navigation Inventory destinations (`journey`) lives here, so it is reachable from the `(app)` Nav Column but is itself chrome-less once opened (final whole-branch review F3, 2026-08-07). |
+| `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding, and `/journal`. ⚠️ **Phase 1b removed `/journal`'s nav row entirely** (A2/A8 — `journey` is now a group *id*, and the `Journey` label moved onto `/roadmap`), so the old "reachable from the `(app)` Nav Column" claim here is dead. Its door is the **companion sprite** — `ambient-provider.tsx:154` wires `openJournal`, and `CompanionAnchor` mounts on `/dashboard` and `/shadowing`; both e2e specs navigate that way. (Supersedes final whole-branch review F3, 2026-08-07.) |
 
 **Chrome in `(immersive)` routes:** While the Nav Column is not mounted, `(immersive)` is not chrome-less.
 Every immersive screen carries its own labelled back affordance (see `components/companion/journal-view.tsx`,
@@ -195,9 +197,10 @@ temporary layer — it does not open, close, or slide over content the way a dra
 - Companion presence is controlled by the Ambient Layer per screen
   (`docs/design/design-reconciliation.md` §2), never by the navigation component. The nav does not
   gain or lose a "Companion tab" or indicator based on which screen is active.
-- Anchor availability today (`design-reconciliation.md` §6) is Available at Dashboard, `/journal`,
-  and — in their empty states specifically — `/shadowing` and `/mining`; all other nav destinations
-  are Planned or Not Supported for Companion. The nav item itself looks identical either way —
+- Anchor availability today (`design-reconciliation.md` §6) is Available at Dashboard, `/journal`
+  (a screen, not a nav row — see the `(immersive)` contract), and — in their empty states
+  specifically — `/shadowing` and `/mining`; all other screens are Planned or Not Supported for
+  Companion. The nav item itself looks identical either way —
   availability is a property of the destination screen, not of the nav link.
 
 ---
@@ -235,8 +238,9 @@ preset (glow, color temperature, glass tint, shadow softness, ambient particles)
 Shadowing Practice workspace, while Rain Sound is only an ambient audio layer, reachable from
 anywhere in the app. The two do not stack or conflict by design — a learner can enable Rain Sound
 under any Study Atmosphere selection, or none at all. Like the streak indicator, Rain Sound is
-available from every `(app)` nav destination — the same 13-of-14 scope, and the same `/journal`
-exception, described just above. It defaults to off and never autoplays.
+available from every `(app)` nav destination, and absent from `(immersive)` surfaces for the same
+reason — stated as the chrome rule described just above, deliberately without a count. It defaults
+to off and never autoplays.
 
 ---
 

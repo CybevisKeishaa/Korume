@@ -57,8 +57,12 @@ test("Companion state survives the (app) <-> (immersive) boundary", async ({ pag
   // Required: the sprite animates infinitely (`companion-breathe`), so
   // Playwright's stable-bounding-box actionability check never settles and the
   // click times out without this. See tests/e2e/journal.spec.ts for the
-  // measurement. Set here rather than in playwright.config.ts so the motion
-  // path stays exercised by the rest of the suite.
+  // measurement. Set here rather than in playwright.config.ts so the rest of
+  // the suite keeps running in the product's DEFAULT motion state. (An earlier
+  // wording claimed the global setting would stop the suite "exercising the
+  // motion path" — a sweep of tests/e2e/ found no spec that asserts one, so
+  // that reason was unmeasured. `L-003`. The choice still stands on default-
+  // state fidelity: reduce-motion is not what a learner gets by default.)
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page
     .getByRole("button", { name: "Your companion — open the journal" })

@@ -18,6 +18,14 @@ const ROUTES = [
 ];
 
 describe("upcoming routes", () => {
+  // `it.each([])` generates ZERO tests and reports green, so the list's own
+  // length is the only thing standing between a bad merge and a vacuous suite.
+  // CLAUDE.md §7: assert the size of any collection an assertion iterates.
+  it("checks every placeholder route, not an empty list", () => {
+    expect(ROUTES).toHaveLength(11);
+    expect(new Set(ROUTES).size).toBe(ROUTES.length);
+  });
+
   it.each(ROUTES)("%s has a page", (route) => {
     const file = path.join(
       process.cwd(), "app", "[locale]", "(protected)", "(app)", route, "page.tsx",

@@ -140,13 +140,15 @@ ACCOUNT    you                         →  Profile · Settings
 The tables above lock group **ids** and **row labels**. They do not say what a group's *heading*
 reads, and the two are not the same string:
 
+Four of the five headings are just the id, capitalised and translated; they live in
+`messages/{en,vi}/nav.json` under `groups`, render-checked against the component by
+`components/layout/app-nav.test.tsx`'s `EXPECTED_GROUP_LABELS`. **Only one carries a decision, so
+only one is restated here** — a full table would be a hand-synced second copy of the catalogs, which
+is the very thing `navigation-system.md`'s deleted nav table was removed for (`CLAUDE.md` §6):
+
 | Group id | Heading (EN) | Heading (VI) |
 |---|---|---|
-| `learn` | Learn | Học |
-| `practice` | Practice | Luyện tập |
-| `remember` | Remember | Ghi nhớ |
 | `journey` | **Growth** | **Tiến trình** |
-| `account` | Account | Tài khoản |
 
 `journey` is the one that is not its id capitalised. A8 puts the **"Journey"** label on the
 `/roadmap` row *inside this group*, so a heading "Journey" would sit directly above an item

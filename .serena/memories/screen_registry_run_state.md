@@ -2,32 +2,47 @@
 
 # ▶▶ RESUME HERE
 
-**Phase 1b is COMPLETE and REVIEWED on branch `screen-registry-phase-1b` (off master `c000242`).
-NOT merged — the user stopped here on 2026-08-13 and will continue next session.**
+**Phase 1b is COMPLETE, REVIEWED TWICE, and all three open items are CLOSED, on branch
+`screen-registry-phase-1b` (off master `c000242`). The only remaining step is the merge.**
 
 Commits: `276d0ac` (the IA change) · `4db8e7b` (memory) · `7ba870a` (fix wave closing the
-whole-branch review) · plus the VN copy commit that follows it.
+whole-branch review) · `2c58e70` (the user's VN naming rulings — A14 revised, A15 added) ·
+`7c39419` (A15 propagated, A14's English settled) · the L-012 fix wave that follows them.
 
-Gate at the last run: `tsc` 0 · `vitest` 235 files / 2102 tests all passing · `lint` 0 errors, mix
-`54 no-non-null-assertion + 23 no-unused-vars` · `next build` OK.
+Gate at the last run: `tsc` 0 · `vitest` **236 files / 2110 tests** all passing · `lint` 0 errors,
+mix `54 no-non-null-assertion + 23 no-unused-vars` (unchanged from baseline) · `next build` OK.
 
-## ▶ NEXT SESSION — do these in order
+## ▶ NEXT SESSION — one step left
 
-1. **Decide A15's propagation.** The user renamed the companion in Vietnamese to **"Linh thú"**
-   (`nav.companion-home` = "Linh thú của tôi", and `/companion`'s page title matches). It has NOT
-   propagated: `messages/vi/companion.json` (`a11y.sprite`), `MASCOT.md`, and the companion's whole
-   first-person voice still say **"Người bạn đồng hành"**. Two names for one character is the
-   `CLAUDE.md` §6 defect. Either propagate or scope A15 explicitly — **the user owns this, do not
-   guess.** Full statement in `docs/product/decision-register.md` §2 under A15.
-2. **Decide the English `journey` heading.** EN still reads **"Growth"** while VI is now
-   **"Tiến trình"** (≈ Progress) — they no longer mean the same thing. Moving EN to "Progress" would
-   also dissolve the known collision with the Companion's own `Growth Areas` surface (`187:6556`),
-   which sits inside that very group.
-3. **`L-012` — the fix wave has not been reviewed.** `docs/lessons.md` L-012 says a fix wave needs
-   its own review; `7ba870a` touched 13 files including a Critical fix and the removal of a table
-   from an **Approved** layer-A document. A narrow review of `4db8e7b..HEAD` was recommended and
-   not run.
-4. Then merge to master `--no-ff` (repo keeps merged branches).
+**Merge to master `--no-ff`** (repo keeps merged branches). Nothing blocks it.
+
+⚠️ If you are about to re-ask the user about the companion's Vietnamese name or the English
+`journey` heading: **don't — both were ruled and implemented on 2026-08-13.** See below.
+
+## ✅ The three items that were open on 2026-08-13 — all closed the same day
+
+1. **A15 propagation — RULED: propagate. DONE in `7c39419`.** And the scope turned out to be one
+   twentieth of what this file previously claimed. **This file said the companion's "whole
+   first-person voice" still said "Người bạn đồng hành". That was false and is retracted**:
+   `messages/vi/companion.json`'s `speech`, `journal` and `memoryTitle` catalogs speak as **"mình"**
+   and **never name the creature at all**. Exactly **one** shipped VN string was affected —
+   `a11y.sprite`, a third-person label addressed to the learner. (`L-002`: the claim was inherited,
+   never measured.)
+   - **"Propagate" ≠ replace-all**, and measuring is what showed why: most of the 21 repo-wide
+     occurrences of "đồng hành" are a **verb** or a description of the relationship, not a name
+     ("yêu cảm giác được đồng hành cùng một sinh vật nhỏ bé"). Only name-uses changed. That rule is
+     now written into `docs/product/decision-register.md` §2 so the next pass cannot re-litigate it.
+   - **`MASCOT.md` contradicted a LOCKED ruling and was reconciled to it.** Its § Danh tính still
+     read "tên sẽ được xác định trong Character Identity Spec" with six open candidates — text that
+     **predates P2's lock (2026-08-12: the name IS `Korume`)**. "Linh thú" is the Vietnamese
+     **common noun**, not the proper name; A15 and P2 compose ("my cat" vs the cat's name).
+2. **English `journey` heading — RULED: keep "Growth".** The user was offered "Progress" (which
+   would also have dissolved the `Growth Areas` collision) and declined. **EN and VI are
+   deliberately not literal equivalents**, and the collision **stands knowingly**. Already
+   render-pinned at `components/layout/app-nav.test.tsx`; the *reason* is now pinned beside it, so
+   a later pass cannot reopen it by rediscovery.
+3. **`L-012` review of `4db8e7b..HEAD` — RUN. Verdict: CHANGES REQUIRED, no code defect.**
+   Everything it blocked on was documentation and test coverage. All findings closed; see below.
 
 ---
 
@@ -124,6 +139,42 @@ Every finding was real. Two were defects the implementer introduced; one was an 
   access control held; the real symptom is a dropped `redirectTo`. Believe
   `lib/supabase/route-protection.test.ts`'s comment, not that message.
 
+### What the L-012 review of the fix wave found (`4db8e7b..HEAD`) — verdict: CHANGES REQUIRED
+
+**No code defect in the whole range**, and the Critical fix the wave existed for was independently
+re-reproduced (default → FAILED 8019ms; `reduce` → CLICKED 67ms; **and `emulateMedia` set *after*
+`page.goto`, which is what both specs actually do, → CLICKED 53ms** — the CSS media query
+re-evaluates live, so ordering is not a defect). Everything blocking was **documentation outranking
+the truth** — the exact failure the wave was written to close, recurring one layer up. That is the
+whole argument for L-012 in one range.
+
+- **⭐ The branch's own "read this first" memory — THIS FILE — was false at HEAD.** It still listed
+  two rulings as open that the last commit had implemented, and repeated the first-person-voice
+  claim that the same commit had formally retracted in `decision-register.md`. `MEMORY.md` names
+  this file the authority on resume, so merging it would have instructed the next session to
+  re-ask the user for rulings already given. **A resume document is code for the next session:
+  stale-check it in the same pass that changes what it describes, not afterwards.**
+- **`navigation-system.md` still asserted `/journal` is a nav row in FOUR places** — including a
+  contract table cell claiming it is "reachable from the `(app)` Nav Column", while
+  `app-nav.test.tsx` asserts in the same range that it is absent from the sidebar. `7ba870a`'s own
+  message said an L-024 sweep "found one more" stale claim; **the sweep stopped at one and missed
+  the branch's headline change in the file it was already editing.** A sweep that stops at the first
+  hit is a spot fix wearing a sweep's name.
+- The Gamification rewrite deleted "13 of the 14 shipped destinations" as stale arithmetic, then
+  **re-asserted the same number twelve lines later** as "the same 13-of-14 scope, described just
+  above" — pointing at text it had itself removed.
+- `messages/vi/upcoming.json` was **unpinned**, so A15's second half had no test: reverting the VI
+  page title alone left the suite green. Closed with the parity invariant above rather than another
+  hand pin, because the invariant catches the *relationship* neither pin can.
+- Minors: a hand-kept table of all ten group headings added by the very commit that deleted another
+  table for being a hand-synced duplicate (now cut to the one row carrying a decision) · a "read the
+  rows with this command" that ran a pass/fail test and printed no rows · `A1–A14` cited as a range
+  one commit before A15 existed · `vi/companion.json` missing the trailing newline the same wave had
+  just fixed on its sibling · an unmeasured "the motion path stays exercised by the rest of the
+  suite" (a sweep found **no** spec asserts a motion path — reworded to default-state fidelity,
+  `L-003`) · `upcoming-routes.test.tsx`'s `it.each` list still had no length assertion, so an
+  emptied list would generate zero tests and report green.
+
 ### Decisions taken during 1b that are not in the locked IA
 
 - **Group HEADINGS were a genuine gap.** A1 locks group *ids* and §2 locks row labels; neither says
@@ -133,7 +184,11 @@ Every finding was real. Two were defects the implementer introduced; one was an 
   (which leaned *maturity/adulthood*). `/roadmap` keeps **"Hành trình"**.
 - **The companion's Vietnamese name is "Linh thú"** (**A15**, user ruling 2026-08-13) — nav row
   "Linh thú của tôi", with `/companion`'s page title matched to it so the destination has one name.
-  **Its propagation is unresolved and is item 1 of the next session.**
+  **Propagated the same day in `7c39419`; see § RESUME HERE for the scope correction it forced.**
+  That "one destination, one name" property is now an *invariant*, not a hand pin:
+  `messages/destination-name-parity.test.ts` asserts nav label === page title per locale for the two
+  screens a ruling binds — and asserts that **`/roadmap` deliberately does NOT match** (A8 gives it
+  nav "Journey"/"Hành trình" over title "Roadmap"/"Lộ trình"), so nobody widens the rule by accident.
 - **`screenId` doubles as the catalog key** (R9 + `deriveNavGroups` maps `key: entry.screenId`), so
   the catalog gained `pronunciation-library` / `companion-home`, not `pronunciation` / `companion`.
   Identity was NOT renamed to prettify a key — `weeklyReport` is the precedent in the other direction.
