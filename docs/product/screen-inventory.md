@@ -186,7 +186,7 @@ admit a parentless variant; parenting them arbitrarily to one screen would recor
 
 ## 3. Repo routes with no frame in this pass (`kind: 'repo-only'`, R6/R13)
 
-`repoOnlyReason: 'legacy-unreviewed'` unless noted.
+`repoOnlyReason: 'no-frame-at-last-pass'` unless noted.
 
 **Already adjudicated by the user 2026-08-11** (see `mem:screen_registry_inputs`) — hide in Phase 2,
 keep the code, do not build further: `/reading`, `/reading/[id]`, `/leaderboard`, `/community`,
@@ -194,21 +194,22 @@ keep the code, do not build further: `/reading`, `/reading/[id]`, `/leaderboard`
 ("không cần vocab nữa, hoặc ẩn nó đi, có thể sau sẽ dùng" — explicitly reversible). **But see the
 conflict in §4 before acting on the vocab half.**
 
-**Not yet adjudicated:**
+**Not yet adjudicated, as surveyed 2026-08-11 — ruling column added 2026-08-13 (Phase 2a) against
+`decision-register.md` §2, the LOCKED IA:**
 
-| Route | Note |
-|---|---|
-| `/register` | Figma has `Login` but no register frame |
-| `/dashboard` | real screen (`LevelCard`/`StreakCard`/`SrsDueCard`/`BadgesGrid`/`RecommendationSection`). Confirmed **separate** from `Companion home` (§1) and still frameless |
-| `/review` | the cross-type SRS review hub |
-| `/grammar` | the grammar list. `Grammar analysis` is a **new, deliberately unbuilt** feature (§1), so this list stays frameless |
-| `/mining`, `/mining/review` | sentence mining |
-| `/playlists`, `/playlists/[id]` | IA question still open |
-| `/achievements`, `/challenges`, `/statistics` | gamification surfaces |
-| `/weekly-report` | placeholder; possibly `Growth Areas` |
-| `/sensei` | placeholder; possibly `Companion Knowledge Assistant` |
-| `/jlpt-test` | dead `redirect()` to `/jlpt`; `deprecated` or out of scope per §3.3 |
-| `/admin/*` (5 routes) | `repoOnlyReason: 'out-of-design-scope'` — the only value R13 allows, and only because `chrome: 'admin'` |
+| Route | Note | Ruling (2026-08-13) |
+|---|---|---|
+| `/register` | Figma has `Login` but no register frame | still open |
+| `/dashboard` | real screen (`LevelCard`/`StreakCard`/`SrsDueCard`/`BadgesGrid`/`RecommendationSection`). Confirmed **separate** from `Companion home` (§1) and still frameless | still open |
+| `/review` | the cross-type SRS review hub | **KEEP** — `ia-proposal.md` §2's `remember` group (part of A1, `decision-register.md` §2) |
+| `/grammar` | the grammar list. `Grammar analysis` is a **new, deliberately unbuilt** feature (§1), so this list stays frameless | still open (this note is a frame observation, not a pending IA question) |
+| `/mining`, `/mining/review` | sentence mining | **A7** — relabelled `Collection`, screenId unchanged |
+| `/playlists`, `/playlists/[id]` | IA question still open | **A11** — stays its own screen, not folded into Explore |
+| `/achievements`, `/challenges`, `/statistics` | gamification surfaces | **A4** (achievements, statistics → Dashboard/Profile), **A5** (challenges → Roadmap/Mission) |
+| `/weekly-report` | placeholder; possibly `Growth Areas` | **A2** — absorbed into Companion (§12.4 rules out `Growth Areas` as the match) |
+| `/sensei` | placeholder; possibly `Companion Knowledge Assistant` | **A2** — absorbed into Companion (one of its six screens) |
+| `/jlpt-test` | dead `redirect()` to `/jlpt`; `deprecated` or out of scope per §3.3 | pending — reserved as **A16**, ruled in Phase 2a Task 5 |
+| `/admin/*` (5 routes) | `repoOnlyReason: 'out-of-design-scope'` — the only value R13 allows, and only because `chrome: 'admin'` | n/a — a T10 mechanism note, not an open IA question |
 
 ---
 
@@ -253,16 +254,21 @@ Frameless with no such conflict: `/review`, `/achievements`, `/challenges`, `/st
 - ~~**`Today's reflection` / `Gentle suggestion`**~~ → state-variants of `companion-home` (§2).
 
 ### Still open
-1. **§4's vocab conflict** — does the `PERSONAL VOCABULARY SHELF` read from the `/vocab` module, or
-   is it companion-owned data? Decides whether hiding `/vocab` is free or breaks a flagship panel.
+1. ~~**§4's vocab conflict** — does the `PERSONAL VOCABULARY SHELF` read from the `/vocab` module, or
+   is it companion-owned data? Decides whether hiding `/vocab` is free or breaks a flagship panel.~~
+   **RESOLVED at `:1502-1506` of this file** (2026-08-13): the shelf sits inside Companion home, so
+   it is companion-owned and hiding `/vocab` costs it nothing.
 2. **Confirm the `Grammar analysis` reading**: "it's a new feature, we don't need to build it, the
    existing grammar module is enough" — is that right?
-3. **`Loading state` / `Error state`** — the §2 rule, which the user asked to discuss further.
+3. ~~**`Loading state` / `Error state`** — the §2 rule, which the user asked to discuss further.~~
+   **RESOLVED by A12** (`decision-register.md` §2): loading + error catalogues go to
+   `/admin/style-guide`, not the registry.
 4. **`Companion Knowledge Assistant` → `/sensei`? `Growth Areas` → `/weekly-report`?** Both routes
    are placeholders today, so this is mapping, not implementation.
 5. **`Panel`** — which screen is it a state of? Unidentifiable from the name alone.
 6. **`Pronunciation (in shadowing)`** — a state of `shadowing-practice`, or its own route?
-7. **`/playlists`** — own screen, or a tab inside Explore? (carried over)
+7. ~~**`/playlists`** — own screen, or a tab inside Explore? (carried over)~~ **RESOLVED by A11**
+   (`decision-register.md` §2): `/playlists` stays its own screen, not folded into Explore.
 8. **`QuickStart`, `Edit profile`** — screens of their own, or states?
 9. ✅ **`Panel` (item 5) is answered** — it is one frame, `180:1129` `Panel Quick preview: Conversation
    practice`; the name had been split across two lines. See `docs/product/figma-frame-map.md`.

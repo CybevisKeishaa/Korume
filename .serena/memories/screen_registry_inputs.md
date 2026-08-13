@@ -1,5 +1,10 @@
 # Screen Registry — product inputs (user adjudications, 2026-08-11)
 
+> ⚠️ **CORRECTION (2026-08-13).** Two claims below are stale. **A10 shipped in Phase 1b**, not
+> Phase 2 — all four routes carry `navGroup: null` at HEAD. And `legacy-unreviewed` was renamed to
+> `no-frame-at-last-pass` in Phase 2a, which also measured that 21 of the 23 entries it labelled
+> were never debt. **The registry at HEAD is the current inventory; this file is historical input.**
+
 Inputs for writing the **Phase 1 plan** against
 `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (approved, committed `e861150`),
 and for the **Phase 2 backlog** that plan will produce. Background: `mem:project_status`
