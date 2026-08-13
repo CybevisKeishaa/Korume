@@ -63,6 +63,7 @@ derives them. See §3b.
 | A13 | **No route for:** search palette · create-conversation wizard · lesson preview · reflection · suggestion drawer | §4 |
 | A14 | **A group's HEADING is not its id.** `journey` displays **"Growth" / "Tiến trình"** | `ia-proposal.md` §2 · ruled 2026-08-13 |
 | A15 | **The companion's Vietnamese name is "Linh thú"** — nav row `companion-home` = **"Linh thú của tôi"** | ruled 2026-08-13 · **propagated 2026-08-13** |
+| A16 | **`/jlpt-test` is dead route code — remove it in 2b.** No callers; its redirect target is itself superseded by A9 | ruled 2026-08-13 · execution deferred to **2b** |
 
 **A14 was added during Phase 1b**, when the gap surfaced in implementation: A1 locks group *ids* and
 §2 locks *row* labels, but nothing said what a group heading reads. Capitalising the id would have
@@ -114,6 +115,26 @@ deliberately not literal equivalents: VI reads "Tiến trình" (≈ *Progress*).
 moving EN to "Progress" and declined, so this is a settled divergence, not drift.
 ⚠️ **The `Growth Areas` collision noted above therefore stands, knowingly.** A future pass that
 "discovers" it must not reopen it on that basis alone — it was seen, priced, and accepted.
+
+**A16 — `/jlpt-test` is dead route code and is removed in Phase 2b.** The route is eight lines, a
+bare `redirect()` to `/jlpt`, commented *"Old placeholder route — the JLPT test engine now lives at
+`/jlpt` (Layer 5)"*. Measured 2026-08-13: **no app code references the route** — every `jlpt-test`
+hit in code is a component filename (`jlpt-test-runner` / `-list` / `-card`).
+
+Three names exist for one thing, which is why this is a reconciliation item and not a cleanup:
+`japanese-learning-app-spec.md:76` says `/jlpt-test`, the repo runs `/jlpt`, and **A9** locks
+`/certification`.
+
+⚠️ **2a rules; 2b executes.** Phase 2b performs exactly four edits: delete
+`app/[locale]/(protected)/(app)/jlpt-test/page.tsx`; delete `/jlpt-test` from `PROTECTED_PREFIXES`
+(`lib/supabase/route-protection.ts:14`); amend `japanese-learning-app-spec.md:76`; and
+**mutation-check** `lib/supabase/route-protection.test.ts` — its filesystem-driven coverage test is
+the existing guard for this class, and 2b must prove it goes RED on a prefix left behind for a
+deleted route rather than run it green and call that evidence.
+
+**No `kind: 'redirect'` was added.** Doing so in 2a would model a hypothetical 2b redirect. If 2b
+genuinely needs `/jlpt` → `/certification` to survive as one, that is a real artifact with a real
+shape and the schema decision can be made against it then.
 
 ## 3. Method rules — `LOCKED`, and they bind future passes
 
