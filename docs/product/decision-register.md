@@ -60,7 +60,7 @@ derives them. See §3b.
 | A12 | **Loading + error catalogues go to `/admin/style-guide`**, not the registry | §4 |
 | A13 | **No route for:** search palette · create-conversation wizard · lesson preview · reflection · suggestion drawer | §4 |
 | A14 | **A group's HEADING is not its id.** `journey` displays **"Growth" / "Tiến trình"** | `ia-proposal.md` §2 · ruled 2026-08-13 |
-| A15 | **The companion's Vietnamese name is "Linh thú"** — nav row `companion-home` = **"Linh thú của tôi"** | ruled 2026-08-13 · ⚠️ **not yet propagated** |
+| A15 | **The companion's Vietnamese name is "Linh thú"** — nav row `companion-home` = **"Linh thú của tôi"** | ruled 2026-08-13 · **propagated 2026-08-13** |
 
 **A14 was added during Phase 1b**, when the gap surfaced in implementation: A1 locks group *ids* and
 §2 locks *row* labels, but nothing said what a group heading reads. Capitalising the id would have
@@ -77,16 +77,32 @@ so the heading and the row inside it no longer collide in either locale.
 and `/companion`'s own page title matches it, so the destination has one name rather than two. This
 replaced "Đồng hành", which named a *quality* rather than the creature.
 
-> ⚠️ **A15 is deliberately NOT propagated yet, and that is the open half of it.**
-> `messages/vi/companion.json` (`a11y.sprite` = "Người bạn đồng hành của bạn — mở nhật ký"),
-> `MASCOT.md`, and the companion's own first-person voice throughout the diary and speech catalogs
-> all still say **"Người bạn đồng hành"**. Two names for one character is the `CLAUDE.md` §6 defect,
-> so this must be closed deliberately — either propagate "Linh thú" everywhere, or scope A15 to the
-> nav/destination label and say so here. **Owner: the user. Do not resolve it by guessing.**
+**A15 was propagated on 2026-08-13** (user ruling: propagate, don't scope down), and propagating it
+required a distinction the ruling did not state — recorded here because it governs every future edit:
+
+> **"Linh thú" replaces "người bạn đồng hành" only where that phrase functioned as a NAME.**
+> Where it describes the *relationship* — `MASCOT.md`'s "Companion là một người bạn đồng hành",
+> `companion-patterns.md`'s "sự khác biệt giữa một AI Assistant và một người bạn đồng hành" — it is
+> a common noun phrase, still true, and deliberately kept. Blanket-replacing produced nonsense on
+> inspection (`MASCOT.md`'s "yêu cảm giác được đồng hành cùng một sinh vật nhỏ bé" is a *verb*).
 >
-> Separately: the **English** heading for `journey` is still **"Growth"** while Vietnamese is now
-> "Tiến trình" (≈ *Progress*). They no longer mean the same thing. Deciding whether EN follows to
-> "Progress" would also dissolve the `Growth Areas` collision noted above.
+> ⚠️ **Correction to this register's own earlier claim, which was measured false.** It said the
+> companion's "first-person voice throughout the diary and speech catalogs" still said "Người bạn
+> đồng hành". It never did: `messages/vi/companion.json`'s `speech`, `journal` and `memoryTitle`
+> catalogs speak as **"mình"** and **never name the creature at all**. The phrase occurred in
+> **exactly one shipped VN string**, `a11y.sprite` — a third-person label addressed to the learner.
+> The propagation was therefore one string, not a voice rewrite. (`L-002`: never carry a scope
+> figure you did not measure.)
+>
+> `MASCOT.md` § Danh tính now carries A15, and states what the ruling implies but does not say:
+> **"Linh thú" is the Vietnamese noun for the creature, not its proper name.** That section still
+> lists Korume/Koru/Hibi/… as undecided *proper*-name candidates, and A15 does not resolve them.
+
+**The English `journey` heading stays "Growth" — user ruling 2026-08-13.** EN and VI are therefore
+deliberately not literal equivalents: VI reads "Tiến trình" (≈ *Progress*). The user considered
+moving EN to "Progress" and declined, so this is a settled divergence, not drift.
+⚠️ **The `Growth Areas` collision noted above therefore stands, knowingly.** A future pass that
+"discovers" it must not reopen it on that basis alone — it was seen, priced, and accepted.
 
 ## 3. Method rules — `LOCKED`, and they bind future passes
 

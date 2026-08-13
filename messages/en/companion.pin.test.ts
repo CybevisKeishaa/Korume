@@ -189,7 +189,10 @@ describe("companion.json VI — speech templates (primary learner locale)", () =
   });
 
   it("pins the two a11y labels", () => {
-    expect(vi.a11y.sprite).toBe("Người bạn đồng hành của bạn — mở nhật ký");
+    // A15 — the companion's Vietnamese name is "Linh thú". This label is the
+    // ONLY shipped VN string that named the creature; the speech, journal and
+    // memoryTitle catalogs speak in first person ("mình") and never name it.
+    expect(vi.a11y.sprite).toBe("Linh thú của bạn — mở nhật ký");
     expect(vi.a11y.dismissSpeech).toBe("Đóng lời nhắn");
   });
 

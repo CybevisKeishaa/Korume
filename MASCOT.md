@@ -119,6 +119,24 @@ Các ứng viên hiện tại:
 
 Korume hiện là ứng viên được yêu thích nhất, nhưng Character Bible chưa mặc định bất kỳ tên nào là chính thức.
 
+## Cách gọi trong giao diện tiếng Việt: **Linh thú**
+
+Chừng nào tên riêng chưa được chốt, giao diện tiếng Việt gọi Companion là **"Linh thú"** — đây là
+**danh từ chỉ loài**, không phải tên riêng, nên nó không tranh chấp với danh sách ứng viên ở trên.
+
+* Nav row `companion-home` và tiêu đề trang `/companion`: **"Linh thú của tôi"**
+* Nhãn a11y của sprite (`messages/vi/companion.json` → `a11y.sprite`): **"Linh thú của bạn — mở nhật ký"**
+
+Cách gọi này thay cho "Đồng hành", vốn đặt tên cho một *phẩm chất* thay vì cho *sinh vật*.
+(Ruling A15 của người dùng, 2026-08-13 — `docs/product/decision-register.md` §2.)
+
+⚠️ **"Người bạn đồng hành" trong tài liệu này vẫn đúng và không bị thay thế** — ở đó nó là **mô tả
+mối quan hệ**, không phải cách gọi tên. Chỉ những chỗ dùng nó **như một cái tên trong UI** mới đổi
+sang "Linh thú". Tiếng Anh không bị ảnh hưởng: vẫn là *Companion*.
+
+Giọng của chính Companion không đổi và không cần đổi: nó xưng **"mình"** và **chưa bao giờ tự gọi
+tên mình** trong bất kỳ chuỗi nào (`speech`, `journal`, `memoryTitle`).
+
 ---
 
 # Thiết kế hình ảnh (Concept)

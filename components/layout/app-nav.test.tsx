@@ -57,6 +57,13 @@ const EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string> = {
 // verbatim would print a heading "Journey" directly above an item "Journey".
 // The IA locks ids and row labels but never specified group headings; user
 // ruling 2026-08-13 keeps the id and displays "Growth".
+//
+// Re-affirmed 2026-08-13 after Vietnamese moved to "Tiến trình" (≈ Progress):
+// the user was offered "Progress" for EN — which would also have dissolved the
+// known collision with the Companion's own `Growth Areas` surface inside this
+// very group — and chose to keep "Growth". EN and VI are therefore deliberately
+// not literal equivalents, and the collision stands knowingly. Do not "fix"
+// either one by discovering them again; see A14 in the decision register.
 const EXPECTED_GROUP_LABELS: Record<(typeof NAV_GROUPS)[number]["key"], string> = {
   learn: "Learn",
   practice: "Practice",
