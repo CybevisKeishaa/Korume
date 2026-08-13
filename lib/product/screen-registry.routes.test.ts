@@ -22,6 +22,20 @@ describe("registry ↔ repo routes", () => {
     expect(lying).toEqual([]);
   });
 
+  it("T2b: every nav destination resolves to a real page.tsx", () => {
+    // NOT covered by T1, which runs the other way: T1 asks "does every
+    // page.tsx have an entry?", this asks "does every sidebar row lead
+    // somewhere?". The spec's claim that T1 "subsumes and generalises" the
+    // old href-resolves guard in app-nav.test.tsx was wrong (corrected in
+    // that spec, §4.1) — deleting the guard on that basis left a nav entry
+    // free to point at a routeless screen with every test green. Phase 1b
+    // adds designed-before-built screens, so this WILL be exercised.
+    const dead = SCREEN_REGISTRY.filter(
+      (e) => e.navGroup !== null && (e.route === null || !derivedRoutes.has(e.route)),
+    ).map((e) => e.screenId);
+    expect(dead).toEqual([]);
+  });
+
   it("T8: chrome matches the route groups actually dropped from the file path", () => {
     // Catches a screen moved between chrome contracts. Entries with no page
     // are exempt — they have nothing to disagree with.

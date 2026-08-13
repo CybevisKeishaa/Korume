@@ -6,27 +6,27 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
 import { NotificationBell } from "@/components/layout/notification-bell";
-import { deriveNavGroups } from "@/lib/product/nav-derivation";
-import { SCREEN_REGISTRY } from "@/lib/product/screen-registry";
+import type { NavGroup } from "@/lib/product/nav-derivation";
 
 /**
- * Derived from the screen registry (R4) — no longer a literal. The registry
- * owns nav membership and order; this file owns presentation.
+ * Presentation only. The registry owns nav membership and order (R4), and
+ * `groups` arrives already derived from it.
  *
- * Phase 1a proved this derivation reproduces the previous literal byte-for-byte
- * (T6 vs lib/product/nav-baseline.fixture.ts). Changing navigation means
- * editing the registry, not this file.
+ * ⛔ **Do not import `SCREEN_REGISTRY` or `NAV_GROUPS` here.** This is a
+ * `"use client"` module: a module-scope import of the registry ships all 50
+ * entries to the browser — private Figma node ids, unshipped screen names,
+ * internal debt labels. `lib/product/nav-groups.ts` explains it in full;
+ * `deriveNavGroups` is called in the server layouts that mount this component
+ * (final whole-branch review FIX 3). The type import below is erased at
+ * compile time and pulls nothing into the client graph.
  */
-export const NAV_GROUPS = deriveNavGroups(SCREEN_REGISTRY);
-
-/** Flat view kept for the catalog-parity test; no production consumer today. */
-export const NAV_ITEMS = NAV_GROUPS.map((group) => group.items).flat();
-
 export function AppNav({
   userEmail,
+  groups,
   defaultVisible = true,
 }: {
   userEmail: string;
+  groups: readonly NavGroup[];
   defaultVisible?: boolean;
 }) {
   const pathname = usePathname();
@@ -53,7 +53,7 @@ export function AppNav({
           </div>
 
           <div data-nav-scroll className="flex-1 overflow-y-auto">
-            {NAV_GROUPS.map((group) => (
+            {groups.map((group) => (
               <div key={group.key} className="mb-2">
                 <p
                   id={`app-nav-group-${group.key}`}

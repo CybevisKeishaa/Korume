@@ -3,7 +3,12 @@ import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { AppNav, NAV_GROUPS, NAV_ITEMS } from "./app-nav";
+import { AppNav } from "./app-nav";
+// NAV_GROUPS/NAV_ITEMS moved out of app-nav.tsx (final whole-branch review
+// FIX 3): app-nav.tsx is "use client", so deriving them there shipped the
+// whole screen registry to the browser. The values are unchanged — only the
+// module they live in moved.
+import { NAV_GROUPS, NAV_ITEMS } from "@/lib/product/nav-groups";
 // Plain JSON import (resolveJsonModule), not next-intl. Used ONLY for a
 // structural check (key-set parity below) — never as a source of expected
 // *values*. Comparing rendered text to this same file would be circular:
@@ -83,7 +88,7 @@ vi.mock("@/components/layout/notification-bell", () => ({
 function renderNav(userEmail = "learner@example.com") {
   return render(
     <ThemeProvider>
-      <AppNav userEmail={userEmail} />
+      <AppNav userEmail={userEmail} groups={NAV_GROUPS} />
     </ThemeProvider>,
   );
 }
@@ -262,7 +267,11 @@ describe("AppNav visibility toggle", () => {
   it("starts hidden when the chrome contract asks for it", () => {
     render(
       <ThemeProvider>
-        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+        <AppNav
+          userEmail="learner@example.com"
+          groups={NAV_GROUPS}
+          defaultVisible={false}
+        />
       </ThemeProvider>,
     );
 
@@ -277,7 +286,7 @@ describe("AppNav visibility toggle", () => {
   it("still starts visible by default", () => {
     render(
       <ThemeProvider>
-        <AppNav userEmail="learner@example.com" />
+        <AppNav userEmail="learner@example.com" groups={NAV_GROUPS} />
       </ThemeProvider>,
     );
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
@@ -291,7 +300,11 @@ describe("AppNav visibility toggle", () => {
   it("keeps the reduce-motion control reachable even while the nav is hidden", () => {
     render(
       <ThemeProvider>
-        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+        <AppNav
+          userEmail="learner@example.com"
+          groups={NAV_GROUPS}
+          defaultVisible={false}
+        />
       </ThemeProvider>,
     );
     expect(

@@ -29,6 +29,42 @@ import type { ScreenEntry } from "./screen-registry-types";
  * exactly 9 files (achievements, challenges, review, roadmap, sensei,
  * settings, shadowing/explore, statistics, weekly-report) — those 9 routes
  * are `impl: "placeholder"`; every other existing route is `impl: "built"`.
+ *
+ * ---------------------------------------------------------------------------
+ * FRAMES DELIBERATELY NOT REGISTERED — 6 of the design file's 57
+ * ---------------------------------------------------------------------------
+ * No test can catch a frame that was simply never typed in here (final
+ * whole-branch review FIX 2), so the exclusions are listed by node id and the
+ * classification that excluded each. The invariant a human can check by hand:
+ *
+ *   registered ids + the 6 exclusions below = the frames captured in
+ *   `docs/product/figma-frame-map.md` § "Captured — all 57 of 57"
+ *
+ * Count the left-hand side with (the `[0-9]` anchor keeps this line itself out
+ * of the result — the obvious pattern counts its own documentation):
+ *
+ *   grep -c 'figmaNodeId: "[0-9]' lib/product/screen-registry.ts
+ *
+ * The 6 exclusions, each with the classification that excluded it:
+ *
+ *   `46:2`      Popup create conversation   — interaction (modal wizard),
+ *                                             screen-inventory.md §15.3
+ *   `181:3525`  Gentle suggestion drawer    — interaction (drawer), §12.2
+ *   `182:3859`  Today's reflection          — interaction (overlay panel), §12.1
+ *   `203:13813` Footer                      — component, not a screen, §19.5
+ *   `210:14338` Loading state               — style-guide catalogue, NOT a
+ *                                             screen, §19.6
+ *   `218:15740` Error state                 — style-guide catalogue, NOT a
+ *                                             screen, §19.6
+ *
+ * The registered total INCLUDES `90:1985`, recorded at the bottom of this file
+ * as `kind: "deprecated"` — a dead frame kept so it is not rediscovered, not a
+ * live screen.
+ *
+ * Anything absent from the frame map is not on the page at all: `5:1718`
+ * (Unuse), `71:2` (Pricing-remove) and `243:14906` are outside the 57 for that
+ * reason — the map's own arithmetic proves the first two were already deleted
+ * and the third was never matched to a frame.
  */
 export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ===================================================================
@@ -1233,6 +1269,37 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "state-variant",
     variantOf: "speaking",
     figmaNodeId: "180:1129",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-12",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+  },
+
+  // ===================================================================
+  // Superseded frames still on the Figma page (kind: "deprecated").
+  // ===================================================================
+
+  // Final whole-branch review FIX 2. `docs/product/figma-frame-map.md` records
+  // this frame as "superseded — dead frame, build against `149:2`. Still on the
+  // page as of 2026-08-12; the delete-plus-rename pair was not carried out",
+  // and its closing arithmetic confirms it is the only one of the three
+  // flagged-for-deletion frames still present. `deprecated` exists for exactly
+  // this — a frame recorded so it is not rediscovered and built against by
+  // someone who searches Figma for "Shadowing Hub" and finds this one first.
+  // The LIVE hub is `149:2`, registered above as `lessons`.
+  //
+  // screenId is NOT "shadowing-hub": R3 makes screenId product identity, and
+  // the product identity of the Shadowing hub belongs to the live screen. This
+  // row is the dead artefact, named as such.
+  {
+    screenId: "shadowing-hub-superseded",
+    name: "Shadowing Hub",
+    kind: "deprecated",
+    variantOf: null,
+    figmaNodeId: "90:1985",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
     route: null,
