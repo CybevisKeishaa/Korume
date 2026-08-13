@@ -96,6 +96,30 @@ describe("upcoming.json EN — catalog literals", () => {
     );
   });
 
+  // Phase 1b's two additions. Both routes ship as UpcomingScreen because the
+  // LOCKED IA gives them a nav row before the feature exists — A6 for
+  // Pronunciation, A2 for Companion — and a row pointing nowhere would make
+  // `deriveNavGroups` throw rather than degrade.
+  it("pins the pronunciation screen copy", () => {
+    expect(en.pronunciation.title).toBe("Pronunciation");
+    expect(en.pronunciation.body).toBe(
+      "Pitch accent, rhythm, and the sounds that keep slipping — practised on their own rather than only inside a lesson.",
+    );
+    expect(en.pronunciation.unlocks).toBe(
+      "Scoring already runs inside Shadowing. This screen is where it becomes practice you can choose.",
+    );
+  });
+
+  it("pins the companion screen copy", () => {
+    expect(en.companion.title).toBe("Companion");
+    expect(en.companion.body).toBe(
+      "One place for the companion studying alongside you — its diary, what it remembers of your sessions, and where it thinks you are growing.",
+    );
+    expect(en.companion.unlocks).toBe(
+      "The Diary already exists and moves here. The rest arrives with the Companion hub.",
+    );
+  });
+
   it("pins the explore lessons screen copy", () => {
     expect(en.explore.title).toBe("Explore Lessons");
     expect(en.explore.body).toBe(

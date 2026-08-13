@@ -44,5 +44,15 @@
     "title": "Khám phá bài học",
     "body": "Những bài học trong Korume, được sắp xếp để bạn có thể tình cờ tìm thấy một điều mình muốn học tiếp.",
     "unlocks": "Chưa có gì ở đây. Không gian khám phá bài học vẫn đang được chuẩn bị."
+  },
+  "pronunciation": {
+    "title": "Phát âm",
+    "body": "Cao độ, nhịp điệu, và những âm cứ trượt đi mỗi lần bạn nói — được luyện riêng ở đây, chứ không chỉ nằm bên trong một bài học.",
+    "unlocks": "Việc chấm phát âm thì đã chạy sẵn trong lúc bạn shadowing rồi. Ở đây, nó sẽ thành một buổi luyện mà bạn tự chọn."
+  },
+  "companion": {
+    "title": "Người bạn đồng hành",
+    "body": "Một nơi dành riêng cho người bạn đang học cùng bạn — cuốn nhật ký, những điều mình còn nhớ về các buổi học, và những chỗ bạn đang lớn lên từng ngày.",
+    "unlocks": "Nhật ký thì đã có sẵn rồi và sẽ dọn về đây. Những phần còn lại sẽ đến cùng không gian này."
   }
 }

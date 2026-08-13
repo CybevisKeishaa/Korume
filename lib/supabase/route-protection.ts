@@ -30,6 +30,12 @@ export const PROTECTED_PREFIXES = [
   "/roadmap",
   "/sensei",
   "/settings",
+  // Phase 1b's two new nav destinations, same terms as the Task 6 set above:
+  // placeholder content today, but real protected routes under
+  // `(protected)/(app)/`. The coverage test caught these missing — without
+  // them middleware would skip auth on both.
+  "/companion",
+  "/pronunciation",
   "/statistics",
   "/weekly-report",
   "/content-manager",

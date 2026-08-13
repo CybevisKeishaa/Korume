@@ -1,13 +1,14 @@
 import type { NavGroupId, ScreenEntry } from "./screen-registry-types";
 
 /** Group order is IA, not data — the registry stores membership and order
- *  within a group, never the order OF groups. Phase 1b edits this array when
- *  the LOCKED IA's five groups replace today's. */
+ *  within a group, never the order OF groups. Phase 1b replaced today's
+ *  `learn/study/insights/progress/account` with the LOCKED IA's five
+ *  (`ia-proposal.md` §2, `decision-register.md` A1). */
 const GROUP_ORDER = [
   "learn",
-  "study",
-  "insights",
-  "progress",
+  "practice",
+  "remember",
+  "journey",
   "account",
 ] as const satisfies readonly NavGroupId[];
 

@@ -5,14 +5,23 @@ import { NAV_GROUPS } from "./nav-groups";
 import { SCREEN_REGISTRY } from "./screen-registry";
 import type { ScreenEntry } from "./screen-registry-types";
 
-describe("nav baseline fixture", () => {
-  it("is a faithful copy of the literal shipping today", () => {
+describe("the exported NAV_GROUPS", () => {
+  // Renamed in Phase 1b. The old name ("is a faithful copy of the literal
+  // shipping today") described 1a's job — there is no hand-written literal
+  // left to copy, and the baseline now states the LOCKED IA instead.
+  //
+  // This is NOT redundant with T6 below, though it looks it: T6 calls
+  // `deriveNavGroups` directly, while this asserts on the `NAV_GROUPS` the
+  // two server layouts actually import. Anything `nav-groups.ts` did to the
+  // derivation on its way out — memoising, filtering, sorting — would pass
+  // T6 and fail here.
+  it("matches the baseline, so layouts consume what T6 checked", () => {
     expect(NAV_BASELINE).toEqual(NAV_GROUPS);
   });
 });
 
-describe("T6: derived NAV_GROUPS reproduces today's literal exactly", () => {
-  it("deep-equals the frozen baseline (R8, zero visual diff)", () => {
+describe("T6: derived NAV_GROUPS reproduces the LOCKED IA exactly", () => {
+  it("deep-equals the hand-written baseline (R8)", () => {
     expect(deriveNavGroups(SCREEN_REGISTRY)).toEqual(NAV_BASELINE);
   });
 

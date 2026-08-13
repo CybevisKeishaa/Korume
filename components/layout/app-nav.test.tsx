@@ -18,49 +18,50 @@ import { NAV_GROUPS, NAV_ITEMS } from "@/lib/product/nav-groups";
 import navMessages from "@/messages/en/nav.json";
 
 // Pinned literals, not sourced from messages/en/nav.json: this is the whole
-// point of a pinning test (see comment above). Labels unchanged since the
-// string-extraction pass are byte-identical to what app-nav.tsx rendered
-// before it (git show 09513db^:components/layout/app-nav.tsx). Three keys
-// were renamed with fresh EN copy by the 2026-08-05 Korume reconciliation
-// (spec §2): lessons (was videos), speaking (was conversation), journey
-// (was journal) — those literals are authored in Plan B (Code) Task 3.
-// Plan C1 Task 7 adds the eight canonical-but-unbuilt destinations (review,
-// challenges, sensei, roadmap, weeklyReport, statistics, achievements,
-// settings), now real routes rendering an honest empty state — literals
-// copied verbatim from the Task 7 brief / messages/en/nav.pin.test.ts.
+// point of a pinning test (see comment above).
+//
+// Phase 1b rewrote this set against the LOCKED IA (ia-proposal.md §2). Ten
+// destinations lost their nav row — vocab, reading, community, leaderboard
+// (HIDDEN, A10) plus challenges, sensei, weeklyReport, journey, statistics
+// and achievements (ABSORBED into Roadmap / Companion / Dashboard) — so their
+// pins are gone from here. Their routes, schema and components are untouched;
+// only the sidebar row went. Two destinations arrived, and their keys are
+// screenIds rather than tidy words because `deriveNavGroups` maps
+// `key: entry.screenId` (R9): `pronunciation-library` and `companion-home`.
+//
+// Two label changes carry a product decision rather than a copy edit:
+//   mining  -> "Collection" (A7)
+//   roadmap -> "Journey"    (A8 — the label moves off the Diary and onto the
+//                            Roadmap, which is what Figma's `journey` names)
 const EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string> = {
   dashboard: "Dashboard",
   lessons: "Lessons",
   kanji: "Kanji",
-  vocab: "Vocab",
   grammar: "Grammar",
-  reading: "Reading",
   speaking: "Speaking",
+  "pronunciation-library": "Pronunciation",
   jlpt: "JLPT",
   review: "Review",
-  mining: "Mining",
+  mining: "Collection",
   playlists: "Playlists",
-  challenges: "Challenges",
-  community: "Community",
-  leaderboard: "Leaderboard",
-  sensei: "Sensei",
-  roadmap: "Roadmap",
-  weeklyReport: "Weekly Report",
-  journey: "Journey",
-  statistics: "Statistics",
-  achievements: "Achievements",
+  roadmap: "Journey",
+  "companion-home": "Companion",
   profile: "Profile",
   settings: "Settings",
 };
-// Group headings, same pinning rule. EN copy authored in Plan B Task 3
-// (navigation-system.md § Navigation Inventory names the groups LEARN /
-// STUDY / INSIGHTS / PROGRESS / ACCOUNT; the catalog stores title case, the
-// uppercase treatment is CSS). INSIGHTS ("Insights") added by Task 7.
+// Group headings, same pinning rule. Phase 1b replaced LEARN/STUDY/INSIGHTS/
+// PROGRESS/ACCOUNT with the LOCKED IA's five groups (A1).
+//
+// ⚠️ `journey` DISPLAYS as "Growth". A1 fixes the group *id* and A8 puts the
+// "Journey" label on the /roadmap row inside that group, so rendering the id
+// verbatim would print a heading "Journey" directly above an item "Journey".
+// The IA locks ids and row labels but never specified group headings; user
+// ruling 2026-08-13 keeps the id and displays "Growth".
 const EXPECTED_GROUP_LABELS: Record<(typeof NAV_GROUPS)[number]["key"], string> = {
   learn: "Learn",
-  study: "Study",
-  insights: "Insights",
-  progress: "Progress",
+  practice: "Practice",
+  remember: "Remember",
+  journey: "Growth",
   account: "Account",
 };
 const EXPECTED_ARIA_LABEL = "Main";
@@ -123,13 +124,13 @@ describe("AppNav", () => {
 
   it("renders the five canonical group headings and groups items under them", () => {
     renderNav();
-    // All 22 canonical destinations are wired (Plan C1 Task 7). Counts per
-    // the NAV_GROUPS structure in app-nav.tsx.
+    // Counts per the LOCKED IA's tables (ia-proposal.md §2), not per any
+    // structure in app-nav.tsx — that file has held no nav data since 1a.
     const expectedCounts: Record<(typeof NAV_GROUPS)[number]["key"], number> = {
-      learn: 8,
-      study: 6,
-      insights: 3,
-      progress: 3,
+      learn: 4,
+      practice: 3,
+      remember: 3,
+      journey: 2,
       account: 2,
     };
     for (const group of NAV_GROUPS) {
@@ -143,17 +144,26 @@ describe("AppNav", () => {
   });
 
   it("renders all five canonical groups in order", () => {
-    // navigation-system.md § Navigation Inventory. INSIGHTS sits between STUDY
-    // and PROGRESS.
+    // ia-proposal.md §2 orders them learn -> practice -> remember -> journey
+    // -> account. `journey` renders as "Growth" (see EXPECTED_GROUP_LABELS).
     renderNav();
     const headings = screen.getAllByText(
-      /^(Learn|Study|Insights|Progress|Account)$/,
+      /^(Learn|Practice|Remember|Growth|Account)$/,
     ).map((el) => el.textContent);
-    expect(headings).toEqual(["Learn", "Study", "Insights", "Progress", "Account"]);
+    expect(headings).toEqual([
+      "Learn",
+      "Practice",
+      "Remember",
+      "Growth",
+      "Account",
+    ]);
   });
 
-  it("ships all 22 canonical destinations", () => {
-    expect(NAV_ITEMS).toHaveLength(22);
+  it("ships exactly the LOCKED IA's destinations", () => {
+    // 14 = the row count of ia-proposal.md §2's five tables, pinned by hand.
+    // Deliberately not derived from NAV_GROUPS: that would be the registry
+    // agreeing with itself.
+    expect(NAV_ITEMS).toHaveLength(14);
   });
 
   // The href-resolves guard moved to lib/product/screen-registry.routes.test.ts
@@ -179,14 +189,53 @@ describe("AppNav", () => {
     expect(list?.className).toContain("overflow-y-auto");
   });
 
-  it("routes the Journey entry at /journal (was `journal`; renamed by spec §2)", () => {
-    // The label is renamed but the destination is unchanged — the Journal
-    // surface has no other entry point in the chrome.
+  it("routes the Journey entry at /roadmap, not at the Diary (A8)", () => {
+    // The defect Phase 1a recorded verbatim rather than fixed: the "Journey"
+    // label sat on /journal (the Companion Diary), while Figma's `journey`
+    // names the Roadmap. A8 moves the label onto /roadmap; the Diary keeps
+    // its route and is reached from Companion instead of the sidebar.
     renderNav();
-    expect(screen.getByRole("link", { name: EXPECTED_LABELS.journey })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: EXPECTED_LABELS.roadmap })).toHaveAttribute(
       "href",
-      "/en/journal",
+      "/en/roadmap",
     );
+  });
+
+  it("drops every hidden and absorbed row from the sidebar", () => {
+    // The substance of Phase 1b. HIDDEN by A10: vocab, reading, community,
+    // leaderboard. ABSORBED: challenges -> Roadmap (A5); sensei, journal,
+    // weekly-report -> Companion (A2); statistics, achievements -> Dashboard
+    // / Profile (A4).
+    //
+    // This asserts ONLY that the sidebar stopped linking them. Every one of
+    // these routes still exists and still renders — `screen-registry.routes`
+    // T1 would fail loudly if any had been deleted, which is the guarantee
+    // that "hide" did not quietly become "remove".
+    renderNav();
+    const hrefs = screen
+      .getAllByRole("link")
+      .map((el) => el.getAttribute("href"));
+    for (const gone of [
+      "/en/vocab",
+      "/en/reading",
+      "/en/community",
+      "/en/leaderboard",
+      "/en/challenges",
+      "/en/sensei",
+      "/en/weekly-report",
+      "/en/journal",
+      "/en/statistics",
+      "/en/achievements",
+    ]) {
+      expect(hrefs, gone).not.toContain(gone);
+    }
+    // Guard the guard: an empty or broken query would satisfy every
+    // not-contains above while asserting nothing (docs/lessons.md L-004).
+    expect(hrefs).toContain("/en/roadmap");
+    // +1 is the wordmark link to /dashboard in the nav header, which is not a
+    // destination row. EXPECTED_LABELS is hand-pinned, so this compares the
+    // render against the pins rather than against the registry.
+    expect(hrefs.length).toBe(Object.keys(EXPECTED_LABELS).length + 1);
   });
 
   it("routes Lessons at /shadowing", () => {

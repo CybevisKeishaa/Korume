@@ -27,13 +27,23 @@ test("a brand-new learner opens the Journal and finds the first page already wri
 
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
 
-  // Through the real chrome, not a direct goto: the nav entry is part of what
-  // Task 10 ships, so a Journal that exists but is unreachable must fail here.
-  // The nav link and the page heading are deliberately different words: Plan
-  // B Task 3 renamed the nav entry to "Journey" (messages/en/nav.json) while
-  // the surface itself is still titled "Journal" (messages/en/companion.json)
-  // — don't "fix" one of them into agreement with the other.
-  await page.getByRole("link", { name: "Journey", exact: true }).click();
+  // Through the real chrome, not a direct goto: a Journal that exists but is
+  // unreachable must fail here.
+  //
+  // The door changed in Phase 1b. This used to click the sidebar's "Journey"
+  // row, but the LOCKED IA moved that label onto /roadmap (A8) and absorbed
+  // the Diary into Companion (A2), so no nav row points here any more. The
+  // companion sprite is the real door and always was — `ambient-provider.tsx`
+  // wires `openJournal: () => router.push("/journal")`, and `/dashboard`
+  // mounts a `CompanionAnchor`. Clicking it is a *stronger* reachability
+  // check than the nav link was, because it is the path the product intends.
+  //
+  // The control's label and the page heading are deliberately different
+  // words — "open the journal" vs the "Journal" heading. Don't "fix" one into
+  // agreement with the other.
+  await page
+    .getByRole("button", { name: "Your companion — open the journal" })
+    .click();
 
   await expect(page).toHaveURL(/\/en\/journal$/, { timeout: 15000 });
   await expect(page.getByRole("heading", { name: "Journal", level: 1 })).toBeVisible();
