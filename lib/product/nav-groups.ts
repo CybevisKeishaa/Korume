@@ -15,8 +15,14 @@ import { SCREEN_REGISTRY } from "./screen-registry";
  *
  * The two server layouts that mount `AppNav`
  * (`app/[locale]/(protected)/(app)` and `…/(focus)`) import this and pass the
- * result down as a prop, so only the 22 `{ href, key }` pairs the sidebar
- * actually renders cross the boundary.
+ * result down as a prop, so only the 14 `{ href, key }` pairs the sidebar
+ * actually renders cross the boundary — 4 `learn` · 3 `practice` ·
+ * 3 `remember` · 2 `journey` · 2 `account`, pinned per group by
+ * `components/layout/app-nav.test.tsx`'s `expectedCounts`. (It read **22**
+ * until 2026-08-14. 22 was true at Phase 1a — `learn 8 · study 6 · insights 3 ·
+ * progress 3 · account 2` — and Phase 1b's LOCKED IA replaced those groups
+ * wholesale. The data moved, the prose beside it did not. `docs/lessons.md`
+ * L-002.)
  *
  * Phase 1a proved this derivation reproduces the previous hand-written literal
  * byte-for-byte (T6 vs `lib/product/nav-baseline.fixture.ts`). Changing

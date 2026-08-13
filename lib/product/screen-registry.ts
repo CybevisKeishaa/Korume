@@ -28,6 +28,11 @@ import type { ScreenEntry } from "./screen-registry-types";
  *      discovered "true identity").
  *   2. `docs/product/screen-inventory.md` Part II §6–§20 — `kind`, and for
  *      state-variants, `variantOf`.
+ *      ⚠️ Citation convention: the per-entry comments below cite that file by
+ *      SECTION and row, never by line number. Line citations written into this
+ *      file went stale twice inside Phase 2a alone — once when a later task in
+ *      the same phase inserted a line above them, and again when the final fix
+ *      wave struck two rows from §3's table. A section survives both.
  *   3. `listPageRoutes(process.cwd())` — `route` + `chrome`. Count it, never
  *      quote it (`docs/lessons.md` L-002); Phase 1b added two pages, so the
  *      44 recorded by Phase 1a is already stale.
@@ -744,7 +749,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
   // Not an independent decision — a community sub-route is reached by
   // drilling into its parent and is never a nav row of its own.
-  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "community-detail",
     name: "Community — Detail",
@@ -762,7 +768,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
   // Not an independent decision — a community sub-route is reached by
   // drilling into its parent and is never a nav row of its own.
-  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "community-peer-review",
     name: "Community — Peer Review",
@@ -801,7 +808,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // Inherits /mining's ruling (A7): a label change to `Collection`, not an
   // identity change — screenId stays `mining`-scoped. Not an independent
   // decision: reached by drilling into its parent, never a nav row of its
-  // own. Frameless per `screen-inventory.md:205`.
+  // own. Frameless per `screen-inventory.md` §3's table, row `/mining`.
   {
     screenId: "mining-review",
     name: "Mining — Review",
@@ -819,7 +826,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // Inherits /playlists's ruling (A11): stays its own screen, not folded
   // into Explore. Not an independent decision — reached by drilling into
   // its parent, never a nav row of its own. Frameless per
-  // `screen-inventory.md:206` ("IA question still open" before A11 settled it).
+  // `screen-inventory.md` §3's table, row `/playlists` ("IA question still
+  // open" before A11 settled it).
   {
     screenId: "playlists-detail",
     name: "Playlists — Detail",
@@ -837,7 +845,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // Inherits /reading's ruling (A10): hidden, code kept, not deprecated.
   // Not an independent decision — a reading sub-route is reached by
   // drilling into its parent and is never a nav row of its own.
-  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "reading-detail",
     name: "Reading — Detail",
@@ -852,8 +861,15 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
-  // `screen-inventory.md:201` — "Figma has `Login` but no register frame".
-  // `:239-240` lists it frameless with no conflict, unlike vocab/reading (§4).
+  // ⚠️ NO PRODUCT RULING EXISTS FOR /register, and none is inferred here.
+  // Everything below is FRAME evidence: `screen-inventory.md` §3's table, row
+  // `/register` — "Figma has `Login` but no register frame" — plus §4's
+  // "Frameless with no such conflict" list, which names it alongside /review,
+  // /achievements, /challenges and /statistics. Both are observations on the
+  // has-a-frame axis. The has-a-ruling axis belongs to `decision-register.md`,
+  // which says nothing about /register; §3's Ruling column therefore reads
+  // "still open", and that is the honest state, not a gap to be filled in by
+  // reading the frame evidence as a decision.
   {
     screenId: "register",
     name: "Register",
@@ -871,7 +887,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
   // not an independent decision — an acquisition-loop sub-route is reached by
   // drilling into its parent and is never a nav row of its own.
-  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "vocab-detail",
     name: "Vocabulary — Detail",
@@ -889,7 +906,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
   // not an independent decision — an acquisition-loop sub-route is reached by
   // drilling into its parent and is never a nav row of its own.
-  // Frameless per `screen-inventory.md:192-193`, which names it explicitly.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "vocab-review",
     name: "Vocabulary — Review",
