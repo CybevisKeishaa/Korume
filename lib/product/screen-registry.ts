@@ -239,7 +239,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: 3,
   },
 
-  // remember/1 — no frame; the cross-type SRS review hub (§3).
+  // remember/1 — no frame; the cross-type SRS review hub. `ia-proposal.md`
+  // §2's `remember` group (line 120) rules `KEEP` — settling what
+  // `screen-inventory.md` §3 still lists as "not yet adjudicated".
   {
     screenId: "review",
     name: "Review",
