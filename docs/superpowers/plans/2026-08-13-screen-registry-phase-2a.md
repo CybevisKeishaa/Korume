@@ -458,6 +458,11 @@ git commit -m "docs(spec): a reason member is an observation, not debt"
 
 - [ ] **Step 2: Write the ruling's prose, with the measurement that supports it**
 
+> ⚠️ **2026-08-14:** this block is the *draft* the plan handed to Task 5. **A16 as it stands in
+> `docs/product/decision-register.md` §2 is the authority** — it was corrected twice after this was
+> written, and this plan is a dated artifact that is not kept in sync. The edit-list paragraph below
+> was replaced by a pointer for exactly that reason.
+
 ```markdown
 **A16 — `/jlpt-test` is dead route code and is removed in Phase 2b.** The route is eight lines, a
 bare `redirect()` to `/jlpt`, commented *"Old placeholder route — the JLPT test engine now lives at
@@ -468,12 +473,8 @@ Three names exist for one thing, which is why this is a reconciliation item and 
 `japanese-learning-app-spec.md:76` says `/jlpt-test`, the repo runs `/jlpt`, and **A9** locks
 `/certification`.
 
-⚠️ **2a rules; 2b executes.** Phase 2b performs exactly four edits: delete
-`app/[locale]/(protected)/(app)/jlpt-test/page.tsx`; delete `/jlpt-test` from `PROTECTED_PREFIXES`
-(`lib/supabase/route-protection.ts:14`); amend `japanese-learning-app-spec.md:76`; and
-**mutation-check** `lib/supabase/route-protection.test.ts` — its filesystem-driven coverage test is
-the existing guard for this class, and 2b must prove it goes RED on a prefix left behind for a
-deleted route rather than run it green and call that evidence.
+⚠️ **2a rules; 2b executes.** For 2b's edit list, read **A16 in `docs/product/decision-register.md`
+§2** — that is its single home, and this plan deliberately keeps no copy.
 
 **No `kind: 'redirect'` was added.** Doing so in 2a would model a hypothetical 2b redirect. If 2b
 genuinely needs `/jlpt` → `/certification` to survive as one, that is a real artifact with a real

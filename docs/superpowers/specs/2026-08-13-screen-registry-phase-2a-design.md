@@ -19,17 +19,27 @@ Generating it produced a result that changed the shape of the phase:
 | Measured at `c03011f` | |
 |---|---|
 | entries carrying `legacy-unreviewed` | 23 |
-| …of those, **already covered by an existing ruling** | **15** |
+| …of those, **already covered by an existing ruling** | **14** |
 | …**sub-routes inheriting a ruled parent** | **7** |
-| …**genuinely undecided** | **1** (`jlpt-test`) |
+| …**genuinely open — no ruling exists** | **2** (`jlpt-test`, `register`) |
 | entries with `impl: 'none'` | 33, all `route: null` |
 | entries with a stale `figmaCheckedAt` | **0** — 51 read `2026-08-12`, 28 read `null` |
 
-**Twenty-one of twenty-three were never debt.** The registry's own per-entry comments already cite
-the ruling that settled them (`vocab` → A10, `challenges` → A5, `weeklyReport` → A2,
-`statistics`/`achievements` → A4, `playlists` → A11, `mining` → A7, `landing-page` → P16,
-`register` → `screen-inventory.md:201`). What made them look like debt was the **name of an enum
-member**, not their state.
+**Twenty-one of twenty-three were never debt** — the 14 + 7 in the rows above. The registry's own
+per-entry comments already cite the ruling that settled them (`vocab` → A10, `challenges` → A5,
+`weeklyReport` → A2, `statistics`/`achievements` → A4, `playlists` → A11, `mining` → A7,
+`landing-page` → P16). What made them look like debt was the **name of an enum member**, not their
+state.
+
+> ⚠️ **Correction, final fix wave (2026-08-14): `register` was counted here as ruled, on frame
+> evidence.** The first version of this table read 15 / 7 / 1 and licensed `register` by citing
+> `screen-inventory.md` — *"Figma has `Login` but no register frame"*. **That is a has-no-frame
+> observation, not a ruling**, and reading it as one is exactly the axis leak §2 forbids. Nothing in
+> `decision-register.md` rules on `/register`; `screen-inventory.md` §3's Ruling column reads *"still
+> open"*, and `2026-08-08-screen-registry-design.md`'s own 2026-08-13 note already said *"Only
+> `jlpt-test` and `register` remain genuinely open"* — so the branch contradicted itself and this
+> section was the wrong half. **No ruling is invented for `/register`. Recording that none exists is
+> the honest outcome**, and it is now what the registry entry's comment says too.
 
 > ⚠️ **Method note, and the reason this section leads with a measurement.** The phase was very
 > nearly scoped from `mem:screen_registry_inputs` (written 2026-08-11), which framed Phase 2 as
@@ -124,24 +134,29 @@ Backfill is **evidence-driven, never blanket**.
 > `repo-only`.** Stamping all 28 because they happen to be repo-only is the exact failure this
 > design exists to prevent, and §5's size assertion is what catches it.
 
-Admissible evidence, each citable to a line:
+Admissible evidence, each citable to a **section and a quoted row** — never to a line number.
+Line citations into `screen-inventory.md` went stale twice inside this phase alone (Task 4 inserted
+a line above Task 3's citations; the final fix wave struck two rows from §3's table), so the
+convention is now sections, and `screen-registry.ts`'s header records it:
 
 - a registry comment naming an inventory section (`vocab`, `grammar`, `kanji`, `weeklyReport`, …);
-- `screen-inventory.md:199-211`, the per-route adjudication table (`register`: *"Figma has `Login`
-  but no register frame"*);
-- `screen-inventory.md:239-240`, the frameless list (`/review`, `/achievements`, `/challenges`,
-  `/statistics`, `/register`).
+- `screen-inventory.md` §3's per-route adjudication table (`register`: *"Figma has `Login` but no
+  register frame"*);
+- `screen-inventory.md` §4's closing *"Frameless with no such conflict"* list (`/review`,
+  `/achievements`, `/challenges`, `/statistics`, `/register`).
 
-Every remaining `null` afterwards then means one true thing: **nobody has compared this entry yet.**
+Every remaining `null` afterwards means one of **two** true things — nobody has compared this entry
+yet, or it is `out-of-design-scope` and therefore never comparable (§3a.1). It never means "we
+forgot", which is the property that makes the null set readable as a survey backlog at all. The G2
+test's comment carries the same two-reason wording.
 
 ### 3a.3 — Reconciliation of comments and stale lists
 
 No new product decisions. Three kinds of edit:
 
-1. **15 group-A entries** — add or correct the comment so it cites the ruling that already governs
+1. **14 group-A entries** — add or correct the comment so it cites the ruling that already governs
    them. Several entries carry **no comment at all** today (`register`, `community-detail`,
-   `vocab-review`, …), which is precisely why `register` was nearly misfiled as undecided.
-   Enumerated here so the plan cannot quietly cover fourteen of them (`L-023`):
+   `vocab-review`, …). Enumerated here so the plan cannot quietly cover thirteen of them (`L-023`):
 
    | Entry | What already governs it |
    |---|---|
@@ -152,17 +167,29 @@ No new product decisions. Three kinds of edit:
    | `playlists` | **A11** — stays its own screen |
    | `mining` | **A7** — relabelled `Collection`; `screenId` deliberately unchanged |
    | `landing-page` | **P16** — no landing page exists yet, known and accepted |
-   | `register` | `screen-inventory.md:201` — *"Figma has `Login` but no register frame"*, and `:239-240` lists it frameless-without-conflict |
    | `kanji` · `grammar` · `review` | Nav rows under the LOCKED IA (**A1**); `repo-only` because no frame matches, each with a judgement call already recorded in the registry comment |
+
+   ⚠️ **`register` used to be a fifteenth row here and is not one.** Its entry gets a comment like
+   the rest, but that comment records **frame evidence only** — `screen-inventory.md` §3's table,
+   row `/register` (*"Figma has `Login` but no register frame"*) and §4's *"Frameless with no such
+   conflict"* list. **No product ruling governs `/register`**, so nothing goes in the "what already
+   governs it" column; see §1's correction. The comment must say so in as many words, or the next
+   reader repeats the inference.
 2. **7 group-B sub-routes** — state that they inherit their parent's ruling
    (`community-detail`/`community-peer-review` ← A10 · `reading-detail` ← A10 ·
    `vocab-detail`/`vocab-review` ← A10 · `playlists-detail` ← A11 · `mining-review` ← A7).
 3. **Stale lists, which are a false backlog for this very phase:**
-   - `screen-inventory.md:255-265` "### Still open" — item 1 (the vocab-shelf conflict) is
-     **resolved at `:1502-1506`** in the same file: the shelf sits inside Companion home, so it is
-     companion-owned and hiding `/vocab` costs it nothing. Item 3 is settled by **A12**, item 7 by
-     **A11**.
-   - `screen-inventory.md:197-211` "Not yet adjudicated" — most rows now have rulings.
+   - `screen-inventory.md` §5's "### Still open" list — item 1 (the vocab-shelf conflict) is
+     **resolved in §11.1** of the same file, under *"⭐ This frame resolves an open question carried
+     since 2026-08-11"*: the shelf sits inside Companion home, so it is companion-owned and hiding
+     `/vocab` costs it nothing. Item 3 is settled by **A12**, item 7 by **A11**, and **item 4 by
+     this file's own §11.5 and §12.4** (`Companion Knowledge Assistant` → `/sensei`; `Growth Areas`
+     → **not** `/weekly-report`) — struck in the final fix wave, 2026-08-14. Items 2, 5, 6 stay
+     open.
+   - `screen-inventory.md` §3's "Not yet adjudicated" table — most rows now have rulings. ⚠️ Two of
+     its rows, `/dashboard` and `/sensei`, asserted framelessness the registry contradicts
+     (`figmaNodeId` `111:515` and `215:15164`, both `kind: "screen"`) and were struck in the final
+     fix wave; §3 carries a note saying where each frame mapping lives.
    - any surviving "debt" phrasing from 3a.1.
 
 ### 3a.4 — Adjudicate `jlpt-test` (ruling only)
@@ -183,13 +210,20 @@ Measured basis:
 - `japanese-learning-app-spec.md:76` still lists `/jlpt-test`, so three names exist for one thing:
   the spec says `/jlpt-test`, the repo runs `/jlpt`, A9 locks `/certification`.
 
-**2a records this ruling and changes no route.** Execution belongs to 2b, and is exactly four edits:
-delete `app/[locale]/(protected)/(app)/jlpt-test/page.tsx`; delete `/jlpt-test` from
-`PROTECTED_PREFIXES` (`lib/supabase/route-protection.ts:14`); amend
-`japanese-learning-app-spec.md:76`, which still lists the route; and re-run
-`lib/supabase/route-protection.test.ts`, whose filesystem-driven coverage test is the existing guard
-for this class — no new guard is needed, and 2b must confirm it fails on a stale prefix rather than
-assuming it.
+**2a records this ruling and changes no route.** Execution belongs to 2b, and **the edit list is
+deliberately not restated here.** It has exactly one home: **A16 in `docs/product/decision-register.md`
+§2.** Read it there.
+
+> ⚠️ **Why this paragraph is a pointer and not a list.** It used to carry its own copy of the edit
+> list, and that copy was wrong in two ways the moment A16 was corrected: it gave a smaller edit
+> count (the registry entry deletion was missing), and it named
+> `lib/supabase/route-protection.test.ts`'s **filesystem-driven coverage test** as the guard for this
+> class. That test walks the `page.tsx` files that *exist*; deleting a page only shrinks its walk, so
+> it structurally cannot detect a prefix that outlived its route. A16 names the **pin test** at
+> `lib/supabase/route-protection.test.ts:19-53` instead. Two copies of an edit list is `CLAUDE.md`
+> §6's "one fact, one home" — and §6 of this spec routes 2b straight back here, so a stale copy at
+> this exact spot sends an implementer to do the wrong work and then to reproduce a failure that
+> cannot happen.
 
 **No `kind: 'redirect'` is added in 2a.** Adding one now would model a *hypothetical* 2b redirect.
 If 2b genuinely needs `/jlpt` → `/certification` to survive as a redirect, that is a real artifact

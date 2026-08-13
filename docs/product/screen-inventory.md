@@ -195,21 +195,35 @@ keep the code, do not build further: `/reading`, `/reading/[id]`, `/leaderboard`
 conflict in §4 before acting on the vocab half.**
 
 **Not yet adjudicated, as surveyed 2026-08-11 — ruling column added 2026-08-13 (Phase 2a) against
-`decision-register.md` §2, the LOCKED IA:**
+`decision-register.md` §2, the LOCKED IA. ⚠️ Two rows were struck 2026-08-14 — read the note below
+the table before treating any row as freshly verified:**
 
 | Route | Note | Ruling (2026-08-13) |
 |---|---|---|
 | `/register` | Figma has `Login` but no register frame | still open |
-| `/dashboard` | real screen (`LevelCard`/`StreakCard`/`SrsDueCard`/`BadgesGrid`/`RecommendationSection`). Confirmed **separate** from `Companion home` (§1) and still frameless | still open |
 | `/review` | the cross-type SRS review hub | **KEEP** — `ia-proposal.md` §2's `remember` group (part of A1, `decision-register.md` §2) |
 | `/grammar` | the grammar list. `Grammar analysis` is a **new, deliberately unbuilt** feature (§1), so this list stays frameless | still open (this note is a frame observation, not a pending IA question) |
 | `/mining`, `/mining/review` | sentence mining | **A7** — relabelled `Collection`, screenId unchanged |
 | `/playlists`, `/playlists/[id]` | IA question still open | **A11** — stays its own screen, not folded into Explore |
 | `/achievements`, `/challenges`, `/statistics` | gamification surfaces | **A4** (achievements, statistics → Dashboard/Profile), **A5** (challenges → Roadmap/Mission) |
 | `/weekly-report` | placeholder; possibly `Growth Areas` | **A2** — absorbed into Companion (§12.4 rules out `Growth Areas` as the match) |
-| `/sensei` | placeholder; possibly `Companion Knowledge Assistant` | **A2** — absorbed into Companion (one of its six screens) |
-| `/jlpt-test` | dead `redirect()` to `/jlpt`; `deprecated` or out of scope per §3.3 | pending — reserved as **A16**, ruled in Phase 2a Task 5 |
+| `/jlpt-test` | dead `redirect()` to `/jlpt`; `deprecated` or out of scope per §3.3 | **A16** (`decision-register.md` §2) — dead route code, removed in Phase 2b |
 | `/admin/*` (5 routes) | `repoOnlyReason: 'out-of-design-scope'` — the only value R13 allows, and only because `chrome: 'admin'` | n/a — a T10 mechanism note, not an open IA question |
+
+> ⚠️ **Struck 2026-08-14 — `/dashboard` and `/sensei` are NOT frameless, so they never belonged in
+> §3.** Both were carried here from the 2026-08-11 survey and re-certified by the Phase 2a pass that
+> added the ruling column, which is what made two stale rows look freshly verified. This same file
+> maps both frames:
+>
+> - **`/dashboard` ← `111:515`** — §19.0 (*"`111:515` is named `Homepage`. It is the authenticated
+>   Dashboard"*), detailed in §19.1, verdict row in §19.7.
+> - **`/sensei` ← `215:15164`** — §11.3 `Companion Knowledge Assistant`, verdict row in §11.5
+>   (`/sensei` ✅ `(app)`).
+>
+> `lib/product/screen-registry.ts` agrees: both are `kind: "screen"` carrying exactly those
+> `figmaNodeId`s, which is the contradiction that surfaced this. **The strike moves nothing on the
+> decision axis** — §3's subject is whether a frame exists, and rulings live in
+> `decision-register.md`. `/sensei` remains governed by **A2**.
 
 ---
 
@@ -256,15 +270,22 @@ Frameless with no such conflict: `/review`, `/achievements`, `/challenges`, `/st
 ### Still open
 1. ~~**§4's vocab conflict** — does the `PERSONAL VOCABULARY SHELF` read from the `/vocab` module, or
    is it companion-owned data? Decides whether hiding `/vocab` is free or breaks a flagship panel.~~
-   **RESOLVED at `:1502-1506` of this file** (2026-08-13): the shelf sits inside Companion home, so
-   it is companion-owned and hiding `/vocab` costs it nothing.
+   **RESOLVED in §11.1 of this file** (2026-08-13), under *"⭐ This frame resolves an open question
+   carried since 2026-08-11"*: the shelf sits inside Companion home, so it is companion-owned and
+   hiding `/vocab` costs it nothing. *(The line citation this entry used to carry, `:1502-1506`,
+   pointed at §11.1's attribute table rather than at that prose, and had already shifted once —
+   hence the section anchor.)*
 2. **Confirm the `Grammar analysis` reading**: "it's a new feature, we don't need to build it, the
    existing grammar module is enough" — is that right?
 3. ~~**`Loading state` / `Error state`** — the §2 rule, which the user asked to discuss further.~~
    **RESOLVED by A12** (`decision-register.md` §2): loading + error catalogues go to
    `/admin/style-guide`, not the registry.
-4. **`Companion Knowledge Assistant` → `/sensei`? `Growth Areas` → `/weekly-report`?** Both routes
-   are placeholders today, so this is mapping, not implementation.
+4. ~~**`Companion Knowledge Assistant` → `/sensei`? `Growth Areas` → `/weekly-report`?**~~
+   **RESOLVED — both halves, in this file** (struck 2026-08-14). `Companion Knowledge Assistant`
+   (`215:15164`) **→ `/sensei`**: §11.3 analyses the frame and §11.5's verdict row records the route
+   as `/sensei` ✅ `(app)`. `Growth Areas` (`187:6556`) **→ NOT `/weekly-report`**: §12.4 rules the
+   guess out in as many words — *"a persistent skill-progress map, not a periodic report"* — and §3's
+   table above carries the same answer on the `/weekly-report` row (**A2**).
 5. **`Panel`** — which screen is it a state of? Unidentifiable from the name alone.
 6. **`Pronunciation (in shadowing)`** — a state of `shadowing-practice`, or its own route?
 7. ~~**`/playlists`** — own screen, or a tab inside Explore? (carried over)~~ **RESOLVED by A11**

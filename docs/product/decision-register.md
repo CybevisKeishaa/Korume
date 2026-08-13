@@ -125,19 +125,30 @@ Three names exist for one thing, which is why this is a reconciliation item and 
 `japanese-learning-app-spec.md:76` says `/jlpt-test`, the repo runs `/jlpt`, and **A9** locks
 `/certification`.
 
-⚠️ **2a rules; 2b executes.** Phase 2b performs exactly five edits: delete
-`app/[locale]/(protected)/(app)/jlpt-test/page.tsx`; delete the `screenId: "jlpt-test"` entry
-(`lib/product/screen-registry.ts:787-800`) from `SCREEN_REGISTRY` — required, not cosmetic. Once the
-page is gone, that entry's `route: "/jlpt-test"` + `impl: "built"` makes it "lying" under **T2**
-(`lib/product/screen-registry.routes.test.ts:17-23`), which walks the real filesystem for
-`derivedRoutes` and fails on any entry claiming a route that no longer resolves there. Deletion is
-the recommended fix over setting `route: null` + `impl: "none"`: the screen ceases to exist, and
-**R5** only requires that every *page* have a registry entry, never that every entry have a page —
-either satisfies T2, and 2b makes the final call; delete `/jlpt-test` from `PROTECTED_PREFIXES`
-(`lib/supabase/route-protection.ts:14`); amend `japanese-learning-app-spec.md:76`; and
-**mutation-check** the pin test at `lib/supabase/route-protection.test.ts:19-53` — it hardcodes the
-literal `PROTECTED_PREFIXES` array, so editing the array without updating the pin is what goes RED,
-and 2b must prove that rather than run the suite green and call it evidence.
+⚠️ **2a rules; 2b executes.** This is the **only** home for 2b's edit list — the Phase 2a design spec
+§3a.4 points here rather than keeping a second copy. The list is given **without an "exactly N"
+total**, because that total has now been written wrong twice (first four, then five) and a bare
+count goes stale the instant one more pin moves; the last bullet is what a count cannot express.
+
+1. Delete `app/[locale]/(protected)/(app)/jlpt-test/page.tsx`.
+2. Delete the `screenId: "jlpt-test"` entry from `SCREEN_REGISTRY` in
+   `lib/product/screen-registry.ts` — **required, not cosmetic.** Once the page is gone, that
+   entry's `route: "/jlpt-test"` + `impl: "built"` makes it "lying" under **T2**
+   (`lib/product/screen-registry.routes.test.ts:17-23`), which walks the real filesystem for
+   `derivedRoutes` and fails on any entry claiming a route that no longer resolves there. Deletion
+   is the recommended fix over setting `route: null` + `impl: "none"`: the screen ceases to exist,
+   and **R5** reads *"Every in-scope route MUST have a registry entry. An entry need NOT have a
+   route"* (`2026-08-08-screen-registry-design.md` R5) — so an entry without a route was always
+   legal and a route without an entry never was. Either shape satisfies T2; 2b makes the final call.
+3. Delete `/jlpt-test` from `PROTECTED_PREFIXES` (`lib/supabase/route-protection.ts:14`).
+4. Amend `japanese-learning-app-spec.md:76`.
+5. **Mutation-check** the pin test at `lib/supabase/route-protection.test.ts:19-53` — it hardcodes
+   the literal `PROTECTED_PREFIXES` array, so editing the array without updating the pin is what
+   goes RED, and 2b must prove that rather than run the suite green and call it evidence.
+6. **Update every count pin the deletion moves. The suite names them by going red — do not
+   enumerate them from here.** Known today: `lib/product/screen-registry.test.ts`'s G2 assertion
+   `expect(stamped).toHaveLength(74)`, because the deleted entry carries
+   `figmaCheckedAt: "2026-08-12"` and so is one of the 74. Treat that as an example, not the list.
 
 ⚠️ **No existing test guards the reverse direction — a prefix left behind for a deleted route.** An
 earlier draft of this ruling named `route-protection.test.ts`'s filesystem-driven coverage test
@@ -152,6 +163,16 @@ forces a *conscious* edit to the array — not because it detects an orphaned pr
 **No `kind: 'redirect'` was added.** Doing so in 2a would model a hypothetical 2b redirect. If 2b
 genuinely needs `/jlpt` → `/certification` to survive as one, that is a real artifact with a real
 shape and the schema decision can be made against it then.
+
+**⚑ Also owed to 2b, and not a ruling — a tracked debt item.** `components/layout/app-nav.tsx`'s
+header comment (lines 16-18) is wrong on two counts: it says a module-scope registry import "ships
+all **50** entries" — `SCREEN_REGISTRY` holds **79** — and it calls `repoOnlyReason` /
+`figmaCheckedAt` "internal **debt labels**", a framing Phase 2a retired when `legacy-unreviewed`
+became `no-frame-at-last-pass` (a reason member records an observation, R6, not debt). **2a
+deliberately left it alone**: its locked guard G4 forbids any `app/` · `supabase/` · `components/`
+path in the branch diff, and a comment fix is not worth breaking that. It is filed here because the
+only other record of it lived in a gitignored progress file, which tracks nothing — and beside A16
+because 2b is the next pass allowed to touch `components/`.
 
 ## 3. Method rules — `LOCKED`, and they bind future passes
 
