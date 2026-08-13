@@ -6,78 +6,27 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import type { NavGroup } from "@/lib/product/nav-derivation";
 
 /**
- * href → nav catalog key, in the 5-group structure from
- * `docs/design/screens/navigation-system.md` § Navigation Inventory. Keys,
- * not labels: the words live in messages/. Group `key` doubles as the
- * heading catalog key (`nav.groups.*`).
+ * Presentation only. The registry owns nav membership and order (R4), and
+ * `groups` arrives already derived from it.
  *
- * All 22 canonical destinations are wired (Plan C1). Eight of them —
- * review, challenges, sensei, roadmap, weeklyReport, statistics,
- * achievements, settings — are real routes rendering an honest empty state
- * rather than a built feature; a nav row that 404s is worse than one that
- * explains itself. `app-nav.test.tsx` asserts every href resolves to a page
- * file, so a future route rename fails loudly instead of shipping a dead row.
+ * ⛔ **Do not import `SCREEN_REGISTRY` or `NAV_GROUPS` here.** This is a
+ * `"use client"` module: a module-scope import of the registry ships all 50
+ * entries to the browser — private Figma node ids, unshipped screen names,
+ * internal debt labels. `lib/product/nav-groups.ts` explains it in full;
+ * `deriveNavGroups` is called in the server layouts that mount this component
+ * (final whole-branch review FIX 3). The type import below is erased at
+ * compile time and pulls nothing into the client graph.
  */
-export const NAV_GROUPS = [
-  {
-    key: "learn",
-    items: [
-      { href: "/dashboard", key: "dashboard" },
-      { href: "/shadowing", key: "lessons" },
-      { href: "/kanji", key: "kanji" },
-      { href: "/vocab", key: "vocab" },
-      { href: "/grammar", key: "grammar" },
-      { href: "/reading", key: "reading" },
-      { href: "/conversation", key: "speaking" },
-      { href: "/jlpt", key: "jlpt" },
-    ],
-  },
-  {
-    key: "study",
-    items: [
-      { href: "/review", key: "review" },
-      { href: "/mining", key: "mining" },
-      { href: "/playlists", key: "playlists" },
-      { href: "/challenges", key: "challenges" },
-      { href: "/community", key: "community" },
-      { href: "/leaderboard", key: "leaderboard" },
-    ],
-  },
-  {
-    key: "insights",
-    items: [
-      { href: "/sensei", key: "sensei" },
-      { href: "/roadmap", key: "roadmap" },
-      { href: "/weekly-report", key: "weeklyReport" },
-    ],
-  },
-  {
-    key: "progress",
-    items: [
-      { href: "/journal", key: "journey" },
-      { href: "/statistics", key: "statistics" },
-      { href: "/achievements", key: "achievements" },
-    ],
-  },
-  {
-    key: "account",
-    items: [
-      { href: "/profile", key: "profile" },
-      { href: "/settings", key: "settings" },
-    ],
-  },
-] as const;
-
-/** Flat view kept for the catalog-parity test; no production consumer today. */
-export const NAV_ITEMS = NAV_GROUPS.map((group) => group.items).flat();
-
 export function AppNav({
   userEmail,
+  groups,
   defaultVisible = true,
 }: {
   userEmail: string;
+  groups: readonly NavGroup[];
   defaultVisible?: boolean;
 }) {
   const pathname = usePathname();
@@ -104,7 +53,7 @@ export function AppNav({
           </div>
 
           <div data-nav-scroll className="flex-1 overflow-y-auto">
-            {NAV_GROUPS.map((group) => (
+            {groups.map((group) => (
               <div key={group.key} className="mb-2">
                 <p
                   id={`app-nav-group-${group.key}`}
@@ -131,7 +80,15 @@ export function AppNav({
                               : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                           )}
                         >
-                          {t(item.key)}
+                          {/* item.key was a 22-literal union while NAV_GROUPS
+                              was a `const` literal; deriving it from the
+                              registry widens the type to `string` (R4). Same
+                              cast precedent as journal-view.tsx. Catalog-key
+                              coverage is enforced at runtime by
+                              app-nav.test.tsx's "pinned label for every nav
+                              destination" and "catalog's destination key set"
+                              tests. */}
+                          {t(item.key as Parameters<typeof t>[0])}
                         </Link>
                       </li>
                     );

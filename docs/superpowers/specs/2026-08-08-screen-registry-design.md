@@ -208,9 +208,25 @@ while the suite stayed green.
 | **T9** | Every `kind === 'repo-only'` has a non-null `repoOnlyReason`; every other kind has `repoOnlyReason === null` (R13). |
 | **T10** | `repoOnlyReason === 'out-of-design-scope'` implies `chrome === 'admin'`. Any other route claiming it **fails**, forcing it into `'legacy-unreviewed'` where Phase 2 counts it as debt (R13). |
 
-T1 subsumes and generalises the existing href-resolves guard in `app-nav.test.tsx`, which today only
-checks that nav hrefs have pages. That guard is the seed of this idea and should be folded in, not
-duplicated.
+⚠️ **Correction (final whole-branch review, 2026-08-12).** This paragraph used to read "T1 subsumes and
+generalises the existing href-resolves guard in `app-nav.test.tsx` … that guard should be folded in, not
+duplicated." **That was wrong, and acting on it deleted a live invariant.** T1 and the href-resolves
+guard run in *opposite directions*:
+
+- **T1**: every `page.tsx` in the repo has a registry entry — catches a route nobody recorded.
+- **href-resolves**: every nav destination reaches a real `page.tsx` — catches a sidebar row pointing
+  nowhere.
+
+Neither implies the other. Deleting the second on the strength of the first left a nav entry free to
+point at a routeless screen with the whole suite green: repointing a nav entry at a routeless
+`/companion` with `impl: 'none'` and moving its page directory away kept T1, T2 and T8 **passing**
+while the sidebar rendered a dead link.
+
+**Two-directional completeness is two separate invariants, not one invariant written two ways.** Both
+are therefore kept: T1 as specified above, and the reverse direction as the nav-destination assertion in
+`lib/product/screen-registry.routes.test.ts`. `deriveNavGroups` additionally *throws* on
+`navGroup !== null && route === null` rather than silently filtering the row out, so the same root cause
+cannot instead manifest as a nav row that quietly disappears.
 
 ### 4.2 Assertions deliberately NOT written
 

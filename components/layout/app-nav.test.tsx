@@ -1,11 +1,14 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { AppNav, NAV_GROUPS, NAV_ITEMS } from "./app-nav";
+import { AppNav } from "./app-nav";
+// NAV_GROUPS/NAV_ITEMS moved out of app-nav.tsx (final whole-branch review
+// FIX 3): app-nav.tsx is "use client", so deriving them there shipped the
+// whole screen registry to the browser. The values are unchanged — only the
+// module they live in moved.
+import { NAV_GROUPS, NAV_ITEMS } from "@/lib/product/nav-groups";
 // Plain JSON import (resolveJsonModule), not next-intl. Used ONLY for a
 // structural check (key-set parity below) — never as a source of expected
 // *values*. Comparing rendered text to this same file would be circular:
@@ -85,7 +88,7 @@ vi.mock("@/components/layout/notification-bell", () => ({
 function renderNav(userEmail = "learner@example.com") {
   return render(
     <ThemeProvider>
-      <AppNav userEmail={userEmail} />
+      <AppNav userEmail={userEmail} groups={NAV_GROUPS} />
     </ThemeProvider>,
   );
 }
@@ -153,17 +156,16 @@ describe("AppNav", () => {
     expect(NAV_ITEMS).toHaveLength(22);
   });
 
-  it("points every nav href at a route that exists", () => {
-    // The regression that makes a future rename fail loudly instead of shipping
-    // a dead nav row. Plan C1 exists partly because eight rows had no route.
-    const missing = NAV_ITEMS.filter((item) => {
-      const segments = item.href.replace(/^\//, "");
-      const candidates = [
-        path.join(process.cwd(), "app", "[locale]", "(protected)", "(app)", segments, "page.tsx"),
-        path.join(process.cwd(), "app", "[locale]", "(protected)", "(immersive)", segments, "page.tsx"),
-      ];
-      return !candidates.some(existsSync);
-    });
+  // The href-resolves guard moved to lib/product/screen-registry.routes.test.ts
+  // (T1), which checks EVERY page.tsx against the registry rather than only
+  // nav hrefs under (app)/(immersive). Spec §4.1: folded in, not duplicated.
+
+  it("has a pinned label for every nav destination", () => {
+    // Restores the exhaustiveness that `NAV_GROUPS`-as-a-literal used to give
+    // at compile time. Once NAV_GROUPS is derived from the registry, the key
+    // type widens to `string`, so a missing EXPECTED_LABELS entry would no
+    // longer be a tsc error — this makes it a test failure instead.
+    const missing = NAV_ITEMS.filter((item) => !(item.key in EXPECTED_LABELS));
     expect(missing).toEqual([]);
   });
 
@@ -265,7 +267,11 @@ describe("AppNav visibility toggle", () => {
   it("starts hidden when the chrome contract asks for it", () => {
     render(
       <ThemeProvider>
-        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+        <AppNav
+          userEmail="learner@example.com"
+          groups={NAV_GROUPS}
+          defaultVisible={false}
+        />
       </ThemeProvider>,
     );
 
@@ -280,7 +286,7 @@ describe("AppNav visibility toggle", () => {
   it("still starts visible by default", () => {
     render(
       <ThemeProvider>
-        <AppNav userEmail="learner@example.com" />
+        <AppNav userEmail="learner@example.com" groups={NAV_GROUPS} />
       </ThemeProvider>,
     );
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
@@ -294,7 +300,11 @@ describe("AppNav visibility toggle", () => {
   it("keeps the reduce-motion control reachable even while the nav is hidden", () => {
     render(
       <ThemeProvider>
-        <AppNav userEmail="learner@example.com" defaultVisible={false} />
+        <AppNav
+          userEmail="learner@example.com"
+          groups={NAV_GROUPS}
+          defaultVisible={false}
+        />
       </ThemeProvider>,
     );
     expect(
