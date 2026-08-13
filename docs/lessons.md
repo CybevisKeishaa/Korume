@@ -221,9 +221,9 @@ count it cannot go stale.
 
 ### L-024 — Reconcile the whole dependent system, not just the flagged files
 
-**Rule:** When reconciling against a governance document, audit every file that depends on the same facts — including files a previous pass marked done.
+**Rule:** When reconciling against a governance document, audit every file that depends on the same facts — including files a previous pass marked done. **Run the sweep to exhaustion: a sweep that stops at its first hit is a spot fix wearing a sweep's name.**
 **Why:** Fixing only the named files leaves latent contradictions that resurface later, which is the confusing state the reconciliation existed to remove.
-**Evidence:** `docs/design/` reconciliation (2026-07-29, merged `20d6eed`) — a repo-wide audit found real contradictions in files a prior "Wave 1" had already signed off, turning a 9-file task into a 22-task plan.
+**Evidence:** `docs/design/` reconciliation (2026-07-29, merged `20d6eed`) — a repo-wide audit found real contradictions in files a prior "Wave 1" had already signed off, turning a 9-file task into a 22-task plan. · Screen Registry Phase 1b `7ba870a` — its own commit message says an L-024 sweep of `navigation-system.md` "found one more" falsehood (`/settings` "does not exist"). It stopped there. The L-012 review of that same wave found **four** surviving claims that `/journal` is a nav row — in the file the sweep was already editing, contradicting the branch's own headline change and a green test in the same range — plus a deleted count re-asserted twelve lines later as "the same 13-of-14 scope, described just above", pointing at text the same commit had removed.
 **Applies to:** doc/config reconciliation against any source of truth. Use parallel research/audit agents to keep a widened audit affordable.
 
 ### L-025 — A nav or label rename must sweep `tests/e2e/` by hand
@@ -240,7 +240,7 @@ count it cannot go stale.
 ### L-026 — Two silently-disagreeing sources is this project's most expensive failure mode
 
 **Status:** Promoted to `CLAUDE.md` §6 (2026-08-13) — retained here as historical evidence.
-**Evidence:** Lesson Workspace Plan A spent an entire plan cleaning up one instance. · `docs/superpowers/specs/2026-08-08-screen-registry-design.md` §7 names it risk 1 and builds R1+R12 to guard it. · This registry exists because the lesson corpus itself had four owners.
+**Evidence:** Lesson Workspace Plan A spent an entire plan cleaning up one instance. · `docs/superpowers/specs/2026-08-08-screen-registry-design.md` §7 names it risk 1 and builds R1+R12 to guard it. · This registry exists because the lesson corpus itself had four owners. · Screen Registry Phase 1b — the **resume memory itself** went stale: at branch HEAD `mem:screen_registry_run_state` still listed two rulings as OPEN that the last commit had implemented, and still repeated a scope claim that the same commit had measured false and retracted in `decision-register.md`. `MEMORY.md` names that memory the thing to read first on resume, so merging it would have instructed the next session to re-ask the user for rulings already given. **A handoff document is code for the next session: stale-check it in the same pass that changes what it describes, not in a later one.**
 
 ### L-027 — Commit the content before the test that pins it
 
