@@ -39,6 +39,10 @@ describe("route protection", () => {
       "/roadmap",
       "/sensei",
       "/settings",
+      // Phase 1b's two new destinations. Added here as a conscious edit,
+      // which is exactly what this pin exists to force.
+      "/companion",
+      "/pronunciation",
       "/statistics",
       "/weekly-report",
       "/content-manager",

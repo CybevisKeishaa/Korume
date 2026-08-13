@@ -60,7 +60,8 @@ count it cannot go stale.
 
 **Status:** Promoted to `CLAUDE.md` §7 (2026-08-13) — retained here as historical evidence.
 **Evidence:** Plan C1 `bd7f574`, three separate rounds — a test titled "sticks the rail" asserted `sticky` and a width class but not the inset class, so it passed against a rail that did not stick; an over-breadth test's `else` arm re-asserted the negation of its own guard, so that path always passed; a four-required-prop component asserted two, leaving the paragraph it existed for untested across nine routes. · Screen registry Phase 1a `0059385` — the glob `app/[locale]/**/page.tsx` matched **zero** files, because a glob reads `[locale]` as a character class, not a literal directory name; escaped, the same walk matched 44. The assertion it fed (T1, "every `page.tsx` has a registry entry") would have compared an empty set against the registry and passed while asserting nothing — the vacuous-pass case, caught only because the count was measured rather than assumed.
-**Note (kept here — too narrow to be law):** `toContain` on a class name is especially prone to this — it constrains a substring, not behaviour.
+**Evidence (cont.):** Screen registry Phase 1b `276d0ac` — the same disease *outside* the test suite. The client-bundle check greped the built chunks for six registry markers and returned six clean zeros. The positive control, `"Pronunciation"`, returned zero **too**: catalog strings travel in the RSC payload and never reach a static chunk, so the grep could not have found anything and all six zeros were meaningless. Re-run with `data-nav-scroll` — a literal that genuinely is in `app-nav.tsx`'s chunk — the control fired, and only then did the zeros mean what they appeared to mean.
+**Note (kept here — too narrow to be law):** `toContain` on a class name is especially prone to this — it constrains a substring, not behaviour. A **grep of a build artifact is a collection gathered by a pattern**, so `CLAUDE.md` §7's clause applies to it verbatim: never report a clean sweep of build output without a control that fires.
 
 ### L-005 — The Supabase mock models no RLS, so RLS mistakes are invisible to the suite
 
@@ -227,10 +228,10 @@ count it cannot go stale.
 
 ### L-025 — A nav or label rename must sweep `tests/e2e/` by hand
 
-**Rule:** After renaming any user-visible label, grep `tests/e2e/` for the old string.
-**Why:** `vitest.config.ts:13` excludes `tests/e2e`, so `npm test` **structurally cannot** run Playwright specs — no unit run can ever catch the break.
-**Evidence:** Lesson Workspace Plan A `ef564c7` — `tests/e2e/journal.spec.ts` still clicked a link named "Journal" after the nav label became "Journey".
-**Applies to:** every label, route, or role-name rename.
+**Rule:** After renaming any user-visible label, grep `tests/e2e/` for the old string — **and then prove the replacement works**, by running it or by an isolated repro. The sweep is only half the job.
+**Why:** `vitest.config.ts:13` excludes `tests/e2e`, so `npm test` **structurally cannot** run Playwright specs. No unit run can catch the break, and none can catch a broken *fix* either — which is the half that gets forgotten, because the replacement looks right on the page.
+**Evidence:** Lesson Workspace Plan A `ef564c7` — `tests/e2e/journal.spec.ts` still clicked a link named "Journal" after the nav label became "Journey". · Screen registry Phase 1b `276d0ac` — the sweep found **two** specs, not one, both clicking a nav row the LOCKED IA had just moved. The replacement pointed them at the companion sprite, which is genuinely the right door — but that button carries `companion-breathe`, an infinite `scale(1 → 1.03)`, and Playwright's click actionability waits for a *stable* bounding box. Measured in an isolated repro: 3/3 timeouts at ~8s by default, 63ms with `page.emulateMedia({ reducedMotion: "reduce" })`. Reading the diff could not have found it; the whole-branch review reproduced it.
+**Applies to:** every label, route, or role-name rename. Also: any Playwright interaction with an element that animates — an infinite animation is never "stable", so the click never becomes actionable.
 
 ---
 

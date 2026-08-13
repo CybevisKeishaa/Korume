@@ -44,5 +44,15 @@
     "title": "Explore Lessons",
     "body": "Every lesson in Korume, arranged for discovery rather than for your own library.",
     "unlocks": "Nothing yet. This screen is being built."
+  },
+  "pronunciation": {
+    "title": "Pronunciation",
+    "body": "Pitch accent, rhythm, and the sounds that keep slipping — practised on their own rather than only inside a lesson.",
+    "unlocks": "Scoring already runs inside Shadowing. This screen is where it becomes practice you can choose."
+  },
+  "companion": {
+    "title": "Companion",
+    "body": "One place for the companion studying alongside you — its diary, what it remembers of your sessions, and where it thinks you are growing.",
+    "unlocks": "The Diary already exists — open it from your companion on the Dashboard until this hub gathers it in. The rest arrives with the hub."
   }
 }

@@ -106,9 +106,15 @@ Journal không phải nhật ký thành tích.
 
 # Danh tính
 
-Tên của Companion sẽ được xác định trong Character Identity Spec.
+**Tên của Companion là `Korume`** — cùng một chữ với tên sản phẩm. Đã chốt, không phải do người học
+đặt. (Ruling **P2**, `LOCKED` 2026-08-12 — `docs/product/decision-register.md` §1, lập luận ở
+`docs/product/screen-inventory.md` §15.5 và §20.)
 
-Các ứng viên hiện tại:
+⚠️ Mục này trước đây ghi "tên sẽ được xác định trong Character Identity Spec" và để ngỏ danh sách
+ứng viên. Câu đó **có trước P2 và đã lỗi thời** — nó được giữ lại bên dưới như hồ sơ lịch sử, không
+còn hiệu lực. `Storykeeper` **chưa bao giờ là tên Companion**; đó là tên một màn hình.
+
+Các ứng viên từng cân nhắc (hồ sơ lịch sử, đã đóng):
 
 * Korume
 * Koru
@@ -117,7 +123,28 @@ Các ứng viên hiện tại:
 * Noki
 * Yura
 
-Korume hiện là ứng viên được yêu thích nhất, nhưng Character Bible chưa mặc định bất kỳ tên nào là chính thức.
+Người dùng đã đóng danh sách này bằng cách **hợp nhất tên với tên sản phẩm** (`Korume`), chứ không
+phải bằng cách tuyên bố nó là placeholder — nên năm ứng viên còn lại không còn mở để chọn lại.
+
+## Cách gọi trong giao diện tiếng Việt: **Linh thú**
+
+Giao diện tiếng Việt gọi Companion là **"Linh thú"**. Đây là **danh từ chỉ loài**, không phải tên
+riêng — nó **không thay thế `Korume`** và không mâu thuẫn với P2, đúng như "con mèo của tôi" không
+thay thế tên con mèo. A15 được ra **sau** P2 một ngày, và người dùng cố ý chọn danh từ chung cho
+nav row thay vì tên riêng.
+
+* Nav row `companion-home` và tiêu đề trang `/companion`: **"Linh thú của tôi"**
+* Nhãn a11y của sprite (`messages/vi/companion.json` → `a11y.sprite`): **"Linh thú của bạn — mở nhật ký"**
+
+Cách gọi này thay cho "Đồng hành", vốn đặt tên cho một *phẩm chất* thay vì cho *sinh vật*.
+(Ruling A15 của người dùng, 2026-08-13 — `docs/product/decision-register.md` §2.)
+
+⚠️ **"Người bạn đồng hành" trong tài liệu này vẫn đúng và không bị thay thế** — ở đó nó là **mô tả
+mối quan hệ**, không phải cách gọi tên. Chỉ những chỗ dùng nó **như một cái tên trong UI** mới đổi
+sang "Linh thú". Tiếng Anh không bị ảnh hưởng: vẫn là *Companion*.
+
+Giọng của chính Companion không đổi và không cần đổi: nó xưng **"mình"** và **chưa bao giờ tự gọi
+tên mình** trong bất kỳ chuỗi nào (`speech`, `journal`, `memoryTitle`).
 
 ---
 

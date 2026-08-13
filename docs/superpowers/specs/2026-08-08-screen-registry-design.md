@@ -69,8 +69,8 @@ and that is what this spec adds.
 | **R5** | **Asymmetric completeness.** Every in-scope route MUST have a registry entry. An entry need NOT have a route. | This asymmetry is what lets `Pricing`/`FAQ`/`Checkout` be recorded as designed-but-unbuilt without being errors, while a route that exists outside the registry is always an error. |
 | **R6** | `kind: 'repo-only'` means *"no corresponding Figma node **at this inventory pass**"* — not a permanent classification. | A screen can be designed later. The field records an observation with a date, not a verdict. |
 | **R7** | Figma↔registry is **human-reconciled**, stamped with `figmaCheckedAt`. No automated verification of that pair is claimed anywhere. | No CI can reach Figma, and the account is student-tier with Code Connect unavailable (probed, `mem:figma_make_design_source`). `figmaCheckedAt` proves only *"this entry was compared against Figma at time X"* — which is the actual assurance available, and the spec must not imply more. |
-| **R8** | Phase 1 ships with **zero visual diff**. The derived `NAV_GROUPS` must be **byte-for-byte identical** to the literal running today. | Phase 1 is a re-index of what exists, not a redesign. If navigation changes during it, that is a Phase 1 defect — not a "cleanup". Every genuine IA change belongs to Phase 2, where it is a deliberate ruling. |
-| **R9** | Phase 1 **does not touch any message catalog**. `screenId` adopts the existing nav key wherever one exists (`dashboard`, `lessons`, `speaking`, `journey`, …). | Catalog churn inside a re-indexing task would violate R8 and make the diff unreviewable. |
+| **R8** | Phase 1 ships with **zero visual diff**. The derived `NAV_GROUPS` must be **byte-for-byte identical** to the literal running today. | Phase 1 is a re-index of what exists, not a redesign. If navigation changes during it, that is a Phase 1 defect — not a "cleanup". Every genuine IA change belongs to Phase 2, where it is a deliberate ruling. ⚠️ **Scoped to Phase 1a — see §5's 2026-08-13 amendment.** |
+| **R9** | Phase 1 **does not touch any message catalog**. `screenId` adopts the existing nav key wherever one exists (`dashboard`, `lessons`, `speaking`, `journey`, …). | Catalog churn inside a re-indexing task would violate R8 and make the diff unreviewable. ⚠️ **Scoped to Phase 1a — see §5's 2026-08-13 amendment.** The `screenId`-adopts-the-nav-key rule itself still holds, and is now load-bearing in the other direction: new destinations put their `screenId` INTO the catalog. |
 | **R10** | The pipeline is **Figma → Screen Registry → IA/route reconciliation → product catalog → UI implementation**. Catalog sits *downstream* of the registry. | Today it runs the other way: a plan brief writes a catalog, and the catalog becomes the de-facto screen list. R10 inverts that. |
 | **R11** | State-variant frames are **not screens**. They are `kind: 'state-variant'` with `variantOf` pointing at the screen they are a state of. | `Loading state`, `Error state`, `Empty state (Companion home)`, `Explore Lessons (with preview)` are states of screens. Promoting them to screens because they have node ids would inflate the inventory and corrupt every count derived from it. |
 | **R12** | The registry holds **no field describing appearance or behaviour** — no copy, no colours, no layout, no data requirements. | This is the concrete guard on R1. The moment the registry describes how a screen looks, it is a second Figma. |
@@ -202,7 +202,7 @@ while the suite stayed green.
 | **T3** | Every entry with `kind !== 'repo-only'` has a non-null `figmaNodeId`; every `kind === 'repo-only'` has `figmaNodeId === null` (R6). |
 | **T4** | Every `kind === 'state-variant'` has a `variantOf` naming an existing entry whose `kind === 'screen'`; every other kind has `variantOf === null` (R11). |
 | **T5** | `screenId` is unique. `route` is unique among non-null routes. |
-| **T6** | The derived `NAV_GROUPS` deep-equals a frozen snapshot of the literal shipping today (R8). |
+| **T6** | The derived `NAV_GROUPS` deep-equals the frozen baseline fixture (R8). In **1a** that baseline was a snapshot of the literal then shipping; in **1b** it is the LOCKED IA, hand-written from `ia-proposal.md` §2. Either way it must be an **independent** oracle — regenerating it from `deriveNavGroups()` makes this test self-referential and silently vacuous. |
 | **T7** | Every entry with `navGroup !== null` has a non-null `navOrder`, and `navOrder` is unique within its group. |
 | **T8** | For every entry with a `page.tsx`, `chrome` equals the groups actually dropped from that file's path (§3.4) — `chrome: 'focus'` ⇒ the file sat under `(focus)`. Catches a screen moved between chrome contracts. Entries without a page are exempt. |
 | **T9** | Every `kind === 'repo-only'` has a non-null `repoOnlyReason`; every other kind has `repoOnlyReason === null` (R13). |
@@ -257,6 +257,28 @@ derive `NAV_GROUPS` from it; ship T1–T10 plus T2b and T11.
 - Any message-catalog edit (R9).
 - Any data, component, state, responsive, token, or copy work (R12, and the 2026-08-05 lazy policy).
 - Closing the 44↔56 gap. Phase 1's job is to make that gap **structured, named, and tested** — not equal.
+
+> ### ⚠️ Amendment, 2026-08-13 — the above is Phase **1a**, not all of Phase 1
+>
+> This spec was written before Phase 1 was split into **1a (the engine)** and **1b (the IA)**. Read
+> as written, R8, R9, T6 and the out-of-scope list above describe **1a**, which shipped exactly that
+> way: zero visual diff, no catalog edit, and T6 pinned to the literal then running.
+>
+> **Phase 1b deliberately does the opposite of three of those lines**, under
+> `docs/product/decision-register.md` A1–A14 (LOCKED, user-approved):
+>
+> | Line above | Phase 1b |
+> |---|---|
+> | "zero visual diff" (R8) | Navigation changes on purpose. T6 now pins the **hand-written LOCKED IA**, not today's literal. |
+> | "does not touch any message catalog" (R9) | Two labels change (A7, A8) and two destinations are added; both are unimplementable without a catalog edit. |
+> | "changing any navigation label, order, or grouping" | Is the entire content of 1b. |
+>
+> Unchanged and still binding in 1b: **R12** (no appearance/behaviour fields), **R1/R3** (the registry
+> is an identity index, `screenId` is the join key and is never renamed for cosmetics), **R5**, **R7**,
+> and the requirement that every test be mutation-checked.
+>
+> The record is amended rather than rewritten, per this file's existing 2026-08-12 precedent: what §4.1
+> and §5 said at lock time is what 1a was accepted against.
 
 **Acceptance criteria:**
 

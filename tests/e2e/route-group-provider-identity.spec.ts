@@ -49,7 +49,24 @@ test("Companion state survives the (app) <-> (immersive) boundary", async ({ pag
     (window as unknown as { __groupSentinel?: number }).__groupSentinel = 1;
   });
 
-  await page.getByRole("link", { name: "Journey", exact: true }).click();
+  // Phase 1b: the sidebar's "Journey" row now points at /roadmap (A8) and the
+  // Diary is absorbed into Companion (A2), so this navigates by the companion
+  // sprite instead. It still exercises what this spec is about — the sprite
+  // calls `router.push("/journal")`, a client-side navigation, so the
+  // `__groupSentinel` assertion below is unchanged in meaning.
+  // Required: the sprite animates infinitely (`companion-breathe`), so
+  // Playwright's stable-bounding-box actionability check never settles and the
+  // click times out without this. See tests/e2e/journal.spec.ts for the
+  // measurement. Set here rather than in playwright.config.ts so the rest of
+  // the suite keeps running in the product's DEFAULT motion state. (An earlier
+  // wording claimed the global setting would stop the suite "exercising the
+  // motion path" — a sweep of tests/e2e/ found no spec that asserts one, so
+  // that reason was unmeasured. `L-003`. The choice still stands on default-
+  // state fidelity: reduce-motion is not what a learner gets by default.)
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page
+    .getByRole("button", { name: "Your companion — open the journal" })
+    .click();
   await expect(page).toHaveURL(/\/en\/journal$/, { timeout: 15000 });
   await expect(page.getByText("The day the two of you met.")).toBeVisible();
 

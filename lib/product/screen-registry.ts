@@ -6,12 +6,21 @@ import type { ScreenEntry } from "./screen-registry-types";
  * inventory (`docs/product/screen-inventory.md`, all 57 frames read
  * 2026-08-12) and today's `components/layout/app-nav.tsx`.
  *
- * ⛔ Phase 1a records navigation and identity EXACTLY as they ship today.
- * The approved IA in `docs/product/ia-proposal.md` (renaming `/jlpt`, hiding
- * `/vocab`, adding `/companion`, moving `journey` to `/roadmap`, etc.) is
- * NOT applied here — including rows that look wrong (`journey` → `/journal`,
- * `/vocab` still in nav despite the 2026-08-11 "hide" ruling). A later phase
- * changes them deliberately.
+ * ✅ Phase 1b APPLIES the LOCKED IA (`docs/product/ia-proposal.md` §2,
+ * `docs/product/decision-register.md` A1–A13). Phase 1a deliberately recorded
+ * navigation exactly as it shipped, defects included, so that the engine and
+ * the product decision never shared a diff. This is the product decision.
+ *
+ * Applied: the five IA groups (A1) · `/vocab` `/reading` `/community`
+ * `/leaderboard` HIDDEN — row removed, code kept (A10) · `/sensei`
+ * `/journal` `/weekly-report` absorbed into Companion (A2), `/statistics`
+ * `/achievements` into Dashboard/Profile (A4), `/challenges` into Roadmap
+ * (A5) · the `Journey` label moved off the Diary onto `/roadmap` (A8) ·
+ * `/companion` (A2) and `/pronunciation` (A6) given real routes.
+ *
+ * ⛔ NOT applied: `/jlpt` → `/certification` (A9). That rename carries a
+ * schema migration — three exam families whose section structures differ, so
+ * `jlpt_section`'s enum cannot be the shared abstraction. Phase 2.
  *
  * Sourcing, per the brief's authority order:
  *   1. `docs/product/figma-frame-map.md` — figmaNodeId + `name` (verbatim
@@ -19,16 +28,23 @@ import type { ScreenEntry } from "./screen-registry-types";
  *      discovered "true identity").
  *   2. `docs/product/screen-inventory.md` Part II §6–§20 — `kind`, and for
  *      state-variants, `variantOf`.
- *   3. `listPageRoutes(process.cwd())` — `route` + `chrome`, the authoritative
- *      44-route set (verified twice independently: `npx tsx` + the recursive
- *      walk one-liner both return 44).
- *   4. `components/layout/app-nav.tsx` + `lib/product/nav-baseline.fixture.ts`
- *      — `navGroup` + `navOrder` for the 22 fixed nav-key screenIds.
+ *   3. `listPageRoutes(process.cwd())` — `route` + `chrome`. Count it, never
+ *      quote it (`docs/lessons.md` L-002); Phase 1b added two pages, so the
+ *      44 recorded by Phase 1a is already stale.
+ *   4. `docs/product/ia-proposal.md` §2 — `navGroup` + `navOrder`. ⚠️ Phase 1a
+ *      sourced these from `components/layout/app-nav.tsx`; that is no longer
+ *      true and must not be reinstated. `app-nav.tsx` has held no nav data
+ *      since 1a, and the IA is the source now.
  *
- * `impl` is measured, not asserted: `grep -rln "UpcomingScreen" app/` names
- * exactly 9 files (achievements, challenges, review, roadmap, sensei,
- * settings, shadowing/explore, statistics, weekly-report) — those 9 routes
- * are `impl: "placeholder"`; every other existing route is `impl: "built"`.
+ * `impl` is measured, not asserted. The placeholder set is whatever this
+ * prints — never a number copied from here (`docs/lessons.md` L-002):
+ *
+ *   grep -rln "UpcomingScreen" app/
+ *
+ * At the Phase 1b pass that was achievements, challenges, companion, review,
+ * pronunciation, roadmap, sensei, settings, shadowing/explore, statistics and
+ * weekly-report (1b added companion + pronunciation). Those routes are
+ * `impl: "placeholder"`; every other existing route is `impl: "built"`.
  *
  * ---------------------------------------------------------------------------
  * FRAMES DELIBERATELY NOT REGISTERED — 6 of the design file's 57
@@ -68,8 +84,17 @@ import type { ScreenEntry } from "./screen-registry-types";
  */
 export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ===================================================================
-  // Nav destinations (22) — kind/impl/figma vary per row; navGroup/navOrder
-  // are fixed by today's app-nav.tsx §learn/study/insights/progress/account.
+  // Nav destinations — kind/impl/figma vary per row; navGroup/navOrder now
+  // come from the LOCKED IA (ia-proposal.md §2), no longer from app-nav.tsx.
+  //
+  // Entries that LOST their row in Phase 1b stay in this section, each with
+  // the decision that removed it. That is the point of HIDE/ABSORB: the
+  // screen, its route and its code all survive — only the sidebar row goes.
+  // Count the live rows with a command, never from a number written here.
+  // The `^    ` anchor keeps this line itself out of the result — without it
+  // the pattern counts its own documentation and reads one too high (the same
+  // trap the `figmaNodeId: "[0-9]` anchor avoids in the header):
+  //   grep -c '^    navGroup: "' lib/product/screen-registry.ts
   // ===================================================================
 
   // learn/1 — designed, built. Frame name is "Homepage"; the SCREEN is the
@@ -123,8 +148,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: "learn",
     navOrder: 3,
   },
-  // learn/4 — no frame in the 57 covers Vocab (§4); built today regardless
-  // of the 2026-08-11 "hide, reversibly" ruling, which Phase 1a does not apply.
+  // HIDDEN in Phase 1b (A10) — the 2026-08-11 "hide, reversibly" ruling, now
+  // applied. Route, schema, API, the `vocab` i18n namespace and every
+  // component stay untouched; only the nav row goes. Deliberately NOT
+  // `deprecated` — the user intends to reconsider the feature.
+  // No frame in the 57 covers Vocab (§4).
   {
     screenId: "vocab",
     name: "Vocabulary",
@@ -136,10 +164,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/vocab",
     chrome: "app",
     impl: "built",
-    navGroup: "learn",
-    navOrder: 4,
+    navGroup: null,
+    navOrder: null,
   },
-  // learn/5 — JUDGEMENT CALL: `Grammar analysis` (284:1464) is a sentence
+  // learn/4 — JUDGEMENT CALL: `Grammar analysis` (284:1464) is a sentence
   // parser, explicitly NOT the /grammar catalogue (§17.1: "the two are not
   // comparable"). So /grammar itself has no frame; 284:1464 gets its own
   // entry below (grammar-analysis), route null.
@@ -155,9 +183,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     chrome: "app",
     impl: "built",
     navGroup: "learn",
-    navOrder: 5,
+    navOrder: 4,
   },
-  // learn/6 — no frame anywhere in the 57 covers Reading.
+  // HIDDEN in Phase 1b (A10) — same terms as /vocab: row removed, code kept,
+  // not deprecated. No frame anywhere in the 57 covers Reading.
   {
     screenId: "reading",
     name: "Reading",
@@ -169,10 +198,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/reading",
     chrome: "app",
     impl: "built",
-    navGroup: "learn",
-    navOrder: 6,
+    navGroup: null,
+    navOrder: null,
   },
-  // learn/7 — designed (≈), built. `/conversation` renders the library shell
+  // practice/1 — designed (≈), built. `/conversation` renders the library shell
   // (170:9364); the live-session frame (44:7289) has no route of its own
   // (§15.6 — "session UI exists in-page") and gets a separate entry below.
   {
@@ -186,12 +215,15 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/conversation",
     chrome: "app",
     impl: "built",
-    navGroup: "learn",
-    navOrder: 7,
+    navGroup: "practice",
+    navOrder: 1,
   },
-  // learn/8 — designed (≈), built. Frame's layer name is "JLPT Practice";
+  // practice/3 — designed (≈), built. Frame's layer name is "JLPT Practice";
   // its on-screen identity is "Certification Practice" (§10.0) — name field
   // stays the layer name, per the Dashboard precedent above.
+  // ⛔ Route AND label stay `/jlpt` / "JLPT" here. A9 renames this row to
+  // Certification at `/certification`, but that carries a schema migration
+  // (see the file header) and is Phase 2. Only the GROUP moved in 1b.
   {
     screenId: "jlpt",
     name: "JLPT Practice",
@@ -203,11 +235,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/jlpt",
     chrome: "app",
     impl: "built",
-    navGroup: "learn",
-    navOrder: 8,
+    navGroup: "practice",
+    navOrder: 3,
   },
 
-  // study/1 — no frame; the cross-type SRS review hub (§3).
+  // remember/1 — no frame; the cross-type SRS review hub (§3).
   {
     screenId: "review",
     name: "Review",
@@ -219,10 +251,12 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/review",
     chrome: "app",
     impl: "placeholder",
-    navGroup: "study",
+    navGroup: "remember",
     navOrder: 1,
   },
-  // study/2 — no frame; sentence mining (§3).
+  // remember/2 — no frame; sentence mining (§3). A7 relabels this row to
+  // "Collection" in the catalog; the screenId stays `mining` because A7 is a
+  // LABEL ruling and the feature itself still needs its own spec.
   {
     screenId: "mining",
     name: "Mining",
@@ -234,10 +268,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/mining",
     chrome: "app",
     impl: "built",
-    navGroup: "study",
+    navGroup: "remember",
     navOrder: 2,
   },
-  // study/3 — built, no frame at this pass (R6) — named debt for Phase 2.
+  // remember/3 — built, no frame at this pass (R6) — named debt for Phase 2.
+  // A11 keeps this its own screen rather than folding it into Explore.
   {
     screenId: "playlists",
     name: "Playlists",
@@ -249,10 +284,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/playlists",
     chrome: "app",
     impl: "built",
-    navGroup: "study",
+    navGroup: "remember",
     navOrder: 3,
   },
-  // study/4 — no frame; a gamification surface (§3).
+  // ABSORBED into Roadmap in Phase 1b (A5) — no nav row; the route and its
+  // placeholder stay. No frame; a gamification surface (§3).
   {
     screenId: "challenges",
     name: "Challenges",
@@ -264,11 +300,13 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/challenges",
     chrome: "app",
     impl: "placeholder",
-    navGroup: "study",
-    navOrder: 4,
+    navGroup: null,
+    navOrder: null,
   },
-  // study/5 — no frame; already adjudicated "hide in Phase 2" (§3), not
-  // applied here per the binding constraint against the new IA.
+  // HIDDEN in Phase 1b (A10) — the adjudication is now applied. The reason is
+  // product, not technical: with no users yet, a community surface mostly
+  // advertises that the system is empty. Code kept. No frame (§3).
+  // `/community/[id]` and `/community/peer-review` ride along below.
   {
     screenId: "community",
     name: "Community",
@@ -280,10 +318,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/community",
     chrome: "app",
     impl: "built",
-    navGroup: "study",
-    navOrder: 5,
+    navGroup: null,
+    navOrder: null,
   },
-  // study/6 — no frame; already adjudicated "hide in Phase 2" (§3).
+  // HIDDEN in Phase 1b (A10), same reason as /community. Code kept. No frame.
   {
     screenId: "leaderboard",
     name: "Leaderboard",
@@ -295,11 +333,13 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/leaderboard",
     chrome: "app",
     impl: "built",
-    navGroup: "study",
-    navOrder: 6,
+    navGroup: null,
+    navOrder: null,
   },
 
-  // insights/1 — designed, placeholder. §11.3 Companion Knowledge Assistant.
+  // ABSORBED into Companion in Phase 1b (A2) — one intelligent presence, not
+  // two. No nav row; the route and its placeholder stay. Designed.
+  // §11.3 Companion Knowledge Assistant.
   {
     screenId: "sensei",
     name: "Companion Knowledge Assistant",
@@ -311,10 +351,15 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/sensei",
     chrome: "app",
     impl: "placeholder",
-    navGroup: "insights",
-    navOrder: 1,
+    navGroup: null,
+    navOrder: null,
   },
-  // insights/2 — designed, honest placeholder (Plan C1). Worked example.
+  // journey/1 — designed, honest placeholder (Plan C1).
+  // ⭐ This row now carries the "Journey" LABEL (A8). Figma's `journey` names
+  // the Roadmap, while the nav had pinned that label on the Diary — the
+  // defect Phase 1a recorded verbatim and this phase fixes. The catalog key
+  // stays `roadmap` (screenId is identity); only its VALUE becomes "Journey".
+  // Also absorbs /challenges (A5).
   {
     screenId: "roadmap",
     name: "Roadmap",
@@ -326,10 +371,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/roadmap",
     chrome: "app",
     impl: "placeholder",
-    navGroup: "insights",
-    navOrder: 2,
+    navGroup: "journey",
+    navOrder: 1,
   },
-  // insights/3 — no frame. §12.4 explicitly rules OUT `Growth Areas` as the
+  // ABSORBED into Companion in Phase 1b (A2) — no nav row; route stays.
+  // No frame. §12.4 explicitly rules OUT `Growth Areas` as the
   // match for this route ("No. This is a persistent skill-progress map, not
   // a periodic report").
   {
@@ -343,15 +389,17 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/weekly-report",
     chrome: "app",
     impl: "placeholder",
-    navGroup: "insights",
-    navOrder: 3,
+    navGroup: null,
+    navOrder: null,
   },
 
-  // progress/1 — designed, built; chrome contract already matches (§11.2).
-  // Note: nav key is "journey" even though this is the Companion DIARY —
-  // the §13.0 label collision (`journey` in Figma names the Roadmap) is a
-  // known defect this phase records, not fixes (nav-baseline.fixture.ts
-  // carries the same note).
+  // ABSORBED into Companion in Phase 1b (A2/A8) — this screen IS the
+  // Companion Diary, so it stops being a top-level row and is reached from
+  // /companion. Route, chrome and code all stay.
+  // The screenId stays `journey`: that is identity (R3), not a label. The
+  // "Journey" LABEL it wrongly carried moves to /roadmap — the §13.0
+  // collision Phase 1a recorded on purpose is closed here.
+  // Designed, built; chrome contract already matches (§11.2).
   {
     screenId: "journey",
     name: "Companion Diary",
@@ -363,10 +411,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/journal",
     chrome: "immersive",
     impl: "built",
-    navGroup: "progress",
-    navOrder: 1,
+    navGroup: null,
+    navOrder: null,
   },
-  // progress/2 — no frame; a gamification surface (§3, §19.1's third
+  // ABSORBED into the Dashboard in Phase 1b (A4) — no nav row; route stays.
+  // No frame; a gamification surface (§3, §19.1's third
   // skill-taxonomy sighting notwithstanding — that lives on the Dashboard).
   {
     screenId: "statistics",
@@ -379,10 +428,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/statistics",
     chrome: "app",
     impl: "placeholder",
-    navGroup: "progress",
-    navOrder: 2,
+    navGroup: null,
+    navOrder: null,
   },
-  // progress/3 — no frame; a gamification surface (§3).
+  // ABSORBED in Phase 1b (A4) — summary on the Dashboard, gallery on Profile.
+  // No nav row; route stays. No frame; a gamification surface (§3).
   {
     screenId: "achievements",
     name: "Achievements",
@@ -394,8 +444,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     route: "/achievements",
     chrome: "app",
     impl: "placeholder",
-    navGroup: "progress",
-    navOrder: 3,
+    navGroup: null,
+    navOrder: null,
   },
 
   // account/1 — designed, built (far simpler than the frame — §18.2).
@@ -428,6 +478,54 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     chrome: "app",
     impl: "placeholder",
     navGroup: "account",
+    navOrder: 2,
+  },
+
+  // -------------------------------------------------------------------
+  // Phase 1b's two NEW nav destinations. Both were already registered as
+  // designed-with-no-route; 1b gives them a route and a row rather than
+  // inventing entries, so the Figma join (R3) is inherited, not re-made.
+  // They are moved here out of the "Designed, no route yet" section below,
+  // which would otherwise describe them falsely.
+  //
+  // ⚠️ Their screenIds double as message-catalog keys (R9, and
+  // `deriveNavGroups` maps `key: entry.screenId`), so the catalog gains
+  // `companion-home` / `pronunciation-library` rather than `companion` /
+  // `pronunciation`. Identity is not renamed to prettify a key — `weeklyReport`
+  // set that precedent in the other direction.
+  // -------------------------------------------------------------------
+
+  // practice/2 — designed, honest placeholder. A6: Pronunciation earns its own
+  // row despite being a T2 sub-skill; it is NOT a leaf of Shadowing.
+  {
+    screenId: "pronunciation-library",
+    name: "Pronunciation library",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "37:4955",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-12",
+    route: "/pronunciation",
+    chrome: "app",
+    impl: "placeholder",
+    navGroup: "practice",
+    navOrder: 2,
+  },
+  // journey/2 — designed, honest placeholder. A2: Companion is ONE destination
+  // over six screens (home · diary · sensei · memory · growth), which is what
+  // absorbs /sensei, /journal and /weekly-report above.
+  {
+    screenId: "companion-home",
+    name: "Companion home",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "156:1310",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-12",
+    route: "/companion",
+    chrome: "app",
+    impl: "placeholder",
+    navGroup: "journey",
     navOrder: 2,
   },
 
@@ -881,20 +979,6 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
   },
   {
-    screenId: "companion-home",
-    name: "Companion home",
-    kind: "screen",
-    variantOf: null,
-    figmaNodeId: "156:1310",
-    repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
-    route: null,
-    chrome: null,
-    impl: "none",
-    navGroup: null,
-    navOrder: null,
-  },
-  {
     screenId: "learning-memory",
     name: "Learning memory",
     kind: "screen",
@@ -986,20 +1070,6 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "screen",
     variantOf: null,
     figmaNodeId: "44:7289",
-    repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
-    route: null,
-    chrome: null,
-    impl: "none",
-    navGroup: null,
-    navOrder: null,
-  },
-  {
-    screenId: "pronunciation-library",
-    name: "Pronunciation library",
-    kind: "screen",
-    variantOf: null,
-    figmaNodeId: "37:4955",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
     route: null,

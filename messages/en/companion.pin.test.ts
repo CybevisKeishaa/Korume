@@ -189,7 +189,10 @@ describe("companion.json VI — speech templates (primary learner locale)", () =
   });
 
   it("pins the two a11y labels", () => {
-    expect(vi.a11y.sprite).toBe("Người bạn đồng hành của bạn — mở nhật ký");
+    // A15 — the companion's Vietnamese name is "Linh thú". This label is the
+    // ONLY shipped VN string that named the creature; the speech, journal and
+    // memoryTitle catalogs speak in first person ("mình") and never name it.
+    expect(vi.a11y.sprite).toBe("Linh thú của bạn — mở nhật ký");
     expect(vi.a11y.dismissSpeech).toBe("Đóng lời nhắn");
   });
 
@@ -206,8 +209,12 @@ describe("companion.json VI — speech templates (primary learner locale)", () =
  * VI `companionGrew` copy is what actually ships to the learner, and the
  * original P12 violation lived in Vietnamese ("...bước sang giai đoạn 2").
  * An EN-only guard would not fail if a future VI edit reintroduced a stage
- * digit — so guard VI explicitly. (Pins are EN-only by convention, with one
- * exception below: `firstMeeting` is VI-pinned too.
+ * digit — so guard VI explicitly. (Pins default to EN, with VI pinned wherever
+ * the VI string itself carries a decision — `firstMeeting` below, `a11y.sprite`
+ * above (A15), and every literal in `messages/vi/nav.pin.test.ts`. The older
+ * wording here said pins were "EN-only by convention", which Phase 1b made
+ * false: this app is VN-first, so a VN string nobody pins is a string nobody
+ * checks. Cross-catalog relationships go in `messages/destination-name-parity.test.ts`.
  *
  * That exception's ORIGINAL reason was that the VI copy was deliberately
  * distinct from `companionGrew.1`. As of the 2026-08-08 native-speaker rewrite

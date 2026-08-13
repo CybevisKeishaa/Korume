@@ -3,8 +3,20 @@ export type ScreenImpl = "built" | "placeholder" | "none";
 export type ScreenChrome = "app" | "focus" | "immersive" | "admin" | "auth" | "marketing";
 export type RepoOnlyReason = "out-of-design-scope" | "legacy-unreviewed";
 
-/** Today's five groups. Phase 1b replaces this union with the LOCKED IA's. */
-export type NavGroupId = "learn" | "study" | "insights" | "progress" | "account";
+/**
+ * The LOCKED IA's five groups — `decision-register.md` A1, applied in Phase 1b.
+ * (Phase 1a shipped today's `learn | study | insights | progress | account`.)
+ *
+ * Group *order* is deliberately not expressed here: it is IA, not data, and
+ * lives in `nav-derivation.ts`'s `GROUP_ORDER`, which carries a compile-time
+ * check that every member of this union appears there.
+ */
+export type NavGroupId =
+  | "learn"
+  | "practice"
+  | "remember"
+  | "journey"
+  | "account";
 
 export interface ScreenEntry {
   /** Stable product identity (R3). kebab-case. The join key for every other artifact. */

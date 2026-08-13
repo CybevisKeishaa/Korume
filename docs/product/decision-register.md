@@ -37,7 +37,9 @@ the user's approval · `OPEN` = not decided.
 
 ## 2. Information architecture — ✅ `LOCKED` (user approval, 2026-08-12)
 
-**The user reviewed A1–A13 and approved the block.** These are now as binding as §1 — do not
+**The user reviewed A1–A13 and approved the block on 2026-08-12.** A14 and A15 were added the
+following day, during Phase 1b, and carry their own individual user rulings (dated in the table) —
+the 08-12 approval does not cover them and does not need to. Cite this section, not a letter range. These are now as binding as §1 — do not
 re-litigate, and do not let Phase 1, a later Figma frame, or the shape of the existing API reopen
 one.
 
@@ -59,6 +61,59 @@ derives them. See §3b.
 | A11 | **`/playlists` stays its own screen** — not folded into Explore | §5 |
 | A12 | **Loading + error catalogues go to `/admin/style-guide`**, not the registry | §4 |
 | A13 | **No route for:** search palette · create-conversation wizard · lesson preview · reflection · suggestion drawer | §4 |
+| A14 | **A group's HEADING is not its id.** `journey` displays **"Growth" / "Tiến trình"** | `ia-proposal.md` §2 · ruled 2026-08-13 |
+| A15 | **The companion's Vietnamese name is "Linh thú"** — nav row `companion-home` = **"Linh thú của tôi"** | ruled 2026-08-13 · **propagated 2026-08-13** |
+
+**A14 was added during Phase 1b**, when the gap surfaced in implementation: A1 locks group *ids* and
+§2 locks *row* labels, but nothing said what a group heading reads. Capitalising the id would have
+rendered a heading "Journey" directly above a row "Journey" — the very label A8 had just moved onto
+`/roadmap`. The id stays `journey` (it is identity, and `NavGroupId` is a compile-time union); only
+the catalog value differs. ⚠️ Known and accepted: "Growth" also names a Companion sub-surface
+(`Growth Areas`, `187:6556`) that lives inside this group.
+
+**A14's Vietnamese heading was revised the same day**, from "Trưởng thành" to **"Tiến trình"** —
+the first leaned *maturity/adulthood* rather than plain progression. `/roadmap` keeps **"Hành trình"**,
+so the heading and the row inside it no longer collide in either locale.
+
+**A15 — the companion's Vietnamese name is "Linh thú".** The nav row reads **"Linh thú của tôi"**,
+and `/companion`'s own page title matches it, so the destination has one name rather than two. This
+replaced "Đồng hành", which named a *quality* rather than the creature.
+
+**A15 was propagated on 2026-08-13** (user ruling: propagate, don't scope down), and propagating it
+required a distinction the ruling did not state — recorded here because it governs every future edit:
+
+> **"Linh thú" replaces "người bạn đồng hành" only where that phrase functioned as a NAME.**
+> Where it describes the *relationship* — `MASCOT.md`'s "Companion là một người bạn đồng hành",
+> `companion-patterns.md`'s "sự khác biệt giữa một AI Assistant và một người bạn đồng hành" — it is
+> a common noun phrase, still true, and deliberately kept. Blanket-replacing produced nonsense on
+> inspection (`MASCOT.md`'s "yêu cảm giác được đồng hành cùng một sinh vật nhỏ bé" is a *verb*).
+>
+> ⚠️ **Correction to this register's own earlier claim, which was measured false.** It said the
+> companion's "first-person voice throughout the diary and speech catalogs" still said "Người bạn
+> đồng hành". It never did: `messages/vi/companion.json`'s `speech`, `journal` and `memoryTitle`
+> catalogs speak as **"mình"** and **never name the creature at all**. The phrase occurred in
+> **exactly one shipped VN string**, `a11y.sprite` — a third-person label addressed to the learner.
+> The propagation was therefore one string, not a voice rewrite. (`L-002`: never carry a scope
+> figure you did not measure.)
+>
+> `MASCOT.md` § Danh tính now carries A15, and states what the ruling implies but does not say:
+> **"Linh thú" is the Vietnamese noun for the creature, not its proper name.** The proper name is
+> **`Korume`** and was already settled by **P2** above — A15, ruled one day later, deliberately puts
+> a common noun on the nav row rather than the proper name, exactly as "my cat" does not displace
+> the cat's name. The two rulings compose; neither overrides the other.
+>
+> ⚠️ **`MASCOT.md` contradicted P2 and was reconciled to it, not the reverse.** Its § Danh tính
+> still read "Tên của Companion sẽ được xác định trong Character Identity Spec" with six open
+> candidates — text that **predates P2's LOCK (2026-08-12)** and had simply never been swept.
+> `screen-inventory.md:436-438` records that the user closed it by *unifying* the name with the
+> product's, not by declaring it a placeholder, so this was applying a ruling the user had already
+> given, not choosing between two live answers. The candidate list is kept as marked-historical.
+
+**The English `journey` heading stays "Growth" — user ruling 2026-08-13.** EN and VI are therefore
+deliberately not literal equivalents: VI reads "Tiến trình" (≈ *Progress*). The user considered
+moving EN to "Progress" and declined, so this is a settled divergence, not drift.
+⚠️ **The `Growth Areas` collision noted above therefore stands, knowingly.** A future pass that
+"discovers" it must not reopen it on that basis alone — it was seen, priced, and accepted.
 
 ## 3. Method rules — `LOCKED`, and they bind future passes
 
@@ -135,5 +190,5 @@ lesson · study material).
 | `docs/design/screens/*.md` | **layer-A** written product authority per module | anything Figma-current |
 | `docs/product/screen-inventory.md` | per-frame observation + the method rules | design; it records, it does not design |
 | `docs/product/capability-map.md` | what Korume can do, and the §3 rulings | screen identity |
-| `docs/product/ia-proposal.md` | destinations and grouping — **proposed** | anything locked |
+| `docs/product/ia-proposal.md` | destinations and grouping, and the **reasoning** behind §2's LOCKED rulings (the name says "proposal"; it stopped being one on 2026-08-12) | implementation detail — the rows that actually ship are `lib/product/screen-registry.ts` |
 | **this file** | an index of decisions | **the reasoning behind any of them** |

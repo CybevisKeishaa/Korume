@@ -30,6 +30,15 @@ export const PROTECTED_PREFIXES = [
   "/roadmap",
   "/sensei",
   "/settings",
+  // Phase 1b's two new nav destinations, same terms as the Task 6 set above:
+  // placeholder content today, but real protected routes under
+  // `(protected)/(app)/`. The filesystem-driven coverage test caught them
+  // missing. Precisely: access control would still have held — the
+  // `(protected)` layout does its own server-side redirect — but `redirectTo`
+  // would have been dropped, so a signed-out learner opening a shared
+  // /vi/companion link would land on /vi/dashboard after logging in.
+  "/companion",
+  "/pronunciation",
   "/statistics",
   "/weekly-report",
   "/content-manager",

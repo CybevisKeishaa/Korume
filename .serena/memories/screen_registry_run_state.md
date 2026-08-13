@@ -2,11 +2,47 @@
 
 # ▶▶ RESUME HERE
 
-**Phase 1a is MERGED to master at `fff90fa` (2026-08-13). Working tree clean. Post-merge verified on
-master: `tsc` 0 · `vitest` 235 files / 2096 tests · `lint` 0 errors · `next build` OK.**
+**Phase 1b is COMPLETE, REVIEWED TWICE, and all three open items are CLOSED, on branch
+`screen-registry-phase-1b` (off master `c000242`). The only remaining step is the merge.**
 
-**▶ NEXT: Phase 1b — move the registry's nav data to the LOCKED IA.** One data-only commit.
-Everything it needs is already decided; nothing about it is open.
+Commits: `276d0ac` (the IA change) · `4db8e7b` (memory) · `7ba870a` (fix wave closing the
+whole-branch review) · `2c58e70` (the user's VN naming rulings — A14 revised, A15 added) ·
+`7c39419` (A15 propagated, A14's English settled) · the L-012 fix wave that follows them.
+
+Gate at the last run: `tsc` 0 · `vitest` **236 files / 2110 tests** all passing · `lint` 0 errors,
+mix `54 no-non-null-assertion + 23 no-unused-vars` (unchanged from baseline) · `next build` OK.
+
+## ▶ NEXT SESSION — one step left
+
+**Merge to master `--no-ff`** (repo keeps merged branches). Nothing blocks it.
+
+⚠️ If you are about to re-ask the user about the companion's Vietnamese name or the English
+`journey` heading: **don't — both were ruled and implemented on 2026-08-13.** See below.
+
+## ✅ The three items that were open on 2026-08-13 — all closed the same day
+
+1. **A15 propagation — RULED: propagate. DONE in `7c39419`.** And the scope turned out to be one
+   twentieth of what this file previously claimed. **This file said the companion's "whole
+   first-person voice" still said "Người bạn đồng hành". That was false and is retracted**:
+   `messages/vi/companion.json`'s `speech`, `journal` and `memoryTitle` catalogs speak as **"mình"**
+   and **never name the creature at all**. Exactly **one** shipped VN string was affected —
+   `a11y.sprite`, a third-person label addressed to the learner. (`L-002`: the claim was inherited,
+   never measured.)
+   - **"Propagate" ≠ replace-all**, and measuring is what showed why: most of the 21 repo-wide
+     occurrences of "đồng hành" are a **verb** or a description of the relationship, not a name
+     ("yêu cảm giác được đồng hành cùng một sinh vật nhỏ bé"). Only name-uses changed. That rule is
+     now written into `docs/product/decision-register.md` §2 so the next pass cannot re-litigate it.
+   - **`MASCOT.md` contradicted a LOCKED ruling and was reconciled to it.** Its § Danh tính still
+     read "tên sẽ được xác định trong Character Identity Spec" with six open candidates — text that
+     **predates P2's lock (2026-08-12: the name IS `Korume`)**. "Linh thú" is the Vietnamese
+     **common noun**, not the proper name; A15 and P2 compose ("my cat" vs the cat's name).
+2. **English `journey` heading — RULED: keep "Growth".** The user was offered "Progress" (which
+   would also have dissolved the `Growth Areas` collision) and declined. **EN and VI are
+   deliberately not literal equivalents**, and the collision **stands knowingly**. Already
+   render-pinned at `components/layout/app-nav.test.tsx`; the *reason* is now pinned beside it, so
+   a later pass cannot reopen it by rediscovery.
+3. **`L-012` review of `4db8e7b..HEAD` — RUN. Verdict: CHANGES REQUIRED, no code defect.**
+   Everything it blocked on was documentation and test coverage. All findings closed; see below.
 
 ---
 
@@ -33,50 +69,131 @@ never share a diff.
 
 ---
 
-## ⛔ PHASE 1b — the four traps, learned the hard way. Read before writing any code.
+## ✅ PHASE 1b — how the four traps actually played out
 
-1. **⛔⛔ NEVER regenerate `nav-baseline.fixture.ts` from `deriveNavGroups()`.** It is an
-   **independent oracle** and the only reason T6 means anything. Dump the derivation into it and T6
-   becomes self-referential — it will pass forever while asserting nothing, and it takes the
-   nav-completeness guards down with it. **Hand-write the new baseline from
-   `docs/product/ia-proposal.md` §2.**
-2. **Two-directional completeness is TWO invariants.** `T1` = *page → registry*. `T11` = *nav → page*.
-   Phase 1a nearly shipped without the second because the spec claimed T1 subsumed it — it does not,
-   and that was proven by construction (a nav row pointing at a routeless page left every test green
-   while the sidebar rendered a dead link). **Phase 1b adds `/companion` and `/pronunciation`, which
-   are designed-before-built — exactly what T11 exists to catch.** Keep both.
-3. **`deriveNavGroups` now THROWS** on `navGroup !== null && route === null` rather than silently
-   dropping the row. So a 1b entry with a nav group but no route yet **crashes both server layouts**.
-   Give every new nav row a real route (an honest `UpcomingScreen` page is the established pattern
-   from C1) or leave `navGroup: null` until the page exists.
-4. **`components/layout/app-nav.tsx` is `"use client"` — never import the registry into it.**
-   Doing so ships the whole registry to the browser (measured ~17.9 KB: Figma node ids, unshipped
-   screen names, `legacy-unreviewed` debt labels). It is derived in the two server layouts and passed
-   as a `groups` prop. Verify after any change by building and grepping the client chunks **with a
-   positive control**, or a broken grep will read as a clean result.
+All four were real. Recorded as evidence, because the next phase inherits the same shape.
 
-### What Phase 1b must actually do
+1. **Baseline as an independent oracle — HELD.** `nav-baseline.fixture.ts` was hand-written from
+   `ia-proposal.md` §2, never regenerated. Proven non-vacuous by mutation: reordering one row
+   turned T6 red naming `['companion-home','roadmap']` vs `['roadmap','companion-home']`.
+2. **Two-directional completeness — BOTH KEPT.** `T1` = page→registry, **`T11`** = nav→page
+   (renamed from the colliding `T2b` just before 1b started).
+3. **`deriveNavGroups` throws on `navGroup` + `route: null` — FIRED CORRECTLY.** Verified against
+   1b's own data: nulling `companion-home`'s route threw and named the entry. Both new rows were
+   given real `UpcomingScreen` pages *before* the registry pointed at them.
+4. **Registry must not reach the client — HELD, but the first check was worthless.** The positive
+   control (`"Pronunciation"`) FAILED, because catalog strings never reach static chunks at all —
+   they travel in the RSC payload. Re-run with `data-nav-scroll`, a literal that genuinely lives in
+   `app-nav.tsx`'s chunk, the control hit `8698-*.js` and only then did the zero registry markers
+   mean anything. **Never accept a clean grep of a build output without a control that fires.**
 
-Apply `docs/product/decision-register.md` §2 (A1–A13, `LOCKED`). Concretely:
+### Two defects 1b's own guards caught — neither was an IA-expectation mismatch
 
-- Rewrite `NavGroupId` to the five new groups: `learn · practice · remember · journey · account`.
-  ⚠️ `GROUP_ORDER` in `nav-derivation.ts` has a compile-time exhaustiveness check — a member added
-  to the union without being added to `GROUP_ORDER` now **fails `tsc`**, which is intended.
-- Re-point `navGroup`/`navOrder` on the registry rows per `ia-proposal.md` §2.
-- `HIDE` (set `navGroup: null`, keep the entry and the code): `/vocab` · `/reading` · `/community` ·
-  `/leaderboard`.
-- `ABSORB`: `/sensei` · `/journal` · `/weekly-report` → under Companion · `/statistics` ·
-  `/achievements` → Dashboard/Profile · `/challenges` → Roadmap.
-- `NEW` rows: `/companion` · `/pronunciation` (see trap 3 — they need real routes first).
-- `journey` label moves to `/roadmap`; `/journal` becomes the Diary.
-- ⚠️ **`L-025`**: `vitest.config.ts:13` excludes `tests/e2e`, so **no unit run can catch a stale label
-  in a Playwright spec**. Grep `tests/e2e/` **by hand** for `Journey`, `Journal`, `Sensei`, `Mining`,
-  `JLPT`. This exact rename already broke `tests/e2e/journal.spec.ts` once.
-- ❌ **NOT in 1b:** `/jlpt` → `/certification`. It carries a schema migration (three exam families
-  with different section structures ⇒ `jlpt_section`'s enum cannot be the shared abstraction).
-  **Phase 2.**
+- **`/companion` and `/pronunciation` had no `PROTECTED_PREFIXES` entry.** Caught by
+  `lib/supabase/route-protection.test.ts`'s filesystem-driven coverage test. Same defect class as C1
+  round 1's "eight protected routes missing from middleware".
+  ⚠️ **Correction (whole-branch review, M3):** commit `276d0ac`'s message says "middleware would have
+  skipped auth on both". **That overstates it** — `app/[locale]/(protected)/layout.tsx:28-29` does its
+  own server-side `getCurrentUser()` redirect, so access control held. The real symptom is a dropped
+  `redirectTo`: a signed-out learner opening a shared `/vi/companion` link would land on
+  `/vi/dashboard` after logging in. Believe the test's own comment, not that commit message.
+- **`L-025`'s hand sweep found TWO e2e specs**, not one: `journal.spec.ts` *and*
+  `route-group-provider-identity.spec.ts` both clicked a nav link named "Journey" expecting
+  `/journal`. `vitest.config.ts:13` excludes `tests/e2e`, so no unit run could ever have caught it.
 
----
+### The product fact that came out of it, measured
+
+**Losing its nav row did NOT strand `/journal`.** The companion sprite is the real door —
+`ambient-provider.tsx:154` wires `openJournal: () => router.push("/journal")`, and `CompanionAnchor`
+mounts on `/dashboard` and `/shadowing`. Both e2e specs now navigate that way, which is a *stronger*
+reachability check than the nav link was. Do not "restore" a Diary nav row on the assumption it is
+unreachable.
+
+### What the whole-branch review found (verdict: "with fixes", all closed in `7ba870a`)
+
+Every finding was real. Two were defects the implementer introduced; one was an overstated claim.
+
+- **⭐ CRITICAL — both e2e specs 1b rewrote were BROKEN, and nothing here could have said so.** They
+  click the companion sprite, which carries `companion-breathe` (`4.5s scale(1→1.03) infinite`,
+  applied whenever reduce-motion is off = the default). **Playwright's click actionability waits for
+  a STABLE bounding box; an infinitely animating element never has one.** Reproduced independently in
+  an isolated harness: **FAILED after 8017ms by default, CLICKED in 63ms with
+  `page.emulateMedia({ reducedMotion: "reduce" })`.** Fixed per-spec, not in `playwright.config.ts`
+  (global would silently remove the motion path from the whole suite) and not with `force: true`
+  (skips the hit-target check the specs exist to exercise).
+  **This is `L-025`'s second half and it is now written into that lesson: sweeping `tests/e2e/` finds
+  the break, but the REPLACEMENT is equally unrunnable here — prove it with a repro.**
+- **An Approved layer-A doc outranked the truth.** `docs/design/screens/navigation-system.md` still
+  declared the old 22-row table canonical. `ia-proposal.md:434` had named that amendment as a
+  precondition of locking the IA and it was skipped. Table replaced by a pointer to the registry; the
+  Gamification section rewritten (its "13 of the 14 shipped destinations" arithmetic died with the
+  table); an L-024 sweep caught one more falsehood in the same file (`/settings` "does not exist" —
+  it has since Plan C1).
+- **Registry header contradicted itself 50 lines apart** — still sourcing `navGroup` from
+  `app-nav.tsx`. `app-nav.tsx` has held no nav data since 1a; do not reinstate that.
+- `upcoming-routes.test.tsx` keeps a **hand-written** route list that 1b added two routes to and did
+  not update — an `L-023` miss.
+- ⚠️ **Correction to `276d0ac`'s own commit message**, which cannot be edited: it says the missing
+  `PROTECTED_PREFIXES` entries meant "middleware would have skipped auth". **That overstates it.**
+  `app/[locale]/(protected)/layout.tsx:28-29` does its own server-side `getCurrentUser()` redirect, so
+  access control held; the real symptom is a dropped `redirectTo`. Believe
+  `lib/supabase/route-protection.test.ts`'s comment, not that message.
+
+### What the L-012 review of the fix wave found (`4db8e7b..HEAD`) — verdict: CHANGES REQUIRED
+
+**No code defect in the whole range**, and the Critical fix the wave existed for was independently
+re-reproduced (default → FAILED 8019ms; `reduce` → CLICKED 67ms; **and `emulateMedia` set *after*
+`page.goto`, which is what both specs actually do, → CLICKED 53ms** — the CSS media query
+re-evaluates live, so ordering is not a defect). Everything blocking was **documentation outranking
+the truth** — the exact failure the wave was written to close, recurring one layer up. That is the
+whole argument for L-012 in one range.
+
+- **⭐ The branch's own "read this first" memory — THIS FILE — was false at HEAD.** It still listed
+  two rulings as open that the last commit had implemented, and repeated the first-person-voice
+  claim that the same commit had formally retracted in `decision-register.md`. `MEMORY.md` names
+  this file the authority on resume, so merging it would have instructed the next session to
+  re-ask the user for rulings already given. **A resume document is code for the next session:
+  stale-check it in the same pass that changes what it describes, not afterwards.**
+- **`navigation-system.md` still asserted `/journal` is a nav row in FOUR places** — including a
+  contract table cell claiming it is "reachable from the `(app)` Nav Column", while
+  `app-nav.test.tsx` asserts in the same range that it is absent from the sidebar. `7ba870a`'s own
+  message said an L-024 sweep "found one more" stale claim; **the sweep stopped at one and missed
+  the branch's headline change in the file it was already editing.** A sweep that stops at the first
+  hit is a spot fix wearing a sweep's name.
+- The Gamification rewrite deleted "13 of the 14 shipped destinations" as stale arithmetic, then
+  **re-asserted the same number twelve lines later** as "the same 13-of-14 scope, described just
+  above" — pointing at text it had itself removed.
+- `messages/vi/upcoming.json` was **unpinned**, so A15's second half had no test: reverting the VI
+  page title alone left the suite green. Closed with the parity invariant above rather than another
+  hand pin, because the invariant catches the *relationship* neither pin can.
+- Minors: a hand-kept table of all ten group headings added by the very commit that deleted another
+  table for being a hand-synced duplicate (now cut to the one row carrying a decision) · a "read the
+  rows with this command" that ran a pass/fail test and printed no rows · `A1–A14` cited as a range
+  one commit before A15 existed · `vi/companion.json` missing the trailing newline the same wave had
+  just fixed on its sibling · an unmeasured "the motion path stays exercised by the rest of the
+  suite" (a sweep found **no** spec asserts a motion path — reworded to default-state fidelity,
+  `L-003`) · `upcoming-routes.test.tsx`'s `it.each` list still had no length assertion, so an
+  emptied list would generate zero tests and report green.
+
+### Decisions taken during 1b that are not in the locked IA
+
+- **Group HEADINGS were a genuine gap.** A1 locks group *ids* and §2 locks row labels; neither says
+  what a group heading reads. Capitalising the id would have printed a heading "Journey" directly
+  above an item "Journey". **User ruling 2026-08-13: keep id `journey`, display "Growth" (EN).**
+  Recorded as **A14**. The Vietnamese was revised the same day: **"Tiến trình"**, not "Trưởng thành"
+  (which leaned *maturity/adulthood*). `/roadmap` keeps **"Hành trình"**.
+- **The companion's Vietnamese name is "Linh thú"** (**A15**, user ruling 2026-08-13) — nav row
+  "Linh thú của tôi", with `/companion`'s page title matched to it so the destination has one name.
+  **Propagated the same day in `7c39419`; see § RESUME HERE for the scope correction it forced.**
+  That "one destination, one name" property is now an *invariant*, not a hand pin:
+  `messages/destination-name-parity.test.ts` asserts nav label === page title per locale for the two
+  screens a ruling binds — and asserts that **`/roadmap` deliberately does NOT match** (A8 gives it
+  nav "Journey"/"Hành trình" over title "Roadmap"/"Lộ trình"), so nobody widens the rule by accident.
+- **`screenId` doubles as the catalog key** (R9 + `deriveNavGroups` maps `key: entry.screenId`), so
+  the catalog gained `pronunciation-library` / `companion-home`, not `pronunciation` / `companion`.
+  Identity was NOT renamed to prettify a key — `weeklyReport` is the precedent in the other direction.
+- **`/jlpt` kept BOTH its route and its "JLPT" label.** A9's rename to Certification is Phase 2 in
+  full, not just the route. Only the row's group moved in 1b.
 
 ## ✅ Owed to the user — ALL THREE CLOSED 2026-08-13, before Phase 1b started
 

@@ -135,6 +135,26 @@ ACCOUNT    you                         →  Profile · Settings
 | **Profile** | `/profile` | `66:166` | `KEEP` | |
 | **Settings** | `/settings` | `220:16032` | `KEEP` | |
 
+### Group headings — added in Phase 1b (`decision-register.md` **A14**)
+
+The tables above lock group **ids** and **row labels**. They do not say what a group's *heading*
+reads, and the two are not the same string:
+
+Four of the five headings are just the id, capitalised and translated; they live in
+`messages/{en,vi}/nav.json` under `groups`, render-checked against the component by
+`components/layout/app-nav.test.tsx`'s `EXPECTED_GROUP_LABELS`. **Only one carries a decision, so
+only one is restated here** — a full table would be a hand-synced second copy of the catalogs, which
+is the very thing `navigation-system.md`'s deleted nav table was removed for (`CLAUDE.md` §6):
+
+| Group id | Heading (EN) | Heading (VI) |
+|---|---|---|
+| `journey` | **Growth** | **Tiến trình** |
+
+`journey` is the one that is not its id capitalised. A8 puts the **"Journey"** label on the
+`/roadmap` row *inside this group*, so a heading "Journey" would sit directly above an item
+"Journey". The id is left alone — it is identity, and `NavGroupId` is a compile-time union whose
+members are checked against `GROUP_ORDER`.
+
 ---
 
 ## 3. Every non-obvious call, with its evidence

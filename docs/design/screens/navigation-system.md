@@ -41,41 +41,42 @@ until now.
 
 # Navigation Inventory
 
-The canonical navigation structure (target for `components/layout/app-nav.tsx`, `NAV_ITEMS`) is
-**5 named groups**, each an ordered list (`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md`
-§2 — supersedes the earlier "single ordered list, no grouping" model):
+⚠️ **This document no longer carries the nav table.** It held the canonical 22-row inventory until
+**2026-08-13**, when Phase 1b applied the LOCKED IA. Keeping a second copy here is precisely the
+"two silently-disagreeing sources" defect that `CLAUDE.md` §6 now forbids, and this document has the
+higher authority (`decision-register.md` §5) — so a stale table here would not merely be wrong, it
+would outrank the truth.
 
-| Group | Order | Label key | Route |
-|---|---|---|---|
-| LEARN | 1 | `dashboard` | `/dashboard` |
-| LEARN | 2 | `lessons` | `/shadowing` |
-| LEARN | 3 | `kanji` | `/kanji` |
-| LEARN | 4 | `vocab` | `/vocab` |
-| LEARN | 5 | `grammar` | `/grammar` |
-| LEARN | 6 | `reading` | `/reading` |
-| LEARN | 7 | `speaking` | `/conversation` |
-| LEARN | 8 | `jlpt` | `/jlpt` |
-| STUDY | 9 | `review` | `/review` |
-| STUDY | 10 | `mining` | `/mining` |
-| STUDY | 11 | `playlists` | `/playlists` |
-| STUDY | 12 | `challenges` | `/challenges` |
-| STUDY | 13 | `community` | `/community` |
-| STUDY | 14 | `leaderboard` | `/leaderboard` |
-| INSIGHTS | 15 | `korume` | *(Companion surface, e.g. `/journal` or a future chat route — not decided by this plan)* |
-| INSIGHTS | 16 | `roadmap` | *(existing Roadmap screen; route not yet mapped to `NAV_ITEMS` — decided by whichever plan implements this group)* |
-| INSIGHTS | 17 | `weeklyReport` | *(Planned — `business-model.md` §8 "sample weekly report," not yet built)* |
-| PROGRESS | 18 | `journey` | `/journal` |
-| PROGRESS | 19 | `statistics` | *(not yet built — spec §7 leaves its source data undecided)* |
-| PROGRESS | 20 | `achievements` | *(not yet built — spec §7 leaves its source data undecided)* |
-| ACCOUNT | 21 | `profile` | `/profile` |
-| ACCOUNT | 22 | `settings` | `/settings` *(Planned — L9b Plan 1, `mem:l9b_plan1_launch_blocker_debt_status`)* |
+**The inventory has one home, and it is derived:**
 
-14 of these 22 rows are shipped today (`dashboard`, `lessons`/was `shadowing`, `kanji`, `vocab`,
-`grammar`, `reading`, `speaking`/was `conversation`, `jlpt`, `mining`, `playlists`, `community`,
-`leaderboard`, `journey`/was `journal`, `profile`) — the remaining 8 (`review`, `challenges`,
-`korume`, `roadmap`, `weeklyReport`, `statistics`, `achievements`, `settings`) are new nav-level
-entries this restructure surfaces; each is Planned/not-yet-wired except where noted, and none of
-this plan's tasks build them. Active acquisition-loop sub-routes (Shadowing Practice, Pronunciation,
+| Question | Where it is answered |
+|---|---|
+| Which rows exist, in which group, in what order | `lib/product/screen-registry.ts` — `navGroup` / `navOrder` per entry |
+| *Why* those rows | `docs/product/ia-proposal.md` §2, indexed in `docs/product/decision-register.md` **§2** (cite the section, never a range — `A1–A14` went stale the day A15 landed) |
+| What actually ships | `NAV_GROUPS`, derived by `lib/product/nav-derivation.ts`. `app-nav.tsx` renders it and holds no nav data of its own. |
+
+Read the current rows from `lib/product/screen-registry.ts` — the `navGroup` / `navOrder` fields
+ARE the data — never from a table in a document (`docs/lessons.md` L-002). To *verify* that what
+ships still matches the LOCKED IA (this reports pass/fail, it does not print the rows):
+
+```bash
+npx vitest run lib/product/nav-derivation.test.ts   # T6 pins the derivation to the LOCKED IA
+```
+
+`lib/product/nav-baseline.fixture.ts` is the hand-written statement of that IA and is the closest
+thing to a readable table — but it is a **test oracle**, not documentation. Never edit it to agree
+with the code; that is how T6 becomes self-referential.
+
+**If you remember the old table**, this is what Phase 1b changed: five groups
+(`learn · practice · remember · journey · account`) replaced LEARN/STUDY/INSIGHTS/PROGRESS/ACCOUNT;
+`/vocab`, `/reading`, `/community` and `/leaderboard` lost their rows but kept all their code (A10);
+`/challenges`, `/sensei`, `/journal`, `/weekly-report`, `/statistics` and `/achievements` were
+absorbed into other destinations (A2/A4/A5); `/companion` and `/pronunciation` gained rows (A2/A6);
+and the `Journey` label moved off `/journal` onto `/roadmap` (A8). `/jlpt` → `/certification` (A9)
+is **not** done — it carries a schema migration and belongs to Phase 2. The two rows this document
+had explicitly left undecided (`korume`, `roadmap`) are both answered there.
+
+The rest of this section is design rule rather than inventory, and still binds. Active acquisition-loop sub-routes (Shadowing Practice, Pronunciation,
 Listening Practice, JLPT test-taking, SRS review, Mining review session) are still reached by
 drilling into their parent item (e.g. `/shadowing/[id]`), never listed as their own top-level nav
 entry — this still keeps the acquisition loops off the persistent chrome, consistent with the
@@ -98,8 +99,8 @@ two exceptions: the Lesson Workspace routes — Shadowing Practice, Dictation, P
 acquisition-loop sub-routes are reached by drilling into a parent item, never listed as their own
 top-level entry — default to hidden under `(focus)` instead, which is exactly the Lesson Workspace
 behavior this paragraph originally deferred (that mandate is now built, not still unbuilt); and
-`/journal` (`journey`, a real § Navigation Inventory row) mounts no Nav Column at all under
-`(immersive)` instead — a harder exception than `(focus)`'s: there is no toggle to restore it, only
+`/journal` mounts no Nav Column at all under `(immersive)` instead — a harder exception than
+`(focus)`'s: there is no toggle to restore it, only
 the per-screen back affordance (see § Navigation States' contract table below — the same exception
 F3 recorded there). The `(app)`/`(focus)` default is session-scoped React
 state (`useState(defaultVisible)` in `app-nav.tsx`, with `defaultVisible` supplied per chrome
@@ -155,9 +156,9 @@ study. That reduction is expressed by the **chrome contract of the route group a
 
 | Group | Contract |
 |---|---|
-| `(app)` | Nav Column mounted and visible. The default for every destination in § Navigation Inventory except `/journal` (see `(immersive)` row below). |
+| `(app)` | Nav Column mounted and visible. The default for **every** nav destination — post-1b there is no exception, because `/journal` is no longer one (see the `(immersive)` row below). |
 | `(focus)` | Nav Column mounted, **hidden by default**, recoverable by the learner. Lesson workspaces — Shadowing Practice, Dictation, Pronunciation Studio (Planned). The reduce-motion control in the same edge-chrome rail as the show/hide button is NOT part of the hidden column — it renders unconditionally (`app-nav.tsx`, outside the `visible` check), so CLAUDE.md §2 rule 4's globally-reachable requirement holds even while the column itself is hidden (final whole-branch review F1, 2026-08-07). |
-| `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding, and `/journal` — one of the 14 shipped § Navigation Inventory destinations (`journey`) lives here, so it is reachable from the `(app)` Nav Column but is itself chrome-less once opened (final whole-branch review F3, 2026-08-07). |
+| `(immersive)` | Nav Column **not mounted**. No navigation landmark. Companion Diary, onboarding, and `/journal`. ⚠️ **Phase 1b removed `/journal`'s nav row entirely** (A2/A8 — `journey` is now a group *id*, and the `Journey` label moved onto `/roadmap`), so the old "reachable from the `(app)` Nav Column" claim here is dead. Its door is the **companion sprite** — `ambient-provider.tsx:154` wires `openJournal`, and `CompanionAnchor` mounts on `/dashboard` and `/shadowing`; both e2e specs navigate that way. (Supersedes final whole-branch review F3, 2026-08-07.) |
 
 **Chrome in `(immersive)` routes:** While the Nav Column is not mounted, `(immersive)` is not chrome-less.
 Every immersive screen carries its own labelled back affordance (see `components/companion/journal-view.tsx`,
@@ -196,16 +197,20 @@ temporary layer — it does not open, close, or slide over content the way a dra
 - Companion presence is controlled by the Ambient Layer per screen
   (`docs/design/design-reconciliation.md` §2), never by the navigation component. The nav does not
   gain or lose a "Companion tab" or indicator based on which screen is active.
-- Anchor availability today (`design-reconciliation.md` §6) is Available at Dashboard, `/journal`,
-  and — in their empty states specifically — `/shadowing` and `/mining`; all other nav destinations
-  are Planned or Not Supported for Companion. The nav item itself looks identical either way —
+- Anchor availability today (`design-reconciliation.md` §6) is Available at Dashboard, `/journal`
+  (a screen, not a nav row — see the `(immersive)` contract), and — in their empty states
+  specifically — `/shadowing` and `/mining`; all other screens are Planned or Not Supported for
+  Companion. The nav item itself looks identical either way —
   availability is a property of the destination screen, not of the nav link.
 
 ---
 
 # Gamification & Navigation
 
-`/leaderboard` is a real, shipped nav item. It belongs entirely to the Gamification Layer
+⚠️ **Amended 2026-08-13.** This section was built on "`/leaderboard` is a real, shipped nav item",
+which Phase 1b made false: A10 removed its row (the code and the route remain — hiding is not
+deleting). The Layer Responsibility point below is unaffected and is the part that matters; only
+its worked example changed. `/leaderboard` still belongs entirely to the Gamification Layer
 (`design-reconciliation.md` §3, Layer Responsibility Rule: Gamification owns XP, Streak, Progress,
 Goal completion). The Nav Column carries one deliberate Gamification exception
 (`docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §5): a compact
@@ -215,11 +220,13 @@ session/goal/hours detail stays where it already lives (Shadowing Hub's Current 
 Dashboard) and is not duplicated here. Beyond this one indicator, the Nav Column stays neutral — no
 live XP counter, no rank badge next to any nav item — and Companion must never narrate the streak
 indicator from within navigation, per the same Layer Responsibility Rule. Because the Nav Column is
-persistent chrome (§ Layout Regions), this streak indicator is visible from every `(app)` `NAV_ITEMS`
-destination, not just Shadowing — 13 of the 14 shipped destinations. The 14th, `/journal`
-(`journey`), is `(immersive)` and mounts no Nav Column at all (§ Navigation States' contract table),
-so the streak indicator is not visible there; that surface has its own Companion-driven presentation
-instead (`design-reconciliation.md` §2), not a gap this document leaves unaddressed.
+persistent chrome (§ Layout Regions), this streak indicator is visible from every `(app)` nav
+destination, not just Shadowing. It is **not** visible on `(immersive)` surfaces, which mount no Nav
+Column at all (§ Navigation States' contract table) — `/journal` is the standing example, and it has
+its own Companion-driven presentation instead (`design-reconciliation.md` §2), not a gap this
+document leaves unaddressed. Stated as a chrome rule rather than a count on purpose: the previous
+wording ("13 of the 14 shipped destinations") was arithmetic over a nav table that no longer lives
+here, and went stale the moment the IA changed.
 
 The Nav footer also carries a "Rain Sound" ambient-audio toggle (§ Settings Entry Point). This is
 **not** part of the Gamification exception above: ambient audio is not XP, Streak, Progress, or Goal
@@ -231,17 +238,19 @@ preset (glow, color temperature, glass tint, shadow softness, ambient particles)
 Shadowing Practice workspace, while Rain Sound is only an ambient audio layer, reachable from
 anywhere in the app. The two do not stack or conflict by design — a learner can enable Rain Sound
 under any Study Atmosphere selection, or none at all. Like the streak indicator, Rain Sound is
-available from every `(app)` nav destination — the same 13-of-14 scope, and the same `/journal`
-exception, described just above. It defaults to off and never autoplays.
+available from every `(app)` nav destination, and absent from `(immersive)` surfaces for the same
+reason — stated as the chrome rule described just above, deliberately without a count. It defaults
+to off and never autoplays.
 
 ---
 
 # Settings Entry Point
 
-There is no `/settings` route today. It is not implemented in the shipped `app-nav.tsx`/`NAV_ITEMS`
-code or in the app route tree — it appears in § Navigation Inventory's table only as row 22 of the
-canonical/target structure, not as a shipped entry (same shipped-vs-canonical distinction as that
-section's lead sentence).
+⚠️ **Corrected 2026-08-13.** This paragraph said "there is no `/settings` route today" and pointed at
+row 22 of § Navigation Inventory's table. Both halves are now wrong: Plan C1 shipped
+`app/[locale]/(protected)/(app)/settings/page.tsx` as an honest `UpcomingScreen`, and that table no
+longer lives in this document. `/settings` is a real, protected, nav-listed route rendering a
+placeholder — the *feature* is what is unbuilt, not the route.
 Two different things currently live where "settings" might be expected, and they must not be
 conflated:
 
