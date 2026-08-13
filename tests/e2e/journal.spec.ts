@@ -41,6 +41,19 @@ test("a brand-new learner opens the Journal and finds the first page already wri
   // The control's label and the page heading are deliberately different
   // words — "open the journal" vs the "Journal" heading. Don't "fix" one into
   // agreement with the other.
+  //
+  // ⚠️ `emulateMedia` is REQUIRED, not hygiene. The sprite carries
+  // `companion-breathe` (globals.css: `4.5s ... infinite`, scale 1 -> 1.03),
+  // applied whenever the app's reduce-motion toggle is off — which is the
+  // default. Playwright's click actionability waits for a STABLE bounding
+  // box, and an infinitely animating element never has one, so the click
+  // times out (measured: 3/3 timeouts at ~8s without this line, ~90ms with
+  // it). `prefers-reduced-motion: reduce` trips the global kill switch in
+  // globals.css, which forces `animation-iteration-count: 1`.
+  //
+  // Do NOT "fix" this with `force: true` instead — that skips the hit-target
+  // check, which is part of what this spec is proving.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page
     .getByRole("button", { name: "Your companion — open the journal" })
     .click();

@@ -115,8 +115,12 @@ describe("upcoming.json EN — catalog literals", () => {
     expect(en.companion.body).toBe(
       "One place for the companion studying alongside you — its diary, what it remembers of your sessions, and where it thinks you are growing.",
     );
+    // Says where the Diary is reachable TODAY. The first draft read "the Diary
+    // … moves here", which the whole-branch review caught as a promise this
+    // placeholder cannot keep: it renders no link, and 1b removed the Diary's
+    // nav row. The companion sprite on /dashboard is the real door.
     expect(en.companion.unlocks).toBe(
-      "The Diary already exists and moves here. The rest arrives with the Companion hub.",
+      "The Diary already exists — open it from your companion on the Dashboard until this hub gathers it in. The rest arrives with the hub.",
     );
   });
 

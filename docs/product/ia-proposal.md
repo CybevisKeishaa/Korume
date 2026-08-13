@@ -135,6 +135,24 @@ ACCOUNT    you                         →  Profile · Settings
 | **Profile** | `/profile` | `66:166` | `KEEP` | |
 | **Settings** | `/settings` | `220:16032` | `KEEP` | |
 
+### Group headings — added in Phase 1b (`decision-register.md` **A14**)
+
+The tables above lock group **ids** and **row labels**. They do not say what a group's *heading*
+reads, and the two are not the same string:
+
+| Group id | Heading (EN) | Heading (VI) |
+|---|---|---|
+| `learn` | Learn | Học |
+| `practice` | Practice | Luyện tập |
+| `remember` | Remember | Ghi nhớ |
+| `journey` | **Growth** | **Trưởng thành** |
+| `account` | Account | Tài khoản |
+
+`journey` is the one that is not its id capitalised. A8 puts the **"Journey"** label on the
+`/roadmap` row *inside this group*, so a heading "Journey" would sit directly above an item
+"Journey". The id is left alone — it is identity, and `NavGroupId` is a compile-time union whose
+members are checked against `GROUP_ORDER`.
+
 ---
 
 ## 3. Every non-obvious call, with its evidence

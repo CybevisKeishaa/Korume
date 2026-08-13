@@ -180,7 +180,8 @@ describe("AppNav", () => {
   });
 
   it("lets the nav list scroll when it is taller than the viewport", () => {
-    // 22 rows do not fit the sidebar. Every Figma frame shows the list clipped
+    // The list can outgrow the sidebar (22 rows did before Phase 1b cut it to
+    // 14, and Phase 2 adds more). Every Figma frame shows the list clipped
     // at 585-682px with no scroll region — an export artifact, not a design
     // decision (spec §7.2, D9).
     renderNav();

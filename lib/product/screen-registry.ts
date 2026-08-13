@@ -28,11 +28,13 @@ import type { ScreenEntry } from "./screen-registry-types";
  *      discovered "true identity").
  *   2. `docs/product/screen-inventory.md` Part II §6–§20 — `kind`, and for
  *      state-variants, `variantOf`.
- *   3. `listPageRoutes(process.cwd())` — `route` + `chrome`, the authoritative
- *      44-route set (verified twice independently: `npx tsx` + the recursive
- *      walk one-liner both return 44).
- *   4. `components/layout/app-nav.tsx` + `lib/product/nav-baseline.fixture.ts`
- *      — `navGroup` + `navOrder` for the 22 fixed nav-key screenIds.
+ *   3. `listPageRoutes(process.cwd())` — `route` + `chrome`. Count it, never
+ *      quote it (`docs/lessons.md` L-002); Phase 1b added two pages, so the
+ *      44 recorded by Phase 1a is already stale.
+ *   4. `docs/product/ia-proposal.md` §2 — `navGroup` + `navOrder`. ⚠️ Phase 1a
+ *      sourced these from `components/layout/app-nav.tsx`; that is no longer
+ *      true and must not be reinstated. `app-nav.tsx` has held no nav data
+ *      since 1a, and the IA is the source now.
  *
  * `impl` is measured, not asserted. The placeholder set is whatever this
  * prints — never a number copied from here (`docs/lessons.md` L-002):

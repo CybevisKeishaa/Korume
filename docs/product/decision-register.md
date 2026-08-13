@@ -59,6 +59,14 @@ derives them. See §3b.
 | A11 | **`/playlists` stays its own screen** — not folded into Explore | §5 |
 | A12 | **Loading + error catalogues go to `/admin/style-guide`**, not the registry | §4 |
 | A13 | **No route for:** search palette · create-conversation wizard · lesson preview · reflection · suggestion drawer | §4 |
+| A14 | **A group's HEADING is not its id.** `journey` displays **"Growth" / "Trưởng thành"** | `ia-proposal.md` §2 · ruled 2026-08-13 |
+
+**A14 was added during Phase 1b**, when the gap surfaced in implementation: A1 locks group *ids* and
+§2 locks *row* labels, but nothing said what a group heading reads. Capitalising the id would have
+rendered a heading "Journey" directly above a row "Journey" — the very label A8 had just moved onto
+`/roadmap`. The id stays `journey` (it is identity, and `NavGroupId` is a compile-time union); only
+the catalog value differs. ⚠️ Known and accepted: "Growth" also names a Companion sub-surface
+(`Growth Areas`, `187:6556`) that lives inside this group.
 
 ## 3. Method rules — `LOCKED`, and they bind future passes
 

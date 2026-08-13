@@ -66,10 +66,14 @@ All four were real. Recorded as evidence, because the next phase inherits the sa
 
 ### Two defects 1b's own guards caught — neither was an IA-expectation mismatch
 
-- **`/companion` and `/pronunciation` had no `PROTECTED_PREFIXES` entry**, so middleware would have
-  skipped auth on both. Caught by `lib/supabase/route-protection.test.ts`'s filesystem-driven
-  coverage test. Same defect class as C1 round 1's "eight protected routes missing from middleware".
-  **Any new route under `(protected)` needs this; the layout alone does not protect it.**
+- **`/companion` and `/pronunciation` had no `PROTECTED_PREFIXES` entry.** Caught by
+  `lib/supabase/route-protection.test.ts`'s filesystem-driven coverage test. Same defect class as C1
+  round 1's "eight protected routes missing from middleware".
+  ⚠️ **Correction (whole-branch review, M3):** commit `276d0ac`'s message says "middleware would have
+  skipped auth on both". **That overstates it** — `app/[locale]/(protected)/layout.tsx:28-29` does its
+  own server-side `getCurrentUser()` redirect, so access control held. The real symptom is a dropped
+  `redirectTo`: a signed-out learner opening a shared `/vi/companion` link would land on
+  `/vi/dashboard` after logging in. Believe the test's own comment, not that commit message.
 - **`L-025`'s hand sweep found TWO e2e specs**, not one: `journal.spec.ts` *and*
   `route-group-provider-identity.spec.ts` both clicked a nav link named "Journey" expecting
   `/journal`. `vitest.config.ts:13` excludes `tests/e2e`, so no unit run could ever have caught it.

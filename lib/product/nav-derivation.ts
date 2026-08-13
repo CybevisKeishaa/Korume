@@ -41,14 +41,17 @@ export type NavGroup = {
  * icons, active state).
  *
  * `key` is the screenId: R9 makes them the same string for every nav
- * destination, which is what lets this land without touching a message
- * catalog.
+ * destination. In Phase 1a that meant the refactor landed without touching a
+ * message catalog; Phase 1b DOES edit the catalog, because A7 and A8 are label
+ * rulings and two new destinations arrived — but the key↔screenId identity is
+ * unchanged, and it is what keeps the catalog honest.
  *
- * ⚠️ `weeklyReport` is camelCase while every other nav key is a single
- * lowercase word. R9 requires adopting the existing key, so its `screenId`
- * in the registry is `weeklyReport` — not `weekly-report` — even though R3
- * says kebab-case. This is the one deliberate exception; changing it would
- * need a message-catalog edit, which R9 forbids in Phase 1.
+ * ⚠️ A screenId is identity, never a label, and it is not renamed to make a
+ * catalog key read nicely. Both directions of that have shipped on purpose:
+ * `weeklyReport` is camelCase where R3 asks for kebab-case (1a adopted the
+ * existing catalog key rather than edit a catalog), and `pronunciation-library`
+ * / `companion-home` are screenIds serving as keys behind the labels
+ * "Pronunciation" / "Companion" (1b kept the Figma join rather than prettify).
  */
 export function deriveNavGroups(registry: readonly ScreenEntry[]): NavGroup[] {
   // Final review FIX 1. This used to be `&& entry.route !== null` inside the
