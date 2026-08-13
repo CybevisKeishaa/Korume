@@ -2,8 +2,13 @@
 
 # ▶▶ RESUME HERE
 
-**Phase 1b is COMPLETE, REVIEWED TWICE, and all three open items are CLOSED, on branch
-`screen-registry-phase-1b` (off master `c000242`). The only remaining step is the merge.**
+**Phase 1b is DONE and MERGED to master at `6f67dd1` (`--no-ff`, 2026-08-13). Reviewed twice, all
+three open items closed. Nothing is owed on it.** Lessons merged separately at `708f47e`.
+
+**⭐ The live next action is now PHASE 2**, whose backlog is already decided and written down —
+see `mem:screen_registry_inputs` (the A10 hides: `/reading`, `/leaderboard`, `/community`; the
+`/jlpt` → `/certification` rename with its schema migration, A9) and § Deferred findings below.
+Post-merge verify on master: `tsc` 0 · `vitest` 236 files / 2110 tests.
 
 Commits: `276d0ac` (the IA change) · `4db8e7b` (memory) · `7ba870a` (fix wave closing the
 whole-branch review) · `2c58e70` (the user's VN naming rulings — A14 revised, A15 added) ·
