@@ -23,7 +23,9 @@ Navigation is no longer a hand-written literal. It is a **derived view** of a ty
 | `lib/product/nav-groups.ts` | the derived `NAV_GROUPS` / `NAV_ITEMS`, **server-side only** |
 | `lib/product/nav-baseline.fixture.ts` | frozen pre-refactor oracle for T6 |
 
-Tests: `T1 · T2 · T2b · T3 · T4 · T5 · T6 · T7 · T8 · T9 · T10`, every one mutation-checked.
+Tests: `T1 · T2 · T2b · T3 · T4 · T5 · T6 · T7 · T8 · T9 · T10 · T11`, every one mutation-checked.
+(`T11` is the nav→page assertion. It shipped titled `T2b`, colliding with the resolver test that
+already held that id in spec §4.1; renamed 2026-08-13, logic untouched.)
 
 **Phase 1a deliberately encoded TODAY's navigation**, including the wrong `journey → /journal` row.
 That is not an oversight — 1a proves the engine, 1b changes the product decision, and the two must
@@ -38,11 +40,11 @@ never share a diff.
    becomes self-referential — it will pass forever while asserting nothing, and it takes the
    nav-completeness guards down with it. **Hand-write the new baseline from
    `docs/product/ia-proposal.md` §2.**
-2. **Two-directional completeness is TWO invariants.** `T1` = *page → registry*. `T2b` = *nav → page*.
+2. **Two-directional completeness is TWO invariants.** `T1` = *page → registry*. `T11` = *nav → page*.
    Phase 1a nearly shipped without the second because the spec claimed T1 subsumed it — it does not,
    and that was proven by construction (a nav row pointing at a routeless page left every test green
    while the sidebar rendered a dead link). **Phase 1b adds `/companion` and `/pronunciation`, which
-   are designed-before-built — exactly what T2b exists to catch.** Keep both.
+   are designed-before-built — exactly what T11 exists to catch.** Keep both.
 3. **`deriveNavGroups` now THROWS** on `navGroup !== null && route === null` rather than silently
    dropping the row. So a 1b entry with a nav group but no route yet **crashes both server layouts**.
    Give every new nav row a real route (an honest `UpcomingScreen` page is the established pattern
@@ -76,16 +78,29 @@ Apply `docs/product/decision-register.md` §2 (A1–A13, `LOCKED`). Concretely:
 
 ---
 
-## ⚠️ Owed to the user — decisions, not tasks
+## ✅ Owed to the user — ALL THREE CLOSED 2026-08-13, before Phase 1b started
 
-1. **`L-004` now has a fourth evidence entry**, which under `docs/lessons.md`'s own rule 3 **triggers
-   a promotion review** (should it become law in `CLAUDE.md`?). Not automatic; the user decides.
-2. **Name collision: `T2b` is used twice** — the spec §4.1 table already had `T2b` for the resolver
-   unit test, and the new nav→page assertion took the same name. Renumber in 1b.
-3. **The e2e suite cannot pass locally without backend credentials.** Measured: 5 fail / 8 pass on
-   the branch **and the identical 5 fail / 8 pass at the branch point `e4f407a`** — all five die at
-   registration. Delta is zero, so this is environmental, not a regression. Know this before trusting
-   a CI result.
+The user sequenced these deliberately: settle method-law and test naming *first*, so neither is left
+hanging inside 1b's data-only diff. Find them with `git log --grep "promotion review"` and
+`git log --grep T11`.
+
+1. **`L-004` promotion review — DONE, promoted.** Ruling covered all five parked candidates against
+   spec **G6** (the ≥3-evidence threshold measures *frequency*; promotion requires the lesson be
+   restatable as a **checkable invariant**). **Promoted:** `L-004` → `CLAUDE.md` §7, `L-026` → §6,
+   `L-011` → §9. **Declined with reasons recorded:** `L-016` (binds only worktree runs; observable
+   only in a controller transcript) and `L-023` (no binary outcome, no bounded depth — unenforceable
+   as law). Declined entries say *do not re-open on evidence count alone*, so this cannot re-trigger.
+   Note `L-004`'s promoted form carries the clause that actually catches the bug class: **an
+   assertion over a collection gathered by a pattern must assert the collection is non-empty and the
+   expected size.**
+2. **`T2b` collision — RESOLVED. The nav→page assertion is now `T11`.** The spec's `T2b` (resolver
+   unit test) kept its id, being both older and more widely referenced. Rename only — one test title
+   and one comment; `git diff` shows zero logic change. Spec §4.1 now defines `T11` in the table
+   instead of leaving it as unnamed prose in the correction block.
+3. **e2e credentials — NOT a blocker, and deliberately not "fixed".** The authoritative statement now
+   lives in `mem:project_status` § Verify commands; it is repo-wide, not registry-specific. Short
+   form: delta against the branch point is zero, so a non-green local Playwright run is
+   environmental. Never repair the environment to improve the number — the comparison is the signal.
 
 ## Deferred findings from the final review — real, non-blocking, none load-bearing
 

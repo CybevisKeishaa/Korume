@@ -22,7 +22,10 @@ describe("registry ↔ repo routes", () => {
     expect(lying).toEqual([]);
   });
 
-  it("T2b: every nav destination resolves to a real page.tsx", () => {
+  it("T11: every nav destination resolves to a real page.tsx", () => {
+    // T11, not T2b: the spec's §4.1 table already uses T2b for the resolver
+    // unit test, and this assertion took the same id by accident. Renamed
+    // 2026-08-13; semantics unchanged.
     // NOT covered by T1, which runs the other way: T1 asks "does every
     // page.tsx have an entry?", this asks "does every sidebar row lead
     // somewhere?". The spec's claim that T1 "subsumes and generalises" the

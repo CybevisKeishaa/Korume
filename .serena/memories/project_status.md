@@ -604,7 +604,16 @@ or remove the worktree first. Still not fixed in config.
 ⚠️ **A worktree has NO `.env.local`** — read `docs/lessons.md` L-020 before trusting any e2e run there.
 `npm run build` (~52s) · `npx playwright test` (**8 e2e**, ~50s; free `:3000` first — `docs/lessons.md`
 L-017) · `npx supabase db reset`
-(15 migrations). ⚠️ `tests/e2e/route-group-provider-identity.spec.ts` needs the seeded FREE-tier video
+(15 migrations).
+
+⚠️ **The e2e suite structurally CANNOT reach full green on a dev machine — this is permanent, and
+"fixing" it is a mistake.** Five specs die at registration because there are no backend credentials
+locally. Measured 2026-08-13 on the Phase 1a branch: **5 fail / 8 pass**, and an *identical* 5 fail /
+8 pass at its branch point `e4f407a`. **Delta zero ⇒ environmental, not a regression.** Therefore:
+read a local Playwright result only as a **comparison against the branch point**, never as an
+absolute pass count, and never repair the environment just to make the number look nicer — the
+comparison is the whole signal, and a green-by-configuration run destroys it. Record the comparison
+in the branch's acceptance notes rather than treating a non-green run as a blocker. ⚠️ `tests/e2e/route-group-provider-identity.spec.ts` needs the seeded FREE-tier video
 in `supabase/seed.sql`, so a fresh machine must run `db reset` before that spec can pass; nothing
 wires the two together.
 Known CPU-contention flakes (standalone-green): `pitch-contour.test.tsx`, `waveform.test.tsx`.

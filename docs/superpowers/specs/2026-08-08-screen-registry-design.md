@@ -207,6 +207,7 @@ while the suite stayed green.
 | **T8** | For every entry with a `page.tsx`, `chrome` equals the groups actually dropped from that file's path (§3.4) — `chrome: 'focus'` ⇒ the file sat under `(focus)`. Catches a screen moved between chrome contracts. Entries without a page are exempt. |
 | **T9** | Every `kind === 'repo-only'` has a non-null `repoOnlyReason`; every other kind has `repoOnlyReason === null` (R13). |
 | **T10** | `repoOnlyReason === 'out-of-design-scope'` implies `chrome === 'admin'`. Any other route claiming it **fails**, forcing it into `'legacy-unreviewed'` where Phase 2 counts it as debt (R13). |
+| **T11** | Every entry with `navGroup !== null` has a `route` that resolves to a real `page.tsx` — the reverse direction of T1. See the correction below. *(Id assigned 2026-08-13; the assertion shipped in Phase 1a, mutation-checked, under a name that collided with T2b.)* |
 
 ⚠️ **Correction (final whole-branch review, 2026-08-12).** This paragraph used to read "T1 subsumes and
 generalises the existing href-resolves guard in `app-nav.test.tsx` … that guard should be folded in, not
@@ -223,8 +224,10 @@ point at a routeless screen with the whole suite green: repointing a nav entry a
 while the sidebar rendered a dead link.
 
 **Two-directional completeness is two separate invariants, not one invariant written two ways.** Both
-are therefore kept: T1 as specified above, and the reverse direction as the nav-destination assertion in
-`lib/product/screen-registry.routes.test.ts`. `deriveNavGroups` additionally *throws* on
+are therefore kept: T1 as specified above, and the reverse direction as **T11**, the nav-destination
+assertion in `lib/product/screen-registry.routes.test.ts`. (That assertion originally shipped titled
+`T2b`, colliding with the resolver test already holding that id in the table above. Renamed to `T11`
+on 2026-08-13 — a rename only; its logic is unchanged.) `deriveNavGroups` additionally *throws* on
 `navGroup !== null && route === null` rather than silently filtering the row out, so the same root cause
 cannot instead manifest as a nav row that quietly disappears.
 
@@ -245,7 +248,7 @@ Recorded so a later contributor does not add them "helpfully" — each would con
 ## 5. Phase 1 scope and acceptance
 
 **In scope:** build the registry; populate it from a measured Figma frame survey plus the 44 repo routes;
-derive `NAV_GROUPS` from it; ship T1–T10 plus T2b.
+derive `NAV_GROUPS` from it; ship T1–T10 plus T2b and T11.
 
 **Out of scope for Phase 1** — every one of these is a Phase 2 or Phase 3 decision:
 
@@ -257,7 +260,7 @@ derive `NAV_GROUPS` from it; ship T1–T10 plus T2b.
 
 **Acceptance criteria:**
 
-1. T1–T10 and T2b pass, each mutation-checked.
+1. T1–T10, T2b and T11 pass, each mutation-checked.
 2. **Zero visual diff.** No component's rendered output changes. T6 is the machine-checkable form of this.
 3. `tsc` 0 errors; lint error count unchanged from the pre-branch baseline.
 4. Every registry entry sourced from Figma carries a `figmaCheckedAt` date from this pass.
