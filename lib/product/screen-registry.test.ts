@@ -93,4 +93,35 @@ describe("screen registry invariants", () => {
       expect(Object.keys(entry).sort(), entry.screenId).toEqual([...ALLOWED].sort());
     }
   });
+
+  it("G2: figmaCheckedAt is null on exactly the out-of-design-scope entries", () => {
+    // Phase 2a backfilled the stamp from CITATIONS, never from membership in
+    // `repo-only`. Every entry the Phase 0 pass demonstrably examined carries
+    // that pass's own date, 2026-08-12.
+    //
+    // The five /admin/* routes deliberately keep `null`: `out-of-design-scope`
+    // means Figma will never cover them, so "compared against Figma at time X"
+    // (R7) is not a claim that can honestly be made about them. A null here
+    // therefore means one of two true things — never compared, or never
+    // comparable — and never "we forgot".
+    //
+    // Asserted as a SET, not a count: a blanket stamp that happened to hit the
+    // right total would pass a count assertion and fail this one.
+    const unstamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt === null)
+      .map((e) => e.screenId)
+      .sort();
+    expect(unstamped).toEqual([
+      "admin",
+      "admin-content",
+      "admin-content-type",
+      "admin-style-guide",
+      "admin-videos",
+    ]);
+
+    const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
+    expect(stamped).toHaveLength(74);
+    for (const entry of stamped) {
+      expect(entry.figmaCheckedAt, entry.screenId).toBe("2026-08-12");
+    }
+  });
 });
