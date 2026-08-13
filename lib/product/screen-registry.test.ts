@@ -54,6 +54,10 @@ describe("screen registry invariants", () => {
   });
 
   it("T9: repoOnlyReason is present iff the entry is repo-only", () => {
+    const repoOnly = SCREEN_REGISTRY.filter((e) => e.kind === "repo-only");
+    // Non-vacuity: without this, an empty filter makes every assertion below
+    // unconditionally true (CLAUDE.md §7).
+    expect(repoOnly.length).toBeGreaterThan(0);
     for (const entry of SCREEN_REGISTRY) {
       if (entry.kind === "repo-only") {
         expect(entry.repoOnlyReason, entry.screenId).not.toBeNull();
@@ -64,24 +68,29 @@ describe("screen registry invariants", () => {
   });
 
   it("T10: out-of-design-scope is restricted to admin chrome", () => {
-    for (const entry of SCREEN_REGISTRY) {
-      if (entry.repoOnlyReason === "out-of-design-scope") {
-        expect(entry.chrome, entry.screenId).toBe("admin");
-      }
+    const outOfScope = SCREEN_REGISTRY.filter(
+      (e) => e.repoOnlyReason === "out-of-design-scope",
+    );
+    expect(outOfScope.length).toBeGreaterThan(0);
+    for (const entry of outOfScope) {
+      expect(entry.chrome, entry.screenId).toBe("admin");
     }
   });
 
-  it("R12: no entry carries an appearance or behaviour field", () => {
+  it("R12: every entry carries exactly the twelve allowed fields", () => {
     // The concrete guard on R1. If someone adds `copy`, `layout`, `colors` or
-    // `dataNeeds`, the registry has started becoming a second Figma.
-    const ALLOWED = new Set([
+    // `dataNeeds`, the registry has started becoming a second Figma. It is
+    // also G3: `ruledBy` / `ruledAt` cannot be added without failing here.
+    // Checked in BOTH directions — the older form only rejected unknown keys,
+    // so an entry missing a field passed.
+    const ALLOWED = [
       "screenId", "name", "kind", "variantOf", "figmaNodeId", "repoOnlyReason",
       "figmaCheckedAt", "route", "chrome", "impl", "navGroup", "navOrder",
-    ]);
+    ];
+    expect(ALLOWED).toHaveLength(12);
+    expect(SCREEN_REGISTRY.length).toBeGreaterThan(0);
     for (const entry of SCREEN_REGISTRY) {
-      for (const key of Object.keys(entry)) {
-        expect(ALLOWED, `${entry.screenId}.${key}`).toContain(key);
-      }
+      expect(Object.keys(entry).sort(), entry.screenId).toEqual([...ALLOWED].sort());
     }
   });
 });

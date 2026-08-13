@@ -9,7 +9,7 @@ import { SCREEN_REGISTRY } from "./screen-registry";
  * because that file is a client component, and importing `SCREEN_REGISTRY`
  * there shipped the whole registry to the browser: ~18 KB of Figma node ids
  * from a private design file, the names of every unshipped screen, and
- * internal debt labels (`legacy-unreviewed`, `figmaCheckedAt`). None of that
+ * internal survey fields (`repoOnlyReason`, `figmaCheckedAt`). None of that
  * is the learner's business, and none of it reached the client before the
  * registry existed (final whole-branch review FIX 3).
  *

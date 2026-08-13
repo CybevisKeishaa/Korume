@@ -1,7 +1,7 @@
 export type ScreenKind = "screen" | "state-variant" | "deprecated" | "repo-only";
 export type ScreenImpl = "built" | "placeholder" | "none";
 export type ScreenChrome = "app" | "focus" | "immersive" | "admin" | "auth" | "marketing";
-export type RepoOnlyReason = "out-of-design-scope" | "legacy-unreviewed";
+export type RepoOnlyReason = "out-of-design-scope" | "no-frame-at-last-pass";
 
 /**
  * The LOCKED IA's five groups — `decision-register.md` A1, applied in Phase 1b.
