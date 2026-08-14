@@ -1,184 +1,164 @@
-# Screen Registry Phase 2b — run state (⭐ THE LIVE RUN STATE)
+# Screen Registry Phase 2b — ✅ COMPLETE AND MERGED
 
-> This file is the authority for Phase 2b. `mem:screen_registry_run_state` is now **historical**
-> (Phases 1a/1b/2a) and points here. Do not record 2b status in two places.
+> Superseded as "live work". This file is now the **historical record of 2b plus its two open
+> debts**. `mem:screen_registry_run_state` covers 1a/1b/2a. Neither is the live next action —
+> there is no live next action for the screen registry until Phase 3 is scoped.
 
 # ▶▶ RESUME HERE
 
-**Branch `screen-registry-phase-2b`, off master `8d01ed9`. All 8 plan tasks are IMPLEMENTED. The
-whole-branch review (`L-011`) has run and its single fix wave has landed.**
+**Phase 2b MERGED to master at `10caaac`** (`--no-ff`, 2026-08-14), off `8d01ed9`. Branch
+`screen-registry-phase-2b` **kept**, per this repo's convention. 16 commits, 53 files.
 
-⚠️ **This header used to say "HEAD `777b326`, three commits, ALL DOCUMENTATION, zero application
-code touched" and named "execute Task 1" as the next action.** All of that is superseded — it
-described the branch before implementation began. It also carried an open question about execution
-mode (subagent-driven vs inline); that question is closed by events, the plan having been executed.
-Corrected by the whole-branch review's fix wave, 2026-08-14, in the same pass that corrected the
-nav-pin claim below (`L-026`: stale-check a handoff doc in the pass that falsifies it).
+Post-merge gate re-run **on master**, measured not inherited:
+`tsc` 0 · `vitest` **237 files / 2113 tests** · `lint` **77 warnings / 0 errors** (baseline) ·
+`next build` exit 0 · `playwright` 8/8 over real HTTP.
 
-The commit list is not restated here — read it off the branch (`L-002`):
+**Nothing is owed on 2b's process.** The review chain ran to the end: per-task reviews →
+whole-branch review (`L-011`) → fix wave → **the `L-012` re-review of that wave** → the two findings
+that re-review raised → controller verification of each.
 
-```
-$ git log --oneline master..HEAD
-$ git diff --name-status master...HEAD
-```
+**Two debts survive, and they are the only things to carry forward. Both are below.**
 
-**⭐ THE NEXT ACTION: the scoped re-review of the fix wave (`L-012`), then merge `--no-ff` —
-and the merge is the user's call, exactly as 2a was not merged until they said so.**
+## ⭐⭐ DEBT 1 — the unverified column grant (security, OPEN)
+
+`certification_questions` inherits `revoke select … from authenticated` plus a column-scoped `grant`
+that deliberately **omits `correct_answer`** (`20260713000011_reading_jlpt.sql:116-117`), with RLS
+`using (true)` on top. The rename must not have silently restored table-wide select.
+
+**This was never verified.** No Docker, no reachable Postgres, no `psql`. `L-005`: the Supabase mock
+models no RLS and no column grants, so the green 2113-test suite **is not evidence about this** and
+must never be allowed to close it.
+
+**Residual risk is bounded but not zero** — the whole-branch review confirmed the second line of
+defence survives: `lib/data/jlpt.ts` selects an explicit column list excluding `correct_answer`,
+`toPublicQuestionData` strips it, the scoring path that does read it goes through
+`createServiceClient()` server-side, and the "never leaks correct_answer/explanation" regression test
+is still live. Exposure would therefore need a **direct PostgREST query from a browser** with the
+anon/authenticated key — a real vector on Supabase, but a second independent failure on top.
+
+**Also unverified: the migration has never run anywhere.** Its first execution will be against a real
+database. It is non-idempotent (consistent with every migration in this repo — none uses
+`if not exists`), so a partial failure leaves a half-renamed schema.
+
+### The recipe that settles it — do this first, next time a database is reachable
+
+1. Start Docker Desktop, then `docker run --rm -e POSTGRES_PASSWORD=x -p 5433:5432 postgres:16`.
+2. Create a stub `authenticated` role first (Supabase's roles do not exist in vanilla Postgres), then
+   apply **in order**: `20260712000001_schema.sql` · `20260712000002_rls.sql` ·
+   `20260712000003_indexes.sql` · `20260713000011_reading_jlpt.sql` ·
+   `20260814000027_certification_rename.sql`.
+3. Run and require the exact row set:
+   ```sql
+   select grantee, privilege_type, column_name
+   from information_schema.column_privileges
+   where table_name = 'certification_questions' and grantee = 'authenticated'
+   order by column_name;
+   ```
+   Expect `id, order_index, question_data, question_type, section, test_id` and **no
+   `correct_answer` row**.
+4. Also assert `relrowsecurity` is still true and that policy `certification_questions_read` exists on
+   the renamed relation.
+
+That run doubles as the migration's first execution test, which is the other thing nobody has done.
+
+## DEBT 2 — three recorded residuals (all non-blocking, all deliberate)
+
+1. **FK constraint keeps its old name.** `certification_questions.test_id` still carries the
+   auto-generated `jlpt_questions_test_id_fkey`. Behaviour is fully preserved (Postgres tracks FKs by
+   OID, not name), and the whole-branch review confirmed nothing depends on the name — PostgREST
+   embedding at `lib/data/admin-content.ts` resolves by **table** name, and there is only one FK
+   between the pair, so no `!constraint_name` disambiguation is needed. **Rename it opportunistically
+   in the next migration that touches these tables** — do not add a migration just for it.
+2. **`lib/data/admin-content.ts`'s "(see migrations 1, 2, 11, 13)" is wrong about 13.**
+   `20260713000013_gamification.sql` creates only `xp_events` and `notifications` and contains none of
+   the tables listed. **Pre-dates this branch** (since `f4fad73`, Layer 7) and was deliberately left
+   verbatim rather than asserting a new citation set inside a wave whose job was removing false
+   claims. Fix it when someone is already editing that comment for another reason.
+3. **`japanese-learning-app-spec.md`'s `/(app)` tree has other stale entries** beyond the two 2b
+   fixed — e.g. `/speaking` where the route is `/conversation`. Out of 2b's scope. ⚠️ Because 2b
+   edited two lines of that tree, a later reader may mistake the section for freshly audited. It is
+   not.
 
 ---
 
-## What 2b is, in one line
+## What 2b actually shipped
 
-Rename the certification **module** — route, API, and its two tables — from `jlpt` to
-`certification`. Leave every name that refers to the JLPT **exam family** alone.
+The certification **MODULE** was renamed; the JLPT exam **FAMILY** was not.
 
-## The four user rulings that set the scope (2026-08-14)
+| Renamed | From → To |
+|---|---|
+| Route | `/jlpt` → `/certification` (+ `/[id]`) |
+| API | `/api/jlpt/**` → `/api/certification/**` |
+| Tables | `jlpt_tests` → `certification_tests`, `jlpt_questions` → `certification_questions` |
+| Nav label | "JLPT" → **"Certification"** / **"Luyện thi"** (A17) |
 
-Each was a real fork; none is re-openable without the user.
+**Kept, because those names are still true:** `components/jlpt/**` (17 files) · `messages/*/jlpt.json`
+· `lib/data/jlpt.ts` · `lib/jlpt-ui.ts` · `lib/validation/jlpt.ts` · enums `jlpt_level` and
+`jlpt_section` · every `jlpt_level` column · `user_test_attempts` · every registry `screenId` · the
+admin ContentType **key** `jlpt_tests` · registry `name` fields (verbatim Figma frame names —
+`"JLPT Practice"` stays). Plus exported function names (`listJlptTests`, `submitJlptTest`, …), the
+`xp_events.source_type = "jlpt_submit"` value, and the rate-limit key `jlpt:submit:`.
 
-1. **NO schema generalisation.** A9 was deferred to Phase 2 precisely because "`jlpt_section`'s enum
-   cannot be the shared abstraction across three exam families". **2b deliberately does not act on
-   that reason**: P5 says the repo implements exactly one family, so the abstraction has no second
-   consumer to validate it. No `exam_family` column, no enum change. Deferred **with its reason
-   recorded**, not forgotten — `jlpt_tests.section_config jsonb` already exists and is the natural
-   hook when BJT or Tokutei Ginou is actually scheduled.
-2. **Old URLs redirect**, with a dated removal condition so the rule cannot become the next
-   `/jlpt-test`.
-3. **Module surface only.** `components/jlpt/`, `messages/*/jlpt.json`, `lib/data/jlpt.ts`, the
-   enums, every `jlpt_level` column, `user_test_attempts`, every `screenId`, and the admin
-   ContentType **key** `jlpt_tests` all keep their names — those names are still true. Same
-   *propagate ≠ replace-all* line A15 forced.
-4. **Tests first**, and route + registry + `PROTECTED_PREFIXES` move in **ONE commit**.
+Rulings executed: **A9**, **A16**. Recorded: **A17** (three parts — the VN label "Luyện thi" as the
+activity not the credential; the deliberate nav/page-title divergence on the `/roadmap` precedent; the
+`/jlpt` redirect's dated removal condition).
 
-Plus, from the user's review of the spec:
+**Accepted knowingly, do not "discover" these as oversights:** `certification_questions.section` is
+still typed `jlpt_section` (no schema generalisation — the repo implements one exam family, so the
+abstraction has no second consumer to validate it), and `lib/data/jlpt.ts` keeps its filename while
+querying the renamed tables.
 
-5. **The reverse-direction `PROTECTED_PREFIXES` guard is DEFERRED, not optional** — infrastructure
-   improvement, not a precondition for shipping A9. **In its place a manual sweep is MANDATORY**
-   (guard G4, Task 7 Step 3), run to exhaustion, output pasted not summarised.
-6. **Migrations are append-only.** The tempting wrong move — renaming the tables inside
-   `20260712000001_schema.sql` "for cleanliness" — is named explicitly in spec §4 with a ⛔ block,
-   because it destroys history: environments that ran the old file diverge from fresh ones.
+## Two architectural facts worth not re-deriving
 
-## The one architectural finding — do not re-derive it
+1. **A `/jlpt` redirect cannot be a registry entry.** R13 machine-restricts `out-of-design-scope` to
+   `chrome: 'admin'` (enforced by **T10**), so a `repo-only` entry would be forced to claim
+   `no-frame-at-last-pass` — **false**, since `/jlpt` has frame `232:2` — and it would pollute the
+   survey backlog Phase 2a exists to keep honest. A redirect is **routing configuration**: no
+   `page.tsx` ⇒ `T1` never sees it ⇒ `R5` is never engaged. It lives in `next.config.mjs`.
+   A **wildcard is correct here** (`/:locale(vi|en)/jlpt/:path*`) where it was wrong for `/videos`,
+   because this renames a **prefix** while only the middle `/videos` rule **collapses** a segment.
+   `:locale` stays constrained — unconstrained it matches the literal `api`, and `redirects()` runs
+   before the filesystem. `permanent: false` (307), never 308.
+2. **In-app links were deliberately moved off `/jlpt` rather than left on the redirect**, because A17
+   makes that redirect temporary. When it is deleted, nothing in-app should break.
 
-**A `/jlpt` redirect CANNOT be a registry entry.** R13 machine-restricts `out-of-design-scope` to
-`chrome: 'admin'` (enforced by **T10**), so a `kind: 'repo-only'` entry would be forced to claim
-**`no-frame-at-last-pass`** — which is **false**, since `/jlpt` has frame `232:2`, and it would
-pollute the survey backlog Phase 2a exists to keep honest. R13 says widening that enum needs an
-explicit spec amendment.
+## What this branch cost, and the lesson that repeated
 
-**2b needs no amendment:** a redirect is *routing configuration*, not a screen. It goes in
-`next.config.mjs` `redirects()`, following the existing `/videos` → `/shadowing` precedent. No
-`page.tsx` ⇒ `T1` never sees it ⇒ `R5` is never engaged.
+**`L-012` fired four times: every fix wave introduced a fresh false claim while removing one.** All
+four were caught, but only because each wave got its own review. Two new lessons came out of it and
+are now in `docs/lessons.md`:
 
-A **wildcard is correct here** (`/:locale(vi|en)/jlpt/:path*`) where it was wrong for `/videos`:
-this renames a **prefix**; the `/videos` rules **collapse a segment**. `:locale` stays constrained —
-unconstrained it matches the literal `api`, and `redirects()` runs before the filesystem (the
-recorded `/api/videos` → 307 incident). `permanent: false` (307), never 308.
+- **`L-032`** — a cross-file `path:NN` citation is falsified by the next commit that touches that
+  file. Cite symbols, not line numbers. (Task 5 correctly cited `app-nav.tsx:91`; Task 7 added a line
+  to that file's header and the citation silently became wrong.)
+- **`L-033`** — a sweep must classify each hit as a **live reference** or a **dated record** before
+  rewriting it. (Task 7's sweep "fixed" a dated provenance comment into a path that had never
+  existed at any commit.)
 
-## Two claims the spec's own review corrected — by reading the tests, not assuming
+Two existing lessons were extended rather than duplicated:
 
-Recorded because both are the exact "plausible but wrong" shape 2a was burned by:
+- **`L-019`** — widened, id kept so citations still resolve. ⚠️ **The environment fact that matters
+  most in this repo:** in Git Bash, a `git grep` pattern **beginning with `/`** is silently mangled by
+  MSYS path conversion and returns **nothing regardless of the truth**. Use
+  `MSYS_NO_PATHCONV=1 git grep …` or write the pattern `[/]jlpt`, and **fire a positive control before
+  trusting any empty result**. This made two of 2b's own plan steps vacuous by construction.
+- **`L-023`** — a rename plan must enumerate every *kind* of reference, **link sites, not just fetch
+  sites**. The spec scoped all of `components/jlpt/**` to "every `fetch` to `/api/jlpt/**`"; the
+  directory also held four `Link`s and a `basePath`, three of them template literals that a
+  `href="/jlpt"` literal grep never finds (`L-022`).
 
-1. **`messages/destination-name-parity.test.ts` structurally CANNOT cover `/certification`.** It
-   compares `nav.json` against **`upcoming.json`**; `/certification` is a *built* page whose title
-   comes from `messages/*/jlpt.json` (`"JLPT mock tests"`). ⛔ **Do not "helpfully" widen that
-   test** — its own header says the scoping is deliberate and its bottom guard fires on widening.
-   The nav/title divergence ("Certification" vs "JLPT mock tests") is **deliberate under A17**, on
-   the `/roadmap` precedent (A8 gives it nav "Journey" over title "Roadmap").
-2. **`next.config.test.ts` asserts an exact rule count** (`toHaveLength(3)` + an exact `toEqual`), so
-   the fourth redirect rule turns it red on its own. Updating it to four **is the proof the rule
-   landed**, not a chore.
+## Known flake — do not chase it
 
-## Measured facts worth not re-deriving
-
-> Except where a bullet says otherwise, these were measured **before implementation**, at master
-> `8d01ed9`, and are kept as a dated record of the starting state — not as claims about HEAD. The
-> branch has since consumed several of them (migration `20260814000027` is no longer "next free";
-> the registry lost an entry to A16). Re-measure at HEAD before using any of them (`L-002`).
-
-- **The `jlpt` nav row's pin coverage, corrected by the whole-branch review (2026-08-14).** This
-  bullet previously read *"Nothing pins the `jlpt` nav row today … the label could be changed or
-  reverted with the suite green."* **That was false for EN**, and the correction matters because it
-  changes what Task 5 was for. Measured at master:
-  - **No CATALOG-level pin for either locale** — `messages/en/nav.pin.test.ts` does not exist, and
-    `messages/vi/nav.pin.test.ts` does not mention `jlpt` (`grep -c jlpt` → 0). This part was right.
-  - **EN was already pinned at RENDER level.** `components/layout/app-nav.test.tsx`'s
-    `EXPECTED_LABELS` is a hand-written literal map — `jlpt: "JLPT"` at master — asserted against
-    the rendered link text. Changing `en/nav.json`'s `jlpt` value would have turned it red
-    immediately, which is exactly why Task 5 had to edit that file to ship A17.
-  - **VI was genuinely unpinned at BOTH levels**, because `test/render.tsx` mounts every component
-    test at `locale="en"` (`NextIntlClientProvider locale="en"`), so no render test ever reads the
-    Vietnamese catalog.
-
-  So Task 5's real gap was **VI**, plus catalog-level directness for EN — not "nothing pins it".
-  `messages/nav-certification.pin.test.ts`'s header states this accurately; prefer it over any
-  restatement here.
-- Registry holds **79** entries at `8d01ed9` (`grep -c 'screenId: "'`). Task 1 deletes one, so
-  **Task 7 forbids copying this number from the plan** and requires re-measuring.
-- `PROTECTED_PREFIXES` has **28** entries. A plan draft wrote 31; both drafted counts were wrong, so
-  the plan now carries **no expected lengths** and tells the implementer to read them off the
-  failure (`L-002` in miniature).
-- `components/jlpt/` = **17** files. `app/api/jlpt/` = **4** route handlers. Exactly **one** runtime
-  caller of the API: `components/jlpt/jlpt-test-runner.tsx:100` (+ its test at `:134`).
-- Exactly **six** historical migrations mention the tables — five that *operate* on them, plus
-  `20260731000019_collections.sql:28` which names `jlpt_tests` **in a comment only**. All six stay.
-- Next free migration number: **`20260814000027`**.
-
-## ⚠️ The one thing that cannot be proven by the test suite
-
-`certification_questions` inherits `revoke select ... from authenticated` plus a column-scoped
-`grant` that deliberately **omits `correct_answer`** (`20260713000011_reading_jlpt.sql:116-117`).
-**`L-005`: the Supabase mock models no RLS, so a green suite is NOT evidence about this.**
-
-Task 2 Step 6 requires DB-level evidence (`information_schema.column_privileges`), or the words
-**"NOT VERIFIED"** written into the report. **Never let a unit-test claim stand in for it**, and
-Task 8 must carry the unresolved state into the whole-branch review as an open security item.
-This is a user-locked condition, not a nicety.
-
-## Two subtleties an implementer will get wrong if unwarned
-
-1. **The admin ContentType KEY `jlpt_tests` stays; only its `table:` value moves.** The key is
-   pinned at `messages/en/admin.pin.test.ts:94,141-144` and drives message lookup. But the
-   `detailColumns` string contains `jlpt_questions(...)`, which is PostgREST **embedded-resource**
-   syntax naming the *table* — so that one **does** move. Both live in
-   the `jlpt_tests` entry of `CONTENT_CONFIG` in `lib/data/admin-content.ts`, four lines apart
-   (cited by symbol, not line — `L-032`).
-2. **Registry `name` fields are Figma frame names copied verbatim** — `"JLPT Practice"` **stays**.
-   The module was renamed; the frame was not. Only `route` changes.
-
-## Guards (each scheduled in a named task, per L-029)
-
-| | Assertion | Where |
-|---|---|---|
-| **G1** | the NEVER-rename list is intact | Task 8 |
-| **G2** | `git diff --name-status master...HEAD -- supabase/migrations/` = one `A`, zero `M` | Task 2 **and** Task 8 |
-| **G3** | `RepoOnlyReason` still has exactly two members; no `kind: "redirect"` | Task 8 |
-| **G4** | the mandatory `/jlpt` + `/jlpt-test` sweep, run to exhaustion | Task 7 |
-
-## Gate (re-measure, never inherit — L-003)
-
-`tsc` 0 · `vitest` all green · `lint` **77 warnings / 0 errors** (baseline) · `next build` exit 0.
-At `8d01ed9` the suite was **236 files / 2111 tests**; Task 5 adds a file, so expect it to move.
-
-## After implementation
-
-Task 8's planned order was: whole-branch review (`L-011`) → fix wave → **the L-012 re-review of that
-fix wave** → then lessons in `docs/lessons.md` → then merge `--no-ff`.
-
-**What actually happened, and it was an improvement:** the lessons landed *inside* the fix wave
-(`26a83de`), not after the re-review. That is the better order — lessons written before the last
-review get reviewed like everything else, and the re-review did in fact correct one of them. So the
-remaining sequence is **re-review → merge**, matching the RESUME HERE header at the top of this
-file. Do not write a second set of lessons; `L-019`, `L-023`, `L-032` and `L-033` already carry this
-branch's.
-
-The merge is still **the user's call** — 2a was not merged until they said so.
+`components/video-player/pitch-contour.test.tsx` fails intermittently under the parallel run and
+passes standalone. Confirmed on **unmodified master** before this branch existed, and diagnosed here
+across five checks. Root cause never investigated; the parallel-worker explanation is an unverified
+hypothesis, not a finding. It makes "vitest all green" a coin-flip gate for every branch — worth its
+own ticket.
 
 ## Related
 
-`docs/superpowers/specs/2026-08-14-screen-registry-phase-2b-design.md` (the spec — read §2 first) ·
-`docs/superpowers/plans/2026-08-14-screen-registry-phase-2b.md` (the plan) ·
-`docs/product/decision-register.md` (A9, A16, and A17 — Task 7 wrote A17; it is present now) ·
-`mem:screen_registry_run_state` (historical: 1a/1b/2a) · `mem:screen_registry_inputs` ·
+`docs/superpowers/specs/2026-08-14-screen-registry-phase-2b-design.md` (read §2 first) ·
+`docs/superpowers/plans/2026-08-14-screen-registry-phase-2b.md` ·
+`docs/product/decision-register.md` (A9, A16, A17) · `docs/lessons.md` (L-019, L-023, L-032, L-033) ·
+`mem:screen_registry_run_state` (1a/1b/2a) · `mem:screen_registry_inputs` ·
 `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (R1–R13, T1–T11).
