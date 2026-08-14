@@ -58,6 +58,20 @@ const nextConfig = {
         destination: "/:locale/shadowing/:id/dictation",
         permanent: false,
       },
+      // Phase 2b / A9: /jlpt -> /certification. A WILDCARD is correct here,
+      // unlike the /videos rules above: this renames a PREFIX, so one rule
+      // covers /jlpt and /jlpt/[id]. The rules above collapse a segment, which
+      // is why they are enumerated instead.
+      //
+      // TEMPORARY, with a removal condition (A17): remove once the app is
+      // published and one release has passed, or at launch if no /jlpt traffic
+      // is observed. Recorded in decision-register.md so this cannot become the
+      // next /jlpt-test — a dead redirect nobody could justify two phases on.
+      {
+        source: "/:locale(vi|en)/jlpt/:path*",
+        destination: "/:locale/certification/:path*",
+        permanent: false,
+      },
     ];
   },
 };

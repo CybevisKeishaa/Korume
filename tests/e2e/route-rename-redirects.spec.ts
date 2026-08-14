@@ -92,3 +92,26 @@ test("the rules do not swallow the /api namespace: GET /api/videos still reaches
   const res = await request.get("/api/videos", { maxRedirects: 0 });
   expect([301, 302, 303, 307, 308]).not.toContain(res.status());
 });
+
+test("certification: /en/jlpt redirects with 307 to /en/certification", async ({ request }) => {
+  const res = await request.get("/en/jlpt", { maxRedirects: 0 });
+  expect(res.status()).toBe(307);
+  expect(locationPathname(res.headers()["location"])).toBe("/en/certification");
+});
+
+test("certification: the wildcard carries the id segment", async ({ request }) => {
+  const res = await request.get(`/en/jlpt/${ID}`, { maxRedirects: 0 });
+  expect(res.status()).toBe(307);
+  expect(locationPathname(res.headers()["location"])).toBe(`/en/certification/${ID}`);
+});
+
+test("certification: the rule is not over-broad — /en/jlptsomething is not swallowed", async ({
+  request,
+}) => {
+  // `/:locale(vi|en)/jlpt/:path*` matches the segment `jlpt` exactly, so a
+  // longer first segment must not redirect at all. Asserted unconditionally,
+  // never branched on the status — a branch lets an `else` arm assert
+  // something true by construction.
+  const res = await request.get("/en/jlptsomething", { maxRedirects: 0 });
+  expect([301, 302, 303, 307, 308]).not.toContain(res.status());
+});
