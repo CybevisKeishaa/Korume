@@ -6,8 +6,11 @@
 >
 > 1. **The title and § RESUME HERE are stale on the live action, and § NEXT SESSION's "one step
 >    left — merge to master `--no-ff`, nothing blocks it" is done.** Phase 1b merged at `6f67dd1`.
->    **Phase 2a is complete** on branch `screen-registry-phase-2a` (unmerged as this is written).
->    The live next action is **Phase 2b**.
+>    **Phase 2a is COMPLETE AND MERGED to master at `e767537`** (`--no-ff`, 2026-08-14; lessons at
+>    `ed4d3a9`; branch `screen-registry-phase-2a` kept). Post-merge gate re-run on master:
+>    `tsc` 0 · `vitest` **2111 tests** passing. **The live next action is Phase 2b**, and nothing
+>    is owed on 2a — its review chain ran to the end (whole-branch review → fix wave → the L-012
+>    re-review of that wave → its fix round `bf344a4`).
 > 2. **"The live next action is now PHASE 2, whose backlog is already decided … (the A10 hides:
 >    `/reading`, `/leaderboard`, `/community`; … A9)" — the A10 half is wrong twice over. A10
 >    shipped in Phase 1b, and it covers FOUR routes, not the three that sentence lists — the
