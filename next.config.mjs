@@ -60,13 +60,18 @@ const nextConfig = {
       },
       // Phase 2b / A9: /jlpt -> /certification. A WILDCARD is correct here,
       // unlike the /videos rules above: this renames a PREFIX, so one rule
-      // covers /jlpt and /jlpt/[id]. The rules above collapse a segment, which
-      // is why they are enumerated instead.
+      // covers /jlpt and /jlpt/[id]. Of the three /videos rules above, only
+      // the middle one (/videos/:id/shadowing -> /shadowing/:id) COLLAPSES a
+      // segment rather than renaming a prefix — that single rule is why all
+      // three are enumerated instead of sharing one wildcard; the other two
+      // would each have been fine with one. See that section's own comment
+      // above, which already says this about the middle rule specifically.
       //
       // TEMPORARY, with a removal condition (A17): remove once the app is
       // published and one release has passed, or at launch if no /jlpt traffic
-      // is observed. Recorded in decision-register.md so this cannot become the
-      // next /jlpt-test — a dead redirect nobody could justify two phases on.
+      // is observed. Task 7 records this condition in decision-register.md so
+      // this cannot become the next /jlpt-test — a dead redirect nobody could
+      // justify two phases on.
       {
         source: "/:locale(vi|en)/jlpt/:path*",
         destination: "/:locale/certification/:path*",
