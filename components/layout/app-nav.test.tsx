@@ -29,10 +29,14 @@ import navMessages from "@/messages/en/nav.json";
 // screenIds rather than tidy words because `deriveNavGroups` maps
 // `key: entry.screenId` (R9): `pronunciation-library` and `companion-home`.
 //
-// Two label changes carry a product decision rather than a copy edit:
-//   mining  -> "Collection" (A7)
-//   roadmap -> "Journey"    (A8 — the label moves off the Diary and onto the
-//                            Roadmap, which is what Figma's `journey` names)
+// Three label changes carry a product decision rather than a copy edit:
+//   mining  -> "Collection"    (A7)
+//   roadmap -> "Journey"       (A8 — the label moves off the Diary and onto
+//                               the Roadmap, which is what Figma's `journey`
+//                               names)
+//   jlpt    -> "Certification" (A17 — the module label; the page heading
+//                               underneath still reads "JLPT mock tests",
+//                               deliberately not forced to match, same as A8)
 const EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string> = {
   dashboard: "Dashboard",
   lessons: "Lessons",

@@ -4,7 +4,7 @@ import en from "./jlpt.json";
 /**
  * Characterization test for `jlpt.json` (Task 13): a literal `toBe` pin for
  * every `jlpt.*` leaf, copied verbatim from the pre-extraction source of
- * `app/[locale]/(app)/jlpt/page.tsx`, `components/jlpt/jlpt-attempt-list.tsx`,
+ * `app/[locale]/(app)/certification/page.tsx`, `components/jlpt/jlpt-attempt-list.tsx`,
  * `components/jlpt/jlpt-pre-start-panel.tsx`, `components/jlpt/jlpt-test-card.tsx`,
  * `components/jlpt/jlpt-test-list.tsx`, `components/jlpt/jlpt-question-card.tsx`,
  * `components/jlpt/jlpt-question-navigator.tsx`, `components/jlpt/jlpt-results-panel.tsx`,

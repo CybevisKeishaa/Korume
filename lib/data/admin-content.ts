@@ -33,7 +33,7 @@ export type { ContentType } from "@/lib/validation/admin-content";
  * uniform list/create/update/delete/CSV-import functions rather than five
  * near-duplicate modules. Every function starts with `requireAdmin()` and
  * writes exclusively through the service-role client — `kanji`/`vocab`/
- * `grammar_points`/`jlpt_tests`/`jlpt_questions`/`reading_passages`/
+ * `grammar_points`/`certification_tests`/`certification_questions`/`reading_passages`/
  * `reading_questions` all have RLS policies that only ever grant
  * `authenticated` SELECT (see migrations 1, 2, 11, 13); the matching
  * table-level INSERT/UPDATE/DELETE grants from the one-time
@@ -389,7 +389,7 @@ export type DeleteContentResult =
   | { ok: false; status: 429; retryAfter: number };
 
 /** Delete a row. Child rows (if any) cascade via FK `on delete cascade`
- * (`kanji_readings.kanji_id`, `jlpt_questions.test_id`,
+ * (`kanji_readings.kanji_id`, `certification_questions.test_id`,
  * `reading_questions.passage_id` — see migrations 1/11) — no explicit child
  * delete needed here. */
 export async function deleteContent(type: ContentType, id: string): Promise<DeleteContentResult> {

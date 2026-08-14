@@ -73,7 +73,7 @@
       /[videoId]/dictation
     /reading
     /speaking
-    /jlpt
+    /certification
     /community
     /profile
   /(admin)
@@ -88,7 +88,7 @@
   /shadowing
   /dictation
   /pronunciation
-  /jlpt
+  /certification
   /srs
   /community
   /admin
@@ -225,8 +225,8 @@ conversation_sessions (id, user_id, scenario_type, started_at, ended_at)
 conversation_messages (id, session_id, role[user/ai], content, pronunciation_score nullable, created_at)
 
 -- JLPT
-jlpt_tests (id, level, title, section_config jsonb)
-jlpt_questions (id, test_id, section[vocab/grammar/reading/listening], question_data jsonb, correct_answer)
+certification_tests (id, level, title, section_config jsonb)
+certification_questions (id, test_id, section[vocab/grammar/reading/listening], question_data jsonb, correct_answer)
 user_test_attempts (id, user_id, test_id, score, section_scores jsonb, completed_at)
 
 -- Gamification
@@ -263,8 +263,8 @@ POST   /api/shadowing/session     { videoId, lineId, recordingBlob }
 POST   /api/dictation/attempt     { videoId, lineId, userInput }
 POST   /api/pronunciation/score   { audioBlob, referenceText }
 POST   /api/conversation/message  { sessionId, message }  -> gọi Claude API
-GET    /api/jlpt/tests?level=N3
-POST   /api/jlpt/tests/:id/submit
+GET    /api/certification/tests?level=N3
+POST   /api/certification/tests/:id/submit
 GET    /api/user/stats
 GET    /api/admin/videos/pending
 POST   /api/admin/videos/:id/approve

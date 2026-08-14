@@ -13,9 +13,10 @@ import type { NavGroup } from "@/lib/product/nav-derivation";
  * `groups` arrives already derived from it.
  *
  * ⛔ **Do not import `SCREEN_REGISTRY` or `NAV_GROUPS` here.** This is a
- * `"use client"` module: a module-scope import of the registry ships all 50
+ * `"use client"` module: a module-scope import of the registry ships all 78
  * entries to the browser — private Figma node ids, unshipped screen names,
- * internal debt labels. `lib/product/nav-groups.ts` explains it in full;
+ * `repoOnlyReason`/`figmaCheckedAt` survey observations.
+ * `lib/product/nav-groups.ts` explains it in full;
  * `deriveNavGroups` is called in the server layouts that mount this component
  * (final whole-branch review FIX 3). The type import below is erased at
  * compile time and pulls nothing into the client graph.

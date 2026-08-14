@@ -13,7 +13,7 @@
  *   const supabase = createMockSupabase({
  *     user: { id: "u1" },
  *     tables: {
- *       jlpt_tests: (calls) => ({ data: [...], error: null }),
+ *       certification_tests: (calls) => ({ data: [...], error: null }),
  *     },
  *   });
  *   vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);

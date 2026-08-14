@@ -16,7 +16,7 @@ export const jlptAttemptsQuerySchema = z.object({
   testId: z.string().uuid().optional(),
 });
 
-/** Chosen-choice index, "0".."3" — matches `jlpt_questions.correct_answer`'s convention. */
+/** Chosen-choice index, "0".."3" — matches `certification_questions.correct_answer`'s convention. */
 const answerValueSchema = z.enum(["0", "1", "2", "3"]);
 
 /**

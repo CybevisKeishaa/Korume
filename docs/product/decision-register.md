@@ -56,14 +56,15 @@ derives them. See §3b.
 | A6 | **Pronunciation gets its own nav row** despite being a T2 sub-skill | §3.5 |
 | A7 | **`/mining` → `Collection`** (label only; the feature needs its own spec) | §3.6 |
 | A8 | **`Journey` label moves to `/roadmap`**; `/journal` becomes the Diary under Companion | §3.3 of `capability-map.md` |
-| A9 | **`/jlpt` → `/certification`** — carries a migration ⇒ **Phase 2** | §5 |
+| A9 | **`/jlpt` → `/certification`** — carries a migration ⇒ **Phase 2** | §5 · executed 2b, `a21dd02` |
 | A10 | **HIDE (code kept, row removed):** `/vocab` · `/reading` · `/community` · `/leaderboard` | §5 · ruled 2026-08-11 |
 | A11 | **`/playlists` stays its own screen** — not folded into Explore | §5 |
 | A12 | **Loading + error catalogues go to `/admin/style-guide`**, not the registry | §4 |
 | A13 | **No route for:** search palette · create-conversation wizard · lesson preview · reflection · suggestion drawer | §4 |
 | A14 | **A group's HEADING is not its id.** `journey` displays **"Growth" / "Tiến trình"** | `ia-proposal.md` §2 · ruled 2026-08-13 |
 | A15 | **The companion's Vietnamese name is "Linh thú"** — nav row `companion-home` = **"Linh thú của tôi"** | ruled 2026-08-13 · **propagated 2026-08-13** |
-| A16 | **`/jlpt-test` is dead route code — remove it in 2b.** No callers; its redirect target is itself superseded by A9 | ruled 2026-08-13 · execution deferred to **2b** |
+| A16 | **`/jlpt-test` is dead route code — remove it in 2b.** No callers; its redirect target is itself superseded by A9 | ruled 2026-08-13 · executed 2b, `888ce75` |
+| A17 | **Certification nav row: "Certification" (EN) / "Luyện thi" (VI); page title deliberately diverges; the `/jlpt` → `/certification` redirect is temporary** | prose below |
 
 **A14 was added during Phase 1b**, when the gap surfaced in implementation: A1 locks group *ids* and
 §2 locks *row* labels, but nothing said what a group heading reads. Capitalising the id would have
@@ -165,6 +166,24 @@ forces a *conscious* edit to the array — not because it detects an orphaned pr
 genuinely needs `/jlpt` → `/certification` to survive as one, that is a real artifact with a real
 shape and the schema decision can be made against it then.
 
+**A17 — the certification nav row, in three parts.**
+
+1. **The VI label is "Luyện thi"** — the activity (studying/practicing for a certification test),
+   not the credential. "Chứng chỉ" was offered and declined: it names the credential itself, so a
+   nav row carrying it would read as a place to view certificates already earned, not a place to
+   practice for one. EN reads "Certification" (unchanged from A9). Per **A14**, EN and VI need not
+   be literal equivalents — this is a deliberate divergence, not an oversight.
+2. **The nav label and the page title deliberately do not match.** The nav row reads
+   "Certification", naming the module per A9. `/certification`'s page heading reads "JLPT mock
+   tests" — naming what the page actually lists (one exam family, not the module). Same precedent
+   as **A8**: `/roadmap`'s nav row reads "Journey" while its page heading reads "Roadmap". Nav
+   names the destination; the page names its contents. Neither is forced onto the other.
+3. **The `/jlpt` → `/certification` redirect (307, `next.config.mjs`) is TEMPORARY.** Its removal
+   condition is recorded here — in a tracked file — precisely because A16's whole finding was that
+   the only record of a dead route lived somewhere untracked (a gitignored progress file) and
+   nobody could find it. Remove the rule once the app is published and one release has passed, or
+   immediately at launch if no `/jlpt` traffic is observed. Until then it is deliberate, not debt.
+
 **⚑ Also owed to 2b, and not a ruling — a tracked debt item.** `components/layout/app-nav.tsx`'s
 header comment (lines 16-18) is wrong on two counts: it says a module-scope registry import "ships
 all **50** entries" — `SCREEN_REGISTRY` holds **79** — and it calls `repoOnlyReason` /
@@ -174,6 +193,10 @@ deliberately left it alone**: its locked guard G4 forbids any `app/` · `supabas
 path in the branch diff, and a comment fix is not worth breaking that. It is filed here because the
 only other record of it lived in a gitignored progress file, which tracks nothing — and beside A16
 because 2b is the next pass allowed to touch `components/`.
+
+✅ **Resolved in 2b, Task 7.** The comment now reads the measured count (**78** — re-measured, not
+copied from this paragraph's now-stale 79; Task 1's `jlpt-test` deletion moved it again after this
+paragraph was written) and no longer calls the reason/timestamp fields "debt labels."
 
 ## 3. Method rules — `LOCKED`, and they bind future passes
 

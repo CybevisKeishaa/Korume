@@ -12,7 +12,7 @@ import type { JlptSubmitInput } from "@/lib/validation/jlpt";
  * JLPT test-engine data layer (CLAUDE.md §5, spec §5.7-§5.8). Auth posture
  * mirrors the existing content routes (`lib/data/content.ts` — kanji/vocab/
  * grammar): list/detail reads are plain, unauthenticated-looking queries —
- * `jlpt_tests`/`jlpt_questions` RLS already scopes `select` to the
+ * `certification_tests`/`certification_questions` RLS already scopes `select` to the
  * `authenticated` role, so a signed-out request is blocked by RLS itself
  * (empty result) rather than an explicit 401 here. Submissions and the
  * attempt history are owner-scoped writes/reads, so those DO check auth

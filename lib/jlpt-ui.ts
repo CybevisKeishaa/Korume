@@ -18,7 +18,7 @@ export type {
 } from "@/lib/jlpt";
 import type { JlptLevel, JlptSection } from "@/lib/jlpt";
 
-/** A `jlpt_tests` row as the list/detail endpoints return it. */
+/** A `certification_tests` row as the list/detail endpoints return it. */
 export interface JlptTestListItem {
   id: string;
   level: JlptLevel;
@@ -81,7 +81,7 @@ export interface JlptSectionConfigEntry {
 const VALID_SECTIONS = new Set<string>(["vocab", "grammar", "reading", "listening"]);
 
 /**
- * Defensive parse of the `jlpt_tests.section_config` jsonb column. Returns
+ * Defensive parse of the `certification_tests.section_config` jsonb column. Returns
  * `[]` for anything malformed rather than throwing — a content-authoring bug
  * in seed data should degrade the test card, never crash the page (same
  * defensive posture as `toPublicQuestionData` in `lib/data/jlpt.ts`).

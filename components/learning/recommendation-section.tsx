@@ -11,7 +11,7 @@ export interface RecommendationSectionProps {
  * `fetch`ing `GET /api/videos/recommendations`, matching this repo's
  * established pattern of server components calling `lib/data/*` straight
  * (see `app/[locale]/(protected)/(app)/shadowing/page.tsx`'s `listVideos()`,
- * `app/[locale]/(protected)/(app)/jlpt/page.tsx`).
+ * `app/[locale]/(protected)/(app)/certification/page.tsx`).
  *
  * Callers (`/dashboard`, `/shadowing`) wrap this in `<Suspense>` so scoring every
  * candidate video (a real, non-trivial amount of tokenization work — see
