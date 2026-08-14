@@ -106,9 +106,10 @@ required a distinction the ruling did not state — recorded here because it gov
 > ⚠️ **`MASCOT.md` contradicted P2 and was reconciled to it, not the reverse.** Its § Danh tính
 > still read "Tên của Companion sẽ được xác định trong Character Identity Spec" with six open
 > candidates — text that **predates P2's LOCK (2026-08-12)** and had simply never been swept.
-> `screen-inventory.md:436-438` records that the user closed it by *unifying* the name with the
-> product's, not by declaring it a placeholder, so this was applying a ruling the user had already
-> given, not choosing between two live answers. The candidate list is kept as marked-historical.
+> `screen-inventory.md` §20's "✅ RESOLVED — the Companion's name is **Korume**" block records that
+> the user closed it by *unifying* the name with the product's, not by declaring it a placeholder,
+> so this was applying a ruling the user had already given, not choosing between two live answers.
+> The candidate list is kept as marked-historical.
 
 **The English `journey` heading stays "Growth" — user ruling 2026-08-13.** EN and VI are therefore
 deliberately not literal equivalents: VI reads "Tiến trình" (≈ *Progress*). The user considered

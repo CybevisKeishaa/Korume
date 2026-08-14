@@ -1,4 +1,4 @@
-# Screen Registry — run state (⭐ THE LIVE NEXT ACTION: Phase 1b)
+# Screen Registry — run state (title superseded — read the correction banner below)
 
 > ⚠️ **CORRECTION (2026-08-14) — read this before the body. The body below is a historical record
 > and is deliberately NOT rewritten.** `MEMORY.md` names this file the one to read first on resume,
@@ -9,9 +9,11 @@
 >    **Phase 2a is complete** on branch `screen-registry-phase-2a` (unmerged as this is written).
 >    The live next action is **Phase 2b**.
 > 2. **"The live next action is now PHASE 2, whose backlog is already decided … (the A10 hides:
->    `/reading`, `/leaderboard`, `/community`; … A9)" — the A10 half is wrong. A10 shipped in Phase
->    1b**: all four routes carry `navGroup: null` at HEAD. Phase 2a was very nearly scoped from that
->    exact sentence; the incident is recorded in
+>    `/reading`, `/leaderboard`, `/community`; … A9)" — the A10 half is wrong twice over. A10
+>    shipped in Phase 1b, and it covers FOUR routes, not the three that sentence lists — the
+>    missing one is `/vocab`** (`decision-register.md` A10: `/vocab` · `/reading` · `/community` ·
+>    `/leaderboard`). All four carry `navGroup: null` at HEAD. Phase 2a was very nearly scoped
+>    from that exact sentence; the incident is recorded in
 >    `docs/superpowers/specs/2026-08-13-screen-registry-phase-2a-design.md` §1's method note, under
 >    the user's ruling that **the registry at HEAD is the current inventory and an older memory is
 >    historical input only**.

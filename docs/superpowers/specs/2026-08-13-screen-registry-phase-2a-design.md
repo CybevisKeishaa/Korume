@@ -184,8 +184,11 @@ No new product decisions. Three kinds of edit:
      since 2026-08-11"*: the shelf sits inside Companion home, so it is companion-owned and hiding
      `/vocab` costs it nothing. Item 3 is settled by **A12**, item 7 by **A11**, and **item 4 by
      this file's own §11.5 and §12.4** (`Companion Knowledge Assistant` → `/sensei`; `Growth Areas`
-     → **not** `/weekly-report`) — struck in the final fix wave, 2026-08-14. Items 2, 5, 6 stay
-     open.
+     → **not** `/weekly-report`) — struck in the final fix wave, 2026-08-14. **Items 2, 6 and 8
+     stay open**; item 5 (`Panel`) is answered by the list's own item 9 (one frame, `180:1129`,
+     the name split across two lines), and item 8 (`QuickStart`, `Edit profile`) is unstruck and
+     genuinely open. *(This sentence read "Items 2, 5, 6" until the L-012 re-review of the fix
+     wave — wrong in both directions, and written about a list the same commit was editing.)*
    - `screen-inventory.md` §3's "Not yet adjudicated" table — most rows now have rulings. ⚠️ Two of
      its rows, `/dashboard` and `/sensei`, asserted framelessness the registry contradicts
      (`figmaNodeId` `111:515` and `215:15164`, both `kind: "screen"`) and were struck in the final

@@ -188,11 +188,14 @@ admit a parentless variant; parenting them arbitrarily to one screen would recor
 
 `repoOnlyReason: 'no-frame-at-last-pass'` unless noted.
 
-**Already adjudicated by the user 2026-08-11** (see `mem:screen_registry_inputs`) — hide in Phase 2,
-keep the code, do not build further: `/reading`, `/reading/[id]`, `/leaderboard`, `/community`,
-`/community/[id]`, `/community/peer-review`, and **`/vocab`, `/vocab/[id]`, `/vocab/review`**
-("không cần vocab nữa, hoặc ẩn nó đi, có thể sau sẽ dùng" — explicitly reversible). **But see the
-conflict in §4 before acting on the vocab half.**
+**Already adjudicated by the user 2026-08-11** (see `mem:screen_registry_inputs`) — **hidden in
+Phase 1b (A10)**, code kept, do not build further: `/reading`, `/reading/[id]`, `/leaderboard`,
+`/community`, `/community/[id]`, `/community/peer-review`, and **`/vocab`, `/vocab/[id]`,
+`/vocab/review`** ("không cần vocab nữa, hoặc ẩn nó đi, có thể sau sẽ dùng" — explicitly
+reversible). A10 scopes the hide to the four parent routes `/vocab` · `/reading` · `/community` ·
+`/leaderboard`; all four carry `navGroup: null` in `lib/product/screen-registry.ts` today.
+**§4's vocab conflict, which this paragraph used to say must be settled first, is resolved** — see
+§5's item 1: the `PERSONAL VOCABULARY SHELF` is companion-owned, so hiding `/vocab` cost it nothing.
 
 **Not yet adjudicated, as surveyed 2026-08-11 — ruling column added 2026-08-13 (Phase 2a) against
 `decision-register.md` §2, the LOCKED IA. ⚠️ Two rows were struck 2026-08-14 — read the note below
