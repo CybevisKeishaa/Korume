@@ -71,7 +71,7 @@ interface ScoredQuestionRow {
 /** All JLPT mock tests, optionally filtered by level. */
 export async function listJlptTests(level?: JlptLevel): Promise<JlptTestListItem[]> {
   const supabase = createClient();
-  let query = supabase.from("jlpt_tests").select(TEST_COLUMNS).order("level", { ascending: true });
+  let query = supabase.from("certification_tests").select(TEST_COLUMNS).order("level", { ascending: true });
   if (level) query = query.eq("level", level);
 
   const { data, error } = await query;
@@ -90,7 +90,7 @@ export async function listJlptTests(level?: JlptLevel): Promise<JlptTestListItem
 export async function getJlptTestDetail(testId: string): Promise<JlptTestDetail | null> {
   const supabase = createClient();
   const { data: test, error: testError } = await supabase
-    .from("jlpt_tests")
+    .from("certification_tests")
     .select(TEST_COLUMNS)
     .eq("id", testId)
     .maybeSingle();
@@ -98,7 +98,7 @@ export async function getJlptTestDetail(testId: string): Promise<JlptTestDetail 
   if (!test) return null;
 
   const { data: questions, error: qError } = await supabase
-    .from("jlpt_questions")
+    .from("certification_questions")
     .select("id, section, question_type, order_index, question_data")
     .eq("test_id", testId)
     .order("order_index", { ascending: true });
@@ -165,7 +165,7 @@ export async function submitJlptTest(testId: string, input: JlptSubmitInput): Pr
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
 
   const { data: test, error: testError } = await supabase
-    .from("jlpt_tests")
+    .from("certification_tests")
     .select("id, level")
     .eq("id", testId)
     .maybeSingle();
@@ -174,7 +174,7 @@ export async function submitJlptTest(testId: string, input: JlptSubmitInput): Pr
 
   const service = createServiceClient();
   let questionQuery = service
-    .from("jlpt_questions")
+    .from("certification_questions")
     .select("id, section, question_type, correct_answer, explanation, order_index")
     .eq("test_id", testId);
   if (input.mode === "section" && input.section) {

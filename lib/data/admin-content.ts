@@ -185,17 +185,17 @@ const CONTENT_CONFIG: Record<ContentType, ContentTypeConfig> = {
     csvRowSchema: grammarCsvRowSchema,
   },
   jlpt_tests: {
-    table: "jlpt_tests",
+    table: "certification_tests",
     orderColumn: "created_at",
     listColumns: "id, level, title, created_at",
     detailColumns:
-      "id, level, title, section_config, created_at, jlpt_questions(id, section, question_type, question_data, correct_answer, explanation, order_index)",
+      "id, level, title, section_config, created_at, certification_questions(id, section, question_type, question_data, correct_answer, explanation, order_index)",
     searchColumn: "title",
     sanitizeMainRow: (row) => collapseFields(row, ["title"]),
     createSchema: createJlptTestSchema,
     updateSchema: updateJlptTestSchema,
     csvRowSchema: jlptTestCsvRowSchema,
-    child: { table: "jlpt_questions", parentColumn: "test_id", key: "questions", sanitize: sanitizeJlptQuestion },
+    child: { table: "certification_questions", parentColumn: "test_id", key: "questions", sanitize: sanitizeJlptQuestion },
   },
   reading_passages: {
     table: "reading_passages",

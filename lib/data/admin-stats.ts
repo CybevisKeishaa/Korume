@@ -103,7 +103,7 @@ export async function getAdminStats(now: Date = new Date()): Promise<GetAdminSta
     service.from("kanji").select("id"),
     service.from("vocab").select("id"),
     service.from("grammar_points").select("id"),
-    service.from("jlpt_tests").select("id"),
+    service.from("certification_tests").select("id"),
     service.from("reading_passages").select("id"),
     service.from("xp_events").select("source_type").gte("created_at", cutoff7),
   ]);

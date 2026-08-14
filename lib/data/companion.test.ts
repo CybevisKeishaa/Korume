@@ -313,7 +313,7 @@ describe("captureCompanionMemories", () => {
     let inserted: Record<string, unknown> | undefined;
     const supabase = createMockSupabase({
       tables: {
-        jlpt_tests: () => ({ data: { level: "N4" }, error: null }),
+        certification_tests: () => ({ data: { level: "N4" }, error: null }),
         companion_memories: (calls) => {
           const upsert = calls.find((c) => c.op === "upsert");
           if (upsert) {
@@ -343,7 +343,7 @@ describe("captureCompanionMemories", () => {
     let touched = false;
     const supabase = createMockSupabase({
       tables: {
-        jlpt_tests: () => ({ data: { level: "N4" }, error: null }),
+        certification_tests: () => ({ data: { level: "N4" }, error: null }),
         companion_memories: (calls) => {
           if (calls.some((c) => c.op === "upsert")) touched = true;
           return { data: [], error: null };

@@ -188,7 +188,7 @@ export async function captureCompanionMemories(supabase: SupabaseClient, input: 
     }
 
     if (input.source === "jlpt_submit" && input.parts.testId && input.passed === true) {
-      const { data: test } = await supabase.from("jlpt_tests").select("level").eq("id", input.parts.testId).maybeSingle();
+      const { data: test } = await supabase.from("certification_tests").select("level").eq("id", input.parts.testId).maybeSingle();
       const level = (test as { level: string | null } | null)?.level;
       if (level) {
         await recordDiscoveredMemory(supabase, {
