@@ -7,7 +7,7 @@ export interface JlptTestListProps {
 }
 
 /**
- * The `/jlpt` test list, grouped implicitly by the caller's level filter. A
+ * The `/certification` test list, grouped implicitly by the caller's level filter. A
  * non-async Server Component — `useTranslations` works here without
  * `"use client"` (same precedent as `components/learning/recommendation-rail.tsx`).
  */

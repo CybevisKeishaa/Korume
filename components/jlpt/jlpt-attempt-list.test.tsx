@@ -48,6 +48,6 @@ describe("JlptAttemptList", () => {
 
   it("links each attempt back to its test", () => {
     render(<JlptAttemptList attempts={[fullAttempt()]} testsById={TESTS_BY_ID} />);
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/en/jlpt/test-1");
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/en/certification/test-1");
   });
 });

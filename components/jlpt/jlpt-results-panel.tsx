@@ -198,7 +198,7 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
         </ol>
       </section>
 
-      <Link href="/jlpt" className={buttonStyles({ variant: "outline" })}>
+      <Link href="/certification" className={buttonStyles({ variant: "outline" })}>
         {t("resultsPanel.backToTests")}
       </Link>
     </div>

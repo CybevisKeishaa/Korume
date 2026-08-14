@@ -15,13 +15,14 @@
  * product decision instead. The old `journey → /journal` row is gone because
  * the IA moved that label to `/roadmap` (A8), not because the engine changed.
  *
- * ⚠️ ONE DELIBERATE DEVIATION from `ia-proposal.md` §2, and it is not a typo:
- * the third `practice` row is `jlpt` at `/jlpt`, while the IA table shows
- * `Certification` at `/certification`. A9 defers that rename to Phase 2
- * because it carries a schema migration (three exam families with different
- * section structures, so `jlpt_section`'s enum cannot be the shared
- * abstraction). Phase 1b moves the row's GROUP only. When Phase 2 lands the
- * rename, this row and the catalog key change together.
+ * The third `practice` row is `jlpt` at `/certification`, matching
+ * `ia-proposal.md` §2's `Certification` row. A9's route rename landed in
+ * Phase 2b (2026-08-14): the deviation this paragraph used to document —
+ * this row still on `/jlpt` while the locked IA already said `/certification`
+ * — is gone. The `href` moved; the catalog key deliberately did NOT: Phase 2b
+ * ruled that `screenId` (and therefore this key) names the JLPT exam family,
+ * not the certification module, so it stays `jlpt` even though the module
+ * and its route are now called certification.
  *
  * Keys are screenIds (R9) — `pronunciation-library` and `companion-home` read
  * oddly next to their "Pronunciation"/"Companion" labels, and that is correct:
@@ -42,7 +43,7 @@ export const NAV_BASELINE = [
     items: [
       { href: "/conversation", key: "speaking" },
       { href: "/pronunciation", key: "pronunciation-library" },
-      { href: "/jlpt", key: "jlpt" },
+      { href: "/certification", key: "jlpt" },
     ],
   },
   {

@@ -41,13 +41,13 @@ export function JlptTestCard({ test }: JlptTestCardProps) {
       )}
 
       <div className="mt-auto flex flex-wrap gap-2 pt-2">
-        <Link href={`/jlpt/${test.id}`} className={buttonStyles({ size: "sm" })}>
+        <Link href={`/certification/${test.id}`} className={buttonStyles({ size: "sm" })}>
           {t("testCard.takeFullMock")}
         </Link>
         {sections.map((s) => (
           <Link
             key={s.section}
-            href={`/jlpt/${test.id}?section=${s.section}`}
+            href={`/certification/${test.id}?section=${s.section}`}
             className={buttonStyles({ variant: "outline", size: "sm" })}
           >
             {t("testCard.practiceSection", { section: t(`sections.${s.section}`) })}

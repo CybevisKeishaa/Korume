@@ -25,7 +25,7 @@ describe("route protection", () => {
       "/shadowing",
       "/reading",
       "/conversation",
-      "/jlpt",
+      "/certification",
       "/community",
       "/playlists",
       "/leaderboard",

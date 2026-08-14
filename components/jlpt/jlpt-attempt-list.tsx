@@ -31,7 +31,7 @@ export function JlptAttemptList({ attempts, testsById }: JlptAttemptListProps) {
         const test = testsById[attempt.test_id];
         return (
           <li key={attempt.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
-            <Link href={`/jlpt/${attempt.test_id}`} className="hover:underline">
+            <Link href={`/certification/${attempt.test_id}`} className="hover:underline">
               <p className="font-jp font-medium">
                 {test?.title ?? t("attemptList.unknownTest")}
                 {test && <span className="ml-2 text-xs text-muted-foreground">{test.level}</span>}

@@ -49,7 +49,7 @@ export default async function JlptPage({
             {level ? ` · ${level}` : ""}
           </p>
         </div>
-        <LevelTabs basePath="/jlpt" active={level} />
+        <LevelTabs basePath="/certification" active={level} />
       </div>
 
       <JlptTestList tests={tests} />
