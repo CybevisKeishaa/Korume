@@ -1,8 +1,11 @@
 /**
  * JLPT test-engine scoring types (CLAUDE.md spec §5, §5.8 "Câu hỏi đọc hiểu
  * ... chấm tự động"; §5.8 "Thống kê điểm yếu theo dạng câu"). Mirrors the
- * shapes `certification_questions` / `reading_questions` are scored in server-side —
- * see migration 20260712000001_schema.sql and 20260713000011_reading_jlpt.sql.
+ * shapes `certification_questions` / `reading_questions` are scored in
+ * server-side — see migration 20260712000001_schema.sql and
+ * 20260713000011_reading_jlpt.sql. Both predate the rename, so they call
+ * `certification_questions` by its original name `jlpt_questions` (renamed by
+ * 20260814000027_certification_rename.sql).
  */
 
 /** The four raw JLPT test sections (matches the `jlpt_section` DB enum). */
@@ -15,8 +18,10 @@ export type JlptLevel = "N5" | "N4" | "N3" | "N2" | "N1";
 export type JlptMode = "full" | "section";
 
 /**
- * A `certification_questions` row as scored server-side — includes `correct_answer`,
- * which is never sent to the client (see migration 11 column-scoped grant).
+ * A `certification_questions` row as scored server-side — includes
+ * `correct_answer`, which is never sent to the client (see migration 11's
+ * column-scoped grant, written against the pre-rename name `jlpt_questions` —
+ * renamed by 20260814000027_certification_rename.sql).
  */
 export interface ScoredQuestion {
   id: string;

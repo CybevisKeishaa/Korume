@@ -19,10 +19,13 @@
  * `ia-proposal.md` §2's `Certification` row. A9's route rename landed in
  * Phase 2b (2026-08-14): the deviation this paragraph used to document —
  * this row still on `/jlpt` while the locked IA already said `/certification`
- * — is gone. The `href` moved; the catalog key deliberately did NOT: Phase 2b
- * ruled that `screenId` (and therefore this key) names the JLPT exam family,
- * not the certification module, so it stays `jlpt` even though the module
- * and its route are now called certification.
+ * — is gone. The `href` moved; the catalog key deliberately did NOT, on the
+ * Phase 1b precedent that identity is not renamed to prettify a key (A14 is
+ * the same shape: a group's heading is not its id). So it stays `jlpt` even
+ * though the module and its route are now called certification. That reason is
+ * owned by the 2b spec §2 and explained at length in
+ * `messages/nav-certification.pin.test.ts` — read either before relying on
+ * this one-line restatement.
  *
  * Keys are screenIds (R9) — `pronunciation-library` and `companion-home` read
  * oddly next to their "Pronunciation"/"Companion" labels, and that is correct:

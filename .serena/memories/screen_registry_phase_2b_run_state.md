@@ -5,29 +5,25 @@
 
 # ▶▶ RESUME HERE
 
-**Branch `screen-registry-phase-2b`, HEAD `777b326`, off master `8d01ed9`. Three commits, ALL
-DOCUMENTATION. Zero application code has been touched** — measured, not assumed:
+**Branch `screen-registry-phase-2b`, off master `8d01ed9`. All 8 plan tasks are IMPLEMENTED. The
+whole-branch review (`L-011`) has run and its single fix wave has landed.**
+
+⚠️ **This header used to say "HEAD `777b326`, three commits, ALL DOCUMENTATION, zero application
+code touched" and named "execute Task 1" as the next action.** All of that is superseded — it
+described the branch before implementation began. It also carried an open question about execution
+mode (subagent-driven vs inline); that question is closed by events, the plan having been executed.
+Corrected by the whole-branch review's fix wave, 2026-08-14, in the same pass that corrected the
+nav-pin claim below (`L-026`: stale-check a handoff doc in the pass that falsifies it).
+
+The commit list is not restated here — read it off the branch (`L-002`):
 
 ```
-$ git diff --name-only master...HEAD
-docs/superpowers/plans/2026-08-14-screen-registry-phase-2b.md
-docs/superpowers/specs/2026-08-14-screen-registry-phase-2b-design.md
+$ git log --oneline master..HEAD
+$ git diff --name-status master...HEAD
 ```
 
-| Commit | What |
-|---|---|
-| `f76efc9` | the spec |
-| `f1d04eb` | spec amendment — the user's two review rulings, locked into the spec so plan and spec cannot disagree |
-| `777b326` | the plan — 8 tasks, 4 guards |
-
-**⭐ THE NEXT ACTION: execute Task 1 of `docs/superpowers/plans/2026-08-14-screen-registry-phase-2b.md`**
-(A16 — delete the dead `/jlpt-test` route). The plan is written for an implementer with zero
-context; read it, not this file, for *how*.
-
-**⚠️ ONE QUESTION IS STILL OPEN and the user has not answered it:** execution mode.
-Offered: **(1) subagent-driven** — fresh subagent per task, review between tasks; this is how 2a ran
-and why its brief defects were caught early. **(2) inline** via `executing-plans`. **Ask before
-starting Task 1.** Do not assume subagent-driven just because it was recommended.
+**⭐ THE NEXT ACTION: the scoped re-review of the fix wave (`L-012`), then merge `--no-ff` —
+and the merge is the user's call, exactly as 2a was not merged until they said so.**
 
 ---
 
@@ -96,9 +92,28 @@ Recorded because both are the exact "plausible but wrong" shape 2a was burned by
 
 ## Measured facts worth not re-deriving
 
-- **Nothing pins the `jlpt` nav row today.** `messages/en/nav.pin.test.ts` does not exist;
-  `messages/vi/nav.pin.test.ts` does not mention it. So the label could be changed or reverted with
-  the suite green. **Task 5 ships that pin** — the gap is why the task exists.
+> Except where a bullet says otherwise, these were measured **before implementation**, at master
+> `8d01ed9`, and are kept as a dated record of the starting state — not as claims about HEAD. The
+> branch has since consumed several of them (migration `20260814000027` is no longer "next free";
+> the registry lost an entry to A16). Re-measure at HEAD before using any of them (`L-002`).
+
+- **The `jlpt` nav row's pin coverage, corrected by the whole-branch review (2026-08-14).** This
+  bullet previously read *"Nothing pins the `jlpt` nav row today … the label could be changed or
+  reverted with the suite green."* **That was false for EN**, and the correction matters because it
+  changes what Task 5 was for. Measured at master:
+  - **No CATALOG-level pin for either locale** — `messages/en/nav.pin.test.ts` does not exist, and
+    `messages/vi/nav.pin.test.ts` does not mention `jlpt` (`grep -c jlpt` → 0). This part was right.
+  - **EN was already pinned at RENDER level.** `components/layout/app-nav.test.tsx`'s
+    `EXPECTED_LABELS` is a hand-written literal map — `jlpt: "JLPT"` at master — asserted against
+    the rendered link text. Changing `en/nav.json`'s `jlpt` value would have turned it red
+    immediately, which is exactly why Task 5 had to edit that file to ship A17.
+  - **VI was genuinely unpinned at BOTH levels**, because `test/render.tsx` mounts every component
+    test at `locale="en"` (`NextIntlClientProvider locale="en"`), so no render test ever reads the
+    Vietnamese catalog.
+
+  So Task 5's real gap was **VI**, plus catalog-level directness for EN — not "nothing pins it".
+  `messages/nav-certification.pin.test.ts`'s header states this accurately; prefer it over any
+  restatement here.
 - Registry holds **79** entries at `8d01ed9` (`grep -c 'screenId: "'`). Task 1 deletes one, so
   **Task 7 forbids copying this number from the plan** and requires re-measuring.
 - `PROTECTED_PREFIXES` has **28** entries. A plan draft wrote 31; both drafted counts were wrong, so
@@ -155,6 +170,6 @@ merged until they said so**).
 
 `docs/superpowers/specs/2026-08-14-screen-registry-phase-2b-design.md` (the spec — read §2 first) ·
 `docs/superpowers/plans/2026-08-14-screen-registry-phase-2b.md` (the plan) ·
-`docs/product/decision-register.md` (A9, A16; **A17 is written by Task 7, not yet present**) ·
+`docs/product/decision-register.md` (A9, A16, and A17 — Task 7 wrote A17; it is present now) ·
 `mem:screen_registry_run_state` (historical: 1a/1b/2a) · `mem:screen_registry_inputs` ·
 `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (R1–R13, T1–T11).

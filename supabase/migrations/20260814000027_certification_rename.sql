@@ -10,6 +10,15 @@
 --
 -- APPEND-ONLY: the historical migrations that create and seed these tables are
 -- NOT edited. They ran under the old names, which was correct at the time.
+--
+-- DEPLOY NOTE (no SQL implied): a table rename is the DDL where a stale
+-- PostgREST schema cache shows up as "relation does not exist" for a table
+-- that plainly does. Supabase's `pgrst_ddl_watch` event trigger normally
+-- reloads it on its own, and no migration in this repo issues an explicit
+-- `notify pgrst, 'reload schema';` — deliberately not making this file the
+-- lone exception (user ruling 2026-08-14). Confirm on FIRST deploy that the
+-- cache picked the rename up; if it did not, reload it out-of-band rather
+-- than editing this migration, which by then will already have run.
 
 alter table jlpt_tests rename to certification_tests;
 alter table jlpt_questions rename to certification_questions;

@@ -22,8 +22,8 @@ import viNav from "./vi/nav.json";
  * closes.
  *
  * For EN, this catalog pin genuinely overlaps app-nav.test.tsx's render pin —
- * they are not mutually blind. `AppNav` renders each item as `t(item.key)`
- * (components/layout/app-nav.tsx:91) against the real EN catalog
+ * they are not mutually blind. `AppNav`'s `t(item.key …)` call in
+ * components/layout/app-nav.tsx renders each item against the real EN catalog
  * (test/render.tsx loads the actual messages/en/*.json, not a fixture), so a
  * typo in `en/nav.json`'s `jlpt` value changes the rendered link's accessible
  * name and fails app-nav.test.tsx's `getByRole("link", { name: … })` lookup

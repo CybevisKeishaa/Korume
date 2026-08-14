@@ -33,9 +33,12 @@ export type { ContentType } from "@/lib/validation/admin-content";
  * uniform list/create/update/delete/CSV-import functions rather than five
  * near-duplicate modules. Every function starts with `requireAdmin()` and
  * writes exclusively through the service-role client — `kanji`/`vocab`/
- * `grammar_points`/`certification_tests`/`certification_questions`/`reading_passages`/
- * `reading_questions` all have RLS policies that only ever grant
- * `authenticated` SELECT (see migrations 1, 2, 11, 13); the matching
+ * `grammar_points`/`certification_tests`/`certification_questions`/
+ * `reading_passages`/`reading_questions` all have RLS policies that only ever
+ * grant `authenticated` SELECT (see migrations 1, 2, 11, 13 — all written
+ * before the rename, so wherever they mention the two certification tables
+ * they use the original names `jlpt_tests`/`jlpt_questions`, renamed by
+ * 20260814000027_certification_rename.sql); the matching
  * table-level INSERT/UPDATE/DELETE grants from the one-time
  * `20260712000006_grants.sql` blanket grant are dead weight with no RLS
  * policy to let them through — this module never relies on them, using the

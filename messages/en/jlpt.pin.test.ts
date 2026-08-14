@@ -4,7 +4,9 @@ import en from "./jlpt.json";
 /**
  * Characterization test for `jlpt.json` (Task 13): a literal `toBe` pin for
  * every `jlpt.*` leaf, copied verbatim from the pre-extraction source of
- * `app/[locale]/(app)/certification/page.tsx`, `components/jlpt/jlpt-attempt-list.tsx`,
+ * `app/[locale]/(app)/jlpt/page.tsx` (now
+ * `app/[locale]/(protected)/(app)/certification/page.tsx`),
+ * `components/jlpt/jlpt-attempt-list.tsx`,
  * `components/jlpt/jlpt-pre-start-panel.tsx`, `components/jlpt/jlpt-test-card.tsx`,
  * `components/jlpt/jlpt-test-list.tsx`, `components/jlpt/jlpt-question-card.tsx`,
  * `components/jlpt/jlpt-question-navigator.tsx`, `components/jlpt/jlpt-results-panel.tsx`,
@@ -15,6 +17,14 @@ import en from "./jlpt.json";
  * 2). `toHaveTextContent` given a string is a CONTAINMENT match, not
  * equality, so this file's job — distinct from the RTL wiring tests — is to
  * pin every leaf byte-exact.
+ *
+ * ⛔ The path list above is a DATED PROVENANCE RECORD — where these strings
+ * were read from, on that branch, at that time — not a set of live references.
+ * Phase 2b's route sweep overwrote the first entry with a `/certification`
+ * path, and got a sentence true of nothing: not the file the strings were
+ * actually read from, and not today's path either — what it wrote has never
+ * existed at any commit. Do not "update" this list again; a later rename
+ * belongs in a parenthetical, as above.
  */
 describe("jlpt.json EN — jlpt/page.tsx", () => {
   it("pins the page title, subtitle count, and Recent attempts heading", () => {

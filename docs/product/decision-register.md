@@ -56,14 +56,14 @@ derives them. See §3b.
 | A6 | **Pronunciation gets its own nav row** despite being a T2 sub-skill | §3.5 |
 | A7 | **`/mining` → `Collection`** (label only; the feature needs its own spec) | §3.6 |
 | A8 | **`Journey` label moves to `/roadmap`**; `/journal` becomes the Diary under Companion | §3.3 of `capability-map.md` |
-| A9 | **`/jlpt` → `/certification`** — carries a migration ⇒ **Phase 2** | §5 · executed 2b, `a21dd02` |
+| A9 | **`/jlpt` → `/certification`** — carries a migration ⇒ **Phase 2** | §5 · executed on branch `screen-registry-phase-2b`, spanning `79786c0` (db) · `6c8af9b` (api) · `a21dd02` (route/registry) · `981ee03` (nav) · `516221c` (redirect) |
 | A10 | **HIDE (code kept, row removed):** `/vocab` · `/reading` · `/community` · `/leaderboard` | §5 · ruled 2026-08-11 |
 | A11 | **`/playlists` stays its own screen** — not folded into Explore | §5 |
 | A12 | **Loading + error catalogues go to `/admin/style-guide`**, not the registry | §4 |
 | A13 | **No route for:** search palette · create-conversation wizard · lesson preview · reflection · suggestion drawer | §4 |
 | A14 | **A group's HEADING is not its id.** `journey` displays **"Growth" / "Tiến trình"** | `ia-proposal.md` §2 · ruled 2026-08-13 |
 | A15 | **The companion's Vietnamese name is "Linh thú"** — nav row `companion-home` = **"Linh thú của tôi"** | ruled 2026-08-13 · **propagated 2026-08-13** |
-| A16 | **`/jlpt-test` is dead route code — remove it in 2b.** No callers; its redirect target is itself superseded by A9 | ruled 2026-08-13 · executed 2b, `888ce75` |
+| A16 | **`/jlpt-test` is dead route code — remove it in 2b.** No callers; its redirect target is itself superseded by A9 | ruled 2026-08-13 · executed on branch `screen-registry-phase-2b`, `888ce75` |
 | A17 | **Certification nav row: "Certification" (EN) / "Luyện thi" (VI); page title deliberately diverges; the `/jlpt` → `/certification` redirect is temporary** | prose below |
 
 **A14 was added during Phase 1b**, when the gap surfaced in implementation: A1 locks group *ids* and

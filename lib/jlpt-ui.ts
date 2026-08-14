@@ -1,8 +1,8 @@
 /**
  * Client-safe shared types + helpers for the JLPT test-engine UI (spec
  * §5.7-§5.8, CLAUDE.md §5). Mirrors the response shapes returned by
- * `lib/data/jlpt.ts` / `/api/certification/*` without importing that (server-only)
- * module — same duplication pattern as `lib/video-types.ts` /
+ * `lib/data/jlpt.ts` / `/api/certification/*` without importing that
+ * (server-only) module — same duplication pattern as `lib/video-types.ts` /
  * `lib/conversation-types.ts`, so this file has zero server-only imports and
  * is safe to pull into any client component.
  */
