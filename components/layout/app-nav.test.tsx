@@ -40,7 +40,7 @@ const EXPECTED_LABELS: Record<(typeof NAV_ITEMS)[number]["key"], string> = {
   grammar: "Grammar",
   speaking: "Speaking",
   "pronunciation-library": "Pronunciation",
-  jlpt: "JLPT",
+  jlpt: "Certification",
   review: "Review",
   mining: "Collection",
   playlists: "Playlists",
