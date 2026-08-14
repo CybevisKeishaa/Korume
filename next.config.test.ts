@@ -45,13 +45,14 @@ describe("next.config.mjs redirects()", () => {
     return group ? group.split("|") : null;
   }
 
-  it("still ships exactly the three rules spec §3.1.1 defines", async () => {
+  it("still ships exactly the four rules the specs define", async () => {
     const sources = (await rules).map((r) => r.source);
-    expect(sources).toHaveLength(3);
+    expect(sources).toHaveLength(4);
     expect(sources.map((s) => s.replace(/\(.*?\)/, ""))).toEqual([
       "/:locale/videos",
       "/:locale/videos/:id/shadowing",
       "/:locale/videos/:id/dictation",
+      "/:locale/jlpt/:path*",
     ]);
   });
 

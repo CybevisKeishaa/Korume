@@ -263,7 +263,7 @@ describe("recordActivity", () => {
     expect((insertedRow as Record<string, unknown>).source_type).toBe("jlpt_submit");
   });
 
-  it("resolves jlptMockLevelsCompleted from user_test_attempts joined to jlpt_tests for badge evaluation", async () => {
+  it("resolves jlptMockLevelsCompleted from user_test_attempts joined to certification_tests for badge evaluation", async () => {
     mockService({
       xp_events: (calls) =>
         hasOp(calls, "upsert") ? { data: { id: "xpe-1" }, error: null } : { data: [{ source_type: "jlpt_submit" }], error: null },
@@ -274,7 +274,7 @@ describe("recordActivity", () => {
         expect(calls.some((c) => c.op === "eq" && c.column === "mode" && c.value === "full")).toBe(true);
         return { data: [{ test_id: "test-1" }], error: null };
       },
-      jlpt_tests: (calls) => {
+      certification_tests: (calls) => {
         expect(calls.some((c) => c.op === "in" && c.column === "id")).toBe(true);
         return { data: [{ level: "N5" }], error: null };
       },

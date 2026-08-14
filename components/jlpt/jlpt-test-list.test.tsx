@@ -35,15 +35,15 @@ describe("JlptTestList", () => {
 
     expect(screen.getByRole("link", { name: /take full mock/i })).toHaveAttribute(
       "href",
-      "/en/jlpt/11111111-1111-1111-1111-111111111111",
+      "/en/certification/11111111-1111-1111-1111-111111111111",
     );
     expect(screen.getByRole("link", { name: /practice vocabulary/i })).toHaveAttribute(
       "href",
-      "/en/jlpt/11111111-1111-1111-1111-111111111111?section=vocab",
+      "/en/certification/11111111-1111-1111-1111-111111111111?section=vocab",
     );
     expect(screen.getByRole("link", { name: /practice listening/i })).toHaveAttribute(
       "href",
-      "/en/jlpt/11111111-1111-1111-1111-111111111111?section=listening",
+      "/en/certification/11111111-1111-1111-1111-111111111111?section=listening",
     );
   });
 

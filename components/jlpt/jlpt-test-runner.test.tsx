@@ -131,7 +131,7 @@ describe("JlptTestRunner", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe(`/api/jlpt/tests/${TEST.id}/submit`);
+    expect(url).toBe(`/api/certification/tests/${TEST.id}/submit`);
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
     expect(body).toMatchObject({ answers: { "q-1": "0" }, mode: "full" });
     expect(body.started_at).toEqual(expect.any(String));

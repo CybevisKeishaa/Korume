@@ -1,8 +1,8 @@
 /**
  * Client-safe shared types + helpers for the JLPT test-engine UI (spec
  * §5.7-§5.8, CLAUDE.md §5). Mirrors the response shapes returned by
- * `lib/data/jlpt.ts` / `/api/jlpt/*` without importing that (server-only)
- * module — same duplication pattern as `lib/video-types.ts` /
+ * `lib/data/jlpt.ts` / `/api/certification/*` without importing that
+ * (server-only) module — same duplication pattern as `lib/video-types.ts` /
  * `lib/conversation-types.ts`, so this file has zero server-only imports and
  * is safe to pull into any client component.
  */
@@ -18,7 +18,7 @@ export type {
 } from "@/lib/jlpt";
 import type { JlptLevel, JlptSection } from "@/lib/jlpt";
 
-/** A `jlpt_tests` row as the list/detail endpoints return it. */
+/** A `certification_tests` row as the list/detail endpoints return it. */
 export interface JlptTestListItem {
   id: string;
   level: JlptLevel;
@@ -63,7 +63,7 @@ export interface JlptPerQuestionResult {
   explanation: string | null;
 }
 
-/** `POST /api/jlpt/tests/[id]/submit`'s `data` shape. */
+/** `POST /api/certification/tests/[id]/submit`'s `data` shape. */
 export interface JlptSubmitResult {
   result: import("@/lib/jlpt").JlptAttemptResult;
   weakness: import("@/lib/jlpt").WeaknessStat[];
@@ -81,7 +81,7 @@ export interface JlptSectionConfigEntry {
 const VALID_SECTIONS = new Set<string>(["vocab", "grammar", "reading", "listening"]);
 
 /**
- * Defensive parse of the `jlpt_tests.section_config` jsonb column. Returns
+ * Defensive parse of the `certification_tests.section_config` jsonb column. Returns
  * `[]` for anything malformed rather than throwing — a content-authoring bug
  * in seed data should degrade the test card, never crash the page (same
  * defensive posture as `toPublicQuestionData` in `lib/data/jlpt.ts`).

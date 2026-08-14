@@ -135,7 +135,9 @@ describe("screen registry invariants", () => {
     // that a change to either is conscious rather than silent. They are
     // EXPECTED to move: the id list when the admin surface changes, and the
     // count the first time a genuinely un-surveyed route is registered (Phase 3
-    // does that by design) or when A16's `jlpt-test` deletion lands in 2b.
+    // does that by design) — or when a stamped entry is deleted, which has
+    // already happened: A16's `jlpt-test` deletion landed in 2b at `888ce75`
+    // and took the count below from 74 to 73.
     // Updating a pin to match a measured registry is normal. Stamping an entry
     // to make a pin green is the failure this whole test exists to catch.
     expect(outOfScope.map((e) => e.screenId).sort()).toEqual([
@@ -147,7 +149,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(74);
+    expect(stamped).toHaveLength(73);
     for (const entry of stamped) {
       expect(entry.figmaCheckedAt, entry.screenId).toBe("2026-08-12");
     }

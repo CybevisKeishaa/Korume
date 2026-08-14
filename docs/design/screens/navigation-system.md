@@ -73,8 +73,8 @@ with the code; that is how T6 becomes self-referential.
 `/challenges`, `/sensei`, `/journal`, `/weekly-report`, `/statistics` and `/achievements` were
 absorbed into other destinations (A2/A4/A5); `/companion` and `/pronunciation` gained rows (A2/A6);
 and the `Journey` label moved off `/journal` onto `/roadmap` (A8). `/jlpt` → `/certification` (A9)
-is **not** done — it carries a schema migration and belongs to Phase 2. The two rows this document
-had explicitly left undecided (`korume`, `roadmap`) are both answered there.
+executed in Phase 2b — see `docs/product/decision-register.md` §2 A9/A16/A17. The two rows this
+document had explicitly left undecided (`korume`, `roadmap`) are both answered there.
 
 The rest of this section is design rule rather than inventory, and still binds. Active acquisition-loop sub-routes (Shadowing Practice, Pronunciation,
 Listening Practice, JLPT test-taking, SRS review, Mining review session) are still reached by

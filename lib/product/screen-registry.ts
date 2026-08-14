@@ -18,9 +18,11 @@ import type { ScreenEntry } from "./screen-registry-types";
  * (A5) · the `Journey` label moved off the Diary onto `/roadmap` (A8) ·
  * `/companion` (A2) and `/pronunciation` (A6) given real routes.
  *
- * ⛔ NOT applied: `/jlpt` → `/certification` (A9). That rename carries a
- * schema migration — three exam families whose section structures differ, so
- * `jlpt_section`'s enum cannot be the shared abstraction. Phase 2.
+ * ✅ APPLIED in Phase 2b: `/jlpt` → `/certification` (A9). The rename covers
+ * the MODULE only — route, API and the two module tables. The JLPT exam family
+ * keeps its names (`jlpt_level`, `jlpt_section`, `components/jlpt/**`), and the
+ * schema generalisation A9 anticipated is deliberately NOT done: the repo
+ * implements one exam family, so it has no consumer to validate it.
  *
  * Sourcing, per the brief's authority order:
  *   1. `docs/product/figma-frame-map.md` — figmaNodeId + `name` (verbatim
@@ -226,9 +228,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // practice/3 — designed (≈), built. Frame's layer name is "JLPT Practice";
   // its on-screen identity is "Certification Practice" (§10.0) — name field
   // stays the layer name, per the Dashboard precedent above.
-  // ⛔ Route AND label stay `/jlpt` / "JLPT" here. A9 renames this row to
-  // Certification at `/certification`, but that carries a schema migration
-  // (see the file header) and is Phase 2. Only the GROUP moved in 1b.
+  // A9 APPLIED in Phase 2b (2026-08-14): the route is `/certification`. The
+  // `name` stays "JLPT Practice" because it is frame 232:2's name, copied
+  // verbatim — the MODULE was renamed, the frame was not. The nav label lives
+  // in messages/*/nav.json under the key `jlpt` (R9: screenId is the catalog
+  // key, and identity is not renamed to prettify a key).
   {
     screenId: "jlpt",
     name: "JLPT Practice",
@@ -237,7 +241,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "232:2",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
-    route: "/jlpt",
+    route: "/certification",
     chrome: "app",
     impl: "built",
     navGroup: "practice",
@@ -541,7 +545,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // nav destination itself — navGroup/navOrder null throughout.
   // ===================================================================
 
-  // 232:2's exam-runner detail. §10.8: Route "/jlpt/[id]" ≈.
+  // 232:2's exam-runner detail. §10.8: Route "/certification/[id]" ≈.
   {
     screenId: "jlpt-practice-phase-1",
     name: "JLPT practice (phase 1)",
@@ -550,7 +554,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "237:1690",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
-    route: "/jlpt/[id]",
+    route: "/certification/[id]",
     chrome: "app",
     impl: "built",
     navGroup: null,
@@ -779,27 +783,6 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     repoOnlyReason: "no-frame-at-last-pass",
     figmaCheckedAt: "2026-08-12",
     route: "/community/peer-review",
-    chrome: "app",
-    impl: "built",
-    navGroup: null,
-    navOrder: null,
-  },
-  // JUDGEMENT CALL (resolution given by the task, not re-litigated here):
-  // an 8-line dead redirect() to /jlpt, superseded in Layer 5. Looks like
-  // `kind: "deprecated"`, but T3 requires a non-null figmaNodeId for
-  // "deprecated" and this route has no frame. Recorded repo-only +
-  // no-frame-at-last-pass with the deprecation noted in `name`; the
-  // deprecated-without-a-frame gap is a Phase 2 spec question, not amended
-  // here.
-  {
-    screenId: "jlpt-test",
-    name: "JLPT Test (deprecated — dead redirect to /jlpt, Layer 5)",
-    kind: "repo-only",
-    variantOf: null,
-    figmaNodeId: null,
-    repoOnlyReason: "no-frame-at-last-pass",
-    figmaCheckedAt: "2026-08-12",
-    route: "/jlpt-test",
     chrome: "app",
     impl: "built",
     navGroup: null,

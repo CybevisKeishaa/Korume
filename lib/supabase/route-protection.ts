@@ -10,8 +10,7 @@ export const PROTECTED_PREFIXES = [
   // but deliberately kept the ROUTE at /conversation (see
   // korume-rebrand-plan-a-status). Protect the real route, not the label.
   "/conversation",
-  "/jlpt",
-  "/jlpt-test",
+  "/certification",
   "/community",
   "/playlists",
   "/leaderboard",

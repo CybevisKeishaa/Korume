@@ -89,7 +89,7 @@ export type UpdateGrammarInput = z.infer<typeof updateGrammarSchema>;
 export const grammarCsvRowSchema = createGrammarSchema.omit({ example_sentences: true });
 
 // ---------------------------------------------------------------------------
-// JLPT tests (table `jlpt_tests` + child `jlpt_questions`)
+// JLPT tests (table `certification_tests` + child `certification_questions`)
 // ---------------------------------------------------------------------------
 /** Mirrors `PublicQuestionData` (lib/data/jlpt.ts) — the shape the test-taking
  * UI reads back out of `question_data`. */

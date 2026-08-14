@@ -48,7 +48,7 @@ beforeEach(() => {
 describe("listJlptTests", () => {
   it("lists all tests when no level filter is given", async () => {
     mockClient({
-      jlpt_tests: () => ({ data: [TEST_ROW], error: null }),
+      certification_tests: () => ({ data: [TEST_ROW], error: null }),
     });
     const result = await listJlptTests();
     expect(result).toEqual([TEST_ROW]);
@@ -56,7 +56,7 @@ describe("listJlptTests", () => {
 
   it("filters by level when given", async () => {
     mockClient({
-      jlpt_tests: (calls: QueryCall[]) => {
+      certification_tests: (calls: QueryCall[]) => {
         expect(eqValue(calls, "level")).toBe("N5");
         return { data: [TEST_ROW], error: null };
       },
@@ -66,26 +66,26 @@ describe("listJlptTests", () => {
   });
 
   it("returns an empty array when there is no data", async () => {
-    mockClient({ jlpt_tests: () => ({ data: null, error: null }) });
+    mockClient({ certification_tests: () => ({ data: null, error: null }) });
     expect(await listJlptTests()).toEqual([]);
   });
 
   it("throws on a query error", async () => {
-    mockClient({ jlpt_tests: () => ({ data: null, error: { message: "boom" } }) });
+    mockClient({ certification_tests: () => ({ data: null, error: { message: "boom" } }) });
     await expect(listJlptTests()).rejects.toBeTruthy();
   });
 });
 
 describe("getJlptTestDetail", () => {
   it("returns null when the test does not exist", async () => {
-    mockClient({ jlpt_tests: () => ({ data: null, error: null }) });
+    mockClient({ certification_tests: () => ({ data: null, error: null }) });
     expect(await getJlptTestDetail(TEST_ID)).toBeNull();
   });
 
   it("returns the test with its questions stripped to the public shape", async () => {
     mockClient({
-      jlpt_tests: () => ({ data: TEST_ROW, error: null }),
-      jlpt_questions: () => ({
+      certification_tests: () => ({ data: TEST_ROW, error: null }),
+      certification_questions: () => ({
         data: [
           {
             id: Q1,
@@ -130,8 +130,8 @@ describe("getJlptTestDetail", () => {
 
   it("never leaks correct_answer/explanation even if present on the raw row", async () => {
     mockClient({
-      jlpt_tests: () => ({ data: TEST_ROW, error: null }),
-      jlpt_questions: () => ({
+      certification_tests: () => ({ data: TEST_ROW, error: null }),
+      certification_questions: () => ({
         data: [
           {
             id: Q1,
@@ -167,14 +167,14 @@ describe("submitJlptTest", () => {
   });
 
   it("returns 404 when the test does not exist", async () => {
-    mockClient({ jlpt_tests: () => ({ data: null, error: null }) });
+    mockClient({ certification_tests: () => ({ data: null, error: null }) });
     const result = await submitJlptTest(TEST_ID, { answers, mode: "full" });
     expect(result).toEqual({ ok: false, status: 404 });
   });
 
   it("returns 400 when the (test, section) combination has no questions", async () => {
-    mockClient({ jlpt_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }) });
-    mockService({ jlpt_questions: () => ({ data: [], error: null }) });
+    mockClient({ certification_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }) });
+    mockService({ certification_questions: () => ({ data: [], error: null }) });
     const result = await submitJlptTest(TEST_ID, { answers, mode: "full" });
     expect(result).toEqual({ ok: false, status: 400 });
   });
@@ -183,7 +183,7 @@ describe("submitJlptTest", () => {
     let insertedRow: unknown;
     mockClient(
       {
-        jlpt_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }),
+        certification_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }),
         user_test_attempts: (calls: QueryCall[]) => {
           const insertCall = calls.find((c): c is Extract<QueryCall, { op: "insert" }> => c.op === "insert");
           insertedRow = insertCall?.values;
@@ -193,7 +193,7 @@ describe("submitJlptTest", () => {
       USER,
     );
     mockService({
-      jlpt_questions: () => ({
+      certification_questions: () => ({
         data: [
           { id: Q1, section: "vocab", question_type: "kanji-reading", correct_answer: "0", explanation: "e1", order_index: 1 },
           { id: Q2, section: "vocab", question_type: "kanji-reading", correct_answer: "2", explanation: "e2", order_index: 2 },
@@ -229,7 +229,7 @@ describe("submitJlptTest", () => {
     let insertedRow: unknown;
     mockClient(
       {
-        jlpt_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }),
+        certification_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }),
         user_test_attempts: (calls: QueryCall[]) => {
           const insertCall = calls.find((c): c is Extract<QueryCall, { op: "insert" }> => c.op === "insert");
           insertedRow = insertCall?.values;
@@ -241,7 +241,7 @@ describe("submitJlptTest", () => {
     // Only vocab questions supplied (no grammar/reading/listening) => the
     // pillar structure can't be completed, so scaledTotal/passed are null.
     mockService({
-      jlpt_questions: () => ({
+      certification_questions: () => ({
         data: [
           { id: Q1, section: "vocab", question_type: "kanji-reading", correct_answer: "0", explanation: null, order_index: 1 },
         ],
@@ -261,7 +261,7 @@ describe("submitJlptTest", () => {
   });
 
   it("returns 429 when the caller is over the rate limit", async () => {
-    mockClient({ jlpt_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }) });
+    mockClient({ certification_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }) });
     const key = `jlpt:submit:${USER.id}`;
     const { rateLimit } = await import("@/lib/rate-limit");
     for (let i = 0; i < 200; i++) rateLimit(key, { limit: 20, windowMs: 60_000 });

@@ -224,7 +224,7 @@ async function buildBadgeSnapshot(
 
   let jlptMockLevelsCompleted: string[] = [];
   if (testIds.length > 0) {
-    const { data: testRows, error: testError } = await supabase.from("jlpt_tests").select("level").in("id", testIds);
+    const { data: testRows, error: testError } = await supabase.from("certification_tests").select("level").in("id", testIds);
     if (testError) throw testError;
     jlptMockLevelsCompleted = Array.from(new Set(((testRows ?? []) as { level: string }[]).map((row) => row.level)));
   }

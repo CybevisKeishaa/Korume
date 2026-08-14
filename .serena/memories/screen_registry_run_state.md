@@ -1,4 +1,9 @@
-# Screen Registry — run state (title superseded — read the correction banner below)
+# Screen Registry — run state for Phases 1a/1b/2a (HISTORICAL — 2b lives elsewhere)
+
+> ⭐ **THE LIVE RUN STATE IS `mem:screen_registry_phase_2b_run_state`.** Phase 2b is in progress on
+> branch `screen-registry-phase-2b`; its spec and plan are committed and no code has been touched
+> yet. **Read that file first.** This one is the historical record for Phases 1a, 1b and 2a, and
+> deliberately carries no 2b status — one fact, one home (CLAUDE.md §6).
 
 > ⚠️ **CORRECTION (2026-08-14) — read this before the body. The body below is a historical record
 > and is deliberately NOT rewritten.** `MEMORY.md` names this file the one to read first on resume,

@@ -85,7 +85,7 @@ describe("getAdminStats", () => {
       kanji: () => ({ data: [{ id: "k1" }], error: null }),
       vocab: () => ({ data: [{ id: "v1" }, { id: "v2" }], error: null }),
       grammar_points: () => ({ data: [], error: null }),
-      jlpt_tests: () => ({ data: [{ id: "t1" }], error: null }),
+      certification_tests: () => ({ data: [{ id: "t1" }], error: null }),
       reading_passages: () => ({ data: [{ id: "p1" }], error: null }),
     });
 
@@ -133,7 +133,7 @@ describe("getAdminStats", () => {
       kanji: () => ({ data: [], error: null }),
       vocab: () => ({ data: [], error: null }),
       grammar_points: () => ({ data: [], error: null }),
-      jlpt_tests: () => ({ data: [], error: null }),
+      certification_tests: () => ({ data: [], error: null }),
       reading_passages: () => ({ data: [], error: null }),
     });
 
