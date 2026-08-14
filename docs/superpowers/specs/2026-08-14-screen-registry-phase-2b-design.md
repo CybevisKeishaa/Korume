@@ -162,9 +162,20 @@ The rename is not just two `alter table` statements. Every dependent object must
 > can prove it**. The plan must verify it against a real database, or state plainly that it was not
 > verified.
 
-**Migrations are append-only.** The historical files are not edited; the rename is a new migration.
-Seed data in `20260713000012_jlpt_reading_content.sql` inserts into the old names and is historical —
-it must not be rewritten, and the new migration must run after it.
+> ⛔ **MIGRATIONS ARE APPEND-ONLY. Do not rename the tables inside the historical migrations.**
+> This is the tempting wrong move — editing `20260712000001_schema.sql` to say `certification_tests`
+> "for cleanliness" looks tidier and destroys the history: every environment that already ran the old
+> file would diverge from every fresh one, and a migration tool comparing checksums would flag or
+> re-run it. The historical files are **read-only artifacts of what already happened**.
+>
+> Concretely, five historical files **operate on** the old tables — `20260712000001_schema.sql`,
+> `20260712000002_rls.sql`, `20260712000003_indexes.sql`, `20260713000011_reading_jlpt.sql` and the
+> seed `20260713000012_jlpt_reading_content.sql` — and a sixth, `20260731000019_collections.sql:28`,
+> mentions `jlpt_tests` **in a comment only**. **All six stay exactly as they are**, including the
+> comment: it describes a naming convention that was true when written. The seed inserts into
+> `jlpt_tests` /
+> `jlpt_questions` under their old names, which is correct — it ran before the rename. The new
+> migration is numbered after all of them and therefore runs after them.
 
 ---
 
@@ -236,8 +247,14 @@ would produce.
    real HTTP — `tests/e2e/route-rename-redirects.spec.ts` already exists for exactly this and is the
    right home. **`vitest.config.ts:13` excludes `tests/e2e`, so no unit run will execute it** —
    L-025's rule applies: sweep by hand and prove the replacement runs.
-3. A test that no `PROTECTED_PREFIXES` entry names a route with no page (the reverse direction A16
-   noted has no guard). **Optional** — A16 says 2b *may* add one and is not required to.
+3. ~~A test that no `PROTECTED_PREFIXES` entry names a route with no page.~~ **DEFERRED — user
+   ruling 2026-08-14, on review of this spec.** The reverse-direction guard A16 noted is missing is
+   an *infrastructure improvement*, not a precondition for shipping A9, and 2b already carries
+   enough moving parts. A16 said 2b *may* add one; the user has now said it should not.
+   **In its place, a manual sweep is MANDATORY, not optional:** grep every surviving reference to
+   `/jlpt-test` and `/jlpt` across the repo and adjudicate each one, because redirect + protection
+   is precisely where a stale reference survives unnoticed. The sweep runs to exhaustion (`L-024`)
+   and its output is pasted into the task report, not summarised.
 
 ### Gate
 
@@ -258,6 +275,8 @@ Recorded so a later pass does not read the absence as an oversight:
 - **No `screenId` renames.**
 - **No change to `jlpt_level` anywhere.**
 - **No `kind: "redirect"` added to the registry** — §3 removes the need for it.
+- **No reverse-direction `PROTECTED_PREFIXES` guard** (§7.3, user ruling 2026-08-14). Replaced by a
+  mandatory manual sweep. The gap A16 identified stays open and stays recorded.
 
 ---
 
@@ -268,6 +287,8 @@ Recorded so a later pass does not read the absence as an oversight:
 | **The column grant on `jlpt_questions` silently widens on rename, exposing `correct_answer`** | The one security-critical item. `L-005`: mocked tests cannot see it. Verify against a real DB or state plainly that it was not verified. |
 | A blanket find-replace of `jlpt` → `certification` | §2's table is the contract. The renamed set is closed and small; everything else is family naming and must not move. |
 | The redirect becomes the next `/jlpt-test` | A17 carries the dated removal condition, in a tracked file. |
+| **An implementer "cleans up" the historical migrations by renaming the tables in them** | §4's ⛔ block. The five files that name the old tables are listed there by name so the boundary is checkable, not a matter of judgement. Append-only is not a style preference. |
+| A stale `/jlpt` or `/jlpt-test` reference survives the rename | §7.3's mandatory sweep, run to exhaustion (`L-024`), output pasted rather than summarised. This replaces the deferred reverse-direction guard, so it is the only thing standing in that gap. |
 | Registry and route move in separate commits | Forbidden by §7; T2 is the detector. |
 | Stale counts in commit messages or docs | `L-002`: write the command, and sanity-check it against a second measurement — Phase 2a found a `grep -c` that matched its own documentation. |
 
