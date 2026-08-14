@@ -74,7 +74,7 @@ and that is what this spec adds.
 | **R10** | The pipeline is **Figma → Screen Registry → IA/route reconciliation → product catalog → UI implementation**. Catalog sits *downstream* of the registry. | Today it runs the other way: a plan brief writes a catalog, and the catalog becomes the de-facto screen list. R10 inverts that. |
 | **R11** | State-variant frames are **not screens**. They are `kind: 'state-variant'` with `variantOf` pointing at the screen they are a state of. | `Loading state`, `Error state`, `Empty state (Companion home)`, `Explore Lessons (with preview)` are states of screens. Promoting them to screens because they have node ids would inflate the inventory and corrupt every count derived from it. |
 | **R12** | The registry holds **no field describing appearance or behaviour** — no copy, no colours, no layout, no data requirements. | This is the concrete guard on R1. The moment the registry describes how a screen looks, it is a second Figma. |
-| **R13** | `kind: 'repo-only'` requires a **`repoOnlyReason` from a closed enum** — never free text, never absent. `'out-of-design-scope'` is machine-restricted to `chrome: 'admin'`; everything else must be `'legacy-unreviewed'`. | Without this, `repo-only` becomes the dumping ground for "not inventoried yet" and silently hides an un-surveyed Figma screen — the exact failure this spec exists to prevent. A closed enum forces a classification a reviewer can check; free text degrades into "TODO" that nobody reads. `'legacy-unreviewed'` makes the debt **named and countable** rather than absorbed, so Phase 2 can report on it. Widening the `'out-of-design-scope'` allowlist beyond `admin` requires an explicit amendment to this spec — it is not a judgement call at implementation time. |
+| **R13** | `kind: 'repo-only'` requires a **`repoOnlyReason` from a closed enum** — never free text, never absent. `'out-of-design-scope'` is machine-restricted to `chrome: 'admin'`; everything else must be `'no-frame-at-last-pass'`. | Without this, `repo-only` becomes the dumping ground for "not inventoried yet" and silently hides an un-surveyed Figma screen — the exact failure this spec exists to prevent. A closed enum forces a classification a reviewer can check; free text degrades into "TODO" that nobody reads. `'no-frame-at-last-pass'` makes the observation **named and countable** rather than absorbed, so Phase 2 can survey it — a reason member records what R6 says (no frame at this pass), not a verdict that the entry is owed review. Widening the `'out-of-design-scope'` allowlist beyond `admin` requires an explicit amendment to this spec — it is not a judgement call at implementation time. |
 
 ---
 
@@ -97,8 +97,9 @@ type ScreenImpl =
 type ScreenChrome = 'app' | 'focus' | 'immersive' | 'admin' | 'auth' | 'marketing'
 
 type RepoOnlyReason =
-  | 'out-of-design-scope' // tooling Figma will never cover. Restricted to chrome: 'admin' (R13)
-  | 'legacy-unreviewed'   // predates the design and still owes a Phase 2 ruling — named debt
+  | 'out-of-design-scope'   // tooling Figma will never cover. Restricted to chrome: 'admin' (R13)
+  | 'no-frame-at-last-pass' // no corresponding Figma node at this inventory pass (R6) —
+                            // an observation, not a verdict; Phase 2 surveys it
 
 interface ScreenEntry {
   /** Stable product identity (R3). kebab-case. The join key for every other artifact. */
@@ -206,7 +207,7 @@ while the suite stayed green.
 | **T7** | Every entry with `navGroup !== null` has a non-null `navOrder`, and `navOrder` is unique within its group. |
 | **T8** | For every entry with a `page.tsx`, `chrome` equals the groups actually dropped from that file's path (§3.4) — `chrome: 'focus'` ⇒ the file sat under `(focus)`. Catches a screen moved between chrome contracts. Entries without a page are exempt. |
 | **T9** | Every `kind === 'repo-only'` has a non-null `repoOnlyReason`; every other kind has `repoOnlyReason === null` (R13). |
-| **T10** | `repoOnlyReason === 'out-of-design-scope'` implies `chrome === 'admin'`. Any other route claiming it **fails**, forcing it into `'legacy-unreviewed'` where Phase 2 counts it as debt (R13). |
+| **T10** | `repoOnlyReason === 'out-of-design-scope'` implies `chrome === 'admin'`. Any other route claiming it **fails**, forcing it into `'no-frame-at-last-pass'` (R13). |
 | **T11** | Every entry with `navGroup !== null` has a `route` that resolves to a real `page.tsx` — the reverse direction of T1. See the correction below. *(Id assigned 2026-08-13; the assertion shipped in Phase 1a, mutation-checked, under a name that collided with T2b.)* |
 
 ⚠️ **Correction (final whole-branch review, 2026-08-12).** This paragraph used to read "T1 subsumes and
@@ -300,8 +301,30 @@ divergence gets exactly **one recorded ruling** so only one source of truth surv
 C1's provisional outputs (the nine empty-state screens, `NAV_GROUPS`' 22 rows, the six seeded collections,
 the `upcoming` catalog) are confirmed or corrected.
 
-Phase 2's work list is generated, not guessed: every entry with `repoOnlyReason: 'legacy-unreviewed'`,
-every `impl: 'none'`, and every stale `figmaCheckedAt`. Phase 1's output *is* Phase 2's backlog.
+Phase 2's work list has two axes, and the registry can generate only one of them:
+
+- **Registry-generated backlog = survey backlog only:** entries with `figmaCheckedAt === null`,
+  excluding the permanent `out-of-design-scope` cases where applicable — those carry no stamp by
+  design (R13), not because a Figma pass is outstanding.
+- **Decision backlog is not derivable from the registry.** Whether an already-surveyed entry still
+  needs a product ruling is a decision, not an observation, and the registry has no field for a
+  decision (R12). That backlog is owned by the decision register and must be enumerated there.
+
+Phase 1's output *is* the registry-generated half of Phase 2's backlog.
+
+> **2026-08-13 note.** The clause above used to name the `repoOnlyReason` enum member directly as
+> the generator (the one renamed in Phase 2a — see that phase's design spec for the old name).
+> Phase 2a measured that clause against the registry and found 21 of its 23 entries already carried
+> a governing product ruling in their own comment (A2, A4, A5, A7, A10, A11, P16, or an explicit
+> judgement call); they were never debt, just unlabeled as resolved. Only `jlpt-test` and `register`
+> remain genuinely open. The generator above is corrected to what the registry can actually
+> observe — whether an entry has been surveyed at all — rather than the enum, which records an
+> observation (R6), not a work-list membership test. ⚠️ **Correction, same-day fix round:** an
+> earlier version of this generator read "`figmaCheckedAt` is null **or stale**." That could not be
+> evaluated — every `no-frame-at-last-pass` entry carries the identical `2026-08-12` stamp after
+> Task 2, and staleness is defined nowhere (R7, §7 risk 2: staleness is *reported*, never
+> automated). The two-axis split above is the fix: the registry answers *"has this been compared,
+> and when,"* never *"does this still need a ruling."*
 
 **Phase 3 — Per-screen adjudication, lazily.** Data, components, states, responsive, copy, behaviour —
 decided immediately before a screen becomes implementation, never weeks ahead. Unchanged from the
@@ -332,7 +355,7 @@ building rather than writing a snapshot document.
    the most likely way this registry quietly stops being true: a surveyor who cannot find a frame reaches
    for `repo-only` and the screen disappears from the gap analysis. *Mitigation:* R13 — the reason enum
    has no "unknown" member, `'out-of-design-scope'` is machine-restricted to `admin` (T10), and everything
-   else lands in `'legacy-unreviewed'`, which is countable and reported by Phase 2. Debt is named, not
+   else lands in `'no-frame-at-last-pass'`, which is countable and reported by Phase 2 — named, not
    absorbed.
 7. **`screenId` chosen from display names.** The most likely way R3 gets violated in practice, because
    frame names are what the surveyor is reading at the time. *Mitigation:* R9 — adopt existing nav keys

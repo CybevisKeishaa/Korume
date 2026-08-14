@@ -63,6 +63,7 @@ derives them. See §3b.
 | A13 | **No route for:** search palette · create-conversation wizard · lesson preview · reflection · suggestion drawer | §4 |
 | A14 | **A group's HEADING is not its id.** `journey` displays **"Growth" / "Tiến trình"** | `ia-proposal.md` §2 · ruled 2026-08-13 |
 | A15 | **The companion's Vietnamese name is "Linh thú"** — nav row `companion-home` = **"Linh thú của tôi"** | ruled 2026-08-13 · **propagated 2026-08-13** |
+| A16 | **`/jlpt-test` is dead route code — remove it in 2b.** No callers; its redirect target is itself superseded by A9 | ruled 2026-08-13 · execution deferred to **2b** |
 
 **A14 was added during Phase 1b**, when the gap surfaced in implementation: A1 locks group *ids* and
 §2 locks *row* labels, but nothing said what a group heading reads. Capitalising the id would have
@@ -105,15 +106,74 @@ required a distinction the ruling did not state — recorded here because it gov
 > ⚠️ **`MASCOT.md` contradicted P2 and was reconciled to it, not the reverse.** Its § Danh tính
 > still read "Tên của Companion sẽ được xác định trong Character Identity Spec" with six open
 > candidates — text that **predates P2's LOCK (2026-08-12)** and had simply never been swept.
-> `screen-inventory.md:436-438` records that the user closed it by *unifying* the name with the
-> product's, not by declaring it a placeholder, so this was applying a ruling the user had already
-> given, not choosing between two live answers. The candidate list is kept as marked-historical.
+> `screen-inventory.md` §20's "✅ RESOLVED — the Companion's name is **Korume**" block records that
+> the user closed it by *unifying* the name with the product's, not by declaring it a placeholder,
+> so this was applying a ruling the user had already given, not choosing between two live answers.
+> The candidate list is kept as marked-historical.
 
 **The English `journey` heading stays "Growth" — user ruling 2026-08-13.** EN and VI are therefore
 deliberately not literal equivalents: VI reads "Tiến trình" (≈ *Progress*). The user considered
 moving EN to "Progress" and declined, so this is a settled divergence, not drift.
 ⚠️ **The `Growth Areas` collision noted above therefore stands, knowingly.** A future pass that
 "discovers" it must not reopen it on that basis alone — it was seen, priced, and accepted.
+
+**A16 — `/jlpt-test` is dead route code and is removed in Phase 2b.** The route is eight lines, a
+bare `redirect()` to `/jlpt`, commented *"Old placeholder route — the JLPT test engine now lives at
+`/jlpt` (Layer 5)"*. Measured 2026-08-13: **no app code references the route** — every `jlpt-test`
+hit in code is a component filename (`jlpt-test-runner` / `-list` / `-card`).
+
+Three names exist for one thing, which is why this is a reconciliation item and not a cleanup:
+`japanese-learning-app-spec.md:76` says `/jlpt-test`, the repo runs `/jlpt`, and **A9** locks
+`/certification`.
+
+⚠️ **2a rules; 2b executes.** This is the **only** home for 2b's edit list — the Phase 2a design spec
+§3a.4 points here rather than keeping a second copy. The list is given **without an "exactly N"
+total**, because that total has now been written wrong twice (first four, then five) and a bare
+count goes stale the instant one more pin moves; the last bullet is what a count cannot express.
+
+1. Delete `app/[locale]/(protected)/(app)/jlpt-test/page.tsx`.
+2. Delete the `screenId: "jlpt-test"` entry from `SCREEN_REGISTRY` in
+   `lib/product/screen-registry.ts` — **required, not cosmetic.** Once the page is gone, that
+   entry's `route: "/jlpt-test"` + `impl: "built"` makes it "lying" under **T2**
+   (`lib/product/screen-registry.routes.test.ts:17-23`), which walks the real filesystem for
+   `derivedRoutes` and fails on any entry claiming a route that no longer resolves there. Deletion
+   is the recommended fix over setting `route: null` + `impl: "none"`: the screen ceases to exist,
+   and **R5** reads *"Every in-scope route MUST have a registry entry. An entry need NOT have a
+   route"* (`2026-08-08-screen-registry-design.md` R5) — so an entry without a route was always
+   legal and a route without an entry never was. Either shape satisfies T2; 2b makes the final call.
+3. Delete `/jlpt-test` from `PROTECTED_PREFIXES` (`lib/supabase/route-protection.ts:14`).
+4. Amend `japanese-learning-app-spec.md:76`.
+5. **Mutation-check** the pin test at `lib/supabase/route-protection.test.ts:19-53` — it hardcodes
+   the literal `PROTECTED_PREFIXES` array, so editing the array without updating the pin is what
+   goes RED, and 2b must prove that rather than run the suite green and call it evidence.
+6. **Update every count pin the deletion moves. The suite names them by going red — do not
+   enumerate them from here.** Known today: `lib/product/screen-registry.test.ts`'s G2 assertion
+   `expect(stamped).toHaveLength(74)`, because the deleted entry carries
+   `figmaCheckedAt: "2026-08-12"` and so is one of the 74. Treat that as an example, not the list.
+
+⚠️ **No existing test guards the reverse direction — a prefix left behind for a deleted route.** An
+earlier draft of this ruling named `route-protection.test.ts`'s filesystem-driven coverage test
+(`:120-154`, *"covers every page under (protected)"*) as that guard; it is not. That test walks the
+`page.tsx` files that **exist** and asserts each has a covering prefix — it catches a page with no
+prefix, never the reverse. Deleting a page only shrinks its walk; it cannot make the test's
+`unprotected` array non-empty, so the test stays green no matter what 2b leaves behind in
+`PROTECTED_PREFIXES`. The pin test above is the real forcing function here, and only because it
+forces a *conscious* edit to the array — not because it detects an orphaned prefix on its own. 2b
+**may** add a guard for the reverse direction; this ruling does not mandate one.
+
+**No `kind: 'redirect'` was added.** Doing so in 2a would model a hypothetical 2b redirect. If 2b
+genuinely needs `/jlpt` → `/certification` to survive as one, that is a real artifact with a real
+shape and the schema decision can be made against it then.
+
+**⚑ Also owed to 2b, and not a ruling — a tracked debt item.** `components/layout/app-nav.tsx`'s
+header comment (lines 16-18) is wrong on two counts: it says a module-scope registry import "ships
+all **50** entries" — `SCREEN_REGISTRY` holds **79** — and it calls `repoOnlyReason` /
+`figmaCheckedAt` "internal **debt labels**", a framing Phase 2a retired when `legacy-unreviewed`
+became `no-frame-at-last-pass` (a reason member records an observation, R6, not debt). **2a
+deliberately left it alone**: its locked guard G4 forbids any `app/` · `supabase/` · `components/`
+path in the branch diff, and a comment fix is not worth breaking that. It is filed here because the
+only other record of it lived in a gitignored progress file, which tracks nothing — and beside A16
+because 2b is the next pass allowed to touch `components/`.
 
 ## 3. Method rules — `LOCKED`, and they bind future passes
 

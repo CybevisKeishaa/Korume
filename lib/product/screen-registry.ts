@@ -28,6 +28,11 @@ import type { ScreenEntry } from "./screen-registry-types";
  *      discovered "true identity").
  *   2. `docs/product/screen-inventory.md` Part II §6–§20 — `kind`, and for
  *      state-variants, `variantOf`.
+ *      ⚠️ Citation convention: the per-entry comments below cite that file by
+ *      SECTION and row, never by line number. Line citations written into this
+ *      file went stale twice inside Phase 2a alone — once when a later task in
+ *      the same phase inserted a line above them, and again when the final fix
+ *      wave struck two rows from §3's table. A section survives both.
  *   3. `listPageRoutes(process.cwd())` — `route` + `chrome`. Count it, never
  *      quote it (`docs/lessons.md` L-002); Phase 1b added two pages, so the
  *      44 recorded by Phase 1a is already stale.
@@ -140,8 +145,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/kanji",
     chrome: "app",
     impl: "built",
@@ -159,8 +164,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/vocab",
     chrome: "app",
     impl: "built",
@@ -177,8 +182,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/grammar",
     chrome: "app",
     impl: "built",
@@ -193,8 +198,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/reading",
     chrome: "app",
     impl: "built",
@@ -239,15 +244,17 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: 3,
   },
 
-  // remember/1 — no frame; the cross-type SRS review hub (§3).
+  // remember/1 — no frame; the cross-type SRS review hub. `ia-proposal.md`
+  // §2's `remember` group (line 120) rules `KEEP` — settling what
+  // `screen-inventory.md` §3 still lists as "not yet adjudicated".
   {
     screenId: "review",
     name: "Review",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/review",
     chrome: "app",
     impl: "placeholder",
@@ -263,24 +270,24 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/mining",
     chrome: "app",
     impl: "built",
     navGroup: "remember",
     navOrder: 2,
   },
-  // remember/3 — built, no frame at this pass (R6) — named debt for Phase 2.
-  // A11 keeps this its own screen rather than folding it into Explore.
+  // remember/3 — built, no frame at this pass (R6). A11 keeps this its own
+  // screen rather than folding it into Explore.
   {
     screenId: "playlists",
     name: "Playlists",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/playlists",
     chrome: "app",
     impl: "built",
@@ -295,8 +302,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/challenges",
     chrome: "app",
     impl: "placeholder",
@@ -313,8 +320,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/community",
     chrome: "app",
     impl: "built",
@@ -328,8 +335,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/leaderboard",
     chrome: "app",
     impl: "built",
@@ -384,8 +391,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/weekly-report",
     chrome: "app",
     impl: "placeholder",
@@ -423,8 +430,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/statistics",
     chrome: "app",
     impl: "placeholder",
@@ -439,8 +446,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/achievements",
     chrome: "app",
     impl: "placeholder",
@@ -647,19 +654,20 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
 
   // ===================================================================
   // Repo routes with no matching frame, and not a nav destination
-  // (repo-only, legacy-unreviewed unless chrome is admin).
+  // (repo-only, no-frame-at-last-pass unless chrome is admin).
   // ===================================================================
 
   // §19.0 — "there is NO marketing landing frame anywhere in the 57... the
-  // public front door of Korume is undesigned."
+  // public front door of Korume is undesigned." P16 records this as known
+  // and accepted — the user will design it later.
   {
     screenId: "landing-page",
     name: "Landing Page",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/",
     chrome: "marketing",
     impl: "built",
@@ -738,28 +746,38 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
+  // Not an independent decision — a community sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "community-detail",
     name: "Community — Detail",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/community/[id]",
     chrome: "app",
     impl: "built",
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
+  // Not an independent decision — a community sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "community-peer-review",
     name: "Community — Peer Review",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/community/peer-review",
     chrome: "app",
     impl: "built",
@@ -770,7 +788,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // an 8-line dead redirect() to /jlpt, superseded in Layer 5. Looks like
   // `kind: "deprecated"`, but T3 requires a non-null figmaNodeId for
   // "deprecated" and this route has no frame. Recorded repo-only +
-  // legacy-unreviewed with the deprecation noted in `name`; the
+  // no-frame-at-last-pass with the deprecation noted in `name`; the
   // deprecated-without-a-frame gap is a Phase 2 spec question, not amended
   // here.
   {
@@ -779,92 +797,125 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/jlpt-test",
     chrome: "app",
     impl: "built",
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /mining's ruling (A7): a label change to `Collection`, not an
+  // identity change — screenId stays `mining`-scoped. Not an independent
+  // decision: reached by drilling into its parent, never a nav row of its
+  // own. Frameless per `screen-inventory.md` §3's table, row `/mining`.
   {
     screenId: "mining-review",
     name: "Mining — Review",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/mining/review",
     chrome: "app",
     impl: "built",
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /playlists's ruling (A11): stays its own screen, not folded
+  // into Explore. Not an independent decision — reached by drilling into
+  // its parent, never a nav row of its own. Frameless per
+  // `screen-inventory.md` §3's table, row `/playlists` ("IA question still
+  // open" before A11 settled it).
   {
     screenId: "playlists-detail",
     name: "Playlists — Detail",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/playlists/[id]",
     chrome: "app",
     impl: "built",
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /reading's ruling (A10): hidden, code kept, not deprecated.
+  // Not an independent decision — a reading sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "reading-detail",
     name: "Reading — Detail",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/reading/[id]",
     chrome: "app",
     impl: "built",
     navGroup: null,
     navOrder: null,
   },
+  // ⚠️ NO PRODUCT RULING EXISTS FOR /register, and none is inferred here.
+  // Everything below is FRAME evidence: `screen-inventory.md` §3's table, row
+  // `/register` — "Figma has `Login` but no register frame" — plus §4's
+  // "Frameless with no such conflict" list, which names it alongside /review,
+  // /achievements, /challenges and /statistics. Both are observations on the
+  // has-a-frame axis. The has-a-ruling axis belongs to `decision-register.md`,
+  // which says nothing about /register; §3's Ruling column therefore reads
+  // "still open", and that is the honest state, not a gap to be filled in by
+  // reading the frame evidence as a decision.
   {
     screenId: "register",
     name: "Register",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/register",
     chrome: "auth",
     impl: "built",
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
+  // not an independent decision — an acquisition-loop sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "vocab-detail",
     name: "Vocabulary — Detail",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/vocab/[id]",
     chrome: "app",
     impl: "built",
     navGroup: null,
     navOrder: null,
   },
+  // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
+  // not an independent decision — an acquisition-loop sub-route is reached by
+  // drilling into its parent and is never a nav row of its own.
+  // Frameless per `screen-inventory.md` §3's "Already adjudicated by the user
+  // 2026-08-11" list, which names this route explicitly.
   {
     screenId: "vocab-review",
     name: "Vocabulary — Review",
     kind: "repo-only",
     variantOf: null,
     figmaNodeId: null,
-    repoOnlyReason: "legacy-unreviewed",
-    figmaCheckedAt: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-08-12",
     route: "/vocab/review",
     chrome: "app",
     impl: "built",

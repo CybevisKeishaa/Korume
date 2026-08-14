@@ -54,6 +54,10 @@ describe("screen registry invariants", () => {
   });
 
   it("T9: repoOnlyReason is present iff the entry is repo-only", () => {
+    const repoOnly = SCREEN_REGISTRY.filter((e) => e.kind === "repo-only");
+    // Non-vacuity: without this, an empty filter makes every assertion below
+    // unconditionally true (CLAUDE.md §7).
+    expect(repoOnly.length).toBeGreaterThan(0);
     for (const entry of SCREEN_REGISTRY) {
       if (entry.kind === "repo-only") {
         expect(entry.repoOnlyReason, entry.screenId).not.toBeNull();
@@ -64,24 +68,88 @@ describe("screen registry invariants", () => {
   });
 
   it("T10: out-of-design-scope is restricted to admin chrome", () => {
-    for (const entry of SCREEN_REGISTRY) {
-      if (entry.repoOnlyReason === "out-of-design-scope") {
-        expect(entry.chrome, entry.screenId).toBe("admin");
-      }
+    const outOfScope = SCREEN_REGISTRY.filter(
+      (e) => e.repoOnlyReason === "out-of-design-scope",
+    );
+    expect(outOfScope.length).toBeGreaterThan(0);
+    for (const entry of outOfScope) {
+      expect(entry.chrome, entry.screenId).toBe("admin");
     }
   });
 
-  it("R12: no entry carries an appearance or behaviour field", () => {
+  it("R12: every entry carries exactly the twelve allowed fields", () => {
     // The concrete guard on R1. If someone adds `copy`, `layout`, `colors` or
-    // `dataNeeds`, the registry has started becoming a second Figma.
-    const ALLOWED = new Set([
+    // `dataNeeds`, the registry has started becoming a second Figma. It is
+    // also G3: `ruledBy` / `ruledAt` cannot be added without failing here.
+    // Checked in BOTH directions — the older form only rejected unknown keys,
+    // so an entry missing a field passed.
+    const ALLOWED = [
       "screenId", "name", "kind", "variantOf", "figmaNodeId", "repoOnlyReason",
       "figmaCheckedAt", "route", "chrome", "impl", "navGroup", "navOrder",
-    ]);
+    ];
+    expect(ALLOWED).toHaveLength(12);
+    expect(SCREEN_REGISTRY.length).toBeGreaterThan(0);
     for (const entry of SCREEN_REGISTRY) {
-      for (const key of Object.keys(entry)) {
-        expect(ALLOWED, `${entry.screenId}.${key}`).toContain(key);
-      }
+      expect(Object.keys(entry).sort(), entry.screenId).toEqual([...ALLOWED].sort());
+    }
+  });
+
+  it("G2: no out-of-design-scope entry can carry a figmaCheckedAt stamp", () => {
+    // Phase 2a backfilled the stamp from CITATIONS, never from membership in
+    // `repo-only`. Every entry the Phase 0 pass demonstrably examined carries
+    // that pass's own date, 2026-08-12.
+    //
+    // THE PERMANENT INVARIANT — a SUBSET relation, and it is asserted first.
+    // `out-of-design-scope` means Figma will never cover the entry, so
+    // "compared against Figma at time X" (R7) is not a claim that can honestly
+    // be made about it: it can never carry a stamp, in any future state of the
+    // registry. A null `figmaCheckedAt` therefore means one of two true things
+    // — never compared, or never comparable — and never "we forgot".
+    //
+    // ⚠️ This read `expect(unstamped).toEqual(outOfScopeIds)` until 2026-08-14,
+    // and set EQUALITY is a stronger claim than either spec makes. It declares
+    // the survey backlog permanently empty by decree: the moment anyone
+    // registers a genuinely un-surveyed route — which Phase 3 does BY DESIGN —
+    // the suite goes red, and the cheapest green is to write a `2026-08-12`
+    // stamp for a Figma pass that never happened. That is the exact dishonesty
+    // the "a citation licenses the stamp" rule exists to prevent, so the
+    // equality is gone and the subset stands.
+    //
+    // The set is DERIVED from `repoOnlyReason === "out-of-design-scope"`, never
+    // hardcoded as a literal id list (fix round 1 on Task 4: a hardcoded list
+    // is a magic number that silently stops protecting this invariant the
+    // moment the admin route count changes; deriving it means the test keeps
+    // checking the actual relationship, not today's headcount).
+    const outOfScope = SCREEN_REGISTRY.filter(
+      (e) => e.repoOnlyReason === "out-of-design-scope",
+    );
+    // Non-vacuity: without this, an empty derived set makes the loop below
+    // unconditionally true (CLAUDE.md §7).
+    expect(outOfScope.length).toBeGreaterThan(0);
+    for (const entry of outOfScope) {
+      expect(entry.figmaCheckedAt, entry.screenId).toBeNull();
+    }
+
+    // ---- TODAY'S STATE. Not invariants. -------------------------------------
+    // These two pins record what the registry happens to hold on 2026-08-14 so
+    // that a change to either is conscious rather than silent. They are
+    // EXPECTED to move: the id list when the admin surface changes, and the
+    // count the first time a genuinely un-surveyed route is registered (Phase 3
+    // does that by design) or when A16's `jlpt-test` deletion lands in 2b.
+    // Updating a pin to match a measured registry is normal. Stamping an entry
+    // to make a pin green is the failure this whole test exists to catch.
+    expect(outOfScope.map((e) => e.screenId).sort()).toEqual([
+      "admin",
+      "admin-content",
+      "admin-content-type",
+      "admin-style-guide",
+      "admin-videos",
+    ]);
+
+    const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
+    expect(stamped).toHaveLength(74);
+    for (const entry of stamped) {
+      expect(entry.figmaCheckedAt, entry.screenId).toBe("2026-08-12");
     }
   });
 });
