@@ -97,7 +97,7 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
     setPhase("submitting");
     setSubmitError(null);
     try {
-      const res = await fetch(`/api/jlpt/tests/${test.id}/submit`, {
+      const res = await fetch(`/api/certification/tests/${test.id}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

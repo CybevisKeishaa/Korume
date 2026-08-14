@@ -6,12 +6,12 @@ export const jlptSectionSchema = z.enum(["vocab", "grammar", "reading", "listeni
 
 export const jlptModeSchema = z.enum(["full", "section"]);
 
-/** GET /api/jlpt/tests?level=N5 — optional; absent means "all levels". */
+/** GET /api/certification/tests?level=N5 — optional; absent means "all levels". */
 export const jlptTestsQuerySchema = z.object({
   level: jlptLevelSchema.optional(),
 });
 
-/** GET /api/jlpt/attempts?testId=... — optional; absent means "all of the caller's attempts". */
+/** GET /api/certification/attempts?testId=... — optional; absent means "all of the caller's attempts". */
 export const jlptAttemptsQuerySchema = z.object({
   testId: z.string().uuid().optional(),
 });
@@ -20,7 +20,7 @@ export const jlptAttemptsQuerySchema = z.object({
 const answerValueSchema = z.enum(["0", "1", "2", "3"]);
 
 /**
- * POST /api/jlpt/tests/[id]/submit body. `answers` is keyed by question id;
+ * POST /api/certification/tests/[id]/submit body. `answers` is keyed by question id;
  * a missing key means unanswered (scored as wrong by `lib/jlpt`). `section`
  * is required exactly when `mode === 'section'` (validated below since zod's
  * object shape can't express a conditional-required field on its own).
