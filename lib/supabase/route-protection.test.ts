@@ -26,7 +26,6 @@ describe("route protection", () => {
       "/reading",
       "/conversation",
       "/jlpt",
-      "/jlpt-test",
       "/community",
       "/playlists",
       "/leaderboard",

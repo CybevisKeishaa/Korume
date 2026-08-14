@@ -73,7 +73,7 @@
       /[videoId]/dictation
     /reading
     /speaking
-    /jlpt-test
+    /jlpt
     /community
     /profile
   /(admin)

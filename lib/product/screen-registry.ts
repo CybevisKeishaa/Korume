@@ -784,27 +784,6 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
-  // JUDGEMENT CALL (resolution given by the task, not re-litigated here):
-  // an 8-line dead redirect() to /jlpt, superseded in Layer 5. Looks like
-  // `kind: "deprecated"`, but T3 requires a non-null figmaNodeId for
-  // "deprecated" and this route has no frame. Recorded repo-only +
-  // no-frame-at-last-pass with the deprecation noted in `name`; the
-  // deprecated-without-a-frame gap is a Phase 2 spec question, not amended
-  // here.
-  {
-    screenId: "jlpt-test",
-    name: "JLPT Test (deprecated — dead redirect to /jlpt, Layer 5)",
-    kind: "repo-only",
-    variantOf: null,
-    figmaNodeId: null,
-    repoOnlyReason: "no-frame-at-last-pass",
-    figmaCheckedAt: "2026-08-12",
-    route: "/jlpt-test",
-    chrome: "app",
-    impl: "built",
-    navGroup: null,
-    navOrder: null,
-  },
   // Inherits /mining's ruling (A7): a label change to `Collection`, not an
   // identity change — screenId stays `mining`-scoped. Not an independent
   // decision: reached by drilling into its parent, never a nav row of its

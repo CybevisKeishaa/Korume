@@ -147,7 +147,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(74);
+    expect(stamped).toHaveLength(73);
     for (const entry of stamped) {
       expect(entry.figmaCheckedAt, entry.screenId).toBe("2026-08-12");
     }
