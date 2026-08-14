@@ -21,13 +21,20 @@ import viNav from "./vi/nav.json";
  * was genuinely unprotected at both levels. That is the real gap this file
  * closes.
  *
- * Both pins are kept, not just one: the render pin proves the UI wires the
- * right catalog KEY to the right nav row; this catalog pin proves the copy
- * ITSELF is stable — a typo introduced in nav.json without touching
- * app-nav.tsx would still pass the render pin (right key, wrong string) and
- * would only be caught here. Same shape as the two assertions kept side by
- * side in lib/product/nav-derivation.test.ts:13-17, for the same reason: each
- * one fails a mutation the other one's blind to.
+ * For EN, this catalog pin genuinely overlaps app-nav.test.tsx's render pin —
+ * they are not mutually blind. `AppNav` renders each item as `t(item.key)`
+ * (components/layout/app-nav.tsx:91) against the real EN catalog
+ * (test/render.tsx loads the actual messages/en/*.json, not a fixture), so a
+ * typo in `en/nav.json`'s `jlpt` value changes the rendered link's accessible
+ * name and fails app-nav.test.tsx's `getByRole("link", { name: … })` lookup
+ * too. What this pin adds for EN isn't coverage of a different mutation —
+ * it's directness: a break here names the catalog string on its own, with no
+ * render involved, instead of surfacing as "can't find a link named X" three
+ * layers down. For VI, by contrast, this pin is not redundant with anything —
+ * it is the only assertion of either kind, catalog or render, per the
+ * `locale="en"` fact above. Keeping the EN half here rather than leaving VI
+ * as a lone-locale file is a legibility choice: the pair reads symmetrically,
+ * and a reader doesn't have to wonder why VI has a pin and EN doesn't.
  *
  * ⚠️ The KEY stays `jlpt` on purpose. R9 makes `screenId` the catalog key and
  * the screenId was not renamed (Phase 1b precedent: identity is not renamed to
