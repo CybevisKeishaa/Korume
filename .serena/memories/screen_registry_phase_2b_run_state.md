@@ -142,7 +142,8 @@ This is a user-locked condition, not a nicety.
    pinned at `messages/en/admin.pin.test.ts:94,141-144` and drives message lookup. But the
    `detailColumns` string contains `jlpt_questions(...)`, which is PostgREST **embedded-resource**
    syntax naming the *table* — so that one **does** move. Both live in
-   `lib/data/admin-content.ts:187-199`, four lines apart.
+   the `jlpt_tests` entry of `CONTENT_CONFIG` in `lib/data/admin-content.ts`, four lines apart
+   (cited by symbol, not line — `L-032`).
 2. **Registry `name` fields are Figma frame names copied verbatim** — `"JLPT Practice"` **stays**.
    The module was renamed; the frame was not. Only `route` changes.
 
@@ -162,9 +163,17 @@ At `8d01ed9` the suite was **236 files / 2111 tests**; Task 5 adds a file, so ex
 
 ## After implementation
 
-Task 8: whole-branch review (`L-011`) → fix wave → **the L-012 re-review of that fix wave** → then
-lessons in `docs/lessons.md` → then merge `--no-ff` (**the merge is the user's call; 2a was not
-merged until they said so**).
+Task 8's planned order was: whole-branch review (`L-011`) → fix wave → **the L-012 re-review of that
+fix wave** → then lessons in `docs/lessons.md` → then merge `--no-ff`.
+
+**What actually happened, and it was an improvement:** the lessons landed *inside* the fix wave
+(`26a83de`), not after the re-review. That is the better order — lessons written before the last
+review get reviewed like everything else, and the re-review did in fact correct one of them. So the
+remaining sequence is **re-review → merge**, matching the RESUME HERE header at the top of this
+file. Do not write a second set of lessons; `L-019`, `L-023`, `L-032` and `L-033` already carry this
+branch's.
+
+The merge is still **the user's call** — 2a was not merged until they said so.
 
 ## Related
 
