@@ -54,16 +54,17 @@ write, and `return=representation` is a trap on a column-grant-restricted table.
 traps have **one home**: `mem:project_status` § Key gotchas, "Verifying a PostgREST write". Do not
 restate it here. `docs/lessons.md` `L-001` carries the lesson.
 
-**Worth keeping, because it is about this run and not about PostgREST:** `L-012` fired on this branch
-**twice, over a comments-only diff**, and the shape is the reusable part. Wave 1 shipped a wrong probe
-inside `L-001` — the entry whose whole subject is unverified success signals. Wave 2 got the probe
-right and the **qualifiers** around it wrong ("needs no SELECT privilege", a wrong attribution of
-TRUNCATE to a repo migration, a residual naming only `authenticated` when `anon` holds the same, a
-hard count two lines above a citation of `L-002`). Wave 3 got one qualifier wrong again — this time
-about the signal the probe itself reads. Every wave was caught by the review of the wave before it,
-never by the author. Recorded as evidence on `L-012` in `docs/lessons.md`; do not restate an ordinal
-for it here (`L-002` — the evidence list is what carries "how often", and this file already counts
-2b's four firings under a different scope, which is exactly how such a figure goes wrong).
+**Worth keeping, because it is about this run and not about PostgREST:** `L-012` fired on **every
+fix wave of this branch**, over a comments-only diff, and the shape is the reusable part. Wave 1
+shipped a wrong probe inside `L-001` — the entry whose whole subject is unverified success signals.
+Wave 2 got the probe right and the **qualifiers** around it wrong ("needs no SELECT privilege", a
+wrong attribution of TRUNCATE to a repo migration, a residual naming only `authenticated` when `anon`
+holds the same, a hard count two lines above a citation of `L-002`). Wave 3 got one qualifier wrong
+again — this time about the signal the probe itself reads. Each wave's defect was caught by the
+review of that wave, never by its author, which is the whole of `L-012` in one branch. Recorded as
+evidence there; do not restate an ordinal for it here (`L-002` — the evidence list is what carries
+"how often", and this file already counts 2b's four firings under a different scope, which is exactly
+how such a figure goes wrong).
 That the defect narrowed each pass — substance, then several scope words, then one — is what a
 converging review loop looks like from the inside, and matches `L-003`'s note that a self-report is
 weakest in its scope words.
