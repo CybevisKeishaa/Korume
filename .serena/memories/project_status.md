@@ -520,20 +520,24 @@ unbuilt from the original 8 layers — see § ROADMAP SEQUENCING for why they ar
   **Layer 7 admin approval MUST use the service-role client** (authenticated has zero UPDATE on
   videos.status/title/etc.). For shared AI content the L4 pattern: SELECT-only policy + explicit
   revoke of write grants + service-role write path.
-- **⭐ Verifying a PostgREST write — the response lies in two different ways.** A `PATCH` under
-  `Prefer: return=minimal` answers **204 `Content-Range: */*`** whether it updated every matching row or
-  none: it cannot distinguish them. Ask for **`count=exact`** instead (alone, or alongside
-  `return=minimal` — only `return=representation` spoils it): the same call answers **204 `*/0`** when
-  RLS filtered it to nothing, and `0-0/N` when N rows were actually written. Two traps, both measured
-  2026-08-19 on `certification_questions`:
-  (a) **`count=exact` still needs SELECT on the columns named in the FILTER** — not on the columns being
-  written, and not on what a representation would return. PostgREST rejects an unfiltered UPDATE
-  outright (`400 21000 "UPDATE requires a WHERE clause"`), so that requirement is never optional; with
-  SELECT revoked entirely the probe returns 403 and tells you nothing.
-  (b) **`return=representation` is a trap on any column-grant-restricted table** — the default
-  representation is `*`, so it answers **403 `42501`** for a *read* reason indistinguishable from a
-  refused write. Narrowing it with `select=<granted cols>` turns the same call into 200, which is how
-  you tell the two apart.
+- **⭐ Verifying a PostgREST write — the STATUS CODE is the part that lies, not the whole response.**
+  A `PATCH` answers **204 whether it updated every matching row or none**. The two differ only in
+  `Content-Range`, which is easy to miss: under `Prefer: return=minimal` that header reads `*/*` for
+  zero rows and `0-(N-1)/*` for N. Ask for **`count=exact`** (alone, or alongside `return=minimal` —
+  behaviour is identical) to get the count itself: `*/0` for zero, `0-(N-1)/N` for N. **The figure
+  after the slash is the affected-row count.** Two traps, both measured 2026-08-19 on
+  `certification_questions` **with the write grants and a permissive UPDATE policy temporarily
+  restored** — on a clean `db reset` every variant returns 403, so the recipe reproduces nothing
+  without that setup:
+  (a) **ANY `PATCH` needs SELECT on the columns named in its FILTER** — not on the columns being
+  written, and not on what a representation would return. This is a Postgres `UPDATE … WHERE` rule,
+  not something the count preference introduces. PostgREST rejects an unfiltered UPDATE outright
+  (`400 21000 "UPDATE requires a WHERE clause"`), so the requirement is never optional; with SELECT
+  revoked entirely the probe returns 403 and tells you nothing.
+  (b) **A `*` representation is a trap on a column-grant-restricted table.** `return=representation`
+  defaults to `*`, so it answers **403 `42501`** for a *read* reason indistinguishable from a refused
+  write — which is why it is the one preference that spoils the probe here. Narrow it with
+  `select=<granted cols>` and the same call returns 200, which is how you tell the two apart.
   This is the canonical home for the recipe; `docs/lessons.md` L-001 carries the lesson it evidences
   and points here.
 - **§2 & YouTube audio**: never extract/compare YouTube source audio; pitch reference = TTS of
@@ -674,7 +678,7 @@ select t.table_name from information_schema.table_privileges t
 ```
 (The `roles like` test misses a policy granted `to public`, which would also apply to `authenticated`;
 none exists today and the failure direction is over-reporting, which is the safe one.) TRUNCATE is a
-separate matter with its own home — see § Key gotchas and the L6 entry below.
+separate matter with its own home — see the L6 entry below, which is its one home.
 From L1: GDPR delete-my-data; getUser() in middleware on all routes (perf); conditional
 aria-describedby; users_update_own email/level column scope. From L2: `unique(word, reading)`
 won't dedupe reading-less vocab (NULLs distinct) — matters when admin CMS adds entries; add CI
@@ -697,8 +701,8 @@ once (822/823, then 823/823 twice; test unidentified, reviewer found no time-fra
 new code — watch for recurrence); markNotificationsRead maps DB errors to 400 (should split 500);
 recommendations tokenizes ≤100 transcripts/request with no cache (revisit with catalog growth or
 L3's deferred difficulty-cache); Supabase's bootstrap `pg_default_acl` (NOT
-`20260712000006_grants.sql`, which grants only select/insert/update/delete and deliberately grants
-`anon` nothing) gives **both `authenticated` AND `anon`** TRUNCATE/REFERENCES/TRIGGER on every public
+`20260712000006_grants.sql`, which grants `authenticated` only select/insert/update/delete and grants
+`anon` nothing — its `grant all … to service_role` is a separate matter) gives **both `authenticated` AND `anon`** TRUNCATE/REFERENCES/TRIGGER on every public
 table — count them, never quote a figure. **RLS does not gate TRUNCATE**, so "RLS holds it shut" is
 only ever a claim about INSERT/UPDATE/DELETE. Not reachable via PostgREST (no TRUNCATE verb), hence a
 hardening candidate rather than a live hole; badge iconUrl all null

@@ -54,13 +54,19 @@ write, and `return=representation` is a trap on a column-grant-restricted table.
 traps have **one home**: `mem:project_status` § Key gotchas, "Verifying a PostgREST write". Do not
 restate it here. `docs/lessons.md` `L-001` carries the lesson.
 
-**Worth keeping, because it is about this run and not about PostgREST:** the first two drafts of that
-recipe were each *wrong in the same way the lesson warns about* — they prescribed a probe that could
-not tell the two outcomes apart. Both were caught by a pre-merge review, neither by the author.
-`L-012` fired a fifth time on this project here, and the pattern was narrower than on 2b: the recipe
-was right, the **qualifiers around it** were not ("needs no SELECT privilege", "from the same blanket
-grant", "ALONE", a hard count two lines above a citation of `L-002`). That matches `L-003`'s note that
-a self-report is weakest in its scope words.
+**Worth keeping, because it is about this run and not about PostgREST:** `L-012` fired on this branch
+**twice, over a comments-only diff**, and the shape is the reusable part. Wave 1 shipped a wrong probe
+inside `L-001` — the entry whose whole subject is unverified success signals. Wave 2 got the probe
+right and the **qualifiers** around it wrong ("needs no SELECT privilege", a wrong attribution of
+TRUNCATE to a repo migration, a residual naming only `authenticated` when `anon` holds the same, a
+hard count two lines above a citation of `L-002`). Wave 3 got one qualifier wrong again — this time
+about the signal the probe itself reads. Every wave was caught by the review of the wave before it,
+never by the author. Recorded as evidence on `L-012` in `docs/lessons.md`; do not restate an ordinal
+for it here (`L-002` — the evidence list is what carries "how often", and this file already counts
+2b's four firings under a different scope, which is exactly how such a figure goes wrong).
+That the defect narrowed each pass — substance, then several scope words, then one — is what a
+converging review loop looks like from the inside, and matches `L-003`'s note that a self-report is
+weakest in its scope words.
 
 **Why the revoke was worth doing even though RLS already held — the argument to reuse.** The
 observable behaviour changed, not just the permission set. Measured on the same row: **before**, a

@@ -14,9 +14,11 @@
 -- `reading_questions`; it also created `user_reading_attempts`, which is per-user
 -- and rightly keeps its writes) but not on `jlpt_questions`, now
 -- `certification_questions`. `jlpt_tests` -- now `certification_tests` -- appears
--- nowhere in that migration; it predates it, and its write grants come from
--- `20260712000006_grants.sql`'s one-time blanket. Same end state, both corrected
--- here.
+-- nowhere in that migration at all. Both tables were created together back in
+-- `20260712000001_schema.sql` (:280, :288) and both took their write grants from
+-- the same `20260712000006_grants.sql` blanket; what differs is only how each
+-- escaped the revoke -- one was overlooked by migration 11, the other was never
+-- in its scope. Same end state, both corrected here.
 --
 -- MEASURED: with RLS on and only a SELECT policy present, a direct PostgREST call
 -- as `authenticated` could not write -- POST returned `new row violates row-level
