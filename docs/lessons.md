@@ -35,8 +35,8 @@ count it cannot go stale.
 
 **Rule:** After any state-changing tool call, read the state back before relying on it.
 **Why:** A success return describes the call, not the world. The two can disagree silently.
-**Evidence:** Plan C1 `bd7f574` — `resize_window` returned success twice while `innerWidth` never left 1280.
-**Applies to:** browser automation, file writes, migrations, anything whose effect is observable.
+**Evidence:** Plan C1 `bd7f574` — `resize_window` returned success twice while `innerWidth` never left 1280. · Certification grants verification, 2026-08-19 — a PostgREST `PATCH` with `Prefer: return=minimal` answered **204** where RLS had silently filtered the statement to zero rows. That status is returned identically whether the update touched every matching row or none, so it cannot distinguish the two outcomes the probe existed to tell apart. Reading the row back settled it (unchanged; no row anywhere held the sentinel), and re-issuing the same call as `Prefer: return=representation,count=exact` turned the 204 into a truthful 403. The 204 was one sentence away from being reported as a critical privilege-escalation finding.
+**Applies to:** browser automation, file writes, migrations, anything whose effect is observable. Prefer a response shape that carries the affected-row count over one that only carries a status.
 
 ### L-002 — Count, don't add up — and record the command, not its output
 
@@ -68,6 +68,7 @@ count it cannot go stale.
 **Rule:** On any query that aggregates across users, ask *which client factory, and what does that table's SELECT policy say* — never *is the test green*.
 **Why:** RLS is enforced by Postgres and no unit test reaches Postgres. `test/supabase-mock.ts` returns whatever a resolver returns.
 **Evidence:** Plan C1 Task 10 — `PopularStrategyV1` read `user_lesson_library` through the cookie-bound `createClient()` while that table's only SELECT policy is `using (user_id = auth.uid())`; in production every learner set tops out at size 1. All 7 tests and all 4 mutation checks were green; a reviewer caught it by reading the migration. Fixed `84a7c71`.
+**Evidence (cont.):** Certification column grant, closed 2026-08-19 — Phase 2b shipped a column-scoped grant withholding `certification_questions.correct_answer` and could not verify it; the unit suite was green throughout and, per this lesson, said nothing either way. Settled by applying the full migration chain to a real local Supabase and querying as the real `authenticated` role over PostgREST: the six granted columns returned rows, while `correct_answer`, `explanation` and `select=*` each returned `42501`. The same run measured a gap that reading the migration had not surfaced — both certification tables still carried table-wide INSERT/UPDATE/DELETE, revoked in `20260819000028`. **A real database is reachable on this project's dev machine**; when a question is RLS- or grant-shaped, that is the only instrument that answers it.
 **Applies to:** cross-user aggregates. Pattern to copy: `lib/data/leaderboard.ts:68` — `createServiceClient()` for the aggregate, `createClient()` kept for caller-scoped reads. Swap **only** the aggregating read. Comment every deliberate service-role read with why it is safe (aggregate only, no per-user field crosses the function boundary). To test it, mock both `@/lib/supabase/service` and `@/lib/supabase/server` and register no resolver for the table on the wrong one, so the mock's throw-on-unregistered-table fires.
 
 ### L-006 — A guard driven by the list it protects cannot detect an omission from that list
