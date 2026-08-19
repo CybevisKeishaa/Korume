@@ -1,67 +1,47 @@
 -- Phase 2b follow-up: on `certification_questions` and `certification_tests`,
--- restore the write-grant revoke their sibling content tables already carry.
--- Measured 2026-08-19 against a real Postgres + PostgREST, not inferred.
+-- revoke the write grants that `authenticated` still carried. Measured
+-- 2026-08-19 against a real Postgres + PostgREST, not inferred.
 --
 -- SCOPE, stated precisely because this comment's first draft overclaimed it:
--- this closes the asymmetry ON THESE TWO TABLES ONLY. Twelve other public
--- tables hold the same shape -- `authenticated` carries INSERT/UPDATE/DELETE
--- while no policy admits any write -- including `subscriptions`. That residual
--- is recorded in `mem:project_status` under Deferred follow-ups. Enumerate it
--- with this query, never from a written count (`L-002`):
---
---   select t.table_name from information_schema.table_privileges t
---    where t.grantee = 'authenticated' and t.table_schema = 'public'
---      and t.privilege_type in ('INSERT','UPDATE','DELETE')
---      and not exists (select 1 from pg_policies p
---                       where p.tablename = t.table_name
---                         and p.cmd in ('INSERT','UPDATE','DELETE','ALL')
---                         and p.roles::text like '%authenticated%')
---    group by t.table_name order by t.table_name;
+-- this closes the asymmetry ON THESE TWO TABLES ONLY. Other public tables hold
+-- the same shape -- `authenticated` carries INSERT/UPDATE/DELETE while no policy
+-- admits any write -- `subscriptions` among them. That residual, and the query
+-- that enumerates it (never a count -- `L-002`), are recorded in
+-- `mem:project_status` under Deferred follow-ups.
 --
 -- WHY THESE TWO, and by two different routes. 20260713000011_reading_jlpt.sql
--- revoked the write grants from `authenticated` on both CONTENT tables it
--- created (`reading_passages`, `reading_questions` -- it also created
--- `user_reading_attempts`, which is per-user and rightly keeps its writes) but
--- not on `jlpt_questions`, now `certification_questions`. `jlpt_tests` -- now
--- `certification_tests` -- appears nowhere in that migration at all; its grants
--- come solely from `20260712000006_grants.sql`'s one-time blanket. Same end
--- state, so both are corrected here:
+-- revoked the write grants on both CONTENT tables it created (`reading_passages`,
+-- `reading_questions`; it also created `user_reading_attempts`, which is per-user
+-- and rightly keeps its writes) but not on `jlpt_questions`, now
+-- `certification_questions`. `jlpt_tests` -- now `certification_tests` -- appears
+-- nowhere in that migration; it predates it, and its write grants come from
+-- `20260712000006_grants.sql`'s one-time blanket. Same end state, both corrected
+-- here.
 --
---   reading_questions        -> SELECT (5 cols), REFERENCES, TRIGGER, TRUNCATE
---   certification_questions  -> SELECT (6 cols), REFERENCES, TRIGGER, TRUNCATE, INSERT, UPDATE, DELETE
---   certification_tests      -> SELECT,          REFERENCES, TRIGGER, TRUNCATE, INSERT, UPDATE, DELETE
+-- MEASURED: with RLS on and only a SELECT policy present, a direct PostgREST call
+-- as `authenticated` could not write -- POST returned `new row violates row-level
+-- security policy`, and PATCH matched zero rows (confirmed by reading the data
+-- back). So for INSERT/UPDATE/DELETE this is defence in depth, not an open hole.
+-- It becomes one the moment anyone adds a permissive INSERT/UPDATE policy --
+-- exactly the failure mode migration 11's own comment predicted for SELECT, one
+-- gate over.
 --
--- MEASURED: with RLS on and only a SELECT policy present, a direct PostgREST
--- call as `authenticated` could not write -- POST returned `new row violates
--- row-level security policy`, and PATCH matched zero rows (confirmed by reading
--- the data back). So for INSERT/UPDATE/DELETE this is defence in depth, not an
--- open hole. It becomes one the moment anyone adds a permissive INSERT/UPDATE
--- policy -- exactly the failure mode migration 11's own comment predicted for
--- SELECT, one gate over.
+-- NOT ADDRESSED HERE, deliberately: `authenticated` AND `anon` also hold TRUNCATE,
+-- TRIGGER and REFERENCES on every public table -- from Supabase's bootstrap
+-- `pg_default_acl`, not from any migration in this repo. RLS does not gate
+-- TRUNCATE, so "held shut by RLS" above is true of INSERT/UPDATE/DELETE and of
+-- nothing else; it is however unreachable from the browser (PostgREST emits no
+-- TRUNCATE verb). Repo-wide hardening item, recorded in `mem:project_status`.
 --
--- TRUNCATE IS NOT RLS-GATED, and is deliberately left in place. `authenticated`
--- holds TRUNCATE and TRIGGER here the same way it does repo-wide, from the same
--- blanket grant, and RLS does not gate TRUNCATE -- so "held shut by RLS" above
--- is true of INSERT/UPDATE/DELETE and of nothing else. It is unreachable from
--- the browser (PostgREST emits no TRUNCATE verb), which is why it stays a
--- repo-wide hardening item instead of something this migration widens to cover.
+-- VERIFYING THIS: never read a PostgREST PATCH's 204 as proof of a write, and do
+-- not reach for `return=representation` on these tables. The probe and both of its
+-- traps have one home -- `mem:project_status` Key gotchas, "Verifying a PostgREST
+-- write"; `docs/lessons.md` L-001 carries the lesson it evidences.
 --
--- WARNING for whoever verifies this. A PostgREST PATCH answers 204 with
--- `Content-Range: */*` under `Prefer: return=minimal` whether it wrote every row
--- or none. Ask for `Prefer: count=exact` ALONE: the same call answers 204 with
--- `Content-Range: */0`, which IS the affected-row count and needs no SELECT
--- privilege. Do NOT reach for `return=representation` on a column-grant-
--- restricted table -- it answers 403 `42501` because the default representation
--- is `*` and the column grant forbids reading it back. That looks identical to a
--- refused write and is not one. Measured with the pre-migration grants restored:
--- `return=minimal` -> 204 `*/*`; `count=exact` -> 204 `*/0`;
--- `return=representation` -> 403; the same call naming only granted columns in
--- `select=` -> 200 `*/0` `[]`, which is what proves the 403 was a read denial.
---
--- SAFE TO REVOKE: no write path to either table runs as `authenticated`. Every
--- one goes through `createServiceClient()` behind `requireAdmin()`
--- (`lib/data/admin-content.ts`); `lib/data/jlpt.ts`'s only `authenticated`
--- insert targets `user_test_attempts`, which is untouched here.
+-- SAFE TO REVOKE: no write path to either table runs as `authenticated`. Every one
+-- goes through `createServiceClient()` behind `requireAdmin()`
+-- (`lib/data/admin-content.ts`); `lib/data/jlpt.ts`'s only `authenticated` insert
+-- targets `user_test_attempts`, which is untouched here.
 --
 -- SELECT IS DELIBERATELY UNCHANGED on both tables -- including the column-scoped
 -- grant on `certification_questions` that withholds `correct_answer` and

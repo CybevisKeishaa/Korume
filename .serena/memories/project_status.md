@@ -520,6 +520,22 @@ unbuilt from the original 8 layers — see § ROADMAP SEQUENCING for why they ar
   **Layer 7 admin approval MUST use the service-role client** (authenticated has zero UPDATE on
   videos.status/title/etc.). For shared AI content the L4 pattern: SELECT-only policy + explicit
   revoke of write grants + service-role write path.
+- **⭐ Verifying a PostgREST write — the response lies in two different ways.** A `PATCH` under
+  `Prefer: return=minimal` answers **204 `Content-Range: */*`** whether it updated every matching row or
+  none: it cannot distinguish them. Ask for **`count=exact`** instead (alone, or alongside
+  `return=minimal` — only `return=representation` spoils it): the same call answers **204 `*/0`** when
+  RLS filtered it to nothing, and `0-0/N` when N rows were actually written. Two traps, both measured
+  2026-08-19 on `certification_questions`:
+  (a) **`count=exact` still needs SELECT on the columns named in the FILTER** — not on the columns being
+  written, and not on what a representation would return. PostgREST rejects an unfiltered UPDATE
+  outright (`400 21000 "UPDATE requires a WHERE clause"`), so that requirement is never optional; with
+  SELECT revoked entirely the probe returns 403 and tells you nothing.
+  (b) **`return=representation` is a trap on any column-grant-restricted table** — the default
+  representation is `*`, so it answers **403 `42501`** for a *read* reason indistinguishable from a
+  refused write. Narrowing it with `select=<granted cols>` turns the same call into 200, which is how
+  you tell the two apart.
+  This is the canonical home for the recipe; `docs/lessons.md` L-001 carries the lesson it evidences
+  and points here.
 - **§2 & YouTube audio**: never extract/compare YouTube source audio; pitch reference = TTS of
   the transcript line TEXT; user contour = mic recording only.
 - **Sentence mining stores NO media** (§2): card = text + `{video_id,start,end}`.
@@ -641,24 +657,24 @@ enumerated in commit `74a752a`'s message. Pairs naturally with the long-standing
 guard asserting RLS is enabled on all public tables), which the same harness would satisfy.
 
 **⭐ RESIDUAL from the same run — the write-grant asymmetry is repo-wide, and only two tables were
-fixed.** `20260819000028` closed it on `certification_questions`/`certification_tests`; a dozen other
-public tables still hold the same shape (`authenticated` carries INSERT/UPDATE/DELETE while no policy
-admits any write), **including `subscriptions`**. All are held shut by RLS alone, exactly as the
-certification pair was — defence-in-depth missing, not an open hole. Never write the list or its size
-here (`L-002`); enumerate it:
+fixed.** `20260819000028` closed it on `certification_questions`/`certification_tests`. Other public
+tables still hold the same shape — `authenticated` carries INSERT/UPDATE/DELETE while no policy admits
+any write — **`subscriptions` among them**. All are held shut by RLS alone, exactly as the certification
+pair was: defence-in-depth missing, not an open hole. Never write the list or its size here (`L-002`);
+enumerate it:
 ```sql
 select t.table_name from information_schema.table_privileges t
  where t.grantee='authenticated' and t.table_schema='public'
    and t.privilege_type in ('INSERT','UPDATE','DELETE')
-   and not exists (select 1 from pg_policies p where p.tablename=t.table_name
-         and p.cmd in ('INSERT','UPDATE','DELETE','ALL')
-         and p.roles::text like '%authenticated%')
+   and not exists (select 1 from pg_policies p
+                    where p.schemaname='public' and p.tablename=t.table_name
+                      and p.cmd in ('INSERT','UPDATE','DELETE','ALL')
+                      and p.roles::text like '%authenticated%')
  group by t.table_name order by t.table_name;
 ```
-⚠️ **Separately: `authenticated` holds TRUNCATE and TRIGGER repo-wide and RLS does NOT gate TRUNCATE.**
-Unreachable from the browser (PostgREST emits no TRUNCATE verb), which is why it stays a hardening
-item rather than a live hole — but "RLS holds it shut" is a claim about INSERT/UPDATE/DELETE only, and
-should never be written unqualified again.
+(The `roles like` test misses a policy granted `to public`, which would also apply to `authenticated`;
+none exists today and the failure direction is over-reporting, which is the safe one.) TRUNCATE is a
+separate matter with its own home — see § Key gotchas and the L6 entry below.
 From L1: GDPR delete-my-data; getUser() in middleware on all routes (perf); conditional
 aria-describedby; users_update_own email/level column scope. From L2: `unique(word, reading)`
 won't dedupe reading-less vocab (NULLs distinct) — matters when admin CMS adds entries; add CI
@@ -680,8 +696,12 @@ coverage) — worth doing before real users. From L6: one intermittent unit-test
 once (822/823, then 823/823 twice; test unidentified, reviewer found no time-fragile test in the
 new code — watch for recurrence); markNotificationsRead maps DB errors to 400 (should split 500);
 recommendations tokenizes ≤100 transcripts/request with no cache (revisit with catalog growth or
-L3's deferred difficulty-cache); Supabase default grants give authenticated TRUNCATE/REFERENCES/
-TRIGGER repo-wide (not exploitable via PostgREST, hardening candidate); badge iconUrl all null
+L3's deferred difficulty-cache); Supabase's bootstrap `pg_default_acl` (NOT
+`20260712000006_grants.sql`, which grants only select/insert/update/delete and deliberately grants
+`anon` nothing) gives **both `authenticated` AND `anon`** TRUNCATE/REFERENCES/TRIGGER on every public
+table — count them, never quote a figure. **RLS does not gate TRUNCATE**, so "RLS holds it shut" is
+only ever a claim about INSERT/UPDATE/DELETE. Not reachable via PostgREST (no TRUNCATE verb), hence a
+hardening candidate rather than a live hole; badge iconUrl all null
 (SVG fallback in UI — real icons = content task); srs_due notification producer unwired (needs
 scheduler, pairs with push/email deliverer later); manual browser click-through of dashboard/bell/
 recommendations not done (unit+build coverage only). From L7: ~~admin dialog focus trap~~ **REPAID in L9a-Plan2** (`components/admin/dialog.tsx` is

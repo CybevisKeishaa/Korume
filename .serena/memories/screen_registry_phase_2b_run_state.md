@@ -49,14 +49,18 @@ back). Defence-in-depth, not an open hole — but a real one the moment anyone a
 INSERT/UPDATE policy. Closed by **`20260819000028_certification_grants_hardening.sql`**, which also
 renamed the stale constraints (DEBT 2 item 1, now closed with it).
 
-⚠️ **`L-001`, learned here the hard way, twice.** A PostgREST `PATCH` with `Prefer: return=minimal`
-answers **204 whether it wrote every row or none**. Never read that as proof of a write — read the
-data back, or ask for **`Prefer: count=exact` alone**, which answers 204 with `Content-Range: */0`,
-the affected-row count, and needs no SELECT privilege. ⚠️ **`return=representation` is a trap here**
-and this file prescribed it in its first draft: on a column-grant-restricted table it answers 403
-`42501` because the default representation is `*`, which is a *read* denial wearing the appearance of
-a refused write. Measured across all four variants; naming only granted columns in `select=` turns
-that 403 into 200 `*/0` `[]`. The wrong recipe was caught by the pre-merge review, not by its author.
+⚠️ **How to verify a PostgREST write without fooling yourself** — a `PATCH`'s 204 is not proof of a
+write, and `return=representation` is a trap on a column-grant-restricted table. The probe and both
+traps have **one home**: `mem:project_status` § Key gotchas, "Verifying a PostgREST write". Do not
+restate it here. `docs/lessons.md` `L-001` carries the lesson.
+
+**Worth keeping, because it is about this run and not about PostgREST:** the first two drafts of that
+recipe were each *wrong in the same way the lesson warns about* — they prescribed a probe that could
+not tell the two outcomes apart. Both were caught by a pre-merge review, neither by the author.
+`L-012` fired a fifth time on this project here, and the pattern was narrower than on 2b: the recipe
+was right, the **qualifiers around it** were not ("needs no SELECT privilege", "from the same blanket
+grant", "ALONE", a hard count two lines above a citation of `L-002`). That matches `L-003`'s note that
+a self-report is weakest in its scope words.
 
 **Why the revoke was worth doing even though RLS already held — the argument to reuse.** The
 observable behaviour changed, not just the permission set. Measured on the same row: **before**, a
