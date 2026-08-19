@@ -18,8 +18,16 @@ whole-branch review (`L-011`) → fix wave → **the `L-012` re-review of that w
 that re-review raised → controller verification of each.
 
 **Both of 2b's debts are now CLOSED (2026-08-19) on branch `certification-grants-hardening` —
-`74a752a` (migration) + `ff985f7` (lessons). ⚠️ NOT YET MERGED to master at the time of writing;
-if `git log master` does not contain `74a752a`, the merge is the one step still owed.**
+`74a752a` (migration) + `ff985f7` (lessons), **MERGED to master `--no-ff` at `a371a4b`** on
+2026-08-19. Branch kept, per repo convention. Post-merge gate re-measured on master, not inherited:
+`supabase db reset` exit 0 · real-DB probe 10/10 · `tsc` 0 · `lint` exit 0, mix `54 + 23` · `vitest`
+237 files / 2113 tests exit 0.**
+
+**What the merge cost, and it is the reusable part: four review passes and three fix waves, all of
+them over documentation.** The SQL was correct in the first commit and never changed — md5 of its
+non-comment lines is identical across all seven commits. Every wave was documentation about a probe,
+and every wave introduced a fresh false claim while removing one. See § What this branch cost below
+and `docs/lessons.md` `L-012`, which now carries this branch as evidence.
 What carries forward is one *new*, deliberately-scoped task — a DB-backed regression guard — plus
 two residuals that were never load-bearing. See § CARRY FORWARD at the end.
 

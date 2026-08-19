@@ -530,7 +530,11 @@ Companion Core `9f09cf2`, L9a-Plan1 `69f22e6`, L9a-Plan2 `fcd35af`, L9a-Plan3 `d
 Design-docs reconciliation `20d6eed`, Shadowing Hub Lesson Workspace Plan A `a6a7617` / Plan B
 `b36c455`, Shadowing Practice Figma reconciliation `b56bba1`, Korume rebrand Plan A `69c4685` /
 Plan B `44521bc`, Figma token + typography foundation `86328bc`, Screen-port workflow `7277ac1`
-(2026-08-07), Shadowing Hub Plan C1 `bd7f574` (2026-08-08), **Lessons Registry `88c1301` (2026-08-11)**.
+(2026-08-07), Shadowing Hub Plan C1 `bd7f574` (2026-08-08), Lessons Registry `88c1301` (2026-08-11),
+Screen Registry Phase 1a `fff90fa` / 1b `6f67dd1` (2026-08-13) / 2a `e767537` / 2b `10caaac`
+(2026-08-14), **certification grants hardening `a371a4b` (2026-08-19)**.
+⚠️ This list went five merges stale before 2026-08-19 — every screen-registry phase was missing.
+Re-derive it rather than trusting it: `git log --oneline --merges master`.
 
 ## Progress
 **The layer-by-layer build log for L1–L7 lives in `mem:project_status_archive`** — it is a
