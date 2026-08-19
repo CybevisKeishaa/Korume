@@ -1,9 +1,11 @@
 # Screen Registry — run state for Phases 1a/1b/2a (HISTORICAL — 2b lives elsewhere)
 
 > ✅ **Phase 2b is COMPLETE AND MERGED** to master at `10caaac` (`--no-ff`, 2026-08-14). See
-> `mem:screen_registry_phase_2b_run_state`, which is now 2b's historical record and carries the two
-> debts that survive it — chiefly the **unverified column grant on `certification_questions`**, which
-> no green suite may close (`L-005`). **There is no live next action for the screen registry** until
+> `mem:screen_registry_phase_2b_run_state`, which is now 2b's historical record. ✅ **Both debts that
+> survived 2b are CLOSED (2026-08-19)** — the column grant on `certification_questions` was verified
+> against a real local Supabase over PostgREST (`L-005` was right that no green suite could close it),
+> and the stale constraint names were renamed. That run also found and fixed a write-grant gap on both
+> certification tables. **There is no live next action for the screen registry** until
 > Phase 3 is scoped. This file is the historical record for Phases 1a, 1b and 2a and deliberately
 > carries no 2b status — one fact, one home (CLAUDE.md §6).
 

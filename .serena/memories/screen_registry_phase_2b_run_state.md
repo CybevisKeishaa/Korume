@@ -49,9 +49,22 @@ back). Defence-in-depth, not an open hole — but a real one the moment anyone a
 INSERT/UPDATE policy. Closed by **`20260819000028_certification_grants_hardening.sql`**, which also
 renamed the stale constraints (DEBT 2 item 1, now closed with it).
 
-⚠️ **`L-001`, learned here the hard way:** a PostgREST `PATCH` with `Prefer: return=minimal` answers
-**204 whether it wrote every row or none**. Never read that as proof of a write. Read the data back,
-or ask for `return=representation,count=exact` — which turns the same call into a truthful 403.
+⚠️ **`L-001`, learned here the hard way, twice.** A PostgREST `PATCH` with `Prefer: return=minimal`
+answers **204 whether it wrote every row or none**. Never read that as proof of a write — read the
+data back, or ask for **`Prefer: count=exact` alone**, which answers 204 with `Content-Range: */0`,
+the affected-row count, and needs no SELECT privilege. ⚠️ **`return=representation` is a trap here**
+and this file prescribed it in its first draft: on a column-grant-restricted table it answers 403
+`42501` because the default representation is `*`, which is a *read* denial wearing the appearance of
+a refused write. Measured across all four variants; naming only granted columns in `select=` turns
+that 403 into 200 `*/0` `[]`. The wrong recipe was caught by the pre-merge review, not by its author.
+
+**Why the revoke was worth doing even though RLS already held — the argument to reuse.** The
+observable behaviour changed, not just the permission set. Measured on the same row: **before**, a
+`PATCH` as `authenticated` answered **204** — the request was admitted, travelled all the way to the
+executor, and was silently filtered to zero rows by RLS. **After**, the same call answers **403** at
+the grant boundary. Identical security outcome; opposite *observability*. A boundary that refuses
+silently cannot be distinguished from one that broke months ago — which is the whole reason
+defence-in-depth is worth having where a single gate already suffices. (User's framing, 2026-08-19.)
 
 **The reproducible recipe, better than the one this file used to carry.** Docker Desktop up →
 `npx supabase db reset` → query `information_schema.column_privileges`, then probe PostgREST with a

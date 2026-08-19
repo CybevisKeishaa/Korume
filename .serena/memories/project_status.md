@@ -639,6 +639,26 @@ has to settle DB lifecycle, CI dependency, seed/reset, credentials, suite runtim
 when Docker is absent — an architecture decision, not a fix. The assertion list to rebuild from is
 enumerated in commit `74a752a`'s message. Pairs naturally with the long-standing L2 item below (CI
 guard asserting RLS is enabled on all public tables), which the same harness would satisfy.
+
+**⭐ RESIDUAL from the same run — the write-grant asymmetry is repo-wide, and only two tables were
+fixed.** `20260819000028` closed it on `certification_questions`/`certification_tests`; a dozen other
+public tables still hold the same shape (`authenticated` carries INSERT/UPDATE/DELETE while no policy
+admits any write), **including `subscriptions`**. All are held shut by RLS alone, exactly as the
+certification pair was — defence-in-depth missing, not an open hole. Never write the list or its size
+here (`L-002`); enumerate it:
+```sql
+select t.table_name from information_schema.table_privileges t
+ where t.grantee='authenticated' and t.table_schema='public'
+   and t.privilege_type in ('INSERT','UPDATE','DELETE')
+   and not exists (select 1 from pg_policies p where p.tablename=t.table_name
+         and p.cmd in ('INSERT','UPDATE','DELETE','ALL')
+         and p.roles::text like '%authenticated%')
+ group by t.table_name order by t.table_name;
+```
+⚠️ **Separately: `authenticated` holds TRUNCATE and TRIGGER repo-wide and RLS does NOT gate TRUNCATE.**
+Unreachable from the browser (PostgREST emits no TRUNCATE verb), which is why it stays a hardening
+item rather than a live hole — but "RLS holds it shut" is a claim about INSERT/UPDATE/DELETE only, and
+should never be written unqualified again.
 From L1: GDPR delete-my-data; getUser() in middleware on all routes (perf); conditional
 aria-describedby; users_update_own email/level column scope. From L2: `unique(word, reading)`
 won't dedupe reading-less vocab (NULLs distinct) — matters when admin CMS adds entries; add CI

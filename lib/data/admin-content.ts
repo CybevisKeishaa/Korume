@@ -40,9 +40,13 @@ export type { ContentType } from "@/lib/validation/admin-content";
  * they use the original names `jlpt_tests`/`jlpt_questions`, renamed by
  * 20260814000027_certification_rename.sql); the matching
  * table-level INSERT/UPDATE/DELETE grants from the one-time
- * `20260712000006_grants.sql` blanket grant are dead weight with no RLS
+ * `20260712000006_grants.sql` blanket grant were dead weight with no RLS
  * policy to let them through — this module never relies on them, using the
- * service role (bypasses RLS) for every write instead.
+ * service role (bypasses RLS) for every write instead. On the two
+ * certification tables and the two reading tables they are now not merely
+ * dead but absent, revoked by 20260819000028_certification_grants_hardening
+ * and 20260713000011 respectively; on `kanji`/`vocab`/`grammar_points` they
+ * are still present and still dead. Either way this module is unaffected.
  */
 
 type GuardFailure = Extract<RequireAdminResult, { ok: false }>;
