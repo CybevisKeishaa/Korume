@@ -30,7 +30,32 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-12) — **Phase 0's INVENTORY is COMPLETE (57/57 frames). The next step is the IA proposal, and it is BLOCKED on 5 answers from the user.**
+## ▶ NEXT ACTION (updated 2026-08-19) — **nothing is pending on the screen registry. The live next action is L9b Plan 1.**
+
+Phase 0 is COMPLETE AND CLOSED — all 57 frames inventoried, capability map built, the four IA blockers
+ruled, §20's content conflicts closed, and **the IA is LOCKED**. **Screen Registry Phases 1a, 1b, 2a
+and 2b are all built and merged** (2b at `10caaac`, 2026-08-14), and the two debts 2b left behind were
+closed on 2026-08-19 (`a371a4b`, verified against a real database). **There is no live screen-registry
+next action until Phase 3 is scoped**, and scoping it is not urgent — see
+`mem:screen_registry_phase_2b_run_state`.
+
+**The live next action is L9b Plan 1** — GDPR delete-my-data, persisting the voice pronunciation score,
+and badge icons. GDPR is a `CLAUDE.md` §2 non-negotiable owed since Layer 1 and has to land before
+real users exist. Decisions 2–3 (the three-stage delete lifecycle; `/settings` placement) are already
+ruled — do not re-litigate them — and the next step is writing the spec for the three remaining items.
+⚠️ Read `l9b-plan1-launch-blocker-debt-status` first: the transcript-submit item this plan originally
+carried was **superseded**, not deferred, so the plan is smaller than older text here implies.
+
+**⚠️ Standing instruction that survives all of the above: do NOT settle navbar/routes/registry without
+the user's review.** ("Do not port any screen yet" is retired — the IA is locked and the registry
+exists, so porting is ordinary work now rather than something to block on.)
+
+<details><summary>(superseded 2026-08-19) the 2026-08-12 block — "the IA proposal is BLOCKED on 5 answers from the user"</summary>
+
+⚠️ **All five questions below were answered, and every stage downstream of them has since shipped.**
+Kept only as the record of what Phase 0 delivered. This block sat in the file's "read this first"
+region long after it stopped being true, which is `L-026` exactly: a resume document is code for the
+next session.
 
 **Read `mem:phase0_figma_inventory_run_state` § "▶▶ RESUME HERE" first — it is the authority.**
 
@@ -55,6 +80,8 @@ route/API reconciliation → UI implementation → L8 → L9.
 
 **⚠️ Standing instructions: do NOT port any screen yet, and do NOT settle navbar/routes/registry
 without the user's review.**
+
+</details>
 
 ### The six cross-cutting systems the inventory found (this is the headline result)
 A capability sighted in 3+ independent modules is **not a feature of any of them**:
