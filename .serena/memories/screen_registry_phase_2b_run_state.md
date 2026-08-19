@@ -1,8 +1,8 @@
 # Screen Registry Phase 2b — ✅ COMPLETE AND MERGED
 
-> Superseded as "live work". This file is now the **historical record of 2b plus its two open
-> debts**. `mem:screen_registry_run_state` covers 1a/1b/2a. Neither is the live next action —
-> there is no live next action for the screen registry until Phase 3 is scoped.
+> Superseded as "live work". This file is the **historical record of 2b, and of the 2026-08-19 run
+> that closed both of its debts**. `mem:screen_registry_run_state` covers 1a/1b/2a. Neither is the
+> live next action — there is no live next action for the screen registry until Phase 3 is scoped.
 
 # ▶▶ RESUME HERE
 
@@ -17,58 +17,61 @@ Post-merge gate re-run **on master**, measured not inherited:
 whole-branch review (`L-011`) → fix wave → **the `L-012` re-review of that wave** → the two findings
 that re-review raised → controller verification of each.
 
-**Two debts survive, and they are the only things to carry forward. Both are below.**
+**Both of 2b's debts are now CLOSED (2026-08-19) on branch `certification-grants-hardening` —
+`74a752a` (migration) + `ff985f7` (lessons). ⚠️ NOT YET MERGED to master at the time of writing;
+if `git log master` does not contain `74a752a`, the merge is the one step still owed.**
+What carries forward is one *new*, deliberately-scoped task — a DB-backed regression guard — plus
+two residuals that were never load-bearing. See § CARRY FORWARD at the end.
 
-## ⭐⭐ DEBT 1 — the unverified column grant (security, OPEN)
+## ✅ DEBT 1 — CLOSED 2026-08-19, by measurement against a real database
 
-`certification_questions` inherits `revoke select … from authenticated` plus a column-scoped `grant`
-that deliberately **omits `correct_answer`** (`20260713000011_reading_jlpt.sql:116-117`), with RLS
-`using (true)` on top. The rename must not have silently restored table-wide select.
+**The column grant survived the Phase 2b rename.** Verified on a real local Supabase (full migration
+chain applied from zero) as the real `authenticated` role, over PostgREST — the exact vector this
+debt named:
 
-**This was never verified.** No Docker, no reachable Postgres, no `psql`. `L-005`: the Supabase mock
-models no RLS and no column grants, so the green 2113-test suite **is not evidence about this** and
-must never be allowed to close it.
+- `authenticated` SELECT is scoped to exactly `id, test_id, section, question_data, question_type,
+  order_index`. **`correct_answer` and `explanation` are absent**, at the SQL grant layer and through
+  PostgREST alike.
+- `select=correct_answer` / `select=explanation` / `select=*` → **403 `42501`**; anon → 401.
+- Non-vacuous: the six granted columns returned 68 real rows, so "denied" is a denial and not an
+  empty table (`L-004`).
 
-**Residual risk is bounded but not zero** — the whole-branch review confirmed the second line of
-defence survives: `lib/data/jlpt.ts` selects an explicit column list excluding `correct_answer`,
-`toPublicQuestionData` strips it, the scoring path that does read it goes through
-`createServiceClient()` server-side, and the "never leaks correct_answer/explanation" regression test
-is still live. Exposure would therefore need a **direct PostgREST query from a browser** with the
-anon/authenticated key — a real vector on Supabase, but a second independent failure on top.
+**The migration's other two unknowns closed in the same run.** `20260814000027` executed for the
+first time ever, inside a full chain from zero, exit 0 — no partial failure. And its own DEPLOY NOTE
+("confirm on FIRST deploy that the PostgREST schema cache picked the rename up") is answered: it did,
+unprompted, with no `notify pgrst`.
 
-**Also unverified: the migration has never run anywhere.** Its first execution will be against a real
-database. It is non-idempotent (consistent with every migration in this repo — none uses
-`if not exists`), so a partial failure leaves a half-renamed schema.
+**What the run additionally found, and fixed.** Both certification tables still carried table-wide
+INSERT/UPDATE/DELETE for `authenticated` — `20260713000011_reading_jlpt.sql` revoked them on
+`reading_passages` and `reading_questions` but not on `jlpt_questions`. RLS was holding it shut alone
+(POST → `new row violates row-level security policy`; PATCH → zero rows, confirmed by reading the data
+back). Defence-in-depth, not an open hole — but a real one the moment anyone adds a permissive
+INSERT/UPDATE policy. Closed by **`20260819000028_certification_grants_hardening.sql`**, which also
+renamed the stale constraints (DEBT 2 item 1, now closed with it).
 
-### The recipe that settles it — do this first, next time a database is reachable
+⚠️ **`L-001`, learned here the hard way:** a PostgREST `PATCH` with `Prefer: return=minimal` answers
+**204 whether it wrote every row or none**. Never read that as proof of a write. Read the data back,
+or ask for `return=representation,count=exact` — which turns the same call into a truthful 403.
 
-1. Start Docker Desktop, then `docker run --rm -e POSTGRES_PASSWORD=x -p 5433:5432 postgres:16`.
-2. Create a stub `authenticated` role first (Supabase's roles do not exist in vanilla Postgres), then
-   apply **in order**: `20260712000001_schema.sql` · `20260712000002_rls.sql` ·
-   `20260712000003_indexes.sql` · `20260713000011_reading_jlpt.sql` ·
-   `20260814000027_certification_rename.sql`.
-3. Run and require the exact row set:
-   ```sql
-   select grantee, privilege_type, column_name
-   from information_schema.column_privileges
-   where table_name = 'certification_questions' and grantee = 'authenticated'
-   order by column_name;
-   ```
-   Expect `id, order_index, question_data, question_type, section, test_id` and **no
-   `correct_answer` row**.
-4. Also assert `relrowsecurity` is still true and that policy `certification_questions_read` exists on
-   the renamed relation.
+**The reproducible recipe, better than the one this file used to carry.** Docker Desktop up →
+`npx supabase db reset` → query `information_schema.column_privileges`, then probe PostgREST with a
+JWT minted off the local `JWT_SECRET`. Real `authenticated`/`anon` roles and a live PostgREST beat the
+old vanilla-`postgres:16` + stub-role recipe on every axis, and PostgREST is the only layer that tests
+the browser-facing vector rather than a proxy for it. **Always include a positive control** — a query
+shape returning zero rows proves nothing until you have seen it return rows where it should.
 
-That run doubles as the migration's first execution test, which is the other thing nobody has done.
+## DEBT 2 — ✅ item 1 CLOSED 2026-08-19; items 2 and 3 still open (non-blocking, deliberate)
 
-## DEBT 2 — three recorded residuals (all non-blocking, all deliberate)
-
-1. **FK constraint keeps its old name.** `certification_questions.test_id` still carries the
-   auto-generated `jlpt_questions_test_id_fkey`. Behaviour is fully preserved (Postgres tracks FKs by
-   OID, not name), and the whole-branch review confirmed nothing depends on the name — PostgREST
-   embedding at `lib/data/admin-content.ts` resolves by **table** name, and there is only one FK
-   between the pair, so no `!constraint_name` disambiguation is needed. **Rename it opportunistically
-   in the next migration that touches these tables** — do not add a migration just for it.
+1. ✅ **Stale constraint names — CLOSED** in `20260819000028_certification_grants_hardening.sql`.
+   The policy this residual set ("rename opportunistically in the next migration that touches these
+   tables — do not add a migration just for it") worked exactly as intended: the grants-hardening
+   migration was that migration. ⚠️ **This residual under-counted the problem — it named only the FK,
+   and there were three stale names**, because both primary keys carried the old name too:
+   `jlpt_questions_test_id_fkey` → `certification_questions_test_id_fkey`,
+   `jlpt_questions_pkey` → `certification_questions_pkey`,
+   `jlpt_tests_pkey` → `certification_tests_pkey`. All renamed and verified in `pg_constraint`;
+   no `jlpt_*` constraint name remains on either table. (`L-002` again — the residual was written
+   from what the reviewer happened to notice, not from a query over `pg_constraint`.)
 2. **`lib/data/admin-content.ts`'s "(see migrations 1, 2, 11, 13)" is wrong about 13.**
    `20260713000013_gamification.sql` creates only `xp_events` and `notifications` and contains none of
    the tables listed. **Pre-dates this branch** (since `f4fad73`, Layer 7) and was deliberately left
@@ -155,10 +158,33 @@ across five checks. Root cause never investigated; the parallel-worker explanati
 hypothesis, not a finding. It makes "vitest all green" a coin-flip gate for every branch — worth its
 own ticket.
 
+## ▶ CARRY FORWARD — one scoped task, deliberately not done on 2026-08-19
+
+**A DB-backed regression guard for RLS and column grants. NOT YET SCOPED — and that is a decision,
+not an omission** (user ruling 2026-08-19).
+
+The 2026-08-19 run closed the *current* security question but left **no guard against a future
+regression**. `L-005` is explicit that no mocked test can ever be that guard, so the only instrument
+that works is a test running against a real Postgres. **That run proved such a test is feasible on
+this machine** — full chain applied from zero, real `authenticated`/`anon` roles, PostgREST probed
+with a locally-minted JWT, ten assertions, exit 0.
+
+**Why it was deliberately deferred rather than bolted on:** wiring a real database into the suite is
+an architecture decision, not a fix. It has to settle DB lifecycle, CI dependency, seed/reset
+strategy, credentials, suite runtime, and how it skips when Docker is absent. Folding that into a
+grants migration would have turned a bounded residual into an unbounded test-infrastructure project.
+**Scope and design it on its own.**
+
+The throwaway probes that prove feasibility are gone with the scratchpad — but every assertion they
+made is enumerated in `20260819000028`'s commit message (`74a752a`), which is the spec to rebuild
+from. Do not re-derive the assertion list from this file.
+
 ## Related
 
 `docs/superpowers/specs/2026-08-14-screen-registry-phase-2b-design.md` (read §2 first) ·
 `docs/superpowers/plans/2026-08-14-screen-registry-phase-2b.md` ·
-`docs/product/decision-register.md` (A9, A16, A17) · `docs/lessons.md` (L-019, L-023, L-032, L-033) ·
+`docs/product/decision-register.md` (A9, A16, A17) ·
+`docs/lessons.md` (L-019, L-023, L-032, L-033 from 2b; L-001 and L-005 extended by the 2026-08-19
+run) · `supabase/migrations/20260819000028_certification_grants_hardening.sql` ·
 `mem:screen_registry_run_state` (1a/1b/2a) · `mem:screen_registry_inputs` ·
 `docs/superpowers/specs/2026-08-08-screen-registry-design.md` (R1–R13, T1–T11).

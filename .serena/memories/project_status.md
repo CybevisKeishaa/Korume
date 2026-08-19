@@ -627,6 +627,18 @@ query-builder mock for lib/data tests).
 **USER-FACING FEATURES đã hoãn nằm ở memory riêng `mem:feature_backlog_deferred` — PHẢI đọc nó
 khi plan bất kỳ layer mới nào (user mandate 2026-07-14: không bỏ sót chức năng đã brainstorm).**
 Mục dưới đây chỉ là engineering debt/nits.
+
+**⭐ SCOPED TASK, not a nit — a DB-backed regression guard for RLS and column grants (added
+2026-08-19).** `L-005` says no mocked test can ever guard these, so the only instrument is a test
+against a real Postgres. **Feasibility is proven**: on 2026-08-19 the full migration chain was applied
+from zero to a local Supabase and probed as the real `authenticated`/`anon` roles over PostgREST —
+ten assertions, exit 0 — which closed Phase 2b's open security debt and exposed a write-grant gap that
+reading the migration had not surfaced (fixed in `20260819000028`). What does **not** exist is any
+guard against a future regression. Deliberately deferred rather than bolted onto that migration: it
+has to settle DB lifecycle, CI dependency, seed/reset, credentials, suite runtime, and how it skips
+when Docker is absent — an architecture decision, not a fix. The assertion list to rebuild from is
+enumerated in commit `74a752a`'s message. Pairs naturally with the long-standing L2 item below (CI
+guard asserting RLS is enabled on all public tables), which the same harness would satisfy.
 From L1: GDPR delete-my-data; getUser() in middleware on all routes (perf); conditional
 aria-describedby; users_update_own email/level column scope. From L2: `unique(word, reading)`
 won't dedupe reading-less vocab (NULLs distinct) — matters when admin CMS adds entries; add CI
