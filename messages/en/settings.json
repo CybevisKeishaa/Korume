@@ -1,0 +1,50 @@
+{
+  "privacy": {
+    "eyebrow": "PRIVACY",
+    "title": "Your data & privacy",
+    "subtitle": "Manage how Korume stores and uses your personal learning data.",
+    "breadcrumbSettings": "Settings",
+    "breadcrumbPrivacy": "Privacy"
+  },
+  "aiTraining": {
+    "title": "Help improve Korume's models",
+    "body": "Let us use your recordings and learning data to improve our models. Off unless you turn it on. Your Companion remembers your learning either way — that is not model training."
+  },
+  "dangerZone": {
+    "eyebrow": "DANGER ZONE",
+    "title": "Control your Korume data",
+    "memory": { "title": "Delete Korume Memory", "body": "Remove what Companion remembers about your journey.", "action": "Manage" },
+    "closeAccount": { "title": "Delete Account", "body": "Close your Korume account. Your learning data is kept, and you can come back.", "action": "Review" },
+    "eraseAll": { "title": "Delete all my data", "body": "Request permanent deletion of your personal data stored by Korume.", "action": "Review deletion" }
+  },
+  "deleteDialog": {
+    "eyebrow": "PRIVACY · DATA CONTROL",
+    "title": "Delete all my data",
+    "subtitle": "Remove the personal data Korume has stored about you.",
+    "whatHeading": "What will be deleted?",
+    "items": {
+      "profile": { "title": "Profile & preferences", "body": "Your profile information, settings and learning preferences." },
+      "progress": { "title": "Learning progress", "body": "Lessons, practice history, review progress and achievements." },
+      "memory": { "title": "Korume Memory", "body": "Information remembered by Companion about your learning journey." },
+      "companion": { "title": "Companion history", "body": "Diary entries, reflections, conversations and personalized observations." },
+      "saved": { "title": "Saved learning content", "body": "Bookmarks, reviews, generated lessons and saved practice material." },
+      "practice": { "title": "Practice history", "body": "Certification practice results, mistakes, answers and review history." }
+    },
+    "noteLabel": "PLEASE NOTE",
+    "note": "You have 7 days to change your mind. We keep your data untouched until then, and you can cancel any time from this page. Some records may be retained where required for legal, security, or billing purposes.",
+    "confirmLabel": "FINAL CONFIRMATION",
+    "confirmHeading": "Are you sure you want to continue?",
+    "confirmBody": "After the 7 days pass, your learning history and personal Korume data will no longer be available to you.",
+    "typePrompt": "Type DELETE to confirm.",
+    "acknowledge": "I understand my data will be deleted after 7 days.",
+    "keep": "Keep my data",
+    "confirm": "Delete all my data",
+    "support": "You can request deletion of your personal data at any time. If you need help, contact Korume Support."
+  },
+  "pending": {
+    "title": "Deletion scheduled",
+    "body": "Your data is scheduled for deletion on {date}. Nothing has been removed yet.",
+    "cancel": "Cancel deletion",
+    "cancelled": "Your deletion request was cancelled. Nothing was removed."
+  }
+}

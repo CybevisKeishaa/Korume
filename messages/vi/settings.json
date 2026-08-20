@@ -1,0 +1,50 @@
+{
+  "privacy": {
+    "eyebrow": "QUYỀN RIÊNG TƯ",
+    "title": "Dữ liệu và quyền riêng tư của bạn",
+    "subtitle": "Quản lý cách Korume lưu trữ và sử dụng dữ liệu học tập cá nhân của bạn.",
+    "breadcrumbSettings": "Cài đặt",
+    "breadcrumbPrivacy": "Quyền riêng tư"
+  },
+  "aiTraining": {
+    "title": "Giúp Korume cải thiện mô hình",
+    "body": "Cho phép dùng bản ghi âm và dữ liệu học của bạn để cải thiện mô hình. Mặc định tắt, chỉ bật khi bạn muốn. Người bạn đồng hành vẫn ghi nhớ việc học của bạn dù bật hay tắt — đó không phải là huấn luyện mô hình."
+  },
+  "dangerZone": {
+    "eyebrow": "VÙNG NGUY HIỂM",
+    "title": "Kiểm soát dữ liệu Korume của bạn",
+    "memory": { "title": "Xóa ký ức Korume", "body": "Xóa những gì Người bạn đồng hành nhớ về hành trình của bạn.", "action": "Quản lý" },
+    "closeAccount": { "title": "Xóa tài khoản", "body": "Đóng tài khoản Korume. Dữ liệu học của bạn được giữ lại và bạn có thể quay lại.", "action": "Xem lại" },
+    "eraseAll": { "title": "Xóa toàn bộ dữ liệu của tôi", "body": "Yêu cầu xóa vĩnh viễn dữ liệu cá nhân mà Korume đang lưu.", "action": "Xem lại việc xóa" }
+  },
+  "deleteDialog": {
+    "eyebrow": "QUYỀN RIÊNG TƯ · KIỂM SOÁT DỮ LIỆU",
+    "title": "Xóa toàn bộ dữ liệu của tôi",
+    "subtitle": "Xóa dữ liệu cá nhân mà Korume đang lưu về bạn.",
+    "whatHeading": "Những gì sẽ bị xóa?",
+    "items": {
+      "profile": { "title": "Hồ sơ và tùy chọn", "body": "Thông tin hồ sơ, cài đặt và tùy chọn học tập của bạn." },
+      "progress": { "title": "Tiến độ học", "body": "Bài học, lịch sử luyện tập, tiến độ ôn tập và thành tích." },
+      "memory": { "title": "Ký ức Korume", "body": "Những gì Người bạn đồng hành nhớ về hành trình học của bạn." },
+      "companion": { "title": "Lịch sử đồng hành", "body": "Nhật ký, chiêm nghiệm, hội thoại và các quan sát cá nhân hóa." },
+      "saved": { "title": "Nội dung đã lưu", "body": "Dấu trang, bài ôn, bài học đã tạo và tài liệu luyện tập đã lưu." },
+      "practice": { "title": "Lịch sử luyện thi", "body": "Kết quả luyện thi, lỗi sai, câu trả lời và lịch sử ôn lại." }
+    },
+    "noteLabel": "LƯU Ý",
+    "note": "Bạn có 7 ngày để đổi ý. Trong thời gian đó dữ liệu được giữ nguyên và bạn có thể hủy bất cứ lúc nào ngay tại trang này. Một số bản ghi có thể được lưu lại khi pháp luật, bảo mật hoặc thanh toán yêu cầu.",
+    "confirmLabel": "XÁC NHẬN CUỐI CÙNG",
+    "confirmHeading": "Bạn chắc chắn muốn tiếp tục?",
+    "confirmBody": "Sau 7 ngày, lịch sử học và dữ liệu Korume cá nhân của bạn sẽ không còn truy cập được nữa.",
+    "typePrompt": "Gõ DELETE để xác nhận.",
+    "acknowledge": "Tôi hiểu dữ liệu của tôi sẽ bị xóa sau 7 ngày.",
+    "keep": "Giữ lại dữ liệu",
+    "confirm": "Xóa toàn bộ dữ liệu của tôi",
+    "support": "Bạn có thể yêu cầu xóa dữ liệu cá nhân bất cứ lúc nào. Nếu cần trợ giúp, hãy liên hệ Hỗ trợ Korume."
+  },
+  "pending": {
+    "title": "Đã lên lịch xóa",
+    "body": "Dữ liệu của bạn được lên lịch xóa vào {date}. Hiện chưa có gì bị xóa.",
+    "cancel": "Hủy yêu cầu xóa",
+    "cancelled": "Yêu cầu xóa đã được hủy. Không có gì bị xóa."
+  }
+}
