@@ -30,6 +30,11 @@ let removeShortfall = false;
  *  pending request for this user". */
 let pendingRequestsByUser: Record<string, string> = {};
 
+/** When set, `auth.admin.deleteUser` reports this error instead of success —
+ *  used to model both "already gone" (status 404, must be tolerated) and a
+ *  real failure (any other status, must still throw). */
+let deleteUserError: { status?: number; message: string } | null = null;
+
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
     storage: {
@@ -102,6 +107,7 @@ vi.mock("@/lib/supabase/service", () => ({
         },
         deleteUser: (id: string) => {
           sequence.push("purge");
+          if (deleteUserError) return Promise.resolve({ error: deleteUserError });
           deletedAuthUsers.push(id);
           return Promise.resolve({ error: null });
         },
@@ -121,6 +127,7 @@ beforeEach(() => {
   listCallCounts = {};
   removeShortfall = false;
   pendingRequestsByUser = {};
+  deleteUserError = null;
   // Default fixture: `u1` holds one folder "shadowing", which holds one file
   // "a.webm" — `list()` is one level deep, so reaching the file requires
   // recursing into the folder entry.
@@ -217,5 +224,15 @@ describe("purgeAuthUser", () => {
   it("deletes the auth user (the 90-day purge step, not a ban)", async () => {
     await purgeAuthUser("u7");
     expect(deletedAuthUsers).toEqual(["u7"]);
+  });
+
+  it("tolerates a 404 (auth user already gone) rather than throwing, so a retry converges", async () => {
+    deleteUserError = { status: 404, message: "User not found" };
+    await expect(purgeAuthUser("u8")).resolves.toBeUndefined();
+  });
+
+  it("still throws on a non-404 auth error", async () => {
+    deleteUserError = { status: 500, message: "internal error" };
+    await expect(purgeAuthUser("u9")).rejects.toEqual(deleteUserError);
   });
 });

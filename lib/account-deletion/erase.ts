@@ -150,11 +150,18 @@ export async function executeDeletion(request: ExecuteDeletionRequest, now: Date
   if (banError) throw banError;
 }
 
-/** Frees the email. The last step, 90 days after the request. */
+/** Frees the email. The last step, 90 days after the request.
+ *
+ * Idempotent on "already gone": a 404 here means some earlier pass already
+ * deleted this auth user and then failed on the step that follows it (the
+ * scheduler's tombstone-row delete, per review I3) — the thing this function
+ * promises ("this auth user no longer exists") is already true, so treating
+ * it as success lets a retry converge instead of throwing forever. Any other
+ * error still throws. */
 export async function purgeAuthUser(userId: string): Promise<void> {
   const service = createServiceClient();
   const { error } = await service.auth.admin.deleteUser(userId);
-  if (error) throw error;
+  if (error && error.status !== 404) throw error;
 }
 
 /** Cancels the caller's live request. Returns false when there was none. */

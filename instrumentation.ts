@@ -1,5 +1,5 @@
 /**
- * Startup configuration validation.
+ * Startup configuration validation, and the scheduler's only call site.
  *
  * MECHANISM ONLY. The requirement is that validation runs exactly once before
  * the app serves its first request (Spec §5.1); this hook is today's way of
@@ -19,4 +19,11 @@ export async function register() {
   registerEnvSpec(aiEnvSpec);
   registerEnvSpec(speechEnvSpec);
   validateEnv();
+
+  // No task in the plan wired this up before now — without it, account
+  // deletion was scheduled but never executed. startScheduler() itself stays
+  // inert unless SCHEDULER_ENABLED=true is set explicitly, so calling it here
+  // changes nothing for any deployment that has not opted in.
+  const { startScheduler } = await import("@/lib/scheduler/start");
+  startScheduler();
 }
