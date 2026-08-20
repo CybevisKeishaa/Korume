@@ -216,6 +216,8 @@ These cost real effort to learn. Breaking one repeats a mistake already paid for
 | M10 | ⭐ **`Taxonomy ≠ Navigation.`** Position in the data model does not determine position in the navbar — in either direction | `ia-proposal.md` §1 |
 | M11 | **A user's "I fixed it" is a claim about intent, not file state.** Read it back when cheap | `L-003` · `screen-inventory.md` §20 |
 | M12 | **`public/demo/**` is not a design source.** Only a live Figma screenshot is authoritative | `mem:phase0_figma_inventory_run_state` |
+| M13 | ⭐⭐ **Spec decides WHAT, Figma decides HOW IT IS PRESENTED.** B-content wrong ⇒ **fix the content inside the frame's template**; never substitute a layout derived from the spec's prose | `screen-inventory.md` § Amendment C (user, 2026-08-20) |
+| M14 | ⭐⭐ **A real Figma↔ruling contradiction is a QUESTION FOR THE USER, never a silent adjudication.** And UI the spec needs but the frame lacks ⇒ **extend the frame in its own design language, propose before building** | § Amendment C |
 
 ## 3b. Sequencing — ✅ `LOCKED` (user, 2026-08-12): Phase 1 splits into **1a / 1b**
 
