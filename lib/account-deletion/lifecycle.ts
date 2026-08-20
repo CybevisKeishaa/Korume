@@ -7,7 +7,13 @@
 export const GRACE_DAYS = 7;
 export const PURGE_DAYS = 90;
 
-export type DeletionTier = "close_account" | "erase_all";
+/**
+ * The two tiers, spelled once. `lib/validation/account-deletion.ts` builds its
+ * zod enum from this same array rather than repeating the literal list — CLAUDE.md
+ * §6: "if a fact would live in two places, make one derive from the other."
+ */
+export const DELETION_TIERS = ["close_account", "erase_all"] as const;
+export type DeletionTier = (typeof DELETION_TIERS)[number];
 export type DeletionStatus = "pending" | "cancelled" | "executed" | "purged";
 
 const DAY_MS = 24 * 60 * 60 * 1000;

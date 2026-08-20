@@ -26,7 +26,7 @@ describe("requestDeletion", () => {
     expect(touched).toBe(false);
   });
 
-  it("writes a pending row whose execute_after is the 7-day boundary", async () => {
+  it("writes a pending row whose execute_after is the 7-day boundary, and purge_after the 90-day boundary for erase_all", async () => {
     let inserted: Record<string, unknown> | null = null;
     mount(createMockSupabase({
       user: { id: "u1" },
@@ -50,9 +50,45 @@ describe("requestDeletion", () => {
       ok: true,
       data: { id: "req1", tier: "erase_all", requestedAt: NOW.toISOString(), executeAfter: "2026-08-27T10:00:00.000Z" },
     });
-    expect(inserted).toMatchObject({ user_id: "u1", tier: "erase_all", execute_after: "2026-08-27T10:00:00.000Z" });
+    expect(inserted).toMatchObject({
+      user_id: "u1",
+      tier: "erase_all",
+      execute_after: "2026-08-27T10:00:00.000Z",
+      // erase_all reserves the freed email for 90 days from the REQUEST.
+      purge_after: "2026-11-18T10:00:00.000Z",
+    });
     // The client never gets to choose its own status.
     expect(inserted).not.toHaveProperty("status");
+  });
+
+  it("writes purge_after null for close_account — that tier never reserves the email", async () => {
+    let inserted: Record<string, unknown> | null = null;
+    const input = { tier: "close_account", confirmation: "DELETE", acknowledged: true } as const;
+    mount(createMockSupabase({
+      user: { id: "u1" },
+      tables: {
+        account_deletion_requests: (calls) => {
+          const insert = calls.find((c) => c.op === "insert");
+          if (insert) inserted = (insert as { values: Record<string, unknown> }).values;
+          return {
+            data: {
+              id: "req2", tier: "close_account",
+              requested_at: NOW.toISOString(),
+              execute_after: "2026-08-27T10:00:00.000Z",
+            },
+            error: null,
+          };
+        },
+      },
+    }));
+    const result = await requestDeletion(input, NOW);
+    expect(result.ok).toBe(true);
+    expect(inserted).toMatchObject({
+      user_id: "u1",
+      tier: "close_account",
+      execute_after: "2026-08-27T10:00:00.000Z",
+      purge_after: null,
+    });
   });
 
   it("maps the one-live-request unique violation to 409, not 500", async () => {
@@ -66,10 +102,12 @@ describe("requestDeletion", () => {
 
 describe("cancelDeletion", () => {
   it("returns 404 when nothing is pending", async () => {
-    mount(createMockSupabase({
-      user: { id: "u1" },
-      tables: { account_deletion_requests: () => ({ data: [], error: null }) },
-    }));
+    // cancelDeletion never calls `.from()` on this table — the actual
+    // transition is delegated entirely to the module-mocked
+    // `cancelPendingDeletion` (Task 5, service-role). No table resolver is
+    // registered here on purpose: a registered-but-unused resolver would
+    // mislead a reader into thinking the 404 comes from an empty read.
+    mount(createMockSupabase({ user: { id: "u1" }, tables: {} }));
     expect(await cancelDeletion(NOW)).toEqual({ ok: false, status: 404 });
   });
 });
