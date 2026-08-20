@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-19) — **nothing is pending on the screen registry. The live next action is L9b Plan 1.**
+## ▶ NEXT ACTION (updated 2026-08-20) — **nothing is pending on the screen registry. The live next action is L9b Plan 1.**
 
 Phase 0 is COMPLETE AND CLOSED — all 57 frames inventoried, capability map built, the four IA blockers
 ruled, §20's content conflicts closed, and **the IA is LOCKED**. **Screen Registry Phases 1a, 1b, 2a
@@ -39,12 +39,19 @@ closed on 2026-08-19 (`a371a4b`, verified against a real database). **There is n
 next action until Phase 3 is scoped**, and scoping it is not urgent — see
 `mem:screen_registry_phase_2b_run_state`.
 
-**The live next action is L9b Plan 1** — GDPR delete-my-data, persisting the voice pronunciation score,
-and badge icons. GDPR is a `CLAUDE.md` §2 non-negotiable owed since Layer 1 and has to land before
-real users exist. Decisions 2–3 (the three-stage delete lifecycle; `/settings` placement) are already
-ruled — do not re-litigate them — and the next step is writing the spec for the three remaining items.
-⚠️ Read `l9b-plan1-launch-blocker-debt-status` first: the transcript-submit item this plan originally
-carried was **superseded**, not deferred, so the plan is smaller than older text here implies.
+**The live next action is L9b Plan 1, and it is now IN PROGRESS on branch `l9b-plan1-gdpr`.**
+GDPR is a `CLAUDE.md` §2 non-negotiable owed since Layer 1 and has to land before real users exist.
+
+⚠️ **The spec and the plan are both WRITTEN** (2026-08-20) — that supersedes this block's older
+"the next step is writing the spec". The branch holds documentation only; no application code exists
+yet. **Read `mem:l9b_plan1_gdpr_run_state` — it is the authority, and this block must not restate it.**
+Four further rulings (the 7-day window vs the modal's "cannot be undone", the two deletion tiers, the
+AI-training split, `/settings/privacy`) were made on 2026-08-20 against two Figma frames Phase 0 never
+saw. Do not re-litigate decisions 2–3 either.
+
+⚠️ **The Figma file has 69 top-level frames against `figma-frame-map.md`'s 57** (measured 2026-08-20),
+so every registry row's `figmaCheckedAt` overstates what was compared. A re-capture pass is owed and
+is deliberately outside L9b Plan 1.
 
 **⚠️ Standing instruction that survives all of the above: do NOT settle navbar/routes/registry without
 the user's review.** ("Do not port any screen yet" is retired — the IA is locked and the registry
