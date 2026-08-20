@@ -63,3 +63,6 @@ next-env.d.ts
 
 # git worktrees for isolated plan execution
 /.worktrees/
+
+# untracked scratch scripts/probes (tsconfig includes **/*.ts, so keep them out of git add -A)
+/scratch/
