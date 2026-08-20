@@ -679,6 +679,14 @@ query-builder mock for lib/data tests).
 khi plan bất kỳ layer mới nào (user mandate 2026-07-14: không bỏ sót chức năng đã brainstorm).**
 Mục dưới đây chỉ là engineering debt/nits.
 
+**⭐ HARD DEPENDENCY ON L8 — PayOS cancellation before erasure (added 2026-08-20).** L9b Plan 1
+builds account deletion while no billing integration exists, so it deletes the `subscriptions` row
+like any other user-owned row. **When L8 lands, deletion must cancel the PayOS subscription first** —
+erasing the account of someone with a live recurring charge, and keeping the charge, is the worst
+shape this can take. Home of the reasoning:
+`docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` §6. **L8’s spec must carry it as a
+requirement**, not discover it.
+
 **⭐ SCOPED TASK, not a nit — a DB-backed regression guard for RLS and column grants (added
 2026-08-19).** `L-005` says no mocked test can ever guard these, so the only instrument is a test
 against a real Postgres. **Feasibility is proven**: on 2026-08-19 the full migration chain was applied
