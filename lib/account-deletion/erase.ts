@@ -48,6 +48,12 @@ const RECORDINGS_BUCKET = "recordings";
  *  is what actually removes the row. */
 const BAN_DURATION = "876000h";
 
+/** GoTrue's documented literal for "clear `banned_until` now" — the inverse
+ *  of `BAN_DURATION`. Confirmed against a real local GoTrue instance, not
+ *  just the docs: `PUT .../admin/users/{id} { ban_duration: "none" }` sets
+ *  `banned_until` back to NULL. */
+const UNBAN_DURATION = "none";
+
 /** Supabase Storage's `list()` default page size. Made explicit (rather than
  *  omitted and left to the client default) so the pagination loop below has
  *  a concrete number to compare a page's length against. */
@@ -169,6 +175,30 @@ export async function executeDeletion(request: ExecuteDeletionRequest, now: Date
     const { error: deleteError } = await service.from("users").delete().eq("id", request.userId);
     if (deleteError) throw deleteError;
   }
+}
+
+/**
+ * Reverses the ban `executeDeletion` applies as its FIRST step. Ban-first
+ * ordering (review N1) makes a new failure mode reachable: `erase_all` bans,
+ * then a LATER step throws (Storage, tombstone, users delete) — the
+ * scheduler reverts the request row to `pending`, but a banned GoTrue user
+ * cannot obtain a session, so `cancelDeletion`/`getPendingDeletion`
+ * (both behind `requireUser`) are unreachable to them. Without this, the
+ * user is banned for ~100 years with their data and request row both intact
+ * and no self-service way out — a review finding in its own right, not a
+ * hypothetical (round 3).
+ *
+ * Called by the scheduler (`lib/scheduler/jobs/account-deletion.ts`)
+ * whenever a claimed row fails or is skipped: at that point the `users` row
+ * is still guaranteed to exist (it is `executeDeletion`'s LAST step), so
+ * there is always a real account here to unban.
+ */
+export async function liftBan(userId: string): Promise<void> {
+  const service = createServiceClient();
+  const { error } = await service.auth.admin.updateUserById(userId, {
+    ban_duration: UNBAN_DURATION,
+  });
+  if (error) throw error;
 }
 
 /** Frees the email. The last step, 90 days after the request.

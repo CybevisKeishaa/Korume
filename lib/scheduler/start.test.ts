@@ -66,3 +66,26 @@ describe("startScheduler — once per process", () => {
     setIntervalSpy.mockRestore();
   });
 });
+
+describe("resetSchedulerForTests — actually cancels the live interval (N7)", () => {
+  it("calls clearInterval on the tracked handle, not just the started flag", () => {
+    process.env.SCHEDULER_ENABLED = "true";
+    const setIntervalSpy = vi.spyOn(global, "setInterval");
+    const clearIntervalSpy = vi.spyOn(global, "clearInterval");
+
+    startScheduler();
+    const handle = setIntervalSpy.mock.results[0]?.value as unknown;
+    expect(handle).toBeDefined();
+
+    resetSchedulerForTests();
+
+    expect(clearIntervalSpy).toHaveBeenCalledWith(handle);
+
+    setIntervalSpy.mockRestore();
+    clearIntervalSpy.mockRestore();
+  });
+
+  it("does not throw when called before startScheduler ever ran (nothing to clear)", () => {
+    expect(() => resetSchedulerForTests()).not.toThrow();
+  });
+});

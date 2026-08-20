@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/service";
-import { executeDeletion, purgeAuthUser } from "@/lib/account-deletion/erase";
+import { executeDeletion, liftBan, purgeAuthUser } from "@/lib/account-deletion/erase";
 import type { ScheduledJob } from "../registry";
 import { DELETION_TIERS } from "@/lib/account-deletion/lifecycle";
 
@@ -62,6 +62,11 @@ interface PassCounts {
  * runs from inside a catch or a guard whose job is to keep the rest of the
  * pass moving — a further throw here would undo exactly that. Any failure,
  * including the row being gone, is logged loudly, never silently swallowed.
+ *
+ * Filters on `status = 'executed'`, not just `id` (review round 3 item 1):
+ * without it, this UPDATE would happily flip a row an admin had since set to
+ * `cancelled` (or any other status) back to `pending` — `id` alone isn't
+ * enough to express "only touch the row I claimed."
  */
 async function revertToPending(service: ServiceClient, requestId: string): Promise<void> {
   try {
@@ -69,6 +74,7 @@ async function revertToPending(service: ServiceClient, requestId: string): Promi
       .from("account_deletion_requests")
       .update({ status: "pending", executed_at: null })
       .eq("id", requestId)
+      .eq("status", "executed")
       .select("id");
     if (error) {
       console.error(
@@ -80,13 +86,43 @@ async function revertToPending(service: ServiceClient, requestId: string): Promi
     }
     if ((data ?? []).length === 0) {
       console.error(
-        `[scheduler] account-deletion: request ${requestId} no longer exists — deletion was ` +
-          `already irreversible past the users-row delete; there is nothing left to revert`,
+        `[scheduler] account-deletion: request ${requestId} could not be reverted — it is no ` +
+          `longer in "executed" status (either it cascaded away past the users-row delete, or ` +
+          `an admin already changed it); nothing left to revert`,
       );
     }
   } catch (error) {
     console.error(
       `[scheduler] account-deletion: FAILED to revert request ${requestId} back to pending (threw)`,
+      error,
+    );
+  }
+}
+
+/**
+ * Un-bans a user after a failed/skipped `erase_all` attempt (review round 3
+ * — the defect the N1 ban-first reorder introduced). `executeDeletion` bans
+ * FIRST, so any failure reaching `processRow`'s catch may have left the
+ * user banned with the deletion otherwise incomplete — and a banned GoTrue
+ * user cannot obtain a session, so they cannot even reach `cancelDeletion`
+ * to help themselves. Safe to call unconditionally: the `users` row is
+ * always still there when this runs (the `users` delete is
+ * `executeDeletion`'s LAST step), so there is always a real account here to
+ * unban, and unbanning an account that was never banned is a harmless no-op.
+ *
+ * Never throws, and never skipped on failure: this must not prevent the row
+ * revert that follows it, but a failure here is the one case in this whole
+ * job that genuinely needs a human — logged loudly with the user id, never
+ * silently swallowed.
+ */
+async function liftBanAfterFailure(userId: string): Promise<void> {
+  try {
+    await liftBan(userId);
+  } catch (error) {
+    console.error(
+      `[scheduler] account-deletion: FAILED to lift the ban on user ${userId} after a failed ` +
+        `deletion attempt — they may be LOCKED OUT of their own account indefinitely (banned for ` +
+        `~100 years, cannot sign in to cancel) until a human clears this by hand`,
       error,
     );
   }
@@ -173,9 +209,13 @@ export const accountDeletionJob: ScheduledJob = {
 };
 
 /** One claimed, schema-valid row: branch on tier, execute, and update
- *  `counts` in place. Any throw from `executeDeletion` (or the null-`purge_after`
- *  guard) reverts this one row to pending and returns — it never escapes to
- *  abort the rows still waiting after it. */
+ *  `counts` in place. Any throw from `executeDeletion` reverts this one row
+ *  to pending and returns — it never escapes to abort the rows still
+ *  waiting after it. Since `executeDeletion` bans FIRST (erase.ts N1), a
+ *  throw here may have left `row.user_id` banned with the deletion
+ *  otherwise incomplete — the ban is lifted before the revert (round 3),
+ *  never after: a locked-out account is the more urgent problem than a row
+ *  stuck as `executed`. */
 async function processRow(service: ServiceClient, row: DueRow, now: Date, counts: PassCounts): Promise<void> {
   try {
     if (row.tier === "erase_all") {
@@ -220,6 +260,7 @@ async function processRow(service: ServiceClient, row: DueRow, now: Date, counts
         `pending for retry`,
       error,
     );
+    await liftBanAfterFailure(row.user_id);
     await revertToPending(service, row.id);
   }
 }

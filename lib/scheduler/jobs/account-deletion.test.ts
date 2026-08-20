@@ -5,11 +5,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  *  (already covered by lib/account-deletion/erase.test.ts). */
 const executeDeletionCalls: unknown[] = [];
 const purgeAuthUserCalls: string[] = [];
+const liftBanCalls: string[] = [];
+
+/** Shared, ordered log of "liftBan:userId" / "revert:requestId" tags — the
+ *  only thing that can PROVE the ban was lifted BEFORE the row was
+ *  reverted; two independent arrays cannot prove relative order, only a
+ *  single shared sequence can (same technique as erase.test.ts's I4 note). */
+const banThenRevertSequence: string[] = [];
 
 /** Set per-test to make a specific user's executeDeletion call throw — the
  *  C1 scenario: "row 3 of 5 throws." */
 let executeDeletionFailFor: Set<string> = new Set();
 let purgeAuthUserFailFor: Set<string> = new Set();
+/** Makes `liftBan` itself reject for a given user — proves a failed unban
+ *  is logged loudly but never prevents the row revert that follows it
+ *  (review round 3). */
+let liftBanFailFor: Set<string> = new Set();
 
 vi.mock("@/lib/account-deletion/erase", () => ({
   executeDeletion: (request: { userId: string }) => {
@@ -23,6 +34,14 @@ vi.mock("@/lib/account-deletion/erase", () => ({
     purgeAuthUserCalls.push(userId);
     if (purgeAuthUserFailFor.has(userId)) {
       return Promise.reject(new Error(`purge failed for ${userId}`));
+    }
+    return Promise.resolve();
+  },
+  liftBan: (userId: string) => {
+    liftBanCalls.push(userId);
+    banThenRevertSequence.push(`liftBan:${userId}`);
+    if (liftBanFailFor.has(userId)) {
+      return Promise.reject(new Error(`unban failed for ${userId}`));
     }
     return Promise.resolve();
   },
@@ -52,6 +71,13 @@ let revertError: { message: string } | null = null;
  *  executeDeletion got past the users-row delete before something else
  *  failed, so there is genuinely nothing left to revert. */
 let revertRowMissingFor: Set<string> = new Set();
+/** Per-request-id, makes the revert's own update().eq().eq().select() chain
+ *  REJECT rather than resolve with { error } — the shape a genuine network
+ *  failure takes, as opposed to a well-formed PostgREST error response.
+ *  Proves N4's try/catch around revertToPending's whole body actually
+ *  catches a rejection, not just an { error } result (review round 3 item 2
+ *  — round 2's N4 fix was itself unmutation-checked). */
+let revertRejectsFor: Set<string> = new Set();
 
 /** Every argument the job passes into the claim / revert / purge-query
  *  chains, so the "the claim IS the work" atomic-shape requirement is
@@ -101,31 +127,45 @@ vi.mock("@/lib/supabase/service", () => ({
             if (values.status === "pending") {
               revertUpdateCalls.push(values);
               return {
-                eq: (col: string, val: string) => {
-                  revertEqCalls.push([col, val]);
+                // .eq("id", requestId) — models the real chain, which then
+                // requires a SECOND .eq("status", "executed") (review round
+                // 3 item 1) before .select("id"): reverting must only ever
+                // touch a row still in "executed" status, never one an
+                // admin already moved to "cancelled".
+                eq: (col1: string, requestId: string) => {
+                  revertEqCalls.push([col1, requestId]);
+                  banThenRevertSequence.push(`revert:${requestId}`);
                   return {
-                    select: (cols: string) => {
-                      revertSelectCalls.push(cols);
-                      // Real client resolves { data, error, count, status, statusText }
-                      // (review N6 — same shape fix m10 already applied to the
-                      // tombstone delete mock).
-                      if (revertError) {
-                        return Promise.resolve({
-                          data: null,
-                          error: revertError,
-                          count: null,
-                          status: 500,
-                          statusText: "Internal Server Error",
-                        });
-                      }
-                      const matched = !revertRowMissingFor.has(val);
-                      return Promise.resolve({
-                        data: matched ? [{ id: val }] : [],
-                        error: null,
-                        count: matched ? 1 : 0,
-                        status: 200,
-                        statusText: "OK",
-                      });
+                    eq: (col2: string, val2: string) => {
+                      revertEqCalls.push([col2, val2]);
+                      return {
+                        select: (cols: string) => {
+                          revertSelectCalls.push(cols);
+                          if (revertRejectsFor.has(requestId)) {
+                            return Promise.reject(new Error(`network failure reverting ${requestId}`));
+                          }
+                          // Real client resolves { data, error, count, status, statusText }
+                          // (review N6 — same shape fix m10 already applied to the
+                          // tombstone delete mock).
+                          if (revertError) {
+                            return Promise.resolve({
+                              data: null,
+                              error: revertError,
+                              count: null,
+                              status: 500,
+                              statusText: "Internal Server Error",
+                            });
+                          }
+                          const matched = !revertRowMissingFor.has(requestId);
+                          return Promise.resolve({
+                            data: matched ? [{ id: requestId }] : [],
+                            error: null,
+                            count: matched ? 1 : 0,
+                            status: 200,
+                            statusText: "OK",
+                          });
+                        },
+                      };
                     },
                   };
                 },
@@ -176,8 +216,11 @@ import { accountDeletionJob } from "./account-deletion";
 beforeEach(() => {
   executeDeletionCalls.length = 0;
   purgeAuthUserCalls.length = 0;
+  liftBanCalls.length = 0;
+  banThenRevertSequence.length = 0;
   executeDeletionFailFor = new Set();
   purgeAuthUserFailFor = new Set();
+  liftBanFailFor = new Set();
   claimedRows = [];
   duePurgeRows = [];
   claimError = null;
@@ -185,6 +228,7 @@ beforeEach(() => {
   tombstoneDeleteErrorFor = new Set();
   revertError = null;
   revertRowMissingFor = new Set();
+  revertRejectsFor = new Set();
   requestsUpdateCalls.length = 0;
   requestsEqCalls.length = 0;
   requestsLteCalls.length = 0;
@@ -256,11 +300,16 @@ describe("accountDeletionJob — the malformed-row guard reverts to pending (C2)
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("u-bad"));
       expect(handled).toBe(1);
 
-      // The revert is a real update(status: 'pending', executed_at: null).eq('id', 'bad').select('id') —
-      // this is what makes C2's fix different from merely skipping, and the
-      // .select('id') is the N1 belt-and-braces proof it actually matched a row.
+      // The revert is a real update(status: 'pending', executed_at: null)
+      //   .eq('id', 'bad').eq('status', 'executed').select('id') —
+      // this is what makes C2's fix different from merely skipping; the
+      // second .eq (round 3 item 1) is the status guard, and .select('id')
+      // is the N1 belt-and-braces proof it actually matched a row.
       expect(revertUpdateCalls).toEqual([{ status: "pending", executed_at: null }]);
-      expect(revertEqCalls).toEqual([["id", "bad"]]);
+      expect(revertEqCalls).toEqual([
+        ["id", "bad"],
+        ["status", "executed"],
+      ]);
       expect(revertSelectCalls).toEqual(["id"]);
 
       errorSpy.mockRestore();
@@ -277,7 +326,10 @@ describe("accountDeletionJob — the malformed-row guard reverts to pending (C2)
 
     expect(executeDeletionCalls).toEqual([{ id: "req4", userId: "u4", tier: "close_account", purgeAfter: null }]);
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("forged"), expect.anything());
-    expect(revertEqCalls).toEqual([["id", "forged"]]);
+    expect(revertEqCalls).toEqual([
+      ["id", "forged"],
+      ["status", "executed"],
+    ]);
     expect(handled).toBe(1);
 
     errorSpy.mockRestore();
@@ -301,13 +353,90 @@ describe("accountDeletionJob — a row's throw reverts only that row (C1)", () =
     // All five were attempted — row 3's failure did not stop the loop.
     expect(executeDeletionCalls.map((c) => (c as { userId: string }).userId)).toEqual(["u1", "u2", "u3", "u4", "u5"]);
     // Only row 3 was reverted.
-    expect(revertEqCalls).toEqual([["id", "r3"]]);
+    expect(revertEqCalls).toEqual([
+      ["id", "r3"],
+      ["status", "executed"],
+    ]);
     // 4 executed successfully; row 3 counts as failed, not executed.
     expect(handled).toBe(4);
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("r3"), expect.any(Error));
 
     errorSpy.mockRestore();
   });
+
+  it(
+    "lifts the ban on the user BEFORE reverting the row when a downstream step throws — " +
+      "otherwise, since executeDeletion bans FIRST, the row goes back to 'pending' while the " +
+      "account stays banned for ~100 years with no self-service way to sign in and cancel (round 3)",
+    async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      executeDeletionFailFor = new Set(["u1"]);
+      claimedRows = [row({ id: "r1", user_id: "u1", tier: "erase_all", purge_after: "2026-11-18T10:00:00.000Z" })];
+
+      await accountDeletionJob.run(NOW);
+
+      expect(liftBanCalls).toEqual(["u1"]);
+      // Ban lifted BEFORE the row is reverted — a locked-out account is the
+      // more urgent problem than a row stuck as "executed". Proved via the
+      // shared sequence array, not two independent arrays (I4/erase.test.ts
+      // technique) — that's the only thing that can show relative order.
+      expect(banThenRevertSequence).toEqual(["liftBan:u1", "revert:r1"]);
+      expect(revertEqCalls).toEqual([
+        ["id", "r1"],
+        ["status", "executed"],
+      ]);
+
+      errorSpy.mockRestore();
+    },
+  );
+
+  it("logs loudly (with the user id) but STILL reverts the row when lifting the ban itself fails", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    executeDeletionFailFor = new Set(["u1"]);
+    liftBanFailFor = new Set(["u1"]);
+    claimedRows = [row({ id: "r1", user_id: "u1", tier: "erase_all", purge_after: "2026-11-18T10:00:00.000Z" })];
+
+    await accountDeletionJob.run(NOW);
+
+    expect(liftBanCalls).toEqual(["u1"]);
+    // The revert must still happen even though the unban failed.
+    expect(revertEqCalls).toEqual([
+      ["id", "r1"],
+      ["status", "executed"],
+    ]);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("LOCKED OUT"),
+      expect.any(Error),
+    );
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("u1"), expect.any(Error));
+
+    errorSpy.mockRestore();
+  });
+
+  it(
+    "does not crash or escape the row loop when the revert chain itself REJECTS (not just " +
+      "returns { error }) — proves N4's try/catch genuinely catches a rejection, and row 2 " +
+      "still runs (round 3 item 2 — round 2's N4 fix was unmutation-checked)",
+    async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      executeDeletionFailFor = new Set(["u1"]);
+      revertRejectsFor = new Set(["r1"]);
+      claimedRows = [row({ id: "r1", user_id: "u1" }), row({ id: "r2", user_id: "u2" })];
+
+      const handled = await accountDeletionJob.run(NOW);
+
+      // row 2 still ran — the rejection from row 1's revert did not escape
+      // and abort the loop.
+      expect(executeDeletionCalls.map((c) => (c as { userId: string }).userId)).toEqual(["u1", "u2"]);
+      expect(handled).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("FAILED to revert request r1"),
+        expect.any(Error),
+      );
+
+      errorSpy.mockRestore();
+    },
+  );
 
   it("logs (but does not throw on) a revert that itself fails", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -333,7 +462,7 @@ describe("accountDeletionJob — a row's throw reverts only that row (C1)", () =
 
       await expect(accountDeletionJob.run(NOW)).resolves.toBe(0);
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining("no longer exists"),
+        expect.stringContaining("could not be reverted"),
       );
       expect(revertSelectCalls).toEqual(["id"]);
 

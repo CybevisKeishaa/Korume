@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { cancelPendingDeletion, executeDeletion, purgeAuthUser } from "./erase";
+import { cancelPendingDeletion, executeDeletion, liftBan, purgeAuthUser } from "./erase";
 
 type ListEntry = { name: string; id: string | null };
 
@@ -255,5 +255,17 @@ describe("purgeAuthUser", () => {
   it("still throws on a non-404 auth error", async () => {
     deleteUserError = { status: 500, message: "internal error" };
     await expect(purgeAuthUser("u9")).rejects.toEqual(deleteUserError);
+  });
+});
+
+describe("liftBan", () => {
+  it("calls updateUserById with ban_duration: 'none' — the inverse of the ban executeDeletion applies", async () => {
+    await liftBan("u10");
+    expect(bans).toEqual([{ id: "u10", attrs: { ban_duration: "none" } }]);
+  });
+
+  it("throws when the unban call itself fails", async () => {
+    banError = { message: "auth service unreachable" };
+    await expect(liftBan("u11")).rejects.toEqual(banError);
   });
 });
