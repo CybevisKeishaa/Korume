@@ -32,7 +32,7 @@ rule requires and two small debts that have been waiting for a screen to live on
 | Not doing | Reason |
 |---|---|
 | **Export Data / Download Learning History** | User ruling 2026-08-20: nobody can yet say what belongs inside the export, so its semantics cannot be settled. The two Figma rows stay unbuilt rather than guessed at. |
-| **`Delete Korume Memory`** (the companion-memory tier) | Not in the user's enumerated scope. The row is designed (`337:3323`) and its data reach is known, but it is not this plan's work. See §3. |
+| **`Delete Korume Memory`** — the *behaviour* | Not in the user's enumerated scope. **Its row is still built** and points at a placeholder, per the §13 ruling. |
 | **Theme / Accent Color / Camera Permission** | Three settings that contradict shipped decisions (`screen-inventory.md` §18.4). Each needs its own ruling; none blocks deletion. |
 | **The rest of `/settings`** | `/settings` stays the `UpcomingScreen` placeholder it is today. Plan 1 adds one sub-route beneath it, nothing more. |
 | **Re-capturing the Figma frame map** | 69 frames exist against the map's 57 (`figma-frame-map.md`, warned 2026-08-20). Folding a registry-wide `figmaCheckedAt` re-reconciliation into this plan would replace it. |
@@ -74,7 +74,7 @@ reader.
 
 | Row | Button | Meaning (decision 5) | This plan |
 |---|---|---|---|
-| Delete Korume Memory | `Manage` | Erase what the Companion remembers. **Learning progress remains.** | ❌ out of scope |
+| Delete Korume Memory | `Manage` | Erase what the Companion remembers. **Learning progress remains.** | ◐ **row ships, behaviour deferred** (§13) |
 | Delete Account | `Review` | **Close the account.** Learning data survives; the account is reopenable. | ✅ built |
 | Delete all my data | `Review deletion` | **Full GDPR erasure.** Unrecoverable. | ✅ built |
 
@@ -253,8 +253,8 @@ route (`lib/rate-limit.ts`); deletion is destructive and enumerable.
 rather than by a heading.
 
 **Built from `337:3323`:** the page shell, the `Learning` card, and the `DANGER ZONE` card with its
-three rows and right-aligned text buttons. The out-of-scope row (§3) **is not silently dropped** — see
-the open question in §13.
+three rows and right-aligned text buttons. **All three render as drawn**; the third points at a
+placeholder destination rather than being greyed out or removed (§13).
 
 **Built from `339:3612`:** the modal, structurally verbatim — six categories, `PLEASE NOTE`,
 type-`DELETE` + checkbox, `Keep my data` / `Delete all my data`. Copy corrected to state the 7-day
@@ -350,13 +350,23 @@ and set `icon_url` in a migration, since content is versioned reference data tha
 
 ---
 
-## 13. Open question for the user — one, and it is small
+## 13. The third row — ✅ ruled, 2026-08-20
 
-**The Danger Zone card is designed with three rows and this plan builds two.** Options: render
-`Delete Korume Memory` disabled with a "coming soon" affordance; or omit the row for now and restore
-it when that tier is built. Omitting changes the frame's template, which M13 says is not the
-assistant's call — so it is asked here rather than decided. **This does not block anything else in
-the spec**; it is a rendering decision at implementation time.
+**The Danger Zone card is designed with three rows and this plan builds the behaviour of two.**
+**User ruling: build the card as though all three exist** — *"cứ làm như thế đã có đi, sau khi có thì
+trỏ tới rồi fill vào"* — and the reason it is safe to do so is that nothing is published yet.
+
+So: **all three rows render exactly as `337:3323` draws them.** The template is not edited, nothing is
+greyed out, and no row is dropped. `Delete Korume Memory`'s `Manage` action points at a placeholder
+destination — the `UpcomingScreen` pattern the repo already uses for `/settings` itself — and when
+that tier is built, the pointer is repointed rather than the card being redesigned.
+
+**What this must not become:** a button that looks live and silently does nothing. Pointing at an
+honest "not built yet" surface and *appearing* functional are different things, and only the first is
+acceptable even pre-launch. The row is real; its destination says plainly that the feature is coming.
+
+**Consequence for §14:** `Delete Korume Memory` stays deferred as *behaviour*. Its **row is delivered
+by this plan**, which is why it is no longer purely out of scope.
 
 ---
 
@@ -365,7 +375,7 @@ the spec**; it is a rendering decision at implementation time.
 | Deferred | Reason |
 |---|---|
 | Export Data / Download Learning History | Semantics unsettled (§1). Revisit with a ruling on what the export contains and in what format. |
-| `Delete Korume Memory` tier | Out of the user's scope; the design and the data reach are both already known when it returns. |
+| `Delete Korume Memory` — the behaviour behind the row | The row ships now (§13); only the erase itself waits. Design and data reach are both already known when it returns. |
 | Figma frame-map + registry re-capture | 12 frames are missing from the map. Own pass, own branch. |
 | DB-backed RLS/grant regression guard | Already scoped and deliberately deferred; §11 states what this plan hands to it. |
 | PayOS cancellation before erasure | No billing integration exists; belongs in L8's spec (§6). |
