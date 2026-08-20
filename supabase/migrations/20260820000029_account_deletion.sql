@@ -56,3 +56,13 @@ comment on column users.model_training_consent is
   'not covered here and needs no consent — it is not model training. '
   'No training pipeline exists yet; this is a stored preference and a '
   'documented gate, not a live switch.';
+
+-- Same asymmetry 20260714000014_community_admin.sql closed for leaderboard_opt_in:
+-- `users` carries a COLUMN-scoped update grant to `authenticated` (not the
+-- table-wide one), so a new column is invisible to the client until it is
+-- named here explicitly — RLS's `users_update_own` row check (id = auth.uid())
+-- never even gets evaluated without it, because column privileges are
+-- enforced before RLS. model_training_consent is an ordinary self-editable
+-- preference (same trust level as leaderboard_opt_in), so it belongs in the
+-- grant, not left as a column only the service role can write.
+grant update (model_training_consent) on users to authenticated;
