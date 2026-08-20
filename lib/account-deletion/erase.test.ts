@@ -35,6 +35,11 @@ let pendingRequestsByUser: Record<string, string> = {};
  *  real failure (any other status, must still throw). */
 let deleteUserError: { status?: number; message: string } | null = null;
 
+/** When set, `auth.admin.updateUserById` (the ban) reports this error
+ *  instead of success — used to prove the ban runs FIRST and that nothing
+ *  downstream of it runs when it fails (review N1). */
+let banError: { message: string } | null = null;
+
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
     storage: {
@@ -102,6 +107,7 @@ vi.mock("@/lib/supabase/service", () => ({
       admin: {
         updateUserById: (id: string, attrs: unknown) => {
           sequence.push("ban");
+          if (banError) return Promise.resolve({ error: banError });
           bans.push({ id, attrs });
           return Promise.resolve({ error: null });
         },
@@ -128,6 +134,7 @@ beforeEach(() => {
   removeShortfall = false;
   pendingRequestsByUser = {};
   deleteUserError = null;
+  banError = null;
   // Default fixture: `u1` holds one folder "shadowing", which holds one file
   // "a.webm" — `list()` is one level deep, so reaching the file requires
   // recursing into the folder entry.
@@ -149,12 +156,26 @@ describe("executeDeletion — erase_all", () => {
     expect(removed).toEqual([["u1/shadowing/a.webm"]]);
   });
 
-  it("erases storage, THEN writes the tombstone, THEN deletes the users row, THEN bans — in that exact order", async () => {
+  it("bans FIRST, THEN erases storage, THEN writes the tombstone, THEN deletes the users row — in that exact order", async () => {
     await executeDeletion(
       { id: "req1", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" },
       NOW,
     );
-    expect(sequence).toEqual(["list:u1", "list:u1/shadowing", "remove", "tombstone", "delete-user", "ban"]);
+    expect(sequence).toEqual(["ban", "list:u1", "list:u1/shadowing", "remove", "tombstone", "delete-user"]);
+  });
+
+  it("throws when the ban fails, and touches nothing downstream — storage, tombstone, and the users row are all untouched (N1)", async () => {
+    banError = { message: "auth service unreachable" };
+    await expect(
+      executeDeletion(
+        { id: "req6", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" },
+        NOW,
+      ),
+    ).rejects.toEqual(banError);
+    expect(sequence).toEqual(["ban"]);
+    expect(removed).toEqual([]);
+    expect(tombstones).toEqual([]);
+    expect(deletedUsers).toEqual([]);
   });
 
   it("pages through more than one page of listings before recursing (list() defaults to 100 per page)", async () => {

@@ -22,6 +22,24 @@ import type { DeletionTier } from "./lifecycle";
  *     videos.added_by_user_id. Community content survives, anonymised. That is
  *     the intended GDPR outcome, not an oversight.
  *  3. `auth.users`, banned here and deleted only at the 90-day purge.
+ *
+ * Step order inside `executeDeletion` — ban, THEN storage, THEN tombstone,
+ * THEN the `users` delete — and why it is exactly that order (review N1):
+ *  - Ban is FIRST because it is the only step here that is itself reversible
+ *    (an admin can clear `banned_until` by hand) and because banning before
+ *    touching anything else stops the user creating new data mid-erasure.
+ *  - Storage is still erased BEFORE the `users` row is deleted: a crash
+ *    between those two strands recordings that no query can ever find again
+ *    (`request.userId` would still be known if storage ran first and crashed
+ *    before the `users` delete, but not the other way round). That is the
+ *    ordering rationale from the original comment here, and moving the ban
+ *    to the front does not touch it — the ban is independent of both steps.
+ *  - The `users` delete is LAST because `account_deletion_requests.user_id`
+ *    references `users(id) on delete cascade`: deleting `users` cascades
+ *    that row away too, and `revertToPending` (lib/scheduler/jobs/account-deletion.ts)
+ *    can no longer find it to retry from. Every step before the `users`
+ *    delete is safe to retry after a failure; the `users` delete itself is
+ *    the point of no return.
  */
 
 const RECORDINGS_BUCKET = "recordings";
@@ -117,9 +135,15 @@ export async function executeDeletion(request: ExecuteDeletionRequest, now: Date
   // this function, so there is nothing left for this function to do with it.
   const service = createServiceClient();
 
+  // Ban FIRST, for both tiers, before anything irreversible: see the step-order
+  // note in the file header (review N1). A failure here leaves nothing to undo.
+  const { error: banError } = await service.auth.admin.updateUserById(request.userId, {
+    ban_duration: BAN_DURATION,
+  });
+  if (banError) throw banError;
+
   if (request.tier === "erase_all") {
-    // Storage FIRST. After the users row is gone the id is still known here,
-    // but a crash between the two leaves orphaned recordings no query can find.
+    // Storage next, still BEFORE the users row (see file header).
     await eraseStoragePrefix(service, request.userId);
 
     // Upsert, not insert (I7): `user_id` is the tombstone's primary key, and
@@ -140,14 +164,11 @@ export async function executeDeletion(request: ExecuteDeletionRequest, now: Date
       );
     if (tombstoneError) throw tombstoneError;
 
+    // LAST: this cascades account_deletion_requests away too (see file
+    // header) — the point past which revertToPending can no longer work.
     const { error: deleteError } = await service.from("users").delete().eq("id", request.userId);
     if (deleteError) throw deleteError;
   }
-
-  const { error: banError } = await service.auth.admin.updateUserById(request.userId, {
-    ban_duration: BAN_DURATION,
-  });
-  if (banError) throw banError;
 }
 
 /** Frees the email. The last step, 90 days after the request.

@@ -43,9 +43,15 @@ let purgeQueryError: { message: string } | null = null;
  *  (review m10/I3 — the real client's `.delete().eq()` can fail and the
  *  error must be checked, not discarded). */
 let tombstoneDeleteErrorFor: Set<string> = new Set();
-/** Makes `revertToPending`'s own update().eq() report an error, to prove the
- *  revert failure is logged rather than silently swallowed or thrown. */
+/** Makes `revertToPending`'s own update().eq().select() report an error, to
+ *  prove the revert failure is logged rather than silently swallowed or
+ *  thrown. */
 let revertError: { message: string } | null = null;
+/** Per-request-id, makes the revert's own UPDATE match zero rows — models
+ *  the N1 scenario: the request row already cascaded away because
+ *  executeDeletion got past the users-row delete before something else
+ *  failed, so there is genuinely nothing left to revert. */
+let revertRowMissingFor: Set<string> = new Set();
 
 /** Every argument the job passes into the claim / revert / purge-query
  *  chains, so the "the claim IS the work" atomic-shape requirement is
@@ -57,6 +63,7 @@ const requestsLteCalls: [string, string][] = [];
 const requestsSelectCalls: string[] = [];
 const revertUpdateCalls: unknown[] = [];
 const revertEqCalls: [string, string][] = [];
+const revertSelectCalls: string[] = [];
 const tombstoneSelectCalls: string[] = [];
 const tombstoneLteCalls: [string, string][] = [];
 const tombstoneDeleteEqCalls: [string, string][] = [];
@@ -96,8 +103,31 @@ vi.mock("@/lib/supabase/service", () => ({
               return {
                 eq: (col: string, val: string) => {
                   revertEqCalls.push([col, val]);
-                  if (revertError) return Promise.resolve({ error: revertError });
-                  return Promise.resolve({ error: null });
+                  return {
+                    select: (cols: string) => {
+                      revertSelectCalls.push(cols);
+                      // Real client resolves { data, error, count, status, statusText }
+                      // (review N6 — same shape fix m10 already applied to the
+                      // tombstone delete mock).
+                      if (revertError) {
+                        return Promise.resolve({
+                          data: null,
+                          error: revertError,
+                          count: null,
+                          status: 500,
+                          statusText: "Internal Server Error",
+                        });
+                      }
+                      const matched = !revertRowMissingFor.has(val);
+                      return Promise.resolve({
+                        data: matched ? [{ id: val }] : [],
+                        error: null,
+                        count: matched ? 1 : 0,
+                        status: 200,
+                        statusText: "OK",
+                      });
+                    },
+                  };
                 },
               };
             }
@@ -154,12 +184,14 @@ beforeEach(() => {
   purgeQueryError = null;
   tombstoneDeleteErrorFor = new Set();
   revertError = null;
+  revertRowMissingFor = new Set();
   requestsUpdateCalls.length = 0;
   requestsEqCalls.length = 0;
   requestsLteCalls.length = 0;
   requestsSelectCalls.length = 0;
   revertUpdateCalls.length = 0;
   revertEqCalls.length = 0;
+  revertSelectCalls.length = 0;
   tombstoneSelectCalls.length = 0;
   tombstoneLteCalls.length = 0;
   tombstoneDeleteEqCalls.length = 0;
@@ -224,10 +256,12 @@ describe("accountDeletionJob — the malformed-row guard reverts to pending (C2)
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("u-bad"));
       expect(handled).toBe(1);
 
-      // The revert is a real update(status: 'pending', executed_at: null).eq('id', 'bad') —
-      // this is what makes C2's fix different from merely skipping.
+      // The revert is a real update(status: 'pending', executed_at: null).eq('id', 'bad').select('id') —
+      // this is what makes C2's fix different from merely skipping, and the
+      // .select('id') is the N1 belt-and-braces proof it actually matched a row.
       expect(revertUpdateCalls).toEqual([{ status: "pending", executed_at: null }]);
       expect(revertEqCalls).toEqual([["id", "bad"]]);
+      expect(revertSelectCalls).toEqual(["id"]);
 
       errorSpy.mockRestore();
     },
@@ -286,6 +320,26 @@ describe("accountDeletionJob — a row's throw reverts only that row (C1)", () =
 
     errorSpy.mockRestore();
   });
+
+  it(
+    "logs a DISTINCT message (not the generic revert-failed one) when the revert's UPDATE " +
+      "matches zero rows — the request row already cascaded away past the users delete (N1) — " +
+      "and does not throw",
+    async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      executeDeletionFailFor = new Set(["u1"]);
+      revertRowMissingFor = new Set(["r1"]);
+      claimedRows = [row({ id: "r1", user_id: "u1" })];
+
+      await expect(accountDeletionJob.run(NOW)).resolves.toBe(0);
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("no longer exists"),
+      );
+      expect(revertSelectCalls).toEqual(["id"]);
+
+      errorSpy.mockRestore();
+    },
+  );
 });
 
 describe("accountDeletionJob — the 90-day purge", () => {
@@ -329,6 +383,27 @@ describe("accountDeletionJob — the 90-day purge", () => {
 
     errorSpy.mockRestore();
   });
+
+  it(
+    "rejects a malformed tombstone row (missing/wrong-typed user_id) rather than trusting it " +
+      "via a cast — an irreversible auth deletion must not run on unvalidated input (N3)",
+    async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      duePurgeRows = [{ user_id: 12345 as unknown as string }, { user_id: "u14" }];
+
+      const handled = await accountDeletionJob.run(NOW);
+
+      // Only the valid row was ever handed to purgeAuthUser.
+      expect(purgeAuthUserCalls).toEqual(["u14"]);
+      expect(handled).toBe(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining("malformed tombstone row"),
+        expect.anything(),
+      );
+
+      errorSpy.mockRestore();
+    },
+  );
 });
 
 describe("accountDeletionJob — structured pass logging (I6)", () => {

@@ -22,6 +22,12 @@ const dueRowSchema = z.object({
 });
 type DueRow = z.infer<typeof dueRowSchema>;
 
+/** Same reasoning as `dueRowSchema` (review N3): `user_id` here drives
+ *  `purgeAuthUser`, an irreversible auth deletion, so it is validated before
+ *  use rather than trusted via an `as` cast. */
+const duePurgeRowSchema = z.object({ user_id: z.string() });
+type DuePurgeRow = z.infer<typeof duePurgeRowSchema>;
+
 /** Counts logged once per run, success or failure (review I6) — so "nothing
  *  was due" and "three users were erased, then it blew up" never look
  *  identical in the logs, and the skip/failure counts are machine-readable
@@ -41,20 +47,46 @@ interface PassCounts {
  * the past means the next pass claims and retries it. `executeDeletion` is
  * re-run-safe (the tombstone step is an upsert), so retrying is safe.
  *
- * Never throws: this already runs from inside a catch or a guard whose job
- * is to keep the rest of the pass moving. If the revert itself fails, the
- * row is stuck as `executed` until a human fixes it by hand — logged loudly
- * so that is visible, not silently swallowed.
+ * That retry guarantee holds for every failure BEFORE the `users`-row delete
+ * inside `executeDeletion` — which, since the N1 fix (`lib/account-deletion/erase.ts`),
+ * is now that function's LAST step (ban, storage, tombstone, users — in that
+ * order). Once that delete succeeds, `account_deletion_requests.user_id
+ * references users(id) on delete cascade` takes the request row with it, and
+ * there is nothing left here to revert. `.select("id")` below is the
+ * belt-and-braces proof of that (review N1): it checks whether the UPDATE
+ * actually matched a row rather than assuming it did, and logs a distinct
+ * message when it did not, instead of promising a retry that can never
+ * happen.
+ *
+ * Never throws (review N4): the whole body is wrapped, because this already
+ * runs from inside a catch or a guard whose job is to keep the rest of the
+ * pass moving — a further throw here would undo exactly that. Any failure,
+ * including the row being gone, is logged loudly, never silently swallowed.
  */
 async function revertToPending(service: ServiceClient, requestId: string): Promise<void> {
-  const { error } = await service
-    .from("account_deletion_requests")
-    .update({ status: "pending", executed_at: null })
-    .eq("id", requestId);
-  if (error) {
+  try {
+    const { data, error } = await service
+      .from("account_deletion_requests")
+      .update({ status: "pending", executed_at: null })
+      .eq("id", requestId)
+      .select("id");
+    if (error) {
+      console.error(
+        `[scheduler] account-deletion: FAILED to revert request ${requestId} back to pending ` +
+          `after a failed/skipped attempt — it will incorrectly stay "executed" until fixed by hand`,
+        error,
+      );
+      return;
+    }
+    if ((data ?? []).length === 0) {
+      console.error(
+        `[scheduler] account-deletion: request ${requestId} no longer exists — deletion was ` +
+          `already irreversible past the users-row delete; there is nothing left to revert`,
+      );
+    }
+  } catch (error) {
     console.error(
-      `[scheduler] account-deletion: FAILED to revert request ${requestId} back to pending ` +
-        `after a failed/skipped attempt — it will incorrectly stay "executed" until fixed by hand`,
+      `[scheduler] account-deletion: FAILED to revert request ${requestId} back to pending (threw)`,
       error,
     );
   }
@@ -118,22 +150,17 @@ export const accountDeletionJob: ScheduledJob = {
         .lte("purge_after", now.toISOString());
       if (purgeError) throw purgeError;
 
-      for (const row of (duePurges ?? []) as { user_id: string }[]) {
-        try {
-          // Idempotent on "already gone" (erase.ts) — a retry after this
-          // very loop's tombstone-delete failed on a prior pass converges
-          // instead of throwing forever.
-          await purgeAuthUser(row.user_id);
-          const { error: deleteError } = await service
-            .from("account_deletion_tombstones")
-            .delete()
-            .eq("user_id", row.user_id);
-          if (deleteError) throw deleteError;
-          counts.purged += 1;
-        } catch (rowError) {
+      for (const rawPurgeRow of (duePurges ?? []) as unknown[]) {
+        const parsedPurgeRow = duePurgeRowSchema.safeParse(rawPurgeRow);
+        if (!parsedPurgeRow.success) {
           counts.failed += 1;
-          console.error(`[scheduler] account-deletion: purge failed for user ${row.user_id}`, rowError);
+          console.error(
+            "[scheduler] account-deletion: malformed tombstone row failed validation — skipping",
+            parsedPurgeRow.error.flatten(),
+          );
+          continue;
         }
+        await processPurgeRow(service, parsedPurgeRow.data, counts);
       }
 
       console.info("[scheduler] account-deletion pass", counts);
@@ -194,5 +221,26 @@ async function processRow(service: ServiceClient, row: DueRow, now: Date, counts
       error,
     );
     await revertToPending(service, row.id);
+  }
+}
+
+/** One due tombstone row: purge the auth user, then delete the tombstone.
+ *  Independently try/caught, same reasoning as `processRow` — one user's
+ *  purge failing must not stop the rest of the purge loop. */
+async function processPurgeRow(service: ServiceClient, row: DuePurgeRow, counts: PassCounts): Promise<void> {
+  try {
+    // Idempotent on "already gone" (erase.ts) — a retry after this very
+    // loop's tombstone-delete failed on a prior pass converges instead of
+    // throwing forever.
+    await purgeAuthUser(row.user_id);
+    const { error: deleteError } = await service
+      .from("account_deletion_tombstones")
+      .delete()
+      .eq("user_id", row.user_id);
+    if (deleteError) throw deleteError;
+    counts.purged += 1;
+  } catch (error) {
+    counts.failed += 1;
+    console.error(`[scheduler] account-deletion: purge failed for user ${row.user_id}`, error);
   }
 }

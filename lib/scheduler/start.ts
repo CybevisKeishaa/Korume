@@ -18,10 +18,21 @@ const TICK_MS = 60_000;
 const SCHEDULER_STARTED = Symbol.for("korume.scheduler.started");
 type GlobalWithScheduler = typeof globalThis & { [SCHEDULER_STARTED]?: boolean };
 
-/** Test-only. Clears the globalThis-keyed started flag so each test gets a
- *  clean process-wide slate. Never called by application code. */
+/** The live interval handle, so a test reset can actually stop it (review
+ *  N7) — clearing only the `started` flag left a real 60s timer running for
+ *  any caller that did not also hold fake timers. */
+let intervalHandle: ReturnType<typeof setInterval> | undefined;
+
+/** Test-only. Clears the globalThis-keyed started flag AND cancels the live
+ *  interval, so each test gets a genuinely clean slate rather than a flag
+ *  reset with a timer still ticking in the background. Never called by
+ *  application code. */
 export function resetSchedulerForTests(): void {
   delete (globalThis as GlobalWithScheduler)[SCHEDULER_STARTED];
+  if (intervalHandle !== undefined) {
+    clearInterval(intervalHandle);
+    intervalHandle = undefined;
+  }
 }
 
 /**
@@ -62,5 +73,6 @@ export function startScheduler(): void {
   };
 
   safeTick();
-  setInterval(safeTick, TICK_MS).unref();
+  intervalHandle = setInterval(safeTick, TICK_MS);
+  intervalHandle.unref();
 }
