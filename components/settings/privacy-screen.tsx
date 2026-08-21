@@ -9,20 +9,24 @@ import { DeleteDataDialog } from "./delete-data-dialog";
 import { DeletionPendingBanner } from "./deletion-pending-banner";
 import { AiTrainingToggle } from "./ai-training-toggle";
 import type { DeletionTier } from "@/lib/account-deletion/lifecycle";
-import type { PendingDeletion } from "@/lib/data/account-deletion";
+import type { PendingDeletionRead } from "@/lib/data/account-deletion";
+import { getPendingDeletionResponseSchema } from "@/lib/validation/account-deletion";
 
 export interface PrivacyScreenProps {
   /** Server-read (`getModelTrainingConsent`, page.tsx) — see AiTrainingToggle. */
   initialAiTrainingConsent: boolean;
   /**
    * Server-read (`getPendingDeletion`, page.tsx) — the live deletion
-   * request for this user, if any, at the moment the page rendered. Null
-   * when there is none, including when the read failed and page.tsx fell
-   * back closed (see that file). Kept as its own piece of state below (not
-   * just read once) so a fresh POST or a cancel updates the screen without
-   * a reload or a re-fetch — Task 11.
+   * request for this user, if any, at the moment the page rendered. `null`
+   * means genuinely no request; `"unknown"` (fix round 1, Important #3(b))
+   * means the read failed and the true state could not be determined — these
+   * are never conflated, because during the 7-day cancellation window
+   * telling a user "no request" when the truth is "we don't know" is the
+   * dangerous direction to be wrong in. Kept as its own piece of state below
+   * (not just read once) so a fresh POST, a cancel, or a `refreshPending()`
+   * re-sync updates the screen without a reload — Task 11 / fix round 1.
    */
-  pending: PendingDeletion | null;
+  pending: PendingDeletionRead;
 }
 
 /**
@@ -56,20 +60,64 @@ export interface PrivacyScreenProps {
  * to regress, because it does not depend on remembering to reset four
  * separate fields by hand.
  *
- * Task 11: `pending !== null` is threaded into `DangerZone`'s
- * `pendingRequest` prop, disabling both destructive rows — the
- * `account_deletion_requests` table allows only one live request per user,
- * so re-opening either dialog while one exists can only produce the 409 the
- * API already refuses. The banner (rendered above the Danger Zone whenever
- * `pending` is set) is what tells the user why. `onConfirmed` receives the
- * newly-created `PendingDeletion` straight from `DeleteDataDialog` — already
- * validated at that boundary (see its own file) — and sets it directly, so
- * the banner appears with no reload and no extra round trip.
+ * Task 11: an actual pending request (not `null`, and not fix round 1's
+ * `"unknown"` — see `PrivacyScreenProps.pending`) is threaded into
+ * `DangerZone`'s `pendingRequest` prop, disabling both destructive rows —
+ * the `account_deletion_requests` table allows only one live request per
+ * user, so re-opening either dialog while one exists can only produce the
+ * 409 the API already refuses. The banner (rendered above the Danger Zone
+ * whenever `pending` is a real request) is what tells the user why, in
+ * tier-aware copy (fix round 1, Important #1) that also explains how to
+ * switch to the other kind of request (Important #2). `onConfirmed` receives
+ * the newly-created `PendingDeletion` straight from `DeleteDataDialog` —
+ * already validated at that boundary (see its own file) — and sets it
+ * directly, so the banner appears with no reload and no extra round trip.
+ * `refreshPending()` (this file's own function, passed down to both
+ * `DeleteDataDialog` and `DeletionPendingBanner`) is the single re-sync path
+ * for every case where a child's belief about pending-state might be wrong.
  */
 export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPending }: PrivacyScreenProps) {
   const t = useTranslations("settings");
   const [openTier, setOpenTier] = useState<DeletionTier | null>(null);
-  const [pending, setPending] = useState<PendingDeletion | null>(initialPending);
+  const [pending, setPending] = useState<PendingDeletionRead>(initialPending);
+
+  /**
+   * The ONE re-sync mechanism fix round 1 (2026-08-21) builds for every path
+   * where a child's belief about pending-state is known to be wrong or
+   * unknown — the dialog's `409` branch, the dialog's malformed/wrong-tier
+   * `200` branch, and the banner's cancel `404` branch all call this, rather
+   * than three separate ad hoc re-fetches. Validates the body the same way
+   * the POST success path already does (`pendingDeletionResponseSchema`'s
+   * sibling `getPendingDeletionResponseSchema`) — an unvalidated GET response
+   * must not drive this page's rendered state any more than an unvalidated
+   * POST response may. A failed fetch, a non-OK status, or a parse failure
+   * all land on `"unknown"`: the read did not confirm anything, so the state
+   * that reflects that honestly is "we don't know", not a guess in either
+   * direction.
+   */
+  async function refreshPending(): Promise<void> {
+    try {
+      const response = await fetch("/api/user/deletion");
+      if (!response.ok) {
+        setPending("unknown");
+        return;
+      }
+      const json: unknown = await response.json();
+      const parsed = getPendingDeletionResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        setPending("unknown");
+        return;
+      }
+      setPending(parsed.data.data);
+    } catch {
+      setPending("unknown");
+    }
+  }
+
+  // A transient read failure ("unknown") must not lock a user out of the
+  // GDPR right this page exists to serve — only an actual, confirmed pending
+  // request disables the Danger Zone rows (Important #3(b)).
+  const pendingRequest = pending !== null && pending !== "unknown";
 
   return (
     <Container className="py-3xl">
@@ -90,9 +138,21 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
 
         <AiTrainingToggle initialConsent={initialAiTrainingConsent} />
 
-        {pending ? (
+        {pending === "unknown" ? (
+          // No new visual vocabulary (Important #3(b)'s cap): the same
+          // neutral card language `AiTrainingToggle` already uses on this
+          // screen, not the danger-tinted banner styling below.
+          <div role="status" className="mt-xl rounded-lg border border-border bg-card p-lg">
+            <p className="text-body font-semibold">{t("privacy.checkFailedTitle")}</p>
+            <p className="mt-xs text-caption text-muted-foreground">{t("privacy.checkFailedBody")}</p>
+          </div>
+        ) : pending ? (
           <div className="mt-xl">
-            <DeletionPendingBanner pending={pending} onCancelled={() => setPending(null)} />
+            <DeletionPendingBanner
+              pending={pending}
+              onCancelled={() => setPending(null)}
+              refreshPending={refreshPending}
+            />
           </div>
         ) : null}
 
@@ -100,7 +160,7 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
           onCloseAccount={() => setOpenTier("close_account")}
           onEraseAll={() => setOpenTier("erase_all")}
           memoryHref="/settings/privacy/memory"
-          pendingRequest={pending !== null}
+          pendingRequest={pendingRequest}
         />
 
         <DeleteDataDialog
@@ -112,6 +172,7 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
             setPending(confirmed);
             setOpenTier(null);
           }}
+          refreshPending={refreshPending}
         />
       </div>
     </Container>

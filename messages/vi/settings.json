@@ -4,7 +4,9 @@
     "title": "Dữ liệu và quyền riêng tư của bạn",
     "subtitle": "Quản lý cách Korume lưu trữ và sử dụng dữ liệu học tập cá nhân của bạn.",
     "breadcrumbSettings": "Cài đặt",
-    "breadcrumbPrivacy": "Quyền riêng tư"
+    "breadcrumbPrivacy": "Quyền riêng tư",
+    "checkFailedTitle": "Chúng tôi chưa kiểm tra được yêu cầu đang chờ xử lý",
+    "checkFailedBody": "Đây thường chỉ là sự cố tạm thời. Hãy thử tải lại trang sau ít phút; các lựa chọn bên dưới vẫn hoạt động bình thường."
   },
   "aiTraining": {
     "title": "Giúp Korume cải thiện mô hình",
@@ -71,10 +73,18 @@
     }
   },
   "pending": {
-    "title": "Đã lên lịch xóa",
-    "body": "Dữ liệu của bạn được lên lịch xóa vào {date}. Hiện chưa có gì bị xóa.",
     "cancel": "Hủy yêu cầu xóa",
     "cancelled": "Yêu cầu xóa đã được hủy. Không có gì bị xóa.",
-    "failed": "Chúng tôi chưa hủy được yêu cầu. Vui lòng thử lại."
+    "failed": "Chúng tôi chưa hủy được yêu cầu. Vui lòng thử lại.",
+    "erase_all": {
+      "title": "Đã lên lịch xóa",
+      "body": "Dữ liệu của bạn được lên lịch xóa vào {date}. Hiện chưa có gì bị xóa.",
+      "switchNote": "Muốn đóng tài khoản và giữ lại dữ liệu thay vì xóa? Hãy hủy yêu cầu này trước, sau đó chọn \"Xóa tài khoản\"."
+    },
+    "close_account": {
+      "title": "Đã lên lịch đóng tài khoản",
+      "body": "Tài khoản của bạn sẽ đóng vào {date}. Dữ liệu học của bạn vẫn được giữ lại, không bị xóa.",
+      "switchNote": "Muốn xóa toàn bộ dữ liệu thay vì đóng tài khoản? Hãy hủy yêu cầu này trước, sau đó chọn \"Xóa toàn bộ dữ liệu của tôi\"."
+    }
   }
 }

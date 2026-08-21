@@ -16,6 +16,16 @@ export interface PendingDeletion {
   executeAfter: string;
 }
 
+/**
+ * The client-facing read outcome for `/settings/privacy` (fix round 1,
+ * Important #3(b)): `null` means genuinely no pending request; `"unknown"`
+ * means the read failed and the true state could not be determined. These
+ * must never be conflated — collapsing a failed read to `null` told a user
+ * mid-cancellation-window that nothing was scheduled when the truth was
+ * simply unknown, which is the more dangerous direction to be wrong in.
+ */
+export type PendingDeletionRead = PendingDeletion | null | "unknown";
+
 type Row = { id: string; tier: DeletionTier; requested_at: string; execute_after: string };
 
 const toPending = (row: Row): PendingDeletion => ({

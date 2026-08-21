@@ -34,12 +34,24 @@ export type DeletionRequestInput = z.infer<typeof deletionRequestSchema>;
  * unexpected SHAPE — a missing field, a wrong tier — not re-deriving the
  * API's own datetime format.
  */
-export const pendingDeletionResponseSchema = z.object({
-  data: z.object({
-    id: z.string(),
-    tier: z.enum(DELETION_TIERS),
-    requestedAt: z.string(),
-    executeAfter: z.string(),
-  }),
+const pendingDeletionSchema = z.object({
+  id: z.string(),
+  tier: z.enum(DELETION_TIERS),
+  requestedAt: z.string(),
+  executeAfter: z.string(),
 });
+
+export const pendingDeletionResponseSchema = z.object({ data: pendingDeletionSchema });
 export type PendingDeletionResponse = z.infer<typeof pendingDeletionResponseSchema>;
+
+/**
+ * GET /api/user/deletion response — validated at the client boundary the
+ * same way the POST success body already is (fix round 1, the
+ * `refreshPending()` mechanism in `components/settings/privacy-screen.tsx`).
+ * Shares `pendingDeletionSchema` with the POST schema above rather than
+ * spelling the same shape twice (CLAUDE.md §6, one fact one home); `data` is
+ * nullable here, unlike the POST response, because "no pending request" is
+ * this route's normal, successful answer.
+ */
+export const getPendingDeletionResponseSchema = z.object({ data: pendingDeletionSchema.nullable() });
+export type GetPendingDeletionResponse = z.infer<typeof getPendingDeletionResponseSchema>;

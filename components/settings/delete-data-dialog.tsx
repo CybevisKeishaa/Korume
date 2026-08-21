@@ -14,6 +14,17 @@ export interface DeleteDataDialogProps {
   tier: DeletionTier;
   onClose: () => void;
   onConfirmed: (pending: PendingDeletion) => void;
+  /**
+   * Re-fetches `GET /api/user/deletion` and sets `PrivacyScreen`'s `pending`
+   * state from the (validated) result — the ONE mechanism fix round 1
+   * (2026-08-21) builds for every path where this dialog's belief about
+   * pending-state is known to be wrong or unknown: a 409 (another tab
+   * already created a live request) and a malformed/wrong-tier 200 (the
+   * server may have created the request even though this response can't be
+   * trusted). Owned by `PrivacyScreen`, not this file, so there is exactly
+   * one implementation — see its own docstring.
+   */
+  refreshPending: () => Promise<void>;
 }
 
 /**
@@ -65,7 +76,7 @@ export interface DeleteDataDialogProps {
  * `privacy-screen.test.tsx`'s "does not carry a typed confirmation across a
  * close and a tier switch" test for the mutation-checked proof.
  */
-export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDataDialogProps) {
+export function DeleteDataDialog({ open, tier, onClose, onConfirmed, refreshPending }: DeleteDataDialogProps) {
   const t = useTranslations("settings");
   const [typed, setTyped] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
@@ -104,11 +115,19 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
         // 409/401 are not "try again" situations — retrying a request that
         // is already pending, or one whose session has expired, cannot
         // possibly succeed, so telling the user to retry is actively
-        // harmful (there is no pending-state banner yet to tell them
-        // otherwise; that is Task 11's). Every other status falls back to
-        // the generic message.
-        if (response.status === 409) setError(t("deleteDialog.alreadyPending"));
-        else if (response.status === 401) setError(t("deleteDialog.signedOut"));
+        // harmful. Every other status falls back to the generic message.
+        //
+        // 409 specifically means the screen's belief about pending-state is
+        // WRONG — a live request already exists (another tab, a second
+        // click race) — so `refreshPending()` re-syncs `PrivacyScreen` from
+        // the server (fix round 1, Important #3(a)): that is what makes the
+        // pending banner and its cancel button appear for this tab too,
+        // instead of leaving the user staring at an error with no way to
+        // see or stop the request it's telling them about.
+        if (response.status === 409) {
+          setError(t("deleteDialog.alreadyPending"));
+          void refreshPending();
+        } else if (response.status === 401) setError(t("deleteDialog.signedOut"));
         else if (response.status === 429) setError(t("deleteDialog.tooMany"));
         else setError(t("deleteDialog.failed"));
         return;
@@ -119,11 +138,20 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
       // comment for why. A parse failure is treated the same as any other
       // "couldn't schedule the deletion" failure, not a distinct message:
       // from the user's perspective the request did not go through either
-      // way.
+      // way. Fix round 1, #14: a well-formed body for a DIFFERENT tier than
+      // was submitted is caught here too — the schema checks shape, not
+      // that the returned tier matches what this dialog asked for.
+      //
+      // Both branches call `refreshPending()` (Important #3(c)): a
+      // malformed/wrong-tier 200 does not mean the request wasn't created —
+      // the server may have succeeded even though this response can't be
+      // trusted, so the screen re-syncs from the source of truth instead of
+      // asserting "nothing happened" when it might have.
       const json: unknown = await response.json();
       const parsed = pendingDeletionResponseSchema.safeParse(json);
-      if (!parsed.success) {
+      if (!parsed.success || parsed.data.data.tier !== tier) {
         setError(t("deleteDialog.failed"));
+        void refreshPending();
         return;
       }
       onConfirmed(parsed.data.data);

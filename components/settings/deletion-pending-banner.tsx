@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormatter, useTranslations } from "@/lib/i18n";
 import type { PendingDeletion } from "@/lib/data/account-deletion";
 
@@ -19,27 +19,77 @@ const VN_TIME_ZONE = "Asia/Ho_Chi_Minh";
  * from the card + outline-button language already on that screen — no new
  * visual vocabulary is invented for it.
  *
- * `role="status"` (polite live region), not `role="alert"`: this block is
- * present at initial render whenever a request already exists — a banner
- * that ASSERTIVELY interrupts on every page load is noise, not a fresh
- * event. Polite status is also the reason it earns its keep on the OTHER
- * path: when `PrivacyScreen` composes this in after a successful POST with
- * no reload, the live region announces the new content to a screen-reader
- * user who never moved focus. The cancel failure below is its own, separate
- * `role="alert"` — a genuinely new, assertive event the user needs to know
- * about immediately.
+ * Fix round 1 (2026-08-21):
+ *
+ * - **Tier-aware copy (Important #1).** `title`/`body`/`switchNote` read from
+ *   `settings.pending.${pending.tier}` — a complete, independent copy block
+ *   per tier (same shape `DeleteDataDialog` uses for `deleteDialog.${tier}`),
+ *   not a partial override. A `close_account` request is data-preserving;
+ *   rendering `erase_all`'s wording for it would tell the user the opposite
+ *   of what they were just promised in the dialog they confirmed.
+ * - **`switchNote` (Important #2)** is the visible explanation for why BOTH
+ *   Danger Zone rows are disabled while a request is pending: changing to a
+ *   different kind of request requires cancelling this one first (the
+ *   `account_deletion_requests` schema allows only one live row per user).
+ * - **`role="status"` now scopes only the title+body paragraphs (#6)**, not
+ *   the whole card — nesting `role="alert"` (the cancel-failure line) inside
+ *   `role="status"` is undefined behaviour and made some screen readers
+ *   re-announce the entire card on every error.
+ * - **Focus moves to this banner on mount (Important #4).** `Dialog` restores
+ *   focus to the trigger it captured on open; when a confirm handler both
+ *   sets `pending` and closes the dialog in the same commit, the trigger it
+ *   restores focus to already carries `disabled` (the Danger Zone row this
+ *   pending state disables), and `HTMLElement.focus()` on a disabled button
+ *   is a no-op — focus would land nowhere, immediately after the most
+ *   destructive action in the product. The container below is `tabIndex={-1}`
+ *   and focuses itself on mount, which also fires the first time this banner
+ *   appears on a normal page load with an existing request — an intentional,
+ *   not incidental, choice: next-intl route changes are not reliably
+ *   announced by screen readers, and moving focus to the most relevant
+ *   content on render is the same "route announcer" pattern SPAs use for
+ *   that gap.
+ * - **Docstring correction (#5):** a previous version of this comment
+ *   claimed the (assertive) live region "announces the new content to a
+ *   screen-reader user who never moved focus." Screen readers generally only
+ *   announce mutations to regions that were already present before the
+ *   content changed — a region and its content inserted in the same commit,
+ *   as happens here, is unreliable across NVDA/JAWS/VoiceOver. The guarantee
+ *   this component actually makes is the explicit focus move above, which is
+ *   asserted directly in `privacy-screen.test.tsx`; `role="status"` is kept
+ *   because it is still the correct semantic role for this steady-state
+ *   content, not because it is relied on to deliver the initial
+ *   announcement.
  */
 export function DeletionPendingBanner({
   pending,
   onCancelled,
+  refreshPending,
 }: {
   pending: PendingDeletion;
   onCancelled: () => void;
+  /**
+   * Re-fetches and re-syncs `PrivacyScreen`'s `pending` state from the
+   * server — called here when a cancel returns `404` (fix round 1, ruled-up
+   * #7): a cancelled-in-another-tab request must not be assumed by this tab;
+   * the server decides what the banner shows next, including removing it.
+   */
+  refreshPending: () => Promise<void>;
 }) {
   const t = useTranslations("settings");
   const format = useFormatter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.focus();
+  }, []);
+
+  // Same tier-key composition `DeleteDataDialog` uses for `deleteDialog.tier`
+  // — `pending.tier` is exactly `DeletionTier`'s two literal values, so it
+  // doubles as the copy-block key with no separate tier→key map to keep in
+  // sync (CLAUDE.md §6, one fact one home).
+  const copy = `pending.${pending.tier}` as const;
 
   async function cancel(): Promise<void> {
     setSubmitting(true);
@@ -49,11 +99,23 @@ export function DeletionPendingBanner({
       if (!response.ok) {
         // Branch on the STATUS only, never the body — the same no-parse
         // discipline `delete-data-dialog.tsx` established (CLAUDE.md §2/§6,
-        // the defect class L9a closed five times). Every failure status
-        // (404 already-cancelled/expired, 401, 429, 500) maps to the same
-        // generic translated message: none of them is a "try a different
-        // thing" situation the user can act on differently.
-        setError(t("pending.failed"));
+        // the defect class L9a closed five times).
+        if (response.status === 404) {
+          // A 404 here means "no pending request" — which could mean this
+          // request was already cancelled from another tab, OR that it was
+          // never live to begin with. Either way this tab's belief is
+          // stale; ask the server what's actually true rather than
+          // rendering a "try again" message for a cancel that can never
+          // succeed (ruled-up #7).
+          void refreshPending();
+          return;
+        }
+        // 401/429 mirror the dialog's own mapping — the same feature
+        // shipping two different behaviours for the same two statuses would
+        // be a "one fact, one home" violation (CLAUDE.md §6).
+        if (response.status === 401) setError(t("deleteDialog.signedOut"));
+        else if (response.status === 429) setError(t("deleteDialog.tooMany"));
+        else setError(t("pending.failed"));
         return;
       }
       onCancelled();
@@ -65,16 +127,23 @@ export function DeletionPendingBanner({
   }
 
   return (
-    <div role="status" className="rounded-lg border border-danger/40 bg-danger/5 p-lg">
-      <p className="text-body font-semibold">{t("pending.title")}</p>
-      <p className="mt-xs text-caption text-muted-foreground">
-        {t("pending.body", {
-          date: format.dateTime(new Date(pending.executeAfter), {
-            dateStyle: "long",
-            timeZone: VN_TIME_ZONE,
-          }),
-        })}
-      </p>
+    <div
+      ref={containerRef}
+      tabIndex={-1}
+      className="rounded-lg border border-danger/40 bg-danger/5 p-lg focus:outline-none focus:ring-2 focus:ring-danger"
+    >
+      <div role="status">
+        <p className="text-body font-semibold">{t(`${copy}.title`)}</p>
+        <p className="mt-xs text-caption text-muted-foreground">
+          {t(`${copy}.body`, {
+            date: format.dateTime(new Date(pending.executeAfter), {
+              dateStyle: "long",
+              timeZone: VN_TIME_ZONE,
+            }),
+          })}
+        </p>
+      </div>
+      <p className="mt-sm text-caption text-muted-foreground">{t(`${copy}.switchNote`)}</p>
       {error ? (
         <p role="alert" className="mt-sm text-caption text-danger-strong">
           {error}

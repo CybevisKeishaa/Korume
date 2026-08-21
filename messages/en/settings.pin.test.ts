@@ -119,6 +119,35 @@ describe("settings.json EN — close_account tells the truth about what happens"
   });
 });
 
+/**
+ * Fix round 1 (2026-08-21), Important #1: `pending.erase_all` and
+ * `pending.close_account` must carry the exact same KEY structure — only the
+ * copy differs by tier, mirroring `deleteDialog`'s own key-parity guard
+ * above. A partial override (falling back to erase-all's title/body when a
+ * close_account key is missing) is exactly the misstatement class this
+ * branch keeps finding — a `close_account` request is data-preserving, and
+ * silently showing it erase-all's "scheduled for deletion" wording would be
+ * a false statement to the user inside a GDPR flow.
+ */
+describe("settings.json EN — pending tier copy blocks", () => {
+  it("erase_all and close_account carry identical key structure", () => {
+    const eraseAllKeys = leafKeyPaths(en.pending.erase_all).sort();
+    const closeAccountKeys = leafKeyPaths(en.pending.close_account).sort();
+
+    // Non-vacuity + exact expected size (CLAUDE.md §7): title/body/switchNote
+    // = 3 leaf keys per block, measured directly against the committed JSON.
+    expect(eraseAllKeys).toHaveLength(3);
+    expect(closeAccountKeys).toHaveLength(3);
+    expect(eraseAllKeys).toEqual(closeAccountKeys);
+  });
+
+  it("never claims the close_account request deletes anything", () => {
+    const closeAccount = JSON.stringify(en.pending.close_account).toLowerCase();
+    expect(closeAccount).not.toContain("scheduled for deletion");
+    expect(closeAccount).not.toContain("will be deleted");
+  });
+});
+
 /** Recursively collects `"a.b.c"`-style leaf key paths of a plain object. */
 function leafKeyPaths(value: unknown, prefix = ""): string[] {
   if (value === null || typeof value !== "object") return [prefix];
