@@ -16,11 +16,20 @@ export interface DeleteDataDialogProps {
 }
 
 /**
- * `339:3612`, built structurally verbatim — six categories, PLEASE NOTE,
- * typed confirmation plus checkbox, Keep my data / Delete all my data. One
- * thing changes: the frame says "cannot be undone", and the LOCKED lifecycle
- * is cancelable for 7 days (spec §2). The words are corrected; the sections
- * are not.
+ * `339:3612`, built structurally verbatim for BOTH deletion tiers — six
+ * categories, PLEASE NOTE, typed confirmation plus checkbox, Keep/Confirm —
+ * only the copy differs by `tier`, read from `settings.deleteDialog.${tier}`
+ * (fix round 1, 2026-08-21): `erase_all` and `close_account` are complete,
+ * independent copy blocks with identical key structure (guarded by
+ * `messages/en/settings.pin.test.ts`'s "identical key structure" test), not
+ * partial overrides — a missing key in one tier must never silently fall
+ * back to the other tier's wording, which for `close_account` would wrongly
+ * claim data is being deleted (`dangerZone.closeAccount.body` promises the
+ * opposite: "Your learning data is kept, and you can come back").
+ *
+ * The frame says "cannot be undone" for the erase-all case; the LOCKED
+ * lifecycle is cancelable for 7 days for BOTH tiers (spec §2). The words are
+ * corrected; the sections are not.
  *
  * Composed on `components/ui/dialog.tsx`'s `Dialog` — a single controlled
  * component (title/description/children), not the `DialogContent`/
@@ -36,6 +45,12 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputId = useId();
+
+  // Every tier-specific string reads through this prefix. `tier` is exactly
+  // `DeletionTier`'s own literal values (`erase_all` | `close_account`),
+  // which double as the copy-block key — one fact, one home (CLAUDE.md §6),
+  // no separate tier→key mapping to keep in sync.
+  const copy = `deleteDialog.${tier}` as const;
 
   const ready = typed === "DELETE" && acknowledged && !submitting;
 
@@ -74,36 +89,36 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
     <Dialog
       open={open}
       onClose={onClose}
-      title={t("deleteDialog.title")}
-      description={t("deleteDialog.subtitle")}
-      closeLabel={t("deleteDialog.keep")}
+      title={t(`${copy}.title`)}
+      description={t(`${copy}.subtitle`)}
+      closeLabel={t(`${copy}.keep`)}
       className="max-w-[42rem]"
     >
-      <p className="text-caption uppercase tracking-wide text-accent-strong">{t("deleteDialog.eyebrow")}</p>
+      <p className="text-caption uppercase tracking-wide text-accent-strong">{t(`${copy}.eyebrow`)}</p>
 
-      <h3 className="mt-lg text-body font-semibold">{t("deleteDialog.whatHeading")}</h3>
+      <h3 className="mt-lg text-body font-semibold">{t(`${copy}.whatHeading`)}</h3>
       <ul className="mt-md divide-y divide-border">
         {CATEGORY_KEYS.map((key) => (
           <li key={key} data-testid="delete-category" className="py-sm">
-            <p className="text-body">{t(`deleteDialog.items.${key}.title`)}</p>
-            <p className="text-caption text-muted-foreground">{t(`deleteDialog.items.${key}.body`)}</p>
+            <p className="text-body">{t(`${copy}.items.${key}.title`)}</p>
+            <p className="text-caption text-muted-foreground">{t(`${copy}.items.${key}.body`)}</p>
           </li>
         ))}
       </ul>
 
       <div className="mt-lg rounded-md border border-danger/40 bg-danger/5 p-md">
-        <p className="text-caption uppercase tracking-wide text-danger-strong">{t("deleteDialog.noteLabel")}</p>
-        <p className="mt-xs text-caption text-muted-foreground">{t("deleteDialog.note")}</p>
+        <p className="text-caption uppercase tracking-wide text-danger-strong">{t(`${copy}.noteLabel`)}</p>
+        <p className="mt-xs text-caption text-muted-foreground">{t(`${copy}.note`)}</p>
       </div>
 
       <p className="mt-lg text-caption uppercase tracking-wide text-muted-foreground">
-        {t("deleteDialog.confirmLabel")}
+        {t(`${copy}.confirmLabel`)}
       </p>
-      <h3 className="mt-xs text-heading font-bold">{t("deleteDialog.confirmHeading")}</h3>
-      <p className="mt-xs text-caption text-muted-foreground">{t("deleteDialog.confirmBody")}</p>
+      <h3 className="mt-xs text-heading font-bold">{t(`${copy}.confirmHeading`)}</h3>
+      <p className="mt-xs text-caption text-muted-foreground">{t(`${copy}.confirmBody`)}</p>
 
       <label htmlFor={inputId} className="mt-md block text-caption">
-        {t("deleteDialog.typePrompt")}
+        {t(`${copy}.typePrompt`)}
       </label>
       <input
         id={inputId}
@@ -119,7 +134,7 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
           checked={acknowledged}
           onChange={(event) => setAcknowledged(event.target.checked)}
         />
-        {t("deleteDialog.acknowledge")}
+        {t(`${copy}.acknowledge`)}
       </label>
 
       {error ? (
@@ -130,7 +145,7 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
 
       <div className="mt-lg flex items-center justify-end gap-sm">
         <button type="button" onClick={onClose} className="rounded-full bg-secondary px-lg py-sm text-caption">
-          {t("deleteDialog.keep")}
+          {t(`${copy}.keep`)}
         </button>
         <button
           type="button"
@@ -138,7 +153,7 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
           onClick={() => void submit()}
           className="rounded-full bg-danger px-lg py-sm text-caption font-semibold text-danger-foreground disabled:opacity-50"
         >
-          {t("deleteDialog.confirm")}
+          {t(`${copy}.confirm`)}
         </button>
       </div>
     </Dialog>

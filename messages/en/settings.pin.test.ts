@@ -22,15 +22,15 @@ describe("settings.json EN — the 7-day window", () => {
     expect(all).not.toContain("permanently remove");
   });
 
-  it("states the cancelable window in the dialog note", () => {
-    expect(en.deleteDialog.note).toBe(
+  it("states the cancelable window in the erase-all dialog note", () => {
+    expect(en.deleteDialog.erase_all.note).toBe(
       "You have 7 days to change your mind. We keep your data untouched until then, and you can cancel any time from this page. Some records may be retained where required for legal, security, or billing purposes.",
     );
   });
 
-  it("pins the two dialog buttons", () => {
-    expect(en.deleteDialog.keep).toBe("Keep my data");
-    expect(en.deleteDialog.confirm).toBe("Delete all my data");
+  it("pins the two erase-all dialog buttons", () => {
+    expect(en.deleteDialog.erase_all.keep).toBe("Keep my data");
+    expect(en.deleteDialog.erase_all.confirm).toBe("Delete all my data");
   });
 
   it("pins the three Danger Zone rows", () => {
@@ -46,6 +46,78 @@ describe("settings.json EN — the 7-day window", () => {
     );
   });
 });
+
+/**
+ * `close_account` reuses `DeleteDataDialog`'s structure with `tier`
+ * (fix round 1, 2026-08-21) — `dangerZone.closeAccount.body` promises
+ * "Your learning data is kept, and you can come back", so the dialog's own
+ * copy for this tier must say the same thing, never the erase-all block's
+ * "will be deleted" language. These pins hold that promise; the global
+ * "never claims irreversible" test above already covers this block too
+ * (it scans the whole `en` object).
+ */
+describe("settings.json EN — close_account tells the truth about what happens", () => {
+  it("never claims the account's data is deleted or erased", () => {
+    // "not erased" / "not deleted" are the honest disclaimer this copy is
+    // FOR, so the banned phrases are the claims themselves, not the bare
+    // words — a substring check on "erased" alone would flag its own
+    // negation.
+    const closeAccount = JSON.stringify(en.deleteDialog.close_account).toLowerCase();
+    expect(closeAccount).not.toContain("will be deleted");
+    expect(closeAccount).not.toContain("will be erased");
+    expect(closeAccount).not.toContain("your data will no longer");
+  });
+
+  it("states plainly that learning data is kept, not deleted", () => {
+    expect(en.deleteDialog.close_account.subtitle).toBe(
+      "Close your Korume account. Your learning data is not deleted.",
+    );
+    expect(en.deleteDialog.close_account.note).toContain("does not delete your learning data");
+  });
+
+  it("still applies the 7-day cancelable window to closing, the same as erasing", () => {
+    expect(en.deleteDialog.close_account.note).toContain("You have 7 days to change your mind");
+  });
+
+  it("pins the two close-account dialog buttons, distinct from erase-all's", () => {
+    expect(en.deleteDialog.close_account.keep).toBe("Keep my account");
+    expect(en.deleteDialog.close_account.confirm).toBe("Close my account");
+  });
+
+  /**
+   * `erase_all` and `close_account` must carry the exact same KEY structure
+   * — only the copy differs by tier (fix round 1's explicit requirement).
+   * Without this, a future edit that adds a key to one block but not the
+   * other fails silently: `DeleteDataDialog` would render `undefined`, or
+   * next-intl would fall back in a way that could show erase-all wording
+   * under the close-account tier — precisely the misstatement this fix
+   * round exists to prevent.
+   */
+  it("erase_all and close_account carry identical key structure", () => {
+    const eraseAllKeys = leafKeyPaths(en.deleteDialog.erase_all).sort();
+    const closeAccountKeys = leafKeyPaths(en.deleteDialog.close_account).sort();
+
+    // Non-vacuity + exact expected size (CLAUDE.md §7): both collections are
+    // gathered by walking the object shape, so an empty or short list would
+    // make the equality check below pass by accident. 25 was measured
+    // directly against the committed JSON (`node -e`), not guessed:
+    // eyebrow/title/subtitle/whatHeading/noteLabel/note/confirmLabel/
+    // confirmHeading/confirmBody/typePrompt/acknowledge/keep/confirm (13)
+    // + items.{profile,progress,memory,companion,saved,practice}.{title,body}
+    // (12) = 25.
+    expect(eraseAllKeys).toHaveLength(25);
+    expect(closeAccountKeys).toHaveLength(25);
+    expect(eraseAllKeys).toEqual(closeAccountKeys);
+  });
+});
+
+/** Recursively collects `"a.b.c"`-style leaf key paths of a plain object. */
+function leafKeyPaths(value: unknown, prefix = ""): string[] {
+  if (value === null || typeof value !== "object") return [prefix];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
+    leafKeyPaths(child, prefix ? `${prefix}.${key}` : key),
+  );
+}
 
 /**
  * `vi` is `routing.defaultLocale` — the catalog this product's primary
@@ -76,14 +148,21 @@ describe("settings.json VI — the 7-day window (primary learner locale)", () =>
     expect(all).not.toContain("xóa vĩnh viễn không thể khôi phục");
   });
 
-  it("states the cancelable window in the dialog note", () => {
-    expect(vi.deleteDialog.note).toBe(
+  it("states the cancelable window in the erase-all dialog note", () => {
+    expect(vi.deleteDialog.erase_all.note).toBe(
       "Bạn có 7 ngày để đổi ý. Trong thời gian đó dữ liệu được giữ nguyên và bạn có thể hủy bất cứ lúc nào ngay tại trang này. Một số bản ghi có thể được lưu lại khi pháp luật, bảo mật hoặc thanh toán yêu cầu.",
     );
   });
 
-  it("pins the two dialog buttons", () => {
-    expect(vi.deleteDialog.keep).toBe("Giữ lại dữ liệu");
-    expect(vi.deleteDialog.confirm).toBe("Xóa toàn bộ dữ liệu của tôi");
+  it("pins the two erase-all dialog buttons", () => {
+    expect(vi.deleteDialog.erase_all.keep).toBe("Giữ lại dữ liệu");
+    expect(vi.deleteDialog.erase_all.confirm).toBe("Xóa toàn bộ dữ liệu của tôi");
+  });
+
+  it("close_account tells the truth: learning data is kept, not deleted", () => {
+    expect(vi.deleteDialog.close_account.subtitle).toContain("không bị xóa");
+    expect(vi.deleteDialog.close_account.note).toContain("không xóa dữ liệu học");
+    expect(vi.deleteDialog.close_account.keep).toBe("Giữ tài khoản");
+    expect(vi.deleteDialog.close_account.confirm).toBe("Đóng tài khoản");
   });
 });

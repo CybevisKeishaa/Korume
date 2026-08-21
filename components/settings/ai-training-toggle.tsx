@@ -3,26 +3,35 @@
 import { useId, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 
+export interface AiTrainingToggleProps {
+  /**
+   * Server-read initial state (`lib/data/model-training-consent.ts`'s
+   * `getModelTrainingConsent`, called from `page.tsx` — no `GET` route; the
+   * page reads the DB directly). This governs whether the caller's voice
+   * recordings may train models (CLAUDE.md §2 rule 2), so a misreported
+   * initial state is not a polish gap: an opted-in user who saw a stale
+   * "off" toggle could click it believing they were turning consent ON when
+   * they were actually turning it OFF. The read fails closed (`false`) on
+   * any auth or DB failure — this component never fetches its own initial
+   * value and must be trusted to render exactly what it was given.
+   */
+  initialConsent: boolean;
+}
+
 /**
  * CLAUDE.md §2 rule 2's opt-in consent to use recordings and learning data
  * for model training — `PATCH /api/user/model-training-consent` (Task 7).
  * Off by default, matching `users.model_training_consent`'s DB default
  * (migration 20260820000029).
  *
- * ⚠️ Task 7 shipped `PATCH` only, no `GET`. There is no way to read a
- * persisted "on" state, so this always starts unchecked rather than
- * fabricating a read this component cannot actually perform. A future task
- * that adds a read path should thread the real value in as a prop, not
- * invent a client-side fetch here.
- *
  * Optimistic update with rollback, mirroring
  * `components/community/leaderboard-opt-in-toggle.tsx`'s established
  * pattern. Never renders the server's own error text (CLAUDE.md §2/§6).
  */
-export function AiTrainingToggle() {
+export function AiTrainingToggle({ initialConsent }: AiTrainingToggleProps) {
   const t = useTranslations("settings");
   const tCommon = useTranslations("common");
-  const [consent, setConsent] = useState(false);
+  const [consent, setConsent] = useState(initialConsent);
   const [error, setError] = useState<string | null>(null);
   const inputId = useId();
 

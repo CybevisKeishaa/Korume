@@ -2,31 +2,39 @@
 
 import { useState } from "react";
 import { useTranslations } from "@/lib/i18n";
-import { Link, useRouter } from "@/lib/i18n/navigation";
+import { Link } from "@/lib/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { DangerZone } from "./danger-zone";
 import { DeleteDataDialog } from "./delete-data-dialog";
 import { AiTrainingToggle } from "./ai-training-toggle";
+import type { DeletionTier } from "@/lib/account-deletion/lifecycle";
+
+export interface PrivacyScreenProps {
+  /** Server-read (`getModelTrainingConsent`, page.tsx) — see AiTrainingToggle. */
+  initialAiTrainingConsent: boolean;
+}
 
 /**
- * `337:3323`, the client half — holds only which dialog is open. The
- * pending-deletion banner (Task 11) and the `pending` prop that feeds it are
- * deliberately NOT wired here: that task composes itself in when it lands,
- * rather than this file carrying an unused prop in anticipation of it.
+ * `337:3323`, the client half — holds only which dialog is open (and which
+ * tier). The pending-deletion banner (Task 11) and the `pending` prop that
+ * feeds it are deliberately NOT wired here: that task composes itself in
+ * when it lands, rather than this file carrying an unused prop in
+ * anticipation of it.
  *
- * "Delete Account" (close_account) has no confirmation dialog in this unit.
- * `DeleteDataDialog`'s copy (`settings.deleteDialog.*`) is written for
- * `erase_all` specifically — it lists categories being erased and says
- * nothing survives — while `dangerZone.closeAccount.body` promises the
- * opposite ("Your learning data is kept, and you can come back"). Opening
- * that dialog for this row would misstate the consequence, so it routes to
- * the same kind of honest not-built destination the memory row's `Link`
- * already uses, rather than a dialog that would lie about what happens.
+ * Both Danger Zone rows that need confirmation ("Delete Account" and
+ * "Delete all my data") open the SAME `DeleteDataDialog`, distinguished only
+ * by `tier` — fix round 1 (2026-08-21). `DeleteDataDialog`'s copy is a
+ * complete, independent block per tier (`settings.deleteDialog.erase_all` /
+ * `.close_account`), so `close_account` never shows erase-all's "will be
+ * deleted" wording; it says plainly that learning data is kept, matching
+ * `dangerZone.closeAccount.body`'s promise ("Your learning data is kept, and
+ * you can come back"). Only the memory row still points at an honest
+ * not-built destination — that feature genuinely has no confirmation flow
+ * anywhere in this branch.
  */
-export function PrivacyScreen() {
+export function PrivacyScreen({ initialAiTrainingConsent }: PrivacyScreenProps) {
   const t = useTranslations("settings");
-  const router = useRouter();
-  const [eraseAllOpen, setEraseAllOpen] = useState(false);
+  const [openTier, setOpenTier] = useState<DeletionTier | null>(null);
 
   return (
     <Container className="py-3xl">
@@ -45,19 +53,19 @@ export function PrivacyScreen() {
         <h1 className="mt-xs text-title font-bold">{t("privacy.title")}</h1>
         <p className="mt-xs text-body text-muted-foreground">{t("privacy.subtitle")}</p>
 
-        <AiTrainingToggle />
+        <AiTrainingToggle initialConsent={initialAiTrainingConsent} />
 
         <DangerZone
-          onCloseAccount={() => router.push("/settings/privacy/close-account")}
-          onEraseAll={() => setEraseAllOpen(true)}
+          onCloseAccount={() => setOpenTier("close_account")}
+          onEraseAll={() => setOpenTier("erase_all")}
           memoryHref="/settings/privacy/memory"
         />
 
         <DeleteDataDialog
-          open={eraseAllOpen}
-          tier="erase_all"
-          onClose={() => setEraseAllOpen(false)}
-          onConfirmed={() => setEraseAllOpen(false)}
+          open={openTier !== null}
+          tier={openTier ?? "erase_all"}
+          onClose={() => setOpenTier(null)}
+          onConfirmed={() => setOpenTier(null)}
         />
       </div>
     </Container>

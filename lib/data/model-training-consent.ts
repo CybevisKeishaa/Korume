@@ -21,6 +21,47 @@ export type SetModelTrainingConsentResult =
  * training pipeline exists yet, so this is a stored preference and the gate a
  * future one must read, not a live switch.
  */
+export interface ModelTrainingConsentSnapshot {
+  consent: boolean;
+}
+
+/**
+ * Best-effort READ of the persisted flag, for seeding the settings toggle's
+ * initial state server-side (no `GET` route — `page.tsx` reads the DB
+ * directly, same as any other server component).
+ *
+ * This governs whether the caller's voice recordings may train models
+ * (CLAUDE.md §2 rule 2), so a UI that misreports it is not a polish gap: an
+ * opted-in user who saw a stale "off" toggle could click it believing they
+ * were turning consent ON when they were actually turning it OFF. Unlike
+ * `setModelTrainingConsent`, this function therefore never throws and never
+ * reports `true` on anything less than a confirmed read — an unauthenticated
+ * caller, a missing row, or an unexpected DB failure all fail CLOSED
+ * (`consent: false`), and a DB failure must not crash the whole
+ * `/settings/privacy` page over one ancillary toggle default.
+ */
+export async function getModelTrainingConsent(): Promise<ModelTrainingConsentSnapshot> {
+  try {
+    const supabase = createClient();
+    const user = await requireUser(supabase);
+    if (!user) return { consent: false };
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("model_training_consent")
+      .eq("id", user.id)
+      .single();
+    if (error) throw error;
+
+    return { consent: (data as { model_training_consent: boolean }).model_training_consent === true };
+  } catch (error) {
+    // eslint-disable-next-line no-console -- server-side only; a failed read
+    // must never crash the page and must never be mistaken for consent.
+    console.error("[data/model-training-consent] getModelTrainingConsent failed:", error);
+    return { consent: false };
+  }
+}
+
 export async function setModelTrainingConsent(
   input: ModelTrainingConsentInput,
   now: Date = new Date(),
