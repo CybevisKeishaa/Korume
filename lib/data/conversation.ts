@@ -146,6 +146,9 @@ export interface PostConversationMessageInput {
   sessionId: string;
   message: string;
   level?: JlptLevel;
+  /** See `postConversationMessageSchema`'s doc comment: self-reported and
+   *  range-validated at the API boundary, and NOT YET fed by any caller. */
+  pronunciationScore?: number;
 }
 
 export type PostConversationMessageResult =
@@ -193,7 +196,12 @@ export async function postConversationMessage(
 
   const { error: insertUserError } = await supabase
     .from("conversation_messages")
-    .insert({ session_id: input.sessionId, role: "user", content: input.message });
+    .insert({
+      session_id: input.sessionId,
+      role: "user",
+      content: input.message,
+      pronunciation_score: input.pronunciationScore ?? null,
+    });
   if (insertUserError) throw insertUserError;
 
   const turns = capHistory<ConversationTurn>([

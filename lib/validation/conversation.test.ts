@@ -61,6 +61,15 @@ describe("postConversationMessageSchema", () => {
     const result = postConversationMessageSchema.parse({ sessionId: UUID, message: "  はい  " });
     expect(result.message).toBe("はい");
   });
+
+  it("rejects a pronunciation score outside 0–100", () => {
+    const base = { sessionId: UUID, message: "hi" };
+    expect(postConversationMessageSchema.safeParse({ ...base, pronunciationScore: 101 }).success).toBe(false);
+    expect(postConversationMessageSchema.safeParse({ ...base, pronunciationScore: -1 }).success).toBe(false);
+    // Positive control — the guard must accept the values it is supposed to.
+    expect(postConversationMessageSchema.safeParse({ ...base, pronunciationScore: 0 }).success).toBe(true);
+    expect(postConversationMessageSchema.safeParse({ ...base, pronunciationScore: 100 }).success).toBe(true);
+  });
 });
 
 describe("capHistory", () => {
