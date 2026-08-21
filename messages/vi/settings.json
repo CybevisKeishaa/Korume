@@ -39,7 +39,8 @@
     "acknowledge": "Tôi hiểu dữ liệu của tôi sẽ bị xóa sau 7 ngày.",
     "keep": "Giữ lại dữ liệu",
     "confirm": "Xóa toàn bộ dữ liệu của tôi",
-    "support": "Bạn có thể yêu cầu xóa dữ liệu cá nhân bất cứ lúc nào. Nếu cần trợ giúp, hãy liên hệ Hỗ trợ Korume."
+    "support": "Bạn có thể yêu cầu xóa dữ liệu cá nhân bất cứ lúc nào. Nếu cần trợ giúp, hãy liên hệ Hỗ trợ Korume.",
+    "failed": "Chúng tôi chưa lên lịch xóa được. Vui lòng thử lại."
   },
   "pending": {
     "title": "Đã lên lịch xóa",

@@ -476,7 +476,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   },
   // account/2 — designed, placeholder. Frame's current name is "Global
   // settings" (rename pass verified 2026-08-12; figma-frame-map.md records
-  // the trimmed string).
+  // the trimmed string). Re-checked 2026-08-20 alongside its child privacy
+  // screen below — genuinely compared, not carried forward by habit.
   {
     screenId: "settings",
     name: "Global settings",
@@ -484,12 +485,49 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     variantOf: null,
     figmaNodeId: "220:16032",
     repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
+    figmaCheckedAt: "2026-08-20",
     route: "/settings",
     chrome: "app",
     impl: "placeholder",
     navGroup: "account",
     navOrder: 2,
+  },
+  // 337:3323 — reached from Settings, not a nav destination of its own
+  // (navGroup/navOrder null, same convention as the certification detail
+  // route below). Danger Zone lives here per settings-patterns.md's
+  // Dangerous Settings Separation, satisfied by structure rather than a
+  // heading — Figma's own "Global settings" frame inlines everything into
+  // one 3758px page; this repo gives Privacy its own route instead.
+  {
+    screenId: "data-privacy",
+    name: "Data privacy (for delete)",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "337:3323",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-20",
+    route: "/settings/privacy",
+    chrome: "app",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+  },
+  // 339:3612 — the delete-all-my-data confirmation dialog: an overlay, not a
+  // route (port-workflow spec §5.4), so `route` is null the same way every
+  // other state-variant's is.
+  {
+    screenId: "delete-data",
+    name: "Delete data",
+    kind: "state-variant",
+    variantOf: "data-privacy",
+    figmaNodeId: "339:3612",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-20",
+    route: null,
+    chrome: null,
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
   },
 
   // -------------------------------------------------------------------
