@@ -22,10 +22,15 @@ export interface DeleteDataDialogProps {
  * (fix round 1, 2026-08-21): `erase_all` and `close_account` are complete,
  * independent copy blocks with identical key structure (guarded by
  * `messages/en/settings.pin.test.ts`'s "identical key structure" test), not
- * partial overrides — a missing key in one tier must never silently fall
- * back to the other tier's wording, which for `close_account` would wrongly
- * claim data is being deleted (`dangerZone.closeAccount.body` promises the
- * opposite: "Your learning data is kept, and you can come back").
+ * partial overrides. next-intl has no cross-tier fallback — a key missing
+ * from one tier renders its own raw key path or throws, it does not borrow
+ * the other tier's string — but a missing `close_account` key would still
+ * be its own defect on a destructive-action surface (a raw literal like
+ * `"deleteDialog.close_account.confirmBody"` next to a live "Close my
+ * account" button), and the two-block shape exists so that never happens
+ * quietly: `close_account`'s copy must independently say plainly that data
+ * is KEPT (`dangerZone.closeAccount.body`'s promise: "Your learning data is
+ * kept, and you can come back"), never inherit anything from `erase_all`.
  *
  * The frame says "cannot be undone" for the erase-all case; the LOCKED
  * lifecycle is cancelable for 7 days for BOTH tiers (spec §2). The words are
@@ -35,8 +40,29 @@ export interface DeleteDataDialogProps {
  * component (title/description/children), not the `DialogContent`/
  * `DialogTitle`/`DialogDescription` compound API — so the eyebrow kicker
  * renders as the first child rather than literally above the dialog's own
- * heading. Focus trap, Escape-to-close and focus return on close all come
- * from that shared primitive; nothing here reimplements them.
+ * heading (accepted on review: dropping `title` to control ordering would
+ * forfeit the accessible name, and trading an a11y guarantee for pixel
+ * order is the wrong trade). Focus trap, Escape-to-close and focus return
+ * on close all come from that shared primitive; nothing here reimplements
+ * them.
+ *
+ * `deleteDialog.support` (shared across tiers, reworded in fix round 2 to
+ * drop its erase-specific framing — "you can request deletion of your
+ * personal data" doesn't describe closing an account) is rendered as a
+ * footer line rather than deleted: against "the frame's template is kept
+ * verbatim," dropping a whole line the frame draws is a bigger structural
+ * departure than any spacing/ordering call made elsewhere in this file.
+ *
+ * `open` remounts the whole dialog on every open and on every tier switch —
+ * `key={openTier ?? "closed"}` lives on the `<DeleteDataDialog>` call site
+ * in `privacy-screen.tsx`, not here, because `typed`/`acknowledged`/`error`/
+ * `submitting` are local state on an ALWAYS-MOUNTED component (Radix stops
+ * RENDERING children when `open` is false; it does not unmount them). Fix
+ * round 2, Critical: without the `key`, a typed "DELETE" + ticked
+ * acknowledgement from one tier survived an Escape and a reopen under the
+ * OTHER tier, arming its confirm button with zero new input — see
+ * `privacy-screen.test.tsx`'s "does not carry a typed confirmation across a
+ * close and a tier switch" test for the mutation-checked proof.
  */
 export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDataDialogProps) {
   const t = useTranslations("settings");
@@ -67,10 +93,23 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
         body: JSON.stringify({ tier, confirmation: "DELETE", acknowledged: true }),
       });
       if (!response.ok) {
-        // The server's own message never reaches the DOM (CLAUDE.md §2/§6 —
-        // the exact defect class L9a closed five times: a raw server string
-        // reaching a role="alert" node).
-        setError(t("deleteDialog.failed"));
+        // Branch on the STATUS CODE only — never start reading the body.
+        // A status code is not server-supplied text; the moment this branch
+        // called response.json() to look for a nicer message, the no-parse
+        // discipline that makes the "never render a server string" guarantee
+        // airtight would have a hole in it (CLAUDE.md §2/§6 — the exact
+        // defect class L9a closed five times).
+        //
+        // 409/401 are not "try again" situations — retrying a request that
+        // is already pending, or one whose session has expired, cannot
+        // possibly succeed, so telling the user to retry is actively
+        // harmful (there is no pending-state banner yet to tell them
+        // otherwise; that is Task 11's). Every other status falls back to
+        // the generic message.
+        if (response.status === 409) setError(t("deleteDialog.alreadyPending"));
+        else if (response.status === 401) setError(t("deleteDialog.signedOut"));
+        else if (response.status === 429) setError(t("deleteDialog.tooMany"));
+        else setError(t("deleteDialog.failed"));
         return;
       }
       // Trusts the same-origin API's documented response shape without
@@ -156,6 +195,8 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
           {t(`${copy}.confirm`)}
         </button>
       </div>
+
+      <p className="mt-md text-caption text-muted-foreground">{t("deleteDialog.support")}</p>
     </Dialog>
   );
 }

@@ -87,11 +87,19 @@ describe("settings.json EN — close_account tells the truth about what happens"
   /**
    * `erase_all` and `close_account` must carry the exact same KEY structure
    * — only the copy differs by tier (fix round 1's explicit requirement).
-   * Without this, a future edit that adds a key to one block but not the
-   * other fails silently: `DeleteDataDialog` would render `undefined`, or
-   * next-intl would fall back in a way that could show erase-all wording
-   * under the close-account tier — precisely the misstatement this fix
-   * round exists to prevent.
+   *
+   * What a missing key actually does: next-intl does NOT fall back to a
+   * sibling key or to the other tier's content — there is no cross-tier
+   * fallback mechanism at all. A missing key renders its own literal key
+   * path (e.g. the raw string `"deleteDialog.close_account.confirmBody"`)
+   * via `getMessageFallback`, or throws, depending on configuration; either
+   * way the failure is LOUD, not a silent switch to erase-all's "will be
+   * deleted" wording. So this test does not guard against the misstatement
+   * itself (a rendering bug can't reach INTO the other tier's content) — it
+   * guards against a raw, un-reviewed key path shipping next to a live
+   * "Close my account" button, which is its own real defect on a
+   * destructive-action surface, just not the one the original comment here
+   * described.
    */
   it("erase_all and close_account carry identical key structure", () => {
     const eraseAllKeys = leafKeyPaths(en.deleteDialog.erase_all).sort();

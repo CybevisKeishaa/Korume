@@ -63,6 +63,40 @@ describe("PrivacyScreen", () => {
     expect(screen.queryByRole("button", { name: "Close my account" })).not.toBeInTheDocument();
   });
 
+  /**
+   * Fix round 2, Critical: `DeleteDataDialog` is mounted unconditionally and
+   * merely hidden by `open` — Radix stops RENDERING children when closed,
+   * it does not unmount them — so `typed`/`acknowledged`/`error`/
+   * `submitting` used to survive a close. Without `key={openTier ?? "closed"}`
+   * on the `<DeleteDataDialog>` call site, this sequence left the erase-all
+   * confirm button already ENABLED on an acknowledgement the user gave for
+   * closing their account (which explicitly promises data is KEPT) — one
+   * click would then have permanently scheduled erasure of everything, with
+   * zero fresh input for that specific, more destructive action. This is
+   * the test that would have caught it before it shipped.
+   */
+  it("does not carry a typed confirmation across a close and a tier switch", async () => {
+    render(<PrivacyScreen initialAiTrainingConsent={false} />);
+
+    // Arm the gate under close_account: type DELETE, tick the box.
+    await userEvent.click(screen.getByRole("button", { name: "Review" }));
+    await userEvent.type(screen.getByLabelText("Type DELETE to confirm."), "DELETE");
+    await userEvent.click(screen.getByRole("checkbox"));
+    expect(screen.getByRole("button", { name: "Close my account" })).toBeEnabled();
+
+    // Back out without confirming.
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByLabelText("Type DELETE to confirm.")).not.toBeInTheDocument();
+
+    // Open erase_all — a different, more destructive action.
+    await userEvent.click(screen.getByRole("button", { name: "Review deletion" }));
+
+    expect((screen.getByLabelText("Type DELETE to confirm.") as HTMLInputElement).value).toBe("");
+    expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete all my data" })).toBeDisabled();
+  });
+
   it("still points the memory row at an honest not-built destination — no confirmation flow exists for it in this branch", () => {
     render(<PrivacyScreen initialAiTrainingConsent={false} />);
     expect(screen.getByRole("link", { name: "Manage" })).toHaveAttribute(

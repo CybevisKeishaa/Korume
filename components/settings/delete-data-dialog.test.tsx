@@ -57,6 +57,74 @@ describe("DeleteDataDialog", () => {
     await userEvent.click(screen.getByRole("button", { name: "Delete all my data" }));
     expect(await screen.findByRole("alert")).not.toHaveTextContent("duplicate key");
   });
+
+  /**
+   * Fix round 2, Important: 409 (already pending) and 401 (signed out) are
+   * not "try again" situations — retrying either cannot possibly succeed,
+   * and for 409 specifically the user has no pending-state banner yet
+   * (Task 11's) to tell them a request already exists, so a generic "please
+   * try again" would send them retrying forever. The branch reads
+   * `response.status` only and never calls `.json()` on the failure path —
+   * a status code is not server-supplied text, so this keeps the same
+   * no-parse discipline the "never the server's own message" test above
+   * checks for.
+   */
+  it.each([
+    [409, "deletion request is already in progress"],
+    [401, "session has expired"],
+    [429, "Too many attempts"],
+  ])("maps status %i to its own translated message, not the generic fallback", async (status, expectedText) => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({}), { status }));
+    render(<DeleteDataDialog open tier="erase_all" onClose={vi.fn()} onConfirmed={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText("Type DELETE to confirm."), "DELETE");
+    await userEvent.click(screen.getByRole("checkbox"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete all my data" }));
+
+    const alert = await screen.findByRole("alert");
+    // en catalog check below is deliberately loose (matches the shipped
+    // en copy's key phrase) — the exact strings are pinned in
+    // messages/en/settings.pin.test.ts; this test only proves the STATUS
+    // routes to a distinct message rather than the generic "please try
+    // again" fallback used for anything else (e.g. 500).
+    expect(alert.textContent?.toLowerCase()).toContain(expectedText.toLowerCase());
+    expect(alert).not.toHaveTextContent("We couldn't schedule the deletion");
+  });
+
+  it("falls back to the generic message for a status with no specific mapping (500)", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({}), { status: 500 }));
+    render(<DeleteDataDialog open tier="erase_all" onClose={vi.fn()} onConfirmed={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText("Type DELETE to confirm."), "DELETE");
+    await userEvent.click(screen.getByRole("checkbox"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete all my data" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't schedule the deletion");
+  });
+
+  /**
+   * Fix round 2, minor #1: the one path where the never-render-a-server-
+   * string guarantee was previously unexercised — a rejected fetch (e.g. a
+   * dropped connection) never even reaches a `.status` to branch on.
+   */
+  it("shows the generic translated error when fetch itself rejects, never a raw error", async () => {
+    vi.spyOn(global, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+    render(<DeleteDataDialog open tier="erase_all" onClose={vi.fn()} onConfirmed={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText("Type DELETE to confirm."), "DELETE");
+    await userEvent.click(screen.getByRole("checkbox"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete all my data" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("We couldn't schedule the deletion");
+    expect(alert).not.toHaveTextContent("Failed to fetch");
+    expect(alert).not.toHaveTextContent("TypeError");
+  });
+
+  it("renders the support footer line", () => {
+    render(<DeleteDataDialog open tier="erase_all" onClose={vi.fn()} onConfirmed={vi.fn()} />);
+    expect(screen.getByText("If you need help, contact Korume Support.")).toBeInTheDocument();
+  });
 });
 
 /**

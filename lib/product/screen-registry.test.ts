@@ -157,8 +157,10 @@ describe("screen registry invariants", () => {
       const date = entry.figmaCheckedAt as string;
       stampedByDate.set(date, (stampedByDate.get(date) ?? 0) + 1);
     }
-    // Non-vacuity for the loop below: every stamped entry falls into one of
-    // these two dates, not some third date nobody accounted for.
+    // Non-vacuity: `stamped`'s length (asserted above) already proves this
+    // map is non-empty; this pins the exact per-date breakdown too, so a
+    // change to either the total or the split between the two dates is
+    // conscious rather than silent.
     expect(Object.fromEntries(stampedByDate)).toEqual({
       "2026-08-12": 72,
       "2026-08-20": 3,

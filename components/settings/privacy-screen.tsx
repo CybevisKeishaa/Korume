@@ -31,6 +31,21 @@ export interface PrivacyScreenProps {
  * you can come back"). Only the memory row still points at an honest
  * not-built destination — that feature genuinely has no confirmation flow
  * anywhere in this branch.
+ *
+ * `key={openTier ?? "closed"}` on `<DeleteDataDialog>` below is load-bearing
+ * — fix round 2, Critical. `DeleteDataDialog` is mounted unconditionally and
+ * merely hidden by `open`, so its `typed`/`acknowledged`/`error`/
+ * `submitting` state lives on an always-mounted component (Radix stops
+ * RENDERING children when closed; it does not unmount them). Without the
+ * `key`, typing "DELETE" and ticking the box under one tier, then pressing
+ * Escape and opening the OTHER tier, left the confirm button already
+ * ENABLED under an acknowledgement the user never gave for that action —
+ * the confirmation gate's only purpose is to require fresh input for THIS
+ * specific destructive action, and shared state across tiers defeats that
+ * outright. The `key` forces a fresh mount (and therefore fresh state) on
+ * every open and every tier switch; it is the hardest version of this fix
+ * to regress, because it does not depend on remembering to reset four
+ * separate fields by hand.
  */
 export function PrivacyScreen({ initialAiTrainingConsent }: PrivacyScreenProps) {
   const t = useTranslations("settings");
@@ -62,6 +77,7 @@ export function PrivacyScreen({ initialAiTrainingConsent }: PrivacyScreenProps) 
         />
 
         <DeleteDataDialog
+          key={openTier ?? "closed"}
           open={openTier !== null}
           tier={openTier ?? "erase_all"}
           onClose={() => setOpenTier(null)}

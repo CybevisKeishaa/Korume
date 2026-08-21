@@ -18,8 +18,11 @@
     "eraseAll": { "title": "Xóa toàn bộ dữ liệu của tôi", "body": "Yêu cầu xóa vĩnh viễn dữ liệu cá nhân mà Korume đang lưu.", "action": "Xem lại việc xóa" }
   },
   "deleteDialog": {
-    "support": "Bạn có thể yêu cầu xóa dữ liệu cá nhân bất cứ lúc nào. Nếu cần trợ giúp, hãy liên hệ Hỗ trợ Korume.",
+    "support": "Nếu cần trợ giúp, hãy liên hệ Hỗ trợ Korume.",
     "failed": "Chúng tôi chưa lên lịch xóa được. Vui lòng thử lại.",
+    "alreadyPending": "Tài khoản của bạn đã có một yêu cầu xóa đang chờ xử lý.",
+    "signedOut": "Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.",
+    "tooMany": "Quá nhiều lần thử. Vui lòng đợi một chút rồi thử lại.",
     "erase_all": {
       "eyebrow": "QUYỀN RIÊNG TƯ · KIỂM SOÁT DỮ LIỆU",
       "title": "Xóa toàn bộ dữ liệu của tôi",
