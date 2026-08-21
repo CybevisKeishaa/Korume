@@ -48,4 +48,13 @@ describe("BadgesGrid", () => {
     render(<BadgesGrid badges={[]} />);
     expect(screen.getByText("No badges in the catalog yet.")).toBeInTheDocument();
   });
+
+  it("still renders a badge whose icon is null", () => {
+    render(
+      <BadgesGrid
+        badges={[{ id: "b1", name: "First Steps", description: null, iconUrl: null, earnedAt: null }]}
+      />,
+    );
+    expect(screen.getByText("First Steps")).toBeInTheDocument();
+  });
 });

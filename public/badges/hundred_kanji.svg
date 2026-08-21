@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- An abstract character built from strokes inside a genkouyoushi-style
+       practice square, standing for kanji mastery in general (not tracing
+       any specific real glyph). -->
+  <rect x="3.5" y="3.5" width="17" height="17" rx="2"/>
+  <path d="M12 6.5v11"/>
+  <path d="M7 9.5h10"/>
+  <path d="M9 13l-2.5 5.5"/>
+  <path d="M15 13l2.5 5.5"/>
+</svg>

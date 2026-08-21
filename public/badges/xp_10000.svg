@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <!-- The xp_1000 sparkle, grown larger and joined by two small satellite
+       sparks: a visibly bigger XP tier, ten times over. -->
+  <path d="M12 2.5l2.4 6 6 2.4-6 2.4-2.4 6-2.4-6-6-2.4 6-2.4z" fill="currentColor" stroke="none"/>
+  <circle cx="19.5" cy="5" r="1.1" fill="currentColor" stroke="none"/>
+  <circle cx="4.5" cy="18.5" r="1.1" fill="currentColor" stroke="none"/>
+</svg>
