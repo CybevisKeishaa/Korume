@@ -1,26 +1,39 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+
+const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 
 /**
  * Reads the migrations rather than the database, so the guard runs in CI
  * with no Docker. It proves the two halves agree: every slug the migrations
  * will generate has a file on disk.
  *
- * `badges` is seeded in TWO migrations (confirmed via
- * `grep -rln "insert into badges" supabase/migrations/`), not one — a guard
- * that reads only the first would cover 3 of 11 rows and pass with 8 badges
- * iconless. Read both.
+ * Discovers seed files dynamically rather than hardcoding a list — `badges`
+ * is seeded in two migrations today (confirmed via
+ * `grep -rln "insert into badges" supabase/migrations/`), but a hardcoded
+ * list would silently stop covering a third one added later: the guard
+ * would keep finding 11 names, keep passing, and a twelfth badge would ship
+ * with `icon_url = NULL` undetected. Scanning every migration file for the
+ * phrase closes that gap regardless of how many files it ends up in.
  */
-const SEED_FILES = [
-  "supabase/migrations/20260712000005_content_n5_n4.sql",
-  "supabase/migrations/20260713000013_gamification.sql",
-];
+function discoverBadgeSeedFiles(dir: string): string[] {
+  return readdirSync(dir)
+    .filter((file) => file.endsWith(".sql"))
+    .filter((file) => /insert into badges/i.test(readFileSync(join(dir, file), "utf8")));
+}
 
 describe("badge icons", () => {
   it("has an SVG on disk for every badge name the seed migrations insert", () => {
-    const names: string[] = SEED_FILES.flatMap((file) => {
-      const sql = readFileSync(join(process.cwd(), file), "utf8");
+    const seedFiles = discoverBadgeSeedFiles(MIGRATIONS_DIR);
+
+    // A wrong directory or a renamed migrations convention must not
+    // silently produce an empty scan — that would make every assertion
+    // below vacuously true.
+    expect(seedFiles.length).toBeGreaterThan(0);
+
+    const names: string[] = seedFiles.flatMap((file) => {
+      const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf8");
       const inserts = [...sql.matchAll(/insert into badges[\s\S]*?values([\s\S]*?);/gi)];
       return inserts.flatMap((insertMatch) => {
         const tuples = insertMatch[1];
@@ -33,6 +46,10 @@ describe("badge icons", () => {
 
     // An empty or partial match would make every assertion below vacuously
     // (or misleadingly) true — pin the exact count found, per CLAUDE.md §7.
+    // Deliberately NOT derived from `seedFiles` or from this same scan: a
+    // pin that comes from the thing it's checking asserts nothing. Pinning
+    // the real, measured number means a future migration adding a twelfth
+    // badge fails this test loudly until its icon is authored.
     expect(names.length).toBeGreaterThan(0);
     expect(names.length).toBe(11);
 

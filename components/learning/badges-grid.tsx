@@ -8,6 +8,16 @@ export interface BadgesGridProps {
 }
 
 /**
+ * `icon_url` values are only ever written by the `badge_icons` migration
+ * (`/badges/<snake_case_name>.svg`), but the value still crosses a DB read
+ * and lands in a CSS `url(...)` below — so it is guarded against anything
+ * that isn't that exact shape rather than trusted. A non-matching value
+ * (including anything injection-shaped) falls back to the default icons
+ * instead of reaching the mask.
+ */
+const ICON_URL_PATTERN = /^\/badges\/[a-z0-9_]+\.svg$/;
+
+/**
  * Dashboard badges grid (Layer 6). Earned vs unearned is never color-only:
  * unearned badges get a lock icon + a visible "Locked" label plus reduced
  * opacity. Each badge tile is a single `aria-label`-ed unit describing name +
@@ -73,9 +83,31 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
                   earned ? "bg-primary/10 text-primary-strong" : "bg-muted text-muted-foreground",
                 )}
               >
-                {badge.iconUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- arbitrary badge-icon storage URLs, not a next/image remotePattern domain.
-                  <img src={badge.iconUrl} alt="" className="h-full w-full rounded-full object-cover" />
+                {badge.iconUrl && ICON_URL_PATTERN.test(badge.iconUrl) ? (
+                  // A CSS mask, not an <img src>: an SVG loaded via <img> is
+                  // an isolated document, so currentColor inside it can
+                  // never resolve against this page — it would render as a
+                  // flat black icon regardless of earned/locked state. A
+                  // mask paints with this element's own background-color
+                  // (currentColor), so the existing earned/locked colour
+                  // distinction (bg-primary/10 text-primary-strong vs
+                  // bg-muted text-muted-foreground on the wrapper above)
+                  // carries through to the icon exactly as it does for the
+                  // two inline fallback SVGs below.
+                  <span
+                    data-testid="badge-icon-mask"
+                    className="h-6 w-6 bg-current"
+                    style={{
+                      maskImage: `url(${badge.iconUrl})`,
+                      WebkitMaskImage: `url(${badge.iconUrl})`,
+                      maskSize: "contain",
+                      WebkitMaskSize: "contain",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskPosition: "center",
+                      WebkitMaskPosition: "center",
+                    }}
+                  />
                 ) : earned ? (
                   <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6">
                     <path d="M10 1.5l2.6 5.5 6 .7-4.4 4.1 1.2 6-5.4-3-5.4 3 1.2-6-4.4-4.1 6-.7L10 1.5z" />
