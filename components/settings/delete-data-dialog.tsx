@@ -5,6 +5,7 @@ import { useTranslations } from "@/lib/i18n";
 import { Dialog } from "@/components/ui/dialog";
 import type { DeletionTier } from "@/lib/account-deletion/lifecycle";
 import type { PendingDeletion } from "@/lib/data/account-deletion";
+import { pendingDeletionResponseSchema } from "@/lib/validation/account-deletion";
 
 const CATEGORY_KEYS = ["profile", "progress", "memory", "companion", "saved", "practice"] as const;
 
@@ -112,11 +113,20 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed }: DeleteDat
         else setError(t("deleteDialog.failed"));
         return;
       }
-      // Trusts the same-origin API's documented response shape without
-      // runtime validation, matching this codebase's other client fetches
-      // (e.g. components/video-player/pin-line-control.tsx).
-      const body = (await response.json()) as { data: PendingDeletion };
-      onConfirmed(body.data);
+      // Validated, not cast (Task 11): this value now drives
+      // DeletionPendingBanner's rendered date, so an unexpected shape must
+      // never reach `onConfirmed` — see pendingDeletionResponseSchema's own
+      // comment for why. A parse failure is treated the same as any other
+      // "couldn't schedule the deletion" failure, not a distinct message:
+      // from the user's perspective the request did not go through either
+      // way.
+      const json: unknown = await response.json();
+      const parsed = pendingDeletionResponseSchema.safeParse(json);
+      if (!parsed.success) {
+        setError(t("deleteDialog.failed"));
+        return;
+      }
+      onConfirmed(parsed.data.data);
     } catch {
       setError(t("deleteDialog.failed"));
     } finally {

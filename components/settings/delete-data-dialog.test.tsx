@@ -125,6 +125,29 @@ describe("DeleteDataDialog", () => {
     render(<DeleteDataDialog open tier="erase_all" onClose={vi.fn()} onConfirmed={vi.fn()} />);
     expect(screen.getByText("If you need help, contact Korume Support.")).toBeInTheDocument();
   });
+
+  /**
+   * Task 11: the success body used to be trusted via a bare type cast with
+   * no runtime check. That was harmless while nothing consumed the value —
+   * it stops being harmless the moment `PrivacyScreen` threads it into
+   * `DeletionPendingBanner`'s rendered date. This proves a malformed shape
+   * (here: `tier` outside the real enum, and no `requestedAt`/`executeAfter`
+   * at all) is caught at this boundary and never reaches `onConfirmed`.
+   */
+  it("never lets a malformed success body reach onConfirmed unvalidated", async () => {
+    const onConfirmed = vi.fn();
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: { id: "r1", tier: "not_a_real_tier" } }), { status: 200 }),
+    );
+    render(<DeleteDataDialog open tier="erase_all" onClose={vi.fn()} onConfirmed={onConfirmed} />);
+    await userEvent.type(screen.getByLabelText("Type DELETE to confirm."), "DELETE");
+    await userEvent.click(screen.getByRole("checkbox"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Delete all my data" }));
+
+    expect(onConfirmed).not.toHaveBeenCalled();
+    expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't schedule the deletion");
+  });
 });
 
 /**

@@ -74,6 +74,7 @@
     "title": "Đã lên lịch xóa",
     "body": "Dữ liệu của bạn được lên lịch xóa vào {date}. Hiện chưa có gì bị xóa.",
     "cancel": "Hủy yêu cầu xóa",
-    "cancelled": "Yêu cầu xóa đã được hủy. Không có gì bị xóa."
+    "cancelled": "Yêu cầu xóa đã được hủy. Không có gì bị xóa.",
+    "failed": "Chúng tôi chưa hủy được yêu cầu. Vui lòng thử lại."
   }
 }

@@ -1,11 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
 import { PrivacyScreen } from "./privacy-screen";
 
+const PENDING = {
+  id: "req1",
+  tier: "erase_all" as const,
+  requestedAt: "2026-08-20T10:00:00.000Z",
+  executeAfter: "2026-08-27T10:00:00.000Z",
+};
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("PrivacyScreen", () => {
   it("composes the AI-training toggle above the Danger Zone, seeded with the server-read consent value", () => {
-    render(<PrivacyScreen initialAiTrainingConsent />);
+    render(<PrivacyScreen initialAiTrainingConsent pending={null} />);
     expect(screen.getByText("Help improve Korume's models")).toBeInTheDocument();
     expect(screen.getByText("Control your Korume data")).toBeInTheDocument();
     expect((screen.getByRole("checkbox", { name: /Help improve Korume's models/ }) as HTMLInputElement).checked).toBe(
@@ -14,7 +25,7 @@ describe("PrivacyScreen", () => {
   });
 
   it("opens the delete-all-my-data dialog from the Danger Zone's erase-all row", async () => {
-    render(<PrivacyScreen initialAiTrainingConsent={false} />);
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
     expect(screen.queryByLabelText("Type DELETE to confirm.")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Review deletion" }));
@@ -24,7 +35,7 @@ describe("PrivacyScreen", () => {
   });
 
   it("closes the dialog on Escape", async () => {
-    render(<PrivacyScreen initialAiTrainingConsent={false} />);
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
     await userEvent.click(screen.getByRole("button", { name: "Review deletion" }));
     expect(screen.getByLabelText("Type DELETE to confirm.")).toBeInTheDocument();
 
@@ -38,7 +49,7 @@ describe("PrivacyScreen", () => {
   // page. See privacy-screen.tsx's file header for why reusing the dialog is
   // safe here (each tier carries its own, independent copy block).
   it("opens the same dialog from the Danger Zone's close-account row, with close-account copy — not the erase-all dialog's wording", async () => {
-    render(<PrivacyScreen initialAiTrainingConsent={false} />);
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
     expect(screen.queryByLabelText("Type DELETE to confirm.")).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Review" }));
@@ -50,7 +61,7 @@ describe("PrivacyScreen", () => {
   });
 
   it("does not leak state between the two rows: closing the close-account dialog and reopening erase-all shows erase-all's copy", async () => {
-    render(<PrivacyScreen initialAiTrainingConsent={false} />);
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Review" }));
     expect(screen.getByRole("button", { name: "Close my account" })).toBeInTheDocument();
@@ -76,7 +87,7 @@ describe("PrivacyScreen", () => {
    * the test that would have caught it before it shipped.
    */
   it("does not carry a typed confirmation across a close and a tier switch", async () => {
-    render(<PrivacyScreen initialAiTrainingConsent={false} />);
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
 
     // Arm the gate under close_account: type DELETE, tick the box.
     await userEvent.click(screen.getByRole("button", { name: "Review" }));
@@ -98,10 +109,65 @@ describe("PrivacyScreen", () => {
   });
 
   it("still points the memory row at an honest not-built destination — no confirmation flow exists for it in this branch", () => {
-    render(<PrivacyScreen initialAiTrainingConsent={false} />);
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
     expect(screen.getByRole("link", { name: "Manage" })).toHaveAttribute(
       "href",
       expect.stringContaining("/settings/privacy/memory"),
     );
+  });
+
+  /**
+   * Task 11: the pending prop (server-read via `getPendingDeletion` in
+   * page.tsx) seeds the one state no Figma frame draws. Its presence must
+   * also disable the two destructive Danger Zone rows — re-opening either
+   * dialog under a live request can only produce the 409 the API refuses.
+   */
+  describe("with a pending deletion request already on the server", () => {
+    it("shows the deletion-pending banner instead of an untouched Danger Zone", () => {
+      render(<PrivacyScreen initialAiTrainingConsent={false} pending={PENDING} />);
+      expect(screen.getByRole("status")).toHaveTextContent(/nothing has been removed yet/i);
+    });
+
+    it("disables the two destructive Danger Zone rows", () => {
+      render(<PrivacyScreen initialAiTrainingConsent={false} pending={PENDING} />);
+      expect(screen.getByRole("button", { name: "Review" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Review deletion" })).toBeDisabled();
+    });
+
+    it("removes the banner and re-enables the Danger Zone after a successful cancel", async () => {
+      vi.spyOn(global, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ data: { cancelled: true } }), { status: 200 }),
+      );
+      render(<PrivacyScreen initialAiTrainingConsent={false} pending={PENDING} />);
+      expect(screen.getByRole("status")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Cancel deletion" }));
+
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Review" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Review deletion" })).toBeEnabled();
+    });
+  });
+
+  /**
+   * Task 11's success path: `DeleteDataDialog` hands the newly-created
+   * `PendingDeletion` to `onConfirmed` — the banner must appear from that
+   * value directly, with no reload and no re-fetch.
+   */
+  it("shows the deletion-pending banner immediately after a successful erase-all confirmation, without a reload", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: PENDING }), { status: 200 }),
+    );
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Review deletion" }));
+    await userEvent.type(screen.getByLabelText("Type DELETE to confirm."), "DELETE");
+    await userEvent.click(screen.getByRole("checkbox"));
+    await userEvent.click(screen.getByRole("button", { name: "Delete all my data" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/nothing has been removed yet/i);
+    expect(screen.queryByLabelText("Type DELETE to confirm.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review deletion" })).toBeDisabled();
   });
 });

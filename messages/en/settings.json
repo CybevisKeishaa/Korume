@@ -74,6 +74,7 @@
     "title": "Deletion scheduled",
     "body": "Your data is scheduled for deletion on {date}. Nothing has been removed yet.",
     "cancel": "Cancel deletion",
-    "cancelled": "Your deletion request was cancelled. Nothing was removed."
+    "cancelled": "Your deletion request was cancelled. Nothing was removed.",
+    "failed": "We couldn't cancel the request. Please try again."
   }
 }

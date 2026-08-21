@@ -6,20 +6,29 @@ import { Link } from "@/lib/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { DangerZone } from "./danger-zone";
 import { DeleteDataDialog } from "./delete-data-dialog";
+import { DeletionPendingBanner } from "./deletion-pending-banner";
 import { AiTrainingToggle } from "./ai-training-toggle";
 import type { DeletionTier } from "@/lib/account-deletion/lifecycle";
+import type { PendingDeletion } from "@/lib/data/account-deletion";
 
 export interface PrivacyScreenProps {
   /** Server-read (`getModelTrainingConsent`, page.tsx) — see AiTrainingToggle. */
   initialAiTrainingConsent: boolean;
+  /**
+   * Server-read (`getPendingDeletion`, page.tsx) — the live deletion
+   * request for this user, if any, at the moment the page rendered. Null
+   * when there is none, including when the read failed and page.tsx fell
+   * back closed (see that file). Kept as its own piece of state below (not
+   * just read once) so a fresh POST or a cancel updates the screen without
+   * a reload or a re-fetch — Task 11.
+   */
+  pending: PendingDeletion | null;
 }
 
 /**
- * `337:3323`, the client half — holds only which dialog is open (and which
- * tier). The pending-deletion banner (Task 11) and the `pending` prop that
- * feeds it are deliberately NOT wired here: that task composes itself in
- * when it lands, rather than this file carrying an unused prop in
- * anticipation of it.
+ * `337:3323`, the client half — holds which dialog is open (and which
+ * tier), plus the pending-deletion request (Task 11's `pending` state,
+ * seeded from the server prop of the same name).
  *
  * Both Danger Zone rows that need confirmation ("Delete Account" and
  * "Delete all my data") open the SAME `DeleteDataDialog`, distinguished only
@@ -46,10 +55,21 @@ export interface PrivacyScreenProps {
  * every open and every tier switch; it is the hardest version of this fix
  * to regress, because it does not depend on remembering to reset four
  * separate fields by hand.
+ *
+ * Task 11: `pending !== null` is threaded into `DangerZone`'s
+ * `pendingRequest` prop, disabling both destructive rows — the
+ * `account_deletion_requests` table allows only one live request per user,
+ * so re-opening either dialog while one exists can only produce the 409 the
+ * API already refuses. The banner (rendered above the Danger Zone whenever
+ * `pending` is set) is what tells the user why. `onConfirmed` receives the
+ * newly-created `PendingDeletion` straight from `DeleteDataDialog` — already
+ * validated at that boundary (see its own file) — and sets it directly, so
+ * the banner appears with no reload and no extra round trip.
  */
-export function PrivacyScreen({ initialAiTrainingConsent }: PrivacyScreenProps) {
+export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPending }: PrivacyScreenProps) {
   const t = useTranslations("settings");
   const [openTier, setOpenTier] = useState<DeletionTier | null>(null);
+  const [pending, setPending] = useState<PendingDeletion | null>(initialPending);
 
   return (
     <Container className="py-3xl">
@@ -70,10 +90,17 @@ export function PrivacyScreen({ initialAiTrainingConsent }: PrivacyScreenProps) 
 
         <AiTrainingToggle initialConsent={initialAiTrainingConsent} />
 
+        {pending ? (
+          <div className="mt-xl">
+            <DeletionPendingBanner pending={pending} onCancelled={() => setPending(null)} />
+          </div>
+        ) : null}
+
         <DangerZone
           onCloseAccount={() => setOpenTier("close_account")}
           onEraseAll={() => setOpenTier("erase_all")}
           memoryHref="/settings/privacy/memory"
+          pendingRequest={pending !== null}
         />
 
         <DeleteDataDialog
@@ -81,7 +108,10 @@ export function PrivacyScreen({ initialAiTrainingConsent }: PrivacyScreenProps) 
           open={openTier !== null}
           tier={openTier ?? "erase_all"}
           onClose={() => setOpenTier(null)}
-          onConfirmed={() => setOpenTier(null)}
+          onConfirmed={(confirmed) => {
+            setPending(confirmed);
+            setOpenTier(null);
+          }}
         />
       </div>
     </Container>

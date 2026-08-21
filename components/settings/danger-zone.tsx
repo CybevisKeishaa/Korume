@@ -7,6 +7,18 @@ export interface DangerZoneProps {
   onCloseAccount: () => void;
   onEraseAll: () => void;
   memoryHref: string;
+  /**
+   * True while a deletion request (either tier) is already live. The
+   * `account_deletion_requests` table allows only one pending request per
+   * user (a partial unique index) — re-opening either dialog under a second
+   * request can only produce the 409 the API already refuses. Disabled here
+   * so the user is never invited into an action that cannot succeed;
+   * `DeletionPendingBanner`, rendered above this section by `PrivacyScreen`
+   * whenever this is true, is what explains why (Task 11). The memory row
+   * is untouched — it has no confirmation flow in this branch and nothing
+   * to do with the deletion-request lifecycle.
+   */
+  pendingRequest: boolean;
 }
 
 /**
@@ -24,7 +36,7 @@ export interface DangerZoneProps {
  * `bg-danger` / `text-danger-foreground` is the pairing
  * `lib/design-tokens.contrast.test.ts` already asserts passes AA.
  */
-export function DangerZone({ onCloseAccount, onEraseAll, memoryHref }: DangerZoneProps) {
+export function DangerZone({ onCloseAccount, onEraseAll, memoryHref, pendingRequest }: DangerZoneProps) {
   const t = useTranslations("settings");
 
   return (
@@ -45,7 +57,8 @@ export function DangerZone({ onCloseAccount, onEraseAll, memoryHref }: DangerZon
           <button
             type="button"
             onClick={onCloseAccount}
-            className="text-caption text-muted-foreground hover:text-foreground"
+            disabled={pendingRequest}
+            className="text-caption text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
           >
             {t("dangerZone.closeAccount.action")}
           </button>
@@ -55,7 +68,8 @@ export function DangerZone({ onCloseAccount, onEraseAll, memoryHref }: DangerZon
           <button
             type="button"
             onClick={onEraseAll}
-            className="rounded-full border border-danger px-md py-xs text-caption font-semibold text-danger-strong hover:bg-danger hover:text-danger-foreground"
+            disabled={pendingRequest}
+            className="rounded-full border border-danger px-md py-xs text-caption font-semibold text-danger-strong hover:bg-danger hover:text-danger-foreground disabled:pointer-events-none disabled:opacity-50"
           >
             {t("dangerZone.eraseAll.action")}
           </button>
