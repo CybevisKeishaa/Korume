@@ -136,7 +136,15 @@ describe("PrivacyScreen", () => {
       expect(screen.getByRole("button", { name: "Review deletion" })).toBeDisabled();
     });
 
-    it("removes the banner and re-enables the Danger Zone after a successful cancel", async () => {
+    /**
+     * Fix round 2, "ruled into this round from the re-review's out-of-scope
+     * list": a successful cancel unmounts the banner while focus was INSIDE
+     * it (the "Cancel deletion" button itself) — without deliberate handling
+     * this drops to `<body>` the same way the NEW Important does. Chose the
+     * Danger Zone's heading over either row: both rows just re-enabled and
+     * there is no single "the" row to prefer between them.
+     */
+    it("removes the banner, re-enables the Danger Zone, and moves focus to its heading after a successful cancel", async () => {
       vi.spyOn(global, "fetch").mockResolvedValue(
         new Response(JSON.stringify({ data: { cancelled: true } }), { status: 200 }),
       );
@@ -148,7 +156,23 @@ describe("PrivacyScreen", () => {
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Review" })).toBeEnabled();
       expect(screen.getByRole("button", { name: "Review deletion" })).toBeEnabled();
+      const heading = screen.getByRole("heading", { name: "Control your Korume data" });
+      expect(document.activeElement).toBe(heading);
     });
+  });
+
+  /**
+   * Fix round 2 ride-along: the round-1 mount effect also fired on a plain
+   * load of `/settings/privacy` when a request already existed, pulling
+   * focus from the document start to a mid-page card before the user had
+   * done anything. Gating focus on "appeared as the result of an action"
+   * (the NEW Important) fixes this too — this is the load-case test the
+   * findings flagged as currently missing.
+   */
+  it("does not steal focus on an ordinary page load with an existing pending request", () => {
+    render(<PrivacyScreen initialAiTrainingConsent={false} pending={PENDING} />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(document.activeElement).toBe(document.body);
   });
 
   /**
@@ -226,8 +250,16 @@ describe("PrivacyScreen", () => {
       // that closing triggers a fresh fetch.
       await userEvent.keyboard("{Escape}");
 
-      expect(await screen.findByRole("status")).toHaveTextContent(/nothing has been removed yet/i);
+      const status = await screen.findByRole("status");
+      expect(status).toHaveTextContent(/nothing has been removed yet/i);
       expect(screen.getByRole("button", { name: "Review deletion" })).toBeDisabled();
+      // NEW Important (fix round 2): `Dialog` restores focus to the trigger
+      // it captured on open, which by now carries `disabled` (the row that
+      // opened it) — a no-op, dropping focus to `<body>`. `PrivacyScreen`'s
+      // focus-ownership effect must catch this exact transition (dialog
+      // just closed onto a real pending request) and land on the banner.
+      expect(document.activeElement).not.toBe(document.body);
+      expect(document.activeElement).toContainElement(status);
     });
 
     it("re-syncs from the server when the dialog's success body is malformed", async () => {
@@ -250,7 +282,11 @@ describe("PrivacyScreen", () => {
       // open dialog is `aria-hidden` until the dialog is dismissed.
       await userEvent.keyboard("{Escape}");
 
-      expect(await screen.findByRole("status")).toHaveTextContent(/nothing has been removed yet/i);
+      const status = await screen.findByRole("status");
+      expect(status).toHaveTextContent(/nothing has been removed yet/i);
+      // NEW Important (fix round 2): same focus transition as the 409 test.
+      expect(document.activeElement).not.toBe(document.body);
+      expect(document.activeElement).toContainElement(status);
     });
   });
 

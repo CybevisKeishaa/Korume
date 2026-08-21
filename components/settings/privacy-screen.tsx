@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { Container } from "@/components/ui/container";
@@ -75,11 +75,40 @@ export interface PrivacyScreenProps {
  * `refreshPending()` (this file's own function, passed down to both
  * `DeleteDataDialog` and `DeletionPendingBanner`) is the single re-sync path
  * for every case where a child's belief about pending-state might be wrong.
+ *
+ * **Focus ownership (fix round 2, 2026-08-21).** Round 1 put a mount-time
+ * focus effect INSIDE `DeletionPendingBanner`, reasoned as the fix for
+ * `Dialog` restoring focus to a trigger that `pendingRequest` had since
+ * disabled. That effect could not distinguish "the banner just appeared
+ * because of something the user did" from "the banner exists on an ordinary
+ * page load" or "the banner mounted while a `Dialog` is still open and
+ * trapping focus" (a `409`/malformed-`200` re-sync can set a real `pending`
+ * while `openTier` is still non-null) — round 2's re-review caught it
+ * reintroducing the same defect via Escape landing on the by-then-disabled
+ * trigger. This component can see what the banner cannot: it tracks the
+ * PREVIOUS `openTier` and `pending` across renders (`prevRef` below) and only
+ * moves focus when the transition actually means "the dialog just closed
+ * onto a real pending request" or "a pending request was just cancelled" —
+ * never on mount, never while a `Dialog` is still open. `components/ui/
+ * dialog.tsx` is deliberately NOT touched here: it is a shared primitive used
+ * by other screens, and teaching it to fall back when its captured trigger is
+ * disabled is a more general fix recorded as a repo-wide follow-up instead of
+ * being made unreviewed at the end of this task.
  */
 export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPending }: PrivacyScreenProps) {
   const t = useTranslations("settings");
   const [openTier, setOpenTier] = useState<DeletionTier | null>(null);
   const [pending, setPending] = useState<PendingDeletionRead>(initialPending);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const dangerZoneHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Fix round 2: guards against a stale `refreshPending()` response
+  // overwriting a newer one when two calls overlap (e.g. a `409` re-sync
+  // still in flight when a cancel `404` re-sync starts). Each call captures
+  // its own sequence number and only applies its result if it is still the
+  // most recent call by the time it resolves — a later call's result always
+  // wins, a straggler is silently dropped rather than winning the race.
+  const refreshSeqRef = useRef(0);
 
   /**
    * The ONE re-sync mechanism fix round 1 (2026-08-21) builds for every path
@@ -96,21 +125,25 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
    * direction.
    */
   async function refreshPending(): Promise<void> {
+    const seq = ++refreshSeqRef.current;
+    const applyIfCurrent = (next: PendingDeletionRead): void => {
+      if (seq === refreshSeqRef.current) setPending(next);
+    };
     try {
       const response = await fetch("/api/user/deletion");
       if (!response.ok) {
-        setPending("unknown");
+        applyIfCurrent("unknown");
         return;
       }
       const json: unknown = await response.json();
       const parsed = getPendingDeletionResponseSchema.safeParse(json);
       if (!parsed.success) {
-        setPending("unknown");
+        applyIfCurrent("unknown");
         return;
       }
-      setPending(parsed.data.data);
+      applyIfCurrent(parsed.data.data);
     } catch {
-      setPending("unknown");
+      applyIfCurrent("unknown");
     }
   }
 
@@ -118,6 +151,48 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
   // GDPR right this page exists to serve — only an actual, confirmed pending
   // request disables the Danger Zone rows (Important #3(b)).
   const pendingRequest = pending !== null && pending !== "unknown";
+
+  /**
+   * Fix round 2: the sole place focus is moved as a RESULT of an action, as
+   * opposed to on mount (see `DeletionPendingBanner`'s docstring for why the
+   * mount-time version was wrong). `prevRef` remembers `openTier`/`pending`
+   * from the previous run of this effect so it can detect a TRANSITION,
+   * never a steady state — an ordinary page load with the dialog closed and
+   * a request already pending never transitions and therefore never steals
+   * focus.
+   */
+  const prevRef = useRef<{ openTier: DeletionTier | null; pending: PendingDeletionRead }>({
+    openTier: null,
+    pending: initialPending,
+  });
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    prevRef.current = { openTier, pending };
+
+    const pendingIsReal = pending !== null && pending !== "unknown";
+    const prevPendingWasReal = prev.pending !== null && prev.pending !== "unknown";
+
+    // The dialog just closed while a real request now exists — either
+    // because the confirm that just closed it succeeded, or because a
+    // background `refreshPending()` re-sync (`409` / malformed `200`)
+    // resolved while the dialog was still open and the user has now
+    // dismissed it (Escape / Keep). Either way `Dialog` would otherwise
+    // restore focus to the trigger it captured, which by now carries
+    // `disabled` — this is the deliberate replacement.
+    if (prev.openTier !== null && openTier === null && pendingIsReal) {
+      bannerRef.current?.focus();
+      return;
+    }
+
+    // A successful cancel unmounts the banner while focus was INSIDE it (the
+    // "Cancel deletion" button) — without this, focus drops to `<body>` the
+    // same way. Lands on the Danger Zone's heading rather than either row:
+    // both rows just re-enabled and there is no single "the" row to prefer.
+    if (prevPendingWasReal && pending === null) {
+      dangerZoneHeadingRef.current?.focus();
+    }
+  }, [openTier, pending]);
 
   return (
     <Container className="py-3xl">
@@ -149,6 +224,7 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
         ) : pending ? (
           <div className="mt-xl">
             <DeletionPendingBanner
+              ref={bannerRef}
               pending={pending}
               onCancelled={() => setPending(null)}
               refreshPending={refreshPending}
@@ -157,6 +233,7 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
         ) : null}
 
         <DangerZone
+          ref={dangerZoneHeadingRef}
           onCloseAccount={() => setOpenTier("close_account")}
           onEraseAll={() => setOpenTier("erase_all")}
           memoryHref="/settings/privacy/memory"

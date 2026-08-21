@@ -6,7 +6,7 @@
     "breadcrumbSettings": "Settings",
     "breadcrumbPrivacy": "Privacy",
     "checkFailedTitle": "We couldn't check for a pending request",
-    "checkFailedBody": "This is usually temporary. Try refreshing the page in a moment; the options below still work as normal."
+    "checkFailedBody": "This is usually temporary. Try refreshing the page in a moment; the options below are still available."
   },
   "aiTraining": {
     "title": "Help improve Korume's models",
@@ -74,7 +74,6 @@
   },
   "pending": {
     "cancel": "Cancel deletion",
-    "cancelled": "Your deletion request was cancelled. Nothing was removed.",
     "failed": "We couldn't cancel the request. Please try again.",
     "erase_all": {
       "title": "Deletion scheduled",

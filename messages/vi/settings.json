@@ -6,7 +6,7 @@
     "breadcrumbSettings": "Cài đặt",
     "breadcrumbPrivacy": "Quyền riêng tư",
     "checkFailedTitle": "Chúng tôi chưa kiểm tra được yêu cầu đang chờ xử lý",
-    "checkFailedBody": "Đây thường chỉ là sự cố tạm thời. Hãy thử tải lại trang sau ít phút; các lựa chọn bên dưới vẫn hoạt động bình thường."
+    "checkFailedBody": "Đây thường chỉ là sự cố tạm thời. Hãy thử tải lại trang sau ít phút; các lựa chọn bên dưới vẫn khả dụng."
   },
   "aiTraining": {
     "title": "Giúp Korume cải thiện mô hình",
@@ -74,7 +74,6 @@
   },
   "pending": {
     "cancel": "Hủy yêu cầu xóa",
-    "cancelled": "Yêu cầu xóa đã được hủy. Không có gì bị xóa.",
     "failed": "Chúng tôi chưa hủy được yêu cầu. Vui lòng thử lại.",
     "erase_all": {
       "title": "Đã lên lịch xóa",

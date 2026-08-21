@@ -59,15 +59,16 @@ describe("DeleteDataDialog", () => {
   });
 
   /**
-   * Fix round 2, Important: 409 (already pending) and 401 (signed out) are
-   * not "try again" situations — retrying either cannot possibly succeed,
-   * and for 409 specifically the user has no pending-state banner yet
-   * (Task 11's) to tell them a request already exists, so a generic "please
-   * try again" would send them retrying forever. The branch reads
-   * `response.status` only and never calls `.json()` on the failure path —
-   * a status code is not server-supplied text, so this keeps the same
-   * no-parse discipline the "never the server's own message" test above
-   * checks for.
+   * Fix round 1, Important: 409 (already pending) and 401 (signed out) are
+   * not "try again" situations — retrying either cannot possibly succeed, so
+   * a generic "please try again" would send the user retrying forever. For
+   * 409 specifically, the pending-state banner now exists (Task 11) and the
+   * branch summons it via `refreshPending()` (asserted below) rather than
+   * just leaving the user reading an error with no way to see or stop the
+   * request it describes. The branch reads `response.status` only and never
+   * calls `.json()` on the failure path — a status code is not
+   * server-supplied text, so this keeps the same no-parse discipline the
+   * "never the server's own message" test above checks for.
    */
   it.each([
     [409, "deletion request is already in progress", true],

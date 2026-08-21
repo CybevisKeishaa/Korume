@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 
@@ -35,8 +36,17 @@ export interface DangerZoneProps {
  * prevent (`--paper-50` on `--danger` measures 2.98:1).
  * `bg-danger` / `text-danger-foreground` is the pairing
  * `lib/design-tokens.contrast.test.ts` already asserts passes AA.
+ *
+ * Fix round 2 (2026-08-21): the section heading forwards `ref` (`tabIndex={-1}`,
+ * focusable but not tab-stopped) so `PrivacyScreen` can direct focus here
+ * after a successful cancel — see that file's own focus-ownership docstring.
+ * Both rows just re-enabled and there is no single "the" row to prefer
+ * between them, so the heading is the deliberate, unambiguous target.
  */
-export function DangerZone({ onCloseAccount, onEraseAll, memoryHref, pendingRequest }: DangerZoneProps) {
+export const DangerZone = forwardRef<HTMLHeadingElement, DangerZoneProps>(function DangerZone(
+  { onCloseAccount, onEraseAll, memoryHref, pendingRequest },
+  ref,
+) {
   const t = useTranslations("settings");
 
   return (
@@ -44,7 +54,13 @@ export function DangerZone({ onCloseAccount, onEraseAll, memoryHref, pendingRequ
       <p className="text-caption font-semibold uppercase tracking-wide text-danger-strong">
         {t("dangerZone.eyebrow")}
       </p>
-      <h2 className="mt-xs text-heading font-bold">{t("dangerZone.title")}</h2>
+      <h2
+        ref={ref}
+        tabIndex={-1}
+        className="mt-xs text-heading font-bold rounded focus:outline-none focus:ring-2 focus:ring-danger"
+      >
+        {t("dangerZone.title")}
+      </h2>
 
       <div className="mt-lg divide-y divide-border">
         <Row title={t("dangerZone.memory.title")} body={t("dangerZone.memory.body")}>
@@ -77,7 +93,7 @@ export function DangerZone({ onCloseAccount, onEraseAll, memoryHref, pendingRequ
       </div>
     </section>
   );
-}
+});
 
 function Row({ title, body, children }: { title: string; body: string; children: React.ReactNode }) {
   return (

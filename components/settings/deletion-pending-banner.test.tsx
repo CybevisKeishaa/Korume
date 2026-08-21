@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { screen } from "@testing-library/react";
@@ -142,21 +143,51 @@ describe("DeletionPendingBanner", () => {
   });
 
   /**
-   * Fix round 1, Important #4/#6: focus moves onto the banner itself when it
-   * appears (not the disabled trigger `Dialog` would otherwise restore focus
-   * to), and the `role="alert"` cancel-failure line is a SIBLING of
-   * `role="status"`, not nested inside it — nesting is undefined behaviour
-   * and re-announces the whole card on some screen readers. Both are
-   * asserted together here because they are the same DOM restructuring
-   * (fix round 1, #6's "render the error as a sibling" resolution).
+   * Fix round 2 (2026-08-21): round 1 had this banner focus itself from a
+   * mount-time `useEffect`, reasoned as the fix for Important #4. The
+   * re-review found that effect reintroduced the SAME defect via a path it
+   * couldn't see — mounting while a `Dialog` is still open and trapping
+   * focus. Focus ownership moved up to `PrivacyScreen`, which can see WHY
+   * the banner appeared and the mount effect could not. This is the
+   * regression guard for that removal: rendering this component standalone
+   * must never move focus by itself, in any circumstance, including mount.
    */
-  it("focuses itself on mount, and keeps the alert region outside the status region", () => {
+  it("never focuses itself — focus ownership belongs to PrivacyScreen (fix round 2)", () => {
     render(<DeletionPendingBanner pending={PENDING} onCancelled={vi.fn()} refreshPending={vi.fn()} />);
+    // Direct equality to `document.body`, not a containment check: `body`
+    // always contains every element in the tree regardless of focus, so
+    // `not.toContainElement` would pass vacuously even if this component DID
+    // steal focus (L-004 — the same trap the corresponding `PrivacyScreen`
+    // assertion documents from the other direction).
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  /**
+   * Fix round 1, #6: the `role="alert"` cancel-failure line is a SIBLING of
+   * `role="status"`, not nested inside it — nesting is undefined behaviour
+   * and re-announces the whole card on some screen readers.
+   */
+  it("keeps the alert region as a sibling of the status region, not nested inside it", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ error: "pg: duplicate key value violates ..." }), { status: 500 }),
+    );
+    render(<DeletionPendingBanner pending={PENDING} onCancelled={vi.fn()} refreshPending={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Cancel deletion" }));
+    const alert = await screen.findByRole("alert");
     const status = screen.getByRole("status");
-    // tabIndex={-1} on the outer container, not on the status region itself
-    // — the container is what receives focus on mount.
-    expect(document.activeElement).not.toBe(status);
-    expect(document.activeElement).toHaveAttribute("tabindex", "-1");
-    expect(document.activeElement).toContainElement(status);
+    expect(status).not.toContainElement(alert);
+  });
+
+  /**
+   * Fix round 2: `PrivacyScreen` directs focus here via the forwarded `ref`
+   * (its own docstring explains when). This is the contract test for that —
+   * a focusable, `tabIndex={-1}` root that actually accepts focus when asked.
+   */
+  it("forwards ref to a focusable, tabIndex=-1 root", () => {
+    const ref = createRef<HTMLDivElement>();
+    render(<DeletionPendingBanner ref={ref} pending={PENDING} onCancelled={vi.fn()} refreshPending={vi.fn()} />);
+    expect(ref.current).toHaveAttribute("tabindex", "-1");
+    ref.current?.focus();
+    expect(document.activeElement).toBe(ref.current);
   });
 });

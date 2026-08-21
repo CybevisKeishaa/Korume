@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useState } from "react";
 import { useFormatter, useTranslations } from "@/lib/i18n";
 import type { PendingDeletion } from "@/lib/data/account-deletion";
 
@@ -35,55 +35,54 @@ const VN_TIME_ZONE = "Asia/Ho_Chi_Minh";
  *   the whole card — nesting `role="alert"` (the cancel-failure line) inside
  *   `role="status"` is undefined behaviour and made some screen readers
  *   re-announce the entire card on every error.
- * - **Focus moves to this banner on mount (Important #4).** `Dialog` restores
- *   focus to the trigger it captured on open; when a confirm handler both
- *   sets `pending` and closes the dialog in the same commit, the trigger it
- *   restores focus to already carries `disabled` (the Danger Zone row this
- *   pending state disables), and `HTMLElement.focus()` on a disabled button
- *   is a no-op — focus would land nowhere, immediately after the most
- *   destructive action in the product. The container below is `tabIndex={-1}`
- *   and focuses itself on mount, which also fires the first time this banner
- *   appears on a normal page load with an existing request — an intentional,
- *   not incidental, choice: next-intl route changes are not reliably
- *   announced by screen readers, and moving focus to the most relevant
- *   content on render is the same "route announcer" pattern SPAs use for
- *   that gap.
- * - **Docstring correction (#5):** a previous version of this comment
- *   claimed the (assertive) live region "announces the new content to a
- *   screen-reader user who never moved focus." Screen readers generally only
- *   announce mutations to regions that were already present before the
+ * - **Focus ownership moved OUT of this component (fix round 2, 2026-08-21).**
+ *   Round 1 focused this banner's root from a mount-time `useEffect`, reasoned
+ *   as fixing Important #4 (a confirm handler disabling the trigger `Dialog`
+ *   would otherwise restore focus to). That mount effect could not tell three
+ *   situations apart, and got two of them wrong: (a) the banner mounting
+ *   because a confirm just succeeded — correct to focus; (b) the banner
+ *   mounting on an ordinary page load with an existing request — focus should
+ *   NOT jump mid-page on load; (c) the banner mounting while `refreshPending()`
+ *   resolves during a `409`/malformed-`200` re-sync WHILE a `Dialog` is still
+ *   open and trapping focus — calling `.focus()` here either got silently
+ *   overridden by Radix's `FocusScope` (leaving Escape's later restore to land
+ *   on the now-disabled trigger, i.e. `<body>` — the very defect this was
+ *   meant to fix) or stole focus into the modal's `aria-hidden` background.
+ *   `PrivacyScreen` can see what a mount effect here cannot — WHY the banner
+ *   appeared (`openTier` transitioning to `null` while `pending` is real) —
+ *   so it now owns this decision; see its own docstring for the mechanism.
+ *   This component only exposes a focusable, `tabIndex={-1}` root via `ref`
+ *   for the owner to direct focus to.
+ * - **Docstring correction (#5, round 1):** a previous version of this
+ *   comment claimed the (assertive) live region "announces the new content to
+ *   a screen-reader user who never moved focus." Screen readers generally
+ *   only announce mutations to regions that were already present before the
  *   content changed — a region and its content inserted in the same commit,
- *   as happens here, is unreliable across NVDA/JAWS/VoiceOver. The guarantee
- *   this component actually makes is the explicit focus move above, which is
- *   asserted directly in `privacy-screen.test.tsx`; `role="status"` is kept
- *   because it is still the correct semantic role for this steady-state
- *   content, not because it is relied on to deliver the initial
- *   announcement.
+ *   as happens here, is unreliable across NVDA/JAWS/VoiceOver. `role="status"`
+ *   is kept because it is still the correct semantic role for this
+ *   steady-state content, not because it is relied on to deliver an initial
+ *   announcement — the actual guarantee is the focus move `PrivacyScreen`
+ *   owns, asserted in `privacy-screen.test.tsx`.
  */
-export function DeletionPendingBanner({
-  pending,
-  onCancelled,
-  refreshPending,
-}: {
-  pending: PendingDeletion;
-  onCancelled: () => void;
-  /**
-   * Re-fetches and re-syncs `PrivacyScreen`'s `pending` state from the
-   * server — called here when a cancel returns `404` (fix round 1, ruled-up
-   * #7): a cancelled-in-another-tab request must not be assumed by this tab;
-   * the server decides what the banner shows next, including removing it.
-   */
-  refreshPending: () => Promise<void>;
-}) {
+export const DeletionPendingBanner = forwardRef<
+  HTMLDivElement,
+  {
+    pending: PendingDeletion;
+    onCancelled: () => void;
+    /**
+     * Re-fetches and re-syncs `PrivacyScreen`'s `pending` state from the
+     * server — called here when a cancel returns `404` (fix round 1,
+     * ruled-up #7): a cancelled-in-another-tab request must not be assumed
+     * by this tab; the server decides what the banner shows next, including
+     * removing it.
+     */
+    refreshPending: () => Promise<void>;
+  }
+>(function DeletionPendingBanner({ pending, onCancelled, refreshPending }, ref) {
   const t = useTranslations("settings");
   const format = useFormatter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
 
   // Same tier-key composition `DeleteDataDialog` uses for `deleteDialog.tier`
   // — `pending.tier` is exactly `DeletionTier`'s two literal values, so it
@@ -128,7 +127,7 @@ export function DeletionPendingBanner({
 
   return (
     <div
-      ref={containerRef}
+      ref={ref}
       tabIndex={-1}
       className="rounded-lg border border-danger/40 bg-danger/5 p-lg focus:outline-none focus:ring-2 focus:ring-danger"
     >
@@ -159,4 +158,4 @@ export function DeletionPendingBanner({
       </button>
     </div>
   );
-}
+});

@@ -202,4 +202,27 @@ describe("settings.json VI — the 7-day window (primary learner locale)", () =>
     expect(vi.deleteDialog.close_account.keep).toBe("Giữ tài khoản");
     expect(vi.deleteDialog.close_account.confirm).toBe("Đóng tài khoản");
   });
+
+  /**
+   * Fix round 2 (2026-08-21), ruled in from the re-review's "controller
+   * decides": the EN half of this guard (`settings.json EN — pending tier
+   * copy blocks` above, "never claims the close_account request deletes
+   * anything") had no VI equivalent — the same gap Task 8's fix round exists
+   * to close (an EN-only guard protects the catalog most users never read).
+   * The VI copy is already correct; only the guard was missing, which means
+   * it could regress silently. Mirrors `deleteDialog`'s own EN/VI pairing.
+   */
+  it("pending.close_account never claims anything is deleted", () => {
+    // "không bị xóa" ("not deleted") is the honest disclaimer this copy is
+    // FOR — same caution as the EN guard above (a substring check on the
+    // bare claim would flag its own negation). The banned phrases below are
+    // the AFFIRMATIVE claims themselves: erase_all's title ("Đã lên lịch
+    // xóa" / "Deletion scheduled"), erase_all's body wording ("được lên
+    // lịch xóa" / "scheduled for deletion"), and a generic "will be
+    // deleted" claim ("sẽ bị xóa") — none of which appear in "không bị xóa".
+    const closeAccount = JSON.stringify(vi.pending.close_account).toLowerCase();
+    expect(closeAccount).not.toContain("đã lên lịch xóa");
+    expect(closeAccount).not.toContain("được lên lịch xóa");
+    expect(closeAccount).not.toContain("sẽ bị xóa");
+  });
 });
