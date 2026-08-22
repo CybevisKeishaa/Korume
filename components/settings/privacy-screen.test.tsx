@@ -1,6 +1,9 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
+import { SCREEN_REGISTRY } from "@/lib/product/screen-registry";
 import { PrivacyScreen } from "./privacy-screen";
 
 const PENDING = {
@@ -106,16 +109,61 @@ describe("PrivacyScreen", () => {
 
     expect((screen.getByLabelText("Type DELETE to confirm.") as HTMLInputElement).value).toBe("");
     expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // (Whole-branch review cleanup: a `queryByRole("alert")` assertion used to
+    // sit here. No submit happens anywhere in this sequence, so no alert could
+    // exist either way — it was unconditionally green and proved nothing.)
     expect(screen.getByRole("button", { name: "Delete all my data" })).toBeDisabled();
   });
 
-  it("still points the memory row at an honest not-built destination — no confirmation flow exists for it in this branch", () => {
+  /**
+   * Whole-branch review, I3. This test used to assert the `href` STRING and
+   * nothing else, so it was green *because it checked the wrong thing*: the
+   * route it blessed had no `page.tsx` behind it, and with no `not-found.tsx`
+   * anywhere under `app/` the row landed on Next's default unstyled English
+   * 404, outside the app chrome. Spec §13 — a user ruling — is explicit that
+   * pointing at an honest "not built yet" surface and merely APPEARING
+   * functional are different things, and only the first is acceptable.
+   *
+   * So the assertion is now about the destination, not the string: the href
+   * must resolve to a registry entry that claims to render something, and
+   * that entry's route must have a real page module on disk. Either half
+   * alone is re-fakeable (a registry row can lie about `impl`; a file can
+   * exist with no row pointing at it), which is why both are here.
+   */
+  it("points the memory row at a destination that actually resolves — not a string that merely looks right", () => {
     render(<PrivacyScreen initialAiTrainingConsent={false} pending={null} />);
-    expect(screen.getByRole("link", { name: "Manage" })).toHaveAttribute(
-      "href",
-      expect.stringContaining("/settings/privacy/memory"),
+    const href = screen.getByRole("link", { name: "Manage" }).getAttribute("href");
+    expect(href).toBeTruthy();
+
+    // The rendered href carries next-intl's locale prefix, so match on the
+    // registry route it ENDS WITH. Gathered by a pattern, therefore its size
+    // is asserted (CLAUDE.md §7): exactly one entry, never zero (which would
+    // make the assertions below vacuous) and never several (which would make
+    // "the" destination ambiguous).
+    const matches = SCREEN_REGISTRY.filter(
+      (entry) => entry.route !== null && (href as string).endsWith(entry.route),
     );
+    expect(matches).toHaveLength(1);
+
+    const destination = matches[0] as (typeof SCREEN_REGISTRY)[number];
+    expect(destination.route).toBe("/settings/privacy/memory");
+    // "none" would mean the registry itself admits nothing renders there.
+    expect(destination.impl).toBe("placeholder");
+
+    // And the page module the registry claims exists really does. The route's
+    // segments sit under the (protected)/(app) chrome groups, which
+    // `destination.chrome` is what names.
+    const pageFile = path.join(
+      process.cwd(),
+      "app",
+      "[locale]",
+      "(protected)",
+      "(app)",
+      ...(destination.route as string).replace(/^\//, "").split("/"),
+      "page.tsx",
+    );
+    expect(destination.chrome).toBe("app");
+    expect(existsSync(pageFile)).toBe(true);
   });
 
   /**

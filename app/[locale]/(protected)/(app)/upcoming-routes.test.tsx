@@ -10,11 +10,13 @@ import { describe, expect, it } from "vitest";
 //
 // ⚠️ Hand-kept, and therefore exactly the kind of list L-023 warns about: it
 // does not discover anything. Phase 1b added `companion` and `pronunciation`
-// and the whole-branch review caught them missing from here.
+// and the whole-branch review caught them missing from here. L9b Plan 1's own
+// whole-branch review added `settings/privacy/memory` — the Danger Zone's
+// third row had been linking at a route with no page behind it.
 const ROUTES = [
   "review", "challenges", "sensei", "roadmap", "weekly-report",
   "statistics", "achievements", "settings", "shadowing/explore",
-  "companion", "pronunciation",
+  "companion", "pronunciation", "settings/privacy/memory",
 ];
 
 describe("upcoming routes", () => {
@@ -22,7 +24,7 @@ describe("upcoming routes", () => {
   // length is the only thing standing between a bad merge and a vacuous suite.
   // CLAUDE.md §7: assert the size of any collection an assertion iterates.
   it("checks every placeholder route, not an empty list", () => {
-    expect(ROUTES).toHaveLength(11);
+    expect(ROUTES).toHaveLength(12);
     expect(new Set(ROUTES).size).toBe(ROUTES.length);
   });
 

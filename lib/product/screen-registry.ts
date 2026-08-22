@@ -512,6 +512,40 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navGroup: null,
     navOrder: null,
   },
+  // The Danger Zone's `Delete Korume Memory` destination. NO frame designs
+  // it: `337:3323` draws the ROW, and spec §13 (a user ruling) says the row
+  // ships now with its behaviour deferred behind an honest "not built yet"
+  // surface. So this is `repo-only`/`no-frame-at-last-pass` — a route the
+  // repo needs and the design file has never covered — with `impl:
+  // "placeholder"` because that is exactly what it renders. `navGroup` is
+  // null: it is reached from the Danger Zone, never from the sidebar.
+  //
+  // Added by the whole-branch review (I3): the row linked here with no page
+  // behind it, so it 404'd into Next's default English error page, outside the
+  // app chrome. T1 below is what forces a registry entry to exist for it.
+  //
+  // `figmaCheckedAt: null` — NOT a stamp. R7 defines the field as the date of
+  // the last HUMAN Figma↔registry comparison, and no human opened Figma for
+  // this row: the plan's §1 explicitly puts frame-map re-capture out of scope,
+  // and this entry was written from the repo side during a fix wave. Stamping
+  // it would claim a comparison that did not happen, which is the same class of
+  // false claim C1 exists to punish. The five existing nulls are all
+  // out-of-design-scope admin rows; this is the first `no-frame-at-last-pass`
+  // one, and it is null for the honest reason rather than the same one.
+  {
+    screenId: "privacy-memory",
+    name: "Delete Korume Memory",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: null,
+    route: "/settings/privacy/memory",
+    chrome: "app",
+    impl: "placeholder",
+    navGroup: null,
+    navOrder: null,
+  },
   // 339:3612 — the delete-all-my-data confirmation dialog: an overlay, not a
   // route (port-workflow spec §5.4), so `route` is null the same way every
   // other state-variant's is.
