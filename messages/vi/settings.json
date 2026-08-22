@@ -16,7 +16,7 @@
     "eyebrow": "VÙNG NGUY HIỂM",
     "title": "Kiểm soát dữ liệu Korume của bạn",
     "memory": { "title": "Xóa ký ức Korume", "body": "Xóa những gì Người bạn đồng hành nhớ về hành trình của bạn.", "action": "Quản lý" },
-    "closeAccount": { "title": "Xóa tài khoản", "body": "Đóng tài khoản Korume. Dữ liệu học của bạn được giữ lại và bạn có thể quay lại.", "action": "Xem lại" },
+    "closeAccount": { "title": "Xóa tài khoản", "body": "Tài khoản của bạn sẽ đóng và không mở lại được. Dữ liệu học vẫn được giữ lại, không bị xóa.", "action": "Xem lại" },
     "eraseAll": { "title": "Xóa toàn bộ dữ liệu của tôi", "body": "Yêu cầu xóa vĩnh viễn dữ liệu cá nhân mà Korume đang lưu.", "action": "Xem lại việc xóa" }
   },
   "deleteDialog": {
@@ -54,8 +54,8 @@
       "subtitle": "Đóng tài khoản Korume của bạn. Dữ liệu học của bạn không bị xóa.",
       "whatHeading": "Điều gì xảy ra khi bạn đóng tài khoản?",
       "items": {
-        "profile": { "title": "Hồ sơ và tùy chọn", "body": "Được giữ nguyên. Bạn sẽ không thể đăng nhập để xem hoặc chỉnh sửa cho đến khi mở lại tài khoản." },
-        "progress": { "title": "Tiến độ học", "body": "Được giữ lại. Bài học, lịch sử luyện tập và thành tích của bạn vẫn được lưu để bạn quay lại." },
+        "profile": { "title": "Hồ sơ và tùy chọn", "body": "Được giữ nguyên. Sau khi tài khoản đóng, bạn sẽ không đăng nhập để xem hay chỉnh sửa được nữa." },
+        "progress": { "title": "Tiến độ học", "body": "Được giữ lại. Bài học, lịch sử luyện tập và thành tích của bạn vẫn được lưu, không bị xóa — chỉ là bạn sẽ không còn truy cập được sau khi tài khoản đóng." },
         "memory": { "title": "Ký ức Korume", "body": "Được giữ lại. Ký ức của Người bạn đồng hành về hành trình học của bạn không bị xóa." },
         "companion": { "title": "Lịch sử Người bạn đồng hành", "body": "Được giữ lại. Nhật ký, suy ngẫm và hội thoại vẫn được lưu trữ." },
         "saved": { "title": "Nội dung đã lưu", "body": "Được giữ lại. Dấu trang, bài ôn và tài liệu luyện tập đã lưu vẫn còn nguyên." },

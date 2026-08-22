@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import en from "./settings.json";
-import vi from "../vi/settings.json";
+import en from "./en/settings.json";
+import vi from "./vi/settings.json";
 
 /**
  * Characterization pins for `settings.json`. Copy corrected from Figma
@@ -14,12 +14,30 @@ import vi from "../vi/settings.json";
  * against BOTH catalogs. `catalog.test.ts` never checks copy content (only
  * structure, ICU validity, argument names, tag names), so this file is the
  * only place either forbidden claim is caught.
+ *
+ * It lives at `messages/`, not `messages/en/`, precisely because it guards
+ * both locales — the whole-branch review flagged the old `messages/en/`
+ * location as claiming an EN-only scope this file has not had since the VI
+ * half was added.
  */
 describe("settings.json EN — the 7-day window", () => {
   it("never claims the deletion is irreversible", () => {
     const all = JSON.stringify(en).toLowerCase();
     expect(all).not.toContain("cannot be undone");
     expect(all).not.toContain("permanently remove");
+  });
+
+  /**
+   * Whole-branch review: the branch ruling forbids irreversibility AND
+   * immediacy, and only the first half was ever guarded. Nothing on this
+   * screen happens when the user confirms — a row is written and the
+   * scheduler acts seven days later — so any copy claiming an immediate
+   * effect is false at the moment the user is deciding, which is the same
+   * defect class as C1's reopen promise.
+   */
+  it("never claims anything happens immediately", () => {
+    const all = JSON.stringify(en).toLowerCase();
+    expect(all).not.toContain("immediately");
   });
 
   it("states the cancelable window in the erase-all dialog note", () => {
@@ -39,6 +57,35 @@ describe("settings.json EN — the 7-day window", () => {
     expect(en.dangerZone.eraseAll.title).toBe("Delete all my data");
   });
 
+  /**
+   * ⭐ C1 (whole-branch review, USER RULING). This key shipped saying "Your
+   * learning data is kept, and you can come back" — and closing an account
+   * bans the GoTrue user for `876000h` (~100 years) with nothing that lifts
+   * it. `liftBan` has exactly one caller, the scheduler's failure handler;
+   * there is no reopen endpoint, no admin un-ban surface, no email flow, and
+   * a banned user cannot obtain a session, so they cannot even reach
+   * `/settings/privacy` to try. The copy stated a falsehood at the exact
+   * moment the user was deciding.
+   *
+   * This key had NO assertion of any kind before now, which is how it
+   * shipped. It is pinned in FULL, in both locales, rather than by a
+   * substring: a partial check would let the promise creep back in the half
+   * that was not pinned.
+   *
+   * The wording may state that CLOSING is permanent — it is — but must not
+   * claim the 7-day cancellation window is absent or that anything happens
+   * on confirm. The window still applies to the request, and
+   * `deleteDialog.close_account.note` is what states it.
+   */
+  it("pins the close-account row body, which must not promise a reopen path", () => {
+    expect(en.dangerZone.closeAccount.body).toBe(
+      "Your account closes and stays closed. Your learning data is kept, not deleted.",
+    );
+    expect(vi.dangerZone.closeAccount.body).toBe(
+      "Tài khoản của bạn sẽ đóng và không mở lại được. Dữ liệu học vẫn được giữ lại, không bị xóa.",
+    );
+  });
+
   it("names the consent toggle for what it actually covers", () => {
     expect(en.aiTraining.title).toBe("Help improve Korume's models");
     expect(en.aiTraining.body).toBe(
@@ -49,10 +96,10 @@ describe("settings.json EN — the 7-day window", () => {
 
 /**
  * `close_account` reuses `DeleteDataDialog`'s structure with `tier`
- * (fix round 1, 2026-08-21) — `dangerZone.closeAccount.body` promises
- * "Your learning data is kept, and you can come back", so the dialog's own
- * copy for this tier must say the same thing, never the erase-all block's
- * "will be deleted" language. These pins hold that promise; the global
+ * (fix round 1, 2026-08-21) — `dangerZone.closeAccount.body` states "Your
+ * account closes and stays closed. Your learning data is kept, not deleted"
+ * (reworded by C1), so the dialog's own copy for this tier must say the same
+ * thing, never the erase-all block's "will be deleted" language. These pins hold that promise; the global
  * "never claims irreversible" test above already covers this block too
  * (it scans the whole `en` object).
  */
@@ -73,6 +120,27 @@ describe("settings.json EN — close_account tells the truth about what happens"
       "Close your Korume account. Your learning data is not deleted.",
     );
     expect(en.deleteDialog.close_account.note).toContain("does not delete your learning data");
+  });
+
+  /**
+   * ⭐ C1, the other half. The Danger Zone row above is pinned exactly; the
+   * dialog block is longer and changes more often, so it is guarded by the
+   * specific promises the repo cannot keep rather than by a full pin. Each
+   * phrase below is one that actually shipped (`items.profile.body` said
+   * "until you reopen your account", `items.progress.body` said "preserved
+   * for when you come back") plus the two adjacent phrasings a writer would
+   * reach for next.
+   */
+  it("never offers a way back into a closed account, in either locale", () => {
+    const enClose = JSON.stringify(en.deleteDialog.close_account).toLowerCase();
+    expect(enClose).not.toContain("reopen");
+    expect(enClose).not.toContain("come back");
+    expect(enClose).not.toContain("sign back in");
+
+    const viClose = JSON.stringify(vi.deleteDialog.close_account).toLowerCase();
+    expect(viClose).not.toContain("mở lại");
+    expect(viClose).not.toContain("quay lại");
+    expect(viClose).not.toContain("kích hoạt lại");
   });
 
   it("still applies the 7-day cancelable window to closing, the same as erasing", () => {
@@ -185,6 +253,41 @@ describe("settings.json VI — the 7-day window (primary learner locale)", () =>
     expect(all).not.toContain("xóa vĩnh viễn không thể khôi phục");
   });
 
+  /**
+   * Whole-branch review: the guard above only covers the `không thể X`
+   * construction. Vietnamese states the same claim just as naturally with the
+   * `không X được` frame, and none of those were caught — a translator
+   * rewriting "không thể hoàn tác" as "không hoàn tác được" would have
+   * reintroduced the forbidden claim with the suite still green.
+   *
+   * ⚠️ ENUMERATED ON PURPOSE, never a `không.*được` regex. That pattern would
+   * match `vi.deleteDialog.erase_all.confirmBody`'s legitimate "không còn
+   * truy cập được" ("will no longer be accessible" — a true statement about
+   * the terminal state, made in the same breath as "Sau 7 ngày"), and would
+   * also match `close_account`'s equally legitimate "không mở lại được" and
+   * "không còn truy cập được". The banned list is the irreversibility claims
+   * themselves, not the grammatical frame they share.
+   */
+  it("never claims irreversibility in the `không X được` frame either", () => {
+    const all = JSON.stringify(vi).toLowerCase();
+    expect(all).not.toContain("không hoàn tác được");
+    expect(all).not.toContain("không lấy lại được");
+    expect(all).not.toContain("không khôi phục được");
+    expect(all).not.toContain("không đảo ngược được");
+  });
+
+  /**
+   * The VI half of the EN immediacy guard above. Both renderings a writer
+   * would reach for: "ngay lập tức" (the ordinary "immediately") and "tức
+   * thì" (the terser, more formal one). Nothing on this screen is immediate —
+   * every path goes through the 7-day window.
+   */
+  it("never claims anything happens immediately", () => {
+    const all = JSON.stringify(vi).toLowerCase();
+    expect(all).not.toContain("ngay lập tức");
+    expect(all).not.toContain("tức thì");
+  });
+
   it("states the cancelable window in the erase-all dialog note", () => {
     expect(vi.deleteDialog.erase_all.note).toBe(
       "Bạn có 7 ngày để đổi ý. Trong thời gian đó dữ liệu được giữ nguyên và bạn có thể hủy bất cứ lúc nào ngay tại trang này. Một số bản ghi có thể được lưu lại khi pháp luật, bảo mật hoặc thanh toán yêu cầu.",
@@ -201,6 +304,11 @@ describe("settings.json VI — the 7-day window (primary learner locale)", () =>
     expect(vi.deleteDialog.close_account.note).toContain("không xóa dữ liệu học");
     expect(vi.deleteDialog.close_account.keep).toBe("Giữ tài khoản");
     expect(vi.deleteDialog.close_account.confirm).toBe("Đóng tài khoản");
+    // C1: the two item bodies that used to promise a reopen. Both now state
+    // the loss of access without offering a way back, and both still say the
+    // data itself survives.
+    expect(vi.deleteDialog.close_account.items.progress.body).toContain("không bị xóa");
+    expect(vi.deleteDialog.close_account.items.profile.body).toContain("Được giữ nguyên");
   });
 
   /**

@@ -40,8 +40,10 @@ export interface PrivacyScreenProps {
  * complete, independent block per tier (`settings.deleteDialog.erase_all` /
  * `.close_account`), so `close_account` never shows erase-all's "will be
  * deleted" wording; it says plainly that learning data is kept, matching
- * `dangerZone.closeAccount.body`'s promise ("Your learning data is kept, and
- * you can come back"). Only the memory row still points at an honest
+ * `dangerZone.closeAccount.body` ("Your account closes and stays closed. Your
+ * learning data is kept, not deleted" — reworded by the whole-branch review's
+ * C1, which found the previous "you can come back" promising a reopen path
+ * the repo does not contain). Only the memory row still points at an honest
  * not-built destination — that feature genuinely has no confirmation flow
  * anywhere in this branch.
  *

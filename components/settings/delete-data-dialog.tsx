@@ -41,8 +41,9 @@ export interface DeleteDataDialogProps {
  * `"deleteDialog.close_account.confirmBody"` next to a live "Close my
  * account" button), and the two-block shape exists so that never happens
  * quietly: `close_account`'s copy must independently say plainly that data
- * is KEPT (`dangerZone.closeAccount.body`'s promise: "Your learning data is
- * kept, and you can come back"), never inherit anything from `erase_all`.
+ * is KEPT (`dangerZone.closeAccount.body`: "Your account closes and stays
+ * closed. Your learning data is kept, not deleted"), never inherit anything
+ * from `erase_all`.
  *
  * The frame says "cannot be undone" for the erase-all case; the LOCKED
  * lifecycle is cancelable for 7 days for BOTH tiers (spec §2). The words are

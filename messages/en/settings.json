@@ -16,7 +16,7 @@
     "eyebrow": "DANGER ZONE",
     "title": "Control your Korume data",
     "memory": { "title": "Delete Korume Memory", "body": "Remove what Companion remembers about your journey.", "action": "Manage" },
-    "closeAccount": { "title": "Delete Account", "body": "Close your Korume account. Your learning data is kept, and you can come back.", "action": "Review" },
+    "closeAccount": { "title": "Delete Account", "body": "Your account closes and stays closed. Your learning data is kept, not deleted.", "action": "Review" },
     "eraseAll": { "title": "Delete all my data", "body": "Request permanent deletion of your personal data stored by Korume.", "action": "Review deletion" }
   },
   "deleteDialog": {
@@ -54,8 +54,8 @@
       "subtitle": "Close your Korume account. Your learning data is not deleted.",
       "whatHeading": "What happens when you close your account?",
       "items": {
-        "profile": { "title": "Profile & preferences", "body": "Kept as they are. You will not be able to sign in to view or edit them until you reopen your account." },
-        "progress": { "title": "Learning progress", "body": "Kept. Your lessons, practice history and achievements are preserved for when you come back." },
+        "profile": { "title": "Profile & preferences", "body": "Kept as they are. Once the account closes you will no longer be able to sign in to view or edit them." },
+        "progress": { "title": "Learning progress", "body": "Kept. Your lessons, practice history and achievements are preserved, not deleted. You will not be able to reach them once the account closes." },
         "memory": { "title": "Korume Memory", "body": "Kept. Companion's memory of your learning journey is preserved, not erased." },
         "companion": { "title": "Companion history", "body": "Kept. Diary entries, reflections and conversations stay stored." },
         "saved": { "title": "Saved learning content", "body": "Kept. Bookmarks, reviews and saved practice material stay stored." },

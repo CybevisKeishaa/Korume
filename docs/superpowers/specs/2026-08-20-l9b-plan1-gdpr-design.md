@@ -75,12 +75,29 @@ reader.
 | Row | Button | Meaning (decision 5) | This plan |
 |---|---|---|---|
 | Delete Korume Memory | `Manage` | Erase what the Companion remembers. **Learning progress remains.** | ◐ **row ships, behaviour deferred** (§13) |
-| Delete Account | `Review` | **Close the account.** Learning data survives; the account is reopenable. | ✅ built |
+| Delete Account | `Review` | **Close the account.** Learning data survives; the closure is **permanent** — see the note below. | ✅ built |
 | Delete all my data | `Review deletion` | **Full GDPR erasure.** Unrecoverable. | ✅ built |
 
 Both in-scope tiers run through **one state machine and one scheduler** (§5, §7), differing only in
 what executes at the end. Building them as two mechanisms would be two chances to get the grace
 window wrong.
+
+> ⚠️ **Corrected 2026-08-22 (whole-branch review, C1 — a spec defect, not just an implementation
+> gap).** This table originally said *"the account is reopenable."* **It is not, and nothing in this
+> plan ever made it so.** `close_account` executes `ban_duration: "876000h"` (~100 years) and then
+> stops. `liftBan` has exactly one caller — the scheduler's failure handler — so there is no reopen
+> endpoint, no admin un-ban surface and no email flow; a banned GoTrue user cannot obtain a session,
+> so they cannot even reach `/settings/privacy` to ask. The plan inherited the claim from here and
+> shipped user-facing copy stating it in both locales, which is exactly why this line is corrected
+> rather than left as a harmless aspiration.
+>
+> What `close_account` actually means, and what the copy now says: **the account closes and stays
+> closed; the learning data is kept, not deleted.** That is still a materially different operation
+> from `erase_all`, which is the whole reason the two tiers exist.
+>
+> A reopen path would be a **new feature** and is deliberately not in this branch. If it is ever
+> built, it belongs in §14 as its own scoped item — with the copy in both locales changed back in the
+> same change, never before it.
 
 ---
 
