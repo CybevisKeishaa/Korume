@@ -1,7 +1,7 @@
 import "server-only";
 import { registerJob } from "./registry";
 import { runDueJobs } from "./runner";
-import { accountDeletionJob } from "./jobs/account-deletion";
+import { accountDeletionJob, reconcileStrandedDeletions } from "./jobs/account-deletion";
 
 const TICK_MS = 60_000;
 
@@ -46,10 +46,34 @@ export function resetSchedulerForTests(): void {
 export function startScheduler(): void {
   const g = globalThis as GlobalWithScheduler;
   if (g[SCHEDULER_STARTED]) return;
-  if (process.env.SCHEDULER_ENABLED !== "true") return;
+  if (process.env.SCHEDULER_ENABLED !== "true") {
+    // Whole-branch review, I2: "off" used to be indistinguishable from "the
+    // scheduler is running and nothing is due" — and from "someone typed
+    // SCHEDULER_ENABLED=1". `lib/scheduler/env.ts` now fails startup on a
+    // value that is neither "true" nor "false", so reaching here is a
+    // DELIBERATE off; this line is what makes that deliberate off visible in
+    // the logs of a machine nobody is watching. Spec §7's own principle: a
+    // silent scheduler cannot be distinguished from a dead one.
+    console.info(
+      "[scheduler] disabled (SCHEDULER_ENABLED is not \"true\") — deletion requests " +
+        "will be recorded and their grace periods will elapse, but NOTHING will execute them",
+    );
+    return;
+  }
   g[SCHEDULER_STARTED] = true;
 
   registerJob(accountDeletionJob);
+
+  // I1: a crash, SIGTERM or deploy restart between the claim and the catch
+  // leaves a row `executed` with the work half-done, and the claim only ever
+  // takes `pending` rows — so nothing would ever retry it. Runs once here, at
+  // startup, because that is exactly the moment after the crash that stranded
+  // it. Fire-and-forget with its own catch: a reconciliation failure must not
+  // stop the scheduler from starting, or one bad row would keep every OTHER
+  // user's deletion from ever running.
+  reconcileStrandedDeletions().catch((error: unknown) =>
+    console.error("[scheduler] startup reconciliation failed", error),
+  );
 
   // Guards against overlapping ticks (review I4): a pass doing recursive
   // paginated Storage work can outlast TICK_MS. `setInterval` would otherwise

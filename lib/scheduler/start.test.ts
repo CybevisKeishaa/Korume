@@ -6,8 +6,15 @@ import { resetSchedulerForTests, startScheduler } from "./start";
 // Doesn't need a real Supabase client — only the env gate and the guard are
 // under test here, not the job's own logic (covered by
 // lib/scheduler/jobs/account-deletion.test.ts).
+const reconcileCalls: number[] = [];
+let reconcileRejects = false;
+
 vi.mock("./jobs/account-deletion", () => ({
   accountDeletionJob: { name: "account-deletion", run: async () => 0 },
+  reconcileStrandedDeletions: () => {
+    reconcileCalls.push(Date.now());
+    return reconcileRejects ? Promise.reject(new Error("reconcile blew up")) : Promise.resolve(0);
+  },
 }));
 
 const ORIGINAL_ENV = process.env.SCHEDULER_ENABLED;
@@ -15,6 +22,8 @@ const ORIGINAL_ENV = process.env.SCHEDULER_ENABLED;
 beforeEach(() => {
   resetJobs();
   resetSchedulerForTests();
+  reconcileCalls.length = 0;
+  reconcileRejects = false;
   vi.useFakeTimers();
 });
 
@@ -85,7 +94,89 @@ describe("resetSchedulerForTests — actually cancels the live interval (N7)", (
     clearIntervalSpy.mockRestore();
   });
 
-  it("does not throw when called before startScheduler ever ran (nothing to clear)", () => {
-    expect(() => resetSchedulerForTests()).not.toThrow();
+  // (Whole-branch review cleanup: a "does not throw when called before
+  // startScheduler ever ran" test used to sit here. It could not fail —
+  // `clearInterval(undefined)` is a Node no-op, so deleting the
+  // `intervalHandle !== undefined` guard it purported to protect leaves it
+  // green. L-004: an assertion that cannot go red is not a guard.)
+});
+
+/**
+ * Whole-branch review, I2. `SCHEDULER_ENABLED` was read raw and registered
+ * nowhere, so every near-miss meant "silently never execute anybody's
+ * deletion" while the app kept accepting requests and kept telling users a
+ * date. `lib/scheduler/env.ts` now fails startup on anything that is not
+ * exactly "true"/"false"/unset (`lib/scheduler/env.test.ts`), and the
+ * DELIBERATE off is announced here — spec §7: a silent scheduler cannot be
+ * distinguished from a dead one.
+ */
+describe("startScheduler — an intentional \"off\" is observable in the logs", () => {
+  it("logs one line naming the variable when the scheduler stays off", () => {
+    delete process.env.SCHEDULER_ENABLED;
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    startScheduler();
+
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(String(info.mock.calls[0]?.[0])).toContain("SCHEDULER_ENABLED");
+    expect(String(info.mock.calls[0]?.[0])).toContain("NOTHING will execute them");
+    info.mockRestore();
+  });
+
+  it("does not log the disabled line when the scheduler actually starts", () => {
+    process.env.SCHEDULER_ENABLED = "true";
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    startScheduler();
+
+    const disabledLines = info.mock.calls.filter((call) =>
+      String(call[0]).includes("SCHEDULER_ENABLED"),
+    );
+    expect(disabledLines).toHaveLength(0);
+    info.mockRestore();
+  });
+});
+
+/**
+ * Whole-branch review, I1. A crash between the claim and the catch leaves a
+ * row `executed` that the claim (which only takes `pending`) will never pick
+ * up again — the erasure silently never completes. Startup is exactly the
+ * moment after the crash that stranded it.
+ */
+describe("startScheduler — the stranded-row reconciliation", () => {
+  it("runs the reconciliation once when the scheduler starts", () => {
+    process.env.SCHEDULER_ENABLED = "true";
+
+    startScheduler();
+
+    expect(reconcileCalls).toHaveLength(1);
+  });
+
+  it("never runs it when the scheduler is disabled", () => {
+    delete process.env.SCHEDULER_ENABLED;
+    vi.spyOn(console, "info").mockImplementation(() => {});
+
+    startScheduler();
+
+    expect(reconcileCalls).toHaveLength(0);
+  });
+
+  it("still starts the scheduler when the reconciliation rejects", async () => {
+    process.env.SCHEDULER_ENABLED = "true";
+    reconcileRejects = true;
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const setIntervalSpy = vi.spyOn(global, "setInterval");
+
+    startScheduler();
+    // Let the rejected fire-and-forget promise settle.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // One bad row must never keep every other user's deletion from running.
+    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    expect(listJobs()).toHaveLength(1);
+    expect(error).toHaveBeenCalled();
+    setIntervalSpy.mockRestore();
+    error.mockRestore();
   });
 });

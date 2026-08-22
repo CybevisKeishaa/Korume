@@ -15,9 +15,16 @@ export async function register() {
 
   const { aiEnvSpec } = await import("@/lib/ai/registry");
   const { speechEnvSpec } = await import("@/lib/speech-scoring/env");
+  // Whole-branch review, I2: `SCHEDULER_ENABLED` was read raw inside
+  // `startScheduler` and registered nowhere, so `=1`, `=TRUE`, `=yes` or a
+  // typo all meant "silently never execute anybody's deletion" while the app
+  // kept accepting requests. Registered here — two lines above the call site
+  // it gates — so a near-miss fails startup instead.
+  const { schedulerEnvSpec } = await import("@/lib/scheduler/env");
 
   registerEnvSpec(aiEnvSpec);
   registerEnvSpec(speechEnvSpec);
+  registerEnvSpec(schedulerEnvSpec);
   validateEnv();
 
   // No task in the plan wired this up before now — without it, account

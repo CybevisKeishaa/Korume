@@ -79,6 +79,24 @@ let revertRowMissingFor: Set<string> = new Set();
  *  — round 2's N4 fix was itself unmutation-checked). */
 let revertRejectsFor: Set<string> = new Set();
 
+/** Rows the I6 guard's lookup finds: "does this user have another COMPLETED
+ *  close_account request?" Keyed by user_id, holding the ids of executed
+ *  close_account rows OTHER than the one being processed. Empty = no
+ *  deliberate closure, so a failed erase_all may lift the ban. */
+let executedClosuresByUser: Record<string, string[]> = {};
+/** Makes the I6 guard's own lookup report an error, to prove the ban is NOT
+ *  lifted when the check could not be made. */
+let closureLookupError: { message: string } | null = null;
+/** Every filter the I6 guard applied, so the query can be asserted rather
+ *  than assumed (in particular the `neq` that excludes the row in hand). */
+const closureLookupFilters: [string, string, string][] = [];
+
+/** Rows the I1 startup reconciliation's query returns, and the filters it
+ *  applied. */
+let strandedRows: unknown[] = [];
+let strandedQueryError: { message: string } | null = null;
+const strandedFilters: [string, string, string][] = [];
+
 /** Every argument the job passes into the claim / revert / purge-query
  *  chains, so the "the claim IS the work" atomic-shape requirement is
  *  checkable: one update().eq().lte().select() call, never a select
@@ -99,6 +117,42 @@ vi.mock("@/lib/supabase/service", () => ({
     from: (table: string) => {
       if (table === "account_deletion_requests") {
         return {
+          /**
+           * Two read chains share this table, distinguished by the columns
+           * asked for — the same "branch on the call's own shape" technique
+           * the two `update()` chains below already use:
+           *   "id"          -> the I6 guard's completed-closure lookup
+           *   "id, user_id" -> the I1 startup reconciliation's stranded scan
+           * Both are chainable filter recorders terminating in a thenable, so
+           * the FILTERS themselves are assertable, not just the result.
+           */
+          select: (cols: string) => {
+            const isClosureLookup = cols === "id";
+            const filters = isClosureLookup ? closureLookupFilters : strandedFilters;
+            const chain: Record<string, unknown> = {};
+            let subjectUserId = "";
+            const record = (op: string) => (col: string, val: string) => {
+              filters.push([op, col, val]);
+              if (col === "user_id") subjectUserId = val;
+              return chain;
+            };
+            chain.eq = record("eq");
+            chain.neq = record("neq");
+            chain.lte = record("lte");
+            chain.then = (
+              onFulfilled: (r: { data: unknown; error: unknown }) => unknown,
+              onRejected?: (e: unknown) => unknown,
+            ) => {
+              const result = isClosureLookup
+                ? {
+                    data: (executedClosuresByUser[subjectUserId] ?? []).map((id) => ({ id })),
+                    error: closureLookupError,
+                  }
+                : { data: strandedRows, error: strandedQueryError };
+              return Promise.resolve(result).then(onFulfilled, onRejected);
+            };
+            return chain;
+          },
           update: (values: Record<string, unknown>) => {
             // Two distinct update() call shapes share this table: the claim
             // (status -> "executed") and the revert (status -> "pending").
@@ -211,7 +265,7 @@ vi.mock("@/lib/supabase/service", () => ({
   }),
 }));
 
-import { accountDeletionJob } from "./account-deletion";
+import { accountDeletionJob, reconcileStrandedDeletions } from "./account-deletion";
 
 beforeEach(() => {
   executeDeletionCalls.length = 0;
@@ -223,6 +277,12 @@ beforeEach(() => {
   liftBanFailFor = new Set();
   claimedRows = [];
   duePurgeRows = [];
+  executedClosuresByUser = {};
+  closureLookupError = null;
+  closureLookupFilters.length = 0;
+  strandedRows = [];
+  strandedQueryError = null;
+  strandedFilters.length = 0;
   claimError = null;
   purgeQueryError = null;
   tombstoneDeleteErrorFor = new Set();
@@ -469,6 +529,181 @@ describe("accountDeletionJob — a row's throw reverts only that row (C1)", () =
       errorSpy.mockRestore();
     },
   );
+});
+
+/**
+ * Whole-branch review, I6. The one-live-request unique index is PARTIAL — it
+ * forbids two *pending* rows — so `close_account`/`executed` coexisting with
+ * `erase_all`/`pending` is representable at rest. The old
+ * `liftBanAfterFailure` was documented as an unconditional, harmless no-op;
+ * it was neither. A failed `erase_all` would un-ban an account the user had
+ * deliberately closed, silently re-opening it. After C1 the product states in
+ * both locales that closing is permanent, which makes reversing one worse
+ * than it was before.
+ */
+describe("accountDeletionJob — a failed erase_all must not re-open a deliberately closed account (I6)", () => {
+  it("does NOT lift the ban when the user has a completed close_account request", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    executeDeletionFailFor = new Set(["u1"]);
+    executedClosuresByUser = { u1: ["closed-req"] };
+    claimedRows = [row({ id: "r1", user_id: "u1", tier: "erase_all", purge_after: "2026-11-18T10:00:00.000Z" })];
+
+    await accountDeletionJob.run(NOW);
+
+    expect(liftBanCalls).toEqual([]);
+    expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining("NOT lifting the ban on user u1"));
+    // The row itself is still reverted — the retry is orthogonal to the ban.
+    expect(revertEqCalls).toEqual([
+      ["id", "r1"],
+      ["status", "executed"],
+    ]);
+
+    errorSpy.mockRestore();
+    infoSpy.mockRestore();
+  });
+
+  it("still lifts the ban for a user with no completed closure — the ordinary case is unchanged", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    executeDeletionFailFor = new Set(["u1"]);
+    executedClosuresByUser = {};
+    claimedRows = [row({ id: "r1", user_id: "u1", tier: "erase_all", purge_after: "2026-11-18T10:00:00.000Z" })];
+
+    await accountDeletionJob.run(NOW);
+
+    expect(liftBanCalls).toEqual(["u1"]);
+    errorSpy.mockRestore();
+  });
+
+  it("excludes the row being processed from the lookup, so a failing close_account can still be un-banned", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    executeDeletionFailFor = new Set(["u1"]);
+    claimedRows = [row({ id: "r1", user_id: "u1", tier: "close_account", purge_after: null })];
+
+    await accountDeletionJob.run(NOW);
+
+    // The row in hand is ITSELF executed + close_account (the claim sets that
+    // before the work runs), so without the `neq` it would match itself and
+    // block its own legitimate lift.
+    expect(closureLookupFilters).toContainEqual(["neq", "id", "r1"]);
+    expect(closureLookupFilters).toContainEqual(["eq", "user_id", "u1"]);
+    expect(closureLookupFilters).toContainEqual(["eq", "tier", "close_account"]);
+    expect(closureLookupFilters).toContainEqual(["eq", "status", "executed"]);
+    expect(closureLookupFilters).toHaveLength(4);
+    expect(liftBanCalls).toEqual(["u1"]);
+
+    errorSpy.mockRestore();
+  });
+
+  it("does NOT lift the ban when the closure check itself fails — 'we could not tell' must not resolve to 're-open it'", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    executeDeletionFailFor = new Set(["u1"]);
+    closureLookupError = { message: "connection reset" };
+    claimedRows = [row({ id: "r1", user_id: "u1", tier: "erase_all", purge_after: "2026-11-18T10:00:00.000Z" })];
+
+    await accountDeletionJob.run(NOW);
+
+    expect(liftBanCalls).toEqual([]);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("could not check whether user u1"),
+      expect.anything(),
+    );
+    // The revert still happens — the check failing must not stop the retry.
+    expect(revertEqCalls).toEqual([
+      ["id", "r1"],
+      ["status", "executed"],
+    ]);
+
+    errorSpy.mockRestore();
+  });
+});
+
+/**
+ * Whole-branch review, I1. The claim marks a row `executed` BEFORE the work
+ * runs. Every in-band failure is handled; a SIGTERM, crash or deploy restart
+ * between the claim and the catch is not. The claim only ever takes
+ * `status = 'pending'`, so such a row is never retried: the GDPR erasure
+ * silently never completes, the statutory clock runs out, and the banned user
+ * cannot sign in to ask why.
+ */
+describe("reconcileStrandedDeletions — the startup pass (I1)", () => {
+  const RECON_NOW = new Date("2026-08-27T10:00:00.000Z");
+
+  it("reverts an erase_all row stranded in 'executed' back to pending", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    strandedRows = [{ id: "r1", user_id: "u1" }];
+
+    const reverted = await reconcileStrandedDeletions(RECON_NOW);
+
+    expect(reverted).toBe(1);
+    expect(revertEqCalls).toEqual([
+      ["id", "r1"],
+      ["status", "executed"],
+    ]);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("never completed"));
+
+    errorSpy.mockRestore();
+    infoSpy.mockRestore();
+  });
+
+  it("scopes the scan to erase_all rows older than the stranded threshold", async () => {
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    strandedRows = [];
+
+    await reconcileStrandedDeletions(RECON_NOW);
+
+    // A completed erase_all takes its own request row with it (the users FK
+    // cascades), so an erase_all row still sitting in `executed` IS the proof
+    // that the work did not finish — no separate users-row probe is needed.
+    expect(strandedFilters).toContainEqual(["eq", "status", "executed"]);
+    expect(strandedFilters).toContainEqual(["eq", "tier", "erase_all"]);
+    const lte = strandedFilters.filter(([op]) => op === "lte");
+    expect(lte).toHaveLength(1);
+    expect(lte[0]?.[1]).toBe("executed_at");
+    // 15 minutes before RECON_NOW — a legitimate in-flight pass is spared.
+    expect(lte[0]?.[2]).toBe("2026-08-27T09:45:00.000Z");
+    expect(strandedFilters).toHaveLength(3);
+
+    infoSpy.mockRestore();
+  });
+
+  it("says so out loud when nothing is stranded — a silent pass is indistinguishable from a dead one", async () => {
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    strandedRows = [];
+
+    const reverted = await reconcileStrandedDeletions(RECON_NOW);
+
+    expect(reverted).toBe(0);
+    expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining("no stranded rows"));
+    expect(revertEqCalls).toEqual([]);
+
+    infoSpy.mockRestore();
+  });
+
+  it("skips a malformed row rather than reverting an id it cannot trust", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    strandedRows = [{ id: 42, user_id: null }, { id: "r2", user_id: "u2" }];
+
+    const reverted = await reconcileStrandedDeletions(RECON_NOW);
+
+    expect(reverted).toBe(1);
+    expect(revertEqCalls).toEqual([
+      ["id", "r2"],
+      ["status", "executed"],
+    ]);
+
+    errorSpy.mockRestore();
+    infoSpy.mockRestore();
+  });
+
+  it("throws when the scan itself fails, so startup logs it rather than reporting a clean pass", async () => {
+    strandedQueryError = { message: "connection reset" };
+    await expect(reconcileStrandedDeletions(RECON_NOW)).rejects.toMatchObject({
+      message: "connection reset",
+    });
+  });
 });
 
 describe("accountDeletionJob — the 90-day purge", () => {

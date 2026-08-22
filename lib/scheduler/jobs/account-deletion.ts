@@ -28,6 +28,10 @@ type DueRow = z.infer<typeof dueRowSchema>;
 const duePurgeRowSchema = z.object({ user_id: z.string() });
 type DuePurgeRow = z.infer<typeof duePurgeRowSchema>;
 
+/** Same reasoning again (I1): `id` here drives an UPDATE that puts a row back
+ *  in the deletion queue, so it is validated rather than `as`-cast. */
+const strandedRowSchema = z.object({ id: z.string(), user_id: z.string() });
+
 /** Counts logged once per run, success or failure (review I6) — so "nothing
  *  was due" and "three users were erased, then it blew up" never look
  *  identical in the logs, and the skip/failure counts are machine-readable
@@ -105,18 +109,64 @@ async function revertToPending(service: ServiceClient, requestId: string): Promi
  * FIRST, so any failure reaching `processRow`'s catch may have left the
  * user banned with the deletion otherwise incomplete — and a banned GoTrue
  * user cannot obtain a session, so they cannot even reach `cancelDeletion`
- * to help themselves. Safe to call unconditionally: the `users` row is
- * always still there when this runs (the `users` delete is
- * `executeDeletion`'s LAST step), so there is always a real account here to
- * unban, and unbanning an account that was never banned is a harmless no-op.
+ * to help themselves.
+ *
+ * ⚠️ NOT safe to call unconditionally, which is what the previous version of
+ * this comment claimed (whole-branch review, I6 — and the fix is the guard
+ * below, not a reworded comment). The one-live-request index is PARTIAL: it
+ * forbids two *pending* rows, so `close_account`/`executed` coexisting with
+ * `erase_all`/`pending` is representable at rest. A user who deliberately
+ * closed their account, and later has a failed `erase_all` attempt, would
+ * have that closure silently undone by an unconditional lift — their account
+ * would simply be open again. After C1 the product states plainly that
+ * closing is permanent, so silently reversing one is worse than it was.
+ *
+ * So: lift only when no OTHER executed `close_account` row exists for this
+ * user. `neq("id", requestId)` excludes the row being processed right now —
+ * a failing `close_account` row is itself `executed` (the claim sets it
+ * before the work runs) and would otherwise match itself and block its own
+ * legitimate lift.
+ *
+ * A failure of the CHECK itself does not lift: "we could not determine
+ * whether this user deliberately closed their account" must not resolve to
+ * "so re-open it". A user who stays banned can be helped by a human; a
+ * closure silently reversed is a promise broken with nobody watching.
  *
  * Never throws, and never skipped on failure: this must not prevent the row
  * revert that follows it, but a failure here is the one case in this whole
  * job that genuinely needs a human — logged loudly with the user id, never
  * silently swallowed.
  */
-async function liftBanAfterFailure(userId: string): Promise<void> {
+async function liftBanAfterFailure(
+  service: ServiceClient,
+  userId: string,
+  requestId: string,
+): Promise<void> {
   try {
+    const { data, error } = await service
+      .from("account_deletion_requests")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("tier", "close_account")
+      .eq("status", "executed")
+      .neq("id", requestId);
+    if (error) {
+      console.error(
+        `[scheduler] account-deletion: could not check whether user ${userId} has a completed ` +
+          `account closure — NOT lifting the ban, because re-opening a deliberately closed ` +
+          `account is the worse mistake. They stay banned until a human looks.`,
+        error,
+      );
+      return;
+    }
+    if ((data ?? []).length > 0) {
+      console.info(
+        `[scheduler] account-deletion: NOT lifting the ban on user ${userId} after a failed ` +
+          `attempt — they have a completed close_account request, so the ban is deliberate and ` +
+          `permanent. Only the deletion request itself is reverted.`,
+      );
+      return;
+    }
     await liftBan(userId);
   } catch (error) {
     console.error(
@@ -126,6 +176,97 @@ async function liftBanAfterFailure(userId: string): Promise<void> {
       error,
     );
   }
+}
+
+/**
+ * How long a row may sit in `executed` before it is treated as STRANDED
+ * rather than in-flight. A single pass can legitimately take a while — the
+ * Storage erase recurses and paginates — but not this long, and everything
+ * else in this feature is measured in days, so there is a wide margin either
+ * side of this number.
+ */
+const STRANDED_AFTER_MS = 15 * 60_000;
+
+/**
+ * ⚠️ I1 (whole-branch review): the claim marks a row `executed` BEFORE the
+ * work runs, and every in-band failure is handled — `processRow`'s catch
+ * lifts the ban and reverts the row. What is not handled is a SIGTERM, a
+ * crash or a deploy restart landing between the claim and the catch. That
+ * leaves an `erase_all` row `executed`, the user banned for ~100 years,
+ * Storage possibly half-deleted, and the `users` row intact — and because
+ * the claim only ever takes `status = 'pending'`, **nothing ever retries
+ * it.** The GDPR erasure silently never completes, the statutory clock runs
+ * out, and the user cannot sign in to ask why.
+ *
+ * This runs once at startup (`lib/scheduler/start.ts`), which is precisely
+ * the moment after the crash that stranded the row.
+ *
+ * **Why `erase_all` only.** `account_deletion_requests.user_id references
+ * users(id) on delete cascade`, and the `users` delete is `executeDeletion`'s
+ * LAST step — so a COMPLETED `erase_all` takes its own request row with it.
+ * An `erase_all` row still sitting in `executed` is therefore proof, by
+ * itself, that the work did not finish. No separate "does the users row still
+ * exist?" query is needed, and none is done: the FK already answers it.
+ *
+ * `close_account` is deliberately NOT reconciled, and that is not an
+ * oversight. For that tier `executed` is the TERMINAL state and the `users`
+ * row surviving is the intended outcome, so nothing distinguishes a completed
+ * closure from a stranded one without asking GoTrue whether the ban landed.
+ * Reverting them on age alone would re-claim and re-execute every closed
+ * account, stamp a fresh `executed_at`, and do it all again N minutes later —
+ * a perpetual re-ban loop for users who are already correctly closed. A
+ * stranded `close_account` is also the mild case: the account simply is not
+ * closed yet, nothing is destroyed, and nothing is on a statutory clock.
+ *
+ * Logs on every path, including "nothing stranded" — spec §7: a silent
+ * scheduler cannot be distinguished from a dead one.
+ *
+ * @returns how many rows were reverted to `pending`.
+ */
+export async function reconcileStrandedDeletions(now: Date = new Date()): Promise<number> {
+  const service = createServiceClient();
+  const cutoff = new Date(now.getTime() - STRANDED_AFTER_MS).toISOString();
+
+  const { data, error } = await service
+    .from("account_deletion_requests")
+    .select("id, user_id")
+    .eq("status", "executed")
+    .eq("tier", "erase_all")
+    .lte("executed_at", cutoff);
+  if (error) throw error;
+
+  const stranded = (data ?? []) as unknown[];
+  if (stranded.length === 0) {
+    console.info("[scheduler] account-deletion reconciliation: no stranded rows");
+    return 0;
+  }
+
+  let reverted = 0;
+  for (const raw of stranded) {
+    const parsed = strandedRowSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.error(
+        "[scheduler] account-deletion reconciliation: malformed stranded row — skipping",
+        parsed.error.flatten(),
+      );
+      continue;
+    }
+    console.error(
+      `[scheduler] account-deletion reconciliation: request ${parsed.data.id} (user ` +
+        `${parsed.data.user_id}) has been "executed" since before ${cutoff} but its users row ` +
+        `still exists, so the erasure never completed — the process almost certainly died ` +
+        `mid-deletion. Reverting to "pending" so the next pass retries it. Storage and the ban ` +
+        `may be in a partial state; executeDeletion is re-run-safe.`,
+    );
+    await revertToPending(service, parsed.data.id);
+    reverted += 1;
+  }
+
+  console.info("[scheduler] account-deletion reconciliation", {
+    stranded: stranded.length,
+    reverted,
+  });
+  return reverted;
 }
 
 /**
@@ -260,7 +401,7 @@ async function processRow(service: ServiceClient, row: DueRow, now: Date, counts
         `pending for retry`,
       error,
     );
-    await liftBanAfterFailure(row.user_id);
+    await liftBanAfterFailure(service, row.user_id, row.id);
     await revertToPending(service, row.id);
   }
 }
