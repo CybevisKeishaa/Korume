@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
 import { scheduleFor, type DeletionTier } from "@/lib/account-deletion/lifecycle";
@@ -40,6 +41,32 @@ export type RequestDeletionResult =
   | { ok: false; status: 401 | 409 }
   | { ok: false; status: 429; retryAfter: number };
 
+/**
+ * ⚠️ The INSERT runs through the SERVICE-ROLE client, and that is a security
+ * control, not a convenience (whole-branch review, C2).
+ *
+ * It used to run through the user's client, which forced `authenticated` to
+ * hold an INSERT grant on `account_deletion_requests`. The insert policy
+ * constrained only `user_id` and `status` — `tier`, `execute_after` and
+ * `purge_after` were free — so anyone holding a session token could POST
+ * straight to PostgREST with `tier: 'erase_all'`, `execute_after: now()`,
+ * `purge_after: now()`. Within one 60-second scheduler tick the row was
+ * claimed, the full erasure ran, and the same pass's purge loop deleted the
+ * `auth.users` row: irreversible annihilation about a minute after one HTTP
+ * call, with the typed `DELETE` confirmation, the acknowledgement checkbox and
+ * the entire 7-day cancellation window bypassed. Reproduced against a real
+ * local database at `ba28de2`.
+ *
+ * `user_id` here comes from `requireUser`, never from the caller's body, so
+ * RLS was adding nothing on this path in the first place. With the write
+ * moved here, `20260820000031_account_deletion_insert_service_role_only.sql`
+ * revokes INSERT from `authenticated` and drops the insert policy — there is
+ * no longer any direct client route to a row of this table.
+ *
+ * The 7-day window itself stays a single fact in
+ * `lib/account-deletion/lifecycle.ts` (CLAUDE.md §6): this fix removes the
+ * bypass without restating the window anywhere else.
+ */
 export async function requestDeletion(
   input: DeletionRequestInput,
   now: Date = new Date(),
@@ -53,9 +80,10 @@ export async function requestDeletion(
 
   const { executeAfter, purgeAfter } = scheduleFor(input.tier, now);
 
-  // `status` is deliberately absent: the column defaults to 'pending' and the
-  // INSERT policy pins it there. Sending it would let a client name its own.
-  const { data, error } = await supabase
+  // `status` is deliberately absent: the column defaults to 'pending'. Sending
+  // it would let a caller name its own — and there is no longer an INSERT
+  // policy pinning it, because there is no longer a client INSERT path at all.
+  const { data, error } = await createServiceClient()
     .from("account_deletion_requests")
     .insert({
       user_id: user.id,
@@ -95,12 +123,27 @@ export async function cancelDeletion(now: Date = new Date()): Promise<CancelDele
 
 export type GetPendingDeletionResult =
   | { ok: true; data: PendingDeletion | null }
-  | { ok: false; status: 401 };
+  | { ok: false; status: 401 }
+  | { ok: false; status: 429; retryAfter: number };
 
-export async function getPendingDeletion(): Promise<GetPendingDeletionResult> {
+/**
+ * The read stays on the USER's client, and the SELECT policy stays in place
+ * (C2 removed only the INSERT half): `user_id = auth.uid()` is what scopes
+ * this to the caller's own row. A service-role read would be scoped by
+ * nothing but the `.eq()` below.
+ *
+ * Rate-limited like POST and DELETE — spec §8 says every route, and this one
+ * enumerates the existence and execution date of a pending deletion.
+ */
+export async function getPendingDeletion(
+  now: Date = new Date(),
+): Promise<GetPendingDeletionResult> {
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
+
+  const limited = rateLimit(`deletion:status:${user.id}`, DELETION_LIMIT, now.getTime());
+  if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
 
   const { data, error } = await supabase
     .from("account_deletion_requests")

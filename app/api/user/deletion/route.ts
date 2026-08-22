@@ -74,7 +74,14 @@ export async function DELETE(): Promise<NextResponse> {
 export async function GET(): Promise<NextResponse> {
   try {
     const result = await getPendingDeletion();
-    if (!result.ok) return NextResponse.json({ error: "Unauthorized" }, { status: result.status });
+    if (!result.ok) {
+      // Whole-branch review cleanup: spec §8 says rate-limit EVERY route, and
+      // this was the one that was not. `PrivacyScreen.refreshPending()` maps
+      // any non-OK response to `"unknown"` ("we could not check"), which is
+      // the honest reading of a 429 — never "no request pending".
+      if (result.status === 429) return tooMany(result.retryAfter);
+      return NextResponse.json({ error: "Unauthorized" }, { status: result.status });
+    }
     return NextResponse.json({ data: result.data });
   } catch (error) {
     return opaque500("GET failed", error);

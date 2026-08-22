@@ -131,6 +131,18 @@ describe("GET /api/user/deletion", () => {
     await expect(res.json()).resolves.toMatchObject({ data: pending });
   });
 
+  /**
+   * Whole-branch review cleanup: POST and DELETE were rate-limited and GET was
+   * not, though spec §8 says every route. `Retry-After` in seconds, the same
+   * mapping the other two verbs already use.
+   */
+  it("sets Retry-After on 429, the same as POST and DELETE", async () => {
+    vi.mocked(getPendingDeletion).mockResolvedValue({ ok: false, status: 429, retryAfter: 15_000 });
+    const res = await GET();
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("15");
+  });
+
   it("turns a thrown data-layer error into an opaque 500 and never leaks its message", async () => {
     vi.mocked(getPendingDeletion).mockRejectedValue(new Error("permission denied for table account_deletion_requests"));
     const res = await GET();
