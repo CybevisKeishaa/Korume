@@ -17,7 +17,9 @@ import type { DeletionTier } from "./lifecycle";
  *     DEEP and paginates at 100 — a folder entry (`id === null`) has to be
  *     listed again to reach its contents, and a session with >100 objects
  *     needs more than one page. Getting either wrong reports success while
- *     leaving recordings behind with nothing left to find them by.
+ *     leaving recordings behind with nothing left to find them by. The
+ *     REMOVE side pages too (`REMOVE_BATCH_SIZE`): one unbounded request body
+ *     made the heaviest users permanently un-erasable (I4).
  *  2. `on delete set null` columns — forum_posts.user_id, forum_comments.user_id,
  *     videos.added_by_user_id. Community content survives, anonymised. That is
  *     the intended GDPR outcome, not an oversight.
@@ -102,6 +104,20 @@ async function collectFileKeys(
   return keys;
 }
 
+/** Keys per `remove()` call.
+ *
+ *  ⚠️ Not cosmetic (whole-branch review, I4). Every key used to go in ONE
+ *  request body, so a user with a few thousand recordings exceeded the Storage
+ *  request-body limit, `remove()` errored, `executeDeletion` threw, the row
+ *  reverted to pending — and the next tick retried the identical oversized
+ *  request. A permanent retry loop for exactly the users with the MOST voice
+ *  data, which is the CLAUDE.md §2 rule-2 asset: the deletion those users are
+ *  entitled to could provably never complete.
+ *
+ *  100 matches `LIST_PAGE_SIZE` deliberately — one page listed, one batch
+ *  removed — so there is one number to reason about rather than two. */
+const REMOVE_BATCH_SIZE = 100;
+
 async function eraseStoragePrefix(
   service: ReturnType<typeof createServiceClient>,
   userId: string,
@@ -110,19 +126,29 @@ async function eraseStoragePrefix(
   if (keys.length === 0) return;
 
   const bucket = service.storage.from(RECORDINGS_BUCKET);
-  const { data, error } = await bucket.remove(keys);
-  if (error) throw error;
 
-  // `remove()` reports what it ACTUALLY deleted — trust that count, not the
-  // absence of an error, or a path-convention change elsewhere in the repo
-  // silently spares recordings while this function reports success.
-  const removedCount = (data ?? []).length;
-  if (removedCount !== keys.length) {
-    throw new Error(
-      `Storage erase incomplete for user ${userId}: asked to remove ${keys.length} ` +
-        `object(s), Storage reported ${removedCount}. Refusing to proceed to the ` +
-        `irreversible users-row delete while recordings may remain.`,
-    );
+  // The shortfall check runs PER BATCH, not once over the total: a batch that
+  // silently under-deletes must be caught against what THAT call asked for,
+  // and stopping at the first shortfall keeps the message pointing at the
+  // batch that actually failed. Either way nothing proceeds to the
+  // irreversible users-row delete while recordings may remain.
+  for (let start = 0; start < keys.length; start += REMOVE_BATCH_SIZE) {
+    const batch = keys.slice(start, start + REMOVE_BATCH_SIZE);
+    const { data, error } = await bucket.remove(batch);
+    if (error) throw error;
+
+    // `remove()` reports what it ACTUALLY deleted — trust that count, not the
+    // absence of an error, or a path-convention change elsewhere in the repo
+    // silently spares recordings while this function reports success.
+    const removedCount = (data ?? []).length;
+    if (removedCount !== batch.length) {
+      throw new Error(
+        `Storage erase incomplete for user ${userId}: asked to remove ${batch.length} ` +
+          `object(s) in this batch (${start + batch.length} of ${keys.length} overall), ` +
+          `Storage reported ${removedCount}. Refusing to proceed to the ` +
+          `irreversible users-row delete while recordings may remain.`,
+      );
+    }
   }
 }
 

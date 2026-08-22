@@ -151,6 +151,21 @@ describe("DeletionPendingBanner", () => {
    * the banner appeared and the mount effect could not. This is the
    * regression guard for that removal: rendering this component standalone
    * must never move focus by itself, in any circumstance, including mount.
+   *
+   * ⚠️ The whole-branch review flagged this as an `L-004` inert test on the
+   * grounds that it "guards code that no longer exists, with no mutation RED".
+   * It is KEPT, with the missing evidence supplied instead: the thing it
+   * guards is the ABSENCE of a mount-time focus effect, and the mutation that
+   * breaks that is re-introducing the effect — which is precisely the defect
+   * this branch already shipped once. Re-adding it (a `useRef` + a
+   * `useEffect(() => selfRef.current?.focus(), [])` merged into the forwarded
+   * ref) turns this assertion, and only this one, red:
+   *
+   *   FAIL … > never focuses itself — focus ownership belongs to PrivacyScreen
+   *     → expected <div tabindex="-1" …> to be <body>…</body>
+   *
+   * and removing it again restores 12/12. A guard against re-adding deleted
+   * code is a real guard; what was missing was the proof, not the assertion.
    */
   it("never focuses itself — focus ownership belongs to PrivacyScreen (fix round 2)", () => {
     render(<DeletionPendingBanner pending={PENDING} onCancelled={vi.fn()} refreshPending={vi.fn()} />);

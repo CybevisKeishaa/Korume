@@ -190,7 +190,51 @@ describe("executeDeletion — erase_all", () => {
       NOW,
     );
     expect(sequence.filter((s) => s === "list:u1")).toHaveLength(2);
-    expect(removed[0]).toHaveLength(101);
+
+    /**
+     * Whole-branch review, I4. This assertion used to read
+     * `expect(removed[0]).toHaveLength(101)` — i.e. it PINNED the defect:
+     * every key in one request body. A user with a few thousand recordings
+     * exceeded the Storage request-body limit, `remove()` errored,
+     * `executeDeletion` threw, the row reverted to pending, and the next tick
+     * retried the identical oversized request — a permanent retry loop for
+     * exactly the users with the most voice data, the CLAUDE.md §2 rule-2
+     * asset. The removal now batches at 100, matching the list page size.
+     */
+    expect(removed).toHaveLength(2);
+    expect(removed[0]).toHaveLength(100);
+    expect(removed[1]).toHaveLength(1);
+    // Batched, not sampled: every key still goes.
+    expect(removed.flat()).toHaveLength(101);
+    expect(removed.flat()).toContain("u1/f0.webm");
+    expect(removed.flat()).toContain("u1/f100.webm");
+  });
+
+  /**
+   * I4's own case, distinct from the pagination test above: enough objects for
+   * THREE batches, so "the last batch is the remainder" is not the only shape
+   * exercised, and the users-row delete is still reached (a chunked erase that
+   * refuses to complete would be its own defect).
+   */
+  it("splits a large erase into batches of at most 100 and still finishes", async () => {
+    listPages = {
+      u1: [
+        Array.from({ length: 100 }, (_, i) => ({ name: `a${i}.webm`, id: `a-${i}` })),
+        Array.from({ length: 100 }, (_, i) => ({ name: `b${i}.webm`, id: `b-${i}` })),
+        Array.from({ length: 50 }, (_, i) => ({ name: `c${i}.webm`, id: `c-${i}` })),
+      ],
+    };
+
+    await executeDeletion(
+      { id: "req5", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" },
+      NOW,
+    );
+
+    expect(removed).toHaveLength(3);
+    for (const batch of removed) expect(batch.length).toBeLessThanOrEqual(100);
+    expect(removed.flat()).toHaveLength(250);
+    expect(new Set(removed.flat()).size).toBe(250);
+    expect(deletedUsers).toEqual(["u1"]);
   });
 
   it("throws when Storage reports removing fewer objects than it was asked to, and never reaches the users delete", async () => {

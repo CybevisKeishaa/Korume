@@ -62,4 +62,43 @@ describe("badge icons", () => {
       expect(existsSync(join(process.cwd(), "public", "badges", `${slug}.svg`))).toBe(true);
     }
   });
+
+  /**
+   * Whole-branch review. `20260820000030_badge_icons.sql` originally ran
+   * `update badges set icon_url = …` with NO `where` clause, so a badge added
+   * by a later migration — with no SVG authored for it — would silently
+   * receive a shape-valid `icon_url`, pass `ICON_URL_PATTERN`, and render an
+   * INVISIBLE image. That bypasses the null-icon fallback the UI has carried
+   * since L6 rather than using it, and nothing about it looks wrong.
+   *
+   * The test above catches an unauthored badge only if it arrives through an
+   * `insert into badges` this scan can see; the `where` clause is what makes
+   * the migration itself safe regardless. This asserts the clause is there and
+   * names every icon actually on disk.
+   */
+  it("scopes the icon-url migration to the badges whose SVGs were authored, never every row", () => {
+    const sql = readFileSync(join(MIGRATIONS_DIR, "20260820000030_badge_icons.sql"), "utf8");
+    const update = /update badges[\s\S]*?;/i.exec(sql);
+    expect(update).not.toBeNull();
+    const statement = (update as RegExpExecArray)[0];
+    expect(statement).toMatch(/where\s+name\s+in\s*\(/i);
+
+    const scoped = [...statement.matchAll(/'([a-z0-9_]+)'/g)]
+      .map((m) => m[1])
+      .filter((name): name is string => Boolean(name));
+
+    // Gathered by a pattern, so its size is asserted (CLAUDE.md §7) — an
+    // empty match would make the set comparison below vacuously true.
+    expect(scoped.length).toBeGreaterThan(0);
+
+    const authored = readdirSync(join(process.cwd(), "public", "badges"))
+      .filter((file) => file.endsWith(".svg"))
+      .map((file) => file.replace(/\.svg$/, ""));
+    expect(authored.length).toBeGreaterThan(0);
+
+    // Exactly the authored set: an icon on disk that the migration never
+    // attaches is dead weight, and a name in the migration with no icon on
+    // disk is the invisible-badge defect this whole test exists for.
+    expect([...scoped].sort()).toEqual([...authored].sort());
+  });
 });
