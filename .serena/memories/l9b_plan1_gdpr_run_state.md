@@ -1,9 +1,10 @@
 # L9b Plan 1 (GDPR / data deletion) — run state
 
-> Rewritten 2026-08-21. **This file is the authority for where L9b Plan 1 stands.**
+> Rewritten 2026-08-22. **This file is the authority for where L9b Plan 1 stands.**
 > `mem:project_status` § NEXT ACTION points here and must not restate it.
 > ⚠️ Everything before 2026-08-20 in this file's history said "documentation only, no code".
-> **That is now false** — the branch is mostly built.
+> **That is now false** — the branch is COMPLETE: 13/13 tasks, whole-branch review run, its one fix
+> wave landed and re-reviewed clean at `a7b510c`.
 
 # ▶▶ RESUME HERE
 
@@ -14,20 +15,24 @@ Execution is running under `superpowers:subagent-driven-development` (the user c
 is the recovery map: every ruling, every deferred minor, every commit range. Read it before doing
 anything. It has its own `▶▶ RESUME HERE` block. This memory summarises; the ledger is complete.
 
-**Immediate next action:** Task 11's review package is **built but its reviewer was never
-dispatched** — `.superpowers/sdd/2026-08-20-l9b-plan1-gdpr/review-aa5f764..c6a860b.diff`. Dispatch
-the task review, then Task 12, Task 13, then the final whole-branch review.
+**Immediate next action:** none inside this plan — **all 13 tasks are built, the whole-branch review
+has run, and its single fix wave landed at `a7b510c` and was re-reviewed clean.** What remains is
+`superpowers:finishing-a-development-branch` plus the two open items in § Owed below.
 
 ## What is built
 
-Tasks **1, 2, 3, 4, 5, 6, 7, 8, 9+10, 11** are implemented and (except 11) reviewed clean.
-**Tasks 12 (persist voice pronunciation score) and 13 (badge icons) are NOT started.**
-All 13 task briefs are already generated in the workspace directory.
+**All 13 tasks are implemented and reviewed clean** (Task 11 needed 2 fix rounds, Task 13 one).
+Then the whole-branch review (`L-011`) found 2 Critical + 8 Important that no task-scoped review
+could see, and its one fix wave closed them — 9 commits, `ba28de2..a7b510c`, re-reviewed clean.
 
 Shipped: the schema (`20260820000029`), the pure lifecycle module, the service-role eraser, the
 user-facing data layer, `GET/POST/DELETE /api/user/deletion`, the database-backed scheduler wired
 into `instrumentation.ts`, model-training consent, the `settings` namespace in both locales, and
-`/settings/privacy` with the Danger Zone, the delete dialog and the pending banner.
+`/settings/privacy` with the Danger Zone, the delete dialog and the pending banner, the voice
+pronunciation-score column (PREPARED, deliberately not wired — see § Owed), and original badge icons.
+The fix wave added migration `20260820000031` (deletion inserts are service-role only), a startup
+reconciliation pass for stranded rows, `SCHEDULER_ENABLED` validation, and
+`/settings/privacy/memory` as an honest not-built-yet surface.
 
 **Execution order was changed at preflight and is not the plan's order** — Task 5 runs before
 Task 3, and Tasks 9 and 10 were dispatched as one unit. Both are ruled and explained below.
@@ -81,20 +86,37 @@ a task's real proof is a database, the probe must exercise the actual code path,
 
 ## Owed before this branch can merge
 
-- **Nobody has ever seen `/settings/privacy` render.** Task 11's brief had a manual browser
-  walkthrough as its Step 5; the subagent had no dev server or DB access. All evidence so far is
-  Vitest/RTL + tsc + lint + real-DB probes. This is the same debt class as the style-guide pass in
-  `mem:l9a_localization_run_state`.
-- **The final whole-branch review has not run.** It must be pointed at every `minor (deferred)` and
-  `Ruling:` line in the ledger.
-- **The plan document still contains the defective fixture and the eraser-less probe** in its Task 5
-  section. A later task copying from it reproduces the Critical.
-- The strongest deferred item: **the insert policy constrains only `user_id` and `status`**, so a
-  client can supply its own `execute_after` (and a null `purge_after`) straight through PostgREST,
-  shortening or breaking the 7-day window. Two independent reviewers reached this from different
-  directions.
-- `SCHEDULER_ENABLED` is read raw rather than through `registerEnvSpec`/`validateEnv`, so a typo
-  silently means deletions are never executed.
+- ⭐ **`deleteDialog.support` names a support channel that does not exist.** Verified twice: no
+  `mailto:`, no `support@`/`contact@`, no `/support` or `/contact` route anywhere in the repo. It is
+  the same defect family as the C1 copy lie the whole-branch review caught, just smaller, and it sits
+  on the same screen. **This needs a product decision** — supply an address, build a route, or delete
+  the line. Nobody may invent an address on a GDPR surface.
+- **No deletion-requested notification email exists.** After the fix wave, the 7-day window is the
+  only thing that lets a victim notice a deletion they did not request — and the only channel telling
+  them one exists is the settings page itself. Out of this branch's scope; record it, do not
+  rediscover it.
+- Minor residue from the final re-review, none blocking: two doc comments still cite
+  `messages/en/settings.pin.test.ts`, a path this wave renamed to `messages/settings.pin.test.ts`;
+  the new GET rate limit is shared with the server-side page render, so six reloads inside 60s show
+  the neutral "couldn't check" card; the both-locale pin sits inside a describe block named "EN", so
+  a VI regression reports as an EN failure; the pin bans the bare verb `mở lại`, which would reject a
+  future *truthful* "không mở lại được"; and two VI wordings would read better as
+  `sẽ bị đóng` / `không thể đăng nhập`.
+
+## Browser pass — DONE 2026-08-22, the debt is closed
+
+`/settings/privacy` and `/settings/privacy/memory` have now been rendered and exercised in a real
+browser, in `vi`, at `a7b510c`. Confirmed: the page renders; C1's rewritten copy is honest in the
+Danger Zone row, the dialog, and the final confirmation gate; the `LƯU Ý` block still states the
+7-day window, so the rewrite did not overshoot into denying it; the typed token stays the
+untranslated literal `DELETE`, matching `z.literal("DELETE")`; `/settings/privacy/memory` renders
+inside the app chrome as an honest not-built-yet surface; and **Escape restores focus to the trigger
+with a visible focus ring** — the branch's most-litigated a11y claim, verified live.
+
+Two visual notes, neither introduced by this branch: the `Xem lại` label wraps to two lines inside
+its button, and the `(app)` shell does not stretch to the viewport on short pages, leaving a dead
+band below the sidebar (visible on `/settings/privacy/memory` and on `/settings/privacy` once
+scrolled).
 
 ## Related
 
