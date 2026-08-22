@@ -207,6 +207,48 @@ describe("PrivacyScreen", () => {
       const heading = screen.getByRole("heading", { name: "Control your Korume data" });
       expect(document.activeElement).toBe(heading);
     });
+
+    /**
+     * Whole-branch review, I7 — the assertion that would have caught it.
+     *
+     * `cancel` treats a `404` as "this tab's belief is stale" and calls
+     * `refreshPending()` instead of showing an error. If that re-read then
+     * fails, `pending` becomes `"unknown"`, the banner unmounts into the
+     * neutral notice card — and the focus branch below it used to test
+     * `pending === null`, so it did not fire. Focus sat on a button that no
+     * longer existed and dropped to `<body>`, in the middle of the GDPR flow,
+     * for a keyboard-only user, with no visible focus ring to recover from.
+     *
+     * "Unmounted the banner" is the thing that matters, not "which of the two
+     * non-real values it became" — hence `!pendingIsReal`.
+     */
+    it("moves focus to the Danger Zone heading when a cancel 404s and the re-read cannot confirm anything", async () => {
+      vi.spyOn(global, "fetch").mockImplementation(async (_input, init) => {
+        // The cancel itself: already gone (cancelled in another tab).
+        if (init?.method === "DELETE") {
+          return new Response(JSON.stringify({ error: "No pending deletion request" }), { status: 404 });
+        }
+        // The refreshPending() GET that the 404 triggers — fails, so the
+        // screen honestly lands on "unknown" rather than guessing.
+        return new Response("nope", { status: 500 });
+      });
+      render(<PrivacyScreen initialAiTrainingConsent={false} pending={PENDING} />);
+
+      await userEvent.click(screen.getByRole("button", { name: "Cancel deletion" }));
+
+      // The banner is gone, replaced by the neutral "couldn't check" notice.
+      const notice = await screen.findByRole("status");
+      expect(notice).toHaveTextContent(/couldn't check/i);
+      expect(screen.queryByRole("button", { name: "Cancel deletion" })).not.toBeInTheDocument();
+
+      // `document.activeElement` falls back to `document.body` when nothing is
+      // focused, so this guard is what makes the assertion real rather than
+      // trivially satisfied.
+      expect(document.activeElement).not.toBe(document.body);
+      expect(document.activeElement).toBe(
+        screen.getByRole("heading", { name: "Control your Korume data" }),
+      );
+    });
   });
 
   /**

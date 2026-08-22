@@ -191,7 +191,17 @@ export function PrivacyScreen({ initialAiTrainingConsent, pending: initialPendin
     // "Cancel deletion" button) — without this, focus drops to `<body>` the
     // same way. Lands on the Danger Zone's heading rather than either row:
     // both rows just re-enabled and there is no single "the" row to prefer.
-    if (prevPendingWasReal && pending === null) {
+    //
+    // The condition is "pending is no longer REAL", not `pending === null`
+    // (whole-branch review, I7). `null` is only one of the two ways the banner
+    // stops being rendered: `cancel` → `404` → `refreshPending()` →
+    // `"unknown"` unmounts it just as completely, into the neutral
+    // "couldn't check" notice card — and with the old condition focus stayed
+    // on the removed button and dropped to `<body>`. Every other transition
+    // reaching this line is unchanged, because a real→real change (only the
+    // request's own fields moving) leaves `pendingIsReal` true and is filtered
+    // out here exactly as `=== null` used to filter it out.
+    if (prevPendingWasReal && !pendingIsReal) {
       dangerZoneHeadingRef.current?.focus();
     }
   }, [openTier, pending]);
