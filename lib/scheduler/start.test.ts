@@ -113,7 +113,7 @@ describe("resetSchedulerForTests — actually cancels the live interval (N7)", (
 describe("startScheduler — an intentional \"off\" is observable in the logs", () => {
   it("logs one line naming the variable when the scheduler stays off", () => {
     delete process.env.SCHEDULER_ENABLED;
-    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
 
     startScheduler();
 
@@ -125,7 +125,7 @@ describe("startScheduler — an intentional \"off\" is observable in the logs", 
 
   it("does not log the disabled line when the scheduler actually starts", () => {
     process.env.SCHEDULER_ENABLED = "true";
-    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
 
     startScheduler();
 
@@ -154,7 +154,7 @@ describe("startScheduler — the stranded-row reconciliation", () => {
 
   it("never runs it when the scheduler is disabled", () => {
     delete process.env.SCHEDULER_ENABLED;
-    vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
 
     startScheduler();
 
@@ -164,7 +164,7 @@ describe("startScheduler — the stranded-row reconciliation", () => {
   it("still starts the scheduler when the reconciliation rejects", async () => {
     process.env.SCHEDULER_ENABLED = "true";
     reconcileRejects = true;
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const setIntervalSpy = vi.spyOn(global, "setInterval");
 
     startScheduler();
