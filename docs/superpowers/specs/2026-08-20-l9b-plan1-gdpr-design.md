@@ -24,8 +24,13 @@ rule requires and two small debts that have been waiting for a screen to live on
 |---|---|---|
 | 1 | **Account closure and full data erasure**, three-stage lifecycle, on `/settings/privacy` | §2 rule 2, owed since L1 |
 | 2 | **Model-training consent** (decision 6) | §2 rule 2's second half — *"never used to train models without explicit consent"* |
-| 3 | **Persist the voice-mode pronunciation score** | `conversation_messages.pronunciation_score` exists and has never been written |
-| 4 | **Badge icons** | `badges.icon_url` is null for every row; the UI has been carrying an SVG fallback since L6 |
+| 3 | **Badge icons** | `badges.icon_url` is null for every row; the UI has been carrying an SVG fallback since L6 |
+
+> ⚠️ **Corrected 2026-08-22 (whole-branch review, I5 — ⭐USER RULING).** This table used to
+> carry a fourth item, *"Persist the voice-mode pronunciation score"*, as **delivered**. It is
+> not delivered, and claiming it here was the actual defect: the plan and its reports inherited
+> the claim. It has moved to §14 with its reason attached. What Plan 1 really ships for it is
+> stated in §12.
 
 ### Out of scope, each for a stated reason
 
@@ -352,11 +357,23 @@ count — specs die locally for want of credentials and that is environmental
 
 ---
 
-## 12. The two small debts
+## 12. The two small debts — one shipped whole, one shipped as its server half
 
-**Persist the voice-mode pronunciation score.** `conversation_messages.pronunciation_score`
-(`20260712000001_schema.sql`) has existed since Layer 1 and Layer 4 deliberately left it unwired,
-keeping the score client-side. Wire the voice-conversation scoring result through on message insert.
+**Persist the voice-mode pronunciation score — ⭐ PREPARED, NOT WIRED (user ruling, 2026-08-22).**
+`conversation_messages.pronunciation_score` (`20260712000001_schema.sql`) has existed since Layer 1
+and Layer 4 deliberately left it unwired, keeping the score client-side.
+
+What Plan 1 delivers is the **server half only**: the field is accepted and range-validated at the
+API boundary (`lib/validation/conversation.ts`), carried through the data-layer input type, and
+written on message insert (`lib/data/conversation.ts`). Those three hooks stay exactly as they are.
+
+What Plan 1 does **not** deliver, and never could without new surface: a caller that actually sends
+it. The client scores asynchronously *after* the message POST resolves
+(`components/conversation/conversation-app.tsx`), and it never learns the created row's id — so at
+POST time there is nothing to send. Wiring it needs the POST to return that id **plus** an endpoint
+that attaches a score to a message the caller owns. That is a new endpoint, it is deliberately not
+built here, and it is §14's business now.
+
 Note `lib/data/companion.ts` already reads `shadowing_sessions.pronunciation_score` — that is a
 **different** column and is not what this item is about.
 
@@ -396,3 +413,4 @@ by this plan**, which is why it is no longer purely out of scope.
 | Figma frame-map + registry re-capture | 12 frames are missing from the map. Own pass, own branch. |
 | DB-backed RLS/grant regression guard | Already scoped and deliberately deferred; §11 states what this plan hands to it. |
 | PayOS cancellation before erasure | No billing integration exists; belongs in L8's spec (§6). |
+| **Wiring the voice-mode pronunciation score to a real caller** (⭐ user ruling, 2026-08-22) | The column, the validation and the insert are all PREPARED (§12) and stay. What is missing is a caller: the client scores *after* the message POST resolves and never learns the created row's id, so there is nothing to send at POST time. Wiring needs the POST to return that id **plus** a new authenticated, rate-limited endpoint to attach a score to a message the caller owns. No new endpoint is built in L9b Plan 1. Filed as its own scoped task in `mem:project_status` § Deferred follow-ups. |

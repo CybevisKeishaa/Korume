@@ -43,8 +43,13 @@ next action until Phase 3 is scoped**, and scoping it is not urgent — see
 GDPR is a `CLAUDE.md` §2 non-negotiable owed since Layer 1 and has to land before real users exist.
 
 ⚠️ **The spec and the plan are both WRITTEN** (2026-08-20) — that supersedes this block's older
-"the next step is writing the spec". The branch holds documentation only; no application code exists
-yet. **Read `mem:l9b_plan1_gdpr_run_state` — it is the authority, and this block must not restate it.**
+"the next step is writing the spec". ⚠️ **CORRECTED 2026-08-22: the branch no longer "holds
+documentation only".** All thirteen tasks are BUILT and committed — migrations, the data layer, the
+API routes, the eraser, the database-backed scheduler, `/settings/privacy` and its dialogs, both
+message catalogs — and the whole-branch review's single fix wave has landed on top of them. The old
+sentence was the first thing a new session read and it was false; it is kept here struck rather than
+deleted so nobody re-derives it. **Read `mem:l9b_plan1_gdpr_run_state` — it is the authority, and
+this block must not restate it.**
 Four further rulings (the 7-day window vs the modal's "cannot be undone", the two deletion tiers, the
 AI-training split, `/settings/privacy`) were made on 2026-08-20 against two Figma frames Phase 0 never
 saw. Do not re-litigate decisions 2–3 either.
@@ -693,6 +698,20 @@ erasing the account of someone with a live recurring charge, and keeping the cha
 shape this can take. Home of the reasoning:
 `docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` §6. **L8’s spec must carry it as a
 requirement**, not discover it.
+
+**⭐ SCOPED TASK, not a nit — wire the voice-mode pronunciation score to a real caller (added
+2026-08-22, user ruling).** `conversation_messages.pronunciation_score` is PREPARED end to end on the
+server: accepted and range-validated at the API boundary (`lib/validation/conversation.ts`), carried
+through the data-layer input type, and written on message insert (`lib/data/conversation.ts`). Those
+three hooks are deliberate and must NOT be deleted as dead code — the user ruled explicitly that the
+column stays prepared. What is missing is a caller, and it cannot be added without new surface: the
+client scores asynchronously *after* the message POST resolves
+(`components/conversation/conversation-app.tsx`) and never learns the created row's id, so at POST
+time there is nothing to send. **Wiring it needs two things: the message POST must return the created
+row id, and a new authenticated + rate-limited endpoint must exist to attach a score to a message the
+caller owns.** L9b Plan 1 deliberately builds neither. Design notes and the reason live in
+`docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` §12 and §14 — this entry is the task,
+that spec is the reasoning. Natural home: whichever layer next touches voice conversation mode.
 
 **⭐ SCOPED TASK, not a nit — a DB-backed regression guard for RLS and column grants (added
 2026-08-19).** `L-005` says no mocked test can ever guard these, so the only instrument is a test

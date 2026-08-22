@@ -1,104 +1,105 @@
 # L9b Plan 1 (GDPR / data deletion) — run state
 
-> Written 2026-08-20. **This file is the authority for where L9b Plan 1 stands.**
+> Rewritten 2026-08-21. **This file is the authority for where L9b Plan 1 stands.**
 > `mem:project_status` § NEXT ACTION points here and must not restate it.
+> ⚠️ Everything before 2026-08-20 in this file's history said "documentation only, no code".
+> **That is now false** — the branch is mostly built.
 
 # ▶▶ RESUME HERE
 
-**Branch `l9b-plan1-gdpr` exists, off master `4bec8ec`, five commits, working tree clean.
-Everything so far is DOCUMENTATION. Not one line of application code has been written, and no
-test has been run because there is nothing yet to test.** Do not read the branch as partially
-implemented.
+Branch **`l9b-plan1-gdpr`**, off master `4bec8ec`, working tree clean.
+Execution is running under `superpowers:subagent-driven-development` (the user chose that mode).
 
-**The next action is Task 1 of the plan** — `docs/superpowers/plans/2026-08-20-l9b-plan1-gdpr.md`.
-Execute with `superpowers:subagent-driven-development` (the user was offered subagent-driven vs
-inline and had not chosen when the session ended — **ask before starting**).
+**The live ledger is `.superpowers/sdd/2026-08-20-l9b-plan1-gdpr/progress.md`** — git-ignored, and it
+is the recovery map: every ruling, every deferred minor, every commit range. Read it before doing
+anything. It has its own `▶▶ RESUME HERE` block. This memory summarises; the ledger is complete.
 
-⚠️ **Task 1 and Task 5 need Docker Desktop running** (`npx supabase start`). Both verify against a
-real local Postgres, because `L-005` makes a mocked test worthless for grants, RLS and cascade.
-Without Docker they stop at the probe step — that is the design, not a failure.
+**Immediate next action:** Task 11's review package is **built but its reviewer was never
+dispatched** — `.superpowers/sdd/2026-08-20-l9b-plan1-gdpr/review-aa5f764..c6a860b.diff`. Dispatch
+the task review, then Task 12, Task 13, then the final whole-branch review.
 
-## What is on the branch
+## What is built
 
-| Commit | What |
-|---|---|
-| `7973a26` | `screen-inventory.md` § **Amendment C** + `decision-register.md` **M13/M14** — the Figma-vs-spec adjudication rule |
-| `df5c59b` | `figma-frame-map.md` staleness warning |
-| `7c6f79c` | The spec |
-| `6f1925e` | Spec §13 closed by user ruling |
-| `6034dd6` | The plan, + the PayOS dependency written into `mem:project_status` |
+Tasks **1, 2, 3, 4, 5, 6, 7, 8, 9+10, 11** are implemented and (except 11) reviewed clean.
+**Tasks 12 (persist voice pronunciation score) and 13 (badge icons) are NOT started.**
+All 13 task briefs are already generated in the workspace directory.
 
-**Spec:** `docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` — 14 sections, no open
-questions left.
-**Plan:** `docs/superpowers/plans/2026-08-20-l9b-plan1-gdpr.md` — 13 tasks, 85 checkbox steps.
-Never quote those figures back without re-counting (`L-002`); they are here to say "it is whole",
-not as a measurement.
+Shipped: the schema (`20260820000029`), the pure lifecycle module, the service-role eraser, the
+user-facing data layer, `GET/POST/DELETE /api/user/deletion`, the database-backed scheduler wired
+into `instrumentation.ts`, model-training consent, the `settings` namespace in both locales, and
+`/settings/privacy` with the Danger Zone, the delete dialog and the pending banner.
 
-## The four rulings this work rests on (2026-08-20)
+**Execution order was changed at preflight and is not the plan's order** — Task 5 runs before
+Task 3, and Tasks 9 and 10 were dispatched as one unit. Both are ruled and explained below.
 
-Outcomes are built into the spec; **the reasoning lives in the assistant's memory file
-`l9b-plan1-launch-blocker-debt-status`, decisions 4–7**, which does not travel with the repo. If that
-is ever lost, the spec still states what gets built — only the *why* would be gone.
+## Rulings that changed the design — do not silently revert these
 
-1. **The 7-day cancelable window survives** the modal's *"cannot be undone"*. The modal's template is
-   kept verbatim; only its copy changes. A `settings` catalog test asserts no string claims
-   irreversibility, so the wrong sentence cannot come back quietly.
-2. **`Delete Account` ≠ `Delete all my data`** — close (data kept, reopenable) vs erase (full GDPR,
-   unrecoverable). The design gives them different buttons for this reason.
-3. **`AI Training` splits.** Personalising the Companion from memory is core, always on, needs no
-   consent — **it is not model training**. The toggle keeps only what §2 rule 2 restricts, stays
-   opt-in, and is renamed. ⚠️ The user recalled ruling "auto-on"; **no file records that**, and
-   default-on would breach §2 rule 2, which M6 says nothing overrides.
-4. **Route is `/settings/privacy`**, per the new frame's own breadcrumb. `/settings` stays the
-   `UpcomingScreen` placeholder.
+1. **Task 5 before Task 3.** Task 3 imports and `vi.mock`s `lib/account-deletion/erase.ts`, so it
+   could not be written first. Free swap, no task text changed.
+2. **Tasks 9 and 10 are one unit.** Genuinely circular: Task 10's registry row needs
+   `variantOf: "data-privacy"` (Task 9's row), Task 9's row needs Task 9's page to exist for a
+   registry test, and Task 9's screen composes Task 10's dialog. `privacy-screen.tsx` is a Task 9
+   deliverable its Files list forgot to name.
+3. **`executeDeletion` order is ban → storage erase → tombstone upsert → users delete.** The plan
+   had the ban last. With the ban last, a failed ban meant the request row had already cascaded
+   away (`on delete cascade`), so the revert matched zero rows and the log promised a retry that
+   could never happen. The invariant that must survive any future reorder: **storage is erased
+   before the `users` row that identifies it** — a crash between them strands recordings no query
+   can find.
+4. **A row that did no work must not rest as `executed`.** Failed and skipped rows revert to
+   `status='pending', executed_at=null`. A `failed` enum value was considered and rejected: it needs
+   a migration and hides the request from the user exactly as `executed` does.
+5. **The revert also lifts the ban** (`liftBan`, `ban_duration: "none"`), because ban-first made a
+   banned-but-undeleted user reachable — and they cannot cancel, since both the cancel path and the
+   banner query need a session a banned user cannot obtain. Verified against real GoTrue.
+6. **`close_account` was completed, not dead-ended.** The Danger Zone row originally routed to a
+   non-existent page. The dialog already took a `tier` prop and the backend fully implemented the
+   tier, so it now opens the dialog with a **complete parallel copy block** (not partial overrides,
+   which fail by silently showing erase-all wording where a key is missing), key-parity tested.
+7. **Consent is read server-side** in the page, not via a new `GET`. Task 7 shipped `PATCH` only, so
+   the toggle always rendered unchecked — meaning an opted-in user saw "off" and the obvious next
+   click would turn their consent off.
 
-Plus §13, ruled after the plan was drafted: **all three Danger Zone rows render as drawn**; the
-memory row points at a placeholder and gets repointed when that tier is built. Nothing is greyed out
-or dropped.
+## Two defects worth remembering, because both classes recur
 
-## Scope, as the user narrowed it — do not re-widen without asking
+1. **The storage eraser deleted nothing while reporting success.** `bucket.list(uid)` is not
+   recursive; recordings live at `{uid}/shadowing/{sessionId}.webm`, so `remove(["uid/shadowing"])`
+   matched no key, returned no error, and the `users` row was then deleted — a `CLAUDE.md` §2 rule-2
+   violation. It survived both test layers because **the mocked fixture returned a `list()` shape
+   the real API can never return** (a `name` containing a slash), and the "real DB" probe never
+   called `executeDeletion` at all. Now recursive, paginated, with a shortfall check, proven against
+   real Storage.
+2. **`users.model_training_consent` had no column-scoped UPDATE grant**, so a real client write
+   failed with `permission denied` and RLS was never evaluated — the same class as the
+   `certification_questions` gap closed in `20260819000028` (`mem:screen_registry_phase_2b_run_state`).
+   Task 1's review missed it; the Task 7 implementer found it. Fixed inside `20260820000029` itself
+   and proven with a real `authenticated` PostgREST write **plus** a reproduction of the pre-fix 403.
 
-**In:** account closure + full erasure · model-training consent · persist the voice-mode pronunciation
-score · badge icons.
-**Out:** **Export Data / Download Learning History** (user: nobody can yet say what belongs inside the
-export, so its semantics cannot be ruled) · the `Delete Korume Memory` *behaviour* (its row still
-ships) · Theme / Accent Color / Camera Permission · the rest of `/settings`.
+**The lesson both share is `L-005`**: mocked tests cannot see grants, RLS, cascade or storage. Where
+a task's real proof is a database, the probe must exercise the actual code path, not a hand-written
+`delete from` that only proves Postgres works.
 
-## Two discoveries worth not re-deriving
+## Owed before this branch can merge
 
-1. **⭐ The Figma file has grown and nothing in the repo knew.** 69 top-level frames measured
-   2026-08-20 against `figma-frame-map.md`'s 57 — **including the two frames that design this very
-   feature** (`337:3323` Data privacy, `339:3612` Delete data). The 2026-07-30 GDPR brainstorm was
-   therefore decided without ever seeing its own design. Consequence: every `screen-registry.ts` row's
-   `figmaCheckedAt` overstates what was compared (`R7`). **A re-capture pass is owed and is
-   deliberately NOT part of this branch.** Enumeration method that works: `get_metadata` on page `0:1`
-   exceeds the MCP token cap but is written to a file, so filter direct children locally — no frame
-   selection in the desktop app needed.
-2. **The voice pronunciation score is client-computed.** Layer 4 kept it client-side on purpose, so
-   persisting it means storing a self-reported number. Plan Task 12 range-validates it 0–100 at the
-   API and marks it a learning signal only — never an input to authorization or XP without
-   server-side re-scoring. The spec did not have this note; the plan found it.
-
-## Things the plan insists on, because they are how this feature fails quietly
-
-- **Postgres cascade never touches Storage.** The `recordings` bucket is keyed `{uid}/…` and holds
-  the §2 rule-2 asset. The eraser deletes the prefix explicitly, **before** deleting the row that
-  identifies it.
-- **Two community tables are `on delete set null`** — `forum_posts.user_id`, `forum_comments.user_id`
-  (plus `videos.added_by_user_id`). Authorship is anonymised rather than removed. Correct GDPR
-  outcome, and it must be deliberate rather than discovered.
-- **Never hardcode the cascade table list.** Enumerate from `pg_constraint` — the set changes with
-  every migration that adds a user-owned table.
-- **The scheduler claim IS the work:** one atomic `update … where status='pending' … returning *`.
-  Select-then-update races. Off unless `SCHEDULER_ENABLED=true` is set explicitly, never inferred
-  from `NODE_ENV` — a build step must not delete an account. Every pass logs, including one that
-  handled nothing.
+- **Nobody has ever seen `/settings/privacy` render.** Task 11's brief had a manual browser
+  walkthrough as its Step 5; the subagent had no dev server or DB access. All evidence so far is
+  Vitest/RTL + tsc + lint + real-DB probes. This is the same debt class as the style-guide pass in
+  `mem:l9a_localization_run_state`.
+- **The final whole-branch review has not run.** It must be pointed at every `minor (deferred)` and
+  `Ruling:` line in the ledger.
+- **The plan document still contains the defective fixture and the eraser-less probe** in its Task 5
+  section. A later task copying from it reproduces the Critical.
+- The strongest deferred item: **the insert policy constrains only `user_id` and `status`**, so a
+  client can supply its own `execute_after` (and a null `purge_after`) straight through PostgREST,
+  shortening or breaking the 7-day window. Two independent reviewers reached this from different
+  directions.
+- `SCHEDULER_ENABLED` is read raw rather than through `registerEnvSpec`/`validateEnv`, so a typo
+  silently means deletions are never executed.
 
 ## Related
 
+`.superpowers/sdd/2026-08-20-l9b-plan1-gdpr/progress.md` (the ledger — authoritative) ·
 `docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` ·
 `docs/superpowers/plans/2026-08-20-l9b-plan1-gdpr.md` ·
-`docs/product/screen-inventory.md` § Amendment C · `docs/product/decision-register.md` M13/M14 ·
-`docs/product/figma-frame-map.md` (stale, warned) ·
 `mem:project_status` § Deferred follow-ups (the PayOS-before-erasure dependency L8 inherits) ·
 `docs/lessons.md` L-002, L-004, L-005, L-011, L-012, L-032.
