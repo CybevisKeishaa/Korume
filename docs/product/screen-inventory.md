@@ -430,6 +430,50 @@ is small."*
 **The one exception, unchanged: layer D still binds absolutely.** CLAUDE.md §2 is not a baseline that
 the design outgrows; it is a constraint on every implementation regardless of how large the design is.
 
+### ⭐⭐⭐ Amendment C, 2026-08-20 — **what to BUILD when B-content is wrong** (user ruling)
+
+Amendment A ends at *"report it"* because it was written for an inventory pass, whose only output is a
+report. **This amendment governs the porting pass**, where something must actually be built. It does
+not change A or A-bis; it says what happens after them.
+
+> **The user's framing:** *"đa phần là section và bố cục của Figma đều ổn rồi, chỉ có thể là nội dung
+> có thể sai vì tôi tạo nó có phần hơi độc lập với spec của dự án… nếu như có việc phải thay đổi vì
+> nội dung của figma chưa đúng, tôi vẫn muốn bạn sửa nó, nhưng theo template của figma, hay thêm
+> section, vẫn dựa trên template của figma."*
+
+**The division of authority, stated once:**
+
+| | Decides |
+|---|---|
+| **The spec + the Decision Register** | **WHAT** the product does — capability, flow semantics, lifecycle, vocabulary |
+| **The Figma frame** | **HOW IT IS PRESENTED** — sections, layout, hierarchy, visual language, affordances |
+
+**Three cases, and only the third is a question for the user:**
+
+1. **Figma and spec agree** → build the frame. Nothing to adjudicate.
+2. **B-design is fine, B-content is wrong** → ✅ **fix the content to the spec, inside the frame's
+   template.** Never discard a Figma layout and substitute one derived from prose in the spec. The
+   sections, their order, and the visual language survive; the words, labels and semantics change.
+3. **A real contradiction — the frame and a ruling cannot both be true** → ⛔ **STOP and ask.** State
+   it as *"Figma decides X, the spec/ruling decides Y, they cannot both hold — which do you want?"*
+   and do not resolve it silently in either direction. Examples of this class: a `Delete immediately`
+   button against the `LOCKED` 7-day grace lifecycle; a section for a capability a ruling has removed;
+   a feature name a ruling has replaced.
+
+**Fourth case — the spec needs UI the frame does not have.** This is not a contradiction and does not
+license improvising a new design. **Extend the frame in its own design language** — a new section
+built from the patterns already on that screen — and **propose it to the user before building** when
+the addition is a product decision rather than a layout detail.
+
+⚠️ **This does NOT reopen A-bis (M3/M4).** Sample values — a name, a date, a stroke count, a
+percentage, a stray `&apos;` — are still **not conflicts** and are still never worth the user's time.
+Case 3 is about *identity content and semantics*, not about the numbers a mock happens to show.
+
+**Why this is worth a rule rather than judgement at port time:** the failure it prevents is an
+implementation that looks entirely reasonable and is built on a premise nobody ever approved — the
+exact shape of `L-012`, and the reason `L-003` exists. A silent adjudication is unfalsifiable later,
+because the frame and the ruling both still read as if they had been honoured.
+
 ---
 
 ## 20. Content conflicts to fix in Figma (user-reportable, running list)
@@ -2371,13 +2415,13 @@ is **not yet a conflict**: if `Adaptive` is one of the options the two are compa
 | **Learning Reminders** | Daily · Review · Streak · Weekly Reflection · **`Sensei Generation Finished`** — *"When a new study companion is ready."* |
 | **Appearance** | **Theme `Dark / System / Light`** · **Accent Color `Warm Orange`** · Display Scale (`Normal / Large / Extra Large`) · **Reduced Motion** |
 | **Privacy & Data** | Microphone Permission · **Camera Permission** · **AI Training** (*"Help improve Korume using your learning patterns."*) · **Export Data** · **Download Learning History** |
-| **Danger Zone** | **Delete Companion Memory** · **Delete Account** |
+| **Danger Zone** | **Delete Korume Memory** · **Delete Account** |
 | **About** | Version · **Discord · Facebook · TikTok** · Privacy Policy · Terms of Service · Send Feedback |
 
 Closing: `COMPANION SUPPORT — "Need a hand?"` with `Talk with Companion` / `Contact Support`, and a
 footer reading *"Built quietly in Vietnam. Crafted for lifelong learners."*
 
-**⭐⭐⭐ `Delete Companion Memory` is a genuine design contribution to a §2 debt.** Its copy:
+**⭐⭐⭐ `Delete Korume Memory` is a genuine design contribution to a §2 debt.** Its copy:
 
 > *"Erase everything Korume has remembered about your learning journey. **Learning progress remains.**
 > Companion memories, diary entries, reflections, observations, conversation memories, recommendations

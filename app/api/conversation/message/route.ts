@@ -16,10 +16,13 @@ const STATUS_MESSAGES: Record<number, string> = {
 };
 
 /**
- * POST /api/conversation/message {sessionId, message, level?} — one turn of
- * scenario conversation. `level` is optional; falls back to the user's
- * profile level when omitted (conversation_sessions has no level column).
- * Rate-limited (20 req/min/user, CLAUDE.md §6).
+ * POST /api/conversation/message {sessionId, message, level?,
+ * pronunciationScore?} — one turn of scenario conversation. `level` is
+ * optional; falls back to the user's profile level when omitted
+ * (conversation_sessions has no level column). `pronunciationScore` is
+ * optional, self-reported, and range-validated (0-100) — see
+ * `postConversationMessageSchema`'s doc comment for why no caller sends it
+ * yet. Rate-limited (20 req/min/user, CLAUDE.md §6).
  */
 export async function POST(request: Request) {
   let body: unknown;

@@ -1,5 +1,20 @@
 # Figma frame map — name → node id
 
+> ⛔ **STALE as of 2026-08-20 — this map is a 2026-08-11 snapshot and the file has grown since.**
+> Measured on 2026-08-20 by dumping the page and counting direct children of `0:1`: **69 top-level frames
+> against this map's 57**. Twelve are absent here, and two of them are load-bearing for L9b Plan 1:
+> **`337:3323` Data privacy (for delete)** and **`339:3612` Delete data**. The others:
+> `332:3` Register · `333:210` Reset password · `335:306` Email OTP · `335:1588` Error state (right
+> font) · `335:1976` Error404 · `337:2055` Error boundary · `340:3795` Membership · `340:4586`
+> Unsubcribe membership · `340:5402` Choose method · `347:6277` Homepage.
+>
+> **Consequence beyond this file:** `lib/product/screen-registry.ts` does not know these frames exist,
+> so every row's `figmaCheckedAt` overstates what was actually compared (`R7`). A re-capture pass is
+> owed and is deliberately NOT folded into L9b Plan 1. **Never quote 57, or any count, from this file
+> — enumerate** (`L-002`). Recapture method: the page dump exceeds the tool's token cap but is written
+> to a file, so `get_metadata` on `0:1` then filter direct children locally — that is how 69 was
+> measured, and it needs no frame selection in the desktop app.
+
 **File:** `IwFHZDZdHW7qsSFiNbWrkd` ("Korume"), single page `0:1`.
 **Captured:** 2026-08-11, by selecting frames in the Figma desktop app and reading the
 `Currently selected nodes` block that `get_metadata` prepends to its response.

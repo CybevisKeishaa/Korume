@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-19) — **nothing is pending on the screen registry. The live next action is L9b Plan 1.**
+## ▶ NEXT ACTION (updated 2026-08-20) — **nothing is pending on the screen registry. The live next action is L9b Plan 1.**
 
 Phase 0 is COMPLETE AND CLOSED — all 57 frames inventoried, capability map built, the four IA blockers
 ruled, §20's content conflicts closed, and **the IA is LOCKED**. **Screen Registry Phases 1a, 1b, 2a
@@ -39,12 +39,24 @@ closed on 2026-08-19 (`a371a4b`, verified against a real database). **There is n
 next action until Phase 3 is scoped**, and scoping it is not urgent — see
 `mem:screen_registry_phase_2b_run_state`.
 
-**The live next action is L9b Plan 1** — GDPR delete-my-data, persisting the voice pronunciation score,
-and badge icons. GDPR is a `CLAUDE.md` §2 non-negotiable owed since Layer 1 and has to land before
-real users exist. Decisions 2–3 (the three-stage delete lifecycle; `/settings` placement) are already
-ruled — do not re-litigate them — and the next step is writing the spec for the three remaining items.
-⚠️ Read `l9b-plan1-launch-blocker-debt-status` first: the transcript-submit item this plan originally
-carried was **superseded**, not deferred, so the plan is smaller than older text here implies.
+**The live next action is L9b Plan 1, and it is now IN PROGRESS on branch `l9b-plan1-gdpr`.**
+GDPR is a `CLAUDE.md` §2 non-negotiable owed since Layer 1 and has to land before real users exist.
+
+⚠️ **The spec and the plan are both WRITTEN** (2026-08-20) — that supersedes this block's older
+"the next step is writing the spec". ⚠️ **CORRECTED 2026-08-22: the branch no longer "holds
+documentation only".** All thirteen tasks are BUILT and committed — migrations, the data layer, the
+API routes, the eraser, the database-backed scheduler, `/settings/privacy` and its dialogs, both
+message catalogs — and the whole-branch review's single fix wave has landed on top of them. The old
+sentence was the first thing a new session read and it was false; it is kept here struck rather than
+deleted so nobody re-derives it. **Read `mem:l9b_plan1_gdpr_run_state` — it is the authority, and
+this block must not restate it.**
+Four further rulings (the 7-day window vs the modal's "cannot be undone", the two deletion tiers, the
+AI-training split, `/settings/privacy`) were made on 2026-08-20 against two Figma frames Phase 0 never
+saw. Do not re-litigate decisions 2–3 either.
+
+⚠️ **The Figma file has 69 top-level frames against `figma-frame-map.md`'s 57** (measured 2026-08-20),
+so every registry row's `figmaCheckedAt` overstates what was compared. A re-capture pass is owed and
+is deliberately outside L9b Plan 1.
 
 **⚠️ Standing instruction that survives all of the above: do NOT settle navbar/routes/registry without
 the user's review.** ("Do not port any screen yet" is retired — the IA is locked and the registry
@@ -678,6 +690,28 @@ query-builder mock for lib/data tests).
 **USER-FACING FEATURES đã hoãn nằm ở memory riêng `mem:feature_backlog_deferred` — PHẢI đọc nó
 khi plan bất kỳ layer mới nào (user mandate 2026-07-14: không bỏ sót chức năng đã brainstorm).**
 Mục dưới đây chỉ là engineering debt/nits.
+
+**⭐ HARD DEPENDENCY ON L8 — PayOS cancellation before erasure (added 2026-08-20).** L9b Plan 1
+builds account deletion while no billing integration exists, so it deletes the `subscriptions` row
+like any other user-owned row. **When L8 lands, deletion must cancel the PayOS subscription first** —
+erasing the account of someone with a live recurring charge, and keeping the charge, is the worst
+shape this can take. Home of the reasoning:
+`docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` §6. **L8’s spec must carry it as a
+requirement**, not discover it.
+
+**⭐ SCOPED TASK, not a nit — wire the voice-mode pronunciation score to a real caller (added
+2026-08-22, user ruling).** `conversation_messages.pronunciation_score` is PREPARED end to end on the
+server: accepted and range-validated at the API boundary (`lib/validation/conversation.ts`), carried
+through the data-layer input type, and written on message insert (`lib/data/conversation.ts`). Those
+three hooks are deliberate and must NOT be deleted as dead code — the user ruled explicitly that the
+column stays prepared. What is missing is a caller, and it cannot be added without new surface: the
+client scores asynchronously *after* the message POST resolves
+(`components/conversation/conversation-app.tsx`) and never learns the created row's id, so at POST
+time there is nothing to send. **Wiring it needs two things: the message POST must return the created
+row id, and a new authenticated + rate-limited endpoint must exist to attach a score to a message the
+caller owns.** L9b Plan 1 deliberately builds neither. Design notes and the reason live in
+`docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` §12 and §14 — this entry is the task,
+that spec is the reasoning. Natural home: whichever layer next touches voice conversation mode.
 
 **⭐ SCOPED TASK, not a nit — a DB-backed regression guard for RLS and column grants (added
 2026-08-19).** `L-005` says no mocked test can ever guard these, so the only instrument is a test

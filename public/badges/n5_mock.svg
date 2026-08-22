@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- An exam shield with a pass check: the base JLPT mock-test mark.
+       n4_mock reuses this exact shield and adds a filled star badge for
+       the tier above N5 — a shape difference (a mark present or absent)
+       survives the 24px mask render size better than a thin-line count
+       would (two 1.8px bars ~2px apart risk blurring together). -->
+  <path d="M12 3l7 3v5c0 5-3 8.5-7 10-4-1.5-7-5-7-10V6z"/>
+  <path d="M9 12l2 2 4-4.5"/>
+</svg>

@@ -40,6 +40,11 @@
     "body": "Tài khoản, ngôn ngữ, chuyển động và những lựa chọn giúp bạn giữ Korume theo cách mình muốn.",
     "unlocks": "Chưa có gì ở đây. Các lựa chọn về dữ liệu, xuất và xóa dữ liệu sẽ được gom về cùng một nơi."
   },
+  "privacyMemory": {
+    "title": "Xóa ký ức Korume",
+    "body": "Xóa những gì Người bạn đồng hành nhớ về hành trình của bạn — bài học, tiến độ và tài khoản của bạn vẫn giữ nguyên.",
+    "unlocks": "Chưa có gì. Trong ba mục ở Vùng nguy hiểm, đây là mục duy nhất chưa được xây dựng; hai mục còn lại đã dùng được."
+  },
   "explore": {
     "title": "Khám phá bài học",
     "body": "Những bài học trong Korume, được sắp xếp để bạn có thể tình cờ tìm thấy một điều mình muốn học tiếp.",

@@ -48,4 +48,55 @@ describe("BadgesGrid", () => {
     render(<BadgesGrid badges={[]} />);
     expect(screen.getByText("No badges in the catalog yet.")).toBeInTheDocument();
   });
+
+  it("still renders a badge whose icon is null", () => {
+    render(
+      <BadgesGrid
+        badges={[{ id: "b1", name: "First Steps", description: null, iconUrl: null, earnedAt: null }]}
+      />,
+    );
+    expect(screen.getByText("First Steps")).toBeInTheDocument();
+  });
+
+  it("renders a well-formed icon URL as a CSS mask, so currentColor (earned/locked) drives its colour", () => {
+    render(
+      <BadgesGrid
+        badges={[
+          {
+            id: "b1",
+            name: "Week Streak",
+            description: null,
+            iconUrl: "/badges/week_streak.svg",
+            earnedAt: "2026-07-01T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+    const mask = screen.getByTestId("badge-icon-mask");
+    // The URL must reach the mask's style, not an <img src> — an <img>-loaded
+    // SVG is an isolated document where currentColor cannot resolve against
+    // the page.
+    expect(mask.getAttribute("style")).toContain("/badges/week_streak.svg");
+  });
+
+  it("falls back to the default icon rather than emitting a broken mask when iconUrl does not match the expected /badges/<slug>.svg shape", () => {
+    render(
+      <BadgesGrid
+        badges={[
+          {
+            id: "b1",
+            name: "Week Streak",
+            description: null,
+            // Injection-shaped: would break out of the CSS url(...) if it
+            // reached the style unguarded.
+            iconUrl: "javascript:alert(1)",
+            earnedAt: "2026-07-01T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+    expect(screen.queryByTestId("badge-icon-mask")).not.toBeInTheDocument();
+    // The earned fallback star still renders — the badge doesn't go blank.
+    expect(screen.getByText("Week Streak")).toBeInTheDocument();
+  });
 });

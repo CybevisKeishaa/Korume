@@ -40,6 +40,11 @@
     "body": "Account, language, motion, and control over your own data.",
     "unlocks": "Nothing yet. Data export and deletion land with this screen."
   },
+  "privacyMemory": {
+    "title": "Delete Korume Memory",
+    "body": "Erase what Companion remembers about your journey — your lessons, progress and account all stay exactly as they are.",
+    "unlocks": "Nothing yet. This is the only one of the three Danger Zone actions whose behaviour is not built; the other two work today."
+  },
   "explore": {
     "title": "Explore Lessons",
     "body": "Every lesson in Korume, arranged for discovery rather than for your own library.",

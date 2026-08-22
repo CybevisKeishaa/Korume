@@ -1,0 +1,89 @@
+{
+  "privacy": {
+    "eyebrow": "QUYỀN RIÊNG TƯ",
+    "title": "Dữ liệu và quyền riêng tư của bạn",
+    "subtitle": "Quản lý cách Korume lưu trữ và sử dụng dữ liệu học tập cá nhân của bạn.",
+    "breadcrumbSettings": "Cài đặt",
+    "breadcrumbPrivacy": "Quyền riêng tư",
+    "checkFailedTitle": "Chúng tôi chưa kiểm tra được yêu cầu đang chờ xử lý",
+    "checkFailedBody": "Đây thường chỉ là sự cố tạm thời. Hãy thử tải lại trang sau ít phút; các lựa chọn bên dưới vẫn khả dụng."
+  },
+  "aiTraining": {
+    "title": "Giúp Korume cải thiện mô hình",
+    "body": "Cho phép dùng bản ghi âm và dữ liệu học của bạn để cải thiện mô hình. Mặc định tắt, chỉ bật khi bạn muốn. Người bạn đồng hành vẫn ghi nhớ việc học của bạn dù bật hay tắt — đó không phải là huấn luyện mô hình."
+  },
+  "dangerZone": {
+    "eyebrow": "VÙNG NGUY HIỂM",
+    "title": "Kiểm soát dữ liệu Korume của bạn",
+    "memory": { "title": "Xóa ký ức Korume", "body": "Xóa những gì Người bạn đồng hành nhớ về hành trình của bạn.", "action": "Quản lý" },
+    "closeAccount": { "title": "Xóa tài khoản", "body": "Tài khoản của bạn sẽ đóng và không mở lại được. Dữ liệu học vẫn được giữ lại, không bị xóa.", "action": "Xem lại" },
+    "eraseAll": { "title": "Xóa toàn bộ dữ liệu của tôi", "body": "Yêu cầu xóa vĩnh viễn dữ liệu cá nhân mà Korume đang lưu.", "action": "Xem lại việc xóa" }
+  },
+  "deleteDialog": {
+    "support": "Nếu cần trợ giúp, hãy liên hệ Hỗ trợ Korume.",
+    "failed": "Chúng tôi chưa lên lịch xóa được. Vui lòng thử lại.",
+    "alreadyPending": "Tài khoản của bạn đã có một yêu cầu xóa đang chờ xử lý.",
+    "signedOut": "Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.",
+    "tooMany": "Quá nhiều lần thử. Vui lòng đợi một chút rồi thử lại.",
+    "erase_all": {
+      "eyebrow": "QUYỀN RIÊNG TƯ · KIỂM SOÁT DỮ LIỆU",
+      "title": "Xóa toàn bộ dữ liệu của tôi",
+      "subtitle": "Xóa dữ liệu cá nhân mà Korume đang lưu về bạn.",
+      "whatHeading": "Những gì sẽ bị xóa?",
+      "items": {
+        "profile": { "title": "Hồ sơ và tùy chọn", "body": "Thông tin hồ sơ, cài đặt và tùy chọn học tập của bạn." },
+        "progress": { "title": "Tiến độ học", "body": "Bài học, lịch sử luyện tập, tiến độ ôn tập và thành tích." },
+        "memory": { "title": "Ký ức Korume", "body": "Những gì Người bạn đồng hành nhớ về hành trình học của bạn." },
+        "companion": { "title": "Lịch sử Người bạn đồng hành", "body": "Nhật ký, suy ngẫm, hội thoại và các quan sát cá nhân hóa." },
+        "saved": { "title": "Nội dung đã lưu", "body": "Dấu trang, bài ôn, bài học đã tạo và tài liệu luyện tập đã lưu." },
+        "practice": { "title": "Lịch sử luyện thi", "body": "Kết quả luyện thi, lỗi sai, câu trả lời và lịch sử ôn lại." }
+      },
+      "noteLabel": "LƯU Ý",
+      "note": "Bạn có 7 ngày để đổi ý. Trong thời gian đó dữ liệu được giữ nguyên và bạn có thể hủy bất cứ lúc nào ngay tại trang này. Một số bản ghi có thể được lưu lại khi pháp luật, bảo mật hoặc thanh toán yêu cầu.",
+      "confirmLabel": "XÁC NHẬN CUỐI CÙNG",
+      "confirmHeading": "Bạn chắc chắn muốn tiếp tục?",
+      "confirmBody": "Sau 7 ngày, lịch sử học và dữ liệu Korume cá nhân của bạn sẽ không còn truy cập được nữa.",
+      "typePrompt": "Gõ DELETE để xác nhận.",
+      "acknowledge": "Tôi hiểu dữ liệu của tôi sẽ bị xóa sau 7 ngày.",
+      "keep": "Giữ lại dữ liệu",
+      "confirm": "Xóa toàn bộ dữ liệu của tôi"
+    },
+    "close_account": {
+      "eyebrow": "QUYỀN RIÊNG TƯ · KIỂM SOÁT TÀI KHOẢN",
+      "title": "Đóng tài khoản của bạn",
+      "subtitle": "Đóng tài khoản Korume của bạn. Dữ liệu học của bạn không bị xóa.",
+      "whatHeading": "Điều gì xảy ra khi bạn đóng tài khoản?",
+      "items": {
+        "profile": { "title": "Hồ sơ và tùy chọn", "body": "Được giữ nguyên. Sau khi tài khoản đóng, bạn sẽ không đăng nhập để xem hay chỉnh sửa được nữa." },
+        "progress": { "title": "Tiến độ học", "body": "Được giữ lại. Bài học, lịch sử luyện tập và thành tích của bạn vẫn được lưu, không bị xóa — chỉ là bạn sẽ không còn truy cập được sau khi tài khoản đóng." },
+        "memory": { "title": "Ký ức Korume", "body": "Được giữ lại. Ký ức của Người bạn đồng hành về hành trình học của bạn không bị xóa." },
+        "companion": { "title": "Lịch sử Người bạn đồng hành", "body": "Được giữ lại. Nhật ký, suy ngẫm và hội thoại vẫn được lưu trữ." },
+        "saved": { "title": "Nội dung đã lưu", "body": "Được giữ lại. Dấu trang, bài ôn và tài liệu luyện tập đã lưu vẫn còn nguyên." },
+        "practice": { "title": "Lịch sử luyện thi", "body": "Được giữ lại. Kết quả luyện thi và lịch sử ôn lại vẫn được lưu trữ." }
+      },
+      "noteLabel": "LƯU Ý",
+      "note": "Bạn có 7 ngày để đổi ý. Tài khoản của bạn vẫn mở và sử dụng bình thường trong thời gian đó, và bạn có thể hủy bất cứ lúc nào ngay tại trang này. Đóng tài khoản không xóa dữ liệu học của bạn.",
+      "confirmLabel": "XÁC NHẬN CUỐI CÙNG",
+      "confirmHeading": "Bạn chắc chắn muốn đóng tài khoản?",
+      "confirmBody": "Sau 7 ngày, bạn sẽ bị đăng xuất và không thể truy cập Korume bằng tài khoản này. Dữ liệu học của bạn vẫn được lưu trữ — đóng tài khoản không giống với xóa dữ liệu.",
+      "typePrompt": "Gõ DELETE để xác nhận.",
+      "acknowledge": "Tôi hiểu tài khoản của tôi sẽ đóng sau 7 ngày, và dữ liệu học của tôi sẽ được giữ lại, không bị xóa.",
+      "keep": "Giữ tài khoản",
+      "confirm": "Đóng tài khoản"
+    }
+  },
+  "pending": {
+    "cancel": "Hủy yêu cầu xóa",
+    "failed": "Chúng tôi chưa hủy được yêu cầu. Vui lòng thử lại.",
+    "erase_all": {
+      "title": "Đã lên lịch xóa",
+      "body": "Dữ liệu của bạn được lên lịch xóa vào {date}. Hiện chưa có gì bị xóa.",
+      "switchNote": "Muốn đóng tài khoản và giữ lại dữ liệu thay vì xóa? Hãy hủy yêu cầu này trước, sau đó chọn \"Xóa tài khoản\"."
+    },
+    "close_account": {
+      "title": "Đã lên lịch đóng tài khoản",
+      "body": "Tài khoản của bạn sẽ đóng vào {date}. Dữ liệu học của bạn vẫn được giữ lại, không bị xóa.",
+      "switchNote": "Muốn xóa toàn bộ dữ liệu thay vì đóng tài khoản? Hãy hủy yêu cầu này trước, sau đó chọn \"Xóa toàn bộ dữ liệu của tôi\"."
+    }
+  }
+}
