@@ -15,9 +15,10 @@ Execution is running under `superpowers:subagent-driven-development` (the user c
 is the recovery map: every ruling, every deferred minor, every commit range. Read it before doing
 anything. It has its own `▶▶ RESUME HERE` block. This memory summarises; the ledger is complete.
 
-**Immediate next action:** none inside this plan — **all 13 tasks are built, the whole-branch review
-has run, and its single fix wave landed at `a7b510c` and was re-reviewed clean.** What remains is
-`superpowers:finishing-a-development-branch` plus the two open items in § Owed below.
+**STATUS: MERGED.** Merged to `master` at **`4b1fef7`** (merge commit, 2026-08-22), branch
+`l9b-plan1-gdpr` kept per repo convention. Merged master verified green: tsc 0, 257 files /
+2327 tests. Nothing in this plan is pending. What survives it is § Owed below — two product
+decisions and some cosmetic residue.
 
 ## What is built
 
@@ -84,7 +85,7 @@ Task 3, and Tasks 9 and 10 were dispatched as one unit. Both are ruled and expla
 a task's real proof is a database, the probe must exercise the actual code path, not a hand-written
 `delete from` that only proves Postgres works.
 
-## Owed before this branch can merge
+## Owed — survives the merge, NOT closed by it
 
 - ⭐ **`deleteDialog.support` names a support channel that does not exist.** Verified twice: no
   `mailto:`, no `support@`/`contact@`, no `/support` or `/contact` route anywhere in the repo. It is

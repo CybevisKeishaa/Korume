@@ -30,29 +30,42 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-20) — **nothing is pending on the screen registry. The live next action is L9b Plan 1.**
+## ▶ NEXT ACTION (updated 2026-08-22) — **L9b Plan 1 is MERGED. There is no live next action; the next one must be scoped.**
 
-Phase 0 is COMPLETE AND CLOSED — all 57 frames inventoried, capability map built, the four IA blockers
-ruled, §20's content conflicts closed, and **the IA is LOCKED**. **Screen Registry Phases 1a, 1b, 2a
-and 2b are all built and merged** (2b at `10caaac`, 2026-08-14), and the two debts 2b left behind were
-closed on 2026-08-19 (`a371a4b`, verified against a real database). **There is no live screen-registry
-next action until Phase 3 is scoped**, and scoping it is not urgent — see
+**L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
+2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and
+reviewed, the whole-branch review (`L-011`) run, its single fix wave landed and re-reviewed clean, and
+the merged master verified green (tsc 0, 257 files / 2327 tests). GDPR was the `CLAUDE.md` §2
+non-negotiable owed since Layer 1; it is now paid.
+**Read `mem:l9b_plan1_gdpr_run_state` — it is the authority on what shipped and what it still owes.
+This block must not restate it.**
+
+Phase 0 is COMPLETE AND CLOSED and **Screen Registry Phases 1a, 1b, 2a and 2b are all built and
+merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`). **There is no live
+screen-registry next action until Phase 3 is scoped**, and scoping it is not urgent — see
 `mem:screen_registry_phase_2b_run_state`.
 
-**The live next action is L9b Plan 1, and it is now IN PROGRESS on branch `l9b-plan1-gdpr`.**
-GDPR is a `CLAUDE.md` §2 non-negotiable owed since Layer 1 and has to land before real users exist.
+**Candidates for the next action, none started, in no fixed order:**
+- **Layer 8** — PayOS billing, animation polish, the performance audit. It is the last unbuilt layer
+  (`.claude/docs/workflow.md` §3). ⚠️ It inherits a hard dependency: deletion currently removes the
+  `subscriptions` row like any other, and L8 must cancel with PayOS *first*.
+- **Two product decisions L9b left open, both small and both on the same screen:**
+  `deleteDialog.support` names a support channel that does not exist anywhere in the repo, and there
+  is **no deletion-requested notification email** — after the C2 fix the 7-day window is the only
+  thing letting a victim notice a deletion they did not request, and the only channel announcing one
+  is the settings page itself.
+- **Two scoped follow-ups L9b sized deliberately so nobody re-derives them:** wiring the voice
+  pronunciation score to its column (the client scores *after* the message POST and never learns the
+  row id, so it needs the POST to return that id plus an endpoint to attach a score); and a
+  repo-wide fix for `components/ui/dialog.tsx`, which restores focus blindly to a trigger that may
+  have become disabled or unmounted while the dialog was open.
+- **A DB-backed regression guard for RLS and column grants** — still owed, and L9b is the third
+  branch to prove grant claims by hand (`L-005`).
+- **Figma re-capture** — see below.
 
-⚠️ **The spec and the plan are both WRITTEN** (2026-08-20) — that supersedes this block's older
-"the next step is writing the spec". ⚠️ **CORRECTED 2026-08-22: the branch no longer "holds
-documentation only".** All thirteen tasks are BUILT and committed — migrations, the data layer, the
-API routes, the eraser, the database-backed scheduler, `/settings/privacy` and its dialogs, both
-message catalogs — and the whole-branch review's single fix wave has landed on top of them. The old
-sentence was the first thing a new session read and it was false; it is kept here struck rather than
-deleted so nobody re-derives it. **Read `mem:l9b_plan1_gdpr_run_state` — it is the authority, and
-this block must not restate it.**
-Four further rulings (the 7-day window vs the modal's "cannot be undone", the two deletion tiers, the
-AI-training split, `/settings/privacy`) were made on 2026-08-20 against two Figma frames Phase 0 never
-saw. Do not re-litigate decisions 2–3 either.
+Four rulings from 2026-08-20 (the 7-day window vs the modal's "cannot be undone", the two deletion
+tiers, the AI-training split, `/settings/privacy`) were made against two Figma frames Phase 0 never
+saw. Do not re-litigate them, or decisions 2–3.
 
 ⚠️ **The Figma file has 69 top-level frames against `figma-frame-map.md`'s 57** (measured 2026-08-20),
 so every registry row's `figmaCheckedAt` overstates what was compared. A re-capture pass is owed and
