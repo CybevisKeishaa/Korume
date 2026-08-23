@@ -1,19 +1,21 @@
 # Figma frame map — name → node id
 
-> ⛔ **STALE as of 2026-08-20 — this map is a 2026-08-11 snapshot and the file has grown since.**
-> Measured on 2026-08-20 by dumping the page and counting direct children of `0:1`: **69 top-level frames
-> against this map's 57**. Twelve are absent here, and two of them are load-bearing for L9b Plan 1:
-> **`337:3323` Data privacy (for delete)** and **`339:3612` Delete data**. The others:
-> `332:3` Register · `333:210` Reset password · `335:306` Email OTP · `335:1588` Error state (right
-> font) · `335:1976` Error404 · `337:2055` Error boundary · `340:3795` Membership · `340:4586`
-> Unsubcribe membership · `340:5402` Choose method · `347:6277` Homepage.
+> ✅ **Second capture batch DONE 2026-08-23.** The 12 frames the 2026-08-20 note listed as absent are
+> now captured (screenshotted + visually reviewed), plus `218:15740 Error state` (already known, now
+> also reviewed). **See § Second capture batch (2026-08-23) below — read it before touching billing,
+> auth, or error-state UI.** One genuinely new node appeared since 2026-08-20: `346:6275`, also named
+> "Homepage", but it is a **hidden `rounded-rectangle`** (not a frame, `hidden="true"`, renders blank)
+> — decorative canvas noise, not a screen. Ignore it.
 >
-> **Consequence beyond this file:** `lib/product/screen-registry.ts` does not know these frames exist,
-> so every row's `figmaCheckedAt` overstates what was actually compared (`R7`). A re-capture pass is
-> owed and is deliberately NOT folded into L9b Plan 1. **Never quote 57, or any count, from this file
-> — enumerate** (`L-002`). Recapture method: the page dump exceeds the tool's token cap but is written
-> to a file, so `get_metadata` on `0:1` then filter direct children locally — that is how 69 was
-> measured, and it needs no frame selection in the desktop app.
+> Method used: the user selected the 15 target nodes in the Figma desktop Layers panel; `get_metadata`
+> with no `nodeId` read the prepended "Currently selected nodes" block to confirm ids, then each was
+> screenshotted individually. Page-wide count as of 2026-08-23: **70 top-level nodes** (69 real frames
+> + the 1 hidden rectangle). **Never quote a count from this file — enumerate** (`L-002`).
+>
+> ⚠️ Still owed, unchanged from 2026-08-20: `lib/product/screen-registry.ts` does not know about any
+> of these 12 (now 13, since `218:15740` was in the registry's blind spot too by never having been
+> screenshotted) frames yet, so registry rows' `figmaCheckedAt` still overstate what was compared —
+> that only closes when Screen Registry Phase 3 folds them in.
 
 **File:** `IwFHZDZdHW7qsSFiNbWrkd` ("Korume"), single page `0:1`.
 **Captured:** 2026-08-11, by selecting frames in the Figma desktop app and reading the
@@ -218,3 +220,69 @@ only `90:1985 Shadowing Hub` is still present.
 In Figma's **Layers panel**, click a frame, then `Shift`+click the fifteenth below it — that selects a
 contiguous run of 15. Say the word, and `get_metadata` is called with **no `nodeId`** (which stays
 cheap — it only lists pages) to read the prepended selection block. Repeat until every frame has an id.
+
+## Second capture batch (2026-08-23) — the 13 previously-uncaptured frames
+
+All screenshotted at `maxDimension: 900` and visually reviewed. Node ids, sizes, and a content summary
+per frame. These sit in a new canvas region (x ≈ -11126..3789, y ≈ 8318..9581), well away from the
+original 57-frame cluster — the user has clearly been designing a new batch, not editing old frames.
+
+### Auth flow — coherent, four-step, matches nothing built yet
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `332:3` | Register | 1280×905 | "Welcome to Korume" — OAuth (Google/Apple/GitHub) + email/password form, name/email/password/confirm, ToS+Privacy checkbox. |
+| `65:2` | Login | 1278×821 | "Welcome Back" — same OAuth row + email/password, "Forgot password?", "Create one" link. (Already in the original 57; now screenshotted for the first time.) |
+| `333:210` | Reset password | 1280×537 | "Forgot your password?" — single email field, "Send reset link". |
+| `335:306` | Email OTP | 1280×566 | "Check your inbox" — 6-digit code entry, expiry countdown, resend-code link. |
+
+All four share the same split layout (left: brand copy + Eevee-line mascot art + quote; right: dark
+card form) — one consistent design language, ready to port as a set.
+
+### Payment / billing (Layer 8 territory) — ⚠️ surfaces a stack conflict, see below
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `340:3795` | Membership | 1280×1176 | Full `/settings/membership` page: active plan card ("Travel Together for a Year", 490.000đ/year, started/renews dates, Change/Cancel), "What's included" (8 items: AI Sensei, Unlimited Lesson Creation, Learning Memory, Personalized Roadmap, Intelligent Review Planning, Native Pronunciation Analysis, AI Conversation Partner, Weakness Coaching), payment-method row, transaction history, contact/help block. |
+| `340:4586` | Unsubcribe membership | 1280×1176 | Same page with a "Leave Korume for now?" cancellation dialog open — states the plan stays active until the paid-through date, "Cancellation stops renewal. It does not remove your access today." |
+| `340:5402` | Choose method | 1280×1176 | Same page with a **"Choose how you'd like to pay"** dialog open, listing three providers: **PayOS** ("Simple QR / payment gateway", pre-selected), **SePay** ("Bank payment"), **MoMo** ("Mobile payment"). |
+
+⚠️ **`340:5402` directly conflicts with `CLAUDE.md` §3: "Payments: PayOS subscriptions, no trial."**
+The design now offers three payment providers, not one. This is a product/stack decision, not
+something to resolve by inventory alone — **flagging per CLAUDE.md §2's "if a task appears to require
+breaking one of these, STOP and surface it to the user," treated here as the design-time equivalent.**
+Needs a ruling: (a) PayOS-only stands, treat SePay/MoMo as design exploration not to be built, or
+(b) the payment stack decision is now multi-provider and `CLAUDE.md` §3 needs updating. **Not decided
+here — escalated, see chat.**
+
+### Error-state system — one design-system reference sheet, one real 404, one real in-app boundary, one likely-duplicate
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `218:15740` | Error state | 1167×1720 | A **design-system spec sheet** ("Error states, gently handled"), not a real screen: 8 card variants (connection lost, AI/Sensei down, lesson gone, video load failure, gated content, 404, dashboard-partial, library-partial) plus an "Error language" tone-guideline footer ("Never blaming. Never alarming. Always Korume-led."). |
+| `335:1588` | Error state (right font) | 1167×1719 | **Pixel-identical to `218:15740`** except one card's CTA label differs ("View Korume" vs blank) — reads as a font/typography QA pass over the same sheet, not a distinct screen. Likely mergeable/one supersedes the other; not adjudicated here. |
+| `335:1976` | Error404 ` | 1280×537 | Real 404 page: "404 · Wrong Turn" / "We couldn't find this place.", Go Home + Go Back, shows the attempted path (`/kanji/lesson/green`). |
+| `337:2055` | Error boundary | 1280×729 | Real in-app route-error screen, rendered **inside the actual app chrome** (sidebar + topbar visible) — "Something interrupted this page.", Try Again / Go to Dashboard, "Your progress is still saved." reassurance banner. |
+
+⚠️ **Side finding, not this task's call:** the sidebar visible in `337:2055` lists LEARN (Dashboard,
+Lessons, Kanji, Vocabulary, Grammar, Reading, Speaking, JLPT) and STUDY (Review, Mining) — worth
+diffing against `components/layout/app-nav.tsx`'s current `NAV_GROUPS` (LEARN 8 / STUDY 4 / PROGRESS 1
+/ ACCOUNT 1) next time nav is touched, since the counts don't obviously match. Not investigated further
+here per the standing instruction not to settle navbar/routes without user review.
+
+### Data privacy / deletion — NOT new content, corroborates what already shipped
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `337:3323` | Data privacy (for delete) | 911×652 | `/settings/privacy` — Learning reminders toggle, Danger Zone (Delete Korume Memory / Delete Account / Delete all my data). |
+| `339:3612` | Delete data | 1280×973 | The "Delete all my data" modal — itemized what's-deleted list, permanence warning, type-DELETE confirmation, checkbox. |
+
+These are the two frames L9b Plan 1 (merged `4b1fef7`) already built against — confirmed here to match
+the shipped `/settings/privacy` implementation. No new information, just closes the loop on why these
+two were flagged load-bearing in the 2026-08-20 note.
+
+### New marketing homepage — distinct from the existing `Homepage` frames
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `347:6277` | Homepage | 1280×4028 | A full public marketing/landing page, unrelated to `111:515`'s auth-adjacent "Homepage" (part of the QuickStart/Generate-sensei onboarding cluster). Long-scroll sections: hero ("Learn Japanese from the Japanese you actually want to understand"), a listening-comprehension score widget (87), an i+1 "recommends what's just beyond what you already know" section, a "Private. Secure. Built on trust." trust block, and a closing CTA ("A quieter way to keep going."). |
+
+**Three frames are now named "Homepage"**: `111:515` (1278×1332, onboarding-cluster), `347:6277`
+(1280×4028, marketing landing page — this one), and the hidden `346:6275` rectangle (not a screen).
+Same collision pattern as the `29:2890`/`280:3` "Kanji" pair from the first capture — worth a rename
+pass eventually, not urgent since node ids disambiguate.
