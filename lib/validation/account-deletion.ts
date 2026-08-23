@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DELETION_TIERS } from "@/lib/account-deletion/lifecycle";
+import { routing } from "@/lib/i18n/routing";
 
 /**
  * POST /api/user/deletion body.
@@ -9,11 +10,23 @@ import { DELETION_TIERS } from "@/lib/account-deletion/lifecycle";
  *
  * `tier` is built from `DELETION_TIERS` (lifecycle.ts), not a separately
  * spelled literal list — one fact, one home (CLAUDE.md §6).
+ *
+ * `locale` is forwarded explicitly by the client (`DeleteDataDialog`'s own
+ * `useLocale()`), the same pattern `app/[locale]/(auth)/actions.ts` uses to
+ * carry the locale across `emailRedirectTo` into `/auth/callback` — because
+ * `/api/user/deletion` is a Route Handler, and `middleware.ts`'s matcher
+ * excludes `api`, `getLocale()` here would silently resolve
+ * `routing.defaultLocale` for every request rather than the caller's actual
+ * locale (code review, `feat/email-notification-system`). Required, not
+ * inferred: the deletion-requested notification this drives is a GDPR
+ * surface, and a wrong-language email with a wrong-locale cancel link is the
+ * wrong direction to default in silently.
  */
 export const deletionRequestSchema = z.object({
   tier: z.enum(DELETION_TIERS),
   confirmation: z.literal("DELETE"),
   acknowledged: z.literal(true),
+  locale: z.enum(routing.locales),
 });
 export type DeletionRequestInput = z.infer<typeof deletionRequestSchema>;
 

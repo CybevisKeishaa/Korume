@@ -1,11 +1,12 @@
 "use client";
 
 import { useId, useState } from "react";
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { Dialog } from "@/components/ui/dialog";
 import type { DeletionTier } from "@/lib/account-deletion/lifecycle";
 import type { PendingDeletion } from "@/lib/data/account-deletion";
 import { pendingDeletionResponseSchema } from "@/lib/validation/account-deletion";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 const CATEGORY_KEYS = ["profile", "progress", "memory", "companion", "saved", "practice"] as const;
 
@@ -79,6 +80,7 @@ export interface DeleteDataDialogProps {
  */
 export function DeleteDataDialog({ open, tier, onClose, onConfirmed, refreshPending }: DeleteDataDialogProps) {
   const t = useTranslations("settings");
+  const locale = useLocale();
   const [typed, setTyped] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,10 +102,14 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed, refreshPend
       const response = await fetch("/api/user/deletion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // The API re-validates both of these. This is the same control
-        // twice, on purpose: the client half is UX, the server half is the
-        // control.
-        body: JSON.stringify({ tier, confirmation: "DELETE", acknowledged: true }),
+        // The API re-validates both `confirmation` and `acknowledged`. This
+        // is the same control twice, on purpose: the client half is UX, the
+        // server half is the control. `locale` is different — there is no
+        // server-side source for it (the route sits outside
+        // `middleware.ts`'s matcher), so this IS the control, validated
+        // against `routing.locales` server-side rather than trusted blindly
+        // (`lib/validation/account-deletion.ts`'s own doc comment).
+        body: JSON.stringify({ tier, confirmation: "DELETE", acknowledged: true, locale }),
       });
       if (!response.ok) {
         // Branch on the STATUS CODE only — never start reading the body.
@@ -235,7 +241,9 @@ export function DeleteDataDialog({ open, tier, onClose, onConfirmed, refreshPend
         </button>
       </div>
 
-      <p className="mt-md text-caption text-muted-foreground">{t("deleteDialog.support")}</p>
+      <p className="mt-md text-caption text-muted-foreground">
+        {t("deleteDialog.support", { email: SUPPORT_EMAIL })}
+      </p>
     </Dialog>
   );
 }

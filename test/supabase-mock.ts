@@ -69,7 +69,7 @@ export type TableResolver = (calls: QueryCall[]) => MockResult | Promise<MockRes
 
 export interface MockSupabaseOptions {
   /** The signed-in user `auth.getUser()` should resolve to; `null`/omitted = signed out. */
-  user?: { id: string } | null;
+  user?: { id: string; email?: string } | null;
   /** One resolver per table name touched by the code under test. */
   tables: Record<string, TableResolver>;
   /**

@@ -3,16 +3,7 @@
 import { forwardRef, useState } from "react";
 import { useFormatter, useTranslations } from "@/lib/i18n";
 import type { PendingDeletion } from "@/lib/data/account-deletion";
-
-/**
- * The market is VN-only and there is no global `timeZone` in
- * `lib/i18n/request.ts`, so next-intl falls back to the ENVIRONMENT's zone —
- * the server's on first paint, the browser's after hydration — which raises
- * an `ENVIRONMENT_FALLBACK` IntlError and can render two different dates for
- * the same instant. Pinning it explicitly is required, not cosmetic; matches
- * `components/companion/journal-view.tsx`'s established constant.
- */
-const VN_TIME_ZONE = "Asia/Ho_Chi_Minh";
+import { VN_TIME_ZONE } from "@/lib/time/vn-timezone";
 
 /**
  * The state `337:3323` does not draw (spec §2, Amendment C case 4). Built

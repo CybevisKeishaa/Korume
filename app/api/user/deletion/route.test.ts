@@ -18,13 +18,13 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("POST /api/user/deletion", () => {
   it("rejects a body whose confirmation text is wrong, without calling the data layer", async () => {
-    const res = await POST(post({ tier: "erase_all", confirmation: "delete", acknowledged: true }));
+    const res = await POST(post({ tier: "erase_all", confirmation: "delete", acknowledged: true, locale: "en" }));
     expect(res.status).toBe(400);
     expect(requestDeletion).not.toHaveBeenCalled();
   });
 
   it("rejects an unacknowledged request", async () => {
-    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: false }));
+    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: false, locale: "en" }));
     expect(res.status).toBe(400);
     expect(requestDeletion).not.toHaveBeenCalled();
   });
@@ -36,20 +36,38 @@ describe("POST /api/user/deletion", () => {
   });
 
   it("rejects an unknown tier, without calling the data layer", async () => {
-    const res = await POST(post({ tier: "wipe_everything", confirmation: "DELETE", acknowledged: true }));
+    const res = await POST(post({ tier: "wipe_everything", confirmation: "DELETE", acknowledged: true, locale: "en" }));
     expect(res.status).toBe(400);
+    expect(requestDeletion).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Code review, `feat/email-notification-system`: `locale` is required and
+   * validated against `routing.locales`, not defaulted — the route sits
+   * outside `middleware.ts`'s matcher, so there is no server-side signal for
+   * it, and a wrong/missing locale must fail loudly rather than silently
+   * resolving to `routing.defaultLocale` for a caller it doesn't match.
+   */
+  it("rejects a missing or unknown locale, without calling the data layer", async () => {
+    const missing = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true }));
+    expect(missing.status).toBe(400);
+
+    const unknown = await POST(
+      post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "fr" }),
+    );
+    expect(unknown.status).toBe(400);
     expect(requestDeletion).not.toHaveBeenCalled();
   });
 
   it("returns 409 when a request is already live", async () => {
     vi.mocked(requestDeletion).mockResolvedValue({ ok: false, status: 409 });
-    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true }));
+    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "en" }));
     expect(res.status).toBe(409);
   });
 
   it("returns 401 when unauthenticated", async () => {
     vi.mocked(requestDeletion).mockResolvedValue({ ok: false, status: 401 });
-    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true }));
+    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "en" }));
     expect(res.status).toBe(401);
   });
 
@@ -58,21 +76,21 @@ describe("POST /api/user/deletion", () => {
       ok: true,
       data: { id: "req1", tier: "erase_all", requestedAt: "2026-08-20T10:00:00.000Z", executeAfter: "2026-08-27T10:00:00.000Z" },
     });
-    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true }));
+    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "en" }));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toMatchObject({ data: { executeAfter: "2026-08-27T10:00:00.000Z" } });
   });
 
   it("sets Retry-After on 429", async () => {
     vi.mocked(requestDeletion).mockResolvedValue({ ok: false, status: 429, retryAfter: 30_000 });
-    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true }));
+    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "en" }));
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBe("30");
   });
 
   it("turns a thrown data-layer error into an opaque 500 and never leaks its message", async () => {
     vi.mocked(requestDeletion).mockRejectedValue(new Error("relation account_deletion_requests: connection refused at 10.0.0.4"));
-    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true }));
+    const res = await POST(post({ tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "en" }));
     expect(res.status).toBe(500);
     const json = await res.json();
     expect(JSON.stringify(json)).not.toContain("connection refused");
