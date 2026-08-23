@@ -45,15 +45,23 @@ merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`). **Ther
 screen-registry next action until Phase 3 is scoped**, and scoping it is not urgent — see
 `mem:screen_registry_phase_2b_run_state`.
 
+**⭐ Branch `feat/email-notification-system` is BUILT, reviewed twice, tests/tsc/lint/build all
+green — awaiting the user's merge decision (2026-08-23).** It closes both of the "two product
+decisions" bullet L9b left open (see below) plus builds the general-purpose `lib/email/*`
+provider-agnostic email port the user asked for (mirrors `lib/ai/*`). **Full detail:
+`mem:l9b_plan1_gdpr_run_state` § Owed — read that before touching `lib/email`, `lib/contact.ts`, or
+`deleteDialog.support` again.** One deploy consequence if/when this merges: `EMAIL_PROVIDER` becomes
+a required boot-time env var (no real transport chosen yet, so `almostgone.vn` needs
+`EMAIL_PROVIDER=none` added to its `.env` before this ships, or the instance fails to boot).
+
 **Candidates for the next action, none started, in no fixed order:**
 - **Layer 8** — PayOS billing, animation polish, the performance audit. It is the last unbuilt layer
   (`.claude/docs/workflow.md` §3). ⚠️ It inherits a hard dependency: deletion currently removes the
   `subscriptions` row like any other, and L8 must cancel with PayOS *first*.
-- **Two product decisions L9b left open, both small and both on the same screen:**
-  `deleteDialog.support` names a support channel that does not exist anywhere in the repo, and there
-  is **no deletion-requested notification email** — after the C2 fix the 7-day window is the only
-  thing letting a victim notice a deletion they did not request, and the only channel announcing one
-  is the settings page itself.
+- **A real production email transport (SMTP/Resend/etc.)** for `lib/email`'s `EMAIL_PROVIDER` —
+  the port and the `console` (dev/test) adapter are built on `feat/email-notification-system`; no
+  production adapter exists yet, so deletion-requested notifications only ever log to the server
+  console until this is picked up. Needs a provider decision from the user first.
 - **Two scoped follow-ups L9b sized deliberately so nobody re-derives them:** wiring the voice
   pronunciation score to its column (the client scores *after* the message POST and never learns the
   row id, so it needs the POST to return that id plus an endpoint to attach a score); and a

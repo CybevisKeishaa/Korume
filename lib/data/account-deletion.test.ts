@@ -1,15 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { headers } from "next/headers";
 import { createMockSupabase } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { sendEmail } from "@/lib/email";
 import { cancelDeletion, getPendingDeletion, requestDeletion } from "./account-deletion";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/account-deletion/erase", () => ({ cancelPendingDeletion: vi.fn().mockResolvedValue(false) }));
+vi.mock("next/headers", () => ({ headers: vi.fn(() => new Headers({ origin: "https://app.korume.example" })) }));
+vi.mock("@/lib/email", () => ({ sendEmail: vi.fn().mockResolvedValue({ status: "sent", id: "email1", provider: "console" }) }));
 
 const NOW = new Date("2026-08-20T10:00:00.000Z");
-const VALID = { tier: "erase_all", confirmation: "DELETE", acknowledged: true } as const;
+const VALID = { tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "en" } as const;
 
 /** The USER's client — auth only, on the write paths. */
 function mount(supabase: unknown) {
@@ -31,7 +35,7 @@ function mountService(supabase: unknown) {
  * `requestDeletion` test below mounts this: the ONLY thing that client is
  * allowed to do on the request path is `auth.getUser()`.
  */
-function userClientWithNoTables(user: { id: string } | null) {
+function userClientWithNoTables(user: { id: string; email?: string } | null) {
   return createMockSupabase({ user, tables: {} });
 }
 
@@ -136,7 +140,7 @@ describe("requestDeletion", () => {
 
   it("writes purge_after null for close_account — that tier never reserves the email", async () => {
     let inserted: Record<string, unknown> | null = null;
-    const input = { tier: "close_account", confirmation: "DELETE", acknowledged: true } as const;
+    const input = { tier: "close_account", confirmation: "DELETE", acknowledged: true, locale: "en" } as const;
     mount(userClientWithNoTables({ id: "u1" }));
     mountService(createMockSupabase({
       user: { id: "u1" },
@@ -172,6 +176,204 @@ describe("requestDeletion", () => {
       tables: { account_deletion_requests: () => ({ data: null, error: { code: "23505", message: "duplicate key" } }) },
     }));
     expect(await requestDeletion(VALID, NOW)).toEqual({ ok: false, status: 409 });
+  });
+
+  /**
+   * `mem:l9b_plan1_gdpr_run_state` § Owed: the 7-day window was otherwise the
+   * only channel telling a victim of an unwanted request that one exists.
+   * `cancelUrl` is built from the request's own `origin` header + the
+   * CALLER'S OWN `locale` (from the validated request body, mocked `origin`
+   * above), the same mechanism `app/[locale]/(auth)/actions.ts` already uses
+   * for `emailRedirectTo` — not a new pattern.
+   */
+  it("sends the deletion-requested notification with the row's own tier, execute_after, and a locale-prefixed cancel link", async () => {
+    mount(userClientWithNoTables({ id: "u-email-notify", email: "learner@example.com" }));
+    mountService(createMockSupabase({
+      user: { id: "u-email-notify" },
+      tables: {
+        account_deletion_requests: () => ({
+          data: {
+            id: "req1", tier: "erase_all",
+            requested_at: NOW.toISOString(),
+            execute_after: "2026-08-27T10:00:00.000Z",
+          },
+          error: null,
+        }),
+      },
+    }));
+
+    const result = await requestDeletion(VALID, NOW);
+
+    expect(result.ok).toBe(true);
+    expect(sendEmail).toHaveBeenCalledWith({
+      template: "account-deletion-requested",
+      to: "learner@example.com",
+      locale: "en",
+      variables: {
+        tier: "erase_all",
+        executeAfter: "2026-08-27T10:00:00.000Z",
+        cancelUrl: "https://app.korume.example/en/settings/privacy",
+      },
+    });
+  });
+
+  /**
+   * Code review, `feat/email-notification-system`: this used to call
+   * `getLocale()`, which resolves via a request header the intl middleware
+   * sets — and `middleware.ts`'s matcher excludes `api`, so on the REAL
+   * request path that header never exists and `getLocale()` silently
+   * returned `routing.defaultLocale` ("vi") for every caller, English
+   * included. The unit test mocking `@/lib/i18n/server` could not catch this
+   * because it mocked away the exact mechanism that was broken. `locale` now
+   * comes from the validated request body instead.
+   *
+   * Parameterised over BOTH locales on purpose (re-review N2): a version of
+   * this test that only ever passed `"vi"` would stay green even if the
+   * implementation silently hardcoded `"vi"` back in — `"vi"` IS
+   * `routing.defaultLocale`, i.e. exactly what the original bug produced.
+   * Running `"en"` too is what actually proves the value comes from the
+   * caller and not from a default of either direction.
+   */
+  it.each(["en", "vi"] as const)(
+    "forwards the caller's own locale (%s) end to end, not a hardcoded or default one",
+    async (locale) => {
+      mount(userClientWithNoTables({ id: `u-email-${locale}`, email: "learner@example.com" }));
+      mountService(createMockSupabase({
+        user: { id: `u-email-${locale}` },
+        tables: {
+          account_deletion_requests: () => ({
+            data: {
+              id: "req1", tier: "erase_all",
+              requested_at: NOW.toISOString(),
+              execute_after: "2026-08-27T10:00:00.000Z",
+            },
+            error: null,
+          }),
+        },
+      }));
+
+      await requestDeletion({ ...VALID, locale }, NOW);
+
+      expect(sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          locale,
+          variables: expect.objectContaining({ cancelUrl: `https://app.korume.example/${locale}/settings/privacy` }),
+        }),
+      );
+    },
+  );
+
+  it("still returns the pending request even when the notification email fails to send", async () => {
+    vi.mocked(sendEmail).mockRejectedValueOnce(new Error("SMTP down"));
+    mount(userClientWithNoTables({ id: "u-email-fail", email: "learner@example.com" }));
+    mountService(createMockSupabase({
+      user: { id: "u-email-fail" },
+      tables: {
+        account_deletion_requests: () => ({
+          data: {
+            id: "req1", tier: "erase_all",
+            requested_at: NOW.toISOString(),
+            execute_after: "2026-08-27T10:00:00.000Z",
+          },
+          error: null,
+        }),
+      },
+    }));
+
+    const result = await requestDeletion(VALID, NOW);
+    expect(result).toEqual({
+      ok: true,
+      data: { id: "req1", tier: "erase_all", requestedAt: NOW.toISOString(), executeAfter: "2026-08-27T10:00:00.000Z" },
+    });
+  });
+
+  /**
+   * Re-review N3: `notifyDeletionRequested`'s whole body is inside a `try`
+   * specifically so a throw from `headers()` (it throws outside a request
+   * scope — a real failure mode, not a hypothetical one) can't escape into
+   * `requestDeletion`'s caller and turn an already-committed insert into an
+   * opaque 500. This is the one branch of "the entire body is inside the
+   * try" that had no direct test before this.
+   */
+  it("still returns the pending request even when headers() itself throws", async () => {
+    vi.mocked(headers).mockImplementationOnce(() => {
+      throw new Error("no request scope");
+    });
+    mount(userClientWithNoTables({ id: "u-email-headersthrow", email: "learner@example.com" }));
+    mountService(createMockSupabase({
+      user: { id: "u-email-headersthrow" },
+      tables: {
+        account_deletion_requests: () => ({
+          data: {
+            id: "req1", tier: "erase_all",
+            requested_at: NOW.toISOString(),
+            execute_after: "2026-08-27T10:00:00.000Z",
+          },
+          error: null,
+        }),
+      },
+    }));
+
+    const result = await requestDeletion(VALID, NOW);
+    expect(result).toEqual({
+      ok: true,
+      data: { id: "req1", tier: "erase_all", requestedAt: NOW.toISOString(), executeAfter: "2026-08-27T10:00:00.000Z" },
+    });
+  });
+
+  /**
+   * Code review, `feat/email-notification-system`: `Origin` is a
+   * client-supplied header. `escapeHtml` in the template prevents attribute
+   * BREAKOUT, but does nothing to stop a non-`http(s)` scheme (e.g.
+   * `javascript:`) surviving whole into an `<a href>` inside an outbound
+   * email. This proves the unsafe scheme never reaches `sendEmail` at all —
+   * it degrades to the same relative-path fallback used when `Origin` is
+   * absent entirely.
+   */
+  it("drops a non-http(s) Origin header rather than embedding it in the cancel link", async () => {
+    vi.mocked(headers).mockReturnValueOnce(new Headers({ origin: "javascript:alert(1)" }));
+    mount(userClientWithNoTables({ id: "u-email-badorigin", email: "learner@example.com" }));
+    mountService(createMockSupabase({
+      user: { id: "u-email-badorigin" },
+      tables: {
+        account_deletion_requests: () => ({
+          data: {
+            id: "req1", tier: "erase_all",
+            requested_at: NOW.toISOString(),
+            execute_after: "2026-08-27T10:00:00.000Z",
+          },
+          error: null,
+        }),
+      },
+    }));
+
+    await requestDeletion(VALID, NOW);
+
+    expect(sendEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: expect.objectContaining({ cancelUrl: "/en/settings/privacy" }),
+      }),
+    );
+  });
+
+  it("does not attempt to send a notification when the user has no email on record", async () => {
+    mount(userClientWithNoTables({ id: "u-email-noaddr" }));
+    mountService(createMockSupabase({
+      user: { id: "u-email-noaddr" },
+      tables: {
+        account_deletion_requests: () => ({
+          data: {
+            id: "req1", tier: "erase_all",
+            requested_at: NOW.toISOString(),
+            execute_after: "2026-08-27T10:00:00.000Z",
+          },
+          error: null,
+        }),
+      },
+    }));
+
+    await requestDeletion(VALID, NOW);
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 });
 

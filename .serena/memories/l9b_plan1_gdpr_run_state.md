@@ -87,15 +87,40 @@ a task's real proof is a database, the probe must exercise the actual code path,
 
 ## Owed — survives the merge, NOT closed by it
 
-- ⭐ **`deleteDialog.support` names a support channel that does not exist.** Verified twice: no
-  `mailto:`, no `support@`/`contact@`, no `/support` or `/contact` route anywhere in the repo. It is
-  the same defect family as the C1 copy lie the whole-branch review caught, just smaller, and it sits
-  on the same screen. **This needs a product decision** — supply an address, build a route, or delete
-  the line. Nobody may invent an address on a GDPR surface.
-- **No deletion-requested notification email exists.** After the fix wave, the 7-day window is the
-  only thing that lets a victim notice a deletion they did not request — and the only channel telling
-  them one exists is the settings page itself. Out of this branch's scope; record it, do not
-  rediscover it.
+⭐⭐ **Both items below are now BUILT on branch `feat/email-notification-system`** (a small
+follow-on branch off master, 2026-08-23), reviewed twice by `code-reviewer` (round 1: 3 Critical +
+6 non-blocking; round 2, after fixes, mutation-verified and approved), full suite green (2366
+tests), tsc/lint/build clean. **Not yet merged — awaiting the user's merge decision**, per this
+repo's convention of asking before merging. If you are resuming and the branch is gone, it merged —
+check `git log --oneline -- lib/email` on master first before treating this section as still open.
+
+- ⭐ **`deleteDialog.support` named a support channel that did not exist.** RESOLVED: the user
+  supplied the real address, `admin@almostgone.vn` — already the canonical one in
+  `docs/product/screen-inventory.md` §19.5 (Figma footer `203:13813`), so this was not inventing an
+  address, it was wiring up the one already on record. Lives in `lib/contact.ts`'s `SUPPORT_EMAIL`,
+  interpolated into `deleteDialog.support` via an ICU `{email}` arg in both locale catalogs.
+- **No deletion-requested notification email existed.** RESOLVED, but only the PORT + one adapter:
+  the user explicitly asked for a shared, provider-agnostic email system (mirroring `lib/ai/*`'s
+  port/registry/env split) rather than a one-off SMTP call bolted onto GDPR code — see
+  `lib/email/{types.ts (the port), env.ts, registry.ts, service.ts, providers/console.ts,
+  templates/account-deletion-requested.ts}`. **`EMAIL_PROVIDER` has exactly one real value today:
+  `console`** (dev/test only, logs instead of sending, REJECTED at startup in production by
+  `lib/email/env.ts`'s schema). No SMTP/Resend/etc. adapter exists yet — that remains genuinely
+  owed, is a separate, larger task (needs a provider decision + real credentials), and is why
+  `EMAIL_PROVIDER` is a NEW required boot-time env var: **almostgone.vn's `.env` needs
+  `EMAIL_PROVIDER=none` added before this branch is deployed, or the instance fails to boot**
+  (`instrumentation.ts` now registers `emailEnvSpec`). `mem:project_status` § Key gotchas should
+  carry this deploy note once this branch is confirmed heading to master.
+  Two review rounds caught and fixed three real bugs before merge, all mutation-verified:
+  (a) `getLocale()` inside an API route (excluded from `middleware.ts`'s matcher) silently resolved
+  `routing.defaultLocale` ("vi") for every caller regardless of actual locale — now the client
+  forwards `locale` explicitly in the validated POST body, the same pattern `(auth)/actions.ts`
+  already uses for `emailRedirectTo` (new lesson `docs/lessons.md` L-034); (b) the notify function's
+  `try` didn't cover its own `headers()`/`getLocale()` calls, so a throw there could turn an
+  already-committed deletion request into a false 500 — now the entire body is inside the `try`;
+  (c) the template hardcoded erase-all "your data is being deleted" framing for BOTH tiers, so a
+  `close_account` request (which keeps learning data) got a false email — now tier-aware, copy taken
+  verbatim from the pinned `deleteDialog.close_account.subtitle`.
 - Minor residue from the final re-review, none blocking: two doc comments still cite
   `messages/en/settings.pin.test.ts`, a path this wave renamed to `messages/settings.pin.test.ts`;
   the new GET rate limit is shared with the server-side page render, so six reloads inside 60s show
@@ -125,4 +150,4 @@ scrolled).
 `docs/superpowers/specs/2026-08-20-l9b-plan1-gdpr-design.md` ·
 `docs/superpowers/plans/2026-08-20-l9b-plan1-gdpr.md` ·
 `mem:project_status` § Deferred follow-ups (the PayOS-before-erasure dependency L8 inherits) ·
-`docs/lessons.md` L-002, L-004, L-005, L-011, L-012, L-032.
+`docs/lessons.md` L-002, L-004, L-005, L-011, L-012, L-032, L-034.

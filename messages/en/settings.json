@@ -20,7 +20,7 @@
     "eraseAll": { "title": "Delete all my data", "body": "Request permanent deletion of your personal data stored by Korume.", "action": "Review deletion" }
   },
   "deleteDialog": {
-    "support": "If you need help, contact Korume Support.",
+    "support": "If you need help, contact {email}.",
     "failed": "We couldn't schedule the deletion. Please try again.",
     "alreadyPending": "A deletion request is already in progress for your account.",
     "signedOut": "Your session has expired. Please sign in again to continue.",

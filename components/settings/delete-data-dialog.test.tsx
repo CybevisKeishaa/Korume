@@ -135,9 +135,9 @@ describe("DeleteDataDialog", () => {
     expect(alert).not.toHaveTextContent("TypeError");
   });
 
-  it("renders the support footer line", () => {
+  it("renders the support footer line with the real support address, not a placeholder", () => {
     render(<DeleteDataDialog open tier="erase_all" onClose={vi.fn()} onConfirmed={vi.fn()} refreshPending={vi.fn()} />);
-    expect(screen.getByText("If you need help, contact Korume Support.")).toBeInTheDocument();
+    expect(screen.getByText("If you need help, contact admin@almostgone.vn.")).toBeInTheDocument();
   });
 
   /**
@@ -275,7 +275,7 @@ describe("DeleteDataDialog — tier=close_account", () => {
     expect(fetchSpy).toHaveBeenCalledWith(
       "/api/user/deletion",
       expect.objectContaining({
-        body: JSON.stringify({ tier: "close_account", confirmation: "DELETE", acknowledged: true }),
+        body: JSON.stringify({ tier: "close_account", confirmation: "DELETE", acknowledged: true, locale: "en" }),
       }),
     );
     expect(onConfirmed).toHaveBeenCalled();

@@ -26,10 +26,11 @@ cp .env.local.example .env.local   # rồi điền key — xem chú thích trong
 npm run dev                        # http://localhost:3000
 ```
 
-`.env.local` **không bao giờ** được commit. `APP_ENV`, `AI_PROVIDER`, `SPEECH_PROVIDER` là bắt buộc và
-được validate một lần lúc khởi động (`lib/env/validate.ts` qua `instrumentation.ts`) — cấu hình sai thì
-app fail ngay lúc boot, không phải 503 lẻ tẻ lúc chạy. Provider luôn được chọn **tường minh**, không
-bao giờ suy ra từ việc key nào đang có; `none` = tắt có chủ đích.
+`.env.local` **không bao giờ** được commit. `APP_ENV`, `AI_PROVIDER`, `SPEECH_PROVIDER`, `EMAIL_PROVIDER`
+là bắt buộc và được validate một lần lúc khởi động (`lib/env/validate.ts` qua `instrumentation.ts`) — cấu
+hình sai thì app fail ngay lúc boot, không phải 503 lẻ tẻ lúc chạy. Provider luôn được chọn **tường
+minh**, không bao giờ suy ra từ việc key nào đang có; `none` = tắt có chủ đích. `SCHEDULER_ENABLED` là
+tùy chọn (mặc định tắt) và không tham gia validate provider, nhưng cũng được đọc qua cùng cơ chế đó.
 
 ## Scripts
 

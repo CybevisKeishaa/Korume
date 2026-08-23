@@ -1,10 +1,13 @@
 import "server-only";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
 import { scheduleFor, type DeletionTier } from "@/lib/account-deletion/lifecycle";
 import { cancelPendingDeletion } from "@/lib/account-deletion/erase";
+import { sendEmail } from "@/lib/email";
+import type { Locale } from "@/lib/i18n/routing";
 import type { DeletionRequestInput } from "@/lib/validation/account-deletion";
 
 /** Destructive and enumerable — a tighter budget than an ordinary toggle. */
@@ -99,7 +102,80 @@ export async function requestDeletion(
   if (error?.code === "23505") return { ok: false, status: 409 };
   if (error) throw error;
 
-  return { ok: true, data: toPending(data as Row) };
+  const pending = toPending(data as Row);
+  if (user.email) await notifyDeletionRequested(user.email, input.locale, pending);
+
+  return { ok: true, data: pending };
+}
+
+/**
+ * `Origin` is a client-supplied header. A well-behaved same-origin `fetch`
+ * POST always sends it, but nothing stops a caller from omitting it or
+ * lying — and this value ends up inside an `<a href>` in an outbound email
+ * (`lib/email/templates/account-deletion-requested.ts` escapes the STRING,
+ * which prevents attribute breakout, but does not constrain the URL's own
+ * scheme). Only `http`/`https` survive; anything else — `javascript:`,
+ * garbage, missing — degrades to the same relative-path fallback the code
+ * already had when `Origin` was absent entirely, rather than being embedded.
+ */
+function safeOrigin(rawOrigin: string | null): string {
+  if (!rawOrigin) return "";
+  try {
+    const url = new URL(rawOrigin);
+    // `url.origin`, not `rawOrigin` verbatim: normalizes away a trailing
+    // slash or stray path component a caller's `Origin` header should never
+    // carry (code review, `feat/email-notification-system`, N5) — a raw
+    // `https://x.example/` would otherwise double the slash against the
+    // `/${locale}/settings/privacy` this gets concatenated with below.
+    return url.protocol === "http:" || url.protocol === "https:" ? url.origin : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * `mem:l9b_plan1_gdpr_run_state` § Owed: after the whole-branch review's C2
+ * fix, the 7-day window is the only thing letting a victim of an unwanted
+ * deletion request notice it — and until now the only channel announcing one
+ * exists was the settings page itself. Best-effort ON PURPOSE, the ENTIRE
+ * body included: a failure anywhere here (a bad `Origin` header, the
+ * provider rejecting the send) must never fail the deletion request that
+ * already committed above — the request row is real regardless of whether
+ * this email goes out (code review, `feat/email-notification-system`:
+ * `getLocale()`/`headers()` calls left outside the `try` could throw past
+ * this function into the route's own error handling, turning an already-
+ * successful request into an opaque 500).
+ *
+ * `locale` comes from the caller's own request body
+ * (`lib/validation/account-deletion.ts`), not `getLocale()` — this runs
+ * inside a Route Handler, which `middleware.ts`'s matcher excludes, so
+ * `getLocale()` would silently resolve `routing.defaultLocale` instead of
+ * the requester's actual locale.
+ */
+async function notifyDeletionRequested(email: string, locale: Locale, pending: PendingDeletion): Promise<void> {
+  try {
+    const origin = safeOrigin(headers().get("origin"));
+    const result = await sendEmail({
+      template: "account-deletion-requested",
+      to: email,
+      locale,
+      variables: {
+        tier: pending.tier,
+        executeAfter: pending.executeAfter,
+        cancelUrl: `${origin}/${locale}/settings/privacy`,
+      },
+    });
+    if (result.status === "skipped") {
+      // eslint-disable-next-line no-console -- server-side only; observability
+      // only (EMAIL_PROVIDER=none is a legitimate, intentional deployment
+      // state — code review finding #5, `mem:l9b_plan1_gdpr_run_state` § Owed).
+      console.info("[account-deletion] deletion-requested notification skipped: EMAIL_PROVIDER=none");
+    }
+  } catch (error) {
+    // eslint-disable-next-line no-console -- server-side only; a failed
+    // notification must never surface in the API response (CLAUDE.md §2/§6).
+    console.error("[account-deletion] failed to send deletion-requested notification:", error);
+  }
 }
 
 export type CancelDeletionResult =

@@ -3,20 +3,8 @@
 import { useFormatter, useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { memoryTitleFor, refFromDedupeKey, type CompanionMemory } from "@/lib/companion";
+import { VN_TIME_ZONE } from "@/lib/time/vn-timezone";
 import { CompanionAnchor } from "./companion-anchor";
-
-/**
- * The market is VN-only and the app already treats one fixed offset as "the"
- * user timezone (`vnDateString`, lib/gamification/streak.ts) — a memory dated
- * "yesterday" on the streak card must not read as "today" here.
- *
- * Passing it explicitly is also required, not cosmetic: there is no global
- * `timeZone` in `lib/i18n/request.ts`, so next-intl would fall back to the
- * ENVIRONMENT's zone — the server's on the first paint, the browser's after
- * hydration — which raises an `ENVIRONMENT_FALLBACK` IntlError and can render
- * two different dates for the same instant.
- */
-const VN_TIME_ZONE = "Asia/Ho_Chi_Minh";
 
 /**
  * The one title a memory shows, in the reader's own locale.
