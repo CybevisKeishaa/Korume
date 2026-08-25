@@ -1,5 +1,7 @@
 # Screen Registry Phase 3 — Stage 1 Implementation Plan
 
+> ✅ **STATUS (2026-08-25): executed, and Stage 2 is CLOSED at zero `spec-only` rows** — the §6 gate ran and the user ruled it; see the spec's **§6.7**. This plan's body is kept as the historical record of what was executed; where it speaks of Stage 2 as still owed, §6.7 supersedes it.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add the `spec-only` screen kind (mechanically, with zero rows) and register the 2026-08-23

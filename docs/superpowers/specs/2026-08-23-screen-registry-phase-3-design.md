@@ -368,14 +368,50 @@ Sanctuary…", with a *"Understanding your current level"* checklist) and `111:1
 ready. → Enter Korume") confirm a complete flow. **Onboarding is a capability already covered by an
 existing Figma destination, not a missing one.**
 
+**Rejected candidates, recorded as §6.5 requires** — by class rather than one by one, so a later
+session can see what was screened out without re-deriving it. Nothing below reached the gate, and none
+of it is a `spec-only` row waiting to be written:
+
+- **Capabilities that live inside an existing screen** (§6.3 bullet 4) — pitch-accent visualisation,
+  adaptive furigana, sentence mining, and the colloquial/keigo/counters/onomatopoeia micro-modules.
+  `CLAUDE.md` §5 lists these as product priorities, which makes them *work*, not *destinations*; each
+  extends a screen the registry already holds.
+- **Cross-cutting systems** (§6.3 bullet 3) — Learning Intelligence, Companion presence, the progress
+  narrative. Phase 0 §1's headline ruling is that a capability sighted in 3+ modules is a feature of
+  none of them and may take no nav row, so it can never be `kind: 'screen'`.
+- **State-variants, overlays, modals and drawers** (§6.3 bullets 1–2) — out by the granularity ruling;
+  T4 needs a real parent, and a spec rarely enumerates states.
+- **Items `decision-register.md` §4 still lists as `OPEN`** — Vimeo/multi-platform import, `JLPT
+  Speaking` as a Certification↔Conversation edge, `AI Coach` as flag-or-tier, the `Friends` social
+  graph, the L1 field, and the deferred model/schema questions. **An open question is not a
+  requirement**; test 1 of §6.2 asks whether a source *requires* a destination, and a register entry
+  that records the absence of a decision requires nothing. Writing a `spec-only` row off one would
+  manufacture the fabricated-ruling failure `L-030` already paid for.
+- **Destinations an existing row already covers under a different name** — the §6.4 identity trap,
+  which fired as predicted: spec §3.6 *"Speaking & Conversation Practice"* is `/conversation`, and
+  §3.8 *"JLPT Mock Test"* is the `certification` module after A9's rename. Matched by product
+  identity, not by string, neither is a gap.
+
 **Two findings from that verification, both deliberately kept OUT of Phase 3:**
 
-1. **`figma-frame-map.md` mischaracterises `111:515`.** It calls that frame part of the
-   "QuickStart/Generate-sensei onboarding cluster". Looked at, `111:515` is the **returning-user
-   Dashboard** — "Welcome back", Continue Learning, a 12-day streak, Today's Mission, Weakness
-   Snapshot. The registry is right (it registers `111:515` as `dashboard`); only the frame map's prose
-   is wrong, and it is wrong for the exact reason `M7` exists — the frame was grouped by **canvas
-   proximity** rather than by being read. Fix it in whatever pass next edits that file.
+1. ✅ **FIXED — `figma-frame-map.md` had reintroduced a mischaracterisation of `111:515` that a
+   standing ruling already corrected.** It called that frame part of the "QuickStart/Generate-sensei
+   onboarding cluster". Looked at, `111:515` is the **returning-user Dashboard** — "Welcome back",
+   Continue Learning, a 12-day streak, Today's Mission, Weakness Snapshot.
+
+   **This was a regression, not a discovery, and the ruling is the authority — not this phase's
+   screenshot.** `docs/product/screen-inventory.md` **§19.0** ruled on **2026-08-12** that *"`111:515`
+   is named `Homepage`. It is the authenticated Dashboard"*, recorded it as the **fourth** time the
+   picture had corrected a frame name, and §19.1 catalogues the frame as **Dashboard** with a
+   *"rename the frame"* note. The registry has always agreed (it registers `111:515` as `dashboard`).
+   The "onboarding cluster" phrase was introduced by **this branch**, in its first commit `22da7d9`
+   (`git log -S "onboarding cluster" -- docs/product/figma-frame-map.md`) — so the defect was a phase
+   document contradicting a ruling that pre-dated it, for the exact reason `M7` exists: the frame was
+   grouped by **canvas proximity** rather than by being read.
+
+   Fixed in `figma-frame-map.md` in both places the phrase appeared, in the review wave that found it,
+   rather than deferred — a deferral would have left a TODO inside merged work, which `CLAUDE.md` §6
+   forbids. §9.1 of this file carried the same wrong phrase and is corrected too.
 2. **Spec §3.1 says "placement quiz ngắn 10 câu"; QuickStart asks one self-assessment question.**
    Per `M13` the presentation is Figma's to choose, so this is not a Phase 3 question. It is flagged
    for **port time** because the two are not the same datum: a self-declared level and a measured
@@ -397,6 +433,11 @@ still open, and the zero result above must never be cited as having resolved it.
 ---
 
 ## 7. Stage 2 — writing the approved rows
+
+> ✅ **Stage 2 CLOSED 2026-08-25 with zero approved rows — see §6.7.** The procedure below is what
+> Stage 2 *would* have run; with an empty approved set, steps 1 and 2 correctly did nothing, and the
+> non-vacuity assertion belongs to a future phase that actually writes rows. Do not read this section
+> as outstanding work.
 
 1. Write the approved `spec-only` rows, each with its `specRef`.
 2. **Add the non-vacuity assertion** to T12/T13 (§8.2) — it is only meaningful once rows exist.
@@ -446,9 +487,11 @@ restore.
 
 The repo has `landing-page` → route `/`, `kind: 'repo-only'`, `impl: 'built'`. The new frame
 `347:6277` is a full marketing landing page (1280×4028). **Three frames now carry the name
-"Homepage"**: `111:515` (the onboarding-cluster frame already registered as `dashboard`),
-`347:6277`, and `346:6275` — the last being a hidden `rounded-rectangle`, decorative canvas noise,
-**not a screen, never to be registered**.
+"Homepage"**: `111:515` (**the returning-user Dashboard** despite the frame's name — ruled 2026-08-12
+in `screen-inventory.md` §19.0/§19.1, registered as `dashboard`; see §6.7 finding 1, which corrects
+the "onboarding cluster" phrasing this sentence originally carried), `347:6277`, and `346:6275` — the
+last being a hidden `rounded-rectangle`, decorative canvas noise, **not a screen, never to be
+registered**.
 
 The question is **identity, not content**:
 

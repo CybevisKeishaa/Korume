@@ -1,7 +1,7 @@
 # Screen Registry Phase 3 — run state
 
 > **This file is the authority for where Phase 3 stands.** `mem:project_status` § NEXT ACTION points
-> here and must not restate it.
+> here and carries at most a one-line gist; it must not duplicate this file's evidence or its reasoning.
 
 # ▶▶ RESUME HERE
 
@@ -19,14 +19,17 @@ the Stage 2 close-out.
 ⚠️ **Do NOT re-run the Stage 2 discovery pass, and do NOT go looking for `spec-only` rows to add.**
 The pass ran 2026-08-25 and the user ruled the result. **The authority for the outcome and its
 evidence is the spec's new §6.7** (`docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md`)
-— read that, do not restate it here. In one line: one candidate (Onboarding, spec §3.1) reached the
+— read that for the method and the evidence, which are not duplicated here. The one-line gist that
+follows is a pointer to it, not a substitute for it: one candidate (Onboarding, spec §3.1) reached the
 user and was **rejected by looking at Figma** — `111:1556` QuickStart already carries level, learning
 purpose and daily pace, so the surface is covered, not missing. **Zero `spec-only` rows is the final
 Phase 3 state, not an unfinished one.**
 
-Two items §6.7 deliberately pushed OUT of Phase 3, both still owed elsewhere: `figma-frame-map.md`
-wrongly files frame `111:515` under the onboarding cluster when it is the returning-user Dashboard
-(fix opportunistically); and spec §3.1's "placement quiz 10 câu" versus QuickStart's single
+Of the two items §6.7 pushed OUT of Phase 3, one is now CLOSED and one is still owed. ✅ CLOSED:
+`figma-frame-map.md` filed frame `111:515` under the "onboarding cluster" when it is the returning-user
+Dashboard — a characterisation **this branch introduced** (`22da7d9`) that regressed a standing ruling
+(`screen-inventory.md` §19.0/§19.1, 2026-08-12), fixed in the review wave rather than deferred as a TODO
+inside merged work (`CLAUDE.md` §6). ⛔ STILL OWED: spec §3.1's "placement quiz 10 câu" versus QuickStart's single
 self-assessment is a **port-time** question about whether `users.level` means self-declared or
 measured — `/lib/difficulty` consumes it, so the two concepts must not be silently merged.
 
@@ -43,12 +46,13 @@ travel with the repo, so re-run rather than chase a log file: `npm run typecheck
 **262 files / 2368 tests passed**, exit 0 · `next build` exit 0. **Playwright was deliberately NOT
 run** — the branch touches no `app/` route and no rendered component.
 
-**THE NEXT STEP IS NOT AN ENGINEERING TASK.** It is the spec's **§6 discovery-pass gate**: a scan of
-`japanese-learning-app-spec.md` + `decision-register.md` produces a candidate list, and **the user
-rules it** (§6.6). No `spec-only` row may be written before that ruling — which is why a registry
-holding **zero** `spec-only` rows today is CORRECT, not incomplete. Stage 2 (§7) then writes the
-approved rows, adds the non-vacuity assertions to T12/T13, runs the full gate, takes a whole-branch
-review, and merges.
+**✅ THE §6 DISCOVERY-PASS GATE HAS ALREADY RUN — do not run it again.** It was never an engineering
+task: a scan of `japanese-learning-app-spec.md` + `decision-register.md` produced a candidate list and
+**the user ruled it** (§6.6) on 2026-08-25. The ruling was **zero `spec-only` rows**, so Stage 2 (§7)
+wrote no rows, and the non-vacuity assertions §7 step 2 describes were **correctly not added** — they
+are meaningful only in a future phase that actually writes rows. **The outcome and its evidence are the
+spec's §6.7**; read that rather than anything here. A registry holding zero `spec-only` rows is the
+final Phase 3 state, not an incomplete one.
 
 **Read `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md` first — it is complete
 and self-contained.** This memory records the process state and the reasoning that did not fit there.
@@ -60,9 +64,10 @@ Two halves, deliberately separated by a user-ruled gate:
 - **Stage 1 (mechanical):** add `spec-only` to `ScreenKind`, add the `specRef` field, register the
   2026-08-23 Figma frame batch, fix the tests that break. **Adds zero `spec-only` rows.**
 - **The gate:** a discovery pass over Spec + Decision Register produces a **candidate list**; the user
-  rules it.
+  rules it. ✅ Ran and was ruled 2026-08-25.
 - **Stage 2:** write the approved `spec-only` rows, add the non-vacuity assertions, full gate, review,
-  merge.
+  merge. ✅ Closed 2026-08-25 with **zero approved rows**, so it wrote none and added no non-vacuity
+  assertion — spec §6.7. What is left is the review and the merge.
 
 ## The four rulings the design rests on (user, 2026-08-23) — do not silently revert
 
@@ -131,7 +136,9 @@ away by an implementer:
 - **Stage 1:** ship T12/T13 WITHOUT a non-vacuity assertion (zero is the correct count then), and prove
   them by **mutation-check** — five specific mutations are enumerated in the spec §8.2; run each, watch
   red, restore, **report both outputs**.
-- **Stage 2:** add `expect(specOnly.length).toBeGreaterThan(0)` once real rows exist.
+- **Stage 2:** add `expect(specOnly.length).toBeGreaterThan(0)` once real rows exist. ⚠️ Stage 2 closed
+  at **zero** rows (spec §6.7), so this assertion was correctly NOT added and must not be added now —
+  it belongs to a future phase that actually writes rows.
 - T3's widening is also a guard over existing code → cannot fail first → mutation-check it too.
 
 ## The frame batch — NOT purely mechanical (✅ all of this is DONE, at `dc917dc`)
@@ -247,9 +254,13 @@ that they belong in this memory, which travels with the repo. Same failure mode 
   debt note. Deliberately not "fixed", because moving a stamp nobody re-earned is the dishonesty G2
   exists to catch.
 
-**Lessons are NOT written yet.** `docs/lessons.md` gets this branch's entries **after Stage 2**, at
-the true end of the branch (user, 2026-08-25) — this project writes lessons once, per `CLAUDE.md`
-§10. The candidates are in this section; do not append them early.
+**✅ Lessons ARE written.** They were written at the true end of the branch, in the Stage 2 close-out
+commit `cf6ab8e`, per `CLAUDE.md` §9/§10 — three new entries (**`L-035`** vitest output volume,
+**`L-036`** scripted writes bypassing CRLF normalisation, **`L-037`** one agent in flight) and four
+extended (**`L-011`**, **`L-012`**, **`L-015`**, **`L-019`**), merged into existing entries rather than
+appended, per that file's rule 2. **Do not re-add them**, and do not treat the ledger above as an
+unwritten backlog — it is the evidence they were drawn from. (The review of `cf6ab8e` then corrected
+several claims inside those entries; `docs/lessons.md` at HEAD is the authority, not this list.)
 
 ## Related
 

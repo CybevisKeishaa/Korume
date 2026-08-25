@@ -33,7 +33,11 @@ navbar/routes/registry without user review.
   L9b Plan 1 (merged `4b1fef7`) already built `/settings/privacy` against; this pass just confirms the
   shipped implementation matches them.
 - **New marketing homepage** (`347:6277`, 1280×4028) — a full public landing page, distinct from the
-  existing onboarding-cluster `Homepage` (`111:515`). Three frames now share the name "Homepage"
+  existing onboarding-cluster `Homepage` (`111:515`). ⚠️ **Correction (2026-08-25):** "onboarding
+  cluster" is wrong for `111:515` — it is the **authenticated Dashboard**, ruled 2026-08-12 in
+  `screen-inventory.md` §19.0/§19.1 and registered as `dashboard`. The frame was grouped by canvas
+  proximity rather than by being looked at (`M7`). Everything else in this bullet stands.
+  Three frames now share the name "Homepage"
   (`111:515`, `347:6277`, and the noise rectangle `346:6275`) — same collision pattern as the earlier
   `29:2890`/`280:3` Kanji pair; a rename pass is optional cleanup, not urgent (node ids disambiguate).
 

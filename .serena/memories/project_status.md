@@ -48,13 +48,14 @@ merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`).
 `git rev-list --count 8865aed..HEAD`), not merged. Stage 1 shipped the type change, the five test
 changes, and the 2026-08-23 frame batch; the branch gate was measured green (tsc 0 · lint 0 errors ·
 262 test files / 2368 tests · `next build` exit 0; Playwright deliberately not run).
-**Read `mem:screen_registry_phase_3_run_state` — it is the authority. This block must not restate it.**
+**Read `mem:screen_registry_phase_3_run_state` — it is the authority. This block carries a one-line
+gist only and must not duplicate that memory's evidence or its reasoning.**
 In one line: `spec-only` is now a `ScreenKind` and `specRef` the 13th field, so the registry can record
 a destination the spec requires that has neither a Figma frame nor an implementation — turning it from
 a Figma map into a product-surface ↔ design ↔ implementation map.
 **Stage 2's discovery pass RAN on 2026-08-25 and the user ruled it: ZERO `spec-only` rows.** Do not
 re-run it and do not hunt for rows to add. The outcome and its evidence live in the spec's **§6.7**;
-the run-state memory points there and neither restates it. The one candidate (Onboarding) was
+the run-state memory points there and neither duplicates that evidence. The one candidate (Onboarding) was
 rejected by *looking at* Figma — QuickStart `111:1556` already carries level, purpose and daily pace.
 **The only work left on this branch is a final review pass and the merge.**
 ⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame

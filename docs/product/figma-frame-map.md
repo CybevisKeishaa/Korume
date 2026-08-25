@@ -310,9 +310,10 @@ two were flagged load-bearing in the 2026-08-20 note.
 ### New marketing homepage — distinct from the existing `Homepage` frames
 | Node id | Frame | Size | Summary |
 |---|---|---|---|
-| `347:6277` | Homepage | 1280×4028 | A full public marketing/landing page, unrelated to `111:515`'s auth-adjacent "Homepage" (part of the QuickStart/Generate-sensei onboarding cluster). Long-scroll sections: hero ("Learn Japanese from the Japanese you actually want to understand"), a listening-comprehension score widget (87), an i+1 "recommends what's just beyond what you already know" section, a "Private. Secure. Built on trust." trust block, and a closing CTA ("A quieter way to keep going."). |
+| `347:6277` | Homepage | 1280×4028 | A full public marketing/landing page, unrelated to the other frame named "Homepage", `111:515` — which is the **authenticated Dashboard** ("Welcome back", Continue Learning, Today's Mission, Weakness Snapshot), ruled 2026-08-12 in `screen-inventory.md` §19.0/§19.1 and registered as `dashboard`. Long-scroll sections: hero ("Learn Japanese from the Japanese you actually want to understand"), a listening-comprehension score widget (87), an i+1 "recommends what's just beyond what you already know" section, a "Private. Secure. Built on trust." trust block, and a closing CTA ("A quieter way to keep going."). |
 
-**Three frames are now named "Homepage"**: `111:515` (1278×1332, onboarding-cluster), `347:6277`
+**Three frames are now named "Homepage"**: `111:515` (1278×1332, the **authenticated Dashboard** —
+`screen-inventory.md` §19.0/§19.1; the name is the frame's, the identity is the picture's), `347:6277`
 (1280×4028, marketing landing page — this one), and the hidden `346:6275` rectangle (not a screen).
 Same collision pattern as the `29:2890`/`280:3` "Kanji" pair from the first capture — worth a rename
 pass eventually, not urgent since node ids disambiguate.

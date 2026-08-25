@@ -79,11 +79,14 @@ describe("screen registry invariants", () => {
 
   it("T12: spec-only is the empty cell — no frame, route, chrome, variant, repo-only reason, stamp, or nav", () => {
     const specOnly = SCREEN_REGISTRY.filter((e) => e.kind === "spec-only");
-    // Vacuous by construction in Stage 1: zero spec-only rows exist yet
-    // (spec §5.6). Proven instead by mutation-check (see the Stage 1 plan) —
-    // CLAUDE.md §7, spec §8.2. Stage 2 adds:
+    // Vacuous by construction: zero spec-only rows exist (spec §5.6). Proven
+    // instead by mutation-check (see the Stage 1 plan) — CLAUDE.md §7,
+    // spec §8.2. Zero is the FINAL Phase 3 state, not a Stage 1 waypoint: the
+    // discovery pass ran, the user ruled it, and Stage 2 closed at zero rows
+    // (spec §6.7). The non-vacuity assertion
     //   expect(specOnly.length).toBeGreaterThan(0);
-    // once real rows exist — not before, since zero is the correct count now.
+    // is therefore owed only by a future phase that actually writes rows —
+    // adding it here would fail against the registry's correct contents.
     for (const entry of specOnly) {
       expect(entry.figmaNodeId, entry.screenId).toBeNull();
       expect(entry.route, entry.screenId).toBeNull();
@@ -104,10 +107,12 @@ describe("screen registry invariants", () => {
     // Figma-derived source this phase excludes on purpose.
     const SPEC_REF_PATTERN =
       /^(japanese-learning-app-spec\.md §\d+(\.\d+)*|decision-register\.md A\d+)$/;
-    // Vacuous by construction in Stage 1: zero spec-only rows exist yet
-    // (spec §5.6), so this loop runs zero iterations today. Proven instead
-    // by mutation-check (see the Stage 1 plan) — CLAUDE.md §7, spec §8.2.
-    // Stage 2 adds a non-vacuity assertion once real rows exist.
+    // Vacuous by construction: zero spec-only rows exist (spec §5.6), so the
+    // spec-only branch below runs zero times. Proven instead by
+    // mutation-check (see the Stage 1 plan) — CLAUDE.md §7, spec §8.2. Zero
+    // is the FINAL Phase 3 state per spec §6.7 (the discovery pass ran and
+    // the user ruled it), so a non-vacuity assertion is owed only by a future
+    // phase that actually writes rows — not by this one.
     for (const entry of SCREEN_REGISTRY) {
       if (entry.kind === "spec-only") {
         expect(entry.specRef, entry.screenId).not.toBeNull();
