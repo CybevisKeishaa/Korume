@@ -201,7 +201,7 @@ describe("screen registry invariants", () => {
     }
     // Non-vacuity: `stamped`'s length (asserted above) already proves this
     // map is non-empty; this pins the exact per-date breakdown too, so a
-    // change to either the total or the split between the two dates is
+    // change to either the total or the split between the dates is
     // conscious rather than silent.
     expect(Object.fromEntries(stampedByDate)).toEqual({
       "2026-08-12": 71,

@@ -12,10 +12,13 @@
 > screenshotted individually. Page-wide count as of 2026-08-23: **70 top-level nodes** (69 real frames
 > + the 1 hidden rectangle). **Never quote a count from this file — enumerate** (`L-002`).
 >
-> ⚠️ Still owed, unchanged from 2026-08-20: `lib/product/screen-registry.ts` does not know about any
-> of these 12 (now 13, since `218:15740` was in the registry's blind spot too by never having been
-> screenshotted) frames yet, so registry rows' `figmaCheckedAt` still overstate what was compared —
-> that only closes when Screen Registry Phase 3 folds them in.
+> ✅ **Registered 2026-08-23** (Screen Registry Phase 3 Stage 1): 11 of the 13 previously-uncaptured
+> frames are now rows in `lib/product/screen-registry.ts` — `register` (converted from `repo-only`),
+> plus 5 new `screen` rows and 2 new `state-variant` rows. `335:1588` is excluded (registry header —
+> style-guide duplicate of `218:15740`). `347:6277` (the new marketing homepage) is deliberately NOT
+> registered — an identity ruling against the existing `landing-page` row is still owed, see that row's
+> comment and `mem:screen_registry_phase_3_run_state` §9.1. The GitHub sign-in button conflict (spec
+> §9.2) is also still open and must be settled before the auth screens are ported.
 
 **File:** `IwFHZDZdHW7qsSFiNbWrkd` ("Korume"), single page `0:1`.
 **Captured:** 2026-08-11, by selecting frames in the Figma desktop app and reading the
