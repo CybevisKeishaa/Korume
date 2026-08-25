@@ -77,6 +77,27 @@ describe("screen registry invariants", () => {
     }
   });
 
+  it("T13: specRef is present iff spec-only, and matches an allowed citation shape", () => {
+    // Only two sources are valid scan targets for Phase 3 (spec §6.1): the
+    // product spec and the decision register. A loose `/\.md §/` pattern is
+    // deliberately rejected — it would admit capability-map.md, a
+    // Figma-derived source this phase excludes on purpose.
+    const SPEC_REF_PATTERN =
+      /^(japanese-learning-app-spec\.md §\d+(\.\d+)*|decision-register\.md A\d+)$/;
+    // Vacuous by construction in Stage 1: zero spec-only rows exist yet
+    // (spec §5.6), so this loop runs zero iterations today. Proven instead
+    // by mutation-check (see the Stage 1 plan) — CLAUDE.md §7, spec §8.2.
+    // Stage 2 adds a non-vacuity assertion once real rows exist.
+    for (const entry of SCREEN_REGISTRY) {
+      if (entry.kind === "spec-only") {
+        expect(entry.specRef, entry.screenId).not.toBeNull();
+        expect(entry.specRef as string, entry.screenId).toMatch(SPEC_REF_PATTERN);
+      } else {
+        expect(entry.specRef, entry.screenId).toBeNull();
+      }
+    }
+  });
+
   it("R12: every entry carries exactly the thirteen allowed fields", () => {
     // The concrete guard on R1. If someone adds `copy`, `layout`, `colors` or
     // `dataNeeds`, the registry has started becoming a second Figma. It is
