@@ -1,6 +1,10 @@
 # Screen Registry Phase 3 — `spec-only` surfaces & the second frame batch — Design
 
-> **Status:** approved in brainstorming 2026-08-23, not yet implemented.
+> **Status:** approved in brainstorming 2026-08-23. **Stage 1 (§4, §5, §8) is IMPLEMENTED** on branch
+> `screen-registry-phase-3` — the seven implementation commits `467b7c1`…`d37027f`, on top of this
+> spec (`22da7d9`) and the plan (`6208925`). **Stage 2 (§7) is still GATED** on §6's discovery pass,
+> which ends in a user ruling, not an engineering task — so a registry holding **zero** `spec-only`
+> rows is the CORRECT state today, not an unfinished one.
 > **Predecessors:** `2026-08-08-screen-registry-design.md` (R1–R13, T1–T11) ·
 > `2026-08-13-screen-registry-phase-2a-design.md` (the observation/decision axis split, G3) ·
 > `2026-08-14-screen-registry-phase-2b-design.md`.

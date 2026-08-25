@@ -54,21 +54,50 @@ import type { ScreenEntry } from "./screen-registry-types";
  * `impl: "placeholder"`; every other existing route is `impl: "built"`.
  *
  * ---------------------------------------------------------------------------
- * FRAMES DELIBERATELY NOT REGISTERED — 6 of the design file's 57
+ * FRAMES DELIBERATELY NOT REGISTERED
  * ---------------------------------------------------------------------------
  * No test can catch a frame that was simply never typed in here (final
  * whole-branch review FIX 2), so the exclusions are listed by node id and the
- * classification that excluded each. The invariant a human can check by hand:
+ * classification that excluded each. That makes this list the ONLY hand-check
+ * there is — so it carries a recipe that still runs.
  *
- *   registered ids + the 6 exclusions below = the frames captured in
- *   `docs/product/figma-frame-map.md` § "Captured — all 57 of 57"
+ * THE INVARIANT — a partition of every node id the frame map records as being
+ * on the Figma page:
  *
- * Count the left-hand side with (the `[0-9]` anchor keeps this line itself out
- * of the result — the obvious pattern counts its own documentation):
+ *   registered ids
+ *     + the first-capture exclusions listed below
+ *     + `335:1588`  — second-capture exclusion, classified below
+ *     + `347:6277`  — DEFERRED, not excluded: an open identity ruling
+ *   = every node id in a table row of `docs/product/figma-frame-map.md`
+ *     § "Captured — all 57 of 57" and § "Second capture batch (2026-08-23)",
+ *     deduplicated (`65:2` and `218:15740` appear in both sections).
  *
- *   grep -c 'figmaNodeId: "[0-9]' lib/product/screen-registry.ts
+ * ⚠️ This replaces an earlier form — "registered ids + the 6 exclusions below
+ * = the frames captured in § 'Captured — all 57 of 57'" — which held only
+ * while every registered id came from that first capture. It stopped holding
+ * the moment ids from OUTSIDE the original 57 were registered: `337:3323` and
+ * `339:3612` by L9b Plan 1 (stamped 2026-08-20), then this branch's batch
+ * (stamped 2026-08-23). It then failed silently, which is the worst failure
+ * mode for the one check nothing automates. Do not restate it in a form that
+ * names a total; run the recipe instead (`docs/lessons.md` L-002).
  *
- * The 6 exclusions, each with the classification that excluded it:
+ * Re-run it (POSIX shell — the `[0-9]` anchors keep these comment lines
+ * themselves out of the results; the obvious pattern counts its own
+ * documentation):
+ *
+ *   grep -o 'figmaNodeId: "[0-9][^"]*"' lib/product/screen-registry.ts \
+ *     | sed 's/.*"\([^"]*\)"/\1/' | sort -u > /tmp/registered
+ *   awk '/^## .*Captured/{s=1} /^## Dead/{s=0} /^## Second capture batch/{s=1} s' \
+ *     docs/product/figma-frame-map.md \
+ *     | grep -o '^| `[0-9][^`]*`' | tr -d '|` ' | sort -u > /tmp/mapped
+ *   comm -13 /tmp/registered /tmp/mapped   # mapped but NOT registered
+ *   comm -23 /tmp/registered /tmp/mapped   # registered but NOT mapped
+ *
+ * The first command must print exactly the ids named above — the first-capture
+ * exclusions, plus `335:1588`, plus `347:6277` — and nothing else. The second
+ * must print nothing at all. Both held when this was run on 2026-08-25.
+ *
+ * The first-capture exclusions, each with the classification that excluded it:
  *
  *   `46:2`      Popup create conversation   — interaction (modal wizard),
  *                                             screen-inventory.md §15.3
@@ -84,17 +113,23 @@ import type { ScreenEntry } from "./screen-registry-types";
  * as `kind: "deprecated"` — a dead frame kept so it is not rediscovered, not a
  * live screen.
  *
- * Anything absent from the frame map is not on the page at all: `5:1718`
- * (Unuse), `71:2` (Pricing-remove) and `243:14906` are outside the 57 for that
- * reason — the map's own arithmetic proves the first two were already deleted
- * and the third was never matched to a frame.
+ * Frames the map records as NO LONGER on the page are outside the invariant
+ * entirely: `5:1718` (Unuse), `71:2` (Pricing-remove) and `243:14906` live in
+ * the map's § "Dead / stale ids from earlier sessions" table — which is
+ * exactly why the recipe's `awk` stops at that heading. The map's own
+ * arithmetic proves the first two were already deleted and the third was never
+ * matched to a frame.
  *
  * ---------------------------------------------------------------------------
- * SECOND BATCH EXCLUSIONS — 2026-08-23 capture, 1 of 13
+ * SECOND BATCH EXCLUSION — 2026-08-23 capture
  * ---------------------------------------------------------------------------
- * `figma-frame-map.md` § "Second capture batch (2026-08-23)" screenshotted 13
- * previously-uncaptured frames (plus `218:15740`, already known but never
- * screenshotted before). Phase 3 Stage 1 registers all of them except:
+ * ⚠️ ONE FACT, ONE HOME (`CLAUDE.md` §6). The ACCOUNTING for that batch —
+ * which ids this branch added, which were already registered, which are
+ * excluded, which is deferred — lives in `docs/product/figma-frame-map.md`
+ * § "Second capture batch (2026-08-23)" and the ✅ Registered note at the top
+ * of that file. It is deliberately NOT restated here: it was, once, and the
+ * two copies immediately disagreed. This block owns only the CLASSIFICATION
+ * that excluded a frame, which no other file records:
  *
  *   `335:1588`  Error state (right font) — pixel-identical to `218:15740`
  *               except one card's CTA label; a font/typography QA pass over
@@ -102,12 +137,14 @@ import type { ScreenEntry } from "./screen-registry-types";
  *               classification that already excludes its twin above.
  *
  * The hidden `346:6275` "Homepage" rectangle is not a Figma frame at all
- * (`hidden="true"`, decorative canvas noise) and was never a candidate.
+ * (`hidden="true"`, decorative canvas noise) and was never a candidate — it
+ * has no table row in the map, so it is outside the invariant too.
  *
  * `347:6277` (the new marketing-landing frame) is deliberately UNREGISTERED
  * pending an identity ruling — see the `landing-page` entry's comment below
- * and `mem:screen_registry_phase_3_run_state` §9.1. Not an exclusion: it is
- * an open decision, not a classification, and must not be resolved silently.
+ * and `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md`
+ * §9.1. Not an exclusion: it is an open decision, not a classification, and
+ * must not be resolved silently.
  */
 export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ===================================================================
@@ -794,8 +831,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ⛔ OPEN as of 2026-08-23 — do NOT resolve here. The second frame batch
   // includes `347:6277`, a full marketing landing page (figma-frame-map.md
   // § "New marketing homepage"). Whether it IS the design for this route
-  // (→ convert, like `register` above) or a DIFFERENT destination (→ its own
-  // row) is an identity question reserved to the user (spec §9.1). This row
+  // (→ convert, the way the `register` row below was) or a DIFFERENT
+  // destination (→ its own row) is an identity question reserved to the user
+  // (2026-08-23-screen-registry-phase-3-design.md §9.1). This row
   // is deliberately left untouched — kind, figmaNodeId and figmaCheckedAt
   // all stay exactly as they were before this frame was captured.
   {
@@ -993,9 +1031,14 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // batch (figma-frame-map.md § "Second capture batch (2026-08-23)" — Auth
   // flow table). Converted from repo-only. The has-a-ruling axis is
   // untouched by this conversion — decision-register.md still says nothing
-  // about /register, and the frame shows a "Continue with GitHub" button
-  // that conflicts with the Apple-yes/GitHub-no ruling; see spec §9.2 —
-  // NOT resolved here, must be settled before this screen is ported.
+  // about /register itself.
+  // ⚠️ The frame shows a "Continue with GitHub" button. That is NOT an open
+  // question: `decision-register.md` P14 rules "Auth = email + Google +
+  // Apple. GitHub: no" (confirmed still standing by the user 2026-08-25).
+  // Registering the frame records what Figma designed, never what may be
+  // built — the frame's content LOSES to P14 at port time, so whoever ports
+  // this screen must not build the GitHub button. `65:2` (login) shows the
+  // same button and the same ruling governs it.
   {
     screenId: "register",
     name: "Register",
@@ -1668,11 +1711,14 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
   // Same membership page with the payment-method dialog open. ⚠️ The frame
-  // offers PayOS + SePay + MoMo; the user ruled 2026-08-23 that PayOS-only
-  // stands (CLAUDE.md §3 unchanged — SePay/MoMo deferred, merchant
-  // registration). Registering this row records what Figma designed, not
-  // what may be built — whoever ports this screen MUST apply the
-  // PayOS-only ruling, not the frame's provider list.
+  // offers PayOS + SePay + MoMo. That is NOT an open question:
+  // `decision-register.md` P13 rules "Payment is PayOS" (confirmed still
+  // standing by the user 2026-08-25, who also re-affirmed it on 2026-08-23
+  // when this frame surfaced; CLAUDE.md §3 unchanged). SePay/MoMo are design
+  // exploration, deferred for merchant-registration reasons — see the note
+  // against P13 in the decision register. Registering this row records what
+  // Figma designed, not what may be built: whoever ports this screen MUST
+  // apply P13, not the frame's provider list.
   {
     screenId: "choose-method",
     name: "Choose method",

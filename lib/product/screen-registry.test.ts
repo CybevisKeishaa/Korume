@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SCREEN_REGISTRY } from "./screen-registry";
 
 describe("screen registry invariants", () => {
-  it("T3: figmaNodeId is present iff the entry is repo-only or spec-only", () => {
+  it("T3: figmaNodeId is null iff the entry is repo-only or spec-only", () => {
     for (const entry of SCREEN_REGISTRY) {
       if (entry.kind === "repo-only" || entry.kind === "spec-only") {
         expect(entry.figmaNodeId, entry.screenId).toBeNull();
@@ -111,7 +111,7 @@ describe("screen registry invariants", () => {
     for (const entry of SCREEN_REGISTRY) {
       if (entry.kind === "spec-only") {
         expect(entry.specRef, entry.screenId).not.toBeNull();
-        expect(entry.specRef as string, entry.screenId).toMatch(SPEC_REF_PATTERN);
+        expect(entry.specRef, entry.screenId).toMatch(SPEC_REF_PATTERN);
       } else {
         expect(entry.specRef, entry.screenId).toBeNull();
       }

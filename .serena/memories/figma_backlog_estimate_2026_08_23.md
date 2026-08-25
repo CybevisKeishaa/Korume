@@ -6,18 +6,22 @@
 
 ## Registry status (the direct answer to "đã lưu chưa")
 
-**NOT saved.** `lib/product/screen-registry.ts` still only has the pre-existing entries. Of the 13
-frames captured 2026-08-23, only 3 were already registered before this session (`65:2` Login,
-`337:3323` Data privacy, `339:3612` Delete data — all added earlier, for L9b Plan 1). **9 are still
-unregistered**: `332:3` Register, `333:210` Reset password, `335:306` Email OTP, `335:1976` Error404,
-`337:2055` Error boundary, `340:3795` Membership, `340:4586` Unsubcribe membership, `340:5402` Choose
-method, `347:6277` Homepage (marketing). `335:1588` (Error state, right font) should almost certainly
-be EXCLUDED like its twin `218:15740` (style-guide catalogue, not a screen — screen-registry.ts's own
-header comment already excludes `218:15740` for this exact reason, confirming the classification).
-Registering these 9 is small and mechanical (~1 short task) but deliberately not done without user
-review, per the standing "do not settle registry without review" instruction — it does touch `kind`/
-`navGroup` judgment calls (e.g. is Unsubcribe/Choose-method a `state-variant` of Membership, the way
-Delete data is of Data privacy?).
+⚠️ **SUPERSEDED — this paragraph said "NOT saved" and it is no longer true.** It was written on
+2026-08-23, before Screen Registry Phase 3 Stage 1 existed. **Stage 1 is now implemented** on branch
+`screen-registry-phase-3` (commits `467b7c1`…`d37027f`): the batch IS registered.
+
+**Read `mem:screen_registry_phase_3_run_state` for the authority, and
+`docs/product/figma-frame-map.md` § "Second capture batch (2026-08-23)" for the per-frame accounting
+— that file is the single home for it, so it is deliberately not restated here.** In one line: every
+frame in the batch is registered except `335:1588` (EXCLUDED — style-guide catalogue, same
+classification as its twin `218:15740`) and `347:6277` (DEFERRED — the marketing-homepage identity
+question is still reserved to the user). The `kind`/`navGroup` judgment calls this paragraph worried
+about were made and reviewed: Unsubcribe membership and Choose method are `state-variant`s of
+Membership, exactly the way Delete data is of Data privacy.
+
+**Consequence for the estimate below: the "9 newly-captured, still-unregistered frames" it counts as
+a separate bucket are no longer unregistered.** Registration was never build work, so the *build*
+estimate is unaffected — but do not re-plan "register the new frames" as an outstanding task.
 
 ## Backlog measured from the registry (2026-08-23)
 
@@ -90,8 +94,11 @@ homepage reconciliation) get answered promptly rather than stalling a plan mid-f
 
 1. **Answer the two open product rulings early** (Kanji explorer-vs-library, new-Homepage-vs-existing-`/`)
    — each currently blocks a whole plan from starting cleanly; answering them now removes a stall later.
-2. **Register the 9 new frames as one small standalone task before the big plans** — cheap, unblocks
-   Screen Registry Phase 3, and gives every downstream plan an accurate `figmaCheckedAt`.
+2. ✅ **DONE — the new frames are registered** (Screen Registry Phase 3 Stage 1, branch
+   `screen-registry-phase-3`). This lever has been spent; every downstream plan now has an accurate
+   `figmaCheckedAt` for them. One caveat that survives: `login`/`65:2` still carries the older
+   `2026-08-12` stamp, deliberately — nobody re-compared that row, and moving a stamp nobody earned
+   is what `G2` exists to prevent.
 3. **Build the payment code as a provider-agnostic port from day one** (mirrors `lib/ai`, `lib/email` —
    see `mem:korume-shared-infra-preference`), even though only the PayOS adapter ships now — avoids a
    rework pass when SePay/MoMo are added later.

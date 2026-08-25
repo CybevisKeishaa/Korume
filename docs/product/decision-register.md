@@ -35,6 +35,17 @@ the user's approval · `OPEN` = not decided.
 | P15 | **Native mobile apps are planned** — store badges are a roadmap statement | `capability-map.md` §3.5 |
 | P16 | **No landing/gateway page exists yet** — known and accepted, user will design it later | `screen-inventory.md` §19.0 |
 
+**Note against P13 — SePay and MoMo are design exploration; P13 was re-affirmed, not reopened.**
+Figma frame `340:5402` *Choose method* (captured 2026-08-23 — `figma-frame-map.md` § "Second capture
+batch (2026-08-23)", which holds the frame evidence) offers **three** providers: PayOS, SePay, MoMo.
+The user re-affirmed P13 when the frame surfaced (2026-08-23) and again on 2026-08-25: **PayOS-only
+stands and `CLAUDE.md` §3 is unchanged. SePay and MoMo are deferred for merchant-registration
+reasons** — the cost is registering as a merchant with each, not writing an adapter. Recorded here
+because that rationale previously existed only as a code comment on the `choose-method` row in
+`lib/product/screen-registry.ts`, which is not a place a product decision can be looked up. **A frame
+is not an authorisation:** `340:5402` is registered because its *identity* is a real screen, and its
+*content* loses to P13 at port time.
+
 ## 2. Information architecture — ✅ `LOCKED` (user approval, 2026-08-12)
 
 **The user reviewed A1–A13 and approved the block on 2026-08-12.** A14 and A15 were added the

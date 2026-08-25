@@ -5,17 +5,35 @@
 
 # ▶▶ RESUME HERE
 
-**Status: SPEC WRITTEN AND APPROVED IN BRAINSTORMING. NOTHING IMPLEMENTED. No code touched.**
+**Status: ✅ STAGE 1 IS IMPLEMENTED. ⛔ STAGE 2 IS GATED ON A USER RULING.**
 
 Branch **`screen-registry-phase-3`**, cut from `master` (which was at `8865aed`) on 2026-08-23.
-The only commit so far is the spec + docs + memories — **no `lib/` file has been modified**.
+**Nine commits on the branch:** the spec (`22da7d9`), the plan (`6208925`), then the seven
+implementation commits `467b7c1`…`d37027f` — plus the prose fix wave that followed the final
+whole-branch review. `lib/product/screen-registry.ts`, `lib/product/screen-registry.test.ts`,
+`lib/product/screen-registry-types.ts` and `lib/product/nav-derivation.test.ts` are all modified.
+**Not merged to `master` yet** — Stage 2 is still owed on this branch.
+
+⚠️ **Do NOT re-do Stage 1.** Everything the spec's §4, §5 and §8 asks for is done: `spec-only` is a
+`ScreenKind`, `specRef` is the 13th field, T3 is widened, T12 and T13 exist, R12's pin is 13 and G2's
+pins are re-measured, and the 2026-08-23 frame batch is registered. This memory previously said
+"NOTHING IMPLEMENTED" and pointed at `superpowers:writing-plans`; that was written before any of it
+and was left stale for eight commits. It is the exact failure a resuming session would act on.
+
+**Gate measured on `d37027f` (not asserted — see `.superpowers/sdd/…/final-gate-*.log`):**
+`tsc --noEmit` 0 errors · `next lint` 0 errors (warning baseline unchanged) · `vitest run`
+**262 files / 2368 tests passed**, exit 0 · `next build` exit 0. **Playwright was deliberately NOT
+run** — the branch touches no `app/` route and no rendered component.
+
+**THE NEXT STEP IS NOT AN ENGINEERING TASK.** It is the spec's **§6 discovery-pass gate**: a scan of
+`japanese-learning-app-spec.md` + `decision-register.md` produces a candidate list, and **the user
+rules it** (§6.6). No `spec-only` row may be written before that ruling — which is why a registry
+holding **zero** `spec-only` rows today is CORRECT, not incomplete. Stage 2 (§7) then writes the
+approved rows, adds the non-vacuity assertions to T12/T13, runs the full gate, takes a whole-branch
+review, and merges.
 
 **Read `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md` first — it is complete
 and self-contained.** This memory records the process state and the reasoning that did not fit there.
-
-**The next step is `superpowers:writing-plans`** to turn the spec into an implementation plan. The
-brainstorming skill's terminal state was reached: design approved → spec written → user approved the
-approach. Do **not** start implementing without a plan.
 
 ## What Phase 3 is
 
@@ -98,23 +116,29 @@ away by an implementer:
 - **Stage 2:** add `expect(specOnly.length).toBeGreaterThan(0)` once real rows exist.
 - T3's widening is also a guard over existing code → cannot fail first → mutation-check it too.
 
-## The frame batch — 9 frames, and it is NOT purely mechanical
+## The frame batch — NOT purely mechanical (✅ all of this is DONE, at `dc917dc`)
 
-Full per-frame detail: the spec §5, and `docs/product/figma-frame-map.md` § "Second capture batch".
-Summary:
+Full per-frame detail: the spec §5, and `docs/product/figma-frame-map.md` § "Second capture batch"
+— which is also the **single home for the batch accounting** (added / already-registered / excluded
+/ deferred). Do not restate those figures here or in the registry header; they disagreed once
+already. Summary of what Stage 1 did:
 
-- **2 CONVERSIONS** (R6 firing for the first time — `repo-only` is an observation with a date, not a
-  permanent verdict): `register` gains frame `332:3` ✅ approved; `landing-page` ⛔ **BLOCKED, see
-  below**.
-- **5 new `screen` rows**, all `impl: 'none'`: Reset password `333:210` · Email OTP `335:306` ·
-  Error404 `335:1976` · Error boundary `337:2055` · Membership `340:3795`.
-- **2 new `state-variant` rows**, `variantOf: 'membership'`: Unsubcribe membership `340:4586` ·
+- **CONVERSION** (R6 firing for the first time — `repo-only` is an observation with a date, not a
+  permanent verdict): ✅ `register` gained frame `332:3`. The second candidate conversion,
+  `landing-page` ← `347:6277`, was ⛔ **NOT made** — see the open decision below. That row's `kind`,
+  `figmaNodeId` and `figmaCheckedAt` are byte-identical to what they were before the capture.
+- **New `screen` rows**, all `impl: 'none'`, all stamped `2026-08-23`: Reset password `333:210` ·
+  Email OTP `335:306` · Error404 `335:1976` · Error boundary `337:2055` · Membership `340:3795`.
+- **New `state-variant` rows**, `variantOf: 'membership'`: Unsubcribe membership `340:4586` ·
   Choose method `340:5402`.
-- **1 EXCLUSION**: `335:1588` Error state (right font) — style-guide catalogue, same classification
-  that already excludes its twin `218:15740`. Must be typed into the registry header's exclusion list,
+- **EXCLUSION**: `335:1588` Error state (right font) — style-guide catalogue, same classification
+  that already excludes its twin `218:15740`. ✅ Typed into the registry header's exclusion list,
   because no test can catch a frame nobody ever entered.
 
-## ⛔ TWO OPEN DECISIONS — the implementer must NOT resolve either
+## ⛔ ONE OPEN DECISION — still unresolved after Stage 1, and reserved to the user
+
+⚠️ **This section listed TWO. The second (the GitHub sign-in button) was never actually open** — see
+the correction below it. Only the `landing-page` identity question remains.
 
 1. **`landing-page` vs frame `347:6277`** — an IDENTITY question reserved to the user. Is `347:6277`
    the design for the existing `/` route (→ convert the row like `register`), or a *different*
@@ -122,14 +146,21 @@ Summary:
    "Homepage": `111:515` (registered as `dashboard`), `347:6277`, and `346:6275` — the last is a
    **hidden `rounded-rectangle`, decorative noise, NEVER to be registered**. Useful evidence to gather
    before the ruling (gathering ≠ resolving): render `/` and compare section by section.
-2. **The GitHub sign-in button** — `capability-map.md` §3 ruled **"Apple yes, GitHub no"**, yet frames
-   `332:3` and `65:2` both show "Continue with GitHub". Amendment C **case 3** ("a section for a
-   capability a ruling has removed") → STOP and ask. Does NOT block Stage 1 (registering a frame is not
-   authorising its content), but MUST be settled before the auth screens are ported.
+✅ **CORRECTION (user, 2026-08-25) — the GitHub sign-in button was NEVER an open decision, and this
+memory was wrong to list it as one.** Frames `332:3` and `65:2` both show "Continue with GitHub", and
+`decision-register.md` **P14** already reads *"Auth = email + Google + Apple. GitHub: no"*. The user
+confirmed P14 still stands. So this is not an Amendment C case 3 escalation awaiting a ruling — the
+ruling pre-dates the frame. It is an ordinary **frame-content-loses-to-ruling** case: register the
+frame, do NOT build the button when the auth screens are ported. Cite **P14**, not "spec §9.2".
 
-Related but already ruled: `choose-method` shows PayOS + SePay + MoMo while the user ruled PayOS-only
-on 2026-08-23. The frame's *identity* is valid so it IS registered; its *content* loses to the ruling
-at port time. The row carries a comment saying so.
+Same shape, same 2026-08-25 confirmation: `choose-method` (`340:5402`) shows PayOS + SePay + MoMo,
+and **P13** (*"Payment is PayOS"*) rules it. SePay/MoMo are design exploration, deferred for
+merchant-registration reasons — now recorded as a note against P13 in the decision register, not
+only in a code comment. The frames' *identity* is valid so both ARE registered; their *content*
+loses to P13/P14 at port time, and each row carries a comment saying so.
+
+⚠️ **Neither of the above makes the `landing-page` question settled.** That one has no ruling and
+stays open everywhere.
 
 ## Corrections this session made to earlier claims
 
@@ -141,6 +172,66 @@ at port time. The row carries a comment saying so.
   `screen-inventory.md` § **Amendment C** (cases 1–4), which is sharper — Amendment C lets you fix
   wrong *content* silently inside the frame's template (case 2) and only stops for *identity/semantics*
   contradictions (case 3), whereas the proposal would have stalled on every content mismatch.
+
+## ⭐ Stage 1 execution ledger — rulings, corrections, deferrals
+
+⚠️ **Why this section exists.** The SDD ledger for Stage 1 lives in
+`.superpowers/sdd/2026-08-25-screen-registry-phase-3-stage-1/`, and **`.superpowers/` is gitignored**
+(`.gitignore:61`). Every ruling below would have evaporated at merge. The user ruled on 2026-08-25
+that they belong in this memory, which travels with the repo. Same failure mode A16 already paid for
+("the only record of a dead route lived in a gitignored progress file and nobody could find it").
+
+**Controller rulings (execution, not product — none of them touches the registry's data):**
+
+1. **No worktree.** Work stayed in the main checkout on branch `screen-registry-phase-3`. This repo
+   has three recorded worktree hazards: `L-020` (a worktree has no `.env.local`, breaking
+   auth-dependent tests), `L-021` (`EnterWorktree` branches from `origin`, wrong for a repo that
+   never pushes), `L-016` (worktree runs need controller git re-verification after every dispatch).
+   The branch already existed, was clean, and was not `master`.
+2. **Implementer model floor raised to `sonnet`**, overriding the cheap-tier guidance, even though
+   every task carried complete literal code. `L-016`'s own evidence is a haiku-tier implementer
+   committing to **`master` in this repo** with the full prompt pattern already in place. Reviewers
+   ran on `sonnet`; the final whole-branch review on `opus`.
+3. **`lib/product/nav-derivation.test.ts` was accepted into Task 1 though the plan's file list
+   omitted it.** It builds a `ScreenEntry` object literal — the only other one in the repo — so `tsc`
+   requires `specRef` there too. The implementer added exactly that one line unprompted; accepted
+   because the type change requires it and it asserts nothing new. Recorded as a *plan* defect.
+4. **Task 5's one Minor was folded into Task 6's dispatch** rather than opening a fix round or
+   deferring it to the final review. (G2's comment said "the split between the two dates" while the
+   pinned object had grown to three.) Task 6 was the next dispatch and already a documentation task,
+   so it rode along and still passed through Task 6's own review.
+
+**Two claims made during execution that measurement proved FALSE. Do not inherit either.**
+
+- ❌ *"The full test suite exceeds the 600-second subagent Bash cap."* **False.** Measured: the suite
+  runs in **~72s wall** (and 63.99s in the final gate). The real cause of both harness kills was
+  **output volume under vitest's default reporter**, not duration — `npx vitest run --reporter=dot`
+  completes cleanly. Consequence: implementer subagents **can** run the full suite here, with
+  `--reporter=dot`. The ruling built on the false premise (controller runs the suite) was harmless,
+  but its reason was wrong (`L-012`).
+- ❌ The plan's **Task 3, Step 5** says setting `specRef` on a `kind: "screen"` row would *"also"*
+  fail `R12` *"because there are now 14 keys"*. **False.** Task 1 had already backfilled
+  `specRef: null` onto all **81** then-existing rows, so the mutation changed a **value**, not the
+  key set; `R12` correctly stayed green and only `T13` went red — which is exactly what the
+  mutation-check was for. The plan file carries this correction inline (it is committed and outlives
+  this ledger).
+
+**Deferred to a later pass — NOT this branch's work:**
+
+- **The canvas / parallel-worker flake family.** `components/video-player/waveform.test.tsx` and
+  `components/video-player/pitch-contour.test.tsx` both pass standalone (waveform: 6/6 across three
+  standalone runs) and both fail only under the parallel full-suite run. `pitch-contour` was already
+  recorded in `mem:screen_registry_phase_2b_run_state` as a single-file flake worth its own ticket;
+  Stage 1 **widened it to two files**, both canvas-based video-player tests, which narrows the
+  hypothesis to **canvas mocking under parallel workers**. Structurally unrelated to anything this
+  branch touched. Treat a hit as a known flake: re-run the file alone, record both outputs, move on.
+- **`login`/`65:2`'s stale `figmaCheckedAt: "2026-08-12"`** — see `figma-frame-map.md`'s ⚠️ residual
+  debt note. Deliberately not "fixed", because moving a stamp nobody re-earned is the dishonesty G2
+  exists to catch.
+
+**Lessons are NOT written yet.** `docs/lessons.md` gets this branch's entries **after Stage 2**, at
+the true end of the branch (user, 2026-08-25) — this project writes lessons once, per `CLAUDE.md`
+§10. The candidates are in this section; do not append them early.
 
 ## Related
 

@@ -376,6 +376,13 @@ Expected: FAIL — `T13` fails on `dashboard` (non-null `specRef` on a `kind: "s
 expect R12 to fail here too (14 keys now) — that's a bonus confirmation, not the point of this check.
 **Record this output.**
 
+> ⚠️ **CORRECTION, measured during execution — "R12 fails too (14 keys now)" is FALSE.** Task 1
+> Step 5 had already backfilled `specRef: null` onto all **81** then-existing rows, `dashboard`
+> included. This mutation therefore changes a **value**, not the key set, so `R12` stays green and
+> only `T13` goes red — which is precisely what this mutation-check is for. Do not treat a green
+> `R12` here as the check having failed to bite. (Recorded inline because the SDD ledger that would
+> otherwise hold it lives under the gitignored `.superpowers/`.)
+
 Remove the `specRef: "decision-register.md A1",` line from `dashboard` again.
 
 Run: `npm test -- lib/product/screen-registry.test.ts`

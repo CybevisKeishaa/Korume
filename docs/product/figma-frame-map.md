@@ -13,7 +13,8 @@
 > + the 1 hidden rectangle). **Never quote a count from this file — enumerate** (`L-002`).
 >
 > ✅ **Registered 2026-08-23** (Screen Registry Phase 3 Stage 1): of the 14 node ids in the batch
-> section below (the 13 previously-uncaptured frames plus `347:6277`), **8 rows were added or
+> section below — the 12 frames the 2026-08-20 note listed as absent, plus **two** that have been in
+> this map since 2026-08-11 but had never been screenshotted, `218:15740` and `65:2` — **8 rows were added or
 > converted by this batch** — `register`/`332:3` (converted from `repo-only`), plus 5 new `screen`
 > rows (`reset-password`/`333:210`, `email-otp`/`335:306`, `error404`/`335:1976`,
 > `error-boundary`/`337:2055`, `membership`/`340:3795`) and 2 new `state-variant` rows
@@ -25,8 +26,11 @@
 > `335:1588` (a font/typography QA pass over the same sheet as `218:15740`, not a distinct screen).
 > **1 remains deliberately unregistered**: `347:6277` (the new marketing homepage) — an identity
 > ruling against the existing `landing-page` row is still owed, see that row's comment and
-> `mem:screen_registry_phase_3_run_state` §9.1. The GitHub sign-in button conflict (spec §9.2) is
-> also still open and must be settled before the auth screens are ported.
+> `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md` §9.1. **This is the one
+> genuinely open question in this batch.** The GitHub sign-in button on `332:3`/`65:2` is **not** one:
+> `decision-register.md` **P14** ("Auth = email + Google + Apple. GitHub: no") already rules it, and
+> the user confirmed on 2026-08-25 that P14 still stands. The frame's content loses to P14 at port
+> time — register the frame, do not build the button.
 >
 > ⚠️ **Residual debt this batch did NOT close:** `login`/`65:2`'s row still carries
 > `figmaCheckedAt: "2026-08-12"`, but this file records `65:2` as screenshotted for the first time
@@ -239,7 +243,7 @@ In Figma's **Layers panel**, click a frame, then `Shift`+click the fifteenth bel
 contiguous run of 15. Say the word, and `get_metadata` is called with **no `nodeId`** (which stays
 cheap — it only lists pages) to read the prepended selection block. Repeat until every frame has an id.
 
-## Second capture batch (2026-08-23) — the 13 previously-uncaptured frames
+## Second capture batch (2026-08-23)
 
 All screenshotted at `maxDimension: 900` and visually reviewed. Node ids, sizes, and a content summary
 per frame. These sit in a new canvas region (x ≈ -11126..3789, y ≈ 8318..9581), well away from the
@@ -256,20 +260,28 @@ original 57-frame cluster — the user has clearly been designing a new batch, n
 All four share the same split layout (left: brand copy + Eevee-line mascot art + quote; right: dark
 card form) — one consistent design language, ready to port as a set.
 
-### Payment / billing (Layer 8 territory) — ⚠️ surfaces a stack conflict, see below
+### Payment / billing (Layer 8 territory) — the frame's provider list is overruled by P13, see below
 | Node id | Frame | Size | Summary |
 |---|---|---|---|
 | `340:3795` | Membership | 1280×1176 | Full `/settings/membership` page: active plan card ("Travel Together for a Year", 490.000đ/year, started/renews dates, Change/Cancel), "What's included" (8 items: AI Sensei, Unlimited Lesson Creation, Learning Memory, Personalized Roadmap, Intelligent Review Planning, Native Pronunciation Analysis, AI Conversation Partner, Weakness Coaching), payment-method row, transaction history, contact/help block. |
 | `340:4586` | Unsubcribe membership | 1280×1176 | Same page with a "Leave Korume for now?" cancellation dialog open — states the plan stays active until the paid-through date, "Cancellation stops renewal. It does not remove your access today." |
 | `340:5402` | Choose method | 1280×1176 | Same page with a **"Choose how you'd like to pay"** dialog open, listing three providers: **PayOS** ("Simple QR / payment gateway", pre-selected), **SePay** ("Bank payment"), **MoMo** ("Mobile payment"). |
 
-⚠️ **`340:5402` directly conflicts with `CLAUDE.md` §3: "Payments: PayOS subscriptions, no trial."**
-The design now offers three payment providers, not one. This is a product/stack decision, not
-something to resolve by inventory alone — **flagging per CLAUDE.md §2's "if a task appears to require
-breaking one of these, STOP and surface it to the user," treated here as the design-time equivalent.**
-Needs a ruling: (a) PayOS-only stands, treat SePay/MoMo as design exploration not to be built, or
-(b) the payment stack decision is now multi-provider and `CLAUDE.md` §3 needs updating. **Not decided
-here — escalated, see chat.**
+⚠️ **`340:5402` shows three payment providers where `CLAUDE.md` §3 says one** ("Payments: PayOS
+subscriptions, no trial"). It was escalated per `CLAUDE.md` §2, and **it is settled — it was already
+settled before the frame existed.** `decision-register.md` **P13** reads *"Payment is PayOS. No
+Stripe, no Visa, no Apple Pay."* The user re-affirmed it when this frame surfaced (2026-08-23) and
+again on **2026-08-25**:
+
+- **PayOS-only stands. `CLAUDE.md` §3 is unchanged.**
+- **SePay and MoMo are design exploration and are not to be built** — deferred for
+  merchant-registration reasons (the cost is registering as a merchant with each, not writing an
+  adapter). Recorded as a note against P13 in `decision-register.md`.
+- Layer 8 consequence: shape the payment integration as a provider-agnostic port from day one
+  (mirroring `lib/ai` and `lib/email`), but ship the **PayOS adapter alone**.
+
+Registering `340:5402` in the screen registry records what Figma *designed*; its provider list loses
+to P13 at port time. **This is not an open question and must not be re-escalated as one.**
 
 ### Error-state system — one design-system reference sheet, one real 404, one real in-app boundary, one likely-duplicate
 | Node id | Frame | Size | Summary |

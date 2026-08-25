@@ -43,15 +43,21 @@ This block must not restate it.**
 Phase 0 is COMPLETE AND CLOSED and **Screen Registry Phases 1a, 1b, 2a and 2b are all built and
 merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`).
 
-⭐ **Screen Registry Phase 3 IS NOW SCOPED — and it is the LIVE next action (2026-08-23).** The design
-is written and approved; **nothing is implemented**. Branch `screen-registry-phase-3` holds only the
-spec. **The next step is `superpowers:writing-plans`, not implementation.**
+⭐ **Screen Registry Phase 3 — ✅ STAGE 1 IS IMPLEMENTED, ⛔ STAGE 2 IS GATED (2026-08-25).** Branch
+`screen-registry-phase-3`, nine commits, not merged. Stage 1 shipped the type change, the five test
+changes, and the 2026-08-23 frame batch; the branch gate was measured green (tsc 0 · lint 0 errors ·
+262 test files / 2368 tests · `next build` exit 0; Playwright deliberately not run).
 **Read `mem:screen_registry_phase_3_run_state` — it is the authority. This block must not restate it.**
-In one line: `spec-only` becomes a `ScreenKind` and `specRef` a 13th field, so the registry can record
+In one line: `spec-only` is now a `ScreenKind` and `specRef` the 13th field, so the registry can record
 a destination the spec requires that has neither a Figma frame nor an implementation — turning it from
-a Figma map into a product-surface ↔ design ↔ implementation map. Two decisions are deliberately left
-OPEN for the user (`landing-page` vs frame `347:6277`; the GitHub sign-in button vs the "Apple yes,
-GitHub no" ruling) and must not be resolved by the implementer.
+a Figma map into a product-surface ↔ design ↔ implementation map.
+**The next step is NOT engineering.** It is the spec's §6 discovery-pass gate: produce the candidate
+list, and **the user rules it**. Until then, zero `spec-only` rows is the CORRECT state.
+⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
+`347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
+The GitHub sign-in button was previously listed alongside it and **should not have been** — that one
+is ruled by `decision-register.md` **P14** ("Auth = email + Google + Apple. GitHub: no"), confirmed
+still standing by the user 2026-08-25; the frame's content simply loses to P14 at port time.
 
 **⭐ `feat/email-notification-system` MERGED to master `8865aed`, 2026-08-23** (branch kept; merged
 master verified green: tsc 0, 262 files / 2366 tests). Closed both of L9b's "two product decisions"
@@ -87,10 +93,13 @@ saw. Do not re-litigate them, or decisions 2–3.
 `218:15740`, never screenshotted before) are now captured and reviewed — auth flow, Layer 8
 billing UI, error-state system, and a new marketing homepage. **Read `mem:figma_recapture_2026_08_23_run_state`
 first.** Its payment-provider question is RULED: PayOS-only stands for now (`CLAUDE.md` §3
-unchanged); when Layer 8 is built, shape the payment code as a provider-agnostic port from day one
-(mirrors `lib/ai`/`lib/email`) but ship only the PayOS adapter — SePay/MoMo are deferred (complex
-merchant registration). Registry rows still don't know about these frames (`figmaCheckedAt` still
-overstates comparison) — that closes only when Screen Registry Phase 3 runs.
+unchanged — it was `decision-register.md` **P13** all along, re-affirmed 2026-08-25, and there is now
+a note against P13 recording the rationale); when Layer 8 is built, shape the payment code as a
+provider-agnostic port from day one (mirrors `lib/ai`/`lib/email`) but ship only the PayOS adapter —
+SePay/MoMo are deferred (complex merchant registration). ✅ **The registry now knows about these
+frames** — Screen Registry Phase 3 Stage 1 registered the batch (see the Phase 3 block above). The
+one row whose `figmaCheckedAt` still overstates comparison is `login`/`65:2`, deliberately left at
+`2026-08-12` because nobody re-compared it.
 
 **⚠️ Standing instruction that survives all of the above: do NOT settle navbar/routes/registry without
 the user's review.** ("Do not port any screen yet" is retired — the IA is locked and the registry
