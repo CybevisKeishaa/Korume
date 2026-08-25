@@ -5,15 +5,30 @@
 
 # ▶▶ RESUME HERE
 
-**Status: ✅ STAGE 1 IS IMPLEMENTED. ⛔ STAGE 2 IS GATED ON A USER RULING.**
+**Status: ✅ STAGE 1 IMPLEMENTED. ✅ STAGE 2 CLOSED WITH ZERO ROWS (user ruling, 2026-08-25).
+⛔ NOT MERGED — the only work left on this branch is a final review pass and the merge itself.**
 
 Branch **`screen-registry-phase-3`**, cut from `master` (which was at `8865aed`) on 2026-08-23.
 **Commit range `8865aed..HEAD`** (count with `git rev-list --count 8865aed..HEAD` — never write the
 total, L-002): the spec (`22da7d9`), the plan (`6208925`), the seven implementation commits
-`467b7c1`…`d37027f`, and the prose fix wave (`4043a74`) that followed the final whole-branch review.
+`467b7c1`…`d37027f`, the prose fix wave (`4043a74`) that followed the final whole-branch review, and
+the Stage 2 close-out.
 `lib/product/screen-registry.ts`, `lib/product/screen-registry.test.ts`,
 `lib/product/screen-registry-types.ts` and `lib/product/nav-derivation.test.ts` are all modified.
-**Not merged to `master` yet** — Stage 2 is still owed on this branch.
+
+⚠️ **Do NOT re-run the Stage 2 discovery pass, and do NOT go looking for `spec-only` rows to add.**
+The pass ran 2026-08-25 and the user ruled the result. **The authority for the outcome and its
+evidence is the spec's new §6.7** (`docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md`)
+— read that, do not restate it here. In one line: one candidate (Onboarding, spec §3.1) reached the
+user and was **rejected by looking at Figma** — `111:1556` QuickStart already carries level, learning
+purpose and daily pace, so the surface is covered, not missing. **Zero `spec-only` rows is the final
+Phase 3 state, not an unfinished one.**
+
+Two items §6.7 deliberately pushed OUT of Phase 3, both still owed elsewhere: `figma-frame-map.md`
+wrongly files frame `111:515` under the onboarding cluster when it is the returning-user Dashboard
+(fix opportunistically); and spec §3.1's "placement quiz 10 câu" versus QuickStart's single
+self-assessment is a **port-time** question about whether `users.level` means self-declared or
+measured — `/lib/difficulty` consumes it, so the two concepts must not be silently merged.
 
 ⚠️ **Do NOT re-do Stage 1.** Everything the spec's §4, §5 and §8 asks for is done: `spec-only` is a
 `ScreenKind`, `specRef` is the 13th field, T3 is widened, T12 and T13 exist, R12's pin is 13 and G2's

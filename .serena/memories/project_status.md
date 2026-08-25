@@ -43,7 +43,7 @@ This block must not restate it.**
 Phase 0 is COMPLETE AND CLOSED and **Screen Registry Phases 1a, 1b, 2a and 2b are all built and
 merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`).
 
-⭐ **Screen Registry Phase 3 — ✅ STAGE 1 IS IMPLEMENTED, ⛔ STAGE 2 IS GATED (2026-08-25).** Branch
+⭐ **Screen Registry Phase 3 — ✅ STAGE 1 IMPLEMENTED, ✅ STAGE 2 CLOSED AT ZERO ROWS, ⛔ NOT MERGED (2026-08-25).** Branch
 `screen-registry-phase-3`, commit range `8865aed..HEAD` (count with
 `git rev-list --count 8865aed..HEAD`), not merged. Stage 1 shipped the type change, the five test
 changes, and the 2026-08-23 frame batch; the branch gate was measured green (tsc 0 · lint 0 errors ·
@@ -52,8 +52,11 @@ changes, and the 2026-08-23 frame batch; the branch gate was measured green (tsc
 In one line: `spec-only` is now a `ScreenKind` and `specRef` the 13th field, so the registry can record
 a destination the spec requires that has neither a Figma frame nor an implementation — turning it from
 a Figma map into a product-surface ↔ design ↔ implementation map.
-**The next step is NOT engineering.** It is the spec's §6 discovery-pass gate: produce the candidate
-list, and **the user rules it**. Until then, zero `spec-only` rows is the CORRECT state.
+**Stage 2's discovery pass RAN on 2026-08-25 and the user ruled it: ZERO `spec-only` rows.** Do not
+re-run it and do not hunt for rows to add. The outcome and its evidence live in the spec's **§6.7**;
+the run-state memory points there and neither restates it. The one candidate (Onboarding) was
+rejected by *looking at* Figma — QuickStart `111:1556` already carries level, purpose and daily pace.
+**The only work left on this branch is a final review pass and the merge.**
 ⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
 `347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
 The GitHub sign-in button was previously listed alongside it and **should not have been** — that one

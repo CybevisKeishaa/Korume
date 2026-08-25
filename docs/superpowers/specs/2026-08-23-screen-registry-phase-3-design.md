@@ -2,9 +2,10 @@
 
 > **Status:** approved in brainstorming 2026-08-23. **Stage 1 (§4, §5, §8) is IMPLEMENTED** on branch
 > `screen-registry-phase-3` — the seven implementation commits `467b7c1`…`d37027f`, on top of this
-> spec (`22da7d9`) and the plan (`6208925`). **Stage 2 (§7) is still GATED** on §6's discovery pass,
-> which ends in a user ruling, not an engineering task — so a registry holding **zero** `spec-only`
-> rows is the CORRECT state today, not an unfinished one.
+> spec (`22da7d9`) and the plan (`6208925`). **Stage 2 (§7) is CLOSED with ZERO rows** — §6's
+> discovery pass ran 2026-08-25 and the user ruled the outcome the same day. **Read §6.7 for the
+> result and its evidence.** A registry holding zero `spec-only` rows is the CORRECT and now FINAL
+> state for Phase 3, not an unfinished one.
 > **Predecessors:** `2026-08-08-screen-registry-design.md` (R1–R13, T1–T11) ·
 > `2026-08-13-screen-registry-phase-2a-design.md` (the observation/decision axis split, G3) ·
 > `2026-08-14-screen-registry-phase-2b-design.md`.
@@ -338,6 +339,60 @@ before the pass runs is guessing.
 The user rules the candidate list. **No `spec-only` row is written before that ruling.** If the list
 is short and uncontentious, the ruling can happen in chat; a long or contentious list gets a written
 proposal. The gate is the approval, never the artifact.
+
+### 6.7 ✅ OUTCOME — the pass ran 2026-08-25 and yielded **zero** `spec-only` rows
+
+**User ruling, 2026-08-25: Stage 2 closes with no rows written.** §6.5 anticipated this outcome and
+required it be reported with its evidence rather than as silence — this section is that report.
+
+**Method actually used**, matching §6.1–§6.4: both allowed sources read end to end (`wc -l` first —
+they are small, as §6.1 predicted); the three Figma-derived sources never opened; the result
+cross-referenced against the registry at HEAD, the `page.tsx` set on disk, and the node list in
+`figma-frame-map.md`.
+
+**One candidate survived the three tests of §6.2 far enough to reach the user: Onboarding**
+(`japanese-learning-app-spec.md §3.1`). It passed test 1 — §2's directory tree names `onboarding`
+alongside `login` and `register`, and §4's schema carries `users.level`, `target_goal` and
+`daily_minutes`, three columns only an onboarding surface fills. It passed test 3, and the measurement
+is worth keeping: **`target_goal` and `daily_minutes` appear only in migrations — nowhere in `app/`,
+`components/` or `lib/`** (positive control fired on `avatar_url`, per `L-019`). The columns exist and
+nothing writes them.
+
+**It failed test 2, and Figma settled it — by picture, not by name.** `M7` forbids inferring a frame's
+identity from its name, so the four frames of the so-called onboarding cluster were screenshotted and
+read. **`111:1556` QuickStart carries all three requirements in one frame**, marked "Step 2 of 5":
+*"What best describes you today?"* (5 level options) → `users.level`; *"What brings you here?"*
+(11 purpose tags) → `target_goal`; *"How would you like learning to fit into your day?"* (Casual
+5-10 / Steady 15-20 / Intensive 30-60 min) → `daily_minutes`. `111:1877` ("Building your Study
+Sanctuary…", with a *"Understanding your current level"* checklist) and `111:1963` ("Everything is
+ready. → Enter Korume") confirm a complete flow. **Onboarding is a capability already covered by an
+existing Figma destination, not a missing one.**
+
+**Two findings from that verification, both deliberately kept OUT of Phase 3:**
+
+1. **`figma-frame-map.md` mischaracterises `111:515`.** It calls that frame part of the
+   "QuickStart/Generate-sensei onboarding cluster". Looked at, `111:515` is the **returning-user
+   Dashboard** — "Welcome back", Continue Learning, a 12-day streak, Today's Mission, Weakness
+   Snapshot. The registry is right (it registers `111:515` as `dashboard`); only the frame map's prose
+   is wrong, and it is wrong for the exact reason `M7` exists — the frame was grouped by **canvas
+   proximity** rather than by being read. Fix it in whatever pass next edits that file.
+2. **Spec §3.1 says "placement quiz ngắn 10 câu"; QuickStart asks one self-assessment question.**
+   Per `M13` the presentation is Figma's to choose, so this is not a Phase 3 question. It is flagged
+   for **port time** because the two are not the same datum: a self-declared level and a measured
+   level differ, and `/lib/difficulty` (the i+1 engine, `CLAUDE.md` §5 priority 2) consumes
+   `users.level`. **Do not silently collapse the two concepts** when this screen is ported.
+
+**What this result does and does not license.** It answers the question that opened Phase 3 —
+*"Figma vẫn chưa thật sự gen tất cả màn hình… nó có thể là vẫn chưa phủ hết"* — with: **within the
+discovery method fixed in §6.1–§6.4, no required destination was found lacking both a frame and an
+implementation.** It is **not** a claim that Figma covers everything. The method sees only what the
+spec states in words, and §6.1 deliberately bars the three documents that could compensate, because
+they are derived from Figma and would make the question circular. That blind spot is the known price
+of non-circularity, not an oversight — and it is the reason this outcome is stated as a scoped
+measurement rather than as reassurance.
+
+**`landing-page` vs `347:6277` is NOT settled by this.** It is a separate identity question (§9.1),
+still open, and the zero result above must never be cited as having resolved it.
 
 ---
 
