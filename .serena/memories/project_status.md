@@ -54,9 +54,10 @@ In one line: `spec-only` is now a `ScreenKind` and `specRef` the 13th field, so 
 a destination the spec requires that has neither a Figma frame nor an implementation — turning it from
 a Figma map into a product-surface ↔ design ↔ implementation map.
 **Stage 2's discovery pass RAN on 2026-08-25 and the user ruled it: ZERO `spec-only` rows.** Do not
-re-run it and do not hunt for rows to add. The outcome and its evidence live in the spec's **§6.7**;
-the run-state memory points there and neither duplicates that evidence. The one candidate (Onboarding) was
-rejected by *looking at* Figma — QuickStart `111:1556` already carries level, purpose and daily pace.
+re-run it and do not hunt for rows to add. Why the pass ended at zero, which candidate reached the
+user, and what rejected it are **in the spec's §6.7** — deliberately not repeated here, because a
+second copy of that reasoning is what the header above forbids and what a later reader would then
+have to reconcile.
 **The only work left on this branch is a final review pass and the merge.**
 ⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
 `347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
