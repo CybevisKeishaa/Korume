@@ -77,6 +77,26 @@ describe("screen registry invariants", () => {
     }
   });
 
+  it("T12: spec-only is the empty cell — no frame, route, chrome, variant, repo-only reason, stamp, or nav", () => {
+    const specOnly = SCREEN_REGISTRY.filter((e) => e.kind === "spec-only");
+    // Vacuous by construction in Stage 1: zero spec-only rows exist yet
+    // (spec §5.6). Proven instead by mutation-check (see the Stage 1 plan) —
+    // CLAUDE.md §7, spec §8.2. Stage 2 adds:
+    //   expect(specOnly.length).toBeGreaterThan(0);
+    // once real rows exist — not before, since zero is the correct count now.
+    for (const entry of specOnly) {
+      expect(entry.figmaNodeId, entry.screenId).toBeNull();
+      expect(entry.route, entry.screenId).toBeNull();
+      expect(entry.chrome, entry.screenId).toBeNull();
+      expect(entry.impl, entry.screenId).toBe("none");
+      expect(entry.variantOf, entry.screenId).toBeNull();
+      expect(entry.repoOnlyReason, entry.screenId).toBeNull();
+      expect(entry.figmaCheckedAt, entry.screenId).toBeNull();
+      expect(entry.navGroup, entry.screenId).toBeNull();
+      expect(entry.navOrder, entry.screenId).toBeNull();
+    }
+  });
+
   it("T13: specRef is present iff spec-only, and matches an allowed citation shape", () => {
     // Only two sources are valid scan targets for Phase 3 (spec §6.1): the
     // product spec and the decision register. A loose `/\.md §/` pattern is
