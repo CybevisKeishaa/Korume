@@ -12,13 +12,28 @@
 > screenshotted individually. Page-wide count as of 2026-08-23: **70 top-level nodes** (69 real frames
 > + the 1 hidden rectangle). **Never quote a count from this file — enumerate** (`L-002`).
 >
-> ✅ **Registered 2026-08-23** (Screen Registry Phase 3 Stage 1): 11 of the 13 previously-uncaptured
-> frames are now rows in `lib/product/screen-registry.ts` — `register` (converted from `repo-only`),
-> plus 5 new `screen` rows and 2 new `state-variant` rows. `335:1588` is excluded (registry header —
-> style-guide duplicate of `218:15740`). `347:6277` (the new marketing homepage) is deliberately NOT
-> registered — an identity ruling against the existing `landing-page` row is still owed, see that row's
-> comment and `mem:screen_registry_phase_3_run_state` §9.1. The GitHub sign-in button conflict (spec
-> §9.2) is also still open and must be settled before the auth screens are ported.
+> ✅ **Registered 2026-08-23** (Screen Registry Phase 3 Stage 1): of the 14 node ids in the batch
+> section below (the 13 previously-uncaptured frames plus `347:6277`), **8 rows were added or
+> converted by this batch** — `register`/`332:3` (converted from `repo-only`), plus 5 new `screen`
+> rows (`reset-password`/`333:210`, `email-otp`/`335:306`, `error404`/`335:1976`,
+> `error-boundary`/`337:2055`, `membership`/`340:3795`) and 2 new `state-variant` rows
+> (`unsubscribe-membership`/`340:4586`, `choose-method`/`340:5402`), all stamped
+> `figmaCheckedAt: "2026-08-23"`. **3 more were already registered before this batch and are
+> untouched by it**: `login`/`65:2` (stamp `2026-08-12`), `data-privacy`/`337:3323` and
+> `delete-data`/`339:3612` (both stamped `2026-08-20`) — 8 + 3 = **11 of the 14 registered**. **2 are
+> excluded**, both style-guide catalogue sheets named in the registry header: `218:15740` and
+> `335:1588` (a font/typography QA pass over the same sheet as `218:15740`, not a distinct screen).
+> **1 remains deliberately unregistered**: `347:6277` (the new marketing homepage) — an identity
+> ruling against the existing `landing-page` row is still owed, see that row's comment and
+> `mem:screen_registry_phase_3_run_state` §9.1. The GitHub sign-in button conflict (spec §9.2) is
+> also still open and must be settled before the auth screens are ported.
+>
+> ⚠️ **Residual debt this batch did NOT close:** `login`/`65:2`'s row still carries
+> `figmaCheckedAt: "2026-08-12"`, but this file records `65:2` as screenshotted for the first time
+> on 2026-08-23 — so that stamp still overstates what was actually compared. Left alone
+> deliberately: a stamp means a human compared frame against registry on that date, and nobody
+> re-compared `login` in Stage 1. Fixing the number by touching the stamp would be exactly the
+> dishonesty the `G2` test exists to catch.
 
 **File:** `IwFHZDZdHW7qsSFiNbWrkd` ("Korume"), single page `0:1`.
 **Captured:** 2026-08-11, by selecting frames in the Figma desktop app and reading the
