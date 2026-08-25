@@ -77,7 +77,7 @@ describe("screen registry invariants", () => {
     }
   });
 
-  it("R12: every entry carries exactly the twelve allowed fields", () => {
+  it("R12: every entry carries exactly the thirteen allowed fields", () => {
     // The concrete guard on R1. If someone adds `copy`, `layout`, `colors` or
     // `dataNeeds`, the registry has started becoming a second Figma. It is
     // also G3: `ruledBy` / `ruledAt` cannot be added without failing here.
@@ -86,8 +86,9 @@ describe("screen registry invariants", () => {
     const ALLOWED = [
       "screenId", "name", "kind", "variantOf", "figmaNodeId", "repoOnlyReason",
       "figmaCheckedAt", "route", "chrome", "impl", "navGroup", "navOrder",
+      "specRef",
     ];
-    expect(ALLOWED).toHaveLength(12);
+    expect(ALLOWED).toHaveLength(13);
     expect(SCREEN_REGISTRY.length).toBeGreaterThan(0);
     for (const entry of SCREEN_REGISTRY) {
       expect(Object.keys(entry).sort(), entry.screenId).toEqual([...ALLOWED].sort());

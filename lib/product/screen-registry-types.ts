@@ -1,4 +1,9 @@
-export type ScreenKind = "screen" | "state-variant" | "deprecated" | "repo-only";
+export type ScreenKind =
+  | "screen"
+  | "state-variant"
+  | "deprecated"
+  | "repo-only"
+  | "spec-only"; // Phase 3: required by Spec/Register; no frame, no implementation
 export type ScreenImpl = "built" | "placeholder" | "none";
 export type ScreenChrome = "app" | "focus" | "immersive" | "admin" | "auth" | "marketing";
 export type RepoOnlyReason = "out-of-design-scope" | "no-frame-at-last-pass";
@@ -38,4 +43,8 @@ export interface ScreenEntry {
   impl: ScreenImpl;
   navGroup: NavGroupId | null;
   navOrder: number | null;
+  /** Required when kind === 'spec-only', null otherwise (T13). A citation to
+   *  where the requirement is written (japanese-learning-app-spec.md or
+   *  decision-register.md) — never a ruling, never appearance/behaviour. */
+  specRef: string | null;
 }
