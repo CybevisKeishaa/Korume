@@ -8,9 +8,10 @@
 **Status: ✅ STAGE 1 IS IMPLEMENTED. ⛔ STAGE 2 IS GATED ON A USER RULING.**
 
 Branch **`screen-registry-phase-3`**, cut from `master` (which was at `8865aed`) on 2026-08-23.
-**Nine commits on the branch:** the spec (`22da7d9`), the plan (`6208925`), then the seven
-implementation commits `467b7c1`…`d37027f` — plus the prose fix wave that followed the final
-whole-branch review. `lib/product/screen-registry.ts`, `lib/product/screen-registry.test.ts`,
+**Commit range `8865aed..HEAD`** (count with `git rev-list --count 8865aed..HEAD` — never write the
+total, L-002): the spec (`22da7d9`), the plan (`6208925`), the seven implementation commits
+`467b7c1`…`d37027f`, and the prose fix wave (`4043a74`) that followed the final whole-branch review.
+`lib/product/screen-registry.ts`, `lib/product/screen-registry.test.ts`,
 `lib/product/screen-registry-types.ts` and `lib/product/nav-derivation.test.ts` are all modified.
 **Not merged to `master` yet** — Stage 2 is still owed on this branch.
 
@@ -20,7 +21,9 @@ pins are re-measured, and the 2026-08-23 frame batch is registered. This memory 
 "NOTHING IMPLEMENTED" and pointed at `superpowers:writing-plans`; that was written before any of it
 and was left stale for eight commits. It is the exact failure a resuming session would act on.
 
-**Gate measured on `d37027f` (not asserted — see `.superpowers/sdd/…/final-gate-*.log`):**
+**Gate measured on `d37027f`** (re-run to verify — `.superpowers/sdd/` is gitignored and does not
+travel with the repo, so re-run rather than chase a log file: `npm run typecheck` ·
+`npx vitest run --reporter=dot` · `npm run lint` · `npm run build`):
 `tsc --noEmit` 0 errors · `next lint` 0 errors (warning baseline unchanged) · `vitest run`
 **262 files / 2368 tests passed**, exit 0 · `next build` exit 0. **Playwright was deliberately NOT
 run** — the branch touches no `app/` route and no rendered component.

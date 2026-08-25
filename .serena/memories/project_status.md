@@ -44,7 +44,8 @@ Phase 0 is COMPLETE AND CLOSED and **Screen Registry Phases 1a, 1b, 2a and 2b ar
 merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`).
 
 ⭐ **Screen Registry Phase 3 — ✅ STAGE 1 IS IMPLEMENTED, ⛔ STAGE 2 IS GATED (2026-08-25).** Branch
-`screen-registry-phase-3`, nine commits, not merged. Stage 1 shipped the type change, the five test
+`screen-registry-phase-3`, commit range `8865aed..HEAD` (count with
+`git rev-list --count 8865aed..HEAD`), not merged. Stage 1 shipped the type change, the five test
 changes, and the 2026-08-23 frame batch; the branch gate was measured green (tsc 0 · lint 0 errors ·
 262 test files / 2368 tests · `next build` exit 0; Playwright deliberately not run).
 **Read `mem:screen_registry_phase_3_run_state` — it is the authority. This block must not restate it.**
