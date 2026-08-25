@@ -88,6 +88,26 @@ import type { ScreenEntry } from "./screen-registry-types";
  * (Unuse), `71:2` (Pricing-remove) and `243:14906` are outside the 57 for that
  * reason — the map's own arithmetic proves the first two were already deleted
  * and the third was never matched to a frame.
+ *
+ * ---------------------------------------------------------------------------
+ * SECOND BATCH EXCLUSIONS — 2026-08-23 capture, 1 of 13
+ * ---------------------------------------------------------------------------
+ * `figma-frame-map.md` § "Second capture batch (2026-08-23)" screenshotted 13
+ * previously-uncaptured frames (plus `218:15740`, already known but never
+ * screenshotted before). Phase 3 Stage 1 registers all of them except:
+ *
+ *   `335:1588`  Error state (right font) — pixel-identical to `218:15740`
+ *               except one card's CTA label; a font/typography QA pass over
+ *               the same style-guide sheet, not a distinct screen. Same
+ *               classification that already excludes its twin above.
+ *
+ * The hidden `346:6275` "Homepage" rectangle is not a Figma frame at all
+ * (`hidden="true"`, decorative canvas noise) and was never a candidate.
+ *
+ * `347:6277` (the new marketing-landing frame) is deliberately UNREGISTERED
+ * pending an identity ruling — see the `landing-page` entry's comment below
+ * and `mem:screen_registry_phase_3_run_state` §9.1. Not an exclusion: it is
+ * an open decision, not a classification, and must not be resolved silently.
  */
 export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ===================================================================
@@ -770,6 +790,14 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // §19.0 — "there is NO marketing landing frame anywhere in the 57... the
   // public front door of Korume is undesigned." P16 records this as known
   // and accepted — the user will design it later.
+  //
+  // ⛔ OPEN as of 2026-08-23 — do NOT resolve here. The second frame batch
+  // includes `347:6277`, a full marketing landing page (figma-frame-map.md
+  // § "New marketing homepage"). Whether it IS the design for this route
+  // (→ convert, like `register` above) or a DIFFERENT destination (→ its own
+  // row) is an identity question reserved to the user (spec §9.1). This row
+  // is deliberately left untouched — kind, figmaNodeId and figmaCheckedAt
+  // all stay exactly as they were before this frame was captured.
   {
     screenId: "landing-page",
     name: "Landing Page",
@@ -961,23 +989,21 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
-  // ⚠️ NO PRODUCT RULING EXISTS FOR /register, and none is inferred here.
-  // Everything below is FRAME evidence: `screen-inventory.md` §3's table, row
-  // `/register` — "Figma has `Login` but no register frame" — plus §4's
-  // "Frameless with no such conflict" list, which names it alongside /review,
-  // /achievements, /challenges and /statistics. Both are observations on the
-  // has-a-frame axis. The has-a-ruling axis belongs to `decision-register.md`,
-  // which says nothing about /register; §3's Ruling column therefore reads
-  // "still open", and that is the honest state, not a gap to be filled in by
-  // reading the frame evidence as a decision.
+  // R6 fires: a Figma frame now exists for /register, captured in the second
+  // batch (figma-frame-map.md § "Second capture batch (2026-08-23)" — Auth
+  // flow table). Converted from repo-only. The has-a-ruling axis is
+  // untouched by this conversion — decision-register.md still says nothing
+  // about /register, and the frame shows a "Continue with GitHub" button
+  // that conflicts with the Apple-yes/GitHub-no ruling; see spec §9.2 —
+  // NOT resolved here, must be settled before this screen is ported.
   {
     screenId: "register",
     name: "Register",
-    kind: "repo-only",
+    kind: "screen",
     variantOf: null,
-    figmaNodeId: null,
-    repoOnlyReason: "no-frame-at-last-pass",
-    figmaCheckedAt: "2026-08-12",
+    figmaNodeId: "332:3",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
     route: "/register",
     chrome: "auth",
     impl: "built",
@@ -1526,6 +1552,135 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "180:1129",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+
+  // ===================================================================
+  // Phase 3 Stage 1 — the 2026-08-23 frame batch (figma-frame-map.md §
+  // "Second capture batch"). impl: "none" for all — no page, no server
+  // action, no route exists for any of these yet.
+  // ===================================================================
+
+  // Auth flow — Reset password. Same OAuth+email split layout as
+  // register/login; Supabase Auth supplies the primitive, no code exists.
+  {
+    screenId: "reset-password",
+    name: "Reset password",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "333:210",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Auth flow — Email OTP (6-digit code entry, resend link). No code exists.
+  {
+    screenId: "email-otp",
+    name: "Email OTP",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "335:306",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Real 404 page design. Repo has no not-found.tsx anywhere — Next's
+  // default 404 serves today.
+  {
+    screenId: "error404",
+    name: "Error404",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "335:1976",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Real in-app route-error screen, rendered inside actual app chrome
+  // (sidebar + topbar visible in the frame). Repo has no error.tsx anywhere.
+  {
+    screenId: "error-boundary",
+    name: "Error boundary",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "337:2055",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Full /settings/membership page design. Zero PayOS integration code
+  // exists yet — Layer 8 territory (CLAUDE.md §3).
+  {
+    screenId: "membership",
+    name: "Membership",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "340:3795",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Same membership page with the "Leave Korume for now?" cancellation
+  // dialog open.
+  {
+    screenId: "unsubscribe-membership",
+    name: "Unsubcribe membership",
+    kind: "state-variant",
+    variantOf: "membership",
+    figmaNodeId: "340:4586",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Same membership page with the payment-method dialog open. ⚠️ The frame
+  // offers PayOS + SePay + MoMo; the user ruled 2026-08-23 that PayOS-only
+  // stands (CLAUDE.md §3 unchanged — SePay/MoMo deferred, merchant
+  // registration). Registering this row records what Figma designed, not
+  // what may be built — whoever ports this screen MUST apply the
+  // PayOS-only ruling, not the frame's provider list.
+  {
+    screenId: "choose-method",
+    name: "Choose method",
+    kind: "state-variant",
+    variantOf: "membership",
+    figmaNodeId: "340:5402",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
     route: null,
     chrome: null,
     impl: "none",

@@ -193,7 +193,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(75);
+    expect(stamped).toHaveLength(82);
     const stampedByDate = new Map<string, number>();
     for (const entry of stamped) {
       const date = entry.figmaCheckedAt as string;
@@ -204,8 +204,9 @@ describe("screen registry invariants", () => {
     // change to either the total or the split between the two dates is
     // conscious rather than silent.
     expect(Object.fromEntries(stampedByDate)).toEqual({
-      "2026-08-12": 72,
+      "2026-08-12": 71,
       "2026-08-20": 3,
+      "2026-08-23": 8,
     });
   });
 });
