@@ -47,7 +47,9 @@ tests** · `next build` exit 0 · the registry's frame-map invariant recipe re-r
 (mapped-but-unregistered = the six first-capture exclusions + `335:1588`; reverse empty).
 Playwright deliberately not run — no `app/` route and no rendered component was touched.
 
-**▶ The live next action: port the landing page at `/`.** **Read
+**▶ The live next action: port the landing page at `/`.**
+**Read `mem:landing_page_port_run_state` first** — it holds the resume block, the authority map, the
+six rulings not to re-litigate, and the process notes. Then **read
 `docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
 it. In one line: build `347:6277`'s structure to `346:6275`'s visual bar, keeping the frame's footer
 and its "A quieter way to keep going." section, which the user ruled authoritative.
@@ -87,8 +89,10 @@ re-run it and do not hunt for rows to add. Why the pass ended at zero, which can
 user, and what rejected it are **in the spec's §6.7** — deliberately not repeated here, because a
 second copy of that reasoning is what the header above forbids and what a later reader would then
 have to reconcile.
-**Phase 3 is merged and closed. There is no live next action from it** — pick from the candidates
-below. Read the run-state memory's ▶▶ RESUME block for the full sequence and the merged-master gate.
+**Phase 3 is merged and closed.** It left one open decision, which was ruled and merged on
+2026-08-26 — **that ruling IS the live next action now, so do not read this block as "pick from the
+candidates below"**; the NEXT ACTION block at the top of this file governs. Read the run-state
+memory's ▶▶ RESUME block for Phase 3's own sequence and merged-master gate.
 ✅ **Phase 3's one open decision is CLOSED (user, 2026-08-26): frame `347:6277` IS the design for
 `/`.** The `landing-page` row converted to `kind: "screen"` on branch `landing-page-identity-ruling`
 (`a9ad897`, NOT yet merged — see the live next action below). The authenticated home **stays
@@ -107,7 +111,8 @@ not yet done: `EMAIL_PROVIDER` is now a required boot-time env var** (no real tr
 — `almostgone.vn`'s production `.env` needs `EMAIL_PROVIDER=none` added before the NEXT deploy, or
 the instance fails to boot.
 
-**Candidates for the next action, none started, in no fixed order:**
+**Candidates AFTER the live next action above, none started, in no fixed order** (this list was
+written when nothing was live; the landing-page port now is, so these are what follows it):
 - **Layer 8** — PayOS billing, animation polish, the performance audit. It is the last unbuilt layer
   (`.claude/docs/workflow.md` §3). ⚠️ It inherits a hard dependency: deletion currently removes the
   `subscriptions` row like any other, and L8 must cancel with PayOS *first*.
