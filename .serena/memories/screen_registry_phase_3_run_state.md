@@ -5,10 +5,19 @@
 
 # ▶▶ RESUME HERE
 
-**Status: ✅ STAGE 1 IMPLEMENTED. ✅ STAGE 2 CLOSED WITH ZERO ROWS (user ruling, 2026-08-25).
-✅ FINAL WHOLE-BRANCH REVIEW RUN (opus, 2026-08-25): 0 Critical, 8 Important, 7 Minor, verdict
-"ready to merge WITH FIXES". ✅ FIX WAVE APPLIED (all 15). ⛔ NOT MERGED — what remains is a review
-**of the fix wave itself** (`L-012`), then the merge.**
+**Status: ✅ MERGED to `master` at `f6f7e95` (`--no-ff`), 2026-08-25. Branch `screen-registry-phase-3`
+kept, per this repo's convention. Phase 3 is CLOSED.**
+
+Sequence, so nobody re-runs a step: Stage 1 implemented · Stage 2 closed at **zero** `spec-only` rows
+(user ruling) · whole-branch review `8865aed..73676b5` (opus, `L-011`) → 0 Critical / 8 Important /
+7 Minor, "merge with fixes" · fix wave applied (all 15) · review **of the fix wave** (`L-012`) → 3
+more Important, **one of them created by the wave itself** · round-2 fixes + lessons committed at
+`5be3aa0` · merged.
+
+**Merged-master gate, measured on `f6f7e95` — this is its single home:** `tsc --noEmit` 0 errors ·
+`next lint` exit 0, 0 errors · `vitest run --reporter=dot` **262 files / 2368 tests passed**, exit 0,
+zero failures · `next build` exit 0. Playwright deliberately not run (no `app/` route, no rendered
+component touched).
 
 The fix wave's own findings, so nobody re-derives them: a stale JSDoc in `screen-registry-types.ts`
 that still stated the pre-branch `figmaNodeId` rule; `SPEC_REF_PATTERN` accepting only the register's

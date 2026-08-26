@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-22) — **L9b Plan 1 is MERGED. There is no live next action; the next one must be scoped.**
+## ▶ NEXT ACTION (updated 2026-08-25) — **Screen Registry Phase 3 is MERGED. There is no live next action; the next one must be scoped.**
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and
@@ -43,12 +43,13 @@ This block must not restate it.**
 Phase 0 is COMPLETE AND CLOSED and **Screen Registry Phases 1a, 1b, 2a and 2b are all built and
 merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`).
 
-⭐ **Screen Registry Phase 3 — ✅ STAGE 1 IMPLEMENTED, ✅ STAGE 2 CLOSED AT ZERO ROWS, ⛔ NOT MERGED (2026-08-25).** Branch
-`screen-registry-phase-3`, commit range `8865aed..HEAD` (count with
-`git rev-list --count 8865aed..HEAD`), not merged. Stage 1 shipped the type change, the five test
-changes, and the 2026-08-23 frame batch; the branch gate was measured green. **The gate figures and
-the command to re-measure them live in the run-state memory only** — not restated here (`CLAUDE.md`
-§6), because a second copy would age independently of the branch.
+⭐ **Screen Registry Phase 3 — ✅ MERGED to master at `f6f7e95` (`--no-ff`), 2026-08-25. CLOSED.**
+Branch `screen-registry-phase-3` kept (repo convention); commit range `8865aed..5be3aa0` (count with
+`git rev-list --count 8865aed..5be3aa0`). Stage 1 shipped the type change, the five test changes and
+the 2026-08-23 frame batch; Stage 2 closed at zero rows; a whole-branch review (`L-011`) and then a
+review of its fix wave (`L-012`) both ran, the second catching a defect the wave itself created.
+**The gate figures and the command to re-measure them live in the run-state memory only** — not
+restated here (`CLAUDE.md` §6), because a second copy would age independently.
 **Read `mem:screen_registry_phase_3_run_state` — it is the authority. This block carries a one-line
 gist only and must not duplicate that memory's evidence or its reasoning.**
 In one line: `spec-only` is now a `ScreenKind` and `specRef` the 13th field, so the registry can record
@@ -59,9 +60,8 @@ re-run it and do not hunt for rows to add. Why the pass ended at zero, which can
 user, and what rejected it are **in the spec's §6.7** — deliberately not repeated here, because a
 second copy of that reasoning is what the header above forbids and what a later reader would then
 have to reconcile.
-**Where the branch stands right now is the run-state memory's ▶▶ RESUME block — read that, not a
-status line duplicated here** (the final review has run and its fix wave has been applied; a line here
-saying otherwise is exactly the duplication this block keeps removing).
+**Phase 3 is merged and closed. There is no live next action from it** — pick from the candidates
+below. Read the run-state memory's ▶▶ RESUME block for the full sequence and the merged-master gate.
 ⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
 `347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
 The GitHub sign-in button was previously listed alongside it and **should not have been** — that one
