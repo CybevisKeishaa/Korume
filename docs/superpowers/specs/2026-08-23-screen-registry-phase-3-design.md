@@ -451,8 +451,9 @@ they are derived from Figma and would make the question circular. That blind spo
 of non-circularity, not an oversight — and it is the reason this outcome is stated as a scoped
 measurement rather than as reassurance.
 
-**`landing-page` vs `347:6277` is NOT settled by this.** It is a separate identity question (§9.1),
-still open, and the zero result above must never be cited as having resolved it.
+**`landing-page` vs `347:6277` was NOT settled by this.** It was a separate identity question, ruled
+by the user on 2026-08-26 (§9.1) — the zero result above neither resolved it nor may be cited as
+having done so.
 
 ---
 
@@ -505,9 +506,26 @@ restore.
 
 ---
 
-## 9. Decision points — §9.1 is open, §9.2 is already ruled
+## 9. Decision points — both §9.1 and §9.2 are now ruled
 
-### 9.1 ⛔ `landing-page` vs `347:6277` — an identity question, reserved to the user
+### 9.1 ✅ `landing-page` vs `347:6277` — RULED by the user, 2026-08-26
+
+**Ruling: `347:6277` IS the design for the existing `/`.** The first branch below was taken — the
+`landing-page` row converted from `repo-only` to `kind: 'screen'`, `figmaNodeId: '347:6277'`,
+`repoOnlyReason: null`, `figmaCheckedAt: '2026-08-26'`, exactly as `register` was converted in §5.2.
+The user ruled in the same breath that the authenticated user's home **stays `dashboard` at
+`/dashboard`** — "user homepage" was their way of distinguishing it from the landing page in
+conversation, explicitly *not* a rename, so no route, `screenId` or nav label moved.
+
+Two further rulings from the same session, both about `347:6277`'s content rather than its identity:
+the frame's **footer** and its **"A quieter way to keep going." section** are authoritative and are
+to be built as designed (the user had already built that footer deliberately); and the flat image
+`346:6275` — described below as "decorative canvas noise", which was **wrong**, see
+`docs/product/figma-frame-map.md` — is the landing page's **visual quality bar**, to be matched but
+never registered, since a layerless image can only be compared against.
+
+The original question is kept below as written, because the reasoning that framed it is what made the
+ruling answerable.
 
 The repo has `landing-page` → route `/`, `kind: 'repo-only'`, `impl: 'built'`. The new frame
 `347:6277` is a full marketing landing page (1280×4028). **Three frames now carry the name
@@ -530,8 +548,9 @@ The question is **identity, not content**:
 **Useful evidence to gather before the ruling** (gathering it is not resolving it): render the current
 `/` and compare it against `347:6277` section by section.
 
-§9.1 is the **only** open decision this phase leaves. Two questions that look like siblings of it are
-already ruled, and are recorded in §9.2 so that a porting session does not re-escalate them.
+§9.1 **was** the only open decision this phase left; it is ruled as of 2026-08-26, so this phase now
+leaves none. Two questions that look like siblings of it were already ruled before that, and are
+recorded in §9.2 so that a porting session does not re-escalate them.
 
 ### 9.2 ✅ ALREADY RULED — frame content that loses to a standing ruling (not open)
 

@@ -67,7 +67,6 @@ import type { ScreenEntry } from "./screen-registry-types";
  *   registered ids
  *     + the first-capture exclusions listed below
  *     + `335:1588`  — second-capture exclusion, classified below
- *     + `347:6277`  — DEFERRED, not excluded: an open identity ruling
  *   = every node id in a table row of `docs/product/figma-frame-map.md`
  *     § "Captured — all 57 of 57" and § "Second capture batch (2026-08-23)",
  *     deduplicated (`65:2` and `218:15740` appear in both sections).
@@ -94,8 +93,10 @@ import type { ScreenEntry } from "./screen-registry-types";
  *   comm -23 /tmp/registered /tmp/mapped   # registered but NOT mapped
  *
  * The first command must print exactly the ids named above — the first-capture
- * exclusions, plus `335:1588`, plus `347:6277` — and nothing else. The second
- * must print nothing at all. Both held when this was run on 2026-08-25.
+ * exclusions, plus `335:1588` — and nothing else. The second must print
+ * nothing at all. Both held when this was re-run on 2026-08-26, after the
+ * `landing-page` identity ruling registered `347:6277` and so removed it from
+ * the deferred line this invariant used to carry.
  *
  * The first-capture exclusions, each with the classification that excluded it:
  *
@@ -136,15 +137,21 @@ import type { ScreenEntry } from "./screen-registry-types";
  *               the same style-guide sheet, not a distinct screen. Same
  *               classification that already excludes its twin above.
  *
- * The hidden `346:6275` "Homepage" rectangle is not a Figma frame at all
- * (`hidden="true"`, decorative canvas noise) and was never a candidate — it
- * has no table row in the map, so it is outside the invariant too.
+ * The `346:6275` "Homepage" rectangle is not a Figma frame and is not a
+ * screen, so it has no table row in the map and is outside the invariant.
+ * It is NOT canvas noise, which is what this note claimed until 2026-08-26:
+ * `get_metadata` shows a single 864×1821 rounded-rectangle with an image
+ * fill and ZERO children, and the user confirmed it is the **visual quality
+ * bar** for the landing page — a picture of a design, not a design. It was
+ * hidden when the 2026-08-23 pass screenshotted it, which is why that pass
+ * got a 149-byte blank render and mis-filed it as decoration. Being a flat
+ * image is exactly why it stays out: nothing can be derived from it, only
+ * compared against. See the `landing-page` row for how it is used.
  *
- * `347:6277` (the new marketing-landing frame) is deliberately UNREGISTERED
- * pending an identity ruling — see the `landing-page` entry's comment below
- * and `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md`
- * §9.1. Not an exclusion: it is an open decision, not a classification, and
- * must not be resolved silently.
+ * `347:6277` (the marketing-landing frame) WAS deliberately unregistered
+ * pending an identity ruling. The user ruled it on 2026-08-26 — it is the
+ * design for `/` — so it is now registered on the `landing-page` row and no
+ * longer appears in the invariant's deferred line above.
  */
 export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ===================================================================
@@ -820,30 +827,46 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   },
 
   // ===================================================================
-  // Repo routes with no matching frame, and not a nav destination
-  // (repo-only, no-frame-at-last-pass unless chrome is admin).
+  // Routes that had NO matching frame at Phase 1, and are not nav
+  // destinations. Most are still `repo-only` (no-frame-at-last-pass unless
+  // chrome is admin) — but the 2026-08-23 capture batch gave two of them a
+  // frame, so `register` and `landing-page` now sit here as `kind: "screen"`.
+  // The section is defined by "not a nav destination", not by kind: read each
+  // row's own `kind`, never this heading.
   // ===================================================================
 
-  // §19.0 — "there is NO marketing landing frame anywhere in the 57... the
-  // public front door of Korume is undesigned." P16 records this as known
-  // and accepted — the user will design it later.
+  // §19.0 once read "there is NO marketing landing frame anywhere in the
+  // 57... the public front door of Korume is undesigned", and P16 recorded
+  // that as known and accepted — the user would design it later. They did:
+  // the 2026-08-23 batch brought `347:6277`, a full 1280×4028 marketing
+  // landing page (figma-frame-map.md § "New marketing homepage").
   //
-  // ⛔ OPEN as of 2026-08-23 — do NOT resolve here. The second frame batch
-  // includes `347:6277`, a full marketing landing page (figma-frame-map.md
-  // § "New marketing homepage"). Whether it IS the design for this route
-  // (→ convert, the way the `register` row below was) or a DIFFERENT
-  // destination (→ its own row) is an identity question reserved to the user
-  // (2026-08-23-screen-registry-phase-3-design.md §9.1). This row
-  // is deliberately left untouched — kind, figmaNodeId and figmaCheckedAt
-  // all stay exactly as they were before this frame was captured.
+  // ✅ RULED by the user 2026-08-26: `347:6277` IS the design for this route.
+  // `/` is the landing page; the authenticated user's home stays `dashboard`
+  // at `/dashboard`, unrenamed (the user declined a `/home` rename in the
+  // same ruling). So this row converts — exactly as `register` did — rather
+  // than a second destination being created. That closes
+  // `2026-08-23-screen-registry-phase-3-design.md` §9.1.
+  //
+  // ⚠️ `impl: "built"` is NOT a claim that the built `/` matches this frame.
+  // It never was: `impl` records that a route exists and renders, and the
+  // existing `(marketing)` page predates the frame by months. A section-by-
+  // section comparison of the two ran on 2026-08-26 and found the frame's own
+  // render below the quality bar of the reference image `346:6275` (missing
+  // photography and mascot art, missing connector/graph linework, a bar chart
+  // where the design calls for a dual pitch contour, and a broken 5-step row
+  // in "Don't study Japanese in isolation"). Whoever ports this screen builds
+  // to `346:6275`'s bar using `347:6277`'s structure — and keeps the frame's
+  // footer and its "A quieter way to keep going." section, which the user
+  // ruled authoritative over the reference image on 2026-08-26.
   {
     screenId: "landing-page",
     name: "Landing Page",
-    kind: "repo-only",
+    kind: "screen",
     variantOf: null,
-    figmaNodeId: null,
-    repoOnlyReason: "no-frame-at-last-pass",
-    figmaCheckedAt: "2026-08-12",
+    figmaNodeId: "347:6277",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-26",
     route: "/",
     chrome: "marketing",
     impl: "built",

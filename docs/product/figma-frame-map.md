@@ -7,8 +7,14 @@
 > **14** table rows — the same two-sizes-for-one-batch defect this file is supposed to be the cure
 > for. Reconciled 2026-08-25; the batch table below is the enumeration.) **See § Second capture batch (2026-08-23) below — read it before touching billing,
 > auth, or error-state UI.** One genuinely new node appeared since 2026-08-20: `346:6275`, also named
-> "Homepage", but it is a **hidden `rounded-rectangle`** (not a frame, `hidden="true"`, renders blank)
-> — decorative canvas noise, not a screen. Ignore it.
+> "Homepage" — a `rounded-rectangle`, not a frame. ⚠️ **This file called it "decorative canvas noise,
+> ignore it" until 2026-08-26, and that was wrong.** It was `hidden="true"` when the 2026-08-23 pass
+> screenshotted it, so it rendered blank (a 149-byte PNG) and was written off from the blank render
+> rather than from the node. Unhidden it is an 864×1821 image fill with **zero children**: a picture
+> of a finished landing-page design, which the user confirmed on 2026-08-26 is the **visual quality
+> bar** for the landing page. It stays out of the registry — a flat image has no layers to derive
+> from, only a target to compare against — but it is not noise, and it must not be deleted in any
+> Figma cleanup pass. See the `landing-page` row in `lib/product/screen-registry.ts`.
 >
 > Method used: the user selected the target nodes in the Figma desktop Layers panel; `get_metadata`
 > with no `nodeId` read the prepended "Currently selected nodes" block to confirm ids, then each was
@@ -34,13 +40,15 @@
 > (`unsubscribe-membership`/`340:4586`, `choose-method`/`340:5402`), all stamped
 > `figmaCheckedAt: "2026-08-23"`. **3 more were already registered before this batch and are
 > untouched by it**: `login`/`65:2` (stamp `2026-08-12`), `data-privacy`/`337:3323` and
-> `delete-data`/`339:3612` (both stamped `2026-08-20`) — 8 + 3 = **11 of the 14 registered**. **2 are
-> excluded**, both style-guide catalogue sheets named in the registry header: `218:15740` and
+> `delete-data`/`339:3612` (both stamped `2026-08-20`) — 8 + 3 = 11. **A 12th was registered on
+> 2026-08-26**: `347:6277` (the new marketing homepage), once the user ruled that it IS the design
+> for the existing `/` — the `landing-page` row converted from `repo-only` to `screen` and took the
+> stamp `2026-08-26`. That closes
+> `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md` §9.1, which was **the one
+> genuinely open question in this batch**; there is now none. So **12 of the 14 are registered**, and
+> **2 are excluded**, both style-guide catalogue sheets named in the registry header: `218:15740` and
 > `335:1588` (a font/typography QA pass over the same sheet as `218:15740`, not a distinct screen).
-> **1 remains deliberately unregistered**: `347:6277` (the new marketing homepage) — an identity
-> ruling against the existing `landing-page` row is still owed, see that row's comment and
-> `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md` §9.1. **This is the one
-> genuinely open question in this batch.** The GitHub sign-in button on `332:3`/`65:2` is **not** one:
+> The GitHub sign-in button on `332:3`/`65:2` was never one:
 > `decision-register.md` **P14** ("Auth = email + Google + Apple. GitHub: no") already rules it, and
 > the user confirmed on 2026-08-25 that P14 still stands. The frame's content loses to P14 at port
 > time — register the frame, do not build the button.
@@ -323,10 +331,13 @@ two were flagged load-bearing in the 2026-08-20 note.
 ### New marketing homepage — distinct from the existing `Homepage` frames
 | Node id | Frame | Size | Summary |
 |---|---|---|---|
-| `347:6277` | Homepage | 1280×4028 | A full public marketing/landing page, unrelated to the other frame named "Homepage", `111:515` — which is the **authenticated Dashboard** ("Welcome back", Continue Learning, Today's Mission, Weakness Snapshot), ruled 2026-08-12 in `screen-inventory.md` §19.0/§19.1 and registered as `dashboard`. Long-scroll sections: hero ("Learn Japanese from the Japanese you actually want to understand"), a listening-comprehension score widget (87), an i+1 "recommends what's just beyond what you already know" section, a "Private. Secure. Built on trust." trust block, and a closing CTA ("A quieter way to keep going."). |
+| `347:6277` | Homepage | 1280×4028 | A full public marketing/landing page, unrelated to the other frame named "Homepage", `111:515` — which is the **authenticated Dashboard** ("Welcome back", Continue Learning, Today's Mission, Weakness Snapshot), ruled 2026-08-12 in `screen-inventory.md` §19.0/§19.1 and registered as `dashboard`. ✅ **Registered as `landing-page` (route `/`) on 2026-08-26** by user ruling. Ten long-scroll sections, in order: hero ("Learn Japanese from the Japanese you actually want to understand"); "You can study Japanese for years and still struggle when Japanese starts moving"; "Don't study Japanese in isolation" (a 5-step Watch→Understand→Shadow→Mine→Remember flow); "Turn listening into something your mouth can do" — a **pitch/pronunciation** section, not listening comprehension: Pitch/Rhythm/Pronunciation/Timing sub-scores under an Overall Score of 87 (this file said "a listening-comprehension score widget" until 2026-08-26, read off the number rather than the section); the i+1 "Korume recommends what's just beyond what you already know"; "Everything connects. Everything builds on each other." (8 linked capabilities); "Private. Secure. Built on trust."; the closing CTA "Start understanding Japanese differently."; a quieter sign-off section, "A quieter way to keep going." (a **separate section after** the CTA — previously mis-recorded as the CTA itself); and the footer. |
 
-**Three frames are now named "Homepage"**: `111:515` (1278×1332, the **authenticated Dashboard** —
-`screen-inventory.md` §19.0/§19.1; the name is the frame's, the identity is the picture's), `347:6277`
-(1280×4028, marketing landing page — this one), and the hidden `346:6275` rectangle (not a screen).
-Same collision pattern as the `29:2890`/`280:3` "Kanji" pair from the first capture — worth a rename
-pass eventually, not urgent since node ids disambiguate.
+**Three nodes are now named "Homepage"**: `111:515` (1278×1332, the **authenticated Dashboard** —
+`screen-inventory.md` §19.0/§19.1; the name is the frame's, the identity is the picture's, and it
+keeps route `/dashboard`: the user declined a `/home` rename on 2026-08-26), `347:6277` (1280×4028,
+the marketing landing page — this one, route `/`), and `346:6275`, which is **not a frame and not a
+screen** but the flat reference image that sets the landing page's visual quality bar (see the note
+at the top of this file). Same collision pattern as the `29:2890`/`280:3` "Kanji" pair from the first
+capture — worth a rename pass eventually, not urgent since node ids disambiguate. If that pass
+happens, `346:6275` should be renamed to something that cannot be mistaken for a screen.
