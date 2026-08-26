@@ -506,6 +506,13 @@ git commit -m "test(screen-registry): add T12 (spec-only is the empty cell), mut
 
 - [ ] **Step 1: Add the second-batch exclusion note to the registry header**
 
+> ⚠️ **Historical record — do NOT copy the block below into the registry today.** This plan executed
+> on 2026-08-25 and is kept as written. Two of the claims it specifies were overtaken on 2026-08-26:
+> `346:6275` is **not** "decorative canvas noise" (it is the landing page's flat visual quality bar,
+> mis-classified from a blank render of a hidden node — `docs/lessons.md` L-019), and `347:6277` is
+> **no longer unregistered** (the user ruled it the design for `/`). `lib/product/screen-registry.ts`
+> is the live text; this is what it was asked to say at the time.
+
 In `lib/product/screen-registry.ts`, find the end of the header doc-comment:
 
 ```ts

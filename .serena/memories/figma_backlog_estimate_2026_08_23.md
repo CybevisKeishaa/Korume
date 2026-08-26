@@ -15,8 +15,10 @@
 — that file is the single home for it, so it is deliberately not restated here.** In one line: every
 frame in the batch is registered except `335:1588` (EXCLUDED — style-guide catalogue, same
 classification as its twin `218:15740`). `347:6277` was deferred here pending the marketing-homepage
-identity question; that was ruled 2026-08-26 and it is now registered as `landing-page`, so the batch
-has exactly one unregistered frame, not two. The `kind`/`navGroup` judgment calls this paragraph worried
+identity question; that was ruled 2026-08-26 and it is now registered as `landing-page`. **How many
+of the batch remain unregistered is `docs/product/figma-frame-map.md`'s to state, not this file's**
+(it is the named single home for the batch accounting, and this paragraph already says so) — an
+earlier draft of this sentence wrote a total here and got it wrong. The `kind`/`navGroup` judgment calls this paragraph worried
 about were made and reviewed: Unsubcribe membership and Choose method are `state-variant`s of
 Membership, exactly the way Delete data is of Data privacy.
 

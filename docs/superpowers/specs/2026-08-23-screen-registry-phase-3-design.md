@@ -532,8 +532,9 @@ The repo has `landing-page` → route `/`, `kind: 'repo-only'`, `impl: 'built'`.
 "Homepage"**: `111:515` (**the returning-user Dashboard** despite the frame's name — ruled 2026-08-12
 in `screen-inventory.md` §19.0/§19.1, registered as `dashboard`; see §6.7 finding 1, which corrects
 the "onboarding cluster" phrasing this sentence originally carried), `347:6277`, and `346:6275` — the
-last being a hidden `rounded-rectangle`, decorative canvas noise, **not a screen, never to be
-registered**.
+last being a hidden `rounded-rectangle`, ~~decorative canvas noise~~ [**wrong — see the ruling above:
+it is the landing page's visual quality bar**], **not a screen, never to be
+registered** (that last part still holds, for the opposite reason).
 
 The question is **identity, not content**:
 

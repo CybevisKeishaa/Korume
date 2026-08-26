@@ -14,8 +14,8 @@ of from the node. Unhidden it is an 864×1821 image fill with zero children: a *
 finished landing-page design**, which the user confirmed on 2026-08-26 is the landing page's
 **visual quality bar**. It correctly stays out of the registry (nothing can be derived from a
 layerless image — only compared against), but "decorative noise" would have licensed deleting it in
-a Figma cleanup pass. **The lesson is the method one this project already knows: never classify a
-node from a render that came back empty — check whether it is hidden first.**
+a Figma cleanup pass. **The lesson this is evidence for is `docs/lessons.md` L-019** — which now
+carries this incident; do not restate its rule here.
 
 The user added new frames to the Figma file (`IwFHZDZdHW7qsSFiNbWrkd`) and asked for a review. Diffing
 the current page against the 2026-08-20 snapshot found exactly one structural change — a hidden

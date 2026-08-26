@@ -30,25 +30,25 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-26) — **branch `landing-page-identity-ruling` (`a9ad897`) is built and gate-green but UNMERGED and UNREVIEWED. Review it, then merge it.**
+## ▶ NEXT ACTION (updated 2026-08-26) — **branch `landing-page-identity-ruling` is built, gate-green and REVIEWED, but UNMERGED. Merge it.**
 
-It is one commit: the user's 2026-08-26 ruling that frame `347:6277` is the design for `/`, plus the
-four now-false claims that ruling exposed (the registry header's frame-map invariant, G2's per-date
-pin, `346:6275` recorded as "decorative canvas noise" in two files, and two mis-read section
-descriptions in `figma-frame-map.md`). Gate on the branch tip: tsc 0 · lint exit 0, 0 errors ·
-262 files / 2368 tests · build exit 0. T3/T9 mutation-checked over the changed row.
-Per `CLAUDE.md` §9 a whole-branch review (`L-011`) is owed before merge even though it is one commit.
+Count its commits with `git rev-list --count master..landing-page-identity-ruling` (`L-002`). They
+carry: the user's 2026-08-26 ruling that frame `347:6277` is the design for `/`, plus the claims that
+ruling made false (the registry header's frame-map invariant, G2's per-date pin, `346:6275` recorded
+as "decorative canvas noise", two mis-read section descriptions in `figma-frame-map.md`); the memory
+and `docs/lessons.md` updates; `docs/product/landing-page-reconciliation.md`; and one fix wave.
+Gate on the branch tip: tsc 0 · lint exit 0, 0 errors · 262 files / 2368 tests · build exit 0.
+T3/T9 mutation-checked over the changed row.
+A whole-branch review (`L-011`) RAN and found 0 correctness bugs and 10 prose defects, all fixed in
+the wave; **`L-012` then requires the wave itself to be reviewed before merge** — do that, then merge.
 
-**Unblocked by that ruling, not started:** porting the landing page at `/`. The design source is
-`347:6277` (structure + its footer and its "A quieter way to keep going." section, both ruled
-authoritative), built to the visual quality bar of the flat reference image `346:6275`. A
-section-by-section comparison ran 2026-08-26 and found the frame's own render short of that bar in
-four ways: missing photography and mascot art, missing connector/graph linework, a bar chart where
-the design calls for a dual pitch contour (`CLAUDE.md` §5 differentiator #1), and a broken 5-step row
-in "Don't study Japanese in isolation". Those are HOW and may be rebuilt to the bar; adding
-capability, claims, flows or routes is not. **That comparison exists only in the 2026-08-26
-conversation — it has no file yet.** Writing it into `docs/product/` is the sensible first task of
-the port.
+**Unblocked by that ruling, not started:** porting the landing page at `/`. **Read
+`docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
+it. In one line: build `347:6277`'s structure to `346:6275`'s visual bar, keeping the frame's footer
+and its "A quieter way to keep going." section, which the user ruled authoritative.
+⚠️ **The port has a blocker that is not a design question:** the reference's photography is baked into
+a flat PNG and cannot be extracted as licensed assets, so the image source for four sections must be
+decided first (`CLAUDE.md` §2.3 — licensed sources checked and attributed). Not a porter's call.
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and

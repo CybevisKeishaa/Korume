@@ -2476,6 +2476,13 @@ routed **through the Companion**.
 `Homepage → / → built`; that mapping is wrong on both ends. The public front door of Korume is
 **undesigned**, while `/` in the repo renders a marketing page nothing in Figma describes.
 
+> ✅ **No longer true as of 2026-08-26 — and note the claim above is still correct as written**: there
+> is no landing frame *among the 57*. The 2026-08-23 capture batch added one from outside that set,
+> `347:6277`, and the user ruled it **is** the design for `/`. It is registered on the `landing-page`
+> row and the front door is no longer undesigned. What survives from the paragraph above is its
+> method point — Part I's `Homepage → /` mapping was wrong, and `111:515` is the authenticated
+> Dashboard. See `docs/product/landing-page-reconciliation.md` and decision-register **P16**.
+
 **`111:1556 QuickStart` belongs to onboarding, not marketing.** It is explicitly **`Step 2 of 5`** and
 sits in the same flow as `220:16766`, `111:1877` and `111:1963` (§14).
 
@@ -2596,6 +2603,6 @@ therefore subject to §14.1's companion-less fallback requirement.
 | `210:14338` | Loading states | **style-guide catalogue** | — | not a screen |
 | `218:15740` | Error states | **style-guide catalogue** | — | not a screen |
 
-**⚑ Handed upward:** **no marketing landing page exists in the design** · **Stripe vs PayOS** ·
+**⚑ Handed upward:** ~~**no marketing landing page exists in the design**~~ (✅ closed 2026-08-26 — `347:6277` is the design for `/`, see §19.0) · **Stripe vs PayOS** ·
 **mobile apps in the footer** · four unbuilt marketing pages · a **third** skill taxonomy ·
 `Journey Point` as a second currency.

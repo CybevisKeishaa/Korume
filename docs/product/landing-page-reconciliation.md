@@ -58,8 +58,8 @@ player; a learner in headphones at a night desk in §2; a Tokyo commute still in
 Companion card, §6 end of the chain, §8 CTA). The frame has **zero mascot**, an **empty black
 rectangle** where the hero player's still belongs, and a garish neon placeholder in §5 that is not
 the commute image. Its §8 background is present but so dark it reads as flat black.
-→ Mascot renders already exist at `public/mascot/renders/*.png`. Photography does not, and is the
-single largest unresolved dependency of this port — see §6.
+→ A mascot render set already exists under `public/mascot/renders/`. Photography does not, and is the
+single largest unresolved dependency of this port — see **§5, "Assets this port needs"**.
 
 **G2 — Connective linework is missing.** The reference *links* things: §2's six capability chips
 surround the example sentence and connect to it with dotted lines through a glowing centre node;
@@ -173,7 +173,7 @@ allowed **only where it does not change structure or content**.
 
 | Asset | Status |
 |---|---|
-| Mascot renders (4 placements) | ⚠️ renders exist (`public/mascot/renders/` — `final_front`, `final_3q`, `final_side`, seven `expr_*`), but **nobody has checked them against the poses the reference uses**, which sit on an ornate lamp/vessel prop. Treat as "an asset set exists", not "the right asset exists". |
+| Mascot renders (4 placements) | ⚠️ a render set exists — `ls public/mascot/renders/` (`final_front`, `final_3q`, `final_side` plus `expr_*` variants; enumerate rather than trust a number here, `L-002`). But **nobody has checked them against the poses the reference uses**, which sit on an ornate lamp/vessel prop. Treat as "an asset set exists", not "the right asset exists". |
 | Hero video still (Kyoto street, dusk) | ❌ none in repo |
 | §2 learner-at-desk photograph | ❌ none in repo |
 | §5 Tokyo commute still | ❌ none in repo |

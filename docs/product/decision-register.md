@@ -33,7 +33,7 @@ the user's approval · `OPEN` = not decided.
 | P13 | **Payment is PayOS.** No Stripe, no Visa, no Apple Pay | `screen-inventory.md` §19.3, §20 |
 | P14 | **Auth = email + Google + Apple.** GitHub: no | `capability-map.md` §3.5 |
 | P15 | **Native mobile apps are planned** — store badges are a roadmap statement | `capability-map.md` §3.5 |
-| P16 | **No landing/gateway page exists yet** — known and accepted, user will design it later | `screen-inventory.md` §19.0 |
+| P16 | ~~**No landing/gateway page exists yet** — known and accepted, user will design it later~~ **SUPERSEDED 2026-08-26: the user designed it.** Frame `347:6277` IS the design for `/`, ruled by the user and registered on the `landing-page` row. P16's premise no longer holds; the accepted gap it recorded is closed. See `docs/product/landing-page-reconciliation.md`. | `screen-inventory.md` §19.0 (whose text carries the same correction) |
 
 **Note against P13 — SePay and MoMo are design exploration; P13 was re-affirmed, not reopened.**
 Figma frame `340:5402` *Choose method* (captured 2026-08-23 — `figma-frame-map.md` § "Second capture
