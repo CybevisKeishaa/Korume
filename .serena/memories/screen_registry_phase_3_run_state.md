@@ -6,7 +6,16 @@
 # ▶▶ RESUME HERE
 
 **Status: ✅ STAGE 1 IMPLEMENTED. ✅ STAGE 2 CLOSED WITH ZERO ROWS (user ruling, 2026-08-25).
-⛔ NOT MERGED — the only work left on this branch is a final review pass and the merge itself.**
+✅ FINAL WHOLE-BRANCH REVIEW RUN (opus, 2026-08-25): 0 Critical, 8 Important, 7 Minor, verdict
+"ready to merge WITH FIXES". ✅ FIX WAVE APPLIED (all 15). ⛔ NOT MERGED — what remains is a review
+**of the fix wave itself** (`L-012`), then the merge.**
+
+The fix wave's own findings, so nobody re-derives them: a stale JSDoc in `screen-registry-types.ts`
+that still stated the pre-branch `figmaNodeId` rule; `SPEC_REF_PATTERN` accepting only the register's
+`A…` series when `P…` is equally live (this branch's own P13/P14 could not have been cited);
+spec §9.2 still presenting the GitHub-button question as ⛔ open when P14 had long ruled it; and a
+cluster of counts that either over-counted (the backlog memory's unanchored `grep -o 'impl: …'`
+matched the registry header's own prose) or duplicated a fact whose home is elsewhere.
 
 Branch **`screen-registry-phase-3`**, cut from `master` (which was at `8865aed`) on 2026-08-23.
 **Commit range `8865aed..HEAD`** (count with `git rev-list --count 8865aed..HEAD` — never write the
@@ -39,12 +48,20 @@ pins are re-measured, and the 2026-08-23 frame batch is registered. This memory 
 "NOTHING IMPLEMENTED" and pointed at `superpowers:writing-plans`; that was written before any of it
 and was left stale for eight commits. It is the exact failure a resuming session would act on.
 
-**Gate measured on `d37027f`** (re-run to verify — `.superpowers/sdd/` is gitignored and does not
-travel with the repo, so re-run rather than chase a log file: `npm run typecheck` ·
-`npx vitest run --reporter=dot` · `npm run lint` · `npm run build`):
-`tsc --noEmit` 0 errors · `next lint` 0 errors (warning baseline unchanged) · `vitest run`
-**262 files / 2368 tests passed**, exit 0 · `next build` exit 0. **Playwright was deliberately NOT
-run** — the branch touches no `app/` route and no rendered component.
+**Gate — this file is its single home** (`mem:project_status` deliberately does not restate the
+figures). Re-run rather than chase a log file, since `.superpowers/sdd/` is gitignored and does not
+travel with the repo: `npm run typecheck` · `npx vitest run --reporter=dot` · `npm run lint` ·
+`npm run build`.
+
+- **`d37027f`** (end of Stage 1): `tsc --noEmit` 0 errors · `next lint` 0 errors (warning baseline
+  unchanged) · `vitest` **262 files / 2368 tests passed**, exit 0 · `next build` exit 0.
+- **`73676b5`** (re-measured 2026-08-25, before the final review): identical — tsc 0 · lint exit 0,
+  0 errors · **262 files / 2368 tests**, exit 0, 65.96s · build exit 0. The five commits between the
+  two are docs/memory only, so the match is the expected result, not a coincidence. The
+  `waveform`/`pitch-contour` canvas flake did **not** fire in this run.
+
+**Playwright was deliberately NOT run** — the branch touches no `app/` route and no rendered
+component.
 
 **✅ THE §6 DISCOVERY-PASS GATE HAS ALREADY RUN — do not run it again.** It was never an engineering
 task: a scan of `japanese-learning-app-spec.md` + `decision-register.md` produced a candidate list and
@@ -192,7 +209,11 @@ stays open everywhere.
 - ⚠️ **The Kanji explorer-vs-library question is NOT open.** An earlier estimate in this session said
   it was "open since Phase 0 and blocking a plan" — **false**. `capability-map.md` §3.4 ruled it on
   2026-08-12: both surfaces ship under ONE nav row, `/kanji` defaults to curriculum, explorer is a
-  browse mode inside it. Already corrected in `mem:figma_backlog_estimate_2026_08_23`.
+  browse mode inside it. ⚠️ This memory previously claimed the correction was "already made in
+  `mem:figma_backlog_estimate_2026_08_23`" — true of **one** occurrence out of four in that file; the
+  other three still called the question open until 2026-08-25, when all four were reconciled. A
+  correction is not made until every copy of the claim carries it (`CLAUDE.md` §6, "one fact, one
+  home" — the reason a claim should not have had four copies in the first place).
 - A proposed "4-tier Figma-vs-spec audit process" was **dropped**: it is already law as
   `screen-inventory.md` § **Amendment C** (cases 1–4), which is sharper — Amendment C lets you fix
   wrong *content* silently inside the frame's template (case 2) and only stops for *identity/semantics*
@@ -225,6 +246,71 @@ that they belong in this memory, which travels with the repo. Same failure mode 
    deferring it to the final review. (G2's comment said "the split between the two dates" while the
    pinned object had grown to three.) Task 6 was the next dispatch and already a documentation task,
    so it rode along and still passed through Task 6's own review.
+
+## ⭐ Mutation-check results — the only tracked copy
+
+⚠️ **Why this section exists.** T3, T12 and T13 are guards written over code that already existed, so
+none of them can fail first (`CLAUDE.md` §7). Each was proved by mutation instead — and the plan holds
+only the mutation *instructions*. The red/green **outputs** existed nowhere but
+`.superpowers/sdd/2026-08-25-screen-registry-phase-3-stage-1/`, which is **gitignored**. After merge,
+§7's *"report both outputs"* would have had no evidence in the repo at all. Transcribed 2026-08-25.
+Each was independently judged genuine by that task's reviewer, who cross-checked the quoted line
+numbers and assertion text against the real file specifically to detect a fabricated output.
+
+| # | Test | Mutation | Red output (verbatim assertion) | Restored |
+|---|---|---|---|---|
+| 1 | **T3** (`93cc045`) | `landing-page.figmaNodeId = "999:999"` on a genuinely `repo-only` row | `T3: figmaNodeId is present iff the entry is repo-only or spec-only` → `landing-page: expected '999:999' to be null` · 1 failed / 7 passed | ✅ green; `git diff 467b7c1 93cc045 -- screen-registry.ts` empty, blob hash identical to HEAD |
+| 2 | **T13** (`c04aa25`) | temp row `mutation-check-temp`, `kind: "spec-only"`, `specRef: null` | `mutation-check-temp: expected null not to be null` · 1 failed / 8 passed | ✅ |
+| 3 | **T13** | same row, `specRef: "TODO"` | `expected 'TODO' to match /^(japanese-learning-app-spec\.md §\d+…/` · 1 failed / 8 passed | ✅ |
+| 4 | **T13** | same row, `specRef: "capability-map.md §3"` | `expected 'capability-map.md §3' to match /^(japanese-learning-app-spec\.md §\d+…/` — proves the excluded Figma-derived source is rejected (§6.1) | ✅ temp row deleted |
+| 5 | **T13** | `specRef: "decision-register.md A1"` on `dashboard` (`kind: "screen"`) | `dashboard: expected 'decision-register.md A1' to be null` · 1 failed / 8 passed. **R12 did NOT fire** — see the false claim below | ✅ |
+| 6 | **T12** (`2f4769e`) | temp `spec-only` row carrying `route: "/mutation-check"` | `T12: spec-only is the empty cell…` → `mutation-check-temp: expected '/mutation-check' to be null` · 1 failed / 9 passed; **T13 stayed green**, isolating the failure to T12's rule | ✅ |
+
+Five of these (2–6) are the "five specific mutations" spec §8.2 enumerates for T12/T13; #1 is T3's
+separate one. `lib/product/screen-registry.test.ts`'s two vacuity comments point here.
+
+**Three more from the post-review fix wave (2026-08-25).** Widening `SPEC_REF_PATTERN` from
+`decision-register\.md A\d+` to `[AP]\d+` is itself a change to a guard over existing code, so it was
+mutation-checked the same way — with a temp `spec-only` row, since zero real ones exist:
+
+| # | Mutation | Result |
+|---|---|---|
+| 7 | temp row, `specRef: "decision-register.md P14"`, **widened** regex | ✅ GREEN, 10/10 — this is what the widening buys |
+| 8 | same row, regex reverted to **A-only** | ❌ RED: `mutation-check-temp: expected 'decision-register.md P14' to match /^(japanese-learning-app-spec\.md §\d+…/` · 1 failed / 9 passed — proves the widening is load-bearing, not decorative |
+| 9 | widened regex, bogus series `"decision-register.md Q1"` | ❌ RED, same assertion · 1 failed / 9 passed — proves `[AP]` did not become a wildcard |
+| 10 | `"decision-register.md M13"` — a **real** ruling in a **third** live series | ❌ RED: `expected 'decision-register.md M13' to match …` · 1 failed / 9 passed. Proves the `M` exclusion is enforced, not merely asserted in a comment |
+
+⚠️ **#10 exists because the fix wave's first attempt introduced a false claim while removing one.**
+The wave's comment said the register has "two live series (A, P)". It has **three** — `M1`–`M14`,
+the §3 Method rules, which include M13/M14 (Amendment C itself). The round-2 review caught it. `M` is
+now excluded **by ruling**: a method rule binds HOW we work and can never be the reason a destination
+must exist, so citing one in a `specRef` would be a category error. Stated in the test comment and in
+spec §4.2, and proved by #10 — not left as an accident of an under-counted enumeration.
+
+Temp row removed afterwards; `git hash-object lib/product/screen-registry.ts` matched
+`git rev-parse HEAD:lib/product/screen-registry.ts` and `git status` did **not** list the file —
+the `L-036` CRLF check, passed because the row was added and removed with the Edit tool, not a script.
+
+### The one unidentified test failure — stated precisely (`L-009`)
+
+The first full-suite run after the fix wave reported **1 failed / 2367 passed**, and **the failing
+test's identity was not captured** (the controller tailed too few lines). Do not record this as "it
+was the canvas flake" — that is a guess. What is actually established:
+
+- **Two subsequent full runs were clean**, 262 files / 2368 tests.
+- **Excluded by mechanism:** the wave's only functional change is `[AP]` inside `SPEC_REF_PATTERN`,
+  on a code path **zero rows reach** (there are no `spec-only` rows), and nothing it touched is
+  reachable from a canvas test.
+- **The signature is documented, and was reproduced on this branch before the wave existed:**
+  `.superpowers/sdd/2026-08-25-screen-registry-phase-3-stage-1/task-3-report.md` records
+  `261 passed, 1 failed` — `components/video-player/waveform.test.tsx`,
+  `expected 0 to be greater than 0` — standalone-green 6/6. The family is also in
+  `mem:project_status`.
+- Both suspects pass standalone now: `waveform` + `pitch-contour`, 14/14.
+
+Treating it as that family is *supported*, not merely assumed — but the honest record is "one
+unidentified failure, wave excluded by mechanism, signature matches a documented family". **If it
+recurs, capture the failing test name before doing anything else.**
 
 **Two claims made during execution that measurement proved FALSE. Do not inherit either.**
 

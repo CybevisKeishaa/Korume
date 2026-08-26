@@ -7,15 +7,23 @@
 ## What happened
 
 The user added new frames to the Figma file (`IwFHZDZdHW7qsSFiNbWrkd`) and asked for a review. Diffing
-the current page (70 top-level nodes) against the 2026-08-20 snapshot (69) found only one structural
-change — a hidden decorative `rounded-rectangle` named "Homepage" (`346:6275`), not a real screen. The
-actual "new screens" were the **12 frames the 2026-08-20 note had already flagged as missing from
-`figma-frame-map.md`** (never screenshotted before) plus `218:15740 Error state` (in the map since
-2026-08-11, but also never screenshotted). The user selected all 15 in the Figma desktop Layers panel;
-`get_metadata` with no `nodeId` read the selection back to confirm ids, then each was screenshotted and
-visually reviewed. This is a **capture/analysis pass, not an implementation pass** — nothing was built,
-no registry or navigation was touched, per the standing CLAUDE.md instruction not to settle
-navbar/routes/registry without user review.
+the current page against the 2026-08-20 snapshot found exactly one structural change — a hidden
+decorative `rounded-rectangle` named "Homepage" (`346:6275`), not a real screen. The actual "new
+screens" were the **frames the 2026-08-20 note had already flagged as missing from
+`figma-frame-map.md`** (never screenshotted before), together with **two ids already in that map since
+2026-08-11 that had never been screenshotted** — `218:15740 Error state` and `65:2 Login`. The user
+selected them in the Figma desktop Layers panel; `get_metadata` with no `nodeId` read the selection
+back to confirm ids, then each was screenshotted and visually reviewed.
+
+This is a **capture/analysis pass, not an implementation pass** — nothing was built, no registry or
+navigation was touched, per the standing CLAUDE.md instruction not to settle navbar/routes/registry
+without user review.
+
+⚠️ **Counts removed 2026-08-25 (`L-002`).** This paragraph used to say "70 top-level nodes", "69",
+"12 frames" and "all 15", and a later section said "these 13 frames" — three different totals for
+overlapping sets, none with a recipe, and the sentence enumerating "15" actually enumerated 13 because
+it omitted `65:2`. **`docs/product/figma-frame-map.md` § "Second capture batch (2026-08-23)" is the
+single home for the batch accounting** (`CLAUDE.md` §6): enumerate its table rows there.
 
 ## What was found, by cluster
 
@@ -67,9 +75,13 @@ here, same standing-instruction reason as above.
 ## Not done in this pass, deliberately
 
 No screen-inventory.md/capability-map.md cluster analysis (the Phase-0-style deep read) was run on
-these 13 frames — this was a capture + first-look review, not a full inventory pass. If the user wants
-these folded into the IA/registry properly, that's the next scoping conversation, likely alongside the
-still-unscoped Screen Registry Phase 3 (`mem:screen_registry_phase_2b_run_state`).
+the captured frames — this was a capture + first-look review, not a full inventory pass. That is
+still not done.
+
+✅ **The registry half of this note is DONE and its "next scoping conversation" has happened.** Screen
+Registry Phase 3 was scoped and Stage 1 registered the batch (branch `screen-registry-phase-3`) —
+read `mem:screen_registry_phase_3_run_state`, not `mem:screen_registry_phase_2b_run_state`, for where
+that stands. Only the deep inventory read remains unscoped.
 
 ## Related
 

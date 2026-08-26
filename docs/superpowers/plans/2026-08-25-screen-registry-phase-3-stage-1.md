@@ -23,9 +23,14 @@ implements only §3.1 items 1–2, i.e. Stage 1; §5.6 explicitly forbids adding
 - **Stage 1 adds ZERO `spec-only` rows** (spec §5.6, user ruling 2026-08-23). Do not be tempted to
   populate T12/T13 with real data to "prove them properly" — that is Stage 2, gated on a user ruling
   over the discovery-pass candidate list, which has not happened.
-- **Two open decisions must NOT be resolved by this plan**: `landing-page` vs frame `347:6277`
-  (spec §9.1), and the GitHub sign-in button vs the Apple-yes/GitHub-no ruling (spec §9.2). Registering
-  a frame records what Figma designed; it never authorises building it.
+- **One open decision must NOT be resolved by this plan**: `landing-page` vs frame `347:6277`
+  (spec §9.1). Registering a frame records what Figma designed; it never authorises building it.
+  > ⚠️ **CORRECTION (2026-08-25, after execution).** This bullet said "**Two** open decisions" and
+  > named the GitHub sign-in button as the second, pointing at spec §9.2. **That was wrong** —
+  > `decision-register.md` **P14** had already ruled it, and spec §9.2 now reads "✅ ALREADY RULED".
+  > The same error survives at two more sites in this plan, corrected in place below (the registry
+  > comment in Task 5, and the Task 6 frame-map note). Registering the frame was always correct;
+  > only the "still open" characterisation was not.
 - **Never hand-compute a count and paste it into a test.** Every place this plan needs a measured
   number (the G2 pins), it says so explicitly and tells you to read the number from the tool's own
   output — never precompute it (`docs/lessons.md` L-002).
@@ -56,6 +61,13 @@ implements only §3.1 items 1–2, i.e. Stage 1; §5.6 explicitly forbids adding
 | `docs/product/figma-frame-map.md` | top note updated: batch is now registered, one open item remains |
 
 No other file changes. `nav-derivation.ts` and `route-resolver.ts` are unaffected (spec §4.1, measured).
+
+> ⚠️ **CORRECTION (2026-08-25, after execution).** "No other file changes" was a **plan defect**.
+> `lib/product/nav-derivation.test.ts` builds the only other `ScreenEntry` object literal in the repo,
+> so adding a required 13th field makes `tsc` demand `specRef: null` there too. Task 1 (`467b7c1`)
+> correctly added exactly that one line, unprompted. The file list above should have named it.
+> The implementation was right; this plan was wrong. Recorded also in
+> `.serena/memories/screen_registry_phase_3_run_state.md` § Stage 1 execution ledger, ruling 3.
 
 ---
 
@@ -573,8 +585,12 @@ Replace with:
   // flow table). Converted from repo-only. The has-a-ruling axis is
   // untouched by this conversion — decision-register.md still says nothing
   // about /register, and the frame shows a "Continue with GitHub" button
-  // that conflicts with the Apple-yes/GitHub-no ruling; see spec §9.2 —
-  // NOT resolved here, must be settled before this screen is ported.
+  // that loses to decision-register.md P14 ("Auth = email + Google + Apple.
+  // GitHub: no") at port time — register the frame, do not build the button.
+  // ⚠️ CORRECTION (2026-08-25): this prescribed comment originally said
+  // "see spec §9.2 — NOT resolved here, must be settled before this screen
+  // is ported". P14 pre-dates the frame, so it was never open. The comment
+  // that actually shipped in lib/product/screen-registry.ts cites P14.
   {
     screenId: "register",
     name: "Register",
@@ -890,8 +906,9 @@ Replace with:
 > plus 5 new `screen` rows and 2 new `state-variant` rows. `335:1588` is excluded (registry header —
 > style-guide duplicate of `218:15740`). `347:6277` (the new marketing homepage) is deliberately NOT
 > registered — an identity ruling against the existing `landing-page` row is still owed, see that row's
-> comment and `mem:screen_registry_phase_3_run_state` §9.1. The GitHub sign-in button conflict (spec
-> §9.2) is also still open and must be settled before the auth screens are ported.
+> comment and `mem:screen_registry_phase_3_run_state` §9.1. **This is the only open question in the
+> batch.** (⚠️ CORRECTION 2026-08-25: this note originally added "The GitHub sign-in button conflict
+> (spec §9.2) is also still open" — it was not. `decision-register.md` **P14** already ruled it.)
 ```
 
 - [ ] **Step 2: Run the final Stage 1 gate**

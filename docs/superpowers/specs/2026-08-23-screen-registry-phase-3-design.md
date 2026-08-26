@@ -122,7 +122,10 @@ every entry carries exactly the allowed set, so a stray `copy` or `layout` field
 ### 3.2 Explicitly out of scope
 
 - **A `spec` axis for every entry.** Considered and rejected 2026-08-23: it would answer *"is this
-  built screen spec-backed?"*, require re-auditing all 81 rows, and is not needed to answer §1.1.
+  built screen spec-backed?"*, require re-auditing **every existing row** (count them at whatever
+  commit you are reading with `grep -c '^  {$' lib/product/screen-registry.ts`, `L-002` — this spec
+  originally wrote "81", which was true at authoring and is not true now), and is not needed to
+  answer §1.1.
   `spec-only` is deliberately **only the empty cell**, not a general spec axis.
 - **An `api` axis.** The user's sketch included `API ?` as a third dimension. Rejected for this phase:
   a screen consumes N endpoints (Shadowing Practice alone reads `shadowing/session`,
@@ -192,7 +195,8 @@ Only the two scan sources of §6.1 are valid, and they use different id schemes:
 
 ```
 japanese-learning-app-spec.md §3.6     ← spec: § plus a dotted section number
-decision-register.md A12               ← register: A followed by digits
+decision-register.md A12               ← register: A or P, followed by digits
+decision-register.md P14               ← both series are live; see §6.1
 ```
 
 T13 accepts exactly these two shapes. A loose `/\.md §/` was **rejected**: it would admit
@@ -204,8 +208,13 @@ admit near-miss junk. Anything else, `"TODO"` included, fails.
 ## 5. Stage 1 — the 2026-08-23 frame batch
 
 Source of the ids and the visual evidence: `docs/product/figma-frame-map.md` § "Second capture batch
-(2026-08-23)". Thirteen frames were captured; three were already registered (`65:2` Login,
-`337:3323` Data privacy, `339:3612` Delete data) and need no action.
+(2026-08-23)". Three of the captured frames were **already registered** (`65:2` Login, `337:3323`
+Data privacy, `339:3612` Delete data) and need no action.
+
+⚠️ **The batch accounting — how many ids, how many added, converted, excluded, deferred — lives in
+that frame-map section and NOWHERE else** (`CLAUDE.md` §6, "one fact, one home"). An earlier draft of
+this section carried its own total; it disagreed with the frame map's within days. Enumerate there;
+do not restate here.
 
 ### 5.1 One frame is deliberately NOT registered
 
@@ -285,10 +294,25 @@ gate in §6.
 | Source | Included? | Why |
 |---|---|---|
 | `japanese-learning-app-spec.md` §3 (module feature list) | ✅ | `CLAUDE.md`: *"Source of truth for the product"* |
-| `docs/product/decision-register.md` (A1–A17) | ✅ | Amendment C: spec + register decide **WHAT** |
+| `docs/product/decision-register.md` (**both** id series: A… and P…) | ✅ | Amendment C: spec + register decide **WHAT** |
 | `docs/product/capability-map.md` | ❌ | derived from reading Figma |
 | `docs/product/screen-inventory.md` | ❌ | derived from reading Figma |
 | `docs/product/ia-proposal.md` | ❌ | derived downstream of both |
+
+⚠️ **The register numbers rulings in THREE live series, and only two of them are citable in a
+`specRef`:**
+
+| Series | Register section | Citable? | Why |
+|---|---|---|---|
+| `A…` | §2 Information architecture | ✅ | rules WHAT the product contains |
+| `P…` | §1 Product model | ✅ | same — **P13**/**P14**, which this branch leans on, are here |
+| `M…` | §3 Method rules | ❌ | binds HOW we work (M13/M14 *are* Amendment C). A method rule can never be the reason a destination must exist, so citing one would be a category error. |
+
+The `M` exclusion is a **ruling, not an oversight** — stated here because the first two attempts at
+this paragraph both got the enumeration wrong. The original spec said "A1–A17" and T13 was written
+A-only, which would have left a row unable to cite P13/P14. The 2026-08-25 fix then said "two live
+series", missing `M…` entirely. Enumerate the ids at read time; ranges are deliberately not written
+here (`L-002`).
 
 **The exclusion is about circularity, not size.** Phase 0 built `capability-map.md` and
 `screen-inventory.md` *by reading the frames*. Asking them what Figma is missing can only return what
@@ -481,7 +505,7 @@ restore.
 
 ---
 
-## 9. Open decision points — do NOT resolve while implementing
+## 9. Decision points — §9.1 is open, §9.2 is already ruled
 
 ### 9.1 ⛔ `landing-page` vs `347:6277` — an identity question, reserved to the user
 
@@ -506,17 +530,25 @@ The question is **identity, not content**:
 **Useful evidence to gather before the ruling** (gathering it is not resolving it): render the current
 `/` and compare it against `347:6277` section by section.
 
-### 9.2 The GitHub sign-in button — an Amendment C case 3
+§9.1 is the **only** open decision this phase leaves. Two questions that look like siblings of it are
+already ruled, and are recorded in §9.2 so that a porting session does not re-escalate them.
 
-`capability-map.md` §3 records the ruling **"Apple yes, GitHub no"** — auth is email + Google + Apple.
-Frames `332:3` (Register) and `65:2` (Login) both show a **"Continue with GitHub"** button.
+### 9.2 ✅ ALREADY RULED — frame content that loses to a standing ruling (not open)
 
-Amendment C names this class explicitly as case 3 — *"a section for a capability a ruling has
-removed"* — which is ⛔ **STOP and ask**, never a silent resolution.
+Both of these are the ordinary **Amendment C case 2** shape — wrong *content* inside a frame whose
+*identity* is valid. The frames ARE registered; what they draw is simply not built. Neither is a
+case 3 escalation, because in each the ruling **pre-dates the frame**.
 
-**This does not block Stage 1.** Registering a frame records what Figma designed; it does not
-authorise building the button. The conflict must be settled **before the auth screens are ported**,
-and is recorded here so the porting session does not rediscover it.
+| Frame content | Ruling that governs it | What that means at port time |
+|---|---|---|
+| "Continue with GitHub" on `332:3` (Register) and `65:2` (Login) | `decision-register.md` **P14** — *"Auth = email + Google + Apple. GitHub: no"* | Register the frames; do **not** build the button. |
+| PayOS + SePay + MoMo on `340:5402` (Choose method) | `decision-register.md` **P13** — payment is PayOS | Build the PayOS path only; SePay/MoMo are design exploration, deferred for merchant-registration reasons (rationale noted against P13). |
+
+⚠️ **An earlier draft of this spec listed the GitHub button here as an open "Amendment C case 3 — ⛔
+STOP and ask" and said the conflict "must be settled before the auth screens are ported".** That was
+wrong on both counts: P14 had already settled it, and the user re-confirmed on 2026-08-25 that P14
+stands. It also cited `capability-map.md` §3 as the ruling's home — a Figma-derived document this
+very phase excludes as a source (§6.1). **Cite P14, not `capability-map.md`, and do not reopen this.**
 
 ---
 

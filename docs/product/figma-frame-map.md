@@ -1,16 +1,29 @@
 # Figma frame map — name → node id
 
-> ✅ **Second capture batch DONE 2026-08-23.** The 12 frames the 2026-08-20 note listed as absent are
-> now captured (screenshotted + visually reviewed), plus `218:15740 Error state` (already known, now
-> also reviewed). **See § Second capture batch (2026-08-23) below — read it before touching billing,
+> ✅ **Second capture batch DONE 2026-08-23.** The frames the 2026-08-20 note listed as absent are
+> now captured (screenshotted + visually reviewed), together with **two ids that had been in this map
+> since 2026-08-11 but had never been screenshotted** — `218:15740` and `65:2`. (This sentence used
+> to describe a 13-id set, omitting `65:2`, while the ✅ Registered note below correctly resolves all
+> **14** table rows — the same two-sizes-for-one-batch defect this file is supposed to be the cure
+> for. Reconciled 2026-08-25; the batch table below is the enumeration.) **See § Second capture batch (2026-08-23) below — read it before touching billing,
 > auth, or error-state UI.** One genuinely new node appeared since 2026-08-20: `346:6275`, also named
 > "Homepage", but it is a **hidden `rounded-rectangle`** (not a frame, `hidden="true"`, renders blank)
 > — decorative canvas noise, not a screen. Ignore it.
 >
-> Method used: the user selected the 15 target nodes in the Figma desktop Layers panel; `get_metadata`
+> Method used: the user selected the target nodes in the Figma desktop Layers panel; `get_metadata`
 > with no `nodeId` read the prepended "Currently selected nodes" block to confirm ids, then each was
-> screenshotted individually. Page-wide count as of 2026-08-23: **70 top-level nodes** (69 real frames
-> + the 1 hidden rectangle). **Never quote a count from this file — enumerate** (`L-002`).
+> screenshotted individually. **Never quote a count from this file — enumerate** (`L-002`): the node
+> ids are the table rows in § Second capture batch (2026-08-23), and the page-wide total is whatever
+> `get_metadata` with no `nodeId` returns today (its children include the one hidden
+> `rounded-rectangle` above, which is not a frame). A "15 target nodes" figure and a "70 top-level
+> nodes as of 2026-08-23" figure used to sit in this paragraph — the second one two lines above the
+> rule forbidding it, and the first disagreeing with the run-state memory's own enumeration. Both
+> removed 2026-08-25.
+>
+> ⓘ **The counts in the next paragraph are the exception to the "never quote a count" rule above, and
+> the reason the rule works.** This file is the designated single home for the batch accounting
+> (`CLAUDE.md` §6), so these figures ARE the enumeration — every one of them is resolvable against the
+> table below. It is *quoting them elsewhere* that is forbidden.
 >
 > ✅ **Registered 2026-08-23** (Screen Registry Phase 3 Stage 1): of the 14 node ids in the batch
 > section below — the 12 frames the 2026-08-20 note listed as absent, plus **two** that have been in
@@ -288,7 +301,7 @@ to P13 at port time. **This is not an open question and must not be re-escalated
 |---|---|---|---|
 | `218:15740` | Error state | 1167×1720 | A **design-system spec sheet** ("Error states, gently handled"), not a real screen: 8 card variants (connection lost, AI/Sensei down, lesson gone, video load failure, gated content, 404, dashboard-partial, library-partial) plus an "Error language" tone-guideline footer ("Never blaming. Never alarming. Always Korume-led."). |
 | `335:1588` | Error state (right font) | 1167×1719 | **Pixel-identical to `218:15740`** except one card's CTA label differs ("View Korume" vs blank) — reads as a font/typography QA pass over the same sheet, not a distinct screen. Likely mergeable/one supersedes the other; not adjudicated here. |
-| `335:1976` | Error404 ` | 1280×537 | Real 404 page: "404 · Wrong Turn" / "We couldn't find this place.", Go Home + Go Back, shows the attempted path (`/kanji/lesson/green`). |
+| `335:1976` | Error404 | 1280×537 | Real 404 page: "404 · Wrong Turn" / "We couldn't find this place.", Go Home + Go Back, shows the attempted path (`/kanji/lesson/green`). |
 | `337:2055` | Error boundary | 1280×729 | Real in-app route-error screen, rendered **inside the actual app chrome** (sidebar + topbar visible) — "Something interrupted this page.", Try Again / Go to Dashboard, "Your progress is still saved." reassurance banner. |
 
 ⚠️ **Side finding, not this task's call:** the sidebar visible in `337:2055` lists LEARN (Dashboard,

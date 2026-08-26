@@ -46,8 +46,9 @@ merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`).
 ⭐ **Screen Registry Phase 3 — ✅ STAGE 1 IMPLEMENTED, ✅ STAGE 2 CLOSED AT ZERO ROWS, ⛔ NOT MERGED (2026-08-25).** Branch
 `screen-registry-phase-3`, commit range `8865aed..HEAD` (count with
 `git rev-list --count 8865aed..HEAD`), not merged. Stage 1 shipped the type change, the five test
-changes, and the 2026-08-23 frame batch; the branch gate was measured green (tsc 0 · lint 0 errors ·
-262 test files / 2368 tests · `next build` exit 0; Playwright deliberately not run).
+changes, and the 2026-08-23 frame batch; the branch gate was measured green. **The gate figures and
+the command to re-measure them live in the run-state memory only** — not restated here (`CLAUDE.md`
+§6), because a second copy would age independently of the branch.
 **Read `mem:screen_registry_phase_3_run_state` — it is the authority. This block carries a one-line
 gist only and must not duplicate that memory's evidence or its reasoning.**
 In one line: `spec-only` is now a `ScreenKind` and `specRef` the 13th field, so the registry can record
@@ -58,7 +59,9 @@ re-run it and do not hunt for rows to add. Why the pass ended at zero, which can
 user, and what rejected it are **in the spec's §6.7** — deliberately not repeated here, because a
 second copy of that reasoning is what the header above forbids and what a later reader would then
 have to reconcile.
-**The only work left on this branch is a final review pass and the merge.**
+**Where the branch stands right now is the run-state memory's ▶▶ RESUME block — read that, not a
+status line duplicated here** (the final review has run and its fix wave has been applied; a line here
+saying otherwise is exactly the duplication this block keeps removing).
 ⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
 `347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
 The GitHub sign-in button was previously listed alongside it and **should not have been** — that one

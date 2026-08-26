@@ -25,19 +25,35 @@ estimate is unaffected — but do not re-plan "register the new frames" as an ou
 
 ## Backlog measured from the registry (2026-08-23)
 
-```
-grep -o 'impl: "[a-z]*"' lib/product/screen-registry.ts | sort | uniq -c
-```
-→ 37 built · 33 `none` (1 is the deprecated Shadowing Hub, so **32 real unbuilt**) · 13 placeholder
-(stub route exists, not fully built).
+⚠️ **The command this section originally recorded OVER-COUNTED every bucket by exactly one.** It was
+`grep -o 'impl: "[a-z]*"' … | sort | uniq -c`, unanchored — so it also matched the registry's own
+*prose* in two places: the header comment (`lib/product/screen-registry.ts:54`, which writes
+`impl: "placeholder"` and `impl: "built"` while explaining the field) and an inline section banner
+*inside* the array (`:1608`, `impl: "none" for all — no page, no server`). That is the identical
+counter-trap `L-002` already documents for `navGroup`. **Anchor to the field's own indentation:**
 
-Of the 32 unbuilt, **13 are `state-variant`** (ride along their parent screen's build — near-zero
-marginal plan cost, same as `339:3612` rode along `337:3323` in L9b). So independent unbuilt-screen
-count ≈ **19**, plus **12 placeholders** to finish, plus the **9 newly-captured, still-unregistered**
-frames (2 of which — Unsubcribe membership, Choose method — are themselves variants of Membership, so
-≈7 independent new units).
+```
+grep -c '^    impl: "built"'       lib/product/screen-registry.ts
+grep -c '^    impl: "placeholder"' lib/product/screen-registry.ts
+grep -c '^    impl: "none"'        lib/product/screen-registry.ts
+grep -c '^  {$'                    lib/product/screen-registry.ts   # total rows
+```
 
-**Total independent build units ≈ 19 + 12 + 7 = 38**, riding ~15 state-variants along for near-free.
+**Re-measured 2026-08-25 at `73676b5`** (branch `screen-registry-phase-3`, i.e. WITH the 2026-08-23
+batch registered — 88 rows): **36 built · 12 placeholder · 40 `none`**. Cross-tabbed by `kind`, the
+40 `none` rows are 26 `screen` + 13 `state-variant` + 1 `deprecated` (the superseded Shadowing Hub).
+
+So: **26 independent unbuilt screens**, plus **12 placeholders** to finish, riding **13
+state-variants** along for near-free (they ride their parent's build, same as `339:3612` rode
+`337:3323` in L9b).
+
+**Total independent build units ≈ 38.** ⚠️ That this total is unchanged from the original figure is
+a coincidence — two counting errors and the newly-registered frames cancelled out. It is **not**
+evidence the old numbers were fine. Re-run the commands above rather than quoting any figure here.
+
+⚠️ The pre-2026-08-25 text also counted "**9 newly-captured, still-unregistered** frames" as a
+separate bucket on top. They are registered now (§ Registry status above) and the 88-row measurement
+already includes them — do not add that bucket again.
 
 ## What already has backend, what doesn't (checked directly, not assumed)
 
@@ -57,11 +73,14 @@ frames (2 of which — Unsubcribe membership, Choose method — are themselves v
 - **New marketing Homepage (`347:6277`)**: conflicts with the EXISTING `/` route, which is already
   `impl: "built"` as `repo-only` (no Figma link recorded). This is a **redesign/reconciliation call**,
   not a build-from-zero — needs a ruling on what happens to the current landing page.
-- **The 32 unbuilt screens spread across existing modules** (Kanji, Pronunciation, Conversation, JLPT,
-  Companion, Profile/onboarding) mostly build on top of already-`built` parent modules/APIs — but a
-  meaningful chunk is blocked on **open product rulings, not effort**: notably the Kanji
-  explorer-vs-library dual-surface question (`mem:phase0_figma_inventory_run_state`, still open since
-  Phase 0) covers 2 of the 19 independent units by itself.
+- **The unbuilt screens spread across existing modules** (Kanji, Pronunciation, Conversation, JLPT,
+  Companion, Profile/onboarding) mostly build on top of already-`built` parent modules/APIs. ⚠️ An
+  earlier draft said a "meaningful chunk is blocked on open product rulings", naming the Kanji
+  explorer-vs-library dual-surface question as **still open since Phase 0**. **That was false** —
+  `decision-register.md` **P4** ruled it on 2026-08-12 (evidence: `capability-map.md` §3.4). See the
+  Kanji cluster row below.
+  The only genuinely open ruling left in this backlog is the marketing-homepage identity question
+  (`347:6277` vs the existing `/`).
 
 ## Effort estimate — framed in this repo's own unit (SDD plans/branches), not generic hours
 
@@ -78,7 +97,7 @@ Bucketing the 38 independent units into L9b-sized plans by natural module cluste
 | Billing/Layer 8 (PayOS port + checkout + pricing/FAQ + `/settings/membership` + cancel flow) | 2 | payment provider ruling — RULED 2026-08-23 (PayOS-only, provider-agnostic port shape) |
 | Error UX (404 + error boundary + design-system tone pass) | 0.5 (foldable into another plan) | nothing |
 | Marketing homepage reconciliation | 1 | needs a ruling: replace `/`, or is `347:6277` a different route? |
-| Kanji cluster (explorer + library) | 1 | nothing — ⚠️ CORRECTED 2026-08-23: an earlier draft of this file said the dual-surface question was "open since Phase 0". **That was false.** `docs/product/capability-map.md` §3.4 RULED it on 2026-08-12: both surfaces ship under ONE nav row, `/kanji` defaults to the curriculum surface, the explorer is a browse mode inside it. Browse-by-radical survives and is cheap (table + FK + index + RLS all exist); curated collections survive and DO have a schema gap. Four domain nouns (learning path · course · kanji lesson · study material) still need naming decisions before building. |
+| Kanji cluster (explorer + library) | 1 | nothing — ⚠️ CORRECTED 2026-08-23: an earlier draft of this file said the dual-surface question was "open since Phase 0". **That was false.** `decision-register.md` **P4** RULED it on 2026-08-12 (evidence pointer: `capability-map.md` §3.4): both surfaces ship under ONE nav row, `/kanji` defaults to the curriculum surface, the explorer is a browse mode inside it. Browse-by-radical survives and is cheap (table + FK + index + RLS all exist); curated collections survive and DO have a schema gap. Four domain nouns (learning path · course · kanji lesson · study material) still need naming decisions before building. |
 | Companion cluster (learning memory, growth areas, conversation memory, welcome page, sensei/companion-home placeholders) | 2 | nothing structural |
 | JLPT cluster (phase test, practice result, review-mistake family, remaining state-variants) | 1–2 | nothing structural |
 | Conversation practice + pronunciation-detail + pronunciation-library placeholder | 1 | nothing structural |
@@ -87,13 +106,15 @@ Bucketing the 38 independent units into L9b-sized plans by natural module cluste
 **Total ≈ 12–14 plans.** At the repo's own historical cadence (~1 plan per 1.5–2 days of active
 engagement), that is roughly **4–7 weeks of continued active work** — this is a velocity observation
 about THIS repo's agentic workflow, not a generic estimate, and it assumes: the user keeps reviewing at
-the same pace, no plan needs more than L9b's one fix-wave, and the open rulings (Kanji dual-surface,
-homepage reconciliation) get answered promptly rather than stalling a plan mid-flight.
+the same pace, no plan needs more than L9b's one fix-wave, and the one open ruling (homepage
+reconciliation) gets answered promptly rather than stalling a plan mid-flight.
 
 ## Speed-up levers (concrete, not generic advice)
 
-1. **Answer the two open product rulings early** (Kanji explorer-vs-library, new-Homepage-vs-existing-`/`)
-   — each currently blocks a whole plan from starting cleanly; answering them now removes a stall later.
+1. **Answer the one remaining open product ruling early** — new-Homepage (`347:6277`) vs the existing
+   `/`. It blocks the marketing-reconciliation plan from starting cleanly; answering it now removes a
+   stall later. (An earlier draft listed Kanji explorer-vs-library here as a second one; that was
+   false — `decision-register.md` **P4** ruled it 2026-08-12.)
 2. ✅ **DONE — the new frames are registered** (Screen Registry Phase 3 Stage 1, branch
    `screen-registry-phase-3`). This lever has been spent; every downstream plan now has an accurate
    `figmaCheckedAt` for them. One caveat that survives: `login`/`65:2` still carries the older
@@ -116,4 +137,5 @@ homepage reconciliation) get answered promptly rather than stalling a plan mid-f
 
 `mem:figma_recapture_2026_08_23_run_state` · `mem:project_status` · `lib/product/screen-registry.ts`
 (header comment, sourcing rules) · `docs/superpowers/plans/` (the cadence evidence) ·
-`mem:phase0_figma_inventory_run_state` (the Kanji dual-surface open question).
+`docs/product/decision-register.md` **P4** (the Kanji dual-surface ruling, 2026-08-12 — **ruled, not
+open**) · `mem:phase0_figma_inventory_run_state`.
