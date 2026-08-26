@@ -30,7 +30,28 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-25) — **Screen Registry Phase 3 is MERGED. There is no live next action; the next one must be scoped.**
+## ▶ NEXT ACTION (updated 2026-08-26) — **branch `landing-page-identity-ruling` is built, gate-green and twice-reviewed, but UNMERGED. The merge is the user's call — ask, do not merge unprompted.**
+
+Count its commits with `git rev-list --count master..landing-page-identity-ruling` (`L-002`). They
+carry: the user's 2026-08-26 ruling that frame `347:6277` is the design for `/`, plus the claims that
+ruling made false (the registry header's frame-map invariant, G2's per-date pin, `346:6275` recorded
+as "decorative canvas noise", two mis-read section descriptions in `figma-frame-map.md`); the memory
+and `docs/lessons.md` updates; `docs/product/landing-page-reconciliation.md`; and two fix waves.
+T3/T9 mutation-checked over the changed row.
+**Both reviews are done:** the whole-branch review (`L-011`) found 0 correctness bugs and 10 prose
+defects; the review of that wave (`L-012`) found 10 more, three of them created by the wave itself.
+Both waves landed. **Re-run the gate at the tip before merging** — `npm run typecheck` ·
+`npx vitest run --reporter=dot` · `npm run lint` · `npm run build` — rather than trusting a figure
+here, because the figures this block used to carry were measured at `a9ad897`, three commits before
+the tip, while the sentence said "branch tip". That mismatch is what `L-012` catches.
+
+**Unblocked by that ruling, not started:** porting the landing page at `/`. **Read
+`docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
+it. In one line: build `347:6277`'s structure to `346:6275`'s visual bar, keeping the frame's footer
+and its "A quieter way to keep going." section, which the user ruled authoritative.
+✅ **The image-licensing question is RULED (user, 2026-08-26): the imagery is AI-generated, so there
+is none.** Do not re-escalate it. What is left is only sourcing the actual image files at usable
+resolution — the reconciliation doc's §5 has it; do not restate it here.
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and
@@ -62,8 +83,11 @@ second copy of that reasoning is what the header above forbids and what a later 
 have to reconcile.
 **Phase 3 is merged and closed. There is no live next action from it** — pick from the candidates
 below. Read the run-state memory's ▶▶ RESUME block for the full sequence and the merged-master gate.
-⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
-`347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
+✅ **Phase 3's one open decision is CLOSED (user, 2026-08-26): frame `347:6277` IS the design for
+`/`.** The `landing-page` row converted to `kind: "screen"` on branch `landing-page-identity-ruling`
+(`a9ad897`, NOT yet merged — see the live next action below). The authenticated home **stays
+`dashboard` at `/dashboard`**: the user declined a `/home` rename in the same ruling. Authority is the
+spec's §9.1; this line is the gist, not a second copy.
 The GitHub sign-in button was previously listed alongside it and **should not have been** — that one
 is ruled by `decision-register.md` **P14** ("Auth = email + Google + Apple. GitHub: no"), confirmed
 still standing by the user 2026-08-25; the frame's content simply loses to P14 at port time.

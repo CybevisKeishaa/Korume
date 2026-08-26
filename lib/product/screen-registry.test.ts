@@ -196,7 +196,7 @@ describe("screen registry invariants", () => {
     }
 
     // ---- TODAY'S STATE. Not invariants. -------------------------------------
-    // These two pins record what the registry happens to hold on 2026-08-25 so
+    // These two pins record what the registry happens to hold on 2026-08-26 so
     // that a change to either is conscious rather than silent. They are
     // EXPECTED to move: the id list when the admin surface changes, and the
     // per-date counts whenever a genuinely re-checked entry is stamped with a
@@ -226,10 +226,16 @@ describe("screen registry invariants", () => {
     // map is non-empty; this pins the exact per-date breakdown too, so a
     // change to either the total or the split between the dates is
     // conscious rather than silent.
+    // 2026-08-26 holds exactly one entry: `landing-page`, re-compared against
+    // frame `347:6277` when the user ruled its identity. The total is
+    // unchanged because that row was already stamped (2026-08-12) as a
+    // repo-only route — the ruling moved a stamp, it did not add one, which
+    // is why 2026-08-12 drops by the same one.
     expect(Object.fromEntries(stampedByDate)).toEqual({
-      "2026-08-12": 71,
+      "2026-08-12": 70,
       "2026-08-20": 3,
       "2026-08-23": 8,
+      "2026-08-26": 1,
     });
   });
 });

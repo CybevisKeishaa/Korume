@@ -31,6 +31,14 @@ implements only §3.1 items 1–2, i.e. Stage 1; §5.6 explicitly forbids adding
   > The same error survives at two more sites in this plan, corrected in place below (the registry
   > comment in Task 5, and the Task 6 frame-map note). Registering the frame was always correct;
   > only the "still open" characterisation was not.
+  > ⚠️ **SECOND CORRECTION (2026-08-26).** The decision this bullet *does* correctly name — the
+  > `landing-page` identity question — **is now RULED**: the user ruled `347:6277` IS the design for
+  > `/`, and it is registered on the `landing-page` row. This plan was right not to resolve it; it is
+  > simply no longer open. `346:6275`, which this plan calls "decorative canvas noise", is the landing
+  > page's flat **visual quality bar** (`docs/lessons.md` L-019). **Both claims recur at three more
+  > sites in this file — Step 1's header block, the Task 5 registry comment, and the Task 6 frame-map
+  > note — each corrected in place below**, per the convention this note's predecessor set.
+  > Authority: `docs/product/landing-page-reconciliation.md` and spec §9.1.
 - **Never hand-compute a count and paste it into a test.** Every place this plan needs a measured
   number (the G2 pins), it says so explicitly and tells you to read the number from the tool's own
   output — never precompute it (`docs/lessons.md` L-002).
@@ -506,6 +514,13 @@ git commit -m "test(screen-registry): add T12 (spec-only is the empty cell), mut
 
 - [ ] **Step 1: Add the second-batch exclusion note to the registry header**
 
+> ⚠️ **Historical record — do NOT copy the block below into the registry today.** This plan executed
+> on 2026-08-25 and is kept as written. Two of the claims it specifies were overtaken on 2026-08-26:
+> `346:6275` is **not** "decorative canvas noise" (it is the landing page's flat visual quality bar,
+> mis-classified from a blank render of a hidden node — `docs/lessons.md` L-019), and `347:6277` is
+> **no longer unregistered** (the user ruled it the design for `/`). `lib/product/screen-registry.ts`
+> is the live text; this is what it was asked to say at the time.
+
 In `lib/product/screen-registry.ts`, find the end of the header doc-comment:
 
 ```ts
@@ -609,6 +624,12 @@ Replace with:
 ```
 
 - [ ] **Step 3: Update the `landing-page` comment — data untouched, open decision flagged**
+
+> ⚠️ **Historical record — do NOT apply this step's replacement text today** (2026-08-26 correction,
+> the third of the three sites the top-of-file note names). The `⛔ OPEN` comment this step installs
+> was correct when it ran; the decision has since been **ruled** — `347:6277` IS the design for `/`,
+> and the `landing-page` row is now `kind: "screen"` with that frame id. `lib/product/screen-registry.ts`
+> holds the live text.
 
 Find:
 
@@ -899,6 +920,12 @@ Find:
 ```
 
 Replace with:
+
+> ⚠️ **Historical record — do NOT apply this block today** (2026-08-26 correction, the second of the
+> three sites the top-of-file note names). Its "`347:6277` … is deliberately NOT registered … **the
+> only open question in the batch**" was true when this plan ran and is false now: the user ruled the
+> identity on 2026-08-26 and the frame is registered as `landing-page`. `docs/product/figma-frame-map.md`
+> holds the live wording.
 
 ```markdown
 > ✅ **Registered 2026-08-23** (Screen Registry Phase 3 Stage 1): 11 of the 13 previously-uncaptured

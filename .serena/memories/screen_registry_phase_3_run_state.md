@@ -176,8 +176,9 @@ already. Summary of what Stage 1 did:
 
 - **CONVERSION** (R6 firing for the first time — `repo-only` is an observation with a date, not a
   permanent verdict): ✅ `register` gained frame `332:3`. The second candidate conversion,
-  `landing-page` ← `347:6277`, was ⛔ **NOT made** — see the open decision below. That row's `kind`,
-  `figmaNodeId` and `figmaCheckedAt` are byte-identical to what they were before the capture.
+  `landing-page` ← `347:6277`, was deliberately NOT made *by this branch* — it needed a user ruling.
+  ✅ **That ruling came on 2026-08-26 and the conversion has since landed on a separate branch**
+  (`landing-page-identity-ruling`, `a9ad897`) — see the closed-decision section below.
 - **New `screen` rows**, all `impl: 'none'`, all stamped `2026-08-23`: Reset password `333:210` ·
   Email OTP `335:306` · Error404 `335:1976` · Error boundary `337:2055` · Membership `340:3795`.
 - **New `state-variant` rows**, `variantOf: 'membership'`: Unsubcribe membership `340:4586` ·
@@ -186,17 +187,23 @@ already. Summary of what Stage 1 did:
   that already excludes its twin `218:15740`. ✅ Typed into the registry header's exclusion list,
   because no test can catch a frame nobody ever entered.
 
-## ⛔ ONE OPEN DECISION — still unresolved after Stage 1, and reserved to the user
+## ✅ THE ONE OPEN DECISION IS NOW CLOSED — ruled by the user 2026-08-26
 
 ⚠️ **This section listed TWO. The second (the GitHub sign-in button) was never actually open** — see
-the correction below it. Only the `landing-page` identity question remains.
+the correction below it. The `landing-page` identity question was the real one, and it is now ruled.
 
-1. **`landing-page` vs frame `347:6277`** — an IDENTITY question reserved to the user. Is `347:6277`
-   the design for the existing `/` route (→ convert the row like `register`), or a *different*
-   marketing destination (→ its own row, `landing-page` stays `repo-only`)? Three frames are now named
-   "Homepage": `111:515` (registered as `dashboard`), `347:6277`, and `346:6275` — the last is a
-   **hidden `rounded-rectangle`, decorative noise, NEVER to be registered**. Useful evidence to gather
-   before the ruling (gathering ≠ resolving): render `/` and compare section by section.
+1. **`landing-page` vs frame `347:6277`** — ✅ **RULED: `347:6277` IS the design for the existing `/`.**
+   The row converted to `kind: "screen"` / `figmaNodeId: "347:6277"` / `figmaCheckedAt: "2026-08-26"`
+   on branch `landing-page-identity-ruling` (`a9ad897`), not on this branch. The user also declined a
+   `/home` rename in the same ruling: the authenticated home **stays `dashboard` at `/dashboard`**,
+   unrenamed — "user homepage" was their phrase for telling the two apart, not a rename instruction.
+   ⚠️ **`346:6275` was described here as "decorative noise", and in several other files as
+   "decorative canvas noise" — two different strings, which is why the first attempt to sweep them
+   with one grep missed half of them (`docs/lessons.md` L-019 carries that). That was
+   wrong** — it is the landing page's flat **visual quality bar** image, mis-filed because it was
+   hidden when 2026-08-23 screenshotted it and rendered blank. Still never to be registered, but for
+   the opposite reason: it is a picture of a design, not decoration. Authority on all of this is now
+   the spec's §9.1 plus `docs/product/figma-frame-map.md`; do not re-derive it from this bullet.
 ✅ **CORRECTION (user, 2026-08-25) — the GitHub sign-in button was NEVER an open decision, and this
 memory was wrong to list it as one.** Frames `332:3` and `65:2` both show "Continue with GitHub", and
 `decision-register.md` **P14** already reads *"Auth = email + Google + Apple. GitHub: no"*. The user

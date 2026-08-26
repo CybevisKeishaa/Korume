@@ -6,9 +6,21 @@
 
 ## What happened
 
+⚠️ **CORRECTION (2026-08-26), read before the paragraph below.** This pass dismissed `346:6275` as
+"a hidden decorative rounded-rectangle, not a real screen". Not a screen was right; **decorative was
+wrong, and it was the wrong kind of wrong** — the node was `hidden="true"` at the time, so the
+screenshot came back a 149-byte blank and the classification was made from the blank render instead
+of from the node. Unhidden it is an 864×1821 image fill with zero children: a **flat picture of a
+finished landing-page design**, which the user confirmed on 2026-08-26 is the landing page's
+**visual quality bar**. It correctly stays out of the registry (nothing can be derived from a
+layerless image — only compared against), but "decorative noise" would have licensed deleting it in
+a Figma cleanup pass. **The lesson this is evidence for is `docs/lessons.md` L-019** — which now
+carries this incident; do not restate its rule here.
+
 The user added new frames to the Figma file (`IwFHZDZdHW7qsSFiNbWrkd`) and asked for a review. Diffing
 the current page against the 2026-08-20 snapshot found exactly one structural change — a hidden
-decorative `rounded-rectangle` named "Homepage" (`346:6275`), not a real screen. The actual "new
+decorative `rounded-rectangle` named "Homepage" (`346:6275`), not a real screen *(the "decorative"
+half of that is corrected above)*. The actual "new
 screens" were the **frames the 2026-08-20 note had already flagged as missing from
 `figma-frame-map.md`** (never screenshotted before), together with **two ids already in that map since
 2026-08-11 that had never been screenshotted** — `218:15740 Error state` and `65:2 Login`. The user
@@ -44,10 +56,16 @@ single home for the batch accounting** (`CLAUDE.md` §6): enumerate its table ro
   existing onboarding-cluster `Homepage` (`111:515`). ⚠️ **Correction (2026-08-25):** "onboarding
   cluster" is wrong for `111:515` — it is the **authenticated Dashboard**, ruled 2026-08-12 in
   `screen-inventory.md` §19.0/§19.1 and registered as `dashboard`. The frame was grouped by canvas
-  proximity rather than by being looked at (`M7`). Everything else in this bullet stands.
-  Three frames now share the name "Homepage"
-  (`111:515`, `347:6277`, and the noise rectangle `346:6275`) — same collision pattern as the earlier
-  `29:2890`/`280:3` Kanji pair; a rename pass is optional cleanup, not urgent (node ids disambiguate).
+  proximity rather than by being looked at (`M7`). ✅ **`347:6277`'s identity is RULED (user,
+  2026-08-26): it IS the design for the existing `/`**, and is now registered as `landing-page`
+  (`a9ad897`). The authenticated home stays `dashboard` at `/dashboard` — a `/home` rename was
+  offered and declined.
+  Three nodes share the name "Homepage" (`111:515`, `347:6277`, and `346:6275`) — same collision
+  pattern as the earlier `29:2890`/`280:3` Kanji pair; a rename pass is optional cleanup, not urgent
+  (node ids disambiguate).
+  ⚠️ **Second correction (2026-08-26): `346:6275` is NOT the "noise rectangle" this memory called it
+  twice.** See the correction at the top of this file — it is the landing page's visual quality bar,
+  and calling it noise nearly got it treated as deletable cleanup.
 
 ## ⭐ Payment-provider conflict — RULED 2026-08-23
 
