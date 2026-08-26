@@ -49,8 +49,9 @@ the tip, while the sentence said "branch tip". That mismatch is what `L-012` cat
 `docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
 it. In one line: build `347:6277`'s structure to `346:6275`'s visual bar, keeping the frame's footer
 and its "A quieter way to keep going." section, which the user ruled authoritative.
-⚠️ **The port is blocked on a non-design question the user must answer — the image sources.** The
-reconciliation doc's §5 has the reasoning; do not re-derive or restate it here.
+✅ **The image-licensing question is RULED (user, 2026-08-26): the imagery is AI-generated, so there
+is none.** Do not re-escalate it. What is left is only sourcing the actual image files at usable
+resolution — the reconciliation doc's §5 has it; do not restate it here.
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and

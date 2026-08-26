@@ -180,17 +180,17 @@ allowed **only where it does not change structure or content**.
 | §7 lit-window photograph | ❌ none in repo |
 | §8 CTA night background | ⚠️ present in the frame but too dark to use as-is |
 
-⚠️ **The photography is the port's real blocker, and it is a licensing question, not a design one.**
-The images in `346:6275` are baked into a flat PNG and cannot be extracted as licensed assets, so
-four sections need a source decided before they can be built: original photography, a licensed stock
-set, or a visual treatment that does not need photographs at all.
+✅ **RULED by the user, 2026-08-26: the imagery is AI-generated, so there is no licensing question.**
+An earlier draft of this section called licensing the port's blocker and escalated it. That is
+settled — the user generated these images, and nothing here needs a stock licence or attribution.
+(`CLAUDE.md` §2.3 was never the governing rule anyway: it is scoped to **study content** — kanji,
+vocab, grammar, JLPT items — not marketing imagery. Noted so nobody re-escalates on that citation.)
 
-**On which rule binds here — state it precisely, because the obvious citation is wrong.**
-`CLAUDE.md` §2.3 is scoped to **study content** (kanji, vocab, grammar, JLPT items) and does not, by
-its letter, govern marketing imagery; citing it for this would be borrowing authority the rule does
-not grant. What actually applies is ordinary licensing diligence plus §2.3's evident principle —
-this project does not ship material whose provenance it cannot state. Either way the conclusion is
-the same and it is not a porter's call to make silently: **ask the user.**
+⚠️ **What remains is not a permission problem but a file problem, and it is smaller.** The images in
+`346:6275` exist only as pixels baked into one flat PNG, at the resolution that PNG was captured at.
+They cannot be sliced out as per-section assets of usable quality. So before §1, §2, §5 and §7 are
+built, the actual image files have to come from somewhere: the user's original generations if they
+still exist, or a fresh generation to the same direction. **Ask which — do not slice the reference.**
 
 ---
 
