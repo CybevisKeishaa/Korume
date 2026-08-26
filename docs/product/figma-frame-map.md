@@ -1,19 +1,56 @@
 # Figma frame map — name → node id
 
-> ⛔ **STALE as of 2026-08-20 — this map is a 2026-08-11 snapshot and the file has grown since.**
-> Measured on 2026-08-20 by dumping the page and counting direct children of `0:1`: **69 top-level frames
-> against this map's 57**. Twelve are absent here, and two of them are load-bearing for L9b Plan 1:
-> **`337:3323` Data privacy (for delete)** and **`339:3612` Delete data**. The others:
-> `332:3` Register · `333:210` Reset password · `335:306` Email OTP · `335:1588` Error state (right
-> font) · `335:1976` Error404 · `337:2055` Error boundary · `340:3795` Membership · `340:4586`
-> Unsubcribe membership · `340:5402` Choose method · `347:6277` Homepage.
+> ✅ **Second capture batch DONE 2026-08-23.** The frames the 2026-08-20 note listed as absent are
+> now captured (screenshotted + visually reviewed), together with **two ids that had been in this map
+> since 2026-08-11 but had never been screenshotted** — `218:15740` and `65:2`. (This sentence used
+> to describe a 13-id set, omitting `65:2`, while the ✅ Registered note below correctly resolves all
+> **14** table rows — the same two-sizes-for-one-batch defect this file is supposed to be the cure
+> for. Reconciled 2026-08-25; the batch table below is the enumeration.) **See § Second capture batch (2026-08-23) below — read it before touching billing,
+> auth, or error-state UI.** One genuinely new node appeared since 2026-08-20: `346:6275`, also named
+> "Homepage", but it is a **hidden `rounded-rectangle`** (not a frame, `hidden="true"`, renders blank)
+> — decorative canvas noise, not a screen. Ignore it.
 >
-> **Consequence beyond this file:** `lib/product/screen-registry.ts` does not know these frames exist,
-> so every row's `figmaCheckedAt` overstates what was actually compared (`R7`). A re-capture pass is
-> owed and is deliberately NOT folded into L9b Plan 1. **Never quote 57, or any count, from this file
-> — enumerate** (`L-002`). Recapture method: the page dump exceeds the tool's token cap but is written
-> to a file, so `get_metadata` on `0:1` then filter direct children locally — that is how 69 was
-> measured, and it needs no frame selection in the desktop app.
+> Method used: the user selected the target nodes in the Figma desktop Layers panel; `get_metadata`
+> with no `nodeId` read the prepended "Currently selected nodes" block to confirm ids, then each was
+> screenshotted individually. **Never quote a count from this file — enumerate** (`L-002`): the node
+> ids are the table rows in § Second capture batch (2026-08-23), and the page-wide total is whatever
+> `get_metadata` with no `nodeId` returns today (its children include the one hidden
+> `rounded-rectangle` above, which is not a frame). A "15 target nodes" figure and a "70 top-level
+> nodes as of 2026-08-23" figure used to sit in this paragraph — the second one two lines above the
+> rule forbidding it, and the first disagreeing with the run-state memory's own enumeration. Both
+> removed 2026-08-25.
+>
+> ⓘ **The counts in the next paragraph are the exception to the "never quote a count" rule above, and
+> the reason the rule works.** This file is the designated single home for the batch accounting
+> (`CLAUDE.md` §6), so these figures ARE the enumeration — every one of them is resolvable against the
+> table below. It is *quoting them elsewhere* that is forbidden.
+>
+> ✅ **Registered 2026-08-23** (Screen Registry Phase 3 Stage 1): of the 14 node ids in the batch
+> section below — the 12 frames the 2026-08-20 note listed as absent, plus **two** that have been in
+> this map since 2026-08-11 but had never been screenshotted, `218:15740` and `65:2` — **8 rows were added or
+> converted by this batch** — `register`/`332:3` (converted from `repo-only`), plus 5 new `screen`
+> rows (`reset-password`/`333:210`, `email-otp`/`335:306`, `error404`/`335:1976`,
+> `error-boundary`/`337:2055`, `membership`/`340:3795`) and 2 new `state-variant` rows
+> (`unsubscribe-membership`/`340:4586`, `choose-method`/`340:5402`), all stamped
+> `figmaCheckedAt: "2026-08-23"`. **3 more were already registered before this batch and are
+> untouched by it**: `login`/`65:2` (stamp `2026-08-12`), `data-privacy`/`337:3323` and
+> `delete-data`/`339:3612` (both stamped `2026-08-20`) — 8 + 3 = **11 of the 14 registered**. **2 are
+> excluded**, both style-guide catalogue sheets named in the registry header: `218:15740` and
+> `335:1588` (a font/typography QA pass over the same sheet as `218:15740`, not a distinct screen).
+> **1 remains deliberately unregistered**: `347:6277` (the new marketing homepage) — an identity
+> ruling against the existing `landing-page` row is still owed, see that row's comment and
+> `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md` §9.1. **This is the one
+> genuinely open question in this batch.** The GitHub sign-in button on `332:3`/`65:2` is **not** one:
+> `decision-register.md` **P14** ("Auth = email + Google + Apple. GitHub: no") already rules it, and
+> the user confirmed on 2026-08-25 that P14 still stands. The frame's content loses to P14 at port
+> time — register the frame, do not build the button.
+>
+> ⚠️ **Residual debt this batch did NOT close:** `login`/`65:2`'s row still carries
+> `figmaCheckedAt: "2026-08-12"`, but this file records `65:2` as screenshotted for the first time
+> on 2026-08-23 — so that stamp still overstates what was actually compared. Left alone
+> deliberately: a stamp means a human compared frame against registry on that date, and nobody
+> re-compared `login` in Stage 1. Fixing the number by touching the stamp would be exactly the
+> dishonesty the `G2` test exists to catch.
 
 **File:** `IwFHZDZdHW7qsSFiNbWrkd` ("Korume"), single page `0:1`.
 **Captured:** 2026-08-11, by selecting frames in the Figma desktop app and reading the
@@ -218,3 +255,78 @@ only `90:1985 Shadowing Hub` is still present.
 In Figma's **Layers panel**, click a frame, then `Shift`+click the fifteenth below it — that selects a
 contiguous run of 15. Say the word, and `get_metadata` is called with **no `nodeId`** (which stays
 cheap — it only lists pages) to read the prepended selection block. Repeat until every frame has an id.
+
+## Second capture batch (2026-08-23)
+
+All screenshotted at `maxDimension: 900` and visually reviewed. Node ids, sizes, and a content summary
+per frame. These sit in a new canvas region (x ≈ -11126..3789, y ≈ 8318..9581), well away from the
+original 57-frame cluster — the user has clearly been designing a new batch, not editing old frames.
+
+### Auth flow — coherent, four-step, matches nothing built yet
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `332:3` | Register | 1280×905 | "Welcome to Korume" — OAuth (Google/Apple/GitHub) + email/password form, name/email/password/confirm, ToS+Privacy checkbox. |
+| `65:2` | Login | 1278×821 | "Welcome Back" — same OAuth row + email/password, "Forgot password?", "Create one" link. (Already in the original 57; now screenshotted for the first time.) |
+| `333:210` | Reset password | 1280×537 | "Forgot your password?" — single email field, "Send reset link". |
+| `335:306` | Email OTP | 1280×566 | "Check your inbox" — 6-digit code entry, expiry countdown, resend-code link. |
+
+All four share the same split layout (left: brand copy + Eevee-line mascot art + quote; right: dark
+card form) — one consistent design language, ready to port as a set.
+
+### Payment / billing (Layer 8 territory) — the frame's provider list is overruled by P13, see below
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `340:3795` | Membership | 1280×1176 | Full `/settings/membership` page: active plan card ("Travel Together for a Year", 490.000đ/year, started/renews dates, Change/Cancel), "What's included" (8 items: AI Sensei, Unlimited Lesson Creation, Learning Memory, Personalized Roadmap, Intelligent Review Planning, Native Pronunciation Analysis, AI Conversation Partner, Weakness Coaching), payment-method row, transaction history, contact/help block. |
+| `340:4586` | Unsubcribe membership | 1280×1176 | Same page with a "Leave Korume for now?" cancellation dialog open — states the plan stays active until the paid-through date, "Cancellation stops renewal. It does not remove your access today." |
+| `340:5402` | Choose method | 1280×1176 | Same page with a **"Choose how you'd like to pay"** dialog open, listing three providers: **PayOS** ("Simple QR / payment gateway", pre-selected), **SePay** ("Bank payment"), **MoMo** ("Mobile payment"). |
+
+⚠️ **`340:5402` shows three payment providers where `CLAUDE.md` §3 says one** ("Payments: PayOS
+subscriptions, no trial"). It was escalated per `CLAUDE.md` §2, and **it is settled — it was already
+settled before the frame existed.** `decision-register.md` **P13** reads *"Payment is PayOS. No
+Stripe, no Visa, no Apple Pay."* The user re-affirmed it when this frame surfaced (2026-08-23) and
+again on **2026-08-25**:
+
+- **PayOS-only stands. `CLAUDE.md` §3 is unchanged.**
+- **SePay and MoMo are design exploration and are not to be built** — deferred for
+  merchant-registration reasons (the cost is registering as a merchant with each, not writing an
+  adapter). Recorded as a note against P13 in `decision-register.md`.
+- Layer 8 consequence: shape the payment integration as a provider-agnostic port from day one
+  (mirroring `lib/ai` and `lib/email`), but ship the **PayOS adapter alone**.
+
+Registering `340:5402` in the screen registry records what Figma *designed*; its provider list loses
+to P13 at port time. **This is not an open question and must not be re-escalated as one.**
+
+### Error-state system — one design-system reference sheet, one real 404, one real in-app boundary, one likely-duplicate
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `218:15740` | Error state | 1167×1720 | A **design-system spec sheet** ("Error states, gently handled"), not a real screen: 8 card variants (connection lost, AI/Sensei down, lesson gone, video load failure, gated content, 404, dashboard-partial, library-partial) plus an "Error language" tone-guideline footer ("Never blaming. Never alarming. Always Korume-led."). |
+| `335:1588` | Error state (right font) | 1167×1719 | **Pixel-identical to `218:15740`** except one card's CTA label differs ("View Korume" vs blank) — reads as a font/typography QA pass over the same sheet, not a distinct screen. Likely mergeable/one supersedes the other; not adjudicated here. |
+| `335:1976` | Error404 | 1280×537 | Real 404 page: "404 · Wrong Turn" / "We couldn't find this place.", Go Home + Go Back, shows the attempted path (`/kanji/lesson/green`). |
+| `337:2055` | Error boundary | 1280×729 | Real in-app route-error screen, rendered **inside the actual app chrome** (sidebar + topbar visible) — "Something interrupted this page.", Try Again / Go to Dashboard, "Your progress is still saved." reassurance banner. |
+
+⚠️ **Side finding, not this task's call:** the sidebar visible in `337:2055` lists LEARN (Dashboard,
+Lessons, Kanji, Vocabulary, Grammar, Reading, Speaking, JLPT) and STUDY (Review, Mining) — worth
+diffing against `components/layout/app-nav.tsx`'s current `NAV_GROUPS` (LEARN 8 / STUDY 4 / PROGRESS 1
+/ ACCOUNT 1) next time nav is touched, since the counts don't obviously match. Not investigated further
+here per the standing instruction not to settle navbar/routes without user review.
+
+### Data privacy / deletion — NOT new content, corroborates what already shipped
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `337:3323` | Data privacy (for delete) | 911×652 | `/settings/privacy` — Learning reminders toggle, Danger Zone (Delete Korume Memory / Delete Account / Delete all my data). |
+| `339:3612` | Delete data | 1280×973 | The "Delete all my data" modal — itemized what's-deleted list, permanence warning, type-DELETE confirmation, checkbox. |
+
+These are the two frames L9b Plan 1 (merged `4b1fef7`) already built against — confirmed here to match
+the shipped `/settings/privacy` implementation. No new information, just closes the loop on why these
+two were flagged load-bearing in the 2026-08-20 note.
+
+### New marketing homepage — distinct from the existing `Homepage` frames
+| Node id | Frame | Size | Summary |
+|---|---|---|---|
+| `347:6277` | Homepage | 1280×4028 | A full public marketing/landing page, unrelated to the other frame named "Homepage", `111:515` — which is the **authenticated Dashboard** ("Welcome back", Continue Learning, Today's Mission, Weakness Snapshot), ruled 2026-08-12 in `screen-inventory.md` §19.0/§19.1 and registered as `dashboard`. Long-scroll sections: hero ("Learn Japanese from the Japanese you actually want to understand"), a listening-comprehension score widget (87), an i+1 "recommends what's just beyond what you already know" section, a "Private. Secure. Built on trust." trust block, and a closing CTA ("A quieter way to keep going."). |
+
+**Three frames are now named "Homepage"**: `111:515` (1278×1332, the **authenticated Dashboard** —
+`screen-inventory.md` §19.0/§19.1; the name is the frame's, the identity is the picture's), `347:6277`
+(1280×4028, marketing landing page — this one), and the hidden `346:6275` rectangle (not a screen).
+Same collision pattern as the `29:2890`/`280:3` "Kanji" pair from the first capture — worth a rename
+pass eventually, not urgent since node ids disambiguate.

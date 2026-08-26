@@ -54,21 +54,50 @@ import type { ScreenEntry } from "./screen-registry-types";
  * `impl: "placeholder"`; every other existing route is `impl: "built"`.
  *
  * ---------------------------------------------------------------------------
- * FRAMES DELIBERATELY NOT REGISTERED — 6 of the design file's 57
+ * FRAMES DELIBERATELY NOT REGISTERED
  * ---------------------------------------------------------------------------
  * No test can catch a frame that was simply never typed in here (final
  * whole-branch review FIX 2), so the exclusions are listed by node id and the
- * classification that excluded each. The invariant a human can check by hand:
+ * classification that excluded each. That makes this list the ONLY hand-check
+ * there is — so it carries a recipe that still runs.
  *
- *   registered ids + the 6 exclusions below = the frames captured in
- *   `docs/product/figma-frame-map.md` § "Captured — all 57 of 57"
+ * THE INVARIANT — a partition of every node id the frame map records as being
+ * on the Figma page:
  *
- * Count the left-hand side with (the `[0-9]` anchor keeps this line itself out
- * of the result — the obvious pattern counts its own documentation):
+ *   registered ids
+ *     + the first-capture exclusions listed below
+ *     + `335:1588`  — second-capture exclusion, classified below
+ *     + `347:6277`  — DEFERRED, not excluded: an open identity ruling
+ *   = every node id in a table row of `docs/product/figma-frame-map.md`
+ *     § "Captured — all 57 of 57" and § "Second capture batch (2026-08-23)",
+ *     deduplicated (`65:2` and `218:15740` appear in both sections).
  *
- *   grep -c 'figmaNodeId: "[0-9]' lib/product/screen-registry.ts
+ * ⚠️ This replaces an earlier form — "registered ids + the 6 exclusions below
+ * = the frames captured in § 'Captured — all 57 of 57'" — which held only
+ * while every registered id came from that first capture. It stopped holding
+ * the moment ids from OUTSIDE the original 57 were registered: `337:3323` and
+ * `339:3612` by L9b Plan 1 (stamped 2026-08-20), then this branch's batch
+ * (stamped 2026-08-23). It then failed silently, which is the worst failure
+ * mode for the one check nothing automates. Do not restate it in a form that
+ * names a total; run the recipe instead (`docs/lessons.md` L-002).
  *
- * The 6 exclusions, each with the classification that excluded it:
+ * Re-run it (POSIX shell — the `[0-9]` anchors keep these comment lines
+ * themselves out of the results; the obvious pattern counts its own
+ * documentation):
+ *
+ *   grep -o 'figmaNodeId: "[0-9][^"]*"' lib/product/screen-registry.ts \
+ *     | sed 's/.*"\([^"]*\)"/\1/' | sort -u > /tmp/registered
+ *   awk '/^## .*Captured/{s=1} /^## Dead/{s=0} /^## Second capture batch/{s=1} s' \
+ *     docs/product/figma-frame-map.md \
+ *     | grep -o '^| `[0-9][^`]*`' | tr -d '|` ' | sort -u > /tmp/mapped
+ *   comm -13 /tmp/registered /tmp/mapped   # mapped but NOT registered
+ *   comm -23 /tmp/registered /tmp/mapped   # registered but NOT mapped
+ *
+ * The first command must print exactly the ids named above — the first-capture
+ * exclusions, plus `335:1588`, plus `347:6277` — and nothing else. The second
+ * must print nothing at all. Both held when this was run on 2026-08-25.
+ *
+ * The first-capture exclusions, each with the classification that excluded it:
  *
  *   `46:2`      Popup create conversation   — interaction (modal wizard),
  *                                             screen-inventory.md §15.3
@@ -84,10 +113,38 @@ import type { ScreenEntry } from "./screen-registry-types";
  * as `kind: "deprecated"` — a dead frame kept so it is not rediscovered, not a
  * live screen.
  *
- * Anything absent from the frame map is not on the page at all: `5:1718`
- * (Unuse), `71:2` (Pricing-remove) and `243:14906` are outside the 57 for that
- * reason — the map's own arithmetic proves the first two were already deleted
- * and the third was never matched to a frame.
+ * Frames the map records as NO LONGER on the page are outside the invariant
+ * entirely: `5:1718` (Unuse), `71:2` (Pricing-remove) and `243:14906` live in
+ * the map's § "Dead / stale ids from earlier sessions" table — which is
+ * exactly why the recipe's `awk` stops at that heading. The map's own
+ * arithmetic proves the first two were already deleted and the third was never
+ * matched to a frame.
+ *
+ * ---------------------------------------------------------------------------
+ * SECOND BATCH EXCLUSION — 2026-08-23 capture
+ * ---------------------------------------------------------------------------
+ * ⚠️ ONE FACT, ONE HOME (`CLAUDE.md` §6). The ACCOUNTING for that batch —
+ * which ids this branch added, which were already registered, which are
+ * excluded, which is deferred — lives in `docs/product/figma-frame-map.md`
+ * § "Second capture batch (2026-08-23)" and the ✅ Registered note at the top
+ * of that file. It is deliberately NOT restated here: it was, once, and the
+ * two copies immediately disagreed. This block owns only the CLASSIFICATION
+ * that excluded a frame, which no other file records:
+ *
+ *   `335:1588`  Error state (right font) — pixel-identical to `218:15740`
+ *               except one card's CTA label; a font/typography QA pass over
+ *               the same style-guide sheet, not a distinct screen. Same
+ *               classification that already excludes its twin above.
+ *
+ * The hidden `346:6275` "Homepage" rectangle is not a Figma frame at all
+ * (`hidden="true"`, decorative canvas noise) and was never a candidate — it
+ * has no table row in the map, so it is outside the invariant too.
+ *
+ * `347:6277` (the new marketing-landing frame) is deliberately UNREGISTERED
+ * pending an identity ruling — see the `landing-page` entry's comment below
+ * and `docs/superpowers/specs/2026-08-23-screen-registry-phase-3-design.md`
+ * §9.1. Not an exclusion: it is an open decision, not a classification, and
+ * must not be resolved silently.
  */
 export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // ===================================================================
@@ -119,6 +176,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "learn",
     navOrder: 1,
+    specRef: null,
   },
   // learn/2 — designed, built. Frame not renamed despite the rename pass
   // targeting it (figma-frame-map.md); name recorded as it stands today.
@@ -135,6 +193,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "learn",
     navOrder: 2,
+    specRef: null,
   },
   // learn/3 — JUDGEMENT CALL: /kanji matches NEITHER designed kanji screen
   // (screen-inventory.md §6.0 — "the shipped screen is a thin catalogue that
@@ -154,6 +213,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "learn",
     navOrder: 3,
+    specRef: null,
   },
   // HIDDEN in Phase 1b (A10) — the 2026-08-11 "hide, reversibly" ruling, now
   // applied. Route, schema, API, the `vocab` i18n namespace and every
@@ -173,6 +233,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // learn/4 — JUDGEMENT CALL: `Grammar analysis` (284:1464) is a sentence
   // parser, explicitly NOT the /grammar catalogue (§17.1: "the two are not
@@ -191,6 +252,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "learn",
     navOrder: 4,
+    specRef: null,
   },
   // HIDDEN in Phase 1b (A10) — same terms as /vocab: row removed, code kept,
   // not deprecated. No frame anywhere in the 57 covers Reading.
@@ -207,6 +269,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // practice/1 — designed (≈), built. `/conversation` renders the library shell
   // (170:9364); the live-session frame (44:7289) has no route of its own
@@ -224,6 +287,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "practice",
     navOrder: 1,
+    specRef: null,
   },
   // practice/3 — designed (≈), built. Frame's layer name is "JLPT Practice";
   // its on-screen identity is "Certification Practice" (§10.0) — name field
@@ -246,6 +310,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "practice",
     navOrder: 3,
+    specRef: null,
   },
 
   // remember/1 — no frame; the cross-type SRS review hub. `ia-proposal.md`
@@ -264,6 +329,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: "remember",
     navOrder: 1,
+    specRef: null,
   },
   // remember/2 — no frame; sentence mining (§3). A7 relabels this row to
   // "Collection" in the catalog; the screenId stays `mining` because A7 is a
@@ -281,6 +347,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "remember",
     navOrder: 2,
+    specRef: null,
   },
   // remember/3 — built, no frame at this pass (R6). A11 keeps this its own
   // screen rather than folding it into Explore.
@@ -297,6 +364,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "remember",
     navOrder: 3,
+    specRef: null,
   },
   // ABSORBED into Roadmap in Phase 1b (A5) — no nav row; the route and its
   // placeholder stay. No frame; a gamification surface (§3).
@@ -313,6 +381,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // HIDDEN in Phase 1b (A10) — the adjudication is now applied. The reason is
   // product, not technical: with no users yet, a community surface mostly
@@ -331,6 +400,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // HIDDEN in Phase 1b (A10), same reason as /community. Code kept. No frame.
   {
@@ -346,6 +416,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 
   // ABSORBED into Companion in Phase 1b (A2) — one intelligent presence, not
@@ -364,6 +435,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // journey/1 — designed, honest placeholder (Plan C1).
   // ⭐ This row now carries the "Journey" LABEL (A8). Figma's `journey` names
@@ -384,6 +456,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: "journey",
     navOrder: 1,
+    specRef: null,
   },
   // ABSORBED into Companion in Phase 1b (A2) — no nav row; route stays.
   // No frame. §12.4 explicitly rules OUT `Growth Areas` as the
@@ -402,6 +475,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 
   // ABSORBED into Companion in Phase 1b (A2/A8) — this screen IS the
@@ -424,6 +498,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // ABSORBED into the Dashboard in Phase 1b (A4) — no nav row; route stays.
   // No frame; a gamification surface (§3, §19.1's third
@@ -441,6 +516,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // ABSORBED in Phase 1b (A4) — summary on the Dashboard, gallery on Profile.
   // No nav row; route stays. No frame; a gamification surface (§3).
@@ -457,6 +533,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 
   // account/1 — designed, built (far simpler than the frame — §18.2).
@@ -473,6 +550,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: "account",
     navOrder: 1,
+    specRef: null,
   },
   // account/2 — designed, placeholder. Frame's current name is "Global
   // settings" (rename pass verified 2026-08-12; figma-frame-map.md records
@@ -491,6 +569,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: "account",
     navOrder: 2,
+    specRef: null,
   },
   // 337:3323 — reached from Settings, not a nav destination of its own
   // (navGroup/navOrder null, same convention as the certification detail
@@ -511,6 +590,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // The Danger Zone's `Delete Korume Memory` destination. NO frame designs
   // it: `337:3323` draws the ROW, and spec §13 (a user ruling) says the row
@@ -545,6 +625,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // 339:3612 — the delete-all-my-data confirmation dialog: an overlay, not a
   // route (port-workflow spec §5.4), so `route` is null the same way every
@@ -562,6 +643,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 
   // -------------------------------------------------------------------
@@ -593,6 +675,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: "practice",
     navOrder: 2,
+    specRef: null,
   },
   // journey/2 — designed, honest placeholder. A2: Companion is ONE destination
   // over six screens (home · diary · sensei · memory · growth), which is what
@@ -610,6 +693,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: "journey",
     navOrder: 2,
+    specRef: null,
   },
 
   // ===================================================================
@@ -631,6 +715,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §6.4 — drawn as a modal overlay in Figma, built as a page in the repo;
   // §6.5's cluster verdict classifies it a screen, not an excluded modal.
@@ -647,6 +732,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §6.3 — chrome contract diverges in the design (Figma wants focus/
   // immersive); this repo's actual route sits under (app) — recorded as
@@ -664,6 +750,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §18.1.
   {
@@ -679,6 +766,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §9.1 — the Shadowing Learning Mode workspace (Shadowing mode is built).
   {
@@ -694,6 +782,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §9.3 — a state-variant (a Learning Mode of the workspace) that HAS a
   // real, distinct route: shipped named for its sub-mode (Dictation) rather
@@ -711,6 +800,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §8.1 — designed in full, shipped as a pure UpcomingScreen placeholder.
   {
@@ -726,6 +816,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "placeholder",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 
   // ===================================================================
@@ -736,6 +827,15 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // §19.0 — "there is NO marketing landing frame anywhere in the 57... the
   // public front door of Korume is undesigned." P16 records this as known
   // and accepted — the user will design it later.
+  //
+  // ⛔ OPEN as of 2026-08-23 — do NOT resolve here. The second frame batch
+  // includes `347:6277`, a full marketing landing page (figma-frame-map.md
+  // § "New marketing homepage"). Whether it IS the design for this route
+  // (→ convert, the way the `register` row below was) or a DIFFERENT
+  // destination (→ its own row) is an identity question reserved to the user
+  // (2026-08-23-screen-registry-phase-3-design.md §9.1). This row
+  // is deliberately left untouched — kind, figmaNodeId and figmaCheckedAt
+  // all stay exactly as they were before this frame was captured.
   {
     screenId: "landing-page",
     name: "Landing Page",
@@ -749,6 +849,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "admin",
@@ -763,6 +864,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "admin-content",
@@ -777,6 +879,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "admin-content-type",
@@ -791,6 +894,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Tooling Figma will never cover — the ONLY legal use of out-of-design-scope
   // (R13/T10). Worked example.
@@ -807,6 +911,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "admin-videos",
@@ -821,6 +926,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
   // Not an independent decision — a community sub-route is reached by
@@ -840,6 +946,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Inherits /community's ruling (A10): hidden, code kept, not deprecated.
   // Not an independent decision — a community sub-route is reached by
@@ -859,6 +966,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Inherits /mining's ruling (A7): a label change to `Collection`, not an
   // identity change — screenId stays `mining`-scoped. Not an independent
@@ -877,6 +985,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Inherits /playlists's ruling (A11): stays its own screen, not folded
   // into Explore. Not an independent decision — reached by drilling into
@@ -896,6 +1005,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Inherits /reading's ruling (A10): hidden, code kept, not deprecated.
   // Not an independent decision — a reading sub-route is reached by
@@ -915,29 +1025,34 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
-  // ⚠️ NO PRODUCT RULING EXISTS FOR /register, and none is inferred here.
-  // Everything below is FRAME evidence: `screen-inventory.md` §3's table, row
-  // `/register` — "Figma has `Login` but no register frame" — plus §4's
-  // "Frameless with no such conflict" list, which names it alongside /review,
-  // /achievements, /challenges and /statistics. Both are observations on the
-  // has-a-frame axis. The has-a-ruling axis belongs to `decision-register.md`,
-  // which says nothing about /register; §3's Ruling column therefore reads
-  // "still open", and that is the honest state, not a gap to be filled in by
-  // reading the frame evidence as a decision.
+  // R6 fires: a Figma frame now exists for /register, captured in the second
+  // batch (figma-frame-map.md § "Second capture batch (2026-08-23)" — Auth
+  // flow table). Converted from repo-only. The has-a-ruling axis is
+  // untouched by this conversion — decision-register.md still says nothing
+  // about /register itself.
+  // ⚠️ The frame shows a "Continue with GitHub" button. That is NOT an open
+  // question: `decision-register.md` P14 rules "Auth = email + Google +
+  // Apple. GitHub: no" (confirmed still standing by the user 2026-08-25).
+  // Registering the frame records what Figma designed, never what may be
+  // built — the frame's content LOSES to P14 at port time, so whoever ports
+  // this screen must not build the GitHub button. `65:2` (login) shows the
+  // same button and the same ruling governs it.
   {
     screenId: "register",
     name: "Register",
-    kind: "repo-only",
+    kind: "screen",
     variantOf: null,
-    figmaNodeId: null,
-    repoOnlyReason: "no-frame-at-last-pass",
-    figmaCheckedAt: "2026-08-12",
+    figmaNodeId: "332:3",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
     route: "/register",
     chrome: "auth",
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
   // not an independent decision — an acquisition-loop sub-route is reached by
@@ -957,6 +1072,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated. This is
   // not an independent decision — an acquisition-loop sub-route is reached by
@@ -976,6 +1092,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 
   // ===================================================================
@@ -995,6 +1112,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "kanji-library",
@@ -1009,6 +1127,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §7.2 — the ⌘K command palette. Heading tags it `CONFIRMED` (the screen
   // of record); the cluster verdict table (§7.3) agrees. Recorded as a
@@ -1027,6 +1146,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "summary-in-shadowing",
@@ -1041,6 +1161,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "jlpt-phase-test",
@@ -1055,6 +1176,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "practice-result",
@@ -1069,6 +1191,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "review-mistake-after-jlpt-practice",
@@ -1083,6 +1206,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "learning-memory",
@@ -1097,6 +1221,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "growth-areas",
@@ -1111,6 +1236,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "roadmap-detail",
@@ -1125,6 +1251,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "conversation-memory",
@@ -1139,6 +1266,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "welcome-companion-page",
@@ -1153,6 +1281,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "generate-sensei",
@@ -1167,6 +1296,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // The live-session frame — see the "speaking" entry above for why this
   // has no route of its own (§15.6: "none (session UI exists in-page)").
@@ -1183,6 +1313,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "pronunciation-detail",
@@ -1197,6 +1328,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // JUDGEMENT CALL: the frame's layer name is "Grammar analysis" (kept
   // verbatim in `name`, per the Dashboard precedent) even though §17.1
@@ -1216,6 +1348,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "edit-profile",
@@ -1230,6 +1363,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // Worked example.
   {
@@ -1245,6 +1379,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "checkout",
@@ -1259,6 +1394,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "faq",
@@ -1273,6 +1409,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "quickstart",
@@ -1287,6 +1424,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 
   // ===================================================================
@@ -1307,6 +1445,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "search-lesson-searched",
@@ -1321,6 +1460,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "pronunciation-in-shadowing",
@@ -1335,6 +1475,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "finish-phase-1",
@@ -1349,6 +1490,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "to-phase-2-ready",
@@ -1363,6 +1505,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "to-phase-2-countdown",
@@ -1377,6 +1520,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "jlpt-practice-phase-2",
@@ -1391,6 +1535,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "review-mistake-more-detail",
@@ -1405,6 +1550,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // §11.4 — misnamed frame: it is the Companion DIARY's empty state, not
   // Companion home's. variantOf points at "journey" (the registered
@@ -1422,6 +1568,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   {
     screenId: "generate-done",
@@ -1436,6 +1583,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
   // variantOf "speaking" — the registered screenId for 170:9364
   // (Conversation practice library), the screen this preview overlays.
@@ -1452,6 +1600,139 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
+  },
+
+  // ===================================================================
+  // Phase 3 Stage 1 — the 2026-08-23 frame batch (figma-frame-map.md §
+  // "Second capture batch"). impl: "none" for all — no page, no server
+  // action, no route exists for any of these yet.
+  // ===================================================================
+
+  // Auth flow — Reset password. Same OAuth+email split layout as
+  // register/login; Supabase Auth supplies the primitive, no code exists.
+  {
+    screenId: "reset-password",
+    name: "Reset password",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "333:210",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Auth flow — Email OTP (6-digit code entry, resend link). No code exists.
+  {
+    screenId: "email-otp",
+    name: "Email OTP",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "335:306",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Real 404 page design. Repo has no not-found.tsx anywhere — Next's
+  // default 404 serves today.
+  {
+    screenId: "error404",
+    name: "Error404",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "335:1976",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Real in-app route-error screen, rendered inside actual app chrome
+  // (sidebar + topbar visible in the frame). Repo has no error.tsx anywhere.
+  {
+    screenId: "error-boundary",
+    name: "Error boundary",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "337:2055",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Full /settings/membership page design. Zero PayOS integration code
+  // exists yet — Layer 8 territory (CLAUDE.md §3).
+  {
+    screenId: "membership",
+    name: "Membership",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "340:3795",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Same membership page with the "Leave Korume for now?" cancellation
+  // dialog open.
+  {
+    screenId: "unsubscribe-membership",
+    name: "Unsubcribe membership",
+    kind: "state-variant",
+    variantOf: "membership",
+    figmaNodeId: "340:4586",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Same membership page with the payment-method dialog open. ⚠️ The frame
+  // offers PayOS + SePay + MoMo. That is NOT an open question:
+  // `decision-register.md` P13 rules "Payment is PayOS" (confirmed still
+  // standing by the user 2026-08-25, who also re-affirmed it on 2026-08-23
+  // when this frame surfaced; CLAUDE.md §3 unchanged). SePay/MoMo are design
+  // exploration, deferred for merchant-registration reasons — see the note
+  // against P13 in the decision register. Registering this row records what
+  // Figma designed, not what may be built: whoever ports this screen MUST
+  // apply P13, not the frame's provider list.
+  {
+    screenId: "choose-method",
+    name: "Choose method",
+    kind: "state-variant",
+    variantOf: "membership",
+    figmaNodeId: "340:5402",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-08-23",
+    route: null,
+    chrome: null,
+    impl: "none",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
   },
 
   // ===================================================================
@@ -1483,5 +1764,6 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "none",
     navGroup: null,
     navOrder: null,
+    specRef: null,
   },
 ];

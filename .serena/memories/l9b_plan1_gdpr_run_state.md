@@ -87,12 +87,11 @@ a task's real proof is a database, the probe must exercise the actual code path,
 
 ## Owed — survives the merge, NOT closed by it
 
-⭐⭐ **Both items below are now BUILT on branch `feat/email-notification-system`** (a small
-follow-on branch off master, 2026-08-23), reviewed twice by `code-reviewer` (round 1: 3 Critical +
-6 non-blocking; round 2, after fixes, mutation-verified and approved), full suite green (2366
-tests), tsc/lint/build clean. **Not yet merged — awaiting the user's merge decision**, per this
-repo's convention of asking before merging. If you are resuming and the branch is gone, it merged —
-check `git log --oneline -- lib/email` on master first before treating this section as still open.
+⭐⭐ **Both items below are MERGED to master at `8865aed`** (merge commit, 2026-08-23; branch
+`feat/email-notification-system` kept, per repo convention — its own commit is `32c1353`), from a small
+follow-on branch reviewed twice by `code-reviewer` (round 1: 3 Critical + 6 non-blocking; round 2,
+after fixes, mutation-verified and approved). Merged master verified green: tsc 0, 262 files /
+2366 tests.
 
 - ⭐ **`deleteDialog.support` named a support channel that did not exist.** RESOLVED: the user
   supplied the real address, `admin@almostgone.vn` — already the canonical one in
@@ -108,9 +107,9 @@ check `git log --oneline -- lib/email` on master first before treating this sect
   `lib/email/env.ts`'s schema). No SMTP/Resend/etc. adapter exists yet — that remains genuinely
   owed, is a separate, larger task (needs a provider decision + real credentials), and is why
   `EMAIL_PROVIDER` is a NEW required boot-time env var: **almostgone.vn's `.env` needs
-  `EMAIL_PROVIDER=none` added before this branch is deployed, or the instance fails to boot**
-  (`instrumentation.ts` now registers `emailEnvSpec`). `mem:project_status` § Key gotchas should
-  carry this deploy note once this branch is confirmed heading to master.
+  `EMAIL_PROVIDER=none` added before the NEXT deploy, or the instance fails to boot**
+  (`instrumentation.ts` now registers `emailEnvSpec`) — this has NOT been done yet, it is a manual
+  step on the live host that this session cannot perform; also carried in `mem:project_status`.
   Two review rounds caught and fixed three real bugs before merge, all mutation-verified:
   (a) `getLocale()` inside an API route (excluded from `middleware.ts`'s matcher) silently resolved
   `routing.defaultLocale` ("vi") for every caller regardless of actual locale — now the client

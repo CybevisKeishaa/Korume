@@ -59,6 +59,7 @@ describe("deriveNavGroups rejects a nav entry with nowhere to go", () => {
     impl: "none",
     navGroup: "learn",
     navOrder: 9,
+    specRef: null,
   };
 
   it("throws instead of dropping the row", () => {

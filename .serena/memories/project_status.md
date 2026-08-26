@@ -41,18 +41,41 @@ non-negotiable owed since Layer 1; it is now paid.
 This block must not restate it.**
 
 Phase 0 is COMPLETE AND CLOSED and **Screen Registry Phases 1a, 1b, 2a and 2b are all built and
-merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`). **There is no live
-screen-registry next action until Phase 3 is scoped**, and scoping it is not urgent — see
-`mem:screen_registry_phase_2b_run_state`.
+merged** (2b at `10caaac`; its two debts closed 2026-08-19 at `a371a4b`).
 
-**⭐ Branch `feat/email-notification-system` is BUILT, reviewed twice, tests/tsc/lint/build all
-green — awaiting the user's merge decision (2026-08-23).** It closes both of the "two product
-decisions" bullet L9b left open (see below) plus builds the general-purpose `lib/email/*`
-provider-agnostic email port the user asked for (mirrors `lib/ai/*`). **Full detail:
-`mem:l9b_plan1_gdpr_run_state` § Owed — read that before touching `lib/email`, `lib/contact.ts`, or
-`deleteDialog.support` again.** One deploy consequence if/when this merges: `EMAIL_PROVIDER` becomes
-a required boot-time env var (no real transport chosen yet, so `almostgone.vn` needs
-`EMAIL_PROVIDER=none` added to its `.env` before this ships, or the instance fails to boot).
+⭐ **Screen Registry Phase 3 — ✅ STAGE 1 IMPLEMENTED, ✅ STAGE 2 CLOSED AT ZERO ROWS, ⛔ NOT MERGED (2026-08-25).** Branch
+`screen-registry-phase-3`, commit range `8865aed..HEAD` (count with
+`git rev-list --count 8865aed..HEAD`), not merged. Stage 1 shipped the type change, the five test
+changes, and the 2026-08-23 frame batch; the branch gate was measured green. **The gate figures and
+the command to re-measure them live in the run-state memory only** — not restated here (`CLAUDE.md`
+§6), because a second copy would age independently of the branch.
+**Read `mem:screen_registry_phase_3_run_state` — it is the authority. This block carries a one-line
+gist only and must not duplicate that memory's evidence or its reasoning.**
+In one line: `spec-only` is now a `ScreenKind` and `specRef` the 13th field, so the registry can record
+a destination the spec requires that has neither a Figma frame nor an implementation — turning it from
+a Figma map into a product-surface ↔ design ↔ implementation map.
+**Stage 2's discovery pass RAN on 2026-08-25 and the user ruled it: ZERO `spec-only` rows.** Do not
+re-run it and do not hunt for rows to add. Why the pass ended at zero, which candidate reached the
+user, and what rejected it are **in the spec's §6.7** — deliberately not repeated here, because a
+second copy of that reasoning is what the header above forbids and what a later reader would then
+have to reconcile.
+**Where the branch stands right now is the run-state memory's ▶▶ RESUME block — read that, not a
+status line duplicated here** (the final review has run and its fix wave has been applied; a line here
+saying otherwise is exactly the duplication this block keeps removing).
+⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
+`347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
+The GitHub sign-in button was previously listed alongside it and **should not have been** — that one
+is ruled by `decision-register.md` **P14** ("Auth = email + Google + Apple. GitHub: no"), confirmed
+still standing by the user 2026-08-25; the frame's content simply loses to P14 at port time.
+
+**⭐ `feat/email-notification-system` MERGED to master `8865aed`, 2026-08-23** (branch kept; merged
+master verified green: tsc 0, 262 files / 2366 tests). Closed both of L9b's "two product decisions"
+bullet plus built the general-purpose `lib/email/*` provider-agnostic email port the user asked for
+(mirrors `lib/ai/*`). **Full detail: `mem:l9b_plan1_gdpr_run_state` § Owed — read that before
+touching `lib/email`, `lib/contact.ts`, or `deleteDialog.support` again.** ⚠️ **Deploy consequence,
+not yet done: `EMAIL_PROVIDER` is now a required boot-time env var** (no real transport chosen yet)
+— `almostgone.vn`'s production `.env` needs `EMAIL_PROVIDER=none` added before the NEXT deploy, or
+the instance fails to boot.
 
 **Candidates for the next action, none started, in no fixed order:**
 - **Layer 8** — PayOS billing, animation polish, the performance audit. It is the last unbuilt layer
@@ -75,9 +98,17 @@ Four rulings from 2026-08-20 (the 7-day window vs the modal's "cannot be undone"
 tiers, the AI-training split, `/settings/privacy`) were made against two Figma frames Phase 0 never
 saw. Do not re-litigate them, or decisions 2–3.
 
-⚠️ **The Figma file has 69 top-level frames against `figma-frame-map.md`'s 57** (measured 2026-08-20),
-so every registry row's `figmaCheckedAt` overstates what was compared. A re-capture pass is owed and
-is deliberately outside L9b Plan 1.
+✅ **Figma re-capture pass 1 DONE 2026-08-23**: the 12 frames flagged missing on 2026-08-20 (plus
+`218:15740`, never screenshotted before) are now captured and reviewed — auth flow, Layer 8
+billing UI, error-state system, and a new marketing homepage. **Read `mem:figma_recapture_2026_08_23_run_state`
+first.** Its payment-provider question is RULED: PayOS-only stands for now (`CLAUDE.md` §3
+unchanged — it was `decision-register.md` **P13** all along, re-affirmed 2026-08-25, and there is now
+a note against P13 recording the rationale); when Layer 8 is built, shape the payment code as a
+provider-agnostic port from day one (mirrors `lib/ai`/`lib/email`) but ship only the PayOS adapter —
+SePay/MoMo are deferred (complex merchant registration). ✅ **The registry now knows about these
+frames** — Screen Registry Phase 3 Stage 1 registered the batch (see the Phase 3 block above). The
+one row whose `figmaCheckedAt` still overstates comparison is `login`/`65:2`, deliberately left at
+`2026-08-12` because nobody re-compared it.
 
 **⚠️ Standing instruction that survives all of the above: do NOT settle navbar/routes/registry without
 the user's review.** ("Do not port any screen yet" is retired — the IA is locked and the registry
@@ -653,6 +684,13 @@ unbuilt from the original 8 layers — see § ROADMAP SEQUENCING for why they ar
   no-restricted-imports rule minus Radix — editing one copy requires editing both. New ui
   primitives must use CSS logical properties (ps-/pe-/ms-/me-/text-start…) — auto-enforced by
   `components/ui/logical-properties.test.ts`.
+- **⚠️ `EMAIL_PROVIDER` is now a required boot-time env var** (`feat/email-notification-system`,
+  merged `8865aed` 2026-08-23 — see `mem:l9b_plan1_gdpr_run_state` § Owed). Only `none` and
+  `console` are legal values today; `console` is REJECTED at startup when `APP_ENV=production`
+  (no real transport exists yet). **`almostgone.vn`'s production `.env` does not have this set as
+  of the merge** — it needs `EMAIL_PROVIDER=none` added before the next deploy, or
+  `instrumentation.ts`'s `validateEnv()` aborts startup exactly like a missing `AI_PROVIDER`/
+  `SPEECH_PROVIDER` would. This is a manual step on the live host no session has performed.
 
 ## Deploy target (user-set)
 **Self-hosted at `almostgone.vn`** — a single long-running Node instance (NOT Vercel/serverless).

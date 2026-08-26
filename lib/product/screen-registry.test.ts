@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { SCREEN_REGISTRY } from "./screen-registry";
 
 describe("screen registry invariants", () => {
-  it("T3: figmaNodeId is present iff the entry is not repo-only", () => {
+  it("T3: figmaNodeId is null iff the entry is repo-only or spec-only", () => {
     for (const entry of SCREEN_REGISTRY) {
-      if (entry.kind === "repo-only") {
+      if (entry.kind === "repo-only" || entry.kind === "spec-only") {
         expect(entry.figmaNodeId, entry.screenId).toBeNull();
       } else {
         expect(entry.figmaNodeId, entry.screenId).not.toBeNull();
@@ -77,7 +77,71 @@ describe("screen registry invariants", () => {
     }
   });
 
-  it("R12: every entry carries exactly the twelve allowed fields", () => {
+  it("T12: spec-only is the empty cell — no frame, route, chrome, variant, repo-only reason, stamp, or nav", () => {
+    const specOnly = SCREEN_REGISTRY.filter((e) => e.kind === "spec-only");
+    // Vacuous by construction: zero spec-only rows exist (spec §5.6). Proven
+    // instead by mutation-check — CLAUDE.md §7, spec §8.2. The plan holds the
+    // mutation *instructions*; the red/green *outputs* are transcribed in
+    // `.serena/memories/screen_registry_phase_3_run_state.md` § "Mutation-check
+    // results", because the SDD run log they were produced in is gitignored.
+    // Zero is the FINAL Phase 3 state, not a Stage 1 waypoint: the
+    // discovery pass ran, the user ruled it, and Stage 2 closed at zero rows
+    // (spec §6.7). The non-vacuity assertion
+    //   expect(specOnly.length).toBeGreaterThan(0);
+    // is therefore owed only by a future phase that actually writes rows —
+    // adding it here would fail against the registry's correct contents.
+    for (const entry of specOnly) {
+      expect(entry.figmaNodeId, entry.screenId).toBeNull();
+      expect(entry.route, entry.screenId).toBeNull();
+      expect(entry.chrome, entry.screenId).toBeNull();
+      expect(entry.impl, entry.screenId).toBe("none");
+      expect(entry.variantOf, entry.screenId).toBeNull();
+      expect(entry.repoOnlyReason, entry.screenId).toBeNull();
+      expect(entry.figmaCheckedAt, entry.screenId).toBeNull();
+      expect(entry.navGroup, entry.screenId).toBeNull();
+      expect(entry.navOrder, entry.screenId).toBeNull();
+    }
+  });
+
+  it("T13: specRef is present iff spec-only, and matches an allowed citation shape", () => {
+    // Only two sources are valid scan targets for Phase 3 (spec §6.1): the
+    // product spec and the decision register. A loose `/\.md §/` pattern is
+    // deliberately rejected — it would admit capability-map.md, a
+    // Figma-derived source this phase excludes on purpose.
+    // The register numbers its rulings in THREE live series: A… (information
+    // architecture, §2), P… (product model, §1) and M… (method rules, §3).
+    // Two of them are citable here and one deliberately is not:
+    //   A, P  ✅ — they rule WHAT the product contains, so they can be the
+    //             reason a destination must exist. This branch's own P13
+    //             (payment is PayOS) and P14 (auth: no GitHub) are of this
+    //             kind; an A-only pattern could not cite either.
+    //   M     ❌ — method rules bind HOW we work (M13/M14 are Amendment C
+    //             itself). A method rule can never be the thing that requires
+    //             a screen, so a specRef citing one would be a category error,
+    //             not a tighter citation. Excluded on purpose, not by omission.
+    // Enumerate the ids in decision-register.md at read time; ranges are not
+    // written here on purpose (L-002).
+    const SPEC_REF_PATTERN =
+      /^(japanese-learning-app-spec\.md §\d+(\.\d+)*|decision-register\.md [AP]\d+)$/;
+    // Vacuous by construction: zero spec-only rows exist (spec §5.6), so the
+    // spec-only branch below runs zero times. Proven instead by
+    // mutation-check — CLAUDE.md §7, spec §8.2; the four red outputs for this
+    // test are transcribed in `.serena/memories/screen_registry_phase_3_run_state.md`
+    // § "Mutation-check results" (the SDD run log is gitignored). Zero
+    // is the FINAL Phase 3 state per spec §6.7 (the discovery pass ran and
+    // the user ruled it), so a non-vacuity assertion is owed only by a future
+    // phase that actually writes rows — not by this one.
+    for (const entry of SCREEN_REGISTRY) {
+      if (entry.kind === "spec-only") {
+        expect(entry.specRef, entry.screenId).not.toBeNull();
+        expect(entry.specRef, entry.screenId).toMatch(SPEC_REF_PATTERN);
+      } else {
+        expect(entry.specRef, entry.screenId).toBeNull();
+      }
+    }
+  });
+
+  it("R12: every entry carries exactly the thirteen allowed fields", () => {
     // The concrete guard on R1. If someone adds `copy`, `layout`, `colors` or
     // `dataNeeds`, the registry has started becoming a second Figma. It is
     // also G3: `ruledBy` / `ruledAt` cannot be added without failing here.
@@ -86,8 +150,9 @@ describe("screen registry invariants", () => {
     const ALLOWED = [
       "screenId", "name", "kind", "variantOf", "figmaNodeId", "repoOnlyReason",
       "figmaCheckedAt", "route", "chrome", "impl", "navGroup", "navOrder",
+      "specRef",
     ];
-    expect(ALLOWED).toHaveLength(12);
+    expect(ALLOWED).toHaveLength(13);
     expect(SCREEN_REGISTRY.length).toBeGreaterThan(0);
     for (const entry of SCREEN_REGISTRY) {
       expect(Object.keys(entry).sort(), entry.screenId).toEqual([...ALLOWED].sort());
@@ -131,7 +196,7 @@ describe("screen registry invariants", () => {
     }
 
     // ---- TODAY'S STATE. Not invariants. -------------------------------------
-    // These two pins record what the registry happens to hold on 2026-08-20 so
+    // These two pins record what the registry happens to hold on 2026-08-25 so
     // that a change to either is conscious rather than silent. They are
     // EXPECTED to move: the id list when the admin surface changes, and the
     // per-date counts whenever a genuinely re-checked entry is stamped with a
@@ -151,7 +216,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(75);
+    expect(stamped).toHaveLength(82);
     const stampedByDate = new Map<string, number>();
     for (const entry of stamped) {
       const date = entry.figmaCheckedAt as string;
@@ -159,11 +224,12 @@ describe("screen registry invariants", () => {
     }
     // Non-vacuity: `stamped`'s length (asserted above) already proves this
     // map is non-empty; this pins the exact per-date breakdown too, so a
-    // change to either the total or the split between the two dates is
+    // change to either the total or the split between the dates is
     // conscious rather than silent.
     expect(Object.fromEntries(stampedByDate)).toEqual({
-      "2026-08-12": 72,
+      "2026-08-12": 71,
       "2026-08-20": 3,
+      "2026-08-23": 8,
     });
   });
 });
