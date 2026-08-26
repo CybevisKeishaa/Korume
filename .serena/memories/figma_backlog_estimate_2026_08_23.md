@@ -14,8 +14,9 @@
 `docs/product/figma-frame-map.md` § "Second capture batch (2026-08-23)" for the per-frame accounting
 — that file is the single home for it, so it is deliberately not restated here.** In one line: every
 frame in the batch is registered except `335:1588` (EXCLUDED — style-guide catalogue, same
-classification as its twin `218:15740`) and `347:6277` (DEFERRED — the marketing-homepage identity
-question is still reserved to the user). The `kind`/`navGroup` judgment calls this paragraph worried
+classification as its twin `218:15740`). `347:6277` was deferred here pending the marketing-homepage
+identity question; that was ruled 2026-08-26 and it is now registered as `landing-page`, so the batch
+has exactly one unregistered frame, not two. The `kind`/`navGroup` judgment calls this paragraph worried
 about were made and reviewed: Unsubcribe membership and Choose method are `state-variant`s of
 Membership, exactly the way Delete data is of Data privacy.
 
@@ -70,17 +71,21 @@ already includes them — do not add that bucket again.
 - **Error UX**: no `app/**/error.tsx` or `not-found.tsx` anywhere in the repo — Next.js is serving its
   default fallback today. Building `335:1976`/`337:2055` is framework-idiomatic (drop-in special files)
   once the visual design is ported, so this is smaller than it looks.
-- **New marketing Homepage (`347:6277`)**: conflicts with the EXISTING `/` route, which is already
-  `impl: "built"` as `repo-only` (no Figma link recorded). This is a **redesign/reconciliation call**,
-  not a build-from-zero — needs a ruling on what happens to the current landing page.
+- **New marketing Homepage (`347:6277`)**: ✅ **RULED 2026-08-26 — it IS the design for the existing
+  `/`**, now registered on the `landing-page` row (`a9ad897`). So this is a **redesign of a built
+  route**, not a build-from-zero and no longer a reconciliation call. Sizing note that survives the
+  ruling: the frame's own render is below the bar set by the reference image `346:6275` (missing
+  photography/mascot art, missing connector linework, a bar chart where a dual pitch contour belongs,
+  a broken 5-step row), so the port is "build to the reference using the frame's structure", which is
+  more than a straight port. Authority: spec §9.1 + `docs/product/figma-frame-map.md`.
 - **The unbuilt screens spread across existing modules** (Kanji, Pronunciation, Conversation, JLPT,
   Companion, Profile/onboarding) mostly build on top of already-`built` parent modules/APIs. ⚠️ An
   earlier draft said a "meaningful chunk is blocked on open product rulings", naming the Kanji
   explorer-vs-library dual-surface question as **still open since Phase 0**. **That was false** —
   `decision-register.md` **P4** ruled it on 2026-08-12 (evidence: `capability-map.md` §3.4). See the
   Kanji cluster row below.
-  The only genuinely open ruling left in this backlog is the marketing-homepage identity question
-  (`347:6277` vs the existing `/`).
+  The one genuinely open ruling this backlog had left — the marketing-homepage identity question
+  (`347:6277` vs the existing `/`) — was **ruled on 2026-08-26**. This backlog now has none.
 
 ## Effort estimate — framed in this repo's own unit (SDD plans/branches), not generic hours
 
@@ -96,7 +101,7 @@ Bucketing the 38 independent units into L9b-sized plans by natural module cluste
 | Auth completeness (reset password, email OTP, Apple/GitHub OAuth, restyle Login/Register) | 1 | nothing — can start now |
 | Billing/Layer 8 (PayOS port + checkout + pricing/FAQ + `/settings/membership` + cancel flow) | 2 | payment provider ruling — RULED 2026-08-23 (PayOS-only, provider-agnostic port shape) |
 | Error UX (404 + error boundary + design-system tone pass) | 0.5 (foldable into another plan) | nothing |
-| Marketing homepage reconciliation | 1 | needs a ruling: replace `/`, or is `347:6277` a different route? |
+| Marketing landing page (`347:6277` → the existing `/`) | 1 | nothing — RULED 2026-08-26: it IS the design for `/`. Build to reference image `346:6275`'s visual bar using the frame's structure; the frame's footer and its "A quieter way to keep going." section are authoritative. |
 | Kanji cluster (explorer + library) | 1 | nothing — ⚠️ CORRECTED 2026-08-23: an earlier draft of this file said the dual-surface question was "open since Phase 0". **That was false.** `decision-register.md` **P4** RULED it on 2026-08-12 (evidence pointer: `capability-map.md` §3.4): both surfaces ship under ONE nav row, `/kanji` defaults to the curriculum surface, the explorer is a browse mode inside it. Browse-by-radical survives and is cheap (table + FK + index + RLS all exist); curated collections survive and DO have a schema gap. Four domain nouns (learning path · course · kanji lesson · study material) still need naming decisions before building. |
 | Companion cluster (learning memory, growth areas, conversation memory, welcome page, sensei/companion-home placeholders) | 2 | nothing structural |
 | JLPT cluster (phase test, practice result, review-mistake family, remaining state-variants) | 1–2 | nothing structural |
@@ -111,10 +116,10 @@ reconciliation) gets answered promptly rather than stalling a plan mid-flight.
 
 ## Speed-up levers (concrete, not generic advice)
 
-1. **Answer the one remaining open product ruling early** — new-Homepage (`347:6277`) vs the existing
-   `/`. It blocks the marketing-reconciliation plan from starting cleanly; answering it now removes a
-   stall later. (An earlier draft listed Kanji explorer-vs-library here as a second one; that was
-   false — `decision-register.md` **P4** ruled it 2026-08-12.)
+1. ✅ **DONE 2026-08-26 — the one remaining open product ruling is answered.** New-Homepage
+   (`347:6277`) IS the design for the existing `/`, so the marketing work can start without a stall.
+   (An earlier draft listed Kanji explorer-vs-library here as a second one; that was false —
+   `decision-register.md` **P4** ruled it 2026-08-12.)
 2. ✅ **DONE — the new frames are registered** (Screen Registry Phase 3 Stage 1, branch
    `screen-registry-phase-3`). This lever has been spent; every downstream plan now has an accurate
    `figmaCheckedAt` for them. One caveat that survives: `login`/`65:2` still carries the older

@@ -30,7 +30,25 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-25) — **Screen Registry Phase 3 is MERGED. There is no live next action; the next one must be scoped.**
+## ▶ NEXT ACTION (updated 2026-08-26) — **branch `landing-page-identity-ruling` (`a9ad897`) is built and gate-green but UNMERGED and UNREVIEWED. Review it, then merge it.**
+
+It is one commit: the user's 2026-08-26 ruling that frame `347:6277` is the design for `/`, plus the
+four now-false claims that ruling exposed (the registry header's frame-map invariant, G2's per-date
+pin, `346:6275` recorded as "decorative canvas noise" in two files, and two mis-read section
+descriptions in `figma-frame-map.md`). Gate on the branch tip: tsc 0 · lint exit 0, 0 errors ·
+262 files / 2368 tests · build exit 0. T3/T9 mutation-checked over the changed row.
+Per `CLAUDE.md` §9 a whole-branch review (`L-011`) is owed before merge even though it is one commit.
+
+**Unblocked by that ruling, not started:** porting the landing page at `/`. The design source is
+`347:6277` (structure + its footer and its "A quieter way to keep going." section, both ruled
+authoritative), built to the visual quality bar of the flat reference image `346:6275`. A
+section-by-section comparison ran 2026-08-26 and found the frame's own render short of that bar in
+four ways: missing photography and mascot art, missing connector/graph linework, a bar chart where
+the design calls for a dual pitch contour (`CLAUDE.md` §5 differentiator #1), and a broken 5-step row
+in "Don't study Japanese in isolation". Those are HOW and may be rebuilt to the bar; adding
+capability, claims, flows or routes is not. **That comparison exists only in the 2026-08-26
+conversation — it has no file yet.** Writing it into `docs/product/` is the sensible first task of
+the port.
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and
@@ -62,8 +80,11 @@ second copy of that reasoning is what the header above forbids and what a later 
 have to reconcile.
 **Phase 3 is merged and closed. There is no live next action from it** — pick from the candidates
 below. Read the run-state memory's ▶▶ RESUME block for the full sequence and the merged-master gate.
-⚠️ **One decision stays OPEN and must not be resolved by an implementer:** `landing-page` vs frame
-`347:6277` (is the new marketing frame the design for the existing `/`, or a different destination?).
+✅ **Phase 3's one open decision is CLOSED (user, 2026-08-26): frame `347:6277` IS the design for
+`/`.** The `landing-page` row converted to `kind: "screen"` on branch `landing-page-identity-ruling`
+(`a9ad897`, NOT yet merged — see the live next action below). The authenticated home **stays
+`dashboard` at `/dashboard`**: the user declined a `/home` rename in the same ruling. Authority is the
+spec's §9.1; this line is the gist, not a second copy.
 The GitHub sign-in button was previously listed alongside it and **should not have been** — that one
 is ruled by `decision-register.md` **P14** ("Auth = email + Google + Apple. GitHub: no"), confirmed
 still standing by the user 2026-08-25; the frame's content simply loses to P14 at port time.
