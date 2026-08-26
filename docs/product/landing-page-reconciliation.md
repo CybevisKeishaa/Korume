@@ -173,18 +173,24 @@ allowed **only where it does not change structure or content**.
 
 | Asset | Status |
 |---|---|
-| Mascot renders (4 placements) | ⚠️ a render set exists — `ls public/mascot/renders/` (`final_front`, `final_3q`, `final_side` plus `expr_*` variants; enumerate rather than trust a number here, `L-002`). But **nobody has checked them against the poses the reference uses**, which sit on an ornate lamp/vessel prop. Treat as "an asset set exists", not "the right asset exists". |
+| Mascot — appears in §1, §4, §6 and §8 of the reference | ⚠️ a render set exists; enumerate it with `ls public/mascot/renders/` rather than trusting any list written here (`L-002`). But **nobody has checked those renders against the poses the reference uses**, which sit on an ornate lamp/vessel prop. Treat this row as "an asset set exists", not "the right asset exists". |
 | Hero video still (Kyoto street, dusk) | ❌ none in repo |
 | §2 learner-at-desk photograph | ❌ none in repo |
 | §5 Tokyo commute still | ❌ none in repo |
 | §7 lit-window photograph | ❌ none in repo |
 | §8 CTA night background | ⚠️ present in the frame but too dark to use as-is |
 
-⚠️ **The photography is the port's real blocker, and it is a licensing question, not a design one**
-(`CLAUDE.md` §2.3 — licensed sources must be checked and attributed). The images in `346:6275` are
-baked into a flat PNG and cannot be extracted as licensed assets. Decide the source before building
-§1, §2, §5 and §7: original photography, a licensed stock set, or a different visual treatment
-altogether. **Nothing about this is a porter's call to make silently.**
+⚠️ **The photography is the port's real blocker, and it is a licensing question, not a design one.**
+The images in `346:6275` are baked into a flat PNG and cannot be extracted as licensed assets, so
+four sections need a source decided before they can be built: original photography, a licensed stock
+set, or a visual treatment that does not need photographs at all.
+
+**On which rule binds here — state it precisely, because the obvious citation is wrong.**
+`CLAUDE.md` §2.3 is scoped to **study content** (kanji, vocab, grammar, JLPT items) and does not, by
+its letter, govern marketing imagery; citing it for this would be borrowing authority the rule does
+not grant. What actually applies is ordinary licensing diligence plus §2.3's evident principle —
+this project does not ship material whose provenance it cannot state. Either way the conclusion is
+the same and it is not a porter's call to make silently: **ask the user.**
 
 ---
 

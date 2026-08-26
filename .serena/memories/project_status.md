@@ -30,25 +30,27 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-26) — **branch `landing-page-identity-ruling` is built, gate-green and REVIEWED, but UNMERGED. Merge it.**
+## ▶ NEXT ACTION (updated 2026-08-26) — **branch `landing-page-identity-ruling` is built, gate-green and twice-reviewed, but UNMERGED. The merge is the user's call — ask, do not merge unprompted.**
 
 Count its commits with `git rev-list --count master..landing-page-identity-ruling` (`L-002`). They
 carry: the user's 2026-08-26 ruling that frame `347:6277` is the design for `/`, plus the claims that
 ruling made false (the registry header's frame-map invariant, G2's per-date pin, `346:6275` recorded
 as "decorative canvas noise", two mis-read section descriptions in `figma-frame-map.md`); the memory
-and `docs/lessons.md` updates; `docs/product/landing-page-reconciliation.md`; and one fix wave.
-Gate on the branch tip: tsc 0 · lint exit 0, 0 errors · 262 files / 2368 tests · build exit 0.
+and `docs/lessons.md` updates; `docs/product/landing-page-reconciliation.md`; and two fix waves.
 T3/T9 mutation-checked over the changed row.
-A whole-branch review (`L-011`) RAN and found 0 correctness bugs and 10 prose defects, all fixed in
-the wave; **`L-012` then requires the wave itself to be reviewed before merge** — do that, then merge.
+**Both reviews are done:** the whole-branch review (`L-011`) found 0 correctness bugs and 10 prose
+defects; the review of that wave (`L-012`) found 10 more, three of them created by the wave itself.
+Both waves landed. **Re-run the gate at the tip before merging** — `npm run typecheck` ·
+`npx vitest run --reporter=dot` · `npm run lint` · `npm run build` — rather than trusting a figure
+here, because the figures this block used to carry were measured at `a9ad897`, three commits before
+the tip, while the sentence said "branch tip". That mismatch is what `L-012` catches.
 
 **Unblocked by that ruling, not started:** porting the landing page at `/`. **Read
 `docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
 it. In one line: build `347:6277`'s structure to `346:6275`'s visual bar, keeping the frame's footer
 and its "A quieter way to keep going." section, which the user ruled authoritative.
-⚠️ **The port has a blocker that is not a design question:** the reference's photography is baked into
-a flat PNG and cannot be extracted as licensed assets, so the image source for four sections must be
-decided first (`CLAUDE.md` §2.3 — licensed sources checked and attributed). Not a porter's call.
+⚠️ **The port is blocked on a non-design question the user must answer — the image sources.** The
+reconciliation doc's §5 has the reasoning; do not re-derive or restate it here.
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and

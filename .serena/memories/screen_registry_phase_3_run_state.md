@@ -197,8 +197,9 @@ the correction below it. The `landing-page` identity question was the real one, 
    on branch `landing-page-identity-ruling` (`a9ad897`), not on this branch. The user also declined a
    `/home` rename in the same ruling: the authenticated home **stays `dashboard` at `/dashboard`**,
    unrenamed — "user homepage" was their phrase for telling the two apart, not a rename instruction.
-   ⚠️ **`346:6275` was described here, and everywhere the phrasing spread, as "decorative noise"
-   (`grep -rl 'canvas noise'` — never a written total, `L-002`). That was
+   ⚠️ **`346:6275` was described here as "decorative noise", and in several other files as
+   "decorative canvas noise" — two different strings, which is why the first attempt to sweep them
+   with one grep missed half of them (`docs/lessons.md` L-019 carries that). That was
    wrong** — it is the landing page's flat **visual quality bar** image, mis-filed because it was
    hidden when 2026-08-23 screenshotted it and rendered blank. Still never to be registered, but for
    the opposite reason: it is a picture of a design, not decoration. Authority on all of this is now
