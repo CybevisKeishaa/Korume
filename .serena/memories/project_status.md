@@ -30,28 +30,34 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-26) — **branch `landing-page-identity-ruling` is built, gate-green and twice-reviewed, but UNMERGED. The merge is the user's call — ask, do not merge unprompted.**
+## ▶ NEXT ACTION (updated 2026-08-26) — **the landing-page ruling is MERGED. The live next action is porting `/` — and it is blocked on one thing only: the image files.**
 
-Count its commits with `git rev-list --count master..landing-page-identity-ruling` (`L-002`). They
-carry: the user's 2026-08-26 ruling that frame `347:6277` is the design for `/`, plus the claims that
-ruling made false (the registry header's frame-map invariant, G2's per-date pin, `346:6275` recorded
-as "decorative canvas noise", two mis-read section descriptions in `figma-frame-map.md`); the memory
-and `docs/lessons.md` updates; `docs/product/landing-page-reconciliation.md`; and two fix waves.
-T3/T9 mutation-checked over the changed row.
-**Both reviews are done:** the whole-branch review (`L-011`) found 0 correctness bugs and 10 prose
-defects; the review of that wave (`L-012`) found 10 more, three of them created by the wave itself.
-Both waves landed. **Re-run the gate at the tip before merging** — `npm run typecheck` ·
-`npx vitest run --reporter=dot` · `npm run lint` · `npm run build` — rather than trusting a figure
-here, because the figures this block used to carry were measured at `a9ad897`, three commits before
-the tip, while the sentence said "branch tip". That mismatch is what `L-012` catches.
+✅ **`landing-page-identity-ruling` MERGED to master at `2822d22` (`--no-ff`), 2026-08-26; branch kept
+per repo convention.** Count its commits with
+`git rev-list --count 988bb97..landing-page-identity-ruling` (`L-002`). It closed the one open
+decision Phase 3 left — frame `347:6277` is the design for `/` — converted the `landing-page` row to
+`kind: "screen"`, left `dashboard` at `/dashboard` unrenamed as the same ruling directed, and fixed
+the claims the ruling made false (the registry header's frame-map invariant, G2's per-date pin,
+`346:6275` recorded as "decorative canvas noise", two mis-read section descriptions in
+`figma-frame-map.md`, and `P16`/§19.0 in the two product-authority docs).
+Two reviews ran: whole-branch (`L-011`) → 0 correctness bugs, 10 prose defects; review of that wave
+(`L-012`) → 10 more, **three created by the wave itself**. Both waves landed.
+**Merged-master gate, measured on `2822d22`:** tsc 0 · `next lint` 0 errors · **262 files / 2368
+tests** · `next build` exit 0 · the registry's frame-map invariant recipe re-run and holding
+(mapped-but-unregistered = the six first-capture exclusions + `335:1588`; reverse empty).
+Playwright deliberately not run — no `app/` route and no rendered component was touched.
 
-**Unblocked by that ruling, not started:** porting the landing page at `/`. **Read
+**▶ The live next action: port the landing page at `/`.** **Read
 `docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
 it. In one line: build `347:6277`'s structure to `346:6275`'s visual bar, keeping the frame's footer
 and its "A quieter way to keep going." section, which the user ruled authoritative.
-✅ **The image-licensing question is RULED (user, 2026-08-26): the imagery is AI-generated, so there
-is none.** Do not re-escalate it. What is left is only sourcing the actual image files at usable
-resolution — the reconciliation doc's §5 has it; do not restate it here.
+✅ **The image-LICENSING question is RULED (user, 2026-08-26): the imagery is AI-generated, so there
+is none.** Do not re-escalate it, and do not cite `CLAUDE.md` §2.3 at it — §2.3 is scoped to study
+content, not marketing imagery.
+⛔ **Still owed, and it is what the port starts on:** the actual image files. The reference's images
+exist only as pixels inside one flat PNG at capture resolution, so they cannot be sliced into
+per-section assets — the user's originals or a fresh generation are needed for §1, §2, §5 and §7.
+The reconciliation doc's §5 is the home for this; do not restate it here.
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and
