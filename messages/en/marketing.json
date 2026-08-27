@@ -46,6 +46,7 @@
       "street": { "jp": "通り（とおり）", "en": "street" },
       "quiet": { "jp": "静か（しずか）", "en": "quiet" }
     },
+    "saveSentence": "Save Sentence",
     "companion": { "name": "Companion", "body": "You already know most of this sentence." }
   },
   "problem": {

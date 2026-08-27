@@ -1,4 +1,4 @@
-import { getTranslations } from "@/lib/i18n/server";
+import type { Translator } from "./translator";
 import { AssetSlot } from "./asset-slot";
 import { HeroSentenceRail } from "./hero-sentence-rail";
 
@@ -8,10 +8,19 @@ import { HeroSentenceRail } from "./hero-sentence-rail";
  * player chrome, transcript tabs over two transcript lines, a Companion
  * card, and the sentence rail (`HeroSentenceRail`) running alongside.
  *
+ * Synchronous, taking the translator as a prop rather than calling
+ * `getTranslations` itself — see `translator.ts` (task 4 fix F5).
+ *
+ * Still-to-rail proportion (task 4 fix F1): the frame holds still:rail at
+ * ~495.5:255.8 ≈ 1.94:1. `lg:basis-2/3` here against `HeroSentenceRail`'s
+ * `lg:basis-1/3` reproduces that as a 2:1 ratio — a relationship, not a
+ * pixel, so no fixed-width token (`w-companion`, meant for the product's own
+ * companion rail, not this depiction of it) is coupled in.
+ *
  * Two affordances the reference depicts do not function on a marketing page
  * and ship as inert, non-focusable depictions rather than live controls
  * (spec §2.3 — no control with no real destination):
- *  - the Transcript / Japanese / English / Notes tabs: a static row with
+ *  - the Transcript / Japanese / English / Notes tabs: a static list with
  *    "Transcript" visually marked current. Making them real tabs would need
  *    per-tab content this catalog does not carry (only the transcript has
  *    real lines) and client-side state a server component can't own.
@@ -23,34 +32,33 @@ import { HeroSentenceRail } from "./hero-sentence-rail";
  * — Task 1's catalog, derived from the frame — only has `lineOne`/`lineTwo`.
  * Two lines are built here, matching the catalog.
  */
-export async function HeroVideoCard() {
-  const t = await getTranslations("marketing");
-  // Awaited explicitly for the same reason `hero.tsx` awaits this
-  // component's own promise — see that file's comment.
-  const sentenceRail = await HeroSentenceRail();
-
+export function HeroVideoCard({ t }: { t: Translator }) {
   return (
     <div
-      role="group"
-      aria-label={t("hero.video.title")}
+      aria-labelledby="hero-video-title"
       className="overflow-hidden rounded-lg border border-border bg-card"
     >
       <div className="flex items-center justify-between border-b border-border px-md py-sm">
-        <p className="text-caption text-foreground">{t("hero.video.title")}</p>
-        <p className="flex gap-xs text-caption text-muted-foreground">
+        <p id="hero-video-title" className="text-caption text-foreground">
+          {t("hero.video.title")}
+        </p>
+        <p className="text-caption text-muted-foreground">
           <span>{t("hero.video.level")}</span>
+          <span aria-hidden="true"> · </span>
           <span>{t("hero.video.duration")}</span>
         </p>
       </div>
 
       <div className="flex flex-col lg:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-col lg:basis-2/3 lg:shrink-0">
           <div className="relative">
             <AssetSlot ratio="16/9" description={t("hero.video.stillAlt")} priority />
-            {/* Decorative player chrome — depicts, never functions (spec §2.3). */}
+            {/* Decorative player chrome — depicts, never functions (spec §2.3).
+                No dark scrim over the still: it must read as unmistakably
+                pending (task 4 fix F7), not as a moodier finished frame. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-sm bg-gradient-to-t from-background/80 to-transparent px-sm py-xs"
+              className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-sm px-sm py-xs"
             >
               <svg viewBox="0 0 12 12" className="h-3 w-3 text-foreground">
                 <path d="M2 1.5 L10 6 L2 10.5 Z" fill="currentColor" />
@@ -60,14 +68,14 @@ export async function HeroVideoCard() {
           </div>
 
           <div className="border-b border-border px-md py-sm">
-            <div className="flex gap-md border-b border-border pb-xs text-caption">
-              <span className="text-primary-strong">{t("hero.tabs.transcript")}</span>
-              <span className="text-muted-foreground">{t("hero.tabs.japanese")}</span>
-              <span className="text-muted-foreground">{t("hero.tabs.english")}</span>
-              <span className="text-muted-foreground">{t("hero.tabs.notes")}</span>
-            </div>
+            <ul data-hero-tabs className="flex gap-md border-b border-border pb-xs text-caption">
+              <li className="text-primary-strong">{t("hero.tabs.transcript")}</li>
+              <li className="text-muted-foreground">{t("hero.tabs.japanese")}</li>
+              <li className="text-muted-foreground">{t("hero.tabs.english")}</li>
+              <li className="text-muted-foreground">{t("hero.tabs.notes")}</li>
+            </ul>
 
-            <div className="mt-xs flex flex-col gap-2xs">
+            <div data-hero-transcript className="mt-xs flex flex-col gap-2xs">
               <p className="rounded-md border border-primary/25 bg-primary/10 px-sm py-xs font-jp text-caption text-foreground">
                 {t("hero.transcript.lineOne")}
               </p>
@@ -91,7 +99,7 @@ export async function HeroVideoCard() {
           </div>
         </div>
 
-        {sentenceRail}
+        <HeroSentenceRail t={t} />
       </div>
     </div>
   );

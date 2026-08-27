@@ -9,22 +9,12 @@ import { HeroVideoCard } from "./hero-video-card";
  * (task 4 brief step 1): copy and two CTAs on the left, the app-preview
  * card (`HeroVideoCard`) on the right. The hero is the page's `<h1>`.
  *
- * "Save Sentence", visible in the reference's right rail, is not rendered:
- * the frame (347:6313) carries no matching text node and `hero.*` (Task 1,
- * derived from the frame) has no key for it. Building it would mean
- * inventing copy the catalog does not support — the same "build what the
- * catalog supports" call Ruling 4 makes for the transcript line count.
+ * Looks up the translator once and passes it down as a prop — see
+ * `translator.ts` (task 4 fix F5) — rather than each subcomponent calling
+ * `getTranslations` itself.
  */
 export async function Hero() {
   const t = await getTranslations("marketing");
-  // Awaited explicitly, not rendered as `<HeroVideoCard />`: Next.js's RSC
-  // renderer resolves an async component used as JSX automatically, but the
-  // plain react-dom renderer this repo's Vitest/jsdom tests run under does
-  // not, and throws ("Objects are not valid as a React child ([object
-  // Promise])") the moment a nested async component appears in the tree.
-  // Awaiting here yields an already-resolved element, which is valid JSX
-  // under both renderers.
-  const videoCard = await HeroVideoCard();
 
   return (
     <Section id="hero" eyebrow={t("hero.eyebrow")} heading={t("hero.heading")} headingLevel={1}>
@@ -42,7 +32,7 @@ export async function Hero() {
           <p className="mt-md text-caption text-muted-foreground">{t("hero.note")}</p>
         </div>
 
-        {videoCard}
+        <HeroVideoCard t={t} />
       </div>
     </Section>
   );
