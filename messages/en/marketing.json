@@ -37,7 +37,7 @@
     "sentence": {
       "label": "Sentence",
       "position": "1 / 29",
-      "jp": "この通りは、いつ来ても 静かで落ち着きます。",
+      "jp": "この通りは、いつ来ても静かで落ち着きます。",
       "romaji": "Kono tōri wa, itsu kite mo shizuka de ochitsukimasu.",
       "en": "This street is always quiet and peaceful whenever I come."
     },
@@ -217,6 +217,9 @@
       "body": "Sync your learning across every device, and come back whenever the day leaves a little room.",
       "appStore": { "prefix": "Download on the", "name": "App Store" },
       "playStore": { "prefix": "Get it on", "name": "Google Play" }
-    }
+    },
+    "newsletter": { "heading": "A gentle note, once in a while." },
+    "closing": "Wherever you are, we'll keep learning together.",
+    "backToTop": "Back to the beginning"
   }
 }

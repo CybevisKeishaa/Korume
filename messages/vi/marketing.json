@@ -27,7 +27,7 @@
     "tabs": {
       "transcript": "Lời thoại",
       "japanese": "Tiếng Nhật",
-      "english": "Tiếng Anh",
+      "english": "Bản dịch",
       "notes": "Ghi chú"
     },
     "transcript": {
@@ -37,7 +37,7 @@
     "sentence": {
       "label": "Câu",
       "position": "1 / 29",
-      "jp": "この通りは、いつ来ても 静かで落ち着きます。",
+      "jp": "この通りは、いつ来ても静かで落ち着きます。",
       "romaji": "Kono tōri wa, itsu kite mo shizuka de ochitsukimasu.",
       "en": "Con phố này lúc nào cũng yên tĩnh và dễ chịu, mỗi lần mình ghé qua."
     },
@@ -220,6 +220,9 @@
       "body": "Đồng bộ việc học trên mọi thiết bị, và quay lại bất cứ khi nào ngày của bạn còn chừa một khoảng trống nhỏ.",
       "appStore": { "prefix": "Tải về trên", "name": "App Store" },
       "playStore": { "prefix": "Có trên", "name": "Google Play" }
-    }
+    },
+    "newsletter": { "heading": "Thi thoảng, một lời nhắn nhẹ nhàng." },
+    "closing": "Dù bạn ở đâu, chúng ta vẫn cùng nhau học tiếp.",
+    "backToTop": "Quay lại từ đầu"
   }
 }
