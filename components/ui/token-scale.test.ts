@@ -30,15 +30,15 @@ const FORBIDDEN = [
 // as components/ui.
 const SCANNED_DIRS = ["components/ui", "components/marketing"];
 
-function collectSources(dir: string): string[] {
+function collectSources(dir: string, root: string = dir): string[] {
   const entries = readdirSync(dir, { withFileTypes: true });
   const files: string[] = [];
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      files.push(...collectSources(fullPath));
+      files.push(...collectSources(fullPath, root));
     } else if (/\.tsx?$/.test(entry.name) && !entry.name.includes(".test.")) {
-      files.push(path.relative(dir, fullPath));
+      files.push(path.relative(root, fullPath));
     }
   }
   return files;

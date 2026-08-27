@@ -47,4 +47,18 @@ describe("Section", () => {
 
     expect(screen.getByText("the body")).toBeInTheDocument();
   });
+
+  it("renders the heading at level 1 when headingLevel is 1, and still links it to the section", () => {
+    render(
+      <Section id="hero" heading="Learn Japanese through video." headingLevel={1}>
+        <p>body</p>
+      </Section>,
+    );
+
+    const heading = screen.getByRole("heading", { level: 1, name: "Learn Japanese through video." });
+    expect(heading).toBeInTheDocument();
+
+    const region = screen.getByRole("region", { name: "Learn Japanese through video." });
+    expect(region).toHaveAttribute("id", "hero");
+  });
 });
