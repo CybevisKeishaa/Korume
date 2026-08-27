@@ -35,6 +35,7 @@ import { HeroSentenceRail } from "./hero-sentence-rail";
 export function HeroVideoCard({ t }: { t: Translator }) {
   return (
     <div
+      role="group"
       aria-labelledby="hero-video-title"
       className="overflow-hidden rounded-lg border border-border bg-card"
     >
