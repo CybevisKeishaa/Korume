@@ -24,7 +24,11 @@ const FORBIDDEN = [
   /\bshadow-\[[^\]]*#/, // shadow-[0_0_12px_#FF8A3D] → shadow-raised
 ];
 
-const uiDir = path.join(process.cwd(), "components/ui");
+// Scanned directories. `components/marketing` was added for the landing-page
+// port (spec §2 of the screen-port workflow design): it is the largest body
+// of new presentational code in the repo and must be held to the same rule
+// as components/ui.
+const SCANNED_DIRS = ["components/ui", "components/marketing"];
 
 function collectSources(dir: string): string[] {
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -34,24 +38,27 @@ function collectSources(dir: string): string[] {
     if (entry.isDirectory()) {
       files.push(...collectSources(fullPath));
     } else if (/\.tsx?$/.test(entry.name) && !entry.name.includes(".test.")) {
-      files.push(path.relative(uiDir, fullPath));
+      files.push(path.relative(dir, fullPath));
     }
   }
   return files;
 }
 
 describe("Rule #0 — semantic tokens are the API (spec §2)", () => {
-  const sources = collectSources(uiDir);
+  for (const scannedDir of SCANNED_DIRS) {
+    const dir = path.join(process.cwd(), scannedDir);
+    const sources = collectSources(dir);
 
-  it("scans a non-empty set of primitives", () => {
-    expect(sources.length).toBeGreaterThan(0);
-  });
+    it(`scans a non-empty set of primitives in ${scannedDir}`, () => {
+      expect(sources.length).toBeGreaterThan(0);
+    });
 
-  it.each(sources)("%s hardcodes no absolute px/rem literal", (file) => {
-    const text = readFileSync(path.join(uiDir, file), "utf8");
-    const hits = FORBIDDEN.filter((pattern) => pattern.test(text));
-    expect(hits).toEqual([]);
-  });
+    it.each(sources)(`${scannedDir}/%s hardcodes no absolute px/rem literal`, (file) => {
+      const text = readFileSync(path.join(dir, file), "utf8");
+      const hits = FORBIDDEN.filter((pattern) => pattern.test(text));
+      expect(hits).toEqual([]);
+    });
+  }
 
   // The three sites outside components/ui that already violated the rule
   // before it existed. Pinned individually so that fixing them cannot silently
