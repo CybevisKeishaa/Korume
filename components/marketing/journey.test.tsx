@@ -52,6 +52,18 @@ describe("Journey", () => {
     }
   });
 
+  it("fix round 1 F2: makes the scrolling row keyboard-focusable, labelled by the section heading", async () => {
+    render(await Journey());
+
+    // No descendant is a link or button, so a keyboard-only user has nothing
+    // to Tab to that would scroll a narrow row into view — the row itself
+    // must be a focus stop. `getByRole` resolving by accessible name also
+    // proves the `aria-labelledby` wiring reaches the real heading text
+    // (not a stale or mistyped id).
+    const row = screen.getByRole("list", { name: en.journey.heading });
+    expect(row).toHaveAttribute("tabindex", "0");
+  });
+
   it("renders every leaf of the journey catalog subtree (dropped-key guard)", async () => {
     // Walks messages/en/marketing.json's `journey` subtree and collects every
     // string leaf, e.g. {a: {b: "x"}} -> [["a.b", "x"]]. Mirrors

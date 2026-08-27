@@ -21,7 +21,11 @@ import type { Translator } from "./translator";
  * to re-orient vertically, and per spec §4.1 the arrows must stay decorative
  * of a left-to-right sequence, never restructured per breakpoint. Scrolling
  * preserves "five cards, four arrows, one row" as a structural invariant
- * instead of a desktop-only shape.
+ * instead of a desktop-only shape. The scroll container itself is
+ * `tabIndex={0}` with an accessible name (fix round 1, F2) so a keyboard-only
+ * user — who has no focusable descendant to scroll-into-view, since no card
+ * is a link or button — can still reach every step on a viewport too narrow
+ * to show all five at once.
  *
  * The arrows (`StepArrow`) are decorative (spec §4.1): they carry no data,
  * are hidden from assistive technology and the tab order, and are derived
@@ -43,19 +47,38 @@ type StepKey = "watch" | "understand" | "shadow" | "mine" | "remember";
 
 const STEPS: readonly StepKey[] = ["watch", "understand", "shadow", "mine", "remember"];
 
+// Mirrors `Section`'s own `${id}-heading` convention (section.tsx:32) so the
+// scroll container's `aria-labelledby` (fix round 1, F2) can point at the
+// heading `Section` already renders, with no new catalog string.
+const SECTION_ID = "journey";
+const HEADING_ID = `${SECTION_ID}-heading`;
+
 export async function Journey() {
   const t = await getTranslations("marketing");
 
   return (
-    <Section id="journey" eyebrow={t("journey.eyebrow")} heading={t("journey.heading")}>
+    <Section id={SECTION_ID} eyebrow={t("journey.eyebrow")} heading={t("journey.heading")}>
       <p className="max-w-xl text-body-lg text-muted-foreground">{t("journey.body")}</p>
       <Link href="/shadowing/explore" className={buttonStyles({ variant: "outline", className: "mt-lg" })}>
         {t("journey.cta")}
       </Link>
 
-      <ol className="mt-xl flex items-stretch gap-2xs overflow-x-auto">
+      <ol
+        tabIndex={0}
+        aria-labelledby={HEADING_ID}
+        className="mt-xl flex items-stretch gap-2xs overflow-x-auto"
+      >
         {STEPS.map((step, i) => (
-          <li key={step} className="flex min-w-0 shrink-0 basis-56 items-center gap-2xs">
+          <li
+            key={step}
+            // Relationship-expressing, not an absolute literal (Rule #0): a
+            // fraction of the viewport, floored and capped in rem so a card
+            // never shrinks below a readable width or grows past a sensible
+            // one. Fix round 1, F1 — `basis-56` resolved to a hardcoded
+            // `14rem` because Tailwind's default numeric scale survives
+            // `theme.extend`, which is the same defect class as `p-6`/`gap-2`.
+            className="flex min-w-0 shrink-0 basis-[clamp(9rem,30vw,13rem)] items-center gap-2xs"
+          >
             <StepCard step={step} t={t} />
             {i < STEPS.length - 1 ? <StepArrow /> : null}
           </li>
