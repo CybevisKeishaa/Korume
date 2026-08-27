@@ -52,7 +52,6 @@ export async function SiteFooter() {
           <p className="font-display text-heading font-bold">{t("footer.wordmark")}</p>
           <p className="mt-2xs font-jp text-caption text-muted-foreground">{t("footer.wordmarkJp")}</p>
           <p className="mt-xs text-body text-muted-foreground">{t("footer.tagline")}</p>
-          <p className="mt-lg text-body-lg text-foreground">{t("footer.newsletter.heading")}</p>
         </div>
 
         <nav aria-labelledby="footer-explore-heading">
@@ -103,6 +102,12 @@ export async function SiteFooter() {
             <FooterItem>{t("footer.columns.legal.privacy")}</FooterItem>
             <FooterItem>{t("footer.columns.legal.terms")}</FooterItem>
           </ul>
+
+          {/* Legal column's second block, frame nodes 347:7222 / 347:7226 (F1). */}
+          <div className="mt-lg">
+            <p className="text-caption font-medium text-foreground">{t("footer.note.heading")}</p>
+            <p className="mt-2xs text-caption text-muted-foreground">{t("footer.note.body")}</p>
+          </div>
         </div>
       </Container>
 
@@ -121,7 +126,9 @@ export async function SiteFooter() {
             {t("footer.app.playStore.prefix")} {t("footer.app.playStore.name")}
           </span>
         </div>
-        <p className="mt-lg text-body text-muted-foreground">{t("footer.closing")}</p>
+        {/* Frame nodes 347:7275 / 347:7277 — beneath the store badges, not the brand column (F5). */}
+        <p className="mt-lg text-body-lg text-foreground">{t("footer.newsletter.heading")}</p>
+        <p className="mt-xs text-body text-muted-foreground">{t("footer.closing")}</p>
         <div className="mt-lg flex flex-col items-start justify-between gap-sm sm:flex-row sm:items-center">
           <p className="text-caption text-muted-foreground">
             {t("footer.copyright", { year: new Date().getFullYear() })}
