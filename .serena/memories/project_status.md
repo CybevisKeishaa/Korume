@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-26) — **the landing-page ruling is MERGED. The live next action is porting `/` — and it is blocked on one thing only: the image files.**
+## ▶ NEXT ACTION (updated 2026-08-27) — **the landing-page port has a SPEC and a PLAN, both committed on branch `landing-page-port`. The live next action is executing Task 1 of that plan. It is NOT blocked on the image files.**
 
 ✅ **`landing-page-identity-ruling` MERGED to master at `2822d22` (`--no-ff`), 2026-08-26; branch kept
 per repo convention.** Count its commits with
@@ -56,10 +56,23 @@ and its "A quieter way to keep going." section, which the user ruled authoritati
 ✅ **The image-LICENSING question is RULED (user, 2026-08-26): the imagery is AI-generated, so there
 is none.** Do not re-escalate it, and do not cite `CLAUDE.md` §2.3 at it — §2.3 is scoped to study
 content, not marketing imagery.
-⛔ **Still owed, and it is what the port starts on:** the actual image files. The reference's images
-exist only as pixels inside one flat PNG at capture resolution, so they cannot be sliced into
-per-section assets — the user's originals or a fresh generation are needed for §1, §2, §5 and §7.
-The reconciliation doc's §5 is the home for this; do not restate it here.
+⛔ **Still owed, but no longer blocking:** the actual image files for §1, §2, §5 and §7. The
+reference's images exist only as pixels inside one flat PNG at capture resolution, so they cannot be
+sliced into per-section assets — the user's originals or a fresh generation are needed. The
+reconciliation doc's §5 is the home for this; do not restate it here. **The port no longer waits on
+them**: the design puts all five behind one `AssetSlot` boundary, so layout is built now and filling
+a slot later is one prop at one call site.
+
+**Where execution actually stands (2026-08-27):** branch `landing-page-port` off master, two commits,
+nothing merged and no implementation code written —
+`81a20c9` the spec (`docs/superpowers/specs/2026-08-27-landing-page-port-design.md`) and `bfdb070`
+the plan (`docs/superpowers/plans/2026-08-27-landing-page-port.md`, 13 tasks / 93 steps). One
+decision is owed before work starts: subagent-driven vs inline execution. **Five more user rulings
+landed that day** — Blender mascot renders rejected, nav destinations, the footer link rule, §2's six
+chip sub-labels (the frame repeats one placeholder six times, a defect the reconciliation doc never
+named), and who writes the Vietnamese copy. **Read `mem:landing_page_port_run_state`** for all of it,
+plus two measurements that replaced assumptions and the process notes; this block must not restate
+them.
 
 **L9b Plan 1 (GDPR data deletion) is DONE and MERGED to master at `4b1fef7`** (merge commit,
 2026-08-22; the branch `l9b-plan1-gdpr` is kept, per this repo's convention). All 13 tasks built and
