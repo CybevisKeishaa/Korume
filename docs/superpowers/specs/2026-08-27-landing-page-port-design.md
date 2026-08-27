@@ -93,6 +93,38 @@ Auth affordances follow **P14** — email, Google, Apple; **GitHub: no** — wha
 Any pricing affordance follows **P13** — PayOS only, and it links out rather than presenting a
 provider choice.
 
+### 2.3 Footer destinations (user ruling, 2026-08-27)
+
+The same problem, larger: the frame's footer names **ten** destinations, of which a registry check on
+2026-08-27 found exactly **two** that exist — `Home → /` and `Roadmap → /roadmap`. Pricing, FAQ,
+Blog, About, Careers, Contact, Privacy Policy and Terms of Service have no route in
+`lib/product/screen-registry.ts` and no page under `app/[locale]/`.
+
+Ruling 3 (§11) says the frame's footer wins outright and its content may not change. Hiding the
+eight labels would change it; pointing them at routes that do not exist would ship broken links. The
+user ruled the third way:
+
+> **Keep every label. A label whose destination exists is a link; a label whose destination does not
+> exist yet renders as text, not as an `<a>`.**
+
+| Label | Treatment |
+|---|---|
+| Home | link → `/` |
+| Roadmap | link → `/roadmap` |
+| Contact | link → `mailto:` the address from `lib/contact.ts` |
+| Pricing · FAQ · Blog · About · Careers · Privacy Policy · Terms of Service | text, not a link |
+
+Nothing about the footer's structure or wording changes; only the `href` is withheld. Adding a page
+later is one `href`.
+
+**The same rule extends, unasked, to the rest of the footer's outbound affordances**, because it is
+the same question with the same answer: the Discord / Facebook / TikTok entries and the App Store and
+Google Play blocks (the frame has **both** stores; the reconciliation document mentions only the App
+Store) render as text until a real URL exists. No placeholder URLs, no `#`.
+
+The support address is **derived from `lib/contact.ts`'s `SUPPORT_EMAIL`**, never re-typed — that
+module exists precisely so the footer and the deletion email cannot drift (`CLAUDE.md` §6).
+
 ---
 
 ## 3. The four cross-cutting gaps and where each one is fixed
@@ -291,7 +323,32 @@ Nor from the reference: `346:6275` is a flattened image whose small type is not 
 where the reconciliation document quotes copy it is identifying *which line is meant*, not supplying
 the string to ship.
 
-### 8.2 The one exception — §6's eight captions
+### 8.2 Two exceptions — the frame's repeated placeholders
+
+The frame repeats one placeholder string across a whole set of items in **two** sections, not one.
+The reconciliation document names only §6; §2 was found the same way on 2026-08-27, while extracting
+copy for this plan. Both are content, so neither may be invented.
+
+#### 8.2.1 §2's six chip sub-labels
+
+All six chips in the frame carry the identical sub-label `"Learn in context"` (nodes `347:6450`,
+`6467`, `6483`, `6506`, `6518`, `6531`). The reference gives six distinct ones. Three read cleanly
+off the reference; three are Japanese at the edge of legibility and were **confirmed by the user**
+(2026-08-27) rather than guessed, because shipping guessed Japanese is a product defect:
+
+| Chip | Sub-label |
+|---|---|
+| Vocabulary | 安い・思う・店 |
+| Grammar | 比較・より |
+| Kanji | 店・思・安 |
+| Pronunciation | Pitch & Rhythm |
+| Listening | Real Audio |
+| SRS Review | Long-term Memory |
+
+All six are drawn from the section's own example sentence, 「この店、思ったより安いね。」 — which is the
+section's argument: one real sentence teaches all six things at once.
+
+#### 8.2.2 §6's eight captions
 
 The frame carries eight real node titles — Video & Context · Shadowing · Kanji · Vocabulary ·
 Grammar · JLPT Practice · Conversation · Memory & Review — but **all eight captions are the same
@@ -347,18 +404,21 @@ the expected size** (`CLAUDE.md` §7 / L-004):
 | Piece | Expected collection |
 |---|---|
 | §0 | 6 nav links, each with the destination from §2.2 |
-| §2 | 6 capability chips |
+| §2 | 6 capability chips, each with a **distinct** sub-label |
 | §3 | 5 step cards **and** 4 arrows |
 | §4 | 4 sub-scores, 2 contour paths |
 | §6 | 8 nodes, 8 captions |
 | §7 | 3 trust cards |
 
-**Two §6 guards**, because §6 is where the frame's placeholder could leak:
+**Four placeholder guards**, two per affected section, because §2 and §6 are where the frame's
+repeated placeholders could leak (§8.2):
 
-- the string `"Learn naturally, one layer at a time."` appears **zero** times in the rendered output;
-- the eight captions are **pairwise distinct** (a `Set` of them has size 8).
+- `"Learn naturally, one layer at a time."` appears **zero** times in §6's rendered output;
+- §6's eight captions are **pairwise distinct** (a `Set` of them has size 8);
+- `"Learn in context"` appears **zero** times in §2's rendered output;
+- §2's six sub-labels are **pairwise distinct** (a `Set` of them has size 6).
 
-Both are written over code that will already exist by then, so neither can fail first. They are
+All four are written over code that will already exist by then, so none can fail first. They are
 **mutation-checked** instead (`CLAUDE.md` §7): break the thing each guards, watch it go red, restore,
 and report both outputs in the task's report.
 
@@ -391,9 +451,14 @@ One branch, `landing-page-port`. Thirteen tasks, in order:
 8. §5 Recommendation + donut
 9. §6 Capability chain
 10. §7 Trust
-11. §8 CTA
-12. §9 Sign-off
+11. §8 CTA + §9 Sign-off
+12. Page composition + the Playwright spec
 13. Density pass, reduced-motion sweep, a11y sweep
+
+§8 and §9 share a task because §9 is a four-line sign-off that would not carry its own review gate.
+The step-by-step form of this sequence is `docs/superpowers/plans/2026-08-27-landing-page-port.md`;
+that plan is the executable copy and this list is the shape — if they ever disagree, the plan is what
+runs and this section is the bug.
 
 Then a **whole-branch review before merge** (`CLAUDE.md` §9, `docs/lessons.md` L-011) — required even
 though every task is reviewed on its own — and lessons written to `docs/lessons.md` per its four
@@ -421,7 +486,11 @@ From the user, 2026-08-26 unless noted:
 6. **Imagery is AI-generated → there is no licensing question.** See §5.2.
 7. **P13** — payments are PayOS only. **P14** — auth is email + Google + Apple, GitHub: no.
 8. **Blender renders are rejected** (user, 2026-08-27). See §5.3.
-9. **§7's three claims** — recordings stay private · your data is yours · AI with boundaries — match
+9. **Footer destinations** (user, 2026-08-27): every label stays; only labels with a real
+   destination become links. See §2.3.
+10. **§2's six chip sub-labels** (user, 2026-08-27): the three Japanese ones are confirmed, not
+    guessed. See §8.2.1.
+11. **§7's three claims** — recordings stay private · your data is yours · AI with boundaries — match
    the `CLAUDE.md` §2 non-negotiables exactly and ship **verbatim**. They are promises, not copy.
 
 ---
