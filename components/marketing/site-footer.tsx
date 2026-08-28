@@ -1,7 +1,10 @@
+import Image from "next/image";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { Container } from "@/components/ui/container";
 import { SUPPORT_EMAIL } from "@/lib/contact";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
+import type { Translator } from "./translator";
 
 /**
  * §10 (spec §2.3, ruling 3).
@@ -29,6 +32,70 @@ const LINKS = {
   roadmap: "/roadmap",
 } as const;
 
+/**
+ * The frame's mascot card (`347:7087`), built after the user overturned the
+ * ruling that had left it out (2026-08-28).
+ *
+ * The frame names its image `KorumeSleepingPeacefullyOnABook` (`347:7101`) and
+ * §9 immediately above reads "The day can end softly", so the pose is the
+ * sleeping one rather than the farewell a footer would otherwise suggest —
+ * see `scripts/mascot/poses.json`.
+ *
+ * The card carries no copy of its own. Its two labels are `footer.wordmarkJp`
+ * ("ことば") and `footer.wordmark`, which the frame places here rather than in
+ * the brand column above; the only new string is the accessible name, because
+ * the frame's `ButtonSayHelloToKorume` (`347:7100`) has no visible label and an
+ * image-only link must still be nameable.
+ *
+ * It links to `/companion`, the product's own Companion screen — a real
+ * destination (spec §2.3). That route is behind auth, so a signed-out visitor
+ * lands on sign-in, which is the normal guard behaviour and not a dead end.
+ */
+function MascotCard({ t }: { t: Translator }) {
+  return (
+    <Link
+      href="/companion"
+      aria-label={t("footer.mascot.cta")}
+      className="mt-lg flex items-center gap-sm rounded-lg border border-border bg-muted p-md transition-colors hover:border-primary/40"
+    >
+      <Image
+        data-mascot
+        src="/mascot/poses/resting.png"
+        alt=""
+        width={112}
+        height={71}
+        aria-hidden="true"
+        className="shrink-0"
+        // A fixed local decorative asset needs no on-demand resize or format
+        // negotiation; serve the file as-is.
+        unoptimized
+      />
+      <span>
+        <span className="block font-jp text-caption text-muted-foreground">
+          {t("footer.wordmarkJp")}
+        </span>
+        <span className="block text-caption uppercase tracking-widest text-primary-strong">
+          {t("footer.wordmark")}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+function StoreBadge({ children, href }: { children: React.ReactNode; href: string }) {
+  return (
+    <a
+      data-store-badge
+      href={href}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="rounded-md border border-border px-md py-sm text-caption text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+    >
+      {children}
+    </a>
+  );
+}
+
 function FooterItem({ children, href }: { children: React.ReactNode; href?: string }) {
   if (!href) {
     return <li className="text-body text-muted-foreground">{children}</li>;
@@ -50,8 +117,8 @@ export async function SiteFooter() {
       <Container className="grid gap-xl md:grid-cols-5">
         <div className="md:col-span-2">
           <p className="font-display text-heading font-bold">{t("footer.wordmark")}</p>
-          <p className="mt-2xs font-jp text-caption text-muted-foreground">{t("footer.wordmarkJp")}</p>
           <p className="mt-xs text-body text-muted-foreground">{t("footer.tagline")}</p>
+          <MascotCard t={t} />
         </div>
 
         <nav aria-labelledby="footer-explore-heading">
@@ -117,14 +184,21 @@ export async function SiteFooter() {
         </p>
         <h2 className="mt-2xs font-display text-heading font-bold">{t("footer.app.heading")}</h2>
         <p className="mt-xs max-w-xl text-body text-muted-foreground">{t("footer.app.body")}</p>
-        {/* No app exists on either store yet — text, per spec §2.3. */}
+        {/*
+         * These shipped as inert text while no app existed on either store.
+         * The user ruled otherwise on 2026-08-28, with the fact that Korume is
+         * not published stated: both badges point at the store's own front
+         * page. `lib/app-stores.ts` holds the two URLs and carries the ruling.
+         * External destinations, so a plain anchor rather than the locale-aware
+         * `Link` — there is no locale to prefix.
+         */}
         <div className="mt-md flex flex-wrap gap-sm">
-          <span className="rounded-md border border-border px-md py-sm text-caption text-muted-foreground">
+          <StoreBadge href={APP_STORE_URL}>
             {t("footer.app.appStore.prefix")} {t("footer.app.appStore.name")}
-          </span>
-          <span className="rounded-md border border-border px-md py-sm text-caption text-muted-foreground">
+          </StoreBadge>
+          <StoreBadge href={PLAY_STORE_URL}>
             {t("footer.app.playStore.prefix")} {t("footer.app.playStore.name")}
-          </span>
+          </StoreBadge>
         </div>
         {/* Frame nodes 347:7275 / 347:7277 — beneath the store badges, not the brand column (F5). */}
         <p className="mt-lg text-body-lg text-foreground">{t("footer.newsletter.heading")}</p>

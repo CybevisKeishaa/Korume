@@ -1,117 +1,163 @@
 # Landing page port (`/`) — run state
 
-> **Status: SPEC + PLAN WRITTEN AND COMMITTED. No implementation code exists yet.**
-> `mem:project_status` § NEXT ACTION points here and carries the gist only.
+> **Status: EXECUTION IN PROGRESS. 7 of 13 tasks built, reviewed and committed on branch
+> `landing-page-port`. Nothing merged.** Paused at the user's request 2026-08-28.
 >
-> ⚠️ **This memory is navigation and process. It deliberately does NOT restate the design or the
-> plan.** The spec and the plan travel with the repo; this does not. If this file and either of them
-> disagree, they win and this file is the bug.
+> ⚠️ **This memory is navigation, process and the decisions I took on the user's behalf. It
+> deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
+> this does not. If this file and either of them disagree, they win and this file is the bug.
 
 # ▶▶ RESUME HERE
 
-**Branch `landing-page-port`, cut from master, two commits, nothing merged:**
+**Next action: Task 8 (§5 Recommendation). BASE is `3f6f00c`.**
+Its brief is not yet generated — run
+`bash <superpowers>/skills/subagent-driven-development/scripts/task-brief docs/superpowers/plans/2026-08-27-landing-page-port.md 8`
 
-| Commit | What |
-|---|---|
-| `81a20c9` | `docs/superpowers/specs/2026-08-27-landing-page-port-design.md` — the design |
-| `bfdb070` | `docs/superpowers/plans/2026-08-27-landing-page-port.md` — 13 tasks, 93 steps — plus two spec amendments |
+**Execution mode is subagent-driven** (user, 2026-08-27): a fresh implementer per task, a task review
+after each, a fix loop, then a whole-branch review at the end. Re-enter with the
+`superpowers:subagent-driven-development` skill — it will find the ledger and resume.
 
-**The next action is Task 1 of the plan** (the `marketing.json` catalog, `en` + `vi`). Read the plan;
-it is step-by-step and assumes no context.
+## ⚠️ THE FULL RECORD IS GIT-IGNORED AND DOES NOT TRAVEL
 
-**One decision is owed before execution starts: HOW to execute.** The user was offered
-subagent-driven (a fresh subagent per task, review between tasks) vs inline, and chose neither before
-the session ended. Subagent-driven is the recommendation and matches
-`mem:` feedback-one-agent-in-flight — **never dispatch task N+1 until task N's implementer AND
-reviewer have both returned and the review has been read**.
+`.superpowers/sdd/2026-08-27-landing-page-port/progress.md` is the SDD ledger: every task's commits,
+every review's findings, every ruling with its cost-if-wrong, and every deferred minor. It is far
+more detailed than this memory and it is **gitignored** — it exists only on this machine and dies
+with the working copy. **Read it first on resume.** The task briefs and reports sit beside it.
 
-## Which file answers which question
+## Where execution stands
 
-| Question | Authority |
-|---|---|
-| What to build, section by section; the four gaps G1–G4 | `docs/product/landing-page-reconciliation.md` |
-| How this port is designed, and every ruling it inherits | the spec, `2026-08-27-landing-page-port-design.md` |
-| The executable steps, the test code, the commit boundaries | the plan, `2026-08-27-landing-page-port.md` |
-| Which node id is what | `docs/product/figma-frame-map.md` |
-| Overall project state, what comes after | `mem:project_status` |
+Branch `landing-page-port`, cut from master, **nothing merged**. Two doc commits (`81a20c9` spec,
+`bfdb070` plan, `952006c` memory) then 14 implementation commits, `ef616a8`..`3f6f00c`.
+Count them with `git rev-list --count 952006c..landing-page-port` (`L-002` — do not record counts).
 
-## What this session settled — five rulings, none to be re-litigated
+| Task | What | Fix rounds |
+|---|---|---|
+| 1 | `marketing.json` catalog, en + vi | 1 |
+| 2 | `Section` + `AssetSlot`, Rule #0 scan extended | 1 |
+| 3 | §0 nav + §10 footer | 1 |
+| 4 | §1 hero | 2 |
+| 5 | §2 problem + constellation | 0 |
+| 6 | §3 journey | 1 |
+| 7 | `lib/pitch/plot.ts` extraction + §4 pitch | 1 |
 
-All from the user, 2026-08-27. All are written into the spec; this is the index, not the text.
+Tasks 8–13 remain: §5 recommendation, §6 capability chain, §7 trust, §8 CTA + §9 sign-off, the page
+composition + Playwright spec, then the density/reduced-motion/a11y sweep.
 
-1. **Blender renders are REJECTED.** `public/mascot/renders/*` (10 files) are broken and ugly; do not
-   use them here or anywhere without a fresh ruling. They were NOT deleted — that is its own
-   decision, still open.
-2. **Nav destinations** — keep all six frame labels, map them onto routes that already exist, add no
-   routes. Explore→`/shadowing/explore`, Practice→`/review`, the other four to their own route.
-3. **Footer destinations** — the frame's footer names ten, only `Home` and `Roadmap` exist. Every
-   label stays; a label with a real destination is a link, one without renders as **text, not an
-   `<a>`**. No `#`, no placeholder route. Extended unasked to Discord/Facebook/TikTok and both app
-   stores.
-4. **§2's six chip sub-labels** — the frame repeats `"Learn in context"` six times, the same defect as
-   §6 and one `landing-page-reconciliation.md` never named. Three read off the reference; the three
-   Japanese ones were **confirmed by the user rather than guessed**.
-5. **Vietnamese copy** — drafted by the agent in the existing voice, reviewed by the user in one pass
-   at the end. `lib/i18n/catalog.test.ts` enforces identical key sets, so an English-only intermediate
-   state is not representable.
+**Merged-master gate is NOT yet run.** State at `3f6f00c`, measured: `npm run typecheck` zero errors
+(clear `tsconfig.tsbuildinfo` first — `"incremental": true` was once observed reporting a false
+green), working tree clean. Re-measure test counts rather than trusting any recorded figure.
 
-## Two things that were MEASURED, not assumed — re-runnable
+## Patterns that review established — reuse, do not re-derive
 
-Both replaced assumptions that would otherwise have shipped as facts.
+These were paid for with fix rounds. Every remaining section dispatch must carry them.
 
-1. **The mascot composites with no matting.** `public/mascot/Korume.png` (1402×1122) is the character
-   cut out on **pure black** — all four corners `(0,0,0)`. The page background is `--void-950` =
-   `#0b0d11`. Because `screen(0, bg) = bg`, `mix-blend-mode: screen` maps its black exactly onto the
-   background and keeps the tails' glow falloff. A simulated composite showed no halo, no rectangle,
-   no edge artefact.
-2. **One mascot pose covers all four placements.** Cropping §1, §4, §6 and §8's mascots out of
-   `346:6275` and viewing them side by side shows one character in one pose — seated on the glowing
-   orb, tails fanning right. Four separate poses are not required.
+1. **Translator-as-prop.** `components/marketing/translator.ts` exports `Translator` and its docstring
+   is the authority. The section's top component is `async` and calls `getTranslations("marketing")`
+   **once**; every sub-component is a plain synchronous function taking `{ t }`. Task 4 originally
+   wrote `const child = await Child()` to satisfy the test renderer — bending production shape to
+   suit jsdom was rejected, and eight sections would have copied it.
+2. **A catalog-coverage guard per section**, mutation-checked. Walk the section's subtree of the EN
+   catalog, assert an explicit total-leaf count, and assert **each leaf's text is in the rendered
+   DOM** — a count proves only what was iterated. This exists because Task 3 silently dropped two
+   footer keys the frame carries. `problem.test.tsx` and `pitch-showcase.test.tsx` are the best
+   examples.
+3. **`AssetSlot` for every image, no substitutes** — no gradient, no solid block, nothing sliced from
+   `346:6275`, and **no scrim laid over a pending placeholder** (one was removed from the hero for
+   softening the "unmistakably unfinished" signal).
+4. **`theme.extend.spacing` EXTENDS Tailwind's default numeric scale.** So `basis-56`, `h-8`,
+   `max-w-md` silently resolve to hardcoded rem and are the same defect class as `p-6`. The Rule #0
+   scan **cannot** catch them — its regexes only match bracketed numeric literals — so a green scan
+   is not evidence of token compliance.
+5. **Vitest resolves `next-intl/server` to `test/stubs/next-intl-server.ts`** (the real build is
+   gated behind a `react-server` condition jsdom never sets). It serves **English only** and now
+   **throws** on any other locale, deliberately: it used to accept and silently ignore a `locale`
+   option that ~40 `app/**` call sites pass, which would have let a Vietnamese assertion pass against
+   English strings.
 
-Neither is in `public/mascot/renders/`. The other five non-render files are character sheets on
-opaque grey/cream backgrounds that would need real matting, and two of them carry the **pre-rebrand
-wordmark "NIHONGO CINEMA"** in their chrome — so any future crop must exclude sheet chrome as well as
-background. Not needed for the initial port.
+## Rulings I made on the user's behalf — review these
 
-## Process notes — worth not re-learning
+Each cost-if-wrong is in the ledger. The three most likely to be overturned are marked ⚠️.
 
-- **`get_metadata` truncates text node names at 50 characters.** Proven: §6's heading came back as
-  `"Everything connects. Everything builds on each oth"`. Metadata is for structure and node ids
-  only; **all copy comes from `get_design_context`**. The plan's Task 1 Step 1 lists the twelve
-  strings this affects and the node each comes from.
-- **The reference `346:6275` is 864×1821 and that IS its native size** — `get_screenshot` at
-  `maxDimension=6000` returns `original_width=864`. There is no more detail to be had. Reading its
-  small type works by downloading the PNG and cropping + upscaling regions locally (PIL is available;
-  **numpy is not**).
-- **That crop-and-upscale trick is what unblocked §6.** All eight captions read cleanly, so a question
-  that looked like it needed the user did not. §2's three Japanese sub-labels sat right at the
-  legibility edge and did need one — the line between the two cases is whether you would be shipping
-  a guess.
-- **Self-review of the plan caught a real hole**: the §1 catalog was missing twelve keys the frame
-  carries (four transcript tabs, two transcript lines, the sentence rail's jp/romaji/en, Key words,
-  the Companion card) plus two in §3. Without that pass Task 4 would have built half a hero. Run the
-  spec-coverage check against the *extracted copy*, not against the spec's prose.
-- **The plan deliberately leaves the tree broken between Task 1 and Task 3.** Task 1 Step 5 runs
-  `typecheck` and EXPECTS failure, because the catalog drops `header.*`/`footer.cta` that the current
-  chrome still reads. It is recorded as expected and must not be "fixed" by re-adding the keys.
+- ⚠️ **The footer's mascot card and its five 13px icons are NOT implemented.** Spec §5.3 enumerates
+  exactly four mascot placements (§1, §4, §6, §8) and the footer is not among them; Task 1 catalogued
+  no string for it; its "Say hello to Korume" button would be an affordance with no destination,
+  which §2.3 forbids. I read ruling 3's "footer content may not change" as governing the ten
+  destinations and the blocks of copy, **not decorative imagery**.
+- ⚠️ **"Save Sentence" ships as inert text** in §1's sentence rail, and `hero.saveSentence` was added
+  to both locales mid-branch. The brief enumerates it and says §1's composition is the reference's,
+  not the frame's; §2.3 says such an affordance ships *as text*, not omitted.
+- ⚠️ **The six-link nav is hidden below `md` with no hamburger — deferred to Task 13.** Real
+  (`CLAUDE.md` §2 rule 5), but a design decision with several valid answers, and nothing downstream
+  depends on it. **Mobile visitors currently reach no marketing destination.**
+- **Newsletter block ships as copy with NO live form.** No `<input>`, no `<form>`, no
+  `footer.newsletter.placeholder` key — there is no signup endpoint (`EMAIL_PROVIDER=none`) and §2.3
+  forbids placeholder affordances. Three keys were added: `footer.newsletter.heading`,
+  `footer.closing`, `footer.backToTop`.
+- **`footer.copyright` keeps `{year}` and gained the frame's missing "· All rights reserved"**,
+  stored sentence-cased (casing is presentation).
+- **`recommend.video.jp` ships the brief's 「朝の通勤ラッシュ」, not frame node `347:6778`'s
+  「雨の通り ラッシュ」** — the frame's string is not idiomatic and does not pair with
+  `recommend.video.en` = "Morning Commute in Tokyo".
+- **`hero.sentence.jp`'s U+0020 was removed.** The space IS in frame node `347:6369` — a highlight
+  boundary leaking from layout into content. `静か` is now wrapped in the component, derived from
+  `keyWords.quiet.jp`.
+- **A frame inconsistency was ported, not corrected:** transcript line 1 (`347:6405`) disagrees with
+  the sentence rail's "1 / 29" (`347:6369`). The frame is the source.
+- **The catalog beat the brief on transcript lines** — the frame and catalog carry two, the brief
+  described three. The brief was the stale party.
+- **`components/video-player/pitch-contour-overlay.tsx` was left alone** — its maths is a genuinely
+  different function (two pre-aligned semitone series, no `refHz`, ranged over their union for a
+  shared y-scale), so forcing it through `toPlotPoints` would be wrong. But it duplicates
+  `MIN_SEMITONE_SPAN = 4` and the pad-and-floor rule → **sent to the whole-branch review as a named
+  item with the fix already specified** (`export function semitoneRange(values)` in `plot.ts`, called
+  by both; ~15 lines + a test). Until then, tuning that constant in one place silently desyncs the
+  player's two pitch views.
+- **Rule #0 does not cover sizing utilities** (`h-3`, `w-8`); widening it needs sizing tokens to
+  exist, which is a repo-wide decision.
 
-## Open items — none block the merge
+## Two measurement techniques worth keeping
 
-- **The five photographs.** Still the reason `AssetSlot` exists. Licensing is closed (AI-generated);
-  what is owed is the files. Do not slice them out of `346:6275`.
-- **§5's "i+1 Perfect Next Step" badge and topic chips** (Daily Life, Commuting) — present in the
-  reference, **absent from the frame's text layers**. Content the frame does not carry, so it is a
-  question for the user, not a gap to fill.
-- **Discord / Facebook / TikTok URLs**, and whether either app-store block should ever become a link.
-- **Whether to delete `public/mascot/renders/` and `assets/blender/references/`** now that Blender is
+- **Verifying copy against Figma without `get_design_context`:** `get_metadata` truncates text-node
+  names at exactly 50 characters, so an exact match on the first 50 verifies a longer string. Used to
+  close a reviewer's ⚠️ on `hero.heading`, `problem.heading`, `trust.cards.ai.body`.
+- **A reviewer mutation-checked a test analytically**, without touching the tree, by recomputing
+  `toPlotPoints` both ways — and proved the plan's own supplied test could not fail. The pattern
+  generalises: ask "what would this assertion do if the behaviour were deleted?"
+
+## Owed to the user
+
+- **The whole Vietnamese catalog**, in one review pass. Parked nits: `.en` gloss keys were translated
+  rather than left English; `"13 min"` → `"13 phút"`; `transcript` → `"Lời thoại"` where the product
+  ships `"Phụ đề"`; `"Giữ lại"` vs the shipped `"Bộ sưu tập"`; and five register nits the reviewer
+  listed for §2/§6/§8.
+- **The five photographs.** Still the reason `AssetSlot` exists.
+- **§5's "i+1 Perfect Next Step" badge and topic chips** — in the reference, absent from the frame's
+  text layers. A question, not a gap.
+- **Discord / Facebook / TikTok URLs**, and whether either app-store block should become a link.
+- **Whether to delete `public/mascot/renders/` and `assets/blender/references/`** now Blender is
   rejected.
+- A **browser pass**: the Companion card's column (frame puts it right of the rail, the build puts it
+  under the transcript — the brief's own ordering supports the build), and whether §4's and §3's SVGs
+  get non-zero height from `viewBox` alone (they carry no CSS height by design — carried to Task 13).
+
+## Carried into later tasks
+
+- **Task 12** (Playwright): assert §3's five cards render as a **row**, not a column — jsdom cannot,
+  so a `flex-col` mutant currently passes.
+- **Task 13**: the mobile nav ruling above; the SVG-height browser check; and note that §2's
+  constellation satisfies reduced-motion **vacuously** (it has no animation) — if Task 13 adds any,
+  the gate becomes a real requirement.
+- **Whole-branch review**: the `semitoneRange` item; the untokenized cluster (`h-16`, `max-w-xl`,
+  `tracking-widest`, `mx-auto`, `max-w-md` across six files); `${id}-heading` duplicated in
+  `section.tsx` and `journey.tsx` (a `CLAUDE.md` §6 "one fact, two homes", guarded by test but not
+  derived — fix is to export `headingIdFor(id)`); the footer coverage guard excluding by leaf **name**
+  rather than path; and `waveform.test.tsx`'s canvas draw-count flake under parallel load.
 
 ## Still true from the 2026-08-26 ruling — do not re-open
 
-`347:6277` IS the design for `/` · the authenticated home stays `dashboard` at `/dashboard` (a
-`/home` rename was offered and declined; ~89 files depend on it) · the frame's footer and its "A
-quieter way to keep going." section win over the reference · `346:6275` is the visual quality bar,
-stays out of the registry, and **must NOT be deleted** (it renders blank if hidden — check
-`get_metadata` before concluding it is empty, `L-019`) · imagery is AI-generated so there is no
-licensing question and `CLAUDE.md` §2.3 does not apply to it · **P13** PayOS only · **P14** auth is
-email + Google + Apple, GitHub no.
+`347:6277` IS the design for `/` · the authenticated home stays `dashboard` at `/dashboard` ·
+the frame's footer and its "A quieter way to keep going." section win over the reference ·
+`346:6275` is the visual quality bar, stays out of the registry, and **must NOT be deleted** ·
+imagery is AI-generated so there is no licensing question · **P13** PayOS only · **P14** auth is
+email + Google + Apple, GitHub no · **Blender mascot renders are REJECTED**; §1/§4/§6/§8 use
+`public/mascot/Korume.png` with `mix-blend-mode: screen`.

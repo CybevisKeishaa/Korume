@@ -185,6 +185,9 @@
     "wordmark": "Korume",
     "wordmarkJp": "ことば",
     "tagline": "Your quiet place to grow with Japanese.",
+    "mascot": {
+      "cta": "Say hello to Korume"
+    },
     "copyright": "© {year} Korume · All rights reserved",
     "columns": {
       "explore": {

@@ -59,13 +59,13 @@
       "fade": [0.78, 0.97]
     },
     {
-      "out": "farewell.png",
-      "sheet": "companion-a",
-      "anchor": [374, 967],
-      "caption": "TẠM BIỆT — waving goodbye",
-      "slot": "§10 footer mascot card. The last thing on the page, so it waves you off. Bookends the §1 greeting.",
+      "out": "resting.png",
+      "sheet": "companion-b",
+      "anchor": [2450, 1800],
+      "caption": "NGỦ GỤC — asleep, with a Zzz",
+      "slot": "§10 footer mascot card. The frame names this image KorumeSleepingPeacefullyOnABook (347:7101) and §9 directly above it reads \"The day can end softly\", so the frame and the copy both ask for a sleeping pose — not the farewell wave a footer would otherwise suggest.",
       "width": 420,
-      "fade": [0.9, 1.0]
+      "fade": [0.94, 1.0]
     }
   ]
 }

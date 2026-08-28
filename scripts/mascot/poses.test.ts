@@ -41,7 +41,7 @@ describe("mascot pose manifest", () => {
       "noting.png",
       "holding-memory.png",
       "looking-ahead.png",
-      "farewell.png",
+      "resting.png",
     ]);
   });
 

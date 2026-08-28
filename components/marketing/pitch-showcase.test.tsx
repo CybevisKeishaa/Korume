@@ -90,12 +90,23 @@ describe("PitchShowcase", () => {
     expect(screen.getByText("Great!")).toBeInTheDocument();
   });
 
-  it("renders the mascot from the approved source, not a Blender render", async () => {
+  it("renders the mascot from a manifested pose, not a Blender render", async () => {
     const { container } = render(await PitchShowcase());
 
     const mascot = container.querySelector("[data-mascot]");
-    expect(mascot?.getAttribute("src")).toContain("/mascot/Korume.png");
+    expect(mascot).not.toBeNull();
+    // Only `scripts/mascot/extract.js` writes into poses/, and
+    // `scripts/mascot/poses.test.ts` pins that directory to the manifest, so
+    // asserting the path is asserting recorded provenance (spec §5.2).
+    expect(mascot?.getAttribute("src")).toBe("/mascot/poses/noting.png");
     expect(mascot?.getAttribute("src")).not.toContain("/renders/");
+    // The alpha channel is what retired the screen-blend workaround; if that
+    // class comes back, the asset is being composited the old, placement-
+    // constraining way.
+    expect(mascot?.className ?? "").not.toContain("mix-blend");
+    // Decorative: the section's meaning must not depend on it.
+    expect(mascot?.getAttribute("alt")).toBe("");
+    expect(mascot?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("renders every leaf of the pitch catalog subtree (dropped-key guard)", async () => {

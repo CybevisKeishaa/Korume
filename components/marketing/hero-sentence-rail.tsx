@@ -1,3 +1,4 @@
+import { Link } from "@/lib/i18n/navigation";
 import type { Translator } from "./translator";
 
 /**
@@ -15,9 +16,16 @@ import type { Translator } from "./translator";
  * lives before the full-width "（"), never by reintroducing a space into the
  * string.
  *
- * F6: "Save Sentence" ships as inert text (`hero.saveSentence`) — never a
- * `<button>` or `<a>` — the same treatment the video card's tabs get, for the
- * same reason: no real destination exists on a marketing page (spec §2.3).
+ * "Save Sentence" shipped as inert text while nothing on the marketing page
+ * could receive a saved sentence. The user overturned that on 2026-08-28: it
+ * links to `/mining`, the screen the registry labels "Collection"
+ * (`lib/product/screen-registry.ts`, `screenId: mining`) — where a saved
+ * sentence actually lands. That route is behind auth, so a signed-out visitor
+ * reaches sign-in, which is the guard doing its job rather than a dead end.
+ *
+ * It stays a link and not a `<button>`: it navigates, and a control that
+ * navigates is a link (the video card's tabs remain inert for the original
+ * reason — they have no destination at all).
  */
 export function HeroSentenceRail({ t }: { t: Translator }) {
   const sentence = t("hero.sentence.jp");
@@ -62,8 +70,13 @@ export function HeroSentenceRail({ t }: { t: Translator }) {
         </ul>
       </div>
 
-      {/* Inert text, not a control — no real destination exists (spec §2.3, F6). */}
-      <p className="text-caption text-primary-strong">{t("hero.saveSentence")}</p>
+      <Link
+        data-save-sentence
+        href="/mining"
+        className="inline-block text-caption text-primary-strong underline-offset-4 hover:underline"
+      >
+        {t("hero.saveSentence")}
+      </Link>
     </div>
   );
 }

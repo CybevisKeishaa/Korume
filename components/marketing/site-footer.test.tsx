@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@/test/render";
 import { SiteFooter } from "./site-footer";
 import { SUPPORT_EMAIL } from "@/lib/contact";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 import en from "@/messages/en/marketing.json";
 
 /** Spec §2.3 — the only three footer labels that have a real destination today. */
@@ -64,6 +65,50 @@ describe("SiteFooter", () => {
     expect(screen.queryByRole("heading", { name: "Resources" })).toBeNull();
   });
 
+  it("builds the frame's mascot card, linked to the Companion screen", async () => {
+    const { container } = render(await SiteFooter());
+
+    const card = screen.getByRole("link", { name: en.footer.mascot.cta });
+    expect(card).toHaveAttribute("href", "/en/companion");
+
+    // The card's image, not any other mascot on the page.
+    const mascot = card.querySelector("[data-mascot]");
+    expect(mascot).not.toBeNull();
+    // Only `scripts/mascot/extract.js` writes into poses/, and
+    // `scripts/mascot/poses.test.ts` pins that directory to the manifest, so
+    // asserting the path is asserting recorded provenance (spec §5.2).
+    expect(mascot?.getAttribute("src")).toBe("/mascot/poses/resting.png");
+    expect(mascot?.getAttribute("src")).not.toContain("/renders/");
+    // Decorative — the link's name comes from `aria-label`, so the image must
+    // not announce itself a second time.
+    expect(mascot?.getAttribute("alt")).toBe("");
+    expect(mascot?.getAttribute("aria-hidden")).toBe("true");
+
+    // The card carries the two labels the frame places here (347:7091/347:7094)
+    // rather than minting copy of its own.
+    expect(card.textContent).toContain(en.footer.wordmarkJp);
+    expect(card.textContent).toContain(en.footer.wordmark);
+    // And the brand column above no longer duplicates the Japanese one.
+    expect(container.textContent?.split(en.footer.wordmarkJp)).toHaveLength(2);
+  });
+
+  it("points both store badges at the stores (user ruling, 2026-08-28)", async () => {
+    const { container } = render(await SiteFooter());
+
+    const badges = Array.from(container.querySelectorAll("[data-store-badge]"));
+    expect(badges).toHaveLength(2);
+    expect(badges.map((b) => b.getAttribute("href"))).toEqual([
+      APP_STORE_URL,
+      PLAY_STORE_URL,
+    ]);
+    for (const badge of badges) {
+      // External destination opened in a new tab; `noopener` is what stops the
+      // opened page reaching back through `window.opener`.
+      expect(badge.getAttribute("target")).toBe("_blank");
+      expect(badge.getAttribute("rel") ?? "").toContain("noopener");
+    }
+  });
+
   it("renders every leaf of the footer catalog subtree (F1/F3 — a dropped key must fail loudly)", async () => {
     // Walks messages/en/marketing.json's `footer` subtree and collects every
     // string leaf, e.g. {a: {b: "x"}} -> [["a.b", "x"]]. Deliberately broader
@@ -87,22 +132,23 @@ describe("SiteFooter", () => {
     }
 
     const allLeaves = collectLeaves(en.footer);
-    // `ariaLabel` is an element attribute, not rendered text; `copyright` is
-    // ICU-interpolated ("© {year} Korume · All rights reserved") so its raw
-    // catalog string never appears verbatim in the DOM — both are asserted
-    // elsewhere (the aria-label and the copyright/backToTop row) and are
-    // excluded here on purpose, not by omission.
-    const EXCLUDED_LEAF_KEYS = new Set(["ariaLabel", "copyright"]);
-    const coveredLeaves = allLeaves.filter((leaf) => {
-      const leafKey = leaf.path.split(".").at(-1);
-      return leafKey !== undefined && !EXCLUDED_LEAF_KEYS.has(leafKey);
-    });
+    // Excluded on purpose, not by omission — each is asserted elsewhere:
+    //  - `ariaLabel` and `mascot.cta` are element attributes, not rendered text
+    //    (the footer's own label, and the mascot card's accessible name);
+    //  - `copyright` is ICU-interpolated ("© {year} Korume · All rights
+    //    reserved"), so its raw catalog string never appears verbatim.
+    // Keyed by full PATH, not by leaf name: excluding "cta" by name would
+    // silently also excuse any future `footer.*.cta` from this net.
+    const EXCLUDED_PATHS = new Set(["ariaLabel", "copyright", "mascot.cta"]);
+    const coveredLeaves = allLeaves.filter(
+      (leaf) => !EXCLUDED_PATHS.has(leaf.path),
+    );
 
     // Explicit counts (CLAUDE.md §7 / docs/lessons.md L-004): the walk must
     // find exactly the catalog's current shape, so an empty or mis-scoped
     // walk cannot pass vacuously, and a later task that adds a footer key
     // without rendering it drops this test's `coveredLeaves` count.
-    expect(allLeaves).toHaveLength(34);
+    expect(allLeaves).toHaveLength(35);
     expect(coveredLeaves).toHaveLength(32);
 
     const { container } = render(await SiteFooter());

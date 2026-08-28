@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Translator } from "./translator";
 import { AssetSlot } from "./asset-slot";
 import { HeroSentenceRail } from "./hero-sentence-rail";
@@ -87,12 +88,23 @@ export function HeroVideoCard({ t }: { t: Translator }) {
           </div>
 
           <div className="flex items-center gap-xs px-md py-sm">
-            <span
+            {/* The reference puts the companion itself here, not an initial.
+                `greeting.png` is its first appearance on the page, so the pose
+                waves — see `scripts/mascot/poses.json` for the cut and the
+                thread it starts. Intrinsic width/height do the sizing, so no
+                numeric Tailwind size class is coupled in (Rule #0). */}
+            <Image
+              data-mascot
+              src="/mascot/poses/greeting.png"
+              alt=""
+              width={44}
+              height={60}
               aria-hidden="true"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary-strong"
-            >
-              {t("hero.companion.name").slice(0, 1)}
-            </span>
+              className="shrink-0"
+              // A fixed local decorative asset needs no on-demand resize or
+              // format negotiation; serve the file as-is.
+              unoptimized
+            />
             <p className="text-caption">
               <span className="text-primary-strong">{t("hero.companion.name")}</span>{" "}
               <span className="text-muted-foreground">{t("hero.companion.body")}</span>

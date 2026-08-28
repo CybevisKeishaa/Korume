@@ -140,23 +140,22 @@ export async function PitchShowcase() {
             <div className="flex items-center gap-sm rounded-lg border border-border bg-muted p-sm">
               <Image
                 data-mascot
-                src="/mascot/Korume.png"
+                src="/mascot/poses/noting.png"
                 alt=""
                 width={96}
-                height={77}
+                height={86}
                 aria-hidden="true"
                 // A fixed local decorative icon needs no on-demand resize/format
                 // negotiation — `unoptimized` serves the file as-is instead of
                 // routing it through the `/_next/image` optimizer.
                 unoptimized
-                /* The source is a light character cut out on pure black. Fix
-                   round 1: `screen(backdrop, black) = backdrop` for ANY
-                   backdrop colour, so this composites correctly regardless
-                   of the container it sits on — here `bg-muted`
-                   (--muted = --void-900, not --void-950, per globals.css) —
-                   while keeping the tails' glow falloff: no matting, no halo
-                   (spec §5.3). */
-                className="mix-blend-screen"
+                /* This card is the companion commenting on your pitch, so the
+                   pose is it writing down what it heard. It carries a real
+                   alpha channel (`scripts/mascot/poses.json`), which replaces
+                   the `mix-blend-screen` trick the earlier `Korume.png` needed:
+                   that only ever composited correctly because the source was
+                   cut out on pure black, and it constrained where the mascot
+                   could be placed. */
               />
               <div>
                 <p className="text-caption text-primary-strong">{t("pitch.companion.name")}</p>

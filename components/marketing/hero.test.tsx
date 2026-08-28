@@ -28,6 +28,34 @@ describe("Hero", () => {
     expect(pending).toHaveLength(1);
   });
 
+  it("links Save Sentence to the Collection screen (user ruling, 2026-08-28)", async () => {
+    render(await Hero());
+
+    const save = screen.getByRole("link", { name: en.hero.saveSentence });
+    // `/mining` is the registry's `screenId: mining`, labelled "Collection".
+    expect(save).toHaveAttribute("href", "/en/mining");
+  });
+
+  it("puts the companion itself in the Companion card, not an initial", async () => {
+    const { container } = render(await Hero());
+
+    const mascot = container.querySelector("[data-mascot]");
+    expect(mascot).not.toBeNull();
+    // Only `scripts/mascot/extract.js` writes into poses/, and
+    // `scripts/mascot/poses.test.ts` pins that directory to the manifest, so
+    // asserting the path is asserting recorded provenance (spec §5.2).
+    expect(mascot?.getAttribute("src")).toBe("/mascot/poses/greeting.png");
+    expect(mascot?.getAttribute("src")).not.toContain("/renders/");
+    expect(mascot?.getAttribute("alt")).toBe("");
+    expect(mascot?.getAttribute("aria-hidden")).toBe("true");
+    // The card previously stood in the mascot's place with the companion
+    // name's first letter. That placeholder must not survive alongside it.
+    const name = en.hero.companion.name;
+    expect(container.textContent).not.toContain(
+      `${name.slice(0, 1)}${name}`,
+    );
+  });
+
   it("shows the video card's metadata", async () => {
     render(await Hero());
 
