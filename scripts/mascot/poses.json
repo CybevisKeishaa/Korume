@@ -1,0 +1,71 @@
+{
+  "$comment": [
+    "Which mascot pose fills which landing-page slot, and where each one is cut from.",
+    "",
+    "A pose is addressed by an `anchor` — a point inside the drawing on the source sheet —",
+    "not by an index, so re-running after a change to the segmentation still resolves to the",
+    "same character. `run scripts/mascot/extract.js` rewrites public/mascot/poses/ from this",
+    "file; nothing else may write there, so an asset's provenance is always this manifest",
+    "plus the sheet it names (spec 5.2: a slot may only be filled from a source whose origin",
+    "is recorded).",
+    "",
+    "`fade` dissolves the bottom of the crop over [from,to] as a fraction of height. The orb",
+    "poses are drawn with the orb's warm light spilling onto a ground plane; cut straight,",
+    "that spill reads as an opaque plate the character sits on. Fading it out keeps the glow",
+    "and loses the plate.",
+    "",
+    "`width` is the exported pixel width — roughly 3x the largest size the slot renders at,",
+    "so the asset holds up on a high-DPI screen without shipping the whole 3072px sheet."
+  ],
+  "sheets": {
+    "companion-a": "public/mascot/upscalemedia-transformed (4).png",
+    "companion-b": "public/mascot/upscalemedia-transformed (5).png"
+  },
+  "poses": [
+    {
+      "out": "greeting.png",
+      "sheet": "companion-b",
+      "anchor": [1345, 900],
+      "caption": "VẪY TAY — waving",
+      "slot": "§1 hero, Companion card. The companion's first appearance on the page, so it waves. Renders ~48px, which is why a pose with a clear silhouette beats a detailed one.",
+      "width": 200,
+      "fade": [0.92, 1.0]
+    },
+    {
+      "out": "noting.png",
+      "sheet": "companion-a",
+      "anchor": [1775, 974],
+      "caption": "GHI LẠI — writing it down",
+      "slot": "§4 pitch showcase, Companion card. The card is the companion commenting on your pitch, so the pose is it taking notes on what it heard.",
+      "width": 340,
+      "fade": [0.9, 1.0]
+    },
+    {
+      "out": "holding-memory.png",
+      "sheet": "companion-b",
+      "anchor": [2126, 918],
+      "caption": "ÔM KÝ ỨC — holding a memory",
+      "slot": "§6 capability chain, at the end of the chain under \"Korume remembers. You grow.\" The pose is literally the companion holding a memory orb.",
+      "width": 320,
+      "fade": [0.9, 1.0]
+    },
+    {
+      "out": "looking-ahead.png",
+      "sheet": "companion-b",
+      "anchor": [1660, 380],
+      "caption": "NHÌN XA — looking into the distance",
+      "slot": "§8 CTA, the largest placement. Keeps the glowing-orb motif the reference uses here, and the gaze points at what the section is asking for — the next step.",
+      "width": 620,
+      "fade": [0.78, 0.97]
+    },
+    {
+      "out": "farewell.png",
+      "sheet": "companion-a",
+      "anchor": [374, 967],
+      "caption": "TẠM BIỆT — waving goodbye",
+      "slot": "§10 footer mascot card. The last thing on the page, so it waves you off. Bookends the §1 greeting.",
+      "width": 420,
+      "fade": [0.9, 1.0]
+    }
+  ]
+}
