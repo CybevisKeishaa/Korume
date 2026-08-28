@@ -237,8 +237,32 @@ enumerates them; the table below groups two of them on one row because they are 
    preserving the soft glow falloff of the tails. A simulated composite showed no halo, no
    rectangle, and no edge artefact. This is what the reference itself does with the mascot.
 
-Therefore: **§1, §4, §6 and §8 use `Korume.png`, screen-blended over the dark surface, at four
-different scales.** No cutout, no matting, no alpha authoring.
+> ⚠️ **SUPERSEDED BY THE USER, 2026-08-28.** Everything above stays as the record of what was
+> measured, but the conclusion it reached no longer holds. The user ruled that each placement gets
+> its own hand-picked pose, cut out of the character sheets with background removed — "cần thiết thì
+> hãy xóa nền hay làm bất cứ thứ gì, miễn là cho nó thật đẹp và ưng mắt" — and that the footer gets
+> a mascot card too, which §5.3 had excluded. What actually ships:
+>
+> - **Five placements**, not four: §1, §4, §6, §8 and the §10 footer card.
+> - **Five different poses**, cut by `scripts/mascot/extract.js` per
+>   `scripts/mascot/poses.json`, which is also the provenance record §5.2 asks for. The manifest
+>   names the sheet, the point in it, what the pose is and which slot it fills.
+> - **Real alpha, and `mix-blend-mode: screen` is retired.** The blend only ever composited
+>   correctly because `Korume.png` is cut out on pure black; that is exactly what limited the mascot
+>   to dark surfaces.
+> - The §10 pose is the **sleeping** one. The frame names its image
+>   `KorumeSleepingPeacefullyOnABook` (`347:7101`) and §9 directly above reads "The day can end
+>   softly", so the frame and the copy agree.
+>
+> The two objections in the paragraph below — that the sheets carry opaque backgrounds needing real
+> matting, and pre-rebrand "NIHONGO CINEMA" chrome — were both answered by measurement rather than
+> waived. The matte is connectivity-based, not a luminance threshold, so it does not bite into a
+> cream character on cream ground; and sheet chrome is excluded structurally, because a crop is
+> masked to its own connected component rather than to a rectangle. `scripts/mascot/matte.js`
+> carries the detail.
+
+The superseded conclusion, kept for the record: **§1, §4, §6 and §8 use `Korume.png`, screen-blended
+over the dark surface, at four different scales.** No cutout, no matting, no alpha authoring.
 
 The character sheets are **not** used in the initial port. They carry opaque grey/cream backgrounds
 that would need real matting — lossy on a translucent, glowing character — and two of them carry the
