@@ -2,6 +2,9 @@ import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { buttonStyles } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toPlotPoints } from "@/lib/pitch";
+import type { PlotPoint } from "@/lib/pitch";
+import { USER_DEMO_CONTOUR, DEMO_REF_HZ } from "@/lib/marketing/pitch-demo";
 import { Section } from "./section";
 import { AssetSlot } from "./asset-slot";
 import type { Translator } from "./translator";
@@ -46,6 +49,35 @@ import type { Translator } from "./translator";
 type StepKey = "watch" | "understand" | "shadow" | "mine" | "remember";
 
 const STEPS: readonly StepKey[] = ["watch", "understand", "shadow", "mine", "remember"];
+
+/**
+ * Step 3's mini pitch preview (task 7 step 13, G3 at smaller scale). The
+ * reference draws a crude bar cluster where a waveform belongs; pitch is a
+ * continuous quantity, so this draws a real contour instead, built through
+ * the SAME `toPlotPoints` primitive the §4 showcase and the real canvas
+ * renderer use — never a second, similar-looking implementation.
+ */
+const SHADOW_CONTOUR_WIDTH = 160;
+const SHADOW_CONTOUR_HEIGHT = 32;
+
+/** Points → an SVG path, starting a new subpath after every unvoiced gap. */
+function toPath(points: readonly (PlotPoint | null)[]): string {
+  let path = "";
+  let penDown = false;
+  for (const point of points) {
+    if (!point) {
+      penDown = false;
+      continue;
+    }
+    path += `${penDown ? "L" : "M"}${point.x.toFixed(2)} ${point.y.toFixed(2)} `;
+    penDown = true;
+  }
+  return path.trim();
+}
+
+const SHADOW_CONTOUR_PATH = toPath(
+  toPlotPoints(USER_DEMO_CONTOUR, DEMO_REF_HZ, SHADOW_CONTOUR_WIDTH, SHADOW_CONTOUR_HEIGHT).points,
+);
 
 // Mirrors `Section`'s own `${id}-heading` convention (section.tsx:32) so the
 // scroll container's `aria-labelledby` (fix round 1, F2) can point at the
@@ -103,6 +135,29 @@ function StepCard({ step, t }: { step: StepKey; t: Translator }) {
 
       {step === "watch" ? (
         <AssetSlot ratio="16/9" description={t("journey.thumbnailAlt")} className="mt-xs" />
+      ) : null}
+
+      {step === "shadow" ? (
+        <svg
+          aria-hidden="true"
+          viewBox={`0 0 ${SHADOW_CONTOUR_WIDTH} ${SHADOW_CONTOUR_HEIGHT}`}
+          // No explicit height class (Rule #0 — `h-8` would be a hardcoded
+          // literal): the `viewBox` supplies the intrinsic aspect ratio, so
+          // `w-full` alone scales the height proportionally, the same way
+          // `pitch-showcase.tsx`'s chart does.
+          className="mt-xs w-full"
+          preserveAspectRatio="none"
+        >
+          <path
+            data-contour
+            d={SHADOW_CONTOUR_PATH}
+            fill="none"
+            className="stroke-primary-strong"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       ) : null}
 
       <p

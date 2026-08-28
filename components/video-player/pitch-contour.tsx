@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { contourFromSamples, hzToSemitones, medianVoicedHz } from "@/lib/pitch";
-import type { PitchContour as PitchContourData } from "@/lib/pitch";
+import { contourFromSamples, medianVoicedHz, toPlotPoints } from "@/lib/pitch";
+import type { PitchContour as PitchContourData, PlotPoint } from "@/lib/pitch";
 import { readBlobAsArrayBuffer } from "@/lib/audio/read-blob";
 
 export interface PitchContourProps {
@@ -23,10 +23,6 @@ export interface PitchContourProps {
 type Status = "idle" | "decoding" | "ready" | "unavailable";
 
 const CANVAS_WIDTH = 600;
-/** Minimum vertical span (in semitones) to plot even when the take is nearly flat. */
-const MIN_SEMITONE_SPAN = 4;
-/** Extra headroom (in semitones) above/below the observed data range. */
-const RANGE_PADDING_SEMITONES = 1;
 const POINT_RADIUS = 1.5;
 
 /**
@@ -44,47 +40,6 @@ function computePitchContour(
   const refHz = medianVoicedHz(contour.frames);
   if (refHz === null) return null;
   return { contour, refHz };
-}
-
-interface PlotPoint {
-  x: number;
-  y: number;
-}
-
-/** Maps contour frames to canvas-space points, one per frame, `null` = gap (unvoiced). */
-function toPlotPoints(
-  contour: PitchContourData,
-  refHz: number,
-  canvasWidth: number,
-  canvasHeight: number,
-): { points: (PlotPoint | null)[]; baselineY: number } {
-  const frames = contour.frames;
-  const maxTime = frames.length > 0 ? (frames[frames.length - 1] as { time: number }).time : 0;
-
-  const semitones = frames.map((f) => (f.hz === null ? null : hzToSemitones(f.hz, refHz)));
-  const voiced = semitones.filter((s): s is number => s !== null);
-  const dataMin = voiced.length > 0 ? Math.min(...voiced) : 0;
-  const dataMax = voiced.length > 0 ? Math.max(...voiced) : 0;
-
-  let min = dataMin - RANGE_PADDING_SEMITONES;
-  let max = dataMax + RANGE_PADDING_SEMITONES;
-  if (max - min < MIN_SEMITONE_SPAN) {
-    const centre = (max + min) / 2;
-    min = centre - MIN_SEMITONE_SPAN / 2;
-    max = centre + MIN_SEMITONE_SPAN / 2;
-  }
-  const span = max - min;
-
-  const toY = (semitone: number) => canvasHeight - ((semitone - min) / span) * canvasHeight;
-  const toX = (time: number) => (maxTime > 0 ? (time / maxTime) * canvasWidth : 0);
-
-  const points = frames.map((f, i) => {
-    const s = semitones[i];
-    if (s === null || s === undefined) return null;
-    return { x: toX(f.time), y: toY(s) };
-  });
-
-  return { points, baselineY: toY(0) };
 }
 
 /** Draws the baseline gridline plus the semitone contour, breaking the line at gaps. */

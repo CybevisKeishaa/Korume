@@ -64,6 +64,13 @@ describe("Journey", () => {
     expect(row).toHaveAttribute("tabindex", "0");
   });
 
+  it("draws step 3's waveform as a contour, not as bars", async () => {
+    const { container } = render(await Journey());
+
+    const shadow = container.querySelector('[data-step="shadow"]');
+    expect(shadow?.querySelectorAll("[data-contour]")).toHaveLength(1);
+  });
+
   it("renders every leaf of the journey catalog subtree (dropped-key guard)", async () => {
     // Walks messages/en/marketing.json's `journey` subtree and collects every
     // string leaf, e.g. {a: {b: "x"}} -> [["a.b", "x"]]. Mirrors
