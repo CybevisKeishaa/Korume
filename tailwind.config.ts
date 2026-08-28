@@ -102,6 +102,7 @@ const config: Config = {
         body: ["var(--text-body)", "var(--leading-body)"],
         "body-lg": ["var(--text-body-lg)", "var(--leading-body-lg)"],
         heading: ["var(--text-heading)", "var(--leading-heading)"],
+        "heading-lg": ["var(--text-heading-lg)", "var(--leading-heading-lg)"],
         title: ["var(--text-title)", "var(--leading-title)"],
         display: ["var(--text-display)", "var(--leading-display)"],
         hero: ["var(--text-hero)", "var(--leading-hero)"],

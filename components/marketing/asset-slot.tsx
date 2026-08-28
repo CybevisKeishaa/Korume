@@ -39,7 +39,23 @@ export function AssetSlot({ ratio, description, src, className, priority }: Asse
   if (src) {
     return (
       <div data-asset-slot className={cn("relative overflow-hidden rounded-lg", ratioClass[ratio], className)}>
-        <Image src={src} alt={description} fill priority={priority} className="object-cover" />
+        <Image
+          src={src}
+          alt={description}
+          fill
+          // `fill` with no `sizes` makes Next assume the image is 100vw, so the
+          // browser picks the 3840px srcset entry for a slot a few hundred px
+          // wide. Measured on §2's photograph the moment it was filled: 1336 KB
+          // and 4.9s, against 190 KB for the same file at a sane width — and
+          // the section rendered an empty right third for those seconds. No
+          // filled slot on this page is ever wider than ~45vw (the widest is
+          // §2's `lg:w-[30%]`), so this is an upper bound that can only
+          // over-serve, never soften an image. NOT a new prop: the slot's
+          // public interface is unchanged.
+          sizes="(min-width: 1024px) 45vw, 100vw"
+          priority={priority}
+          className="object-cover"
+        />
       </div>
     );
   }

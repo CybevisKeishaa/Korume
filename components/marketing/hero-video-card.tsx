@@ -54,7 +54,15 @@ export function HeroVideoCard({ t }: { t: Translator }) {
       <div className="flex flex-col lg:flex-row">
         <div className="flex min-w-0 flex-col lg:basis-2/3 lg:shrink-0">
           <div className="relative">
-            <AssetSlot ratio="16/9" description={t("hero.video.stillAlt")} priority />
+            {/* 1672x941 is exactly the 16/9 the slot declares, so filling it moved
+                no layout (fix F7). Provenance recorded in `progress.md` per spec
+                §5.2: user-generated from the written per-slot description. */}
+            <AssetSlot
+              ratio="16/9"
+              description={t("hero.video.stillAlt")}
+              src="/marketing/hero-still.png"
+              priority
+            />
             {/* Decorative player chrome — depicts, never functions (spec §2.3).
                 No dark scrim over the still: it must read as unmistakably
                 pending (task 4 fix F7), not as a moodier finished frame. */}

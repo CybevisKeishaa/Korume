@@ -26,12 +26,12 @@ import type { Translator } from "./translator";
  * `max-w-6xl` while the section (and so the photograph) keeps tracking the
  * viewport.
  *
- * ⚠️ The photograph does not exist yet (spec §5.2), so this stays an
- * `AssetSlot` in its visibly-pending state. Filling it later is one `src` prop
- * at this one call site. The reference fades the photograph's left edge into
- * the background; that fade is deliberately NOT built here — fading a dashed
- * placeholder would stop it reading as a placeholder, and the fade is owed to
- * whoever supplies the real photograph.
+ * The photograph is `PROBLEM_PHOTO` (fix F7). It was pending at first commit;
+ * spec §5.2 needs a source whose origin is recorded, and `progress.md` now
+ * records it — user-generated from the written per-slot description, licensing
+ * ruled closed 2026-08-26. Its intrinsic 1086x1448 is exactly the 3/4 the slot
+ * declares, so filling it moved no layout: it was one `src` prop at one call
+ * site, as designed.
  *
  * ⚠️ The connectors express a DECORATIVE relationship. They are not derived
  * from user state, SRS data or the difficulty engine, nothing in them is
@@ -47,6 +47,26 @@ import type { Translator } from "./translator";
  * `translator.ts` (task 4 fix F5) — rather than each subcomponent calling
  * `getTranslations` itself.
  */
+const PROBLEM_PHOTO = "/marketing/problem-desk.png";
+
+/**
+ * The reference dissolves the photograph's left edge into the page instead of
+ * cutting it on a hard line. Held back at first commit for a good reason: the
+ * slot was pending, and fading a dashed placeholder into the background would
+ * stop it reading as a placeholder, which spec §5.2 forbids.
+ *
+ * ⚠️ That reason is encoded here, not just remembered. The mask is scoped to a
+ * descendant `img`, and `AssetSlot` renders an `img` ONLY in its filled branch —
+ * the pending branch is a dashed div with a `<span>`. So if `src` were ever
+ * removed, the placeholder comes back with a hard boundary and this rule matches
+ * nothing. An unfilled slot cannot fade. Do not re-scope this to the wrapper.
+ *
+ * `lg:` only: below that the photograph is an ordinary in-flow card with nothing
+ * to bleed into. Percentages, not pixels — the fade is a proportion of the photo.
+ */
+const PHOTO_LEFT_FADE =
+  "lg:[&_img]:[mask-image:linear-gradient(to_right,transparent,#000_20%)]";
+
 const TOP_CHIPS: readonly ChipKey[] = ["vocabulary", "grammar", "kanji"];
 const BOTTOM_CHIPS: readonly ChipKey[] = ["pronunciation", "listening", "srs"];
 
@@ -83,13 +103,13 @@ export async function Problem() {
 
       {/* Full-bleed to the section's right edge and its full height from `lg`
           up; a normal portrait slot in the flow below that, where there is no
-          three-zone composition to bleed into. Only the left border survives
-          the bleed — enough to keep the pending state legible as a boundary
-          without drawing a box that stops short of the page edge. */}
+          three-zone composition to bleed into. `lg:aspect-auto` lets the two
+          insets drive the height instead of the declared 3/4. */}
       <AssetSlot
         ratio="3/4"
         description={t("problem.photoAlt")}
-        className="mt-xl lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:aspect-auto lg:w-[30%] lg:rounded-none lg:border-y-0 lg:border-r-0"
+        src={PROBLEM_PHOTO}
+        className={`mt-xl lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:aspect-auto lg:w-[30%] lg:rounded-none ${PHOTO_LEFT_FADE}`}
       />
     </Section>
   );

@@ -55,10 +55,58 @@ describe("Problem", () => {
     expect(connectors[0]).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("holds the learner photograph as a pending asset slot", async () => {
+  it("holds the learner photograph as a real image with a recorded source", async () => {
+    // Was a pending-slot guard until fix F7 supplied the photograph. Asserting
+    // the exact path is asserting recorded provenance (spec §5.2 — the same
+    // reasoning hero.test.tsx uses for the mascot poses): `progress.md` records
+    // where `/marketing/problem-desk.png` came from, and nothing else may be
+    // substituted here — least of all a slice of the reference PNG.
     const { container } = render(await Problem());
 
-    expect(container.querySelectorAll('[data-asset-pending="true"]')).toHaveLength(1);
+    expect(container.querySelectorAll('[data-asset-pending="true"]')).toHaveLength(0);
+
+    const slots = Array.from(container.querySelectorAll("[data-asset-slot]"));
+    expect(slots).toHaveLength(1);
+
+    const photos = Array.from(container.querySelectorAll("[data-asset-slot] img"));
+    expect(photos).toHaveLength(1);
+
+    const [photo] = photos;
+    if (!photo) throw new Error("the photograph slot rendered no <img>");
+    // `next/image` rewrites src to `/_next/image?url=<encoded>&w=…`, so the
+    // recorded path is asserted after decoding rather than against the raw
+    // attribute — the subject is which FILE is served, not the optimizer URL.
+    const photoSrc = decodeURIComponent(photo.getAttribute("src") ?? "");
+    expect(photoSrc).toContain("/marketing/problem-desk.png");
+    expect(photo.getAttribute("alt")).toBe(en.problem.photoAlt);
+  });
+
+  it("scopes the photograph's left-edge fade to the image, so a pending slot cannot fade", async () => {
+    // The fade was deliberately withheld while the slot was empty: fading a
+    // dashed placeholder into the background stops it reading as a placeholder,
+    // which spec §5.2 forbids. The photograph exists now, so the fade ships —
+    // but the reason has to survive as a property of the code, not as a memory.
+    // Scoping the mask to a descendant `img` does that: `AssetSlot` renders an
+    // `img` ONLY in its filled branch, so if `src` were removed the rule would
+    // match nothing and the hard dashed boundary would return by itself.
+    //
+    // A className assertion is the right instrument only because jsdom applies
+    // no Tailwind stylesheet, so there is no computed `mask-image` to read. The
+    // subject is the SCOPE of the rule, which is expressed in the class name.
+    const { container } = render(await Problem());
+
+    const slots = Array.from(container.querySelectorAll("[data-asset-slot]"));
+    expect(slots).toHaveLength(1);
+
+    const [slot] = slots;
+    if (!slot) throw new Error("the photograph slot did not render");
+    const masks = slot.className
+      .split(/\s+/)
+      .filter((cls) => cls.includes("mask-image"));
+    expect(masks).toHaveLength(1);
+    for (const mask of masks) {
+      expect(mask, "the fade must be scoped to a descendant img").toContain("[&_img]:");
+    }
   });
 
   it("renders every leaf of the problem catalog subtree (dropped-key guard)", async () => {
@@ -84,10 +132,13 @@ describe("Problem", () => {
 
     const allLeaves = collectLeaves(en.problem);
 
-    // No exclusions: every problem leaf renders as plain visible text,
-    // including `photoAlt`, which `AssetSlot`'s pending branch renders as
-    // both an `aria-label` AND visible `<span>` text (as hero's
-    // `video.stillAlt` does).
+    // Still NO exclusions, and still by path rather than by leaf name. What
+    // changed with fix F7 is where one leaf lands: `photoAlt` used to be
+    // visible `<span>` text in `AssetSlot`'s pending branch, and is now the
+    // filled branch's `alt`. It is just as present and just as required — so
+    // the guard widens to "visible text OR an image's accessible name" rather
+    // than excusing the leaf. Dropping it to an exclusion would have made this
+    // the one catalog key nothing checks.
     //
     // Explicit count (CLAUDE.md §7 / docs/lessons.md L-004): the walk must
     // find exactly the catalog's current shape, so an empty or mis-scoped
@@ -96,7 +147,15 @@ describe("Problem", () => {
     expect(allLeaves).toHaveLength(18);
 
     const { container } = render(await Problem());
-    const renderedText = container.textContent ?? "";
+    const alts = Array.from(container.querySelectorAll("img"))
+      .map((img) => img.getAttribute("alt") ?? "")
+      .filter((alt) => alt.length > 0);
+    // Non-empty subject before relying on it (docs/lessons.md L-004): if the
+    // photograph ever stopped rendering, `alts` would be empty and `photoAlt`
+    // would silently have nowhere to be found rather than failing loudly.
+    expect(alts).toHaveLength(1);
+
+    const renderedText = [container.textContent ?? "", ...alts].join(" ");
 
     for (const { path, text } of allLeaves) {
       expect(renderedText, `problem.${path} = ${JSON.stringify(text)} did not render`).toContain(

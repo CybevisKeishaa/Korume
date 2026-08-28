@@ -21,11 +21,27 @@ describe("Hero", () => {
     );
   });
 
-  it("holds the hero still as a pending asset slot, not as invented art", async () => {
+  it("holds the hero still as a real image with a recorded source", async () => {
+    // Was a pending-slot guard until task A1 fix F7 supplied the still. The
+    // point it protected is unchanged: no invented art. Asserting the exact
+    // path is asserting recorded provenance (spec §5.2), the same way the
+    // mascot-pose assertion below does.
     const { container } = render(await Hero());
 
-    const pending = container.querySelectorAll('[data-asset-pending="true"]');
-    expect(pending).toHaveLength(1);
+    expect(container.querySelectorAll('[data-asset-pending="true"]')).toHaveLength(0);
+
+    const slots = Array.from(container.querySelectorAll("[data-asset-slot]"));
+    expect(slots).toHaveLength(1);
+
+    const stills = Array.from(container.querySelectorAll("[data-asset-slot] img"));
+    expect(stills).toHaveLength(1);
+
+    const [still] = stills;
+    if (!still) throw new Error("the hero still slot rendered no <img>");
+    // Decoded: `next/image` serves it through `/_next/image?url=<encoded>`.
+    const stillSrc = decodeURIComponent(still.getAttribute("src") ?? "");
+    expect(stillSrc).toContain("/marketing/hero-still.png");
+    expect(still.getAttribute("alt")).toBe(en.hero.video.stillAlt);
   });
 
   it("links Save Sentence to the Collection screen (user ruling, 2026-08-28)", async () => {
@@ -128,10 +144,12 @@ describe("Hero", () => {
 
     const allLeaves = collectLeaves(en.hero);
 
-    // No exclusions: unlike footer's `ariaLabel`/`copyright`, every hero leaf
-    // renders as plain visible text — including `video.stillAlt`, which
-    // `AssetSlot`'s pending branch renders as both an `aria-label` AND
-    // visible `<span>` text.
+    // Still NO exclusions, and still by path rather than by leaf name. What
+    // changed with task A1 fix F7 is where one leaf lands: `video.stillAlt`
+    // used to be visible `<span>` text in `AssetSlot`'s pending branch, and is
+    // now the filled branch's `alt`. Just as present, just as required — so the
+    // guard widens to "visible text OR an image's accessible name" rather than
+    // excusing the leaf.
     //
     // Explicit counts (CLAUDE.md §7 / docs/lessons.md L-004): the walk must
     // find exactly the catalog's current shape, so an empty or mis-scoped
@@ -140,7 +158,16 @@ describe("Hero", () => {
     expect(allLeaves).toHaveLength(29);
 
     const { container } = render(await Hero());
-    const renderedText = container.textContent ?? "";
+    const alts = Array.from(container.querySelectorAll("img"))
+      .map((img) => img.getAttribute("alt") ?? "")
+      .filter((alt) => alt.length > 0);
+    // Non-empty subject before relying on it (docs/lessons.md L-004). Exactly
+    // one: the still. The mascot is decorative and carries `alt=""`, which the
+    // filter above drops — as it must, or a decorative image could satisfy a
+    // catalog leaf.
+    expect(alts).toHaveLength(1);
+
+    const renderedText = [container.textContent ?? "", ...alts].join(" ");
 
     for (const { path, text } of allLeaves) {
       expect(renderedText, `hero.${path} = ${JSON.stringify(text)} did not render`).toContain(text);

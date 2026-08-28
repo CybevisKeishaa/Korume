@@ -39,9 +39,17 @@
 const VIEW_BOX = "-24 0 48 100";
 /** Where the side rays turn inward — the example sentence's vertical middle. */
 const TURN_Y = 48;
-/** Corner radius of that turn, and how far the ray points on past it. */
+/**
+ * Corner radius of that turn, and how far the ray points on past it.
+ *
+ * Fix F3: `TIP_X` was 9, which at the layer's 1.12 scale left only ~3.4px of
+ * straight run after the corner — about ONE dash, so the turn read as a
+ * detached speck rather than as direction. The reference's horizontal run is
+ * ~15px at build scale and carries two or three dashes; 13 units x 1.12 = 14.6px
+ * reproduces that. The tip still clears the example sentence (measured).
+ */
 const TURN_R = 6;
-const TIP_X = 9;
+const TIP_X = 13;
 /** The glowing node sits high in the band, above the sentence, as 346:6275 does. */
 const NODE_Y = 20;
 /** The centre ray to the bottom chips restarts below the translation line. */
@@ -116,11 +124,18 @@ function CentreColumn() {
           <stop offset="0.4" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
           <stop offset="1" stopColor="hsl(var(--primary))" stopOpacity={0} />
         </radialGradient>
-        <linearGradient id={FLARE_ID}>
-          <stop offset="0" stopColor="hsl(var(--primary))" stopOpacity={0} />
-          <stop offset="0.5" stopColor="hsl(var(--primary))" stopOpacity={0.75} />
+        {/*
+          Fix F4: this was a `<rect height="1">` under a horizontal-only
+          gradient — diffuse across the flare but knife-sharp top and bottom, so
+          just above the sentence it read as a divider rule rather than as light.
+          A radial gradient painted onto a wide, shallow ellipse falls off on
+          BOTH axes, which is what the reference's flare does.
+        */}
+        <radialGradient id={FLARE_ID}>
+          <stop offset="0" stopColor="hsl(var(--primary))" stopOpacity={0.75} />
+          <stop offset="0.35" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
           <stop offset="1" stopColor="hsl(var(--primary))" stopOpacity={0} />
-        </linearGradient>
+        </radialGradient>
       </defs>
 
       <g
@@ -136,7 +151,7 @@ function CentreColumn() {
 
       <g data-connector-node>
         <circle cx="0" cy={NODE_Y} r="17" fill={`url(#${GLOW_ID})`} />
-        <rect x="-60" y={NODE_Y - 0.5} width="120" height="1" fill={`url(#${FLARE_ID})`} />
+        <ellipse cx="0" cy={NODE_Y} rx="60" ry="3.4" fill={`url(#${FLARE_ID})`} />
         <circle cx="0" cy={NODE_Y} r="2" className="fill-primary" />
       </g>
     </svg>
@@ -148,9 +163,16 @@ function CentreColumn() {
  * positioned parent, so the band's own height — set by the sentence it wraps —
  * is what the 0..100 coordinate space maps onto.
  *
- * Desktop only (`hidden lg:grid`): below `lg` the chips stack into one column,
- * so there are no three column centres to connect and the rays would be
- * meaningless decoration pointing at nothing.
+ * Desktop only (`hidden lg:grid`) — but NOT for the reason an earlier version of
+ * this comment claimed (fix F5). The chip grid goes three-across at `sm:`, not
+ * `lg:`, so between 640px and 1024px the three column centres do exist and this
+ * layer could geometrically connect them. It stays hidden there deliberately:
+ * that range is `Section`'s stacked layout, where the constellation spans the
+ * full container, so the band is far wider than tall and the figure's
+ * proportions — a long drop closing on a small inward nub — stop reading.
+ * Restyling the rays for the stacked composition is not this task's scope.
+ * Below `sm:` the chips genuinely are one column and there is nothing to
+ * connect. Two later tasks read this file; the stated reason has to be true.
  */
 export function ProblemConnectors() {
   return (

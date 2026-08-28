@@ -156,6 +156,14 @@
   --leading-body-lg: 1.625rem;
   --text-heading: 1.25rem;
   --leading-heading: 1.75rem;
+  /* Added by the landing-page port (spec §13, task A1 fix F1). The scale
+     jumped 20px -> 28px with nothing between, and §2's rail heading in
+     reference 346:6275 measures ~23.7px: 20px reads undersized and 28px
+     wraps to five lines in a ~28% column. Named `heading-lg` to mirror the
+     scale's own `body`/`body-lg` pairing rather than invent a naming shape.
+     No existing step was changed. */
+  --text-heading-lg: 1.5rem;
+  --leading-heading-lg: 2rem;
   --text-title: 1.75rem;
   --leading-title: 2.25rem;
   --text-display: 2.5rem;

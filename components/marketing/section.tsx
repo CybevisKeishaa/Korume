@@ -39,9 +39,15 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * eyebrow, heading and body while a wide column carries the showcase alongside.
  *
  * Passing `rail` turns that on. Two consequences worth stating:
- * - the heading drops from `text-display` to `text-heading`, because 40px in a
- *   ~28% column wraps into a wall; `text-heading` is the token that matches the
- *   reference's scale there. It is a token step, not a hand-tuned size.
+ * - the heading drops from `text-display` to `text-heading-lg` (24px), because
+ *   40px in a ~28% column wraps into a wall. That step did not exist before
+ *   this layout needed it: the scale ran 20px -> 28px, and review measured the
+ *   reference's rail heading at ~23.7px by two independent routes (cap height
+ *   calibrated on the eyebrow as a control, and characters-per-line at a rail
+ *   width matching the reference's to within 1%). 20px read ~18% undersized;
+ *   28px wraps to five lines here. So `--text-heading-lg` was added to
+ *   `app/globals.css` (fix F1) rather than reaching for an arbitrary value,
+ *   which Rule #0 forbids. It is a token step, not a hand-tuned size.
  * - `max-w-3xl` is dropped in the split — the rail column IS the measure, and a
  *   second cap fighting it is what makes the two disagree at some widths.
  *
@@ -63,7 +69,11 @@ export function Section({
 }: SectionProps) {
   const headingId = `${id}-heading`;
   const Heading = headingLevel === 1 ? "h1" : "h2";
-  const isSplit = rail !== undefined;
+  // `!= null`, not `!== undefined`: §3-§9 adopt this prop next and the shape
+  // they will write is `rail={cond ? <Body /> : null}`. Under `!== undefined`
+  // that selects the split layout with an empty rail div and a silently
+  // narrowed heading — a layout change with no visible cause (fix F6).
+  const isSplit = rail != null;
 
   const headingBlock = (
     <>
@@ -80,7 +90,7 @@ export function Section({
         className={cn(
           "text-balance font-display font-bold",
           headingLevel === 1 && "text-hero",
-          headingLevel === 2 && (isSplit ? "text-heading" : "text-display"),
+          headingLevel === 2 && (isSplit ? "text-heading-lg" : "text-display"),
           !isSplit && "max-w-3xl",
         )}
       >
