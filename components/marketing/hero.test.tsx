@@ -44,6 +44,50 @@ describe("Hero", () => {
     expect(still.getAttribute("alt")).toBe(en.hero.video.stillAlt);
   });
 
+  it("gives the decorative player chrome its own ground, so it survives an arbitrary still (fix F9)", async () => {
+    // The chrome was drawn against a dark dashed placeholder: a `bg-border`
+    // hairline (a near-black colour meant for `--card`) and a bare glyph. Fix
+    // F7 put a bright lantern-lit photograph behind it and both became a
+    // smudge. The treatment must not depend on which photograph is in the
+    // slot, so the chrome carries its own scrim and the track is drawn from
+    // the foreground ramp.
+    //
+    // jsdom applies no Tailwind stylesheet, so there is no computed
+    // background or contrast to read here — legibility was judged in a
+    // browser. The subject this can pin is which treatment is DECLARED, and
+    // that the chrome stayed decoration while gaining it.
+    const { container } = render(await Hero());
+
+    const chromes = Array.from(container.querySelectorAll("[data-player-chrome]"));
+    expect(chromes).toHaveLength(1);
+
+    const [chrome] = chromes;
+    if (!chrome) throw new Error("the player chrome did not render");
+
+    expect(chrome).toHaveAttribute("aria-hidden", "true");
+    expect(chrome.className).toContain("pointer-events-none");
+    expect(
+      chrome.querySelectorAll("a, button, input, [tabindex]"),
+      "the chrome depicts controls, it must never become one",
+    ).toHaveLength(0);
+
+    expect(
+      chrome.className,
+      "the chrome needs a ground of its own, not the still's own tones",
+    ).toContain("from-scrim/");
+
+    const tracks = Array.from(chrome.querySelectorAll("[data-player-track]"));
+    expect(tracks).toHaveLength(1);
+
+    const [track] = tracks;
+    if (!track) throw new Error("the progress track did not render");
+    expect(
+      track.className,
+      "the track must be a light hairline over any photograph, not `--border`",
+    ).toContain("bg-foreground/");
+    expect(track.className).not.toContain("bg-border");
+  });
+
   it("links Save Sentence to the Collection screen (user ruling, 2026-08-28)", async () => {
     render(await Hero());
 

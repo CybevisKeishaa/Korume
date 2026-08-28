@@ -109,6 +109,48 @@ describe("Problem", () => {
     }
   });
 
+  it("keeps the widened photograph behind the chips and unable to intercept them (fix F10)", async () => {
+    // The photograph went 30% -> 41.5% of the section to match `346:6275`,
+    // which puts its faded left edge over the constellation's right column.
+    // Two properties make that safe, and neither is visible to jsdom — it does
+    // no layout, so it can see neither the overlap nor the stacking order.
+    // What it CAN pin is that both declarations are present, which is what a
+    // later edit would silently drop:
+    //  - the constellation is lifted into its own stacking context, so an
+    //    absolutely-positioned photograph LATER in the subtree cannot paint
+    //    over the chips (verified in a browser: at 1024/1280/1440/1920 the
+    //    topmost element at each chip's inner right edge is the chip);
+    //  - the photograph cannot be hit-tested at all, so even its transparent
+    //    strip can never swallow a pointer aimed at the constellation
+    //    (verified: `elementFromPoint` over the photograph returns the layout
+    //    div behind it, never the slot).
+    const { container } = render(await Problem());
+
+    const slots = Array.from(container.querySelectorAll("[data-asset-slot]"));
+    expect(slots).toHaveLength(1);
+
+    const [slot] = slots;
+    if (!slot) throw new Error("the photograph slot did not render");
+    expect(
+      slot.className,
+      "the photograph overlaps the chips and must not be able to intercept them",
+    ).toContain("pointer-events-none");
+
+    const showcases = Array.from(container.querySelectorAll("[data-constellation]"));
+    expect(showcases).toHaveLength(1);
+
+    const [showcase] = showcases;
+    if (!showcase) throw new Error("the constellation column did not render");
+    expect(
+      showcase.className,
+      "the constellation must be lifted above the photograph it now overlaps",
+    ).toContain("z-10");
+
+    // Non-empty subject (docs/lessons.md L-004): the lift is worthless unless
+    // every chip is actually inside the lifted layer.
+    expect(container.querySelectorAll("[data-constellation] [data-chip]")).toHaveLength(6);
+  });
+
   it("renders every leaf of the problem catalog subtree (dropped-key guard)", async () => {
     // Walks messages/en/marketing.json's `problem` subtree and collects every
     // string leaf, e.g. {a: {b: "x"}} -> [["a.b", "x"]]. Mirrors

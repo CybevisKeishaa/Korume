@@ -49,9 +49,10 @@ export function AssetSlot({ ratio, description, src, className, priority }: Asse
           // and 4.9s, against 190 KB for the same file at a sane width — and
           // the section rendered an empty right third for those seconds. No
           // filled slot on this page is ever wider than ~45vw (the widest is
-          // §2's `lg:w-[30%]`), so this is an upper bound that can only
-          // over-serve, never soften an image. NOT a new prop: the slot's
-          // public interface is unchanged.
+          // §2's photograph, at 41.5% of the section — and the section IS the
+          // viewport, since that slot bleeds past the container), so this is an
+          // upper bound that can only over-serve, never soften an image. NOT a
+          // new prop: the slot's public interface is unchanged.
           sizes="(min-width: 1024px) 45vw, 100vw"
           priority={priority}
           className="object-cover"

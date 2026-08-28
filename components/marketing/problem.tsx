@@ -17,14 +17,45 @@ import type { Translator } from "./translator";
  *   text rail (~28%) │ constellation │ photograph, bled to the page edge
  *
  * The rail is `Section`'s new split layout, shared with §3–§9 so this is fixed
- * once. The constellation takes the left ~56% of the showcase column; the
- * remainder is deliberately left empty because the photograph — absolutely
- * positioned against the `<section>`, escaping `Container`'s max width — lands
- * there. Those two percentages are a relationship between columns, not copied
- * pixels: the photograph's left edge clears the constellation from the `lg`
- * breakpoint all the way up, because the container stops growing at
- * `max-w-6xl` while the section (and so the photograph) keeps tracking the
- * viewport.
+ * once. The constellation takes the left ~56% of the showcase column, and the
+ * photograph — absolutely positioned against the `<section>`, escaping
+ * `Container`'s max width — takes the section's right 41.5%. Both are
+ * relationships between columns, not copied pixels.
+ *
+ * ## Why the two overlap, and why that is safe (fix F10)
+ *
+ * The photograph was `lg:w-[30%]` while the slot was a hard-edged dashed
+ * placeholder that had to clear the constellation. Measured off `346:6275`
+ * (chroma/variance scan of the 2× crop, `s2-problem.png`): the reference's
+ * photograph starts at 57.7% of the section and runs to the edge — **42.2%**,
+ * and its left edge sits within ~6px of the chip grid's right edge. So in the
+ * reference the photograph does not clear the chips; it begins exactly where
+ * they end and the fade does the blending.
+ *
+ * Our chip grid is wider than the reference's (~423px against ~329px at
+ * 1280 — our 12px type floor against the reference's ~7.5px equivalent, a
+ * deviation review already recorded), so the reference's WIDTH and the
+ * reference's CLEARANCE cannot both hold. §13.1(2) makes the reference
+ * binding, so the width wins and the two zones overlap. Three properties make
+ * that safe, and all three are load-bearing:
+ *
+ *  1. `PHOTO_LEFT_FADE` is transparent at the photograph's left edge, so the
+ *     overlapping strip is the fade's faintest part. Measured (overlap vs the
+ *     fade's own length): 1280 → 104.6 / 105.0, so the fade reaches full
+ *     opacity within half a pixel of the chip grid's right edge, and the two
+ *     only diverge further apart as the viewport grows (1440 → 91 / 118,
+ *     1920 → 50 / 158), because the container caps at `max-w-6xl` while the
+ *     photograph keeps tracking the section. At the NARROW end of `lg` it goes
+ *     the other way (1024 → 99.8 / 83.7): the photograph is fully opaque for
+ *     the last ~16px behind the SRS chip, which is exactly why (2) is not
+ *     optional.
+ *  2. The constellation is lifted above the photograph (`relative z-10`) and
+ *     every chip is an OPAQUE `bg-card` card, so nothing behind a chip can
+ *     reach its text. Verified in the browser, not assumed.
+ *  3. The photograph is `pointer-events-none`, so even the transparent part of
+ *     it can never intercept a pointer aimed at the constellation. It is a
+ *     decoration with nothing to click; the `<img>` keeps its `alt`, which
+ *     pointer-events does not touch.
  *
  * The photograph is `PROBLEM_PHOTO` (fix F7). It was pending at first commit;
  * spec §5.2 needs a source whose origin is recorded, and `progress.md` now
@@ -81,8 +112,15 @@ export async function Problem() {
       rail={<p className="text-body text-muted-foreground">{t("problem.body")}</p>}
     >
       {/* 56% of the showcase column: the constellation's share of the
-          zone the reference splits between it and the photograph. */}
-      <div className="lg:w-[56%]">
+          zone the reference splits between it and the photograph.
+
+          `relative z-10` is not decoration. The photograph is absolutely
+          positioned and comes LATER in this subtree, so with both at
+          `z-index: auto` it would paint over the constellation's right
+          column. Lifting the constellation into its own stacking context is
+          what puts the photograph behind the chips instead of on top of them
+          (fix F10). Do not drop it while the two zones overlap. */}
+      <div data-constellation className="relative z-10 lg:w-[56%]">
         <ChipRow chips={TOP_CHIPS} t={t} />
 
         {/* The band the connectors map their 0..100 coordinate space onto —
@@ -104,12 +142,16 @@ export async function Problem() {
       {/* Full-bleed to the section's right edge and its full height from `lg`
           up; a normal portrait slot in the flow below that, where there is no
           three-zone composition to bleed into. `lg:aspect-auto` lets the two
-          insets drive the height instead of the declared 3/4. */}
+          insets drive the height instead of the declared 3/4.
+
+          `pointer-events-none` is unconditional rather than `lg:` only: the
+          slot is a decoration at every width, and a rule that only holds above
+          a breakpoint is one someone has to remember. See the docblock. */}
       <AssetSlot
         ratio="3/4"
         description={t("problem.photoAlt")}
         src={PROBLEM_PHOTO}
-        className={`mt-xl lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:aspect-auto lg:w-[30%] lg:rounded-none ${PHOTO_LEFT_FADE}`}
+        className={`pointer-events-none mt-xl lg:absolute lg:inset-y-0 lg:right-0 lg:mt-0 lg:aspect-auto lg:w-[41.5%] lg:rounded-none ${PHOTO_LEFT_FADE}`}
       />
     </Section>
   );

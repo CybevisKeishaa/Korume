@@ -64,16 +64,39 @@ export function HeroVideoCard({ t }: { t: Translator }) {
               priority
             />
             {/* Decorative player chrome — depicts, never functions (spec §2.3).
-                No dark scrim over the still: it must read as unmistakably
-                pending (task 4 fix F7), not as a moodier finished frame. */}
+                Still `aria-hidden` and still not a control: fix F9 changes only
+                how it is drawn.
+
+                It used to carry NO scrim, and the stated reason was that a
+                scrim would stop the slot reading as unmistakably pending (task
+                4 fix F7). That reason expired with fix F7 itself: the slot now
+                holds `hero-still.png`, a bright lantern-lit Kyoto street. A
+                `bg-border` hairline and a bare glyph designed against a dark
+                dashed placeholder read as a smudge over it.
+
+                The treatment has to hold over an ARBITRARY photograph, not just
+                this one, so it does not lean on the still's own tones:
+                 - a bottom-up scrim ramp gives the chrome its own dark ground,
+                   which is also what `347:6313` draws under its transport bar;
+                 - the track is drawn from the foreground ramp at partial alpha
+                   instead of `--border` (a near-black hairline meant for
+                   `--card`), so it stays a light hairline whatever is behind it.
+                No timestamp text is invented and no control becomes real —
+                the crop and the transport bar's own fidelity are the
+                visual-fidelity task's, not this one's. */}
             <div
+              data-player-chrome
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-sm px-sm py-xs"
+              className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-sm bg-gradient-to-t from-scrim/85 via-scrim/45 to-transparent px-sm pb-xs pt-xl"
             >
-              <svg viewBox="0 0 12 12" className="h-3 w-3 text-foreground">
+              {/* `h-sm w-sm` is the same 0.75rem the old `h-3 w-3` resolved to,
+                  said in tokens: `theme.extend.spacing` EXTENDS Tailwind's
+                  numeric scale, so `h-3` was hardcoded rem the Rule #0 scan
+                  cannot see. */}
+              <svg viewBox="0 0 12 12" className="h-sm w-sm shrink-0 text-foreground">
                 <path d="M2 1.5 L10 6 L2 10.5 Z" fill="currentColor" />
               </svg>
-              <div className="h-px flex-1 bg-border" />
+              <div data-player-track className="h-px flex-1 bg-foreground/70" />
             </div>
           </div>
 
