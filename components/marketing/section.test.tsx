@@ -61,4 +61,66 @@ describe("Section", () => {
     const region = screen.getByRole("region", { name: "Learn Japanese through video." });
     expect(region).toHaveAttribute("id", "hero");
   });
+
+  it("omits the rail element entirely in the stacked layout", () => {
+    const { container } = render(
+      <Section id="s" heading="Only a heading">
+        <p>body</p>
+      </Section>,
+    );
+
+    expect(container.querySelectorAll("[data-section-rail]")).toHaveLength(0);
+  });
+
+  it("moves body copy into a left rail when `rail` is given, without unlabelling the region", () => {
+    // Task A1 (spec §13): the split layout is what fixes §2's composition, and
+    // §3-§9 inherit it. The accessible structure must survive the change — one
+    // heading, still level 2, still the region's name.
+    render(
+      <Section
+        id="problem"
+        eyebrow="Japanese isn't a textbook"
+        heading="You can study Japanese for years."
+        rail={<p>Traditional study separates everything.</p>}
+      >
+        <p>the showcase</p>
+      </Section>,
+    );
+
+    expect(screen.getByText("Traditional study separates everything.")).toBeInTheDocument();
+    expect(screen.getByText("the showcase")).toBeInTheDocument();
+    expect(screen.getByText("Japanese isn't a textbook")).toBeInTheDocument();
+
+    const heading = screen.getByRole("heading", {
+      level: 2,
+      name: "You can study Japanese for years.",
+    });
+    expect(heading).toBeInTheDocument();
+    expect(screen.getAllByRole("heading")).toHaveLength(1);
+
+    const region = screen.getByRole("region", { name: "You can study Japanese for years." });
+    expect(region).toHaveAttribute("id", "problem");
+  });
+
+  it("puts the rail beside the heading, not around the showcase", () => {
+    // Guards the arrangement the composition depends on: rail copy shares the
+    // narrow left column with the heading, and `children` stays out of it.
+    const { container } = render(
+      <Section id="s" heading="H" rail={<p>rail copy</p>}>
+        <p>showcase copy</p>
+      </Section>,
+    );
+
+    const rails = Array.from(container.querySelectorAll("[data-section-rail]"));
+    expect(rails).toHaveLength(1);
+
+    const [rail] = rails;
+    if (!rail) throw new Error("no [data-section-rail] was rendered");
+    expect(rail.textContent).toBe("rail copy");
+
+    const column = rail.parentElement;
+    if (!column) throw new Error("the rail has no parent column");
+    expect(column.querySelector("h2")).not.toBeNull();
+    expect(column.textContent).not.toContain("showcase copy");
+  });
 });

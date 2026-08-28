@@ -9,9 +9,18 @@ export interface SectionProps {
   heading: string;
   /** 1 only for the hero; every other section is 2. */
   headingLevel?: 1 | 2;
+  /**
+   * Body copy (and any CTA) that belongs BESIDE the section's showcase rather
+   * than above it. Supplying it selects the split layout described below;
+   * omitting it keeps the original stacked layout, byte for byte.
+   */
+  rail?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
+
+/** ~28/72. A relationship between two columns, not a copied pixel width. */
+const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
 
 /**
  * The landing page's body-section wrapper (spec §2, §6).
@@ -20,39 +29,89 @@ export interface SectionProps {
  * tall for content the frame spends 4028px on — is fixed here and nowhere else,
  * so that tightening the page is one edit rather than nine. Sections must not
  * add their own top/bottom padding.
+ *
+ * ## The split layout (spec §13, G5 — user ruling 2026-08-28)
+ *
+ * Stacking eyebrow + heading + children was the ROOT CAUSE of the composition
+ * the user rejected: a `text-display` heading with `max-w-3xl` spans most of the
+ * viewport in three oversized lines and shoves the section's showcase into the
+ * space beneath it. `346:6275` does the opposite — a narrow left rail carries
+ * eyebrow, heading and body while a wide column carries the showcase alongside.
+ *
+ * Passing `rail` turns that on. Two consequences worth stating:
+ * - the heading drops from `text-display` to `text-heading`, because 40px in a
+ *   ~28% column wraps into a wall; `text-heading` is the token that matches the
+ *   reference's scale there. It is a token step, not a hand-tuned size.
+ * - `max-w-3xl` is dropped in the split — the rail column IS the measure, and a
+ *   second cap fighting it is what makes the two disagree at some widths.
+ *
+ * Below `lg` the split stacks exactly as the original layout does, so the
+ * mobile composition is unchanged.
+ *
+ * `relative` is unconditional: a section whose showcase bleeds to the page edge
+ * (§2's photograph) needs the section element — not the max-width `Container` —
+ * as its positioning context. It changes nothing for sections that don't.
  */
 export function Section({
   id,
   eyebrow,
   heading,
   headingLevel = 2,
+  rail,
   children,
   className,
 }: SectionProps) {
   const headingId = `${id}-heading`;
   const Heading = headingLevel === 1 ? "h1" : "h2";
+  const isSplit = rail !== undefined;
+
+  const headingBlock = (
+    <>
+      {eyebrow ? (
+        <p
+          data-eyebrow
+          className="mb-2xs font-display text-caption uppercase tracking-widest text-primary-strong"
+        >
+          {eyebrow}
+        </p>
+      ) : null}
+      <Heading
+        id={headingId}
+        className={cn(
+          "text-balance font-display font-bold",
+          headingLevel === 1 && "text-hero",
+          headingLevel === 2 && (isSplit ? "text-heading" : "text-display"),
+          !isSplit && "max-w-3xl",
+        )}
+      >
+        {heading}
+      </Heading>
+    </>
+  );
 
   return (
-    <section id={id} aria-labelledby={headingId} className={cn("py-2xl", className)}>
+    <section
+      id={id}
+      aria-labelledby={headingId}
+      className={cn("relative py-2xl", className)}
+    >
       <Container>
-        {eyebrow ? (
-          <p
-            data-eyebrow
-            className="mb-2xs font-display text-caption uppercase tracking-widest text-primary-strong"
-          >
-            {eyebrow}
-          </p>
-        ) : null}
-        <Heading
-          id={headingId}
-          className={cn(
-            "max-w-3xl text-balance font-display font-bold",
-            headingLevel === 1 ? "text-hero" : "text-display",
-          )}
-        >
-          {heading}
-        </Heading>
-        <div className="mt-lg">{children}</div>
+        {isSplit ? (
+          <div className={cn("grid gap-xl lg:items-start", SPLIT_COLUMNS)}>
+            <div>
+              {headingBlock}
+              <div data-section-rail className="mt-md">
+                {rail}
+              </div>
+            </div>
+            <div>{children}</div>
+          </div>
+        ) : (
+          <>
+            {headingBlock}
+            <div className="mt-lg">{children}</div>
+          </>
+        )}
       </Container>
     </section>
   );

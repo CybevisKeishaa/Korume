@@ -104,4 +104,95 @@ describe("Problem", () => {
       );
     }
   });
+
+  it("gives every chip its own decorative line icon, hidden from assistive tech", async () => {
+    // Task A1 (spec §13.1.2): the chips shipped as label-only rectangles. The
+    // icons are pure decoration — every chip's meaning stays in its own text —
+    // so they must be out of the accessibility tree AND out of the tab order.
+    const { container } = render(await Problem());
+
+    const icons = Array.from(container.querySelectorAll("[data-chip-icon]"));
+    expect(icons).toHaveLength(6);
+
+    expect(new Set(icons.map((el) => el.getAttribute("data-chip-icon")))).toEqual(
+      new Set(["vocabulary", "grammar", "kanji", "pronunciation", "listening", "srs"]),
+    );
+
+    for (const icon of icons) {
+      const key = icon.getAttribute("data-chip-icon");
+      expect(icon, `${key} icon`).toHaveAttribute("aria-hidden", "true");
+      expect(icon, `${key} icon`).toHaveAttribute("focusable", "false");
+      expect(icon.closest("[data-chip]"), `${key} icon is not inside a chip`).not.toBeNull();
+    }
+  });
+
+  it("draws SIX DIFFERENT glyphs, not one repeated six times", async () => {
+    // The cheap failure a presence check would pass: six chips, one icon. The
+    // subject is the rendered drawing, not the key the caller passed in.
+    const { container } = render(await Problem());
+
+    const shapes = Array.from(container.querySelectorAll("[data-chip-icon]")).map(
+      (el) => el.innerHTML,
+    );
+    expect(shapes).toHaveLength(6);
+    for (const shape of shapes) {
+      expect(shape.length).toBeGreaterThan(0);
+    }
+    expect(new Set(shapes).size).toBe(6);
+  });
+
+  it("draws the constellation as three per-column layers with no stretched viewBox", async () => {
+    // The defect this replaces: one overlay with `preserveAspectRatio="none"`
+    // over a square viewBox, which sheared the rays and made the stroke width
+    // and dash rhythm differ ray to ray. jsdom does no layout and CANNOT see
+    // that the dashes are now even — what it CAN prove is that the stretching
+    // attribute is gone and each column carries its own layer.
+    const { container } = render(await Problem());
+
+    const layer = container.querySelector("[data-connector]");
+    expect(layer).not.toBeNull();
+
+    const columns = Array.from(container.querySelectorAll("[data-connector-column]"));
+    expect(columns).toHaveLength(3);
+    expect(columns.map((el) => el.getAttribute("data-connector-column"))).toEqual([
+      "left",
+      "centre",
+      "right",
+    ]);
+
+    for (const column of columns) {
+      const name = column.getAttribute("data-connector-column");
+      expect(column, `${name} column`).toHaveAttribute("focusable", "false");
+      expect(column.getAttribute("preserveAspectRatio"), `${name} column`).toBeNull();
+    }
+  });
+
+  it("keeps the connector layer unreachable and non-interactive", async () => {
+    const { container } = render(await Problem());
+
+    const layer = container.querySelector("[data-connector]");
+    expect(layer).not.toBeNull();
+    expect(layer).toHaveAttribute("aria-hidden", "true");
+    expect(layer?.className).toContain("pointer-events-none");
+
+    // Non-empty subject first (docs/lessons.md L-004): the layer really does
+    // hold three drawings, so "no focusable descendant" is not vacuously true.
+    expect(container.querySelectorAll("[data-connector] svg")).toHaveLength(3);
+    expect(
+      container.querySelectorAll(
+        "[data-connector] a, [data-connector] button, [data-connector] input, [data-connector] [tabindex]",
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("puts a single glowing node at the centre of the constellation", async () => {
+    const { container } = render(await Problem());
+
+    const nodes = Array.from(container.querySelectorAll("[data-connector-node]"));
+    expect(nodes).toHaveLength(1);
+
+    const [node] = nodes;
+    if (!node) throw new Error("no [data-connector-node] was rendered");
+    expect(node.closest('[data-connector-column="centre"]')).not.toBeNull();
+  });
 });
