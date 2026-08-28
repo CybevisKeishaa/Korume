@@ -3,10 +3,10 @@ import { getTranslations } from "@/lib/i18n/server";
 import { buttonStyles } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toPlotPoints } from "@/lib/pitch";
-import type { PlotPoint } from "@/lib/pitch";
 import { USER_DEMO_CONTOUR, DEMO_REF_HZ } from "@/lib/marketing/pitch-demo";
 import { Section } from "./section";
 import { AssetSlot } from "./asset-slot";
+import { toPath } from "./contour-path";
 import type { Translator } from "./translator";
 
 /**
@@ -59,21 +59,6 @@ const STEPS: readonly StepKey[] = ["watch", "understand", "shadow", "mine", "rem
  */
 const SHADOW_CONTOUR_WIDTH = 160;
 const SHADOW_CONTOUR_HEIGHT = 32;
-
-/** Points → an SVG path, starting a new subpath after every unvoiced gap. */
-function toPath(points: readonly (PlotPoint | null)[]): string {
-  let path = "";
-  let penDown = false;
-  for (const point of points) {
-    if (!point) {
-      penDown = false;
-      continue;
-    }
-    path += `${penDown ? "L" : "M"}${point.x.toFixed(2)} ${point.y.toFixed(2)} `;
-    penDown = true;
-  }
-  return path.trim();
-}
 
 const SHADOW_CONTOUR_PATH = toPath(
   toPlotPoints(USER_DEMO_CONTOUR, DEMO_REF_HZ, SHADOW_CONTOUR_WIDTH, SHADOW_CONTOUR_HEIGHT).points,

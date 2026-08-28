@@ -13,6 +13,10 @@ import type { PitchContour } from "@/lib/pitch";
  * 日本の秋, a peak on とても, and a fall through 美しいですね, with an unvoiced
  * gap at the phrase break. The "You" track follows the same phrase but flattens
  * the peak, which is exactly the error the real scorer is built to surface.
+ *
+ * Fix round 1: this warning used to sit only above `FRAME_INTERVAL_SECONDS`,
+ * so hovering either exported contour below showed nothing. Each export below
+ * now carries its own one-line pointer back to this block.
  */
 const FRAME_INTERVAL_SECONDS = 0.01;
 
@@ -23,7 +27,10 @@ function toContour(hz: readonly (number | null)[]): PitchContour {
   };
 }
 
-/** A speaker-relative baseline, the same quantity `medianVoicedHz` would return. */
+/**
+ * A speaker-relative baseline, the same quantity `medianVoicedHz` would
+ * return. Illustrative mock data, not a measurement — see the file header.
+ */
 export const DEMO_REF_HZ = 180;
 
 const NATIVE_HZ = [
@@ -42,5 +49,7 @@ const USER_HZ = [
   178, 177, 176, 175, 175, 174, 174, 173,
 ] as const;
 
+/** The "native speaker" track. Illustrative mock data, not a measurement — see the file header. */
 export const NATIVE_DEMO_CONTOUR: PitchContour = toContour(NATIVE_HZ);
+/** The "you" track. Illustrative mock data, not a measurement — see the file header. */
 export const USER_DEMO_CONTOUR: PitchContour = toContour(USER_HZ);

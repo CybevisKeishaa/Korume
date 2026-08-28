@@ -3,9 +3,10 @@ import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { buttonStyles } from "@/components/ui/button";
 import { toPlotPoints } from "@/lib/pitch";
-import type { PitchContour, PlotPoint } from "@/lib/pitch";
+import type { PitchContour } from "@/lib/pitch";
 import { NATIVE_DEMO_CONTOUR, USER_DEMO_CONTOUR, DEMO_REF_HZ } from "@/lib/marketing/pitch-demo";
 import { Section } from "./section";
+import { toPath } from "./contour-path";
 
 /**
  * §4 (spec §7).
@@ -21,21 +22,11 @@ import { Section } from "./section";
  */
 const VIEWBOX_WIDTH = 600;
 const VIEWBOX_HEIGHT = 160;
-
-/** Points → an SVG path, starting a new subpath after every unvoiced gap. */
-function toPath(points: readonly (PlotPoint | null)[]): string {
-  let path = "";
-  let penDown = false;
-  for (const point of points) {
-    if (!point) {
-      penDown = false;
-      continue;
-    }
-    path += `${penDown ? "L" : "M"}${point.x.toFixed(2)} ${point.y.toFixed(2)} `;
-    penDown = true;
-  }
-  return path.trim();
-}
+/** Dash pattern shared by the native contour and its legend swatch (fix round 1, F3). */
+const NATIVE_DASH = "10 6";
+/** Internal coordinate system for the legend line swatches (not a CSS px/rem literal — see VIEWBOX_WIDTH). */
+const SWATCH_VIEW_WIDTH = 24;
+const SWATCH_VIEW_HEIGHT = 8;
 
 function contourPath(contour: PitchContour): string {
   const { points } = toPlotPoints(contour, DEMO_REF_HZ, VIEWBOX_WIDTH, VIEWBOX_HEIGHT);
@@ -43,6 +34,36 @@ function contourPath(contour: PitchContour): string {
 }
 
 const SUB_SCORES = ["pitch", "rhythm", "pronunciation", "timing"] as const;
+
+/**
+ * A small line icon next to a legend label (fix round 1, F3, WCAG 1.4.1):
+ * the two contours must be distinguishable by more than colour alone. Mirrors
+ * `components/video-player/pitch-contour-overlay.tsx`, which dashes the
+ * reference stroke and keeps the user stroke solid — this reuses that same
+ * convention rather than inventing a new one. `stroke-current` inherits the
+ * colour from the parent `<span>`'s text colour class, so the swatch and its
+ * label never fall out of sync.
+ */
+function LegendSwatch({ dashed }: { dashed: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox={`0 0 ${SWATCH_VIEW_WIDTH} ${SWATCH_VIEW_HEIGHT}`}
+      className="h-2xs w-lg"
+      preserveAspectRatio="none"
+    >
+      <line
+        x1={0}
+        y1={SWATCH_VIEW_HEIGHT / 2}
+        x2={SWATCH_VIEW_WIDTH}
+        y2={SWATCH_VIEW_HEIGHT / 2}
+        className="stroke-current"
+        strokeWidth={2}
+        strokeDasharray={dashed ? NATIVE_DASH : undefined}
+      />
+    </svg>
+  );
+}
 
 export async function PitchShowcase() {
   const t = await getTranslations("marketing");
@@ -61,8 +82,14 @@ export async function PitchShowcase() {
 
         <div className="rounded-lg border border-border bg-card p-lg">
           <div className="flex items-center gap-md text-caption">
-            <span className="text-primary-strong">{t("pitch.legend.native")}</span>
-            <span className="text-muted-foreground">{t("pitch.legend.you")}</span>
+            <span className="flex items-center gap-xs text-primary-strong">
+              <LegendSwatch dashed />
+              {t("pitch.legend.native")}
+            </span>
+            <span className="flex items-center gap-xs text-muted-foreground">
+              <LegendSwatch dashed={false} />
+              {t("pitch.legend.you")}
+            </span>
           </div>
 
           <svg
@@ -78,6 +105,7 @@ export async function PitchShowcase() {
               fill="none"
               className="stroke-primary-strong"
               strokeWidth={2}
+              strokeDasharray={NATIVE_DASH}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -96,7 +124,7 @@ export async function PitchShowcase() {
 
           <dl className="mt-lg grid grid-cols-2 gap-md sm:grid-cols-4">
             {SUB_SCORES.map((score) => (
-              <div key={score}>
+              <div key={score} data-subscore={score}>
                 <dt className="text-caption text-muted-foreground">{t(`pitch.scores.${score}.name`)}</dt>
                 <dd className="text-heading font-semibold">{t(`pitch.scores.${score}.value`)}</dd>
               </div>
@@ -121,9 +149,13 @@ export async function PitchShowcase() {
                 // negotiation — `unoptimized` serves the file as-is instead of
                 // routing it through the `/_next/image` optimizer.
                 unoptimized
-                /* The source is a light character cut out on pure black, so
-                   `screen` maps its background exactly onto --void-950 and keeps
-                   the tails' glow falloff — no matting, no halo (spec §5.3). */
+                /* The source is a light character cut out on pure black. Fix
+                   round 1: `screen(backdrop, black) = backdrop` for ANY
+                   backdrop colour, so this composites correctly regardless
+                   of the container it sits on — here `bg-muted`
+                   (--muted = --void-900, not --void-950, per globals.css) —
+                   while keeping the tails' glow falloff: no matting, no halo
+                   (spec §5.3). */
                 className="mix-blend-screen"
               />
               <div>

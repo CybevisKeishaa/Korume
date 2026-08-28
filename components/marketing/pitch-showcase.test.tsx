@@ -22,20 +22,67 @@ describe("PitchShowcase", () => {
     expect(screen.getByText("You")).toBeInTheDocument();
   });
 
-  it("gives the chart an accessible name and hides its internals from assistive tech", async () => {
+  it("gives the chart an accessible name, carried by the chart alone", async () => {
     const { container } = render(await PitchShowcase());
 
     const chart = container.querySelector("svg[role='img']");
     expect(chart).toHaveAccessibleName(
       "Two pitch contours compared: a native speaker's and yours.",
     );
+
+    // Fix round 1: the old test name claimed this hid the paths' internals
+    // from assistive tech but never asserted it — neither `<path>` carries
+    // its own `role`/`aria-label`, so the chart's single name is the only
+    // thing a screen reader announces, not two unlabeled child images.
+    const paths = container.querySelectorAll("[data-contour]");
+    for (const path of Array.from(paths)) {
+      expect(path).not.toHaveAttribute("role");
+      expect(path).not.toHaveAttribute("aria-label");
+    }
+  });
+
+  it("distinguishes the two contours by more than colour (WCAG 1.4.1)", async () => {
+    // Fix round 1, F3: `stroke-primary-strong` vs `stroke-muted-foreground`
+    // alone is a colour-only distinction. Mirrors
+    // `pitch-contour-overlay.tsx`, which dashes the reference stroke and
+    // keeps the user stroke solid — the native contour here plays that same
+    // reference-analogue role, so it gets the dash.
+    const { container } = render(await PitchShowcase());
+
+    const native = container.querySelector('[data-contour="native"]');
+    const you = container.querySelector('[data-contour="you"]');
+    expect(native?.getAttribute("stroke-dasharray")).toBeTruthy();
+    expect(you?.getAttribute("stroke-dasharray")).toBeFalsy();
+
+    // The legend repeats the same distinction as a small line icon next to
+    // each label, not just a colour swatch.
+    const legendLines = container.querySelectorAll(
+      "svg[aria-hidden='true'] line",
+    );
+    expect(legendLines).toHaveLength(2);
+    const dashed = Array.from(legendLines).map((line) =>
+      Boolean(line.getAttribute("stroke-dasharray")),
+    );
+    expect(dashed).toEqual([true, false]);
   });
 
   it("shows all four sub-scores and the overall score", async () => {
-    render(await PitchShowcase());
+    const { container } = render(await PitchShowcase());
+
+    // Fix round 1, F2: gathered from the render, not a literal the test just
+    // wrote — `["86/100", ...]).toHaveLength(4)` could never be anything but
+    // 4 and never touched the DOM. `[data-subscore]` proves the component
+    // actually rendered four (not three, not a duplicated one).
+    const subscores = container.querySelectorAll("[data-subscore]");
+    expect(subscores).toHaveLength(4);
+    expect(Array.from(subscores).map((el) => el.getAttribute("data-subscore"))).toEqual([
+      "pitch",
+      "rhythm",
+      "pronunciation",
+      "timing",
+    ]);
 
     const scores = ["86/100", "84/100", "82/100", "90/100"];
-    expect(scores).toHaveLength(4);
     for (const score of scores) {
       expect(screen.getByText(score)).toBeInTheDocument();
     }
