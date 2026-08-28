@@ -528,3 +528,53 @@ From the user, 2026-08-26 unless noted:
   `346:6275` is measurable — it has no layers.
 - This spec goes stale if either Figma node changes. Re-derive with the recipe in
   `docs/product/landing-page-reconciliation.md` §7 rather than trusting it.
+
+---
+
+## 13. G5 — motion and visual expressiveness (user ruling, 2026-08-28)
+
+A fifth gap, opened after §1–§4 and §10 were built and seen in a browser. It is the user's verdict
+on shipped work, not a prediction, and it outranks the four principles' silence on the subject.
+
+**What was judged.** §2 Problem (`problem.eyebrow`, "Tiếng Nhật không phải một quyển sách giáo
+khoa"), §3 Journey (`journey.eyebrow`), §4 Pitch (`pitch.eyebrow`). The verdict on §2 was the
+sharpest: its composition reads **markedly worse than `346:6275`** — "bố cục nó xấu hẳn so với ảnh
+png, sắp xếp cũng xấu, nhìn khô". The linework across all three — §2's constellation rays, §3's step
+arrows, and above all the **pitch contour** (§4's chart and the mini preview inside §3's Shadow
+card) — is flat where the reference is expressive: "cái sóng tôi muốn đặc sắc hơn".
+
+**Why this was not caught earlier, and what it says about the gates.** Every one of those sections
+passed its task review, and none of the gates that passed them can see this. A catalog-coverage
+guard proves a string reached the DOM. A Rule #0 scan proves no hardcoded number. jsdom proves
+structure. **All of them are satisfied by a section that is correct and lifeless.** The port had
+been treating "the decorative element is structurally present, aria-hidden, and motion-safe" as
+finished, when for these sections presence is the floor, not the bar.
+
+### 13.1 The rule
+
+1. **Motion is a requirement for §2, §3, §4 and §5, not Task 13 polish.** The stack is already
+   chosen (`CLAUDE.md` §3): GSAP + ScrollTrigger, Lenis, Framer Motion. The role is
+   `motion-engineer`, not `frontend-engineer`.
+2. **Visual fidelity to `346:6275` is a requirement for these sections**, alongside the density
+   Task 13 already owns. §6 of this spec scopes the reference to a *density* target; that scope is
+   too narrow. Composition, arrangement and the expressiveness of the linework are in scope too.
+3. **Every remaining section task builds to this bar from the start.** §5 Recommendation is named
+   explicitly — "những phần recommendation cũng sẽ cần đặc sắc và giống ảnh png hơn". A section that
+   is merely correct is not done.
+4. ⚠️ **Reduced motion stops being satisfiable by accident.** §2's constellation currently passes
+   that gate *vacuously* — it has no animation, so nothing can be removed. The moment motion is
+   added, `CLAUDE.md` §2 rule 4 and this spec's §4.1 become real, testable requirements:
+   **reduced motion removes movement and nothing else** — every connector still visible in its final
+   state, every mascot still present, no section collapsed or blank.
+5. **Build the motion vocabulary once, then reuse it.** These are four sections wanting a coherent
+   signature, not four independent effects. The primitives belong in shared modules the later
+   sections consume — the same shape as `components/marketing/section.tsx` for rhythm and
+   `lib/pitch/plot.ts` for the contour maths.
+
+### 13.2 What this does not license
+
+Nothing here weakens §4.1. Decorative linework stays decorative: `aria-hidden`, unreachable by tab
+or screen reader, and content-preserving. "More expressive" is a visual instruction, not permission
+to move meaning into an animation. And `CLAUDE.md` §2 rule 4 still stands over the whole app — no
+heavy autoplay animation inside repeated study loops; this is a marketing page, which is precisely
+why it is the one surface where a cinematic signature belongs.
