@@ -19,9 +19,31 @@ export interface AssetSlotProps {
   description: string;
   /** Omit while the photograph does not exist yet. */
   src?: string;
+  /**
+   * Override for `DEFAULT_SIZES`. Pass it when the slot renders MUCH narrower
+   * than that upper bound — see the note on the constant.
+   */
+  sizes?: string;
   className?: string;
   priority?: boolean;
 }
+
+/**
+ * The widest any filled slot on this page gets. `fill` with no `sizes` makes
+ * Next assume the image is 100vw, so the browser picks the 3840px srcset entry
+ * for a slot a few hundred px wide. Measured on §2's photograph the moment it
+ * was filled: 1336 KB and 4.9s, against 190 KB for the same file at a sane
+ * width — and the section rendered an empty right third for those seconds.
+ *
+ * ⚠️ This is an UPPER BOUND, so it can only over-serve, never soften an image —
+ * but "over-serve" is not free, and it stops being harmless once a slot is much
+ * smaller than the bound. §3's Watch thumbnail renders ~106 CSS px wide, where
+ * this default selects the 1080px variant: **74.7 KB** as WebP / **980 KB** as
+ * PNG, against **15.6 KB** / **149 KB** for the 384px variant that slot
+ * actually needs — 4.8x and 6.6x (measured 2026-08-29 against the dev
+ * optimizer). Hence `sizes`: a slot far below the bound passes its own.
+ */
+const DEFAULT_SIZES = "(min-width: 1024px) 45vw, 100vw";
 
 /**
  * The landing page's pending-photograph boundary (spec §5).
@@ -35,7 +57,7 @@ export interface AssetSlotProps {
  * the flat reference PNG (spec §5.2). A slot may only be filled from a source
  * whose origin is known and recorded.
  */
-export function AssetSlot({ ratio, description, src, className, priority }: AssetSlotProps) {
+export function AssetSlot({ ratio, description, src, sizes, className, priority }: AssetSlotProps) {
   if (src) {
     return (
       <div data-asset-slot className={cn("relative overflow-hidden rounded-lg", ratioClass[ratio], className)}>
@@ -43,17 +65,9 @@ export function AssetSlot({ ratio, description, src, className, priority }: Asse
           src={src}
           alt={description}
           fill
-          // `fill` with no `sizes` makes Next assume the image is 100vw, so the
-          // browser picks the 3840px srcset entry for a slot a few hundred px
-          // wide. Measured on §2's photograph the moment it was filled: 1336 KB
-          // and 4.9s, against 190 KB for the same file at a sane width — and
-          // the section rendered an empty right third for those seconds. No
-          // filled slot on this page is ever wider than ~45vw (the widest is
-          // §2's photograph, at 41.5% of the section — and the section IS the
-          // viewport, since that slot bleeds past the container), so this is an
-          // upper bound that can only over-serve, never soften an image. NOT a
-          // new prop: the slot's public interface is unchanged.
-          sizes="(min-width: 1024px) 45vw, 100vw"
+          // See `DEFAULT_SIZES` for why this is never omitted, and why a slot
+          // far narrower than that bound overrides it.
+          sizes={sizes ?? DEFAULT_SIZES}
           priority={priority}
           className="object-cover"
         />

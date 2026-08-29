@@ -64,11 +64,161 @@ describe("Journey", () => {
     expect(row).toHaveAttribute("tabindex", "0");
   });
 
-  it("draws step 3's waveform as a contour, not as bars", async () => {
+  it("replaces the text arrow glyph with drawn linework", async () => {
+    const { container } = render(await Journey());
+
+    const arrows = container.querySelectorAll("[data-step-arrow]");
+    expect(arrows).toHaveLength(4);
+    for (const arrow of Array.from(arrows)) {
+      expect(arrow.tagName.toLowerCase()).toBe("svg");
+      expect(arrow).toHaveAttribute("focusable", "false");
+      // The old implementation rendered the character itself, so its text
+      // content was "→". Drawn linework contributes no text at all.
+      expect(arrow.textContent).toBe("");
+    }
+    expect(container.textContent).not.toContain("→");
+  });
+
+  it("fills the Watch card's slot with the photograph, not a pending placeholder", async () => {
+    const { container } = render(await Journey());
+
+    const watch = container.querySelector('[data-step="watch"]');
+    expect(watch).not.toBeNull();
+    expect(watch?.querySelectorAll("[data-asset-pending]")).toHaveLength(0);
+
+    const images = Array.from(watch?.querySelectorAll("img") ?? []);
+    expect(images).toHaveLength(1);
+    const [photo] = images;
+    if (!photo) throw new Error("unreachable — asserted above");
+    expect(photo).toHaveAttribute("alt", en.journey.thumbnailAlt);
+
+    // next/image rewrites `src` through the optimizer, so the subject is which
+    // FILE is served, not the URL shape (mirrors problem.test.tsx).
+    expect(decodeURIComponent(photo.getAttribute("src") ?? "")).toContain(
+      "/marketing/journey-thumb.png",
+    );
+
+    // The default `sizes` is an upper bound sized for §2's 45vw photograph; at
+    // this slot's ~106 CSS px it selects the 1080px variant (74.7 KB WebP /
+    // 980 KB PNG) instead of the 384px one (15.6 KB / 149 KB). Losing the
+    // override is a silent 4.8x regression with no visible symptom.
+    expect(photo.getAttribute("sizes")).toBe("(min-width: 1024px) 200px, 300px");
+  });
+
+  it("draws step 3's waveform as amplitude bars, not as a pitch contour", async () => {
     const { container } = render(await Journey());
 
     const shadow = container.querySelector('[data-step="shadow"]');
-    expect(shadow?.querySelectorAll("[data-contour]")).toHaveLength(1);
+    expect(shadow).not.toBeNull();
+    // The superseded build reused §4's pitch contour here (controller ruling,
+    // 2026-08-29): a waveform is amplitude, which is a different quantity.
+    expect(shadow?.querySelectorAll("[data-contour]")).toHaveLength(0);
+
+    const waveform = shadow?.querySelectorAll("[data-shadow-waveform]") ?? [];
+    expect(waveform).toHaveLength(1);
+    expect(waveform[0]).toHaveAttribute("aria-hidden", "true");
+
+    const bars = shadow?.querySelectorAll("[data-wave-bar]") ?? [];
+    expect(bars).toHaveLength(56);
+  });
+
+  it("splits the waveform at a playhead — a recorded run and a rest", async () => {
+    const { container } = render(await Journey());
+
+    const shadow = container.querySelector('[data-step="shadow"]');
+    const recorded = shadow?.querySelectorAll('[data-wave-state="recorded"]') ?? [];
+    const rest = shadow?.querySelectorAll('[data-wave-state="rest"]') ?? [];
+
+    // Explicit sizes, not just "non-empty" (CLAUDE.md §7): a single-tone
+    // waveform would leave one of these at 0 and still satisfy a
+    // greater-than-zero check on the other. 56 bars split at ~62%.
+    expect(recorded).toHaveLength(35);
+    expect(rest).toHaveLength(21);
+  });
+
+  it("gives the Mine card its third chip — the save affordance", async () => {
+    const { container } = render(await Journey());
+
+    const mine = container.querySelector('[data-step="mine"]');
+    const chipRow = mine?.querySelector("[data-mine-chips]");
+    expect(chipRow).not.toBeNull();
+    expect(chipRow?.children).toHaveLength(3);
+
+    const save = chipRow?.querySelector("[data-save-chip]");
+    expect(save).not.toBeNull();
+    // Drawn, not named: it must never grow a catalog string, and it carries
+    // no meaning the card's own text does not already have.
+    expect(save).toHaveAttribute("aria-hidden", "true");
+    expect(save?.textContent).toBe("");
+  });
+
+  it("draws the Remember card's review grid as 15 dots with exactly 2 lit", async () => {
+    const { container } = render(await Journey());
+
+    const remember = container.querySelector('[data-step="remember"]');
+    const grid = remember?.querySelectorAll("[data-review-grid]") ?? [];
+    expect(grid).toHaveLength(1);
+    expect(grid[0]).toHaveAttribute("aria-hidden", "true");
+
+    // 5 columns x 3 rows. Both counts are explicit: a grid that rendered no
+    // dots, or lit none of them, would pass a bare "greater than zero" check
+    // on the other collection.
+    expect(remember?.querySelectorAll("[data-review-dot]")).toHaveLength(15);
+    expect(remember?.querySelectorAll("[data-review-dot-lit]")).toHaveLength(2);
+  });
+
+  it("keeps every added graphic decorative and unreachable by keyboard", async () => {
+    const { container } = render(await Journey());
+
+    const HOOKS = [
+      "[data-step-arrow]",
+      "[data-watch-play]",
+      "[data-watch-progress]",
+      "[data-step-progress]",
+      "[data-shadow-waveform]",
+      "[data-record-glyph]",
+      "[data-save-chip]",
+      "[data-review-grid]",
+    ] as const;
+
+    for (const hook of HOOKS) {
+      const nodes = container.querySelectorAll(hook);
+      // A selector that matches nothing makes every assertion below it
+      // unconditionally green (CLAUDE.md §7).
+      expect(nodes.length, `${hook} matched nothing`).toBeGreaterThan(0);
+
+      for (const node of Array.from(nodes)) {
+        expect(node, `${hook} is exposed to assistive technology`).toHaveAttribute(
+          "aria-hidden",
+          "true",
+        );
+        expect(node, `${hook} is in the tab order`).not.toHaveAttribute("tabindex");
+        expect(
+          node.querySelectorAll("a, button, input, select, textarea, [tabindex]"),
+          `${hook} has a focusable descendant`,
+        ).toHaveLength(0);
+      }
+    }
+  });
+
+  it("puts the body and the CTA in the section rail, beside the heading", async () => {
+    const { container } = render(await Journey());
+
+    // The stacked layout — a full-width display heading over the body over the
+    // CTA over the card row — was the composition the user rejected (spec §13,
+    // G5). `Section`'s `rail` is the shared mechanism for the split; jsdom
+    // cannot see the two columns, but it can see that the rail exists and that
+    // the body and CTA are inside it rather than above the cards.
+    const rail = container.querySelector("[data-section-rail]");
+    expect(rail).not.toBeNull();
+    expect(rail?.textContent).toContain(en.journey.body);
+
+    const cta = rail?.querySelector("a");
+    expect(cta).not.toBeNull();
+    expect(cta?.textContent).toContain(en.journey.cta);
+
+    // The card row is the rail's sibling, not its descendant.
+    expect(rail?.querySelector("[data-step]")).toBeNull();
   });
 
   it("renders every leaf of the journey catalog subtree (dropped-key guard)", async () => {
@@ -99,7 +249,22 @@ describe("Journey", () => {
     expect(allLeaves).toHaveLength(23);
 
     const { container } = render(await Journey());
-    const renderedText = container.textContent ?? "";
+
+    // Still NO exclusions, and still by path rather than by leaf name. What
+    // changed in Task A2 is where one leaf lands: `thumbnailAlt` used to be
+    // visible `<span>` text in `AssetSlot`'s pending branch, and is now the
+    // filled branch's `alt`. It is just as present and just as required — so
+    // the guard widens to "visible text OR an image's accessible name" rather
+    // than excusing the leaf, exactly as problem.test.tsx did for `photoAlt`.
+    const alts = Array.from(container.querySelectorAll("img"))
+      .map((img) => img.getAttribute("alt") ?? "")
+      .filter((alt) => alt.length > 0);
+    // Non-empty subject before relying on it (docs/lessons.md L-004): if the
+    // photograph ever stopped rendering, `alts` would be empty and
+    // `thumbnailAlt` would silently have nowhere to be found.
+    expect(alts).toHaveLength(1);
+
+    const renderedText = [container.textContent ?? "", ...alts].join(" ");
 
     for (const { path, text } of allLeaves) {
       expect(renderedText, `journey.${path} = ${JSON.stringify(text)} did not render`).toContain(
