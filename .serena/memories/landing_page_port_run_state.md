@@ -1,7 +1,7 @@
 # Landing page port (`/`) — run state
 
-> **Status: EXECUTION IN PROGRESS. 7 of 13 original tasks + Task M/R built and committed on branch
-> `landing-page-port`. Nothing merged.** Paused at the user's request 2026-08-28 (second pause).
+> **Status: EXECUTION IN PROGRESS. Tasks 1–7 + Task M/R + Task A1 built and committed on branch
+> `landing-page-port`. Nothing merged.** Paused at the user's request 2026-08-29 (third pause).
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -9,159 +9,155 @@
 
 # ▶▶ RESUME HERE
 
-**BASE is `978af38`.** Two things are open, and the FIRST ONE NEEDS THE USER TO SEQUENCE IT:
+**BASE is `0002b21`.** The next action is **Task A2 (§3 Journey)** — its brief is written, updated
+and ready at `.superpowers/sdd/2026-08-27-landing-page-port/task-A2-brief.md`. No decision is owed
+by the user before it starts.
 
-1. **Task A — motion vocabulary + the §2/§3/§4 expressiveness retrofit.** New, from the user's
-   review of the built page on 2026-08-28. Written up as **spec §13 (G5)** — read that first, it is
-   the authority. Not yet planned or scheduled.
-2. **Task 8 (§5 Recommendation)** and onward, each now built to §13's bar.
-
-**My recommendation, which the user has NOT ruled on: do Task A before Task 8.** §13.1(5) asks for
-one motion vocabulary reused across sections, not four independent effects; building it first gives
-Tasks 8–11 primitives to consume, the same shape as `section.tsx` for rhythm and `lib/pitch/plot.ts`
-for the contour maths. It also matches `mem:korume-shared-infra-preference`. Doing Task 8 first
-means §5 invents its own motion and is then reworked. **Put it to the user.**
+**A2 was dispatched once and killed mid-task; it made no commit.** Its partial work is in
+`git stash@{0}`. It is **incomplete, not merely uncommitted** — it wrote the rail test before wiring
+the rail, so `components/marketing` runs 1 red. **Re-dispatch A2 from its brief on a clean tree** and
+treat the stash as reference only (`git stash show -p stash@{0}`); drop it once A2 lands.
 
 **Execution mode is subagent-driven** (user, 2026-08-27). Re-enter with
-`superpowers:subagent-driven-development`; it will find the ledger and resume. Two exceptions
-already established: work that turns on the controller's own visual judgement (pose choice, matte
-quality) was done by the controller, not delegated — the user asked for that directly.
+`superpowers:subagent-driven-development`; it will find the ledger and resume.
 
 ## ⚠️ THE FULL RECORD IS GIT-IGNORED AND DOES NOT TRAVEL
 
 `.superpowers/sdd/2026-08-27-landing-page-port/progress.md` is the SDD ledger: every task's commits,
-every review's findings, every ruling with its cost-if-wrong, every deferred minor. It is far more
-detailed than this memory and it is **gitignored** — it exists only on this machine and dies with
-the working copy. **Read it first on resume.** Task briefs and reports sit beside it.
+every review's findings, every ruling with its cost-if-wrong, every deferred minor. Far more
+detailed than this memory, **gitignored**, and it dies with this working copy. **Read it first on
+resume.** Briefs, reports and reviews sit beside it — including A2's and A3's briefs, both written.
 
-## Where execution stands
+## THE USER'S SEQUENCING RULING (2026-08-29) — this reversed my own recommendation
 
-Branch `landing-page-port`, cut from master, **nothing merged**. Tasks 1–7 (`ef616a8`..`3f6f00c`),
-then Task M/R (`2fefd12`, `033368d`, `edfc1b9`), then the §13 ruling (`978af38`).
-Count commits with `git rev-list --count 952006c..landing-page-port` (`L-002` — do not record counts).
+I proposed building the motion vocabulary first. The user argued motion is holistic (cursor effects,
+page-level rhythm) and that sections not yet built will want motion too, so a vocabulary designed
+against 3 of 9 sections over-fits. They are right, and the split they implied is now the plan:
 
-| Task | What | Fix rounds |
-|---|---|---|
-| 1–7 | catalog · primitives · §0+§10 · §1 · §2 · §3 · `lib/pitch/plot.ts`+§4 | see ledger |
-| M/R | mascot pipeline + 5 poses; footer mascot card; the user's four overturned rulings | 0 |
+  Task A-STATIC (A1 §2 ✅ · A2 §3 · A3 §4)  composition + linework expressiveness. ZERO motion.
+  Tasks 8–11        build to §13's visual bar; each records 1–2 ledger lines naming what it will
+                    later want to animate, so the static build does not FUSE elements that must
+                    move separately. No motion implemented.
+  Task 12           page composition
+  Task A-MOTION     ONE pass over the whole composed page: shared vocabulary + the global layer.
+  Task 13 · Task V · whole-branch review
 
-Still to build: §5, §6, §7, §8+§9, the page composition + Playwright spec, the density/a11y sweep,
-**Task A** (motion), and **Task V** (visual fidelity vs `346:6275`).
+**Why doing static early forecloses nothing:** static expressiveness (stroke weight, curve,
+gradient, glow) and motion (draw-on, scrub) are disjoint layers on the same `<path>`. And §13's
+composition half — §2's "bố cục xấu hẳn" — is not a motion defect at all and could not wait, because
+§5–§9 were about to be built on the same broken `Section` shape.
 
-Gate at `978af38`, measured: tsc 0 errors, lint 0 errors, 274 files / 2455 tests. Clear
-`tsconfig.tsbuildinfo` before any typecheck after a `messages/**` change. Re-measure counts rather
-than trusting any recorded figure.
+## What Task A1 established — every later section task consumes this
 
-## ▶ THE MOST IMPORTANT THING THIS RUN LEARNED (2026-08-28)
+1. **ROOT CAUSE of "bố cục xấu hẳn" was shared infra, not §2.** `section.tsx` stacked eyebrow +
+   heading + children always. The reference is a two-column split: rail ≈28.6%, showcase ≈71.4%.
+   `Section` now takes an optional `rail` prop, guarded `rail != null` (not `!== undefined`, so
+   `rail={cond ? <X/> : null}` cannot select the split with an empty rail).
+2. ⚠️ **A NEW SCALE TOKEN NEEDS FIVE HOMES.** `app/globals.css`, `tailwind.config.ts`,
+   **`lib/utils.ts`'s tailwind-merge `font-size` group**, and `lib/design-tokens.test.ts`. Without
+   the tailwind-merge home, `cn()` classifies the class as a text COLOUR and silently drops it —
+   `lib/utils.ts` already records this bug hitting badge/select/tabs. I said "two homes", the
+   implementer found four, the reviewer found five. `text-heading-lg` (1.5rem) now exists for
+   split-layout headings; 20px was measurably too small and 28px too large, with nothing between.
+3. **`AssetSlot` now passes `sizes`.** Without it `fill` made the browser fetch a 3840px / 1336 KB
+   variant for a 379px slot — 4.9 s of empty section, worse than the placeholder it replaced.
+4. ⚠️ **AN OVERLAPPING DECORATIVE IMAGE NEEDS THREE MECHANISMS, NOT A PERCENTAGE.** §2's photo at
+   the reference's 41.5% forces a ~104px overlap with the constellation, because our chip grid is
+   423px where the reference's is 329px (our 12px type floor — the reference's width and its
+   clearance cannot both hold). It is safe only via the left-edge fade + `relative z-10` on the
+   constellation + `pointer-events-none` on the photo. All three are commented load-bearing and
+   mutation-guarded. **A3's mascot overflowing the companion card is the same shape of problem.**
 
-The user looked at the built page and judged §2/§3/§4 **correct but lifeless** — §2's composition
-"xấu hẳn so với ảnh png… nhìn khô", and the linework (constellation rays, step arrows, above all
-the pitch contour) flat where the reference is expressive.
+## Rulings I made this session (all in the ledger with cost-if-wrong)
 
-**No gate in the plan could have caught it, and that is the lesson, not the defect.** All three
-sections passed their reviews; §2 passed with zero fix rounds, the only one in the run. A
-catalog-coverage guard proves a string reached the DOM. The Rule #0 scan proves no hardcoded number.
-jsdom does no layout at all. The §4.1 reviewer checks — decorative, aria-hidden, unreachable,
-motion-gated, content-preserving — all genuinely held. **Every one of those is satisfied by a
-section that is correct and dead.** Adding assertions would not have found this; a human looking at
-the page did. Treat "structurally present and correctly hidden" as the floor for decorative
-elements, never the bar.
+- **Fold the `Section` split prop into §2** rather than a separate primitive task — §2 is its first
+  consumer and proves the pattern.
+- **`pitch-demo.ts`'s numbers may be rewritten** (its own header calls them illustrative mock data);
+  the shape must still read as 日本の秋はとても美しいですね。 and the You track must still flatten
+  the peak — that is the pedagogical point.
+- **§4's native contour goes solid + heavier, the You track becomes the thin dashed one**, inverting
+  Task 7 fix F3. F3's real requirement was WCAG 1.4.1, which still holds via dash AND weight; which
+  line got dashed was arbitrary.
+- **§3's Shadow card draws an AUDIO WAVEFORM, not a shrunken pitch contour.** `journey.tsx`'s
+  current doc comment argues bars misrepresent pitch — true for §4, wrong here: the reference's
+  graphic is symmetric about a centre line, i.e. amplitude, and reusing §4's contour makes §3 a
+  duplicate of §4, part of why the page reads flat.
+- **Promoted two Minor findings into A1's fix loop** (connector turn ~3.4px vs the reference's 15px;
+  the centre node's flare a hard 1px rect). The expressiveness of that linework is the whole point
+  of the task; a generic rubric scores it cosmetic.
+- **Accepted the implementer's out-of-scope `sizes` fix** — it was a regression the photo wiring
+  itself introduced.
+- **§1's player chrome was mine to fix**, not scope creep: I pulled §1 in for a one-prop change and
+  its chrome then read as a smudge over a real photograph.
 
-Corollary now written into spec §13.1(4): §2's constellation passes reduced-motion **vacuously**
-(it has no animation). A vacuous pass on a decorative element is evidence the element is inert, not
-evidence it is safe.
+## ▶ THE FIVE PHOTOGRAPHS ARRIVED. §5.2 PROVENANCE IS IN THE LEDGER.
 
-## Patterns that review established — reuse, do not re-derive
+The user generated all six themselves from short per-slot descriptions I wrote, and pasted them into
+`public/marketing/`. Aspect ratios measured exact (1672×941 = 16/9 ×4; 1086×1448 = 3/4 ×2), matching
+the `ratio` each slot already declared. Alt fidelity spot-checked (`problem.photoAlt` says
+"headphones on"; a zoom shows headphones). Licensing was ruled closed 2026-08-26 (AI-generated).
 
-1. **Translator-as-prop.** `components/marketing/translator.ts` is the authority. Section top
-   component is `async` and calls `getTranslations("marketing")` **once**; every sub-component is a
-   plain synchronous function taking `{ t }`. Never `await Child()` to satisfy jsdom.
-2. **A catalog-coverage guard per section**, mutation-checked: explicit total-leaf count **and**
-   per-leaf DOM presence. Exclude by **path**, never by leaf name (that bug was real and is fixed).
-3. **`AssetSlot` for every pending image** — no gradient, no solid block, nothing sliced from
-   `346:6275`, and no scrim over a pending placeholder.
-4. **`theme.extend.spacing` EXTENDS Tailwind's default numeric scale**, so `basis-56`, `h-8`,
-   `max-w-md` are hardcoded rem and the Rule #0 scan **cannot** see them. A green scan is not
-   evidence of token compliance. Giving `next/image` explicit width/height sidesteps it entirely.
-5. **Vitest maps `next-intl/server` to `test/stubs/next-intl-server.ts`**, English only, and it
-   **throws** on any other locale — deliberately.
+- **Wired:** `hero-still.png` (§1), `problem-desk.png` (§2) — both committed.
+- **Owed:** `journey-thumb.png` → Task A2 (its brief carries it) · `recommend-commute.png` → Task 8 ·
+  `trust-window.png` → Task 10 · `cta-bridge.png` → Task 11. These four are still untracked, which
+  is correct. **A committed reference to an untracked asset would ship a 404** — checked, did not happen.
+- ⚠️ **`cta-bridge.png` is a full-bleed background with text over it.** "Looks dark" is not WCAG AA;
+  Task 11 must add a scrim and measure. A scrim over a REAL image is allowed — the no-scrim rule is
+  scoped to pending placeholders.
+- Ruling: PNGs committed as-is, 13MB. `sharp` is NOT installed, so converting means writing an
+  encoder. `next/image` optimises at request time.
 
-## Mascot: what exists now (spec §5.3 is SUPERSEDED, §5.3's own header says so)
+## ⚠️ TWO DEPLOY BLOCKERS FOR almostgone.vn, BOTH NOW EVIDENCED
 
-`scripts/mascot/` cuts poses out of the character sheets; `poses.json` is both the manifest and the
-provenance record §5.2 demands; `poses.test.ts` pins it to disk, mutation-checked both ways.
-Dependency-free by design (PNG over `zlib`). **Five poses, one narrative thread**: waves hello §1 ·
-takes notes §4 · holds a memory §6 · looks ahead §8 · sleeps §10. `mix-blend-mode: screen` is retired.
-`holding-memory.png` and `looking-ahead.png` are already cut — Tasks 9 and 11 just consume them.
+1. **`sharp` is not installed.** Next falls back to the WASM optimiser: cold variant generation runs
+   2–5 s and **the dev server died twice** with `Jest worker encountered 2 child process exceptions`
+   (500 on every route). almostgone.vn is the same shape of single long-running Node host. This is a
+   blocker candidate, not a footnote.
+2. `EMAIL_PROVIDER=none` must be in its `.env` before the next deploy (older debt, still open).
 
-**Method worth keeping:** nothing thresholds on luminance (cream character on cream ground); the
-ground is whatever a border-seeded flood fill reaches. Composite a cutout on **magenta** to tell a
-real see-through gap from a matte failure — on a dark page they look identical.
+Also learned: **`next dev` and `next build` share one `.next` and clobber each other** — it cost one
+implementer two false diagnoses.
 
-## Rulings — the user's own, 2026-08-28, NOT re-litigable
+## Environment ceiling — THREE agents have now hit it
 
-- **Mascot**: per-placement hand-picked poses, real alpha, five placements. Overturns spec §5.3.
-- **Footer mascot card ships.** Both my objections were wrong and the frame's own metadata proved it:
-  `ButtonSayHelloToKorume` (`347:7100`) has NO visible label — that is a layer name — and its two
-  real labels were already in the catalog. **When I rule something out for "no copy exists", the
-  frame's metadata is the control.**
-- **"Save Sentence"** → `/mining` (registry label "Collection"). Protected; sign-in redirect is fine.
-- **Store affordances** → the stores' own front pages via `lib/app-stores.ts`. App is not published;
-  the user ruled with that stated. Mobile shows **both** stores — a server component cannot guess
-  the platform. Confirmed by the user as not crowding at narrow width.
-- **Vietnamese copy: the user will do it themselves.** DO NOT create a task, write a report, or edit
-  `messages/vi/marketing.json` copy. One string added this session needs their eye:
-  `footer.mascot.cta` = "Chào Korume một tiếng". Older parked nits are in the ledger.
+This machine is 1280 logical px. `resize_window` below that **reports success while doing nothing**,
+and root `zoom` does not move media queries. Mobile has never been observed by anyone. A
+**fixed-width same-origin iframe DOES move real media queries** and is the workaround that worked
+for geometry and hit-testing. 1280 is the reference's own width, so that one can be seen whole.
+Mobile and Lighthouse are deferred to Task 13 / Task V, which need Playwright or a real narrow viewport.
 
-## Motion: what is already there — DO NOT ADD A DEPENDENCY
+## Process facts worth keeping
 
-`gsap@^3.12.5`, `lenis@^1.1.13`, `framer-motion@^11.5.4` are **already installed**, plus
-`lib/gsap.ts` (lazy `registerGsap()` + ScrollTrigger, its doc comment already naming "landing
-storytelling"), `components/motion/reveal.tsx`, `smooth-scroll.tsx`, and `stroke-order.tsx` with a
-test — a worked, shipping example of a scroll-driven animation. Task A extends this.
-
-**Two constraints found by reading that code:**
-1. Reduced motion here is a **JS check** (`useTheme().reduceMotion`), not a CSS media query, and
-   `Reveal` returns plain content when set. Correct shape; copy it. A `motion-reduce:` variant is
-   not interchangeable with it.
-2. `Reveal` is `"use client"` and every marketing section is an **async server component**. A
-   section cannot just become a client component — it would lose `getTranslations`, and the
-   translator is not serialisable. Expect: server section renders content, thin client wrapper
-   animates it.
-
-## Reference `346:6275` — pulled and read this session (855×1800)
-
-Closed two open questions: the §1 **Companion card sits UNDER the transcript** (the build is right,
-the frame was the outlier), and **§5 does carry the "i+1 Perfect Next Step" badge and topic chips**
-(Task 8 builds them; not a question for the user). Also visible: the reference's accent is a strong
-**orange**, and its footer has no newsletter, no store badges and no mascot card — those are all
-frame, and ruling 3 keeps the frame's footer. Recorded so Task V does not "fix" it backwards.
+- **A killed subagent may not be resumable** — "No transcript found for agent ID" — so the REPORT
+  FILE on disk is the persistent memory, not the session. Keep making implementers write full
+  reports to disk; it is what made a fresh implementer able to take over A1 at fix round 2.
+- **Check `git status` before assuming a killed agent's work was lost.** A1's first fix attempt died
+  on an Opus session rate limit having changed nothing.
+- **After killing an agent mid-mutation-check, verify no deliberate break is live** — compare each
+  `.tsx.bak` against its live file before deleting anything. All four matched this time.
+- `code-reviewer` is code-only (Read/Grep/Glob/Bash). For anything visual or Figma-touching, use
+  `general-purpose` — it can render the page and open reference crops.
+- Reference crops for the briefs live OUTSIDE the repo in the session scratchpad (derived from
+  Figma, not ours to commit). Regenerate with `scripts/mascot/png.js` — note `decode` returns
+  `{w,h,ch,data}`, NOT `{width,height}`.
 
 ## Still owed to the user
 
-- **The five photographs.** Still the reason `AssetSlot` exists.
-- **Discord / Facebook / TikTok URLs.**
-- **Whether to delete `public/mascot/renders/` and `assets/blender/references/`** now Blender is
-  rejected.
-- Sequencing Task A vs Task 8 (above).
+- **Discord / Facebook / TikTok URLs** — they will do these "after the app is stable". The links
+  currently ship as plain TEXT, not anchors, per spec §2.3. Nothing is broken.
+- **Whether to delete `public/mascot/renders/` and `assets/blender/references/`** now Blender is rejected.
+- ⚠️ **`text-heading-lg` widened the app-wide type scale** — a design decision beyond §2. It is the
+  smallest change satisfying §13.1(2) without an arbitrary value, but the user may prefer 20px; one
+  line reverses it.
+- **Vietnamese copy: the user will do it themselves.** DO NOT create a task, write a report, or edit
+  `messages/vi/marketing.json` copy. Parked nits are in the ledger.
 
-## Carried into later tasks
-
-- **Task 12** (Playwright): assert §3's five cards render as a **row**, not a column — jsdom cannot,
-  so a `flex-col` mutant passes today.
-- **Task 13 / V**: whether §4's and §3's SVGs get non-zero height from `viewBox` alone; the five
-  poses' on-page display sizes (44px hero, 96px pitch, 112px footer) — jsdom does no layout.
-- **Whole-branch review**: `export function semitoneRange(values)` in `plot.ts`, called by both
-  `plot.ts` and `pitch-contour-overlay.tsx` (fix already specified, ~15 lines + a test) — until then
-  `MIN_SEMITONE_SPAN = 4` lives in two homes and tuning one desyncs the player's two pitch views;
-  the untokenized `h-16`/`max-w-xl`/`tracking-widest`/`mx-auto`/`max-w-md` cluster; `${id}-heading`
-  duplicated in `section.tsx` and `journey.tsx` (fix: export `headingIdFor(id)`);
-  `waveform.test.tsx`'s canvas draw-count flake under parallel load.
-
-## Still true from the 2026-08-26 ruling — do not re-open
+## Still true from earlier rulings — do not re-open
 
 `347:6277` IS the design for `/` · the authenticated home stays `dashboard` at `/dashboard` ·
 the frame's footer and its "A quieter way to keep going." section win over the reference ·
 `346:6275` is the visual quality bar, stays out of the registry, and **must NOT be deleted** ·
 imagery is AI-generated so there is no licensing question · **P13** PayOS only · **P14** auth is
-email + Google + Apple, GitHub no · **Blender mascot renders are REJECTED**.
+email + Google + Apple, GitHub no · **Blender mascot renders are REJECTED** · mascot poses are
+per-placement hand-picked with real alpha, five placements, `mix-blend-mode: screen` retired ·
+"Save Sentence" → `/mining` · store affordances → the stores' own front pages.
