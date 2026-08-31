@@ -54,6 +54,24 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * Below `lg` the split stacks exactly as the original layout does, so the
  * mobile composition is unchanged.
  *
+ * ⚠️ BOTH grid items carry `min-w-0`, and that is load-bearing (task A2 review
+ * C1). `SPLIT_COLUMNS` applies only at `lg:`; below it the grid falls back to
+ * one implicit `auto` track, where a grid item's `min-width: auto` resolves to
+ * a CONTENT-BASED minimum. Any showcase that does not shrink — §3's five-card
+ * `overflow-x-auto` row is the first — then widens its own column past the
+ * grid, and with it the page: measured at a 375px viewport, `scrollWidth` 587
+ * against `clientWidth` 375, with the rail's heading and body clipped off the
+ * right edge. That is a WCAG 1.4.10 (Reflow) failure, not only a visual one.
+ * `minmax(0, …)` supplies the same `0` at `lg` and above, which is why the
+ * defect was invisible at desktop widths. §4-§9 adopt `rail` next, so the
+ * hardening belongs here rather than at any one consumer.
+ *
+ * INVARIANT: at every viewport width, no section may make
+ * `document.documentElement.scrollWidth` exceed `clientWidth`. jsdom does no
+ * layout and cannot assert that; `section.test.tsx` guards the MECHANISM (the
+ * class is present on both items) and the OUTCOME assertion at a 320px
+ * viewport is owed to the queued Playwright pass (Task 13/V).
+ *
  * `relative` is unconditional: a section whose showcase bleeds to the page edge
  * (§2's photograph) needs the section element — not the max-width `Container` —
  * as its positioning context. It changes nothing for sections that don't.
@@ -108,13 +126,16 @@ export function Section({
       <Container>
         {isSplit ? (
           <div className={cn("grid gap-xl lg:items-start", SPLIT_COLUMNS)}>
-            <div>
+            {/* `min-w-0` on both items: see the docblock's INVARIANT. */}
+            <div className="min-w-0">
               {headingBlock}
               <div data-section-rail className="mt-md">
                 {rail}
               </div>
             </div>
-            <div>{children}</div>
+            <div data-section-showcase className="min-w-0">
+              {children}
+            </div>
           </div>
         ) : (
           <>

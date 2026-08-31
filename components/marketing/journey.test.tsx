@@ -101,8 +101,10 @@ describe("Journey", () => {
     // The default `sizes` is an upper bound sized for §2's 45vw photograph; at
     // this slot's ~106 CSS px it selects the 1080px variant (74.7 KB WebP /
     // 980 KB PNG) instead of the 384px one (15.6 KB / 149 KB). Losing the
-    // override is a silent 4.8x regression with no visible symptom.
-    expect(photo.getAttribute("sizes")).toBe("(min-width: 1024px) 200px, 300px");
+    // override is a silent 4.8x regression with no visible symptom. The 220
+    // (not 200) is the COVER-CROP requirement re-derived from the slot's
+    // HEIGHT — see `THUMB_SIZES` in journey.tsx (fix round m2).
+    expect(photo.getAttribute("sizes")).toBe("(min-width: 1024px) 220px, 300px");
   });
 
   it("draws step 3's waveform as amplitude bars, not as a pitch contour", async () => {
@@ -152,7 +154,7 @@ describe("Journey", () => {
     expect(save?.textContent).toBe("");
   });
 
-  it("draws the Remember card's review grid as 15 dots with exactly 2 lit", async () => {
+  it("draws the Remember card's review grid at the reference's shape — 6 x 3, irregularly filled", async () => {
     const { container } = render(await Journey());
 
     const remember = container.querySelector('[data-step="remember"]');
@@ -160,11 +162,71 @@ describe("Journey", () => {
     expect(grid).toHaveLength(1);
     expect(grid[0]).toHaveAttribute("aria-hidden", "true");
 
-    // 5 columns x 3 rows. Both counts are explicit: a grid that rendered no
-    // dots, or lit none of them, would pass a bare "greater than zero" check
-    // on the other collection.
-    expect(remember?.querySelectorAll("[data-review-dot]")).toHaveLength(15);
+    // Task A2 review I2: the brief's prose said "5 columns x 3 rows", the
+    // binding reference (`zoom-c5.png`, pixel-probed) is SIX columns and the
+    // fill is sparse and irregular. A uniform matrix reads as wallpaper; the
+    // irregularity is what makes it read as a schedule with data in it.
+    // `18` alone would also be satisfied by a 3 x 6 grid, so the column count
+    // is asserted from the inline track list — the single home for it.
+    expect(grid[0]?.getAttribute("style")).toContain("repeat(6,");
+
+    const dots = remember?.querySelectorAll("[data-review-dot]") ?? [];
+    expect(dots).toHaveLength(18);
+
+    // Every count explicit, and the four states must PARTITION the 18 cells:
+    // a bare "greater than zero" on any one of them would be satisfied by a
+    // uniform grid that lost the irregularity this assertion exists for.
+    const byState = (state: string) =>
+      remember?.querySelectorAll(`[data-review-dot-state="${state}"]`) ?? [];
+    expect(byState("ring")).toHaveLength(9);
+    expect(byState("ghost")).toHaveLength(4);
+    expect(byState("lit")).toHaveLength(2);
+    expect(byState("empty")).toHaveLength(3);
+    expect(
+      byState("ring").length + byState("ghost").length + byState("lit").length + byState("empty").length,
+    ).toBe(dots.length);
+
+    // The colour-independent hook the two lit cells keep.
     expect(remember?.querySelectorAll("[data-review-dot-lit]")).toHaveLength(2);
+
+    // The reference sets six tiny column labels over the dots. They are text
+    // and the catalog is frozen, so they ship as decorative tick marks — one
+    // per column, which is what ties them to `DOT_COLUMNS`.
+    expect(remember?.querySelectorAll("[data-review-tick]")).toHaveLength(6);
+  });
+
+  it("mines the FULL sentence in card 4, with the target fragment marked inside it", async () => {
+    const { container } = render(await Journey());
+
+    const mine = container.querySelector('[data-step="mine"]');
+    expect(mine).not.toBeNull();
+
+    // Task A2 review I1: card 4 rendered the bare fragment `思ったより` in a
+    // generously padded panel — five characters in ~124 x 105 px, the emptiest
+    // object in the row. Sentence mining IS "sentence + target word"
+    // (CLAUDE.md §5, priority 3), and the reference draws the whole sentence.
+    // No new catalog key: the sentence is `understand.detail`, already frozen.
+    const sentences = mine?.querySelectorAll("[data-mine-sentence]") ?? [];
+    expect(sentences).toHaveLength(1);
+    expect(sentences[0]?.textContent).toBe(en.journey.steps.understand.detail);
+
+    const targets = mine?.querySelectorAll("[data-mine-target]") ?? [];
+    expect(targets).toHaveLength(1);
+    expect(targets[0]?.textContent).toBe(en.journey.steps.mine.detail);
+  });
+
+  it("keeps card 4's unmarked fallback OFF the normal path", async () => {
+    // `MineBody` falls back to the plain sentence when the fragment is not
+    // found, so a later copy edit degrades instead of throwing. That fallback
+    // must never become the silent normal path (task A2 review I1), so the
+    // catalog relationship it depends on is asserted directly — and the
+    // rendered result is asserted to be the MARKED branch, not the fallback.
+    expect(en.journey.steps.mine.detail.length).toBeGreaterThan(0);
+    expect(en.journey.steps.understand.detail).toContain(en.journey.steps.mine.detail);
+
+    const { container } = render(await Journey());
+    const mine = container.querySelector('[data-step="mine"]');
+    expect(mine?.querySelectorAll("[data-mine-target]")).toHaveLength(1);
   });
 
   it("keeps every added graphic decorative and unreachable by keyboard", async () => {
@@ -178,6 +240,11 @@ describe("Journey", () => {
       "[data-shadow-waveform]",
       "[data-record-glyph]",
       "[data-save-chip]",
+      // Task A2 review m5: the glyph itself, not only its wrapper. The CTA
+      // glyph is the one that matters — it lives INSIDE a focusable `<a>`, so
+      // losing its `aria-hidden` would change the link's accessible name.
+      "[data-save-glyph]",
+      "[data-cta-glyph]",
       "[data-review-grid]",
     ] as const;
 
@@ -216,6 +283,10 @@ describe("Journey", () => {
     const cta = rail?.querySelector("a");
     expect(cta).not.toBeNull();
     expect(cta?.textContent).toContain(en.journey.cta);
+    // The drawn chevron inside the link must not reach the accessible name
+    // (task A2 review m5): `getByRole` resolving by an EXACT name proves the
+    // decoration is excluded, which `textContent` alone cannot.
+    expect(screen.getByRole("link", { name: en.journey.cta })).toBe(cta);
 
     // The card row is the rail's sibling, not its descendant.
     expect(rail?.querySelector("[data-step]")).toBeNull();

@@ -277,24 +277,72 @@ export function SaveGlyph() {
 /* ------------------------------------------------------- card 5: dot grid */
 
 /**
- * The Remember card's review schedule — a grid of day slots with the next two
- * reviews lit, as `346:6275` draws it.
+ * The Remember card's review schedule — a grid of day slots, most of them
+ * scheduled, two of them due, as `346:6275` draws it.
  *
- * ⚠️ Not derived from SRS state (spec §13.2). `LIT_DOTS` is a fixed pair of
- * indices chosen to sit where the reference lights them; it is not a query,
- * not a projection, and must never become one. The card says "Review
- * Schedule" in its own text, so deleting this grid loses decoration only.
+ * ⚠️ Not derived from SRS state (spec §13.2). `DOT_MASK` is a fixed picture; it
+ * is not a query, not a projection, and must never become one. The card says
+ * "Review Schedule" in its own text, so deleting this grid loses decoration
+ * only.
  *
- * `DOT_COLUMNS` is the single home for the column count: the track list is
- * built from it inline rather than restated as a `grid-cols-*` class that
- * could drift out of sync with `DOT_COUNT` (CLAUDE.md §6, "one fact, one
- * home"). It is a count, not a copied pixel.
+ * ## The shape is read off the reference, not off prose (task A2 review I2)
+ *
+ * The brief's prose said "5 columns x 3 rows, two lit orange" and the first
+ * build shipped a uniform 5 x 3 matrix of fifteen identical rings. That prose
+ * was wrong, and the uniformity was the worse half of the error: every cell the
+ * same reads as decorative wallpaper, not as a schedule with data in it — which
+ * is exactly the "correct but lifeless" symptom §3 was rebuilt to remove.
+ *
+ * `zoom-c5.png` is the binding authority and was pixel-probed rather than
+ * eyeballed (cell centres against the panel ground at RGB ~14,17,24):
+ *
+ *     row 1   .  *  .  *  *  *
+ *     row 2   o  *  o  *  *  *
+ *     row 3   o  *  o  @  @  .
+ *
+ * SIX columns, and the fill is sparse and irregular: 9 rings, 4 barely-visible
+ * ghosts, 2 solid lit cells adjacent toward the bottom right, 3 cells empty.
+ * The two lit cells are the only saturated marks in the card, which is what
+ * makes "two reviews are due" read at a glance.
+ *
+ * The reference sets six tiny column labels over the dots. They are TEXT and
+ * the copy catalog is frozen, so they ship as decorative tick marks instead —
+ * one per column, generated from `DOT_COLUMNS`, needing no string.
+ *
+ * Two constants, no third. `DOT_COLUMNS` is the single home for the column
+ * count — the track list is built from it inline rather than restated as a
+ * `grid-cols-*` class that could drift (CLAUDE.md §6, "one fact, one home") —
+ * and `DOT_MASK` is the single home for the fill. The ROW count is neither
+ * stored nor needed: it is `DOT_MASK.length / DOT_COLUMNS`, and the grid flows
+ * it. `journey.test.tsx` pins the shape (18 cells over `repeat(6,`) and each
+ * state's count, so a mask edit that loses a cell or flattens the irregularity
+ * goes red rather than silently reflowing.
  */
-const DOT_COLUMNS = 5;
-const DOT_ROWS = 3;
-const DOT_COUNT = DOT_COLUMNS * DOT_ROWS;
-/** Bottom row, right of centre — where the reference's two lit dots sit. */
-const LIT_DOTS: readonly number[] = [12, 13];
+const DOT_COLUMNS = 6;
+
+/** `empty` draws nothing but still occupies its cell, which is what keeps the columns aligned. */
+type DotState = "empty" | "ghost" | "ring" | "lit";
+
+/** Row-major, 6 per row, transcribed from `zoom-c5.png`. See the docblock's diagram. */
+const DOT_MASK: readonly DotState[] = [
+  "empty", "ring", "empty", "ring", "ring", "ring",
+  "ghost", "ring", "ghost", "ring", "ring", "ring",
+  "ghost", "ring", "ghost", "lit", "lit", "empty",
+];
+
+/**
+ * `border-muted-foreground/45` for a ring, not `border-border`: `--border` is a
+ * near-black hairline meant for `--card`, and these sit on `--muted`, where it
+ * is invisible (fix round 2 of the original task). A ghost is a fill with no
+ * ring at all — the reference's unfilled slots read as a faint disc, roughly
+ * one stop above the panel ground, not as a fainter ring.
+ */
+const DOT_STATE_STYLES: Record<DotState, string> = {
+  empty: "",
+  ghost: "bg-muted-foreground/10",
+  ring: "border border-muted-foreground/45 bg-card",
+  lit: "bg-primary",
+};
 
 export function ReviewDotGrid() {
   return (
@@ -304,15 +352,17 @@ export function ReviewDotGrid() {
       className="grid w-full justify-items-center gap-2xs"
       style={{ gridTemplateColumns: `repeat(${DOT_COLUMNS}, minmax(0, 1fr))` }}
     >
-      {Array.from({ length: DOT_COUNT }, (_, i) => (
+      {/* The column header, drawn rather than named — see the docblock. */}
+      {Array.from({ length: DOT_COLUMNS }, (_, i) => (
+        <span key={`tick-${i}`} data-review-tick className="h-px w-xs bg-muted-foreground/30" />
+      ))}
+      {DOT_MASK.map((state, i) => (
         <span
           key={i}
           data-review-dot
-          data-review-dot-lit={LIT_DOTS.includes(i) ? "true" : undefined}
-          className={cn(
-            "h-xs w-xs rounded-full",
-            LIT_DOTS.includes(i) ? "bg-primary" : "border border-muted-foreground/45 bg-card",
-          )}
+          data-review-dot-state={state}
+          data-review-dot-lit={state === "lit" ? "true" : undefined}
+          className={cn("h-xs w-xs rounded-full", DOT_STATE_STYLES[state])}
         />
       ))}
     </div>

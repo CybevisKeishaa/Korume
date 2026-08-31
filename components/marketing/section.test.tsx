@@ -123,4 +123,50 @@ describe("Section", () => {
     expect(column.querySelector("h2")).not.toBeNull();
     expect(column.textContent).not.toContain("showcase copy");
   });
+
+  it("gives BOTH split columns min-w-0, so a wide showcase cannot widen the grid below `lg`", () => {
+    // Task A2 review C1. `SPLIT_COLUMNS` is applied only at `lg:`. Below that
+    // breakpoint the grid falls back to a single implicit `auto` track, and a
+    // grid item's `min-width: auto` resolves to a CONTENT-BASED minimum. §3's
+    // non-shrinking five-card row therefore pushed its own column to 572px
+    // inside a 449px grid, giving the whole PAGE 212px of horizontal overflow
+    // at a 375px viewport and clipping the heading and body copy — a WCAG
+    // 1.4.10 (Reflow) failure, not just a visual one. `minmax(0, …)` supplies
+    // the missing `0` at `lg` and above, which is why it was invisible at the
+    // only width the implementer could measure.
+    //
+    // ⚠️ This asserts the MECHANISM, because jsdom does no layout. The OUTCOME
+    // assertion — `documentElement.scrollWidth === clientWidth` at a 320px
+    // viewport — is owed to the queued Playwright pass (Task 13/V); written
+    // here it would be unconditionally green (CLAUDE.md §7).
+    const { container } = render(
+      <Section id="s" heading="H" rail={<p>rail copy</p>}>
+        <p>showcase copy</p>
+      </Section>,
+    );
+
+    const rail = container.querySelector("[data-section-rail]");
+    if (!rail) throw new Error("no [data-section-rail] was rendered");
+    const railColumn = rail.parentElement;
+    if (!railColumn) throw new Error("the rail has no parent column");
+
+    const showcase = container.querySelector("[data-section-showcase]");
+    if (!showcase) throw new Error("no [data-section-showcase] was rendered");
+
+    // Both columns must be children of the SAME grid, or `min-w-0` is being
+    // asserted on something that is not a grid item and proves nothing.
+    const grid = railColumn.parentElement;
+    if (!grid) throw new Error("the rail column has no parent grid");
+    expect(showcase.parentElement).toBe(grid);
+    expect(grid.className).toContain("grid");
+
+    const columns = [railColumn, showcase];
+    expect(columns).toHaveLength(2);
+    for (const column of columns) {
+      expect(
+        column.className.split(/\s+/),
+        `${column.hasAttribute("data-section-showcase") ? "showcase" : "rail"} column is missing min-w-0`,
+      ).toContain("min-w-0");
+    }
+  });
 });

@@ -1,5 +1,6 @@
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
+import { cn } from "@/lib/utils";
 import { buttonStyles } from "@/components/ui/button";
 import { Section } from "./section";
 import { AssetSlot } from "./asset-slot";
@@ -101,13 +102,21 @@ const JOURNEY_THUMB = "/marketing/journey-thumb.png";
  * browser hint that has to be stated in real layout units, and these are
  * measured from the built page, not read off the frame.)
  *
- * The values allow for the COVER CROP: the file is 16/9 and the slot is nearly
- * square, so the browser scales the source to the slot's HEIGHT and crops the
- * width — it needs ~1.85x the slot's own width in source pixels. 106 -> ~200;
- * the widest the card ever gets is 11rem, at 896-1023px where the section is
- * still stacked, which is the 300.
+ * The values allow for the COVER CROP, and the derivation runs from the slot's
+ * HEIGHT, not its width (fix round m2 — the first version worked from the width
+ * and landed ~10% short). The file is 16/9 and the slot renders taller than it
+ * is wide: `object-cover` therefore scales the source until its HEIGHT covers
+ * the slot's, and crops the width. So the source width required is
+ * `slotHeight * 16/9`, not `slotWidth * anything`. Measured live at 1280 the
+ * slot is 106 x 123 CSS px, so it needs 123 * 1.778 ~= 219 -> 220. The widest
+ * the card ever gets is 11rem, at 896-1023px where the section is still
+ * stacked, which is the 300.
+ *
+ * (Both the old 200 and this 220 select the same variant at DPR 1, 1.5 and 2 —
+ * `w=384` at the DPR this machine reports — so this is a correctness fix to a
+ * number a future editor would trust, not a measured saving.)
  */
-const THUMB_SIZES = "(min-width: 1024px) 200px, 300px";
+const THUMB_SIZES = "(min-width: 1024px) 220px, 300px";
 
 // Mirrors `Section`'s own `${id}-heading` convention (section.tsx) so the
 // scroll container's `aria-labelledby` (fix round 1, F2) can point at the
@@ -159,7 +168,7 @@ export async function Journey() {
         className="flex items-stretch gap-2xs overflow-x-auto"
       >
         {STEPS.map((step, i) => (
-          <li key={step} className={`flex min-w-0 shrink-0 items-center gap-2xs ${CARD_BASIS}`}>
+          <li key={step} className={cn("flex min-w-0 shrink-0 items-center gap-2xs", CARD_BASIS)}>
             <StepCard step={step} t={t} />
             {i < STEPS.length - 1 ? <StepArrow /> : null}
           </li>
@@ -202,10 +211,23 @@ function StepHeading({ step, t }: { step: StepKey; t: Translator }) {
   );
 }
 
-/** The inset the reference draws inside every card except Watch's. */
+/**
+ * The inset the reference draws inside every card except Watch's.
+ *
+ * `cn()`, not a template literal (fix round m4): every other composed class
+ * string in this section goes through tailwind-merge, and `WatchBody`'s comment
+ * explains a place where that resolution is load-bearing. One caller passing a
+ * conflicting utility to a concatenating parent is a bug with no symptom until
+ * it happens.
+ */
 function StepPanel({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={`mt-xs flex flex-1 flex-col rounded-md border border-border bg-muted p-xs ${className ?? ""}`}>
+    <div
+      className={cn(
+        "mt-xs flex flex-1 flex-col rounded-md border border-border bg-muted p-xs",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -303,16 +325,92 @@ function ShadowBody({ t }: { t: Translator }) {
 }
 
 /**
- * Card 4. The mined expression in the panel, then its chips: the JLPT level in
- * the house tint pattern, the grammar tag outlined, and a save affordance that
- * is drawn rather than named (no catalog string is invented for it).
+ * Splits `sentence` around the first occurrence of `fragment`.
+ *
+ * Returns `null` when the fragment is not in the sentence, so the caller can
+ * fall back to the plain sentence instead of throwing. That fallback exists for
+ * one reason: the copy catalog is frozen for the English pass but the user is
+ * writing the Vietnamese one, and a translation could word the sentence so the
+ * mined fragment no longer occurs verbatim inside it. It must never become the
+ * silent normal path, which is why `journey.test.tsx` asserts the fragment IS
+ * found today AND that the marked branch is the one that renders.
+ */
+function splitAroundFragment(
+  sentence: string,
+  fragment: string,
+): { before: string; target: string; after: string } | null {
+  const at = fragment.length > 0 ? sentence.indexOf(fragment) : -1;
+  if (at < 0) return null;
+  return {
+    before: sentence.slice(0, at),
+    target: fragment,
+    after: sentence.slice(at + fragment.length),
+  };
+}
+
+/**
+ * Card 4. The mined sentence in the panel with its target word marked, then the
+ * chips: the JLPT level in the house tint pattern, the grammar tag outlined,
+ * and a save affordance that is drawn rather than named (no catalog string is
+ * invented for it).
+ *
+ * ⚠️ The panel shows the FULL sentence, not the bare fragment (task A2 review
+ * I1). The first build rendered `mine.detail` alone — five characters floating
+ * in a ~124 x 105 px panel, unmistakably the emptiest object in a row of five,
+ * which is the "correct but lifeless" symptom §3 was rebuilt to remove. It is
+ * also the wrong picture of the feature: sentence mining is "sentence + target
+ * word" (CLAUDE.md §5, priority 3), and `zoom-c4.png` draws a two-line sentence
+ * over the chips.
+ *
+ * NO NEW COPY KEY was needed and none was added. The sentence is already in the
+ * catalog as `journey.steps.understand.detail` (`この店は、思ったより安い。`)
+ * and `journey.steps.mine.detail` (`思ったより`) is literally a substring of it,
+ * so the marking is a render-time split rather than new content. The reference
+ * repeats card 2's sentence in card 4 for the same reason: the point of the
+ * pair of cards is that the same line you understood is the line you mine. Both
+ * leaves still render, so the catalog coverage guard's total stays 23.
  */
 function MineBody({ t }: { t: Translator }) {
+  const sentence = t("journey.steps.understand.detail");
+  const parts = splitAroundFragment(sentence, t("journey.steps.mine.detail"));
+
   return (
     <>
       <StepHeading step="mine" t={t} />
       <StepPanel className="justify-center">
-        <p className="font-jp text-body text-foreground">{t("journey.steps.mine.detail")}</p>
+        {/* Same size and face as card 2's line — it IS card 2's line, and the
+            pair only reads as "the sentence you understood is the sentence you
+            mine" if it looks like the same object. `leading-jp` because this
+            one wraps to three lines where card 2's has room to breathe. */}
+        <p data-mine-sentence className="font-jp text-body leading-jp text-foreground">
+          {parts ? (
+            <>
+              {parts.before}
+              {/* The house tint pattern (`bg-primary/10` + `text-primary-strong`,
+                  as card 4's own N3 chip and §2's chips use it), already covered
+                  by `lib/design-tokens.contrast.test.ts`'s SURFACES x TINTED
+                  sweep at 4.5:1 both plain and alpha-blended. It marks the
+                  target with colour AND with a distinct ground, so it does not
+                  rest on hue alone (WCAG 1.4.1). */}
+              {/* `box-decoration-clone`, not `whitespace-nowrap`: the panel is
+                  ~92 CSS px wide and this mark WILL straddle a line break.
+                  Cloning gives each line fragment its own rounded box, so the
+                  wrap reads as intentional; forcing nowrap instead would make a
+                  longer fragment (the Vietnamese pass may write one) overflow
+                  the card, which is the class of bug this fix round exists to
+                  remove. */}
+              <span
+                data-mine-target
+                className="box-decoration-clone rounded-sm bg-primary/10 text-primary-strong"
+              >
+                {parts.target}
+              </span>
+              {parts.after}
+            </>
+          ) : (
+            sentence
+          )}
+        </p>
       </StepPanel>
       {/* Three chips, as the reference draws them. The third is the save
           affordance: icon-only and unbordered, because at our 12px type floor
@@ -337,7 +435,13 @@ function MineBody({ t }: { t: Translator }) {
   );
 }
 
-/** Card 5. A titled schedule panel over the review grid. */
+/**
+ * Card 5. A titled schedule panel over the review grid.
+ *
+ * The grid gets its own bordered box, as `zoom-c5.png` draws it: the title sits
+ * in one inset and the schedule in a second beneath it, which is what makes the
+ * dots read as a calendar rather than as a loose scatter under a label.
+ */
 function RememberBody({ t }: { t: Translator }) {
   return (
     <>
@@ -346,7 +450,7 @@ function RememberBody({ t }: { t: Translator }) {
         <p className="rounded-sm border border-border bg-card px-2xs py-2xs text-caption text-muted-foreground">
           {t("journey.steps.remember.detail")}
         </p>
-        <div className="flex flex-1 items-center">
+        <div className="flex flex-1 items-center rounded-sm border border-border px-2xs py-xs">
           <ReviewDotGrid />
         </div>
       </StepPanel>
