@@ -1,7 +1,7 @@
 # Landing page port (`/`) — run state
 
-> **Status: EXECUTION IN PROGRESS. Tasks 1–7 + Task M/R + Task A1 built and committed on branch
-> `landing-page-port`. Nothing merged.** Paused at the user's request 2026-08-29 (third pause).
+> **Status: EXECUTION IN PROGRESS. Tasks 1–7 + Task M/R + Task A1 + Task A2 built and committed on
+> branch `landing-page-port`. Nothing merged.** Resumed 2026-09-01 after a third pause.
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -9,17 +9,26 @@
 
 # ▶▶ RESUME HERE
 
-**BASE is `0002b21`.** The next action is **Task A2 (§3 Journey)** — its brief is written, updated
-and ready at `.superpowers/sdd/2026-08-27-landing-page-port/task-A2-brief.md`. No decision is owed
-by the user before it starts.
+**BASE is `ccc283f`.** The next action is **Task A3 (§4 Pitch)** — its brief is written, updated and
+ready at `.superpowers/sdd/2026-08-27-landing-page-port/task-A3-brief.md`. No decision is owed by
+the user before it starts.
 
-**A2 was dispatched once and killed mid-task; it made no commit.** Its partial work is in
-`git stash@{0}`. It is **incomplete, not merely uncommitted** — it wrote the rail test before wiring
-the rail, so `components/marketing` runs 1 red. **Re-dispatch A2 from its brief on a clean tree** and
-treat the stash as reference only (`git stash show -p stash@{0}`); drop it once A2 lands.
+**Task A2 (§3) is COMPLETE** (commits 5db2e72..ccc283f, one fix round, re-review PASS). Do NOT
+re-dispatch it — an earlier version of this memory said to, and this session nearly acted on it.
+`git stash@{0}` is the FIRST A2 attempt, killed 2026-08-29; it is now obsolete, contains a test
+written before its implementation, and **must never be applied**. Dropping it is the user's call.
 
 **Execution mode is subagent-driven** (user, 2026-08-27). Re-enter with
 `superpowers:subagent-driven-development`; it will find the ledger and resume.
+
+## ⚠️ ONE BLOCKER-CLASS DEFECT IS OPEN AND IT BELONGS TO NO SECTION TASK
+
+§1's `<h1 class="text-hero">` overflows every viewport below ~480px, so **the landing page fails
+WCAG 1.4.10 Reflow today**. The root cause is structural and needs no browser to confirm:
+`app/globals.css` defines `--text-hero: 4rem` — 64px, FIXED, with no `clamp()` and no media query.
+Two separate audits missed it because text overflowing its own box does not move that box's client
+rect, and both filtered on `getBoundingClientRect().right`. **Assigned to Task 13**, which already
+owns `globals.css`; raise it to the whole-branch review as blocker-class, not as a minor.
 
 ## ⚠️ THE FULL RECORD IS GIT-IGNORED AND DOES NOT TRAVEL
 
