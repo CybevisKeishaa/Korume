@@ -80,7 +80,7 @@ const STILL = "/marketing/recommend-commute.png";
  * crops nothing and the required source width is the slot's own width — the
  * height-driven derivation `journey.tsx` documents does not apply here.
  */
-const STILL_SIZES = "(min-width: 1024px) 240px, (min-width: 640px) 440px, 560px";
+export const STILL_SIZES = "(min-width: 1024px) 240px, (min-width: 640px) 440px, 560px";
 
 /** ~2.5:1 — the main card against the "Why this video?" card, as measured above. */
 const SHOWCASE_COLUMNS = "lg:grid-cols-[minmax(0,5fr)_minmax(0,2fr)]";

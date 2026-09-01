@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@/test/render";
-import { Recommendation } from "./recommendation";
+import { Recommendation, STILL_SIZES } from "./recommendation";
 import { CIRCUMFERENCE, arcLength } from "./recommendation-donut";
 import en from "@/messages/en/marketing.json";
 
@@ -105,10 +105,17 @@ describe("Recommendation", () => {
     // next/image rewrites `src` through the optimizer, so the file name is what
     // survives — the assertion is "this slot points at the committed file".
     expect(still.getAttribute("src")).toContain("recommend-commute.png");
-    // Without `sizes`, `fill` makes the browser fetch the 3840px variant for a
-    // ~225px slot (the defect that cost §2 4.9s of empty section).
-    expect(still).toHaveAttribute("sizes");
-    expect(still.getAttribute("sizes")).not.toBe("");
+    // Pinned to the EXACT hint, not just "present" or "non-empty": `AssetSlot`
+    // renders `sizes={sizes ?? DEFAULT_SIZES}` (asset-slot.tsx), so the
+    // attribute is NEVER absent or empty — a bare `toHaveAttribute("sizes")` /
+    // `not.toBe("")` pair is green whether or not `STILL_SIZES` is actually
+    // wired at this call site, because `AssetSlot`'s own 45vw upper-bound
+    // fallback satisfies both just as well (review fix round 1, task 8).
+    // Asserting equality to the exported constant also pins the pure-px
+    // invariant `recommendation.tsx`'s docblock calls load-bearing: `STILL_SIZES`
+    // carries no `vw` term, so this one assertion catches both a missing
+    // `sizes` prop AND a regression back to a `vw`-based hint.
+    expect(still.getAttribute("sizes")).toBe(STILL_SIZES);
 
     const probe = document.createElement("div");
     probe.setAttribute("data-asset-pending", "true");
