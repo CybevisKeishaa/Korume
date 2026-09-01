@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { toPlotPoints, MIN_SEMITONE_SPAN, RANGE_PADDING_SEMITONES } from "./plot";
+import {
+  toPlotPoints,
+  toSemitones,
+  semitoneRange,
+  MIN_SEMITONE_SPAN,
+  RANGE_PADDING_SEMITONES,
+} from "./plot";
 import { hzToSemitones } from "./contour";
 import type { PitchContour } from "./types";
 
@@ -93,5 +99,76 @@ describe("toPlotPoints", () => {
     expect(points).toHaveLength(1);
     expect(points[0]?.x).toBe(0);
     expect(Number.isFinite(points[0]?.y)).toBe(true);
+  });
+});
+
+describe("semitoneRange", () => {
+  it("pads the observed range by RANGE_PADDING_SEMITONES on each side", () => {
+    const range = semitoneRange([0, 6]);
+
+    expect(range.min).toBeCloseTo(-RANGE_PADDING_SEMITONES, 10);
+    expect(range.max).toBeCloseTo(6 + RANGE_PADDING_SEMITONES, 10);
+  });
+
+  it("widens a nearly-flat set to MIN_SEMITONE_SPAN, centred on the data", () => {
+    const range = semitoneRange([2, 2.5]);
+
+    expect(range.max - range.min).toBeCloseTo(MIN_SEMITONE_SPAN, 10);
+    expect((range.max + range.min) / 2).toBeCloseTo(2.25, 10);
+  });
+
+  it("ignores unvoiced entries and survives an all-unvoiced set", () => {
+    expect(semitoneRange([null, 0, null, 6])).toEqual(semitoneRange([0, 6]));
+
+    const empty = semitoneRange([null, null]);
+    expect(empty.max - empty.min).toBeCloseTo(MIN_SEMITONE_SPAN, 10);
+  });
+});
+
+describe("toSemitones", () => {
+  it("converts each frame relative to refHz and preserves gaps positionally", () => {
+    const values = toSemitones(contour([220, null, 440]), 220);
+
+    expect(values).toHaveLength(3);
+    expect(values[0]).toBeCloseTo(0, 10);
+    expect(values[1]).toBeNull();
+    expect(values[2]).toBeCloseTo(12, 10);
+  });
+});
+
+describe("toPlotPoints with a shared range", () => {
+  it("draws two takes in proportion to each other, which per-take normalization cannot", () => {
+    // The defect this argument exists to fix. `flat` moves EXACTLY HALF as far
+    // as `wide` — 6 semitones against 12 — so an honest overlay draws it half
+    // as tall. Normalized to its own range it is drawn at 7/8 the height
+    // instead, because each window costs the same fixed
+    // RANGE_PADDING_SEMITONES however much the take actually moved. That is
+    // how §4 came to show a flattened "You" track at nearly the native's
+    // amplitude.
+    const base = 200;
+    const refHz = 200;
+    const height = 100;
+    const wide = contour([base, base * 2 ** (12 / 12)]);
+    const flat = contour([base, base * 2 ** (6 / 12)]);
+    const spanOf = (c: PitchContour, range?: { min: number; max: number }) => {
+      const ys = toPlotPoints(c, refHz, 300, height, range)
+        .points.filter((p): p is { x: number; y: number } => p !== null)
+        .map((p) => p.y);
+      return Math.max(...ys) - Math.min(...ys);
+    };
+
+    // Independently normalized: 12/(12+2) against 6/(6+2) — 0.875, not 0.5.
+    expect(spanOf(flat) / spanOf(wide)).toBeCloseTo(0.875, 6);
+
+    const shared = semitoneRange([...toSemitones(wide, refHz), ...toSemitones(flat, refHz)]);
+    expect(spanOf(flat, shared) / spanOf(wide, shared)).toBeCloseTo(0.5, 6);
+  });
+
+  it("leaves the derived-range behaviour untouched when no range is passed", () => {
+    const c = contour([200, 300]);
+
+    expect(toPlotPoints(c, 220, 300, 100)).toEqual(
+      toPlotPoints(c, 220, 300, 100, semitoneRange(toSemitones(c, 220))),
+    );
   });
 });
