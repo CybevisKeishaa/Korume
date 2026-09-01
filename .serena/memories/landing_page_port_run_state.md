@@ -9,26 +9,177 @@
 
 # ▶▶ RESUME HERE
 
-**BASE is `ccc283f`.** The next action is **Task A3 (§4 Pitch)** — its brief is written, updated and
-ready at `.superpowers/sdd/2026-08-27-landing-page-port/task-A3-brief.md`. No decision is owed by
-the user before it starts.
+**BASE is `aa927d9`.** Branch `landing-page-port`, nothing merged. **The working tree is CLEAN and
+the full suite is GREEN (2525/2525, 276/276 files)** — the first time on this branch that both have
+been true at once.
 
-**Task A2 (§3) is COMPLETE** (commits 5db2e72..ccc283f, one fix round, re-review PASS). Do NOT
-re-dispatch it — an earlier version of this memory said to, and this session nearly acted on it.
-`git stash@{0}` is the FIRST A2 attempt, killed 2026-08-29; it is now obsolete, contains a test
-written before its implementation, and **must never be applied**. Dropping it is the user's call.
+  Tasks 1-7 · A1 §2 · A2 §3 · A3 §4 · P (mascot)   COMPLETE
+  Task 8 §5  COMPLETE (cc85602..351f947) — 1 fix round, re-review clean
+  Task 9 §6  COMPLETE (351f947..e610bfe) — 1 fix round, re-review clean
+  Task 9b    COMPLETE (e610bfe..c9c14db tests, ..aa927d9 owner copy + favicon)
 
-**Execution mode is subagent-driven** (user, 2026-08-27). Re-enter with
-`superpowers:subagent-driven-development`; it will find the ledger and resume.
+## ▶ THE NEXT ACTION IS TASK 10 (§7), AND ITS BRIEF IS NOT WRITTEN
 
-## ⚠️ ONE BLOCKER-CLASS DEFECT IS OPEN AND IT BELONGS TO NO SECTION TASK
+§7 is a **RAIL SPLIT, not centred** — settled by measurement during Task 9's review, do not
+re-derive it. Its photograph `trust-window.png` is COMMITTED, so wire it directly.
 
-§1's `<h1 class="text-hero">` overflows every viewport below ~480px, so **the landing page fails
-WCAG 1.4.10 Reflow today**. The root cause is structural and needs no browser to confirm:
-`app/globals.css` defines `--text-hero: 4rem` — 64px, FIXED, with no `clamp()` and no media query.
-Two separate audits missed it because text overflowing its own box does not move that box's client
-rect, and both filtered on `getBoundingClientRect().right`. **Assigned to Task 13**, which already
-owns `globals.css`; raise it to the whole-branch review as blocker-class, not as a minor.
+Then: **Task 11 §8+§9** (§8 IS centred, and owes the `Section` align/heading-size decision — two
+axes, not one option) · **Task 12** composition (owes the max-width decision, and §6's residual tile
+gap below) · **Task A-MOTION** · **Task 13** (⚠️ RE-AIM IT AT §3) · **Task V** · whole-branch review.
+
+## ▶ WHAT TASK 9b SETTLED — READ THIS BEFORE WRITING ANY FURTHER TEST
+
+All §0-§4 tests now derive their expected COPY from `messages/en/marketing.json`, the way §5 and §6
+already did. Routes, `data-*` keys and DOM contracts stay pinned as literals — those are the
+invariants; the wording is the owner's to re-voice at will.
+
+- ⚠️ **THE RECORDED RED COUNT WAS WRONG: 7, NOT 5.** Both this memory and the ledger said "five
+  tests are red" because both measured `npx vitest run components/marketing`. The full suite finds
+  **7 across 5 files** — the two extra are in `components/layout/site-header.test.tsx` (§0), which
+  reads `marketing.nav.*` and sat outside that scope. **A count from a SCOPED command is a claim
+  about that scope only.** Re-run unscoped before recording a number later tasks plan against.
+- ⚠️ **TWO ASSERTIONS MUST STAY LITERAL AND NOW SAY SO IN A COMMENT** — `hero.test.tsx`'s "ruling 3"
+  transcript pair (a frame-faithful inconsistency a cleanup must fail loudly on) and
+  `problem.test.tsx`'s Figma-placeholder guard (no catalog key by design; its ABSENCE is the
+  assertion). A future "finish the job" pass that derives these would erase a shipped ruling.
+- **§2 pins chip membership, not order, on purpose**: `data-chip` is a valueless attribute there,
+  unlike §3's `data-step` and §6's `data-chain-node`. Adding a value is a component change.
+- **Mutation-checked BOTH ways**, which a new guard needs: six catalog strings changed → still
+  107/107 green (the property being added); five components broken, one per file → all five files
+  red. The owner's catalog was restored from a byte-exact backup, sha256-verified both ends.
+- **Commit order was chosen so no commit in history is red**: the test conversion landed BEFORE the
+  copy commit and was verified green against the pre-copy-pass catalog too.
+- ⚠️ **ONE FLAKE FOR THE WHOLE-BRANCH REVIEW, not caused by 9b**:
+  `components/video-player/pitch-contour.test.tsx > decodes the blob…` failed in one full run,
+  passed in isolation and in the two full runs after, and passed in the pre-change baseline.
+
+## ▶ WHAT MADE §5 AND §6 LAND FIRST TIME — REPEAT THIS FOR EVERY REMAINING SECTION
+
+§2, §3 and §4 were each built to the plan's skeleton, judged dead by the user, and rebuilt in a whole
+second task. §5 and §6 both cleared the §13 visual bar inside their own task. Three things changed:
+
+1. **The controller opened the reference itself** and put a located, cropped target in the brief,
+   instead of sending an implementer to hunt for the section.
+2. **The extracted brief was AUDITED and AMENDED before dispatch.** ⚠️ **The plan's per-task text is
+   systematically stale** — Task 8 needed 5 rulings, Task 9 needed 9. Task 9's plan block would have
+   applied `mix-blend-screen` (a shipped test forbids it), pinned `toHaveLength(1)` on a connector the
+   reference draws in two layers, and used `h-12 w-12` (Rule #0). **Never dispatch an extracted brief
+   without auditing it against the reference and current code.**
+3. **The dispatch required the implementer to render and look before claiming done**, and the task
+   review was given rendering ability (`general-purpose`, not `code-reviewer`, which is code-only).
+
+## ▶ DEFERRED WITH RULINGS — do not re-open these as section defects
+
+- **§6's between-tile gap is 39.34 CSS px where the reference's is ~55.** `aspect-[7/6]` closed 36% of
+  it; the rest needs `h-3xl` or the cell pitch, both of which belong to **Task 12**, behind the same
+  lever as the max-width decision.
+- **§6's seven Minor findings** (physical `left-1/2` — branch-wide, zero logical-property utilities
+  exist in `components/marketing/` and no lint rule; a node name wrapping at `xl`; `poses[].slot`
+  overloaded; the connector test cannot tell its two layers apart; the orb floats ~14px above the
+  rail; `ChainNode` is not self-contained; the 324-line file). All in the ledger for the whole-branch
+  review.
+
+
+## ▶ THE OWNER'S COPY PASS IS NOW COMMITTED AND THE TESTS NO LONGER DEPEND ON ITS WORDING
+
+The owner rewrote the ENGLISH copy mid-run (2026-09-01 23:03-23:10) — measured, not inferred:
+**85 strings CHANGED, 0 added, 0 removed**, same key set — and redid the VIETNAMESE copy in the same
+pass. Both are now committed at `aa927d9`, together with `public/korume.png` and the layout's
+`icons` block. **Task 9b removed the reason this ever mattered**: no test in §0-§4 retypes English
+any more, so the next copy pass cannot turn the suite red on its own.
+
+▶ **THE EVIDENCE THAT SETTLED IT, worth keeping**: §5's and §6's tests survived the 85-string
+rewrite untouched because they derive expectations from the catalog, while §0-§4's retyped-string
+tests went red for a defect that did not exist. That accident proved the rule better than any
+argument — a hardcoded-string test here is not merely brittle, it goes red the moment the owner
+exercises a copy pass they explicitly reserved for themselves.
+
+⚠️ **The Vietnamese copy remains the owner's.** Still do NOT create a task, write a report, or edit
+`messages/vi/marketing.json` copy.
+
+## ▶ §6's ICON QUESTION IS CLOSED — DO NOT RE-OPEN IT
+
+The owner ruled 2026-09-02: "Icon §6 hiện tại tôi nhìn đã ổn." The glyphs from Figma frame
+`347:6835` (sparkles for Grammar, a play-ring for Video & Context, a shield for JLPT, a speaker cone
+for Conversation) **stand as shipped**, even though reference `346:6275` draws different ones. The
+owed visual-taste question is discharged.
+
+
+## ▶ THE USER COMMITTED THE ASSETS THEMSELVES (`b30661f`, 2026-09-01) — TWO FACTS CHANGED
+
+1. **The three owed marketing photographs are COMMITTED.** The old rule "they are still untracked,
+   which is correct — a committed reference to an untracked asset would ship a 404" is OBSOLETE.
+   **Tasks 8, 10 and 11 may wire their photograph directly.** Task 11 still owes `cta-bridge.png`
+   a MEASURED scrim (full-bleed background with text over it; "looks dark" is not WCAG AA).
+2. **There is now a 27-pose supplied mascot library**, hand-cut by the user "tránh việc bạn phải tự
+   xóa nền rồi crop ảnh tốn công". Recorded in `scripts/mascot/poses.json` under `supplied`, each
+   with a `depicts` line. Tasks 8-11 pick from it; adding a `slot` to a supplied entry records the
+   pick, and it does NOT migrate to `poses` (that array is reserved for what `extract.js` cuts).
+
+## ▶ A CONTROLLER'S VISUAL READ IS A CLAIM THAT NEEDS VERIFYING — IT HAS BEEN WRONG TWICE
+
+Both times I asserted something from a rendered image and the source said otherwise:
+- §3's dot grid: I recorded "6 columns" off a screenshot; the code said `DOT_COLUMNS = 5`.
+- Task P: I told an implementer `hapyy.png` was "full-body with ears spread wider". Both it and
+  `happy.png` are chest-height crops (406x375 vs 408x376, no legs in either). My overclaim was
+  inherited straight into a FILENAME before a reviewer's pixel measurement caught it.
+**Write dispatches that tell the implementer not to adopt my description on authority.** That
+instruction is what produced the right answer the second time.
+
+## ▶ WHEN A SAMPLE SHOWS AN ERROR *RATE*, RE-DERIVE THE WHOLE COLLECTION
+
+Task P's review spot-checked 5 of 27 generated pose descriptions and found 3 wrong. Ruling: re-open
+all 27, not just the 3 named. That found TWO MORE nobody had flagged (`angry.png`, `lying-prone.png`)
+— 5 of 27 total. Patching only the sampled rows would have shipped the same rate as "reviewed".
+Then require the re-reviewer to independently sample the corrected table: it opened 17 and found
+zero mismatches, which is what turned "the table says so" into a measured result.
+
+## ⚠️ IMPLEMENTER RESUMPTION IS UNRELIABLE — NEVER PLAN ON IT (rule revised twice)
+
+This rule has been wrong twice. What the evidence actually supports:
+
+- A1, A3, P and Task 8's first implementer: `SendMessage` → "No transcript found". **All four had a
+  DEAD CONTROLLER SESSION.**
+- Task 8's implementer, resumed after completing normally in a live session: **worked.**
+- Task 9's implementer, resumed mid-run after an API drop: **worked**, and saved a half-built task.
+- That same Task 9 implementer, after it later hit a rate limit and then completed: **"No transcript
+  found"** — controller still alive.
+
+So a transcript can vanish even with a live controller. **Operational rule: write EVERY dispatch so the
+REPORT FILE ON DISK carries what a successor needs, and treat a successful resume as a bonus, never as
+the plan.** That assumption has paid five times and cost nothing on the occasions resume did work.
+
+## ⚠️ TASK 12 NOW OWES A MAX-WIDTH DECISION, PROMOTED FROM A COSMETIC MINOR
+
+A2 filed as cosmetic that "the showcase column stops at `max-w-6xl` where the reference runs nearer
+the page edge" (m8). A3 proved it load-bearing: **our showcase card is 754 CSS px where the
+reference's is ~950**, so every proportion inside it absorbs a 21% shortfall. §4 therefore had to
+choose between chart width and the Companion's text measure — a choice the reference does not
+impose. Reclassified to Task 12 with that evidence. Two independent measurements agree the real
+lever is `Section`'s max width and that it was not §4's to pull.
+
+## ⚠️ THE REFLOW BLOCKER WAS MISDIAGNOSED — IT IS §3, NOT §1
+
+**This section previously said the blocker was `--text-hero: 4rem`. THAT WAS WRONG**, and wrong in the
+direction that costs most: Task 13 was aimed at `globals.css` when the overflow lives in §3's markup.
+Corrected 2026-09-02 by two independent measurements — Task 9's implementer claimed it, I refused the
+claim and routed it to the reviewer, which settled it by enumerating every element in `main` whose
+right edge exceeds `documentElement.clientWidth`:
+
+- **320px** — the offender is §3's `LI.min-w-0.shrink-0.basis-[clamp(8rem…)]` at right = 408, plus five
+  of its descendants. **Nothing in `#hero`.**
+- **390px** — the same `LI` at 408, and a second at 540. **Nothing in `#hero`.**
+- **768px** — a THIRD, separate defect: `scrollWidth` 779 vs `clientWidth` 768, an 11px overflow with
+  no element attributable by right-edge filtering. Unexplained by either agent; goes to the same task.
+
+**Task 13 must be re-aimed at §3's `shrink-0` + `basis-[clamp(...)]` card row.** `--text-hero` being a
+fixed 64px with no `clamp()` may still be a real a11y problem worth fixing — but it is NOT what makes
+the page overflow, and fixing it would have closed nothing.
+
+▶ The lesson cost more than the bug: **text overflowing its own box does not move that box's client
+rect.** Two audits filtered on `getBoundingClientRect().right`, found nothing, and then attributed the
+page overflow to the most PLAUSIBLE suspect rather than the measured one. A plausible cause recorded as
+a measured one is worse than an open question.
 
 ## ⚠️ THE FULL RECORD IS GIT-IGNORED AND DOES NOT TRAVEL
 
@@ -209,14 +360,25 @@ the browser" as unverified unless the widths are named.
 
 ## Still owed to the user
 
-- **Discord / Facebook / TikTok URLs** — they will do these "after the app is stable". The links
-  currently ship as plain TEXT, not anchors, per spec §2.3. Nothing is broken.
+- **Discord / Facebook / TikTok URLs** — still do not exist (reconfirmed 2026-09-02); they will do
+  these "after the app is stable". The links currently ship as plain TEXT, not anchors, per spec
+  §2.3. Nothing is broken.
 - **Whether to delete `public/mascot/renders/` and `assets/blender/references/`** now Blender is rejected.
+- **Five UNTRACKED favicon candidates sit in `public/mascot/`** — `concept-logo.png`,
+  `favicon-korume.png`, `favicon4.png`, `korume-favicon2.png`, `korume-favicon3.png`, 5.5 MB
+  together. Deliberately NOT committed at `aa927d9`: nothing references them, and unreferenced files
+  under `public/` are served to every visitor. The shipped mark is `public/korume.png`. Ask whether
+  to delete them or keep them somewhere outside `public/`.
 - ⚠️ **`text-heading-lg` widened the app-wide type scale** — a design decision beyond §2. It is the
   smallest change satisfying §13.1(2) without an arbitrary value, but the user may prefer 20px; one
   line reverses it.
-- **Vietnamese copy: the user will do it themselves.** DO NOT create a task, write a report, or edit
-  `messages/vi/marketing.json` copy. Parked nits are in the ledger.
+- **Vietnamese copy: DONE by the user and committed at `aa927d9`** (2026-09-02). Still theirs — do
+  NOT create a task, write a report, or edit `messages/vi/marketing.json` copy. Parked nits stay in
+  the ledger.
+  ⚠️ **ONE THING TO ASK THEM, NOT TO FIX**: `vi.nav.companion` is `"Korume"` where `en.nav.companion`
+  is `"Companion"`, so the Vietnamese header shows the brand name twice — once as the wordmark and
+  once as a nav item. It may be deliberate (the Companion feature branded by name); it reads like a
+  paste slip. Their call, their file.
   ▶ **FLAG AT THAT PASS — §3's card 2 is missing four strings the reference has**: a `5 / 12`
   counter, a tag chip, a romaji line, and a small icon caption. A2 deliberately built without them
   rather than inventing content: romaji is *study content*, not decoration (CLAUDE.md §2.3), and the
