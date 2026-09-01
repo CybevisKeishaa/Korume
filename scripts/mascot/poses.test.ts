@@ -134,7 +134,7 @@ describe("mascot pose manifest", () => {
       .trim()
       .split(/\r?\n/)
       .map((line) => line.trim().slice(2).trim().split(/\s+/, 1)[0] ?? "");
-    expect(extractedNames.length).toBe(5);
+    expect(extractedNames.length).toBe(manifest.poses.length);
     for (const name of extractedNames) {
       expect(name.length, "extracted line names a file").toBeGreaterThan(0);
       expect(suppliedNames.has(name), `${name} is not a supplied pose`).toBe(false);

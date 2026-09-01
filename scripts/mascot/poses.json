@@ -112,7 +112,7 @@
     {
       "out": "angry.png",
       "caption": "TỨC GIẬN — angry, brow furrowed",
-      "depicts": "Front-facing close-up, brow furrowed downward, a small red mark on the forehead, taut annoyed mouth.",
+      "depicts": "Front-facing, seated with torso and feet visible (not a close-up), brow furrowed downward, an orange spark-shaped mark on the forehead, small closed stern mouth.",
       "width": 450,
       "height": 411,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
@@ -174,9 +174,9 @@
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
     },
     {
-      "out": "happy-full-body.png",
-      "caption": "VUI VẺ (toàn thân) — happy, full body, ears spread wide",
-      "depicts": "Same closed-eye smile as happy.png, but framed as full body with the ears spread wider apart.",
+      "out": "happy-wide-ears.png",
+      "caption": "VUI VẺ (tai xòe rộng) — happy, ears spread wide",
+      "depicts": "Same closed-eye content smile as happy.png, chest-height crop like happy.png (neither shows legs or feet), but the ears sit spread wider apart and more of the chest pendant is visible.",
       "width": 406,
       "height": 375,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
@@ -192,7 +192,7 @@
     {
       "out": "lying-prone.png",
       "caption": "NẰM SẤP — lying prone atop the glowing orb",
-      "depicts": "Lying flat on its belly atop the glowing ringed orb, paws stretched forward, tail trailing behind.",
+      "depicts": "Lying flat on its belly atop a glowing speckled orb (no ring band around this one, unlike hugging-an-orb.png / reading-on-the-orb.png), paws stretched forward, tail trailing behind.",
       "width": 558,
       "height": 447,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
@@ -206,9 +206,9 @@
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
     },
     {
-      "out": "noted.png",
+      "out": "quill-writing.png",
       "caption": "GHI CHÚ — writing on a scroll with a quill",
-      "depicts": "Seated, writing with a quill on a scroll laid flat on the ground.",
+      "depicts": "Seated, writing with a quill on a scroll laid flat on the ground. Renamed from the supplied file's original noted.png: one letter from the extracted noting.png (used in pitch-showcase) and visually a close cousin (same writing pose, same style) even though the framing and scroll angle differ — see P-F6.",
       "width": 495,
       "height": 424,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
@@ -264,7 +264,7 @@
     {
       "out": "sleepy.png",
       "caption": "BUỒN NGỦ — sleepy, drowsy eyes",
-      "depicts": "Tight close-up crop, drooping half-closed eyes, paws folded low, no props.",
+      "depicts": "Tight head/upper-chest crop, drooping half-closed eyes, no paws visible in frame, no props.",
       "width": 427,
       "height": 388,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
@@ -311,8 +311,8 @@
     },
     {
       "out": "timid.png",
-      "caption": "RỤT RÈ — timid, peeking from behind a leaf",
-      "depicts": "Peeking out from behind a large held leaf, bashful expression.",
+      "caption": "RỤT RÈ — timid, holding a large leaf",
+      "depicts": "Standing, holding a large leaf out in front with both paws at chest level, face fully visible (not concealed by the leaf), gentle bashful expression, fluffy tail.",
       "width": 526,
       "height": 474,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
@@ -320,7 +320,7 @@
     {
       "out": "worry.png",
       "caption": "LO LẮNG — worried, paws clasped",
-      "depicts": "Paws clasped at the chest, ears drooping, concerned expression.",
+      "depicts": "Seated, full body, paws clasped at the chest, ears upright/perked (not drooping), wide worried eyes.",
       "width": 370,
       "height": 397,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
