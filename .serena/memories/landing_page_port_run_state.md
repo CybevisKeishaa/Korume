@@ -1,7 +1,8 @@
 # Landing page port (`/`) — run state
 
-> **Status: EXECUTION IN PROGRESS. Tasks 1–7 + Task M/R + Task A1 + Task A2 built and committed on
-> branch `landing-page-port`. Nothing merged.** Resumed 2026-09-01 after a third pause.
+> **Status: EXECUTION IN PROGRESS. Tasks 1–7 · A1 §2 · A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b built
+> and committed on branch `landing-page-port`. Nothing merged.** Paused 2026-09-02 after a fourth
+> pause, at the user's request, with Task 9b closed and the tree clean.
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -9,9 +10,18 @@
 
 # ▶▶ RESUME HERE
 
-**BASE is `aa927d9`.** Branch `landing-page-port`, nothing merged. **The working tree is CLEAN and
-the full suite is GREEN (2525/2525, 276/276 files)** — the first time on this branch that both have
-been true at once.
+**The last CODE commit is `aa927d9`**; this memory's own update commits sit on top of it, so run
+`git log --oneline -3` for true HEAD rather than trusting a hash written here. Branch
+`landing-page-port`, **nothing merged**.
+
+▶ **The user stopped the session here (2026-09-02) and will continue in a new one.** Nothing is
+half-built: **the working tree is CLEAN and the full suite is GREEN (2525/2525, 276/276 files,
+tsc 0, lint 0)** — the first time on this branch both have been true at once. There is no in-flight
+agent, no unprocessed report on disk, and no red test to explain away. Start Task 10 cold.
+
+⚠️ **The ONLY untracked files are five favicon candidates in `public/mascot/`** (`concept-logo.png`,
+`favicon-korume.png`, `favicon4.png`, `korume-favicon2.png`, `korume-favicon3.png`, 5.5 MB together).
+That is deliberate, not an oversight — see "Still owed to the user". Do not commit them to "clean up".
 
   Tasks 1-7 · A1 §2 · A2 §3 · A3 §4 · P (mascot)   COMPLETE
   Task 8 §5  COMPLETE (cc85602..351f947) — 1 fix round, re-review clean
