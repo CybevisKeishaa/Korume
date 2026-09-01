@@ -3,6 +3,7 @@ import { Problem } from "@/components/marketing/problem";
 import { Journey } from "@/components/marketing/journey";
 import { PitchShowcase } from "@/components/marketing/pitch-showcase";
 import { Recommendation } from "@/components/marketing/recommendation";
+import { CapabilityChain } from "@/components/marketing/capability-chain";
 
 export default function LandingPage() {
   return (
@@ -12,6 +13,7 @@ export default function LandingPage() {
       <Journey />
       <PitchShowcase />
       <Recommendation />
+      <CapabilityChain />
     </main>
   );
 }

@@ -23,9 +23,11 @@
     "`width` is the exported pixel width — roughly 3x the largest size the slot renders at,",
     "so the asset holds up on a high-DPI screen without shipping the whole 3072px sheet.",
     "",
-    "`supplied` entries carry no `slot`: they are a library to pick from, not placements. If",
-    "one is later wired into a component, add a `slot` to its `supplied` entry — it does not",
-    "migrate to `poses`, which is reserved for assets extract.js itself cuts from a sheet."
+    "A `supplied` entry carries a `slot` only once it is wired into a component: the array is a",
+    "library to pick from, not a list of placements. Adding that `slot` does NOT migrate it to",
+    "`poses`, which is reserved for assets extract.js itself cuts from a sheet. The reverse is",
+    "also possible: a `poses` entry can lose its placement (holding-memory.png did, in task 9)",
+    "and still belong there, because extract.js still reproduces it."
   ],
   "sheets": {
     "companion-a": "public/mascot/upscalemedia-transformed (4).png",
@@ -70,7 +72,7 @@
         918
       ],
       "caption": "ÔM KÝ ỨC — holding a memory",
-      "slot": "§6 capability chain, at the end of the chain under \"Korume remembers. You grow.\" The pose is literally the companion holding a memory orb.",
+      "slot": "UNPLACED as of task 9. It was written for §6 (the companion holding a memory orb), but §6 shipped reading-on-the-orb.png instead: chain.mascotAlt describes the companion SITTING ON a glowing orb, and this pose sits on the ground cradling one, which would have made the alt false. Kept and still extracted so the asset stays reproducible; a later section may claim it.",
       "width": 320,
       "fade": [
         0.9,
@@ -225,6 +227,7 @@
       "out": "reading-on-the-orb.png",
       "caption": "ĐỌC SÁCH — reading a scroll atop the ringed orb",
       "depicts": "Seated atop the glowing ringed orb, unrolling and reading a scroll; a small secondary orb icon floats beside it.",
+      "slot": "§6 capability chain, at the right-hand end of the node row. Chosen over holding-memory.png because chain.mascotAlt (copy the user owns, and rewrote mid-task) describes the companion SITTING ON a glowing orb, which this pose does and holding-memory.png — sitting on the ground cradling one — does not. It also matches reference 346:6275 detail for detail: eyes open, scroll across the chest, ringed orb below, small orb floating beside the head.",
       "width": 499,
       "height": 500,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."

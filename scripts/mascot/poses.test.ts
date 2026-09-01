@@ -41,6 +41,8 @@ type Supplied = {
   width: number;
   height: number;
   origin: string;
+  /** Present only once the pose is wired into a component — see the test below. */
+  slot?: string;
 };
 type Manifest = {
   sheets: Record<string, string>;
@@ -53,7 +55,11 @@ const manifest: Manifest = JSON.parse(
 );
 
 describe("mascot pose manifest", () => {
-  it("declares the five landing-page placements", () => {
+  // "the five EXTRACTED poses", not "the five placements": task 9 left
+  // holding-memory.png in this array with no landing-page slot (§6 shipped a
+  // supplied pose whose orb the frozen alt copy actually describes), and
+  // extract.js still reproduces it, so it still belongs here.
+  it("declares the five extracted poses", () => {
     // Named individually: a bare length check passes just as happily when a
     // placement is renamed out from under its slot.
     expect(manifest.poses.map((p) => p.out)).toEqual([
@@ -89,9 +95,24 @@ describe("mascot pose manifest", () => {
     for (const pose of manifest.supplied) {
       expect(pose.depicts.length, `${pose.out} depicts`).toBeGreaterThan(0);
       expect(pose.origin.length, `${pose.out} origin`).toBeGreaterThan(0);
-      // Supplied poses fill no slot — spec 5.2's "origin recorded" is
-      // satisfied by `origin` above, not by a placement that doesn't exist.
-      expect("slot" in pose, `${pose.out} has no slot`).toBe(false);
+    }
+  });
+
+  it("names every supplied pose that has been wired into a component", () => {
+    // This test used to assert `"slot" in pose === false` for EVERY supplied
+    // entry, which contradicted the manifest's own `$comment`: "If one is later
+    // wired into a component, add a `slot` to its `supplied` entry — it does
+    // not migrate to `poses`." Task 9 (§6) is the first time that happened, so
+    // the rule is now written the way the manifest states it rather than as a
+    // blanket ban. Spec 5.2's "origin recorded" is still satisfied by `origin`
+    // for every supplied pose, placed or not.
+    //
+    // Named individually rather than counted: a bare count passes just as
+    // happily when one placement is dropped and another appears.
+    const placed = manifest.supplied.filter((pose) => pose.slot !== undefined);
+    expect(placed.map((pose) => pose.out)).toEqual(["reading-on-the-orb.png"]);
+    for (const pose of placed) {
+      expect((pose.slot as string).length, `${pose.out} slot`).toBeGreaterThan(0);
     }
   });
 
