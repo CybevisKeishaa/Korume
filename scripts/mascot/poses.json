@@ -1,13 +1,19 @@
 {
   "$comment": [
-    "Which mascot pose fills which landing-page slot, and where each one is cut from.",
+    "Which mascot pose fills which landing-page slot, and where each one is cut from — plus",
+    "the library of supplied poses that fill no slot yet. public/mascot/poses/ is NOT fully",
+    "machine-owned: `poses` below are cut by scripts/mascot/extract.js and nothing else may",
+    "write those five files; `supplied` are hand-cut PNGs the project owner pasted in directly",
+    "(background removed, cropped) — extract.js never touches them and never will, since a",
+    "human edit is not reproducible by re-running an extractor. Either way, every file on disk",
+    "has a record here, so an asset's provenance is always this manifest plus either the sheet",
+    "a `poses` entry names or the `origin` a `supplied` entry gives (spec 5.2: a slot may only",
+    "be filled from a source whose origin is recorded).",
     "",
-    "A pose is addressed by an `anchor` — a point inside the drawing on the source sheet —",
-    "not by an index, so re-running after a change to the segmentation still resolves to the",
-    "same character. `run scripts/mascot/extract.js` rewrites public/mascot/poses/ from this",
-    "file; nothing else may write there, so an asset's provenance is always this manifest",
-    "plus the sheet it names (spec 5.2: a slot may only be filled from a source whose origin",
-    "is recorded).",
+    "A `poses` entry is addressed by an `anchor` — a point inside the drawing on the source",
+    "sheet — not by an index, so re-running after a change to the segmentation still resolves",
+    "to the same character. `node scripts/mascot/extract.js` rewrites its five outputs in",
+    "public/mascot/poses/ from this file.",
     "",
     "`fade` dissolves the bottom of the crop over [from,to] as a fraction of height. The orb",
     "poses are drawn with the orb's warm light spilling onto a ground plane; cut straight,",
@@ -15,7 +21,11 @@
     "and loses the plate.",
     "",
     "`width` is the exported pixel width — roughly 3x the largest size the slot renders at,",
-    "so the asset holds up on a high-DPI screen without shipping the whole 3072px sheet."
+    "so the asset holds up on a high-DPI screen without shipping the whole 3072px sheet.",
+    "",
+    "`supplied` entries carry no `slot`: they are a library to pick from, not placements. If",
+    "one is later wired into a component, add a `slot` to its `supplied` entry — it does not",
+    "migrate to `poses`, which is reserved for assets extract.js itself cuts from a sheet."
   ],
   "sheets": {
     "companion-a": "public/mascot/upscalemedia-transformed (4).png",
@@ -25,47 +35,295 @@
     {
       "out": "greeting.png",
       "sheet": "companion-b",
-      "anchor": [1345, 900],
+      "anchor": [
+        1345,
+        900
+      ],
       "caption": "VẪY TAY — waving",
       "slot": "§1 hero, Companion card. The companion's first appearance on the page, so it waves. Renders ~48px, which is why a pose with a clear silhouette beats a detailed one.",
       "width": 200,
-      "fade": [0.92, 1.0]
+      "fade": [
+        0.92,
+        1
+      ]
     },
     {
       "out": "noting.png",
       "sheet": "companion-a",
-      "anchor": [1775, 974],
+      "anchor": [
+        1775,
+        974
+      ],
       "caption": "GHI LẠI — writing it down",
       "slot": "§4 pitch showcase, Companion card. The card is the companion commenting on your pitch, so the pose is it taking notes on what it heard.",
       "width": 340,
-      "fade": [0.9, 1.0]
+      "fade": [
+        0.9,
+        1
+      ]
     },
     {
       "out": "holding-memory.png",
       "sheet": "companion-b",
-      "anchor": [2126, 918],
+      "anchor": [
+        2126,
+        918
+      ],
       "caption": "ÔM KÝ ỨC — holding a memory",
       "slot": "§6 capability chain, at the end of the chain under \"Korume remembers. You grow.\" The pose is literally the companion holding a memory orb.",
       "width": 320,
-      "fade": [0.9, 1.0]
+      "fade": [
+        0.9,
+        1
+      ]
     },
     {
       "out": "looking-ahead.png",
       "sheet": "companion-b",
-      "anchor": [1660, 380],
+      "anchor": [
+        1660,
+        380
+      ],
       "caption": "NHÌN XA — looking into the distance",
       "slot": "§8 CTA, the largest placement. Keeps the glowing-orb motif the reference uses here, and the gaze points at what the section is asking for — the next step.",
       "width": 620,
-      "fade": [0.78, 0.97]
+      "fade": [
+        0.78,
+        0.97
+      ]
     },
     {
       "out": "resting.png",
       "sheet": "companion-b",
-      "anchor": [2450, 1800],
+      "anchor": [
+        2450,
+        1800
+      ],
       "caption": "NGỦ GỤC — asleep, with a Zzz",
       "slot": "§10 footer mascot card. The frame names this image KorumeSleepingPeacefullyOnABook (347:7101) and §9 directly above it reads \"The day can end softly\", so the frame and the copy both ask for a sleeping pose — not the farewell wave a footer would otherwise suggest.",
       "width": 420,
-      "fade": [0.94, 1.0]
+      "fade": [
+        0.94,
+        1
+      ]
+    }
+  ],
+  "supplied": [
+    {
+      "out": "angry.png",
+      "caption": "TỨC GIẬN — angry, brow furrowed",
+      "depicts": "Front-facing close-up, brow furrowed downward, a small red mark on the forehead, taut annoyed mouth.",
+      "width": 450,
+      "height": 411,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "bye.png",
+      "caption": "TẠM BIỆT — waving goodbye",
+      "depicts": "Standing full body, one paw raised in a wave, gentle smile, tail flowing to the side.",
+      "width": 572,
+      "height": 436,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "cleaning.png",
+      "caption": "QUÉT DỌN — sweeping with a broom",
+      "depicts": "Crouched, sweeping the ground with a broom held in both paws.",
+      "width": 534,
+      "height": 467,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "curious.png",
+      "caption": "TÒ MÒ — curious, head tilted",
+      "depicts": "Head tilted at an angle, ears perked, inquisitive close-up expression, no props.",
+      "width": 451,
+      "height": 414,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "curious-question-mark.png",
+      "caption": "TÒ MÒ (?) — curious, with a floating question mark",
+      "depicts": "Front-facing, same inquisitive expression as curious.png, with a question mark floating beside the head.",
+      "width": 423,
+      "height": 370,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "disappointed.png",
+      "caption": "THẤT VỌNG — disappointed, eyes closed",
+      "depicts": "Eyes closed, head and ears drooping, downcast resigned expression.",
+      "width": 454,
+      "height": 414,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "excited.png",
+      "caption": "HÀO HỨNG — excited, paws clasped",
+      "depicts": "Mouth open, paws clasped together near the chest, sparkles flanking both sides, wide eyes.",
+      "width": 436,
+      "height": 364,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "happy.png",
+      "caption": "VUI VẺ — happy, close-up",
+      "depicts": "Closer-in crop, eyes closed, content closed-mouth smile.",
+      "width": 408,
+      "height": 376,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "happy-full-body.png",
+      "caption": "VUI VẺ (toàn thân) — happy, full body, ears spread wide",
+      "depicts": "Same closed-eye smile as happy.png, but framed as full body with the ears spread wider apart.",
+      "width": 406,
+      "height": 375,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "hugging-an-orb.png",
+      "caption": "ÔM CẦU — seated on the orb, cradling a small charm",
+      "depicts": "Seated cross-legged atop the glowing ringed orb, eyes closed, cradling a smaller round charm against its chest.",
+      "width": 484,
+      "height": 516,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "lying-prone.png",
+      "caption": "NẰM SẤP — lying prone atop the glowing orb",
+      "depicts": "Lying flat on its belly atop the glowing ringed orb, paws stretched forward, tail trailing behind.",
+      "width": 558,
+      "height": 447,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "neutral.png",
+      "caption": "BÌNH THẢN — neutral expression",
+      "depicts": "Front-facing, calm expression, no strong emotion.",
+      "width": 436,
+      "height": 381,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "noted.png",
+      "caption": "GHI CHÚ — writing on a scroll with a quill",
+      "depicts": "Seated, writing with a quill on a scroll laid flat on the ground.",
+      "width": 495,
+      "height": 424,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "proud.png",
+      "caption": "TỰ HÀO — proud, content smile with sparkles",
+      "depicts": "Eyes closed, content smile, blushing cheeks, sparkles around the head.",
+      "width": 442,
+      "height": 406,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "reading-on-the-orb.png",
+      "caption": "ĐỌC SÁCH — reading a scroll atop the ringed orb",
+      "depicts": "Seated atop the glowing ringed orb, unrolling and reading a scroll; a small secondary orb icon floats beside it.",
+      "width": 499,
+      "height": 500,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "reflecting.png",
+      "caption": "SUY NGẪM — watching a leaf float, lost in thought",
+      "depicts": "Standing, gazing upward at a single leaf floating above its head.",
+      "width": 537,
+      "height": 457,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "relax.png",
+      "caption": "THƯ GIÃN — relaxed, eyes closed",
+      "depicts": "Seated, eyes closed, tail curled in, calm restful posture.",
+      "width": 423,
+      "height": 375,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "short-yawn.png",
+      "caption": "NGÁP — mid-yawn, paws at the face",
+      "depicts": "Mouth open wide mid-yawn, paws raised near the face, eyes squeezed shut.",
+      "width": 543,
+      "height": 427,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "shy.png",
+      "caption": "NGƯỢNG NGÙNG — shy, paws covering the mouth",
+      "depicts": "Paws covering the lower face, blushing, a small red mark and sparkles near the ear.",
+      "width": 430,
+      "height": 399,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "sleepy.png",
+      "caption": "BUỒN NGỦ — sleepy, drowsy eyes",
+      "depicts": "Tight close-up crop, drooping half-closed eyes, paws folded low, no props.",
+      "width": 427,
+      "height": 388,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "sleepy-eyes-watering.png",
+      "caption": "BUỒN NGỦ (ầng ậc nước) — sleepy, eyes watering",
+      "depicts": "Same drowsy droop as sleepy.png, but with water droplets beading near the ear.",
+      "width": 460,
+      "height": 379,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "sulking.png",
+      "caption": "HỜN DỖI — sulking, arms crossed",
+      "depicts": "Arms crossed, pouty frown, a small huff-cloud beside its head.",
+      "width": 438,
+      "height": 420,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "surprised.png",
+      "caption": "NGẠC NHIÊN — surprised, mouth open",
+      "depicts": "Mouth open in a surprised \\\"O\\\", no extra marks.",
+      "width": 394,
+      "height": 391,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "surprised-exclamation.png",
+      "caption": "NGẠC NHIÊN (!!) — surprised, with exclamation marks",
+      "depicts": "Same surprised open-mouth expression as surprised.png, with two exclamation marks floating beside it.",
+      "width": 454,
+      "height": 319,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "thinking.png",
+      "caption": "SUY NGHĨ — thinking, paw at chin",
+      "depicts": "Arms crossed, one paw resting at the chin, contemplative look.",
+      "width": 427,
+      "height": 406,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "timid.png",
+      "caption": "RỤT RÈ — timid, peeking from behind a leaf",
+      "depicts": "Peeking out from behind a large held leaf, bashful expression.",
+      "width": 526,
+      "height": 474,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "worry.png",
+      "caption": "LO LẮNG — worried, paws clasped",
+      "depicts": "Paws clasped at the chest, ears drooping, concerned expression.",
+      "width": 370,
+      "height": 397,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
     }
   ]
 }
