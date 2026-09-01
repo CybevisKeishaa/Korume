@@ -77,6 +77,13 @@ export async function generateMetadata({
       template: "%s · Korume",
     },
     description: t("meta.description"),
+    // The Korume mark, served from `public/`. There is deliberately no
+    // `apple:` entry: no apple-touch icon has been drawn, and naming one that
+    // does not exist ships a 404 on every iOS "add to home screen".
+    icons: {
+      icon: "/korume.png",
+      shortcut: "/korume.png",
+    },
   };
 }
 
