@@ -102,6 +102,44 @@ describe("Section", () => {
     expect(region).toHaveAttribute("id", "problem");
   });
 
+  it("selects the split layout from `split` alone, with no rail element to show for it", () => {
+    // §7 is the first section whose rail carries only the eyebrow and heading:
+    // `346:6275` gives it no body paragraph and `messages/**` has no
+    // `trust.body`. Under the original `rail != null` selector that shape could
+    // not be expressed at all — `rail={null}` silently picked the STACKED
+    // layout instead, which is the composition the user rejected in §2.
+    const { container } = render(
+      <Section id="trust" eyebrow="Your data belongs to you" heading="Private. Secure." split>
+        <p>the showcase</p>
+      </Section>,
+    );
+
+    // The split's two columns exist...
+    const showcase = container.querySelector("[data-section-showcase]");
+    if (!showcase) throw new Error("`split` did not select the split layout");
+    expect(showcase.textContent).toBe("the showcase");
+    // ...and the heading takes the split's smaller token, not `text-display`.
+    const heading = screen.getByRole("heading", { level: 2, name: "Private. Secure." });
+    expect(heading.className).toContain("text-heading-lg");
+    expect(heading.className).not.toContain("text-display");
+    // ...but no empty rail wrapper is left behind to push `mt-md` of dead space
+    // under the heading.
+    expect(container.querySelectorAll("[data-section-rail]")).toHaveLength(0);
+  });
+
+  it("still stacks when neither `rail` nor `split` is given", () => {
+    // The positive control for the case above: `split` must be what changed the
+    // layout, not the mere presence of an eyebrow or of children.
+    const { container } = render(
+      <Section id="s" eyebrow="An eyebrow" heading="A heading">
+        <p>the showcase</p>
+      </Section>,
+    );
+
+    expect(container.querySelectorAll("[data-section-showcase]")).toHaveLength(0);
+    expect(screen.getByRole("heading", { level: 2 }).className).toContain("text-display");
+  });
+
   it("puts the rail beside the heading, not around the showcase", () => {
     // Guards the arrangement the composition depends on: rail copy shares the
     // narrow left column with the heading, and `children` stays out of it.

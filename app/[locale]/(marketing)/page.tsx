@@ -4,6 +4,7 @@ import { Journey } from "@/components/marketing/journey";
 import { PitchShowcase } from "@/components/marketing/pitch-showcase";
 import { Recommendation } from "@/components/marketing/recommendation";
 import { CapabilityChain } from "@/components/marketing/capability-chain";
+import { Trust } from "@/components/marketing/trust";
 
 export default function LandingPage() {
   return (
@@ -14,6 +15,7 @@ export default function LandingPage() {
       <PitchShowcase />
       <Recommendation />
       <CapabilityChain />
+      <Trust />
     </main>
   );
 }

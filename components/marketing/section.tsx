@@ -15,6 +15,20 @@ export interface SectionProps {
    * omitting it keeps the original stacked layout, byte for byte.
    */
   rail?: React.ReactNode;
+  /**
+   * Selects the split layout when the rail carries ONLY the eyebrow and
+   * heading. §7 is the first such consumer: `346:6275` draws it as a rail split
+   * whose rail has no body paragraph, and `messages/**` has no `trust.body` to
+   * put there — inventing one would be inventing product copy.
+   *
+   * ⚠️ TWO SELECTORS FOR ONE LAYOUT IS A SEAM TAKEN KNOWINGLY, NOT A DESIGN.
+   * `Section`'s layout API is already owed a decision at task 11, where
+   * §8 adds centred alignment and a third heading size. Collapse all of it
+   * there — the candidate shape is `layout?: "stacked" | "split"` with `rail`
+   * as pure content, which also retires the `!= null` guard below by
+   * construction. Do NOT add a third selector before that task.
+   */
+  split?: boolean;
   children: React.ReactNode;
   className?: string;
 }
@@ -82,6 +96,7 @@ export function Section({
   heading,
   headingLevel = 2,
   rail,
+  split = false,
   children,
   className,
 }: SectionProps) {
@@ -91,7 +106,7 @@ export function Section({
   // they will write is `rail={cond ? <Body /> : null}`. Under `!== undefined`
   // that selects the split layout with an empty rail div and a silently
   // narrowed heading — a layout change with no visible cause (fix F6).
-  const isSplit = rail != null;
+  const isSplit = split || rail != null;
 
   const headingBlock = (
     <>
@@ -129,9 +144,15 @@ export function Section({
             {/* `min-w-0` on both items: see the docblock's INVARIANT. */}
             <div className="min-w-0">
               {headingBlock}
-              <div data-section-rail className="mt-md">
-                {rail}
-              </div>
+              {/* Rendered only when the rail HAS body content: `split` selects
+                  this layout for §7, whose rail is eyebrow + heading alone, and
+                  an empty wrapper would put `mt-md` of dead space under the
+                  heading and a meaningless node in the tree. */}
+              {rail != null ? (
+                <div data-section-rail className="mt-md">
+                  {rail}
+                </div>
+              ) : null}
             </div>
             <div data-section-showcase className="min-w-0">
               {children}
