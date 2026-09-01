@@ -13,13 +13,44 @@
  * token classes, never from a width/height attribute and never from an inline
  * `stroke="hsl(var(--primary))"` (which would freeze the tone at the glyph).
  *
- * ## What each glyph is, and where it comes from
+ * ## What each glyph is, and where it comes from — AND where the two sources disagree
  *
  * Read off Figma `347:6835`, the §6 frame, one 18x18 `Icon` per node — the
  * eight are `347:6848`, `:6862`, `:6875`, `:6893`, `:6907`, `:6924`, `:6938`,
- * `:6953`. The reference render `346:6275` draws the SAME eight; at its export
- * scale each occupies ~16px, which is why they read as ambiguous blobs there
- * and the frame is the legible source. They reconcile shape for shape:
+ * `:6953`. **The frame is the icon source used below — this stays true after
+ * the correction in this docblock.** An earlier version of this comment
+ * claimed the flattened reference render `346:6275` draws the same eight
+ * shapes "shape for shape." That claim was false and has been withdrawn:
+ * a reviewer cropped the reference icons at 14x and found the frame and the
+ * reference DISAGREE on at least four of the eight —
+ *
+ *   grammar             frame: sparkles, one large and two small.
+ *                        reference (x406-434, y1324-1350): a closed A/chevron
+ *                        outline — no sparkle shape at all.
+ *   video (& context)    frame: a play mark inside a ring.
+ *                        reference (x52-80): a padlock/bag body with a
+ *                        shackle arc on top — no play mark.
+ *   jlpt                 frame: a shield with a check inside.
+ *                        reference: a square badge, not a shield.
+ *   conversation         frame: a speaker cone with two sound arcs.
+ *                        reference: a speech-bubble blob with a dot — no
+ *                        cone, no arcs.
+ *
+ * (`shadowing`, `kanji`, `vocabulary`, `memory` were not re-litigated here;
+ * treat them as unverified against the reference, not as confirmed matches.)
+ *
+ * **Controller ruling: the frame `347:6835` REMAINS the icon source. The
+ * glyphs below are NOT redrawn to chase the reference.** `346:6275` is a
+ * flattened PNG export, and this plan already refuses to take *copy* from
+ * that export for exactly this reason — a small raster mark is unreliable
+ * evidence, and a ~28px icon glyph is that same class of evidence. The frame
+ * is vector truth; the export is not. This divergence is recorded here for
+ * the design owner to resolve (retire one source, or accept the mismatch),
+ * not resolved by an implementer's own redraw. A successor can re-check it
+ * in one step: open `346:6275` at the coordinates above and compare against
+ * the glyphs this file draws.
+ *
+ * The glyphs actually drawn (per the frame, `347:6835`):
  *
  *   video         play mark inside a ring
  *   shadowing     headphones

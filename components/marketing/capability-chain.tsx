@@ -20,7 +20,7 @@ import type { Translator } from "./translator";
  * content against the design's 1216 (0.895):
  *
  *   node cell pitch   89 ref px -> 132 design -> ~118 CSS px  (built: ~114)
- *   icon tile         61 x 45   -> 90 x 67    -> 80 x 60      (built: 85 x 64)
+ *   icon tile         49-52x45  -> ~74 x 67   -> ~68 x 60     (built: ~75 x 64)
  *   companion         120 wide  -> 178        -> 159          (built: 160)
  *   caption measure   ~61       -> ~90        -> ~81          (built: ~98)
  *
@@ -29,6 +29,16 @@ import type { Translator } from "./translator";
  * break "Understand the characters deeply." into four lines where the reference
  * gets two. Sizing the measure to the TYPE rather than to the ratio is what
  * keeps the row reading as the reference's does.
+ *
+ * ⚠️ CORRECTED MEASUREMENT (fix round 1, I2). The icon tile row above used to
+ * read "61 x 45" — a number that was never actually sampled from the export
+ * and was off by ~18%. A reviewer re-measured the reference tile at three
+ * scanlines: 49-52 x 45 export px, ratio ~1.13 (a rounded square, matching
+ * what the brief said in prose the whole time), tile pitch 89. The tile is
+ * `aspect-[7/6]` (ratio 1.167, the closest token-scale-free fraction to 1.13)
+ * rather than the old `aspect-[4/3]` (1.33) — 4:3 was filling 75% of the cell
+ * where the reference gives the tile 58%, which is why the dashed run between
+ * tiles read cramped. See `ChainNode`'s tile `span` for the corrected class.
  *
  * ## Two connector layers, not one (T9-R5)
  *
@@ -233,7 +243,7 @@ function ChainNode({
             and later in DOM order, so its opaque `bg-card` paints OVER the
             dashes crossing behind it — which is how the reference's segments
             appear only in the gaps between tiles. */}
-        <span className="relative flex aspect-[4/3] h-3xl shrink-0 items-center justify-center rounded-md border border-border bg-card">
+        <span className="relative flex aspect-[7/6] h-3xl shrink-0 items-center justify-center rounded-md border border-border bg-card">
           <ChainIcon node={node} className="h-lg w-lg text-primary-strong" />
         </span>
       </div>

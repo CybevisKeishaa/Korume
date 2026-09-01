@@ -167,4 +167,40 @@ describe("CapabilityChain", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(8);
     expect(list.querySelectorAll("[data-chain-node]")).toHaveLength(8);
   });
+
+  /**
+   * I3 (review round 1). `CENTRED_HEAD` reaches into `Section`'s internals: it
+   * assumes `Section`'s unsplit branch renders exactly one un-nested `h2`
+   * carrying `max-w-3xl` (`section.tsx:106-116`), and overrides it from the
+   * outside via a `[&_h2]:mx-auto [&_h2]:text-title` arbitrary variant. Before
+   * this test, nothing asserted the outcome — only the accessible name was
+   * checked above — so if `Section` ever wrapped its heading or changed its
+   * tag, §6 would silently revert to a left-aligned 40px `text-display`
+   * heading with a fully green suite (the same composition failure that cost
+   * §2, §3 and §4 a whole rebuild task each). This vitest environment loads no
+   * CSS (see `vitest.config.ts` — no stylesheet pipeline), so `getComputedStyle`
+   * cannot see Tailwind's cascade; the outcome that CAN be asserted here is
+   * that the centring/size override literally reaches the DOM, targeting a
+   * heading that still matches `Section`'s assumption.
+   */
+  it("centres the head block and shrinks the heading below Section's default (I3)", async () => {
+    const { container } = render(await CapabilityChain());
+
+    const section = must(container.querySelector("section#chain"), "the #chain section");
+    // The override lives on the ancestor `<section>` as a `[&_h2]` arbitrary
+    // variant (Tailwind never rewrites it onto the h2's own className), so
+    // this is where the outcome is actually recorded in the DOM.
+    expect(section.className).toContain("[&_h2]:mx-auto");
+    expect(section.className).toContain("[&_h2]:text-title");
+
+    // The override is only meaningful if it targets exactly what Section's
+    // unsplit branch is documented to render: ONE un-nested h2 carrying
+    // `max-w-3xl` (the box `mx-auto` has to centre). If a future `Section`
+    // change breaks either fact, this line — not just a vibe — goes red.
+    const headings = section.querySelectorAll("h2");
+    expect(headings).toHaveLength(1);
+    const heading = must(headings[0] ?? null, "the section heading");
+    expect(heading).toHaveClass("max-w-3xl");
+    expect(heading).not.toHaveClass("text-heading-lg"); // the split-layout size, not this one
+  });
 });
