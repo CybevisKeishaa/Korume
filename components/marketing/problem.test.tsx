@@ -3,14 +3,17 @@ import { render, screen } from "@/test/render";
 import { Problem } from "./problem";
 import en from "@/messages/en/marketing.json";
 
-const CHIP_NAMES = [
-  "Vocabulary",
-  "Grammar",
-  "Kanji",
-  "Pronunciation",
-  "Listening",
-  "SRS Review",
-] as const;
+/**
+ * The six chip keys, DERIVED from the catalog rather than retyped (the pattern
+ * `capability-chain.test.tsx` established for §6), so a copy pass that
+ * re-voices a chip name — as 2026-09-01's did with "SRS Review" -> "SRS
+ * review" — no longer turns this file red while the component is still right.
+ *
+ * ⚠️ Membership only, not order: `data-chip` is a valueless attribute here
+ * (unlike §3's `data-step` and §6's `data-chain-node`), so there is nothing in
+ * the DOM to compare an order against without changing the component.
+ */
+const CHIP_KEYS = Object.keys(en.problem.chips) as Array<keyof typeof en.problem.chips>;
 
 describe("Problem", () => {
   it("renders all six capability chips", async () => {
@@ -18,9 +21,9 @@ describe("Problem", () => {
 
     const chips = container.querySelectorAll("[data-chip]");
     expect(chips).toHaveLength(6);
-    expect(CHIP_NAMES).toHaveLength(6);
-    for (const name of CHIP_NAMES) {
-      expect(screen.getByText(name)).toBeInTheDocument();
+    expect(CHIP_KEYS).toHaveLength(6);
+    for (const key of CHIP_KEYS) {
+      expect(screen.getByText(en.problem.chips[key].name)).toBeInTheDocument();
     }
   });
 
@@ -37,14 +40,17 @@ describe("Problem", () => {
   it("never renders the frame's placeholder sub-label", async () => {
     const { container } = render(await Problem());
 
+    // ⚠️ Pinned literally ON PURPOSE, and NOT derivable from the catalog: this
+    // is the Figma frame's repeated placeholder, which deliberately has no key
+    // in `messages/`. Its absence is the assertion.
     expect(container.textContent).not.toContain("Learn in context");
   });
 
   it("centres the example sentence the six chips are about", async () => {
     render(await Problem());
 
-    expect(screen.getByText("この店、思ったより安いね。")).toBeInTheDocument();
-    expect(screen.getByText("This place is cheaper than I thought.")).toBeInTheDocument();
+    expect(screen.getByText(en.problem.example.jp)).toBeInTheDocument();
+    expect(screen.getByText(en.problem.example.en)).toBeInTheDocument();
   });
 
   it("marks the constellation connectors decorative and hides them from assistive tech", async () => {

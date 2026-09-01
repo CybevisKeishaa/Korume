@@ -14,8 +14,14 @@ describe("Hero", () => {
   it("offers both hero CTAs, pointing at register and the explore surface", async () => {
     render(await Hero());
 
-    expect(screen.getByRole("link", { name: "Start Learning" })).toHaveAttribute("href", "/en/register");
-    expect(screen.getByRole("link", { name: "Explore Korume" })).toHaveAttribute(
+    // Names from the catalog, hrefs pinned: the destination is the invariant,
+    // the wording is the owner's to re-voice (see the header note in
+    // `site-header.test.tsx`).
+    expect(screen.getByRole("link", { name: en.hero.cta })).toHaveAttribute(
+      "href",
+      "/en/register",
+    );
+    expect(screen.getByRole("link", { name: en.hero.ctaSecondary })).toHaveAttribute(
       "href",
       "/en/shadowing/explore",
     );
@@ -119,23 +125,24 @@ describe("Hero", () => {
   it("shows the video card's metadata", async () => {
     render(await Hero());
 
-    expect(screen.getByText("Travel to Japan: Kyoto in Autumn")).toBeInTheDocument();
-    expect(screen.getByText("N3")).toBeInTheDocument();
-    expect(screen.getByText("13 min")).toBeInTheDocument();
-    expect(screen.getByText("1 / 29")).toBeInTheDocument();
+    expect(screen.getByText(en.hero.video.title)).toBeInTheDocument();
+    expect(screen.getByText(en.hero.video.level)).toBeInTheDocument();
+    expect(screen.getByText(en.hero.video.duration)).toBeInTheDocument();
+    expect(screen.getByText(en.hero.sentence.position)).toBeInTheDocument();
   });
 
-  it("renders exactly the four depicted tabs, Transcript / Japanese / English / Notes", async () => {
+  it("renders exactly the four depicted tabs, in catalog order", async () => {
     const { container } = render(await Hero());
+
+    // Derived from `en.hero.tabs` rather than retyped, the way §5 and §6 do
+    // it. `Object.values` also pins the ORDER, so a reshuffled tab strip
+    // fails here even though every label still appears somewhere.
+    const labels = Object.values(en.hero.tabs);
+    expect(labels).toHaveLength(4);
 
     const tabs = container.querySelectorAll("[data-hero-tabs] li");
     expect(tabs).toHaveLength(4);
-    expect(Array.from(tabs).map((tab) => tab.textContent)).toEqual([
-      "Transcript",
-      "Japanese",
-      "English",
-      "Notes",
-    ]);
+    expect(Array.from(tabs).map((tab) => tab.textContent)).toEqual(labels);
   });
 
   it("ruling 4: builds exactly two transcript lines, matching the catalog (not the reference's three)", async () => {

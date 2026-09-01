@@ -3,7 +3,17 @@ import { render, screen } from "@/test/render";
 import { Journey } from "./journey";
 import en from "@/messages/en/marketing.json";
 
-const STEPS = ["Watch", "Understand", "Shadow", "Mine", "Remember"] as const;
+/**
+ * The five step keys, DERIVED from the catalog rather than retyped, the way
+ * `capability-chain.test.tsx` derives its eight node keys.
+ *
+ * The keys double as the `data-step` values, so one constant pins both the
+ * ORDER of the row and the identity of each card, and the names come from the
+ * same place the component reads them. Retyping the names is what turned this
+ * file red on the owner's 2026-09-01 copy pass, which renamed `mine` from
+ * "Mine" to "Keep" without touching a single line of the component.
+ */
+const STEP_KEYS = Object.keys(en.journey.steps) as Array<keyof typeof en.journey.steps>;
 
 describe("Journey", () => {
   it("renders the five steps as ONE row — the frame breaks it into a column plus a row", async () => {
@@ -11,16 +21,10 @@ describe("Journey", () => {
 
     const cards = container.querySelectorAll("[data-step]");
     expect(cards).toHaveLength(5);
-    expect(STEPS).toHaveLength(5);
-    expect(Array.from(cards).map((c) => c.getAttribute("data-step"))).toEqual([
-      "watch",
-      "understand",
-      "shadow",
-      "mine",
-      "remember",
-    ]);
-    for (const name of STEPS) {
-      expect(screen.getByText(name)).toBeInTheDocument();
+    expect(STEP_KEYS).toHaveLength(5);
+    expect(Array.from(cards).map((c) => c.getAttribute("data-step"))).toEqual(STEP_KEYS);
+    for (const key of STEP_KEYS) {
+      expect(screen.getByText(en.journey.steps[key].name)).toBeInTheDocument();
     }
   });
 

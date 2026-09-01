@@ -2,15 +2,26 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@/test/render";
 import { SiteHeader } from "./site-header";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
+import en from "@/messages/en/marketing.json";
 
-/** The six marketing nav destinations, ruled by the user 2026-08-27 (spec §2.2). */
-const EXPECTED_LINKS: ReadonlyArray<readonly [string, string]> = [
-  ["Explore", "/en/shadowing/explore"],
-  ["Shadowing", "/en/shadowing"],
-  ["Kanji", "/en/kanji"],
-  ["Grammar", "/en/grammar"],
-  ["Practice", "/en/review"],
-  ["Companion", "/en/companion"],
+/**
+ * The six marketing nav destinations, ruled by the user 2026-08-27 (spec §2.2).
+ *
+ * ⚠️ The KEY and the HREF are pinned literally — they are the ruling, and a
+ * route silently changing is exactly what this test exists to catch. The LABEL
+ * is read from the catalog instead of retyped: the project owner re-voices the
+ * English copy directly in `messages/en/marketing.json`, and a test that
+ * retypes a label goes red on a copy pass that broke nothing. That is not a
+ * hypothetical — the 2026-09-01 pass renamed `nav.ariaLabel` and `nav.cta`
+ * and turned this file red while the component was still correct.
+ */
+const EXPECTED_LINKS: ReadonlyArray<readonly [keyof typeof en.nav, string]> = [
+  ["explore", "/en/shadowing/explore"],
+  ["shadowing", "/en/shadowing"],
+  ["kanji", "/en/kanji"],
+  ["grammar", "/en/grammar"],
+  ["practice", "/en/review"],
+  ["companion", "/en/companion"],
 ];
 
 describe("SiteHeader", () => {
@@ -40,21 +51,27 @@ describe("SiteHeader", () => {
   it("renders exactly the six ruled marketing nav destinations", async () => {
     render(await SiteHeader());
 
-    const nav = screen.getByRole("navigation", { name: "Primary" });
+    const nav = screen.getByRole("navigation", { name: en.nav.ariaLabel });
     const links = Array.from(nav.querySelectorAll("a[data-nav-item]"));
 
     expect(links).toHaveLength(EXPECTED_LINKS.length);
     expect(EXPECTED_LINKS).toHaveLength(6);
     expect(links.map((a) => [a.textContent, a.getAttribute("href")])).toEqual(
-      EXPECTED_LINKS.map(([label, href]) => [label, href]),
+      EXPECTED_LINKS.map(([key, href]) => [en.nav[key], href]),
     );
   });
 
   it("offers sign-in and get-started, and never GitHub (P14)", async () => {
     render(await SiteHeader());
 
-    expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/en/login");
-    expect(screen.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/en/register");
+    expect(screen.getByRole("link", { name: en.nav.signIn })).toHaveAttribute(
+      "href",
+      "/en/login",
+    );
+    expect(screen.getByRole("link", { name: en.nav.cta })).toHaveAttribute(
+      "href",
+      "/en/register",
+    );
     expect(screen.queryByText(/github/i)).toBeNull();
   });
 });

@@ -20,6 +20,33 @@ function must<T>(value: T | null | undefined, what: string): T {
 }
 
 /**
+ * The four sub-score keys, in the order the card renders them.
+ *
+ * ⚠️ These are pinned literally because they are the component's
+ * `data-subscore` CONTRACT, not copy — `en.pitch.scores` also holds
+ * `overallLabel` / `overall` / `verdict`, so `Object.keys` would be wrong here.
+ * Every VALUE below is read from the catalog instead of retyped: the owner
+ * re-voices `messages/en/marketing.json` directly, and the 2026-09-01 pass
+ * (`"Great!"` -> `"Nice work!"`) turned this file red without the component
+ * changing at all.
+ */
+const SUBSCORE_KEYS = ["pitch", "rhythm", "pronunciation", "timing"] as const;
+
+/** The catalog's own `"86/100"`-shaped strings, in render order. */
+const SUBSCORE_VALUES: string[] = SUBSCORE_KEYS.map((key) => en.pitch.scores[key].value);
+
+/**
+ * Splits a `"86/100"` pair the way the component does at render time — into a
+ * green number and a grey suffix. Throws rather than returning a silent `""`,
+ * so a catalog value that stops being a pair fails loudly here.
+ */
+function splitScore(value: string): { number: string; suffix: string } {
+  const slash = value.indexOf("/");
+  if (slash < 0) throw new Error(`sub-score "${value}" is not a "<n>/<max>" pair`);
+  return { number: value.slice(0, slash), suffix: value.slice(slash) };
+}
+
+/**
  * Asserts that `selector` matches nothing under `root` — after first PROVING
  * the selector can match, by inserting a node that satisfies it and watching
  * the count go to 1.
@@ -59,8 +86,8 @@ describe("PitchShowcase", () => {
   it("labels which curve is which", async () => {
     render(await PitchShowcase());
 
-    expect(screen.getByText("Native")).toBeInTheDocument();
-    expect(screen.getByText("You")).toBeInTheDocument();
+    expect(screen.getByText(en.pitch.legend.native)).toBeInTheDocument();
+    expect(screen.getByText(en.pitch.legend.you)).toBeInTheDocument();
   });
 
   it("gives the chart an accessible name, carried by the chart alone", async () => {
@@ -245,10 +272,7 @@ describe("PitchShowcase", () => {
     const subscores = container.querySelectorAll("[data-subscore]");
     expect(subscores).toHaveLength(4);
     expect(Array.from(subscores).map((el) => el.getAttribute("data-subscore"))).toEqual([
-      "pitch",
-      "rhythm",
-      "pronunciation",
-      "timing",
+      ...SUBSCORE_KEYS,
     ]);
 
     // ⚠️ Task A3: `getByText("86/100")` no longer applies. The value is split
@@ -256,12 +280,14 @@ describe("PitchShowcase", () => {
     // styling), and testing-library matches on an element's own direct text
     // nodes — so the two halves are asserted where they live, and the pair is
     // asserted to still read as one string.
-    const scores = ["86/100", "84/100", "82/100", "90/100"];
-    expect(Array.from(subscores).map((el) => el.querySelector("dd")?.textContent)).toEqual(scores);
-    expect(screen.getByText("86")).toBeInTheDocument();
-    expect(screen.getAllByText("/100")).toHaveLength(4);
-    expect(screen.getByText("87")).toBeInTheDocument();
-    expect(screen.getByText("Great!")).toBeInTheDocument();
+    expect(Array.from(subscores).map((el) => el.querySelector("dd")?.textContent)).toEqual(
+      SUBSCORE_VALUES,
+    );
+    const first = splitScore(must(SUBSCORE_VALUES[0], "the first sub-score value"));
+    expect(screen.getByText(first.number)).toBeInTheDocument();
+    expect(screen.getAllByText(first.suffix)).toHaveLength(4);
+    expect(screen.getByText(en.pitch.scores.overall)).toBeInTheDocument();
+    expect(screen.getByText(en.pitch.scores.verdict)).toBeInTheDocument();
   });
 
   it("styles the sub-score value as a number plus a suffix, not one uniform string", async () => {
@@ -271,7 +297,9 @@ describe("PitchShowcase", () => {
     const suffixes = container.querySelectorAll("[data-score-suffix]");
     expect(numbers).toHaveLength(4);
     expect(suffixes).toHaveLength(4);
-    expect(Array.from(numbers).map((n) => n.textContent)).toEqual(["86", "84", "82", "90"]);
+    expect(Array.from(numbers).map((n) => n.textContent)).toEqual(
+      SUBSCORE_VALUES.map((value) => splitScore(value).number),
+    );
     for (const number of Array.from(numbers)) {
       expect(number.className).toContain("text-success-strong");
     }
