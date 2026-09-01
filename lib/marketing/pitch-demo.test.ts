@@ -137,8 +137,12 @@ describe("pitch demo fixtures", () => {
     const at = (i: number) => must(hz[i], `frame ${i}`);
     expect(at(first.end - 1)).toBeGreaterThan(at(first.start));
 
-    // The phrase's high point falls in とても — the first third of the second
-    // accent phrase (three morae of nine).
+    // The phrase's high point falls in とても — inside the first third of the
+    // second accent phrase. とても美しいですね is ELEVEN morae (と て も う つ
+    // く し い で す ね), so a third of it is とても plus a fraction of う;
+    // "three morae of nine" here was simply wrong about the sentence (fix
+    // round 1, F7). The window is still tight enough to exclude 秋, which is
+    // where the mutation check moves the peak to.
     const peak = Math.max(...hz.filter((v) => !Number.isNaN(v)));
     const peakIndex = hz.indexOf(peak);
     const totemoEnd = second.start + (second.end - second.start) / 3;

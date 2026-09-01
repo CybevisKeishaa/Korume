@@ -22,15 +22,39 @@ import type { Translator } from "./translator";
  * geometry is fixed in one place. The card's own split is local to this
  * section.
  *
- * ⚠️ The inner split is 2fr/1fr, not the 5fr/2fr the rail uses. Measured off
- * the reference crop (`s4-pitch.png`, a 2x export) by a luminance column
- * profile rather than by eye: the card's border columns sit at x=514 and
- * x=1654 and the column divider at x=1242, so the score column is 36% of the
- * card's outer width and ~35% of its content width once the card's padding and
- * the column gap are taken out. The task brief's prose said "~28%"; the
- * reference is the binding authority (spec §13.1(2)) and 28% leaves the
- * Companion's three-line body about 78 CSS px to wrap into at `lg`, which is
- * how the deviation was noticed. Reported to the controller.
+ * ⚠️ The inner split is 9fr/5fr, not the 5fr/2fr the rail uses, and it does NOT
+ * carry a column divider. Both follow from a re-measurement of the reference
+ * (fix round 1, F2); the first build's "column divider at x=1242" was wrong.
+ * Measured on `ref/s4-pitch.png` by luminance differencing:
+ *
+ *   showcase card borders   x = 514 .. 1654
+ *   chart panel             x = 550 .. 1282  (its own bordered frame)
+ *   score block rules       x = 1300 .. 1619
+ *   Companion card          x = 1242 .. 1658, y 296..410
+ *
+ * x=1242 is a vertical that exists ONLY in y 300..405 — it is the COMPANION
+ * CARD's left border, not a column boundary; there is no vertical anywhere
+ * between x=550 and x=1280 in the chart's own band (y 50..235). So of the
+ * card's 1069-px content width the reference gives the chart panel 68.5%, the
+ * gap 1.7% and the score block 29.8% — while letting the Companion card alone
+ * run to 38.9%, wider than the score block above it at both ends.
+ *
+ * A single column cannot be 29.8% and 38.9% at once, and shrinking the chart
+ * to buy the difference would push it further from the reference's 68.5% than
+ * the first build already was (64.4%). So the width comes from two places
+ * instead:
+ *
+ *  1. the column divider is GONE. The reference has none — the chart panel's
+ *     own right border is the separation — and dropping `lg:border-l`/`lg:pl-lg`
+ *     returns 25 CSS px to the Companion at no cost to the chart;
+ *  2. the split moves 2fr/1fr -> 9fr/5fr, chart 64.4% -> 62.1% of content.
+ *
+ * Together the Companion's body measure goes from 103.8 to ~145 CSS px, which
+ * is the reference's own measure to within a couple of px once its 1069-px
+ * content width is scaled onto ours. Note the underlying constraint that no
+ * ratio fixes: our showcase card is 754 CSS px where the reference's is ~950,
+ * so every absolute measure here starts ~21% short. That is the `Section`
+ * container's geometry and is not this section's to change.
  *
  * ## The numbers are not claims
  *
@@ -80,16 +104,20 @@ const MASCOT = "/mascot/poses/noting.png";
 const MASCOT_WIDTH = 104;
 const MASCOT_HEIGHT = 93;
 /**
- * The slot renders at a fixed 104 CSS px at every viewport — it is a decorative
- * fixed-size element, not a fluid one — so `sizes` is that width, flat.
+ * The slot renders at a fixed `MASCOT_WIDTH` CSS px at every viewport — it is a
+ * decorative fixed-size element, not a fluid one — so `sizes` is that width,
+ * flat. DERIVED, never restated (CLAUDE.md §6 "one fact, one home", fix round 1
+ * F3): a literal `"104px"` here is the same fact in a second hand-synced home,
+ * and changing the width without it leaves the hint silently wrong while every
+ * test stays green.
  *
  * ⚠️ This replaces `unoptimized`, whose comment called this "a fixed local
  * decorative icon". It is not an icon: `noting.png` is 340x304 and 166 KB, and
  * `unoptimized` shipped all 166 KB to paint ~100 px. With the optimizer and
- * this hint the browser picks the 128px variant instead — measured at 4.9 KB
- * in the browser, a 34x saving. See the task report.
+ * this hint the browser picks a small variant instead — measured at 4.9 KB in
+ * the browser at DPR 1, a 34x saving. See the task report.
  */
-const MASCOT_SIZES = "104px";
+const MASCOT_SIZES = `${MASCOT_WIDTH}px`;
 
 export async function PitchShowcase() {
   const t = await getTranslations("marketing");
@@ -116,7 +144,7 @@ export async function PitchShowcase() {
             its own two (see that file's INVARIANT): below `lg` this collapses
             to one implicit `auto` track whose minimum is content-based, and the
             chart column holds a full-width SVG and a four-column score row. */}
-        <div className="grid gap-lg lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="grid gap-lg lg:grid-cols-[minmax(0,9fr)_minmax(0,5fr)]">
           <div className="min-w-0">
             <PitchChart t={t} />
 
@@ -132,8 +160,13 @@ export async function PitchShowcase() {
           {/* `flex flex-col` + the Companion's `lg:mt-auto`: the grid stretches
               this cell to the chart column's height, and the reference sets the
               Companion card against the card's bottom rather than leaving a
-              well of dead space under it. */}
-          <div className="flex min-w-0 flex-col lg:border-l lg:border-border lg:pl-lg">
+              well of dead space under it.
+
+              No `lg:border-l`/`lg:pl-lg`: the reference draws no rule between
+              these columns — the chart panel's own right border is what
+              separates them — and the 25 px they cost was coming straight out
+              of the Companion's text measure (fix round 1, F2). */}
+          <div className="flex min-w-0 flex-col">
             <p className="text-caption text-muted-foreground">{t("pitch.scores.overallLabel")}</p>
             <p className="font-display text-display font-bold">{t("pitch.scores.overall")}</p>
             <p className="text-body-lg text-success-strong">{t("pitch.scores.verdict")}</p>

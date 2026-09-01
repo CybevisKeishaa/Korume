@@ -64,19 +64,65 @@ const USER_STROKE = 1.4;
  * give the contour a plane to move against instead of floating in a void.
  * Purely decorative — they carry no scale, no tick labels and no value, so
  * they need no catalog string and are hidden from assistive tech.
+ *
+ * ## Why THREE, and why the panel (fix round 1, F1 + F4)
+ *
+ * The first build drew FOUR rules and no frame, on the reading that "two are
+ * clearly visible in the 4x crop, consistent with four evenly spaced rules".
+ * Re-measured on `ref/s4-pitch.png` (luminance differenced against y±8 to
+ * defeat the card's vertical gradient) the reference is unambiguous:
+ *
+ *   verticals   x = 550 and x = 1280..1283, both spanning y 48..235
+ *   horizontals y = 44, 92, 140, 190, 238 — five rules, evenly spaced 48 apart
+ *   the y=44 and y=238 rules run exactly 550..1280, i.e. the verticals' span
+ *
+ * So the reference frames its chart in a BORDERED INSET PANEL whose own top
+ * and bottom edges are the outer two lines of an even five-line grid, with
+ * THREE interior rules inside it. The build's fourth rule was a misreading,
+ * and `expect(lines).toHaveLength(4)` then froze the misreading in a test that
+ * mutation-checked perfectly against the implementer's own constant.
+ *
+ * The panel is a real CSS border on the wrapper rather than an SVG `<rect>`:
+ * that keeps it on the `--border` token, gives it the radius scale, and — the
+ * reason that matters — makes the five-line grid EVEN BY CONSTRUCTION at every
+ * width, because the SVG fills the wrapper's content box exactly and the three
+ * interior rules sit at H/4, H/2, 3H/4 of it.
+ *
+ * ⚠️ Known divergence: the reference puts the legend INSIDE the panel, in the
+ * grid's top band. Ours sits above the panel. Our showcase card is ~21%
+ * narrower than the reference's, so at 320px the panel is ~75 CSS px tall and
+ * a top band would be ~19px — less than the 18px line box of the caption plus
+ * any padding, so the legend would spill onto the trace. Reported, not fixed.
  */
-const GRIDLINE_COUNT = 4;
+const GRIDLINE_COUNT = 3;
 const GRIDLINE_YS = Array.from(
   { length: GRIDLINE_COUNT },
   (_, i) => ((i + 1) * VIEWBOX_HEIGHT) / (GRIDLINE_COUNT + 1),
 );
+
+/**
+ * ~1 CSS px at 1280, where the viewBox scales by 0.73 — so an interior rule
+ * draws at the same weight as the panel's own 1px CSS border and the five-line
+ * grid reads as one grid rather than as a box with fainter lines inside it.
+ */
+const GRIDLINE_STROKE = 1.4;
+
+/**
+ * The traces are plotted into an inset region of the panel rather than edge to
+ * edge, so a round line cap at either end never lands on the frame. Both are
+ * viewBox coordinates (the house exception the docblock records).
+ */
+const PLOT_INSET_X = 14;
+const PLOT_INSET_Y = 18;
+const PLOT_WIDTH = VIEWBOX_WIDTH - PLOT_INSET_X * 2;
+const PLOT_HEIGHT = VIEWBOX_HEIGHT - PLOT_INSET_Y * 2;
 
 /** Internal coordinate system for the legend line swatches (see the docblock). */
 const SWATCH_VIEW_WIDTH = 24;
 const SWATCH_VIEW_HEIGHT = 8;
 
 function contourPath(contour: PitchContour, range: SemitoneRange): string {
-  const { points } = toPlotPoints(contour, DEMO_REF_HZ, VIEWBOX_WIDTH, VIEWBOX_HEIGHT, range);
+  const { points } = toPlotPoints(contour, DEMO_REF_HZ, PLOT_WIDTH, PLOT_HEIGHT, range);
   return toPath(points);
 }
 
@@ -133,38 +179,58 @@ export function PitchChart({ t }: { t: Translator }) {
         </span>
       </div>
 
-      <svg
-        role="img"
-        aria-label={t("pitch.chartLabel")}
-        viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-        className="mt-sm w-full"
-        preserveAspectRatio="none"
+      {/* The inset plot panel. Its own top and bottom borders are the outer two
+          lines of the reference's even five-line grid — see GRIDLINE_COUNT.
+          `overflow-hidden` is what lets the rules run the panel's full width
+          without poking through the corner radius. No padding: the SVG fills
+          the content box exactly, which is what keeps the grid even. */}
+      <div
+        data-plot-panel
+        className="mt-sm overflow-hidden rounded-md border border-border"
       >
-        <g data-gridlines aria-hidden="true" className="stroke-border">
-          {GRIDLINE_YS.map((y) => (
-            <line key={y} data-gridline x1={0} y1={y} x2={VIEWBOX_WIDTH} y2={y} strokeWidth={1} />
-          ))}
-        </g>
-        <path
-          data-contour="native"
-          d={nativePath}
-          fill="none"
-          className="stroke-primary-strong"
-          strokeWidth={NATIVE_STROKE}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          data-contour="you"
-          d={userPath}
-          fill="none"
-          className="stroke-muted-foreground"
-          strokeWidth={USER_STROKE}
-          strokeDasharray={USER_DASH}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+        <svg
+          role="img"
+          aria-label={t("pitch.chartLabel")}
+          viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+          className="block w-full"
+          preserveAspectRatio="none"
+        >
+          <g data-gridlines aria-hidden="true" className="stroke-border">
+            {GRIDLINE_YS.map((y) => (
+              <line
+                key={y}
+                data-gridline
+                x1={0}
+                y1={y}
+                x2={VIEWBOX_WIDTH}
+                y2={y}
+                strokeWidth={GRIDLINE_STROKE}
+              />
+            ))}
+          </g>
+          <g transform={`translate(${PLOT_INSET_X} ${PLOT_INSET_Y})`}>
+            <path
+              data-contour="native"
+              d={nativePath}
+              fill="none"
+              className="stroke-primary-strong"
+              strokeWidth={NATIVE_STROKE}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              data-contour="you"
+              d={userPath}
+              fill="none"
+              className="stroke-muted-foreground"
+              strokeWidth={USER_STROKE}
+              strokeDasharray={USER_DASH}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
+        </svg>
+      </div>
     </>
   );
 }

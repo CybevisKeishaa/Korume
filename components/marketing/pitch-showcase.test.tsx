@@ -8,6 +8,42 @@ function pathYs(d: string): number[] {
   return Array.from(d.matchAll(/[ML]\s*-?[\d.]+\s+(-?[\d.]+)/g)).map((m) => Number(m[1]));
 }
 
+/** Every `<width>w` descriptor in a srcset, in source order. */
+function srcsetWidths(srcset: string): number[] {
+  return Array.from(srcset.matchAll(/\s(\d+)w/g)).map((m) => Number(m[1]));
+}
+
+/** Narrows a query result, failing the test loudly instead of skipping silently. */
+function must<T>(value: T | null | undefined, what: string): T {
+  if (value === null || value === undefined) throw new Error(`expected to find ${what}`);
+  return value;
+}
+
+/**
+ * Asserts that `selector` matches nothing under `root` — after first PROVING
+ * the selector can match, by inserting a node that satisfies it and watching
+ * the count go to 1.
+ *
+ * Fix round 1, F6 (CLAUDE.md §7): a bare `toHaveLength(0)` over a collection
+ * gathered by a pattern is green when the invariant holds AND green when the
+ * pattern is simply wrong — a typo'd selector reports safety. The positive
+ * control is what makes the negative assertion mean something.
+ */
+function expectSelectorMatchesNothing(
+  root: ParentNode,
+  selector: string,
+  probeParent: Element,
+  probe: Element,
+): void {
+  expect(root.querySelectorAll(selector), `"${selector}" must match nothing`).toHaveLength(0);
+  probeParent.appendChild(probe);
+  expect(
+    root.querySelectorAll(selector),
+    `positive control: "${selector}" must find the probe it was given`,
+  ).toHaveLength(1);
+  probe.remove();
+}
+
 describe("PitchShowcase", () => {
   it("draws TWO contours — the frame draws bars, which misrepresents a continuous quantity", async () => {
     const { container } = render(await PitchShowcase());
@@ -124,14 +160,79 @@ describe("PitchShowcase", () => {
     expect(group?.getAttribute("aria-hidden")).toBe("true");
 
     const lines = container.querySelectorAll("[data-gridline]");
-    expect(lines).toHaveLength(4);
+    expect(lines.length).toBeGreaterThan(0);
     for (const line of Array.from(lines)) {
       expect(line).not.toHaveAttribute("role");
       expect(line).not.toHaveAttribute("aria-label");
       expect(line).not.toHaveAttribute("tabindex");
     }
-    // Nothing in the chart is in the tab order at all.
-    expect(container.querySelectorAll("svg [tabindex]")).toHaveLength(0);
+
+    // Nothing in the chart is in the tab order at all — with a positive
+    // control, so a broken selector cannot report safety (F6).
+    const chart = must(container.querySelector("svg[role='img']"), "the chart svg");
+    const focusableProbe = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    focusableProbe.setAttribute("tabindex", "0");
+    expectSelectorMatchesNothing(container, "svg [tabindex]", chart, focusableProbe);
+  });
+
+  it("frames the plot in a bordered panel whose own edges complete an even five-line grid", async () => {
+    // ⚠️ THE COUNT BELOW IS READ OFF THE REFERENCE, NOT OFF THE COMPONENT.
+    // Fix round 1, F1/F4: the first build drew FOUR interior rules and no
+    // frame, and pinned `toHaveLength(4)` — which mutation-checks perfectly
+    // against a constant the implementer chose, and could never go red for
+    // being wrong about the reference.
+    //
+    // Re-measured on the reference crop `ref/s4-pitch.png` (1728x440, the §4
+    // export), by differencing each pixel against the same column at y±8 to
+    // defeat the card's vertical gradient:
+    //
+    //   horizontal rules  y = 44, 92, 140, 190, 238   (five, evenly 48 apart)
+    //   vertical rules    x = 550 and x = 1280..1283, both spanning y 48..235
+    //   the y=44 rule runs x 554..1271, the y=238 rule x 556..1275
+    //
+    // i.e. the outer two horizontals run exactly the verticals' span, so they
+    // are the panel's own top and bottom border and only THREE rules are
+    // interior. Confirmed by eye on a 2x gain-boosted crop of the same file:
+    // a rounded bordered box with three faint rules behind the trace.
+    const REFERENCE_INTERIOR_GRIDLINES = 3;
+
+    const { container } = render(await PitchShowcase());
+
+    const panelEl = container.querySelector("[data-plot-panel]");
+    expect(panelEl, "the plot panel must exist").not.toBeNull();
+    const panel = must(panelEl, "the plot panel");
+    expect(
+      panel.className,
+      "the panel is the grid's outer two lines — it must be bordered",
+    ).toContain("border-border");
+
+    // The panel FRAMES the chart; the chart is not merely near it.
+    const chartEl = panel.querySelector("svg[role='img']");
+    expect(chartEl, "the chart must be inside the panel").not.toBeNull();
+    const chart = must(chartEl, "the chart svg inside the panel");
+
+    const height = Number((chart.getAttribute("viewBox") ?? "").split(/\s+/)[3]);
+    expect(height).toBeGreaterThan(0);
+
+    const ys = Array.from(container.querySelectorAll("[data-gridline]")).map((line) =>
+      Number(line.getAttribute("y1")),
+    );
+    expect(ys).toHaveLength(REFERENCE_INTERIOR_GRIDLINES);
+    for (const y of ys) {
+      // Interior: strictly inside the panel, never coincident with its border.
+      expect(y).toBeGreaterThan(0);
+      expect(y).toBeLessThan(height);
+    }
+
+    // The panel's own edges are lines 1 and 5 of the grid, and all four bands
+    // are equal — the property that makes the frame read as part of the grid
+    // rather than as a box drawn around it.
+    const grid = [0, ...ys, height];
+    const gaps = grid.slice(1).map((y, i) => y - Number(grid[i]));
+    expect(gaps).toHaveLength(REFERENCE_INTERIOR_GRIDLINES + 1);
+    for (const gap of gaps) {
+      expect(gap).toBeCloseTo(height / (REFERENCE_INTERIOR_GRIDLINES + 1), 6);
+    }
   });
 
   it("shows all four sub-scores and the overall score", async () => {
@@ -187,11 +288,16 @@ describe("PitchShowcase", () => {
     expect(withRule).toHaveLength(4);
     expect(cells.filter((c) => c.className.includes("sm:first:border-l-0"))).toHaveLength(4);
 
-    // No separator element, no aria role, no invented string.
-    const list = container.querySelector("dl");
-    expect(list).not.toBeNull();
-    expect(list?.querySelectorAll("[role]")).toHaveLength(0);
-    expect(list?.querySelectorAll("hr")).toHaveLength(0);
+    // No separator element, no aria role, no invented string — each asserted
+    // with a positive control first, so a wrong selector cannot pass as an
+    // absence (F6).
+    const list = must(container.querySelector("dl"), "the sub-score list");
+
+    const roleProbe = document.createElement("span");
+    roleProbe.setAttribute("role", "separator");
+    expectSelectorMatchesNothing(list, "[role]", list, roleProbe);
+
+    expectSelectorMatchesNothing(list, "hr", list, document.createElement("hr"));
   });
 
   it("renders the mascot from a manifested pose, not a Blender render", async () => {
@@ -240,17 +346,36 @@ describe("PitchShowcase", () => {
     expect(copy?.className).toContain("z-10");
   });
 
-  it("tells the browser how wide the mascot actually renders", async () => {
+  it("tells the browser how wide the mascot actually renders, from the width it renders at", async () => {
     // Without `unoptimized` the browser is offered a srcset; without `sizes`
-    // it would assume 100vw and pick a variant far larger than 124 px.
+    // it would assume 100vw and pick a variant far larger than the slot.
     const { container } = render(await PitchShowcase());
 
-    const mascot = container.querySelector("[data-mascot]");
-    expect(mascot?.getAttribute("sizes")).toBe("104px");
-    const srcset = mascot?.getAttribute("srcset") ?? "";
-    const widths = Array.from(srcset.matchAll(/\s(\d+)w/g)).map((m) => Number(m[1]));
+    const mascot = must(container.querySelector("[data-mascot]"), "the mascot image");
+
+    const sizes = mascot.getAttribute("sizes") ?? "";
+    expect(sizes).toMatch(/^\d+px$/);
+    const slot = Number(sizes.replace("px", ""));
+
+    // Fix round 1, F3 (CLAUDE.md §6, "one fact, one home"): `sizes` is DERIVED
+    // from the rendered width. Asserting the literal `"104px"` let the two
+    // drift apart silently; asserting they are the same number does not.
+    expect(slot).toBe(Number(mascot.getAttribute("width")));
+
+    // Fix round 1, F5: positive control for the descriptor extractor before it
+    // is trusted on the real srcset. The old assertion here
+    // (`Math.min(widths) <= 256`) tested Next's `imageSizes` config, not this
+    // component, and a typo in the pattern would have read as a pass.
+    expect(srcsetWidths("/a.png?w=16 16w, /a.png?w=64 64w, /a.png?w=384 384w")).toEqual([
+      16, 64, 384,
+    ]);
+    expect(srcsetWidths("/a.png")).toEqual([]);
+
+    const widths = srcsetWidths(mascot.getAttribute("srcset") ?? "");
     expect(widths.length).toBeGreaterThan(0);
-    expect(Math.min(...widths)).toBeLessThanOrEqual(256);
+    // A variant that actually fits the slot at DPR 2 must be on offer,
+    // otherwise the `sizes` hint above buys nothing.
+    expect(Math.min(...widths)).toBeLessThanOrEqual(slot * 2);
   });
 
   it("renders every leaf of the pitch catalog subtree (dropped-key guard)", async () => {
