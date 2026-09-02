@@ -94,6 +94,15 @@ const config: Config = {
         "sidebar-collapsed": "var(--layout-sidebar-collapsed)",
         companion: "var(--layout-companion-width)",
       },
+      height: {
+        header: "var(--layout-header-height)",
+      },
+      // `scroll-mt-header` — the clearance an anchored section holds under the
+      // sticky bar. Deliberately NOT added to `spacing`: these are shell
+      // dimensions, not steps in the spacing rhythm (see globals.css).
+      scrollMargin: {
+        header: "var(--layout-header-height)",
+      },
       maxWidth: {
         content: "var(--layout-content-max)",
       },

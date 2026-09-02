@@ -131,6 +131,25 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * (§2's and §7's photographs, §8's background) needs the section element — not
  * the max-width `Container` — as its positioning context. It changes nothing
  * for sections that don't.
+ *
+ * ## Anchor clearance (task 11 review M1)
+ *
+ * ⚠️ `scroll-mt-header` is load-bearing and belongs HERE, not at a consumer.
+ * Every section's `id` is a live anchor target, and the site header is
+ * `position: sticky` — so without a scroll margin the browser puts the section's
+ * top at y = 0 and the header paints over whatever is in its first ~65px.
+ * Measured at 1280 before the fix: `/en#cta` put `#cta-heading` at 47.97px under
+ * a bar occupying 0..64.67px, i.e. the top ~17px of the section's ACCESSIBLE
+ * NAME (`aria-labelledby`) was hidden.
+ *
+ * §2-§7 concealed rather than escaped this: their `eyebrow` is what lands in the
+ * bar's strip instead of the heading, and an eyebrow is decoration. §8 and §9
+ * are the first sections with none — correctly, since the catalog has no
+ * `cta.eyebrow`/`signoff.eyebrow` and adding one would be inventing copy — which
+ * is what exposed it. The token is the header's own (`--layout-header-height`,
+ * consumed by `site-header.tsx` as `h-header`), so resizing the bar cannot leave
+ * this stale. The bar's 1px bottom border is outside the token and is absorbed
+ * by `py-2xl` above the heading.
  */
 export function Section(props: SectionProps) {
   const { id, eyebrow, heading, headingLevel = 2, backdrop, children, className } = props;
@@ -173,7 +192,7 @@ export function Section(props: SectionProps) {
     <section
       id={id}
       aria-labelledby={headingId}
-      className={cn("relative py-2xl", className)}
+      className={cn("relative scroll-mt-header py-2xl", className)}
     >
       {backdrop}
       <Container>

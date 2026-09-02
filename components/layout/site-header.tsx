@@ -29,7 +29,11 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur">
-      <Container className="flex h-16 items-center justify-between gap-md">
+      {/* `h-header` (not `h-16`): `section.tsx` reserves this same token as
+          scroll margin so an anchored heading clears this sticky bar. One
+          fact, one home — a hand-synced pair would drift silently, because
+          nothing renders the bar and a section anchor together. */}
+      <Container className="flex h-header items-center justify-between gap-md">
         <Link href="/" className="font-display text-heading font-bold">
           {t("nav.wordmark")}
         </Link>

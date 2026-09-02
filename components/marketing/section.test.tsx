@@ -236,4 +236,46 @@ describe("Section", () => {
       ).toContain("min-w-0");
     }
   });
+
+  it.each(["stacked", "split", "centred"] as const)(
+    "holds a %s section clear of the sticky header when it is the anchor target",
+    (layout) => {
+      // Task 11 review M1, measured in the browser at 1280 before this test was
+      // written: `header` is `position: sticky` and occupies 0..64.67px, and NO
+      // element in the repo set `scroll-margin-top`. Loading `/en#cta` put the
+      // section's top at y = -0.03, so `#cta-heading` — the section's accessible
+      // NAME via `aria-labelledby` — landed at 47.97px and its top ~16.7px
+      // rendered underneath the bar.
+      //
+      // §2-§7 hid the defect rather than escaping it: each has an `eyebrow`, and
+      // the eyebrow (decoration) is what lands in the header's strip instead of
+      // the heading — measured at the same time, `#problem`'s eyebrow sits 22px
+      // above its heading and `#trust`'s 40px. §8 and §9 are the first sections
+      // with NO eyebrow, correctly so: the catalog has no `cta.eyebrow` /
+      // `signoff.eyebrow` key and adding one would be inventing product copy.
+      // So the clearance cannot be a consumer's job — it belongs to the
+      // primitive, and must hold for a section with no decoration to spare.
+      //
+      // jsdom does no layout and cannot assert the OUTCOME; this guards the
+      // MECHANISM. `scroll-mt-header` resolves to `--layout-header-height`, the
+      // same token `site-header.tsx` sizes itself from, so the reservation
+      // cannot go stale when the bar is resized — that half is pinned in
+      // `site-header.test.tsx`.
+      const { container } = render(
+        layout === "split" ? (
+          <Section id="s" heading="H" layout="split">
+            <p>body</p>
+          </Section>
+        ) : (
+          <Section id="s" heading="H" layout={layout}>
+            <p>body</p>
+          </Section>
+        ),
+      );
+
+      const section = container.querySelector("section#s");
+      if (!section) throw new Error(`the ${layout} layout rendered no section#s`);
+      expect(section.className.split(/\s+/)).toContain("scroll-mt-header");
+    },
+  );
 });

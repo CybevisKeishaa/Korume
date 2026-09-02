@@ -74,4 +74,25 @@ describe("SiteHeader", () => {
     );
     expect(screen.queryByText(/github/i)).toBeNull();
   });
+
+  it("takes its height from the shared layout token that anchored sections clear", async () => {
+    // The other half of task 11 review M1. `Section` reserves `scroll-mt-header`
+    // so an anchored <h2> does not land under this bar; that reservation is only
+    // correct while the bar's height is THE SAME FACT, not a second statement of
+    // the same number. `h-16` here plus a 4rem token there is exactly the
+    // "both, kept in sync by hand" that CLAUDE.md §6 calls a defect — and it
+    // would go wrong silently, because nothing renders both together.
+    const { container } = render(await SiteHeader());
+
+    const bar = container.querySelector("header");
+    if (!bar) throw new Error("SiteHeader rendered no <header>");
+    // The bar is sticky, which is what makes clearance necessary at all.
+    expect(bar.className.split(/\s+/)).toContain("sticky");
+
+    const row = bar.firstElementChild;
+    if (!row) throw new Error("<header> has no child row to measure");
+    const classes = row.className.split(/\s+/);
+    expect(classes).toContain("h-header");
+    expect(classes).not.toContain("h-16");
+  });
 });

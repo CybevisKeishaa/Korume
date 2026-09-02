@@ -144,6 +144,14 @@
   --layout-companion-width: 340px;
   --layout-gutter: var(--space-xl);
   --layout-column-gap: var(--space-lg);
+  /* The sticky site header's row height. TWO consumers, which is why it is a
+     token and not a `h-16` on one element: `site-header.tsx` sizes the bar,
+     and `section.tsx` reserves the same distance as `scroll-margin-top` so an
+     anchored <h2> does not land underneath the bar (task 11 review M1). The
+     bar's 1px bottom border sits outside this value and is covered by the
+     section's own `py-2xl`, so the heading still clears — measured, not
+     assumed. */
+  --layout-header-height: 4rem;
 
   /* Typography scale: size + line-height pairs. Body line-heights are
      deliberately generous — Vietnamese stacks two tiers of diacritics (ắ ặ ễ)

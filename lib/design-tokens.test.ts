@@ -29,6 +29,11 @@ const REQUIRED_TOKENS = [
   "--layout-sidebar-width", "--layout-sidebar-collapsed",
   "--layout-content-max", "--layout-companion-width",
   "--layout-gutter", "--layout-column-gap",
+  // The sticky site header's height. A shell dimension, not a spacing step:
+  // `site-header.tsx` sizes the bar from it and `section.tsx` reserves it as
+  // scroll margin so an anchored heading cannot land underneath the bar
+  // (task 11 review M1). Two consumers, one definition.
+  "--layout-header-height",
   // radius — declared absolutely, never derived. A calc()-chained scale means
   // one edit to the base silently skews every other step. No unqualified
   // `--radius`: it had zero consumers outside docs/ and was deleted.
