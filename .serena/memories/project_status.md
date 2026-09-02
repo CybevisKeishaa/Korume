@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-09-02) — **the landing-page port is BUILT: all nine sections, task 12's page composition and Task V's visual-fidelity pass are committed on branch `landing-page-port`, nothing merged. The live next action is an INDEPENDENT RENDER-CAPABLE REVIEW of `19b05d5..HEAD`.**
+## ▶ NEXT ACTION (updated 2026-09-03) — **the landing-page port is BUILT and §1/§4's owner-owed work is now closed too: all nine sections, task 12's page composition, Task V's visual-fidelity pass, §1's player chrome + third key word (`44c56f3`) and §4's rebuilt pitch contour (`81ff680`) are committed on branch `landing-page-port`, nothing merged, nothing pushed. Gate on `81ff680`: tsc 0 · lint 0 · 2578 tests over 280 files. The live next action is an INDEPENDENT RENDER-CAPABLE REVIEW of `19b05d5..HEAD` — three ranges have never had one (task 12's was run by the lineage that built it, Task V's none, and these two commits none).**
 
 ✅ **`landing-page-identity-ruling` MERGED to master at `2822d22` (`--no-ff`), 2026-08-26; branch kept
 per repo convention.** Count its commits with

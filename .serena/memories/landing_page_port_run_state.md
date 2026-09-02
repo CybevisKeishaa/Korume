@@ -1,31 +1,20 @@
 # Landing page port (`/`) — run state
 
-> **Status 2026-09-02 (THIRD session of the date, later than every note below).** Tasks 1–7 · A1 §2 ·
-> A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7 · 11 §8+§9 · 12 (page composition) · **TASK V** are
-> all built and committed on branch `landing-page-port`. **Nothing merged, nothing pushed.**
+> **Status 2026-09-03 (FOURTH working session of the port; later than every note below).** Tasks 1–7 ·
+> A1 §2 · A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7 · 11 §8+§9 · 12 · **TASK V** · and now
+> **§1's two owed owner decisions** and **§4's contour rebuild** are all built and committed on branch
+> `landing-page-port`. **Nothing merged, nothing pushed.**
 >
-> ✅ **TASK V IS WRITTEN INTO THE COMMITTED PLAN AND EXECUTED.** It used to be one line in a
-> gitignored file. V1 (§3's waveform), V2 (§3's card row), V3 (the two untrimmed poses) and V5 (the
-> dot-grid arrangement guard) are done and committed. V4 is **measured and reported, not closed** —
-> both of its gaps need something that is the owner's to give.
+> ▶ Gate, every command run and read before anything was written about it: `npx tsc --noEmit` exit 0 ·
+> `npm run lint` 0 errors · `npx vitest run` **2578 over 280 files, 0 failed**. Working tree clean.
 >
-> ▶ Gate, every command run and read before anything was written about it: `npm run typecheck` exit
-> 0 · `npm run lint` 0 errors · `npx vitest run` **2564 over 280 files, 0 failed** · `npx playwright
-> test` **23 passed**. Working tree clean.
+> ⚠️ **STILL NO INDEPENDENT REVIEW, AND THE GAP IS NOW THREE RANGES WIDE.** Task 12's review was run
+> by the lineage that built it; Task V has had none; and this session's two commits have had none.
+> **An independent render-capable pass over `19b05d5..HEAD` is still the biggest thing worth buying.**
 >
-> ⚠️ **TASK 12's REVIEW WAS NOT INDEPENDENT AND THAT GAP IS STILL OPEN**, and Task V's work has had
-> **no review at all** — it was built by this controller on the owner's "do it, no approval needed".
-> **An independent render-capable pass over `19b05d5..HEAD` is the biggest thing still worth buying.**
->
-> ⏸️ **SESSION PAUSED BY THE OWNER 2026-09-02, third session of the date. Clean stopping point.**
-> Nothing is in flight: no agent running, no unprocessed report on disk, working tree clean.
->
-> ▶ **A `next start` server IS listening on :3000 (PID 11340, created 23:17:26) and it is NOT this
-> session's.** The one this session started was killed and `netstat` verified 0 listeners on :300x
-> before this one appeared, so treat it as the owner's and do not kill it without asking. `.next`
-> holds a PRODUCTION build, so `npm run start` is ~1 s — but check `netstat` first, and check which
-> port `npm run dev` actually takes (it moves to 3001 silently). `next dev` and `next build` share
-> `.next` and clobber each other.
+> ⚠️ **`.next` NO LONGER HOLDS A PRODUCTION BUILD.** This memory used to say it did and that
+> `npm run start` was ~1 s. `BUILD_ID` is absent — a `next dev` run clobbered it, exactly the hazard
+> already recorded below. `npm run start` will fail; `npm run build` first, or use `npm run dev`.
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the owner's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -33,36 +22,111 @@
 
 # ▶▶ RESUME HERE
 
-**Run `git log --oneline -9`. HEAD is the pause commit that saved this file, and its hash is
-deliberately NOT written here.** A file cannot name the commit that contains it: writing one means
-predicting it, and a predicted number formatted as a measurement is the L-002 failure this branch
-has already paid for three times. **The last commit whose hash this file can honestly state is
-`005bf84`**; the pause commit is the one directly after it. Seven commits landed in this session:
+**Run `git log --oneline -6`.** The last hash this file can honestly state is **`81ff680`** (the §4
+rebuild); anything after it was written by a later session. A file cannot name the commit that
+contains it — writing one means predicting it, and a predicted number formatted as a measurement is
+the L-002 failure this branch has paid for four times now.
 
-    95f77b5  docs(landing)   Task V written into the plan, beside Task 13
-    92b8214  fix(marketing)  V1  §3's waveform — 32 bars, floor 0.05
-    d720eb7  fix(marketing)  V2  §3's card row — all five 146.51
-    7afc664  fix(mascot)     V3  trimmed reading-on-the-orb.png and hugging-an-orb.png
-    4af5646  test(marketing) V5  the dot-grid arrangement guard
-    23662ac  docs(landing)   the plan's §6 step CORRECTED + Task V's outcome recorded
-    005bf84  docs(landing)   this memory, rewritten for Task V
-    (HEAD)   docs(landing)   this pause — the :3000 line corrected, project_status refreshed
+    44c56f3  feat(marketing)  §1 — player chrome (timestamp + 4 control glyphs) and the third key word
+    81ff680  fix(marketing)   §4 — the pitch contour rebuilt as a speech intonation trace
 
 ## ▶▶ THE NEXT ACTIONS, IN ORDER
 
-1. **An INDEPENDENT render-capable review of `19b05d5..HEAD`.** Two ranges now need it: task 12's
-   (whose review was run by the lineage that built it) and Task V's (which has had none). Use
-   `general-purpose`, not `code-reviewer` — the latter is code-only and every finding here is visual.
+1. **An INDEPENDENT render-capable review of `19b05d5..HEAD`.** Three ranges now need it: task 12's,
+   Task V's, and this session's two commits. Use `general-purpose`, not `code-reviewer` — the latter
+   is code-only and every finding here is visual.
 2. **Task A-MOTION** — one pass over the whole composed page, plus the unexplained `/en#problem`
    scroll drift, which belongs to whoever owns the scroll layer.
 3. **Task 13** — ⚠️ **re-measure the 320/390/768 overflow rather than trusting anything written
    about it.** V2 changed the last list item's padding, NOT the `shrink-0` + `basis-[clamp(...)]`
    construct the overflow comes from, so the recorded `320 -> +87 · 390 -> +17 · 768 -> +11` are
    ASSUMED to stand and were not re-run.
-4. **Whole-branch review**, then the branch-end `docs/lessons.md` pass — now **SIX** queued entries
+4. **Whole-branch review**, then the branch-end `docs/lessons.md` pass — now **EIGHT** queued entries
    (two L-002 evidence entries · `npx playwright test` belongs in the gates · that same e2e gate is
-   unrunnable from cold · the window-vs-page pattern, three instances · and **new: a plan step can
-   carry a correct measurement and a wrong cause**).
+   unrunnable from cold · the window-vs-page pattern, three instances · a plan step can carry a
+   correct measurement and a wrong cause · **new: choosing the wrong METRIC survives four rejections
+   in a row** · **new: a phrase-level claim must be measured on a phrase-level signal**).
+
+## ✅ §1's TWO OWED OWNER DECISIONS ARE CLOSED (`44c56f3`, 2026-09-03)
+
+This memory carried both to the owner as blockers. They ruled: *"4 nút tùy bạn, trông sao cho đẹp,
+không cần mang tính hứa đâu, bởi vì tôi tin là màn luyện tập shadowing còn đặc sắc hơn nhiều"* — and
+delegated the catalog key too. **Both are built. Do not re-raise them.**
+
+- The transport bar now carries an elapsed timestamp and FOUR glyphs (subtitles · repeat · volume ·
+  fullscreen). The §2.3 constraint that they DEPICT and never function is untouched and asserted.
+- ⚠️ **The timestamp shows ELAPSED ONLY, deliberately.** `hero.video.duration` ("13 min") is already
+  four rows above it, so a "0:24 / 13:00" readout would put one fact in two places by hand — a
+  CLAUDE.md §6 defect, not a trade-off. Do not "complete" it.
+- The third key word is 落ち着く（おちつく）· calm, drawn from the rail's OWN sentence
+  (落ち着きます). A test pins that RULE — a replacement word not occurring in the sentence would be
+  new study content, which is the owner's.
+- ▶ **The catalog-leaf guard did the whole TDD job with no new test written.** Adding a key without
+  rendering it moved `expect(allLeaves).toHaveLength(29)` to 32 and failed loudly. That guard is
+  worth copying to any other section with a catalog subtree.
+
+## ⚠️ §4's CONTOUR: FOUR REJECTIONS, ONE ROOT CAUSE — I KEPT MEASURING THE WRONG THING
+
+The single most expensive lesson of this branch so far. The graphic was rejected four times and every
+time I controlled a quantity that was not the one making it look wrong:
+
+1. The original: 40 monotone frames, two lazy S-curves. Owner: *"cái sóng tôi muốn đặc sắc hơn"*.
+2. **A3** read that as DENSER: ±3.9 Hz of INDEPENDENT per-frame jitter, drawn with `L` commands so
+   every one of ~169 samples was also a corner. Owner: *"trông rất xấu"*.
+3. My first fix bounded the **SLOPE**. That outlawed the near-vertical closing lift the owner's own
+   reference ends on, and smoothed the trace to SEVEN direction changes — a lazy curve again.
+4. My second bounded the **BEND**, and I loosened it twice, telling myself each time there was a
+   reason. There was: **the reference IS sharp. Sharpness was never the defect.**
+
+▶ **The defect was INCOHERENCE.** A3 drew each frame independently of its neighbours, so the line
+had no direction from one sample to the next. **No single-frame statistic sees that** — measured, A3
+bent 10.30 with 71 direction changes and the shipped version bends 5.60 with 38, the same
+neighbourhood. The **lag-1 autocorrelation of the first differences** separates them cleanly:
+**0.327 against 0.720**. That is now the guard; bend and run-length are demoted to labelled coarse
+backstops with their weakness and their numbers written into the test.
+
+▶ **The tell I ignored: I loosened the same threshold twice.** Once is a tuning. Twice means the
+threshold is measuring the wrong thing. Stop and find the metric that separates the accepted case
+from the rejected one — I had both populations on disk the whole time and could have measured this
+in one command.
+
+⚠️ **PERIOD AND AMPLITUDE ARE SEPARATE DIALS AND I TURNED THEM TOGETHER TWICE.** The owner's
+corrections were precise about this: first *"giống những tia sét"* (sharper — a dash-wave shape
+problem, fixed by using TRIANGLE waves instead of sines, whose extrema are round and scallop when
+sampled per frame), then *"thêm mật độ… có độ sâu và cao hơn"*, then *"sâu hơn, và biên độ (chiều
+ngang) bớt dày hơn"* — i.e. deeper AND less crowded, which is one dial each. Shipped: periods 8/13/22
+frames, amplitude ~10.4 Hz.
+
+⚠️ **A PHRASE-LEVEL CLAIM MUST BE MEASURED ON A PHRASE-LEVEL SIGNAL.** When the detail layer reached
+~10 Hz, the "You track never releases" test went red at 29.7 against a bound of 26 — and the bound
+was RIGHT. A raw 40-frame window answers partly about the sentence and partly about where a detail
+trough happened to land; it inflated the apparent release by ~10 Hz. The fix was a 9-frame centred
+mean (one frame wider than the fastest detail period), not a looser number. **Resisting the
+threshold nudge is what found the real bug.**
+
+⚠️ **THE UNVOICED GAP IS GONE FROM THE FIXTURE, AND THAT IS DELIBERATE.** The owner asked why the
+line kept breaking in the middle. A native speaker does not pause between 日本の秋は and とても: the
+phrase boundary is a pitch VALLEY, and a hole showed nothing at all. **`toPath` still renders gaps
+and `contour-path.test.ts` still pins that — the product's real overlay depends on it.**
+
+⚠️ **BOTH LINES ARE SOLID NOW — WCAG 1.4.1's cue is STROKE WEIGHT, and that is weaker.** The owner
+ruled explicitly (*"k sợ dính vào luật nào cả"*). Recorded in `pitch-chart.tsx`'s docblock rather
+than waved through, with the stronger remedy named (a small direct label at each line's end). **If a
+reviewer raises 1.4.1 here, it is a known, owner-accepted trade, not an oversight.**
+
+▶ **Measured on the shipped fixtures, native / you:** range 167.2–233.6 / 172.3–207.4 Hz · peak
+region 233.6 / 202.0 (a 31.6 Hz gap on とても) · release 46.1 / 19.7 Hz over 40 smoothed frames ·
+direction changes 38 / 37 · coherence 0.720 / 0.697 · bend 5.60 / 5.20 · one unbroken subpath, 168
+curve segments, zero line segments.
+
+## ▶ HOW THE SESSION FOUND THE BUG IT WAS ASKED ABOUT — THE OWNER POINTED AT THE WRONG WAVE
+
+The session opened with *"phần waveform nó vẫn chưa thay đổi gì"*. §3's waveform HAD changed and
+rendered correctly — measured live: 32 bars, 1.784 px each, range 16.81, matching `92b8214` exactly.
+The owner then sent a screenshot: they meant **§4's contour**, a different component Task V never
+touched.
+▶ **A report that a fix "didn't work" can be about a different thing entirely. Ask for the picture
+before re-opening the fix.** Measuring §3 first cost two minutes and prevented un-fixing a good fix.
 
 ## ⚠️ WHAT TASK V CHANGED ABOUT WHAT THIS MEMORY USED TO SAY
 
