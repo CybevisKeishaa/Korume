@@ -130,7 +130,7 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * `relative` is unconditional: a section whose showcase bleeds to the page edge
  * (§2's and §7's photographs, §8's background) needs the section element — not
  * the max-width `MarketingContainer` — as its positioning context. It changes
- * for sections that don't.
+ * nothing for sections that don't.
  *
  * ## Anchor clearance (task 11 review M1)
  *
