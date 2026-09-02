@@ -1,4 +1,4 @@
-import { Container } from "@/components/ui/container";
+import { MarketingContainer } from "./marketing-container";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,7 +21,7 @@ interface SectionBase {
   /** 1 only for the hero; every other section is 2. */
   headingLevel?: 1 | 2;
   /**
-   * Full-bleed layers painted BEHIND the `Container` — a background photograph,
+   * Full-bleed layers painted BEHIND the `MarketingContainer` — a background photo,
    * a scrim, a decorative figure that must sit under the copy. Rendered as the
    * section's first child, outside the max-width wrapper, so `absolute inset-0`
    * against the section's own box does what it reads like.
@@ -129,7 +129,7 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  *
  * `relative` is unconditional: a section whose showcase bleeds to the page edge
  * (§2's and §7's photographs, §8's background) needs the section element — not
- * the max-width `Container` — as its positioning context. It changes nothing
+ * the max-width `MarketingContainer` — as its positioning context. It changes
  * for sections that don't.
  *
  * ## Anchor clearance (task 11 review M1)
@@ -195,7 +195,7 @@ export function Section(props: SectionProps) {
       className={cn("relative scroll-mt-header py-2xl", className)}
     >
       {backdrop}
-      <Container>
+      <MarketingContainer>
         {isSplit ? (
           <div className={cn("grid gap-xl lg:items-start", SPLIT_COLUMNS)}>
             {/* `min-w-0` on both items: see the docblock's INVARIANT. */}
@@ -236,7 +236,7 @@ export function Section(props: SectionProps) {
             <div className="mt-lg">{children}</div>
           </>
         )}
-      </Container>
+      </MarketingContainer>
     </section>
   );
 }

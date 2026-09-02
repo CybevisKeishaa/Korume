@@ -237,6 +237,22 @@ describe("Section", () => {
     }
   });
 
+  it("lays its content out on the marketing measure, not the app-wide one", () => {
+    // Task 12. Every section shares the page's content column, so the width
+    // lives in `MarketingContainer` and `Section` consumes it — rather than
+    // each of §1-§9 restating it. Widening `Container` itself was rejected: it
+    // has 36 consumers and only the marketing surfaces are four of them.
+    const { container } = render(
+      <Section id="s" heading="H">
+        <p>body</p>
+      </Section>,
+    );
+
+    const boxes = Array.from(container.querySelectorAll(".max-w-marketing"));
+    expect(boxes).toHaveLength(1);
+    expect(boxes[0]?.textContent).toContain("body");
+  });
+
   it.each(["stacked", "split", "centred"] as const)(
     "holds a %s section clear of the sticky header when it is the anchor target",
     (layout) => {

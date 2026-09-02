@@ -105,6 +105,7 @@ const config: Config = {
       },
       maxWidth: {
         content: "var(--layout-content-max)",
+        marketing: "var(--layout-marketing-max)",
       },
       fontSize: {
         caption: ["var(--text-caption)", "var(--leading-caption)"],

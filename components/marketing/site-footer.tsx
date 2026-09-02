@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
-import { Container } from "@/components/ui/container";
+import { MarketingContainer } from "./marketing-container";
 import { SUPPORT_EMAIL } from "@/lib/contact";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 import type { Translator } from "./translator";
@@ -114,7 +114,7 @@ export async function SiteFooter() {
 
   return (
     <footer aria-label={t("footer.ariaLabel")} className="border-t border-border py-xl">
-      <Container className="grid gap-xl md:grid-cols-5">
+      <MarketingContainer className="grid gap-xl md:grid-cols-5">
         <div className="md:col-span-2">
           <p className="font-display text-heading font-bold">{t("footer.wordmark")}</p>
           <p className="mt-xs text-body text-muted-foreground">{t("footer.tagline")}</p>
@@ -176,9 +176,9 @@ export async function SiteFooter() {
             <p className="mt-2xs text-caption text-muted-foreground">{t("footer.note.body")}</p>
           </div>
         </div>
-      </Container>
+      </MarketingContainer>
 
-      <Container className="mt-xl border-t border-border pt-lg">
+      <MarketingContainer className="mt-xl border-t border-border pt-lg">
         <p className="text-caption uppercase tracking-widest text-primary-strong">
           {t("footer.app.eyebrow")}
         </p>
@@ -217,7 +217,7 @@ export async function SiteFooter() {
            */}
           <p className="text-caption text-muted-foreground">{t("footer.backToTop")}</p>
         </div>
-      </Container>
+      </MarketingContainer>
     </footer>
   );
 }

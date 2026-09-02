@@ -34,6 +34,10 @@ const REQUIRED_TOKENS = [
   // scroll margin so an anchored heading cannot land underneath the bar
   // (task 11 review M1). Two consumers, one definition.
   "--layout-header-height",
+  // The marketing pages' content column. Wider than the rest of the app on
+  // purpose: frame 347:6277 is 1280 wide and puts its content ~44px from each
+  // edge, where Container's app-wide max-w-6xl puts it 96px in (task 12).
+  "--layout-marketing-max",
   // radius — declared absolutely, never derived. A calc()-chained scale means
   // one edit to the base silently skews every other step. No unqualified
   // `--radius`: it had zero consumers outside docs/ and was deleted.

@@ -152,6 +152,13 @@
      section's own `py-2xl`, so the heading still clears — measured, not
      assumed. */
   --layout-header-height: 4rem;
+  /* The MARKETING pages' content column — wider than the rest of the app on
+     purpose, and a separate fact from --layout-content-max (the shadowing
+     shell). Frame 347:6277, the binding design for `/`, is 1280 wide and puts
+     its content 3.46% of the page width in from each edge (~44px). At 1280 a
+     1256 box leaves 12px each side, plus Container's own lg:px-8, which is
+     exactly that. Measured off the frame, like --layout-sidebar-width. */
+  --layout-marketing-max: 1256px;
 
   /* Typography scale: size + line-height pairs. Body line-heights are
      deliberately generous — Vietnamese stacks two tiers of diacritics (ắ ặ ễ)

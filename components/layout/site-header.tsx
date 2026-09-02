@@ -1,7 +1,7 @@
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { buttonStyles } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
+import { MarketingContainer } from "@/components/marketing/marketing-container";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 
 /**
@@ -33,7 +33,7 @@ export async function SiteHeader() {
           scroll margin so an anchored heading clears this sticky bar. One
           fact, one home — a hand-synced pair would drift silently, because
           nothing renders the bar and a section anchor together. */}
-      <Container className="flex h-header items-center justify-between gap-md">
+      <MarketingContainer className="flex h-header items-center justify-between gap-md">
         <Link href="/" className="font-display text-heading font-bold">
           {t("nav.wordmark")}
         </Link>
@@ -89,7 +89,7 @@ export async function SiteHeader() {
             {t("nav.cta")}
           </Link>
         </div>
-      </Container>
+      </MarketingContainer>
     </header>
   );
 }

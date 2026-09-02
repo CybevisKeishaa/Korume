@@ -75,6 +75,16 @@ describe("SiteHeader", () => {
     expect(screen.queryByText(/github/i)).toBeNull();
   });
 
+  it("aligns its bar on the same measure the marketing sections use", async () => {
+    // Task 12. If the header kept `Container`'s app-wide max width while the
+    // sections moved to the marketing one, the wordmark would no longer sit
+    // over the content it labels — a 52px misalignment at 1280.
+    const { container } = render(await SiteHeader());
+
+    const boxes = Array.from(container.querySelectorAll(".max-w-marketing"));
+    expect(boxes).toHaveLength(1);
+  });
+
   it("takes its height from the shared layout token that anchored sections clear", async () => {
     // The other half of task 11 review M1. `Section` reserves `scroll-mt-header`
     // so an anchored <h2> does not land under this bar; that reservation is only
