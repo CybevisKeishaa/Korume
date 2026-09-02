@@ -5,12 +5,16 @@
 > (page composition)** are all built and committed on branch `landing-page-port`. **Nothing merged.**
 > **ALL NINE SECTIONS EXIST AND THE PAGE COMPOSITION IS DONE.**
 >
-> ▶ **THE ONE THING OWED BEFORE ANY NEW WORK: task 12 is UNREVIEWED.** Everything else on this branch
-> has had an independent pass. Task 12 changes a token, a new shared component, four call sites, §7's
-> composition and the whole e2e suite — and it shipped a regression mid-task that only a RENDERED
-> LOOK caught, which is exactly why its reviewer needs rendering ability (`general-purpose`, not
-> `code-reviewer`). Range `19b05d5..9861650`; the diff is already on disk as
-> `review-19b05d5..9861650.diff` in the ledger folder.
+> ✅ **TASK 12 IS REVIEWED — PASS, 1 Minor (N1), fixed.** Report: `task-12-review.md`.
+> **EVERY TASK ON THIS BRANCH HAS NOW HAD A REVIEW.**
+>
+> ⚠️ **BUT TASK 12's REVIEW WAS NOT INDEPENDENT, and that is a real gap, not a formality.** It was
+> run by the controller lineage that BUILT the task, because the user asked for it directly and this
+> session does not spawn agents unasked. Substituted instead: every load-bearing number re-derived
+> from a primary source, one mutation-check re-run, the page rendered and looked at, and everything
+> unverifiable listed as unverified rather than passed. **An independent render-capable pass over
+> `19b05d5..9861650` is still worth buying** — and TWO items in that review are single-sourced on me
+> (§6's tile gap, unmeasurable with `[data-chain-node]`; and the 3.46% pixel scan, not re-run).
 >
 > ▶ Nothing is in flight: no agent running, no unprocessed report on disk, no dev server left up
 > (one was running on :3000 this session and was stopped at the pause — `npm run dev` restores it;
@@ -45,12 +49,90 @@ owed". Full suite **2561 tests over 280 files** (`npx vitest run --reporter=json
   Task 12       COMPLETE (`7dab407` page measure + e2e suite, `9861650` §7 rebalance) — UNREVIEWED
   **EVERY SECTION TASK IS CLOSED, AND THE PAGE COMPOSITION TASK IS BUILT.**
 
-## ▶ TASK 12 IS DONE AND UNREVIEWED. THAT REVIEW IS THE NEXT ACTION.
+## ✅ TASK 12 IS REVIEWED — PASS. WHAT THE REVIEW SETTLED, AND WHAT IT DID NOT
 
-`7dab407` (the page measure + a real e2e suite) and `9861650` (§7's rebalance, on an owner ruling).
-It changes a token, a new shared component, four call sites, §7's composition and the whole e2e
-suite — **and it shipped a regression mid-task that only a rendered look caught**. Review
-`19b05d5..9861650` (diff on disk as `review-19b05d5..9861650.diff`) with RENDERING ability.
+Full report `task-12-review.md`; the reasoning is in the ledger. **PASS, 0 Critical, 0 Important,
+1 Minor.** All six flagged claims re-derived: the reference viewport (1280, straight from
+`get_screenshot` on `347:6277` — the anchor of the whole width argument) · the 1256 arithmetic and
+its live render (content starts 44.0, width 1192) · the scope call (**36** consumers, **3** marketing
+files, **4** call sites — widening `Container` would have hit **33 unrelated files**) · the showcase
+at 828.578 · §7 · and the mutation-check, re-run and holding (removing `lg:w-[78%]` drops the strip
+226.3 — **44.0**, under the test's `>150`).
+
+⚠️ **N1, THE ONE MINOR: A RENAME REWRAPPED A LINE AND DROPPED A WORD.** `Container` —
+`MarketingContainer` turned *"It changes nothing for sections that don't"* into *"It changes for
+sections that don't"* — the opposite claim, in the sentence explaining why `relative` is
+unconditional. Fixed.
+▶ **A hunk-by-hunk read shows that line as "renamed", not as "meaning reversed".** Read a rewrapped
+sentence WHOLE against its pre-rename form. Cheap, and repeatable on any rename that reflows prose.
+
+⚠️ **THE WINDOW-VS-PAGE ERROR FIRED A THIRD TIME, AND IT IS NOW A PATTERN WORTH A LESSON.** The
+ledger's §7 numbers (82.7%, strip 218.6px) would not reproduce; I measured 82.32% / 226.3px. Neither
+is wrong: **the earlier run had a 15px classic scrollbar, so its page was 1265 wide, not 1280** —
+modelling 1265 reproduces 82.70% / 218.79px to the decimal. With `/en#signoff`'s scroll room and
+`poses.json`'s diff-line count, that is three.
+▶ **One shape: a fact about the measuring WINDOW recorded as a fact about the PAGE.** A
+percentage-of-page or a distance-to-page-edge is not a property of the layout unless the page width
+is written beside it. Queued for the branch-end lessons pass.
+
+▶ **NOT verified by that review, and left open rather than passed**: §6's between-tile gap (named
+as closed by task 12, but the diff never touches `capability-chain.tsx`, and `[data-chain-node]`
+resolves to the grid CELL — 8 x 127px, zero inter-cell gap — not the visible tile), and the 3.46%
+pixel scan of `346:6275` itself (anchor and arithmetic confirmed; the scan not re-run).
+
+▶ **The overflow sweep is PRE-EXISTING and a cold reviewer WILL misfile it.** 320 -> +87 · 390 ->
++17 · 768 -> +11, identical to the numbers already recorded against **Task 13**; below `lg` the new
+`max-width` does not bind at all. Keep it visibly assigned to Task 13.
+
+## ⚠️ TASK V IS THE OWNER'S QUALITY TASK AND IT IS NOT IN THE PLAN
+
+**Task V exists ONLY as one line in the gitignored ledger** — *"visual fidelity vs `346:6275`"* —
+carrying two parked items. The committed plan has Tasks 1—13 and no Task V, no Task A-MOTION and no
+Task A-STATIC. **Task 13 explicitly refuses this work**: *"change `py-2xl` in `section.tsx`, NOT the
+individual sections."*
+▶ So the task that owns the owner's single biggest concern — whether the sections LOOK right —
+dies with this working copy. Writing it into the plan is owed.
+
+### The owner raised three defects on 2026-09-02. All three were measured, none guessed.
+
+1. **§3's Shadow waveform is visibly BROKEN.** Root cause is scale, not data: the SVG is authored in
+   a **160x52** unit box and renders at **102.5 x 33.3 CSS px** (0.64x). With `WAVE_BARS = 56` that
+   is **~1.0 CSS px per bar with ~0.8px gaps** — sub-pixel, so bars alias away and the low-amplitude
+   stretches vanish. `journey-art.tsx`'s own docblock says the envelope was shaped to read *"as
+   speech at 130px wide"*; **it ships at 102.5px, narrower than the width it was designed for.**
+   The gaps are also partly in the data: `syllables = 0.5 + 0.5*sin(17.4t)*sin(5.3t+0.4)` collapses
+   to ~0 at several t, floored at 0.18. Fix direction: fewer bars (~28), or a higher floor, or
+   shallower modulation — NOT a rewrite, and NOT a return to the pitch contour (ruled out
+   2026-08-29, and a shipped test forbids it).
+2. **§3's card row is internally inconsistent.** Verified from the DOM, not by eye (this controller's
+   visual reads have been wrong twice — see that section):
+
+       card         label offset from card top    first visual    width
+       1 watch                  145                    13         146.5
+       2 understand              13                    39         146.5
+       3 shadow                  13                    39         146.5
+       4 mine                    13                    39         146.5
+       5 remember                13                    39         **162.5**
+
+   **Card 1 inverts the order** — image first, label below — so "1 Watch" reads as a caption while
+   "2 Understand" reads as a heading. And **card 5 is 16px wider**, from the `shrink-0` +
+   `basis-[clamp(...)]` construct that is ALSO the 320/390 overflow already assigned to Task 13 —
+   **one construct, two tasks; fix it once.**
+3. **§6's companion is too small and misaligned — THREE separate causes, and one non-cause.**
+   - Its column is only **176px** (the 8-node grid takes 1016 of the 1192 content), so the 160px box
+     has just **16px** of slack. Making it bigger means taking width from the grid.
+   - **`MASCOT_WIDTH = 160` was fixed BEFORE task 12 widened the page** (content 1088 -> 1192) and
+     nobody re-derived it. The docblock derives 160 from the reference's 120 export px against the
+     OLD container.
+   - **Vertical**: the parent is `flex` with **`align-items: flex-end`**, so it bottom-aligns to the
+     187px-tall grid and its centre lands **74.7px BELOW** the icon-tile row's centre.
+   - **Horizontal**: `reading-on-the-orb.png` (499x500) has **asymmetric transparent padding — 26px
+     left, 61px right**, 30 top, 16 bottom. The creature fills only 82.6% x 90.8% of its frame, so in
+     a 160px box it draws **132 x 145 CSS px** and sits ~5.6 CSS px left of the box centre.
+   - ⚠️ **NOT a cause: resolution.** `sizes="160px"` is correct and Next serves a 320px variant on
+     a 2x display. Do not "fix" that.
+
+▶ **The parked Task V items from earlier tasks are only two**, so these three roughly triple it.
 
 ## ▶ WHAT TASK 12 SETTLED
 
@@ -142,18 +224,20 @@ in the same shell invocation.** Commits are immutable; the correction lives here
 single failure whose NAME I did not capture**; four later runs were clean. The branch has a known
 `pitch-contour.test.tsx` flake and **I am not claiming this was it.**
 
-## ▶ THE NEXT ACTIONS AFTER TASK 12'S REVIEW
+## ▶ THE NEXT ACTIONS — EVERY TASK IS NOW BUILT AND REVIEWED
 
-Task 11's fix round was independently reviewed and returned **PASS** — one Minor, and the Minor is
-about two numbers in a commit message, not about code (see the L-002 hit below). Details in
-`task-11-fix-review.md`; what the reviewer re-derived rather than accepted is in the ledger.
+Tasks 1—13's predecessors, A1/A2/A3, P, 8—11 (+fix, re-reviewed PASS) and **12 (reviewed PASS,
+2026-09-02)** are all closed. Task 12's three parked findings: §3/§4's showcase CONFIRMED closed
+(828.578 measured), §7's photograph CONFIRMED closed, **§6's tile gap NOT verified — still open**.
 
-**Task 12 is BUILT — its three parked findings are closed** (§3/§4's showcase, §6's tile gap, §7's
-photograph; the max-width section further down is now history, not a to-do). Then:
+Remaining, in order:
+**Task V** (⚠️ see the section below — the owner raised three concrete defects on 2026-09-02 and this
+task is where they live; it is ALSO the task with the biggest documentation gap on this branch) ·
 **Task A-MOTION** (and the unexplained scroll drift below) · **Task 13** (⚠️ aimed at §3's card row,
-the site header at 390px, and the unexplained 11px overflow at 768) · **Task V** · whole-branch
-review · the branch-end
-`docs/lessons.md` pass, which has an L-002 evidence entry queued in the ledger.
+the site header at 390px, and the unexplained 11px overflow at 768) · whole-branch review · the
+branch-end `docs/lessons.md` pass, which now has FIVE queued entries: two L-002 evidence entries,
+`npx playwright test` belongs in the gates, that same e2e gate being unrunnable from cold, and the
+window-vs-page pattern that has now fired three times.
 
 ## ⚠️ THE FIX-ROUND REVIEW'S ONE MINOR WAS AN L-002 HIT ON ME, AND IT FIRED TWICE IN ONE COMMIT
 
