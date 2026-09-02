@@ -1,93 +1,124 @@
 # Landing page port (`/`) — run state
 
-> **Status: SESSION PAUSED BY THE USER 2026-09-02 — the SECOND pause of that date, a LATER
-> session than the older notes below describe. Clean stopping point.** Tasks 1–7 · A1 §2 ·
-> A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7 · 11 §8+§9 (+fix round, re-reviewed **PASS**) · **12
-> (page composition)** are all built and committed on branch `landing-page-port`. **Nothing merged.**
-> **ALL NINE SECTIONS EXIST AND THE PAGE COMPOSITION IS DONE.**
+> **Status 2026-09-02 (THIRD session of the date, later than every note below).** Tasks 1–7 · A1 §2 ·
+> A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7 · 11 §8+§9 · 12 (page composition) · **TASK V** are
+> all built and committed on branch `landing-page-port`. **Nothing merged, nothing pushed.**
 >
-> ✅ **TASK 12 IS REVIEWED — PASS, 1 Minor (N1), fixed.** Report: `task-12-review.md`.
-> **EVERY TASK ON THIS BRANCH HAS NOW HAD A REVIEW.**
+> ✅ **TASK V IS WRITTEN INTO THE COMMITTED PLAN AND EXECUTED.** It used to be one line in a
+> gitignored file. V1 (§3's waveform), V2 (§3's card row), V3 (the two untrimmed poses) and V5 (the
+> dot-grid arrangement guard) are done and committed. V4 is **measured and reported, not closed** —
+> both of its gaps need something that is the owner's to give.
 >
-> ⚠️ **BUT TASK 12's REVIEW WAS NOT INDEPENDENT, and that is a real gap, not a formality.** It was
-> run by the controller lineage that BUILT the task, because the user asked for it directly and this
-> session does not spawn agents unasked. Substituted instead: every load-bearing number re-derived
-> from a primary source, one mutation-check re-run, the page rendered and looked at, and everything
-> unverifiable listed as unverified rather than passed. **An independent render-capable pass over
-> `19b05d5..9861650` is still worth buying** — and TWO items in that review are single-sourced on me
-> (§6's tile gap, unmeasurable with `[data-chain-node]`; and the 3.46% pixel scan, not re-run).
+> ▶ Gate, every command run and read before anything was written about it: `npm run typecheck` exit
+> 0 · `npm run lint` 0 errors · `npx vitest run` **2564 over 280 files, 0 failed** · `npx playwright
+> test` **23 passed**. Working tree clean.
 >
-> ▶ Nothing is in flight: no agent running, no unprocessed report on disk, **0 listeners on
-> :300x (verified with `netstat`, not assumed)**. `npm run dev` restores a dev server — **check the
-> port it actually takes**, it moves to 3001 silently when 3000 is held. `.next` currently holds a
-> PRODUCTION build, so `npm run start` comes up in ~1 s; `next dev` and `next build` share `.next`
-> and clobber each other.
+> ⚠️ **TASK 12's REVIEW WAS NOT INDEPENDENT AND THAT GAP IS STILL OPEN**, and Task V's work has had
+> **no review at all** — it was built by this controller on the owner's "do it, no approval needed".
+> **An independent render-capable pass over `19b05d5..HEAD` is the biggest thing still worth buying.**
 >
-> ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
+> ▶ Nothing is in flight: no agent running, no unprocessed report on disk. A production server may
+> still be listening on **:3000** from this session — check `netstat` before starting one, and check
+> which port `npm run dev` actually takes (it moves to 3001 silently). `.next` holds a PRODUCTION
+> build; `next dev` and `next build` share `.next` and clobber each other.
+>
+> ⚠️ **This memory is navigation, process and the decisions taken on the owner's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
 > this does not. If this file and either of them disagree, they win and this file is the bug.
 
 # ▶▶ RESUME HERE
 
-**The last LANDING-PAGE code commit is `ceea58e`** — task 12's one-Minor fix round (N1). Task
-12's own commits are `7dab407` (page measure + e2e suite) and `9861650` (§7 rebalance); task 11's
-fix round `e0db3c2` is REVIEWED AND PASSED. Branch `landing-page-port`, **nothing merged, nothing
-pushed**. Run `git log --oneline -8` for true HEAD rather than trusting a hash written here.
+**HEAD is `23662ac`.** Run `git log --oneline -8` for the truth rather than trusting a hash here.
+Six commits landed in this session:
 
-**FIVE commits landed in the session that ended at this pause** (`0588bbf..HEAD`):
+    95f77b5  docs(landing)   Task V written into the plan, beside Task 13
+    92b8214  fix(marketing)  V1  §3's waveform — 32 bars, floor 0.05
+    d720eb7  fix(marketing)  V2  §3's card row — all five 146.51
+    7afc664  fix(mascot)     V3  trimmed reading-on-the-orb.png and hugging-an-orb.png
+    4af5646  test(marketing) V5  the dot-grid arrangement guard
+    23662ac  docs(landing)   the plan's §6 step CORRECTED + Task V's outcome recorded
 
-    2d14481  perf(images)   install sharp                       } owner-delegated housekeeping.
-    5e02cf1  chore(assets)  mascot art out of public/, Blender  } NOT landing-page work, and NOT
-    090c7e6  docs(landing)  record that housekeeping            } part of task 12's review range.
-    ceea58e  fix(marketing) N1 — task 12's review fix round
-    fccf2b7  docs(landing)  record task 12's review + the Task V defects
+## ▶▶ THE NEXT ACTIONS, IN ORDER
 
-⚠️ **`2d14481` and `5e02cf1` touch no marketing component's RENDERING** — only two docblocks, the
-mascot asset paths and the docs. Do not fold them into task 12's range when reasoning about it.
+1. **An INDEPENDENT render-capable review of `19b05d5..HEAD`.** Two ranges now need it: task 12's
+   (whose review was run by the lineage that built it) and Task V's (which has had none). Use
+   `general-purpose`, not `code-reviewer` — the latter is code-only and every finding here is visual.
+2. **Task A-MOTION** — one pass over the whole composed page, plus the unexplained `/en#problem`
+   scroll drift, which belongs to whoever owns the scroll layer.
+3. **Task 13** — ⚠️ **re-measure the 320/390/768 overflow rather than trusting anything written
+   about it.** V2 changed the last list item's padding, NOT the `shrink-0` + `basis-[clamp(...)]`
+   construct the overflow comes from, so the recorded `320 -> +87 · 390 -> +17 · 768 -> +11` are
+   ASSUMED to stand and were not re-run.
+4. **Whole-branch review**, then the branch-end `docs/lessons.md` pass — now **SIX** queued entries
+   (two L-002 evidence entries · `npx playwright test` belongs in the gates · that same e2e gate is
+   unrunnable from cold · the window-vs-page pattern, three instances · and **new: a plan step can
+   carry a correct measurement and a wrong cause**).
 
-## ▶▶ THE NEXT ACTION, AGREED WITH THE OWNER AT THIS PAUSE
+## ⚠️ WHAT TASK V CHANGED ABOUT WHAT THIS MEMORY USED TO SAY
 
-**Write Task V into the committed plan** (`docs/superpowers/plans/2026-08-27-landing-page-port.md`,
-beside Task 13). **DOCUMENTATION ONLY — no code in this step.** The owner chose this order
-explicitly: N1 + record the review first (both done, `ceea58e` / `fccf2b7`), then Task V.
+**The §6 open question this memory carried to the owner was built on a cause nobody had checked, and
+it does not need asking.** It said the companion could only grow by narrowing the 8-node grid or by
+overflowing its column (triggering T9-R4's three-mechanism rule and contradicting the docblock's
+"NOTHING OVERLAPS HERE"). Neither is needed:
 
-What goes in it: the **three owner-raised defects** measured this session (their own section below,
-with every number and its cause), plus the **two items already parked** for Task V in the ledger.
-Why it is urgent: **Task V exists today only as ONE LINE in a gitignored file.** It is the task that
-owns whether the page LOOKS right — the owner's main concern — and it currently dies with this
-working copy.
+**`reading-on-the-orb.png` was never trimmed** — it filled 82.6% x 90.8% of its own 499x500 frame,
+so in a 160px box the creature drew 132 x 145 CSS px and sat 5.6px LEFT of centre. The other three
+poses a component references are `extract.js`'s output and measure ~100% fill, because a cutter
+emits a tight box. Trimming the two hand-cut ones bought a **21% larger, centred creature for zero
+grid pixels** (companion now 160 x 176, node grid still 1016).
+▶ **Before writing an open question about a trade-off, check whether the thing being traded is the
+constraint.** The 16px of "slack" was real and irrelevant.
 
-⚠️ **ONE OPEN QUESTION MUST GO TO THE OWNER WHILE WRITING IT — DO NOT DECIDE IT FOR THEM.**
-§6's companion cannot just be made bigger: its column is **176px** and the box is already 160, so
-there are **16px of slack**. Two routes, and composition is something this owner has rejected before:
-  (a) **narrow the 8-node grid** (currently 1016 of the 1192 content) to widen the companion's
-      column — changes the chain's own rhythm;
-  (b) **let the companion overflow its column** — but then T9-R4's three-mechanism rule for an image
-      that breaks out of its box applies (edge fade + explicit z-order + `pointer-events-none`), AND
-      `capability-chain.tsx`'s docblock currently asserts the opposite ("NOTHING OVERLAPS HERE"), so
-      that claim would have to be retired deliberately rather than contradicted silently.
-Write BOTH with their trade-offs; let the owner pick at execution time.
+⚠️ **`xl:items-end` on §6 IS CORRECT — do not "fix" it.** The plan I wrote told the implementer to
+centre the companion, reasoning from a real measurement (its centre is 74.67px below the icon-tile
+row's). The measurement is right and the cause is wrong: the docblock already says `items-end` is
+what puts the orb on the RAIL, the node grid's bottom edge IS the rail, and the reference draws it
+that way. What looked wrong was the same untrimmed file — 16px of bottom margin, so `items-end` was
+pinning the MARGIN to the rail and the creature floated 5.1px above it. **That is the §6 minor
+already on file as "the orb floats ~14px above the rail": the same defect, filed twice.**
+▶ **Read a class's own docblock before changing a class that has one.** The plan is corrected at
+`23662ac`; an e2e guard now pins the rail contact, mutation-checked.
 
-▶ After Task V is written: **Task A-MOTION** (plus the unexplained `/en#problem` scroll drift) ·
-**Task 13** · whole-branch review · the branch-end `docs/lessons.md` pass (FIVE queued entries).
-▶ Also still available and still worth buying: **an INDEPENDENT render-capable review of
-`19b05d5..9861650`**, because this session's was not independent.
+⚠️ **§3's card 1 leading with the still, label below, is CORRECT and closed.** The owner raised it
+as an inconsistency; `ref/zoom-c1.png` draws it that way and the still is **70%** of the card's
+height in both. Reversing it is one line (lead `WatchBody` with `StepHeading`) and a deliberate
+departure from the reference — the owner's call, not a defect.
 
-▶ Working tree **fully clean** — the five favicon candidates are no longer untracked, see "Still
-owed". Full suite **2561 tests over 280 files** (`npx vitest run --reporter=json`), tsc 0, `npm run lint`
-0 errors, **Playwright 21/21**. No agent in flight, no unprocessed report on disk.
+## ▶ THE TWO THINGS TASK V LEFT FOR THE OWNER (V4 Step 1)
 
-  Tasks 1-7 · A1 §2 · A2 §3 · A3 §4 · P (mascot) · 9b   COMPLETE
-  Task 8 §5   COMPLETE (cc85602..351f947) — 1 fix round
-  Task 9 §6   COMPLETE (351f947..e610bfe) — 1 fix round
-  Task 10 §7  COMPLETE (bbfefbf..5ff0398) — review PASS, 0 fix rounds
-  Task 11 §8+§9 COMPLETE (9f2f8e6..bc13acb) — review FAIL, 1 fix round
-  Task 11 fix  `e0db3c2` — re-reviewed **PASS**, 1 Minor (two numbers in a commit message, not code)
-  `ae26059`   — the owner's own vi mascot-alt fix, both keys
-  Task 12       COMPLETE (`7dab407` page measure + e2e suite, `9861650` §7 rebalance)
-  Task 12 fix  `ceea58e` — reviewed **PASS**, 1 Minor (N1, a word a rename dropped), fixed
-  **EVERY TASK ON THIS BRANCH IS BUILT AND REVIEWED. NOTHING IS OWED ON THE EXISTING TASKS.**
-  ⚠️ Task 12's review was NOT independent — see the status block; that gap is still open.
+Most of §1 already matches `ref/s1-hero-card.png`. Two gaps, and building either would take a
+decision that is not mine:
+1. The reference's transport bar carries a **timestamp and four control glyphs**. Adding them means
+   choosing which affordances to depict, and depicting a control implies the feature (spec §2.3).
+2. Its **Key Words list has three entries against our two**. A third needs a new catalog key, and
+   the catalog is the owner's — A2's ruling on §3 card 2's romaji and chip applies unchanged.
+
+✅ **V4 Step 2 is CLOSED as verified-harmless.** §2's photograph at a LAYOUT width of 1024 overruns
+its fade by **16.29 px** behind the SRS chip (photo 599.04..1024, fade 84.99, chips end 700.32,
+overlap 101.28). A1 recorded ~16 and it re-derives; Task 12's widening did not move it. Every chip
+is an opaque `bg-card` panel at `relative z-10`, so nothing reaches its text. Lengthening the fade
+to clear 1024 would over-fade at 1280, the reference's own width.
+▶ **A same-origin iframe carries its OWN 15px scrollbar: a 1024px iframe lays out at 1009 and drops
+below the `lg` branch entirely.** Ask for 1039, and read `clientWidth` back before believing it.
+
+## ▶ THE MEASUREMENT RULES TASK V PAID FOR AGAIN
+
+- ⚠️ **The page here is 1265, not 1280** (window 1280 less a 15px classic scrollbar). Every
+  percentage or distance-to-edge is worthless without the page width beside it. Three numbers on
+  this branch were recorded wrong this way; this session avoided a fourth.
+- ⚠️ **A number can be right and still describe the wrong subject.** My first §6 e2e guard compared
+  the companion's centre to `[data-chain-node]`'s and went red at 13.19 against a 12px bound — which
+  looks like a working guard and is not: the node is the whole 186.67px CELL, so `items-end` puts
+  the centres 13.33px apart BY DESIGN. The 74.67 belongs to the icon-TILE row, a different element.
+- ⚠️ **Change one constant at a time when two are suspected.** §3's waveform had two independent
+  causes; fixing the bar count alone left the dynamic range at 4.67, which is what PROVED the 0.18
+  floor was a second defect and not a symptom.
+- **`encode` in `scripts/mascot/png.js` is `encode(w, h, data)` with a Buffer** — not an object, and
+  not a `Uint8Array` (it calls `data.copy`). `decode(path)` takes a path, not a buffer.
+- **The JWT skew recurred and the recorded procedure worked verbatim.** `auth-locale-round-trip`
+  went red with digest **1612785857** — the same one already on file — and `date -u` gave host
+  12:49:34 against the container's 12:49:35. Passed on re-run. Read the digest first; it is the join
+  key between the browser and the server log.
 
 ## ✅ TASK 12 IS REVIEWED — PASS. WHAT THE REVIEW SETTLED, AND WHAT IT DID NOT
 
@@ -124,7 +155,17 @@ pixel scan of `346:6275` itself (anchor and arithmetic confirmed; the scan not r
 +17 · 768 -> +11, identical to the numbers already recorded against **Task 13**; below `lg` the new
 `max-width` does not bind at all. Keep it visibly assigned to Task 13.
 
-## ⚠️ TASK V IS THE OWNER'S QUALITY TASK AND IT IS NOT IN THE PLAN
+## ✅ SUPERSEDED — TASK V IS IN THE PLAN NOW, AND EXECUTED (kept for its evidence)
+
+> Everything below was written while Task V existed only as one line in a gitignored file.
+> It is now written into the committed plan (`95f77b5`) and executed (`92b8214` / `d720eb7` /
+> `7afc664` / `4af5646`), and the plan's own "What Task V actually did" section is the
+> current record. **The three measured defects below are kept because the numbers are the
+> evidence — but read the RESUME block first: defect 3's stated cause is WRONG.** The
+> companion was not a composition trade-off, it was an untrimmed PNG, and `xl:items-end` was
+> right all along.
+
+### The original note, as written
 
 **Task V exists ONLY as one line in the gitignored ledger** — *"visual fidelity vs `346:6275`"* —
 carrying two parked items. The committed plan has Tasks 1—13 and no Task V, no Task A-MOTION and no
