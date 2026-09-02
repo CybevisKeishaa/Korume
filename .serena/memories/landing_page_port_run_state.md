@@ -1,8 +1,9 @@
 # Landing page port (`/`) — run state
 
 > **Status: EXECUTION IN PROGRESS. Tasks 1–7 · A1 §2 · A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7
-> built and committed on branch `landing-page-port`. Nothing merged.** Task 10 closed 2026-09-02
-> with a PASS review and ZERO fix rounds — the first section task on this branch to need none.
+> · 11 §8+§9 built and committed on branch `landing-page-port`. Nothing merged.** Task 11 closed
+> 2026-09-02 with a FAIL review (one Major, one Minor) and one fix round at `e0db3c2`. **ALL NINE
+> SECTIONS OF THE PAGE NOW EXIST.**
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -10,36 +11,82 @@
 
 # ▶▶ RESUME HERE
 
-**The last CODE commit is `5ff0398`** (§7 Trust); memory/ledger commits sit on top, so run
+**The last CODE commit is `e0db3c2`** (task 11's fix round); memory/ledger commits sit on top, so run
 `git log --oneline -3` for true HEAD rather than trusting a hash written here. Branch
 `landing-page-port`, **nothing merged**.
 
-▶ Working tree clean apart from the five deliberately untracked favicon candidates in
-`public/mascot/` (see "Still owed to the user" — do NOT commit them to tidy up). Full suite
-**2536/2536 over 277 files**, tsc 0, lint 0. No agent in flight, no unprocessed report on disk.
+▶ Working tree **fully clean** — the five favicon candidates are no longer untracked, see "Still
+owed". Full suite **2556/2556 over 279 files**, tsc 0, lint 0 errors. No agent in flight, no
+unprocessed report on disk.
 
   Tasks 1-7 · A1 §2 · A2 §3 · A3 §4 · P (mascot) · 9b   COMPLETE
   Task 8 §5   COMPLETE (cc85602..351f947) — 1 fix round
   Task 9 §6   COMPLETE (351f947..e610bfe) — 1 fix round
   Task 10 §7  COMPLETE (bbfefbf..5ff0398) — review PASS, 0 fix rounds
+  Task 11 §8+§9 COMPLETE (9f2f8e6..bc13acb, fix round e0db3c2) — review FAIL, 1 fix round
 
-## ▶ THE NEXT ACTION IS TASK 11 (§8 CTA + §9 SIGN-OFF), AND ITS BRIEF IS NOT WRITTEN
+## ▶ THE NEXT ACTION IS AN INDEPENDENT RE-REVIEW OF THE FIX ROUND (`bc13acb..e0db3c2`)
 
-Two things it must settle, and they must be settled TOGETHER, not one at a time:
+Task 11's own review is done and its two findings are fixed and committed. What has NOT happened is
+an independent pass over the FIX. It is not a section edit — it touches `Section`, the site header,
+the token system and `cn()`, i.e. four things Task 12 will build on — so it earns one.
+Diff is at `review-bc13acb..e0db3c2.diff` in the ledger folder.
 
-1. **`Section`'s layout API — collapse it.** §7 added `split?: boolean` as a KNOWING SEAM because
-   `isSplit = rail != null` made `rail` both the selector and the content, so "split with an empty
-   rail" was inexpressible (`rail={null}` selects the STACKED layout — fix F6's deliberate
-   behaviour, and the composition the user rejected in §2). §8 is CENTRED and wants a third heading
-   size, so it is the second consumer that makes the redesign honest. Candidate shape, recorded in
-   the prop's own docblock: `layout?: "stacked" | "split" | "centred"` with `rail` as pure content,
-   which also retires the `!= null` guard by construction. **Do not add a third selector.**
-2. **`cta-bridge.png` is a FULL-BLEED background with text over it and needs a MEASURED scrim.**
-   "Looks dark" is not WCAG AA. A scrim over a REAL image is allowed — the no-scrim rule is scoped
-   to pending placeholders.
+Then: **Task 12** composition · **Task A-MOTION** · **Task 13** (⚠️ aimed at §3, and also the site
+header at 390px) · **Task V** · whole-branch review.
 
-Then: **Task 12** composition · **Task A-MOTION** · **Task 13** (⚠️ aimed at §3, and now also the
-site header at 390px) · **Task V** · whole-branch review.
+## ▶ WHAT TASK 11 SETTLED — Task 12 CONSUMES ALL OF IT
+
+1. **`Section` now takes ONE `layout` prop: `"stacked" | "split" | "centred"`.** `split?: boolean`
+   and the `rail != null` selector are RETIRED. `rail` is pure content and is accepted **only**
+   under `layout="split"`, as a discriminated union — so both mistakes fix F6 guarded against are
+   now compile errors, verified both ways with `tsc`. Each layout pairs an arrangement with its own
+   measured heading token (40px / 24px / 28px); that is why it is one prop and not an `align` flag.
+2. **`backdrop` is a NEW slot, and is NOT what §2/§7 use.** It renders as the section's first child
+   OUTSIDE `Container`, for a layer behind the whole band including the copy. §2's and §7's
+   photographs are PARTIAL bleeds scoped to the showcase column's edge and stay in `children`.
+   **Do not migrate them** — they would lose their column-scoping and Container-relative bleed math.
+3. **§9 is CENTRED**, reversing the plan. The pre-written reason to keep it left ("centred reads as
+   a second CTA") was wrong at the hinge: **what makes §8 a CTA is its buttons, not its alignment.**
+4. **§8's copy is `text-foreground`, not `text-muted-foreground`.** Over a photograph the muted grey
+   measures 3.75:1 / 2.41:1 — failing AA. Raising the scrim to 80% still leaves the note at 3.49:1
+   AND flattens the image; changing the text colour puts every block past 7:1. Because
+   `object-cover` crops differently at every width, the bound was taken from the brightest pixel
+   anywhere in the band rather than extrapolated: floor 6.82:1 across all six geometries.
+   ▶ **Grey-on-photograph is the reusable lesson — a scrim is not what rescues a muted tone.**
+
+## ▶ WHAT TASK 11's FIX ROUND ADDED TO THE METHOD
+
+- ⚠️ **EVERY SECTION HEADING WAS LANDING UNDER THE STICKY HEADER, BRANCH-WIDE, AND ONLY §8/§9 MADE
+  IT VISIBLE.** Nothing in the repo set `scroll-margin-top`. `/en#cta` put `#cta-heading` at 47.97px
+  under a bar occupying 0..64.67px — ~17px of the section's ACCESSIBLE NAME (`aria-labelledby`)
+  hidden. §2-§7 CONCEALED it: their `eyebrow` is decoration and is what lands in the strip instead.
+  §8/§9 are the first sections with no eyebrow (correctly — no catalog key, and inventing one is
+  inventing copy). Fixed at the primitive: `--layout-header-height` → `h-header` + `scroll-mt-header`.
+  After: heading 47.97 → 112.14; the control `/en#problem`'s eyebrow 48.16 → 112.16, so §2-§7
+  improved too.
+- ⚠️ **`scrollIntoView()` DOES NOT REPRODUCE IT — only real hash navigation on a fresh load does.**
+  That is why an implementer's browser pass, a self-review and a completion gate all missed it.
+  **Add `/{locale}#<section-id>` on a fresh load to every section task's browser checklist.**
+- ⚠️ **A NEW SHELL TOKEN HAS FOUR HOMES, AND `lib/utils.ts` IS ONE EVEN WHEN THE UTILITY IS
+  UNAMBIGUOUS.** The A1-era note framed that fourth home as a `text-*` colour-vs-size hazard — the
+  LOUD failure, where the class is silently dropped. The QUIET one applies to any custom name:
+  unregistered, twMerge recognizes neither `h-header` nor `scroll-mt-header` and keeps **both sides**
+  of a conflict, leaving CSS source order to decide. Measured: `cn("h-16","h-header")` →
+  `'h-16 h-header'`. Homes: `globals.css` · `tailwind.config.ts` · `lib/design-tokens.test.ts` ·
+  `lib/utils.ts`.
+- ⚠️ **A NEW TAILWIND UTILITY THAT "DOESN'T APPLY" IS PROBABLY THE BROWSER'S CSS CACHE.** After the
+  fix the page reported the header bar COLLAPSED to 36px and `scroll-margin-top: 0px`. The classes
+  were on the elements and the rules WERE in the served CSS — `curl`ing the exact stylesheet URL the
+  page had loaded proved it. A hard reload fixed it. ▶ **Curl the stylesheet the page actually
+  loaded before touching the config.** (Separately: a `tailwind.config.ts` edit does NOT reach a
+  running `next dev` — that one genuinely needs a restart.)
+- **A FORMATTING FINDING NEEDS A BASELINE.** The review's N1 evidence was `prettier --check` warning
+  on `poses.json` — but the file was ALREADY prettier-dirty at `9f2f8e6` (70 diff lines), so
+  `prettier --write` would have fixed a pre-existing condition and reformatted 40+ unrelated lines
+  inside a task-11 fix commit. Hand-fixed the one entry to its siblings' key order instead, and
+  compared both parses: identical content, key order aside. ▶ **Check whether the tool was already
+  failing before the diff under review.**
 
 ## ▶ TASK 12'S MAX-WIDTH LEVER NOW HAS THREE FINDINGS BEHIND IT, NOT ONE
 
@@ -361,11 +408,13 @@ the `ratio` each slot already declared. Alt fidelity spot-checked (`problem.phot
 
 - **Wired:** `hero-still.png` (§1), `problem-desk.png` (§2), `journey-thumb.png` (§3) — all committed.
 - **Wired since:** `recommend-commute.png` (§5, task 8) · `trust-window.png` (§7, task 10 — 1086x1448,
-  exactly 3/4, so `ratio="3/4"` crops nothing). **Only `cta-bridge.png` is still owed, to Task 11.**
-  All six are COMMITTED; the old "still untracked, which is correct" note is obsolete.
-- ⚠️ **`cta-bridge.png` is a full-bleed background with text over it.** "Looks dark" is not WCAG AA;
-  Task 11 must add a scrim and measure. A scrim over a REAL image is allowed — the no-scrim rule is
-  scoped to pending placeholders.
+  exactly 3/4, so `ratio="3/4"` crops nothing) · `cta-bridge.png` (§8, task 11, as a full-bleed
+  `backdrop` under a measured scrim). **ALL SIX ARE NOW WIRED AND COMMITTED**; the old "still
+  untracked, which is correct" note is obsolete and so is "only `cta-bridge.png` is owed".
+- ✅ **`cta-bridge.png`'s scrim is DONE and measured** — 70% over the photograph, with §8's copy
+  switched to `text-foreground` because `text-muted-foreground` measured 3.75:1 / 2.41:1 there.
+  Floor 6.82:1 taken from the brightest pixel anywhere in the band, across all six `object-cover`
+  geometries. Independently re-derived by the reviewer via canvas sampling of the live render.
 - Ruling: PNGs committed as-is, 13MB. `sharp` is NOT installed, so converting means writing an
   encoder. `next/image` optimises at request time.
 
@@ -375,6 +424,9 @@ the `ratio` each slot already declared. Alt fidelity spot-checked (`problem.phot
    2–5 s and **the dev server died twice** with `Jest worker encountered 2 child process exceptions`
    (500 on every route). almostgone.vn is the same shape of single long-running Node host. This is a
    blocker candidate, not a footnote.
+   ▶ **Task 11 attached a number, and §8 is the worst case on the page**: the optimizer returns
+   **2,038,814 bytes** for `cta-bridge.png` at `w=1920` — essentially the original PNG, no saving at
+   all — and took 3.5 s cold. §8 declares `sizes="100vw"`, so this is the page's heaviest request.
 2. `EMAIL_PROVIDER=none` must be in its `.env` before the next deploy (older debt, still open).
 
 Also learned: **`next dev` and `next build` share one `.next` and clobber each other** — it cost one
@@ -409,6 +461,14 @@ the browser" as unverified unless the widths are named.
   review returned at 22:40 and the ledger stopped at 22:24, so the run looked "mid-review" when in
   fact a completed FAIL verdict was sitting on disk unprocessed. `ls -la` on the workspace is the
   first command of any resume, before trusting either the ledger tail or the Serena memory.
+  ▶ **IT FIRED AGAIN ON TASK 11, AND HARDER.** The reviewer finished, wrote `task-11-review.md` at
+  09:04, and was then killed by a **session rate limit** while returning — the controller saw only
+  *"Agent terminated early due to an API error: You've hit your session limit"* and nothing else.
+  The ledger's last write was 07:10 (task 10), the report 08:48, the review 09:04. A cold resume
+  that trusted either the ledger or this memory would have concluded "Task 11's brief is not
+  written" and rebuilt a finished, reviewed task. **A killed agent is not a lost result — look on
+  disk first.** This is also why every dispatch must require a full report file: it is what turned a
+  dead session into a few minutes of reading.
 - ⚠️ **ASSERT CODE FACTS FROM CODE, NOT FROM A RENDERED SCREENSHOT.** I recorded in the ledger that
   §3's dot grid "came out 6 columns" after looking at a card-scale screenshot; the source said
   `DOT_COLUMNS = 5`. A 5- and a 6-column grid look alike at that size and one `grep` would have
@@ -436,21 +496,34 @@ the browser" as unverified unless the widths are named.
   these "after the app is stable". The links currently ship as plain TEXT, not anchors, per spec
   §2.3. Nothing is broken.
 - **Whether to delete `public/mascot/renders/` and `assets/blender/references/`** now Blender is rejected.
-- **Five UNTRACKED favicon candidates sit in `public/mascot/`** — `concept-logo.png`,
-  `favicon-korume.png`, `favicon4.png`, `korume-favicon2.png`, `korume-favicon3.png`, 5.5 MB
-  together. Deliberately NOT committed at `aa927d9`: nothing references them, and unreferenced files
-  under `public/` are served to every visitor. The shipped mark is `public/korume.png`. Ask whether
-  to delete them or keep them somewhere outside `public/`.
+- ✅ **The five favicon candidates are SETTLED (`9f2f8e6`, owner delegated the call).** Moved to
+  `assets/brand/favicon-candidates/` — outside `public/`, so no longer served — and COMMITTED rather
+  than deleted, because they were untracked and deleting would have destroyed the only copy.
+  Deleting later costs one command; recovering would have been impossible.
+- ⚠️ **BUT THEY WERE THE SMALLEST INSTANCE, AND THE REAL ONE IS STILL OPEN.** `public/mascot/` is
+  52 MB, of which **37 MB is TRACKED at the top level and publicly served**. 16 MB of that is
+  `upscalemedia-transformed (4).png` and `(5).png`, declared as `sheets` in `scripts/mascot/
+  poses.json` — build-time source art for `extract.js`, not runtime assets, downloadable by anyone.
+  The other two `upscalemedia-transformed*.png` (16 MB) are referenced by NOTHING. Deliberately not
+  acted on: moving a declared sheet changes that script's contract, and deleting tracked art is the
+  owner's call. **Ask.**
 - ⚠️ **`text-heading-lg` widened the app-wide type scale** — a design decision beyond §2. It is the
   smallest change satisfying §13.1(2) without an arbitrary value, but the user may prefer 20px; one
   line reverses it.
 - **Vietnamese copy: DONE by the user and committed at `aa927d9`** (2026-09-02). Still theirs — do
   NOT create a task, write a report, or edit `messages/vi/marketing.json` copy. Parked nits stay in
   the ledger.
-  ⚠️ **ONE THING TO ASK THEM, NOT TO FIX**: `vi.nav.companion` is `"Korume"` where `en.nav.companion`
-  is `"Companion"`, so the Vietnamese header shows the brand name twice — once as the wordmark and
-  once as a nav item. It may be deliberate (the Companion feature branded by name); it reads like a
-  paste slip. Their call, their file.
+  ✅ **`vi.nav.companion` is SETTLED (`9f2f8e6`, owner delegated) — and it was NOT a paste slip.**
+  The owner names the companion CHARACTER "Korume" in Vietnamese consistently: `hero.companion` and
+  `pitch.companion` are speaker labels on its chat bubbles and both say "Korume". That is deliberate
+  and untouched. Only the NAV item was wrong, because there the same word rendered twice in one bar
+  meaning two different things. Renamed to "Bạn đồng hành", the short form already used for this
+  feature in `messages/vi/settings.json`. One key changed; every other vi string byte-identical.
+  ⚠️ **A SECOND vi STRING IS OWED AND IS NOT FIXED**: `vi.cta.mascotAlt` reads *"Korume của Korume,
+  ngồi trên một quả cầu phát sáng."* — literally "Korume's Korume", broken Vietnamese. `git log
+  --follow` shows it used to say *"Linh thú của Korume"* and was changed in the owner's own copy pass
+  at `aa927d9`. Task 11 is merely the first commit that RENDERS it. Task 11's reviewer flagged it and
+  correctly did NOT count it against the diff. **Owner's file, owner's call — ask, do not edit.**
   ▶ **FLAG AT THAT PASS — §3's card 2 is missing four strings the reference has**: a `5 / 12`
   counter, a tag chip, a romaji line, and a small icon caption. A2 deliberately built without them
   rather than inventing content: romaji is *study content*, not decoration (CLAUDE.md §2.3), and the
