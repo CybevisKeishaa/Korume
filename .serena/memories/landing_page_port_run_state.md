@@ -1,9 +1,20 @@
 # Landing page port (`/`) — run state
 
-> **Status: EXECUTION IN PROGRESS. Tasks 1–7 · A1 §2 · A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7
-> · 11 §8+§9 built and committed on branch `landing-page-port`. Nothing merged.** Task 11 closed
-> 2026-09-02 with a FAIL review (one Major, one Minor) and one fix round at `e0db3c2`. **ALL NINE
-> SECTIONS OF THE PAGE NOW EXIST.**
+> **Status: SESSION PAUSED BY THE USER 2026-09-02, at a clean stopping point.** Tasks 1–7 · A1 §2 ·
+> A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7 · 11 §8+§9 (+fix round, re-reviewed **PASS**) · **12
+> (page composition)** are all built and committed on branch `landing-page-port`. **Nothing merged.**
+> **ALL NINE SECTIONS EXIST AND THE PAGE COMPOSITION IS DONE.**
+>
+> ▶ **THE ONE THING OWED BEFORE ANY NEW WORK: task 12 is UNREVIEWED.** Everything else on this branch
+> has had an independent pass. Task 12 changes a token, a new shared component, four call sites, §7's
+> composition and the whole e2e suite — and it shipped a regression mid-task that only a RENDERED
+> LOOK caught, which is exactly why its reviewer needs rendering ability (`general-purpose`, not
+> `code-reviewer`). Range `19b05d5..9861650`; the diff is already on disk as
+> `review-19b05d5..9861650.diff` in the ledger folder.
+>
+> ▶ Nothing is in flight: no agent running, no unprocessed report on disk, no dev server left up
+> (one was running on :3000 this session and was stopped at the pause — `npm run dev` restores it;
+> **check the port it actually takes**, it moves to 3001 silently when 3000 is held).
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
