@@ -127,6 +127,7 @@ export async function PitchShowcase() {
       id="pitch"
       eyebrow={t("pitch.eyebrow")}
       heading={t("pitch.heading")}
+      layout="split"
       rail={
         <>
           <p className="text-body text-muted-foreground">{t("pitch.body")}</p>

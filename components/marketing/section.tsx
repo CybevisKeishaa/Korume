@@ -1,7 +1,18 @@
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
 
-export interface SectionProps {
+/**
+ * The three compositions this page uses. One prop, because alignment and
+ * heading size are not independent: each layout pairs a measured heading token
+ * with the arrangement that token was measured for.
+ *
+ * - `stacked`  — eyebrow + heading above the showcase, `text-display` (40px).
+ * - `split`    — narrow rail beside a wide showcase, `text-heading-lg` (24px).
+ * - `centred`  — everything centred, `text-title` (28px). §8's shape.
+ */
+export type SectionLayout = "stacked" | "split" | "centred";
+
+interface SectionBase {
   /** Anchor id; also what the accessible region is keyed to. */
   id: string;
   /** Small label above the heading. Presentational text, never a heading. */
@@ -9,29 +20,31 @@ export interface SectionProps {
   heading: string;
   /** 1 only for the hero; every other section is 2. */
   headingLevel?: 1 | 2;
-  /**
-   * Body copy (and any CTA) that belongs BESIDE the section's showcase rather
-   * than above it. Supplying it selects the split layout described below;
-   * omitting it keeps the original stacked layout, byte for byte.
-   */
-  rail?: React.ReactNode;
-  /**
-   * Selects the split layout when the rail carries ONLY the eyebrow and
-   * heading. §7 is the first such consumer: `346:6275` draws it as a rail split
-   * whose rail has no body paragraph, and `messages/**` has no `trust.body` to
-   * put there — inventing one would be inventing product copy.
-   *
-   * ⚠️ TWO SELECTORS FOR ONE LAYOUT IS A SEAM TAKEN KNOWINGLY, NOT A DESIGN.
-   * `Section`'s layout API is already owed a decision at task 11, where
-   * §8 adds centred alignment and a third heading size. Collapse all of it
-   * there — the candidate shape is `layout?: "stacked" | "split"` with `rail`
-   * as pure content, which also retires the `!= null` guard below by
-   * construction. Do NOT add a third selector before that task.
-   */
-  split?: boolean;
   children: React.ReactNode;
   className?: string;
 }
+
+/**
+ * ⚠️ `rail` IS ONLY ACCEPTED UNDER `layout="split"`, AND THAT IS ENFORCED BY THE
+ * TYPE, not by a runtime guard. Passing rail content to a stacked or centred
+ * section would silently drop it — the mirror image of the bug fix F6 guarded
+ * against, where `rail={cond ? <X/> : null}` silently SELECTED a layout. Making
+ * the pair a discriminated union means neither mistake compiles.
+ */
+export type SectionProps = SectionBase &
+  (
+    | { layout?: "stacked" | "centred"; rail?: never }
+    | {
+        layout: "split";
+        /**
+         * Body copy (and any CTA) that belongs BESIDE the showcase rather than
+         * above it. Optional even here: §7's rail carries only the eyebrow and
+         * heading, and omitting this renders no rail element at all rather than
+         * an empty one.
+         */
+        rail?: React.ReactNode;
+      }
+  );
 
 /** ~28/72. A relationship between two columns, not a copied pixel width. */
 const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
@@ -52,7 +65,7 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * space beneath it. `346:6275` does the opposite — a narrow left rail carries
  * eyebrow, heading and body while a wide column carries the showcase alongside.
  *
- * Passing `rail` turns that on. Two consequences worth stating:
+ * `layout="split"` turns that on. Two consequences worth stating:
  * - the heading drops from `text-display` to `text-heading-lg` (24px), because
  *   40px in a ~28% column wraps into a wall. That step did not exist before
  *   this layout needed it: the scale ran 20px -> 28px, and review measured the
@@ -86,27 +99,34 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * class is present on both items) and the OUTCOME assertion at a 320px
  * viewport is owed to the queued Playwright pass (Task 13/V).
  *
+ * ## The centred layout (§8)
+ *
+ * §8 is a full-bleed band with its content centred over a photograph. It is a
+ * `Section` and not a bespoke element on purpose: this component owns the
+ * page's vertical rhythm, and a section that sets its own `py-*` puts G4 back
+ * in nine places. Its heading token was measured, not chosen — §7's rail
+ * heading has a 12px capital in `346:6275` and ships at `text-heading-lg`
+ * (24px); §8's measures 14px, so 24 x 14/12 = 28px = `text-title`.
+ *
+ * ⚠️ This is the layout API the §7 task deferred here. `split` (a boolean) and
+ * `rail != null` were TWO selectors for one layout, kept only until a second
+ * consumer existed to design against. §8 is that consumer, and it needed a
+ * third arrangement AND a third heading size — which is why the answer is one
+ * `layout` prop rather than an `align` flag bolted onto the old pair.
+ *
  * `relative` is unconditional: a section whose showcase bleeds to the page edge
- * (§2's photograph) needs the section element — not the max-width `Container` —
- * as its positioning context. It changes nothing for sections that don't.
+ * (§2's and §7's photographs, §8's background) needs the section element — not
+ * the max-width `Container` — as its positioning context. It changes nothing
+ * for sections that don't.
  */
-export function Section({
-  id,
-  eyebrow,
-  heading,
-  headingLevel = 2,
-  rail,
-  split = false,
-  children,
-  className,
-}: SectionProps) {
+export function Section(props: SectionProps) {
+  const { id, eyebrow, heading, headingLevel = 2, children, className } = props;
+  const layout: SectionLayout = props.layout ?? "stacked";
+  const rail = props.layout === "split" ? props.rail : undefined;
   const headingId = `${id}-heading`;
   const Heading = headingLevel === 1 ? "h1" : "h2";
-  // `!= null`, not `!== undefined`: §3-§9 adopt this prop next and the shape
-  // they will write is `rail={cond ? <Body /> : null}`. Under `!== undefined`
-  // that selects the split layout with an empty rail div and a silently
-  // narrowed heading — a layout change with no visible cause (fix F6).
-  const isSplit = split || rail != null;
+  const isSplit = layout === "split";
+  const isCentred = layout === "centred";
 
   const headingBlock = (
     <>
@@ -123,8 +143,12 @@ export function Section({
         className={cn(
           "text-balance font-display font-bold",
           headingLevel === 1 && "text-hero",
-          headingLevel === 2 && (isSplit ? "text-heading-lg" : "text-display"),
-          !isSplit && "max-w-3xl",
+          headingLevel === 2 && isSplit && "text-heading-lg",
+          headingLevel === 2 && isCentred && "text-title",
+          headingLevel === 2 && layout === "stacked" && "text-display",
+          // The centred layout caps its own measure on the wrapper instead, so
+          // the cap and the centring cannot disagree at some widths.
+          layout === "stacked" && "max-w-3xl",
         )}
       >
         {heading}
@@ -157,6 +181,17 @@ export function Section({
             <div data-section-showcase className="min-w-0">
               {children}
             </div>
+          </div>
+        ) : isCentred ? (
+          // `mx-auto max-w-3xl` caps the measure here rather than on the
+          // heading, so a centred heading and a centred body cannot end up on
+          // different measures — which is what `max-w-3xl` on the heading plus
+          // a wider wrapper would do at some widths. `relative` keeps the whole
+          // block above any full-bleed background the section places behind it,
+          // without each consumer having to remember a z-index.
+          <div data-section-centred className="relative mx-auto max-w-3xl text-center">
+            {headingBlock}
+            <div className="mt-lg">{children}</div>
           </div>
         ) : (
           <>

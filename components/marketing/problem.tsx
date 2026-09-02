@@ -109,6 +109,7 @@ export async function Problem() {
       id="problem"
       eyebrow={t("problem.eyebrow")}
       heading={t("problem.heading")}
+      layout="split"
       rail={<p className="text-body text-muted-foreground">{t("problem.body")}</p>}
     >
       {/* 56% of the showcase column: the constellation's share of the

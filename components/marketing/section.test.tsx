@@ -81,6 +81,7 @@ describe("Section", () => {
         id="problem"
         eyebrow="Japanese isn't a textbook"
         heading="You can study Japanese for years."
+        layout="split"
         rail={<p>Traditional study separates everything.</p>}
       >
         <p>the showcase</p>
@@ -102,21 +103,49 @@ describe("Section", () => {
     expect(region).toHaveAttribute("id", "problem");
   });
 
-  it("selects the split layout from `split` alone, with no rail element to show for it", () => {
+  it("centres eyebrow, heading and showcase when `layout` is \"centred\"", () => {
+    // §8's shape: a full-bleed band whose content is centred, with no rail and no
+    // showcase column. Its heading is `text-title` (28px), not `text-display`
+    // (40px) — calibrated against §7's rail heading, whose capital measures 12px
+    // in `346:6275` and ships at `text-heading-lg` (24px); §8's measures 14px,
+    // i.e. 24 * 14/12 = 28. So alignment and heading size really are two axes,
+    // which is why one `layout` prop settles both rather than an `align` flag.
+    const { container } = render(
+      <Section id="cta" eyebrow="Ready when you are" heading="Start understanding." layout="centred">
+        <p>the showcase</p>
+      </Section>,
+    );
+
+    const heading = screen.getByRole("heading", { level: 2, name: "Start understanding." });
+    expect(heading.className).toContain("text-title");
+    expect(heading.className).not.toContain("text-display");
+    expect(heading.className).not.toContain("text-heading-lg");
+
+    // Centred layout has neither of the split's columns.
+    expect(container.querySelectorAll("[data-section-showcase]")).toHaveLength(0);
+    expect(container.querySelectorAll("[data-section-rail]")).toHaveLength(0);
+
+    const centred = container.querySelector("[data-section-centred]");
+    if (!centred) throw new Error("`layout=\"centred\"` rendered no centred wrapper");
+    expect(centred.className).toContain("text-center");
+    expect(screen.getByText("the showcase")).toBeInTheDocument();
+  });
+
+  it("selects the split layout from `layout` alone, with no rail element to show for it", () => {
     // §7 is the first section whose rail carries only the eyebrow and heading:
     // `346:6275` gives it no body paragraph and `messages/**` has no
     // `trust.body`. Under the original `rail != null` selector that shape could
     // not be expressed at all — `rail={null}` silently picked the STACKED
     // layout instead, which is the composition the user rejected in §2.
     const { container } = render(
-      <Section id="trust" eyebrow="Your data belongs to you" heading="Private. Secure." split>
+      <Section id="trust" eyebrow="Your data belongs to you" heading="Private. Secure." layout="split">
         <p>the showcase</p>
       </Section>,
     );
 
     // The split's two columns exist...
     const showcase = container.querySelector("[data-section-showcase]");
-    if (!showcase) throw new Error("`split` did not select the split layout");
+    if (!showcase) throw new Error("layout='split' did not select the split layout");
     expect(showcase.textContent).toBe("the showcase");
     // ...and the heading takes the split's smaller token, not `text-display`.
     const heading = screen.getByRole("heading", { level: 2, name: "Private. Secure." });
@@ -127,9 +156,9 @@ describe("Section", () => {
     expect(container.querySelectorAll("[data-section-rail]")).toHaveLength(0);
   });
 
-  it("still stacks when neither `rail` nor `split` is given", () => {
-    // The positive control for the case above: `split` must be what changed the
-    // layout, not the mere presence of an eyebrow or of children.
+  it("still stacks when no `layout` is given", () => {
+    // The positive control for the cases above: `layout` must be what changed the
+    // composition, not the mere presence of an eyebrow or of children.
     const { container } = render(
       <Section id="s" eyebrow="An eyebrow" heading="A heading">
         <p>the showcase</p>
@@ -144,7 +173,7 @@ describe("Section", () => {
     // Guards the arrangement the composition depends on: rail copy shares the
     // narrow left column with the heading, and `children` stays out of it.
     const { container } = render(
-      <Section id="s" heading="H" rail={<p>rail copy</p>}>
+      <Section id="s" heading="H" layout="split" rail={<p>rail copy</p>}>
         <p>showcase copy</p>
       </Section>,
     );
@@ -178,7 +207,7 @@ describe("Section", () => {
     // viewport — is owed to the queued Playwright pass (Task 13/V); written
     // here it would be unconditionally green (CLAUDE.md §7).
     const { container } = render(
-      <Section id="s" heading="H" rail={<p>rail copy</p>}>
+      <Section id="s" heading="H" layout="split" rail={<p>rail copy</p>}>
         <p>showcase copy</p>
       </Section>,
     );

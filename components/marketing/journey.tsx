@@ -149,6 +149,7 @@ export async function Journey() {
       id={SECTION_ID}
       eyebrow={t("journey.eyebrow")}
       heading={t("journey.heading")}
+      layout="split"
       rail={
         <>
           <p className="text-body text-muted-foreground">{t("journey.body")}</p>

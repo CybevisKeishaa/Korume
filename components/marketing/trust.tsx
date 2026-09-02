@@ -126,7 +126,7 @@ export async function Trust() {
   const t = await getTranslations("marketing");
 
   return (
-    <Section id="trust" eyebrow={t("trust.eyebrow")} heading={t("trust.heading")} split>
+    <Section id="trust" eyebrow={t("trust.eyebrow")} heading={t("trust.heading")} layout="split">
       {/* `relative z-10` is not decoration, and the overlap it guards is real:
           measured at 1280 the photograph's box covers 240 of the third card's
           243px. Mechanism 2 of 3. Being absolutely positioned and LATER in the

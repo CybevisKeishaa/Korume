@@ -95,6 +95,7 @@ export async function Recommendation() {
       id="recommend"
       eyebrow={t("recommend.eyebrow")}
       heading={t("recommend.heading")}
+      layout="split"
       rail={<p className="text-body text-muted-foreground">{t("recommend.body")}</p>}
     >
       {/* `min-w-0` on both cells for the reason `Section`'s own INVARIANT
