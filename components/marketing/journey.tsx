@@ -169,7 +169,25 @@ export async function Journey() {
         className="flex items-stretch gap-2xs overflow-x-auto"
       >
         {STEPS.map((step, i) => (
-          <li key={step} className={cn("flex min-w-0 shrink-0 items-center gap-2xs", CARD_BASIS)}>
+          // `last:pe-…` is what makes all five cards ONE width. Every `li` gets
+          // the same basis, but the first four spend part of it on a StepArrow
+          // (`w-sm`) and the `gap-2xs` before it, while the fifth renders no
+          // arrow and handed the whole basis to its card — 162.51 CSS px
+          // against the other four's 146.51, which is exactly those two tokens.
+          // The padding is inside the basis (`box-sizing: border-box`), so it
+          // reserves the arrow's place without drawing one.
+          //
+          // The basis CANNOT move to the card instead: its middle term is
+          // `100%` of the flex container, which on the `li` is the `ol`'s width
+          // and on the card would be the `li`'s own content-derived width.
+          <li
+            key={step}
+            className={cn(
+              "flex min-w-0 shrink-0 items-center gap-2xs",
+              CARD_BASIS,
+              "last:pe-[calc(var(--space-sm)+var(--space-2xs))]",
+            )}
+          >
             <StepCard step={step} t={t} />
             {i < STEPS.length - 1 ? <StepArrow /> : null}
           </li>
