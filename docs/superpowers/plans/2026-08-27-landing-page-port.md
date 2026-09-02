@@ -2796,6 +2796,598 @@ git commit -m "feat(marketing): compose the landing page and pin its section ord
 
 ---
 
+## Task V: Visual fidelity against `346:6275`
+
+Every other task on this branch asks "is this section correct?". This one asks the question the
+owner has actually raised, repeatedly: **does the page LOOK right next to the reference?** It owns
+composition, proportion and the small optical faults no unit test can see. Until 2026-09-02 it
+existed only as one line in a gitignored ledger.
+
+⚠️ **ORDERING. Run Task V BEFORE Task 13.** Task 13 changes page-wide rhythm (`py-2xl` in
+`section.tsx`) and is explicitly forbidden from touching individual sections; if it runs first,
+every measurement below moves and has to be retaken. Task A-MOTION may run either side — it adds a
+layer, it does not move geometry.
+
+⚠️ **MEASURE THE PAGE, NOT THE WINDOW.** This machine renders `/en` at `innerWidth` **1280** with a
+15px classic scrollbar, so the *page* is **1265** and every percentage below is against 1265. Three
+separate numbers on this branch were recorded wrong because a fact about the measuring window was
+written down as a fact about the page. When you record a percentage-of-page or a distance-to-an-edge,
+write the page width beside it or the number is worthless to the next reader.
+
+⚠️ **Do not file a visual defect off a downscaled screenshot** — Task 10 nearly filed §7's photograph
+as missing that way. Measure the element in the DOM first, then zoom to look.
+
+**Files:**
+- Modify: `components/marketing/journey-art.tsx` — the waveform's bar count and floor
+- Modify: `components/marketing/journey.tsx` — where the card row's flex basis lives
+- Modify: `components/marketing/journey.test.tsx` — the bar counts it pins, plus a range guard
+- Modify: `components/marketing/capability-chain.tsx` — the companion's cross-axis alignment
+- Create: `scripts/mascot/trim.js` — trims a pose to its opaque bounding box
+- Modify: `public/mascot/poses/reading-on-the-orb.png`, `public/mascot/poses/hugging-an-orb.png`
+- Modify: `scripts/mascot/poses.json` — the trimmed dimensions
+- Modify: `scripts/mascot/poses.test.ts` — a new guard: a pose that SHIPS must be trimmed
+- Modify: `tests/e2e/landing-page.spec.ts` — the two geometric facts jsdom structurally cannot see
+
+**Interfaces:**
+- Consumes: `MarketingContainer` and `--layout-marketing-max: 1256px` (Task 12) — content measures
+  1192px at a 1265px page. `Section`'s `layout="split" | "stacked" | "centred"` (Task 11).
+- Produces: nothing new for later tasks. `MASCOT_POSE` and `MASCOT_SIZES` keep their signatures;
+  only the shape of the files they point at changes.
+
+---
+
+### V1 — §3's Shadow waveform renders as a smear, and the cause is scale, not data
+
+**Measured on the live page** (page 1265, `#journey [data-shadow-waveform]`):
+
+    rendered strip   103.84 x 33.74 CSS px
+    bars             56, so the pitch is 103.84 / 56 = 1.854 CSS px
+    bar width        1.02 CSS px    (WAVE_BAR_DUTY 0.55)
+    gap              0.83 CSS px
+    bar heights      min 6.07   max 28.43   -> a dynamic range of only 4.7 : 1
+
+`journey-art.tsx`'s own docblock says the envelope was shaped because it "reads as speech at 130px
+wide". **It ships at 103.84px.** At a 1.02px bar with a 0.51px corner radius every bar is a blurred
+capsule, and the row reads as one orange smear.
+
+The reference disagrees on range, not on width. A bar-column scan of the §3 card-3 zoom
+(`ref/zoom-c3.png`) gives lit-column heights of **min 4, max 132 — a 33 : 1 range** — and puts the
+waveform at **456 / 632 = 72.2%** of its card against our 103.84 / 146.51 = **70.9%**. So the strip
+is the right width. There are too many bars in it, and the `Math.max(0.18, ...)` floor has flattened
+the valleys that the two-tone split exists to show.
+
+⚠️ **Do NOT "fix" this by returning to the pitch contour.** Ruled out 2026-08-29: §4 owns pitch, the
+reference's card-3 graphic is symmetric about a centre line (amplitude, a different quantity), and
+`journey.test.tsx` asserts `[data-contour]` has length 0 inside `[data-step="shadow"]`.
+
+- [ ] **Step 1: Change the two tests that pin the bar counts, and add the guard that was missing**
+
+In `components/marketing/journey.test.tsx`, the two existing expectations become:
+
+```ts
+    const bars = shadow?.querySelectorAll("[data-wave-bar]") ?? [];
+    expect(bars).toHaveLength(32);
+```
+
+```ts
+    // Explicit sizes, not just "non-empty" (CLAUDE.md §7): a single-tone
+    // waveform would leave one of these at 0 and still satisfy a
+    // greater-than-zero check on the other. 32 bars split at ~62%.
+    expect(recorded).toHaveLength(20);
+    expect(rest).toHaveLength(12);
+```
+
+Then add a third test in the same `describe`, pinning the property the smear violated:
+
+```ts
+  it("keeps the waveform's dynamic range wide enough to read as speech", async () => {
+    const { container } = render(await Journey());
+
+    const shadow = container.querySelector('[data-step="shadow"]');
+    const bars = [...(shadow?.querySelectorAll("[data-wave-bar]") ?? [])];
+    // L-004: a pattern-gathered collection asserts its own size, or an empty
+    // match makes every expectation below unconditionally green.
+    expect(bars).toHaveLength(32);
+
+    const heights = bars.map((bar) => Number(bar.getAttribute("height")));
+    expect(heights.every((h) => Number.isFinite(h) && h > 0)).toBe(true);
+
+    // The defect this guards: Math.max(0.18, ...) floored the valleys so hard
+    // that the tallest bar was 4.7x the shortest and the row read as one
+    // block. The reference's own bar columns measure ~33:1 (ref/zoom-c3.png,
+    // min 4 / max 132). 8:1 is well under what this envelope produces and
+    // well over anything a re-flattened one could reach.
+    expect(Math.max(...heights) / Math.min(...heights)).toBeGreaterThan(8);
+  });
+```
+
+- [ ] **Step 2: Run the tests and watch them fail**
+
+Run: `npx vitest run components/marketing/journey.test.tsx`
+Expected: **FAIL** — 56 is not 32, 35/21 are not 20/12, and 4.7 is not greater than 8. Three
+failures, from the three tests you touched. Anything else failing is not yours; stop and read it.
+
+- [ ] **Step 3: Change the two constants**
+
+In `components/marketing/journey-art.tsx`:
+
+```ts
+/**
+ * 32, not the 56 this shipped with. The bar count is a function of the width
+ * the strip ACTUALLY renders at, and that is 103.84 CSS px on a 1265px page —
+ * not the 130px the envelope below was shaped for. 56 bars there is a 1.854px
+ * pitch and a 1.02px bar, which at a 0.51px corner radius is a blurred
+ * capsule; 32 gives a 3.245px pitch and a 1.78px bar, which survives
+ * rasterisation at DPR 1. Re-derive it if the card's width ever changes:
+ * floor(strip width / 3), the pitch below which a duty-0.55 bar falls under
+ * ~1.7 CSS px.
+ */
+const WAVE_BARS = 32;
+```
+
+and, in `waveAmplitude`, the floor:
+
+```ts
+  // 0.05, not 0.18. The floor exists so the unrecorded tail still draws a line
+  // instead of vanishing — but 0.18 of the half-height is 6.07 CSS px against
+  // a 28.43px peak, a range of 4.7:1, and speech does not look like that. The
+  // reference's bar columns run ~33:1 (ref/zoom-c3.png). 0.05 keeps a 1.69px
+  // line in the valleys and takes the range to ~17:1.
+  return Math.max(0.05, hull * syllables * grain);
+```
+
+- [ ] **Step 4: Run the tests again**
+
+Run: `npx vitest run components/marketing/journey.test.tsx`
+Expected: **PASS**, every test in the file.
+
+- [ ] **Step 5: Look at it, at the size it actually ships**
+
+```bash
+npm run build && npm run start
+```
+
+Open `http://localhost:3000/en`, scroll `#journey` into view, and measure BEFORE you zoom:
+
+```js
+const w = document.querySelector('[data-shadow-waveform]');
+const bars = [...w.querySelectorAll('[data-wave-bar]')].map((b) => b.getBoundingClientRect());
+({ strip: w.getBoundingClientRect().width, bar: bars[0].width,
+   minH: Math.min(...bars.map((b) => b.height)), maxH: Math.max(...bars.map((b) => b.height)) })
+```
+
+Expected: strip ~103.8, bar ~1.78, max/min near 17. Then zoom the card and confirm the bars are
+separable and the valleys read as valleys.
+
+---
+
+### V2 — §3's fifth card is 16px wider than the other four
+
+**Measured on the live page:** cards 1–4 are **146.51** CSS px; card 5 (`remember`) is **162.51**.
+
+The cause is structural, not a stray class. Each `<li>` carries `CARD_BASIS` and holds a `StepCard`
+plus a `StepArrow`, and the arrow renders only for `i < STEPS.length - 1`. For the first four the
+basis is shared between a card, a `gap-2xs` and the arrow; the fifth hands its card the whole basis.
+**16px is exactly the arrow plus its gap.**
+
+⚠️ **This is the same construct as the 320/390 page overflow assigned to Task 13** (`shrink-0` +
+`basis-[clamp(...)]`; the `LI` measured at right = 408 against a 320 viewport). Fix it once here,
+then re-measure the overflow and report what actually happened — do not assume either way.
+
+- [ ] **Step 1: Write the failing browser assertion**
+
+jsdom loads no CSS in this suite (`capability-chain.test.tsx` records the same limit), so a width
+assertion belongs in Playwright. In `tests/e2e/landing-page.spec.ts`:
+
+```ts
+test("§3's five step cards are all the same width", async ({ page }) => {
+  await page.goto("/en");
+  const cards = page.locator("#journey [data-step]");
+  await expect(cards).toHaveCount(5);
+
+  const widths = await cards.evaluateAll((els) =>
+    els.map((el) => Math.round(el.getBoundingClientRect().width)),
+  );
+  // The defect: the last card had no StepArrow sibling to share its flex
+  // basis with, so it kept the arrow's 16px for itself.
+  expect(new Set(widths).size, `widths were ${widths.join(", ")}`).toBe(1);
+});
+```
+
+- [ ] **Step 2: Run it and watch it fail**
+
+```bash
+npm run build && npm run start          # in one shell — see the webServer note
+npx playwright test landing-page -g "same width"
+```
+
+Expected: **FAIL**, reporting widths like `147, 147, 147, 147, 163` (rounded; the exact values move
+with the page width, which is why the assertion is "all equal" and not a literal).
+
+⚠️ `playwright.config.ts` gives `webServer` 120,000 ms for `npm run build && npm run start`, and a
+cold build measures ~135 s on this machine — so a cold `npx playwright test` dies before the first
+test runs, and the tail of its output is webpack cache noise that looks like the real problem. Build
+and start the server yourself first; `reuseExistingServer` is true locally.
+
+- [ ] **Step 3: Move the basis from the list item to the card**
+
+In `components/marketing/journey.tsx`:
+
+```tsx
+        {STEPS.map((step, i) => (
+          // The basis lives on the CARD, not on this `li`. While it was here,
+          // the `li` split it between the card, the gap and the arrow — and
+          // the fifth `li`, which renders no arrow, handed its card the whole
+          // basis and came out 16px wider than the other four.
+          <li key={step} className="flex min-w-0 shrink-0 items-center gap-2xs">
+            <StepCard step={step} t={t} />
+            {i < STEPS.length - 1 ? <StepArrow /> : null}
+          </li>
+        ))}
+```
+
+and `StepCard` takes it, replacing `flex-1`:
+
+```tsx
+    <div
+      data-step={step}
+      className={cn(
+        "flex h-full min-w-0 shrink-0 flex-col rounded-lg border border-border bg-card p-sm",
+        CARD_BASIS,
+      )}
+    >
+```
+
+`cn()` and not a template literal, for the reason `StepPanel`'s docblock already gives.
+
+- [ ] **Step 4: Run both suites**
+
+```bash
+npx vitest run components/marketing/journey.test.tsx    # EXPECT: green
+npx playwright test landing-page -g "same width"        # EXPECT: 1 passed
+```
+
+- [ ] **Step 5: Re-measure the narrow-width overflow and report it honestly**
+
+At 320, 390 and 768 in a fixed-width same-origin iframe — `resize_window` below 1280 reports success
+while doing nothing on this machine, and four agents have now hit that — compare
+`documentElement.scrollWidth` against `clientWidth`.
+
+Task 13's recorded numbers are `320 -> 407 (+87)`, `390 -> 407 (+17)`, `768 -> 779 (+11)`. Record
+what you actually get. If they closed, say so and strike them from Task 13. If they did not, leave
+them assigned to Task 13 — the 768px one has never been attributed to an element and is a separate
+defect from this one.
+
+---
+
+### V3 — §6's companion is too small and sits too low, and one cause is an untrimmed PNG
+
+**Measured on the live page** (page 1265, content 1192):
+
+    wrap       1192 wide, `xl:flex xl:items-end xl:gap-md` (gap 16)
+    node grid  1016 wide (`xl:flex-1`), 186.67 tall, 8 cells of 127
+    companion  160 x 160 box (`xl:shrink-0`), bottom-aligned
+    icon-tile row centre  y 2805.01        companion centre  y 2879.68
+    => the companion's centre sits 74.67 CSS px BELOW the tile row's centre
+
+Three causes, and the first is the one nobody had looked for:
+
+1. ⚠️ **`reading-on-the-orb.png` was never trimmed, and three of the five poses that ship were.**
+   Alpha bounding boxes, measured with `scripts/mascot/png.js`:
+
+        greeting.png            200x272   fill 100.0% x  99.3%                       (§1)
+        noting.png              340x304   fill 100.0% x  99.0%                       (§4)
+        resting.png             420x266   fill 100.0% x  99.2%                    (footer)
+        reading-on-the-orb.png  499x500   fill  82.6% x  90.8%   pad L26 R61 T30 B16  (§6)
+        hugging-an-orb.png      484x516   fill  83.1% x  82.2%   pad L66 R16 T54 B38  (§8)
+
+   In a 160px box §6's creature therefore draws **132.1 x 145.3** CSS px and sits **5.6 CSS px left**
+   of the box centre, because the right margin is 61px against the left's 26. **Trimming is this
+   library's own convention** — this is not a change of taste, it is the two files that missed it.
+2. **`MASCOT_WIDTH = 160` predates Task 12.** Its docblock derives 160 from the reference's 120
+   export px against the OLD 1088px content; content is 1192 now and nobody re-derived it. Once
+   trimmed the creature fills the 160 box — **12.6% of the 1265px page**, against a reference
+   companion whose bright core measures 79 / 864 = **9.1%** and whose full body reads nearer 13%.
+   160 is defensible after the trim. **Re-measure before changing it further.**
+3. **`xl:items-end` is what puts it low.** It bottom-aligns a 160-tall box to a 186.67-tall grid.
+   The reference draws the companion spanning the whole node block — top level with the icon tiles,
+   body past the text — not hanging from the block's bottom.
+   ⚠️ **NOT a cause: resolution.** `sizes="160px"` is correct and Next serves a 320px variant at
+   DPR 2. Do not "fix" that.
+
+▶ **The route this takes, and the one it deliberately does not.** Growing the box means taking width
+from the grid: the `<ul>` is `xl:flex-1` and the companion `xl:shrink-0`, so every pixel the
+companion gains, the 8 cells lose. Trimming buys a 21% larger creature for **zero** grid pixels, and
+it leaves `capability-chain.tsx`'s "NOTHING OVERLAPS HERE" claim true. That is why this task trims
+first and only then asks whether a width change is still wanted.
+
+- [ ] **Step 1: Write the guard that would have caught it**
+
+In `scripts/mascot/poses.test.ts`:
+
+```ts
+import png from "./png.js";
+
+const { decode } = png as unknown as {
+  decode: (path: string) => { w: number; h: number; ch: number; data: Uint8Array };
+};
+
+/** The opaque bounding box of a PNG that has an alpha channel. */
+function opaqueBox(path: string) {
+  const { w, h, ch, data } = decode(path);
+  let x0 = w, x1 = -1, y0 = h, y1 = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (ch === 4 && data[(y * w + x) * ch + 3] <= 8) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  return { w, h, boxW: x1 - x0 + 1, boxH: y1 - y0 + 1 };
+}
+
+it("ships no pose with transparent margin — a placed pose is trimmed", () => {
+  const placed = manifest.supplied.filter((pose) => pose.slot !== undefined);
+  // L-004: an empty filter would make the loop below vacuously green, and this
+  // is exactly the kind of guard that gets written over already-working code.
+  expect(placed.length).toBeGreaterThanOrEqual(2);
+
+  for (const pose of placed) {
+    const { w, h, boxW, boxH } = opaqueBox(join(POSES_DIR, pose.out));
+    // A placement sizes the FILE — `sizes="160px"` paints the box, not the
+    // creature — so transparent margin is drawn size the creature never gets,
+    // and asymmetric margin also pushes it off the box's centre.
+    // reading-on-the-orb.png shipped at 82.6% x 90.8% and drew 132 x 145 CSS
+    // px inside a 160px box, 5.6px left of centre.
+    expect(boxW / w, `${pose.out} horizontal fill`).toBeGreaterThan(0.98);
+    expect(boxH / h, `${pose.out} vertical fill`).toBeGreaterThan(0.98);
+  }
+});
+```
+
+- [ ] **Step 2: Run it and watch it fail**
+
+Run: `npx vitest run scripts/mascot/poses.test.ts`
+Expected: **FAIL** — `reading-on-the-orb.png horizontal fill: expected 0.8256... to be greater than
+0.98`. It must name the file. If it fails on `placed.length` instead, the manifest filter is wrong,
+not the assets — fix that before going on.
+
+- [ ] **Step 3: Write the trimmer**
+
+`scripts/mascot/trim.js`, beside `extract.js` and on the same `png.js`:
+
+```js
+// Trims a supplied pose to its opaque bounding box. Lossless for the creature:
+// only fully-transparent margin is removed, so every pixel the artwork draws
+// survives byte-identical. `--check` re-derives the box and reports without
+// writing, the contract `extract.js --check` already has.
+const { decode, encode } = require("./png.js");
+const fs = require("fs");
+const path = require("path");
+
+const ROOT = path.join(__dirname, "..", "..");
+const ALPHA_FLOOR = 8;
+
+function box({ w, h, ch, data }) {
+  let x0 = w, x1 = -1, y0 = h, y1 = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (ch === 4 && data[(y * w + x) * ch + 3] <= ALPHA_FLOOR) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  return { x0, y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+
+function trim(rel, { write }) {
+  const abs = path.join(ROOT, rel);
+  const img = decode(abs);
+  const b = box(img);
+  const already = b.x0 === 0 && b.y0 === 0 && b.w === img.w && b.h === img.h;
+  console.log(
+    `${rel}: ${img.w}x${img.h} -> ${b.w}x${b.h} (offset ${b.x0},${b.y0})` +
+      (already ? "  already trimmed" : ""),
+  );
+  if (already || !write) return b;
+  const out = new Uint8Array(b.w * b.h * img.ch);
+  for (let y = 0; y < b.h; y++) {
+    const src = ((y + b.y0) * img.w + b.x0) * img.ch;
+    out.set(img.data.subarray(src, src + b.w * img.ch), y * b.w * img.ch);
+  }
+  fs.writeFileSync(abs, encode({ w: b.w, h: b.h, ch: img.ch, data: out }));
+  return b;
+}
+
+const write = !process.argv.includes("--check");
+for (const f of process.argv.slice(2).filter((a) => !a.startsWith("--"))) trim(f, { write });
+```
+
+- [ ] **Step 4: Trim the two files, and confirm the other three are already tight**
+
+```bash
+node scripts/mascot/trim.js --check public/mascot/poses/greeting.png \
+  public/mascot/poses/noting.png public/mascot/poses/resting.png
+```
+Expected: all three print `already trimmed`. If any does not, **stop** — the convention this task
+argues from is not what you think it is.
+
+```bash
+node scripts/mascot/trim.js public/mascot/poses/reading-on-the-orb.png \
+  public/mascot/poses/hugging-an-orb.png
+```
+Expected: `499x500 -> 412x454 (offset 26,30)` and `484x516 -> 402x424 (offset 66,54)`.
+
+- [ ] **Step 5: Correct the manifest, which records the old dimensions**
+
+In `scripts/mascot/poses.json`, `reading-on-the-orb` becomes `"width": 412, "height": 454` and
+`hugging-an-orb` becomes `"width": 402, "height": 424`. Append to each entry's `origin`:
+`Trimmed to its opaque bounding box on 2026-09-02 (scripts/mascot/trim.js) — no creature pixel changed.`
+
+- [ ] **Step 6: Run the guard again**
+
+Run: `npx vitest run scripts/mascot/poses.test.ts`
+Expected: **PASS**, including the manifest/disk consistency tests that were already there.
+
+- [ ] **Step 7: Centre the companion on the node block**
+
+In `components/marketing/capability-chain.tsx`, `xl:items-end` becomes `xl:items-center`, with the
+reason recorded where the class is:
+
+```tsx
+      {/* `items-center`, not `items-end`. `flex-end` bottom-aligned a 160-tall
+          companion to the 186.67-tall node block and left its centre 74.67 CSS
+          px below the icon-tile row's, so it read as sitting under the row
+          rather than beside it. The reference (346:6275) draws the companion
+          spanning the block, its top level with the tiles. Centring is the
+          target that needs no magic number: the companion's centre IS the
+          block's. */}
+```
+
+- [ ] **Step 8: Pin the alignment where a browser can see it**
+
+In `tests/e2e/landing-page.spec.ts`:
+
+```ts
+test("§6's companion is centred on the node row, not hanging below it", async ({ page }) => {
+  await page.goto("/en");
+  const mascot = await page.locator("#chain [data-chain-mascot]").boundingBox();
+  const node = await page.locator("#chain [data-chain-node]").first().boundingBox();
+  if (!mascot || !node) throw new Error("§6's companion or its node grid did not render");
+
+  const mascotCentre = mascot.y + mascot.height / 2;
+  const nodeCentre = node.y + node.height / 2;
+  // It was 74.67px low. The bound is deliberately loose — this pins "centred
+  // on the row", not a layout constant that legitimately moves with copy.
+  expect(Math.abs(mascotCentre - nodeCentre)).toBeLessThan(12);
+});
+```
+
+- [ ] **Step 9: Mutation-check both new guards — both were written over working code**
+
+CLAUDE.md §7: a guard written after the fact cannot fail first, so break what it guards and watch it
+go red. Restore afterwards and confirm the tree is clean.
+
+```bash
+git checkout HEAD -- public/mascot/poses/reading-on-the-orb.png
+npx vitest run scripts/mascot/poses.test.ts     # EXPECT: red, naming that file
+node scripts/mascot/trim.js public/mascot/poses/reading-on-the-orb.png
+npx vitest run scripts/mascot/poses.test.ts     # EXPECT: green again
+```
+
+For the e2e guard, flip `xl:items-center` back to `xl:items-end`, rebuild, run the one test, watch
+it fail at a distance near 74, then restore. **Print both outputs in the task report** — a mutation
+check you did not print is a claim, not evidence.
+
+- [ ] **Step 10: Look at it beside the reference**
+
+Render `/en`, scroll `#chain` into view, compare against `ref/s6-band.png`. What you are looking
+for: the companion's top near the icon tiles' top, its body past the text, its optical centre in its
+own column instead of pulled left.
+
+---
+
+### V4 — the two items earlier tasks parked for this one
+
+Both are Task A1 minors. Neither has been measured since. Measure before deciding.
+
+- [ ] **Step 1: §1's video still and the reference's fuller transport bar**
+
+A1 wired `hero-still.png`'s `src` and never reconciled the crop or the transport chrome against the
+reference. Open `ref/s1-hero-card.png` and `ref/s1-transport.png` beside the live `#hero` and either
+close it — recording what matched — or write down exactly what differs. **Do not invent transport
+controls the reference does not draw**: §1's chrome is decoration, `aria-hidden`, and inventing an
+affordance implies a feature that does not exist.
+
+- [ ] **Step 2: §2's photograph at the narrow end of `lg`**
+
+At 1024 the photograph is fully opaque for its last ~16px behind the SRS chip. A1 verified with
+`elementFromPoint` that the chip is opaque and on top, so nothing is unreadable — the composition is
+simply tighter than at 1280. Re-measure in a fixed-width iframe at 1024 and either extend the
+left-edge fade or record it closed.
+
+⚠️ Whatever changes here, **A1's three load-bearing mechanisms stay**: the left-edge fade,
+`relative z-10` on the constellation, and `pointer-events-none` on the photograph. They are
+mutation-guarded and commented as load-bearing; a composition tweak must not quietly retire one.
+
+---
+
+### V5 — the dot-grid guard pins counts, not arrangement
+
+§3's dot grid shipped as a uniform 5x3 because a brief's prose said so, where the binding reference
+draws 6x3 and sparse. The arrangement was fixed; the test still asserts totals — so **a scrambled
+`DOT_MASK` with the same number of filled dots stays green forever**, which is the very failure mode
+that let the wrong count ship.
+
+- [ ] **Step 1: Add the arrangement assertion**
+
+In `components/marketing/journey.test.tsx`, beside the existing dot-grid test, assert the per-row
+fill profile rather than the total. Read the expected profile off `DOT_MASK` in `journey-art.tsx`
+and write the literals in, with a comment saying they come from the reference.
+
+⚠️ Read `journey-art.tsx` first: if the dots carry no row-identifying attribute, adding one is part
+of this step. An arrangement assertion that infers rows from DOM order is a guard on the renderer's
+loop order, not on the arrangement.
+
+- [ ] **Step 2: Mutation-check it**
+
+Scramble `DOT_MASK` keeping the same total, run the test, watch it go red, restore, run it green.
+Print both outputs.
+
+---
+
+### V6 — the gate, and the commits
+
+- [ ] **Step 1: Full gate**
+
+```bash
+npm run typecheck    # EXPECT: exit 0
+npm run lint         # EXPECT: 0 errors
+npx vitest run       # EXPECT: all green — record files/tests from THIS command's output
+npm run build        # EXPECT: exit 0
+npx playwright test  # EXPECT: all green (build and start the server yourself first)
+```
+
+⚠️ **L-002, which has now fired three times on this branch: never put a measured number and the
+command that produces it in the same shell invocation.** Both of Task 12's commit messages state a
+suite total that was written before the run existed. Run the suite, read the output, then write the
+message.
+
+- [ ] **Step 2: Commit, one concern at a time**
+
+```bash
+git add components/marketing/journey-art.tsx components/marketing/journey.test.tsx
+git commit -m "fix(marketing): give the shadow waveform bars you can see"
+
+git add components/marketing/journey.tsx tests/e2e/landing-page.spec.ts
+git commit -m "fix(marketing): make all five journey cards one width"
+
+git add scripts/mascot/trim.js scripts/mascot/poses.json scripts/mascot/poses.test.ts \
+        public/mascot/poses/reading-on-the-orb.png public/mascot/poses/hugging-an-orb.png \
+        components/marketing/capability-chain.tsx
+git commit -m "fix(marketing): trim the two untrimmed poses and centre the companion"
+```
+
+---
+
+### Ruled and closed by Task V — do not re-open
+
+- **§3's card 1 leading with the still, its label below, is CORRECT.** The owner raised it on
+  2026-09-02 as an inconsistency — "1 Watch" reads as a caption where "2 Understand" reads as a
+  heading. It was checked against the reference rather than argued: `ref/zoom-c1.png` draws the
+  still first with "1 Watch / Real Japanese video" beneath it, and the proportion matches ours —
+  the still is **70%** of the card's height in both. `WatchBody`'s docblock already says why.
+  What made the row read wrong is V1 and V2, which sit in the same eyeline.
+  ▶ If the owner still wants the row uniform after V1–V3 land, it is a one-line change (lead
+  `WatchBody` with `StepHeading`) and a deliberate departure from the reference — worth recording
+  as one, not worth doing silently.
+
+---
+
 ## Task 13: Density, reduced motion, and the accessibility sweep
 
 The last task is the one that makes the page read as a product rather than nine correct sections.
