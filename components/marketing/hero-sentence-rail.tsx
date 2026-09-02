@@ -27,6 +27,21 @@ import type { Translator } from "./translator";
  * navigates is a link (the video card's tabs remain inert for the original
  * reason — they have no destination at all).
  */
+/**
+ * The key words the rail lists, in render order.
+ *
+ * The SET is pinned here as literals and the copy is read from the catalog —
+ * task 9b's rule, and the reason §5/§6's tests survived the owner's 85-string
+ * copy pass untouched. Adding a fourth word is a catalog entry plus one line
+ * here; `hero.test.tsx`'s catalog-leaf walk fails loudly if the two disagree
+ * in either direction.
+ *
+ * `calm` was added on the owner's instruction (2026-09-03) to bring the list
+ * to the reference's three. 落ち着く is drawn from the rail's own sentence
+ * (落ち着きます), so it needs no vocabulary this page did not already show.
+ */
+const KEY_WORDS = ["street", "quiet", "calm"] as const;
+
 export function HeroSentenceRail({ t }: { t: Translator }) {
   const sentence = t("hero.sentence.jp");
   const quietWord = t("hero.keyWords.quiet.jp").split("（")[0] ?? "";
@@ -59,14 +74,12 @@ export function HeroSentenceRail({ t }: { t: Translator }) {
           {t("hero.keyWords.heading")}
         </p>
         <ul className="mt-2xs flex flex-col gap-2xs">
-          <li className="text-caption text-foreground">
-            <span className="font-jp">{t("hero.keyWords.street.jp")}</span>{" "}
-            <span className="text-muted-foreground">· {t("hero.keyWords.street.en")}</span>
-          </li>
-          <li className="text-caption text-foreground">
-            <span className="font-jp">{t("hero.keyWords.quiet.jp")}</span>{" "}
-            <span className="text-muted-foreground">· {t("hero.keyWords.quiet.en")}</span>
-          </li>
+          {KEY_WORDS.map((key) => (
+            <li key={key} data-key-word={key} className="text-caption text-foreground">
+              <span className="font-jp">{t(`hero.keyWords.${key}.jp`)}</span>{" "}
+              <span className="text-muted-foreground">· {t(`hero.keyWords.${key}.en`)}</span>
+            </li>
+          ))}
         </ul>
       </div>
 

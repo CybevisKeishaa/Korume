@@ -25,8 +25,12 @@ import { HeroSentenceRail } from "./hero-sentence-rail";
  *    "Transcript" visually marked current. Making them real tabs would need
  *    per-tab content this catalog does not carry (only the transcript has
  *    real lines) and client-side state a server component can't own.
- *  - the player chrome over the still: an icon-only play glyph and a bare
- *    progress track, both `aria-hidden`. No timestamp text is invented.
+ *  - the player chrome over the still: a play glyph, an elapsed timestamp, a
+ *    part-played progress track and four control glyphs (subtitles, repeat,
+ *    volume, fullscreen), all `aria-hidden` and none of them focusable. The
+ *    glyph row was added on the owner's 2026-09-03 ruling — see the comment
+ *    at the chrome itself for what that ruling overturned and what it did
+ *    not.
  *
  * Ruling 4: the reference shows three transcript lines; the frame (347:6313)
  * carries only two text nodes (347:6405, 347:6408), and `hero.transcript.*`
@@ -81,22 +85,119 @@ export function HeroVideoCard({ t }: { t: Translator }) {
                  - the track is drawn from the foreground ramp at partial alpha
                    instead of `--border` (a near-black hairline meant for
                    `--card`), so it stays a light hairline whatever is behind it.
-                No timestamp text is invented and no control becomes real —
-                the crop and the transport bar's own fidelity are the
-                visual-fidelity task's, not this one's. */}
+                ⚠️ THE "NO TIMESTAMP, NO CONTROLS" LINE ABOVE IS SUPERSEDED
+                (owner ruling, 2026-09-03). It read the reference's four
+                control glyphs as promises — draw a loop button and a visitor
+                expects loop playback — so it drew a play glyph and a bare
+                line and left the rest to a decision. The owner made it:
+                "4 nút tùy bạn, trông sao cho đẹp, không cần mang tính hứa
+                đâu, bởi vì tôi tin là màn luyện tập shadowing còn đặc sắc hơn
+                nhiều." The glyphs are composition, not a feature list.
+
+                What did NOT change: they are still depictions. The chrome is
+                `aria-hidden`, `pointer-events-none`, and contains no `a`,
+                `button`, `input` or `[tabindex]` — `hero.test.tsx` asserts
+                all four, so a later task cannot quietly make one real.
+
+                The four chosen are the ones whose silhouettes stay legible at
+                12 px and whose meanings this page can stand behind anyway:
+                subtitles (the card already shows a transcript), repeat (a
+                shadowing loop), volume, fullscreen. Two outlined boxes and
+                two round forms, so the row reads as a row rather than as four
+                similar smudges. The play glyph stays solid — the primary
+                affordance filled, the secondary ones outlined.
+
+                The timestamp is `hero.video.elapsed`, a catalog string. It is
+                "0:24" and shows ELAPSED ONLY: the total is already on screen
+                as `hero.video.duration` four rows up, and a "0:24 / 13:00"
+                readout would put the same fact in two places by hand
+                (CLAUDE.md §6). 0:24 of 13 min is 3.1%, which is what the
+                played segment below is set to, and it agrees with the rail's
+                "Sentence 1 / 29" instead of contradicting it. */}
             <div
               data-player-chrome
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center gap-sm bg-gradient-to-t from-scrim/85 via-scrim/45 to-transparent px-sm pb-xs pt-xl"
+              className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-xs bg-gradient-to-t from-scrim/85 via-scrim/45 to-transparent px-sm pb-xs pt-xl"
             >
-              {/* `h-sm w-sm` is the same 0.75rem the old `h-3 w-3` resolved to,
-                  said in tokens: `theme.extend.spacing` EXTENDS Tailwind's
-                  numeric scale, so `h-3` was hardcoded rem the Rule #0 scan
-                  cannot see. */}
-              <svg viewBox="0 0 12 12" className="h-sm w-sm shrink-0 text-foreground">
-                <path d="M2 1.5 L10 6 L2 10.5 Z" fill="currentColor" />
-              </svg>
-              <div data-player-track className="h-px flex-1 bg-foreground/70" />
+              {/* The track is a percentage, which Rule #0 allows and intends:
+                  3% is a RELATIONSHIP to the duration beside it, not a copied
+                  pixel. */}
+              <div data-player-track className="h-px w-full bg-foreground/40">
+                <div data-player-progress className="h-full w-[3%] bg-primary" />
+              </div>
+
+              <div className="flex items-center gap-sm">
+                {/* `h-sm w-sm` is the same 0.75rem the old `h-3 w-3` resolved
+                    to, said in tokens: `theme.extend.spacing` EXTENDS
+                    Tailwind's numeric scale, so `h-3` was hardcoded rem the
+                    Rule #0 scan cannot see. */}
+                <svg viewBox="0 0 12 12" className="h-sm w-sm shrink-0 text-foreground">
+                  <path d="M2 1.5 L10 6 L2 10.5 Z" fill="currentColor" />
+                </svg>
+                <span className="text-caption tabular-nums text-foreground/80">
+                  {t("hero.video.elapsed")}
+                </span>
+
+                <span className="flex-1" />
+
+                {/* Stroked, not filled, and drawn on the same 12x12 grid as
+                    the play glyph so the row sits on one optical baseline. */}
+                <svg
+                  data-player-control="subtitles"
+                  viewBox="0 0 12 12"
+                  className="h-sm w-sm shrink-0 text-foreground/75"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                >
+                  <rect x="1" y="3" width="10" height="6" rx="1.5" />
+                  <path d="M3.4 6.4h2M7 6.4h1.6" />
+                </svg>
+                <svg
+                  data-player-control="repeat"
+                  viewBox="0 0 12 12"
+                  className="h-sm w-sm shrink-0 text-foreground/75"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M2 4.4h6.2" />
+                  <path d="M6.9 3.1 8.2 4.4 6.9 5.7" />
+                  <path d="M10 7.6H3.8" />
+                  <path d="M5.1 6.3 3.8 7.6l1.3 1.3" />
+                </svg>
+                <svg
+                  data-player-control="volume"
+                  viewBox="0 0 12 12"
+                  className="h-sm w-sm shrink-0 text-foreground/75"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M1.6 4.6h1.9L6 2.6v6.8L3.5 7.4H1.6z" />
+                  <path d="M8.2 4.3a2.6 2.6 0 0 1 0 3.4" />
+                </svg>
+                <svg
+                  data-player-control="fullscreen"
+                  viewBox="0 0 12 12"
+                  className="h-sm w-sm shrink-0 text-foreground/75"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M1.6 4.2V2.6a1 1 0 0 1 1-1h1.6" />
+                  <path d="M7.8 1.6h1.6a1 1 0 0 1 1 1v1.6" />
+                  <path d="M10.4 7.8v1.6a1 1 0 0 1-1 1H7.8" />
+                  <path d="M4.2 10.4H2.6a1 1 0 0 1-1-1V7.8" />
+                </svg>
+              </div>
             </div>
           </div>
 

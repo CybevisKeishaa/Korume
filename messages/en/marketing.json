@@ -22,6 +22,7 @@
       "title": "Travel to Japan: Kyoto in Autumn",
       "level": "N3",
       "duration": "13 min",
+      "elapsed": "0:24",
       "stillAlt": "A quiet Kyoto street at dusk, with lanterns just beginning to glow."
     },
     "tabs": {
@@ -50,6 +51,10 @@
       "quiet": {
         "jp": "静か（しずか）",
         "en": "quiet"
+      },
+      "calm": {
+        "jp": "落ち着く（おちつく）",
+        "en": "calm"
       }
     },
     "saveSentence": "Save this sentence",

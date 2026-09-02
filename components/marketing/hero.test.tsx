@@ -92,6 +92,44 @@ describe("Hero", () => {
       "the track must be a light hairline over any photograph, not `--border`",
     ).toContain("bg-foreground/");
     expect(track.className).not.toContain("bg-border");
+
+    // The played segment (owner ruling 2026-09-03). A track with no filled
+    // portion reads as a rule, not as a video part-way through.
+    const progress = track.querySelector("[data-player-progress]");
+    expect(progress, "the track needs a played segment").not.toBeNull();
+    expect(progress?.className).toContain("bg-primary");
+  });
+
+  it("draws four control glyphs that stay depictions, not controls (owner ruling 2026-09-03)", async () => {
+    // The owner overturned the "no controls, they read as promises" ruling:
+    // "4 nút tùy bạn, trông sao cho đẹp, không cần mang tính hứa đâu". What
+    // the ruling did NOT relax is spec §2.3 — these depict, they never
+    // function — so this pins BOTH halves.
+    const { container } = render(await Hero());
+
+    const chrome = container.querySelector("[data-player-chrome]");
+    if (!chrome) throw new Error("the player chrome did not render");
+
+    const controls = Array.from(chrome.querySelectorAll("[data-player-control]"));
+    // Exact, and non-empty before anything is read off it (L-004).
+    expect(controls).toHaveLength(4);
+    expect(controls.map((c) => c.getAttribute("data-player-control"))).toEqual([
+      "subtitles",
+      "repeat",
+      "volume",
+      "fullscreen",
+    ]);
+
+    for (const control of controls) {
+      const name = control.getAttribute("data-player-control") ?? "(unnamed)";
+      // Inheriting the chrome's `aria-hidden` is enough for AT, but each one
+      // must also be inert to the keyboard and the pointer in its own right.
+      expect(control.tagName.toLowerCase(), name).toBe("svg");
+      expect(control.querySelectorAll("a, button, input, [tabindex]"), name).toHaveLength(0);
+    }
+
+    // The timestamp is catalog copy, not a string typed into the component.
+    expect(chrome.textContent).toContain(en.hero.video.elapsed);
   });
 
   it("links Save Sentence to the Collection screen (user ruling, 2026-08-28)", async () => {
@@ -172,6 +210,41 @@ describe("Hero", () => {
     expect(highlight?.className).toContain("text-primary-strong");
   });
 
+  it("lists exactly the three key words the reference draws, in order", async () => {
+    // The list stood at two against the reference's three until the owner
+    // ruled on 2026-09-03. The SET is the invariant and is pinned literally;
+    // the wording is derived, per task 9b.
+    const { container } = render(await Hero());
+
+    const items = Array.from(container.querySelectorAll("[data-key-word]"));
+    // Non-empty and exact before reading it (docs/lessons.md L-004): a
+    // selector that matched nothing would satisfy every assertion below.
+    expect(items).toHaveLength(3);
+    expect(items.map((li) => li.getAttribute("data-key-word"))).toEqual([
+      "street",
+      "quiet",
+      "calm",
+    ]);
+
+    for (const key of ["street", "quiet", "calm"] as const) {
+      const item = container.querySelector(`[data-key-word="${key}"]`);
+      expect(item?.textContent, key).toContain(en.hero.keyWords[key].jp);
+      expect(item?.textContent, key).toContain(en.hero.keyWords[key].en);
+    }
+  });
+
+  it("draws the third key word from the rail's own sentence, inventing no vocabulary", async () => {
+    // 落ち着く is conjugated 落ち着きます in `hero.sentence.jp`, so the word
+    // shown is one the visitor can already see in the sentence above it. This
+    // guards the RULE, not the string: a replacement word that does not occur
+    // in the sentence would be new study content, which is the owner's to
+    // choose and not this page's to invent (CLAUDE.md §2.3).
+    const stem = en.hero.keyWords.calm.jp.split("（")[0]?.slice(0, 3) ?? "";
+
+    expect(stem).toHaveLength(3);
+    expect(en.hero.sentence.jp).toContain(stem);
+  });
+
   it("renders every leaf of the hero catalog subtree (F2 — a dropped key must fail loudly)", async () => {
     // Walks messages/en/marketing.json's `hero` subtree and collects every
     // string leaf, e.g. {a: {b: "x"}} -> [["a.b", "x"]]. Mirrors
@@ -206,7 +279,7 @@ describe("Hero", () => {
     // find exactly the catalog's current shape, so an empty or mis-scoped
     // walk cannot pass vacuously, and a later task that adds a hero key
     // without rendering it drops this count.
-    expect(allLeaves).toHaveLength(29);
+    expect(allLeaves).toHaveLength(32);
 
     const { container } = render(await Hero());
     const alts = Array.from(container.querySelectorAll("img"))
