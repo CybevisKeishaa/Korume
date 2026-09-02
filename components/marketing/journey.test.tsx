@@ -125,7 +125,7 @@ describe("Journey", () => {
     expect(waveform[0]).toHaveAttribute("aria-hidden", "true");
 
     const bars = shadow?.querySelectorAll("[data-wave-bar]") ?? [];
-    expect(bars).toHaveLength(56);
+    expect(bars).toHaveLength(32);
   });
 
   it("splits the waveform at a playhead — a recorded run and a rest", async () => {
@@ -137,9 +137,29 @@ describe("Journey", () => {
 
     // Explicit sizes, not just "non-empty" (CLAUDE.md §7): a single-tone
     // waveform would leave one of these at 0 and still satisfy a
-    // greater-than-zero check on the other. 56 bars split at ~62%.
-    expect(recorded).toHaveLength(35);
-    expect(rest).toHaveLength(21);
+    // greater-than-zero check on the other. 32 bars split at ~62%.
+    expect(recorded).toHaveLength(20);
+    expect(rest).toHaveLength(12);
+  });
+
+  it("keeps the waveform's dynamic range wide enough to read as speech", async () => {
+    const { container } = render(await Journey());
+
+    const shadow = container.querySelector('[data-step="shadow"]');
+    const bars = [...(shadow?.querySelectorAll("[data-wave-bar]") ?? [])];
+    // L-004: a pattern-gathered collection asserts its own size, or an empty
+    // match makes every expectation below unconditionally green.
+    expect(bars).toHaveLength(32);
+
+    const heights = bars.map((bar) => Number(bar.getAttribute("height")));
+    expect(heights.every((h) => Number.isFinite(h) && h > 0)).toBe(true);
+
+    // The defect this guards: `Math.max(0.18, …)` floored the valleys so hard
+    // that the tallest bar was 4.7x the shortest and the strip read as one
+    // orange smear. The reference's own bar columns measure ~33:1
+    // (`ref/zoom-c3.png`, min 4 / max 132). 8:1 is well under what this
+    // envelope produces and well over anything a re-flattened one could reach.
+    expect(Math.max(...heights) / Math.min(...heights)).toBeGreaterThan(8);
   });
 
   it("gives the Mine card its third chip — the save affordance", async () => {

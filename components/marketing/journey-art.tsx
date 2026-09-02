@@ -159,8 +159,11 @@ export function UnderstandProgress() {
  * duplicate of §4, which is part of why the page read flat.
  *
  * ⚠️ This is ILLUSTRATION, not measurement. The envelope below is a hand-shaped
- * curve — a slow hull over two syllable groups with a little grain — chosen
- * because it reads as speech at 130px wide. It is NOT decoded audio, it is not
+ * curve — a slow hull over two syllable groups with a little grain — shaped to
+ * read as speech at the width this strip ACTUALLY renders at, which is 103.84
+ * CSS px on a 1265px page. It once said "at 130px wide" and shipped at 103.84,
+ * which is how 56 bars became a 1.02px smear; `WAVE_BARS` now records the
+ * derivation. It is NOT decoded audio, it is not
  * derived from any recording, and nothing may ever wire it to one: the real
  * renderer is the client component named above. It carries no accessible name
  * for the same reason.
@@ -174,7 +177,18 @@ export function UnderstandProgress() {
  */
 const WAVE_WIDTH = 160;
 const WAVE_HEIGHT = 52;
-const WAVE_BARS = 56;
+/**
+ * 32, not the 56 this shipped with. The bar count is a function of the width
+ * the strip ACTUALLY renders at, and that is 103.84 CSS px on a 1265px page —
+ * not the 130px the envelope below was shaped for. 56 bars there is a 1.854px
+ * pitch and a 1.02px bar, which at a 0.51px corner radius is a blurred capsule,
+ * so the strip read as one orange smear. 32 gives a 3.245px pitch and a 1.78px
+ * bar, which survives rasterisation at DPR 1.
+ *
+ * Re-derive it if the card's width ever changes: `floor(strip width / 3)`, the
+ * pitch below which a `WAVE_BAR_DUTY` bar falls under ~1.7 CSS px.
+ */
+const WAVE_BARS = 32;
 /** Where the playhead sits — the reference splits its waveform at ~62%. */
 const WAVE_RECORDED_BARS = Math.round(WAVE_BARS * 0.62);
 /** Gap between bars, as a share of the per-bar pitch. */
@@ -194,7 +208,14 @@ function waveAmplitude(index: number): number {
   const hull = Math.min(1, Math.sin(Math.PI * t) * 4) ** 0.8;
   const syllables = 0.5 + 0.5 * Math.sin(t * 17.4) * Math.sin(t * 5.3 + 0.4);
   const grain = 0.74 + 0.26 * Math.sin(t * 46.1 + 1.7);
-  return Math.max(0.18, hull * syllables * grain);
+  // 0.05, not the 0.18 this shipped with. The floor exists so the unrecorded
+  // tail still draws a line instead of vanishing — but 0.18 of the half-height
+  // is 6.07 CSS px against a 28.43px peak, a dynamic range of 4.7:1, and speech
+  // does not look like that: it flattened the valleys the two-tone split exists
+  // to show. The reference's own bar columns run ~33:1 (`ref/zoom-c3.png`, lit
+  // column heights min 4 / max 132). 0.05 keeps a ~1.7px line in the valleys
+  // and takes the range to ~17:1.
+  return Math.max(0.05, hull * syllables * grain);
 }
 
 export function ShadowWaveform() {
