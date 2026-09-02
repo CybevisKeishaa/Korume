@@ -219,6 +219,40 @@ describe("Journey", () => {
     expect(remember?.querySelectorAll("[data-review-tick]")).toHaveLength(6);
   });
 
+  it("draws the review grid's ARRANGEMENT, not just its per-state totals", async () => {
+    const { container } = render(await Journey());
+
+    const remember = container.querySelector('[data-step="remember"]');
+    const dots = [...(remember?.querySelectorAll("[data-review-dot]") ?? [])];
+    // L-004, and load-bearing for the reshape below: an empty match would make
+    // `toEqual` compare [] with [] row by row and pass.
+    expect(dots).toHaveLength(18);
+
+    // WHY THIS EXISTS. Every other assertion on this grid is a COUNT, and a
+    // scrambled `DOT_MASK` with the same 9/4/2/3 totals satisfies all of them
+    // forever. That is the same failure mode as A2's I2 — a count that was
+    // internally consistent and wrong, and therefore green for good.
+    //
+    // Reading rows off DOM order is sound HERE specifically: the container is
+    // a CSS grid with an explicit `repeat(6, …)` track list and default
+    // row-major auto-flow, and the test above pins that track list from the
+    // inline style. Six per row is not assumed, it is asserted next door.
+    const rows: string[][] = [];
+    for (let i = 0; i < dots.length; i += 6) {
+      rows.push(
+        dots.slice(i, i + 6).map((dot) => dot.getAttribute("data-review-dot-state") ?? "?"),
+      );
+    }
+
+    // Transcribed from `zoom-c5.png`, the same pixel probe `DOT_MASK` came
+    // from — not copied from the constant, which would make this a tautology.
+    expect(rows).toEqual([
+      ["empty", "ring", "empty", "ring", "ring", "ring"],
+      ["ghost", "ring", "ghost", "ring", "ring", "ring"],
+      ["ghost", "ring", "ghost", "lit", "lit", "empty"],
+    ]);
+  });
+
   it("mines the FULL sentence in card 4, with the target fragment marked inside it", async () => {
     const { container } = render(await Journey());
 
