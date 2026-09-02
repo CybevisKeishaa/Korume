@@ -58,7 +58,9 @@ player; a learner in headphones at a night desk in §2; a Tokyo commute still in
 Companion card, §6 end of the chain, §8 CTA). The frame has **zero mascot**, an **empty black
 rectangle** where the hero player's still belongs, and a garish neon placeholder in §5 that is not
 the commute image. Its §8 background is present but so dark it reads as flat black.
-→ A mascot render set already exists under `public/mascot/renders/`. Photography does not, and is the
+→ A mascot render set existed under `public/mascot/renders/`; the user rejected it (2026-08-27) and
+it was deleted (2026-09-02). The mascot ships instead from the owner's hand-cut pose library, recorded
+in `scripts/mascot/poses.json`. Photography did not exist at the time of writing, and was the
 single largest unresolved dependency of this port — see **§5, "Assets this port needs"**.
 
 **G2 — Connective linework is missing.** The reference *links* things: §2's six capability chips
@@ -173,7 +175,7 @@ allowed **only where it does not change structure or content**.
 
 | Asset | Status |
 |---|---|
-| Mascot — appears in §1, §4, §6 and §8 of the reference | ⚠️ a render set exists; enumerate it with `ls public/mascot/renders/` rather than trusting any list written here (`L-002`). But **nobody has checked those renders against the poses the reference uses**, which sit on an ornate lamp/vessel prop. Treat this row as "an asset set exists", not "the right asset exists". |
+| Mascot — appears in §1, §4, §6 and §8 of the reference | ✅ shipped, but NOT from Blender: that render set was rejected (2026-08-27) and `public/mascot/renders/` deleted (2026-09-02). All four placements are filled from the owner's hand-cut pose library, each with its source recorded in `scripts/mascot/poses.json`; enumerate the assets with `ls public/mascot/poses/` rather than trusting any list written here (`L-002`). |
 | Hero video still (Kyoto street, dusk) | ❌ none in repo |
 | §2 learner-at-desk photograph | ❌ none in repo |
 | §5 Tokyo commute still | ❌ none in repo |

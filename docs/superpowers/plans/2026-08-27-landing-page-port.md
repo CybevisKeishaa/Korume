@@ -2338,7 +2338,7 @@ export async function CapabilityChain() {
           width={200}
           height={160}
           /* Cut out on pure black — `screen` maps that onto --void-950 exactly.
-             See spec §5.3; do NOT use public/mascot/renders/, which the user
+             See spec §5.3; do NOT use the Blender renders (deleted 2026-09-02), which the user
              rejected on 2026-08-27. */
           className="mix-blend-screen"
         />
@@ -2878,4 +2878,4 @@ git commit -m "feat(marketing): density pass, reduced-motion and a11y sweep"
    - the five photographs, still the reason `AssetSlot` exists;
    - §5's "i+1 Perfect Next Step" badge and topic chips — in the reference, absent from the frame (Task 8 Step 3);
    - Discord / Facebook / TikTok URLs, and whether either app store block should ever become a link;
-   - whether `public/mascot/renders/` and `assets/blender/references/` should be deleted now that Blender is rejected.
+   - ✅ ANSWERED 2026-09-02: the owner ruled delete. `public/mascot/renders/` and `assets/blender/references/` are gone (recoverable from git history). `assets/blender/korume.blend` was NOT part of the ruling and stays.

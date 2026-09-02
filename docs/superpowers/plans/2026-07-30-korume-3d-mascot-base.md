@@ -4,7 +4,7 @@
 
 **Goal:** Build a riggable base 3D model of Korume (Nihongo Cinema's Companion mascot) in Blender — body, head, eyes, ears, tail, 6 facial-expression shape keys, and a pose armature — so future work can render stills/animations at different expressions and camera angles.
 
-**Architecture:** All geometry is built with the Blender MCP tools (`execute_blender_code` running `bpy`/`bmesh` scripts, `get_viewport_screenshot` / `get_scene_info` for verification). This is an art asset, not application code — there is no automated test suite. **The "run test" step in every task below is a visual check**: capture a viewport screenshot and compare it against the matching panel of `public/mascot/Emotion.png`, per the spec's Testing/acceptance section. Numeric coordinates given in each step are starting values the implementer nudges (via a follow-up `execute_blender_code` call) until the screenshot check passes — the same way a UI task iterates on exact pixel values. Do not skip the screenshot check to save time.
+**Architecture:** All geometry is built with the Blender MCP tools (`execute_blender_code` running `bpy`/`bmesh` scripts, `get_viewport_screenshot` / `get_scene_info` for verification). This is an art asset, not application code — there is no automated test suite. **The "run test" step in every task below is a visual check**: capture a viewport screenshot and compare it against the matching panel of `assets/mascot/source/Emotion.png`, per the spec's Testing/acceptance section. Numeric coordinates given in each step are starting values the implementer nudges (via a follow-up `execute_blender_code` call) until the screenshot check passes — the same way a UI task iterates on exact pixel values. Do not skip the screenshot check to save time.
 
 **Tech Stack:** Blender (via `mcp__blender__*` tools), Python/PIL for the one-off reference-image crop (Task 1).
 
@@ -754,7 +754,7 @@ print("final renders saved")
 
 - [ ] **Step 2: Visual acceptance check**
 
-Read all three renders plus, for comparison, `public/mascot/Emotion.png`. Expected: PASS — front-view silhouette and proportions are recognizably Korume (big head, small body, leaf ears, sweeping tail) against the TURNAROUND row; no shape key breaks the mesh at 0.0/1.0 (re-check by repeating Task 7 Step 3's `preview()` loop with screenshots if any expression wasn't re-verified after the rig was added in Task 8). If something regressed after rigging, fix the armature weights (Task 8 Step 2/3) and re-render.
+Read all three renders plus, for comparison, `assets/mascot/source/Emotion.png`. Expected: PASS — front-view silhouette and proportions are recognizably Korume (big head, small body, leaf ears, sweeping tail) against the TURNAROUND row; no shape key breaks the mesh at 0.0/1.0 (re-check by repeating Task 7 Step 3's `preview()` loop with screenshots if any expression wasn't re-verified after the rig was added in Task 8). If something regressed after rigging, fix the armature weights (Task 8 Step 2/3) and re-render.
 
 - [ ] **Step 3: Save and commit**
 

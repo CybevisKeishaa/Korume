@@ -30,8 +30,8 @@
     "and still belong there, because extract.js still reproduces it."
   ],
   "sheets": {
-    "companion-a": "public/mascot/upscalemedia-transformed (4).png",
-    "companion-b": "public/mascot/upscalemedia-transformed (5).png"
+    "companion-a": "assets/mascot/sheets/upscalemedia-transformed (4).png",
+    "companion-b": "assets/mascot/sheets/upscalemedia-transformed (5).png"
   },
   "poses": [
     {

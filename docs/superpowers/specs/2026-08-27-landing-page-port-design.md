@@ -207,13 +207,20 @@ origin is known and recorded.** Filling one by cropping the reference is a defec
 
 ### 5.3 Mascot — a separate case with a verified source
 
-⚠️ **The Blender renders in `public/mascot/renders/` are rejected by the user (2026-08-27) as broken
-and low quality. They must not be used on this page, or anywhere else, without a fresh ruling.**
-This spec does not delete them; removing them is out of scope and would need its own decision.
+⚠️ **The Blender renders were rejected by the user (2026-08-27) as broken and low quality, and
+`public/mascot/renders/` was DELETED on the owner's ruling (2026-09-02).** They must not be
+reinstated or regenerated without a fresh ruling. This paragraph previously said removing them was
+out of scope and needed its own decision; that decision has now been taken. The files stay
+recoverable from git history, so the deletion is reversible and the record above is not the only
+copy.
 
 The mascot is **not** part of the `asset-slot` pending set, because a usable source does exist. An
-inventory of `public/mascot/` (2026-08-27) found seven non-render files — `ls public/mascot/*.png`
-enumerates them; the table below groups two of them on one row because they are the same sheet:
+inventory of `public/mascot/` (2026-08-27) found seven non-render files. **On 2026-09-02 all seven
+moved out of `public/`** — build-time source art has no business being served to every visitor —
+so `ls assets/mascot/sheets/ assets/mascot/source/` enumerates them now. `sheets/` holds the two
+`scripts/mascot/poses.json` actually reads; `source/` holds the other five, which no code reads and
+which are kept as provenance. The table below groups two of them on one row because they are the
+same sheet:
 
 | File | Size | What it is |
 |---|---|---|

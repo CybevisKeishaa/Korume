@@ -117,10 +117,11 @@ const CENTRED_HEAD = "text-center [&_h2]:mx-auto [&_h2]:text-title";
 /**
  * The companion at the end of the chain (T9-R2/R3/R4).
  *
- * ⚠️ Do NOT reach for `mix-blend-screen`, and do NOT use `public/mascot/renders/`
- * — the first is a retired workaround for cut-outs with no alpha (there is a
- * test in `pitch-showcase.test.tsx` asserting the class never returns), the
- * second the user rejected on 2026-08-27. This is a real-alpha pose from the
+ * ⚠️ Do NOT reach for `mix-blend-screen`, and do NOT go back to the Blender
+ * render set — the first is a retired workaround for cut-outs with no alpha
+ * (there is a test in `pitch-showcase.test.tsx` asserting the class never
+ * returns), the second the user rejected on 2026-08-27 and deleted from
+ * `public/mascot/renders/` on 2026-09-02. This is a real-alpha pose from the
  * hand-cut library the project owner supplied, recorded in
  * `scripts/mascot/poses.json` with `"slot": "chain"`.
  *

@@ -1,6 +1,9 @@
 /**
  * Cuts the landing page's mascot assets out of the character sheets in
- * public/mascot/, per scripts/mascot/poses.json.
+ * assets/mascot/sheets/, per scripts/mascot/poses.json. The sheets sit outside
+ * public/ deliberately: they are build-time source art (~16 MB) and everything
+ * under public/ is served to anyone who asks for it. Only the five OUTPUTS
+ * belong there.
  *
  *   node scripts/mascot/extract.js          # rewrite public/mascot/poses/
  *   node scripts/mascot/extract.js --check  # fail if the outputs are stale

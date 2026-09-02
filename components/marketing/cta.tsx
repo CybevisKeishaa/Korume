@@ -101,7 +101,8 @@ export const CTA_BACKGROUND = "/marketing/cta-bridge.png";
  * is accepted, not overlooked: the reference is a flattened PNG and our pose
  * library is a real asset the owner hand-cut, so the library wins on the same
  * reasoning the owner used to close §6's icon question. Do NOT re-source this
- * from `public/mascot/renders/` (Blender, rejected — spec §5.3), and do NOT
+ * from the Blender render set (rejected — spec §5.3 — and deleted from
+ * `public/mascot/renders/` on 2026-09-02), and do NOT
  * reach for `mix-blend-mode: screen`: the poses have real alpha, screening is
  * retired, and §4 and §6 already assert its absence.
  */
