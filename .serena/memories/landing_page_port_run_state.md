@@ -1,8 +1,8 @@
 # Landing page port (`/`) — run state
 
-> **Status: EXECUTION IN PROGRESS. Tasks 1–7 · A1 §2 · A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b built
-> and committed on branch `landing-page-port`. Nothing merged.** Paused 2026-09-02 after a fourth
-> pause, at the user's request, with Task 9b closed and the tree clean.
+> **Status: EXECUTION IN PROGRESS. Tasks 1–7 · A1 §2 · A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7
+> built and committed on branch `landing-page-port`. Nothing merged.** Task 10 closed 2026-09-02
+> with a PASS review and ZERO fix rounds — the first section task on this branch to need none.
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -10,32 +10,93 @@
 
 # ▶▶ RESUME HERE
 
-**The last CODE commit is `aa927d9`**; this memory's own update commits sit on top of it, so run
+**The last CODE commit is `5ff0398`** (§7 Trust); memory/ledger commits sit on top, so run
 `git log --oneline -3` for true HEAD rather than trusting a hash written here. Branch
 `landing-page-port`, **nothing merged**.
 
-▶ **The user stopped the session here (2026-09-02) and will continue in a new one.** Nothing is
-half-built: **the working tree is CLEAN and the full suite is GREEN (2525/2525, 276/276 files,
-tsc 0, lint 0)** — the first time on this branch both have been true at once. There is no in-flight
-agent, no unprocessed report on disk, and no red test to explain away. Start Task 10 cold.
+▶ Working tree clean apart from the five deliberately untracked favicon candidates in
+`public/mascot/` (see "Still owed to the user" — do NOT commit them to tidy up). Full suite
+**2536/2536 over 277 files**, tsc 0, lint 0. No agent in flight, no unprocessed report on disk.
 
-⚠️ **The ONLY untracked files are five favicon candidates in `public/mascot/`** (`concept-logo.png`,
-`favicon-korume.png`, `favicon4.png`, `korume-favicon2.png`, `korume-favicon3.png`, 5.5 MB together).
-That is deliberate, not an oversight — see "Still owed to the user". Do not commit them to "clean up".
+  Tasks 1-7 · A1 §2 · A2 §3 · A3 §4 · P (mascot) · 9b   COMPLETE
+  Task 8 §5   COMPLETE (cc85602..351f947) — 1 fix round
+  Task 9 §6   COMPLETE (351f947..e610bfe) — 1 fix round
+  Task 10 §7  COMPLETE (bbfefbf..5ff0398) — review PASS, 0 fix rounds
 
-  Tasks 1-7 · A1 §2 · A2 §3 · A3 §4 · P (mascot)   COMPLETE
-  Task 8 §5  COMPLETE (cc85602..351f947) — 1 fix round, re-review clean
-  Task 9 §6  COMPLETE (351f947..e610bfe) — 1 fix round, re-review clean
-  Task 9b    COMPLETE (e610bfe..c9c14db tests, ..aa927d9 owner copy + favicon)
+## ▶ THE NEXT ACTION IS TASK 11 (§8 CTA + §9 SIGN-OFF), AND ITS BRIEF IS NOT WRITTEN
 
-## ▶ THE NEXT ACTION IS TASK 10 (§7), AND ITS BRIEF IS NOT WRITTEN
+Two things it must settle, and they must be settled TOGETHER, not one at a time:
 
-§7 is a **RAIL SPLIT, not centred** — settled by measurement during Task 9's review, do not
-re-derive it. Its photograph `trust-window.png` is COMMITTED, so wire it directly.
+1. **`Section`'s layout API — collapse it.** §7 added `split?: boolean` as a KNOWING SEAM because
+   `isSplit = rail != null` made `rail` both the selector and the content, so "split with an empty
+   rail" was inexpressible (`rail={null}` selects the STACKED layout — fix F6's deliberate
+   behaviour, and the composition the user rejected in §2). §8 is CENTRED and wants a third heading
+   size, so it is the second consumer that makes the redesign honest. Candidate shape, recorded in
+   the prop's own docblock: `layout?: "stacked" | "split" | "centred"` with `rail` as pure content,
+   which also retires the `!= null` guard by construction. **Do not add a third selector.**
+2. **`cta-bridge.png` is a FULL-BLEED background with text over it and needs a MEASURED scrim.**
+   "Looks dark" is not WCAG AA. A scrim over a REAL image is allowed — the no-scrim rule is scoped
+   to pending placeholders.
 
-Then: **Task 11 §8+§9** (§8 IS centred, and owes the `Section` align/heading-size decision — two
-axes, not one option) · **Task 12** composition (owes the max-width decision, and §6's residual tile
-gap below) · **Task A-MOTION** · **Task 13** (⚠️ RE-AIM IT AT §3) · **Task V** · whole-branch review.
+Then: **Task 12** composition · **Task A-MOTION** · **Task 13** (⚠️ aimed at §3, and now also the
+site header at 390px) · **Task V** · whole-branch review.
+
+## ▶ TASK 12'S MAX-WIDTH LEVER NOW HAS THREE FINDINGS BEHIND IT, NOT ONE
+
+A2/A3's showcase shortfall · §6's residual tile gap (39.34px vs ~55) · and now **§7's photograph
+reading as a narrower strip than the reference's**. All three are the same cause: `Container` is
+`max-w-6xl` (1152) so at 1280 the content is 1088 and the gutters are 96 — where the reference's
+content is ~1302 of a ~1400 page with ~49 gutters. §7's cards therefore end at 92.5% of the page
+where the reference's end at 82.6%, which is why less photograph is visible. **Not fixable inside
+§7**: the visible photograph is bounded by where the cards end, and widening it only hides more
+behind an opaque card.
+
+## ▶ WHAT TASK 10 ADDED TO THE METHOD (all paid for, all cheap to re-learn the hard way)
+
+- ⚠️ **TWO `next dev` INSTANCES CLOBBER EACH OTHER, not just `dev` vs `build`.** Two servers on one
+  working copy killed one with a webpack `rename 3.pack.gz_ ENOENT` and left the other serving
+  `ChunkLoadError: Loading chunk app/[locale]/(protected)/layout failed` — while `curl` proved the
+  server-rendered HTML was correct the whole time. Fix: kill every listener, `rm -rf .next`, start
+  ONE. **Check the port before trusting a page**: 3000 was already taken, so `npm run dev` silently
+  moved to 3001 and the first browser check hit a stranger's 404.
+- ⚠️ **DO NOT FILE A VISUAL DEFECT OFF A DOWNSCALED SCREENSHOT.** At 1568px for a 1280 viewport the
+  §7 photograph read as empty dark and was one step from being filed as missing. Measuring the `img`
+  first (`complete`, natural 332x443, opacity 1, at left 936) and THEN zooming showed it renders
+  correctly. Measure the element, then zoom — the same family as the §3 dot-grid error, caught
+  before the claim this time instead of after.
+- ⚠️ **A NEW COMPONENT FILE SILENTLY CHANGES THE SUITE TOTAL.**
+  `components/ui/token-scale.test.ts` runs `it.each(sources)` over every file in
+  `components/marketing/`, so each new component file adds one auto-generated Rule #0 case. Task 10's
+  raw delta was +9 against 7 new tests; the gap was closed by diffing per-file counts from two
+  `--reporter=json` runs, not by assuming. A task that records "+N tests" without knowing this will
+  mis-explain its own delta.
+- **The plan's per-task text was stale in FIVE ways this time** (8 needed 5 rulings, 9 needed 9).
+  Worst: it pinned three English sentences as "verbatim" per spec §11 ruling 11, and **two of the
+  three no longer exist** after the owner's copy pass — the plan's test was red on arrival. Also:
+  a pending-slot assertion for a photograph committed since `b30661f`; `lg:grid-cols-[2fr_1fr]` where
+  the reference draws a rail split with three equal cards; no mention of the three icons; and body
+  copy in a rail the reference leaves empty.
+- ▶ **"Verbatim promise" copy still derives from the catalog.** Ruling 11's real subject is that the
+  three claims SHIP and none is dropped or emptied — not their bytes, which the owner re-voices.
+  `trust.test.tsx` pins the KEY SET literally and derives every sentence. **Whether the current
+  wording still states the `CLAUDE.md` §2 guarantees is a reading task for the owner, and the test
+  deliberately does not pretend otherwise.**
+
+## ▶ HOW TASK 10 WAS RUN — AND WHY IT NEEDED NO FIX ROUND
+
+The user was ASKED how to run it (the session forbids spawning agents unasked) and chose **build
+inline + ONE independent reviewer**. That kept the property that had caught a defect in every prior
+section task, at one dispatch instead of two. It is worth repeating.
+
+What the reviewer actually re-derived rather than accepted — this is what makes a PASS mean
+something: it re-ran the `elementFromPoint` matrix and **found and reported its own scoping bug**
+first (an unscoped `[data-asset-slot]` matched another section's photograph); it re-computed WCAG
+luminance itself; and it **re-ran two of the eleven mutations**, restoring and sha256-verifying.
+
+⚠️ **Two claims stay SINGLE-SOURCED (mine): the narrow-width sweep and the Vietnamese render.** The
+reviewer's browser tooling died mid-run and it said so instead of reporting them passed. Both were
+re-measured on a clean build afterwards — §7's `scrollWidth === clientWidth` with zero overflowing
+descendants at 320/390/496/768/1023/1280 in both locales — but nobody independent has reproduced it.
 
 ## ▶ WHAT TASK 9b SETTLED — READ THIS BEFORE WRITING ANY FURTHER TEST
 
@@ -299,8 +360,9 @@ the `ratio` each slot already declared. Alt fidelity spot-checked (`problem.phot
 "headphones on"; a zoom shows headphones). Licensing was ruled closed 2026-08-26 (AI-generated).
 
 - **Wired:** `hero-still.png` (§1), `problem-desk.png` (§2), `journey-thumb.png` (§3) — all committed.
-- **Owed:** `recommend-commute.png` → Task 8 · `trust-window.png` → Task 10 · `cta-bridge.png` →
-  Task 11. These three are still untracked, which is correct. **A committed reference to an untracked asset would ship a 404** — checked, did not happen.
+- **Wired since:** `recommend-commute.png` (§5, task 8) · `trust-window.png` (§7, task 10 — 1086x1448,
+  exactly 3/4, so `ratio="3/4"` crops nothing). **Only `cta-bridge.png` is still owed, to Task 11.**
+  All six are COMMITTED; the old "still untracked, which is correct" note is obsolete.
 - ⚠️ **`cta-bridge.png` is a full-bleed background with text over it.** "Looks dark" is not WCAG AA;
   Task 11 must add a scrim and measure. A scrim over a REAL image is allowed — the no-scrim rule is
   scoped to pending placeholders.
