@@ -17,10 +17,15 @@
 > **no review at all** — it was built by this controller on the owner's "do it, no approval needed".
 > **An independent render-capable pass over `19b05d5..HEAD` is the biggest thing still worth buying.**
 >
-> ▶ Nothing is in flight: no agent running, no unprocessed report on disk. A production server may
-> still be listening on **:3000** from this session — check `netstat` before starting one, and check
-> which port `npm run dev` actually takes (it moves to 3001 silently). `.next` holds a PRODUCTION
-> build; `next dev` and `next build` share `.next` and clobber each other.
+> ⏸️ **SESSION PAUSED BY THE OWNER 2026-09-02, third session of the date. Clean stopping point.**
+> Nothing is in flight: no agent running, no unprocessed report on disk, working tree clean.
+>
+> ▶ **A `next start` server IS listening on :3000 (PID 11340, created 23:17:26) and it is NOT this
+> session's.** The one this session started was killed and `netstat` verified 0 listeners on :300x
+> before this one appeared, so treat it as the owner's and do not kill it without asking. `.next`
+> holds a PRODUCTION build, so `npm run start` is ~1 s — but check `netstat` first, and check which
+> port `npm run dev` actually takes (it moves to 3001 silently). `next dev` and `next build` share
+> `.next` and clobber each other.
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the owner's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -28,8 +33,11 @@
 
 # ▶▶ RESUME HERE
 
-**HEAD is `23662ac`.** Run `git log --oneline -8` for the truth rather than trusting a hash here.
-Six commits landed in this session:
+**Run `git log --oneline -9`. HEAD is the pause commit that saved this file, and its hash is
+deliberately NOT written here.** A file cannot name the commit that contains it: writing one means
+predicting it, and a predicted number formatted as a measurement is the L-002 failure this branch
+has already paid for three times. **The last commit whose hash this file can honestly state is
+`005bf84`**; the pause commit is the one directly after it. Seven commits landed in this session:
 
     95f77b5  docs(landing)   Task V written into the plan, beside Task 13
     92b8214  fix(marketing)  V1  §3's waveform — 32 bars, floor 0.05
@@ -37,6 +45,8 @@ Six commits landed in this session:
     7afc664  fix(mascot)     V3  trimmed reading-on-the-orb.png and hugging-an-orb.png
     4af5646  test(marketing) V5  the dot-grid arrangement guard
     23662ac  docs(landing)   the plan's §6 step CORRECTED + Task V's outcome recorded
+    005bf84  docs(landing)   this memory, rewritten for Task V
+    (HEAD)   docs(landing)   this pause — the :3000 line corrected, project_status refreshed
 
 ## ▶▶ THE NEXT ACTIONS, IN ORDER
 

@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-08-27) — **the landing-page port has a SPEC and a PLAN, both committed on branch `landing-page-port`. The live next action is executing Task 1 of that plan. It is NOT blocked on the image files.**
+## ▶ NEXT ACTION (updated 2026-09-02) — **the landing-page port is BUILT: all nine sections, task 12's page composition and Task V's visual-fidelity pass are committed on branch `landing-page-port`, nothing merged. The live next action is an INDEPENDENT RENDER-CAPABLE REVIEW of `19b05d5..HEAD`.**
 
 ✅ **`landing-page-identity-ruling` MERGED to master at `2822d22` (`--no-ff`), 2026-08-26; branch kept
 per repo convention.** Count its commits with
@@ -47,7 +47,7 @@ tests** · `next build` exit 0 · the registry's frame-map invariant recipe re-r
 (mapped-but-unregistered = the six first-capture exclusions + `335:1588`; reverse empty).
 Playwright deliberately not run — no `app/` route and no rendered component was touched.
 
-**▶ The live next action: port the landing page at `/`.**
+**▶ The landing page at `/` is PORTED; what is live now is reviewing it — see the block above.**
 **Read `mem:landing_page_port_run_state` first** — it holds the resume block, the authority map, the
 six rulings not to re-litigate, and the process notes. Then **read
 `docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
@@ -63,11 +63,26 @@ reconciliation doc's §5 is the home for this; do not restate it here. **The por
 them**: the design puts all five behind one `AssetSlot` boundary, so layout is built now and filling
 a slot later is one prop at one call site.
 
-**Where execution actually stands (2026-08-27):** branch `landing-page-port` off master, two commits,
-nothing merged and no implementation code written —
-`81a20c9` the spec (`docs/superpowers/specs/2026-08-27-landing-page-port-design.md`) and `bfdb070`
-the plan (`docs/superpowers/plans/2026-08-27-landing-page-port.md`, 13 tasks / 93 steps). One
-decision is owed before work starts: subagent-driven vs inline execution. **Five more user rulings
+**Where execution actually stands (2026-09-02, superseding the 2026-08-27 note this block used to
+carry):** branch `landing-page-port` off master, **nothing merged, nothing pushed**, and the page is
+BUILT — tasks 1–7, A1/A2/A3, P, 8–11, **12** (page composition, `--layout-marketing-max`) and
+**Task V** (visual fidelity) are all committed. Unit **2564 over 280 files**, tsc 0, lint 0,
+**Playwright 23/23**.
+
+▶ **The live next action is an independent RENDER-CAPABLE review of `19b05d5..HEAD`.** Two ranges
+need one: task 12's review was run by the lineage that built it, and Task V has had no review at
+all. Use `general-purpose`, not `code-reviewer` — the latter is code-only and every finding here is
+visual. After that: **Task A-MOTION**, **Task 13** (⚠️ re-measure the 320/390/768 overflow rather
+than trusting any recorded number — Task V did not touch the construct it comes from), the
+whole-branch review, and the branch-end `docs/lessons.md` pass (**six** queued entries).
+
+⚠️ **Two decisions are waiting on the owner**, neither blocking: §1's transport bar lacks the
+reference's timestamp and four control glyphs (adding them means choosing which affordances to
+depict), and its Key Words list has two entries against the reference's three (a third needs a new
+catalog key, and the catalog is the owner's).
+
+The spec is `81a20c9` (`docs/superpowers/specs/2026-08-27-landing-page-port-design.md`) and the plan
+`docs/superpowers/plans/2026-08-27-landing-page-port.md`, which now carries Task V beside Task 13. **Five more user rulings
 landed that day** — Blender mascot renders rejected, nav destinations, the footer link rule, §2's six
 chip sub-labels (the frame repeats one placeholder six times, a defect the reconciliation doc never
 named), and who writes the Vietnamese copy. **Read `mem:landing_page_port_run_state`** for all of it,
