@@ -1,6 +1,7 @@
 # Landing page port (`/`) — run state
 
-> **Status: SESSION PAUSED BY THE USER 2026-09-02, at a clean stopping point.** Tasks 1–7 · A1 §2 ·
+> **Status: SESSION PAUSED BY THE USER 2026-09-02 — the SECOND pause of that date, a LATER
+> session than the older notes below describe. Clean stopping point.** Tasks 1–7 · A1 §2 ·
 > A2 §3 · A3 §4 · P · 8 §5 · 9 §6 · 9b · 10 §7 · 11 §8+§9 (+fix round, re-reviewed **PASS**) · **12
 > (page composition)** are all built and committed on branch `landing-page-port`. **Nothing merged.**
 > **ALL NINE SECTIONS EXIST AND THE PAGE COMPOSITION IS DONE.**
@@ -16,9 +17,11 @@
 > `19b05d5..9861650` is still worth buying** — and TWO items in that review are single-sourced on me
 > (§6's tile gap, unmeasurable with `[data-chain-node]`; and the 3.46% pixel scan, not re-run).
 >
-> ▶ Nothing is in flight: no agent running, no unprocessed report on disk, no dev server left up
-> (one was running on :3000 this session and was stopped at the pause — `npm run dev` restores it;
-> **check the port it actually takes**, it moves to 3001 silently when 3000 is held).
+> ▶ Nothing is in flight: no agent running, no unprocessed report on disk, **0 listeners on
+> :300x (verified with `netstat`, not assumed)**. `npm run dev` restores a dev server — **check the
+> port it actually takes**, it moves to 3001 silently when 3000 is held. `.next` currently holds a
+> PRODUCTION build, so `npm run start` comes up in ~1 s; `next dev` and `next build` share `.next`
+> and clobber each other.
 >
 > ⚠️ **This memory is navigation, process and the decisions taken on the user's behalf. It
 > deliberately does NOT restate the design or the plan.** The spec and the plan travel with the repo;
@@ -26,14 +29,49 @@
 
 # ▶▶ RESUME HERE
 
-**The last LANDING-PAGE code commit is still `9861650`** (task 12's §7 rebalance; `7dab407` is task
-12's main commit, and task 11's fix round `e0db3c2` is REVIEWED AND PASSED). **On top of it sit two
-owner-delegated HOUSEKEEPING commits, 2026-09-02 — `2d14481` (sharp) and `5e02cf1` (mascot assets
-moved out of `public/`; Blender renders + references deleted).** Those two are NOT landing-page work
-and are NOT part of task 12's review range; they touch no marketing component's rendering, only two
-docblocks, the asset paths and the docs. Memory/ledger commits sit on top of those, so run
-`git log --oneline -5` for true HEAD rather than trusting a hash written here. Branch
-`landing-page-port`, **nothing merged**.
+**The last LANDING-PAGE code commit is `ceea58e`** — task 12's one-Minor fix round (N1). Task
+12's own commits are `7dab407` (page measure + e2e suite) and `9861650` (§7 rebalance); task 11's
+fix round `e0db3c2` is REVIEWED AND PASSED. Branch `landing-page-port`, **nothing merged, nothing
+pushed**. Run `git log --oneline -8` for true HEAD rather than trusting a hash written here.
+
+**FIVE commits landed in the session that ended at this pause** (`0588bbf..HEAD`):
+
+    2d14481  perf(images)   install sharp                       } owner-delegated housekeeping.
+    5e02cf1  chore(assets)  mascot art out of public/, Blender  } NOT landing-page work, and NOT
+    090c7e6  docs(landing)  record that housekeeping            } part of task 12's review range.
+    ceea58e  fix(marketing) N1 — task 12's review fix round
+    fccf2b7  docs(landing)  record task 12's review + the Task V defects
+
+⚠️ **`2d14481` and `5e02cf1` touch no marketing component's RENDERING** — only two docblocks, the
+mascot asset paths and the docs. Do not fold them into task 12's range when reasoning about it.
+
+## ▶▶ THE NEXT ACTION, AGREED WITH THE OWNER AT THIS PAUSE
+
+**Write Task V into the committed plan** (`docs/superpowers/plans/2026-08-27-landing-page-port.md`,
+beside Task 13). **DOCUMENTATION ONLY — no code in this step.** The owner chose this order
+explicitly: N1 + record the review first (both done, `ceea58e` / `fccf2b7`), then Task V.
+
+What goes in it: the **three owner-raised defects** measured this session (their own section below,
+with every number and its cause), plus the **two items already parked** for Task V in the ledger.
+Why it is urgent: **Task V exists today only as ONE LINE in a gitignored file.** It is the task that
+owns whether the page LOOKS right — the owner's main concern — and it currently dies with this
+working copy.
+
+⚠️ **ONE OPEN QUESTION MUST GO TO THE OWNER WHILE WRITING IT — DO NOT DECIDE IT FOR THEM.**
+§6's companion cannot just be made bigger: its column is **176px** and the box is already 160, so
+there are **16px of slack**. Two routes, and composition is something this owner has rejected before:
+  (a) **narrow the 8-node grid** (currently 1016 of the 1192 content) to widen the companion's
+      column — changes the chain's own rhythm;
+  (b) **let the companion overflow its column** — but then T9-R4's three-mechanism rule for an image
+      that breaks out of its box applies (edge fade + explicit z-order + `pointer-events-none`), AND
+      `capability-chain.tsx`'s docblock currently asserts the opposite ("NOTHING OVERLAPS HERE"), so
+      that claim would have to be retired deliberately rather than contradicted silently.
+Write BOTH with their trade-offs; let the owner pick at execution time.
+
+▶ After Task V is written: **Task A-MOTION** (plus the unexplained `/en#problem` scroll drift) ·
+**Task 13** · whole-branch review · the branch-end `docs/lessons.md` pass (FIVE queued entries).
+▶ Also still available and still worth buying: **an INDEPENDENT render-capable review of
+`19b05d5..9861650`**, because this session's was not independent.
 
 ▶ Working tree **fully clean** — the five favicon candidates are no longer untracked, see "Still
 owed". Full suite **2561 tests over 280 files** (`npx vitest run --reporter=json`), tsc 0, `npm run lint`
@@ -46,8 +84,10 @@ owed". Full suite **2561 tests over 280 files** (`npx vitest run --reporter=json
   Task 11 §8+§9 COMPLETE (9f2f8e6..bc13acb) — review FAIL, 1 fix round
   Task 11 fix  `e0db3c2` — re-reviewed **PASS**, 1 Minor (two numbers in a commit message, not code)
   `ae26059`   — the owner's own vi mascot-alt fix, both keys
-  Task 12       COMPLETE (`7dab407` page measure + e2e suite, `9861650` §7 rebalance) — UNREVIEWED
-  **EVERY SECTION TASK IS CLOSED, AND THE PAGE COMPOSITION TASK IS BUILT.**
+  Task 12       COMPLETE (`7dab407` page measure + e2e suite, `9861650` §7 rebalance)
+  Task 12 fix  `ceea58e` — reviewed **PASS**, 1 Minor (N1, a word a rename dropped), fixed
+  **EVERY TASK ON THIS BRANCH IS BUILT AND REVIEWED. NOTHING IS OWED ON THE EXISTING TASKS.**
+  ⚠️ Task 12's review was NOT independent — see the status block; that gap is still open.
 
 ## ✅ TASK 12 IS REVIEWED — PASS. WHAT THE REVIEW SETTLED, AND WHAT IT DID NOT
 
