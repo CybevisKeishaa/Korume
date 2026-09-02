@@ -110,9 +110,45 @@ describe("mascot pose manifest", () => {
     // Named individually rather than counted: a bare count passes just as
     // happily when one placement is dropped and another appears.
     const placed = manifest.supplied.filter((pose) => pose.slot !== undefined);
-    expect(placed.map((pose) => pose.out)).toEqual(["reading-on-the-orb.png"]);
+    // Manifest order, not placement order: §8 (`hugging-an-orb`) was wired after
+    // §6 (`reading-on-the-orb`) but sorts earlier in `supplied`.
+    expect(placed.map((pose) => pose.out)).toEqual([
+      "hugging-an-orb.png",
+      "reading-on-the-orb.png",
+    ]);
     for (const pose of placed) {
       expect((pose.slot as string).length, `${pose.out} slot`).toBeGreaterThan(0);
+    }
+  });
+
+  it("wires each placed pose into a component that actually references its file", () => {
+    // The `slot` field is prose and prose drifts. This makes it checkable: a
+    // pose recorded as placed must appear, by filename, in some component under
+    // components/marketing. Without this, deleting §8's <Image> would leave the
+    // manifest claiming a placement that no longer exists — and the test above
+    // would still pass, because it only reads the manifest.
+    const placed = manifest.supplied.filter((pose) => pose.slot !== undefined);
+    expect(placed.length, "no placed poses to check").toBeGreaterThan(0);
+
+    const dir = join(process.cwd(), "components", "marketing");
+    // ⚠️ COMMENTS ARE STRIPPED FIRST, and that is the whole test. Written
+    // without this it was vacuously green: every one of these components
+    // explains in a docblock WHY it chose its pose, by filename, so a plain
+    // `includes` matched the prose and kept passing after the actual <Image>
+    // was repointed at a different file. Caught by mutation — swapping §8's
+    // pose for `relax.png` left all assertions green until the strip was added.
+    const stripComments = (src: string) =>
+      src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const sources = readdirSync(dir)
+      .filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"))
+      .map((f) => stripComments(readFileSync(join(dir, f), "utf8")));
+    expect(sources.length, "no marketing components found to scan").toBeGreaterThan(0);
+
+    for (const pose of placed) {
+      expect(
+        sources.some((src) => src.includes(pose.out)),
+        `${pose.out} is recorded as placed but no component references it in code`,
+      ).toBe(true);
     }
   });
 

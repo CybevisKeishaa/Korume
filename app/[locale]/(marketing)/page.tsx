@@ -5,6 +5,8 @@ import { PitchShowcase } from "@/components/marketing/pitch-showcase";
 import { Recommendation } from "@/components/marketing/recommendation";
 import { CapabilityChain } from "@/components/marketing/capability-chain";
 import { Trust } from "@/components/marketing/trust";
+import { Cta } from "@/components/marketing/cta";
+import { Signoff } from "@/components/marketing/signoff";
 
 export default function LandingPage() {
   return (
@@ -16,6 +18,8 @@ export default function LandingPage() {
       <Recommendation />
       <CapabilityChain />
       <Trust />
+      <Cta />
+      <Signoff />
     </main>
   );
 }

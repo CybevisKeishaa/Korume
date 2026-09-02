@@ -20,6 +20,19 @@ interface SectionBase {
   heading: string;
   /** 1 only for the hero; every other section is 2. */
   headingLevel?: 1 | 2;
+  /**
+   * Full-bleed layers painted BEHIND the `Container` — a background photograph,
+   * a scrim, a decorative figure that must sit under the copy. Rendered as the
+   * section's first child, outside the max-width wrapper, so `absolute inset-0`
+   * against the section's own box does what it reads like.
+   *
+   * ⚠️ NOT the same thing as §2's and §7's photographs, which travel through
+   * `children`. Those are PARTIAL bleeds scoped to the showcase column's right
+   * edge and belong to that column's composition; this is for a layer behind
+   * the whole band, including the copy. The distinction matters because content
+   * must paint above a backdrop and beside a partial bleed.
+   */
+  backdrop?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
 }
@@ -120,7 +133,7 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * for sections that don't.
  */
 export function Section(props: SectionProps) {
-  const { id, eyebrow, heading, headingLevel = 2, children, className } = props;
+  const { id, eyebrow, heading, headingLevel = 2, backdrop, children, className } = props;
   const layout: SectionLayout = props.layout ?? "stacked";
   const rail = props.layout === "split" ? props.rail : undefined;
   const headingId = `${id}-heading`;
@@ -162,6 +175,7 @@ export function Section(props: SectionProps) {
       aria-labelledby={headingId}
       className={cn("relative py-2xl", className)}
     >
+      {backdrop}
       <Container>
         {isSplit ? (
           <div className={cn("grid gap-xl lg:items-start", SPLIT_COLUMNS)}>
@@ -186,10 +200,14 @@ export function Section(props: SectionProps) {
           // `mx-auto max-w-3xl` caps the measure here rather than on the
           // heading, so a centred heading and a centred body cannot end up on
           // different measures — which is what `max-w-3xl` on the heading plus
-          // a wider wrapper would do at some widths. `relative` keeps the whole
-          // block above any full-bleed background the section places behind it,
-          // without each consumer having to remember a z-index.
-          <div data-section-centred className="relative mx-auto max-w-3xl text-center">
+          // a wider wrapper would do at some widths.
+          //
+          // ⚠️ `relative z-10` is load-bearing whenever `backdrop` is used, and
+          // it lives here rather than at the consumer because the consumer does
+          // not own the heading. A backdrop layer is POSITIONED, so it paints
+          // above in-flow text no matter which order the two appear in; without
+          // this the heading disappears under §8's photograph.
+          <div data-section-centred className="relative z-10 mx-auto max-w-3xl text-center">
             {headingBlock}
             <div className="mt-lg">{children}</div>
           </div>
