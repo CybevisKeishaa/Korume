@@ -11,7 +11,8 @@
 
 # ▶▶ RESUME HERE
 
-**The last CODE commit is `e0db3c2`** (task 11's fix round); memory/ledger commits sit on top, so run
+**The last CODE commit is `ae26059`** (the owner's vi mascot-alt fix, on top of task 11's fix round
+`e0db3c2`, which is REVIEWED AND PASSED); memory/ledger commits sit on top, so run
 `git log --oneline -3` for true HEAD rather than trusting a hash written here. Branch
 `landing-page-port`, **nothing merged**.
 
@@ -23,17 +24,60 @@ unprocessed report on disk.
   Task 8 §5   COMPLETE (cc85602..351f947) — 1 fix round
   Task 9 §6   COMPLETE (351f947..e610bfe) — 1 fix round
   Task 10 §7  COMPLETE (bbfefbf..5ff0398) — review PASS, 0 fix rounds
-  Task 11 §8+§9 COMPLETE (9f2f8e6..bc13acb, fix round e0db3c2) — review FAIL, 1 fix round
+  Task 11 §8+§9 COMPLETE (9f2f8e6..bc13acb) — review FAIL, 1 fix round
+  Task 11 fix  `e0db3c2` — re-reviewed **PASS**, 1 Minor (two numbers in a commit message, not code)
+  `ae26059`   — the owner's own vi mascot-alt fix, both keys
+  **EVERY SECTION TASK ON THIS BRANCH IS NOW CLOSED.**
 
-## ▶ THE NEXT ACTION IS AN INDEPENDENT RE-REVIEW OF THE FIX ROUND (`bc13acb..e0db3c2`)
+## ▶ EVERY SECTION TASK IS NOW CLOSED. THE NEXT ACTION IS TASK 12, AND ITS BRIEF IS NOT WRITTEN.
 
-Task 11's own review is done and its two findings are fixed and committed. What has NOT happened is
-an independent pass over the FIX. It is not a section edit — it touches `Section`, the site header,
-the token system and `cn()`, i.e. four things Task 12 will build on — so it earns one.
-Diff is at `review-bc13acb..e0db3c2.diff` in the ledger folder.
+Task 11's fix round was independently reviewed and returned **PASS** — one Minor, and the Minor is
+about two numbers in a commit message, not about code (see the L-002 hit below). Details in
+`task-11-fix-review.md`; what the reviewer re-derived rather than accepted is in the ledger.
 
-Then: **Task 12** composition · **Task A-MOTION** · **Task 13** (⚠️ aimed at §3, and also the site
-header at 390px) · **Task V** · whole-branch review.
+**Task 12 owes ONE decision with THREE findings behind it** — see the max-width section below. Then:
+**Task A-MOTION** (and the unexplained scroll drift below) · **Task 13** (⚠️ aimed at §3's card row,
+and also the site header at 390px) · **Task V** · whole-branch review · the branch-end
+`docs/lessons.md` pass, which has an L-002 evidence entry queued in the ledger.
+
+## ⚠️ THE FIX-ROUND REVIEW'S ONE MINOR WAS AN L-002 HIT ON ME, AND IT FIRED TWICE IN ONE COMMIT
+
+Both numbers the reviewer could not reproduce were mine — and re-deriving them showed **both of us
+had measured correctly**, which is worse than one of us being wrong, because it means the numbers
+were never properties of the thing they described:
+
+- **`/en#signoff` scroll room.** I wrote "420px", the reviewer measured 363.67. The quantity is
+  `scrollHeight − innerHeight − scrollY`; `scrollHeight` (4422) and `scrollY` (3473.33) are
+  IDENTICAL across both runs and only `innerHeight` differs (585 theirs, 531 mine). **It is a fact
+  about the window, not about the page.**
+- **`poses.json`'s pre-existing dirtiness.** I wrote "70 diff lines". `diff | wc -l` = **70** (mine —
+  it counts the `NcN` separators too); `diff | grep -cE '^[<>]'` = **50**; `diff -u | grep -cE
+  '^[+-][^+-]'` = **50** (theirs). Both outputs are real; I recorded one without its command.
+
+▶ In both cases the load-bearing argument survives unchanged. **That is exactly why it is worth
+keeping: the number that is DECORATIVE to the argument is the one nobody re-runs the command for.**
+
+▶ **Also recorded, deliberately NOT filed: a one-time scroll drift on `/en#problem`.** One
+measurement taken after a multi-second gap between two tool calls showed the page near the document
+bottom with no interaction in between; a controlled re-test (fresh nav → immediate measure → two more
+after 5s idle each) was stable and correctly anchored across 10s. Not reproducible, and not
+attributable to the app (Lenis / ScrollTrigger) versus the tooling. **Worth a look during
+Task A-MOTION**, which owns the scroll layer.
+
+## ▶ WHAT THE FIX-ROUND REVIEW SETTLED BY MEASUREMENT — do not re-open these
+
+- **`Section` is the RIGHT scope for the anchor clearance, not an under-fix.** `SiteHeader` has
+  exactly ONE consumer (`app/[locale]/(marketing)/layout.tsx`); `grep -rl "sticky" components/ app/`
+  returns three hits and the only other is `two-column-shell.tsx`'s sticky *sidebar rail*, not a top
+  bar. Every `Section` importer is inside `components/marketing/`.
+- **`4rem` is the right VALUE**, verified from the render function rather than the docblock:
+  `headingBlock` is unconditionally the first IN-FLOW content in all three layout branches
+  (`backdrop` is `position: absolute` and never displaces it), and `py-2xl` = 48px trivially absorbs
+  the 0.667px gap to the bar's real 64.667px.
+- **Class-presence assertions are the honest ceiling in this suite**, proven from prior art rather
+  than from this fix's own docblock: `capability-chain.test.tsx` (pre-existing, unrelated) already
+  records that this vitest environment loads no CSS, so `getComputedStyle` cannot see Tailwind's
+  cascade. A real pixel assertion is owed to the Playwright pass Task 13/V already carries.
 
 ## ▶ WHAT TASK 11 SETTLED — Task 12 CONSUMES ALL OF IT
 
@@ -82,7 +126,9 @@ header at 390px) · **Task V** · whole-branch review.
   loaded before touching the config.** (Separately: a `tailwind.config.ts` edit does NOT reach a
   running `next dev` — that one genuinely needs a restart.)
 - **A FORMATTING FINDING NEEDS A BASELINE.** The review's N1 evidence was `prettier --check` warning
-  on `poses.json` — but the file was ALREADY prettier-dirty at `9f2f8e6` (70 diff lines), so
+  on `poses.json` — but the file was ALREADY prettier-dirty at `9f2f8e6` (50 changed lines by
+  `diff X Xf | grep -cE '^[<>]'`; the "70" first recorded here was `diff | wc -l`, which counts the
+  `NcN` separators too — see the L-002 hit below), so
   `prettier --write` would have fixed a pre-existing condition and reformatted 40+ unrelated lines
   inside a task-11 fix commit. Hand-fixed the one entry to its siblings' key order instead, and
   compared both parses: identical content, key order aside. ▶ **Check whether the tool was already
@@ -519,11 +565,16 @@ the browser" as unverified unless the widths are named.
   and untouched. Only the NAV item was wrong, because there the same word rendered twice in one bar
   meaning two different things. Renamed to "Bạn đồng hành", the short form already used for this
   feature in `messages/vi/settings.json`. One key changed; every other vi string byte-identical.
-  ⚠️ **A SECOND vi STRING IS OWED AND IS NOT FIXED**: `vi.cta.mascotAlt` reads *"Korume của Korume,
-  ngồi trên một quả cầu phát sáng."* — literally "Korume's Korume", broken Vietnamese. `git log
-  --follow` shows it used to say *"Linh thú của Korume"* and was changed in the owner's own copy pass
-  at `aa927d9`. Task 11 is merely the first commit that RENDERS it. Task 11's reviewer flagged it and
-  correctly did NOT count it against the diff. **Owner's file, owner's call — ask, do not edit.**
+  ✅ **The broken mascot alt text is FIXED BY THE OWNER (`ae26059`).** `vi.chain.mascotAlt` and
+  `vi.cta.mascotAlt` both read *"Korume ngồi trên Memory Orb."* now — they had said *"Korume của
+  Korume, ngồi trên một quả cầu phát sáng."* ("Korume's Korume") since the owner's own copy pass at
+  `aa927d9`; task 11 was merely the first commit to RENDER the string, and its reviewer flagged it
+  without counting it against the diff. Exactly two keys changed, every other vi string byte-identical.
+  ▶ **"ngồi trên" surviving matters beyond copy**: `poses.json` justifies BOTH pose picks by the alt
+  text saying the companion is SITTING ON an orb — that is what ruled out `holding-memory.png` for
+  §6 — so the reasoning recorded there still holds. Raised, not acted on: "Memory Orb" appears
+  nowhere else in `messages/vi/`, and the English pair distinguishes the two placements ("sitting
+  quietly on" for §6) where the Vietnamese pair is now byte-identical for both.
   ▶ **FLAG AT THAT PASS — §3's card 2 is missing four strings the reference has**: a `5 / 12`
   counter, a tag chip, a romaji line, and a small icon caption. A2 deliberately built without them
   rather than inventing content: romaji is *study content*, not decoration (CLAUDE.md §2.3), and the
