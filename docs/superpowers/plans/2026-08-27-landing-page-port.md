@@ -3233,61 +3233,77 @@ In `scripts/mascot/poses.json`, `reading-on-the-orb` becomes `"width": 412, "hei
 Run: `npx vitest run scripts/mascot/poses.test.ts`
 Expected: **PASS**, including the manifest/disk consistency tests that were already there.
 
-- [ ] **Step 7: Centre the companion on the node block**
+- [ ] **Step 7: ⚠️ DO NOT touch `xl:items-end` — this step used to say "centre the companion"**
 
-In `components/marketing/capability-chain.tsx`, `xl:items-end` becomes `xl:items-center`, with the
-reason recorded where the class is:
+**That instruction was wrong, and it was caught by reading the component before applying it.**
+`capability-chain.tsx`'s `Companion` docblock already says what the class is for:
 
-```tsx
-      {/* `items-center`, not `items-end`. `flex-end` bottom-aligned a 160-tall
-          companion to the 186.67-tall node block and left its centre 74.67 CSS
-          px below the icon-tile row's, so it read as sitting under the row
-          rather than beside it. The reference (346:6275) draws the companion
-          spanning the block, its top level with the tiles. Centring is the
-          target that needs no magic number: the companion's centre IS the
-          block's. */}
-```
+> `xl:items-end` on the parent is what puts the orb on the rail: the grid and this column share a
+> bottom edge, and the grid's bottom edge IS the rail.
 
-- [ ] **Step 8: Pin the alignment where a browser can see it**
+§6's rail is layer B of the connector — a dashed line under the captions carrying an amber dot below
+each node — and `ref/s6-band.png` draws the companion with its orb sitting on that line. Centring
+the companion lifts the orb off the rail and breaks a composition that was correct.
 
-In `tests/e2e/landing-page.spec.ts`:
+▶ **What made it look wrong was never the alignment.** It was the untrimmed file: 16px of
+transparent margin along the bottom meant `items-end` was pinning the MARGIN to the rail and the
+creature floated 5.1 CSS px above it. That is also the §6 minor already on file as "the orb floats
+above the rail" — the same defect, filed twice. Steps 3–6 close it, and the alignment needs nothing.
+
+▶ **The lesson worth keeping:** a plan step written from a measurement ("its centre is 74.67px below
+the tile row") can still name the wrong cause. The measurement was right; the tile row was simply
+not the thing the companion is aligned to. **Read the class's own docblock before changing a class
+that has one.**
+
+- [ ] **Step 8: Pin what `items-end` actually promises**
+
+In `tests/e2e/landing-page.spec.ts`, assert the companion's box bottom meets the node grid's,
+because that contact is the whole point of the class and a refactor to `items-center` looks harmless:
 
 ```ts
-test("§6's companion is centred on the node row, not hanging below it", async ({ page }) => {
+test("keeps §6's companion standing on the rail", async ({ page }) => {
   await page.goto("/en");
+
   const mascot = await page.locator("#chain [data-chain-mascot]").boundingBox();
-  const node = await page.locator("#chain [data-chain-node]").first().boundingBox();
+  const node = await page.locator("#chain [data-chain-node]").last().boundingBox();
   if (!mascot || !node) throw new Error("§6's companion or its node grid did not render");
 
-  const mascotCentre = mascot.y + mascot.height / 2;
-  const nodeCentre = node.y + node.height / 2;
-  // It was 74.67px low. The bound is deliberately loose — this pins "centred
-  // on the row", not a layout constant that legitimately moves with copy.
-  expect(Math.abs(mascotCentre - nodeCentre)).toBeLessThan(12);
+  expect(Math.abs(mascot.y + mascot.height - (node.y + node.height))).toBeLessThan(1);
 });
 ```
 
-- [ ] **Step 9: Mutation-check both new guards — both were written over working code**
+⚠️ **Note in the test what it CANNOT see**: this measures the image BOX. Whether the creature
+reaches the box's bottom edge is a property of the FILE, and that is Step 1's guard — the untrimmed
+pose floated the orb while this assertion stayed green.
 
-CLAUDE.md §7: a guard written after the fact cannot fail first, so break what it guards and watch it
-go red. Restore afterwards and confirm the tree is clean.
+⚠️ **Do NOT write this against `[data-chain-node]`'s CENTRE.** That was tried: the node is the whole
+186.67px grid cell, so `items-end` puts the companion's centre 13.19px from it and a "centred"
+assertion with a 12px bound passes or fails on rounding. The 74.67px figure is the distance to the
+ICON-TILE ROW's centre, which is a different element.
+
+- [ ] **Step 9: Mutation-check the guards that were written over working code**
+
+CLAUDE.md §7: a guard written after the fact cannot fail first. Step 1's pose guard genuinely failed
+first (it named `hugging-an-orb.png` at 0.8305785123966942), so it needs nothing more. Step 8's does
+not — it was green the moment it was written — so it must be broken deliberately:
 
 ```bash
-git checkout HEAD -- public/mascot/poses/reading-on-the-orb.png
-npx vitest run scripts/mascot/poses.test.ts     # EXPECT: red, naming that file
-node scripts/mascot/trim.js public/mascot/poses/reading-on-the-orb.png
-npx vitest run scripts/mascot/poses.test.ts     # EXPECT: green again
+# flip xl:items-end -> xl:items-center in capability-chain.tsx
+npm run build && npm run start
+npx playwright test landing-page -g "standing on the rail"   # EXPECT: red
+# restore, rebuild, re-run                                    # EXPECT: green
 ```
 
-For the e2e guard, flip `xl:items-center` back to `xl:items-end`, rebuild, run the one test, watch
-it fail at a distance near 74, then restore. **Print both outputs in the task report** — a mutation
-check you did not print is a claim, not evidence.
+**Print both outputs in the task report.** A mutation check you did not print is a claim, not
+evidence. Restore with `git checkout --` or a copy, then confirm `git diff --stat` shows only your
+intended change.
 
 - [ ] **Step 10: Look at it beside the reference**
 
 Render `/en`, scroll `#chain` into view, compare against `ref/s6-band.png`. What you are looking
-for: the companion's top near the icon tiles' top, its body past the text, its optical centre in its
-own column instead of pulled left.
+for: the companion's orb ON the rail, its top reaching up into the icon-tile row, and its optical
+centre in its own column instead of pulled left.
+
 
 ---
 
@@ -3373,6 +3389,82 @@ git commit -m "fix(marketing): trim the two untrimmed poses and centre the compa
 ```
 
 ---
+
+---
+
+### What Task V actually did — executed 2026-09-02
+
+V1, V2, V3 and V5 are **DONE and committed**. V4 is **measured and reported, not closed** — both
+of its remaining gaps need something that is the owner's to give.
+
+    92b8214  fix(marketing)  V1  the waveform
+    d720eb7  fix(marketing)  V2  the card row
+    7afc664  fix(mascot)     V3  the two untrimmed poses
+    4af5646  test(marketing) V5  the dot-grid arrangement guard
+
+Measured after, on the live page, page width **1265** (window 1280 less a 15px scrollbar):
+
+    §3 waveform   32 bars · bar 1.78 CSS px · min 1.69 · max 28.36 · range 16.78 : 1
+                  (was 56 · 1.02 · 6.07 · 28.43 · 4.7 : 1)
+    §3 cards      146.51 x5      (was 146.51 x4 + 162.51)
+    §6 companion  160 x 176 · bottom flush with the node block (delta 0.00)
+                  node grid unchanged at 1016 — the creature grew 21% for zero grid pixels
+
+Gate: `npm run typecheck` exit 0 · `npm run lint` 0 errors · `npx vitest run` **2563 tests over 280
+files, 0 failed** · `npx playwright test` **23 passed** (21 before; V2 and V3 added one each).
+
+⚠️ One e2e went red on the first full run and it was NOT the diff: `auth-locale-round-trip.spec.ts`,
+with `PGRST303 / JWT issued at future` and digest `1612785857` in the server log — the same digest
+already on file. `date -u` on the host read 12:49:34 against the Supabase container's 12:49:35. It
+passed on re-run and in the full run after. The container clock skew is still unfixed, so this can
+recur; read the digest first.
+
+#### V4 Step 1 — §1's still and transport bar: MEASURED, NOT CLOSED
+
+Rendered `/en` beside `ref/s1-hero-card.png`. Most of the card already matches: the transport bar
+with its play glyph and progress line, the Transcript/Japanese/Translation/Notes tabs, the
+transcript lines, the right rail's Sentence 1/29 with Japanese, romaji and English, and the
+Companion line. Two things differ, and **neither is mine to decide**:
+
+1. The reference's transport bar carries a **timestamp on the left and four control glyphs on the
+   right**. Adding them means choosing which four affordances to depict — the plan's own step warns
+   against inventing chrome, and depicting a control implies the feature.
+2. The reference's Key Words list has **three** entries (通り, 静か, 落ち着く); ours has two. A third
+   needs a new catalog key, and the catalog is the owner's — the same ruling A2 made when it
+   declined to invent §3 card 2's romaji and chip.
+
+▶ Put both to the owner. Do not close this by building either.
+
+#### V4 Step 2 — §2's photograph at the narrow end of `lg`: RE-MEASURED, CLOSED
+
+In a fixed-width same-origin iframe at a **layout width of 1024** (the iframe had to be 1039 CSS px
+wide — it carries its own 15px scrollbar, and a 1024px iframe lays out at 1009 and drops below the
+`lg` branch entirely):
+
+    photograph  599.04 .. 1024  (424.96 wide)
+    fade length 20% of 424.96 = 84.99
+    chips end   700.32     ->  overlap 101.28,  opaque overrun 16.29 px
+
+A1 recorded 99.8 / 83.7 → ~16px. It re-derives, and Task 12's widening did not move it: at 1024 the
+container is viewport-bound, not capped. Mechanism (2) still holds — every chip is an opaque
+`bg-card` panel lifted by `relative z-10`, so nothing behind one reaches its text.
+
+▶ **Closed as verified-harmless, not fixed.** Lengthening the fade to clear the overlap at 1024
+(24%) would over-fade the photograph at 1280, which is the reference's own width and the one that
+matters. The three load-bearing mechanisms stay exactly as A1 left them.
+
+#### Still open after Task V
+
+- **V4 Step 1's two questions, above.** Owner's call.
+- **§3's card 1 order**, ruled correct and closed below — reversible in one line if the owner still
+  wants the row uniform.
+- **The narrow-width overflow (V2 Step 5) was not re-measured.** V2 changed the last item's padding,
+  not the `shrink-0` + `basis-[clamp(...)]` construct the 320/390 overflow comes from, so Task 13's
+  numbers are assumed to stand — **assumed, not verified**. Measure them in Task 13 rather than
+  trusting this line.
+- **`MASCOT_WIDTH` was not re-derived** against Task 12's wider content. After the trim the creature
+  fills its 160px box at 12.6% of a 1265px page, which reads correctly beside the reference, so it
+  was left alone deliberately.
 
 ### Ruled and closed by Task V — do not re-open
 
