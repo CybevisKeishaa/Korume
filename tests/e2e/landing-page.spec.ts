@@ -113,6 +113,31 @@ test.describe("landing page", () => {
     ).toBeVisible();
   });
 
+  test("leaves §7's photograph a readable strip beside the cards", async ({
+    page,
+  }) => {
+    // Task 12. The page measure widened from `max-w-6xl` to
+    // `--layout-marketing-max`, which pushed §7's cards from 92.5% of the page
+    // to 97.1% and left the photograph a ~37px sliver. The reference draws its
+    // three cards at 207..372, 379..543 and 550..714 of an 864-wide page
+    // (recorded in trust.tsx's docblock from task 10's reading), so they end at
+    // 714/864 = 82.6% — and an independent luminance-edge scan of `346:6275`
+    // puts the photograph's READABLE content (the lit window) starting at 88.9%,
+    // which 82.6% clears with room. So the invariant is not "the cards are 78%
+    // wide" — it is that the photograph is still an image someone can see.
+    //
+    // Asserted as an OUTCOME in a real browser because the unit suite loads no
+    // CSS and cannot measure any of this.
+    await page.goto("/en");
+
+    const photo = await page.locator("#trust img").boundingBox();
+    const cards = await page.locator("#trust [data-trust-cards]").boundingBox();
+    if (!photo || !cards) throw new Error("§7 has no photograph or no card row");
+
+    const clearStrip = photo.x + photo.width - (cards.x + cards.width);
+    expect(clearStrip).toBeGreaterThan(150);
+  });
+
   test("is reachable by keyboard from the top", async ({ page }) => {
     await page.goto("/en");
     await page.keyboard.press("Tab");

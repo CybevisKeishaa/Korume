@@ -76,13 +76,17 @@ export const TRUST_CARDS: readonly TrustKey[] = ["recordings", "data", "ai"];
  * photograph's opaque edge lands at ~695 — it crosses only the third card's
  * ~15px right padding, leaving every glyph of text clear of it.
  *
- * Our content is proportionally narrower and our gutters proportionally wider:
- * `Container` is `max-w-6xl` (1152) inside a 1280 viewport, so the cards end at
- * x=1184 (92.5% of the page) where the reference's end at 82.6%. The
- * reference's photograph WIDTH and its CLEARANCE from the third card therefore
- * cannot both hold — the same trade §2's docblock records for its own overlap,
- * and it comes from `Section`'s max width, which task 12 owns and which was not
- * §7's to pull.
+ * ⚠️ `lg:w-[78%]` ON THE CARD ROW IS LOAD-BEARING, and it is what task 12 owed
+ * this section. The page measure is now `--layout-marketing-max`, not
+ * `max-w-6xl` — which is right for §3/§4/§6 but pushed these cards from 92.5%
+ * of the page to 97.1% and left the photograph a ~37px sliver, worse than
+ * before. The reference's three cards end at 714 of 864 = **82.6%** (the
+ * coordinates above), and an independent luminance-edge scan of `346:6275`
+ * puts the photograph's READABLE content — the lit window — starting at 88.9%,
+ * which 82.6% clears with room. 78% of the showcase column reproduces that at
+ * 1280. The invariant is the OUTCOME, not this number: `landing-page.spec.ts`
+ * asserts the photograph keeps a strip wide enough to read, in a real browser,
+ * because the unit suite loads no CSS and cannot measure any of it.
  *
  * So the photograph keeps a reference-like width and pays for it with a LONGER
  * fade — transparent until 70% of its own width. Measured live at 1280: the
@@ -134,7 +138,7 @@ export async function Trust() {
           verified by removing the class in the browser, where the card's text
           disappears into the window's glow. `pointer-events-none` (below) does
           NOT cover this case: it stops hit-testing, never painting. */}
-      <ul data-trust-cards className="relative z-10 grid gap-sm sm:grid-cols-3">
+      <ul data-trust-cards className="relative z-10 grid gap-sm sm:grid-cols-3 lg:w-[78%]">
         {TRUST_CARDS.map((claim) => (
           <ClaimCard key={claim} claim={claim} t={t} />
         ))}
