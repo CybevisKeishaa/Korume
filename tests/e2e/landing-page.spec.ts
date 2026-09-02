@@ -166,4 +166,42 @@ test.describe("landing page", () => {
     expect(headerBottom).toBeGreaterThan(0);
     expect(headingTop).toBeGreaterThan(headerBottom);
   });
+  test("gives §3's five step cards one width", async ({ page }) => {
+    // Geometry, so it belongs here and not in the jsdom suite, which loads no
+    // CSS. The defect: every `li` carried the flex basis and shared it with a
+    // StepArrow — except the fifth, which renders no arrow and kept the
+    // arrow's 16px for its card. Measured 146.51 x4 against 162.51.
+    await page.goto("/en");
+
+    const cards = page.locator("#journey [data-step]");
+    await expect(cards).toHaveCount(5);
+
+    const widths = await cards.evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().width)),
+    );
+    // "All equal", not a literal: the width itself legitimately moves with the
+    // page width, the thing that must not vary is card-to-card.
+    expect(new Set(widths).size, `widths were ${widths.join(", ")}`).toBe(1);
+  });
+
+  test("keeps §6's companion standing on the rail", async ({ page }) => {
+    // `xl:items-end` is load-bearing and documented: the node grid's bottom
+    // edge IS the rail, so bottom-aligning the companion is what puts its orb
+    // on the line, exactly as the reference draws it. A refactor to
+    // `items-center` looks harmless and lifts the orb off the rail, so the
+    // promise is pinned here where a browser can see it.
+    await page.goto("/en");
+
+    const mascot = await page.locator("#chain [data-chain-mascot]").boundingBox();
+    const node = await page.locator("#chain [data-chain-node]").last().boundingBox();
+    if (!mascot || !node) throw new Error("§6's companion or its node grid did not render");
+
+    // 1px, not 0: sub-pixel layout rounding is legitimate, 13px of centring is
+    // not. NOTE this measures the IMAGE BOX. Whether the creature reaches the
+    // box's bottom edge is a property of the FILE, guarded in
+    // `scripts/mascot/poses.test.ts` — an untrimmed pose left a 16px
+    // transparent margin and floated the orb 5.1 CSS px above the rail while
+    // this assertion stayed green.
+    expect(Math.abs(mascot.y + mascot.height - (node.y + node.height))).toBeLessThan(1);
+  });
 });

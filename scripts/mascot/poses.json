@@ -188,9 +188,9 @@
       "caption": "ÔM CẦU — seated on the orb, cradling a small charm",
       "depicts": "Seated cross-legged atop the glowing ringed orb, eyes closed, cradling a smaller round charm against its chest.",
       "slot": "§8 CTA, at the right-hand end of the centred band. The only unused supplied pose that is SITTING ON an orb, which is what cta.mascotAlt — the owner's copy, and the binding description of what ships — says the image shows. reading-on-the-orb.png is the other and §6 has it; lying-prone.png is lying, not sitting, and would make the alt text false for anyone who cannot see the image. Differs from 346:6275 (eyes open, ring-less orb): the reference is a flattened PNG and the hand-cut library wins, the same reasoning the owner used to close §6's icon question.",
-      "width": 484,
-      "height": 516,
-      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+      "width": 402,
+      "height": 424,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed. Trimmed to its opaque bounding box on 2026-09-02 by scripts/mascot/trim.js (484x516 -> 402x424): only fully transparent margin was removed, verified pixel by pixel against the pre-trim file — 0 of 681792 channel values differ and 0 opaque pixels were dropped."
     },
     {
       "out": "lying-prone.png",
@@ -229,9 +229,9 @@
       "caption": "ĐỌC SÁCH — reading a scroll atop the ringed orb",
       "depicts": "Seated atop the glowing ringed orb, unrolling and reading a scroll; a small secondary orb icon floats beside it.",
       "slot": "§6 capability chain, at the right-hand end of the node row. Chosen over holding-memory.png because chain.mascotAlt (copy the user owns, and rewrote mid-task) describes the companion SITTING ON a glowing orb, which this pose does and holding-memory.png — sitting on the ground cradling one — does not. It also matches reference 346:6275 detail for detail: eyes open, scroll across the chest, ringed orb below, small orb floating beside the head.",
-      "width": 499,
-      "height": 500,
-      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+      "width": 412,
+      "height": 454,
+      "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed. Trimmed to its opaque bounding box on 2026-09-02 by scripts/mascot/trim.js (499x500 -> 412x454): only fully transparent margin was removed, verified pixel by pixel against the pre-trim file — 0 of 748192 channel values differ and 0 opaque pixels were dropped."
     },
     {
       "out": "reflecting.png",

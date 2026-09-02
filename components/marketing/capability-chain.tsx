@@ -160,7 +160,19 @@ export const MASCOT_POSE = "/mascot/poses/reading-on-the-orb.png";
  * the grid, centred, still in flow.
  */
 const MASCOT_WIDTH = 160;
-const MASCOT_HEIGHT = 160;
+/**
+ * The pose's own aspect ratio at `MASCOT_WIDTH`, not a second free choice:
+ * `reading-on-the-orb.png` is 412x454, so 160 * 454 / 412 = 176.
+ *
+ * It was 160x160 while the file was 499x500 — near-square, so the box looked
+ * right and the defect hid inside it. That file carried 26/61/30/16 px of
+ * TRANSPARENT margin, so the creature drew only 132 x 145 CSS px of the 160 box
+ * and sat 5.6px left of its centre, and the 16px bottom margin floated the orb
+ * 5.1 CSS px above the rail this column is bottom-aligned to. The file is
+ * trimmed now (`scripts/mascot/trim.js`, guarded by `poses.test.ts`), so the
+ * box IS the creature — which is why this number has to follow the file.
+ */
+const MASCOT_HEIGHT = 176;
 /**
  * The companion renders at a fixed `MASCOT_WIDTH` CSS px at every viewport — it
  * is a fixed-size decorative element, not a fluid one — so `sizes` is that

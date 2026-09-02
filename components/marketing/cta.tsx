@@ -163,12 +163,18 @@ export async function Cta() {
               here, within 8px of the content column's own right edge. A
               proportion rather than a copied pixel, like §2's and §7's
               photographs. */}
+          {/* `width`/`height` are the file's real dimensions — 402x424 since
+              the 2026-09-02 trim (`scripts/mascot/trim.js`, guarded by
+              `scripts/mascot/poses.test.ts`). They were 484x516, and that file
+              carried 66/16/54/38 px of TRANSPARENT margin, so `bottom-0` pinned
+              the margin to the band's floor and the creature hovered above it
+              at 83% of the width it was given. */}
           <Image
             data-mascot
             src={CTA_MASCOT}
             alt={t("cta.mascotAlt")}
-            width={484}
-            height={516}
+            width={402}
+            height={424}
             sizes={MASCOT_SIZES}
             className="pointer-events-none absolute bottom-0 right-[7%] hidden h-auto w-[20%] lg:block"
           />

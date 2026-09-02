@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { decode } from "./png.js";
 import { join } from "node:path";
 
 /**
@@ -24,6 +25,28 @@ import { join } from "node:path";
 
 const ROOT = join(__dirname, "..", "..");
 const POSES_DIR = join(ROOT, "public", "mascot", "poses");
+
+/** The bounding box of a PNG's non-transparent pixels. */
+function opaqueBox(path: string) {
+  const { w, h, ch, data } = decode(path);
+  let x0 = w;
+  let x1 = -1;
+  let y0 = h;
+  let y1 = -1;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // 8, not 0: a hand-cut edge feathers, and a pixel at alpha 3 is not
+      // margin a viewer can see.
+      if (ch === 4 && (data[(y * w + x) * ch + 3] ?? 0) <= 8) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  return { w, h, boxW: x1 - x0 + 1, boxH: y1 - y0 + 1 };
+}
+
 
 type Pose = {
   out: string;
@@ -149,6 +172,60 @@ describe("mascot pose manifest", () => {
         sources.some((src) => src.includes(pose.out)),
         `${pose.out} is recorded as placed but no component references it in code`,
       ).toBe(true);
+    }
+  });
+
+  it("draws every pose that ships with no transparent margin around it", () => {
+    // A placement sizes the FILE, not the creature — `sizes="160px"` paints the
+    // image box — so transparent margin is drawn size the artwork never gets,
+    // and asymmetric margin also pushes it off its own box's centre. §6 shipped
+    // `reading-on-the-orb.png` at 82.6% x 90.8% of its frame: in a 160px box
+    // the creature drew 132 x 145 CSS px, sat 5.6px left of centre, and its
+    // 16px bottom margin floated the orb 5.1 CSS px ABOVE the rail that
+    // `capability-chain.tsx` bottom-aligns it to.
+    //
+    // Scoped to what SHIPS, read from the components rather than from the
+    // manifest's `slot`. Both classes are scanned on purpose: three of the five
+    // poses a component references are `extract.js`'s output, and THEY are what
+    // proves the convention — a cutter emits a tight box, so all three measure
+    // 100% fill. The two that did not were hand-cut and pasted in.
+    const stripComments = (src: string) =>
+      src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const dir = join(process.cwd(), "components", "marketing");
+    const sources = readdirSync(dir)
+      .filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"))
+      .map((f) => stripComments(readFileSync(join(dir, f), "utf8")));
+    expect(sources.length, "no marketing components found to scan").toBeGreaterThan(0);
+
+    const shipped = [...manifest.poses, ...manifest.supplied].filter((pose) =>
+      sources.some((src) => src.includes(pose.out)),
+    );
+    // L-004: without this, a scan that matched nothing would make the loop
+    // below vacuously green — and this guard was written over existing code,
+    // which is exactly when that happens unnoticed.
+    expect(shipped.map((pose) => pose.out).sort()).toEqual([
+      "greeting.png",
+      "hugging-an-orb.png",
+      "noting.png",
+      "reading-on-the-orb.png",
+      "resting.png",
+    ]);
+
+    for (const pose of shipped) {
+      const { w, h, boxW, boxH } = opaqueBox(join(POSES_DIR, pose.out));
+      expect(boxW / w, `${pose.out} horizontal fill`).toBeGreaterThan(0.98);
+      expect(boxH / h, `${pose.out} vertical fill`).toBeGreaterThan(0.98);
+      // A supplied entry records both dimensions, and they must describe the
+      // file on disk — otherwise a trim leaves two records disagreeing
+      // (CLAUDE.md 6, one fact one home). An extracted entry records only the
+      // cut `width`; its height comes from the sheet, and `extract.js --check`
+      // already byte-compares those files.
+      if ("height" in pose) {
+        expect({ width: w, height: h }, `${pose.out} manifest dimensions`).toEqual({
+          width: pose.width,
+          height: pose.height,
+        });
+      }
     }
   });
 
