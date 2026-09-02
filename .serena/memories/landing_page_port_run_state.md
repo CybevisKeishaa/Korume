@@ -22,9 +22,13 @@
 
 # ▶▶ RESUME HERE
 
-**The last CODE commit is `9861650`** (task 12's §7 rebalance; `7dab407` is task 12's main commit,
-and task 11's fix round `e0db3c2` is REVIEWED AND PASSED); memory/ledger commits sit on top, so run
-`git log --oneline -3` for true HEAD rather than trusting a hash written here. Branch
+**The last LANDING-PAGE code commit is still `9861650`** (task 12's §7 rebalance; `7dab407` is task
+12's main commit, and task 11's fix round `e0db3c2` is REVIEWED AND PASSED). **On top of it sit two
+owner-delegated HOUSEKEEPING commits, 2026-09-02 — `2d14481` (sharp) and `5e02cf1` (mascot assets
+moved out of `public/`; Blender renders + references deleted).** Those two are NOT landing-page work
+and are NOT part of task 12's review range; they touch no marketing component's rendering, only two
+docblocks, the asset paths and the docs. Memory/ledger commits sit on top of those, so run
+`git log --oneline -5` for true HEAD rather than trusting a hash written here. Branch
 `landing-page-port`, **nothing merged**.
 
 ▶ Working tree **fully clean** — the five favicon candidates are no longer untracked, see "Still
@@ -97,6 +101,32 @@ wording from the catalog) and extended. **21/21.**
 ▶ **e2e can express what the unit suite structurally cannot** — this vitest environment loads no CSS,
 so every geometric invariant here has been a class-presence proxy. Task 11's M1 and §7's photograph
 strip are now real browser measurements. Task 13/V's owed Playwright pass is partly already here.
+
+## ⚠️ THE E2E GATE CANNOT RUN FROM COLD — THE GATE THIS BRANCH JUST ADDED IS ITSELF BROKEN
+
+`playwright.config.ts` gives `webServer` **120,000 ms** to run `npm run build && npm run start`.
+A cold build measured **135 s** on this machine, so `npx playwright test` dies with
+`Timed out waiting 120000ms from config.webServer` **before a single test runs** — and the tail of
+the output is webpack cache warnings, which look like the problem and are not.
+Workaround: `npm run build` first, then start the server yourself; `reuseExistingServer` is true
+locally, so `npx playwright test` then picks it up and runs in ~24 s.
+▶ Queued as a FOURTH branch-end lessons entry. Adding a gate to the list is not the same as
+the gate being runnable, and this one fails in a way nobody would attribute to a config number.
+
+## ⚠️ AN E2E RED THAT WAS NOT THE DIFF — AND THE DIGEST IS WHAT SETTLED IT IN ONE COMMAND
+
+`journal.spec.ts` went red during the 2026-09-02 housekeeping. The browser showed
+"Application error: a server-side exception has occurred", `Digest: 1612785857`. The production
+server log carried **the same digest** against `PGRST303 / JWT issued at future`, plus one
+`42501 permission denied for table vocab`. The local Supabase runs in **Docker**
+(`127.0.0.1:54321`) and its containers read **~1—3 s AHEAD of the host**, which PostgREST does not
+tolerate on a JWT's `iat`. Each error appeared exactly once; neither recurred across the two runs
+after (single-spec, then a full **21/21**).
+▶ **The digest rendered in the browser is the join key to the server log.** Without it this was
+a coin-flip between "my change broke auth" and "flake"; with it, one `cat` of the log settled it.
+▶ Recorded, not waved through (L-009): the skew is diagnosed but NOT fixed — the container
+clock is still ahead, so this can recur. If a future e2e run goes red on a registration step, read
+the digest first and check `docker exec supabase_db_nihongo-cinema date -u` against the host.
 
 ## ⚠️ L-002 FIRED ON ME AGAIN, IN THE SAME SESSION IT WAS RECORDED
 
@@ -549,16 +579,25 @@ the `ratio` each slot already declared. Alt fidelity spot-checked (`problem.phot
 - Ruling: PNGs committed as-is, 13MB. `sharp` is NOT installed, so converting means writing an
   encoder. `next/image` optimises at request time.
 
-## ⚠️ TWO DEPLOY BLOCKERS FOR almostgone.vn, BOTH NOW EVIDENCED
+## ⚠️ ONE DEPLOY BLOCKER LEFT FOR almostgone.vn — `sharp` IS DONE (`2d14481`, 2026-09-02)
 
-1. **`sharp` is not installed.** Next falls back to the WASM optimiser: cold variant generation runs
-   2–5 s and **the dev server died twice** with `Jest worker encountered 2 child process exceptions`
-   (500 on every route). almostgone.vn is the same shape of single long-running Node host. This is a
-   blocker candidate, not a footnote.
-   ▶ **Task 11 attached a number, and §8 is the worst case on the page**: the optimizer returns
-   **2,038,814 bytes** for `cta-bridge.png` at `w=1920` — essentially the original PNG, no saving at
-   all — and took 3.5 s cold. §8 declares `sizes="100vw"`, so this is the page's heaviest request.
-2. `EMAIL_PROVIDER=none` must be in its `.env` before the next deploy (older debt, still open).
+1. ✅ **`sharp` 0.35.4 / libvips 8.18.6 is INSTALLED.** Measured through **Next's own optimizer**
+   (a direct `sharp()` call proves sharp works, not that Next uses it), on a restarted server with
+   `.next/cache/images` emptied so the header reads `X-Nextjs-Cache: MISS`:
+   `cta-bridge.png` at `w=1920&q=75` — **134,210 bytes, image/webp, 0.365 s cold, 0.006 s warm**,
+   against the WASM fallback's 2,038,814 bytes / ~3.5 s. **15.9x smaller** on the page's heaviest
+   request. The crash is NOT claimed fixed: WASM is out of the path so it cannot recur that way, but
+   it was never reproduced on demand.
+   ▶ **A CACHE HEADER IS PART OF THE MEASUREMENT.** My first "after" number came back at 0.22 s
+   with `X-Nextjs-Cache: STALE`; emptying the on-disk cache still returned 8.9 ms and still STALE,
+   because Next also caches in-process. Only a server RESTART with the cache emptied gave a MISS.
+   The byte count was identical across all three reads, so only the timing claim was ever at risk.
+2. `EMAIL_PROVIDER=none` must be in almostgone.vn's `.env` before the next deploy. **STILL OPEN, and
+   it is an OPS task, not a code task** — checked 2026-09-02: this repo has no `.env` at all, only
+   `.env.local` and `.env.local.example`, and both already carry the correct dev value
+   (`EMAIL_PROVIDER=console`). `lib/email/env.ts` rejects `console` when `APP_ENV=production`. No
+   commit here can close it. ▶ **Locate the file before planning the edit: a debt phrased as
+   "put X in the env" can be an ops task wearing a code task's clothes.**
 
 Also learned: **`next dev` and `next build` share one `.next` and clobber each other** — it cost one
 implementer two false diagnoses.
@@ -626,18 +665,32 @@ the browser" as unverified unless the widths are named.
 - **Discord / Facebook / TikTok URLs** — still do not exist (reconfirmed 2026-09-02); they will do
   these "after the app is stable". The links currently ship as plain TEXT, not anchors, per spec
   §2.3. Nothing is broken.
-- **Whether to delete `public/mascot/renders/` and `assets/blender/references/`** now Blender is rejected.
+- ✅ **DELETED 2026-09-02 on the owner's ruling (`5e02cf1`): `public/mascot/renders/` and
+  `assets/blender/references/`, 4,112,511 bytes.** Both were TRACKED, so both stay recoverable from
+  git history — which is exactly why deleting was safe here and the favicon candidates had to be
+  MOVED instead. `assets/blender/korume.blend` was not in the ruling and stays; so does the untracked
+  `korume.blend1` autosave beside it (deleting an untracked file is the owner's call).
+  ▶ **Deleting a directory falsifies every sentence describing it.** The two component docblocks
+  warning "do NOT use `public/mascot/renders/`" kept their RULE and changed only their tense — the
+  rule outlives the directory. Spec §5.3, the reconciliation doc's G1 line and asset row, and the port
+  plan's open-question bullet were all corrected in the same commit.
 - ✅ **The five favicon candidates are SETTLED (`9f2f8e6`, owner delegated the call).** Moved to
   `assets/brand/favicon-candidates/` — outside `public/`, so no longer served — and COMMITTED rather
   than deleted, because they were untracked and deleting would have destroyed the only copy.
   Deleting later costs one command; recovering would have been impossible.
-- ⚠️ **BUT THEY WERE THE SMALLEST INSTANCE, AND THE REAL ONE IS STILL OPEN.** `public/mascot/` is
-  52 MB, of which **37 MB is TRACKED at the top level and publicly served**. 16 MB of that is
-  `upscalemedia-transformed (4).png` and `(5).png`, declared as `sheets` in `scripts/mascot/
-  poses.json` — build-time source art for `extract.js`, not runtime assets, downloadable by anyone.
-  The other two `upscalemedia-transformed*.png` (16 MB) are referenced by NOTHING. Deliberately not
-  acted on: moving a declared sheet changes that script's contract, and deleting tracked art is the
-  owner's call. **Ask.**
+- ✅ **THE BIG ONE IS SETTLED TOO (`5e02cf1`, 2026-09-02, owner delegated the call).** All seven
+  top-level files MOVED out of `public/`, none deleted, all recorded by git as `R100` renames:
+  `assets/mascot/sheets/` (16,405,685 B — the two `poses.json` reads) and `assets/mascot/source/`
+  (22,457,795 B — the five no code reads, kept as spec §5.3 provenance). `public/mascot/` is now
+  **5,594,040 B and holds only `poses/`**, every file of which a component references.
+  ▶ **The worry that moving a declared sheet "changes that script's contract" was unfounded, and
+  one read of the code would have shown it**: `extract.js` already resolved `path.join(ROOT, rel)`
+  off the manifest, so the sheets were never pinned to `public/` in code — only in a manifest string
+  and a docblock. Repointing `sheets` was the entire edit. Verified by RUNNING it:
+  `node scripts/mascot/extract.js --check` decodes both 3072x2048 sheets at the new location and
+  byte-compares all five outputs — all `=`, exit 0, and `poses.test.ts` re-runs that in the suite.
+  ▶ `assets/mascot/source/`'s 22 MB is now merely STORED, not served. Deleting it later touches
+  no code path — but it is what the spec's §5.3 inventory table describes, so it is a real decision.
 - ⚠️ **`text-heading-lg` widened the app-wide type scale** — a design decision beyond §2. It is the
   smallest change satisfying §13.1(2) without an arbitrary value, but the user may prefer 20px; one
   line reverses it.
