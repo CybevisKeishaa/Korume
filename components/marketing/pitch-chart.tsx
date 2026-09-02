@@ -26,20 +26,33 @@ import type { Translator } from "./translator";
  * are now plotted against a single `semitoneRange` computed over both, which
  * is what `pitch-contour-overlay.tsx` already does for real takes.
  *
- * ## Which line is dashed, and why it flipped
+ * ## ⚠️ NEITHER LINE IS DASHED ANY MORE — owner ruling, 2026-09-03
  *
- * Fix round 1 (F3) dashed the NATIVE line, mirroring the in-product overlay
- * where the reference take is the dashed one. F3's actual requirement was WCAG
- * 1.4.1 — the two contours must be distinguishable by more than colour — and
- * WHICH of the two got dashed was arbitrary. Reference `346:6275` makes the
- * native contour the dominant solid line, so the pair now differs by dash AND
- * by stroke weight, with `LegendSwatch` rendering the matching pattern and
- * weight for each label. Keep the swatch in sync with the line it stands for.
+ * Fix round 1 (F3) dashed one of the two lines to satisfy WCAG 1.4.1: the
+ * contours must be distinguishable by more than colour. The owner's rebuild
+ * brief overrides the technique — "Both lines must be solid continuous
+ * strokes… The two lines should be differentiated ONLY through color, not
+ * through dashed/solid patterns" — and the reason given is that a dashed trace
+ * does not read as a voice.
  *
- * ⚠️ This is deliberately the OPPOSITE convention from
- * `components/video-player/pitch-contour-overlay.tsx` (dashed grey reference,
- * solid accent user). The marketing chart's subject is the native model you
- * are copying; the product chart's subject is your own take. Reported to the
+ * ▶ The requirement did not go away, so the non-colour cue is now STROKE
+ * WEIGHT: 2.2 against 1.7 in viewBox units, which at the ~0.81 scale the panel
+ * renders at draws ~1.8 against ~1.4 CSS px. That is BELOW the brief's
+ * original 2-2.5 px band, on the owner's later correction that the reference's
+ * line is thinner ("nét nó có phần mảnh hơn") — a thin stroke is also what
+ * lets the fast excursions stay legible instead of merging into a ribbon.
+ * It is repeated by `LegendSwatch` so the legend carries the same
+ * distinction the plot does. That is weaker than a dash, and it is
+ * recorded here rather than waved through. If it proves too weak, the standard
+ * next step is a small direct label at each line's end, which is a stronger
+ * remedy than either and was left out only because the brief asks for minimal
+ * clutter. The chart also keeps `role="img"` with `pitch.chartLabel` as its
+ * accessible name, so a screen reader is told what the graphic is regardless.
+ *
+ * ⚠️ Still deliberately a DIFFERENT convention from
+ * `components/video-player/pitch-contour-overlay.tsx`, which dashes its
+ * reference take. The marketing chart's subject is the native model you are
+ * copying; the product chart's subject is your own take. Reported to the
  * controller as a cross-surface inconsistency worth a product ruling.
  *
  * NO MOTION. This is the static half of spec §13; the whole-page motion pass
@@ -53,11 +66,17 @@ import type { Translator } from "./translator";
 const VIEWBOX_WIDTH = 600;
 const VIEWBOX_HEIGHT = 190;
 
-/** Dash pattern shared by the "You" contour and its legend swatch. */
-const USER_DASH = "8 5";
-/** The native line dominates; the user line reads as the comparison against it. */
-const NATIVE_STROKE = 2.4;
-const USER_STROKE = 1.4;
+/**
+ * The native line dominates; the user line reads as the comparison against it.
+ *
+ * These are also the WCAG 1.4.1 cue now that neither line is dashed — see the
+ * docblock. At the panel's ~0.81 scale they draw ~1.8 and ~1.4 CSS px, thinner
+ * than the brief's first ask and matching the owner's later correction against
+ * the reference. The RATIO between them is what has to survive a retune, not
+ * either number on its own.
+ */
+const NATIVE_STROKE = 2.2;
+const USER_STROKE = 1.7;
 
 /**
  * Faint horizontal rules behind the traces, as the reference draws them: they
@@ -127,16 +146,17 @@ function contourPath(contour: PitchContour, range: SemitoneRange): string {
 }
 
 /**
- * A small line icon next to a legend label (WCAG 1.4.1): the two contours must
- * be distinguishable by more than colour alone, so the swatch repeats both the
- * dash state and the relative weight of the line it stands for.
+ * A small line icon next to a legend label. Solid, like the line it stands
+ * for, and carrying that line's WEIGHT — which since 2026-09-03 is the only
+ * non-colour cue distinguishing the two contours (WCAG 1.4.1; see the
+ * docblock). Keep it in sync with the path it labels.
  *
  * `stroke-current` inherits the colour from the parent `<span>`'s text colour
  * class, so the swatch and its label never fall out of sync. The `viewBox` is
  * 24x8 and the element is rendered at exactly 24x8 CSS px, so `strokeWidth`
  * here is the width the line actually draws at.
  */
-function LegendSwatch({ dashed, weight }: { dashed: boolean; weight: number }) {
+function LegendSwatch({ weight }: { weight: number }) {
   return (
     <svg
       aria-hidden="true"
@@ -152,7 +172,6 @@ function LegendSwatch({ dashed, weight }: { dashed: boolean; weight: number }) {
         className="stroke-current"
         strokeWidth={weight}
         strokeLinecap="round"
-        strokeDasharray={dashed ? USER_DASH : undefined}
       />
     </svg>
   );
@@ -170,11 +189,11 @@ export function PitchChart({ t }: { t: Translator }) {
     <>
       <div className="flex items-center gap-md text-caption">
         <span className="flex items-center gap-xs text-primary-strong">
-          <LegendSwatch dashed={false} weight={NATIVE_STROKE} />
+          <LegendSwatch weight={NATIVE_STROKE} />
           {t("pitch.legend.native")}
         </span>
         <span className="flex items-center gap-xs text-muted-foreground">
-          <LegendSwatch dashed weight={USER_STROKE} />
+          <LegendSwatch weight={USER_STROKE} />
           {t("pitch.legend.you")}
         </span>
       </div>
@@ -224,7 +243,6 @@ export function PitchChart({ t }: { t: Translator }) {
               fill="none"
               className="stroke-muted-foreground"
               strokeWidth={USER_STROKE}
-              strokeDasharray={USER_DASH}
               strokeLinecap="round"
               strokeLinejoin="round"
             />

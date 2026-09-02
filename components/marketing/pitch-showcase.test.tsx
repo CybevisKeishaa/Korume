@@ -3,9 +3,19 @@ import { render, screen } from "@/test/render";
 import { PitchShowcase } from "./pitch-showcase";
 import en from "@/messages/en/marketing.json";
 
-/** Every `y` coordinate in an SVG path `d` of the `M`/`L x y` shape this chart emits. */
+/**
+ * Every ANCHOR `y` in an SVG path `d` — the point each command lands on.
+ *
+ * `M x y` and `L x y` end on their only pair; `C c1x c1y c2x c2y x y` ends on
+ * its LAST pair, and the two control pairs before it are not points the curve
+ * passes through. Reading them as anchors would report a vertical span the
+ * contour never reaches.
+ */
 function pathYs(d: string): number[] {
-  return Array.from(d.matchAll(/[ML]\s*-?[\d.]+\s+(-?[\d.]+)/g)).map((m) => Number(m[1]));
+  return Array.from(d.matchAll(/[MLC]((?:\s*-?[\d.]+){2,6})/g)).map((m) => {
+    const nums = (m[1] ?? "").trim().split(/\s+/).map(Number);
+    return nums[nums.length - 1] ?? Number.NaN;
+  });
 }
 
 /** Every `<width>w` descriptor in a srcset, in source order. */
@@ -109,38 +119,46 @@ describe("PitchShowcase", () => {
     }
   });
 
-  it("distinguishes the two contours by more than colour (WCAG 1.4.1)", async () => {
-    // `stroke-primary-strong` vs `stroke-muted-foreground` alone is a
-    // colour-only distinction, so the pair also differs by dash AND by stroke
-    // weight.
+  it("keeps BOTH contours solid, and distinguishes them by weight (WCAG 1.4.1)", async () => {
+    // ⚠️ REVERSED 2026-09-03 on the owner's ruling. Fix round 1 (F3) dashed
+    // one line so the pair was not distinguished by colour alone. The owner's
+    // rebuild brief requires both to be solid — a dashed trace does not read
+    // as a voice — and accepted the trade explicitly.
     //
-    // ⚠️ Task A3 INVERTED which one is dashed. Fix round 1 (F3) dashed the
-    // native line, mirroring `pitch-contour-overlay.tsx`, where the reference
-    // take is the dashed one. F3's requirement was 1.4.1, not a particular
-    // assignment, and reference `346:6275` makes the native contour the
-    // dominant solid line — so native is now solid and heavier and "you" is
-    // the thin dashed comparison. See `pitch-chart.tsx`'s docblock.
+    // 1.4.1 still has to be answered, so this now pins the replacement cue:
+    // stroke WEIGHT, repeated in the legend. It is weaker than a dash; the
+    // stronger remedy, if this proves insufficient, is a direct label at each
+    // line's end. `pitch-chart.tsx`'s docblock carries the reasoning.
     const { container } = render(await PitchShowcase());
 
     const native = container.querySelector('[data-contour="native"]');
     const you = container.querySelector('[data-contour="you"]');
-    expect(native?.getAttribute("stroke-dasharray")).toBeFalsy();
-    expect(you?.getAttribute("stroke-dasharray")).toBeTruthy();
+
+    expect(native, "native contour").not.toBeNull();
+    expect(you, "you contour").not.toBeNull();
+    expect(native?.getAttribute("stroke-dasharray"), "native must be solid").toBeFalsy();
+    expect(you?.getAttribute("stroke-dasharray"), "you must be solid too").toBeFalsy();
 
     const nativeWidth = Number(native?.getAttribute("stroke-width"));
     const youWidth = Number(you?.getAttribute("stroke-width"));
     expect(nativeWidth).toBeGreaterThan(0);
-    expect(nativeWidth).toBeGreaterThan(youWidth);
+    expect(youWidth).toBeGreaterThan(0);
+    expect(nativeWidth, "the weight difference IS the non-colour cue").toBeGreaterThan(youWidth);
 
-    // The legend repeats the same distinction as a small line icon next to
-    // each label, not just a colour swatch — and it must show what its line
-    // shows, in both dash state and weight.
+    // Both lines also carry round caps and joins, per the brief.
+    for (const [name, path] of [["native", native], ["you", you]] as const) {
+      expect(path?.getAttribute("stroke-linecap"), name).toBe("round");
+      expect(path?.getAttribute("stroke-linejoin"), name).toBe("round");
+      expect(path?.getAttribute("fill"), `${name} carries no area fill`).toBe("none");
+    }
+
+    // The legend repeats the same distinction, and must show what its line
+    // shows: solid, at the same weight.
     const legendLines = container.querySelectorAll("svg[aria-hidden='true'] line");
     expect(legendLines).toHaveLength(2);
-    const dashed = Array.from(legendLines).map((line) =>
-      Boolean(line.getAttribute("stroke-dasharray")),
-    );
-    expect(dashed).toEqual([false, true]);
+    for (const line of Array.from(legendLines)) {
+      expect(line.getAttribute("stroke-dasharray")).toBeFalsy();
+    }
     expect(Number(legendLines[0]?.getAttribute("stroke-width"))).toBe(nativeWidth);
     expect(Number(legendLines[1]?.getAttribute("stroke-width"))).toBe(youWidth);
   });
@@ -167,15 +185,27 @@ describe("PitchShowcase", () => {
     expect(Math.min(...nativeYs)).toBeLessThan(Math.min(...youYs));
   });
 
-  it("keeps the unvoiced gap at the phrase break rather than bridging it", async () => {
-    // `toPath`'s pen-up/pen-down behaviour, exercised through the real data:
-    // a second `M` is a second subpath, which is the gap. `contour-path.ts`
-    // owns the unit-level proof; this is the integration one.
+  it("draws each contour as ONE unbroken, curved stroke", async () => {
+    // Two properties of the 2026-09-03 rebuild, exercised through the real
+    // data rather than through a synthetic point list:
+    //
+    //  - ONE subpath. The fixture used to carry an unvoiced gap after は and
+    //    this asserted TWO `M`s. The owner asked why the line kept breaking;
+    //    the phrase boundary is now a pitch valley instead of a hole. `toPath`
+    //    still renders gaps and `contour-path.test.ts` still proves it — the
+    //    product's real overlay needs that — this fixture just has none.
+    //  - CURVES, not line segments. A contour joined by `L` commands makes
+    //    every one of its ~169 samples a corner, which is what made the trace
+    //    read as a jagged generated chart.
     const { container } = render(await PitchShowcase());
 
     for (const key of ["native", "you"]) {
       const d = container.querySelector(`[data-contour="${key}"]`)?.getAttribute("d") ?? "";
-      expect(d.match(/M/g), `${key} contour`).toHaveLength(2);
+
+      expect(d.length, `${key} contour is non-empty`).toBeGreaterThan(100);
+      expect(d.match(/M/g), `${key} contour`).toHaveLength(1);
+      expect(d.match(/\bL/g), `${key} contour has no straight segments`).toBeNull();
+      expect((d.match(/C/g) ?? []).length, `${key} contour`).toBeGreaterThan(100);
     }
   });
 
