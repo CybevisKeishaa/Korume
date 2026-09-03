@@ -48,7 +48,7 @@ tests** · `next build` exit 0 · the registry's frame-map invariant recipe re-r
 Playwright deliberately not run — no `app/` route and no rendered component was touched.
 
 **▶ The landing page at `/` is PORTED; what is live now is reviewing it — see the block above.**
-**Read `mem:landing_page_port_run_state` first** — it holds the resume block, the authority map, the
+**Read `mem:landing_page_port_archive` first** — it holds the resume block, the authority map, the
 six rulings not to re-litigate, and the process notes. Then **read
 `docs/product/landing-page-reconciliation.md` — it is the authority** and this block must not restate
 it. In one line: build `347:6277`'s structure to `346:6275`'s visual bar, keeping the frame's footer
@@ -85,7 +85,7 @@ The spec is `81a20c9` (`docs/superpowers/specs/2026-08-27-landing-page-port-desi
 `docs/superpowers/plans/2026-08-27-landing-page-port.md`, which now carries Task V beside Task 13. **Five more user rulings
 landed that day** — Blender mascot renders rejected, nav destinations, the footer link rule, §2's six
 chip sub-labels (the frame repeats one placeholder six times, a defect the reconciliation doc never
-named), and who writes the Vietnamese copy. **Read `mem:landing_page_port_run_state`** for all of it,
+named), and who writes the Vietnamese copy. **Read `mem:landing_page_port_archive`** for all of it,
 plus two measurements that replaced assumptions and the process notes; this block must not restate
 them.
 
