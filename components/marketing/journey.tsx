@@ -96,27 +96,49 @@ const JOURNEY_THUMB = "/marketing/journey-thumb.png";
  *
  * Absolute px rather than vw, because this slot's width does NOT track the
  * viewport: `CARD_BASIS` clamps it between 8rem and 11rem, and above `lg` the
- * container caps at `max-w-6xl` so it is a constant ~106 CSS px from 1152px up.
- * A vw expression would under-serve on a phone and over-serve on a large
- * display. (Rule #0 is about class names copying Figma pixels; `sizes` is a
- * browser hint that has to be stated in real layout units, and these are
- * measured from the built page, not read off the frame.)
+ * container caps at `--layout-marketing-max` so the slot settles to a constant
+ * 120.52 CSS px from 1256px up. A vw expression would under-serve on a phone
+ * and over-serve on a large display. (Rule #0 is about class names copying
+ * Figma pixels; `sizes` is a browser hint that has to be stated in real layout
+ * units, and these are measured from the built page, not read off the frame.)
  *
  * The values allow for the COVER CROP, and the derivation runs from the slot's
  * HEIGHT, not its width (fix round m2 — the first version worked from the width
  * and landed ~10% short). The file is 16/9 and the slot renders taller than it
  * is wide: `object-cover` therefore scales the source until its HEIGHT covers
  * the slot's, and crops the width. So the source width required is
- * `slotHeight * 16/9`, not `slotWidth * anything`. Measured live at 1280 the
- * slot is 106 x 123 CSS px, so it needs 123 * 1.778 ~= 219 -> 220. The widest
- * the card ever gets is 11rem, at 896-1023px where the section is still
- * stacked, which is the 300.
+ * `slotHeight * 16/9`, not `slotWidth * anything`.
  *
- * (Both the old 200 and this 220 select the same variant at DPR 1, 1.5 and 2 —
- * `w=384` at the DPR this machine reports — so this is a correctness fix to a
- * number a future editor would trust, not a measured saving.)
+ * ## ⚠️ A `sizes` branch must cover its WHOLE range, not one width inside it
+ *
+ * This has been wrong twice. m2 fixed the axis; the replacement was still
+ * derived at 1280 alone, on the premise that the slot is constant "from 1152px
+ * up". It is not. The card row REFLOWS as it narrows and a shorter card makes a
+ * TALLER image, so the height — the axis the whole derivation runs on — climbs
+ * as the viewport shrinks inside one `min-width` branch. Measured (headless
+ * Chromium, both locales, the slot's own box):
+ *
+ *     viewport   en slot        needs    vi slot        needs
+ *     1024       87.36 x 164    291.6    87.36 x 146    259.6
+ *     1080       95.36 x 146    259.6    95.36 x 146    259.6
+ *     1120      101.08 x 124    220.4   101.08 x 106    188.4
+ *     >= 1256   120.52 x 124    220.4   120.52 x 106    188.4
+ *
+ * So one value for `>= 1024` under-declared by up to 33% at the bottom of its
+ * own branch. Split at 1120, where the row has finished reflowing: 292 covers
+ * 1024-1119 (worst case 291.6), 220 covers everything above (220.4). Below
+ * `lg` the card reaches its 11rem maximum and 300 still covers it — measured
+ * at 768 and 896.
+ *
+ * ▶ Not cosmetic: at DPR 1 the old 220 selected `w=256` where 292 selects
+ * `w=384`, and at DPR 1.5 `w=384` where 292 selects `w=640`. At DPR 2 both
+ * land on `w=640`, which is why measuring at one DPR would have hidden it.
+ *
+ * `tests/e2e/landing-page.spec.ts` now sweeps every branch in both locales and
+ * compares the declared value against the measured need, so the next person to
+ * move a breakpoint is told rather than trusted.
  */
-const THUMB_SIZES = "(min-width: 1024px) 220px, 300px";
+const THUMB_SIZES = "(min-width: 1120px) 220px, (min-width: 1024px) 292px, 300px";
 
 // Mirrors `Section`'s own `${id}-heading` convention (section.tsx) so the
 // scroll container's `aria-labelledby` (fix round 1, F2) can point at the

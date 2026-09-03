@@ -36,14 +36,14 @@ import type { Translator } from "./translator";
  * does not read as a voice.
  *
  * ▶ The requirement did not go away, so the non-colour cue is now STROKE
- * WEIGHT: 2.2 against 1.7 in viewBox units, which at the ~0.81 scale the panel
- * renders at draws ~1.8 against ~1.4 CSS px. That is BELOW the brief's
- * original 2-2.5 px band, on the owner's later correction that the reference's
- * line is thinner ("nét nó có phần mảnh hơn") — a thin stroke is also what
- * lets the fast excursions stay legible instead of merging into a ribbon.
- * It is repeated by `LegendSwatch` so the legend carries the same
- * distinction the plot does. That is weaker than a dash, and it is
- * recorded here rather than waved through. If it proves too weak, the standard
+ * WEIGHT: 2.2 against 1.7 in viewBox units, which draws 1.77 against 1.37 CSS
+ * px at the panel's rendered scale (stated once, with the viewBox constants).
+ * That is BELOW the brief's original 2-2.5 px band, on the owner's later
+ * correction that the reference's line is thinner ("nét nó có phần mảnh hơn")
+ * — a thin stroke is also what lets the fast excursions stay legible instead
+ * of merging into a ribbon. It is repeated by `LegendSwatch` so the legend
+ * carries the same distinction the plot does. That is weaker than a dash, and
+ * it is recorded here rather than waved through. If it proves too weak, the standard
  * next step is a small direct label at each line's end, which is a stronger
  * remedy than either and was left out only because the brief asks for minimal
  * clutter. The chart also keeps `role="img"` with `pitch.chartLabel` as its
@@ -62,6 +62,26 @@ import type { Translator } from "./translator";
  * width in that coordinate system — an internal coordinate space, not a CSS
  * px/rem literal copied out of the frame (same house exception the previous
  * `VIEWBOX_WIDTH` / `SWATCH_VIEW_WIDTH` comments record).
+ *
+ * ## THE RENDERED SCALE — stated once, here
+ *
+ * Every claim in this file about what a stroke draws at in CSS px derives from
+ * this; do not restate it elsewhere. Measured `[data-plot-panel] svg`: 483.08
+ * CSS px wide against this 600-unit viewBox, so **0.805**. It is CONSTANT for
+ * any page at or above the container's 1256px cap — measured identical at page
+ * widths 1265 and 1280, so the 15px-scrollbar question that spoils most
+ * measurements on this page does not arise here.
+ *
+ *     stroke (viewBox units)   x 0.805  =  CSS px
+ *     NATIVE_STROKE     2.2                 1.77
+ *     USER_STROKE       1.7                 1.37
+ *     GRIDLINE_STROKE   1.4                 1.13
+ *
+ * ⚠️ This file used to give two different answers — 0.81 above and 0.73 for the
+ * gridline, fifty lines apart. 0.81 was the right one, and it matters: the
+ * stroke-weight RATIO is the only non-colour cue left now that both contours
+ * are solid (WCAG 1.4.1, the owner-accepted trade), so the arithmetic
+ * defending that trade has to be one number rather than two.
  */
 const VIEWBOX_WIDTH = 600;
 const VIEWBOX_HEIGHT = 190;
@@ -70,7 +90,7 @@ const VIEWBOX_HEIGHT = 190;
  * The native line dominates; the user line reads as the comparison against it.
  *
  * These are also the WCAG 1.4.1 cue now that neither line is dashed — see the
- * docblock. At the panel's ~0.81 scale they draw ~1.8 and ~1.4 CSS px, thinner
+ * docblock. They draw 1.77 and 1.37 CSS px at the rendered scale, thinner
  * than the brief's first ask and matching the owner's later correction against
  * the reference. The RATIO between them is what has to survive a retune, not
  * either number on its own.
@@ -120,9 +140,13 @@ const GRIDLINE_YS = Array.from(
 );
 
 /**
- * ~1 CSS px at 1280, where the viewBox scales by 0.73 — so an interior rule
- * draws at the same weight as the panel's own 1px CSS border and the five-line
- * grid reads as one grid rather than as a box with fainter lines inside it.
+ * 1.13 CSS px at the panel's rendered scale — close enough to the panel's own
+ * 1px CSS border that the five-line grid reads as one grid rather than as a box
+ * with fainter lines inside it.
+ *
+ * ⚠️ This used to claim "~1 CSS px … the viewBox scales by 0.73". The scale is
+ * 0.805 and it is stated once, with the viewBox constants; 0.73 was wrong and
+ * carried this number with it.
  */
 const GRIDLINE_STROKE = 1.4;
 

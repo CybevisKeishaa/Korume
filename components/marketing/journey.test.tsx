@@ -103,12 +103,21 @@ describe("Journey", () => {
     );
 
     // The default `sizes` is an upper bound sized for §2's 45vw photograph; at
-    // this slot's ~106 CSS px it selects the 1080px variant (74.7 KB WebP /
+    // this slot's ~120 CSS px it selects the 1080px variant (74.7 KB WebP /
     // 980 KB PNG) instead of the 384px one (15.6 KB / 149 KB). Losing the
-    // override is a silent 4.8x regression with no visible symptom. The 220
-    // (not 200) is the COVER-CROP requirement re-derived from the slot's
-    // HEIGHT — see `THUMB_SIZES` in journey.tsx (fix round m2).
-    expect(photo.getAttribute("sizes")).toBe("(min-width: 1024px) 220px, 300px");
+    // override is a silent 4.8x regression with no visible symptom, so the
+    // presence of an override is pinned here, literally, where it is cheap.
+    //
+    // ⚠️ This assertion does NOT check the values are ADEQUATE — it cannot.
+    // This environment loads no CSS, so the slot has no measurable size, and
+    // the numbers come from the rendered height at several viewports. That is
+    // `tests/e2e/landing-page.spec.ts`'s "covers its whole branch", which
+    // sweeps both locales and every branch in a real browser. If you change
+    // `THUMB_SIZES`, this test tells you that you did; that one tells you
+    // whether you were right.
+    expect(photo.getAttribute("sizes")).toBe(
+      "(min-width: 1120px) 220px, (min-width: 1024px) 292px, 300px",
+    );
   });
 
   it("draws step 3's waveform as amplitude bars, not as a pitch contour", async () => {

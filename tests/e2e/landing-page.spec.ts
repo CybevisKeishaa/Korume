@@ -204,4 +204,81 @@ test.describe("landing page", () => {
     // this assertion stayed green.
     expect(Math.abs(mascot.y + mascot.height - (node.y + node.height))).toBeLessThan(1);
   });
+
+  /**
+   * §3's thumbnail `sizes` must cover the WORST case inside each of its
+   * branches, not the value at one convenient width.
+   *
+   * ⚠️ This has now been wrong twice for two different reasons. Fix round m2
+   * corrected it from the slot's WIDTH to its HEIGHT — right, because the slot
+   * renders taller than it is wide and `object-cover` scales the 16/9 source
+   * until its height covers, so the source width needed is `height * 16/9`.
+   * But the replacement was still derived at 1280 ALONE, on a docblock premise
+   * that the slot is constant "from 1152px up". The container's cap moved
+   * (`max-w-6xl` → `max-w-marketing`) and, more to the point, the slot's HEIGHT
+   * is not constant across the branch at all: the cards reflow as the row
+   * narrows, and a shorter card makes a TALLER image.
+   *
+   * A number derived at one width, for a media query spanning every width
+   * above it, is a guess everywhere else in the branch. This measures the
+   * branch.
+   */
+  test("declares a §3 thumbnail `sizes` that covers its whole branch", async ({ page }) => {
+    // Both ends of the `(min-width: 1024px)` branch plus the container cap,
+    // and two widths below it so the fallback branch is measured too — in both
+    // locales, because the Vietnamese copy wraps differently and so reflows the
+    // row at different widths.
+    const widths = [768, 896, 1024, 1080, 1120, 1256, 1440];
+    const locales = ["en", "vi"] as const;
+    const samples: Array<{ where: string; needed: number; declared: number }> = [];
+
+    for (const locale of locales) {
+      for (const width of widths) {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto(`/${locale}`);
+        const image = page.locator("#journey img").first();
+        await expect(image).toBeVisible();
+
+        const measured = await image.evaluate((node) => {
+          const img = node as HTMLImageElement;
+          const box = img.getBoundingClientRect();
+          // The declared width for THIS viewport: the first matching branch of
+          // the `sizes` attribute, read off the element rather than imported,
+          // so the test measures what the browser was actually told.
+          const declared = (img.getAttribute("sizes") ?? "")
+            .split(",")
+            .map((clause) => clause.trim())
+            .reduce<number | null>((chosen, clause) => {
+              if (chosen !== null) return chosen;
+              const query = clause.match(/^\((.+)\)\s+(\d+)px$/);
+              if (query) return window.matchMedia(`(${query[1]})`).matches ? Number(query[2]) : null;
+              const fallback = clause.match(/^(\d+)px$/);
+              return fallback ? Number(fallback[1]) : null;
+            }, null);
+          // `object-cover` on a 16/9 source in a box taller than it is wide:
+          // the source is scaled until its HEIGHT covers, then cropped.
+          return { height: box.height, width: box.width, declared };
+        });
+
+        expect(measured.declared, `a sizes branch matching ${width}px`).not.toBeNull();
+        samples.push({
+          where: `${locale} @${width}`,
+          needed: (measured.height * 16) / 9,
+          declared: measured.declared as number,
+        });
+      }
+    }
+
+    // L-004: the collection is gathered by a loop, so pin its size — an empty
+    // or short sweep would pass this test without measuring anything.
+    expect(samples, "viewport/locale samples").toHaveLength(widths.length * locales.length);
+
+    const short = samples.filter((s) => s.declared < s.needed - 0.5);
+    expect(
+      short,
+      `sizes under-declares at: ${short
+        .map((s) => `${s.where} needs ${s.needed.toFixed(1)} declared ${s.declared}`)
+        .join(" · ")}`,
+    ).toEqual([]);
+  });
 });
