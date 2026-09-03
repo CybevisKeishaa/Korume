@@ -203,4 +203,26 @@ describe("CapabilityChain", () => {
     expect(heading).toHaveClass("max-w-3xl");
     expect(heading).not.toHaveClass("text-heading-lg"); // the split-layout size, not this one
   });
+
+  it("gives each of the eight nodes its own cascade step, and names the dot so it can be timed", async () => {
+    const { container } = render(await CapabilityChain());
+
+    const nodes = container.querySelectorAll("[data-chain-node]");
+    expect(nodes).toHaveLength(8);
+
+    // Each node carries its ordinal as a custom property; globals.css turns
+    // that into a delay. A relationship, not an absolute literal — Rule #0
+    // allows it, and it survives the grid wrapping 8 -> 4 -> 2, which a single
+    // full-width sweep could not (see this component's connector docblock).
+    // Read the property rather than the serialized attribute: React writes
+    // `--chain-step: 0;`, and pinning that spelling would break on a formatting
+    // change without anything actually regressing.
+    expect(
+      Array.from(nodes).map((n) =>
+        (n as HTMLElement).style.getPropertyValue("--chain-step").trim(),
+      ),
+    ).toEqual(["0", "1", "2", "3", "4", "5", "6", "7"]);
+
+    expect(container.querySelectorAll("[data-rail-dot]")).toHaveLength(8);
+  });
 });

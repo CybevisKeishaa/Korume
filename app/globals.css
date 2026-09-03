@@ -459,6 +459,53 @@
   }
 }
 
+/* §6's cascade — the page's signature motion, and the one section whose heading
+   already promises it ("Everything connects"). The section's own entrance
+   brings in the heading; these are its eight cells, stepped in DOM order so the
+   stagger survives the grid wrapping from eight columns to four to two. A single
+   sweep across the row cannot: see capability-chain.tsx's connector docblock,
+   which calls one full-width line across a wrapped grid a defect.
+
+   This is a cascade, not a stroke draw, deliberately. The rail is a border on a
+   zero-height span whose dot is translated OUTSIDE that box, so neither
+   clip-path nor scaleX can sweep the line without clipping the dot away or
+   squashing it — and restructuring the rail would move shipped geometry. */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-chain-node] > *,
+    [data-chain-node] [data-connector]
+  ) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] :is(
+    [data-chain-node] > *,
+    [data-chain-node] [data-connector]
+  ) {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--chain-step, 0) + 2));
+}
+
+/* The dot lands one beat after its own segment, which is what makes the thread
+   read as being traced rather than switched on.
+
+   ⚠️ This keyframe restates the dot's shipped `-translate-x-1/2 -translate-y-1/2`
+   because an animated `transform` REPLACES the utility's rather than composing
+   with it. If the dot's centring utilities change, this changes with them. */
+[data-reveal-scope] [data-reveal="in"] [data-rail-dot] {
+  animation: chain-dot-in var(--duration-fast) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--chain-step, 0) + 3));
+}
+@keyframes chain-dot-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
 /**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).

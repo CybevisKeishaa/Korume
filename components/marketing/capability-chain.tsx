@@ -202,7 +202,13 @@ export async function CapabilityChain() {
             minimum — the same hazard `Section` documents for its own split. */}
         <ul className="grid min-w-0 grid-cols-2 gap-y-xl sm:grid-cols-4 xl:flex-1 xl:grid-cols-8">
           {NODES.map((node, index) => (
-            <ChainNode key={node} t={t} node={node} isLast={index === NODES.length - 1} />
+            <ChainNode
+              key={node}
+              t={t}
+              node={node}
+              index={index}
+              isLast={index === NODES.length - 1}
+            />
           ))}
         </ul>
 
@@ -240,14 +246,24 @@ export async function CapabilityChain() {
 function ChainNode({
   t,
   node,
+  index,
   isLast,
 }: {
   t: Translator;
   node: ChainIconKey;
+  index: number;
   isLast: boolean;
 }) {
   return (
-    <li data-chain-node={node} className="flex min-w-0 flex-col">
+    <li
+      data-chain-node={node}
+      // The cascade's ordinal (Task A-MOTION). globals.css multiplies it by
+      // --duration-stagger, so the delay is a relationship and survives the
+      // grid wrapping from eight columns to four to two — which is why this is
+      // a per-node step and not one sweep across the row.
+      style={{ "--chain-step": index } as React.CSSProperties}
+      className="flex min-w-0 flex-col"
+    >
       {/* Full cell width (no padding here), so layer A can span exactly from
           this node's centre to the next node's centre. */}
       <div className="relative flex justify-center">
@@ -313,7 +329,10 @@ function Rail() {
       aria-hidden="true"
       className="pointer-events-none relative mt-auto block border-t border-dashed border-border"
     >
-      <span className="absolute left-1/2 top-0 h-2xs w-2xs -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-primary/10" />
+      <span
+        data-rail-dot
+        className="absolute left-1/2 top-0 h-2xs w-2xs -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-primary/10"
+      />
     </span>
   );
 }
