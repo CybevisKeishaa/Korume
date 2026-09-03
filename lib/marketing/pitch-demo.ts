@@ -54,12 +54,12 @@ import type { PitchContour } from "@/lib/pitch";
  * ▶ Measured on the current fixtures:
  *
  *                     native      you
- *     range        167.2-233.6  173.1-221.8 Hz
- *     peak region  233.6        204.1        (とても — a 29.5 Hz gap)
- *     release      46.1         18.1         (over 40 smoothed frames)
- *     direction changes  38     40
- *     coherence     0.720       0.711
- *     bend          5.60        5.10
+ *     range        167.2-233.6  180.3-221.4 Hz
+ *     peak region  233.6        203.3        (とても — a 30.3 Hz gap)
+ *     release      46.1         14.2         (over 40 smoothed frames)
+ *     direction changes  38     36
+ *     coherence     0.715       0.710
+ *     bend          5.60        5.30
  *
  * ⚠️ Phrase-level claims — the release, the boundary valley — are asserted
  * against a SMOOTHED signal. The detail layer runs ~10 Hz deep at an ~8-frame
@@ -113,11 +113,25 @@ const TOTAL_FRAMES = 169;
  */
 const NATIVE_CONTROL: readonly ControlPoint[] = [
   // 日本の秋は — the phrase climbs, then falls into the boundary.
+  //
+  // ⚠️ It climbs in per-mora STEPS, not as a ramp. The points alternate lift
+  // and settle every ~6 frames (roughly a mora) so the line visibly rises and
+  // falls on its way up. Before this the phrase was a smooth ramp and the only
+  // movement in it came from the detail layer, which made the whole left third
+  // read flatter than the rest of the plot — measured, its peak-to-peak was
+  // 26.7 Hz against 42.3 for the closing phrase. The owner asked for it to be
+  // lifted, not levelled: it is 30.0 now, still under the later phrases, which
+  // is right because those carry the accent and this one does not.
   { frame: 0, hz: 178 },
-  { frame: 12, hz: 185 },
-  { frame: 24, hz: 190 },
-  { frame: 36, hz: 195 },
-  { frame: 48, hz: 191 },
+  { frame: 6, hz: 186 },
+  { frame: 12, hz: 180 },
+  { frame: 18, hz: 192 },
+  { frame: 24, hz: 185 },
+  { frame: 30, hz: 197 },
+  { frame: 36, hz: 189 },
+  { frame: 42, hz: 199 },
+  { frame: 48, hz: 190 },
+  { frame: 54, hz: 184 },
   // は — the phrase-final fall into the PHRASE BOUNDARY VALLEY. No unvoiced
   // gap: the boundary is a low point, not a hole. See TOTAL_FRAMES.
   //
@@ -196,29 +210,46 @@ const USER_CONTROL: readonly ControlPoint[] = [
   // a higher register", which is a different error and not the one the copy
   // describes. If a future pass wants them further apart, that is a product
   // decision, not a tuning.
+  //
+  // ⚠️ Its steps sit on a DIFFERENT beat from the native's — ~8 frames here
+  // against the native's ~6 — and that is deliberate. Separated but stepping
+  // in unison, the two lines drew the same wave shape twice and read as one
+  // stroke with a shadow; the owner asked for two different waves, "hơi rối"
+  // being fine. Do not align these frames with `NATIVE_CONTROL`'s.
   { frame: 0, hz: 190 },
-  { frame: 12, hz: 195 },
-  { frame: 24, hz: 199 },
-  { frame: 36, hz: 203 },
-  { frame: 48, hz: 201 },
-  { frame: 58, hz: 192 },
-  { frame: 66, hz: 184 },
+  { frame: 8, hz: 198 },
+  { frame: 16, hz: 191 },
+  { frame: 26, hz: 202 },
+  { frame: 34, hz: 195 },
+  { frame: 44, hz: 207 },
+  { frame: 52, hz: 197 },
+  { frame: 60, hz: 190 },
+  { frame: 66, hz: 185 },
   { frame: 74, hz: 190 },
   { frame: 86, hz: 193 },
   { frame: 96, hz: 196 },
-  // ERROR 1 — the flattened peak, ~32 Hz under the native's, and then no
+  // ERROR 1 — the flattened peak, ~30 Hz under the native's, and then no
   // release: where the native sheds its plateau this merely drifts, ending up
   // ABOVE the native all the way down.
+  //
+  // ⚠️ It drifts almost FLAT here (197 -> 189 over 40 frames) rather than
+  // easing down behind the native. When it fell more steeply the two lines ran
+  // within a couple of Hz of each other from 128 to 165, and with the two
+  // tracks back on separate detail periods that stretch braided — 8 crossings,
+  // all of them in the release. Failing to release IS the error, so drawing it
+  // flatter states the error more plainly AND buys the separation the texture
+  // needs. Both at once, which is why this is the shape rather than a
+  // compromise.
   { frame: 101, hz: 198 },
   { frame: 108, hz: 197 },
-  { frame: 118, hz: 195 },
-  { frame: 128, hz: 191 },
-  { frame: 138, hz: 186 },
-  { frame: 148, hz: 183 },
-  { frame: 157, hz: 178 },
-  { frame: 163, hz: 181 },
+  { frame: 118, hz: 197 },
+  { frame: 128, hz: 195 },
+  { frame: 138, hz: 193 },
+  { frame: 148, hz: 191 },
+  { frame: 157, hz: 189 },
+  { frame: 163, hz: 194 },
   // ERROR 2 — the over-raised ね, climbing past its own peak.
-  { frame: 168, hz: 216 },
+  { frame: 168, hz: 220 },
 ];
 
 /**
@@ -278,39 +309,37 @@ function nativeDetail(frame: number): number {
 }
 
 /**
- * The You track's detail: the SAME three periods as the native, at slightly
- * smaller amplitudes.
+ * The You track's detail: its OWN three periods, at smaller amplitudes than
+ * the native's. The two lines are meant to look like different waves.
  *
- * ## ⚠️ The shared periods are load-bearing. Do not give this its own.
+ * ## ⚠️ Independent periods are only affordable because the tracks are apart
  *
- * They used to differ (0.698 / 0.436 / 0.249 against the native's 0.785 /
- * 0.483 / 0.279) so the two tracks would "drift in and out of step instead of
- * shadowing each other". That reasoning is right about each track ALONE and
- * wrong about the PAIR, and it shipped a defect no per-track test could see:
+ * These periods and the phrase gap are ONE decision, and the history is worth
+ * the four lines it takes. With the tracks within ~5 Hz through 日本の秋, two
+ * independent ~10 Hz textures made their DIFFERENCE swing by up to 19.6 Hz —
+ * so which line read as "on top" was decided by where a detail trough landed
+ * rather than by the sentence. The pair crossed 25 times in a visible braid.
  *
- *   two independent ~10 Hz textures make their DIFFERENCE swing by up to
- *   19.6 Hz, while the intonation separates the tracks by only ~5 Hz through
- *   日本の秋 — so which line was on top was decided by where a detail trough
- *   landed, not by the sentence. The pair crossed 25 times, in a visible
- *   braid through the left 40% of the plot, against a docblock that says
- *   they "cross each other twice".
+ * Sharing the native's periods fixed that (25 crossings -> 6) but drew the
+ * same wave shape twice: separated, the two lines read as one stroke with a
+ * shadow. The owner asked for two different waves and said a bit of tangle was
+ * fine. So the periods came back, and what makes them safe now is that the
+ * phrase shapes carry ~10 Hz of separation and the release no longer converges
+ * — see `USER_CONTROL`. Measured with both in place: 3 overrides, 2 crossings.
  *
- * Sharing the periods makes the DIFFERENCE smooth without flattening either
- * line: each track still carries its full depth and its own coherence, and the
- * order changes only where the sentence changes it. Measured, control points
- * untouched: 25 crossings -> 6, and those six are separate events rather than
- * one braid.
+ * ▶ THE RULE THAT SURVIVES ALL OF IT: independent texture needs phrase-level
+ * separation to sit on. Narrow the gap in `USER_CONTROL` without touching this
+ * function and the braid comes back — `pitch-demo.test.ts`'s "lets the
+ * SENTENCE decide which track is on top" is what will tell you.
  *
- * ▶ The amplitudes stay lower than the native's (4.6/2.8/1.8 against
- * 5.2/3.2/2.0). That is the pedagogy, not decoration: a learner moves their
- * pitch less. Tuning these is safe; tuning the PERIODS reopens the braid, and
- * `pitch-demo.test.ts` will say so.
+ * ▶ The amplitudes stay under the native's (4.6/2.8/1.8 against 5.2/3.2/2.0):
+ * a learner moves their pitch less. That part is pedagogy, not tuning.
  */
 function userDetail(frame: number): number {
   return (
-    4.6 * triangle(frame * 0.785 + 0.6) +
-    2.8 * triangle(frame * 0.483 + 2.1) +
-    1.8 * Math.sin(frame * 0.279 + 4.3)
+    4.6 * triangle(frame * 0.698 + 3.3) +
+    2.8 * triangle(frame * 0.436 + 0.8) +
+    1.8 * Math.sin(frame * 0.249 + 5.1)
   );
 }
 
