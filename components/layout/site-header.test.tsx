@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@/test/render";
 import { SiteHeader } from "./site-header";
-import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 import en from "@/messages/en/marketing.json";
 
 /**
@@ -25,27 +24,38 @@ const EXPECTED_LINKS: ReadonlyArray<readonly [keyof typeof en.nav, string]> = [
 ];
 
 describe("SiteHeader", () => {
-  it("sends narrow viewports to the app stores, standing in for the hidden nav", async () => {
-    // User ruling, 2026-08-28: below `md` there is no hamburger; the stores
-    // are where a phone visitor goes instead.
+  it("hands the narrow viewport a menu, and no longer a pair of store links", async () => {
+    // ⚠️ THIS REVERSES A RULING, deliberately. On 2026-08-28 the user ruled
+    // that below `md` there would be no hamburger and a phone visitor would be
+    // sent to the app stores instead; that is what this test used to pin. On
+    // 2026-09-03 they designed the mobile header themselves (Figma `433:1442`,
+    // menu `434:1453`) as a wordmark plus a hamburger. The stores keep their
+    // two blocks in the FOOTER, so nothing was lost — only moved.
     const { container } = render(await SiteHeader());
 
-    const storeLinks = Array.from(container.querySelectorAll("[data-store-link]"));
-    expect(storeLinks).toHaveLength(2);
-    expect(storeLinks.map((a) => a.getAttribute("href"))).toEqual([
-      APP_STORE_URL,
-      PLAY_STORE_URL,
-    ]);
-    for (const link of storeLinks) {
-      expect(link.getAttribute("target")).toBe("_blank");
-      // `noopener` is what stops the opened page reaching back through
-      // `window.opener`.
-      expect(link.getAttribute("rel") ?? "").toContain("noopener");
-    }
-    // They exist for the viewport the six-link nav is hidden at, and must not
-    // double up with it above that breakpoint.
-    const group = storeLinks[0]?.parentElement;
-    expect(group?.className ?? "").toContain("md:hidden");
+    expect(container.querySelectorAll("[data-store-link]")).toHaveLength(0);
+
+    const toggle = container.querySelector("[data-menu-toggle]");
+    if (!toggle) throw new Error("the header rendered no menu toggle");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    // It stands in for the nav at exactly the widths the nav is hidden at —
+    // one breakpoint decides both, or the two disagree at some width.
+    expect(toggle.parentElement?.className ?? "").toContain("md:hidden");
+  });
+
+  it("renders one set of destinations, in the bar and in the sheet", async () => {
+    // CLAUDE.md §6. `NAV_ITEMS` is the one home for the marketing IA; the
+    // desktop row and the mobile sheet both read it. A second list would drift
+    // silently, because no viewport renders both at once.
+    const { container } = render(await SiteHeader());
+
+    const href = (nodes: Iterable<Element>) =>
+      Array.from(nodes, (a) => a.getAttribute("href"));
+    const bar = href(container.querySelectorAll("a[data-nav-item]"));
+    const sheet = href(container.querySelectorAll("a[data-menu-item]"));
+
+    expect(bar).toHaveLength(EXPECTED_LINKS.length);
+    expect(sheet).toEqual(bar);
   });
 
   it("renders exactly the six ruled marketing nav destinations", async () => {
@@ -81,8 +91,11 @@ describe("SiteHeader", () => {
     // over the content it labels — a 52px misalignment at 1280.
     const { container } = render(await SiteHeader());
 
-    const boxes = Array.from(container.querySelectorAll(".max-w-marketing"));
-    expect(boxes).toHaveLength(1);
+    // The BAR's own row, not a count of every box on the measure: the mobile
+    // sheet is on it too, which is the point — its rows have to line up under
+    // the wordmark the bar puts there.
+    const bar = container.querySelector("header")?.firstElementChild;
+    expect(bar?.className.split(/\s+/)).toContain("max-w-marketing");
   });
 
   it("takes its height from the shared layout token that anchored sections clear", async () => {

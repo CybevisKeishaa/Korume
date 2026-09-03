@@ -166,6 +166,235 @@ test.describe("landing page", () => {
     expect(headerBottom).toBeGreaterThan(0);
     expect(headingTop).toBeGreaterThan(headerBottom);
   });
+  /**
+   * WCAG 1.4.10 Reflow: no horizontal scrolling at 320 CSS px (CLAUDE.md §2
+   * rule 5). Task 13's central guard, and the reason it needed re-aiming
+   * twice.
+   *
+   * ⚠️ HOW TO READ A FAILURE, because two audits and this file's own run-state
+   * got it wrong. `getBoundingClientRect().right > clientWidth` CANNOT see the
+   * offender that actually caused this: a text run overflowing its own box does
+   * not move that box's rect, so right-edge filtering returns a wall of
+   * irrelevant `LI`s inside `#journey`'s scroll container while the hero `h1`
+   * stays invisible to it. The failure message below is built from a `Range`
+   * over TEXT NODES plus an ancestor `overflow-x` walk, so it names the run,
+   * not a box that happens to sit near the edge.
+   *
+   * ⚠️ It also asserts the page RENDERED. A blank page, a 500, or a dev server
+   * whose workers have died all have `scrollWidth === clientWidth` at every
+   * width — "no overflow" is exactly what broken looks like, and this guard was
+   * unconditionally green against a dead server before that check existed.
+   */
+  test("never scrolls horizontally, at any width, in either locale", async ({
+    page,
+  }) => {
+    // Eighteen navigations in one test. Alone it finishes in ~8s; against the
+    // one `next dev` this suite shares between five parallel workers it went
+    // past the 30s default. The sweep's breadth is the whole point — a number
+    // derived at one width is a guess at every other — so the budget moves,
+    // not the sample.
+    test.slow();
+
+    // 320 is the WCAG floor; 414 is the control that proved the hero `h1` was
+    // the offender (the run is 390.5px wide and clears the viewport there
+    // without changing size); 768 is where the footer's email token bites.
+    const widths = [320, 360, 390, 414, 480, 640, 768, 1024, 1280];
+    const locales = ["en", "vi"] as const;
+    const samples: Array<{ where: string; over: number; offenders: string[] }> = [];
+
+    for (const locale of locales) {
+      for (const width of widths) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(`/${locale}`);
+        // Non-negotiable: "no overflow" on an unrendered page is a false green.
+        await expect(page.locator("main section[id]")).toHaveCount(9);
+
+        samples.push({
+          where: `${locale} @${width}`,
+          ...(await page.evaluate(() => {
+            const docWidth = document.documentElement.clientWidth;
+
+            /** The nearest ancestor that CONTAINS overflow, if any. */
+            const clipped = (node: Node) => {
+              let el: Element | null =
+                node instanceof Element ? node : node.parentElement;
+              while (el && el !== document.documentElement) {
+                if (getComputedStyle(el).overflowX !== "visible") return true;
+                el = el.parentElement;
+              }
+              return false;
+            };
+
+            const name = (el: Element | null) => {
+              if (!el) return "?";
+              const id = el.id ? `#${el.id}` : "";
+              const cls = (el.getAttribute("class") ?? "")
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .join(".");
+              return `${el.tagName.toLowerCase()}${id}${cls ? `.${cls}` : ""}`;
+            };
+
+            const offenders = new Set<string>();
+            const walker = document.createTreeWalker(
+              document.body,
+              NodeFilter.SHOW_TEXT,
+            );
+            for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+              if (!n.textContent?.trim() || clipped(n)) continue;
+              const range = document.createRange();
+              range.selectNodeContents(n);
+              for (const rect of range.getClientRects()) {
+                if (rect.width === 0 || rect.right <= docWidth + 0.5) continue;
+                offenders.add(
+                  `${name(n.parentElement)} "${n.textContent.trim().slice(0, 24)}" +${(rect.right - docWidth).toFixed(1)}`,
+                );
+              }
+            }
+            for (const el of document.querySelectorAll("body *")) {
+              const rect = el.getBoundingClientRect();
+              if (rect.width === 0 || rect.right <= docWidth + 0.5) continue;
+              if (clipped(el.parentElement ?? el)) continue;
+              offenders.add(
+                `${name(el)} (box) +${(rect.right - docWidth).toFixed(1)}`,
+              );
+            }
+
+            return {
+              over: document.documentElement.scrollWidth - docWidth,
+              offenders: [...offenders],
+            };
+          })),
+        });
+      }
+    }
+
+    // L-004: the sweep is gathered by a loop, so pin its size — a short sweep
+    // would pass this test without measuring anything.
+    expect(samples, "viewport/locale samples").toHaveLength(
+      widths.length * locales.length,
+    );
+
+    const scrolling = samples.filter((s) => s.over > 0);
+    expect(
+      scrolling,
+      `the page scrolls horizontally at: ${scrolling
+        .map((s) => `${s.where} by ${s.over}px [${s.offenders.join(" · ")}]`)
+        .join(" — ")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * §3's card row is the one place on the page that is WIDER than the viewport
+   * on purpose, and the ledger owed this assertion from task A2.
+   *
+   * ⚠️ Two facts, and the second is the one that is easy to lose. The row
+   * CONTAINS its overflow (`overflow-x: auto`), which is why it never reached
+   * the page — and for a long time this row was blamed for the page overflow
+   * that the hero `h1` was actually causing. But a region you can only reach
+   * by scrolling sideways must also be reachable WITHOUT a mouse (WCAG 2.1.1);
+   * browsers make a scrollable box focusable for exactly that reason, and a
+   * refactor to `overflow-x: clip` or a wrapper that hides the overflow would
+   * keep this row looking right while silently making two of its five cards
+   * unreachable by keyboard.
+   */
+  test("keeps §3's card row self-contained and still reachable by keyboard", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto("/en");
+    await expect(page.locator("main section[id]")).toHaveCount(9);
+
+    const row = page.locator("#journey ol");
+    const measured = await row.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+      overflowX: getComputedStyle(el).overflowX,
+    }));
+
+    // It really is overflowing — otherwise "contains its overflow" is a claim
+    // about nothing, and this test would pass on an empty row.
+    expect(measured.scrollWidth).toBeGreaterThan(measured.clientWidth);
+    expect(measured.overflowX).toBe("auto");
+
+    // And the overflow stops there rather than reaching the page.
+    const section = await page
+      .locator("#journey")
+      .evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+    expect(section.scrollWidth).toBe(section.clientWidth);
+
+    // WCAG 2.1.1: the cards past the fold must be reachable without a mouse.
+    const reachable = await row.evaluate((el) => {
+      el.focus();
+      if (document.activeElement !== el) return { focusable: false, scrolled: 0 };
+      const before = el.scrollLeft;
+      el.scrollLeft = el.scrollWidth;
+      return { focusable: true, scrolled: el.scrollLeft - before };
+    });
+    expect(reachable.focusable).toBe(true);
+    expect(reachable.scrolled).toBeGreaterThan(0);
+  });
+
+  /**
+   * §3's two Japanese sentence lines must keep a long token INSIDE their panel.
+   *
+   * The ledger carried this from task A2 as "no `break-words`, so a single
+   * unbreakable token overflows the panel (276px inside 105px)". With today's
+   * copy it does not reproduce at any width in either locale — the panels are
+   * ~86px and the widest rendered line is 67px — but the latent rule is still
+   * wrong: `overflow-wrap` is `normal`, so the FIRST long token anyone writes
+   * escapes. Card 4's own comment already promises the opposite ("forcing
+   * nowrap would make a longer fragment overflow the card, which is the class
+   * of bug this fix round exists to remove"), and a promise the CSS does not
+   * keep is worse than no promise.
+   *
+   * So the token is injected rather than waited for. This asserts the RULE,
+   * which is what the comment claims, not today's copy, which happens to be
+   * short enough.
+   */
+  test("keeps a long unbreakable token inside §3's sentence panels", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.goto("/en");
+    await expect(page.locator("main section[id]")).toHaveCount(9);
+
+    const lines = page.locator("#journey [data-step] p.font-jp");
+    // The pair the ledger names: card 2's line and card 4's. Pinned, so a
+    // refactor that drops one cannot quietly halve what this covers.
+    await expect(lines).toHaveCount(2);
+
+    const spills = await lines.evaluateAll((nodes) =>
+      nodes.map((node, i) => {
+        const original = node.textContent;
+        // ⚠️ LATIN, deliberately. The first version of this used a long kana
+        // run and passed on the spot — Japanese breaks BETWEEN characters, so
+        // a kana run is not an unbreakable token at all and proved nothing.
+        // The tokens that actually escape are the ones with no break
+        // opportunity: romaji, a URL, an address.
+        node.textContent = "omottayorimotottemoyasuikaimonodesune";
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const widest = [...range.getClientRects()].reduce(
+          (a, b) => Math.max(a, b.width),
+          0,
+        );
+        const box = node.getBoundingClientRect().width;
+        node.textContent = original;
+        return { i, box: +box.toFixed(1), widest: +widest.toFixed(1) };
+      }),
+    );
+
+    const escaped = spills.filter((s) => s.widest > s.box + 0.5);
+    expect(
+      escaped,
+      `a long token left its panel at: ${escaped
+        .map((s) => `line ${s.i} — ${s.widest} in ${s.box}`)
+        .join(" · ")}`,
+    ).toEqual([]);
+  });
+
   test("gives §3's five step cards one width", async ({ page }) => {
     // Geometry, so it belongs here and not in the jsdom suite, which loads no
     // CSS. The defect: every `li` carried the flex basis and shared it with a

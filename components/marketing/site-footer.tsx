@@ -160,7 +160,13 @@ export async function SiteFooter() {
           <h2 className="text-caption uppercase tracking-widest text-foreground">
             {t("footer.columns.support.heading")}
           </h2>
-          <p className="mt-sm text-body text-muted-foreground">{SUPPORT_EMAIL}</p>
+          {/* `break-words`: at 768 this grid gives each column a 118.4px track
+              and the address measures 153.9px as ONE unbreakable token, so it
+              left the column and took the page with it (+11px, task 13). An
+              address is the case `overflow-wrap: break-word` exists for — it
+              breaks only when nothing else can, so every wider layout renders
+              it on one line exactly as before. */}
+          <p className="mt-sm break-words text-body text-muted-foreground">{SUPPORT_EMAIL}</p>
 
           <h2 className="mt-lg text-caption uppercase tracking-widest text-foreground">
             {t("footer.columns.legal.heading")}

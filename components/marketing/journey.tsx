@@ -333,7 +333,7 @@ function UnderstandBody({ t }: { t: Translator }) {
       <StepPanel>
         {/* One step up the scale from its translation, as the reference sets
             them: the Japanese is what you are reading, the English annotates. */}
-        <p className="border-l border-primary pl-xs font-jp text-body text-foreground">
+        <p className="border-l border-primary break-words pl-xs font-jp text-body text-foreground">
           {t("journey.steps.understand.detail")}
         </p>
         <p className="mt-xs border-t border-border pt-xs text-caption text-muted-foreground">
@@ -423,7 +423,7 @@ function MineBody({ t }: { t: Translator }) {
             pair only reads as "the sentence you understood is the sentence you
             mine" if it looks like the same object. `leading-jp` because this
             one wraps to three lines where card 2's has room to breathe. */}
-        <p data-mine-sentence className="font-jp text-body leading-jp text-foreground">
+        <p data-mine-sentence className="break-words font-jp text-body leading-jp text-foreground">
           {parts ? (
             <>
               {parts.before}
@@ -438,8 +438,13 @@ function MineBody({ t }: { t: Translator }) {
                   Cloning gives each line fragment its own rounded box, so the
                   wrap reads as intentional; forcing nowrap instead would make a
                   longer fragment (the Vietnamese pass may write one) overflow
-                  the card, which is the class of bug this fix round exists to
-                  remove. */}
+                  the card.
+                  ▶ Cloning handles a fragment that STRADDLES a break; it does
+                  nothing for a token with no break opportunity in it, which is
+                  why the paragraph itself carries `break-words` (task 13). A
+                  romaji or URL token measured 285px in this 68px panel until
+                  it did — kana was never the risk here, because Japanese
+                  breaks between characters. */}
               <span
                 data-mine-target
                 className="box-decoration-clone rounded-sm bg-primary/10 text-primary-strong"

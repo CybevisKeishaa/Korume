@@ -1,6 +1,9 @@
 {
   "nav": {
     "ariaLabel": "Primary navigation",
+    "menuAriaLabel": "Menu",
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu",
     "wordmark": "Korume",
     "explore": "Explore",
     "shadowing": "Shadowing",

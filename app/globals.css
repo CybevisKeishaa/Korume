@@ -187,9 +187,35 @@
      Earned by semantic role, not size: the four sites are page-opening <h1>s
      and one pull-quote, all in the display face (spec §3.2). The 62px
      watermark and the 128/150px kanji are larger and deliberately excluded —
-     large Japanese glyphs are content presentation, not interface typography. */
-  --text-hero: 4rem;
-  --leading-hero: 4.25rem;
+     large Japanese glyphs are content presentation, not interface typography.
+
+     ⚠️ FLUID (task 13). A fixed 4rem was the whole reason `/` failed WCAG
+     1.4.10 Reflow: the English heading's widest word, "understand.", measures
+     390.5px at 64px and cannot break, so it left the 288px column at 320px
+     wide and pushed the PAGE to 407px. It vanished at 414 not because the word
+     shrank but because the viewport finally cleared its 406.5px right edge —
+     which is why an audit that filtered on box right-edges could never see it.
+
+     The ramp is anchored on the OWNER'S OWN NUMBERS, not on the reflow bound:
+     their 2026-09-03 mobile brief specifies a 36-40px hero at 390, and frame
+     347:6277 draws 64px at 1280. `5.7vw + 1rem` passes through both — 38.2px
+     at 390, reaching the 4rem cap at ~842px, so every width the desktop design
+     was drawn for is untouched.
+
+       320 -> 34.2    390 -> 38.2    640 -> 52.5    768 -> 59.8    842+ -> 64
+
+     The reflow bound is the ceiling this has to stay under, and it clears it
+     with room everywhere (`size <= 0.1639 * viewport - 5.25` below `sm`, i.e.
+     47.2 at 320 against 34.2). The 2rem floor is a backstop below 281px, past
+     the 320px WCAG floor, so it never binds in supported territory.
+     ▶ The bound is a property of the COPY. If the owner re-voices the heading
+     with a longer word, the guard in `tests/e2e/landing-page.spec.ts` goes red
+     and names the run — fix the number there, not the test. */
+  --text-hero: clamp(2rem, 5.7vw + 1rem, 4rem);
+  /* Unitless, so it tracks the clamp instead of being hand-synced to it: the
+     ratio 4.25/4 = 1.0625 IS the fact, and a fixed 68px against a 34px hero
+     would read as 2.0 (CLAUDE.md §6, one fact one home). */
+  --leading-hero: 1.0625;
   /* Japanese line-height: kanji + furigana want more vertical room than Latin
      script at the same size. Use with font-jp (leading-jp utility). */
   --leading-jp: 1.8;

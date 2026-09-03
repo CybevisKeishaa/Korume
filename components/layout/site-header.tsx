@@ -2,7 +2,7 @@ import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { buttonStyles } from "@/components/ui/button";
 import { MarketingContainer } from "@/components/marketing/marketing-container";
-import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
+import { SiteMenu } from "./site-menu";
 
 /**
  * §0 of the landing page (spec §2.1, §2.2).
@@ -23,6 +23,11 @@ const NAV_ITEMS = [
   { key: "practice", href: "/review" },
   { key: "companion", href: "/companion" },
 ] as const;
+
+/** One home for the two auth routes: the bar renders them above `md`, the
+ *  sheet renders them below it, and both read them from here. */
+const SIGN_IN_HREF = "/login";
+const CTA_HREF = "/register";
 
 export async function SiteHeader() {
   const t = await getTranslations("marketing");
@@ -49,46 +54,35 @@ export async function SiteHeader() {
             </Link>
           ))}
         </nav>
-        {/*
-         * Below `md` the six-link nav is hidden and there is no hamburger. The
-         * user ruled (2026-08-28) that narrow viewports go to the app stores
-         * instead of getting a menu, so this stands in its place — the one
-         * marketing destination a phone visitor gets besides sign-in.
-         *
-         * Both stores, not one: this is a server component and guessing the
-         * visitor's platform from anything available here would be wrong more
-         * often than it is worth. The names come from the footer's own keys
-         * rather than new ones — they are the same two proper nouns pointing
-         * at the same two URLs (CLAUDE.md §6, one fact one home).
-         */}
-        <div className="flex items-center gap-sm md:hidden">
-          <a
-            data-store-link
-            href={APP_STORE_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-caption text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t("footer.app.appStore.name")}
-          </a>
-          <a
-            data-store-link
-            href={PLAY_STORE_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-caption text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {t("footer.app.playStore.name")}
-          </a>
-        </div>
-        <div className="flex items-center gap-xs">
-          <Link href="/login" className={buttonStyles({ variant: "ghost", size: "sm" })}>
+        {/* Both move into the sheet below `md`. They are the heaviest pair in
+            the bar — 184.7px (en) / 207.2px (vi) unwrapped against 288px of
+            room at 320 — and keeping them would have made the reflow
+            arithmetic unsolvable no matter what else was cut. */}
+        <div className="hidden items-center gap-xs md:flex">
+          <Link href={SIGN_IN_HREF} className={buttonStyles({ variant: "ghost", size: "sm" })}>
             {t("nav.signIn")}
           </Link>
-          <Link href="/register" className={buttonStyles({ size: "sm" })}>
+          <Link href={CTA_HREF} className={buttonStyles({ size: "sm" })}>
             {t("nav.cta")}
           </Link>
         </div>
+
+        <SiteMenu
+          items={NAV_ITEMS.map((item) => ({
+            key: item.key,
+            href: item.href,
+            label: t(`nav.${item.key}`),
+          }))}
+          labels={{
+            open: t("nav.menuOpen"),
+            close: t("nav.menuClose"),
+            nav: t("nav.menuAriaLabel"),
+            signIn: t("nav.signIn"),
+            cta: t("nav.cta"),
+          }}
+          signInHref={SIGN_IN_HREF}
+          ctaHref={CTA_HREF}
+        />
       </MarketingContainer>
     </header>
   );

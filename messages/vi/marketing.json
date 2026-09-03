@@ -1,6 +1,9 @@
 {
   "nav": {
     "ariaLabel": "Điều hướng chính",
+    "menuAriaLabel": "Menu",
+    "menuOpen": "Mở menu",
+    "menuClose": "Đóng menu",
     "wordmark": "Korume",
     "explore": "Khám phá",
     "shadowing": "Shadowing",
