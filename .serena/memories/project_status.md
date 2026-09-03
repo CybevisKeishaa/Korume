@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-09-03, session 6) — **branch `landing-page-port` is fully BUILT: tasks 1-13, A1/A2/A3, P, V, the independent review AND its fixes are all committed. HEAD `5410845`, nothing merged, nothing pushed. Gate: tsc 0 · lint 0 errors · vitest 2589/281 · playwright 27/27. ⚠️ Task 13 gave §0 a hamburger + sheet, which REVERSES the owner's own 2026-08-28 "no hamburger" ruling, at their direction. The live next actions are: **Task A-MOTION** (whole-page motion + the `/en#problem` scroll drift) · **the whole-branch review** (L-011, then the fix-wave pass L-012) · **the `docs/lessons.md` pass, 16 entries queued**. Then a NEW and large piece already scoped out of Task 13: **the owner's mobile landing page** (Figma `429:2` / `433:728`), which is a RICHER page than the built one — ~12 sections, five with no counterpart — and needs two questions answered first. ▶ Detail: `mem:landing_page_port_run_state` (204 lines, reads in one call).**
+## ▶ NEXT ACTION (updated 2026-09-04, session 7) — **branch `landing-page-port` is fully BUILT AND the motion pass has landed: tasks 1-13, A1/A2/A3, P, V, the independent review and its fixes, plus **Task A-MOTION (A-M1…A-M5)**. HEAD `e7696d4`, nothing merged, nothing pushed. Gate: tsc 0 · lint 0 errors / 81 warnings (the pre-existing count) · `npm test` **2605 over 282 files** · `npx playwright test tests/e2e/landing-page.spec.ts` **20/20** · `npm run build` exit 0 · page height **4480px at 1280, unchanged** — the motion layer moved no geometry. ⚠️ **Do NOT record `playwright 27/27` without local Supabase running**: five specs (auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with `ECONNREFUSED 127.0.0.1:54321` in a session without it; they all register a user and none touches the landing page. ⚠️ Task 13 gave §0 a hamburger + sheet, which REVERSES the owner's own 2026-08-28 "no hamburger" ruling, at their direction. The live next actions are: **the whole-branch review** (L-011, then the fix-wave pass L-012) · **the `docs/lessons.md` pass, now 18 entries queued**. Then a NEW and large piece already scoped out of Task 13: **the owner's mobile landing page** (Figma `429:2` / `433:728`), a RICHER page than the built one — ~12 sections, five with no counterpart — which needs two questions answered first. ▶ **Its four extra sections are the same four a 14-section motion proposal assumed, so the two share one open question** (does mobile-only content go on desktop?). ▶ Detail: `mem:landing_page_port_run_state`.**
 
 ✅ **`landing-page-identity-ruling` MERGED to master at `2822d22` (`--no-ff`), 2026-08-26; branch kept
 per repo convention.** Count its commits with
@@ -63,18 +63,7 @@ reconciliation doc's §5 is the home for this; do not restate it here. **The por
 them**: the design puts all five behind one `AssetSlot` boundary, so layout is built now and filling
 a slot later is one prop at one call site.
 
-**Where execution actually stands (2026-09-02, superseding the 2026-08-27 note this block used to
-carry):** branch `landing-page-port` off master, **nothing merged, nothing pushed**, and the page is
-BUILT — tasks 1–7, A1/A2/A3, P, 8–11, **12** (page composition, `--layout-marketing-max`) and
-**Task V** (visual fidelity) are all committed. Unit **2564 over 280 files**, tsc 0, lint 0,
-**Playwright 23/23**.
-
-▶ **The live next action is an independent RENDER-CAPABLE review of `19b05d5..HEAD`.** Two ranges
-need one: task 12's review was run by the lineage that built it, and Task V has had no review at
-all. Use `general-purpose`, not `code-reviewer` — the latter is code-only and every finding here is
-visual. After that: **Task A-MOTION**, **Task 13** (⚠️ re-measure the 320/390/768 overflow rather
-than trusting any recorded number — Task V did not touch the construct it comes from), the
-whole-branch review, and the branch-end `docs/lessons.md` pass (**six** queued entries).
+**Where execution stands is the NEXT ACTION block at the top of this file, and nowhere else.** The 2026-09-02 paragraph that used to sit here — the one naming an independent render-capable review of `19b05d5..HEAD` as the live next action, with unit 2564/280 and Playwright 23/23 — is **superseded**: that review ran, its fixes landed, and Task 13 and Task A-MOTION were built after it. It is moved to the superseded section at the end of this file rather than kept here, because two blocks each calling themselves the live next action is the defect `CLAUDE.md` §6 names.
 
 ⚠️ **Two decisions are waiting on the owner**, neither blocking: §1's transport bar lacks the
 reference's timestamp and four control glyphs (adding them means choosing which affordances to
@@ -118,12 +107,13 @@ user, and what rejected it are **in the spec's §6.7** — deliberately not repe
 second copy of that reasoning is what the header above forbids and what a later reader would then
 have to reconcile.
 **Phase 3 is merged and closed.** It left one open decision, which was ruled and merged on
-2026-08-26 — **that ruling IS the live next action now, so do not read this block as "pick from the
+2026-08-26 and merged to master at `2822d22` — **do not read this block as "pick from the
 candidates below"**; the NEXT ACTION block at the top of this file governs. Read the run-state
 memory's ▶▶ RESUME block for Phase 3's own sequence and merged-master gate.
 ✅ **Phase 3's one open decision is CLOSED (user, 2026-08-26): frame `347:6277` IS the design for
 `/`.** The `landing-page` row converted to `kind: "screen"` on branch `landing-page-identity-ruling`
-(`a9ad897`, NOT yet merged — see the live next action below). The authenticated home **stays
+(`a9ad897`, merged to master at `2822d22` on 2026-08-26 — an older note here said "NOT yet
+merged", which stopped being true that same day). The authenticated home **stays
 `dashboard` at `/dashboard`**: the user declined a `/home` rename in the same ruling. Authority is the
 spec's §9.1; this line is the gist, not a second copy.
 The GitHub sign-in button was previously listed alongside it and **should not have been** — that one
@@ -229,6 +219,23 @@ mining** (6) · **pitch accent** (4) · **provenance-attached claims** (3+) · *
 <details><summary>(superseded 2026-08-12) the instruction that started this stage — Phase 0: Figma Product Inventory, Do NOT start Screen Registry Phase 1</summary>
 
 ## ▶ Superseded NEXT ACTION blocks — moved out 2026-09-03
+
+### The 2026-09-02 "where execution actually stands" block (superseded 2026-09-04)
+
+Kept verbatim because it records figures measured at that point; every one of them has since moved.
+
+> **Where execution actually stands (2026-09-02, superseding the 2026-08-27 note this block used to
+> carry):** branch `landing-page-port` off master, **nothing merged, nothing pushed**, and the page is
+> BUILT — tasks 1–7, A1/A2/A3, P, 8–11, **12** (page composition, `--layout-marketing-max`) and
+> **Task V** (visual fidelity) are all committed. Unit **2564 over 280 files**, tsc 0, lint 0,
+> **Playwright 23/23**.
+> 
+> ▶ **The live next action is an independent RENDER-CAPABLE review of `19b05d5..HEAD`.** Two ranges
+> need one: task 12's review was run by the lineage that built it, and Task V has had no review at
+> all. Use `general-purpose`, not `code-reviewer` — the latter is code-only and every finding here is
+> visual. After that: **Task A-MOTION**, **Task 13** (⚠️ re-measure the 320/390/768 overflow rather
+> than trusting any recorded number — Task V did not touch the construct it comes from), the
+> whole-branch review, and the branch-end `docs/lessons.md` pass (**six** queued entries).
 
 Three of them (Phase 0 2026-08-11 · the screen-port workflow merge · the Figma token/typography
 foundation) already labelled themselves historical/done/superseded and were 25% of this file.
