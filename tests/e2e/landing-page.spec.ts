@@ -511,3 +511,78 @@ test.describe("landing page", () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * The motion layer (Task A-MOTION), and the one claim the whole architecture
+ * rests on: no reader can end up looking at content held at `opacity: 0`.
+ *
+ * The hidden state is gated on `:root[data-reduce-motion="false"]`, which
+ * themeInitScript sets before paint and only when JS ran. That one selector is
+ * supposed to cover all three cases below — so all three are measured, not
+ * reasoned about.
+ *
+ * ⚠️ Every case asserts nine sections FIRST. A dead dev server serves a 500
+ * page, which has no hidden content either, so a sweep that skips this check
+ * goes green while measuring nothing.
+ */
+test.describe("motion never hides content", () => {
+  test.slow();
+
+  const PARTS = "[data-eyebrow], [data-section-heading], [data-section-body], [data-section-showcase]";
+
+  for (const width of [320, 390, 768, 1280]) {
+    test(`renders every section opaque under reduce-motion at ${width}`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/en");
+
+      await expect(page.locator("main section[id]")).toHaveCount(9);
+
+      const opacities = await page.locator(`main section[id] :is(${PARTS})`).evaluateAll((nodes) =>
+        nodes.map((n) => Number(getComputedStyle(n).opacity)),
+      );
+      expect(opacities.length).toBeGreaterThanOrEqual(9);
+      expect(opacities.filter((o) => o !== 1)).toEqual([]);
+    });
+  }
+
+  test("renders every section opaque with JavaScript disabled", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/en");
+
+    await expect(page.locator("main section[id]")).toHaveCount(9);
+
+    const opacities = await page
+      .locator("main section[id] [data-section-heading]")
+      .evaluateAll((nodes) => nodes.map((n) => Number(getComputedStyle(n).opacity)));
+    expect(opacities).toHaveLength(9);
+    expect(opacities.filter((o) => o !== 1)).toEqual([]);
+
+    await context.close();
+  });
+
+  test("leaves nothing hidden after a reader scrolls the whole page", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/en");
+
+    await expect(page.locator("main section[id]")).toHaveCount(9);
+
+    for (const id of ["problem", "journey", "pitch", "recommend", "chain", "trust", "cta", "signoff"]) {
+      await page.locator(`#${id}`).scrollIntoViewIfNeeded();
+      await page.waitForTimeout(200);
+    }
+    // Long enough for the slowest chain: §4's overall score waits 1.5x the
+    // cinematic duration.
+    await page.waitForTimeout(2500);
+
+    const hidden = await page
+      .locator(
+        `main :is(${PARTS}, [data-chip], [data-step], [data-trust-card], [data-chain-node] > *, [data-subscore], [data-score-overall])`,
+      )
+      .evaluateAll((nodes) =>
+        nodes.filter((n) => Number(getComputedStyle(n).opacity) !== 1).length,
+      );
+    expect(hidden).toBe(0);
+  });
+});
