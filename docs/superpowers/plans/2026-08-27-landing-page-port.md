@@ -3553,7 +3553,1113 @@ git commit -m "feat(marketing): density pass, reduced-motion and a11y sweep"
 
 ---
 
-## After Task 13
+## Task A-MOTION: the motion pass
+
+The page has **no motion today** beyond Lenis. `components/motion/reveal.tsx` exists but has zero
+importers, `lib/gsap.ts` has zero importers, and `grep -rn reduceMotion components/marketing/`
+returns nothing — so the reduced-motion gate Task 13 signed off on is, on this surface, vacuous.
+This task is what makes it real.
+
+**Scope ruled by the owner, 2026-09-03.** A 14-section motion proposal was reviewed against the
+built page. Its *philosophy* is adopted as written — motion explains, never decorates; one metaphor
+per section; reveal once, never reverse; orange only where something becomes active. Its *section
+map* is not: it describes a Video section, a Kanji-inspect section, a JLPT section and a
+Review-Mistakes section that **do not exist here**, and omits `Signoff`, which does. **Those four
+sections are deliberately out of scope and will be built later, together with the mobile page** —
+the owner ruled the nine-section page stands as a landing page. Do not add a section in this task.
+
+Also cut, with reasons that are load-bearing:
+
+- **No pin, no scroll-scrub.** This plan's own constraint (line 2808) is that A-MOTION *"adds a
+  layer, it does not move geometry"*. Pinning changes scroll length; it would invalidate the settled
+  density figure (4480px at 1280) and make two e2e assertions position-dependent:
+  `tests/e2e/landing-page.spec.ts:434` (the chain mascot's bottom edge equals the last node's bottom
+  edge **within 1px**) and `:133` (`#trust`'s photograph against its card block).
+- **No hero parallax and no hero zoom-out on scroll**, same reason.
+- **No new colour states on `#chain`.** The proposal wants orange = current, green = done, grey =
+  future. `components/marketing/capability-chain.tsx:44-62` records the shipped design: layer A is
+  `--border`, *not* the accent, and layer B puts a bloomed `--primary` dot under **every** node.
+  Changing that is a design change, not a motion layer.
+
+### Four findings that shaped the architecture — read before writing any code
+
+1. **Motion tokens already exist** (`app/globals.css:239-246`, spec §4.4) and are under contract in
+   `lib/design-tokens.test.ts:58`: `--duration-fast: 150ms`, `--duration-base: 300ms`,
+   `--duration-slow: 600ms`, `--ease-standard`, `--ease-out-expo`. The proposal's ladder maps onto
+   them — Micro→`fast`, UI→`base`, Reveal→`slow`. **Do not create a second motion scale**
+   (`CLAUDE.md` §6, one fact one home). Only the "cinematic" tier is genuinely missing.
+2. **This project's established motion pattern is plain CSS, and it is gated for free.**
+   `app/globals.css:283-287` states it: the L6 celebrations are *"all one-shot (no `infinite`), fast
+   (<=600ms), and plain CSS so they need no client component"*, kill-switched by the global block at
+   `:374-400` — which collapses `animation-duration` honouring **both** the OS query **and** the app
+   toggle (`:root[data-reduce-motion="true"]`).
+3. **Therefore: not GSAP.** GSAP animates inline styles from a rAF loop, which the block in (2)
+   cannot reach; choosing it would add an ungated surface and diverge from (2) for no gain, since
+   nothing in the trimmed scope needs scrub or pin. `gsap.matchMedia()` in particular is *wrong
+   here* — it reads only the OS media query, so it would ignore the app toggle and break
+   `CLAUDE.md` §2 rule 4. `lib/gsap.ts` stays unused; leave it.
+4. **`data-reduce-motion` is set before paint** by `themeInitScript`
+   (`components/providers/theme-provider.tsx:32-43`, injected at `app/[locale]/layout.tsx:129`), and
+   is `"false"` **only when JS ran and motion is allowed**. So `:root[data-reduce-motion="false"]` is
+   a ready-made gate needing no new attribute and no new script: with JS off the attribute is
+   absent, the hidden state never applies, and content is simply visible. This is what keeps motion
+   from ever being what hides content (spec §4.1) — the deleted Framer component got this wrong,
+   which is one reason it was never wired.
+
+### The architecture
+
+**Zero new DOM nodes.** All nine sections already render through
+`components/marketing/section.tsx:192`, so the entrance contract is added there once, as attributes
+on elements that already exist. Transform and opacity do not affect layout, so no measurement on
+this branch moves — which is what lets this task run either side of Task 13, as line 2808 says.
+
+```
+page.tsx  <main data-reveal-scope>          <- scopes the hidden state to THIS page
+            <RevealScope />                  <- one IntersectionObserver, renders null
+            <Hero /> ... <Signoff />         <- each is a <Section data-reveal="pending">
+                                                -> observer flips it to data-reveal="in"
+                                                -> globals.css animates its parts, staggered
+```
+
+The scope attribute is not decoration: `Section` is shared, and a marketing page that did **not**
+mount `RevealScope` would otherwise hold its content at `opacity: 0` forever. Gating the hidden
+state on an ancestor `[data-reveal-scope]` makes that impossible by construction.
+
+**Files:**
+- Modify: `app/globals.css` — two tokens, the reveal keyframes, the gate
+- Modify: `tailwind.config.ts` — expose the cinematic duration
+- Modify: `lib/design-tokens.test.ts` — put both new tokens under contract
+- Modify: `components/marketing/section.tsx` — four attributes, no nodes
+- Create: `components/motion/reveal-scope.tsx`, `components/motion/reveal-scope.test.tsx`
+- Delete: `components/motion/reveal.tsx` — dead code, and its SSR `opacity: 0` hides content
+- Modify: `app/[locale]/(marketing)/page.tsx` — the scope and the observer
+- Modify: `components/marketing/capability-chain.tsx` — an ordinal and one attribute
+- Modify: `components/marketing/pitch-chart.tsx` — `pathLength={1}` on the two contours
+- Modify: `components/marketing/pitch-showcase.tsx`, `problem.tsx`, `journey.tsx`, `trust.tsx` — one
+  ordinal each
+- Modify: `components/marketing/section.test.tsx`, `capability-chain.test.tsx`,
+  `pitch-showcase.test.tsx`, `problem.test.tsx`, `journey.test.tsx`, `trust.test.tsx`,
+  `tests/e2e/landing-page.spec.ts`
+
+**Interfaces:**
+- Consumes: `Section`'s existing `[data-eyebrow]`, `[data-section-rail]`, `[data-section-showcase]`;
+  `[data-chain-node]`, `[data-connector]`, `[data-contour]`, `[data-score-number]`,
+  `[data-subscore]`, `[data-step]`, `[data-trust-card]`, `[data-connector-node]`.
+- Produces: `RevealScope()`; the `data-reveal` contract (`"pending" | "in"`); tokens
+  `--duration-cinematic`, `--duration-stagger`; keyframes `reveal-rise` (blocks) and `reveal-fade`
+  (anything nested inside one); attributes `data-reveal-scope`, `data-section-heading`,
+  `data-section-body`, `data-rail-dot`, `data-score-overall`; the ordinal custom properties
+  `--chain-step`, `--subscore-step`, `--card-step`.
+
+---
+
+### Task A-M1: The reveal foundation, and all nine sections get their entrance
+
+- [ ] **Step 1: Write the failing tests**
+
+`components/motion/reveal-scope.test.tsx`:
+
+```tsx
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render";
+import { RevealScope } from "./reveal-scope";
+
+/**
+ * jsdom does not implement IntersectionObserver, so the suite supplies one and
+ * keeps the observed elements and the callback reachable. Asserting against a
+ * stub we wrote is only meaningful because every assertion below is about what
+ * RevealScope DOES to the DOM, never about the observer itself.
+ */
+let observed: Element[] = [];
+let fire: (entries: { target: Element; isIntersecting: boolean }[]) => void;
+const unobserve = vi.fn();
+
+beforeEach(() => {
+  observed = [];
+  unobserve.mockClear();
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      constructor(cb: (e: { target: Element; isIntersecting: boolean }[]) => void) {
+        fire = cb;
+      }
+      observe(el: Element) {
+        observed.push(el);
+      }
+      unobserve = unobserve;
+      disconnect() {}
+    },
+  );
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  document.body.innerHTML = "";
+});
+
+describe("RevealScope", () => {
+  it("observes every pending target inside its scope, and no more", () => {
+    document.body.innerHTML = `
+      <div data-reveal-scope>
+        <section data-reveal="pending" id="a"></section>
+        <section data-reveal="pending" id="b"></section>
+      </div>
+      <section data-reveal="pending" id="outside"></section>`;
+
+    render(<RevealScope />);
+
+    expect(observed).toHaveLength(2);
+    expect(observed.map((el) => el.id)).toEqual(["a", "b"]);
+  });
+
+  it("flips a target to `in` when it intersects, and stops watching it", () => {
+    document.body.innerHTML = `
+      <div data-reveal-scope><section data-reveal="pending" id="a"></section></div>`;
+
+    render(<RevealScope />);
+    const target = document.getElementById("a")!;
+    fire([{ target, isIntersecting: true }]);
+
+    expect(target.getAttribute("data-reveal")).toBe("in");
+    expect(unobserve).toHaveBeenCalledWith(target);
+  });
+
+  it("leaves a target alone until it intersects", () => {
+    document.body.innerHTML = `
+      <div data-reveal-scope><section data-reveal="pending" id="a"></section></div>`;
+
+    render(<RevealScope />);
+    const target = document.getElementById("a")!;
+    fire([{ target, isIntersecting: false }]);
+
+    expect(target.getAttribute("data-reveal")).toBe("pending");
+    expect(unobserve).not.toHaveBeenCalled();
+  });
+
+  it("renders no DOM of its own", () => {
+    const { container } = render(<RevealScope />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+```
+
+Append to `components/marketing/section.test.tsx`:
+
+```tsx
+  it("carries the reveal contract on the section element itself, adding no wrapper", () => {
+    const { container } = render(
+      <Section id="s" eyebrow="Eyebrow" heading="Heading">
+        <p>Body</p>
+      </Section>,
+    );
+
+    const section = container.querySelector("section")!;
+    expect(section.getAttribute("data-reveal")).toBe("pending");
+    // The entrance must be attributes on elements that already exist, never new
+    // nodes: §6's mascot sits on the node grid's bottom edge to within 1px and
+    // e2e asserts it (tests/e2e/landing-page.spec.ts).
+    expect(container.querySelectorAll("[data-reveal]")).toHaveLength(1);
+  });
+
+  it("names the three staggered parts so the stagger needs no wrapper", () => {
+    const { container } = render(
+      <Section id="s" eyebrow="Eyebrow" heading="Heading">
+        <p>Body</p>
+      </Section>,
+    );
+
+    expect(container.querySelectorAll("[data-eyebrow]")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-section-heading]")).toHaveLength(1);
+    expect(container.querySelectorAll("[data-section-body]")).toHaveLength(1);
+  });
+```
+
+Append to `lib/design-tokens.test.ts`'s `REQUIRED_TOKENS`, inside the `// motion` group:
+
+```ts
+  "--duration-cinematic", "--duration-stagger",
+```
+
+and add this case beside the existing kill-switch one:
+
+```ts
+  it("hides a pending reveal only when the init script proved motion is allowed", () => {
+    // The gate is `[data-reduce-motion="false"]`, which themeInitScript sets
+    // before paint and ONLY when JS ran. With JS off the attribute is absent,
+    // so the hidden state never applies and content is visible — motion can
+    // never be what hides content (spec §4.1, CLAUDE.md §2.4).
+    const gated = css.match(
+      /:root\[data-reduce-motion="false"\] \[data-reveal-scope\] \[data-reveal="pending"\]/g,
+    );
+    expect(gated).not.toBeNull();
+    expect(gated!.length).toBeGreaterThanOrEqual(1);
+    // And the hidden state must never be written ungated.
+    expect(css).not.toMatch(/^\[data-reveal="pending"\]/m);
+  });
+```
+
+- [ ] **Step 2: Run them and watch them fail**
+
+```bash
+npx vitest run components/motion/reveal-scope.test.tsx components/marketing/section.test.tsx lib/design-tokens.test.ts
+```
+
+Expected: `reveal-scope.test.tsx` fails to resolve `./reveal-scope`; the two `section.test.tsx`
+cases fail on `data-reveal` / `data-section-heading` being `null`; `design-tokens.test.ts` fails on
+the two missing tokens and the missing gate. **Record the actual output** (`CLAUDE.md` §7).
+
+- [ ] **Step 3: Add the two tokens**
+
+In `app/globals.css`, extend the existing motion block — do not start a second one:
+
+```css
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 600ms;
+  /* The cinematic tier: hero and photograph entrances, and §4's contour draw,
+     where 600ms reads clipped. Nothing above covered 1.0-1.5s. */
+  --duration-cinematic: 1200ms;
+  /* The beat between staggered siblings — eyebrow, then heading, then body.
+     One value, so the page has one rhythm rather than nine. */
+  --duration-stagger: 90ms;
+  --ease-standard: ease-out;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+```
+
+In `tailwind.config.ts`, beside `slow`:
+
+```ts
+      transitionDuration: {
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        slow: "var(--duration-slow)",
+        cinematic: "var(--duration-cinematic)",
+      },
+```
+
+- [ ] **Step 4: Add the reveal machinery to `app/globals.css`**
+
+Place it immediately before the reduce-motion block at the end of the file, so a reader meets the
+motion and its kill-switch together:
+
+```css
+/**
+ * Landing-page entrance motion (Task A-MOTION).
+ *
+ * `RevealScope` flips `[data-reveal]` from "pending" to "in" as each section
+ * enters view; everything here is plain CSS, the same mechanism `.stroke-draw`
+ * and `.level-fill` above already use. Three properties of that choice are
+ * load-bearing:
+ *
+ *  - The reduce-motion blocks below collapse every `animation-duration` to
+ *    0.001ms, honouring the OS query AND the app toggle, so this is gated for
+ *    free. A rAF timeline animating inline styles (GSAP) is not reachable from
+ *    there at all, which is why this surface uses none.
+ *  - The hidden state is gated on `[data-reduce-motion="false"]`, which
+ *    themeInitScript sets before paint and only when JS ran. With JS off, or
+ *    reduce-motion on, the hidden state never applies: content is visible and
+ *    static. Motion is never what hides content (spec §4.1).
+ *  - It is scoped to `[data-reveal-scope]`. `Section` is shared, so a marketing
+ *    page that never mounts `RevealScope` must not be able to hold its own
+ *    content at opacity 0.
+ *
+ * Transform and opacity do not affect layout, so nothing here moves geometry —
+ * §6's mascot/rail alignment is asserted to 1px in e2e.
+ */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-eyebrow],
+    [data-section-heading],
+    [data-section-body],
+    [data-section-rail],
+    [data-section-showcase]
+  ) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] :is(
+    [data-eyebrow],
+    [data-section-heading],
+    [data-section-body],
+    [data-section-rail],
+    [data-section-showcase]
+  ) {
+  animation: reveal-rise var(--duration-slow) var(--ease-standard) both;
+}
+
+/* The stagger: eyebrow, then heading, then the body or the showcase together.
+   Derived off one token with calc(), so the rhythm is one decision rather than
+   five literals. */
+[data-reveal-scope] [data-reveal="in"] [data-section-heading] {
+  animation-delay: var(--duration-stagger);
+}
+[data-reveal-scope]
+  [data-reveal="in"]
+  :is([data-section-body], [data-section-rail], [data-section-showcase]) {
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    /* 24px, as the token — the rise the owner's brief asked for. */
+    transform: translateY(var(--space-lg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/**
+ * The same entrance without the travel, for anything nested INSIDE a block
+ * that already rises — §2's chips, §3's steps, §4's scores, §6's nodes, §7's
+ * cards. A child transform does not replace its ancestor's, it composes with
+ * it: `reveal-rise` on both would give the inner element ~48px of travel and
+ * two easing curves fighting over it. The rise happens once, at the block; the
+ * stagger inside it is carried by opacity alone, which is also the quieter
+ * reading the brief asks for.
+ */
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+```
+
+- [ ] **Step 5: Add the four attributes to `components/marketing/section.tsx`**
+
+`<Heading>` gains `data-section-heading`:
+
+```tsx
+      <Heading
+        id={headingId}
+        data-section-heading
+        className={cn(
+```
+
+The `<section>` gains the contract:
+
+```tsx
+    <section
+      id={id}
+      aria-labelledby={headingId}
+      // The entrance contract (Task A-MOTION). Attributes only: the stagger
+      // must not introduce a wrapper, because §6's mascot sits on the node
+      // grid's bottom edge to within 1px and e2e asserts it.
+      data-reveal="pending"
+      className={cn("relative scroll-mt-header py-2xl", className)}
+    >
+```
+
+Both body wrappers — the `centred` branch's and the `stacked` branch's — gain `data-section-body`:
+
+```tsx
+            <div data-section-body className="mt-lg">
+              {children}
+            </div>
+```
+
+- [ ] **Step 6: Write `components/motion/reveal-scope.tsx`**
+
+```tsx
+"use client";
+
+import { useEffect } from "react";
+
+/**
+ * One IntersectionObserver for the whole landing page: it flips every
+ * `[data-reveal="pending"]` inside `[data-reveal-scope]` to `"in"` as it enters
+ * view, and `app/globals.css` does the animating. Renders no DOM.
+ *
+ * Why one page-level observer instead of a wrapper component per section: a
+ * wrapper adds a DOM node around measured content, and this branch asserts §6's
+ * mascot/rail alignment to 1px. Attributes on elements that already exist
+ * cannot move anything.
+ *
+ * It is mounted by the landing page, not the marketing layout, so it remounts
+ * with the page (a locale switch replaces the tree) and so no other marketing
+ * route silently inherits the behaviour.
+ *
+ * Reduce-motion needs no branch here: the CSS gate applies the hidden state
+ * only when `data-reduce-motion="false"`, so flipping the attribute under the
+ * app toggle animates nothing. The observer is left running rather than
+ * conditionally skipped, because the toggle can change mid-session and the
+ * attribute is then already correct.
+ */
+export function RevealScope() {
+  useEffect(() => {
+    const targets = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-reveal-scope] [data-reveal="pending"]'),
+    );
+    if (targets.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          (entry.target as HTMLElement).dataset.reveal = "in";
+          observer.unobserve(entry.target);
+        }
+      },
+      // Ask for a little of the section to be in view, so the entrance starts
+      // as the reader arrives rather than a moment before.
+      { rootMargin: "0px 0px -10% 0px" },
+    );
+
+    for (const target of targets) observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+
+  return null;
+}
+```
+
+- [ ] **Step 7: Mount it, and delete the dead Framer component**
+
+`app/[locale]/(marketing)/page.tsx`:
+
+```tsx
+import { RevealScope } from "@/components/motion/reveal-scope";
+// ...existing section imports, unchanged...
+
+export default function LandingPage() {
+  return (
+    <main data-reveal-scope>
+      <RevealScope />
+      <Hero />
+      <Problem />
+      <Journey />
+      <PitchShowcase />
+      <Recommendation />
+      <CapabilityChain />
+      <Trust />
+      <Cta />
+      <Signoff />
+    </main>
+  );
+}
+```
+
+```bash
+git rm components/motion/reveal.tsx
+```
+
+`reveal.tsx` has no importers (`grep -rn "<Reveal" app components` returns nothing), so it is dead
+code under `CLAUDE.md` §6 — and it renders `opacity: 0` into the SSR markup, which hides content
+when JS does not run. ⚠️ **Report to the owner, do not act on it:** this leaves `framer-motion` with
+zero importers, and `CLAUDE.md` §3 names it in the target stack. Removing the dependency is the
+owner's call, not this task's.
+
+- [ ] **Step 8: Run the tests and the gate**
+
+```bash
+npx vitest run components/motion/ components/marketing/ lib/design-tokens.test.ts
+npm run typecheck
+npm run lint
+```
+
+Expected: all green. Paste the output into the task report.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add -A
+git commit -m "feat(marketing): the nine sections get an entrance, gated in CSS"
+```
+
+---
+### Task A-M2: `#chain` — the signature sequential draw
+
+The page's signature motion, and the one section whose heading already promises it: *"Everything
+connects. And little by little, it starts to make sense."* Its eight nodes light in DOM order —
+tile, caption, then that cell's rail segment and its amber dot — so the eye is led along the thread
+rather than shown it all at once.
+
+⚠️ **This is a staggered cascade, not a stroke draw, and that is deliberate.** The rail is a
+`border-t` on a zero-height `<span>` whose dot is translated *outside* that box
+(`capability-chain.tsx:310-317`), so neither `clip-path` nor `scaleX` can sweep the line without
+either clipping the dot away or squashing it. A true left-to-right draw needs the rail
+restructured, and restructuring it moves shipped geometry. The cascade reads the same at this
+speed and touches nothing. Do not "fix" this into a draw without re-reading that docblock.
+
+⚠️ **The grid wraps.** Eight nodes are one row only at `xl`, then four columns, then two
+(`capability-chain.tsx:53-62`, which calls a single full-width line across a wrapped grid a defect).
+A per-node delay in DOM order is wrap-safe by construction: it reads along each row and then down.
+Do not write a delay that assumes one row.
+
+**Files:**
+- Modify: `components/marketing/capability-chain.tsx` — an ordinal and one attribute
+- Modify: `components/marketing/capability-chain.test.tsx`
+- Modify: `app/globals.css`
+
+**Interfaces:**
+- Consumes: `--duration-stagger`, `--duration-base`, `--duration-fast`, `--ease-out-expo`, and the
+  `data-reveal` contract (all A-M1).
+- Produces: `--chain-step`, `data-rail-dot`.
+
+- [ ] **Step 1: Write the failing test**
+
+Append to `components/marketing/capability-chain.test.tsx`:
+
+```tsx
+  it("gives each of the eight nodes its own cascade step, and names the dot so it can be timed", async () => {
+    const { container } = render(await CapabilityChain());
+
+    const nodes = container.querySelectorAll("[data-chain-node]");
+    expect(nodes).toHaveLength(8);
+
+    // Each node carries its ordinal as a custom property; globals.css turns
+    // that into a delay. A relationship, not an absolute literal — Rule #0
+    // allows it, and it survives the grid wrapping 8 -> 4 -> 2.
+    expect(Array.from(nodes).map((n) => n.getAttribute("style"))).toEqual(
+      [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `--chain-step:${i}`),
+    );
+
+    expect(container.querySelectorAll("[data-rail-dot]")).toHaveLength(8);
+  });
+```
+
+- [ ] **Step 2: Run it and watch it fail**
+
+```bash
+npx vitest run components/marketing/capability-chain.test.tsx
+```
+
+Expected: FAIL — `style` is `null` on all eight nodes, and `[data-rail-dot]` matches 0.
+
+- [ ] **Step 3: Pass the ordinal down, and name the dot**
+
+`ChainNode` takes an `index`; `Rail` names its dot. Both are attribute-level changes — no node is
+added, no class is removed, and the rail keeps its shipped border, colour and dot styling:
+
+```tsx
+function ChainNode({
+  t,
+  node,
+  index,
+  isLast,
+}: {
+  t: Translator;
+  node: ChainIconKey;
+  index: number;
+  isLast: boolean;
+}) {
+  return (
+    <li
+      data-chain-node={node}
+      // The cascade's ordinal. globals.css multiplies it by --duration-stagger,
+      // so the delay is a relationship and survives the grid wrapping.
+      style={{ "--chain-step": index } as React.CSSProperties}
+      className="flex min-w-0 flex-col"
+    >
+```
+
+At the call site, pass it from the existing `map`'s second argument. In `Rail()`:
+
+```tsx
+      <span
+        data-rail-dot
+        className="absolute left-1/2 top-0 h-2xs w-2xs -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-primary/10"
+      />
+```
+
+- [ ] **Step 4: Add the cascade to `app/globals.css`**
+
+Beside A-M1's reveal machinery:
+
+```css
+/* §6's cascade. The section's own entrance (A-M1) brings in the heading; these
+   are its eight cells, stepped in DOM order so the stagger survives the grid
+   wrapping from eight columns to four to two. `+ 2` starts them after the
+   heading and body have landed. */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-chain-node] > *,
+    [data-chain-node] [data-connector]
+  ) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] :is(
+    [data-chain-node] > *,
+    [data-chain-node] [data-connector]
+  ) {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--chain-step, 0) + 2));
+}
+
+/* The dot lands one beat after its own segment, which is what makes the thread
+   read as being traced rather than switched on. */
+[data-reveal-scope] [data-reveal="in"] [data-rail-dot] {
+  animation: chain-dot-in var(--duration-fast) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--chain-step, 0) + 3));
+}
+@keyframes chain-dot-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+```
+
+⚠️ `chain-dot-in` restates the dot's shipped `-translate-x-1/2 -translate-y-1/2` inside the
+keyframe, because an animated `transform` **replaces** the utility's rather than composing with it.
+If the dot's centring utilities ever change, this keyframe changes with them — that is a real
+two-homes cost, accepted here because the alternative is a wrapper node inside measured markup.
+
+- [ ] **Step 5: Run the tests**
+
+```bash
+npx vitest run components/marketing/capability-chain.test.tsx
+npm run typecheck && npm run lint
+```
+
+Expected: green.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add -A
+git commit -m "feat(marketing): §6's thread is traced node by node"
+```
+
+---
+
+### Task A-M3: `#pitch` — the two contours draw, then the score
+
+The section that most earns motion: it is about a voice being followed by another voice, and a
+static overlay of two curves does not say that. The reference contour draws, the learner's draws
+after it, then the four sub-scores settle, then the overall number.
+
+This reuses `.stroke-draw` (`app/globals.css:270-278`) rather than inventing a draw — it already
+does `stroke-dasharray: 1; stroke-dashoffset: 1 -> 0` against `pathLength=1`, exactly the mechanism
+needed. The two contour paths do not set `pathLength` yet; adding it changes no rendering (they
+carry no dash pattern today) and is what makes the normalized dash arithmetic correct.
+
+⚠️ **The overall score has no hook today.** `[data-score-number]` is **not** it — that attribute is
+inside `ScoreValue` and renders once per sub-score, so it matches **4** elements
+(`pitch-showcase.tsx:222-240`; all four catalog values contain `/`). The overall `87` is a bare
+`<p>` at `pitch-showcase.tsx:171` and needs `data-score-overall` added.
+
+**Files:**
+- Modify: `components/marketing/pitch-chart.tsx` — `pathLength={1}` on both contours
+- Modify: `components/marketing/pitch-showcase.tsx` — the sub-score ordinal, `data-score-overall`
+- Modify: `components/marketing/pitch-showcase.test.tsx`
+- Modify: `app/globals.css`
+
+**Interfaces:**
+- Consumes: `.stroke-draw`'s `@keyframes stroke-draw`; `--duration-cinematic`, `--duration-stagger`.
+- Produces: `--subscore-step`, `data-score-overall`.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `components/marketing/pitch-showcase.test.tsx`:
+
+```tsx
+  it("normalizes both contours so the shared stroke-draw arithmetic applies", async () => {
+    const { container } = render(await PitchShowcase());
+
+    const contours = container.querySelectorAll("[data-contour]");
+    expect(contours).toHaveLength(2);
+    expect(Array.from(contours).map((c) => c.getAttribute("data-contour"))).toEqual([
+      "native",
+      "you",
+    ]);
+    // `.stroke-draw` dashes against pathLength=1 (globals.css). Without this the
+    // dasharray would be 1 user unit of a ~480-unit path — a dotted line, not a
+    // draw.
+    for (const contour of contours) {
+      expect(contour.getAttribute("pathLength")).toBe("1");
+    }
+  });
+
+  it("steps the four sub-scores so they settle in order, and names the overall score", async () => {
+    const { container } = render(await PitchShowcase());
+
+    const rows = container.querySelectorAll("[data-subscore]");
+    expect(rows).toHaveLength(4);
+    expect(Array.from(rows).map((r) => r.getAttribute("style"))).toEqual(
+      [0, 1, 2, 3].map((i) => `--subscore-step:${i}`),
+    );
+
+    // The overall 87, which `[data-score-number]` is NOT — that one is per
+    // sub-score and matches four elements.
+    const overall = container.querySelectorAll("[data-score-overall]");
+    expect(overall).toHaveLength(1);
+    expect(overall[0]).toHaveTextContent("87");
+    expect(container.querySelectorAll("[data-score-number]")).toHaveLength(4);
+  });
+```
+
+- [ ] **Step 2: Run them and watch them fail**
+
+```bash
+npx vitest run components/marketing/pitch-showcase.test.tsx
+```
+
+Expected: FAIL — `pathLength` is `null` on both paths; `style` is `null` on the four rows;
+`[data-score-overall]` matches 0.
+
+- [ ] **Step 3: Add `pathLength` to both contours**
+
+In `components/marketing/pitch-chart.tsx`, on each of the two `<path>` elements — the attribute
+goes beside `d`, and nothing else about either path changes:
+
+```tsx
+            <path
+              data-contour="native"
+              d={nativePath}
+              pathLength={1}
+```
+
+```tsx
+            <path
+              data-contour="you"
+              d={userPath}
+              pathLength={1}
+```
+
+- [ ] **Step 4: Add the ordinal and the overall hook**
+
+In `SubScores`, inside the existing `SUB_SCORES.map`:
+
+```tsx
+      {SUB_SCORES.map((score, index) => (
+        <div
+          key={score}
+          data-subscore={score}
+          style={{ "--subscore-step": index } as React.CSSProperties}
+```
+
+At `pitch-showcase.tsx:171`:
+
+```tsx
+            <p data-score-overall className="font-display text-display font-bold">
+              {t("pitch.scores.overall")}
+            </p>
+```
+
+- [ ] **Step 5: Add the draw to `app/globals.css`**
+
+```css
+/* §4's two voices. The reference contour draws, then the learner's follows it,
+   then the scores settle — the ORDER is the section's claim, so each delay is
+   derived from the one before rather than chosen separately.
+   The dash mechanism is `.stroke-draw`'s, above; both paths set pathLength=1 in
+   pitch-chart.tsx. */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] [data-contour] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+[data-reveal-scope] [data-reveal="in"] [data-contour] {
+  stroke-dasharray: 1;
+  animation: stroke-draw var(--duration-cinematic) var(--ease-standard) both;
+}
+[data-reveal-scope] [data-reveal="in"] [data-contour="you"] {
+  animation-delay: calc(var(--duration-cinematic) / 2);
+}
+
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-subscore],
+    [data-score-overall]
+  ) {
+  opacity: 0;
+}
+[data-reveal-scope] [data-reveal="in"] [data-subscore] {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(
+    var(--duration-cinematic) + var(--duration-stagger) * var(--subscore-step, 0)
+  );
+}
+[data-reveal-scope] [data-reveal="in"] [data-score-overall] {
+  animation: reveal-fade var(--duration-base) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-cinematic) * 1.5);
+}
+```
+
+⚠️ **The score must not count up.** It renders `87` from the catalog; animating the digits would put
+a second, transient value on screen for a number the copy states once — motion that decorates
+rather than explains, and a false reading for anyone who glances mid-animation. It fades and rises,
+nothing more.
+
+- [ ] **Step 6: Run the tests, then commit**
+
+```bash
+npx vitest run components/marketing/pitch-showcase.test.tsx
+npm run typecheck && npm run lint
+git add -A
+git commit -m "feat(marketing): §4's reference voice draws, then yours follows"
+```
+
+---
+
+### Task A-M4: `#problem`, `#journey`, `#trust`, and the CTA's hover
+
+Four small pieces, one commit — none carries its own review gate, and all four reuse machinery
+A-M1 and A-M2 already built. The counts below were read from the catalog and the components on
+2026-09-03; **re-read them before asserting**, and state the size (`CLAUDE.md` §7, L-004).
+
+- **`#problem` — fragment → connection.** `[data-chip]` × **6** (`TOP_CHIPS` 3 + `BOTTOM_CHIPS` 3),
+  stepped, entering *after* the constellation they hang off, so the chips read as emerging from the
+  sentence rather than arriving on their own. `[data-constellation]` and `[data-connector]` fade
+  first. Both connector layers are already `aria-hidden` (this plan, line 30), so animating them
+  needs no accessibility change.
+- **`#journey` — five steps.** `[data-step]` × **5**, stepped, `--duration-base`. ⚠️ Their widths
+  are pinned in e2e (`landing-page.spec.ts:398-410`, measured 146.51 ×4 against 162.51) — opacity
+  and transform do not affect layout, so this is safe, but do not reach for `width` or `margin`
+  here. `journey-art.tsx`'s eight glyphs stay still: stepping each of them is exactly the "noisy"
+  failure the owner named.
+- **`#trust` — the slow-down.** `[data-trust-card]` × **3** (not five — `TRUST_CARDS` has three
+  keys, `sm:grid-cols-3`), stepped, and slower than the rest (`--duration-slow`). This is the
+  section that decelerates before the CTA.
+- **CTA — the only hover in the task.** The primary button brightens over `--duration-fast`. No
+  scale.
+
+**Files:**
+- Modify: `components/marketing/problem.tsx`, `journey.tsx`, `trust.tsx` — one ordinal each
+- Modify: `components/marketing/problem.test.tsx`, `journey.test.tsx`, `trust.test.tsx`
+- Modify: `components/marketing/cta.tsx` — only if the shared `Button` lacks the transition
+- Modify: `app/globals.css`
+
+**Interfaces:**
+- Consumes: A-M1's tokens and `data-reveal` contract.
+- Produces: `--card-step` on `[data-chip]`, `[data-step]` and `[data-trust-card]` — one property
+  name across all three, because they differ in duration, not in mechanism.
+
+- [ ] **Step 1: Write the three failing tests**
+
+One case per section, each asserting the collection's size before its contents. `trust.test.tsx`:
+
+```tsx
+  it("steps its three cards so they settle in order", async () => {
+    const { container } = render(await Trust());
+
+    const cards = container.querySelectorAll("[data-trust-card]");
+    expect(cards).toHaveLength(3);
+    expect(Array.from(cards).map((c) => c.getAttribute("style"))).toEqual(
+      [0, 1, 2].map((i) => `--card-step:${i}`),
+    );
+  });
+```
+
+`journey.test.tsx` — the same shape, `[data-step]`, length **5**, `[0,1,2,3,4]`.
+`problem.test.tsx` — the same shape, `[data-chip]`, length **6**, `[0,1,2,3,4,5]`. ⚠️ `#problem`
+renders its chips from two arrays (`TOP_CHIPS`, then `BOTTOM_CHIPS`); the ordinal must be
+continuous across both, so the second array's index is offset by the first's length. Assert the
+continuity — that is the part a naive `map` gets wrong.
+
+- [ ] **Step 2: Run them and watch them fail**
+
+```bash
+npx vitest run components/marketing/problem.test.tsx components/marketing/journey.test.tsx components/marketing/trust.test.tsx
+```
+
+Expected: FAIL on `style` being `null` in all three, and — if the chips were done per-array — on
+`#problem`'s ordinals restarting at 0 rather than continuing to 5.
+
+- [ ] **Step 3: Add `--card-step` at the three call sites**
+
+`journey.tsx` and `trust.tsx` take the `map` index directly:
+
+```tsx
+      style={{ "--card-step": index } as React.CSSProperties}
+```
+
+`problem.tsx` renders two rows, so the offset is explicit rather than implied:
+
+```tsx
+      {/* One continuous ordinal across both rows: the cascade reads as six
+          chips emerging from one sentence, not as two rows of three. */}
+      {chips.map((chip, index) => (
+        <Chip key={chip} chip={chip} step={offset + index} t={t} />
+      ))}
+```
+
+- [ ] **Step 4: One CSS rule for all three, plus the CTA hover**
+
+```css
+/* The stepped collections: §2's six chips, §3's five steps, §7's three cards.
+   One rule and one custom property — they differ in duration, not mechanism. */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-chip],
+    [data-step],
+    [data-trust-card],
+    [data-constellation]
+  ) {
+  opacity: 0;
+}
+[data-reveal-scope] [data-reveal="in"] [data-constellation] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+[data-reveal-scope] [data-reveal="in"] :is([data-chip], [data-step]) {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 3));
+}
+/* §7 is the deceleration before the CTA, so its cards take the reveal tier. */
+[data-reveal-scope] [data-reveal="in"] [data-trust-card] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
+}
+```
+
+The CTA hover is a utility on the existing button, not CSS here — the token scale already exposes
+it:
+
+```tsx
+className="... transition-colors duration-fast ease-standard hover:bg-primary-strong"
+```
+
+⚠️ **Read `cta.tsx`'s button and the shared `Button` primitive first.** If `Button` already carries
+a colour transition, this is already done and **the correct change is none** — a second transition
+on the same property is a defect, not a nicety.
+
+- [ ] **Step 5: Run the tests, then commit**
+
+```bash
+npx vitest run components/marketing/
+npm run typecheck && npm run lint
+git add -A
+git commit -m "feat(marketing): §2, §3 and §7 settle in order, and the CTA answers hover"
+```
+
+---
+
+### Task A-M5: The verification sweep
+
+The gate. This branch has shipped a WCAG failure once because an implementer measured only at 1280,
+and has twice recorded a green check that was measuring nothing — so this task's output is
+**evidence**, and every claim in it names the width it was taken at.
+
+⚠️ **Read these before measuring anything.**
+- **A dead dev server reports zero problems at every width** — a 500 page has
+  `scrollWidth === clientWidth` too. Every browser measurement must first assert the page rendered:
+  nine sections.
+- **`.next` goes corrupt** (`Cannot find module './vendor-chunks/@swc.js'`) and the server then
+  serves 500s. `rm -rf .next` and restart. `next dev` and `next build` share one `.next` and clobber
+  each other.
+- **Playwright attaches to a running `next dev`** via `reuseExistingServer` and the suite is
+  `fullyParallel`: **re-run before believing an e2e failure**, and record a non-reproducible one as
+  such (`docs/lessons.md` L-009), never as fixed.
+- **This machine is 1280 logical px.** Widths below it come from Playwright, never from
+  `resize_window`, which reports success while doing nothing.
+
+**Files:**
+- Modify: `tests/e2e/landing-page.spec.ts`
+
+- [ ] **Step 1: Prove the reduce-motion and no-JS paths lose nothing**
+
+The assertion that matters most: the whole architecture rests on the claim that no reader can end up
+with content held at `opacity: 0`.
+
+```ts
+test.describe("motion never hides content", () => {
+  for (const width of [320, 390, 768, 1280]) {
+    test(`renders every section opaque under reduce-motion at ${width}`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/en");
+
+      // A 500 page also has nine of nothing: prove the page rendered first.
+      const sections = page.locator("main section[id]");
+      await expect(sections).toHaveCount(9);
+
+      const opacities = await sections.evaluateAll((nodes) =>
+        nodes.flatMap((n) =>
+          Array.from(
+            n.querySelectorAll("[data-eyebrow], [data-section-heading], [data-section-body]"),
+          ).map((el) => Number(getComputedStyle(el).opacity)),
+        ),
+      );
+      expect(opacities.length).toBeGreaterThanOrEqual(9);
+      expect(opacities.every((o) => o === 1)).toBe(true);
+    });
+  }
+
+  test("renders every section opaque with JavaScript disabled", async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto("/en");
+
+    await expect(page.locator("main section[id]")).toHaveCount(9);
+    const opacities = await page
+      .locator("main section[id] [data-section-heading]")
+      .evaluateAll((nodes) => nodes.map((n) => Number(getComputedStyle(n).opacity)));
+    expect(opacities).toHaveLength(9);
+    expect(opacities.every((o) => o === 1)).toBe(true);
+    await context.close();
+  });
+});
+```
+
+⚠️ This test does many navigations — give the describe block `test.slow()`. The 18-navigation
+reflow sweep already blew the 30s default under five workers.
+
+- [ ] **Step 2: Mutation-check it — it was written over code that already exists**
+
+It cannot fail first, so per `CLAUDE.md` §7 it must be proven to bite. Break the gate, watch it go
+red, restore, and **report both outputs**:
+
+```bash
+cp app/globals.css /tmp/globals.css.bak
+sha256sum app/globals.css > /tmp/globals.sha
+# Mutation: drop the `[data-reduce-motion="false"]` scope so the hidden state
+# applies unconditionally — exactly the defect this test exists to catch.
+sed -i 's/:root\[data-reduce-motion="false"\] \[data-reveal-scope\]/[data-reveal-scope]/g' app/globals.css
+npx playwright test tests/e2e/landing-page.spec.ts -g "never hides content"   # EXPECT: RED
+cp /tmp/globals.css.bak app/globals.css
+sha256sum -c /tmp/globals.sha                                                  # EXPECT: OK
+npx playwright test tests/e2e/landing-page.spec.ts -g "never hides content"   # EXPECT: GREEN
+```
+
+⚠️ **Never `git checkout -- app/globals.css` to undo this** — it destroys uncommitted work in the
+file. Restore from the copy and verify with `sha256sum -c`, as above.
+
+- [ ] **Step 3: Prove no geometry moved**
+
+The architecture claims transform and opacity change nothing measurable. Verify against the two
+assertions that would catch a violation, at the widths they were written for:
+
+```bash
+npx playwright test tests/e2e/landing-page.spec.ts   # EXPECT: 27/27 + the new cases
+```
+
+Then confirm the settled density figure is unchanged — **4480px at 1280**. If it moved, a wrapper
+node got in somewhere; find it rather than re-recording the number (`docs/lessons.md`: a threshold
+loosened twice means the metric is wrong).
+
+- [ ] **Step 4: Look at it, at 3x, and put the render in front of the owner**
+
+Both of the owner's §4 corrections on this branch arrived *after* every metric was green, and both
+were about the picture. Capture `/en` and `/vi`, mid-entrance and settled, and send them.
+
+- [ ] **Step 5: The full gate, every command run and read**
+
+```bash
+npm run typecheck    # EXPECT: exit 0
+npm run lint         # EXPECT: 0 errors (81 warnings pre-existing; verify none are in this diff)
+npm test             # EXPECT: >= 2589 over >= 281 files, all green
+npm run test:e2e     # EXPECT: all green
+npm run build        # EXPECT: exit 0
+```
+
+Record every command's output in the task report, not a summary of it (`CLAUDE.md` §7).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add -A
+git commit -m "test(marketing): prove the motion layer hides nothing and moves nothing"
+```
+
+---
+## After Task A-M5 — the branch close
 
 1. **Whole-branch review** (`CLAUDE.md` §9, `docs/lessons.md` L-011) — required even though every task was reviewed on its own. Then a **review of the fix wave** (L-012): on this project the second pass has repeatedly caught defects the first wave created.
 2. **Write lessons** to `docs/lessons.md` per its four entry rules — merged into an existing entry where one applies, not appended as a new one.
