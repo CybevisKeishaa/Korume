@@ -141,4 +141,16 @@ describe("Trust", () => {
     // inventing product copy the Vietnamese pass would then have to match.
     expect(container.querySelectorAll("[data-section-rail]")).toHaveLength(0);
   });
+
+  it("steps its three claim cards so they settle in order", async () => {
+    const { container } = render(await Trust());
+
+    const cards = container.querySelectorAll("[data-trust-card]");
+    expect(cards).toHaveLength(3);
+    expect(
+      Array.from(cards).map((c) =>
+        (c as HTMLElement).style.getPropertyValue("--card-step").trim(),
+      ),
+    ).toEqual(["0", "1", "2"]);
+  });
 });

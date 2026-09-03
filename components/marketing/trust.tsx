@@ -139,8 +139,8 @@ export async function Trust() {
           disappears into the window's glow. `pointer-events-none` (below) does
           NOT cover this case: it stops hit-testing, never painting. */}
       <ul data-trust-cards className="relative z-10 grid gap-sm sm:grid-cols-3 lg:w-[78%]">
-        {TRUST_CARDS.map((claim) => (
-          <ClaimCard key={claim} claim={claim} t={t} />
+        {TRUST_CARDS.map((claim, index) => (
+          <ClaimCard key={claim} claim={claim} index={index} t={t} />
         ))}
       </ul>
 
@@ -177,10 +177,21 @@ export async function Trust() {
  * `h-xl w-xl` (32px) against our ~243px card; the glyph inside is `md-lg`
  * (20px), holding the reference's ~0.55 glyph-to-ring ratio.
  */
-function ClaimCard({ claim, t }: { claim: TrustKey; t: Translator }) {
+function ClaimCard({
+  claim,
+  index,
+  t,
+}: {
+  claim: TrustKey;
+  index: number;
+  t: Translator;
+}) {
   return (
     <li
       data-trust-card={claim}
+      // §7 is the deceleration before the CTA, so these take the slow tier
+      // (Task A-MOTION).
+      style={{ "--card-step": index } as React.CSSProperties}
       className="min-w-0 rounded-lg border border-border bg-card p-md-lg"
     >
       <span className="flex h-xl w-xl items-center justify-center rounded-full border border-border text-primary-strong">

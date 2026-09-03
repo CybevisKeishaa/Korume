@@ -302,4 +302,19 @@ describe("Problem", () => {
     if (!node) throw new Error("no [data-connector-node] was rendered");
     expect(node.closest('[data-connector-column="centre"]')).not.toBeNull();
   });
+
+  it("steps all six chips continuously across the two rows", async () => {
+    const { container } = render(await Problem());
+
+    const chips = container.querySelectorAll("[data-chip]");
+    expect(chips).toHaveLength(6);
+    // Continuous, NOT restarting at 0 on the second row: the cascade reads as
+    // six chips emerging from one sentence, not as two rows of three. A naive
+    // per-row map gets exactly this wrong (Task A-MOTION).
+    expect(
+      Array.from(chips).map((c) =>
+        (c as HTMLElement).style.getPropertyValue("--card-step").trim(),
+      ),
+    ).toEqual(["0", "1", "2", "3", "4", "5"]);
+  });
 });

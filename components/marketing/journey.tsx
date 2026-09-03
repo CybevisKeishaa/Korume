@@ -210,7 +210,7 @@ export async function Journey() {
               "last:pe-[calc(var(--space-sm)+var(--space-2xs))]",
             )}
           >
-            <StepCard step={step} t={t} />
+            <StepCard step={step} index={i} t={t} />
             {i < STEPS.length - 1 ? <StepArrow /> : null}
           </li>
         ))}
@@ -227,10 +227,12 @@ export async function Journey() {
  * depicted UI instead of pooling as dead space under the text, which is what
  * the first build did.
  */
-function StepCard({ step, t }: { step: StepKey; t: Translator }) {
+function StepCard({ step, index, t }: { step: StepKey; index: number; t: Translator }) {
   return (
     <div
       data-step={step}
+      // Settles in order behind the section's own entrance (Task A-MOTION).
+      style={{ "--card-step": index } as React.CSSProperties}
       className="flex h-full min-w-0 flex-1 flex-col rounded-lg border border-border bg-card p-sm"
     >
       {step === "watch" ? <WatchBody t={t} /> : null}

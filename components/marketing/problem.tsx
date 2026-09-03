@@ -122,7 +122,7 @@ export async function Problem() {
           what puts the photograph behind the chips instead of on top of them
           (fix F10). Do not drop it while the two zones overlap. */}
       <div data-constellation className="relative z-10 lg:w-[56%]">
-        <ChipRow chips={TOP_CHIPS} t={t} />
+        <ChipRow chips={TOP_CHIPS} offset={0} t={t} />
 
         {/* The band the connectors map their 0..100 coordinate space onto —
             its height is set by the sentence it wraps, and `relative` makes it
@@ -137,7 +137,7 @@ export async function Problem() {
           </div>
         </div>
 
-        <ChipRow chips={BOTTOM_CHIPS} t={t} />
+        <ChipRow chips={BOTTOM_CHIPS} offset={TOP_CHIPS.length} t={t} />
       </div>
 
       {/* Full-bleed to the section's right edge and its full height from `lg`
@@ -166,16 +166,28 @@ export async function Problem() {
  * `data-chip` / `data-chip-detail` are the hooks the §2 coverage guards use —
  * keep them.
  */
-function ChipRow({ chips, t }: { chips: readonly ChipKey[]; t: Translator }) {
+function ChipRow({
+  chips,
+  offset,
+  t,
+}: {
+  chips: readonly ChipKey[];
+  /** Where this row starts in the page-wide cascade (Task A-MOTION). Rows are
+   *  rendered separately, but the six chips must read as ONE sequence emerging
+   *  from the sentence, not as two rows restarting at zero. */
+  offset: number;
+  t: Translator;
+}) {
   return (
     // Same `grid-cols-3` + `gap-sm` as the connector overlay, so every column
     // centre line sits under its chip's centre line. Changing one without the
     // other pulls the rays off the chips.
     <div className="grid gap-sm sm:grid-cols-3">
-      {chips.map((chip) => (
+      {chips.map((chip, index) => (
         <div
           key={chip}
           data-chip
+          style={{ "--card-step": offset + index } as React.CSSProperties}
           className="flex flex-col items-center rounded-md border border-border bg-card px-xs py-md text-center"
         >
           <ChipIcon chip={chip} className="h-lg w-lg text-primary-strong" />

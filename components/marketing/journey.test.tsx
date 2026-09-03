@@ -410,4 +410,16 @@ describe("Journey", () => {
       );
     }
   });
+
+  it("steps its five step cards so they settle in order", async () => {
+    const { container } = render(await Journey());
+
+    const steps = container.querySelectorAll("[data-step]");
+    expect(steps).toHaveLength(5);
+    expect(
+      Array.from(steps).map((s) =>
+        (s as HTMLElement).style.getPropertyValue("--card-step").trim(),
+      ),
+    ).toEqual(["0", "1", "2", "3", "4"]);
+  });
 });

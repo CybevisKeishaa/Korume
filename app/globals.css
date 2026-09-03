@@ -554,6 +554,36 @@
   animation-delay: calc(var(--duration-cinematic) * 1.5);
 }
 
+/* The stepped collections: §2's six chips, §3's five steps, §7's three cards.
+   One rule and one custom property — they differ in duration, not mechanism.
+   Nothing else inside these sections moves: §3's eight journey-art glyphs stay
+   still deliberately, because stepping every small element is exactly the
+   noisy reading the brief rules out. */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-chip],
+    [data-step],
+    [data-trust-card],
+    [data-constellation]
+  ) {
+  opacity: 0;
+}
+
+/* §2's constellation is the thing the chips hang off, so it arrives first and
+   they emerge from it. */
+[data-reveal-scope] [data-reveal="in"] [data-constellation] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+[data-reveal-scope] [data-reveal="in"] :is([data-chip], [data-step]) {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 3));
+}
+/* §7 is the deceleration before the CTA, so its cards take the reveal tier. */
+[data-reveal-scope] [data-reveal="in"] [data-trust-card] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
+}
+
 /**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
