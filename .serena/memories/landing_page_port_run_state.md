@@ -8,9 +8,13 @@
 > ▶ Gate, every command run and read before anything was written about it: `npx tsc --noEmit` exit 0 ·
 > `npm run lint` 0 errors · `npx vitest run` **2578 over 280 files, 0 failed**. Working tree clean.
 >
-> ⚠️ **STILL NO INDEPENDENT REVIEW, AND THE GAP IS NOW THREE RANGES WIDE.** Task 12's review was run
-> by the lineage that built it; Task V has had none; and this session's two commits have had none.
-> **An independent render-capable pass over `19b05d5..HEAD` is still the biggest thing worth buying.**
+> ⚠️⚠️ **EVERYTHING BELOW IS THE FOURTH SESSION. A FIFTH RAN ON 2026-09-03 AND CHANGED THE HEADLINES.**
+> Read `## ✅ SESSION 5 — the review landed, and Task 13 was aimed at the wrong element` near the
+> bottom BEFORE acting on anything in this file. In short: the independent review is **DONE** (all
+> three passes, report on disk), five more commits landed, HEAD is **`08633cd`**, the suite is
+> **2580 unit / 24 e2e**, and this file's Task 13 attribution is **WRONG**.
+>
+> ~~STILL NO INDEPENDENT REVIEW, AND THE GAP IS NOW THREE RANGES WIDE.~~ ✅ Closed by session 5.
 >
 > ⚠️ **`.next` NO LONGER HOLDS A PRODUCTION BUILD.** This memory used to say it did and that
 > `npm run start` was ~1 s. `BUILD_ID` is absent — a `next dev` run clobbered it, exactly the hazard
@@ -22,8 +26,10 @@
 
 # ▶▶ RESUME HERE
 
-**Run `git log --oneline -6`.** The last hash this file can honestly state is **`81ff680`** (the §4
-rebuild); anything after it was written by a later session. A file cannot name the commit that
+**Run `git log --oneline -8`.** The last hash this file can honestly state is **`08633cd`** (session
+5's last §4 commit — the two-different-waves fix); anything after it was written by a later session.
+⚠️ The two hashes listed just below are session 4's and are NO LONGER the tip — session 5's five
+commits sit on top of them, listed in `## ✅ SESSION 5`. A file cannot name the commit that
 contains it — writing one means predicting it, and a predicted number formatted as a measurement is
 the L-002 failure this branch has paid for four times now.
 
@@ -32,15 +38,20 @@ the L-002 failure this branch has paid for four times now.
 
 ## ▶▶ THE NEXT ACTIONS, IN ORDER
 
-1. **An INDEPENDENT render-capable review of `19b05d5..HEAD`.** Three ranges now need it: task 12's,
-   Task V's, and this session's two commits. Use `general-purpose`, not `code-reviewer` — the latter
-   is code-only and every finding here is visual.
+> ⚠️⚠️ **THIS LIST IS SUPERSEDED. The 2026-09-03 FIFTH session did items 1 and part of 4.**
+> Read `## ✅ SESSION 5` near the bottom of this file FIRST — it closes the review gap, corrects
+> Task 13's aim, and lists what actually remains. The four items below are kept only because their
+> wording is what the superseding section argues against.
+
+1. ~~**An INDEPENDENT render-capable review of `19b05d5..HEAD`.**~~ ✅ **DONE, all three passes.**
+   Report: `.superpowers/sdd/2026-08-27-landing-page-port/review-19b05d5-HEAD-report.md` (555 lines).
+   With fixes · 0 Critical · 9 Important · 7 Minor. Do not re-raise this.
 2. **Task A-MOTION** — one pass over the whole composed page, plus the unexplained `/en#problem`
-   scroll drift, which belongs to whoever owns the scroll layer.
-3. **Task 13** — ⚠️ **re-measure the 320/390/768 overflow rather than trusting anything written
-   about it.** V2 changed the last list item's padding, NOT the `shrink-0` + `basis-[clamp(...)]`
-   construct the overflow comes from, so the recorded `320 -> +87 · 390 -> +17 · 768 -> +11` are
-   ASSUMED to stand and were not re-run.
+   scroll drift, which belongs to whoever owns the scroll layer. **STILL OPEN.**
+3. ~~**Task 13** — re-measure the 320/390/768 overflow.~~ ✅ **RE-MEASURED, TWICE, INDEPENDENTLY —
+   AND THE ATTRIBUTION IN THIS FILE WAS WRONG.** The three numbers reproduce EXACTLY, but the cause
+   is NOT §3's `shrink-0` + `basis-[clamp(...)]` row. See `## ✅ SESSION 5`. Task 13 is still open;
+   it is now aimed at `--text-hero` and the footer.
 4. **Whole-branch review**, then the branch-end `docs/lessons.md` pass — now **EIGHT** queued entries
    (two L-002 evidence entries · `npx playwright test` belongs in the gates · that same e2e gate is
    unrunnable from cold · the window-vs-page pattern, three instances · a plan step can carry a
@@ -964,6 +975,159 @@ the browser" as unverified unless the widths are named.
 - **`git stash@{0}` is obsolete** — the first, killed A2 attempt. It contains a test written before
   its implementation and must never be applied. Safe to `git stash drop`; left in place because
   dropping is irreversible and that call is the user's.
+
+## ✅ SESSION 5 (2026-09-03) — the review landed, and Task 13 was aimed at the wrong element
+
+**HEAD `08633cd`. Working tree clean. Nothing merged, nothing pushed.** Gates, each run and read:
+`tsc` exit 0 · `next lint` 0 errors (11 warnings, all pre-existing, outside every diff) ·
+`vitest` **2580 over 280 files** · `playwright` **24/24**.
+
+    567ce12  fix(marketing)  I1–I4 — the measurement table becomes the one home, and is asserted
+    ad865b0  fix(marketing)  I5/I6 — §3's sizes branch, §4's rendered scale
+    2d9aa58  fix(marketing)  V1 — the detail layer stops deciding which contour is on top
+    f17be69  feat(marketing) §4 — learner lifted clear of the native (owner's pick of 2 renders)
+    08633cd  feat(marketing) §4 — two different waves, first phrase lifted (owner's 2 corrections)
+
+### ✅ The independent review is DONE — all three passes
+
+`review-19b05d5-HEAD-report.md` (555 lines) + `review-19b05d5-HEAD-brief.md`, both in the SDD
+workspace. **With fixes · 0 Critical · 9 Important · 7 Minor**, covering task 12, Task V and the
+2026-09-03 commits. It re-derived the branch's central claim itself and it HOLDS (**0.327 rejected
+vs 0.720 shipped**, threshold 0.45 between); all seven header-table cells re-derived exactly; four
+mutation checks, the strongest swapping in the ACTUAL rejected A3 fixture (6 of 15 red, coherence
+failing at exactly 0.327).
+
+▶ **It also established how to run e2e here: Playwright attaches to a running `next dev` via
+`reuseExistingServer` — no build, no 120 s webServer timeout.** That retires the "e2e gate cannot
+run from cold" problem in practice. The suite had never been run before task 12.
+
+⚠️ **The review died mid-run to a session rate limit and its Pass 1+2 findings existed ONLY in its
+session.** Resuming it with "write the report to disk BEFORE anything else" saved the whole thing.
+**Every dispatch must say that, and a resume should re-state it as the first instruction.**
+
+⚠️ **It tried to start a second `next dev` despite the brief forbidding it in bold.** No damage (the
+first server held the port), but: forbidding something in a brief is not the same as preventing it.
+
+### ⚠️⚠️ TASK 13's ATTRIBUTION WAS WRONG IN THIS FILE — corrected by two independent measurements
+
+The three numbers reproduce **exactly** (`320 → +87 · 390 → +17 · 768 → +11`) and are unchanged by
+`d720eb7`. **The cause is not §3's card row.** Measured with a `Range` over text nodes plus an
+ancestor-clip walk:
+
+| viewport | overflow | the actual unclipped offender |
+|---|---|---|
+| 320 | +87 | `#hero h1` — an unbreakable token **390.5 px** wide at `--text-hero` 64px |
+| 390 | +17 | the same `h1`, still 390.5 |
+| **414** | **+0** | h1 still 390.5, now fits — **this is the decisive control** |
+| 768 | +11 | footer `admin@almostgone.vn` — **153.9 px** in a **118.4 px** grid track |
+
+`#journey ol` is `overflow-x: auto` (measured `scrollWidth 656` vs `clientWidth 288`) so it
+**contains its own overflow** and never reaches the page.
+
+▶ **MY FIRST SCRIPT REPRODUCED THE ORIGINAL MISDIAGNOSIS IN REAL TIME.** Filtering on
+`getBoundingClientRect().right > clientWidth` returns a wall of `[data-journey]` `LI`s — they are
+inside a scroll container and irrelevant — while the `h1` is INVISIBLE to that filter, because text
+overflowing its own box does not move the box's rect. That is exactly the trap already recorded in
+this file. **Use a `Range` over text nodes and walk ancestors for `overflow-x`; never right-edge
+filtering alone.**
+
+▶ So this file's sentence *"`--text-hero` … is NOT what makes the page overflow"* is **falsified**.
+Task 13 is aimed at `--text-hero` (needs a `clamp()` or a mobile step-down) and the footer's
+unbreakable email token.
+
+### What the review's findings became
+
+- **I1–I4 (`567ce12`)** — every "measured" number in `pitch-demo.test.ts`'s comments was stale, in
+  four places; one quantity had two different values nine lines apart. Removed. An **orphaned
+  27-line docblock** attached to no symbol was deleted (checked first that nothing unique was lost).
+  ▶ **The durable half: the header table is now SELF-VERIFYING.** A test reads the SOURCE TEXT of
+  `pitch-demo.ts`, parses the table, and re-derives every cell from the fixtures — it reads text
+  rather than importing a constant because the thing that rots is the prose a human reads. It
+  compares at the precision the table states ("19.7" is satisfied by 19.71, not 19.8) and pins the
+  row count (L-004). **It has since caught every changed cell three times, unprompted.**
+- **I5 (`ad865b0`)** — the review said the slot was 121×141 and `220px` was ~14% short. **I could not
+  reproduce 141 under any condition** and got 120.52×124, where 220 is right. Sweeping the BRANCH
+  instead of one width found a real and different bug: `(min-width: 1024px) 220px` spans 1024→∞ and
+  the demand inside it runs to **291.6** at 1024 (en). Split at 1120. Not cosmetic — at DPR 1 the old
+  value picked `w=256` where 292 picks `w=384`.
+- **I6 (`ad865b0`)** — `pitch-chart.tsx` claimed 0.81 in one place and 0.73 in another for one
+  viewBox. Measured **0.805**, so 0.81 was right and 0.73 had carried a wrong consequence
+  (`GRIDLINE_STROKE` draws 1.13 CSS px, not "~1"). The scale is now stated once. It is CONSTANT above
+  the 1256 cap — identical at page 1265 and 1280 — so the scrollbar question does not arise here.
+- **V1 (`2d9aa58`, `f17be69`, `08633cd`)** — see the next section.
+
+### ⚠️ §4's BRAID — and the rule that came out of it
+
+Measured before touching anything: through 日本の秋 the intonation separated the tracks by ~**5.0 Hz**
+while two INDEPENDENT detail layers made their DIFFERENCE swing by up to **19.6 Hz**. So texture, not
+the sentence, decided which line was on top — 25 crossings.
+
+▶ **I tried the obvious fix first and it was WRONG: pulling the phrase shapes apart.** That turns
+"missed the accent" into "spoke in a higher register" — a different error, and not the one the copy
+describes. **The two tracks SHOULD agree through 日本の秋; the accent on とても is the whole point.**
+
+    ~5 Hz gap,  shared periods     6 overrides ·  6 crossings
+    ~5 Hz gap,  own periods       30 overrides · 25 crossings   (the braid)
+    ~10 Hz gap, own periods       14 overrides ·  8 crossings   (all of them in the RELEASE)
+    ~10 Hz gap, own periods, release widened
+                                   3 overrides ·  2 crossings   (shipped)
+
+▶ **THE RULE: independent texture needs phrase-level separation to sit on.** Neither is the defect
+alone. The 14-override run is what showed it, by moving every crossing into the release where the
+tracks had converged to a couple of Hz — so the You track now drifts nearly flat there (197→189),
+which states "failed to release" MORE plainly and buys the separation at once.
+
+▶ **THE METRIC, and it needs no arbitrary window** — my first attempt excluded "frames near a
+crossing" and needed a window nobody could derive. The raw gap carries both layers; `smoothed(gap)`
+carries only the sentence; **where their SIGNS disagree, texture has put the wrong line on top.** A
+real crossing appears in the smoothed signal too, so no exclusion is needed. Bound 10, between two
+measured populations (30 vs 6), the way `deltaCoherence`'s 0.45 was chosen.
+
+### ▶ THE OWNER'S TWO CORRECTIONS ON THE RENDER — both were things no metric saw
+
+1. *"tách nhưng trông vẫn giống nhau nét sóng"* — sharing the native's periods fixed the braid but
+   drew the SAME WAVE TWICE; separated, the pair read as one stroke with a shadow. They asked for two
+   different waves and said a bit of tangle was fine (*"có thể để chúng hơi rối"*). Own periods came
+   back; what makes that safe is the ~10 Hz gap plus the widened release.
+2. *"cho đoạn đầu cao lên một chút… không cần bằng"* — **and the detail layer was NOT the cause.**
+   Detrended, the wiggle is near-constant across the plot (13.8 / 13.4 / 21.4). What differed was the
+   RAW excursion: 26.7 Hz through 日本の秋 against 42.3 for the closing phrase, because that phrase
+   was a smooth ramp and all its movement came from texture. So the lift belonged in the CONTROL
+   POINTS — both tracks now climb in per-mora lift-and-settle steps, **on different beats (~6 vs ~8
+   frames)**, which is also half of what stops them looking like one wave. First phrase 26.7 → 30.0
+   (native), 22.5 → 31.0 (You). Raised, deliberately not levelled.
+
+▶ **Both corrections were about the picture, and both arrived after every metric was green.** Render
+at 3x and LOOK before saying a §4 change is done — and put the render in front of the owner.
+
+### ⚠️ NEW OPERATIONAL LESSONS — queued for the branch-end `docs/lessons.md` pass (now 13 entries)
+
+1. **`git checkout -- <file>` to undo a mutation check DESTROYS uncommitted work in that same file.**
+   It cost me three finished edits mid-session. **Copy the file, mutate, restore from the copy, and
+   verify with `sha256sum -c`.** That is what the later checks did, and the checksum line is the
+   proof the restore held.
+2. **A reviewer's arithmetic needs re-deriving like anyone's.** Two of this review's numbers did not
+   survive: A3's run length (it said 2.35; the test's own formula gives **2.25** — and its own
+   mutation output printed 2.25, contradicting its table), and §3's slot height (141 vs my 124 under
+   three conditions). Both were found only because I re-measured numbers I was about to WRITE DOWN.
+3. **The e2e suite is `fullyParallel` against ONE `next dev`.** Transient failures appear in
+   unrelated specs under load (seen twice: 2 failures, then 3 across three unrelated specs), and all
+   passed on re-run with the server healthy. **Re-run before believing an e2e failure**, and record
+   it as not-reproducible rather than fixed (L-009).
+4. **A guard whose subject is a PAIR cannot be built from per-track statistics.** Every §4 assertion
+   measured one track alone, and all of them were green while the pair braided visibly.
+5. **A bound set before measuring is a guess.** My first crossing test used `min gap > 4 Hz` and
+   `frames away > 100`; both were arithmetically impossible once the design changed. Fixing the
+   METRIC beat loosening either number — the same lesson this branch already paid for once.
+
+### Environment notes that changed
+
+- **A `next dev` (PID 42832) was left running on :3000 and serves HEAD.** A background-task wrapper
+  around it was killed but the node process survived. Check the port before starting another.
+- `.next` still holds **no production build** (`BUILD_ID` absent) — and it does not need one, because
+  Playwright attaches to the dev server.
+- **Killing a process was blocked by the permission classifier.** When a dev server must be
+  restarted, ask the owner to run `taskkill //PID <pid> //F` themselves.
 
 ## Still true from earlier rulings — do not re-open
 
