@@ -8,11 +8,13 @@
 > ▶ Gate, every command run and read before anything was written about it: `npx tsc --noEmit` exit 0 ·
 > `npm run lint` 0 errors · `npx vitest run` **2578 over 280 files, 0 failed**. Working tree clean.
 >
-> ⚠️⚠️ **EVERYTHING BELOW IS THE FOURTH SESSION. A FIFTH RAN ON 2026-09-03 AND CHANGED THE HEADLINES.**
-> Read `## ✅ SESSION 5 — the review landed, and Task 13 was aimed at the wrong element` near the
-> bottom BEFORE acting on anything in this file. In short: the independent review is **DONE** (all
-> three passes, report on disk), five more commits landed, HEAD is **`08633cd`**, the suite is
-> **2580 unit / 24 e2e**, and this file's Task 13 attribution is **WRONG**.
+> ⚠️⚠️ **EVERYTHING BELOW IS THE FOURTH SESSION. TWO MORE RAN ON 2026-09-03.**
+> Read `## ✅ SESSION 6 — TASK 13 IS BUILT AND COMMITTED` near the bottom FIRST, then
+> `## ✅ SESSION 5`. In short: the independent review is **DONE**; **Task 13 is DONE and committed
+> at `9cebadd`**; HEAD is **`9cebadd`**, the suite is **2589 unit / 27 e2e**. §0 now has a
+> hamburger + sheet, which **reverses the 2026-08-28 "no hamburger" ruling at the owner's own
+> direction**. What remains: **Task A-MOTION · the whole-branch review · the lessons pass · and a
+> NEW, LARGE piece — the owner's mobile landing page**, deliberately scoped out of Task 13.
 >
 > ~~STILL NO INDEPENDENT REVIEW, AND THE GAP IS NOW THREE RANGES WIDE.~~ ✅ Closed by session 5.
 >
@@ -1128,6 +1130,130 @@ at 3x and LOOK before saying a §4 change is done — and put the render in fron
   Playwright attaches to the dev server.
 - **Killing a process was blocked by the permission classifier.** When a dev server must be
   restarted, ask the owner to run `taskkill //PID <pid> //F` themselves.
+
+## ✅ SESSION 6 (2026-09-03) — TASK 13 IS BUILT AND COMMITTED (`9cebadd`)
+
+**HEAD `9cebadd`. Working tree clean. Nothing merged, nothing pushed.** Gate, each run and read:
+`tsc` exit 0 · `lint` 0 errors (**81** warnings — none in the diff, checked per file; the "11"
+this memory used to state was a different counting method, do not repeat it) ·
+`vitest` **2589 over 281 files** · `playwright` **27/27**.
+
+### ▶▶ WHAT REMAINS ON THIS BRANCH
+
+1. **Task A-MOTION** — the whole-page motion pass, plus the unexplained `/en#problem` scroll drift.
+   ▶ It now also owns the mobile sheet's transition: `site-menu.tsx` ships with NO animation
+   deliberately, and adding one there makes §2's currently-vacuous reduced-motion gate real.
+2. **Whole-branch review** (L-011), then a review of the fix wave (L-012).
+3. **The branch-end `docs/lessons.md` pass — now 16 queued entries.**
+4. **NEW AND BIG: the owner's mobile landing page.** See its own section below.
+
+### ✅ Task 13 — the three reflow causes, all measured, all fixed
+
+The run-state's own attribution was right about the hero and the footer and MISSED A THIRD.
+Method that found them: a `Range` over text nodes + an ancestor `overflow-x` walk. Right-edge
+filtering on boxes cannot see any of them.
+
+| where | cause | fix |
+|---|---|---|
+| en 320/360/390 | `#hero h1` — "understand." 390.5px at a fixed 64px in a 288px column | `--text-hero` → `clamp(2rem, 5.7vw + 1rem, 4rem)` |
+| en+vi 768 | footer `admin@almostgone.vn` — 153.9px in a 118.4px track | `break-words` |
+| **en +27.6 / vi +9.6 at 320** | **§0's header — NOT in any earlier note** | hamburger + sheet |
+
+▶ **The clamp is anchored on the OWNER'S numbers, not on my WCAG bound.** Their mobile brief says
+36–40px at 390; frame 347:6277 says 64px at 1280. `5.7vw + 1rem` passes through both (38.2 at 390,
+cap reached ~842px, desktop untouched). My first attempt used `13vw`, derived only from the reflow
+ceiling, and rendered 50.7px at 390 — inside the bound and still visibly wrong. **A bound is not a
+target.** `--leading-hero` became the unitless ratio 1.0625 so it tracks instead of hand-syncing.
+
+### ⚠️ THE 2026-08-28 "NO HAMBURGER" RULING IS REVERSED, BY THE OWNER
+
+R4 said mobile nav → the app stores, no hamburger. Their Figma mobile header (`433:1442`, menu
+`434:1453`) draws a hamburger. **The arithmetic said the same thing independently**: at 320 the bar
+has 288px and its four clusters need **380.6 (en) / 403.1 (vi)** unwrapped — no combination of
+smaller type fits, so it was never a styling problem. Store links keep both footer blocks.
+
+- `SiteMenu` is a **disclosure**, not `components/ui/dialog.tsx` — the design draws no scrim, so a
+  Radix modal would add a scrim, a scroll lock and a focus trap the design does not have.
+- **`absolute top-full`, never `fixed`**: the bar has `backdrop-blur`, and a backdrop filter makes
+  its element a containing block for fixed descendants. A `fixed` panel there anchors to the 64px
+  bar and looks right only by accident.
+- **Closing on focus-out is load-bearing, and only a browser found it.** Tabbing past the last row
+  put focus on the hero CTA UNDERNEATH the opaque sheet — a focus ring nobody can see, WCAG 2.4.7
+  failing at exactly one step. jsdom cannot see this.
+- Sign-in is kept in the sheet though the design omits it (a phone visitor otherwise cannot reach
+  an account). Raised with the owner; one line removes it.
+- Three new catalog keys: `nav.menuAriaLabel` / `menuOpen` / `menuClose`, both locales. The vi
+  strings are mine and are owed to the owner's copy pass; every other vi string is byte-identical.
+
+### ⚠️ FALSE GREENS THIS SESSION CAUGHT — both would have been believed
+
+1. **The dev server from session 5 was serving 500s** (`Jest worker … exceeding retry limit`) and my
+   first overflow sweep reported **OVERFLOW 0 at every width in both locales**. A blank or errored
+   page has `scrollWidth === clientWidth` everywhere. **Every browser measurement now asserts the
+   page rendered (9 sections) before believing a number**, and so does the e2e guard.
+   ▶ `.next` also went corrupt mid-session (`Cannot find module './vendor-chunks/@swc.js'`).
+   `rm -rf .next` + restart fixed it. Killing the server was NOT blocked this time —
+   `taskkill //PID <pid> //F` worked.
+2. **A test that passed on the spot.** The §3 long-token guard used a long KANA run and went green
+   immediately — Japanese breaks BETWEEN characters, so a kana run is not an unbreakable token and
+   the test proved nothing. With a romaji token it went red at **285px in a 68px panel**, which is
+   the ledger's carried A2 finding reproduced. Latin, not kana, is the risk in a JP panel.
+
+### ▶ DENSITY IS SETTLED — DO NOT TOUCH `py-2xl`
+
+Page is **4480** at 1280 against frame 347:6277's **4028**. The 452px is NOT the rhythm: six of
+eight sections sit within ±43px of the frame's own bands. It decomposes as **+208 signoff** (a
+section the frame does not have — the owner ruled it in), **+358 hero**, **−151 journey**, +35 the
+rest. Frame bands, for anyone re-checking: header 60 · 519.7 · 450.0 · 522.9 · 473.3 · 393.3 ·
+357.7 · 234.1 · 336.5 · footer 681.6.
+
+### ✅ The rest of Task 13's sweep, all measured in a browser
+
+- **Decoration**: 41 svgs in `main`, **0 reach the accessibility tree**; 20 `[data-connector]` /
+  `[data-step-arrow]`, all 20 hidden. ⚠️ My first pass reported six false positives by reading
+  `aria-hidden` on the svg ALONE — **it is inherited, so walk the ancestors**.
+- **Keyboard @1280**: 24 stops, every one with a visible focus ring, none zero-size. Three
+  "backwards" jumps are all legitimate column/rail layout (7px inside the header bar; §3's rail
+  before its card row; the footer's brand column before Explore).
+- **Keyboard @390**: closed sheet costs 0 stops; Enter opens; 6 rows → CTA → sign-in; Escape closes
+  and returns focus to the toggle.
+- **Reduced motion**: page height identical (4480), 20 connectors and 10 images unchanged, no
+  section loses content, the sheet still opens with all 6 rows.
+- **§2's three column SVGs** (task 7's carried "cannot verify from a diff" item): 112×146.7 at 1280,
+  `display:none` below `lg`. The zero-height fear does not arise. CLOSED.
+
+### ▶ NEW GUARDS, AND THE TWO THAT NEEDED MUTATION-CHECKING
+
+`tests/e2e/landing-page.spec.ts` gained three. The reflow sweep failed first for real (6 samples).
+The other two are written over existing code and **cannot** fail first, so §3's `overflow-x-auto`
+was removed as a mutation: both went red (the reflow guard then named §3's `li`s, which is exactly
+what the original misdiagnosis claimed). **Restored from a copy and verified with `sha256sum -c`
+(`OK`) — never `git checkout --`, which destroyed three finished edits last session.**
+⚠️ The reflow sweep needs `test.slow()`: 18 navigations in one test blew the 30s default under the
+five-worker parallel load, though it runs in ~8s alone.
+
+## ⚠️⚠️ THE OWNER DESIGNED A WHOLE MOBILE LANDING PAGE — SCOPE DECISION ALREADY TAKEN
+
+Figma `429:2` "Landing page 320 px" and `433:728` "Landing page 390px" (+ `434:1453` "Menu"), file
+`IwFHZDZdHW7qsSFiNbWrkd`. ⚠️ **The frames are 935px wide artboards; the design column is ~380/430px
+centred, with backgrounds full-bleed.** Do not read the frame width as the viewport.
+
+▶ **RULED 2026-09-03: implement the HEADER + MENU only, and close Task 13. The rest is separate.**
+
+**It is not a mobile version of the built page — it is a richer page.** ~12 sections against our 9,
+and at least five have no counterpart at all: "Understand the pieces without losing the sentence"
+(思 / 思ったより / 〜より table) · "Your learning journey becomes context" (timeline) · "Practice
+before the real thing" (JLPT N3 set) · "Mistakes become part of the lesson" (01–04 ✓/✕ + Explain) ·
+"Your Japanese, all in one place" (あなたの日本語 hub + 9 chips). The owner's generating prompt
+lists 18 sections and is in this session's transcript.
+
+⚠️ **Two things to settle before any of it is built:**
+1. **Do the five new sections go on DESKTOP too?** If mobile has them and desktop does not, one page
+   carries two different contents — CLAUDE.md §6 calls that a defect, not a trade-off.
+2. **The owner says a menu row scrolls to its section. It cannot, today** — the rows are Explore /
+   Shadowing / Kanji / Grammar / Practice / Companion / Pricing / FAQ and no section has those
+   names. The shipped sheet therefore carries the six existing NAV_ITEMS at their existing routes,
+   and drops Pricing/FAQ, which have no URL anywhere (the footer renders them as plain text).
 
 ## Still true from earlier rulings — do not re-open
 
