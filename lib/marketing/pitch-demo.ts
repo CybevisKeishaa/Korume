@@ -54,11 +54,11 @@ import type { PitchContour } from "@/lib/pitch";
  * ▶ Measured on the current fixtures:
  *
  *                     native      you
- *     range        167.2-233.6  173.3-211.8 Hz
+ *     range        167.2-233.6  173.1-221.8 Hz
  *     peak region  233.6        204.1        (とても — a 29.5 Hz gap)
- *     release      46.1         17.8         (over 40 smoothed frames)
+ *     release      46.1         18.1         (over 40 smoothed frames)
  *     direction changes  38     40
- *     coherence     0.720       0.692
+ *     coherence     0.720       0.711
  *     bend          5.60        5.10
  *
  * ⚠️ Phrase-level claims — the release, the boundary valley — are asserted
@@ -168,32 +168,42 @@ const USER_CONTROL: readonly ControlPoint[] = [
   //
   // ⚠️ The gap between the two tracks is deliberately UNEVEN — the owner asked
   // for exactly that: "có thể lệch nhiều lệch ít, chứ không nhất thiết phải
-  // dính liền nhau". Through 日本の秋 the two cross each other twice; at the
-  // phrase boundary the learner sits above; through とても they separate by
-  // ~30 Hz, which is the error the section is about; and they close again on
-  // the final ね.
+  // dính liền nhau". Through 日本の秋 the learner sits ABOVE by ~10 Hz (min
+  // 7.5, mean 10.0) without crossing; the native takes off for the accent and
+  // passes it once; through とても they separate by ~30 Hz, which is the error
+  // the section is about; and they close again on the final ね.
   //
   // An earlier pass tried to separate them by giving the learner an
   // out-of-phase settle at every mora. That produced a regular braid, which
   // the owner read immediately as unnatural. Separation belongs in the phrase
   // shape, where it means something, not in the detail layer's rhythm.
   //
-  // ⚠️ THESE POINTS ARE DELIBERATELY CLOSE THROUGH 日本の秋, and that is not
-  // the thing to change if the pair ever braids again. The two tracks SHOULD
-  // agree on the easy part of the sentence — the error §4 exists to show is
-  // the accent on とても, and pulling them apart earlier turns "missed the
-  // accent" into "spoke in a higher register", which is a different error and
-  // not the one the copy describes. When the pair braided (25 crossings, left
-  // 40% of the plot) the cause was in `userDetail`, which had its own periods;
-  // it now shares the native's. See its docblock.
-  { frame: 0, hz: 186 },
-  { frame: 12, hz: 188 },
-  { frame: 24, hz: 189 },
-  { frame: 36, hz: 191 },
-  { frame: 48, hz: 193 },
-  { frame: 58, hz: 186 },
-  { frame: 66, hz: 180 },
-  { frame: 74, hz: 188 },
+  // ## ⚠️ Why the learner sits ABOVE here, and why it is only ~10 Hz
+  //
+  // These points used to run within ~5 Hz of the native through 日本の秋. That
+  // is too close to survive the detail layer, and the pair braided — 25
+  // crossings down the left 40% of the plot. The braid's CAUSE was
+  // `userDetail`'s independent periods and is fixed there; this gap is the
+  // second half, chosen by the owner from two rendered options.
+  //
+  // ABOVE rather than below, deliberately: the learner starts high and stays
+  // there, so the native's climb into とても reads as the accent the learner
+  // never makes. Put the learner BELOW and the same climb reads as the learner
+  // rising too — which weakens the very error §4 exists to show.
+  //
+  // ▶ ~10 Hz is a CEILING as much as a floor. Widen it much further and the
+  // pair stops reading as "missed the accent" and starts reading as "spoke in
+  // a higher register", which is a different error and not the one the copy
+  // describes. If a future pass wants them further apart, that is a product
+  // decision, not a tuning.
+  { frame: 0, hz: 190 },
+  { frame: 12, hz: 195 },
+  { frame: 24, hz: 199 },
+  { frame: 36, hz: 203 },
+  { frame: 48, hz: 201 },
+  { frame: 58, hz: 192 },
+  { frame: 66, hz: 184 },
+  { frame: 74, hz: 190 },
   { frame: 86, hz: 193 },
   { frame: 96, hz: 196 },
   // ERROR 1 — the flattened peak, ~32 Hz under the native's, and then no
@@ -208,7 +218,7 @@ const USER_CONTROL: readonly ControlPoint[] = [
   { frame: 157, hz: 178 },
   { frame: 163, hz: 181 },
   // ERROR 2 — the over-raised ね, climbing past its own peak.
-  { frame: 168, hz: 206 },
+  { frame: 168, hz: 216 },
 ];
 
 /**
