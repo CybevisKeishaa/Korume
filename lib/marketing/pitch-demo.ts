@@ -147,13 +147,17 @@ const NATIVE_CONTROL: readonly ControlPoint[] = [
 /**
  * The same phrase, learner-shaped. Two errors, both deliberate:
  *
- *  1. THE FLATTENED PEAK — 200.7 Hz where the native reaches 225.5, and then
- *     barely released: across the 40-frame window where the native sheds
- *     45.9 Hz, this sheds 21.3, and it stays ABOVE the native right through
- *     the release instead of dropping with it. It is not a quieter voice, it
- *     is a missing accent.
+ *  1. THE FLATTENED PEAK — it reaches well under the native on とても and then
+ *     barely releases, staying ABOVE the native right through the fall instead
+ *     of dropping with it. It is not a quieter voice, it is a missing accent.
  *  2. THE OVER-RAISED FINAL ね — it ends at its own highest point, where the
- *     native's closing lift stops ~16 Hz under its peak.
+ *     native's closing lift stops short of its peak.
+ *
+ * ⚠️ Deliberately stated without numbers. Both errors are quantified once, in
+ * the file header's measurement table, which `pitch-demo.test.ts` re-derives
+ * from these fixtures and asserts. This block used to restate four of those
+ * values and all four had gone stale against it (CLAUDE.md §6, one fact one
+ * home) — so state the SHAPE here and let the table own the magnitudes.
  *
  * It shares the native's timeline frame for frame so the two overlay, and the
  * two converge around the phrase-boundary valley so the pair reads as two
@@ -199,33 +203,6 @@ const USER_CONTROL: readonly ControlPoint[] = [
 ];
 
 /**
- * The DETAIL layer: the fast excursions that sit on top of the phrase shape.
- *
- * ⚠️ Three sinusoids with SHORT, mutually incommensurable periods — roughly 7,
- * 11 and 19 frames. That combination is the whole trick:
- *
- *  - SHORT is what makes it read as speech. A period of 7 frames is ~19 CSS px
- *    on the rendered chart. The previous pass used 40 and 22 frames — 60 px and
- *    33 px — which drew broad rolling swells, and the owner's word for the
- *    result was that it looked unnatural next to the reference, which "giống
- *    những tia sét": short, sharp excursions, not long waves.
- *  - INCOMMENSURABLE is what stops it looking mechanical. 7, 11 and 19 share no
- *    factors, so the sum never repeats inside the sentence: peaks land at
- *    irregular intervals and reach irregular heights, the way real F0 does. An
- *    earlier attempt got its irregularity from hand-alternating the control
- *    table instead and produced a visible braid.
- *  - AMPLITUDE stays modest — ~5 Hz total against a ~58 Hz range, so the detail
- *    is a texture on the intonation, never a replacement for it. This is the
- *    line A3 crossed: its ±3.9 Hz was applied INDEPENDENTLY per frame, so it
- *    had no period at all and read as grain rather than as movement.
- *
- * The two tracks get different frequencies, so they drift in and out of step
- * across the sentence — close here, separated there — instead of either
- * shadowing each other exactly or braiding on a fixed beat.
- *
- * Deterministic: fixed constants, no random number generator, no clock.
- */
-/**
  * A triangle wave in -1..1. Straight ramps, sharp vertices.
  *
  * ⚠️ Not a sine, and that is the point. A sine's extrema are ROUND: sampled
@@ -255,11 +232,14 @@ function triangle(x: number): number {
  *  - TRIANGLE, not sine, for the two fast components: sharp excursions rather
  *    than scallops. The slow one stays a sine because it is doing phrase-level
  *    work, where a vertex would read as a real pitch event.
- *  - INCOMMENSURABLE periods stop it looking mechanical: 7.5, 12 and 21 never
- *    line up inside the sentence, so peaks land at irregular intervals and
- *    reach irregular heights. An earlier attempt hand-alternated the control
- *    table to get that irregularity and produced a visible braid instead.
- *  - AMPLITUDE is ~10.4 Hz against a ~65 Hz range. That is a LOT — roughly a
+ *  - INCOMMENSURABLE periods stop it looking mechanical. Each period is
+ *    `2π / ω` of the coefficients in the two functions below — native 8.00,
+ *    13.01, 22.52 frames; You 9.00, 14.41, 25.23 — so the sum never repeats
+ *    inside the sentence: peaks land at irregular intervals and reach
+ *    irregular heights. Read them off the coefficients rather than trusting
+ *    this line; an earlier attempt hand-alternated the control table to get
+ *    that irregularity and produced a visible braid instead.
+ *  - AMPLITUDE is ~10.4 Hz against a 66.4 Hz range. That is a LOT — roughly a
  *    sixth of the whole plot — and it is deliberate: the owner asked for depth
  *    twice. It is safe because the movement is coherent. A3's ±3.9 Hz was far
  *    smaller and looked far worse, because it was drawn INDEPENDENTLY per

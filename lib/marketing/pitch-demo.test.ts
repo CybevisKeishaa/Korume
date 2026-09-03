@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { NATIVE_DEMO_CONTOUR, USER_DEMO_CONTOUR, DEMO_REF_HZ } from "./pitch-demo";
 
 const hzOf = (c: typeof NATIVE_DEMO_CONTOUR) => c.frames.map((f) => f.hz);
@@ -77,12 +79,18 @@ function maxBend(hz: readonly (number | null)[]): number {
  *
  * ⚠️ This is the metric that actually separates the two things this fixture
  * has been rejected for, and it took three tries to find. `maxBend` and the
- * inflection count do NOT separate them — measured, the current fixtures bend
- * 6.40/3.70 with 58/55 direction changes against A3's 10.30/7.90 with 71/65,
- * which is the same neighbourhood. What differs is CAUSE: A3 drew an
- * independent value per frame from a lookup table, so its steps barely
- * predict one another (0.327 / 0.273); this is a sum of periodic components,
- * so they strongly do (0.533 / 0.616).
+ * inflection count do NOT separate them — the shipped fixtures bend 5.60/5.20
+ * with 38/37 direction changes against A3's 10.30/7.90 with 71/65, which is
+ * the same neighbourhood. What differs is CAUSE: A3 drew an independent value
+ * per frame from a lookup table, so its steps barely predict one another
+ * (0.327 / 0.273); this is a sum of periodic components, so they strongly do
+ * (0.720 / 0.697).
+ *
+ * ⚠️ The A3 figures are the only hand-kept numbers left in this file: they
+ * come from `git show 81ff680^` and cannot be re-derived from HEAD. Every
+ * number describing the SHIPPED fixtures is re-derived and asserted by
+ * "the header's measurement table still describes these fixtures" below —
+ * do not restate one here.
  *
  * ▶ Grain and movement can look equally busy on any single-frame statistic.
  * The question worth asking is whether consecutive samples KNOW about each
@@ -269,23 +277,23 @@ describe("pitch demo fixtures", () => {
 
   it("keeps the bend inside a sanity bound — no return to A3's grain", () => {
     // Kept as a coarse backstop only, NOT as the design constraint it used to
-    // be: measured, A3's native track bent 10.30 and this bends 6.40. It
-    // catches a wholesale regression; the test above is what pins the quality.
+    // be. It catches a wholesale regression; the test above is what pins the
+    // quality.
     for (const [name, contour] of [
       ["native", NATIVE_DEMO_CONTOUR],
       ["you", USER_DEMO_CONTOUR],
     ] as const) {
-      // 4 is not a guess, and it has been raised once. Measured on the A3
+      // 8 is not a guess, and it has been raised once. Measured on the A3
       // fixtures — the build the owner called "trông rất xấu" — the bend was
-      // 10.30 (native) and 7.90 (You). Measured here it is 2.70 and 2.10,
-      // after the detail layer was shortened to match the reference's "tia
-      // sét" excursions; the first, too-smooth attempt read 1.90 and 1.20.
+      // 10.30 (native) and 7.90 (You), so the bound sits under the population
+      // it must reject. The shipped fixtures' own bend is re-derived by the
+      // measurement-table test below rather than restated here.
       //
       // ▶ What the bound is actually for: A3's wobble was applied
       // INDEPENDENTLY per frame, so it had no period and no coherence — that
-      // is grain. This layer is three sinusoids, so however sharp its peaks
-      // get they are still movement. The bound is set to catch a return to
-      // grain, which sits at 2.9x this value, not to police sharpness.
+      // is grain. This layer is three periodic components, so however sharp
+      // its peaks get they are still movement. The bound is set to catch a
+      // return to grain, not to police sharpness.
       expect(maxBend(hzOf(contour)), name).toBeLessThanOrEqual(8);
     }
   });
@@ -295,7 +303,7 @@ describe("pitch demo fixtures", () => {
     // grain has no correlation between neighbouring steps, while a slow
     // undulation keeps moving the same way for many frames at a time. The
     // average run length between direction changes is what tells them apart —
-    // the old fixtures ran ~2.3 frames per run, i.e. noise.
+    // A3's rejected fixtures ran 2.25 frames per run, i.e. noise.
     for (const [name, contour] of [
       ["native", NATIVE_DEMO_CONTOUR],
       ["you", USER_DEMO_CONTOUR],
@@ -304,12 +312,12 @@ describe("pitch demo fixtures", () => {
       const runLength = voiced.length / (inflections(hzOf(contour)) + 1);
 
       expect(voiced.length, name).toBeGreaterThan(100);
-      // ⚠️ A COARSE BACKSTOP, not the guard. Measured, A3's rejected fixtures
-      // ran 2.35 frames per direction and these run 2.86 — the same
-      // neighbourhood, because run length is another single-frame statistic
-      // that cannot tell dense movement from grain. `deltaCoherence` is what
-      // actually separates them (0.53 against 0.33). This only rules out a
-      // reversal on almost every frame.
+      // ⚠️ A COARSE BACKSTOP, not the guard. A3's rejected fixtures ran 2.25
+      // frames per direction, which is the same ORDER as these — run length is
+      // another single-frame statistic and cannot tell dense movement from
+      // grain. `deltaCoherence` is what actually separates the two builds
+      // (A3 measured 0.327 / 0.273). This only rules out a reversal on almost
+      // every frame.
       expect(runLength, `${name} does not reverse on nearly every frame`).toBeGreaterThan(2.5);
     }
   });
@@ -454,5 +462,92 @@ describe("pitch demo fixtures", () => {
     const region = (hz: readonly number[]) => Math.max(...hz.slice(90, 116));
 
     expect(region(native) - region(user), "the flattened peak").toBeGreaterThanOrEqual(20);
+  });
+
+  /**
+   * The file header carries a measurement table describing these fixtures.
+   *
+   * ⚠️ This test exists because FOUR separate docblocks used to restate parts
+   * of that table by hand and every one of them had drifted — in one case
+   * giving two different values for a single quantity nine lines apart. That
+   * is CLAUDE.md §6 ("one fact, one home") failing in the only way a comment
+   * can fail: silently and permanently, because nothing ever re-runs a
+   * comment. The copies are gone; this makes the surviving original
+   * self-verifying, so retuning the fixtures without updating the table turns
+   * this red instead of leaving a plausible wrong number behind forever.
+   *
+   * It reads the SOURCE TEXT rather than importing a constant on purpose: the
+   * thing at risk of going stale is the prose a human reads.
+   */
+  it("keeps the header's measurement table true of the fixtures it describes", () => {
+    const source = readFileSync(join(__dirname, "pitch-demo.ts"), "utf8");
+    const table = source.split("▶ Measured on the current fixtures:")[1]?.split("⚠️")[0];
+    expect(table, "the header's measurement table").toBeTruthy();
+
+    const lines = must(table, "the table block")
+      .split("\n")
+      .map((line) => line.replace(/^\s*\*\s*/, ""));
+
+    // ⚠️ L-004: assert the SIZE of the collection this test walks. Without
+    // this, a seventh row added to the table would simply go unchecked and
+    // the test would stay green while the new number rotted.
+    const rows = lines.filter((line) => /^[a-z]/.test(line) && /\d/.test(line));
+    expect(rows, "rows in the measurement table").toHaveLength(6);
+
+    /** The numbers documented on the row labelled `label`, in written order. */
+    const documented = (label: string): string[] => {
+      const line = rows.find((row) => row.startsWith(label));
+      const found = must(line, `a table row for "${label}"`).match(/\d+(?:\.\d+)?/g) ?? [];
+      expect(found.length, `numbers on the "${label}" row`).toBeGreaterThanOrEqual(2);
+      return found;
+    };
+
+    /**
+     * Compare at the precision the table itself states — "19.7" is satisfied
+     * by 19.71 but not by 19.8. Asserting more precision than the prose claims
+     * would make the test fail for a rounding the reader cannot see.
+     */
+    const agrees = (derived: number, claimed: string, what: string) => {
+      const decimals = claimed.includes(".") ? must(claimed.split(".")[1], what).length : 0;
+      expect(derived.toFixed(decimals), what).toBe(claimed);
+    };
+
+    const native = hzOf(NATIVE_DEMO_CONTOUR);
+    const you = hzOf(USER_DEMO_CONTOUR);
+    const voiced = (hz: readonly (number | null)[]) => hz.filter((v): v is number => v !== null);
+    // The same とても window the flattened-peak test above uses, for the same
+    // reason — both tracks end on a rising ね, so a global maximum stops
+    // measuring the peak and starts measuring the two closing lifts.
+    const peak = (hz: readonly (number | null)[]) => Math.max(...voiced(hz).slice(90, 116));
+
+    const range = documented("range");
+    expect(range, "both tracks' floor and ceiling").toHaveLength(4);
+    agrees(Math.min(...voiced(native)), must(range[0], "native floor"), "native range floor");
+    agrees(Math.max(...voiced(native)), must(range[1], "native ceiling"), "native range ceiling");
+    agrees(Math.min(...voiced(you)), must(range[2], "you floor"), "you range floor");
+    agrees(Math.max(...voiced(you)), must(range[3], "you ceiling"), "you range ceiling");
+
+    const peaks = documented("peak region");
+    agrees(peak(native), must(peaks[0], "native peak"), "native peak on とても");
+    agrees(peak(you), must(peaks[1], "you peak"), "you peak on とても");
+    agrees(peak(native) - peak(you), must(peaks[2], "the gap"), "the peak gap the table names");
+
+    const release = documented("release");
+    const window = Number(must(release[2], "the smoothing window"));
+    expect(window, "the release window the table names").toBe(40);
+    agrees(maxFallOver(smoothed(native), window), must(release[0], "native"), "native release");
+    agrees(maxFallOver(smoothed(you), window), must(release[1], "you"), "you release");
+
+    const changes = documented("direction changes");
+    agrees(inflections(native), must(changes[0], "native"), "native direction changes");
+    agrees(inflections(you), must(changes[1], "you"), "you direction changes");
+
+    const coherence = documented("coherence");
+    agrees(deltaCoherence(native), must(coherence[0], "native"), "native coherence");
+    agrees(deltaCoherence(you), must(coherence[1], "you"), "you coherence");
+
+    const bend = documented("bend");
+    agrees(maxBend(native), must(bend[0], "native"), "native bend");
+    agrees(maxBend(you), must(bend[1], "you"), "you bend");
   });
 });
