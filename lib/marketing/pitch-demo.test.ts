@@ -151,6 +151,29 @@ function must<T>(value: T | undefined, what: string): T {
   return value;
 }
 
+/**
+ * The frames where the two tracks swap which one is on top.
+ *
+ * ⚠️ EVERY OTHER METRIC IN THIS FILE MEASURES ONE TRACK ALONE. This is the
+ * only one that measures the PAIR, and it exists because a defect got all the
+ * way to a rendered page without a single per-track assertion noticing: the
+ * two lines braided through the first 40% of the plot. The intonation
+ * separated them by ~5 Hz there while the detail layer swings up to ~19.6 Hz,
+ * so TEXTURE decided which line was on top rather than the sentence — 25
+ * crossings against a docblock that says they "cross each other twice".
+ */
+function crossings(a: readonly (number | null)[], b: readonly (number | null)[]): number[] {
+  const at: number[] = [];
+  for (let i = 1; i < a.length; i += 1) {
+    const [pa, pb, ca, cb] = [a[i - 1], b[i - 1], a[i], b[i]];
+    if (pa == null || pb == null || ca == null || cb == null) continue;
+    const before = Math.sign(pa - pb);
+    const now = Math.sign(ca - cb);
+    if (now !== 0 && before !== 0 && now !== before) at.push(i);
+  }
+  return at;
+}
+
 /** Index ranges of the voiced runs, i.e. the phrases between unvoiced gaps. */
 function voicedRuns(hz: readonly (number | null)[]): Array<{ start: number; end: number }> {
   const runs: Array<{ start: number; end: number }> = [];
@@ -462,6 +485,54 @@ describe("pitch demo fixtures", () => {
     const region = (hz: readonly number[]) => Math.max(...hz.slice(90, 116));
 
     expect(region(native) - region(user), "the flattened peak").toBeGreaterThanOrEqual(20);
+  });
+
+  it("lets the SENTENCE decide which track is on top, not the detail layer", () => {
+    const native = hzOf(NATIVE_DEMO_CONTOUR);
+    const you = hzOf(USER_DEMO_CONTOUR);
+    const gap = native.map((v, i) => {
+      const u = you[i];
+      return v == null || u == null ? null : v - u;
+    });
+
+    // ▶ THE PROPERTY, stated without an arbitrary window. `gap` carries both
+    // layers; `smoothed(gap)` carries only the sentence, by the same 9-frame
+    // mean the release assertions use. Where their SIGNS disagree, the texture
+    // has put the wrong line on top — the reader sees an order the sentence
+    // never asked for. A first attempt at this test excluded "frames near a
+    // crossing" instead, which needed a window nobody could derive; this needs
+    // none, because a real crossing shows up in the smoothed signal too.
+    const phrase = smoothed(gap);
+    const overrides = gap.filter((raw, i) => {
+      const slow = phrase[i];
+      if (raw == null || slow == null || Math.sign(slow) === 0) return false;
+      return Math.sign(raw) !== Math.sign(slow);
+    });
+
+    // L-004: pin the size of the collection this is filtered from, or a
+    // fixture that somehow produced all-null gaps would pass unconditionally.
+    expect(gap.filter((g) => g !== null), "voiced frames on both tracks").toHaveLength(169);
+
+    // 10 sits between two MEASURED populations, the way `deltaCoherence`'s
+    // 0.45 does. Both were measured with the control points untouched, so the
+    // sentence is identical in each and only the texture differs:
+    //
+    //   independent detail periods  30 overrides, 24 raw crossings against 5 phrase-level
+    //   shared detail periods        6 overrides,  6 raw crossings against 4 phrase-level
+    //
+    // The residual 6 are AT the four phrase-level crossings, where the slow
+    // signal is itself passing through zero and a sign disagreement means
+    // nothing. The 30 were a braid down the left 40% of the plot.
+    expect(overrides.length, "frames where the texture overrides the sentence").toBeLessThanOrEqual(
+      10,
+    );
+
+    // A coarse backstop on the same defect, kept for the same reason `maxBend`
+    // is: it catches a wholesale regression that the guard above might not
+    // phrase loudly. The design in `USER_CONTROL`'s docblock is four order
+    // changes; 25 was the braid.
+    const at = crossings(native, you);
+    expect(at.length, `crossings at frames ${at.join(", ")}`).toBeLessThanOrEqual(8);
   });
 
   /**

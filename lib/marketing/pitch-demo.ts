@@ -54,12 +54,12 @@ import type { PitchContour } from "@/lib/pitch";
  * ▶ Measured on the current fixtures:
  *
  *                     native      you
- *     range        167.2-233.6  172.3-207.4 Hz
- *     peak region  233.6        202.0        (とても — a 31.6 Hz gap)
- *     release      46.1         19.7         (over 40 smoothed frames)
- *     direction changes  38     37
- *     coherence     0.720       0.697
- *     bend          5.60        5.20
+ *     range        167.2-233.6  173.3-211.8 Hz
+ *     peak region  233.6        204.1        (とても — a 29.5 Hz gap)
+ *     release      46.1         17.8         (over 40 smoothed frames)
+ *     direction changes  38     40
+ *     coherence     0.720       0.692
+ *     bend          5.60        5.10
  *
  * ⚠️ Phrase-level claims — the release, the boundary valley — are asserted
  * against a SMOOTHED signal. The detail layer runs ~10 Hz deep at an ~8-frame
@@ -177,6 +177,15 @@ const USER_CONTROL: readonly ControlPoint[] = [
   // out-of-phase settle at every mora. That produced a regular braid, which
   // the owner read immediately as unnatural. Separation belongs in the phrase
   // shape, where it means something, not in the detail layer's rhythm.
+  //
+  // ⚠️ THESE POINTS ARE DELIBERATELY CLOSE THROUGH 日本の秋, and that is not
+  // the thing to change if the pair ever braids again. The two tracks SHOULD
+  // agree on the easy part of the sentence — the error §4 exists to show is
+  // the accent on とても, and pulling them apart earlier turns "missed the
+  // accent" into "spoke in a higher register", which is a different error and
+  // not the one the copy describes. When the pair braided (25 crossings, left
+  // 40% of the plot) the cause was in `userDetail`, which had its own periods;
+  // it now shares the native's. See its docblock.
   { frame: 0, hz: 186 },
   { frame: 12, hz: 188 },
   { frame: 24, hz: 189 },
@@ -258,11 +267,40 @@ function nativeDetail(frame: number): number {
   );
 }
 
+/**
+ * The You track's detail: the SAME three periods as the native, at slightly
+ * smaller amplitudes.
+ *
+ * ## ⚠️ The shared periods are load-bearing. Do not give this its own.
+ *
+ * They used to differ (0.698 / 0.436 / 0.249 against the native's 0.785 /
+ * 0.483 / 0.279) so the two tracks would "drift in and out of step instead of
+ * shadowing each other". That reasoning is right about each track ALONE and
+ * wrong about the PAIR, and it shipped a defect no per-track test could see:
+ *
+ *   two independent ~10 Hz textures make their DIFFERENCE swing by up to
+ *   19.6 Hz, while the intonation separates the tracks by only ~5 Hz through
+ *   日本の秋 — so which line was on top was decided by where a detail trough
+ *   landed, not by the sentence. The pair crossed 25 times, in a visible
+ *   braid through the left 40% of the plot, against a docblock that says
+ *   they "cross each other twice".
+ *
+ * Sharing the periods makes the DIFFERENCE smooth without flattening either
+ * line: each track still carries its full depth and its own coherence, and the
+ * order changes only where the sentence changes it. Measured, control points
+ * untouched: 25 crossings -> 6, and those six are separate events rather than
+ * one braid.
+ *
+ * ▶ The amplitudes stay lower than the native's (4.6/2.8/1.8 against
+ * 5.2/3.2/2.0). That is the pedagogy, not decoration: a learner moves their
+ * pitch less. Tuning these is safe; tuning the PERIODS reopens the braid, and
+ * `pitch-demo.test.ts` will say so.
+ */
 function userDetail(frame: number): number {
   return (
-    4.6 * triangle(frame * 0.698 + 3.3) +
-    2.8 * triangle(frame * 0.436 + 0.8) +
-    1.8 * Math.sin(frame * 0.249 + 5.1)
+    4.6 * triangle(frame * 0.785 + 0.6) +
+    2.8 * triangle(frame * 0.483 + 2.1) +
+    1.8 * Math.sin(frame * 0.279 + 4.3)
   );
 }
 
