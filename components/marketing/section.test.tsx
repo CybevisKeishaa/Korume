@@ -294,4 +294,35 @@ describe("Section", () => {
       expect(section.className.split(/\s+/)).toContain("scroll-mt-header");
     },
   );
+
+  it("carries the reveal contract on the section element itself, adding no wrapper", () => {
+    const { container } = render(
+      <Section id="s" eyebrow="Eyebrow" heading="Heading">
+        <p>Body</p>
+      </Section>,
+    );
+
+    const section = container.querySelector("section");
+    if (!section) throw new Error("rendered no section");
+    expect(section).toHaveAttribute("data-reveal", "pending");
+    // The entrance must be attributes on elements that already exist, never new
+    // nodes: §6's mascot sits on the node grid's bottom edge to within 1px and
+    // e2e asserts it (tests/e2e/landing-page.spec.ts).
+    expect(container.querySelectorAll("[data-reveal]")).toHaveLength(1);
+  });
+
+  it.each(["stacked", "centred"] as const)(
+    "names the three staggered parts in the %s layout, so the stagger needs no wrapper",
+    (layout) => {
+      const { container } = render(
+        <Section id="s" eyebrow="Eyebrow" heading="Heading" layout={layout}>
+          <p>Body</p>
+        </Section>,
+      );
+
+      expect(container.querySelectorAll("[data-eyebrow]")).toHaveLength(1);
+      expect(container.querySelectorAll("[data-section-heading]")).toHaveLength(1);
+      expect(container.querySelectorAll("[data-section-body]")).toHaveLength(1);
+    },
+  );
 });

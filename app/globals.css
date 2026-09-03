@@ -242,6 +242,12 @@
   --duration-fast: 150ms;
   --duration-base: 300ms;
   --duration-slow: 600ms;
+  /* The cinematic tier: §4's contour draw and the photograph entrances, where
+     600ms reads clipped. Nothing above covered 1.0-1.5s. */
+  --duration-cinematic: 1200ms;
+  /* The beat between staggered siblings — eyebrow, then heading, then body.
+     One value, so the landing page has one rhythm rather than nine. */
+  --duration-stagger: 90ms;
   --ease-standard: ease-out;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -365,6 +371,91 @@
   }
   50% {
     transform: scale(1.03);
+  }
+}
+
+/**
+ * Landing-page entrance motion (Task A-MOTION).
+ *
+ * `RevealScope` flips `[data-reveal]` from "pending" to "in" as each section
+ * enters view; everything here is plain CSS, the same mechanism `.stroke-draw`
+ * and `.level-fill` above already use. Three properties of that choice are
+ * load-bearing:
+ *
+ *  - The reduce-motion blocks below collapse every `animation-duration` to
+ *    0.001ms, honouring the OS query AND the app toggle, so this is gated for
+ *    free. A rAF timeline animating inline styles (GSAP) is not reachable from
+ *    there at all, which is why this surface uses none.
+ *  - The hidden state is gated on `[data-reduce-motion="false"]`, which
+ *    themeInitScript sets before paint and only when JS ran. With JS off, or
+ *    reduce-motion on, the hidden state never applies: content is visible and
+ *    static. Motion is never what hides content (spec §4.1).
+ *  - It is scoped to `[data-reveal-scope]`. `Section` is shared, so a marketing
+ *    page that never mounts `RevealScope` must not be able to hold its own
+ *    content at opacity 0.
+ *
+ * Transform and opacity do not affect layout, so nothing here moves geometry —
+ * §6's mascot/rail alignment is asserted to 1px in e2e.
+ */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-eyebrow],
+    [data-section-heading],
+    [data-section-body],
+    [data-section-rail],
+    [data-section-showcase]
+  ) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] :is(
+    [data-eyebrow],
+    [data-section-heading],
+    [data-section-body],
+    [data-section-rail],
+    [data-section-showcase]
+  ) {
+  animation: reveal-rise var(--duration-slow) var(--ease-standard) both;
+}
+
+/* The stagger: eyebrow, then heading, then the body or the showcase together.
+   Derived off one token with calc(), so the rhythm is one decision rather than
+   five literals. */
+[data-reveal-scope] [data-reveal="in"] [data-section-heading] {
+  animation-delay: var(--duration-stagger);
+}
+[data-reveal-scope]
+  [data-reveal="in"]
+  :is([data-section-body], [data-section-rail], [data-section-showcase]) {
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    /* 24px, as the token — the rise the owner's brief asked for. */
+    transform: translateY(var(--space-lg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/**
+ * The same entrance without the travel, for anything nested INSIDE a block that
+ * already rises — §2's chips, §3's steps, §4's scores, §6's nodes, §7's cards.
+ * A child transform does not replace its ancestor's, it composes with it:
+ * `reveal-rise` on both would give the inner element ~48px of travel and two
+ * easing curves fighting over it. The rise happens once, at the block; the
+ * stagger inside it is carried by opacity alone, which is also the quieter
+ * reading the brief asks for.
+ */
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

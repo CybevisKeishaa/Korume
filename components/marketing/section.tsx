@@ -172,6 +172,7 @@ export function Section(props: SectionProps) {
       ) : null}
       <Heading
         id={headingId}
+        data-section-heading
         className={cn(
           "text-balance font-display font-bold",
           headingLevel === 1 && "text-hero",
@@ -192,6 +193,10 @@ export function Section(props: SectionProps) {
     <section
       id={id}
       aria-labelledby={headingId}
+      // The entrance contract (Task A-MOTION). Attributes only: the stagger
+      // must not introduce a wrapper, because §6's mascot sits on the node
+      // grid's bottom edge to within 1px and e2e asserts it.
+      data-reveal="pending"
       className={cn("relative scroll-mt-header py-2xl", className)}
     >
       {backdrop}
@@ -228,12 +233,12 @@ export function Section(props: SectionProps) {
           // this the heading disappears under §8's photograph.
           <div data-section-centred className="relative z-10 mx-auto max-w-3xl text-center">
             {headingBlock}
-            <div className="mt-lg">{children}</div>
+            <div data-section-body className="mt-lg">{children}</div>
           </div>
         ) : (
           <>
             {headingBlock}
-            <div className="mt-lg">{children}</div>
+            <div data-section-body className="mt-lg">{children}</div>
           </>
         )}
       </MarketingContainer>

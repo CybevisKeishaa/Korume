@@ -139,6 +139,7 @@ const config: Config = {
         fast: "var(--duration-fast)",
         base: "var(--duration-base)",
         slow: "var(--duration-slow)",
+        cinematic: "var(--duration-cinematic)",
       },
       transitionTimingFunction: {
         standard: "var(--ease-standard)",

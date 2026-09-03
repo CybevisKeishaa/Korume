@@ -56,6 +56,7 @@ const REQUIRED_TOKENS = [
   "--elevation-raised", "--elevation-overlay", "--elevation-floating",
   // motion
   "--duration-fast", "--duration-base", "--duration-slow",
+  "--duration-cinematic", "--duration-stagger",
   "--ease-standard", "--ease-out-expo",
   // z-index
   "--z-nav", "--z-overlay", "--z-popover", "--z-toast",
@@ -110,6 +111,21 @@ describe("design tokens", () => {
     // Both blocks must keep collapsing animation AND transition durations.
     const matches = css.match(/animation-duration: 0\.001ms !important/g);
     expect(matches?.length).toBe(2);
+  });
+
+  it("hides a pending reveal only when the init script proved motion is allowed", () => {
+    // The gate is `[data-reduce-motion="false"]`, which themeInitScript sets
+    // before paint and ONLY when JS ran. With JS off the attribute is absent,
+    // so the hidden state never applies and content is visible — motion can
+    // never be what hides content (spec §4.1, CLAUDE.md §2.4).
+    const gated = css.match(
+      /:root\[data-reduce-motion="false"\] \[data-reveal-scope\] \[data-reveal="pending"\]/g,
+    );
+    expect(gated).not.toBeNull();
+    expect(gated?.length).toBeGreaterThanOrEqual(1);
+    // And the hidden state must never be written ungated: a rule that starts at
+    // `[data-reveal-scope]` or `[data-reveal="pending"]` would apply with JS off.
+    expect(css).not.toMatch(/^\[data-reveal(-scope)?[^\]]*\][^{]*\{\s*opacity:\s*0/m);
   });
 
   it("defines the primitive colour palette", () => {
