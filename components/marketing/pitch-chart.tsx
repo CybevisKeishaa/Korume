@@ -255,6 +255,9 @@ export function PitchChart({ t }: { t: Translator }) {
             <path
               data-contour="native"
               d={nativePath}
+              // `.stroke-draw` dashes against pathLength=1 (globals.css); without it
+              // the dasharray is 1 unit of a ~480-unit path (Task A-MOTION).
+              pathLength={1}
               fill="none"
               className="stroke-primary-strong"
               strokeWidth={NATIVE_STROKE}
@@ -264,6 +267,9 @@ export function PitchChart({ t }: { t: Translator }) {
             <path
               data-contour="you"
               d={userPath}
+              // `.stroke-draw` dashes against pathLength=1 (globals.css); without it
+              // the dasharray is 1 unit of a ~480-unit path (Task A-MOTION).
+              pathLength={1}
               fill="none"
               className="stroke-muted-foreground"
               strokeWidth={USER_STROKE}

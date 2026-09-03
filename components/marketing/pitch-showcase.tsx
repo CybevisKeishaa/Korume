@@ -169,7 +169,9 @@ export async function PitchShowcase() {
               of the Companion's text measure (fix round 1, F2). */}
           <div className="flex min-w-0 flex-col">
             <p className="text-caption text-muted-foreground">{t("pitch.scores.overallLabel")}</p>
-            <p className="font-display text-display font-bold">{t("pitch.scores.overall")}</p>
+            <p data-score-overall className="font-display text-display font-bold">
+              {t("pitch.scores.overall")}
+            </p>
             <p className="text-body-lg text-success-strong">{t("pitch.scores.verdict")}</p>
 
             <CompanionCard t={t} />
@@ -199,10 +201,13 @@ export async function PitchShowcase() {
 function SubScores({ t }: { t: Translator }) {
   return (
     <dl className="mt-md grid grid-cols-2 gap-y-sm border-t border-border pt-md sm:grid-cols-4 sm:gap-y-0">
-      {SUB_SCORES.map((score) => (
+      {SUB_SCORES.map((score, index) => (
         <div
           key={score}
           data-subscore={score}
+          // Settles after the contours have drawn (Task A-MOTION); globals.css
+          // turns the ordinal into the delay.
+          style={{ "--subscore-step": index } as React.CSSProperties}
           className={cn(
             "min-w-0",
             "sm:border-l sm:border-border sm:px-sm sm:first:border-l-0 sm:first:pl-0",

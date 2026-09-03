@@ -506,6 +506,54 @@
   }
 }
 
+/* §4's two voices. The reference contour draws, the learner's follows it, then
+   the four sub-scores settle, then the overall number — the ORDER is the
+   section's claim ("turn something you hear into something your mouth can do"),
+   so each delay is derived from the one before rather than chosen separately.
+
+   The dash mechanism is `.stroke-draw`'s, above; both paths set pathLength=1 in
+   pitch-chart.tsx. Drawn once, never looped: this is a data visualization of
+   learning, not audio decoration. */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] [data-contour] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+[data-reveal-scope] [data-reveal="in"] [data-contour] {
+  /* ⚠️ Both dash declarations must be repeated here, not only on the `pending`
+     rule above. `@keyframes stroke-draw` declares only a `to`, so its implicit
+     `from` is the element's own computed value — and the `pending` rule stops
+     matching the instant the state flips to "in". Without this the animation
+     runs 0 -> 0 and no draw happens: the paths simply appear. Measured, not
+     guessed; the unit tests cannot see it. */
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: stroke-draw var(--duration-cinematic) var(--ease-standard) both;
+}
+[data-reveal-scope] [data-reveal="in"] [data-contour="you"] {
+  animation-delay: calc(var(--duration-cinematic) / 2);
+}
+
+/* ⚠️ The score does NOT count up. It renders 87 from the catalog; animating the
+   digits would put a second, transient value on screen for a number the copy
+   states once — motion that decorates rather than explains, and a false reading
+   for anyone who glances mid-animation. It fades, nothing more. */
+:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-subscore],
+    [data-score-overall]
+  ) {
+  opacity: 0;
+}
+[data-reveal-scope] [data-reveal="in"] [data-subscore] {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(
+    var(--duration-cinematic) + var(--duration-stagger) * var(--subscore-step, 0)
+  );
+}
+[data-reveal-scope] [data-reveal="in"] [data-score-overall] {
+  animation: reveal-fade var(--duration-base) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-cinematic) * 1.5);
+}
+
 /**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).

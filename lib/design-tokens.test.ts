@@ -128,6 +128,22 @@ describe("design tokens", () => {
     expect(css).not.toMatch(/^\[data-reveal(-scope)?[^\]]*\][^{]*\{\s*opacity:\s*0/m);
   });
 
+  it("declares the contour dash offset on the revealed rule, not only the pending one", () => {
+    // `@keyframes stroke-draw` declares only a `to`, so its implicit `from` is
+    // the element's own computed value — and the `pending` rule stops matching
+    // the instant the state flips to "in". If the start value lives only there,
+    // the animation runs 0 -> 0 and §4's contours appear instead of drawing.
+    // That shipped once and no unit test could see it, so it is pinned here.
+    const revealed = css.match(
+      /\[data-reveal="in"\] \[data-contour\] \{([^}]*)\}/,
+    );
+    expect(revealed).not.toBeNull();
+    const body = revealed?.[1] ?? "";
+    expect(body).toMatch(/stroke-dasharray:\s*1/);
+    expect(body).toMatch(/stroke-dashoffset:\s*1/);
+    expect(body).toMatch(/animation:\s*stroke-draw/);
+  });
+
   it("defines the primitive colour palette", () => {
     const missing = PRIMITIVE_TOKENS.filter(
       (token) => !new RegExp(`${token}\\s*:`).test(css),

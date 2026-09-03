@@ -500,4 +500,40 @@ describe("PitchShowcase", () => {
     expect(rail?.textContent).toContain(en.pitch.cta);
     expect(showcase?.textContent).toContain(en.pitch.scores.overall);
   });
+
+  it("normalizes both contours so the shared stroke-draw arithmetic applies", async () => {
+    const { container } = render(await PitchShowcase());
+
+    const contours = container.querySelectorAll("[data-contour]");
+    expect(contours).toHaveLength(2);
+    expect(Array.from(contours).map((c) => c.getAttribute("data-contour"))).toEqual([
+      "native",
+      "you",
+    ]);
+    // `.stroke-draw`'s keyframe dashes against pathLength=1 (globals.css).
+    // Without this the dasharray would be 1 user unit of a ~480-unit path — a
+    // dotted line, not a draw.
+    for (const contour of contours) {
+      expect(contour).toHaveAttribute("pathLength", "1");
+    }
+  });
+
+  it("steps the four sub-scores so they settle in order, and names the overall score", async () => {
+    const { container } = render(await PitchShowcase());
+
+    const rows = container.querySelectorAll("[data-subscore]");
+    expect(rows).toHaveLength(4);
+    expect(
+      Array.from(rows).map((r) =>
+        (r as HTMLElement).style.getPropertyValue("--subscore-step").trim(),
+      ),
+    ).toEqual(["0", "1", "2", "3"]);
+
+    // The overall 87 — which `[data-score-number]` is NOT: that attribute is
+    // inside ScoreValue and renders once per sub-score, so it matches four.
+    const overall = container.querySelectorAll("[data-score-overall]");
+    expect(overall).toHaveLength(1);
+    expect(overall[0]).toHaveTextContent(en.pitch.scores.overall);
+    expect(container.querySelectorAll("[data-score-number]")).toHaveLength(4);
+  });
 });
