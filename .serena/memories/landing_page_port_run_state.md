@@ -11,29 +11,72 @@
 
 # ▶▶ RESUME HERE
 
-**Run `git log --oneline -5`.** The last hash this file can honestly state is **`27f74b8`**
-(2026-09-03, session 6); anything after it was written by a later session. A file cannot name the
+**Run `git log --oneline -8`.** The last hash this file can honestly state is **`c1c6ab2`**
+(2026-09-03, session 7); anything after it was written by a later session. A file cannot name the
 commit that contains it — writing one means predicting it, which is the L-002 failure this branch
 has paid for four times.
 
 **Branch `landing-page-port`. Nothing merged, nothing pushed.** Everything is built: tasks 1-13,
-A1/A2/A3, P, V, the independent review and its fixes.
+A1/A2/A3, P, V, the independent review and its fixes, and **Task A-MOTION (A-M1…A-M5)**.
 
-Gate, each command run and read (session 6): `tsc` exit 0 · `npm run lint` **0 errors, 81 warnings**
-(all pre-existing, none in the diff — verified per file; an older note said "11", which was a
-different counting method — do not repeat it) · `npx vitest run` **2589 over 281 files** ·
-`npx playwright test` **27/27**.
+Gate, each command run and read (session 7): `tsc` exit 0 · `npm run lint` **0 errors, 81 warnings**
+(all pre-existing, none in the diff; an older note said "11", which was a different counting method
+— do not repeat it) · `npm test` **2605 over 282 files** · `npx playwright test
+tests/e2e/landing-page.spec.ts` **20/20** · `npm run build` exit 0.
+⚠️ **The full `npx playwright test` is NOT 27/27 in a session without local Supabase.** Five specs
+(auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with
+`ECONNREFUSED 127.0.0.1:54321`; they all register a user. That is the environment, not a defect —
+but do not record 27/27 without Supabase up.
 
 ## ▶▶ WHAT REMAINS, IN ORDER
 
-1. **Task A-MOTION** — the whole-page motion pass, plus the unexplained `/en#problem` scroll drift.
-   ▶ It also owns **the mobile sheet's transition**: `site-menu.tsx` ships with NO animation
-   deliberately, and adding one turns §2's currently-vacuous reduced-motion gate into a real one.
-2. **Whole-branch review** (L-011), then a review of the fix wave (L-012) — on this project the
+1. **Whole-branch review** (L-011), then a review of the fix wave (L-012) — on this project the
    second pass has repeatedly caught defects the first wave created.
-3. **The branch-end `docs/lessons.md` pass — 16 queued entries** (listed at the end of the archive's
-   session-5 and session-6 sections).
-4. **The owner's mobile landing page** — new, large, and deliberately out of scope. See below.
+2. **The branch-end `docs/lessons.md` pass — 18 queued entries** (16 listed at the end of the
+   archive's session-5 and session-6 sections, plus two from A-MOTION, below).
+3. **The owner's mobile landing page** — new, large, and deliberately out of scope. See below.
+   ▶ Its four extra sections (Video · Kanji-inspect · JLPT · Review Mistakes) are the SAME four the
+   motion proposal assumed, so the two pieces of work share one open question. See A-MOTION below.
+
+## ✅ TASK A-MOTION — DONE (`da9233e` · `340800d` · `5d31520` · `a22e13e` · `c1c6ab2`)
+
+Spec is in the plan (`029d612`), under `## Task A-MOTION`. It came from a 14-section motion proposal
+the owner brought; the **philosophy was adopted, the section map was not** — the proposal describes a
+Video section, a Kanji-inspect section, a JLPT section and a Review-Mistakes section that do not
+exist here, and omits `Signoff`, which does. ▶ **Owner ruled 2026-09-03: the nine-section page stands
+as a landing page; those four are built later, with the mobile page.**
+
+**The architecture, and why it is not GSAP.** `lib/gsap.ts` is still unused, deliberately. The global
+reduce-motion block in `globals.css` collapses `animation-duration` honouring the OS query AND the
+app toggle, so **CSS motion is gated for free**; a rAF timeline animating inline styles is not
+reachable from there at all. ⚠️ **`gsap.matchMedia()` would be a defect here** — it reads only the OS
+media query, so it ignores the app toggle (CLAUDE.md §2 r4). Nothing in the shipped scope needs
+scrub or pin, so nothing needs GSAP.
+
+**The gate is one selector: `:root[data-reduce-motion="false"]`**, which `themeInitScript` sets
+before paint and only when JS ran. It covers all three cases with no JS branch — motion on hides then
+reveals, reduce-motion never hides, JS off never hides. Scoped under `[data-reveal-scope]` (on the
+landing `<main>`) so a marketing page that never mounts `RevealScope` cannot strand its own content
+at opacity 0. **Zero new DOM nodes anywhere**: the entrance is attributes on `section.tsx`'s existing
+elements, because §6's mascot sits on the node grid's bottom edge to within 1px.
+
+**Geometry proven unchanged:** document **4480px at 1280** — the settled figure exactly — as header
+65 + main 3737 + footer 678, measured under reduce-motion so nothing was mid-flight.
+
+▶ **Two lessons queued for the `docs/lessons.md` pass:**
+- **A keyframe with only a `to` takes its `from` from the element's live computed value.** §4's
+  contour draw shipped broken for one commit because `stroke-dashoffset: 1` lived only on the
+  `pending` rule, which stops matching the instant the state flips to `in` — so the animation ran
+  0 → 0 and the paths just appeared. Unit tests were green; only a browser probe of
+  `getComputedStyle` mid-animation saw it. Now pinned in `design-tokens.test.ts`.
+- **A child transform composes with its ancestor's, it does not replace it.** `reveal-fade` exists
+  beside `reveal-rise` for exactly this: stepped collections nest inside a block that already rises,
+  and using `reveal-rise` on both gives ~48px of travel and two easing curves fighting.
+
+▶ **Still owed on this section, none of it blocking:** the `/en#problem` scroll drift was NOT
+investigated (it was listed under A-MOTION but is a scroll-anchor question, not a motion-layer one),
+and **`site-menu.tsx` still ships with no transition** — the mobile sheet's animation was not part of
+what was built.
 
 ## ⚠️⚠️ THE OWNER'S MOBILE LANDING PAGE — NOT STARTED, SCOPE ALREADY RULED
 
