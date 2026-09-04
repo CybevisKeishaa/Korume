@@ -21,6 +21,8 @@
 - **No new DOM nodes where an attribute will do.** Attributes on existing elements cannot move measured geometry.
 - **Tests first.** A guard written over code that already exists cannot fail first — mutation-check it and report both outputs (CLAUDE.md §7).
 - **A collection gathered by a pattern must be asserted non-empty and of the size expected** (L-004), or an empty match makes it unconditionally green.
+- **⚠️ The same rule binds test doubles, and this plan has already broken it once.** A mock that *collects* something — registered listeners, captured callbacks, recorded calls — must have that collection driven and asserted, or the mock is scaffolding that proves nothing. Task 1's first version built a `listeners` Set inside its `matchMedia` mock and discarded the return value at all five call sites; the production listener under test could be deleted outright and the suite stayed 7/7 green. **Before writing any test that stubs a global, ask what the stub collects and where that collection is exercised.** If the answer is "nowhere", the test is measuring its own setup.
+- **A test whose subject is absent passes or fails for the wrong reason.** Components in this plan return early when they find no target element — `ScrollProgress` on no `[data-scroll-progress]`, `RevealScope` on no `[data-reveal="pending"]`. A test of their behaviour must put the target in the DOM first, or it exercises the early return and reports something unrelated to what it claims.
 
 ---
 
@@ -350,12 +352,29 @@ describe("<ScrollProgress />", () => {
     document.documentElement.removeAttribute("data-reduce-motion");
   });
 
-  it("disconnects its observer and cancels its frame on unmount", () => {
+  it("disconnects its observer and cancels a REAL frame on unmount", () => {
     document.documentElement.setAttribute("data-reduce-motion", "false");
+
+    // ⚠️ The section must exist. ScrollProgress returns early when it finds no
+    // `[data-scroll-progress]`, so without this the effect never builds an
+    // observer, `disconnect` is never called, and the test fails for a reason
+    // that has nothing to do with teardown.
+    const section = document.createElement("section");
+    section.setAttribute(SCROLL_PROGRESS_ATTR, "");
+    document.body.append(section);
+
     const disconnect = vi.fn();
+    // Capture the callback so the test can drive an intersection. Without one,
+    // `active` stays empty, no frame is ever scheduled, and the cancel
+    // assertion below would be satisfied by a no-op `cancelAnimationFrame(0)`
+    // — green while proving nothing.
+    let fire: ((entries: unknown[]) => void) | undefined;
     vi.stubGlobal(
       "IntersectionObserver",
       class {
+        constructor(cb: (entries: unknown[]) => void) {
+          fire = cb;
+        }
         observe = vi.fn();
         unobserve = vi.fn();
         disconnect = disconnect;
@@ -364,10 +383,16 @@ describe("<ScrollProgress />", () => {
     const cancel = vi.spyOn(window, "cancelAnimationFrame");
 
     const { unmount } = render(<ScrollProgress />);
+    fire?.([{ target: section, isIntersecting: true }]);
+
     unmount();
 
     expect(disconnect).toHaveBeenCalled();
-    expect(cancel).toHaveBeenCalled();
+    // A real frame id, not 0: the loop was genuinely running when we unmounted.
+    const cancelled = cancel.mock.calls.at(-1)?.[0];
+    expect(cancelled).toBeGreaterThan(0);
+
+    section.remove();
     document.documentElement.removeAttribute("data-reduce-motion");
   });
 });
