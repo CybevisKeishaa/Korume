@@ -474,13 +474,22 @@ export function ScrollProgress(): null {
       }
     };
 
-    if (!motionEnabled()) {
-      settle();
-      return subscribeMotionEnabled(() => {});
-    }
-
     const active = new Set<HTMLElement>();
     let frame = 0;
+    // Gates rescheduling only. `active` is never cleared by this flag — the
+    // observer is the single source of truth for what is on screen, in both
+    // directions, whether paused or not. Seeded from the gate so a mount that
+    // starts with motion off is paused from the first frame, with the same
+    // observer and the same resume path as a mid-session toggle.
+    //
+    // ⚠️ There is deliberately NO early return for "motion is off at mount".
+    // An earlier version of this plan had one, and it was a CLAUDE.md §2 r4
+    // defect: it never built the observer, so a reader who turned motion back
+    // on in that same mount got a permanently dead page until reload. Two
+    // branches encoding one state machine is also §6 — and the two branches
+    // disagreeing IS the bug. One path, one seeded flag.
+    let paused = !motionEnabled();
+    if (paused) settle();
 
     const tick = () => {
       for (const section of active) {
@@ -499,19 +508,32 @@ export function ScrollProgress(): null {
         if (entry.isIntersecting) active.add(section);
         else active.delete(section);
       }
-      if (active.size > 0 && frame === 0) frame = window.requestAnimationFrame(tick);
+      // ⚠️ `!paused` is load-bearing and was added after a reproduced defect:
+      // without it, a section scrolled out and back in re-adds itself, sees
+      // `frame === 0`, and schedules a fresh loop — resuming live writes for a
+      // reader who had already turned reduce-motion on.
+      if (!paused && active.size > 0 && frame === 0) {
+        frame = window.requestAnimationFrame(tick);
+      }
     });
 
     for (const section of sections) observer.observe(section);
 
-    // The toggle can flip mid-session. Settling on the spot beats waiting for
-    // the next scroll, which may never come.
+    // The toggle can flip mid-session, in either direction.
     const unsubscribe = subscribeMotionEnabled((enabled) => {
-      if (enabled) return;
-      window.cancelAnimationFrame(frame);
-      frame = 0;
-      active.clear();
-      settle();
+      if (!enabled) {
+        // Settling on the spot beats waiting for the next scroll, which may
+        // never come. `active` is left untouched — pausing is not forgetting.
+        paused = true;
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+        settle();
+        return;
+      }
+      paused = false;
+      // Whatever is on screen right now resumes immediately; nothing waits
+      // for a fresh intersection event that a static page may never fire.
+      if (active.size > 0 && frame === 0) frame = window.requestAnimationFrame(tick);
     });
 
     return () => {
