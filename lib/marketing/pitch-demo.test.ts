@@ -550,6 +550,38 @@ describe("pitch demo fixtures", () => {
    * It reads the SOURCE TEXT rather than importing a constant on purpose: the
    * thing at risk of going stale is the prose a human reads.
    */
+  it("keeps the control-point counts its docblocks state", () => {
+    // The table above is machine-checked; the counts beside it were not, and
+    // both were wrong — the header's build sketch said "~19" and
+    // NATIVE_CONTROL's docblock said "Forty-three", over arrays holding 24 and
+    // 21. Two homes for one fact, neither matching the code between them
+    // (CLAUDE.md §6, L-002). The count is load-bearing prose: the docblock's
+    // whole argument is "N control points, not 169 hand-typed frames".
+    //
+    // Reads the SOURCE TEXT for the same reason the table test does — what
+    // goes stale is the sentence a human reads, not the array.
+    const source = readFileSync(join(__dirname, "pitch-demo.ts"), "utf8");
+
+    const count = (name: string) => {
+      const after = must(source.split(`const ${name}`)[1], `${name} declaration`);
+      const block = must(after.split("];")[0], `${name} array body`);
+      const points = block.match(/frame:\s*\d+/g) ?? [];
+      // L-004: a collection gathered by a pattern. Assert it is non-empty
+      // before asserting its size, or a renamed field makes this green at 0.
+      expect(points.length, `${name} control points found`).toBeGreaterThan(0);
+      return points.length;
+    };
+
+    const native = count("NATIVE_CONTROL");
+    const user = count("USER_CONTROL");
+    expect(native, "NATIVE_CONTROL").toBe(24);
+    expect(user, "USER_CONTROL").toBe(21);
+
+    // Both prose homes must carry the number the arrays actually hold.
+    expect(source, "NATIVE_CONTROL's docblock").toContain(`${native} control points`);
+    expect(source, "the header's build sketch").toContain(`${native + user} control points`);
+  });
+
   it("keeps the header's measurement table true of the fixtures it describes", () => {
     const source = readFileSync(join(__dirname, "pitch-demo.ts"), "utf8");
     const table = source.split("▶ Measured on the current fixtures:")[1]?.split("⚠️")[0];

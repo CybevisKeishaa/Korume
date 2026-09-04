@@ -235,12 +235,17 @@ describe("mascot pose manifest", () => {
       ...manifest.poses.map((p) => p.out),
       ...manifest.supplied.map((p) => p.out),
     ];
-    // Union of both classes: 5 extracted + 27 supplied. A bare length check
-    // on `onDisk` alone would pass just as happily if a file and a record
-    // drifted apart by the same count, so compare the actual name sets too.
-    expect(onDisk.length).toBe(32);
-    expect(named.length).toBe(32);
+    // THE INVARIANT, permanent: the directory and the manifest name the same
+    // set. A bare length check on `onDisk` alone would pass just as happily if
+    // a file and a record drifted apart by the same count, so compare names.
     expect(onDisk.sort()).toEqual(named.sort());
+
+    // TODAY'S STATE. Not an invariant (L-031). 5 extracted + 27 supplied = 32.
+    // Adding a pose is legitimate and SHOULD fail here — update this number,
+    // never the manifest, to make it green again. Kept separate from the
+    // invariant above so a later reader can tell which is which.
+    expect(onDisk.length, "poses on disk today").toBe(32);
+    expect(named.length, "poses the manifest names today").toBe(32);
   });
 
   it("the extracted assets are what the extractor produces from the sheets", () => {

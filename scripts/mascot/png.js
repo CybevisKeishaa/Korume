@@ -16,6 +16,10 @@ function decode(path) {
     else if (type === "IEND") break;
     pos += 12 + len;
   }
+  // No IHDR means this was not a PNG (or was truncated before the header).
+  // Without this the next line throws "Cannot read properties of null", which
+  // sends the reader looking for a decoder bug instead of at their input.
+  if (!ihdr) throw new Error("not a PNG — no IHDR chunk: " + path);
   if (ihdr.depth !== 8 || ihdr.interlace !== 0) throw new Error("unsupported PNG");
   const ch = ihdr.color === 6 ? 4 : ihdr.color === 2 ? 3 : null;
   if (!ch) throw new Error("unsupported colortype " + ihdr.color);

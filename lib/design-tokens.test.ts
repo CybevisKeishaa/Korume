@@ -131,6 +131,32 @@ describe("design tokens", () => {
     expect(matches?.length).toBe(2);
   });
 
+  it("collapses animation DELAY under reduce-motion, not only duration", () => {
+    // ⚠️ CLAUDE.md §2 rule 4. Collapsing only the duration is not enough: the
+    // reveal layer's rules are `animation: reveal-rise … both`, and
+    // `animation-fill-mode: both` holds the element at the keyframe's FROM
+    // value — `opacity: 0` — for the whole of `animation-delay`. So with the
+    // delay left alive, a reduce-motion reader still gets content hidden by
+    // motion, for up to `--duration-cinematic * 1.5`.
+    //
+    // Measured in a real browser at 1280 before this guard existed:
+    // `animationName: reveal-rise, animationDuration: 1e-06s (collapsed),
+    // animationDelay: 0.09s (NOT collapsed), animationFillMode: both,
+    // data-reveal: in, opacity: 0` — hidden across 12 sampled frames spanning
+    // ~350ms. The e2e case for this reproduced it only about 1 run in 12,
+    // because the assertion has to land inside that window; this test cannot
+    // miss it.
+    //
+    // A NEGATIVE delay rather than `0s`: with a 0.001ms duration, a frame
+    // sampled at exactly the animation's start still reads the FROM value.
+    // Starting it already-completed makes `both` hold the TO value instead.
+    const delays = css.match(/animation-delay: -1ms !important/g);
+    // L-004: non-empty AND the expected size — one per reduce-motion block,
+    // and there are exactly two blocks (asserted in the test above).
+    expect(delays).not.toBeNull();
+    expect(delays).toHaveLength(2);
+  });
+
   it("hides a pending reveal only when the init script proved motion is allowed", () => {
     // The gate is `[data-reduce-motion="false"]`, which themeInitScript sets
     // before paint and ONLY when JS ran. With JS off the attribute is absent,

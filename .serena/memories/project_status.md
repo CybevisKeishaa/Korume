@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-07-17-l9a-i18n-design-system-design.md`;
 plan `docs/superpowers/plans/2026-07-17-l9a-localization-architecture.md`;
 SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
-## ▶ NEXT ACTION (updated 2026-09-04, session 9) — **branch `landing-page-port` is fully BUILT, the motion pass has landed, and BOTH reviews have now run: tasks 1-13, A1/A2/A3, P, V, the independent review and its fixes, **Task A-MOTION (A-M1…A-M5)**, the whole-branch review (L-011) and the review of its fix wave (L-012). Nothing merged, nothing pushed; for the tip and the count run `git log --oneline -6` and `git rev-list --count master..landing-page-port` (L-002 — a file cannot name the commit that contains it), and run `git status` for the state of the tree rather than reading it from any memory. ⚠️ **The gate figures live in `mem:landing_page_port_run_state` and nowhere else** — this block used to carry a second copy (`2605 over 282 files`) that the next wave immediately falsified, which is the CLAUDE.md §6 defect twice over. ⚠️ **Do NOT record `playwright 27/27` without local Supabase running**: five specs (auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with `ECONNREFUSED 127.0.0.1:54321` in a session without it; they all register a user and none touches the landing page. ⚠️ Task 13 gave §0 a hamburger + sheet, which REVERSES the owner's own 2026-08-28 "no hamburger" ruling, at their direction. **L-011 returned 0 Critical / 3 Important / 3 Minor; the L-012 review of its fix wave returned 0 Critical / 6 Important / 8 Minor — including the fix for I1 repeating I1's own error one level down.** Both fix waves are applied and, at the owner's direction, landed in ONE commit. ⚠️ The L-011 pass was **PARTIAL**: two dispatched reviewers died on a rate limit, so `pitch-demo.ts`'s maths and `scripts/mascot/**` were never read — the L-012 pass did not cover them either. The live next actions are: **finish that unread coverage** · **the `docs/lessons.md` pass, now 23 entries queued**. ▶ Detail, the browser evidence for I1, and why the reviewer's stronger fix was rejected: `mem:landing_page_port_run_state`. Then a NEW and large piece already scoped out of Task 13: **the owner's mobile landing page** (Figma `429:2` / `433:728`), a RICHER page than the built one — ~12 sections, five with no counterpart — which needs two questions answered first. ▶ **Its four extra sections are the same four a 14-section motion proposal assumed, so the two share one open question** (does mobile-only content go on desktop?). ▶ Detail: `mem:landing_page_port_run_state`.**
+## ▶ NEXT ACTION (updated 2026-09-04, session 9) — **branch `landing-page-port` is fully BUILT, the motion pass has landed, and BOTH reviews have now run: tasks 1-13, A1/A2/A3, P, V, the independent review and its fixes, **Task A-MOTION (A-M1…A-M5)**, the whole-branch review (L-011) and the review of its fix wave (L-012). Nothing merged, nothing pushed; for the tip and the count run `git log --oneline -6` and `git rev-list --count master..landing-page-port` (L-002 — a file cannot name the commit that contains it), and run `git status` for the state of the tree rather than reading it from any memory. ⚠️ **The gate figures live in `mem:landing_page_port_run_state` and nowhere else** — this block used to carry a second copy (`2605 over 282 files`) that the next wave immediately falsified, which is the CLAUDE.md §6 defect twice over. ⚠️ **Do NOT record `playwright 27/27` without local Supabase running**: five specs (auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with `ECONNREFUSED 127.0.0.1:54321` in a session without it; they all register a user and none touches the landing page. ⚠️ Task 13 gave §0 a hamburger + sheet, which REVERSES the owner's own 2026-08-28 "no hamburger" ruling, at their direction. **L-011 returned 0 Critical / 3 Important / 3 Minor; the L-012 review of its fix wave returned 0 Critical / 6 Important / 8 Minor — including the fix for I1 repeating I1's own error one level down.** Both fix waves are applied and, at the owner's direction, landed in ONE commit. The L-011 pass was PARTIAL (two dispatched reviewers died on a rate limit, leaving `pitch-demo.ts` and `scripts/mascot/**` unread) — ✅ **that coverage gap is now CLOSED**: all nine files were reviewed 2026-09-04, returning 0 Critical / 2 Important / 2 Minor, all prose or robustness, none reaching output. ✅ **The branch-end `docs/lessons.md` pass has also RUN**: 23 queued items became **2 new ids (`L-038` the wrong-metric family, `L-039` presence-vs-behaviour signals)**, ~9 evidence merges into existing entries, and **5 relocations into this file's § Key gotchas** — those five are CSS/DOM mechanics, and `lessons.md`'s § Scope reserves it for process. ⚠️ **A third reviewer died on the same session rate limit** doing the coverage pass; budget for dispatch running out before the work does. ▶ **The live next action is now the owner's call: this branch is built, fully reviewed, and green — the open question is whether to MERGE it.** ▶ Detail, the browser evidence for I1, why the reviewer's stronger fix was rejected, and what the coverage pass verified clean: `mem:landing_page_port_run_state`. Then a NEW and large piece already scoped out of Task 13: **the owner's mobile landing page** (Figma `429:2` / `433:728`), a RICHER page than the built one — ~12 sections, five with no counterpart — which needs two questions answered first. ▶ **Its four extra sections are the same four a 14-section motion proposal assumed, so the two share one open question** (does mobile-only content go on desktop?). ▶ Detail: `mem:landing_page_port_run_state`.**
 
 ✅ **`landing-page-identity-ruling` MERGED to master at `2822d22` (`--no-ff`), 2026-08-26; branch kept
 per repo convention.** Count its commits with
@@ -511,6 +511,44 @@ unbuilt from the original 8 layers — see § ROADMAP SEQUENCING for why they ar
   of the merge** — it needs `EMAIL_PROVIDER=none` added before the next deploy, or
   `instrumentation.ts`'s `validateEnv()` aborts startup exactly like a missing `AI_PROVIDER`/
   `SPEECH_PROVIDER` would. This is a manual step on the live host no session has performed.
+
+### CSS / DOM mechanics that have already cost this project a defect
+
+Filed here, not in `docs/lessons.md`: that file's scope is **process**, and these are technical
+facts (its § Scope sends them here). Each cost a real defect on `landing-page-port`.
+
+- **Tailwind preflight's `[hidden]` rule is `[hidden]:where(:not([hidden="until-found"]))`.**
+  `:where()` **contributes** zero specificity, so the rule weighs a single attribute selector — it
+  merely TIES with any one utility class and loses on source order. The day an element carrying
+  `hidden` gains `block`/`flex`/`grid`, it silently stops hiding and no test goes red. ⚠️ Do not
+  restate this as "the rule has zero specificity" — that is a different and false claim (it would
+  then lose to every class). Guard: `[&[hidden]]:hidden`, as `components/layout/site-menu.tsx` does.
+- **⭐ A reduce-motion kill switch that collapses `animation-duration` but not `animation-delay`
+  does NOT disable animation — it hides content.** `animation-fill-mode: both` holds the element at
+  the keyframe's FROM value for the whole delay, so with `opacity: 0` in the `from`, a reduce-motion
+  reader sees nothing for as long as the stagger runs. Found live on `landing-page-port` 2026-09-04
+  (CLAUDE.md §2 r4 violation): `animationDuration: 1e-06s` beside `animationDelay: 0.09s`, element at
+  opacity 0 across 12 frames / ~350ms. Both blocks in `app/globals.css` now carry
+  `animation-delay: -1ms !important` and `transition-delay: 0s !important`, pinned in
+  `lib/design-tokens.test.ts`. ⚠️ **Negative, not `0s`** — with a 0.001ms duration, a frame sampled
+  at the animation's exact start still reads the FROM value; `-1ms` starts it already complete.
+- **A `@keyframes` block with only a `to` takes its `from` from the element's LIVE computed value.**
+  So a start value that lives on a rule which stops matching when the state flips is not the start
+  value — the animation runs `x → x` and the element just appears. §4's contour draw shipped broken
+  for one commit this way (`stroke-dashoffset: 1` on the `pending` rule only). Unit tests were green;
+  only a browser probe of `getComputedStyle` mid-animation saw it. Now pinned in
+  `lib/design-tokens.test.ts`.
+- **A child's `transform` composes with its ancestor's, it does not replace it.** `reveal-fade`
+  exists beside `reveal-rise` in `app/globals.css` for exactly this: stepped collections nest inside
+  a block that already rises, and using `reveal-rise` on both gives ~48px of travel and two easing
+  curves fighting each other.
+- **`aria-hidden` is INHERITED.** Testing it on the element alone reported six false positives —
+  walk the ancestors.
+- **To find what makes a page scroll sideways, use a `Range` over TEXT NODES plus an ancestor
+  `overflow-x` walk.** Filtering on `getBoundingClientRect().right` cannot see the offender, because
+  text overflowing its own box does not move the box's rect; it returns a wall of irrelevant `LI`s
+  inside whatever scroll container is nearby. This single mistake misdirected Task 13 across three
+  sessions.
 
 ## Deploy target (user-set)
 **Self-hosted at `almostgone.vn`** — a single long-running Node instance (NOT Vercel/serverless).

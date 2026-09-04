@@ -595,14 +595,31 @@
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
  * Animation must never block a repeated study loop.
+ *
+ * ⚠️ THE DELAY MUST BE COLLAPSED TOO, and it is not optional. Every reveal rule
+ * above is `animation: … both`, and `animation-fill-mode: both` holds the
+ * element at the keyframe's FROM value — `opacity: 0` — for the whole of
+ * `animation-delay`. Collapsing only the duration therefore still hides content
+ * from a reduce-motion reader, for as long as the stagger: measured in a
+ * browser at 1280, `animationDuration: 1e-06s` (collapsed) beside
+ * `animationDelay: 0.09s` (not), with the element at opacity 0 across 12
+ * sampled frames spanning ~350ms. That is a §2.4 violation, and the e2e case
+ * that exists to catch it reproduced it only ~1 run in 12, because the
+ * assertion has to land inside the window. Pinned in `design-tokens.test.ts`.
+ *
+ * ▶ NEGATIVE, not `0s`: with a 0.001ms duration a frame sampled exactly at the
+ * animation's start still reads the FROM value. `-1ms` starts it already
+ * complete, so `both` holds the TO value from the first frame.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: -1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
@@ -611,7 +628,9 @@
 :root[data-reduce-motion="true"] *::before,
 :root[data-reduce-motion="true"] *::after {
   animation-duration: 0.001ms !important;
+  animation-delay: -1ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
+  transition-delay: 0s !important;
   scroll-behavior: auto !important;
 }

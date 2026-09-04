@@ -598,40 +598,72 @@ test.describe("motion never hides content", () => {
     await page.route("**/_next/static/chunks/**", (route) => route.abort());
 
     await page.setViewportSize({ width: 1280, height: 900 });
-    // `domcontentloaded`, not the default `load`: the markup and the inline
-    // scripts are all this needs, and waiting on six photographs would eat the
-    // failsafe window the positive control below has to fit inside.
-    await page.goto("/en", { waitUntil: "domcontentloaded" });
+    // `commit`, so the observation below starts as early as the document does.
+    await page.goto("/en", { waitUntil: "commit" });
 
-    const headings = page.locator("main section[id] [data-section-heading]");
+    // ⚠️ BOTH halves are measured INSIDE THE PAGE, in one evaluate, and this is
+    // load-bearing rather than tidiness. The armed state is TRANSIENT — it ends
+    // when the failsafe fires — so measuring it with a Playwright round-trip
+    // races that window, and under parallel workers the round-trip loses:
+    // measured, the control read `hidden: 0` not because the page was never
+    // armed but because it had already been released before the assertion
+    // arrived. An in-page observer starts at the first frame the headings
+    // exist and cannot be outrun by scheduling.
+    //
+    // What each field is for:
+    //   total            — nine headings exist, so this is not the 500 page
+    //                      that would give every test in this describe a free
+    //                      pass (a dead server has no hidden content either);
+    //   hiddenAtFirstSight — the POSITIVE CONTROL. All nine were actually at
+    //                      opacity 0, so the release below is a real release.
+    //                      Without it, a build that stopped ARMING the hidden
+    //                      state would sail through having measured nothing
+    //                      (L-004);
+    //   releasedAfterMs  — the failsafe fired and the page came back.
+    const observed = await page.evaluate(
+      ({ budgetMs }) =>
+        new Promise<{ total: number; hiddenAtFirstSight: number; releasedAfterMs: number | null }>(
+          (resolve) => {
+            const SELECTOR = "main section[id] [data-section-heading]";
+            const t0 = performance.now();
+            let hiddenAtFirstSight: number | null = null;
+            let total = 0;
+            const opacityOf = (n: Element) => Number(getComputedStyle(n).opacity);
 
-    // ⚠️ POSITIVE CONTROL, and the half that stops this test from ever passing
-    // vacuously. One round-trip, run immediately so it lands well inside the
-    // failsafe window, and it asserts BOTH halves at once:
-    //   total  — nine headings exist, so this is not the 500 page that gives
-    //            every test in this describe a free pass (a dead server has no
-    //            hidden content either);
-    //   hidden — all nine are actually at opacity 0, so the poll below is
-    //            watching a real release. Without this, a build that stopped
-    //            ARMING the hidden state — a dropped gate, a themeInitScript
-    //            regression, Playwright defaulting to reduce-motion — would
-    //            sail through the poll having measured nothing (L-004).
-    expect(
-      await headings.evaluateAll((nodes) => ({
-        total: nodes.length,
-        hidden: nodes.filter((n) => Number(getComputedStyle(n).opacity) === 0).length,
-      })),
-    ).toEqual({ total: 9, hidden: 9 });
+            const tick = () => {
+              const nodes = [...document.querySelectorAll(SELECTOR)];
+              // ⚠️ Only sample once all nine have PARSED. `waitUntil: "commit"`
+              // starts this observer while the document is still streaming, so
+              // the first frame that has any headings has only some of them —
+              // measured, 5 of 9 — and reading the control there compares a
+              // partial page against a whole one.
+              if (nodes.length >= 9) {
+                total = nodes.length;
+                const hidden = nodes.filter((n) => opacityOf(n) === 0).length;
+                if (hiddenAtFirstSight === null) hiddenAtFirstSight = hidden;
+                if (nodes.every((n) => opacityOf(n) === 1)) {
+                  resolve({
+                    total,
+                    hiddenAtFirstSight: hiddenAtFirstSight ?? -1,
+                    releasedAfterMs: Math.round(performance.now() - t0),
+                  });
+                  return;
+                }
+              }
+              if (performance.now() - t0 > budgetMs) {
+                resolve({ total, hiddenAtFirstSight: hiddenAtFirstSight ?? -1, releasedAfterMs: null });
+                return;
+              }
+              requestAnimationFrame(tick);
+            };
+            tick();
+          },
+        ),
+      { budgetMs: REVEAL_FAILSAFE_MS + 5000 },
+    );
 
-    // The failsafe window, plus margin for the release to take effect.
-    await expect
-      .poll(
-        async () =>
-          headings.evaluateAll((nodes) =>
-            nodes.filter((n) => Number(getComputedStyle(n).opacity) !== 1).length,
-          ),
-        { timeout: REVEAL_FAILSAFE_MS + 3000 },
-      )
-      .toBe(0);
+    expect(observed.total, "nine headings rendered").toBe(9);
+    expect(observed.hiddenAtFirstSight, "all nine were armed hidden before the release").toBe(9);
+    expect(observed.releasedAfterMs, "the failsafe released the page").not.toBeNull();
   });
 });

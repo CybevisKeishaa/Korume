@@ -38,12 +38,15 @@ import type { PitchContour } from "@/lib/pitch";
  * That is GRAIN, and no single-frame statistic sees it: measured, A3 bent 10.30
  * with 71 direction changes and this bends 5.60 with 38 — the same
  * neighbourhood. The lag-1 autocorrelation of the first differences separates
- * them cleanly, 0.327 against 0.720, and `pitch-demo.test.ts` now guards that
- * instead. Depth and density are free; incoherence is not.
+ * them cleanly — A3 measured 0.327, this fixture sits far above the 0.45
+ * threshold, and `pitch-demo.test.ts` guards that instead. The shipped value is
+ * in the table below and stated only there, because it is the one the guard
+ * re-derives; an earlier draft of this sentence carried a second copy (0.720)
+ * that had drifted from it. Depth and density are free; incoherence is not.
  *
  * ## How the fixture is built
  *
- *   ~19 control points (the intonation)  ->  Hermite interpolation
+ *   45 control points (the intonation)  ->  Hermite interpolation
  *     + a detail layer (three short-period components)  ->  169 frames
  *
  * The two layers are separate DIALS and were repeatedly turned together by
@@ -100,13 +103,16 @@ const TOTAL_FRAMES = 169;
 /**
  * 日本の秋は | とても美しいですね。
  *
- * Forty-three control points, not 169 hand-typed frames: the shape has to stay
+ * 24 control points, not 169 hand-typed frames: the shape has to stay
  * legible as a SHAPE, and `interpolate` fills in the rest. Reading down the
- * `hz` column is reading the intonation.
+ * `hz` column is reading the intonation. (`USER_CONTROL` carries 21 more, for
+ * the 45 the header names. Both counts are pinned in `pitch-demo.test.ts` —
+ * they were each wrong, in two different places, before that guard existed.)
  *
- * They sit ~4 frames apart, which is roughly half a mora — close enough to
- * carry the per-mora lift-and-settle that makes the line read as speech, far
- * enough apart that the spline through them never has to turn sharply. That
+ * They sit 4 to 12 frames apart, ~7 on average and ~6 through the opening
+ * climb, which is roughly a mora — close enough to carry the per-mora
+ * lift-and-settle that makes the line read as speech, far enough apart that the
+ * spline through them never has to turn sharply. That
  * spacing IS the design: the previous attempt put the local structure in an
  * added sinusoid instead and could not make it show, because a sinusoid only
  * turns the line around where its slope beats the base curve's.

@@ -106,11 +106,21 @@ diff; an older note said "11", which was a different counting method — do not 
 `npm test` **2615 over 283 files** · `npm run build` exit 0 · `npx playwright test
 tests/e2e/landing-page.spec.ts` **21/21**, against `npx next start -p 3000` on a fresh production
 build (session 7's figures were 2605/282 and 20/20 — superseded, do not re-cite).
-⚠️ **One unit test failed on the first of three full runs and was never captured.** Two further full
-runs (2615/2615, exit 0) and six runs of the four touched files were clean, so it is recorded as
-NON-REPRODUCIBLE, not as fixed (L-009) — and the name is unknown because the output was not written
-to a file. **Redirect `npm test` to a file before reading its summary**; a failure you cannot name is
-a failure you cannot diagnose.
+**Session 9's final gate, each command run and read:** `npx tsc --noEmit` exit 0 · `npm run lint`
+**0 errors / 81 warnings** (unchanged all branch) · `npm test` **2617 over 283 files**, exit 0 ·
+`npm run build` exit 0 · `npx playwright test tests/e2e/landing-page.spec.ts` **21/21** against
+`npx next start -p 3000` on a fresh production build · `docs/lessons.test.ts` 2/2.
+
+✅ **THE BRANCH'S LONG-RUNNING FLAKE NOW HAS A NAME.** For weeks it was "a known
+`pitch-contour.test.tsx` flake" with no evidence; session 8 hit an uncaptured failure and could say
+nothing about it. Session 9 redirected `npm test` to a file *before* reading the summary and the
+failures were named immediately: **`components/video-player/pitch-contour.test.tsx`** and
+**`components/video-player/waveform.test.tsx`** — both decode an audio blob and assert canvas
+draw-call counts, both fail `expected 0 to be greater than 0`, and both only under parallel load.
+Excluded three ways (L-009): standalone **14/14 twice**; a full re-run at **2616/2616**; and neither
+file imports anything in the session's diff. ▶ **Do not chase it as a regression, and do not let it
+absorb a real one** — if a THIRD file joins that pair, that is new information. Always
+`npm test -- --reporter=dot > <file>` and read the file.
 ⚠️ **The full `npx playwright test` is NOT 27/27 in a session without local Supabase.** Five specs
 (auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with
 `ECONNREFUSED 127.0.0.1:54321`; they all register a user. That is the environment, not a defect —
@@ -158,30 +168,121 @@ executed as written and returns the number its prose claims.**
 
 ▶ **THE FAILSAFE NOW HAS A REPRODUCIBLE IN-REPO PROOF, IN BOTH DIRECTIONS.** Session 8's negative
 probe lived in a throwaway Playwright config on :3001 that was deleted, so nothing travelling with
-the branch could reproduce it. The e2e case gained a **positive control** — one `evaluateAll`
-immediately after `goto`, asserting `{total: 9, hidden: 9}` — which proves the page was ARMED before
-the poll watches it be released, and which subsumes the 500-page guard (a dead server has no
-headings to count). Mutation-checked properly, on a production build served by `next start`:
-- failsafe removed from the layout, rebuilt, `korumeRevealMounted` absent from the served HTML →
-  **RED: `Expected: 0, Received: 9`** — the positive control passed, then nothing ever released the
-  page. That is I1's defect, reproduced by a spec that ships.
-- restored (`sha256sum -c` OK), rebuilt, script back in the HTML → **GREEN, 21/21.**
+the branch could reproduce it. The e2e case gained a **positive control**: it asserts the page was
+ARMED (all nine headings at opacity 0) before watching it be released, which also subsumes the
+500-page guard — a dead server has no headings to count.
 
-**Do not weaken that pre-assertion.** Without it the case goes green on any build that stopped
-ARMING the hidden state at all, which is the "passed on its first run" signature session 8 recorded
-and then had to chase out-of-repo.
+⚠️ **The whole measurement runs INSIDE THE PAGE, in one `evaluate` driving a `requestAnimationFrame`
+loop, and that is load-bearing.** Session 9's first version used a Playwright `evaluateAll` right
+after `goto` and **it raced the 3s failsafe window**: under parallel workers the round-trip lost, and
+the control read `hidden: 0` — not because the page was never armed, but because it had already been
+released before the assertion arrived. An in-page observer cannot be outrun by scheduling. Two
+further traps it hit, both now commented in the spec: sample only once **all nine have parsed**
+(`waitUntil: "commit"` starts the loop mid-stream, where only 5 of 9 exist — measured), and give the
+loop a budget rather than a single sample.
+
+Mutation-checked properly, on a production build served by `next start`, rebuilding AND restarting
+between the two directions:
+- failsafe removed from the layout → `korumeRevealMounted` absent from the served HTML →
+  **RED: "the failsafe released the page · Received: null"** — armed, then never released. That is
+  I1's defect, reproduced by a spec that ships.
+- restored (`sha256sum -c` OK) → **GREEN, 21/21**, and 6/6 on `--repeat-each=6`.
+
+**Do not weaken the armed-state assertion, and do not move the measurement back out of the page.**
+Without the first, the case goes green on any build that stopped ARMING at all — the "passed on its
+first run" signature session 8 recorded. Without the second, it goes green under load for the
+opposite reason, which is worse: it looks like a flake.
+
+## ✅ THE COVERAGE GAP IS CLOSED — 2026-09-04, session 9
+
+The nine files the L-011 rate limit left unread have now been reviewed. ⚠️ **A dispatched
+`code-reviewer` died on the SAME session rate limit again** (HTTP 429, "session limit · resets
+2:30pm") having read nothing — three reviewers lost to it across two sessions now — so the
+controller did it inline. **Budget for this: on this project a long session runs out of dispatch
+before it runs out of work.**
+
+Scope, all new on the branch (2239 insertions, 0 deletions): `lib/marketing/pitch-demo.ts` (429) +
+its test (624), `scripts/mascot/{extract,matte,png,trim}.js`, `png.d.ts`, `poses.json`,
+`poses.test.ts`.
+
+**Findings — 0 Critical, 2 Important, 2 Minor, all in prose or robustness; nothing reached output.**
+- **`pitch-demo.ts` stated its control-point count in two homes that disagreed with each other AND
+  with the array between them** — header "~19", `NATIVE_CONTROL` docblock "Forty-three", arrays hold
+  24 and 21. The docblock's argument rests on that number. Fixed, and the count is now machine-checked
+  by a new test (mutation-checked: `44` → RED, restore → GREEN).
+- **A second coherence figure (`0.720`) contradicted the file's own machine-checked table (`0.715`)**
+  — and it was the number the `0.45` threshold's justification leaned on. Now stated once, in the
+  table the guard re-derives.
+- Minor: `~4 frames apart` was the MINIMUM gap, not the spacing (mean 7.30, min 4, max 12).
+- Minor: `png.js` dereferenced `ihdr` without a null check, so a non-PNG threw "Cannot read
+  properties of null" instead of naming the input. Minor: `poses.test.ts` mixed two `32` state pins
+  into the same test as its permanent set-equality invariant, unlabelled (L-031).
+
+**What was verified CLEAN, and is worth not re-reviewing:**
+- **No CLAUDE.md §2 violation.** No downloader/proxy/re-host, no recordings, no secrets. The one
+  Japanese sentence is original and its construction is documented.
+- **The mascot scripts contain no `exec`/`spawn`/network/`eval`** — filesystem only, on paths from a
+  checked-in manifest — and **no app code imports them**: every `scripts/mascot` mention under
+  `app/` and `components/` is a comment. Not reachable from the client bundle.
+- **`poses.json` reconciles with `public/mascot/poses/` in BOTH directions**: 5 extracted + 27
+  supplied = 32 claimed, 32 on disk, zero missing, zero unclaimed; both source sheets exist.
+- **`png.d.ts` matches `png.js` exactly**, and `decode` really does validate depth/interlace/
+  colortype as the types promise.
+- **The detail-layer maths is right**: periods `2π/ω` → native 8.00/13.01/22.52, you 9.00/14.41/25.23,
+  amplitude 10.4 against a 66.4 Hz range — all re-derived, all exact.
+- **The "illustrative mock data, not measurement" boundary holds in FACT, not just in a comment**:
+  the demo contours are consumed only by `components/marketing/pitch-chart.tsx` for rendering, and
+  nothing in `lib/pitch` or `lib/speech-scoring` derives a threshold from them.
+- ⭐ **`pitch-demo.test.ts`'s header-table test is the best guard on this branch** — it re-parses the
+  docblock's measurement table from source, asserts the row count (citing L-004), requires ≥2 numbers
+  per row, and re-derives every value at the table's own stated precision. `poses.test.ts` is its
+  equal on the asset side. Both were written before any reviewer asked. The defects found above are
+  precisely the numbers those guards did *not* cover, which is the useful pattern: **when a file
+  machine-checks one of its own claims, audit its other numbers — the guarded one proves the author
+  already knew the risk.**
+
+## ⚠️⚠️ A LIVE §2 r4 VIOLATION WAS FOUND AND FIXED — 2026-09-04, session 9
+
+**The reduce-motion kill switch collapsed `animation-duration` but not `animation-delay`.** Every
+reveal rule is `animation: … both`, and `animation-fill-mode: both` holds an element at the
+keyframe's FROM value — `opacity: 0` — for the whole of its delay. So a reader who asked for no
+motion had content **hidden by motion**, for up to `--duration-cinematic * 1.5`. That is
+CLAUDE.md §2 rule 4, on the branch whose signature feature is the motion layer.
+
+▶ **How close it came to shipping.** The e2e case that exists to catch exactly this
+(`renders every section opaque under reduce-motion`) passed **21/21 twice on the same day**, and
+20/20 in session 7, and survived both the L-011 and L-012 reviews. It fires only when the single
+assertion lands inside the delay window — measured at roughly **1 run in 12**. It did **not**
+reproduce in 25 sequential probe loads; it needs the parallel-worker load. Every instinct said
+"known flake" (this suite has one — see the gate section above), and treating it as one would have
+merged the defect.
+
+▶ **What actually found it:** sampling **every frame** through load instead of once —
+`animationDuration: 1e-06s` (collapsed) sitting beside `animationDelay: 0.09s` (not), element at
+opacity 0 across 12 frames spanning ~350ms.
+▶ **Fix:** `animation-delay: -1ms !important` + `transition-delay: 0s !important` in BOTH blocks.
+Negative, not `0s`: with a 0.001ms duration a frame sampled at the animation's exact start still
+reads the FROM value. Test written first and seen RED. Re-probed after: **115 frames, 0 hidden**;
+the e2e went 1-in-12 failing → **20/20** on `--repeat-each=5`.
+▶ **The guard is now deterministic**, in `lib/design-tokens.test.ts` — a CSS-source assertion that
+cannot miss the window. The e2e stays as the behavioural check.
+
+⚠️ **Do not "simplify" the two kill-switch blocks by dropping the delay lines.** They look redundant
+next to the duration lines and they are not.
 
 ## ▶▶ WHAT REMAINS, IN ORDER
 
 1. ~~Whole-branch review (L-011)~~ **RAN** · ~~its fix wave~~ **LANDED** · ~~the L-012 review of that
    wave~~ **RAN, 6 Important + 8 Minor, all applied** (section above). Both reports are in
    `.superpowers/sdd/2026-08-27-landing-page-port/` and ⚠️ **gitignored** — they do not travel.
-2. **Finish the review coverage the rate limit cut short** — `lib/marketing/pitch-demo.ts`'s fixture
-   maths and its 624-line test, plus `scripts/mascot/**`. Neither has had a whole-branch pass. This
-   is the oldest unpaid debt on the branch; it is not closed by either review above.
-3. **The branch-end `docs/lessons.md` pass — now 23 queued entries** (16 listed at the end of the
-   archive's session-5 and session-6 sections, plus two from A-MOTION, two its review added, and
-   three from the L-012 review — all seven below).
+2. ~~Finish the review coverage the rate limit cut short~~ — **DONE 2026-09-04, session 9.** All
+   nine never-reviewed files read (`lib/marketing/pitch-demo.ts` + its 624-line test,
+   `scripts/mascot/{extract,matte,png,trim}.js`, `png.d.ts`, `poses.json`, `poses.test.ts` —
+   2239 insertions, all new on the branch). ▶ See the coverage section below. **The branch has now
+   had a full pass**; the PARTIAL warning above applies to the L-011 report only, not to the branch.
+3. ~~The branch-end `docs/lessons.md` pass~~ — **DONE 2026-09-04, session 9.** See below for what it
+   actually did; the short version is that 23 queued items became **2 new ids (L-038, L-039)**,
+   ~9 evidence merges, and 5 relocations, per the file's own rules 2 and 4.
 4. **The owner's mobile landing page** — new, large, and deliberately out of scope. See below.
    ▶ Its four extra sections (Video · Kanji-inspect · JLPT · Review Mistakes) are the SAME four the
    motion proposal assumed, so the two pieces of work share one open question. See A-MOTION below.
@@ -219,42 +320,40 @@ elements, because §6's mascot sits on the node grid's bottom edge to within 1px
 **Geometry proven unchanged:** document **4480px at 1280** — the settled figure exactly — as header
 65 + main 3737 + footer 678, measured under reduce-motion so nothing was mid-flight.
 
-▶ **Lessons queued for the `docs/lessons.md` pass — two from A-MOTION, two from its review, three
-from the L-012 review of the fix wave:**
-- **A gate that proves a SCRIPT ran does not prove the CODE IT GATES ran.** The reveal gate keyed on
-  an attribute set by an inline `<head>` script, then relied on a bundled observer to clear it. Two
-  independent failure domains, one treated as proof of the other. The e2e covered "JS off" and "JS
-  works" and could not see the state between them.
-  ▶ **And the FIX made the same substitution one level down** (L-012 review): the flag meant to prove
-  the observer arrived was set as the effect's first statement, before the observer was constructed,
-  so `IntersectionObserver` throwing disarmed the failsafe. **When a bug is "signal X was taken as
-  proof of behaviour Y", the fix's own signal is the first thing to re-check** — it is written by
-  whoever just had the wrong model, and it is where the wrong model goes next.
-- **Tailwind preflight's `[hidden]` rule is `[hidden]:where(:not([hidden="until-found"]))`: the
-  `:where()` CONTRIBUTES zero specificity, so the rule weighs one attribute selector.** It merely
-  ties with any single utility class and loses on source order, so `hidden` on an element that later
-  gains `flex`/`block` silently stops hiding. ⚠️ Do not write "the rule has zero specificity" — that
-  is a different and false claim (it would then lose to every class), and it is what session 8 wrote,
-  next to a "verified in the built CSS" parenthetical quoting CSS the build does not contain.
-- **A verification recipe must be RUN, not read** — and a recipe written inside the file it searches
-  matches its own text. `grep -rn "<AssetSlot" components/ | wc -l`, offered as the thing to trust
-  instead of the prose, returned 12 against a claim of 6: its own docblock line plus five test
-  renders. The replacement then returned 7, and the parenthetical warning about self-matching
-  contained the pattern and matched too. **Three iterations, each caught only by execution.** Cheap
-  to check, and it is the one line in a document that readers are told to believe over the rest.
-- **A test that guards a magic string by restating it guards nothing.** `design-tokens.test.ts`
-  filtered CSS rules for a hardcoded `':not([data-reveal-failsafe])'` while its sibling module
-  exported `REVEAL_FAILSAFE_ATTR`. Renaming the attribute would have left every unit test green — the
-  CSS unchanged, the test still matching the old literal — while the failsafe silently stopped
-  releasing anything. **Build the literal from the exported constant, or the guard tests the copy.**
-- **A keyframe with only a `to` takes its `from` from the element's live computed value.** §4's
-  contour draw shipped broken for one commit because `stroke-dashoffset: 1` lived only on the
-  `pending` rule, which stops matching the instant the state flips to `in` — so the animation ran
-  0 → 0 and the paths just appeared. Unit tests were green; only a browser probe of
-  `getComputedStyle` mid-animation saw it. Now pinned in `design-tokens.test.ts`.
-- **A child transform composes with its ancestor's, it does not replace it.** `reveal-fade` exists
-  beside `reveal-rise` for exactly this: stepped collections nest inside a block that already rises,
-  and using `reveal-rise` on both gives ~48px of travel and two easing curves fighting.
+▶ **These lessons are now FILED — the `docs/lessons.md` pass ran 2026-09-04 (session 9).**
+Do not re-file them. Where they went, and why the destinations differ:
+- **A gate that proves a SCRIPT ran does not prove the CODE IT GATES ran**, plus the L-012 finding
+  that the FIX repeated it one level down → **`L-039`**, a new id. Both halves are the entry: the
+  pair is the lesson, because the second instance is what shows where the wrong model goes next.
+- **The wrong-metric family** — §4's fixture rejected four times (slope, then bend, loosened twice,
+  when the defect was grain); a pair guard built from per-track statistics; bounds chosen before
+  measuring; the hero clamp derived from a reflow ceiling; the scroll-room number that was a fact
+  about the window → **`L-038`**, a new id. Seven queued items, one lesson.
+- **A verification recipe must be RUN, not read** → merged into **`L-019`**, which already carried
+  this exact shape from 2026-08-26. Three iterations of the `AssetSlot` recipe are its new evidence.
+- **A test that guards a magic string by restating it** → merged into **`L-006`** (a guard driven by
+  the thing it protects is a tautology).
+- The rest went to **`L-001`** (never `git checkout --` to undo a mutation), **`L-002`** (the
+  `poses.json` diff-count; `pitch-demo.ts`'s two disagreeing control-point counts), **`L-003`**
+  (a reviewer's arithmetic, and a reviewer's proposed REMEDY, both need re-deriving), **`L-004`**
+  (a test green on its first run; the dead-server sweep; the e2e positive control), **`L-009`**
+  (parallel e2e flakes; and an uncaptured failure name), **`L-013`** (a plan step with a correct
+  measurement and a wrong cause), **`L-017`** (the gate is unrunnable from cold; a server holds the
+  build it started with) and **`L-029`** (`npx playwright test` was never scheduled in the gates).
+
+⚠️ **FIVE of the 23 queued items were NOT filed as lessons, deliberately.** `docs/lessons.md`'s own
+§ Scope says its subject is **process**, and technical facts belong in `mem:project_status`
+§ Key gotchas. Tailwind's `[hidden]` specificity, the `@keyframes`-`from` rule, transform
+composition, `aria-hidden` inheritance and the text-node `Range` technique for finding overflow are
+CSS/DOM mechanics, not process — they are now in **`mem:project_status` § Key gotchas**, under
+"CSS / DOM mechanics that have already cost this project a defect", each with its incident attached.
+Filing them in `lessons.md` would have broken that file's scope rule and its rule 4 at once.
+
+▶ **The shape of the pass, for whoever runs the next one:** 23 queued items → **2 new ids**,
+~9 evidence merges, 5 relocations. That is the correct outcome, not a shortfall — rule 2 says merge
+rather than append, and rule 4 says "thirty entries that are five variants of five lessons is a
+defect". The queue is a list of *incidents*; the file is a list of *lessons*, and the mapping is
+many-to-one by design.
 
 ▶ **Still owed on this section, none of it blocking:** the `/en#problem` scroll drift was NOT
 investigated (it was listed under A-MOTION but is a scroll-anchor question, not a motion-layer one),
