@@ -33,15 +33,23 @@ export function sectionProgress(rect: DOMRect, viewportHeight: number): number {
  * Only intersecting sections compute — the observer adds and removes them from
  * the active set — and the rAF loop stops entirely when that set is empty.
  *
- * ⚠️ Toggling motion off mid-session must not merely stop the loop — it must
- * stay stopped until motion is explicitly re-enabled, even if the section
- * scrolls out of view and back in (or a resize recomputes the ratio) while
- * motion is off. `paused` — not an emptied `active` set — is what the
- * observer's reschedule check consults, so a stale re-intersect while paused
- * schedules nothing. `active` itself keeps tracking real geometry in both
- * directions regardless of `paused`, so turning motion back on can resume
- * immediately for whatever is on screen right now, instead of leaving the
- * page dead until the reader scrolls again or reloads.
+ * ⚠️ One state machine, not two. Motion off must not merely stop the loop —
+ * it must stay stopped until motion is explicitly re-enabled, whether that
+ * "off" was true from the very first render (a persisted `localStorage`
+ * preference, seeded before paint) or arrived mid-session from the toggle,
+ * and whether or not the section scrolls out of view and back in (or a
+ * resize recomputes the ratio) while it's off. There is exactly one branch
+ * below, built unconditionally on mount: `paused` — never an unbuilt
+ * observer and never an emptied `active` set — is what gates the loop.
+ * `active` keeps tracking real on-screen geometry in both directions
+ * regardless of `paused`, so turning motion on, from either starting state,
+ * resumes immediately for whatever is on screen right now instead of
+ * leaving the page dead until the reader scrolls again or reloads. An
+ * earlier version special-cased "motion already off at mount" as a
+ * permanent no-op subscription with no observer to resume through — the
+ * same defect the mid-session paused-forgets-active bug was, through a
+ * different door, because it was a second copy of this state machine that
+ * could (and did) drift out of sync with the first.
  */
 export function ScrollProgress(): null {
   useEffect(() => {
@@ -75,18 +83,16 @@ export function ScrollProgress(): null {
       }
     };
 
-    if (!motionEnabled()) {
-      settle();
-      // eslint-disable-next-line @typescript-eslint/no-empty-function -- motion is already off; there is nothing to react to until the toggle flips, and the unsubscribe still needs to be returned for symmetric teardown.
-      return subscribeMotionEnabled(() => {});
-    }
-
     const active = new Set<HTMLElement>();
     let frame = 0;
     // Gates rescheduling only. `active` is never cleared by this flag — the
     // observer is the single source of truth for what is on screen, in both
-    // directions, whether paused or not. See the docblock above.
-    let paused = false;
+    // directions, whether paused or not. Seeded from the gate so a mount that
+    // starts with motion off is paused from the first frame, with the same
+    // observer and the same resume path as a mid-session toggle. See the
+    // docblock above.
+    let paused = !motionEnabled();
+    if (paused) settle();
 
     const tick = () => {
       for (const section of active) {

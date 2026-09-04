@@ -45,6 +45,18 @@ describe("<ScrollProgress />", () => {
     const section = document.createElement("section");
     section.setAttribute(SCROLL_PROGRESS_ATTR, "");
     document.body.append(section);
+    // Round-2 review finding: the observer is now built unconditionally on
+    // mount, even while motion starts off (so it exists to resume through)
+    // — this test needs jsdom's missing IntersectionObserver stubbed too,
+    // matching the per-file pattern in components/motion/reveal-scope.test.tsx.
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+      },
+    );
     const raf = vi.spyOn(window, "requestAnimationFrame");
 
     render(<ScrollProgress />);
@@ -179,6 +191,52 @@ describe("<ScrollProgress />", () => {
     // observer, so the loop must resume without needing a fresh intersection.
     document.documentElement.setAttribute("data-reduce-motion", "false");
     await vi.waitFor(() => expect(raf).toHaveBeenCalled());
+
+    section.remove();
+    document.documentElement.removeAttribute("data-reduce-motion");
+  });
+
+  // Round-2 review finding: the SAME defect through the mount-time door.
+  // data-reduce-motion is seeded from localStorage before paint, so a reader
+  // with a persisted "off" preference mounts straight into the motion-off
+  // branch — which must build the same observer/active/paused state machine
+  // as the motion-on branch, not a permanent no-op, or turning motion back on
+  // later in that same mount has nothing to resume through.
+  it("builds a resumable observer even when motion is already off at mount, and starts the loop once motion is turned on", async () => {
+    document.documentElement.setAttribute("data-reduce-motion", "true");
+    const section = document.createElement("section");
+    section.setAttribute(SCROLL_PROGRESS_ATTR, "");
+    document.body.append(section);
+
+    let fire: ((entries: unknown[]) => void) | undefined;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(cb: (entries: unknown[]) => void) {
+          fire = cb;
+        }
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+      },
+    );
+    const raf = vi.spyOn(window, "requestAnimationFrame");
+
+    render(<ScrollProgress />);
+
+    // Motion-off-at-mount behaviour is unchanged: settled once, no loop —
+    // but the observer must exist regardless, ready to resume through.
+    expect(fire).toBeDefined();
+    expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("0");
+    expect(raf).not.toHaveBeenCalled();
+
+    // Reader turns motion on within the same mount.
+    document.documentElement.setAttribute("data-reduce-motion", "false");
+    raf.mockClear();
+    await vi.waitFor(() => {
+      fire?.([{ target: section, isIntersecting: true }]);
+      expect(raf).toHaveBeenCalled();
+    });
 
     section.remove();
     document.documentElement.removeAttribute("data-reduce-motion");
