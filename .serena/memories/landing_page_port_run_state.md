@@ -1,22 +1,41 @@
-# Landing page port (`/`) — run state
+# Landing page port (`/`) — CLOSED, merged to master
 
-> **Live file. Short on purpose.** The full narrative of sessions 1-6 — every measurement, every
-> rejected attempt, every piece of evidence behind the rulings below — is in
-> `mem:landing_page_port_archive` (~96KB; grep it, do not open it whole). Split 2026-09-03 because
-> reading the combined file had become the expensive part of starting a session.
+> **⭐ MERGED 2026-09-04 at `9c0fec2` (`--no-ff`). This branch is DONE.** Branch
+> `landing-page-port` is KEPT per repo convention, not deleted. **Nothing is pushed** — local
+> `master` runs ~103 commits ahead of `origin/master`, which is normal here (`L-021`).
 >
-> ⚠️ **This memory is navigation, process, and decisions taken on the owner's behalf. It does NOT
-> restate the design or the plan.** The spec and `docs/superpowers/plans/2026-08-27-landing-page-port.md`
-> travel with the repo; this does not. If this file and either of them disagree, they win.
+> **This file is no longer a run state. It is the branch's record**, kept because most of it outlives
+> the branch: the rulings that still bind, what is still owed to the owner, the method rules this
+> work paid for, and the mobile landing page that was deliberately scoped out and is still unbuilt.
+> Sessions 1-6 in full are in `mem:landing_page_port_archive` (~96KB; grep it, do not open it whole).
+>
+> ⚠️ **Navigation, process, and decisions taken on the owner's behalf. It does NOT restate the
+> design or the plan.** The spec and `docs/superpowers/plans/2026-08-27-landing-page-port.md` travel
+> with the repo; this does not. If this file and either of them disagree, they win.
 
-# ▶▶ RESUME HERE
+# ▶▶ READ THIS FIRST IF YOU ARE PICKING UP THE LANDING PAGE AGAIN
 
-## ▶ STATE OF THE TREE — run `git status`, do not read it from here
+**Nothing here is in flight.** For what to work on next, `mem:project_status` § NEXT ACTION governs.
+The three live items this branch leaves behind are:
 
-A memory cannot state whether the tree is clean: the commit that lands the wave falsifies any such
-sentence in the very act of carrying it (L-012's sharpest shape, and session 8 shipped exactly that
-sentence). **Run `git status` and `git log --oneline -6`.** Sessions 8 and 9 left nothing merged and
-nothing pushed; if that has changed, git says so and this line does not.
+1. **The owner's mobile landing page** — large, unbuilt, and **blocked on two questions** (see its
+   section below). It is NOT a mobile version of what shipped; it is a richer page.
+2. **What is still owed to the owner** — the section near the end. None of it blocked the merge.
+3. **`EMAIL_PROVIDER=none` on `almostgone.vn`** — an OPS task; no commit in this repo can close it.
+
+**Merged-master gate, measured on `9c0fec2`:** `npx tsc --noEmit` 0 · `npm run lint` **0 errors /
+81 warnings** · `npm test` **2617 over 283 files, exit 0** · `npm run build` exit 0. The landing-page
+e2e was **21/21** on the branch tip against `npx next start -p 3000`.
+
+⚠️ **Two tests flake under parallel load, and they now have names**:
+`components/video-player/pitch-contour.test.tsx` and `components/video-player/waveform.test.tsx` —
+both `expected 0 to be greater than 0` on canvas call counts after decoding an audio blob. Excluded
+three ways (standalone 14/14 ×4 · full re-run 2617/2617 · `waveform` is untouched by this branch yet
+shows the identical signature, so the cause is shared and environmental). It fired on several full
+runs this session including one before any server was started, so **CPU contention is a hypothesis,
+not an established cause** — do not record it as one. **Always
+`npm test -- --reporter=dot > <file>` and read the file**: for weeks this was an unnamed rumour, and
+naming it took one shell redirect (`L-009`).
 
 ## ✅ THE WHOLE-BRANCH REVIEW (L-011) RAN — 2026-09-04, session 8
 
@@ -77,11 +96,10 @@ a block. L-012's shape exactly — which is the argument for the next item.
 
 ## ▶ ENVIRONMENT LEFT BY SESSION 9 — read before measuring anything
 
-- **`.next` holds a clean PRODUCTION build of the restored tree**, and session 9 left
-  `npx next start -p 3000` RUNNING against it. Session 8's stale dev server is gone (session 9 found
-  :3000 free). Check the port before starting anything: `Get-NetTCPConnection -LocalPort 3000 -State
-  Listen`. If you want dev, kill it first — `next dev` and `next build` share one `.next` and
-  clobber each other.
+- **`.next` holds a clean PRODUCTION build of merged master, and NO server is left running** —
+  session 9 killed every `node.exe` before its final suite run and :3000 was free afterwards. Check
+  the port anyway before starting one: `Get-NetTCPConnection -LocalPort 3000 -State Listen`. `next
+  dev` and `next build` share one `.next` and clobber each other, so pick one.
 - **Playwright's config hardcodes :3000 with `reuseExistingServer: true`**, so it attaches to
   whatever squats there, healthy or not — including a server serving a build you have since changed.
   Session 8 worked around it with a throwaway config on :3001, deleted after use. **Session 9 did not
@@ -91,13 +109,15 @@ a block. L-012's shape exactly — which is the argument for the next item.
   after the server was restarted on the rebuilt output; the first attempt would have tested the old
   build in memory.
 
-**Run `git log --oneline -8`.** The last hash this file can honestly state is **`9d5545d`**
-(2026-09-04, the tip session 8 inherited); session 8 committed nothing, and session 9's own commit
-cannot be named here. A file cannot name the commit that contains it — writing one means predicting
-it, which is the L-002 failure this branch has paid for four times.
+**The merge commit `9c0fec2` can be named here because a LATER commit wrote this line** — the two
+fix-wave commits it merges (`b78eac0`, `9212caf`) could not name themselves, which is the L-002
+failure this branch paid for four times. Re-derive anything else with
+`git log --oneline --first-parent -5 master`.
 
-**Branch `landing-page-port`. Nothing merged, nothing pushed.** Everything is built: tasks 1-13,
-A1/A2/A3, P, V, the independent review and its fixes, and **Task A-MOTION (A-M1…A-M5)**.
+**Branch `landing-page-port`: MERGED to master, branch KEPT, nothing pushed.** Everything was built:
+tasks 1-13, A1/A2/A3, P, V, the independent review and its fixes, **Task A-MOTION (A-M1…A-M5)**, the
+L-011 whole-branch review, the L-012 review of its fix wave, and the coverage pass that closed the
+rate-limited gap.
 
 **Gate — measured in session 9 on the combined L-011 + L-012 wave, each command run and read. This
 is the single home for these figures; `project_status.md` deliberately carries none.**
@@ -270,22 +290,27 @@ cannot miss the window. The e2e stays as the behavioural check.
 ⚠️ **Do not "simplify" the two kill-switch blocks by dropping the delay lines.** They look redundant
 next to the duration lines and they are not.
 
-## ▶▶ WHAT REMAINS, IN ORDER
+## ✅ EVERYTHING THIS BRANCH OWED IS DONE — the list is kept as the record
 
 1. ~~Whole-branch review (L-011)~~ **RAN** · ~~its fix wave~~ **LANDED** · ~~the L-012 review of that
-   wave~~ **RAN, 6 Important + 8 Minor, all applied** (section above). Both reports are in
-   `.superpowers/sdd/2026-08-27-landing-page-port/` and ⚠️ **gitignored** — they do not travel.
-2. ~~Finish the review coverage the rate limit cut short~~ — **DONE 2026-09-04, session 9.** All
-   nine never-reviewed files read (`lib/marketing/pitch-demo.ts` + its 624-line test,
-   `scripts/mascot/{extract,matte,png,trim}.js`, `png.d.ts`, `poses.json`, `poses.test.ts` —
-   2239 insertions, all new on the branch). ▶ See the coverage section below. **The branch has now
-   had a full pass**; the PARTIAL warning above applies to the L-011 report only, not to the branch.
-3. ~~The branch-end `docs/lessons.md` pass~~ — **DONE 2026-09-04, session 9.** See below for what it
-   actually did; the short version is that 23 queued items became **2 new ids (L-038, L-039)**,
-   ~9 evidence merges, and 5 relocations, per the file's own rules 2 and 4.
-4. **The owner's mobile landing page** — new, large, and deliberately out of scope. See below.
-   ▶ Its four extra sections (Video · Kanji-inspect · JLPT · Review Mistakes) are the SAME four the
-   motion proposal assumed, so the two pieces of work share one open question. See A-MOTION below.
+   wave~~ **RAN, 6 Important + 8 Minor, all applied.** Both reports are in
+   `.superpowers/sdd/2026-08-27-landing-page-port/` and ⚠️ **gitignored** — they do not travel, so
+   what is written in this memory is all that survives of them.
+2. ~~Finish the review coverage the rate limit cut short~~ — **DONE.** All nine never-reviewed files
+   read (`lib/marketing/pitch-demo.ts` + its 624-line test, `scripts/mascot/{extract,matte,png,trim}
+   .js`, `png.d.ts`, `poses.json`, `poses.test.ts` — 2239 insertions). ▶ See the coverage section
+   below. **The branch had a full pass before it merged**; the PARTIAL warning above describes the
+   L-011 report only, not the branch.
+3. ~~The branch-end `docs/lessons.md` pass~~ — **DONE.** 23 queued items became **2 new ids
+   (`L-038`, `L-039`)**, ~9 evidence merges, and 5 relocations to `mem:project_status` § Key gotchas,
+   per that file's own rules 2 and 4.
+4. ~~Merge~~ — **DONE, `9c0fec2`.**
+
+▶ **THE ONE PIECE OF LANDING-PAGE WORK STILL UNBUILT: the owner's mobile landing page.** Large,
+deliberately scoped out of Task 13, and **blocked on two questions** — see its section below. Its
+four extra sections (Video · Kanji-inspect · JLPT · Review Mistakes) are the SAME four the 14-section
+motion proposal assumed, so those two pieces of work share one open question (does mobile-only
+content go on desktop?). Do not start it before the owner answers.
 
 ## ✅ TASK A-MOTION — DONE (`da9233e` · `340800d` · `5d31520` · `a22e13e` · `c1c6ab2`)
 
