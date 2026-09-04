@@ -32,6 +32,16 @@ export function sectionProgress(rect: DOMRect, viewportHeight: number): number {
  *
  * Only intersecting sections compute — the observer adds and removes them from
  * the active set — and the rAF loop stops entirely when that set is empty.
+ *
+ * ⚠️ Toggling motion off mid-session must not merely stop the loop — it must
+ * stay stopped until motion is explicitly re-enabled, even if the section
+ * scrolls out of view and back in (or a resize recomputes the ratio) while
+ * motion is off. `paused` — not an emptied `active` set — is what the
+ * observer's reschedule check consults, so a stale re-intersect while paused
+ * schedules nothing. `active` itself keeps tracking real geometry in both
+ * directions regardless of `paused`, so turning motion back on can resume
+ * immediately for whatever is on screen right now, instead of leaving the
+ * page dead until the reader scrolls again or reloads.
  */
 export function ScrollProgress(): null {
   useEffect(() => {
@@ -73,6 +83,10 @@ export function ScrollProgress(): null {
 
     const active = new Set<HTMLElement>();
     let frame = 0;
+    // Gates rescheduling only. `active` is never cleared by this flag — the
+    // observer is the single source of truth for what is on screen, in both
+    // directions, whether paused or not. See the docblock above.
+    let paused = false;
 
     const tick = () => {
       for (const section of active) {
@@ -91,19 +105,28 @@ export function ScrollProgress(): null {
         if (entry.isIntersecting) active.add(section);
         else active.delete(section);
       }
-      if (active.size > 0 && frame === 0) frame = window.requestAnimationFrame(tick);
+      if (!paused && active.size > 0 && frame === 0) {
+        frame = window.requestAnimationFrame(tick);
+      }
     });
 
     for (const section of sections) observer.observe(section);
 
-    // The toggle can flip mid-session. Settling on the spot beats waiting for
-    // the next scroll, which may never come.
+    // The toggle can flip mid-session, in either direction.
     const unsubscribe = subscribeMotionEnabled((enabled) => {
-      if (enabled) return;
-      window.cancelAnimationFrame(frame);
-      frame = 0;
-      active.clear();
-      settle();
+      if (!enabled) {
+        // Settling on the spot beats waiting for the next scroll, which may
+        // never come. `active` is left untouched — pausing is not forgetting.
+        paused = true;
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+        settle();
+        return;
+      }
+      paused = false;
+      // Whatever is on screen right now resumes immediately; nothing waits
+      // for a fresh intersection event that a static page may never fire.
+      if (active.size > 0 && frame === 0) frame = window.requestAnimationFrame(tick);
     });
 
     return () => {

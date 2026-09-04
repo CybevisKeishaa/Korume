@@ -1,5 +1,5 @@
 import { render } from "@/test/render";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ScrollProgress,
   sectionProgress,
@@ -11,22 +11,8 @@ function rect(top: number, height: number): DOMRect {
   return { top, height, bottom: top + height } as DOMRect;
 }
 
-// jsdom does not implement matchMedia (see lib/motion/motion-enabled.test.ts
-// for the same stub). motionEnabled() calls it unconditionally, so every
-// <ScrollProgress /> test needs it defined; `matches: false` means these
-// tests' behaviour is governed solely by the `data-reduce-motion` attribute
-// each one sets, matching the OR semantics of motionEnabled().
-beforeEach(() => {
-  vi.stubGlobal(
-    "matchMedia",
-    vi.fn(() => ({
-      matches: false,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  );
-});
-
+// matchMedia is stubbed globally in vitest.setup.ts (matches: false) — every
+// test here relies on that shared default, not a local override.
 afterEach(() => vi.unstubAllGlobals());
 
 describe("sectionProgress", () => {
@@ -109,6 +95,90 @@ describe("<ScrollProgress />", () => {
     // A real frame id, not 0: the loop was genuinely running when we unmounted.
     const cancelled = cancel.mock.calls.at(-1)?.[0];
     expect(cancelled).toBeGreaterThan(0);
+
+    section.remove();
+    document.documentElement.removeAttribute("data-reduce-motion");
+  });
+
+  // Round-1 review finding: pausing the loop must not stay paused only by
+  // accident of `active` being empty. A stale re-intersect (scroll the
+  // section out and back, or a resize) must NOT resume live writes for a
+  // reader who is currently asking for no motion.
+  it("does not resume the loop from a stale re-intersect after motion is turned off mid-session", async () => {
+    document.documentElement.setAttribute("data-reduce-motion", "false");
+    const section = document.createElement("section");
+    section.setAttribute(SCROLL_PROGRESS_ATTR, "");
+    document.body.append(section);
+
+    let fire: ((entries: unknown[]) => void) | undefined;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(cb: (entries: unknown[]) => void) {
+          fire = cb;
+        }
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+      },
+    );
+
+    render(<ScrollProgress />);
+    fire?.([{ target: section, isIntersecting: true }]);
+
+    // Reader turns reduce-motion on mid-session.
+    document.documentElement.setAttribute("data-reduce-motion", "true");
+    await vi.waitFor(() =>
+      expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("0"),
+    );
+
+    const raf = vi.spyOn(window, "requestAnimationFrame");
+    raf.mockClear();
+
+    // Scroll the section out of view and back in while motion is still off.
+    fire?.([{ target: section, isIntersecting: false }]);
+    fire?.([{ target: section, isIntersecting: true }]);
+
+    expect(raf).not.toHaveBeenCalled();
+
+    section.remove();
+    document.documentElement.removeAttribute("data-reduce-motion");
+  });
+
+  it("restarts the loop when motion is turned back on while a section is still intersecting", async () => {
+    document.documentElement.setAttribute("data-reduce-motion", "false");
+    const section = document.createElement("section");
+    section.setAttribute(SCROLL_PROGRESS_ATTR, "");
+    document.body.append(section);
+
+    let fire: ((entries: unknown[]) => void) | undefined;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(cb: (entries: unknown[]) => void) {
+          fire = cb;
+        }
+        observe = vi.fn();
+        unobserve = vi.fn();
+        disconnect = vi.fn();
+      },
+    );
+
+    render(<ScrollProgress />);
+    fire?.([{ target: section, isIntersecting: true }]);
+
+    document.documentElement.setAttribute("data-reduce-motion", "true");
+    await vi.waitFor(() =>
+      expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("0"),
+    );
+
+    const raf = vi.spyOn(window, "requestAnimationFrame");
+    raf.mockClear();
+
+    // Reader turns motion back on; the section never left the DOM or the
+    // observer, so the loop must resume without needing a fresh intersection.
+    document.documentElement.setAttribute("data-reduce-motion", "false");
+    await vi.waitFor(() => expect(raf).toHaveBeenCalled());
 
     section.remove();
     document.documentElement.removeAttribute("data-reduce-motion");
