@@ -50,14 +50,17 @@ of the five mascots on this page are deliberately, permanently still.
   at least one of them is decoration.
 - **Motion in every section at full intensity.** §4 and the footer are deliberate quiet zones.
   Playbook §9's rhythm rule: a page with no rests does not breathe.
+- **A thread segment in every section.** See §3.3. Requiring one everywhere is how a design
+  grammar degrades into a mandatory visual prop.
 
 ---
 
 ## 3. The Korume Learning Thread
 
-One through-line, four morphologies. The reader is never told these are the same line; continuity
-is felt, not announced. It may disappear for a section and return — the gap is what makes the
-return legible.
+**The Thread is design grammar, not an animation and not an object.** It is realised as many local
+segments that share one vocabulary. One through-line, four morphologies. The reader is never told
+these are the same line; continuity is felt, not announced. It may appear, transform, disappear and
+return — and the gap is what makes the return legible.
 
 | State | Shape | Where |
 |---|---|---|
@@ -70,23 +73,75 @@ The thread's journey ends at **§9 Signoff**, not at §8 CTA. The CTA is an invi
 the path; the Signoff is the resolution. This was an explicit owner ruling, 2026-09-04, and it
 resolves a real gap: the page has nine sections and the first draft of this narrative had eight.
 
-### 3.1 The thread is not one element
+### 3.1 The Thread is not one element
 
-⚠️ **The thread is a shared visual language, not a single DOM node spanning the page.** Each
-section owns its own thread element, sized and positioned inside that section. They are bound by
-shared tokens — one stroke width, one accent, one draw mechanism (`stroke-dashoffset`), one easing
-— so that a segment ending at a section's bottom edge and the next beginning at the following
-section's top edge read as one line continuing.
+⚠️ **There is no single DOM node spanning the page.** Each section owns its own segment, sized and
+positioned inside that section:
 
-This is deliberate and it is the cheaper *and* the more robust choice. A single spanning element
-would have to be positioned across section boundaries that already carry settled geometry (§6's
-rail alignment is asserted to 1px), would fight every responsive reflow, and would put one
-element's failure in charge of the whole page's through-line. Per-section segments degrade one
-section at a time.
+```
+§1 ── ThreadSegment          §5 ── ThreadSegment
+§2 ── ThreadSegment          §6 ── frozen, no new choreography
+§3 ── ThreadSegment          §7 ── ThreadSegment (low intensity)
+§4 ── frozen, no segment     §8 ── ThreadSegment
+                             §9 ── ThreadSegment → resolution
+```
 
-**The continuity obligation is therefore a test, not a wish:** the segments' shared tokens must be
-asserted from CSS source, so a change to one section's thread that silently desynchronizes it from
-the rest goes red.
+A single spanning element would have to be positioned across section boundaries that already carry
+settled geometry (§6's rail alignment is asserted to 1px), would fight every responsive reflow, and
+would put one element's failure in charge of the whole page's through-line. Per-section segments
+degrade one section at a time.
+
+### 3.2 Continuity is motion grammar, not DOM topology
+
+⚠️ **Segments do not need to meet at section boundaries, and must not be built as if they do.**
+Two adjacent segments may have completely different geometry:
+
+```
+        §2 segment
+                 ╲
+                  ●
+        ─ ─ ─ section boundary ─ ─ ─
+                  ●
+                 ╱
+        §3 segment
+```
+
+What binds them is a shared **motion grammar**:
+
+- the same visual tokens (below),
+- the same stroke language and cap,
+- the same accent,
+- the same easing family,
+- and the exit direction of one segment agreeing with the entrance direction of the next.
+
+Continuity is a property of the vocabulary, not of the layout tree. This is what lets a segment be
+absent for a whole section without the through-line breaking.
+
+**The token contract** — every segment consumes these, and none may define its own:
+
+```css
+--thread-width
+--thread-color
+--thread-opacity
+--thread-cap
+--thread-ease
+--thread-duration
+--thread-dash
+```
+
+**The continuity obligation is therefore a test, not a wish.** A CSS-source assertion pins the
+contract: if §3 uses its own width, or §7 its own easing, the suite goes red. "Make sure the thread
+looks continuous" is not a check; this is.
+
+### 3.3 A section may have no segment
+
+**If a section's own mechanism already carries the reading, it does not get a thread segment.** §4
+is the standing example: its pitch curves *are* the thread in that section's morphology, and adding
+a separate segment beside them would be an ornament competing with the section's actual subject.
+
+This rule exists to protect the doctrine from itself. The moment every section must display a
+thread, the Thread stops being grammar and becomes a prop that each section is obliged to hold —
+which is the same failure mode as a mascot that must fly into every section.
 
 ---
 
@@ -119,17 +174,17 @@ can end softly."* — a narrative decision that predates this spec.
 
 Nine verbs. `Enter → Understand → Connect → Experience → Discover → Build → Trust → Begin → Rest`.
 
-| § | Section | Metaphor | Verb | Status |
-|---|---|---|---|---|
-| 1 | Hero | Cinematic camera push | **Enter** | NEW |
-| 2 | Problem | Node assembly / orbit | **Understand** | NEW |
-| 3 | Journey | Learning conveyor | **Connect** | NEW |
-| 4 | PitchShowcase | Pitch-line draw | **Experience** | ✅ **ships already — do not rebuild** |
-| 5 | Recommendation | Calibration scanner | **Discover** | NEW |
-| 6 | CapabilityChain | Learning path | **Build** | ✅ **ships already — do not rebuild** |
-| 7 | Trust | Quiet lock | **Trust** | NEW |
-| 8 | Cta | Invitation | **Begin** | NEW |
-| 9 | Signoff | Thread resolves | **Rest** | NEW |
+| § | Section | Metaphor | Verb | Thread | Status |
+|---|---|---|---|---|---|
+| 1 | Hero | Cinematic camera push | **Enter** | segment | NEW |
+| 2 | Problem | Node assembly / orbit | **Understand** | segment | NEW |
+| 3 | Journey | Learning conveyor | **Connect** | segment | NEW |
+| 4 | PitchShowcase | Pitch-line draw | **Experience** | none | 🔒 **FROZEN** |
+| 5 | Recommendation | Calibration scanner | **Discover** | segment | NEW |
+| 6 | CapabilityChain | Learning path | **Build** | frozen | 🔒 **FROZEN** |
+| 7 | Trust | Quiet lock | **Trust** | segment, low | NEW |
+| 8 | Cta | Invitation | **Begin** | segment | NEW |
+| 9 | Signoff | Thread resolves | **Rest** | resolution | NEW |
 
 ### §1 Hero — camera push
 
@@ -137,18 +192,32 @@ The page's most expensive motion. The section is a two-column grid: copy plus tw
 left, `HeroVideoCard` on the right (which owns the `hero-still.png` frame, the transport bar, the
 sentence rail and `greeting.png`).
 
-On entrance, in order: the still settles from `scale(1.04)`; the heading reveals line by line; the
-subtitle; the two CTAs; then the video card's own interface — transport bar, then sentence rail,
-then the mascot; then the first thread segment.
+**The heading reveals as one block, never line by line.** Ruled 2026-09-04. A per-line reveal needs
+either a JS measure pass or hard-coded `<span>`s, and the heading is a single catalog string that
+wraps to a different number of lines in English and Vietnamese at every width. The architecture must
+not bend for one effect. The block gets:
 
-On scroll: the video card scales `1.00 → 0.94` and lifts as the section leaves, and the thread
-draws downward, handing the reader to §2.
+```
+opacity: 0 → 1
+translateY: 20–28px → 0
+clip / mask: hidden → visible
+```
 
-⚠️ **The heading's line-by-line reveal needs a line-splitting decision.** The heading is one
-catalog string; splitting it into lines in the DOM means either a JS measure pass or a hard-coded
-break, and both are fragile across two locales and every viewport width. Simplest sufficient
-option: reveal the heading as one unit with a mask-rise rather than per line, and spend the extra
-beat on the video card's interior instead. Resolve against a render before building.
+Typography never needs to know whether it wrapped to three lines or five, and it stays
+multilingual-safe with no measurement pass and no fragile DOM.
+
+The cinematic sequencing lives **inside the video card** instead, which is where it belongs:
+
+```
+Hero enters → heading block → body → CTA → video image → subtitle/metadata → Companion
+```
+
+On scroll: the video card scales `1.00` toward `0.94` and lifts as the section leaves, and the
+thread segment draws downward.
+
+⚠️ **The exact scroll distance is deliberately not specified.** Not "over 600px", not "over 800px" —
+`TBD by render review`, measured at 1280 and at 390. Freezing that metric on paper before seeing it
+is how the first hero clamp shipped at 50.7px: inside its bound and visibly wrong.
 
 This is the one section whose motion is scroll-*progress* driven rather than entrance-triggered.
 
@@ -156,26 +225,53 @@ This is the one section whose motion is scroll-*progress* driven rather than ent
 
 The six chips are not six cards. They are six parts of one system: Vocabulary, Grammar, Kanji,
 Pronunciation, Listening, SRS. They arrive scattered and assemble; the constellation's lines then
-draw between them (`stroke-dashoffset`, the mechanism §4 already uses). The centre sentence lands
-last.
+draw between them (`stroke-dashoffset`). The centre sentence lands last.
+
+⚠️ **§2's acceptance criterion is visual and cannot be asserted in pixels:**
+
+> At rest, the six capabilities must read as one connected learning system rather than six
+> independent cards.
+
+A sequential six-chip stagger will pass every unit test and every timing assertion while failing
+this. **A green suite is not evidence for this section** — it needs a render review with the owner's
+eye, and it may need to be rebuilt after the first attempt. Budget for that rather than treating the
+first green as done.
 
 The reading this earns: *"Korume doesn't teach these separately."*
 
 ### §3 Journey — learning conveyor
 
-Five steps, handed off rather than revealed together: video frame → subtitle highlight → word
-extracted → meaning → review card. Each step wakes as the thread reaches it. Horizontal in
-feeling, but **not** a horizontal-scroll pin — the playbook's lineup device is deliberately
-softened here (see §8 of this spec).
+Five steps, handed off rather than revealed together. The semantic choreography is fixed:
 
-### §4 PitchShowcase — already correct
+```
+Video → Sentence → Vocabulary → Grammar → SRS
+```
 
-Reference contour draws, learner's contour follows, four sub-scores settle, overall number appears.
-Keep exactly as is. Two constraints, both already enforced in `app/globals.css`:
+Each step wakes as the thread reaches it. Horizontal in feeling, but **not** a horizontal-scroll
+pin (see §8 of this spec).
 
-- **`87` does not count up.** Ruled 2026-09-04, ruling upheld. Animating the digits puts a second,
-  transient value on screen for a number the copy states once — a false reading for anyone who
-  glances mid-animation, on a page about pronunciation scoring.
+⚠️ **The timing is deliberately not specified.** No `150ms / 250ms / 350ms` in this document,
+because the right values depend on the real distance between cards, the scroll velocity and the
+viewport. `TBD by render review`, and the review decides: how much the cards overlap, whether the
+hand-off is too fast, how long the outgoing card holds, whether the next enters by translate or
+opacity, and whether the thread leads the eye clearly enough.
+
+### §4 PitchShowcase — 🔒 FROZEN
+
+**DO NOT MODIFY.** This section ships correct and is not a task in this work.
+
+Specifically forbidden: changing the mascot, changing the geometry, changing the score, adding a
+count-up, changing the layout, or "cleaning up" the existing animation. The only permitted contact
+is hooking it into the motion system **if that changes no existing behaviour**.
+
+It gets **no thread segment** — its pitch curves are the thread in that morphology (§3.3).
+
+Two constraints already enforced in `app/globals.css` and restated here so a future reader does not
+undo them:
+
+- **`87` does not count up.** Ruled 2026-09-04, upheld. Animating the digits puts a second,
+  transient value on screen for a number the copy states once — a false reading for anyone glancing
+  mid-animation, on a page about pronunciation scoring.
 - The dash declarations must be repeated on the `"in"` rule, not only on `"pending"` — a
   `@keyframes` block with only a `to` takes its `from` from the live computed value.
 
@@ -184,11 +280,12 @@ Keep exactly as is. Two constraints, both already enforced in `app/globals.css`:
 A different mechanism from §4 on purpose. Known vocabulary scans, then the new lesson resolves,
 then the donut arc sweeps `0 → 96` via `stroke-dashoffset`. The `NEW` word reveals last.
 
-**The donut sweep is geometry, not digits, so it is not covered by §4's ruling.** The component
-was authored for exactly this: `recommendation-donut.tsx`'s docblock states the arc was built as a
+**The donut sweep is geometry, not digits, so §4's ruling does not cover it.** The component was
+authored for exactly this: `recommendation-donut.tsx`'s docblock states the arc was built as a
 `stroke-dasharray` sweep *"because that is the one shape a later `stroke-dashoffset` tween can
 animate without re-authoring the geometry"*, and it already carries `data-familiar-donut` /
-`data-familiar-arc` hooks that no CSS rule consumes today. This section is wiring, not invention.
+`data-familiar-arc` hooks that no CSS rule consumes today. **This section is wiring, not
+invention.**
 
 ⚠️ That docblock also says *"The whole-page motion pass is a later task"* — false since Task
 A-MOTION. It must be corrected in the same change, or the file keeps arguing its reduce-motion
@@ -197,35 +294,84 @@ obligation from a premise that stopped being true.
 The metaphor is **discovery/calibration**, not growth: *"Korume is finding the right next thing
 for me."*
 
-### §6 CapabilityChain — already correct
+### §6 CapabilityChain — 🔒 FROZEN
 
-Eight cells cascade in DOM order, connectors and rail dots one beat behind, the mascot standing at
-the endpoint. Keep. `xl:items-end` is load-bearing and pinned in e2e — the node grid's bottom edge
-is the rail.
+**DO NOT MODIFY.** Eight cells cascade in DOM order, connectors and rail dots one beat behind, the
+mascot standing at the endpoint. The mascot endpoint is already right; the chain is already right.
+
+Not an animation playground. `xl:items-end` is load-bearing and pinned in e2e — the node grid's
+bottom edge is the rail.
 
 ### §7 Trust — quiet lock
 
-Intensity drops to roughly 30–40% of §1. No playful motion; this section is about privacy
-(*"Your recordings stay private"*, *"Your data is yours"*, *"AI with clear boundaries"*). The
-thread arrives, enters a lock, and stops. The three cards then arrive slowly, in sequence. This is
-the page's breathing room before the CTA.
+Intensity drops to roughly 30–40% of §1. This section is about privacy (*"Your recordings stay
+private"*, *"Your data is yours"*, *"AI with clear boundaries"*), and it is the page's
+**deceleration zone** — the rest before the CTA.
 
-### §8 Cta — invitation
+The thread segment is low-intensity: progress `0 → 1` on `stroke-dashoffset`, opacity slightly
+reduced, arriving at a lock, and then stopping. The three cards follow slowly, in sequence. No
+playful motion.
 
-A new scene, not a continuation. Background settles `1.03 → 1.00`; the orb floats; the mascot
-breathes almost imperceptibly; the CTA reveals last. The thread becomes a short path into the
-button.
+### §8 Cta — invitation, and a thread **continuation**
+
+⚠️ **The thread does not complete here.** §8 is a continuation, not the destination — a distinction
+that changes what the segment does at its end (it passes through, it does not land).
+
+```
+───────────────●
+               CTA
+```
+
+A new scene, not a character arrival. Background settles `1.03 → 1.00`; the orb floats; the mascot
+breathes almost imperceptibly; the CTA reveals last. The copy says *"Start learning"* — an
+invitation.
 
 ### §9 Signoff — resolution
 
-The thread slows, softens its curve, loses opacity, and settles. It does not vanish abruptly. The
-footer below it is fully still, with `resting.png` asleep on its book.
+The one section whose mechanism is not an entrance but a **resolution**. No large new device:
+
+```
+Thread → slows → curves → settles → opacity down
+```
+
+Then *"A gentler way to keep going."* and *"The day can end here."* The footer below is fully
+still, with `resting.png` asleep on its book. This is where the page breathes out.
 
 ---
 
 ## 6. Architecture
 
 Approach C, chosen 2026-09-04: **CSS for every section mechanism, exactly one JS engine.**
+
+```
+                    KORUME MOTION SYSTEM
+
+                       SCROLL PROGRESS
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+       SECTION MOTION                THREAD SEGMENTS
+             │                             │
+    ┌────────┼────────┐               shared tokens
+    │        │        │                    │
+  Hero      §2       §3            width · accent
+ camera   system  hand-off         easing · stroke
+    │        │        │
+   §5       §7       §8
+ scanner   lock     CTA
+    │
+   §9
+ resolve
+
+                  MASCOT SYSTEM
+                       │
+        ┌──────────────┼──────────────┐
+      Hero            §6             §8
+    animated       animated       animated
+
+        §4                        Footer
+      static                      static
+```
 
 ### 6.1 Why not GSAP, and why not scroll-driven CSS
 
@@ -313,6 +459,7 @@ Existing tokens are the vocabulary; no new duration or easing literals:
 - **Cursor-reactive canvas constellation in §2.** The SVG line-draw carries the same reading with
   no canvas and no second JS surface. Revisit only if §2 reads flat once built.
 - **A mascot SVG rig.** All 32 poses are PNG; eye-tracking would need new art. Not in this design.
+- **Any change to §4 or §6.** See their FROZEN entries.
 - **Mobile landing page.** Still blocked on two owner questions, unchanged by this spec.
 
 ---
@@ -324,9 +471,12 @@ Existing tokens are the vocabulary; no new duration or easing literals:
 - **The scroll-progress provider** — unit tests for the `[0,1]` mapping at section boundaries, for
   deactivation when out of view, and for the write-final-value-once path when motion is off.
   Teardown asserted (no leaked rAF or observer).
+- **The thread token contract** — a CSS-source assertion that every segment consumes the shared
+  tokens and none defines its own width, accent, cap or easing. This is what makes continuity
+  checkable rather than aspirational.
 - **CSS-source assertions in `lib/design-tokens.test.ts`** — every new hidden rule carries the
-  failsafe escape; the rule count is pinned; no new duration/easing literals. These are
-  deterministic and cannot miss a timing window.
+  failsafe escape; the rule count is pinned; no new duration/easing literals. Deterministic, and
+  they cannot miss a timing window.
 - **e2e per section** — a behavioural check that each mechanism completes, plus the existing
   `motion never hides content` sweep extended to the new rules. ⚠️ Each new e2e case needs a
   **positive control** asserting the armed state before watching the release; a case without one
@@ -334,8 +484,11 @@ Existing tokens are the vocabulary; no new duration or easing literals:
 - **Reduce-motion is checked by sampling every frame through load**, not by one assertion. The
   §2 r4 defect found on 2026-09-04 passed a single-sample e2e 21/21 twice and fired roughly
   1 run in 12.
-- Guards written over code that already exists (§4, §6) **cannot fail first** — mutation-check
-  them and report both outputs (CLAUDE.md §7).
+- **Two acceptance criteria are visual and no test can carry them:** §2 reading as a system, and
+  §3's hand-off feeling natural. These are render reviews with the owner. A green suite is not
+  evidence for either.
+- Guards written over code that already exists **cannot fail first** — mutation-check them and
+  report both outputs (CLAUDE.md §7).
 
 ---
 
@@ -345,26 +498,27 @@ This is a large spec — roughly a dozen tasks — and it sits at the upper edge
 plan. It stays one plan because the doctrine in §2 binds every piece: splitting it would let the
 sections be built against drifting interpretations of the same four rules.
 
-Build order follows playbook §2 — hardest engine first, sections after, never the reverse:
+Build order, owner-approved 2026-09-04. Hardest engine first, sections after, never the reverse:
 
-1. **The motion gate.** Nothing else may be built before it; every JS consumer depends on it, and
-   it is the one piece whose failure is a CLAUDE.md §2 r4 defect.
-2. **The scroll-progress provider**, on top of the gate.
-3. **The thread's shared tokens and its CSS-source continuity test** — before any section renders a
-   segment, so no section can define its own dialect first.
-4. **§5 Recommendation.** Deliberately first among the sections: it is wiring, not invention (the
-   hooks and geometry exist), so it exercises the whole stack end to end at the lowest risk, and it
-   closes the stale-docblock defect early.
-5. **§1 Hero** — the only scroll-progress-driven section, and the one that proves the provider.
-6. **§2, §3, §7, §8, §9** — entrance-driven, independently buildable once 1–3 land.
-7. **§4 and §6 are not tasks.** They ship correct. Any change to them in this work is a regression.
+| Phase | Work | Why here |
+|---|---|---|
+| **0** | Motion gate · scroll-progress provider · thread tokens + contract test | Nothing may be built before the gate; the token contract must land before any section renders a segment, so no section defines its own dialect first |
+| **01** | **§5 i+1** | The motion laboratory. Wiring, not invention — hooks and geometry exist. Exercises reveal, SVG geometry, progress, timing, the gate and reduce-motion at the lowest risk, and closes the stale-docblock defect early |
+| **02** | **§1 Hero** | The architecture proof — the only scroll-progress-driven section |
+| **03** | **§2 System** | Render test: do six chips read as a system? |
+| **04** | **§3 Pipeline** | Render test: is the hand-off natural? |
+| **05** | **§7 Privacy** | Quiet motion |
+| **06** | **§8 CTA** | Invitation |
+| **07** | **§9 Signoff** | Thread resolution |
+| — | **§4 and §6** | **No task. No refactor. No "improve."** |
 
 ## 11. Open items
 
-1. **§3's hand-off timing** is described qualitatively. The exact per-step offsets should be
-   chosen against a render, not derived on paper — both of the owner's §4 corrections came after
-   every metric was green and both were about the picture.
-2. **§1's scroll range** — over what scroll distance the product preview travels `1.00 → 0.94` —
-   needs a measurement at 1280 and at 390, not a guess.
-3. Whether §2's assembly reads as a system or as six cards arriving is a judgement that needs the
-   owner's eye on a real render before the section is called done.
+1. **§1's scroll distance** — over what distance the video card travels `1.00 → 0.94`. Measured at
+   1280 and at 390, after a render.
+2. **§3's hand-off timing** — overlap, hold, and enter-transform, decided against a render.
+3. **§2's system reading** — whether the assembly reads as one system or as six cards arriving.
+   The owner's eye, on a real render, before the section is called done.
+
+All three are deliberately unfrozen. Both of the owner's §4 corrections came after every metric was
+green, and both were about the picture.
