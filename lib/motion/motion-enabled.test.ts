@@ -1,18 +1,31 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { motionEnabled, subscribeMotionEnabled, REDUCE_MOTION_ATTR } from "./motion-enabled";
 
-/** Drives the OS query independently of the attribute, so the OR is testable. */
-function mockOsReduce(matches: boolean) {
+/**
+ * Drives the OS query independently of the attribute, so the OR is testable.
+ *
+ * `matches` is exposed as a getter over a variable captured in this closure
+ * (not a fixed value baked into the returned object), so a caller can flip it
+ * after subscribing and have every `matchMedia()` call — including the one
+ * inside `subscribeMotionEnabled`'s own listener re-checks — see the new
+ * value. `setMatches` mutates it; `listeners` is the set of `"change"`
+ * listeners registered against this mock, so a test can invoke them directly
+ * to simulate the OS firing a change event (jsdom does not fire one itself).
+ */
+function mockOsReduce(initialMatches: boolean) {
   const listeners = new Set<() => void>();
+  let matches = initialMatches;
   vi.stubGlobal(
     "matchMedia",
     vi.fn(() => ({
-      matches,
+      get matches() {
+        return matches;
+      },
       addEventListener: (_: string, l: () => void) => listeners.add(l),
       removeEventListener: (_: string, l: () => void) => listeners.delete(l),
     })),
   );
-  return listeners;
+  return { listeners, setMatches: (next: boolean) => { matches = next; } };
 }
 
 afterEach(() => {
@@ -52,6 +65,22 @@ describe("motionEnabled", () => {
     const unsubscribe = subscribeMotionEnabled((enabled) => seen.push(enabled));
 
     document.documentElement.setAttribute(REDUCE_MOTION_ATTR, "true");
+    await vi.waitFor(() => expect(seen).toContain(false));
+
+    unsubscribe();
+  });
+
+  it("notifies subscribers when the OS query changes after subscribing", async () => {
+    const { listeners, setMatches } = mockOsReduce(false);
+    document.documentElement.setAttribute(REDUCE_MOTION_ATTR, "false");
+    const seen: boolean[] = [];
+    const unsubscribe = subscribeMotionEnabled((enabled) => seen.push(enabled));
+
+    setMatches(true);
+    // jsdom's mock doesn't fire "change" on its own; invoke the listener(s)
+    // subscribeMotionEnabled registered, the way a real MediaQueryList would.
+    expect(listeners.size).toBeGreaterThan(0);
+    listeners.forEach((l) => l());
     await vi.waitFor(() => expect(seen).toContain(false));
 
     unsubscribe();
