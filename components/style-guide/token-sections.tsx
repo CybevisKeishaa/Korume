@@ -24,7 +24,12 @@ const SEMANTIC_COLORS = [
   // Text tones: the same hue tuned for legibility as TEXT rather than as a
   // fill (see globals.css). Features use these for words and icons.
   "--primary-strong", "--accent-strong", "--success-strong", "--danger-strong",
-  "--surface-overlay", "--scrim",
+  "--surface-overlay",
+  // Thread motion tokens that reference existing colours. --thread-color is an
+  // alias of --accent; two identical swatches here means the thread inherits the
+  // accent colour and moves with it if the palette changes.
+  "--thread-color",
+  "--scrim",
 ];
 
 const SPACING = ["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl"];

@@ -335,11 +335,29 @@ describe("thread token contract", () => {
   });
 
   it("derives the thread's timing from existing tokens, inventing no literal", () => {
-    const ease = css.match(/--thread-ease:\s*([^;]+);/)?.[1]?.trim();
-    const duration = css.match(/--thread-duration:\s*([^;]+);/)?.[1]?.trim();
-    expect(ease).toBeDefined();
-    expect(duration).toBeDefined();
-    expect(ease).toMatch(/^var\(--ease-/);
-    expect(duration).toMatch(/^var\(--duration-/);
+    const easeMatch = css.match(/--thread-ease:\s*([^;]+);/)?.[1]?.trim();
+    const durationMatch = css.match(/--thread-duration:\s*([^;]+);/)?.[1]?.trim();
+    expect(easeMatch).toBeDefined();
+    expect(durationMatch).toBeDefined();
+    expect(easeMatch).toMatch(/^var\(--ease-[a-z0-9-]+\)$/);
+    expect(durationMatch).toMatch(/^var\(--duration-[a-z0-9-]+\)$/);
+
+    // Extract and verify the referenced tokens exist in globals.css
+    const easeRef = easeMatch?.match(/var\(--ease-[a-z0-9-]+\)/)?.[0];
+    const durationRef = durationMatch?.match(/var\(--duration-[a-z0-9-]+\)/)?.[0];
+    if (easeRef) {
+      const tokenName = easeRef.slice(4, -1); // Extract "--ease-..." from "var(...)"
+      expect(css).toContain(`${tokenName}:`);
+    }
+    if (durationRef) {
+      const tokenName = durationRef.slice(4, -1);
+      expect(css).toContain(`${tokenName}:`);
+    }
+  });
+
+  it("keeps thread colour as a var() alias, never a literal", () => {
+    const colour = css.match(/--thread-color:\s*([^;]+);/)?.[1]?.trim();
+    expect(colour).toBeDefined();
+    expect(colour).toMatch(/^var\(--[a-z0-9-]+\)$/);
   });
 });
