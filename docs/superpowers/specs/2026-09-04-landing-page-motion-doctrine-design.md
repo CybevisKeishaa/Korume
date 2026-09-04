@@ -62,12 +62,17 @@ segments that share one vocabulary. One through-line, four morphologies. The rea
 these are the same line; continuity is felt, not announced. It may appear, transform, disappear and
 return — and the gap is what makes the return legible.
 
-| State | Shape | Where |
-|---|---|---|
-| **LINE** | `────────` | transitions between sections |
-| **CONNECTION** | `●────────●` | §2, where the system is assembled |
-| **PATH** | `● ╲ ● ╲ ●` | §6, the learning path |
-| **KNOWLEDGE CURVE** | `───╮ ╰──╮ ╰──` | §4, where the line becomes pitch |
+⚠️ **Not every morphology corresponds to a new component.** Two of the five already ship, realised
+by mechanisms that were built before this spec existed. The `Implementation` column is the part
+that matters at build time:
+
+| Morphology | Shape | Where | Implementation |
+|---|---|---|---|
+| **LINE** | `────────` | transitions | new local segments |
+| **CONNECTION** | `●────────●` | §2, where the system is assembled | new segment |
+| **KNOWLEDGE CURVE** | `───╮ ╰──╮ ╰──` | §4, where the line becomes pitch | **existing pitch contours — 🔒 frozen** |
+| **PATH** | `● ╲ ● ╲ ●` | §6, the learning path | **existing cascade — 🔒 frozen** |
+| **RESOLUTION** | soft settling curve | §9 | new segment |
 
 The thread's journey ends at **§9 Signoff**, not at §8 CTA. The CTA is an invitation sitting on
 the path; the Signoff is the resolution. This was an explicit owner ruling, 2026-09-04, and it
@@ -117,27 +122,48 @@ What binds them is a shared **motion grammar**:
 Continuity is a property of the vocabulary, not of the layout tree. This is what lets a segment be
 absent for a whole section without the through-line breaking.
 
-**The token contract** — every segment consumes these, and none may define its own:
+**The token contract has two halves, and confusing them is the failure this section exists to
+prevent.**
+
+**Invariant — no section may define its own:**
 
 ```css
---thread-width
---thread-color
+--thread-width      /* stroke width */
+--thread-color      /* accent source */
 --thread-opacity
---thread-cap
---thread-ease
+--thread-cap        /* cap style */
+--thread-dash       /* dash behaviour */
+--thread-ease       /* easing family */
 --thread-duration
---thread-dash
 ```
 
+…together with the draw mechanism itself (`stroke-dashoffset`).
+
+**Local geometry — each section decides freely:**
+
+```
+x / y position          curvature            connection points
+length                  orientation          number of bends
+```
+
+⚠️ **Continuity is same grammar, different geometry.** An implementer who reads "continuous" as
+"the segments should look alike" will produce nine copies of one line and lose the variety this
+whole design exists to create. The two-segment diagram above is the intended reading: different
+shapes, one voice.
+
 **The continuity obligation is therefore a test, not a wish.** A CSS-source assertion pins the
-contract: if §3 uses its own width, or §7 its own easing, the suite goes red. "Make sure the thread
-looks continuous" is not a check; this is.
+invariant half: if §3 uses its own width, or §7 its own easing, the suite goes red. "Make sure the
+thread looks continuous" is not a check; this is.
 
 ### 3.3 A section may have no segment
 
 **If a section's own mechanism already carries the reading, it does not get a thread segment.** §4
 is the standing example: its pitch curves *are* the thread in that section's morphology, and adding
 a separate segment beside them would be an ornament competing with the section's actual subject.
+
+⚠️ **§6 is PATH by existing implementation.** Its shipped cascade, connectors and rail dots *are*
+the PATH morphology. **Do not add a Thread Segment beside or over it.** `PATH` in the morphology
+table does not mean "build an SVG path here" — that path already shipped, and §6 is frozen.
 
 This rule exists to protect the doctrine from itself. The moment every section must display a
 thread, the Thread stops being grammar and becomes a prop that each section is obliged to hold —
@@ -418,6 +444,16 @@ One engine. Not a mascot mover — the mascot no longer travels.
 This follows playbook §1 principle 3 — scroll normalized to `[0,1]`, everything hung off the
 percentage — rather than each section inventing its own scroll mechanism.
 
+⚠️ **The provider is a capability, not an obligation.**
+
+> The scroll-progress provider exists to serve mechanisms that genuinely require continuous
+> progress. It must not be used merely because it exists; entrance-driven sections remain
+> entrance-driven.
+
+**§1 Hero is the only section that consumes it.** §2, §3, §5, §7, §8 and §9 are entrance-driven and
+must stay that way. Wiring them to `--section-progress` because the provider happens to be there is
+the same failure mode as putting a thread segment in every section: a facility becoming a mandate.
+
 ### 6.4 What stays exactly as it is
 
 `RevealScope` (one page-level `IntersectionObserver`, `rootMargin: "0px 0px -10% 0px"`,
@@ -471,9 +507,15 @@ Existing tokens are the vocabulary; no new duration or easing literals:
 - **The scroll-progress provider** — unit tests for the `[0,1]` mapping at section boundaries, for
   deactivation when out of view, and for the write-final-value-once path when motion is off.
   Teardown asserted (no leaked rAF or observer).
-- **The thread token contract** — a CSS-source assertion that every segment consumes the shared
-  tokens and none defines its own width, accent, cap or easing. This is what makes continuity
-  checkable rather than aspirational.
+- **The thread contract, in two tiers — and only the first is automatable.**
+  - *Deterministic:* a CSS-source assertion that every segment references the shared thread tokens,
+    that no segment introduces its own timing or easing literal, and that stroke behaviour and
+    accent source are consistent. This is what makes continuity checkable rather than aspirational.
+  - *Visual:* whether `segment A → section boundary → segment B` actually reads as a continuation.
+    A render review, not a test.
+  - ⚠️ **Never snapshot-test continuity.** Local geometry is explicitly free to differ per section
+    (§3.2), so a snapshot would either fail on legitimate variation or pass by pinning the very
+    sameness this design forbids. Assert the invariants; look at the geometry.
 - **CSS-source assertions in `lib/design-tokens.test.ts`** — every new hidden rule carries the
   failsafe escape; the rule count is pinned; no new duration/easing literals. Deterministic, and
   they cannot miss a timing window.
