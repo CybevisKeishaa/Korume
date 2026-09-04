@@ -36,7 +36,9 @@ const tailwind = readFileSync(
 const revealGates = css.match(
   /:root\[data-reduce-motion="false"\][^ ]* \[data-reveal-scope\] \[data-reveal="pending"\]/g,
 );
-const REVEAL_GATE_COUNT = 5;
+// STATE PIN: task 4 adds two (the thread rule, the donut rule) — 5 -> 7,
+// verified by running the test and reading the real number, not counted.
+const REVEAL_GATE_COUNT = 7;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -359,5 +361,45 @@ describe("thread token contract", () => {
     const colour = css.match(/--thread-color:\s*([^;]+);/)?.[1]?.trim();
     expect(colour).toBeDefined();
     expect(colour).toMatch(/^var\(--[a-z0-9-]+\)$/);
+  });
+});
+
+/**
+ * The contract's enforcement half: every thread rule must consume the shared
+ * tokens and none may hardcode the invariants. Gathered by pattern, so the
+ * count is asserted too — an empty match would make every claim below
+ * unconditionally true (L-004).
+ *
+ * ⚠️ THREAD_RULE_COUNT is a STATE PIN, not an invariant: it says "this many
+ * exist today". Every task that touches it RUNS the test, reads the actual
+ * number, and sets the constant to it — never a number counted in your head.
+ * Task 4 adds three matching rules (base, pending, in). Later sections bump it
+ * only if they actually add a matching rule; several add none.
+ */
+const threadRules = css.match(/\[data-thread-segment[^\]]*\][^{]*\{[^}]*\}/g) ?? [];
+const THREAD_RULE_COUNT = 3;
+
+describe("thread continuity contract", () => {
+  it("finds the thread rules it is about to make claims about", () => {
+    expect(threadRules.length).toBe(THREAD_RULE_COUNT);
+  });
+
+  it("hardcodes none of the invariants in any thread rule", () => {
+    // Local geometry is free; these seven are not.
+    //
+    // ⚠️ The negative lookahead sits directly after the colon, with no `\s*`
+    // ahead of it: `stroke-linecap:\s*(?!var)` backtracks `\s*` to zero width
+    // whenever the value is `var(...)` with a leading space (the file's own
+    // style everywhere else), so the lookahead ends up checking " va" against
+    // "var" — which never matches "var" literally — and the rule reads as
+    // hardcoded even though it consumes the token. Verified both ways: with
+    // the backtracking form, `stroke-linecap: var(--thread-cap);` (the actual
+    // rule below) flags as a false positive; with the optional whitespace
+    // moved INSIDE the lookahead, as here, it does not, and `stroke-linecap:
+    // round;` still does.
+    const forbidden = /stroke-width:\s*\d|stroke-linecap:(?!\s*var)|animation-timing-function:(?!\s*var)|stroke-dasharray:(?!\s*(?:var|1\b))/;
+    for (const rule of threadRules) {
+      expect(rule, `a thread rule redefines an invariant:\n${rule}`).not.toMatch(forbidden);
+    }
   });
 });

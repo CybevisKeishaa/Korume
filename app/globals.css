@@ -608,6 +608,56 @@
   animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
 }
 
+/* The thread's shared grammar. Every segment consumes the invariant tokens;
+   geometry lives in the component, where it is free to differ per section.
+   ⚠️ `hsl(...)`, not a bare `var()`: every colour token in this file (spec
+   §2.5's two-tier system) is stored as bare HSL channels so Tailwind's
+   `<alpha-value>` can compose them — `stroke: var(--thread-color)` computes
+   to the invalid colour `29 75% 64%` and the whole declaration drops to its
+   initial value, `none`. Caught only by rendering the page: `getComputedStyle`
+   read `stroke: "none"` on a real `path` with `--thread-color` resolving
+   correctly, no unit test sees a dropped declaration. */
+[data-thread-segment] path {
+  stroke: hsl(var(--thread-color));
+  stroke-width: var(--thread-width);
+  stroke-linecap: var(--thread-cap);
+  opacity: var(--thread-opacity);
+  stroke-dasharray: var(--thread-dash);
+}
+
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment] path {
+  stroke-dashoffset: var(--thread-dash);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment] path {
+  /* ⚠️ Repeated, not inherited from the `pending` rule above: `stroke-draw`
+     declares only a `to`, so its implicit `from` is the live computed value —
+     and `pending` stops matching the instant the state flips. Without this the
+     animation runs 0 -> 0 and the segment simply appears. */
+  stroke-dasharray: var(--thread-dash);
+  stroke-dashoffset: var(--thread-dash);
+  animation: stroke-draw var(--thread-duration) var(--thread-ease) both;
+}
+
+/* §5's calibration sweep. The attribute, not its value: the ring is drawn
+   TWICE — a blurred glow and the crisp line on top — and animating only the
+   crisp one leaves a halo tracing a path its own line has not reached. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-familiar-arc] {
+  stroke-dashoffset: var(--donut-circumference);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-familiar-arc] {
+  stroke-dashoffset: var(--donut-circumference);
+  animation: donut-sweep var(--duration-cinematic) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+
+@keyframes donut-sweep {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
