@@ -52,7 +52,9 @@ Two rulings already bind here and must not be re-litigated:
 These are not per-section defects; they are the same four failures repeated down the page, and they
 are the whole reason the frame reads as a prototype and the reference reads as a product.
 
-**G1 — Imagery is missing.** The reference carries five photographs (Kyoto street at dusk in the hero
+**G1 — Imagery was missing (closed 2026-09-01).** ▶ *All five photographs are delivered and every `AssetSlot` call site passes `src`. They landed across 2026-08-28 to 2026-09-01, not on one day — `git log --diff-filter=A --date=short -- public/marketing/` is the record. The analysis below stands as the record of the gap, not as a live one.*
+
+The reference carries five photographs (Kyoto street at dusk in the hero
 player; a learner in headphones at a night desk in §2; a Tokyo commute still in §5; a lit window in
 §7; a lantern-lit bridge behind the §8 CTA) and four renders of the mascot (§1 Companion card, §4
 Companion card, §6 end of the chain, §8 CTA). The frame has **zero mascot**, an **empty black

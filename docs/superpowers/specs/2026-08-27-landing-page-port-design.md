@@ -177,6 +177,8 @@ Consequences, all mandatory:
 
 ### 5.1 `asset-slot.tsx`
 
+▶ **UPDATE 2026-09-04: all of these have been delivered** and every `AssetSlot` call site now passes `src`; the analysis below is kept as the reason the boundary exists, not as a live gap. They arrived across 2026-08-28 to 2026-09-01 rather than on one day — the record is `git log --diff-filter=A --date=short -- public/marketing/`, and no date is restated here.
+
 Five photographs the reference carries do not exist in the repo: the §1 hero video still (Kyoto
 street at dusk), the §2 learner at a night desk, the §5 Tokyo commute still, the §7 lit window, and
 the §8 CTA night background. `asset-slot.tsx` is the single component that stands in for all five.

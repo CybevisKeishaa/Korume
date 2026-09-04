@@ -390,6 +390,13 @@
  *    themeInitScript sets before paint and only when JS ran. With JS off, or
  *    reduce-motion on, the hidden state never applies: content is visible and
  *    static. Motion is never what hides content (spec §4.1).
+ *  - ⚠️ That gate proves JS RAN, not that the OBSERVER ran — themeInitScript is
+ *    inline in `<head>`, outside the bundle, so it survives the bundle failing
+ *    to arrive while `RevealScope` does not. `:not([data-reveal-failsafe])`
+ *    closes that fourth case: an inline script releases the page a few seconds
+ *    in if the observer never reports (`components/motion/reveal-failsafe.ts`).
+ *    Every hidden rule below carries the escape, and the count is pinned in
+ *    `design-tokens.test.ts` — releasing some of them rescues some of the page.
  *  - It is scoped to `[data-reveal-scope]`. `Section` is shared, so a marketing
  *    page that never mounts `RevealScope` must not be able to hold its own
  *    content at opacity 0.
@@ -397,7 +404,7 @@
  * Transform and opacity do not affect layout, so nothing here moves geometry —
  * §6's mascot/rail alignment is asserted to 1px in e2e.
  */
-:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
     [data-eyebrow],
     [data-section-heading],
     [data-section-body],
@@ -470,7 +477,7 @@
    zero-height span whose dot is translated OUTSIDE that box, so neither
    clip-path nor scaleX can sweep the line without clipping the dot away or
    squashing it — and restructuring the rail would move shipped geometry. */
-:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
     [data-chain-node] > *,
     [data-chain-node] [data-connector]
   ) {
@@ -514,7 +521,7 @@
    The dash mechanism is `.stroke-draw`'s, above; both paths set pathLength=1 in
    pitch-chart.tsx. Drawn once, never looped: this is a data visualization of
    learning, not audio decoration. */
-:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] [data-contour] {
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-contour] {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
 }
@@ -537,7 +544,7 @@
    digits would put a second, transient value on screen for a number the copy
    states once — motion that decorates rather than explains, and a false reading
    for anyone who glances mid-animation. It fades, nothing more. */
-:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
     [data-subscore],
     [data-score-overall]
   ) {
@@ -559,7 +566,7 @@
    Nothing else inside these sections moves: §3's eight journey-art glyphs stay
    still deliberately, because stepping every small element is exactly the
    noisy reading the brief rules out. */
-:root[data-reduce-motion="false"] [data-reveal-scope] [data-reveal="pending"] :is(
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
     [data-chip],
     [data-step],
     [data-trust-card],

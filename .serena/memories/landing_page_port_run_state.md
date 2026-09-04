@@ -11,30 +11,178 @@
 
 # ▶▶ RESUME HERE
 
-**Run `git log --oneline -8`.** The last hash this file can honestly state is **`c1c6ab2`**
-(2026-09-03, session 7); anything after it was written by a later session. A file cannot name the
-commit that contains it — writing one means predicting it, which is the L-002 failure this branch
-has paid for four times.
+## ▶ STATE OF THE TREE — run `git status`, do not read it from here
+
+A memory cannot state whether the tree is clean: the commit that lands the wave falsifies any such
+sentence in the very act of carrying it (L-012's sharpest shape, and session 8 shipped exactly that
+sentence). **Run `git status` and `git log --oneline -6`.** Sessions 8 and 9 left nothing merged and
+nothing pushed; if that has changed, git says so and this line does not.
+
+## ✅ THE WHOLE-BRANCH REVIEW (L-011) RAN — 2026-09-04, session 8
+
+Report: `.superpowers/sdd/2026-08-27-landing-page-port/review-master-HEAD-report.md`
+(⚠️ **gitignored** — it does not travel; it exists only on this machine).
+Range `0584b31..9d5545d` (master..branch tip as it stood in session 8; **HEAD has moved since** —
+re-derive with `git rev-parse master landing-page-port`). **0 Critical · 3 Important · 3 Minor.**
+
+⚠️ **How it ran matters. It is PARTIAL.** Two dispatched `code-reviewer` subagents both died on a
+session rate limit (HTTP 429) before writing anything, so the controller did it inline. The report's
+`## Coverage` section is the honest record. **Still unreviewed: `lib/marketing/pitch-demo.ts`'s 429
+lines of fixture maths + its 624-line test, and `scripts/mascot/**`.** Do not assume this branch has
+had a full pass.
+
+**I1 — the motion gate proved JS RAN, not that the OBSERVER ran.** `themeInitScript` is inline in
+`<head>`, outside the bundle, so it armed the `opacity: 0` state even when the bundle 404s, is
+blocked by an extension, or aborts hydration — and `RevealScope`, which ships in the bundle, was
+then never there to disarm it. The landing page would have stayed blank permanently.
+▶ **Reproduced in a browser, both directions**, against a production build on :3001 with
+`page.route("**/_next/static/chunks/**", abort)`: failsafe neutralised → **0 of 9** headings opaque
+(the defect); failsafe active → **9 of 9**. The negative probe was run *because* the new e2e case
+passed on its first run.
+▶ Fix: `components/motion/reveal-failsafe.ts` — an INLINE script (it cannot be bundled: it exists to
+survive the bundle) releasing the page after `REVEAL_FAILSAFE_MS` unless `RevealScope` sets
+`window.__korumeRevealMounted`. It only ever RELEASES — arming late would flash content and then
+hide it, which is why `themeInitScript` was left alone. All five hidden rules gained
+`:not([data-reveal-failsafe])`, count pinned in `design-tokens.test.ts`.
+
+**I2** — `project_status.md` stated a HEAD its own commit falsified (`HEAD e7696d4`, written by
+`9d5545d`). Now names the range + counting command (L-002).
+
+**I3 — "five photographs do not exist in the repo" was FALSE at HEAD.** Every `AssetSlot` call site
+passes `src`. The homes, listed rather than totalled (session 8 wrote "SIX" over a list of seven, and
+the L-012 review then found an eighth): the `asset-slot.tsx` docblock · both memories · the plan's
+owed list · the plan's live Task-4 instruction · the spec's §5.1 · `landing-page-reconciliation.md`'s
+G1 · **the plan's Task-4 Step 7 copy-this-code block (`~:608`), found only by the L-012 review** —
+the one that would have re-injected the false docblock into shipped source if the task were re-run.
+Live claims rewritten; historical analysis kept and dated with a `▶` update.
+⚠️ **The delivery DATE session 8 wrote into seven of those homes was wrong** — see the L-012 section.
+
+**Minors:** M1 — the `site-menu.tsx` panel gained `[&[hidden]]:hidden`. Tailwind preflight's rule is
+`[hidden]:where(:not([hidden="until-found"])){display:none}`: the `:where()` **contributes** zero
+specificity, so the rule weighs one attribute selector — it merely TIES with any single utility class
+and loses on source order. M2 — `onBlur` no longer closes the sheet when focus leaves the document.
+**M3 NOT fixed, deliberately**:
+`asset-slot.tsx`'s `(image pending)` is the branch's only untranslated user-visible string, but the
+pending branch is unreached and every fix either invents Vietnamese copy (the owner's) or makes
+`AssetSlot` async for all six call sites to serve a dead path. Queued with the owner's copy debt.
+
+**Wave gate, each command run and read:** tsc 0 · lint **0 errors / 81 warnings** (unchanged) ·
+`npm test` **2613 over 283 files** (+8 tests, +1 file) · `npm run build` exit 0 ·
+`motion never hides content` **7/7** against the production build. Both new `SiteMenu` guards were
+mutation-checked: red on mutation, green on restore, `sha256sum -c` confirming the restore.
+
+⚠️ **The wave created one defect and caught it inside itself:** the first `project_status.md` edit
+replaced one sentence and left the rest of its paragraph contradicting the new opening. Rewritten as
+a block. L-012's shape exactly — which is the argument for the next item.
+
+## ▶ ENVIRONMENT LEFT BY SESSION 9 — read before measuring anything
+
+- **`.next` holds a clean PRODUCTION build of the restored tree**, and session 9 left
+  `npx next start -p 3000` RUNNING against it. Session 8's stale dev server is gone (session 9 found
+  :3000 free). Check the port before starting anything: `Get-NetTCPConnection -LocalPort 3000 -State
+  Listen`. If you want dev, kill it first — `next dev` and `next build` share one `.next` and
+  clobber each other.
+- **Playwright's config hardcodes :3000 with `reuseExistingServer: true`**, so it attaches to
+  whatever squats there, healthy or not — including a server serving a build you have since changed.
+  Session 8 worked around it with a throwaway config on :3001, deleted after use. **Session 9 did not
+  need it**: it ran the suite against `next start -p 3000`, which is the recommended shape — rebuild
+  and restart between mutations rather than trusting a warm server.
+- ⚠️ **A server holds the build it started with.** Session 9's mutation check only produced its RED
+  after the server was restarted on the rebuilt output; the first attempt would have tested the old
+  build in memory.
+
+**Run `git log --oneline -8`.** The last hash this file can honestly state is **`9d5545d`**
+(2026-09-04, the tip session 8 inherited); session 8 committed nothing, and session 9's own commit
+cannot be named here. A file cannot name the commit that contains it — writing one means predicting
+it, which is the L-002 failure this branch has paid for four times.
 
 **Branch `landing-page-port`. Nothing merged, nothing pushed.** Everything is built: tasks 1-13,
 A1/A2/A3, P, V, the independent review and its fixes, and **Task A-MOTION (A-M1…A-M5)**.
 
-Gate, each command run and read (session 7): `tsc` exit 0 · `npm run lint` **0 errors, 81 warnings**
-(all pre-existing, none in the diff; an older note said "11", which was a different counting method
-— do not repeat it) · `npm test` **2605 over 282 files** · `npx playwright test
-tests/e2e/landing-page.spec.ts` **20/20** · `npm run build` exit 0.
+**Gate — measured in session 9 on the combined L-011 + L-012 wave, each command run and read. This
+is the single home for these figures; `project_status.md` deliberately carries none.**
+`npx tsc --noEmit` exit 0 · `npm run lint` **0 errors, 81 warnings** (all pre-existing, none in the
+diff; an older note said "11", which was a different counting method — do not repeat it) ·
+`npm test` **2615 over 283 files** · `npm run build` exit 0 · `npx playwright test
+tests/e2e/landing-page.spec.ts` **21/21**, against `npx next start -p 3000` on a fresh production
+build (session 7's figures were 2605/282 and 20/20 — superseded, do not re-cite).
+⚠️ **One unit test failed on the first of three full runs and was never captured.** Two further full
+runs (2615/2615, exit 0) and six runs of the four touched files were clean, so it is recorded as
+NON-REPRODUCIBLE, not as fixed (L-009) — and the name is unknown because the output was not written
+to a file. **Redirect `npm test` to a file before reading its summary**; a failure you cannot name is
+a failure you cannot diagnose.
 ⚠️ **The full `npx playwright test` is NOT 27/27 in a session without local Supabase.** Five specs
 (auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with
 `ECONNREFUSED 127.0.0.1:54321`; they all register a user. That is the environment, not a defect —
 but do not record 27/27 without Supabase up.
 
+## ✅ THE L-012 REVIEW OF THAT FIX WAVE RAN — 2026-09-04, session 9
+
+The owner chose "review the wave first, then commit once", so the L-011 wave and the L-012 fixes
+below landed in ONE commit. A dispatched `code-reviewer` (opus) read the whole uncommitted diff —
+code and prose — and returned **CHANGES REQUIRED: 0 Critical · 6 Important · 8 Minor**. It did not
+die on a rate limit this time; one agent, in flight alone (L-037). Every finding was re-derived by
+the controller before being acted on (L-003) and each held.
+
+**The one that matters, and it is I1's own error one level down.** `RevealScope` reported in by
+setting `window.__korumeRevealMounted` as its effect's **first statement** — before
+`new IntersectionObserver`. So the flag proved *"the effect started"* while the failsafe needs
+*"something is watching for the reveal"*, and `IntersectionObserver` throwing — the case the
+failsafe's own docblock enumerates — would have disarmed the failsafe and left the page at opacity 0
+for good. **The fix wave for a presence-signal-mistaken-for-behaviour bug contained the same
+substitution.** Fixed by moving the report-in to after `observer.observe()`; test written first and
+seen red (`expected true to be undefined`).
+▶ **The reviewer proposed a stronger fix — release unless something was actually revealed — and it
+was REJECTED on evidence.** The `[data-reveal="in"]` rules in `globals.css` (`~:417`) carry no
+failsafe escape and animate from opacity 0 with `both`, so a backgrounded tab would release the page
+and then animate `reveal-rise` over content the reader can already see. The limitation that remains
+(an observer constructed but silently inert) is recorded in `REVEAL_MOUNTED_FLAG`'s docblock rather
+than papered over.
+
+**The wave's own defects, all of them L-012 shapes:** a delivery DATE invented in seven homes
+(`2026-08-28`; only two of six files landed that day, three landed `2026-09-01` — `git log
+--diff-filter=A --date=short -- public/marketing/`) · an **eighth** home of the claim I3 existed to
+kill, in the plan's copy-this-code block · a "verified in the built CSS as `[hidden]{display:none}`"
+parenthetical that the built CSS contradicts, attached to a wrong statement of specificity, in the
+version queued for `docs/lessons.md` · a test guarding `data-reveal-failsafe` by a **hardcoded copy**
+of the literal, in a file whose sibling exports the constant — renaming the attribute would have left
+`npm test` fully green while the failsafe silently stopped releasing anything · an e2e case with no
+positive control, so a build that stopped ARMING the hidden state would have passed it vacuously ·
+no unit-level guard that the layout injects the script at all.
+
+⚠️ **And the controller reproduced the shape twice while fixing it.** The replacement grep recipe for
+the `AssetSlot` census was written, run, and returned **7** instead of 6 — then the parenthetical
+added to warn about self-matching *itself contained the pattern* and matched. Both caught by running
+the recipe rather than reading it. **Every recipe in this memory and in `asset-slot.tsx` has now been
+executed as written and returns the number its prose claims.**
+
+▶ **THE FAILSAFE NOW HAS A REPRODUCIBLE IN-REPO PROOF, IN BOTH DIRECTIONS.** Session 8's negative
+probe lived in a throwaway Playwright config on :3001 that was deleted, so nothing travelling with
+the branch could reproduce it. The e2e case gained a **positive control** — one `evaluateAll`
+immediately after `goto`, asserting `{total: 9, hidden: 9}` — which proves the page was ARMED before
+the poll watches it be released, and which subsumes the 500-page guard (a dead server has no
+headings to count). Mutation-checked properly, on a production build served by `next start`:
+- failsafe removed from the layout, rebuilt, `korumeRevealMounted` absent from the served HTML →
+  **RED: `Expected: 0, Received: 9`** — the positive control passed, then nothing ever released the
+  page. That is I1's defect, reproduced by a spec that ships.
+- restored (`sha256sum -c` OK), rebuilt, script back in the HTML → **GREEN, 21/21.**
+
+**Do not weaken that pre-assertion.** Without it the case goes green on any build that stopped
+ARMING the hidden state at all, which is the "passed on its first run" signature session 8 recorded
+and then had to chase out-of-repo.
+
 ## ▶▶ WHAT REMAINS, IN ORDER
 
-1. **Whole-branch review** (L-011), then a review of the fix wave (L-012) — on this project the
-   second pass has repeatedly caught defects the first wave created.
-2. **The branch-end `docs/lessons.md` pass — 18 queued entries** (16 listed at the end of the
-   archive's session-5 and session-6 sections, plus two from A-MOTION, below).
-3. **The owner's mobile landing page** — new, large, and deliberately out of scope. See below.
+1. ~~Whole-branch review (L-011)~~ **RAN** · ~~its fix wave~~ **LANDED** · ~~the L-012 review of that
+   wave~~ **RAN, 6 Important + 8 Minor, all applied** (section above). Both reports are in
+   `.superpowers/sdd/2026-08-27-landing-page-port/` and ⚠️ **gitignored** — they do not travel.
+2. **Finish the review coverage the rate limit cut short** — `lib/marketing/pitch-demo.ts`'s fixture
+   maths and its 624-line test, plus `scripts/mascot/**`. Neither has had a whole-branch pass. This
+   is the oldest unpaid debt on the branch; it is not closed by either review above.
+3. **The branch-end `docs/lessons.md` pass — now 23 queued entries** (16 listed at the end of the
+   archive's session-5 and session-6 sections, plus two from A-MOTION, two its review added, and
+   three from the L-012 review — all seven below).
+4. **The owner's mobile landing page** — new, large, and deliberately out of scope. See below.
    ▶ Its four extra sections (Video · Kanji-inspect · JLPT · Review Mistakes) are the SAME four the
    motion proposal assumed, so the two pieces of work share one open question. See A-MOTION below.
 
@@ -53,9 +201,17 @@ reachable from there at all. ⚠️ **`gsap.matchMedia()` would be a defect here
 media query, so it ignores the app toggle (CLAUDE.md §2 r4). Nothing in the shipped scope needs
 scrub or pin, so nothing needs GSAP.
 
-**The gate is one selector: `:root[data-reduce-motion="false"]`**, which `themeInitScript` sets
-before paint and only when JS ran. It covers all three cases with no JS branch — motion on hides then
-reveals, reduce-motion never hides, JS off never hides. Scoped under `[data-reveal-scope]` (on the
+**The gate is `:root[data-reduce-motion="false"]:not([data-reveal-failsafe])`**, which
+`themeInitScript` sets before paint and only when JS ran. Three cases need no JS branch — motion on
+hides then reveals, reduce-motion never hides, JS off never hides.
+⚠️ **The whole-branch review found a FOURTH** (2026-09-04, finding I1): that gate proves JS RAN, not
+that the OBSERVER ran. `themeInitScript` is inline in `<head>`, outside the bundle, so it arms the
+hidden state even when the bundle 404s, is blocked, or aborts hydration — and `RevealScope`, which
+ships in the bundle, is then never there to disarm it. The page would stay at opacity 0 for good.
+`components/motion/reveal-failsafe.ts` is an INLINE script (it cannot be bundled: it exists to
+survive the bundle) that releases the page after `REVEAL_FAILSAFE_MS` unless `RevealScope` reports
+in. It only ever RELEASES — arming late would flash content and then hide it. All five hidden rules
+carry the escape and the count is pinned in `design-tokens.test.ts`. Scoped under `[data-reveal-scope]` (on the
 landing `<main>`) so a marketing page that never mounts `RevealScope` cannot strand its own content
 at opacity 0. **Zero new DOM nodes anywhere**: the entrance is attributes on `section.tsx`'s existing
 elements, because §6's mascot sits on the node grid's bottom edge to within 1px.
@@ -63,7 +219,34 @@ elements, because §6's mascot sits on the node grid's bottom edge to within 1px
 **Geometry proven unchanged:** document **4480px at 1280** — the settled figure exactly — as header
 65 + main 3737 + footer 678, measured under reduce-motion so nothing was mid-flight.
 
-▶ **Two lessons queued for the `docs/lessons.md` pass:**
+▶ **Lessons queued for the `docs/lessons.md` pass — two from A-MOTION, two from its review, three
+from the L-012 review of the fix wave:**
+- **A gate that proves a SCRIPT ran does not prove the CODE IT GATES ran.** The reveal gate keyed on
+  an attribute set by an inline `<head>` script, then relied on a bundled observer to clear it. Two
+  independent failure domains, one treated as proof of the other. The e2e covered "JS off" and "JS
+  works" and could not see the state between them.
+  ▶ **And the FIX made the same substitution one level down** (L-012 review): the flag meant to prove
+  the observer arrived was set as the effect's first statement, before the observer was constructed,
+  so `IntersectionObserver` throwing disarmed the failsafe. **When a bug is "signal X was taken as
+  proof of behaviour Y", the fix's own signal is the first thing to re-check** — it is written by
+  whoever just had the wrong model, and it is where the wrong model goes next.
+- **Tailwind preflight's `[hidden]` rule is `[hidden]:where(:not([hidden="until-found"]))`: the
+  `:where()` CONTRIBUTES zero specificity, so the rule weighs one attribute selector.** It merely
+  ties with any single utility class and loses on source order, so `hidden` on an element that later
+  gains `flex`/`block` silently stops hiding. ⚠️ Do not write "the rule has zero specificity" — that
+  is a different and false claim (it would then lose to every class), and it is what session 8 wrote,
+  next to a "verified in the built CSS" parenthetical quoting CSS the build does not contain.
+- **A verification recipe must be RUN, not read** — and a recipe written inside the file it searches
+  matches its own text. `grep -rn "<AssetSlot" components/ | wc -l`, offered as the thing to trust
+  instead of the prose, returned 12 against a claim of 6: its own docblock line plus five test
+  renders. The replacement then returned 7, and the parenthetical warning about self-matching
+  contained the pattern and matched too. **Three iterations, each caught only by execution.** Cheap
+  to check, and it is the one line in a document that readers are told to believe over the rest.
+- **A test that guards a magic string by restating it guards nothing.** `design-tokens.test.ts`
+  filtered CSS rules for a hardcoded `':not([data-reveal-failsafe])'` while its sibling module
+  exported `REVEAL_FAILSAFE_ATTR`. Renaming the attribute would have left every unit test green — the
+  CSS unchanged, the test still matching the old literal — while the failsafe silently stopped
+  releasing anything. **Build the literal from the exported constant, or the guard tests the copy.**
 - **A keyframe with only a `to` takes its `from` from the element's live computed value.** §4's
   contour draw shipped broken for one commit because `stroke-dashoffset: 1` lived only on the
   `pending` rule, which stops matching the instant the state flips to `in` — so the animation ran
@@ -190,7 +373,13 @@ load-bearing and each was learned the hard way:
 - **`EMAIL_PROVIDER=none` in almostgone.vn's `.env` before the next deploy.** The only deploy blocker
   left; `sharp` is done (`2d14481`). ▶ **It is an OPS task, not a code task** — this repo has no
   `.env` at all, so no commit here can close it.
-- **The five photographs** — still the reason `AssetSlot` exists.
+- ~~The five photographs~~ — **DELIVERED, no longer owed.** Every `AssetSlot` call site passes `src`;
+  the files are in `public/marketing/`. They landed across **2026-08-28 to 2026-09-01**, not on one
+  day — session 8 wrote the single date `2026-08-28` into seven homes and it was false in five of
+  them. The record is `git log --diff-filter=A --date=short -- public/marketing/`. Re-derive the call
+  sites with `grep -rl "<AssetSlot" components/marketing --include="*.tsx" | grep -v asset-slot`
+  (returns 6; the trailing filter drops the component's own file and its test, which a recipe
+  searching its own directory counts as call sites), never from this line.
 - **Discord / Facebook / TikTok URLs do not exist** (reconfirmed 2026-09-02; "after the app is
   stable"). They ship as plain TEXT, not anchors, per spec §2.3. Nothing is broken.
 - **§3's card 2 is missing four strings the reference has**: a `5 / 12` counter, a tag chip, a romaji

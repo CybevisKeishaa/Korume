@@ -48,9 +48,21 @@ const DEFAULT_SIZES = "(min-width: 1024px) 45vw, 100vw";
 /**
  * The landing page's pending-photograph boundary (spec §5).
  *
- * Five photographs the reference carries do not exist in the repo. This is the
- * one component that stands in for all five, so that filling a slot later is
- * one prop at one call site with no layout change.
+ * Five photographs the reference carries were missing when this was written.
+ * This is the one component that stands in for all of them, so that filling a
+ * slot is one prop at one call site with no layout change.
+ *
+ * ▶ Every slot on the landing page is now FILLED — all six call sites pass
+ * `src` and the files are in `public/marketing/`. They arrived over 2026-08-28
+ * to 2026-09-01, not on one day; `git log --diff-filter=A --date=short --
+ * public/marketing/` is the record, and no date is restated here. The pending
+ * branch below is therefore unreached on `/` today. It stays because the
+ * boundary is the point: the next surface that needs a photograph gets the same
+ * treatment. Re-derive rather than trusting this line — it returns 6:
+ * `grep -rl "<AssetSlot" components/marketing --include="*.tsx" | grep -v asset-slot`
+ * against `ls public/marketing/`. The trailing filter is load-bearing, not
+ * tidiness: a recipe written inside the file it searches matches its own text,
+ * so it must drop this file and its test or it counts them as call sites.
  *
  * The pending state is deliberately, visibly a placeholder — never a decorative
  * gradient that could be mistaken for finished art, and never filled by slicing

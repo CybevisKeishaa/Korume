@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { render, screen } from "@/test/render";
+import { fireEvent, render, screen } from "@/test/render";
 import { SiteMenu } from "./site-menu";
 
 /**
@@ -178,6 +178,38 @@ describe("SiteMenu", () => {
     expect(
       screen.getByRole("button", { name: LABELS.open }),
     ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("stays open when focus leaves the document rather than the sheet", async () => {
+    // `relatedTarget` is null when the reader alt-tabs away or clicks the
+    // address bar. Nothing underneath the sheet has focus, so there is no
+    // invisible focus ring to prevent — and closing would mean they come back
+    // to a menu they never shut.
+    const user = userEvent.setup();
+    renderMenu();
+    const toggle = screen.getByRole("button", { name: LABELS.open });
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.focusOut(toggle, { relatedTarget: null });
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("keeps the closed panel collapsed even against a display utility", async () => {
+    // jsdom applies no Tailwind, so this asserts the contract rather than the
+    // computed style. Preflight's rule is
+    // `[hidden]:where(:not([hidden="until-found"])){display:none}` and
+    // `:where()` has ZERO specificity, so it only TIES with a single utility
+    // class and loses on source order. Without an explicit guard, adding
+    // `block`/`flex`/`grid` to the panel renders the closed menu over the hero
+    // and nothing here would have gone red.
+    renderMenu();
+    const toggle = screen.getByRole("button", { name: LABELS.open });
+    const panel = document.getElementById(toggle.getAttribute("aria-controls") as string);
+
+    expect(panel).not.toBeNull();
+    expect(panel?.className).toContain("[&[hidden]]:hidden");
   });
 
   it("keeps every glyph out of the accessibility tree", async () => {

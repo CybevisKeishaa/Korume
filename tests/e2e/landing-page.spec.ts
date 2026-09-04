@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import en from "../../messages/en/marketing.json";
+import { REVEAL_FAILSAFE_MS } from "../../components/motion/reveal-failsafe";
 
 /**
  * `/` — the landing page, end to end (spec §2, plan task 12).
@@ -584,5 +585,53 @@ test.describe("motion never hides content", () => {
         nodes.filter((n) => Number(getComputedStyle(n).opacity) !== 1).length,
       );
     expect(hidden).toBe(0);
+  });
+
+  test("renders every section opaque when the client bundle never arrives", async ({
+    page,
+  }) => {
+    // The case the three above cannot reach. JS is ENABLED, so themeInitScript
+    // runs — it is inline in <head>, outside the bundle — and arms the hidden
+    // state. But `RevealScope` ships in the bundle, so if the bundle does not
+    // execute, nothing flips `pending` to `in`. Without the inline failsafe the
+    // whole page stays at opacity 0 for good.
+    await page.route("**/_next/static/chunks/**", (route) => route.abort());
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    // `domcontentloaded`, not the default `load`: the markup and the inline
+    // scripts are all this needs, and waiting on six photographs would eat the
+    // failsafe window the positive control below has to fit inside.
+    await page.goto("/en", { waitUntil: "domcontentloaded" });
+
+    const headings = page.locator("main section[id] [data-section-heading]");
+
+    // ⚠️ POSITIVE CONTROL, and the half that stops this test from ever passing
+    // vacuously. One round-trip, run immediately so it lands well inside the
+    // failsafe window, and it asserts BOTH halves at once:
+    //   total  — nine headings exist, so this is not the 500 page that gives
+    //            every test in this describe a free pass (a dead server has no
+    //            hidden content either);
+    //   hidden — all nine are actually at opacity 0, so the poll below is
+    //            watching a real release. Without this, a build that stopped
+    //            ARMING the hidden state — a dropped gate, a themeInitScript
+    //            regression, Playwright defaulting to reduce-motion — would
+    //            sail through the poll having measured nothing (L-004).
+    expect(
+      await headings.evaluateAll((nodes) => ({
+        total: nodes.length,
+        hidden: nodes.filter((n) => Number(getComputedStyle(n).opacity) === 0).length,
+      })),
+    ).toEqual({ total: 9, hidden: 9 });
+
+    // The failsafe window, plus margin for the release to take effect.
+    await expect
+      .poll(
+        async () =>
+          headings.evaluateAll((nodes) =>
+            nodes.filter((n) => Number(getComputedStyle(n).opacity) !== 1).length,
+          ),
+        { timeout: REVEAL_FAILSAFE_MS + 3000 },
+      )
+      .toBe(0);
   });
 });

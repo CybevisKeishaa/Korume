@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render";
+import { REVEAL_FAILSAFE_ATTR, REVEAL_MOUNTED_FLAG } from "./reveal-failsafe";
 import { RevealScope } from "./reveal-scope";
 
 /**
@@ -35,6 +36,8 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   document.body.innerHTML = "";
+  document.documentElement.removeAttribute(REVEAL_FAILSAFE_ATTR);
+  Reflect.deleteProperty(window, REVEAL_MOUNTED_FLAG);
 });
 
 describe("RevealScope", () => {
@@ -82,6 +85,60 @@ describe("RevealScope", () => {
     const { container } = render(<RevealScope />);
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("reports that it mounted, so the failsafe stands down", () => {
+    document.body.innerHTML = `
+      <div data-reveal-scope><section data-reveal="pending" id="a"></section></div>`;
+
+    expect(Reflect.get(window, REVEAL_MOUNTED_FLAG)).toBeUndefined();
+
+    render(<RevealScope />);
+
+    // The inline failsafe script reads this. Without it the page would reveal
+    // itself 3s in and then animate a second time on scroll.
+    expect(Reflect.get(window, REVEAL_MOUNTED_FLAG)).toBe(true);
+  });
+
+  it("does not report in when the observer cannot be constructed", () => {
+    // The case the failsafe's docblock enumerates: `IntersectionObserver`
+    // throwing. A flag set on the way INTO the effect would stand the failsafe
+    // down for an observer that never existed, and the page would stay at
+    // opacity 0 for good — a presence signal standing in for a behavioural one,
+    // which is the substitution the failsafe exists to correct.
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor() {
+          throw new Error("blocked");
+        }
+      },
+    );
+    document.body.innerHTML = `
+      <div data-reveal-scope><section data-reveal="pending" id="a"></section></div>`;
+
+    try {
+      render(<RevealScope />);
+    } catch {
+      // Expected: React surfaces the effect's throw through render(). Whether
+      // it does is React's business; the flag is this test's subject.
+    }
+
+    expect(Reflect.get(window, REVEAL_MOUNTED_FLAG)).toBeUndefined();
+  });
+
+  it("leaves the page alone when the failsafe already released it", () => {
+    document.documentElement.setAttribute(REVEAL_FAILSAFE_ATTR, "");
+    document.body.innerHTML = `
+      <div data-reveal-scope><section data-reveal="pending" id="a"></section></div>`;
+
+    render(<RevealScope />);
+
+    // Hydration lost the race: everything is visible. Flipping targets to `in`
+    // now would run `reveal-rise` from opacity 0 and flash content that the
+    // reader is already looking at.
+    expect(observed).toHaveLength(0);
+    expect(document.getElementById("a")?.getAttribute("data-reveal")).toBe("pending");
   });
 
   it("disconnects the observer on unmount", () => {

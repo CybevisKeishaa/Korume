@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { REVEAL_FAILSAFE_ATTR } from "@/components/motion/reveal-failsafe";
 
 /**
  * The token system's automated contract (spec §2.9: architectural invariants
@@ -19,6 +20,23 @@ const tailwind = readFileSync(
   path.join(process.cwd(), "tailwind.config.ts"),
   "utf8",
 );
+
+/**
+ * The reveal layer's PERSISTENT hidden state: every rule in globals.css that
+ * holds landing-page content at opacity 0 until the observer flips it. Gathered
+ * once, because two tests below ask about the same five rules and a sixth
+ * legitimately-added rule must move one number, not two (CLAUDE.md §6).
+ *
+ * `[^ ]*` tolerates further conditions on `:root` — the failsafe escape added
+ * one — while still requiring the reduce-motion gate to be what each rule
+ * starts from. A rule that LOSES its escape still matches here (the `*` takes
+ * the empty string) and drops out of the escapable filter, which is what makes
+ * that filter a real assertion rather than a restatement of this one.
+ */
+const revealGates = css.match(
+  /:root\[data-reduce-motion="false"\][^ ]* \[data-reveal-scope\] \[data-reveal="pending"\]/g,
+);
+const REVEAL_GATE_COUNT = 5;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -118,14 +136,35 @@ describe("design tokens", () => {
     // before paint and ONLY when JS ran. With JS off the attribute is absent,
     // so the hidden state never applies and content is visible — motion can
     // never be what hides content (spec §4.1, CLAUDE.md §2.4).
-    const gated = css.match(
-      /:root\[data-reduce-motion="false"\] \[data-reveal-scope\] \[data-reveal="pending"\]/g,
-    );
-    expect(gated).not.toBeNull();
-    expect(gated?.length).toBeGreaterThanOrEqual(1);
+    // The COUNT is not this test's subject, and is pinned in the failsafe test
+    // below, which is the one it belongs to (L-031: assert the relation the
+    // spec states, not a stronger one today's CSS happens to satisfy).
+    expect(revealGates).not.toBeNull();
+    expect(revealGates?.length).toBeGreaterThanOrEqual(1);
     // And the hidden state must never be written ungated: a rule that starts at
     // `[data-reveal-scope]` or `[data-reveal="pending"]` would apply with JS off.
     expect(css).not.toMatch(/^\[data-reveal(-scope)?[^\]]*\][^{]*\{\s*opacity:\s*0/m);
+  });
+
+  it("lets the failsafe release every hidden rule, not just the first one", () => {
+    // The gate proves JS RAN (themeInitScript is inline, in <head>, outside the
+    // bundle). It does not prove the OBSERVER ran. If the client bundle never
+    // executes — 404, blocked by an extension, hydration aborted — nothing ever
+    // flips `pending` to `in`, and the whole page stays at opacity 0. The
+    // inline failsafe sets `[data-reveal-failsafe]` after a few seconds, so
+    // every hidden rule has to be escapable by it or the page is only partly
+    // rescued.
+    // L-004: a pattern-gathered collection is asserted non-empty AND at its
+    // expected size, or an empty match makes this unconditionally green.
+    expect(revealGates).not.toBeNull();
+    expect(revealGates).toHaveLength(REVEAL_GATE_COUNT);
+
+    // Built from the exported constant, never from a second copy of the
+    // literal: renaming the attribute must break this test, not slip past it
+    // while the failsafe silently stops releasing anything.
+    const escape = `:not([${REVEAL_FAILSAFE_ATTR}])`;
+    const escapable = revealGates?.filter((rule) => rule.includes(escape));
+    expect(escapable).toHaveLength(REVEAL_GATE_COUNT);
   });
 
   it("declares the contour dash offset on the revealed rule, not only the pending one", () => {

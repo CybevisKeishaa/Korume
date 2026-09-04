@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { REVEAL_FAILSAFE_ATTR, REVEAL_MOUNTED_FLAG } from "./reveal-failsafe";
+
 /**
  * One IntersectionObserver for the whole landing page: it flips every
  * `[data-reveal="pending"]` inside `[data-reveal-scope]` to `"in"` as it enters
@@ -24,6 +26,11 @@ import { useEffect } from "react";
  */
 export function RevealScope(): null {
   useEffect(() => {
+    // Hydration lost the race and the failsafe already revealed the page.
+    // Flipping targets to `in` now would run `reveal-rise` from opacity 0 and
+    // flash content the reader is already looking at.
+    if (document.documentElement.hasAttribute(REVEAL_FAILSAFE_ATTR)) return;
+
     const targets = Array.from(
       document.querySelectorAll<HTMLElement>('[data-reveal-scope] [data-reveal="pending"]'),
     );
@@ -43,6 +50,16 @@ export function RevealScope(): null {
     );
 
     for (const target of targets) observer.observe(target);
+
+    // Report in HERE and nowhere earlier, so the inline failsafe stands down
+    // for something it can rely on: the observer exists and is observing. Set
+    // as the effect's first statement, this was the same substitution the
+    // failsafe exists to correct — `new IntersectionObserver` throwing would
+    // have disarmed the failsafe and left the page at opacity 0 for good.
+    // Every path that returns before this line leaves the flag unset, and the
+    // failsafe then releases the page a few seconds later: the safe direction.
+    Reflect.set(window, REVEAL_MOUNTED_FLAG, true);
+
     return () => observer.disconnect();
   }, []);
 

@@ -609,6 +609,11 @@ export interface AssetSlotProps {
  * one component that stands in for all five, so that filling a slot later is
  * one prop at one call site with no layout change.
  *
+ * ▶ TRUE WHEN THIS TASK WAS WRITTEN, FALSE SINCE 2026-09-01. The photographs
+ * were delivered; read the docblock that actually ships in
+ * `components/marketing/asset-slot.tsx` before copying this block anywhere.
+ * Left as written because it is the record of what the task was given.
+ *
  * The pending state is deliberately, visibly a placeholder — never a decorative
  * gradient that could be mistaken for finished art, and never filled by slicing
  * the flat reference PNG (spec §5.2). A slot may only be filled from a source
@@ -1073,7 +1078,7 @@ git commit -m "feat(marketing): §0 nav and §10 footer"
 
 Run `get_design_context` on `347:6313`. The composition to build is the **reference's**, not the frame's: copy and two CTAs on the left; on the right a video card (title, level, duration) with player chrome over the still, then Transcript / Japanese / English / Notes tabs over three transcript lines, a Companion card, and a right rail carrying "Sentence 1 / 29", the Japanese line, romaji, English, Key Words and "Save Sentence".
 
-⚠️ This is the page's single most important image and it does not exist. The still is an `AssetSlot` with `ratio="16/9"`; **do not** substitute a gradient, and do not slice it out of `346:6275`.
+⚠️ This is the page's single most important image. It did not exist when this task was written; it was delivered 2026-08-28 as `/marketing/hero-still.png`. The instruction below still binds for any REPLACEMENT of it. The still is an `AssetSlot` with `ratio="16/9"`; **do not** substitute a gradient, and do not slice it out of `346:6275`.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -4665,7 +4670,11 @@ git commit -m "test(marketing): prove the motion layer hides nothing and moves n
 2. **Write lessons** to `docs/lessons.md` per its four entry rules — merged into an existing entry where one applies, not appended as a new one.
 3. **Update `mem:landing_page_port_run_state`** and `mem:project_status` § NEXT ACTION.
 4. **Open items to put to the user**, none of which block the merge:
-   - the five photographs, still the reason `AssetSlot` exists;
+   - ~~the five photographs~~ — delivered across 2026-08-28 to 2026-09-01, not on one day; every
+     slot passes `src` (verify — returns 6:
+     `grep -rl "<AssetSlot" components/marketing --include="*.tsx" | grep -v asset-slot`
+     against `ls public/marketing/`; the trailing filter drops the component's own file and its
+     test, which a recipe searching its own directory would otherwise count as call sites);
    - §5's "i+1 Perfect Next Step" badge and topic chips — in the reference, absent from the frame (Task 8 Step 3);
    - Discord / Facebook / TikTok URLs, and whether either app store block should ever become a link;
    - ✅ ANSWERED 2026-09-02: the owner ruled delete. `public/mascot/renders/` and `assets/blender/references/` are gone (recoverable from git history). `assets/blender/korume.blend` was NOT part of the ruling and stays.

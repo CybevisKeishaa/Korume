@@ -110,6 +110,11 @@ export function SiteMenu({ items, labels, signInHref, ctaHref }: SiteMenuProps) 
       // keeps the pattern non-modal and every stop visible.
       onBlur={(event) => {
         if (!open) return;
+        // Focus left the document entirely (alt-tab, a click in the address
+        // bar). Nothing underneath the sheet has focus, so there is no
+        // invisible focus ring to prevent — and closing here would mean the
+        // reader comes back to a menu they did not shut.
+        if (event.relatedTarget === null) return;
         if (event.currentTarget.contains(event.relatedTarget)) return;
         setOpen(false);
       }}
@@ -134,11 +139,19 @@ export function SiteMenu({ items, labels, signInHref, ctaHref }: SiteMenuProps) 
       {/* Rendered and `hidden` rather than unmounted: `aria-controls` has to
           resolve to a real element, and a dangling id is a broken reference,
           not a closed menu. `hidden` also takes the links out of the tab
-          order, so a closed sheet costs no keyboard stops. */}
+          order, so a closed sheet costs no keyboard stops.
+
+          ⚠️ `[&[hidden]]:hidden` is not redundant. Tailwind's preflight rule is
+          `[hidden]:where(:not([hidden="until-found"])){display:none}`, and
+          `:where()` contributes ZERO specificity — so that rule merely TIES
+          with any single utility class and loses on source order. The day
+          someone adds `block`, `flex` or `grid` here, the closed menu renders
+          over the hero and no test goes red. This makes the closed state win
+          on its own terms. */}
       <div
         id={panelId}
         hidden={!open}
-        className="absolute inset-x-0 top-full z-nav border-b border-border/60 bg-background pb-lg pt-lg"
+        className="absolute inset-x-0 top-full z-nav border-b border-border/60 bg-background pb-lg pt-lg [&[hidden]]:hidden"
       >
         <MarketingContainer>
           <nav aria-label={labels.nav}>
