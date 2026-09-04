@@ -251,6 +251,23 @@
   --ease-standard: ease-out;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /**
+   * The Korume Learning Thread — its INVARIANT half (spec §3.2). Every thread
+   * segment consumes these and none may define its own. Continuity is same
+   * grammar, different geometry: position, length, curvature, orientation and
+   * bends are each section's own business, and are deliberately absent here.
+   *
+   * Timing derives from the existing scales rather than inventing literals, so
+   * a change to the page's rhythm moves the thread with it.
+   */
+  --thread-width: 2px;
+  --thread-color: var(--accent);
+  --thread-opacity: 0.9;
+  --thread-cap: round;
+  --thread-dash: 1;
+  --thread-ease: var(--ease-standard);
+  --thread-duration: var(--duration-slow);
+
   /* Z-index ladder. Fixed rungs so stacking is a decision made once, not a
      bidding war of hardcoded z-40s. */
   --z-nav: 30;

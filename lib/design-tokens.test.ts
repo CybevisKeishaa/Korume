@@ -313,3 +313,33 @@ describe("design tokens", () => {
     expect(css).toMatch(/--layout-column-gap:\s*var\(--space-lg\)/);
   });
 });
+
+/**
+ * The Thread's invariant half (spec §3.2). Local geometry — position, length,
+ * curvature, orientation, bends — is deliberately NOT here: sections differ in
+ * shape and share only grammar. Pinning geometry would forbid the variety.
+ */
+const THREAD_TOKENS = [
+  "--thread-width",
+  "--thread-color",
+  "--thread-opacity",
+  "--thread-cap",
+  "--thread-dash",
+  "--thread-ease",
+  "--thread-duration",
+];
+
+describe("thread token contract", () => {
+  it.each(THREAD_TOKENS)("defines %s in :root", (token) => {
+    expect(css).toContain(`${token}:`);
+  });
+
+  it("derives the thread's timing from existing tokens, inventing no literal", () => {
+    const ease = css.match(/--thread-ease:\s*([^;]+);/)?.[1]?.trim();
+    const duration = css.match(/--thread-duration:\s*([^;]+);/)?.[1]?.trim();
+    expect(ease).toBeDefined();
+    expect(duration).toBeDefined();
+    expect(ease).toMatch(/^var\(--ease-/);
+    expect(duration).toMatch(/^var\(--duration-/);
+  });
+});
