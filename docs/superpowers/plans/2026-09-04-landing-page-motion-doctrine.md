@@ -330,7 +330,11 @@ describe("sectionProgress", () => {
 });
 
 describe("<ScrollProgress />", () => {
-  it("writes the final value once and starts no loop when motion is off", () => {
+  // ⚠️ 0, not 1. See the settle() docblock: a static transform driven by this
+  // property is reachable by NEITHER kill-switch block, so settling to the
+  // "finished" value would leave a reduce-motion reader looking at a hero card
+  // permanently at scale(0.94).
+  it("settles to the undistorted state once and starts no loop when motion is off", () => {
     document.documentElement.setAttribute("data-reduce-motion", "true");
     const section = document.createElement("section");
     section.setAttribute(SCROLL_PROGRESS_ATTR, "");
@@ -339,7 +343,7 @@ describe("<ScrollProgress />", () => {
 
     render(<ScrollProgress />);
 
-    expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("1");
+    expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("0");
     expect(raf).not.toHaveBeenCalled();
 
     section.remove();
@@ -420,12 +424,28 @@ export function ScrollProgress(): null {
     );
     if (sections.length === 0) return;
 
-    // Motion off: the final state, written once. Never an intermediate value,
-    // never a loop. This is the same answer a reduce-motion reader gets from
-    // the CSS lane, which is the point of sharing one gate.
+    /**
+     * Motion off: the UNDISTORTED state, written once. Never an intermediate
+     * value, never a loop.
+     *
+     * ⚠️ `0`, not `1`, and this is load-bearing. Consumers of this property use
+     * it in a static `transform` — and a static transform is reachable by
+     * NEITHER kill-switch block in `app/globals.css`: both collapse only
+     * `animation-*` and `transition-*`. Settling to `1` would therefore leave
+     * §1's hero card permanently at `scale(0.94)` for a reduce-motion reader —
+     * content distorted by the motion system, for the one reader who asked for
+     * none. `0` is the resting value, `motionEnabled()` is already the correct
+     * OR over both inputs, and `var(--section-progress, 0)` gives the same
+     * answer when JS never runs — one mechanism, correct in every combination.
+     *
+     * ▶ If a future consumer's natural resting state is `1` rather than `0`,
+     * do NOT flip this global. Give that consumer a CSS rule gated on
+     * `:root[data-reduce-motion="false"]` plus a `@media (prefers-reduced-motion)`
+     * reset, and say why in its docblock.
+     */
     const settle = () => {
       for (const section of sections) {
-        section.style.setProperty(SCROLL_PROGRESS_VAR, "1");
+        section.style.setProperty(SCROLL_PROGRESS_VAR, "0");
       }
     };
 
@@ -667,12 +687,14 @@ describe("<ThreadSegment />", () => {
  * count is asserted too — an empty match would make every claim below
  * unconditionally true (L-004).
  *
- * ⚠️ Bump THREAD_RULE_COUNT with each section that adds a segment. It is a
- * state pin, not an invariant: it says "this many exist today", and a section
- * that silently loses its thread is what it catches.
+ * ⚠️ THREAD_RULE_COUNT is a STATE PIN, not an invariant: it says "this many
+ * exist today". Every task that touches it RUNS the test, reads the actual
+ * number, and sets the constant to it — never a number counted in your head.
+ * Task 4 adds three matching rules (base, pending, in). Later sections bump it
+ * only if they actually add a matching rule; several add none.
  */
 const threadRules = css.match(/\[data-thread-segment[^\]]*\][^{]*\{[^}]*\}/g) ?? [];
-const THREAD_RULE_COUNT = 2;
+const THREAD_RULE_COUNT = 3;
 
 describe("thread continuity contract", () => {
   it("finds the thread rules it is about to make claims about", () => {
@@ -1273,4 +1295,4 @@ Merge into existing `L-NNN` entries where one applies; append a new id only for 
 
 **Placeholders.** None. The three genuinely open values (§1's coefficient, §3's hand-off timing, §2's system reading) are open *by the spec's decision* and each has a named step that closes it against a render, with the outcome recorded in a commit message — that is a decision procedure, not a TBD.
 
-**Type consistency.** `motionEnabled` / `subscribeMotionEnabled` / `REDUCE_MOTION_ATTR` are defined in Task 1 and consumed under those exact names in Task 2. `SCROLL_PROGRESS_ATTR` / `SCROLL_PROGRESS_VAR` / `sectionProgress` are defined in Task 2 and consumed in Task 6. `ThreadSegment` / `THREAD_MORPHOLOGIES` / `THREAD_SEGMENT_ATTR` are defined in Task 4 and consumed in Tasks 9, 10, 11 — with `resolution` present in the morphology list from the start, so Task 11 needs no widening. `REVEAL_GATE_COUNT` starts at 5 and is bumped by every task that adds a hidden rule; `THREAD_RULE_COUNT` starts at 2 in Task 4 and is bumped in Tasks 9, 10 and 11.
+**Type consistency.** `motionEnabled` / `subscribeMotionEnabled` / `REDUCE_MOTION_ATTR` are defined in Task 1 and consumed under those exact names in Task 2. `SCROLL_PROGRESS_ATTR` / `SCROLL_PROGRESS_VAR` / `sectionProgress` are defined in Task 2 and consumed in Task 6. `ThreadSegment` / `THREAD_MORPHOLOGIES` / `THREAD_SEGMENT_ATTR` are defined in Task 4 and consumed in Tasks 9, 10, 11 — with `resolution` present in the morphology list from the start, so Task 11 needs no widening. `REVEAL_GATE_COUNT` starts at 5 and is bumped by every task that adds a hidden rule; `THREAD_RULE_COUNT` starts at 3 in Task 4 and is bumped in Tasks 9, 10 and 11.
