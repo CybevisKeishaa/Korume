@@ -1,35 +1,31 @@
-import { Link } from "@/lib/i18n/navigation";
-import { buttonStyles } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
-import { getTranslations } from "@/lib/i18n/server";
+import { Hero } from "@/components/marketing/hero";
+import { Problem } from "@/components/marketing/problem";
+import { Journey } from "@/components/marketing/journey";
+import { PitchShowcase } from "@/components/marketing/pitch-showcase";
+import { Recommendation } from "@/components/marketing/recommendation";
+import { CapabilityChain } from "@/components/marketing/capability-chain";
+import { Trust } from "@/components/marketing/trust";
+import { Cta } from "@/components/marketing/cta";
+import { Signoff } from "@/components/marketing/signoff";
+import { RevealScope } from "@/components/motion/reveal-scope";
 
-export default async function LandingPage() {
-  const t = await getTranslations("marketing");
-  const tCommon = await getTranslations("common");
+export default function LandingPage() {
+  // `data-reveal-scope` is what lets `Section`'s `data-reveal="pending"` mean
+  // anything: the hidden state in globals.css is gated on this ancestor, so a
+  // marketing page that never mounts `RevealScope` cannot hold its own content
+  // at opacity 0 (Task A-MOTION).
   return (
-    <main>
-      <Container className="flex min-h-[80vh] flex-col items-center justify-center py-24 text-center">
-        <p className="mb-4 font-jp text-sm tracking-widest text-primary-strong">
-          {tCommon("appNameJp")}
-        </p>
-        <h1 className="max-w-3xl text-balance text-4xl font-bold leading-tight sm:text-6xl">
-          {t("hero.heading")}
-        </h1>
-        <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-          {t("hero.subtitle")}
-        </p>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href="/register" className={buttonStyles({ size: "lg" })}>
-            {t("hero.cta")}
-          </Link>
-          <Link
-            href="/login"
-            className={buttonStyles({ size: "lg", variant: "outline" })}
-          >
-            {tCommon("auth.signIn")}
-          </Link>
-        </div>
-      </Container>
+    <main data-reveal-scope>
+      <RevealScope />
+      <Hero />
+      <Problem />
+      <Journey />
+      <PitchShowcase />
+      <Recommendation />
+      <CapabilityChain />
+      <Trust />
+      <Cta />
+      <Signoff />
     </main>
   );
 }

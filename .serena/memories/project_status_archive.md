@@ -775,3 +775,273 @@ submit UI + GDPR delete) → L8 PayOS → L9c polish/perf.
   adaptive-furigana). Every feature's Free/Premium home is mapped in `business-model.md` **§2.1**. When
   building F-010, keep §2 "mining stores NO media" (thumbnail = YouTube URL reference, don't store images).
 
+---
+
+# Superseded NEXT ACTION blocks — moved out of `mem:project_status` 2026-09-03
+
+> Verbatim. Each already carried its own (historical)/(done)/(superseded) label; they were
+> moved so the live index reads faster, not because anything in them stopped being true.
+
+## ▶ (historical) NEXT ACTION (2026-08-11) — **Phase 0: Figma Product Inventory. Do NOT start Screen Registry Phase 1.**
+
+**User ruling 2026-08-11.** Screen Registry Phase 1 is still correct and its spec is still approved —
+it just is **not next**. A new stage runs before it, because Phase 1 was about to be fed by guesswork:
+
+```
+Figma → Product Inventory → Capability Map → IA/Navigation → Screen Registry
+      → Route/API reconciliation → UI implementation → L8 → L9
+```
+
+**The rule that drives it: navigation is an OUTPUT of the analysis, never an input.** Both navbars in
+play are demos, not IA — the repo's `NAV_GROUPS` (provisional since C1) *and* the one in the user's
+reference render. Judging Figma against either is a method error; the controller made exactly that
+error on 2026-08-11 and it is what triggered this restructure.
+
+Phase 0 answers, per frame: screen or state? · which capability? · entered from where? · exits to
+where? · what actions? · what data? · API exists? · route exists? · related screens? Then capabilities
+aggregate into product areas, and **IA is designed from those** — with a **human checkpoint before IA
+is locked** (user requirement: never let the assistant settle IA and navbar unreviewed).
+
+**Two artifacts, not one — this is load-bearing.** The analysis is prose/tables and one-time; the
+registry is 12 typed fields and durable. `ScreenEntry` has no `purpose`/`entryPoints`/`actions`/
+`dataNeeds`/`api` and must not grow them, or it becomes the "product ontology system" the user
+explicitly forbade. Phase 0's doc *produces* decisions; the registry *holds* them.
+
+Live inventory draft: `docs/product/screen-inventory.md` (`9580ad5`, `6074024`) — the frame list
+classified into screens vs state-variants, plus the user's rulings. Product inputs and adjudications:
+`mem:screen_registry_inputs`.
+
+⚠️ **The 44↔56 divergence figure is DISCREDITED as a starting point.** It was produced by matching
+route strings to frame names, which counted JLPT — fully designed *and* fully built — as a gap purely
+because a dead `/jlpt-test` redirect stub has no frame. `R3` makes `screenId` the join key precisely to
+avoid this. Re-derive from screen identity; inherit no count (`L-002`).
+
+### Verified input path (probed 2026-08-11, use this, don't re-derive it)
+- **Figma desktop MCP is live.** File key `IwFHZDZdHW7qsSFiNbWrkd`, one page `0:1`.
+- **`get_screenshot` is the Phase 0 workhorse and is cheap** — it returns a short-lived URL (~80
+  tokens), not an inline image. `curl` it, then Read the file. Verified on `149:2` (1536×2746).
+- **Do NOT use `get_metadata` in Phase 0.** It is a *geometry* tool; the whole page is ~4.4M chars.
+  Phase 0 asks about purpose and flow, which a screenshot plus the prose prompts answer far better.
+- **`figma-mcp-go` returns `plugin not connected`** — that route needs the user to run the plugin.
+- ✅ **Frame enumeration is SOLVED. `docs/product/figma-frame-map.md` (`9af7d7a`) holds all 57
+  frames, name → node id.** Method, if it ever needs redoing: the user selects frames in Figma, then
+  `get_metadata` with **no `nodeId`** prepends a `Currently selected nodes` block — it prints at most
+  16, so capture in runs of ≤15.
+
+**▶ Execution state and the concrete next action live in `mem:phase0_figma_inventory_run_state`.
+READ THAT FIRST when resuming.** ✅ *(superseded 2026-08-12: the frame map AND the per-frame inventory
+are both complete — see the current NEXT ACTION block above.)*
+
+</details>
+
+- **Richest un-read source: the Figma Make bundle's tier-A prose prompts** —
+  `C:\Users\tplon\Downloads\Design Shadowing Page UI\src\imports\pasted_text\`, 21 files, 208 KB of
+  design intent in words (`companion-home-design.md`, `kanji-explorer-screen.md`,
+  `pronunciation-studio.md`, `about-philosophy.md`, …). Never read. It is a decaying snapshot for
+  *numbers* (proven within a day) but far more stable for *intent*; cross-check against live
+  screenshots. See `mem:figma_make_design_source`.
+
+### Figma cleanup ordering — the circular dependency, resolved
+The user was advised to delete obsolete frames *before* the analysis, while also wanting the assistant
+to flag `CONFIRMED / LIKELY / AMBIGUOUS / OBSOLETE / STATE-VARIANT`. Doing the deletion first discards
+the very frames the flagging would have identified. **Order: inventory pass first with every frame
+tagged → the user deletes using the OBSOLETE list → only AMBIGUOUS gets discussed.** Exception: three
+frames are already known dead and can go now — `Unuse` (`5:1718`), `Pricing-remove` (`71:2`), and the
+superseded `Shadowing Hub` (`90:1985`, build against `149:2` instead).
+
+**The boundary the user set, and it is binding:** the registry is a **derived identity/structure index**,
+never a second Figma. Phase 1 answers only
+`Figma screen ↔ screenId ↔ route ↔ IA/nav ↔ implementation`, plus `kind`/`impl` and the declared
+`repo-only` exceptions. **Phase 1 does NOT fix catalog, copy, data, components or responsive just because
+the inventory surfaces them** — that is Phase 2 adjudication. Acceptance is **zero visual diff**, with the
+derived `NAV_GROUPS` deep-equalling a snapshot of today's literal captured BEFORE the refactor.
+
+**Frame this correctly or the whole thing goes wrong:** merging C1 does NOT mean "the repo is now correct
+against the product". It means "the implementation meets C1's contract; the registry will now say where it
+matches the product and where it diverges." So when the inventory finds Pricing/FAQ/Checkout designed but
+unbuilt, that is a **reconciliation finding, not new scope**.
+
+Open items carried forward:
+- **⚑ Product question the user must answer before C2 touches ranking:** may "Popular" render fewer than
+  `limit` lessons when RLS hides some, or must the strategy over-fetch and backfill? Two deferred
+  `lib/data/lesson-ranking.ts` defects wait on that answer (unbounded read vs `max_rows = 1000`, and
+  `.slice(0, limit)` running before the RLS-filtered `videos` read).
+- Two copy items parked for the localization/copy pass: the hardcoded English `"Reduce motion"` label with
+  no catalog key in either locale, and `"Chưa có gì ở đây"` opening 5 of 10 `vi/upcoming.json` entries
+  while `/vi/roadmap` does the same job forward-lookingly.
+
+<details><summary>(completed) Lessons Registry — MERGED <code>88c1301</code> --no-ff, 2026-08-11</summary>
+
+All 6 tasks done. `docs/lessons.md` is now the single canonical home for process lessons, guarded by
+`docs/lessons.test.ts` (I1: every `L-NNN` reference in a tracked file resolves to a defined lesson; I2:
+every id is defined exactly once). `CLAUDE.md` §10 (read contract) and §9 (write contract) now govern when
+to consult and when to add to the registry — note `CLAUDE.md` itself carries zero `L-NNN` tokens today, so
+the guard covers it in principle but is not yet exercised by it. Lesson bodies elsewhere — this file,
+`project_status_archive.md`, `l9a_localization_run_state.md`, `shadowing_hub_plan_c_run_state.md` — are cut
+to `L-NNN` pointers. Count entries with `grep -c "^### L-" docs/lessons.md`, never from a written figure.
+
+**⚑ FOUR parked promotion reviews are the user's call, and they are the only open item this work leaves.**
+`L-011`, `L-016`, `L-023` and `L-026` have each crossed lesson-entry rule 3's three-evidence
+promotion-*review* threshold; all four carry a `Status:` line deferring the decision. Promotion to
+`CLAUDE.md` law stayed out of this work's scope by design — see
+`docs/superpowers/specs/2026-08-08-lessons-registry-design.md` §7. Only `L-011` was known during
+execution; the final review found the other three, and this branch's own edits pushed `L-023` from two
+evidence entries to four.
+
+**Merged `88c1301` `--no-ff`.** Post-merge verified ON MASTER: tsc 0 · unit 2066/2066 across 231 files ·
+lint 0 errors / 77 warnings, mix `54 no-non-null-assertion + 23 no-unused-vars` identical to baseline.
+Branch retained, per this repo's convention of keeping merged feature branches. → Read
+`mem:lessons_registry_run_state` for the full record, including all five upstream plan-authored defects
+this run caught and the mitigation that closed them.
+
+**The final review's two findings worth remembering, because both are the disease inside the cure:**
+(a) the plan itself is a tracked, already-diverged second copy of every entry, while `docs/lessons.md`
+claims to be the only place a lesson is written out — resolved with a banner line, since spec §7 forbids
+rewriting a committed plan; (b) the l9a **mutation taxonomy** (which operator lists run against which test
+layer) had been cut with no destination and existed nowhere, while its consumer is live — L9a Plan 3 Tasks
+14–19 are pending and this file still tells their briefs to take its full text from that memory. It was a
+run-scoped *instruction*, not a lesson, and the classification pass swept it up with the body around it.
+Restored byte-identical under the `L-007` pointer. **That distinction — instruction vs lesson — is the one
+to hold on to the next time anything is cut down to pointers.**
+
+**Task 6 gate: tsc/lint/unit all green**, lint matching the pre-branch baseline mix and unit adding exactly
+one test file (`docs/lessons.test.ts`). Task 6 round 1 found and fixed a real `tsc` failure in
+`docs/lessons.test.ts` (`noUncheckedIndexedAccess` on a `matchAll` capture group) that had shipped
+undetected since Task 2, which never ran `tsc`; fixed with a type-guard filter, not a non-null assertion or
+a fallback default, so the guard's detection is unchanged — both mutation checks (I1, I2) were re-proven
+red then green against the fix.
+
+</details>
+
+<details><summary>(completed) Shadowing Hub Plan C1 — merged `bd7f574`, 2026-08-08</summary>
+
+Read `mem:shadowing_hub_plan_c_run_state` for the full record.
+
+Spec `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` **LOCKED** at `22c9d18`
+(17 decisions D1–D17 + a measured evidence appendix). Plan C was split into three sequential plans —
+**C1 Foundation / C2 Shadowing Hub / C3 Explore Lessons** — because measurement showed it was three
+screens' worth of work, not one. Only C1 is planned so far, deliberately: C2 and C3 get their plans
+after the plan before them merges, so each is written against a real foundation.
+
+**C1 MERGED at `bd7f574` (`--no-ff`), 2026-08-08.** Post-merge on master: tsc 0, unit 2064/2064 across
+230 files. The branch was KEPT, matching this repo's convention of retaining merged feature branches.
+Never record a commit count — run `git rev-list --count`; see
+`mem:shadowing_hub_plan_c_run_state` correction 1 for why. All 11 tasks done;
+all four human gates approved, D on 2026-08-08. Gate, controller-measured after round 1's fixes: tsc 0 ·
+lint 0 errors / 77 warnings (mix unchanged) · unit **2064/2064 across 230 files** · build ✓ · Playwright
+**13/13** · browser pass 6/6. Both earlier open items are closed: Checkpoint B was approved, and the
+Vietnamese copy ruling landed when the user rewrote the catalogs themselves (`d7ac610`, `60abdef`).
+
+**Round 1 of the whole-branch review returned CHANGES REQUIRED and was right — five for five.** Its two
+blockers (a redirect rule swallowing `/api/videos`; eight protected routes missing from middleware) are
+fixed at `b4d624b` and `65ebb4c`. Two ranking defects are deferred to C2 by user ruling, one of them
+carrying a product question that must be answered before a fix shape is chosen.
+
+**⚠️ A green C1 does NOT mean the product's IA is settled.** The 22 NAV rows, 9 empty-state routes and 6
+seeded collections are **provisional**; confirming them is Screen Registry Phase 2 —
+`docs/superpowers/specs/2026-08-08-screen-registry-design.md`, committed at `e861150`.
+
+Everything else — the full commit list, decisions amended during execution, the carry-forward lessons,
+the plan defects the controller authored, and the deferred minors — is in
+`mem:shadowing_hub_plan_c_run_state`, which was itself corrected on 2026-08-08 after the review found it
+stale.
+
+</details>
+
+<details><summary>(superseded) previous NEXT ACTION — screen-port workflow, merged `7277ac1`</summary>
+
+## ▶ (done 2026-08-07) — **Screen-port workflow MERGED to master `--no-ff` at `7277ac1` (17 commits). Branch deleted, not pushed.**
+
+Spec `docs/superpowers/specs/2026-08-07-screen-port-workflow-design.md`,
+plan `docs/superpowers/plans/2026-08-07-screen-port-workflow.md`, 7 tasks (an 8th was dropped).
+Post-merge verified ON MASTER: **unit 2007/2007 across 221 files · tsc 0 · lint 0 errors + 77
+warnings (mix `54 no-non-null-assertion + 23 no-unused-vars`) · Playwright 8/8.**
+
+**Delivered — the token half:** `Rule #0` (Figma pixels are not an API; every value maps to a semantic
+token) is enforced by `components/ui/token-scale.test.ts`, and `token-scale-adoption.test.ts` bans raw
+numeric Tailwind in `components/ui/**`. One typography step added, `hero` = `4rem/4.25rem`. Seven
+primitives moved onto `--space-*`. `bg-inputBackground` → `bg-input-background`.
+
+**Delivered — the chrome half:** `app/[locale]/(protected)/` owns the authenticated session's lifetime
+and mounts `AmbientProvider`; `(app)` (nav visible) / `(focus)` (nav mounted, hidden by default) /
+`(immersive)` (no nav landmark) sit beneath it. `/journal` is immersive; `videos/[id]/shadowing` and
+`.../dictation` are focus. **URLs did not change** — route groups never enter the path.
+`lib/auth/current-user.ts` exports `getCurrentUser()`, `cache()`-wrapped and `server-only`.
+
+### Rules this branch established — they bind every screen port from here on
+- **Rule #0: semantic tokens are the public design API; Figma is an authoring tool, not a runtime
+  contract.** Never port a px value. Measured evidence: the design's dominant body size is 10px
+  across 883 sites, ≈×1.4 off the shipped scale. That ratio is an observation about one snapshot,
+  NOT an invariant — do not build on it.
+- **Large Japanese glyphs are content presentation, not interface typography.** 104/128/150px are
+  never tokenised; no `kanji-xl`.
+- **Provider lifetime > layout lifetime.** A state owner must outlive every chrome change. Future
+  session-scoped owners (AI conversation, study queue, draft journal, mining selection) belong in
+  `(protected)`, not in a chrome group.
+- **Route groups express chrome contracts, not feature categories.** `(learning)`/`(study)` would be
+  wrong; features churn, chrome contracts do not.
+- **Overlay is presentation, not navigation.** A Figma modal becomes a dialog/drawer component, never
+  a `page.tsx`, unless the URL must be shareable or state-recoverable — and then it is justified in
+  writing, per screen.
+- **`figma-prompt-style.md` (repo root) is authoritative for INTENT and for nothing numeric.** Its
+  colour and font sections match the code; every geometry number in it is approximate. Measured:
+  sidebar 224 vs real 220, collapsed 62 vs 68, content 1500 vs 1180, and its radius scale lists 12px,
+  which appears nowhere in the design.
+
+### Still deferred, by decision
+- **All shell geometry** (sidebar width, collapsed width, toolbar height, right column, content
+  max-width, gutters). `components/ui/container.tsx` still has Tailwind defaults (`max-w-6xl`,
+  `px-4/6/8`) that were never compared against the design. Measure against the LIVE Figma at the
+  moment the first screen in a group is ported — the local bundle decays, proven within one day.
+- **Avatar primitive** — the design has one (initial letter in a `rounded-full`), `components/ui/`
+  does not.
+- Widening the Rule #0 scan beyond `components/ui/**`; `collectPrimitives` in
+  `token-scale-adoption.test.ts` drops directory prefixes (fails loudly, no subdirs today);
+  `anchor-boundary.test.ts` still pre-declares `(app)/shadowing/[id]/…` paths that now belong under
+  `(focus)`; `supabase db reset` is not wired into `test:e2e`, so a fresh machine needs it before the
+  new e2e can reach its seeded video.
+- **Task 8 was DROPPED, not deferred** (user, 2026-08-07): moving `requireUser` out of
+  `lib/data/videos.ts`. The spec's rationale was measured false — protected layouts use
+  `getCurrentUser()`, and `requireUser`'s 22 importers are all in `lib/data/**`. Do not re-derive
+  this question from spec §5.5.
+
+### Lessons worth carrying
+Migrated to `docs/lessons.md`: L-003, L-010, L-011, L-012, L-013, L-018.
+
+</details>
+
+## ▶ (superseded 2026-08-07) — **Figma Make token + typography foundation MERGED at `86328bc`.** Kept because its lessons and its two open browser-pass items are still live.
+
+Post-merge verified on master: **218 files / 1966 tests**, tsc 0. Branching history gains
+`figma-token-foundation 86328bc`.
+
+Spec `docs/superpowers/specs/2026-08-06-figma-make-token-typography-adoption-design.md` (`f728731`),
+plan `docs/superpowers/plans/2026-08-06-figma-make-token-typography-foundation.md` (`99f8978`),
+9 tasks via `superpowers:subagent-driven-development` in a worktree.
+
+**Delivered:** dark-only Korume palette in `:root` (no `[data-theme]` blocks); primitives renamed off
+the Japanese scheme to `void/paper/ink/slate/ember/sand/mint/coral`; indigo deleted; new `--secondary`,
+`--danger-foreground`, `--input-background`; absolute 8/14/20/28 radius; re-valued elevation; five
+`next/font` roles (Plus Jakarta Sans / Be Vietnam Pro / Noto Serif / IBM Plex Mono / Noto Sans JP);
+ThemeToggle unmounted from the shell but retained in the admin style guide.
+
+**Final state:** unit 1966/1966 · tsc 0 · lint 0 errors, 77 warnings (78 baseline, rule mix identical,
+none new) · Playwright **6/6** · LCP warm **300ms → 220ms** · font bytes fetched on `/vi`
+**169 KB → 82 KB** (only sans + jp preload).
+
+### Lessons worth carrying (the SDD ledger is deleted; these are the parts that generalise)
+Migrated to `docs/lessons.md`: L-003, L-011, L-020, L-021, L-022.
+
+### Open, deliberately deferred
+- ⚠️ **Not verified: `/dashboard` and `/admin/style-guide` in a browser.** Spec §6 asked for a dense
+  real screen; both are auth-gated and account creation is not something the assistant may do. Only
+  `/vi` and `/vi/login` were checked visually. **Ask the user to click through those two.**
+- `bg-inputBackground` is camelCase where the repo otherwise uses kebab Tailwind classes. Parked for
+  the component-verification spec (spec §1 step 3).
+- `--slate-800` hue is 217° where its hex rounds to 218°; contrast figures quoted from hex comments
+  run ~0.08 higher than the HSL the tests actually evaluate. Both pre-existing-style rounding nits.
+- `theme-toggle.tsx` hardcodes an English `aria-label` in an i18n'd app (pre-existing, not this branch).
+
+> **Superseded NEXT ACTION blocks moved to `mem:project_status_archive` (2026-08-07)** — this file had
+> outgrown a single read. Nothing was deleted; the history is verbatim in that file.
+

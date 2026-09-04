@@ -1,16 +1,336 @@
 {
-  "hero": {
-    "heading": "Learn Japanese the way it’s actually spoken.",
-    "subtitle": "Shadow real video, master kanji and grammar, and track it all with a spaced-repetition engine built for retention.",
-    "cta": "Get started free"
+  "nav": {
+    "ariaLabel": "Primary navigation",
+    "menuAriaLabel": "Menu",
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu",
+    "wordmark": "Korume",
+    "explore": "Explore",
+    "shadowing": "Shadowing",
+    "kanji": "Kanji",
+    "grammar": "Grammar",
+    "practice": "Practice",
+    "companion": "Companion",
+    "signIn": "Log in",
+    "cta": "Start learning"
   },
-  "header": {
-    "ariaLabel": "Primary",
-    "cta": "Get started"
+  "hero": {
+    "eyebrow": "Japanese, in the things that are real",
+    "heading": "Learn Japanese from the Japanese you actually want to understand.",
+    "subtitle": "Bring a real video. Korume helps you listen a little closer, say it out loud, notice the little things in each sentence, and meet them again when the time is right.",
+    "cta": "Start learning",
+    "ctaSecondary": "Explore Korume",
+    "note": "Nothing complicated to set up. Just start with something you already want to watch.",
+    "video": {
+      "title": "Travel to Japan: Kyoto in Autumn",
+      "level": "N3",
+      "duration": "13 min",
+      "elapsed": "0:24",
+      "stillAlt": "A quiet Kyoto street at dusk, with lanterns just beginning to glow."
+    },
+    "tabs": {
+      "transcript": "Transcript",
+      "japanese": "Japanese",
+      "english": "Translation",
+      "notes": "Notes"
+    },
+    "transcript": {
+      "lineOne": "この通りは、いつ来ても落ち着きます。",
+      "lineTwo": "紅葉の季節には更に美しいです。"
+    },
+    "sentence": {
+      "label": "Sentence",
+      "position": "1 / 29",
+      "jp": "この通りは、いつ来ても静かで落ち着きます。",
+      "romaji": "Kono tōri wa, itsu kite mo shizuka de ochitsukimasu.",
+      "en": "This street always feels quiet and peaceful whenever I come here."
+    },
+    "keyWords": {
+      "heading": "A few things to notice",
+      "street": {
+        "jp": "通り（とおり）",
+        "en": "street"
+      },
+      "quiet": {
+        "jp": "静か（しずか）",
+        "en": "quiet"
+      },
+      "calm": {
+        "jp": "落ち着く（おちつく）",
+        "en": "calm"
+      }
+    },
+    "saveSentence": "Save this sentence",
+    "companion": {
+      "name": "Companion",
+      "body": "I think this one is worth remembering."
+    }
+  },
+  "problem": {
+    "eyebrow": "Japanese doesn't live on the page",
+    "heading": "You can study Japanese for years and still feel a little lost when real Japanese starts moving.",
+    "body": "A word has more than a definition. A sentence has more than grammar. In real Japanese, everything happens together — and Korume helps you notice what's there.",
+    "example": {
+      "jp": "この店、思ったより安いね。",
+      "en": "This place is cheaper than I thought."
+    },
+    "chips": {
+      "vocabulary": {
+        "name": "Vocabulary",
+        "detail": "安い・思う・店"
+      },
+      "grammar": {
+        "name": "Grammar",
+        "detail": "比較・より"
+      },
+      "kanji": {
+        "name": "Kanji",
+        "detail": "店・思・安"
+      },
+      "pronunciation": {
+        "name": "Pronunciation",
+        "detail": "Pitch & rhythm"
+      },
+      "listening": {
+        "name": "Listening",
+        "detail": "Real audio"
+      },
+      "srs": {
+        "name": "SRS review",
+        "detail": "Meet it again later"
+      }
+    },
+    "photoAlt": "A learner at a desk at night, wearing headphones and quietly focused on a lesson."
+  },
+  "journey": {
+    "eyebrow": "Start with something real",
+    "heading": "Don't learn Japanese in pieces.",
+    "body": "Watch something you actually care about. Pause at a sentence you like. Listen again. Try saying it. Keep one little thing worth remembering. From one video, Korume helps you take the next small step.",
+    "cta": "See how it works",
+    "steps": {
+      "watch": {
+        "index": "1",
+        "name": "Watch",
+        "detail": "A real Japanese video"
+      },
+      "understand": {
+        "index": "2",
+        "name": "Understand",
+        "detail": "この店は、思ったより安い。",
+        "gloss": "This place is cheaper than I thought."
+      },
+      "shadow": {
+        "index": "3",
+        "name": "Shadow",
+        "detail": "87"
+      },
+      "mine": {
+        "index": "4",
+        "name": "Keep",
+        "detail": "思ったより",
+        "level": "N3",
+        "tag": "Grammar"
+      },
+      "remember": {
+        "index": "5",
+        "name": "Remember",
+        "detail": "Review schedule"
+      }
+    },
+    "thumbnailAlt": "A still from a Japanese lesson featuring a quiet street scene."
+  },
+  "pitch": {
+    "eyebrow": "Listen a little closer",
+    "heading": "Turn something you hear into something your mouth can do.",
+    "body": "See the pitch. Feel the rhythm. Try again. Little by little, Japanese starts to find its way into your own voice.",
+    "cta": "Try shadowing",
+    "legend": {
+      "native": "Native",
+      "you": "You"
+    },
+    "example": {
+      "jp": "日本の秋はとても美しいですね。"
+    },
+    "scores": {
+      "overallLabel": "Overall score",
+      "overall": "87",
+      "verdict": "Nice work!",
+      "pitch": {
+        "name": "Pitch",
+        "value": "86/100"
+      },
+      "rhythm": {
+        "name": "Rhythm",
+        "value": "84/100"
+      },
+      "pronunciation": {
+        "name": "Pronunciation",
+        "value": "82/100"
+      },
+      "timing": {
+        "name": "Timing",
+        "value": "90/100"
+      }
+    },
+    "companion": {
+      "name": "Companion",
+      "body": "Hmm... that sounded a little closer to natural Japanese."
+    },
+    "chartLabel": "Two pitch contours compared: a native speaker's and yours."
+  },
+  "recommend": {
+    "eyebrow": "One interesting thing next",
+    "heading": "Korume finds something just challenging enough to make you curious.",
+    "body": "Based on what you already know and what you've been learning, Korume finds a next step that feels right — not too easy, and no need to rush.",
+    "cardHeading": "Maybe try this",
+    "video": {
+      "jp": "朝の通勤ラッシュ",
+      "en": "Morning Commute in Tokyo"
+    },
+    "stillAlt": "A Tokyo commuter train during the morning rush hour.",
+    "familiar": {
+      "value": "96",
+      "unit": "%",
+      "label": "Familiar words",
+      "body": "You already know most of these"
+    },
+    "cta": "Start learning",
+    "why": {
+      "heading": "Why this video?",
+      "vocabulary": "You already know 96% of the vocabulary",
+      "speed": "Natural-speed conversation",
+      "expressions": "Everyday expressions",
+      "difficulty": "A comfortable i+1 step"
+    }
+  },
+  "chain": {
+    "eyebrow": "One journey, many things to discover",
+    "heading": "Everything connects. And little by little, it starts to make sense.",
+    "nodes": {
+      "video": {
+        "name": "Video & context",
+        "caption": "Real Japanese, from real life."
+      },
+      "shadowing": {
+        "name": "Shadowing",
+        "caption": "Say it. Hear it. Then make it yours."
+      },
+      "kanji": {
+        "name": "Kanji",
+        "caption": "Get to know each character, one at a time."
+      },
+      "vocabulary": {
+        "name": "Vocabulary",
+        "caption": "Meet words in context. Remember them longer."
+      },
+      "grammar": {
+        "name": "Grammar",
+        "caption": "Notice the patterns. Use them naturally."
+      },
+      "jlpt": {
+        "name": "JLPT practice",
+        "caption": "Practice with purpose. Feel a little more ready."
+      },
+      "conversation": {
+        "name": "Conversation",
+        "caption": "Talk with Korume. Give it a try, and keep going."
+      },
+      "memory": {
+        "name": "Memory & review",
+        "caption": "Korume remembers with you. You keep growing."
+      }
+    },
+    "mascotAlt": "Korume's companion, sitting quietly on a glowing memory orb."
+  },
+  "trust": {
+    "eyebrow": "Some things are worth keeping private",
+    "heading": "Private. Secure. A quiet place to learn your way.",
+    "cards": {
+      "recordings": {
+        "name": "Your recordings stay private",
+        "body": "Encrypted while stored and never public by default."
+      },
+      "data": {
+        "name": "Your data is yours",
+        "body": "Export or delete your data and learning history whenever you want."
+      },
+      "ai": {
+        "name": "AI with clear boundaries",
+        "body": "Korume doesn't use your data to train models without your consent."
+      }
+    },
+    "photoAlt": "A warmly lit window glowing softly in the night."
+  },
+  "cta": {
+    "heading": "Start understanding Japanese a little differently.",
+    "body": "Bring something real. A video, a sentence, a little curiosity. Korume will start from there with you.",
+    "primary": "Start learning",
+    "secondary": "Explore lessons",
+    "note": "A journey can begin with one very small sentence.",
+    "backgroundAlt": "A quiet bridge glowing with lanterns at night.",
+    "mascotAlt": "Korume's companion, sitting on a glowing memory orb."
+  },
+  "signoff": {
+    "heading": "A gentler way to keep going.",
+    "body": "The day can end here. One sentence you learned can stay with you, waiting for tomorrow."
   },
   "footer": {
     "ariaLabel": "Footer",
-    "copyright": "© {year} Korume",
-    "cta": "Get started"
+    "wordmark": "Korume",
+    "wordmarkJp": "ことば",
+    "tagline": "A quiet place to grow with Japanese.",
+    "mascot": {
+      "cta": "Say hello to Korume"
+    },
+    "copyright": "© {year} Korume · All rights reserved",
+    "columns": {
+      "explore": {
+        "heading": "Explore",
+        "home": "Home",
+        "pricing": "Pricing",
+        "faq": "FAQ",
+        "blog": "Blog",
+        "roadmap": "Roadmap",
+        "about": "About",
+        "careers": "Careers",
+        "contact": "Contact"
+      },
+      "community": {
+        "heading": "Community",
+        "discord": "Discord",
+        "facebook": "Facebook",
+        "tiktok": "TikTok"
+      },
+      "support": {
+        "heading": "Support"
+      },
+      "legal": {
+        "heading": "Legal",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service"
+      }
+    },
+    "note": {
+      "heading": "A little note",
+      "body": "Korume makes room for steady learning, quiet curiosity, and the occasional urge to find out just one more thing."
+    },
+    "app": {
+      "eyebrow": "Keep learning wherever you are",
+      "heading": "Take the next little step with you.",
+      "body": "Keep your learning in sync across your devices, and come back whenever your day leaves a little room.",
+      "appStore": {
+        "prefix": "Download on the",
+        "name": "App Store"
+      },
+      "playStore": {
+        "prefix": "Get it on",
+        "name": "Google Play"
+      }
+    },
+    "newsletter": {
+      "heading": "A gentle note, every now and then."
+    },
+    "closing": "Wherever you are, whether you learned a lot or just a little today, there's always another small step.",
+    "backToTop": "Back to the beginning"
   }
 }

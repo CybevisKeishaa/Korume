@@ -95,4 +95,20 @@ describe("cn (tailwind-merge custom token config)", () => {
     expect(cn("max-w-6xl", "max-w-content")).toBe("max-w-content");
     expect(cn("w-60", "w-sidebar")).toBe("w-sidebar");
   });
+
+  it("resolves the header-height scale, so a consumer can override the anchor clearance", () => {
+    // `--layout-header-height` reaches Tailwind as two utilities (task 11 review
+    // M1): `h-header` on the sticky bar, `scroll-mt-header` on every Section.
+    // Unregistered, twMerge does not recognize either name, so it keeps BOTH
+    // sides of a conflict and leaves CSS source order to decide which wins —
+    // `Section` merges `scroll-mt-header` with a caller's `className`, so a
+    // section that legitimately needs different clearance would silently not
+    // get it. Written after the config change, so it is MUTATION-CHECKED
+    // rather than red-first: deleting either group from lib/utils.ts turns
+    // this red.
+    expect(cn("h-16", "h-header")).toBe("h-header");
+    expect(cn("h-header", "h-16")).toBe("h-16");
+    expect(cn("scroll-mt-0", "scroll-mt-header")).toBe("scroll-mt-header");
+    expect(cn("scroll-mt-header", "scroll-mt-0")).toBe("scroll-mt-0");
+  });
 });

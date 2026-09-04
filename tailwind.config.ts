@@ -94,14 +94,25 @@ const config: Config = {
         "sidebar-collapsed": "var(--layout-sidebar-collapsed)",
         companion: "var(--layout-companion-width)",
       },
+      height: {
+        header: "var(--layout-header-height)",
+      },
+      // `scroll-mt-header` — the clearance an anchored section holds under the
+      // sticky bar. Deliberately NOT added to `spacing`: these are shell
+      // dimensions, not steps in the spacing rhythm (see globals.css).
+      scrollMargin: {
+        header: "var(--layout-header-height)",
+      },
       maxWidth: {
         content: "var(--layout-content-max)",
+        marketing: "var(--layout-marketing-max)",
       },
       fontSize: {
         caption: ["var(--text-caption)", "var(--leading-caption)"],
         body: ["var(--text-body)", "var(--leading-body)"],
         "body-lg": ["var(--text-body-lg)", "var(--leading-body-lg)"],
         heading: ["var(--text-heading)", "var(--leading-heading)"],
+        "heading-lg": ["var(--text-heading-lg)", "var(--leading-heading-lg)"],
         title: ["var(--text-title)", "var(--leading-title)"],
         display: ["var(--text-display)", "var(--leading-display)"],
         hero: ["var(--text-hero)", "var(--leading-hero)"],
@@ -128,6 +139,7 @@ const config: Config = {
         fast: "var(--duration-fast)",
         base: "var(--duration-base)",
         slow: "var(--duration-slow)",
+        cinematic: "var(--duration-cinematic)",
       },
       transitionTimingFunction: {
         standard: "var(--ease-standard)",

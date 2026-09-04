@@ -1,16 +1,336 @@
 {
-  "hero": {
-    "heading": "Học tiếng Nhật như cách người Nhật thực sự nói.",
-    "subtitle": "Luyện shadowing với những video thật, học kanji và ngữ pháp trong đúng ngữ cảnh, rồi để Korume giúp bạn nhớ lại những gì đã học — đúng lúc bạn cần.",
-    "cta": "Bắt đầu miễn phí"
-  },
-  "header": {
+  "nav": {
     "ariaLabel": "Điều hướng chính",
+    "menuAriaLabel": "Menu",
+    "menuOpen": "Mở menu",
+    "menuClose": "Đóng menu",
+    "wordmark": "Korume",
+    "explore": "Khám phá",
+    "shadowing": "Shadowing",
+    "kanji": "Kanji",
+    "grammar": "Ngữ pháp",
+    "practice": "Luyện tập",
+    "companion": "Bạn đồng hành",
+    "signIn": "Đăng nhập",
     "cta": "Bắt đầu học"
+  },
+  "hero": {
+    "eyebrow": "Tiếng Nhật, trong những điều thật",
+    "heading": "Học tiếng Nhật từ chính thứ tiếng Nhật bạn muốn hiểu.",
+    "subtitle": "Bạn mang đến một video thật. Korume giúp bạn nghe kỹ hơn, nói lại, nhìn thấy những điều nhỏ trong câu, rồi gặp lại chúng vào đúng lúc.",
+    "cta": "Bắt đầu học",
+    "ctaSecondary": "Khám phá Korume",
+    "note": "Không cần chuẩn bị gì nhiều. Chỉ cần bắt đầu từ một điều bạn thật sự muốn xem.",
+    "video": {
+      "title": "Du lịch Nhật Bản: Kyoto mùa thu",
+      "level": "N3",
+      "duration": "13 phút",
+      "elapsed": "0:24",
+      "stillAlt": "Một con phố Kyoto yên tĩnh lúc chạng vạng, đèn lồng vừa được thắp lên."
+    },
+    "tabs": {
+      "transcript": "Lời thoại",
+      "japanese": "Tiếng Nhật",
+      "english": "Bản dịch",
+      "notes": "Ghi chú"
+    },
+    "transcript": {
+      "lineOne": "この通りは、いつ来ても落ち着きます。",
+      "lineTwo": "紅葉の季節には更に美しいです。"
+    },
+    "sentence": {
+      "label": "Câu",
+      "position": "1 / 29",
+      "jp": "この通りは、いつ来ても静かで落ち着きます。",
+      "romaji": "Kono tōri wa, itsu kite mo shizuka de ochitsukimasu.",
+      "en": "Con phố này lúc nào cũng yên tĩnh và dễ chịu, mỗi lần mình ghé qua."
+    },
+    "keyWords": {
+      "heading": "Từ khóa",
+      "street": {
+        "jp": "通り（とおり）",
+        "en": "con phố"
+      },
+      "quiet": {
+        "jp": "静か（しずか）",
+        "en": "yên tĩnh"
+      },
+      "calm": {
+        "jp": "落ち着く（おちつく）",
+        "en": "dễ chịu"
+      }
+    },
+    "saveSentence": "Lưu câu này",
+    "companion": {
+      "name": "Korume",
+      "body": "Mình thấy câu này đáng để nhớ đấy."
+    }
+  },
+  "problem": {
+    "eyebrow": "Tiếng Nhật không chỉ nằm trên trang giấy",
+    "heading": "Bạn có thể học tiếng Nhật nhiều năm, rồi vẫn thấy mình hụt hơi khi tiếng Nhật thật sự bắt đầu chuyển động.",
+    "body": "Một từ không chỉ có nghĩa. Một câu không chỉ có ngữ pháp. Khi nghe tiếng Nhật trong đời thật, mọi thứ cùng xuất hiện — và Korume giúp bạn nhìn thấy chúng.",
+    "example": {
+      "jp": "この店、思ったより安いね。",
+      "en": "Quán này rẻ hơn mình tưởng."
+    },
+    "chips": {
+      "vocabulary": {
+        "name": "Từ vựng",
+        "detail": "安い・思う・店"
+      },
+      "grammar": {
+        "name": "Ngữ pháp",
+        "detail": "比較・より"
+      },
+      "kanji": {
+        "name": "Kanji",
+        "detail": "店・思・安"
+      },
+      "pronunciation": {
+        "name": "Phát âm",
+        "detail": "Cao độ & nhịp"
+      },
+      "listening": {
+        "name": "Nghe",
+        "detail": "Âm thanh thật"
+      },
+      "srs": {
+        "name": "Ôn tập SRS",
+        "detail": "Để gặp lại đúng lúc"
+      }
+    },
+    "photoAlt": "Một người học ngồi bên bàn vào ban đêm, đeo tai nghe và chăm chú xem một bài học."
+  },
+  "journey": {
+    "eyebrow": "Bắt đầu từ một điều có thật",
+    "heading": "Đừng học tiếng Nhật thành từng mảnh.",
+    "body": "Xem điều bạn thật sự quan tâm. Dừng lại ở một câu hay. Nghe lại. Nói thử. Giữ lại một điều đáng nhớ. Từ một video, Korume cùng bạn đi xa hơn một chút.",
+    "cta": "Xem cách hoạt động",
+    "steps": {
+      "watch": {
+        "index": "1",
+        "name": "Xem",
+        "detail": "Một video tiếng Nhật thật"
+      },
+      "understand": {
+        "index": "2",
+        "name": "Hiểu",
+        "detail": "この店は、思ったより安い。",
+        "gloss": "Quán này rẻ hơn mình nghĩ."
+      },
+      "shadow": {
+        "index": "3",
+        "name": "Shadowing",
+        "detail": "87"
+      },
+      "mine": {
+        "index": "4",
+        "name": "Giữ lại",
+        "detail": "思ったより",
+        "level": "N3",
+        "tag": "Ngữ pháp"
+      },
+      "remember": {
+        "index": "5",
+        "name": "Ghi nhớ",
+        "detail": "Lịch ôn tập"
+      }
+    },
+    "thumbnailAlt": "Một khung hình từ bài học quay cảnh một con phố Nhật Bản."
+  },
+  "pitch": {
+    "eyebrow": "Nghe kỹ một chút",
+    "heading": "Biến điều bạn nghe được thành điều miệng bạn nói được.",
+    "body": "Nhìn thấy cao độ. Cảm được nhịp. Thử lại. Rồi từ từ, tiếng Nhật bắt đầu nằm trong giọng nói của chính bạn.",
+    "cta": "Thử shadowing",
+    "legend": {
+      "native": "Người bản xứ",
+      "you": "Bạn"
+    },
+    "example": {
+      "jp": "日本の秋はとても美しいですね。"
+    },
+    "scores": {
+      "overallLabel": "Điểm tổng",
+      "overall": "87",
+      "verdict": "Tốt lắm!",
+      "pitch": {
+        "name": "Cao độ",
+        "value": "86/100"
+      },
+      "rhythm": {
+        "name": "Nhịp",
+        "value": "84/100"
+      },
+      "pronunciation": {
+        "name": "Phát âm",
+        "value": "82/100"
+      },
+      "timing": {
+        "name": "Bắt nhịp",
+        "value": "90/100"
+      }
+    },
+    "companion": {
+      "name": "Korume",
+      "body": "Ừm... lần này nghe gần với tiếng Nhật tự nhiên hơn rồi."
+    },
+    "chartLabel": "Hai đường cao độ: của người bản xứ và của bạn."
+  },
+  "recommend": {
+    "eyebrow": "Một điều hay ho tiếp theo",
+    "heading": "Korume tìm thứ vừa đủ khó để bạn muốn khám phá thêm.",
+    "body": "Dựa trên những gì bạn đã biết và những gì bạn đang học, Korume tìm một bước tiếp theo vừa sức — không quá dễ, cũng chưa cần phải vội.",
+    "cardHeading": "Thử cái này nhé",
+    "video": {
+      "jp": "朝の通勤ラッシュ",
+      "en": "Giờ cao điểm buổi sáng ở Tokyo"
+    },
+    "stillAlt": "Một chuyến tàu Tokyo vào giờ cao điểm.",
+    "familiar": {
+      "value": "96",
+      "unit": "%",
+      "label": "Từ quen thuộc",
+      "body": "Phần lớn bạn đã biết"
+    },
+    "cta": "Bắt đầu học",
+    "why": {
+      "heading": "Vì sao là video này?",
+      "vocabulary": "Bạn đã biết 96% từ vựng",
+      "speed": "Hội thoại ở tốc độ tự nhiên",
+      "expressions": "Những cách nói thường ngày",
+      "difficulty": "Vừa sức theo i+1"
+    }
+  },
+  "chain": {
+    "eyebrow": "Một hành trình, nhiều điều gặp nhau",
+    "heading": "Mọi thứ kết nối với nhau. Và rồi mọi thứ bắt đầu có ý nghĩa.",
+    "nodes": {
+      "video": {
+        "name": "Video & ngữ cảnh",
+        "caption": "Tiếng Nhật thật, từ những điều thật."
+      },
+      "shadowing": {
+        "name": "Shadowing",
+        "caption": "Nói ra. Nghe lại. Rồi nó thành của bạn."
+      },
+      "kanji": {
+        "name": "Kanji",
+        "caption": "Hiểu từng chữ, từng chút một."
+      },
+      "vocabulary": {
+        "name": "Từ vựng",
+        "caption": "Gặp từ trong ngữ cảnh. Nhớ lâu hơn."
+      },
+      "grammar": {
+        "name": "Ngữ pháp",
+        "caption": "Thấy được quy luật. Dùng tự nhiên hơn."
+      },
+      "jlpt": {
+        "name": "Luyện thi JLPT",
+        "caption": "Ôn tập có mục tiêu. Bớt lo hơn một chút."
+      },
+      "conversation": {
+        "name": "Hội thoại",
+        "caption": "Nói chuyện cùng Korume. Cứ thử, rồi tiến bộ."
+      },
+      "memory": {
+        "name": "Ghi nhớ & ôn tập",
+        "caption": "Korume nhớ giúp bạn. Bạn cứ đi tiếp."
+      }
+    },
+    "mascotAlt": "Korume ngồi trên Memory Orb."
+  },
+  "trust": {
+    "eyebrow": "Những điều đáng được giữ riêng",
+    "heading": "Riêng tư. An toàn. Và đủ yên tâm để bạn học theo cách của mình.",
+    "cards": {
+      "recordings": {
+        "name": "Bản ghi âm của bạn được giữ riêng tư",
+        "body": "Được mã hóa khi lưu trữ và mặc định không bao giờ công khai."
+      },
+      "data": {
+        "name": "Dữ liệu của bạn thuộc về bạn",
+        "body": "Bạn có thể tải về hoặc xóa dữ liệu và lịch sử học của mình."
+      },
+      "ai": {
+        "name": "AI có những giới hạn rõ ràng",
+        "body": "Korume không dùng dữ liệu của bạn để huấn luyện mô hình khi chưa có sự đồng ý."
+      }
+    },
+    "photoAlt": "Một ô cửa sổ sáng ấm trong đêm."
+  },
+  "cta": {
+    "heading": "Bắt đầu hiểu tiếng Nhật theo một cách khác.",
+    "body": "Mang đến một thứ có thật. Một video, một câu, một điều bạn tò mò. Korume sẽ cùng bạn bắt đầu từ đó.",
+    "primary": "Bắt đầu học",
+    "secondary": "Khám phá bài học",
+    "note": "Hành trình có thể bắt đầu từ một câu rất nhỏ.",
+    "backgroundAlt": "Một cây cầu thắp đèn lồng trong đêm.",
+    "mascotAlt": "Korume ngồi trên Memory Orb."
+  },
+  "signoff": {
+    "heading": "Một cách nhẹ nhàng hơn để đi tiếp.",
+    "body": "Ngày hôm nay có thể khép lại. Một câu bạn đã học vẫn có thể ở lại, để ngày mai mình gặp lại."
   },
   "footer": {
     "ariaLabel": "Chân trang",
-    "copyright": "© {year} Korume",
-    "cta": "Bắt đầu học"
+    "wordmark": "Korume",
+    "wordmarkJp": "ことば",
+    "tagline": "Một chốn yên để bạn lớn lên cùng tiếng Nhật.",
+    "mascot": {
+      "cta": "Chào Korume một tiếng"
+    },
+    "copyright": "© {year} Korume · Bảo lưu mọi quyền",
+    "columns": {
+      "explore": {
+        "heading": "Khám phá",
+        "home": "Trang chủ",
+        "pricing": "Bảng giá",
+        "faq": "Câu hỏi thường gặp",
+        "blog": "Blog",
+        "roadmap": "Lộ trình",
+        "about": "Về Korume",
+        "careers": "Tuyển dụng",
+        "contact": "Liên hệ"
+      },
+      "community": {
+        "heading": "Cộng đồng",
+        "discord": "Discord",
+        "facebook": "Facebook",
+        "tiktok": "TikTok"
+      },
+      "support": {
+        "heading": "Hỗ trợ"
+      },
+      "legal": {
+        "heading": "Pháp lý",
+        "privacy": "Chính sách bảo mật",
+        "terms": "Điều khoản sử dụng"
+      }
+    },
+    "note": {
+      "heading": "Một lời nhắn nhỏ",
+      "body": "Korume dành một khoảng yên cho việc học đều đặn, tò mò, và đôi khi chỉ đơn giản là muốn biết thêm một điều."
+    },
+    "app": {
+      "eyebrow": "Học tiếp ở bất cứ đâu",
+      "heading": "Mang bước nhỏ tiếp theo đi cùng bạn.",
+      "body": "Đồng bộ việc học trên mọi thiết bị, để bạn có thể quay lại bất cứ khi nào ngày của mình còn một khoảng trống nhỏ.",
+      "appStore": {
+        "prefix": "Tải về trên",
+        "name": "App Store"
+      },
+      "playStore": {
+        "prefix": "Có trên",
+        "name": "Google Play"
+      }
+    },
+    "newsletter": {
+      "heading": "Thi thoảng, một lời nhắn nhẹ nhàng."
+    },
+    "closing": "Dù hôm nay học được nhiều hay chỉ một chút, mình vẫn còn có thể học tiếp.",
+    "backToTop": "Quay lại từ đầu"
   }
 }

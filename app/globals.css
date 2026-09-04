@@ -144,6 +144,21 @@
   --layout-companion-width: 340px;
   --layout-gutter: var(--space-xl);
   --layout-column-gap: var(--space-lg);
+  /* The sticky site header's row height. TWO consumers, which is why it is a
+     token and not a `h-16` on one element: `site-header.tsx` sizes the bar,
+     and `section.tsx` reserves the same distance as `scroll-margin-top` so an
+     anchored <h2> does not land underneath the bar (task 11 review M1). The
+     bar's 1px bottom border sits outside this value and is covered by the
+     section's own `py-2xl`, so the heading still clears — measured, not
+     assumed. */
+  --layout-header-height: 4rem;
+  /* The MARKETING pages' content column — wider than the rest of the app on
+     purpose, and a separate fact from --layout-content-max (the shadowing
+     shell). Frame 347:6277, the binding design for `/`, is 1280 wide and puts
+     its content 3.46% of the page width in from each edge (~44px). At 1280 a
+     1256 box leaves 12px each side, plus Container's own lg:px-8, which is
+     exactly that. Measured off the frame, like --layout-sidebar-width. */
+  --layout-marketing-max: 1256px;
 
   /* Typography scale: size + line-height pairs. Body line-heights are
      deliberately generous — Vietnamese stacks two tiers of diacritics (ắ ặ ễ)
@@ -156,6 +171,14 @@
   --leading-body-lg: 1.625rem;
   --text-heading: 1.25rem;
   --leading-heading: 1.75rem;
+  /* Added by the landing-page port (spec §13, task A1 fix F1). The scale
+     jumped 20px -> 28px with nothing between, and §2's rail heading in
+     reference 346:6275 measures ~23.7px: 20px reads undersized and 28px
+     wraps to five lines in a ~28% column. Named `heading-lg` to mirror the
+     scale's own `body`/`body-lg` pairing rather than invent a naming shape.
+     No existing step was changed. */
+  --text-heading-lg: 1.5rem;
+  --leading-heading-lg: 2rem;
   --text-title: 1.75rem;
   --leading-title: 2.25rem;
   --text-display: 2.5rem;
@@ -164,9 +187,35 @@
      Earned by semantic role, not size: the four sites are page-opening <h1>s
      and one pull-quote, all in the display face (spec §3.2). The 62px
      watermark and the 128/150px kanji are larger and deliberately excluded —
-     large Japanese glyphs are content presentation, not interface typography. */
-  --text-hero: 4rem;
-  --leading-hero: 4.25rem;
+     large Japanese glyphs are content presentation, not interface typography.
+
+     ⚠️ FLUID (task 13). A fixed 4rem was the whole reason `/` failed WCAG
+     1.4.10 Reflow: the English heading's widest word, "understand.", measures
+     390.5px at 64px and cannot break, so it left the 288px column at 320px
+     wide and pushed the PAGE to 407px. It vanished at 414 not because the word
+     shrank but because the viewport finally cleared its 406.5px right edge —
+     which is why an audit that filtered on box right-edges could never see it.
+
+     The ramp is anchored on the OWNER'S OWN NUMBERS, not on the reflow bound:
+     their 2026-09-03 mobile brief specifies a 36-40px hero at 390, and frame
+     347:6277 draws 64px at 1280. `5.7vw + 1rem` passes through both — 38.2px
+     at 390, reaching the 4rem cap at ~842px, so every width the desktop design
+     was drawn for is untouched.
+
+       320 -> 34.2    390 -> 38.2    640 -> 52.5    768 -> 59.8    842+ -> 64
+
+     The reflow bound is the ceiling this has to stay under, and it clears it
+     with room everywhere (`size <= 0.1639 * viewport - 5.25` below `sm`, i.e.
+     47.2 at 320 against 34.2). The 2rem floor is a backstop below 281px, past
+     the 320px WCAG floor, so it never binds in supported territory.
+     ▶ The bound is a property of the COPY. If the owner re-voices the heading
+     with a longer word, the guard in `tests/e2e/landing-page.spec.ts` goes red
+     and names the run — fix the number there, not the test. */
+  --text-hero: clamp(2rem, 5.7vw + 1rem, 4rem);
+  /* Unitless, so it tracks the clamp instead of being hand-synced to it: the
+     ratio 4.25/4 = 1.0625 IS the fact, and a fixed 68px against a 34px hero
+     would read as 2.0 (CLAUDE.md §6, one fact one home). */
+  --leading-hero: 1.0625;
   /* Japanese line-height: kanji + furigana want more vertical room than Latin
      script at the same size. Use with font-jp (leading-jp utility). */
   --leading-jp: 1.8;
@@ -193,6 +242,12 @@
   --duration-fast: 150ms;
   --duration-base: 300ms;
   --duration-slow: 600ms;
+  /* The cinematic tier: §4's contour draw and the photograph entrances, where
+     600ms reads clipped. Nothing above covered 1.0-1.5s. */
+  --duration-cinematic: 1200ms;
+  /* The beat between staggered siblings — eyebrow, then heading, then body.
+     One value, so the landing page has one rhythm rather than nine. */
+  --duration-stagger: 90ms;
   --ease-standard: ease-out;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -320,17 +375,251 @@
 }
 
 /**
+ * Landing-page entrance motion (Task A-MOTION).
+ *
+ * `RevealScope` flips `[data-reveal]` from "pending" to "in" as each section
+ * enters view; everything here is plain CSS, the same mechanism `.stroke-draw`
+ * and `.level-fill` above already use. Three properties of that choice are
+ * load-bearing:
+ *
+ *  - The reduce-motion blocks below collapse every `animation-duration` to
+ *    0.001ms, honouring the OS query AND the app toggle, so this is gated for
+ *    free. A rAF timeline animating inline styles (GSAP) is not reachable from
+ *    there at all, which is why this surface uses none.
+ *  - The hidden state is gated on `[data-reduce-motion="false"]`, which
+ *    themeInitScript sets before paint and only when JS ran. With JS off, or
+ *    reduce-motion on, the hidden state never applies: content is visible and
+ *    static. Motion is never what hides content (spec §4.1).
+ *  - ⚠️ That gate proves JS RAN, not that the OBSERVER ran — themeInitScript is
+ *    inline in `<head>`, outside the bundle, so it survives the bundle failing
+ *    to arrive while `RevealScope` does not. `:not([data-reveal-failsafe])`
+ *    closes that fourth case: an inline script releases the page a few seconds
+ *    in if the observer never reports (`components/motion/reveal-failsafe.ts`).
+ *    Every hidden rule below carries the escape, and the count is pinned in
+ *    `design-tokens.test.ts` — releasing some of them rescues some of the page.
+ *  - It is scoped to `[data-reveal-scope]`. `Section` is shared, so a marketing
+ *    page that never mounts `RevealScope` must not be able to hold its own
+ *    content at opacity 0.
+ *
+ * Transform and opacity do not affect layout, so nothing here moves geometry —
+ * §6's mascot/rail alignment is asserted to 1px in e2e.
+ */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-eyebrow],
+    [data-section-heading],
+    [data-section-body],
+    [data-section-rail],
+    [data-section-showcase]
+  ) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] :is(
+    [data-eyebrow],
+    [data-section-heading],
+    [data-section-body],
+    [data-section-rail],
+    [data-section-showcase]
+  ) {
+  animation: reveal-rise var(--duration-slow) var(--ease-standard) both;
+}
+
+/* The stagger: eyebrow, then heading, then the body or the showcase together.
+   Derived off one token with calc(), so the rhythm is one decision rather than
+   five literals. */
+[data-reveal-scope] [data-reveal="in"] [data-section-heading] {
+  animation-delay: var(--duration-stagger);
+}
+[data-reveal-scope]
+  [data-reveal="in"]
+  :is([data-section-body], [data-section-rail], [data-section-showcase]) {
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    /* 24px, as the token — the rise the owner's brief asked for. */
+    transform: translateY(var(--space-lg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/**
+ * The same entrance without the travel, for anything nested INSIDE a block that
+ * already rises — §2's chips, §3's steps, §4's scores, §6's nodes, §7's cards.
+ * A child transform does not replace its ancestor's, it composes with it:
+ * `reveal-rise` on both would give the inner element ~48px of travel and two
+ * easing curves fighting over it. The rise happens once, at the block; the
+ * stagger inside it is carried by opacity alone, which is also the quieter
+ * reading the brief asks for.
+ */
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* §6's cascade — the page's signature motion, and the one section whose heading
+   already promises it ("Everything connects"). The section's own entrance
+   brings in the heading; these are its eight cells, stepped in DOM order so the
+   stagger survives the grid wrapping from eight columns to four to two. A single
+   sweep across the row cannot: see capability-chain.tsx's connector docblock,
+   which calls one full-width line across a wrapped grid a defect.
+
+   This is a cascade, not a stroke draw, deliberately. The rail is a border on a
+   zero-height span whose dot is translated OUTSIDE that box, so neither
+   clip-path nor scaleX can sweep the line without clipping the dot away or
+   squashing it — and restructuring the rail would move shipped geometry. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-chain-node] > *,
+    [data-chain-node] [data-connector]
+  ) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] :is(
+    [data-chain-node] > *,
+    [data-chain-node] [data-connector]
+  ) {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--chain-step, 0) + 2));
+}
+
+/* The dot lands one beat after its own segment, which is what makes the thread
+   read as being traced rather than switched on.
+
+   ⚠️ This keyframe restates the dot's shipped `-translate-x-1/2 -translate-y-1/2`
+   because an animated `transform` REPLACES the utility's rather than composing
+   with it. If the dot's centring utilities change, this changes with them. */
+[data-reveal-scope] [data-reveal="in"] [data-rail-dot] {
+  animation: chain-dot-in var(--duration-fast) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--chain-step, 0) + 3));
+}
+@keyframes chain-dot-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* §4's two voices. The reference contour draws, the learner's follows it, then
+   the four sub-scores settle, then the overall number — the ORDER is the
+   section's claim ("turn something you hear into something your mouth can do"),
+   so each delay is derived from the one before rather than chosen separately.
+
+   The dash mechanism is `.stroke-draw`'s, above; both paths set pathLength=1 in
+   pitch-chart.tsx. Drawn once, never looped: this is a data visualization of
+   learning, not audio decoration. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-contour] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+[data-reveal-scope] [data-reveal="in"] [data-contour] {
+  /* ⚠️ Both dash declarations must be repeated here, not only on the `pending`
+     rule above. `@keyframes stroke-draw` declares only a `to`, so its implicit
+     `from` is the element's own computed value — and the `pending` rule stops
+     matching the instant the state flips to "in". Without this the animation
+     runs 0 -> 0 and no draw happens: the paths simply appear. Measured, not
+     guessed; the unit tests cannot see it. */
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: stroke-draw var(--duration-cinematic) var(--ease-standard) both;
+}
+[data-reveal-scope] [data-reveal="in"] [data-contour="you"] {
+  animation-delay: calc(var(--duration-cinematic) / 2);
+}
+
+/* ⚠️ The score does NOT count up. It renders 87 from the catalog; animating the
+   digits would put a second, transient value on screen for a number the copy
+   states once — motion that decorates rather than explains, and a false reading
+   for anyone who glances mid-animation. It fades, nothing more. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-subscore],
+    [data-score-overall]
+  ) {
+  opacity: 0;
+}
+[data-reveal-scope] [data-reveal="in"] [data-subscore] {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(
+    var(--duration-cinematic) + var(--duration-stagger) * var(--subscore-step, 0)
+  );
+}
+[data-reveal-scope] [data-reveal="in"] [data-score-overall] {
+  animation: reveal-fade var(--duration-base) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-cinematic) * 1.5);
+}
+
+/* The stepped collections: §2's six chips, §3's five steps, §7's three cards.
+   One rule and one custom property — they differ in duration, not mechanism.
+   Nothing else inside these sections moves: §3's eight journey-art glyphs stay
+   still deliberately, because stepping every small element is exactly the
+   noisy reading the brief rules out. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
+    [data-chip],
+    [data-step],
+    [data-trust-card],
+    [data-constellation]
+  ) {
+  opacity: 0;
+}
+
+/* §2's constellation is the thing the chips hang off, so it arrives first and
+   they emerge from it. */
+[data-reveal-scope] [data-reveal="in"] [data-constellation] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+[data-reveal-scope] [data-reveal="in"] :is([data-chip], [data-step]) {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 3));
+}
+/* §7 is the deceleration before the CTA, so its cards take the reveal tier. */
+[data-reveal-scope] [data-reveal="in"] [data-trust-card] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
+}
+
+/**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
  * Animation must never block a repeated study loop.
+ *
+ * ⚠️ THE DELAY MUST BE COLLAPSED TOO, and it is not optional. Every reveal rule
+ * above is `animation: … both`, and `animation-fill-mode: both` holds the
+ * element at the keyframe's FROM value — `opacity: 0` — for the whole of
+ * `animation-delay`. Collapsing only the duration therefore still hides content
+ * from a reduce-motion reader, for as long as the stagger: measured in a
+ * browser at 1280, `animationDuration: 1e-06s` (collapsed) beside
+ * `animationDelay: 0.09s` (not), with the element at opacity 0 across 12
+ * sampled frames spanning ~350ms. That is a §2.4 violation, and the e2e case
+ * that exists to catch it reproduced it only ~1 run in 12, because the
+ * assertion has to land inside the window. Pinned in `design-tokens.test.ts`.
+ *
+ * ▶ NEGATIVE, not `0s`: with a 0.001ms duration a frame sampled exactly at the
+ * animation's start still reads the FROM value. `-1ms` starts it already
+ * complete, so `both` holds the TO value from the first frame.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: -1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
 }
@@ -339,7 +628,9 @@
 :root[data-reduce-motion="true"] *::before,
 :root[data-reduce-motion="true"] *::after {
   animation-duration: 0.001ms !important;
+  animation-delay: -1ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
+  transition-delay: 0s !important;
   scroll-behavior: auto !important;
 }

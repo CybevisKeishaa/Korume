@@ -31,6 +31,14 @@ export default defineConfig({
       "server-only": fileURLToPath(
         new URL("./test/stubs/server-only.ts", import.meta.url),
       ),
+      // `next-intl/server`'s real implementation is gated behind the
+      // `react-server` resolution condition, which Vitest's jsdom environment
+      // never sets — every call would otherwise throw "not supported in
+      // Client Components" before any component code runs. See
+      // `test/stubs/next-intl-server.ts` for the full rationale.
+      "next-intl/server": fileURLToPath(
+        new URL("./test/stubs/next-intl-server.ts", import.meta.url),
+      ),
     },
   },
 });

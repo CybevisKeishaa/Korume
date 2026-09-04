@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { REVEAL_FAILSAFE_ATTR } from "@/components/motion/reveal-failsafe";
 
 /**
  * The token system's automated contract (spec §2.9: architectural invariants
@@ -20,6 +21,23 @@ const tailwind = readFileSync(
   "utf8",
 );
 
+/**
+ * The reveal layer's PERSISTENT hidden state: every rule in globals.css that
+ * holds landing-page content at opacity 0 until the observer flips it. Gathered
+ * once, because two tests below ask about the same five rules and a sixth
+ * legitimately-added rule must move one number, not two (CLAUDE.md §6).
+ *
+ * `[^ ]*` tolerates further conditions on `:root` — the failsafe escape added
+ * one — while still requiring the reduce-motion gate to be what each rule
+ * starts from. A rule that LOSES its escape still matches here (the `*` takes
+ * the empty string) and drops out of the escapable filter, which is what makes
+ * that filter a real assertion rather than a restatement of this one.
+ */
+const revealGates = css.match(
+  /:root\[data-reduce-motion="false"\][^ ]* \[data-reveal-scope\] \[data-reveal="pending"\]/g,
+);
+const REVEAL_GATE_COUNT = 5;
+
 const REQUIRED_TOKENS = [
   // spacing
   "--space-2xs", "--space-xs", "--space-sm", "--space-md",
@@ -29,15 +47,25 @@ const REQUIRED_TOKENS = [
   "--layout-sidebar-width", "--layout-sidebar-collapsed",
   "--layout-content-max", "--layout-companion-width",
   "--layout-gutter", "--layout-column-gap",
+  // The sticky site header's height. A shell dimension, not a spacing step:
+  // `site-header.tsx` sizes the bar from it and `section.tsx` reserves it as
+  // scroll margin so an anchored heading cannot land underneath the bar
+  // (task 11 review M1). Two consumers, one definition.
+  "--layout-header-height",
+  // The marketing pages' content column. Wider than the rest of the app on
+  // purpose: frame 347:6277 is 1280 wide and puts its content ~44px from each
+  // edge, where Container's app-wide max-w-6xl puts it 96px in (task 12).
+  "--layout-marketing-max",
   // radius — declared absolutely, never derived. A calc()-chained scale means
   // one edit to the base silently skews every other step. No unqualified
   // `--radius`: it had zero consumers outside docs/ and was deleted.
   "--radius-sm", "--radius-md", "--radius-lg", "--radius-xl",
   // typography
   "--text-caption", "--text-body", "--text-body-lg", "--text-heading",
-  "--text-title", "--text-display", "--text-hero",
+  "--text-heading-lg", "--text-title", "--text-display", "--text-hero",
   "--leading-caption", "--leading-body", "--leading-body-lg",
-  "--leading-heading", "--leading-title", "--leading-display", "--leading-hero",
+  "--leading-heading", "--leading-heading-lg",
+  "--leading-title", "--leading-display", "--leading-hero",
   "--leading-jp",
   "--font-weight-regular", "--font-weight-medium", "--font-weight-semibold",
   "--font-weight-bold",
@@ -46,6 +74,7 @@ const REQUIRED_TOKENS = [
   "--elevation-raised", "--elevation-overlay", "--elevation-floating",
   // motion
   "--duration-fast", "--duration-base", "--duration-slow",
+  "--duration-cinematic", "--duration-stagger",
   "--ease-standard", "--ease-out-expo",
   // z-index
   "--z-nav", "--z-overlay", "--z-popover", "--z-toast",
@@ -100,6 +129,84 @@ describe("design tokens", () => {
     // Both blocks must keep collapsing animation AND transition durations.
     const matches = css.match(/animation-duration: 0\.001ms !important/g);
     expect(matches?.length).toBe(2);
+  });
+
+  it("collapses animation DELAY under reduce-motion, not only duration", () => {
+    // ⚠️ CLAUDE.md §2 rule 4. Collapsing only the duration is not enough: the
+    // reveal layer's rules are `animation: reveal-rise … both`, and
+    // `animation-fill-mode: both` holds the element at the keyframe's FROM
+    // value — `opacity: 0` — for the whole of `animation-delay`. So with the
+    // delay left alive, a reduce-motion reader still gets content hidden by
+    // motion, for up to `--duration-cinematic * 1.5`.
+    //
+    // Measured in a real browser at 1280 before this guard existed:
+    // `animationName: reveal-rise, animationDuration: 1e-06s (collapsed),
+    // animationDelay: 0.09s (NOT collapsed), animationFillMode: both,
+    // data-reveal: in, opacity: 0` — hidden across 12 sampled frames spanning
+    // ~350ms. The e2e case for this reproduced it only about 1 run in 12,
+    // because the assertion has to land inside that window; this test cannot
+    // miss it.
+    //
+    // A NEGATIVE delay rather than `0s`: with a 0.001ms duration, a frame
+    // sampled at exactly the animation's start still reads the FROM value.
+    // Starting it already-completed makes `both` hold the TO value instead.
+    const delays = css.match(/animation-delay: -1ms !important/g);
+    // L-004: non-empty AND the expected size — one per reduce-motion block,
+    // and there are exactly two blocks (asserted in the test above).
+    expect(delays).not.toBeNull();
+    expect(delays).toHaveLength(2);
+  });
+
+  it("hides a pending reveal only when the init script proved motion is allowed", () => {
+    // The gate is `[data-reduce-motion="false"]`, which themeInitScript sets
+    // before paint and ONLY when JS ran. With JS off the attribute is absent,
+    // so the hidden state never applies and content is visible — motion can
+    // never be what hides content (spec §4.1, CLAUDE.md §2.4).
+    // The COUNT is not this test's subject, and is pinned in the failsafe test
+    // below, which is the one it belongs to (L-031: assert the relation the
+    // spec states, not a stronger one today's CSS happens to satisfy).
+    expect(revealGates).not.toBeNull();
+    expect(revealGates?.length).toBeGreaterThanOrEqual(1);
+    // And the hidden state must never be written ungated: a rule that starts at
+    // `[data-reveal-scope]` or `[data-reveal="pending"]` would apply with JS off.
+    expect(css).not.toMatch(/^\[data-reveal(-scope)?[^\]]*\][^{]*\{\s*opacity:\s*0/m);
+  });
+
+  it("lets the failsafe release every hidden rule, not just the first one", () => {
+    // The gate proves JS RAN (themeInitScript is inline, in <head>, outside the
+    // bundle). It does not prove the OBSERVER ran. If the client bundle never
+    // executes — 404, blocked by an extension, hydration aborted — nothing ever
+    // flips `pending` to `in`, and the whole page stays at opacity 0. The
+    // inline failsafe sets `[data-reveal-failsafe]` after a few seconds, so
+    // every hidden rule has to be escapable by it or the page is only partly
+    // rescued.
+    // L-004: a pattern-gathered collection is asserted non-empty AND at its
+    // expected size, or an empty match makes this unconditionally green.
+    expect(revealGates).not.toBeNull();
+    expect(revealGates).toHaveLength(REVEAL_GATE_COUNT);
+
+    // Built from the exported constant, never from a second copy of the
+    // literal: renaming the attribute must break this test, not slip past it
+    // while the failsafe silently stops releasing anything.
+    const escape = `:not([${REVEAL_FAILSAFE_ATTR}])`;
+    const escapable = revealGates?.filter((rule) => rule.includes(escape));
+    expect(escapable).toHaveLength(REVEAL_GATE_COUNT);
+  });
+
+  it("declares the contour dash offset on the revealed rule, not only the pending one", () => {
+    // `@keyframes stroke-draw` declares only a `to`, so its implicit `from` is
+    // the element's own computed value — and the `pending` rule stops matching
+    // the instant the state flips to "in". If the start value lives only there,
+    // the animation runs 0 -> 0 and §4's contours appear instead of drawing.
+    // That shipped once and no unit test could see it, so it is pinned here.
+    const revealed = css.match(
+      /\[data-reveal="in"\] \[data-contour\] \{([^}]*)\}/,
+    );
+    expect(revealed).not.toBeNull();
+    const body = revealed?.[1] ?? "";
+    expect(body).toMatch(/stroke-dasharray:\s*1/);
+    expect(body).toMatch(/stroke-dashoffset:\s*1/);
+    expect(body).toMatch(/animation:\s*stroke-draw/);
   });
 
   it("defines the primitive colour palette", () => {

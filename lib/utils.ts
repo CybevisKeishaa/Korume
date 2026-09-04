@@ -17,7 +17,7 @@ const twMerge = extendTailwindMerge({
       spacing: ["2xs", "xs", "sm", "md", "md-lg", "lg", "xl", "2xl", "3xl"],
     },
     classGroups: {
-      "font-size": [{ text: ["caption", "body", "body-lg", "heading", "title", "display", "hero"] }],
+      "font-size": [{ text: ["caption", "body", "body-lg", "heading", "heading-lg", "title", "display", "hero"] }],
       shadow: [{ shadow: ["raised", "overlay", "floating"] }],
       leading: [{ leading: ["jp"] }],
       "font-weight": [{ font: ["regular"] }],
@@ -25,8 +25,10 @@ const twMerge = extendTailwindMerge({
       duration: [{ duration: ["fast", "base", "slow"] }],
       ease: [{ ease: ["standard", "out-expo"] }],
       z: [{ z: ["nav", "overlay", "popover", "toast"] }],
-      "max-w": [{ "max-w": ["content"] }],
+      "max-w": [{ "max-w": ["content", "marketing"] }],
       w: [{ w: ["sidebar", "sidebar-collapsed", "companion"] }],
+      h: [{ h: ["header"] }],
+      "scroll-mt": [{ "scroll-mt": ["header"] }],
     },
   },
 });

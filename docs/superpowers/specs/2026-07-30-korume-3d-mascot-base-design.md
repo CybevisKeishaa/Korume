@@ -1,8 +1,8 @@
 # Korume 3D Mascot — Base Model & Rig (Design)
 
 > Status: Approved by user (Trần Nguyễn Phi Long / Keishaa) on 2026-07-30.
-> Source references: `MASCOT.md` (Companion Character Bible), `public/mascot/Korume.png`
-> (hero illustration), `public/mascot/Emotion.png` (turnaround, 6 expressions, poses, wireframe).
+> Source references: `MASCOT.md` (Companion Character Bible), `assets/mascot/source/Korume.png`
+> (hero illustration), `assets/mascot/source/Emotion.png` (turnaround, 6 expressions, poses, wireframe).
 
 ## Purpose
 
