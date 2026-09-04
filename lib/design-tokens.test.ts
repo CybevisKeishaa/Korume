@@ -195,21 +195,65 @@ describe("design tokens", () => {
     expect(escapable).toHaveLength(REVEAL_GATE_COUNT);
   });
 
-  it("declares the contour dash offset on the revealed rule, not only the pending one", () => {
-    // `@keyframes stroke-draw` declares only a `to`, so its implicit `from` is
-    // the element's own computed value — and the `pending` rule stops matching
-    // the instant the state flips to "in". If the start value lives only there,
-    // the animation runs 0 -> 0 and §4's contours appear instead of drawing.
-    // That shipped once and no unit test could see it, so it is pinned here.
-    const revealed = css.match(
-      /\[data-reveal="in"\] \[data-contour\] \{([^}]*)\}/,
-    );
-    expect(revealed).not.toBeNull();
-    const body = revealed?.[1] ?? "";
-    expect(body).toMatch(/stroke-dasharray:\s*1/);
-    expect(body).toMatch(/stroke-dashoffset:\s*1/);
-    expect(body).toMatch(/animation:\s*stroke-draw/);
-  });
+  /**
+   * `@keyframes stroke-draw` (and `donut-sweep`) declare only a `to`, so their
+   * implicit `from` is the element's own computed value — and the `pending`
+   * rule stops matching the instant the state flips to "in". If the start
+   * value lives only there, the animation runs 0 -> 0 and the element simply
+   * appears instead of drawing. §4 shipped that defect once for `[data-contour]`
+   * and it was pinned below for that ONE selector only.
+   *
+   * Review fix round 1 (I5): task 4 added two more rules with the identical
+   * repeat-or-break shape — `[data-thread-segment] path` and
+   * `[data-familiar-arc]` — and neither was covered: deleting either rule's
+   * repeated declarations was GREEN. Generalised into one table so a FOURTH
+   * rule (any later section's thread segment) is one row, not a forgotten
+   * pin. `requiredDasharray` is `null` for the donut arc because its
+   * `stroke-dasharray` is set as an SVG attribute (`recommendation-donut.tsx`),
+   * never a CSS declaration — there is nothing to repeat there, only the
+   * dashoffset and the animation.
+   */
+  const DASH_REPETITION_CASES: Array<{
+    label: string;
+    selectorPattern: RegExp;
+    requiredDasharray: RegExp | null;
+    requiredDashoffset: RegExp;
+    requiredAnimation: RegExp;
+  }> = [
+    {
+      label: "[data-contour]",
+      selectorPattern: /\[data-reveal="in"\] \[data-contour\] \{([^}]*)\}/,
+      requiredDasharray: /stroke-dasharray:\s*1\b/,
+      requiredDashoffset: /stroke-dashoffset:\s*1\b/,
+      requiredAnimation: /animation:\s*stroke-draw/,
+    },
+    {
+      label: "[data-thread-segment] path",
+      selectorPattern: /\[data-reveal="in"\] \[data-thread-segment\] path \{([^}]*)\}/,
+      requiredDasharray: /stroke-dasharray:\s*var\(--thread-dash\)/,
+      requiredDashoffset: /stroke-dashoffset:\s*var\(--thread-dash\)/,
+      requiredAnimation: /animation:\s*stroke-draw/,
+    },
+    {
+      label: "[data-familiar-arc]",
+      selectorPattern: /\[data-reveal="in"\] \[data-familiar-arc\] \{([^}]*)\}/,
+      requiredDasharray: null,
+      requiredDashoffset: /stroke-dashoffset:\s*var\(--donut-circumference\)/,
+      requiredAnimation: /animation:\s*donut-sweep/,
+    },
+  ];
+
+  it.each(DASH_REPETITION_CASES)(
+    "repeats $label's dash start value on the revealed rule, not only the pending one",
+    ({ selectorPattern, requiredDasharray, requiredDashoffset, requiredAnimation }) => {
+      const revealed = css.match(selectorPattern);
+      expect(revealed).not.toBeNull();
+      const body = revealed?.[1] ?? "";
+      if (requiredDasharray) expect(body).toMatch(requiredDasharray);
+      expect(body).toMatch(requiredDashoffset);
+      expect(body).toMatch(requiredAnimation);
+    },
+  );
 
   it("defines the primitive colour palette", () => {
     const missing = PRIMITIVE_TOKENS.filter(
@@ -384,6 +428,28 @@ describe("thread continuity contract", () => {
     expect(threadRules.length).toBe(THREAD_RULE_COUNT);
   });
 
+  it("wraps --thread-color in hsl(), not a bare var()", () => {
+    // Review fix round 1 (I3a). Every colour token in this file (spec §2.5) is
+    // stored as bare HSL channels — `--accent: 29 75% 64%` — specifically so
+    // Tailwind can compose `hsl(var(--accent) / <alpha-value>)`. Consuming one
+    // as a raw `var()` in a plain CSS `stroke`/`color`/`background` property
+    // hands the engine the invalid colour `29 75% 64%`; the whole declaration
+    // is dropped and falls back to its initial value (`stroke: none`). That
+    // shipped here once already — the thread segment was in the DOM, fully
+    // drawn, `data-reveal="in"`, and invisible — and no existing test could
+    // see it: nothing asserted the wrap, and the e2e that exists for "motion
+    // never hides content" measures opacity only (I3b covers that gap).
+    //
+    // Checked against `threadRules` (the rule BODIES), not the raw `css`
+    // string: this file's own docblock, two paragraphs up, quotes the broken
+    // form (`stroke: var(--thread-color)`) as prose explaining the bug it
+    // fixed — asserting on `css` directly makes this test fail against its
+    // own correct code, for a reason that has nothing to do with the CSS.
+    const threadRuleText = threadRules.join("\n");
+    expect(threadRuleText).toMatch(/stroke:\s*hsl\(var\(--thread-color\)\)/);
+    expect(threadRuleText).not.toMatch(/stroke:\s*var\(--thread-color\)/);
+  });
+
   it("hardcodes none of the invariants in any thread rule", () => {
     // Local geometry is free; these seven are not.
     //
@@ -397,7 +463,26 @@ describe("thread continuity contract", () => {
     // rule below) flags as a false positive; with the optional whitespace
     // moved INSIDE the lookahead, as here, it does not, and `stroke-linecap:
     // round;` still does.
-    const forbidden = /stroke-width:\s*\d|stroke-linecap:(?!\s*var)|animation-timing-function:(?!\s*var)|stroke-dasharray:(?!\s*(?:var|1\b))/;
+    //
+    // ⚠️ Review fix round 1 (I1): the FIRST version of this guard only checked
+    // four of the seven `--thread-*` tokens — colour, opacity, and the
+    // duration/easing pair written INSIDE the `animation:` shorthand (the only
+    // form this repo uses; `animation-timing-function:` as a longhand appears
+    // nowhere) all walked straight through. `stroke: #ff0000`, `opacity: 0.4`,
+    // and either half of `animation: stroke-draw 600ms
+    // cubic-bezier(0.16, 1, 0.3, 1) both` were all invisible to it. The two new
+    // alternatives below close those: `stroke:` and `opacity:` follow the same
+    // whitespace-inside-the-lookahead shape as `stroke-linecap:` above, and the
+    // `animation:` alternative asserts the two tokens after `stroke-draw` are
+    // EXACTLY `var(--thread-duration) var(--thread-ease)` — catching a
+    // hardcoded duration, a hardcoded easing, or both, in one check. (The
+    // lookahead ends on `(?=\s|;)`, not `\b`: `\b` requires a word/non-word
+    // transition, and there is none between `)` and the following space, so a
+    // trailing `\b` here would never match the correct value and the whole
+    // alternative would false-positive on every well-formed rule — caught by
+    // running the "good" CSS through it before trusting the pattern.)
+    const forbidden =
+      /stroke-width:\s*\d|stroke-linecap:(?!\s*var)|animation-timing-function:(?!\s*var)|stroke-dasharray:(?!\s*(?:var|1\b))|stroke:(?!\s*hsl\(var\(--thread-color\)\))|opacity:(?!\s*var\(--thread-opacity\))|animation:\s*stroke-draw\s+(?!var\(--thread-duration\)\s+var\(--thread-ease\)(?=\s|;))/;
     for (const rule of threadRules) {
       expect(rule, `a thread rule redefines an invariant:\n${rule}`).not.toMatch(forbidden);
     }

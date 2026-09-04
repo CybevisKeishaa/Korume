@@ -48,16 +48,25 @@ import type { Translator } from "./translator";
  *
  * ## MOTION
  *
- * The whole-page motion pass has run (task 4). This section now carries two
- * live mechanisms, both in `app/globals.css`, neither declared here: the
- * donut's calibration sweep (`recommendation-donut.tsx`) and the rail's own
+ * The whole-page motion pass (Task A-MOTION) already animates this section's
+ * rail and showcase entrance via `Section`'s shared reveal mechanism — the
+ * same mechanism every other section on the page uses. This task (the
+ * `landing-page-motion-doctrine` plan's task 4) adds two more live
+ * mechanisms, both declared in `app/globals.css`, neither here: the donut's
+ * calibration sweep (`recommendation-donut.tsx`) and the rail's own
  * `ThreadSegment` (`connection` morphology, spec §3), which draws in on
  * entrance the same way `stroke-draw` already draws §4's contours. The
  * `prefers-reduced-motion` obligation is satisfied by the global kill switch,
- * not vacuously — the earlier claim here was true only until this task.
+ * not vacuously — false since A-MOTION, exactly as `recommendation-donut.tsx`'s
+ * corrected docblock states; review fix round 1 (m5) found this docblock's
+ * own earlier correction disagreed with that ("true only until this task"),
+ * which was itself still wrong — A-MOTION predates task 4 by a whole prior
+ * phase of this branch.
  *
  * Looks up the translator once and passes it down as a prop — see
- * `translator.ts` (task 4 fix F5) — rather than each subcomponent calling
+ * `translator.ts` (the `landing-page-port` plan's task 4 fix F5 — a
+ * different plan's different task 4, named here to not collide with the one
+ * two paragraphs up) — rather than each subcomponent calling
  * `getTranslations` itself.
  */
 const STILL = "/marketing/recommend-commute.png";

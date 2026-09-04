@@ -32,6 +32,17 @@
  * which collapses duration AND delay. This section's obligation is satisfied
  * by that gate, not vacuously — an earlier version of this docblock claimed
  * the latter and was false from the moment the motion pass ran.
+ *
+ * ⚠️ LOAD-BEARING (review fix round 1, m2): the `<svg>`'s inline
+ * `--donut-circumference` custom property is what gives `app/globals.css`'s
+ * `stroke-dashoffset: var(--donut-circumference)` and `donut-sweep`'s
+ * `to { stroke-dashoffset: 0 }` a real length to travel. Delete it and both
+ * `var(--donut-circumference)` declarations resolve to nothing, the pending
+ * offset falls back to `0`, and the sweep runs 0 -> 0 — the arc simply
+ * appears fully drawn instead of drawing, the same class of defect as an
+ * un-repeated dash declaration (see `lib/design-tokens.test.ts`'s dash-
+ * repetition contract). `recommendation.test.tsx` asserts this property is
+ * present with the exact `CIRCUMFERENCE` value.
  */
 
 /** The ring's own coordinate space. Square, so one number covers both axes. */
@@ -96,7 +107,7 @@ export function FamiliarDonut({ percent }: FamiliarDonutProps) {
       aria-hidden="true"
       focusable="false"
       className="shrink-0 overflow-visible"
-      style={{ ["--donut-circumference" as string]: `${CIRCUMFERENCE}` }}
+      style={{ "--donut-circumference": CIRCUMFERENCE } as React.CSSProperties}
     >
       <defs>
         <linearGradient id="recommend-donut-sweep" x1="0" y1="0" x2="0" y2="1">

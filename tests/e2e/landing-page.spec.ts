@@ -544,6 +544,27 @@ test.describe("motion never hides content", () => {
       );
       expect(opacities.length).toBeGreaterThanOrEqual(9);
       expect(opacities.filter((o) => o !== 1)).toEqual([]);
+
+      // Review fix round 1 (I3b): task 4's two new mechanisms — §5's donut
+      // sweep and the thread's first segment — hide via `stroke-dashoffset`,
+      // not opacity, and nothing above samples that dimension. A dropped
+      // colour declaration (the `hsl()` defect this branch shipped once) is
+      // invisible to an opacity check too: the element is fully "revealed"
+      // and simply has no visible stroke. Sampled in the same evaluate as a
+      // single positive-controlled collection (L-004): non-empty AND at least
+      // one of each kind, so an empty match cannot make either assertion
+      // below unconditionally green.
+      const strokes = await page
+        .locator("[data-familiar-arc], [data-thread-segment] path")
+        .evaluateAll((nodes) =>
+          nodes.map((n) => {
+            const cs = getComputedStyle(n);
+            return { dashoffset: cs.strokeDashoffset, stroke: cs.stroke };
+          }),
+        );
+      expect(strokes.length).toBeGreaterThanOrEqual(2);
+      expect(strokes.filter((s) => s.dashoffset !== "0px")).toEqual([]);
+      expect(strokes.filter((s) => s.stroke === "none")).toEqual([]);
     });
   }
 
