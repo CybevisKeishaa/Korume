@@ -23,6 +23,8 @@
 - **A collection gathered by a pattern must be asserted non-empty and of the size expected** (L-004), or an empty match makes it unconditionally green.
 - **⚠️ The same rule binds test doubles, and this plan has already broken it once.** A mock that *collects* something — registered listeners, captured callbacks, recorded calls — must have that collection driven and asserted, or the mock is scaffolding that proves nothing. Task 1's first version built a `listeners` Set inside its `matchMedia` mock and discarded the return value at all five call sites; the production listener under test could be deleted outright and the suite stayed 7/7 green. **Before writing any test that stubs a global, ask what the stub collects and where that collection is exercised.** If the answer is "nowhere", the test is measuring its own setup.
 - **A test whose subject is absent passes or fails for the wrong reason.** Components in this plan return early when they find no target element — `ScrollProgress` on no `[data-scroll-progress]`, `RevealScope` on no `[data-reveal="pending"]`. A test of their behaviour must put the target in the DOM first, or it exercises the early return and reports something unrelated to what it claims.
+- **⚠️⚠️ SVG in this plan must be RENDERED, never reasoned about. It has now behaved differently in a browser than on paper twice, in one task.** (1) `stroke: var(--thread-color)` computed to an invalid colour — the segment was in the DOM, drawn, `data-reveal="in"`, and *invisible*; jsdom cannot compute colour, so nothing in the suite could see it. (2) `stroke-width: 2px` inside a `viewBox`ed SVG resolves in **user units** and is then scaled by the viewBox→viewport transform, so a nominally-invariant 2px token drew at 1.33px — and the scale is set by each caller's `className`, making the "invariant" silently redefinable by any section. **Before calling any SVG work done: load it in a browser, read `getComputedStyle` for the properties you claim to control, and look at it.** A deterministic scrub (Web Animations API, seeking to fixed times) beats hoping to catch a frame.
+- **`vectorEffect="non-scaling-stroke"` is required on every thread `<path>`** so `--thread-width` is evaluated in CSS pixels rather than user units. Verified in a browser to compose with `pathLength={1}`: `strokeDashoffset` interpolates 1px→0px while `strokeWidth` stays exactly 2px. Do not remove it as redundant — without it the token is advisory, not invariant.
 
 ---
 
@@ -827,7 +829,15 @@ In `app/globals.css`, after the existing §5 rules:
 /* The thread's shared grammar. Every segment consumes the invariant tokens;
    geometry lives in the component, where it is free to differ per section. */
 [data-thread-segment] path {
-  stroke: var(--thread-color);
+  /* ⚠️ `hsl(...)` is not optional. This repo's colour tokens hold BARE HSL
+     CHANNELS (`--sand-400: 29 75% 64%`), deliberately, so Tailwind can write
+     `hsl(var(--accent) / <alpha-value>)`. A raw `stroke: var(--thread-color)`
+     computes to an invalid colour — and an invalid stroke does not error, it
+     renders NOTHING. The first version of this plan had it, and the segment
+     shipped in the DOM, fully drawn, `data-reveal="in"`, and completely
+     invisible. No unit test saw it; jsdom does not compute colour. It was
+     found by reading `getComputedStyle` in a real browser. */
+  stroke: hsl(var(--thread-color));
   stroke-width: var(--thread-width);
   stroke-linecap: var(--thread-cap);
   opacity: var(--thread-opacity);
