@@ -24,7 +24,7 @@ its own metaphor and verb, bound by one thread grammar so variety does not becom
 | 0 | 1 · motion gate (`lib/motion/motion-enabled.ts`) | ✅ complete, review clean after 1 fix round |
 | 0 | 2 · scroll-progress provider | ✅ complete, review clean after 2 fix rounds |
 | 0 | 3 · thread tokens + contract test | ✅ complete, review clean after 1 fix round |
-| 01 | 4 · §5 donut sweep + first `ThreadSegment` | ⏸️ **fix round 2 done, final re-review WAS IN FLIGHT when paused** |
+| 01 | 4 · §5 donut sweep + first `ThreadSegment` | ✅ complete, review clean after 2 fix rounds |
 | 02 | 5 · §1 Hero heading + card interior | not started |
 | 02 | 6 · §1 Hero scroll-linked camera push | not started |
 | 03-07 | 7 §2 · 8 §3 · 9 §7 · 10 §8 · 11 §9 | not started |
@@ -33,18 +33,23 @@ its own metaphor and verb, bound by one thread grammar so variety does not becom
 **🔒 §4 (`pitch-showcase.tsx`, `pitch-chart.tsx`) and §6 (`capability-chain.tsx`) are FROZEN and are
 NOT tasks.** They already ship correct. Any change to them in this work is a regression.
 
-## ⚠️ FIRST THING TO DO WHEN RESUMING
+## ▶ WHEN RESUMING: start at Task 5. Task 4 is signed off.
 
-A re-review subagent was mid-mutation when the session stopped. **Check the working tree before
-anything else.** If `components/marketing/recommendation-donut.tsx` still contains
-`data-familiar-arc-DISABLED`, restore it to `data-familiar-arc="glow"` **by editing the file back**
-— never with `git checkout --` or `git restore` (`L-001`; and `stash@{0}` on this machine must
-never be applied).
+The final re-review returned **ADDRESSED / APPROVE** after the pause was announced. Working tree is
+clean, the mutation left behind by that reviewer was restored by editing the file back (verified
+byte-identical to HEAD, §5 suite re-run 10/10 green).
 
-That mutation was testing the *arc* direction of Task 4's final e2e guard. Its verdict was never
-received, so **Task 4 is not signed off**. Re-run that check when resuming: remove the glow marker,
-confirm the e2e fails naming the arc count specifically, restore, confirm green. Then Task 4 is
-done and Task 5 can start.
+⚠️ **One residual, recorded honestly:** the split e2e guard was proven red in the *thread-vanishing*
+direction but only **reasoned, not observed**, in the *arc-vanishing* direction. The reasoning is
+sound — the two collections are fetched by independent `page.locator()` calls and asserted
+separately, so neither can mask a loss in the other — but nobody has watched `expect(arcs)
+.toHaveLength(2)` actually go red. Cheap to close whenever someone is next in that file.
+
+⚠️ **Do not believe the claim that "the harness silently reverts direct-to-disk edits on tracked
+files".** That reviewer's `sed` mutation really did disappear mid-run, and it inferred a sandbox
+protection — but the true cause was mundane: the CONTROLLER restored the file while the reviewer
+was still running, during the session-pause cleanup. The harness does no such thing. Recording the
+correction because a false environment fact costs the next session real time.
 
 Last gate actually measured, on `11a2882`: `npm test` **2657 tests / 286 files, 0 failed, 0
 skipped** · `npx tsc --noEmit` 0 · lint 0 errors, pre-existing warning mix unchanged · the §5
