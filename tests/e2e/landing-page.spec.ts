@@ -550,21 +550,36 @@ test.describe("motion never hides content", () => {
       // not opacity, and nothing above samples that dimension. A dropped
       // colour declaration (the `hsl()` defect this branch shipped once) is
       // invisible to an opacity check too: the element is fully "revealed"
-      // and simply has no visible stroke. Sampled in the same evaluate as a
-      // single positive-controlled collection (L-004): non-empty AND at least
-      // one of each kind, so an empty match cannot make either assertion
-      // below unconditionally green.
-      const strokes = await page
-        .locator("[data-familiar-arc], [data-thread-segment] path")
-        .evaluateAll((nodes) =>
-          nodes.map((n) => {
-            const cs = getComputedStyle(n);
-            return { dashoffset: cs.strokeDashoffset, stroke: cs.stroke };
-          }),
-        );
-      expect(strokes.length).toBeGreaterThanOrEqual(2);
-      expect(strokes.filter((s) => s.dashoffset !== "0px")).toEqual([]);
-      expect(strokes.filter((s) => s.stroke === "none")).toEqual([]);
+      // and simply has no visible stroke.
+      //
+      // ⚠️ Review fix round 2: the first version of this sampled BOTH
+      // selectors into one collection and asserted only
+      // `strokes.length >= 2` — which is exactly satisfied by the two donut
+      // arcs alone. If the thread segment vanished from the DOM entirely
+      // (attribute renamed, component unmounted), that lower bound would
+      // still hold and the assertions below would silently stop checking the
+      // thread segment at all — the L-004 failure the original comment here
+      // claimed to prevent but did not enforce. Split into two locators, each
+      // pinned to its OWN exact/minimum count, so losing either kind fails on
+      // its own line and names itself rather than hiding inside a combined
+      // total.
+      const sampleStrokes = (nodes: Element[]) =>
+        nodes.map((n) => {
+          const cs = getComputedStyle(n);
+          return { dashoffset: cs.strokeDashoffset, stroke: cs.stroke };
+        });
+
+      const arcs = await page.locator("[data-familiar-arc]").evaluateAll(sampleStrokes);
+      expect(arcs).toHaveLength(2);
+      expect(arcs.filter((s) => s.dashoffset !== "0px")).toEqual([]);
+      expect(arcs.filter((s) => s.stroke === "none")).toEqual([]);
+
+      const threadPaths = await page
+        .locator("[data-thread-segment] path")
+        .evaluateAll(sampleStrokes);
+      expect(threadPaths.length).toBeGreaterThanOrEqual(1);
+      expect(threadPaths.filter((s) => s.dashoffset !== "0px")).toEqual([]);
+      expect(threadPaths.filter((s) => s.stroke === "none")).toEqual([]);
     });
   }
 
