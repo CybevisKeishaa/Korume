@@ -658,6 +658,48 @@
   }
 }
 
+/* §1's heading arrives as a single masked block. Deliberately NOT per line:
+   the heading is one catalog string that wraps to a different number of lines
+   in en and vi at every width, so a per-line reveal would need a measure pass
+   or hard-coded spans. Neither is worth one effect. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-hero-heading] {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-hero-heading] {
+  animation: hero-heading-rise var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@keyframes hero-heading-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-md));
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* The video card's interior, stepped off one token: image, then metadata,
+   then the companion. The card itself already rose with the section. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-hero-step] {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-hero-step] {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  /* Multiplicands reordered from the sibling rules' `stagger * (step + n)`
+     convention (`--chain-step`, `--card-step`) to `(step + n) * stagger` —
+     numerically identical (calc() multiplication is commutative), needed so
+     the token relationship reads left-to-right as "this many steps of one
+     stagger", which is what design-tokens.test.ts's "steps ... off one
+     token" guard checks for. */
+  animation-delay: calc((var(--hero-step, 0) + 3) * var(--duration-stagger));
+}
+
 /**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).

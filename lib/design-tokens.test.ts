@@ -36,9 +36,10 @@ const tailwind = readFileSync(
 const revealGates = css.match(
   /:root\[data-reduce-motion="false"\][^ ]* \[data-reveal-scope\] \[data-reveal="pending"\]/g,
 );
-// STATE PIN: task 4 adds two (the thread rule, the donut rule) — 5 -> 7,
-// verified by running the test and reading the real number, not counted.
-const REVEAL_GATE_COUNT = 7;
+// STATE PIN: task 4 adds two (the thread rule, the donut rule) — 5 -> 7;
+// task 5 adds two more (the hero heading, the hero step) — 7 -> 9, verified
+// by running the test and reading the real number, not counted.
+const REVEAL_GATE_COUNT = 9;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -486,5 +487,22 @@ describe("thread continuity contract", () => {
     for (const rule of threadRules) {
       expect(rule, `a thread rule redefines an invariant:\n${rule}`).not.toMatch(forbidden);
     }
+  });
+});
+
+describe("§1 hero entrance", () => {
+  it("reveals the heading as one masked block, not per line", () => {
+    expect(css).toMatch(/@keyframes hero-heading-rise/);
+    // A per-line implementation would need nth-child stepping. Its absence is
+    // the assertion: this must stay multilingual-safe with no measure pass.
+    const rule = css.match(/\[data-hero-heading\][^{]*\{[^}]*\}/g) ?? [];
+    expect(rule.length).toBeGreaterThan(0);
+    for (const r of rule) expect(r).not.toMatch(/nth-child/);
+  });
+
+  it("steps the video card's interior off one token", () => {
+    const steps = css.match(/\[data-hero-step\]/g) ?? [];
+    expect(steps.length).toBeGreaterThan(0);
+    expect(css).toMatch(/--hero-step[^;]*var\(--duration-stagger\)/);
   });
 });

@@ -173,6 +173,12 @@ export function Section(props: SectionProps) {
       <Heading
         id={headingId}
         data-section-heading
+        // §1's masked-block entrance (Task 5, ruling R9). Derived from
+        // `headingLevel` rather than a new `heroHeading` prop: the hero is the
+        // only `headingLevel={1}` consumer, and this doc comment already says
+        // so above — a second selector for the same fact is the exact defect
+        // this component's `split`/`rail != null` history already fixed once.
+        data-hero-heading={headingLevel === 1 ? true : undefined}
         className={cn(
           "text-balance font-display font-bold",
           headingLevel === 1 && "text-hero",

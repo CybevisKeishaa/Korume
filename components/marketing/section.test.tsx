@@ -62,6 +62,28 @@ describe("Section", () => {
     expect(region).toHaveAttribute("id", "hero");
   });
 
+  it("carries §1's masked-block reveal attribute on the heading only at headingLevel 1 (Task 5, ruling R9)", () => {
+    // Derived from `headingLevel`, not a second `heroHeading` prop: the hero
+    // is the ONLY headingLevel=1 consumer, so the attribute must appear
+    // exactly there and nowhere else — asserted both ways so a later default
+    // change (e.g. dropping `headingLevel = 2`) cannot silently widen it.
+    const { container: heroLevel } = render(
+      <Section id="hero" heading="Learn Japanese through video." headingLevel={1}>
+        <p>body</p>
+      </Section>,
+    );
+    const heroHeadings = heroLevel.querySelectorAll("[data-hero-heading]");
+    expect(heroHeadings).toHaveLength(1);
+    expect(heroHeadings[0]?.tagName.toLowerCase()).toBe("h1");
+
+    const { container: sectionLevel } = render(
+      <Section id="s" heading="Everything connects." headingLevel={2}>
+        <p>body</p>
+      </Section>,
+    );
+    expect(sectionLevel.querySelectorAll("[data-hero-heading]")).toHaveLength(0);
+  });
+
   it("omits the rail element entirely in the stacked layout", () => {
     const { container } = render(
       <Section id="s" heading="Only a heading">

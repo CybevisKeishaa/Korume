@@ -57,7 +57,11 @@ export function HeroVideoCard({ t }: { t: Translator }) {
 
       <div className="flex flex-col lg:flex-row">
         <div className="flex min-w-0 flex-col lg:basis-2/3 lg:shrink-0">
-          <div className="relative">
+          {/* §1's interior sequencing (Task 5, ruling R11): the still, then the
+              transport bar drawn over it (step 1 nests inside step 0, so their
+              `reveal-fade` opacities compose — verified in a browser, not
+              reasoned about), then the sentence rail, then the mascot. */}
+          <div className="relative" data-hero-step style={{ "--hero-step": 0 } as React.CSSProperties}>
             {/* 1672x941 is exactly the 16/9 the slot declares, so filling it moved
                 no layout (fix F7). Provenance recorded in `progress.md` per spec
                 §5.2: user-generated from the written per-slot description. */}
@@ -116,6 +120,8 @@ export function HeroVideoCard({ t }: { t: Translator }) {
                 "Sentence 1 / 29" instead of contradicting it. */}
             <div
               data-player-chrome
+              data-hero-step
+              style={{ "--hero-step": 1 } as React.CSSProperties}
               aria-hidden="true"
               className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-xs bg-gradient-to-t from-scrim/85 via-scrim/45 to-transparent px-sm pb-xs pt-xl"
             >
@@ -227,6 +233,8 @@ export function HeroVideoCard({ t }: { t: Translator }) {
                 numeric Tailwind size class is coupled in (Rule #0). */}
             <Image
               data-mascot
+              data-hero-step
+              style={{ "--hero-step": 3 } as React.CSSProperties}
               src="/mascot/poses/greeting.png"
               alt=""
               width={44}

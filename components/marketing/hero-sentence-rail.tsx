@@ -50,7 +50,11 @@ export function HeroSentenceRail({ t }: { t: Translator }) {
   const after = splitIndex >= 0 ? sentence.slice(splitIndex + quietWord.length) : "";
 
   return (
-    <div className="flex flex-col gap-sm border-border p-md lg:basis-1/3 lg:shrink-0 lg:border-s">
+    <div
+      className="flex flex-col gap-sm border-border p-md lg:basis-1/3 lg:shrink-0 lg:border-s"
+      data-hero-step
+      style={{ "--hero-step": 2 } as React.CSSProperties}
+    >
       <div className="flex items-center justify-between text-caption text-muted-foreground">
         <span>{t("hero.sentence.label")}</span>
         <span>{t("hero.sentence.position")}</span>
