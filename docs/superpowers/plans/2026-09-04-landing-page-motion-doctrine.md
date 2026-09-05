@@ -1143,7 +1143,9 @@ Load `/en` at 1280 and at 390, scroll the hero out slowly, and judge whether `0.
 
 - [ ] **Step 7: Verify reduce-motion**
 
-Toggle reduce-motion on, reload, scroll. The card must sit at its final scale and never animate. Confirm `--section-progress` reads `1`.
+Toggle reduce-motion on, reload, scroll. The card must stay undistorted and
+never animate. Confirm the Hero-only `--hero-scroll-progress` reads `0`; the
+generic `--section-progress` remains its independent viewport-travel contract.
 
 - [ ] **Step 8: Commit**
 

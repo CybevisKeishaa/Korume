@@ -8,6 +8,8 @@ import { motionEnabled, subscribeMotionEnabled } from "@/lib/motion/motion-enabl
 export const SCROLL_PROGRESS_ATTR = "data-scroll-progress";
 /** The custom property CSS reads. */
 export const SCROLL_PROGRESS_VAR = "--section-progress";
+/** Hero-only derived value: zero at document rest, one once the Hero leaves. */
+export const HERO_SCROLL_PROGRESS_VAR = "--hero-scroll-progress";
 
 /**
  * How far a section has travelled through the viewport, normalized to [0,1]:
@@ -18,6 +20,19 @@ export function sectionProgress(rect: DOMRect, viewportHeight: number): number {
   const total = rect.height + viewportHeight;
   if (total <= 0) return 0;
   const travelled = viewportHeight - rect.top;
+  return Math.min(1, Math.max(0, travelled / total));
+}
+
+/**
+ * How far the Hero has travelled from its document rest position, normalized
+ * to [0,1]. Unlike `sectionProgress`, this does not measure viewport entry:
+ * the Hero is already visible at scrollY=0, so generic viewport travel would
+ * begin above zero and distort its resting card.
+ */
+export function heroProgress(rect: DOMRect, documentRestTop: number): number {
+  const total = rect.height + documentRestTop;
+  if (total <= 0) return 0;
+  const travelled = documentRestTop - rect.top;
   return Math.min(1, Math.max(0, travelled / total));
 }
 
@@ -57,6 +72,12 @@ export function ScrollProgress(): null {
       document.querySelectorAll<HTMLElement>(`[${SCROLL_PROGRESS_ATTR}]`),
     );
     if (sections.length === 0) return;
+    // The Hero opts into the derived contract through its existing progress
+    // section plus its card marker. Other sections retain generic viewport
+    // travel only, even if they later opt into `data-scroll-progress`.
+    const heroSections = new Set(
+      sections.filter((section) => section.querySelector("[data-hero-card]") !== null),
+    );
 
     /**
      * Motion off: the UNDISTORTED state, written once. Never an intermediate
@@ -80,6 +101,9 @@ export function ScrollProgress(): null {
     const settle = () => {
       for (const section of sections) {
         section.style.setProperty(SCROLL_PROGRESS_VAR, "0");
+        if (heroSections.has(section)) {
+          section.style.setProperty(HERO_SCROLL_PROGRESS_VAR, "0");
+        }
       }
     };
 
@@ -96,11 +120,16 @@ export function ScrollProgress(): null {
 
     const tick = () => {
       for (const section of active) {
-        const progress = sectionProgress(
-          section.getBoundingClientRect(),
-          window.innerHeight,
-        );
+        const rect = section.getBoundingClientRect();
+        const progress = sectionProgress(rect, window.innerHeight);
         section.style.setProperty(SCROLL_PROGRESS_VAR, progress.toFixed(4));
+        if (heroSections.has(section)) {
+          const documentRestTop = rect.top + window.scrollY;
+          section.style.setProperty(
+            HERO_SCROLL_PROGRESS_VAR,
+            heroProgress(rect, documentRestTop).toFixed(4),
+          );
+        }
       }
       frame = active.size > 0 ? window.requestAnimationFrame(tick) : 0;
     };

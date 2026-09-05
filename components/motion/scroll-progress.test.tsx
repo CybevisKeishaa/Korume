@@ -1,6 +1,7 @@
 import { render } from "@/test/render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  heroProgress,
   ScrollProgress,
   sectionProgress,
   SCROLL_PROGRESS_ATTR,
@@ -32,6 +33,23 @@ describe("sectionProgress", () => {
   it("clamps below 0 and above 1 rather than reporting out-of-range values", () => {
     expect(sectionProgress(rect(2000, 600), 800)).toBe(0);
     expect(sectionProgress(rect(-5000, 600), 800)).toBe(1);
+  });
+});
+
+describe("heroProgress", () => {
+  it("starts at 0 at the Hero's document rest position and reaches 1 as it leaves", () => {
+    // The Hero begins 96px below the document top and is 600px tall. Its
+    // remaining document travel is 696px, until its bottom reaches viewport
+    // top. Replacing this with generic viewport-travel progress would start
+    // above zero whenever the Hero is already visible at document rest.
+    expect(heroProgress(rect(96, 600), 96)).toBe(0);
+    expect(heroProgress(rect(-252, 600), 96)).toBeCloseTo(0.5, 5);
+    expect(heroProgress(rect(-600, 600), 96)).toBe(1);
+  });
+
+  it("clamps the Hero-only progress before its rest position and after it leaves", () => {
+    expect(heroProgress(rect(800, 600), 96)).toBe(0);
+    expect(heroProgress(rect(-5000, 600), 96)).toBe(1);
   });
 });
 

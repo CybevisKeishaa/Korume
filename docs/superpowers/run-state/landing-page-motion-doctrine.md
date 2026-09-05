@@ -26,8 +26,11 @@ capability-chain modules left untouched.
 
 ## Contracts and decisions
 
-- The hero is the only `ScrollProgress` consumer. Its video card consumes
-  `--section-progress` with the `0.06` recession coefficient.
+- The hero is the only `ScrollProgress` consumer. Its video card consumes the
+  Hero-only `--hero-scroll-progress` derivative with the `0.06` recession
+  coefficient; generic `--section-progress` remains documented viewport
+  travel for future section consumers. The derivative is zero at the Hero's
+  document rest position and normalizes to one as the Hero leaves.
 - The Task 5 reviewer mutation was restored manually, and the motion-doctrine
   plan was synced after plan-authored corrections.
 - The Codex protocol migration is concurrent branch work; its plan is
@@ -35,8 +38,9 @@ capability-chain modules left untouched.
 
 ## Verification
 
-- Task 6 is implemented, but has not been test-, build-, or browser-validated
-  in this Codex shell because Node/npm are unavailable on PATH.
+- Task 6's approved Hero-only rest-relative-progress fix has focused unit
+  coverage; full production-build and browser verification remain pending in
+  the Codex shell.
 - Task 4 switches the active instruction paths to lowercase `.codex`; the
   legacy tracked `.claude` runtime files are retained for possible future
   Claude use, but are not Codex's active instruction source. Its validator
