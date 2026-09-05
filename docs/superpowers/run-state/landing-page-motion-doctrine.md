@@ -58,6 +58,13 @@ test/build verification before the motion plan may advance to Task 7.
 
 ## Next actions
 
-The next owner reviews and browser-validates Task 6's hero camera push at
-1280px and 390px, including the `0.06` coefficient, before Task 7 begins.
-Run the whole-branch review required by `AGENTS.md` before merging this branch.
+`motion-engineer` reviews and browser-validates Task 6 before Task 7 begins:
+`app/[locale]/(marketing)/page.tsx`, `app/globals.css`,
+`components/marketing/hero-video-card.tsx`, `components/marketing/hero.tsx`,
+`components/marketing/section.tsx`,
+`docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`, and
+`tests/e2e/landing-page.spec.ts`. Validate the hero camera push at 1280px and
+390px, including the `0.06` coefficient.
+
+`code-reviewer` owns the whole-branch review required by `AGENTS.md` before
+this branch merges.
