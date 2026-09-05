@@ -37,9 +37,10 @@ capability-chain modules left untouched.
 
 - Task 6 is implemented, but has not been test-, build-, or browser-validated
   in this Codex shell because Node/npm are unavailable on PATH.
-- Task 4 switches the active instruction paths to lowercase `.codex` and
-  retires the tracked Claude runtime files; its validator and path-sweep
-  evidence are recorded with that task's commit.
+- Task 4 switches the active instruction paths to lowercase `.codex`; the
+  legacy tracked `.claude` runtime files are retained for possible future
+  Claude use, but are not Codex's active instruction source. Its validator
+  and path-sweep evidence are recorded with the active-path commit.
 
 ## Working tree and environment
 
