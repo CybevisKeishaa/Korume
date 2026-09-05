@@ -37,17 +37,17 @@ capability-chain modules left untouched.
 
 - Task 6 is implemented, but has not been test-, build-, or browser-validated
   in this Codex shell because Node/npm are unavailable on PATH.
-- The protocol validator currently fails only for the active retired or
-  noncanonical instruction reference in `AGENTS.md`; Task 4 of the protocol
-  migration owns that change.
+- Task 4 switches the active instruction paths to lowercase `.codex` and
+  retires the tracked Claude runtime files; its validator and path-sweep
+  evidence are recorded with that task's commit.
 
 ## Working tree and environment
 
 - `components/marketing/recommendation-donut.tsx` is pre-existing CRLF-only
   working-tree noise (`git diff --numstat` is empty).
-- Untracked non-product configuration currently includes `AGENTS.md` and
-  `.agents/skills/source-command-review-changes/SKILL.md`; canonical `.codex`
-  configuration is committed.
+- Untracked non-product configuration includes
+  `.agents/skills/source-command-review-changes/SKILL.md`; `AGENTS.md` and the
+  canonical `.codex` configuration are committed with the active-path switch.
 - Windows PowerShell works with execution-policy bypass; Node/npm/npx/pwsh are
   unavailable on PATH in this Codex shell.
 
