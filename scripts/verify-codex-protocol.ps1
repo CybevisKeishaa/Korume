@@ -1,8 +1,12 @@
 [CmdletBinding()]
 param(
   [Parameter()]
-  [string] $Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+  [string] $Root
 )
+
+if ([string]::IsNullOrWhiteSpace($Root)) {
+  $Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+}
 
 $requiredRoles = @(
   'ai-engineer', 'backend-engineer', 'code-reviewer', 'database-engineer',
@@ -63,6 +67,13 @@ function Test-RetiredPathReferences {
 
 $requiredFiles = @('AGENTS.md', '.codex/docs/workflow.md')
 $requiredFiles += $requiredRoles | ForEach-Object { ".codex/agents/$_.toml" }
+$requiredFiles += @(
+  '.codex/commands/build-layer.md',
+  '.codex/commands/new-module.md',
+  '.codex/commands/review-changes.md',
+  '.codex/commands/create-task-packet.md',
+  '.codex/commands/checkpoint-branch.md'
+)
 foreach ($requiredFile in $requiredFiles) {
   Test-RequiredFile -RelativePath $requiredFile | Out-Null
 }

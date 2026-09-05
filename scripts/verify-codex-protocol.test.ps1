@@ -7,6 +7,10 @@ $requiredRoles = @(
   'ai-engineer', 'backend-engineer', 'code-reviewer', 'database-engineer',
   'frontend-engineer', 'motion-engineer', 'tech-lead', 'test-engineer'
 )
+$requiredCommands = @(
+  'build-layer', 'new-module', 'review-changes', 'create-task-packet',
+  'checkpoint-branch'
+)
 $requiredHeadings = @(
   '# Branch Run State', '## Goal and scope', '## Authorities',
   '## Accepted commits', '## Contracts and decisions',
@@ -28,6 +32,7 @@ function Assert-ExitCode {
 try {
   $directories = @(
     '.codex/agents',
+    '.codex/commands',
     '.codex/docs',
     'docs/superpowers/run-state'
   )
@@ -40,10 +45,20 @@ try {
   foreach ($role in $requiredRoles) {
     Set-Content -LiteralPath (Join-Path $validRoot ".codex/agents/$role.toml") -Value "role = '$role'"
   }
+  foreach ($command in $requiredCommands) {
+    Set-Content -LiteralPath (Join-Path $validRoot ".codex/commands/$command.md") -Value "command = '$command'"
+  }
   Set-Content -LiteralPath (Join-Path $validRoot 'docs/superpowers/run-state/feature-branch.md') -Value $requiredHeadings
 
   & $validator -Root $validRoot
   Assert-ExitCode -Expected 0 -Message 'valid protocol fixture failed.'
+
+  $defaultRootScripts = Join-Path $validRoot 'scripts'
+  New-Item -ItemType Directory -Path $defaultRootScripts -Force | Out-Null
+  $defaultRootValidator = Join-Path $defaultRootScripts 'verify-codex-protocol.ps1'
+  Copy-Item -LiteralPath $validator -Destination $defaultRootValidator
+  & powershell -NoProfile -ExecutionPolicy Bypass -File $defaultRootValidator
+  Assert-ExitCode -Expected 0 -Message 'validator default-root invocation failed.'
 
   Remove-Item -LiteralPath (Join-Path $validRoot '.codex/agents/test-engineer.toml')
   & $validator -Root $validRoot
@@ -60,6 +75,12 @@ try {
   & $validator -Root $validRoot
   if ($LASTEXITCODE -eq 0) { throw 'noncanonical Codex path was accepted' }
   Assert-ExitCode -Expected 1 -Message 'noncanonical Codex path fixture failed to be rejected.'
+
+  Set-Content -LiteralPath (Join-Path $validRoot 'AGENTS.md') -Value 'Read .codex/docs/workflow.md'
+  Remove-Item -LiteralPath (Join-Path $validRoot '.codex/commands/checkpoint-branch.md')
+  & $validator -Root $validRoot
+  if ($LASTEXITCODE -eq 0) { throw 'missing command was accepted' }
+  Assert-ExitCode -Expected 1 -Message 'missing command fixture failed to be rejected.'
 }
 finally {
   if (Test-Path -LiteralPath $validRoot) {
