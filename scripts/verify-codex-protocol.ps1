@@ -50,8 +50,13 @@ function Test-RetiredPathReferences {
 
   foreach ($path in $Paths) {
     $content = Get-Content -LiteralPath $path -Raw
-    if ($content -cmatch '\.claude/|\.Codex/') {
-      Add-Violation -RelativePath (Get-ProtocolRelativePath $path) -Message 'contains a retired .claude/ or .Codex/ path'
+    $hasRetiredClaudePath = $content -imatch '\.claude/'
+    $hasNonCanonicalCodexPath = @(
+      [regex]::Matches($content, '\.codex/', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) |
+        Where-Object { $_.Value -cne '.codex/' }
+    ).Count -gt 0
+    if ($hasRetiredClaudePath -or $hasNonCanonicalCodexPath) {
+      Add-Violation -RelativePath (Get-ProtocolRelativePath $path) -Message 'contains a retired .claude/ path or noncanonical .codex/ path'
     }
   }
 }

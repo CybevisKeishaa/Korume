@@ -55,6 +55,11 @@ try {
   & $validator -Root $validRoot
   if ($LASTEXITCODE -eq 0) { throw 'retired Claude path was accepted' }
   Assert-ExitCode -Expected 1 -Message 'retired Claude path fixture failed to be rejected.'
+
+  Set-Content -LiteralPath (Join-Path $validRoot 'AGENTS.md') -Value 'Read .CODEX/docs/workflow.md'
+  & $validator -Root $validRoot
+  if ($LASTEXITCODE -eq 0) { throw 'noncanonical Codex path was accepted' }
+  Assert-ExitCode -Expected 1 -Message 'noncanonical Codex path fixture failed to be rejected.'
 }
 finally {
   if (Test-Path -LiteralPath $validRoot) {
