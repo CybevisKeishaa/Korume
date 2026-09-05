@@ -96,8 +96,11 @@ Test-RetiredPathReferences -Paths $instructionPaths
 
 $runStateDirectory = Join-Path $Root 'docs/superpowers/run-state'
 if (Test-Path -LiteralPath $runStateDirectory -PathType Container) {
-  $runStates = Get-ChildItem -LiteralPath $runStateDirectory -File -Filter '*.md' |
-    Where-Object { $_.Name -cne 'README.md' -and $_.Name -cne 'TEMPLATE.md' }
+  $runStates = @(Get-ChildItem -LiteralPath $runStateDirectory -File -Filter '*.md' |
+    Where-Object { $_.Name -cne 'README.md' -and $_.Name -cne 'TEMPLATE.md' })
+  if ($runStates.Count -eq 0) {
+    Add-Violation -RelativePath 'docs/superpowers/run-state' -Message 'at least one non-template branch run-state file is required'
+  }
 
   foreach ($runState in $runStates) {
     $relativePath = Get-ProtocolRelativePath $runState.FullName
@@ -117,6 +120,9 @@ if (Test-Path -LiteralPath $runStateDirectory -PathType Container) {
       }
     }
   }
+}
+else {
+  Add-Violation -RelativePath 'docs/superpowers/run-state' -Message 'run-state directory is missing'
 }
 
 if ($violations.Count -gt 0) {

@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $validator = Join-Path $PSScriptRoot 'verify-codex-protocol.ps1'
 $fixtureName = "verify-codex-protocol-$PID-$([guid]::NewGuid().ToString('N'))"
 $validRoot = Join-Path $env:TEMP $fixtureName
+$missingRunStateRoot = Join-Path $env:TEMP "$fixtureName-no-run-state"
 $requiredRoles = @(
   'ai-engineer', 'backend-engineer', 'code-reviewer', 'database-engineer',
   'frontend-engineer', 'motion-engineer', 'tech-lead', 'test-engineer'
@@ -53,6 +54,12 @@ try {
   & $validator -Root $validRoot
   Assert-ExitCode -Expected 0 -Message 'valid protocol fixture failed.'
 
+  Copy-Item -LiteralPath $validRoot -Destination $missingRunStateRoot -Recurse
+  Remove-Item -LiteralPath (Join-Path $missingRunStateRoot 'docs/superpowers/run-state/feature-branch.md')
+  & $validator -Root $missingRunStateRoot
+  if ($LASTEXITCODE -eq 0) { throw 'missing branch run state was accepted' }
+  Assert-ExitCode -Expected 1 -Message 'missing branch run-state fixture failed to be rejected.'
+
   $defaultRootScripts = Join-Path $validRoot 'scripts'
   New-Item -ItemType Directory -Path $defaultRootScripts -Force | Out-Null
   $defaultRootValidator = Join-Path $defaultRootScripts 'verify-codex-protocol.ps1'
@@ -85,5 +92,8 @@ try {
 finally {
   if (Test-Path -LiteralPath $validRoot) {
     Remove-Item -LiteralPath $validRoot -Recurse -Force
+  }
+  if (Test-Path -LiteralPath $missingRunStateRoot) {
+    Remove-Item -LiteralPath $missingRunStateRoot -Recurse -Force
   }
 }
