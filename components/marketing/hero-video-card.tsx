@@ -42,6 +42,7 @@ export function HeroVideoCard({ t }: { t: Translator }) {
     <div
       role="group"
       aria-labelledby="hero-video-title"
+      data-hero-card
       className="overflow-hidden rounded-lg border border-border bg-card"
     >
       <div className="flex items-center justify-between border-b border-border px-md py-sm">

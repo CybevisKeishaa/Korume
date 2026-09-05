@@ -84,6 +84,23 @@ test.describe("landing page", () => {
     ).toHaveCount(0);
   });
 
+  test("§1's video card recedes as the hero leaves, and is untouched at rest", async ({ page }) => {
+    await page.goto("/en");
+
+    // POSITIVE CONTROL: prove the card is at its resting scale before asserting
+    // that it moves. Without this the case passes vacuously against a build
+    // that stopped applying the transform at all.
+    const card = page.locator("[data-hero-card]");
+    await expect(card).toBeVisible();
+    const atRest = await card.evaluate((el) => getComputedStyle(el).transform);
+    expect(atRest === "none" || atRest === "matrix(1, 0, 0, 1, 0, 0)").toBe(true);
+
+    await page.evaluate(() => window.scrollBy(0, window.innerHeight * 0.8));
+    await expect
+      .poll(async () => card.evaluate((el) => getComputedStyle(el).transform))
+      .not.toBe(atRest);
+  });
+
   test("renders the nav and the footer as chrome outside main", async ({
     page,
   }) => {

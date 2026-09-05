@@ -700,6 +700,14 @@
   animation-delay: calc((var(--hero-step, 0) + 3) * var(--duration-stagger));
 }
 
+/* §1's camera push. Driven by --section-progress, which only §1 opts into:
+   the provider is a capability, not global choreography (spec §6.3).
+   Transform only — the card must not move a single pixel of layout. */
+[data-hero-card] {
+  transform: scale(calc(1 - 0.06 * var(--section-progress, 0)));
+  transform-origin: center top;
+}
+
 /**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).

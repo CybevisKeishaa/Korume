@@ -8,6 +8,7 @@ import { Trust } from "@/components/marketing/trust";
 import { Cta } from "@/components/marketing/cta";
 import { Signoff } from "@/components/marketing/signoff";
 import { RevealScope } from "@/components/motion/reveal-scope";
+import { ScrollProgress } from "@/components/motion/scroll-progress";
 
 export default function LandingPage() {
   // `data-reveal-scope` is what lets `Section`'s `data-reveal="pending"` mean
@@ -17,6 +18,7 @@ export default function LandingPage() {
   return (
     <main data-reveal-scope>
       <RevealScope />
+      <ScrollProgress />
       <Hero />
       <Problem />
       <Journey />

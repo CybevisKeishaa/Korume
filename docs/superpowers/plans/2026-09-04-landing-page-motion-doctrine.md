@@ -967,7 +967,9 @@ The only section that consumes the scroll-progress provider. If Hero works, the 
 ### Task 5: §1's heading block and interior sequencing
 
 **Files:**
-- Modify: `components/marketing/hero.tsx`
+- Modify: `components/marketing/hero.tsx` (hero composition)
+- Modify: `components/marketing/section.tsx` (derive the hero-only heading marker)
+- Test: `components/marketing/section.test.tsx` (heading marker scope)
 - Modify: `components/marketing/hero-video-card.tsx`
 - Modify: `app/globals.css`
 - Modify: `lib/design-tokens.test.ts`
@@ -1041,7 +1043,7 @@ Expected: FAIL — no `hero-heading-rise` keyframe.
 
 [data-reveal-scope] [data-reveal="in"] [data-hero-step] {
   animation: reveal-fade var(--duration-base) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-stagger) * (var(--hero-step, 0) + 3));
+  animation-delay: calc((var(--hero-step, 0) + 3) * var(--duration-stagger));
 }
 ```
 
@@ -1075,6 +1077,7 @@ or hard-coded spans. The cinematic beat moves inside the video card."
 **Files:**
 - Modify: `app/[locale]/(marketing)/page.tsx` (mount `<ScrollProgress />`)
 - Modify: `components/marketing/hero.tsx` (opt in)
+- Modify: `components/marketing/section.tsx` (forward the opt-in marker)
 - Modify: `app/globals.css`
 - Modify: `tests/e2e/landing-page.spec.ts`
 
