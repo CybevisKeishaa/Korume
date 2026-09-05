@@ -4,6 +4,8 @@ $validator = Join-Path $PSScriptRoot 'verify-codex-protocol.ps1'
 $fixtureName = "verify-codex-protocol-$PID-$([guid]::NewGuid().ToString('N'))"
 $validRoot = Join-Path $env:TEMP $fixtureName
 $missingRunStateRoot = Join-Path $env:TEMP "$fixtureName-no-run-state"
+$missingRunStateDirectoryRoot = Join-Path $env:TEMP "$fixtureName-no-run-state-directory"
+$templateOnlyRunStateRoot = Join-Path $env:TEMP "$fixtureName-template-only-run-state"
 $requiredRoles = @(
   'ai-engineer', 'backend-engineer', 'code-reviewer', 'database-engineer',
   'frontend-engineer', 'motion-engineer', 'tech-lead', 'test-engineer'
@@ -60,6 +62,21 @@ try {
   if ($LASTEXITCODE -eq 0) { throw 'missing branch run state was accepted' }
   Assert-ExitCode -Expected 1 -Message 'missing branch run-state fixture failed to be rejected.'
 
+  Copy-Item -LiteralPath $validRoot -Destination $missingRunStateDirectoryRoot -Recurse
+  Remove-Item -LiteralPath (Join-Path $missingRunStateDirectoryRoot 'docs/superpowers/run-state') -Recurse
+  & $validator -Root $missingRunStateDirectoryRoot
+  if ($LASTEXITCODE -eq 0) { throw 'missing run-state directory was accepted' }
+  Assert-ExitCode -Expected 1 -Message 'missing run-state directory fixture failed to be rejected.'
+
+  Copy-Item -LiteralPath $validRoot -Destination $templateOnlyRunStateRoot -Recurse
+  $templateOnlyDirectory = Join-Path $templateOnlyRunStateRoot 'docs/superpowers/run-state'
+  Remove-Item -LiteralPath (Join-Path $templateOnlyDirectory 'feature-branch.md')
+  Set-Content -LiteralPath (Join-Path $templateOnlyDirectory 'README.md') -Value 'Run-state documentation'
+  Set-Content -LiteralPath (Join-Path $templateOnlyDirectory 'TEMPLATE.md') -Value '# Branch Run State'
+  & $validator -Root $templateOnlyRunStateRoot
+  if ($LASTEXITCODE -eq 0) { throw 'template-only run-state directory was accepted' }
+  Assert-ExitCode -Expected 1 -Message 'template-only run-state fixture failed to be rejected.'
+
   $defaultRootScripts = Join-Path $validRoot 'scripts'
   New-Item -ItemType Directory -Path $defaultRootScripts -Force | Out-Null
   $defaultRootValidator = Join-Path $defaultRootScripts 'verify-codex-protocol.ps1'
@@ -95,5 +112,11 @@ finally {
   }
   if (Test-Path -LiteralPath $missingRunStateRoot) {
     Remove-Item -LiteralPath $missingRunStateRoot -Recurse -Force
+  }
+  if (Test-Path -LiteralPath $missingRunStateDirectoryRoot) {
+    Remove-Item -LiteralPath $missingRunStateDirectoryRoot -Recurse -Force
+  }
+  if (Test-Path -LiteralPath $templateOnlyRunStateRoot) {
+    Remove-Item -LiteralPath $templateOnlyRunStateRoot -Recurse -Force
   }
 }
