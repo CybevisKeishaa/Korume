@@ -45,8 +45,11 @@ const revealGates = css.match(
 // replaces §2's shared generic rule with its own assembly gate — 9 -> 10;
 // task 8 splits §3's conveyor gate from §7's trust gate — 10 -> 11.
 // Verified by running the test and reading the real number, not counted.
-// Task 9 then adds the quiet lock's separate pending rule — 11 -> 12.
-const REVEAL_GATE_COUNT = 12;
+// Task 9 then adds the quiet lock's separate pending rule — 11 -> 12;
+// Task 10 hides both the CTA action and its continuation segment until the
+// invitation scene begins — 12 -> 14.
+// The focus-visible escape adds one matching gate: 14 -> 15.
+const REVEAL_GATE_COUNT = 15;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -429,7 +432,7 @@ describe("thread token contract", () => {
  * only if they actually add a matching rule; several add none.
  */
 const threadRules = css.match(/\[data-thread-segment[^\]]*\][^{]*\{[^}]*\}/g) ?? [];
-const THREAD_RULE_COUNT = 5;
+const THREAD_RULE_COUNT = 7;
 
 describe("thread continuity contract", () => {
   it("finds the thread rules it is about to make claims about", () => {
@@ -589,5 +592,36 @@ describe("quiet lock", () => {
     expect(lockRules).toHaveLength(2);
     expect(lockRules[0]).toMatch(/visibility:\s*hidden/);
     expect(lockRules[1]).toMatch(/opacity:\s*var\(--thread-opacity\)/);
+  });
+});
+
+describe("§8 invitation", () => {
+  it("reveals the primary call to action after the invitation scene settles", () => {
+    // Break caught: a CTA that enters with its backdrop, orb, or mascot reads
+    // as a generic section fade instead of the page's invitation. The pending
+    // rule makes the intended sequence observable rather than relying on a
+    // source-only delay assertion.
+    const pendingRules =
+      css.match(
+        /:root\[data-reduce-motion="false"\]:not\(\[data-reveal-failsafe\]\) \[data-reveal-scope\] \[data-reveal="pending"\] \[data-cta-action\]\s*\{[^}]*\}/g,
+      ) ?? [];
+    expect(pendingRules).toHaveLength(1);
+    expect(pendingRules[0]).toMatch(/opacity:\s*0/);
+
+    const revealedRules =
+      css.match(/\[data-reveal="in"\][^{]*\[data-cta-action\][^{]*\{[^}]*\}/g) ?? [];
+    expect(revealedRules).toHaveLength(2);
+
+    const sequenceRules = revealedRules.filter((rule) => !rule.includes(":focus-visible"));
+    expect(sequenceRules).toHaveLength(1);
+    expect(sequenceRules[0]).toMatch(/animation:\s*reveal-fade/);
+    expect(sequenceRules[0]).toMatch(
+      /animation-delay:\s*calc\(var\(--thread-duration\) \+ var\(--duration-stagger\) \* 2\);/,
+    );
+
+    const focusRules = revealedRules.filter((rule) => rule.includes(":focus-visible"));
+    expect(focusRules).toHaveLength(1);
+    expect(focusRules[0]).toMatch(/animation:\s*none/);
+    expect(focusRules[0]).toMatch(/opacity:\s*1/);
   });
 });

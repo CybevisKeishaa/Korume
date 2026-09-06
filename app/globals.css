@@ -626,6 +626,77 @@
   opacity: var(--thread-opacity);
 }
 
+/* §8 is an invitation, not the thread's destination. The backdrop settles,
+   the supplied orb/mascot scene stays gently alive, and only then does the
+   primary action appear. The vertical line leaves through the section's lower
+   edge so §9, rather than this button, owns the final resolution. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-cta-action] {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] .cta-backdrop {
+  animation: cta-backdrop-settle var(--duration-slow) var(--ease-standard) both;
+}
+
+@keyframes cta-backdrop-settle {
+  from {
+    transform: scale(1.03);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-cta-orb] {
+  animation: cta-orb-float var(--duration-cinematic) var(--ease-standard) infinite;
+}
+
+@keyframes cta-orb-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(calc(var(--space-2xs) * -1));
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-cta-mascot] {
+  animation: cta-mascot-breathe calc(var(--duration-cinematic) * 4) var(--ease-standard) infinite;
+}
+
+@keyframes cta-mascot-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.015);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-cta-action] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--thread-duration) + var(--duration-stagger) * 2);
+}
+
+/* A delayed action can still be reached by keyboard. Focus is an explicit
+   request to interact, so it wins over choreography: show the control at once
+   instead of leaving a reader on an invisible link until its delay expires. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-cta-action]:focus-visible,
+[data-reveal-scope] [data-reveal="in"] [data-cta-action]:focus-visible {
+  animation: none;
+  opacity: 1;
+}
+
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment="line"].cta-thread {
+  visibility: hidden;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="line"].cta-thread {
+  opacity: var(--thread-opacity);
+}
+
 /* §2 assembles one learning system: the six capability chips settle from
    deliberately different positions, the constellation draws between them, and
    the example sentence lands only after the connection is established. */

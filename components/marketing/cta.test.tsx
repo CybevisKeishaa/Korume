@@ -122,5 +122,26 @@ describe("Cta", () => {
     // §6 already guard this and §8 is the third placement.
     expect(mascot.className).not.toContain("mix-blend");
     expect(mascot.getAttribute("alt")).toBe(en.cta.mascotAlt);
+
+    // The transform wrapper is decorative, but the photograph-like mascot has
+    // useful alternative text. Hiding its ancestor would make that text
+    // unreachable despite the image retaining a nominal alt attribute.
+    const orb = must(container.querySelector("[data-cta-orb]"), "the mascot scene wrapper");
+    expect(orb).not.toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("continues the learning thread through the invitation instead of ending it at the action", async () => {
+    // Break caught: removing the section-owned segment makes the CTA read as
+    // the thread's endpoint, even though §9 owns its resolution.
+    const { container } = render(await Cta());
+
+    const thread = must(
+      container.querySelector('[data-thread-segment="line"].cta-thread'),
+      "the CTA continuation thread",
+    );
+    expect(thread).toHaveAttribute("aria-hidden", "true");
+
+    const primary = screen.getByRole("link", { name: en.cta.primary });
+    expect(primary).toHaveAttribute("data-cta-action", "true");
   });
 });

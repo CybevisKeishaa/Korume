@@ -764,4 +764,35 @@ test.describe("motion never hides content", () => {
     expect(observed.hiddenAtFirstSight, "all nine were armed hidden before the release").toBe(9);
     expect(observed.releasedAfterMs, "the failsafe released the page").not.toBeNull();
   });
+
+  test("makes the delayed §8 action visible when keyboard focus reaches it", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/en");
+
+    const cta = page.locator("#cta");
+    await cta.scrollIntoViewIfNeeded();
+    await expect(cta).toHaveAttribute("data-reveal", "in");
+
+    const action = cta.locator("[data-cta-action]");
+    // Positive control: the case is meaningful only while the delayed entrance
+    // is armed. If this is already final opacity, the focus assertion below
+    // would get a free pass from elapsed time rather than the a11y mechanism.
+    await expect(action).toHaveCSS("animation-name", "reveal-fade");
+    await expect(action).toHaveCSS("opacity", "0");
+
+    // Freeze the delayed animation before focus. Without this control,
+    // Playwright's focus round-trip can consume the 780ms delay and falsely
+    // make the action visible simply because time passed.
+    const frozen = await action.evaluate((element) => {
+      const animations = element.getAnimations();
+      for (const animation of animations) animation.pause();
+      return { count: animations.length, opacity: getComputedStyle(element).opacity };
+    });
+    expect(frozen.count).toBeGreaterThan(0);
+    expect(frozen.opacity).toBe("0");
+
+    await action.focus();
+    await expect(action).toBeFocused();
+    await expect(action).toHaveCSS("opacity", "1");
+  });
 });
