@@ -17,6 +17,30 @@ and rise, everywhere. Only §4 (pitch contours) and §6 (chain cascade) read as 
 words, 2026-09-04: *"motion kiểu vậy thì nó chung chung nhàm quá"*. This branch gives each section
 its own metaphor and verb, bound by one thread grammar so variety does not become noise.
 
+> ## RESUME UPDATE — 2026-09-06 (this banner supersedes every earlier resume instruction below)
+>
+> **Canonical branch state:** `docs/superpowers/run-state/landing-page-motion-doctrine.md`.
+> Tasks 1–6 are complete and Task 6 is review-clean: implementation `56808ed`,
+> document-rest repair `beddb27`, reduced-motion coverage `78e69f2`, and
+> checkpoint `f05fa5f`. Its real Chromium checks passed at 1280×720 and
+> 390×720; reduced motion leaves the Hero undistorted. The next task is
+> **Task 7, §2 node assembly**. The owner explicitly paused before Task 7:
+> it has **not** been dispatched and no Task 7 source code was edited.
+>
+> Resume sequence: read `AGENTS.md`, `docs/lessons.md`, the canonical run-state,
+> then Task 7 and spec §2. A machine-local Task 7 brief already exists at
+> `.superpowers/sdd/2026-09-04-landing-page-motion-doctrine/task-7-brief.md`.
+> Preserve Task 6's Hero-only progress contract and the frozen pitch/capability
+> modules. Treat all old “start at Task 5/6” instructions below as historical.
+>
+> **Environment:** Node is installed through nvm4w at
+> `C:\Users\tplon\AppData\Local\nvm\v24.14.1` but absent from this shell's
+> PATH; call it explicitly. Local Playwright 1.61.1 and Chromium are installed.
+> Before any build, verify no existing `next build/start/dev` process is using
+> `.next`; stale concurrent Next trees corrupted verification on this session.
+> The Task 6 verification server was stopped. Preserve the pre-existing
+> `recommendation-donut.tsx` CRLF-only noise and untracked `.agents/`.
+
 **Where execution stands:**
 
 | Phase | Task | State |

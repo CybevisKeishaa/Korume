@@ -4,6 +4,16 @@ Read this first each session. Product spec: `japanese-learning-app-spec.md` (**r
 in from the parent folder and put under version control 2026-07-16; old references say `../`);
 root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.claude/docs/workflow.md`.
 
+> ## NEXT ACTION — 2026-09-06 (supersedes the older status block below)
+>
+> **`landing-page-motion-doctrine` is paused at the owner's request before
+> Task 7.** Tasks 1–6 are complete; Task 6's browser/render, reduced-motion,
+> and task-review gates passed. Task 7 has **not** been dispatched. Read
+> `mem:landing_page_motion_doctrine_run_state` first, then canonical
+> `docs/superpowers/run-state/landing-page-motion-doctrine.md`, the Task 7
+> plan, and its direct spec dependency. The existing candidate queue remains
+> deferred until this branch closes.
+
 ## What this is
 Learn Japanese through video shadowing/dictation + kanji/vocab/grammar/JLPT, cinematic UI.
 8 layers, one per session; all 8 = finished product. Use `/build-layer <n>`.
