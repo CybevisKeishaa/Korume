@@ -37,9 +37,10 @@ const revealGates = css.match(
   /:root\[data-reduce-motion="false"\][^ ]* \[data-reveal-scope\] \[data-reveal="pending"\]/g,
 );
 // STATE PIN: task 4 adds two (the thread rule, the donut rule) — 5 -> 7;
-// task 5 adds two more (the hero heading, the hero step) — 7 -> 9, verified
-// by running the test and reading the real number, not counted.
-const REVEAL_GATE_COUNT = 9;
+// task 5 adds two more (the hero heading, the hero step) — 7 -> 9; task 7
+// replaces §2's shared generic rule with its own assembly gate — 9 -> 10.
+// Verified by running the test and reading the real number, not counted.
+const REVEAL_GATE_COUNT = 10;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -504,5 +505,40 @@ describe("§1 hero entrance", () => {
     const steps = css.match(/\[data-hero-step\]/g) ?? [];
     expect(steps.length).toBeGreaterThan(0);
     expect(css).toMatch(/--hero-step[^;]*var\(--duration-stagger\)/);
+  });
+});
+
+describe("§2 node assembly", () => {
+  it("assembles the chips before drawing the connectors between them", () => {
+    // Break caught: replacing §2 with the former generic fade stagger makes
+    // the six capabilities read as unrelated cards instead of one system.
+    expect(css).toMatch(/@keyframes node-assemble/);
+
+    // L-004: this gathers CSS rules, so an empty collection must not make the
+    // per-rule dash assertion pass vacuously. There is one shared connector
+    // rule today; later selectors belong in an explicit change to this pin.
+    const connectorRules =
+      css.match(/\[data-reveal-scope\] \[data-reveal="in"\] \[data-connector\] path\s*\{[^}]*\}/g) ?? [];
+    expect(connectorRules).toHaveLength(1);
+    for (const rule of connectorRules) {
+      expect(rule).toMatch(/stroke-dashoffset/);
+      expect(rule).toMatch(/animation-delay:\s*calc\(var\(--duration-stagger\) \* 8\)/);
+    }
+  });
+
+  it("keeps the assembled centre alive with a token-derived, quiet pulse", () => {
+    // Break caught: replacing the constellation's living centre with a static
+    // glow makes the completed system lose the subtle ongoing signal the owner
+    // requested, while a literal duration would drift from the motion scale.
+    expect(css).toMatch(/@keyframes problem-node-pulse/);
+
+    const pulseRules =
+      css.match(/\[data-reveal-scope\] \[data-reveal="in"\] \[data-connector-node\] :is\([^)]*\)\s*\{[^}]*\}/g) ?? [];
+    expect(pulseRules).toHaveLength(1);
+    for (const rule of pulseRules) {
+      expect(rule).toMatch(/animation:\s*problem-node-pulse/);
+      expect(rule).toMatch(/calc\(var\(--duration-cinematic\) \* 4\)/);
+      expect(rule).toMatch(/infinite/);
+    }
   });
 });

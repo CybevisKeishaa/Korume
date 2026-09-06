@@ -578,27 +578,18 @@
   animation-delay: calc(var(--duration-cinematic) * 1.5);
 }
 
-/* The stepped collections: §2's six chips, §3's five steps, §7's three cards.
-   One rule and one custom property — they differ in duration, not mechanism.
+/* The stepped collections: §3's five steps and §7's three cards.
    Nothing else inside these sections moves: §3's eight journey-art glyphs stay
    still deliberately, because stepping every small element is exactly the
    noisy reading the brief rules out. */
 :root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
-    [data-chip],
     [data-step],
-    [data-trust-card],
-    [data-constellation]
+    [data-trust-card]
   ) {
   opacity: 0;
 }
 
-/* §2's constellation is the thing the chips hang off, so it arrives first and
-   they emerge from it. */
-[data-reveal-scope] [data-reveal="in"] [data-constellation] {
-  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-stagger) * 2);
-}
-[data-reveal-scope] [data-reveal="in"] :is([data-chip], [data-step]) {
+[data-reveal-scope] [data-reveal="in"] [data-step] {
   animation: reveal-fade var(--duration-base) var(--ease-standard) both;
   animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 3));
 }
@@ -606,6 +597,69 @@
 [data-reveal-scope] [data-reveal="in"] [data-trust-card] {
   animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
   animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
+}
+
+/* §2 assembles one learning system: the six capability chips settle from
+   deliberately different positions, the constellation draws between them, and
+   the example sentence lands only after the connection is established. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is([data-chip], [data-connector] path, [data-connector-node], [data-problem-sentence]) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-chip] {
+  animation: node-assemble var(--duration-fast) var(--ease-out-expo) both;
+  animation-delay: calc(var(--node-step, 0) * var(--duration-stagger));
+}
+
+@keyframes node-assemble {
+  from {
+    opacity: 0;
+    transform: translate(var(--node-x, 0), var(--node-y, var(--space-md)));
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-connector] path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: stroke-draw var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * 8);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-connector-node] {
+  animation: reveal-fade var(--duration-fast) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-stagger) * 11);
+}
+
+/* Keep the resolved centre point gently alive without moving the layout. */
+[data-reveal-scope] [data-reveal="in"] [data-connector-node] :is(circle:first-child, ellipse) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: problem-node-pulse calc(var(--duration-cinematic) * 4) var(--ease-standard) infinite;
+  animation-delay: calc(var(--duration-stagger) * 11);
+}
+
+@keyframes problem-node-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    filter: brightness(1.2);
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-problem-sentence] {
+  animation: node-assemble var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * 15);
 }
 
 /* The thread's shared grammar. Every segment consumes the invariant tokens;

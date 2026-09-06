@@ -101,6 +101,51 @@ test.describe("landing page", () => {
       .not.toBe(atRest);
   });
 
+  test("§2 assembles six capability nodes before drawing their connectors", async ({ page }) => {
+    await page.goto("/en");
+
+    const problem = page.locator("#problem");
+    await problem.scrollIntoViewIfNeeded();
+    // Positive controls: this is the actual section, observed by the shared
+    // reveal substrate, and it contains all six independently meaningful chips.
+    await expect(problem).toHaveAttribute("data-reveal", "in");
+    const chips = problem.locator("[data-chip][data-node-step]");
+    await expect(chips).toHaveCount(6);
+    expect(await chips.evaluateAll((nodes) => nodes.map((node) => node.dataset.nodeStep))).toEqual([
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+    ]);
+    await expect.poll(async () => chips.first().evaluate((node) => getComputedStyle(node).animationName)).toBe(
+      "node-assemble",
+    );
+
+    const connectorPaths = problem.locator("[data-connector] path");
+    await expect(connectorPaths).toHaveCount(6);
+    await expect
+      .poll(async () =>
+        connectorPaths.first().evaluate((node) => ({
+          animation: getComputedStyle(node).animationName,
+          vectorEffect: getComputedStyle(node).vectorEffect,
+        })),
+      )
+      .toEqual({ animation: "stroke-draw", vectorEffect: "non-scaling-stroke" });
+
+    const centreFlare = problem.locator("[data-connector-node] ellipse");
+    await expect(centreFlare).toHaveCount(1);
+    await expect
+      .poll(async () =>
+        centreFlare.evaluate((node) => ({
+          animation: getComputedStyle(node).animationName,
+          iterations: getComputedStyle(node).animationIterationCount,
+        })),
+      )
+      .toEqual({ animation: "problem-node-pulse", iterations: "infinite" });
+  });
+
   test("renders the nav and the footer as chrome outside main", async ({
     page,
   }) => {

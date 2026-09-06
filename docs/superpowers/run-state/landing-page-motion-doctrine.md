@@ -59,16 +59,42 @@ capability-chain modules left untouched.
 - Windows PowerShell works with execution-policy bypass; Node/npm/npx/pwsh are
   unavailable on PATH in this Codex shell.
 
+## Task 7 checkpoint — owner accepted
+
+- The owner approved a quiet, continuous centre pulse after the one-shot node
+  assembly. It scales and brightens only the central flare/glow over a
+  token-derived 4.8-second cycle; it does not travel around or reflow the
+  constellation. The owner accepted the final visual; this checkpoint is
+  committed with the Task 7 source and tests. The current 1280px production
+  screenshot is `scratch/task-7-node-assembly-1280.png`.
+- TDD recorded RED for the missing pulse keyframe and browser animation, then
+  GREEN. Removing `infinite` temporarily made the pulse contract RED; restoring
+  it made the focused test GREEN. The full design-token file is GREEN (33
+  tests), a clean production build completed, and focused Playwright passed on
+  the clean production server. Runtime inspection observed `problem-node-pulse`,
+  a `4.8s` infinite cycle, and reduced motion collapsed to one `0.001ms` pass.
+  The durable evidence is the machine-local
+  `.superpowers/sdd/2026-09-04-landing-page-motion-doctrine/task-7-report.md`.
+- During verification, an old Playwright server on port 3000 had survived while
+  the generated `.next` cache was cleared. It returned 404s for hydration
+  chunks: the SSR section stayed `pending`, `RevealScope` never mounted, and the
+  failsafe released CSS after its delay. Browser diagnostics isolated that
+  environmental state; stopping only that verified server and rerunning against
+  the clean production server passed. No product code changed for it.
+
 ## Blockers
 
-No blocker remains before Task 7.
+Task 7 has owner acceptance and no technical blocker remains.
 
 ## Next actions
 
-`motion-engineer` owns Task 7 (§2 node assembly) next, following the task
-brief in `docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`.
-Task 7 must preserve Task 6's Hero-only progress contract and must not touch
-the frozen pitch or capability-chain modules.
+The historical Task 7 resume paragraph below is superseded. Task 7 is accepted
+and this checkpoint ships with its implementation. The next action is Task 8
+in the next session.
+
+Task 8 ownership, scope, and dependencies remain defined by
+`docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`; read its
+Task 8 section and direct dependency graph before starting the next session.
 
 `code-reviewer` owns the whole-branch review required by `AGENTS.md` before
 this branch merges.
