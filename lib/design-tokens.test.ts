@@ -38,9 +38,10 @@ const revealGates = css.match(
 );
 // STATE PIN: task 4 adds two (the thread rule, the donut rule) — 5 -> 7;
 // task 5 adds two more (the hero heading, the hero step) — 7 -> 9; task 7
-// replaces §2's shared generic rule with its own assembly gate — 9 -> 10.
+// replaces §2's shared generic rule with its own assembly gate — 9 -> 10;
+// task 8 splits §3's conveyor gate from §7's trust gate — 10 -> 11.
 // Verified by running the test and reading the real number, not counted.
-const REVEAL_GATE_COUNT = 10;
+const REVEAL_GATE_COUNT = 11;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -505,6 +506,20 @@ describe("§1 hero entrance", () => {
     const steps = css.match(/\[data-hero-step\]/g) ?? [];
     expect(steps.length).toBeGreaterThan(0);
     expect(css).toMatch(/--hero-step[^;]*var\(--duration-stagger\)/);
+  });
+});
+
+describe("§3 conveyor", () => {
+  it("hands each step off in order rather than revealing them together", () => {
+    expect(css).toMatch(/@keyframes conveyor-handoff/);
+    const rule = css.match(/\[data-reveal="in"\][^{]*\[data-step\][^{]*\{[^}]*\}/g) ?? [];
+    expect(rule).toHaveLength(1);
+    expect(rule[0]).toMatch(
+      /animation:\s*conveyor-handoff\s+var\(--duration-base\)\s+var\(--ease-standard\)\s+both;/,
+    );
+    expect(rule[0]).toMatch(
+      /animation-delay:\s*calc\(var\(--duration-stagger\)\s*\*\s*var\(--conveyor-step, 0\)\);/,
+    );
   });
 });
 

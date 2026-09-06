@@ -582,18 +582,34 @@
    Nothing else inside these sections moves: §3's eight journey-art glyphs stay
    still deliberately, because stepping every small element is exactly the
    noisy reading the brief rules out. */
-:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
-    [data-step],
-    [data-trust-card]
-  ) {
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-step] {
   opacity: 0;
 }
 
+/* §3 hands the five learning steps from left to right. The section itself
+   already rises; this small horizontal travel reads as a conveyor without
+   adding a second vertical entrance or changing layout. */
 [data-reveal-scope] [data-reveal="in"] [data-step] {
-  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 3));
+  animation: conveyor-handoff var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * var(--conveyor-step, 0));
 }
+
+@keyframes conveyor-handoff {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--space-sm) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* §7 is the deceleration before the CTA, so its cards take the reveal tier. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-trust-card] {
+  opacity: 0;
+}
+
 [data-reveal-scope] [data-reveal="in"] [data-trust-card] {
   animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
   animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
