@@ -612,7 +612,18 @@
 
 [data-reveal-scope] [data-reveal="in"] [data-trust-card] {
   animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
+  animation-delay: calc(var(--thread-duration) + var(--duration-stagger) * var(--card-step, 0));
+}
+
+/* The quiet-lock line draws into the existing recording-card padlock, then
+   stays still while the privacy promises arrive. The line is decorative; the
+   cards' visible claims carry the accessible guarantee. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment="line"].trust-lock-thread {
+  visibility: hidden;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="line"].trust-lock-thread {
+  opacity: var(--thread-opacity);
 }
 
 /* §2 assembles one learning system: the six capability chips settle from

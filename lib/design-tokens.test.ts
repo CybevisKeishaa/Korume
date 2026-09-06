@@ -16,6 +16,10 @@ import { REVEAL_FAILSAFE_ATTR } from "@/components/motion/reveal-failsafe";
  *   (CLAUDE.md §2.4 non-negotiable).
  */
 const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+const trustSource = readFileSync(
+  path.join(process.cwd(), "components/marketing/trust.tsx"),
+  "utf8",
+);
 const tailwind = readFileSync(
   path.join(process.cwd(), "tailwind.config.ts"),
   "utf8",
@@ -41,7 +45,8 @@ const revealGates = css.match(
 // replaces §2's shared generic rule with its own assembly gate — 9 -> 10;
 // task 8 splits §3's conveyor gate from §7's trust gate — 10 -> 11.
 // Verified by running the test and reading the real number, not counted.
-const REVEAL_GATE_COUNT = 11;
+// Task 9 then adds the quiet lock's separate pending rule — 11 -> 12.
+const REVEAL_GATE_COUNT = 12;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -424,7 +429,7 @@ describe("thread token contract", () => {
  * only if they actually add a matching rule; several add none.
  */
 const threadRules = css.match(/\[data-thread-segment[^\]]*\][^{]*\{[^}]*\}/g) ?? [];
-const THREAD_RULE_COUNT = 3;
+const THREAD_RULE_COUNT = 5;
 
 describe("thread continuity contract", () => {
   it("finds the thread rules it is about to make claims about", () => {
@@ -555,5 +560,34 @@ describe("§2 node assembly", () => {
       expect(rule).toMatch(/calc\(var\(--duration-cinematic\) \* 4\)/);
       expect(rule).toMatch(/infinite/);
     }
+  });
+});
+
+describe("quiet lock", () => {
+  it("stops a low-intensity line at the existing recording lock before the cards arrive", () => {
+    // The original card rule already used --duration-slow, so this also pins
+    // the absent lock contract. Otherwise the test would have passed before
+    // Task 9 existed and proved nothing new.
+    const trustCards =
+      css.match(/\[data-reveal="in"\][^{]*\[data-trust-card\][^{]*\{[^}]*\}/g) ?? [];
+    expect(trustCards).toHaveLength(1);
+    expect(trustCards[0]).toMatch(/var\(--duration-slow\)/);
+    expect(trustCards[0]).toMatch(
+      /animation-delay:\s*calc\(var\(--thread-duration\) \+ var\(--duration-stagger\) \* var\(--card-step, 0\)\);/,
+    );
+
+    // The segment is a necessary SVG element; the lock it terminates at is an
+    // existing icon wrapper, marked rather than wrapped again. Neither enters
+    // the accessibility tree: the privacy claims themselves carry the meaning.
+    expect(trustSource).toMatch(
+      /<ThreadSegment\s+morphology="line"\s+className="trust-lock-thread\b[^\"]*"\s*\/>/,
+    );
+    expect(trustSource).toMatch(/data-trust-lock=/);
+
+    const lockRules =
+      css.match(/\[data-thread-segment="line"\]\.trust-lock-thread[^{]*\{[^}]*\}/g) ?? [];
+    expect(lockRules).toHaveLength(2);
+    expect(lockRules[0]).toMatch(/visibility:\s*hidden/);
+    expect(lockRules[1]).toMatch(/opacity:\s*var\(--thread-opacity\)/);
   });
 });

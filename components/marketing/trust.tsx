@@ -1,6 +1,7 @@
 import { getTranslations } from "@/lib/i18n/server";
 import { Section } from "./section";
 import { AssetSlot } from "./asset-slot";
+import { ThreadSegment } from "./thread-segment";
 import { TrustIcon, type TrustKey } from "./trust-icon";
 import type { Translator } from "./translator";
 
@@ -19,7 +20,8 @@ import type { Translator } from "./translator";
  * card. In reference coordinates the three cards are 207..372, 379..543 and
  * 550..714 — three equal 165px cards with a 7px gap, i.e. `grid-cols-3` and a
  * small gap rather than any hand-set width. The rail holds the eyebrow and a
- * two-line heading and nothing else.
+ * two-line heading and nothing else; the decorative quiet-lock thread lives
+ * at the existing recording icon in the showcase.
  *
  * ⚠️ The plan's Task 10 drew this as `lg:grid-cols-[2fr_1fr]` with the
  * photograph as the narrow column and the claims as a `sm:grid-cols-3` list
@@ -37,13 +39,13 @@ import type { Translator } from "./translator";
  * alignment into one layout decision, with two consumers in view instead of
  * one.
  *
- * ## NO MOTION
+ * ## Quiet lock
  *
- * This is the static half of spec §13; the whole-page motion pass is task
- * A-MOTION. Nothing here declares a transition, keyframe or scroll trigger, so
- * this section's `prefers-reduced-motion` obligation is satisfied vacuously, as
- * §2-§6's are. What it will later want to animate: the three cards settling in
- * sequence, and the window's glow warming as the section enters.
+ * The shared `line` segment is the sole decorative mechanism: it draws into the
+ * existing closed-padlock wrapper, stops, and the three cards then reveal on
+ * the slow token in sequence. `app/globals.css` gates both the line and cards
+ * through the page's reveal failsafe and global reduced-motion strategy, so
+ * neither can hide privacy content for a reader who opts out.
  *
  * Looks the translator up once and passes it down as a prop (`translator.ts`,
  * task 4 fix F5) rather than each card calling `getTranslations` itself.
@@ -139,6 +141,13 @@ export async function Trust() {
           disappears into the window's glow. `pointer-events-none` (below) does
           NOT cover this case: it stops hit-testing, never painting. */}
       <ul data-trust-cards className="relative z-10 grid gap-sm sm:grid-cols-3 lg:w-[78%]">
+        {/* A presentational list item keeps the SVG's necessary position outside
+            the recordings card's delayed opacity animation while retaining
+            valid list children. It occupies no grid cell and reaches the
+            existing lock without moving any measured card geometry. */}
+        <li aria-hidden="true" className="pointer-events-none absolute -top-lg left-md-lg">
+          <ThreadSegment morphology="line" className="trust-lock-thread h-2xl w-xl" />
+        </li>
         {TRUST_CARDS.map((claim, index) => (
           <ClaimCard key={claim} claim={claim} index={index} t={t} />
         ))}
@@ -194,7 +203,10 @@ function ClaimCard({
       style={{ "--card-step": index } as React.CSSProperties}
       className="min-w-0 rounded-lg border border-border bg-card p-md-lg"
     >
-      <span className="flex h-xl w-xl items-center justify-center rounded-full border border-border text-primary-strong">
+      <span
+        data-trust-lock={claim === "recordings" ? "" : undefined}
+        className="flex h-xl w-xl items-center justify-center rounded-full border border-border text-primary-strong"
+      >
         <TrustIcon claim={claim} className="h-md-lg w-md-lg" />
       </span>
       <h3 className="mt-sm text-body font-medium">{t(`trust.cards.${claim}.name`)}</h3>
