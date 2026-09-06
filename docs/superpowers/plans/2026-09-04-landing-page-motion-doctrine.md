@@ -1082,10 +1082,11 @@ or hard-coded spans. The cinematic beat moves inside the video card."
 - Modify: `tests/e2e/landing-page.spec.ts`
 
 **Interfaces:**
-- Consumes: `ScrollProgress`, `SCROLL_PROGRESS_ATTR` from Task 2.
+- Consumes: `ScrollProgress`, `SCROLL_PROGRESS_ATTR`, and the Hero-only
+  `HERO_SCROLL_PROGRESS_VAR` derived contract from Task 2.
 - Produces: nothing downstream.
 
-⚠️ **The scroll distance is an open item (spec §11).** Do not freeze a pixel number in CSS from this document. Implement the mapping off `--section-progress`, then choose the felt range against a render at 1280 **and** 390, and record the chosen value in the commit message.
+⚠️ **The scroll distance is an open item (spec §11).** Do not freeze a pixel number in CSS from this document. The Hero explicitly opts into its rest-relative `--hero-scroll-progress` derivative through its progress section and card marker; preserve generic `--section-progress` as viewport travel for future consumers. Choose the felt range against a render at 1280 **and** 390, and record the chosen value in the commit message.
 
 - [ ] **Step 1: Write the failing e2e case**
 
@@ -1116,16 +1117,18 @@ Expected: FAIL — no `[data-hero-card]`.
 
 - [ ] **Step 3: Mount the provider and opt §1 in**
 
-In `app/[locale]/(marketing)/page.tsx`, render `<ScrollProgress />` beside the existing `<RevealScope />`. In `hero.tsx`, put `data-scroll-progress` on the `<Section>`'s own element and `data-hero-card` on the existing video-card wrapper. No new elements.
+In `app/[locale]/(marketing)/page.tsx`, render `<ScrollProgress />` beside the existing `<RevealScope />`. In `hero.tsx`, put `data-scroll-progress` on the `<Section>`'s own element and `data-hero-card` on the existing video-card wrapper. Together those existing markers explicitly opt §1 into the Hero-only derived property; no new elements.
 
 - [ ] **Step 4: Add the CSS**
 
 ```css
-/* §1's camera push. Driven by --section-progress, which only §1 opts into:
-   the provider is a capability, not global choreography (spec §6.3).
+/* §1's camera push. Driven by the Hero-only, rest-relative
+   --hero-scroll-progress derivative. Generic --section-progress remains
+   viewport travel, so the provider is a capability rather than global
+   choreography (spec §6.3).
    Transform only — the card must not move a single pixel of layout. */
 [data-hero-card] {
-  transform: scale(calc(1 - 0.06 * var(--section-progress, 0)));
+  transform: scale(calc(1 - 0.06 * var(--hero-scroll-progress, 0)));
   transform-origin: center top;
 }
 ```
@@ -1144,8 +1147,9 @@ Load `/en` at 1280 and at 390, scroll the hero out slowly, and judge whether `0.
 - [ ] **Step 7: Verify reduce-motion**
 
 Toggle reduce-motion on, reload, scroll. The card must stay undistorted and
-never animate. Confirm the Hero-only `--hero-scroll-progress` reads `0`; the
-generic `--section-progress` remains its independent viewport-travel contract.
+never animate. Confirm both generic `--section-progress` and Hero-only
+`--hero-scroll-progress` settle to `0`; neither resumes movement while motion
+is off.
 
 - [ ] **Step 8: Commit**
 

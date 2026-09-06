@@ -2,6 +2,7 @@ import { render } from "@/test/render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   heroProgress,
+  HERO_SCROLL_PROGRESS_VAR,
   ScrollProgress,
   sectionProgress,
   SCROLL_PROGRESS_ATTR,
@@ -62,6 +63,9 @@ describe("<ScrollProgress />", () => {
     document.documentElement.setAttribute("data-reduce-motion", "true");
     const section = document.createElement("section");
     section.setAttribute(SCROLL_PROGRESS_ATTR, "");
+    const heroCard = document.createElement("div");
+    heroCard.setAttribute("data-hero-card", "");
+    section.append(heroCard);
     document.body.append(section);
     // Round-2 review finding: the observer is now built unconditionally on
     // mount, even while motion starts off (so it exists to resume through)
@@ -80,6 +84,7 @@ describe("<ScrollProgress />", () => {
     render(<ScrollProgress />);
 
     expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("0");
+    expect(section.style.getPropertyValue(HERO_SCROLL_PROGRESS_VAR)).toBe("0");
     expect(raf).not.toHaveBeenCalled();
 
     section.remove();
@@ -134,11 +139,26 @@ describe("<ScrollProgress />", () => {
   // accident of `active` being empty. A stale re-intersect (scroll the
   // section out and back, or a resize) must NOT resume live writes for a
   // reader who is currently asking for no motion.
-  it("does not resume the loop from a stale re-intersect after motion is turned off mid-session", async () => {
+  it("resets generic and Hero progress after an active scroll, then stays paused on re-intersect", async () => {
     document.documentElement.setAttribute("data-reduce-motion", "false");
     const section = document.createElement("section");
     section.setAttribute(SCROLL_PROGRESS_ATTR, "");
+    const heroCard = document.createElement("div");
+    heroCard.setAttribute("data-hero-card", "");
+    section.append(heroCard);
     document.body.append(section);
+
+    const scrollYDescriptor = Object.getOwnPropertyDescriptor(window, "scrollY");
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 348 });
+    vi.spyOn(section, "getBoundingClientRect").mockReturnValue(rect(-252, 600));
+
+    let frameCallback: FrameRequestCallback | undefined;
+    const raf = vi.fn((callback: FrameRequestCallback) => {
+      frameCallback = callback;
+      return 1;
+    });
+    vi.stubGlobal("requestAnimationFrame", raf);
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
 
     let fire: ((entries: unknown[]) => void) | undefined;
     vi.stubGlobal(
@@ -155,14 +175,21 @@ describe("<ScrollProgress />", () => {
 
     render(<ScrollProgress />);
     fire?.([{ target: section, isIntersecting: true }]);
+    frameCallback?.(0);
+
+    // The active frame observed both contracts before the reader disabled
+    // motion: generic travel is nonzero and the Hero-only rest-relative value
+    // is halfway through its leave travel.
+    expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).not.toBe("0");
+    expect(section.style.getPropertyValue(HERO_SCROLL_PROGRESS_VAR)).toBe("0.5000");
 
     // Reader turns reduce-motion on mid-session.
     document.documentElement.setAttribute("data-reduce-motion", "true");
-    await vi.waitFor(() =>
-      expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("0"),
-    );
+    await vi.waitFor(() => {
+      expect(section.style.getPropertyValue(SCROLL_PROGRESS_VAR)).toBe("0");
+      expect(section.style.getPropertyValue(HERO_SCROLL_PROGRESS_VAR)).toBe("0");
+    });
 
-    const raf = vi.spyOn(window, "requestAnimationFrame");
     raf.mockClear();
 
     // Scroll the section out of view and back in while motion is still off.
@@ -171,6 +198,7 @@ describe("<ScrollProgress />", () => {
 
     expect(raf).not.toHaveBeenCalled();
 
+    if (scrollYDescriptor) Object.defineProperty(window, "scrollY", scrollYDescriptor);
     section.remove();
     document.documentElement.removeAttribute("data-reduce-motion");
   });
