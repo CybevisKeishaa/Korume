@@ -2,10 +2,10 @@
 
 > ## SYNC UPDATE - 2026-09-06 (current)
 >
-> The active `landing-page-motion-doctrine` branch has accepted Tasks 1-8.
-> Task 8 is `bc1f232`; its canonical checkpoint is `fda21f0`. The sole
+> The active `landing-page-motion-doctrine` branch has checkpointed Tasks 1-9.
+> Task 9 is `6b0acc2`; its canonical checkpoint is `68075aa`. The sole
 > lifecycle source is `docs/superpowers/run-state/landing-page-motion-doctrine.md`;
-> resume with Task 9, Section 7 quiet lock. Earlier NEXT ACTION blocks below
+> resume with Task 10, Section 8 CTA invitation. Earlier NEXT ACTION blocks below
 > are historical only.
 
 Read this first each session. Product spec: `japanese-learning-app-spec.md` (**repo root** — moved

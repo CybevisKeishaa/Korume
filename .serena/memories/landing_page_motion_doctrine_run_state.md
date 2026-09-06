@@ -3,8 +3,8 @@
 > ## SYNC UPDATE - 2026-09-06 (supersedes all resume instructions below)
 >
 > **Canonical state:** `docs/superpowers/run-state/landing-page-motion-doctrine.md`.
-> Tasks 1-8 are accepted. Task 8 source commit: `bc1f232`; its canonical
-> checkpoint: `fda21f0`. Resume at Task 9, Section 7 quiet lock.
+> Tasks 1-9 are checkpointed. Task 9 source commit: `6b0acc2`; its canonical
+> checkpoint: `68075aa`. Resume at Task 10, Section 8 CTA invitation.
 >
 > Preserve pre-existing working-tree items: the CRLF-only
 > `components/marketing/recommendation-donut.tsx`, `.agents/`, and the
