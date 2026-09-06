@@ -26,6 +26,7 @@ capability-chain modules left untouched.
   reduced-motion coverage: `beddb27`, `78e69f2`.
 - Task 7 node assembly and owner-accepted centre pulse: `c93d639`.
 - Task 8 Journey learning conveyor: `bc1f232`.
+- Task 9 Trust quiet lock: `6b0acc2`.
 
 ## Contracts and decisions
 
@@ -106,16 +107,31 @@ capability-chain modules left untouched.
   durable browser evidence was measured from the clean production build; no
   server remains running on port 3000.
 
+## Task 9 checkpoint: reviewed and verified
+
+- The Trust line is a presentational, absolute list child so its 600ms shared
+  thread draw is not inherited from the recordings card's delayed opacity. It
+  terminates at the existing recording lock without altering card geometry.
+- The card sequence starts only after the thread: 600ms, 690ms, then 780ms.
+  Focused Trust/design-token coverage passed 43/43; mutations covered the
+  absent thread, incorrect pending visibility, and the timing relation.
+- A fresh production build and Chromium inspection at 1280px and 390px passed:
+  the thread aligns to the lock within 1px and overlaps its endpoint by 4px.
+  Reduced motion rendered every card opaque; the existing 4-viewport
+  reduced-motion e2e and normal scroll-completion e2e passed. The initial
+  review found cards beginning before the thread; the fix wave was re-reviewed
+  **APPROVE**. No server remains running on port 3000.
+
 ## Blockers
 
-Task 8 has owner acceptance and no technical blocker remains.
+Task 9 is reviewed and verified; no technical blocker remains.
 
 ## Next actions
 
-Tasks 7 and 8 are accepted and checkpointed. The next action is Task 9
-(section 7 quiet lock) in the next session.
+Tasks 7-9 are checkpointed. The next action is Task 10 (section 8 CTA
+invitation) in the next session.
 
-Task 9 ownership, scope, and dependencies remain defined by
+Task 10 ownership, scope, and dependencies remain defined by
 `docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`; read its
 Task 9 section and direct dependency graph before starting the next session.
 
