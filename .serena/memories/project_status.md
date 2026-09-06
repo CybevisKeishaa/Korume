@@ -1,5 +1,13 @@
 # Korume (was Nihongo Cinema) — Project Status
 
+> ## SYNC UPDATE - 2026-09-06 (current)
+>
+> The active `landing-page-motion-doctrine` branch has accepted Tasks 1-8.
+> Task 8 is `bc1f232`; its canonical checkpoint is `fda21f0`. The sole
+> lifecycle source is `docs/superpowers/run-state/landing-page-motion-doctrine.md`;
+> resume with Task 9, Section 7 quiet lock. Earlier NEXT ACTION blocks below
+> are historical only.
+
 Read this first each session. Product spec: `japanese-learning-app-spec.md` (**repo root** — moved
 in from the parent folder and put under version control 2026-07-16; old references say `../`);
 root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.claude/docs/workflow.md`.

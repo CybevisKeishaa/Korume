@@ -1,5 +1,18 @@
 # Landing-page motion doctrine — IN PROGRESS, paused 2026-09-05
 
+> ## SYNC UPDATE - 2026-09-06 (supersedes all resume instructions below)
+>
+> **Canonical state:** `docs/superpowers/run-state/landing-page-motion-doctrine.md`.
+> Tasks 1-8 are accepted. Task 8 source commit: `bc1f232`; its canonical
+> checkpoint: `fda21f0`. Resume at Task 9, Section 7 quiet lock.
+>
+> Preserve pre-existing working-tree items: the CRLF-only
+> `components/marketing/recommendation-donut.tsx`, `.agents/`, and the
+> untracked Serena protocol memory. No development server is running.
+>
+> This is a navigation mirror only; do not update lifecycle facts here in
+> preference to the canonical run-state above.
+
 > **Branch `landing-page-motion-doctrine`, 18 commits off master `faa2cfd`. NOTHING merged,
 > NOTHING pushed, master untouched.** Paused at the owner's request mid-Task-4.
 >
