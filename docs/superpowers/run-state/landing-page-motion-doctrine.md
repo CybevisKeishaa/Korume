@@ -133,7 +133,7 @@ invitation) in the next session.
 
 Task 10 ownership, scope, and dependencies remain defined by
 `docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`; read its
-Task 9 section and direct dependency graph before starting the next session.
+Task 10 section and direct dependency graph before starting the next session.
 
 `code-reviewer` owns the whole-branch review required by `AGENTS.md` before
 this branch merges.
