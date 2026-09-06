@@ -1,10 +1,11 @@
 # Landing-page motion doctrine — IN PROGRESS, paused 2026-09-05
 
-> ## SYNC UPDATE - 2026-09-06 (supersedes all resume instructions below)
+> ## SYNC UPDATE - 2026-09-07 (supersedes all resume instructions below)
 >
 > **Canonical state:** `docs/superpowers/run-state/landing-page-motion-doctrine.md`.
-> Tasks 1-9 are checkpointed. Task 9 source commit: `6b0acc2`; its canonical
-> checkpoint: `68075aa`. Resume at Task 10, Section 8 CTA invitation.
+> Tasks 1-10 are checkpointed. Task 10 source commit: `ad3400c`; its
+> canonical checkpoint: `d8d4b7e`. Resume at Task 11, Section 9 footer
+> resolution.
 >
 > Preserve pre-existing working-tree items: the CRLF-only
 > `components/marketing/recommendation-donut.tsx`, `.agents/`, and the
