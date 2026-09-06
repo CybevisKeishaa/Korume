@@ -22,7 +22,8 @@ capability-chain modules left untouched.
 - Motion-doctrine Tasks 1–4 implementation and review range:
   `16d807f..11a2882`; `bcf3911` records the final Task 4 re-review approval.
 - Task 5: `9f9df8a`.
-- Task 6: `56808ed`.
+- Task 6 implementation: `56808ed`; approved document-rest repair and
+  reduced-motion coverage: `beddb27`, `78e69f2`.
 
 ## Contracts and decisions
 
@@ -38,9 +39,11 @@ capability-chain modules left untouched.
 
 ## Verification
 
-- Task 6's approved Hero-only rest-relative-progress fix has focused unit
-  coverage; full production-build and browser verification remain pending in
-  the Codex shell.
+- Task 6 is verified: focused scroll-progress unit coverage, a clean
+  production build, the `recedes` Chromium e2e case, and real Chromium
+  inspections at 1280×720 and 390×720 all passed. Reduced motion kept the
+  card undistorted after scroll and set both progress properties to `0`.
+  Its repair round was independently re-reviewed and approved.
 - Task 4 switches the active instruction paths to lowercase `.codex`; the
   legacy tracked `.claude` runtime files are retained for possible future
   Claude use, but are not Codex's active instruction source. Its validator
@@ -58,18 +61,14 @@ capability-chain modules left untouched.
 
 ## Blockers
 
-Task 6 needs a real browser render at 1280px and 390px plus its relevant
-test/build verification before the motion plan may advance to Task 7.
+No blocker remains before Task 7.
 
 ## Next actions
 
-`motion-engineer` reviews and browser-validates Task 6 before Task 7 begins:
-`app/[locale]/(marketing)/page.tsx`, `app/globals.css`,
-`components/marketing/hero-video-card.tsx`, `components/marketing/hero.tsx`,
-`components/marketing/section.tsx`,
-`docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`, and
-`tests/e2e/landing-page.spec.ts`. Validate the hero camera push at 1280px and
-390px, including the `0.06` coefficient.
+`motion-engineer` owns Task 7 (§2 node assembly) next, following the task
+brief in `docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`.
+Task 7 must preserve Task 6's Hero-only progress contract and must not touch
+the frozen pitch or capability-chain modules.
 
 `code-reviewer` owns the whole-branch review required by `AGENTS.md` before
 this branch merges.
