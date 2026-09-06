@@ -27,6 +27,7 @@ capability-chain modules left untouched.
 - Task 7 node assembly and owner-accepted centre pulse: `c93d639`.
 - Task 8 Journey learning conveyor: `bc1f232`.
 - Task 9 Trust quiet lock: `6b0acc2`.
+- Task 10 CTA invitation: `ad3400c`.
 
 ## Contracts and decisions
 
@@ -57,6 +58,11 @@ capability-chain modules left untouched.
   restored. A fresh production build, Chromium renders at 1280px and 390px,
   normal-motion and reduced-motion e2e checks, and a fix-wave re-review all
   passed.
+- Task 10 is verified: its focused CTA/design-token suites passed 45/45, the
+  full landing-page Playwright suite passed 24/24 on a clean production build,
+  and typecheck and lint completed (lint retains only baseline warnings). The
+  reviewer approved the focus-visible escape that prevents the delayed primary
+  action from becoming an invisible keyboard stop.
 
 ## Working tree and environment
 
@@ -122,18 +128,33 @@ capability-chain modules left untouched.
   review found cards beginning before the thread; the fix wave was re-reviewed
   **APPROVE**. No server remains running on port 3000.
 
+## Task 10 checkpoint: reviewed and verified
+
+- The CTA now settles its backdrop, floats the companion orb and applies a
+  restrained mascot breath. Its existing primary registration action reveals
+  only after the thread-derived delay, while a presentational `ThreadSegment`
+  continues below the invitation for the next section to resolve.
+- TDD recorded RED for the missing continuation segment, gate, and exact
+  timing relation; the data-marker and zero-delay mutations both went RED and
+  were restored manually. A final browser regression freezes the delayed
+  action at zero opacity, moves keyboard focus to it, and proves the
+  focus-visible rule exposes it.
+- Task review found the invisible-focus defect and an overly permissive timing
+  assertion. Both fixes were independently re-reviewed **APPROVE**. No server
+  remains running on port 3000.
+
 ## Blockers
 
-Task 9 is reviewed and verified; no technical blocker remains.
+Task 10 is reviewed and verified; no technical blocker remains.
 
 ## Next actions
 
-Tasks 7-9 are checkpointed. The next action is Task 10 (section 8 CTA
-invitation) in the next session.
+Tasks 7-10 are checkpointed. The next action is Task 11 (section 9 footer
+resolution) in the next session.
 
-Task 10 ownership, scope, and dependencies remain defined by
+Task 11 ownership, scope, and dependencies remain defined by
 `docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`; read its
-Task 10 section and direct dependency graph before starting the next session.
+Task 11 section and direct dependency graph before starting the next session.
 
 `code-reviewer` owns the whole-branch review required by `AGENTS.md` before
 this branch merges.
