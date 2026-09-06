@@ -24,6 +24,8 @@ capability-chain modules left untouched.
 - Task 5: `9f9df8a`.
 - Task 6 implementation: `56808ed`; approved document-rest repair and
   reduced-motion coverage: `beddb27`, `78e69f2`.
+- Task 7 node assembly and owner-accepted centre pulse: `c93d639`.
+- Task 8 Journey learning conveyor: `bc1f232`.
 
 ## Contracts and decisions
 
@@ -48,6 +50,12 @@ capability-chain modules left untouched.
   legacy tracked `.claude` runtime files are retained for possible future
   Claude use, but are not Codex's active instruction source. Its validator
   and path-sweep evidence are recorded with the active-path commit.
+- Task 8 is verified: its TDD RED covered the missing `ThreadSegment` and
+  independent section-3 pending gate; its focused suite is green; both the
+  all-zero conveyor-index mutation and zero-delay mutation went RED and were
+  restored. A fresh production build, Chromium renders at 1280px and 390px,
+  normal-motion and reduced-motion e2e checks, and a fix-wave re-review all
+  passed.
 
 ## Working tree and environment
 
@@ -82,19 +90,34 @@ capability-chain modules left untouched.
   environmental state; stopping only that verified server and rerunning against
   the clean production server passed. No product code changed for it.
 
+## Task 8 checkpoint: owner accepted
+
+- The owner accepted the section-3 hand-off at a token-derived `300ms`
+  duration, `90ms` stagger, and `12px` horizontal travel. The five cards hand
+  off in semantic order; the eight journey-art glyphs remain still.
+- Journey owns one local `line` `ThreadSegment`, while section 3 and section 7
+  retain separate failsafe-gated pending rules. The production render confirmed
+  the segment's `stroke-draw`, accent stroke, and non-scaling stroke at desktop
+  and mobile widths. The inspected screenshots are
+  `scratch/task-8-conveyor-1280-handoff.png` and
+  `scratch/task-8-conveyor-390-handoff.png`.
+- Task review initially required the missing segment, independent gate, and
+  complete stagger guard. The fix wave was re-reviewed as **APPROVE**. The
+  durable browser evidence was measured from the clean production build; no
+  server remains running on port 3000.
+
 ## Blockers
 
-Task 7 has owner acceptance and no technical blocker remains.
+Task 8 has owner acceptance and no technical blocker remains.
 
 ## Next actions
 
-The historical Task 7 resume paragraph below is superseded. Task 7 is accepted
-and this checkpoint ships with its implementation. The next action is Task 8
-in the next session.
+Tasks 7 and 8 are accepted and checkpointed. The next action is Task 9
+(section 7 quiet lock) in the next session.
 
-Task 8 ownership, scope, and dependencies remain defined by
+Task 9 ownership, scope, and dependencies remain defined by
 `docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`; read its
-Task 8 section and direct dependency graph before starting the next session.
+Task 9 section and direct dependency graph before starting the next session.
 
 `code-reviewer` owns the whole-branch review required by `AGENTS.md` before
 this branch merges.
