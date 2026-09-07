@@ -126,5 +126,6 @@
     "waveformUnavailable": "Waveform preview unavailable.",
     "furigana": { "adaptive": "Adaptive", "all": "All", "off": "Off" },
     "loop": { "setA": "Set A", "setB": "Set B", "clear": "Clear loop" }
-  }
+  },
+  "hub": { "eyebrow": "Shadowing", "railLabel": "Companion", "featured": "Featured", "recentlyAdded": "Recently added", "popular": "Popular", "continueLearning": "Continue learning", "start": "Start", "continue": "Continue" }
 }

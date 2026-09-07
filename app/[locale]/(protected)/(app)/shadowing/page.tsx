@@ -15,19 +15,20 @@ export async function generateMetadata({ params }: { params: { locale: Locale } 
 export const dynamic = "force-dynamic";
 
 export default async function VideosPage() {
-  const [t, tCommon, result] = await Promise.all([
+  const [t, tCommon, tHub, result] = await Promise.all([
     getTranslations("videos"),
     getTranslations("common"),
+    getTranslations("shadowing"),
     getShadowingHub(),
   ]);
   if (!result.ok) redirect({ href: "/login", locale: await getLocale() });
 
   const hub = result.data;
   return (
-    <TwoColumnShell railLabel="Companion" className="py-2xl">
+    <TwoColumnShell railLabel={tHub("hub.railLabel")} className="py-2xl">
       <div className="space-y-2xl">
         <header>
-          <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">Shadowing</p>
+          <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{tHub("hub.eyebrow")}</p>
           <h1 className="mt-xs text-title font-semibold text-foreground">{t("title")}</h1>
           <p className="mt-sm text-body text-muted-foreground">{t("subtitle")}</p>
         </header>
@@ -41,13 +42,13 @@ export default async function VideosPage() {
           popular={hub.popular}
           recommendations={hub.recommendations}
           labels={{
-            featured: "Featured",
-            recentlyAdded: "Recently added",
-            popular: "Popular",
-            continueLearning: "Continue learning",
+            featured: tHub("hub.featured"),
+            recentlyAdded: tHub("hub.recentlyAdded"),
+            popular: tHub("hub.popular"),
+            continueLearning: tHub("hub.continueLearning"),
             recommended: tCommon("recommendations.heading"),
-            start: "Start",
-            continue: "Continue",
+            start: tHub("hub.start"),
+            continue: tHub("hub.continue"),
             noThumbnail: tCommon("noThumbnail"),
           }}
         />

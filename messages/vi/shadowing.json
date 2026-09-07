@@ -140,5 +140,6 @@
       "setB": "Đặt B",
       "clear": "Xóa vòng lặp"
     }
-  }
+  },
+  "hub": { "eyebrow": "Shadowing", "railLabel": "Bạn đồng hành", "featured": "Nổi bật", "recentlyAdded": "Mới thêm", "popular": "Phổ biến", "continueLearning": "Tiếp tục học", "start": "Bắt đầu", "continue": "Tiếp tục" }
 }
