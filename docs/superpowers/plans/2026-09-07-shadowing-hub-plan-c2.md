@@ -47,10 +47,10 @@
 - Produces `getShadowingHub(): Promise<GetShadowingHubResult>` where a success carries `featured`, `library`, `continueLearning`, `recentlyAdded`, `popular`, `recommendations`, `quota`, and `rail` fields.
 - Consumes C1 collection functions, `PopularStrategyV1`, `getRecommendations`, `getUserStats`, and the authenticated server user.
 
-- [ ] Write tests first for a signed-out result, a ready/private lesson, an unavailable-transcript lesson, a no-data result, and a building lesson whose `currentStep` is a real label but has no `progressPercent` or `eta` property.
-- [ ] Run `npm exec vitest -- run lib/data/shadowing-hub.test.ts`; verify the missing module fails.
-- [ ] Implement the discriminated result and orchestration function. Query through existing data-layer functions; return `null` for unavailable optional sections rather than sample rows.
-- [ ] Re-run the focused test and commit `feat(shadowing): add Hub read model`.
+- [x] Write tests first for a signed-out result, a ready/private lesson, an unavailable-transcript lesson, and a no-data result. Do not add a server-side `building` projection: C4 owns the durable job source it would require.
+- [x] Run `npm exec vitest -- run lib/data/shadowing-hub.test.ts`; verify the missing module fails.
+- [x] Implement the discriminated result and orchestration function. Query through existing data-layer functions; return `null` for unavailable optional sections rather than sample rows.
+- [x] Re-run the focused test and commit `feat(shadowing): add Hub read model`.
 
 ### Task 2: Add an honest recommendation reason
 
@@ -94,9 +94,9 @@
 
 **Interfaces:**
 - `HubImportSection` receives `{ used, limit, tier }` and uses the existing validated `/api/videos/import` endpoint.
-- `HubLibrarySection` receives typed `ready | building | unavailable` projections; building has `currentStep` only.
+- `HubLibrarySection` receives typed `ready | unavailable` projections. `HubImportSection` owns the short-lived client submission state and may say it is preparing the lesson while the request is pending.
 
-- [ ] Write failing tests for quota copy, disabled submit during request, 403 quota response, ready/open action, unavailable/retry state, and the absence of percentage/ETA text on a building row.
+- [ ] Write failing tests for quota copy, disabled submit during request, truthful preparing copy while the request is pending, 403 quota response, ready/open action, unavailable/retry state, and the absence of percentage/ETA UI. C4 is the only plan allowed to replace this pending state with job progress.
 - [ ] Implement by reusing the existing form validation/error mapping. Keep the server contract authoritative after refresh; no optimistic fake pipeline.
 - [ ] Run the focused component tests and commit `feat(shadowing): port import and library states`.
 

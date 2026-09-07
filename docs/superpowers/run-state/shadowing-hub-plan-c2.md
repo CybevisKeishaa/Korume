@@ -17,20 +17,26 @@ C4 durable import-job progress are explicitly excluded.
 
 ## Accepted commits
 
-- None yet. C1 foundation merged earlier at `bd7f574`; landing motion merged
-to the base at `bfd52c0`.
+- C2 plan/run-state amendment and Task 1 are ready to commit as
+  `feat(shadowing): add Hub read model`.
+- C1 foundation merged earlier at `bd7f574`; landing motion merged to the
+  base at `bfd52c0`.
 
 ## Contracts and decisions
 
 - The Hub is an `(app)` page using `TwoColumnShell`; rail width is the C1
 layout token and it disappears below `xl`.
-- Building rows carry a real current step only: no invented percentage/ETA.
+- C2 has no durable building-row state because import is synchronous today. It
+  may show client-only pending copy during submit; C4 may add a server-backed
+  current step, percentage, and ETA only once a job source exists.
 - Recommendation reasons are derived learning facts, not Figma sample copy.
 - All video remains official YouTube IFrame playback; no media download/proxy.
 
 ## Verification
 
-- Planning only. No product code or test has changed.
+- Task 1 RED: `lib/data/shadowing-hub.test.ts` could not resolve its absent
+  `./shadowing-hub` module.
+- Task 1 GREEN: focused Vitest passed 4 tests; `npm run typecheck` passed.
 - Figma design context fetched for `149:2`, `149:1072`, and `149:1162`.
 
 ## Working tree and environment
@@ -41,11 +47,10 @@ layout token and it disappears below `xl`.
 
 ## Blockers
 
-- The implementation plan requires user review before execution, per the
-approved architectural workflow.
+- None. The owner approved C2 execution and confirmed that C4 may add durable
+  import-job progress later.
 
 ## Next actions
 
-1. Commit the C2 implementation plan and run-state only after reviewing their
-scope against the locked design.
-2. Ask the owner to approve the plan, then execute Task 1 with TDD.
+1. Commit the amended C2 plan/run-state and Task 1 read model.
+2. Execute Task 2: add an evidence-backed recommendation reason, with TDD.
