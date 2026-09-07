@@ -63,10 +63,10 @@
 - Extends `VideoRecommendation` with `reason: RecommendationReason | null`, where the reason is a structured, measurable fact (for example known-word fit or a recorded weak grammar signal), not a rendered sentence.
 - `getShadowingHub` consumes the structured reason and the UI localizes it.
 
-- [ ] Add a failing unit test proving a recommendation never returns the Figma sample copy and that a reason is absent when no supporting learner data exists.
-- [ ] Implement the smallest reason taxonomy backed by fields already read by the scorer; do not claim a grammar weakness until an actual grammar-mistake source is queried.
-- [ ] Update the recommendation API contract tests and the shared type consumers.
-- [ ] Run focused recommendation and Hub tests, then commit `feat(recommendations): expose truthful learning reasons`.
+- [x] Add a failing unit test proving a recommendation never returns the Figma sample copy and that a reason is absent when no supporting learner data exists.
+- [x] Implement the smallest reason taxonomy backed by fields already read by the scorer; do not claim a grammar weakness until an actual grammar-mistake source is queried.
+- [x] Update the recommendation API contract tests and the shared type consumers.
+- [x] Run focused recommendation and Hub tests, then commit `feat(recommendations): expose truthful learning reasons`.
 
 ### Task 3: Build reusable Hub lesson cards and section headings
 

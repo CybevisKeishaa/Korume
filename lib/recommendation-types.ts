@@ -8,6 +8,19 @@
 
 export type RecommendationBand = "ideal" | "too-easy" | "too-hard";
 
+/**
+ * A recommendation explanation may only carry measured learner data. The UI
+ * localizes this descriptor; it never receives a server-authored sentence.
+ */
+export type RecommendationReason =
+  | {
+      kind: "known-word-fit";
+      knownRatio: number;
+      totalWords: number;
+      knownWords: number;
+    }
+  | null;
+
 export interface VideoRecommendation {
   videoId: string;
   youtubeVideoId: string;
@@ -18,6 +31,7 @@ export interface VideoRecommendation {
   band: RecommendationBand;
   totalWords: number;
   knownWords: number;
+  reason: RecommendationReason;
 }
 
 /**

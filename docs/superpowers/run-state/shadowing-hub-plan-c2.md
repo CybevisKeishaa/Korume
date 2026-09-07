@@ -18,7 +18,9 @@ C4 durable import-job progress are explicitly excluded.
 ## Accepted commits
 
 - C2 plan/run-state amendment and Task 1 are ready to commit as
-  `feat(shadowing): add Hub read model`.
+  `feat(shadowing): add Hub read model` (`21a4e14`).
+- Task 2 is ready to commit as
+  `feat(recommendations): expose truthful learning reasons`.
 - C1 foundation merged earlier at `bd7f574`; landing motion merged to the
   base at `bfd52c0`.
 
@@ -37,6 +39,8 @@ layout token and it disappears below `xl`.
 - Task 1 RED: `lib/data/shadowing-hub.test.ts` could not resolve its absent
   `./shadowing-hub` module.
 - Task 1 GREEN: focused Vitest passed 4 tests; `npm run typecheck` passed.
+- Task 2 RED: recommendation expectations for the new reason field failed as
+  expected; GREEN: 17 focused tests and `npm run typecheck` passed.
 - Figma design context fetched for `149:2`, `149:1072`, and `149:1162`.
 
 ## Working tree and environment
@@ -52,5 +56,5 @@ layout token and it disappears below `xl`.
 
 ## Next actions
 
-1. Commit the amended C2 plan/run-state and Task 1 read model.
-2. Execute Task 2: add an evidence-backed recommendation reason, with TDD.
+1. Commit Task 2's reason contract and its tests.
+2. Execute Task 3: build the reusable Hub lesson card primitives with RTL.
