@@ -109,12 +109,15 @@ export async function getShadowingHub(): Promise<GetShadowingHubResult> {
   if (progressResult.error) throw progressResult.error;
 
   const videos = (videosResult.data as VideoRow[] | null) ?? [];
-  const videoById = new Map(videos.map((video) => [video.id, video]));
-  const libraryIds = ((libraryResult.data as LibraryRow[] | null) ?? []).map((row) => row.lesson_id);
-  const libraryVideos = libraryIds.flatMap((id) => {
-    const video = videoById.get(id);
-    return video ? [video] : [];
-  });
+  const libraryIds = new Set(((libraryResult.data as LibraryRow[] | null) ?? []).map((row) => row.lesson_id));
+  const libraryVideos = videos.filter(
+    (video) =>
+      libraryIds.has(video.id) ||
+      // A private import whose captions were unavailable has not consumed a
+      // quota slot and is deliberately absent from user_lesson_library. It is
+      // nevertheless the learner's failed import and must remain retryable.
+      (video.library_access === "PRIVATE" && video.added_by_user_id === user.id),
+  );
 
   const transcriptAvailability = await Promise.all(
     libraryVideos.map(async (video) => ({ video, available: await hasTranscript(video.id) })),

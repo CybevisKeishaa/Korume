@@ -128,6 +128,18 @@ describe("getShadowingHub", () => {
     expect(JSON.stringify(result)).not.toMatch(/building|percentage|eta/i);
   });
 
+  it("keeps the learner's private failed import visible even before it enters the quota ledger", async () => {
+    mockClient(USER, { videos: [PRIVATE_LESSON] });
+    vi.mocked(hasTranscript).mockResolvedValue(false);
+
+    const result = await getShadowingHub();
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: { library: [{ lesson: { id: PRIVATE_LESSON.id }, state: "unavailable" }] },
+    });
+  });
+
   it("returns null or empty section projections when the learner has no available data", async () => {
     mockClient(USER);
 

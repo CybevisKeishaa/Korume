@@ -22,7 +22,9 @@ C4 durable import-job progress are explicitly excluded.
 - Task 2 is ready to commit as
   `feat(recommendations): expose truthful learning reasons` (`46c5ee1`).
 - Task 3 is ready to commit as
-  `feat(shadowing): add Hub lesson card primitives`.
+  `feat(shadowing): add Hub lesson card primitives` (`d28a03d`).
+- A Task 4 discovery correction is ready to commit: failed private imports
+  remain visible before they receive a `user_lesson_library` ledger row.
 - C1 foundation merged earlier at `bd7f574`; landing motion merged to the
   base at `bfd52c0`.
 
@@ -45,6 +47,8 @@ layout token and it disappears below `xl`.
   expected; GREEN: 17 focused tests and `npm run typecheck` passed.
 - Task 3 RED: Hub card modules were absent; GREEN: focused RTL passed 3
   tests and `npm run typecheck` passed.
+- Task 4 discovery RED/GREEN: a failed private import was absent from the Hub;
+  a focused 5-test Hub suite now verifies it remains `unavailable`.
 - Figma design context fetched for `149:2`, `149:1072`, and `149:1162`.
 
 ## Working tree and environment
@@ -60,5 +64,5 @@ layout token and it disappears below `xl`.
 
 ## Next actions
 
-1. Commit Task 3's Hub card primitives.
+1. Commit the Task 4 data correction.
 2. Execute Task 4: port the inline import and My Lessons states with RTL.
