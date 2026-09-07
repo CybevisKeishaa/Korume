@@ -79,10 +79,10 @@
 - `HubLessonCard` accepts a typed lesson projection, action label, optional progress, and `href`.
 - It does not issue fetches, choose rankings, or use a hardcoded image; stored lesson thumbnails remain the source.
 
-- [ ] Write RTL tests for semantic heading hierarchy, accessible lesson link, thumbnail fallback, progress label, and focus-visible link.
-- [ ] Verify RED with absent components.
-- [ ] Implement token-based card geometry responsive from one column to the Figma shelf layout, reusing `next/image`, `Link`, and current card tokens.
-- [ ] Run focused tests and commit `feat(shadowing): add Hub lesson card primitives`.
+- [x] Write RTL tests for semantic heading hierarchy, accessible lesson link, thumbnail fallback, progress label, and focus-visible link.
+- [x] Verify RED with absent components.
+- [x] Implement token-based card geometry responsive from one column to the Figma shelf layout, reusing `next/image`, `Link`, and current card tokens.
+- [x] Run focused tests and commit `feat(shadowing): add Hub lesson card primitives`.
 
 ### Task 4: Port the import and My Lessons state machine
 

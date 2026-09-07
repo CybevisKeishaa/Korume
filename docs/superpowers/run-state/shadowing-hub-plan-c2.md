@@ -20,7 +20,9 @@ C4 durable import-job progress are explicitly excluded.
 - C2 plan/run-state amendment and Task 1 are ready to commit as
   `feat(shadowing): add Hub read model` (`21a4e14`).
 - Task 2 is ready to commit as
-  `feat(recommendations): expose truthful learning reasons`.
+  `feat(recommendations): expose truthful learning reasons` (`46c5ee1`).
+- Task 3 is ready to commit as
+  `feat(shadowing): add Hub lesson card primitives`.
 - C1 foundation merged earlier at `bd7f574`; landing motion merged to the
   base at `bfd52c0`.
 
@@ -41,6 +43,8 @@ layout token and it disappears below `xl`.
 - Task 1 GREEN: focused Vitest passed 4 tests; `npm run typecheck` passed.
 - Task 2 RED: recommendation expectations for the new reason field failed as
   expected; GREEN: 17 focused tests and `npm run typecheck` passed.
+- Task 3 RED: Hub card modules were absent; GREEN: focused RTL passed 3
+  tests and `npm run typecheck` passed.
 - Figma design context fetched for `149:2`, `149:1072`, and `149:1162`.
 
 ## Working tree and environment
@@ -56,5 +60,5 @@ layout token and it disappears below `xl`.
 
 ## Next actions
 
-1. Commit Task 2's reason contract and its tests.
-2. Execute Task 3: build the reusable Hub lesson card primitives with RTL.
+1. Commit Task 3's Hub card primitives.
+2. Execute Task 4: port the inline import and My Lessons states with RTL.
