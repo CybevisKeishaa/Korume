@@ -28,6 +28,7 @@ capability-chain modules left untouched.
 - Task 8 Journey learning conveyor: `bc1f232`.
 - Task 9 Trust quiet lock: `6b0acc2`.
 - Task 10 CTA invitation: `ad3400c`.
+- Task 11 Signoff resolution: `3110580`, with review repair `496315a`.
 
 ## Contracts and decisions
 
@@ -63,6 +64,15 @@ capability-chain modules left untouched.
   and typecheck and lint completed (lint retains only baseline warnings). The
   reviewer approved the focus-visible escape that prevents the delayed primary
   action from becoming an invisible keyboard stop.
+- Task 11 is verified: its source guard recorded RED before the resolution
+  rules existed, passed focused at 37/37 after implementation, and proved RED
+  for both a forbidden footer animation and a reintroduced `stroke-draw` before
+  manual restoration. Typecheck, lint (baseline warnings only), and a clean
+  production build completed. A final Chromium probe on the final build found
+  the resolution path at completed dash offset with no path animation, its SVG
+  container running `resolution-settle`, and reduced motion leaving Signoff copy
+  visible with the footer mascot still. The task review required the anti-draw
+  override; its scoped re-review approved the repair.
 
 ## Working tree and environment
 
@@ -145,16 +155,16 @@ capability-chain modules left untouched.
 
 ## Blockers
 
-Task 10 is reviewed and verified; no technical blocker remains.
+Task 11 is reviewed and verified; no technical blocker remains.
 
 ## Next actions
 
-Tasks 7-10 are checkpointed. The next action is Task 11 (section 9 footer
-resolution) in the next session.
+Tasks 7-11 are checkpointed. The next action is Task 12 (whole-branch review
+and lessons pass) in the next session.
 
-Task 11 ownership, scope, and dependencies remain defined by
+Task 12 ownership, scope, and dependencies remain defined by
 `docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`; read its
-Task 11 section and direct dependency graph before starting the next session.
+Task 12 section and direct dependency graph before starting the next session.
 
 `code-reviewer` owns the whole-branch review required by `AGENTS.md` before
 this branch merges.

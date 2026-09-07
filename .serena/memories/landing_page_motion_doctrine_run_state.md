@@ -3,9 +3,9 @@
 > ## SYNC UPDATE - 2026-09-07 (supersedes all resume instructions below)
 >
 > **Canonical state:** `docs/superpowers/run-state/landing-page-motion-doctrine.md`.
-> Tasks 1-10 are checkpointed. Task 10 source commit: `ad3400c`; its
-> canonical checkpoint: `d8d4b7e`. Resume at Task 11, Section 9 footer
-> resolution.
+> Tasks 1-11 are checkpointed. Task 11 source commit: `3110580`, with
+> review repair `496315a`. Resume at Task 12, the whole-branch review and
+> lessons pass.
 >
 > Preserve pre-existing working-tree items: the CRLF-only
 > `components/marketing/recommendation-donut.tsx`, `.agents/`, and the
