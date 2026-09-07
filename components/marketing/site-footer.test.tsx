@@ -74,6 +74,7 @@ describe("SiteFooter", () => {
     // The card's image, not any other mascot on the page.
     const mascot = card.querySelector("[data-mascot]");
     expect(mascot).not.toBeNull();
+    expect(mascot).toHaveAttribute("data-footer-mascot");
     // Only `scripts/mascot/extract.js` writes into poses/, and
     // `scripts/mascot/poses.test.ts` pins that directory to the manifest, so
     // asserting the path is asserting recorded provenance (spec §5.2).

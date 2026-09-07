@@ -313,7 +313,7 @@ describe("Problem", () => {
     // per-row map gets exactly this wrong (Task A-MOTION).
     expect(
       Array.from(chips).map((c) =>
-        (c as HTMLElement).style.getPropertyValue("--card-step").trim(),
+        (c as HTMLElement).style.getPropertyValue("--node-step").trim(),
       ),
     ).toEqual(["0", "1", "2", "3", "4", "5"]);
   });

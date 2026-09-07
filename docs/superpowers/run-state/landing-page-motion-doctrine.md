@@ -155,16 +155,15 @@ capability-chain modules left untouched.
 
 ## Blockers
 
-Task 11 is reviewed and verified; no technical blocker remains.
+Task 12 is reviewed and verified; no technical blocker remains.
 
 ## Next actions
 
-Tasks 7-11 are checkpointed. The next action is Task 12 (whole-branch review
-and lessons pass) in the next session.
+Tasks 7-12 are checkpointed. Task 12 completed the whole-branch review,
+re-reviewed its fix wave, and recorded the lessons evidence in `docs/lessons.md`.
 
 Task 12 ownership, scope, and dependencies remain defined by
-`docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md`; read its
-Task 12 section and direct dependency graph before starting the next session.
+`docs/superpowers/plans/2026-09-04-landing-page-motion-doctrine.md` for audit history.
 
-`code-reviewer` owns the whole-branch review required by `AGENTS.md` before
-this branch merges.
+The branch is ready for the finishing/merge decision. No server remains running
+on port 3001; the pre-existing listener on port 3000 was not stopped.
