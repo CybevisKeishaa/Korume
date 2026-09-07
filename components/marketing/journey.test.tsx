@@ -28,6 +28,15 @@ describe("Journey", () => {
     }
   });
 
+  it("owns the §3 line segment that leads into the learning conveyor", async () => {
+    const { container } = render(await Journey());
+
+    const segments = container.querySelectorAll('[data-thread-segment="line"]');
+    expect(segments).toHaveLength(1);
+    expect(segments[0]).toHaveAttribute("aria-hidden", "true");
+    expect(segments[0]?.querySelectorAll("path")).toHaveLength(1);
+  });
+
   it("puts an arrow between each adjacent pair — four, not one", async () => {
     const { container } = render(await Journey());
 
@@ -411,14 +420,14 @@ describe("Journey", () => {
     }
   });
 
-  it("steps its five step cards so they settle in order", async () => {
+  it("hands its five step cards to the conveyor in order", async () => {
     const { container } = render(await Journey());
 
     const steps = container.querySelectorAll("[data-step]");
     expect(steps).toHaveLength(5);
     expect(
       Array.from(steps).map((s) =>
-        (s as HTMLElement).style.getPropertyValue("--card-step").trim(),
+        (s as HTMLElement).style.getPropertyValue("--conveyor-step").trim(),
       ),
     ).toEqual(["0", "1", "2", "3", "4"]);
   });

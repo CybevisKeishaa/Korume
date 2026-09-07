@@ -17,7 +17,13 @@ export async function Hero() {
   const t = await getTranslations("marketing");
 
   return (
-    <Section id="hero" eyebrow={t("hero.eyebrow")} heading={t("hero.heading")} headingLevel={1}>
+    <Section
+      id="hero"
+      eyebrow={t("hero.eyebrow")}
+      heading={t("hero.heading")}
+      headingLevel={1}
+      scrollProgress
+    >
       <div className="grid gap-xl lg:grid-cols-2 lg:items-center">
         <div>
           <p className="max-w-xl text-body-lg text-muted-foreground">{t("hero.subtitle")}</p>

@@ -10,10 +10,10 @@ GSAP + Lenis + Framer Motion · Vitest + Playwright.
 
 | File | Nội dung |
 |---|---|
-| `CLAUDE.md` | Luật gốc của repo: non-negotiables (§2), stack, conventions, Definition of Done |
+| `AGENTS.md` | Luật gốc của repo: non-negotiables (§2), stack, conventions, Definition of Done |
 | `japanese-learning-app-spec.md` | Spec sản phẩm đầy đủ: modules, DB schema, API endpoints |
 | `docs/product/business-model.md` | **Nguồn chân lý** cho thị trường & monetization (supersede spec §3.12) |
-| `.claude/docs/workflow.md` | Agent roster, routing, 8 lớp build, branching policy |
+| `.codex/docs/workflow.md` | Agent roster, routing, 8 lớp build, branching policy |
 | `docs/features/` | F-001..F-016 — feature briefs |
 
 Khi spec và `business-model.md` xung đột: **business-model.md thắng**.
@@ -44,9 +44,9 @@ tùy chọn (mặc định tắt) và không tham gia validate provider, nhưng 
 | `npm run test:e2e` | Playwright |
 
 TDD là mặc định: test viết trước, và không claim "chạy được" nếu chưa chạy lệnh và thấy nó pass
-(`CLAUDE.md` §7, §9).
+(`AGENTS.md` §7, §9).
 
-## Ranh giới không được vượt (tóm tắt `CLAUDE.md` §2)
+## Ranh giới không được vượt (tóm tắt `AGENTS.md` §2)
 
 - **Không bao giờ tải/host/proxy video.** Video luôn phát qua YouTube IFrame Player API. Server chỉ lưu
   video ID, metadata, transcript và dữ liệu học tập.

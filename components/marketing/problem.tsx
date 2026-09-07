@@ -101,6 +101,15 @@ const PHOTO_LEFT_FADE =
 const TOP_CHIPS: readonly ChipKey[] = ["vocabulary", "grammar", "kanji"];
 const BOTTOM_CHIPS: readonly ChipKey[] = ["pronunciation", "listening", "srs"];
 
+const NODE_OFFSETS: Record<ChipKey, { x: string; y: string }> = {
+  vocabulary: { x: "calc(var(--space-xl) * -1)", y: "calc(var(--space-md) * -1)" },
+  grammar: { x: "var(--space-sm)", y: "calc(var(--space-lg) * -1)" },
+  kanji: { x: "var(--space-xl)", y: "calc(var(--space-md) * -1)" },
+  pronunciation: { x: "calc(var(--space-xl) * -1)", y: "var(--space-md)" },
+  listening: { x: "calc(var(--space-sm) * -1)", y: "var(--space-lg)" },
+  srs: { x: "var(--space-xl)", y: "var(--space-md)" },
+};
+
 export async function Problem() {
   const t = await getTranslations("marketing");
 
@@ -131,7 +140,7 @@ export async function Problem() {
         <div className="relative py-xl">
           <ProblemConnectors />
 
-          <div className="relative text-center">
+          <div data-problem-sentence className="relative text-center">
             <p className="font-jp text-body-lg">{t("problem.example.jp")}</p>
             <p className="mt-2xs text-caption text-muted-foreground">{t("problem.example.en")}</p>
           </div>
@@ -187,7 +196,14 @@ function ChipRow({
         <div
           key={chip}
           data-chip
-          style={{ "--card-step": offset + index } as React.CSSProperties}
+          data-node-step={offset + index}
+          style={
+            {
+              "--node-step": offset + index,
+              "--node-x": NODE_OFFSETS[chip].x,
+              "--node-y": NODE_OFFSETS[chip].y,
+            } as React.CSSProperties
+          }
           className="flex flex-col items-center rounded-md border border-border bg-card px-xs py-md text-center"
         >
           <ChipIcon chip={chip} className="h-lg w-lg text-primary-strong" />

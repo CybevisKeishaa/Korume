@@ -20,6 +20,8 @@ interface SectionBase {
   heading: string;
   /** 1 only for the hero; every other section is 2. */
   headingLevel?: 1 | 2;
+  /** Opt this section into the scroll-progress provider's custom property. */
+  scrollProgress?: boolean;
   /**
    * Full-bleed layers painted BEHIND the `MarketingContainer` — a background photo,
    * a scrim, a decorative figure that must sit under the copy. Rendered as the
@@ -152,7 +154,16 @@ const SPLIT_COLUMNS = "lg:grid-cols-[minmax(0,2fr)_minmax(0,5fr)]";
  * by `py-2xl` above the heading.
  */
 export function Section(props: SectionProps) {
-  const { id, eyebrow, heading, headingLevel = 2, backdrop, children, className } = props;
+  const {
+    id,
+    eyebrow,
+    heading,
+    headingLevel = 2,
+    scrollProgress = false,
+    backdrop,
+    children,
+    className,
+  } = props;
   const layout: SectionLayout = props.layout ?? "stacked";
   const rail = props.layout === "split" ? props.rail : undefined;
   const headingId = `${id}-heading`;
@@ -173,6 +184,12 @@ export function Section(props: SectionProps) {
       <Heading
         id={headingId}
         data-section-heading
+        // §1's masked-block entrance (Task 5, ruling R9). Derived from
+        // `headingLevel` rather than a new `heroHeading` prop: the hero is the
+        // only `headingLevel={1}` consumer, and this doc comment already says
+        // so above — a second selector for the same fact is the exact defect
+        // this component's `split`/`rail != null` history already fixed once.
+        data-hero-heading={headingLevel === 1 ? true : undefined}
         className={cn(
           "text-balance font-display font-bold",
           headingLevel === 1 && "text-hero",
@@ -193,6 +210,7 @@ export function Section(props: SectionProps) {
     <section
       id={id}
       aria-labelledby={headingId}
+      data-scroll-progress={scrollProgress ? "" : undefined}
       // The entrance contract (Task A-MOTION). Attributes only: the stagger
       // must not introduce a wrapper, because §6's mascot sits on the node
       // grid's bottom edge to within 1px and e2e asserts it.

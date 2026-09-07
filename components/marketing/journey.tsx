@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { buttonStyles } from "@/components/ui/button";
 import { Section } from "./section";
 import { AssetSlot } from "./asset-slot";
+import { ThreadSegment } from "./thread-segment";
 import {
   CtaGlyph,
   RecordGlyph,
@@ -64,10 +65,10 @@ import type { Translator } from "./translator";
  * is a link or button — can still reach every step on a viewport too narrow
  * to show all five at once.
  *
- * No animation: this section has no motion of its own, so its
- * `prefers-reduced-motion` obligation is satisfied vacuously (as §2's
- * constellation is) rather than by an implemented, gated transition. The
- * whole-page motion pass of spec §13.1 is a later task.
+ * The conveyor hands the five cards off in sequence while the rail's local
+ * `ThreadSegment` draws the shared line morphology into it. Both are gated by
+ * the page-wide reveal and reduced-motion systems, so motion never hides the
+ * learning flow for readers who opt out.
  *
  * Looks up the translator once and passes it down as a prop — see
  * `translator.ts` (task 4 fix F5) — rather than each subcomponent calling
@@ -182,6 +183,7 @@ export async function Journey() {
             {t("journey.cta")}
             <CtaGlyph />
           </Link>
+          <ThreadSegment morphology="line" className="mt-md h-2xl w-sm" />
         </>
       }
     >
@@ -231,8 +233,9 @@ function StepCard({ step, index, t }: { step: StepKey; index: number; t: Transla
   return (
     <div
       data-step={step}
-      // Settles in order behind the section's own entrance (Task A-MOTION).
-      style={{ "--card-step": index } as React.CSSProperties}
+      // The conveyor hands each learning step to the next after the section's
+      // own entrance. The index belongs to this sequence, not the §7 cards.
+      style={{ "--conveyor-step": index } as React.CSSProperties}
       className="flex h-full min-w-0 flex-1 flex-col rounded-lg border border-border bg-card p-sm"
     >
       {step === "watch" ? <WatchBody t={t} /> : null}

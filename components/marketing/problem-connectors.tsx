@@ -70,8 +70,16 @@ function SideRays({ sweep }: { sweep: 1 | -1 }) {
 
   return (
     <>
-      <path d={`M0 0 V${TURN_Y - TURN_R} Q0 ${TURN_Y} ${turnEnd} ${TURN_Y} H${tip}`} />
-      <path d={`M0 100 V${TURN_Y + TURN_R} Q0 ${TURN_Y} ${turnEnd} ${TURN_Y} H${tip}`} />
+      <path
+        d={`M0 0 V${TURN_Y - TURN_R} Q0 ${TURN_Y} ${turnEnd} ${TURN_Y} H${tip}`}
+        pathLength={1}
+        vectorEffect="non-scaling-stroke"
+      />
+      <path
+        d={`M0 100 V${TURN_Y + TURN_R} Q0 ${TURN_Y} ${turnEnd} ${TURN_Y} H${tip}`}
+        pathLength={1}
+        vectorEffect="non-scaling-stroke"
+      />
     </>
   );
 }
@@ -145,8 +153,8 @@ function CentreColumn() {
         strokeLinecap="round"
         className="stroke-primary/55"
       >
-        <path d={`M0 0 V${NODE_Y - 3}`} />
-        <path d={`M0 100 V${BOTTOM_RAY_Y}`} />
+        <path d={`M0 0 V${NODE_Y - 3}`} pathLength={1} vectorEffect="non-scaling-stroke" />
+        <path d={`M0 100 V${BOTTOM_RAY_Y}`} pathLength={1} vectorEffect="non-scaling-stroke" />
       </g>
 
       <g data-connector-node>

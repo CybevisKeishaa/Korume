@@ -18,14 +18,31 @@
  * copied out of the frame, and an intrinsic element size is the escape Rule #0
  * itself points at. No class name here carries a px or rem value.
  *
- * ## NO MOTION
+ * ## MOTION
  *
- * The whole-page motion pass is a later task. Nothing here declares a
- * transition, keyframe or scroll trigger, so this section's reduced-motion
- * obligation is satisfied vacuously — exactly as §2's, §3's and §4's are. The
- * arc is deliberately built as a `stroke-dasharray` sweep rather than a drawn
- * path, because that is the one shape a later `stroke-dashoffset` tween can
- * animate without re-authoring the geometry.
+ * The arc sweeps 0 -> 96 on entrance via `stroke-dashoffset` (spec §5). The
+ * geometry was built for exactly this and needed no re-authoring.
+ *
+ * ⚠️ BOTH dashed circles sweep — the blurred glow and the crisp line. They
+ * share `[data-familiar-arc]`; the glow carries the value "glow" only so a
+ * reader can tell them apart. Animating one alone leaves a halo ahead of its
+ * own line.
+ *
+ * Reduce-motion is handled by the global kill switch in `app/globals.css`,
+ * which collapses duration AND delay. This section's obligation is satisfied
+ * by that gate, not vacuously — an earlier version of this docblock claimed
+ * the latter and was false from the moment the motion pass ran.
+ *
+ * ⚠️ LOAD-BEARING (review fix round 1, m2): the `<svg>`'s inline
+ * `--donut-circumference` custom property is what gives `app/globals.css`'s
+ * `stroke-dashoffset: var(--donut-circumference)` and `donut-sweep`'s
+ * `to { stroke-dashoffset: 0 }` a real length to travel. Delete it and both
+ * `var(--donut-circumference)` declarations resolve to nothing, the pending
+ * offset falls back to `0`, and the sweep runs 0 -> 0 — the arc simply
+ * appears fully drawn instead of drawing, the same class of defect as an
+ * un-repeated dash declaration (see `lib/design-tokens.test.ts`'s dash-
+ * repetition contract). `recommendation.test.tsx` asserts this property is
+ * present with the exact `CIRCUMFERENCE` value.
  */
 
 /** The ring's own coordinate space. Square, so one number covers both axes. */
@@ -90,6 +107,7 @@ export function FamiliarDonut({ percent }: FamiliarDonutProps) {
       aria-hidden="true"
       focusable="false"
       className="shrink-0 overflow-visible"
+      style={{ "--donut-circumference": CIRCUMFERENCE } as React.CSSProperties}
     >
       <defs>
         <linearGradient id="recommend-donut-sweep" x1="0" y1="0" x2="0" y2="1">
@@ -116,6 +134,7 @@ export function FamiliarDonut({ percent }: FamiliarDonutProps) {
           sweep at twelve. Applied to both arcs so the glow tracks the line. */}
       <g transform={`rotate(-90 ${centre} ${centre})`}>
         <circle
+          data-familiar-arc="glow"
           cx={centre}
           cy={centre}
           r={RADIUS}

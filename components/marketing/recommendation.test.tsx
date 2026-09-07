@@ -155,17 +155,46 @@ describe("Recommendation", () => {
   it("derives the arc's sweep from the catalog value rather than drawing a full ring", async () => {
     const { container } = render(await Recommendation());
 
-    const arc = must(container.querySelector("[data-familiar-arc]"), "the donut arc");
-    const dashArray = must(arc.getAttribute("stroke-dasharray"), "the arc's stroke-dasharray");
+    // Review fix round 1 (I2): the ring is drawn TWICE — a blurred glow, marked
+    // `data-familiar-arc="glow"`, and the crisp line on top, carrying the bare
+    // attribute (renders as `="true"`). A `querySelector` here silently returns
+    // whichever the DOM happens to put first — the glow, once it gained its own
+    // marker — and the test kept passing only because both circles' dasharrays
+    // are computed from the same `dash` value. Asserting BOTH, and pinning the
+    // exact attribute-value set, is what makes this test actually about the
+    // crisp arc it names rather than about whichever circle sorts first.
+    const arcs = container.querySelectorAll("[data-familiar-arc]");
+    expect(arcs).toHaveLength(2);
+    expect(
+      Array.from(arcs)
+        .map((el) => el.getAttribute("data-familiar-arc"))
+        .sort(),
+    ).toEqual(["glow", "true"]);
 
     const percent = Number(en.recommend.familiar.value);
     expect(Number.isFinite(percent)).toBe(true);
-    expect(drawnLength(dashArray)).toBeCloseTo(arcLength(percent), 6);
 
-    // 96 is not 100: a full ring would say "you know all of it" and is exactly
-    // what a hard-coded arc would draw.
-    expect(drawnLength(dashArray)).toBeLessThan(CIRCUMFERENCE);
-    expect(drawnLength(dashArray) / CIRCUMFERENCE).toBeCloseTo(percent / 100, 6);
+    for (const arc of Array.from(arcs)) {
+      const dashArray = must(arc.getAttribute("stroke-dasharray"), "an arc's stroke-dasharray");
+      expect(drawnLength(dashArray)).toBeCloseTo(arcLength(percent), 6);
+
+      // 96 is not 100: a full ring would say "you know all of it" and is
+      // exactly what a hard-coded arc would draw.
+      expect(drawnLength(dashArray)).toBeLessThan(CIRCUMFERENCE);
+      expect(drawnLength(dashArray) / CIRCUMFERENCE).toBeCloseTo(percent / 100, 6);
+    }
+  });
+
+  it("exposes the ring's circumference as a CSS custom property, for the CSS sweep to travel", async () => {
+    // Review fix round 1 (m2): `--donut-circumference` is load-bearing, not
+    // decoration — `app/globals.css`'s `stroke-dashoffset: var(--donut-
+    // circumference)` and `donut-sweep`'s `to { stroke-dashoffset: 0 }` have
+    // nothing to travel FROM without it, and the sweep runs 0 -> 0 (the arc
+    // simply appears instead of drawing). Nothing else in this file measures
+    // an inline `style` attribute, so this is pinned on its own.
+    const { container } = render(await Recommendation());
+    const donut = must(container.querySelector<SVGElement>("[data-familiar-donut]"), "the donut");
+    expect(donut.style.getPropertyValue("--donut-circumference")).toBe(String(CIRCUMFERENCE));
   });
 
   it("maps a percentage onto arc length linearly, and clamps out-of-range input", () => {

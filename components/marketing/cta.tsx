@@ -4,6 +4,7 @@ import { getTranslations } from "@/lib/i18n/server";
 import { buttonStyles } from "@/components/ui/button";
 import { Section } from "./section";
 import { AssetSlot } from "./asset-slot";
+import { ThreadSegment } from "./thread-segment";
 
 /**
  * §8 — the page's call to action (spec §4, §13).
@@ -143,7 +144,7 @@ export async function Cta() {
             description={t("cta.backgroundAlt")}
             src={CTA_BACKGROUND}
             sizes={BACKGROUND_SIZES}
-            className="pointer-events-none absolute inset-0 aspect-auto rounded-none"
+            className="cta-backdrop pointer-events-none absolute inset-0 aspect-auto rounded-none"
           />
           <div
             data-cta-scrim
@@ -169,14 +170,30 @@ export async function Cta() {
               carried 66/16/54/38 px of TRANSPARENT margin, so `bottom-0` pinned
               the margin to the band's floor and the creature hovered above it
               at 83% of the width it was given. */}
-          <Image
-            data-mascot
-            src={CTA_MASCOT}
-            alt={t("cta.mascotAlt")}
-            width={402}
-            height={424}
-            sizes={MASCOT_SIZES}
-            className="pointer-events-none absolute bottom-0 right-[7%] hidden h-auto w-[20%] lg:block"
+          {/* The supplied pose contains both companion and orb. Separating the
+              transform layers lets the orb's scene float without competing
+              with the companion's small, local breath. */}
+          <div
+            data-cta-orb
+            className="pointer-events-none absolute bottom-0 right-[7%] hidden w-[20%] lg:block"
+          >
+            <Image
+              data-mascot
+              data-cta-mascot
+              src={CTA_MASCOT}
+              alt={t("cta.mascotAlt")}
+              width={402}
+              height={424}
+              sizes={MASCOT_SIZES}
+              className="h-auto w-full"
+            />
+          </div>
+          {/* §8 continues the learning thread past its action. The decorative
+              segment leaves the bottom edge for §9 to resolve; it is never a
+              destination marker for either CTA. */}
+          <ThreadSegment
+            morphology="line"
+            className="cta-thread pointer-events-none absolute bottom-[calc(var(--space-lg)*-1)] left-1/2 h-2xl w-xl -translate-x-1/2"
           />
         </>
       }
@@ -187,7 +204,7 @@ export async function Cta() {
         {/* One filled, one outlined. A page-level CTA that offers two equally
             weighted choices offers no choice at all, and the reference draws the
             same asymmetry. */}
-        <Link href="/register" className={buttonStyles({ size: "lg" })}>
+        <Link href="/register" data-cta-action="true" className={buttonStyles({ size: "lg" })}>
           {t("cta.primary")}
         </Link>
         <Link

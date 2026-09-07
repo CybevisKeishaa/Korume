@@ -16,6 +16,10 @@ import { REVEAL_FAILSAFE_ATTR } from "@/components/motion/reveal-failsafe";
  *   (CLAUDE.md §2.4 non-negotiable).
  */
 const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
+const trustSource = readFileSync(
+  path.join(process.cwd(), "components/marketing/trust.tsx"),
+  "utf8",
+);
 const tailwind = readFileSync(
   path.join(process.cwd(), "tailwind.config.ts"),
   "utf8",
@@ -36,7 +40,17 @@ const tailwind = readFileSync(
 const revealGates = css.match(
   /:root\[data-reduce-motion="false"\][^ ]* \[data-reveal-scope\] \[data-reveal="pending"\]/g,
 );
-const REVEAL_GATE_COUNT = 5;
+// STATE PIN: task 4 adds two (the thread rule, the donut rule) — 5 -> 7;
+// task 5 adds two more (the hero heading, the hero step) — 7 -> 9; task 7
+// replaces §2's shared generic rule with its own assembly gate — 9 -> 10;
+// task 8 splits §3's conveyor gate from §7's trust gate — 10 -> 11.
+// Verified by running the test and reading the real number, not counted.
+// Task 9 then adds the quiet lock's separate pending rule — 11 -> 12;
+// Task 10 hides both the CTA action and its continuation segment until the
+// invitation scene begins — 12 -> 14.
+// The focus-visible escape adds one matching gate: 14 -> 15.
+// Task 11 holds the resolution thread until §9 enters: 15 -> 16.
+const REVEAL_GATE_COUNT = 16;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -193,21 +207,65 @@ describe("design tokens", () => {
     expect(escapable).toHaveLength(REVEAL_GATE_COUNT);
   });
 
-  it("declares the contour dash offset on the revealed rule, not only the pending one", () => {
-    // `@keyframes stroke-draw` declares only a `to`, so its implicit `from` is
-    // the element's own computed value — and the `pending` rule stops matching
-    // the instant the state flips to "in". If the start value lives only there,
-    // the animation runs 0 -> 0 and §4's contours appear instead of drawing.
-    // That shipped once and no unit test could see it, so it is pinned here.
-    const revealed = css.match(
-      /\[data-reveal="in"\] \[data-contour\] \{([^}]*)\}/,
-    );
-    expect(revealed).not.toBeNull();
-    const body = revealed?.[1] ?? "";
-    expect(body).toMatch(/stroke-dasharray:\s*1/);
-    expect(body).toMatch(/stroke-dashoffset:\s*1/);
-    expect(body).toMatch(/animation:\s*stroke-draw/);
-  });
+  /**
+   * `@keyframes stroke-draw` (and `donut-sweep`) declare only a `to`, so their
+   * implicit `from` is the element's own computed value — and the `pending`
+   * rule stops matching the instant the state flips to "in". If the start
+   * value lives only there, the animation runs 0 -> 0 and the element simply
+   * appears instead of drawing. §4 shipped that defect once for `[data-contour]`
+   * and it was pinned below for that ONE selector only.
+   *
+   * Review fix round 1 (I5): task 4 added two more rules with the identical
+   * repeat-or-break shape — `[data-thread-segment] path` and
+   * `[data-familiar-arc]` — and neither was covered: deleting either rule's
+   * repeated declarations was GREEN. Generalised into one table so a FOURTH
+   * rule (any later section's thread segment) is one row, not a forgotten
+   * pin. `requiredDasharray` is `null` for the donut arc because its
+   * `stroke-dasharray` is set as an SVG attribute (`recommendation-donut.tsx`),
+   * never a CSS declaration — there is nothing to repeat there, only the
+   * dashoffset and the animation.
+   */
+  const DASH_REPETITION_CASES: Array<{
+    label: string;
+    selectorPattern: RegExp;
+    requiredDasharray: RegExp | null;
+    requiredDashoffset: RegExp;
+    requiredAnimation: RegExp;
+  }> = [
+    {
+      label: "[data-contour]",
+      selectorPattern: /\[data-reveal="in"\] \[data-contour\] \{([^}]*)\}/,
+      requiredDasharray: /stroke-dasharray:\s*1\b/,
+      requiredDashoffset: /stroke-dashoffset:\s*1\b/,
+      requiredAnimation: /animation:\s*stroke-draw/,
+    },
+    {
+      label: "[data-thread-segment] path",
+      selectorPattern: /\[data-reveal="in"\] \[data-thread-segment\] path \{([^}]*)\}/,
+      requiredDasharray: /stroke-dasharray:\s*var\(--thread-dash\)/,
+      requiredDashoffset: /stroke-dashoffset:\s*var\(--thread-dash\)/,
+      requiredAnimation: /animation:\s*stroke-draw/,
+    },
+    {
+      label: "[data-familiar-arc]",
+      selectorPattern: /\[data-reveal="in"\] \[data-familiar-arc\] \{([^}]*)\}/,
+      requiredDasharray: null,
+      requiredDashoffset: /stroke-dashoffset:\s*var\(--donut-circumference\)/,
+      requiredAnimation: /animation:\s*donut-sweep/,
+    },
+  ];
+
+  it.each(DASH_REPETITION_CASES)(
+    "repeats $label's dash start value on the revealed rule, not only the pending one",
+    ({ selectorPattern, requiredDasharray, requiredDashoffset, requiredAnimation }) => {
+      const revealed = css.match(selectorPattern);
+      expect(revealed).not.toBeNull();
+      const body = revealed?.[1] ?? "";
+      if (requiredDasharray) expect(body).toMatch(requiredDasharray);
+      expect(body).toMatch(requiredDashoffset);
+      expect(body).toMatch(requiredAnimation);
+    },
+  );
 
   it("defines the primitive colour palette", () => {
     const missing = PRIMITIVE_TOKENS.filter(
@@ -311,5 +369,282 @@ describe("design tokens", () => {
     // they must say so by referencing the step, not by restating a number.
     expect(css).toMatch(/--layout-gutter:\s*var\(--space-xl\)/);
     expect(css).toMatch(/--layout-column-gap:\s*var\(--space-lg\)/);
+  });
+});
+
+/**
+ * The Thread's invariant half (spec §3.2). Local geometry — position, length,
+ * curvature, orientation, bends — is deliberately NOT here: sections differ in
+ * shape and share only grammar. Pinning geometry would forbid the variety.
+ */
+const THREAD_TOKENS = [
+  "--thread-width",
+  "--thread-color",
+  "--thread-opacity",
+  "--thread-cap",
+  "--thread-dash",
+  "--thread-ease",
+  "--thread-duration",
+];
+
+describe("thread token contract", () => {
+  it.each(THREAD_TOKENS)("defines %s in :root", (token) => {
+    expect(css).toContain(`${token}:`);
+  });
+
+  it("derives the thread's timing from existing tokens, inventing no literal", () => {
+    const easeMatch = css.match(/--thread-ease:\s*([^;]+);/)?.[1]?.trim();
+    const durationMatch = css.match(/--thread-duration:\s*([^;]+);/)?.[1]?.trim();
+    expect(easeMatch).toBeDefined();
+    expect(durationMatch).toBeDefined();
+    expect(easeMatch).toMatch(/^var\(--ease-[a-z0-9-]+\)$/);
+    expect(durationMatch).toMatch(/^var\(--duration-[a-z0-9-]+\)$/);
+
+    // Extract and verify the referenced tokens exist in globals.css
+    const easeRef = easeMatch?.match(/var\(--ease-[a-z0-9-]+\)/)?.[0];
+    const durationRef = durationMatch?.match(/var\(--duration-[a-z0-9-]+\)/)?.[0];
+    if (easeRef) {
+      const tokenName = easeRef.slice(4, -1); // Extract "--ease-..." from "var(...)"
+      expect(css).toContain(`${tokenName}:`);
+    }
+    if (durationRef) {
+      const tokenName = durationRef.slice(4, -1);
+      expect(css).toContain(`${tokenName}:`);
+    }
+  });
+
+  it("keeps thread colour as a var() alias, never a literal", () => {
+    const colour = css.match(/--thread-color:\s*([^;]+);/)?.[1]?.trim();
+    expect(colour).toBeDefined();
+    expect(colour).toMatch(/^var\(--[a-z0-9-]+\)$/);
+  });
+});
+
+/**
+ * The contract's enforcement half: every thread rule must consume the shared
+ * tokens and none may hardcode the invariants. Gathered by pattern, so the
+ * count is asserted too — an empty match would make every claim below
+ * unconditionally true (L-004).
+ *
+ * ⚠️ THREAD_RULE_COUNT is a STATE PIN, not an invariant: it says "this many
+ * exist today". Every task that touches it RUNS the test, reads the actual
+ * number, and sets the constant to it — never a number counted in your head.
+ * Task 4 adds three matching rules (base, pending, in). Later sections bump it
+ * only if they actually add a matching rule; several add none.
+ */
+const threadRules = css.match(/\[data-thread-segment[^\]]*\][^{]*\{[^}]*\}/g) ?? [];
+// Task 11 fix round adds the revealed resolution-path anti-draw override: 9 -> 10.
+const THREAD_RULE_COUNT = 10;
+
+describe("thread continuity contract", () => {
+  it("finds the thread rules it is about to make claims about", () => {
+    expect(threadRules.length).toBe(THREAD_RULE_COUNT);
+  });
+
+  it("wraps --thread-color in hsl(), not a bare var()", () => {
+    // Review fix round 1 (I3a). Every colour token in this file (spec §2.5) is
+    // stored as bare HSL channels — `--accent: 29 75% 64%` — specifically so
+    // Tailwind can compose `hsl(var(--accent) / <alpha-value>)`. Consuming one
+    // as a raw `var()` in a plain CSS `stroke`/`color`/`background` property
+    // hands the engine the invalid colour `29 75% 64%`; the whole declaration
+    // is dropped and falls back to its initial value (`stroke: none`). That
+    // shipped here once already — the thread segment was in the DOM, fully
+    // drawn, `data-reveal="in"`, and invisible — and no existing test could
+    // see it: nothing asserted the wrap, and the e2e that exists for "motion
+    // never hides content" measures opacity only (I3b covers that gap).
+    //
+    // Checked against `threadRules` (the rule BODIES), not the raw `css`
+    // string: this file's own docblock, two paragraphs up, quotes the broken
+    // form (`stroke: var(--thread-color)`) as prose explaining the bug it
+    // fixed — asserting on `css` directly makes this test fail against its
+    // own correct code, for a reason that has nothing to do with the CSS.
+    const threadRuleText = threadRules.join("\n");
+    expect(threadRuleText).toMatch(/stroke:\s*hsl\(var\(--thread-color\)\)/);
+    expect(threadRuleText).not.toMatch(/stroke:\s*var\(--thread-color\)/);
+  });
+
+  it("hardcodes none of the invariants in any thread rule", () => {
+    // Local geometry is free; these seven are not.
+    //
+    // ⚠️ The negative lookahead sits directly after the colon, with no `\s*`
+    // ahead of it: `stroke-linecap:\s*(?!var)` backtracks `\s*` to zero width
+    // whenever the value is `var(...)` with a leading space (the file's own
+    // style everywhere else), so the lookahead ends up checking " va" against
+    // "var" — which never matches "var" literally — and the rule reads as
+    // hardcoded even though it consumes the token. Verified both ways: with
+    // the backtracking form, `stroke-linecap: var(--thread-cap);` (the actual
+    // rule below) flags as a false positive; with the optional whitespace
+    // moved INSIDE the lookahead, as here, it does not, and `stroke-linecap:
+    // round;` still does.
+    //
+    // ⚠️ Review fix round 1 (I1): the FIRST version of this guard only checked
+    // four of the seven `--thread-*` tokens — colour, opacity, and the
+    // duration/easing pair written INSIDE the `animation:` shorthand (the only
+    // form this repo uses; `animation-timing-function:` as a longhand appears
+    // nowhere) all walked straight through. `stroke: #ff0000`, `opacity: 0.4`,
+    // and either half of `animation: stroke-draw 600ms
+    // cubic-bezier(0.16, 1, 0.3, 1) both` were all invisible to it. The two new
+    // alternatives below close those: `stroke:` and `opacity:` follow the same
+    // whitespace-inside-the-lookahead shape as `stroke-linecap:` above, and the
+    // `animation:` alternative asserts the two tokens after `stroke-draw` are
+    // EXACTLY `var(--thread-duration) var(--thread-ease)` — catching a
+    // hardcoded duration, a hardcoded easing, or both, in one check. (The
+    // lookahead ends on `(?=\s|;)`, not `\b`: `\b` requires a word/non-word
+    // transition, and there is none between `)` and the following space, so a
+    // trailing `\b` here would never match the correct value and the whole
+    // alternative would false-positive on every well-formed rule — caught by
+    // running the "good" CSS through it before trusting the pattern.)
+    const forbidden =
+      /stroke-width:\s*\d|stroke-linecap:(?!\s*var)|animation-timing-function:(?!\s*var)|stroke-dasharray:(?!\s*(?:var|1\b))|stroke:(?!\s*hsl\(var\(--thread-color\)\))|opacity:(?!\s*var\(--thread-opacity\))|animation:\s*stroke-draw\s+(?!var\(--thread-duration\)\s+var\(--thread-ease\)(?=\s|;))/;
+    for (const rule of threadRules) {
+      expect(rule, `a thread rule redefines an invariant:\n${rule}`).not.toMatch(forbidden);
+    }
+  });
+});
+
+describe("§1 hero entrance", () => {
+  it("reveals the heading as one masked block, not per line", () => {
+    expect(css).toMatch(/@keyframes hero-heading-rise/);
+    // A per-line implementation would need nth-child stepping. Its absence is
+    // the assertion: this must stay multilingual-safe with no measure pass.
+    const rule = css.match(/\[data-hero-heading\][^{]*\{[^}]*\}/g) ?? [];
+    expect(rule.length).toBeGreaterThan(0);
+    for (const r of rule) expect(r).not.toMatch(/nth-child/);
+  });
+
+  it("steps the video card's interior off one token", () => {
+    const steps = css.match(/\[data-hero-step\]/g) ?? [];
+    expect(steps.length).toBeGreaterThan(0);
+    expect(css).toMatch(/--hero-step[^;]*var\(--duration-stagger\)/);
+  });
+});
+
+describe("§3 conveyor", () => {
+  it("hands each step off in order rather than revealing them together", () => {
+    expect(css).toMatch(/@keyframes conveyor-handoff/);
+    const rule = css.match(/\[data-reveal="in"\][^{]*\[data-step\][^{]*\{[^}]*\}/g) ?? [];
+    expect(rule).toHaveLength(1);
+    expect(rule[0]).toMatch(
+      /animation:\s*conveyor-handoff\s+var\(--duration-base\)\s+var\(--ease-standard\)\s+both;/,
+    );
+    expect(rule[0]).toMatch(
+      /animation-delay:\s*calc\(var\(--duration-stagger\)\s*\*\s*var\(--conveyor-step, 0\)\);/,
+    );
+  });
+});
+
+describe("§2 node assembly", () => {
+  it("assembles the chips before drawing the connectors between them", () => {
+    // Break caught: replacing §2 with the former generic fade stagger makes
+    // the six capabilities read as unrelated cards instead of one system.
+    expect(css).toMatch(/@keyframes node-assemble/);
+
+    // L-004: this gathers CSS rules, so an empty collection must not make the
+    // per-rule dash assertion pass vacuously. There is one shared connector
+    // rule today; later selectors belong in an explicit change to this pin.
+    const connectorRules =
+      css.match(/\[data-reveal-scope\] \[data-reveal="in"\] \[data-connector\] path\s*\{[^}]*\}/g) ?? [];
+    expect(connectorRules).toHaveLength(1);
+    for (const rule of connectorRules) {
+      expect(rule).toMatch(/stroke-dashoffset/);
+      expect(rule).toMatch(/animation-delay:\s*calc\(var\(--duration-stagger\) \* 8\)/);
+    }
+  });
+
+  it("keeps the assembled centre alive with a token-derived, quiet pulse", () => {
+    // Break caught: replacing the constellation's living centre with a static
+    // glow makes the completed system lose the subtle ongoing signal the owner
+    // requested, while a literal duration would drift from the motion scale.
+    expect(css).toMatch(/@keyframes problem-node-pulse/);
+
+    const pulseRules =
+      css.match(/\[data-reveal-scope\] \[data-reveal="in"\] \[data-connector-node\] :is\([^)]*\)\s*\{[^}]*\}/g) ?? [];
+    expect(pulseRules).toHaveLength(1);
+    for (const rule of pulseRules) {
+      expect(rule).toMatch(/animation:\s*problem-node-pulse/);
+      expect(rule).toMatch(/calc\(var\(--duration-cinematic\) \* 4\)/);
+      expect(rule).toMatch(/infinite/);
+    }
+  });
+});
+
+describe("quiet lock", () => {
+  it("stops a low-intensity line at the existing recording lock before the cards arrive", () => {
+    // The original card rule already used --duration-slow, so this also pins
+    // the absent lock contract. Otherwise the test would have passed before
+    // Task 9 existed and proved nothing new.
+    const trustCards =
+      css.match(/\[data-reveal="in"\][^{]*\[data-trust-card\][^{]*\{[^}]*\}/g) ?? [];
+    expect(trustCards).toHaveLength(1);
+    expect(trustCards[0]).toMatch(/var\(--duration-slow\)/);
+    expect(trustCards[0]).toMatch(
+      /animation-delay:\s*calc\(var\(--thread-duration\) \+ var\(--duration-stagger\) \* var\(--card-step, 0\)\);/,
+    );
+
+    // The segment is a necessary SVG element; the lock it terminates at is an
+    // existing icon wrapper, marked rather than wrapped again. Neither enters
+    // the accessibility tree: the privacy claims themselves carry the meaning.
+    expect(trustSource).toMatch(
+      /<ThreadSegment\s+morphology="line"\s+className="trust-lock-thread\b[^\"]*"\s*\/>/,
+    );
+    expect(trustSource).toMatch(/data-trust-lock=/);
+
+    const lockRules =
+      css.match(/\[data-thread-segment="line"\]\.trust-lock-thread[^{]*\{[^}]*\}/g) ?? [];
+    expect(lockRules).toHaveLength(2);
+    expect(lockRules[0]).toMatch(/visibility:\s*hidden/);
+    expect(lockRules[1]).toMatch(/opacity:\s*var\(--thread-opacity\)/);
+  });
+});
+
+describe("§8 invitation", () => {
+  it("reveals the primary call to action after the invitation scene settles", () => {
+    // Break caught: a CTA that enters with its backdrop, orb, or mascot reads
+    // as a generic section fade instead of the page's invitation. The pending
+    // rule makes the intended sequence observable rather than relying on a
+    // source-only delay assertion.
+    const pendingRules =
+      css.match(
+        /:root\[data-reduce-motion="false"\]:not\(\[data-reveal-failsafe\]\) \[data-reveal-scope\] \[data-reveal="pending"\] \[data-cta-action\]\s*\{[^}]*\}/g,
+      ) ?? [];
+    expect(pendingRules).toHaveLength(1);
+    expect(pendingRules[0]).toMatch(/opacity:\s*0/);
+
+    const revealedRules =
+      css.match(/\[data-reveal="in"\][^{]*\[data-cta-action\][^{]*\{[^}]*\}/g) ?? [];
+    expect(revealedRules).toHaveLength(2);
+
+    const sequenceRules = revealedRules.filter((rule) => !rule.includes(":focus-visible"));
+    expect(sequenceRules).toHaveLength(1);
+    expect(sequenceRules[0]).toMatch(/animation:\s*reveal-fade/);
+    expect(sequenceRules[0]).toMatch(
+      /animation-delay:\s*calc\(var\(--thread-duration\) \+ var\(--duration-stagger\) \* 2\);/,
+    );
+
+    const focusRules = revealedRules.filter((rule) => rule.includes(":focus-visible"));
+    expect(focusRules).toHaveLength(1);
+    expect(focusRules[0]).toMatch(/animation:\s*none/);
+    expect(focusRules[0]).toMatch(/opacity:\s*1/);
+  });
+});
+
+describe("§9 resolution", () => {
+  it("settles the thread rather than drawing it, and leaves the footer still", () => {
+    const rule = css.match(/\[data-thread-segment="resolution"\](?! path)[^{]*\{[^}]*\}/g) ?? [];
+    expect(rule.length).toBeGreaterThan(0);
+    for (const r of rule) expect(r).toMatch(/opacity/);
+
+    // The generic revealed-thread rule draws every path. Resolution is the
+    // deliberate exception: it begins completed, then only its SVG settles
+    // and fades. The exact count makes a missing or duplicate override loud.
+    const revealedPathRules =
+      css.match(/\[data-reveal="in"\] \[data-thread-segment="resolution"\] path\s*\{[^}]*\}/g) ?? [];
+    expect(revealedPathRules).toHaveLength(1);
+    expect(revealedPathRules[0]).toMatch(/stroke-dashoffset:\s*0/);
+    expect(revealedPathRules[0]).toMatch(/animation:\s*none/);
+    expect(revealedPathRules[0]).not.toMatch(/stroke-draw/);
+
+    // The footer mascot is static by doctrine (spec §4). Nothing may animate it.
+    expect(css).not.toMatch(/\[data-footer-mascot\][^{]*\{[^}]*animation:/);
   });
 });

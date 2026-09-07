@@ -1,5 +1,6 @@
 import { getTranslations } from "@/lib/i18n/server";
 import { Section } from "./section";
+import { ThreadSegment } from "./thread-segment";
 
 /**
  * §9 — the sign-off (spec §11 ruling 4).
@@ -27,16 +28,17 @@ import { Section } from "./section";
  * carries no action at all — `signoff.test.tsx` pins the no-links, no-buttons
  * part, because a later "add a CTA here too" would split the one §8 asks for.
  *
- * ## NO MOTION
+ * ## Thread resolution
  *
- * Static half of spec §13, like §2-§8. Nothing here declares a transition,
- * keyframe or scroll trigger.
+ * The shared thread enters once, slows into its soft local curve, then fades
+ * away. The copy keeps Section's standard entrance; the footer remains still.
  */
 export async function Signoff() {
   const t = await getTranslations("marketing");
 
   return (
     <Section id="signoff" heading={t("signoff.heading")} layout="centred">
+      <ThreadSegment morphology="resolution" className="mx-auto mb-lg h-xl w-md" />
       <p className="mx-auto max-w-xl text-body-lg text-muted-foreground">{t("signoff.body")}</p>
     </Section>
   );

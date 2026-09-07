@@ -84,6 +84,68 @@ test.describe("landing page", () => {
     ).toHaveCount(0);
   });
 
+  test("§1's video card recedes as the hero leaves, and is untouched at rest", async ({ page }) => {
+    await page.goto("/en");
+
+    // POSITIVE CONTROL: prove the card is at its resting scale before asserting
+    // that it moves. Without this the case passes vacuously against a build
+    // that stopped applying the transform at all.
+    const card = page.locator("[data-hero-card]");
+    await expect(card).toBeVisible();
+    const atRest = await card.evaluate((el) => getComputedStyle(el).transform);
+    expect(atRest === "none" || atRest === "matrix(1, 0, 0, 1, 0, 0)").toBe(true);
+
+    await page.evaluate(() => window.scrollBy(0, window.innerHeight * 0.8));
+    await expect
+      .poll(async () => card.evaluate((el) => getComputedStyle(el).transform))
+      .not.toBe(atRest);
+  });
+
+  test("§2 assembles six capability nodes before drawing their connectors", async ({ page }) => {
+    await page.goto("/en");
+
+    const problem = page.locator("#problem");
+    await problem.scrollIntoViewIfNeeded();
+    // Positive controls: this is the actual section, observed by the shared
+    // reveal substrate, and it contains all six independently meaningful chips.
+    await expect(problem).toHaveAttribute("data-reveal", "in");
+    const chips = problem.locator("[data-chip][data-node-step]");
+    await expect(chips).toHaveCount(6);
+    expect(await chips.evaluateAll((nodes) => nodes.map((node) => node.dataset.nodeStep))).toEqual([
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+    ]);
+    await expect.poll(async () => chips.first().evaluate((node) => getComputedStyle(node).animationName)).toBe(
+      "node-assemble",
+    );
+
+    const connectorPaths = problem.locator("[data-connector] path");
+    await expect(connectorPaths).toHaveCount(6);
+    await expect
+      .poll(async () =>
+        connectorPaths.first().evaluate((node) => ({
+          animation: getComputedStyle(node).animationName,
+          vectorEffect: getComputedStyle(node).vectorEffect,
+        })),
+      )
+      .toEqual({ animation: "stroke-draw", vectorEffect: "non-scaling-stroke" });
+
+    const centreFlare = problem.locator("[data-connector-node] ellipse");
+    await expect(centreFlare).toHaveCount(1);
+    await expect
+      .poll(async () =>
+        centreFlare.evaluate((node) => ({
+          animation: getComputedStyle(node).animationName,
+          iterations: getComputedStyle(node).animationIterationCount,
+        })),
+      )
+      .toEqual({ animation: "problem-node-pulse", iterations: "infinite" });
+  });
+
   test("renders the nav and the footer as chrome outside main", async ({
     page,
   }) => {
@@ -544,6 +606,42 @@ test.describe("motion never hides content", () => {
       );
       expect(opacities.length).toBeGreaterThanOrEqual(9);
       expect(opacities.filter((o) => o !== 1)).toEqual([]);
+
+      // Review fix round 1 (I3b): task 4's two new mechanisms — §5's donut
+      // sweep and the thread's first segment — hide via `stroke-dashoffset`,
+      // not opacity, and nothing above samples that dimension. A dropped
+      // colour declaration (the `hsl()` defect this branch shipped once) is
+      // invisible to an opacity check too: the element is fully "revealed"
+      // and simply has no visible stroke.
+      //
+      // ⚠️ Review fix round 2: the first version of this sampled BOTH
+      // selectors into one collection and asserted only
+      // `strokes.length >= 2` — which is exactly satisfied by the two donut
+      // arcs alone. If the thread segment vanished from the DOM entirely
+      // (attribute renamed, component unmounted), that lower bound would
+      // still hold and the assertions below would silently stop checking the
+      // thread segment at all — the L-004 failure the original comment here
+      // claimed to prevent but did not enforce. Split into two locators, each
+      // pinned to its OWN exact/minimum count, so losing either kind fails on
+      // its own line and names itself rather than hiding inside a combined
+      // total.
+      const sampleStrokes = (nodes: Element[]) =>
+        nodes.map((n) => {
+          const cs = getComputedStyle(n);
+          return { dashoffset: cs.strokeDashoffset, stroke: cs.stroke };
+        });
+
+      const arcs = await page.locator("[data-familiar-arc]").evaluateAll(sampleStrokes);
+      expect(arcs).toHaveLength(2);
+      expect(arcs.filter((s) => s.dashoffset !== "0px")).toEqual([]);
+      expect(arcs.filter((s) => s.stroke === "none")).toEqual([]);
+
+      const threadPaths = await page
+        .locator("[data-thread-segment] path")
+        .evaluateAll(sampleStrokes);
+      expect(threadPaths.length).toBeGreaterThanOrEqual(1);
+      expect(threadPaths.filter((s) => s.dashoffset !== "0px")).toEqual([]);
+      expect(threadPaths.filter((s) => s.stroke === "none")).toEqual([]);
     });
   }
 
@@ -665,5 +763,36 @@ test.describe("motion never hides content", () => {
     expect(observed.total, "nine headings rendered").toBe(9);
     expect(observed.hiddenAtFirstSight, "all nine were armed hidden before the release").toBe(9);
     expect(observed.releasedAfterMs, "the failsafe released the page").not.toBeNull();
+  });
+
+  test("makes the delayed §8 action visible when keyboard focus reaches it", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/en");
+
+    const cta = page.locator("#cta");
+    await cta.scrollIntoViewIfNeeded();
+    await expect(cta).toHaveAttribute("data-reveal", "in");
+
+    const action = cta.locator("[data-cta-action]");
+    // Positive control: the case is meaningful only while the delayed entrance
+    // is armed. If this is already final opacity, the focus assertion below
+    // would get a free pass from elapsed time rather than the a11y mechanism.
+    await expect(action).toHaveCSS("animation-name", "reveal-fade");
+    await expect(action).toHaveCSS("opacity", "0");
+
+    // Freeze the delayed animation before focus. Without this control,
+    // Playwright's focus round-trip can consume the 780ms delay and falsely
+    // make the action visible simply because time passed.
+    const frozen = await action.evaluate((element) => {
+      const animations = element.getAnimations();
+      for (const animation of animations) animation.pause();
+      return { count: animations.length, opacity: getComputedStyle(element).opacity };
+    });
+    expect(frozen.count).toBeGreaterThan(0);
+    expect(frozen.opacity).toBe("0");
+
+    await action.focus();
+    await expect(action).toBeFocused();
+    await expect(action).toHaveCSS("opacity", "1");
   });
 });

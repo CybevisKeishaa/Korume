@@ -123,14 +123,12 @@ describe("Trust", () => {
     ).toContain("pointer-events-none");
   });
 
-  it("puts §7 in the split layout, with the rail carrying only eyebrow and heading", async () => {
+  it("terminates the quiet line at the recordings lock without adding a rail body", async () => {
     const { container } = render(await Trust());
 
-    // The reference draws §7 as a rail split — settled by measurement during
-    // task 9's review, and re-measured for this task off `346:6275`: the rail
-    // holds the eyebrow and a two-line heading and NOTHING else, while three
-    // equal cards fill the showcase. §7 is the first consumer of `Section`'s
-    // split with no rail body, which is why `split` exists.
+    // The reference draws §7 as a rail split: eyebrow and heading stay in the
+    // rail while three equal cards fill the showcase. The quiet line must end
+    // at the recordings lock instead of merely decorating the distant rail.
     const grid = must(container.querySelector("[data-section-showcase]"), "the showcase column")
       .parentElement;
     if (!grid) throw new Error("the showcase column has no parent grid");
@@ -140,6 +138,17 @@ describe("Trust", () => {
     // No rail body copy exists for §7 in the catalog, and inventing one would be
     // inventing product copy the Vietnamese pass would then have to match.
     expect(container.querySelectorAll("[data-section-rail]")).toHaveLength(0);
+    const cardRow = must(container.querySelector("[data-trust-cards]"), "the trust card row");
+    const threadItems = Array.from(cardRow.children).filter(
+      (child) => child.matches('li[aria-hidden="true"]'),
+    );
+    expect(threadItems).toHaveLength(1);
+    expect(threadItems[0]?.getAttribute("class")).toContain("-top-lg");
+    const locks = threadItems[0]?.querySelectorAll(
+      '[data-thread-segment="line"].trust-lock-thread',
+    ) ?? [];
+    expect(locks).toHaveLength(1);
+    expect(locks[0]).toHaveAttribute("aria-hidden", "true");
   });
 
   it("steps its three claim cards so they settle in order", async () => {

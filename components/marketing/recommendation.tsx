@@ -4,6 +4,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { Section } from "./section";
 import { AssetSlot } from "./asset-slot";
 import { FamiliarDonut } from "./recommendation-donut";
+import { ThreadSegment } from "./thread-segment";
 import type { Translator } from "./translator";
 
 /**
@@ -45,15 +46,27 @@ import type { Translator } from "./translator";
  * reads user state, and no code may derive a threshold from them — the real
  * i+1 scorer is `backend-engineer`'s `/lib/difficulty`.
  *
- * ## NO MOTION
+ * ## MOTION
  *
- * This is the static half of spec §13; the whole-page motion pass is a later
- * task. Nothing here declares a transition, keyframe or scroll trigger, so this
- * section's `prefers-reduced-motion` obligation is satisfied vacuously — as
- * §2's, §3's and §4's are.
+ * The whole-page motion pass (Task A-MOTION) already animates this section's
+ * rail and showcase entrance via `Section`'s shared reveal mechanism — the
+ * same mechanism every other section on the page uses. This task (the
+ * `landing-page-motion-doctrine` plan's task 4) adds two more live
+ * mechanisms, both declared in `app/globals.css`, neither here: the donut's
+ * calibration sweep (`recommendation-donut.tsx`) and the rail's own
+ * `ThreadSegment` (`connection` morphology, spec §3), which draws in on
+ * entrance the same way `stroke-draw` already draws §4's contours. The
+ * `prefers-reduced-motion` obligation is satisfied by the global kill switch,
+ * not vacuously — false since A-MOTION, exactly as `recommendation-donut.tsx`'s
+ * corrected docblock states; review fix round 1 (m5) found this docblock's
+ * own earlier correction disagreed with that ("true only until this task"),
+ * which was itself still wrong — A-MOTION predates task 4 by a whole prior
+ * phase of this branch.
  *
  * Looks up the translator once and passes it down as a prop — see
- * `translator.ts` (task 4 fix F5) — rather than each subcomponent calling
+ * `translator.ts` (the `landing-page-port` plan's task 4 fix F5 — a
+ * different plan's different task 4, named here to not collide with the one
+ * two paragraphs up) — rather than each subcomponent calling
  * `getTranslations` itself.
  */
 const STILL = "/marketing/recommend-commute.png";
@@ -96,7 +109,16 @@ export async function Recommendation() {
       eyebrow={t("recommend.eyebrow")}
       heading={t("recommend.heading")}
       layout="split"
-      rail={<p className="text-body text-muted-foreground">{t("recommend.body")}</p>}
+      rail={
+        <>
+          <p className="text-body text-muted-foreground">{t("recommend.body")}</p>
+          {/* The thread's §5 segment (spec §3) — the rail's body leads into the
+              showcase, so "connection" is the morphology, not "line" or
+              "resolution". No new layout container: it renders straight into
+              the rail Section already gives this section. */}
+          <ThreadSegment morphology="connection" className="mt-md h-md w-3xl" />
+        </>
+      }
     >
       {/* `min-w-0` on both cells for the reason `Section`'s own INVARIANT
           records: below `lg` this collapses to one implicit `auto` track whose

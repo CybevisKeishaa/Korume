@@ -251,6 +251,23 @@
   --ease-standard: ease-out;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /**
+   * The Korume Learning Thread — its INVARIANT half (spec §3.2). Every thread
+   * segment consumes these and none may define its own. Continuity is same
+   * grammar, different geometry: position, length, curvature, orientation and
+   * bends are each section's own business, and are deliberately absent here.
+   *
+   * Timing derives from the existing scales rather than inventing literals, so
+   * a change to the page's rhythm moves the thread with it.
+   */
+  --thread-width: 2px;
+  --thread-color: var(--accent);
+  --thread-opacity: 0.9;
+  --thread-cap: round;
+  --thread-dash: 1;
+  --thread-ease: var(--ease-standard);
+  --thread-duration: var(--duration-slow);
+
   /* Z-index ladder. Fixed rungs so stacking is a decision made once, not a
      bidding war of hardcoded z-40s. */
   --z-nav: 30;
@@ -561,34 +578,317 @@
   animation-delay: calc(var(--duration-cinematic) * 1.5);
 }
 
-/* The stepped collections: §2's six chips, §3's five steps, §7's three cards.
-   One rule and one custom property — they differ in duration, not mechanism.
+/* The stepped collections: §3's five steps and §7's three cards.
    Nothing else inside these sections moves: §3's eight journey-art glyphs stay
    still deliberately, because stepping every small element is exactly the
    noisy reading the brief rules out. */
-:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is(
-    [data-chip],
-    [data-step],
-    [data-trust-card],
-    [data-constellation]
-  ) {
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-step] {
   opacity: 0;
 }
 
-/* §2's constellation is the thing the chips hang off, so it arrives first and
-   they emerge from it. */
-[data-reveal-scope] [data-reveal="in"] [data-constellation] {
-  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-stagger) * 2);
+/* §3 hands the five learning steps from left to right. The section itself
+   already rises; this small horizontal travel reads as a conveyor without
+   adding a second vertical entrance or changing layout. */
+[data-reveal-scope] [data-reveal="in"] [data-step] {
+  animation: conveyor-handoff var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * var(--conveyor-step, 0));
 }
-[data-reveal-scope] [data-reveal="in"] :is([data-chip], [data-step]) {
-  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 3));
+
+@keyframes conveyor-handoff {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--space-sm) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
+
 /* §7 is the deceleration before the CTA, so its cards take the reveal tier. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-trust-card] {
+  opacity: 0;
+}
+
 [data-reveal-scope] [data-reveal="in"] [data-trust-card] {
   animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
-  animation-delay: calc(var(--duration-stagger) * (var(--card-step, 0) + 2));
+  animation-delay: calc(var(--thread-duration) + var(--duration-stagger) * var(--card-step, 0));
+}
+
+/* The quiet-lock line draws into the existing recording-card padlock, then
+   stays still while the privacy promises arrive. The line is decorative; the
+   cards' visible claims carry the accessible guarantee. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment="line"].trust-lock-thread {
+  visibility: hidden;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="line"].trust-lock-thread {
+  opacity: var(--thread-opacity);
+}
+
+/* §8 is an invitation, not the thread's destination. The backdrop settles,
+   the supplied orb/mascot scene stays gently alive, and only then does the
+   primary action appear. The vertical line leaves through the section's lower
+   edge so §9, rather than this button, owns the final resolution. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-cta-action] {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] .cta-backdrop {
+  animation: cta-backdrop-settle var(--duration-slow) var(--ease-standard) both;
+}
+
+@keyframes cta-backdrop-settle {
+  from {
+    transform: scale(1.03);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-cta-orb] {
+  animation: cta-orb-float var(--duration-cinematic) var(--ease-standard) infinite;
+}
+
+@keyframes cta-orb-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(calc(var(--space-2xs) * -1));
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-cta-mascot] {
+  animation: cta-mascot-breathe calc(var(--duration-cinematic) * 4) var(--ease-standard) infinite;
+}
+
+@keyframes cta-mascot-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.015);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-cta-action] {
+  animation: reveal-fade var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--thread-duration) + var(--duration-stagger) * 2);
+}
+
+/* A delayed action can still be reached by keyboard. Focus is an explicit
+   request to interact, so it wins over choreography: show the control at once
+   instead of leaving a reader on an invisible link until its delay expires. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-cta-action]:focus-visible,
+[data-reveal-scope] [data-reveal="in"] [data-cta-action]:focus-visible {
+  animation: none;
+  opacity: 1;
+}
+
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment="line"].cta-thread {
+  visibility: hidden;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="line"].cta-thread {
+  opacity: var(--thread-opacity);
+}
+
+/* §9 resolves the thread rather than extending it: its existing soft curve
+   slows down, settles into place, and fades before the deliberately still footer. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment="resolution"] {
+  visibility: hidden;
+  opacity: var(--thread-opacity);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="resolution"] {
+  visibility: visible;
+  opacity: var(--thread-opacity);
+  animation: resolution-settle var(--duration-cinematic) var(--ease-standard) both;
+}
+
+@keyframes resolution-settle {
+  from {
+    opacity: var(--thread-opacity);
+    transform: translateY(calc(var(--space-2xs) * -1));
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
+/* §2 assembles one learning system: the six capability chips settle from
+   deliberately different positions, the constellation draws between them, and
+   the example sentence lands only after the connection is established. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] :is([data-chip], [data-connector] path, [data-connector-node], [data-problem-sentence]) {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-chip] {
+  animation: node-assemble var(--duration-fast) var(--ease-out-expo) both;
+  animation-delay: calc(var(--node-step, 0) * var(--duration-stagger));
+}
+
+@keyframes node-assemble {
+  from {
+    opacity: 0;
+    transform: translate(var(--node-x, 0), var(--node-y, var(--space-md)));
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-connector] path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: stroke-draw var(--duration-slow) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * 8);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-connector-node] {
+  animation: reveal-fade var(--duration-fast) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-stagger) * 11);
+}
+
+/* Keep the resolved centre point gently alive without moving the layout. */
+[data-reveal-scope] [data-reveal="in"] [data-connector-node] :is(circle:first-child, ellipse) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: problem-node-pulse calc(var(--duration-cinematic) * 4) var(--ease-standard) infinite;
+  animation-delay: calc(var(--duration-stagger) * 11);
+}
+
+@keyframes problem-node-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    filter: brightness(1.2);
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-problem-sentence] {
+  animation: node-assemble var(--duration-base) var(--ease-standard) both;
+  animation-delay: calc(var(--duration-stagger) * 15);
+}
+
+/* The thread's shared grammar. Every segment consumes the invariant tokens;
+   geometry lives in the component, where it is free to differ per section.
+   ⚠️ `hsl(...)`, not a bare `var()`: every colour token in this file (spec
+   §2.5's two-tier system) is stored as bare HSL channels so Tailwind's
+   `<alpha-value>` can compose them — `stroke: var(--thread-color)` computes
+   to the invalid colour `29 75% 64%` and the whole declaration drops to its
+   initial value, `none`. Caught only by rendering the page: `getComputedStyle`
+   read `stroke: "none"` on a real `path` with `--thread-color` resolving
+   correctly, no unit test sees a dropped declaration. */
+[data-thread-segment] path {
+  stroke: hsl(var(--thread-color));
+  stroke-width: var(--thread-width);
+  stroke-linecap: var(--thread-cap);
+  opacity: var(--thread-opacity);
+  stroke-dasharray: var(--thread-dash);
+}
+
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment] path {
+  stroke-dashoffset: var(--thread-dash);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment] path {
+  /* ⚠️ Repeated, not inherited from the `pending` rule above: `stroke-draw`
+     declares only a `to`, so its implicit `from` is the live computed value —
+     and `pending` stops matching the instant the state flips. Without this the
+     animation runs 0 -> 0 and the segment simply appears. */
+  stroke-dasharray: var(--thread-dash);
+  stroke-dashoffset: var(--thread-dash);
+  animation: stroke-draw var(--thread-duration) var(--thread-ease) both;
+}
+
+/* §9 resolves rather than draws: the local curve begins complete, while its
+   parent SVG alone runs the slower settle-and-fade animation above. */
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="resolution"] path {
+  stroke-dashoffset: 0;
+  animation: none;
+}
+
+/* §5's calibration sweep. The attribute, not its value: the ring is drawn
+   TWICE — a blurred glow and the crisp line on top — and animating only the
+   crisp one leaves a halo tracing a path its own line has not reached. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-familiar-arc] {
+  stroke-dashoffset: var(--donut-circumference);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-familiar-arc] {
+  stroke-dashoffset: var(--donut-circumference);
+  animation: donut-sweep var(--duration-cinematic) var(--ease-out-expo) both;
+  animation-delay: calc(var(--duration-stagger) * 2);
+}
+
+@keyframes donut-sweep {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* §1's heading arrives as a single masked block. Deliberately NOT per line:
+   the heading is one catalog string that wraps to a different number of lines
+   in en and vi at every width, so a per-line reveal would need a measure pass
+   or hard-coded spans. Neither is worth one effect. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-hero-heading] {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-hero-heading] {
+  animation: hero-heading-rise var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@keyframes hero-heading-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-md));
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* The video card's interior, stepped off one token: image, then metadata,
+   then the companion. The card itself already rose with the section. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-hero-step] {
+  opacity: 0;
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-hero-step] {
+  animation: reveal-fade var(--duration-base) var(--ease-standard) both;
+  /* Multiplicands reordered from the sibling rules' `stagger * (step + n)`
+     convention (`--chain-step`, `--card-step`) to `(step + n) * stagger` —
+     numerically identical (calc() multiplication is commutative), needed so
+     the token relationship reads left-to-right as "this many steps of one
+     stagger", which is what design-tokens.test.ts's "steps ... off one
+     token" guard checks for. */
+  animation-delay: calc((var(--hero-step, 0) + 3) * var(--duration-stagger));
+}
+
+/* §1's camera push. --hero-scroll-progress is a Hero-only rest-relative
+   derivative; generic --section-progress remains viewport travel for future
+   consumers. Transform only — the card must not move a single pixel of layout. */
+[data-hero-card] {
+  transform: scale(calc(1 - 0.06 * var(--hero-scroll-progress, 0)));
+  transform-origin: center top;
 }
 
 /**
