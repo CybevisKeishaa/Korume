@@ -815,6 +815,13 @@
   animation: stroke-draw var(--thread-duration) var(--thread-ease) both;
 }
 
+/* §9 resolves rather than draws: the local curve begins complete, while its
+   parent SVG alone runs the slower settle-and-fade animation above. */
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="resolution"] path {
+  stroke-dashoffset: 0;
+  animation: none;
+}
+
 /* §5's calibration sweep. The attribute, not its value: the ring is drawn
    TWICE — a blurred glow and the crisp line on top — and animating only the
    crisp one leaves a halo tracing a path its own line has not reached. */

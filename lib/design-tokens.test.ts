@@ -433,7 +433,8 @@ describe("thread token contract", () => {
  * only if they actually add a matching rule; several add none.
  */
 const threadRules = css.match(/\[data-thread-segment[^\]]*\][^{]*\{[^}]*\}/g) ?? [];
-const THREAD_RULE_COUNT = 9;
+// Task 11 fix round adds the revealed resolution-path anti-draw override: 9 -> 10.
+const THREAD_RULE_COUNT = 10;
 
 describe("thread continuity contract", () => {
   it("finds the thread rules it is about to make claims about", () => {
@@ -629,9 +630,20 @@ describe("§8 invitation", () => {
 
 describe("§9 resolution", () => {
   it("settles the thread rather than drawing it, and leaves the footer still", () => {
-    const rule = css.match(/\[data-thread-segment="resolution"\][^{]*\{[^}]*\}/g) ?? [];
+    const rule = css.match(/\[data-thread-segment="resolution"\](?! path)[^{]*\{[^}]*\}/g) ?? [];
     expect(rule.length).toBeGreaterThan(0);
     for (const r of rule) expect(r).toMatch(/opacity/);
+
+    // The generic revealed-thread rule draws every path. Resolution is the
+    // deliberate exception: it begins completed, then only its SVG settles
+    // and fades. The exact count makes a missing or duplicate override loud.
+    const revealedPathRules =
+      css.match(/\[data-reveal="in"\] \[data-thread-segment="resolution"\] path\s*\{[^}]*\}/g) ?? [];
+    expect(revealedPathRules).toHaveLength(1);
+    expect(revealedPathRules[0]).toMatch(/stroke-dashoffset:\s*0/);
+    expect(revealedPathRules[0]).toMatch(/animation:\s*none/);
+    expect(revealedPathRules[0]).not.toMatch(/stroke-draw/);
+
     // The footer mascot is static by doctrine (spec §4). Nothing may animate it.
     expect(css).not.toMatch(/\[data-footer-mascot\][^{]*\{[^}]*animation:/);
   });
