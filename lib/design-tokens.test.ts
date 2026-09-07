@@ -49,7 +49,8 @@ const revealGates = css.match(
 // Task 10 hides both the CTA action and its continuation segment until the
 // invitation scene begins — 12 -> 14.
 // The focus-visible escape adds one matching gate: 14 -> 15.
-const REVEAL_GATE_COUNT = 15;
+// Task 11 holds the resolution thread until §9 enters: 15 -> 16.
+const REVEAL_GATE_COUNT = 16;
 
 const REQUIRED_TOKENS = [
   // spacing
@@ -432,7 +433,7 @@ describe("thread token contract", () => {
  * only if they actually add a matching rule; several add none.
  */
 const threadRules = css.match(/\[data-thread-segment[^\]]*\][^{]*\{[^}]*\}/g) ?? [];
-const THREAD_RULE_COUNT = 7;
+const THREAD_RULE_COUNT = 9;
 
 describe("thread continuity contract", () => {
   it("finds the thread rules it is about to make claims about", () => {
@@ -623,5 +624,15 @@ describe("§8 invitation", () => {
     expect(focusRules).toHaveLength(1);
     expect(focusRules[0]).toMatch(/animation:\s*none/);
     expect(focusRules[0]).toMatch(/opacity:\s*1/);
+  });
+});
+
+describe("§9 resolution", () => {
+  it("settles the thread rather than drawing it, and leaves the footer still", () => {
+    const rule = css.match(/\[data-thread-segment="resolution"\][^{]*\{[^}]*\}/g) ?? [];
+    expect(rule.length).toBeGreaterThan(0);
+    for (const r of rule) expect(r).toMatch(/opacity/);
+    // The footer mascot is static by doctrine (spec §4). Nothing may animate it.
+    expect(css).not.toMatch(/\[data-footer-mascot\][^{]*\{[^}]*animation:/);
   });
 });

@@ -60,6 +60,7 @@ function MascotCard({ t }: { t: Translator }) {
     >
       <Image
         data-mascot
+        data-footer-mascot
         src="/mascot/poses/resting.png"
         alt=""
         width={112}

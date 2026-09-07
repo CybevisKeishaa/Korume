@@ -697,6 +697,30 @@
   opacity: var(--thread-opacity);
 }
 
+/* §9 resolves the thread rather than extending it: its existing soft curve
+   slows down, settles into place, and fades before the deliberately still footer. */
+:root[data-reduce-motion="false"]:not([data-reveal-failsafe]) [data-reveal-scope] [data-reveal="pending"] [data-thread-segment="resolution"] {
+  visibility: hidden;
+  opacity: var(--thread-opacity);
+}
+
+[data-reveal-scope] [data-reveal="in"] [data-thread-segment="resolution"] {
+  visibility: visible;
+  opacity: var(--thread-opacity);
+  animation: resolution-settle var(--duration-cinematic) var(--ease-standard) both;
+}
+
+@keyframes resolution-settle {
+  from {
+    opacity: var(--thread-opacity);
+    transform: translateY(calc(var(--space-2xs) * -1));
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0);
+  }
+}
+
 /* §2 assembles one learning system: the six capability chips settle from
    deliberately different positions, the constellation draws between them, and
    the example sentence lands only after the connection is established. */
