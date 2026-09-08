@@ -133,8 +133,15 @@ layout token and it disappears below `xl`.
 
 ## Completion
 
-Task 8 is complete. The whole-branch review and its narrow follow-up both
-approved the C2 branch; it is ready for merge.
+Task 8 and its whole-branch review are complete, but the branch is **reopened
+on 2026-09-09 and is not ready for merge**. The owner identified that the
+technical C2 completion criterion incorrectly accepted conditional removal of
+empty Figma regions. The new authoritative repair design is
+`docs/superpowers/specs/2026-09-09-desktop-hub-empty-states-design.md`:
+desktop-only web at 1024px+, an always-present 300px rail, complete truthful
+no-data regions, and an EN/VI copy contract. Implementation has not begun;
+obtain the owner's review of that spec, then create its task plan before
+resuming source work.
 
 ## Historical next actions (superseded by the verification above)
 
