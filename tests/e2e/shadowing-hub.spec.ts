@@ -13,17 +13,29 @@ async function registerLearner(page: import("@playwright/test").Page): Promise<v
 }
 
 async function assertAllRenderedLessonActionsAreKeyboardReachable(
+  page: import("@playwright/test").Page,
   main: import("@playwright/test").Locator,
 ): Promise<void> {
   const lessonActions = main.locator('a[href^="/en/shadowing/"]');
   const actionCount = await lessonActions.count();
   expect(actionCount).toBeGreaterThan(0);
 
-  for (let index = 0; index < actionCount; index += 1) {
-    const action = lessonActions.nth(index);
-    await action.focus();
-    await expect(action).toBeFocused();
+  // Start from the URL field, whose position in the first Hub state is known.
+  // Pressing Tab proves the browser's sequential-focus order; calling
+  // locator.focus() would let a tabindex=-1 lesson card falsely pass.
+  await main.getByLabel("YouTube URL").focus();
+  const maximumTabPresses = await main.locator('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])').count();
+  const reachedActionIndexes = new Set<number>();
+
+  for (let press = 0; press < maximumTabPresses && reachedActionIndexes.size < actionCount; press += 1) {
+    await page.keyboard.press("Tab");
+    const focusedIndex = await lessonActions.evaluateAll((actions) => actions.findIndex((action) => action === document.activeElement));
+    if (focusedIndex >= 0) reachedActionIndexes.add(focusedIndex);
   }
+
+  expect([...reachedActionIndexes].sort((left, right) => left - right)).toEqual(
+    Array.from({ length: actionCount }, (_, index) => index),
+  );
 }
 
 test("the Shadowing Hub keeps core study controls usable without fabricated progress", async ({ page }) => {
@@ -39,7 +51,7 @@ test("the Shadowing Hub keeps core study controls usable without fabricated prog
   await expect(main.getByRole("heading", { name: "Shadowing Hub", level: 1 })).toBeVisible();
   await expect(main.getByRole("search", { name: "Search lessons" })).toBeVisible();
   await expect(main.getByLabel("YouTube URL")).toBeVisible();
-  await assertAllRenderedLessonActionsAreKeyboardReachable(main);
+  await assertAllRenderedLessonActionsAreKeyboardReachable(page, main);
 
   let releaseImport!: () => void;
   const importResponse = new Promise<void>((resolve) => {

@@ -101,6 +101,11 @@ layout token and it disappears below `xl`.
   failed as expected against the isolated `bfd52c0` legacy artifact because
   its `Shadowing Hub` heading did not exist. This is the RED/GREEN proof for
   the Task 8 route port, not a result from the untrusted port-3000 process.
+- The lesson-action proof now uses sequential `Tab` traversal from the known
+  YouTube URL field, not programmatic `locator.focus()`. A temporary
+  `tabIndex={-1}` mutation made the assertion fail with no reached lesson
+  actions; after restoration, the same check passed on a clean isolated
+  production artifact on port 3004.
 - Whole-branch review through `f2dc18d` approved the C2 implementation after
   an isolated build, focused browser run, typecheck, lint, focused Hub suite,
   full Vitest suite, and diff check. It identified the lesson-action browser
