@@ -934,3 +934,18 @@
   transition-delay: 0s !important;
   scroll-behavior: auto !important;
 }
+
+.mobile-app-handoff {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .mobile-app-handoff {
+    display: block;
+    min-height: 100svh;
+  }
+
+  [data-desktop-web] {
+    display: none !important;
+  }
+}

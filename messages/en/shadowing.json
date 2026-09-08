@@ -7,6 +7,13 @@
     "title": "No transcript yet",
     "body": "This video doesn't have a transcript to shadow against yet. Transcript submission is coming soon."
   },
+  "mobileHandoff": {
+    "eyebrow": "Korume mobile app",
+    "title": "Take your Japanese study with you",
+    "body": "Use the Korume app to keep learning wherever you are.",
+    "appStoreLabel": "Download on the App Store",
+    "playStoreLabel": "Get it on Google Play"
+  },
   "translationToggle": "Translation",
   "summary": {
     "heading": "Summary",

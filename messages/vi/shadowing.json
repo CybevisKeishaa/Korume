@@ -7,6 +7,13 @@
     "title": "Video này chưa có phụ đề.",
     "body": "Hiện chưa có phụ đề để luyện shadowing theo. Tính năng thêm phụ đề sẽ sớm có mặt."
   },
+  "mobileHandoff": {
+    "eyebrow": "Ứng dụng Korume",
+    "title": "Mang việc học tiếng Nhật theo bạn",
+    "body": "Dùng ứng dụng Korume để tiếp tục học ở bất cứ đâu.",
+    "appStoreLabel": "Tải trên App Store",
+    "playStoreLabel": "Tải trên Google Play"
+  },
   "translationToggle": "Bản dịch",
   "summary": {
     "heading": "Tóm tắt",
