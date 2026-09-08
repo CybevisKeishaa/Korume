@@ -122,6 +122,18 @@ describe("VideoImportForm", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it("explains the monthly lesson quota on 403 instead of treating it as a generic failure", async () => {
+    mockFetchOnce({ ok: false, status: 403 });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "You've reached this month's lesson import limit.",
+    );
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it("shows a wait message built from the Retry-After header on 429", async () => {
     mockFetchOnce({ ok: false, status: 429, headers: { "Retry-After": "30" } });
 

@@ -23,8 +23,11 @@ C4 durable import-job progress are explicitly excluded.
   `feat(recommendations): expose truthful learning reasons` (`46c5ee1`).
 - Task 3 is ready to commit as
   `feat(shadowing): add Hub lesson card primitives` (`d28a03d`).
-- A Task 4 discovery correction is ready to commit: failed private imports
-  remain visible before they receive a `user_lesson_library` ledger row.
+- Task 4's data correction is `d50ff27`; its Hub import/library UI source
+  checkpoint is `0b033cd`. Failed private imports remain visible before they
+  receive a `user_lesson_library` ledger row and can retry caption retrieval.
+- `61caf26` and `9ed0297` contain Task 5/7-oriented source work, but their
+  plan checklists have not yet been audited as complete.
 - C1 foundation merged earlier at `bd7f574`; landing motion merged to the
   base at `bfd52c0`.
 
@@ -47,8 +50,12 @@ layout token and it disappears below `xl`.
   expected; GREEN: 17 focused tests and `npm run typecheck` passed.
 - Task 3 RED: Hub card modules were absent; GREEN: focused RTL passed 3
   tests and `npm run typecheck` passed.
-- Task 4 discovery RED/GREEN: a failed private import was absent from the Hub;
-  a focused 5-test Hub suite now verifies it remains `unavailable`.
+- Task 4 RED: the new quota component was absent, 403 import failures mapped
+  to the generic error, and unavailable lessons had no retry control. GREEN:
+  focused Hub import/library and import-form RTL coverage verifies quota facts,
+  pending/error states, a real retry POST with authoritative refresh, and no
+  fabricated percentage or ETA. `npm run typecheck` and `npm run lint` pass
+  (lint retains only baseline warnings); the Task 4 fix-wave review approved.
 - Figma design context fetched for `149:2`, `149:1072`, and `149:1162`.
 
 ## Working tree and environment
@@ -64,5 +71,8 @@ layout token and it disappears below `xl`.
 
 ## Next actions
 
-1. Commit the Task 4 data correction.
-2. Execute Task 4: port the inline import and My Lessons states with RTL.
+1. Commit the Task 4 RTL evidence and this checkpoint after its source/catalog
+   commit, following `docs/lessons.md` L-027.
+2. Audit the already-landed Task 5/7-oriented work against their full plan
+   checklists before treating either task as complete; then continue with the
+   remaining C2 task sequence.
