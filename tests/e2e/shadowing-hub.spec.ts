@@ -12,6 +12,20 @@ async function registerLearner(page: import("@playwright/test").Page): Promise<v
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });
 }
 
+async function assertAllRenderedLessonActionsAreKeyboardReachable(
+  main: import("@playwright/test").Locator,
+): Promise<void> {
+  const lessonActions = main.locator('a[href^="/en/shadowing/"]');
+  const actionCount = await lessonActions.count();
+  expect(actionCount).toBeGreaterThan(0);
+
+  for (let index = 0; index < actionCount; index += 1) {
+    const action = lessonActions.nth(index);
+    await action.focus();
+    await expect(action).toBeFocused();
+  }
+}
+
 test("the Shadowing Hub keeps core study controls usable without fabricated progress", async ({ page }) => {
   await registerLearner(page);
 
@@ -25,6 +39,7 @@ test("the Shadowing Hub keeps core study controls usable without fabricated prog
   await expect(main.getByRole("heading", { name: "Shadowing Hub", level: 1 })).toBeVisible();
   await expect(main.getByRole("search", { name: "Search lessons" })).toBeVisible();
   await expect(main.getByLabel("YouTube URL")).toBeVisible();
+  await assertAllRenderedLessonActionsAreKeyboardReachable(main);
 
   let releaseImport!: () => void;
   const importResponse = new Promise<void>((resolve) => {
