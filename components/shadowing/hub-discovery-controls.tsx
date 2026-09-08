@@ -25,6 +25,7 @@ export interface HubDiscoveryControlsProps {
   filters: HubDiscoveryFilter[];
   query: string;
   activeFilter: string | null;
+  action: string;
   /** Null means the learner has not searched or filtered yet. */
   results: HubLesson[] | null;
   labels: HubDiscoveryControlsLabels;
@@ -34,10 +35,10 @@ export interface HubDiscoveryControlsProps {
  * The Hub's quiet discovery entry point. It submits to the server-rendered
  * Hub route, keeping search/filtering in the same RLS-protected read model.
  */
-export function HubDiscoveryControls({ filters, query, activeFilter, results, labels }: HubDiscoveryControlsProps) {
+export function HubDiscoveryControls({ filters, query, activeFilter, results, action, labels }: HubDiscoveryControlsProps) {
   return (
     <section aria-label={labels.searchLabel}>
-      <form role="search" aria-label={labels.searchLabel} action="/shadowing" method="get">
+      <form role="search" aria-label={labels.searchLabel} action={action} method="get">
         <label htmlFor="hub-search" className="sr-only">{labels.searchLabel}</label>
         <Input
           id="hub-search"

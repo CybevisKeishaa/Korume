@@ -7,6 +7,9 @@ export interface HubFeaturedHeroLabels {
   start: string;
   continue: string;
   noThumbnail: string;
+  jlptLabel: string;
+  durationLabel: string;
+  duration: (minutes: number) => string;
 }
 
 export function HubFeaturedHero({ lesson, isInProgress = false, labels }: { lesson: HubLesson | null; isInProgress?: boolean; labels: HubFeaturedHeroLabels }) {
@@ -27,8 +30,8 @@ export function HubFeaturedHero({ lesson, isInProgress = false, labels }: { less
           <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{labels.eyebrow}</p>
           <h2 className="mt-sm text-title font-semibold tracking-tight text-foreground">{lesson.title}</h2>
           <dl className="mt-md flex flex-wrap gap-x-md gap-y-xs text-caption text-muted-foreground">
-            {lesson.jlptLevelEstimate ? <div><dt className="sr-only">JLPT</dt><dd>{lesson.jlptLevelEstimate}</dd></div> : null}
-            {lesson.durationSeconds ? <div><dt className="sr-only">Duration</dt><dd>{Math.ceil(lesson.durationSeconds / 60)} min</dd></div> : null}
+            {lesson.jlptLevelEstimate ? <div><dt className="sr-only">{labels.jlptLabel}</dt><dd>{lesson.jlptLevelEstimate}</dd></div> : null}
+            {lesson.durationSeconds ? <div><dt className="sr-only">{labels.durationLabel}</dt><dd>{labels.duration(Math.ceil(lesson.durationSeconds / 60))}</dd></div> : null}
           </dl>
           <Link
             href={`/shadowing/${lesson.id}`}

@@ -7,7 +7,6 @@ import { getRecommendations } from "@/lib/data/recommendations";
 import type { VideoRecommendation } from "@/lib/recommendation-types";
 import type { RecommendationReason } from "@/lib/recommendation-types";
 import { getActivePlanTier, type PlanTier } from "@/lib/data/subscriptions";
-import { getUserStats, type UserStatsData } from "@/lib/data/user-stats";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { listSituations, listSources } from "@/lib/data/lesson-taxonomy";
 
@@ -41,7 +40,6 @@ export interface HubQuota {
 }
 
 export interface HubRailProjection {
-  stats: UserStatsData;
   /** Only a recommendation carrying a measured learner-data reason may enter the rail. */
   suggestion: { lesson: HubLesson; reason: Exclude<RecommendationReason, null> } | null;
 }
@@ -104,7 +102,7 @@ export async function getShadowingHub(options: { query?: string; filter?: string
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
 
-  const [libraryResult, videosResult, progressResult, tier, used, popularResult, recommendationsResult, statsResult, featured, situations, sources] =
+  const [libraryResult, videosResult, progressResult, tier, used, popularResult, recommendationsResult, featured, situations, sources] =
     await Promise.all([
       supabase.from("user_lesson_library").select("lesson_id").eq("user_id", user.id),
       supabase.from("videos").select(VIDEO_COLUMNS).order("created_at", { ascending: false }),
@@ -116,7 +114,6 @@ export async function getShadowingHub(options: { query?: string; filter?: string
       countMonthlyCreations(user.id),
       PopularStrategyV1.rank({ userId: user.id, limit: SHELF_LIMIT }),
       getRecommendations({ limit: SHELF_LIMIT }),
-      getUserStats(),
       getCollectionBySlug("featured"),
       listSituations(),
       listSources(),
@@ -191,24 +188,21 @@ export async function getShadowingHub(options: { query?: string; filter?: string
         limit: tier === "plus" ? null : FREE_MONTHLY_LESSON_QUOTA,
         tier,
       },
-      rail: statsResult.ok
-        ? {
-            stats: statsResult.data,
-            suggestion: suggestedRecommendation?.reason
-              ? {
-                  lesson: {
-                    id: suggestedRecommendation.videoId,
-                    youtubeVideoId: suggestedRecommendation.youtubeVideoId,
-                    title: suggestedRecommendation.title,
-                    durationSeconds: null,
-                    thumbnailUrl: suggestedRecommendation.thumbnailUrl,
-                    jlptLevelEstimate: suggestedRecommendation.jlptLevelEstimate,
-                  },
-                  reason: suggestedRecommendation.reason,
-                }
-              : null,
-          }
-        : null,
+      rail: {
+        suggestion: suggestedRecommendation?.reason
+          ? {
+              lesson: {
+                id: suggestedRecommendation.videoId,
+                youtubeVideoId: suggestedRecommendation.youtubeVideoId,
+                title: suggestedRecommendation.title,
+                durationSeconds: null,
+                thumbnailUrl: suggestedRecommendation.thumbnailUrl,
+                jlptLevelEstimate: suggestedRecommendation.jlptLevelEstimate,
+              },
+              reason: suggestedRecommendation.reason,
+            }
+          : null,
+      },
       filters,
       discovery,
     },

@@ -153,7 +153,10 @@
     "searchPlaceholder": "Search by title, expression, anime, movie or topic...",
     "searchResults": "Search results",
     "noSearchResults": "No lessons matched your search.",
-    "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "dailyLife": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
-    "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" }
-  }
+    "jlptLabel": "Japanese level",
+    "durationLabel": "Lesson length",
+    "minutes": "{count} min"
+  },
+  "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
+  "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" }
 }

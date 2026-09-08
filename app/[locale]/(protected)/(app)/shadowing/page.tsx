@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/lib/i18n";
-import { redirect } from "@/lib/i18n/navigation";
+import { getPathname, redirect } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { getShadowingHub } from "@/lib/data/shadowing-hub";
 import { TwoColumnShell } from "@/components/layout/two-column-shell";
@@ -11,6 +11,11 @@ import { HubFeaturedHero } from "@/components/shadowing/hub-featured-hero";
 import { HubCompanionRail } from "@/components/shadowing/hub-companion-rail";
 import { HubDiscoveryControls } from "@/components/shadowing/hub-discovery-controls";
 import { shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
+import enShadowing from "@/messages/en/shadowing.json";
+
+type TaxonomyTranslationKey =
+  | `situations.${keyof typeof enShadowing.situations}`
+  | `sources.${keyof typeof enShadowing.sources}`;
 
 export async function generateMetadata({ params }: { params: { locale: Locale } }): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: "videos" });
@@ -25,32 +30,16 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
     filter: typeof searchParams?.filter === "string" ? searchParams.filter : undefined,
   });
   const hubQuery = query.success ? query.data : {};
-  const [t, tCommon, tHub, result] = await Promise.all([
+  const [t, tCommon, tHub, result, locale] = await Promise.all([
     getTranslations("videos"),
     getTranslations("common"),
     getTranslations("shadowing"),
     getShadowingHub({ query: hubQuery.q, filter: hubQuery.filter }),
+    getLocale(),
   ]);
-  if (!result.ok) redirect({ href: "/login", locale: await getLocale() });
+  if (!result.ok) redirect({ href: "/login", locale });
 
   const hub = result.data;
-  const filterLabels: Record<string, string> = {
-    "situation:conversation": tHub("hub.situations.conversation"),
-    "situation:restaurant": tHub("hub.situations.restaurant"),
-    "situation:business": tHub("hub.situations.business"),
-    "situation:daily-life": tHub("hub.situations.dailyLife"),
-    "situation:travel": tHub("hub.situations.travel"),
-    "situation:office": tHub("hub.situations.office"),
-    "situation:shopping": tHub("hub.situations.shopping"),
-    "situation:cafe": tHub("hub.situations.cafe"),
-    "source:youtube": tHub("hub.sources.youtube"),
-    "source:nhk": tHub("hub.sources.nhk"),
-    "source:podcast": tHub("hub.sources.podcast"),
-    "source:drama": tHub("hub.sources.drama"),
-    "source:anime": tHub("hub.sources.anime"),
-    "source:vlog": tHub("hub.sources.vlog"),
-    "source:news": tHub("hub.sources.news"),
-  };
   return (
     <TwoColumnShell
       railLabel={tHub("hub.railLabel")}
@@ -61,8 +50,6 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
         noGoal: tHub("hub.noGoal"),
         weeklyProgress: tHub("hub.weeklyProgress"),
         noWeeklyActivity: tHub("hub.noWeeklyActivity"),
-        streak: tHub("hub.streak"),
-        reviewsDue: (count) => tHub("hub.reviewsDue", { count }),
         suggestion: tHub("hub.suggestion"),
         noSuggestion: tHub("hub.noSuggestion"),
         openLesson: tHub("hub.openLesson"),
@@ -84,6 +71,9 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
           start: tHub("hub.start"),
           continue: tHub("hub.continue"),
           noThumbnail: tCommon("noThumbnail"),
+          jlptLabel: tHub("hub.jlptLabel"),
+          durationLabel: tHub("hub.durationLabel"),
+          duration: (minutes) => tHub("hub.minutes", { count: minutes }),
           }}
         />
         <HubImportSection used={hub.quota.used} limit={hub.quota.limit} tier={hub.quota.tier} />
@@ -100,13 +90,14 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
           }}
         />
         <HubDiscoveryControls
-          filters={hub.filters.flatMap((filter) => {
-            const label = filterLabels[`${filter.kind}:${filter.slug}`];
-            return label ? [{ ...filter, label }] : [];
-          })}
+          filters={hub.filters.map((filter) => ({
+            ...filter,
+            label: tHub(`${filter.kind === "situation" ? "situations" : "sources"}.${filter.slug}` as TaxonomyTranslationKey),
+          }))}
           query={hub.discovery?.query ?? ""}
           activeFilter={hub.discovery?.activeFilter ?? null}
           results={hub.discovery?.lessons ?? null}
+          action={getPathname({ href: "/shadowing", locale })}
           labels={{
             searchLabel: tHub("hub.searchLabel"),
             searchPlaceholder: tHub("hub.searchPlaceholder"),

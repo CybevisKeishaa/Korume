@@ -8,8 +8,6 @@ export interface HubCompanionRailLabels {
   noGoal: string;
   weeklyProgress: string;
   noWeeklyActivity: string;
-  streak: string;
-  reviewsDue: (count: number) => string;
   suggestion: string;
   noSuggestion: string;
   openLesson: string;
@@ -51,18 +49,6 @@ export function HubCompanionRail({ rail, labels }: HubCompanionRailProps) {
       <section aria-label={labels.weeklyProgress} className="rounded-xl border border-border bg-card p-md-lg">
         <h2 className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{labels.weeklyProgress}</h2>
         <p className="mt-sm text-sm text-muted-foreground">{labels.noWeeklyActivity}</p>
-        {rail ? (
-          <dl className="mt-md grid grid-cols-2 gap-md border-t border-border pt-md">
-            <div>
-              <dt className="text-caption text-muted-foreground">{labels.streak}</dt>
-              <dd className="mt-2xs text-body font-semibold text-foreground">{rail.stats.streakCurrent}</dd>
-            </div>
-            <div>
-              <dt className="text-caption text-muted-foreground">{labels.reviewsDue(rail.stats.srsDueCount)}</dt>
-              <dd className="mt-2xs text-body font-semibold text-foreground">{rail.stats.srsDueCount}</dd>
-            </div>
-          </dl>
-        ) : null}
       </section>
 
       <section aria-label={labels.suggestion} className="rounded-xl border border-border bg-card p-md-lg">
