@@ -82,6 +82,15 @@ layout token and it disappears below `xl`.
   with baseline warnings outside this scope. Production build cannot yet be
   asserted: this host's shell runner terminates `next build` after lint and
   before `BUILD_ID` is written; rerun in a persistent terminal.
+- Production build was subsequently run in a persistent hidden process and
+  completed with a fresh `.next/BUILD_ID`. `tests/e2e/shadowing-hub.spec.ts`
+  now covers a newly registered learner at 390px and 1536px: one main
+  landmark, search/import keyboard reachability, no horizontal overflow, a
+  rail hidden below `xl`, and no fabricated progress copy. The Playwright
+  file parses (`--list` finds one test), but its execution is still pending:
+  this environment forces Playwright's configured web server to rebuild even
+  while the fresh production server is live, so the host shell cuts it before
+  browser execution begins.
 
 ## Working tree and environment
 
@@ -96,8 +105,8 @@ layout token and it disappears below `xl`.
 
 ## Next actions
 
-1. Record the re-review verdict for `6541609`/`a057de8`; do not call the
-   fix-wave complete until a persistent-terminal production build passes.
+1. Run the focused Playwright Hub spec in a terminal that permits Playwright
+   to reuse the fresh production server; record its browser verdict.
 2. Audit Tasks 5–7 against the full plan before marking any complete: add the
    route characterization/E2E checks, compare desktop/mobile renders with
    Figma, amend the stale collection-driven Hub screen doc per spec §8, and
