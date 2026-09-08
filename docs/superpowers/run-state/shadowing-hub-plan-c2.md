@@ -109,7 +109,7 @@ layout token and it disappears below `xl`.
 - Whole-branch review through `f2dc18d` approved the C2 implementation after
   an isolated build, focused browser run, typecheck, lint, focused Hub suite,
   full Vitest suite, and diff check. It identified the lesson-action browser
-  coverage gap; `17f2fd3` closes that specific gap and needs its narrow
+  coverage gap; `2165a91` closes that specific gap and needs its narrow
   follow-up review before merge.
 - Fresh 390px and 1536px captures from the isolated `17f2fd3` production
   artifact were compared with Figma node `149:2`. They preserve the C2
@@ -133,7 +133,7 @@ layout token and it disappears below `xl`.
 
 ## Remaining action
 
-1. Obtain the narrow follow-up review for `17f2fd3`; then Task 8 and this C2
+1. Obtain the narrow follow-up review for `2165a91`; then Task 8 and this C2
    branch are ready for merge under the existing whole-branch approval.
 
 ## Historical next actions (superseded by the verification above)
