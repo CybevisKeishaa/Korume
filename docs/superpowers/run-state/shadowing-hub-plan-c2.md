@@ -91,6 +91,11 @@ layout token and it disappears below `xl`.
   not then verified. The spec now also covers a controlled 422 import-error
   alert and reduced motion; rerun it only against a newly built isolated
   production artifact.
+- Whole-branch review caught a real encoding defect in that expanded browser
+  spec: its pending-label selector was mojibake while the UI uses the message
+  catalog value. The selector now derives from `messages/en/videos.json`;
+  `npm run typecheck` and `playwright --list` pass. The browser execution is
+  still pending the isolated production artifact, so this is not an E2E pass.
 
 ## Working tree and environment
 

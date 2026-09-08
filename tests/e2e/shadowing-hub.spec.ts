@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import enVideos from "@/messages/en/videos.json";
 
 async function registerLearner(page: import("@playwright/test").Page): Promise<void> {
   const email = `e2e_shadowing_hub_${Date.now()}@example.com`;
@@ -35,7 +36,7 @@ test("the Shadowing Hub keeps core study controls usable without fabricated prog
   });
   await main.getByLabel("YouTube URL").fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
   await main.getByRole("button", { name: "Import video" }).click();
-  await expect(main.getByRole("button", { name: "Importingâ€¦" })).toBeDisabled();
+  await expect(main.getByRole("button", { name: enVideos.importing })).toBeDisabled();
   releaseImport();
   await expect(main.getByRole("alert")).toHaveText(
     "We couldn't fetch details for that video. Double-check the link and try again.",
