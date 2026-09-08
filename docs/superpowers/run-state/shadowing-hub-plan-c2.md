@@ -33,6 +33,12 @@ C4 durable import-job progress are explicitly excluded.
   measured recommendation explanations, and complete EN/VI Hub copy. It is a
   source checkpoint only; its RTL/data/validation evidence is intentionally
   committed after the source under L-027.
+- Fix-wave source `6541609` corrects the Figma shelf order to Popular,
+  Continue Learning, Recently Added; removes non-shadowing global statistics
+  from the empty weekly region; preserves the active locale on discovery
+  submission; and moves Hub taxonomy labels to their catalog authority.
+  `a057de8` adds the consequent RTL/data and EN/VI catalog pins after that
+  content commit, per L-027.
 - C1 foundation merged earlier at `bd7f574`; landing motion merged to the
   base at `bfd52c0`.
 
@@ -69,6 +75,13 @@ layout token and it disappears below `xl`.
   daily-goal, or weekly-activity source today, so its C2 empty states must not
   imitate Figma's sample values. The non-empty Hub is not an approved Companion
   anchor; do not mount a mascot there.
+- Fix-wave RED and GREEN: the shelf, empty weekly card, locale-aware search,
+  localized hero metadata, taxonomy catalog, and selected discovery-query
+  contracts all went red before `6541609`; focused Hub Vitest now passes 10
+  files / 31 tests and `npm run typecheck` passes. `npm run lint` exits 0
+  with baseline warnings outside this scope. Production build cannot yet be
+  asserted: this host's shell runner terminates `next build` after lint and
+  before `BUILD_ID` is written; rerun in a persistent terminal.
 
 ## Working tree and environment
 
@@ -83,8 +96,8 @@ layout token and it disappears below `xl`.
 
 ## Next actions
 
-1. Commit the C2 expanded-source RTL/data/validation evidence and this
-   checkpoint after `06d5f32`, following `docs/lessons.md` L-027.
+1. Record the re-review verdict for `6541609`/`a057de8`; do not call the
+   fix-wave complete until a persistent-terminal production build passes.
 2. Audit Tasks 5–7 against the full plan before marking any complete: add the
    route characterization/E2E checks, compare desktop/mobile renders with
    Figma, amend the stale collection-driven Hub screen doc per spec §8, and
