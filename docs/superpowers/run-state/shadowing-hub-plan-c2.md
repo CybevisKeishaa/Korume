@@ -139,9 +139,11 @@ technical C2 completion criterion incorrectly accepted conditional removal of
 empty Figma regions. The new authoritative repair design is
 `docs/superpowers/specs/2026-09-09-desktop-hub-empty-states-design.md`:
 desktop-only web at 1024px+, an always-present 300px rail, complete truthful
-no-data regions, and an EN/VI copy contract. Implementation has not begun;
-obtain the owner's review of that spec, then create its task plan before
-resuming source work.
+no-data regions, and an EN/VI copy contract. The owner approved that design
+and the executable task plan now lives at
+`docs/superpowers/plans/2026-09-09-desktop-hub-empty-states.md`.
+Corrective implementation has not begun; execute its red/green checks before
+any new whole-branch review or merge claim.
 
 ## Historical next actions (superseded by the verification above)
 
