@@ -14,14 +14,32 @@ async function registerLearner(page: import("@playwright/test").Page): Promise<v
 test("the Shadowing Hub keeps core study controls usable without fabricated progress", async ({ page }) => {
   await registerLearner(page);
 
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/en/shadowing");
+  await page.waitForLoadState("networkidle");
 
   const main = page.getByRole("main");
   await expect(main).toHaveCount(1);
   await expect(main.getByRole("heading", { name: "Shadowing Hub", level: 1 })).toBeVisible();
   await expect(main.getByRole("search", { name: "Search lessons" })).toBeVisible();
   await expect(main.getByLabel("YouTube URL")).toBeVisible();
+
+  let releaseImport!: () => void;
+  const importResponse = new Promise<void>((resolve) => {
+    releaseImport = resolve;
+  });
+  await page.route("**/api/videos/import", async (route) => {
+    await importResponse;
+    await route.fulfill({ status: 422, contentType: "application/json", body: "{}" });
+  });
+  await main.getByLabel("YouTube URL").fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+  await main.getByRole("button", { name: "Import video" }).click();
+  await expect(main.getByRole("button", { name: "Importingâ€¦" })).toBeDisabled();
+  releaseImport();
+  await expect(main.getByRole("alert")).toHaveText(
+    "We couldn't fetch details for that video. Double-check the link and try again.",
+  );
 
   // The import is keyboard-operable in the empty-learning state. Focusing the
   // URL field and advancing with Tab is intentionally a native keyboard path,

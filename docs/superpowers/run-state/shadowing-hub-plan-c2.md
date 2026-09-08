@@ -86,9 +86,11 @@ layout token and it disappears below `xl`.
   completed with a fresh `.next/BUILD_ID`. `tests/e2e/shadowing-hub.spec.ts`
   now covers a newly registered learner at 390px and 1536px: one main
   landmark, search/import keyboard reachability, no horizontal overflow, a
-  rail hidden below `xl`, and no fabricated progress copy. It passes 1/1 on
-  the fresh production server using a temporary no-web-server config; the
-  temporary config was deleted after verification.
+  rail hidden below `xl`, and no fabricated progress copy. Its initial 1/1
+  browser result was obtained through port 3000, but the server ownership was
+  not then verified. The spec now also covers a controlled 422 import-error
+  alert and reduced motion; rerun it only against a newly built isolated
+  production artifact.
 
 ## Working tree and environment
 
@@ -98,12 +100,14 @@ layout token and it disappears below `xl`.
 
 ## Blockers
 
-- None. The owner approved C2 execution and confirmed that C4 may add durable
-  import-job progress later.
+- Port 3000 is occupied by an existing workspace server which serves stale
+  client chunks after a shared `.next` rebuild. Do not stop that unknown
+  process. Run the final browser check only after its owner stops it, or from
+  a separately configured build output directory.
 
 ## Next actions
 
-1. Audit Tasks 5–7 against the full plan before marking any complete: add the
-   route characterization/E2E checks, compare desktop/mobile renders with
-   Figma, amend the stale collection-driven Hub screen doc per spec §8, and
-   run task plus whole-branch reviews.
+1. Run the expanded focused Playwright Hub spec against a newly built isolated
+   production server; this verifies the controlled import-error alert.
+2. The Task 5–7 audit and docs reconciliation are in the current diff. Run
+   task and whole-branch reviews before a merge claim.

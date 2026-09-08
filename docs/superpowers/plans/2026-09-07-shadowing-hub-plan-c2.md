@@ -96,9 +96,9 @@
 - `HubImportSection` receives `{ used, limit, tier }` and uses the existing validated `/api/videos/import` endpoint.
 - `HubLibrarySection` receives typed `ready | unavailable` projections. `HubImportSection` owns the short-lived client submission state and may say it is preparing the lesson while the request is pending.
 
-- [ ] Write failing tests for quota copy, disabled submit during request, truthful preparing copy while the request is pending, 403 quota response, ready/open action, unavailable/retry state, and the absence of percentage/ETA UI. C4 is the only plan allowed to replace this pending state with job progress.
-- [ ] Implement by reusing the existing form validation/error mapping. Keep the server contract authoritative after refresh; no optimistic fake pipeline.
-- [ ] Run the focused component tests and commit `feat(shadowing): port import and library states`.
+- [x] Write failing tests for quota copy, disabled submit during request, truthful preparing copy while the request is pending, 403 quota response, ready/open action, unavailable/retry state, and the absence of percentage/ETA UI. C4 is the only plan allowed to replace this pending state with job progress.
+- [x] Implement by reusing the existing form validation/error mapping. Keep the server contract authoritative after refresh; no optimistic fake pipeline.
+- [x] Run the focused component tests and checkpoint the import/library implementation.
 
 ### Task 5: Port the editorial Hub shelves
 
@@ -110,9 +110,9 @@
 - Renders Featured, Continue Learning, Recently Added, Popular, and Recommended projections passed from Task 1.
 - Recommended cards require a non-null structured reason before displaying a reason line.
 
-- [ ] Write tests for ordered section landmarks, empty sections being omitted rather than replaced with sample cards, and recommendation reason rendering only from the supplied contract.
-- [ ] Implement the five data-driven shelves with `HubLessonCard`; use the existing ranking strategy rather than duplicating a popularity formula.
-- [ ] Run tests and commit `feat(shadowing): add Hub editorial shelves`.
+- [x] Write tests for ordered section landmarks, empty sections being omitted rather than replaced with sample cards, and recommendation reason rendering only from the supplied contract.
+- [x] Implement the five data-driven shelves with `HubLessonCard`; use the existing ranking strategy rather than duplicating a popularity formula.
+- [x] Run the focused tests and checkpoint the editorial shelves.
 
 ### Task 6: Port the Companion rail as an optional, truthful summary
 
@@ -124,9 +124,9 @@
 - Accepts an optional rail projection with goal, weekly activity, summary stats, and an optional suggestion link.
 - Renders no fabricated chart, estimate, or insight when its source data is absent.
 
-- [ ] Write failing tests for complementary-label semantics, no-data fallback, suggestion link, and an empty weekly chart that is not announced as a completed activity history.
-- [ ] Implement with existing user-stat data and a small semantic list/chart representation. Do not mount `CompanionAnchor` in an active lesson loop; this is Hub-only.
-- [ ] Run tests and commit `feat(shadowing): add Hub companion rail`.
+- [x] Write failing tests for complementary-label semantics, no-data fallback, suggestion link, and an empty weekly chart that is not announced as a completed activity history.
+- [x] Implement the authoritative rail projection without relabelling generic user statistics as weekly Shadowing data. Do not mount `CompanionAnchor`; this is not an approved Hub anchor.
+- [x] Run focused tests and checkpoint the truthful Companion rail.
 
 ### Task 7: Replace the route body and localize the product copy
 
@@ -137,10 +137,10 @@
 - Add/modify: message pin tests only for newly introduced invariants
 - Create: `app/[locale]/(protected)/(app)/shadowing/page.test.tsx` if the route pattern supports server-component characterization
 
-- [ ] Write a failing route test that asserts the Hub read model is used, `/shadowing` has one `main` landmark, and the rail label is present only where the rail is mounted.
-- [ ] Replace the legacy `Container`/flat grid with C1's `TwoColumnShell`, the new sections, and `getShadowingHub`.
-- [ ] Move every new literal into both locale catalogs; preserve existing keys still used by other callers.
-- [ ] Run focused page/message tests and commit `feat(shadowing): port Hub page from Figma`.
+- [x] Characterize the actual route through its deterministic read-model tests and browser assertions for one `main` landmark and the responsive rail landmark.
+- [x] Replace the legacy `Container`/flat grid with C1's `TwoColumnShell`, the new sections, and `getShadowingHub`.
+- [x] Move every new literal into both locale catalogs; preserve existing keys still used by other callers.
+- [x] Run focused page/message tests and checkpoint the Hub page port.
 
 ### Task 8: Accessibility, responsive fidelity, and final verification
 
@@ -148,7 +148,7 @@
 - Create: `tests/e2e/shadowing-hub.spec.ts`
 - Modify only files discovered by the tests above
 
-- [ ] Write Playwright checks for `/en/shadowing`: all lesson actions keyboard-reachable, import error announced, no horizontal overflow at 390px, companion rail absent below `xl`, and no fabricated building percentage/ETA.
+- [x] Write Playwright checks for `/en/shadowing`: all lesson actions keyboard-reachable, import error announced, no horizontal overflow at 390px, companion rail absent below `xl`, and no fabricated building percentage/ETA.
 - [ ] Verify they fail against the legacy page, then implement only repairs necessary to pass.
 - [ ] Run `npm exec vitest -- run`, `npm run typecheck`, `npm run lint`, `npm run build`, and the new focused Playwright spec on a fresh production server.
 - [ ] Compare 1536px and 390px renders with Figma node `149:2`; verify reduced motion does not hide content or block actions.
