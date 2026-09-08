@@ -149,9 +149,9 @@
 - Modify only files discovered by the tests above
 
 - [x] Write Playwright checks for `/en/shadowing`: all lesson actions keyboard-reachable, import error announced, no horizontal overflow at 390px, companion rail absent below `xl`, and no fabricated building percentage/ETA.
-- [ ] Verify they fail against the legacy page, then implement only repairs necessary to pass.
-- [ ] Run `npm exec vitest -- run`, `npm run typecheck`, `npm run lint`, `npm run build`, and the new focused Playwright spec on a fresh production server.
-- [ ] Compare 1536px and 390px renders with Figma node `149:2`; verify reduced motion does not hide content or block actions.
+- [x] Verify they fail against the legacy page, then implement only repairs necessary to pass.
+- [x] Run `npm exec vitest -- run`, `npm run typecheck`, `npm run lint`, `npm run build`, and the new focused Playwright spec on a fresh production server.
+- [x] Compare 1536px and 390px renders with Figma node `149:2`; verify reduced motion does not hide content or block actions.
 - [ ] Commit the verification repair, request a task review, then a whole-branch review before merge.
 
 ## Self-review

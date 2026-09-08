@@ -94,8 +94,24 @@ layout token and it disappears below `xl`.
 - Whole-branch review caught a real encoding defect in that expanded browser
   spec: its pending-label selector was mojibake while the UI uses the message
   catalog value. The selector now derives from `messages/en/videos.json`;
-  `npm run typecheck` and `playwright --list` pass. The browser execution is
-  still pending the isolated production artifact, so this is not an E2E pass.
+  `npm run typecheck` and `playwright --list` pass.
+- The corrected expanded spec passed against a fresh, isolated production
+  build on port 3001. It includes a non-empty control: all rendered lesson
+  actions are present and individually receive keyboard focus. The same spec
+  failed as expected against the isolated `bfd52c0` legacy artifact because
+  its `Shadowing Hub` heading did not exist. This is the RED/GREEN proof for
+  the Task 8 route port, not a result from the untrusted port-3000 process.
+- Whole-branch review through `f2dc18d` approved the C2 implementation after
+  an isolated build, focused browser run, typecheck, lint, focused Hub suite,
+  full Vitest suite, and diff check. It identified the lesson-action browser
+  coverage gap; `17f2fd3` closes that specific gap and needs its narrow
+  follow-up review before merge.
+- Fresh 390px and 1536px captures from the isolated `17f2fd3` production
+  artifact were compared with Figma node `149:2`. They preserve the C2
+  hierarchy, responsive shell/rail behavior, shelf order, and four rail cards.
+  The no-data cards are the intentional truthful C2 divergence; no Figma
+  sample progress, job, goal, or mascot was introduced. Reduced motion was
+  active for the capture and for the passing browser spec.
 
 ## Working tree and environment
 
@@ -103,14 +119,19 @@ layout token and it disappears below `xl`.
 `.serena/memories/codex_long_task_protocol_run_state.md`; leave untouched.
 - Branch was created from the current merged `master` after sandbox approval.
 
-## Blockers
+## Resolved environment note
 
 - Port 3000 is occupied by an existing workspace server which serves stale
   client chunks after a shared `.next` rebuild. Do not stop that unknown
-  process. Run the final browser check only after its owner stops it, or from
-  a separately configured build output directory.
+  process. Final verification used separately configured production artifacts
+  instead.
 
-## Next actions
+## Remaining action
+
+1. Obtain the narrow follow-up review for `17f2fd3`; then Task 8 and this C2
+   branch are ready for merge under the existing whole-branch approval.
+
+## Historical next actions (superseded by the verification above)
 
 1. Run the expanded focused Playwright Hub spec against a newly built isolated
    production server; this verifies the controlled import-error alert.
