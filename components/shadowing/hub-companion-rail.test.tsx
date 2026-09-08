@@ -9,8 +9,6 @@ const labels = {
   noGoal: "No daily goal is set yet.",
   weeklyProgress: "Weekly progress",
   noWeeklyActivity: "No weekly shadowing activity has been recorded yet.",
-  streak: "Current streak",
-  reviewsDue: (count: number) => `${count} reviews due`,
   suggestion: "Suggested next lesson",
   noSuggestion: "No lesson suggestion is available yet.",
   openLesson: "Open lesson",
@@ -60,5 +58,8 @@ describe("HubCompanionRail", () => {
 
     expect(screen.getByText("No weekly shadowing activity has been recorded yet.")).toBeInTheDocument();
     expect(screen.queryByLabelText(/weekly activity chart/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("Current streak")).not.toBeInTheDocument();
+    expect(screen.queryByText("4")).not.toBeInTheDocument();
+    expect(screen.queryByText("3 reviews due")).not.toBeInTheDocument();
   });
 });

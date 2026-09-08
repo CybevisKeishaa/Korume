@@ -16,17 +16,20 @@ describe("HubFeaturedHero", () => {
     render(
       <HubFeaturedHero
         lesson={lesson}
-        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail" }}
+        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes` }}
       />,
     );
 
     expect(screen.getByRole("region", { name: "Featured lesson" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: lesson.title })).toBeInTheDocument();
+    expect(screen.getByText("8 minutes")).toBeInTheDocument();
+    expect(screen.getByText("Japanese level")).toHaveClass("sr-only");
+    expect(screen.getByText("Lesson length")).toHaveClass("sr-only");
     expect(screen.getByRole("link", { name: "Start lesson: Ordering coffee at a cozy café" })).toHaveAttribute("href", "/en/shadowing/featured-1");
   });
 
   it("does not replace absent featured data with a sample lesson", () => {
-    render(<HubFeaturedHero lesson={null} labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail" }} />);
+    render(<HubFeaturedHero lesson={null} labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes` }} />);
 
     expect(screen.queryByRole("region", { name: "Featured lesson" })).not.toBeInTheDocument();
   });
@@ -36,7 +39,7 @@ describe("HubFeaturedHero", () => {
       <HubFeaturedHero
         lesson={lesson}
         isInProgress
-        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail" }}
+        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes` }}
       />,
     );
 

@@ -25,11 +25,13 @@ describe("HubDiscoveryControls", () => {
         query=""
         activeFilter={null}
         results={null}
+        action="/en/shadowing"
         labels={labels}
       />,
     );
 
     expect(screen.getByRole("search", { name: "Search lessons" })).toBeInTheDocument();
+    expect(screen.getByRole("search", { name: "Search lessons" })).toHaveAttribute("action", "/en/shadowing");
     expect(screen.getByRole("searchbox", { name: "Search lessons" })).toHaveAttribute("name", "q");
     expect(screen.getByRole("link", { name: "Restaurant" })).toHaveAttribute("href", "/en/shadowing?filter=situation%3Arestaurant");
     expect(screen.getByRole("link", { name: "Anime" })).toHaveAttribute("href", "/en/shadowing?filter=source%3Aanime");
@@ -37,12 +39,13 @@ describe("HubDiscoveryControls", () => {
 
   it("renders search results only from the supplied result projection", () => {
     const { rerender } = render(
-      <HubDiscoveryControls filters={[]} query="restaurant" activeFilter={null} results={[lesson]} labels={labels} />,
+      <HubDiscoveryControls filters={[]} query="restaurant" activeFilter={null} results={[lesson]} action="/vi/shadowing" labels={labels} />,
     );
+    expect(screen.getByRole("search", { name: "Search lessons" })).toHaveAttribute("action", "/vi/shadowing");
     expect(screen.getByRole("heading", { name: "Search results" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Start lesson: Restaurant conversation" })).toBeInTheDocument();
 
-    rerender(<HubDiscoveryControls filters={[]} query="restaurant" activeFilter={null} results={[]} labels={labels} />);
+    rerender(<HubDiscoveryControls filters={[]} query="restaurant" activeFilter={null} results={[]} action="/vi/shadowing" labels={labels} />);
     expect(screen.getByText("No lessons matched your search.")).toBeInTheDocument();
   });
 });

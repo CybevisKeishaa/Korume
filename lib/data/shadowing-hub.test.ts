@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase } from "@/test/supabase-mock";
+import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import type { VideoRow } from "@/lib/data/videos";
 
@@ -18,7 +18,6 @@ vi.mock("@/lib/data/lesson-ranking", () => ({
   PopularStrategyV1: { id: "popular-v1", rank: vi.fn() },
 }));
 vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: vi.fn() }));
-vi.mock("@/lib/data/user-stats", () => ({ getUserStats: vi.fn() }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listSituations: vi.fn(), listSources: vi.fn() }));
 
 import { getShadowingHub } from "./shadowing-hub";
@@ -27,7 +26,6 @@ import { countMonthlyCreations, hasTranscript } from "@/lib/data/lesson-library"
 import { getActivePlanTier } from "@/lib/data/subscriptions";
 import { PopularStrategyV1 } from "@/lib/data/lesson-ranking";
 import { getRecommendations } from "@/lib/data/recommendations";
-import { getUserStats } from "@/lib/data/user-stats";
 import { listSituations, listSources } from "@/lib/data/lesson-taxonomy";
 
 const USER = { id: "learner-1" };
@@ -47,7 +45,7 @@ const PRIVATE_LESSON: VideoRow = {
 
 function mockClient(
   user: { id: string } | null = USER,
-  options: { libraryIds?: string[]; videos?: VideoRow[]; progress?: unknown[] } = {},
+  options: { libraryIds?: string[]; videos?: VideoRow[]; progress?: unknown[]; onVideosQuery?: (calls: QueryCall[]) => void } = {},
 ) {
   const supabase = createMockSupabase({
     user,
@@ -56,7 +54,10 @@ function mockClient(
         data: (options.libraryIds ?? []).map((lesson_id) => ({ lesson_id })),
         error: null,
       }),
-      videos: () => ({ data: options.videos ?? [], error: null }),
+      videos: (calls) => {
+        options.onVideosQuery?.(calls);
+        return { data: options.videos ?? [], error: null };
+      },
       user_video_progress: () => ({ data: options.progress ?? [], error: null }),
     },
   });
@@ -74,18 +75,6 @@ beforeEach(() => {
   vi.mocked(getRecommendations).mockResolvedValue({ ok: true, data: [] });
   vi.mocked(listSituations).mockResolvedValue([]);
   vi.mocked(listSources).mockResolvedValue([]);
-  vi.mocked(getUserStats).mockResolvedValue({
-    ok: true,
-    data: {
-      xp: 0,
-      level: { level: 1, levelFloorXp: 0, nextLevelXp: 100, progressRatio: 0 },
-      streakCurrent: 0,
-      streakLongest: 0,
-      lastActiveDate: null,
-      badges: [],
-      srsDueCount: 0,
-    },
-  });
 });
 
 describe("getShadowingHub", () => {
@@ -176,7 +165,8 @@ describe("getShadowingHub", () => {
   });
 
   it("exposes both taxonomy axes and uses only the selected real tag for a discovery query", async () => {
-    mockClient(USER, { videos: [PRIVATE_LESSON] });
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
     vi.mocked(listSituations).mockResolvedValue([{ id: "s1", slug: "restaurant", displayOrder: 1 }]);
     vi.mocked(listSources).mockResolvedValue([{ id: "o1", slug: "anime", displayOrder: 1 }]);
 
@@ -196,6 +186,10 @@ describe("getShadowingHub", () => {
         },
       },
     });
+    expect(videoQueries).toContainEqual(expect.arrayContaining([
+      { op: "ilike", column: "title", pattern: "%private%" },
+      { op: "eq", column: "situation_id", value: "s1" },
+    ]));
   });
 
   it("returns null or empty section projections when the learner has no available data", async () => {
@@ -213,18 +207,7 @@ describe("getShadowingHub", () => {
         filters: [],
         discovery: null,
         quota: { used: 0, limit: 3, tier: "free" },
-        rail: {
-          stats: {
-            xp: 0,
-            level: { level: 1, levelFloorXp: 0, nextLevelXp: 100, progressRatio: 0 },
-            streakCurrent: 0,
-            streakLongest: 0,
-            lastActiveDate: null,
-            badges: [],
-            srsDueCount: 0,
-          },
-          suggestion: null,
-        },
+        rail: { suggestion: null },
       },
     });
   });

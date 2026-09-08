@@ -34,9 +34,9 @@ describe("HubShelves", () => {
 
     expect(screen.getAllByRole("region").map((region) => region.getAttribute("aria-label"))).toEqual([
       "Featured",
+      "Popular",
       "Continue learning",
       "Recently added",
-      "Popular",
       "Recommended for you",
     ]);
   });
