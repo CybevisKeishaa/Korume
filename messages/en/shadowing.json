@@ -127,5 +127,33 @@
     "furigana": { "adaptive": "Adaptive", "all": "All", "off": "Off" },
     "loop": { "setA": "Set A", "setB": "Set B", "clear": "Clear loop" }
   },
-  "hub": { "eyebrow": "Shadowing", "railLabel": "Companion", "featured": "Featured", "recentlyAdded": "Recently added", "popular": "Popular", "continueLearning": "Continue learning", "start": "Start", "continue": "Continue" }
+  "hub": {
+    "eyebrow": "Korume \u00b7 Lesson library",
+    "title": "Shadowing Hub",
+    "subtitle": "A quiet place to discover, import, and continue your Japanese lessons.",
+    "railLabel": "Learning continuity",
+    "featured": "Featured lesson",
+    "recentlyAdded": "Recently added",
+    "popular": "Popular lessons",
+    "continueLearning": "Continue learning",
+    "start": "Start lesson",
+    "continue": "Continue lesson",
+    "preparation": "Lesson preparation",
+    "noPreparation": "No lesson is being prepared right now.",
+    "todayGoal": "Today's goal",
+    "noGoal": "No daily goal is set yet.",
+    "weeklyProgress": "Weekly progress",
+    "noWeeklyActivity": "No weekly shadowing activity has been recorded yet.",
+    "streak": "Current streak",
+    "reviewsDue": "{count} reviews due",
+    "suggestion": "Suggested next lesson",
+    "noSuggestion": "No lesson suggestion is available yet.",
+    "openLesson": "Open lesson",
+    "searchLabel": "Search lessons",
+    "searchPlaceholder": "Search by title, expression, anime, movie or topic...",
+    "searchResults": "Search results",
+    "noSearchResults": "No lessons matched your search.",
+    "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "dailyLife": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
+    "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" }
+  }
 }

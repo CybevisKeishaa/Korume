@@ -5,9 +5,11 @@ import { FREE_MONTHLY_LESSON_QUOTA, countMonthlyCreations, hasTranscript } from 
 import { PopularStrategyV1 } from "@/lib/data/lesson-ranking";
 import { getRecommendations } from "@/lib/data/recommendations";
 import type { VideoRecommendation } from "@/lib/recommendation-types";
+import type { RecommendationReason } from "@/lib/recommendation-types";
 import { getActivePlanTier, type PlanTier } from "@/lib/data/subscriptions";
 import { getUserStats, type UserStatsData } from "@/lib/data/user-stats";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
+import { listSituations, listSources } from "@/lib/data/lesson-taxonomy";
 
 const SHELF_LIMIT = 4;
 
@@ -40,8 +42,19 @@ export interface HubQuota {
 
 export interface HubRailProjection {
   stats: UserStatsData;
-  /** Reserved for a recommendation with an evidence-backed reason (Task 2). */
-  suggestion: null;
+  /** Only a recommendation carrying a measured learner-data reason may enter the rail. */
+  suggestion: { lesson: HubLesson; reason: Exclude<RecommendationReason, null> } | null;
+}
+
+export interface HubDiscoveryFilter {
+  kind: "situation" | "source";
+  slug: string;
+}
+
+export interface HubDiscoveryProjection {
+  query: string;
+  activeFilter: string | null;
+  lessons: HubLesson[];
 }
 
 export interface ShadowingHubData {
@@ -53,6 +66,9 @@ export interface ShadowingHubData {
   recommendations: VideoRecommendation[];
   quota: HubQuota;
   rail: HubRailProjection | null;
+  filters: HubDiscoveryFilter[];
+  /** Null until the learner submits a search or selects a filter. */
+  discovery: HubDiscoveryProjection | null;
 }
 
 export type GetShadowingHubResult = { ok: true; data: ShadowingHubData } | { ok: false; status: 401 };
@@ -83,12 +99,12 @@ function toHubLesson(video: VideoRow): HubLesson {
  * boundaries, returning absence explicitly instead of filling Figma regions
  * with example lessons or invented learner state.
  */
-export async function getShadowingHub(): Promise<GetShadowingHubResult> {
+export async function getShadowingHub(options: { query?: string; filter?: string } = {}): Promise<GetShadowingHubResult> {
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
 
-  const [libraryResult, videosResult, progressResult, tier, used, popularResult, recommendationsResult, statsResult, featured] =
+  const [libraryResult, videosResult, progressResult, tier, used, popularResult, recommendationsResult, statsResult, featured, situations, sources] =
     await Promise.all([
       supabase.from("user_lesson_library").select("lesson_id").eq("user_id", user.id),
       supabase.from("videos").select(VIDEO_COLUMNS).order("created_at", { ascending: false }),
@@ -102,6 +118,8 @@ export async function getShadowingHub(): Promise<GetShadowingHubResult> {
       getRecommendations({ limit: SHELF_LIMIT }),
       getUserStats(),
       getCollectionBySlug("featured"),
+      listSituations(),
+      listSources(),
     ]);
 
   if (libraryResult.error) throw libraryResult.error;
@@ -127,6 +145,28 @@ export async function getShadowingHub(): Promise<GetShadowingHubResult> {
     ((progressResult.data as ProgressRow[] | null) ?? []).map((progress) => [progress.video_id, progress]),
   );
   const featuredLessons = featured ? await listCollectionLessons(featured.id) : [];
+  const recommendations = recommendationsResult.ok ? recommendationsResult.data : [];
+  const suggestedRecommendation = recommendations.find((recommendation) => recommendation.reason !== null) ?? null;
+  const filterTags = [
+    ...situations.map((tag) => ({ kind: "situation" as const, slug: tag.slug, id: tag.id })),
+    ...sources.map((tag) => ({ kind: "source" as const, slug: tag.slug, id: tag.id })),
+  ];
+  const filters: HubDiscoveryFilter[] = filterTags.map(({ kind, slug }) => ({ kind, slug }));
+  const query = options.query?.trim() ?? "";
+  const activeFilter = filterTags.find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
+  let discovery: HubDiscoveryProjection | null = null;
+  if (query || activeFilter) {
+    let search = supabase.from("videos").select(VIDEO_COLUMNS);
+    if (query) search = search.ilike("title", `%${query}%`);
+    if (activeFilter) search = search.eq(activeFilter.kind === "situation" ? "situation_id" : "source_id", activeFilter.id);
+    const { data, error } = await search.order("created_at", { ascending: false }).limit(SHELF_LIMIT);
+    if (error) throw error;
+    discovery = {
+      query,
+      activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
+      lessons: ((data as VideoRow[] | null) ?? []).map(toHubLesson),
+    };
+  }
 
   return {
     ok: true,
@@ -145,13 +185,32 @@ export async function getShadowingHub(): Promise<GetShadowingHubResult> {
         .slice(0, SHELF_LIMIT),
       recentlyAdded: videos.slice(0, SHELF_LIMIT).map(toHubLesson),
       popular: popularResult.map(toHubLesson),
-      recommendations: recommendationsResult.ok ? recommendationsResult.data : [],
+      recommendations,
       quota: {
         used,
         limit: tier === "plus" ? null : FREE_MONTHLY_LESSON_QUOTA,
         tier,
       },
-      rail: statsResult.ok ? { stats: statsResult.data, suggestion: null } : null,
+      rail: statsResult.ok
+        ? {
+            stats: statsResult.data,
+            suggestion: suggestedRecommendation?.reason
+              ? {
+                  lesson: {
+                    id: suggestedRecommendation.videoId,
+                    youtubeVideoId: suggestedRecommendation.youtubeVideoId,
+                    title: suggestedRecommendation.title,
+                    durationSeconds: null,
+                    thumbnailUrl: suggestedRecommendation.thumbnailUrl,
+                    jlptLevelEstimate: suggestedRecommendation.jlptLevelEstimate,
+                  },
+                  reason: suggestedRecommendation.reason,
+                }
+              : null,
+          }
+        : null,
+      filters,
+      discovery,
     },
   };
 }
