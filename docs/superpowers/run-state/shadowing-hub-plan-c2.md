@@ -28,6 +28,11 @@ C4 durable import-job progress are explicitly excluded.
   receive a `user_lesson_library` ledger row and can retry caption retrieval.
 - `61caf26` and `9ed0297` contain Task 5/7-oriented source work, but their
   plan checklists have not yet been audited as complete.
+- `06d5f32` expands the in-progress C2 source with the featured hero,
+  taxonomy-backed discovery controls, an optional truthful continuity rail,
+  measured recommendation explanations, and complete EN/VI Hub copy. It is a
+  source checkpoint only; its RTL/data/validation evidence is intentionally
+  committed after the source under L-027.
 - C1 foundation merged earlier at `bd7f574`; landing motion merged to the
   base at `bfd52c0`.
 
@@ -57,6 +62,13 @@ layout token and it disappears below `xl`.
   fabricated percentage or ETA. `npm run typecheck` and `npm run lint` pass
   (lint retains only baseline warnings); the Task 4 fix-wave review approved.
 - Figma design context fetched for `149:2`, `149:1072`, and `149:1162`.
+- Fresh Figma screenshot re-read from `149:2` on 2026-09-08. The eight Hub
+  content regions are Header, FeaturedHero, Import, My Lessons,
+  SearchAndFilter, Popular, Continue Learning, Recently Added, and
+  Recommended; the desktop rail has four cards. The rail has no durable job,
+  daily-goal, or weekly-activity source today, so its C2 empty states must not
+  imitate Figma's sample values. The non-empty Hub is not an approved Companion
+  anchor; do not mount a mascot there.
 
 ## Working tree and environment
 
@@ -71,8 +83,9 @@ layout token and it disappears below `xl`.
 
 ## Next actions
 
-1. Commit the Task 4 RTL evidence and this checkpoint after its source/catalog
-   commit, following `docs/lessons.md` L-027.
-2. Audit the already-landed Task 5/7-oriented work against their full plan
-   checklists before treating either task as complete; then continue with the
-   remaining C2 task sequence.
+1. Commit the C2 expanded-source RTL/data/validation evidence and this
+   checkpoint after `06d5f32`, following `docs/lessons.md` L-027.
+2. Audit Tasks 5–7 against the full plan before marking any complete: add the
+   route characterization/E2E checks, compare desktop/mobile renders with
+   Figma, amend the stale collection-driven Hub screen doc per spec §8, and
+   run task plus whole-branch reviews.

@@ -19,6 +19,7 @@ vi.mock("@/lib/data/lesson-ranking", () => ({
 }));
 vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: vi.fn() }));
 vi.mock("@/lib/data/user-stats", () => ({ getUserStats: vi.fn() }));
+vi.mock("@/lib/data/lesson-taxonomy", () => ({ listSituations: vi.fn(), listSources: vi.fn() }));
 
 import { getShadowingHub } from "./shadowing-hub";
 import { getCollectionBySlug, listCollectionLessons } from "@/lib/data/collections";
@@ -27,6 +28,7 @@ import { getActivePlanTier } from "@/lib/data/subscriptions";
 import { PopularStrategyV1 } from "@/lib/data/lesson-ranking";
 import { getRecommendations } from "@/lib/data/recommendations";
 import { getUserStats } from "@/lib/data/user-stats";
+import { listSituations, listSources } from "@/lib/data/lesson-taxonomy";
 
 const USER = { id: "learner-1" };
 
@@ -70,6 +72,8 @@ beforeEach(() => {
   vi.mocked(getActivePlanTier).mockResolvedValue("free");
   vi.mocked(PopularStrategyV1.rank).mockResolvedValue([]);
   vi.mocked(getRecommendations).mockResolvedValue({ ok: true, data: [] });
+  vi.mocked(listSituations).mockResolvedValue([]);
+  vi.mocked(listSources).mockResolvedValue([]);
   vi.mocked(getUserStats).mockResolvedValue({
     ok: true,
     data: {
@@ -140,6 +144,60 @@ describe("getShadowingHub", () => {
     });
   });
 
+  it("promotes only a measured recommendation reason into the optional rail suggestion", async () => {
+    mockClient(USER);
+    vi.mocked(getRecommendations).mockResolvedValue({
+      ok: true,
+      data: [{
+        videoId: "recommended-1",
+        youtubeVideoId: "yt-recommended-1",
+        title: "Ordering at a restaurant",
+        thumbnailUrl: null,
+        jlptLevelEstimate: "N4",
+        knownRatio: 0.78,
+        totalWords: 100,
+        knownWords: 78,
+        band: "ideal",
+        reason: { kind: "known-word-fit", knownRatio: 0.78, totalWords: 100, knownWords: 78 },
+      }],
+    });
+
+    await expect(getShadowingHub()).resolves.toMatchObject({
+      ok: true,
+      data: {
+        rail: {
+          suggestion: {
+            lesson: { id: "recommended-1", title: "Ordering at a restaurant" },
+            reason: { kind: "known-word-fit", knownRatio: 0.78 },
+          },
+        },
+      },
+    });
+  });
+
+  it("exposes both taxonomy axes and uses only the selected real tag for a discovery query", async () => {
+    mockClient(USER, { videos: [PRIVATE_LESSON] });
+    vi.mocked(listSituations).mockResolvedValue([{ id: "s1", slug: "restaurant", displayOrder: 1 }]);
+    vi.mocked(listSources).mockResolvedValue([{ id: "o1", slug: "anime", displayOrder: 1 }]);
+
+    const result = await getShadowingHub({ query: "private", filter: "situation:restaurant" });
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        filters: [
+          { kind: "situation", slug: "restaurant" },
+          { kind: "source", slug: "anime" },
+        ],
+        discovery: {
+          query: "private",
+          activeFilter: "situation:restaurant",
+          lessons: [{ id: PRIVATE_LESSON.id }],
+        },
+      },
+    });
+  });
+
   it("returns null or empty section projections when the learner has no available data", async () => {
     mockClient(USER);
 
@@ -152,6 +210,8 @@ describe("getShadowingHub", () => {
         recentlyAdded: [],
         popular: [],
         recommendations: [],
+        filters: [],
+        discovery: null,
         quota: { used: 0, limit: 3, tier: "free" },
         rail: {
           stats: {
