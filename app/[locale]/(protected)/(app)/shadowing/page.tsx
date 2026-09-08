@@ -5,7 +5,8 @@ import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { getShadowingHub } from "@/lib/data/shadowing-hub";
 import { TwoColumnShell } from "@/components/layout/two-column-shell";
 import { HubShelves } from "@/components/shadowing/hub-shelves";
-import { VideoImportForm } from "@/components/video/video-import-form";
+import { HubImportSection } from "@/components/shadowing/hub-import-section";
+import { HubLibrarySection } from "@/components/shadowing/hub-library-section";
 
 export async function generateMetadata({ params }: { params: { locale: Locale } }): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: "videos" });
@@ -32,9 +33,19 @@ export default async function VideosPage() {
           <h1 className="mt-xs text-title font-semibold text-foreground">{t("title")}</h1>
           <p className="mt-sm text-body text-muted-foreground">{t("subtitle")}</p>
         </header>
-        <section aria-label={t("import")} className="rounded-xl border border-border bg-card p-md-lg">
-          <VideoImportForm />
-        </section>
+        <HubImportSection used={hub.quota.used} limit={hub.quota.limit} tier={hub.quota.tier} />
+        <HubLibrarySection
+          items={hub.library}
+          labels={{
+            title: t("yourVideos"),
+            readyAction: tCommon("actions.next"),
+            unavailable: tHub("noTranscript.title"),
+            retry: tCommon("actions.retry"),
+            retryPending: t("retryPending"),
+            retryFailed: t("retryFailed"),
+            noThumbnail: tCommon("noThumbnail"),
+          }}
+        />
         <HubShelves
           featured={hub.featured}
           continueLearning={hub.continueLearning}

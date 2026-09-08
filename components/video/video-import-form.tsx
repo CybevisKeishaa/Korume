@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { VideoRow } from "@/lib/video-types";
 
-type KnownErrorStatus = 400 | 401 | 422 | 429;
+type KnownErrorStatus = 400 | 401 | 403 | 422 | 429;
 
 function isKnownErrorStatus(status: number): status is KnownErrorStatus {
-  return status === 400 || status === 401 || status === 422 || status === 429;
+  return status === 400 || status === 401 || status === 403 || status === 422 || status === 429;
 }
 
 /**
@@ -24,6 +24,7 @@ function isKnownErrorStatus(status: number): status is KnownErrorStatus {
 type ErrorDescriptor =
   | { key: "invalidUrl" }
   | { key: "sessionExpired" }
+  | { key: "quotaReached" }
   | { key: "fetchFailed" }
   | { key: "rateLimited"; seconds: number }
   | { key: "rateLimitedGeneric" }
@@ -36,6 +37,8 @@ function descriptorForStatus(status: KnownErrorStatus | "unknown", retryAfterSec
       return { key: "invalidUrl" };
     case 401:
       return { key: "sessionExpired" };
+    case 403:
+      return { key: "quotaReached" };
     case 422:
       return { key: "fetchFailed" };
     case 429:
