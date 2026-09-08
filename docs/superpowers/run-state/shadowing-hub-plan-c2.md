@@ -109,8 +109,8 @@ layout token and it disappears below `xl`.
 - Whole-branch review through `f2dc18d` approved the C2 implementation after
   an isolated build, focused browser run, typecheck, lint, focused Hub suite,
   full Vitest suite, and diff check. It identified the lesson-action browser
-  coverage gap; `2165a91` closes that specific gap and needs its narrow
-  follow-up review before merge.
+  coverage gap; `2165a91` closes that specific gap. The narrow re-review
+  approved it after `0882367` corrected the commit citations in the evidence.
 - Fresh 390px and 1536px captures from the isolated `17f2fd3` production
   artifact were compared with Figma node `149:2`. They preserve the C2
   hierarchy, responsive shell/rail behavior, shelf order, and four rail cards.
@@ -131,10 +131,10 @@ layout token and it disappears below `xl`.
   process. Final verification used separately configured production artifacts
   instead.
 
-## Remaining action
+## Completion
 
-1. Obtain the narrow follow-up review for `2165a91`; then Task 8 and this C2
-   branch are ready for merge under the existing whole-branch approval.
+Task 8 is complete. The whole-branch review and its narrow follow-up both
+approved the C2 branch; it is ready for merge.
 
 ## Historical next actions (superseded by the verification above)
 

@@ -152,7 +152,7 @@
 - [x] Verify they fail against the legacy page, then implement only repairs necessary to pass.
 - [x] Run `npm exec vitest -- run`, `npm run typecheck`, `npm run lint`, `npm run build`, and the new focused Playwright spec on a fresh production server.
 - [x] Compare 1536px and 390px renders with Figma node `149:2`; verify reduced motion does not hide content or block actions.
-- [ ] Commit the verification repair, request a task review, then a whole-branch review before merge.
+- [x] Commit the verification repair, request a task review, then a whole-branch review before merge.
 
 ## Self-review
 
