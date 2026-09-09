@@ -148,8 +148,12 @@ and the executable task plan now lives at
 Desktop Hub repair Tasks 1 and 2 are complete: focused handoff and shell
 coverage passed 6/6, the shell's rail-track mutation went RED and restored to
 GREEN, TypeScript passed, and task review approved the combined checkpoint.
-Task 3 (truthful empty interiors for every authored Hub region) is next;
-execute its red/green checks before any new whole-branch review or merge claim.
+Task 3 is complete in `0107e2f`: every authored Hub region now retains a
+truthful empty interior, the page owns Hub translations, and the screen
+documentation cites the repair contract. Its 20 focused tests and TypeScript
+passed, and a re-review approved the final diff. Task 4 (catalog contract and
+browser breakpoint checks) is next; execute its red/green checks before any
+new whole-branch review or merge claim.
 
 ## Historical next actions (superseded by the verification above)
 
