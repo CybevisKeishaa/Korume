@@ -71,8 +71,10 @@ test("at desktop widths, the Hub keeps every truthful region and a fixed rail th
   await page.waitForLoadState("networkidle");
 
   const main = page.locator("[data-desktop-web] main");
+  const hubColumn = main.locator(":scope > div > div").first();
   const rail = page.getByRole("complementary", { name: enShadowing.hub.railLabel });
   await expect(main).toBeVisible();
+  await expect(hubColumn).toBeVisible();
   await expect(rail).toBeVisible();
 
   for (const name of HUB_REGIONS) {
@@ -103,7 +105,7 @@ test("at desktop widths, the Hub keeps every truthful region and a fixed rail th
     "We couldn't fetch details for that video. Double-check the link and try again.",
   );
 
-  const beforeMain = await main.boundingBox();
+  const beforeMain = await hubColumn.boundingBox();
   const beforeRail = await rail.boundingBox();
   expect(beforeMain).not.toBeNull();
   expect(beforeRail).not.toBeNull();
@@ -114,7 +116,7 @@ test("at desktop widths, the Hub keeps every truthful region and a fixed rail th
   await page.getByRole("button", { name: "Hide navigation" }).click();
   await expect(page.getByRole("button", { name: "Show navigation" })).toBeVisible();
 
-  const afterMain = await main.boundingBox();
+  const afterMain = await hubColumn.boundingBox();
   const afterRail = await rail.boundingBox();
   expect(afterMain).not.toBeNull();
   expect(afterRail).not.toBeNull();

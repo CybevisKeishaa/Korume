@@ -161,12 +161,21 @@ EN/VI `hub` + `mobileHandoff` contract (two roots, 50 leaves, matching paths,
 and ICU placeholder sets) plus EN/VI provider render coverage. Its contract
 test passed 4/4, TypeScript and Playwright discovery passed, its intentionally
 broken ICU placeholder mutation went RED and restored GREEN, and review
-approved its fix wave. An isolated production Playwright run passed the new
-1023px handoff assertion. The desktop browser case remains externally blocked:
-the configured local Supabase endpoint at `127.0.0.1:54321` refused the fresh
-registration request. The source assertion is ready but this branch is not
-merge-ready until the desktop case runs on an available local test backend and
-the whole-branch verification/review completes.
+approved its fix wave. Once local Docker/Supabase was started, the isolated
+production server at port 3001 passed the full browser spec 2/2: 1023px
+handoff-only and the newly registered learner's 1024px Hub with all regions,
+fixed rail, keyboard import, reduced motion, nav-collapse main growth, and no
+overflow. The first desktop run went RED because the test measured the outer
+chrome `main`, which includes the rail; it was corrected to measure the Hub
+grid's first-column child, re-ran GREEN, and its narrow review approved. The
+whole-branch review also caught a stale run-state `xl` rail claim; `3a7050a`
+corrected it and re-review approved. Visual inspection then captured 1023px,
+1024px, 1280px, and 1536px from the verified port-3001 artifact: the handoff
+is exclusive below desktop, and all desktop captures retain the side-by-side
+rail, authored regions, and truthful empty interiors. Keep that server running
+for the owner to inspect; before a merge handoff, stop it and perform the
+fresh isolated build/restart gate so its artifact cannot be confused with the
+long-lived root-checkout server on port 3000.
 
 ## Historical next actions (superseded by the verification above)
 
