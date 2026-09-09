@@ -19,9 +19,9 @@ export default async function AppChromeLayout({
   const user = await getCurrentUser();
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="flex min-h-screen flex-row">
       <AppNav userEmail={user?.email ?? ""} groups={NAV_GROUPS} />
-      <main className="flex-1">{children}</main>
+      <main className="min-w-0 flex-1">{children}</main>
     </div>
   );
 }

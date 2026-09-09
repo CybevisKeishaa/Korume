@@ -141,7 +141,7 @@
   --layout-sidebar-width: 224px;
   --layout-sidebar-collapsed: 68px;
   --layout-content-max: 1240px;
-  --layout-companion-width: 340px;
+  --layout-companion-width: 300px;
   --layout-gutter: var(--space-xl);
   --layout-column-gap: var(--space-lg);
   /* The sticky site header's row height. TWO consumers, which is why it is a

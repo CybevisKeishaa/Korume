@@ -40,11 +40,11 @@ export function AppNav({
   const [visible, setVisible] = useState(defaultVisible);
 
   return (
-    <div className="flex w-full shrink-0 flex-col md:w-auto md:flex-row">
+    <div className="flex h-screen shrink-0 flex-row">
       {visible ? (
         <nav
           aria-label={t("ariaLabel")}
-          className="flex w-full flex-col gap-1 border-b border-border bg-card p-4 md:h-screen md:w-60 md:border-b-0 md:border-r"
+          className="flex h-screen w-60 flex-col gap-1 border-r border-border bg-card p-4"
         >
           <div className="mb-4 flex items-center justify-between gap-2 px-2">
             <Link href="/dashboard" className="font-jp text-lg font-bold">
@@ -58,13 +58,13 @@ export function AppNav({
               <div key={group.key} className="mb-2">
                 <p
                   id={`app-nav-group-${group.key}`}
-                  className="hidden px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:block"
+                  className="block px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   {t(`groups.${group.key}`)}
                 </p>
                 <ul
                   aria-labelledby={`app-nav-group-${group.key}`}
-                  className="flex flex-wrap gap-1 md:flex-col md:flex-nowrap"
+                  className="flex flex-col gap-1"
                 >
                   {group.items.map((item) => {
                     const active =
@@ -125,7 +125,7 @@ export function AppNav({
         asserts `getByRole("navigation")` stays at 0 on chrome-less surfaces,
         and this rail must not become a second landmark on `(app)` either.
 
-        `md:w-6` is restored here (NB-1, 2026-08-07, final whole-branch
+        `w-6` is restored here (NB-1, 2026-08-07, final whole-branch
         review round 2): `(focus)` exists precisely so navigation recedes to
         a narrow strip during focused study, and the first F1 pass widened
         this rail to ~130px by rendering `ReduceMotionToggle`'s caption
@@ -133,7 +133,7 @@ export function AppNav({
         the point of F1) without re-widening the rail — see
         `reduce-motion-toggle.tsx`.
       */}
-      <div className="flex flex-col items-center gap-2 border-b border-border bg-card py-2 md:h-screen md:w-6 md:border-b-0 md:border-r md:py-3">
+      <div className="flex h-screen w-6 flex-col items-center gap-2 border-r border-border bg-card py-3">
         <button
           type="button"
           aria-expanded={visible}
