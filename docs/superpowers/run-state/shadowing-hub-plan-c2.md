@@ -41,6 +41,9 @@ C4 durable import-job progress are explicitly excluded.
   content commit, per L-027.
 - C1 foundation merged earlier at `bd7f574`; landing motion merged to the
   base at `bfd52c0`.
+- Desktop Hub repair Task 1: `0014ea2` adds the mobile app handoff.
+- Desktop Hub repair Task 2: `292f28c` makes the application chrome and Hub
+  shell fluid desktop geometry with a permanent 300px rail.
 
 ## Contracts and decisions
 
@@ -142,8 +145,11 @@ desktop-only web at 1024px+, an always-present 300px rail, complete truthful
 no-data regions, and an EN/VI copy contract. The owner approved that design
 and the executable task plan now lives at
 `docs/superpowers/plans/2026-09-09-desktop-hub-empty-states.md`.
-Corrective implementation has not begun; execute its red/green checks before
-any new whole-branch review or merge claim.
+Desktop Hub repair Tasks 1 and 2 are complete: focused handoff and shell
+coverage passed 6/6, the shell's rail-track mutation went RED and restored to
+GREEN, TypeScript passed, and task review approved the combined checkpoint.
+Task 3 (truthful empty interiors for every authored Hub region) is next;
+execute its red/green checks before any new whole-branch review or merge claim.
 
 ## Historical next actions (superseded by the verification above)
 
