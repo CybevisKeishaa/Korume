@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
+import enShadowing from "@/messages/en/shadowing.json";
 import enVideos from "@/messages/en/videos.json";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 
 async function registerLearner(page: import("@playwright/test").Page): Promise<void> {
   const email = `e2e_shadowing_hub_${Date.now()}@example.com`;
@@ -12,46 +14,78 @@ async function registerLearner(page: import("@playwright/test").Page): Promise<v
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });
 }
 
-async function assertAllRenderedLessonActionsAreKeyboardReachable(
-  page: import("@playwright/test").Page,
-  main: import("@playwright/test").Locator,
-): Promise<void> {
-  const lessonActions = main.locator('a[href^="/en/shadowing/"]');
-  const actionCount = await lessonActions.count();
-  expect(actionCount).toBeGreaterThan(0);
+const HUB_REGIONS = [
+  enShadowing.hub.sections.featured,
+  enShadowing.hub.import.title,
+  enShadowing.hub.sections.library,
+  enShadowing.hub.sections.search,
+  enShadowing.hub.sections.popular,
+  enShadowing.hub.sections.continueLearning,
+  enShadowing.hub.sections.recentlyAdded,
+  enShadowing.hub.sections.recommended,
+] as const;
 
-  // Start from the URL field, whose position in the first Hub state is known.
-  // Pressing Tab proves the browser's sequential-focus order; calling
-  // locator.focus() would let a tabindex=-1 lesson card falsely pass.
-  await main.getByLabel("YouTube URL").focus();
-  const maximumTabPresses = await main.locator('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])').count();
-  const reachedActionIndexes = new Set<number>();
+const RAIL_CARDS = [
+  enShadowing.hub.rail.preparation,
+  enShadowing.hub.rail.todayGoal,
+  enShadowing.hub.rail.weeklyProgress,
+  enShadowing.hub.rail.suggestion,
+] as const;
 
-  for (let press = 0; press < maximumTabPresses && reachedActionIndexes.size < actionCount; press += 1) {
-    await page.keyboard.press("Tab");
-    const focusedIndex = await lessonActions.evaluateAll((actions) => actions.findIndex((action) => action === document.activeElement));
-    if (focusedIndex >= 0) reachedActionIndexes.add(focusedIndex);
-  }
+async function assertNoHorizontalOverflow(page: import("@playwright/test").Page): Promise<void> {
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+}
 
-  expect([...reachedActionIndexes].sort((left, right) => left - right)).toEqual(
-    Array.from({ length: actionCount }, (_, index) => index),
+function expectSideBySide(
+  mainBox: { x: number; y: number; width: number; height: number } | null,
+  railBox: { x: number; y: number; width: number; height: number } | null,
+): void {
+  expect(mainBox).not.toBeNull();
+  expect(railBox).not.toBeNull();
+  if (!mainBox || !railBox) throw new Error("Hub main or rail has no layout box");
+
+  expect(railBox.x).toBeGreaterThanOrEqual(mainBox.x + mainBox.width);
+  expect(Math.min(mainBox.y + mainBox.height, railBox.y + railBox.height)).toBeGreaterThan(
+    Math.max(mainBox.y, railBox.y),
   );
 }
 
-test("the Shadowing Hub keeps core study controls usable without fabricated progress", async ({ page }) => {
-  await registerLearner(page);
+test("at 1023px, Shadowing exposes only the app-download handoff", async ({ page }) => {
+  await page.setViewportSize({ width: 1023, height: 844 });
+  await page.goto("/en/shadowing");
 
+  const handoff = page.getByRole("main", { name: enShadowing.mobileHandoff.title });
+  await expect(handoff).toBeVisible();
+  await expect(handoff.getByRole("link", { name: enShadowing.mobileHandoff.appStoreLabel })).toHaveAttribute("href", APP_STORE_URL);
+  await expect(handoff.getByRole("link", { name: enShadowing.mobileHandoff.playStoreLabel })).toHaveAttribute("href", PLAY_STORE_URL);
+  await expect(page.getByRole("main")).toHaveCount(1);
+  await expect(page.getByRole("navigation")).toHaveCount(0);
+  await expect(page.locator("[data-desktop-web]")).toBeHidden();
+});
+
+test("at desktop widths, the Hub keeps every truthful region and a fixed rail through nav collapse", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await registerLearner(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/en/shadowing");
   await page.waitForLoadState("networkidle");
 
-  const main = page.getByRole("main");
-  await expect(main).toHaveCount(1);
-  await expect(main.getByRole("heading", { name: "Shadowing Hub", level: 1 })).toBeVisible();
-  await expect(main.getByRole("search", { name: "Search lessons" })).toBeVisible();
-  await expect(main.getByLabel("YouTube URL")).toBeVisible();
-  await assertAllRenderedLessonActionsAreKeyboardReachable(page, main);
+  const main = page.locator("[data-desktop-web] main");
+  const rail = page.getByRole("complementary", { name: enShadowing.hub.railLabel });
+  await expect(main).toBeVisible();
+  await expect(rail).toBeVisible();
+
+  for (const name of HUB_REGIONS) {
+    await expect(main.getByRole("region", { name })).toBeVisible();
+  }
+  for (const name of RAIL_CARDS) {
+    await expect(rail.getByRole("region", { name })).toBeVisible();
+  }
+
+  const importUrl = main.getByLabel("YouTube URL");
+  await importUrl.focus();
+  await page.keyboard.press("Tab");
+  await expect(main.getByRole("button", { name: enShadowing.hub.import.title })).toBeFocused();
 
   let releaseImport!: () => void;
   const importResponse = new Promise<void>((resolve) => {
@@ -61,29 +95,33 @@ test("the Shadowing Hub keeps core study controls usable without fabricated prog
     await importResponse;
     await route.fulfill({ status: 422, contentType: "application/json", body: "{}" });
   });
-  await main.getByLabel("YouTube URL").fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-  await main.getByRole("button", { name: "Import video" }).click();
+  await importUrl.fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+  await main.getByRole("button", { name: enShadowing.hub.import.title }).click();
   await expect(main.getByRole("button", { name: enVideos.importing })).toBeDisabled();
   releaseImport();
   await expect(main.getByRole("alert")).toHaveText(
     "We couldn't fetch details for that video. Double-check the link and try again.",
   );
 
-  // The import is keyboard-operable in the empty-learning state. Focusing the
-  // URL field and advancing with Tab is intentionally a native keyboard path,
-  // not a programmatic button click.
-  await main.getByLabel("YouTube URL").focus();
-  await page.keyboard.press("Tab");
-  await expect(main.getByRole("button", { name: "Import video" })).toBeFocused();
+  const beforeMain = await main.boundingBox();
+  const beforeRail = await rail.boundingBox();
+  expect(beforeMain).not.toBeNull();
+  expect(beforeRail).not.toBeNull();
+  expect(beforeRail?.width).toBeCloseTo(300, 0);
+  expectSideBySide(beforeMain, beforeRail);
+  await assertNoHorizontalOverflow(page);
 
-  await expect(page.getByRole("complementary", { name: "Learning continuity" })).toBeHidden();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await page.getByRole("button", { name: "Hide navigation" }).click();
+  await expect(page.getByRole("button", { name: "Show navigation" })).toBeVisible();
 
-  // A fresh learner has no server-backed building job, percentage, ETA, or
-  // weekly shadowing history to display. Its honest empty state must remain
-  // visible instead of being replaced by Figma sample progress.
+  const afterMain = await main.boundingBox();
+  const afterRail = await rail.boundingBox();
+  expect(afterMain).not.toBeNull();
+  expect(afterRail).not.toBeNull();
+  expect(afterMain?.width).toBeGreaterThan(beforeMain?.width ?? 0);
+  expect(afterRail?.width).toBeCloseTo(300, 0);
+  expectSideBySide(afterMain, afterRail);
+  await assertNoHorizontalOverflow(page);
+
   await expect(main).not.toContainText(/\b(?:ETA|estimated|\d{1,3}%|\d+\s*(?:min|minutes)\s+remaining)\b/i);
-
-  await page.setViewportSize({ width: 1536, height: 900 });
-  await expect(page.getByRole("complementary", { name: "Learning continuity" })).toBeVisible();
 });

@@ -11,6 +11,10 @@ C4 durable import-job progress are explicitly excluded.
 ## Authorities
 
 - `AGENTS.md`, `docs/lessons.md`, and `.codex/docs/workflow.md`.
+- `docs/superpowers/specs/2026-09-09-desktop-hub-empty-states-design.md` for
+  the authoritative responsive, no-data, and Hub-copy repair contract.
+- `docs/superpowers/plans/2026-09-09-desktop-hub-empty-states.md` for the
+  executable repair sequence.
 - `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` §§4, 6.
 - `docs/superpowers/plans/2026-09-07-shadowing-hub-plan-c2.md` once accepted.
 - Figma file `IwFHZDZdHW7qsSFiNbWrkd`, node `149:2`, via design context.
@@ -151,9 +155,17 @@ GREEN, TypeScript passed, and task review approved the combined checkpoint.
 Task 3 is complete in `0107e2f`: every authored Hub region now retains a
 truthful empty interior, the page owns Hub translations, and the screen
 documentation cites the repair contract. Its 20 focused tests and TypeScript
-passed, and a re-review approved the final diff. Task 4 (catalog contract and
-browser breakpoint checks) is next; execute its red/green checks before any
-new whole-branch review or merge claim.
+passed, and a re-review approved the final diff. Task 4 adds a non-vacuous
+EN/VI `hub` + `mobileHandoff` contract (two roots, 50 leaves, matching paths,
+and ICU placeholder sets) plus EN/VI provider render coverage. Its contract
+test passed 4/4, TypeScript and Playwright discovery passed, its intentionally
+broken ICU placeholder mutation went RED and restored GREEN, and review
+approved its fix wave. An isolated production Playwright run passed the new
+1023px handoff assertion. The desktop browser case remains externally blocked:
+the configured local Supabase endpoint at `127.0.0.1:54321` refused the fresh
+registration request. The source assertion is ready but this branch is not
+merge-ready until the desktop case runs on an available local test backend and
+the whole-branch verification/review completes.
 
 ## Historical next actions (superseded by the verification above)
 
