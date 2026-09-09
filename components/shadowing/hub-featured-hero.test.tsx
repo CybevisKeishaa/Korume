@@ -16,7 +16,7 @@ describe("HubFeaturedHero", () => {
     render(
       <HubFeaturedHero
         lesson={lesson}
-        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes` }}
+        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes`, emptyTitle: "Featured lessons are selected editorially", emptyBody: "A featured lesson will appear here when one is available." }}
       />,
     );
 
@@ -28,10 +28,13 @@ describe("HubFeaturedHero", () => {
     expect(screen.getByRole("link", { name: "Start lesson: Ordering coffee at a cozy café" })).toHaveAttribute("href", "/en/shadowing/featured-1");
   });
 
-  it("does not replace absent featured data with a sample lesson", () => {
-    render(<HubFeaturedHero lesson={null} labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes` }} />);
+  it("keeps the featured region with a truthful empty interior when no lesson is supplied", () => {
+    render(<HubFeaturedHero lesson={null} labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes`, emptyTitle: "Featured lessons are selected editorially", emptyBody: "A featured lesson will appear here when one is available." }} />);
 
-    expect(screen.queryByRole("region", { name: "Featured lesson" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Featured lesson" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Featured lessons are selected editorially" })).toBeInTheDocument();
+    expect(screen.getByText("A featured lesson will appear here when one is available.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /lesson/i })).not.toBeInTheDocument();
   });
 
   it("uses the continuation action only when the read model says this featured lesson is in progress", () => {
@@ -39,7 +42,7 @@ describe("HubFeaturedHero", () => {
       <HubFeaturedHero
         lesson={lesson}
         isInProgress
-        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes` }}
+        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes`, emptyTitle: "Featured lessons are selected editorially", emptyBody: "A featured lesson will appear here when one is available." }}
       />,
     );
 

@@ -2,11 +2,14 @@
 
 ## The learner's home for shadowing
 
-> **Status:** Implemented C2 contract. Presentation authority is Figma frame
-> `149:2` in file `IwFHZDZdHW7qsSFiNbWrkd`; the data and behaviour authority
+> **Status:** Desktop Hub repair in progress. Presentation reference is Figma
+> frame `149:2` in file `IwFHZDZdHW7qsSFiNbWrkd`; the historical authority
 > is `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` §4.
 > This replaces the older collection-grid description. Explore is a separate
 > C3 screen, not a Hub section.
+>
+> The responsive, no-data, and Hub-copy contract is
+> `docs/superpowers/specs/2026-09-09-desktop-hub-empty-states-design.md`.
 
 The Shadowing Hub is the personalised starting point for choosing, creating,
 resuming, and discovering Lessons. A Lesson is the canonical learning object;
@@ -19,10 +22,12 @@ actual study state.
 
 ## Desktop layout
 
-The application sidebar is provided by app chrome. Inside it, the Hub uses a
-single main column beside an optional 340px continuity rail. The content
-measure, gutter, column gap, and `xl` collapse point are owned by
-`TwoColumnShell`, not re-declared by this screen.
+Korume is desktop web from 1024px upward. The application sidebar is provided
+by app chrome. Inside it, the Hub uses a fluid main column beside a permanent
+300px continuity rail. `TwoColumnShell` owns the main-column minimum, gutters,
+and gap so navigation collapse gives released width back to the content.
+Below 1024px, the Hub is not a responsive web screen: the locale root exposes
+only the app-download handoff.
 
 The main column appears in this fixed authored order:
 
@@ -40,9 +45,10 @@ The main column appears in this fixed authored order:
 9. **Recommended for you** — recommendations only when their reason is a
    measured learner-data fact.
 
-Empty sections are omitted rather than populated with sample cards. The
-Featured region is omitted when the editorial collection is empty; My Lessons
-is omitted when the learner has none.
+No data removes no authored region. Featured, My Lessons, Popular, Continue
+learning, Recently added, and Recommended keep quiet empty interiors rather
+than sample cards, fabricated learner facts, or invented actions. My Lessons
+alone links to the real inline import control.
 
 ## Data and interaction contract
 
@@ -79,16 +85,17 @@ measured known-word fit.
 
 ## Continuity rail
 
-At `xl` and above, the complementary rail may show these four labelled cards:
+At every desktop width from 1024px upward, the permanent 300px complementary
+rail keeps these four labelled cards:
 
 - Lesson preparation
 - Today's goal
 - Weekly progress
 - Suggested next lesson
 
-The rail is supplementary: no required learning action exists only there, and
-it is entirely hidden below `xl`. It is not a Companion anchor. The non-empty
-Hub has no approved mascot/Companion presence.
+The rail is supplementary: no required learning action exists only there. It
+is not a Companion anchor. The non-empty Hub has no approved mascot/Companion
+presence.
 
 Only recorded Shadowing-scoped facts belong in the weekly card. Until durable
 preparation, daily-goal, and weekly-activity sources exist, those cards render
@@ -103,8 +110,9 @@ only with a structured, measured recommendation reason.
 - Every Lesson action is a locale-aware link with a visible focus treatment.
 - The Hub has one page `main` landmark; shelves and rail cards have named
   regions/headings; import failures use an alert.
-- At 390px there is no document-level horizontal overflow and the rail is not
-  exposed. The main column remains usable in one column.
+- At 1023px the desktop Hub landmarks are absent and the accessible app-store
+  handoff is the only rendered experience. At 1024px and above, the main and
+  rail remain side by side without document-level horizontal overflow.
 - Reduced motion must not hide content or prevent import, search, filter, or
   Lesson actions.
 - All new copy has EN and VI catalog entries. Metadata labels and duration

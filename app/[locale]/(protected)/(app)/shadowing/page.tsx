@@ -44,15 +44,15 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
     <TwoColumnShell
       railLabel={tHub("hub.railLabel")}
       rail={<HubCompanionRail rail={hub.rail} labels={{
-        preparation: tHub("hub.preparation"),
-        noPreparation: tHub("hub.noPreparation"),
-        todayGoal: tHub("hub.todayGoal"),
-        noGoal: tHub("hub.noGoal"),
-        weeklyProgress: tHub("hub.weeklyProgress"),
-        noWeeklyActivity: tHub("hub.noWeeklyActivity"),
-        suggestion: tHub("hub.suggestion"),
-        noSuggestion: tHub("hub.noSuggestion"),
-        openLesson: tHub("hub.openLesson"),
+        preparation: tHub("hub.rail.preparation"),
+        noPreparation: tHub("hub.rail.noPreparation"),
+        todayGoal: tHub("hub.rail.todayGoal"),
+        noGoal: tHub("hub.rail.noGoal"),
+        weeklyProgress: tHub("hub.rail.weeklyProgress"),
+        noWeeklyActivity: tHub("hub.rail.noWeeklyActivity"),
+        suggestion: tHub("hub.rail.suggestion"),
+        noSuggestion: tHub("hub.rail.noSuggestion"),
+        openLesson: tHub("hub.actions.openLesson"),
         knownWordFit: (percent) => tCommon("recommendations.knownWords", { percent }),
       }} />}
       className="py-2xl"
@@ -67,26 +67,40 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
           lesson={hub.featured}
           isInProgress={hub.featured ? hub.continueLearning.some(({ lesson }) => lesson.id === hub.featured?.id) : false}
           labels={{
-          eyebrow: tHub("hub.featured"),
-          start: tHub("hub.start"),
-          continue: tHub("hub.continue"),
+          eyebrow: tHub("hub.sections.featured"),
+          start: tHub("hub.actions.start"),
+          continue: tHub("hub.actions.continue"),
           noThumbnail: tCommon("noThumbnail"),
-          jlptLabel: tHub("hub.jlptLabel"),
-          durationLabel: tHub("hub.durationLabel"),
-          duration: (minutes) => tHub("hub.minutes", { count: minutes }),
+          jlptLabel: tHub("hub.metadata.jlptLabel"),
+          durationLabel: tHub("hub.metadata.durationLabel"),
+          duration: (minutes) => tHub("hub.metadata.minutes", { count: minutes }),
+          emptyTitle: tHub("hub.empty.featured.title"),
+          emptyBody: tHub("hub.empty.featured.body"),
           }}
         />
-        <HubImportSection used={hub.quota.used} limit={hub.quota.limit} tier={hub.quota.tier} />
+        <HubImportSection
+          used={hub.quota.used}
+          limit={hub.quota.limit}
+          tier={hub.quota.tier}
+          labels={{
+            title: tHub("hub.import.title"),
+            quotaUnlimited: tHub("hub.import.quotaUnlimited"),
+            quotaUsed: (used, limit) => tHub("hub.import.quotaUsed", { used, limit }),
+          }}
+        />
         <HubLibrarySection
           items={hub.library}
           labels={{
-            title: t("yourVideos"),
+            title: tHub("hub.sections.library"),
             readyAction: tCommon("actions.next"),
             unavailable: tHub("noTranscript.title"),
             retry: tCommon("actions.retry"),
             retryPending: t("retryPending"),
             retryFailed: t("retryFailed"),
             noThumbnail: tCommon("noThumbnail"),
+            emptyTitle: tHub("hub.empty.library.title"),
+            emptyBody: tHub("hub.empty.library.body"),
+            emptyAction: tHub("hub.empty.library.action"),
           }}
         />
         <HubDiscoveryControls
@@ -99,31 +113,35 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
           results={hub.discovery?.lessons ?? null}
           action={getPathname({ href: "/shadowing", locale })}
           labels={{
-            searchLabel: tHub("hub.searchLabel"),
-            searchPlaceholder: tHub("hub.searchPlaceholder"),
+            searchLabel: tHub("hub.sections.search"),
+            searchPlaceholder: tHub("hub.search.placeholder"),
             all: tCommon("filters.all"),
-            results: tHub("hub.searchResults"),
-            noResults: tHub("hub.noSearchResults"),
-            start: tHub("hub.start"),
+            results: tHub("hub.search.results"),
+            noResults: tHub("hub.search.noResults"),
+            start: tHub("hub.actions.start"),
             noThumbnail: tCommon("noThumbnail"),
           }}
         />
         <HubShelves
-          featured={null}
           continueLearning={hub.continueLearning}
           recentlyAdded={hub.recentlyAdded}
           popular={hub.popular}
           recommendations={hub.recommendations}
           labels={{
-            featured: tHub("hub.featured"),
-            recentlyAdded: tHub("hub.recentlyAdded"),
-            popular: tHub("hub.popular"),
-            continueLearning: tHub("hub.continueLearning"),
-            recommended: tCommon("recommendations.heading"),
-            start: tHub("hub.start"),
-            continue: tHub("hub.continue"),
+            recentlyAdded: tHub("hub.sections.recentlyAdded"),
+            popular: tHub("hub.sections.popular"),
+            continueLearning: tHub("hub.sections.continueLearning"),
+            recommended: tHub("hub.sections.recommended"),
+            start: tHub("hub.actions.start"),
+            continue: tHub("hub.actions.continue"),
             noThumbnail: tCommon("noThumbnail"),
             recommendationReason: (percent) => tCommon("recommendations.knownWords", { percent }),
+            empty: {
+              popular: { title: tHub("hub.empty.popular.title"), body: tHub("hub.empty.popular.body") },
+              continueLearning: { title: tHub("hub.empty.continueLearning.title"), body: tHub("hub.empty.continueLearning.body") },
+              recentlyAdded: { title: tHub("hub.empty.recentlyAdded.title"), body: tHub("hub.empty.recentlyAdded.body") },
+              recommended: { title: tHub("hub.empty.recommended.title"), body: tHub("hub.empty.recommended.body") },
+            },
           }}
         />
       </div>

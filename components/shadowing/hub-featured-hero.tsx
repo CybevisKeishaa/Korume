@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Link } from "@/lib/i18n/navigation";
 import type { HubLesson } from "@/lib/data/shadowing-hub";
+import { HubEmptyState } from "./hub-empty-state";
 
 export interface HubFeaturedHeroLabels {
   eyebrow: string;
@@ -10,10 +11,18 @@ export interface HubFeaturedHeroLabels {
   jlptLabel: string;
   durationLabel: string;
   duration: (minutes: number) => string;
+  emptyTitle: string;
+  emptyBody: string;
 }
 
 export function HubFeaturedHero({ lesson, isInProgress = false, labels }: { lesson: HubLesson | null; isInProgress?: boolean; labels: HubFeaturedHeroLabels }) {
-  if (!lesson) return null;
+  if (!lesson) {
+    return (
+      <section aria-label={labels.eyebrow}>
+        <HubEmptyState title={labels.emptyTitle} body={labels.emptyBody} />
+      </section>
+    );
+  }
 
   const action = isInProgress ? labels.continue : labels.start;
 

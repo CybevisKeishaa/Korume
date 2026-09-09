@@ -26,14 +26,19 @@ const labels = {
   continue: "Continue",
   noThumbnail: "No thumbnail",
   recommendationReason: (percent: number) => `${percent}% words you know`,
+  empty: {
+    popular: { title: "Popular lessons are taking shape", body: "Popular lessons will appear once learners have recorded activity." },
+    continueLearning: { title: "Continue when you are ready", body: "Lessons you begin will wait here for you." },
+    recentlyAdded: { title: "New lessons will arrive here", body: "Recently added lessons will appear once the library grows." },
+    recommended: { title: "Recommendations need learning signals", body: "Recommendations will appear when there is enough learning data." },
+  },
 };
 
 describe("HubShelves", () => {
-  it("keeps supplied section landmarks in the authored Figma order and omits empty ones", () => {
-    render(<HubShelves featured={lesson} recentlyAdded={[lesson]} popular={[lesson]} continueLearning={[{ lesson, lastWatchedPosition: 90 }]} recommendations={[recommendation]} labels={labels} />);
+  it("keeps the four supplied shelf landmarks in the authored Figma order", () => {
+    render(<HubShelves recentlyAdded={[lesson]} popular={[lesson]} continueLearning={[{ lesson, lastWatchedPosition: 90 }]} recommendations={[recommendation]} labels={labels} />);
 
     expect(screen.getAllByRole("region").map((region) => region.getAttribute("aria-label"))).toEqual([
-      "Featured",
       "Popular",
       "Continue learning",
       "Recently added",
@@ -41,23 +46,25 @@ describe("HubShelves", () => {
     ]);
   });
 
-  it("renders supplied shelves and omits empty ones instead of inventing sample lessons", () => {
-    render(<HubShelves featured={lesson} recentlyAdded={[lesson]} popular={[]} continueLearning={[]} recommendations={[]} labels={labels} />);
-    expect(screen.getByRole("heading", { name: "Featured" })).toBeInTheDocument();
+  it("keeps every shelf in authored order with a truthful empty interior instead of sample lessons", () => {
+    render(<HubShelves recentlyAdded={[lesson]} popular={[]} continueLearning={[]} recommendations={[]} labels={labels} />);
+    expect(screen.getByRole("heading", { name: "Popular lessons are taking shape" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Continue when you are ready" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Recently added" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Popular" })).not.toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: /Tokyo at night/ })).toHaveLength(2);
+    expect(screen.getByRole("heading", { name: "Recommendations need learning signals" })).toBeInTheDocument();
+    expect(screen.getByText("Lessons you begin will wait here for you.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Popular lessons|Continue when|Recommendations need/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Tokyo at night/ })).toHaveLength(1);
   });
 
   it("only renders a recommendation explanation when the recommendation carries a measured reason", () => {
     const { rerender } = render(
-      <HubShelves featured={null} recentlyAdded={[]} popular={[]} continueLearning={[]} recommendations={[recommendation]} labels={labels} />,
+      <HubShelves recentlyAdded={[]} popular={[]} continueLearning={[]} recommendations={[recommendation]} labels={labels} />,
     );
     expect(screen.getByText("82% words you know")).toBeInTheDocument();
 
     rerender(
       <HubShelves
-        featured={null}
         recentlyAdded={[]}
         popular={[]}
         continueLearning={[]}
