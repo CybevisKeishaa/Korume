@@ -157,9 +157,13 @@
       "recommended": { "title": "Recommendations need learning signals", "body": "Recommendations will appear when there is enough learning data." }
     },
     "import": {
-      "title": "Import video",
-      "quotaUsed": "{used} of {limit} lesson imports used this month",
-      "quotaUnlimited": "Plus plan includes unlimited lesson imports."
+      "eyebrow": "Import lesson from YouTube",
+      "title": "Turn any Japanese video into an interactive lesson.",
+      "body": "Paste a YouTube link to create a lesson with vocabulary, grammar, and shadowing practice.",
+      "support": "Japanese dialogue and subtitles improve lesson quality.",
+      "freePlan": "Free plan",
+      "importsRemaining": "Imports remaining",
+      "quotaUnlimited": "Unlimited lesson imports."
     },
     "rail": {
       "preparation": "Lesson preparation",

@@ -6,6 +6,7 @@ import { useTranslations } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import type { VideoRow } from "@/lib/video-types";
 
 type KnownErrorStatus = 400 | 401 | 403 | 422 | 429;
@@ -53,12 +54,18 @@ function descriptorForStatus(status: KnownErrorStatus | "unknown", retryAfterSec
  * /api/videos/import; on success refreshes the server-rendered list and
  * takes the user straight to the new video's shadowing page.
  */
-export function VideoImportForm() {
+export interface VideoImportFormProps {
+  /** The Hub uses its own labelled section and needs a compact control row. */
+  variant?: "default" | "hub";
+}
+
+export function VideoImportForm({ variant = "default" }: VideoImportFormProps) {
   const t = useTranslations("videos");
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ErrorDescriptor | null>(null);
+  const isHubForm = variant === "hub";
 
   function errorMessage(descriptor: ErrorDescriptor): string {
     return descriptor.key === "rateLimited"
@@ -108,10 +115,15 @@ export function VideoImportForm() {
     <form
       onSubmit={handleSubmit}
       noValidate
-      className="flex flex-col gap-3 sm:flex-row sm:items-end"
+      className={cn(
+        "flex flex-col gap-3 sm:flex-row",
+        isHubForm ? "sm:items-center" : "sm:items-end",
+      )}
     >
       <div className="flex-1">
-        <Label htmlFor="youtube-url">{t("urlLabel")}</Label>
+        <Label className={isHubForm ? "sr-only" : undefined} htmlFor="youtube-url">
+          {t("urlLabel")}
+        </Label>
         <Input
           id="youtube-url"
           name="youtubeUrl"
@@ -124,10 +136,10 @@ export function VideoImportForm() {
           disabled={loading}
           aria-invalid={error ? "true" : undefined}
           aria-describedby={error ? "youtube-url-error" : undefined}
-          className="mt-1"
+          className={isHubForm ? "mt-0" : "mt-1"}
         />
       </div>
-      <Button type="submit" disabled={loading}>
+      <Button className={isHubForm ? "shrink-0 whitespace-nowrap" : undefined} type="submit" disabled={loading}>
         {loading ? t("importing") : t("import")}
       </Button>
       {error && (

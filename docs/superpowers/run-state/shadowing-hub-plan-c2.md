@@ -177,6 +177,15 @@ for the owner to inspect; before a merge handoff, stop it and perform the
 fresh isolated build/restart gate so its artifact cannot be confused with the
 long-lived root-checkout server on port 3000.
 
+The owner then supplied Figma node `149:520` for the Import card and approved
+its desktop implementation. The current Figma alignment keeps the outer C2
+desktop geometry intact: at `xl` the quota capsule sits beside the form; from
+1024px to below `xl` it moves inside the card beneath the form so the actual
+URL control remains usable. It also replaces generic import copy with EN/VI
+parity, preserves truthful quota values, and has focused unit, translation,
+TypeScript, build, and port-3002 browser evidence. A task review approved the
+accessibility fix that removes an extra complementary landmark.
+
 ## Historical next actions (superseded by the verification above)
 
 1. Run the expanded focused Playwright Hub spec against a newly built isolated

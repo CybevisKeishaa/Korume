@@ -83,9 +83,13 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
           limit={hub.quota.limit}
           tier={hub.quota.tier}
           labels={{
+            eyebrow: tHub("hub.import.eyebrow"),
             title: tHub("hub.import.title"),
+            body: tHub("hub.import.body"),
+            support: tHub("hub.import.support"),
+            freePlan: tHub("hub.import.freePlan"),
+            importsRemaining: tHub("hub.import.importsRemaining"),
             quotaUnlimited: tHub("hub.import.quotaUnlimited"),
-            quotaUsed: (used, limit) => tHub("hub.import.quotaUsed", { used, limit }),
           }}
         />
         <HubLibrarySection

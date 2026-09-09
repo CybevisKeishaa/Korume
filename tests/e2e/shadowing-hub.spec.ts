@@ -84,10 +84,18 @@ test("at desktop widths, the Hub keeps every truthful region and a fixed rail th
     await expect(rail.getByRole("region", { name })).toBeVisible();
   }
 
+  await expect(main.getByText(enShadowing.hub.import.eyebrow)).toBeVisible();
+  await expect(main.getByText(enShadowing.hub.import.body)).toBeVisible();
+  await expect(main.getByText(enShadowing.hub.import.support)).toBeVisible();
+  await expect(main.getByText(enShadowing.hub.import.freePlan)).toBeVisible();
+  await expect(main.locator("p").filter({ hasText: /^3 \/ 3$/ })).toBeVisible();
+
   const importUrl = main.getByLabel("YouTube URL");
+  const importUrlBox = await importUrl.boundingBox();
+  expect(importUrlBox?.width).toBeGreaterThanOrEqual(180);
   await importUrl.focus();
   await page.keyboard.press("Tab");
-  await expect(main.getByRole("button", { name: enShadowing.hub.import.title })).toBeFocused();
+  await expect(main.getByRole("button", { name: enVideos.import })).toBeFocused();
 
   let releaseImport!: () => void;
   const importResponse = new Promise<void>((resolve) => {
@@ -98,7 +106,7 @@ test("at desktop widths, the Hub keeps every truthful region and a fixed rail th
     await route.fulfill({ status: 422, contentType: "application/json", body: "{}" });
   });
   await importUrl.fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-  await main.getByRole("button", { name: enShadowing.hub.import.title }).click();
+  await main.getByRole("button", { name: enVideos.import }).click();
   await expect(main.getByRole("button", { name: enVideos.importing })).toBeDisabled();
   releaseImport();
   await expect(main.getByRole("alert")).toHaveText(

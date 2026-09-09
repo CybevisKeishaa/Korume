@@ -10,7 +10,7 @@ type CatalogNode = Record<string, unknown>;
 type Locale = "en" | "vi";
 
 const COPY_ROOTS = ["hub", "mobileHandoff"] as const;
-const EXPECTED_LEAF_COUNT = 50;
+const EXPECTED_LEAF_COUNT = 54;
 
 function collectLeaves(value: unknown, path = ""): Record<string, string> {
   if (typeof value === "string") return { [path]: value };
