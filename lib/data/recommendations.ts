@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/data/videos";
 import { getKnownVocabLemmas } from "@/lib/data/difficulty";
 import { tokenize } from "@/lib/japanese/tokenizer";
 import { contentLemmas, scoreComprehension } from "@/lib/difficulty";
+import type { RecommendationBand, RecommendationReason, VideoRecommendation } from "@/lib/recommendation-types";
 import type { RecommendationsQuery } from "@/lib/validation/recommendations";
 
 /**
@@ -24,25 +25,13 @@ import type { RecommendationsQuery } from "@/lib/validation/recommendations";
  */
 const SCAN_LIMIT = 100;
 
-type RankedBand = "ideal" | "too-easy" | "too-hard";
+type RankedBand = RecommendationBand;
 
 const BAND_RANK: Record<RankedBand, number> = {
   ideal: 0,
   "too-easy": 1,
   "too-hard": 2,
 };
-
-export interface VideoRecommendation {
-  videoId: string;
-  youtubeVideoId: string;
-  title: string;
-  thumbnailUrl: string | null;
-  jlptLevelEstimate: string | null;
-  knownRatio: number;
-  band: RankedBand;
-  totalWords: number;
-  knownWords: number;
-}
 
 export type GetRecommendationsResult = { ok: true; data: VideoRecommendation[] } | { ok: false; status: 401 };
 
@@ -68,6 +57,25 @@ interface TranscriptRow {
 interface LineRow {
   transcript_id: string;
   text_jp: string;
+}
+
+function reasonForKnownWordFit(input: {
+  band: RankedBand;
+  knownRatio: number;
+  totalWords: number;
+  knownWords: number;
+}): RecommendationReason {
+  // The current scorer only records vocabulary comprehension. A grammar or
+  // pronunciation explanation would be an unsupported inference, so it is
+  // intentionally impossible to return one from this function.
+  if (input.band !== "ideal" || input.knownWords === 0) return null;
+
+  return {
+    kind: "known-word-fit",
+    knownRatio: input.knownRatio,
+    totalWords: input.totalWords,
+    knownWords: input.knownWords,
+  };
 }
 
 /**
@@ -173,6 +181,12 @@ export async function getRecommendations(query: RecommendationsQuery): Promise<G
       band,
       totalWords: score.totalWords,
       knownWords: score.knownWords,
+      reason: reasonForKnownWordFit({
+        band,
+        knownRatio: score.knownRatio,
+        totalWords: score.totalWords,
+        knownWords: score.knownWords,
+      }),
     });
   }
 

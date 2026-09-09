@@ -16,14 +16,17 @@ describe("TwoColumnShell", () => {
     // Explore is single-column (spec D14). An empty <aside> would still be a
     // landmark screen readers announce, so it must not be rendered at all.
     render(
-      <TwoColumnShell railLabel="Companion">
+      <TwoColumnShell railLabel="Companion" data-testid="shell-without-rail">
         <p>main</p>
       </TwoColumnShell>,
     );
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+    expect(screen.getByTestId("shell-without-rail").className).toContain(
+      "grid-cols-[minmax(0,1fr)]",
+    );
   });
 
-  it("sticks the rail and sizes it from the layout token", () => {
+  it("keeps the rail sticky at its layout-token width", () => {
     render(
       <TwoColumnShell rail={<p>companion</p>} railLabel="Companion">
         <p>main</p>
@@ -31,32 +34,36 @@ describe("TwoColumnShell", () => {
     );
     const rail = screen.getByRole("complementary", { name: "Companion" });
     expect(rail.className).toContain("sticky");
-    expect(rail.className).toContain("xl:top-md-lg");
-    expect(rail.className).toContain("xl:w-companion");
+    expect(rail.className).toContain("top-md-lg");
+    expect(rail.className).toContain("w-[--layout-companion-width]");
   });
 
-  it("hides the rail below xl so main content keeps the full width", () => {
+  it("keeps main and rail in the desktop grid without hiding the rail", () => {
     render(
-      <TwoColumnShell rail={<p>companion</p>} railLabel="Companion">
+      <TwoColumnShell rail={<p>companion</p>} railLabel="Companion" data-testid="shell">
         <p>main</p>
       </TwoColumnShell>,
     );
-    expect(screen.getByRole("complementary", { name: "Companion" }).className).toContain("hidden");
-    expect(screen.getByRole("complementary", { name: "Companion" }).className).toContain("xl:block");
+    const shell = screen.getByTestId("shell");
+    const main = screen.getByText("main").parentElement;
+    const rail = screen.getByRole("complementary", { name: "Companion" });
+
+    expect(shell.className).toContain("grid-cols-[minmax(0,1fr)_var(--layout-companion-width)]");
+    expect(main).toHaveClass("min-w-0");
+    expect(rail.className).not.toContain("hidden");
   });
 
-  it("owns the shell measure, so pages inside it need no Container", () => {
-    // --layout-content-max is the SHADOWING SHELL's width, consumed here and
-    // nowhere else. components/ui/container.tsx keeps max-w-6xl on purpose:
-    // Pricing, Settings and Auth will each want their own measure, and this
-    // token is not a claim that every page should be 1240px.
+  it("owns the grid gutter and column gap without a centered maximum measure", () => {
     render(
       <TwoColumnShell railLabel="Companion" data-testid="shell">
         <p>main</p>
       </TwoColumnShell>,
     );
     const shell = screen.getByTestId("shell");
-    expect(shell.className).toContain("max-w-content");
-    expect(shell.className).toContain("mx-auto");
+    expect(shell).toHaveClass("grid");
+    expect(shell.className).toContain("px-[--layout-gutter]");
+    expect(shell.className).toContain("gap-[--layout-column-gap]");
+    expect(shell.className).not.toContain("max-w-content");
+    expect(shell.className).not.toContain("mx-auto");
   });
 });

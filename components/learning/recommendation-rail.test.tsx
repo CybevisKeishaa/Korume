@@ -13,6 +13,7 @@ const base: VideoRecommendation = {
   band: "ideal",
   totalWords: 100,
   knownWords: 82,
+  reason: { kind: "known-word-fit", knownRatio: 0.82, totalWords: 100, knownWords: 82 },
 };
 
 describe("RecommendationRail", () => {

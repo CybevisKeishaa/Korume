@@ -1,4 +1,10 @@
 {
+  "quota": {
+    "used": "{used} of {limit} lesson imports used this month",
+    "unlimited": "Plus plan includes unlimited lesson imports."
+  },
+  "retryPending": "Retrying captions\u2026",
+  "retryFailed": "Couldn't retry captions. Try again.",
   "title": "Lessons",
   "subtitle": "Shadow and study Japanese YouTube videos. Paste a link to add one.",
   "yourVideos": "Your videos",
@@ -8,6 +14,7 @@
   "import": "Import video",
   "importing": "Importing…",
   "errors": {
+    "quotaReached": "You've reached this month's lesson import limit.",
     "invalidUrl": "That doesn't look like a valid YouTube URL.",
     "sessionExpired": "Your session expired — please sign in again.",
     "fetchFailed": "We couldn't fetch details for that video. Double-check the link and try again.",

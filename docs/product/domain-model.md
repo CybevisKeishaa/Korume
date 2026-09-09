@@ -20,6 +20,8 @@ doesn't define, add it here first — don't coin a new synonym for an existing t
 | **My Lessons** | The learner's own `PRIVATE`-tier Lessons — created via Create Lesson, or dedup-joined from someone else's. A top-level, always-visible section of the Shadowing Hub, not a filter. |
 | **Library** | The full set of `FREE`/`PLUS`-tier published Lessons, visible in the Shadowing Hub. `library_access` (`PRIVATE`\|`FREE`\|`PLUS`) is a *publishing state*, not a permission system or a tag — it answers exactly one question, "where is this Lesson published?" |
 | **Collection** | An editorial or computed grouping of Lessons for discovery/curation (Featured, Anime, JLPT N3, Continue Learning, Recently Added, …), entirely separate from `library_access`. A Lesson can belong to any number of Collections at once. |
+| **Situation** | A learner-facing context taxonomy for a Lesson, such as restaurant, conversation, or travel. Current storage is one provisional `situation_id` FK per Lesson; consumers use the data-layer boundary so a future many-to-many assignment changes one implementation, not screen code. Its localized label is `shadowing.situations.*`, never a database display field. |
+| **Source** | A learner-facing origin taxonomy for a Lesson, such as NHK, podcast, drama, anime, or vlog. It is independent of Situation and of the technical `transcript_source` field. Current storage is one provisional `source_id` FK; labels are `shadowing.sources.*` catalog entries, never database display fields. |
 
 ## Lesson Workspace (inside a Lesson)
 

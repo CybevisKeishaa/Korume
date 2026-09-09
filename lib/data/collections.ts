@@ -72,7 +72,12 @@ export async function listCollectionLessons(collectionId: string): Promise<Video
 
   // RLS on `videos` still applies: a PLUS lesson the viewer cannot read is
   // filtered by the database, not by this function.
-  const { data, error } = await supabase.from("videos").select(VIDEO_COLUMNS).in("id", ids);
+  const { data, error } = await supabase
+    .from("videos")
+    .select(VIDEO_COLUMNS)
+    .in("id", ids)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: true });
   if (error) throw error;
   return (data as VideoRow[] | null) ?? [];
 }

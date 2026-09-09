@@ -13,6 +13,7 @@ import {
   ThemeProvider,
   themeInitScript,
 } from "@/components/providers/theme-provider";
+import { MobileAppHandoff } from "@/components/layout/mobile-app-handoff";
 import { ToastProvider } from "@/components/ui/toast";
 import { routing } from "@/lib/i18n/routing";
 import "../globals.css";
@@ -116,6 +117,7 @@ export default async function LocaleLayout({
   // localization independence, spec §4.5), so the translated label is
   // resolved here, server-side, and passed down.
   const t = await getTranslations("common");
+  const shadowing = await getTranslations("shadowing");
 
   // Ships the whole catalog to the client. Deliberate for now: 65 client
   // components make per-namespace splitting a real design question, and
@@ -134,7 +136,14 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             <ToastProvider dismissLabel={t("a11y.dismissNotification")}>
-              {children}
+              <MobileAppHandoff
+                eyebrow={shadowing("mobileHandoff.eyebrow")}
+                title={shadowing("mobileHandoff.title")}
+                body={shadowing("mobileHandoff.body")}
+                appStoreLabel={shadowing("mobileHandoff.appStoreLabel")}
+                playStoreLabel={shadowing("mobileHandoff.playStoreLabel")}
+              />
+              <div data-desktop-web>{children}</div>
             </ToastProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

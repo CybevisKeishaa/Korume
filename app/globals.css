@@ -141,7 +141,7 @@
   --layout-sidebar-width: 224px;
   --layout-sidebar-collapsed: 68px;
   --layout-content-max: 1240px;
-  --layout-companion-width: 340px;
+  --layout-companion-width: 300px;
   --layout-gutter: var(--space-xl);
   --layout-column-gap: var(--space-lg);
   /* The sticky site header's row height. TWO consumers, which is why it is a
@@ -933,4 +933,19 @@
   transition-duration: 0.001ms !important;
   transition-delay: 0s !important;
   scroll-behavior: auto !important;
+}
+
+.mobile-app-handoff {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .mobile-app-handoff {
+    display: block;
+    min-height: 100svh;
+  }
+
+  [data-desktop-web] {
+    display: none !important;
+  }
 }

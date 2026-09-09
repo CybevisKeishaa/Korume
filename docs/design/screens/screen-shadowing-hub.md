@@ -1,641 +1,135 @@
 # Shadowing Hub
-## The Learner's Home for Shadowing
 
-> **Status:** Approved
-> Replaces `screen-video-library.md` per `docs/superpowers/specs/2026-07-29-shadowing-hub-consolidation-design.md` §0/§5 and `docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §5. **The primary product domain is Shadowing, not Video** — this screen is
-> not "a library that also does other things"; it is the learner's home for the Shadowing domain,
-> answering "What should I practice next?" through browse/discover, search/filter, recommendations
-> — **and** continuing an unfinished session, seeing weekly progress, resuming where they left off.
-> Session-continuity is core to the Hub's identity, not a feature bolted onto a library.
+## The learner's home for shadowing
 
-> Every lesson is not content.
+> **Status:** Desktop Hub repair in progress. Presentation reference is Figma
+> frame `149:2` in file `IwFHZDZdHW7qsSFiNbWrkd`; the historical authority
+> is `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` §4.
+> This replaces the older collection-grid description. Explore is a separate
+> C3 screen, not a Hub section.
 >
-> Every lesson is a story waiting to become part of someone's Japanese journey.
-
-The Shadowing Hub is not a media browser.
-
-It is not YouTube.
-
-It is not Netflix.
-
-It is not a file manager.
-
-It is a calm, personal home for the learner's Shadowing practice — a place to pick up an unfinished
-lesson, discover a new one, and see how the week is going, all at once.
-
-The learner should feel like browsing a beautiful bookshelf rather than searching through a video database.
-
----
-
-# Emotional Goal
-
-Opening the Hub should evoke curiosity.
-
-The learner should naturally slow down.
-
-Browsing should feel enjoyable even before choosing a lesson.
-
-Every lesson should invite exploration rather than compete for attention.
-
----
-
-# Core Philosophy
-
-The Hub exists to answer one simple question:
-
-> "What story do I want to spend time with today?"
-
-Not
-
-> "Which video should I consume?"
-
----
-
-# Information Hierarchy
-
-Priority
-
-Story
-
-↓
-
-Learning Experience
-
-↓
-
-Metadata
-
-↓
-
-Actions
-
-The emotional identity of each lesson is more important than its technical details.
-
----
-
-# Layout
-
-Desktop
-
-```
-┌─────────────────────────────────────────────────────────────┬──────────────────┐
-│ Quiet Header                                                │                  │
-├─────────────────────────────────────────────────────────────┤ Current Session  │
-│ Search                                                      │ & This Week's    │
-├─────────────────────────────────────────────────────────────┤ Record           │
-│ Collections                                                 │                  │
-├─────────────────────────────────────────────────────────────┤                  │
-│                                                             │                  │
-│ Story Grid                                                  │                  │
-│                                                             │                  │
-│                                                             │                  │
-└─────────────────────────────────────────────────────────────┴──────────────────┘
-```
-
-Large margins.
-
-Generous spacing.
-
-No dashboard widgets except the Current Session rail below — that rail is Gamification-Layer
-continuity content, deliberately shown here (see § Current Session & This Week's Record).
-
-No information overload.
-
----
-
-# Current Session & This Week's Record
-
-A right-rail section, always visible on desktop, present because the Hub owns learning *continuity*
-— not to be confused with the Dashboard, which owns long-term *progress*
-(`docs/design/design-reconciliation.md` §3, Hub/Dashboard split):
-
-> **Shadowing Hub owns learning continuity** — current session (in progress, resume action), weekly
-> record framed as "how is my practice going right now," the immediate next step.
->
-> **Dashboard owns long-term progress** — arrival/overview, historical trends, milestones over time,
-> the broader relationship with the whole product, not just Shadowing.
-
-Contains
-
-Current session (lesson in progress, one-tap Resume)
-
-This week's record — streak, goal, hours studied
-
-Both are Gamification-Layer content (`docs/design/design-reconciliation.md` §3) — this is a
-deliberate exception to the Hub's otherwise neutral-browsing stance, unlike the old Video Library.
-
-## Layer Responsibility
-
-| Layer | Allowed | Forbidden |
-|---|---|---|
-| Gamification | Current session, Streak, Weekly goal, Hours studied | — |
-| Companion | Memory, Reflection, Journey meaning (empty-state only, see § Companion) | Reacting to XP/streak/leaderboard changes |
-
----
-
-# Header
-
-Minimal.
-
-Contains
-
-Shadowing Hub
-
-Create Lesson
-
-Search
-
-Display Options
-
-Nothing else.
-
-No statistics.
-
-No counters.
-
-No notification badges.
-
----
-
-# Search
-
-Search should feel lightweight.
-
-Placeholder
-
-Search by title, expression, anime, movie or topic...
-
-The search bar is elegant and quiet.
-
-Rounded.
-
-Soft border.
-
-Warm surface.
-
-No giant search interface.
-
----
-
-# Collections
-
-Collections replace traditional filters.
-
-Instead of technical categories,
-
-present meaningful groups.
-
-The grid is entirely collection-driven, ordered by each collection's stored display order — no
-hardcoded sections in code (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §5). Three computed (virtual) collections always exist:
-
-Continue Learning
-
-My Lessons
-
-Recently Added
-
-Editorial collections are no longer required to follow after all three — per
-`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md` §5.1, an
-editorial collection (e.g. a "Popular Lessons" row) may render before some or all of the computed
-collections. The three computed collections keep their order relative to *each other*
-(Continue Learning, then My Lessons, then Recently Added, wherever they appear in the overall grid) —
-only their position relative to editorial collections is no longer fixed-first.
-Editorial examples
-
-Slice of Life
-
-Daily Conversation
-
-Anime
-
-Drama
-
-Movies
-
-JLPT N3
-
-A Lesson can belong to any number of editorial collections simultaneously — the Netflix model, not
-a single-category filter. "Favorites" / "Saved for Later" are themselves computed collections (a
-query, not a stored row), same as Continue Learning/My Lessons/Recently Added above.
-
-Each collection feels like a bookshelf.
-
-Not a filter menu.
-
-## Filter Pills as Collection Shortcuts
-
-A compact, always-visible row of pills (e.g. All / Conversation / Business / Travel / Restaurant /
-Daily Life / Anime / Podcast / News / Office / Cafe) may sit directly under Search as a quick jump
-into the Collection grid below — this is a shortcut *into* the Collection model, not a second,
-competing categorization system. The pill labels are the same kind of names already used as
-Collection examples above (Anime, Slice of Life, …), not technical filter criteria (resolution,
-duration, date) — so this pattern does not reopen "Collections replace traditional filters... not a
-filter menu" above (`docs/superpowers/specs/2026-08-05-korume-rebrand-shadowing-figma-reconciliation-design.md` §5.2).
-
----
-
-# My Lessons
-
-The learner's own `PRIVATE` creations — every lesson they've made via Create Lesson, or dedup-joined
-from someone else's (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md`
-§1.3, §5). This is a top-level, always-visible section, not a filter chip buried behind a menu —
-learners return to their own imports far more than to random discovery.
-
-Displayed exactly like any other collection row: Story Cards, same treatment, same spacing. What
-makes it different is placement (always second, right after Continue Learning) and permanence (it
-is never empty of intent — even a freshly-created lesson with no transcript yet belongs here).
-
----
-
-# Story Grid
-
-Every lesson appears as a Story Card.
-
-Cards breathe.
-
-They are never compressed.
-
-Each card contains
-
-Poster
-
-Title
-
-Series
-
-Small learning summary
-
-Estimated study time
-
-Subtitle availability
-
-Bookmark
-
-Hover reveals
-
-Continue Learning
-
-Start Shadowing
-
-The interface never feels button-heavy.
-
----
-
-# Story Card
-
-Cards should resemble beautifully arranged books.
-
-Large artwork.
-
-Comfortable typography.
-
-Soft corners.
-
-Subtle elevation.
-
-Tiny metadata.
-
-Nothing noisy.
-
-A small 🔒 badge appears when the lesson's `library_access` is `PLUS` and the viewer is Free —
-visible, never hidden, per `business-model.md` §5 "show don't tell"
-(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §5). No other badge
-communicates access tier; `FREE` lessons carry no badge at all.
-
-Hover creates
-
-slight elevation
-
-gentle glow
-
-soft scaling
-
-No dramatic movement.
-
----
-
-# Story Metadata
-
-Instead of emphasizing duration,
-
-emphasize learning value.
-
-Examples
-
-Great for casual conversation
-
-Excellent listening practice
-
-Rich emotional vocabulary
-
-Simple everyday expressions
-
-Metadata explains
-
-why this lesson is meaningful.
-
-Not merely
-
-what it contains.
-
----
-
-# Progress
-
-Gamification numbers (XP, Level) are not avoided at the product level — they belong to the
-Gamification Layer, not to this discovery surface (`docs/design/design-reconciliation.md` §3).
-This screen simply doesn't repeat them here: it shows continuity instead, because the Hub's
-job is discovery, not status.
-
-Show
-
-Continue from sentence 18
-
-Recently practiced
-
-Finished shadowing
-
-Saved expressions
-
-Learning feels continuous rather than measured.
-
----
-
-# Thumbnail Philosophy
-
-Artwork is the emotional entry point.
-
-Thumbnails should be large enough to appreciate.
-
-Rounded corners.
-
-Soft shadow.
-
-No heavy overlays.
-
-Minimal text.
-
-The artwork should breathe.
-
----
-
-# Continue Learning
-
-Lessons already studied receive a subtle visual cue.
-
-A warm accent line.
-
-A small bookmark.
-
-A remembered position.
-
-Never large progress bars.
-
-Never bright completion rings.
-
-The learner should recognize familiar lessons naturally.
-
----
-
-# Create Lesson Experience
-
-Creating a lesson should feel like adding a new book to a shelf.
-
-Not uploading a file. "Import Video" is retired product-facing language — this action is **Create
-Lesson** everywhere it appears in Hub copy
-(`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §2, §7).
-
-The modal shows quota remaining before any input (e.g. "2/3 lessons left this month" / "Unlimited"
-for Plus), so a later block is never a surprise (§2.1 of that spec).
-
-The interface should ask
-
-Paste YouTube URL
-
-After pasting, show a quiet three-line processing state — not the technical steps behind it:
-
-```
-Preparing lesson...
-✓ Finding transcript
-✓ Building lesson
-✓ Ready to study
-```
-
-A dedup hit (someone already prepared this exact lesson) skips straight to a delight line instead of
-a technical one:
-
-```
-Great news! Someone has already prepared this lesson.
-✓ Added instantly
-✓ Ready to study
-```
-
-A no-caption failure offers a way forward, never a dead end:
-
-```
-Preparing lesson...
-✓ Finding transcript
-✕ No transcript found
-  [ Generate with AI 🔒 Plus ]   [ Try another video ]
-```
-
-Avoid technical terminology throughout.
-
----
-
-# Sorting
-
-Sorting is intentionally simple.
-
-Recently Studied
-
-Recently Added
-
-Alphabetical
-
-Favorites
-
-Recommended
-
-Never expose dozens of sorting options.
-
----
-
-# Display Modes
-
-Support multiple browsing styles.
-
-## Gallery
-
-Large artwork.
-
-Most emotional.
-
-Ideal default.
-
----
-
-## Comfortable
-
-Medium cards.
-
-Balanced information.
-
----
-
-## Compact
-
-Smaller cards.
-
-Suitable for large libraries.
-
-Even in Compact mode,
-
-maintain generous spacing.
-
-Never resemble a spreadsheet.
-
----
-
-# Empty Hub
-
-An empty Hub should inspire curiosity.
-
-Example
-
-> Every learning journey begins with one story.
-
-Offer
-
-Create your first Lesson
-
-Browse sample lessons
-
-The screen should feel hopeful,
-
-never empty.
-
-This empty state is one of L9b (D3)'s four shipped Companion anchors — Available today
-(`docs/design/design-reconciliation.md` §6, listed there as "Shadowing Hub (empty state)"). Unlike
-the non-empty view below (Planned), Companion may appear here now; see
-`docs/design/patterns/companion-patterns.md` § Declare Anchor for the presence-level and copy
-conventions it follows.
-
----
-
-# Companion
-
-○ Planned — chưa implement. L9b (D3) chỉ có 4 anchor (Dashboard, `/journal`, Shadowing Hub empty
-state, Mining deck empty state); Shadowing Hub non-empty state is not one of them yet
-(`docs/design/design-reconciliation.md` §6). The behavior below describes the target design once
-this anchor is built, not current behavior. Removing the previous Video Detail page does not
-transfer its responsibilities here either — Companion provides context only where it already would
-have, never to backfill a removed screen (`docs/design/design-reconciliation.md` §2).
-
-The Companion quietly appears only when meaningful.
-
-Examples
-
-"This lesson matches the expressions you've been saving."
-
-"You haven't visited this story in a while."
-
-"This movie contains beautiful everyday conversations."
-
-No recommendations based on engagement.
-
-Only thoughtful observations.
-
----
-
-# Motion
-
-Cards fade into place.
-
-Hover gently lifts cards.
-
-Collections slide naturally.
-
-Search expands softly.
-
-Scrolling resembles browsing a bookshelf.
-
-No bounce.
-
-No flashy transitions.
-
----
-
-# Accessibility
-
-Remember
-
-Display mode
-
-Sort order
-
-Preferred collections
-
-Reading preferences
-
-across sessions.
-
-The Hub should always feel familiar when the learner returns.
-
----
-
-# Responsive Behavior
-
-## Wide Desktop
-
-Five to six story cards per row.
-
-Large artwork.
-
-Generous spacing.
-
----
-
-## Standard Desktop
-
-Three to four cards per row.
-
-Maintain comfortable reading rhythm.
-
----
-
-## Tablet
-
-Two cards per row.
-
-Collections become horizontally scrollable.
-
----
-
-## Mobile
-
-Single-column layout.
-
-Large artwork.
-
-Search remains pinned.
-
-Navigation becomes bottom navigation.
-
-The emotional feeling should remain unchanged.
-
----
-
-# Success Criteria
-
-The learner opens the Hub and immediately thinks
-
-> "Which story do I want to spend time with today?"
-
-They should never think
-
-> "Which file should I open?"
-
-If the screen feels like YouTube, Netflix, or a media manager,
-
-the design has failed.
+> The responsive, no-data, and Hub-copy contract is
+> `docs/superpowers/specs/2026-09-09-desktop-hub-empty-states-design.md`.
+
+The Shadowing Hub is the personalised starting point for choosing, creating,
+resuming, and discovering Lessons. A Lesson is the canonical learning object;
+each region below is a projection of existing Lesson, library, progress, or
+recommendation data. The Hub never copies a second lesson store.
+
+It is not a media browser, a generic dashboard, or an imitation of YouTube.
+It should feel quiet and editorial while remaining honest about a learner's
+actual study state.
+
+## Desktop layout
+
+Korume is desktop web from 1024px upward. The application sidebar is provided
+by app chrome. Inside it, the Hub uses a fluid main column beside a permanent
+300px continuity rail. `TwoColumnShell` owns the main-column minimum, gutters,
+and gap so navigation collapse gives released width back to the content.
+Below 1024px, the Hub is not a responsive web screen: the locale root exposes
+only the app-download handoff.
+
+The main column appears in this fixed authored order:
+
+1. **Header** — eyebrow, `Shadowing Hub` H1, and short orientation copy.
+2. **Featured lesson** — the first Lesson in the editorial `featured`
+   collection, when one exists; its real thumbnail, title, JLPT estimate,
+   duration, and Start/Continue action are shown.
+3. **Inline import and quota** — a YouTube URL form backed by the validated
+   import endpoint, plus the learner's real monthly allowance.
+4. **My Lessons** — the learner's ready or unavailable private imports.
+5. **Search and filters** — title search and Situation/Source taxonomy chips.
+6. **Popular lessons** — the ranking-port projection, not a copied formula.
+7. **Continue learning** — only unfinished real progress rows.
+8. **Recently added** — current access-visible Lessons ordered by creation.
+9. **Recommended for you** — recommendations only when their reason is a
+   measured learner-data fact.
+
+No data removes no authored region. Featured, My Lessons, Popular, Continue
+learning, Recently added, and Recommended keep quiet empty interiors rather
+than sample cards, fabricated learner facts, or invented actions. My Lessons
+alone links to the real inline import control.
+
+## Data and interaction contract
+
+### Import and My Lessons
+
+The inline form uses `/api/videos/import`; video playback remains the official
+YouTube IFrame Player API and no media is downloaded, proxied, or stored.
+
+Quota is read from `user_lesson_library`. Free learners see their current
+monthly use; Plus has an explicit unlimited allowance. A private import with
+no available transcript remains visible as **unavailable** and can retry its
+caption fetch. It is not silently discarded and it does not invent a pipeline
+percentage, ETA, or completed job.
+
+The current creation pipeline is synchronous. During a client request the UI
+may identify that an import is in progress, but durable job steps,
+percentages, estimates, and resumable jobs belong to C4.
+
+### Search and taxonomy
+
+Search is a server-rendered GET on the locale-preserving Hub route. It filters
+Lesson title with `ILIKE`; a selected taxonomy chip applies the real
+`situation_id` or `source_id`. Situation and Source are independent axes.
+Their labels live in the `shadowing.situations.*` and `shadowing.sources.*`
+i18n catalogs, never in database display columns or an application map.
+
+### Editorial shelves
+
+The Hub's order is editorial, not a collection loop. `Popular` uses the
+ranking strategy port; `Continue` uses recorded unfinished position; `Recent`
+uses creation order; `Recommended` consumes the recommendation contract. A
+reason line is shown only for a non-null structured reason, currently a
+measured known-word fit.
+
+## Continuity rail
+
+At every desktop width from 1024px upward, the permanent 300px complementary
+rail keeps these four labelled cards:
+
+- Lesson preparation
+- Today's goal
+- Weekly progress
+- Suggested next lesson
+
+The rail is supplementary: no required learning action exists only there. It
+is not a Companion anchor. The non-empty Hub has no approved mascot/Companion
+presence.
+
+Only recorded Shadowing-scoped facts belong in the weekly card. Until durable
+preparation, daily-goal, and weekly-activity sources exist, those cards render
+their explicit empty states. Global SRS due counts and generic streak values
+must not be relabelled as weekly Shadowing progress. A suggestion may appear
+only with a structured, measured recommendation reason.
+
+## Visual and accessibility requirements
+
+- Cards use stored thumbnails or an accessible thumbnail fallback; no
+  hardcoded/sample images.
+- Every Lesson action is a locale-aware link with a visible focus treatment.
+- The Hub has one page `main` landmark; shelves and rail cards have named
+  regions/headings; import failures use an alert.
+- At 1023px the desktop Hub landmarks are absent and the accessible app-store
+  handoff is the only rendered experience. At 1024px and above, the main and
+  rail remain side by side without document-level horizontal overflow.
+- Reduced motion must not hide content or prevent import, search, filter, or
+  Lesson actions.
+- All new copy has EN and VI catalog entries. Metadata labels and duration
+  formatting are localized; components do not carry English literals.
+
+## Explicit exclusions
+
+- Explore Lessons and its preview drawer are C3.
+- Job percentages, ETA, and durable import lifecycle are C4.
+- A mascot/Companion anchor on the populated Hub is not approved.
+- The Hub does not derive popularity or recommendation reasons in the view.
+
+## Verification contract
+
+Focused data and RTL tests cover the Hub read model, empty states, shelf order,
+locale-preserving discovery, taxonomy labels, and no-fabrication rules.
+Production browser coverage verifies the main landmark, keyboard import path,
+responsive rail behaviour, no horizontal overflow, reduced motion, and no
+fabricated progress. The canonical execution record is
+`docs/superpowers/run-state/shadowing-hub-plan-c2.md`.

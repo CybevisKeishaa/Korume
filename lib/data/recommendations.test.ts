@@ -78,8 +78,36 @@ describe("getRecommendations", () => {
         band: "ideal",
         totalWords: 5,
         knownWords: 4,
+        reason: {
+          kind: "known-word-fit",
+          knownRatio: 0.8,
+          totalWords: 5,
+          knownWords: 4,
+        },
       },
     ]);
+  });
+
+  it("uses only a measured known-word fit as a reason, and leaves it absent without supporting learner data", async () => {
+    vi.mocked(getKnownVocabLemmas).mockResolvedValue(new Set());
+    mockClient({
+      user_video_progress: () => ({ data: [], error: null }),
+      videos: () => ({ data: [VIDEO_A], error: null }),
+      transcripts: () => ({ data: [{ id: "t1", video_id: "va", created_at: "2026-07-01T00:00:00Z" }], error: null }),
+      transcript_lines: () => ({ data: [{ transcript_id: "t1", text_jp: "unknown" }], error: null }),
+    });
+
+    const result = await getRecommendations({ limit: 12 });
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: [
+        {
+          videoId: "va",
+          reason: null,
+        },
+      ],
+    });
   });
 
   it("excludes videos the user has already completed", async () => {

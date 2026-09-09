@@ -19,6 +19,16 @@
 > as it happened. Same open question as the Consolidation spec: this work is merged, and whether its
 > conclusions need re-checking against live Figma is the user's call.
 >
+> **C2 implementation addendum — 2026-09-08:** Figma frame `149:2` supersedes
+> this document's §5 collection-loop presentation: the Hub is an authored
+> eight-section layout (header, featured, inline import/quota, My Lessons,
+> search/filter, Popular, Continue, Recent, Recommended). The import control is
+> inline rather than a header modal. C2 has no durable job source, so it shows
+> only client pending state and no percentage/ETA; C4 owns persisted progress.
+> The older §5 collection ordering and §2.2's three-line progress copy are
+> historical design context, not implementation instructions. See the C2 plan
+> and `screen-shadowing-hub.md` for the live contract.
+>
 > **Trigger:** User provided two Figma reference exports (`public/demo/image.png`,
 > `public/demo/image1.png` — the same references that triggered the Consolidation spec) and asked
 > to correct the assistant's understanding of the video-import/transcript mechanism, which grew

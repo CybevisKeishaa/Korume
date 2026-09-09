@@ -1,89 +1,154 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import type { Locale } from "@/lib/i18n";
-import { redirect } from "@/lib/i18n/navigation";
+import { getPathname, redirect } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
-import { listVideos } from "@/lib/data/videos";
-import { Container } from "@/components/ui/container";
-import { VideoImportForm } from "@/components/video/video-import-form";
-import { VideoCard } from "@/components/video/video-card";
-import { RecommendationSection } from "@/components/learning/recommendation-section";
-import { SaveToPlaylistButton } from "@/components/community/save-to-playlist-button";
-import { CompanionAnchor } from "@/components/companion/companion-anchor";
-// lib/data/videos.ts's VideoRow is the same DB row shape as lib/video-types.ts's
-// client-safe VideoRow, just declared locally with a wider `string | null` for
-// jlpt_level_estimate instead of the `JlptLevel | null` union. The cast below is
-// a type-only reconciliation of that duplication, not a runtime-unsafe one.
-import type { VideoRow } from "@/lib/video-types";
+import { getShadowingHub } from "@/lib/data/shadowing-hub";
+import { TwoColumnShell } from "@/components/layout/two-column-shell";
+import { HubShelves } from "@/components/shadowing/hub-shelves";
+import { HubImportSection } from "@/components/shadowing/hub-import-section";
+import { HubLibrarySection } from "@/components/shadowing/hub-library-section";
+import { HubFeaturedHero } from "@/components/shadowing/hub-featured-hero";
+import { HubCompanionRail } from "@/components/shadowing/hub-companion-rail";
+import { HubDiscoveryControls } from "@/components/shadowing/hub-discovery-controls";
+import { shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
+import enShadowing from "@/messages/en/shadowing.json";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: Locale };
-}): Promise<Metadata> {
+type TaxonomyTranslationKey =
+  | `situations.${keyof typeof enShadowing.situations}`
+  | `sources.${keyof typeof enShadowing.sources}`;
+
+export async function generateMetadata({ params }: { params: { locale: Locale } }): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: "videos" });
   return { title: t("title") };
 }
+
 export const dynamic = "force-dynamic";
 
-export default async function VideosPage() {
-  const t = await getTranslations("videos");
-  const tCommon = await getTranslations("common");
-  const result = await listVideos();
-  // (app) layout already redirects unauthenticated users; this is defence in depth.
-  if (!result.ok) redirect({ href: "/login", locale: await getLocale() });
+export default async function VideosPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
+  const query = shadowingHubQuerySchema.safeParse({
+    q: typeof searchParams?.q === "string" ? searchParams.q : undefined,
+    filter: typeof searchParams?.filter === "string" ? searchParams.filter : undefined,
+  });
+  const hubQuery = query.success ? query.data : {};
+  const [t, tCommon, tHub, result, locale] = await Promise.all([
+    getTranslations("videos"),
+    getTranslations("common"),
+    getTranslations("shadowing"),
+    getShadowingHub({ query: hubQuery.q, filter: hubQuery.filter }),
+    getLocale(),
+  ]);
+  if (!result.ok) redirect({ href: "/login", locale });
 
-  const videos = result.data as unknown as VideoRow[];
-
+  const hub = result.data;
   return (
-    <Container className="py-10">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t("subtitle")}
-        </p>
+    <TwoColumnShell
+      railLabel={tHub("hub.railLabel")}
+      rail={<HubCompanionRail rail={hub.rail} labels={{
+        preparation: tHub("hub.rail.preparation"),
+        noPreparation: tHub("hub.rail.noPreparation"),
+        todayGoal: tHub("hub.rail.todayGoal"),
+        noGoal: tHub("hub.rail.noGoal"),
+        weeklyProgress: tHub("hub.rail.weeklyProgress"),
+        noWeeklyActivity: tHub("hub.rail.noWeeklyActivity"),
+        suggestion: tHub("hub.rail.suggestion"),
+        noSuggestion: tHub("hub.rail.noSuggestion"),
+        openLesson: tHub("hub.actions.openLesson"),
+        knownWordFit: (percent) => tCommon("recommendations.knownWords", { percent }),
+      }} />}
+      className="py-2xl"
+    >
+      <div className="space-y-2xl">
+        <header>
+          <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{tHub("hub.eyebrow")}</p>
+          <h1 className="mt-xs text-title font-semibold text-foreground">{tHub("hub.title")}</h1>
+          <p className="mt-sm text-body text-muted-foreground">{tHub("hub.subtitle")}</p>
+        </header>
+        <HubFeaturedHero
+          lesson={hub.featured}
+          isInProgress={hub.featured ? hub.continueLearning.some(({ lesson }) => lesson.id === hub.featured?.id) : false}
+          labels={{
+          eyebrow: tHub("hub.sections.featured"),
+          start: tHub("hub.actions.start"),
+          continue: tHub("hub.actions.continue"),
+          noThumbnail: tCommon("noThumbnail"),
+          jlptLabel: tHub("hub.metadata.jlptLabel"),
+          durationLabel: tHub("hub.metadata.durationLabel"),
+          duration: (minutes) => tHub("hub.metadata.minutes", { count: minutes }),
+          emptyTitle: tHub("hub.empty.featured.title"),
+          emptyBody: tHub("hub.empty.featured.body"),
+          }}
+        />
+        <HubImportSection
+          used={hub.quota.used}
+          limit={hub.quota.limit}
+          tier={hub.quota.tier}
+          labels={{
+            eyebrow: tHub("hub.import.eyebrow"),
+            title: tHub("hub.import.title"),
+            body: tHub("hub.import.body"),
+            support: tHub("hub.import.support"),
+            freePlan: tHub("hub.import.freePlan"),
+            importsRemaining: tHub("hub.import.importsRemaining"),
+            quotaUnlimited: tHub("hub.import.quotaUnlimited"),
+          }}
+        />
+        <HubLibrarySection
+          items={hub.library}
+          labels={{
+            title: tHub("hub.sections.library"),
+            readyAction: tCommon("actions.next"),
+            unavailable: tHub("noTranscript.title"),
+            retry: tCommon("actions.retry"),
+            retryPending: t("retryPending"),
+            retryFailed: t("retryFailed"),
+            noThumbnail: tCommon("noThumbnail"),
+            emptyTitle: tHub("hub.empty.library.title"),
+            emptyBody: tHub("hub.empty.library.body"),
+            emptyAction: tHub("hub.empty.library.action"),
+          }}
+        />
+        <HubDiscoveryControls
+          filters={hub.filters.map((filter) => ({
+            ...filter,
+            label: tHub(`${filter.kind === "situation" ? "situations" : "sources"}.${filter.slug}` as TaxonomyTranslationKey),
+          }))}
+          query={hub.discovery?.query ?? ""}
+          activeFilter={hub.discovery?.activeFilter ?? null}
+          results={hub.discovery?.lessons ?? null}
+          action={getPathname({ href: "/shadowing", locale })}
+          labels={{
+            searchLabel: tHub("hub.sections.search"),
+            searchPlaceholder: tHub("hub.search.placeholder"),
+            all: tCommon("filters.all"),
+            results: tHub("hub.search.results"),
+            noResults: tHub("hub.search.noResults"),
+            start: tHub("hub.actions.start"),
+            noThumbnail: tCommon("noThumbnail"),
+          }}
+        />
+        <HubShelves
+          continueLearning={hub.continueLearning}
+          recentlyAdded={hub.recentlyAdded}
+          popular={hub.popular}
+          recommendations={hub.recommendations}
+          labels={{
+            recentlyAdded: tHub("hub.sections.recentlyAdded"),
+            popular: tHub("hub.sections.popular"),
+            continueLearning: tHub("hub.sections.continueLearning"),
+            recommended: tHub("hub.sections.recommended"),
+            start: tHub("hub.actions.start"),
+            continue: tHub("hub.actions.continue"),
+            noThumbnail: tCommon("noThumbnail"),
+            recommendationReason: (percent) => tCommon("recommendations.knownWords", { percent }),
+            empty: {
+              popular: { title: tHub("hub.empty.popular.title"), body: tHub("hub.empty.popular.body") },
+              continueLearning: { title: tHub("hub.empty.continueLearning.title"), body: tHub("hub.empty.continueLearning.body") },
+              recentlyAdded: { title: tHub("hub.empty.recentlyAdded.title"), body: tHub("hub.empty.recentlyAdded.body") },
+              recommended: { title: tHub("hub.empty.recommended.title"), body: tHub("hub.empty.recommended.body") },
+            },
+          }}
+        />
       </div>
-
-      <VideoImportForm />
-
-      <section aria-labelledby="recommendations-heading" className="mt-8">
-        <h2 id="recommendations-heading" className="mb-3 text-lg font-semibold">
-          {tCommon("recommendations.heading")}
-        </h2>
-        <Suspense fallback={<p className="text-sm text-muted-foreground">{tCommon("recommendations.loading")}</p>}>
-          <RecommendationSection limit={8} />
-        </Suspense>
-      </section>
-
-      <div className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold">{t("yourVideos")}</h2>
-        {videos.length === 0 ? (
-          // An empty library is a rest point (§5.2/§5.4); the anchor states
-          // WHAT HAPPENED and the Ambient Layer decides whether to speak.
-          <div className="flex flex-col items-start gap-3">
-            <CompanionAnchor surface="videos-empty" pose="standing" context="empty_library" />
-            <p className="text-muted-foreground">
-              {t("empty")}
-            </p>
-          </div>
-        ) : (
-          // `role="list"`/`"listitem"` (rather than <ul>/<li>) because each
-          // item wraps VideoCard's own <li> together with an overlaid
-          // "Save to playlist" button as a sibling — nesting another <li>
-          // around VideoCard's would be invalid HTML, so ARIA restores the
-          // list semantics for assistive tech instead.
-          <div role="list" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {videos.map((video) => (
-              <div key={video.id} role="listitem" className="relative">
-                <VideoCard video={video} />
-                <div className="absolute right-2 top-2 z-10">
-                  <SaveToPlaylistButton videoId={video.id} />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </Container>
+    </TwoColumnShell>
   );
 }
