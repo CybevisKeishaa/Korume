@@ -157,7 +157,7 @@ Task 3 is complete in `0107e2f`: every authored Hub region now retains a
 truthful empty interior, the page owns Hub translations, and the screen
 documentation cites the repair contract. Its 20 focused tests and TypeScript
 passed, and a re-review approved the final diff. Task 4 adds a non-vacuous
-EN/VI `hub` + `mobileHandoff` contract (two roots, 50 leaves, matching paths,
+EN/VI `hub` + `mobileHandoff` contract (two roots, 54 leaves, matching paths,
 and ICU placeholder sets) plus EN/VI provider render coverage. Its contract
 test passed 4/4, TypeScript and Playwright discovery passed, its intentionally
 broken ICU placeholder mutation went RED and restored GREEN, and review

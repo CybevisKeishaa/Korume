@@ -1,10 +1,22 @@
 import { parse, TYPE, type MessageFormatElement } from "@formatjs/icu-messageformat-parser";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { NextIntlClientProvider, useTranslations } from "next-intl";
 import { render, screen } from "@testing-library/react";
 import en from "./en/shadowing.json";
-import vi from "./vi/shadowing.json";
+import viCatalog from "./vi/shadowing.json";
+import enVideos from "./en/videos.json";
+import viVideos from "./vi/videos.json";
 import { HubFeaturedHero } from "@/components/shadowing/hub-featured-hero";
+import { HubImportSection } from "@/components/shadowing/hub-import-section";
+import { HubLibrarySection } from "@/components/shadowing/hub-library-section";
+import { HubDiscoveryControls } from "@/components/shadowing/hub-discovery-controls";
+import { HubShelves } from "@/components/shadowing/hub-shelves";
+import { HubCompanionRail } from "@/components/shadowing/hub-companion-rail";
+
+vi.mock("@/lib/i18n/navigation", () => ({
+  Link: "a",
+  useRouter: () => ({ push: () => undefined, refresh: () => undefined }),
+}));
 
 type CatalogNode = Record<string, unknown>;
 type Locale = "en" | "vi";
@@ -85,10 +97,117 @@ function LocalizedFeaturedEmptyState(): JSX.Element {
   );
 }
 
+function LocalizedEmptyHub(): JSX.Element {
+  const t = useTranslations("shadowing");
+
+  return (
+    <>
+      <HubFeaturedHero
+        lesson={null}
+        labels={{
+          eyebrow: t("hub.sections.featured"),
+          start: t("hub.actions.start"),
+          continue: t("hub.actions.continue"),
+          noThumbnail: "",
+          jlptLabel: t("hub.metadata.jlptLabel"),
+          durationLabel: t("hub.metadata.durationLabel"),
+          duration: (minutes) => t("hub.metadata.minutes", { count: minutes }),
+          emptyTitle: t("hub.empty.featured.title"),
+          emptyBody: t("hub.empty.featured.body"),
+        }}
+      />
+      <HubImportSection
+        used={0}
+        limit={3}
+        tier="free"
+        labels={{
+          eyebrow: t("hub.import.eyebrow"),
+          title: t("hub.import.title"),
+          body: t("hub.import.body"),
+          support: t("hub.import.support"),
+          freePlan: t("hub.import.freePlan"),
+          importsRemaining: t("hub.import.importsRemaining"),
+          quotaUnlimited: t("hub.import.quotaUnlimited"),
+        }}
+      />
+      <HubLibrarySection
+        items={[]}
+        labels={{
+          title: t("hub.sections.library"),
+          readyAction: t("hub.actions.start"),
+          unavailable: "",
+          retry: "",
+          retryPending: "",
+          retryFailed: "",
+          noThumbnail: "",
+          emptyTitle: t("hub.empty.library.title"),
+          emptyBody: t("hub.empty.library.body"),
+          emptyAction: t("hub.empty.library.action"),
+        }}
+      />
+      <HubDiscoveryControls
+        filters={[]}
+        query=""
+        activeFilter={null}
+        results={null}
+        action="/shadowing"
+        labels={{
+          searchLabel: t("hub.sections.search"),
+          searchPlaceholder: t("hub.search.placeholder"),
+          all: "",
+          results: t("hub.search.results"),
+          noResults: t("hub.search.noResults"),
+          start: t("hub.actions.start"),
+          noThumbnail: "",
+        }}
+      />
+      <HubShelves
+        recentlyAdded={[]}
+        popular={[]}
+        continueLearning={[]}
+        recommendations={[]}
+        labels={{
+          recentlyAdded: t("hub.sections.recentlyAdded"),
+          popular: t("hub.sections.popular"),
+          continueLearning: t("hub.sections.continueLearning"),
+          recommended: t("hub.sections.recommended"),
+          start: t("hub.actions.start"),
+          continue: t("hub.actions.continue"),
+          noThumbnail: "",
+          recommendationReason: () => "",
+          empty: {
+            popular: { title: t("hub.empty.popular.title"), body: t("hub.empty.popular.body") },
+            continueLearning: { title: t("hub.empty.continueLearning.title"), body: t("hub.empty.continueLearning.body") },
+            recentlyAdded: { title: t("hub.empty.recentlyAdded.title"), body: t("hub.empty.recentlyAdded.body") },
+            recommended: { title: t("hub.empty.recommended.title"), body: t("hub.empty.recommended.body") },
+          },
+        }}
+      />
+      <HubCompanionRail
+        rail={null}
+        labels={{
+          preparation: t("hub.rail.preparation"),
+          noPreparation: t("hub.rail.noPreparation"),
+          todayGoal: t("hub.rail.todayGoal"),
+          noGoal: t("hub.rail.noGoal"),
+          weeklyProgress: t("hub.rail.weeklyProgress"),
+          noWeeklyActivity: t("hub.rail.noWeeklyActivity"),
+          suggestion: t("hub.rail.suggestion"),
+          noSuggestion: t("hub.rail.noSuggestion"),
+          openLesson: t("hub.actions.openLesson"),
+          knownWordFit: () => "",
+        }}
+      />
+    </>
+  );
+}
+
 const LOCALES: ReadonlyArray<{ locale: Locale; catalog: CatalogNode }> = [
   { locale: "en", catalog: en },
-  { locale: "vi", catalog: vi },
+  { locale: "vi", catalog: viCatalog },
 ];
+
+const VIDEO_CATALOGS: Record<Locale, CatalogNode> = { en: enVideos, vi: viVideos };
 
 describe("Shadowing Hub EN/VI copy contract", () => {
   it("covers exactly the two Hub-owned roots and their expected non-empty leaf collections", () => {
@@ -105,7 +224,7 @@ describe("Shadowing Hub EN/VI copy contract", () => {
 
   it("has identical leaf paths and ICU placeholder sets in EN and VI", () => {
     const enLeaves = collectContractLeaves(en);
-    const viLeaves = collectContractLeaves(vi);
+    const viLeaves = collectContractLeaves(viCatalog);
     const enPaths = Object.keys(enLeaves).sort();
     const viPaths = Object.keys(viLeaves).sort();
 
@@ -140,6 +259,37 @@ describe("Shadowing Hub EN/VI copy contract", () => {
       expect(screen.getByRole("region", { name: sections.featured as string })).toBeVisible();
       expect(screen.getByRole("heading", { name: featuredEmpty.title as string })).toBeVisible();
       expect(screen.getByText(featuredEmpty.body as string)).toBeVisible();
+    });
+
+    it(`renders every honest empty Hub region and its real import action in ${locale}`, () => {
+      render(
+        <NextIntlClientProvider locale={locale} messages={{ shadowing: catalog, videos: VIDEO_CATALOGS[locale] }}>
+          <LocalizedEmptyHub />
+        </NextIntlClientProvider>,
+      );
+
+      const hub = catalog.hub as CatalogNode;
+      const sections = hub.sections as CatalogNode;
+      const rail = hub.rail as CatalogNode;
+      const libraryEmpty = (hub.empty as CatalogNode).library as CatalogNode;
+
+      for (const title of [
+        sections.featured,
+        sections.library,
+        sections.popular,
+        sections.continueLearning,
+        sections.recentlyAdded,
+        sections.recommended,
+      ]) {
+        expect(screen.getByRole("region", { name: title as string })).toBeVisible();
+      }
+      for (const title of [rail.preparation, rail.todayGoal, rail.weeklyProgress, rail.suggestion]) {
+        expect(screen.getByRole("region", { name: title as string })).toBeVisible();
+      }
+
+      expect(screen.getByRole("search", { name: sections.search as string })).toBeVisible();
+      expect(screen.getByRole("link", { name: libraryEmpty.action as string })).toHaveAttribute("href", "#hub-import");
+      expect(screen.getByRole("button", { name: (VIDEO_CATALOGS[locale] as CatalogNode).import as string })).toBeVisible();
     });
   }
 });

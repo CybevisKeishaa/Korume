@@ -56,7 +56,7 @@ describe("collections", () => {
     expect(await listCollectionLessons("c1")).toEqual([]);
   });
 
-  it("fetches only the member lessons, by id", async () => {
+  it("fetches member lessons by a stable editorial order", async () => {
     useTables({
       lesson_collections: () => ({
         data: [{ lesson_id: "v1" }, { lesson_id: "v2" }],
@@ -64,6 +64,8 @@ describe("collections", () => {
       }),
       videos: (calls) => {
         expect(calls).toContainEqual({ op: "in", column: "id", values: ["v1", "v2"] });
+        expect(calls).toContainEqual({ op: "order", column: "created_at", ascending: false });
+        expect(calls).toContainEqual({ op: "order", column: "id", ascending: true });
         return { data: [{ id: "v1" }, { id: "v2" }], error: null };
       },
     });
