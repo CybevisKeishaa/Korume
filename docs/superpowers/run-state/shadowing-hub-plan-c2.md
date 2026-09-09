@@ -51,8 +51,9 @@ C4 durable import-job progress are explicitly excluded.
 
 ## Contracts and decisions
 
-- The Hub is an `(app)` page using `TwoColumnShell`; rail width is the C1
-layout token and it disappears below `xl`.
+- The Hub is an `(app)` page using `TwoColumnShell`. Below 1024px the locale
+  root exposes only the app-store handoff; at 1024px and above the Hub keeps
+  its permanent 300px rail beside the fluid main column.
 - C2 has no durable building-row state because import is synchronous today. It
   may show client-only pending copy during submit; C4 may add a server-backed
   current step, percentage, and ETA only once a job source exists.
