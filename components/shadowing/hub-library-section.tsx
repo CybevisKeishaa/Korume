@@ -24,9 +24,11 @@ export interface HubLibrarySectionLabels {
 export interface HubLibrarySectionProps {
   items: HubLibraryLesson[];
   labels: HubLibrarySectionLabels;
+  /** The Hub uses its local importer; Explore routes learners back to it. */
+  emptyActionHref?: string;
 }
 
-export function HubLibrarySection({ items, labels }: HubLibrarySectionProps) {
+export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-import" }: HubLibrarySectionProps) {
   const router = useRouter();
   const [retryingVideoId, setRetryingVideoId] = useState<string | null>(null);
   const [retryErrorVideoId, setRetryErrorVideoId] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function HubLibrarySection({ items, labels }: HubLibrarySectionProps) {
           body={labels.emptyBody}
           action={(
             <a
-              href="#hub-import"
+              href={emptyActionHref}
               className="inline-flex rounded-md bg-primary px-md py-sm text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {labels.emptyAction}

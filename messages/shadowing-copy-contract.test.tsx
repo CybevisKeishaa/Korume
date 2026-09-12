@@ -21,8 +21,8 @@ vi.mock("@/lib/i18n/navigation", () => ({
 type CatalogNode = Record<string, unknown>;
 type Locale = "en" | "vi";
 
-const COPY_ROOTS = ["hub", "mobileHandoff"] as const;
-const EXPECTED_LEAF_COUNT = 54;
+const COPY_ROOTS = ["hub", "mobileHandoff", "explore"] as const;
+const EXPECTED_LEAF_COUNT = 77;
 
 function collectLeaves(value: unknown, path = ""): Record<string, string> {
   if (typeof value === "string") return { [path]: value };
@@ -209,10 +209,10 @@ const LOCALES: ReadonlyArray<{ locale: Locale; catalog: CatalogNode }> = [
 
 const VIDEO_CATALOGS: Record<Locale, CatalogNode> = { en: enVideos, vi: viVideos };
 
-describe("Shadowing Hub EN/VI copy contract", () => {
-  it("covers exactly the two Hub-owned roots and their expected non-empty leaf collections", () => {
-    expect(COPY_ROOTS).toEqual(["hub", "mobileHandoff"]);
-    expect(COPY_ROOTS).toHaveLength(2);
+describe("Shadowing Hub and Explore EN/VI copy contract", () => {
+  it("covers the Hub and C3 Explore roots with their expected non-empty leaf collections", () => {
+    expect(COPY_ROOTS).toEqual(["hub", "mobileHandoff", "explore"]);
+    expect(COPY_ROOTS).toHaveLength(3);
     expect(LOCALES).toHaveLength(2);
 
     for (const { locale, catalog } of LOCALES) {

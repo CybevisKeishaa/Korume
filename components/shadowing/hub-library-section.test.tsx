@@ -27,6 +27,12 @@ describe("HubLibrarySection", () => {
     expect(screen.getByRole("link", { name: "Import a lesson" })).toHaveAttribute("href", "#hub-import");
   });
 
+  it("allows Explore to route its empty-library action to the Hub import section", () => {
+    render(<HubLibrarySection items={[]} labels={labels} emptyActionHref="/shadowing#hub-import" />);
+
+    expect(screen.getByRole("link", { name: "Import a lesson" })).toHaveAttribute("href", "/shadowing#hub-import");
+  });
+
   it("links a ready lesson to its shadowing workspace", () => {
     render(
       <HubLibrarySection

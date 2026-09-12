@@ -59,7 +59,10 @@ export async function getCollectionBySlug(slug: string): Promise<Collection | nu
   return data ? toCollection(data as CollectionRow) : null;
 }
 
-export async function listCollectionLessons(collectionId: string): Promise<VideoRow[]> {
+export async function listCollectionLessons(
+  collectionId: string,
+  options: { situationId?: string; query?: string; limit?: number } = {},
+): Promise<VideoRow[]> {
   const supabase = createClient();
   const { data: memberships, error: membershipError } = await supabase
     .from("lesson_collections")
@@ -72,12 +75,11 @@ export async function listCollectionLessons(collectionId: string): Promise<Video
 
   // RLS on `videos` still applies: a PLUS lesson the viewer cannot read is
   // filtered by the database, not by this function.
-  const { data, error } = await supabase
-    .from("videos")
-    .select(VIDEO_COLUMNS)
-    .in("id", ids)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: true });
+  let query = supabase.from("videos").select(VIDEO_COLUMNS).in("id", ids);
+  if (options.situationId) query = query.eq("situation_id", options.situationId);
+  if (options.query) query = query.ilike("title", `%${options.query}%`);
+  if (options.limit) query = query.limit(options.limit);
+  const { data, error } = await query.order("created_at", { ascending: false }).order("id", { ascending: true });
   if (error) throw error;
   return (data as VideoRow[] | null) ?? [];
 }
