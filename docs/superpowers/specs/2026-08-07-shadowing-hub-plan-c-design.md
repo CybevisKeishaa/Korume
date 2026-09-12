@@ -62,6 +62,7 @@ wants to revisit one should read the evidence first, not re-derive the question.
 | D15 | Quick Preview drawer ships **in C3**, not deferred. | It is an Explore interaction, not a backend feature. Deferring it means editing the lesson card twice. (User ruling.) |
 | D16 | `JLPT → Certification Practice` and the removal of `Reading` are **recorded, not acted on**. | Observed only in the newest JLPT frames. Whichever plan ports those screens rules on it. Changing a nav label before knowing the destination is backwards. |
 | D17 | The `sensei` nav row routes to **`/sensei`**, not `/companion`. | Companion is a cross-cutting concept — it appears in the Hub rail, AI Suggestion, Growth Areas, Weekly Report, and Roadmap. A `/companion` route would attract "everything AI" and sprawl. INSIGHTS lists Sensei, Roadmap and Weekly Report as three peers, so the route matches the nav label and stays one thing. `/companion` is left free to become a landing page *over* them later (`/companion` → sensei · roadmap · growth) rather than a bucket. |
+| D18 | C3 preserves the three-line transcript preview and **Add to My Lessons** even though live preview frame `200:10726` no longer draws them. The panel follows that frame's current visual language; the separate global `Search lesson` command palette (`212:14610` / `212:14753`) remains out of C3. | User ruling, 2026-09-09, after direct comparison with the live file. The two approved functions require truthful stored data and a server action; the command palette is a separate unapproved screen. |
 
 ---
 
@@ -354,6 +355,28 @@ omitted** (D13).
 description, JLPT, duration, word count, a three-sentence transcript preview, and the actions Start
 Lesson / Bookmark / Add to My Lessons. Per the screen-port workflow's overlay rule, this is a drawer
 component, **not a route** — its state is neither shareable nor recoverable, so no URL is justified.
+
+### 5.1 C3 preview and search amendment (2026-09-09)
+
+`200:10726` is the current presentation reference for the panel's 420px right-side composition,
+thumbnail, close control, metadata grid, and Start action. It does not visibly draw the transcript
+rows or Add action named above. The user explicitly retained both functions. C3 therefore adds them
+as a secondary panel region and a full-width secondary action that reuse the frame's card, border,
+type, spacing, focus, and reduced-motion language; they are not silently removed to match an
+incomplete sample.
+
+- The preview contains the first three persisted Japanese transcript lines in playback order. If there
+  is no transcript, it says so truthfully; it never substitutes Figma sample dialogue.
+- Add is an authenticated, idempotent server action for a lesson the current learner can already read.
+  It writes only that learner's `user_lesson_library` membership and reports its added/already-added
+  state in the drawer. Saving a catalogue lesson must not consume or distort the monthly private-import
+  quota ledger.
+- The visual bookmark icon in the Figma sample is not a separate C3 persistence model. C3 may use the
+  same save affordance's iconography, but must not ship a button that claims to bookmark without a
+  backing store.
+- The hero's in-page catalogue search and page-scoped situation chips remain part of Explore. The
+  global `Search lesson` command palette and its searched variant are explicitly deferred; C3 neither
+  registers a shortcut nor changes the `search-lesson` screen registry state.
 
 ---
 

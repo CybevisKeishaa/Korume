@@ -809,7 +809,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
-  // §8.1 — designed in full, shipped as a pure UpcomingScreen placeholder.
+  // §8.1 — C3 implements the Figma catalogue and its local preview state.
   {
     screenId: "explore-lessons",
     name: "Explore Lessons",
@@ -820,7 +820,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaCheckedAt: "2026-08-12",
     route: "/shadowing/explore",
     chrome: "app",
-    impl: "placeholder",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,
@@ -1465,7 +1465,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaCheckedAt: "2026-08-12",
     route: null,
     chrome: null,
-    impl: "none",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,

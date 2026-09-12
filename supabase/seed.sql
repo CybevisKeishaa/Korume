@@ -26,3 +26,36 @@ values (
   'FREE'
 )
 on conflict (id) do nothing;
+
+-- C3 Explore fixture: an authenticated browser can exercise an actual
+-- RLS-visible collection card and stored transcript preview without calling
+-- an external video or caption service. The Japanese lines are fixture copy,
+-- not imported content.
+insert into videos (id, youtube_video_id, title, duration_seconds, jlpt_level_estimate, library_access, situation_id)
+select
+  'e2e00000-0000-0000-0000-000000000002',
+  'e2e_explore_lesson_01',
+  'E2E Explore Lesson',
+  180,
+  'N5',
+  'FREE',
+  id
+from lesson_situations
+where slug = 'restaurant'
+on conflict (id) do nothing;
+
+insert into lesson_collections (lesson_id, collection_id)
+select 'e2e00000-0000-0000-0000-000000000002', id
+from collections
+where slug = 'beginner-foundation'
+on conflict (lesson_id, collection_id) do nothing;
+
+insert into transcripts (id, video_id, source)
+values ('e2e00000-0000-0000-0000-000000000003', 'e2e00000-0000-0000-0000-000000000002', 'youtube_caption')
+on conflict (id) do nothing;
+
+insert into transcript_lines (id, transcript_id, start_time, text_jp) values
+  ('e2e00000-0000-0000-0000-000000000004', 'e2e00000-0000-0000-0000-000000000003', 0, 'いらっしゃいませ。'),
+  ('e2e00000-0000-0000-0000-000000000005', 'e2e00000-0000-0000-0000-000000000003', 2, 'ラーメンをお願いします。'),
+  ('e2e00000-0000-0000-0000-000000000006', 'e2e00000-0000-0000-0000-000000000003', 4, 'かしこまりました。')
+on conflict (id) do nothing;

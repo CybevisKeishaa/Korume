@@ -72,4 +72,21 @@ describe("collections", () => {
     const { listCollectionLessons } = await import("@/lib/data/collections");
     expect((await listCollectionLessons("c1")).map((v) => v.id)).toEqual(["v1", "v2"]);
   });
+
+  it("applies Explore's selected situation and search term to the RLS-visible member query", async () => {
+    useTables({
+      lesson_collections: () => ({ data: [{ lesson_id: "v1" }], error: null }),
+      videos: (calls) => {
+        expect(calls).toEqual(expect.arrayContaining([
+          { op: "eq", column: "situation_id", value: "s-restaurant" },
+          { op: "ilike", column: "title", pattern: "%ramen%" },
+          { op: "limit", count: 8 },
+        ]));
+        return { data: [{ id: "v1" }], error: null };
+      },
+    });
+    const { listCollectionLessons } = await import("@/lib/data/collections");
+
+    await expect(listCollectionLessons("c1", { situationId: "s-restaurant", query: "ramen", limit: 8 })).resolves.toEqual([{ id: "v1" }]);
+  });
 });

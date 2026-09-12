@@ -2,11 +2,11 @@
 
 ## The learner's home for shadowing
 
-> **Status:** Desktop Hub repair in progress. Presentation reference is Figma
+> **Status:** Desktop Hub repair (C2) and the separate Explore screen (C3) are built. Presentation reference is Figma
 > frame `149:2` in file `IwFHZDZdHW7qsSFiNbWrkd`; the historical authority
 > is `docs/superpowers/specs/2026-08-07-shadowing-hub-plan-c-design.md` §4.
 > This replaces the older collection-grid description. Explore is a separate
-> C3 screen, not a Hub section.
+> `/shadowing/explore` screen with its own local preview drawer, not a Hub section.
 >
 > The responsive, no-data, and Hub-copy contract is
 > `docs/superpowers/specs/2026-09-09-desktop-hub-empty-states-design.md`.

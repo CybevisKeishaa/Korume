@@ -41,7 +41,7 @@ Legend — `impl`: `built` · `placeholder` (renders `UpcomingScreen`) · `none`
 | Figma frame | screenId | route | impl |
 |---|---|---|---|
 | Shadowing Hub | `shadowing-hub` | `/shadowing` | built |
-| Explore Lessons | `explore-lessons` | `/shadowing/explore` | **placeholder** |
+| Explore Lessons | `explore-lessons` | `/shadowing/explore` | built |
 | Shadowing Practice | `shadowing-practice` | `/shadowing/[id]` | built |
 | Dictation (in shadowing) | `dictation` | `/shadowing/[id]/dictation` | built |
 
@@ -713,7 +713,7 @@ only `admin/videos` still carries the old noun:
 | Route | Chrome group | State |
 |---|---|---|
 | `/shadowing` | `(app)` | built |
-| `/shadowing/explore` | `(app)` | **placeholder** (`UpcomingScreen`) |
+| `/shadowing/explore` | `(app)` | built (C3) |
 | `/shadowing/[id]` | `(focus)` | built |
 | `/shadowing/[id]/dictation` | `(focus)` | built |
 
@@ -902,28 +902,29 @@ the preview panel, per the tall-frame method. `200:7705` is **the largest frame 
 | **Capability** | Browse the entire catalogue. Header copy: *"Browse every lesson in Korume. Or narrow everything by situation."* |
 | **Entered from** | Hub → `View All` on Popular Lessons; nav; `← Back` implies a caller. |
 | **Exits to** | A lesson (`Start` / `Continue`) · `Import a lesson` · `Browse shelf` ×2 · `All lessons` · the quiet suggestion's lesson · a shelf page (pagination). |
-| **Actions** | Search · pick 1 of 16 situation chips · paginate within any shelf · open / retry / **delete** an imported lesson · start or continue a lesson. |
+| **Actions** | C3: search by title · choose a supported situation context · preview a visible lesson · add it to My Lessons · start a lesson. Pagination, imported-lesson delete/retry, and the Figma-only facets remain unbuilt. |
 | **Data needed** | See the section list below — this is the densest data contract in the inventory so far. |
 | **API exists** | Partly, and the taxonomy half is genuinely good — see below. |
-| **Route exists** | ⚠️ `/shadowing/explore` exists but is a **pure placeholder**: measured, its `page.tsx` renders `UpcomingScreen` and nothing else. |
+| **Route exists** | ✅ `/shadowing/explore` is built in C3 with the catalogue search, situation context, truthful shelves and preview drawer. The global Search lesson command palette remains separately unbuilt by scope. |
 | **Related** | Hub (`149:2`) · search panel (`212:*`) · the preview variant (`200:10726`) · Companion. |
 
 **Page structure, top to bottom:**
 
 1. Hero — eyebrow `SHADOWING LIBRARY`, title, subtitle.
-2. **Search field** with the helper *"Search by title, topic, grammar, vocabulary, creator, JLPT,
-   situation or tag."* — **eight facets**, two of which (`creator`, `tag`) exist nowhere else.
-3. **`MY IMPORTED LESSONS`** — *"The material you chose to bring with you."* + `Import a lesson ›`.
-   Three cards, one per import state: `72% complete · Ready`, `Preparing transcript…`,
-   `Import failed · Retry`. Each has a delete affordance.
+2. **Search field.** C3 implements title search and preserves the selected situation in the URL.
+   The Figma helper's topic, grammar, vocabulary, creator, JLPT and tag facets are design evidence,
+   not shipped C3 filters; `creator` and `tag` remain without a data model.
+3. **`MY IMPORTED LESSONS`** — C3 renders the existing private-library shelf and its empty-state
+   import link. The Figma's three import-state cards and their delete/retry controls are not C3
+   capabilities.
 4. **`RECENTLY ADDED`** — *"New official Korume scenes, released this week."* + `Browse shelf ›`.
 5. **`RECOMMENDED FOR YOU`** — *"A few directions your Companion thinks may feel good next."*
 6. **`BROWSE BY SITUATION`** — 16 chips + `All`, under the line *"This selection becomes the context
    for every bookshelf below."*
 7. **`A quiet suggestion`** — *"You recently practiced Restaurant conversations. Maybe try the N4–N3
    version next."* Another reason-carrying recommendation (§7.1).
-8. **Five shelves**, each `JLPT band · name · 8 lessons · blurb · Shelf n of 5`, a 4×2 card grid, and
-   **its own pagination** `‹ 1 2 3 4 ›`:
+8. **Five shelves**, each with its authored JLPT band, name, blurb and a responsive card grid.
+   Per-shelf pagination shown in Figma is not part of C3:
 
    | Band | Shelf | Blurb |
    |---|---|---|
@@ -993,15 +994,14 @@ block — **`JLPT` N5–N4 · `DURATION` 7 min · `VOCABULARY` 14 words · `SENT
 
 | Node id | Name | Tag | Route | Verdict |
 |---|---|---|---|---|
-| `200:7705` | Explore Lessons | `CONFIRMED` | `/shadowing/explore` = **placeholder** | designed in full, unbuilt; taxonomy backend partly exists and is well-modelled |
+| `200:7705` | Explore Lessons | `CONFIRMED` | `/shadowing/explore` = **built (C3)** | catalogue search, situation filtering and authored level shelves are implemented |
 | `200:10726` | Explore Lessons (with preview) | `STATE-VARIANT` of `200:7705` | — | — |
 
-**Capabilities added to the map:** full-catalogue browse · **faceted search including `creator` and
-`tag`** · situation-as-page-context filtering · **curated shelves banded by JLPT** · per-shelf
-pagination · separation of **official catalogue vs user-imported material** · per-lesson import state
-with delete/retry · **creator/channel attribution** · a **series/collection axis** distinct from
-situation and source · lesson preview before commitment · Companion-authored suggestions carrying
-their reason.
+**C3 capabilities now in the map:** title search · situation-as-page-context filtering · curated
+JLPT-banded shelves · existing private-library display · lesson preview before commitment · protected
+Add to My Lessons · factual recommendation reasons. The Figma evidence for creator/tag facets,
+per-shelf pagination, import-state delete/retry, creator attribution and a series/collection axis
+remains recorded above as later-scope design work, not implemented C3 capability.
 
 **⚑ New question for the user:** *Vimeo* appears as an import platform. Is multi-platform import
 intended, or is that card placeholder dressing? It changes `lib/youtube`'s scope, the import schema,

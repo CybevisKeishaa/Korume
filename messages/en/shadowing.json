@@ -179,6 +179,7 @@
     "search": { "label": "Search lessons", "placeholder": "Search by title, expression, anime, movie or topic...", "results": "Search results", "noResults": "No lessons matched your search." },
     "metadata": { "jlptLabel": "Japanese level", "durationLabel": "Lesson length", "minutes": "{count} min" }
   },
+  "explore": { "eyebrow": "Shadowing library", "title": "Explore Lessons", "subtitle": "Browse Japanese lessons grounded in real transcripts.", "imported": "My imported lessons", "recent": "Recently added", "recommended": "Recommended for you", "situations": "Browse by situation", "all": "All situations", "preview": "Preview lesson", "empty": "No lessons are available for this selection yet.", "moreAvailable": "This collection contains more lessons than are shown here.", "drawer": { "close": "Close preview", "start": "Start lesson", "add": "Add to My Lessons", "added": "Added to My Lessons", "adding": "Adding lesson", "addFailed": "Could not add lesson", "transcript": "Transcript preview", "transcriptUnavailable": "Transcript preview unavailable", "jlpt": "JLPT", "duration": "Duration", "vocabulary": "Vocabulary", "sentences": "Sentences" } },
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" }
 }

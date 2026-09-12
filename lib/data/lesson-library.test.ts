@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("./subscriptions", () => ({ getActivePlanTier: vi.fn() }));
 
 import { getActivePlanTier } from "./subscriptions";
 import {
   addToLibrary,
+  addVisibleLessonToLibrary,
   countMonthlyCreations,
   findExistingLesson,
   hasTranscript,
@@ -27,6 +30,7 @@ function mockService(tables: Parameters<typeof createMockSupabase>[0]["tables"])
 
 beforeEach(() => {
   vi.mocked(createServiceClient).mockReset();
+  vi.mocked(createClient).mockReset();
   vi.mocked(getActivePlanTier).mockReset();
 });
 
@@ -72,6 +76,21 @@ describe("countMonthlyCreations / isUnderQuota", () => {
     await expect(countMonthlyCreations(USER_ID, NOW)).resolves.toBe(2);
   });
 
+  it("counts only the learner's private imports, never saved public catalogue lessons", async () => {
+    mockService({
+      user_lesson_library: (calls: QueryCall[]) => {
+        expect(calls).toEqual(expect.arrayContaining([
+          { op: "select", columns: "lesson_id, videos!inner(added_by_user_id, library_access)" },
+          { op: "eq", column: "videos.added_by_user_id", value: USER_ID },
+          { op: "eq", column: "videos.library_access", value: "PRIVATE" },
+        ]));
+        return { data: [{ lesson_id: "private-import" }], error: null };
+      },
+    });
+
+    await expect(countMonthlyCreations(USER_ID, NOW)).resolves.toBe(1);
+  });
+
   it("is always under quota for a plus user regardless of count", async () => {
     vi.mocked(getActivePlanTier).mockResolvedValue("plus");
     mockService({
@@ -115,5 +134,108 @@ describe("isInLibrary / addToLibrary", () => {
     const upsert = upsertCalls.find((c): c is Extract<QueryCall, { op: "upsert" }> => c.op === "upsert");
     expect(upsert?.values).toEqual({ user_id: USER_ID, lesson_id: LESSON_ID });
     expect(upsert?.options).toEqual({ onConflict: "user_id,lesson_id", ignoreDuplicates: true });
+  });
+});
+
+describe("addVisibleLessonToLibrary", () => {
+  it("stops before the service-role writer when there is no authenticated learner", async () => {
+    const requestClient = createMockSupabase({ user: null, tables: {} });
+    vi.mocked(createClient).mockReturnValue(requestClient as unknown as ReturnType<typeof createClient>);
+
+    await expect(addVisibleLessonToLibrary(LESSON_ID)).resolves.toEqual({ ok: false, status: 401 });
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
+
+  it("does not allow the service-role writer to turn an RLS-hidden lesson into a library item", async () => {
+    const requestClient = createMockSupabase({
+      user: { id: USER_ID },
+      tables: { videos: () => ({ data: null, error: null }) },
+    });
+    vi.mocked(createClient).mockReturnValue(requestClient as unknown as ReturnType<typeof createClient>);
+
+    await expect(addVisibleLessonToLibrary(LESSON_ID)).resolves.toEqual({ ok: false, status: 404 });
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
+
+  it("adds only a lesson visible through the learner request client", async () => {
+    const requestClient = createMockSupabase({
+      user: { id: USER_ID },
+      tables: {
+        videos: (calls) => {
+          expect(calls).toEqual(expect.arrayContaining([
+            { op: "eq", column: "id", value: LESSON_ID },
+            { op: "maybeSingle" },
+          ]));
+          return {
+            data: {
+              id: LESSON_ID,
+              youtube_video_id: "public-lesson",
+              title: "Visible catalogue lesson",
+              duration_seconds: null,
+              thumbnail_url: null,
+              jlpt_level_estimate: "N4",
+              added_by_user_id: null,
+              library_access: "FREE",
+              promotion_starred: false,
+              created_at: "2026-09-09T00:00:00.000Z",
+            },
+            error: null,
+          };
+        },
+      },
+    });
+    const libraryQueries: QueryCall[][] = [];
+    const serviceClient = createMockSupabase({
+      tables: {
+        user_lesson_library: (calls) => {
+          libraryQueries.push([...calls]);
+          return { data: null, error: null };
+        },
+      },
+    });
+    vi.mocked(createClient).mockReturnValue(requestClient as unknown as ReturnType<typeof createClient>);
+    vi.mocked(createServiceClient).mockReturnValue(serviceClient as unknown as ReturnType<typeof createServiceClient>);
+
+    await expect(addVisibleLessonToLibrary(LESSON_ID)).resolves.toEqual({ ok: true, alreadyAdded: false });
+    expect(libraryQueries).toContainEqual(expect.arrayContaining([
+      {
+        op: "upsert",
+        values: { user_id: USER_ID, lesson_id: LESSON_ID },
+        options: { onConflict: "user_id,lesson_id", ignoreDuplicates: true },
+      },
+    ]));
+  });
+
+  it("reports an existing visible membership as an idempotent success without another upsert", async () => {
+    const requestClient = createMockSupabase({
+      user: { id: USER_ID },
+      tables: {
+        videos: () => ({
+          data: { id: LESSON_ID, youtube_video_id: "public-lesson", title: "Visible catalogue lesson", duration_seconds: null, thumbnail_url: null, jlpt_level_estimate: "N4", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00.000Z" },
+          error: null,
+        }),
+      },
+    });
+    const libraryQueries: QueryCall[][] = [];
+    const serviceClient = createMockSupabase({
+      tables: {
+        user_lesson_library: (calls) => {
+          libraryQueries.push([...calls]);
+          return { data: { user_id: USER_ID, lesson_id: LESSON_ID }, error: null };
+        },
+      },
+    });
+    vi.mocked(createClient).mockReturnValue(requestClient as unknown as ReturnType<typeof createClient>);
+    vi.mocked(createServiceClient).mockReturnValue(serviceClient as unknown as ReturnType<typeof createServiceClient>);
+
+    await expect(addVisibleLessonToLibrary(LESSON_ID)).resolves.toEqual({ ok: true, alreadyAdded: true });
+    expect(libraryQueries).toHaveLength(1);
+    expect(libraryQueries[0]).toEqual(expect.arrayContaining([
+      { op: "select", columns: "user_id, lesson_id" },
+      { op: "eq", column: "user_id", value: USER_ID },
+      { op: "eq", column: "lesson_id", value: LESSON_ID },
+      { op: "maybeSingle" },
+    ]));
+    expect(libraryQueries[0]).not.toEqual(expect.arrayContaining([{ op: "upsert", values: expect.anything() }]));
   });
 });

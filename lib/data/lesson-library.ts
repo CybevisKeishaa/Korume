@@ -1,7 +1,8 @@
 import "server-only";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActivePlanTier } from "@/lib/data/subscriptions";
-import { VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
+import { requireUser, selectVideoById, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 
 /** Free-tier monthly Create Lesson allowance (spec §3.1). Plus is unlimited. */
 export const FREE_MONTHLY_LESSON_QUOTA = 3;
@@ -40,8 +41,10 @@ export async function countMonthlyCreations(userId: string, now: Date = new Date
   const service = createServiceClient();
   const { data, error } = await service
     .from("user_lesson_library")
-    .select("lesson_id")
+    .select("lesson_id, videos!inner(added_by_user_id, library_access)")
     .eq("user_id", userId)
+    .eq("videos.added_by_user_id", userId)
+    .eq("videos.library_access", "PRIVATE")
     .gte("added_at", startOfMonth(now));
   if (error) throw error;
   return ((data as { lesson_id: string }[] | null) ?? []).length;
@@ -77,4 +80,26 @@ export async function addToLibrary(userId: string, lessonId: string): Promise<vo
     .from("user_lesson_library")
     .upsert({ user_id: userId, lesson_id: lessonId }, { onConflict: "user_id,lesson_id", ignoreDuplicates: true });
   if (error) throw error;
+}
+
+export type AddVisibleLessonToLibraryResult =
+  | { ok: true; alreadyAdded: boolean }
+  | { ok: false; status: 401 | 404 };
+
+/**
+ * Adds an already-visible lesson to the current learner's library. The
+ * request-scoped RLS read is intentionally before the service-role upsert:
+ * the latter is only a membership writer, never an authorization oracle.
+ */
+export async function addVisibleLessonToLibrary(lessonId: string): Promise<AddVisibleLessonToLibraryResult> {
+  const requestClient = createClient();
+  const user = await requireUser(requestClient);
+  if (!user) return { ok: false, status: 401 };
+
+  const lesson = await selectVideoById(requestClient, lessonId);
+  if (!lesson) return { ok: false, status: 404 };
+
+  const alreadyAdded = await isInLibrary(user.id, lesson.id);
+  if (!alreadyAdded) await addToLibrary(user.id, lesson.id);
+  return { ok: true, alreadyAdded };
 }
