@@ -1,5 +1,10 @@
 # Branch Run State
 
+> **CLOSED 2026-09-13.** C3 was merged into local `master` at `148d4af`; the approved
+> post-merge Figma-density and curated-metadata correction landed at `429fac2`. Do not resume this
+> file as a pending C3 task. Plan C1/C2/C3 are complete; C4 is a separately planned asynchronous
+> lesson-creation backend subsystem, outside this spec.
+
 ## Goal and scope
 
 Branch: `shadowing-explore-c3`; base: `aacf813`.
