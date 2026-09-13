@@ -39,6 +39,8 @@
  * null)`) — additive only, no existing behavior changed.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 export type QueryCall =
   | { op: "select"; columns: string }
   | { op: "insert"; values: unknown }
@@ -67,11 +69,19 @@ export interface MockResult {
 
 export type TableResolver = (calls: QueryCall[]) => MockResult | Promise<MockResult>;
 
+export interface RpcCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+export type RpcResolver = (args: Record<string, unknown>) => MockResult | Promise<MockResult>;
+
 export interface MockSupabaseOptions {
   /** The signed-in user `auth.getUser()` should resolve to; `null`/omitted = signed out. */
   user?: { id: string; email?: string } | null;
   /** One resolver per table name touched by the code under test. */
   tables: Record<string, TableResolver>;
+  /** Registered RPC responses; unknown names fail instead of silently returning empty data. */
+  rpcs?: Record<string, RpcResolver>;
   /**
    * Optional per-bucket `createSignedUrl` stub for code that calls
    * `supabase.storage.from(bucket).createSignedUrl(path, ttl)` (e.g.
@@ -98,6 +108,21 @@ export function hasCall(calls: QueryCall[], op: QueryCall["op"]): boolean {
 type Builder = any;
 
 export function createMockSupabase(opts: MockSupabaseOptions) {
+  const rpcCalls: RpcCall[] = [];
+  function rpc(name: string, args: Record<string, unknown>): ReturnType<SupabaseClient["rpc"]> {
+    rpcCalls.push({ name, args });
+    const result = Promise.resolve().then(() => {
+      const resolver = opts.rpcs?.[name];
+      if (!resolver) {
+        throw new Error(`createMockSupabase: no resolver registered for RPC "${name}"`);
+      }
+      return resolver(args);
+    });
+    // This narrow RPC double supports awaiting only, not PostgREST filter chaining.
+    // Retain the client signature so existing tests can cast this partial client.
+    return result as unknown as ReturnType<SupabaseClient["rpc"]>;
+  }
+
   const auth = {
     getUser: async () => ({ data: { user: opts.user ?? null } }),
   };
@@ -207,5 +232,8 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
     };
   }
 
-  return { auth, from, storage: { from: storageFrom } };
+  const client = { auth, from, rpc: rpc as SupabaseClient["rpc"], rpcCalls, storage: { from: storageFrom } };
+  // Optional at the structural boundary because the real client has no recorder.
+  // Every mock instance still initializes it above.
+  return client as Omit<typeof client, "rpcCalls"> & { rpcCalls?: RpcCall[] };
 }
