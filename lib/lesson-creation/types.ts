@@ -43,15 +43,45 @@ export interface LessonCreationJobProjection {
 
 export const lessonCreationJobProjectionSchema = z
   .object({
-    id: z.string(),
+    id: z.string().uuid(),
     state: z.enum(LESSON_CREATION_JOB_STATES),
     step: z.enum(LESSON_CREATION_STEPS),
     attemptCount: z.number().int().nonnegative(),
-    lessonId: z.string().nullable(),
+    lessonId: z.string().uuid().nullable(),
     publicErrorCode: z.enum(LESSON_CREATION_ERROR_CODES).nullable(),
-    updatedAt: z.string(),
+    updatedAt: z.string().datetime({ offset: true }),
   })
-  .strict();
+  .strict()
+  .superRefine((projection, context) => {
+    if (projection.state === "succeeded" && projection.step !== "ready") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["step"],
+        message: 'A succeeded job must have the "ready" step.',
+      });
+    }
+    if (projection.state === "failed" && projection.step !== "failed") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["step"],
+        message: 'A failed job must have the "failed" step.',
+      });
+    }
+    if (projection.step === "ready" && projection.state !== "succeeded") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["state"],
+        message: 'The "ready" step requires a succeeded job.',
+      });
+    }
+    if (projection.step === "failed" && projection.state !== "failed") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["state"],
+        message: 'The "failed" step requires a failed job.',
+      });
+    }
+  });
 
 export function isTerminalJobState(state: LessonCreationJobState): state is TerminalLessonCreationJobState {
   return state === "succeeded" || state === "failed";
