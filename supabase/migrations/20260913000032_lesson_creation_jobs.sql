@@ -192,7 +192,7 @@ $$;
 create function public.finalize_lesson_creation_job(p_job_id uuid, p_lesson_id uuid, p_requester uuid,
   p_lease_token uuid, p_content jsonb default null)
 returns public.lesson_creation_jobs language plpgsql security definer set search_path = '' as $$
-declare j public.lesson_creation_jobs; v public.videos; transcript_id uuid; monthly_count bigint;
+declare j public.lesson_creation_jobs; v public.videos; chosen_transcript_id uuid; monthly_count bigint;
 begin
   perform 1 from public.users where id = p_requester for update;
   select * into j from public.lesson_creation_jobs where id = p_job_id and requester_user_id = p_requester for update;
@@ -207,8 +207,26 @@ begin
   if p_lesson_id is not null and (v.id is null or v.id <> p_lesson_id) then
     raise exception 'lesson_mismatch' using errcode = '22023';
   end if;
-  if not exists (select 1 from public.transcripts t join public.transcript_lines l on l.transcript_id = t.id
-    where t.video_id = v.id and t.language = 'ja') then
+  -- Refuse before any content write: creator visibility must not let a failed
+  -- creation become studyable through the ordinary C3 library-add path.
+  if j.origin = 'learner' and (v.id is null or v.library_access = 'PRIVATE') and not exists (
+    select 1 from public.user_lesson_library where user_id = p_requester and lesson_id = v.id) then
+    if not exists (select 1 from public.subscriptions s where s.user_id = p_requester and s.plan <> 'free' and s.status = 'active') then
+      select count(*) into monthly_count from public.user_lesson_library ull join public.videos counted_video on counted_video.id = ull.lesson_id
+        where ull.user_id = p_requester and counted_video.added_by_user_id = p_requester and counted_video.library_access = 'PRIVATE'
+        and ull.added_at >= date_trunc('month', timezone('utc', now())) at time zone 'UTC';
+      if monthly_count >= 3 then
+        update public.lesson_creation_jobs set state = 'failed', step = 'failed', public_error_code = 'quota_exceeded',
+          lease_expires_at = null, lease_token = null, completed_at = now(), updated_at = now()
+          where id = j.id returning * into j;
+        return j;
+      end if;
+    end if;
+  end if;
+  -- Match getTranscript: newest header, without filtering language or lines.
+  select t.id into chosen_transcript_id from public.transcripts t
+    where t.video_id = v.id order by t.created_at desc limit 1 for update;
+  if not exists (select 1 from public.transcript_lines l where l.transcript_id = chosen_transcript_id) then
     if p_content is null or jsonb_typeof(p_content) <> 'object' or
       jsonb_typeof(p_content->'title') is distinct from 'string' or length(btrim(p_content->>'title')) = 0 or
       p_content->>'source' is distinct from 'youtube_caption' or
@@ -233,29 +251,24 @@ begin
         on conflict (youtube_video_id) do nothing returning * into v;
       if v.id is null then select * into v from public.videos where youtube_video_id = j.youtube_video_id for update; end if;
     end if;
-    -- Existing empty legacy headers are preserved; only complete new headers are added.
-    if not exists (select 1 from public.transcripts t join public.transcript_lines l on l.transcript_id = t.id
-      where t.video_id = v.id and t.language = 'ja') then
-      insert into public.transcripts(video_id, source, language) values (v.id, 'youtube_caption', 'ja') returning id into transcript_id;
+    -- Recheck the selected header after resolving a video uniqueness race.
+    select t.id into chosen_transcript_id from public.transcripts t
+      where t.video_id = v.id order by t.created_at desc limit 1 for update;
+    if not exists (select 1 from public.transcript_lines l where l.transcript_id = chosen_transcript_id) then
+      if chosen_transcript_id is null then
+        insert into public.transcripts(video_id, source, language) values (v.id, 'youtube_caption', 'ja') returning id into chosen_transcript_id;
+      else
+        -- Repair the header playback actually selects, retaining older history.
+        update public.transcripts set source = 'youtube_caption', language = 'ja' where id = chosen_transcript_id;
+      end if;
       insert into public.transcript_lines(transcript_id, start_time, end_time, text_jp, text_translation, furigana_json)
-        select transcript_id, l.start_time, l.end_time, l.text_jp, l.text_translation, l.furigana_json
+        select chosen_transcript_id, l.start_time, l.end_time, l.text_jp, l.text_translation, l.furigana_json
         from jsonb_to_recordset(p_content->'lines') as l(start_time numeric, end_time numeric,
           text_jp text, text_translation text, furigana_json jsonb);
     end if;
   end if;
   if j.origin = 'learner' and v.library_access = 'PRIVATE' and not exists (
     select 1 from public.user_lesson_library where user_id = p_requester and lesson_id = v.id) then
-    if not exists (select 1 from public.subscriptions s where s.user_id = p_requester and s.plan <> 'free' and s.status = 'active') then
-      select count(*) into monthly_count from public.user_lesson_library ull join public.videos counted_video on counted_video.id = ull.lesson_id
-        where ull.user_id = p_requester and counted_video.added_by_user_id = p_requester and counted_video.library_access = 'PRIVATE'
-        and ull.added_at >= date_trunc('month', timezone('utc', now())) at time zone 'UTC';
-      if monthly_count >= 3 then
-        update public.lesson_creation_jobs set state = 'failed', step = 'failed', public_error_code = 'quota_exceeded',
-          lease_expires_at = null, lease_token = null, completed_at = now(), updated_at = now()
-          where id = j.id returning * into j;
-        return j;
-      end if;
-    end if;
     insert into public.user_lesson_library(user_id, lesson_id) values (p_requester, v.id) on conflict do nothing;
   end if;
   -- Admin dedup of a PRIVATE lesson must not publish it or grant a personal membership.

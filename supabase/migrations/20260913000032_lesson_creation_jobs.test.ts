@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import { LESSON_CREATION_ERROR_CODES, LESSON_CREATION_JOB_STATES, LESSON_CREATION_STEPS } from "../../lib/lesson-creation/types";
 
@@ -60,7 +61,55 @@ describe("durable lesson creation SQL contract", () => {
     expect(sql).toContain("s.plan <> 'free' and s.status = 'active'");
     expect(sql).toContain("insert into public.user_lesson_library");
     expect(sql).toContain("jsonb_to_recordset");
-    expect(sql).toContain("join public.transcript_lines");
+    expect(sql).toContain("from public.transcript_lines");
+  });
+  it("refuses quota before writing newly creator-visible video or transcript content", () => {
+    const body = migration().match(/create function public\.finalize_lesson_creation_job\([\s\S]*?\$\$;/)?.[0];
+    expect(body).toBeDefined();
+    if (!body) throw new Error("Missing finalize");
+    const refusal = body.indexOf("if monthly_count >= 3 then");
+    expect(refusal).toBeGreaterThan(0);
+    for (const table of ["videos", "transcripts", "transcript_lines"]) {
+      const write = body.indexOf(`insert into public.${table}`);
+      expect(write).toBeGreaterThan(refusal);
+    }
+    expect(body).toContain("(v.id is null or v.library_access = 'private')");
+    expect(body.slice(refusal, body.indexOf("insert into public.videos"))).toContain("return j;");
+  });
+  it("selects the newest empty header over an older complete header and repairs that same header", () => {
+    const sql = migration();
+    const selections = [...sql.matchAll(/select t\.id into chosen_transcript_id from public\.transcripts t\s+where t\.video_id = v\.id\s+order by t\.created_at desc limit 1 for update/g)];
+    expect(selections.length).toBeGreaterThan(0);
+    expect(selections).toHaveLength(2);
+    // Execute the exact relational SELECT against a small SQLite fixture; this
+    // verifies header selection only, not PostgreSQL RPC/transaction/RLS behavior.
+    const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as {
+      DatabaseSync: new (path: string) => {
+        exec(sql: string): void;
+        prepare(sql: string): { get(...args: string[]): Record<string, unknown> | undefined };
+        close(): void;
+      };
+    };
+    const db = new DatabaseSync(":memory:");
+    try {
+      db.exec(`attach database ':memory:' as public;
+        create table public.transcripts(id text, video_id text, created_at text, language text);
+        create table public.transcript_lines(transcript_id text, text_jp text);
+        insert into public.transcripts values ('older', 'lesson', '2026-09-12', 'ja'), ('newer', 'lesson', '2026-09-13', 'en');
+        insert into public.transcript_lines values ('older', 'original fixture line');`);
+      expect(db.prepare("select count(*) as count from public.transcripts").get()?.count).toBe(2);
+      expect(db.prepare("select count(*) as count from public.transcript_lines where transcript_id = 'older'").get()?.count).toBe(1);
+      for (const [selection] of selections) {
+        const query = selection.replace(" into chosen_transcript_id", "").replace("v.id", "?").replace(" for update", "");
+        expect(db.prepare(query).get("lesson")?.id).toBe("newer");
+      }
+      expect(db.prepare("select count(*) as count from public.transcript_lines where transcript_id = 'newer'").get()?.count).toBe(0);
+    } finally { db.close(); }
+    expect(sql).toContain("where l.transcript_id = chosen_transcript_id");
+    expect(sql).toContain("if chosen_transcript_id is null then");
+    expect(sql).toContain("where id = chosen_transcript_id");
+    expect(sql).toContain("select chosen_transcript_id, l.start_time");
+    expect(sql).not.toContain("join public.transcript_lines l on l.transcript_id = t.id");
   });
   it("exposes the approved atomic finalize payload and lease fence", () => {
     const sql = migration();
