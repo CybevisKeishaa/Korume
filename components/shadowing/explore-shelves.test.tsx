@@ -7,6 +7,10 @@ const labels = {
   start: "Start lesson",
   preview: "Preview lesson",
   noThumbnail: "No thumbnail",
+  minutesTemplate: "{count} min",
+  linesTemplate: "{count} lines",
+  grammarWordsTemplate: "{grammar} grammar · {words} words",
+  grammarUnavailable: "Grammar unavailable",
   empty: "No lessons are available for this selection yet.",
   moreAvailable: "This collection contains more lessons than are shown here.",
   drawer: {
@@ -36,6 +40,9 @@ const shelf = {
     transcriptPreview: ["いらっしゃいませ。"],
     lineCount: 12,
     wordCount: 9,
+    grammarCount: 3,
+    vocabularyCount: 2,
+    summary: "A compact restaurant exchange.",
   }],
 };
 const shelves = [shelf];
@@ -53,13 +60,23 @@ describe("ExploreShelves", () => {
     expect(document.querySelector("img")).toHaveAttribute("src", expect.stringContaining("ramen.jpg"));
   });
 
+  it("renders the truthful compact learning metadata that the lesson card needs", () => {
+    render(<ExploreShelves shelves={shelves} labels={labels} />);
+
+    const card = screen.getByRole("listitem");
+    expect(card).toHaveTextContent("5 min");
+    expect(card).toHaveTextContent("12 lines");
+    expect(card).toHaveTextContent("3 grammar · 2 words");
+  });
+
   it("passes stored preview metadata to the drawer instead of substituting placeholder counts", async () => {
     const user = userEvent.setup();
     render(<ExploreShelves shelves={shelves} labels={labels} />);
 
     await user.click(screen.getByRole("button", { name: "Preview lesson: Ordering ramen" }));
 
-    expect(screen.getByRole("dialog")).toHaveTextContent("9");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Vocabulary2");
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("Vocabulary9");
     expect(screen.getByRole("dialog")).toHaveTextContent("12");
     expect(screen.getByRole("dialog")).toHaveTextContent("いらっしゃいませ。");
   });

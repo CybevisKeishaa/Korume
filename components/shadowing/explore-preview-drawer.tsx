@@ -15,6 +15,8 @@ export interface ExplorePreviewLesson {
   transcriptPreview: string[];
   lineCount: number;
   wordCount: number;
+  /** Curated vocabulary count from the persisted video summary, when available. */
+  vocabularyCount: number | null;
 }
 
 export interface ExplorePreviewDrawerLabels {
@@ -69,7 +71,7 @@ export function ExplorePreviewDrawer({ lesson, onClose, labels }: {
           {[
             [labels.metadata.jlpt, lesson.jlptLevelEstimate ?? "—"],
             [labels.metadata.duration, durationValue(lesson.durationSeconds, labels.durationTemplate)],
-            [labels.metadata.vocabulary, `${lesson.wordCount}`],
+            [labels.metadata.vocabulary, lesson.vocabularyCount === null ? "—" : `${lesson.vocabularyCount}`],
             [labels.metadata.sentences, `${lesson.lineCount}`],
           ].map(([label, value]) => (
             <div key={label} className="bg-card p-sm">

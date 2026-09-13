@@ -3,7 +3,7 @@ import enShadowing from "@/messages/en/shadowing.json";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 
 const EXPLORE_LESSON_ID = "e2e00000-0000-0000-0000-000000000002";
-const EXPLORE_TITLE = "E2E Explore Lesson";
+const EXPLORE_TITLE = "E2E Explore Lesson with a deliberately long two line title";
 
 async function tabTo(page: import("@playwright/test").Page, target: import("@playwright/test").Locator, limit = 40): Promise<void> {
   for (let index = 0; index < limit; index += 1) {
@@ -101,4 +101,28 @@ test("at 1024px, Explore exposes a seeded shelf card and keyboard-operable local
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("at the 1600px compact desktop reference, a lesson card keeps Figma density", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 732 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await registerLearner(page);
+  await page.goto("/en/shadowing/explore?situation=restaurant");
+
+  const card = page.getByRole("button", { name: `${enShadowing.explore.preview}: ${EXPLORE_TITLE}` }).locator("xpath=ancestor::li");
+  await expect(card).toContainText("3 min");
+  await expect(card).toContainText("3 lines");
+  await expect(card).toContainText("2 grammar · 2 words");
+
+  const cardBox = await card.boundingBox();
+  const thumbnailBox = await card.locator(":scope > div").first().boundingBox();
+  const startBox = await card.getByRole("link", { name: `${enShadowing.hub.actions.start}: ${EXPLORE_TITLE}` }).boundingBox();
+  expect(cardBox?.height).toBeGreaterThanOrEqual(296);
+  expect(cardBox?.height).toBeLessThanOrEqual(300);
+  expect(cardBox?.width).toBeGreaterThanOrEqual(295);
+  expect(cardBox?.width).toBeLessThanOrEqual(297);
+  expect(thumbnailBox?.height).toBeGreaterThanOrEqual(111);
+  expect(thumbnailBox?.height).toBeLessThanOrEqual(113);
+  expect(startBox?.height).toBeGreaterThanOrEqual(24);
+  expect(startBox?.height).toBeLessThanOrEqual(28);
 });

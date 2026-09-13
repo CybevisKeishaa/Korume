@@ -20,6 +20,10 @@ export interface ExploreLesson extends HubLesson {
   transcriptPreview: string[];
   lineCount: number;
   wordCount: number;
+  /** A missing summary is unknown learning data, not zero grammar. */
+  grammarCount: number | null;
+  vocabularyCount: number | null;
+  summary: string | null;
 }
 
 export interface ShadowingExploreData {
@@ -47,6 +51,7 @@ function toLesson(video: VideoRow): HubLesson {
 
 interface TranscriptRow { id: string; video_id: string; created_at: string }
 interface TranscriptLineRow { transcript_id: string; text_jp: string; start_time: number }
+interface VideoSummaryProjection { video_id: string; summary: string; key_vocab: unknown; key_grammar: unknown }
 
 /** C3's authored learning-path sequence; editorial collections stay on the Hub. */
 const EXPLORE_COLLECTION_SLUGS = [
@@ -109,9 +114,16 @@ export async function getShadowingExplore(
   ]));
   const latestTranscriptByVideo = new Map<string, string>();
   const linesByTranscript = new Map<string, TranscriptLineRow[]>();
+  const summaryByVideo = new Map<string, VideoSummaryProjection>();
   if (lessonIds.length) {
-    const { data: transcriptData, error: transcriptError } = await supabase.from("transcripts").select("id, video_id, created_at").in("video_id", lessonIds).order("created_at", { ascending: false });
+    const [transcriptResult, summaryResult] = await Promise.all([
+      supabase.from("transcripts").select("id, video_id, created_at").in("video_id", lessonIds).order("created_at", { ascending: false }),
+      supabase.from("video_summaries").select("video_id, summary, key_vocab, key_grammar").in("video_id", lessonIds),
+    ]);
+    const { data: transcriptData, error: transcriptError } = transcriptResult;
     if (transcriptError) throw transcriptError;
+    if (summaryResult.error) throw summaryResult.error;
+    for (const summary of (summaryResult.data as VideoSummaryProjection[] | null) ?? []) summaryByVideo.set(summary.video_id, summary);
     for (const transcript of (transcriptData as TranscriptRow[] | null) ?? []) if (!latestTranscriptByVideo.has(transcript.video_id)) latestTranscriptByVideo.set(transcript.video_id, transcript.id);
     const transcriptIds = Array.from(new Set(latestTranscriptByVideo.values()));
     if (transcriptIds.length) {
@@ -132,11 +144,17 @@ export async function getShadowingExplore(
   const shelves = await Promise.all(rawShelves.map(async ({ collection, lessons, hasMore }) => ({ collection, hasMore, lessons: await Promise.all(lessons.map(async (lesson) => {
     const transcriptId = latestTranscriptByVideo.get(lesson.id);
     const lines = linesByTranscript.get(transcriptId ?? "") ?? [];
+    const summary = summaryByVideo.get(lesson.id);
+    const grammar = summary?.key_grammar;
+    const vocabulary = summary?.key_vocab;
     return {
       ...toLesson(lesson),
       transcriptPreview: lines.slice(0, 3).map((line) => line.text_jp),
       lineCount: lines.length,
       wordCount: await getWordCount(transcriptId, lines),
+      grammarCount: Array.isArray(grammar) ? grammar.length : null,
+      vocabularyCount: Array.isArray(vocabulary) ? vocabulary.length : null,
+      summary: summary?.summary ?? null,
     };
   })) })));
   const library = libraryVideos.map((video) => ({

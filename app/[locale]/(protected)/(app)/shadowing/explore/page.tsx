@@ -137,6 +137,10 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
           start: tHub("actions.start"),
           preview: t("preview"),
           noThumbnail: tCommon("noThumbnail"),
+          minutesTemplate: t("card.minutes", { count: "{count}" }),
+          linesTemplate: t("card.lines", { count: "{count}" }),
+          grammarWordsTemplate: t("card.grammarWords", { grammar: "{grammar}", words: "{words}" }),
+          grammarUnavailable: t("card.grammarUnavailable"),
           empty: t("empty"),
           moreAvailable: t("moreAvailable"),
           drawer: {

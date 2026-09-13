@@ -339,6 +339,14 @@ markers; the full browser spec then passed against that isolated server.
 **Status:** Promoted to `CLAUDE.md` §6 (2026-08-13) — retained here as historical evidence.
 **Evidence:** Lesson Workspace Plan A spent an entire plan cleaning up one instance. · `docs/superpowers/specs/2026-08-08-screen-registry-design.md` §7 names it risk 1 and builds R1+R12 to guard it. · This registry exists because the lesson corpus itself had four owners. · Screen Registry Phase 1b — the **resume memory itself** went stale: at branch HEAD `mem:screen_registry_run_state` still listed two rulings as OPEN that the last commit had implemented, and still repeated a scope claim that the same commit had measured false and retracted in `decision-register.md`. `MEMORY.md` names that memory the thing to read first on resume, so merging it would have instructed the next session to re-ask the user for rulings already given. **A handoff document is code for the next session: stale-check it in the same pass that changes what it describes, not in a later one.** · Screen Registry Phase 2a `01eb284`, `bf344a4` — the same memory again, handled a different way: the stale body was left intact as a historical record and a dated correction banner was placed *above* it, naming each superseded section by heading. That form survives review, but only because the banner precedes every false sentence. Its two soft spots are worth copying carefully: the **title** was left stale while `MEMORY.md` indexes the file *by* its title (a label is not a historical record — retitle it), and a retraction that corrects "three routes" to "all four" without naming the fourth leaves the reader to reconcile the mismatch.
 
+**Evidence (cont.):** Shadowing Explore Figma-fidelity wave, 2026-09-13 — the compact card was corrected to label
+the curated count from `video_summaries.key_vocab` as “words”, while its preview drawer still labelled the separate
+transcript-wide lemma `wordCount` as “Vocabulary”. Both values were truthful in isolation and had the same `number`
+shape, so the mismatch survived the first fix. Re-review caught the second consumer; it now derives from the same
+`vocabularyCount` field (or honestly renders unavailable), with a regression where curated vocabulary is 2 and
+transcript words are 14. **What generalises:** preserving a legacy measurement does not license relabelling it as a
+different fact; carry the source identity through every consumer, especially when the values share a type.
+
 ### L-032 — A cross-file `path:NN` citation is falsified by the next commit that touches that file
 
 **Rule:** Across files, cite a **symbol** — "`AppNav`'s `t(item.key)` call in `components/layout/app-nav.tsx`" — never `path:line`. Keep line numbers for citations *inside the same file as the text*, where anything that moves the target shows up in the same diff. When a drifted citation is found, re-anchor it to a symbol; bumping the number only restarts the same clock.

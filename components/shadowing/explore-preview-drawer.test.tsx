@@ -13,6 +13,7 @@ const LESSON = {
   transcriptPreview: ["一つ目です。", "二つ目です。", "三つ目です。"],
   lineCount: 20,
   wordCount: 14,
+  vocabularyCount: 2,
 };
 
 afterEach(() => vi.unstubAllGlobals());
@@ -37,6 +38,8 @@ describe("ExplorePreviewDrawer", () => {
     }} />);
 
     expect(screen.getByRole("dialog")).toHaveTextContent("一つ目です。");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Vocabulary2");
+    expect(screen.getByRole("dialog")).not.toHaveTextContent("Vocabulary14");
     expect(screen.getByRole("link", { name: "Start lesson" })).toHaveAttribute("href", "/en/shadowing/a0000000-0000-0000-0000-000000000001");
 
     await user.click(screen.getByRole("button", { name: "Add to My Lessons" }));

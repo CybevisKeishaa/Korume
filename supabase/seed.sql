@@ -35,7 +35,7 @@ insert into videos (id, youtube_video_id, title, duration_seconds, jlpt_level_es
 select
   'e2e00000-0000-0000-0000-000000000002',
   'e2e_explore_lesson_01',
-  'E2E Explore Lesson',
+  'E2E Explore Lesson with a deliberately long two line title',
   180,
   'N5',
   'FREE',
@@ -59,3 +59,13 @@ insert into transcript_lines (id, transcript_id, start_time, text_jp) values
   ('e2e00000-0000-0000-0000-000000000005', 'e2e00000-0000-0000-0000-000000000003', 2, 'ラーメンをお願いします。'),
   ('e2e00000-0000-0000-0000-000000000006', 'e2e00000-0000-0000-0000-000000000003', 4, 'かしこまりました。')
 on conflict (id) do nothing;
+
+insert into video_summaries (video_id, summary, key_vocab, key_grammar, model)
+values (
+  'e2e00000-0000-0000-0000-000000000002',
+  'A short restaurant exchange for testing the Explore card.',
+  '[{"word":"ラーメン","reading":"らーめん","meaning":"ramen"},{"word":"お願い","reading":"おねがい","meaning":"request"}]'::jsonb,
+  '[{"pattern":"〜をお願いします","explanation":"A polite restaurant request."},{"pattern":"かしこまりました","explanation":"A formal acknowledgement."}]'::jsonb,
+  'fixture'
+)
+on conflict (video_id) do nothing;

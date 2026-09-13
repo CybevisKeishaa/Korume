@@ -96,6 +96,7 @@ describe("getShadowingExplore", () => {
         user_lesson_library: () => ({ data: [], error: null }),
         videos: () => ({ data: [], error: null }),
         transcripts: () => ({ data: [{ id: "t1", video_id: "v1", created_at: "2026-09-09T00:00:00Z" }], error: null }),
+        video_summaries: () => ({ data: [{ video_id: "v1", summary: "A compact restaurant exchange.", key_vocab: [{ word: "ãƒ©ãƒ¼ãƒ¡ãƒ³" }, { word: "ãŠé¡˜ã„" }], key_grammar: [{ pattern: "ã€œã¦ã‚‚ã‚‰ã†" }, { pattern: "ã€œãŸã„" }] }], error: null }),
         transcript_lines: () => ({ data: [
           { transcript_id: "t1", text_jp: "一番目", start_time: 0 },
           { transcript_id: "t1", text_jp: "二番目", start_time: 2 },
@@ -113,6 +114,7 @@ describe("getShadowingExplore", () => {
     const result = await getShadowingExplore();
 
     expect(result).toMatchObject({ ok: true, data: { shelves: [{ lessons: [{ id: "v1", transcriptPreview: ["一番目", "二番目", "三番目"], lineCount: 4, wordCount: 4 }] }] } });
+    expect(result).toMatchObject({ ok: true, data: { shelves: [{ lessons: [{ id: "v1", grammarCount: 2, vocabularyCount: 2, summary: "A compact restaurant exchange." }] }] } });
     expect(tokenize).toHaveBeenCalledTimes(4);
   });
 
@@ -124,6 +126,7 @@ describe("getShadowingExplore", () => {
         user_lesson_library: () => ({ data: [{ lesson_id: "library" }], error: null }),
         videos: () => ({ data: [video("library"), video("recent")], error: null }),
         transcripts: () => ({ data: [], error: null }),
+        video_summaries: () => ({ data: [], error: null }),
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
@@ -149,6 +152,7 @@ describe("getShadowingExplore", () => {
       tables: {
         user_lesson_library: () => ({ data: [], error: null }), videos: () => ({ data: [], error: null }),
         transcripts: () => ({ data: [{ id: "t1", video_id: "v1", created_at: "2026-09-09T00:00:00Z" }], error: null }),
+        video_summaries: () => ({ data: [], error: null }),
         transcript_lines: () => ({ data: [{ transcript_id: "t1", text_jp: "åŒã˜", start_time: 0 }], error: null }),
       },
     });
@@ -173,6 +177,7 @@ describe("getShadowingExplore", () => {
       tables: {
         user_lesson_library: () => ({ data: [], error: null }), videos: () => ({ data: [], error: null }),
         transcripts: () => ({ data: [], error: null }),
+        video_summaries: () => ({ data: [], error: null }),
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
