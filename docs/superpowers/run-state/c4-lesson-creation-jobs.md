@@ -20,7 +20,10 @@ The machine-local SDD ledger at `.superpowers/sdd/2026-09-13-lesson-creation-job
 
 ## Status
 
-Task 1 is complete. The controller created this minimal run-state before the first dispatch because `AGENTS.md` requires every multi-task branch to have one; Task 1 owns expanding it with its committed task evidence.
+Tasks 1–3 are complete and task-reviewed. Task 2's required live PostgreSQL
+reset/RLS/concurrency gate remains blocked by Docker access and is a final
+branch-acceptance gate, not a substituteable source-test result. The next
+owned task is Task 4 (idempotent pipeline and one claimed worker pass).
 
 ## Resume protocol
 
@@ -47,3 +50,28 @@ lessons by id only; the applicable Task 1 controls include `L-001`, `L-004`,
   this shell's PATH).
 - Green verification: `npm test -- lib/lesson-creation/types.test.ts --reporter=dot`
   and `npm run typecheck` (both run through that explicit executable).
+
+### Task 2 — durable queue schema and RPCs
+
+- Owner: database-engineer.
+- Commits: `9ff79f9`, `6817f07`.
+- Review: task review and its R1 re-review approved.
+- Runtime caveat: source-level migration tests and TypeScript verification are
+  accepted, but the real PostgreSQL reset, RLS/grants, atomic claim/recovery,
+  finalize, and quota-concurrency evidence remains a final branch gate.
+
+### Task 3 — provider-free lesson-creation store
+
+- Owner: backend-engineer.
+- Commits: `1a72ace`, review-fix `485ec28`.
+- Output: the service-role store is the only TypeScript persistence boundary;
+  it maps the Task 2 RPC contract, parses public and worker-private rows, and
+  scopes requester lookups by both job and requester.
+- Evidence: the store's ownership mutation was read back, turned its focused
+  checks red, then restored from a checksum-verified copy. The review fix's
+  inherited-RPC regression was red before `Object.hasOwn`; its terminal
+  transition assertion was mutation-checked by nulling `p_error`, observing
+  focused red, and restoring from the verified copy. Focused tests, typecheck,
+  lint, and `git diff --check` were re-run after the fix.
+- Review: independent review returned APPROVE WITH NITS; the two focused fixes
+  are committed and the required re-review returned APPROVE.
