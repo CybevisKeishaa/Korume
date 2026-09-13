@@ -432,4 +432,3 @@ Review \`c1a14e9..HEAD\` against C4, constructing restart and concurrent-enqueue
 git add tests/e2e/lesson-creation-jobs.spec.ts supabase/seed.sql docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md docs/design/screens/screen-shadowing-hub.md docs/superpowers/run-state/c4-lesson-creation-jobs.md docs/lessons.md
 git commit -m "test(shadowing): verify lesson creation jobs end to end"
 \`\`\`
-
