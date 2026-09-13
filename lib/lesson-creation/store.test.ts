@@ -98,7 +98,7 @@ describe("lesson creation store", () => {
     expectRpc(client, "retry_lesson_creation_job", { p_job_id: jobId, p_requester: requesterId });
   });
 
-  it.each(["queued", "running", "succeeded"])("preserves terminal-only retry rejection for %s", async () => {
+  it("propagates the RPC's not-retryable rejection", async () => {
     const error = { message: "job_not_retryable", code: "23505" };
     const client = rpcFixture("retry_lesson_creation_job", null, error);
     await expect(retryRequesterJob(jobId, requesterId)).rejects.toBe(error);
@@ -131,10 +131,16 @@ describe("lesson creation store", () => {
     expectRpc(client, "transition_lesson_creation_job", transitionArgs);
   });
 
-  it("maps transient requeue and terminal failure controls", async () => {
+  it("maps a transient requeue with its available time", async () => {
     const client = rpcFixture("transition_lesson_creation_job", { ...row, public_error_code: "temporary_failure" });
     await transitionClaimedJob({ ...transitionInput, availableAt: now, error: "temporary_failure" });
     expectRpc(client, "transition_lesson_creation_job", { ...transitionArgs, p_available_at: now, p_error: "temporary_failure" });
+  });
+
+  it("maps a terminal transition without a retry time", async () => {
+    const client = rpcFixture("transition_lesson_creation_job", { ...row, state: "failed", step: "failed", public_error_code: "metadata_unavailable" });
+    await transitionClaimedJob({ ...transitionInput, step: "failed", error: "metadata_unavailable" });
+    expectRpc(client, "transition_lesson_creation_job", { ...transitionArgs, p_step: "failed", p_available_at: null, p_error: "metadata_unavailable" });
   });
 
   it.each([
@@ -199,5 +205,11 @@ describe("lesson creation store", () => {
     const client = createMockSupabase({ tables: {} });
     await expect(client.rpc("unknown_job_rpc", { p_job_id: jobId })).rejects.toThrow('no resolver registered for RPC "unknown_job_rpc"');
     expect(client.rpcCalls).toEqual([{ name: "unknown_job_rpc", args: { p_job_id: jobId } }]);
+  });
+
+  it("rejects inherited RPC property names as unregistered", async () => {
+    const client = createMockSupabase({ tables: {}, rpcs: {} });
+    await expect(client.rpc("toString", { p_job_id: jobId })).rejects.toThrow('no resolver registered for RPC "toString"');
+    expect(client.rpcCalls).toEqual([{ name: "toString", args: { p_job_id: jobId } }]);
   });
 });

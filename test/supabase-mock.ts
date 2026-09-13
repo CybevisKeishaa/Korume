@@ -112,7 +112,7 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
   function rpc(name: string, args: Record<string, unknown>): ReturnType<SupabaseClient["rpc"]> {
     rpcCalls.push({ name, args });
     const result = Promise.resolve().then(() => {
-      const resolver = opts.rpcs?.[name];
+      const resolver = opts.rpcs && Object.hasOwn(opts.rpcs, name) ? opts.rpcs[name] : undefined;
       if (!resolver) {
         throw new Error(`createMockSupabase: no resolver registered for RPC "${name}"`);
       }
