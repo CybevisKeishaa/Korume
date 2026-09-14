@@ -249,7 +249,6 @@ describe("createLesson (user mode)", () => {
       lines: [{ startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: null }],
     });
     const sharedMetadata = vi.spyOn(defaultLessonCreationDependencies, "fetchOembed");
-    const sharedCaptions = vi.spyOn(defaultLessonCreationDependencies, "fetchCaptions");
     mockService({
       videos: (calls: QueryCall[]) => {
         if (calls.some((c) => c.op === "insert")) {
@@ -273,7 +272,7 @@ describe("createLesson (user mode)", () => {
 
     expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "fetched" });
     expect(sharedMetadata).toHaveBeenCalledWith(VIDEO_ID);
-    expect(sharedCaptions).toHaveBeenCalledWith(VIDEO_ID);
+    expect(youtubeCaptionProvider.fetch).toHaveBeenCalledWith(VIDEO_ID);
   });
 
   it("creates a brand-new PRIVATE lesson but reports transcriptStatus 'missing' with no quota spent on caption failure", async () => {

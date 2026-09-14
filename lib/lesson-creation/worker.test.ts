@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   claimNextLessonCreationJob,
   finalizeClaimedJob,
@@ -82,10 +82,14 @@ function installRunningStore(claimed = claim()) {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
   vi.clearAllMocks();
   vi.mocked(recoverExpiredLessonCreationJobs).mockResolvedValue(0);
   vi.mocked(claimNextLessonCreationJob).mockResolvedValue(null);
 });
+
+afterEach(() => vi.useRealTimers());
 
 describe("runLessonCreationPass", () => {
   it("recovers leases and returns an idle pass without claiming more than once", async () => {
@@ -152,6 +156,21 @@ describe("runLessonCreationPass", () => {
       step: "failed",
       error: "temporary_failure",
       availableAt: "2026-09-14T03:00:01.000Z",
+    });
+  });
+
+  it("starts the full backoff when a delayed provider fails, using the injected failure clock", async () => {
+    installRunningStore();
+    let currentTime = NOW;
+    const dependency = providers({ fetchCaptions: async () => {
+      currentTime = new Date("2026-09-14T03:00:05.000Z");
+      throw new TransientLessonCreationProviderError("caption connection failed after five seconds");
+    } });
+
+    await expect(runLessonCreationPass(NOW, dependency, () => currentTime)).resolves.toMatchObject({ requeued: 1 });
+    expect(transitionClaimedJob).toHaveBeenLastCalledWith({
+      jobId: JOB_ID, leaseToken: LEASE_TOKEN, step: "failed", error: "temporary_failure",
+      availableAt: "2026-09-14T03:00:06.000Z",
     });
   });
 

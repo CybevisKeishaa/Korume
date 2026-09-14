@@ -100,7 +100,7 @@ export const defaultLessonCreationDependencies: LessonCreationDependencies = {
     return fetchOembed(youtubeVideoId);
   },
   async fetchCaptions(youtubeVideoId: string) {
-    return youtubeCaptionProvider.fetch(youtubeVideoId);
+    return youtubeCaptionProvider.fetchForWorker(youtubeVideoId);
   },
   async toFurigana(text: string) {
     return toFurigana(text);

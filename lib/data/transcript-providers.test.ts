@@ -1,14 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/youtube", () => ({ fetchJapaneseCaptions: vi.fn() }));
+vi.mock("@/lib/youtube", () => ({
+  fetchJapaneseCaptions: vi.fn(),
+  fetchJapaneseCaptionsForWorker: vi.fn(),
+}));
 
-import { fetchJapaneseCaptions } from "@/lib/youtube";
+import { fetchJapaneseCaptions, fetchJapaneseCaptionsForWorker } from "@/lib/youtube";
+import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/worker";
 import { aiTranscriptProvider, youtubeCaptionProvider } from "./transcript-providers";
 
 const VIDEO_ID = "dQw4w9WgXcQ";
 
 beforeEach(() => {
   vi.mocked(fetchJapaneseCaptions).mockReset();
+  vi.mocked(fetchJapaneseCaptionsForWorker).mockReset();
 });
 
 describe("youtubeCaptionProvider", () => {
@@ -28,6 +33,13 @@ describe("youtubeCaptionProvider", () => {
   it("returns null when fetchJapaneseCaptions returns null", async () => {
     vi.mocked(fetchJapaneseCaptions).mockResolvedValue(null);
     await expect(youtubeCaptionProvider.fetch(VIDEO_ID)).resolves.toBeNull();
+  });
+
+  it("exposes typed transient caption errors on the worker path", async () => {
+    const error = new TransientLessonCreationProviderError("caption timedtext transport failed");
+    vi.mocked(fetchJapaneseCaptionsForWorker).mockRejectedValue(error);
+
+    await expect(youtubeCaptionProvider.fetchForWorker(VIDEO_ID)).rejects.toBe(error);
   });
 });
 

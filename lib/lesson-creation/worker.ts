@@ -13,6 +13,8 @@ import {
   type LessonCreationDependencies,
 } from "./pipeline";
 import type { LessonCreationErrorCode } from "./types";
+export { TransientLessonCreationProviderError } from "./errors";
+import { TransientLessonCreationProviderError } from "./errors";
 
 export const MAX_LESSON_CREATION_ATTEMPTS = 3;
 
@@ -27,13 +29,6 @@ export interface LessonCreationPassResult {
   requeued: number;
   failed: number;
   recovered: number;
-}
-
-export class TransientLessonCreationProviderError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
-    super(message, options);
-    this.name = "TransientLessonCreationProviderError";
-  }
 }
 
 export function retryDelayMs(attempt: number): number {
@@ -65,6 +60,7 @@ function terminalErrorCode(error: unknown): LessonCreationErrorCode {
 export async function runLessonCreationPass(
   now: Date,
   deps: LessonCreationDependencies = defaultLessonCreationDependencies,
+  clock: () => Date = () => new Date(),
 ): Promise<LessonCreationPassResult> {
   const timestamp = now.toISOString();
   const recovered = await recoverExpiredLessonCreationJobs(timestamp);
@@ -99,7 +95,7 @@ export async function runLessonCreationPass(
     const retryable = isExplicitlyTransient(error) &&
       claimed.job.attemptCount < MAX_LESSON_CREATION_ATTEMPTS;
     if (retryable) {
-      const availableAt = new Date(now.getTime() + retryDelayMs(claimed.job.attemptCount)).toISOString();
+      const availableAt = new Date(clock().getTime() + retryDelayMs(claimed.job.attemptCount)).toISOString();
       await transitionClaimedJob({
         jobId: claimed.job.id,
         leaseToken: claimed.leaseToken,

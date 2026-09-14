@@ -1,5 +1,5 @@
 import "server-only";
-import { fetchJapaneseCaptions } from "@/lib/youtube";
+import { fetchJapaneseCaptions, fetchJapaneseCaptionsForWorker } from "@/lib/youtube";
 
 export interface ProviderTranscriptLine {
   startTime: number;
@@ -23,14 +23,24 @@ export interface TranscriptProvider {
   fetch(videoId: string): Promise<ProviderTranscriptResult | null>;
 }
 
-export const youtubeCaptionProvider: TranscriptProvider = {
+export interface WorkerTranscriptProvider extends TranscriptProvider {
+  fetchForWorker(videoId: string): Promise<ProviderTranscriptResult | null>;
+}
+
+function toYoutubeCaptionResult(lines: Awaited<ReturnType<typeof fetchJapaneseCaptions>>): ProviderTranscriptResult | null {
+  if (!lines) return null;
+  return {
+    source: "youtube_caption",
+    lines: lines.map((line) => ({ ...line, textTranslation: null })),
+  };
+}
+
+export const youtubeCaptionProvider: WorkerTranscriptProvider = {
   async fetch(videoId: string): Promise<ProviderTranscriptResult | null> {
-    const lines = await fetchJapaneseCaptions(videoId);
-    if (!lines) return null;
-    return {
-      source: "youtube_caption",
-      lines: lines.map((line) => ({ ...line, textTranslation: null })),
-    };
+    return toYoutubeCaptionResult(await fetchJapaneseCaptions(videoId));
+  },
+  async fetchForWorker(videoId: string): Promise<ProviderTranscriptResult | null> {
+    return toYoutubeCaptionResult(await fetchJapaneseCaptionsForWorker(videoId));
   },
 };
 
@@ -46,7 +56,7 @@ export const youtubeCaptionProvider: TranscriptProvider = {
 export const aiTranscriptProvider: {
   fetch(videoId: string): Promise<{ ok: false; status: 501 }>;
 } = {
-  async fetch(_videoId: string) {
+  async fetch() {
     return { ok: false, status: 501 };
   },
 };

@@ -5,6 +5,7 @@ import { requireAdmin, type RequireAdminResult } from "@/lib/admin/guard";
 import { parseVideoId, OembedFetchError } from "@/lib/youtube";
 import { rateLimit } from "@/lib/rate-limit";
 import { defaultLessonCreationDependencies } from "@/lib/lesson-creation/pipeline";
+import { youtubeCaptionProvider } from "@/lib/data/transcript-providers";
 import {
   addToLibrary,
   findExistingLesson,
@@ -94,7 +95,7 @@ async function insertLessonAndFetchTranscript(
 
 /** Attempts the caption-fetch → transcript/transcript_lines insert for an existing lesson row. */
 async function attemptCaptionFetch(lessonId: string, youtubeVideoId: string): Promise<TranscriptStatus> {
-  const captionResult = await defaultLessonCreationDependencies.fetchCaptions(youtubeVideoId);
+  const captionResult = await youtubeCaptionProvider.fetch(youtubeVideoId);
   if (!captionResult) return "missing";
 
   const service = createServiceClient();
