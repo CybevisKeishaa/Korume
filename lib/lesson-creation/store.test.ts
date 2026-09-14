@@ -3,7 +3,7 @@ import { createMockSupabase, eqValue, type MockResult, type QueryCall } from "@/
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   claimNextLessonCreationJob, enqueueLessonCreation, finalizeClaimedJob,
-  getRequesterJob, recoverExpiredLessonCreationJobs, retryRequesterJob, transitionClaimedJob,
+  getRequesterJob, hasStudyableLessonTranscript, recoverExpiredLessonCreationJobs, retryRequesterJob, transitionClaimedJob,
 } from "./store";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
@@ -43,6 +43,54 @@ function expectRpc(client: ReturnType<typeof createMockSupabase>, name: string, 
 beforeEach(() => vi.clearAllMocks());
 
 describe("lesson creation store", () => {
+  it.each([false, true])("checks lines in only the newest transcript before reporting studyable=%s", async (studyable) => {
+    const queries: { table: string; calls: QueryCall[] }[] = [];
+    const client = createMockSupabase({ tables: {
+      transcripts: (calls) => {
+        queries.push({ table: "transcripts", calls });
+        return { data: { id: jobId }, error: null };
+      },
+      transcript_lines: (calls) => {
+        queries.push({ table: "transcript_lines", calls });
+        return { data: studyable ? { id: foreignId } : null, error: null };
+      },
+    } });
+    vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
+
+    expect(await hasStudyableLessonTranscript(lessonId)).toBe(studyable);
+    expect(queries).toEqual([
+      { table: "transcripts", calls: [
+        { op: "select", columns: "id" }, { op: "eq", column: "video_id", value: lessonId },
+        { op: "order", column: "created_at", ascending: false }, { op: "limit", count: 1 }, { op: "maybeSingle" },
+      ] },
+      { table: "transcript_lines", calls: [
+        { op: "select", columns: "id" }, { op: "eq", column: "transcript_id", value: jobId },
+        { op: "limit", count: 1 }, { op: "maybeSingle" },
+      ] },
+    ]);
+    expect(createServiceClient).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not check lines when no transcript exists", async () => {
+    const client = createMockSupabase({ tables: { transcripts: () => ({ data: null, error: null }) } });
+    vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
+    await expect(hasStudyableLessonTranscript(lessonId)).resolves.toBe(false);
+  });
+
+  it.each(["transcripts", "transcript_lines"])("surfaces database and malformed-row errors from %s", async (table) => {
+    for (const result of [
+      { data: null, error: { message: "connection failure", code: "08006" } },
+      { data: { id: "invalid" }, error: null },
+    ]) {
+      const client = createMockSupabase({ tables: {
+        transcripts: () => table === "transcripts" ? result : { data: { id: jobId }, error: null },
+        transcript_lines: () => result,
+      } });
+      vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
+      await expect(hasStudyableLessonTranscript(lessonId)).rejects.toBeDefined();
+    }
+  });
+
   it.each(["queued", "running"])("maps new or active %s enqueue into only public fields", async (state) => {
     const client = rpcFixture("enqueue_lesson_creation_job", { ...row, state });
     expect(await enqueueLessonCreation(enqueueInput)).toEqual({ ...projection, state });

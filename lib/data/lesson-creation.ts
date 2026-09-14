@@ -2,10 +2,9 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin, type RequireAdminResult } from "@/lib/admin/guard";
-import { parseVideoId, fetchOembed, OembedFetchError } from "@/lib/youtube";
-import { toFurigana } from "@/lib/japanese";
+import { parseVideoId, OembedFetchError } from "@/lib/youtube";
 import { rateLimit } from "@/lib/rate-limit";
-import { youtubeCaptionProvider } from "@/lib/data/transcript-providers";
+import { defaultLessonCreationDependencies } from "@/lib/lesson-creation/pipeline";
 import {
   addToLibrary,
   findExistingLesson,
@@ -95,7 +94,7 @@ async function insertLessonAndFetchTranscript(
 
 /** Attempts the caption-fetch → transcript/transcript_lines insert for an existing lesson row. */
 async function attemptCaptionFetch(lessonId: string, youtubeVideoId: string): Promise<TranscriptStatus> {
-  const captionResult = await youtubeCaptionProvider.fetch(youtubeVideoId);
+  const captionResult = await defaultLessonCreationDependencies.fetchCaptions(youtubeVideoId);
   if (!captionResult) return "missing";
 
   const service = createServiceClient();
@@ -111,7 +110,7 @@ async function attemptCaptionFetch(lessonId: string, youtubeVideoId: string): Pr
   for (const line of captionResult.lines) {
     let furigana: unknown = null;
     try {
-      furigana = await toFurigana(line.textJp);
+      furigana = await defaultLessonCreationDependencies.toFurigana(line.textJp);
     } catch (err) {
       // Best-effort, same posture as lib/data/admin-videos.ts::replaceVideoTranscript —
       // a tokenizer hiccup must not fail the whole caption ingest.
@@ -178,7 +177,7 @@ export async function createLesson(input: CreateLessonInput): Promise<CreateLess
   } else {
     let meta;
     try {
-      meta = await fetchOembed(videoId);
+      meta = await defaultLessonCreationDependencies.fetchOembed(videoId);
     } catch (err) {
       if (err instanceof OembedFetchError) return { ok: false, status: 422 };
       throw err;
@@ -211,7 +210,7 @@ export async function createLessonAsAdmin(input: CreateLessonAsAdminInput): Prom
 
   let meta;
   try {
-    meta = await fetchOembed(videoId);
+    meta = await defaultLessonCreationDependencies.fetchOembed(videoId);
   } catch (err) {
     if (err instanceof OembedFetchError) return { ok: false, status: 422 };
     throw err;

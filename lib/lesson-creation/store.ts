@@ -85,6 +85,24 @@ async function callRpc(name: string, args: Record<string, unknown>): Promise<unk
   return data;
 }
 
+/** Service-role dedup may inspect private lessons; only a boolean leaves this lookup. */
+export async function hasStudyableLessonTranscript(lessonId: string): Promise<boolean> {
+  const client = createServiceClient();
+  // Match getTranscript and finalization: an older complete header cannot hide a newer empty one.
+  const { data: header, error: headerError } = await client.from("transcripts")
+    .select("id").eq("video_id", lessonId)
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (headerError) throw headerError;
+  if (header === null) return false;
+  const transcript = z.object({ id: z.string().uuid() }).strict().parse(header);
+  const { data: line, error: lineError } = await client.from("transcript_lines")
+    .select("id").eq("transcript_id", transcript.id).limit(1).maybeSingle();
+  if (lineError) throw lineError;
+  if (line === null) return false;
+  z.object({ id: z.string().uuid() }).strict().parse(line);
+  return true;
+}
+
 export async function enqueueLessonCreation(input: EnqueueLessonCreationInput): Promise<EnqueueResult> {
   return projectRow(await callRpc("enqueue_lesson_creation_job", {
     p_requester: input.requesterId,

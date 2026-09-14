@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/admin/guard";
 import { fetchOembed, OembedFetchError } from "@/lib/youtube";
 import { toFurigana } from "@/lib/japanese";
+import { defaultLessonCreationDependencies } from "@/lib/lesson-creation/pipeline";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
@@ -40,6 +41,7 @@ function mockService(tables: Parameters<typeof createMockSupabase>[0]["tables"])
 }
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.mocked(createClient).mockReset();
   vi.mocked(createServiceClient).mockReset();
   vi.mocked(requireAdmin).mockReset();
@@ -246,6 +248,8 @@ describe("createLesson (user mode)", () => {
       source: "youtube_caption",
       lines: [{ startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: null }],
     });
+    const sharedMetadata = vi.spyOn(defaultLessonCreationDependencies, "fetchOembed");
+    const sharedCaptions = vi.spyOn(defaultLessonCreationDependencies, "fetchCaptions");
     mockService({
       videos: (calls: QueryCall[]) => {
         if (calls.some((c) => c.op === "insert")) {
@@ -268,6 +272,8 @@ describe("createLesson (user mode)", () => {
     const result = await createLesson({ youtubeUrl: YOUTUBE_URL });
 
     expect(result).toMatchObject({ ok: true, alreadyInLibrary: false, transcriptStatus: "fetched" });
+    expect(sharedMetadata).toHaveBeenCalledWith(VIDEO_ID);
+    expect(sharedCaptions).toHaveBeenCalledWith(VIDEO_ID);
   });
 
   it("creates a brand-new PRIVATE lesson but reports transcriptStatus 'missing' with no quota spent on caption failure", async () => {
