@@ -16,6 +16,7 @@ export async function register() {
   const { aiEnvSpec } = await import("@/lib/ai/registry");
   const { speechEnvSpec } = await import("@/lib/speech-scoring/env");
   const { emailEnvSpec } = await import("@/lib/email/registry");
+  const { lessonCreationWorkerEnvSpec } = await import("@/lib/lesson-creation/env");
   // Whole-branch review, I2: `SCHEDULER_ENABLED` was read raw inside
   // `startScheduler` and registered nowhere, so `=1`, `=TRUE`, `=yes` or a
   // typo all meant "silently never execute anybody's deletion" while the app
@@ -25,6 +26,7 @@ export async function register() {
 
   registerEnvSpec(aiEnvSpec);
   registerEnvSpec(speechEnvSpec);
+  registerEnvSpec(lessonCreationWorkerEnvSpec);
   registerEnvSpec(schedulerEnvSpec);
   registerEnvSpec(emailEnvSpec);
   validateEnv();
@@ -35,4 +37,6 @@ export async function register() {
   // changes nothing for any deployment that has not opted in.
   const { startScheduler } = await import("@/lib/scheduler/start");
   startScheduler();
+  const { startLessonCreationWorker } = await import("@/lib/lesson-creation/start");
+  startLessonCreationWorker();
 }
