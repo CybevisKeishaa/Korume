@@ -20,10 +20,10 @@ The machine-local SDD ledger at `.superpowers/sdd/2026-09-13-lesson-creation-job
 
 ## Status
 
-Tasks 1–3 are complete and task-reviewed. Task 2's required live PostgreSQL
+Tasks 1–4 are complete and task-reviewed. Task 2's required live PostgreSQL
 reset/RLS/concurrency gate remains blocked by Docker access and is a final
 branch-acceptance gate, not a substituteable source-test result. The next
-owned task is Task 4 (idempotent pipeline and one claimed worker pass).
+owned task is Task 5 (explicit Node worker startup and lifecycle).
 
 ## Resume protocol
 
@@ -75,3 +75,27 @@ lessons by id only; the applicable Task 1 controls include `L-001`, `L-004`,
   lint, and `git diff --check` were re-run after the fix.
 - Review: independent review returned APPROVE WITH NITS; the two focused fixes
   are committed and the required re-review returned APPROVE.
+
+### Task 4 — idempotent pipeline and worker pass
+
+- Owner: backend-engineer.
+- Commits: `bcb073a`, fix round 1 `fdcd5af`.
+- Output: the only asynchronous path to metadata/captions and complete
+  transcript finalization. It re-reads durable state across restartable steps,
+  keeps furigana best-effort per line, and executes at most one recovered and
+  claimed job per pass. The legacy synchronous callers remain until Task 6.
+- Ruling: the pipeline's default dedup checks through a narrow service-role
+  store helper that the newest transcript header has a line; a header alone
+  cannot satisfy Task 2 finalization's studyable-transcript contract.
+- Evidence: the required durable-read and retry-delay mutations turned their
+  focused checks red and were restored from checksum-verified copies. The
+  fix-round mutations prove failure-time retry scheduling; focused scope,
+  full Vitest scope excluding `.worktrees/**`, typecheck, lint, and
+  `git diff --check` were run. The final full-run wrapper forwards native npm
+  exit status because redirected Vite warning stderr otherwise changes
+  PowerShell's wrapper status without changing the test process result.
+- Review: task review found transient-caption classification and pass-start
+  retry timing defects. Fix round 1 preserves the legacy null-compatible
+  synchronous adapter while the worker path carries explicit 429/503/transport
+  failures, and derives availability at failure time. Scoped re-review:
+  APPROVE.
