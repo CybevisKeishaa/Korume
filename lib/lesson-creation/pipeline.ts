@@ -6,7 +6,6 @@ import {
   type ProviderTranscriptResult,
 } from "@/lib/data/transcript-providers";
 import type { VideoRow } from "@/lib/data/videos";
-import { toFurigana } from "@/lib/japanese";
 import { fetchOembed } from "@/lib/youtube";
 import { sanitizeTranscriptText } from "@/lib/transcript";
 import {
@@ -103,6 +102,7 @@ export const defaultLessonCreationDependencies: LessonCreationDependencies = {
     return youtubeCaptionProvider.fetchForWorker(youtubeVideoId);
   },
   async toFurigana(text: string) {
+    const { toFurigana } = await import("@/lib/japanese");
     return toFurigana(text);
   },
 };
