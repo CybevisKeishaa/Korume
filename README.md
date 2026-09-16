@@ -14,6 +14,7 @@ GSAP + Lenis + Framer Motion · Vitest + Playwright.
 | `japanese-learning-app-spec.md` | Spec sản phẩm đầy đủ: modules, DB schema, API endpoints |
 | `docs/product/business-model.md` | **Nguồn chân lý** cho thị trường & monetization (supersede spec §3.12) |
 | `.codex/docs/workflow.md` | Agent roster, routing, 8 lớp build, branching policy |
+| `docs/agent-onboarding.md` | Setup Serena/Codex/Claude và thứ tự đọc context khi onboard |
 | `docs/features/` | F-001..F-016 — feature briefs |
 
 Khi spec và `business-model.md` xung đột: **business-model.md thắng**.
