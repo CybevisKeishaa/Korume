@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { lessonCreationWorkerEnvSpec } from "./env";
+import { afterEach, describe, expect, it } from "vitest";
+import { isLessonCreationWorkerEnabled, lessonCreationWorkerEnvSpec } from "./env";
 
 describe("lessonCreationWorkerEnvSpec", () => {
   const parse = (env: Record<string, string>) => lessonCreationWorkerEnvSpec.schema.safeParse(env);
@@ -35,5 +35,36 @@ describe("lessonCreationWorkerEnvSpec", () => {
 
   it("is registered under its own env spec name", () => {
     expect(lessonCreationWorkerEnvSpec.name).toBe("lesson-creation-worker");
+  });
+});
+
+describe("isLessonCreationWorkerEnabled", () => {
+  const ORIGINAL = process.env.LESSON_CREATION_WORKER_ENABLED;
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env.LESSON_CREATION_WORKER_ENABLED;
+    else process.env.LESSON_CREATION_WORKER_ENABLED = ORIGINAL;
+  });
+
+  it("is enabled by the exact literal only", () => {
+    process.env.LESSON_CREATION_WORKER_ENABLED = "true";
+    expect(isLessonCreationWorkerEnabled()).toBe(true);
+  });
+
+  const DISABLING = ["false", "TRUE", "True", "1", "yes", " true", ""];
+
+  it("checks every disabling value, not an empty list", () => {
+    expect(DISABLING).toHaveLength(7);
+    expect(new Set(DISABLING).size).toBe(DISABLING.length);
+  });
+
+  it.each(DISABLING)("treats %o as disabled", (value) => {
+    process.env.LESSON_CREATION_WORKER_ENABLED = value;
+    expect(isLessonCreationWorkerEnabled()).toBe(false);
+  });
+
+  it("treats unset as deliberately disabled", () => {
+    delete process.env.LESSON_CREATION_WORKER_ENABLED;
+    expect(isLessonCreationWorkerEnabled()).toBe(false);
   });
 });

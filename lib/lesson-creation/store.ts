@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { FuriganaSegment } from "@/lib/japanese/types";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
-  lessonCreationJobProjectionSchema,
-  type LessonCreationErrorCode, type LessonCreationJobProjection, type LessonCreationStep,
+  lessonCreationJobEventSchema, lessonCreationJobProjectionSchema,
+  type LessonCreationErrorCode, type LessonCreationJobEvent, type LessonCreationJobProjection, type LessonCreationStep,
 } from "./types";
 
 export type EnqueueLessonCreationInput = {
@@ -18,6 +18,7 @@ export type FinalizeOutcome = LessonCreationJobProjection | null;
 
 const leaseSeconds = 120;
 const publicColumns = "id,state,step,attempt_count,lesson_id,public_error_code,updated_at";
+const publicEventColumns = "state,step,attempt_count,public_error_code,created_at";
 const rowSchema = z.record(z.unknown());
 const privateClaimSchema = z.object({
   requesterId: z.string().uuid(),
@@ -122,6 +123,31 @@ export async function getRequesterJob(jobId: string, requesterId: string): Promi
     .maybeSingle();
   if (error) throw error;
   return data === null ? null : projectRow(data);
+}
+
+/**
+ * One job's append-only transition history, oldest first.
+ *
+ * ⚠️ Ownership is NOT checked here and cannot be: the events table carries no
+ * requester column, and this reads through the service role, which bypasses
+ * RLS. Call it only after `getRequesterJob` has returned a row for the same
+ * caller — reading history for an id the caller does not own would disclose
+ * that someone else's job exists.
+ */
+export async function listJobEventsForOwnedJob(jobId: string): Promise<LessonCreationJobEvent[]> {
+  const client = createServiceClient();
+  const { data, error } = await client.from("lesson_creation_job_events")
+    .select(publicEventColumns)
+    .eq("job_id", jobId)
+    .order("id", { ascending: true });
+  if (error) throw error;
+  return z.array(rowSchema).parse(data).map((row) => lessonCreationJobEventSchema.parse({
+    state: row.state,
+    step: row.step,
+    attemptCount: row.attempt_count,
+    publicErrorCode: row.public_error_code,
+    createdAt: row.created_at,
+  }));
 }
 
 export async function retryRequesterJob(jobId: string, requesterId: string): Promise<RetryResult> {

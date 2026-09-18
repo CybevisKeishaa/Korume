@@ -20,3 +20,15 @@ export const lessonCreationWorkerEnvSpec: EnvSpec<LessonCreationWorkerEnvShape> 
   name: "lesson-creation-worker",
   schema: lessonCreationWorkerEnvSchema,
 };
+
+/**
+ * The single home of the "is the worker running?" rule, shared by the process
+ * that starts it and the endpoints that refuse to record work for it. Only the
+ * exact literal enables it: an unset, misspelled, or near-miss value means a
+ * queued job would sit untouched forever, so an enqueue must fail loudly
+ * instead. Read at call time — the startup spec above validates the value; this
+ * only interprets it.
+ */
+export function isLessonCreationWorkerEnabled(): boolean {
+  return process.env.LESSON_CREATION_WORKER_ENABLED === "true";
+}

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { enqueueLearnerLessonCreationJob } from "@/lib/data/lesson-creation-jobs";
-import { enqueueLessonCreationSchema } from "@/lib/validation/lesson-creation";
+import { enqueueAdminLessonCreationJob } from "@/lib/data/lesson-creation-jobs";
+import { adminEnqueueLessonCreationSchema } from "@/lib/validation/lesson-creation";
 
 /**
- * The learner entry point keeps its path and its request body, but no longer
- * blocks on metadata or captions: it queues durable work and answers `202`
- * with the job to poll. A `202` never means a lesson exists — that is what the
- * job projection is for.
+ * Catalogue seeding uses the same queue and the same worker as a learner's own
+ * creation — there is no special synchronous admin path. `origin` is forced
+ * server-side; the body may only name the video and a shippable access level
+ * (`PRIVATE` belongs to the learner origin and the schema rejects it).
  */
 export async function POST(request: Request) {
   let body: unknown;
@@ -16,15 +16,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = enqueueLessonCreationSchema.safeParse(body);
+  const parsed = adminEnqueueLessonCreationSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Invalid video URL", details: parsed.error.flatten().fieldErrors },
+      { error: "Invalid lesson creation request", details: parsed.error.flatten().fieldErrors },
       { status: 400 },
     );
   }
 
-  const result = await enqueueLearnerLessonCreationJob({ youtubeVideoId: parsed.data.youtubeVideoId });
+  const result = await enqueueAdminLessonCreationJob({
+    youtubeVideoId: parsed.data.youtubeVideoId,
+    libraryAccess: parsed.data.libraryAccess,
+  });
   if (!result.ok) {
     if (result.status === 429) {
       return NextResponse.json(
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
       result.status === 401
         ? "Unauthorized"
         : result.status === 403
-          ? "Monthly lesson quota reached"
+          ? "Forbidden"
           : "Lesson creation is temporarily unavailable";
     return NextResponse.json({ error: message }, { status: result.status });
   }

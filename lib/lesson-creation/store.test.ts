@@ -3,7 +3,8 @@ import { createMockSupabase, eqValue, type MockResult, type QueryCall } from "@/
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   claimNextLessonCreationJob, enqueueLessonCreation, finalizeClaimedJob,
-  getRequesterJob, hasStudyableLessonTranscript, recoverExpiredLessonCreationJobs, retryRequesterJob, transitionClaimedJob,
+  getRequesterJob, hasStudyableLessonTranscript, listJobEventsForOwnedJob,
+  recoverExpiredLessonCreationJobs, retryRequesterJob, transitionClaimedJob,
 } from "./store";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
@@ -23,6 +24,10 @@ const projection = {
   id: jobId, state: "queued", step: "deduplicating", attemptCount: 0,
   lessonId: null, publicErrorCode: null, updatedAt: now,
 };
+const eventRow = {
+  state: "queued", step: "deduplicating", attempt_count: 0, public_error_code: null, created_at: now,
+};
+const event = { state: "queued", step: "deduplicating", attemptCount: 0, publicErrorCode: null, createdAt: now };
 const enqueueInput = { requesterId, origin: "learner" as const, requestedAccess: "PRIVATE" as const, youtubeVideoId: "abcdefghijk" };
 const enqueueArgs = { p_requester: requesterId, p_origin: "learner", p_access: "PRIVATE", p_youtube_video_id: "abcdefghijk" };
 const transitionInput = { jobId, leaseToken, step: "fetching_transcript" as const };
@@ -259,5 +264,38 @@ describe("lesson creation store", () => {
     const client = createMockSupabase({ tables: {}, rpcs: {} });
     await expect(client.rpc("toString", { p_job_id: jobId })).rejects.toThrow('no resolver registered for RPC "toString"');
     expect(client.rpcCalls).toEqual([{ name: "toString", args: { p_job_id: jobId } }]);
+  });
+
+  it("reads one job's event history in durable order", async () => {
+    let query: QueryCall[] = [];
+    const client = createMockSupabase({ tables: { lesson_creation_job_events: (calls) => {
+      query = calls;
+      return { data: [eventRow, { ...eventRow, state: "running", step: "fetching_metadata", attempt_count: 1 }], error: null };
+    } } });
+    vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
+    expect(await listJobEventsForOwnedJob(jobId)).toEqual([
+      event,
+      { ...event, state: "running", step: "fetching_metadata", attemptCount: 1 },
+    ]);
+    expect(query).toEqual([
+      { op: "select", columns: "state,step,attempt_count,public_error_code,created_at" },
+      { op: "eq", column: "job_id", value: jobId },
+      { op: "order", column: "id", ascending: true },
+    ]);
+  });
+
+  it("returns no history rather than inventing one for a job with no events", async () => {
+    const client = createMockSupabase({ tables: { lesson_creation_job_events: () => ({ data: [], error: null }) } });
+    vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
+    expect(await listJobEventsForOwnedJob(jobId)).toEqual([]);
+  });
+
+  it.each([
+    { data: [{ ...eventRow, step: "bogus" }], error: null },
+    { data: null, error: { message: "history unavailable", code: "08006" } },
+  ])("throws history database/parse errors", async (result) => {
+    const client = createMockSupabase({ tables: { lesson_creation_job_events: () => result } });
+    vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
+    await expect(listJobEventsForOwnedJob(jobId)).rejects.toBeDefined();
   });
 });

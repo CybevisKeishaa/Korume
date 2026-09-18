@@ -1,0 +1,273 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMockSupabase } from "@/test/supabase-mock";
+import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/admin/guard";
+import { rateLimit } from "@/lib/rate-limit";
+import { isUnderQuota } from "@/lib/data/lesson-library";
+import {
+  enqueueLessonCreation,
+  getRequesterJob,
+  listJobEventsForOwnedJob,
+  retryRequesterJob,
+} from "@/lib/lesson-creation/store";
+
+vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/admin/guard", () => ({ requireAdmin: vi.fn() }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
+vi.mock("@/lib/data/lesson-library", () => ({ isUnderQuota: vi.fn() }));
+vi.mock("@/lib/lesson-creation/store", () => ({
+  enqueueLessonCreation: vi.fn(),
+  getRequesterJob: vi.fn(),
+  listJobEventsForOwnedJob: vi.fn(),
+  retryRequesterJob: vi.fn(),
+}));
+
+import {
+  enqueueAdminLessonCreationJob,
+  enqueueLearnerLessonCreationJob,
+  readAdminLessonCreationJob,
+  readLearnerLessonCreationJob,
+  retryAdminLessonCreationJob,
+  retryLearnerLessonCreationJob,
+} from "./lesson-creation-jobs";
+
+const USER = { id: "11111111-1111-4111-8111-111111111111" };
+const ADMIN = { id: "22222222-2222-4222-8222-222222222222", email: "admin@example.com" };
+const JOB_ID = "33333333-3333-4333-8333-333333333333";
+const VIDEO_ID = "dQw4w9WgXcQ";
+const ORIGINAL_WORKER_FLAG = process.env.LESSON_CREATION_WORKER_ENABLED;
+
+const JOB = {
+  id: JOB_ID,
+  state: "queued" as const,
+  step: "deduplicating" as const,
+  attemptCount: 0,
+  lessonId: null,
+  publicErrorCode: null,
+  updatedAt: "2026-09-19T08:00:00.000Z",
+};
+const EVENT = {
+  state: "queued" as const,
+  step: "deduplicating" as const,
+  attemptCount: 0,
+  publicErrorCode: null,
+  createdAt: "2026-09-19T08:00:00.000Z",
+};
+
+function signedInAs(user: { id: string } | null) {
+  const supabase = createMockSupabase({ user, tables: {} });
+  vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  process.env.LESSON_CREATION_WORKER_ENABLED = "true";
+  signedInAs(USER);
+  vi.mocked(rateLimit).mockReturnValue({ ok: true, retryAfter: 0 });
+  vi.mocked(isUnderQuota).mockResolvedValue(true);
+  vi.mocked(requireAdmin).mockResolvedValue({ ok: true, user: ADMIN });
+  vi.mocked(enqueueLessonCreation).mockResolvedValue(JOB);
+  vi.mocked(getRequesterJob).mockResolvedValue(JOB);
+  vi.mocked(listJobEventsForOwnedJob).mockResolvedValue([EVENT]);
+  vi.mocked(retryRequesterJob).mockResolvedValue(JOB);
+});
+
+afterEach(() => {
+  if (ORIGINAL_WORKER_FLAG === undefined) delete process.env.LESSON_CREATION_WORKER_ENABLED;
+  else process.env.LESSON_CREATION_WORKER_ENABLED = ORIGINAL_WORKER_FLAG;
+});
+
+describe("enqueueLearnerLessonCreationJob", () => {
+  it("queues a learner-origin PRIVATE job for the authenticated requester", async () => {
+    expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({ ok: true, data: JOB });
+
+    expect(enqueueLessonCreation).toHaveBeenCalledWith({
+      requesterId: USER.id,
+      origin: "learner",
+      requestedAccess: "PRIVATE",
+      youtubeVideoId: VIDEO_ID,
+    });
+  });
+
+  it("refuses an anonymous caller before any queue work", async () => {
+    signedInAs(null);
+
+    expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({ ok: false, status: 401 });
+    expect(rateLimit).not.toHaveBeenCalled();
+    expect(enqueueLessonCreation).not.toHaveBeenCalled();
+  });
+
+  it("reports the rate limiter's own retry delay", async () => {
+    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 4200 });
+
+    expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({
+      ok: false,
+      status: 429,
+      retryAfter: 4200,
+    });
+    expect(rateLimit).toHaveBeenCalledWith(`lessons:create:${USER.id}`, { limit: 20, windowMs: 60_000 });
+    expect(enqueueLessonCreation).not.toHaveBeenCalled();
+  });
+
+  it.each([["false"], [undefined], ["TRUE"], ["1"]])(
+    "refuses to record a job the worker will never run (flag %s)",
+    async (flag) => {
+      if (flag === undefined) delete process.env.LESSON_CREATION_WORKER_ENABLED;
+      else process.env.LESSON_CREATION_WORKER_ENABLED = flag;
+
+      expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({ ok: false, status: 503 });
+      expect(enqueueLessonCreation).not.toHaveBeenCalled();
+      // A disabled service must not also claim the learner is out of quota.
+      expect(isUnderQuota).not.toHaveBeenCalled();
+    },
+  );
+
+  it("gives an exhausted learner the advisory quota refusal", async () => {
+    vi.mocked(isUnderQuota).mockResolvedValue(false);
+
+    expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({ ok: false, status: 403 });
+    expect(isUnderQuota).toHaveBeenCalledWith(USER.id);
+    expect(enqueueLessonCreation).not.toHaveBeenCalled();
+  });
+});
+
+describe("enqueueAdminLessonCreationJob", () => {
+  it("queues an admin-origin job at the requested access level", async () => {
+    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "PLUS" })).toEqual({
+      ok: true,
+      data: JOB,
+    });
+
+    expect(enqueueLessonCreation).toHaveBeenCalledWith({
+      requesterId: ADMIN.id,
+      origin: "admin",
+      requestedAccess: "PLUS",
+      youtubeVideoId: VIDEO_ID,
+    });
+  });
+
+  it("never spends a learner quota slot on catalogue work", async () => {
+    await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" });
+
+    expect(isUnderQuota).not.toHaveBeenCalled();
+  });
+
+  it.each([[401 as const], [403 as const]])("passes the admin guard's own %i through", async (status) => {
+    vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status });
+
+    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" })).toEqual({
+      ok: false,
+      status,
+    });
+    expect(enqueueLessonCreation).not.toHaveBeenCalled();
+  });
+
+  it("refuses while the worker is disabled", async () => {
+    process.env.LESSON_CREATION_WORKER_ENABLED = "false";
+
+    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" })).toEqual({
+      ok: false,
+      status: 503,
+    });
+    expect(enqueueLessonCreation).not.toHaveBeenCalled();
+  });
+
+  it("rate-limits the admin queue action under its own key", async () => {
+    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 1500 });
+
+    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" })).toEqual({
+      ok: false,
+      status: 429,
+      retryAfter: 1500,
+    });
+    expect(rateLimit).toHaveBeenCalledWith(`lessons:create:admin:${ADMIN.id}`, { limit: 20, windowMs: 60_000 });
+  });
+});
+
+describe("readLearnerLessonCreationJob", () => {
+  it("returns the owner's projection with its durable event history", async () => {
+    expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: { job: JOB, events: [EVENT] } });
+
+    expect(getRequesterJob).toHaveBeenCalledWith(JOB_ID, USER.id);
+    expect(listJobEventsForOwnedJob).toHaveBeenCalledWith(JOB_ID);
+  });
+
+  it("cannot tell a foreign job from a missing one", async () => {
+    vi.mocked(getRequesterJob).mockResolvedValue(null);
+
+    expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 404 });
+    // Reading events for an unowned job would leak that it exists.
+    expect(listJobEventsForOwnedJob).not.toHaveBeenCalled();
+  });
+
+  it("refuses an anonymous reader", async () => {
+    signedInAs(null);
+
+    expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 401 });
+    expect(getRequesterJob).not.toHaveBeenCalled();
+  });
+});
+
+describe("readAdminLessonCreationJob", () => {
+  it("scopes an admin read to the jobs that admin requested", async () => {
+    expect(await readAdminLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: { job: JOB, events: [EVENT] } });
+
+    expect(getRequesterJob).toHaveBeenCalledWith(JOB_ID, ADMIN.id);
+  });
+
+  it("passes the admin guard's refusal through", async () => {
+    vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 403 });
+
+    expect(await readAdminLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 403 });
+    expect(getRequesterJob).not.toHaveBeenCalled();
+  });
+});
+
+describe("retryLearnerLessonCreationJob", () => {
+  it("queues a fresh attempt for the owner's failed job", async () => {
+    expect(await retryLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: JOB });
+
+    expect(retryRequesterJob).toHaveBeenCalledWith(JOB_ID, USER.id);
+  });
+
+  it("cannot tell a foreign job from a missing one", async () => {
+    vi.mocked(retryRequesterJob).mockResolvedValue(null);
+
+    expect(await retryLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 404 });
+  });
+
+  it("maps the database's not-retryable rejection to a conflict", async () => {
+    vi.mocked(retryRequesterJob).mockRejectedValue({ message: "job_not_retryable", code: "23505" });
+
+    expect(await retryLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 409 });
+  });
+
+  it("never swallows an unrelated database failure as a conflict", async () => {
+    const outage = { message: "connection failure", code: "08006" };
+    vi.mocked(retryRequesterJob).mockRejectedValue(outage);
+
+    await expect(retryLearnerLessonCreationJob(JOB_ID)).rejects.toBe(outage);
+  });
+
+  it("refuses an anonymous caller", async () => {
+    signedInAs(null);
+
+    expect(await retryLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 401 });
+    expect(retryRequesterJob).not.toHaveBeenCalled();
+  });
+});
+
+describe("retryAdminLessonCreationJob", () => {
+  it("scopes an admin retry to the jobs that admin requested", async () => {
+    expect(await retryAdminLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: JOB });
+
+    expect(retryRequesterJob).toHaveBeenCalledWith(JOB_ID, ADMIN.id);
+  });
+
+  it("passes the admin guard's refusal through", async () => {
+    vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 401 });
+
+    expect(await retryAdminLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 401 });
+    expect(retryRequesterJob).not.toHaveBeenCalled();
+  });
+});

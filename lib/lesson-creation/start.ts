@@ -1,4 +1,5 @@
 import "server-only";
+import { isLessonCreationWorkerEnabled } from "./env";
 import { runLessonCreationPass } from "./worker";
 
 const TICK_MS = 5_000;
@@ -21,7 +22,7 @@ export function resetLessonCreationWorkerForTests(): void {
 export function startLessonCreationWorker(): void {
   const g = globalThis as GlobalWithLessonCreationWorker;
   if (g[LESSON_CREATION_WORKER_STARTED]) return;
-  if (process.env.LESSON_CREATION_WORKER_ENABLED !== "true") {
+  if (!isLessonCreationWorkerEnabled()) {
     console.info(
       '[lesson-creation-worker] disabled (LESSON_CREATION_WORKER_ENABLED is not "true")',
     );

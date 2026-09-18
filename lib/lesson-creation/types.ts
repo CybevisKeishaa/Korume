@@ -86,3 +86,28 @@ export const lessonCreationJobProjectionSchema = z
 export function isTerminalJobState(state: LessonCreationJobState): state is TerminalLessonCreationJobState {
   return state === "succeeded" || state === "failed";
 }
+
+/**
+ * One durable transition from the append-only event table, as its requester
+ * may see it. This is the only history a surface is allowed to present as
+ * completed work: a step inferred from the current projection would be a
+ * guess, and after a retry resets the attempt it would be a wrong one.
+ * Requester and lease fields stay behind the store boundary here too.
+ */
+export interface LessonCreationJobEvent {
+  state: LessonCreationJobState;
+  step: LessonCreationStep;
+  attemptCount: number;
+  publicErrorCode: LessonCreationErrorCode | null;
+  createdAt: string;
+}
+
+export const lessonCreationJobEventSchema = z
+  .object({
+    state: z.enum(LESSON_CREATION_JOB_STATES),
+    step: z.enum(LESSON_CREATION_STEPS),
+    attemptCount: z.number().int().nonnegative(),
+    publicErrorCode: z.enum(LESSON_CREATION_ERROR_CODES).nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
