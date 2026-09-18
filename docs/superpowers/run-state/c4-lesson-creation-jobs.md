@@ -33,7 +33,8 @@ C4 is a backend subsystem, not a Figma screen port. It is outside the
 | 4 — idempotent pipeline and worker pass | `bcb073a` | `fdcd5af` | APPROVE after R1 |
 | 5 — Node worker lifecycle | `8c6fb4b` | `13267fc`, `0cb3567` | R1 approved; **R2 unreviewed** |
 
-Checkpoints: `8a77112`, `c6f40de`.
+Live database gate: `ed0a8f0`.
+Checkpoints: `8a77112`, `c6f40de`, `bb72328`.
 
 Tasks 6 (learner/admin APIs), 7 (progress UI) and 8 (integration, browser,
 docs) are not started.
@@ -60,6 +61,20 @@ docs) are not started.
 
 ## Verification
 
+- **Task 2's live PostgreSQL gate, 2026-09-19 (`ed0a8f0`) — cleared.** A full
+  `supabase db reset` applied all 32 migrations on PostgreSQL 15.8, then
+  `npm run verify:db:lesson-jobs` passed: grants, enqueue idempotency and the
+  partial unique index, admin-origin enforcement, lease recovery (requeue at
+  attempt 1, terminal at 3), the event trigger, RLS read isolation as the
+  authenticated role, finalize's lease fence and atomicity, the success path,
+  and the free-tier quota cap. Two sessions racing for one queued job produced
+  exactly one claim, one NULL, and a job left at attempt 1 — a second claim
+  would have made it 2 — and the loser returned in ~2s rather than waiting on
+  the 5s holder, which is `skip locked` rather than lock contention.
+  Mutation-checked twice: `using (true)` on the RLS policy reported 3 foreign
+  rows, and re-granting UPDATE on the event table reported `service_role can
+  still rewrite events: UPDATE`. One control was added after the RLS check was
+  caught passing vacuously against a null `auth.uid()` (L-004).
 - Baseline 2026-09-13: 2745 passing tests across 897 files, via
   `npm test -- --exclude '.worktrees/**' --reporter=json`.
 - Tasks 1–5 each ran TDD red first, then focused green, typecheck, and
@@ -93,20 +108,16 @@ docs) are not started.
 
 ## Blockers
 
-- **Task 2's live PostgreSQL gate has never run.** Reset, RLS and grants,
-  atomic claim and recovery, finalize, and quota concurrency are all accepted
-  at source level only. It is a final branch-acceptance gate and cannot be
-  substituted by a source test. It was blocked by Docker access for every
-  Codex session; it is not blocked now, and running it needs a local
-  `supabase db reset`, which is destructive to local development data and
-  therefore needs the owner's say-so.
-- Task 5 fix round 2 is committed but has had no independent review. Claude
-  wrote it, so the asymmetric review rule does not cover it.
+- None blocking implementation. Task 2's live PostgreSQL gate — the branch's
+  one long-standing blocker — ran on 2026-09-19 with the owner's approval and
+  passed; see Verification and `ed0a8f0`.
+- Review debt: Task 5 fix round 2 (`0cb3567`), the live gate (`ed0a8f0`) and
+  everything from Task 6 onward are being written by Claude, so the asymmetric
+  review rule does not cover them. The whole-branch review must carry them.
 
 ## Next actions
 
-1. Owner decision on running the live PostgreSQL gate (it resets the local DB).
-2. Task 6 — replace the synchronous learner/admin import endpoints with job
+1. Task 6 — replace the synchronous learner/admin import endpoints with job
    APIs that observe `LESSON_CREATION_WORKER_ENABLED` and return the
-   disabled-worker `503`. Owner: whoever implements next.
-3. Tasks 7 and 8 follow, then the mandatory whole-branch review.
+   disabled-worker `503`.
+2. Tasks 7 and 8 follow, then the mandatory whole-branch review.
