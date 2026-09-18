@@ -12,12 +12,22 @@ $requiredRoles = @(
   'ai-engineer', 'backend-engineer', 'code-reviewer', 'database-engineer',
   'frontend-engineer', 'motion-engineer', 'tech-lead', 'test-engineer'
 )
+$requiredCommands = @(
+  'build-layer', 'new-module', 'review-changes', 'create-task-packet',
+  'checkpoint-branch'
+)
 $requiredHeadings = @(
   '# Branch Run State', '## Goal and scope', '## Authorities',
   '## Accepted commits', '## Contracts and decisions',
   '## Verification', '## Working tree and environment',
   '## Blockers', '## Next actions'
 )
+
+# A Claude Code adapter stub exists only to route a harness that cannot load
+# .toml role definitions. It must stay small enough to hold no fact of its own
+# and must name the canonical file it defers to (see the 2026-09-19
+# dual-harness design, D1a).
+$maxStubLines = 25
 
 $Root = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path.TrimEnd('\', '/')
 $violations = @()
@@ -49,34 +59,39 @@ function Test-RequiredFile {
   return $true
 }
 
-function Test-RetiredPathReferences {
+function Test-CanonicalCodexPaths {
   param([string[]] $Paths)
 
   foreach ($path in $Paths) {
     $content = Get-Content -LiteralPath $path -Raw
-    $hasRetiredClaudePath = $content -imatch '\.claude/'
+    if ($null -eq $content) {
+      $content = ''
+    }
+
     $hasNonCanonicalCodexPath = @(
       [regex]::Matches($content, '\.codex/', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) |
         Where-Object { $_.Value -cne '.codex/' }
     ).Count -gt 0
-    if ($hasRetiredClaudePath -or $hasNonCanonicalCodexPath) {
-      Add-Violation -RelativePath (Get-ProtocolRelativePath $path) -Message 'contains a retired .claude/ path or noncanonical .codex/ path'
+    if ($hasNonCanonicalCodexPath) {
+      Add-Violation -RelativePath (Get-ProtocolRelativePath $path) -Message 'contains a noncanonical .codex/ path'
     }
   }
 }
 
+# --- Required protocol artifacts ---------------------------------------------
+# Both harnesses must be represented: the canonical Codex definition and the
+# Claude Code stub that defers to it.
+
 $requiredFiles = @('AGENTS.md', '.codex/docs/workflow.md')
 $requiredFiles += $requiredRoles | ForEach-Object { ".codex/agents/$_.toml" }
-$requiredFiles += @(
-  '.codex/commands/build-layer.md',
-  '.codex/commands/new-module.md',
-  '.codex/commands/review-changes.md',
-  '.codex/commands/create-task-packet.md',
-  '.codex/commands/checkpoint-branch.md'
-)
+$requiredFiles += $requiredCommands | ForEach-Object { ".codex/commands/$_.md" }
+$requiredFiles += $requiredRoles | ForEach-Object { ".claude/agents/$_.md" }
+$requiredFiles += $requiredCommands | ForEach-Object { ".claude/commands/$_.md" }
 foreach ($requiredFile in $requiredFiles) {
   Test-RequiredFile -RelativePath $requiredFile | Out-Null
 }
+
+# --- Canonical casing in the active instruction layer -------------------------
 
 $instructionPaths = @()
 foreach ($relativePath in @('AGENTS.md', '.codex/docs/workflow.md')) {
@@ -92,7 +107,45 @@ foreach ($relativeDirectory in @('.codex/agents', '.codex/commands')) {
       Select-Object -ExpandProperty FullName
   }
 }
-Test-RetiredPathReferences -Paths $instructionPaths
+Test-CanonicalCodexPaths -Paths $instructionPaths
+
+# --- Adapter stubs may not become a second home for any fact ------------------
+
+$stubExpectations = [ordered] @{}
+foreach ($role in $requiredRoles) {
+  $stubExpectations[".claude/agents/$role.md"] = ".codex/agents/$role.toml"
+}
+foreach ($command in $requiredCommands) {
+  $stubExpectations[".claude/commands/$command.md"] = ".codex/commands/$command.md"
+}
+$stubExpectations['.claude/docs/workflow.md'] = '.codex/docs/workflow.md'
+
+$inspectedStubCount = 0
+foreach ($relativePath in $stubExpectations.Keys) {
+  $path = Join-Path $Root $relativePath
+  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+    continue
+  }
+
+  $inspectedStubCount++
+  $lines = @(Get-Content -LiteralPath $path)
+  if ($lines.Count -gt $maxStubLines) {
+    Add-Violation -RelativePath $relativePath -Message "adapter stub exceeds $maxStubLines lines (found $($lines.Count)); role and workflow content belongs in .codex/"
+  }
+
+  $canonicalTarget = $stubExpectations[$relativePath]
+  if (($lines -join "`n") -cnotmatch [regex]::Escape($canonicalTarget)) {
+    Add-Violation -RelativePath $relativePath -Message "adapter stub must point at $canonicalTarget"
+  }
+}
+
+# An empty or mislocated adapter tree must fail loudly rather than pass by
+# measuring nothing (docs/lessons.md L-004).
+if ($inspectedStubCount -eq 0) {
+  Add-Violation -RelativePath '.claude' -Message 'no adapter stub was inspected; the Claude Code adapter tree is absent'
+}
+
+# --- Branch run state ---------------------------------------------------------
 
 $runStateDirectory = Join-Path $Root 'docs/superpowers/run-state'
 if (Test-Path -LiteralPath $runStateDirectory -PathType Container) {
@@ -118,6 +171,13 @@ if (Test-Path -LiteralPath $runStateDirectory -PathType Container) {
       if ($headingCount -ne 1) {
         Add-Violation -RelativePath $relativePath -Message "heading '$heading' must appear exactly once (found $headingCount)"
       }
+    }
+
+    # One worktree has exactly one writer at a time; a handoff is the commit
+    # that changes this line (dual-harness design, D3a).
+    $ownerCount = @($lines | Where-Object { $_ -cmatch '^- Owner: (Claude|Codex)(\s.*)?$' }).Count
+    if ($ownerCount -ne 1) {
+      Add-Violation -RelativePath $relativePath -Message "exactly one '- Owner: Claude|Codex' line is required (found $ownerCount)"
     }
   }
 }

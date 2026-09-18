@@ -9,7 +9,8 @@ Scope is **process**. Technical facts about this codebase (schema, tokens, provi
 belong in `docs/reference/GRAND_PLAYBOOK.md`.
 
 Design: `docs/superpowers/specs/2026-08-08-lessons-registry-design.md`.
-Contracts: `CLAUDE.md` §10 (when to read) and §9 (when to write).
+Contracts: `AGENTS.md` §10 (when to read) and §9 (when to write). Entries below that cite `CLAUDE.md`
+predate the 2026-09-05 move of the law into `AGENTS.md`; they are recorded evidence and are left as written.
 
 ## Lesson-entry rules
 
@@ -93,6 +94,18 @@ registry or inventory state, read the named records and the diff before acceptin
 **Evidence (cont.):** Shadowing Hub C2 Task 8, 2026-09-08 (`2165a91`) — a whole-branch reviewer caught that calling `locator.focus()` then asserting focus claims only programmatic focusability, while the acceptance claim was Tab-key reachability. The original browser test passed even though a `tabindex=-1` card would have been skipped by sequential navigation. Replaced with bounded `page.keyboard.press("Tab")` traversal from the URL field, a nonempty rendered-card control, and an equality check over every rendered card action. The exact `tabIndex={-1}` mutation then failed with no reached actions; restore on an isolated production artifact passed.
 **Evidence (cont.):** Shadowing Explore C3 whole-branch review, 2026-09-12 — the first browser proof used `focus()` for Preview and `click()` for Add, leaving its keyboard claim structurally untested. It was replaced with bounded sequential Tab traversal from the local search field through the situation chip, selected-card Preview, drawer close, and Add. The same `tabIndex={-1}` Preview mutation made that traversal fail; source restored from a SHA-256-verified backup, then the fresh production artifact passed.
 **Note (kept here — too narrow to be law):** `toContain` on a class name is especially prone to this — it constrains a substring, not behaviour. A **grep of a build artifact is a collection gathered by a pattern**, so `CLAUDE.md` §7's clause applies to it verbatim: never report a clean sweep of build output without a control that fires.
+
+**Evidence (cont.):** Dual-harness migration, 2026-09-19 — `scripts/verify-codex-protocol.ps1` was correct,
+capable of failing, and **failing**: it exited 1 on `master` with seven run-state heading violations left by
+renamed headings (`## Decisions and contracts`, `## Completed checkpoints`, `## Historical next actions`).
+Nobody knew, because no command ran it. It was absent from `package.json`, from CI, and from the Definition of
+Done, so the only way to learn its verdict was to already suspect it needed checking. **What generalises:** a
+guard no command invokes is not a weaker version of a vacuous assertion — it is the same defect in better
+clothes, reporting nothing while appearing to protect. Ship a guard as an *invocation*
+(`npm run verify:protocol`) named in the gate that must not pass without it, never as a file in `scripts/`.
+It was then mutation-checked against the real tree rather than fixtures, per this lesson: a stub grown to 41
+lines and a deleted `- Owner:` line each went red for the stated reason, and each was restored byte-for-byte
+and re-verified by SHA-256.
 
 ### L-005 — The Supabase mock models no RLS, so RLS mistakes are invisible to the suite
 
@@ -346,6 +359,19 @@ shape, so the mismatch survived the first fix. Re-review caught the second consu
 `vocabularyCount` field (or honestly renders unavailable), with a regression where curated vocabulary is 2 and
 transcript words are 14. **What generalises:** preserving a legacy measurement does not license relabelling it as a
 different fact; carry the source identity through every consumer, especially when the values share a type.
+
+**Evidence (cont.):** Dual-harness migration, 2026-09-19 — `.claude/` and `.codex/` held the same eight role
+briefs and the same workflow, and disagreed for five weeks with nobody noticing. The cause was a **partial
+revert**: `fbef87d` deleted the Claude copies exactly as the approved `2026-09-05` migration directed, and
+`7e31260` restored them twenty-three minutes later without amending the spec or the validator that the same
+day's `3abd943` had written to forbid them. The restored copies dated from 2026-08-05, so they never received
+that day's long-task protocol: `.claude/agents/code-reviewer.md` still told a reviewer to read `CLAUDE.md`
+"all of it" after that file had become a ten-line pointer holding no law, and still described the AI layer as a
+"Claude wrapper" where `AGENTS.md` §3 requires a provider-agnostic port. **What generalises:** reverting the
+artifacts a decision produced, without reverting the decision, leaves the repository contradicting its own
+spec — and the contradiction is invisible because both halves look deliberate. A revert is complete only when
+the files, the rule and the guard agree again. The repair was to stop depending on agreement at all: `.claude/`
+now holds stubs the validator caps at 25 lines, so a second home cannot be written in the first place.
 
 ### L-032 — A cross-file `path:NN` citation is falsified by the next commit that touches that file
 

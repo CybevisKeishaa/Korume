@@ -76,6 +76,7 @@ capability-chain modules left untouched.
 
 ## Working tree and environment
 
+- Owner: Claude (awaiting the finishing/merge decision)
 - `components/marketing/recommendation-donut.tsx` is pre-existing CRLF-only
   working-tree noise (`git diff --numstat` is empty).
 - Untracked non-product configuration includes
