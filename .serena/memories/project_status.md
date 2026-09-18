@@ -1,6 +1,32 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## SYNC UPDATE - 2026-09-06 (current)
+> ## ⚠️ CORRECTION BANNER — 2026-09-19 (supersedes every dated block below)
+>
+> Four claims below are false as of today. Everything else in this file stands.
+>
+> 1. **"root rules: `CLAUDE.md`; agent workflow: `.claude/docs/workflow.md`"**
+>    (the intro line under this banner, and the Layer 8 note further down).
+>    Wrong since 2026-09-05. Root law is **`AGENTS.md`**; workflow, roles and
+>    the 8-layer order are **`.codex/docs/workflow.md`**. `CLAUDE.md` is a
+>    pointer holding no rule, and `.claude/` holds only adapter stubs — see
+>    `mem:dual_harness_workflow_run_state`.
+> 2. **"nothing is in flight, the tree is clean, choose one"** (the 2026-09-04
+>    NEXT ACTION). Work *is* in flight: `c4-lesson-creation-jobs` is 21 commits
+>    ahead of `master` with Tasks 6–8 still to build. See
+>    `mem:c4_lesson_creation_jobs_run_state`.
+> 3. **The 2026-09-06 SYNC UPDATE below** says `landing-page-motion-doctrine`
+>    is active and to resume at Task 10. That branch finished Task 12 and is
+>    **merged into `master`**; it is history, not a resume point.
+> 4. **"Docker Desktop must be running"** as a constraint that blocks database
+>    work: Docker is available, and the C4 database gate now runs as
+>    `npm run verify:db:lesson-jobs`.
+>
+> Two branches carry unmerged work invisible from `master`:
+> `c4-lesson-creation-jobs` and `dual-harness-workflow`. Both owe an
+> independent whole-branch review — Claude wrote and self-reviewed them while
+> Codex was rate-limited.
+
+> ## SYNC UPDATE - 2026-09-06 (superseded — see the correction banner above)
 >
 > The active `landing-page-motion-doctrine` branch has checkpointed Tasks 1-9.
 > Task 9 is `6b0acc2`; its canonical checkpoint is `68075aa`. The sole
@@ -10,7 +36,9 @@
 
 Read this first each session. Product spec: `japanese-learning-app-spec.md` (**repo root** — moved
 in from the parent folder and put under version control 2026-07-16; old references say `../`);
-root rules: `CLAUDE.md`; agent workflow + 8-layer order + branching policy: `.claude/docs/workflow.md`.
+root rules: `AGENTS.md`; agent workflow + 8-layer order + branching policy: `.codex/docs/workflow.md`.
+(Corrected 2026-09-19; this line named `CLAUDE.md` and `.claude/docs/workflow.md` until then, which
+had held no rule since 2026-09-05.)
 
 > ## NEXT ACTION — 2026-09-06 (supersedes the older status block below)
 >
@@ -52,7 +80,7 @@ SDD ledger `.superpowers/sdd/progress.md` (gitignored, richer per-task detail).
 
 <details><summary>(superseded 2026-09-05) the 2026-09-04 block — "the landing page is merged, pick the next piece of work"</summary>
 
-## ▶ NEXT ACTION (updated 2026-09-04, session 9) — **⭐ THE LANDING PAGE IS MERGED TO MASTER (`9c0fec2`, `--no-ff`) AND MASTER IS GREEN. The branch is closed; pick the next piece of work.** `landing-page-port` is KEPT per repo convention (not deleted), and **nothing is pushed** — local `master` runs 103 commits ahead of `origin/master` (`988bb97`), which is this repo's normal state (`L-021`); do NOT `git pull` on master, it would merge a stale remote into a local branch that leads it. Merged-master gate, each command run and read on `9c0fec2`: `npx tsc --noEmit` 0 · `npm run lint` **0 errors / 81 warnings** · `npm test` **2617 over 283 files, exit 0** · `npm run build` exit 0. The merge brought in 156 files, +21431/-600. ⚠️ **Two tests flake under parallel load** — `components/video-player/pitch-contour.test.tsx` and `waveform.test.tsx`, both `expected 0 to be greater than 0` on canvas call counts after decoding an audio blob. Named and excluded three ways (standalone 14/14 ×4; full re-run 2617/2617; `waveform` is untouched by the merged branch yet shows the identical signature, so the cause is shared and environmental). **Re-run before believing either**, and always `npm test -- --reporter=dot > <file>` so a failure has a name. ⚠️ **Do NOT record `playwright 27/27` without local Supabase running**: five specs (auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with `ECONNREFUSED 127.0.0.1:54321`; none touches the landing page. ▶ **WHAT TO PICK UP NEXT — nothing is in flight, the tree is clean, choose one:** (1) **Layer 8**, the last unbuilt layer — PayOS billing, animation polish, the performance audit (`.claude/docs/workflow.md` §3); ⚠️ it inherits a hard dependency: account deletion currently drops the `subscriptions` row like any other, and L8 must cancel with PayOS *first*. (2) **The owner's mobile landing page** (Figma `429:2` / `433:728`) — large, and **two questions must be answered before any of it is built** (do its five extra sections go on desktop too, and what do the menu rows point at); see `mem:landing_page_port_run_state`. (3) **`EMAIL_PROVIDER=none` in `almostgone.vn`'s production `.env`** — the only deploy blocker, and an OPS task no commit in this repo can close. ▶ The full record of the landing-page branch — what shipped, the rulings that still bind, what is still owed to the owner, and the method rules it paid for — is `mem:landing_page_port_run_state`; sessions 1-6 are in `mem:landing_page_port_archive` (grep it, do not open it whole).
+## ▶ NEXT ACTION (updated 2026-09-04, session 9) — **⭐ THE LANDING PAGE IS MERGED TO MASTER (`9c0fec2`, `--no-ff`) AND MASTER IS GREEN. The branch is closed; pick the next piece of work.** `landing-page-port` is KEPT per repo convention (not deleted), and **nothing is pushed** — local `master` runs 103 commits ahead of `origin/master` (`988bb97`), which is this repo's normal state (`L-021`); do NOT `git pull` on master, it would merge a stale remote into a local branch that leads it. Merged-master gate, each command run and read on `9c0fec2`: `npx tsc --noEmit` 0 · `npm run lint` **0 errors / 81 warnings** · `npm test` **2617 over 283 files, exit 0** · `npm run build` exit 0. The merge brought in 156 files, +21431/-600. ⚠️ **Two tests flake under parallel load** — `components/video-player/pitch-contour.test.tsx` and `waveform.test.tsx`, both `expected 0 to be greater than 0` on canvas call counts after decoding an audio blob. Named and excluded three ways (standalone 14/14 ×4; full re-run 2617/2617; `waveform` is untouched by the merged branch yet shows the identical signature, so the cause is shared and environmental). **Re-run before believing either**, and always `npm test -- --reporter=dot > <file>` so a failure has a name. ⚠️ **Do NOT record `playwright 27/27` without local Supabase running**: five specs (auth-locale-round-trip · journal · review · route-group-provider-identity ×2) fail with `ECONNREFUSED 127.0.0.1:54321`; none touches the landing page. ▶ **WHAT TO PICK UP NEXT — nothing is in flight, the tree is clean, choose one:** (1) **Layer 8**, the last unbuilt layer — PayOS billing, animation polish, the performance audit (`.codex/docs/workflow.md` §3); ⚠️ it inherits a hard dependency: account deletion currently drops the `subscriptions` row like any other, and L8 must cancel with PayOS *first*. (2) **The owner's mobile landing page** (Figma `429:2` / `433:728`) — large, and **two questions must be answered before any of it is built** (do its five extra sections go on desktop too, and what do the menu rows point at); see `mem:landing_page_port_run_state`. (3) **`EMAIL_PROVIDER=none` in `almostgone.vn`'s production `.env`** — the only deploy blocker, and an OPS task no commit in this repo can close. ▶ The full record of the landing-page branch — what shipped, the rulings that still bind, what is still owed to the owner, and the method rules it paid for — is `mem:landing_page_port_run_state`; sessions 1-6 are in `mem:landing_page_port_archive` (grep it, do not open it whole).
 
 </details>
 
@@ -162,7 +190,7 @@ the instance fails to boot.
 (2026-09-04) nothing is in flight, so this list IS what is next** — the NEXT ACTION block at the top
 names the three it considers strongest and this is the fuller set:
 - **Layer 8** — PayOS billing, animation polish, the performance audit. It is the last unbuilt layer
-  (`.claude/docs/workflow.md` §3). ⚠️ It inherits a hard dependency: deletion currently removes the
+  (`.codex/docs/workflow.md` §3). ⚠️ It inherits a hard dependency: deletion currently removes the
   `subscriptions` row like any other, and L8 must cancel with PayOS *first*.
 - **A real production email transport (SMTP/Resend/etc.)** for `lib/email`'s `EMAIL_PROVIDER` —
   the port and the `console` (dev/test) adapter are built on `feat/email-notification-system`; no

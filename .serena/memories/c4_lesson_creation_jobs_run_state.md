@@ -1,110 +1,98 @@
-# C4 lesson-creation jobs — paused checkpoint 2026-09-16
+# C4 lesson-creation jobs — checkpoint 2026-09-19
 
-> **Current authority — this block supersedes every operational-status claim
-> below.** The retained 2026-09-13 record is historical context only; in
-> particular, its assertion that Task 5 was merely ready and the C4 worktree
-> was clean is no longer true.
+> **Current authority — this block supersedes BOTH blocks below.** The
+> 2026-09-16 block is now wrong on all three of its headline claims: Task 5 is
+> not paused, no follow-up is uncommitted, and the Docker gate is not blocked.
+> Both older blocks are retained as historical record only.
 
-## Current status
+**The canonical record is `docs/superpowers/run-state/c4-lesson-creation-jobs.md`
+on the branch.** It was rewritten on 2026-09-19 to the nine required headings
+and now carries the per-task commit table, contracts, verification and blockers.
+This memory is a pointer plus resume instructions; do not restate branch facts
+here (run-state README; `docs/lessons.md` L-028).
 
-- Worktree: `.worktrees/c4-lesson-creation-jobs`; branch:
-  `c4-lesson-creation-jobs`; base `c1a14e9`.
-- Tasks 1–4 are completed and independently task-reviewed. Task 2's local
-  PostgreSQL reset/RLS/concurrency proof remains a final branch gate blocked
-  by Docker access; source tests are not a substitute.
-- Task 5's original lifecycle implementation is committed as `8c6fb4b`
-  (`feat(shadowing): start internal lesson creation worker`). The instrumentation
-  bundle fix is committed as `13267fc` (`fix(shadowing): isolate lesson worker
-  instrumentation bundle`). Together they supply the explicit
-  `LESSON_CREATION_WORKER_ENABLED` contract, a separate 5-second unref'd immediate
-  tick, process startup guard, overlap guard, and Node-only bundle boundaries.
-- Task 5 is **PAUSED, not accepted**. An independent review found that the
-  `instrumentation.ts` import graph could pull `kuromoji` and Node builtins
-  into a non-Node bundle. This was a real `npm run build` blocker that focused
-  tests and typecheck did not catch.
+## What changed on 2026-09-19 (session run by Claude, Codex was rate-limited)
 
-## Current uncommitted Task 5 follow-up
+1. **Task 5 is COMPLETE**, not paused: `8c6fb4b` + fix round 1 `13267fc` +
+   fix round 2 `0cb3567`. Both the run-state and the SDD ledger had recorded
+   Task 5 as "the next task to pick up" while Git showed it implemented and
+   fix-reviewed — a resuming session would have reimplemented it (L-026).
+   Corrected in `bb72328`.
+2. **The uncommitted follow-up is committed** as `0cb3567`. It removes
+   `KORUME_DISABLE_NODE_ALIAS`, which `13267fc` had introduced with **no
+   consumer anywhere** — no test, no doc, no caller — leaving an ambient
+   variable able to drop the `path`/`fs`/`zlib` aliases from a production Node
+   build, i.e. re-creating the defect `13267fc` existed to fix. Pinned by a
+   test that sets the variable and still expects the alias; mutation-checked.
+3. **Task 2's live PostgreSQL gate is CLEARED** (`ed0a8f0`). It had never run
+   once, because Docker was unavailable to every Codex session. With the
+   owner's approval a full `supabase db reset` applied all 32 migrations on
+   PostgreSQL 15.8 and every gate passed. It is now repeatable:
+   **`npm run verify:db:lesson-jobs`** (`supabase/tests/lesson-creation-jobs.sql`
+   + `scripts/verify-lesson-creation-gate.ps1`), self-fixturing and
+   self-cleaning, including a two-session contention check. Mutation-checked
+   twice. Full evidence is in the run-state's Verification section.
+4. **Task 6 is STARTED**: `d4080ba` adds `lib/validation/lesson-creation.ts`
+   (+ test, 15/15, red first). It deliberately follows `importVideoSchema`'s
+   `parseVideoId` contract rather than the plan's `z.string().url()`, which
+   would have rejected the bare eleven-character id `/api/videos/import`
+   accepts today — the design wins over the plan where they differ.
 
-The C4 worktree intentionally has these remaining uncommitted changes:
+## Resume here
 
-- `next.config.mjs` removes the environment escape hatch that could disable the
-  Node instrumentation aliases.
-- `next.config.test.ts` adds regression coverage proving that the escape hatch
-  cannot disable those aliases.
+Task 6 remains, minus the schemas already committed. Per the plan's Task 6
+section: `POST /api/videos/import` returns `202 { data: JobProjection }`;
+learner status + retry routes; the admin trio. Then Task 7 (progress UI,
+persisted labels only, a11y + reduced-motion), Task 8 (integration, browser,
+docs), then the mandatory whole-branch review.
 
-The pipeline import deferral and `lib/node-builtins/{path,fs,zlib}.cjs` shims are
-already committed in `13267fc`.
+Task 6's own mutation check is non-optional: a foreign job id and a missing
+job id must both return **404**, proving the API does not disclose that
+another learner's job exists.
 
-The implementer report
-`.superpowers/sdd/2026-09-13-lesson-creation-jobs/task-5-report.md` records
-the boundary regression as RED (14 pass, 1 fail), then 29 focused tests green,
-typecheck/lint green, and a successful `npm run build` (121 static pages),
-with server/edge instrumentation artifact read-back. Treat this as
-implementer-provided evidence only: the report predates the committed
-`13267fc` fix, and the two remaining follow-up config/test edits have not yet
-received independent re-review or been committed.
+## Review debt — read before accepting anything
 
-## Required resume sequence
+Everything from `0cb3567` onward (`0cb3567`, `bb72328`, `ed0a8f0`, `2b2e463`,
+`d4080ba`) was **written and self-reviewed by Claude alone**. The asymmetric
+review rule (2026-09-19 dual-harness design, D4a) assumes Codex implements and
+Claude reviews, which did not hold here. When Codex returns, the first thing to
+give it is a **whole-branch review**, not more implementation.
 
-1. Read `AGENTS.md`, `docs/lessons.md`,
-   `docs/superpowers/run-state/c4-lesson-creation-jobs.md`, this current block,
-   Task 5's plan section, and its dependency graph.
-2. Inspect every uncommitted config/source/shim change; re-run focused Task 5
-   + `next.config.test.ts`, typecheck, lint, `npm run build`, `git diff --check`,
-   and server/edge artifact read-back.
-3. Commit the verified fix in the C4 worktree and obtain independent Task 5
-   re-review. Do not dispatch Task 6 until it is approved.
-4. Preserve the Task 2 database runtime gate and whole-branch review as final
-   acceptance gates.
+## Environment (differs from the Codex sessions that ran Tasks 1–5)
 
-## Operational notes
+- Bare `npm` **works** in this shell; the `%LOCALAPPDATA%\nvm\...\npm.cmd`
+  workaround below was a property of the Codex shell, not of the branch.
+- **Docker is available** (28.5.1). Local Supabase is up; DB container is
+  `supabase_db_nihongo-cinema`, DB on `127.0.0.1:54322`.
+- A fresh worktree has no dependencies: run `npm ci` in it first, or kuromoji
+  dictionary tests fail with ENOENT for reasons unrelated to the change.
+- Branch state at checkpoint: 21 commits ahead of `master`, working tree clean,
+  `npm test` 2882/2882 across 315 files, typecheck 0, lint 0.
 
-- Use `%LOCALAPPDATA%\\nvm\\v24.14.1\\npm.cmd`; bare `npm` is
-  absent from this shell.
-- Root-worktree untracked `.agents/`, `.serena/`, and `docs/mobile/` are
-  user-owned and outside C4 scope.
+## One thing that went wrong here, worth not repeating
+
+The first version of the RLS check passed **vacuously**: the user id was read
+after `set local role authenticated`, that role cannot read `public.users`, so
+`auth.uid()` was null and `requester_user_id <> auth.uid()` evaluated to NULL
+for every row — the count came back 0 and the isolation check "passed" while
+measuring nothing. The committed gate now asserts `auth.uid() is not null`
+first. Same disease as `docs/lessons.md` L-004.
 
 ---
 
-# Historical 2026-09-13 checkpoint (superseded)
+# Historical 2026-09-16 checkpoint (SUPERSEDED — see above)
 
-## Resume authority
+Its three headline claims are all false as of 2026-09-19: Task 5 is complete,
+not paused; the `next.config.mjs` / `next.config.test.ts` follow-up is
+committed as `0cb3567`; and the Task 2 database gate is cleared, not blocked.
+Its description of *what* Task 5 delivers (the explicit
+`LESSON_CREATION_WORKER_ENABLED` contract, a separate 5-second unref'd
+immediate tick, process startup guard, overlap guard, and Node-only bundle
+boundaries) remains accurate.
 
-- Worktree: `.worktrees/c4-lesson-creation-jobs`
-- Branch: `c4-lesson-creation-jobs`, clean and currently ahead of `origin/c4-lesson-creation-jobs` by 2 commits.
-- Approved design: `docs/superpowers/specs/2026-09-13-lesson-creation-jobs-design.md`
-- Implementation plan: `docs/superpowers/plans/2026-09-13-lesson-creation-jobs.md`
-- Canonical branch run-state: `docs/superpowers/run-state/c4-lesson-creation-jobs.md`
-- Machine-local SDD ledger: `.superpowers/sdd/2026-09-13-lesson-creation-jobs/progress.md`
+The rest of that block, and the 2026-09-13 block beneath it, are kept only as
+provenance for how the branch reached Task 5. Read
+`docs/superpowers/run-state/c4-lesson-creation-jobs.md` instead: it carries the
+same facts, current, and versioned with the code.
 
-Before resuming, read `AGENTS.md`, `docs/lessons.md`, the run-state, this memory, the cited plan task, and its direct dependency graph. Do not touch user-owned root-worktree files or merge/push without explicit user approval.
-
-## Completed and reviewed
-
-- `84236b6 feat(shadowing): define lesson creation job contract`
-- `b8c7648 fix(shadowing): validate lesson creation job projections`
-  - Task 1 is fully reviewed and re-reviewed. `lib/lesson-creation/types.ts` owns strict public projection parsing, exact state/step/error tuples, UUID/timestamp validation, requester/lease exclusion, and terminal pairs.
-- `9ff79f9 feat(shadowing): add durable lesson creation queue`
-- `6817f07 fix(shadowing): preserve lesson creation finalization invariants`
-  - Task 2 source-level review and R1 re-review approved. Finalize has the approved extension after its first three planned parameters: lease token plus typed JSON content payload, to satisfy atomic persistence. It performs the final learner-private quota decision before content writes and repairs the newest transcript header playback reads.
-  - Source tests passed 9/9 and TypeScript passed. Mandatory local PostgreSQL reset/RLS/concurrency execution is still blocked by Docker access and remains a final branch gate; never claim it passed.
-- `1a72ace feat(shadowing): add lesson creation job store`
-  - Task 3 has implemented and committed the service-role store. Report: `.superpowers/sdd/2026-09-13-lesson-creation-jobs/task-3-report.md`.
-  - Reported evidence: 42 store plus 6 existing tests passed (48), typecheck/lint/diff check passed, and requester-scope mutation turned 3 tests red then restored from a verified SHA-256 copy.
-  - Task 3 has NOT yet received its independent task review. This is the immediate next action.
-
-## Exact next sequence
-
-1. Read `docs/lessons.md` before opening the Task 3 report.
-2. Generate the Task 3 review package from base `6817f07` to head `1a72ace`, dispatch an independent code reviewer, and write its verdict into the SDD ledger. Fix/re-review if required.
-3. Only then dispatch Task 4 (pipeline and worker pass), then Tasks 5-8 sequentially with the existing SDD workflow.
-4. Before final branch acceptance, obtain runtime database evidence: local Supabase reset, migration application/readback, RLS/grants, atomic claim/recovery/finalize/quota concurrency coverage. Docker was inaccessible in this session; source assertions are not a substitute.
-5. Run the required whole-branch review and final verification before proposing merge. Record an actual lesson only if new evidence merits an existing `docs/lessons.md` entry.
-
-## Environment and process notes
-
-- `npm` is absent from PATH. Use `%LOCALAPPDATA%\nvm\v24.14.1\npm.cmd` with escalation when sandbox cannot traverse NVM.
-- Git stage/commit in the linked worktree needs escalation due the `.git/worktrees/.../index.lock` permission boundary.
-- SDD helper scripts need Git Bash with `PATH=/mingw64/bin:/usr/local/bin:/usr/bin:/bin`.
-- All task artifacts/reports are under the gitignored `.superpowers/sdd/2026-09-13-lesson-creation-jobs/` directory.
-- No workers are active at this checkpoint. Task 2's original database agent exhausted its usage quota after its R1 implementation; the controller independently ran the final focused 9/9 test/typecheck and committed `6817f07`.
+Related: `mem:project_status`, `mem:codex_long_task_protocol_run_state`.
