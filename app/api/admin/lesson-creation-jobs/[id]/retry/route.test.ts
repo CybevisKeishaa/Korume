@@ -42,6 +42,15 @@ describe("POST /api/admin/lesson-creation-jobs/[id]/retry", () => {
     expect(retryAdminLessonCreationJob).not.toHaveBeenCalled();
   });
 
+  it("converts the limiter's millisecond delay into whole Retry-After seconds", async () => {
+    vi.mocked(retryAdminLessonCreationJob).mockResolvedValue({ ok: false, status: 429, retryAfter: 2500 });
+
+    const response = await post(JOB_ID);
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("3");
+  });
+
   it.each([
     [401 as const, "Unauthorized"],
     [403 as const, "Forbidden"],

@@ -5,7 +5,6 @@ import { readLearnerLessonCreationJob } from "@/lib/data/lesson-creation-jobs";
 vi.mock("@/lib/data/lesson-creation-jobs", () => ({ readLearnerLessonCreationJob: vi.fn() }));
 
 const JOB_ID = "33333333-3333-4333-8333-333333333333";
-const FOREIGN_JOB_ID = "44444444-4444-4444-8444-444444444444";
 const STATUS = {
   job: {
     id: JOB_ID,
@@ -53,15 +52,22 @@ describe("GET /api/lesson-creation-jobs/[id]", () => {
     expect(readLearnerLessonCreationJob).not.toHaveBeenCalled();
   });
 
-  it("answers a foreign job exactly as it answers a missing one", async () => {
+  /**
+   * This route cannot prove non-disclosure: it mocks the data layer, so foreign
+   * and missing are the same stub here and any forwarding route would pass.
+   * The honest evidence is one layer down — `lib/data/lesson-creation-jobs.test.ts`
+   * "cannot tell a foreign job from a missing one", which also asserts the event
+   * read is skipped and is what the mutation check turned red — plus
+   * `lib/lesson-creation/store.test.ts` for the mandatory requester filter and
+   * the live database gate `ed0a8f0` for real RLS.
+   */
+  it("maps the data layer's 404 to the shared not-found body", async () => {
     vi.mocked(readLearnerLessonCreationJob).mockResolvedValue({ ok: false, status: 404 });
 
-    const foreign = await get(FOREIGN_JOB_ID);
-    const missing = await get(JOB_ID);
+    const response = await get(JOB_ID);
 
-    expect([foreign.status, missing.status]).toEqual([404, 404]);
-    await expect(foreign.json()).resolves.toEqual({ error: "Not found" });
-    await expect(missing.json()).resolves.toEqual({ error: "Not found" });
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({ error: "Not found" });
   });
 
   it("refuses an anonymous reader", async () => {

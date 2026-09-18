@@ -1,6 +1,6 @@
 import "server-only";
 import { requireAdmin } from "@/lib/admin/guard";
-import { isUnderQuota } from "@/lib/data/lesson-library";
+import { findExistingLesson, isUnderQuota } from "@/lib/data/lesson-library";
 import { requireUser } from "@/lib/data/videos";
 import { isLessonCreationWorkerEnabled } from "@/lib/lesson-creation/env";
 import {
@@ -50,7 +50,8 @@ export type ReadLessonCreationJobResult =
 
 export type RetryLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobProjection }
-  | Refusal<401 | 403 | 404 | 409>;
+  | Refusal<401 | 403 | 404 | 409>
+  | RateLimited;
 
 type Identity = { ok: true; userId: string } | Refusal<401 | 403>;
 
@@ -71,9 +72,22 @@ async function adminIdentity(): Promise<Identity> {
 /**
  * `retry_lesson_creation_job` raises `job_not_retryable` under SQLSTATE 23505
  * when the job is not failed, or when another attempt for the same video is
- * already active. It is the only 23505 that RPC can raise — it performs one
- * update against a table with no unique index — so nothing else is being
- * swallowed here. Any other database error is re-thrown.
+ * already active. Any other database error is re-thrown.
+ *
+ * ⚠️ 23505 is also the ordinary unique-violation code, and this table HAS a
+ * unique index — `lesson_creation_jobs_active` on
+ * `(requester_user_id, youtube_video_id) where state in ('queued','running')`
+ * — whose predicate retry's own `set state = 'queued'` writes the row into.
+ * What keeps the two apart is not the absence of an index: it is that every
+ * function able to put a row into that predicate first takes the requester's
+ * row lock (`perform 1 from public.users where id = p_requester for update`,
+ * migration lines 87/157/197), and claim/transition/recover only move rows
+ * already inside it. That `perform` reads like a no-op; delete it, or add a
+ * writer without it, and a genuine unique violation starts reaching a learner
+ * as "This job cannot be retried". The durable fix is for the RPC to raise a
+ * custom SQLSTATE for the business rule instead of overloading a system code —
+ * recorded as a Task 8 item, since it changes an applied migration and needs
+ * the live database gate re-run.
  */
 function isNotRetryableRejection(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "23505";
@@ -115,11 +129,31 @@ export async function enqueueLearnerLessonCreationJob(input: {
     identity,
     `lessons:create:${requesterId}`,
     { requesterId, origin: "learner", requestedAccess: "PRIVATE", youtubeVideoId: input.youtubeVideoId },
-    // Advisory only. `finalize_lesson_creation_job` rechecks the quota under
-    // the user's lock and stays authoritative; this just refuses an already
-    // exhausted learner quickly instead of doing a doomed pipeline pass (spec §6).
-    () => isUnderQuota(requesterId),
+    () => mayProceedOnQuota(requesterId, input.youtubeVideoId),
   );
+}
+
+/**
+ * The advisory quota check (design §6) — deliberately narrower than the
+ * authoritative one.
+ *
+ * `finalize_lesson_creation_job` charges a slot only where no lesson row
+ * exists, or where it is PRIVATE and the requester does not already hold it
+ * (migration line 212). Design §3 rules 3 and 4 keep that: a visible FREE/PLUS
+ * lesson, or one already in the learner's library, costs nothing — so an
+ * exhausted learner must still be able to reach it. Refusing those here would
+ * be a lie AND would put them out of reach of the importer entirely.
+ *
+ * So this refuses only the case where a charge is certain: the video has no
+ * lesson at all yet. The remaining case — an unheld PRIVATE lesson while
+ * exhausted — is left to the worker, which ends the job `failed` with
+ * `quota_exceeded`, a truthful terminal state the projection already carries.
+ * Restating finalize's three-clause predicate here instead would be a second
+ * home for it, and the two would drift (AGENTS.md §6).
+ */
+async function mayProceedOnQuota(requesterId: string, youtubeVideoId: string): Promise<boolean> {
+  if ((await findExistingLesson(youtubeVideoId)) !== null) return true;
+  return isUnderQuota(requesterId);
 }
 
 export async function enqueueAdminLessonCreationJob(input: {
@@ -158,8 +192,24 @@ export async function readAdminLessonCreationJob(jobId: string): Promise<ReadLes
   return readFor(await adminIdentity(), jobId);
 }
 
-async function retryFor(identity: Identity, jobId: string): Promise<RetryLessonCreationJobResult> {
+/**
+ * A retry resets `attempt_count` to 0 (migration line 164), buying a fresh
+ * three-attempt budget of third-party metadata and caption calls. The RPC's
+ * "no other active job for this video" rule bounds the loop to about one cycle
+ * per worker tick but caps nothing over time, so the retry needs a per-user
+ * budget of its own (AGENTS.md §2.6, design §8.1).
+ */
+async function retryFor(
+  identity: Identity,
+  jobId: string,
+  rateLimitKeyPrefix: string,
+): Promise<RetryLessonCreationJobResult> {
   if (!identity.ok) return identity;
+
+  // Built from the identity here, never handed in: a caller that derived the
+  // key before knowing who is calling could bucket every user together.
+  const limited = rateLimit(`${rateLimitKeyPrefix}${identity.userId}`, CREATE_LIMIT);
+  if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
 
   let job: LessonCreationJobProjection | null;
   try {
@@ -173,9 +223,9 @@ async function retryFor(identity: Identity, jobId: string): Promise<RetryLessonC
 }
 
 export async function retryLearnerLessonCreationJob(jobId: string): Promise<RetryLessonCreationJobResult> {
-  return retryFor(await learnerIdentity(), jobId);
+  return retryFor(await learnerIdentity(), jobId, "lessons:retry:");
 }
 
 export async function retryAdminLessonCreationJob(jobId: string): Promise<RetryLessonCreationJobResult> {
-  return retryFor(await adminIdentity(), jobId);
+  return retryFor(await adminIdentity(), jobId, "lessons:retry:admin:");
 }

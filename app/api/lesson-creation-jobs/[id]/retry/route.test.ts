@@ -52,6 +52,15 @@ describe("POST /api/lesson-creation-jobs/[id]/retry", () => {
     await expect(response.json()).resolves.toEqual({ error: "This job cannot be retried" });
   });
 
+  it("converts the limiter's millisecond delay into whole Retry-After seconds", async () => {
+    vi.mocked(retryLearnerLessonCreationJob).mockResolvedValue({ ok: false, status: 429, retryAfter: 2500 });
+
+    const response = await post(JOB_ID);
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("3");
+  });
+
   it.each([
     [401 as const, "Unauthorized"],
     [404 as const, "Not found"],

@@ -3,7 +3,7 @@ import { createMockSupabase } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/admin/guard";
 import { rateLimit } from "@/lib/rate-limit";
-import { isUnderQuota } from "@/lib/data/lesson-library";
+import { findExistingLesson, isUnderQuota } from "@/lib/data/lesson-library";
 import {
   enqueueLessonCreation,
   getRequesterJob,
@@ -14,7 +14,7 @@ import {
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/admin/guard", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
-vi.mock("@/lib/data/lesson-library", () => ({ isUnderQuota: vi.fn() }));
+vi.mock("@/lib/data/lesson-library", () => ({ findExistingLesson: vi.fn(), isUnderQuota: vi.fn() }));
 vi.mock("@/lib/lesson-creation/store", () => ({
   enqueueLessonCreation: vi.fn(),
   getRequesterJob: vi.fn(),
@@ -64,6 +64,7 @@ beforeEach(() => {
   process.env.LESSON_CREATION_WORKER_ENABLED = "true";
   signedInAs(USER);
   vi.mocked(rateLimit).mockReturnValue({ ok: true, retryAfter: 0 });
+  vi.mocked(findExistingLesson).mockResolvedValue(null);
   vi.mocked(isUnderQuota).mockResolvedValue(true);
   vi.mocked(requireAdmin).mockResolvedValue({ ok: true, user: ADMIN });
   vi.mocked(enqueueLessonCreation).mockResolvedValue(JOB);
@@ -122,12 +123,46 @@ describe("enqueueLearnerLessonCreationJob", () => {
     },
   );
 
-  it("gives an exhausted learner the advisory quota refusal", async () => {
+  it("gives an exhausted learner the advisory quota refusal for a lesson that does not exist yet", async () => {
+    vi.mocked(findExistingLesson).mockResolvedValue(null);
     vi.mocked(isUnderQuota).mockResolvedValue(false);
 
     expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({ ok: false, status: 403 });
     expect(isUnderQuota).toHaveBeenCalledWith(USER.id);
     expect(enqueueLessonCreation).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["FREE" as const],
+    ["PLUS" as const],
+    ["PRIVATE" as const],
+  ])(
+    "never refuses an exhausted learner over a %s lesson that already exists — finalize would charge no slot",
+    async (libraryAccess) => {
+      // Design §3 rules 3 and 4: a lesson the learner can already reach, or
+      // already holds, costs no quota. `finalize_lesson_creation_job` charges
+      // only where no row exists or it is PRIVATE and unheld, so a refusal here
+      // would be untrue AND would make the lesson unreachable from the importer.
+      vi.mocked(findExistingLesson).mockResolvedValue({ id: "l1", library_access: libraryAccess } as never);
+      vi.mocked(isUnderQuota).mockResolvedValue(false);
+
+      expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({ ok: true, data: JOB });
+      expect(enqueueLessonCreation).toHaveBeenCalled();
+    },
+  );
+
+  it("looks the catalogue up before spending an advisory refusal", async () => {
+    await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID });
+
+    expect(findExistingLesson).toHaveBeenCalledWith(VIDEO_ID);
+  });
+
+  it("does not consult the catalogue while the worker is disabled", async () => {
+    process.env.LESSON_CREATION_WORKER_ENABLED = "false";
+
+    await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID });
+
+    expect(findExistingLesson).not.toHaveBeenCalled();
   });
 });
 
@@ -255,6 +290,16 @@ describe("retryLearnerLessonCreationJob", () => {
     expect(await retryLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 401 });
     expect(retryRequesterJob).not.toHaveBeenCalled();
   });
+
+  it("is rate-limited under its own key", async () => {
+    // A retry resets attempt_count to 0, buying a fresh three-attempt budget of
+    // third-party metadata and caption calls, so it needs a budget of its own.
+    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 2500 });
+
+    expect(await retryLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 429, retryAfter: 2500 });
+    expect(rateLimit).toHaveBeenCalledWith(`lessons:retry:${USER.id}`, { limit: 20, windowMs: 60_000 });
+    expect(retryRequesterJob).not.toHaveBeenCalled();
+  });
 });
 
 describe("retryAdminLessonCreationJob", () => {
@@ -268,6 +313,14 @@ describe("retryAdminLessonCreationJob", () => {
     vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 401 });
 
     expect(await retryAdminLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 401 });
+    expect(retryRequesterJob).not.toHaveBeenCalled();
+  });
+
+  it("is rate-limited under its own key", async () => {
+    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 2500 });
+
+    expect(await retryAdminLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 429, retryAfter: 2500 });
+    expect(rateLimit).toHaveBeenCalledWith(`lessons:retry:admin:${ADMIN.id}`, { limit: 20, windowMs: 60_000 });
     expect(retryRequesterJob).not.toHaveBeenCalled();
   });
 });

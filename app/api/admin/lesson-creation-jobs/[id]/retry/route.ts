@@ -11,6 +11,12 @@ export async function POST(_request: Request, { params }: { params: { id: string
 
   const result = await retryAdminLessonCreationJob(parsed.data);
   if (!result.ok) {
+    if (result.status === 429) {
+      return NextResponse.json(
+        { error: "Too many retries, slow down" },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(result.retryAfter / 1000)) } },
+      );
+    }
     const message =
       result.status === 401
         ? "Unauthorized"
