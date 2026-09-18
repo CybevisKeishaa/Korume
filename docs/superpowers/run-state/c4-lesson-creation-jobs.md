@@ -1,101 +1,112 @@
-# C4 Lesson Creation Jobs — Run State
+# Branch Run State
 
-## Authority and scope
+## Goal and scope
 
-- Branch: `c4-lesson-creation-jobs`; base: `c1a14e9`.
+Branch: `c4-lesson-creation-jobs`; base: `c1a14e9`.
+
+Replace the synchronous lesson-import path with a durable, idempotent
+asynchronous job queue: typed contract, Postgres queue schema and RPCs, a
+service-role store, a restartable pipeline/worker, an explicit Node worker
+lifecycle, learner and admin APIs, and the progress UI.
+
+C4 is a backend subsystem, not a Figma screen port. It is outside the
+`shadowing-hub-plan-c` spec by that spec's own § Out of scope.
+
+## Authorities
+
+- `AGENTS.md`, `docs/lessons.md`, `.codex/docs/workflow.md`.
 - Design: `docs/superpowers/specs/2026-09-13-lesson-creation-jobs-design.md`.
 - Plan: `docs/superpowers/plans/2026-09-13-lesson-creation-jobs.md`.
-- This file is the canonical lifecycle record for the branch. Read it before
-  resuming or dispatching a task; the design wins over the plan if they differ.
+  The design wins over the plan if they differ.
+- Machine-local ledger `.superpowers/sdd/2026-09-13-lesson-creation-jobs/progress.md`
+  carries dispatch, review, fix-round and ruling evidence. It is gitignored, so
+  it is not branch-durable — this file is.
+- Task 1 controls cite `L-001`, `L-004`, `L-011`, `L-026`, `L-028` by id only.
 
-## Pre-flight
+## Accepted commits
 
-- Isolated worktree: `.worktrees/c4-lesson-creation-jobs`.
-- Baseline: `npm test -- --exclude '.worktrees/**' --reporter=json --outputFile scratch/c4-baseline-vitest.json` reported 2745 passing tests across 897 files on 2026-09-13. Node runs from the explicit nvm path because it is absent from this shell's PATH.
-- Root-worktree untracked files are user-owned and out of scope. This worktree began clean after the design and plan commits.
+| Task | Implementation | Fix rounds | Review |
+| --- | --- | --- | --- |
+| 1 — typed job contract | `84236b6` | `b8c7648` | approved after R1 |
+| 2 — queue schema and RPCs | `9ff79f9` | `6817f07` | approved after R1 |
+| 3 — service-role store | `1a72ace` | `485ec28` | APPROVE after re-review |
+| 4 — idempotent pipeline and worker pass | `bcb073a` | `fdcd5af` | APPROVE after R1 |
+| 5 — Node worker lifecycle | `8c6fb4b` | `13267fc`, `0cb3567` | R1 approved; **R2 unreviewed** |
 
-## Task ledger pointer
+Checkpoints: `8a77112`, `c6f40de`.
 
-The machine-local SDD ledger at `.superpowers/sdd/2026-09-13-lesson-creation-jobs/progress.md` carries dispatch, review, fix-round, and ruling evidence. Do not duplicate lessons here; `docs/lessons.md` is their only home.
+Tasks 6 (learner/admin APIs), 7 (progress UI) and 8 (integration, browser,
+docs) are not started.
 
-## Status
+## Contracts and decisions
 
-Tasks 1–4 are complete and task-reviewed. Task 2's required live PostgreSQL
-reset/RLS/concurrency gate remains blocked by Docker access and is a final
-branch-acceptance gate, not a substituteable source-test result. The next
-owned task is Task 5 (explicit Node worker startup and lifecycle).
+- The store is the only TypeScript persistence boundary; worker code never
+  writes SQL directly.
+- `finalize_lesson_creation_job` extends the plan's three-argument signature
+  with typed JSON payload and attempt/lease-fence arguments, in that order.
+  SQL validates and persists atomically; all provider and network work stays
+  outside the transaction.
+- Default pipeline dedup goes through a narrow store helper proving the newest
+  transcript header has at least one line. A header alone cannot satisfy
+  finalization's studyable-transcript contract.
+- The worker runs at most one recovered-and-claimed job per pass, on its own
+  5s cadence, deliberately decoupled from the account-deletion scheduler.
+- `LESSON_CREATION_WORKER_ENABLED` accepts exactly `"true"`, `"false"` or
+  unset; unset is disabled. Startup validation rejects anything else.
+- Legacy synchronous callers stay until Task 6 switches the routes, so every
+  intermediate commit compiles.
+- Node builtin aliasing in `next.config.mjs` has no environment escape hatch:
+  ambient configuration must not be able to drop it from a production build.
 
-## Resume protocol
+## Verification
 
-Before any resume or dispatch, read `AGENTS.md`, `docs/lessons.md`, this
-run-state, the cited task-plan section, and its direct dependency graph. Cite
-lessons by id only; the applicable Task 1 controls include `L-001`, `L-004`,
-`L-011`, `L-026`, and `L-028`.
+- Baseline 2026-09-13: 2745 passing tests across 897 files, via
+  `npm test -- --exclude '.worktrees/**' --reporter=json`.
+- Tasks 1–5 each ran TDD red first, then focused green, typecheck, and
+  `git diff --check`. Mutations for store ownership, durable reads, retry
+  delay, terminal transitions and the worker-enabled gate each turned their
+  focused checks red and were restored from checksum-verified copies.
+- Task 5 fix round 1 (`13267fc`) was proved on build artefacts, not reasoning:
+  `.next/server/instrumentation.js` carries the Node worker start and the
+  `kuromoji` external, and `.next/server/edge-instrumentation.js` carries
+  neither.
+- Task 5 fix round 2 (`0cb3567`, 2026-09-19, Claude): `KORUME_DISABLE_NODE_ALIAS`
+  was introduced by `13267fc` with no consumer anywhere — no test, no doc, no
+  caller — leaving an ambient variable able to drop the `path`/`fs`/`zlib`
+  aliases from a production Node build, which is the defect `13267fc` existed
+  to fix. Removed, and pinned by a test that sets the variable and still
+  expects the alias. Focused 30/30; the new assertion was mutation-checked by
+  restoring the escape hatch (exactly one test red, 15 green) and the file was
+  restored byte-for-byte, SHA-256
+  `020F048105A105EA53E9574A5F3E5E0B3ADE4CA975F5F0F1D5E5AC53DECDB94E`.
 
-## Task ledger
+## Working tree and environment
 
-### Task 1 — typed lesson-creation job contract
+- Owner: Claude
+- Isolated worktree `.worktrees/c4-lesson-creation-jobs`, with its own
+  dependencies installed. Clean at this checkpoint.
+- The Codex shell that ran Tasks 1–5 had no `npm` on PATH and invoked it
+  through an explicit nvm path; that is a property of that shell, not of the
+  branch.
+- Docker **is** available in the current session (`docker info` → 28.5.1), so
+  the gate below is no longer environmentally blocked.
 
-- Owner: backend-engineer.
-- Inputs: approved C4 design and existing `lesson_access_level` migration.
-- Output: the canonical `LessonCreationJobProjection` parser for store, routes,
-  worker, and UI; it excludes requester and lease fields.
-- Checklist:
-  - [x] Add the test before the implementation and confirm it is red.
-  - [x] Define canonical state, step, error, projection, and parser types.
-  - [x] Run the focused contract test and strict TypeScript check.
-  - [x] Read changed state back, run `git diff --check`, and commit the owned files.
-- TDD red command: `npm test -- lib/lesson-creation/types.test.ts --reporter=dot`
-  (run through the explicit nvm npm executable because `npm` is absent from
-  this shell's PATH).
-- Green verification: `npm test -- lib/lesson-creation/types.test.ts --reporter=dot`
-  and `npm run typecheck` (both run through that explicit executable).
+## Blockers
 
-### Task 2 — durable queue schema and RPCs
+- **Task 2's live PostgreSQL gate has never run.** Reset, RLS and grants,
+  atomic claim and recovery, finalize, and quota concurrency are all accepted
+  at source level only. It is a final branch-acceptance gate and cannot be
+  substituted by a source test. It was blocked by Docker access for every
+  Codex session; it is not blocked now, and running it needs a local
+  `supabase db reset`, which is destructive to local development data and
+  therefore needs the owner's say-so.
+- Task 5 fix round 2 is committed but has had no independent review. Claude
+  wrote it, so the asymmetric review rule does not cover it.
 
-- Owner: database-engineer.
-- Commits: `9ff79f9`, `6817f07`.
-- Review: task review and its R1 re-review approved.
-- Runtime caveat: source-level migration tests and TypeScript verification are
-  accepted, but the real PostgreSQL reset, RLS/grants, atomic claim/recovery,
-  finalize, and quota-concurrency evidence remains a final branch gate.
+## Next actions
 
-### Task 3 — provider-free lesson-creation store
-
-- Owner: backend-engineer.
-- Commits: `1a72ace`, review-fix `485ec28`.
-- Output: the service-role store is the only TypeScript persistence boundary;
-  it maps the Task 2 RPC contract, parses public and worker-private rows, and
-  scopes requester lookups by both job and requester.
-- Evidence: the store's ownership mutation was read back, turned its focused
-  checks red, then restored from a checksum-verified copy. The review fix's
-  inherited-RPC regression was red before `Object.hasOwn`; its terminal
-  transition assertion was mutation-checked by nulling `p_error`, observing
-  focused red, and restoring from the verified copy. Focused tests, typecheck,
-  lint, and `git diff --check` were re-run after the fix.
-- Review: independent review returned APPROVE WITH NITS; the two focused fixes
-  are committed and the required re-review returned APPROVE.
-
-### Task 4 — idempotent pipeline and worker pass
-
-- Owner: backend-engineer.
-- Commits: `bcb073a`, fix round 1 `fdcd5af`.
-- Output: the only asynchronous path to metadata/captions and complete
-  transcript finalization. It re-reads durable state across restartable steps,
-  keeps furigana best-effort per line, and executes at most one recovered and
-  claimed job per pass. The legacy synchronous callers remain until Task 6.
-- Ruling: the pipeline's default dedup checks through a narrow service-role
-  store helper that the newest transcript header has a line; a header alone
-  cannot satisfy Task 2 finalization's studyable-transcript contract.
-- Evidence: the required durable-read and retry-delay mutations turned their
-  focused checks red and were restored from checksum-verified copies. The
-  fix-round mutations prove failure-time retry scheduling; focused scope,
-  full Vitest scope excluding `.worktrees/**`, typecheck, lint, and
-  `git diff --check` were run. The final full-run wrapper forwards native npm
-  exit status because redirected Vite warning stderr otherwise changes
-  PowerShell's wrapper status without changing the test process result.
-- Review: task review found transient-caption classification and pass-start
-  retry timing defects. Fix round 1 preserves the legacy null-compatible
-  synchronous adapter while the worker path carries explicit 429/503/transport
-  failures, and derives availability at failure time. Scoped re-review:
-  APPROVE.
+1. Owner decision on running the live PostgreSQL gate (it resets the local DB).
+2. Task 6 — replace the synchronous learner/admin import endpoints with job
+   APIs that observe `LESSON_CREATION_WORKER_ENABLED` and return the
+   disabled-worker `503`. Owner: whoever implements next.
+3. Tasks 7 and 8 follow, then the mandatory whole-branch review.
