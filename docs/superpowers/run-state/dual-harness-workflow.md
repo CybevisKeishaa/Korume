@@ -20,7 +20,10 @@ No product source, migration, or user data is in scope.
 
 ## Accepted commits
 
-- Pending: the branch is uncommitted while the owner reviews.
+- `d991c1c` — the whole change as one unit: adapter stubs, validator rules and
+  test, run-state repairs and `- Owner:` lines, `npm run verify:protocol`,
+  `AGENTS.md` §8/§9, `.codex/docs/workflow.md` §8, `CLAUDE.md`, and the lessons
+  merged into L-026 and L-004.
 
 ## Contracts and decisions
 
