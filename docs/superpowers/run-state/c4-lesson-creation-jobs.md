@@ -32,7 +32,7 @@ C4 is a backend subsystem, not a Figma screen port. It is outside the
 | 3 — service-role store | `1a72ace` | `485ec28` | APPROVE after re-review |
 | 4 — idempotent pipeline and worker pass | `bcb073a` | `fdcd5af` | APPROVE after R1 |
 | 5 — Node worker lifecycle | `8c6fb4b` | `13267fc`, `0cb3567` | R1 approved; **R2 unreviewed** |
-| 6 — learner/admin job APIs | `d4080ba` (schemas), `45d7684` (routes) | — | **unreviewed** |
+| 6 — learner/admin job APIs | `d4080ba` (schemas), `45d7684` (routes) | `19c0d09` | R1 CHANGES REQUIRED, all three closed; **fix round itself unreviewed** |
 
 Live database gate: `ed0a8f0`.
 Checkpoints: `8a77112`, `c6f40de`, `bb72328`.
@@ -65,6 +65,15 @@ Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
 - Enqueue refusal order: identity → rate limit → worker enabled → this
   learner's quota. A disabled worker must not answer "out of quota", and no
   job is recorded for a worker that will not run.
+- The advisory quota refusal fires **only where a charge is certain** — the
+  video has no lesson row yet. A visible FREE/PLUS lesson, or a PRIVATE one
+  the learner already holds, costs no quota (design §3 rules 3 and 4), so an
+  exhausted learner must still reach it. An unheld PRIVATE lesson while
+  exhausted is left to the worker's `quota_exceeded`. Finalize's three-clause
+  predicate is deliberately NOT restated in TypeScript.
+- Both retry endpoints carry their own per-user rate-limit budget: a retry
+  resets `attempt_count` to 0 and so buys a fresh three-attempt budget of
+  third-party calls.
 - `isLessonCreationWorkerEnabled()` in `lib/lesson-creation/env.ts` is the one
   home of the exact-`"true"` rule; `start.ts` and the enqueue APIs share it.
 - The admin trio is scoped to the admin who requested the job, not to the admin
@@ -126,6 +135,21 @@ Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
   ownership. Each turned exactly one test red — "cannot tell a foreign job
   from a missing one" (1 failed / 25 passed) — and the focused suite returned
   63/63 after restoring.
+- Task 6 review R1 (`code-reviewer`, 2026-09-19): **CHANGES REQUIRED**, 3
+  Important + 6 Minor, 0 Critical, no §2 non-negotiable breach, and it
+  re-derived rather than trusted every numeric claim in `aefc6c4` (all held).
+  All three Important findings are closed by `19c0d09`; the Minors are routed
+  to Task 8 below. Its three mutation checks each restored from a copy verified
+  by `git hash-object` (`78cecdde5471c81001e6a15c81c6d17f7dd8e7ec`): dropping
+  the catalogue lookup turned 4 tests red, removing the retry limiter 2, and
+  moving the advisory ahead of the worker gate 5. After it: focused 72/72,
+  full `npm test` **2983/2983 over 323 files, exit 0**, tsc 0, lint 0 errors.
+- **What no test in Task 6 proves.** Route tests mock the data layer, so they
+  prove status/body/`Retry-After` mapping and the malformed-id short-circuit,
+  nothing more. The data-layer tests mock the store, so they prove ordering and
+  arguments but not that a query filters. The chain closes only at
+  `store.test.ts` (query shape) plus the live gate `ed0a8f0` (real RLS/RPC).
+  No test here drives an HTTP request against a real database — Task 8 owes it.
 
 ## Working tree and environment
 
@@ -152,11 +176,41 @@ Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
 1. Task 7 — the durable progress UI in both importer surfaces. Both consumers
    still expect the old synchronous `201` body, so `VideoImportForm` and
    `hub-library-section` are the first thing it must migrate.
-2. Task 8 — integration, browser acceptance, docs. It must also settle the one
-   piece of dead code Task 6 created: `lib/data/lesson-creation.ts`
-   (`createLesson`, `createLessonAsAdmin`) now has **no production caller** —
-   the import route was its last one. Deleting it was deliberately left out of
-   Task 6 to keep that diff to the API switch; AGENTS.md §6 forbids merging it
-   as-is.
+2. Task 8 — integration, browser acceptance, docs, plus the five items Task 6's
+   review routed here:
+   - **Dead code (AGENTS.md §6, forbids merging as-is).** `lib/data/lesson-creation.ts`
+     (`createLesson`, `createLessonAsAdmin`) lost its last production caller
+     when the import route switched to the queue, and `importVideoSchema` /
+     `ImportVideoInput` in `lib/youtube/schema.ts` lost theirs in the same
+     commit — the latter also now duplicates both of its user-facing strings in
+     `lib/validation/lesson-creation.ts`. Left out of Task 6 deliberately, to
+     keep that diff to the API switch.
+   - **The 23505 overload.** Have `retry_lesson_creation_job` raise a custom
+     SQLSTATE for `job_not_retryable` instead of the system unique-violation
+     code, and match on that. Changes an applied migration, so the live gate
+     (`npm run verify:db:lesson-jobs`) must be re-run.
+   - **A `reason` discriminant on the enqueue refusal.** Today the learner 403
+     has exactly one source, so "Monthly lesson quota reached" is accurate by
+     luck; the next 403 added would silently inherit that copy.
+   - **`listJobEventsForOwnedJob` is safe by comment, not by construction.**
+     A single `getRequesterJobWithEvents(jobId, requesterId)` would make the
+     ownership mistake unrepresentable, which is the posture the rest of this
+     subsystem takes.
+   - **Event history is unbounded** and re-sent whole on every poll. Consider a
+     limit, or only the current attempt's sequence.
 3. Then the mandatory whole-branch review, which must carry everything from
-   `0cb3567` onward — Claude wrote and self-reviewed all of it.
+   `0cb3567` onward — Claude wrote and self-reviewed all of it, including
+   Task 6's own fix round `19c0d09`.
+
+## Owner decision needed
+
+**May an admin job that dedups onto an existing PRIVATE lesson report
+`succeeded`?** Surfaced by Task 6's review; it is a pre-existing property of
+Task 2's migration (lines 270-278), not a defect this task introduced, but the
+admin status endpoint is what makes it visible. Finalize marks such a job
+`succeeded` against that lesson id and never applies `requested_library_access`,
+so `GET /api/admin/lesson-creation-jobs/:id` reports "ready" for catalogue work
+that published nothing — and hands the admin the UUID of another user's private
+lesson. The migration comment states the non-publishing rule deliberately; what
+is missing is any way for the admin to learn it happened. Needs an answer before
+an admin UI is built on this projection.
