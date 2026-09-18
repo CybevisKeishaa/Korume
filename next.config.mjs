@@ -48,7 +48,7 @@ const nextConfig = {
       // aliases absent and retains the real startup import.
       config.resolve.alias[path.resolve(process.cwd(), "lib/lesson-creation/start")] = false;
     }
-    if (nextRuntime === "nodejs" && process.env.KORUME_DISABLE_NODE_ALIAS !== "1") {
+    if (nextRuntime === "nodejs") {
       const nodeBuiltinAliases = {
         path: path.resolve(process.cwd(), "lib/node-builtins/path.cjs"),
         "node:path": path.resolve(process.cwd(), "lib/node-builtins/path.cjs"),

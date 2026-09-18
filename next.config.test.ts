@@ -142,6 +142,20 @@ describe("next.config.mjs webpack instrumentation boundaries", () => {
     expect(aliases["@/lib/lesson-creation/start"]).toBeUndefined();
   });
 
+  it("does not allow ambient environment to disable Node instrumentation aliases", () => {
+    const previous = process.env.KORUME_DISABLE_NODE_ALIAS;
+    process.env.KORUME_DISABLE_NODE_ALIAS = "1";
+
+    try {
+      const aliases = configuredAliases("nodejs");
+
+      expect(aliases["path"]).toBe(path.resolve(process.cwd(), "lib/node-builtins/path.cjs"));
+    } finally {
+      if (previous === undefined) delete process.env.KORUME_DISABLE_NODE_ALIAS;
+      else process.env.KORUME_DISABLE_NODE_ALIAS = previous;
+    }
+  });
+
   it("externalizes kuromoji for the server build that compiles instrumentation", () => {
     const packages = (nextConfig as {
       experimental?: { serverComponentsExternalPackages?: string[] };
