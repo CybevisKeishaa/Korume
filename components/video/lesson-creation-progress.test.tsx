@@ -34,7 +34,7 @@ function stageState(label: string): string {
 
 describe("LessonCreationProgress", () => {
   it("shows every approved stage label and nothing else", () => {
-    render(<LessonCreationProgress job={job()} events={[event("deduplicating")]} onRetry={vi.fn()} />);
+    render(<LessonCreationProgress job={job()} events={[event("deduplicating", "queued")]} onRetry={vi.fn()} />);
 
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(STAGE_LABELS.length);
@@ -49,7 +49,7 @@ describe("LessonCreationProgress", () => {
     render(
       <LessonCreationProgress
         job={job({ step: "fetching_transcript" })}
-        events={[event("deduplicating")]}
+        events={[event("deduplicating", "queued")]}
         onRetry={vi.fn()}
       />,
     );
@@ -63,7 +63,7 @@ describe("LessonCreationProgress", () => {
     render(
       <LessonCreationProgress
         job={job({ step: "fetching_transcript" })}
-        events={[event("deduplicating"), event("fetching_transcript")]}
+        events={[event("deduplicating", "queued"), event("fetching_transcript")]}
         onRetry={vi.fn()}
       />,
     );
@@ -110,7 +110,7 @@ describe("LessonCreationProgress", () => {
   });
 
   it("announces durable transitions through a live region", () => {
-    render(<LessonCreationProgress job={job()} events={[event("deduplicating")]} onRetry={vi.fn()} />);
+    render(<LessonCreationProgress job={job()} events={[event("deduplicating", "queued")]} onRetry={vi.fn()} />);
 
     const status = screen.getByRole("status");
     expect(status).toHaveAccessibleName("Lesson creation progress");
@@ -121,7 +121,7 @@ describe("LessonCreationProgress", () => {
     const { container } = render(
       <LessonCreationProgress
         job={job({ step: "persisting" })}
-        events={[event("deduplicating"), event("fetching_transcript"), event("persisting")]}
+        events={[event("deduplicating", "queued"), event("fetching_transcript"), event("persisting")]}
         onRetry={vi.fn()}
       />,
     );
@@ -173,7 +173,7 @@ describe("LessonCreationProgress", () => {
   });
 
   it("offers no retry while the job can still finish on its own", () => {
-    render(<LessonCreationProgress job={job()} events={[event("deduplicating")]} onRetry={vi.fn()} />);
+    render(<LessonCreationProgress job={job()} events={[event("deduplicating", "queued")]} onRetry={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
   });
@@ -193,5 +193,22 @@ describe("LessonCreationProgress", () => {
 
     expect(await screen.findByRole("button", { name: "Retrying…" })).toBeDisabled();
     settle();
+  });
+
+  it("claims no progress when the retained history no longer holds this attempt's start", () => {
+    // The store keeps only the newest event rows, so after enough retries the
+    // opening `queued` event can fall out of the window. Using the rest anyway
+    // would mark stages done from a PREVIOUS attempt.
+    render(
+      <LessonCreationProgress
+        job={job({ step: "fetching_transcript" })}
+        events={[event("fetching_transcript"), event("enriching_furigana")]}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    for (const label of STAGE_LABELS) {
+      expect(stageState(label)).toContain("not started");
+    }
   });
 });

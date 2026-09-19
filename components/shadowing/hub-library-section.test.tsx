@@ -150,6 +150,26 @@ describe("HubLibrarySection", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it("frees every card's retry when the poll is refused, instead of disabling them all silently", async () => {
+    // `tracked !== null` disables every unavailable card's button. If a refused
+    // poll left that in place with no message, the whole section would go inert.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.startsWith("/api/videos/import")
+          ? enqueued()
+          : ({ ok: false, status: 500, headers: new Headers(), json: async () => ({ error: "boom" }) } as Response),
+      ),
+    );
+
+    render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't retry captions. Try again.");
+    expect(screen.getByRole("button", { name: "Try again" })).not.toBeDisabled();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
   it("announces a refused enqueue and leaves the lesson available for another attempt", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 } as Response));
 

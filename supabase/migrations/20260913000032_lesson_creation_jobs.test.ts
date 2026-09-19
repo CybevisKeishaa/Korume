@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import { LESSON_CREATION_ERROR_CODES, LESSON_CREATION_JOB_STATES, LESSON_CREATION_STEPS } from "../../lib/lesson-creation/types";
+import { FREE_MONTHLY_LESSON_QUOTA } from "../../lib/data/lesson-library";
 
 const directory = join(process.cwd(), "supabase/migrations");
 const filename = "20260913000032_lesson_creation_jobs.sql";
@@ -16,6 +17,21 @@ function migration(): string {
 }
 
 describe("durable lesson creation SQL contract", () => {
+  /**
+   * `finalize_lesson_creation_job` is the authoritative quota decision and it
+   * holds the free-tier cap as a SQL literal, while `FREE_MONTHLY_LESSON_QUOTA`
+   * drives the advisory refusal and the Hub's "used / limit" chip. Two homes for
+   * one number is a defect (AGENTS.md §6), and nothing else connects them: raise
+   * the constant alone and the chip promises a slot that finalize refuses AFTER
+   * the caption work is done. This pin is that connection.
+   */
+  it("holds the same free-tier cap as FREE_MONTHLY_LESSON_QUOTA", () => {
+    const sql = migration();
+    const match = /if monthly_count >= (\d+) then/.exec(sql);
+    expect(match).not.toBeNull();
+    expect(Number(match?.[1])).toBe(FREE_MONTHLY_LESSON_QUOTA);
+  });
+
   it("ships exactly one migration and both private, cascading tables", () => {
     const sql = migration();
     for (const table of ["lesson_creation_jobs", "lesson_creation_job_events"]) {

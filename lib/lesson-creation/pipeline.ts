@@ -8,6 +8,7 @@ import {
 import type { VideoRow } from "@/lib/data/videos";
 import { fetchOembed } from "@/lib/youtube";
 import { sanitizeTranscriptText } from "@/lib/transcript";
+import { TransientLessonCreationProviderError } from "./errors";
 import {
   finalizeClaimedJob,
   getRequesterJob,
@@ -39,7 +40,6 @@ export interface LessonCreationPersistenceDependencies {
 export class LessonCreationPipelineError extends Error {
   constructor(
     public readonly publicErrorCode: LessonCreationErrorCode,
-    public readonly retryable: boolean,
     options?: ErrorOptions,
   ) {
     super(publicErrorCode, options);
@@ -153,7 +153,7 @@ function parseMetadata(metadata: { title: string; thumbnailUrl: string }): {
     thumbnailUrl: z.string().url(),
   }).strict().safeParse({ title, thumbnailUrl: metadata.thumbnailUrl });
   if (!parsed.success) {
-    throw new LessonCreationPipelineError("metadata_unavailable", false, { cause: parsed.error });
+    throw new LessonCreationPipelineError("metadata_unavailable", { cause: parsed.error });
   }
   return parsed.data;
 }
@@ -161,7 +161,7 @@ function parseMetadata(metadata: { title: string; thumbnailUrl: string }): {
 function parseCaptions(result: CaptionResult | null): CaptionResult {
   const parsed = captionResultSchema.safeParse(result);
   if (!parsed.success) {
-    throw new LessonCreationPipelineError("transcript_unavailable", false, { cause: parsed.error });
+    throw new LessonCreationPipelineError("transcript_unavailable", { cause: parsed.error });
   }
   const lines = parsed.data.lines.map((line) => ({
     ...line,
@@ -169,7 +169,7 @@ function parseCaptions(result: CaptionResult | null): CaptionResult {
     textTranslation: line.textTranslation === null ? null : sanitizeTranscriptText(line.textTranslation),
   }));
   if (lines.some((line) => line.textJp.length === 0)) {
-    throw new LessonCreationPipelineError("transcript_unavailable", false);
+    throw new LessonCreationPipelineError("transcript_unavailable");
   }
   return { source: parsed.data.source, lines };
 }
@@ -224,7 +224,12 @@ export async function processClaimedLessonCreationJob(
     metadata = parseMetadata(await dependencies.fetchOembed(claim.youtubeVideoId));
   } catch (error) {
     if (error instanceof LessonCreationPipelineError) throw error;
-    throw new LessonCreationPipelineError("metadata_unavailable", false, { cause: error });
+    // A stall is not a verdict on the video. `metadata_unavailable` is terminal,
+    // so swallowing a transient provider error here would permanently fail a
+    // lesson because YouTube was slow once — and the 10s provider timeout makes
+    // that reachable. Let the worker's retry classification see it.
+    if (error instanceof TransientLessonCreationProviderError) throw error;
+    throw new LessonCreationPipelineError("metadata_unavailable", { cause: error });
   }
 
   await transitionAndRead(claim, store, "fetching_transcript");

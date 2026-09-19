@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { LessonCreationProgress } from "@/components/video/lesson-creation-progress";
 import { useLessonCreationJob } from "@/components/video/use-lesson-creation-job";
@@ -38,13 +38,23 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
   // One card at a time: the retry buttons disable each other while one runs.
   const [tracked, setTracked] = useState<{ youtubeVideoId: string; jobId: string } | null>(null);
 
-  const { job, events, restart } = useLessonCreationJob(tracked?.jobId ?? null, {
+  const { job, events, phase, restart } = useLessonCreationJob(tracked?.jobId ?? null, {
     onSucceeded() {
       // Only now is the lesson studyable; the server render is the authority
       // on what the card becomes.
       router.refresh();
     },
   });
+
+  // A poll that was refused, or a job that stopped moving, must release the
+  // card: `tracked !== null` disables EVERY unavailable card's retry, so
+  // holding it would make the whole section inert with nothing on screen to
+  // explain why.
+  const pollAbandoned = phase === "refused" || phase === "stalled";
+  const trackedCard = pollAbandoned ? null : tracked;
+  useEffect(() => {
+    if (pollAbandoned && tracked !== null) setRetryErrorVideoId(tracked.youtubeVideoId);
+  }, [pollAbandoned, tracked]);
 
   /**
    * Queues a fresh creation attempt for a lesson whose transcript never
@@ -117,14 +127,14 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
               <li key={item.lesson.id} className="rounded-xl border border-danger/40 bg-card p-md-lg">
                 <h3 className="font-semibold text-foreground">{item.lesson.title}</h3>
                 <p className="mt-xs text-sm text-muted-foreground">{labels.unavailable}</p>
-                {tracked?.youtubeVideoId === item.lesson.youtubeVideoId && job !== null ? (
+                {trackedCard?.youtubeVideoId === item.lesson.youtubeVideoId && job !== null ? (
                   <LessonCreationProgress job={job} events={events} onRetry={retryTrackedJob} />
                 ) : (
                   <Button
                     type="button"
                     className="mt-md"
                     variant="outline"
-                    disabled={retryingVideoId !== null || tracked !== null}
+                    disabled={retryingVideoId !== null || trackedCard !== null}
                     onClick={() => void retryCaptionFetch(item.lesson.youtubeVideoId)}
                   >
                     {retryingVideoId === item.lesson.youtubeVideoId ? labels.retryPending : labels.retry}

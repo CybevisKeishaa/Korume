@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/test/render";
 import userEvent from "@testing-library/user-event";
+import { act, fireEvent } from "@testing-library/react";
 import { VideoImportForm } from "./video-import-form";
 
 const push = vi.fn();
@@ -142,21 +143,50 @@ describe("VideoImportForm", () => {
     expect(await screen.findByRole("button", { name: "Importing…" })).toBeDisabled();
   });
 
-  it("reports a job it can no longer read instead of polling in silence", async () => {
+  function refusePollWith(status: number) {
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) =>
         url.startsWith("/api/videos/import")
           ? ({ ok: true, status: 202, headers: new Headers(), json: async () => ({ data: jobProjection() }) } as Response)
-          : ({ ok: false, status: 404, headers: new Headers(), json: async () => ({ error: "Not found" }) } as Response),
+          : ({ ok: false, status, headers: new Headers(), json: async () => ({ error: "refused" }) } as Response),
       ),
     );
+  }
+
+  it("reports a job it can no longer read instead of polling in silence", async () => {
+    refusePollWith(404);
 
     render(<VideoImportForm />);
     await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Something went wrong importing that video. Please try again.",
+    );
+  });
+
+  it("lets the learner try again after a refused poll, instead of locking the form", async () => {
+    // The enqueue succeeded and the job is running durably in the background,
+    // but this page can no longer follow it. Leaving the button disabled and
+    // reading "Importing…" strands the learner with no way out but a reload.
+    refusePollWith(500);
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    await screen.findByRole("alert");
+    expect(screen.getByRole("button", { name: "Import video" })).not.toBeDisabled();
+    expect(screen.getByLabelText("YouTube URL")).not.toBeDisabled();
+  });
+
+  it("names an expired session during polling instead of blaming the video", async () => {
+    refusePollWith(401);
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Your session expired — please sign in again.",
     );
   });
 
@@ -335,5 +365,46 @@ describe("VideoImportForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Something went wrong importing that video. Please try again.",
     );
+  });
+});
+
+/**
+ * Isolated because fake timers and `userEvent` do not mix: an earlier version
+ * of this test called `vi.useFakeTimers()` inside the main block and every
+ * other test in the file timed out at 5s — 19 failures from one line. Here the
+ * clock is installed and removed per test, and interaction uses `fireEvent`,
+ * which does not wait on timers at all.
+ */
+describe("VideoImportForm — a job that stops moving", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("says the lesson is still being prepared rather than staying 'Importing…' forever", async () => {
+    mockJobFlow({ job: jobProjection({ state: "queued", step: "deduplicating" }) });
+
+    render(<VideoImportForm />);
+    fireEvent.change(screen.getByLabelText("YouTube URL"), {
+      target: { value: "https://www.youtube.com/watch?v=abc123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Import video" }));
+    // Let the enqueue settle FIRST: the poll cannot start before the job id
+    // exists, and advancing the clock in the same act spends the budget before
+    // there is anything to poll.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByRole("button", { name: "Importing…" })).toBeDisabled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5 * 60_000 + 4_000);
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Lesson creation is paused right now. Please try again later.",
+    );
+    expect(screen.getByRole("button", { name: "Import video" })).not.toBeDisabled();
   });
 });

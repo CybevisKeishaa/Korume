@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { VideoRow } from "@/lib/data/videos";
+import { TransientLessonCreationProviderError } from "./errors";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createMockSupabase } from "@/test/supabase-mock";
 import type {
@@ -213,7 +214,6 @@ describe("processClaimedLessonCreationJob", () => {
     await expect(processClaimedLessonCreationJob(claim(), dependency, store)).rejects.toEqual(
       expect.objectContaining<Partial<LessonCreationPipelineError>>({
         publicErrorCode: "transcript_unavailable",
-        retryable: false,
       }),
     );
     expect(store.finalizations).toEqual([]);
@@ -294,5 +294,22 @@ describe("processClaimedLessonCreationJob", () => {
     for (const fixture of fixtureStrings) {
       expect(fixture).not.toMatch(/googlevideo|videoplayback|mime=video|mime=audio|audio_url|video_url|media_url/i);
     }
+  });
+});
+
+describe("a stalled metadata provider", () => {
+  it("stays transient instead of becoming a terminal verdict on the video", async () => {
+    // A timeout says nothing about whether the metadata exists. Wrapping it as
+    // `metadata_unavailable` would permanently fail the lesson on attempt 1,
+    // and the 10s provider timeout makes that reachable.
+    const dependencies = providers({
+      fetchOembed: vi.fn().mockRejectedValue(
+        new TransientLessonCreationProviderError("YouTube oEmbed timed out."),
+      ),
+    });
+
+    await expect(
+      processClaimedLessonCreationJob(claim(), dependencies, persistence()),
+    ).rejects.toBeInstanceOf(TransientLessonCreationProviderError);
   });
 });

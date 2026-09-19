@@ -138,7 +138,8 @@ user-curated, publicly shareable collection. Note the spec's own R2 already uses
 worked example: `kind: 'repo-only'` + `impl: 'built'`.
 
 The user's underlying model — *explore holds every video including ones the user imported* — is
-supported: `POST /api/videos/import` → `createLesson()` is user-scoped with a monthly quota
+supported: `POST /api/videos/import` is user-scoped with a monthly quota (as of C4 it
+enqueues a durable job and answers `202`; `createLesson()` is deleted)
 (403 "Monthly lesson quota reached"), so self-import is a real user feature, not admin-only.
 
 ## ⚑ Still open — the user has not answered these

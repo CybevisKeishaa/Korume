@@ -63,10 +63,17 @@ function stageIndexOf(step: LessonCreationStep): number {
  * its FAILED attempt had reached as already complete — work that is being
  * redone, presented as done. `attemptCount` cannot serve here: retry resets it
  * to 0, so the numbers repeat across attempts.
+ *
+ * The store caps history at its newest rows, so after enough retries the
+ * opening `queued` event can fall outside the window. That is treated as NO
+ * proof rather than as licence to use the whole window — the alternative would
+ * mark stages done from a previous attempt, which is the exact lie this exists
+ * to prevent.
  */
 function currentAttempt(events: LessonCreationJobEvent[]): LessonCreationJobEvent[] {
   const lastQueued = events.map((event) => event.state).lastIndexOf("queued");
-  return lastQueued <= 0 ? events : events.slice(lastQueued);
+  if (lastQueued === -1) return events.length === 0 ? events : [];
+  return events.slice(lastQueued);
 }
 
 function stageStates(job: LessonCreationJobProjection, events: LessonCreationJobEvent[]): StageState[] {

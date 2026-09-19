@@ -21,6 +21,9 @@ interface CaptionTrack {
   kind: "manual" | "asr";
 }
 
+/** See `oembed.ts`: a stalled provider request freezes the whole worker. */
+const PROVIDER_TIMEOUT_MS = 10_000;
+
 function trackListUrl(videoId: string): string {
   return `https://video.google.com/timedtext?type=list&v=${encodeURIComponent(videoId)}`;
 }
@@ -100,7 +103,7 @@ async function fetchCaptionResponse(
   stage: "track-list" | "caption-body",
 ): Promise<Response | null> {
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
     if (response.ok) return response;
     if (surfaceTransientErrors && isTransientHttpStatus(response.status)) {
       throw new TransientLessonCreationProviderError(

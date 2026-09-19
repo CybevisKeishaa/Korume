@@ -172,6 +172,12 @@ begin
   if st <> 'queued' or stp <> 'deduplicating' then
     raise exception 'G5 attempt 1 became %/%, expected queued/deduplicating', st, stp;
   end if;
+  -- A requeued job is healthy and must carry no public error code.
+  if exists (select 1 from public.lesson_creation_jobs
+    where id = j_retry and public_error_code is not null) then
+    raise exception 'G5 requeued job still carries a public_error_code';
+  end if;
+  raise notice 'G5a PASS  requeued job carries no error code';
 
   select state::text, step::text, completed_at into st, stp, comp
     from public.lesson_creation_jobs where id = j_dead;

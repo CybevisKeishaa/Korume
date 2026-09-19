@@ -8,34 +8,53 @@ import {
 } from "@/lib/lesson-creation/types";
 
 /**
- * Polls one lesson-creation job for as long as it can still change.
+ * Polls one lesson-creation job for as long as it can still change, and says
+ * plainly when it has stopped.
  *
- * The worker ticks every 5s; this asks more often so a durable transition
- * reaches the learner without feeling stalled, and stops the moment there is
- * nothing left to learn — a terminal state, an unreadable job, a replaced job
- * id, or unmount. It reports the job's own durable event history untouched:
- * the presentation layer decides what may be shown as complete, and may only
- * use events to decide it.
+ * Every way of stopping is visible in `phase`, because a consumer that cannot
+ * tell polling has ended has no way to let the learner out: the importer's
+ * submit button stays disabled reading "Importing…" forever, which is what an
+ * earlier version of this hook caused when it reported only "unreadable".
+ *
+ * - `polling`  — a job is being watched and may still change.
+ * - `terminal` — it succeeded or failed; nothing more will arrive.
+ * - `refused`  — the status read was refused (`refusedStatus` carries the code,
+ *   so a consumer can say "session expired" for a 401 rather than "something
+ *   went wrong").
+ * - `stalled`  — the job was still active after the poll budget ran out. The
+ *   worker may be disabled, deploying, or simply busy with other jobs, and
+ *   design §7 forbids presenting that as indefinitely pending.
+ * - `idle`     — no job.
  */
 const POLL_MS = 2_000;
+
+/**
+ * How long to watch a job that keeps reporting the same durable step. The
+ * budget resets on every durable transition, so a slow-but-progressing job is
+ * never abandoned; only one that is not moving.
+ */
+const STALL_BUDGET_MS = 5 * 60_000;
+
+export type LessonCreationJobPhase = "idle" | "polling" | "terminal" | "refused" | "stalled";
 
 interface PolledJob {
   job: LessonCreationJobProjection | null;
   events: LessonCreationJobEvent[];
-  /** The job could not be read at all (signed out, or not this requester's). */
-  unreadable: boolean;
+  phase: LessonCreationJobPhase;
+  /** The HTTP status that refused the read, when `phase` is `refused`. */
+  refusedStatus: number | null;
 }
 
 export interface LessonCreationJobPollingState extends PolledJob {
   /**
    * Poll the same job id again. A retry re-queues the job it was given, so the
-   * id does not change and cannot restart a loop that stopped on a terminal
-   * state — the consumer that knows a new attempt exists says so.
+   * id does not change and cannot restart a loop that stopped — the consumer
+   * that knows a new attempt exists says so.
    */
   restart(): void;
 }
 
-const IDLE: PolledJob = { job: null, events: [], unreadable: false };
+const IDLE: PolledJob = { job: null, events: [], phase: "idle", refusedStatus: null };
 
 export function useLessonCreationJob(
   jobId: string | null,
@@ -45,19 +64,24 @@ export function useLessonCreationJob(
   const [attempt, setAttempt] = useState(0);
 
   // Held in a ref so a caller passing a fresh closure each render cannot
-  // restart the poll loop; only the job id may do that.
+  // restart the poll loop; only the job id or an explicit restart may.
   const onSucceeded = useRef(options.onSucceeded);
   useEffect(() => {
     onSucceeded.current = options.onSucceeded;
   }, [options.onSucceeded]);
 
   useEffect(() => {
-    setState(IDLE);
-    if (jobId === null) return;
+    if (jobId === null) {
+      setState(IDLE);
+      return;
+    }
+    setState({ ...IDLE, phase: "polling" });
 
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
+    let lastMovedAt = Date.now();
+    let lastStep: string | null = null;
 
     function stop(): void {
       stopped = true;
@@ -70,8 +94,7 @@ export function useLessonCreationJob(
         const response = await fetch(`/api/lesson-creation-jobs/${jobId}`, { signal: controller.signal });
         if (stopped) return;
         if (!response.ok) {
-          // 401 and 404 are both final for a reader: nothing further to poll.
-          setState((current) => ({ ...current, unreadable: true }));
+          setState((current) => ({ ...current, phase: "refused", refusedStatus: response.status }));
           stop();
           return;
         }
@@ -83,17 +106,33 @@ export function useLessonCreationJob(
         // A truncated or unexpected body is treated as a missed tick, not as a
         // job: a consumer must never be handed a half-shaped projection.
         if (projection !== undefined && projection !== null) {
-          setState({ job: projection, events: body?.data?.events ?? [], unreadable: false });
+          setState({
+            job: projection,
+            events: body?.data?.events ?? [],
+            phase: "polling",
+            refusedStatus: null,
+          });
           if (isTerminalJobState(projection.state)) {
             stop();
+            setState((current) => ({ ...current, phase: "terminal" }));
             if (projection.state === "succeeded") onSucceeded.current(projection);
             return;
+          }
+          // Durable movement, not wall-clock time, is what earns more patience.
+          if (projection.step !== lastStep) {
+            lastStep = projection.step;
+            lastMovedAt = Date.now();
           }
         }
       } catch {
         // A dropped connection is transient; the next tick tries again. An
         // abort is already covered by `stopped`.
         if (stopped) return;
+      }
+      if (Date.now() - lastMovedAt >= STALL_BUDGET_MS) {
+        setState((current) => ({ ...current, phase: "stalled" }));
+        stop();
+        return;
       }
       timer = setTimeout(() => void poll(), POLL_MS);
     }

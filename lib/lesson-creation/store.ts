@@ -208,9 +208,19 @@ export async function claimNextLessonCreationJob(now: string): Promise<ClaimedLe
   return { job, ...privateFields };
 }
 
+export class LessonCreationJobVanishedError extends Error {
+  constructor(jobId: string) {
+    super(`Lesson-creation job ${jobId} no longer exists.`);
+    this.name = "LessonCreationJobVanishedError";
+  }
+}
+
 export async function transitionClaimedJob(input: TransitionClaimedJobInput): Promise<void> {
-  // Even a discarded RPC row is parsed: a missing row must not look like a completed transition.
-  projectRow(await callRpc("transition_lesson_creation_job", {
+  // A missing row must not look like a completed transition — and it arrives as
+  // PostgREST's all-null composite, so it needs `isAbsentRow` like its siblings.
+  // Naming it beats letting a raw ZodError out: the only realistic cause is the
+  // requester deleting their account mid-flight (FK cascade).
+  const data = await callRpc("transition_lesson_creation_job", {
     p_job_id: input.jobId,
     p_expected_state: "running",
     p_step: input.step,
@@ -218,7 +228,9 @@ export async function transitionClaimedJob(input: TransitionClaimedJobInput): Pr
     p_error: input.error ?? null,
     p_lease_token: input.leaseToken,
     p_lease_seconds: leaseSeconds,
-  }));
+  });
+  if (isAbsentRow(data)) throw new LessonCreationJobVanishedError(input.jobId);
+  projectRow(data);
 }
 
 export async function finalizeClaimedJob(input: FinalizeClaimedJobInput): Promise<FinalizeOutcome> {

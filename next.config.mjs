@@ -49,15 +49,16 @@ const nextConfig = {
       config.resolve.alias[path.resolve(process.cwd(), "lib/lesson-creation/start")] = false;
     }
     if (nextRuntime === "nodejs") {
-      const nodeBuiltinAliases = {
-        path: path.resolve(process.cwd(), "lib/node-builtins/path.cjs"),
-        "node:path": path.resolve(process.cwd(), "lib/node-builtins/path.cjs"),
-        fs: path.resolve(process.cwd(), "lib/node-builtins/fs.cjs"),
-        "node:fs": path.resolve(process.cwd(), "lib/node-builtins/fs.cjs"),
-        zlib: path.resolve(process.cwd(), "lib/node-builtins/zlib.cjs"),
-        "node:zlib": path.resolve(process.cwd(), "lib/node-builtins/zlib.cjs"),
-      };
-      Object.assign(config.resolve.alias, nodeBuiltinAliases);
+      // Externalization is the whole mechanism, and it must stay: without it
+      // webpack bundles kuromoji's Node-only dictionary loader into the Node
+      // instrumentation chunk. An earlier version also aliased `path`/`fs`/
+      // `zlib` to `eval("require")` shims under `lib/node-builtins/`; those
+      // were provably inert — externals short-circuit resolution at factorize,
+      // before `resolve.alias` is consulted, so the built
+      // `.next/server/instrumentation.js` contained plain `require("path")`
+      // and no shim, and `grep -rlF 'eval("require")' .next/server` matched
+      // nothing. Deleted with their guard test, which had the dead alias map
+      // as its only subject.
       config.externalsPresets = { ...config.externalsPresets, node: true };
       const externalizeNodeInstrumentationBuiltins = ({ request }, callback) => {
         if (NODE_INSTRUMENTATION_EXTERNALS.has(request)) {

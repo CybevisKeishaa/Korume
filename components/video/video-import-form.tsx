@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { isTerminalJobState, type LessonCreationJobProjection } from "@/lib/lesson-creation/types";
+import type { LessonCreationJobProjection } from "@/lib/lesson-creation/types";
 import { LessonCreationProgress } from "./lesson-creation-progress";
 import { useLessonCreationJob } from "./use-lesson-creation-job";
 
@@ -78,7 +78,7 @@ export function VideoImportForm({ variant = "default" }: VideoImportFormProps) {
   const [jobId, setJobId] = useState<string | null>(null);
   const isHubForm = variant === "hub";
 
-  const { job, events, unreadable, restart } = useLessonCreationJob(jobId, {
+  const { job, events, phase, refusedStatus, restart } = useLessonCreationJob(jobId, {
     onSucceeded(succeeded: LessonCreationJobProjection) {
       router.refresh();
       // A succeeded job without a lesson id would route to /shadowing/null;
@@ -87,9 +87,25 @@ export function VideoImportForm({ variant = "default" }: VideoImportFormProps) {
     },
   });
 
-  /** In flight, or queued work that can still change. Both keep the form busy. */
-  const working = loading || (jobId !== null && (job === null || !isTerminalJobState(job.state)));
-  const shownError: ErrorDescriptor | null = error ?? (unreadable ? { key: "generic" } : null);
+  /**
+   * In flight, or a job still being polled. Anything that ENDS the poll must
+   * end this too: a form that cannot leave "Importing…" strands the learner
+   * with no way out but a page reload, while the job finishes unseen.
+   */
+  const working = loading || (jobId !== null && phase === "polling");
+
+  function pollingRefusal(): ErrorDescriptor | null {
+    if (phase === "refused") {
+      // The read was refused, not the video: a 401 means sign in again.
+      return refusedStatus === 401 ? { key: "sessionExpired" } : { key: "generic" };
+    }
+    // Still queued after the poll budget: the worker may be off or busy. Design
+    // §7 forbids showing this as indefinitely pending.
+    if (phase === "stalled") return { key: "unavailable" };
+    return null;
+  }
+
+  const shownError: ErrorDescriptor | null = error ?? pollingRefusal();
 
   function errorMessage(descriptor: ErrorDescriptor): string {
     return descriptor.key === "rateLimited"

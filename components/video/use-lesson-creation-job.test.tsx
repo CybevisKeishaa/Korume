@@ -39,7 +39,8 @@ function Harness({ jobId }: { jobId: string | null }) {
       <span data-testid="step">{state.job?.step ?? "none"}</span>
       <span data-testid="state">{state.job?.state ?? "none"}</span>
       <span data-testid="events">{state.events.map((event) => event.step).join(",")}</span>
-      <span data-testid="unreadable">{String(state.unreadable)}</span>
+      <span data-testid="phase">{state.phase}</span>
+      <span data-testid="refused">{String(state.refusedStatus)}</span>
       <button type="button" onClick={state.restart}>restart</button>
     </div>
   );
@@ -182,7 +183,8 @@ describe("useLessonCreationJob", () => {
     await settle();
     await advanceOnePoll();
 
-    expect(screen.getByTestId("unreadable")).toHaveTextContent("true");
+    expect(screen.getByTestId("phase")).toHaveTextContent("refused");
+    expect(screen.getByTestId("refused")).toHaveTextContent("404");
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -222,7 +224,7 @@ describe("useLessonCreationJob", () => {
 
     expect(screen.getByTestId("step")).toHaveTextContent("none");
     expect(screen.getByTestId("events")).toBeEmptyDOMElement();
-    expect(screen.getByTestId("unreadable")).toHaveTextContent("false");
+    expect(screen.getByTestId("phase")).toHaveTextContent("polling");
   });
 
   it("treats a job with no event history as having none, not as broken", async () => {
@@ -239,6 +241,70 @@ describe("useLessonCreationJob", () => {
 
     expect(screen.getByTestId("step")).toHaveTextContent("fetching_transcript");
     expect(screen.getByTestId("events")).toBeEmptyDOMElement();
+  });
+
+  it("reports the status that refused the read, so a consumer can be specific about 401", async () => {
+    respondWith({ ok: false, status: 401 });
+
+    render(<Harness jobId={JOB_ID} />);
+    await settle();
+
+    expect(screen.getByTestId("phase")).toHaveTextContent("refused");
+    expect(screen.getByTestId("refused")).toHaveTextContent("401");
+  });
+
+  it("reaches a terminal phase so a consumer can tell polling is over", async () => {
+    respondWith({ job: job({ state: "succeeded", step: "ready", lessonId: LESSON_ID }) });
+
+    render(<Harness jobId={JOB_ID} />);
+    await settle();
+
+    expect(screen.getByTestId("phase")).toHaveTextContent("terminal");
+  });
+
+  it("gives up on a job that never leaves the queue, rather than polling for as long as the tab is open", async () => {
+    // Design §7: a queued job the worker will never run must not be presented
+    // as indefinitely pending. The worker may also simply be off.
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ data: { job: job({ state: "queued", step: "deduplicating" }), events: [] } }),
+    } as Response);
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<Harness jobId={JOB_ID} />);
+    await settle();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5 * 60_000 + 4_000);
+    });
+
+    expect(screen.getByTestId("phase")).toHaveTextContent("stalled");
+    const callsAtGiveUp = fetchMock.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(fetchMock.mock.calls.length).toBe(callsAtGiveUp);
+  });
+
+  it("does not give up on a job that is still making durable progress", async () => {
+    let step = 0;
+    const steps = ["deduplicating", "fetching_metadata", "fetching_transcript", "enriching_furigana"] as const;
+    const fetchMock = vi.fn().mockImplementation(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        data: { job: job({ state: "running", step: steps[Math.min(step++, steps.length - 1)] }), events: [] },
+      }),
+    } as Response));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<Harness jobId={JOB_ID} />);
+    await settle();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4 * 60_000);
+    });
+
+    expect(screen.getByTestId("phase")).toHaveTextContent("polling");
   });
 
   it("keeps polling through a transient network failure", async () => {
@@ -259,6 +325,6 @@ describe("useLessonCreationJob", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId("step")).toHaveTextContent("fetching_transcript");
-    expect(screen.getByTestId("unreadable")).toHaveTextContent("false");
+    expect(screen.getByTestId("phase")).toHaveTextContent("polling");
   });
 });
