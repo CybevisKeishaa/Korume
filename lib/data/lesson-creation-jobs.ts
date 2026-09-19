@@ -72,7 +72,7 @@ export type ReadLessonCreationJobResult =
 
 export type RetryLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobProjection }
-  | Refusal<401 | 404 | 409>
+  | Refusal<401 | 404 | 409 | 503>
   | Forbidden
   | RateLimited;
 
@@ -283,6 +283,13 @@ async function retryFor(
   // key before knowing who is calling could bucket every user together.
   const limited = rateLimit(`${rateLimitKeyPrefix}${identity.userId}`, CREATE_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
+
+  // Same refusal order as enqueue, and for the same reason: a retry re-queues a
+  // job, so it must not record work for a worker that will not run it. Without
+  // this the staleness rule and "Try again" loop against each other — the retry
+  // re-queues, the rule ends it a window later, forever — while a fresh import of
+  // the same video answers 503 honestly (review Minor M1).
+  if (!isLessonCreationWorkerEnabled()) return { ok: false, status: 503 };
 
   let job: LessonCreationJobProjection | null;
   try {

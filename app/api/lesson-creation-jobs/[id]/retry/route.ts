@@ -29,7 +29,9 @@ export async function POST(_request: Request, { params }: { params: { id: string
           ? lessonCreationRefusalMessage(result.reason)
           : result.status === 404
             ? "Not found"
-            : "This job cannot be retried";
+            : result.status === 503
+              ? "Lesson creation is temporarily unavailable"
+              : "This job cannot be retried";
     return NextResponse.json({ error: message }, { status: result.status });
   }
 

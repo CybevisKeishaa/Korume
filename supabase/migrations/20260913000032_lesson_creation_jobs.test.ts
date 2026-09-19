@@ -107,7 +107,6 @@ describe("durable lesson creation SQL contract", () => {
     expect(sql).toContain("set state = 'queued', step = 'deduplicating', attempt_count = 0");
   });
 
-
   it("ships exactly one migration and both private, cascading tables", () => {
     const sql = migration();
     for (const table of ["lesson_creation_jobs", "lesson_creation_job_events"]) {
@@ -272,13 +271,20 @@ describe("durable lesson creation SQL contract", () => {
     if (!body) throw new Error("the stale-queued sweeper is missing");
 
     // A single-concurrency worker makes a healthy job wait behind others; without
-    // this guard the window alone would call that queue dead.
+    // this guard the window alone would call that queue dead. The claim-history
+    // half is the load-bearing one: a pass sweeps between its recovery and its
+    // claim, holding no lease, so an instantaneous lease test alone failed the
+    // head of a healthy backlog (reviewed 2026-09-20, reproduced live).
     expect(body).toContain("state = 'running' and lease_expires_at > p_now");
+    expect(body).toContain("or exists (select 1 from public.lesson_creation_job_events");
+    expect(body).toContain("and created_at > p_now - make_interval(secs => p_max_age_seconds)) then");
     expect(body).toContain("return 0;");
     // `updated_at`, never `created_at`: a transient requeue touches the former,
     // so a job being retried on schedule is not stale.
     expect(body).toContain("updated_at <= p_now - make_interval(secs => p_max_age_seconds)");
-    expect(body).not.toContain("created_at");
+    // The job's own age is never read from `created_at` — only the events clause
+    // above reads that column, and it reads it forwards, on the history table.
+    expect(body).not.toMatch(/created_at\s*<=?[^=]/);
     // Terminal and retryable, and it consumes no attempt — the row never ran.
     expect(body).toContain("state = 'failed', step = 'failed', public_error_code = 'temporary_failure'");
     expect(body).not.toContain("attempt_count");
@@ -305,6 +311,20 @@ describe("durable lesson creation SQL contract", () => {
     expect(functions.length).toBeGreaterThan(0);
     expect(functions).toHaveLength(8);
     for (const [body] of functions) expect(body).toContain("security definer set search_path = ''");
+    // Every definer function must appear in BOTH privilege lists by name. The
+    // stale sweeper's safety rests entirely on this revoke: its `p_job_id` is not
+    // requester-scoped in SQL, so ownership is proven only in TypeScript.
+    // Each statement taken whole, from its verb to its own terminator: slicing to
+    // the next "to service_role;" would stop at the TABLE grant far above.
+    const revoked = sql.match(/revoke all on function[\s\S]*?;/)?.[0] ?? "";
+    const granted = sql.match(/grant execute on function[\s\S]*?;/)?.[0] ?? "";
+    expect(revoked).toContain("from public, anon, authenticated;");
+    expect(granted).toContain("to service_role;");
+    for (const [, name] of functions) {
+      if (name === "record_lesson_creation_job_event") continue; // trigger-owned, granted to nobody
+      expect(granted).toContain(`public.${name}(`);
+      expect(revoked).toContain(`public.${name}(`);
+    }
     expect(sql).toContain("lease_token is distinct from p_lease_token");
     expect(sql).toContain("lease_expires_at <= clock_timestamp()");
     expect(sql).toContain("revoke all on function");

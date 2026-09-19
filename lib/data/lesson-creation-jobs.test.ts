@@ -394,6 +394,23 @@ describe("retryLearnerLessonCreationJob", () => {
   });
 });
 
+describe("retry while the worker is disabled", () => {
+  /**
+   * Review Minor M1. Without this, "Try again" with the worker off re-queues a row
+   * that the staleness rule ends ten minutes later, forever — while a fresh import
+   * of the same video answers `503` honestly. The two paths must agree.
+   */
+  it.each([
+    ["learner", () => retryLearnerLessonCreationJob(JOB_ID)],
+    ["admin", () => retryAdminLessonCreationJob(JOB_ID)],
+  ])("refuses a %s retry with 503 rather than re-queueing work nothing will run", async (_who, run) => {
+    process.env.LESSON_CREATION_WORKER_ENABLED = "false";
+
+    expect(await run()).toEqual({ ok: false, status: 503 });
+    expect(retryRequesterJob).not.toHaveBeenCalled();
+  });
+});
+
 describe("retryAdminLessonCreationJob", () => {
   it("scopes an admin retry to the jobs that admin requested", async () => {
     expect(await retryAdminLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: JOB });

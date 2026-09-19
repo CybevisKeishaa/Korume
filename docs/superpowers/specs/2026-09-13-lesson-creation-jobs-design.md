@@ -151,12 +151,15 @@ same maximum-attempt policy as an ordinary retry. The first implementation is
 intentionally single-concurrency per process. Claiming remains atomic so a
 future second process cannot execute the same row concurrently.
 
-A queued job can also end without ever running. If a row has sat untouched past
-a generous window AND no job anywhere holds a live lease, nothing is working on
-the queue — the worker was stopped or died after the row was recorded — and the
-job is failed as `temporary_failure`, spending no attempt. Both conditions are
-required: a single-concurrency worker leaves a healthy job waiting behind others,
-and the window alone would call that queue dead. The rule is one SQL function
+A queued job can also end without ever running. If a row has sat untouched past a
+generous window AND no worker has claimed anything inside that window, the worker
+was stopped or died after the row was recorded, and the job is failed as
+`temporary_failure`, spending no attempt. Both conditions are required: a
+single-concurrency worker leaves a healthy job waiting behind others, and the
+window alone would call that queue dead. Liveness is read from claims, not from
+the current lease set — a claim is the one act only the worker performs, and a
+pass sweeps at the moment it holds no lease, so an instantaneous lease test would
+fail the head of a healthy backlog. The rule is one SQL function
 applied by the learner's own status read, scoped to the job being polled, and by
 each worker pass, sweeping the queue; the read path is what matters, because with
 the worker stopped the pass does not run at all. Ending the row is what gives the
@@ -229,17 +232,19 @@ per the established scheduler pattern, performs immediate recovery/claim work,
 then runs an unref'd short polling interval with an overlap guard. It logs a
 structured pass result (claimed, succeeded, requeued, failed, recovered,
 staleFailed) and catches top-level errors so one bad pass cannot crash the
-application. It does
-not share the account-deletion scheduler's feature switch or cadence: lesson
+application. It does not share the account-deletion scheduler's feature switch or
+cadence: lesson
 creation is user-visible work and must not wait for a deletion-oriented
 one-minute tick.
 
 When disabled, enqueue endpoints return `503` before recording a job. The UI
 shows a generic try-again-later state rather than presenting an indefinitely
-pending lesson. That `503` protects only jobs not yet recorded; rows already
-`queued` when the worker stops are ended by the staleness rule in §5, which the
-learner's own status read applies. The enabled flag is never inferred from `NODE_ENV` or the
-presence of another credential.
+pending lesson. Retry refuses with the same `503`, for the same reason — it
+re-queues a job, and must not record work nothing will run. That `503` protects
+only jobs not yet recorded; rows already `queued` when the worker stops are ended
+by the staleness rule in §5, which the learner's own status read applies. The
+enabled flag is never inferred from `NODE_ENV` or the presence of another
+credential.
 
 ## 8. API contracts
 

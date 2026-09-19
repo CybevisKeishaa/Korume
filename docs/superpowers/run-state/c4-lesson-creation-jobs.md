@@ -94,13 +94,14 @@ closes its three Important findings. What remains is under Next actions.
 ## Verification
 
 **Current gate state, every command run and read on this wave:** vitest
-**3057/3057 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
+**3059/3059 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
 --noEmit` 0 · `npm run lint` 0 errors, 80 baseline warnings · `npm run build` 0
 · `git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a
-freshly reset database**, `PRECONDITION` through the new `F5a`–`F5f` plus
+freshly reset database**, `PRECONDITION` through the new `F5a`–`F5h` plus
 `CONTENTION` · `npx playwright test --config=playwright.c4.config.ts` **3/3**.
-The `F5a` live-lease guard was mutation-checked against the live database:
-neutralised → `F5a` red, restored by hash → green again.
+Mutation-checked against the live database: restoring the rejected
+instantaneous-lease guard turned **`F5g`** red ("a live worker lost the head of
+its own backlog"), and restoring by hash returned the gate to green.
 
 ⚠️ `components/video-player/waveform.test.tsx` and `pitch-contour.test.tsx`
 flake under parallel load (`expected 0 to be greater than 0` on canvas calls).
@@ -108,10 +109,9 @@ Neither file is touched by this branch — `git diff --name-only master..HEAD`
 matches nothing under `video-player` — and both pass 14/14 in isolation.
 **Re-run before believing a failure in either.**
 
-Per-task and per-wave evidence — the red-first runs, the mutation checks and
-their restored hashes, the superseded gate counts — is in the commit messages,
-which is where Git already keeps it. This file carries the current state
-(`.codex/docs/workflow.md` §5). Reviews and what each closed:
+Per-wave evidence — red-first runs, mutation checks and their restored hashes,
+superseded gate counts — is in the commit messages. This file carries the current
+state (`.codex/docs/workflow.md` §5). Reviews and what each closed:
 
 | Review of | Verdict | Closed by |
 | --- | --- | --- |
@@ -119,7 +119,8 @@ which is where Git already keeps it. This file carries the current state
 | whole branch @ `226d4a4` | 0 Critical, 6 Important, 9 Minor | `226d4a4` |
 | `226d4a4` | 1 Critical, 3 Important, 9 Minor | `9e1b04d` |
 | `3c73987` | 1 Critical, 3 Important, 5 Minor | `509ca76` |
-| whole branch @ `813d6b7` | 0 Critical, 3 Important, 9 Minor | this wave (I1–I3) |
+| whole branch @ `813d6b7` | 0 Critical, 3 Important, 9 Minor | `2c03e9d` (I1–I3) |
+| `813d6b7..260a01a` | **1 Critical**, 3 Important, 7 Minor | this wave (C1, M1–M4, M7) |
 
 Two findings changed how this subsystem is built, and both now live outside
 this file: the admin-dedup rule is design §6 rule 1 and §8.2, and the
@@ -143,58 +144,57 @@ own evidence.
 
 ## Blockers
 
-- None blocking implementation. Task 2's live PostgreSQL gate — the branch's
-  one long-standing blocker — ran on 2026-09-19 with the owner's approval and
-  passed; see Verification and `ed0a8f0`.
+- None blocking implementation. Task 2's live gate — the one long-standing
+  blocker — ran 2026-09-19 with the owner's approval and passed (`ed0a8f0`).
 - `scripts/verify-codex-protocol.ps1` is green on this file; keep it under the
   200-line cap, which PowerShell counts one line differently from `wc -l`. Its
   other findings all belong to merged branches' run states (shadowing Explore C3
   and Hub Plan C2), not to this one.
-- Review debt: one item — this fix wave, unreviewed. Everything through
-  `813d6b7` is reviewed and closed.
+- Review debt: one item — this second fix wave. Everything through `260a01a` is
+  reviewed and closed.
+- Two owner calls are open, neither blocking: whether to ALSO sweep on the
+  enqueue path (cheaper than per-poll, and it frees a learner who closed the tab
+  and so has nothing polling), and whether the staleness rule routing more jobs
+  into the retry UI makes Minor M3's focus bug worth fixing now.
 
 ## Next actions
 
-1. **Review this fix wave** — the whole-branch review's three Important items,
-   closed together. It edits an applied migration, so a reviewer should confirm
-   the live gate was re-run on a fresh reset rather than take Verification's
-   word, and should check the one judgement call in it: the staleness rule is
-   applied on the learner's status read, which is a write on a `GET`.
+1. **Review this second fix wave** (C1 plus four Minors). C1 was a real defect in
+   the first wave, found by review and reproduced live: the guard tested the lease
+   set at an instant, and a pass sweeps between its recovery and its claim, holding
+   no lease — so a healthy worker failed the head of its own backlog. Liveness now
+   reads claim history; re-derive that only `claim` writes a `running` event.
 2. Then `git merge --no-ff` (`.codex/docs/workflow.md` §7). Do not push unless
    the owner asks.
-3. Nine Minors are follow-ups, not blockers. **M3** is the only one with an
-   accessibility cost (the Hub's "Try again" is unmounted on retry, so focus
-   lands on `document.body`); M2 and M7 are near-free. Also deliberately NOT in
-   this branch: **the 23505 overload** — `retry_lesson_creation_job` raises the
-   system unique-violation code for a business rule. No spurious 23505 is
-   reachable today and `isNotRetryableRejection` documents why; the durable fix
-   is a custom SQLSTATE, which changes an applied migration and needs the live
-   gate re-run.
-4. A sibling of I2 found while closing it, **not fixed and not a regression**: a
-   job stuck in `running` with an expired lease has the same dead end, because
-   `recover_expired_lesson_creation_jobs` is also worker-only. With the worker
-   running it recovers on the next tick; with the worker off it does not.
+3. Follow-ups, not blockers. **M3** (the Hub's "Try again" unmounts on retry, so
+   focus lands on `document.body`) is the only one with an a11y cost — see the
+   owner call under Blockers. Also deliberately NOT in this branch: **the 23505
+   overload**, where `retry_lesson_creation_job` raises the system
+   unique-violation code for a business rule. No spurious 23505 is reachable
+   today and `isNotRetryableRejection` documents why; the durable fix is a custom
+   SQLSTATE, which changes an applied migration and needs the live gate re-run.
+4. A sibling of I2, **not fixed and not a regression**: a job stuck in `running`
+   with an expired lease has the same dead end, lease recovery being worker-only
+   too. With the worker running it recovers next tick; with it off, not at all.
 
 ## Owner decisions taken
 
 **May an admin job that dedups onto an existing PRIVATE lesson report
-`succeeded`? — RULED 2026-09-19: no. Options A + C.** The owner chose a
-distinct terminal outcome (A) plus an early refusal at enqueue (C), rejecting
-the alternative of applying the requested access level, which would have
-republished a learner's private lesson and retroactively refunded the quota
-slot it had consumed.
+`succeeded`? — RULED 2026-09-19: no. Options A + C.** A distinct terminal outcome
+(A) plus an early refusal at enqueue (C), rejecting the alternative of applying
+the requested access level, which would have republished a learner's private
+lesson and refunded the quota slot it had consumed.
 
-**The rule's home is the design, §6 rule 1 and §8.2 — not this file.** Worth
-repeating only because a reader meets the code first: of the three layers, only
-the refusal inside `pg_advisory_xact_lock` is a guarantee — the `409` at enqueue
-and the pipeline's early exit both run before that lock (`L-040`).
+**That rule's home is the design, §6 rule 1 and §8.2.** Of its three layers only
+the refusal inside `pg_advisory_xact_lock` is a guarantee (`L-040`).
 
 **Where does the "queued job the worker can no longer reach" rule run? — RULED
 2026-09-19: on the learner's status read AND each worker pass.** The review
-proposed the worker pass alone; that was checked and found insufficient, because
-`recover_expired_lesson_creation_jobs` is called only from
-`runLessonCreationPass`, so with the worker stopped — the case that strands the
-rows — it would never run. The read path costs a write on a `GET`; the owner
-accepted that over leaving the learner unable to re-import.
+proposed the worker pass alone; re-derivation showed
+`recover_expired_lesson_creation_jobs` has one caller, `runLessonCreationPass`,
+so with the worker stopped — the case that strands the rows — it would never run.
+The read path costs a write on a `GET`, accepted over leaving the learner unable
+to re-import. **Liveness is read from claim history, not the lease set** — see
+Next actions 1 for why the first version of that was wrong.
 
 **Migrations are edited in place** — ruled 2026-09-19, now AGENTS.md §6.

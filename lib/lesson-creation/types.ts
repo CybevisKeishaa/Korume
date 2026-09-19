@@ -41,7 +41,6 @@ export type TerminalLessonCreationJobState = Extract<LessonCreationJobState, "su
  */
 export const MAX_LESSON_CREATION_ATTEMPTS = 3;
 
-
 /**
  * The only job shape allowed beyond the server/store boundary. Requester and
  * lease fields remain operational database details and must never reach UI or API consumers.

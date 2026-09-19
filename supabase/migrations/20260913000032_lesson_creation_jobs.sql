@@ -52,6 +52,10 @@ create table public.lesson_creation_job_events (
   check ((state = 'failed') = (step = 'failed'))
 );
 create index lesson_creation_job_events_history on public.lesson_creation_job_events (job_id, id);
+-- Claims only: `fail_stale_queued_lesson_creation_jobs` asks "was a worker alive
+-- inside the window?", and a `running` event is the only record of one acting.
+create index lesson_creation_job_events_claims on public.lesson_creation_job_events (created_at)
+  where state = 'running';
 alter table public.lesson_creation_jobs enable row level security;
 alter table public.lesson_creation_job_events enable row level security;
 create policy lesson_creation_jobs_read on public.lesson_creation_jobs for select to authenticated
@@ -200,8 +204,25 @@ $$;
 -- The window alone must not decide it. A single-concurrency worker makes a job
 -- wait a long time behind others while being perfectly healthy, which is exactly
 -- why the client-side poll budget was removed, so the age test is paired with a
--- condition no number can express: NO job anywhere holds a live lease. Together
--- they mean "the queue is not moving", not "this job is slow".
+-- condition no number can express: has the WORKER acted lately?
+--
+-- That question is answered by the one act only the worker performs — claiming.
+-- `claim` is the sole writer of `state = 'running'`, and the event trigger records
+-- every one, so a `running` event inside the window means a worker was alive
+-- inside the window. A live lease is the same fact seen directly, and is kept as
+-- the cheap index-backed half.
+--
+-- An instantaneous "does anything hold a live lease" test is NOT enough, and was
+-- the first version of this guard: `runLessonCreationPass` sweeps between its
+-- recovery and its claim, which is precisely when a single-concurrency worker
+-- holds no lease, so a healthy worker working through a backlog would fail the
+-- head of its own queue — the exact outcome the pairing exists to prevent.
+-- Reviewed 2026-09-20; reproduced against a live database before this fix.
+--
+-- The claim-event signal is also what keeps this sweep from blocking itself: the
+-- sweeper writes a `failed` event and never a `running` one, so ending one
+-- stranded job does not read as progress and leave the next learner waiting
+-- another full window.
 --
 -- `updated_at`, not `created_at`: a transient requeue touches it, so a job that
 -- is being retried on schedule is never stale. `attempt_count` is left alone —
@@ -219,7 +240,10 @@ begin
     raise exception 'invalid_stale_window' using errcode = '22023';
   end if;
   if exists (select 1 from public.lesson_creation_jobs
-    where state = 'running' and lease_expires_at > p_now) then
+    where state = 'running' and lease_expires_at > p_now)
+    or exists (select 1 from public.lesson_creation_job_events
+      where state = 'running'
+        and created_at > p_now - make_interval(secs => p_max_age_seconds)) then
     return 0;
   end if;
   with stale as (select id from public.lesson_creation_jobs

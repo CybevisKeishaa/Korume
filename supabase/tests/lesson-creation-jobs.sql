@@ -472,6 +472,7 @@ end $$;
 -- ---------------------------------------------------------------------------
 do $$
 declare uid_b uuid; j_stale uuid; j_fresh uuid; j_second uuid; j_live uuid; j_new uuid;
+  j_backlog uuid; j_next uuid;
   ended int; st text; stp text; err text; comp timestamptz; attempts int;
   events_before int; events_after int; expired int; window_refused boolean := false;
 begin
@@ -513,12 +514,18 @@ begin
   if st <> 'queued' then raise exception 'F5a a busy queue lost a job: %', st; end if;
   raise notice 'F5a PASS  a live lease anywhere holds the sweep off';
 
-  -- F5b  With nothing holding a lease, the stale job ends. The precondition at
-  -- the top of this file is what makes "every live lease" safe to expire here:
-  -- the queue holds no job this gate did not create.
+  -- F5b  With nothing holding a lease, the stale job ends. Only F5a's own row is
+  -- expired: a queue-wide update standing in for this would silently neuter a
+  -- future gate inserted above F5 that means to leave a live lease behind.
   update public.lesson_creation_jobs set lease_expires_at = now() - interval '1 minute'
-    where state = 'running' and lease_expires_at > now();
+    where id = j_live;
   get diagnostics expired = row_count;
+  if expired <> 1 then raise exception 'F5b expected to expire 1 lease, expired %', expired; end if;
+  -- The claim history must also fall outside the window, or the guard below reads
+  -- F5a's own insert as a worker that acted recently. Same reason, stated where it
+  -- bites: this gate's rows are the only ones in the queue (see PRECONDITION).
+  update public.lesson_creation_job_events set created_at = now() - interval '1 hour'
+    where state = 'running';
 
   select count(*) into events_before from public.lesson_creation_job_events where job_id = j_stale;
   ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_stale);
@@ -545,10 +552,13 @@ begin
   end if;
   raise notice 'F5c PASS  a job inside the window is left alone';
 
-  -- F5d  The same definition sweeps the queue when given no job id. The count is
-  -- not asserted: earlier gates leave queued rows of their own behind, so this
-  -- check owns only the row it names.
-  perform public.fail_stale_queued_lesson_creation_jobs(now(), 600, null);
+  -- F5d  The same definition sweeps the queue when given no job id. The count IS
+  -- asserted: earlier gates leave queued rows behind, but every one is written
+  -- through `enqueue`/`recover` with `updated_at = now()`, so none is stale and
+  -- exactly one row here can be. A bare named-row check would miss the
+  -- `available_at <= p_now` filter being dropped.
+  ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, null);
+  if ended <> 1 then raise exception 'F5d queue-wide sweep ended %, expected 1', ended; end if;
   select state::text, public_error_code::text into st, err
     from public.lesson_creation_jobs where id = j_second;
   if st <> 'failed' or err <> 'temporary_failure' then
@@ -580,6 +590,49 @@ begin
   end;
   if not window_refused then raise exception 'F5f a zero-second window was accepted'; end if;
   raise notice 'F5f PASS  an out-of-range window is refused';
+
+  -- F5g  The case the first version of this rule got wrong, and the reason the
+  -- guard reads claim history rather than the instantaneous lease set. A worker
+  -- pass sweeps BETWEEN its recovery and its claim, so a healthy single-concurrency
+  -- worker holds no lease at that moment; with only a live-lease test, a backlog
+  -- older than the window was failed wholesale — head first, because `claim` is
+  -- FIFO. Reviewed and reproduced against a live database, 2026-09-20.
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
+  values (uid_b, 'learner', 'PRIVATE', 'C4GATEBKLG1', 'queued', 'deduplicating', 0,
+    now() - interval '1 hour', now() - interval '1 hour', now() - interval '1 hour')
+  returning id into j_backlog;
+
+  -- The worker claimed something 30 seconds ago and is between jobs right now:
+  -- no lease is held, and the queue is plainly moving.
+  insert into public.lesson_creation_job_events(job_id, attempt_count, state, step, created_at)
+  values (j_backlog, 1, 'running', 'fetching_metadata', now() - interval '30 seconds');
+
+  ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_backlog);
+  select state::text into st from public.lesson_creation_jobs where id = j_backlog;
+  if ended <> 0 or st <> 'queued' then
+    raise exception 'F5g a live worker lost the head of its own backlog (ended %, state %)', ended, st;
+  end if;
+  raise notice 'F5g PASS  a recent claim keeps a healthy backlog intact';
+
+  -- F5h  And the sweep must not block itself. Ending one stranded job writes a
+  -- `failed` event, never a `running` one, so the next learner's poll is not told
+  -- the queue is moving and made to wait another full window.
+  update public.lesson_creation_job_events set created_at = now() - interval '1 hour'
+    where state = 'running';
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
+  values (uid_b, 'learner', 'PRIVATE', 'C4GATENEXT1', 'queued', 'deduplicating', 0,
+    now() - interval '1 hour', now() - interval '1 hour', now() - interval '1 hour')
+  returning id into j_next;
+
+  ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_backlog);
+  if ended <> 1 then raise exception 'F5h the first stranded job survived (%)', ended; end if;
+  ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_next);
+  if ended <> 1 then
+    raise exception 'F5h the sweeper read its OWN write as queue progress (ended %)', ended;
+  end if;
+  raise notice 'F5h PASS  ending one stranded job does not strand the next';
 end $$;
 
 -- ---------------------------------------------------------------------------

@@ -73,8 +73,10 @@ export async function runLessonCreationPass(
 ): Promise<LessonCreationPassResult> {
   const timestamp = now.toISOString();
   const recovered = await recoverExpiredLessonCreationJobs(timestamp);
-  // After recovery, so a lease this pass just released cannot read as a job
-  // nothing is working on, and before the claim, so a swept row is never claimed.
+  // Before the claim, so a row this pass is about to end is never claimed first.
+  // Ordering is not what makes the sweep safe: this pass holds no lease at this
+  // point, by construction, so the rule reads the worker's claim history instead
+  // of the instantaneous lease set (see the SQL function's own comment).
   const staleFailed = await failStaleQueuedLessonCreationJobs(null, timestamp);
   const claimed = await claimNextLessonCreationJob(timestamp);
   const result: LessonCreationPassResult = {

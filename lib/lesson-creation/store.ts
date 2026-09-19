@@ -267,9 +267,11 @@ export async function recoverExpiredLessonCreationJobs(now: string): Promise<num
  *
  * It is generous on purpose. A queue that is merely busy must never be declared
  * dead — that is why the client-side poll budget was removed — so the SQL pairs
- * this window with a second condition the number cannot express: no job anywhere
- * holds a live lease. Ten minutes past that, with a lease of two minutes and a
- * backoff that tops out at thirty seconds, nothing is still working on the row.
+ * this window with a second condition the number cannot express: whether a worker
+ * has CLAIMED anything inside it. `claim` is the only writer of `running`, so a
+ * `running` event in the window means a worker was alive in it, however long the
+ * backlog is. The window is several times the lease and the backoff ceiling, both
+ * of which live in this file and in `worker.ts`.
  *
  * Passed as an RPC argument rather than written into the migration, so the window
  * keeps one home (AGENTS.md §6) and needs no pin of its own.
