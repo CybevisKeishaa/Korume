@@ -76,12 +76,9 @@ remains before merge is under Next actions.
 - Enqueue refusal order: identity → rate limit → worker enabled → this
   learner's quota. A disabled worker must not answer "out of quota", and no
   job is recorded for a worker that will not run.
-- The advisory quota refusal fires **only where a charge is certain** — the
-  video has no lesson row yet. A visible FREE/PLUS lesson, or a PRIVATE one
-  the learner already holds, costs no quota (design §3 rules 3 and 4), so an
-  exhausted learner must still reach it. An unheld PRIVATE lesson while
-  exhausted is left to the worker's `quota_exceeded`. Finalize's three-clause
-  predicate is deliberately NOT restated in TypeScript.
+- The advisory quota refusal fires **only where a charge is certain** — no
+  lesson row yet. Reasoning: design §3 rules 3-4 and `mayProceedOnQuota`'s
+  docblock. Finalize's predicate is deliberately not restated in TypeScript.
 - Both retry endpoints carry their own per-user rate-limit budget: a retry
   resets `attempt_count` to 0 and so buys a fresh three-attempt budget of
   third-party calls.
@@ -105,193 +102,37 @@ remains before merge is under Next actions.
 
 ## Verification
 
-- **Task 2's live PostgreSQL gate, 2026-09-19 (`ed0a8f0`) — cleared.** A full
-  `supabase db reset` applied all 32 migrations on PostgreSQL 15.8, then
-  `npm run verify:db:lesson-jobs` passed: grants, enqueue idempotency and the
-  partial unique index, admin-origin enforcement, lease recovery (requeue at
-  attempt 1, terminal at 3), the event trigger, RLS read isolation as the
-  authenticated role, finalize's lease fence and atomicity, the success path,
-  and the free-tier quota cap. Two sessions racing for one queued job produced
-  exactly one claim, one NULL, and a job left at attempt 1 — a second claim
-  would have made it 2 — and the loser returned in ~2s rather than waiting on
-  the 5s holder, which is `skip locked` rather than lock contention.
-  Mutation-checked twice: `using (true)` on the RLS policy reported 3 foreign
-  rows, and re-granting UPDATE on the event table reported `service_role can
-  still rewrite events: UPDATE`. One control was added after the RLS check was
-  caught passing vacuously against a null `auth.uid()` (L-004).
-- Baseline 2026-09-13: 2745 passing tests across 897 files, via
-  `npm test -- --exclude '.worktrees/**' --reporter=json`.
-- Tasks 1–5 each ran TDD red first, then focused green, typecheck, and
-  `git diff --check`. Mutations for store ownership, durable reads, retry
-  delay, terminal transitions and the worker-enabled gate each turned their
-  focused checks red and were restored from checksum-verified copies.
-- Task 5 fix round 1 (`13267fc`) was proved on build artefacts, not reasoning:
-  `.next/server/instrumentation.js` carries the Node worker start and the
-  `kuromoji` external, and `.next/server/edge-instrumentation.js` carries
-  neither.
-- Task 5 fix round 2 (`0cb3567`, 2026-09-19, Claude): `KORUME_DISABLE_NODE_ALIAS`
-  was introduced by `13267fc` with no consumer anywhere — no test, no doc, no
-  caller — leaving an ambient variable able to drop the `path`/`fs`/`zlib`
-  aliases from a production Node build, which is the defect `13267fc` existed
-  to fix. Removed, and pinned by a test that sets the variable and still
-  expects the alias. Focused 30/30; the new assertion was mutation-checked by
-  restoring the escape hatch (exactly one test red, 15 green) and the file was
-  restored byte-for-byte, SHA-256
-  `020F048105A105EA53E9574A5F3E5E0B3ADE4CA975F5F0F1D5E5AC53DECDB94E`.
-- Task 6 (`45d7684`, 2026-09-19, Claude) ran red first: nine test files failed,
-  six because the route and data modules did not exist and three on the absent
-  `listJobEventsForOwnedJob` / `isLessonCreationWorkerEnabled`. Then focused
-  207/207 over 15 files, full `npm test -- --exclude '.worktrees/**'`
-  **2974/2974 over 323 files, exit 0**, `npm run typecheck` 0, `npm run lint`
-  exit 0 with 80 baseline warnings and none in the new files.
-- Task 6's non-disclosure mutation check ran **twice**, each restored from a
-  copy verified by `git hash-object`
-  (`dc72ac421f937848547af9a42f25c1cb0825d4dc`): answering `403` instead of
-  `404` for a foreign read, and reading event history before proving
-  ownership. Each turned exactly one test red — "cannot tell a foreign job
-  from a missing one" (1 failed / 25 passed) — and the focused suite returned
-  63/63 after restoring.
-- Task 6 review R1 (`code-reviewer`, 2026-09-19): **CHANGES REQUIRED**, 3
-  Important + 6 Minor, 0 Critical, no §2 non-negotiable breach, and it
-  re-derived rather than trusted every numeric claim in `aefc6c4` (all held).
-  All three Important findings are closed by `19c0d09`; the Minors are routed
-  to Task 8 below. Its three mutation checks each restored from a copy verified
-  by `git hash-object` (`78cecdde5471c81001e6a15c81c6d17f7dd8e7ec`): dropping
-  the catalogue lookup turned 4 tests red, removing the retry limiter 2, and
-  moving the advisory ahead of the worker gate 5. After it: focused 72/72,
-  full `npm test` **2983/2983 over 323 files, exit 0**, tsc 0, lint 0 errors.
-- **What no test in Task 6 proves.** Route tests mock the data layer, so they
-  prove status/body/`Retry-After` mapping and the malformed-id short-circuit,
-  nothing more. The data-layer tests mock the store, so they prove ordering and
-  arguments but not that a query filters. The chain closes only at
-  `store.test.ts` (query shape) plus the live gate `ed0a8f0` (real RLS/RPC).
-  No test here drives an HTTP request against a real database — Task 8 owes it.
+**Current gate state, every command run and read on `509ca76`:** vitest
+**3044/3044 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
+--noEmit` 0 · `npm run lint` 0 errors, 80 baseline warnings · `npm run build` 0
+· `git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a
+freshly reset database**, with `PRECONDITION`, `G5a`, `F4`, `F4b` and
+`CONTENTION` all passing · `npx playwright test --config=playwright.c4.config.ts`
+**3/3**, zero server errors.
 
-- Task 7 (`ba90db8`, `002f993`) ran red first: the hook and component test
-  files failed to load because neither module existed; the EN pins were green
-  from the start because the copy was committed before them (L-027). Then
-  focused 235/235 over 22 files, full `npm test` 3029/3029 over 325 files.
-  Mutation-checked, each restored from a `git hash-object`-verified copy:
-  deriving completion from `job.step` turned the durable-event test red;
-  refreshing the Hub on enqueue turned 3 red; removing the terminal-state stop
-  turned 2 red. **A fourth attempt proved nothing and is recorded because of
-  that**: a CRLF-blind `perl -0pi` silently failed to apply, and the line it
-  printed back had always been there, so the suite was green because the
-  mutation never existed. Caught by comparing file hashes, not output.
-- **Task 8's browser acceptance found a defect no unit test could.** PostgREST
-  renders a composite NULL as an object with every column null, not as `null`,
-  so `data === null` never matched for claim/retry/finalize and the worker threw
-  a ZodError on EVERY idle pass. The three unit tests that asserted the empty
-  case were green because each fixture used a literal `null` the database never
-  sends. Confirmed by hand before fixing —
-  `POST /rest/v1/rpc/retry_lesson_creation_job` for a missing job returns
-  `{"id":null,…,"completed_at":null}` — then fixed with `isAbsentRow` and
-  re-tested with the real shape. The same browser run afterwards logs zero
-  worker errors. Recorded as L-005 evidence.
-- **Gate ordering, learned the same way.** The C4 acceptance leaves two jobs in
-  `running` when Playwright kills its server; run afterwards on the same
-  database, the DB gate's lease-recovery step requeued them and its two
-  contending sessions each claimed a different job, failing with
-  `one session must claim and one must skip` — which reads like a
-  `skip locked` regression. Nothing was wrong. Diagnosed by querying the queue
-  (2 running, 1 succeeded), not by re-running. The SQL now asserts it owns the
-  queue; planting a foreign job proved the message fires (exit 1) and a clean
-  queue passes (exit 0). Recorded as L-017 evidence.
-- **Final gates, each run and read on `b4290d5`:** `npm test -- --exclude
-  '.worktrees/**'` **3021/3021 over 324 files, exit 0** · `npm run typecheck` 0 ·
-  `npm run lint` exit 0, 80 baseline warnings, none in new files ·
-  `npm run build` exit 0 · `git diff --check` clean ·
-  `npm run verify:db:lesson-jobs` exit 0 on a freshly reset database with
-  `PRECONDITION PASS` and `CONTENTION PASS` · `npx playwright test
-  --config=playwright.c4.config.ts` **3/3**, zero server errors. The vitest
-  count falls from 3029 because `lib/data/lesson-creation.test.ts` was deleted
-  with the module it covered.
-- The e2e's YouTube seam is `tests/e2e/fixtures/youtube-stub.cjs`, a
-  `node --require` preload named only in `playwright.c4.config.ts`'s webServer
-  command. Nothing that ships gains a test branch, and an unknown video id makes
-  the stub throw rather than fall through to the network.
-### Admin-dedup wave (owner ruling A+C, 2026-09-19)
+⚠️ `components/video-player/waveform.test.tsx` and `pitch-contour.test.tsx`
+flake under parallel load (`expected 0 to be greater than 0` on canvas calls).
+Neither file is touched by this branch — `git diff --name-only master..HEAD`
+matches nothing under `video-player` — and both pass 14/14 in isolation.
+**Re-run before believing a failure in either.**
 
-Every command run and read, in this worktree: vitest **3038/3038 over 324 files,
-exit 0** (baseline 3031; +7) · tsc 0 · lint 0 errors · `next build` 0 ·
-`git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a freshly
-reset database** · playwright C4 **3/3** (`.env.local` borrowed and deleted,
-L-020). *(Superseded: this wave originally shipped two additional migration
-files. The review of it ruled that convention out — see below — and they are
-gone, so the `ALTER TYPE` reasoning they carried no longer applies to anything.)*
+Per-task and per-wave evidence — the red-first runs, the mutation checks and
+their restored hashes, the superseded gate counts — is in the commit messages,
+which is where Git already keeps it. This file carries the current state
+(`.codex/docs/workflow.md` §5). Reviews and what each closed:
 
-**The live gate reproduced the defect before the fix** — `F4 admin dedup onto a
-PRIVATE lesson gave succeeded/ready err=<NULL>` against the real database. No
-source test caught it; the Supabase mock models neither PostgREST nor the lock.
+| Review of | Verdict | Closed by |
+| --- | --- | --- |
+| Task 6 | CHANGES REQUIRED, 3 Important | `19c0d09` |
+| whole branch @ `226d4a4` | 0 Critical, 6 Important, 9 Minor | `226d4a4` |
+| `226d4a4` | 1 Critical, 3 Important, 9 Minor | `9e1b04d` |
+| `3c73987` | 1 Critical, 3 Important, 5 Minor | `509ca76` |
 
-Mutation-checked (L-004), each restored to a byte-identical hash: the two enqueue
-guards (`6e6565d4`→`4c7871e9`, plus a refusal-order swap), the SQL leak assertion
-(`10c978a8`→`e622f1b5`), and the distributive `ClaimCatalogue` type (tsc rejects
-`admin` + `PRIVATE`).
-
-### Review of `226d4a4`, and the wave closing it (2026-09-19)
-
-Verdict CHANGES REQUIRED: 1 Critical, 3 Important, 9 Minor. All closed.
-
-- **C1** — `fetchOembed` wrapped every transport failure, including the new 10s
-  abort, in `OembedFetchError`, which `worker.ts` does not treat as retryable.
-  The I5 "a stall is not a verdict on the video" guard was therefore dead code,
-  and the timeout it shipped with turned a slow provider into a terminal
-  `metadata_unavailable` on the first blip — strictly worse than the lease-
-  expiry requeue it replaced. `oembed.ts` now classifies transport as transient,
-  matching `timedtext.ts`. The green test that hid this mocked a shape
-  production could not produce (**L-005**), so the fix pins the seam itself.
-- **I1** — the Hub masked `tracked` instead of clearing it, so a retry getting
-  the same job id back (enqueue is idempotent while active) never changed the
-  hook's deps and Try again did nothing, forever.
-- **I2** — the client giveup is REMOVED (owner ruling). Design §9 lists three
-  stop conditions; §7's `503` governs the case with no job to poll at all.
-- **I3** — M4 is REVERTED (owner ruling, after investigation). The event trigger
-  copies `public_error_code` into the append-only history, and lease recovery
-  fires exactly when no terminal transition was written, so blanking it deleted
-  the only evidence of why the attempt died — which design §5 forbids twice over.
-  The projection concern M4 cited is unreachable: the sole reader gates on
-  `state === "failed"`. Live gate G5a now asserts the category is retained.
-- **Correction to `226d4a4`'s commit message, which cannot be edited:** its M3
-  decline says the timeout "removes the case that made it bite". False — a
-  provider 429 is a rate limit, not a stall, and a timeout does not touch it.
-  The decline itself still stands on design §6 ("Metadata failure is terminal").
-
-Gates after the wave: vitest **3043/3043 over 324 files, exit 0** · tsc 0 ·
-lint 0 errors · `next build` 0 · `git diff --check` clean ·
-`npm run verify:db:lesson-jobs` **exit 0 on a freshly reset database**, with
-G5a red first against the pre-revert function.
-
-### Review of `3c73987`, and the wave closing it (2026-09-19)
-
-Verdict CHANGES REQUIRED: 1 Critical, 3 Important, 5 Minor. All closed.
-
-- **I1, owner ruling — migrations are edited IN PLACE.** Now law, in AGENTS.md
-  §6. The additive `CREATE OR REPLACE` migrations this wave introduced are gone;
-  migration 32 absorbs the enum value and the refusal branch. Choosing this
-  dissolved C1 and the whole `ALTER TYPE` migration with it.
-- **C1** — migration 32's `finalize_lesson_creation_job` had become dead SQL the
-  database never ran, while every behavioural pin still read it: the quota
-  literal, the `security definer set search_path = ''` check (its regex matches
-  `create function`, so the replacement was invisible to it) and the §2.1
-  no-download scan. A guard now asserts the subsystem stays at one file, so the
-  scans below it cannot silently stop covering the live definitions.
-- **I2** — F4 passed a non-null `p_lesson_id`, i.e. the path `pipeline.ts`
-  short-circuits before finalize is ever called. **The race the SQL refusal
-  exists for was untested.** F4b now drives `p_lesson_id = null` with full
-  content, and was verified red against a refusal-free function
-  (`succeeded/ready err=<NULL>`) before being accepted.
-- **I3** — the `409` had been widened onto the shared enqueue result, so the
-  learner route's final `else` could answer 409 with the 503 copy. The result
-  type is now per-caller; `tsc` rejects a 409 from the learner path.
-- Minors: unreachable learner copy made neutral and commented; the Vietnamese
-  catalogue's `temporaryFailure` encoding churn reverted; the SQL leak assertion
-  narrowed to `lesson_id = v.id`; the 409 now names the remedy (approve the
-  existing lesson); the unbounded-but-manual futile retry documented.
-
-Gates after the wave: vitest **3043/3043 over 324 files, exit 0** · tsc 0 ·
-lint 0 errors · `next build` 0 · `git diff --check` clean ·
-`npm run verify:db:lesson-jobs` **exit 0 on a freshly reset database**.
+Two findings changed how this subsystem is built, and both now live outside
+this file: the admin-dedup rule is design §6 rule 1 and §8.2, and the
+**edit-migrations-in-place** convention is AGENTS.md §6. Three method lessons it
+paid for are `docs/lessons.md` L-005, L-017 and L-040 — this branch is L-040's
+own evidence.
 
 ## Working tree and environment
 
@@ -312,30 +153,27 @@ lint 0 errors · `next build` 0 · `git diff --check` clean ·
 - None blocking implementation. Task 2's live PostgreSQL gate — the branch's
   one long-standing blocker — ran on 2026-09-19 with the owner's approval and
   passed; see Verification and `ed0a8f0`.
-- **`scripts/verify-codex-protocol.ps1` is red on this file: it exceeds the
-  200-line cap (291).** Pre-existing — it was 263 at `226d4a4`, so the cap was
-  already broken before the admin-dedup wave, which added 28. Not introduced
-  here and not silently inherited either: the file needs a real trim (its
-  per-task Verification detail is transcript, which `.codex/docs/workflow.md` §5
-  says does not belong here) before merge, and that is a separate edit from a
-  reviewer's own. The other two violations the validator reports belong to
-  already-merged branches' run states.
-- Review debt: the whole-branch review has run and carried Task 5 fix round 2
-  (`0cb3567`), the live gate (`ed0a8f0`) and Tasks 6-8. What remains unreviewed
-  is its own fix wave `226d4a4` and the admin-dedup wave — both listed under
-  Next actions.
+- `scripts/verify-codex-protocol.ps1` is green on this file again. It had been
+  red on the 200-line cap since before this branch's later waves; the per-task
+  Verification detail that overran it was transcript (§5) and now lives in the
+  commit messages. The validator still reports two violations, both belonging to
+  already-merged branches' run states, not to this one.
+- Review debt: every wave through `3c73987` has been reviewed and closed. The
+  two waves that closed those reviews — `9e1b04d` and `509ca76` — are covered by
+  the fresh whole-branch review under Next actions, which the owner chose over
+  reviewing each separately (L-012 recurses; L-011 is where it stops).
 
 ## Next actions
 
-1. **Review the wave that closes the `226d4a4` review** (L-012 again — the fix
-   wave for a fix wave's review). Its review should re-derive that each new
-   test's fixture is a shape the production transport can actually produce:
-   that was C1's exact shape.
-2. **Review the wave that closes the `3c73987` review** (L-012, again). It
-   consolidated the subsystem back to one migration file, so its review should
-   check that no pin still reads a definition the database does not run.
-3. **Trim this file under the 200-line cap** so `verify-codex-protocol.ps1` is
-   green (see Blockers).
+1. **A fresh whole-branch review over `c1a14e9..HEAD`** (AGENTS.md §9, L-011),
+   chosen by the owner 2026-09-19 in place of separate reviews of `9e1b04d` and
+   `509ca76`: the branch has moved substantially since the last whole-branch
+   review at `226d4a4`, and per-wave reviews cannot see interactions between
+   waves. It must construct the restart, concurrent-enqueue, retry-storm and
+   worker-disabled-with-queued-rows sequences by hand — no test covers those end
+   to end — and re-derive that each new test's fixture is a shape the production
+   transport can actually produce, which was the previous review's Critical.
+2. Fix wave for whatever it finds, then merge.
 3. Only then merge. One item is deliberately NOT in this branch and must not
    block it: **the 23505 overload.** `retry_lesson_creation_job` raises the
    system unique-violation code for a business rule. No spurious 23505 is
@@ -352,14 +190,11 @@ the alternative of applying the requested access level, which would have
 republished a learner's private lesson and retroactively refunded the quota
 slot it had consumed.
 
-Shipped as three layers of one rule, only the last a guarantee: `409` at
-`enqueueAdminLessonCreationJob` (courtesy), an early exit at `pipeline.ts`'s
-dedup branch (saves provider calls), and the authoritative refusal in
-`finalize_lesson_creation_job` after the `lesson_mismatch` guard, **inside
-`pg_advisory_xact_lock`**. The first two run before the lock, so the row can
-appear after either passes — `L-040`, which this branch paid for. The job ends
-`failed` / `existing_private_lesson` with **no lesson id**, closing the UUID
-disclosure by construction. Retry stays available: the condition clears if an
-admin publishes the lesson elsewhere or the learner deletes it.
+**The rule's home is the design, §6 rule 1 and §8.2 — not this file.** The one
+thing worth repeating here, because a reader of the code will meet it before
+the spec: of the three layers, only the refusal inside `pg_advisory_xact_lock`
+is a guarantee. The `409` at enqueue and the pipeline's early exit both run
+before that lock, so the row can appear after either has passed (`L-040`, which
+this branch is the evidence for).
 
-The rule's home is the design (§6 rule 1, §8.2), not this file.
+**Migrations are edited in place** — ruled 2026-09-19, now AGENTS.md §6.
