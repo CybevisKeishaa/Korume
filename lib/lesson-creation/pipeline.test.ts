@@ -42,7 +42,21 @@ function video(libraryAccess: VideoRow["library_access"]): VideoRow {
   };
 }
 
-function claim(step: ClaimedLessonCreationJob["job"]["step"] = "deduplicating"): ClaimedLessonCreationJob {
+/**
+ * Distributes over the claim union, so the fixture cannot pair an origin with an
+ * access level the contract forbids. A plain `Pick` would merge the members and
+ * silently allow `admin` + `PRIVATE`.
+ */
+type ClaimCatalogue<T extends ClaimedLessonCreationJob = ClaimedLessonCreationJob> = T extends unknown
+  ? Pick<T, "origin" | "requestedAccess">
+  : never;
+
+const ADMIN_CLAIM = { origin: "admin", requestedAccess: "FREE" } as const;
+
+function claim(
+  step: ClaimedLessonCreationJob["job"]["step"] = "deduplicating",
+  catalogue: ClaimCatalogue = { origin: "learner", requestedAccess: "PRIVATE" },
+): ClaimedLessonCreationJob {
   return {
     job: {
       id: JOB_ID,
@@ -54,8 +68,7 @@ function claim(step: ClaimedLessonCreationJob["job"]["step"] = "deduplicating"):
       updatedAt: NOW,
     },
     requesterId: REQUESTER_ID,
-    origin: "learner",
-    requestedAccess: "PRIVATE",
+    ...catalogue,
     youtubeVideoId: VIDEO_ID,
     leaseToken: LEASE_TOKEN,
     leaseExpiresAt: "2026-09-14T03:02:00.000Z",
@@ -162,6 +175,27 @@ describe("processClaimedLessonCreationJob", () => {
       }]);
     },
   );
+
+  /**
+   * An admin job asks for a FREE/PLUS catalogue lesson. Deduping onto a PRIVATE
+   * one publishes nothing, so finishing `succeeded` would report catalogue work
+   * that never happened. This early exit only saves the provider calls — the
+   * authoritative refusal is in `finalize_lesson_creation_job`, under the
+   * advisory lock, because the row can appear after this check has passed.
+   */
+  it("refuses an admin job deduping onto a private lesson, before any provider call", async () => {
+    const dependency = providers({ findExistingLesson: vi.fn().mockResolvedValue(video("PRIVATE")) });
+    const store = persistence();
+
+    const error = await processClaimedLessonCreationJob(claim("deduplicating", ADMIN_CLAIM), dependency, store)
+      .then(() => null, (thrown: unknown) => thrown);
+
+    expect(error).toBeInstanceOf(LessonCreationPipelineError);
+    expect((error as LessonCreationPipelineError).publicErrorCode).toBe("existing_private_lesson");
+    expect(store.finalizations).toHaveLength(0);
+    expect(dependency.fetchOembed).not.toHaveBeenCalled();
+    expect(dependency.fetchCaptions).not.toHaveBeenCalled();
+  });
 
   it("fetches metadata and captions, sanitizes lines, tolerates one furigana failure, and persists once", async () => {
     const dependency = providers();

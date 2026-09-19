@@ -36,12 +36,17 @@ export async function POST(request: Request) {
         { status: 429, headers: { "Retry-After": String(Math.ceil(result.retryAfter / 1000)) } },
       );
     }
+    // 409 carries its own words deliberately: the 503 copy ("temporarily
+    // unavailable") would tell the admin to wait, and an existing private
+    // lesson does not clear on its own.
     const message =
       result.status === 401
         ? "Unauthorized"
         : result.status === 403
           ? lessonCreationRefusalMessage(result.reason)
-          : "Lesson creation is temporarily unavailable";
+          : result.status === 409
+            ? "This video already has a private lesson, so it cannot be published to the catalogue"
+            : "Lesson creation is temporarily unavailable";
     return NextResponse.json({ error: message }, { status: result.status });
   }
 

@@ -34,6 +34,7 @@ describe("lesson creation job domain contract", () => {
       "transcript_unavailable",
       "quota_exceeded",
       "temporary_failure",
+      "existing_private_lesson",
     ]);
     expect(isTerminalJobState("succeeded")).toBe(true);
     expect(isTerminalJobState("failed")).toBe(true);

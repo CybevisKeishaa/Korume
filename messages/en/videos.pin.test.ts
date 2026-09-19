@@ -158,7 +158,7 @@ describe("videos.json EN — lesson creation progress", () => {
       ...Object.values(en.creation.errors),
     ];
     // Guard the guard: an empty list would pass every assertion below (L-004).
-    expect(strings).toHaveLength(14);
+    expect(strings).toHaveLength(15);
     for (const value of strings) {
       expect(value).not.toMatch(/%|\bETA\b|remaining|estimat/i);
     }

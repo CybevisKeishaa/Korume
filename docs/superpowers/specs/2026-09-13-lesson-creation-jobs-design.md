@@ -166,6 +166,16 @@ reading current durable state and may safely run again after an interruption.
 1. **Deduplicate.** Service-role lookup checks `youtube_video_id`. Published
    lessons finish immediately; existing complete private lessons continue only
    to the final requester-membership decision.
+
+   An **admin** job deduping onto a `PRIVATE` lesson is refused instead
+   (owner ruling, 2026-09-19). Persist never republishes a row it deduped onto,
+   so such a job would otherwise end `succeeded` having published nothing, and
+   would report another learner's lesson id as its result. It ends `failed`
+   with `existing_private_lesson` and no lesson id. The refusal is authoritative
+   **inside the persist operation's advisory lock** — the enqueue and pipeline
+   checks below are early exits, and the row can appear after either has passed.
+   Retry stays available: an admin may publish the lesson by other means, or the
+   learner may delete it, and the condition then clears.
 2. **Fetch metadata.** A new lesson obtains oEmbed metadata. Metadata failure
    is terminal and no video row is created.
 3. **Fetch transcript.** The supported caption provider returns captions or a
@@ -245,6 +255,11 @@ admin guard, accepts only `FREE` or `PLUS` requested access, and enqueues the
 same job with `origin = admin`. It returns the same job projection and uses the
 same status/retry machinery; it never calls a special synchronous transcript
 path. Admins can read/retry only jobs they requested through the admin route.
+
+It answers `409` when an existing `PRIVATE` lesson already occupies the video,
+with its own message rather than the `503` copy: "temporarily unavailable" would
+tell the admin to wait, and this condition does not clear on its own. The check
+is a courtesy ahead of §6's authoritative one, not a substitute for it.
 
 All API input has Zod validation. Service-role credentials remain server-only;
 no worker control or database RPC is callable from the browser.

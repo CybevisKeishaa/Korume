@@ -67,6 +67,13 @@ describe("POST /api/admin/lesson-creation-jobs", () => {
     [{ ok: false, status: 401 } as const, 401, "Unauthorized"],
     [{ ok: false, status: 403, reason: "not_admin" } as const, 403, "Forbidden"],
     [{ ok: false, status: 503 } as const, 503, "Lesson creation is temporarily unavailable"],
+    // Must not inherit the 503 copy: "temporarily unavailable" tells the admin
+    // to wait, and this condition does not clear on its own.
+    [
+      { ok: false, status: 409 } as const,
+      409,
+      "This video already has a private lesson, so it cannot be published to the catalogue",
+    ],
   ])("does not collapse a %o refusal into a queued job", async (refusal, status, error) => {
     vi.mocked(enqueueAdminLessonCreationJob).mockResolvedValue(refusal);
 

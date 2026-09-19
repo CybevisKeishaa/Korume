@@ -39,8 +39,8 @@ C4 is a backend subsystem, not a Figma screen port. It is outside the
 Live database gate: `ed0a8f0`.
 Checkpoints: `8a77112`, `c6f40de`, `bb72328`.
 
-All eight tasks are implemented. The mandatory whole-branch review is the
-remaining gate before merge.
+All eight tasks are implemented and the whole-branch review has run. What
+remains before merge is under Next actions.
 
 ## Contracts and decisions
 
@@ -210,6 +210,24 @@ remaining gate before merge.
   `node --require` preload named only in `playwright.c4.config.ts`'s webServer
   command. Nothing that ships gains a test branch, and an unknown video id makes
   the stub throw rather than fall through to the network.
+### Admin-dedup wave (owner ruling A+C, 2026-09-19)
+
+Every command run and read, in this worktree: vitest **3038/3038 over 324 files,
+exit 0** (baseline 3031; +7) · tsc 0 · lint 0 errors · `next build` 0 ·
+`git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a freshly
+reset database** (`supabase db reset` 0, both migrations applied in order, so the
+two-file `ALTER TYPE … ADD VALUE` split holds) · playwright C4 **3/3** (`.env.local`
+borrowed and deleted, L-020).
+
+**The live gate reproduced the defect before the fix** — `F4 admin dedup onto a
+PRIVATE lesson gave succeeded/ready err=<NULL>` against the real database. No
+source test caught it; the Supabase mock models neither PostgREST nor the lock.
+
+Mutation-checked (L-004), each restored to a byte-identical hash: the two enqueue
+guards (`6e6565d4`→`4c7871e9`, plus a refusal-order swap), the SQL leak assertion
+(`10c978a8`→`e622f1b5`), and the distributive `ClaimCatalogue` type (tsc rejects
+`admin` + `PRIVATE`).
+
 ## Working tree and environment
 
 - Owner: Claude
@@ -229,19 +247,30 @@ remaining gate before merge.
 - None blocking implementation. Task 2's live PostgreSQL gate — the branch's
   one long-standing blocker — ran on 2026-09-19 with the owner's approval and
   passed; see Verification and `ed0a8f0`.
-- Review debt: Task 5 fix round 2 (`0cb3567`), the live gate (`ed0a8f0`) and
-  everything from Task 6 onward are being written by Claude, so the asymmetric
-  review rule does not cover them. The whole-branch review must carry them.
+- **`scripts/verify-codex-protocol.ps1` is red on this file: it exceeds the
+  200-line cap (291).** Pre-existing — it was 263 at `226d4a4`, so the cap was
+  already broken before the admin-dedup wave, which added 28. Not introduced
+  here and not silently inherited either: the file needs a real trim (its
+  per-task Verification detail is transcript, which `.codex/docs/workflow.md` §5
+  says does not belong here) before merge, and that is a separate edit from a
+  reviewer's own. The other two violations the validator reports belong to
+  already-merged branches' run states.
+- Review debt: the whole-branch review has run and carried Task 5 fix round 2
+  (`0cb3567`), the live gate (`ed0a8f0`) and Tasks 6-8. What remains unreviewed
+  is its own fix wave `226d4a4` and the admin-dedup wave — both listed under
+  Next actions.
 
 ## Next actions
 
-1. **The mandatory whole-branch review** (AGENTS.md §9, L-011) over
-   `c1a14e9..HEAD` — 29 commits, 73 files, +7247/-783. It must carry everything
-   from `0cb3567` onward, which Claude wrote and self-reviewed, and it must
-   construct the restart, concurrent-enqueue, retry-storm and
-   worker-disabled-with-queued-rows sequences by hand: no test covers those end
-   to end.
-2. Fix wave for whatever it finds, TDD, then a review of that wave (L-012).
+1. **Review the fix wave `226d4a4`** (L-012 — a fix wave needs its own review).
+   It closed the whole-branch review's findings, and it is large: 24 files,
+   including deleted build config and a change to an applied migration.
+   Unreviewed. *(The whole-branch review itself has run: `0 Critical, 6
+   Important, 9 Minor`. This file previously listed it as still pending, which
+   was wrong from `226d4a4` onward — that commit did not update this section.)*
+2. **Review the admin-dedup wave** (this section's sibling, "Owner decisions
+   taken"). It is its own fix wave and needs its own review: 14 files plus two
+   new migrations, one of which replaces an applied function.
 3. Only then merge. One item is deliberately NOT in this branch and must not
    block it: **the 23505 overload.** `retry_lesson_creation_job` raises the
    system unique-violation code for a business rule. No spurious 23505 is
@@ -249,15 +278,23 @@ remaining gate before merge.
    durable fix is a custom SQLSTATE — it changes an applied migration and needs
    the live gate re-run, so it is a follow-up.
 
-## Owner decision needed
+## Owner decisions taken
 
 **May an admin job that dedups onto an existing PRIVATE lesson report
-`succeeded`?** Surfaced by Task 6's review; it is a pre-existing property of
-Task 2's migration (lines 270-278), not a defect this task introduced, but the
-admin status endpoint is what makes it visible. Finalize marks such a job
-`succeeded` against that lesson id and never applies `requested_library_access`,
-so `GET /api/admin/lesson-creation-jobs/:id` reports "ready" for catalogue work
-that published nothing — and hands the admin the UUID of another user's private
-lesson. The migration comment states the non-publishing rule deliberately; what
-is missing is any way for the admin to learn it happened. Needs an answer before
-an admin UI is built on this projection.
+`succeeded`? — RULED 2026-09-19: no. Options A + C.** The owner chose a
+distinct terminal outcome (A) plus an early refusal at enqueue (C), rejecting
+the alternative of applying the requested access level, which would have
+republished a learner's private lesson and retroactively refunded the quota
+slot it had consumed.
+
+Shipped as three layers of one rule, only the last a guarantee: `409` at
+`enqueueAdminLessonCreationJob` (courtesy), an early exit at `pipeline.ts`'s
+dedup branch (saves provider calls), and the authoritative refusal in
+`finalize_lesson_creation_job` after the `lesson_mismatch` guard, **inside
+`pg_advisory_xact_lock`**. The first two run before the lock, so the row can
+appear after either passes — `L-040`, which this branch paid for. The job ends
+`failed` / `existing_private_lesson` with **no lesson id**, closing the UUID
+disclosure by construction. Retry stays available: the condition clears if an
+admin publishes the lesson elsewhere or the learner deletes it.
+
+The rule's home is the design (§6 rule 1, §8.2), not this file.

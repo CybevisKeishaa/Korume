@@ -7,13 +7,25 @@ import { FREE_MONTHLY_LESSON_QUOTA } from "../../lib/data/lesson-library";
 
 const directory = join(process.cwd(), "supabase/migrations");
 const filename = "20260913000032_lesson_creation_jobs.sql";
-function migration(): string {
-  const files = readdirSync(directory).filter((file) => file === filename);
+
+/** Adds `existing_private_lesson`; separate because a value added by ALTER TYPE
+ * is not usable in the transaction that added it. */
+const CODE_MIGRATION = "20260919000033_lesson_creation_existing_private_lesson_code.sql";
+
+/** Replaces `finalize_lesson_creation_job` with the A+C ruling's authoritative half. */
+const REFUSAL_MIGRATION = "20260919000034_lesson_creation_admin_private_dedup.sql";
+
+function migrationNamed(name: string): string {
+  const files = readdirSync(directory).filter((file) => file === name);
   expect(files.length).toBeGreaterThan(0);
   expect(files).toHaveLength(1);
   const file = files[0];
-  if (!file) throw new Error("C4 migration is missing");
+  if (!file) throw new Error(`C4 migration ${name} is missing`);
   return readFileSync(join(directory, file), "utf8").replace(/--[^\n]*/g, "").toLowerCase();
+}
+
+function migration(): string {
+  return migrationNamed(filename);
 }
 
 describe("durable lesson creation SQL contract", () => {
@@ -48,7 +60,12 @@ describe("durable lesson creation SQL contract", () => {
       expect(definition).not.toBeNull();
       const members = definition?.[1];
       if (!members) throw new Error(`Missing enum ${name}`);
-      expect([...members.matchAll(/'([^']+)'/g)].map((match) => match[1])).toEqual(values);
+      // A domain value may also arrive by ALTER TYPE in a later migration; the
+      // union of both is what the database actually accepts.
+      const added = [...migrationNamed(CODE_MIGRATION).matchAll(
+        new RegExp(`alter type public\\.${name} add value '([^']+)'`, "g"),
+      )].map((match) => match[1]);
+      expect([...members.matchAll(/'([^']+)'/g)].map((match) => match[1]).concat(added)).toEqual(values);
     }
     expect(sql).toContain("(state = 'succeeded') = (step = 'ready')");
     expect(sql).toContain("(state = 'failed') = (step = 'failed')");
@@ -92,6 +109,40 @@ describe("durable lesson creation SQL contract", () => {
     expect(body).toContain("(v.id is null or v.library_access = 'private')");
     expect(body.slice(refusal, body.indexOf("insert into public.videos"))).toContain("return j;");
   });
+  /**
+   * The authoritative half of the owner's A+C ruling (2026-09-19). An admin job
+   * asks for FREE/PLUS; finalize never publishes a lesson it deduped onto, so
+   * landing on a PRIVATE one must not report `succeeded`. The refusal has to sit
+   * inside the advisory-locked section: the enqueue and pipeline checks both run
+   * before the lock, so the row can still appear after they have passed.
+   */
+  it("refuses an admin job deduping onto a private lesson, under the lock and before any write", () => {
+    const body = migrationNamed(REFUSAL_MIGRATION)
+      .match(/create or replace function public\.finalize_lesson_creation_job\([\s\S]*?\$\$;/)?.[0];
+    expect(body).toBeDefined();
+    if (!body) throw new Error("Missing finalize replacement");
+
+    const lock = body.indexOf("pg_advisory_xact_lock");
+    const refusal = body.indexOf("public_error_code = 'existing_private_lesson'");
+    expect(lock).toBeGreaterThan(0);
+    expect(refusal).toBeGreaterThan(lock);
+    expect(body).toContain("j.origin = 'admin' and v.library_access = 'private'");
+
+    const firstWrite = body.indexOf("insert into public.videos");
+    for (const table of ["videos", "transcripts", "transcript_lines"]) {
+      expect(body.indexOf(`insert into public.${table}`)).toBeGreaterThan(refusal);
+    }
+    expect(body.slice(refusal, firstWrite)).toContain("return j;");
+
+    // Scoped to the refusal's own branch: the learner quota block between it and
+    // the first write legitimately reads `lesson_id = v.id`. The admin must not
+    // be handed another learner's private lesson id, so this branch never
+    // mentions the column at all.
+    const branch = body.slice(body.lastIndexOf("if j.origin = 'admin'", refusal), body.indexOf("return j;", refusal));
+    expect(branch).toContain("state = 'failed'");
+    expect(branch).not.toContain("lesson_id");
+  });
+
   it("selects the newest empty header over an older complete header and repairs that same header", () => {
     const sql = migration();
     const selections = [...sql.matchAll(/select t\.id into chosen_transcript_id from public\.transcripts t\s+where t\.video_id = v\.id\s+order by t\.created_at desc limit 1 for update/g)];

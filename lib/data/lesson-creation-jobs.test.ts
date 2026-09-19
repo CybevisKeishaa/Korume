@@ -188,6 +188,40 @@ describe("enqueueAdminLessonCreationJob", () => {
     expect(isUnderQuota).not.toHaveBeenCalled();
   });
 
+  /**
+   * The early half of the A+C ruling. An admin job asks for FREE/PLUS; deduping
+   * onto a PRIVATE lesson publishes nothing, so refuse before a job exists at
+   * all. This is the courtesy, not the guarantee — `finalize_lesson_creation_job`
+   * repeats it under the advisory lock, where a learner cannot create the row
+   * after the check has passed.
+   */
+  it("refuses a catalogue job for a video an existing private lesson already occupies", async () => {
+    vi.mocked(findExistingLesson).mockResolvedValue({ id: "l1", library_access: "PRIVATE" } as never);
+
+    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" })).toEqual({
+      ok: false,
+      status: 409,
+    });
+    expect(enqueueLessonCreation).not.toHaveBeenCalled();
+  });
+
+  it.each(["FREE", "PLUS"] as const)("still queues over an existing published %s lesson", async (libraryAccess) => {
+    vi.mocked(findExistingLesson).mockResolvedValue({ id: "l1", library_access: libraryAccess } as never);
+
+    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" })).toEqual({
+      ok: true,
+      data: JOB,
+    });
+  });
+
+  it("does not consult the catalogue while the worker is disabled", async () => {
+    process.env.LESSON_CREATION_WORKER_ENABLED = "false";
+
+    await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" });
+
+    expect(findExistingLesson).not.toHaveBeenCalled();
+  });
+
   it.each([
     [401 as const, { ok: false, status: 401 }],
     [403 as const, { ok: false, status: 403, reason: "not_admin" }],

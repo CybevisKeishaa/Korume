@@ -43,6 +43,11 @@ do $$
 declare spec record;
 begin
   delete from auth.users where email like 'c4gate-%@example.invalid';
+  -- Also here, not only in teardown: a gate that raises skips its teardown, and
+  -- a surviving video with a studyable transcript silently changes what the
+  -- next run measures — F2's finalize would dedup instead of validating content
+  -- and the failure would read as a regression in an unrelated gate.
+  delete from public.videos where youtube_video_id like 'C4GATE%';
   for spec in select * from (values
     ('c4gate-a@example.invalid', false),
     ('c4gate-b@example.invalid', false),
@@ -341,6 +346,51 @@ begin
     raise exception 'F3b a quota refusal still created a lesson';
   end if;
   raise notice 'F3b PASS  over-quota finalize failed terminally and wrote no lesson';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- F4  Owner ruling 2026-09-19. An admin job requests FREE/PLUS; finalize never
+--     republishes a row it deduped onto, so landing on a learner's PRIVATE
+--     lesson must refuse rather than report `succeeded`. The lesson is given a
+--     studyable transcript on purpose: without the refusal the function reaches
+--     its success fallthrough, which is the defect being pinned.
+-- ---------------------------------------------------------------------------
+do $$
+declare uid_admin uuid; uid_b uuid; job uuid; tok uuid := gen_random_uuid();
+  lesson uuid; transcript uuid; st text; stp text; err text; reported uuid; access text;
+begin
+  select id into strict uid_admin from public.users where email = 'c4gate-admin@example.invalid';
+  select id into strict uid_b from public.users where email = 'c4gate-b@example.invalid';
+
+  insert into public.videos(youtube_video_id, title, added_by_user_id, library_access)
+  values ('C4GATEPRIV1', 'a learner private lesson', uid_b, 'PRIVATE') returning id into lesson;
+  insert into public.transcripts(video_id, source, language)
+  values (lesson, 'youtube_caption', 'ja') returning id into transcript;
+  insert into public.transcript_lines(transcript_id, start_time, end_time, text_jp)
+  values (transcript, 0, 1.5, 'これは勉強です');
+
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, lease_expires_at, lease_token)
+  values (uid_admin, 'admin', 'FREE', 'C4GATEPRIV1', 'running', 'persisting', 1,
+    now() + interval '10 minutes', tok) returning id into job;
+
+  perform public.finalize_lesson_creation_job(job, lesson, uid_admin, tok, null);
+  select state::text, step::text, public_error_code::text, lesson_id
+    into st, stp, err, reported from public.lesson_creation_jobs where id = job;
+  if st <> 'failed' or stp <> 'failed' or err <> 'existing_private_lesson' then
+    raise exception 'F4 admin dedup onto a PRIVATE lesson gave %/% err=%', st, stp, err;
+  end if;
+  if reported is not null then
+    raise exception 'F4 the refusal disclosed a private lesson id';
+  end if;
+  select library_access::text into access from public.videos where youtube_video_id = 'C4GATEPRIV1';
+  if access <> 'PRIVATE' then
+    raise exception 'F4 the refusal published the learner lesson as %', access;
+  end if;
+  if exists (select 1 from public.user_lesson_library where lesson_id = lesson and user_id = uid_admin) then
+    raise exception 'F4 the refusal granted the admin a personal library row';
+  end if;
+  raise notice 'F4 PASS  admin dedup onto a private lesson refused, disclosed nothing, published nothing';
 end $$;
 
 -- ---------------------------------------------------------------------------

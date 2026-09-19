@@ -47,9 +47,12 @@ type Forbidden = { ok: false; status: 403; reason: "quota_exceeded" | "not_admin
 
 export type EnqueueLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobProjection }
-  | Refusal<401 | 503>
+  | Refusal<401 | 409 | 503>
   | Forbidden
   | RateLimited;
+
+/** An enqueue refusal, i.e. everything the result can be except the queued job. */
+type EnqueueRefusal = Exclude<EnqueueLessonCreationJobResult, { ok: true }>;
 
 export type ReadLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobStatus }
@@ -112,7 +115,7 @@ async function enqueueFor(
   identity: Identity,
   rateLimitKey: string,
   job: Parameters<typeof enqueueLessonCreation>[0],
-  advisory?: () => Promise<boolean>,
+  advisory?: () => Promise<EnqueueRefusal | null>,
 ): Promise<EnqueueLessonCreationJobResult> {
   if (!identity.ok) return identity;
 
@@ -123,9 +126,10 @@ async function enqueueFor(
   // would present as pending forever rather than as unavailable (spec §7).
   if (!isLessonCreationWorkerEnabled()) return { ok: false, status: 503 };
 
-  if (advisory !== undefined && !(await advisory())) {
-    return { ok: false, status: 403, reason: "quota_exceeded" };
-  }
+  // Each caller owns the words of its own refusal: a second reason inheriting
+  // the first one's copy is exactly what `Forbidden` exists to prevent.
+  const refusal = advisory === undefined ? null : await advisory();
+  if (refusal !== null) return refusal;
 
   return { ok: true, data: await enqueueLessonCreation(job) };
 }
@@ -141,7 +145,10 @@ export async function enqueueLearnerLessonCreationJob(input: {
     identity,
     `lessons:create:${requesterId}`,
     { requesterId, origin: "learner", requestedAccess: "PRIVATE", youtubeVideoId: input.youtubeVideoId },
-    () => mayProceedOnQuota(requesterId, input.youtubeVideoId),
+    async () =>
+      (await mayProceedOnQuota(requesterId, input.youtubeVideoId))
+        ? null
+        : { ok: false, status: 403, reason: "quota_exceeded" },
   );
 }
 
@@ -178,12 +185,29 @@ export async function enqueueAdminLessonCreationJob(input: {
   const requesterId = identity.userId;
   // No quota check: the learner monthly quota governs personal libraries, and
   // `finalize_lesson_creation_job` applies it to learner-origin jobs only.
-  return enqueueFor(identity, `lessons:create:admin:${requesterId}`, {
-    requesterId,
-    origin: "admin",
-    requestedAccess: input.libraryAccess,
-    youtubeVideoId: input.youtubeVideoId,
-  });
+  return enqueueFor(
+    identity,
+    `lessons:create:admin:${requesterId}`,
+    { requesterId, origin: "admin", requestedAccess: input.libraryAccess, youtubeVideoId: input.youtubeVideoId },
+    () => mayPublishOver(input.youtubeVideoId),
+  );
+}
+
+/**
+ * The early half of the A+C ruling (owner, 2026-09-19).
+ *
+ * An admin job asks for FREE/PLUS. `finalize_lesson_creation_job` never
+ * publishes a lesson it deduped onto, so a job landing on a PRIVATE one would
+ * end `succeeded` having published nothing — and hand the admin another
+ * learner's lesson id. Refuse here, before a job row exists.
+ *
+ * This is the courtesy, not the guarantee: the check is not under the advisory
+ * lock finalize takes, so a learner can still create the row afterwards. The
+ * authoritative refusal is in SQL, and must stay there.
+ */
+async function mayPublishOver(youtubeVideoId: string): Promise<EnqueueRefusal | null> {
+  const existing = await findExistingLesson(youtubeVideoId);
+  return existing?.library_access === "PRIVATE" ? { ok: false, status: 409 } : null;
 }
 
 async function readFor(identity: Identity, jobId: string): Promise<ReadLessonCreationJobResult> {

@@ -45,6 +45,7 @@ const ERROR_KEYS = {
   transcript_unavailable: "transcriptUnavailable",
   quota_exceeded: "quotaExceeded",
   temporary_failure: "temporaryFailure",
+  existing_private_lesson: "existingPrivateLesson",
 } as const satisfies Record<LessonCreationErrorCode, string>;
 
 type StageState = "done" | "inProgress" | "waiting";

@@ -22,6 +22,7 @@ export const LESSON_CREATION_ERROR_CODES = [
   "transcript_unavailable",
   "quota_exceeded",
   "temporary_failure",
+  "existing_private_lesson",
 ] as const;
 export type LessonCreationErrorCode = (typeof LESSON_CREATION_ERROR_CODES)[number];
 

@@ -208,6 +208,14 @@ export async function processClaimedLessonCreationJob(
   await readRunningJob(claim, store);
   const existing = await dependencies.findExistingLesson(claim.youtubeVideoId);
 
+  // An admin job asks for FREE/PLUS. Deduping onto a PRIVATE lesson publishes
+  // nothing, so `succeeded` would report catalogue work that never happened.
+  // Saves the provider calls only: `finalize_lesson_creation_job` repeats this
+  // under the advisory lock, where the row cannot appear after the check.
+  if (existing && claim.origin === "admin" && existing.library_access === "PRIVATE") {
+    throw new LessonCreationPipelineError("existing_private_lesson");
+  }
+
   if (existing) {
     await transitionAndRead(claim, store, "persisting");
     return requireFinalOutcome(await store.finalizeClaimedJob({
