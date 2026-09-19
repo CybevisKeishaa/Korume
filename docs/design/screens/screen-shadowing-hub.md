@@ -63,9 +63,13 @@ no available transcript remains visible as **unavailable** and can retry its
 caption fetch. It is not silently discarded and it does not invent a pipeline
 percentage, ETA, or completed job.
 
-The current creation pipeline is synchronous. During a client request the UI
-may identify that an import is in progress, but durable job steps,
-percentages, estimates, and resumable jobs belong to C4.
+**Superseded by C4 (2026-09-19).** The creation pipeline is no longer
+synchronous. `POST /api/videos/import` queues a durable job and answers `202`
+with its projection; the Hub importer and the unavailable card's retry both
+poll that job and render `LessonCreationProgress`, which marks a stage complete
+only once a durable event for a later stage exists. Percentages, ETAs and
+estimates remain forbidden — C4 did not add them, it made the per-step progress
+truthful. A retry re-queues the job rather than re-running a request.
 
 ### Search and taxonomy
 
@@ -121,7 +125,9 @@ only with a structured, measured recommendation reason.
 ## Explicit exclusions
 
 - Explore Lessons and its preview drawer are C3.
-- Job percentages, ETA, and durable import lifecycle are C4.
+- Job percentages and ETAs are excluded permanently, not deferred: no worker
+  measurement is authoritative enough to promise either. The durable import
+  lifecycle itself shipped in C4.
 - A mascot/Companion anchor on the populated Hub is not approved.
 - The Hub does not derive popularity or recommendation reasons in the view.
 

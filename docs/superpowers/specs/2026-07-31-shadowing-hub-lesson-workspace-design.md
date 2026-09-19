@@ -25,9 +25,19 @@
 > search/filter, Popular, Continue, Recent, Recommended). The import control is
 > inline rather than a header modal. C2 has no durable job source, so it shows
 > only client pending state and no percentage/ETA; C4 owns persisted progress.
-> The older §5 collection ordering and §2.2's three-line progress copy are
-> historical design context, not implementation instructions. See the C2 plan
-> and `screen-shadowing-hub.md` for the live contract.
+> The older §5 collection ordering is historical design context, not
+> implementation instructions. See the C2 plan and `screen-shadowing-hub.md`
+> for the live contract.
+>
+> **C4 implementation addendum — 2026-09-19:** persisted progress now exists.
+> §2.2's three lines are no longer merely historical — C4 implements that
+> shape, from durable events, as `videos.creation.steps.*` in both catalogs:
+> Preparing lesson / Finding transcript / Building lesson / Ready to study. Two
+> details of §2.2 did NOT ship and are not owed: the dedup "delight line" (a
+> dedup hit reaches `ready` through the same four stages, so no separate copy
+> exists) and the trailing `...`, which the catalog omits. The design of record
+> for the durable lifecycle is
+> `docs/superpowers/specs/2026-09-13-lesson-creation-jobs-design.md`.
 >
 > **Trigger:** User provided two Figma reference exports (`public/demo/image.png`,
 > `public/demo/image1.png` — the same references that triggered the Consolidation spec) and asked

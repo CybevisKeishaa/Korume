@@ -9,9 +9,32 @@
 --
 -- The script creates its own fixtures and removes them again, so it is
 -- repeatable against a database that already holds data.
+--
+-- PRECONDITION, enforced below: no lesson-creation job may exist that this gate
+-- did not create. The contention check claims from the shared queue and the
+-- recovery check requeues expired leases, so a job left behind by another run
+-- — the C4 browser acceptance abandons two in `running` when Playwright kills
+-- its server — hands the two contending sessions different jobs to claim, and
+-- the gate then fails with a confusing "one must claim and one must skip".
+-- Run the gate BEFORE the browser acceptance, or reset the database between.
 
 \set ON_ERROR_STOP on
 \timing off
+
+-- ---------------------------------------------------------------------------
+-- Precondition: a queue this gate does not own makes its results meaningless.
+-- ---------------------------------------------------------------------------
+do $$
+declare foreign_jobs bigint;
+begin
+  select count(*) into foreign_jobs from public.lesson_creation_jobs j
+    where not exists (select 1 from auth.users u
+      where u.id = j.requester_user_id and u.email like 'c4gate-%@example.invalid');
+  if foreign_jobs > 0 then
+    raise exception 'PRECONDITION FAIL  % lesson-creation job(s) this gate does not own are present; run `npx supabase db reset --no-seed` first', foreign_jobs;
+  end if;
+  raise notice 'PRECONDITION PASS  queue holds no job this gate does not own';
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- Fixture: three users owned by this gate alone.

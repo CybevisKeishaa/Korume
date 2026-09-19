@@ -86,6 +86,24 @@ async function callRpc(name: string, args: Record<string, unknown>): Promise<unk
   return data;
 }
 
+/**
+ * Whether an RPC answered "no row".
+ *
+ * ⚠️ PostgREST does not render a composite NULL as JSON `null`. A plpgsql
+ * function declared `returns public.lesson_creation_jobs` that does
+ * `return null` — which claim, retry and finalize all do — comes back as an
+ * object with EVERY column null. Checking `data === null` alone therefore
+ * misses the empty case and hands a row of nulls to the projection parser: the
+ * worker threw a ZodError on every idle pass until the C4 browser run showed
+ * it, because the unit fixtures used a literal `null` the database never sends.
+ */
+function isAbsentRow(data: unknown): boolean {
+  if (data === null || data === undefined) return true;
+  if (typeof data !== "object" || Array.isArray(data)) return false;
+  const values = Object.values(data as Record<string, unknown>);
+  return values.length > 0 && values.every((value) => value === null);
+}
+
 /** Service-role dedup may inspect private lessons; only a boolean leaves this lookup. */
 export async function hasStudyableLessonTranscript(lessonId: string): Promise<boolean> {
   const client = createServiceClient();
@@ -170,12 +188,12 @@ export async function getRequesterJobWithEvents(
 
 export async function retryRequesterJob(jobId: string, requesterId: string): Promise<RetryResult> {
   const data = await callRpc("retry_lesson_creation_job", { p_job_id: jobId, p_requester: requesterId });
-  return data === null ? null : projectRow(data);
+  return isAbsentRow(data) ? null : projectRow(data);
 }
 
 export async function claimNextLessonCreationJob(now: string): Promise<ClaimedLessonCreationJob | null> {
   const data = await callRpc("claim_lesson_creation_job", { p_now: now, p_lease_seconds: leaseSeconds });
-  if (data === null) return null;
+  if (isAbsentRow(data)) return null;
   const job = projectRow(data);
   const row = rowSchema.parse(data);
   z.literal("running").parse(job.state);
@@ -223,7 +241,7 @@ export async function finalizeClaimedJob(input: FinalizeClaimedJobInput): Promis
       })),
     },
   });
-  return data === null ? null : projectRow(data);
+  return isAbsentRow(data) ? null : projectRow(data);
 }
 
 export async function recoverExpiredLessonCreationJobs(now: string): Promise<number> {

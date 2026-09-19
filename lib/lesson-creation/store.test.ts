@@ -173,6 +173,31 @@ describe("lesson creation store", () => {
     expectRpc(client, "claim_lesson_creation_job", { p_now: now, p_lease_seconds: 120 });
   });
 
+  /**
+   * PostgREST does NOT render a composite NULL as JSON `null`: a plpgsql
+   * function declared `returns public.lesson_creation_jobs` that does
+   * `return null` comes back as an object with every column null. Fixtures that
+   * use a literal `null` alone cannot catch this — an idle worker pass threw on
+   * every tick until the C4 browser run surfaced it.
+   */
+  const compositeNullRow = Object.fromEntries(Object.keys(row).map((key) => [key, null]));
+
+  it("reads PostgREST's all-null composite row as an empty claim, not as a job", async () => {
+    const client = rpcFixture("claim_lesson_creation_job", compositeNullRow);
+    expect(await claimNextLessonCreationJob(now)).toBeNull();
+    expectRpc(client, "claim_lesson_creation_job", { p_now: now, p_lease_seconds: 120 });
+  });
+
+  it("reads an all-null composite row as a missing job on retry", async () => {
+    rpcFixture("retry_lesson_creation_job", compositeNullRow);
+    expect(await retryRequesterJob(jobId, requesterId)).toBeNull();
+  });
+
+  it("reads an all-null composite row as a missing job on finalize", async () => {
+    rpcFixture("finalize_lesson_creation_job", compositeNullRow);
+    expect(await finalizeClaimedJob(finalizeInput)).toBeNull();
+  });
+
   it("rejects a claim without a valid lease", async () => {
     rpcFixture("claim_lesson_creation_job", { ...row, state: "running" });
     await expect(claimNextLessonCreationJob(now)).rejects.toBeDefined();
