@@ -331,6 +331,22 @@ describe("processClaimedLessonCreationJob", () => {
   });
 });
 
+/**
+ * The seam, not either side of it. C1 of the `226d4a4` review was exactly this
+ * gap: the stall test below injects a mock that rejects with the transient type,
+ * while production's `fetchOembed` threw `OembedFetchError` for every transport
+ * failure — so a green test described a shape the real provider could not
+ * produce (L-005). This drives the REAL default dependency.
+ */
+describe("the production metadata dependency", () => {
+  it("surfaces a transport failure as transient, so the worker retries it", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("fetch failed")));
+
+    await expect(defaultLessonCreationDependencies.fetchOembed(VIDEO_ID))
+      .rejects.toBeInstanceOf(TransientLessonCreationProviderError);
+  });
+});
+
 describe("a stalled metadata provider", () => {
   it("stays transient instead of becoming a terminal verdict on the video", async () => {
     // A timeout says nothing about whether the metadata exists. Wrapping it as

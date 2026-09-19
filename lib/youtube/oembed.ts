@@ -5,6 +5,7 @@
  * YouTube for title/author/thumbnail, never for video bytes.
  */
 import { z } from "zod";
+import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 
 export interface OembedResult {
   title: string;
@@ -50,8 +51,16 @@ export async function fetchOembed(videoId: string): Promise<OembedResult> {
   try {
     response = await fetch(oembedUrlFor(videoId), { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
   } catch (err) {
-    throw new OembedFetchError(
+    // Only a transport failure reaches here — `fetch` rejects on a network
+    // error or an abort, never on an HTTP status. The worker retries only this
+    // type (`worker.ts` `isExplicitlyTransient`), so classifying a stall as
+    // `OembedFetchError` would end the lesson as `metadata_unavailable` on the
+    // first blip: a verdict on the video, from a fact about the network. The
+    // 10s timeout above is what makes that reachable, so the two belong
+    // together. `timedtext.ts` classifies its transport the same way.
+    throw new TransientLessonCreationProviderError(
       `Network error fetching YouTube oEmbed metadata: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
     );
   }
 

@@ -375,14 +375,21 @@ describe("VideoImportForm", () => {
  * clock is installed and removed per test, and interaction uses `fireEvent`,
  * which does not wait on timers at all.
  */
-describe("VideoImportForm — a job that stops moving", () => {
+describe("VideoImportForm — a job that waits in the queue", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
-  it("says the lesson is still being prepared rather than staying 'Importing…' forever", async () => {
+  /**
+   * Owner ruling (2026-09-19) on review finding I2. The client giveup this
+   * block used to test is gone: the worker claims one job per 5s tick, so a
+   * queued job can wait a long time while perfectly healthy, and telling the
+   * learner creation is "paused" would be a guess about a busy queue. Design §9
+   * lists the three stop conditions, and waiting is not one of them.
+   */
+  it("keeps showing the import as in flight instead of declaring it paused", async () => {
     mockJobFlow({ job: jobProjection({ state: "queued", step: "deduplicating" }) });
 
     render(<VideoImportForm />);
@@ -391,8 +398,7 @@ describe("VideoImportForm — a job that stops moving", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Import video" }));
     // Let the enqueue settle FIRST: the poll cannot start before the job id
-    // exists, and advancing the clock in the same act spends the budget before
-    // there is anything to poll.
+    // exists.
     await act(async () => {
       await Promise.resolve();
     });
@@ -402,9 +408,7 @@ describe("VideoImportForm — a job that stops moving", () => {
       await vi.advanceTimersByTimeAsync(5 * 60_000 + 4_000);
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Lesson creation is paused right now. Please try again later.",
-    );
-    expect(screen.getByRole("button", { name: "Import video" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Importing…" })).toBeDisabled();
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });

@@ -39,9 +39,12 @@ describe("durable lesson creation SQL contract", () => {
    */
   it("holds the same free-tier cap as FREE_MONTHLY_LESSON_QUOTA", () => {
     const sql = migration();
-    const match = /if monthly_count >= (\d+) then/.exec(sql);
-    expect(match).not.toBeNull();
-    expect(Number(match?.[1])).toBe(FREE_MONTHLY_LESSON_QUOTA);
+    // `matchAll` with an asserted count, not `exec`: a first-match-only pin
+    // would keep passing if a second, divergent copy of the cap appeared
+    // (AGENTS.md §7 — a pattern-gathered collection must assert its size).
+    const matches = [...sql.matchAll(/if monthly_count >= (\d+) then/g)];
+    expect(matches).toHaveLength(1);
+    expect(Number(matches[0]?.[1])).toBe(FREE_MONTHLY_LESSON_QUOTA);
   });
 
   it("ships exactly one migration and both private, cascading tables", () => {
@@ -100,7 +103,10 @@ describe("durable lesson creation SQL contract", () => {
     const body = migration().match(/create function public\.finalize_lesson_creation_job\([\s\S]*?\$\$;/)?.[0];
     expect(body).toBeDefined();
     if (!body) throw new Error("Missing finalize");
-    const refusal = body.indexOf("if monthly_count >= 3 then");
+    // Derived, not hardcoded: a third literal copy of the cap in the very file
+    // that exists to keep it to one home would turn this test red for an
+    // unrelated reason the next time the cap changes.
+    const refusal = body.indexOf(`if monthly_count >= ${FREE_MONTHLY_LESSON_QUOTA} then`);
     expect(refusal).toBeGreaterThan(0);
     for (const table of ["videos", "transcripts", "transcript_lines"]) {
       const write = body.indexOf(`insert into public.${table}`);

@@ -92,7 +92,10 @@ export function VideoImportForm({ variant = "default" }: VideoImportFormProps) {
    * end this too: a form that cannot leave "Importing…" strands the learner
    * with no way out but a page reload, while the job finishes unseen.
    */
-  const working = loading || (jobId !== null && phase === "polling");
+  // `phase` is still `idle` in the render that first sets `jobId` — the hook's
+  // effect has not run yet — so treating only `polling` as busy would flash an
+  // enabled "Import video" between a successful enqueue and the first poll.
+  const working = loading || (jobId !== null && (phase === "polling" || phase === "idle"));
 
   function pollingRefusal(): ErrorDescriptor | null {
     if (phase === "refused") {
@@ -101,7 +104,6 @@ export function VideoImportForm({ variant = "default" }: VideoImportFormProps) {
     }
     // Still queued after the poll budget: the worker may be off or busy. Design
     // §7 forbids showing this as indefinitely pending.
-    if (phase === "stalled") return { key: "unavailable" };
     return null;
   }
 

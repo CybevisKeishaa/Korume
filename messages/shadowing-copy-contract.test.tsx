@@ -137,6 +137,7 @@ function LocalizedEmptyHub(): JSX.Element {
           readyAction: t("hub.actions.start"),
           unavailable: "",
           retry: "",
+          retrySessionExpired: "",
           retryPending: "",
           retryFailed: "",
           noThumbnail: "",

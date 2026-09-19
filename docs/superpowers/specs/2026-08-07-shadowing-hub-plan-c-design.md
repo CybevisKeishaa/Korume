@@ -254,7 +254,7 @@ honest inventory.
 | Section | Data source | State |
 |---|---|---|
 | FeaturedHero | `collections` slug `featured` + the viewer's progress | new query (tables exist) |
-| ImportSection + quota | `createLesson` · `countMonthlyCreations` · `FREE_MONTHLY_LESSON_QUOTA` · `isUnderQuota` | exists |
+| ImportSection + quota | `enqueueLearnerLessonCreationJob` · `countMonthlyCreations` · `FREE_MONTHLY_LESSON_QUOTA` · `isUnderQuota` | exists — C4 replaced `createLesson` with the job queue (§4.2.3) |
 | MyLessons — Ready | `user_lesson_library` + `hasTranscript` | exists |
 | MyLessons — Failed | `transcriptStatus === "missing"` | exists — see §4.2.2 |
 | MyLessons — Building | in-flight request, current step label | see §4.2.3 |

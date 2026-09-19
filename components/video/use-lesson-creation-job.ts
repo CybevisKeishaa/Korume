@@ -21,21 +21,18 @@ import {
  * - `refused`  — the status read was refused (`refusedStatus` carries the code,
  *   so a consumer can say "session expired" for a 401 rather than "something
  *   went wrong").
- * - `stalled`  — the job was still active after the poll budget ran out. The
- *   worker may be disabled, deploying, or simply busy with other jobs, and
- *   design §7 forbids presenting that as indefinitely pending.
  * - `idle`     — no job.
+ *
+ * There is deliberately no client-side giveup. Design §9 lists the stop
+ * conditions — terminal state, unmount, a replaced job id — and nothing else.
+ * A single-concurrency worker claims one job per tick, so a job can wait a long
+ * time behind others while being perfectly healthy; abandoning it would declare
+ * a busy queue "paused". §7's `503` covers the genuinely unserviceable case,
+ * before a job is ever recorded.
  */
 const POLL_MS = 2_000;
 
-/**
- * How long to watch a job that keeps reporting the same durable step. The
- * budget resets on every durable transition, so a slow-but-progressing job is
- * never abandoned; only one that is not moving.
- */
-const STALL_BUDGET_MS = 5 * 60_000;
-
-export type LessonCreationJobPhase = "idle" | "polling" | "terminal" | "refused" | "stalled";
+export type LessonCreationJobPhase = "idle" | "polling" | "terminal" | "refused";
 
 interface PolledJob {
   job: LessonCreationJobProjection | null;
@@ -80,8 +77,7 @@ export function useLessonCreationJob(
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
-    let lastMovedAt = Date.now();
-    let lastStep: string | null = null;
+
 
     function stop(): void {
       stopped = true;
@@ -118,21 +114,11 @@ export function useLessonCreationJob(
             if (projection.state === "succeeded") onSucceeded.current(projection);
             return;
           }
-          // Durable movement, not wall-clock time, is what earns more patience.
-          if (projection.step !== lastStep) {
-            lastStep = projection.step;
-            lastMovedAt = Date.now();
-          }
         }
       } catch {
         // A dropped connection is transient; the next tick tries again. An
         // abort is already covered by `stopped`.
         if (stopped) return;
-      }
-      if (Date.now() - lastMovedAt >= STALL_BUDGET_MS) {
-        setState((current) => ({ ...current, phase: "stalled" }));
-        stop();
-        return;
       }
       timer = setTimeout(() => void poll(), POLL_MS);
     }

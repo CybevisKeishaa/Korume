@@ -73,7 +73,10 @@ function stageIndexOf(step: LessonCreationStep): number {
  */
 function currentAttempt(events: LessonCreationJobEvent[]): LessonCreationJobEvent[] {
   const lastQueued = events.map((event) => event.state).lastIndexOf("queued");
-  if (lastQueued === -1) return events.length === 0 ? events : [];
+  // No opening `queued` event means the 60-row cap trimmed it, so this attempt's
+  // start is unknown and no stage can be claimed done. Both arms of the previous
+  // ternary here returned an empty array.
+  if (lastQueued === -1) return [];
   return events.slice(lastQueued);
 }
 

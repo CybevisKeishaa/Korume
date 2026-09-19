@@ -176,7 +176,7 @@ describe("useLessonCreationJob", () => {
     expect(screen.getByTestId("events")).toBeEmptyDOMElement();
   });
 
-  it("stops and reports the job unreadable when the request is refused", async () => {
+  it("stops and reports the refusal, carrying the status that caused it", async () => {
     const fetchMock = respondWith({ ok: false, status: 404 });
 
     render(<Harness jobId={JOB_ID} />);
@@ -262,9 +262,15 @@ describe("useLessonCreationJob", () => {
     expect(screen.getByTestId("phase")).toHaveTextContent("terminal");
   });
 
-  it("gives up on a job that never leaves the queue, rather than polling for as long as the tab is open", async () => {
-    // Design §7: a queued job the worker will never run must not be presented
-    // as indefinitely pending. The worker may also simply be off.
+  /**
+   * Owner ruling (2026-09-19) on review finding I2: the client-side giveup is
+   * removed. Design §9 lists exactly three stop conditions — terminal state,
+   * unmount, and a replaced job id — and §7's sentence the giveup cited governs
+   * a `503` returned *before a job is recorded*, which is a case with no job to
+   * poll at all. A job merely waiting behind a busy single-concurrency worker
+   * must not be declared paused.
+   */
+  it("keeps polling a job that sits in the queue, however long it waits", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -278,12 +284,12 @@ describe("useLessonCreationJob", () => {
       await vi.advanceTimersByTimeAsync(5 * 60_000 + 4_000);
     });
 
-    expect(screen.getByTestId("phase")).toHaveTextContent("stalled");
-    const callsAtGiveUp = fetchMock.mock.calls.length;
+    expect(screen.getByTestId("phase")).toHaveTextContent("polling");
+    const callsSoFar = fetchMock.mock.calls.length;
     await act(async () => {
       await vi.advanceTimersByTimeAsync(60_000);
     });
-    expect(fetchMock.mock.calls.length).toBe(callsAtGiveUp);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(callsSoFar);
   });
 
   it("does not give up on a job that is still making durable progress", async () => {

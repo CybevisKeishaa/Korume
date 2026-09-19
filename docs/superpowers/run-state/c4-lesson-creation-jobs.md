@@ -228,6 +228,39 @@ guards (`6e6565d4`→`4c7871e9`, plus a refusal-order swap), the SQL leak assert
 (`10c978a8`→`e622f1b5`), and the distributive `ClaimCatalogue` type (tsc rejects
 `admin` + `PRIVATE`).
 
+### Review of `226d4a4`, and the wave closing it (2026-09-19)
+
+Verdict CHANGES REQUIRED: 1 Critical, 3 Important, 9 Minor. All closed.
+
+- **C1** — `fetchOembed` wrapped every transport failure, including the new 10s
+  abort, in `OembedFetchError`, which `worker.ts` does not treat as retryable.
+  The I5 "a stall is not a verdict on the video" guard was therefore dead code,
+  and the timeout it shipped with turned a slow provider into a terminal
+  `metadata_unavailable` on the first blip — strictly worse than the lease-
+  expiry requeue it replaced. `oembed.ts` now classifies transport as transient,
+  matching `timedtext.ts`. The green test that hid this mocked a shape
+  production could not produce (**L-005**), so the fix pins the seam itself.
+- **I1** — the Hub masked `tracked` instead of clearing it, so a retry getting
+  the same job id back (enqueue is idempotent while active) never changed the
+  hook's deps and Try again did nothing, forever.
+- **I2** — the client giveup is REMOVED (owner ruling). Design §9 lists three
+  stop conditions; §7's `503` governs the case with no job to poll at all.
+- **I3** — M4 is REVERTED (owner ruling, after investigation). The event trigger
+  copies `public_error_code` into the append-only history, and lease recovery
+  fires exactly when no terminal transition was written, so blanking it deleted
+  the only evidence of why the attempt died — which design §5 forbids twice over.
+  The projection concern M4 cited is unreachable: the sole reader gates on
+  `state === "failed"`. Live gate G5a now asserts the category is retained.
+- **Correction to `226d4a4`'s commit message, which cannot be edited:** its M3
+  decline says the timeout "removes the case that made it bite". False — a
+  provider 429 is a rate limit, not a stall, and a timeout does not touch it.
+  The decline itself still stands on design §6 ("Metadata failure is terminal").
+
+Gates after the wave: vitest **3043/3043 over 324 files, exit 0** · tsc 0 ·
+lint 0 errors · `next build` 0 · `git diff --check` clean ·
+`npm run verify:db:lesson-jobs` **exit 0 on a freshly reset database**, with
+G5a red first against the pre-revert function.
+
 ## Working tree and environment
 
 - Owner: Claude
@@ -262,15 +295,16 @@ guards (`6e6565d4`→`4c7871e9`, plus a refusal-order swap), the SQL leak assert
 
 ## Next actions
 
-1. **Review the fix wave `226d4a4`** (L-012 — a fix wave needs its own review).
-   It closed the whole-branch review's findings, and it is large: 24 files,
-   including deleted build config and a change to an applied migration.
-   Unreviewed. *(The whole-branch review itself has run: `0 Critical, 6
-   Important, 9 Minor`. This file previously listed it as still pending, which
-   was wrong from `226d4a4` onward — that commit did not update this section.)*
-2. **Review the admin-dedup wave** (this section's sibling, "Owner decisions
-   taken"). It is its own fix wave and needs its own review: 14 files plus two
-   new migrations, one of which replaces an applied function.
+1. **Review the wave that closes the `226d4a4` review** (L-012 again — the fix
+   wave for a fix wave's review). Its review should re-derive that each new
+   test's fixture is a shape the production transport can actually produce:
+   that was C1's exact shape.
+2. **Review the admin-dedup wave `3c73987`** (owner ruling A+C). Its own fix
+   wave: 19 files plus two new migrations, one replacing an applied function.
+   Take with it the second `monthly_count >= 3` that migration 34 necessarily
+   carries — the file-scoped pin in migration 32's test does not read it.
+3. **Trim this file under the 200-line cap** so `verify-codex-protocol.ps1` is
+   green (see Blockers).
 3. Only then merge. One item is deliberately NOT in this branch and must not
    block it: **the 23505 overload.** `retry_lesson_creation_job` raises the
    system unique-violation code for a business rule. No spurious 23505 is

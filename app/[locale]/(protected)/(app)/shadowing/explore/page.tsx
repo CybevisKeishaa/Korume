@@ -96,6 +96,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
             retry: tCommon("actions.retry"),
             retryPending: tVideos("retryPending"),
             retryFailed: tVideos("retryFailed"),
+            retrySessionExpired: tVideos("errors.sessionExpired"),
             noThumbnail: tCommon("noThumbnail"),
             emptyTitle: tHub("empty.library.title"),
             emptyBody: tHub("empty.library.body"),

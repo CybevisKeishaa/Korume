@@ -177,13 +177,13 @@ begin
   update public.lesson_creation_jobs j set
     state = case when attempt_count < 3 then 'queued'::public.lesson_creation_job_state else 'failed' end,
     step = case when attempt_count < 3 then 'deduplicating'::public.lesson_creation_step else 'failed' end,
-    -- A requeued job is healthy: leaving `temporary_failure` on it would hand
-    -- the projection an error code for work that is about to succeed, and the
-    -- next consumer to read publicErrorCode without checking state would show
-    -- it. Only the terminal branch carries a code (the table's own check
-    -- constraint requires one there).
-    public_error_code = case when attempt_count < 3 then null else 'temporary_failure'::public.lesson_creation_error_code end,
-    lease_expires_at = null, lease_token = null,
+    -- The category is retained on a requeue, deliberately. The event trigger
+    -- copies this column into the append-only history, and lease recovery fires
+    -- exactly when the worker died without writing a terminal transition — so
+    -- this event is the only record of why the attempt ended. Design §5:
+    -- "retain their public error category", "rather than deleting evidence of
+    -- the earlier failure". A reader must gate on `state`, as the only one does.
+    public_error_code = 'temporary_failure', lease_expires_at = null, lease_token = null,
     available_at = p_now, updated_at = p_now, completed_at = case when attempt_count >= 3 then p_now end
     from expired where j.id = expired.id;
   get diagnostics recovered = row_count;

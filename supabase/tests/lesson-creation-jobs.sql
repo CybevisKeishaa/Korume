@@ -179,10 +179,18 @@ begin
   end if;
   -- A requeued job is healthy and must carry no public error code.
   if exists (select 1 from public.lesson_creation_jobs
-    where id = j_retry and public_error_code is not null) then
-    raise exception 'G5 requeued job still carries a public_error_code';
+    where id = j_retry and public_error_code is distinct from 'temporary_failure') then
+    -- Review of `226d4a4`, finding I3, ruled 2026-09-19: M4 is reverted. The
+    -- event trigger copies `public_error_code` from the row it is writing, so
+    -- blanking it on requeue also blanks the append-only history — and lease
+    -- recovery fires exactly when the worker died without writing a terminal
+    -- transition, making that event the ONLY record of why the attempt ended.
+    -- Design §5 ("retain their public error category", "rather than deleting
+    -- evidence of the earlier failure") forbids that. The projection concern M4
+    -- cited is unreachable: the sole reader gates on `state === 'failed'`.
+    raise exception 'G5 requeued job lost its public_error_code';
   end if;
-  raise notice 'G5a PASS  requeued job carries no error code';
+  raise notice 'G5a PASS  requeued job retains its transient category';
 
   select state::text, step::text, completed_at into st, stp, comp
     from public.lesson_creation_jobs where id = j_dead;
