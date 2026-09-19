@@ -38,7 +38,6 @@
     "unavailable": "Vi\u1ec7c t\u1ea1o b\u00e0i h\u1ecdc \u0111ang t\u1ea1m d\u1eebng. Th\u1eed l\u1ea1i sau m\u1ed9t ch\u00fat nh\u00e9.",
     "invalidUrl": "Hmm, hình như đây chưa phải là một URL YouTube hợp lệ.",
     "sessionExpired": "Phiên đăng nhập của bạn đã hết hạn — đăng nhập lại rồi mình tiếp tục nhé.",
-    "fetchFailed": "Korume không lấy được thông tin video này. Kiểm tra lại liên kết rồi thử lại nhé.",
     "rateLimited": "Bạn mang video về hơi nhanh rồi — thử lại sau {seconds} giây nhé.",
     "rateLimitedGeneric": "Bạn mang video về hơi nhanh rồi — nghỉ một chút rồi thử lại nhé.",
     "generic": "Có chút trục trặc khi mang video này về. Thử lại nhé."

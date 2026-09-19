@@ -28,6 +28,56 @@ function mockFetchOnce(response: {
   );
 }
 
+const JOB_ID = "33333333-3333-4333-8333-333333333333";
+const LESSON_ID = "55555555-5555-4555-8555-555555555555";
+
+function jobProjection(overrides: Record<string, unknown> = {}) {
+  return {
+    id: JOB_ID,
+    state: "queued",
+    step: "deduplicating",
+    attemptCount: 0,
+    lessonId: null,
+    publicErrorCode: null,
+    updatedAt: "2026-09-19T08:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/**
+ * Routes the enqueue POST and the status GET separately, because the form now
+ * performs two different requests: it queues durable work, then polls it.
+ */
+function mockJobFlow(status: { job: Record<string, unknown>; events?: unknown[] }) {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    if (typeof url === "string" && url.startsWith("/api/videos/import")) {
+      return {
+        ok: true,
+        status: 202,
+        headers: new Headers(),
+        json: async () => ({ data: jobProjection() }),
+      } as Response;
+    }
+    if (typeof url === "string" && url.includes("/retry")) {
+      return {
+        ok: true,
+        status: 202,
+        headers: new Headers(),
+        json: async () => ({ data: jobProjection() }),
+      } as Response;
+    }
+    void init;
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      json: async () => ({ data: { job: status.job, events: status.events ?? [] } }),
+    } as Response;
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
 async function fillAndSubmit(url: string): Promise<void> {
   await userEvent.type(screen.getByLabelText(/youtube url/i), url);
   await userEvent.click(screen.getByRole("button", { name: /import video/i }));
@@ -46,12 +96,25 @@ describe("VideoImportForm", () => {
     expect(screen.getByRole("button", { name: "Import video" })).toBeInTheDocument();
   });
 
-  it("shows the importing state while the request is in flight, then restores it", async () => {
-    let resolveFetch!: (value: unknown) => void;
-    const pending = new Promise((resolve) => {
-      resolveFetch = resolve;
+  it("shows the importing state while the request is in flight, then restores it once the job is terminal", async () => {
+    let resolveEnqueue!: (value: unknown) => void;
+    const pendingEnqueue = new Promise((resolve) => {
+      resolveEnqueue = resolve;
     });
-    vi.stubGlobal("fetch", vi.fn().mockReturnValue(pending));
+    const failed = jobProjection({ state: "failed", step: "failed", publicErrorCode: "temporary_failure" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.startsWith("/api/videos/import")
+          ? pendingEnqueue
+          : ({
+              ok: true,
+              status: 200,
+              headers: new Headers(),
+              json: async () => ({ data: { job: failed, events: [] } }),
+            } as Response),
+      ),
+    );
 
     render(<VideoImportForm />);
     await userEvent.type(screen.getByLabelText("YouTube URL"), "https://www.youtube.com/watch?v=abc123");
@@ -60,36 +123,89 @@ describe("VideoImportForm", () => {
     const importingButton = await screen.findByRole("button", { name: "Importing…" });
     expect(importingButton).toBeDisabled();
 
-    resolveFetch({
+    resolveEnqueue({
       ok: true,
-      status: 201,
+      status: 202,
       headers: new Headers(),
-      json: async () => ({ data: { id: "abc123" } }),
+      json: async () => ({ data: jobProjection() }),
     });
 
     expect(await screen.findByRole("button", { name: "Import video" })).not.toBeDisabled();
   });
 
-  it("imports a video, refreshes the list, and navigates to its shadowing page", async () => {
-    mockFetchOnce({
-      ok: true,
-      status: 201,
-      json: async () => ({ data: { id: "abc123" } }),
-    });
+  it("stays busy while a queued job is still running", async () => {
+    mockJobFlow({ job: jobProjection({ state: "running", step: "fetching_transcript" }) });
 
     render(<VideoImportForm />);
     await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
 
-    expect(refresh).toHaveBeenCalledOnce();
-    expect(push).toHaveBeenCalledWith("/shadowing/abc123");
+    expect(await screen.findByRole("button", { name: "Importing…" })).toBeDisabled();
   });
 
-  it("clears the input on success", async () => {
-    mockFetchOnce({
-      ok: true,
-      status: 201,
-      json: async () => ({ data: { id: "abc123" } }),
-    });
+  it("reports a job it can no longer read instead of polling in silence", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.startsWith("/api/videos/import")
+          ? ({ ok: true, status: 202, headers: new Headers(), json: async () => ({ data: jobProjection() }) } as Response)
+          : ({ ok: false, status: 404, headers: new Headers(), json: async () => ({ error: "Not found" }) } as Response),
+      ),
+    );
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Something went wrong importing that video. Please try again.",
+    );
+  });
+
+  it("shows the durable progress of the queued job instead of navigating on 202", async () => {
+    mockJobFlow({ job: jobProjection({ state: "running", step: "fetching_transcript" }), events: [
+      { state: "queued", step: "deduplicating", attemptCount: 0, publicErrorCode: null, createdAt: "2026-09-19T08:00:00.000Z" },
+    ] });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    expect(await screen.findByRole("status", { name: "Lesson creation progress" })).toBeInTheDocument();
+    expect(screen.getByText("Preparing lesson")).toBeInTheDocument();
+    // A 202 is not a lesson: nothing may navigate yet.
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("polls the job it was handed, not the lesson it does not have yet", async () => {
+    const fetchMock = mockJobFlow({ job: jobProjection({ state: "running", step: "deduplicating" }) });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    await screen.findByRole("status", { name: "Lesson creation progress" });
+    expect(fetchMock.mock.calls.map((call) => call[0])).toContain(`/api/lesson-creation-jobs/${JOB_ID}`);
+  });
+
+  it("refreshes and navigates to the lesson only once the job succeeds", async () => {
+    mockJobFlow({ job: jobProjection({ state: "succeeded", step: "ready", lessonId: LESSON_ID }) });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith(`/shadowing/${LESSON_ID}`));
+    expect(refresh).toHaveBeenCalled();
+  });
+
+  it("does not navigate to a succeeded job that carries no lesson id", async () => {
+    mockJobFlow({ job: jobProjection({ state: "succeeded", step: "ready", lessonId: null }) });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalled());
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("clears the input once the work is queued", async () => {
+    mockJobFlow({ job: jobProjection({ state: "running", step: "deduplicating" }) });
 
     render(<VideoImportForm />);
     const input = screen.getByLabelText<HTMLInputElement>(/youtube url/i);
@@ -98,16 +214,46 @@ describe("VideoImportForm", () => {
     expect(input).toHaveValue("");
   });
 
-  it("shows a friendly message and does not navigate when metadata can't be fetched (422)", async () => {
-    mockFetchOnce({ ok: false, status: 422 });
+  it("names the disabled-worker refusal rather than showing a generic failure (503)", async () => {
+    mockFetchOnce({ ok: false, status: 503 });
 
     render(<VideoImportForm />);
     await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "We couldn't fetch details for that video. Double-check the link and try again.",
+      "Lesson creation is paused right now. Please try again later.",
     );
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("states a job-time failure in the learner's terms, with a retry", async () => {
+    mockJobFlow({
+      job: jobProjection({ state: "failed", step: "failed", publicErrorCode: "transcript_unavailable" }),
+      events: [{ state: "failed", step: "failed", attemptCount: 1, publicErrorCode: "transcript_unavailable", createdAt: "2026-09-19T08:00:00.000Z" }],
+    });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This video has no Japanese captions, so there's nothing to shadow yet.",
+    );
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("re-queues the same job through the retry endpoint", async () => {
+    const fetchMock = mockJobFlow({
+      job: jobProjection({ state: "failed", step: "failed", publicErrorCode: "temporary_failure" }),
+    });
+
+    render(<VideoImportForm />);
+    await fillAndSubmit("https://www.youtube.com/watch?v=abc123");
+    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
+
+    expect(fetchMock.mock.calls.map((call) => call[0])).toContain(
+      `/api/lesson-creation-jobs/${JOB_ID}/retry`,
+    );
   });
 
   it("shows a session-expired message on 401", async () => {

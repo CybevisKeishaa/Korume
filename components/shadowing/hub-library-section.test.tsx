@@ -12,6 +12,47 @@ vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
   useRouter: () => ({ refresh }),
 }));
 
+const JOB_ID = "33333333-3333-4333-8333-333333333333";
+
+function jobProjection(overrides: Record<string, unknown> = {}) {
+  return {
+    id: JOB_ID,
+    state: "queued",
+    step: "deduplicating",
+    attemptCount: 0,
+    lessonId: null,
+    publicErrorCode: null,
+    updatedAt: "2026-09-19T08:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** The 202 the enqueue now answers with: a job to poll, not a finished lesson. */
+function enqueued(): Response {
+  return {
+    ok: true,
+    status: 202,
+    headers: new Headers(),
+    json: async () => ({ data: jobProjection() }),
+  } as Response;
+}
+
+function mockJobFlow(job: Record<string, unknown>) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) =>
+      url.startsWith("/api/videos/import")
+        ? enqueued()
+        : ({
+            ok: true,
+            status: 200,
+            headers: new Headers(),
+            json: async () => ({ data: { job: jobProjection(job), events: [] } }),
+          } as Response),
+    ),
+  );
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   refresh.mockClear();
@@ -51,12 +92,24 @@ describe("HubLibrarySection", () => {
     expect(screen.queryByText(/%|ETA|estimated/i)).not.toBeInTheDocument();
   });
 
-  it("retries the existing import and refreshes the authoritative Hub state", async () => {
+  it("queues the retry and shows its durable progress instead of claiming the lesson is back", async () => {
     let resolveFetch!: (value: Response) => void;
     const pending = new Promise<Response>((resolve) => {
       resolveFetch = resolve;
     });
-    vi.stubGlobal("fetch", vi.fn().mockReturnValue(pending));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        url.startsWith("/api/videos/import")
+          ? pending
+          : Promise.resolve({
+              ok: true,
+              status: 200,
+              headers: new Headers(),
+              json: async () => ({ data: { job: jobProjection({ state: "running" }), events: [] } }),
+            } as Response),
+      ),
+    );
 
     render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -69,12 +122,36 @@ describe("HubLibrarySection", () => {
       body: JSON.stringify({ youtubeUrl: "https://www.youtube.com/watch?v=yt-failed" }),
     });
 
-    resolveFetch({ ok: true } as Response);
+    resolveFetch(enqueued());
+    // The queue accepted the work; the lesson is not studyable yet, so the Hub
+    // must not refresh as though it were.
+    expect(await screen.findByRole("status", { name: "Lesson creation progress" })).toBeInTheDocument();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("refreshes the authoritative Hub state only once the job succeeds", async () => {
+    mockJobFlow({ state: "succeeded", step: "ready", lessonId: "l1" });
+
+    render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
     await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
   });
 
-  it("announces a retry failure and leaves the lesson available for another attempt", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false } as Response));
+  it("states a job-time failure in the learner's terms, inside the card", async () => {
+    mockJobFlow({ state: "failed", step: "failed", publicErrorCode: "transcript_unavailable" });
+
+    render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "This video has no Japanese captions, so there's nothing to shadow yet.",
+    );
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("announces a refused enqueue and leaves the lesson available for another attempt", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 } as Response));
 
     render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));

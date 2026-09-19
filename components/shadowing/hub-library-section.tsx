@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LessonCreationProgress } from "@/components/video/lesson-creation-progress";
+import { useLessonCreationJob } from "@/components/video/use-lesson-creation-job";
 import type { HubLibraryLesson } from "@/lib/data/shadowing-hub";
 import { useRouter } from "@/lib/i18n/navigation";
+import type { LessonCreationJobProjection } from "@/lib/lesson-creation/types";
 import { HubLessonCard } from "./hub-lesson-card";
 import { HubSectionHeading } from "./hub-section-heading";
 import { HubEmptyState } from "./hub-empty-state";
@@ -32,7 +35,23 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
   const router = useRouter();
   const [retryingVideoId, setRetryingVideoId] = useState<string | null>(null);
   const [retryErrorVideoId, setRetryErrorVideoId] = useState<string | null>(null);
+  // One card at a time: the retry buttons disable each other while one runs.
+  const [tracked, setTracked] = useState<{ youtubeVideoId: string; jobId: string } | null>(null);
 
+  const { job, events, restart } = useLessonCreationJob(tracked?.jobId ?? null, {
+    onSucceeded() {
+      // Only now is the lesson studyable; the server render is the authority
+      // on what the card becomes.
+      router.refresh();
+    },
+  });
+
+  /**
+   * Queues a fresh creation attempt for a lesson whose transcript never
+   * arrived. The endpoint answers `202` with a job, so this shows that job's
+   * durable progress in the card rather than refreshing as though the lesson
+   * were already back.
+   */
   async function retryCaptionFetch(youtubeVideoId: string): Promise<void> {
     setRetryingVideoId(youtubeVideoId);
     setRetryErrorVideoId(null);
@@ -44,11 +63,26 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
         body: JSON.stringify({ youtubeUrl: `https://www.youtube.com/watch?v=${youtubeVideoId}` }),
       });
       if (!response.ok) throw new Error("Caption retry failed");
-      router.refresh();
+      const body = (await response.json()) as { data: LessonCreationJobProjection };
+      setTracked({ youtubeVideoId, jobId: body.data.id });
     } catch {
       setRetryErrorVideoId(youtubeVideoId);
     } finally {
       setRetryingVideoId(null);
+    }
+  }
+
+  /** Re-queues the tracked job itself, once it has failed. */
+  async function retryTrackedJob(): Promise<void> {
+    if (tracked === null) return;
+    setRetryErrorVideoId(null);
+    try {
+      const response = await fetch(`/api/lesson-creation-jobs/${tracked.jobId}/retry`, { method: "POST" });
+      // 409 means an attempt is already active — polling it is the honest answer.
+      if (!response.ok && response.status !== 409) throw new Error("Job retry failed");
+      restart();
+    } catch {
+      setRetryErrorVideoId(tracked.youtubeVideoId);
     }
   }
 
@@ -83,15 +117,19 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
               <li key={item.lesson.id} className="rounded-xl border border-danger/40 bg-card p-md-lg">
                 <h3 className="font-semibold text-foreground">{item.lesson.title}</h3>
                 <p className="mt-xs text-sm text-muted-foreground">{labels.unavailable}</p>
-                <Button
-                  type="button"
-                  className="mt-md"
-                  variant="outline"
-                  disabled={retryingVideoId !== null}
-                  onClick={() => void retryCaptionFetch(item.lesson.youtubeVideoId)}
-                >
-                  {retryingVideoId === item.lesson.youtubeVideoId ? labels.retryPending : labels.retry}
-                </Button>
+                {tracked?.youtubeVideoId === item.lesson.youtubeVideoId && job !== null ? (
+                  <LessonCreationProgress job={job} events={events} onRetry={retryTrackedJob} />
+                ) : (
+                  <Button
+                    type="button"
+                    className="mt-md"
+                    variant="outline"
+                    disabled={retryingVideoId !== null || tracked !== null}
+                    onClick={() => void retryCaptionFetch(item.lesson.youtubeVideoId)}
+                  >
+                    {retryingVideoId === item.lesson.youtubeVideoId ? labels.retryPending : labels.retry}
+                  </Button>
+                )}
                 {retryErrorVideoId === item.lesson.youtubeVideoId && (
                   <p role="alert" className="mt-sm text-sm text-danger-strong">
                     {labels.retryFailed}
