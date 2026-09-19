@@ -10,8 +10,9 @@ import { parseVideoId } from "@/lib/youtube";
  * attempt count, lease — is the server's, so these schemas strip unknown keys
  * rather than carrying them toward the store.
  *
- * URL handling matches the existing `importVideoSchema` contract: any common
- * YouTube URL form, or a bare eleven-character id.
+ * URL handling keeps the contract the removed `importVideoSchema` carried: any
+ * common YouTube URL form, or a bare eleven-character id. This is now its only
+ * home — the synchronous importer it belonged to no longer exists.
  */
 
 const youtubeUrlField = z.string().trim().min(1, "A YouTube URL is required.");

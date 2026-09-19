@@ -59,3 +59,21 @@ export function speechErrorStatus(kind: SpeechErrorKind): number {
  * our own limiter's computed `retryAfter`, which is exact.
  */
 export const SPEECH_THROTTLE_RETRY_AFTER_MS = 30_000;
+
+/**
+ * The message a lesson-creation API returns for a `403`, chosen by WHY it was
+ * refused rather than by the status code.
+ *
+ * The learner path's only 403 today is an exhausted quota and the admin path's
+ * only one is a failed guard, so a route could infer either from the status
+ * alone — until a second reason is added on one of those paths, and silently
+ * inherits the wrong copy. Reading the reason keeps that from being possible.
+ */
+export function lessonCreationRefusalMessage(reason: "quota_exceeded" | "not_admin"): string {
+  switch (reason) {
+    case "quota_exceeded":
+      return "Monthly lesson quota reached";
+    case "not_admin":
+      return "Forbidden";
+  }
+}

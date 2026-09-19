@@ -5,8 +5,7 @@ import { requireUser } from "@/lib/data/videos";
 import { isLessonCreationWorkerEnabled } from "@/lib/lesson-creation/env";
 import {
   enqueueLessonCreation,
-  getRequesterJob,
-  listJobEventsForOwnedJob,
+  getRequesterJobWithEvents,
   retryRequesterJob,
 } from "@/lib/lesson-creation/store";
 import type { LessonCreationJobEvent, LessonCreationJobProjection } from "@/lib/lesson-creation/types";
@@ -39,21 +38,31 @@ export interface LessonCreationJobStatus {
 type Refusal<S extends number> = { ok: false; status: S };
 type RateLimited = { ok: false; status: 429; retryAfter: number };
 
+/**
+ * Why a 403 happened, so a route never has to infer its copy from the status
+ * code alone. The learner path's only 403 is the quota today — but the next
+ * one added would silently inherit "Monthly lesson quota reached" without this.
+ */
+type Forbidden = { ok: false; status: 403; reason: "quota_exceeded" | "not_admin" };
+
 export type EnqueueLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobProjection }
-  | Refusal<401 | 403 | 503>
+  | Refusal<401 | 503>
+  | Forbidden
   | RateLimited;
 
 export type ReadLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobStatus }
-  | Refusal<401 | 403 | 404>;
+  | Refusal<401 | 404>
+  | Forbidden;
 
 export type RetryLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobProjection }
-  | Refusal<401 | 403 | 404 | 409>
+  | Refusal<401 | 404 | 409>
+  | Forbidden
   | RateLimited;
 
-type Identity = { ok: true; userId: string } | Refusal<401 | 403>;
+type Identity = { ok: true; userId: string } | Refusal<401> | Forbidden;
 
 async function learnerIdentity(): Promise<Identity> {
   const user = await requireUser(createClient());
@@ -66,7 +75,8 @@ async function learnerIdentity(): Promise<Identity> {
  */
 async function adminIdentity(): Promise<Identity> {
   const admin = await requireAdmin();
-  return admin.ok ? { ok: true, userId: admin.user.id } : { ok: false, status: admin.status };
+  if (admin.ok) return { ok: true, userId: admin.user.id };
+  return admin.status === 401 ? { ok: false, status: 401 } : { ok: false, status: 403, reason: "not_admin" };
 }
 
 /**
@@ -113,7 +123,9 @@ async function enqueueFor(
   // would present as pending forever rather than as unavailable (spec §7).
   if (!isLessonCreationWorkerEnabled()) return { ok: false, status: 503 };
 
-  if (advisory !== undefined && !(await advisory())) return { ok: false, status: 403 };
+  if (advisory !== undefined && !(await advisory())) {
+    return { ok: false, status: 403, reason: "quota_exceeded" };
+  }
 
   return { ok: true, data: await enqueueLessonCreation(job) };
 }
@@ -177,11 +189,11 @@ export async function enqueueAdminLessonCreationJob(input: {
 async function readFor(identity: Identity, jobId: string): Promise<ReadLessonCreationJobResult> {
   if (!identity.ok) return identity;
 
-  const job = await getRequesterJob(jobId, identity.userId);
-  if (job === null) return { ok: false, status: 404 };
+  // One call: the store will not read history for a job this caller does not own.
+  const found = await getRequesterJobWithEvents(jobId, identity.userId);
+  if (found === null) return { ok: false, status: 404 };
 
-  // Ownership is established by the line above; only then may history be read.
-  return { ok: true, data: { job, events: await listJobEventsForOwnedJob(jobId) } };
+  return { ok: true, data: found };
 }
 
 export async function readLearnerLessonCreationJob(jobId: string): Promise<ReadLessonCreationJobResult> {

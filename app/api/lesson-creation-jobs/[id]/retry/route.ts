@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { lessonCreationRefusalMessage } from "@/lib/http-status";
 import { retryLearnerLessonCreationJob } from "@/lib/data/lesson-creation-jobs";
 import { lessonCreationJobIdSchema } from "@/lib/validation/lesson-creation";
 
@@ -25,7 +26,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
       result.status === 401
         ? "Unauthorized"
         : result.status === 403
-          ? "Forbidden"
+          ? lessonCreationRefusalMessage(result.reason)
           : result.status === 404
             ? "Not found"
             : "This job cannot be retried";

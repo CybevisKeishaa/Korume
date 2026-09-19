@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { lessonCreationRefusalMessage } from "@/lib/http-status";
 import { readLearnerLessonCreationJob } from "@/lib/data/lesson-creation-jobs";
 import { lessonCreationJobIdSchema } from "@/lib/validation/lesson-creation";
 
@@ -15,7 +16,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 
   const result = await readLearnerLessonCreationJob(parsed.data);
   if (!result.ok) {
-    const message = result.status === 401 ? "Unauthorized" : result.status === 403 ? "Forbidden" : "Not found";
+    const message =
+      result.status === 401 ? "Unauthorized" : result.status === 403 ? lessonCreationRefusalMessage(result.reason) : "Not found";
     return NextResponse.json({ error: message }, { status: result.status });
   }
 

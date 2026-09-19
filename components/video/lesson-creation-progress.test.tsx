@@ -73,6 +73,28 @@ describe("LessonCreationProgress", () => {
     expect(stageState("Building lesson")).toContain("not started");
   });
 
+  it("reports the current attempt only, not stages the failed attempt had reached", () => {
+    // A retry re-queues the job. The first attempt's `fetching_transcript`
+    // event is still durable and still visible, but the work it describes is
+    // being redone — showing "Preparing lesson: done" for an attempt that has
+    // only just started would be the exact lie design §9 forbids.
+    render(
+      <LessonCreationProgress
+        job={job({ state: "queued", step: "deduplicating", attemptCount: 0 })}
+        events={[
+          event("deduplicating"),
+          event("fetching_transcript"),
+          event("failed", "failed"),
+          event("deduplicating", "queued"),
+        ]}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(stageState("Preparing lesson")).toContain("in progress");
+    expect(stageState("Finding transcript")).toContain("not started");
+  });
+
   it("marks every stage done for a succeeded job", () => {
     render(
       <LessonCreationProgress

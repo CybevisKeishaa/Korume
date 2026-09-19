@@ -52,12 +52,12 @@ describe("POST /api/admin/lesson-creation-jobs/[id]/retry", () => {
   });
 
   it.each([
-    [401 as const, "Unauthorized"],
-    [403 as const, "Forbidden"],
-    [404 as const, "Not found"],
-    [409 as const, "This job cannot be retried"],
-  ])("does not collapse a %i refusal into a queued retry", async (status, error) => {
-    vi.mocked(retryAdminLessonCreationJob).mockResolvedValue({ ok: false, status });
+    [{ ok: false, status: 401 } as const, 401, "Unauthorized"],
+    [{ ok: false, status: 403, reason: "not_admin" } as const, 403, "Forbidden"],
+    [{ ok: false, status: 404 } as const, 404, "Not found"],
+    [{ ok: false, status: 409 } as const, 409, "This job cannot be retried"],
+  ])("does not collapse a %o refusal into a queued retry", async (refusal, status, error) => {
+    vi.mocked(retryAdminLessonCreationJob).mockResolvedValue(refusal);
 
     const response = await post(JOB_ID);
 

@@ -6,8 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { findExistingLesson, isUnderQuota } from "@/lib/data/lesson-library";
 import {
   enqueueLessonCreation,
-  getRequesterJob,
-  listJobEventsForOwnedJob,
+  getRequesterJobWithEvents,
   retryRequesterJob,
 } from "@/lib/lesson-creation/store";
 
@@ -17,8 +16,7 @@ vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
 vi.mock("@/lib/data/lesson-library", () => ({ findExistingLesson: vi.fn(), isUnderQuota: vi.fn() }));
 vi.mock("@/lib/lesson-creation/store", () => ({
   enqueueLessonCreation: vi.fn(),
-  getRequesterJob: vi.fn(),
-  listJobEventsForOwnedJob: vi.fn(),
+  getRequesterJobWithEvents: vi.fn(),
   retryRequesterJob: vi.fn(),
 }));
 
@@ -68,8 +66,7 @@ beforeEach(() => {
   vi.mocked(isUnderQuota).mockResolvedValue(true);
   vi.mocked(requireAdmin).mockResolvedValue({ ok: true, user: ADMIN });
   vi.mocked(enqueueLessonCreation).mockResolvedValue(JOB);
-  vi.mocked(getRequesterJob).mockResolvedValue(JOB);
-  vi.mocked(listJobEventsForOwnedJob).mockResolvedValue([EVENT]);
+  vi.mocked(getRequesterJobWithEvents).mockResolvedValue({ job: JOB, events: [EVENT] });
   vi.mocked(retryRequesterJob).mockResolvedValue(JOB);
 });
 
@@ -127,7 +124,11 @@ describe("enqueueLearnerLessonCreationJob", () => {
     vi.mocked(findExistingLesson).mockResolvedValue(null);
     vi.mocked(isUnderQuota).mockResolvedValue(false);
 
-    expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({ ok: false, status: 403 });
+    expect(await enqueueLearnerLessonCreationJob({ youtubeVideoId: VIDEO_ID })).toEqual({
+      ok: false,
+      status: 403,
+      reason: "quota_exceeded",
+    });
     expect(isUnderQuota).toHaveBeenCalledWith(USER.id);
     expect(enqueueLessonCreation).not.toHaveBeenCalled();
   });
@@ -187,13 +188,13 @@ describe("enqueueAdminLessonCreationJob", () => {
     expect(isUnderQuota).not.toHaveBeenCalled();
   });
 
-  it.each([[401 as const], [403 as const]])("passes the admin guard's own %i through", async (status) => {
+  it.each([
+    [401 as const, { ok: false, status: 401 }],
+    [403 as const, { ok: false, status: 403, reason: "not_admin" }],
+  ])("passes the admin guard's own %i through, saying why", async (status, expected) => {
     vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status });
 
-    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" })).toEqual({
-      ok: false,
-      status,
-    });
+    expect(await enqueueAdminLessonCreationJob({ youtubeVideoId: VIDEO_ID, libraryAccess: "FREE" })).toEqual(expected);
     expect(enqueueLessonCreation).not.toHaveBeenCalled();
   });
 
@@ -223,23 +224,23 @@ describe("readLearnerLessonCreationJob", () => {
   it("returns the owner's projection with its durable event history", async () => {
     expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: { job: JOB, events: [EVENT] } });
 
-    expect(getRequesterJob).toHaveBeenCalledWith(JOB_ID, USER.id);
-    expect(listJobEventsForOwnedJob).toHaveBeenCalledWith(JOB_ID);
+    expect(getRequesterJobWithEvents).toHaveBeenCalledWith(JOB_ID, USER.id);
   });
 
   it("cannot tell a foreign job from a missing one", async () => {
-    vi.mocked(getRequesterJob).mockResolvedValue(null);
+    vi.mocked(getRequesterJobWithEvents).mockResolvedValue(null);
 
     expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 404 });
-    // Reading events for an unowned job would leak that it exists.
-    expect(listJobEventsForOwnedJob).not.toHaveBeenCalled();
+    // The requester id is passed to the store on every read; the store is what
+    // refuses to touch history for a job this caller does not own.
+    expect(getRequesterJobWithEvents).toHaveBeenCalledWith(JOB_ID, USER.id);
   });
 
   it("refuses an anonymous reader", async () => {
     signedInAs(null);
 
     expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 401 });
-    expect(getRequesterJob).not.toHaveBeenCalled();
+    expect(getRequesterJobWithEvents).not.toHaveBeenCalled();
   });
 });
 
@@ -247,14 +248,14 @@ describe("readAdminLessonCreationJob", () => {
   it("scopes an admin read to the jobs that admin requested", async () => {
     expect(await readAdminLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: { job: JOB, events: [EVENT] } });
 
-    expect(getRequesterJob).toHaveBeenCalledWith(JOB_ID, ADMIN.id);
+    expect(getRequesterJobWithEvents).toHaveBeenCalledWith(JOB_ID, ADMIN.id);
   });
 
-  it("passes the admin guard's refusal through", async () => {
+  it("passes the admin guard's refusal through, saying why", async () => {
     vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 403 });
 
-    expect(await readAdminLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 403 });
-    expect(getRequesterJob).not.toHaveBeenCalled();
+    expect(await readAdminLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 403, reason: "not_admin" });
+    expect(getRequesterJobWithEvents).not.toHaveBeenCalled();
   });
 });
 

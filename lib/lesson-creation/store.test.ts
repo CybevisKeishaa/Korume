@@ -3,7 +3,7 @@ import { createMockSupabase, eqValue, type MockResult, type QueryCall } from "@/
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   claimNextLessonCreationJob, enqueueLessonCreation, finalizeClaimedJob,
-  getRequesterJob, hasStudyableLessonTranscript, listJobEventsForOwnedJob,
+  getRequesterJob, getRequesterJobWithEvents, hasStudyableLessonTranscript,
   recoverExpiredLessonCreationJobs, retryRequesterJob, transitionClaimedJob,
 } from "./store";
 
@@ -266,36 +266,63 @@ describe("lesson creation store", () => {
     expect(client.rpcCalls).toEqual([{ name: "toString", args: { p_job_id: jobId } }]);
   });
 
-  it("reads one job's event history in durable order", async () => {
-    let query: QueryCall[] = [];
-    const client = createMockSupabase({ tables: { lesson_creation_job_events: (calls) => {
-      query = calls;
-      return { data: [eventRow, { ...eventRow, state: "running", step: "fetching_metadata", attempt_count: 1 }], error: null };
-    } } });
+  it("reads a job and its history together, newest rows kept but returned oldest first", async () => {
+    let eventQuery: QueryCall[] = [];
+    const client = createMockSupabase({ tables: {
+      lesson_creation_jobs: () => ({ data: row, error: null }),
+      lesson_creation_job_events: (calls) => {
+        eventQuery = calls;
+        // The database returns newest first; the caller must not see that order.
+        return { data: [{ ...eventRow, state: "running", step: "fetching_metadata", attempt_count: 1 }, eventRow], error: null };
+      },
+    } });
     vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
-    expect(await listJobEventsForOwnedJob(jobId)).toEqual([
-      event,
-      { ...event, state: "running", step: "fetching_metadata", attemptCount: 1 },
-    ]);
-    expect(query).toEqual([
+
+    expect(await getRequesterJobWithEvents(jobId, requesterId)).toEqual({
+      job: projection,
+      events: [event, { ...event, state: "running", step: "fetching_metadata", attemptCount: 1 }],
+    });
+    expect(eventQuery).toEqual([
       { op: "select", columns: "state,step,attempt_count,public_error_code,created_at" },
       { op: "eq", column: "job_id", value: jobId },
-      { op: "order", column: "id", ascending: true },
+      { op: "order", column: "id", ascending: false },
+      { op: "limit", count: 60 },
     ]);
   });
 
-  it("returns no history rather than inventing one for a job with no events", async () => {
-    const client = createMockSupabase({ tables: { lesson_creation_job_events: () => ({ data: [], error: null }) } });
+  it("never reads history for a job the caller does not own", async () => {
+    let eventsQueried = false;
+    const client = createMockSupabase({ tables: {
+      lesson_creation_jobs: () => ({ data: null, error: null }),
+      lesson_creation_job_events: () => {
+        eventsQueried = true;
+        return { data: [], error: null };
+      },
+    } });
     vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
-    expect(await listJobEventsForOwnedJob(jobId)).toEqual([]);
+
+    expect(await getRequesterJobWithEvents(jobId, foreignId)).toBeNull();
+    expect(eventsQueried).toBe(false);
+  });
+
+  it("returns no history rather than inventing one for a job with no events", async () => {
+    const client = createMockSupabase({ tables: {
+      lesson_creation_jobs: () => ({ data: row, error: null }),
+      lesson_creation_job_events: () => ({ data: [], error: null }),
+    } });
+    vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
+    expect(await getRequesterJobWithEvents(jobId, requesterId)).toEqual({ job: projection, events: [] });
   });
 
   it.each([
     { data: [{ ...eventRow, step: "bogus" }], error: null },
     { data: null, error: { message: "history unavailable", code: "08006" } },
   ])("throws history database/parse errors", async (result) => {
-    const client = createMockSupabase({ tables: { lesson_creation_job_events: () => result } });
+    const client = createMockSupabase({ tables: {
+      lesson_creation_jobs: () => ({ data: row, error: null }),
+      lesson_creation_job_events: () => result,
+    } });
     vi.mocked(createServiceClient).mockReturnValue(client as unknown as ReturnType<typeof createServiceClient>);
-    await expect(listJobEventsForOwnedJob(jobId)).rejects.toBeDefined();
+    await expect(getRequesterJobWithEvents(jobId, requesterId)).rejects.toBeDefined();
   });
 });

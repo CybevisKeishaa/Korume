@@ -64,11 +64,11 @@ describe("POST /api/admin/lesson-creation-jobs", () => {
   });
 
   it.each([
-    [401 as const, "Unauthorized"],
-    [403 as const, "Forbidden"],
-    [503 as const, "Lesson creation is temporarily unavailable"],
-  ])("does not collapse a %i refusal into a queued job", async (status, error) => {
-    vi.mocked(enqueueAdminLessonCreationJob).mockResolvedValue({ ok: false, status });
+    [{ ok: false, status: 401 } as const, 401, "Unauthorized"],
+    [{ ok: false, status: 403, reason: "not_admin" } as const, 403, "Forbidden"],
+    [{ ok: false, status: 503 } as const, 503, "Lesson creation is temporarily unavailable"],
+  ])("does not collapse a %o refusal into a queued job", async (refusal, status, error) => {
+    vi.mocked(enqueueAdminLessonCreationJob).mockResolvedValue(refusal);
 
     const response = await post({ youtubeUrl: "dQw4w9WgXcQ", libraryAccess: "FREE" });
 

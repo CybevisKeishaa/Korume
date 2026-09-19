@@ -73,7 +73,7 @@ describe("POST /api/videos/import", () => {
 
   it.each([
     [{ ok: false, status: 401 } as const, 401, "Unauthorized"],
-    [{ ok: false, status: 403 } as const, 403, "Monthly lesson quota reached"],
+    [{ ok: false, status: 403, reason: "quota_exceeded" } as const, 403, "Monthly lesson quota reached"],
     [{ ok: false, status: 503 } as const, 503, "Lesson creation is temporarily unavailable"],
   ])("does not collapse a %o refusal into a queued job", async (result, status, error) => {
     vi.mocked(enqueueLearnerLessonCreationJob).mockResolvedValue(result);

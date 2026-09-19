@@ -126,28 +126,46 @@ export async function getRequesterJob(jobId: string, requesterId: string): Promi
 }
 
 /**
- * One job's append-only transition history, oldest first.
- *
- * ⚠️ Ownership is NOT checked here and cannot be: the events table carries no
- * requester column, and this reads through the service role, which bypasses
- * RLS. Call it only after `getRequesterJob` has returned a row for the same
- * caller — reading history for an id the caller does not own would disclose
- * that someone else's job exists.
+ * A retried job accumulates history without limit, and every poll re-sends it.
+ * Sixty rows is roughly ten attempts' worth — far more than the presentation
+ * needs (it reads only the current attempt) and enough that the cap is never
+ * reached in an ordinary life. The newest rows are the ones kept.
  */
-export async function listJobEventsForOwnedJob(jobId: string): Promise<LessonCreationJobEvent[]> {
+const maxEventHistory = 60;
+
+/**
+ * One job and its append-only transition history, oldest first — or `null` if
+ * the caller does not own it.
+ *
+ * Both reads live in one function on purpose. The events table carries no
+ * requester column and this client bypasses RLS, so a history read is only
+ * safe once the job lookup has proven ownership. Exposing the history read on
+ * its own would make "forgot to check first" a mistake someone can make; here
+ * it is not expressible.
+ */
+export async function getRequesterJobWithEvents(
+  jobId: string,
+  requesterId: string,
+): Promise<{ job: LessonCreationJobProjection; events: LessonCreationJobEvent[] } | null> {
+  const job = await getRequesterJob(jobId, requesterId);
+  if (job === null) return null;
+
   const client = createServiceClient();
   const { data, error } = await client.from("lesson_creation_job_events")
     .select(publicEventColumns)
     .eq("job_id", jobId)
-    .order("id", { ascending: true });
+    .order("id", { ascending: false })
+    .limit(maxEventHistory);
   if (error) throw error;
-  return z.array(rowSchema).parse(data).map((row) => lessonCreationJobEventSchema.parse({
+  const events = z.array(rowSchema).parse(data).map((row) => lessonCreationJobEventSchema.parse({
     state: row.state,
     step: row.step,
     attemptCount: row.attempt_count,
     publicErrorCode: row.public_error_code,
     createdAt: row.created_at,
   }));
+  // Queried newest-first so the cap keeps the newest; consumers read oldest-first.
+  return { job, events: events.reverse() };
 }
 
 export async function retryRequesterJob(jobId: string, requesterId: string): Promise<RetryResult> {

@@ -54,8 +54,25 @@ function stageIndexOf(step: LessonCreationStep): number {
   return STAGES.findIndex((stage) => stage.steps.includes(step));
 }
 
+/**
+ * The events belonging to the attempt now running.
+ *
+ * A retry re-queues the same job, so its history accumulates across attempts.
+ * Every `queued` event marks an attempt beginning, so the tail from the last
+ * one is the current attempt. Without this, a retried job would show the stages
+ * its FAILED attempt had reached as already complete — work that is being
+ * redone, presented as done. `attemptCount` cannot serve here: retry resets it
+ * to 0, so the numbers repeat across attempts.
+ */
+function currentAttempt(events: LessonCreationJobEvent[]): LessonCreationJobEvent[] {
+  const lastQueued = events.map((event) => event.state).lastIndexOf("queued");
+  return lastQueued <= 0 ? events : events.slice(lastQueued);
+}
+
 function stageStates(job: LessonCreationJobProjection, events: LessonCreationJobEvent[]): StageState[] {
-  const reached = events.map((event) => stageIndexOf(event.step)).filter((index) => index >= 0);
+  const reached = currentAttempt(events)
+    .map((event) => stageIndexOf(event.step))
+    .filter((index) => index >= 0);
   const furthestReached = reached.length === 0 ? -1 : Math.max(...reached);
 
   return STAGES.map((_stage, index) => {

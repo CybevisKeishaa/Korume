@@ -44,11 +44,11 @@ describe("GET /api/admin/lesson-creation-jobs/[id]", () => {
   });
 
   it.each([
-    [401 as const, "Unauthorized"],
-    [403 as const, "Forbidden"],
-    [404 as const, "Not found"],
-  ])("does not collapse a %i refusal into a job", async (status, error) => {
-    vi.mocked(readAdminLessonCreationJob).mockResolvedValue({ ok: false, status });
+    [{ ok: false, status: 401 } as const, 401, "Unauthorized"],
+    [{ ok: false, status: 403, reason: "not_admin" } as const, 403, "Forbidden"],
+    [{ ok: false, status: 404 } as const, 404, "Not found"],
+  ])("does not collapse a %o refusal into a job", async (refusal, status, error) => {
+    vi.mocked(readAdminLessonCreationJob).mockResolvedValue(refusal);
 
     const response = await get(JOB_ID);
 

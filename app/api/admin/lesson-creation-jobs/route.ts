@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { lessonCreationRefusalMessage } from "@/lib/http-status";
 import { enqueueAdminLessonCreationJob } from "@/lib/data/lesson-creation-jobs";
 import { adminEnqueueLessonCreationSchema } from "@/lib/validation/lesson-creation";
 
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
       result.status === 401
         ? "Unauthorized"
         : result.status === 403
-          ? "Forbidden"
+          ? lessonCreationRefusalMessage(result.reason)
           : "Lesson creation is temporarily unavailable";
     return NextResponse.json({ error: message }, { status: result.status });
   }
