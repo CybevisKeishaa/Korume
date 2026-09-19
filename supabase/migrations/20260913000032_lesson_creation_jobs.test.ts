@@ -8,24 +8,25 @@ import { FREE_MONTHLY_LESSON_QUOTA } from "../../lib/data/lesson-library";
 const directory = join(process.cwd(), "supabase/migrations");
 const filename = "20260913000032_lesson_creation_jobs.sql";
 
-/** Adds `existing_private_lesson`; separate because a value added by ALTER TYPE
- * is not usable in the transaction that added it. */
-const CODE_MIGRATION = "20260919000033_lesson_creation_existing_private_lesson_code.sql";
-
-/** Replaces `finalize_lesson_creation_job` with the A+C ruling's authoritative half. */
-const REFUSAL_MIGRATION = "20260919000034_lesson_creation_admin_private_dedup.sql";
-
-function migrationNamed(name: string): string {
-  const files = readdirSync(directory).filter((file) => file === name);
+/**
+ * One migration file, deliberately. Owner ruling 2026-09-19 on review finding
+ * I1: this subsystem is edited IN PLACE rather than by additive
+ * `CREATE OR REPLACE` migrations (AGENTS.md §6a). A second file defining the
+ * same function would leave every assertion below reading a copy the database
+ * never runs — which is exactly what the previous shape did.
+ */
+function migration(): string {
+  const files = readdirSync(directory).filter((file) => file === filename);
   expect(files.length).toBeGreaterThan(0);
   expect(files).toHaveLength(1);
   const file = files[0];
-  if (!file) throw new Error(`C4 migration ${name} is missing`);
+  if (!file) throw new Error("C4 migration is missing");
   return readFileSync(join(directory, file), "utf8").replace(/--[^\n]*/g, "").toLowerCase();
 }
 
-function migration(): string {
-  return migrationNamed(filename);
+/** Nothing else may define this subsystem's functions; see `migration()`. */
+function subsystemMigrations(): string[] {
+  return readdirSync(directory).filter((file) => file.endsWith(".sql") && file >= filename);
 }
 
 describe("durable lesson creation SQL contract", () => {
@@ -63,12 +64,7 @@ describe("durable lesson creation SQL contract", () => {
       expect(definition).not.toBeNull();
       const members = definition?.[1];
       if (!members) throw new Error(`Missing enum ${name}`);
-      // A domain value may also arrive by ALTER TYPE in a later migration; the
-      // union of both is what the database actually accepts.
-      const added = [...migrationNamed(CODE_MIGRATION).matchAll(
-        new RegExp(`alter type public\\.${name} add value '([^']+)'`, "g"),
-      )].map((match) => match[1]);
-      expect([...members.matchAll(/'([^']+)'/g)].map((match) => match[1]).concat(added)).toEqual(values);
+      expect([...members.matchAll(/'([^']+)'/g)].map((match) => match[1])).toEqual(values);
     }
     expect(sql).toContain("(state = 'succeeded') = (step = 'ready')");
     expect(sql).toContain("(state = 'failed') = (step = 'failed')");
@@ -123,10 +119,9 @@ describe("durable lesson creation SQL contract", () => {
    * before the lock, so the row can still appear after they have passed.
    */
   it("refuses an admin job deduping onto a private lesson, under the lock and before any write", () => {
-    const body = migrationNamed(REFUSAL_MIGRATION)
-      .match(/create or replace function public\.finalize_lesson_creation_job\([\s\S]*?\$\$;/)?.[0];
+    const body = migration().match(/create function public\.finalize_lesson_creation_job\([\s\S]*?\$\$;/)?.[0];
     expect(body).toBeDefined();
-    if (!body) throw new Error("Missing finalize replacement");
+    if (!body) throw new Error("Missing finalize");
 
     const lock = body.indexOf("pg_advisory_xact_lock");
     const refusal = body.indexOf("public_error_code = 'existing_private_lesson'");
@@ -146,7 +141,9 @@ describe("durable lesson creation SQL contract", () => {
     // mentions the column at all.
     const branch = body.slice(body.lastIndexOf("if j.origin = 'admin'", refusal), body.indexOf("return j;", refusal));
     expect(branch).toContain("state = 'failed'");
-    expect(branch).not.toContain("lesson_id");
+    // The precise thing forbidden, not the substring: an implementation that
+    // wrote `lesson_id = null` explicitly is equally safe and must not go red.
+    expect(branch).not.toContain("lesson_id = v.id");
   });
 
   it("selects the newest empty header over an older complete header and repairs that same header", () => {
@@ -197,6 +194,15 @@ describe("durable lesson creation SQL contract", () => {
     expect(body).toContain("pg_advisory_xact_lock");
     expect(body).toContain("state = 'succeeded', step = 'ready', lesson_id = v.id");
   });
+  /**
+   * Guards the ruling itself (AGENTS.md §6a): if a later commit ever adds a
+   * second subsystem migration, these scans and the definer check below would
+   * silently stop covering the live definitions. Fail here instead.
+   */
+  it("keeps this subsystem to one migration file, so every scan below is complete", () => {
+    expect(subsystemMigrations()).toEqual([filename]);
+  });
+
   it("fences worker writes and restricts all definer functions to service role", () => {
     const sql = migration();
     const functions = [...sql.matchAll(/create function public\.(\w+)\([\s\S]*?\$\$;/g)];

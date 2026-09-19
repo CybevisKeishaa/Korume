@@ -4,7 +4,7 @@
 create type public.lesson_creation_origin as enum ('learner', 'admin');
 create type public.lesson_creation_job_state as enum ('queued', 'running', 'succeeded', 'failed');
 create type public.lesson_creation_step as enum ('deduplicating', 'fetching_metadata', 'fetching_transcript', 'enriching_furigana', 'persisting', 'ready', 'failed');
-create type public.lesson_creation_error_code as enum ('metadata_unavailable', 'transcript_unavailable', 'quota_exceeded', 'temporary_failure');
+create type public.lesson_creation_error_code as enum ('metadata_unavailable', 'transcript_unavailable', 'quota_exceeded', 'temporary_failure', 'existing_private_lesson');
 
 create table public.lesson_creation_jobs (
   id uuid primary key default gen_random_uuid(),
@@ -213,6 +213,23 @@ begin
   if p_lesson_id is not null and (v.id is null or v.id <> p_lesson_id) then
     raise exception 'lesson_mismatch' using errcode = '22023';
   end if;
+  -- Owner ruling 2026-09-19. An admin job requests FREE/PLUS, and dedup never
+  -- republishes an existing row, so there is nothing this job can truthfully
+  -- report as done. Refuse before any content write, and leave lesson_id null:
+  -- the requester must not be handed another learner's private lesson id.
+  -- No `v.id is not null` guard: with no row `v` is all-null, so the comparison
+  -- is null and the branch is not taken.
+  --
+  -- This is the AUTHORITATIVE half of the rule. The enqueue refusal and the
+  -- pipeline's early exit both run before this advisory lock, so a learner can
+  -- create the PRIVATE row after either has passed; only here is it race-free.
+  if j.origin = 'admin' and v.library_access = 'PRIVATE' then
+    update public.lesson_creation_jobs set state = 'failed', step = 'failed',
+      public_error_code = 'existing_private_lesson', lease_expires_at = null, lease_token = null,
+      completed_at = now(), updated_at = now()
+      where id = j.id returning * into j;
+    return j;
+  end if;
   -- Refuse before any content write: creator visibility must not let a failed
   -- creation become studyable through the ordinary C3 library-add path.
   if j.origin = 'learner' and (v.id is null or v.library_access = 'PRIVATE') and not exists (
@@ -277,7 +294,8 @@ begin
     select 1 from public.user_lesson_library where user_id = p_requester and lesson_id = v.id) then
     insert into public.user_lesson_library(user_id, lesson_id) values (p_requester, v.id) on conflict do nothing;
   end if;
-  -- Admin dedup of a PRIVATE lesson must not publish it or grant a personal membership.
+  -- Reached only by a job that published or reused a lesson it may report. An
+  -- admin dedup onto a PRIVATE lesson returned above and never arrives here.
   update public.lesson_creation_jobs set state = 'succeeded', step = 'ready', lesson_id = v.id,
     public_error_code = null, lease_expires_at = null, lease_token = null, completed_at = now(), updated_at = now()
     where id = j.id returning * into j;

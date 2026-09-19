@@ -215,9 +215,10 @@ remains before merge is under Next actions.
 Every command run and read, in this worktree: vitest **3038/3038 over 324 files,
 exit 0** (baseline 3031; +7) · tsc 0 · lint 0 errors · `next build` 0 ·
 `git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a freshly
-reset database** (`supabase db reset` 0, both migrations applied in order, so the
-two-file `ALTER TYPE … ADD VALUE` split holds) · playwright C4 **3/3** (`.env.local`
-borrowed and deleted, L-020).
+reset database** · playwright C4 **3/3** (`.env.local` borrowed and deleted,
+L-020). *(Superseded: this wave originally shipped two additional migration
+files. The review of it ruled that convention out — see below — and they are
+gone, so the `ALTER TYPE` reasoning they carried no longer applies to anything.)*
 
 **The live gate reproduced the defect before the fix** — `F4 admin dedup onto a
 PRIVATE lesson gave succeeded/ready err=<NULL>` against the real database. No
@@ -261,6 +262,37 @@ lint 0 errors · `next build` 0 · `git diff --check` clean ·
 `npm run verify:db:lesson-jobs` **exit 0 on a freshly reset database**, with
 G5a red first against the pre-revert function.
 
+### Review of `3c73987`, and the wave closing it (2026-09-19)
+
+Verdict CHANGES REQUIRED: 1 Critical, 3 Important, 5 Minor. All closed.
+
+- **I1, owner ruling — migrations are edited IN PLACE.** Now law, in AGENTS.md
+  §6. The additive `CREATE OR REPLACE` migrations this wave introduced are gone;
+  migration 32 absorbs the enum value and the refusal branch. Choosing this
+  dissolved C1 and the whole `ALTER TYPE` migration with it.
+- **C1** — migration 32's `finalize_lesson_creation_job` had become dead SQL the
+  database never ran, while every behavioural pin still read it: the quota
+  literal, the `security definer set search_path = ''` check (its regex matches
+  `create function`, so the replacement was invisible to it) and the §2.1
+  no-download scan. A guard now asserts the subsystem stays at one file, so the
+  scans below it cannot silently stop covering the live definitions.
+- **I2** — F4 passed a non-null `p_lesson_id`, i.e. the path `pipeline.ts`
+  short-circuits before finalize is ever called. **The race the SQL refusal
+  exists for was untested.** F4b now drives `p_lesson_id = null` with full
+  content, and was verified red against a refusal-free function
+  (`succeeded/ready err=<NULL>`) before being accepted.
+- **I3** — the `409` had been widened onto the shared enqueue result, so the
+  learner route's final `else` could answer 409 with the 503 copy. The result
+  type is now per-caller; `tsc` rejects a 409 from the learner path.
+- Minors: unreachable learner copy made neutral and commented; the Vietnamese
+  catalogue's `temporaryFailure` encoding churn reverted; the SQL leak assertion
+  narrowed to `lesson_id = v.id`; the 409 now names the remedy (approve the
+  existing lesson); the unbounded-but-manual futile retry documented.
+
+Gates after the wave: vitest **3043/3043 over 324 files, exit 0** · tsc 0 ·
+lint 0 errors · `next build` 0 · `git diff --check` clean ·
+`npm run verify:db:lesson-jobs` **exit 0 on a freshly reset database**.
+
 ## Working tree and environment
 
 - Owner: Claude
@@ -299,10 +331,9 @@ G5a red first against the pre-revert function.
    wave for a fix wave's review). Its review should re-derive that each new
    test's fixture is a shape the production transport can actually produce:
    that was C1's exact shape.
-2. **Review the admin-dedup wave `3c73987`** (owner ruling A+C). Its own fix
-   wave: 19 files plus two new migrations, one replacing an applied function.
-   Take with it the second `monthly_count >= 3` that migration 34 necessarily
-   carries — the file-scoped pin in migration 32's test does not read it.
+2. **Review the wave that closes the `3c73987` review** (L-012, again). It
+   consolidated the subsystem back to one migration file, so its review should
+   check that no pin still reads a definition the database does not run.
 3. **Trim this file under the 200-line cap** so `verify-codex-protocol.ps1` is
    green (see Blockers).
 3. Only then merge. One item is deliberately NOT in this branch and must not

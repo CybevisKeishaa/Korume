@@ -45,14 +45,24 @@ type RateLimited = { ok: false; status: 429; retryAfter: number };
  */
 type Forbidden = { ok: false; status: 403; reason: "quota_exceeded" | "not_admin" };
 
-export type EnqueueLessonCreationJobResult =
+/**
+ * What every enqueue can answer, whoever is asking. Each caller widens this
+ * with its OWN refusals rather than sharing one union: a status only the admin
+ * path can produce would otherwise be reachable, as far as the compiler knows,
+ * from the learner route's final `else` — which would answer it with the `503`
+ * copy. That is the same silent inheritance `Forbidden` below exists to stop,
+ * one level up on the status axis.
+ */
+type BaseEnqueueResult =
   | { ok: true; data: LessonCreationJobProjection }
-  | Refusal<401 | 409 | 503>
+  | Refusal<401 | 503>
   | Forbidden
   | RateLimited;
 
-/** An enqueue refusal, i.e. everything the result can be except the queued job. */
-type EnqueueRefusal = Exclude<EnqueueLessonCreationJobResult, { ok: true }>;
+export type EnqueueLearnerLessonCreationJobResult = BaseEnqueueResult;
+
+/** Adds `409`: an existing PRIVATE lesson already occupies the video. */
+export type EnqueueAdminLessonCreationJobResult = BaseEnqueueResult | Refusal<409>;
 
 export type ReadLessonCreationJobResult =
   | { ok: true; data: LessonCreationJobStatus }
@@ -111,12 +121,12 @@ function isNotRetryableRejection(error: unknown): boolean {
  * the worker exists at all, and only then anything about this particular
  * learner. A disabled service must not answer "you are out of quota".
  */
-async function enqueueFor(
+async function enqueueFor<Refused extends Exclude<BaseEnqueueResult, { ok: true }> | Refusal<409>>(
   identity: Identity,
   rateLimitKey: string,
   job: Parameters<typeof enqueueLessonCreation>[0],
-  advisory?: () => Promise<EnqueueRefusal | null>,
-): Promise<EnqueueLessonCreationJobResult> {
+  advisory?: () => Promise<Refused | null>,
+): Promise<BaseEnqueueResult | Refused> {
   if (!identity.ok) return identity;
 
   const limited = rateLimit(rateLimitKey, CREATE_LIMIT);
@@ -136,7 +146,7 @@ async function enqueueFor(
 
 export async function enqueueLearnerLessonCreationJob(input: {
   youtubeVideoId: string;
-}): Promise<EnqueueLessonCreationJobResult> {
+}): Promise<EnqueueLearnerLessonCreationJobResult> {
   const identity = await learnerIdentity();
   if (!identity.ok) return identity;
 
@@ -178,7 +188,7 @@ async function mayProceedOnQuota(requesterId: string, youtubeVideoId: string): P
 export async function enqueueAdminLessonCreationJob(input: {
   youtubeVideoId: string;
   libraryAccess: "FREE" | "PLUS";
-}): Promise<EnqueueLessonCreationJobResult> {
+}): Promise<EnqueueAdminLessonCreationJobResult> {
   const identity = await adminIdentity();
   if (!identity.ok) return identity;
 
@@ -204,8 +214,14 @@ export async function enqueueAdminLessonCreationJob(input: {
  * This is the courtesy, not the guarantee: the check is not under the advisory
  * lock finalize takes, so a learner can still create the row afterwards. The
  * authoritative refusal is in SQL, and must stay there.
+ *
+ * A job refused this way ends `failed`, so it is retryable, and a retry resets
+ * `attempt_count` to 0 — the three-attempt cap never engages, and a futile
+ * retry loop is bounded only by the per-admin rate limit and by retry being
+ * manual. That is deliberate: the condition genuinely clears when the lesson is
+ * approved into the catalogue, which is what the 403/409 copy points at.
  */
-async function mayPublishOver(youtubeVideoId: string): Promise<EnqueueRefusal | null> {
+async function mayPublishOver(youtubeVideoId: string): Promise<Refusal<409> | null> {
   const existing = await findExistingLesson(youtubeVideoId);
   return existing?.library_access === "PRIVATE" ? { ok: false, status: 409 } : null;
 }

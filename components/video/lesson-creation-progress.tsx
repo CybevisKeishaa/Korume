@@ -45,6 +45,10 @@ const ERROR_KEYS = {
   transcript_unavailable: "transcriptUnavailable",
   quota_exceeded: "quotaExceeded",
   temporary_failure: "temporaryFailure",
+  // Required by the `satisfies` below, but unreachable on this surface: the
+  // code is set only for `origin = 'admin'`, and this component renders only on
+  // learner surfaces. Its copy is deliberately neutral — it must not describe
+  // another learner's private lesson to whoever eventually does see it.
   existing_private_lesson: "existingPrivateLesson",
 } as const satisfies Record<LessonCreationErrorCode, string>;
 

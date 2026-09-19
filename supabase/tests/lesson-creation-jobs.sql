@@ -402,6 +402,66 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- F4b  The race F4 cannot reach, and the whole reason this rule lives in SQL.
+--
+--     F4 above passes a non-null `p_lesson_id` — the path `pipeline.ts` has
+--     already short-circuited before finalize is called. Here the pipeline
+--     found NOTHING, fetched captions, and calls finalize with
+--     `p_lesson_id = null` and full content, while a learner created the
+--     PRIVATE row in between. Both the enqueue check and the pipeline check ran
+--     before the advisory lock and both saw an empty catalogue. Only this
+--     refusal is race-free, and it must beat every content write (L-040).
+-- ---------------------------------------------------------------------------
+do $$
+declare uid_admin uuid; uid_b uuid; job uuid; tok uuid := gen_random_uuid();
+  lesson uuid; transcript uuid; st text; stp text; err text; reported uuid; access text;
+  lines_before int; lines_after int;
+  good jsonb := jsonb_build_object(
+    'title', 'C4 gate race lesson', 'thumbnail_url', null, 'source', 'youtube_caption',
+    'lines', jsonb_build_array(jsonb_build_object(
+      'start_time', 0, 'end_time', 2, 'text_jp', 'これは割り込みです',
+      'text_translation', 'This is the interleaving', 'furigana_json', null)));
+begin
+  select id into strict uid_admin from public.users where email = 'c4gate-admin@example.invalid';
+  select id into strict uid_b from public.users where email = 'c4gate-b@example.invalid';
+
+  -- The learner's lesson, created AFTER the admin job was enqueued and claimed.
+  insert into public.videos(youtube_video_id, title, added_by_user_id, library_access)
+  values ('C4GATERACE1', 'a learner private lesson', uid_b, 'PRIVATE') returning id into lesson;
+  insert into public.transcripts(video_id, source, language)
+  values (lesson, 'youtube_caption', 'ja') returning id into transcript;
+  insert into public.transcript_lines(transcript_id, start_time, end_time, text_jp)
+  values (transcript, 0, 1.5, 'これは学習者のものです');
+  select count(*) into lines_before from public.transcript_lines where transcript_id = transcript;
+
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, lease_expires_at, lease_token)
+  values (uid_admin, 'admin', 'FREE', 'C4GATERACE1', 'running', 'persisting', 1,
+    now() + interval '10 minutes', tok) returning id into job;
+
+  -- p_lesson_id null: the pipeline believed it was creating a brand-new lesson.
+  perform public.finalize_lesson_creation_job(job, null, uid_admin, tok, good);
+
+  select state::text, step::text, public_error_code::text, lesson_id
+    into st, stp, err, reported from public.lesson_creation_jobs where id = job;
+  if st <> 'failed' or stp <> 'failed' or err <> 'existing_private_lesson' then
+    raise exception 'F4b admin finalize racing a new PRIVATE lesson gave %/% err=%', st, stp, err;
+  end if;
+  if reported is not null then
+    raise exception 'F4b the refusal disclosed a private lesson id';
+  end if;
+  select library_access::text into access from public.videos where youtube_video_id = 'C4GATERACE1';
+  if access <> 'PRIVATE' then
+    raise exception 'F4b the refusal published the learner lesson as %', access;
+  end if;
+  select count(*) into lines_after from public.transcript_lines where transcript_id = transcript;
+  if lines_after <> lines_before then
+    raise exception 'F4b the refusal wrote content: % transcript lines, expected %', lines_after, lines_before;
+  end if;
+  raise notice 'F4b PASS  refusal beat the content write on the unlocked-check race';
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Teardown. Deleting the auth users cascades to public.users and to the jobs.
 -- ---------------------------------------------------------------------------
 delete from public.videos where youtube_video_id like 'C4GATE%';

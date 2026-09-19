@@ -72,7 +72,7 @@ describe("POST /api/admin/lesson-creation-jobs", () => {
     [
       { ok: false, status: 409 } as const,
       409,
-      "This video already has a private lesson, so it cannot be published to the catalogue",
+      "This video already has a private lesson, so it cannot be published to the catalogue. Approve that lesson instead if it should be public.",
     ],
   ])("does not collapse a %o refusal into a queued job", async (refusal, status, error) => {
     vi.mocked(enqueueAdminLessonCreationJob).mockResolvedValue(refusal);

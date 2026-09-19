@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         : result.status === 403
           ? lessonCreationRefusalMessage(result.reason)
           : result.status === 409
-            ? "This video already has a private lesson, so it cannot be published to the catalogue"
+            ? "This video already has a private lesson, so it cannot be published to the catalogue. Approve that lesson instead if it should be public."
             : "Lesson creation is temporarily unavailable";
     return NextResponse.json({ error: message }, { status: result.status });
   }
