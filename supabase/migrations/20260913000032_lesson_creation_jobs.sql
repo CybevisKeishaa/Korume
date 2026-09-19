@@ -190,6 +190,52 @@ begin
   return recovered;
 end;
 $$;
+-- Review finding I2. A `queued` job outlives the worker whenever the process is
+-- stopped or dies after the row was recorded: `claim` never reaches it, lease
+-- recovery above only touches `running`, `retry` refuses anything but `failed`,
+-- and `enqueue` keeps returning it as the active job for that video — so the
+-- learner cannot re-import it either. Design §7 forbids presenting an
+-- indefinitely pending lesson; this is the rule that ends one.
+--
+-- The window alone must not decide it. A single-concurrency worker makes a job
+-- wait a long time behind others while being perfectly healthy, which is exactly
+-- why the client-side poll budget was removed, so the age test is paired with a
+-- condition no number can express: NO job anywhere holds a live lease. Together
+-- they mean "the queue is not moving", not "this job is slow".
+--
+-- `updated_at`, not `created_at`: a transient requeue touches it, so a job that
+-- is being retried on schedule is never stale. `attempt_count` is left alone —
+-- the row never ran, so it owes no attempt, and `retry` resets the counter anyway.
+--
+-- p_job_id narrows it to one row (the learner's own status read, after that read
+-- has proven ownership); null sweeps the queue (each worker pass). Both callers
+-- share this one definition of "stale".
+create function public.fail_stale_queued_lesson_creation_jobs(p_now timestamptz,
+  p_max_age_seconds integer, p_job_id uuid default null)
+returns integer language plpgsql security definer set search_path = '' as $$
+declare ended integer;
+begin
+  if p_now is null or p_max_age_seconds is null or p_max_age_seconds not between 60 and 86400 then
+    raise exception 'invalid_stale_window' using errcode = '22023';
+  end if;
+  if exists (select 1 from public.lesson_creation_jobs
+    where state = 'running' and lease_expires_at > p_now) then
+    return 0;
+  end if;
+  with stale as (select id from public.lesson_creation_jobs
+    where state = 'queued' and available_at <= p_now
+      and updated_at <= p_now - make_interval(secs => p_max_age_seconds)
+      and (p_job_id is null or id = p_job_id) for update skip locked)
+  update public.lesson_creation_jobs j set
+    state = 'failed', step = 'failed', public_error_code = 'temporary_failure',
+    lease_expires_at = null, lease_token = null,
+    available_at = p_now, updated_at = p_now, completed_at = p_now
+    from stale where j.id = stale.id;
+  get diagnostics ended = row_count;
+  return ended;
+end;
+$$;
+
 
 -- Payload: {title, thumbnail_url: string|null, source: "youtube_caption",
 -- lines: [{start_time, end_time: number|null, text_jp,
@@ -309,11 +355,13 @@ revoke all on function public.record_lesson_creation_job_event(),
   public.claim_lesson_creation_job(timestamptz, integer),
   public.transition_lesson_creation_job(uuid, public.lesson_creation_job_state, public.lesson_creation_step, timestamptz, public.lesson_creation_error_code, uuid, integer),
   public.retry_lesson_creation_job(uuid, uuid), public.recover_expired_lesson_creation_jobs(timestamptz),
+  public.fail_stale_queued_lesson_creation_jobs(timestamptz, integer, uuid),
   public.finalize_lesson_creation_job(uuid, uuid, uuid, uuid, jsonb) from public, anon, authenticated;
 grant execute on function public.enqueue_lesson_creation_job(uuid, public.lesson_creation_origin, public.lesson_access_level, text),
   public.claim_lesson_creation_job(timestamptz, integer),
   public.transition_lesson_creation_job(uuid, public.lesson_creation_job_state, public.lesson_creation_step, timestamptz, public.lesson_creation_error_code, uuid, integer),
   public.retry_lesson_creation_job(uuid, uuid), public.recover_expired_lesson_creation_jobs(timestamptz),
+  public.fail_stale_queued_lesson_creation_jobs(timestamptz, integer, uuid),
   public.finalize_lesson_creation_job(uuid, uuid, uuid, uuid, jsonb) to service_role;
 
 /* DOWN (manual, destructive only to C4 job/event history; export first):
@@ -322,6 +370,7 @@ drop function public.claim_lesson_creation_job(timestamptz, integer);
 drop function public.transition_lesson_creation_job(uuid, public.lesson_creation_job_state, public.lesson_creation_step, timestamptz, public.lesson_creation_error_code, uuid, integer);
 drop function public.retry_lesson_creation_job(uuid, uuid);
 drop function public.recover_expired_lesson_creation_jobs(timestamptz);
+drop function public.fail_stale_queued_lesson_creation_jobs(timestamptz, integer, uuid);
 drop function public.finalize_lesson_creation_job(uuid, uuid, uuid, uuid, jsonb);
 drop table public.lesson_creation_job_events;
 drop table public.lesson_creation_jobs;

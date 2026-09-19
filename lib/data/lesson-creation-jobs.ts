@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/data/videos";
 import { isLessonCreationWorkerEnabled } from "@/lib/lesson-creation/env";
 import {
   enqueueLessonCreation,
+  failStaleQueuedLessonCreationJobs,
   getRequesterJobWithEvents,
   retryRequesterJob,
 } from "@/lib/lesson-creation/store";
@@ -226,12 +227,32 @@ async function mayPublishOver(youtubeVideoId: string): Promise<Refusal<409> | nu
   return existing?.library_access === "PRIVATE" ? { ok: false, status: 409 } : null;
 }
 
+/**
+ * Read one job, and on the way out end it if it is a `queued` row no live worker
+ * can still be reaching (review finding I2, design §5).
+ *
+ * The staleness rule has to run somewhere the learner's own traffic reaches.
+ * `recover_expired_lesson_creation_jobs` is called only from the worker pass, so
+ * with the worker stopped — the case that strands these rows — it would never
+ * fire; this poll is the one path that still runs. The order matters twice: the
+ * owner-scoped read proves whose row this is before anything mutates it, and the
+ * re-read is what lets the poll see the terminal state on the same tick that ends
+ * it, instead of one tick later.
+ */
 async function readFor(identity: Identity, jobId: string): Promise<ReadLessonCreationJobResult> {
   if (!identity.ok) return identity;
 
   // One call: the store will not read history for a job this caller does not own.
   const found = await getRequesterJobWithEvents(jobId, identity.userId);
   if (found === null) return { ok: false, status: 404 };
+
+  if (found.job.state === "queued") {
+    const ended = await failStaleQueuedLessonCreationJobs(jobId);
+    if (ended > 0) {
+      const terminal = await getRequesterJobWithEvents(jobId, identity.userId);
+      if (terminal !== null) return { ok: true, data: terminal };
+    }
+  }
 
   return { ok: true, data: found };
 }

@@ -4,7 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   claimNextLessonCreationJob, enqueueLessonCreation, finalizeClaimedJob,
   getRequesterJob, getRequesterJobWithEvents, hasStudyableLessonTranscript,
-  recoverExpiredLessonCreationJobs, retryRequesterJob, transitionClaimedJob,
+  failStaleQueuedLessonCreationJobs, recoverExpiredLessonCreationJobs, retryRequesterJob,
+  STALE_QUEUED_JOB_SECONDS, transitionClaimedJob,
 } from "./store";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
@@ -254,6 +255,33 @@ describe("lesson creation store", () => {
     expectRpc(client, "recover_expired_lesson_creation_jobs", { p_now: now });
   });
 
+  /**
+   * Review finding I2. The window is an argument, not a SQL literal, so it keeps
+   * one home; the job id decides whether this ends one row or sweeps the queue.
+   */
+  it.each([0, 3])("returns the stale-queued count %s and sweeps the whole queue by default", async (count) => {
+    const client = rpcFixture("fail_stale_queued_lesson_creation_jobs", count);
+    expect(await failStaleQueuedLessonCreationJobs(null, now)).toBe(count);
+    expectRpc(client, "fail_stale_queued_lesson_creation_jobs", {
+      p_now: now, p_max_age_seconds: STALE_QUEUED_JOB_SECONDS, p_job_id: null,
+    });
+  });
+
+  it("narrows the stale rule to one job when given an id", async () => {
+    const client = rpcFixture("fail_stale_queued_lesson_creation_jobs", 1);
+    expect(await failStaleQueuedLessonCreationJobs(jobId, now)).toBe(1);
+    expectRpc(client, "fail_stale_queued_lesson_creation_jobs", {
+      p_now: now, p_max_age_seconds: STALE_QUEUED_JOB_SECONDS, p_job_id: jobId,
+    });
+  });
+
+  it("pairs a generous window with the guard the number cannot express", () => {
+    // Ten minutes: a two-minute lease and a thirty-second backoff ceiling both
+    // fit inside it several times over, and the SQL additionally refuses to act
+    // while any live lease exists.
+    expect(STALE_QUEUED_JOB_SECONDS).toBe(600);
+  });
+
   const operations = [
     { name: "enqueue_lesson_creation_job", args: enqueueArgs, run: () => enqueueLessonCreation(enqueueInput) },
     { name: "retry_lesson_creation_job", args: { p_job_id: jobId, p_requester: requesterId }, run: () => retryRequesterJob(jobId, requesterId) },
@@ -261,6 +289,11 @@ describe("lesson creation store", () => {
     { name: "transition_lesson_creation_job", args: transitionArgs, run: () => transitionClaimedJob(transitionInput) },
     { name: "finalize_lesson_creation_job", args: finalizeArgs, run: () => finalizeClaimedJob(finalizeInput) },
     { name: "recover_expired_lesson_creation_jobs", args: { p_now: now }, run: () => recoverExpiredLessonCreationJobs(now) },
+    {
+      name: "fail_stale_queued_lesson_creation_jobs",
+      args: { p_now: now, p_max_age_seconds: STALE_QUEUED_JOB_SECONDS, p_job_id: null },
+      run: () => failStaleQueuedLessonCreationJobs(null, now),
+    },
   ];
   it.each(operations)("throws unchanged RPC errors from $name", async ({ name, args, run }) => {
     const error = { message: "database unavailable", code: "08006" };

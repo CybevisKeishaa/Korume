@@ -27,6 +27,20 @@ export const LESSON_CREATION_ERROR_CODES = [
 export type LessonCreationErrorCode = (typeof LESSON_CREATION_ERROR_CODES)[number];
 
 export type TerminalLessonCreationJobState = Extract<LessonCreationJobState, "succeeded" | "failed">;
+/**
+ * Total execution attempts per job (design §5, "There are three total execution
+ * attempts").
+ *
+ * This number is shared with SQL, which cannot import it: the migration spends it
+ * in nine places (two check constraints, `claim`'s eligibility filter,
+ * `transition`'s two CASE arms and its `completed_at`, and `recover`'s three).
+ * It lives here rather than in `worker.ts` so the migration's contract test can
+ * pin every one of those against it without importing the worker; that pin is
+ * the only thing connecting the two homes (AGENTS.md §6, "one fact, one home").
+ * Raise it here and the pin will name each SQL site that must follow.
+ */
+export const MAX_LESSON_CREATION_ATTEMPTS = 3;
+
 
 /**
  * The only job shape allowed beyond the server/store boundary. Requester and

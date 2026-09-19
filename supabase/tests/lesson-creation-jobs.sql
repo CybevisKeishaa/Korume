@@ -462,6 +462,127 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- F5  Review finding I2, 2026-09-19. A `queued` job that outlives the worker
+-- must end; a queue that is merely busy must never be mistaken for a dead one;
+-- and once ended, the learner must be able to get the lesson another way.
+--
+-- Only a live server shows any of this: the rule turns on `for update skip
+-- locked`, on a partial unique index deciding whether a fresh enqueue is even
+-- allowed, and on the event trigger appending the terminal row.
+-- ---------------------------------------------------------------------------
+do $$
+declare uid_b uuid; j_stale uuid; j_fresh uuid; j_second uuid; j_live uuid; j_new uuid;
+  ended int; st text; stp text; err text; comp timestamptz; attempts int;
+  events_before int; events_after int; expired int; window_refused boolean := false;
+begin
+  select id into strict uid_b from public.users where email = 'c4gate-b@example.invalid';
+
+  -- Untouched for an hour: what the worker leaves behind when it is stopped.
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
+  values (uid_b, 'learner', 'PRIVATE', 'C4GATESTAL1', 'queued', 'deduplicating', 0,
+    now() - interval '1 hour', now() - interval '1 hour', now() - interval '1 hour')
+  returning id into j_stale;
+
+  -- Touched a minute ago: inside the window, and none of this may reach it.
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
+  values (uid_b, 'learner', 'PRIVATE', 'C4GATEFRSH1', 'queued', 'deduplicating', 0,
+    now() - interval '1 minute', now() - interval '1 minute', now() - interval '1 minute')
+  returning id into j_fresh;
+
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
+  values (uid_b, 'learner', 'PRIVATE', 'C4GATESTAL2', 'queued', 'deduplicating', 0,
+    now() - interval '1 hour', now() - interval '1 hour', now() - interval '1 hour')
+  returning id into j_second;
+
+  -- F5a  A live lease anywhere means someone IS working: a single-concurrency
+  -- worker makes a healthy job wait behind others, and the window alone would
+  -- read that queue as dead.
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, lease_expires_at, lease_token)
+  values (uid_b, 'learner', 'PRIVATE', 'C4GATELIVE1', 'running', 'fetching_metadata', 1,
+    now() + interval '1 minute', gen_random_uuid()) returning id into j_live;
+
+  ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_stale);
+  if ended <> 0 then
+    raise exception 'F5a ended % job(s) while a live lease existed, expected 0', ended;
+  end if;
+  select state::text into st from public.lesson_creation_jobs where id = j_stale;
+  if st <> 'queued' then raise exception 'F5a a busy queue lost a job: %', st; end if;
+  raise notice 'F5a PASS  a live lease anywhere holds the sweep off';
+
+  -- F5b  With nothing holding a lease, the stale job ends. The precondition at
+  -- the top of this file is what makes "every live lease" safe to expire here:
+  -- the queue holds no job this gate did not create.
+  update public.lesson_creation_jobs set lease_expires_at = now() - interval '1 minute'
+    where state = 'running' and lease_expires_at > now();
+  get diagnostics expired = row_count;
+
+  select count(*) into events_before from public.lesson_creation_job_events where job_id = j_stale;
+  ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_stale);
+  if ended <> 1 then raise exception 'F5b ended % job(s), expected 1', ended; end if;
+
+  select state::text, step::text, public_error_code::text, completed_at, attempt_count
+    into st, stp, err, comp, attempts from public.lesson_creation_jobs where id = j_stale;
+  if st <> 'failed' or stp <> 'failed' or err <> 'temporary_failure' or comp is null then
+    raise exception 'F5b stale job became %/% err=% completed_at=%', st, stp, err, comp;
+  end if;
+  -- The row never ran, so it owes no attempt.
+  if attempts <> 0 then raise exception 'F5b the sweep spent an attempt: %', attempts; end if;
+  select count(*) into events_after from public.lesson_creation_job_events where job_id = j_stale;
+  if events_after <= events_before then
+    raise exception 'F5b no event recorded for the terminal transition (% -> %)', events_before, events_after;
+  end if;
+  raise notice 'F5b PASS  stale queued job ended terminal and retryable after % lease(s) expired', expired;
+
+  -- F5c  Inside the window, nothing happens.
+  ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_fresh);
+  select state::text into st from public.lesson_creation_jobs where id = j_fresh;
+  if ended <> 0 or st <> 'queued' then
+    raise exception 'F5c a job touched a minute ago was ended (% row(s), state %)', ended, st;
+  end if;
+  raise notice 'F5c PASS  a job inside the window is left alone';
+
+  -- F5d  The same definition sweeps the queue when given no job id. The count is
+  -- not asserted: earlier gates leave queued rows of their own behind, so this
+  -- check owns only the row it names.
+  perform public.fail_stale_queued_lesson_creation_jobs(now(), 600, null);
+  select state::text, public_error_code::text into st, err
+    from public.lesson_creation_jobs where id = j_second;
+  if st <> 'failed' or err <> 'temporary_failure' then
+    raise exception 'F5d the queue-wide sweep left % (err %)', st, err;
+  end if;
+  raise notice 'F5d PASS  the queue-wide form ends the same rows';
+
+  -- F5e  The point of all of it: the learner is no longer stuck. An ended job is
+  -- retryable, and a fresh import of the same video is allowed again — both were
+  -- impossible while the row sat in `queued`, because retry refuses anything but
+  -- `failed` and enqueue returns the active row rather than making a new one.
+  if (public.retry_lesson_creation_job(j_stale, uid_b)).state::text <> 'queued' then
+    raise exception 'F5e retry did not requeue an aged-out job';
+  end if;
+  select id into j_new
+    from public.enqueue_lesson_creation_job(uid_b, 'learner', 'PRIVATE', 'C4GATESTAL2');
+  if j_new = j_second then
+    raise exception 'F5e enqueue handed back the aged-out job instead of a new one';
+  end if;
+  raise notice 'F5e PASS  an aged-out job is retryable and its video re-importable';
+
+  -- F5f  The window belongs to the caller, and an implausible one is refused
+  -- rather than quietly applied.
+  begin
+    perform public.fail_stale_queued_lesson_creation_jobs(now(), 0, null);
+  exception when others then
+    if sqlstate <> '22023' then raise; end if;
+    window_refused := true;
+  end;
+  if not window_refused then raise exception 'F5f a zero-second window was accepted'; end if;
+  raise notice 'F5f PASS  an out-of-range window is refused';
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Teardown. Deleting the auth users cascades to public.users and to the jobs.
 -- ---------------------------------------------------------------------------
 delete from public.videos where youtube_video_id like 'C4GATE%';

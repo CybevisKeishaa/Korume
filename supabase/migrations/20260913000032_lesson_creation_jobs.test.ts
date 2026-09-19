@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
-import { LESSON_CREATION_ERROR_CODES, LESSON_CREATION_JOB_STATES, LESSON_CREATION_STEPS } from "../../lib/lesson-creation/types";
+import { LESSON_CREATION_ERROR_CODES, LESSON_CREATION_JOB_STATES, LESSON_CREATION_STEPS, MAX_LESSON_CREATION_ATTEMPTS } from "../../lib/lesson-creation/types";
 import { FREE_MONTHLY_LESSON_QUOTA } from "../../lib/data/lesson-library";
 
 const directory = join(process.cwd(), "supabase/migrations");
@@ -24,9 +24,21 @@ function migration(): string {
   return readFileSync(join(directory, file), "utf8").replace(/--[^\n]*/g, "").toLowerCase();
 }
 
-/** Nothing else may define this subsystem's functions; see `migration()`. */
+/**
+ * Every migration that defines any part of this subsystem; see `migration()`.
+ *
+ * Scoped by CONTENT, not by filename ordering. A `file >= filename` string
+ * comparison collects the next migration added for ANY subsystem, turning this
+ * red with a message naming the C4 one-file rule that is not the cause — which
+ * invites the next author to weaken the guard AGENTS.md §6 depends on. The
+ * subsystem's own name is the thing worth matching on.
+ */
 function subsystemMigrations(): string[] {
-  return readdirSync(directory).filter((file) => file.endsWith(".sql") && file >= filename);
+  return readdirSync(directory).filter(
+    (file) =>
+      file.endsWith(".sql") &&
+      readFileSync(join(directory, file), "utf8").includes("lesson_creation_job"),
+  );
 }
 
 describe("durable lesson creation SQL contract", () => {
@@ -47,6 +59,54 @@ describe("durable lesson creation SQL contract", () => {
     expect(matches).toHaveLength(1);
     expect(Number(matches[0]?.[1])).toBe(FREE_MONTHLY_LESSON_QUOTA);
   });
+  /**
+   * The same defect as the quota pin above, for the three-attempt cap — which
+   * that pin's own comment describes and nothing enforced until this test.
+   *
+   * `MAX_LESSON_CREATION_ATTEMPTS` drives the worker's requeue-vs-terminal
+   * decision and its claimed-attempt sanity guard; the SQL spends the same number
+   * nine times. Drift is silent in BOTH directions: raise the constant alone and
+   * `transition_lesson_creation_job` still computes `else 'failed'` at three
+   * attempts, so what the worker records as a requeue becomes a terminal failure
+   * and `claim` never picks the row up again; lower the SQL alone and the worker's
+   * guard still passes while jobs die an attempt early. `worker.test.ts` is green
+   * against the constant and structurally cannot see the SQL.
+   */
+  it("spends the attempt cap as MAX_LESSON_CREATION_ATTEMPTS at every SQL site", () => {
+    const sql = migration();
+
+    // One pattern over EVERY comparison of `attempt_count` against a literal,
+    // counted. The three shapes below are readable but not exhaustive: a new
+    // shape (`> 2`, `= 3`) would slip past them and be caught only here
+    // (AGENTS.md §7 — a pattern-gathered collection must assert its size).
+    const everySite = [...sql.matchAll(/attempt_count\s*(?:<=|>=|<|>|=|between 0 and)\s*(\d+)/g)];
+    expect(everySite.length).toBeGreaterThan(0);
+    expect(everySite).toHaveLength(10);
+
+    const capShapes = [
+      // the two check constraints, on jobs and on the event history
+      [/attempt_count between 0 and (\d+)/g, 2],
+      // `claim`'s eligibility filter, `transition`'s two CASE arms, `recover`'s two
+      [/attempt_count < (\d+)/g, 5],
+      // `transition`'s `completed_at`, and `recover`'s exhausted arm
+      [/attempt_count >= (\d+)/g, 2],
+    ] as const;
+    let capSites = 0;
+    for (const [pattern, expected] of capShapes) {
+      const matches = [...sql.matchAll(pattern)];
+      expect(matches).toHaveLength(expected);
+      for (const match of matches) expect(Number(match[1])).toBe(MAX_LESSON_CREATION_ATTEMPTS);
+      capSites += matches.length;
+    }
+    expect(capSites).toBe(9);
+
+    // The tenth site is a different fact, so it is named rather than pinned to
+    // the cap: a retry resets the counter to start a fresh attempt sequence on
+    // the same job (design §5).
+    expect([...sql.matchAll(/attempt_count = (\d+)/g)]).toHaveLength(1);
+    expect(sql).toContain("set state = 'queued', step = 'deduplicating', attempt_count = 0");
+  });
+
 
   it("ships exactly one migration and both private, cascading tables", () => {
     const sql = migration();
@@ -199,15 +259,51 @@ describe("durable lesson creation SQL contract", () => {
    * second subsystem migration, these scans and the definer check below would
    * silently stop covering the live definitions. Fail here instead.
    */
+  /**
+   * Review finding I2. The sweeper that ends a `queued` job no live worker can
+   * reach. Two of its rules are easy to "simplify" into bugs, so both are pinned:
+   * the live-lease guard is what keeps a merely busy queue from being declared
+   * dead, and the age is measured on the column a requeue touches.
+   */
+  it("ends a stale queued job, and only while nothing holds a live lease", () => {
+    const sql = migration();
+    const body = sql.match(/create function public\.fail_stale_queued_lesson_creation_jobs\([\s\S]*?\$\$;/)?.[0];
+    expect(body).toBeDefined();
+    if (!body) throw new Error("the stale-queued sweeper is missing");
+
+    // A single-concurrency worker makes a healthy job wait behind others; without
+    // this guard the window alone would call that queue dead.
+    expect(body).toContain("state = 'running' and lease_expires_at > p_now");
+    expect(body).toContain("return 0;");
+    // `updated_at`, never `created_at`: a transient requeue touches the former,
+    // so a job being retried on schedule is not stale.
+    expect(body).toContain("updated_at <= p_now - make_interval(secs => p_max_age_seconds)");
+    expect(body).not.toContain("created_at");
+    // Terminal and retryable, and it consumes no attempt — the row never ran.
+    expect(body).toContain("state = 'failed', step = 'failed', public_error_code = 'temporary_failure'");
+    expect(body).not.toContain("attempt_count");
+    // One row (a learner's own poll) or the whole queue (a worker pass), one
+    // definition of stale.
+    expect(body).toContain("(p_job_id is null or id = p_job_id)");
+    expect(body).toContain("for update skip locked");
+    // The window stays the caller's, so it never gains a second home in SQL.
+    expect(body).toContain("p_max_age_seconds not between 60 and 86400");
+    expect(body).not.toMatch(/interval '\d/);
+  });
+
   it("keeps this subsystem to one migration file, so every scan below is complete", () => {
-    expect(subsystemMigrations()).toEqual([filename]);
+    const files = subsystemMigrations();
+    // Non-empty first: a content filter that matched nothing would make this
+    // pass by finding no second file AND no first one (AGENTS.md §7).
+    expect(files.length).toBeGreaterThan(0);
+    expect(files).toEqual([filename]);
   });
 
   it("fences worker writes and restricts all definer functions to service role", () => {
     const sql = migration();
     const functions = [...sql.matchAll(/create function public\.(\w+)\([\s\S]*?\$\$;/g)];
     expect(functions.length).toBeGreaterThan(0);
-    expect(functions).toHaveLength(7);
+    expect(functions).toHaveLength(8);
     for (const [body] of functions) expect(body).toContain("security definer set search_path = ''");
     expect(sql).toContain("lease_token is distinct from p_lease_token");
     expect(sql).toContain("lease_expires_at <= clock_timestamp()");

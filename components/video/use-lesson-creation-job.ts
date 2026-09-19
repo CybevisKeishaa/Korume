@@ -29,6 +29,11 @@ import {
  * time behind others while being perfectly healthy; abandoning it would declare
  * a busy queue "paused". §7's `503` covers the genuinely unserviceable case,
  * before a job is ever recorded.
+ *
+ * A job already queued when the worker stopped is ended by the server, on the
+ * read this poll makes, and arrives here as an ordinary terminal failure (review
+ * finding I2). The queue's own state decides it — not a count of ticks, which is
+ * the distinction the removed giveup could not make.
  */
 const POLL_MS = 2_000;
 

@@ -102,8 +102,10 @@ export function VideoImportForm({ variant = "default" }: VideoImportFormProps) {
       // The read was refused, not the video: a 401 means sign in again.
       return refusedStatus === 401 ? { key: "sessionExpired" } : { key: "generic" };
     }
-    // Still queued after the poll budget: the worker may be off or busy. Design
-    // §7 forbids showing this as indefinitely pending.
+    // A job still being polled has nothing to say here. A queued job that no live
+    // worker can reach is ended server-side, on this poll's own read, and arrives
+    // as an ordinary terminal failure that `LessonCreationProgress` states with a
+    // retry (design §7) — there is no client-side budget to run out.
     return null;
   }
 

@@ -6,6 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { findExistingLesson, isUnderQuota } from "@/lib/data/lesson-library";
 import {
   enqueueLessonCreation,
+  failStaleQueuedLessonCreationJobs,
   getRequesterJobWithEvents,
   retryRequesterJob,
 } from "@/lib/lesson-creation/store";
@@ -16,6 +17,7 @@ vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
 vi.mock("@/lib/data/lesson-library", () => ({ findExistingLesson: vi.fn(), isUnderQuota: vi.fn() }));
 vi.mock("@/lib/lesson-creation/store", () => ({
   enqueueLessonCreation: vi.fn(),
+  failStaleQueuedLessonCreationJobs: vi.fn(),
   getRequesterJobWithEvents: vi.fn(),
   retryRequesterJob: vi.fn(),
 }));
@@ -68,6 +70,8 @@ beforeEach(() => {
   vi.mocked(enqueueLessonCreation).mockResolvedValue(JOB);
   vi.mocked(getRequesterJobWithEvents).mockResolvedValue({ job: JOB, events: [EVENT] });
   vi.mocked(retryRequesterJob).mockResolvedValue(JOB);
+  // Nothing is stale unless a test says so.
+  vi.mocked(failStaleQueuedLessonCreationJobs).mockResolvedValue(0);
 });
 
 afterEach(() => {
@@ -270,11 +274,64 @@ describe("readLearnerLessonCreationJob", () => {
     expect(getRequesterJobWithEvents).toHaveBeenCalledWith(JOB_ID, USER.id);
   });
 
-  it("refuses an anonymous reader", async () => {
+
+  /**
+   * Review finding I2. A job left `queued` when the worker stopped never reached
+   * a terminal state: the poll ran forever, the importer's submit button stayed
+   * disabled reading "Importing…", and enqueue kept handing back the same active
+   * row, so the learner could not re-import the video at all.
+   *
+   * The rule cannot live in the worker pass alone — `recover_expired_...` is
+   * called only from `runLessonCreationPass`, so with the worker off (the very
+   * case that produces these rows) nothing would ever run it. The learner's own
+   * poll is the path that still runs, so it is where the rule is applied.
+   */
+  it("ages out a queued job the worker can no longer be reaching, and returns the terminal read", async () => {
+    const failed = { ...JOB, state: "failed" as const, step: "failed" as const, publicErrorCode: "temporary_failure" as const };
+    vi.mocked(getRequesterJobWithEvents)
+      .mockResolvedValueOnce({ job: JOB, events: [EVENT] })
+      .mockResolvedValueOnce({ job: failed, events: [EVENT] });
+    vi.mocked(failStaleQueuedLessonCreationJobs).mockResolvedValue(1);
+
+    expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: { job: failed, events: [EVENT] } });
+    // Scoped to this one job, never a global sweep on a read.
+    expect(failStaleQueuedLessonCreationJobs).toHaveBeenCalledWith(JOB_ID);
+  });
+
+  it("leaves a queued job that is not yet stale exactly as it read it", async () => {
+    expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: true, data: { job: JOB, events: [EVENT] } });
+
+    // Asked, and the answer was "nothing was stale": one read, no re-read.
+    expect(failStaleQueuedLessonCreationJobs).toHaveBeenCalledWith(JOB_ID);
+    expect(getRequesterJobWithEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("never ages out a job that is running, succeeded or failed", async () => {
+    for (const state of ["running", "succeeded", "failed"] as const) {
+      vi.mocked(failStaleQueuedLessonCreationJobs).mockClear();
+      vi.mocked(getRequesterJobWithEvents).mockResolvedValue({ job: { ...JOB, state }, events: [EVENT] });
+
+      await readLearnerLessonCreationJob(JOB_ID);
+
+      expect(failStaleQueuedLessonCreationJobs).not.toHaveBeenCalled();
+    }
+  });
+
+  it("proves ownership before it mutates anything", async () => {
+    vi.mocked(getRequesterJobWithEvents).mockResolvedValue(null);
+
+    expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 404 });
+    // A foreign or missing id must not reach the sweeper: the owner-scoped read
+    // above is what makes the mutation safe to aim at this row.
+    expect(failStaleQueuedLessonCreationJobs).not.toHaveBeenCalled();
+  });
+
+  it("refuses an anonymous reader without touching the queue", async () => {
     signedInAs(null);
 
     expect(await readLearnerLessonCreationJob(JOB_ID)).toEqual({ ok: false, status: 401 });
     expect(getRequesterJobWithEvents).not.toHaveBeenCalled();
+    expect(failStaleQueuedLessonCreationJobs).not.toHaveBeenCalled();
   });
 });
 

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   claimNextLessonCreationJob,
+  failStaleQueuedLessonCreationJobs,
   finalizeClaimedJob,
   getRequesterJob,
   recoverExpiredLessonCreationJobs,
@@ -19,6 +20,7 @@ vi.mock("./store", async (importOriginal) => {
   return {
     ...actual,
     claimNextLessonCreationJob: vi.fn(),
+    failStaleQueuedLessonCreationJobs: vi.fn(),
     finalizeClaimedJob: vi.fn(),
     getRequesterJob: vi.fn(),
     recoverExpiredLessonCreationJobs: vi.fn(),
@@ -86,6 +88,7 @@ beforeEach(() => {
   vi.setSystemTime(NOW);
   vi.clearAllMocks();
   vi.mocked(recoverExpiredLessonCreationJobs).mockResolvedValue(0);
+  vi.mocked(failStaleQueuedLessonCreationJobs).mockResolvedValue(0);
   vi.mocked(claimNextLessonCreationJob).mockResolvedValue(null);
 });
 
@@ -101,9 +104,24 @@ describe("runLessonCreationPass", () => {
       requeued: 0,
       failed: 0,
       recovered: 2,
+      staleFailed: 0,
     });
     expect(claimNextLessonCreationJob).toHaveBeenCalledTimes(1);
     expect(claimNextLessonCreationJob).toHaveBeenCalledWith(NOW.toISOString());
+  });
+
+  /**
+   * Review finding I2. The learner's poll applies the same rule to its own job —
+   * that is the path that still runs with the worker stopped — but a live worker
+   * must not leave rows for someone else's poll to find, so each pass sweeps the
+   * whole queue too.
+   */
+  it("ages out stale queued jobs across the queue in the same pass", async () => {
+    vi.mocked(failStaleQueuedLessonCreationJobs).mockResolvedValue(3);
+
+    await expect(runLessonCreationPass(NOW, providers())).resolves.toMatchObject({ staleFailed: 3 });
+    // null = the whole queue, at the pass's own timestamp rather than a second clock.
+    expect(failStaleQueuedLessonCreationJobs).toHaveBeenCalledWith(null, NOW.toISOString());
   });
 
   it("processes one claimed job to success", async () => {
@@ -115,6 +133,7 @@ describe("runLessonCreationPass", () => {
       requeued: 0,
       failed: 0,
       recovered: 0,
+      staleFailed: 0,
     });
     expect(claimNextLessonCreationJob).toHaveBeenCalledTimes(1);
     expect(finalizeClaimedJob).toHaveBeenCalledTimes(1);
@@ -129,6 +148,7 @@ describe("runLessonCreationPass", () => {
       requeued: 0,
       failed: 1,
       recovered: 0,
+      staleFailed: 0,
     });
     expect(transitionClaimedJob).toHaveBeenLastCalledWith({
       jobId: JOB_ID,
@@ -149,6 +169,7 @@ describe("runLessonCreationPass", () => {
       requeued: 1,
       failed: 0,
       recovered: 0,
+      staleFailed: 0,
     });
     expect(transitionClaimedJob).toHaveBeenLastCalledWith({
       jobId: JOB_ID,
@@ -184,6 +205,7 @@ describe("runLessonCreationPass", () => {
       requeued: 0,
       failed: 1,
       recovered: 0,
+      staleFailed: 0,
     });
     expect(transitionClaimedJob).toHaveBeenLastCalledWith({
       jobId: JOB_ID,

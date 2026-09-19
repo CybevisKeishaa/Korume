@@ -261,3 +261,36 @@ export async function recoverExpiredLessonCreationJobs(now: string): Promise<num
     await callRpc("recover_expired_lesson_creation_jobs", { p_now: now }),
   );
 }
+/**
+ * How long a `queued` job may sit untouched before it is failed as unreachable
+ * (review finding I2).
+ *
+ * It is generous on purpose. A queue that is merely busy must never be declared
+ * dead — that is why the client-side poll budget was removed — so the SQL pairs
+ * this window with a second condition the number cannot express: no job anywhere
+ * holds a live lease. Ten minutes past that, with a lease of two minutes and a
+ * backoff that tops out at thirty seconds, nothing is still working on the row.
+ *
+ * Passed as an RPC argument rather than written into the migration, so the window
+ * keeps one home (AGENTS.md §6) and needs no pin of its own.
+ */
+export const STALE_QUEUED_JOB_SECONDS = 600;
+
+/**
+ * Fail queued jobs no live worker can still be reaching. `jobId` narrows it to
+ * one row — what the learner's own status read uses, after that read has proven
+ * ownership; `null` sweeps the queue, which is what each worker pass does.
+ * Returns how many rows it ended.
+ */
+export async function failStaleQueuedLessonCreationJobs(
+  jobId: string | null = null,
+  now: string = new Date().toISOString(),
+): Promise<number> {
+  return z.number().int().nonnegative().parse(
+    await callRpc("fail_stale_queued_lesson_creation_jobs", {
+      p_now: now,
+      p_max_age_seconds: STALE_QUEUED_JOB_SECONDS,
+      p_job_id: jobId,
+    }),
+  );
+}
