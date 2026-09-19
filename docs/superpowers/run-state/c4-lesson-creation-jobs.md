@@ -32,12 +32,15 @@ C4 is a backend subsystem, not a Figma screen port. It is outside the
 | 3 — service-role store | `1a72ace` | `485ec28` | APPROVE after re-review |
 | 4 — idempotent pipeline and worker pass | `bcb073a` | `fdcd5af` | APPROVE after R1 |
 | 5 — Node worker lifecycle | `8c6fb4b` | `13267fc`, `0cb3567` | R1 approved; **R2 unreviewed** |
-| 6 — learner/admin job APIs | `d4080ba` (schemas), `45d7684` (routes) | `19c0d09` | R1 CHANGES REQUIRED, all three closed; **fix round itself unreviewed** |
+| 6 — learner/admin job APIs | `d4080ba` (schemas), `45d7684` (routes) | `19c0d09` | R1 CHANGES REQUIRED, all three closed |
+| 7 — durable progress UI | `ba90db8` (copy), `002f993` (hook, component, both consumers) | — | covered by the whole-branch review |
+| 8 — integration, browser, docs | `e20f2f9` (carried findings), `b4290d5` (e2e, docs, PostgREST fix) | — | covered by the whole-branch review |
 
 Live database gate: `ed0a8f0`.
 Checkpoints: `8a77112`, `c6f40de`, `bb72328`.
 
-Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
+All eight tasks are implemented. The mandatory whole-branch review is the
+remaining gate before merge.
 
 ## Contracts and decisions
 
@@ -54,14 +57,22 @@ Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
   5s cadence, deliberately decoupled from the account-deletion scheduler.
 - `LESSON_CREATION_WORKER_ENABLED` accepts exactly `"true"`, `"false"` or
   unset; unset is disabled. Startup validation rejects anything else.
-- Legacy synchronous callers stay until Task 6 switches the routes, so every
-  intermediate commit compiles.
+- The synchronous path is GONE, not retired in place: `lib/data/lesson-creation.ts`
+  and `lib/youtube/schema.ts` were deleted in `e20f2f9` once the routes switched,
+  with their re-export chain. `lib/validation/lesson-creation.ts` is now the only
+  home of the YouTube URL contract.
 - `POST /api/videos/import` keeps its path and request body and now answers
   `202 { data: JobProjection }`. A `202` never means a lesson exists.
 - A job read or retry is scoped to its requester, and a foreign job answers
   exactly as a missing one does (`404`, same body). Event history is read only
-  after `getRequesterJob` has proven ownership — the events table carries no
-  requester column and the store reads it through the service role.
+  `getRequesterJobWithEvents` is the single entry point: the events table
+  carries no requester column and the store reads it through the service role,
+  so the history read is not exported on its own and reading it without proving
+  ownership is not expressible. It also caps history at the newest 60 rows.
+- A 403 carries a `reason` (`quota_exceeded` or `not_admin`), mapped to copy by
+  `lessonCreationRefusalMessage`. Each path has exactly one 403 source today, so
+  a route could infer the message from the status — until a second reason
+  appears and inherits the wrong words.
 - Enqueue refusal order: identity → rate limit → worker enabled → this
   learner's quota. A disabled worker must not answer "out of quota", and no
   job is recorded for a worker that will not run.
@@ -81,9 +92,14 @@ Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
   learner quota; `finalize_lesson_creation_job` applies it to learner origin only.
 - `retry_lesson_creation_job`'s SQLSTATE 23505 (`job_not_retryable`) maps to
   `409`; every other database error is re-thrown, never swallowed as a conflict.
-- The status route returns `{ job, events }` per design §8.1. Task 7 must mark
-  completed lines from `events`, not from the current `step` — a retry resets
-  the attempt, so an inferred step would be a wrong guess (design §9).
+- The status route returns `{ job, events }` per design §8.1, and
+  `LessonCreationProgress` marks a stage complete ONLY from a durable event for
+  a later stage — never from the current `step`, which a retry moves backwards.
+  It reads only the current attempt: the tail from the last `queued` event,
+  because retry resets `attempt_count` to 0 and the numbers repeat.
+- **PostgREST renders a composite NULL as an all-null row, not as `null`.**
+  `isAbsentRow` in the store decides absence for claim, retry and finalize. See
+  Verification — the worker threw on every idle pass before this.
 - Node builtin aliasing in `next.config.mjs` has no environment escape hatch:
   ambient configuration must not be able to drop it from a production build.
 
@@ -151,11 +167,57 @@ Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
   `store.test.ts` (query shape) plus the live gate `ed0a8f0` (real RLS/RPC).
   No test here drives an HTTP request against a real database — Task 8 owes it.
 
+- Task 7 (`ba90db8`, `002f993`) ran red first: the hook and component test
+  files failed to load because neither module existed; the EN pins were green
+  from the start because the copy was committed before them (L-027). Then
+  focused 235/235 over 22 files, full `npm test` 3029/3029 over 325 files.
+  Mutation-checked, each restored from a `git hash-object`-verified copy:
+  deriving completion from `job.step` turned the durable-event test red;
+  refreshing the Hub on enqueue turned 3 red; removing the terminal-state stop
+  turned 2 red. **A fourth attempt proved nothing and is recorded because of
+  that**: a CRLF-blind `perl -0pi` silently failed to apply, and the line it
+  printed back had always been there, so the suite was green because the
+  mutation never existed. Caught by comparing file hashes, not output.
+- **Task 8's browser acceptance found a defect no unit test could.** PostgREST
+  renders a composite NULL as an object with every column null, not as `null`,
+  so `data === null` never matched for claim/retry/finalize and the worker threw
+  a ZodError on EVERY idle pass. The three unit tests that asserted the empty
+  case were green because each fixture used a literal `null` the database never
+  sends. Confirmed by hand before fixing —
+  `POST /rest/v1/rpc/retry_lesson_creation_job` for a missing job returns
+  `{"id":null,…,"completed_at":null}` — then fixed with `isAbsentRow` and
+  re-tested with the real shape. The same browser run afterwards logs zero
+  worker errors. Recorded as L-005 evidence.
+- **Gate ordering, learned the same way.** The C4 acceptance leaves two jobs in
+  `running` when Playwright kills its server; run afterwards on the same
+  database, the DB gate's lease-recovery step requeued them and its two
+  contending sessions each claimed a different job, failing with
+  `one session must claim and one must skip` — which reads like a
+  `skip locked` regression. Nothing was wrong. Diagnosed by querying the queue
+  (2 running, 1 succeeded), not by re-running. The SQL now asserts it owns the
+  queue; planting a foreign job proved the message fires (exit 1) and a clean
+  queue passes (exit 0). Recorded as L-017 evidence.
+- **Final gates, each run and read on `b4290d5`:** `npm test -- --exclude
+  '.worktrees/**'` **3021/3021 over 324 files, exit 0** · `npm run typecheck` 0 ·
+  `npm run lint` exit 0, 80 baseline warnings, none in new files ·
+  `npm run build` exit 0 · `git diff --check` clean ·
+  `npm run verify:db:lesson-jobs` exit 0 on a freshly reset database with
+  `PRECONDITION PASS` and `CONTENTION PASS` · `npx playwright test
+  --config=playwright.c4.config.ts` **3/3**, zero server errors. The vitest
+  count falls from 3029 because `lib/data/lesson-creation.test.ts` was deleted
+  with the module it covered.
+- The e2e's YouTube seam is `tests/e2e/fixtures/youtube-stub.cjs`, a
+  `node --require` preload named only in `playwright.c4.config.ts`'s webServer
+  command. Nothing that ships gains a test branch, and an unknown video id makes
+  the stub throw rather than fall through to the network.
 ## Working tree and environment
 
 - Owner: Claude
 - Isolated worktree `.worktrees/c4-lesson-creation-jobs`, with its own
   dependencies installed. Clean at this checkpoint.
+- `.env.local` is NOT in this worktree (L-020). It was copied from the main
+  checkout for the browser run and **deleted again afterwards**; copy it back
+  before any e2e or auth-dependent run, and remove it when done.
 - The Codex shell that ran Tasks 1–5 had no `npm` on PATH and invoked it
   through an explicit nvm path; that is a property of that shell, not of the
   branch.
@@ -173,34 +235,19 @@ Tasks 7 (progress UI) and 8 (integration, browser, docs) are not started.
 
 ## Next actions
 
-1. Task 7 — the durable progress UI in both importer surfaces. Both consumers
-   still expect the old synchronous `201` body, so `VideoImportForm` and
-   `hub-library-section` are the first thing it must migrate.
-2. Task 8 — integration, browser acceptance, docs, plus the five items Task 6's
-   review routed here:
-   - **Dead code (AGENTS.md §6, forbids merging as-is).** `lib/data/lesson-creation.ts`
-     (`createLesson`, `createLessonAsAdmin`) lost its last production caller
-     when the import route switched to the queue, and `importVideoSchema` /
-     `ImportVideoInput` in `lib/youtube/schema.ts` lost theirs in the same
-     commit — the latter also now duplicates both of its user-facing strings in
-     `lib/validation/lesson-creation.ts`. Left out of Task 6 deliberately, to
-     keep that diff to the API switch.
-   - **The 23505 overload.** Have `retry_lesson_creation_job` raise a custom
-     SQLSTATE for `job_not_retryable` instead of the system unique-violation
-     code, and match on that. Changes an applied migration, so the live gate
-     (`npm run verify:db:lesson-jobs`) must be re-run.
-   - **A `reason` discriminant on the enqueue refusal.** Today the learner 403
-     has exactly one source, so "Monthly lesson quota reached" is accurate by
-     luck; the next 403 added would silently inherit that copy.
-   - **`listJobEventsForOwnedJob` is safe by comment, not by construction.**
-     A single `getRequesterJobWithEvents(jobId, requesterId)` would make the
-     ownership mistake unrepresentable, which is the posture the rest of this
-     subsystem takes.
-   - **Event history is unbounded** and re-sent whole on every poll. Consider a
-     limit, or only the current attempt's sequence.
-3. Then the mandatory whole-branch review, which must carry everything from
-   `0cb3567` onward — Claude wrote and self-reviewed all of it, including
-   Task 6's own fix round `19c0d09`.
+1. **The mandatory whole-branch review** (AGENTS.md §9, L-011) over
+   `c1a14e9..HEAD` — 29 commits, 73 files, +7247/-783. It must carry everything
+   from `0cb3567` onward, which Claude wrote and self-reviewed, and it must
+   construct the restart, concurrent-enqueue, retry-storm and
+   worker-disabled-with-queued-rows sequences by hand: no test covers those end
+   to end.
+2. Fix wave for whatever it finds, TDD, then a review of that wave (L-012).
+3. Only then merge. One item is deliberately NOT in this branch and must not
+   block it: **the 23505 overload.** `retry_lesson_creation_job` raises the
+   system unique-violation code for a business rule. No spurious 23505 is
+   reachable today and `isNotRetryableRejection` documents exactly why, but the
+   durable fix is a custom SQLSTATE — it changes an applied migration and needs
+   the live gate re-run, so it is a follow-up.
 
 ## Owner decision needed
 
