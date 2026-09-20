@@ -94,7 +94,7 @@ closes its three Important findings. What remains is under Next actions.
 ## Verification
 
 **Current gate state, every command run and read on this wave:** vitest
-**3059/3059 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
+**3060/3060 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
 --noEmit` 0 · `npm run lint` 0 errors, 80 baseline warnings · `npm run build` 0
 · `git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a
 freshly reset database**, `PRECONDITION` through the new `F5a`–`F5h` plus
@@ -152,10 +152,10 @@ own evidence.
   and Hub Plan C2), not to this one.
 - Review debt: one item — this second fix wave. Everything through `260a01a` is
   reviewed and closed.
-- Two owner calls are open, neither blocking: whether to ALSO sweep on the
-  enqueue path (cheaper than per-poll, and it frees a learner who closed the tab
-  and so has nothing polling), and whether the staleness rule routing more jobs
-  into the retry UI makes Minor M3's focus bug worth fixing now.
+- One owner call remains, not blocking: the reviewer's suggestion to ALSO sweep on
+  the enqueue path — cheaper than the per-poll write, and it frees a learner who
+  closed the tab and so has nothing polling. **RULED 2026-09-20: follow-up**, not
+  this branch. M3's focus bug was ruled IN the same day and is closed.
 
 ## Next actions
 
@@ -166,9 +166,9 @@ own evidence.
    reads claim history; re-derive that only `claim` writes a `running` event.
 2. Then `git merge --no-ff` (`.codex/docs/workflow.md` §7). Do not push unless
    the owner asks.
-3. Follow-ups, not blockers. **M3** (the Hub's "Try again" unmounts on retry, so
-   focus lands on `document.body`) is the only one with an a11y cost — see the
-   owner call under Blockers. Also deliberately NOT in this branch: **the 23505
+3. Follow-ups, not blockers. **M3 is now CLOSED** — ruled in, 2026-09-20, because
+   the staleness rule routes more jobs through that same retry UI. Also
+   deliberately NOT in this branch: **the 23505
    overload**, where `retry_lesson_creation_job` raises the system
    unique-violation code for a business rule. No spurious 23505 is reachable
    today and `isNotRetryableRejection` documents why; the durable fix is a custom

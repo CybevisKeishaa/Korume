@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -115,9 +115,28 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
     waiting: t("creation.stepWaiting"),
   };
 
+  /**
+   * A successful retry re-queues the job, so the block holding the button the
+   * learner just pressed unmounts and focus falls to `document.body` — a keyboard
+   * user is returned to the top of the document with nothing said about why
+   * (review Minor M3). Focus moves to the progress region instead: it survives
+   * the transition, carries an accessible name, and holds the stages that just
+   * changed. Only a retry started here moves focus, so a job failing on its own
+   * never steals it.
+   */
+  const statusRef = useRef<HTMLDivElement>(null);
+  const focusProgressWhenRetried = useRef(false);
+
+  useEffect(() => {
+    if (!focusProgressWhenRetried.current || job.state === "failed") return;
+    focusProgressWhenRetried.current = false;
+    statusRef.current?.focus();
+  }, [job.state]);
+
   async function handleRetry(): Promise<void> {
     if (retrying) return;
     setRetrying(true);
+    focusProgressWhenRetried.current = true;
     try {
       await onRetry();
     } finally {
@@ -127,7 +146,13 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
 
   return (
     <div className="mt-md">
-      <div role="status" aria-label={t("creation.progressLabel")}>
+      <div
+        ref={statusRef}
+        tabIndex={-1}
+        role="status"
+        aria-label={t("creation.progressLabel")}
+        className="rounded focus:outline-none focus:ring-2 focus:ring-ring"
+      >
         <ol className="flex flex-col gap-xs">
           {STAGES.map((stage, index) => {
             const state = states[index] ?? "waiting";

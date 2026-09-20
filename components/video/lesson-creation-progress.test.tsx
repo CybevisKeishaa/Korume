@@ -172,6 +172,37 @@ describe("LessonCreationProgress", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
+  /**
+   * Review Minor M3. A successful retry re-queues the job, so the block holding
+   * the button the learner just pressed unmounts — and focus fell to
+   * `document.body`, putting a keyboard user back at the top of the document
+   * with no announcement of what happened. The staleness rule routes more jobs
+   * through this exact path, so it is worth closing now.
+   */
+  it("keeps focus inside the progress region when a retry unmounts the button", async () => {
+    const onRetry = vi.fn().mockResolvedValue(undefined);
+    const failed = job({ state: "failed", step: "failed", publicErrorCode: "temporary_failure" });
+    const { rerender } = render(
+      <LessonCreationProgress job={failed} events={[event("failed", "failed")]} onRetry={onRetry} />,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    // What the server does on a successful retry: the job is queued again.
+    rerender(
+      <LessonCreationProgress
+        job={job({ state: "queued", step: "deduplicating", attemptCount: 0 })}
+        events={[event("failed", "failed"), event("deduplicating", "queued")]}
+        onRetry={onRetry}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveFocus();
+    expect(screen.getByRole("status", { name: "Lesson creation progress" })).toContainElement(
+      document.activeElement as HTMLElement,
+    );
+  });
+
   it("offers no retry while the job can still finish on its own", () => {
     render(<LessonCreationProgress job={job()} events={[event("deduplicating", "queued")]} onRetry={vi.fn()} />);
 
