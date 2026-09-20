@@ -22,14 +22,21 @@ this one.
 
 ## Accepted commits
 
-- Spec committed. No implementation commit yet.
+- `b686945` — spec and this run state.
+- Plan, packet and the spec's D3/D4 corrections. No implementation commit yet.
 
 ## Contracts and decisions
 
 - **D1** rail track `clamp(15rem, 27.5%, 21.25rem)`; the aside must become `w-full` or the
-  percentage resolves twice. **D2** `w-60` -> `w-sidebar`. **D3** cards use `rounded-lg`; `xl` only
-  on surfaces over ~200 px tall, with a comment. **D4** explore search field capped at 440 px,
-  height `h-10`. **D5** no new token, breakpoint or type change.
+  percentage resolves twice. **D2** `w-60` -> `w-sidebar`. **D3** every card uses `rounded-lg`, and
+  `--radius-xl` plus its Tailwind key are deleted. **D4** explore search row capped at
+  `clamp(18rem, 33.5%, 27.5rem)`, input `h-11` -> `h-10`. **D5** no new token, breakpoint or type
+  change; one token removed.
+- ⚠️ D3 previously kept `rounded-xl` "for hero surfaces over ~200 px". **That exception was
+  measured away**: FeaturedHero (`149:464`, 873 x 280) draws `rounded-[22px]`, the same as the
+  339 x 225 rail card. The design draws 22 on every card whatever its size, and 28 appears nowhere.
+- ⚠️ D4 previously said the frame's 38 px height "is `h-10`". `h-10` is 40 px; it is the nearest
+  existing rung, not the frame value, and no new rung is introduced for the 2 px.
 - The rule this branch leaves behind, to be written into
   `docs/design/screens/adaptive-layouts.md`: a shell dimension read off a frame is a share of that
   frame's canvas, not a constant; a constant is allowed only as the `max` of a clamp.
@@ -56,15 +63,20 @@ from the main checkout only with the worktree exclusions in `vitest.config.ts` (
 The dev server the measurements were taken against was already running on
 `http://localhost:3000`, authenticated, Vietnamese locale.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
-None. The spec awaits the owner's review; the implementation plan is written after that.
+None. The owner approved the spec on 2026-09-20; plan and packet are written and the branch is
+handed to Codex.
 
 ## Next actions
 
-1. Owner reviews the spec.
-2. Claude writes the implementation plan and the task packets, then sets `- Owner: Codex`.
-3. Codex implements under TDD, per-task review and checkpoint.
+1. Codex reads the packet `.superpowers/sdd/desktop-density-pass/density-pass-brief.md`, then
+   implements the five tasks of the plan in order, under TDD, with a `code-reviewer` pass and a
+   checkpoint here after each accepted task.
+2. T2 Step 5 requires a decision about `components/marketing/hero-video-card.tsx`; record which of
+   the two cases it was under `## Contracts and decisions`.
+3. Codex fills in the six `grid-template-columns` strings, runs the full gate including both
+   Playwright configs, and sets `- Owner: Claude`.
 4. Claude reviews `git diff master...desktop-density-pass`, records lessons, merges `--no-ff`.

@@ -40,6 +40,7 @@ Frame `149:2` (Shadowing hub, 1536 canvas), read via `get_metadata` and `get_des
 | Column gap | 28 px | — |
 | Rail card (`149:1163`) | radius **22**, padding **20**, border 0.8 | — |
 | Rail card inner chip (`149:1197`) | radius 10, padding 12/10 | — |
+| FeaturedHero (`149:464`), 873 x 280 | radius **22**, padding 28 | the largest card draws the same radius as the smallest |
 
 Frame `200:7705` (Explore Lessons, 1536 canvas):
 
@@ -61,6 +62,22 @@ and `/vi/shadowing/explore`, Vietnamese locale):
 | Card radius | `rounded-xl` = **28 px** | on boxes 91 px tall (31% of the short side) | same | 22 px on a 1536 canvas = 18.3 px at 1280 |
 | Card padding | `p-md-lg` = 20 px | same at every card size | same | 20 px on a 1536 canvas = 16.7 px at 1280 |
 | Explore search field | **818 x 44 px** | 87% of the inner box | same ratio | 440 x 38 = 367 x 32 at 1280 |
+
+**How to re-measure the shipped column, rather than trusting the table** (`docs/lessons.md` L-002 —
+record the command, not its output). With the dev server running and authenticated, at the viewport
+you want to test:
+
+```js
+// in the page console, on /vi/shadowing
+const shell = document.querySelector('main .grid');
+({ vw: innerWidth,
+   cols: getComputedStyle(shell).gridTemplateColumns,
+   nav: document.querySelector('nav').getBoundingClientRect().width });
+```
+
+The rail's share is the second track divided by the sum of both tracks plus the gap. The frame side
+re-measures with `get_metadata` on `149:2` and `200:7705`, and `get_design_context` on `149:1163`
+(rail card) and `149:464` (featured hero) for radius and padding.
 
 **The rail number is the whole explanation.** At 1422 the rail holds 27.8% of the shell, which is
 the frame's 27.3% to within half a point. At 1280 it holds 32.0%, because 300 px is a constant
@@ -115,28 +132,58 @@ track plus that class yields 27.5% of 27.5%. The aside must become `w-full`.
 class becomes `w-sidebar`. This is a defect fix, not a design change: the token and its measurement
 predate this branch.
 
-### D3 — Card radius uses the ruled rung
+### D3 — Card radius uses the ruled rung, and the unused rung is removed
 
-Every card surface uses `rounded-lg` (20 px). `rounded-xl` (28 px) is reserved for full-bleed or
-hero surfaces taller than ~200 px, where a 28 px corner is under 15% of the short side. The audit
-covers the 11 `rounded-xl` occurrences under `components/` and `app/`; each one either moves to
-`rounded-lg` or gains a one-line comment naming the surface that justifies 28.
+Every card surface uses `rounded-lg` (20 px). There is **no** hero exception.
 
-Rationale in one number: a 28 px corner on a 91 px-tall card rounds 31% of its short side. The
-frame's rail card rounds 9.8% (22 on 225). That ratio, not the absolute value, is what reads as
-bloated.
+⚠️ An earlier draft of this decision kept `rounded-xl` "for full-bleed or hero surfaces taller than
+~200 px". **That exception was measured and does not exist.** Frame `149:2`'s FeaturedHero
+(`149:464`) is 873 x 280 — the largest card on the page — and draws `rounded-[22px]`, the same
+radius as the 339 x 225 rail card. The design draws 22 on every card surface regardless of size.
+
+Consequences:
+
+- The nine product call sites of `rounded-xl` move to `rounded-lg`:
+  `hub-companion-rail.tsx` (4), `hub-empty-state.tsx`, `hub-featured-hero.tsx`,
+  `hub-lesson-card.tsx`, `hub-library-section.tsx`, and
+  `app/[locale]/(protected)/(app)/shadowing/explore/page.tsx`.
+- `--radius-xl: 28px` then has no product consumer, only the style guide documenting itself. It is
+  **removed**, from `app/globals.css`, from `tailwind.config.ts`'s `borderRadius` map, and from the
+  style guide's own table (`token-sections.tsx`, `style-guide.test.tsx`). The scale becomes
+  sm 8 / md 14 / lg 20.
+- Removing the Tailwind key matters as much as removing the variable: leaving `xl` mapped to a
+  deleted variable would make a future `rounded-xl` silently render square.
+
+Rationale in one number: a 28 px corner on a 91 px-tall card rounds 31% of its short side; the
+frame rounds 9.8% (22 on 225). That ratio, not the absolute value, is what reads as bloated.
+
+An unused rung is also precisely the shape of D2's defect — `--layout-sidebar-width` sat correct and
+unconsumed while the code hardcoded a different number. This branch does not leave a second one.
 
 ### D4 — The explore search field is a control, not a banner
 
-The field is capped at `28.6%` of the shell inner box with a 440 px maximum (frame `200:8180`:
-440/1536), and its height moves from 44 px to the frame's 38 px — which is `h-10` under the
-existing scale, not a new value. At 1280 it renders ~268–367 px instead of 818 px.
+Frame `200:7705` draws the field 440 px wide inside a 1312 px content region — **33.5%**, with the
+440 as its value at the 1536 canvas. Shipped, the row is `flex` with `flex-1` on the input, so it
+takes whatever is left: 818 px at a 1280 viewport, 2.2x the design.
+
+The row is capped the same way D1 caps the rail — a share, with the frame value as the maximum:
+
+```
+max-w-[clamp(18rem,33.5%,27.5rem)]
+```
+
+27.5rem = 440 px is the frame's own width; 18rem = 288 px is the floor below which the field stops
+holding a useful query. At a 1280 viewport the row renders ~314 px instead of 818.
+
+Height moves from `h-11` (44 px) to `h-10` (40 px), the nearest existing rung to the frame's 38 px.
+No new height value is introduced.
 
 ### D5 — No new scale, no new breakpoint, no type change
 
-This branch adds no token, no breakpoint and no clamp on the type scale. Every value it writes is
-either an existing token or a number read off a frame and recorded in §2. A future "compact
-desktop scale" remains possible and is explicitly **not** this branch.
+This branch adds no token, no breakpoint and no clamp on the type scale. It **removes** one token
+(`--radius-xl`, D3) because the evidence says nothing draws it. Every value it writes is either an
+existing token or a number read off a frame and recorded in §2. A future "compact desktop scale"
+remains possible and is explicitly **not** this branch.
 
 ## 5. The rule this leaves behind, for every screen ported after it
 
@@ -157,7 +204,8 @@ That single sentence is what would have prevented this defect, and it is what th
 | `app/globals.css` | `--layout-companion-width` becomes the clamp of D1; comment records frame evidence |
 | `components/layout/two-column-shell.tsx` | grid track from D1; aside `w-[…]` -> `w-full`; docblock updated (it currently claims 300 px is "the approved fluid-desktop adaptation of 340 px" — that claim is what this branch retires) |
 | `components/layout/app-nav.tsx` | `w-60` -> `w-sidebar` |
-| 11 `rounded-xl` call sites | audit per D3 |
+| 9 product `rounded-xl` call sites | `rounded-lg` per D3 |
+| `tailwind.config.ts`, `components/style-guide/token-sections.tsx`, `components/style-guide/style-guide.test.tsx` | drop the `xl` radius rung per D3 |
 | the explore search field component | D4 |
 | `docs/design/screens/adaptive-layouts.md` | the rule in §5 |
 
@@ -168,9 +216,9 @@ Each is falsifiable and must fail before the change:
 - **T1** `two-column-shell.test.tsx`: the rail track contains a `clamp(` and does **not** contain a
   bare `300px`; the aside does not carry a width utility resolving to a percentage.
 - **T2** `app-nav.test.tsx`: the nav element carries `w-sidebar` and not `w-60`.
-- **T3** a new assertion that no file under `components/` or `app/` uses `rounded-xl` without an
-  adjacent justification comment — mechanical, in the spirit of the registry's own grep-anchored
-  tests (`docs/lessons.md` L-002: anchor the pattern, do not match prose).
+- **T3** `style-guide.test.tsx` no longer lists `["rounded-xl", 28]`, and a grep-anchored assertion
+  holds that `rounded-xl` appears nowhere under `components/` or `app/` — anchored to the class
+  attribute, not to prose (`docs/lessons.md` L-002).
 - **T4** the explore search field has a max width and a height of `h-10`.
 - **T5** the existing `two-column-shell` and nav snapshots are updated deliberately, not
   regenerated blindly; the diff is read.
