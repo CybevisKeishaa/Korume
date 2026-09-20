@@ -90,22 +90,22 @@ closes its three Important findings. What remains is under Next actions.
 
 ## Verification
 
-**Current gate state, every command run and read on this wave:** vitest
-**3063/3063 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
---noEmit` 0 · `npm run lint` 0 errors, 80 baseline warnings · `npm run build` 0
-· `git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a
-freshly reset database**, `PRECONDITION` through `F5a`–`F5h` plus `CONTENTION` ·
-`npx playwright test --config=playwright.c4.config.ts` **3/3**.
-Three mutation checks against the live database: the rejected instantaneous-lease
-guard turns **`F5g`** red; dropping the `available_at` filter turns **`F5d`** red
-(it did NOT before this wave — that was the false green I-2 named); and an
-un-named focus flag turns the M-4 test red. Each restored by hash.
+**Current gate state, every command run and read:** vitest **3064/3064 over 324
+files, exit 0** (`--reporter=dot`, L-035) · `npx tsc --noEmit` 0 · `npm run lint`
+0 errors, 80 baseline warnings · `npm run build` 0 · `git diff --check` clean.
+⚠️ `verify:db:lesson-jobs` (exit 0, `PRECONDITION` through `F5a`–`F5h` plus
+`CONTENTION`) and playwright (3/3) were measured on `65c040b` and **NOT re-run on
+wave 4** — owner ruling 2026-09-20: wave 4 changed no executable SQL and no
+rendered route, every `supabase/` edit being a comment, checked by filtering the
+diff. Re-run both on a fresh reset before trusting them again.
+Four mutation checks, each restored by hash: the rejected instantaneous guard
+turns **`F5g`** red; dropping `available_at` turns **`F5d`** red (it did NOT before
+wave 3 — the false green I-2 named); an un-named focus flag turns M-4 red; and
+dropping the status read in `retryCaptionFetch` turns wave 4's 503 test red.
 
-⚠️ `components/video-player/waveform.test.tsx` and `pitch-contour.test.tsx`
-flake under parallel load (`expected 0 to be greater than 0` on canvas calls).
-Neither file is touched by this branch — `git diff --name-only master..HEAD`
-matches nothing under `video-player` — and both pass 14/14 in isolation.
-**Re-run before believing a failure in either.**
+⚠️ `waveform.test.tsx` and `pitch-contour.test.tsx` (`components/video-player`,
+untouched by this branch) flake under parallel load on canvas call counts, and
+both pass 14/14 in isolation. **Re-run before believing a failure in either.**
 
 Per-wave evidence — red-first runs, mutation checks and their restored hashes,
 superseded gate counts — is in the commit messages. This file carries the current
@@ -119,13 +119,13 @@ state (`.codex/docs/workflow.md` §5). Reviews and what each closed:
 | `3c73987` | 1 Critical, 3 Important, 5 Minor | `509ca76` |
 | whole branch @ `813d6b7` | 0 Critical, 3 Important, 9 Minor | `2c03e9d` (I1–I3) |
 | `813d6b7..260a01a` | **1 Critical**, 3 Important, 7 Minor | `83b7db1`, `0cf4c74` |
-| `260a01a..0cf4c74` | **1 Critical**, 2 Important, 9 Minor | this wave (all closed) |
+| `260a01a..0cf4c74` | **1 Critical**, 2 Important, 9 Minor | `65c040b` |
+| `0cf4c74..65c040b` | 0 Critical, 1 Important (prose), 5 Minor | `558785e` |
 
-Two findings changed how this subsystem is built, and both now live outside
-this file: the admin-dedup rule is design §6 rule 1 and §8.2, and the
-**edit-migrations-in-place** convention is AGENTS.md §6. Three method lessons it
-paid for are `docs/lessons.md` L-005, L-017 and L-040 — this branch is L-040's
-own evidence.
+Two findings changed how this subsystem is built, and both live outside this
+file: the admin-dedup rule is design §6 rule 1 and §8.2, the
+**edit-migrations-in-place** convention is AGENTS.md §6. Method lessons paid for:
+`docs/lessons.md` L-005, L-017, L-040 — this branch is L-040's own evidence.
 
 ## Working tree and environment
 
