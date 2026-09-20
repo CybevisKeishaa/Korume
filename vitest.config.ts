@@ -10,7 +10,14 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     // Playwright specs live in tests/e2e and run via `npm run test:e2e`.
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules", ".next", "tests/e2e"],
+    // Every pattern is `**`-anchored on purpose. A bare `node_modules` matches
+    // the root directory only, so from the main checkout this collected each
+    // `.worktrees/*/node_modules/**` suite — 2195 files and 762 failures, all of
+    // them third-party. `.worktrees` is excluded on top of that, because the
+    // worktrees also hold their own copies of this project's tests: another
+    // branch's suite passing or failing here says nothing about this one.
+    // Inside a worktree none of this changes — there is no `.worktrees` below it.
+    exclude: ["**/node_modules/**", "**/.next/**", "**/tests/e2e/**", "**/.worktrees/**"],
     // `next@14.2.35` ships no `exports` map. `next-intl` imports
     // `next/navigation` as a bare specifier without extension, causing Node's
     // native ESM resolver to fail. Inlining `next-intl` routes it through
