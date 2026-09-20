@@ -472,7 +472,7 @@ end $$;
 -- ---------------------------------------------------------------------------
 do $$
 declare uid_b uuid; j_stale uuid; j_fresh uuid; j_second uuid; j_live uuid; j_new uuid;
-  j_backlog uuid; j_next uuid;
+  j_backlog uuid; j_next uuid; j_backoff uuid;
   ended int; st text; stp text; err text; comp timestamptz; attempts int;
   events_before int; events_after int; expired int; window_refused boolean := false;
 begin
@@ -522,10 +522,15 @@ begin
   get diagnostics expired = row_count;
   if expired <> 1 then raise exception 'F5b expected to expire 1 lease, expired %', expired; end if;
   -- The claim history must also fall outside the window, or the guard below reads
-  -- F5a's own insert as a worker that acted recently. Same reason, stated where it
-  -- bites: this gate's rows are the only ones in the queue (see PRECONDITION).
-  update public.lesson_creation_job_events set created_at = now() - interval '1 hour'
-    where state = 'running';
+  -- F5a's own insert as a worker that acted recently. Scoped to this gate's own
+  -- rows — every job owned by a `c4gate-%` user, which the PRECONDITION makes the
+  -- whole queue — rather than every row in the table, for the same reason F5b's
+  -- lease expiry above is scoped: an unscoped update would silently neuter a
+  -- future gate that depends on event recency.
+  update public.lesson_creation_job_events e set created_at = now() - interval '1 hour'
+    where e.state = 'running' and exists (select 1 from public.lesson_creation_jobs j
+      join public.users u on u.id = j.requester_user_id
+      where j.id = e.job_id and u.email like 'c4gate-%@example.invalid');
 
   select count(*) into events_before from public.lesson_creation_job_events where job_id = j_stale;
   ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_stale);
@@ -552,11 +557,21 @@ begin
   end if;
   raise notice 'F5c PASS  a job inside the window is left alone';
 
-  -- F5d  The same definition sweeps the queue when given no job id. The count IS
-  -- asserted: earlier gates leave queued rows behind, but every one is written
-  -- through `enqueue`/`recover` with `updated_at = now()`, so none is stale and
-  -- exactly one row here can be. A bare named-row check would miss the
-  -- `available_at <= p_now` filter being dropped.
+  -- F5d  The queue-wide form (no job id). No TypeScript calls it — the worker pass
+  -- must not sweep — but the SQL keeps it for this gate and for the deferred
+  -- enqueue-path rule, so it is exercised here. The count IS asserted: earlier
+  -- gates leave queued rows behind, yet every one is written through
+  -- `enqueue`/`recover` with `updated_at = now()`, so none of them is stale.
+  --
+  -- A row that is stale by age but NOT yet due proves the `available_at` filter is
+  -- doing something. Without it this gate stayed green while that filter was
+  -- deleted, which is how a redundant-looking clause loses its only cover.
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
+  values (uid_b, 'learner', 'PRIVATE', 'C4GATEBKOF1', 'queued', 'deduplicating', 1,
+    now() + interval '1 hour', now() - interval '1 hour', now() - interval '1 hour')
+  returning id into j_backoff;
+
   ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, null);
   if ended <> 1 then raise exception 'F5d queue-wide sweep ended %, expected 1', ended; end if;
   select state::text, public_error_code::text into st, err
@@ -564,7 +579,11 @@ begin
   if st <> 'failed' or err <> 'temporary_failure' then
     raise exception 'F5d the queue-wide sweep left % (err %)', st, err;
   end if;
-  raise notice 'F5d PASS  the queue-wide form ends the same rows';
+  select state::text into st from public.lesson_creation_jobs where id = j_backoff;
+  if st <> 'queued' then
+    raise exception 'F5d a job still inside its retry backoff was ended (state %)', st;
+  end if;
+  raise notice 'F5d PASS  the queue-wide form ends the stale row and spares the not-yet-due one';
 
   -- F5e  The point of all of it: the learner is no longer stuck. An ended job is
   -- retryable, and a fresh import of the same video is allowed again — both were
@@ -603,10 +622,13 @@ begin
     now() - interval '1 hour', now() - interval '1 hour', now() - interval '1 hour')
   returning id into j_backlog;
 
-  -- The worker claimed something 30 seconds ago and is between jobs right now:
-  -- no lease is held, and the queue is plainly moving.
+  -- The worker claimed ANOTHER job 30 seconds ago and is between jobs right now:
+  -- no lease is held, and the queue is plainly moving. The event belongs to a
+  -- different row on purpose — attached to `j_backlog` itself it would also pass a
+  -- guard that only ever looked at the polled job's own history, and so would not
+  -- show the clause is queue-wide.
   insert into public.lesson_creation_job_events(job_id, attempt_count, state, step, created_at)
-  values (j_backlog, 1, 'running', 'fetching_metadata', now() - interval '30 seconds');
+  values (j_live, 1, 'running', 'fetching_metadata', now() - interval '30 seconds');
 
   ended := public.fail_stale_queued_lesson_creation_jobs(now(), 600, j_backlog);
   select state::text into st from public.lesson_creation_jobs where id = j_backlog;
@@ -618,8 +640,10 @@ begin
   -- F5h  And the sweep must not block itself. Ending one stranded job writes a
   -- `failed` event, never a `running` one, so the next learner's poll is not told
   -- the queue is moving and made to wait another full window.
-  update public.lesson_creation_job_events set created_at = now() - interval '1 hour'
-    where state = 'running';
+  update public.lesson_creation_job_events e set created_at = now() - interval '1 hour'
+    where e.state = 'running' and exists (select 1 from public.lesson_creation_jobs j
+      join public.users u on u.id = j.requester_user_id
+      where j.id = e.job_id and u.email like 'c4gate-%@example.invalid');
   insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
     youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
   values (uid_b, 'learner', 'PRIVATE', 'C4GATENEXT1', 'queued', 'deduplicating', 0,

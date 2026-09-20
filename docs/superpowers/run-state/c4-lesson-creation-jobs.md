@@ -45,15 +45,14 @@ closes its three Important findings. What remains is under Next actions.
 ## Contracts and decisions
 
 - The store is the only TypeScript persistence boundary; worker code never writes SQL.
-- `finalize_lesson_creation_job` extends the plan's three-argument signature with
-  typed JSON payload and attempt/lease-fence arguments, in that order. SQL
-  validates and persists atomically; provider work stays outside the transaction.
-- Default pipeline dedup goes through a narrow store helper proving the newest
-  transcript header has a line: a header alone is not studyable.
-- The worker runs at most one recovered-and-claimed job per pass, on its own
-  5s cadence, deliberately decoupled from the account-deletion scheduler.
-- `LESSON_CREATION_WORKER_ENABLED` accepts exactly `"true"`, `"false"` or
-  unset; unset is disabled. Startup validation rejects anything else.
+- `finalize_lesson_creation_job` adds a typed JSON payload plus attempt/lease-fence
+  arguments; it validates and persists atomically, with no provider work inside.
+- Pipeline dedup proves the newest transcript header has a line: a header alone is
+  not studyable.
+- The worker runs at most one recovered-and-claimed job per pass on a 5s cadence,
+  decoupled from the account-deletion scheduler, and never sweeps stale rows.
+- `LESSON_CREATION_WORKER_ENABLED` accepts exactly `"true"`, `"false"` or unset;
+  unset is disabled, and enqueue AND retry both answer `503` then.
 - The synchronous path is GONE, not retired in place: `lib/data/lesson-creation.ts`
   and `lib/youtube/schema.ts` were deleted in `e20f2f9` with their re-export chain.
   `lib/validation/lesson-creation.ts` is the only home of the YouTube URL contract.
@@ -65,43 +64,42 @@ closes its three Important findings. What remains is under Next actions.
   column and the store reads it as service role, so reading history without
   first proving ownership is not expressible. It caps history at 60 rows.
 - A 403 carries a `reason` (`quota_exceeded` or `not_admin`), mapped to copy by
-  `lessonCreationRefusalMessage`. Each path has one 403 source today, so a route
-  could infer it from the status — until a second reason inherits wrong words.
-- Enqueue refusal order: identity → rate limit → worker enabled → this
-  learner's quota. A disabled worker must not answer "out of quota", and no
-  job is recorded for a worker that will not run.
+  `lessonCreationRefusalMessage`, so a second reason cannot inherit wrong words.
+- Enqueue and retry share one refusal order: identity → rate limit → worker enabled
+  → quota. A disabled worker must not answer "out of quota", and no job is recorded
+  (or re-queued) for a worker that will not run it.
 - The advisory quota refusal fires **only where a charge is certain** — no lesson
   row yet (design §3 rules 3-4). Finalize's predicate is not restated in TS.
 - Both retry endpoints carry a per-user rate-limit budget: a retry resets
-  `attempt_count` to 0, buying a fresh three-attempt budget of third-party calls.
+  `attempt_count` to 0, buying a fresh three-attempt budget of provider calls.
 - `isLessonCreationWorkerEnabled()` in `lib/lesson-creation/env.ts` is the one
   home of the exact-`"true"` rule; `start.ts` and the enqueue APIs share it.
-- The admin trio is scoped to the admin who requested the job, not to the admin
-  role — a status endpoint, not a queue console. Admin jobs never consult the
-  learner quota; `finalize_lesson_creation_job` applies it to learner origin only.
+- The admin trio is scoped to the admin who requested the job, not to the role — a
+  status endpoint, not a queue console. Admin jobs never consult the learner quota.
 - `retry_lesson_creation_job`'s SQLSTATE 23505 (`job_not_retryable`) maps to
   `409`; every other database error is re-thrown, never swallowed as a conflict.
-- The status route returns `{ job, events }` per design §8.1, and
-  `LessonCreationProgress` marks a stage complete ONLY from a durable event for
-  a later stage — never from the current `step`, which a retry moves backwards.
-  It reads only the current attempt: the tail from the last `queued` event,
-  because retry resets `attempt_count` to 0 and the numbers repeat.
+- The status route returns `{ job, events }` per design §8.1, and it is also where
+  the stale-queued rule is applied. `LessonCreationProgress` marks a stage complete
+  ONLY from a durable event for a later stage — never from the current `step`,
+  which a retry moves backwards — and reads only the current attempt: the tail from
+  the last `queued` event, because retry resets `attempt_count` to 0.
 - **PostgREST renders a composite NULL as an all-null row, not as `null`.**
-  `isAbsentRow` in the store decides absence for claim, retry and finalize. See
-  Verification — the worker threw on every idle pass before this.
+  `isAbsentRow` decides absence for claim, retry and finalize; before it, the
+  worker threw on every idle pass.
 - Node builtin aliasing in `next.config.mjs` has no environment escape hatch.
 
 ## Verification
 
 **Current gate state, every command run and read on this wave:** vitest
-**3060/3060 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
+**3063/3063 over 324 files, exit 0** (`--reporter=dot`, L-035) · `npx tsc
 --noEmit` 0 · `npm run lint` 0 errors, 80 baseline warnings · `npm run build` 0
 · `git diff --check` clean · `npm run verify:db:lesson-jobs` **exit 0 on a
-freshly reset database**, `PRECONDITION` through the new `F5a`–`F5h` plus
-`CONTENTION` · `npx playwright test --config=playwright.c4.config.ts` **3/3**.
-Mutation-checked against the live database: restoring the rejected
-instantaneous-lease guard turned **`F5g`** red ("a live worker lost the head of
-its own backlog"), and restoring by hash returned the gate to green.
+freshly reset database**, `PRECONDITION` through `F5a`–`F5h` plus `CONTENTION` ·
+`npx playwright test --config=playwright.c4.config.ts` **3/3**.
+Three mutation checks against the live database: the rejected instantaneous-lease
+guard turns **`F5g`** red; dropping the `available_at` filter turns **`F5d`** red
+(it did NOT before this wave — that was the false green I-2 named); and an
+un-named focus flag turns the M-4 test red. Each restored by hash.
 
 ⚠️ `components/video-player/waveform.test.tsx` and `pitch-contour.test.tsx`
 flake under parallel load (`expected 0 to be greater than 0` on canvas calls).
@@ -120,7 +118,8 @@ state (`.codex/docs/workflow.md` §5). Reviews and what each closed:
 | `226d4a4` | 1 Critical, 3 Important, 9 Minor | `9e1b04d` |
 | `3c73987` | 1 Critical, 3 Important, 5 Minor | `509ca76` |
 | whole branch @ `813d6b7` | 0 Critical, 3 Important, 9 Minor | `2c03e9d` (I1–I3) |
-| `813d6b7..260a01a` | **1 Critical**, 3 Important, 7 Minor | this wave (C1, M1–M4, M7) |
+| `813d6b7..260a01a` | **1 Critical**, 3 Important, 7 Minor | `83b7db1`, `0cf4c74` |
+| `260a01a..0cf4c74` | **1 Critical**, 2 Important, 9 Minor | this wave (all closed) |
 
 Two findings changed how this subsystem is built, and both now live outside
 this file: the admin-dedup rule is design §6 rule 1 and §8.2, and the
@@ -150,20 +149,21 @@ own evidence.
   200-line cap, which PowerShell counts one line differently from `wc -l`. Its
   other findings all belong to merged branches' run states (shadowing Explore C3
   and Hub Plan C2), not to this one.
-- Review debt: one item — this second fix wave. Everything through `260a01a` is
+- Review debt: one item — this third fix wave. Everything through `0cf4c74` is
   reviewed and closed.
-- One owner call remains, not blocking: the reviewer's suggestion to ALSO sweep on
-  the enqueue path — cheaper than the per-poll write, and it frees a learner who
-  closed the tab and so has nothing polling. **RULED 2026-09-20: follow-up**, not
-  this branch. M3's focus bug was ruled IN the same day and is closed.
+- **Sweep on the enqueue path — RULED 2026-09-20: follow-up, not this branch.** It
+  is now the only thing that would free a learner who closed the tab, since the
+  worker pass no longer sweeps; nothing polls that row, so it waits.
 
 ## Next actions
 
-1. **Review this second fix wave** (C1 plus four Minors). C1 was a real defect in
-   the first wave, found by review and reproduced live: the guard tested the lease
-   set at an instant, and a pass sweeps between its recovery and its claim, holding
-   no lease — so a healthy worker failed the head of its own backlog. Liveness now
-   reads claim history; re-derive that only `claim` writes a `running` event.
+1. **Review this third fix wave.** Its Critical was a second doorway to the same
+   harm: the pass swept BEFORE claiming, so the first pass after an outage longer
+   than the window failed the whole backlog and claimed nothing. **RULED 2026-09-20:
+   the pass no longer sweeps** — `claim` accepts every row the sweep could reach, so
+   sweeping there could only destroy work the worker was about to do. Re-derive
+   that, and that a `running` event implies a live lease (it comes from `claim` OR
+   `transition`, not `claim` alone — the previous wave's prose said otherwise).
 2. Then `git merge --no-ff` (`.codex/docs/workflow.md` §7). Do not push unless
    the owner asks.
 3. Follow-ups, not blockers. **M3 is now CLOSED** — ruled in, 2026-09-20, because
@@ -174,8 +174,8 @@ own evidence.
    today and `isNotRetryableRejection` documents why; the durable fix is a custom
    SQLSTATE, which changes an applied migration and needs the live gate re-run.
 4. A sibling of I2, **not fixed and not a regression**: a job stuck in `running`
-   with an expired lease has the same dead end, lease recovery being worker-only
-   too. With the worker running it recovers next tick; with it off, not at all.
+   with an expired lease has the same dead end, lease recovery being worker-only.
+   With the worker running it recovers next tick; with it off, not at all.
 
 ## Owner decisions taken
 

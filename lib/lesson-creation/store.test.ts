@@ -257,17 +257,19 @@ describe("lesson creation store", () => {
 
   /**
    * Review finding I2. The window is an argument, not a SQL literal, so it keeps
-   * one home; the job id decides whether this ends one row or sweeps the queue.
+   * one home. The job id is required: the queue-wide form exists in SQL for the
+   * live gate and the deferred enqueue-path rule, and no TypeScript may sweep —
+   * the worker pass must not (review C-1, owner ruling 2026-09-20).
    */
-  it.each([0, 3])("returns the stale-queued count %s and sweeps the whole queue by default", async (count) => {
+  it.each([0, 1])("returns whether it ended the one job it was given (%s)", async (count) => {
     const client = rpcFixture("fail_stale_queued_lesson_creation_jobs", count);
-    expect(await failStaleQueuedLessonCreationJobs(null, now)).toBe(count);
+    expect(await failStaleQueuedLessonCreationJobs(jobId, now)).toBe(count);
     expectRpc(client, "fail_stale_queued_lesson_creation_jobs", {
-      p_now: now, p_max_age_seconds: STALE_QUEUED_JOB_SECONDS, p_job_id: null,
+      p_now: now, p_max_age_seconds: STALE_QUEUED_JOB_SECONDS, p_job_id: jobId,
     });
   });
 
-  it("narrows the stale rule to one job when given an id", async () => {
+  it("always names a job rather than sweeping the queue", async () => {
     const client = rpcFixture("fail_stale_queued_lesson_creation_jobs", 1);
     expect(await failStaleQueuedLessonCreationJobs(jobId, now)).toBe(1);
     expectRpc(client, "fail_stale_queued_lesson_creation_jobs", {
@@ -291,8 +293,8 @@ describe("lesson creation store", () => {
     { name: "recover_expired_lesson_creation_jobs", args: { p_now: now }, run: () => recoverExpiredLessonCreationJobs(now) },
     {
       name: "fail_stale_queued_lesson_creation_jobs",
-      args: { p_now: now, p_max_age_seconds: STALE_QUEUED_JOB_SECONDS, p_job_id: null },
-      run: () => failStaleQueuedLessonCreationJobs(null, now),
+      args: { p_now: now, p_max_age_seconds: STALE_QUEUED_JOB_SECONDS, p_job_id: jobId },
+      run: () => failStaleQueuedLessonCreationJobs(jobId, now),
     },
   ];
   it.each(operations)("throws unchanged RPC errors from $name", async ({ name, args, run }) => {

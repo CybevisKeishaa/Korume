@@ -138,6 +138,7 @@ function LocalizedEmptyHub(): JSX.Element {
           unavailable: "",
           retry: "",
           retrySessionExpired: "",
+          retryUnavailable: "",
           retryPending: "",
           retryFailed: "",
           noThumbnail: "",

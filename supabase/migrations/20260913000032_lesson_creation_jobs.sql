@@ -206,10 +206,13 @@ $$;
 -- why the client-side poll budget was removed, so the age test is paired with a
 -- condition no number can express: has the WORKER acted lately?
 --
--- That question is answered by the one act only the worker performs — claiming.
--- `claim` is the sole writer of `state = 'running'`, and the event trigger records
--- every one, so a `running` event inside the window means a worker was alive
--- inside the window. A live lease is the same fact seen directly, and is kept as
+-- That question is answered by the `running` rows in the event history. TWO paths
+-- write one and the distinction matters: `claim` mints a lease, and `transition`
+-- refuses unless the caller presents a live matching one. So every `running` event
+-- comes from something holding a lease at the time, which is why one inside the
+-- window proves a worker was alive inside it. A reader who believes only `claim`
+-- writes `running` could add a third writer without a lease check and silently
+-- disable this rule. A live lease is the same fact seen directly, and is kept as
 -- the cheap index-backed half.
 --
 -- An instantaneous "does anything hold a live lease" test is NOT enough, and was
@@ -259,7 +262,6 @@ begin
   return ended;
 end;
 $$;
-
 
 -- Payload: {title, thumbnail_url: string|null, source: "youtube_caption",
 -- lines: [{start_time, end_time: number|null, text_jp,

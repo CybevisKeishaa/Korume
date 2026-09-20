@@ -56,6 +56,10 @@ describe("POST /api/admin/lesson-creation-jobs/[id]/retry", () => {
     [{ ok: false, status: 403, reason: "not_admin" } as const, 403, "Forbidden"],
     [{ ok: false, status: 404 } as const, 404, "Not found"],
     [{ ok: false, status: 409 } as const, 409, "This job cannot be retried"],
+    // A disabled worker. Without this row the 503 branch can be deleted and the
+    // suite stays green while the caller is told the job cannot be retried
+    // (review Minor M-1).
+    [{ ok: false, status: 503 } as const, 503, "Lesson creation is temporarily unavailable"],
   ])("does not collapse a %o refusal into a queued retry", async (refusal, status, error) => {
     vi.mocked(retryAdminLessonCreationJob).mockResolvedValue(refusal);
 

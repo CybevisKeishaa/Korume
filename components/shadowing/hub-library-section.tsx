@@ -20,6 +20,8 @@ export interface HubLibrarySectionLabels {
   retryFailed: string;
   /** Shown instead of `retryFailed` when the refusal was a 401. */
   retrySessionExpired: string;
+  /** Shown instead of `retryFailed` for a 503: the worker is off, not the video bad. */
+  retryUnavailable: string;
   noThumbnail: string;
   emptyTitle: string;
   emptyBody: string;
@@ -38,7 +40,8 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
   const [retryingVideoId, setRetryingVideoId] = useState<string | null>(null);
   // One object, not a video id plus a parallel flag: two states that must agree
   // by hand are a second home for one fact (AGENTS.md §6).
-  const [retryError, setRetryError] = useState<{ youtubeVideoId: string; sessionExpired: boolean } | null>(null);
+  const [retryError, setRetryError] =
+    useState<{ youtubeVideoId: string; kind: "generic" | "sessionExpired" | "unavailable" } | null>(null);
   // One card at a time: the retry buttons disable each other while one runs.
   const [tracked, setTracked] = useState<{ youtubeVideoId: string; jobId: string } | null>(null);
 
@@ -66,7 +69,10 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
     if (pollAbandoned && tracked !== null) {
       // A 401 is about the session, not the captions: telling a signed-out
       // learner to try again sends them round the same refusal forever.
-      setRetryError({ youtubeVideoId: tracked.youtubeVideoId, sessionExpired: refusedStatus === 401 });
+      setRetryError({
+        youtubeVideoId: tracked.youtubeVideoId,
+        kind: refusedStatus === 401 ? "sessionExpired" : "generic",
+      });
       setTracked(null);
     }
   }, [pollAbandoned, refusedStatus, tracked]);
@@ -91,7 +97,7 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
       const body = (await response.json()) as { data: LessonCreationJobProjection };
       setTracked({ youtubeVideoId, jobId: body.data.id });
     } catch {
-      setRetryError({ youtubeVideoId, sessionExpired: false });
+      setRetryError({ youtubeVideoId, kind: "generic" });
     } finally {
       setRetryingVideoId(null);
     }
@@ -104,10 +110,18 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
     try {
       const response = await fetch(`/api/lesson-creation-jobs/${tracked.jobId}/retry`, { method: "POST" });
       // 409 means an attempt is already active — polling it is the honest answer.
-      if (!response.ok && response.status !== 409) throw new Error("Job retry failed");
+      if (!response.ok && response.status !== 409) {
+        // The status decides the words. A 503 means the worker is off, which is not
+        // something the learner can fix by trying this video again (review M-2).
+        setRetryError({
+          youtubeVideoId: tracked.youtubeVideoId,
+          kind: response.status === 401 ? "sessionExpired" : response.status === 503 ? "unavailable" : "generic",
+        });
+        return;
+      }
       restart();
     } catch {
-      setRetryError({ youtubeVideoId: tracked.youtubeVideoId, sessionExpired: false });
+      setRetryError({ youtubeVideoId: tracked.youtubeVideoId, kind: "generic" });
     }
   }
 
@@ -157,7 +171,11 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
                 )}
                 {retryError?.youtubeVideoId === item.lesson.youtubeVideoId && (
                   <p role="alert" className="mt-sm text-sm text-danger-strong">
-                    {retryError.sessionExpired ? labels.retrySessionExpired : labels.retryFailed}
+                    {retryError.kind === "sessionExpired"
+                      ? labels.retrySessionExpired
+                      : retryError.kind === "unavailable"
+                        ? labels.retryUnavailable
+                        : labels.retryFailed}
                   </p>
                 )}
               </li>

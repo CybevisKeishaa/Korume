@@ -198,9 +198,42 @@ describe("LessonCreationProgress", () => {
 
     expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
     expect(document.body).not.toHaveFocus();
-    expect(screen.getByRole("status", { name: "Lesson creation progress" })).toContainElement(
-      document.activeElement as HTMLElement,
+    // The wrapper, not the live region itself: focusing a `role="status"` element
+    // makes a screen reader announce it twice (review M-3).
+    const focused = document.activeElement as HTMLElement;
+    expect(focused).not.toHaveAttribute("role", "status");
+    expect(focused).toContainElement(screen.getByRole("status", { name: "Lesson creation progress" }));
+  });
+
+  /**
+   * Review Minor M-4. A retry that FAILS leaves the component mounted and still
+   * showing `failed`, and in the importer the same instance outlives that job — so
+   * an un-named armed flag fired on whatever job arrived next and stole focus from
+   * a learner who never retried.
+   */
+  it("does not steal focus for a different job after a failed retry", async () => {
+    // Resolves, and the job stays `failed`: that is what a refused retry looks
+    // like from here, because both consumers catch the refusal themselves and
+    // show it. An `onRetry` that rejects is a shape production cannot produce
+    // (`docs/lessons.md` L-005).
+    const onRetry = vi.fn().mockResolvedValue(undefined);
+    const failed = job({ id: JOB_ID, state: "failed", step: "failed", publicErrorCode: "temporary_failure" });
+    const { rerender } = render(
+      <LessonCreationProgress job={failed} events={[event("failed", "failed")]} onRetry={onRetry} />,
     );
+
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    // A different video, queued by the same form instance.
+    const other = "44444444-4444-4444-8444-444444444444";
+    rerender(
+      <LessonCreationProgress
+        job={job({ id: other, state: "queued", step: "deduplicating", attemptCount: 0 })}
+        events={[event("deduplicating", "queued")]}
+        onRetry={onRetry}
+      />,
+    );
+
+    expect(document.body).toHaveFocus();
   });
 
   it("offers no retry while the job can still finish on its own", () => {

@@ -3,8 +3,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createMockSupabase } from "@/test/supabase-mock";
 import { fetchJapaneseCaptions } from "@/lib/youtube/timedtext";
 import {
-  claimNextLessonCreationJob, failStaleQueuedLessonCreationJobs, finalizeClaimedJob,
-  getRequesterJob, recoverExpiredLessonCreationJobs, transitionClaimedJob,
+  claimNextLessonCreationJob, finalizeClaimedJob, getRequesterJob,
+  recoverExpiredLessonCreationJobs, transitionClaimedJob,
   type ClaimedLessonCreationJob,
 } from "./store";
 import { runLessonCreationPass } from "./worker";
@@ -13,8 +13,7 @@ vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/japanese", () => ({ toFurigana: vi.fn().mockResolvedValue([]) }));
 vi.mock("./store", async (importOriginal) => ({
   ...await importOriginal<typeof import("./store")>(),
-  claimNextLessonCreationJob: vi.fn(), failStaleQueuedLessonCreationJobs: vi.fn(),
-  finalizeClaimedJob: vi.fn(), getRequesterJob: vi.fn(),
+  claimNextLessonCreationJob: vi.fn(), finalizeClaimedJob: vi.fn(), getRequesterJob: vi.fn(),
   recoverExpiredLessonCreationJobs: vi.fn(), transitionClaimedJob: vi.fn(),
 }));
 
@@ -38,7 +37,6 @@ beforeEach(() => {
   vi.setSystemTime(NOW);
   let durable = CLAIM.job;
   vi.mocked(recoverExpiredLessonCreationJobs).mockResolvedValue(0);
-  vi.mocked(failStaleQueuedLessonCreationJobs).mockResolvedValue(0);
   vi.mocked(claimNextLessonCreationJob).mockResolvedValue(CLAIM);
   vi.mocked(getRequesterJob).mockImplementation(async () => durable);
   vi.mocked(transitionClaimedJob).mockImplementation(async (input) => {

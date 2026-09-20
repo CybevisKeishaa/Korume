@@ -321,9 +321,12 @@ describe("durable lesson creation SQL contract", () => {
     expect(revoked).toContain("from public, anon, authenticated;");
     expect(granted).toContain("to service_role;");
     for (const [, name] of functions) {
-      if (name === "record_lesson_creation_job_event") continue; // trigger-owned, granted to nobody
-      expect(granted).toContain(`public.${name}(`);
+      // The revoke covers every function without exception — PostgreSQL grants
+      // EXECUTE to PUBLIC by default, so the trigger function, which is granted to
+      // nobody, is the one whose ONLY protection is this listing.
       expect(revoked).toContain(`public.${name}(`);
+      if (name === "record_lesson_creation_job_event") continue; // trigger-owned; no grant
+      expect(granted).toContain(`public.${name}(`);
     }
     expect(sql).toContain("lease_token is distinct from p_lease_token");
     expect(sql).toContain("lease_expires_at <= clock_timestamp()");

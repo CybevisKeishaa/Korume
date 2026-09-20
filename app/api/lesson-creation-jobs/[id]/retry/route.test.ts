@@ -64,6 +64,10 @@ describe("POST /api/lesson-creation-jobs/[id]/retry", () => {
   it.each([
     [401 as const, "Unauthorized"],
     [404 as const, "Not found"],
+    // A disabled worker. Without this row the 503 branch can be deleted and the
+    // suite stays green while the learner is told the job cannot be retried
+    // (review Minor M-1).
+    [503 as const, "Lesson creation is temporarily unavailable"],
   ])("does not collapse a %i refusal into a queued retry", async (status, error) => {
     vi.mocked(retryLearnerLessonCreationJob).mockResolvedValue({ ok: false, status });
 

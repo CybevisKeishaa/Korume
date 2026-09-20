@@ -102,6 +102,7 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
             retryPending: t("retryPending"),
             retryFailed: t("retryFailed"),
             retrySessionExpired: t("errors.sessionExpired"),
+            retryUnavailable: t("errors.unavailable"),
             noThumbnail: tCommon("noThumbnail"),
             emptyTitle: tHub("hub.empty.library.title"),
             emptyBody: tHub("hub.empty.library.body"),

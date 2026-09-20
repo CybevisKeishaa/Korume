@@ -274,7 +274,6 @@ describe("readLearnerLessonCreationJob", () => {
     expect(getRequesterJobWithEvents).toHaveBeenCalledWith(JOB_ID, USER.id);
   });
 
-
   /**
    * Review finding I2. A job left `queued` when the worker stopped never reached
    * a terminal state: the poll ran forever, the importer's submit button stayed

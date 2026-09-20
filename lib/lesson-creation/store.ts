@@ -268,10 +268,11 @@ export async function recoverExpiredLessonCreationJobs(now: string): Promise<num
  * It is generous on purpose. A queue that is merely busy must never be declared
  * dead — that is why the client-side poll budget was removed — so the SQL pairs
  * this window with a second condition the number cannot express: whether a worker
- * has CLAIMED anything inside it. `claim` is the only writer of `running`, so a
- * `running` event in the window means a worker was alive in it, however long the
- * backlog is. The window is several times the lease and the backoff ceiling, both
- * of which live in this file and in `worker.ts`.
+ * acted inside it, read from the `running` rows in the event history. Every path
+ * that writes one either mints a lease (`claim`) or presents a live matching one
+ * (`transition`), so such an event means a worker was alive in the window, however
+ * long the backlog is. The window is several times the lease and the backoff
+ * ceiling, both of which live in this file and in `worker.ts`.
  *
  * Passed as an RPC argument rather than written into the migration, so the window
  * keeps one home (AGENTS.md §6) and needs no pin of its own.
@@ -279,13 +280,17 @@ export async function recoverExpiredLessonCreationJobs(now: string): Promise<num
 export const STALE_QUEUED_JOB_SECONDS = 600;
 
 /**
- * Fail queued jobs no live worker can still be reaching. `jobId` narrows it to
- * one row — what the learner's own status read uses, after that read has proven
- * ownership; `null` sweeps the queue, which is what each worker pass does.
- * Returns how many rows it ended.
+ * Fail one queued job no live worker can still be reaching — the job the learner
+ * is polling, after the read above it has proven ownership. Returns 1 if it ended
+ * that row, 0 otherwise.
+ *
+ * Scoped to a single job because that is the only shape production needs: the
+ * worker pass must NOT sweep (see `runLessonCreationPass`), because every row it
+ * could reach is a row it can claim. The SQL keeps a queue-wide form for the live
+ * gate and for the deferred enqueue-path rule; no TypeScript calls it.
  */
 export async function failStaleQueuedLessonCreationJobs(
-  jobId: string | null = null,
+  jobId: string,
   now: string = new Date().toISOString(),
 ): Promise<number> {
   return z.number().int().nonnegative().parse(

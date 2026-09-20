@@ -156,10 +156,20 @@ generous window AND no worker has claimed anything inside that window, the worke
 was stopped or died after the row was recorded, and the job is failed as
 `temporary_failure`, spending no attempt. Both conditions are required: a
 single-concurrency worker leaves a healthy job waiting behind others, and the
-window alone would call that queue dead. Liveness is read from claims, not from
-the current lease set — a claim is the one act only the worker performs, and a
-pass sweeps at the moment it holds no lease, so an instantaneous lease test would
-fail the head of a healthy backlog. The rule is one SQL function
+window alone would call that queue dead. Liveness is read from the `running` rows
+in the event history, not from the current lease set: every path that writes one
+either mints a lease or presents a live matching one, so such a row proves a
+worker was alive, while a lease test answers only "right this instant" — and the
+instant a worker pass would ask is one where it holds none.
+
+The rule runs on the learner's status read, scoped to the job being polled, and
+NOT in the worker pass. A pass must not sweep: `claim` accepts any `queued` row
+that is due with fewer than three attempts, and a `queued` row can never hold
+three, so every row a pass could sweep is one it can serve — the first pass after
+an outage longer than the window would fail the whole backlog instead of working
+it. A learner whose tab is closed therefore keeps a stranded row until something
+asks about it; applying the same rule at enqueue time is the deferred follow-up
+that closes that. The rule is one SQL function
 applied by the learner's own status read, scoped to the job being polled, and by
 each worker pass, sweeping the queue; the read path is what matters, because with
 the worker stopped the pass does not run at all. Ending the row is what gives the
@@ -230,12 +240,11 @@ sets it to `true`.
 When enabled, `startLessonCreationWorker()` uses a `Symbol.for` process guard,
 per the established scheduler pattern, performs immediate recovery/claim work,
 then runs an unref'd short polling interval with an overlap guard. It logs a
-structured pass result (claimed, succeeded, requeued, failed, recovered,
-staleFailed) and catches top-level errors so one bad pass cannot crash the
-application. It does not share the account-deletion scheduler's feature switch or
-cadence: lesson
-creation is user-visible work and must not wait for a deletion-oriented
-one-minute tick.
+structured pass result (claimed, succeeded, requeued, failed, recovered) and
+catches top-level errors so one bad pass cannot crash the application. It does
+not share the account-deletion scheduler's feature switch or cadence: lesson
+creation is user-visible work and must not wait for a deletion-oriented one-minute
+tick.
 
 When disabled, enqueue endpoints return `503` before recording a job. The UI
 shows a generic try-again-later state rather than presenting an indefinitely

@@ -5,7 +5,7 @@ import { HubLibrarySection } from "./hub-library-section";
 
 const lesson = { id: "failed", youtubeVideoId: "yt-failed", title: "Missing captions", durationSeconds: null, thumbnailUrl: null, jlptLevelEstimate: null };
 const refresh = vi.fn();
-const labels = { title: "My lessons", readyAction: "Open", unavailable: "Transcript unavailable", retry: "Try again", retryPending: "Retrying captions\u2026", retryFailed: "Couldn't retry captions. Try again.", retrySessionExpired: "Your session expired — please sign in again.", noThumbnail: "No thumbnail", emptyTitle: "Your lesson library is ready", emptyBody: "Import a lesson to begin building your library.", emptyAction: "Import a lesson" };
+const labels = { title: "My lessons", readyAction: "Open", unavailable: "Transcript unavailable", retry: "Try again", retryPending: "Retrying captions\u2026", retryFailed: "Couldn't retry captions. Try again.", retrySessionExpired: "Your session expired — please sign in again.", retryUnavailable: "Lesson creation is unavailable right now.", noThumbnail: "No thumbnail", emptyTitle: "Your lesson library is ready", emptyBody: "Import a lesson to begin building your library.", emptyAction: "Import a lesson" };
 
 vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/i18n/navigation")>()),
@@ -220,6 +220,40 @@ describe("HubLibrarySection", () => {
 
     expect(await screen.findByRole("status", { name: "Lesson creation progress" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  /**
+   * Review Minor M-2. A job retry now answers `503` when the worker is disabled
+   * (Minor M1), and the whole point of that was for retry to be as honest as a
+   * fresh import. The Hub collapsed every refusal but a 401 into the generic
+   * wording, so on this surface it was not.
+   */
+  it("says the worker is unavailable when a tracked job's retry is refused with 503", async () => {
+    const failed = jobProjection({ state: "failed", step: "failed", publicErrorCode: "temporary_failure" });
+    // Dispatched on URL, not on call order: only the RETRY is refused. A mock that
+    // answered 503 to everything would also refuse the poll, and the poll's own
+    // refusal writes the same alert — the test could then pass without the retry
+    // path being right at all.
+    vi.stubGlobal("fetch", vi.fn(async (url: string) =>
+      url.endsWith("/retry")
+        ? ({ ok: false, status: 503 } as Response)
+        : ({
+            ok: true,
+            status: 202,
+            headers: new Headers(),
+            // The enqueue answers the projection; the status poll wraps it in `job`.
+            json: async () => ({ data: url.includes("/api/videos/import") ? failed : { job: failed, events: [] } }),
+          } as Response),
+    ));
+
+    render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Try again" }));
+
+    // By text, not by role: the progress component states the job's own failure in
+    // an alert of its own, so there are two on screen and only one is this claim.
+    const shown = await screen.findByText("Lesson creation is unavailable right now.");
+    expect(shown).toHaveAttribute("role", "alert");
   });
 
   it("announces a refused enqueue and leaves the lesson available for another attempt", async () => {

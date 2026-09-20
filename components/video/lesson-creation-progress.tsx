@@ -119,24 +119,31 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
    * A successful retry re-queues the job, so the block holding the button the
    * learner just pressed unmounts and focus falls to `document.body` — a keyboard
    * user is returned to the top of the document with nothing said about why
-   * (review Minor M3). Focus moves to the progress region instead: it survives
-   * the transition, carries an accessible name, and holds the stages that just
-   * changed. Only a retry started here moves focus, so a job failing on its own
-   * never steals it.
+   * (review Minor M3). Focus moves to the wrapper around the progress region
+   * instead: it survives the transition and sits immediately before the stages
+   * that changed. The wrapper, NOT the `role="status"` element — focusing a live
+   * region makes a screen reader announce it once for the focus and again for the
+   * polite update, which is why `components/settings/deletion-pending-banner.tsx`
+   * settled on the same split (review M-3).
+   *
+   * The armed flag names the job it was armed for: a retry that FAILS leaves the
+   * component mounted and still showing `failed`, and in the importer the same
+   * instance then outlives that job — so an un-named flag would fire on whatever
+   * job arrived next, stealing focus from a learner who never retried (review M-4).
    */
-  const statusRef = useRef<HTMLDivElement>(null);
-  const focusProgressWhenRetried = useRef(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const retriedJobId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!focusProgressWhenRetried.current || job.state === "failed") return;
-    focusProgressWhenRetried.current = false;
-    statusRef.current?.focus();
-  }, [job.state]);
+    if (retriedJobId.current !== job.id || job.state === "failed") return;
+    retriedJobId.current = null;
+    wrapperRef.current?.focus();
+  }, [job.id, job.state]);
 
   async function handleRetry(): Promise<void> {
     if (retrying) return;
     setRetrying(true);
-    focusProgressWhenRetried.current = true;
+    retriedJobId.current = job.id;
     try {
       await onRetry();
     } finally {
@@ -145,14 +152,12 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
   }
 
   return (
-    <div className="mt-md">
-      <div
-        ref={statusRef}
-        tabIndex={-1}
-        role="status"
-        aria-label={t("creation.progressLabel")}
-        className="rounded focus:outline-none focus:ring-2 focus:ring-ring"
-      >
+    <div
+      ref={wrapperRef}
+      tabIndex={-1}
+      className="mt-md rounded focus:outline-none focus:ring-2 focus:ring-ring"
+    >
+      <div role="status" aria-label={t("creation.progressLabel")}>
         <ol className="flex flex-col gap-xs">
           {STAGES.map((stage, index) => {
             const state = states[index] ?? "waiting";

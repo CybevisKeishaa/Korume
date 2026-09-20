@@ -32,9 +32,9 @@ import {
  *
  * A job already queued when the worker stopped is ended by the server, on the
  * read this poll makes, and arrives here as an ordinary terminal failure (review
- * finding I2). Whether a worker has claimed anything lately decides it — not a
- * count of ticks, which is the distinction the removed giveup could not make, and
- * not the age of this job alone, which a busy queue also grows.
+ * finding I2). Whether a worker acted lately decides it — not a count of ticks,
+ * which is the distinction the removed giveup could not make, and not the age of
+ * this job alone, which a busy queue also grows.
  */
 const POLL_MS = 2_000;
 
@@ -83,7 +83,6 @@ export function useLessonCreationJob(
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
-
 
     function stop(): void {
       stopped = true;

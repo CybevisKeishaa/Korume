@@ -17,7 +17,6 @@ const PASS_RESULT: LessonCreationPassResult = {
   requeued: 0,
   failed: 0,
   recovered: 0,
-  staleFailed: 0,
 };
 
 type IntervalCallback = () => void;
