@@ -12,6 +12,9 @@ Before writing anything, read `.codex/docs/workflow.md` §8 (two-harness
 protocol): it defines who owns which worktree, how a handoff happens, and what
 Claude owns versus Codex.
 
-`.claude/agents/` and `.claude/commands/` are adapter stubs that exist only
-because this harness cannot load `.toml` role definitions. They hold no role or
-workflow content, and `npm run verify:protocol` fails if they gain any.
+`.claude/agents/`, `.claude/commands/` and `.claude/docs/` are adapter stubs
+that exist only because this harness cannot load `.toml` role definitions. They
+hold no role or workflow content. `npm run verify:protocol` enumerates both
+trees and fails if a stub grows past 25 lines or 4096 bytes, loses its pointer,
+has no canonical counterpart, or lets its `description` or `argument-hint` drift
+from that counterpart.

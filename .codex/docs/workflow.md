@@ -52,6 +52,8 @@ When an agent finishes its slice it reports:
 
 The `tech-lead` keeps the thread coherent and calls `code-reviewer` before marking a layer done.
 
+Between two harnesses a handoff has one more requirement: `npm run verify:protocol` must exit 0 before the `- Owner:` line changes. See §8.
+
 ## 5. Long-task protocol
 
 For a multi-task branch, the coordinator creates and maintains exactly one `docs/superpowers/run-state/<branch>.md`. Before dispatching or resuming, read `AGENTS.md`, `docs/lessons.md`, that run state, the cited task-plan section, and the direct dependency graph only. Checkpoint after every accepted task and before a new owner, review/fix round, user decision, or external verification.
@@ -74,10 +76,14 @@ Two agent runtimes work this repository. Authority is split by kind of work, not
 | --- | --- | --- |
 | Owns | Architecture, specs, plans, task packets, whole-branch review, merge | Implementation, per-task `code-reviewer`, run-state checkpoints |
 | Works in | The main worktree on `master` | `.worktrees/<branch>` |
-| Writes | `AGENTS.md`, `.codex/**`, `.claude/**`, `docs/superpowers/specs/**`, `.superpowers/sdd/**`, `docs/lessons.md` | Product source and tests, `docs/superpowers/run-state/<its branch>.md` |
+| Writes | `AGENTS.md`, `.codex/**`, `.claude/**`, `docs/superpowers/specs/**`, `.superpowers/sdd/**`, `docs/lessons.md`, and `docs/superpowers/run-state/<branch>.md` while it owns that branch | Product source and tests, and `docs/superpowers/run-state/<its branch>.md` while it owns that branch |
 | Never | Edits code during review | Edits the instruction layer |
 
-**Instruction layer.** `.codex/` is the only home of role, routing and procedure content. `.claude/` is a runtime adapter: Claude Code cannot load `.toml` role definitions and needs its own frontmatter to route a subagent, so each of its files is a stub that names its canonical counterpart. A stub holds no fact of its own. `npm run verify:protocol` rejects one that exceeds 25 lines or loses its pointer, so "one fact, one home" holds by construction rather than by memory.
+**Instruction layer.** `.codex/` is the only home of role, routing and procedure content. `.claude/` is a runtime adapter: Claude Code cannot load `.toml` role definitions and needs its own frontmatter to route a subagent, so each of its files is a stub that names its canonical counterpart. A stub holds no fact of its own.
+
+`npm run verify:protocol` enforces that by **enumerating both trees**, never by consulting a list of names — a rule that walks a hardcoded list cannot see the new file that is exactly how content comes back. Every file under `.claude/agents`, `.claude/commands` and `.claude/docs` must have a canonical counterpart and vice versa; each stub is capped at 25 lines **and** 4096 bytes, must name its counterpart, and must carry the same `description` (and `argument-hint`, where the canonical procedure takes an argument) as that counterpart, compared character for character.
+
+What that does **not** cover: prose inside a stub, under both caps, is bounded but not compared. The guard makes silent drift of the routed fields impossible; it does not make a badly written stub impossible.
 
 **Ownership.** One worktree has exactly one writer at a time. The run state records it on a single `- Owner: Claude|Codex` line, and a handoff is the commit that changes that line. There is no implicit handoff. Reading another worktree is always allowed; writing into one you do not own is a defect.
 

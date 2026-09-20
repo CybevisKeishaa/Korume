@@ -28,6 +28,7 @@ $requiredHeadings = @(
 # and must name the canonical file it defers to (see the 2026-09-19
 # dual-harness design, D1a).
 $maxStubLines = 25
+$maxStubBytes = 4096
 
 $Root = (Resolve-Path -LiteralPath $Root -ErrorAction Stop).Path.TrimEnd('\', '/')
 $violations = @()
@@ -35,7 +36,9 @@ $violations = @()
 function Get-ProtocolRelativePath {
   param([string] $Path)
 
-  return $Path.Substring($Root.Length).TrimStart('\', '/')
+  # Forward slashes so a violation reads the same as the paths the instruction
+  # layer writes, whichever separator the filesystem handed us.
+  return $Path.Substring($Root.Length).TrimStart('\', '/').Replace('\', '/')
 }
 
 function Add-Violation {
@@ -68,14 +71,49 @@ function Test-CanonicalCodexPaths {
       $content = ''
     }
 
+    # A backslash separator is matched too: on Windows `.Codex\docs` is a
+    # plausible way to write the path and must not escape the casing rule.
     $hasNonCanonicalCodexPath = @(
-      [regex]::Matches($content, '\.codex/', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) |
+      [regex]::Matches($content, '\.codex[\\/]', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase) |
         Where-Object { $_.Value -cne '.codex/' }
     ).Count -gt 0
     if ($hasNonCanonicalCodexPath) {
       Add-Violation -RelativePath (Get-ProtocolRelativePath $path) -Message 'contains a noncanonical .codex/ path'
     }
   }
+}
+
+# `description` and `argument-hint` are the fields a harness reads to route work
+# and to prompt for arguments, so they are the fields that can silently disagree
+# with the canonical definition. Extracting one means handling both the TOML and
+# the YAML spellings.
+function Get-DeclaredField {
+  param(
+    [string] $Path,
+    [string] $Field,
+    [ValidateSet('toml', 'yaml')] [string] $Format
+  )
+
+  $escapedField = [regex]::Escape($Field)
+  $pattern = if ($Format -eq 'toml') { "^\s*$escapedField\s*=\s*(.+)$" } else { "^\s*$escapedField\s*:\s*(.+)$" }
+  foreach ($line in @(Get-Content -LiteralPath $Path)) {
+    if ($line -match $pattern) {
+      $raw = $Matches[1].Trim()
+      if ($raw.Length -ge 6 -and $raw.StartsWith('"""') -and $raw.EndsWith('"""')) {
+        return $raw.Substring(3, $raw.Length - 6)
+      }
+      if ($raw.Length -ge 2 -and $raw.StartsWith("'") -and $raw.EndsWith("'")) {
+        # YAML and TOML literal strings both use '', TOML only inside basic strings.
+        return $raw.Substring(1, $raw.Length - 2).Replace("''", "'")
+      }
+      if ($raw.Length -ge 2 -and $raw.StartsWith('"') -and $raw.EndsWith('"')) {
+        return $raw.Substring(1, $raw.Length - 2)
+      }
+      return $raw
+    }
+  }
+
+  return $null
 }
 
 # --- Required protocol artifacts ---------------------------------------------
@@ -87,6 +125,7 @@ $requiredFiles += $requiredRoles | ForEach-Object { ".codex/agents/$_.toml" }
 $requiredFiles += $requiredCommands | ForEach-Object { ".codex/commands/$_.md" }
 $requiredFiles += $requiredRoles | ForEach-Object { ".claude/agents/$_.md" }
 $requiredFiles += $requiredCommands | ForEach-Object { ".claude/commands/$_.md" }
+$requiredFiles += '.claude/docs/workflow.md'
 foreach ($requiredFile in $requiredFiles) {
   Test-RequiredFile -RelativePath $requiredFile | Out-Null
 }
@@ -110,37 +149,119 @@ foreach ($relativeDirectory in @('.codex/agents', '.codex/commands')) {
 Test-CanonicalCodexPaths -Paths $instructionPaths
 
 # --- Adapter stubs may not become a second home for any fact ------------------
+# Both trees are ENUMERATED, never named. A rule that walks a hardcoded list
+# inspects nothing outside it, so a new `.claude/` file — the very way content
+# would come back — would pass unseen.
 
-$stubExpectations = [ordered] @{}
-foreach ($role in $requiredRoles) {
-  $stubExpectations[".claude/agents/$role.md"] = ".codex/agents/$role.toml"
-}
-foreach ($command in $requiredCommands) {
-  $stubExpectations[".claude/commands/$command.md"] = ".codex/commands/$command.md"
-}
-$stubExpectations['.claude/docs/workflow.md'] = '.codex/docs/workflow.md'
+$adapterTrees = @(
+  # The minimums are literals on purpose. Deriving them from $requiredRoles /
+  # $requiredCommands would make the rule shrink with the very list it guards:
+  # delete a name from that list and the count it is checked against drops too.
+  [pscustomobject] @{
+    Stub = '.claude/agents'; Canonical = '.codex/agents'
+    CanonicalExtension = '.toml'; Format = 'toml'; Minimum = 8
+    MirroredFields = @('description')
+  },
+  [pscustomobject] @{
+    Stub = '.claude/commands'; Canonical = '.codex/commands'
+    CanonicalExtension = '.md'; Format = 'yaml'; Minimum = 5
+    MirroredFields = @('description', 'argument-hint')
+  },
+  [pscustomobject] @{
+    # `.claude/docs` carries no routed field to compare; the cap and the pointer
+    # are the whole rule for it.
+    Stub = '.claude/docs'; Canonical = '.codex/docs'
+    CanonicalExtension = '.md'; Format = 'yaml'; Minimum = 1
+    MirroredFields = @()
+  }
+)
 
 $inspectedStubCount = 0
-foreach ($relativePath in $stubExpectations.Keys) {
-  $path = Join-Path $Root $relativePath
-  if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-    continue
+foreach ($tree in $adapterTrees) {
+  $stubDirectory = Join-Path $Root $tree.Stub
+  $canonicalDirectory = Join-Path $Root $tree.Canonical
+
+  $stubFiles = @()
+  if (Test-Path -LiteralPath $stubDirectory -PathType Container) {
+    $stubFiles = @(Get-ChildItem -LiteralPath $stubDirectory -File -Filter '*.md')
+  }
+  $canonicalFiles = @()
+  if (Test-Path -LiteralPath $canonicalDirectory -PathType Container) {
+    $canonicalFiles = @(Get-ChildItem -LiteralPath $canonicalDirectory -File -Filter "*$($tree.CanonicalExtension)")
   }
 
-  $inspectedStubCount++
-  $lines = @(Get-Content -LiteralPath $path)
-  if ($lines.Count -gt $maxStubLines) {
-    Add-Violation -RelativePath $relativePath -Message "adapter stub exceeds $maxStubLines lines (found $($lines.Count)); role and workflow content belongs in .codex/"
+  # Parity, both ways: a canonical definition the Claude harness cannot route,
+  # and a stub answering to no definition, are both drift.
+  $stubNames = @($stubFiles | ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) })
+  $canonicalNames = @($canonicalFiles | ForEach-Object { [System.IO.Path]::GetFileNameWithoutExtension($_.Name) })
+  foreach ($name in $canonicalNames) {
+    if ($stubNames -cnotcontains $name) {
+      Add-Violation -RelativePath "$($tree.Stub)/$name.md" -Message "adapter stub is missing for $($tree.Canonical)/$name$($tree.CanonicalExtension)"
+    }
+  }
+  foreach ($name in $stubNames) {
+    if ($canonicalNames -cnotcontains $name) {
+      Add-Violation -RelativePath "$($tree.Stub)/$name.md" -Message "adapter stub has no canonical counterpart at $($tree.Canonical)/$name$($tree.CanonicalExtension)"
+    }
   }
 
-  $canonicalTarget = $stubExpectations[$relativePath]
-  if (($lines -join "`n") -cnotmatch [regex]::Escape($canonicalTarget)) {
-    Add-Violation -RelativePath $relativePath -Message "adapter stub must point at $canonicalTarget"
+  # An adapter tree that shrank below its known size must fail loudly rather
+  # than pass by measuring nothing (docs/lessons.md L-004).
+  if ($stubFiles.Count -lt $tree.Minimum) {
+    Add-Violation -RelativePath $tree.Stub -Message "expected at least $($tree.Minimum) adapter stubs, found $($stubFiles.Count)"
+  }
+
+  foreach ($stubFile in $stubFiles) {
+    $relativePath = Get-ProtocolRelativePath $stubFile.FullName
+    $inspectedStubCount++
+
+    $lines = @(Get-Content -LiteralPath $stubFile.FullName)
+    if ($lines.Count -gt $maxStubLines) {
+      Add-Violation -RelativePath $relativePath -Message "adapter stub exceeds $maxStubLines lines (found $($lines.Count)); role and workflow content belongs in .codex/"
+    }
+
+    # A line cap alone bounds nothing: 25 lines of prose can hold a whole role
+    # brief. The byte cap is what makes "holds no fact of its own" measurable.
+    if ($stubFile.Length -gt $maxStubBytes) {
+      Add-Violation -RelativePath $relativePath -Message "adapter stub exceeds $maxStubBytes bytes (found $($stubFile.Length)); role and workflow content belongs in .codex/"
+    }
+
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($stubFile.Name)
+    $canonicalRelativePath = "$($tree.Canonical)/$name$($tree.CanonicalExtension)"
+    if (($lines -join "`n") -cnotmatch [regex]::Escape($canonicalRelativePath)) {
+      Add-Violation -RelativePath $relativePath -Message "adapter stub must point at $canonicalRelativePath"
+    }
+
+    # The routed fields are the ones both harnesses read. If the two copies may
+    # differ, the stub holds a fact of its own after all.
+    $canonicalPath = Join-Path $Root $canonicalRelativePath
+    if (Test-Path -LiteralPath $canonicalPath -PathType Leaf) {
+      foreach ($field in $tree.MirroredFields) {
+        $stubValue = Get-DeclaredField -Path $stubFile.FullName -Field $field -Format 'yaml'
+        $canonicalValue = Get-DeclaredField -Path $canonicalPath -Field $field -Format $tree.Format
+
+        # `argument-hint` is only required where the canonical file declares it.
+        if ($null -eq $canonicalValue -and $field -ne 'description') {
+          if ($null -ne $stubValue) {
+            Add-Violation -RelativePath $relativePath -Message "adapter stub declares $field but $canonicalRelativePath does not"
+          }
+          continue
+        }
+
+        if ($null -eq $stubValue) {
+          Add-Violation -RelativePath $relativePath -Message "adapter stub declares no $field"
+        }
+        elseif ($null -eq $canonicalValue) {
+          Add-Violation -RelativePath $canonicalRelativePath -Message "canonical definition declares no $field"
+        }
+        elseif ($stubValue -cne $canonicalValue) {
+          Add-Violation -RelativePath $relativePath -Message "adapter stub $field differs from $canonicalRelativePath; the canonical file is the only home"
+        }
+      }
+    }
   }
 }
 
-# An empty or mislocated adapter tree must fail loudly rather than pass by
-# measuring nothing (docs/lessons.md L-004).
 if ($inspectedStubCount -eq 0) {
   Add-Violation -RelativePath '.claude' -Message 'no adapter stub was inspected; the Claude Code adapter tree is absent'
 }

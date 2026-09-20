@@ -102,8 +102,11 @@ Done and of every handoff: no branch changes owner or merges while it is red.
 - `npm run verify:protocol` exits 0 on this branch, and the validator test
   exits 0, including a deliberate failure for a `.claude/` file that grew
   content and for a run state missing `- Owner:`.
-- Every `.codex/agents/*.toml` and `.codex/commands/*.md` has a stub peer.
+- Every `.codex/agents/*.toml` and `.codex/commands/*.md` has a stub peer, and
+  every file under `.claude/agents`, `.claude/commands` and `.claude/docs` has a
+  canonical counterpart. Both directions are enumerated from the tree.
 - No `.claude/` file contains role or workflow content.
+- Every rule in the validator has a test that goes red when the rule is removed.
 - A fresh Claude session reaches `AGENTS.md` and `.codex/docs/workflow.md`
   without reading any stale instruction.
 - Product source, migrations, and user data are untouched.
@@ -112,8 +115,8 @@ Done and of every handoff: no branch changes owner or merges while it is red.
 
 | Risk | Mitigation |
 | --- | --- |
-| Stubs regrow into a second home | validator caps stub size and requires the pointer; test asserts the failure. |
-| Parity check passes on an empty glob | test asserts exact counts (8 roles, 5 commands); an empty directory fails. |
+| Stubs regrow into a second home | validator caps stub lines and bytes and requires the pointer; test asserts each failure. |
+| Parity check passes on an empty glob | both trees are enumerated, not named; the test asserts a minimum size (8 roles, 5 commands) and an empty directory fails. |
 | Owner line is stale rather than wrong | handoff is a commit; review checks the line against `git log`. |
-| Readmitting `.claude/` reopens the drift D1 closed | drift is now structurally impossible, not merely discouraged. |
+| Readmitting `.claude/` reopens the drift D1 closed | the one field both harnesses route on — `description` — is compared against the canonical file, so it cannot drift silently. Prose inside a stub is bounded, not compared: a stub can still be wrong in under 4096 bytes without the validator saying so. |
 | Validator stays unrun again | it is an npm script inside the Definition of Done and the handoff gate. |

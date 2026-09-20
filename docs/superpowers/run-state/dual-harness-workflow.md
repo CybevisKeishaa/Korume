@@ -94,7 +94,14 @@ Four Important findings say the validator is weaker than `CLAUDE.md`,
 is duplicated byte-for-byte and unguarded, enforcement is a hardcoded 21-name
 allowlist rather than a property of the tree, `.claude/docs/workflow.md` is
 treated as a stub but not required, and the run-state heading rule — the only
-rule with demonstrated field value — has no negative test. **All four are open
-as of this commit** and are the next work on `master`. Until they close, four
-documents describe a guard stronger than the one that runs: re-read the
-validator before trusting any claim about what it enforces.
+rule with demonstrated field value — has no negative test.
+
+**All four are closed on `master` in the commit after the merge**, together with
+the minors worth fixing. The validator now enumerates both adapter trees instead
+of naming 21 paths, mirrors `description` and `argument-hint` against the
+canonical file character for character, caps stub bytes as well as lines, and
+matches the `.codex` casing rule through a backslash. Fourteen of fourteen rules
+now turn the test suite red when removed — the property the four Importants were
+really about. What the guard still does **not** do is compare a stub's prose:
+under both caps a stub can be wrong without the validator saying so, and
+`.codex/docs/workflow.md` §8 says exactly that rather than claiming more.

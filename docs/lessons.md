@@ -107,6 +107,19 @@ It was then mutation-checked against the real tree rather than fixtures, per thi
 lines and a deleted `- Owner:` line each went red for the stated reason, and each was restored byte-for-byte
 and re-verified by SHA-256.
 
+**Evidence (cont.):** Dual-harness merge, 2026-09-20 — the validator above was mutation-checked *the other way
+round*, and the result inverted the picture. Removing a rule from a copy of the validator and re-running
+`npm run verify:protocol:test` left the suite **green** for four of them: the required-heading rule, the
+200-line run-state cap, the kebab-case filename rule, and the empty-adapter-tree guard. All four worked — each
+went red when its input was broken — they simply had no assertion behind them. The required-heading rule is the
+one with demonstrated field value: it is what found seven violations on `master`. **What generalises:** "does
+this rule fire when I break the input" and "does anything notice when I delete this rule" are different
+questions, and only the second tells you whether the rule will survive the next refactor. Run it over every rule
+at once, not over the rule you happen to be writing. The harness is cheap — neuter each `Add-Violation` in a
+copy, run the suite, and expect red. Fourteen of fourteen rules now fail the suite when removed. One of them,
+the minimum-stub-count guard, could not be made to fail at all until its minimum stopped being
+`$requiredRoles.Count`: **a threshold derived from the list it guards shrinks along with it** (`L-006`).
+
 ### L-005 — The Supabase mock models no RLS, so RLS mistakes are invisible to the suite
 
 **Rule:** On any query that aggregates across users, ask *which client factory, and what does that table's SELECT policy say* — never *is the test green*.
@@ -123,6 +136,7 @@ and re-verified by SHA-256.
 **Why:** Iterating `PROTECTED_PREFIXES` to check `PROTECTED_PREFIXES` is a tautology — a route that was never added is invisible to every assertion in the file.
 **Evidence:** Plan C1 — eight `(protected)/(app)` routes never reached `PROTECTED_PREFIXES`, dropping `redirectTo`; invisible to eleven per-task reviews and a green gate. Fixed `65ebb4c` with a filesystem walk.
 **Evidence (cont.):** `landing-page-port` `b78eac0`, 2026-09-04 — the same tautology in miniature, and it defeated the guard completely. `lib/design-tokens.test.ts` proved every hidden CSS rule could be released by the reveal failsafe, by filtering the rules for a **hardcoded string copy** of `':not([data-reveal-failsafe])'` — while the sibling module it was guarding *exports that attribute as `REVEAL_FAILSAFE_ATTR`*, and two other test files already import it. Rename the attribute and: the CSS changes, the constant changes, the test keeps matching its own stale literal, and the whole unit suite stays green while the failsafe silently stops releasing anything. `vitest.config.ts` excludes `tests/e2e`, so the only guard that *would* have caught it does not run in `npm test`. Fixed by building the literal from the exported constant. **A guard that restates the value it protects is testing its own copy** — the same shape as driving a guard from the list it protects.
+**Evidence (cont.):** Dual-harness merge, 2026-09-20 — the tautology reappeared **inside the guard written to close it**. `verify-codex-protocol.ps1` checked the `.claude/` adapter stubs by iterating `$stubExpectations`, a map built from the hardcoded `$requiredRoles` and `$requiredCommands` arrays, so it inspected 21 named paths and nothing else. The pre-merge review demonstrated all three escapes against a fixture: a new `.claude/docs/routing.md` holding 120 lines of routing content, a new `.claude/agents/security-engineer.md` holding 80 lines of role content, and a new `.codex/agents/security-engineer.toml` with no stub peer — **each exited 0**. Four documents meanwhile claimed the validator "rejects any `.claude/` file large enough to hold content". Fixed by enumerating both trees with `Get-ChildItem` and requiring a counterpart in each direction; the three fixtures now exit 1 for their own reason. **What generalises:** writing a guard about drift does not exempt the guard from this lesson — ask of every new rule which set it walks, and whether the thing you fear could arrive outside that set.
 **Applies to:** route protection, nav registries, token scales, any list-shaped invariant — and any assertion that hardcodes a magic string an implementation module already exports.
 
 ### L-007 — Report a blended metric in its separate layers, never as one number
@@ -383,6 +397,32 @@ artifacts a decision produced, without reverting the decision, leaves the reposi
 spec — and the contradiction is invisible because both halves look deliberate. A revert is complete only when
 the files, the rule and the guard agree again. The repair was to stop depending on agreement at all: `.claude/`
 now holds stubs the validator caps at 25 lines, so a second home cannot be written in the first place.
+
+**Evidence (cont.):** Dual-harness merge, 2026-09-20 — and that last sentence was itself too strong, which is
+the lesson repeating one level up. The 25-line cap bounded the stub's *prose* while leaving its `description:`
+frontmatter — the one field a harness actually routes on — duplicated **byte-for-byte in all thirteen pairs**,
+compared by nothing. The pre-merge review rewrote `.claude/agents/ai-engineer.md`'s description to "Owns
+absolutely nothing at all." and the validator exited 0; Claude Code would then have routed pitch and AI work
+from a stale description while Codex routed from the true one — the same five-week silent disagreement, in the
+file written to prevent it. Two more of the same shape: the cap counted lines, not bytes, so a 25-line stub of
+158,925 bytes passed; and three command stubs had dropped the `argument-hint` their canonical procedures
+declare, so `/build-layer 3` lost the argument with nothing to notice. Fixed by mirroring `description` and
+`argument-hint` character-for-character against the canonical file, and by capping bytes as well as lines.
+**What generalises:** a size limit is not a sameness guarantee. When two files must agree, compare the fields
+that are read — and when you write the sentence "X cannot happen now", name the mechanism and check it
+actually covers every field X could hide in. The surviving honest claim is narrower and is now written into
+`.codex/docs/workflow.md` §8: the routed fields cannot drift silently; prose inside a stub is bounded, not
+compared.
+
+**Evidence (cont.):** Same merge, the C1 finding — the reverse direction, and the one that would have undone the
+work. `docs/superpowers/specs/2026-09-05-codex-long-task-protocol-design.md` was untouched by the branch and
+still read `**Status:** Proposed`, `D1 — Codex is the sole active agent runtime`, "no live instruction may point
+to them", and an acceptance criterion requiring the validator to reject exactly the `.claude/` pointers that
+`AGENTS.md` and `CLAUDE.md` now contain deliberately. A future agent grepping the specs for workflow authority
+would have found it, followed it correctly, and deleted the adapter tree. **What generalises:** when a branch
+reverses a decision, the document that recorded the decision is part of the diff — a spec left true to an
+abandoned design is a live instruction, not an archive. Fixed by marking the status, the decision heading, both
+affected migration steps and both acceptance criteria with what replaced each.
 
 ### L-032 — A cross-file `path:NN` citation is falsified by the next commit that touches that file
 
