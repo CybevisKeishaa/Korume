@@ -4,10 +4,13 @@
 > including the correction banner, where they disagree)
 >
 > **Nothing is in flight. The tree is clean and `master` is green.** Local
-> `master` is `59a0b33`, **48 commits ahead of `origin/master`** — this repo's
+> `master` is `387aa5e`, **54 commits ahead of `origin/master`** — this repo's
 > normal state (`L-021`); do NOT `git pull` on master.
 >
-> Closed today, both `--no-ff`, both branches kept, nothing pushed:
+> ⭐ **`git branch --no-merged master` is now EMPTY.** For the first time in
+> months no branch in this repo carries work invisible from `master`.
+>
+> Closed today, all `--no-ff`, all branches kept, nothing pushed:
 > 1. **C4 lesson-creation jobs** at `21a436b` — 42 commits, 79 files,
 >    +8874/-803. The last review returned 0 Critical and no finding against the
 >    code; its one Important was that three authority documents still described a
@@ -24,8 +27,22 @@
 >    gate figure measured before `52175bf` may have been measured against the
 >    wrong tree.**
 >
-> **Gate on `59a0b33`, each command run and read:** tsc 0 · `npm test` with no
-> flags **3064/3064 over 324 files, exit 0** · lint 0 errors / 80 baseline
+> 3. **`dual-harness-workflow`** at `fd2fbdf`, plus `387aa5e` closing its
+>    review. The two-harness protocol — Codex implements, Claude owns
+>    architecture/specs/review/merge, `.codex/` is the only home of role content,
+>    `.claude/` is adapter stubs, `npm run verify:protocol` is the gate — **is
+>    now live on `master`**, where before it was invisible from it. The merge
+>    also closed the two pre-existing protocol violations below
+>    (`shadowing-explore-c3.md` 3→7 headings, `shadowing-hub-plan-c2.md` 5→7).
+>    Its review returned one Critical (a superseded spec still instructing the
+>    `.claude/` deletion the branch reverses) and four Importants (the validator
+>    enforced less than four documents claimed); all closed, lessons merged into
+>    `L-004`, `L-006` and `L-026`. `mem:dual_harness_workflow_run_state` is the
+>    authority.
+>
+> **Gate on `387aa5e`, each command run and read:** `npm run verify:protocol` 0 ·
+> `npm run verify:protocol:test` all assertions passed · tsc 0 · `npm test` with
+> no flags **3064/3064 over 324 files, exit 0** · lint 0 errors / 80 baseline
 > warnings · `next build` 0.
 >
 > ⚠️ **Not re-measured today and still owed:** C4's live database gate
@@ -35,19 +52,19 @@
 > 2026-09-20 not to re-run them for a wave that changed no executable SQL and no
 > rendered route.
 >
-> ⚠️ `scripts/verify-codex-protocol.ps1` reports two violations, both
-> pre-existing: `shadowing-explore-c3.md` and `shadowing-hub-plan-c2.md` are
-> closed run-states missing required headings.
+> ✅ `npm run verify:protocol` now exits 0. The two violations recorded here
+> earlier — `shadowing-explore-c3.md` and `shadowing-hub-plan-c2.md` missing
+> required headings — were closed by the `fd2fbdf` merge.
 >
-> **▶ Pick one next — the queue is unchanged:** (1) **Layer 8**, the last unbuilt
-> layer (PayOS billing, animation polish, performance audit) — it inherits a hard
-> dependency: account deletion drops the `subscriptions` row like any other, and
-> L8 must cancel with PayOS *first*. (2) **The owner's mobile landing page**
-> (Figma `429:2` / `433:728`) — **two questions must be answered before any of it
-> is built**; see `mem:landing_page_port_run_state`. (3) **`EMAIL_PROVIDER=none`
-> in `almostgone.vn`'s production `.env`** — the only deploy blocker, and an OPS
-> task no commit here can close. (4) **`dual-harness-workflow`**, which still owes
-> an independent whole-branch review.
+> **▶ Pick one next — the queue is now three, not four:** (1) **Layer 8**, the
+> last unbuilt layer (PayOS billing, animation polish, performance audit) — it
+> inherits a hard dependency: account deletion drops the `subscriptions` row like
+> any other, and L8 must cancel with PayOS *first*. (2) **The owner's mobile
+> landing page** (Figma `429:2` / `433:728`) — **two questions must be answered
+> before any of it is built**; see `mem:landing_page_port_run_state`. (3)
+> **`EMAIL_PROVIDER=none` in `almostgone.vn`'s production `.env`** — the only
+> deploy blocker, and an OPS task no commit here can close. *(The fourth item,
+> `dual-harness-workflow`, is done — reviewed and merged 2026-09-20.)*
 
 > ## ⚠️ CORRECTION BANNER — 2026-09-19 (superseded in part by the block above)
 >
@@ -81,11 +98,10 @@
 >    work: Docker is available, and the C4 database gate now runs as
 >    `npm run verify:db:lesson-jobs`.
 >
-> One branch still carries unmerged work invisible from `master`:
-> `dual-harness-workflow`. It owes an independent whole-branch review — Claude
-> wrote and self-reviewed it while Codex was rate-limited. (C4 owed the same and
-> has now had it: four review rounds plus a whole-branch review, then a review of
-> each fix wave.)
+> ~~One branch still carries unmerged work invisible from `master`:
+> `dual-harness-workflow`.~~ ❌ **No longer true as of 2026-09-20.** It got the
+> independent whole-branch review it owed and was merged at `fd2fbdf`, with
+> `387aa5e` closing the findings. No branch in this repo is unmerged now.
 
 > ## SYNC UPDATE - 2026-09-06 (superseded — see the correction banner above)
 >
