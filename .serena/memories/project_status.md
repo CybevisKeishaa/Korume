@@ -1,6 +1,55 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ⚠️ CORRECTION BANNER — 2026-09-19 (supersedes every dated block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-20 (supersedes every block below,
+> including the correction banner, where they disagree)
+>
+> **Nothing is in flight. The tree is clean and `master` is green.** Local
+> `master` is `59a0b33`, **48 commits ahead of `origin/master`** — this repo's
+> normal state (`L-021`); do NOT `git pull` on master.
+>
+> Closed today, both `--no-ff`, both branches kept, nothing pushed:
+> 1. **C4 lesson-creation jobs** at `21a436b` — 42 commits, 79 files,
+>    +8874/-803. The last review returned 0 Critical and no finding against the
+>    code; its one Important was that three authority documents still described a
+>    worker-pass sweep the code had removed, which is the instruction that
+>    produced both of this branch's Criticals. `mem:c4_lesson_creation_jobs_run_state`
+>    is the authority — read it before touching lesson creation, especially its
+>    five open follow-ups.
+> 2. **`vitest.config.ts` swept the worktrees** at `52175bf`. From the main
+>    checkout `npm test` had been collecting `.worktrees/*/node_modules/**` AND
+>    every other branch's copy of this project's tests — 2195 files, 762
+>    meaningless failures. All exclude patterns are now `**`-anchored and
+>    `.worktrees` is excluded outright. Pre-existing, never caused by a branch,
+>    and invisible from inside a worktree, which is why it survived. **A master
+>    gate figure measured before `52175bf` may have been measured against the
+>    wrong tree.**
+>
+> **Gate on `59a0b33`, each command run and read:** tsc 0 · `npm test` with no
+> flags **3064/3064 over 324 files, exit 0** · lint 0 errors / 80 baseline
+> warnings · `next build` 0.
+>
+> ⚠️ **Not re-measured today and still owed:** C4's live database gate
+> (`npm run verify:db:lesson-jobs`, needs a fresh `npx supabase db reset
+> --no-seed`; it refuses its own PRECONDITION while earlier jobs remain) and the
+> C4 Playwright spec. Both were exit 0 / 3/3 at `65c040b`, and the owner ruled on
+> 2026-09-20 not to re-run them for a wave that changed no executable SQL and no
+> rendered route.
+>
+> ⚠️ `scripts/verify-codex-protocol.ps1` reports two violations, both
+> pre-existing: `shadowing-explore-c3.md` and `shadowing-hub-plan-c2.md` are
+> closed run-states missing required headings.
+>
+> **▶ Pick one next — the queue is unchanged:** (1) **Layer 8**, the last unbuilt
+> layer (PayOS billing, animation polish, performance audit) — it inherits a hard
+> dependency: account deletion drops the `subscriptions` row like any other, and
+> L8 must cancel with PayOS *first*. (2) **The owner's mobile landing page**
+> (Figma `429:2` / `433:728`) — **two questions must be answered before any of it
+> is built**; see `mem:landing_page_port_run_state`. (3) **`EMAIL_PROVIDER=none`
+> in `almostgone.vn`'s production `.env`** — the only deploy blocker, and an OPS
+> task no commit here can close. (4) **`dual-harness-workflow`**, which still owes
+> an independent whole-branch review.
+
+> ## ⚠️ CORRECTION BANNER — 2026-09-19 (superseded in part by the block above)
 >
 > Four claims below are false as of today. Everything else in this file stands.
 >
