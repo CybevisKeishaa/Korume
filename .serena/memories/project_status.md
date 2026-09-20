@@ -1,16 +1,51 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-20 (supersedes every block below,
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-21 (supersedes every block below,
 > including the correction banner, where they disagree)
 >
 > **Nothing is in flight. The tree is clean and `master` is green.** Local
-> `master` is `387aa5e`, **54 commits ahead of `origin/master`** — this repo's
-> normal state (`L-021`); do NOT `git pull` on master.
+> `master` is `296c9a4`.
 >
-> ⭐ **`git branch --no-merged master` is now EMPTY.** For the first time in
-> months no branch in this repo carries work invisible from `master`.
+> 🚨 **"Nothing pushed" is FALSE, and was false when this file last said it.**
+> Measured 2026-09-21: `git ls-remote origin refs/heads/master` returns
+> `296c9a4` — GitHub holds today's merge. `rev-list --left-right --count
+> origin/master...master` is `0 0`, not 54 ahead. `git reflog show
+> refs/remotes/origin/master` shows **`update by push`** for `296c9a4` at
+> 01:19:34 and for `ec402f6` at 19:37:16 the previous day, and back through
+> 2026-09-12 — each one minutes to an hour *after* the commit it carries, none
+> of them issued by the session that made the commit. **Something outside the
+> agent sessions pushes `master` to GitHub.** There are no git hooks
+> (`.git/hooks` holds only samples, no `core.hooksPath`) and no scheduled task
+> whose `Execute` matches git, so the mechanism is UNKNOWN — a wrapper script,
+> an IDE, a GUI client or another session are all still open. Until it is
+> found: (a) stop writing "nothing pushed" anywhere, (b) treat every merge to
+> `master` as **publishing to GitHub within minutes**, and (c) re-check
+> `L-021`'s "do NOT `git pull`" advice, whose premise was the 54-commit gap
+> that no longer exists.
 >
-> Closed today, all `--no-ff`, all branches kept, nothing pushed:
+> ⭐ **`git branch --no-merged master` is EMPTY** (re-measured 2026-09-21).
+>
+> Closed 2026-09-21, `--no-ff`, branch and worktree kept:
+> 0. **`desktop-density-pass`** at `296c9a4` — the shell now renders its
+>    designed composition at a 1280 viewport, which is what the owner had been
+>    getting only at browser zoom 90%. The rail is
+>    `clamp(15rem, 27.5%, 21.25rem)` on the grid track with the aside at
+>    `w-full`; the sidebar uses its measured 224px token; every card is
+>    `rounded-lg` and the 28px rung is deleted with its Tailwind key; the
+>    Explore search input is capped at its frame width. Main column measured
+>    677.8px at 1280 against 613 on `master` before. Ten review findings, all
+>    closed — the two that mattered were guards, not geometry (an e2e case still
+>    pinning the deleted 300px constant, and a radius guard blind first to the
+>    file that violated it and then to the idiom this repo writes classes in);
+>    both are evidence on `L-004` and `L-006`.
+>    `docs/superpowers/run-state/desktop-density-pass.md` **in the repo** is the
+>    authority, not a serena memory. Two owner rulings corrected decisions
+>    mid-review (D4 caps the input, not the row, at `28.65vw`; the
+>    frame-fidelity rule carves out a persistent nav rail). Deferred by ruling:
+>    `borderRadius.DEFAULT: "0.25rem"`, an undocumented fourth rung at ~25 call
+>    sites — spec §9 holds the reasoning.
+>
+> Closed 2026-09-20, all `--no-ff`, all branches kept:
 > 1. **C4 lesson-creation jobs** at `21a436b` — 42 commits, 79 files,
 >    +8874/-803. The last review returned 0 Critical and no finding against the
 >    code; its one Important was that three authority documents still described a
@@ -40,7 +75,17 @@
 >    `L-004`, `L-006` and `L-026`. `mem:dual_harness_workflow_run_state` is the
 >    authority.
 >
-> **Gate on `387aa5e`, each command run and read:** `npm run verify:protocol` 0 ·
+> **Gate on the merged `296c9a4`, run in the main checkout and read:**
+> `npm run verify:protocol` 0 · tsc 0 · `npm test` with no flags **3082/3082
+> over 324 files, exit 0**. `lint` (0 errors / baseline warnings) and
+> `next build` (compiled) were run on the branch tip immediately before the
+> merge, in `.worktrees/desktop-density-pass`; that is sound here **only
+> because the two trees are identical** — `master^{tree}` and
+> `desktop-density-pass^{tree}` are both `4c8dc7ba`, the branch having been cut
+> from `master`'s then-tip. Do not reuse that shortcut on a merge that had to
+> resolve anything.
+>
+> **Gate on `387aa5e`, the previous live figure:** `npm run verify:protocol` 0 ·
 > `npm run verify:protocol:test` all assertions passed · tsc 0 · `npm test` with
 > no flags **3064/3064 over 324 files, exit 0** · lint 0 errors / 80 baseline
 > warnings · `next build` 0.
@@ -56,15 +101,28 @@
 > earlier — `shadowing-explore-c3.md` and `shadowing-hub-plan-c2.md` missing
 > required headings — were closed by the `fd2fbdf` merge.
 >
-> **▶ Pick one next — the queue is now three, not four:** (1) **Layer 8**, the
-> last unbuilt layer (PayOS billing, animation polish, performance audit) — it
-> inherits a hard dependency: account deletion drops the `subscriptions` row like
-> any other, and L8 must cancel with PayOS *first*. (2) **The owner's mobile
-> landing page** (Figma `429:2` / `433:728`) — **two questions must be answered
-> before any of it is built**; see `mem:landing_page_port_run_state`. (3)
-> **`EMAIL_PROVIDER=none` in `almostgone.vn`'s production `.env`** — the only
-> deploy blocker, and an OPS task no commit here can close. *(The fourth item,
-> `dual-harness-workflow`, is done — reviewed and merged 2026-09-20.)*
+> **▶ THE NEXT ACTION IS ALREADY CHOSEN — do not re-offer this queue.** The
+> owner ruled on 2026-09-20 to port Figma screens *instead of* starting Layer 8,
+> and picked the **Auth + Error UX** cluster: reset password `333:210`, email
+> OTP `335:306`, restyle Login/Register, Error404 `335:1976`, error boundary
+> `337:2055`. That ruling had one precondition — a desktop density pass first —
+> and **that precondition is now spent** (`296c9a4`, above). So Auth + Error is
+> the live next branch. Two things bind it: `docs/product/decision-register.md`
+> **P14** stands, so the Apple and GitHub OAuth buttons the auth frames draw are
+> **not** ported (auth stays email + Google); and the frame-fidelity rule the
+> density pass left in `docs/design/screens/adaptive-layouts.md` applies — the
+> auth/error frames are drawn on a **1280** canvas, not 1536, so divide by 1280.
+>
+> **The rest of the queue, explicitly NOT the next action:** (1) **Layer 8**
+> (PayOS billing, animation polish, performance audit) — deferred by the ruling
+> above; it inherits a hard dependency, account deletion drops the
+> `subscriptions` row like any other and L8 must cancel with PayOS *first*.
+> (2) **The owner's mobile landing page** (Figma `429:2` / `433:728`) — **two
+> questions must be answered before any of it is built**; see
+> `mem:landing_page_port_run_state`. (3) **`EMAIL_PROVIDER=none` in
+> `almostgone.vn`'s production `.env`** — the only deploy blocker, and an OPS
+> task no commit here can close. (4) `borderRadius.DEFAULT`, deferred out of the
+> density pass by ruling — smallest of the four.
 
 > ## ⚠️ CORRECTION BANNER — 2026-09-19 (superseded in part by the block above)
 >
