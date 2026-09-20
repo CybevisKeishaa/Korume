@@ -26,7 +26,7 @@ describe("TwoColumnShell", () => {
     );
   });
 
-  it("keeps the rail sticky at its layout-token width", () => {
+  it("keeps the rail sticky inside its grid track", () => {
     render(
       <TwoColumnShell rail={<p>companion</p>} railLabel="Companion">
         <p>main</p>
@@ -35,7 +35,11 @@ describe("TwoColumnShell", () => {
     const rail = screen.getByRole("complementary", { name: "Companion" });
     expect(rail.className).toContain("sticky");
     expect(rail.className).toContain("top-md-lg");
-    expect(rail.className).toContain("w-[--layout-companion-width]");
+    // The rail is a GRID TRACK now, not an element width. A percentage in the
+    // track resolves against the grid content box; the same percentage on the
+    // aside would resolve against the track, i.e. 27.5% of 27.5%.
+    expect(rail.className).toContain("w-full");
+    expect(rail.className).not.toContain("w-[--layout-companion-width]");
   });
 
   it("keeps main and rail in the desktop grid without hiding the rail", () => {
@@ -51,6 +55,17 @@ describe("TwoColumnShell", () => {
     expect(shell.className).toContain("grid-cols-[minmax(0,1fr)_var(--layout-companion-width)]");
     expect(main).toHaveClass("min-w-0");
     expect(rail.className).not.toContain("hidden");
+  });
+
+  it("defines the rail track as a share of the shell, capped at the frame width", async () => {
+    // Read the declaration out of the stylesheet rather than the DOM: jsdom
+    // does not resolve clamp(), so asserting a computed width here would be a
+    // false green (docs/lessons.md: prove the subject exists first).
+    const css = await import("node:fs/promises").then((fs) =>
+      fs.readFile("app/globals.css", "utf8"),
+    );
+    expect(css).toContain("--layout-companion-width: clamp(15rem, 27.5%, 21.25rem);");
+    expect(css).not.toContain("--layout-companion-width: 300px;");
   });
 
   it("owns the grid gutter and column gap without a centered maximum measure", () => {

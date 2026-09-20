@@ -141,7 +141,14 @@
   --layout-sidebar-width: 224px;
   --layout-sidebar-collapsed: 68px;
   --layout-content-max: 1240px;
-  --layout-companion-width: 300px;
+  /* The companion rail. A SHARE of the shell, not a constant: frame 149:2
+     draws it 339 wide inside a 1240 container (27.3%), and shipping the
+     constant meant the rail held 27.8% of the shell at a 1422 viewport but
+     32.0% at 1280 — the main column, not the rail, absorbed the whole
+     difference. 21.25rem (340px) is the frame's own rail width and caps the
+     track; 15rem is the floor below which the rail stops being usable.
+     Measured 2026-09-20; see the desktop-density-pass spec §2. */
+  --layout-companion-width: clamp(15rem, 27.5%, 21.25rem);
   --layout-gutter: var(--space-xl);
   --layout-column-gap: var(--space-lg);
   /* The sticky site header's row height. TWO consumers, which is why it is a
