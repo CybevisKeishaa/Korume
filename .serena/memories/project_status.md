@@ -11,9 +11,21 @@
 >    pointer holding no rule, and `.claude/` holds only adapter stubs — see
 >    `mem:dual_harness_workflow_run_state`.
 > 2. **"nothing is in flight, the tree is clean, choose one"** (the 2026-09-04
->    NEXT ACTION). Work *is* in flight: `c4-lesson-creation-jobs` is 21 commits
->    ahead of `master` with Tasks 6–8 still to build. See
->    `mem:c4_lesson_creation_jobs_run_state`.
+>    NEXT ACTION). It was false while C4 was in flight; it is true again now.
+>    ⭐ **`c4-lesson-creation-jobs` is MERGED to `master` at `21a436b`
+>    (`--no-ff`), 2026-09-20** — 42 commits, 79 files, +8874/-803, branch kept,
+>    nothing pushed. Four review rounds plus a whole-branch review ran and four
+>    fix waves closed everything they found, including two Criticals, both
+>    reproduced against the live database before being fixed. The last review
+>    returned 0 Critical and no finding against the code.
+>    Merged-master gate on `21a436b`: tsc 0 · **vitest 3064/3064 over 324 files,
+>    exit 0** · lint 0 errors / 80 baseline warnings · `next build` 0.
+>    ⚠️ **`npm test` from the main checkout sweeps `.worktrees/*/node_modules`**
+>    and reports ~2195 files / 762 failures. Pre-existing, not C4:
+>    `vitest.config.ts:13` excludes the bare pattern `"node_modules"`, which
+>    matches only the root one. Measure master with `--exclude "**/.worktrees/**"`
+>    until that becomes `**/node_modules/**`, or the number means nothing.
+>    See `mem:c4_lesson_creation_jobs_run_state` — it is the authority.
 > 3. **The 2026-09-06 SYNC UPDATE below** says `landing-page-motion-doctrine`
 >    is active and to resume at Task 10. That branch finished Task 12 and is
 >    **merged into `master`**; it is history, not a resume point.
@@ -21,10 +33,11 @@
 >    work: Docker is available, and the C4 database gate now runs as
 >    `npm run verify:db:lesson-jobs`.
 >
-> Two branches carry unmerged work invisible from `master`:
-> `c4-lesson-creation-jobs` and `dual-harness-workflow`. Both owe an
-> independent whole-branch review — Claude wrote and self-reviewed them while
-> Codex was rate-limited.
+> One branch still carries unmerged work invisible from `master`:
+> `dual-harness-workflow`. It owes an independent whole-branch review — Claude
+> wrote and self-reviewed it while Codex was rate-limited. (C4 owed the same and
+> has now had it: four review rounds plus a whole-branch review, then a review of
+> each fix wave.)
 
 > ## SYNC UPDATE - 2026-09-06 (superseded — see the correction banner above)
 >
