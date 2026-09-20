@@ -15,8 +15,9 @@ import { HeroSentenceRail } from "./hero-sentence-rail";
  * Still-to-rail proportion (task 4 fix F1): the frame holds still:rail at
  * ~495.5:255.8 ≈ 1.94:1. `lg:basis-2/3` here against `HeroSentenceRail`'s
  * `lg:basis-1/3` reproduces that as a 2:1 ratio — a relationship, not a
- * pixel, so no fixed-width token (`w-companion`, meant for the product's own
- * companion rail, not this depiction of it) is coupled in.
+ * pixel, so no fixed-width token is coupled in. There is no such token to
+ * couple to any more: the app rail became a clamped share on 2026-09-20 and
+ * the `w-companion` utility that once exposed it was deleted as a trap.
  *
  * Two affordances the reference depicts do not function on a marketing page
  * and ship as inert, non-focusable depictions rather than live controls

@@ -38,9 +38,27 @@ function collectProductSources(directory: string): string[] {
   return sources;
 }
 
-function classNameUses(source: string, utility: string): boolean {
+/**
+ * Comments are removed so that a utility *named in prose* is not counted as a
+ * call site (`docs/lessons.md` L-002: anchor the assertion to code, not to the
+ * word). `//` preceded by `:` is left alone so a URL inside a string survives.
+ */
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+/**
+ * True when the file draws `utility` anywhere in its code, as a whole class
+ * token. Deliberately NOT anchored to `className=`: this repo extracts class
+ * strings into module constants (`PHOTO_LEFT_FADE`, `CTA_SCRIM`,
+ * `SHOWCASE_COLUMNS`, …) that reach the DOM through a template literal, and a
+ * `className=`-anchored match walks straight past every one of them. That hole
+ * was demonstrated on 2026-09-21: `rounded-xl` added to `PHOTO_LEFT_FADE`
+ * rendered live and the guard stayed green.
+ */
+function drawsUtility(source: string, utility: string): boolean {
   const escaped = utility.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp("\\bclassName\\s*=\\s*(?:[\"'][^\"']*" + escaped + "|\\{[^}]*" + escaped + ")").test(source);
+  return new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`).test(stripComments(source));
 }
 
 describe("StyleGuide", () => {
@@ -117,7 +135,7 @@ describe("StyleGuide", () => {
     );
     expect(productSources.length).toBeGreaterThan(6);
     const sourcesWith = (utility: string) => productSources.filter((file) =>
-      classNameUses(readFileSync(file, "utf8"), utility),
+      drawsUtility(readFileSync(file, "utf8"), utility),
     );
     expect(sourcesWith("rounded-xl")).toEqual([]);
     expect(sourcesWith("rounded-[22px]")).toEqual([]);

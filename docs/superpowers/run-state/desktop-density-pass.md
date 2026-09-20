@@ -29,6 +29,7 @@ this one.
 - `eb09d90` — T3 removes the unused 28px radius rung and moves every scoped card to `rounded-lg`.
 - `59fb51f` — T4 caps the Explore search row and moves its input to the existing 40px height rung.
 - `a4a18cf` - T5 writes the frame-fidelity rule for subsequent screen ports.
+- `ea73bf2` review, `4da28d6` fixes, then F10 and two nits in the commit below this line.
 
 ## Contracts and decisions
 
@@ -60,25 +61,12 @@ this one.
 
 ## Task-level verification
 
-Status at task checkpoints; superseded by the final verification below.
-
-T1: `npx vitest run components/layout/app-nav.test.tsx -t "measured layout token"` went red because
-the rendered nav had `w-60`, then `npx vitest run components/layout/app-nav.test.tsx` passed (22 tests).
-
-T2: `npx vitest run components/layout/two-column-shell.test.tsx` went red on the missing `w-full`
-and clamp token, then passed (6 tests); `npx vitest run components/layout/` passed (64 tests). A
-mutation from the clamp back to `300px` made the token guard red; restoration was SHA-256-checked.
-The code-reviewer approved with one nit, removed before this checkpoint. Browser measurements remain
-owed: no browser surface is connected to this Codex environment.
-
-T3: `npx vitest run components/style-guide/style-guide.test.tsx` went red because Tailwind inherited
-`rounded-xl` as `0.75rem`; after replacing the project radius scale, `npx vitest run
-components/style-guide/ components/shadowing/` passed (47 tests), and `npm run typecheck` passed.
-The code-reviewer required and approved the resolved-config and six-source-file regression guards.
-
-T4: the target test went red on the absent width cap after its textbox query was disambiguated from
-the search landmark, then the complete Explore page test file passed (2 tests). The code-reviewer
-approved; its independent `npm run build` passed and found the generated clamp utility.
+Each of T1-T4 went red first, then passed, and was reviewed by `code-reviewer`; Git holds the
+commands and counts. Two are worth keeping: T2's mutation from the clamp back to `300px` made the
+token guard red and the restore was SHA-256-checked, and T3's guard first went red because Tailwind
+inherited `rounded-xl` as `0.75rem` — which is why D3 replaces the radius scale instead of
+extending it. T2 also recorded that no browser surface was connected to the Codex environment, so
+every browser number on this branch was measured later, under Verification.
 
 Acceptance number: main column at 1280 must measure **~684 px**, up from the 613 px measured on
 `master` at `ec402f6`. A result far from that means D1 or D2 did not land.
@@ -111,7 +99,7 @@ Production-browser measurements from an isolated worktree server at `http://loca
 Explore passes no companion rail to `TwoColumnShell`, so its shell resolves to one track. Hub holds
 the 27.5% rail share at 1280/1422 and caps it at 340px at 1920.
 
-## Whole-branch review (Claude, 2026-09-21) — CHANGES REQUIRED
+## Whole-branch review (Claude, 2026-09-21) — findings F1-F10, all closed
 
 Reviewed `git diff master...desktop-density-pass` from the main worktree. The core holds: D1's
 clamp and track, D2, the removed rung and the search cap all land, and 27.5% of the 968 px inner
@@ -172,29 +160,41 @@ then 257.390625 / 257.391px after collapse. The Hub file is 2 passed / 1 known i
 failure at line 148; the temporary server stopped. Claude re-reviews this delta, records any lesson,
 and merges `--no-ff` if approved; F7/F9 remain ruled/deferred.
 
+## Fix verification (Claude, 2026-09-21) — APPROVED
+
+Every gate re-run here rather than read off Codex's report: `verify:protocol` valid, `typecheck`
+clean, Vitest 324 files / 3082 tests, `lint` exit 0 on existing warnings, `build` compiled
+(`BUILD_ID` `RKcn7bqeKoQeyKm1ZpTfp`). Checked in `.next`, not in source: the CSS carries
+`max-width:clamp(18rem,28.65vw,27.5rem)` and `--layout-companion-width:clamp(15rem,27.5%,21.25rem)`
+and no longer carries `--radius-xl` or `.w-companion`.
+
+Three mutations, each reverted with the restored blob SHA read back. `rounded-[22px]` in
+`explore-lesson-card.tsx` turned both guards red. `rounded-xl` in `components/ui/dialog.tsx` turned
+the widened D3 guard red, naming a file the old six-file list could not see.
+
+**F10, found by the third mutation and fixed here.** `rounded-xl` inside the `PHOTO_LEFT_FADE`
+constant in `components/marketing/trust.tsx` rendered live and the guard stayed **green** — it was
+anchored to `className=`, and this repo routes class strings through module constants into a
+template literal. The helper now strips comments and matches the utility as a whole class token
+anywhere in code: red on that mutation naming `trust.tsx`, green once reverted. Two nits closed
+with it — `token-scale.test.ts` referenced the radius rule as `FORBIDDEN[3]`, a positional index
+that would silently enforce a different rule if a pattern were inserted above it, now the named
+`RADIUS_LITERAL`; and `hero-video-card.tsx` still pointed at the deleted `w-companion`.
+
+⚠️ **Protocol deviation, owner-directed.** §8 says Claude does not edit code or tests during
+review. The owner directed Claude to fix F10 in place rather than hand the branch back for one
+guard change. Claude owned the worktree, so there was no second writer. Recorded because the rule
+has no standing exception.
+
 ## Blockers
-No active Codex blocker; the remaining Hub import-copy failure is the recorded baseline.
-One of these cannot be mutation-checked the usual way: F1's assertion sits behind a baseline
-failure at line 112 of the same case, so it never executes on `master`. Do not repair line 112 —
-that is not this branch's defect. Read the rail width the case reports instead, and record the
-number, not the fact that it ran (`docs/lessons.md` L-002).
+
+None. The Hub import-copy failure at `shadowing-hub.spec.ts:148` is `master`'s baseline, confirmed
+on the 3000 server, and was deliberately not repaired here.
 
 ## Next actions
-1. Completed by Codex: F1-F6/F8 and the branch-production browser gate.
-   - **F1** `tests/e2e/shadowing-hub.spec.ts` — both rail assertions read the resolved clamp
-     instead of 300 (spec §7 T6).
-   - **F2** `components/style-guide/style-guide.test.tsx` — the D3 guard becomes a directory walk
-     over `components/` and `app/` and asserts its collected count exceeds the six it replaces
-     (spec §7 T7). Run it **before** F3 and confirm it goes red on `explore-lesson-card.tsx`.
-   - **F3** `components/shadowing/explore-lesson-card.tsx` — `rounded-[22px]` -> `rounded-lg`, and
-     add `components/shadowing` to `SCANNED_DIRS` in `components/ui/token-scale.test.ts`.
-   - **F4** `tailwind.config.ts` — delete `width.companion`.
-   - **F5** the explore search field — move the cap off the row and onto the input as
-     `max-w-[clamp(18rem,28.65vw,27.5rem)]`; update the T4 assertion to match.
-   - **F6** `docs/design/screens/adaptive-layouts.md` — add the persistent-nav-rail carve-out to
-     the frame-fidelity rule, with the reason, per spec §5.
-   - **F8** drop `shrink-0` from the aside in `components/layout/two-column-shell.tsx`; correct the
-     `sizes` hint in `components/shadowing/hub-featured-hero.tsx` against the measured slot.
-2. Codex reruns the full gate from spec §8, **plus** `shadowing-hub.spec.ts` against a worktree
-   production build, and records the rail width it measures at 1024 and after nav collapse.
-F7 and F9 need no code: both are recorded in the spec by owner ruling (D1 and §9 respectively).
+
+1. Claude records the lesson in `docs/lessons.md`, merges `--no-ff`, removes the worktree.
+
+Standing by ruling: F7 (spec D1) and F9 (spec §9). The e2e helper keeps `not.toBeCloseTo(300, 0)`;
+it would misfire only at the ~1394 viewport where 27.5% resolves to 300, a ±0.5px window no case
+uses, and tightening it would weaken the guard on the very constant F1 removes.
