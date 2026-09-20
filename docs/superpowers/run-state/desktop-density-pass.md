@@ -26,6 +26,7 @@ this one.
 - `b3ede47` — plan, packet and the spec's D3/D4 corrections.
 - `5afa978` — T1 changes the app sidebar from literal `w-60` to measured `w-sidebar`.
 - `c50befb` — T2 makes the companion rail a capped shell share and keeps the aside within its track.
+- `eb09d90` — T3 removes the unused 28px radius rung and moves every scoped card to `rounded-lg`.
 
 ## Contracts and decisions
 
@@ -63,6 +64,11 @@ mutation from the clamp back to `300px` made the token guard red; restoration wa
 The code-reviewer approved with one nit, removed before this checkpoint. Browser measurements remain
 owed: no browser surface is connected to this Codex environment.
 
+T3: `npx vitest run components/style-guide/style-guide.test.tsx` went red because Tailwind inherited
+`rounded-xl` as `0.75rem`; after replacing the project radius scale, `npx vitest run
+components/style-guide/ components/shadowing/` passed (47 tests), and `npm run typecheck` passed.
+The code-reviewer required and approved the resolved-config and six-source-file regression guards.
+
 Acceptance number: main column at 1280 must measure **~684 px**, up from the 613 px measured on
 `master` at `ec402f6`. A result far from that means D1 or D2 did not land.
 
@@ -85,8 +91,8 @@ handed to Codex.
 
 ## Next actions
 
-1. Codex implements T3 (one card radius) under TDD, with a `code-reviewer` pass and a checkpoint
-   here after the accepted task.
+1. Codex implements T4 (the explore search cap) under TDD, with a `code-reviewer` pass and a
+   checkpoint here after the accepted task.
 2. T2 consumer audit found no `hero-video-card.tsx` token consumer: it explicitly documents that it
    is not coupled to the app shell. The only live consumer is `TwoColumnShell`.
 3. Codex fills in the six `grid-template-columns` strings, runs the full gate including both
