@@ -34,17 +34,25 @@ this one.
 
 - **D1** rail track `clamp(15rem, 27.5%, 21.25rem)`; the aside must become `w-full` or the
   percentage resolves twice. **D2** `w-60` -> `w-sidebar`. **D3** every card uses `rounded-lg`, and
-  `--radius-xl` plus its Tailwind key are deleted. **D4** explore search row capped at
-  `clamp(18rem, 33.5%, 27.5rem)`, input `h-11` -> `h-10`. **D5** no new token, breakpoint or type
-  change; one token removed.
+  `--radius-xl` plus its Tailwind key are deleted. **D4** the explore search **input** capped at
+  `clamp(18rem, 28.65vw, 27.5rem)` — the row is not capped — and `h-11` -> `h-10`. **D5** no new
+  token, breakpoint or type change; one token removed.
+- ⚠️ **D4 was corrected 2026-09-21 by owner ruling**, after the whole-branch review. It shipped as
+  `max-w-[clamp(18rem,33.5%,27.5rem)]` on the flex **row**, which was wrong twice: the row also
+  holds `gap-sm` and the submit button, leaving the input near 210-230 px at 1280 against the
+  367 px the spec's own §2 records as the frame equivalent; and 33.5% divides 440 by the 1312
+  content region, while §5 rules that a frame dimension divides by the canvas it was drawn on
+  (1536 -> 28.65%). D4 was the one decision on this branch that did not obey the branch's own rule.
+- ⚠️ **The §5 frame-fidelity rule gains a nav-rail carve-out, 2026-09-21 owner ruling.** As first
+  written it condemned D2: `--layout-sidebar-width: 224px` is a shell dimension off a 1536 frame
+  shipped as a bare constant. The carve-out is a persistent navigation rail that owns a collapsed
+  state and a fixed text measure — a rail that scales crops its labels instead of rebalancing the
+  layout, and it already has two escapes (`--layout-sidebar-collapsed`, and the handoff below 1024).
 - ⚠️ D3 previously kept `rounded-xl` "for hero surfaces over ~200 px". **That exception was
   measured away**: FeaturedHero (`149:464`, 873 x 280) draws `rounded-[22px]`, the same as the
   339 x 225 rail card. The design draws 22 on every card whatever its size, and 28 appears nowhere.
 - ⚠️ D4 previously said the frame's 38 px height "is `h-10`". `h-10` is 40 px; it is the nearest
   existing rung, not the frame value, and no new rung is introduced for the 2 px.
-- The rule this branch leaves behind, to be written into
-  `docs/design/screens/adaptive-layouts.md`: a shell dimension read off a frame is a share of that
-  frame's canvas, not a constant; a constant is allowed only as the `max` of a clamp.
 - T2 audit: `hero-video-card.tsx` has no `--layout-companion-width` consumer; its docblock explicitly
   says the marketing depiction is not coupled to the app-shell rail. No marketing change is needed.
 - Owner ruling 2026-09-20: `decision-register.md` **P14** stands — Apple and GitHub OAuth buttons
@@ -53,11 +61,6 @@ this one.
 ## Task-level verification
 
 Status at task checkpoints; superseded by the final verification below.
-
-Owed, none run yet on this branch: `npm run verify:protocol` · `npm run typecheck` · `npx vitest
-run --reporter=dot` · `npm run lint` · `npm run build` · Playwright (this branch changes rendered
-app chrome, so it is not waivable) · a manual read at 1280 / 1422 / 1920 on `/vi/shadowing` and
-`/vi/shadowing/explore`.
 
 T1: `npx vitest run components/layout/app-nav.test.tsx -t "measured layout token"` went red because
 the rendered nav had `w-60`, then `npx vitest run components/layout/app-nav.test.tsx` passed (22 tests).
@@ -108,6 +111,45 @@ Production-browser measurements from an isolated worktree server at `http://loca
 Explore passes no companion rail to `TwoColumnShell`, so its shell resolves to one track. Hub holds
 the 27.5% rail share at 1280/1422 and caps it at 340px at 1920.
 
+## Whole-branch review (Claude, 2026-09-21) — CHANGES REQUIRED
+
+Reviewed `git diff master...desktop-density-pass` from the main worktree. The core holds: D1's
+clamp and track, D2, the removed rung and the search cap all land, and 27.5% of the 968 px inner
+box is 266.19 against the 266.188 measured at 1280. What failed review is the belt around it. Each
+fix and its reason is in spec §6; the two corrected decisions are under Contracts above.
+
+- **F1 · CRITICAL · `tests/e2e/shadowing-hub.spec.ts:120` and `:132`** — `toBeCloseTo(300, 0)` pins
+  the constant D1 deletes, so the rail geometry has two homes (`AGENTS.md` §6). At the case's 1024
+  viewport the inner box is at most 1024 - 224 = 800 whatever the gutter, so the clamp sits on its
+  15rem floor, 240 px; ~263 after nav collapse. It can never be 300.
+- **F2 · MAJOR · `components/style-guide/style-guide.test.tsx:100-112`** — the D3 guard walks a
+  hardcoded six-file list and asserts the length of that same literal. §7 T3 specified a walk over
+  `components/` and `app/`; workflow §8 says why. With the `xl` key deleted, a new `rounded-xl`
+  renders with no radius and nothing catches it.
+- **F3 · MAJOR · `components/shadowing/explore-lesson-card.tsx:23`** — still `rounded-[22px]`, so
+  Explore draws lesson cards at 22 and its suggestion card at 20 on the screen this branch
+  measured. `components/ui/token-scale.test.ts` forbids the pattern but omits `components/shadowing`
+  from `SCANNED_DIRS`, which is how F2's narrow guard and this line found each other.
+- **F4 · MEDIUM · `tailwind.config.ts:99`** — `width.companion` survives, now pointing at a token
+  holding a percentage. Zero consumers, and using it is the 27.5%-of-27.5% trap D1 warns about.
+- **F5, F6 · MEDIUM · ruled and corrected** — D4 capped the wrong element against the wrong
+  denominator; the §5 rule as written condemned D2. Both under Contracts.
+- **F7 · LOW · accepted as a documented limitation** — from 1024 to ~1177 the floor binds and the
+  rail holds ~35% of the shell, against 43.9% for the old constant at the same width. Closing it
+  needs a breakpoint D5 forbids. Recorded in spec D1; no code change.
+- **F8 · NIT · accepted** — `two-column-shell.tsx:41` keeps `shrink-0`, inert on a grid item;
+  `hub-featured-hero.tsx:32` still claims `sizes` 55rem against a slot measured at 677.8 / 1244 px.
+- **F9 · deferred to its own branch, owner ruling** — `borderRadius.DEFAULT: "0.25rem"`, an
+  undocumented fourth rung at ~25 call sites. Not a regression; spec §9 holds the reasoning.
+
+**Baseline question from the previous checkpoint: answered.** Claude ran `npx playwright test
+tests/e2e/shadowing-hub.spec.ts --reporter=line` against the same external 3000 server: 1 passed, 1
+failed at **line 112** on an import error-string mismatch, unrelated to this diff. That server runs
+a build from outside this worktree, so every failure on it is `master`'s state by construction.
+That run is also what exposed F1 — line 112 aborts the case before the rail assertion at 120 — and
+a second gap: `playwright.c3.config.ts` carries `testMatch: "shadowing-explore.spec.ts"`, so **no
+Playwright run has yet exercised the Hub against a branch build**, and the Hub is what D1 changes.
+
 ## Working tree and environment
 
 Worktree `.worktrees/desktop-density-pass`, branch `desktop-density-pass`, cut from `master` at
@@ -119,24 +161,38 @@ Measurements used an isolated production server on `http://localhost:3002`, auth
 local test learner in the Vietnamese locale. The existing 3000 server was not stopped or reused for
 branch browser evidence.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
-No branch-specific blocker. Claude must confirm the eight default-suite failures on the external
-3000 server are baseline during whole-branch review.
+The baseline question is answered (see the review section). The branch does not merge until F1-F4,
+F5, F6 and F8 are fixed and the Hub has a Playwright run against a branch build.
+
+One of these cannot be mutation-checked the usual way: F1's assertion sits behind a baseline
+failure at line 112 of the same case, so it never executes on `master`. Do not repair line 112 —
+that is not this branch's defect. Read the rail width the case reports instead, and record the
+number, not the fact that it ran (`docs/lessons.md` L-002).
 
 ## Next actions
 
-1. Claude performs the required whole-branch review, confirms the external default-suite baseline,
-   records an applicable lesson only if one exists, and merges with `--no-ff`.
+1. Codex fixes, each with its test first:
+   - **F1** `tests/e2e/shadowing-hub.spec.ts` — both rail assertions read the resolved clamp
+     instead of 300 (spec §7 T6).
+   - **F2** `components/style-guide/style-guide.test.tsx` — the D3 guard becomes a directory walk
+     over `components/` and `app/` and asserts its collected count exceeds the six it replaces
+     (spec §7 T7). Run it **before** F3 and confirm it goes red on `explore-lesson-card.tsx`.
+   - **F3** `components/shadowing/explore-lesson-card.tsx` — `rounded-[22px]` -> `rounded-lg`, and
+     add `components/shadowing` to `SCANNED_DIRS` in `components/ui/token-scale.test.ts`.
+   - **F4** `tailwind.config.ts` — delete `width.companion`.
+   - **F5** the explore search field — move the cap off the row and onto the input as
+     `max-w-[clamp(18rem,28.65vw,27.5rem)]`; update the T4 assertion to match.
+   - **F6** `docs/design/screens/adaptive-layouts.md` — add the persistent-nav-rail carve-out to
+     the frame-fidelity rule, with the reason, per spec §5.
+   - **F8** drop `shrink-0` from the aside in `components/layout/two-column-shell.tsx`; correct the
+     `sizes` hint in `components/shadowing/hub-featured-hero.tsx` against the measured slot.
+2. Codex reruns the full gate from spec §8, **plus** `shadowing-hub.spec.ts` against a worktree
+   production build, and records the rail width it measures at 1024 and after nav collapse.
+3. Codex sets `- Owner: Claude`.
+4. Claude re-reviews the delta only, records lessons, and merges `--no-ff`.
 
-**Historical task plan, retained as a completed record:**
-
-1. Codex writes the frame-fidelity rule, runs the remaining branch gate, records every actual result,
-   and performs the final checkpoint for Claude's whole-branch review.
-2. T2 consumer audit found no `hero-video-card.tsx` token consumer: it explicitly documents that it
-   is not coupled to the app shell. The only live consumer is `TwoColumnShell`.
-3. Codex fills in the six `grid-template-columns` strings, runs the full gate including both
-   Playwright configs, and sets `- Owner: Claude`.
-4. Claude reviews `git diff master...desktop-density-pass`, records lessons, merges `--no-ff`.
+F7 and F9 need no code: both are recorded in the spec by owner ruling (D1 and §9 respectively).
