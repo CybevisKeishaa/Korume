@@ -412,7 +412,7 @@ Expected: roughly 250–320, not 818. Record the number in the run state.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add "app/[locale]/(protected)/(app)/shadowing/explore" 
+git add "app/[locale]/(protected)/(app)/shadowing/explore"
 git commit -m "fix(explore): the search field stops at the width it was drawn"
 ```
 

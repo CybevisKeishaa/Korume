@@ -27,6 +27,8 @@ this one.
 - `5afa978` — T1 changes the app sidebar from literal `w-60` to measured `w-sidebar`.
 - `c50befb` — T2 makes the companion rail a capped shell share and keeps the aside within its track.
 - `eb09d90` — T3 removes the unused 28px radius rung and moves every scoped card to `rounded-lg`.
+- `59fb51f` — T4 caps the Explore search row and moves its input to the existing 40px height rung.
+- `a4a18cf` - T5 writes the frame-fidelity rule for subsequent screen ports.
 
 ## Contracts and decisions
 
@@ -48,7 +50,9 @@ this one.
 - Owner ruling 2026-09-20: `decision-register.md` **P14** stands — Apple and GitHub OAuth buttons
   in the auth frames are not ported. Belongs to the next branch; recorded so it is not rediscovered.
 
-## Verification
+## Task-level verification
+
+Status at task checkpoints; superseded by the final verification below.
 
 Owed, none run yet on this branch: `npm run verify:protocol` · `npm run typecheck` · `npx vitest
 run --reporter=dot` · `npm run lint` · `npm run build` · Playwright (this branch changes rendered
@@ -69,8 +73,40 @@ T3: `npx vitest run components/style-guide/style-guide.test.tsx` went red becaus
 components/style-guide/ components/shadowing/` passed (47 tests), and `npm run typecheck` passed.
 The code-reviewer required and approved the resolved-config and six-source-file regression guards.
 
+T4: the target test went red on the absent width cap after its textbox query was disambiguated from
+the search landmark, then the complete Explore page test file passed (2 tests). The code-reviewer
+approved; its independent `npm run build` passed and found the generated clamp utility.
+
 Acceptance number: main column at 1280 must measure **~684 px**, up from the 613 px measured on
 `master` at `ec402f6`. A result far from that means D1 or D2 did not land.
+
+## Verification
+
+Final gate from this worktree: `npm run verify:protocol` and `npm run typecheck` passed; Vitest
+passed 3068/3068; `npm run lint` exited 0 with existing unrelated warnings; and `npm run build`
+compiled the production bundle and produced `.next/BUILD_ID`. Build and browser commands loaded the
+root local environment only into their processes; no secret file was copied into the worktree.
+
+`npx playwright test --config=playwright.c3.config.ts` passed all 3 Explore cases against the
+worktree production build. The first attempt failed before rendering because this worktree had no
+Kuromoji dictionary at `process.cwd()/node_modules`; `npm install` added ignored dependencies in the
+worktree and the rerun passed.
+
+`npm run test:e2e` ran 45 default cases against an already-listening `localhost:3000` server outside
+this worktree and failed 8: landing-page (3), lesson-creation-jobs (3),
+route-group-provider-identity, and shadowing-hub. They are not attributed to this diff; the C3 suite
+above is the branch production-browser gate.
+
+Production-browser measurements from an isolated worktree server at `http://localhost:3002`:
+
+| viewport | `/vi/shadowing` | `/vi/shadowing/explore` |
+| --- | --- | --- |
+| 1280 | `677.812px 266.188px` | `968px` |
+| 1422 | `780.75px 305.25px` | `1110px` |
+| 1920 | `1244px 340px` | `1608px` |
+
+Explore passes no companion rail to `TwoColumnShell`, so its shell resolves to one track. Hub holds
+the 27.5% rail share at 1280/1422 and caps it at 340px at 1920.
 
 ## Working tree and environment
 
@@ -79,20 +115,26 @@ Worktree `.worktrees/desktop-density-pass`, branch `desktop-density-pass`, cut f
 from the main checkout only with the worktree exclusions in `vitest.config.ts` (they are
 `**`-anchored since `52175bf`).
 
-The dev server the measurements were taken against was already running on
-`http://localhost:3000`, authenticated, Vietnamese locale.
+Measurements used an isolated production server on `http://localhost:3002`, authenticated as a new
+local test learner in the Vietnamese locale. The existing 3000 server was not stopped or reused for
+branch browser evidence.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
-None. The owner approved the spec on 2026-09-20; plan and packet are written and the branch is
-handed to Codex.
+No branch-specific blocker. Claude must confirm the eight default-suite failures on the external
+3000 server are baseline during whole-branch review.
 
 ## Next actions
 
-1. Codex implements T4 (the explore search cap) under TDD, with a `code-reviewer` pass and a
-   checkpoint here after the accepted task.
+1. Claude performs the required whole-branch review, confirms the external default-suite baseline,
+   records an applicable lesson only if one exists, and merges with `--no-ff`.
+
+**Historical task plan, retained as a completed record:**
+
+1. Codex writes the frame-fidelity rule, runs the remaining branch gate, records every actual result,
+   and performs the final checkpoint for Claude's whole-branch review.
 2. T2 consumer audit found no `hero-video-card.tsx` token consumer: it explicitly documents that it
    is not coupled to the app shell. The only live consumer is `TwoColumnShell`.
 3. Codex fills in the six `grid-template-columns` strings, runs the full gate including both
