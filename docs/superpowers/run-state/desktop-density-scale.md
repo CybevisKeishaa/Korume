@@ -1,6 +1,6 @@
 # Branch Run State
 
-- Owner: Claude
+- Owner: Codex
 
 ## Goal and scope
 
@@ -22,9 +22,12 @@ colour tokens; new breakpoints; and anything below 1280.
 
 ## Authorities
 
-- `docs/superpowers/specs/2026-09-21-desktop-density-scale-design.md` — this branch's design. §3
-  holds the six owner rulings, §5 the mechanism and its browser verification, §6 the token table.
-  Read it before touching any file.
+- `docs/superpowers/specs/2026-09-21-desktop-density-scale-design.md` — this branch's design,
+  **approved by the owner 2026-09-21**. §3 holds the six owner rulings, §5 the mechanism and its
+  browser verification, §6 the token table. Read it before touching any file.
+- `docs/superpowers/plans/2026-09-21-desktop-density-scale.md` — the seven tasks in the owner's
+  order, each with its files, its failing test and its commands. The plan argues from the spec;
+  where they disagree, the spec wins and the disagreement gets reported, not reconciled silently.
 - `AGENTS.md`, `.codex/docs/workflow.md` (§8 two-harness protocol), `docs/lessons.md`.
 - `docs/superpowers/specs/2026-09-20-desktop-density-pass-design.md` — the superseded spec. Its §1
   claim that the 90% preference "is not a preference for smaller text" is the error this branch
@@ -78,12 +81,30 @@ hour of misattribution.
 
 ## Blockers
 
-None. The spec is written and awaits owner review before the plan is drafted.
+None. The owner approved the spec on 2026-09-21; the plan and the dispatch packet are written and
+the branch is handed to Codex.
 
 ## Next actions
 
-1. Owner reviews `docs/superpowers/specs/2026-09-21-desktop-density-scale-design.md`.
-2. On approval, Claude writes the implementation plan and task packets, then sets `- Owner: Codex`.
-3. Task 1 is the typography consolidation and is a precondition for every later task: until the 32
+1. Codex implements `docs/superpowers/plans/2026-09-21-desktop-density-scale.md`, task by task, in
+   order, under TDD, running `code-reviewer` and checkpointing this file after every accepted task.
+   The dispatch packet is `.superpowers/sdd/2026-09-21-desktop-density-scale/branch-brief.md`
+   (gitignored, so it exists only in this worktree).
+2. Task 1 is the typography consolidation and is a precondition for every later task: until the 32
    `text-sm` and 4 `text-xs` sites are migrated by semantic role, a token change moves only 8 call
    sites and cannot produce a coherent screen.
+3. Task 5 is the acceptance gate and is the one the previous branch got wrong. The acceptance
+   number is the owner's zoom-90% composition (main column ~768 px at 1280), measured on a
+   production build with exactly one server — never a number derived from this branch's own
+   arithmetic.
+4. Codex sets `- Owner: Claude` when the branch gate is green. Claude then reviews the whole branch
+   from `git diff master...desktop-density-scale` in the main worktree and merges `--no-ff`.
+
+## Open decisions for the owner
+
+- **`borderRadius.DEFAULT` (4 px, ~25 call sites)** stays a literal in this branch. It was deferred
+  out of `desktop-density-pass` by owner ruling and scaling it is a change that ruling did not
+  authorize (spec §9). If the owner rules it in, it is one line:
+  `DEFAULT: "calc(4 * var(--density-unit))"`.
+- **`button.tsx`'s `h-12` (48 px)** has no rung in spec §6.5 and is left unscaled. Adding
+  `--control-xl` would be an implementer changing the spec.
