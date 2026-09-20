@@ -25,6 +25,7 @@ this one.
 - `b686945` — spec and this run state.
 - `b3ede47` — plan, packet and the spec's D3/D4 corrections.
 - `5afa978` — T1 changes the app sidebar from literal `w-60` to measured `w-sidebar`.
+- `c50befb` — T2 makes the companion rail a capped shell share and keeps the aside within its track.
 
 ## Contracts and decisions
 
@@ -41,6 +42,8 @@ this one.
 - The rule this branch leaves behind, to be written into
   `docs/design/screens/adaptive-layouts.md`: a shell dimension read off a frame is a share of that
   frame's canvas, not a constant; a constant is allowed only as the `max` of a clamp.
+- T2 audit: `hero-video-card.tsx` has no `--layout-companion-width` consumer; its docblock explicitly
+  says the marketing depiction is not coupled to the app-shell rail. No marketing change is needed.
 - Owner ruling 2026-09-20: `decision-register.md` **P14** stands — Apple and GitHub OAuth buttons
   in the auth frames are not ported. Belongs to the next branch; recorded so it is not rediscovered.
 
@@ -53,6 +56,12 @@ app chrome, so it is not waivable) · a manual read at 1280 / 1422 / 1920 on `/v
 
 T1: `npx vitest run components/layout/app-nav.test.tsx -t "measured layout token"` went red because
 the rendered nav had `w-60`, then `npx vitest run components/layout/app-nav.test.tsx` passed (22 tests).
+
+T2: `npx vitest run components/layout/two-column-shell.test.tsx` went red on the missing `w-full`
+and clamp token, then passed (6 tests); `npx vitest run components/layout/` passed (64 tests). A
+mutation from the clamp back to `300px` made the token guard red; restoration was SHA-256-checked.
+The code-reviewer approved with one nit, removed before this checkpoint. Browser measurements remain
+owed: no browser surface is connected to this Codex environment.
 
 Acceptance number: main column at 1280 must measure **~684 px**, up from the 613 px measured on
 `master` at `ec402f6`. A result far from that means D1 or D2 did not land.
@@ -76,10 +85,10 @@ handed to Codex.
 
 ## Next actions
 
-1. Codex implements T2 (the companion rail) under TDD, with a `code-reviewer` pass and a checkpoint
+1. Codex implements T3 (one card radius) under TDD, with a `code-reviewer` pass and a checkpoint
    here after the accepted task.
-2. T2 Step 5 requires a decision about `components/marketing/hero-video-card.tsx`; record which of
-   the two cases it was under `## Contracts and decisions`.
+2. T2 consumer audit found no `hero-video-card.tsx` token consumer: it explicitly documents that it
+   is not coupled to the app shell. The only live consumer is `TwoColumnShell`.
 3. Codex fills in the six `grid-template-columns` strings, runs the full gate including both
    Playwright configs, and sets `- Owner: Claude`.
 4. Claude reviews `git diff master...desktop-density-pass`, records lessons, merges `--no-ff`.
