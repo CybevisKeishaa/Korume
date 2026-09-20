@@ -44,7 +44,7 @@ export function AppNav({
       {visible ? (
         <nav
           aria-label={t("ariaLabel")}
-          className="flex h-screen w-60 flex-col gap-1 border-r border-border bg-card p-4"
+          className="flex h-screen w-sidebar flex-col gap-1 border-r border-border bg-card p-4"
         >
           <div className="mb-4 flex items-center justify-between gap-2 px-2">
             <Link href="/dashboard" className="font-jp text-lg font-bold">

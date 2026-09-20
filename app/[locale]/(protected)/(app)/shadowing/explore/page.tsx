@@ -80,7 +80,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
             {query.situation ? <input type="hidden" name="situation" value={query.situation} /> : null}
             <label className="sr-only" htmlFor="explore-search">{tHub("sections.search")}</label>
             <div className="flex gap-sm">
-              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-card px-md text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-10 min-w-0 max-w-[clamp(18rem,28.65vw,27.5rem)] flex-1 rounded-lg border border-border bg-card px-md text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
               <button type="submit" className="rounded-md bg-primary px-md text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{tHub("sections.search")}</button>
             </div>
           </form>
@@ -128,7 +128,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
         </section>
 
         {data.quietSuggestion?.reason?.kind === "known-word-fit" ? (
-          <section aria-label={tCommon("recommendations.heading")} className="rounded-xl border border-border bg-card p-md-lg">
+          <section aria-label={tCommon("recommendations.heading")} className="rounded-lg border border-border bg-card p-md-lg">
             <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{tCommon("recommendations.heading")}</p>
             <p className="mt-xs text-body font-semibold text-foreground">{data.quietSuggestion.title}</p>
             <p className="mt-xs text-sm text-muted-foreground">{tCommon("recommendations.knownWords", { percent: Math.round(data.quietSuggestion.reason.knownRatio * 100) })}</p>

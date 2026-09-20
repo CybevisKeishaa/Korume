@@ -73,7 +73,7 @@ const REQUIRED_TOKENS = [
   // radius — declared absolutely, never derived. A calc()-chained scale means
   // one edit to the base silently skews every other step. No unqualified
   // `--radius`: it had zero consumers outside docs/ and was deleted.
-  "--radius-sm", "--radius-md", "--radius-lg", "--radius-xl",
+  "--radius-sm", "--radius-md", "--radius-lg",
   // typography
   "--text-caption", "--text-body", "--text-body-lg", "--text-heading",
   "--text-heading-lg", "--text-title", "--text-display", "--text-hero",

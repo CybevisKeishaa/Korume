@@ -27,10 +27,10 @@ export function HubFeaturedHero({ lesson, isInProgress = false, labels }: { less
   const action = isInProgress ? labels.continue : labels.start;
 
   return (
-    <section aria-label={labels.eyebrow} className="overflow-hidden rounded-xl border border-border bg-card shadow-raised">
+    <section aria-label={labels.eyebrow} className="overflow-hidden rounded-lg border border-border bg-card shadow-raised">
       <div className="relative min-h-64 overflow-hidden px-md-lg py-xl">
         {lesson.thumbnailUrl ? (
-          <Image src={lesson.thumbnailUrl} alt="" fill priority sizes="(min-width: 1280px) 55rem, 100vw" className="object-cover" />
+          <Image src={lesson.thumbnailUrl} alt="" fill priority sizes="(min-width: 1549px) calc(100vw - 42.25rem), (min-width: 1024px) calc(72.5vw - 15.625rem), 100vw" className="object-cover" />
         ) : (
           <div className="absolute inset-0 bg-muted" aria-hidden="true" />
         )}

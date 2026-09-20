@@ -40,7 +40,7 @@ export function HubLessonCard({ lesson, href, actionLabel, noThumbnailLabel, pro
       <Link
         href={href}
         aria-label={`${actionLabel}: ${lesson.title}`}
-        className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-raised transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-raised transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <div className="relative aspect-video w-full shrink-0 overflow-hidden bg-muted">
           {lesson.thumbnailUrl ? (

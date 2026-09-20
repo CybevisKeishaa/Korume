@@ -3,8 +3,11 @@ import { cn } from "@/lib/utils";
 /**
  * The Hub/Explore desktop content shell: a flexible main column beside an
  * optional sticky companion rail. Geometry lives here and nowhere else. The
- * 300px rail is the approved fluid-desktop adaptation of Figma frame 149:2's
- * 340px rail. The rail must never be the only place information appears.
+ * rail is a share of the shell — 27.5%, frame 149:2's 339 of 1240 — capped at
+ * that frame's own 340px. It was a fixed 300px until 2026-09-20; at a 1280
+ * viewport that constant took 19% off the main column, which is the whole of
+ * what read as "the right side is too big". The rail must never be the only
+ * place information appears.
  */
 export function TwoColumnShell({
   children,
@@ -35,7 +38,7 @@ export function TwoColumnShell({
       {rail ? (
         <aside
           aria-label={railLabel}
-          className="sticky top-md-lg w-[--layout-companion-width] shrink-0 self-start"
+          className="sticky top-md-lg w-full self-start"
         >
           {rail}
         </aside>

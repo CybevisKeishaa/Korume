@@ -90,15 +90,15 @@
   --scrim: 0 0% 0%;
 
   /* Radius. `lg` moves 12px -> 20px to match the Figma cards (the design draws
-     rounded-[22px] and its DNA states "20-24px"). Steps are ABSOLUTE, not
-     calc()-derived, so changing one rung cannot skew the others. `sm` is kept
-     because chips, badges and field interiors need a radius well below the
-     card value; the point is that the scale is fixed, not that it has 3 rungs.
-     No unqualified `--radius` compatibility default: nothing consumed it. */
+     rounded-[22px] on EVERY card surface, from the 339x225 rail card to the
+     873x280 featured hero — measured 2026-09-20). `sm` is kept because chips,
+     badges and field interiors need a radius well below the card value. There
+     is deliberately no `xl`: 28px appears nowhere in the design file, and the
+     rung it occupied was being applied to 91px-tall cards, rounding 31% of
+     their short side. Steps are ABSOLUTE, not calc()-derived. */
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
-  --radius-xl: 28px;
 }
 
 /**
@@ -141,7 +141,14 @@
   --layout-sidebar-width: 224px;
   --layout-sidebar-collapsed: 68px;
   --layout-content-max: 1240px;
-  --layout-companion-width: 300px;
+  /* The companion rail. A SHARE of the shell, not a constant: frame 149:2
+     draws it 339 wide inside a 1240 container (27.3%), and shipping the
+     constant meant the rail held 27.8% of the shell at a 1422 viewport but
+     32.0% at 1280 — the main column, not the rail, absorbed the whole
+     difference. 21.25rem (340px) is the frame's own rail width and caps the
+     track; 15rem is the floor below which the rail stops being usable.
+     Measured 2026-09-20; see the desktop-density-pass spec §2. */
+  --layout-companion-width: clamp(15rem, 27.5%, 21.25rem);
   --layout-gutter: var(--space-xl);
   --layout-column-gap: var(--space-lg);
   /* The sticky site header's row height. TWO consumers, which is why it is a

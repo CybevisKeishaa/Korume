@@ -268,6 +268,16 @@ describe("AppNav", () => {
     ).toBeInTheDocument();
   });
 
+  it("sizes the rail from the measured layout token, not a literal", () => {
+    // --layout-sidebar-width is 224px, measured off Figma frame 149:2 and
+    // exposed as w-sidebar. The literal w-60 (240px) that shipped here was
+    // 7% wider than the frame and took that width out of the main column.
+    renderNav();
+    const nav = screen.getByRole("navigation");
+    expect(nav.className).toContain("w-sidebar");
+    expect(nav.className).not.toContain("w-60");
+  });
+
   it("marks the active destination", () => {
     renderNav();
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(

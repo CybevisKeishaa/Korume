@@ -15,20 +15,31 @@ import { describe, expect, it } from "vitest";
  * Exceptions require an inline comment saying why no token can express the
  * value — see spec §7. Deleting this test is not an exception.
  */
+/** Named, because a scope below enforces this rule alone. A positional index
+ *  into FORBIDDEN would silently start enforcing a different rule the moment
+ *  a pattern is inserted above it. */
+const RADIUS_LITERAL = /\brounded(-[a-z]+)?-\[[\d.]+(px|rem|em)\]/; // rounded-[22px] → rounded-lg
+
 const FORBIDDEN = [
   /\btext-\[[\d.]+(px|rem|em)\]/, // text-[12px] → text-caption
   /\b[pm][trblxy]?-\[[\d.]+(px|rem|em)\]/, // p-[10px] → p-sm
   /\bgap(-[xy])?-\[[\d.]+(px|rem|em)\]/, // gap-[6px] → gap-xs
-  /\brounded(-[a-z]+)?-\[[\d.]+(px|rem|em)\]/, // rounded-[22px] → rounded-lg
+  RADIUS_LITERAL,
   /\bleading-\[[\d.]+(px|rem|em)\]/, // leading-[18px] → a paired token
   /\bshadow-\[[^\]]*#/, // shadow-[0_0_12px_#FF8A3D] → shadow-raised
-];
+] as const;
 
 // Scanned directories. `components/marketing` was added for the landing-page
 // port (spec §2 of the screen-port workflow design): it is the largest body
 // of new presentational code in the repo and must be held to the same rule
 // as components/ui.
-const SCANNED_DIRS = ["components/ui", "components/marketing"];
+const SCANNED_DIRS = [
+  { dir: "components/ui", rules: FORBIDDEN },
+  { dir: "components/marketing", rules: FORBIDDEN },
+  // D5 keeps Shadowing's measured type scale out of this density pass; its
+  // card-radius literals are nevertheless covered here.
+  { dir: "components/shadowing", rules: [RADIUS_LITERAL] },
+];
 
 function collectSources(dir: string, root: string = dir): string[] {
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -45,7 +56,7 @@ function collectSources(dir: string, root: string = dir): string[] {
 }
 
 describe("Rule #0 — semantic tokens are the API (spec §2)", () => {
-  for (const scannedDir of SCANNED_DIRS) {
+  for (const { dir: scannedDir, rules } of SCANNED_DIRS) {
     const dir = path.join(process.cwd(), scannedDir);
     const sources = collectSources(dir);
 
@@ -55,7 +66,7 @@ describe("Rule #0 — semantic tokens are the API (spec §2)", () => {
 
     it.each(sources)(`${scannedDir}/%s hardcodes no absolute px/rem literal`, (file) => {
       const text = readFileSync(path.join(dir, file), "utf8");
-      const hits = FORBIDDEN.filter((pattern) => pattern.test(text));
+      const hits = rules.filter((pattern) => pattern.test(text));
       expect(hits).toEqual([]);
     });
   }

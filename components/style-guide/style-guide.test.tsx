@@ -1,9 +1,11 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import resolveConfig from "tailwindcss/resolveConfig";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import tailwindConfig from "../../tailwind.config";
 import { StyleGuide } from "./style-guide";
 
 /**
@@ -24,6 +26,39 @@ function renderGuide() {
       </ToastProvider>
     </ThemeProvider>,
   );
+}
+
+function collectProductSources(directory: string): string[] {
+  const sources: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) sources.push(...collectProductSources(file));
+    else if (/\.tsx?$/.test(entry.name) && !entry.name.includes(".test.")) sources.push(file);
+  }
+  return sources;
+}
+
+/**
+ * Comments are removed so that a utility *named in prose* is not counted as a
+ * call site (`docs/lessons.md` L-002: anchor the assertion to code, not to the
+ * word). `//` preceded by `:` is left alone so a URL inside a string survives.
+ */
+function stripComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
+/**
+ * True when the file draws `utility` anywhere in its code, as a whole class
+ * token. Deliberately NOT anchored to `className=`: this repo extracts class
+ * strings into module constants (`PHOTO_LEFT_FADE`, `CTA_SCRIM`,
+ * `SHOWCASE_COLUMNS`, …) that reach the DOM through a template literal, and a
+ * `className=`-anchored match walks straight past every one of them. That hole
+ * was demonstrated on 2026-09-21: `rounded-xl` added to `PHOTO_LEFT_FADE`
+ * rendered live and the guard stayed green.
+ */
+function drawsUtility(source: string, utility: string): boolean {
+  const escaped = utility.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`).test(stripComments(source));
 }
 
 describe("StyleGuide", () => {
@@ -70,16 +105,40 @@ describe("StyleGuide", () => {
     }
   });
 
-  it("shows all four radius steps with their pixel values", () => {
+  it("shows all three radius steps with their pixel values", () => {
     renderGuide();
     for (const [cls, px] of [
       ["rounded-sm", 8],
       ["rounded-md", 14],
       ["rounded-lg", 20],
-      ["rounded-xl", 28],
     ] as const) {
       expect(screen.getByText(new RegExp(`${cls} · ${px}px`))).toBeInTheDocument();
     }
+  });
+
+  it("has no radius rung that nothing draws", async () => {
+    // Frame 149:2 draws rounded-[22px] on every card surface, from the
+    // 339x225 rail card to the 873x280 featured hero. 28px was never in the
+    // design, and an unused rung is how the sidebar defect survived: the
+    // correct token sat there while the code hardcoded a different number.
+    const fs = await import("node:fs/promises");
+    const [css, tw] = await Promise.all([
+      fs.readFile("app/globals.css", "utf8"),
+      fs.readFile("tailwind.config.ts", "utf8"),
+    ]);
+    expect(css).not.toContain("--radius-xl");
+    expect(tw).not.toContain('xl: "var(--radius-xl)"');
+    expect(resolveConfig(tailwindConfig).theme.borderRadius.xl).toBeUndefined();
+
+    const productSources = ["components", "app"].flatMap((root) =>
+      collectProductSources(path.join(process.cwd(), root)),
+    );
+    expect(productSources.length).toBeGreaterThan(6);
+    const sourcesWith = (utility: string) => productSources.filter((file) =>
+      drawsUtility(readFileSync(file, "utf8"), utility),
+    );
+    expect(sourcesWith("rounded-xl")).toEqual([]);
+    expect(sourcesWith("rounded-[22px]")).toEqual([]);
   });
 
   it("lists every colour token defined in globals.css", () => {

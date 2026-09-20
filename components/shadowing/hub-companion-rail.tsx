@@ -36,22 +36,22 @@ export function HubCompanionRail({ rail, labels }: HubCompanionRailProps) {
 
   return (
     <div className="space-y-md-lg">
-      <section aria-label={labels.preparation} className="rounded-xl border border-border bg-card p-md-lg">
+      <section aria-label={labels.preparation} className="rounded-lg border border-border bg-card p-md-lg">
         <h2 className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{labels.preparation}</h2>
         <p className="mt-sm text-sm text-muted-foreground">{labels.noPreparation}</p>
       </section>
 
-      <section aria-label={labels.todayGoal} className="rounded-xl border border-border bg-card p-md-lg">
+      <section aria-label={labels.todayGoal} className="rounded-lg border border-border bg-card p-md-lg">
         <h2 className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{labels.todayGoal}</h2>
         <p className="mt-sm text-sm text-muted-foreground">{labels.noGoal}</p>
       </section>
 
-      <section aria-label={labels.weeklyProgress} className="rounded-xl border border-border bg-card p-md-lg">
+      <section aria-label={labels.weeklyProgress} className="rounded-lg border border-border bg-card p-md-lg">
         <h2 className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{labels.weeklyProgress}</h2>
         <p className="mt-sm text-sm text-muted-foreground">{labels.noWeeklyActivity}</p>
       </section>
 
-      <section aria-label={labels.suggestion} className="rounded-xl border border-border bg-card p-md-lg">
+      <section aria-label={labels.suggestion} className="rounded-lg border border-border bg-card p-md-lg">
         <h2 className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{labels.suggestion}</h2>
         {suggestion && suggestionDetail ? (
           <div className="mt-sm">

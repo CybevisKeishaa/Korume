@@ -43,14 +43,13 @@ const TYPE_SCALE = [
   { cls: "text-caption", name: "caption" },
 ] as const;
 
-/** The four absolute radius steps (app/globals.css). Pixel values are
+/** The three absolute radius steps (app/globals.css). Pixel values are
  * labelled directly, not derived, so a rung change in globals.css shows up
  * here as a real mismatch to fix rather than silently relabelling itself. */
 const RADIUS_STEPS = [
   { cls: "rounded-sm", px: 8 },
   { cls: "rounded-md", px: 14 },
   { cls: "rounded-lg", px: 20 },
-  { cls: "rounded-xl", px: 28 },
 ] as const;
 
 /** The five typeface roles (app/globals.css --font-*, tailwind.config.ts).

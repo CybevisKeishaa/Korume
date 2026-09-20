@@ -34,6 +34,18 @@ vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
 import ExplorePage from "./page";
 
 describe("ExplorePage", () => {
+  it("caps the search field at its frame width without constraining its row", async () => {
+    // Frame 200:7705's 440px field is 28.65% of its 1536px canvas.
+    render(await ExplorePage({ searchParams: {} }));
+    const input = screen.getByRole("textbox", { name: "shadowing.hub.sections.search" });
+    const row = input.parentElement as HTMLElement;
+
+    expect(row.className).not.toContain("max-w-");
+    expect(input.className).toContain("max-w-[clamp(18rem,28.65vw,27.5rem)]");
+    expect(input.className).toContain("h-10");
+    expect(input.className).not.toContain("h-11");
+  });
+
   it("keeps C3's authored desktop sequence without a Companion rail", async () => {
     render(await ExplorePage({ searchParams: { q: "ramen", situation: "restaurant" } }));
 

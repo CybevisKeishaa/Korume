@@ -14,6 +14,16 @@ const config: Config = {
     "./lib/**/*.{ts,tsx}",
   ],
   theme: {
+    // This replaces Tailwind's default radius scale rather than extending it:
+    // `rounded-xl` must not silently fall back to the framework's 0.75rem.
+    borderRadius: {
+      none: "0px",
+      DEFAULT: "0.25rem",
+      sm: "var(--radius-sm)",
+      md: "var(--radius-md)",
+      lg: "var(--radius-lg)",
+      full: "9999px",
+    },
     extend: {
       colors: {
         background: "hsl(var(--background) / <alpha-value>)",
@@ -72,12 +82,6 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
         jp: ["var(--font-jp)", "var(--font-sans)", "sans-serif"],
       },
-      borderRadius: {
-        sm: "var(--radius-sm)",
-        md: "var(--radius-md)",
-        lg: "var(--radius-lg)",
-        xl: "var(--radius-xl)",
-      },
       spacing: {
         "2xs": "var(--space-2xs)",
         xs: "var(--space-xs)",
@@ -92,7 +96,6 @@ const config: Config = {
       width: {
         sidebar: "var(--layout-sidebar-width)",
         "sidebar-collapsed": "var(--layout-sidebar-collapsed)",
-        companion: "var(--layout-companion-width)",
       },
       height: {
         header: "var(--layout-header-height)",

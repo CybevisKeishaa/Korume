@@ -164,7 +164,7 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
                 noThumbnailLabel={labels.noThumbnail}
               />
             ) : (
-              <li key={item.lesson.id} className="rounded-xl border border-danger/40 bg-card p-md-lg">
+              <li key={item.lesson.id} className="rounded-lg border border-danger/40 bg-card p-md-lg">
                 <h3 className="font-semibold text-foreground">{item.lesson.title}</h3>
                 <p className="mt-xs text-sm text-muted-foreground">{labels.unavailable}</p>
                 {tracked?.youtubeVideoId === item.lesson.youtubeVideoId && job !== null ? (

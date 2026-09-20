@@ -50,6 +50,25 @@ function expectSideBySide(
   );
 }
 
+async function expectRailMatchesShellTrack(
+  rail: import("@playwright/test").Locator,
+): Promise<number> {
+  const [railBox, trackWidth] = await Promise.all([
+    rail.boundingBox(),
+    rail.evaluate((aside) => {
+      const shell = aside.parentElement;
+      if (!shell) throw new Error("Hub rail has no grid parent");
+      const columns = getComputedStyle(shell).gridTemplateColumns.split(" ");
+      return Number.parseFloat(columns.at(-1) ?? "");
+    }),
+  ]);
+  expect(railBox).not.toBeNull();
+  expect(trackWidth).toBeGreaterThan(0);
+  expect(railBox?.width).toBeCloseTo(trackWidth, 0);
+  expect(railBox?.width).not.toBeCloseTo(300, 0);
+  return railBox?.width ?? 0;
+}
+
 test("at 1023px, Shadowing exposes only the app-download handoff", async ({ page }) => {
   await page.setViewportSize({ width: 1023, height: 844 });
   await page.goto("/en/shadowing");
@@ -63,7 +82,24 @@ test("at 1023px, Shadowing exposes only the app-download handoff", async ({ page
   await expect(page.locator("[data-desktop-web]")).toBeHidden();
 });
 
-test("at desktop widths, the Hub keeps every truthful region and a fixed rail through nav collapse", async ({ page }) => {
+test("at 1024px, the Hub rail follows its resolved track through nav collapse", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await registerLearner(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/en/shadowing");
+  await page.waitForLoadState("networkidle");
+
+  const rail = page.getByRole("complementary", { name: enShadowing.hub.railLabel });
+  await expect(rail).toBeVisible();
+  const beforeRailWidth = await expectRailMatchesShellTrack(rail);
+
+  await page.getByRole("button", { name: "Hide navigation" }).click();
+  await expect(page.getByRole("button", { name: "Show navigation" })).toBeVisible();
+  const afterRailWidth = await expectRailMatchesShellTrack(rail);
+  expect(afterRailWidth).toBeGreaterThanOrEqual(beforeRailWidth);
+});
+
+test("at desktop widths, the Hub keeps every truthful region and a fluid rail through nav collapse", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
   await registerLearner(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -117,7 +153,7 @@ test("at desktop widths, the Hub keeps every truthful region and a fixed rail th
   const beforeRail = await rail.boundingBox();
   expect(beforeMain).not.toBeNull();
   expect(beforeRail).not.toBeNull();
-  expect(beforeRail?.width).toBeCloseTo(300, 0);
+  await expectRailMatchesShellTrack(rail);
   expectSideBySide(beforeMain, beforeRail);
   await assertNoHorizontalOverflow(page);
 
@@ -129,7 +165,7 @@ test("at desktop widths, the Hub keeps every truthful region and a fixed rail th
   expect(afterMain).not.toBeNull();
   expect(afterRail).not.toBeNull();
   expect(afterMain?.width).toBeGreaterThan(beforeMain?.width ?? 0);
-  expect(afterRail?.width).toBeCloseTo(300, 0);
+  await expectRailMatchesShellTrack(rail);
   expectSideBySide(afterMain, afterRail);
   await assertNoHorizontalOverflow(page);
 

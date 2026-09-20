@@ -20,7 +20,7 @@ export function ExploreLessonCard({ lesson, eyebrow, labels, onPreview }: {
   onPreview: (lesson: ExploreLesson) => void;
 }) {
   return (
-    <li className="flex h-[298px] min-w-0 flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-raised">
+    <li className="flex h-[298px] min-w-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-raised">
       <div className="relative h-28 shrink-0 overflow-hidden bg-muted">
         {lesson.thumbnailUrl ? (
           <Image src={lesson.thumbnailUrl} alt="" fill sizes="(min-width: 1280px) 18.5rem, (min-width: 640px) 50vw, 100vw" className="object-cover opacity-65" />

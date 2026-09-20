@@ -692,3 +692,24 @@ The interface should quietly reshape itself around the learner's current intenti
 The learner should never need to fight the layout.
 
 Instead, the workspace should gently make room for the way they choose to study.
+
+# Frame Fidelity: shares, not constants
+
+A shell dimension read off a Figma frame is a **share of that frame's canvas**, not a pixel
+constant — unless the element is a fixed control (icon button, avatar, form-row height).
+
+A **persistent navigation rail that owns a collapsed state and a fixed text measure** is a fixed
+control under this rule. Scaling it crops labels rather than rebalancing the layout; its fixed and
+collapsed widths are its two intentional escapes.
+
+- App frames in the Korume file are drawn on a **1536** canvas. The auth, error and membership
+  batch and the marketing page are drawn on **1280**. Divide by the canvas the frame was drawn on.
+- A constant is allowed only as the `max` of a `clamp()`, where it caps the share at the value the
+  designer actually drew.
+- A percentage belongs on the grid **track**, never on the element sitting in that track — a
+  percentage there resolves against the track and applies itself twice.
+
+Why this exists: the companion rail shipped as a fixed `300px` measured off a 1536 frame. At a 1422
+viewport it held 27.8% of the shell, matching the frame's 27.3%; at 1280 it held 32.0% and the main
+column lost 19% of its width. Nothing about the rail was wrong at the width it was drawn for. See
+`docs/superpowers/specs/2026-09-20-desktop-density-pass-design.md`.
