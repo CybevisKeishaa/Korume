@@ -3,37 +3,37 @@
 > ## ▶ WHERE EXECUTION STANDS — 2026-09-21 (supersedes every block below,
 > including the correction banner, where they disagree)
 >
-> **Nothing is in flight. The tree is clean and `master` is green.** Local
-> `master` is `296c9a4`.
+> **ONE BRANCH IS IN FLIGHT: `desktop-density-scale`.** Local `master` is
+> `42197a6`; the branch sits at `f515bc2` in `.worktrees/desktop-density-scale`
+> and carries a spec and run state only, no code. Owner is Claude, awaiting the
+> owner's review of the spec.
 >
-> 🚨 **"Nothing pushed" is FALSE, and was false when this file last said it.**
-> Measured 2026-09-21: `git ls-remote origin refs/heads/master` returns
-> `296c9a4` — GitHub holds today's merge. `rev-list --left-right --count
-> origin/master...master` is `0 0`, not 54 ahead. `git reflog show
-> refs/remotes/origin/master` shows **`update by push`** for `296c9a4` at
-> 01:19:34 and for `ec402f6` at 19:37:16 the previous day, and back through
-> 2026-09-12 — each one minutes to an hour *after* the commit it carries, none
-> of them issued by the session that made the commit. **Something outside the
-> agent sessions pushes `master` to GitHub.** There are no git hooks
-> (`.git/hooks` holds only samples, no `core.hooksPath`) and no scheduled task
-> whose `Execute` matches git, so the mechanism is UNKNOWN — a wrapper script,
-> an IDE, a GUI client or another session are all still open. Until it is
-> found: (a) stop writing "nothing pushed" anywhere, (b) treat every merge to
-> `master` as **publishing to GitHub within minutes**, and (c) re-check
-> `L-021`'s "do NOT `git pull`" advice, whose premise was the 54-commit gap
-> that no longer exists.
+> ✅ **The "something pushes master" mystery is CLOSED, 2026-09-21: the owner
+> pushes it themselves.** They said so in as many words when this file's
+> previous block called the mechanism UNKNOWN. There is no wrapper script, no
+> hook and no rogue session. What stands from that investigation: `master` IS
+> on GitHub (`git ls-remote` returned `296c9a4`), so **never write "nothing
+> pushed" in this repo again**, and treat a merge to `master` as publishable at
+> the owner's discretion. `L-021`'s "do NOT `git pull`" advice rested on a
+> 54-commit gap that no longer exists and still needs re-checking.
 >
 > ⭐ **`git branch --no-merged master` is EMPTY** (re-measured 2026-09-21).
 >
 > Closed 2026-09-21, `--no-ff`, branch and worktree kept:
-> 0. **`desktop-density-pass`** at `296c9a4` — the shell now renders its
->    designed composition at a 1280 viewport, which is what the owner had been
->    getting only at browser zoom 90%. The rail is
+> 0. **`desktop-density-pass`** at `296c9a4` — ⚠️ **this entry overstated its
+>    result and is corrected by the NEXT ACTION block above.** It did NOT make
+>    the shell render the owner's zoom-90% composition at 1280: measured after
+>    the merge, the hub main column is 666.7px at 100% against 768.6px at 90%.
+>    It closed ~27% of the gap. What it did land, and what still stands: the
+>    rail is
 >    `clamp(15rem, 27.5%, 21.25rem)` on the grid track with the aside at
 >    `w-full`; the sidebar uses its measured 224px token; every card is
 >    `rounded-lg` and the 28px rung is deleted with its Tailwind key; the
 >    Explore search input is capped at its frame width. Main column measured
->    677.8px at 1280 against 613 on `master` before. Ten review findings, all
+>    677.8px at 1280 against 613 on `master` before — but that 677.8 was taken
+>    on a server without a scrollbar and the acceptance number (~684px) came
+>    from the branch's own clamp arithmetic, not from the composition the owner
+>    was judging against. Ten review findings, all
 >    closed — the two that mattered were guards, not geometry (an e2e case still
 >    pinning the deleted 300px constant, and a radius guard blind first to the
 >    file that violated it and then to the idiom this repo writes classes in);
@@ -101,17 +101,41 @@
 > earlier — `shadowing-explore-c3.md` and `shadowing-hub-plan-c2.md` missing
 > required headings — were closed by the `fd2fbdf` merge.
 >
-> **▶ THE NEXT ACTION IS ALREADY CHOSEN — do not re-offer this queue.** The
-> owner ruled on 2026-09-20 to port Figma screens *instead of* starting Layer 8,
-> and picked the **Auth + Error UX** cluster: reset password `333:210`, email
-> OTP `335:306`, restyle Login/Register, Error404 `335:1976`, error boundary
-> `337:2055`. That ruling had one precondition — a desktop density pass first —
-> and **that precondition is now spent** (`296c9a4`, above). So Auth + Error is
-> the live next branch. Two things bind it: `docs/product/decision-register.md`
-> **P14** stands, so the Apple and GitHub OAuth buttons the auth frames draw are
-> **not** ported (auth stays email + Google); and the frame-fidelity rule the
-> density pass left in `docs/design/screens/adaptive-layouts.md` applies — the
-> auth/error frames are drawn on a **1280** canvas, not 1536, so divide by 1280.
+> **▶ THE NEXT ACTION IS `desktop-density-scale` — NOT Auth + Error.**
+> Corrected 2026-09-21 after the owner supplied four screenshots. **The density
+> pass merged but did not close the symptom it was written to close.** Measured
+> on the post-merge server at viewport 1280, `/vi/shadowing` gives a **666.7px**
+> main column at zoom 100% against **768.6px** at 90%, and 267px more
+> whole-page scrolling. It closed ~27% of the gap and reported success against
+> an acceptance number (~684px) derived from its own clamp arithmetic rather
+> than from the composition the owner was comparing against. Its spec §1 opens
+> by ruling out the real cause — *"The 90% preference is not a preference for
+> smaller text"* — so it fixed four widths and never touched type, spacing,
+> radius, control height or icon size.
+>
+> Branch `desktop-density-scale`, worktree `.worktrees/desktop-density-scale`,
+> spec `docs/superpowers/specs/2026-09-21-desktop-density-scale-design.md`,
+> commits `94d8c96` and `f515bc2`. **Resume by asking the owner to review that
+> spec**; on approval Claude writes the plan and task packets and sets
+> `- Owner: Codex`. Six owner rulings bind it: reference viewport **1440**;
+> density bounded to **1280-1440 only**; the density pass's **sidebar carve-out
+> is revoked**; `caption` floors at 11px; typography consolidated by semantic
+> role FIRST (32 `text-sm` + 4 `text-xs` sites share a value with `text-body` /
+> `text-caption`, so a token change alone moves only 8 call sites); and **no CSS
+> `zoom`, no page-level override** — the owner rejected a `zoom: 0.9` wrapper
+> outright as a frame every later screen would have to be viewed through.
+>
+> **Auth + Error UX is the branch AFTER it**, unchanged otherwise: reset
+> password `333:210`, email OTP `335:306`, restyle Login/Register, Error404
+> `335:1976`, error boundary `337:2055`. `docs/product/decision-register.md`
+> **P14** still binds it — Apple and GitHub OAuth buttons are **not** ported,
+> auth stays email + Google — and those frames are drawn on a **1280** canvas.
+>
+> ⚠ Three `next dev` servers were found running from the MAIN checkout on
+> ports 3000/3001/3002, all sharing one `.next` and overwriting each other's
+> chunks; `:3000` returned `Cannot find module './vendor-chunks/
+> react-remove-scroll.js'` for `/vi/shadowing/explore`. Use one server, and do
+> not trust a measurement taken from a checkout running more than one.
 >
 > **The rest of the queue, explicitly NOT the next action:** (1) **Layer 8**
 > (PayOS billing, animation polish, performance audit) — deferred by the ruling
@@ -121,8 +145,9 @@
 > questions must be answered before any of it is built**; see
 > `mem:landing_page_port_run_state`. (3) **`EMAIL_PROVIDER=none` in
 > `almostgone.vn`'s production `.env`** — the only deploy blocker, and an OPS
-> task no commit here can close. (4) `borderRadius.DEFAULT`, deferred out of the
-> density pass by ruling — smallest of the four.
+> task no commit here can close. (4) `borderRadius.DEFAULT` is no longer a separate
+> deferred item — it falls inside the `desktop-density-scale` token
+> conversion, whose spec §9 surfaces it for a decision rather than assuming it.
 
 > ## ⚠️ CORRECTION BANNER — 2026-09-19 (superseded in part by the block above)
 >
