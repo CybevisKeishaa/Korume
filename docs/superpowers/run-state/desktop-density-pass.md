@@ -23,7 +23,8 @@ this one.
 ## Accepted commits
 
 - `b686945` — spec and this run state.
-- Plan, packet and the spec's D3/D4 corrections. No implementation commit yet.
+- `b3ede47` — plan, packet and the spec's D3/D4 corrections.
+- `5afa978` — T1 changes the app sidebar from literal `w-60` to measured `w-sidebar`.
 
 ## Contracts and decisions
 
@@ -50,6 +51,9 @@ run --reporter=dot` · `npm run lint` · `npm run build` · Playwright (this bra
 app chrome, so it is not waivable) · a manual read at 1280 / 1422 / 1920 on `/vi/shadowing` and
 `/vi/shadowing/explore`.
 
+T1: `npx vitest run components/layout/app-nav.test.tsx -t "measured layout token"` went red because
+the rendered nav had `w-60`, then `npx vitest run components/layout/app-nav.test.tsx` passed (22 tests).
+
 Acceptance number: main column at 1280 must measure **~684 px**, up from the 613 px measured on
 `master` at `ec402f6`. A result far from that means D1 or D2 did not land.
 
@@ -72,9 +76,8 @@ handed to Codex.
 
 ## Next actions
 
-1. Codex reads the packet `.superpowers/sdd/desktop-density-pass/density-pass-brief.md`, then
-   implements the five tasks of the plan in order, under TDD, with a `code-reviewer` pass and a
-   checkpoint here after each accepted task.
+1. Codex implements T2 (the companion rail) under TDD, with a `code-reviewer` pass and a checkpoint
+   here after the accepted task.
 2. T2 Step 5 requires a decision about `components/marketing/hero-video-card.tsx`; record which of
    the two cases it was under `## Contracts and decisions`.
 3. Codex fills in the six `grid-template-columns` strings, runs the full gate including both
