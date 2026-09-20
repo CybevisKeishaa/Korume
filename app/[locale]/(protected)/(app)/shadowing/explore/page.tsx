@@ -79,8 +79,8 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
           <form action={path} className="mt-xl" role="search" aria-label={tHub("sections.search")}>
             {query.situation ? <input type="hidden" name="situation" value={query.situation} /> : null}
             <label className="sr-only" htmlFor="explore-search">{tHub("sections.search")}</label>
-            <div className="flex gap-sm">
-              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-11 min-w-0 flex-1 rounded-lg border border-border bg-card px-md text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+            <div className="flex max-w-[clamp(18rem,33.5%,27.5rem)] gap-sm">
+              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-card px-md text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
               <button type="submit" className="rounded-md bg-primary px-md text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{tHub("sections.search")}</button>
             </div>
           </form>

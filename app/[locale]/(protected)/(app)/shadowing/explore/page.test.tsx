@@ -34,6 +34,19 @@ vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
 import ExplorePage from "./page";
 
 describe("ExplorePage", () => {
+  it("caps the search row at the frame width instead of filling the column", async () => {
+    // Frame 200:7705 draws the field 440 wide inside a 1312 content region
+    // (33.5%). Shipped, flex-1 on the input gave it 818px at a 1280 viewport.
+    // 27.5rem = 440px is the frame value and the cap; 18rem is the floor.
+    render(await ExplorePage({ searchParams: {} }));
+    const input = screen.getByRole("textbox", { name: "shadowing.hub.sections.search" });
+    const row = input.parentElement as HTMLElement;
+
+    expect(row.className).toContain("max-w-[clamp(18rem,33.5%,27.5rem)]");
+    expect(input.className).toContain("h-10");
+    expect(input.className).not.toContain("h-11");
+  });
+
   it("keeps C3's authored desktop sequence without a Companion rail", async () => {
     render(await ExplorePage({ searchParams: { q: "ramen", situation: "restaurant" } }));
 
