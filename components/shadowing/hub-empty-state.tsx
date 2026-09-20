@@ -13,7 +13,7 @@ export interface HubEmptyStateProps {
  */
 export function HubEmptyState({ title, body, action }: HubEmptyStateProps) {
   return (
-    <div className="mt-md rounded-xl border border-border bg-card p-md-lg">
+    <div className="mt-md rounded-lg border border-border bg-card p-md-lg">
       <h3 className="text-body font-semibold text-foreground">{title}</h3>
       <p className="mt-xs text-sm text-muted-foreground">{body}</p>
       {action ? <div className="mt-md">{action}</div> : null}

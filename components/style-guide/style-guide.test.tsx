@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import resolveConfig from "tailwindcss/resolveConfig";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
+import tailwindConfig from "../../tailwind.config";
 import { StyleGuide } from "./style-guide";
 
 /**
@@ -70,16 +72,44 @@ describe("StyleGuide", () => {
     }
   });
 
-  it("shows all four radius steps with their pixel values", () => {
+  it("shows all three radius steps with their pixel values", () => {
     renderGuide();
     for (const [cls, px] of [
       ["rounded-sm", 8],
       ["rounded-md", 14],
       ["rounded-lg", 20],
-      ["rounded-xl", 28],
     ] as const) {
       expect(screen.getByText(new RegExp(`${cls} · ${px}px`))).toBeInTheDocument();
     }
+  });
+
+  it("has no radius rung that nothing draws", async () => {
+    // Frame 149:2 draws rounded-[22px] on every card surface, from the
+    // 339x225 rail card to the 873x280 featured hero. 28px was never in the
+    // design, and an unused rung is how the sidebar defect survived: the
+    // correct token sat there while the code hardcoded a different number.
+    const fs = await import("node:fs/promises");
+    const [css, tw] = await Promise.all([
+      fs.readFile("app/globals.css", "utf8"),
+      fs.readFile("tailwind.config.ts", "utf8"),
+    ]);
+    expect(css).not.toContain("--radius-xl");
+    expect(tw).not.toContain('xl: "var(--radius-xl)"');
+    expect(resolveConfig(tailwindConfig).theme.borderRadius.xl).toBeUndefined();
+
+    const cardSourceFiles = [
+      "components/shadowing/hub-companion-rail.tsx",
+      "components/shadowing/hub-empty-state.tsx",
+      "components/shadowing/hub-featured-hero.tsx",
+      "components/shadowing/hub-lesson-card.tsx",
+      "components/shadowing/hub-library-section.tsx",
+      "app/[locale]/(protected)/(app)/shadowing/explore/page.tsx",
+    ];
+    expect(cardSourceFiles).toHaveLength(6);
+    const cardSources = await Promise.all(
+      cardSourceFiles.map((file) => fs.readFile(file, "utf8")),
+    );
+    expect(cardSources.some((source) => source.includes("rounded-xl"))).toBe(false);
   });
 
   it("lists every colour token defined in globals.css", () => {

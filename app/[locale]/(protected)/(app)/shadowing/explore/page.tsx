@@ -128,7 +128,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
         </section>
 
         {data.quietSuggestion?.reason?.kind === "known-word-fit" ? (
-          <section aria-label={tCommon("recommendations.heading")} className="rounded-xl border border-border bg-card p-md-lg">
+          <section aria-label={tCommon("recommendations.heading")} className="rounded-lg border border-border bg-card p-md-lg">
             <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{tCommon("recommendations.heading")}</p>
             <p className="mt-xs text-body font-semibold text-foreground">{data.quietSuggestion.title}</p>
             <p className="mt-xs text-sm text-muted-foreground">{tCommon("recommendations.knownWords", { percent: Math.round(data.quietSuggestion.reason.knownRatio * 100) })}</p>
