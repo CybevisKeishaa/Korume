@@ -96,7 +96,6 @@ const config: Config = {
       width: {
         sidebar: "var(--layout-sidebar-width)",
         "sidebar-collapsed": "var(--layout-sidebar-collapsed)",
-        companion: "var(--layout-companion-width)",
       },
       height: {
         header: "var(--layout-header-height)",

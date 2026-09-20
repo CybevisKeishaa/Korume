@@ -40,6 +40,7 @@ describe("TwoColumnShell", () => {
     // aside would resolve against the track, i.e. 27.5% of 27.5%.
     expect(rail.className).toContain("w-full");
     expect(rail.className).not.toContain("w-[--layout-companion-width]");
+    expect(rail.className).not.toContain("shrink-0");
   });
 
   it("keeps main and rail in the desktop grid without hiding the rail", () => {

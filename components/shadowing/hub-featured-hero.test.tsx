@@ -48,4 +48,18 @@ describe("HubFeaturedHero", () => {
 
     expect(screen.getByRole("link", { name: "Continue lesson: Ordering coffee at a cozy café" })).toBeInTheDocument();
   });
+
+  it("reports the measured desktop slot to the image optimizer", () => {
+    render(
+      <HubFeaturedHero
+        lesson={{ ...lesson, thumbnailUrl: "https://example.com/featured.jpg" }}
+        labels={{ eyebrow: "Featured lesson", start: "Start lesson", continue: "Continue lesson", noThumbnail: "No thumbnail", jlptLabel: "Japanese level", durationLabel: "Lesson length", duration: (minutes) => `${minutes} minutes`, emptyTitle: "Featured lessons are selected editorially", emptyBody: "A featured lesson will appear here when one is available." }}
+      />,
+    );
+
+    expect(document.querySelector("img")).toHaveAttribute(
+      "sizes",
+      "(min-width: 1549px) calc(100vw - 42.25rem), (min-width: 1024px) calc(72.5vw - 15.625rem), 100vw",
+    );
+  });
 });

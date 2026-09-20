@@ -34,15 +34,14 @@ vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
 import ExplorePage from "./page";
 
 describe("ExplorePage", () => {
-  it("caps the search row at the frame width instead of filling the column", async () => {
-    // Frame 200:7705 draws the field 440 wide inside a 1312 content region
-    // (33.5%). Shipped, flex-1 on the input gave it 818px at a 1280 viewport.
-    // 27.5rem = 440px is the frame value and the cap; 18rem is the floor.
+  it("caps the search field at its frame width without constraining its row", async () => {
+    // Frame 200:7705's 440px field is 28.65% of its 1536px canvas.
     render(await ExplorePage({ searchParams: {} }));
     const input = screen.getByRole("textbox", { name: "shadowing.hub.sections.search" });
     const row = input.parentElement as HTMLElement;
 
-    expect(row.className).toContain("max-w-[clamp(18rem,33.5%,27.5rem)]");
+    expect(row.className).not.toContain("max-w-");
+    expect(input.className).toContain("max-w-[clamp(18rem,28.65vw,27.5rem)]");
     expect(input.className).toContain("h-10");
     expect(input.className).not.toContain("h-11");
   });

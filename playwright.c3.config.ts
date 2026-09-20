@@ -1,10 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3001;
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3001);
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: "shadowing-explore.spec.ts",
+  testMatch: "shadowing-*.spec.ts",
   reporter: "list",
   use: { baseURL: `http://localhost:${PORT}`, locale: "en", trace: "on-first-retry" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

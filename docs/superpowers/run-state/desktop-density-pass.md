@@ -161,21 +161,26 @@ Measurements used an isolated production server on `http://localhost:3002`, auth
 local test learner in the Vietnamese locale. The existing 3000 server was not stopped or reused for
 branch browser evidence.
 
-- Owner: Codex
+- Owner: Claude
+
+## Review-fix verification (Codex, 2026-09-21)
+
+F1-F6/F8 are fixed. The guard's 300-file walk went red on `rounded-[22px]`; target suites then
+passed 76 tests (final style/token pair: 64). Typecheck, lint, build, diff check and full Vitest
+(324 files / 3082 tests) passed. At 1024px the branch production Hub rail / track was 240 / 240px,
+then 257.390625 / 257.391px after collapse. The Hub file is 2 passed / 1 known import-copy baseline
+failure at line 148; the temporary server stopped. Claude re-reviews this delta, records any lesson,
+and merges `--no-ff` if approved; F7/F9 remain ruled/deferred.
 
 ## Blockers
-
-The baseline question is answered (see the review section). The branch does not merge until F1-F4,
-F5, F6 and F8 are fixed and the Hub has a Playwright run against a branch build.
-
+No active Codex blocker; the remaining Hub import-copy failure is the recorded baseline.
 One of these cannot be mutation-checked the usual way: F1's assertion sits behind a baseline
 failure at line 112 of the same case, so it never executes on `master`. Do not repair line 112 —
 that is not this branch's defect. Read the rail width the case reports instead, and record the
 number, not the fact that it ran (`docs/lessons.md` L-002).
 
 ## Next actions
-
-1. Codex fixes, each with its test first:
+1. Completed by Codex: F1-F6/F8 and the branch-production browser gate.
    - **F1** `tests/e2e/shadowing-hub.spec.ts` — both rail assertions read the resolved clamp
      instead of 300 (spec §7 T6).
    - **F2** `components/style-guide/style-guide.test.tsx` — the D3 guard becomes a directory walk
@@ -192,7 +197,4 @@ number, not the fact that it ran (`docs/lessons.md` L-002).
      `sizes` hint in `components/shadowing/hub-featured-hero.tsx` against the measured slot.
 2. Codex reruns the full gate from spec §8, **plus** `shadowing-hub.spec.ts` against a worktree
    production build, and records the rail width it measures at 1024 and after nav collapse.
-3. Codex sets `- Owner: Claude`.
-4. Claude re-reviews the delta only, records lessons, and merges `--no-ff`.
-
 F7 and F9 need no code: both are recorded in the spec by owner ruling (D1 and §9 respectively).

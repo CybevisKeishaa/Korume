@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import resolveConfig from "tailwindcss/resolveConfig";
@@ -26,6 +26,21 @@ function renderGuide() {
       </ToastProvider>
     </ThemeProvider>,
   );
+}
+
+function collectProductSources(directory: string): string[] {
+  const sources: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) sources.push(...collectProductSources(file));
+    else if (/\.tsx?$/.test(entry.name) && !entry.name.includes(".test.")) sources.push(file);
+  }
+  return sources;
+}
+
+function classNameUses(source: string, utility: string): boolean {
+  const escaped = utility.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp("\\bclassName\\s*=\\s*(?:[\"'][^\"']*" + escaped + "|\\{[^}]*" + escaped + ")").test(source);
 }
 
 describe("StyleGuide", () => {
@@ -97,19 +112,15 @@ describe("StyleGuide", () => {
     expect(tw).not.toContain('xl: "var(--radius-xl)"');
     expect(resolveConfig(tailwindConfig).theme.borderRadius.xl).toBeUndefined();
 
-    const cardSourceFiles = [
-      "components/shadowing/hub-companion-rail.tsx",
-      "components/shadowing/hub-empty-state.tsx",
-      "components/shadowing/hub-featured-hero.tsx",
-      "components/shadowing/hub-lesson-card.tsx",
-      "components/shadowing/hub-library-section.tsx",
-      "app/[locale]/(protected)/(app)/shadowing/explore/page.tsx",
-    ];
-    expect(cardSourceFiles).toHaveLength(6);
-    const cardSources = await Promise.all(
-      cardSourceFiles.map((file) => fs.readFile(file, "utf8")),
+    const productSources = ["components", "app"].flatMap((root) =>
+      collectProductSources(path.join(process.cwd(), root)),
     );
-    expect(cardSources.some((source) => source.includes("rounded-xl"))).toBe(false);
+    expect(productSources.length).toBeGreaterThan(6);
+    const sourcesWith = (utility: string) => productSources.filter((file) =>
+      classNameUses(readFileSync(file, "utf8"), utility),
+    );
+    expect(sourcesWith("rounded-xl")).toEqual([]);
+    expect(sourcesWith("rounded-[22px]")).toEqual([]);
   });
 
   it("lists every colour token defined in globals.css", () => {

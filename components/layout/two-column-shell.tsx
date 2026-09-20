@@ -38,7 +38,7 @@ export function TwoColumnShell({
       {rail ? (
         <aside
           aria-label={railLabel}
-          className="sticky top-md-lg w-full shrink-0 self-start"
+          className="sticky top-md-lg w-full self-start"
         >
           {rail}
         </aside>

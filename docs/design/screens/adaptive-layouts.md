@@ -698,6 +698,10 @@ Instead, the workspace should gently make room for the way they choose to study.
 A shell dimension read off a Figma frame is a **share of that frame's canvas**, not a pixel
 constant — unless the element is a fixed control (icon button, avatar, form-row height).
 
+A **persistent navigation rail that owns a collapsed state and a fixed text measure** is a fixed
+control under this rule. Scaling it crops labels rather than rebalancing the layout; its fixed and
+collapsed widths are its two intentional escapes.
+
 - App frames in the Korume file are drawn on a **1536** canvas. The auth, error and membership
   batch and the marketing page are drawn on **1280**. Divide by the canvas the frame was drawn on.
 - A constant is allowed only as the `max` of a `clamp()`, where it caps the share at the value the
