@@ -199,6 +199,19 @@ token already holds. `@1280` is what renders at the owner's viewport.
 When a rung reaches its floor its line-height floors with it, preserving the authored ratio; this
 is why `caption` is 11 / 16.5 and not 11 / 16.
 
+**The floor is `max()`, not a `clamp` bound, and the difference is not cosmetic.** `12 × w/1440`
+reaches 11 px at w = 1320, so `caption` is under its floor across the whole 1280–1320 band, not
+only at the 1280 endpoint. A `clamp` minimum on `--density-unit` holds the *unit* at 1280 and would
+leave that band unguarded. The floor therefore wraps the token:
+
+```css
+--text-caption:    max(0.6875rem,   calc(12 * var(--density-unit)));  /* 11px    */
+--leading-caption: max(1.03125rem,  calc(18 * var(--density-unit)));  /* 16.5px  */
+```
+
+`caption` is the only rung that needs this: the next one up, `body`, bottoms out at 12.44 px and
+never approaches a floor inside the range.
+
 ### 6.2 Spacing — px
 
 | token | @1440 | @1280 | | token | @1440 | @1280 |
