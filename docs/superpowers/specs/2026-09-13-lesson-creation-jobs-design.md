@@ -160,7 +160,7 @@ window alone would call that queue dead. Liveness is read from the `running` row
 in the event history, not from the current lease set: every path that writes one
 either mints a lease or presents a live matching one, so such a row proves a
 worker was alive, while a lease test answers only "right this instant" — and the
-instant a worker pass would ask is one where it holds none.
+instant the rejected worker-pass sweep would have asked is one where it held none.
 
 The rule runs on the learner's status read, scoped to the job being polled, and
 NOT in the worker pass. A pass must not sweep: `claim` accepts any `queued` row
@@ -169,12 +169,12 @@ three, so every row a pass could sweep is one it can serve — the first pass af
 an outage longer than the window would fail the whole backlog instead of working
 it. A learner whose tab is closed therefore keeps a stranded row until something
 asks about it; applying the same rule at enqueue time is the deferred follow-up
-that closes that. The rule is one SQL function
-applied by the learner's own status read, scoped to the job being polled, and by
-each worker pass, sweeping the queue; the read path is what matters, because with
-the worker stopped the pass does not run at all. Ending the row is what gives the
-learner a way out: the terminal state stops the poll and shows the retry, retry
-accepts a `failed` job, and enqueue will record a fresh one for that video again.
+that closes that. Ending the row is what gives the learner a way out: the
+terminal state stops the poll and shows the retry, retry accepts a `failed` job,
+and enqueue will record a fresh one for that video again. Accepted with the read
+path: a poll landing between a worker restart and its first `claim` can still end
+a due, over-window row the worker was about to serve — one job, and the retry the
+terminal state reveals is the way back.
 
 Transient failures use bounded exponential backoff and retain their public
 error category. Permanent failures include malformed input discovered before

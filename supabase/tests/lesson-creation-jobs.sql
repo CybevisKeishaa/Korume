@@ -611,11 +611,11 @@ begin
   raise notice 'F5f PASS  an out-of-range window is refused';
 
   -- F5g  The case the first version of this rule got wrong, and the reason the
-  -- guard reads claim history rather than the instantaneous lease set. A worker
-  -- pass sweeps BETWEEN its recovery and its claim, so a healthy single-concurrency
-  -- worker holds no lease at that moment; with only a live-lease test, a backlog
-  -- older than the window was failed wholesale — head first, because `claim` is
-  -- FIFO. Reviewed and reproduced against a live database, 2026-09-20.
+  -- guard reads the `running`-event history rather than the instantaneous lease
+  -- set. The sweep then ran BETWEEN the recovery and the claim of a pass, so a
+  -- healthy single-concurrency worker held no lease at that moment; with only a
+  -- live-lease test, a backlog older than the window was failed wholesale — head
+  -- first, because `claim` is FIFO. Reviewed and reproduced live, 2026-09-20.
   insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
     youtube_video_id, state, step, attempt_count, available_at, created_at, updated_at)
   values (uid_b, 'learner', 'PRIVATE', 'C4GATEBKLG1', 'queued', 'deduplicating', 0,

@@ -149,30 +149,30 @@ own evidence.
   200-line cap, which PowerShell counts one line differently from `wc -l`. Its
   other findings all belong to merged branches' run states (shadowing Explore C3
   and Hub Plan C2), not to this one.
-- Review debt: one item — this third fix wave. Everything through `0cf4c74` is
-  reviewed and closed.
+- Review debt: none. The wave-3 review closed the last item.
 - **Sweep on the enqueue path — RULED 2026-09-20: follow-up, not this branch.** It
   is now the only thing that would free a learner who closed the tab, since the
   worker pass no longer sweeps; nothing polls that row, so it waits.
 
 ## Next actions
 
-1. **Review this third fix wave.** Its Critical was a second doorway to the same
-   harm: the pass swept BEFORE claiming, so the first pass after an outage longer
-   than the window failed the whole backlog and claimed nothing. **RULED 2026-09-20:
-   the pass no longer sweeps** — `claim` accepts every row the sweep could reach, so
-   sweeping there could only destroy work the worker was about to do. Re-derive
-   that, and that a `running` event implies a live lease (it comes from `claim` OR
-   `transition`, not `claim` alone — the previous wave's prose said otherwise).
+1. **The third fix wave is REVIEWED, 2026-09-20 — 0 Critical, 0 code findings.**
+   It re-derived both load-bearing facts: the `attempt_count < 3` bound holds
+   across all five writers of `queued`, so `claim` serves every row the sweep
+   could have reached; and a `running` event implies a live lease (`claim` OR
+   `transition`, not `claim` alone). Its one Important was prose — three
+   authority docs still described the removed sweep; a fourth wave closed it.
 2. Then `git merge --no-ff` (`.codex/docs/workflow.md` §7). Do not push unless
    the owner asks.
-3. Follow-ups, not blockers. **M3 is now CLOSED** — ruled in, 2026-09-20, because
-   the staleness rule routes more jobs through that same retry UI. Also
-   deliberately NOT in this branch: **the 23505
-   overload**, where `retry_lesson_creation_job` raises the system
-   unique-violation code for a business rule. No spurious 23505 is reachable
-   today and `isNotRetryableRejection` documents why; the durable fix is a custom
-   SQLSTATE, which changes an applied migration and needs the live gate re-run.
+3. Follow-ups, not blockers. **M3 is CLOSED** — ruled in 2026-09-20, the staleness
+   rule routes more jobs through that retry UI. Deliberately NOT in this branch:
+   **the 23505 overload**, where `retry_lesson_creation_job` raises the system
+   unique-violation code for a business rule (no spurious one is reachable today,
+   and `isNotRetryableRejection` documents why; the durable fix is a custom
+   SQLSTATE, changing an applied migration and needing the live gate re-run).
+   Two more from the wave-3 review: a `check (state <> 'queued' or attempt_count
+   < 3)` to hold the no-sweep bound in the database, and one home for the status
+   ladder the two retry routes duplicate.
 4. A sibling of I2, **not fixed and not a regression**: a job stuck in `running`
    with an expired lease has the same dead end, lease recovery being worker-only.
    With the worker running it recovers next tick; with it off, not at all.
@@ -189,12 +189,12 @@ lesson and refunded the quota slot it had consumed.
 the refusal inside `pg_advisory_xact_lock` is a guarantee (`L-040`).
 
 **Where does the "queued job the worker can no longer reach" rule run? — RULED
-2026-09-19: on the learner's status read AND each worker pass.** The review
-proposed the worker pass alone; re-derivation showed
-`recover_expired_lesson_creation_jobs` has one caller, `runLessonCreationPass`,
-so with the worker stopped — the case that strands the rows — it would never run.
-The read path costs a write on a `GET`, accepted over leaving the learner unable
-to re-import. **Liveness is read from claim history, not the lease set** — see
-Next actions 1 for why the first version of that was wrong.
+2026-09-19: on the status read AND each worker pass. SUPERSEDED 2026-09-20: the
+status read ONLY — the pass does not sweep at all.** The review proposed the pass
+alone; `recover_expired_lesson_creation_jobs` has one caller, so with the worker
+stopped — the case that strands the rows — it would never run. The read path costs
+a write on a `GET`, accepted over leaving the learner unable to re-import.
+**Liveness is read from the `running`-event history, not the lease set** — the
+guard comment in the migration says why the lease-set version was wrong.
 
 **Migrations are edited in place** — ruled 2026-09-19, now AGENTS.md §6.

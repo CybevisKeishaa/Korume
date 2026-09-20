@@ -52,8 +52,10 @@ create table public.lesson_creation_job_events (
   check ((state = 'failed') = (step = 'failed'))
 );
 create index lesson_creation_job_events_history on public.lesson_creation_job_events (job_id, id);
--- Claims only: `fail_stale_queued_lesson_creation_jobs` asks "was a worker alive
--- inside the window?", and a `running` event is the only record of one acting.
+-- `running` events, not claims alone: `fail_stale_queued_lesson_creation_jobs`
+-- asks "was a worker alive inside the window?", and every `running` event answers
+-- it — from `claim`, which mints a lease, or from `transition`, which refuses
+-- without a live one. The index name says claims; this comment is the fact's home.
 create index lesson_creation_job_events_claims on public.lesson_creation_job_events (created_at)
   where state = 'running';
 alter table public.lesson_creation_jobs enable row level security;
@@ -216,10 +218,11 @@ $$;
 -- the cheap index-backed half.
 --
 -- An instantaneous "does anything hold a live lease" test is NOT enough, and was
--- the first version of this guard: `runLessonCreationPass` sweeps between its
--- recovery and its claim, which is precisely when a single-concurrency worker
--- holds no lease, so a healthy worker working through a backlog would fail the
--- head of its own queue — the exact outcome the pairing exists to prevent.
+-- the first version of this guard: the sweep then still ran inside
+-- `runLessonCreationPass`, between its recovery and its claim, which is precisely
+-- when a single-concurrency worker holds no lease, so a healthy worker working
+-- through a backlog failed the head of its own queue. The pass no longer sweeps
+-- at all (see below); the read path can still ask, and it asks this way.
 -- Reviewed 2026-09-20; reproduced against a live database before this fix.
 --
 -- The claim-event signal is also what keeps this sweep from blocking itself: the
@@ -231,9 +234,10 @@ $$;
 -- is being retried on schedule is never stale. `attempt_count` is left alone —
 -- the row never ran, so it owes no attempt, and `retry` resets the counter anyway.
 --
--- p_job_id narrows it to one row (the learner's own status read, after that read
--- has proven ownership); null sweeps the queue (each worker pass). Both callers
--- share this one definition of "stale".
+-- p_job_id names the row: the learner's own status read, after that read has
+-- proven ownership, is the one production caller. The null form sweeps the queue
+-- and is kept for the live gate and for the deferred enqueue-path rule; no
+-- TypeScript can pass it, and the worker pass does not sweep at all.
 create function public.fail_stale_queued_lesson_creation_jobs(p_now timestamptz,
   p_max_age_seconds integer, p_job_id uuid default null)
 returns integer language plpgsql security definer set search_path = '' as $$

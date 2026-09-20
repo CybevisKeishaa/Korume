@@ -271,10 +271,11 @@ describe("durable lesson creation SQL contract", () => {
     if (!body) throw new Error("the stale-queued sweeper is missing");
 
     // A single-concurrency worker makes a healthy job wait behind others; without
-    // this guard the window alone would call that queue dead. The claim-history
-    // half is the load-bearing one: a pass sweeps between its recovery and its
-    // claim, holding no lease, so an instantaneous lease test alone failed the
-    // head of a healthy backlog (reviewed 2026-09-20, reproduced live).
+    // this guard the window alone would call that queue dead. The running-event
+    // half is the load-bearing one: while the sweep still ran in the worker pass it
+    // ran between recovery and claim, holding no lease, so an instantaneous lease
+    // test alone failed the head of a healthy backlog (reviewed 2026-09-20,
+    // reproduced live).
     expect(body).toContain("state = 'running' and lease_expires_at > p_now");
     expect(body).toContain("or exists (select 1 from public.lesson_creation_job_events");
     expect(body).toContain("and created_at > p_now - make_interval(secs => p_max_age_seconds)) then");
@@ -288,8 +289,8 @@ describe("durable lesson creation SQL contract", () => {
     // Terminal and retryable, and it consumes no attempt — the row never ran.
     expect(body).toContain("state = 'failed', step = 'failed', public_error_code = 'temporary_failure'");
     expect(body).not.toContain("attempt_count");
-    // One row (a learner's own poll) or the whole queue (a worker pass), one
-    // definition of stale.
+    // One row (the learner's own poll, the only production caller) or the whole
+    // queue (the live gate, and the deferred enqueue-path rule), one definition.
     expect(body).toContain("(p_job_id is null or id = p_job_id)");
     expect(body).toContain("for update skip locked");
     // The window stays the caller's, so it never gains a second home in SQL.

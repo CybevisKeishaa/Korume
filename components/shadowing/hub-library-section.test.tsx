@@ -256,8 +256,20 @@ describe("HubLibrarySection", () => {
     expect(shown).toHaveAttribute("role", "alert");
   });
 
-  it("announces a refused enqueue and leaves the lesson available for another attempt", async () => {
+  it("names the disabled worker when the enqueue itself is refused, and leaves the lesson available", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503 } as Response));
+
+    render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+    // The importer answers this status in these words; until the wave-3 review
+    // this surface said "couldn't retry captions" for the same refusal.
+    expect(await screen.findByRole("alert")).toHaveTextContent("Lesson creation is unavailable right now.");
+    expect(screen.getByRole("button", { name: "Try again" })).not.toBeDisabled();
+  });
+
+  it("keeps the generic words when the enqueue fails for any other reason", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 } as Response));
 
     render(<HubLibrarySection items={[{ lesson, state: "unavailable" }]} labels={labels} />);
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
