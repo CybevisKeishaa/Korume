@@ -1,6 +1,20 @@
 # Codex Long-Task Protocol Design
 
-**Status:** Proposed
+**Status:** Implemented, partly superseded
+**Superseded by:** D1a and D2a of `2026-09-19-dual-harness-workflow-design.md`
+
+> ⚠️ **D1 below is reversed. Do not act on it.** This document was implemented,
+> and then its central decision was overturned: two harnesses now work this
+> repository, not one. `.claude/` is **live** — it holds adapter stubs that the
+> Claude Code harness requires and that `npm run verify:protocol` enforces.
+> Every clause that calls `.claude/` retired, that forbids a live instruction
+> from pointing at it, or that asks the validator to reject such a pointer, is
+> **no longer the rule**, and each is marked below.
+>
+> What survives unchanged: the lowercase `.codex/` canonical root, one compact
+> run state per active branch (D2, now extended with an `- Owner:` line), and
+> the executable validator. The current rule is `AGENTS.md` §8 and
+> `.codex/docs/workflow.md` §8.
 
 ## Goal
 
@@ -25,7 +39,13 @@ the code they describe.
 
 ## Decisions
 
-### D1 — Codex is the sole active agent runtime
+### D1 — Codex is the sole active agent runtime — ❌ REVERSED 2026-09-19
+
+> **Reversed by D1a of `2026-09-19-dual-harness-workflow-design.md`.** Two
+> harnesses are active. The canonical-root half of this decision stands; the
+> sole-runtime half does not. The table below is still correct — `.codex/` is
+> the only home of every fact — but `.claude/` is no longer retired: it is a
+> live adapter tree of stubs that hold no fact of their own.
 
 The canonical active configuration root is lowercase `.codex/`. Lowercase is
 intentional for portability: Windows treats `.Codex` and `.codex` as the same
@@ -44,10 +64,13 @@ The active homes are:
 | Current state of one long-running branch | `docs/superpowers/run-state/<branch>.md` |
 | Detailed feature design and executable task plan | `docs/superpowers/specs/` and `docs/superpowers/plans/` |
 
-The tracked Claude role files and workflow are retired from the active path in
+~~The tracked Claude role files and workflow are retired from the active path in
 the migration. Git history remains the archive; no live instruction may point
-to them. Personal Claude session history outside the repository is read-only
-provenance, never a required runtime dependency.
+to them.~~ ❌ **No longer the rule.** `.claude/agents/`, `.claude/commands/` and
+`.claude/docs/workflow.md` are live adapter stubs, capped at 25 lines and
+required to name their canonical `.codex/` counterpart; `AGENTS.md` and
+`CLAUDE.md` point at them deliberately. Personal Claude session history outside
+the repository is read-only provenance, never a required runtime dependency.
 
 ### D2 — One compact run state per active branch
 
@@ -152,17 +175,24 @@ would require a successor to reconstruct decisions from chat history.
 
 ## Migration
 
+> ⚠️ This migration ran in 2026-09-05 and is history. Steps 2 and 5 were
+> **partly undone** on 2026-09-19 and are annotated below. Do not replay them.
+
 1. Add the current `.codex/agents/*.toml` files to Git and make their
    `Read first` sections point only to canonical Codex paths.
 2. Move the active workflow content from `.claude/docs/workflow.md` to
-   `.codex/docs/workflow.md`, update `AGENTS.md`, and remove active Claude
-   role/workflow configuration so no fact has two live homes.
+   `.codex/docs/workflow.md`, update `AGENTS.md`, and ~~remove active Claude
+   role/workflow configuration~~ **reduce it to adapter stubs** so no fact has
+   two live homes. ❌ The files were deleted here and **restored as stubs** on
+   2026-09-19; deleting them again breaks the Claude Code harness.
 3. Add `docs/superpowers/run-state/README.md` and a compact run-state template.
 4. Add task-packet and handoff templates under `.codex/commands/`; templates
    describe an artifact shape and do not become a second state store.
 5. Add a small PowerShell validator that checks canonical paths, required role
    files, required run-state headings, and that no active instruction still
-   points to `.claude/` or `.Codex/`.
+   points to ~~`.claude/` or~~ `.Codex/`. ❌ The `.claude/` half of this rule
+   was **removed** on 2026-09-19 and replaced by the stub cap and pointer
+   checks; re-adding it would fail the tree on `AGENTS.md` itself.
 6. Migrate the current `landing-page-motion-doctrine` branch into one run-state
    file using its Git commits and SDD ledger as evidence. Do not copy the full
    ledger.
@@ -171,13 +201,16 @@ would require a successor to reconstruct decisions from chat history.
 
 ## Acceptance criteria
 
-- The repository has one versioned Codex-only source for active role and
-  workflow instructions.
+- The repository has one versioned ~~Codex-only~~ **canonical `.codex/`** source
+  for active role and workflow instructions. ❌ "Codex-only" no longer holds:
+  `.claude/` carries adapter stubs that name that source and add nothing to it.
 - A fresh agent can identify the current branch goal, verified state, known
   dirtiness, and next owner by reading no more than `AGENTS.md`, lessons, one
   run state, and its task packet.
 - The validator fails when a required protocol artifact is absent or a live
-  instruction references retired Claude/case-variant Codex paths.
+  instruction references ~~retired Claude/~~case-variant Codex paths. ❌ The
+  Claude half is reversed: the validator now *requires* the `.claude/` stubs and
+  checks their cap and pointers instead of forbidding references to them.
 - The current motion-doctrine branch has a run state that matches its Git
   history and does not claim unrun tests as passing.
 - Existing product source, migrations, and user data are untouched.

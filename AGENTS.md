@@ -162,12 +162,25 @@ a task spans roles, `tech-lead` decomposes it and sequences the specialists. See
 `docs/superpowers/run-state/<branch>.md`; before dispatching or resuming, read it before the
 cited task-plan section and its direct dependency graph.
 
+**Two-harness rule:** this repository is worked by two agent runtimes. Codex owns
+implementation; Claude Code owns architecture, specs, task packets, and the whole-branch
+review before merge. `.codex/` is the only home of role, routing, and procedure content.
+`.claude/` exists solely because Claude Code cannot load `.toml` role definitions: its files
+are adapter stubs that name their canonical counterpart and hold no fact of their own.
+Writing role or workflow content into a stub is a defect — §6 applies without exception.
+
+**One worktree, one owner:** the main worktree belongs to Claude; Codex works in
+`.worktrees/<branch>`. Each run state names its current owner on a single
+`- Owner: Claude|Codex` line, and a handoff is the commit that changes that line. Never write
+into a worktree you do not currently own. See `.codex/docs/workflow.md` §8.
+
 ---
 
 ## 9. Definition of Done (applies to every task)
 
 - [ ] Meets the spec + the §2 non-negotiables + §5 priorities where relevant
 - [ ] TypeScript strict passes, lint clean
+- [ ] `npm run verify:protocol` exits 0 — required before any owner handoff and before merge
 - [ ] Tests written first and passing (command output shown, not assumed)
 - [ ] a11y: keyboard-navigable, WCAG AA, respects reduced-motion
 - [ ] No secrets client-side; inputs validated; user content sanitized

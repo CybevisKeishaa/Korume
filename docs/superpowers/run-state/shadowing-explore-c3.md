@@ -18,7 +18,7 @@ Replace the `/shadowing/explore` placeholder with Figma Explore Lessons (`200:77
 - `docs/superpowers/plans/2026-09-09-shadowing-explore-c3.md`.
 - Figma `IwFHZDZdHW7qsSFiNbWrkd`, nodes `200:7705`, `200:10726`.
 
-## Decisions and contracts
+## Contracts and decisions
 
 - Explore is an `(app)` desktop screen without a Companion rail. The global mobile handoff remains active below 1024px.
 - Hero catalogue search and situation context are C3. Selecting a situation re-queries every shelf.
@@ -28,13 +28,14 @@ Replace the `/shadowing/explore` placeholder with Figma Explore Lessons (`200:77
 
 ## Working tree and environment
 
+- Owner: Claude (branch closed 2026-09-13; retained for history)
 - Isolated worktree: `.worktrees/shadowing-explore-c3`; branch created from merged C2 at `aacf813`.
 - Root workspace has user-owned untracked `.agents/` and two `.serena/memories/*` paths; untouched.
 - Dependencies were installed in the C3 worktree.
 - The isolated worktree has its own `.env.local`; no configuration or secret was copied from the root
   worktree during this resume.
 
-## Completed checkpoints
+## Accepted commits
 
 - Data/API: authenticated batched Explore projection, bounded eight-card shelves with a truthful
   overflow state, shared transcript word-count cache, truthful absence handling, RLS-before-service-role idempotent membership POST,
@@ -53,7 +54,7 @@ Replace the `/shadowing/explore` placeholder with Figma Explore Lessons (`200:77
   reaches the situation chip, card Preview, drawer close, and Add control by bounded sequential Tab
   traversal rather than programmatic focus or clicks.
 
-## Verification and remaining gate
+## Verification
 
 - Passed: focused C3 Vitest command (12 files, 66 tests) after review fixes; post-fix focused
   data/RTL/localization command (3 files, 16 tests); full `npm test -- --reporter=dot`; `npm run
@@ -82,4 +83,13 @@ Replace the `/shadowing/explore` placeholder with Figma Explore Lessons (`200:77
   then failed at that traversal and was restored from a SHA-256-verified backup. Fresh build and C3
   Playwright passed 2/2, TypeScript passed, lint retained baseline warnings only, `git diff --check`
   passed, and the full Vitest JSON report passed 2744/2744 across 897 files.
-- Next: request a fix-wave re-review. Do not merge or push without the user's direction.
+
+## Blockers
+
+None. The branch is closed.
+
+## Next actions
+
+None. C3 merged into local `master` at `148d4af`, with the approved post-merge Figma-density
+and curated-metadata correction at `429fac2`. The last open item recorded here before closure
+was "request a fix-wave re-review"; the closure banner above supersedes it.

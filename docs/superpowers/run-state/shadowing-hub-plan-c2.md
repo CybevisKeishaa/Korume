@@ -130,9 +130,8 @@ C4 durable import-job progress are explicitly excluded.
 
 - User-owned untracked paths: `.agents/` and
 `.serena/memories/codex_long_task_protocol_run_state.md`; leave untouched.
+- Owner: Claude (branch reopened 2026-09-09; not merged)
 - Branch was created from the current merged `master` after sandbox approval.
-
-## Resolved environment note
 
 - Port 3000 is occupied by an existing workspace server which serves stale
   client chunks after a shared `.next` rebuild. Do not stop that unknown
@@ -186,7 +185,13 @@ parity, preserves truthful quota values, and has focused unit, translation,
 TypeScript, build, and port-3002 browser evidence. A task review approved the
 accessibility fix that removes an extra complementary landmark.
 
-## Historical next actions (superseded by the verification above)
+## Blockers
+
+The branch is reopened as of 2026-09-09 and is not ready for merge; see Completion above.
+
+## Next actions
+
+Superseded by the verification above, retained for history:
 
 1. Run the expanded focused Playwright Hub spec against a newly built isolated
    production server; this verifies the controlled import-error alert.

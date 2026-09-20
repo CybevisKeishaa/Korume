@@ -65,3 +65,30 @@ The Definition of Done in AGENTS.md applies to every task. A layer is done only 
 ## 7. Branching and merge policy
 
 Use one branch per layer and merge to `master` only after its Definition of Done is met. Use `git merge --no-ff` so each layer remains a visible unit in history. Do not push to a remote unless the user explicitly asks.
+
+## 8. Two-harness protocol
+
+Two agent runtimes work this repository. Authority is split by kind of work, not by file type.
+
+| | Claude Code | Codex |
+| --- | --- | --- |
+| Owns | Architecture, specs, plans, task packets, whole-branch review, merge | Implementation, per-task `code-reviewer`, run-state checkpoints |
+| Works in | The main worktree on `master` | `.worktrees/<branch>` |
+| Writes | `AGENTS.md`, `.codex/**`, `.claude/**`, `docs/superpowers/specs/**`, `.superpowers/sdd/**`, `docs/lessons.md` | Product source and tests, `docs/superpowers/run-state/<its branch>.md` |
+| Never | Edits code during review | Edits the instruction layer |
+
+**Instruction layer.** `.codex/` is the only home of role, routing and procedure content. `.claude/` is a runtime adapter: Claude Code cannot load `.toml` role definitions and needs its own frontmatter to route a subagent, so each of its files is a stub that names its canonical counterpart. A stub holds no fact of its own. `npm run verify:protocol` rejects one that exceeds 25 lines or loses its pointer, so "one fact, one home" holds by construction rather than by memory.
+
+**Ownership.** One worktree has exactly one writer at a time. The run state records it on a single `- Owner: Claude|Codex` line, and a handoff is the commit that changes that line. There is no implicit handoff. Reading another worktree is always allowed; writing into one you do not own is a defect.
+
+**Task lifecycle.**
+
+1. Claude creates the branch and its worktree, writes the spec, plan and task packets there, and sets `- Owner: Codex`.
+2. Codex reads `AGENTS.md`, `docs/lessons.md`, this file, the run state and its packet, then implements under TDD, reviewing and checkpointing each accepted task.
+3. Codex sets `- Owner: Claude` when the branch is ready. That line is the only handoff signal; neither side infers readiness.
+4. Claude reviews the whole branch from `git diff master...<branch>` in the main worktree — no checkout, no edits — and returns findings to Codex, who fixes them.
+5. Claude records lessons, merges with `git merge --no-ff`, and removes the worktree.
+
+**Gate.** `npm run verify:protocol` must exit 0 before any owner change and before merge. A red protocol blocks the handoff, not just the merge.
+
+Specs and plans live on the feature branch from the moment they are written. `master` receives only completed, reviewed work.
