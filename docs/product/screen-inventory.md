@@ -778,7 +778,7 @@ unavailable — monthly lesson quota reached"* — rather than implying the vide
 | **Exits to** | Featured lesson (continue / preview) · a library lesson · Explore (`View All`) · a popular lesson · resume the current path · a recommended lesson · `Upgrade` · the search modal. |
 | **Actions** | Continue / Preview the featured lesson · **paste a YouTube URL and import** · open / retry / delete a library lesson · search · filter by 11 category chips · `View All` ×2 · resume · start a recommended lesson · upgrade. |
 | **Data needed** | Featured lesson (cover, title, blurb, JLPT, sentence count, minutes, category, % done) · **import quota** (`2 / 3 imports remaining`, plan name) · library rows with a **live pipeline state machine** (ready / building + 6 sub-steps + % + ETA / failed + reason) · 11 category chips · popular lessons (cover, JLPT, category, sentences, minutes, % done) · current-path resume pointer incl. **the current sentence text** and "last studied" · recently added · weakness-based recommendations **with a stated reason per card** · right rail: companion activity, today's goal, 7-day bar chart + 4 stats, an AI suggestion with its reason. |
-| **API exists** | Substantially ✅. `app/api/videos/import/route.ts`, `/api/videos`, `/api/videos/recommendations`, `/api/videos/[id]/{transcript,progress,summary,difficulty}` all exist, and `lib/data/lesson-{creation,library,ranking,taxonomy}.ts` back them. **The quota is real** — `createLesson()` already returns 403 `Monthly lesson quota reached`, which is what the `2 / 3` chip renders. |
+| **API exists** | Substantially ✅. `app/api/videos/import/route.ts`, `/api/videos`, `/api/videos/recommendations`, `/api/videos/[id]/{transcript,progress,summary,difficulty}` all exist, and `lib/data/lesson-{creation,library,ranking,taxonomy}.ts` back them. **The quota is real** — a 403 `Monthly lesson quota reached` is returned and is what the `2 / 3` chip renders. (Measured before C4. `createLesson()` was deleted on `c4-lesson-creation-jobs`: `/api/videos/import` now queues a durable job via `lib/data/lesson-creation-jobs.ts`, answers `202`, and the advisory 403 fires only where finalize would certainly charge a slot.) |
 | **Route exists** | ✅ `/shadowing`, `(app)` — matches the frame's chrome. |
 | **Related** | Explore (`200:7705`) · search modal (`212:*`) · practice (`105:3088`) · Companion (owns two of the four rail cards). |
 
@@ -2519,7 +2519,7 @@ Pre-rebrand throughout (`JapanWeb+`). Two tiers plus three billing shapes:
 **⭐ Three confirmations the rest of the inventory needed:**
 1. **`Adaptive Furigana` is named as such, and it is FREE** — which settles the §18.3 worry in the
    right direction: the product does mean CLAUDE.md §5 #4's adaptive behaviour, not an on/off toggle.
-2. **`Personal Lesson Creation · 3 lessons/month`** matches the measured `createLesson()` quota exactly
+2. **`Personal Lesson Creation · 3 lessons/month`** matches the measured quota exactly (measured against `createLesson()`, which C4 replaced with the job queue; the cap itself is unchanged and now pinned between `FREE_MONTHLY_LESSON_QUOTA` and the migration)
    (§7.1), and **`Unlimited Lesson Creation`** is what the paid tier buys.
 3. **`AI Transcript Generation` is a paid feature** — i.e. the deliberately-stubbed
    `aiTranscriptProvider` (§7.0) is *monetised*, which raises the stakes on the deferred STT question.

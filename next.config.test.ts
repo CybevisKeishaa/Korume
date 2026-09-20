@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import path from "node:path";
 // `tsconfig.json` sets `allowJs: false`, and next.config.mjs is plain JS whose
 // only typing is a JSDoc `@type` annotation — so TS cannot produce a declaration
 // for it. The suppressed binding IS `any`; it is narrowed back at its single use
@@ -13,6 +14,16 @@ import nextConfig from "./next.config.mjs";
 import { routing } from "@/lib/i18n/routing";
 
 type RedirectRule = { source: string; destination: string; permanent: boolean };
+type WebpackExternal = (
+  context: { request?: string },
+  callback: (error?: Error | null, result?: string) => void,
+) => void;
+type WebpackConfig = {
+  context: string;
+  externals?: Array<WebpackExternal | object | string>;
+  externalsPresets?: { node?: boolean };
+  resolve: { alias: Record<string, unknown> };
+};
 
 /**
  * Guards the `redirects()` rules in `next.config.mjs` against the defect the
@@ -82,4 +93,73 @@ describe("next.config.mjs redirects()", () => {
     // A 308 is cached hard by browsers; these routes move again in Plan D.
     for (const rule of await rules) expect(rule.permanent).toBe(false);
   });
+});
+
+describe("next.config.mjs webpack instrumentation boundaries", () => {
+  function configuredConfig(nextRuntime: string | undefined): WebpackConfig {
+    const config: WebpackConfig = { context: process.cwd(), resolve: { alias: {} } };
+    return (nextConfig as {
+      webpack: (config: WebpackConfig, options: { nextRuntime: string | undefined }) => WebpackConfig;
+    }).webpack(config, { nextRuntime });
+  }
+
+  function configuredAliases(nextRuntime: string | undefined): Record<string, unknown> {
+    const configured = configuredConfig(nextRuntime);
+    return configured.resolve.alias;
+  }
+
+  async function resolvedExternal(request: string, nextRuntime: string): Promise<string | undefined> {
+    const configured = configuredConfig(nextRuntime);
+    for (const external of configured.externals ?? []) {
+      if (typeof external !== "function") continue;
+      const result = await new Promise<string | undefined>((resolve, reject) => {
+        external({ request }, (error, externalResult) => {
+          if (error) reject(error);
+          else resolve(externalResult);
+        });
+      });
+      if (result !== undefined) return result;
+    }
+    return undefined;
+  }
+
+  it("keeps the lesson creation worker startup out of the edge instrumentation bundle", () => {
+    const aliases = configuredAliases("edge");
+
+    expect(aliases["@/lib/lesson-creation/start"]).toBe(false);
+    expect(aliases[path.resolve(process.cwd(), "lib/lesson-creation/start")]).toBe(false);
+  });
+
+  it("keeps the lesson creation worker startup out of non-runtime client compilation", () => {
+    const aliases = configuredAliases(undefined);
+
+    expect(aliases["@/lib/lesson-creation/start"]).toBe(false);
+  });
+
+  it("keeps the real lesson creation worker startup import for node instrumentation", () => {
+    const aliases = configuredAliases("nodejs");
+
+    expect(aliases["@/lib/lesson-creation/start"]).toBeUndefined();
+  });
+
+  it("externalizes kuromoji for the server build that compiles instrumentation", () => {
+    const packages = (nextConfig as {
+      experimental?: { serverComponentsExternalPackages?: string[] };
+    }).experimental?.serverComponentsExternalPackages;
+
+    expect(packages ?? []).toContain("kuromoji");
+  });
+
+  it("uses webpack's node externals preset for node instrumentation builtins", () => {
+    const configured = configuredConfig("nodejs");
+
+    expect(configured.externalsPresets?.node).toBe(true);
+  });
+
+  it.each(["path", "node:path", "fs", "node:fs", "zlib", "node:zlib"])(
+    "externalizes Node builtin %s for node instrumentation",
+    async (request) => {
+      await expect(resolvedExternal(request, "nodejs")).resolves.toBe(`commonjs ${request}`);
+    },
+  );
 });

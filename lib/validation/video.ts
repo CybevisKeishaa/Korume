@@ -1,8 +1,6 @@
 import { z } from "zod";
 import type { TranscriptFormat } from "@/lib/transcript";
 
-export { importVideoSchema, type ImportVideoInput } from "@/lib/youtube";
-
 const transcriptFormatSchema = z.enum(["auto", "srt", "vtt", "plain"]) satisfies z.ZodType<TranscriptFormat>;
 
 /** POST /api/videos/[id]/transcript body. */

@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { createLesson } from "@/lib/data/lesson-creation";
-import { importVideoSchema } from "@/lib/validation/video";
+import { lessonCreationRefusalMessage } from "@/lib/http-status";
+import { enqueueLearnerLessonCreationJob } from "@/lib/data/lesson-creation-jobs";
+import { enqueueLessonCreationSchema } from "@/lib/validation/lesson-creation";
 
+/**
+ * The learner entry point keeps its path and its request body, but no longer
+ * blocks on metadata or captions: it queues durable work and answers `202`
+ * with the job to poll. A `202` never means a lesson exists — that is what the
+ * job projection is for.
+ */
 export async function POST(request: Request) {
   let body: unknown;
   try {
@@ -10,7 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = importVideoSchema.safeParse(body);
+  const parsed = enqueueLessonCreationSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid video URL", details: parsed.error.flatten().fieldErrors },
@@ -18,7 +25,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await createLesson({ youtubeUrl: parsed.data.youtubeUrl });
+  const result = await enqueueLearnerLessonCreationJob({ youtubeVideoId: parsed.data.youtubeVideoId });
   if (!result.ok) {
     if (result.status === 429) {
       return NextResponse.json(
@@ -26,20 +33,14 @@ export async function POST(request: Request) {
         { status: 429, headers: { "Retry-After": String(Math.ceil(result.retryAfter / 1000)) } },
       );
     }
-    if (result.status === 403) {
-      return NextResponse.json({ error: "Monthly lesson quota reached" }, { status: 403 });
-    }
     const message =
       result.status === 401
         ? "Unauthorized"
-        : result.status === 422
-          ? "Could not fetch video metadata"
-          : "Invalid video";
+        : result.status === 403
+          ? lessonCreationRefusalMessage(result.reason)
+          : "Lesson creation is temporarily unavailable";
     return NextResponse.json({ error: message }, { status: result.status });
   }
 
-  return NextResponse.json(
-    { data: result.data, alreadyInLibrary: result.alreadyInLibrary, transcriptStatus: result.transcriptStatus },
-    { status: 201 },
-  );
+  return NextResponse.json({ data: result.data }, { status: 202 });
 }

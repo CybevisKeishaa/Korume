@@ -254,7 +254,7 @@ honest inventory.
 | Section | Data source | State |
 |---|---|---|
 | FeaturedHero | `collections` slug `featured` + the viewer's progress | new query (tables exist) |
-| ImportSection + quota | `createLesson` · `countMonthlyCreations` · `FREE_MONTHLY_LESSON_QUOTA` · `isUnderQuota` | exists |
+| ImportSection + quota | `enqueueLearnerLessonCreationJob` · `countMonthlyCreations` · `FREE_MONTHLY_LESSON_QUOTA` · `isUnderQuota` | exists — C4 replaced `createLesson` with the job queue (§4.2.3) |
 | MyLessons — Ready | `user_lesson_library` + `hasTranscript` | exists |
 | MyLessons — Failed | `transcriptStatus === "missing"` | exists — see §4.2.2 |
 | MyLessons — Building | in-flight request, current step label | see §4.2.3 |
@@ -297,6 +297,16 @@ The design's failure copy is *"Reason: Transcript unavailable"*, which maps exac
 learner's library. Both are real operations against existing data.
 
 #### 4.2.3 Building (D10)
+
+> **Superseded in mechanism by C4 (2026-09-19), not in conclusion.** The
+> paragraph below described the state at design time and is kept because D10's
+> reasoning depends on it. C4 deleted `createLesson()`: there is now a job
+> table, per-step durable status, a worker and a retry path, and
+> `/api/videos/import` answers `202` with a job to poll. **D10's ruling stands
+> unchanged and is now enforced by tests** — still no percentage, no ETA, no
+> tick the backend cannot justify; `LessonCreationProgress` marks a stage
+> complete only from a durable event. See
+> `docs/superpowers/specs/2026-09-13-lesson-creation-jobs-design.md`.
 
 `lib/data/lesson-creation.ts`'s `createLesson()` runs the whole pipeline **synchronously inside one
 request** and returns `{ ok, data, transcriptStatus }`. There is no job table, no per-step status, no

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify:db:lesson-jobs": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-lesson-creation-gate.ps1"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",

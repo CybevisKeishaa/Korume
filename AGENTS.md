@@ -117,6 +117,15 @@ learners. Treat them as first-class, not add-ons:
 - **One fact, one home.** If a fact would live in two places, make one derive from the other or
   delete one — "both, kept in sync by hand" is a defect, not a trade-off. (Promoted from
   `docs/lessons.md` L-026, which keeps the evidence.)
+- **Migrations are edited IN PLACE, not superseded by additive ones.** Change the migration that
+  defines the object; do not add a later file that `CREATE OR REPLACE`s it. This repo has no CI, no
+  `supabase db push`, and has never been published: every environment applies the chain with
+  `npx supabase db reset`, so an additive migration buys nothing and costs a second home for the
+  same definition — which silently strands every test that pins the original. Ruled by the owner
+  2026-09-19, after a review found exactly that: a duplicated `SECURITY DEFINER` function left the
+  live copy's `search_path`, grants and quota literal unpinned. Re-run the subsystem's live gate on
+  a fresh reset after any such edit. If a migration ever *does* reach an environment that cannot be
+  reset, this rule is what must change first — deliberately, not by one commit choosing otherwise.
 
 ---
 

@@ -1,11 +1,24 @@
 import createNextIntlPlugin from "next-intl/plugin";
+import path from "node:path";
 
 const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
+
+const NODE_INSTRUMENTATION_EXTERNALS = new Set([
+  "path",
+  "node:path",
+  "fs",
+  "node:fs",
+  "zlib",
+  "node:zlib",
+]);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: { instrumentationHook: true },
+  experimental: {
+    instrumentationHook: true,
+    serverComponentsExternalPackages: ["kuromoji"],
+  },
   images: {
     remotePatterns: [
       // YouTube thumbnails (metadata only — never proxying video, per CLAUDE.md §2)
@@ -21,8 +34,45 @@ const nextConfig = {
     // build, and @anthropic-ai/sdk statically imports `node:fs`/`node:path`,
     // which the edge bundle cannot handle. It is unreachable at edge runtime,
     // so aliasing it away here only affects bundling, not behaviour.
-    if (nextRuntime === "edge") {
+    if (nextRuntime !== "nodejs") {
       config.resolve.alias["@anthropic-ai/sdk"] = false;
+      // The lesson-creation worker is also behind instrumentation.ts'
+      // NEXT_RUNTIME=nodejs guard. Non-Node compilation can still follow the
+      // dynamic import target and would otherwise bundle kuromoji's Node-only
+      // dictionary loader (`path` / `node:path`) even though only the Node
+      // runtime ever starts the worker.
+      config.resolve.alias["@/lib/lesson-creation/start"] = false;
+      // Instrumentation's SWC transform resolves the `@/` import to a
+      // filesystem request before webpack applies aliases, so cover that
+      // request form as well. The Node compiler intentionally leaves both
+      // aliases absent and retains the real startup import.
+      config.resolve.alias[path.resolve(process.cwd(), "lib/lesson-creation/start")] = false;
+    }
+    if (nextRuntime === "nodejs") {
+      // Externalization is the whole mechanism, and it must stay: without it
+      // webpack bundles kuromoji's Node-only dictionary loader into the Node
+      // instrumentation chunk. An earlier version also aliased `path`/`fs`/
+      // `zlib` to `eval("require")` shims under `lib/node-builtins/`; those
+      // were provably inert — externals short-circuit resolution at factorize,
+      // before `resolve.alias` is consulted, so the built
+      // `.next/server/instrumentation.js` contained plain `require("path")`
+      // and no shim, and `grep -rlF 'eval("require")' .next/server` matched
+      // nothing. Deleted with their guard test, which had the dead alias map
+      // as its only subject.
+      config.externalsPresets = { ...config.externalsPresets, node: true };
+      const externalizeNodeInstrumentationBuiltins = ({ request }, callback) => {
+        if (NODE_INSTRUMENTATION_EXTERNALS.has(request)) {
+          callback(null, `commonjs ${request}`);
+          return;
+        }
+        callback();
+      };
+      const existingExternals = Array.isArray(config.externals)
+        ? config.externals
+        : config.externals
+          ? [config.externals]
+          : [];
+      config.externals = [...existingExternals, externalizeNodeInstrumentationBuiltins];
     }
     return config;
   },

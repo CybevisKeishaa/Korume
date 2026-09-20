@@ -1,0 +1,127 @@
+import { z } from "zod";
+
+/** The durable lifecycle states shared by the queue, worker, APIs, and UI. */
+export const LESSON_CREATION_JOB_STATES = ["queued", "running", "succeeded", "failed"] as const;
+export type LessonCreationJobState = (typeof LESSON_CREATION_JOB_STATES)[number];
+
+/** The persisted pipeline checkpoints that can be truthfully presented to a learner. */
+export const LESSON_CREATION_STEPS = [
+  "deduplicating",
+  "fetching_metadata",
+  "fetching_transcript",
+  "enriching_furigana",
+  "persisting",
+  "ready",
+  "failed",
+] as const;
+export type LessonCreationStep = (typeof LESSON_CREATION_STEPS)[number];
+
+/** Stable, translated-safe failure categories. Provider errors never cross this boundary. */
+export const LESSON_CREATION_ERROR_CODES = [
+  "metadata_unavailable",
+  "transcript_unavailable",
+  "quota_exceeded",
+  "temporary_failure",
+  "existing_private_lesson",
+] as const;
+export type LessonCreationErrorCode = (typeof LESSON_CREATION_ERROR_CODES)[number];
+
+export type TerminalLessonCreationJobState = Extract<LessonCreationJobState, "succeeded" | "failed">;
+/**
+ * Total execution attempts per job (design §5, "There are three total execution
+ * attempts").
+ *
+ * This number is shared with SQL, which cannot import it: the migration spends it
+ * in nine places (two check constraints, `claim`'s eligibility filter,
+ * `transition`'s two CASE arms and its `completed_at`, and `recover`'s three).
+ * It lives here rather than in `worker.ts` so the migration's contract test can
+ * pin every one of those against it without importing the worker; that pin is
+ * the only thing connecting the two homes (AGENTS.md §6, "one fact, one home").
+ * Raise it here and the pin will name each SQL site that must follow.
+ */
+export const MAX_LESSON_CREATION_ATTEMPTS = 3;
+
+/**
+ * The only job shape allowed beyond the server/store boundary. Requester and
+ * lease fields remain operational database details and must never reach UI or API consumers.
+ */
+export interface LessonCreationJobProjection {
+  id: string;
+  state: LessonCreationJobState;
+  step: LessonCreationStep;
+  attemptCount: number;
+  lessonId: string | null;
+  publicErrorCode: LessonCreationErrorCode | null;
+  updatedAt: string;
+}
+
+export const lessonCreationJobProjectionSchema = z
+  .object({
+    id: z.string().uuid(),
+    state: z.enum(LESSON_CREATION_JOB_STATES),
+    step: z.enum(LESSON_CREATION_STEPS),
+    attemptCount: z.number().int().nonnegative(),
+    lessonId: z.string().uuid().nullable(),
+    publicErrorCode: z.enum(LESSON_CREATION_ERROR_CODES).nullable(),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict()
+  .superRefine((projection, context) => {
+    if (projection.state === "succeeded" && projection.step !== "ready") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["step"],
+        message: 'A succeeded job must have the "ready" step.',
+      });
+    }
+    if (projection.state === "failed" && projection.step !== "failed") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["step"],
+        message: 'A failed job must have the "failed" step.',
+      });
+    }
+    if (projection.step === "ready" && projection.state !== "succeeded") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["state"],
+        message: 'The "ready" step requires a succeeded job.',
+      });
+    }
+    if (projection.step === "failed" && projection.state !== "failed") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["state"],
+        message: 'The "failed" step requires a failed job.',
+      });
+    }
+  });
+
+export function isTerminalJobState(state: LessonCreationJobState): state is TerminalLessonCreationJobState {
+  return state === "succeeded" || state === "failed";
+}
+
+/**
+ * One durable transition from the append-only event table, as its requester
+ * may see it. This is the only history a surface is allowed to present as
+ * completed work: a step inferred from the current projection would be a
+ * guess, and after a retry resets the attempt it would be a wrong one.
+ * Requester and lease fields stay behind the store boundary here too.
+ */
+export interface LessonCreationJobEvent {
+  state: LessonCreationJobState;
+  step: LessonCreationStep;
+  attemptCount: number;
+  publicErrorCode: LessonCreationErrorCode | null;
+  createdAt: string;
+}
+
+export const lessonCreationJobEventSchema = z
+  .object({
+    state: z.enum(LESSON_CREATION_JOB_STATES),
+    step: z.enum(LESSON_CREATION_STEPS),
+    attemptCount: z.number().int().nonnegative(),
+    publicErrorCode: z.enum(LESSON_CREATION_ERROR_CODES).nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();

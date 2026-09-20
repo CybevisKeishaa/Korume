@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { LessonCreationProgress } from "@/components/video/lesson-creation-progress";
+import { useLessonCreationJob } from "@/components/video/use-lesson-creation-job";
 import type { HubLibraryLesson } from "@/lib/data/shadowing-hub";
 import { useRouter } from "@/lib/i18n/navigation";
+import type { LessonCreationJobProjection } from "@/lib/lesson-creation/types";
 import { HubLessonCard } from "./hub-lesson-card";
 import { HubSectionHeading } from "./hub-section-heading";
 import { HubEmptyState } from "./hub-empty-state";
@@ -15,6 +18,10 @@ export interface HubLibrarySectionLabels {
   retry: string;
   retryPending: string;
   retryFailed: string;
+  /** Shown instead of `retryFailed` when the refusal was a 401. */
+  retrySessionExpired: string;
+  /** Shown instead of `retryFailed` for a 503: the worker is off, not the video bad. */
+  retryUnavailable: string;
   noThumbnail: string;
   emptyTitle: string;
   emptyBody: string;
@@ -28,14 +35,70 @@ export interface HubLibrarySectionProps {
   emptyActionHref?: string;
 }
 
+type RetryErrorKind = "generic" | "sessionExpired" | "unavailable";
+
+/**
+ * One ladder for every refusal this section can show. Its three call sites — an
+ * abandoned poll, a refused enqueue, a refused retry — answered the same status
+ * with different words until review M-2, and the enqueue half outlived that fix:
+ * with the worker off from the start no job is ever created, so the enqueue is
+ * the refusal a learner actually meets. The status decides the words, once.
+ */
+function retryErrorKind(status: number | null): RetryErrorKind {
+  // A 401 is about the session, not the captions: telling a signed-out learner
+  // to try again sends them round the same refusal forever.
+  if (status === 401) return "sessionExpired";
+  // A 503 is the worker being off, which trying this video again cannot fix.
+  if (status === 503) return "unavailable";
+  return "generic";
+}
+
 export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-import" }: HubLibrarySectionProps) {
   const router = useRouter();
   const [retryingVideoId, setRetryingVideoId] = useState<string | null>(null);
-  const [retryErrorVideoId, setRetryErrorVideoId] = useState<string | null>(null);
+  // One object, not a video id plus a parallel flag: two states that must agree
+  // by hand are a second home for one fact (AGENTS.md §6).
+  const [retryError, setRetryError] =
+    useState<{ youtubeVideoId: string; kind: RetryErrorKind } | null>(null);
+  // One card at a time: the retry buttons disable each other while one runs.
+  const [tracked, setTracked] = useState<{ youtubeVideoId: string; jobId: string } | null>(null);
 
+  const { job, events, phase, refusedStatus, restart } = useLessonCreationJob(tracked?.jobId ?? null, {
+    onSucceeded() {
+      // Only now is the lesson studyable; the server render is the authority
+      // on what the card becomes.
+      router.refresh();
+    },
+  });
+
+  // A refused poll must RELEASE the card, not merely hide it: `tracked !== null`
+  // disables EVERY unavailable card's retry, so holding it would make the whole
+  // section inert with nothing on screen to explain why.
+  //
+  // Clearing `tracked` rather than masking it is load-bearing. Enqueue is
+  // idempotent while a job is active, so a retry hands back the SAME job id; if
+  // the old id were still held, the hook's `[jobId, attempt]` deps would not
+  // change, its effect would not re-run, and Try again would do nothing
+  // forever. Clearing makes the next attempt a real `null -> id` transition,
+  // and it closes the window where this effect could stamp an error onto a new
+  // job after reading a stale `phase`.
+  const pollAbandoned = phase === "refused";
+  useEffect(() => {
+    if (pollAbandoned && tracked !== null) {
+      setRetryError({ youtubeVideoId: tracked.youtubeVideoId, kind: retryErrorKind(refusedStatus) });
+      setTracked(null);
+    }
+  }, [pollAbandoned, refusedStatus, tracked]);
+
+  /**
+   * Queues a fresh creation attempt for a lesson whose transcript never
+   * arrived. The endpoint answers `202` with a job, so this shows that job's
+   * durable progress in the card rather than refreshing as though the lesson
+   * were already back.
+   */
   async function retryCaptionFetch(youtubeVideoId: string): Promise<void> {
     setRetryingVideoId(youtubeVideoId);
-    setRetryErrorVideoId(null);
+    setRetryError(null);
 
     try {
       const response = await fetch("/api/videos/import", {
@@ -43,12 +106,33 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ youtubeUrl: `https://www.youtube.com/watch?v=${youtubeVideoId}` }),
       });
-      if (!response.ok) throw new Error("Caption retry failed");
-      router.refresh();
+      if (!response.ok) {
+        setRetryError({ youtubeVideoId, kind: retryErrorKind(response.status) });
+        return;
+      }
+      const body = (await response.json()) as { data: LessonCreationJobProjection };
+      setTracked({ youtubeVideoId, jobId: body.data.id });
     } catch {
-      setRetryErrorVideoId(youtubeVideoId);
+      setRetryError({ youtubeVideoId, kind: "generic" });
     } finally {
       setRetryingVideoId(null);
+    }
+  }
+
+  /** Re-queues the tracked job itself, once it has failed. */
+  async function retryTrackedJob(): Promise<void> {
+    if (tracked === null) return;
+    setRetryError(null);
+    try {
+      const response = await fetch(`/api/lesson-creation-jobs/${tracked.jobId}/retry`, { method: "POST" });
+      // 409 means an attempt is already active — polling it is the honest answer.
+      if (!response.ok && response.status !== 409) {
+        setRetryError({ youtubeVideoId: tracked.youtubeVideoId, kind: retryErrorKind(response.status) });
+        return;
+      }
+      restart();
+    } catch {
+      setRetryError({ youtubeVideoId: tracked.youtubeVideoId, kind: "generic" });
     }
   }
 
@@ -83,18 +167,26 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
               <li key={item.lesson.id} className="rounded-xl border border-danger/40 bg-card p-md-lg">
                 <h3 className="font-semibold text-foreground">{item.lesson.title}</h3>
                 <p className="mt-xs text-sm text-muted-foreground">{labels.unavailable}</p>
-                <Button
-                  type="button"
-                  className="mt-md"
-                  variant="outline"
-                  disabled={retryingVideoId !== null}
-                  onClick={() => void retryCaptionFetch(item.lesson.youtubeVideoId)}
-                >
-                  {retryingVideoId === item.lesson.youtubeVideoId ? labels.retryPending : labels.retry}
-                </Button>
-                {retryErrorVideoId === item.lesson.youtubeVideoId && (
+                {tracked?.youtubeVideoId === item.lesson.youtubeVideoId && job !== null ? (
+                  <LessonCreationProgress job={job} events={events} onRetry={retryTrackedJob} />
+                ) : (
+                  <Button
+                    type="button"
+                    className="mt-md"
+                    variant="outline"
+                    disabled={retryingVideoId !== null || tracked !== null}
+                    onClick={() => void retryCaptionFetch(item.lesson.youtubeVideoId)}
+                  >
+                    {retryingVideoId === item.lesson.youtubeVideoId ? labels.retryPending : labels.retry}
+                  </Button>
+                )}
+                {retryError?.youtubeVideoId === item.lesson.youtubeVideoId && (
                   <p role="alert" className="mt-sm text-sm text-danger-strong">
-                    {labels.retryFailed}
+                    {retryError.kind === "sessionExpired"
+                      ? labels.retrySessionExpired
+                      : retryError.kind === "unavailable"
+                        ? labels.retryUnavailable
+                        : labels.retryFailed}
                   </p>
                 )}
               </li>

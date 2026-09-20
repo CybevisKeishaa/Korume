@@ -1,4 +1,6 @@
 // lib/youtube/timedtext.ts
+import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
+
 /**
  * Best-effort YouTube caption fetch via the unofficial, keyless `timedtext`
  * endpoint (`video.google.com/timedtext`). This reads only the caption TEXT
@@ -18,6 +20,9 @@ interface CaptionTrack {
   langCode: string;
   kind: "manual" | "asr";
 }
+
+/** See `oembed.ts`: a stalled provider request freezes the whole worker. */
+const PROVIDER_TIMEOUT_MS = 10_000;
 
 function trackListUrl(videoId: string): string {
   return `https://video.google.com/timedtext?type=list&v=${encodeURIComponent(videoId)}`;
@@ -73,23 +78,88 @@ function pickJapaneseTrack(tracks: CaptionTrack[]): CaptionTrack | null {
   return tracks.find((t) => t.langCode === "ja" && t.kind === "asr") ?? null;
 }
 
-/** Fetches the Japanese caption track for a YouTube video, or `null` if none exists / any step fails. */
-export async function fetchJapaneseCaptions(videoId: string): Promise<TimedTextLine[] | null> {
+function isTransientHttpStatus(status: number): boolean {
+  return status === 429 || status === 503;
+}
+
+async function readResponseText(
+  response: Response,
+  surfaceTransientErrors: boolean,
+  message: string,
+): Promise<string | null> {
   try {
-    const listResponse = await fetch(trackListUrl(videoId));
-    if (!listResponse.ok) return null;
-
-    const listXml = await listResponse.text();
-    const track = pickJapaneseTrack(parseTrackList(listXml));
-    if (!track) return null;
-
-    const bodyResponse = await fetch(captionBodyUrl(videoId, track));
-    if (!bodyResponse.ok) return null;
-
-    const bodyXml = await bodyResponse.text();
-    const lines = parseCaptionBody(bodyXml);
-    return lines.length > 0 ? lines : null;
-  } catch {
+    return await response.text();
+  } catch (error) {
+    if (surfaceTransientErrors) {
+      throw new TransientLessonCreationProviderError(message, { cause: error });
+    }
     return null;
   }
+}
+
+async function fetchCaptionResponse(
+  url: string,
+  surfaceTransientErrors: boolean,
+  stage: "track-list" | "caption-body",
+): Promise<Response | null> {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
+    if (response.ok) return response;
+    if (surfaceTransientErrors && isTransientHttpStatus(response.status)) {
+      throw new TransientLessonCreationProviderError(
+        `YouTube timedtext ${stage} returned transient HTTP ${response.status}.`,
+      );
+    }
+    return null;
+  } catch (error) {
+    if (error instanceof TransientLessonCreationProviderError) throw error;
+    if (surfaceTransientErrors) {
+      throw new TransientLessonCreationProviderError(
+        `YouTube timedtext ${stage} transport failed.`,
+        { cause: error },
+      );
+    }
+    return null;
+  }
+}
+
+async function fetchJapaneseCaptionsInternal(
+  videoId: string,
+  surfaceTransientErrors: boolean,
+): Promise<TimedTextLine[] | null> {
+  const listResponse = await fetchCaptionResponse(trackListUrl(videoId), surfaceTransientErrors, "track-list");
+  if (!listResponse) return null;
+
+  const listXml = await readResponseText(
+    listResponse,
+    surfaceTransientErrors,
+    "YouTube timedtext track-list body could not be read.",
+  );
+  if (listXml === null) return null;
+
+  const track = pickJapaneseTrack(parseTrackList(listXml));
+  if (!track) return null;
+
+  const bodyResponse = await fetchCaptionResponse(captionBodyUrl(videoId, track), surfaceTransientErrors, "caption-body");
+  if (!bodyResponse) return null;
+
+  const bodyXml = await readResponseText(
+    bodyResponse,
+    surfaceTransientErrors,
+    "YouTube timedtext caption body could not be read.",
+  );
+  if (bodyXml === null) return null;
+
+  const lines = parseCaptionBody(bodyXml);
+  return lines.length > 0 ? lines : null;
+}
+
+/** Fetches the Japanese caption track for a YouTube video, or `null` if none exists / any step fails. */
+export async function fetchJapaneseCaptions(videoId: string): Promise<TimedTextLine[] | null> {
+  return fetchJapaneseCaptionsInternal(videoId, false);
+}
+
+/** Worker-only caption fetch that preserves transient failures for retry classification. */
+export async function fetchJapaneseCaptionsForWorker(videoId: string): Promise<TimedTextLine[] | null> {
+  return fetchJapaneseCaptionsInternal(videoId, true);
 }

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchOembed, OembedFetchError } from "./oembed";
+import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 
 const ID = "dQw4w9WgXcQ";
 
@@ -86,11 +87,32 @@ describe("fetchOembed — failure", () => {
     await expect(fetchOembed(ID)).rejects.toThrow(OembedFetchError);
   });
 
-  it("throws OembedFetchError on a network failure", async () => {
+  /**
+   * A transport failure is not a verdict on the video. The worker retries only
+   * `TransientLessonCreationProviderError` (`worker.ts` `isExplicitlyTransient`),
+   * so classifying these as `OembedFetchError` ends the lesson terminally as
+   * `metadata_unavailable` on the first blip — and the 10s provider timeout
+   * makes that reachable. `timedtext.ts` already classifies its transport the
+   * same way; this is the other half.
+   */
+  it("classifies a network failure as transient, not a verdict on the video", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockRejectedValue(new TypeError("fetch failed")),
     );
+    await expect(fetchOembed(ID)).rejects.toThrow(TransientLessonCreationProviderError);
+  });
+
+  it("classifies the provider timeout as transient", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new DOMException("The operation was aborted due to timeout", "TimeoutError")),
+    );
+    await expect(fetchOembed(ID)).rejects.toThrow(TransientLessonCreationProviderError);
+  });
+
+  it("keeps an HTTP status terminal: the provider answered, and its answer was no", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     await expect(fetchOembed(ID)).rejects.toThrow(OembedFetchError);
   });
 });

@@ -64,12 +64,6 @@ describe("videos.json EN — literals", () => {
     expect(en.errors.sessionExpired).toBe("Your session expired — please sign in again.");
   });
 
-  it("pins errors.fetchFailed (POST /api/videos/import 422)", () => {
-    expect(en.errors.fetchFailed).toBe(
-      "We couldn't fetch details for that video. Double-check the link and try again.",
-    );
-  });
-
   it("pins errors.rateLimited (POST /api/videos/import 429 with Retry-After)", () => {
     expect(en.errors.rateLimited).toBe(
       "Too many imports — please wait {seconds}s and try again.",
@@ -86,5 +80,87 @@ describe("videos.json EN — literals", () => {
     expect(en.errors.generic).toBe(
       "Something went wrong importing that video. Please try again.",
     );
+  });
+
+  it("pins errors.unavailable (POST /api/videos/import 503, worker disabled)", () => {
+    expect(en.errors.unavailable).toBe("Lesson creation is paused right now. Please try again later.");
+  });
+});
+
+/**
+ * C4 durable-progress copy. The four stage labels are not free copy: design §9
+ * fixes the mapping from durable step to learner presentation, and these pins
+ * are the only place that mapping is asserted as literal text.
+ */
+describe("videos.json EN — lesson creation progress", () => {
+  it("pins the accessible name of the progress region", () => {
+    expect(en.creation.progressLabel).toBe("Lesson creation progress");
+  });
+
+  it("pins the label for deduplicating and fetching_metadata", () => {
+    expect(en.creation.steps.preparing).toBe("Preparing lesson");
+  });
+
+  it("pins the label for fetching_transcript", () => {
+    expect(en.creation.steps.findingTranscript).toBe("Finding transcript");
+  });
+
+  it("pins the label for enriching_furigana and persisting", () => {
+    expect(en.creation.steps.building).toBe("Building lesson");
+  });
+
+  it("pins the label for ready", () => {
+    expect(en.creation.steps.ready).toBe("Ready to study");
+  });
+
+  it("pins the three per-stage states, which carry the progress for a screen reader", () => {
+    expect(en.creation.stepDone).toBe("done");
+    expect(en.creation.stepInProgress).toBe("in progress");
+    expect(en.creation.stepWaiting).toBe("not started");
+  });
+
+  it("pins the retry affordance and its pending name", () => {
+    expect(en.creation.retry).toBe("Try again");
+    expect(en.creation.retrying).toBe("Retrying…");
+  });
+
+  it("pins creation.errors.metadataUnavailable", () => {
+    expect(en.creation.errors.metadataUnavailable).toBe(
+      "We couldn't read this video's details. Check the link and try again.",
+    );
+  });
+
+  it("pins creation.errors.transcriptUnavailable", () => {
+    expect(en.creation.errors.transcriptUnavailable).toBe(
+      "This video has no Japanese captions, so there's nothing to shadow yet.",
+    );
+  });
+
+  it("pins creation.errors.quotaExceeded", () => {
+    expect(en.creation.errors.quotaExceeded).toBe("You've reached this month's lesson import limit.");
+  });
+
+  it("pins creation.errors.temporaryFailure", () => {
+    expect(en.creation.errors.temporaryFailure).toBe(
+      "Something went wrong building this lesson. Try again in a moment.",
+    );
+  });
+
+  it("states no percentage, ETA, or estimated time in any progress string", () => {
+    const strings = [
+      en.creation.progressLabel,
+      ...Object.values(en.creation.steps),
+      en.creation.stepDone,
+      en.creation.stepInProgress,
+      en.creation.stepWaiting,
+      en.creation.retry,
+      en.creation.retrying,
+      ...Object.values(en.creation.errors),
+    ];
+    // Guard the guard: an empty list would pass every assertion below (L-004).
+    expect(strings).toHaveLength(15);
+    for (const value of strings) {
+      expect(value).not.toMatch(/%|\bETA\b|remaining|estimat/i);
+    }
   });
 });

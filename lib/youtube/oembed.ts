@@ -5,6 +5,7 @@
  * YouTube for title/author/thumbnail, never for video bytes.
  */
 import { z } from "zod";
+import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 
 export interface OembedResult {
   title: string;
@@ -29,6 +30,16 @@ const oembedResponseSchema = z.object({
   thumbnail_url: z.string(),
 });
 
+/**
+ * A provider that accepts the connection and then stalls must not stall the
+ * lesson-creation worker with it. The worker runs one job per 5s tick behind an
+ * overlap guard, so a hung request freezes claiming AND lease recovery for the
+ * whole instance until undici's ~300s default fires — long enough for the 120s
+ * lease to expire, which burns the attempt when the pass finally unwinds. Three
+ * of those permanently fail a learner's lesson.
+ */
+const PROVIDER_TIMEOUT_MS = 10_000;
+
 function oembedUrlFor(videoId: string): string {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
   return `https://www.youtube.com/oembed?url=${encodeURIComponent(watchUrl)}&format=json`;
@@ -38,10 +49,18 @@ function oembedUrlFor(videoId: string): string {
 export async function fetchOembed(videoId: string): Promise<OembedResult> {
   let response: Response;
   try {
-    response = await fetch(oembedUrlFor(videoId));
+    response = await fetch(oembedUrlFor(videoId), { signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS) });
   } catch (err) {
-    throw new OembedFetchError(
+    // Only a transport failure reaches here — `fetch` rejects on a network
+    // error or an abort, never on an HTTP status. The worker retries only this
+    // type (`worker.ts` `isExplicitlyTransient`), so classifying a stall as
+    // `OembedFetchError` would end the lesson as `metadata_unavailable` on the
+    // first blip: a verdict on the video, from a fact about the network. The
+    // 10s timeout above is what makes that reachable, so the two belong
+    // together. `timedtext.ts` classifies its transport the same way.
+    throw new TransientLessonCreationProviderError(
       `Network error fetching YouTube oEmbed metadata: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err },
     );
   }
 
