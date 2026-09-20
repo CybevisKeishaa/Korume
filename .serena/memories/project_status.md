@@ -20,11 +20,10 @@
 >    returned 0 Critical and no finding against the code.
 >    Merged-master gate on `21a436b`: tsc 0 · **vitest 3064/3064 over 324 files,
 >    exit 0** · lint 0 errors / 80 baseline warnings · `next build` 0.
->    ⚠️ **`npm test` from the main checkout sweeps `.worktrees/*/node_modules`**
->    and reports ~2195 files / 762 failures. Pre-existing, not C4:
->    `vitest.config.ts:13` excludes the bare pattern `"node_modules"`, which
->    matches only the root one. Measure master with `--exclude "**/.worktrees/**"`
->    until that becomes `**/node_modules/**`, or the number means nothing.
+>    (Those figures were measured with `--exclude "**/.worktrees/**"`, because
+>    `npm test` from the main checkout then swept every worktree and reported
+>    2195 files / 762 failures. **Fixed on master at `52175bf`**; the plain
+>    command now gives 324/3064 and the flag is no longer needed.)
 >    See `mem:c4_lesson_creation_jobs_run_state` — it is the authority.
 > 3. **The 2026-09-06 SYNC UPDATE below** says `landing-page-motion-doctrine`
 >    is active and to resume at Task 10. That branch finished Task 12 and is

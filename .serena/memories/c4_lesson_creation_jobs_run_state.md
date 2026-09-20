@@ -28,14 +28,11 @@ exists.
 tsc 0 · **vitest 3064/3064 over 324 files, exit 0** · lint 0 errors (80 baseline
 warnings) · `next build` 0.
 
-⚠️ **`npm test` from the MAIN CHECKOUT sweeps the worktrees and reports ~2195
-files / 762 failures.** Not a regression — `vitest.config.ts:13` excludes
-`"node_modules"`, a bare pattern that matches only the root one, so
-`.worktrees/*/node_modules/**` is collected (identical at pre-merge master
-`a55b8a4` and at the branch tip; the branch never touched that file). Until the
-pattern becomes `**/node_modules/**`, measure master with
-`--exclude "**/.worktrees/**"` or the number means nothing. **This is an open
-repo-level defect, not C4's.**
+ℹ️ Those 324/3064 were measured with `--exclude "**/.worktrees/**"`, because at
+the time `npm test` from the main checkout swept every worktree and reported 2195
+files / 762 failures. **That is FIXED on master at `52175bf`** — the bare exclude
+patterns in `vitest.config.ts` are now `**`-anchored and `.worktrees` is excluded
+outright, so the plain `npm test` gives 324/3064. The flag is no longer needed.
 
 The live database gate (`npm run verify:db:lesson-jobs`) and `playwright.c4`
 were **exit 0 / 3/3 on `65c040b`** and deliberately NOT re-run on the last wave
