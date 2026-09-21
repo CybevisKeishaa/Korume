@@ -63,4 +63,15 @@ describe("Popover", () => {
     expect(content).toHaveAttribute("data-density", "reference");
     expect(content).toHaveAttribute("role", "dialog");
   });
+
+  it("carries no density scope when opened outside one", async () => {
+    const user = userEvent.setup();
+    render(
+      <Popover trigger={<button>unscoped</button>}>
+        <p>unscoped content</p>
+      </Popover>,
+    );
+    await user.click(screen.getByRole("button", { name: "unscoped" }));
+    expect((await screen.findByText("unscoped content")).closest("[data-density]")).toBeNull();
+  });
 });

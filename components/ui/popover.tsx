@@ -32,14 +32,14 @@ export function Popover({
   className,
   children,
 }: PopoverProps) {
-  const { anchorRef, density } = useDensityScope();
+  const { anchorRef, contentRef } = useDensityScope();
   return (
     <RadixPopover.Root open={open} onOpenChange={onOpenChange}>
       <RadixPopover.Trigger asChild>{trigger}</RadixPopover.Trigger>
       <span hidden ref={anchorRef} />
       <RadixPopover.Portal>
         <RadixPopover.Content
-          data-density={density}
+          ref={contentRef}
           side={side}
           align={align}
           sideOffset={6}

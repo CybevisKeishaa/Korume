@@ -50,7 +50,7 @@ export function Dialog({
   closeLabel = "Close dialog",
 }: DialogProps) {
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-  const { anchorRef, density } = useDensityScope();
+  const { anchorRef, contentRef } = useDensityScope();
 
   useLayoutEffect(() => {
     if (open) {
@@ -70,7 +70,7 @@ export function Dialog({
         <RadixDialog.Overlay className="fixed inset-0 z-overlay bg-scrim/50" />
         <RadixDialog.Content
           aria-modal="true"
-          data-density={density}
+          ref={contentRef}
           onOpenAutoFocus={(event) => {
             if (initialFocusRef?.current) {
               event.preventDefault();

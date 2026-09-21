@@ -64,4 +64,11 @@ describe("Select", () => {
     const listbox = await screen.findByRole("listbox");
     expect(listbox.closest("[data-density]")).toHaveAttribute("data-density", "reference");
   });
+
+  it("carries no density scope when opened outside one", async () => {
+    const user = userEvent.setup();
+    render(<Select options={options} aria-label="Level" />);
+    await user.click(screen.getByRole("combobox", { name: "Level" }));
+    expect((await screen.findByRole("listbox")).closest("[data-density]")).toBeNull();
+  });
 });

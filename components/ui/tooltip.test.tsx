@@ -53,4 +53,15 @@ describe("Tooltip", () => {
     // closest() reaches the bubble, which is the node that carries the tokens.
     expect(tooltip.closest("[data-density]")).toHaveAttribute("data-density", "reference");
   });
+
+  it("carries no density scope when opened outside one", async () => {
+    const user = userEvent.setup();
+    render(
+      <Tooltip content="unscoped tip">
+        <button>trigger</button>
+      </Tooltip>,
+    );
+    await user.tab();
+    expect((await screen.findByRole("tooltip")).closest("[data-density]")).toBeNull();
+  });
 });

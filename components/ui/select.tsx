@@ -37,7 +37,7 @@ export function Select({
   className,
   "aria-label": ariaLabel,
 }: SelectProps) {
-  const { anchorRef, density } = useDensityScope();
+  const { anchorRef, contentRef } = useDensityScope();
   return (
     <RadixSelect.Root value={value} onValueChange={onValueChange} disabled={disabled}>
       <RadixSelect.Trigger
@@ -59,7 +59,7 @@ export function Select({
       <span hidden ref={anchorRef} />
       <RadixSelect.Portal>
         <RadixSelect.Content
-          data-density={density}
+          ref={contentRef}
           position="popper"
           sideOffset={4}
           className={cn(

@@ -18,7 +18,7 @@ export interface TooltipProps {
  * Never put interactive content in a tooltip; that is what Popover is for.
  */
 export function Tooltip({ content, side = "top", children }: TooltipProps) {
-  const { anchorRef, density } = useDensityScope();
+  const { anchorRef, contentRef } = useDensityScope();
   return (
     <RadixTooltip.Provider delayDuration={200}>
       <RadixTooltip.Root>
@@ -26,7 +26,7 @@ export function Tooltip({ content, side = "top", children }: TooltipProps) {
         <span hidden ref={anchorRef} />
         <RadixTooltip.Portal>
           <RadixTooltip.Content
-            data-density={density}
+            ref={contentRef}
             side={side}
             sideOffset={6}
             className="z-popover rounded-md bg-foreground px-xs py-2xs text-caption text-background shadow-overlay"
