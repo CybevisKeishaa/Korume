@@ -3,10 +3,23 @@
 > ## ▶ WHERE EXECUTION STANDS — 2026-09-21 (supersedes every block below,
 > including the correction banner, where they disagree)
 >
-> **ONE BRANCH IS IN FLIGHT: `desktop-density-scale`.** Local `master` is
-> `42197a6`; the branch sits at `f515bc2` in `.worktrees/desktop-density-scale`
-> and carries a spec and run state only, no code. Owner is Claude, awaiting the
-> owner's review of the spec.
+> **NO BRANCH IS IN FLIGHT.** `desktop-density-scale` is **MERGED to `master`**
+> at `02a0d57` + a CRLF test fix merged at `1099c5a` (`--no-ff`, branch and
+> worktree kept). Merged-master gate: `tsc` 0, `lint` 0, `npm test` **324 files /
+> 3125**, `verify:protocol` 0. Not pushed by Claude — the owner pushes by hand.
+>
+> ⭐ **The density symptom is CLOSED, and the owner verified it themselves:** they
+> viewed `/vi/shadowing` at 1280 in their own Chrome and said it is right. At 1280
+> the shell matches master-at-zoom-90% **in screen px** within 0.2% (column 703.7
+> vs 702.7). Spec §1's "≈768px" target was the wrong unit (CSS px of the 1422
+> zoom-90% viewport) — corrected in the spec.
+> **Accepted gap, owner told:** ~86 unmigrated files keep `text-sm/xs/lg` beside
+> scaled cards; each screen port migrates its own. The Toast viewport stays fluid.
+> The rule every later screen follows is `docs/design/screens/adaptive-layouts.md`
+> § Frame Fidelity: 1536 frame values ARE the 1440 values, no 0.9375 factor.
+> `docs/superpowers/run-state/desktop-density-scale.md` is the record.
+>
+> **▶ NEXT ACTION: Auth + Error UX** (details in the block below, unchanged).
 >
 > ✅ **The "something pushes master" mystery is CLOSED, 2026-09-21: the owner
 > pushes it themselves.** They said so in as many words when this file's
@@ -101,31 +114,11 @@
 > earlier — `shadowing-explore-c3.md` and `shadowing-hub-plan-c2.md` missing
 > required headings — were closed by the `fd2fbdf` merge.
 >
-> **▶ THE NEXT ACTION IS `desktop-density-scale` — NOT Auth + Error.**
-> Corrected 2026-09-21 after the owner supplied four screenshots. **The density
-> pass merged but did not close the symptom it was written to close.** Measured
-> on the post-merge server at viewport 1280, `/vi/shadowing` gives a **666.7px**
-> main column at zoom 100% against **768.6px** at 90%, and 267px more
-> whole-page scrolling. It closed ~27% of the gap and reported success against
-> an acceptance number (~684px) derived from its own clamp arithmetic rather
-> than from the composition the owner was comparing against. Its spec §1 opens
-> by ruling out the real cause — *"The 90% preference is not a preference for
-> smaller text"* — so it fixed four widths and never touched type, spacing,
-> radius, control height or icon size.
+> **▶ `desktop-density-scale` is MERGED (2026-09-21, see the top banner). Auth +
+> Error UX is now the next action.** It will be the first reference-scope
+> (`data-density="reference"`) screen to use Dialog/Popover/Select/Tooltip.
 >
-> Branch `desktop-density-scale`, worktree `.worktrees/desktop-density-scale`,
-> spec `docs/superpowers/specs/2026-09-21-desktop-density-scale-design.md`,
-> commits `94d8c96` and `f515bc2`. **Resume by asking the owner to review that
-> spec**; on approval Claude writes the plan and task packets and sets
-> `- Owner: Codex`. Six owner rulings bind it: reference viewport **1440**;
-> density bounded to **1280-1440 only**; the density pass's **sidebar carve-out
-> is revoked**; `caption` floors at 11px; typography consolidated by semantic
-> role FIRST (32 `text-sm` + 4 `text-xs` sites share a value with `text-body` /
-> `text-caption`, so a token change alone moves only 8 call sites); and **no CSS
-> `zoom`, no page-level override** — the owner rejected a `zoom: 0.9` wrapper
-> outright as a frame every later screen would have to be viewed through.
->
-> **Auth + Error UX is the branch AFTER it**, unchanged otherwise: reset
+> **Auth + Error UX**, unchanged: reset
 > password `333:210`, email OTP `335:306`, restyle Login/Register, Error404
 > `335:1976`, error boundary `337:2055`. `docs/product/decision-register.md`
 > **P14** still binds it — Apple and GitHub OAuth buttons are **not** ported,
