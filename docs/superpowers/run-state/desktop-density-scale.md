@@ -38,6 +38,7 @@ colour tokens; new breakpoints; and anything below 1280.
 ## Accepted commits
 
 - `1d0f1ce` `refactor(type): one source of truth per typography rung, with a guard` — Task 1.
+- `c89cc56` `fix(type): close the Task 1 review — guard scope, one re-roled site, the Explore card`.
 
 ## Contracts and decisions
 
@@ -84,70 +85,43 @@ owed again unless the formula changes.
   now pins 15 UI, 25 marketing, 12 shadowing, 9 layout, and 2 shadowing-route sources. Scoped re-review:
   ADDRESSED, no new Critical or Important finding.
 
-### Task 1 review round (Claude, 2026-09-21)
+### Task 1 review round, closed at `c89cc56` (Claude, 2026-09-21)
 
-The owner asked for an independent review of Task 1 and then took the worktree back so Claude could
-close the findings directly. Verified first, from the main checkout: 46 of 46 changed line pairs,
-45 of which preserve the rendered value; the five `app-nav.tsx` sites match the plan role table;
-`leading-[18px]` was deleted and folded into the caption pairing; `notification-bell.tsx` is
-value-for-value; the pinned source counts 15/25/12/9/2 are real (counted independently); and the
-checkpoint's own figures (70 tests, 21 files / 178 tests) reproduce exactly.
+Five findings, all closed. ⚠️ Claude edited this worktree while the Owner line still read `Codex`:
+the owner directed the takeback in conversation, but the line is the handoff and was not flipped
+first. Recorded, not hidden.
 
-Three findings, all closed on this branch:
+1. **The guard owned three trees and enforced two rules in them** — a **plan** defect, specified
+   verbatim; not an implementation one. Every other absolute literal stayed legal, and
+   `explore-lesson-card.tsx` was through the hole with four `text-[8px]` and two `text-[9px]`
+   sites. Now `[...FORBIDDEN, DEFAULT_TYPE_UTILITY]`. Evidence on L-006.
+2. **`mobile-app-handoff.tsx` was re-roled down a rung** (14 -> 12 px) on the below-1024 screen,
+   outside the band this branch touches. Restored to `text-body`.
+3. Two minors: the `sources:` pins had no maintenance note and their case was misnamed; the
+   `DEFAULT_TYPE_UTILITY` docblock had lost its reasoning. Both restored.
+4. **The Hub leaks into `components/video`** — one import hop below the page, which the first
+   review pass explicitly said did not exist. `hub-import-section` -> `VideoImportForm`, and it and
+   `hub-library-section` -> `LessonCreationProgress`. Found only because a Playwright failure
+   printed the element with its class list. Tree now scanned (4 sources), 7 sites migrated
+   value-for-value.
+5. **`tests/e2e/shadowing-hub.spec.ts` had failed on `master` since 2026-09-19** — C4 removed the
+   error string it pinned at `002f993` (master via `21a436b`), unnoticed because C4 was excused
+   from re-running this spec. Now reads `enVideos.errors.generic`. **C4 debt, fixed here only
+   because it blocks this gate.**
 
-1. **The guard took ownership of three trees and only guarded two rules in them.** The new entries
-   used `[RADIUS_LITERAL, DEFAULT_TYPE_UTILITY]`, so every other absolute literal stayed legal —
-   and `explore-lesson-card.tsx` was already through the hole with four `text-[8px]` sites and two
-   `text-[9px]` ones, on a calibration screen, below the 11 px caption floor and unable to scale.
-   **This was a defect in the plan, not in the implementation**: the plan specified those two rules
-   verbatim. The three entries now take `[...FORBIDDEN, DEFAULT_TYPE_UTILITY]`, and the plan's
-   Task 1 carries the correction. Evidence on `docs/lessons.md` L-006 — the same task written to
-   close that lesson reproduced it.
-2. **One migration changed what renders.** `mobile-app-handoff.tsx` was re-roled down a rung
-   (14 px -> 12 px) on the below-1024 handoff screen, outside the 1280-1440 band this branch
-   touches at all. Restored to `text-body`, which is the same 14 px the site held before.
-3. **Two minors:** the `sources:` pins had no maintenance note and the case asserting them was
-   still named "scans a non-empty set of primitives", which is not what it asserts; and the
-   `DEFAULT_TYPE_UTILITY` docblock had lost the reason `text-lg` and up are deliberately absent.
-   Both restored.
+**Owner ruling: every rung in `explore-lesson-card.tsx` is `caption`.** The caption line box is
+18 px, so the eyebrow dropped its own height and line-height and the summary went `h-9` -> `h-10`;
+interior `h-[196px]`, card `h-[308px]`. The fixed-height model is untouched and is Task 4 work — px
+heights cannot scale with `--density-unit`. `tracking-[1.04px]` is deliberately left: no rule
+covers tracking and changing it is a visual decision the ruling did not cover.
 
-**Owner ruling 2026-09-21:** raise every rung in `explore-lesson-card.tsx` to `caption`. Done. The
-caption line box is 18 px, so the eyebrow dropped its own height and line-height and the summary
-went `h-9` -> `h-10`; the interior is `h-[196px]` and the card `h-[308px]`. The fixed-height model
-itself is untouched and is Task 4 work — px heights cannot scale with `--density-unit`.
-`tracking-[1.04px]` on the eyebrow is left as it is: no guard rule covers tracking, and changing it
-is a visual decision the ruling did not cover. Named here so Task 4 does not rediscover it.
+⚠️ **A text-scanning guard reads prose too** — a comment explaining finding 2 contained the banned
+class name and failed its own file.
 
-**Two more findings, surfaced by running the e2e specs rather than by reading the diff:**
-
-4. **The Hub leaks into `components/video`, and the first review pass said it did not.** Claude
-   checked for leaks by grepping the imports of the two route files and the shell, concluded "every
-   component the calibration screens render is inside a guarded tree", and was wrong: the leak is
-   one hop further down. `hub-import-section.tsx` imports `VideoImportForm`, and both it and
-   `hub-library-section.tsx` import `LessonCreationProgress`. The Hub was rendering an import card
-   that still set a duplicate rung. Found only because a Playwright failure printed the offending
-   element with its class list. `components/video` is now scanned (4 sources) and its seven sites
-   are migrated value-for-value.
-5. **`tests/e2e/shadowing-hub.spec.ts` had been failing on `master` since 2026-09-19**, and not
-   because of anything on this branch. It asserted a literal error string that C4 removed from
-   `messages/en/videos.json` at `002f993` — on master since the `21a436b` merge. It went unnoticed
-   because C4 was excused from re-running its Playwright spec. The assertion now reads
-   `enVideos.errors.generic` from the catalogue instead of copying a string out of it. **Fixed
-   here because it blocks this branch's own gate**, and recorded for the owner as a C4 defect, not
-   a density one.
-
-⚠️ **A text-scanning guard reads prose too.** A comment written to explain finding 2 contained the
-banned class name and failed its own file. Keep rung names out of comments inside scanned trees.
-
-**Gate after the review round**, every command run from this worktree and read:
-
-- `npm run verify:protocol` — `Codex protocol: valid`, exit 0.
-- `npx tsc --noEmit` — exit 0.
-- `npm test` — **324/324 files, 3100/3100 tests**. Master baseline is 3082; the +18 are the six
-  source-count pins plus the twelve per-file cases the `components/video` scope adds.
-- `npm run lint` — 0 errors, baseline warnings only.
-- `npx playwright test tests/e2e/shadowing-hub.spec.ts tests/e2e/shadowing-explore.spec.ts` —
-  **6 passed**.
+**Gate, every command run from this worktree and read:** `verify:protocol` 0 · `tsc` 0 · `npm test`
+**324/324 files, 3100/3100** (master baseline 3082; +18 = six source-count pins plus the twelve
+per-file cases `components/video` adds) · `lint` 0 errors / baseline warnings · `playwright` on both
+calibration specs **6 passed**.
 
 The card height 308 px is **measured, not computed**: the old pin was left in place on purpose and
 read off its failure (`Expected: <= 300, Received: 308`) before being moved to 306-310.
@@ -184,7 +158,9 @@ the branch is handed to Codex.
 ## Next actions
 
 1. Task 2 defines the density unit and reference-group reset under TDD, then receives a per-task
-   `code-reviewer` review and checkpoint.
+   `code-reviewer` review and checkpoint. **Re-read the plan's Task 1 before starting** — it was
+   corrected during the review round and its guard scope is now the standard every later task
+   inherits.
 2. Task 5 is the acceptance gate and is the one the previous branch got wrong. The acceptance
    number is the owner's zoom-90% composition (main column ~768 px at 1280), measured on a
    production build with exactly one server — never a number derived from this branch's own
