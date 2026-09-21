@@ -25,11 +25,16 @@ each, one `codex exec` dispatch per task, Claude review between tasks.
 - `13a6739` Task 2 auth shell, per-flow forms, confirm password (one Claude fix wave: a missed e2e
   migration, the narrow layout made dead by `MobileAppHandoff`, heading outline, formatting).
   Claude re-ran: tsc 0, lint 0, full suite 328 files / 3148 tests exit 0; Playwright `--workers=1`
-  14/17 — `auth-layout`, `auth-locale-round-trip`, `journal`, `review`, both
+  14/17 - `auth-layout`, `auth-locale-round-trip`, `journal`, `review`, both
   `route-group-provider-identity`, `shadowing-explore` x4, `shadowing-hub` x4 pass;
   `lesson-creation-jobs` x3 fail only because it needs `playwright.c4.config.ts` (YouTube stub),
   and its registration step passed. Parallel runs hit a local-Supabase `JWT issued at future`
   clock-skew flake; run auth e2e with `--workers=1`.
+- `6031351` Task 3 `OtpInput`. Claude re-ran: focused 9/9, tsc 0, lint 0, full suite 329 files /
+  3157 tests exit 0. Codex mutation checks: suppressing `onComplete` -> 2 red; truncation -> 1 red.
+  **Deferred to Task 4 (first item of its packet):** `aria-invalid={Boolean(errorId)}` marks all six
+  boxes invalid whenever a parent passes `errorId`; replace with an explicit `invalid` prop. Deferred
+  because nothing consumes `OtpInput` until Task 4 (L-014).
 
 ## Contracts and decisions
 
@@ -71,9 +76,9 @@ None.
 
 ## Next actions
 
-1. Codex: Task 3 (`task-3-brief.md`). Implement and verify; leave uncommitted; set
+1. Codex: Task 4 (`task-4-brief.md`). Implement and verify; leave uncommitted; set
    `- Owner: Claude` in this file when ready.
-2. Claude: review, re-verify, commit Task 3, then dispatch Task 4.
+2. Claude: review, re-verify, commit Task 4, then dispatch Task 5.
 3. After Task 7: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips,
    owner review in their Chrome, merge `--no-ff`.
 4. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
