@@ -423,12 +423,28 @@ describe("desktop density scale", () => {
     // This asserts the two lists are the SAME SET. A token added to :root and
     // forgotten in the scope block silently stops honouring the opt-out, and
     // the only symptom is a marketing page 11% off its own design.
-    const derived = (source: string) =>
-      new Set(
-        [...source.matchAll(/^[ \t]*(--[a-z0-9-]+):\s*((?:[^;]|\n)*?);/gm)]
-          .filter((match) => match[2]!.includes("density-unit") && match[1] !== "--density-unit")
-          .map((match) => match[1]!),
+    //
+    // Derived is TRANSITIVE: `--layout-gutter: var(--space-xl)` never names the
+    // unit, yet resolves on :root to a finished fluid length exactly like the
+    // tokens that do. A filter on the literal text "density-unit" missed it
+    // (whole-branch review M1), so a chain is followed to its root.
+    const derived = (source: string) => {
+      const declarations = [...source.matchAll(/^[ \t]*(--[a-z0-9-]+):\s*((?:[^;]|\n)*?);/gm)].map(
+        (match) => [match[1]!, match[2]!] as const,
       );
+      const found = new Set<string>();
+      for (let grew = true; grew; ) {
+        grew = false;
+        for (const [name, value] of declarations) {
+          if (name === "--density-unit" || found.has(name)) continue;
+          if (value.includes("density-unit") || [...found].some((token) => value.includes(`var(${token})`))) {
+            found.add(name);
+            grew = true;
+          }
+        }
+      }
+      return found;
+    };
 
     const scopeBlock = css.match(/\[data-density\]\s*\{([\s\S]*?)\n\}/)?.[1];
     expect(scopeBlock).toBeDefined();

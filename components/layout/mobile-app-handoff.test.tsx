@@ -30,4 +30,20 @@ describe("MobileAppHandoff", () => {
     expect(playStoreLink).toHaveAttribute("target", "_blank");
     expect(playStoreLink).toHaveAttribute("rel", "noreferrer");
   });
+
+  it("holds density at 1.0 - it is below 1024, outside the band the unit scales", () => {
+    // It renders from the locale layout, above every route group, and the unit
+    // holds at its 1280 floor (0.889) below 1280 - so without its own scope
+    // every phone got 11% smaller type and radius (whole-branch review I3).
+    render(
+      <MobileAppHandoff
+        eyebrow="Korume"
+        title="Use the app"
+        body="Body"
+        appStoreLabel="Download on the App Store"
+        playStoreLabel="Get it on Google Play"
+      />,
+    );
+    expect(screen.getByRole("main")).toHaveAttribute("data-density", "reference");
+  });
 });

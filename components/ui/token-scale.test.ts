@@ -26,10 +26,12 @@ const RADIUS_LITERAL = /\brounded(-[a-z]+)?-\[[\d.]+(px|rem|em)\]/; // rounded-[
  *  others, which is how the density defect survived a whole branch — changing
  *  the token moved 8 of 40 sites.
  *
- *  `text-lg` and up are deliberately NOT listed. They have no rung of their
- *  own yet, and banning a utility with no replacement only teaches people to
- *  escape it — which is what `text-[8px]` in a screen port already was. */
-const DEFAULT_TYPE_UTILITY = /\btext-(sm|xs)\b/;
+ *  `text-base` (16 = body-lg), `text-xl` (20 = heading) and `text-2xl`
+ *  (24 = heading-lg) are the same defect and are listed too (whole-branch
+ *  review M3). `text-lg` (18), `text-3xl` and up have no rung of their own,
+ *  and banning a utility with no replacement only teaches people to escape
+ *  it — which is what `text-[8px]` in a screen port already was. */
+const DEFAULT_TYPE_UTILITY = /\btext-(sm|xs|base|xl|2xl)\b/;
 
 const FORBIDDEN = [
   /\btext-\[[\d.]+(px|rem|em)\]/, // text-[12px] → text-caption

@@ -398,6 +398,10 @@
   --icon-sm: calc(16 * var(--density-unit));
   --icon-md: calc(24 * var(--density-unit));
   --icon-lg: calc(28 * var(--density-unit));
+  /* Chained, not unit-literal: they resolve on the declaring element like the
+     rest, so they are re-declared here too (whole-branch review M1). */
+  --layout-gutter: var(--space-xl);
+  --layout-column-gap: var(--space-lg);
 }
 
 @layer base {
