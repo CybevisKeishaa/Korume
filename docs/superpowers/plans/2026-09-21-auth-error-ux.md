@@ -339,14 +339,14 @@ export const registerSchema = z
 ```tsx
 // components/auth/auth-split-shell.tsx
 /**
- * The auth composition (spec §5.1): a 60/40 split at desktop widths, falling back to today's single
- * centred column (max-w-md, card first) when both columns no longer fit. No per-screen variants.
+ * The auth composition (spec §5.1): a 60/40 split. No per-screen variants and no narrow layout —
+ * below 1024 px the root layout shows MobileAppHandoff instead of the web app.
  */
 export function AuthSplitShell({ story, children }: { story: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-background lg:grid lg:grid-cols-[3fr_2fr]">
-      <div className="order-2 lg:order-1">{story}</div>
-      <main className="order-1 flex items-center justify-center px-md py-xl lg:order-2 lg:px-xl">
+    <div className="grid min-h-dvh grid-cols-[3fr_2fr] bg-background">
+      {story}
+      <main className="flex items-center justify-center px-xl py-xl">
         <div className="w-full max-w-md">{children}</div>
       </main>
     </div>
@@ -358,8 +358,10 @@ export function AuthSplitShell({ story, children }: { story: React.ReactNode; ch
 layout), eyebrow (`text-caption uppercase tracking-wide text-primary`), heading (`font-display
 text-display` or `text-hero`, whichever matches the frame at 1280), body (`text-body-lg
 text-muted-foreground`), `<MascotPose size="lg">`, quote (`<blockquote>`) and attribution
-(`text-caption uppercase tracking-wide`). **Below `lg`, only logo and heading render**; eyebrow,
-body, pose and quote carry `hidden lg:block`. `AuthCard` renders a `rounded-lg border border-border
+(`text-caption uppercase tracking-wide`). *(Corrected 2026-09-21: there is no below-`lg` variant —
+spec §5.1 now sets the floor at 1024 px, where the web app starts rendering.)* The story's display
+heading is a `<p>`, not a heading element: the card's `<h1>` is the page's only heading, so the
+document outline does not start with an `h2` before the `h1`. `AuthCard` renders a `rounded-lg border border-border
 bg-card p-xl shadow-raised` panel with eyebrow, `<h1>` heading (`font-display text-title`), subtitle
 and children.
 
@@ -464,8 +466,10 @@ for every spec.
   - at 1280×800: the story column and the card column are both visible, and the card column's
     width is within 480–544 px (≈512, spec §5.1); no element whose accessible name matches
     `/apple|github/i`;
-  - at 320×640: `document.documentElement.scrollWidth <= document.documentElement.clientWidth`, the
-    submit button is visible after `scrollIntoViewIfNeeded()`, and the pose image is not visible.
+  - at 1024×768: `document.documentElement.scrollWidth <= document.documentElement.clientWidth`,
+    the story and card columns are side by side, and the submit button is visible after
+    `scrollIntoViewIfNeeded()`. *(Corrected 2026-09-21: the first version tested 320 px, where the
+    root layout shows `MobileAppHandoff` instead of any auth page — spec §5.1.)*
 
 - [ ] **Step 11: Verify** — `npx tsc --noEmit` 0 · `npm run lint` 0 errors ·
   `npm test -- --reporter=dot > .test-out.txt` exit 0 (read the file) · with local Supabase and

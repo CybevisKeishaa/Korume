@@ -131,13 +131,15 @@ Figma's Inter maps to `font-sans` (Plus Jakarta Sans); Outfit is `font-display`.
 
 - **`AuthSplitShell`** — the 60/40 split (≈768/512 at 1280), background, a left slot and a right
   slot. It has **no per-screen variants**; a screen differs only by what it puts in the slots.
-- **Minimum responsive contract for `AuthSplitShell`.** It is a new primitive, so it has no
-  existing behaviour to inherit; "mobile is out of scope" (§10) means no new mobile *design*, not
-  licence to break narrow viewports. The floor is today's auth page — a single centred column of at
-  most `max-w-md`. When the two columns no longer fit at their content widths, the shell falls
-  back to that single column: the card and its form come first and stay fully usable; the story
-  collapses to the logo and heading, and the pose and quote are hidden. At every width from 320 px
-  up there is no horizontal overflow and every control is reachable by keyboard and by scroll.
+- **Minimum responsive contract for `AuthSplitShell` — corrected 2026-09-21 during Task 2 review.**
+  The first version of this bullet set a 320 px floor with a single-column fallback. That rested on
+  a false premise: below 1024 px (`@media (max-width: 1023px)` in `app/globals.css`) the root
+  layout hides the whole web app — auth included — behind `MobileAppHandoff`, an existing product
+  decision. A narrow auth layout would never render, so it would be dead code (AGENTS.md §6).
+  The floor is therefore **1024 px, the narrowest width at which the web app renders**: from 1024
+  up there is no horizontal overflow, the split holds, the card and every control are fully
+  visible and reachable by keyboard, and the pose may shrink but not overlap text. No layout exists
+  below it.
 - **`AuthStory`** — left-slot content: eyebrow, display heading, body, quote with its attribution
   line, and a `pose` (§5.4).
 - **`AuthCard`** — right-slot card: eyebrow, heading, subtitle, children.
@@ -268,7 +270,7 @@ machine-translated. The frames' error-language rule applies: never blaming, neve
 | --- | --- | --- |
 | Component | Vitest + RTL | `OtpInput` every rule in §5.2 (digit filter, advance, backspace, paste full/partial/with non-digits, a six-digit `input` event with **no** paste event distributed the same way, focus on the Verify button after the sixth digit, the two accessible names). Resend cooldown with fake timers, including `?resend=1`. `mascot-poses` ↔ `poses.json`. `RouteErrorPanel` fires its callbacks and never renders the error message (mutation-check: render it, see red). The path leaf. A guard that no auth screen renders an Apple or GitHub control. |
 | Route / integration | Vitest, Supabase mocked as in `actions.test.ts` | Each action: validation errors, success redirect, error mapping. `register` in **both** response shapes (§4.1). `requestPasswordReset` returns the identical state for success and for a Supabase error. `login` maps *email not confirmed* to the verify redirect and nothing else. `updatePassword` with no session. `route-protection`: `/forgot-password` and `/verify-email` are auth routes, `/reset-password` is not. `/verify-email` with a missing or invalid `email`. |
-| E2E / visual, 1280 | Playwright, local Supabase | Login, register, forgot-password round trips. `/verify-email?email=…` renders, accepts typed and pasted digits, shows the error for a wrong code, shows the cooldown. 404 at `/en/<unmatched>` shows the path. A thrown route error renders **inside** the shell: the sidebar's measured width is identical before and after the error. No Apple/GitHub control in the DOM. At 320 px, each auth route has no horizontal overflow (`scrollWidth <= clientWidth`) and its submit button is reachable. The five existing auth-dependent specs stay green. |
+| E2E / visual, 1280 | Playwright, local Supabase | Login, register, forgot-password round trips. `/verify-email?email=…` renders, accepts typed and pasted digits, shows the error for a wrong code, shows the cooldown. 404 at `/en/<unmatched>` shows the path. A thrown route error renders **inside** the shell: the sidebar's measured width is identical before and after the error. No Apple/GitHub control in the DOM. At 1024 px, each auth route has no horizontal overflow (`scrollWidth <= clientWidth`), keeps the split, and its submit button is visible (§5.1, corrected). The five existing auth-dependent specs stay green. |
 
 Guard tests written over code that already exists are mutation-checked (AGENTS.md §7). Any
 assertion over a pattern-gathered collection also asserts its size.
@@ -316,4 +318,4 @@ Then: whole-branch review by Claude (§8.2, §8.3), owner review in their own Ch
 Apple and GitHub sign-in · Terms, Privacy and help pages · a live OTP expiry display · changing the
 local confirmation default · `toast` density scoping · the design-system error sheet `218:15740` /
 `335:1588` beyond the two real screens · migrating the marketing mascot constants to the new map ·
-a new mobile design (the floor in §5.1 still binds).
+any layout below 1024 px, where `MobileAppHandoff` replaces the web app (§5.1).
