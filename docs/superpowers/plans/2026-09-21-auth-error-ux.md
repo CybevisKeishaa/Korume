@@ -27,8 +27,14 @@ plan argues from it; where they disagree, stop and report instead of choosing.
 - Figma values are composition reference only. Use repo tokens: spacing `2xs xs sm md md-lg lg xl
   2xl 3xl`; type `caption body body-lg heading heading-lg title display hero`; `h-control-sm|md|lg`;
   colours `background foreground card muted border input primary accent danger`; fonts `font-sans`
-  (Figma's Inter) and `font-display` (Outfit). **Never** `text-xs|sm|base|lg|xl`, numeric padding,
-  margin, gap, `space-*` or insets (e.g. `p-4`, `gap-2`, `top-4`) in new or touched files.
+  (Figma's Inter) and `font-display` (Outfit). In new or touched files, **never** use
+  `text-xs|sm|base|lg|xl`, and never a **numeric** step for padding, margin, gap, `space-*` or
+  insets (`p-4`, `gap-2`, `space-y-1.5`, `top-4`). The **token** forms of the same utilities are
+  the required vocabulary (`p-xl`, `gap-sm`, `space-y-xs`, `pe-2xl`); `0` needs no token
+  (`inset-y-0`, `end-0`); fractions are fine (`grid-cols-[3fr_2fr]`); px/rem literals are not.
+  This is exactly what `components/ui/token-scale-adoption.test.ts`'s patterns forbid — when this
+  line and that guard seem to disagree, the guard is the authority. *(Clarified 2026-09-21 after
+  Codex stopped on `space-y-xs`.)*
 - Auth routes and the 404 are `data-density="reference"` surfaces. The route-error surface sets
   **no** `data-density` and never recreates sidebar or top bar (spec §6.3).
 - Every new string exists in `messages/en/*.json` **and** `messages/vi/*.json` in the same commit.
