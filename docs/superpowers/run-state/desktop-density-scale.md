@@ -65,11 +65,27 @@ colour tokens; new breakpoints; and anything below 1280.
 
 ## Verification
 
-Task 2's required handoff commands are recorded below. The branch gate additionally owes lint, build,
-plus a production-build browser measurement of both screens at **1280 and 1440** against spec §6.
+### Task 5, measured 2026-09-21 — the branch reproduces the zoom-90% composition
 
-The spec's §5.2 mechanism check has been run and is recorded there with its command, so it is not
-owed again unless the formula changes.
+Production builds, one fresh learner, branch `:3100` vs `master` `e921a67` `:3101`, headless (no
+scrollbar). Zoom 90% at 1280 = a 1422 CSS viewport drawn at 0.9: **master@1422 × 0.9, screen px**.
+Mechanism first: `calc(28 * var(--density-unit))` = **24.8889px** at 1280, **28px** at 1440.
+
+| `/en/shadowing` | master 100% | master zoom 90% (screen px) | **branch 1280** |
+|---|---|---|---|
+| main column | 677.8 | 780.75 × 0.9 = **702.7** | **703.7** |
+| rail | 266.2 | 305.25 × 0.9 = **274.7** | **275.0** |
+| sidebar | 224 | 201.6 | 199.1 |
+| scroll height | 2292 | 2328 × 0.9 = **2095** | **2087** |
+
+Explore 1280: column 1000.0 vs 1110 × 0.9 = 999.0. `text-body` 12.4445 / `text-caption` **11**
+at 1280 and 1300; 14 / 12 + sidebar 224 at 1440; `--control-lg` 39.11; 16 `min-h-hit-target` rows
+44.00. Root 20px (set on `html`, not browser setting): `text-body` 15.56 — grows. Explore card:
+308px frame, last row ends 289px (1280) vs 294px (1440); screenshot reads full. **No change owed.**
+
+🚨 **Plan/spec §1: "≈768px at 1280" is in the wrong unit** — 768.6 / 300.6 / 2085 are CSS px of the
+1422 zoom-90% viewport; no 1280 layout reaches them. In screen px (what the owner sees) the branch
+is within 0.2% on column, rail and scroll. Fifth plan defect; spec §1 needs a unit column.
 
 ### Task 1, accepted — what still binds later tasks
 
@@ -79,41 +95,25 @@ default-type rule, per tree, with a pinned source count each (15/25/12/9/2/4).
 
 - **The Hub renders into `components/video`**, one import hop below the page. Following a page's
   own imports misses it; the tree is scanned now.
-- **`explore-lesson-card.tsx`: every rung is `caption` by owner ruling.** Card is `h-[308px]` —
-  **measured**, read off the old e2e pin failing — now pinned 306-310. Its fixed-height interior
-  still does not scale; Task 5 must measure whether that reads wrong at 1280.
-- **`tests/e2e/shadowing-hub.spec.ts` had failed on `master` since 2026-09-19** (C4 removed the
-  error string it pinned). Fixed here only because it blocked this gate.
+- **`explore-lesson-card.tsx`: every rung is `caption` by owner ruling**; `h-[308px]` pinned 306-310.
+- `tests/e2e/shadowing-hub.spec.ts` was red on `master` since 2026-09-19 (C4); fixed here.
 
 ⚠️ A text-scanning guard reads prose too — a comment naming a banned class fails its own file.
-
 ## Working tree and environment
 
 `.worktrees/desktop-density-scale`, cut from `master` at `42197a6`.
 
-`node_modules` and `.env.local` were repaired here on 2026-09-21 (missing `kuromoji` and runtime
-env respectively). For Task 5, use one server only: three main-worktree dev servers previously
-shared `.next` and produced invalid chunks.
+`node_modules` (`kuromoji`) and `.env.local` repaired here 2026-09-21. Authenticated e2e and
+browser measurement need Docker Desktop + `npx supabase start` (`:54321`), or register fails.
 
 ## Blockers
-
-Git worktree metadata is read-only in this session: `git commit` cannot create
-`.git/worktrees/desktop-density-scale/index.lock` despite no lock or Git process.
+None.
 
 ## Next actions
 
-1. **Task 5 — the acceptance gate, and Claude does it.** Production build, ONE server, measure
-   `/vi/shadowing` and `/vi/shadowing/explore` at 1280 and 1440. Grade against spec §1 — main
-   column ~768 px at 1280, rail ~300 px, scroll ~2085 px, `text-body` 12.44, `text-caption` 11
-   floored — never against this branch's own arithmetic. Re-run the spec §5.2 mechanism check
-   first; if the unit is not reaching the page, every number after it is worthless.
-2. **Known risk to measure, not to guess:** `explore-lesson-card.tsx` still sets its heights in px
-   (`h-[308px]`, `h-[196px]`, two `h-10` rows). Its type scales, its frame does not, so at 1280 the
-   card may read empty. Deliberately left for Task 5 to measure with numbers in hand.
-3. Then Task 6 (portal containers) and Task 7 (write the rule into `adaptive-layouts.md`).
-4. Claude dispatches one task per `codex exec` and reviews each diff independently. Tasks 1-4 each
-   shipped a defect Codex's own `code-reviewer` had approved, and three of the four were defects in
-   the PLAN.
+1. Task 5 done (see Verification; owner must see the §1 unit finding). Next: Task 6, then Task 7.
+2. One task per `codex exec`, Claude reviews each diff: Tasks 1-4 each shipped a defect Codex's
+   `code-reviewer` approved.
 
 ## Owner rulings, 2026-09-21 — both spec §9 open items are CLOSED
 
