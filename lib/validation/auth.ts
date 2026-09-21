@@ -16,14 +16,23 @@ export const loginSchema = z.object({
   password: z.string().min(1, "validation.passwordRequired"),
 });
 
-export const registerSchema = z.object({
-  name: z.string().trim().min(1, "validation.nameRequired").max(80),
-  email: z.string().trim().email("validation.emailInvalid"),
-  password: z
-    .string()
-    .min(8, "validation.passwordTooShort")
-    .max(72, "validation.passwordTooLong"),
-});
+/** The one password rule (spec §4.3). Register and reset both derive from it. */
+export const passwordRule = z
+  .string()
+  .min(8, "validation.passwordTooShort")
+  .max(72, "validation.passwordTooLong");
+
+export const registerSchema = z
+  .object({
+    name: z.string().trim().min(1, "validation.nameRequired").max(80),
+    email: z.string().trim().email("validation.emailInvalid"),
+    password: passwordRule,
+    confirmPassword: z.string(),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    message: "validation.passwordMismatch",
+    path: ["confirmPassword"],
+  });
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;

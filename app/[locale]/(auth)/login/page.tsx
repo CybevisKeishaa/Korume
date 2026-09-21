@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/lib/i18n";
-import { AuthForm } from "@/components/auth/auth-form";
-import { Container } from "@/components/ui/container";
+import { AuthCard } from "@/components/auth/auth-card";
+import { LoginForm } from "@/components/auth/login-form";
+import { AuthSplitShell } from "@/components/auth/auth-split-shell";
+import { AuthStory } from "@/components/auth/auth-story";
 import { getTranslations } from "@/lib/i18n/server";
 
 export async function generateMetadata({
@@ -20,17 +22,30 @@ export default async function LoginPage({
 }) {
   const t = await getTranslations("auth");
   return (
-    <Container className="flex min-h-[80vh] max-w-md flex-col justify-center py-12">
-      <h1 className="text-2xl font-bold">{t("login.heading")}</h1>
-      <p className="mt-2 text-muted-foreground">{t("login.subtitle")}</p>
-      {searchParams.checkEmail ? (
-        <p className="mt-4 rounded-md bg-accent/10 px-3 py-2 text-sm text-foreground">
-          {t("login.checkEmail")}
-        </p>
-      ) : null}
-      <div className="mt-8">
-        <AuthForm mode="login" redirectTo={searchParams.redirectTo} />
-      </div>
-    </Container>
+    <AuthSplitShell
+      story={
+        <AuthStory
+          eyebrow={t("login.story.eyebrow")}
+          heading={t("login.story.heading")}
+          body={t("login.story.body")}
+          quote={t("login.story.quote")}
+          quoteAttribution={t("login.story.quoteAttribution")}
+          pose="login"
+        />
+      }
+    >
+      <AuthCard
+        eyebrow={t("login.card.eyebrow")}
+        heading={t("login.heading")}
+        subtitle={t("login.subtitle")}
+      >
+        {searchParams.checkEmail ? (
+          <p className="mb-md rounded-md bg-accent/10 px-sm py-xs text-body text-foreground">
+            {t("login.checkEmail")}
+          </p>
+        ) : null}
+        <LoginForm redirectTo={searchParams.redirectTo} />
+      </AuthCard>
+    </AuthSplitShell>
   );
 }

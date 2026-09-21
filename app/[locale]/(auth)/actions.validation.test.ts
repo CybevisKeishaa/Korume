@@ -94,6 +94,24 @@ describe("login()/register() field-validation text", () => {
     ]);
   });
 
+  it("resolves a mismatched register confirmation to real English copy", async () => {
+    const { register } = await import("./actions");
+
+    const result = await register(
+      {},
+      formData({
+        name: "Aki",
+        email: "a@b.co",
+        password: "password123",
+        confirmPassword: "password124",
+      }),
+    );
+
+    expect(result.fieldErrors?.confirmPassword).toEqual([
+      "Passwords do not match.",
+    ]);
+  });
+
   it("resolves a blank register name to real English copy", async () => {
     const { register } = await import("./actions");
 

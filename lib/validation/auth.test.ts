@@ -42,6 +42,29 @@ describe("loginSchema", () => {
 });
 
 describe("registerSchema", () => {
+  describe("confirmPassword", () => {
+    const base = { name: "A", email: "a@b.com", password: "password123" };
+
+    it("accepts a matching confirmation", () => {
+      expect(
+        registerSchema.safeParse({ ...base, confirmPassword: "password123" })
+          .success,
+      ).toBe(true);
+    });
+
+    it("reports a mismatch on confirmPassword with the catalog key", () => {
+      const result = registerSchema.safeParse({
+        ...base,
+        confirmPassword: "password124",
+      });
+
+      expect(result.success).toBe(false);
+      expect(
+        !result.success && result.error.flatten().fieldErrors.confirmPassword,
+      ).toEqual(["validation.passwordMismatch"]);
+    });
+  });
+
   it("requires a password of at least 8 characters, keyed passwordTooShort", () => {
     const short = registerSchema.safeParse({
       name: "Aki",
@@ -57,6 +80,7 @@ describe("registerSchema", () => {
       name: "Aki",
       email: "a@b.co",
       password: "12345678",
+      confirmPassword: "12345678",
     });
     expect(ok.success).toBe(true);
   });

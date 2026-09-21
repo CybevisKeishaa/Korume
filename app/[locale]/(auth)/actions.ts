@@ -40,6 +40,8 @@ function translateValidationKey(key: string, t: AuthTranslator): string {
       return t("validation.passwordTooShort");
     case "validation.passwordTooLong":
       return t("validation.passwordTooLong");
+    case "validation.passwordMismatch":
+      return t("validation.passwordMismatch");
     default:
       return key;
   }
@@ -105,6 +107,7 @@ export async function register(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   });
   if (!parsed.success) {
     const t = await getTranslations("auth");

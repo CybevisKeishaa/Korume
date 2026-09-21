@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/lib/i18n";
-import { AuthForm } from "@/components/auth/auth-form";
-import { Container } from "@/components/ui/container";
+import { AuthCard } from "@/components/auth/auth-card";
+import { RegisterForm } from "@/components/auth/register-form";
+import { AuthSplitShell } from "@/components/auth/auth-split-shell";
+import { AuthStory } from "@/components/auth/auth-story";
 import { getTranslations } from "@/lib/i18n/server";
 
 export async function generateMetadata({
@@ -16,12 +18,10 @@ export async function generateMetadata({
 export default async function RegisterPage() {
   const t = await getTranslations("auth");
   return (
-    <Container className="flex min-h-[80vh] max-w-md flex-col justify-center py-12">
-      <h1 className="text-2xl font-bold">{t("register.heading")}</h1>
-      <p className="mt-2 text-muted-foreground">{t("register.subtitle")}</p>
-      <div className="mt-8">
-        <AuthForm mode="register" />
-      </div>
-    </Container>
+    <AuthSplitShell story={<AuthStory eyebrow={t("register.story.eyebrow")} heading={t("register.story.heading")} body={t("register.story.body")} quote={t("register.story.quote")} quoteAttribution={t("register.story.quoteAttribution")} pose="register" />}>
+      <AuthCard eyebrow={t("register.card.eyebrow")} heading={t("register.heading")} subtitle={t("register.subtitle")}>
+        <RegisterForm />
+      </AuthCard>
+    </AuthSplitShell>
   );
 }
