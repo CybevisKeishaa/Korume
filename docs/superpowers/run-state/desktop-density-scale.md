@@ -63,7 +63,7 @@ colour tokens; new breakpoints; and anything below 1280.
 
 ## Verification
 
-Not yet run. The branch gate is `npm run verify:protocol` 0, tsc 0, `npm test`, lint, `next build`,
+Task 2's required handoff commands are recorded below. The branch gate additionally owes lint, build,
 plus a production-build browser measurement of both screens at **1280 and 1440** against spec §6.
 
 The spec's §5.2 mechanism check has been run and is recorded there with its command, so it is not
@@ -180,3 +180,20 @@ the branch is handed to Codex.
   and checkpoints it, then flips the line back; Claude reviews that task's diff independently
   before the next one is dispatched. **One task per dispatch** — the Task 1 review found a defect
   in the plan itself, which a single end-to-end run would have propagated into every later task.
+
+### Task 2 checkpoint
+
+- Commit: `bea1068` `feat(density): a bounded desktop density unit, with a per-group opt-out`.
+- Changed only the density declaration/reset, its three route-group attributes, and its contract test; no token value, colour token, `--text-hero`, `--layout-marketing-max`, breakpoint, or Task 3/4 file changed.
+- Evidence:
+  ```text
+  RED — & 'C:\nvm4w\nodejs\npx.ps1' vitest run lib/design-tokens.test.ts -t "desktop density"
+  ❯ lib/design-tokens.test.ts (40 tests | 2 failed | 37 skipped)
+  Test Files  1 failed (1); Tests  2 failed | 1 passed | 37 skipped (40)
+  GREEN — & 'C:\nvm4w\nodejs\npx.ps1' vitest run lib/design-tokens.test.ts
+  ✓ lib/design-tokens.test.ts (40 tests); Test Files  1 passed (1); Tests  40 passed (40)
+  npm run verify:protocol → Codex protocol: valid
+  npx tsc --noEmit → exit 0 (no output)
+  npm test -- --reporter=dot → Test Files  324 passed (324); Tests  3103 passed (3103); Duration 140.13s
+  ```
+- `code-reviewer`: APPROVE, no actionable findings. Deferred exactly as planned: token conversion and all Task 3+ work.
