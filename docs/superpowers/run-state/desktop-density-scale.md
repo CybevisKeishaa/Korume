@@ -1,6 +1,6 @@
 # Branch Run State
 
-- Owner: Claude
+- Owner: Codex
 
 ## Goal and scope
 
@@ -168,11 +168,15 @@ the branch is handed to Codex.
 3. Codex sets `- Owner: Claude` when the branch gate is green. Claude then reviews the whole branch
    from `git diff master...desktop-density-scale` in the main worktree and merges `--no-ff`.
 
-## Open decisions for the owner
+## Owner rulings, 2026-09-21 — both spec §9 open items are CLOSED
 
-- **`borderRadius.DEFAULT` (4 px, ~25 call sites)** stays a literal in this branch. It was deferred
-  out of `desktop-density-pass` by owner ruling and scaling it is a change that ruling did not
-  authorize (spec §9). If the owner rules it in, it is one line:
-  `DEFAULT: "calc(4 * var(--density-unit))"`.
-- **`button.tsx`'s `h-12` (48 px)** has no rung in spec §6.5 and is left unscaled. Adding
-  `--control-xl` would be an implementer changing the spec.
+- **`borderRadius.DEFAULT` scales.** `DEFAULT: "calc(4 * var(--density-unit))"` in
+  `tailwind.config.ts`; the whole radius scale moves as one. `none` and `full` stay literal.
+  Asserted against the config text, not `globals.css`, because that is where the rung lives.
+- **`button.tsx`'s `h-12` (48 px) does NOT scale.** No fourth control rung is added. The `lg`
+  button holds 48 px while `sm` and `md` scale. That is the decision, not an oversight.
+- **Claude drives the Task 2-7 loop.** The owner reviews at the end, not between tasks. Each cycle:
+  Claude flips `- Owner: Codex` and dispatches one task to `codex exec`; Codex implements, reviews
+  and checkpoints it, then flips the line back; Claude reviews that task's diff independently
+  before the next one is dispatched. **One task per dispatch** — the Task 1 review found a defect
+  in the plan itself, which a single end-to-end run would have propagated into every later task.

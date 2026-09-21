@@ -587,11 +587,29 @@ In `theme.extend`, add to the existing `height` block (which already holds `head
 Leave `borderRadius`, `spacing`, `fontSize` and `width` exactly as they are — they already
 reference the vars, so they inherit the conversion with no edit.
 
-**`borderRadius.DEFAULT: "0.25rem"` stays a literal in this branch.** Spec §9 names it: it is
-~25 call sites, it was deferred out of `desktop-density-pass` by owner ruling, and scaling it is a
-change that ruling did not authorize. Do not scale it and do not delete it. Record it in the run
-state as an open decision for the owner. If the owner rules it in, the whole change is one line —
-`DEFAULT: "calc(4 * var(--density-unit))"` — plus a rung in the Step 1 `scaled` list.
+**`borderRadius.DEFAULT` scales — owner ruling 2026-09-21**, closing the spec §9 open item. It is
+~25 bare `rounded` call sites and it was deferred out of `desktop-density-pass`; the owner has now
+ruled it into this conversion, so the whole radius scale moves together:
+
+```ts
+      DEFAULT: "calc(4 * var(--density-unit))",
+```
+
+It cannot be checked by the Step 1 `scaled` list, which reads `app/globals.css`; this rung lives in
+`tailwind.config.ts` as a literal, like `none` and `full`. Assert it where it lives — add to the
+`describe("desktop density scale", …)` block:
+
+```ts
+  it("scales the default radius rung, which lives in the Tailwind config, not the stylesheet", () => {
+    // Owner ruling 2026-09-21. ~25 bare `rounded` sites; deferred out of
+    // desktop-density-pass and ruled in here, so the radius scale moves as
+    // one. `none` and `full` stay literal: 0 does not scale and 9999 is a
+    // pill, not a measurement.
+    expect(tailwind).toMatch(/DEFAULT:\s*"calc\(4\s*\*\s*var\(--density-unit\)\)"/);
+    expect(tailwind).toMatch(/none:\s*"0px"/);
+    expect(tailwind).toMatch(/full:\s*"9999px"/);
+  });
+```
 
 - [ ] **Step 5: Run the token contract**
 
@@ -681,9 +699,10 @@ vocabulary:
 **The icon map:** `h-3 w-3` → `size-icon-xs`, `h-4 w-4` → `size-icon-sm`, `h-6 w-6` →
 `size-icon-md`, `h-7 w-7` → `size-icon-lg`.
 
-**`button.tsx`'s `h-12` is NOT in this map and does not change.** Spec §6.5 defines three control
-rungs and 48px is not one of them; inventing `--control-xl` here would be a spec change made by an
-implementer. Leave it, and name it in the checkpoint.
+**`button.tsx`'s `h-12` is NOT in this map and does not change — owner ruling 2026-09-21**, closing
+the second spec §9 open item. Spec §6.5 defines three control rungs and 48px is not one of them; the
+owner ruled against adding a fourth. The `lg` button keeps 48px and does not scale while `sm` and
+`md` do. That is the decision, not an oversight — do not "fix" it.
 
 - [ ] **Step 1: Write the failing test**
 
