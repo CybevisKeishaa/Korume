@@ -37,7 +37,7 @@ colour tokens; new breakpoints; and anything below 1280.
 
 ## Accepted commits
 
-- (none yet — spec and run state are the first commit)
+- `1d0f1ce` `refactor(type): one source of truth per typography rung, with a guard` — Task 1.
 
 ## Contracts and decisions
 
@@ -68,6 +68,22 @@ plus a production-build browser measurement of both screens at **1280 and 1440**
 The spec's §5.2 mechanism check has been run and is recorded there with its command, so it is not
 owed again unless the formula changes.
 
+### Task 1 checkpoint (accepted)
+
+- RED: `npx vitest run components/ui/token-scale.test.ts` failed in `app-nav.tsx`, all nine named
+  `components/shadowing` sources, and `shadowing/explore/page.tsx`; it also exposed real shared-shell
+  consumers in `mobile-app-handoff.tsx` and `notification-bell.tsx`, which were migrated rather than
+  excluded from the layout scan.
+- GREEN: `npx vitest run components/ui/token-scale.test.ts components/layout components/shadowing
+  "app/[locale]/(protected)/(app)/shadowing"` passed: 21 files, 178 tests. The final focused guard
+  passed: 70 tests.
+- Mutation checks: restoring `text-sm` in `AppNav` made the guard fail on `app-nav.tsx`; the SHA-256
+  restore matched its backup. Renaming `mobile-app-handoff.tsx` made the layout source-count assertion
+  fail 8 vs 9; restoring it returned the guard to green.
+- Review: `code-reviewer` first required exact source counts for filesystem-collected sets; the guard
+  now pins 15 UI, 25 marketing, 12 shadowing, 9 layout, and 2 shadowing-route sources. Scoped re-review:
+  ADDRESSED, no new Critical or Important finding.
+
 ## Working tree and environment
 
 `.worktrees/desktop-density-scale`, cut from `master` at `42197a6`.
@@ -86,18 +102,13 @@ the branch is handed to Codex.
 
 ## Next actions
 
-1. Codex implements `docs/superpowers/plans/2026-09-21-desktop-density-scale.md`, task by task, in
-   order, under TDD, running `code-reviewer` and checkpointing this file after every accepted task.
-   The dispatch packet is `.superpowers/sdd/2026-09-21-desktop-density-scale/branch-brief.md`
-   (gitignored, so it exists only in this worktree).
-2. Task 1 is the typography consolidation and is a precondition for every later task: until the 32
-   `text-sm` and 4 `text-xs` sites are migrated by semantic role, a token change moves only 8 call
-   sites and cannot produce a coherent screen.
-3. Task 5 is the acceptance gate and is the one the previous branch got wrong. The acceptance
+1. Task 2 defines the density unit and reference-group reset under TDD, then receives a per-task
+   `code-reviewer` review and checkpoint.
+2. Task 5 is the acceptance gate and is the one the previous branch got wrong. The acceptance
    number is the owner's zoom-90% composition (main column ~768 px at 1280), measured on a
    production build with exactly one server — never a number derived from this branch's own
    arithmetic.
-4. Codex sets `- Owner: Claude` when the branch gate is green. Claude then reviews the whole branch
+3. Codex sets `- Owner: Claude` when the branch gate is green. Claude then reviews the whole branch
    from `git diff master...desktop-density-scale` in the main worktree and merges `--no-ff`.
 
 ## Open decisions for the owner
