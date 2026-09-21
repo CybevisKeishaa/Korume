@@ -99,6 +99,24 @@ test("at 1024px, the Hub rail follows its resolved track through nav collapse", 
   expect(afterRailWidth).toBeGreaterThanOrEqual(beforeRailWidth);
 });
 
+test("at 1280px, navigation rows keep the 44px hit-target floor", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await registerLearner(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/en/shadowing");
+
+  const rows = [
+    page.getByRole("navigation").getByRole("list").first().getByRole("link").first(),
+    page.getByRole("button", { name: "Sign out" }),
+    page.getByRole("button", { name: "Hide navigation" }),
+  ];
+
+  for (const row of rows) {
+    await expect(row).toBeVisible();
+    expect((await row.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
 test("at desktop widths, the Hub keeps every truthful region and a fluid rail through nav collapse", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
   await registerLearner(page);

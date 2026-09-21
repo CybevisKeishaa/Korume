@@ -256,6 +256,17 @@
   /* Control heights. --control-lg reaches 39.11px at 1280, under the 44px
      touch convention; accepted by spec §7 for this pointer-driven desktop
      range, where WCAG 2.5.8 requires 24 × 24. */
+  /* The hit-target floor, and the ONE dimension here that must never scale.
+     Ruling 3.2 puts the rail inside the density rule and carves out only what
+     is tied to a hit target; spec §7 then accepts --control-lg falling to
+     39.11px at 1280. So the floor cannot be --control-lg: a token that scales
+     cannot express "never below 44px". It is rem, not px, so it still grows
+     with the reader's own font size. It is absent from the [data-density]
+     block on purpose — nothing about it depends on the unit.
+     Verified in a browser, not assumed: tests/e2e/shadowing-hub.spec.ts
+     measures the nav rows at 1280. */
+  --hit-target-min: 2.75rem; /* 44px at a 16px root — deliberately unscaled */
+
   --control-sm: calc(36 * var(--density-unit));
   --control-md: calc(40 * var(--density-unit));
   --control-lg: calc(44 * var(--density-unit));

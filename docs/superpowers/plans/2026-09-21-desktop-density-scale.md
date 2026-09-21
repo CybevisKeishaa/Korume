@@ -694,7 +694,15 @@ vocabulary:
 | `-4` | 16 | `md` |
 
 **The control map:** `h-9` → `h-control-sm`, `h-10` → `h-control-md`, `h-11` / `min-h-11` →
-`h-control-lg` / `min-h-control-lg`.
+`h-control-lg` / `min-h-hit-target`.
+
+⚠️ **Corrected 2026-09-21, after Codex stopped and reported it.** This step first said the 44px
+floor was `min-h-control-lg`. It cannot be: `--control-lg` is `calc(44 * var(--density-unit))`,
+which is **39.11px at 1280** — and spec §7 explicitly *accepts* that. A token that scales cannot
+express "never below 44px". The floor is its own non-scaling token, `--hit-target-min: 2.75rem`
+(44px at a 16px root, in `rem` so it still answers the reader's font-size setting), mapped as
+`min-h-hit-target`. It is deliberately absent from the `[data-density]` block. Codex was right to
+stop rather than loosen the assertion to 39px; that is the behaviour this plan asks for.
 
 **The icon map:** `h-3 w-3` → `size-icon-xs`, `h-4 w-4` → `size-icon-sm`, `h-6 w-6` →
 `size-icon-md`, `h-7 w-7` → `size-icon-lg`.
@@ -716,7 +724,7 @@ Add to `components/layout/app-nav.test.tsx`, inside the existing `describe("AppN
     // dimensions and the carve-out applies only to the second.
     renderNav();
     const [firstLink] = screen.getAllByRole("link");
-    expect(firstLink.className).toContain("min-h-control-lg");
+    expect(firstLink.className).toContain("min-h-hit-target");
   });
 ```
 

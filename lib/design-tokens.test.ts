@@ -77,6 +77,8 @@ const REQUIRED_TOKENS = [
   // and h-3/h-4/h-6/h-7 were Tailwind numerics scattered across primitives
   // and screens, so they could not scale with anything.
   "--control-sm", "--control-md", "--control-lg",
+  // The hit-target floor. NOT density-derived, on purpose.
+  "--hit-target-min",
   "--icon-xs", "--icon-sm", "--icon-md", "--icon-lg",
   "--density-unit",
   // typography
@@ -435,6 +437,16 @@ describe("desktop density scale", () => {
     const scopeDerived = derived(scopeBlock!);
     expect(rootDerived.size).toBeGreaterThan(30);
     expect([...scopeDerived].sort()).toEqual([...rootDerived].sort());
+  });
+
+  it("keeps the hit-target floor out of the density rule entirely", () => {
+    // Spec §7 accepts --control-lg falling to 39.11px at 1280, so the floor
+    // cannot be that token: a value that scales cannot express "never below
+    // 44px". rem, not px, so it still answers the reader's font-size setting.
+    expect(css).toMatch(/--hit-target-min:\s*2\.75rem/);
+    const declaration = css.match(/--hit-target-min:[^;]+;/)?.[0] ?? "";
+    expect(declaration).not.toMatch(/density-unit/);
+    expect(2.75 * 16).toBe(44);
   });
 
   it("puts the reference opt-out on all three out-of-scope layouts", () => {

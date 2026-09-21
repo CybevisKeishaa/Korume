@@ -104,6 +104,7 @@ const config: Config = {
         "control-lg": "var(--control-lg)",
       },
       minHeight: {
+        "hit-target": "var(--hit-target-min)",
         "control-sm": "var(--control-sm)",
         "control-md": "var(--control-md)",
         "control-lg": "var(--control-lg)",
