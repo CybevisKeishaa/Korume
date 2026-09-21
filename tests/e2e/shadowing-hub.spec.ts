@@ -99,6 +99,24 @@ test("at 1024px, the Hub rail follows its resolved track through nav collapse", 
   expect(afterRailWidth).toBeGreaterThanOrEqual(beforeRailWidth);
 });
 
+test("at 1280px, navigation rows keep the 44px hit-target floor", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await registerLearner(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/en/shadowing");
+
+  const rows = [
+    page.getByRole("navigation").getByRole("list").first().getByRole("link").first(),
+    page.getByRole("button", { name: "Sign out" }),
+    page.getByRole("button", { name: "Hide navigation" }),
+  ];
+
+  for (const row of rows) {
+    await expect(row).toBeVisible();
+    expect((await row.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
 test("at desktop widths, the Hub keeps every truthful region and a fluid rail through nav collapse", async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
   await registerLearner(page);
@@ -145,9 +163,12 @@ test("at desktop widths, the Hub keeps every truthful region and a fluid rail th
   await main.getByRole("button", { name: enVideos.import }).click();
   await expect(main.getByRole("button", { name: enVideos.importing })).toBeDisabled();
   releaseImport();
-  await expect(main.getByRole("alert")).toHaveText(
-    "We couldn't fetch details for that video. Double-check the link and try again.",
-  );
+  // Read from the catalogue, not copied out of it. This assertion held a
+  // literal string that C4 removed from messages/en/videos.json at 002f993
+  // (on master since the 21a436b merge), so it had been failing on master
+  // since 2026-09-19 — unnoticed because that branch was excused from
+  // re-running this spec. A 422 with no error code maps to `generic`.
+  await expect(main.getByRole("alert")).toHaveText(enVideos.errors.generic);
 
   const beforeMain = await hubColumn.boundingBox();
   const beforeRail = await rail.boundingBox();

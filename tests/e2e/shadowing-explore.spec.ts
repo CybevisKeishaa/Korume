@@ -103,7 +103,14 @@ test("at 1024px, Explore exposes a seeded shelf card and keyboard-operable local
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test("at the 1600px compact desktop reference, a lesson card keeps Figma density", async ({ page }) => {
+// The card height moved 298 -> 308 on 2026-09-21 by owner ruling: this card
+// was ported 1:1 off the 1536 frame and set its own type at 8-9px, below the
+// 11px floor the density scale gives `caption` and immune to --density-unit
+// because an absolute literal cannot scale. Every rung in it is now `caption`,
+// whose line box is 18px, so the eyebrow and summary rows grew by 6 and 4.
+// 308 is MEASURED in this test, not computed: the previous pin was left in
+// place deliberately and read off its failure (Expected <= 300, Received 308).
+test("at the 1600px compact desktop reference, a lesson card holds its composed height", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 732 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await registerLearner(page);
@@ -117,12 +124,36 @@ test("at the 1600px compact desktop reference, a lesson card keeps Figma density
   const cardBox = await card.boundingBox();
   const thumbnailBox = await card.locator(":scope > div").first().boundingBox();
   const startBox = await card.getByRole("link", { name: `${enShadowing.hub.actions.start}: ${EXPLORE_TITLE}` }).boundingBox();
-  expect(cardBox?.height).toBeGreaterThanOrEqual(296);
-  expect(cardBox?.height).toBeLessThanOrEqual(300);
+  expect(cardBox?.height).toBeGreaterThanOrEqual(306);
+  expect(cardBox?.height).toBeLessThanOrEqual(310);
   expect(cardBox?.width).toBeGreaterThanOrEqual(295);
   expect(cardBox?.width).toBeLessThanOrEqual(297);
   expect(thumbnailBox?.height).toBeGreaterThanOrEqual(111);
   expect(thumbnailBox?.height).toBeLessThanOrEqual(113);
   expect(startBox?.height).toBeGreaterThanOrEqual(24);
   expect(startBox?.height).toBeLessThanOrEqual(28);
+});
+
+test("at 1280px, every text field reads at the body rung, not the browser's unscaled 16px", async ({ page }) => {
+  // A field with no type class inherits preflight's `font-size: 100%` — the
+  // body's 16px, which the density unit never touches. The search field shipped
+  // that way at 16px beside 12.44px body copy, and no text-scanning guard can
+  // see a class that is ABSENT. Only a computed value can.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await registerLearner(page);
+  for (const path of ["/en/shadowing/explore", "/en/shadowing"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const sizes = await page.locator("[data-desktop-web]").evaluate((root) => {
+      const probe = document.createElement("p");
+      probe.className = "text-body";
+      root.append(probe);
+      const body = getComputedStyle(probe).fontSize;
+      probe.remove();
+      const fields = [...root.querySelectorAll("input:not([type=hidden]), textarea, select")];
+      return { body, fields: fields.map((field) => `${field.id || field.getAttribute("name")}=${getComputedStyle(field).fontSize}`) };
+    });
+    expect(sizes.fields.length, path).toBeGreaterThan(0);
+    for (const field of sizes.fields) expect(field, path).toMatch(new RegExp(`=${sizes.body}$`));
+  }
 });

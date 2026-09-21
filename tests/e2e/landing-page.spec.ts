@@ -796,3 +796,38 @@ test.describe("motion never hides content", () => {
     await expect(action).toHaveCSS("opacity", "1");
   });
 });
+
+test.describe("density opt-out", () => {
+  /**
+   * The marketing group holds density at 1.0 (`data-density="reference"`),
+   * because its frames are drawn on a 1280 canvas and are already 1:1 correct.
+   *
+   * ⚠️ This has to be MEASURED IN A BROWSER, and no stylesheet assertion can
+   * replace it. A var() inside a custom property is substituted on the element
+   * that DECLARES it, so the first version of this opt-out set --density-unit
+   * on the group and changed nothing at all: every token had already resolved
+   * against :root. The CSS text said the reset existed, a unit test confirmed
+   * the rule and the attribute were both present, and the whole landing page
+   * still rendered ~11% small. Only a computed value catches that.
+   */
+  test("holds the reference density at 1280, where the app scales down", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/en");
+
+    const scope = page.locator('[data-density="reference"]').first();
+    await expect(scope).toHaveCount(1);
+
+    const measured = await scope.evaluate((element) => {
+      const probe = document.createElement("div");
+      probe.style.cssText = "font-size: var(--text-body); padding-left: var(--space-md)";
+      element.append(probe);
+      const { fontSize, paddingLeft } = getComputedStyle(probe);
+      probe.remove();
+      return { fontSize, paddingLeft };
+    });
+
+    // 1.0, not 1280/1440. The fluid values here would be 12.4445px / 14.2222px.
+    expect(measured.fontSize).toBe("14px");
+    expect(measured.paddingLeft).toBe("16px");
+  });
+});

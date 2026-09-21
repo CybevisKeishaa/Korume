@@ -2,6 +2,7 @@
 
 import * as RadixSelect from "@radix-ui/react-select";
 import { cn } from "@/lib/utils";
+import { useDensityScope } from "./use-density-scope";
 
 export interface SelectOption {
   value: string;
@@ -36,13 +37,14 @@ export function Select({
   className,
   "aria-label": ariaLabel,
 }: SelectProps) {
+  const { anchorRef, contentRef } = useDensityScope();
   return (
     <RadixSelect.Root value={value} onValueChange={onValueChange} disabled={disabled}>
       <RadixSelect.Trigger
         id={id}
         aria-label={ariaLabel}
         className={cn(
-          "flex h-10 w-full items-center justify-between gap-xs rounded-md border border-input",
+          "flex h-control-md w-full items-center justify-between gap-xs rounded-md border border-input",
           "bg-input-background px-sm text-body text-foreground",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "data-[placeholder]:text-muted-foreground",
@@ -54,8 +56,10 @@ export function Select({
           ▾
         </RadixSelect.Icon>
       </RadixSelect.Trigger>
+      <span hidden ref={anchorRef} />
       <RadixSelect.Portal>
         <RadixSelect.Content
+          ref={contentRef}
           position="popper"
           sideOffset={4}
           className={cn(

@@ -18,7 +18,7 @@ const config: Config = {
     // `rounded-xl` must not silently fall back to the framework's 0.75rem.
     borderRadius: {
       none: "0px",
-      DEFAULT: "0.25rem",
+      DEFAULT: "calc(4 * var(--density-unit))",
       sm: "var(--radius-sm)",
       md: "var(--radius-md)",
       lg: "var(--radius-lg)",
@@ -99,6 +99,21 @@ const config: Config = {
       },
       height: {
         header: "var(--layout-header-height)",
+        "control-sm": "var(--control-sm)",
+        "control-md": "var(--control-md)",
+        "control-lg": "var(--control-lg)",
+      },
+      minHeight: {
+        "hit-target": "var(--hit-target-min)",
+        "control-sm": "var(--control-sm)",
+        "control-md": "var(--control-md)",
+        "control-lg": "var(--control-lg)",
+      },
+      size: {
+        "icon-xs": "var(--icon-xs)",
+        "icon-sm": "var(--icon-sm)",
+        "icon-md": "var(--icon-md)",
+        "icon-lg": "var(--icon-lg)",
       },
       // `scroll-mt-header` — the clearance an anchored section holds under the
       // sticky bar. Deliberately NOT added to `spacing`: these are shell

@@ -70,10 +70,17 @@ const REQUIRED_TOKENS = [
   // purpose: frame 347:6277 is 1280 wide and puts its content ~44px from each
   // edge, where Container's app-wide max-w-6xl puts it 96px in (task 12).
   "--layout-marketing-max",
-  // radius — declared absolutely, never derived. A calc()-chained scale means
-  // one edit to the base silently skews every other step. No unqualified
-  // `--radius`: it had zero consumers outside docs/ and was deleted.
+  // radius — each rung is independently authored from its 1440 value. No
+  // unqualified `--radius`: it had zero consumers outside docs/ and was deleted.
   "--radius-sm", "--radius-md", "--radius-lg",
+  // Control heights and icon sizes. NEW in the density scale: h-9/h-10/h-11
+  // and h-3/h-4/h-6/h-7 were Tailwind numerics scattered across primitives
+  // and screens, so they could not scale with anything.
+  "--control-sm", "--control-md", "--control-lg",
+  // The hit-target floor. NOT density-derived, on purpose.
+  "--hit-target-min",
+  "--icon-xs", "--icon-sm", "--icon-md", "--icon-lg",
+  "--density-unit",
   // typography
   "--text-caption", "--text-body", "--text-body-lg", "--text-heading",
   "--text-heading-lg", "--text-title", "--text-display", "--text-hero",
@@ -369,6 +376,198 @@ describe("design tokens", () => {
     // they must say so by referencing the step, not by restating a number.
     expect(css).toMatch(/--layout-gutter:\s*var\(--space-xl\)/);
     expect(css).toMatch(/--layout-column-gap:\s*var\(--space-lg\)/);
+  });
+});
+
+describe("desktop density scale", () => {
+  it("declares the density unit with both bounds in rem, never in px", () => {
+    // Spec §5.2: a vw-derived unit ignores the reader's own font-size
+    // preference and fails WCAG 1.4.4. rem bounds rise above the vw term
+    // when the reader raises their default size, so type still grows.
+    expect(css).toMatch(
+      /--density-unit:\s*clamp\(\s*0\.0555556rem\s*,\s*calc\(100vw\s*\/\s*1440\)\s*,\s*0\.0625rem\s*\)/,
+    );
+    const declaration = css.match(/--density-unit:[^;]+;/)?.[0] ?? "";
+    expect(declaration).not.toMatch(/\d+px/);
+  });
+
+  it("bounds the rule to 1280-1440 and to nothing else", () => {
+    // Ruling 3.5: 1440 = 1.0, 1280 = 0.889, held at both ends.
+    //
+    // The bounds are READ OUT OF THE STYLESHEET, not copied into this file.
+    // Asserting `0.0555556 * 16 ≈ 1280/1440` proves arithmetic about two
+    // literals and would keep passing while the CSS said something else
+    // entirely — a check that measures nothing, which is exactly how the
+    // density defect survived a branch.
+    const bounds = css.match(
+      /--density-unit:\s*clamp\(\s*([\d.]+)rem\s*,\s*calc\(100vw\s*\/\s*(\d+)\)\s*,\s*([\d.]+)rem\s*\)/,
+    );
+    expect(bounds).not.toBeNull();
+    const [, lower, reference, upper] = bounds!;
+    expect(Number(reference)).toBe(1440);
+    expect(Number(upper) * 16).toBe(1); // 1px at the reference viewport
+    expect(Number(lower) * 16).toBeCloseTo(1280 / 1440, 4); // 0.889 at 1280
+  });
+
+  it("re-declares the whole derived layer on the opt-out scope, not just the unit", () => {
+    // THE OPT-OUT'S ACTUAL MECHANISM. A var() inside a custom property is
+    // substituted on the element that DECLARES the property, so every token
+    // declared on :root resolves against :root's unit and inherits a finished
+    // length. Overriding --density-unit lower down cannot reach it.
+    //
+    // Measured in Chrome at 1280 while only the reset existed: inside the
+    // reference scope, padding-left: var(--space-md) rendered 14.2222px — the
+    // fluid value — and a direct calc(16 * var(--density-unit)) rendered 16px.
+    // The three layouts carried an attribute that did nothing.
+    //
+    // This asserts the two lists are the SAME SET. A token added to :root and
+    // forgotten in the scope block silently stops honouring the opt-out, and
+    // the only symptom is a marketing page 11% off its own design.
+    //
+    // Derived is TRANSITIVE: `--layout-gutter: var(--space-xl)` never names the
+    // unit, yet resolves on :root to a finished fluid length exactly like the
+    // tokens that do. A filter on the literal text "density-unit" missed it
+    // (whole-branch review M1), so a chain is followed to its root.
+    const derived = (source: string) => {
+      const declarations = [...source.matchAll(/^[ \t]*(--[a-z0-9-]+):\s*((?:[^;]|\n)*?);/gm)].map(
+        (match) => [match[1]!, match[2]!] as const,
+      );
+      const found = new Set<string>();
+      for (let grew = true; grew; ) {
+        grew = false;
+        for (const [name, value] of declarations) {
+          if (name === "--density-unit" || found.has(name)) continue;
+          if (value.includes("density-unit") || [...found].some((token) => value.includes(`var(${token})`))) {
+            found.add(name);
+            grew = true;
+          }
+        }
+      }
+      return found;
+    };
+
+    const scopeBlock = css.match(/\[data-density\]\s*\{([\s\S]*?)\n\}/)?.[1];
+    expect(scopeBlock).toBeDefined();
+
+    const rootDerived = derived(css.replace(scopeBlock!, ""));
+    const scopeDerived = derived(scopeBlock!);
+    expect(rootDerived.size).toBeGreaterThan(30);
+    expect([...scopeDerived].sort()).toEqual([...rootDerived].sort());
+  });
+
+  it("keeps the hit-target floor out of the density rule entirely", () => {
+    // Spec §7 accepts --control-lg falling to 39.11px at 1280, so the floor
+    // cannot be that token: a value that scales cannot express "never below
+    // 44px". rem, not px, so it still answers the reader's font-size setting.
+    expect(css).toMatch(/--hit-target-min:\s*2\.75rem/);
+    const declaration = css.match(/--hit-target-min:[^;]+;/)?.[0] ?? "";
+    expect(declaration).not.toMatch(/density-unit/);
+    expect(2.75 * 16).toBe(44);
+  });
+
+  it("puts the reference opt-out on all three out-of-scope layouts", () => {
+    // The reset rule existing proves nothing: delete the attribute from these
+    // three files and every other assertion here still passes, while the
+    // marketing, auth and immersive groups silently start scaling from the
+    // token conversion onward. Their frames are drawn on a 1280 canvas, so
+    // that would take them ~10% away from their own design.
+    const layouts = [
+      "app/[locale]/(marketing)/layout.tsx",
+      "app/[locale]/(auth)/layout.tsx",
+      "app/[locale]/(protected)/(immersive)/layout.tsx",
+    ];
+    const missing = layouts.filter(
+      (file) => !/data-density="reference"/.test(readFileSync(file, "utf8")),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  it("lets a route group opt out, because a custom property cascades", () => {
+    // Spec §5.3: rem resolves against the root and is all-or-nothing per
+    // document, which is the reason this is a custom property at all.
+    expect(css).toMatch(/\[data-density="reference"\]\s*\{\s*--density-unit:\s*0\.0625rem;?\s*\}/);
+  });
+
+  it("scales every rung of every scale through the one unit", () => {
+    // Spec §6. The authored number is the 1440 value; nothing is rounded and
+    // nothing is re-derived. A rung missing from this list is a rung that
+    // silently stopped scaling.
+    const scaled: Array<[string, number]> = [
+      ["--space-2xs", 4], ["--space-xs", 8], ["--space-sm", 12], ["--space-md", 16],
+      ["--space-md-lg", 20], ["--space-lg", 24], ["--space-xl", 32],
+      ["--space-2xl", 48], ["--space-3xl", 64],
+      ["--radius-sm", 8], ["--radius-md", 14], ["--radius-lg", 20],
+      ["--text-body", 14], ["--leading-body", 22],
+      ["--text-body-lg", 16], ["--leading-body-lg", 26],
+      ["--text-heading", 20], ["--leading-heading", 28],
+      ["--text-heading-lg", 24], ["--leading-heading-lg", 32],
+      ["--text-title", 28], ["--leading-title", 36],
+      ["--text-display", 40], ["--leading-display", 48],
+      ["--layout-sidebar-width", 224], ["--layout-sidebar-collapsed", 68],
+      ["--layout-content-max", 1240], ["--layout-header-height", 64],
+      ["--control-sm", 36], ["--control-md", 40], ["--control-lg", 44],
+      ["--icon-xs", 12], ["--icon-sm", 16], ["--icon-md", 24], ["--icon-lg", 28],
+    ];
+    const missing = scaled.filter(
+      ([name, n]) =>
+        !new RegExp(`${name}:\\s*calc\\(${n}\\s*\\*\\s*var\\(--density-unit\\)\\)`).test(css),
+    );
+    expect(missing.map(([name]) => name)).toEqual([]);
+  });
+
+  it("floors caption with max(), not with a clamp bound on the unit", () => {
+    // Spec §6.1: 12 × w/1440 reaches 11px at w = 1320, so caption is under
+    // its floor across the whole 1280-1320 band — not only at the endpoint.
+    // Holding the UNIT at 1280 would leave that band unguarded, so the floor
+    // wraps the TOKEN. The line-height floors with it, preserving the ratio.
+    expect(css).toMatch(
+      /--text-caption:\s*max\(0\.6875rem,\s*calc\(12\s*\*\s*var\(--density-unit\)\)\)/,
+    );
+    expect(css).toMatch(
+      /--leading-caption:\s*max\(1\.03125rem,\s*calc\(18\s*\*\s*var\(--density-unit\)\)\)/,
+    );
+  });
+
+  it("leaves the marketing column and the hero rung alone", () => {
+    // Both belong to a surface that holds density at 1.0. --layout-marketing-max
+    // is measured off a 1280 canvas; --text-hero is already fluid on a
+    // different formula, introduced to fix a WCAG 1.4.10 reflow failure.
+    expect(css).toMatch(/--layout-marketing-max:\s*1256px/);
+    expect(css).toMatch(/--text-hero:\s*clamp\(/);
+    expect(css).not.toMatch(/--text-hero:[^;]*--density-unit/);
+  });
+
+  it("scales the companion rail's bounds but not its share", () => {
+    // Spec §6.4: the 27.5% share is already proportional and is not touched;
+    // the 15rem floor and 21.25rem cap are constants and are.
+    expect(css).toMatch(
+      /--layout-companion-width:\s*clamp\(\s*calc\(240\s*\*\s*var\(--density-unit\)\)\s*,\s*27\.5%\s*,\s*calc\(340\s*\*\s*var\(--density-unit\)\)\s*\)/,
+    );
+  });
+
+  it("scales the default radius rung, which lives in the Tailwind config, not the stylesheet", () => {
+    // Owner ruling 2026-09-21. ~25 bare `rounded` sites; deferred out of
+    // desktop-density-pass and ruled in here, so the radius scale moves as
+    // one. `none` and `full` stay literal: 0 does not scale and 9999 is a
+    // pill, not a measurement.
+    expect(tailwind).toMatch(/DEFAULT:\s*"calc\(4\s*\*\s*var\(--density-unit\)\)"/);
+    expect(tailwind).toMatch(/none:\s*"0px"/);
+    expect(tailwind).toMatch(/full:\s*"9999px"/);
+  });
+
+  it("maps every density control and icon token to its Tailwind utility scale", () => {
+    const height = tailwind.match(/height:\s*\{([\s\S]*?)\n\s*\},\n\s*minHeight:/)?.[1] ?? "";
+    const minHeight = tailwind.match(/minHeight:\s*\{([\s\S]*?)\n\s*\},\n\s*size:/)?.[1] ?? "";
+    const size = tailwind.match(/size:\s*\{([\s\S]*?)\n\s*\},\n\s*\/\//)?.[1] ?? "";
+
+    for (const name of ["sm", "md", "lg"]) {
+      const mapping = `"control-${name}": "var(--control-${name})"`;
+      expect(height).toContain(mapping);
+      expect(minHeight).toContain(mapping);
+    }
+    for (const name of ["xs", "sm", "md", "lg"]) {
+      expect(size).toContain(`"icon-${name}": "var(--icon-${name})"`);
+    }
   });
 });
 

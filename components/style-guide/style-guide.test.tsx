@@ -105,14 +105,16 @@ describe("StyleGuide", () => {
     }
   });
 
-  it("shows all three radius steps with their pixel values", () => {
+  it("shows all three radius steps at their 1440 and 1280 values", () => {
     renderGuide();
-    for (const [cls, px] of [
-      ["rounded-sm", 8],
-      ["rounded-md", 14],
-      ["rounded-lg", 20],
+    for (const [cls, px, at1280] of [
+      ["rounded-sm", 8, 7.11],
+      ["rounded-md", 14, 12.44],
+      ["rounded-lg", 20, 17.78],
     ] as const) {
-      expect(screen.getByText(new RegExp(`${cls} · ${px}px`))).toBeInTheDocument();
+      expect(
+        screen.getByText(new RegExp(`${cls} · ${px}px @1440 · ${at1280}px @1280`)),
+      ).toBeInTheDocument();
     }
   });
 

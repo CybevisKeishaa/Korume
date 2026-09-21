@@ -25,9 +25,9 @@ export function ExploreShelves({ shelves, labels }: {
                 ))}
               </ul>
             ) : (
-              <p className="mt-md text-sm text-muted-foreground">{labels.empty}</p>
+              <p className="mt-md text-body text-muted-foreground">{labels.empty}</p>
             )}
-            {shelf.hasMore ? <p className="mt-sm text-sm text-muted-foreground">{labels.moreAvailable}</p> : null}
+            {shelf.hasMore ? <p className="mt-sm text-body text-muted-foreground">{labels.moreAvailable}</p> : null}
           </section>
         ))}
       </div>

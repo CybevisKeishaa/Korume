@@ -58,14 +58,16 @@ describe("TwoColumnShell", () => {
     expect(rail.className).not.toContain("hidden");
   });
 
-  it("defines the rail track as a share of the shell, capped at the frame width", async () => {
+  it("defines the rail track as a share of the shell, with density-scaled bounds", async () => {
     // Read the declaration out of the stylesheet rather than the DOM: jsdom
     // does not resolve clamp(), so asserting a computed width here would be a
     // false green (docs/lessons.md: prove the subject exists first).
     const css = await import("node:fs/promises").then((fs) =>
       fs.readFile("app/globals.css", "utf8"),
     );
-    expect(css).toContain("--layout-companion-width: clamp(15rem, 27.5%, 21.25rem);");
+    expect(css).toMatch(
+      /--layout-companion-width:\s*clamp\(\s*calc\(240\s*\*\s*var\(--density-unit\)\)\s*,\s*27\.5%\s*,\s*calc\(340\s*\*\s*var\(--density-unit\)\)\s*\)/,
+    );
     expect(css).not.toContain("--layout-companion-width: 300px;");
   });
 

@@ -224,7 +224,7 @@ export function NotificationBell() {
           className="panel-in absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
           <div className="flex items-center justify-between gap-2">
-            <h2 id={headingId} className="text-sm font-semibold">
+            <h2 id={headingId} className="text-body font-semibold">
               Notifications
             </h2>
             <button
@@ -242,38 +242,38 @@ export function NotificationBell() {
           </div>
 
           <div className="mt-2 flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground" aria-live="polite">
+            <p className="text-caption text-muted-foreground" aria-live="polite">
               {unreadCount} unread
             </p>
             <button
               type="button"
               onClick={() => void markAll()}
               disabled={unreadCount === 0 || rateLimited}
-              className="rounded-md px-2 py-1 text-xs font-medium text-primary-strong hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-50"
+              className="rounded-md px-2 py-1 text-caption font-medium text-primary-strong hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-50"
             >
               Mark all as read
             </button>
           </div>
 
           {loadState.status === "error" && (
-            <p role="alert" className="mt-2 text-xs text-danger-strong">
+            <p role="alert" className="mt-2 text-caption text-danger-strong">
               {loadState.message}
             </p>
           )}
           {mutateError && (
-            <p role="alert" className="mt-2 text-xs text-danger-strong">
+            <p role="alert" className="mt-2 text-caption text-danger-strong">
               {mutateError}
             </p>
           )}
           {rateLimited && (
-            <p role="status" className="mt-2 text-xs text-muted-foreground">
+            <p role="status" className="mt-2 text-caption text-muted-foreground">
               Please wait a moment before marking more as read.
             </p>
           )}
 
           <div className="mt-2 max-h-80 overflow-y-auto">
             {notifications.length === 0 && loadState.status !== "loading" ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
+              <p className="py-4 text-center text-body text-muted-foreground">
                 No notifications yet — you&apos;ll see badges, level-ups and review reminders here.
               </p>
             ) : (
@@ -292,10 +292,10 @@ export function NotificationBell() {
                         )}
                       />
                       <span className="flex-1">
-                        <span className={cn("block text-sm", unread ? "font-semibold" : "text-foreground")}>
+                        <span className={cn("block text-body", unread ? "font-semibold" : "text-foreground")}>
                           {description}
                         </span>
-                        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="mt-0.5 flex items-center gap-1.5 text-caption text-muted-foreground">
                           <time dateTime={notification.createdAt}>{time}</time>
                           {unread && <span className="font-medium text-primary-strong">· Unread</span>}
                         </span>

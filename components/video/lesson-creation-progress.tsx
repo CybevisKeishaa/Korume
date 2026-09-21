@@ -165,7 +165,7 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
               <li
                 key={stage.key}
                 className={cn(
-                  "flex items-center gap-sm text-sm",
+                  "flex items-center gap-sm text-body",
                   state === "done" && "text-foreground",
                   state === "inProgress" && "font-semibold text-foreground",
                   state === "waiting" && "text-muted-foreground",
@@ -182,7 +182,7 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
 
       {job.state === "failed" && (
         <div className="mt-sm">
-          <p role="alert" className="text-sm text-danger-strong">
+          <p role="alert" className="text-body text-danger-strong">
             {t(`creation.errors.${ERROR_KEYS[job.publicErrorCode ?? "temporary_failure"]}`)}
           </p>
           <Button type="button" variant="outline" className="mt-sm" disabled={retrying} onClick={() => void handleRetry()}>

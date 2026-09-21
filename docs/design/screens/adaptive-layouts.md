@@ -693,23 +693,42 @@ The learner should never need to fight the layout.
 
 Instead, the workspace should gently make room for the way they choose to study.
 
-# Frame Fidelity: shares, not constants
+# Frame Fidelity: normalize to 1440, then tokenize
 
-A shell dimension read off a Figma frame is a **share of that frame's canvas**, not a pixel
-constant — unless the element is a fixed control (icon button, avatar, form-row height).
+A dimension read off a Figma frame is never implemented as the pixel value the frame draws. It is
+**normalized to the 1440 reference viewport**, and then expressed as a token — `calc(N *
+var(--density-unit))`, where N is the normalized 1440 value.
 
-A **persistent navigation rail that owns a collapsed state and a fixed text measure** is a fixed
-control under this rule. Scaling it crops labels rather than rebalancing the layout; its fixed and
-collapsed widths are its two intentional escapes.
-
-- App frames in the Korume file are drawn on a **1536** canvas. The auth, error and membership
-  batch and the marketing page are drawn on **1280**. Divide by the canvas the frame was drawn on.
-- A constant is allowed only as the `max` of a `clamp()`, where it caps the share at the value the
-  designer actually drew.
+- App frames in the Korume file are drawn on a **1536** canvas, and their values **are** the 1440
+  values: N is the number the frame draws, with no 1440/1536 factor. The owner read those values
+  as correct at 1422 ≈ 1440, and the two calibration screens ship them that way — a 0.9375 factor
+  would make every later screen 6% smaller than Hub and Explore. The auth, error and membership
+  batch and the marketing page are drawn on **1280** and belong to route groups that hold density
+  at 1.0 (`data-density="reference"`), so their values are used as drawn.
+- The density unit is `clamp(0.0555556rem, calc(100vw / 1440), 0.0625rem)`: 1.0 at 1440 and above,
+  0.889 at 1280 and below, interpolated between. Both bounds are `rem` so the reader's own
+  font-size preference still works (WCAG 1.4.4).
+- **There is no carve-out for a persistent navigation rail.** The earlier version of this section
+  exempted one as a "fixed control"; owner ruling 2026-09-21 revoked that. The rail scales like
+  everything else. What holds its own size is named, not inferred: the 44px hit target on an
+  interactive row (`min-h-hit-target`, on the target, not the container), `caption`'s 11px floor,
+  and the `lg` button's 48px by owner ruling.
 - A percentage belongs on the grid **track**, never on the element sitting in that track — a
   percentage there resolves against the track and applies itself twice.
+- A raw px value is allowed only where no token can express it, with an inline comment saying why.
+  `components/ui/token-scale.test.ts` rejects raw type, spacing, gap, radius, leading and shadow
+  values in the trees it scans; it does **not** scan widths or heights, so those rely on review.
+- A portaled overlay (`Dialog`, `Popover`, `Select`, `Tooltip` in `components/ui`) copies the
+  `data-density` of the scope it was opened from onto its content. A new portaled primitive must
+  do the same through `useDensityScope`, or it renders at the app's density inside a reference
+  group.
+- **Judge a screen against the owner's comparison, in screen px.** "Looks right at browser zoom
+  90%" means a 1280 window laid out at a 1422 CSS viewport and drawn at 0.9 — so the target is
+  the 1422 measurement × 0.9, not the 1422 number itself.
 
-Why this exists: the companion rail shipped as a fixed `300px` measured off a 1536 frame. At a 1422
-viewport it held 27.8% of the shell, matching the frame's 27.3%; at 1280 it held 32.0% and the main
-column lost 19% of its width. Nothing about the rail was wrong at the width it was drawn for. See
-`docs/superpowers/specs/2026-09-20-desktop-density-pass-design.md`.
+Why this exists: the companion rail shipped as a fixed `300px` measured off a 1536 frame, and the
+branch that fixed four such widths still left the owner reading the app at browser zoom 90% —
+because it normalized three dimensions and left type, spacing, radius, control heights and icon
+sizes at wide-canvas values. Fixing the widths one at a time cannot work; the ratio of every value
+to the viewport is what density means. See
+`docs/superpowers/specs/2026-09-21-desktop-density-scale-design.md`.

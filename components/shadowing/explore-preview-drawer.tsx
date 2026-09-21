@@ -67,7 +67,7 @@ export function ExplorePreviewDrawer({ lesson, onClose, labels }: {
         <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">
           {lesson.thumbnailUrl ? <Image src={lesson.thumbnailUrl} alt="" fill sizes="420px" className="object-cover" /> : null}
         </div>
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border text-sm">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border text-body">
           {[
             [labels.metadata.jlpt, lesson.jlptLevelEstimate ?? "—"],
             [labels.metadata.duration, durationValue(lesson.durationSeconds, labels.durationTemplate)],
@@ -81,23 +81,23 @@ export function ExplorePreviewDrawer({ lesson, onClose, labels }: {
           ))}
         </dl>
         <section aria-label={labels.transcript}>
-          <h3 className="text-sm font-semibold text-foreground">{labels.transcript}</h3>
+          <h3 className="text-body font-semibold text-foreground">{labels.transcript}</h3>
           {lesson.transcriptPreview.length ? (
-            <ol className="mt-sm space-y-sm text-sm text-muted-foreground">
+            <ol className="mt-sm space-y-sm text-body text-muted-foreground">
               {lesson.transcriptPreview.map((line, index) => <li key={`${index}-${line}`}>{line}</li>)}
             </ol>
           ) : (
-            <p className="mt-sm text-sm text-muted-foreground">{labels.transcriptUnavailable}</p>
+            <p className="mt-sm text-body text-muted-foreground">{labels.transcriptUnavailable}</p>
           )}
         </section>
         <div className="grid gap-sm">
-          <Link href={`/shadowing/${lesson.id}`} className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-md text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Link href={`/shadowing/${lesson.id}`} className="inline-flex min-h-hit-target items-center justify-center rounded-md bg-primary px-md text-body font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             {labels.start}
           </Link>
           <Button type="button" variant="outline" onClick={() => void addToLibrary()} disabled={state === "adding" || state === "added"}>
             {state === "adding" ? labels.adding : state === "added" ? labels.added : labels.add}
           </Button>
-          {state === "failed" ? <p role="alert" className="text-sm text-danger-strong">{labels.addFailed}</p> : null}
+          {state === "failed" ? <p role="alert" className="text-body text-danger-strong">{labels.addFailed}</p> : null}
         </div>
       </div>
     </Dialog>

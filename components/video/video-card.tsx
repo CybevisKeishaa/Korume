@@ -33,22 +33,22 @@ export function VideoCard({ video }: { video: VideoRow }) {
               className="object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-full items-center justify-center text-body text-muted-foreground">
               {tCommon("noThumbnail")}
             </div>
           )}
           {video.library_access === "PRIVATE" && (
-            <span className="absolute right-2 top-2 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+            <span className="absolute right-2 top-2 rounded-full bg-accent px-2 py-0.5 text-caption font-medium text-accent-foreground">
               {t("pendingReview")}
             </span>
           )}
         </div>
         <div className="flex flex-1 flex-col gap-2 p-4">
-          <p className="line-clamp-2 text-sm font-medium text-foreground">
+          <p className="line-clamp-2 text-body font-medium text-foreground">
             {video.title}
           </p>
           {video.jlpt_level_estimate && (
-            <span className="mt-auto w-fit rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            <span className="mt-auto w-fit rounded-full bg-muted px-2 py-0.5 text-caption text-muted-foreground">
               {video.jlpt_level_estimate}
             </span>
           )}

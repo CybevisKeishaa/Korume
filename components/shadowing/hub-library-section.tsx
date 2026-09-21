@@ -146,7 +146,7 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
           action={(
             <a
               href={emptyActionHref}
-              className="inline-flex rounded-md bg-primary px-md py-sm text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex rounded-md bg-primary px-md py-sm text-body font-semibold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {labels.emptyAction}
             </a>
@@ -166,7 +166,7 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
             ) : (
               <li key={item.lesson.id} className="rounded-lg border border-danger/40 bg-card p-md-lg">
                 <h3 className="font-semibold text-foreground">{item.lesson.title}</h3>
-                <p className="mt-xs text-sm text-muted-foreground">{labels.unavailable}</p>
+                <p className="mt-xs text-body text-muted-foreground">{labels.unavailable}</p>
                 {tracked?.youtubeVideoId === item.lesson.youtubeVideoId && job !== null ? (
                   <LessonCreationProgress job={job} events={events} onRetry={retryTrackedJob} />
                 ) : (
@@ -181,7 +181,7 @@ export function HubLibrarySection({ items, labels, emptyActionHref = "#hub-impor
                   </Button>
                 )}
                 {retryError?.youtubeVideoId === item.lesson.youtubeVideoId && (
-                  <p role="alert" className="mt-sm text-sm text-danger-strong">
+                  <p role="alert" className="mt-sm text-body text-danger-strong">
                     {retryError.kind === "sessionExpired"
                       ? labels.retrySessionExpired
                       : retryError.kind === "unavailable"

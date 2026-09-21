@@ -80,8 +80,8 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
             {query.situation ? <input type="hidden" name="situation" value={query.situation} /> : null}
             <label className="sr-only" htmlFor="explore-search">{tHub("sections.search")}</label>
             <div className="flex gap-sm">
-              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-10 min-w-0 max-w-[clamp(18rem,28.65vw,27.5rem)] flex-1 rounded-lg border border-border bg-card px-md text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-              <button type="submit" className="rounded-md bg-primary px-md text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{tHub("sections.search")}</button>
+              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-control-md min-w-0 max-w-[clamp(18rem,28.65vw,27.5rem)] flex-1 rounded-lg border border-border bg-card px-md text-body text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+              <button type="submit" className="rounded-md bg-primary px-md text-body font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{tHub("sections.search")}</button>
             </div>
           </form>
         </header>
@@ -107,20 +107,20 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
 
         <section aria-label={t("recent")}>
           <HubSectionHeading title={t("recent")} />
-          {recentCards.length ? <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-4">{recentCards}</ul> : <p className="mt-md text-sm text-muted-foreground">{t("empty")}</p>}
+          {recentCards.length ? <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-4">{recentCards}</ul> : <p className="mt-md text-body text-muted-foreground">{t("empty")}</p>}
         </section>
 
         <section aria-label={t("recommended")}>
           <HubSectionHeading title={t("recommended")} />
-          {recommendationCards.length ? <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-4">{recommendationCards}</ul> : <p className="mt-md text-sm text-muted-foreground">{t("empty")}</p>}
+          {recommendationCards.length ? <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-4">{recommendationCards}</ul> : <p className="mt-md text-body text-muted-foreground">{t("empty")}</p>}
         </section>
 
         <section aria-label={t("situations")}>
           <HubSectionHeading title={t("situations")} />
           <div className="mt-md flex flex-wrap gap-xs">
-            <a href={exploreHref(path, { q: query.q })} aria-current={data.activeSituation === null ? "page" : undefined} className="rounded-full border border-border px-sm py-xs text-sm font-medium text-foreground hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("all")}</a>
+            <a href={exploreHref(path, { q: query.q })} aria-current={data.activeSituation === null ? "page" : undefined} className="rounded-full border border-border px-sm py-xs text-body font-medium text-foreground hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("all")}</a>
             {data.situations.map((situation) => (
-              <a key={situation.id} href={exploreHref(path, { q: query.q, situation: situation.slug })} aria-current={data.activeSituation === situation.slug ? "page" : undefined} className="rounded-full border border-border px-sm py-xs text-sm font-medium text-foreground hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <a key={situation.id} href={exploreHref(path, { q: query.q, situation: situation.slug })} aria-current={data.activeSituation === situation.slug ? "page" : undefined} className="rounded-full border border-border px-sm py-xs text-body font-medium text-foreground hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {tShadowing(`situations.${situation.slug}` as SituationTranslationKey)}
               </a>
             ))}
@@ -131,7 +131,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
           <section aria-label={tCommon("recommendations.heading")} className="rounded-lg border border-border bg-card p-md-lg">
             <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{tCommon("recommendations.heading")}</p>
             <p className="mt-xs text-body font-semibold text-foreground">{data.quietSuggestion.title}</p>
-            <p className="mt-xs text-sm text-muted-foreground">{tCommon("recommendations.knownWords", { percent: Math.round(data.quietSuggestion.reason.knownRatio * 100) })}</p>
+            <p className="mt-xs text-body text-muted-foreground">{tCommon("recommendations.knownWords", { percent: Math.round(data.quietSuggestion.reason.knownRatio * 100) })}</p>
           </section>
         ) : null}
 

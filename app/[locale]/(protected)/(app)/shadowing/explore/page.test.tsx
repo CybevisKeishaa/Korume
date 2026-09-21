@@ -42,8 +42,11 @@ describe("ExplorePage", () => {
 
     expect(row.className).not.toContain("max-w-");
     expect(input.className).toContain("max-w-[clamp(18rem,28.65vw,27.5rem)]");
-    expect(input.className).toContain("h-10");
-    expect(input.className).not.toContain("h-11");
+    // The rung, not the Tailwind numeric. `h-control-md` IS the 40px this
+    // pinned before, now expressed as the token that scales with the desktop
+    // density rule; `h-control-lg` would be the taller rung this row rejected.
+    expect(input.className).toContain("h-control-md");
+    expect(input.className).not.toContain("h-control-lg");
   });
 
   it("keeps C3's authored desktop sequence without a Companion rail", async () => {
