@@ -97,44 +97,20 @@ Claude's review found five things Codex and its `code-reviewer` did not. Three t
 
 `.worktrees/desktop-density-scale`, cut from `master` at `42197a6`.
 
-⚠️ **This worktree was created without two untracked files the main checkout has, and neither
-failure looks like what it is.** Both fixed 2026-09-21:
-
-- `node_modules` was a partial install with no `kuromoji` package, so
-  `lib/japanese/{tokenizer,furigana}.test.ts` failed 11 tests on a missing dictionary file while
-  the same 17 tests passed in the main checkout. Fixed by `npm install` here.
-- `.env.local` was absent, so `npm run build && npm run start` died on `EnvValidationError`
-  (APP_ENV, AI_PROVIDER, SPEECH_PROVIDER, EMAIL_PROVIDER) and Playwright reported only
-  `Timed out waiting 120000ms from config.webServer` — no mention of the real cause. Copied from
-  the main checkout; `.gitignore` line 29 (`.env.*`) keeps it out of the diff.
-
-Both are worth knowing before Task 5, whose whole job is a production-build measurement from here.
-
-⚠️ Three `next dev` servers were found running from the **main** checkout on ports 3000, 3001 and
-3002, all sharing one `.next`. They overwrite each other's chunks: `:3000` returned
-`Cannot find module './vendor-chunks/react-remove-scroll.js'` for `/vi/shadowing/explore` and a
-transient `clientModules` TypeError elsewhere. Use one server, and do not trust a measurement taken
-from a checkout that has more than one running. Unrelated to this diff; recorded because it cost an
-hour of misattribution.
+`node_modules` and `.env.local` were repaired here on 2026-09-21 (missing `kuromoji` and runtime
+env respectively). For Task 5, use one server only: three main-worktree dev servers previously
+shared `.next` and produced invalid chunks.
 
 ## Blockers
 
-None. The owner approved the spec on 2026-09-21; the plan and the dispatch packet are written and
-the branch is handed to Codex.
+Git worktree metadata is read-only in this session: `git commit` cannot create
+`.git/worktrees/desktop-density-scale/index.lock` despite no lock or Git process.
 
 ## Next actions
 
-1. **Task 3 — convert the token layer.** The heaviest task: type, spacing, radius, layout, plus the
-   new control and icon tokens, all as `calc(N * var(--density-unit))` per spec §6, plus
-   `borderRadius.DEFAULT` by owner ruling. Spec §9 predicts pinned pixel assertions go red here;
-   that is part of the task, not triage afterwards. A geometry assertion at a viewport >= 1440 must
-   still pass — red there is a real regression.
-2. Then Tasks 4, 5, 6, 7 in order. **Task 5 is the acceptance gate** and is the one the previous
-   branch got wrong: grade against spec §1 (main column ~768 px at 1280), never against this
-   branch's own arithmetic.
-3. Claude dispatches one task per `codex exec` run and reviews each diff independently before the
-   next. Both Task 1 and Task 2 shipped defects that Codex's own `code-reviewer` returned
-   APPROVE/ADDRESSED on.
+1. Restore Git metadata write access; commit Task 3 source, then its checkpoint.
+2. Re-run `verify:protocol` if the run state changes, set `- Owner: Claude`, and commit that line by
+   itself. Do not begin Task 4 first.
 
 ## Owner rulings, 2026-09-21 — both spec §9 open items are CLOSED
 
@@ -182,3 +158,29 @@ carry the attribute. Two findings, both "green while measuring nothing", both fi
    fails it.
 
 Gate after the review: `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3104 tests**.
+
+### Task 3 checkpoint
+
+- Commit: **blocked** — `git commit` could not create
+  `.git/worktrees/desktop-density-scale/index.lock` (permission denied); source remains uncommitted.
+- RED evidence:
+  ```text
+  & 'C:\nvm4w\nodejs\npx.ps1' vitest run lib/design-tokens.test.ts -t "desktop density"
+  Test Files 1 failed (1); Tests 4 failed | 5 passed | 37 skipped (46)
+  Missing scaled tokens/caption floors/companion bounds/default radius, as expected before conversion.
+  & 'C:\nvm4w\nodejs\npx.ps1' vitest run components/style-guide/style-guide.test.tsx -t "1440 and 1280"
+  Test Files 1 failed (1); Tests 1 failed | 6 skipped (7)
+  Mutation: deleting `height.control-sm` made its new mapping contract fail (1 failed | 46 skipped).
+  ```
+- GREEN evidence:
+  ```text
+  npx vitest run lib/design-tokens.test.ts → 47 passed (47)
+  npm run verify:protocol → Codex protocol: valid
+  npx tsc --noEmit → exit 0 (no output)
+  npm test -- --reporter=dot → Test Files 324 passed (324); Tests 3110 passed (3110); Duration 64.55s
+  ```
+- Pin decisions: `two-column-shell` now pins the §6 companion token (240 / 27.5% / 340), not a
+  rendered threshold; style-guide labels now document specified @1440/@1280 radius values. No
+  geometry pin at ≥1440 changed. Left untouched: hero/leading-hero/leading-jp, marketing max,
+  colours, breakpoints, and `button.tsx` `h-12`.
+- `code-reviewer`: APPROVE after a direct Tailwind height/minHeight/size mapping guard and mutation check.

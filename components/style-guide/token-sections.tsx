@@ -43,13 +43,12 @@ const TYPE_SCALE = [
   { cls: "text-caption", name: "caption" },
 ] as const;
 
-/** The three absolute radius steps (app/globals.css). Pixel values are
- * labelled directly, not derived, so a rung change in globals.css shows up
- * here as a real mismatch to fix rather than silently relabelling itself. */
+/** The three radius steps (app/globals.css). Values are the 1440 reference;
+ * each renders ~11% smaller at 1280 through --density-unit. */
 const RADIUS_STEPS = [
-  { cls: "rounded-sm", px: 8 },
-  { cls: "rounded-md", px: 14 },
-  { cls: "rounded-lg", px: 20 },
+  { cls: "rounded-sm", px: 8, at1280: 7.11 },
+  { cls: "rounded-md", px: 14, at1280: 12.44 },
+  { cls: "rounded-lg", px: 20, at1280: 17.78 },
 ] as const;
 
 /** The five typeface roles (app/globals.css --font-*, tailwind.config.ts).
@@ -177,11 +176,11 @@ export function RadiusSection() {
     <section aria-labelledby="sg-radius">
       <h2 id="sg-radius" className="text-heading font-semibold">{t("styleGuide.sections.radius.heading")}</h2>
       <div className="mt-md flex flex-wrap gap-lg">
-        {RADIUS_STEPS.map(({ cls, px }) => (
+        {RADIUS_STEPS.map(({ cls, px, at1280 }) => (
           <div key={cls} className="flex flex-col items-center gap-2xs">
             <span aria-hidden="true" className={cn("h-16 w-16 border border-border bg-primary", cls)} />
             <code className="text-caption">
-              {cls} · {px}px
+              {cls} · {px}px @1440 · {at1280}px @1280
             </code>
           </div>
         ))}
