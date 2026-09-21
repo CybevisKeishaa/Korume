@@ -385,11 +385,38 @@ describe("desktop density scale", () => {
   });
 
   it("bounds the rule to 1280-1440 and to nothing else", () => {
-    // Ruling 3.5: 1440 = 1.0, 1280 = 0.889, held at both ends. 0.0555556rem
-    // is 0.888…px at a 16px root, which is 1280/1440. A different lower
-    // bound would silently widen or narrow the rule.
-    expect(0.0555556 * 16).toBeCloseTo(1280 / 1440, 4);
-    expect(0.0625 * 16).toBe(1);
+    // Ruling 3.5: 1440 = 1.0, 1280 = 0.889, held at both ends.
+    //
+    // The bounds are READ OUT OF THE STYLESHEET, not copied into this file.
+    // Asserting `0.0555556 * 16 ≈ 1280/1440` proves arithmetic about two
+    // literals and would keep passing while the CSS said something else
+    // entirely — a check that measures nothing, which is exactly how the
+    // density defect survived a branch.
+    const bounds = css.match(
+      /--density-unit:\s*clamp\(\s*([\d.]+)rem\s*,\s*calc\(100vw\s*\/\s*(\d+)\)\s*,\s*([\d.]+)rem\s*\)/,
+    );
+    expect(bounds).not.toBeNull();
+    const [, lower, reference, upper] = bounds!;
+    expect(Number(reference)).toBe(1440);
+    expect(Number(upper) * 16).toBe(1); // 1px at the reference viewport
+    expect(Number(lower) * 16).toBeCloseTo(1280 / 1440, 4); // 0.889 at 1280
+  });
+
+  it("puts the reference opt-out on all three out-of-scope layouts", () => {
+    // The reset rule existing proves nothing: delete the attribute from these
+    // three files and every other assertion here still passes, while the
+    // marketing, auth and immersive groups silently start scaling from the
+    // token conversion onward. Their frames are drawn on a 1280 canvas, so
+    // that would take them ~10% away from their own design.
+    const layouts = [
+      "app/[locale]/(marketing)/layout.tsx",
+      "app/[locale]/(auth)/layout.tsx",
+      "app/[locale]/(protected)/(immersive)/layout.tsx",
+    ];
+    const missing = layouts.filter(
+      (file) => !/data-density="reference"/.test(readFileSync(file, "utf8")),
+    );
+    expect(missing).toEqual([]);
   });
 
   it("lets a route group opt out, because a custom property cascades", () => {

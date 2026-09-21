@@ -39,6 +39,7 @@ colour tokens; new breakpoints; and anything below 1280.
 
 - `1d0f1ce` `refactor(type): one source of truth per typography rung, with a guard` — Task 1.
 - `c89cc56` `fix(type): close the Task 1 review — guard scope, one re-roled site, the Explore card`.
+- `bea1068` `feat(density): a bounded desktop density unit, with a per-group opt-out` — Task 2.
 
 ## Contracts and decisions
 
@@ -69,62 +70,28 @@ plus a production-build browser measurement of both screens at **1280 and 1440**
 The spec's §5.2 mechanism check has been run and is recorded there with its command, so it is not
 owed again unless the formula changes.
 
-### Task 1 checkpoint (accepted)
+### Task 1, accepted — what still binds later tasks
 
-- RED: `npx vitest run components/ui/token-scale.test.ts` failed in `app-nav.tsx`, all nine named
-  `components/shadowing` sources, and `shadowing/explore/page.tsx`; it also exposed real shared-shell
-  consumers in `mobile-app-handoff.tsx` and `notification-bell.tsx`, which were migrated rather than
-  excluded from the layout scan.
-- GREEN: `npx vitest run components/ui/token-scale.test.ts components/layout components/shadowing
-  "app/[locale]/(protected)/(app)/shadowing"` passed: 21 files, 178 tests. The final focused guard
-  passed: 70 tests.
-- Mutation checks: restoring `text-sm` in `AppNav` made the guard fail on `app-nav.tsx`; the SHA-256
-  restore matched its backup. Renaming `mobile-app-handoff.tsx` made the layout source-count assertion
-  fail 8 vs 9; restoring it returned the guard to green.
-- Review: `code-reviewer` first required exact source counts for filesystem-collected sets; the guard
-  now pins 15 UI, 25 marketing, 12 shadowing, 9 layout, and 2 shadowing-route sources. Scoped re-review:
-  ADDRESSED, no new Critical or Important finding.
+Typography has one source of truth across `components/{layout,shadowing,ui,video}` and the two
+shadowing routes. `components/ui/token-scale.test.ts` enforces it: full `FORBIDDEN` **plus** the
+default-type rule, per tree, with a pinned source count each (15/25/12/9/2/4).
 
-### Task 1 review round, closed at `c89cc56` (Claude, 2026-09-21)
+Claude's review found five things Codex and its `code-reviewer` did not. Three that still matter:
 
-Five findings, all closed. ⚠️ Claude edited this worktree while the Owner line still read `Codex`:
-the owner directed the takeback in conversation, but the line is the handoff and was not flipped
-first. Recorded, not hidden.
+- **The Hub renders into `components/video`** — one import hop below the page
+  (`hub-import-section` -> `VideoImportForm`; both it and `hub-library-section` ->
+  `LessonCreationProgress`). Following a page's own imports misses it. Tree is scanned now.
+- **`explore-lesson-card.tsx`: every rung is `caption` by owner ruling.** Caption's line box is
+  18 px, so the eyebrow lost its own height/line-height and the summary went `h-9` -> `h-10`;
+  interior `h-[196px]`, card `h-[308px]` — **measured**, read off the old e2e pin failing
+  (`Expected: <= 300, Received: 308`), now pinned 306-310. The fixed-height model is Task 4 work:
+  px heights cannot scale with `--density-unit`. `tracking-[1.04px]` is deliberately left.
+- **`tests/e2e/shadowing-hub.spec.ts` had failed on `master` since 2026-09-19** — C4 removed the
+  error string it pinned at `002f993`. C4 debt, fixed here only because it blocked this gate.
+  Other Playwright assertions C4 touched are worth a look.
 
-1. **The guard owned three trees and enforced two rules in them** — a **plan** defect, specified
-   verbatim; not an implementation one. Every other absolute literal stayed legal, and
-   `explore-lesson-card.tsx` was through the hole with four `text-[8px]` and two `text-[9px]`
-   sites. Now `[...FORBIDDEN, DEFAULT_TYPE_UTILITY]`. Evidence on L-006.
-2. **`mobile-app-handoff.tsx` was re-roled down a rung** (14 -> 12 px) on the below-1024 screen,
-   outside the band this branch touches. Restored to `text-body`.
-3. Two minors: the `sources:` pins had no maintenance note and their case was misnamed; the
-   `DEFAULT_TYPE_UTILITY` docblock had lost its reasoning. Both restored.
-4. **The Hub leaks into `components/video`** — one import hop below the page, which the first
-   review pass explicitly said did not exist. `hub-import-section` -> `VideoImportForm`, and it and
-   `hub-library-section` -> `LessonCreationProgress`. Found only because a Playwright failure
-   printed the element with its class list. Tree now scanned (4 sources), 7 sites migrated
-   value-for-value.
-5. **`tests/e2e/shadowing-hub.spec.ts` had failed on `master` since 2026-09-19** — C4 removed the
-   error string it pinned at `002f993` (master via `21a436b`), unnoticed because C4 was excused
-   from re-running this spec. Now reads `enVideos.errors.generic`. **C4 debt, fixed here only
-   because it blocks this gate.**
-
-**Owner ruling: every rung in `explore-lesson-card.tsx` is `caption`.** The caption line box is
-18 px, so the eyebrow dropped its own height and line-height and the summary went `h-9` -> `h-10`;
-interior `h-[196px]`, card `h-[308px]`. The fixed-height model is untouched and is Task 4 work — px
-heights cannot scale with `--density-unit`. `tracking-[1.04px]` is deliberately left: no rule
-covers tracking and changing it is a visual decision the ruling did not cover.
-
-⚠️ **A text-scanning guard reads prose too** — a comment explaining finding 2 contained the banned
-class name and failed its own file.
-
-**Gate, every command run from this worktree and read:** `verify:protocol` 0 · `tsc` 0 · `npm test`
-**324/324 files, 3100/3100** (master baseline 3082; +18 = six source-count pins plus the twelve
-per-file cases `components/video` adds) · `lint` 0 errors / baseline warnings · `playwright` on both
-calibration specs **6 passed**.
-
-The card height 308 px is **measured, not computed**: the old pin was left in place on purpose and
-read off its failure (`Expected: <= 300, Received: 308`) before being moved to 306-310.
+⚠️ **A text-scanning guard reads prose too** — a comment naming a banned class fails its own file.
+⚠️ Claude edited this worktree once while the Owner line still read `Codex`. Recorded, not hidden.
 
 ## Working tree and environment
 
@@ -197,3 +164,20 @@ the branch is handed to Codex.
   npm test -- --reporter=dot → Test Files  324 passed (324); Tests  3103 passed (3103); Duration 140.13s
   ```
 - `code-reviewer`: APPROVE, no actionable findings. Deferred exactly as planned: token conversion and all Task 3+ work.
+
+**Task 2 review (Claude).** The mechanism is right and placed right: `--density-unit` sits in the
+foundation `:root` (globals.css:124), the reset at :306 outside `@layer`, and the three layouts
+carry the attribute. Two findings, both "green while measuring nothing", both fixed:
+
+1. **`bounds the rule to 1280-1440` never read the stylesheet.** It asserted
+   `0.0555556 * 16 ≈ 1280/1440` — arithmetic on two literals copied into the test, which keeps
+   passing while the CSS says something else. **Codex's own RED evidence showed it: 2 failed,
+   1 passed, before the feature existed** — and `code-reviewer` still returned APPROVE. The bounds
+   are now parsed out of `css`. Mutation-checked: `0.0555556rem` -> `0.05rem` fails it.
+2. **Nothing asserted the three layouts carry `data-density="reference"`.** The reset rule existing
+   proves only that the rule exists; deleting the attribute from all three files left the whole
+   suite green while marketing, auth and immersive would silently start scaling at Task 3.
+   New assertion reads the three files. Mutation-checked: removing it from the marketing layout
+   fails it.
+
+Gate after the review: `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3104 tests**.
