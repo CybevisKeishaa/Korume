@@ -1,6 +1,6 @@
 # Branch Run State
 
-- Owner: Codex
+- Owner: Claude
 
 ## Goal and scope
 
@@ -102,9 +102,18 @@ Git worktree metadata is read-only in this session: `git commit` cannot create
 
 ## Next actions
 
-1. Restore Git metadata write access; commit Task 3 source, then its checkpoint.
-2. Re-run `verify:protocol` if the run state changes, set `- Owner: Claude`, and commit that line by
-   itself. Do not begin Task 4 first.
+1. **Task 5 — the acceptance gate, and Claude does it.** Production build, ONE server, measure
+   `/vi/shadowing` and `/vi/shadowing/explore` at 1280 and 1440. Grade against spec §1 — main
+   column ~768 px at 1280, rail ~300 px, scroll ~2085 px, `text-body` 12.44, `text-caption` 11
+   floored — never against this branch's own arithmetic. Re-run the spec §5.2 mechanism check
+   first; if the unit is not reaching the page, every number after it is worthless.
+2. **Known risk to measure, not to guess:** `explore-lesson-card.tsx` still sets its heights in px
+   (`h-[308px]`, `h-[196px]`, two `h-10` rows). Its type scales, its frame does not, so at 1280 the
+   card may read empty. Deliberately left for Task 5 to measure with numbers in hand.
+3. Then Task 6 (portal containers) and Task 7 (write the rule into `adaptive-layouts.md`).
+4. Claude dispatches one task per `codex exec` and reviews each diff independently. Tasks 1-4 each
+   shipped a defect Codex's own `code-reviewer` had approved, and three of the four were defects in
+   the PLAN.
 
 ## Owner rulings, 2026-09-21 — both spec §9 open items are CLOSED
 
