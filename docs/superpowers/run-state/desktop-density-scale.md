@@ -40,8 +40,7 @@ colour tokens; new breakpoints; and anything below 1280.
 - `1d0f1ce` `refactor(type): one source of truth per typography rung, with a guard` — Task 1.
 - `c89cc56` `fix(type): close the Task 1 review — guard scope, one re-roled site, the Explore card`.
 - `bea1068` `feat(density): a bounded desktop density unit, with a per-group opt-out` — Task 2.
-- `41aa819` `feat(density): every scale authored at 1440 and scaled through one unit` — Task 3.
-- `442c140` the opt-out fix · `80876d8` the hit-target token · Task 4 below.
+- `41aa819` `feat(density): every scale authored at 1440 and scaled through one unit` — Task 3. Then `442c140` (opt-out fix), `80876d8` (hit-target token), `9663935` (Task 4).
 
 ## Contracts and decisions
 
