@@ -41,6 +41,7 @@ colour tokens; new breakpoints; and anything below 1280.
 - `c89cc56` `fix(type): close the Task 1 review — guard scope, one re-roled site, the Explore card`.
 - `bea1068` `feat(density): a bounded desktop density unit, with a per-group opt-out` — Task 2.
 - `41aa819` `feat(density): every scale authored at 1440 and scaled through one unit` — Task 3. Then `442c140` (opt-out fix), `80876d8` (hit-target token), `9663935` (Task 4).
+- `35e3b9a` Task 5 measurement. `dbfff1d` + `081b47f` + review fix `97a3e8a` — Task 6. `2593b97` — Task 7.
 
 ## Contracts and decisions
 
@@ -111,9 +112,9 @@ None.
 
 ## Next actions
 
-1. Task 5 done (see Verification; owner must see the §1 unit finding). Next: Task 6, then Task 7.
-2. One task per `codex exec`, Claude reviews each diff: Tasks 1-4 each shipped a defect Codex's
-   `code-reviewer` approved.
+1. **All 7 tasks done.** Next: the whole-branch review, then the owner's merge decision. Owner has
+   seen the branch at 1280 in their own Chrome (2026-09-21) and said it is right.
+2. Still owed to the owner: spec §1's table needs a unit column (Task 5 finding).
 
 ## Owner rulings, 2026-09-21 — both spec §9 open items are CLOSED
 
@@ -130,15 +131,24 @@ None.
 
 ### Task 2, accepted at `bea1068` — what still binds
 
-`--density-unit` in the foundation `:root`, the `[data-density="reference"]` reset outside
-`@layer`, the attribute on all three out-of-scope layouts. Two of its tests were green while
-measuring nothing and were rewritten: one asserted arithmetic on literals copied into the test
-instead of reading the stylesheet (**Codex's own RED evidence showed it — 2 failed, 1 passed,
-before the feature existed — and `code-reviewer` still said APPROVE**), and nothing checked that
-any layout carried the attribute. Both mutation-checked now.
+`--density-unit` on `:root`, the `[data-density="reference"]` reset, the attribute on all three
+out-of-scope layouts. Two tests were green while measuring nothing (one asserted literals copied into
+the test; Codex's `code-reviewer` still said APPROVE); both rewritten and mutation-checked.
 
-⚠️ Neither of those tests, nor the reset itself, was enough: see the Task 3 CRITICAL below. The
-opt-out needs its second half.
+### Task 6 + 7, done by Claude 2026-09-21 — deviates from the plan, on purpose
+
+Portaled `Dialog/Popover/Select/Tooltip` copy the nearest `data-density` onto their content via
+`useDensityScope` (a hidden anchor + a content callback ref), instead of the plan's move-the-portal
+(stacking context, remount; its test used a `DialogContent` API this repo lacks). Review found I1:
+a mount-time effect read left a Select nested in an open-on-mount Dialog at fluid density — fixed
+`97a3e8a`, RED-first. Browser 1280: body-level node with the attribute → `p-md` 16px vs 14.2222;
+app-scope Explore dialog keeps fluid 21.33px. **Not handled, recorded:** the Toast viewport sits in
+the locale layout, not portaled, so a toast fired in a reference group is fluid (review M2). **No
+reference-group screen uses these four primitives today** (M3) — Auth + Error will be the first.
+Task 7 corrected the plan's draft: `token-scale.test.ts` does not scan widths/heights.
+
+**Gate at `97a3e8a`:** `tsc` 0 · `lint` 0 · `npm test` **324 / 3124** · build 0 · playwright hub +
+explore + landing **29 pass / 3 fail** — the same three landing tests red on `master`.
 
 ### Task 4, accepted — the calibration screens carry tokens
 
@@ -154,25 +164,13 @@ falling below 44. A token that scales cannot express "never below 44px". `--hit-
 from the `[data-density]` block, and asserted to contain no `density-unit`. Third plan defect of
 this branch, all three Claude's.
 
-Claude finished the task after Codex hit its ChatGPT usage limit mid-run (reset 16:49), and found
-two things in the handed-over tree:
+Claude finished it after Codex hit its ChatGPT quota, fixing a CTA on `min-h-control-lg` (would
+have dropped 44→39.11px) and re-pinning a test's `h-10` as `h-control-md` (same 40px, a contract).
 
-- `explore-preview-drawer.tsx` used `min-h-control-lg` where the map says `min-h-hit-target` —
-  it would have lowered that CTA's target from 44px to 39.11px. Fixed.
-- `explore/page.test.tsx` pinned `h-10` on the search field. Updated to `h-control-md`: the same
-  40px expressed as the rung, a contract change, not a loosened threshold.
+⚠️ **`tests/e2e/landing-page.spec.ts` has THREE tests failing on `master`** — h1, §3 keyboard
+reachability, the §3 `#journey` thumbnail. Same lines on master; pre-existing, not fixed here.
 
-⚠️ **`tests/e2e/landing-page.spec.ts` has THREE tests failing on `master`** — one h1 assertion,
-§3 keyboard reachability, and a `#journey` image that never becomes visible. Verified by running
-the same three in the main checkout on master: identical failures, identical lines. Pre-existing
-debt, not this branch, and not fixed here. Second batch of stale e2e found on this branch after
-the C4 string.
-
-⚠️ Claude committed `80876d8` with `git add -A`, which swept up a red e2e guard Codex had left in
-the tree, and did not run the e2e before committing. It goes green with this task.
-
-**Gate:** `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3112 tests** · `lint` 0 errors ·
-`playwright` hub + explore + landing **29 passed, 3 failed — all three red on master too**.
+⚠️ Claude committed `80876d8` with `git add -A`, sweeping in an untested red e2e guard.
 
 ### Task 3, accepted at `41aa819` — and the CRITICAL it inherited
 
