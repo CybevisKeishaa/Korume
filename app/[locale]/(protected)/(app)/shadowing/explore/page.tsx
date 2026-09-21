@@ -80,7 +80,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
             {query.situation ? <input type="hidden" name="situation" value={query.situation} /> : null}
             <label className="sr-only" htmlFor="explore-search">{tHub("sections.search")}</label>
             <div className="flex gap-sm">
-              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-10 min-w-0 max-w-[clamp(18rem,28.65vw,27.5rem)] flex-1 rounded-lg border border-border bg-card px-md text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+              <input id="explore-search" name="q" defaultValue={query.q} placeholder={tHub("search.placeholder")} className="h-control-md min-w-0 max-w-[clamp(18rem,28.65vw,27.5rem)] flex-1 rounded-lg border border-border bg-card px-md text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
               <button type="submit" className="rounded-md bg-primary px-md text-body font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{tHub("sections.search")}</button>
             </div>
           </form>

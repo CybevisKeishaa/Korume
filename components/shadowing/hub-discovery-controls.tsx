@@ -46,7 +46,7 @@ export function HubDiscoveryControls({ filters, query, activeFilter, results, ac
           type="search"
           defaultValue={query}
           placeholder={labels.searchPlaceholder}
-          className="h-11 rounded-lg bg-card"
+          className="h-control-lg rounded-lg bg-card"
         />
       </form>
 

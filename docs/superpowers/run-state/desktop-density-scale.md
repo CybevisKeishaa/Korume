@@ -41,6 +41,7 @@ colour tokens; new breakpoints; and anything below 1280.
 - `c89cc56` `fix(type): close the Task 1 review — guard scope, one re-roled site, the Explore card`.
 - `bea1068` `feat(density): a bounded desktop density unit, with a per-group opt-out` — Task 2.
 - `41aa819` `feat(density): every scale authored at 1440 and scaled through one unit` — Task 3.
+- `442c140` the opt-out fix · `80876d8` the hit-target token · Task 4 below.
 
 ## Contracts and decisions
 
@@ -73,26 +74,19 @@ owed again unless the formula changes.
 
 ### Task 1, accepted — what still binds later tasks
 
-Typography has one source of truth across `components/{layout,shadowing,ui,video}` and the two
-shadowing routes. `components/ui/token-scale.test.ts` enforces it: full `FORBIDDEN` **plus** the
+Typography has one source of truth across `components/{layout,shadowing,ui,video}` and both
+shadowing routes. `components/ui/token-scale.test.ts` enforces it: full `FORBIDDEN` plus the
 default-type rule, per tree, with a pinned source count each (15/25/12/9/2/4).
 
-Claude's review found five things Codex and its `code-reviewer` did not. Three that still matter:
+- **The Hub renders into `components/video`**, one import hop below the page. Following a page's
+  own imports misses it; the tree is scanned now.
+- **`explore-lesson-card.tsx`: every rung is `caption` by owner ruling.** Card is `h-[308px]` —
+  **measured**, read off the old e2e pin failing — now pinned 306-310. Its fixed-height interior
+  still does not scale; Task 5 must measure whether that reads wrong at 1280.
+- **`tests/e2e/shadowing-hub.spec.ts` had failed on `master` since 2026-09-19** (C4 removed the
+  error string it pinned). Fixed here only because it blocked this gate.
 
-- **The Hub renders into `components/video`** — one import hop below the page
-  (`hub-import-section` -> `VideoImportForm`; both it and `hub-library-section` ->
-  `LessonCreationProgress`). Following a page's own imports misses it. Tree is scanned now.
-- **`explore-lesson-card.tsx`: every rung is `caption` by owner ruling.** Caption's line box is
-  18 px, so the eyebrow lost its own height/line-height and the summary went `h-9` -> `h-10`;
-  interior `h-[196px]`, card `h-[308px]` — **measured**, read off the old e2e pin failing
-  (`Expected: <= 300, Received: 308`), now pinned 306-310. The fixed-height model is Task 4 work:
-  px heights cannot scale with `--density-unit`. `tracking-[1.04px]` is deliberately left.
-- **`tests/e2e/shadowing-hub.spec.ts` had failed on `master` since 2026-09-19** — C4 removed the
-  error string it pinned at `002f993`. C4 debt, fixed here only because it blocked this gate.
-  Other Playwright assertions C4 touched are worth a look.
-
-⚠️ **A text-scanning guard reads prose too** — a comment naming a banned class fails its own file.
-⚠️ Claude edited this worktree once while the Owner line still read `Codex`. Recorded, not hidden.
+⚠️ A text-scanning guard reads prose too — a comment naming a banned class fails its own file.
 
 ## Working tree and environment
 
@@ -126,39 +120,51 @@ Git worktree metadata is read-only in this session: `git commit` cannot create
   before the next one is dispatched. **One task per dispatch** — the Task 1 review found a defect
   in the plan itself, which a single end-to-end run would have propagated into every later task.
 
-### Task 2 checkpoint
+### Task 2, accepted at `bea1068` — what still binds
 
-- Commit: `bea1068` `feat(density): a bounded desktop density unit, with a per-group opt-out`.
-- Changed only the density declaration/reset, its three route-group attributes, and its contract test; no token value, colour token, `--text-hero`, `--layout-marketing-max`, breakpoint, or Task 3/4 file changed.
-- Evidence:
-  ```text
-  RED — & 'C:\nvm4w\nodejs\npx.ps1' vitest run lib/design-tokens.test.ts -t "desktop density"
-  ❯ lib/design-tokens.test.ts (40 tests | 2 failed | 37 skipped)
-  Test Files  1 failed (1); Tests  2 failed | 1 passed | 37 skipped (40)
-  GREEN — & 'C:\nvm4w\nodejs\npx.ps1' vitest run lib/design-tokens.test.ts
-  ✓ lib/design-tokens.test.ts (40 tests); Test Files  1 passed (1); Tests  40 passed (40)
-  npm run verify:protocol → Codex protocol: valid
-  npx tsc --noEmit → exit 0 (no output)
-  npm test -- --reporter=dot → Test Files  324 passed (324); Tests  3103 passed (3103); Duration 140.13s
-  ```
-- `code-reviewer`: APPROVE, no actionable findings. Deferred exactly as planned: token conversion and all Task 3+ work.
+`--density-unit` in the foundation `:root`, the `[data-density="reference"]` reset outside
+`@layer`, the attribute on all three out-of-scope layouts. Two of its tests were green while
+measuring nothing and were rewritten: one asserted arithmetic on literals copied into the test
+instead of reading the stylesheet (**Codex's own RED evidence showed it — 2 failed, 1 passed,
+before the feature existed — and `code-reviewer` still said APPROVE**), and nothing checked that
+any layout carried the attribute. Both mutation-checked now.
 
-**Task 2 review (Claude).** The mechanism is right and placed right: `--density-unit` sits in the
-foundation `:root` (globals.css:124), the reset at :306 outside `@layer`, and the three layouts
-carry the attribute. Two findings, both "green while measuring nothing", both fixed:
+⚠️ Neither of those tests, nor the reset itself, was enough: see the Task 3 CRITICAL below. The
+opt-out needs its second half.
 
-1. **`bounds the rule to 1280-1440` never read the stylesheet.** It asserted
-   `0.0555556 * 16 ≈ 1280/1440` — arithmetic on two literals copied into the test, which keeps
-   passing while the CSS says something else. **Codex's own RED evidence showed it: 2 failed,
-   1 passed, before the feature existed** — and `code-reviewer` still returned APPROVE. The bounds
-   are now parsed out of `css`. Mutation-checked: `0.0555556rem` -> `0.05rem` fails it.
-2. **Nothing asserted the three layouts carry `data-density="reference"`.** The reset rule existing
-   proves only that the rule exists; deleting the attribute from all three files left the whole
-   suite green while marketing, auth and immersive would silently start scaling at Task 3.
-   New assertion reads the three files. Mutation-checked: removing it from the marketing layout
-   fails it.
+### Task 4, accepted — the calibration screens carry tokens
 
-Gate after the review: `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3104 tests**.
+Migration done: `button/input/select` on `h-control-*`, numeric spacing on the named scale across
+the shell and both screens, icon sizes on `size-icon-*`, and the nav's three interactive rows on
+`min-h-hit-target`. `w-sidebar` needed no edit — it already resolves through the density-scaled
+layout token, which is what a working token layer looks like.
+
+**Codex stopped this task once and was right to.** The plan said the 44px floor was
+`min-h-control-lg`; that renders **39.11px at 1280**, and spec §7 explicitly accepts `--control-lg`
+falling below 44. A token that scales cannot express "never below 44px". `--hit-target-min:
+2.75rem` now exists for it — unscaled, in `rem` so it still answers the reader's font size, absent
+from the `[data-density]` block, and asserted to contain no `density-unit`. Third plan defect of
+this branch, all three Claude's.
+
+Claude finished the task after Codex hit its ChatGPT usage limit mid-run (reset 16:49), and found
+two things in the handed-over tree:
+
+- `explore-preview-drawer.tsx` used `min-h-control-lg` where the map says `min-h-hit-target` —
+  it would have lowered that CTA's target from 44px to 39.11px. Fixed.
+- `explore/page.test.tsx` pinned `h-10` on the search field. Updated to `h-control-md`: the same
+  40px expressed as the rung, a contract change, not a loosened threshold.
+
+⚠️ **`tests/e2e/landing-page.spec.ts` has THREE tests failing on `master`** — one h1 assertion,
+§3 keyboard reachability, and a `#journey` image that never becomes visible. Verified by running
+the same three in the main checkout on master: identical failures, identical lines. Pre-existing
+debt, not this branch, and not fixed here. Second batch of stale e2e found on this branch after
+the C4 string.
+
+⚠️ Claude committed `80876d8` with `git add -A`, which swept up a red e2e guard Codex had left in
+the tree, and did not run the e2e before committing. It goes green with this task.
+
+**Gate:** `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3112 tests** · `lint` 0 errors ·
+`playwright` hub + explore + landing **29 passed, 3 failed — all three red on master too**.
 
 ### Task 3, accepted at `41aa819` — and one CRITICAL it inherited
 

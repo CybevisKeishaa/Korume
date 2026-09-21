@@ -34,28 +34,28 @@ export function ExploreLessonCard({ lesson, eyebrow, labels, onPreview }: {
           <div className="flex h-full items-center justify-center text-body text-muted-foreground">{labels.noThumbnail}</div>
         )}
         {lesson.jlptLevelEstimate ? (
-            <span className="absolute left-3 top-3 rounded-full bg-background/90 px-2 py-1 text-caption font-semibold text-foreground">
+            <span className="absolute left-sm top-sm rounded-full bg-background/90 px-xs py-2xs text-caption font-semibold text-foreground">
             {lesson.jlptLevelEstimate}
             </span>
           ) : null}
-        <Button type="button" variant="ghost" size="sm" aria-label={`${labels.preview}: ${lesson.title}`} onClick={() => onPreview(lesson)} className="absolute bottom-2 right-2 h-7 px-2 text-caption">
+        <Button type="button" variant="ghost" size="sm" aria-label={`${labels.preview}: ${lesson.title}`} onClick={() => onPreview(lesson)} className="absolute bottom-xs right-xs h-7 px-xs text-caption">
           {labels.preview}
         </Button>
       </div>
-      <div className="h-[196px] shrink-0 p-4">
+      <div className="h-[196px] shrink-0 p-md">
         {/* The eyebrow and the summary drop their own height and line-height:
             `caption` carries both (12/18 at the 1440 reference, floored at
             11/16.5), and a row sized for 8px type would clip it. 18 + 26 + 40
             + 16 + 24 + 40 + 32px of padding = 196. */}
         <p className="truncate text-caption font-semibold uppercase tracking-[1.04px] text-primary">{eyebrow}</p>
-        <h3 className="h-[26px] truncate pt-2 text-caption font-semibold text-foreground">{lesson.title}</h3>
-        <p className="h-10 line-clamp-2 pt-1 text-caption text-muted-foreground">{lesson.summary ?? "\u00a0"}</p>
-        <div className="h-4 pt-3" aria-hidden="true"><div className="h-1 overflow-hidden rounded-full bg-foreground/10"><div className="h-full w-0 bg-primary" /></div></div>
+        <h3 className="h-[26px] truncate pt-xs text-caption font-semibold text-foreground">{lesson.title}</h3>
+        <p className="h-10 line-clamp-2 pt-2xs text-caption text-muted-foreground">{lesson.summary ?? "\u00a0"}</p>
+        <div className="h-4 pt-sm" aria-hidden="true"><div className="h-1 overflow-hidden rounded-full bg-foreground/10"><div className="h-full w-0 bg-primary" /></div></div>
         <div className="flex h-6 items-end justify-between text-caption text-muted-foreground">
           <span>{labels.minutesTemplate.replace("{count}", lesson.durationSeconds === null ? "—" : String(Math.max(1, Math.round(lesson.durationSeconds / 60))))}</span>
           <span>{labels.linesTemplate.replace("{count}", String(lesson.lineCount))}</span>
         </div>
-        <div className="h-10 pt-3">
+        <div className="h-10 pt-sm">
           <div className="flex h-7 items-center justify-between border-t border-border/70">
           <span className="text-caption text-muted-foreground">
             {lesson.grammarCount === null || lesson.vocabularyCount === null

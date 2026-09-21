@@ -12,7 +12,7 @@ export function HubSectionHeading({ eyebrow, title, action }: HubSectionHeadingP
     <header className="flex items-end justify-between gap-md">
       <div className="min-w-0">
         {eyebrow && <p className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{eyebrow}</p>}
-        <h2 className="mt-1 text-heading-lg font-semibold tracking-tight text-foreground">{title}</h2>
+        <h2 className="mt-2xs text-heading-lg font-semibold tracking-tight text-foreground">{title}</h2>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </header>

@@ -44,9 +44,9 @@ export function AppNav({
       {visible ? (
         <nav
           aria-label={t("ariaLabel")}
-          className="flex h-screen w-sidebar flex-col gap-1 border-r border-border bg-card p-4"
+          className="flex h-screen w-sidebar flex-col gap-2xs border-r border-border bg-card p-md"
         >
-          <div className="mb-4 flex items-center justify-between gap-2 px-2">
+          <div className="mb-md flex items-center justify-between gap-xs px-xs">
             <Link href="/dashboard" className="font-jp text-lg font-bold">
               {tCommon("appNameJp")}
             </Link>
@@ -55,16 +55,16 @@ export function AppNav({
 
           <div data-nav-scroll className="flex-1 overflow-y-auto">
             {groups.map((group) => (
-              <div key={group.key} className="mb-2">
+              <div key={group.key} className="mb-xs">
                 <p
                   id={`app-nav-group-${group.key}`}
-                  className="block px-3 pb-1 pt-2 text-caption font-semibold uppercase tracking-wide text-muted-foreground"
+                  className="block px-sm pb-2xs pt-xs text-caption font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   {t(`groups.${group.key}`)}
                 </p>
                 <ul
                   aria-labelledby={`app-nav-group-${group.key}`}
-                  className="flex flex-col gap-1"
+                  className="flex flex-col gap-2xs"
                 >
                   {group.items.map((item) => {
                     const active =
@@ -75,7 +75,7 @@ export function AppNav({
                           href={item.href}
                           aria-current={active ? "page" : undefined}
                           className={cn(
-                            "block rounded-md px-3 py-2 text-body font-medium transition-colors",
+                            "block min-h-hit-target rounded-md px-sm py-xs text-body font-medium transition-colors",
                             active
                               ? "bg-primary/10 text-primary-strong"
                               : "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -99,14 +99,14 @@ export function AppNav({
             ))}
           </div>
 
-          <div className="mt-4 space-y-3 border-t border-border pt-4">
-            <p className="truncate px-1 text-caption text-muted-foreground" title={userEmail}>
+          <div className="mt-md space-y-sm border-t border-border pt-md">
+            <p className="truncate px-2xs text-caption text-muted-foreground" title={userEmail}>
               {userEmail}
             </p>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="w-full rounded-md px-3 py-2 text-left text-body text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="min-h-hit-target w-full rounded-md px-sm py-xs text-left text-body text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 {tCommon("auth.signOut")}
               </button>
@@ -133,19 +133,19 @@ export function AppNav({
         the point of F1) without re-widening the rail — see
         `reduce-motion-toggle.tsx`.
       */}
-      <div className="flex h-screen w-6 flex-col items-center gap-2 border-r border-border bg-card py-3">
+      <div className="flex h-screen w-6 flex-col items-center gap-xs border-r border-border bg-card py-sm">
         <button
           type="button"
           aria-expanded={visible}
           onClick={() => setVisible((current) => !current)}
-          className="flex items-center justify-center rounded py-1 text-caption text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          className="flex min-h-hit-target items-center justify-center rounded py-2xs text-caption text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
           <span aria-hidden="true">{visible ? "‹" : "›"}</span>
           <span className="sr-only">
             {visible ? t("toggle.hide") : t("toggle.show")}
           </span>
         </button>
-        <div className="border-t border-border pt-2 text-muted-foreground">
+        <div className="border-t border-border pt-xs text-muted-foreground">
           <ReduceMotionToggle compact />
         </div>
       </div>

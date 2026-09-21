@@ -91,7 +91,7 @@ export function ExplorePreviewDrawer({ lesson, onClose, labels }: {
           )}
         </section>
         <div className="grid gap-sm">
-          <Link href={`/shadowing/${lesson.id}`} className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-md text-body font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Link href={`/shadowing/${lesson.id}`} className="inline-flex min-h-hit-target items-center justify-center rounded-md bg-primary px-md text-body font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             {labels.start}
           </Link>
           <Button type="button" variant="outline" onClick={() => void addToLibrary()} disabled={state === "adding" || state === "added"}>
