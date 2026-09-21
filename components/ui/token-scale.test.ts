@@ -52,7 +52,7 @@ const FORBIDDEN = [
 // moved. A count that drifts silently is the same defect as a scan that sees
 // nothing.
 const SCANNED_DIRS = [
-  { dir: "components/ui", rules: FORBIDDEN, sources: 15 },
+  { dir: "components/ui", rules: FORBIDDEN, sources: 16 },
   { dir: "components/marketing", rules: FORBIDDEN, sources: 25 },
   // The typography consolidation (2026-09-21 density-scale spec, ruling 3.4)
   // gives these three trees one source of truth per rung. They get the FULL
