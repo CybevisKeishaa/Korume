@@ -93,9 +93,16 @@ send local users to a code screen for a code Supabase never sent.
   protected route. The page itself checks for a session and, with none, shows an "this link has
   expired" state linking to `/forgot-password` instead of the form.
 - `/auth/callback` is unchanged: it already forwards a locale-carrying `next`.
-- `/verify-email` validates its `email` query parameter with the same email schema. Missing or
-  invalid → redirect `/register`. The email is rendered as text only (React escaping); it is never
-  put into a URL other than the `resendCode`/`verifyEmail` form fields.
+- `/verify-email?email=` carries the address in the query string. **This is a deliberate
+  trade-off**: the page needs the address to verify and resend, and there is no session to hold it.
+  Rules: it is always URL-encoded when built (`register`, `login`); the page validates it with the
+  same email schema, and a missing or invalid value redirects to `/register`; it is rendered as text
+  only (React escaping); it is **not propagated** into any other link (e.g. "Change email" links to
+  a bare `/register`); and the actions receive it from the form body via a hidden field, never by
+  reading the URL.
+- `resend=1` is an **untrusted UI hint** and nothing more. It does not trigger a resend, does not
+  bypass Supabase's rate limit, and does not start a cooldown; it only sets the initial state of
+  the resend control to enabled (§5.3).
 
 ### 4.3 Validation additions
 
@@ -124,6 +131,13 @@ Figma's Inter maps to `font-sans` (Plus Jakarta Sans); Outfit is `font-display`.
 
 - **`AuthSplitShell`** — the 60/40 split (≈768/512 at 1280), background, a left slot and a right
   slot. It has **no per-screen variants**; a screen differs only by what it puts in the slots.
+- **Minimum responsive contract for `AuthSplitShell`.** It is a new primitive, so it has no
+  existing behaviour to inherit; "mobile is out of scope" (§10) means no new mobile *design*, not
+  licence to break narrow viewports. The floor is today's auth page — a single centred column of at
+  most `max-w-md`. When the two columns no longer fit at their content widths, the shell falls
+  back to that single column: the card and its form come first and stay fully usable; the story
+  collapses to the logo and heading, and the pose and quote are hidden. At every width from 320 px
+  up there is no horizontal overflow and every control is reachable by keyboard and by scroll.
 - **`AuthStory`** — left-slot content: eyebrow, display heading, body, quote with its attribution
   line, and a `pose` (§5.4).
 - **`AuthCard`** — right-slot card: eyebrow, heading, subtitle, children.
@@ -144,8 +158,11 @@ behaviour, which Figma does not show.
 - Each box accepts one digit; any non-digit input is discarded.
 - Typing a digit moves focus to the next box.
 - Backspace in an empty box moves focus to the previous box and clears it.
-- Pasting into any box distributes the pasted digits (non-digits stripped) from that box onward,
-  truncated at six, and focuses the box after the last one filled.
+- **Any multi-character insertion into a box is distributed** — a paste event, and equally a
+  platform `one-time-code` autofill that delivers the whole string through `input`/`change` without
+  any paste event. Non-digits are stripped, digits fill from that box onward, truncated at six.
+- After a distribution or a typed digit, focus moves to the next empty box; when the sixth box is
+  filled, focus moves to the "Verify email" button. Focus never moves to a box that does not exist.
 - `inputMode="numeric"`; the **first** box carries `autocomplete="one-time-code"` so platform
   autofill delivers the whole code.
 - The group has one accessible label ("Verification code"); each box has a positional name
@@ -159,13 +176,16 @@ behaviour, which Figma does not show.
   "Resend code in Ns", then an enabled "Resend code"; every successful resend restarts it.
 - Arriving from `register`, `signUp` has just sent a code, so the cooldown starts on page load.
 - Arriving from `login` (unconfirmed email), nothing was sent now, so `login` redirects with
-  `?resend=1` and the page starts with "Resend code" enabled and no cooldown.
+  `?resend=1` and the page starts with "Resend code" enabled and no cooldown. Nothing is sent until
+  the user presses it; the 60 s cooldown starts only after a resend **succeeds**.
 - "Wrong email? Change email" links to `/register`.
 
 ### 5.4 Mascot poses — one mapping, one home
 
-`components/auth/mascot-poses.ts` is the **only** place a semantic screen state maps to an asset
-file. Pages pass the semantic name; they never name a file and never set an offset.
+`components/mascot/mascot-poses.ts` is the **only** place a semantic screen state maps to an asset
+file, and `components/mascot/mascot-pose.tsx` renders it. The home is neutral on purpose: auth and
+error surfaces both import it, so neither depends on the other. Pages pass the semantic name; they
+never name a file and never set an offset.
 
 | Screen | Pose file (`public/mascot/poses/`) |
 | --- | --- |
@@ -246,9 +266,9 @@ machine-translated. The frames' error-language rule applies: never blaming, neve
 
 | Layer | Tool | What it proves |
 | --- | --- | --- |
-| Component | Vitest + RTL | `OtpInput` every rule in §5.2 (digit filter, advance, backspace, paste full/partial/with non-digits, the two accessible names). Resend cooldown with fake timers, including `?resend=1`. `mascot-poses` ↔ `poses.json`. `RouteErrorPanel` fires its callbacks and never renders the error message (mutation-check: render it, see red). The path leaf. A guard that no auth screen renders an Apple or GitHub control. |
+| Component | Vitest + RTL | `OtpInput` every rule in §5.2 (digit filter, advance, backspace, paste full/partial/with non-digits, a six-digit `input` event with **no** paste event distributed the same way, focus on the Verify button after the sixth digit, the two accessible names). Resend cooldown with fake timers, including `?resend=1`. `mascot-poses` ↔ `poses.json`. `RouteErrorPanel` fires its callbacks and never renders the error message (mutation-check: render it, see red). The path leaf. A guard that no auth screen renders an Apple or GitHub control. |
 | Route / integration | Vitest, Supabase mocked as in `actions.test.ts` | Each action: validation errors, success redirect, error mapping. `register` in **both** response shapes (§4.1). `requestPasswordReset` returns the identical state for success and for a Supabase error. `login` maps *email not confirmed* to the verify redirect and nothing else. `updatePassword` with no session. `route-protection`: `/forgot-password` and `/verify-email` are auth routes, `/reset-password` is not. `/verify-email` with a missing or invalid `email`. |
-| E2E / visual, 1280 | Playwright, local Supabase | Login, register, forgot-password round trips. `/verify-email?email=…` renders, accepts typed and pasted digits, shows the error for a wrong code, shows the cooldown. 404 at `/en/<unmatched>` shows the path. A thrown route error renders **inside** the shell: the sidebar's measured width is identical before and after the error. No Apple/GitHub control in the DOM. The five existing auth-dependent specs stay green. |
+| E2E / visual, 1280 | Playwright, local Supabase | Login, register, forgot-password round trips. `/verify-email?email=…` renders, accepts typed and pasted digits, shows the error for a wrong code, shows the cooldown. 404 at `/en/<unmatched>` shows the path. A thrown route error renders **inside** the shell: the sidebar's measured width is identical before and after the error. No Apple/GitHub control in the DOM. At 320 px, each auth route has no horizontal overflow (`scrollWidth <= clientWidth`) and its submit button is reachable. The five existing auth-dependent specs stay green. |
 
 Guard tests written over code that already exists are mutation-checked (AGENTS.md §7). Any
 assertion over a pattern-gathered collection also asserts its size.
@@ -271,19 +291,23 @@ repo's default config is not changed for this.
 
 ## 9. Tasks
 
-Each task is one commit, reviewable and revertible alone, and adds its own catalog keys in both
-locales.
+Each task is one commit, and **every commit leaves the app correct on its own**: no redirect,
+link or form field lands before the route, action or schema it depends on. Each task adds its own
+catalog keys in both locales.
 
-1. `mascot-poses` + `MascotPose`.
-2. `AuthSplitShell`, `AuthStory`, `AuthCard`; move Login and Register onto them (behaviour
-   unchanged apart from confirm-password and the show/hide toggle; Google only).
-3. `OtpInput` (UI only).
-4. OTP server flow: template + config, `register` both modes (§4.1), `login` unconfirmed redirect,
-   `verifyEmail`, `resendCode`, schemas.
-5. `/verify-email` page.
-6. Forgot + reset: actions, the two pages, `AUTH_ROUTES`.
-7. 404: `not-found`, catch-all, path leaf.
-8. Errors: `RouteErrorPanel`, `(app)/error.tsx`, `[locale]/error.tsx`, `global-error.tsx`.
+1. `components/mascot/`: `mascot-poses` + `MascotPose`.
+2. `AuthSplitShell`, `AuthStory`, `AuthCard`; move Login and Register onto them, Google only. This
+   task **also** lands confirm-password end to end (field, `registerSchema` refinement, `register`
+   reading it, tests) and the show/hide toggle. It does **not** add the "Forgot password?" link.
+3. `OtpInput` (UI only; nothing routes to it yet).
+4. **OTP vertical slice**, one commit: template + config, the `/verify-email` page, `verifyEmail`,
+   `resendCode`, their schemas, `/verify-email` in `AUTH_ROUTES`, and only then the redirects into
+   it — `register` in both modes (§4.1) and `login`'s unconfirmed redirect.
+5. **Password reset slice**, one commit: `requestPasswordReset`, `updatePassword`, their schemas,
+   the `/forgot-password` and `/reset-password` pages, `/forgot-password` in `AUTH_ROUTES`, and the
+   "Forgot password?" link on Login.
+6. 404: `not-found`, catch-all, path leaf.
+7. Errors: `RouteErrorPanel`, `(app)/error.tsx`, `[locale]/error.tsx`, `global-error.tsx`.
 
 Then: whole-branch review by Claude (§8.2, §8.3), owner review in their own Chrome, merge.
 
@@ -292,4 +316,4 @@ Then: whole-branch review by Claude (§8.2, §8.3), owner review in their own Ch
 Apple and GitHub sign-in · Terms, Privacy and help pages · a live OTP expiry display · changing the
 local confirmation default · `toast` density scoping · the design-system error sheet `218:15740` /
 `335:1588` beyond the two real screens · migrating the marketing mascot constants to the new map ·
-mobile layouts beyond the existing responsive behaviour of the primitives used.
+a new mobile design (the floor in §5.1 still binds).
