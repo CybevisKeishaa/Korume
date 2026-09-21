@@ -330,6 +330,65 @@
   --density-unit: 0.0625rem;
 }
 
+/* THE OPT-OUT'S SECOND HALF, and the half that actually does the work.
+
+   A var() inside a custom property is substituted on the element that
+   DECLARES the property, not on the element that reads it. So every token
+   above computes against :root's --density-unit and inherits an already
+   resolved length; overriding --density-unit further down does nothing to
+   it. Measured in Chrome at viewport 1280, not reasoned about: with only
+   the reset above, padding-left: var(--space-md) inside the reference
+   scope rendered 14.2222px — the fluid value — while a direct
+   calc(16 * var(--density-unit)) in the same scope rendered 16px.
+
+   So the derived layer is re-declared here, on the scope element itself,
+   where it resolves against that element's unit. --density-unit is NOT
+   redeclared: the reset above owns it.
+
+   lib/design-tokens.test.ts asserts this list and the :root list are the
+   same set. A token added above and forgotten here would silently stop
+   honouring the opt-out. */
+[data-density] {
+  --radius-sm: calc(8 * var(--density-unit));
+  --radius-md: calc(14 * var(--density-unit));
+  --radius-lg: calc(20 * var(--density-unit));
+  --space-2xs: calc(4 * var(--density-unit));
+  --space-xs: calc(8 * var(--density-unit));
+  --space-sm: calc(12 * var(--density-unit));
+  --space-md: calc(16 * var(--density-unit));
+  --space-lg: calc(24 * var(--density-unit));
+  --space-xl: calc(32 * var(--density-unit));
+  --space-2xl: calc(48 * var(--density-unit));
+  --space-3xl: calc(64 * var(--density-unit));
+  --space-md-lg: calc(20 * var(--density-unit));
+  --layout-sidebar-width: calc(224 * var(--density-unit));
+  --layout-sidebar-collapsed: calc(68 * var(--density-unit));
+  --layout-content-max: calc(1240 * var(--density-unit));
+  --layout-companion-width: clamp( calc(240 * var(--density-unit)), 27.5%, calc(340 * var(--density-unit)) );
+  --layout-header-height: calc(64 * var(--density-unit));
+  --text-caption: max(0.6875rem, calc(12 * var(--density-unit)));
+  --leading-caption: max(1.03125rem, calc(18 * var(--density-unit)));
+  --text-body: calc(14 * var(--density-unit));
+  --leading-body: calc(22 * var(--density-unit));
+  --text-body-lg: calc(16 * var(--density-unit));
+  --leading-body-lg: calc(26 * var(--density-unit));
+  --text-heading: calc(20 * var(--density-unit));
+  --leading-heading: calc(28 * var(--density-unit));
+  --text-heading-lg: calc(24 * var(--density-unit));
+  --leading-heading-lg: calc(32 * var(--density-unit));
+  --text-title: calc(28 * var(--density-unit));
+  --leading-title: calc(36 * var(--density-unit));
+  --text-display: calc(40 * var(--density-unit));
+  --leading-display: calc(48 * var(--density-unit));
+  --control-sm: calc(36 * var(--density-unit));
+  --control-md: calc(40 * var(--density-unit));
+  --control-lg: calc(44 * var(--density-unit));
+  --icon-xs: calc(12 * var(--density-unit));
+  --icon-sm: calc(16 * var(--density-unit));
+  --icon-md: calc(24 * var(--density-unit));
+  --icon-lg: calc(28 * var(--density-unit));
+}
+
 @layer base {
   * {
     @apply border-border;

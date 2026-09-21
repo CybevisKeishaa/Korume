@@ -169,6 +169,30 @@ out-of-scope groups reset it:
 [data-density="reference"] { --density-unit: 0.0625rem; }  /* held at 1.0 */
 ```
 
+> ⚠️ **CORRECTED 2026-09-21, after the line above shipped and did nothing.** That reset alone is
+> **not** the opt-out, and the paragraph above is only half true. A `var()` inside a custom
+> property is substituted on the element that **declares** the property, not on the element that
+> reads it. Every token declared on `:root` as `calc(N * var(--density-unit))` therefore resolves
+> against `:root`'s unit and inherits a finished length; overriding `--density-unit` on a
+> descendant cannot reach it.
+>
+> Measured in Chrome at viewport 1280, with only the reset in place:
+>
+> | inside `[data-density="reference"]` | rendered | should have been |
+> | --- | --- | --- |
+> | `padding-left: var(--space-md)` (a `:root`-declared token) | **14.222px** | 16px |
+> | `padding-left: calc(16 * var(--density-unit))` (direct) | 16px | 16px |
+>
+> The three layouts carried an attribute that changed nothing, and the whole marketing surface
+> would have shipped ~11% small. **The opt-out is therefore two rules**: the reset above, plus a
+> `[data-density]` block that re-declares the entire derived token layer on the scope element,
+> where it resolves against that element's unit. `--density-unit` itself is not re-declared there.
+>
+> Two guards, because the first kind of guard is what let this through:
+> `lib/design-tokens.test.ts` asserts the two token lists are the same set, and
+> `tests/e2e/landing-page.spec.ts` **measures a computed value in a real browser**. A stylesheet
+> assertion cannot catch this class of defect — the CSS text was correct throughout.
+
 applied by the `(marketing)`, `(auth)` and `(immersive)` layouts. Those frames are drawn on a 1280
 canvas and are already 1:1 correct; scaling them would take them 10% away from their own design.
 

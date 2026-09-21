@@ -40,6 +40,7 @@ colour tokens; new breakpoints; and anything below 1280.
 - `1d0f1ce` `refactor(type): one source of truth per typography rung, with a guard` — Task 1.
 - `c89cc56` `fix(type): close the Task 1 review — guard scope, one re-roled site, the Explore card`.
 - `bea1068` `feat(density): a bounded desktop density unit, with a per-group opt-out` — Task 2.
+- `41aa819` `feat(density): every scale authored at 1440 and scaled through one unit` — Task 3.
 
 ## Contracts and decisions
 
@@ -159,28 +160,36 @@ carry the attribute. Two findings, both "green while measuring nothing", both fi
 
 Gate after the review: `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3104 tests**.
 
-### Task 3 checkpoint
+### Task 3, accepted at `41aa819` — and one CRITICAL it inherited
 
-- Commit: **blocked** — `git commit` could not create
-  `.git/worktrees/desktop-density-scale/index.lock` (permission denied); source remains uncommitted.
-- RED evidence:
-  ```text
-  & 'C:\nvm4w\nodejs\npx.ps1' vitest run lib/design-tokens.test.ts -t "desktop density"
-  Test Files 1 failed (1); Tests 4 failed | 5 passed | 37 skipped (46)
-  Missing scaled tokens/caption floors/companion bounds/default radius, as expected before conversion.
-  & 'C:\nvm4w\nodejs\npx.ps1' vitest run components/style-guide/style-guide.test.tsx -t "1440 and 1280"
-  Test Files 1 failed (1); Tests 1 failed | 6 skipped (7)
-  Mutation: deleting `height.control-sm` made its new mapping contract fail (1 failed | 46 skipped).
-  ```
-- GREEN evidence:
-  ```text
-  npx vitest run lib/design-tokens.test.ts → 47 passed (47)
-  npm run verify:protocol → Codex protocol: valid
-  npx tsc --noEmit → exit 0 (no output)
-  npm test -- --reporter=dot → Test Files 324 passed (324); Tests 3110 passed (3110); Duration 64.55s
-  ```
-- Pin decisions: `two-column-shell` now pins the §6 companion token (240 / 27.5% / 340), not a
-  rendered threshold; style-guide labels now document specified @1440/@1280 radius values. No
-  geometry pin at ≥1440 changed. Left untouched: hero/leading-hero/leading-jp, marketing max,
-  colours, breakpoints, and `button.tsx` `h-12`.
-- `code-reviewer`: APPROVE after a direct Tailwind height/minHeight/size mapping guard and mutation check.
+Codex's conversion is faithful. All 38 derived tokens match spec §6 exactly; the seven
+non-scaling exceptions are the documented ones (`--layout-gutter` / `--layout-column-gap` reference
+the spacing scale, `--layout-marketing-max`, `--text-hero`, `--leading-hero`, `--leading-jp`, and
+the companion clamp's own 27.5% share); `borderRadius.DEFAULT` scales per owner ruling; and the one
+pinned assertion it changed (`two-column-shell.test.tsx`) is a real contract change, pinned as
+tightly as before. Its own gate: tsc 0, `npm test` 324 files / 3110 tests. Its handoff commit
+failed on `index.lock` — GitHub Desktop holds it — so Claude committed the work after verifying it.
+
+🚨 **CRITICAL, inherited from Task 2 and from spec §5.3: the density opt-out did nothing.**
+A `var()` inside a custom property is substituted on the element that DECLARES it. Every token
+declared on `:root` resolved against `:root`'s unit and inherited a finished length, so
+`[data-density="reference"]` could never reach it. Measured in Chrome at 1280: inside the reference
+scope `var(--space-md)` rendered **14.2222px**, not 16px, while a direct
+`calc(16 * var(--density-unit))` in the same scope rendered 16px. Marketing, auth and immersive —
+all drawn on a 1280 canvas — would have shipped ~11% small, the landing page among them.
+
+Fixed: a `[data-density]` block re-declares all 38 derived tokens on the scope element, where they
+resolve against that element's unit. Re-measured at 1280: fluid `14.2222px / 12.4445px`, reference
+`16px / 14px`, and `16px` three levels deep inside the scope. Spec §5.3 carries the correction.
+
+**Why it survived two reviews.** Task 2's tests — and Claude's own additions to them — asserted the
+CSS TEXT and the attribute's presence. Both were correct the entire time. Two guards now: a
+set-equality test over the two token lists, and `tests/e2e/landing-page.spec.ts`, which **measures a
+computed value in a real browser**. Mutation-checked: renaming the `[data-density]` selector makes
+that e2e fail `Expected "14px", Received "12.4445px"` — the exact symptom.
+
+⚠️ Claude restored a mutation with `git checkout --` and destroyed its own uncommitted fix with it.
+Edit a mutation back; never `git restore` while one is in flight.
+
+**Gate:** `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3111 tests** · `lint` 0 errors ·
+`playwright` landing-page density case green, and mutation-checked red.

@@ -407,6 +407,36 @@ describe("desktop density scale", () => {
     expect(Number(lower) * 16).toBeCloseTo(1280 / 1440, 4); // 0.889 at 1280
   });
 
+  it("re-declares the whole derived layer on the opt-out scope, not just the unit", () => {
+    // THE OPT-OUT'S ACTUAL MECHANISM. A var() inside a custom property is
+    // substituted on the element that DECLARES the property, so every token
+    // declared on :root resolves against :root's unit and inherits a finished
+    // length. Overriding --density-unit lower down cannot reach it.
+    //
+    // Measured in Chrome at 1280 while only the reset existed: inside the
+    // reference scope, padding-left: var(--space-md) rendered 14.2222px — the
+    // fluid value — and a direct calc(16 * var(--density-unit)) rendered 16px.
+    // The three layouts carried an attribute that did nothing.
+    //
+    // This asserts the two lists are the SAME SET. A token added to :root and
+    // forgotten in the scope block silently stops honouring the opt-out, and
+    // the only symptom is a marketing page 11% off its own design.
+    const derived = (source: string) =>
+      new Set(
+        [...source.matchAll(/^[ \t]*(--[a-z0-9-]+):\s*((?:[^;]|\n)*?);/gm)]
+          .filter((match) => match[2]!.includes("density-unit") && match[1] !== "--density-unit")
+          .map((match) => match[1]!),
+      );
+
+    const scopeBlock = css.match(/\[data-density\]\s*\{([\s\S]*?)\n\}/)?.[1];
+    expect(scopeBlock).toBeDefined();
+
+    const rootDerived = derived(css.replace(scopeBlock!, ""));
+    const scopeDerived = derived(scopeBlock!);
+    expect(rootDerived.size).toBeGreaterThan(30);
+    expect([...scopeDerived].sort()).toEqual([...rootDerived].sort());
+  });
+
   it("puts the reference opt-out on all three out-of-scope layouts", () => {
     // The reset rule existing proves nothing: delete the attribute from these
     // three files and every other assertion here still passes, while the
