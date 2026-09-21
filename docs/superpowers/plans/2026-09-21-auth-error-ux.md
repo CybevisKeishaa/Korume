@@ -59,7 +59,7 @@ plan argues from it; where they disagree, stop and report instead of choosing.
 | --- | --- | --- |
 | `components/mascot/mascot-poses.ts` (+ `.test.ts`) | 1 | The one semantic-name → file/size mapping |
 | `components/mascot/mascot-pose.tsx` (+ `.test.tsx`) | 1 | Renders a pose; owns size variants |
-| `components/auth/auth-split-shell.tsx` | 2 | 60/40 split + narrow fallback |
+| `components/auth/auth-split-shell.tsx` | 2 | 60/40 split (no narrow layout; see spec §5.1) |
 | `components/auth/auth-story.tsx` | 2 | Left column content |
 | `components/auth/auth-card.tsx` | 2 | Right column card |
 | `components/auth/form-parts.tsx` | 2 | `SubmitButton`, `FieldError`, `FormError`, `PasswordField`, `GoogleButton`, `OrDivider` |
