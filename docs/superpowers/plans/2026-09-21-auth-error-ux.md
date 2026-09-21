@@ -314,8 +314,12 @@ export const registerSchema = z
 
 - [ ] **Step 3: Failing action test** — in `actions.validation.test.ts`, add a register case posting
   mismatched passwords and assert `fieldErrors.confirmPassword` equals
-  `["Passwords do not match."]` (the literal English text, never read from the JSON). Run → FAIL
-  (raw key leaks through `default`).
+  `["Passwords do not match."]` (the literal English text, never read from the JSON). The posted
+  form must carry a **present but different** `confirmPassword`. Run → FAIL. *(Corrected
+  2026-09-21 after Codex stopped on it: the red reason here is that `register()` does not read
+  `confirmPassword` yet, so zod reports its own missing-field message — not a leaked
+  `validation.passwordMismatch` key. The leak only becomes observable after `register()` reads the
+  field; Step 4 fixes both at once. Any red on this assertion is the expected failure.)*
 
 - [ ] **Step 4: Implement** — in `actions.ts`: `register` reads
   `confirmPassword: formData.get("confirmPassword")`; `signUp` still receives only
