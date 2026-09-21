@@ -22,7 +22,7 @@
 > **▶ NEXT ACTION: Auth + Error UX** (details in the block below, unchanged).
 >
 > **Resume checklist for the next session (state at end of 2026-09-21):**
-> 1. `master` = `2bb68a3`, clean except a tool-generated `.serena/project.yml`
+> 1. `master` tip = the commit that added this checklist (`git log -1`), clean except a tool-generated `.serena/project.yml`
 >    diff (not ours, left uncommitted). Run `git ls-remote origin
 >    refs/heads/master` before saying anything about what is pushed.
 > 2. Environment: no server running on `:3000`; the main checkout's `.next` was
