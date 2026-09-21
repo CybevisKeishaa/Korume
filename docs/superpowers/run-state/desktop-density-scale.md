@@ -174,36 +174,27 @@ the tree, and did not run the e2e before committing. It goes green with this tas
 **Gate:** `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3112 tests** · `lint` 0 errors ·
 `playwright` hub + explore + landing **29 passed, 3 failed — all three red on master too**.
 
-### Task 3, accepted at `41aa819` — and one CRITICAL it inherited
+### Task 3, accepted at `41aa819` — and the CRITICAL it inherited
 
-Codex's conversion is faithful. All 38 derived tokens match spec §6 exactly; the seven
-non-scaling exceptions are the documented ones (`--layout-gutter` / `--layout-column-gap` reference
-the spacing scale, `--layout-marketing-max`, `--text-hero`, `--leading-hero`, `--leading-jp`, and
-the companion clamp's own 27.5% share); `borderRadius.DEFAULT` scales per owner ruling; and the one
-pinned assertion it changed (`two-column-shell.test.tsx`) is a real contract change, pinned as
-tightly as before. Its own gate: tsc 0, `npm test` 324 files / 3110 tests. Its handoff commit
-failed on `index.lock` — GitHub Desktop holds it — so Claude committed the work after verifying it.
+All 38 derived tokens match spec §6 exactly; the seven non-scaling exceptions are the documented
+ones; `borderRadius.DEFAULT` scales per owner ruling; the one pinned assertion it changed is a real
+contract change. Codex's handoff commit died on `index.lock` (GitHub Desktop holds it).
 
-🚨 **CRITICAL, inherited from Task 2 and from spec §5.3: the density opt-out did nothing.**
-A `var()` inside a custom property is substituted on the element that DECLARES it. Every token
-declared on `:root` resolved against `:root`'s unit and inherited a finished length, so
-`[data-density="reference"]` could never reach it. Measured in Chrome at 1280: inside the reference
-scope `var(--space-md)` rendered **14.2222px**, not 16px, while a direct
-`calc(16 * var(--density-unit))` in the same scope rendered 16px. Marketing, auth and immersive —
-all drawn on a 1280 canvas — would have shipped ~11% small, the landing page among them.
+🚨 **The density opt-out did nothing.** A `var()` inside a custom property is substituted on the
+element that DECLARES it, so every `:root` token resolved against `:root`'s unit and inherited a
+finished length. Measured in Chrome at 1280: inside the reference scope `var(--space-md)` rendered
+**14.2222px**, not 16px, while a direct `calc(16 * var(--density-unit))` rendered 16px. Marketing,
+auth and immersive would have shipped ~11% small — the landing page among them.
 
-Fixed: a `[data-density]` block re-declares all 38 derived tokens on the scope element, where they
-resolve against that element's unit. Re-measured at 1280: fluid `14.2222px / 12.4445px`, reference
-`16px / 14px`, and `16px` three levels deep inside the scope. Spec §5.3 carries the correction.
+Fixed at `442c140`: a `[data-density]` block re-declares all 38 derived tokens on the scope
+element. Re-measured: fluid `14.2222 / 12.4445`, reference `16 / 14`, `16px` three levels deep.
+Spec §5.3 carries the correction.
 
-**Why it survived two reviews.** Task 2's tests — and Claude's own additions to them — asserted the
-CSS TEXT and the attribute's presence. Both were correct the entire time. Two guards now: a
-set-equality test over the two token lists, and `tests/e2e/landing-page.spec.ts`, which **measures a
-computed value in a real browser**. Mutation-checked: renaming the `[data-density]` selector makes
-that e2e fail `Expected "14px", Received "12.4445px"` — the exact symptom.
+**Why it survived two reviews:** every test involved asserted CSS TEXT and attribute presence, and
+both were correct the whole time. Two guards now — a set-equality test over the two token lists,
+and `tests/e2e/landing-page.spec.ts`, which **measures a computed value in a browser**.
+Mutation-checked: renaming the `[data-density]` selector fails it with
+`Expected "14px", Received "12.4445px"`.
 
-⚠️ Claude restored a mutation with `git checkout --` and destroyed its own uncommitted fix with it.
-Edit a mutation back; never `git restore` while one is in flight.
-
-**Gate:** `verify:protocol` 0 · `tsc` 0 · `npm test` **324 files / 3111 tests** · `lint` 0 errors ·
-`playwright` landing-page density case green, and mutation-checked red.
+⚠️ Claude restored a mutation with `git checkout --` and destroyed its own uncommitted fix. Edit a
+mutation back; never `git restore` while one is in flight.
