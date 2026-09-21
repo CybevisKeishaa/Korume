@@ -3,6 +3,7 @@
 import * as RadixPopover from "@radix-ui/react-popover";
 import { cn } from "@/lib/utils";
 import type { Side } from "./tooltip";
+import { useDensityScope } from "./use-density-scope";
 
 export interface PopoverProps {
   /** The anchor/trigger. Must be a single focusable element. */
@@ -31,11 +32,14 @@ export function Popover({
   className,
   children,
 }: PopoverProps) {
+  const { anchorRef, density } = useDensityScope();
   return (
     <RadixPopover.Root open={open} onOpenChange={onOpenChange}>
       <RadixPopover.Trigger asChild>{trigger}</RadixPopover.Trigger>
+      <span hidden ref={anchorRef} />
       <RadixPopover.Portal>
         <RadixPopover.Content
+          data-density={density}
           side={side}
           align={align}
           sideOffset={6}

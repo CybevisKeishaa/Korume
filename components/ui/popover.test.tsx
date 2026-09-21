@@ -44,4 +44,23 @@ describe("Popover", () => {
     );
     expect(await screen.findByText("controlled content")).toBeInTheDocument();
   });
+
+  it("carries the density scope it was opened from onto its portaled content", async () => {
+    // Radix portals to document.body, outside every route-group subtree, so
+    // content opened from a data-density="reference" group would inherit the
+    // app's fluid density. The scope is copied onto the portaled content,
+    // where the [data-density] block re-declares the tokens (spec §5.3).
+    const user = userEvent.setup();
+    render(
+      <div data-density="reference">
+        <Popover trigger={<button>scoped</button>}>
+          <p>scoped content</p>
+        </Popover>
+      </div>,
+    );
+    await user.click(screen.getByRole("button", { name: "scoped" }));
+    const content = (await screen.findByText("scoped content")).closest("[data-density]");
+    expect(content).toHaveAttribute("data-density", "reference");
+    expect(content).toHaveAttribute("role", "dialog");
+  });
 });

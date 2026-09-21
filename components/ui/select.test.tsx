@@ -48,4 +48,20 @@ describe("Select", () => {
       "JLPT N5",
     );
   });
+
+  it("carries the density scope it was opened from onto its portaled content", async () => {
+    // Radix portals to document.body, outside every route-group subtree, so
+    // content opened from a data-density="reference" group would inherit the
+    // app's fluid density. The scope is copied onto the portaled content,
+    // where the [data-density] block re-declares the tokens (spec §5.3).
+    const user = userEvent.setup();
+    render(
+      <div data-density="reference">
+        <Select options={options} aria-label="Level" />
+      </div>,
+    );
+    await user.click(screen.getByRole("combobox", { name: "Level" }));
+    const listbox = await screen.findByRole("listbox");
+    expect(listbox.closest("[data-density]")).toHaveAttribute("data-density", "reference");
+  });
 });

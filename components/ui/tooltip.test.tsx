@@ -33,4 +33,24 @@ describe("Tooltip", () => {
     await user.tab();
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
+
+  it("carries the density scope it was opened from onto its portaled content", async () => {
+    // Radix portals to document.body, outside every route-group subtree, so
+    // content opened from a data-density="reference" group would inherit the
+    // app's fluid density. The scope is copied onto the portaled content,
+    // where the [data-density] block re-declares the tokens (spec §5.3).
+    const user = userEvent.setup();
+    render(
+      <div data-density="reference">
+        <Tooltip content="scoped tip">
+          <button>trigger</button>
+        </Tooltip>
+      </div>,
+    );
+    await user.tab();
+    const tooltip = await screen.findByRole("tooltip");
+    // role="tooltip" is Radix's visually-hidden copy INSIDE the bubble, so
+    // closest() reaches the bubble, which is the node that carries the tokens.
+    expect(tooltip.closest("[data-density]")).toHaveAttribute("data-density", "reference");
+  });
 });

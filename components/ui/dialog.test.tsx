@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/test/render";
+import { render, screen, waitFor } from "@/test/render";
 import { Dialog } from "./dialog";
 
 describe("Dialog", () => {
@@ -89,5 +89,30 @@ describe("Dialog", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it("carries the density scope it was opened from onto its portaled content", async () => {
+    // Radix portals to document.body, outside every route-group subtree, so
+    // content opened from a data-density="reference" group would inherit the
+    // app's fluid density. The scope is copied onto the portaled content,
+    // where the [data-density] block re-declares the tokens (spec §5.3).
+    render(
+      <div data-density="reference">
+        <Dialog open onClose={vi.fn()} title="Scoped">
+          <p>body</p>
+        </Dialog>
+      </div>,
+    );
+    const dialog = screen.getByRole("dialog", { name: "Scoped" });
+    await waitFor(() => expect(dialog).toHaveAttribute("data-density", "reference"));
+  });
+
+  it("carries no density scope when opened outside one", () => {
+    render(
+      <Dialog open onClose={vi.fn()} title="Unscoped">
+        <p>body</p>
+      </Dialog>,
+    );
+    expect(screen.getByRole("dialog", { name: "Unscoped" })).not.toHaveAttribute("data-density");
   });
 });

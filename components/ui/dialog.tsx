@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
+import { useDensityScope } from "./use-density-scope";
 
 export interface DialogProps {
   open: boolean;
@@ -49,6 +50,7 @@ export function Dialog({
   closeLabel = "Close dialog",
 }: DialogProps) {
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const { anchorRef, density } = useDensityScope();
 
   useLayoutEffect(() => {
     if (open) {
@@ -63,10 +65,12 @@ export function Dialog({
         if (!next) onClose();
       }}
     >
+      <span hidden ref={anchorRef} />
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="fixed inset-0 z-overlay bg-scrim/50" />
         <RadixDialog.Content
           aria-modal="true"
+          data-density={density}
           onOpenAutoFocus={(event) => {
             if (initialFocusRef?.current) {
               event.preventDefault();

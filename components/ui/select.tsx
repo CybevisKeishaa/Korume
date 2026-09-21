@@ -2,6 +2,7 @@
 
 import * as RadixSelect from "@radix-ui/react-select";
 import { cn } from "@/lib/utils";
+import { useDensityScope } from "./use-density-scope";
 
 export interface SelectOption {
   value: string;
@@ -36,6 +37,7 @@ export function Select({
   className,
   "aria-label": ariaLabel,
 }: SelectProps) {
+  const { anchorRef, density } = useDensityScope();
   return (
     <RadixSelect.Root value={value} onValueChange={onValueChange} disabled={disabled}>
       <RadixSelect.Trigger
@@ -54,8 +56,10 @@ export function Select({
           ▾
         </RadixSelect.Icon>
       </RadixSelect.Trigger>
+      <span hidden ref={anchorRef} />
       <RadixSelect.Portal>
         <RadixSelect.Content
+          data-density={density}
           position="popper"
           sideOffset={4}
           className={cn(
