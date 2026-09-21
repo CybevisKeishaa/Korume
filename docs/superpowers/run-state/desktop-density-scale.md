@@ -1,6 +1,6 @@
 # Branch Run State
 
-- Owner: Claude
+- Owner: Codex
 
 ## Goal and scope
 
@@ -124,16 +124,17 @@ the branch is handed to Codex.
 
 ## Next actions
 
-1. Task 2 defines the density unit and reference-group reset under TDD, then receives a per-task
-   `code-reviewer` review and checkpoint. **Re-read the plan's Task 1 before starting** — it was
-   corrected during the review round and its guard scope is now the standard every later task
-   inherits.
-2. Task 5 is the acceptance gate and is the one the previous branch got wrong. The acceptance
-   number is the owner's zoom-90% composition (main column ~768 px at 1280), measured on a
-   production build with exactly one server — never a number derived from this branch's own
-   arithmetic.
-3. Codex sets `- Owner: Claude` when the branch gate is green. Claude then reviews the whole branch
-   from `git diff master...desktop-density-scale` in the main worktree and merges `--no-ff`.
+1. **Task 3 — convert the token layer.** The heaviest task: type, spacing, radius, layout, plus the
+   new control and icon tokens, all as `calc(N * var(--density-unit))` per spec §6, plus
+   `borderRadius.DEFAULT` by owner ruling. Spec §9 predicts pinned pixel assertions go red here;
+   that is part of the task, not triage afterwards. A geometry assertion at a viewport >= 1440 must
+   still pass — red there is a real regression.
+2. Then Tasks 4, 5, 6, 7 in order. **Task 5 is the acceptance gate** and is the one the previous
+   branch got wrong: grade against spec §1 (main column ~768 px at 1280), never against this
+   branch's own arithmetic.
+3. Claude dispatches one task per `codex exec` run and reviews each diff independently before the
+   next. Both Task 1 and Task 2 shipped defects that Codex's own `code-reviewer` returned
+   APPROVE/ADDRESSED on.
 
 ## Owner rulings, 2026-09-21 — both spec §9 open items are CLOSED
 
