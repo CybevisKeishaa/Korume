@@ -52,7 +52,7 @@ export function HubLessonCard({ lesson, href, actionLabel, noThumbnailLabel, pro
               className="object-cover transition-transform duration-base group-hover:scale-[1.02] motion-reduce:transform-none"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{noThumbnailLabel}</div>
+            <div className="flex h-full items-center justify-center text-body text-muted-foreground">{noThumbnailLabel}</div>
           )}
           {lesson.jlptLevelEstimate && (
             <span className="absolute left-sm top-sm rounded-full bg-background/90 px-sm py-2xs text-caption font-semibold text-foreground">
@@ -63,7 +63,7 @@ export function HubLessonCard({ lesson, href, actionLabel, noThumbnailLabel, pro
 
         <div className="flex flex-1 flex-col gap-sm p-md-lg">
           <h3 className="line-clamp-2 text-body font-semibold text-foreground">{lesson.title}</h3>
-          {detail ? <p className="text-sm text-muted-foreground">{detail}</p> : null}
+          {detail ? <p className="text-body text-muted-foreground">{detail}</p> : null}
           {progress && progressPercent !== null && (
             <div className="mt-auto space-y-xs">
               <p className="text-caption text-muted-foreground">{progress.label}</p>
@@ -79,7 +79,7 @@ export function HubLessonCard({ lesson, href, actionLabel, noThumbnailLabel, pro
               </div>
             </div>
           )}
-          <span className="mt-auto text-sm font-semibold text-primary-strong group-hover:underline group-hover:underline-offset-4">
+          <span className="mt-auto text-body font-semibold text-primary-strong group-hover:underline group-hover:underline-offset-4">
             {actionLabel}
           </span>
         </div>

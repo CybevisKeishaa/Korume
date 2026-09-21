@@ -18,7 +18,7 @@ export function MobileAppHandoff({
   return (
     <main className="mobile-app-handoff" aria-labelledby="mobile-app-handoff-title">
       <div className="mx-auto flex min-h-[100svh] max-w-md flex-col justify-center px-6 py-12">
-        <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        <p className="text-caption font-medium uppercase tracking-[0.18em] text-muted-foreground">
           {eyebrow}
         </p>
         <h1 id="mobile-app-handoff-title" className="mt-4 font-display text-4xl font-semibold text-foreground">

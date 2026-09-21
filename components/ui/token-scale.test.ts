@@ -20,6 +20,9 @@ import { describe, expect, it } from "vitest";
  *  a pattern is inserted above it. */
 const RADIUS_LITERAL = /\brounded(-[a-z]+)?-\[[\d.]+(px|rem|em)\]/; // rounded-[22px] → rounded-lg
 
+/** Tailwind defaults duplicate the semantic body and caption rungs. */
+const DEFAULT_TYPE_UTILITY = /\btext-(sm|xs)\b/;
+
 const FORBIDDEN = [
   /\btext-\[[\d.]+(px|rem|em)\]/, // text-[12px] → text-caption
   /\b[pm][trblxy]?-\[[\d.]+(px|rem|em)\]/, // p-[10px] → p-sm
@@ -34,11 +37,12 @@ const FORBIDDEN = [
 // of new presentational code in the repo and must be held to the same rule
 // as components/ui.
 const SCANNED_DIRS = [
-  { dir: "components/ui", rules: FORBIDDEN },
-  { dir: "components/marketing", rules: FORBIDDEN },
-  // D5 keeps Shadowing's measured type scale out of this density pass; its
-  // card-radius literals are nevertheless covered here.
-  { dir: "components/shadowing", rules: [RADIUS_LITERAL] },
+  { dir: "components/ui", rules: FORBIDDEN, sources: 15 },
+  { dir: "components/marketing", rules: FORBIDDEN, sources: 25 },
+  // Typography consolidation gives these trees one source of truth per rung.
+  { dir: "components/shadowing", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY], sources: 12 },
+  { dir: "components/layout", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY], sources: 9 },
+  { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY], sources: 2 },
 ];
 
 function collectSources(dir: string, root: string = dir): string[] {
@@ -56,12 +60,13 @@ function collectSources(dir: string, root: string = dir): string[] {
 }
 
 describe("Rule #0 — semantic tokens are the API (spec §2)", () => {
-  for (const { dir: scannedDir, rules } of SCANNED_DIRS) {
+  for (const { dir: scannedDir, rules, sources: expectedSourceCount } of SCANNED_DIRS) {
     const dir = path.join(process.cwd(), scannedDir);
     const sources = collectSources(dir);
 
     it(`scans a non-empty set of primitives in ${scannedDir}`, () => {
       expect(sources.length).toBeGreaterThan(0);
+      expect(sources).toHaveLength(expectedSourceCount);
     });
 
     it.each(sources)(`${scannedDir}/%s hardcodes no absolute px/rem literal`, (file) => {

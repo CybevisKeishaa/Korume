@@ -25,7 +25,7 @@ export function ExploreLessonCard({ lesson, eyebrow, labels, onPreview }: {
         {lesson.thumbnailUrl ? (
           <Image src={lesson.thumbnailUrl} alt="" fill sizes="(min-width: 1280px) 18.5rem, (min-width: 640px) 50vw, 100vw" className="object-cover opacity-65" />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{labels.noThumbnail}</div>
+          <div className="flex h-full items-center justify-center text-body text-muted-foreground">{labels.noThumbnail}</div>
         )}
         {lesson.jlptLevelEstimate ? (
             <span className="absolute left-3 top-3 rounded-full bg-background/90 px-2 py-1 text-[8px] font-semibold leading-3 text-foreground">
@@ -38,7 +38,7 @@ export function ExploreLessonCard({ lesson, eyebrow, labels, onPreview }: {
       </div>
       <div className="h-[186px] shrink-0 p-4">
         <p className="h-3 truncate text-[8px] font-semibold uppercase leading-3 tracking-[1.04px] text-primary">{eyebrow}</p>
-        <h3 className="h-[26px] truncate pt-2 text-xs font-semibold leading-[18px] text-foreground">{lesson.title}</h3>
+        <h3 className="h-[26px] truncate pt-2 text-caption font-semibold text-foreground">{lesson.title}</h3>
         <p className="h-9 line-clamp-2 pt-1 text-[9px] leading-4 text-muted-foreground">{lesson.summary ?? "\u00a0"}</p>
         <div className="h-4 pt-3" aria-hidden="true"><div className="h-1 overflow-hidden rounded-full bg-foreground/10"><div className="h-full w-0 bg-primary" /></div></div>
         <div className="flex h-6 items-end justify-between text-[8px] leading-3 text-muted-foreground">

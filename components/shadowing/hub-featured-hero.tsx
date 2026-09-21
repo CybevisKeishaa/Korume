@@ -45,7 +45,7 @@ export function HubFeaturedHero({ lesson, isInProgress = false, labels }: { less
           <Link
             href={`/shadowing/${lesson.id}`}
             aria-label={`${action}: ${lesson.title}`}
-            className="mt-md inline-flex w-fit rounded-md bg-primary px-md py-sm text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="mt-md inline-flex w-fit rounded-md bg-primary px-md py-sm text-body font-semibold text-primary-foreground transition-colors hover:bg-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {action}
           </Link>

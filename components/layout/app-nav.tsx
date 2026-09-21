@@ -58,7 +58,7 @@ export function AppNav({
               <div key={group.key} className="mb-2">
                 <p
                   id={`app-nav-group-${group.key}`}
-                  className="block px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                  className="block px-3 pb-1 pt-2 text-caption font-semibold uppercase tracking-wide text-muted-foreground"
                 >
                   {t(`groups.${group.key}`)}
                 </p>
@@ -75,7 +75,7 @@ export function AppNav({
                           href={item.href}
                           aria-current={active ? "page" : undefined}
                           className={cn(
-                            "block rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                            "block rounded-md px-3 py-2 text-body font-medium transition-colors",
                             active
                               ? "bg-primary/10 text-primary-strong"
                               : "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -100,13 +100,13 @@ export function AppNav({
           </div>
 
           <div className="mt-4 space-y-3 border-t border-border pt-4">
-            <p className="truncate px-1 text-xs text-muted-foreground" title={userEmail}>
+            <p className="truncate px-1 text-caption text-muted-foreground" title={userEmail}>
               {userEmail}
             </p>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="w-full rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="w-full rounded-md px-3 py-2 text-left text-body text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 {tCommon("auth.signOut")}
               </button>
@@ -138,7 +138,7 @@ export function AppNav({
           type="button"
           aria-expanded={visible}
           onClick={() => setVisible((current) => !current)}
-          className="flex items-center justify-center rounded py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          className="flex items-center justify-center rounded py-1 text-caption text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
           <span aria-hidden="true">{visible ? "‹" : "›"}</span>
           <span className="sr-only">
