@@ -20,7 +20,15 @@ import { describe, expect, it } from "vitest";
  *  a pattern is inserted above it. */
 const RADIUS_LITERAL = /\brounded(-[a-z]+)?-\[[\d.]+(px|rem|em)\]/; // rounded-[22px] → rounded-lg
 
-/** Tailwind defaults duplicate the semantic body and caption rungs. */
+/** A Tailwind default type utility where a rung already exists. `text-sm` IS
+ *  `--text-body` (0.875rem) and `text-xs` IS `--text-caption` (0.75rem): two
+ *  names for one value means a token change moves some call sites and not
+ *  others, which is how the density defect survived a whole branch — changing
+ *  the token moved 8 of 40 sites.
+ *
+ *  `text-lg` and up are deliberately NOT listed. They have no rung of their
+ *  own yet, and banning a utility with no replacement only teaches people to
+ *  escape it — which is what `text-[8px]` in a screen port already was. */
 const DEFAULT_TYPE_UTILITY = /\btext-(sm|xs)\b/;
 
 const FORBIDDEN = [
@@ -36,13 +44,31 @@ const FORBIDDEN = [
 // port (spec §2 of the screen-port workflow design): it is the largest body
 // of new presentational code in the repo and must be held to the same rule
 // as components/ui.
+//
+// `sources` is a STATE PIN, not a fact about the design: it is the file count
+// each scan must reach, so that a scan which silently stops walking cannot
+// pass by finding nothing. Bump it, in its own commit, when a directory
+// legitimately gains or loses a source — and when you bump it, say which file
+// moved. A count that drifts silently is the same defect as a scan that sees
+// nothing.
 const SCANNED_DIRS = [
   { dir: "components/ui", rules: FORBIDDEN, sources: 15 },
   { dir: "components/marketing", rules: FORBIDDEN, sources: 25 },
-  // Typography consolidation gives these trees one source of truth per rung.
-  { dir: "components/shadowing", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY], sources: 12 },
-  { dir: "components/layout", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY], sources: 9 },
-  { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY], sources: 2 },
+  // The typography consolidation (2026-09-21 density-scale spec, ruling 3.4)
+  // gives these three trees one source of truth per rung. They get the FULL
+  // rule set, not just radius: a tree that may not write `text-sm` but may
+  // still write `text-[8px]` has not been given one source of truth, it has
+  // been given a detour. `explore-lesson-card.tsx` had taken that detour four
+  // times over before this scope was widened.
+  { dir: "components/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 12 },
+  { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
+  { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
+  // The Shadowing Hub renders into this tree and the first pass missed it:
+  // hub-import-section imports VideoImportForm, and both it and
+  // hub-library-section import LessonCreationProgress. A calibration screen
+  // whose import card still sets a duplicate rung is not consolidated, so the
+  // scan has to follow the second hop, not just the page's own imports.
+  { dir: "components/video", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
 ];
 
 function collectSources(dir: string, root: string = dir): string[] {
@@ -64,7 +90,7 @@ describe("Rule #0 — semantic tokens are the API (spec §2)", () => {
     const dir = path.join(process.cwd(), scannedDir);
     const sources = collectSources(dir);
 
-    it(`scans a non-empty set of primitives in ${scannedDir}`, () => {
+    it(`reaches every one of the ${scannedDir} sources it claims to scan`, () => {
       expect(sources.length).toBeGreaterThan(0);
       expect(sources).toHaveLength(expectedSourceCount);
     });

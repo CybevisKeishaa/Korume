@@ -51,6 +51,10 @@ number below comes from, §7 the accessibility floors, §9 the open items.
   master, but the habit still matters for `next build` and `next dev`.
 - **Use exactly one `next dev` server.** Three were found running from the main checkout sharing
   one `.next`, overwriting each other's chunks. A measurement taken from such a tree is worthless.
+- **This worktree shipped with a partial `node_modules`** — `kuromoji` was absent, so
+  `lib/japanese/{tokenizer,furigana}.test.ts` failed 11 tests on a missing dictionary file while
+  the same 17 tests passed in the main checkout. Fixed by `npm install` here on 2026-09-21. If a
+  suite fails on a missing file under `node_modules/`, that is this, not the diff.
 
 ## File Structure
 
@@ -132,6 +136,28 @@ and anything a reader reads as a sentence.
 Only `font-size` names change. **Do not remove `font-semibold`, `font-medium`, `uppercase`,
 `tracking-wide`, or any colour class** — weight and tracking are separate decisions from the rung.
 
+**A migration must not change what renders.** The default small rung IS `--text-body` (both 14px)
+and the default extra-small rung IS `--text-caption` (both 12px); every site in the table maps
+along those lines. If a site looks like it wants a different rung than its current value, that is a
+design decision, not part of this task — leave the value alone and name it in the checkpoint. This
+caught one real case: `components/layout/mobile-app-handoff.tsx` was re-roled down a rung (14 → 12)
+on a below-1024 screen, outside the band this branch touches at all.
+
+**Two files outside the calibration set are in these trees and are in scope**:
+`components/layout/mobile-app-handoff.tsx` and `components/layout/notification-bell.tsx`. They are
+shared shell, they hold the same duplicate rungs, and the scan reaches them. Migrate them
+value-for-value rather than excluding them from the scan.
+
+**`components/shadowing/explore-lesson-card.tsx` needs more than a rename.** It was ported 1:1 off
+the 1536 frame and sets its own type at 8–9px with `leading-3` / `leading-4` overrides inside a
+fixed-height stack. Owner ruling 2026-09-21: **raise every rung in that card to `caption`.** The
+caption line box is 18px, so two rows must grow — the eyebrow drops its `h-3`/`leading-3` and the
+summary goes `h-9` → `h-10` — and the interior and card heights follow: `h-[186px]` → `h-[196px]`,
+`h-[298px]` → `h-[308px]` (16 + 18 + 26 + 40 + 16 + 24 + 40 + 16). The fixed-height model itself
+stays for now and is Task 4 work: px heights cannot scale with `--density-unit`, which is the whole
+point of this branch. `tests/e2e/shadowing-explore.spec.ts` pins the card height and must be
+re-pinned against a **measured** number, not this arithmetic.
+
 - [ ] **Step 1: Write the failing guard**
 
 The audit is only durable if the next screen cannot reintroduce the second home. Add to
@@ -148,16 +174,35 @@ const DEFAULT_TYPE_UTILITY = /\btext-(sm|xs)\b/; // text-sm → text-body, text-
 ```
 
 Then widen the `components/shadowing` scope and add the shell and the two routes to
-`SCANNED_DIRS`, replacing that entry:
+`SCANNED_DIRS`, replacing that entry. **Give them the FULL rule set**, not radius plus type:
 
 ```ts
   // The typography consolidation (2026-09-21 density-scale spec, ruling 3.4)
-  // gives these three trees one source of truth per rung. The radius rule
-  // continues to apply to all of them.
-  { dir: "components/shadowing", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY] },
-  { dir: "components/layout", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY] },
-  { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [RADIUS_LITERAL, DEFAULT_TYPE_UTILITY] },
+  // gives these three trees one source of truth per rung. A tree that may not
+  // write a default type utility but may still write `text-[8px]` has not
+  // been given one source of truth, it has been given a detour.
+  { dir: "components/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY] },
+  { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY] },
+  { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY] },
+  { dir: "components/video", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY] },
 ```
+
+`components/video` is in the list because **the Hub renders into it**: `hub-import-section.tsx`
+imports `VideoImportForm`, and both it and `hub-library-section.tsx` import
+`LessonCreationProgress`. Following only the page's own imports misses it — the leak is one hop
+further down, and a calibration screen whose import card still sets a duplicate rung is not
+consolidated. Seven sites across three files, all value-for-value.
+
+⚠️ **Corrected 2026-09-21, after review.** This step first read `[RADIUS_LITERAL,
+DEFAULT_TYPE_UTILITY]`, and Codex implemented exactly that — a plan defect, not an implementation
+one. It left every other absolute literal legal in the three trees the task had just taken
+ownership of, and `components/shadowing/explore-lesson-card.tsx` was already through the hole with
+four `text-[8px]` sites and two `text-[9px]` ones. The guard ran green over a file setting 8px type
+on a calibration screen: `docs/lessons.md` L-006 again, in the same task that was written to close
+it.
+
+The scan reads file TEXT, so a prose comment containing a banned class name fails the file. Keep
+rung names out of comments in scanned trees, or spell them descriptively.
 
 - [ ] **Step 2: Run it and watch it fail for the right reason**
 

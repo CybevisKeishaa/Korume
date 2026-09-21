@@ -103,7 +103,14 @@ test("at 1024px, Explore exposes a seeded shelf card and keyboard-operable local
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test("at the 1600px compact desktop reference, a lesson card keeps Figma density", async ({ page }) => {
+// The card height moved 298 -> 308 on 2026-09-21 by owner ruling: this card
+// was ported 1:1 off the 1536 frame and set its own type at 8-9px, below the
+// 11px floor the density scale gives `caption` and immune to --density-unit
+// because an absolute literal cannot scale. Every rung in it is now `caption`,
+// whose line box is 18px, so the eyebrow and summary rows grew by 6 and 4.
+// 308 is MEASURED in this test, not computed: the previous pin was left in
+// place deliberately and read off its failure (Expected <= 300, Received 308).
+test("at the 1600px compact desktop reference, a lesson card holds its composed height", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 732 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await registerLearner(page);
@@ -117,8 +124,8 @@ test("at the 1600px compact desktop reference, a lesson card keeps Figma density
   const cardBox = await card.boundingBox();
   const thumbnailBox = await card.locator(":scope > div").first().boundingBox();
   const startBox = await card.getByRole("link", { name: `${enShadowing.hub.actions.start}: ${EXPLORE_TITLE}` }).boundingBox();
-  expect(cardBox?.height).toBeGreaterThanOrEqual(296);
-  expect(cardBox?.height).toBeLessThanOrEqual(300);
+  expect(cardBox?.height).toBeGreaterThanOrEqual(306);
+  expect(cardBox?.height).toBeLessThanOrEqual(310);
   expect(cardBox?.width).toBeGreaterThanOrEqual(295);
   expect(cardBox?.width).toBeLessThanOrEqual(297);
   expect(thumbnailBox?.height).toBeGreaterThanOrEqual(111);

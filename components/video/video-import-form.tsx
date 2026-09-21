@@ -212,7 +212,7 @@ export function VideoImportForm({ variant = "default" }: VideoImportFormProps) {
         <p
           id="youtube-url-error"
           role="alert"
-          className="text-sm text-danger-strong sm:basis-full"
+          className="text-body text-danger-strong sm:basis-full"
         >
           {errorMessage(shownError)}
         </p>

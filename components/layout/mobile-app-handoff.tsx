@@ -18,7 +18,14 @@ export function MobileAppHandoff({
   return (
     <main className="mobile-app-handoff" aria-labelledby="mobile-app-handoff-title">
       <div className="mx-auto flex min-h-[100svh] max-w-md flex-col justify-center px-6 py-12">
-        <p className="text-caption font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        {/* `text-body`, not `caption`: this site held Tailwind's default small
+            rung, which IS `--text-body` — both 14px. This screen is the
+            below-1024 handoff, outside the 1280-1440 band the density rule
+            touches at all, so the consolidation must not change what it
+            renders. Re-roling this eyebrow down a rung is a separate design
+            decision. (The rung names are spelled out in the guard, not here:
+            it is a text scan and cannot tell prose from a class list.) */}
+        <p className="text-body font-medium uppercase tracking-[0.18em] text-muted-foreground">
           {eyebrow}
         </p>
         <h1 id="mobile-app-handoff-title" className="mt-4 font-display text-4xl font-semibold text-foreground">

@@ -84,9 +84,90 @@ owed again unless the formula changes.
   now pins 15 UI, 25 marketing, 12 shadowing, 9 layout, and 2 shadowing-route sources. Scoped re-review:
   ADDRESSED, no new Critical or Important finding.
 
+### Task 1 review round (Claude, 2026-09-21)
+
+The owner asked for an independent review of Task 1 and then took the worktree back so Claude could
+close the findings directly. Verified first, from the main checkout: 46 of 46 changed line pairs,
+45 of which preserve the rendered value; the five `app-nav.tsx` sites match the plan role table;
+`leading-[18px]` was deleted and folded into the caption pairing; `notification-bell.tsx` is
+value-for-value; the pinned source counts 15/25/12/9/2 are real (counted independently); and the
+checkpoint's own figures (70 tests, 21 files / 178 tests) reproduce exactly.
+
+Three findings, all closed on this branch:
+
+1. **The guard took ownership of three trees and only guarded two rules in them.** The new entries
+   used `[RADIUS_LITERAL, DEFAULT_TYPE_UTILITY]`, so every other absolute literal stayed legal —
+   and `explore-lesson-card.tsx` was already through the hole with four `text-[8px]` sites and two
+   `text-[9px]` ones, on a calibration screen, below the 11 px caption floor and unable to scale.
+   **This was a defect in the plan, not in the implementation**: the plan specified those two rules
+   verbatim. The three entries now take `[...FORBIDDEN, DEFAULT_TYPE_UTILITY]`, and the plan's
+   Task 1 carries the correction. Evidence on `docs/lessons.md` L-006 — the same task written to
+   close that lesson reproduced it.
+2. **One migration changed what renders.** `mobile-app-handoff.tsx` was re-roled down a rung
+   (14 px -> 12 px) on the below-1024 handoff screen, outside the 1280-1440 band this branch
+   touches at all. Restored to `text-body`, which is the same 14 px the site held before.
+3. **Two minors:** the `sources:` pins had no maintenance note and the case asserting them was
+   still named "scans a non-empty set of primitives", which is not what it asserts; and the
+   `DEFAULT_TYPE_UTILITY` docblock had lost the reason `text-lg` and up are deliberately absent.
+   Both restored.
+
+**Owner ruling 2026-09-21:** raise every rung in `explore-lesson-card.tsx` to `caption`. Done. The
+caption line box is 18 px, so the eyebrow dropped its own height and line-height and the summary
+went `h-9` -> `h-10`; the interior is `h-[196px]` and the card `h-[308px]`. The fixed-height model
+itself is untouched and is Task 4 work — px heights cannot scale with `--density-unit`.
+`tracking-[1.04px]` on the eyebrow is left as it is: no guard rule covers tracking, and changing it
+is a visual decision the ruling did not cover. Named here so Task 4 does not rediscover it.
+
+**Two more findings, surfaced by running the e2e specs rather than by reading the diff:**
+
+4. **The Hub leaks into `components/video`, and the first review pass said it did not.** Claude
+   checked for leaks by grepping the imports of the two route files and the shell, concluded "every
+   component the calibration screens render is inside a guarded tree", and was wrong: the leak is
+   one hop further down. `hub-import-section.tsx` imports `VideoImportForm`, and both it and
+   `hub-library-section.tsx` import `LessonCreationProgress`. The Hub was rendering an import card
+   that still set a duplicate rung. Found only because a Playwright failure printed the offending
+   element with its class list. `components/video` is now scanned (4 sources) and its seven sites
+   are migrated value-for-value.
+5. **`tests/e2e/shadowing-hub.spec.ts` had been failing on `master` since 2026-09-19**, and not
+   because of anything on this branch. It asserted a literal error string that C4 removed from
+   `messages/en/videos.json` at `002f993` — on master since the `21a436b` merge. It went unnoticed
+   because C4 was excused from re-running its Playwright spec. The assertion now reads
+   `enVideos.errors.generic` from the catalogue instead of copying a string out of it. **Fixed
+   here because it blocks this branch's own gate**, and recorded for the owner as a C4 defect, not
+   a density one.
+
+⚠️ **A text-scanning guard reads prose too.** A comment written to explain finding 2 contained the
+banned class name and failed its own file. Keep rung names out of comments inside scanned trees.
+
+**Gate after the review round**, every command run from this worktree and read:
+
+- `npm run verify:protocol` — `Codex protocol: valid`, exit 0.
+- `npx tsc --noEmit` — exit 0.
+- `npm test` — **324/324 files, 3100/3100 tests**. Master baseline is 3082; the +18 are the six
+  source-count pins plus the twelve per-file cases the `components/video` scope adds.
+- `npm run lint` — 0 errors, baseline warnings only.
+- `npx playwright test tests/e2e/shadowing-hub.spec.ts tests/e2e/shadowing-explore.spec.ts` —
+  **6 passed**.
+
+The card height 308 px is **measured, not computed**: the old pin was left in place on purpose and
+read off its failure (`Expected: <= 300, Received: 308`) before being moved to 306-310.
+
 ## Working tree and environment
 
 `.worktrees/desktop-density-scale`, cut from `master` at `42197a6`.
+
+⚠️ **This worktree was created without two untracked files the main checkout has, and neither
+failure looks like what it is.** Both fixed 2026-09-21:
+
+- `node_modules` was a partial install with no `kuromoji` package, so
+  `lib/japanese/{tokenizer,furigana}.test.ts` failed 11 tests on a missing dictionary file while
+  the same 17 tests passed in the main checkout. Fixed by `npm install` here.
+- `.env.local` was absent, so `npm run build && npm run start` died on `EnvValidationError`
+  (APP_ENV, AI_PROVIDER, SPEECH_PROVIDER, EMAIL_PROVIDER) and Playwright reported only
+  `Timed out waiting 120000ms from config.webServer` — no mention of the real cause. Copied from
+  the main checkout; `.gitignore` line 29 (`.env.*`) keeps it out of the diff.
+
+Both are worth knowing before Task 5, whose whole job is a production-build measurement from here.
 
 ⚠️ Three `next dev` servers were found running from the **main** checkout on ports 3000, 3001 and
 3002, all sharing one `.next`. They overwrite each other's chunks: `:3000` returned
