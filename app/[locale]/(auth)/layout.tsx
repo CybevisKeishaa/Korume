@@ -8,7 +8,7 @@ export default async function AuthLayout({
 }) {
   const t = await getTranslations("common");
   return (
-    <div className="min-h-screen">
+    <div data-density="reference" className="min-h-screen">
       <header className="p-4">
         <Link href="/" className="font-jp text-lg font-bold">
           {t("appNameJp")}

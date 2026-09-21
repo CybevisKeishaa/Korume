@@ -107,6 +107,22 @@
  * tailwind.config.ts (p-md, text-body, shadow-overlay, duration-fast, z-toast…).
  */
 :root {
+  /* The desktop density function (spec 2026-09-21-desktop-density-scale §5).
+     Every app frame in the Figma file is drawn on a 1536 canvas and the
+     product is viewed at 1280; a value authored for the wide canvas and
+     placed unscaled at 1280 occupies 20% more of the screen than it was
+     drawn to occupy. This unit is 1px at the 1440 reference viewport,
+     0.888…px at 1280, interpolated between, and held at both ends
+     (ruling 3.5 — density is not an unbounded viewport scale).
+
+     BOTH bounds are rem on purpose. A bare vw-derived unit does not answer
+     the reader's own font-size preference and would fail WCAG 1.4.4; with
+     rem bounds the floor rises above the vw term when the reader raises
+     their default size. Verified in Chrome at viewport 1422, not reasoned
+     about: calc(28 * unit) gives 27.654px at a 16px root and 31.111px at a
+     20px root (spec §5.2 carries the command). */
+  --density-unit: clamp(0.0555556rem, calc(100vw / 1440), 0.0625rem);
+
   /* Font families. next/font in app/[locale]/layout.tsx sets these at runtime;
      the values here are only the pre-hydration fallback. */
   --font-sans: system-ui, sans-serif;
@@ -281,6 +297,14 @@
   --z-overlay: 40;
   --z-popover: 50;
   --z-toast: 60;
+}
+
+/* The three route groups that hold density at 1.0. Their frames are drawn on
+   a 1280 canvas and are already 1:1 correct; scaling them would take them 10%
+   away from their own design. A custom property is what makes this possible —
+   a root font-size change is all-or-nothing per document (spec §5.3). */
+[data-density="reference"] {
+  --density-unit: 0.0625rem;
 }
 
 @layer base {

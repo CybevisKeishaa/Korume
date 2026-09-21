@@ -18,7 +18,7 @@ export default function ImmersiveChromeLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen">
+    <main data-density="reference" className="min-h-screen">
       <div className="flex justify-end p-md text-muted-foreground">
         <ReduceMotionToggle />
       </div>

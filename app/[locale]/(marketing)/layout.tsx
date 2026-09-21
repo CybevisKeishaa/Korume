@@ -23,7 +23,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           entirely. Move this to the page, or clear the attribute, at that
           point — not before, when there is nothing to test it against. */}
       <script dangerouslySetInnerHTML={{ __html: revealFailsafeScript }} />
-      <div className="flex min-h-screen flex-col">
+      <div data-density="reference" className="flex min-h-screen flex-col">
         <SiteHeader />
         <div className="flex-1">{children}</div>
         <SiteFooter />

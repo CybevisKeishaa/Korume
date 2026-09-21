@@ -372,6 +372,33 @@ describe("design tokens", () => {
   });
 });
 
+describe("desktop density scale", () => {
+  it("declares the density unit with both bounds in rem, never in px", () => {
+    // Spec §5.2: a vw-derived unit ignores the reader's own font-size
+    // preference and fails WCAG 1.4.4. rem bounds rise above the vw term
+    // when the reader raises their default size, so type still grows.
+    expect(css).toMatch(
+      /--density-unit:\s*clamp\(\s*0\.0555556rem\s*,\s*calc\(100vw\s*\/\s*1440\)\s*,\s*0\.0625rem\s*\)/,
+    );
+    const declaration = css.match(/--density-unit:[^;]+;/)?.[0] ?? "";
+    expect(declaration).not.toMatch(/\d+px/);
+  });
+
+  it("bounds the rule to 1280-1440 and to nothing else", () => {
+    // Ruling 3.5: 1440 = 1.0, 1280 = 0.889, held at both ends. 0.0555556rem
+    // is 0.888…px at a 16px root, which is 1280/1440. A different lower
+    // bound would silently widen or narrow the rule.
+    expect(0.0555556 * 16).toBeCloseTo(1280 / 1440, 4);
+    expect(0.0625 * 16).toBe(1);
+  });
+
+  it("lets a route group opt out, because a custom property cascades", () => {
+    // Spec §5.3: rem resolves against the root and is all-or-nothing per
+    // document, which is the reason this is a custom property at all.
+    expect(css).toMatch(/\[data-density="reference"\]\s*\{\s*--density-unit:\s*0\.0625rem;?\s*\}/);
+  });
+});
+
 /**
  * The Thread's invariant half (spec §3.2). Local geometry — position, length,
  * curvature, orientation, bends — is deliberately NOT here: sections differ in
