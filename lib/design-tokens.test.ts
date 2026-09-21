@@ -15,15 +15,14 @@ import { REVEAL_FAILSAFE_ATTR } from "@/components/motion/reveal-failsafe";
  * - The reduce-motion kill-switch survives every globals.css edit
  *   (CLAUDE.md §2.4 non-negotiable).
  */
-const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
-const trustSource = readFileSync(
-  path.join(process.cwd(), "components/marketing/trust.tsx"),
-  "utf8",
-);
-const tailwind = readFileSync(
-  path.join(process.cwd(), "tailwind.config.ts"),
-  "utf8",
-);
+// Line endings are normalised on read. This repo checks out CRLF on Windows,
+// but a file a script rewrote stays LF until git next touches it — so a
+// pattern written against `\n` passed in the worktree that built it and failed
+// on the merged checkout (desktop-density-scale, 2026-09-21).
+const read = (file: string) => readFileSync(path.join(process.cwd(), file), "utf8").replace(/\r\n/g, "\n");
+const css = read("app/globals.css");
+const trustSource = read("components/marketing/trust.tsx");
+const tailwind = read("tailwind.config.ts");
 
 /**
  * The reveal layer's PERSISTENT hidden state: every rule in globals.css that
