@@ -699,10 +699,12 @@ A dimension read off a Figma frame is never implemented as the pixel value the f
 **normalized to the 1440 reference viewport**, and then expressed as a token — `calc(N *
 var(--density-unit))`, where N is the normalized 1440 value.
 
-- App frames in the Korume file are drawn on a **1536** canvas: multiply by 1440/1536 = 0.9375.
-  The auth, error and membership batch and the marketing page are drawn on **1280** and belong to
-  route groups that hold density at 1.0 (`data-density="reference"`), so their values are used
-  as drawn.
+- App frames in the Korume file are drawn on a **1536** canvas, and their values **are** the 1440
+  values: N is the number the frame draws, with no 1440/1536 factor. The owner read those values
+  as correct at 1422 ≈ 1440, and the two calibration screens ship them that way — a 0.9375 factor
+  would make every later screen 6% smaller than Hub and Explore. The auth, error and membership
+  batch and the marketing page are drawn on **1280** and belong to route groups that hold density
+  at 1.0 (`data-density="reference"`), so their values are used as drawn.
 - The density unit is `clamp(0.0555556rem, calc(100vw / 1440), 0.0625rem)`: 1.0 at 1440 and above,
   0.889 at 1280 and below, interpolated between. Both bounds are `rem` so the reader's own
   font-size preference still works (WCAG 1.4.4).

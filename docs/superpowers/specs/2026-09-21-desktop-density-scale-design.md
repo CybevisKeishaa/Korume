@@ -28,6 +28,11 @@ Measured on `localhost:3001` (post-merge server), `/vi/shadowing`, authenticated
 | Companion rail | 262.0 px | 300.6 px | +38.6 px |
 | Whole-page scroll height | 2352 px | 2085 px | −267 px |
 
+> **Units, corrected 2026-09-21 (Task 5).** The zoom-90% column is **CSS px of a 1422 viewport**,
+> not screen px: on screen it is × 0.9. The gap column subtracts two different units. No 1280
+> layout can reach 768.6 CSS px; the target is the owner's composition **in screen px**, which the
+> branch meets within 0.2% (column 703.7 vs 702.7). See the run state's Task 5 record.
+
 The merged branch moved the main column from 613 px to 666.7 px. The distance still to travel was
 101.9 px. It closed roughly 27% of the gap and reported success against an acceptance number
 (~684 px) derived from its own clamp arithmetic rather than from the composition the owner was
@@ -58,6 +63,10 @@ Ruled 2026-09-21, in the conversation that produced this document:
 
 1. **Reference viewport is 1440.** Frames drawn on any other canvas are normalized to 1440 before
    becoming tokens. Raw px is never copied from a frame into code.
+   *As implemented, 2026-09-21:* the app frames' 1536 values ARE the 1440 values — no 0.9375
+   factor — because §2's evidence is that those values read correctly at 1422 ≈ 1440, and the
+   owner approved the result rendered that way. "Normalize" means placing a value on the 1440
+   reference through the unit, not rescaling 1536 → 1440.
 2. **The sidebar carve-out from `desktop-density-pass` is revoked.** The sidebar is inside the
    density rule: 224 @1440 → ~199 @1280. Expanded and collapsed widths normalize through the same
    system. Only dimensions tied directly to hit target or accessibility may hold their own minimum.
@@ -70,6 +79,8 @@ Ruled 2026-09-21, in the conversation that produced this document:
 5. **The density rule applies only across 1280–1440.** 1440 = 1.0, 1280 = 0.889, interpolated
    between. Above 1440 it holds at 1.0. Below 1280 it stops; the existing responsive rules take
    over. Density is not an unbounded viewport scale.
+   *As implemented:* "stops" means the unit stops moving — it holds at 0.889 below 1280, so the
+   1024–1279 desktop band renders at 0.889. The below-1024 handoff opts out to 1.0.
 6. **No CSS `zoom`, and no page-level override** that imitates the two screenshots. Shadowing Hub
    and Explore are calibration samples; the shipped result must come from shared tokens and
    primitives.
@@ -199,8 +210,10 @@ canvas and are already 1:1 correct; scaling them would take them 10% away from t
 **Portals.** `components/ui/{dialog,popover,select,tooltip}.tsx` render through a Radix `Portal`
 into `document.body`, outside any route-group subtree. With the fluid value on `:root` a dialog
 opened from an app screen inherits the correct density by default. A dialog opened from a
-`data-density="reference"` group would not. Task 6 gives those four primitives a portal container
-inside the group subtree so the attribute is inherited in both directions.
+`data-density="reference"` group would not. *As implemented (Task 6):* the portal stays in
+`document.body`; `components/ui/use-density-scope.ts` copies the nearest `data-density` onto the
+portaled content when it mounts, where the `[data-density]` block re-declares the tokens. Moving
+the portal into the scope was rejected — stacking context, and a remount on attach.
 
 ## 6. The token table
 

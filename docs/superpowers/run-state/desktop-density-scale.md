@@ -92,7 +92,7 @@ is within 0.2% on column, rail and scroll. Fifth plan defect; spec §1 needs a u
 
 Typography has one source of truth across `components/{layout,shadowing,ui,video}` and both
 shadowing routes. `components/ui/token-scale.test.ts` enforces it: full `FORBIDDEN` plus the
-default-type rule, per tree, with a pinned source count each (15/25/12/9/2/4).
+default-type rule, per tree, with a pinned source count each (16/25/12/9/2/4).
 
 - **The Hub renders into `components/video`**, one import hop below the page. Following a page's
   own imports misses it; the tree is scanned now.
@@ -112,9 +112,11 @@ None.
 
 ## Next actions
 
-1. **All 7 tasks done.** Next: the whole-branch review, then the owner's merge decision. Owner has
-   seen the branch at 1280 in their own Chrome (2026-09-21) and said it is right.
-2. Still owed to the owner: spec §1's table needs a unit column (Task 5 finding).
+1. **Done; whole-branch review closed (0 Critical), owner said merge.** Fixes `4238caa` + docs:
+   spec §1 units, ruling 3.1 (1536 values ARE the 1440 values, no 0.9375), 3.5, §5.3 portals.
+2. **Accepted gap (ruling 3.4 scope), owner told:** ~86 unmigrated files keep `text-sm/xs/lg`
+   (14/12/18) beside scaled cards — e.g. profile's `text-lg` stat (18) outsizes its 17.78 title.
+   Each screen port migrates its own. Toast viewport stays fluid (known).
 
 ## Owner rulings, 2026-09-21 — both spec §9 open items are CLOSED
 
@@ -153,7 +155,7 @@ explore + landing **29 pass / 3 fail** — the same three landing tests red on `
 ### Task 4, accepted — the calibration screens carry tokens
 
 Migration done: `button/input/select` on `h-control-*`, numeric spacing on the named scale across
-the shell and both screens, icon sizes on `size-icon-*`, and the nav's three interactive rows on
+the shell and both screens (`--icon-*` tokens exist but have no consumer yet), and the nav rows on
 `min-h-hit-target`. `w-sidebar` needed no edit — it already resolves through the density-scaled
 layout token, which is what a working token layer looks like.
 
