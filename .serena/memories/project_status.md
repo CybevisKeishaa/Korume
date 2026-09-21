@@ -21,6 +21,20 @@
 >
 > **▶ NEXT ACTION: Auth + Error UX** (details in the block below, unchanged).
 >
+> **Resume checklist for the next session (state at end of 2026-09-21):**
+> 1. `master` = `2bb68a3`, clean except a tool-generated `.serena/project.yml`
+>    diff (not ours, left uncommitted). Run `git ls-remote origin
+>    refs/heads/master` before saying anything about what is pushed.
+> 2. Environment: no server running on `:3000`; the main checkout's `.next` was
+>    deleted, so the owner's next `npm run dev` rebuilds it. Docker Desktop and
+>    local Supabase were left running — authenticated e2e and measurements need
+>    them (`npx supabase start`). **Never build in the main checkout**; build and
+>    serve only from a worktree with absolute paths.
+> 3. Auth + Error starts from brainstorming → spec → plan (Claude), then one task
+>    per `codex exec` with a Claude review between. Its screens are 1280-canvas,
+>    reference scope (`data-density="reference"`, values used as drawn). Toast is
+>    NOT density-scoped yet — a toast on an auth screen renders fluid.
+>
 > ✅ **The "something pushes master" mystery is CLOSED, 2026-09-21: the owner
 > pushes it themselves.** They said so in as many words when this file's
 > previous block called the mechanism UNKNOWN. There is no wrapper script, no
