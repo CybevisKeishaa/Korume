@@ -1,6 +1,6 @@
 # Branch Run State
 
-- Owner: Codex
+- Owner: Claude
 
 ## Goal and scope
 
