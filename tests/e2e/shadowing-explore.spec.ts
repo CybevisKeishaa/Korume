@@ -133,3 +133,27 @@ test("at the 1600px compact desktop reference, a lesson card holds its composed 
   expect(startBox?.height).toBeGreaterThanOrEqual(24);
   expect(startBox?.height).toBeLessThanOrEqual(28);
 });
+
+test("at 1280px, every text field reads at the body rung, not the browser's unscaled 16px", async ({ page }) => {
+  // A field with no type class inherits preflight's `font-size: 100%` — the
+  // body's 16px, which the density unit never touches. The search field shipped
+  // that way at 16px beside 12.44px body copy, and no text-scanning guard can
+  // see a class that is ABSENT. Only a computed value can.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await registerLearner(page);
+  for (const path of ["/en/shadowing/explore", "/en/shadowing"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const sizes = await page.locator("[data-desktop-web]").evaluate((root) => {
+      const probe = document.createElement("p");
+      probe.className = "text-body";
+      root.append(probe);
+      const body = getComputedStyle(probe).fontSize;
+      probe.remove();
+      const fields = [...root.querySelectorAll("input:not([type=hidden]), textarea, select")];
+      return { body, fields: fields.map((field) => `${field.id || field.getAttribute("name")}=${getComputedStyle(field).fontSize}`) };
+    });
+    expect(sizes.fields.length, path).toBeGreaterThan(0);
+    for (const field of sizes.fields) expect(field, path).toMatch(new RegExp(`=${sizes.body}$`));
+  }
+});
