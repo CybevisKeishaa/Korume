@@ -22,6 +22,14 @@ each, one `codex exec` dispatch per task, Claude review between tasks.
 - `f8d565f` Task 1 mascot pose module. Claude re-ran: `components/mascot` 18/18, tsc 0, lint 0,
   full suite 326 files / 3143 tests exit 0 (baseline 324 / 3125 + 2 / 18). Mutation check by Codex:
   worry->sulking turns the pin test red (2 failed), restore green.
+- `13a6739` Task 2 auth shell, per-flow forms, confirm password (one Claude fix wave: a missed e2e
+  migration, the narrow layout made dead by `MobileAppHandoff`, heading outline, formatting).
+  Claude re-ran: tsc 0, lint 0, full suite 328 files / 3148 tests exit 0; Playwright `--workers=1`
+  14/17 — `auth-layout`, `auth-locale-round-trip`, `journal`, `review`, both
+  `route-group-provider-identity`, `shadowing-explore` x4, `shadowing-hub` x4 pass;
+  `lesson-creation-jobs` x3 fail only because it needs `playwright.c4.config.ts` (YouTube stub),
+  and its registration step passed. Parallel runs hit a local-Supabase `JWT issued at future`
+  clock-skew flake; run auth e2e with `--workers=1`.
 
 ## Contracts and decisions
 
@@ -38,6 +46,9 @@ Owner rulings 2026-09-21 are spec §2. The ones most likely to be broken by acci
   co-author, then commits the run-state update. The sandbox is not bypassed.
 
 ## Verification
+
+Spec corrections made during execution (all committed): §5.1 floor is 1024 px (`8afa8a5`);
+plan Task 2 Step 3 red reason (`56a917c`); spacing constraint defers to the token guard (`28c916a`).
 
 Per task: the task's own tests red → green, `npx tsc --noEmit` 0, `npm run lint` 0 errors, full
 `npm test -- --reporter=dot > <file>` exit 0 (read the file), and the task's named Playwright specs.
@@ -60,9 +71,9 @@ None.
 
 ## Next actions
 
-1. Codex: Task 2 (`task-2-brief.md`). Implement and verify; leave uncommitted; set
+1. Codex: Task 3 (`task-3-brief.md`). Implement and verify; leave uncommitted; set
    `- Owner: Claude` in this file when ready.
-2. Claude: review, re-verify, commit Task 2, then dispatch Task 3.
+2. Claude: review, re-verify, commit Task 3, then dispatch Task 4.
 3. After Task 7: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips,
    owner review in their Chrome, merge `--no-ff`.
 4. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
