@@ -92,7 +92,9 @@ send local users to a code screen for a code Supabase never sent.
   it would send the user to the dashboard before they can set a password. It is also not a
   protected route. The page itself checks for a session and, with none, shows an "this link has
   expired" state linking to `/forgot-password` instead of the form.
-- `/auth/callback` is unchanged: it already forwards a locale-carrying `next`.
+- `/auth/callback` forwards a locale-carrying `next`. One change (whole-branch review, 2026-09-22):
+  a failed exchange whose `next` is `/reset-password` goes there, not to login, so a link opened in
+  another browser (no PKCE verifier) or expired reaches the page's expired state.
 - `/verify-email?email=` carries the address in the query string. **This is a deliberate
   trade-off**: the page needs the address to verify and resend, and there is no session to hold it.
   Rules: it is always URL-encoded when built (`register`, `login`); the page validates it with the

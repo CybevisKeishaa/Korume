@@ -109,6 +109,30 @@ describe("OtpInput (spec 5.2)", () => {
     expect(screen.getByRole("button", { name: "Verify email" })).toHaveFocus();
   });
 
+  it("moves focus to the parent again when a digit is retyped in a complete code", async () => {
+    const user = userEvent.setup();
+    function CompletionHost() {
+      const submit = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <OtpInput name="token" onComplete={() => submit.current?.focus()} />
+          <button ref={submit} type="button">
+            Verify email
+          </button>
+        </>
+      );
+    }
+
+    const { container } = render(<CompletionHost />);
+    box(0).focus();
+    await user.paste("123456");
+    await user.click(box(1));
+    await user.keyboard("9");
+
+    expect(hidden(container)).toHaveValue("193456");
+    expect(screen.getByRole("button", { name: "Verify email" })).toHaveFocus();
+  });
+
   it("truncates at six and never completes an incomplete value", async () => {
     const user = userEvent.setup();
     const onComplete = vi.fn();

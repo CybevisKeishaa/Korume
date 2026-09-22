@@ -20,19 +20,13 @@ export function OtpInput({
   const t = useTranslations("auth");
   const [digits, setDigits] = useState<string[]>(() => Array(LENGTH).fill(""));
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
-  const wasComplete = useRef(false);
 
   function commit(next: string[]): boolean {
     const complete = next.every((digit) => digit !== "");
     setDigits(next);
-
-    if (!complete) {
-      wasComplete.current = false;
-    } else if (!wasComplete.current) {
-      wasComplete.current = true;
-      onComplete?.();
-    }
-
+    // Every commit that leaves the code complete hands focus back, not only
+    // the first: retyping one digit of a full code must still reach Verify.
+    if (complete) onComplete?.();
     return complete;
   }
 
