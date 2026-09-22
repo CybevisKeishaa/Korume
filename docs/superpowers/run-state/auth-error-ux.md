@@ -35,6 +35,17 @@ each, one `codex exec` dispatch per task, Claude review between tasks.
   **Deferred to Task 4 (first item of its packet):** `aria-invalid={Boolean(errorId)}` marks all six
   boxes invalid whenever a parent passes `errorId`; replace with an explicit `invalid` prop. Deferred
   because nothing consumes `OtpInput` until Task 4 (L-014).
+- `9c8c081` Task 4 OTP slice (`/verify-email`, `verifyEmail`/`resendCode`, template, redirects;
+  Item 0 `OtpInput` `invalid` prop). Codex stopped with 1 red: the plan omitted the registry, and
+  `screen-registry.routes` T1 caught the unregistered route. Claude fix wave: the existing
+  `email-otp` entry (`335:306`) now claims `/verify-email` (convert, never add - T1 wants exactly one
+  entry); e2e fixes (Playwright has no `locator.paste`, so a real `ClipboardEvent` is dispatched;
+  `auth-layout` looks up each route's submit label; alert scoped to `main` past Next's route
+  announcer). Claude re-ran: tsc 0, lint 0, full suite 331 files / 3180 tests, 1 red =
+  `pitch-contour` known flake, 8/8 alone; Playwright `--workers=1` `auth-verify-email`,
+  `auth-layout`, `auth-locale-round-trip`, both `route-group-provider-identity` pass.
+  **Carry to Task 5:** the registry's `reset-password` entry (`333:210`, `route: null`) needs the
+  same conversion, and every new page needs its e2e run by Claude before commit.
 
 ## Contracts and decisions
 
@@ -68,28 +79,25 @@ desktop-density-scale merge gate; re-measure before relying on it).
   `npx supabase status` before any Playwright run.
 - Never build or serve from the main checkout; the owner's dev server uses its `.next`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
-- **Paused 2026-09-22 00:46 at the owner's request.** Codex hit its usage limit while reading for
-  Task 4 ("try again at 3:41 AM"); it wrote nothing - the worktree was verified clean at `83d055e`.
-  Owner chose to wait for Codex rather than have Claude implement.
+- None. Task 5 has no packet yet (only tasks 1-4 were written).
 
 ## Next actions
 
-**Resume here (next session):** Task 4 has NOT started. The packet
-`.superpowers/sdd/2026-09-21-auth-error-ux/task-4-brief.md` (main checkout, gitignored) and the
-prompt pattern are ready. Re-dispatch: `codex exec -C <worktree> -s workspace-write -o <last.md> -
-< <prompt file>` run detached (`nohup ... &`), prompt = the Task 3 prompt with 3 -> 4 and spec
-sections "3, 4, 4.1-4.4 and 5.3". Wait on the `-o` file; do NOT detect exit by grepping `codex` in
-`tasklist` - the `codex-windows-sandbox-ser` service always matches, which hid the usage-limit
-stop for 30 minutes. Also grep the log for `usage limit`.
+**Resume here:** Task 4 accepted at `9c8c081`. Claude writes
+`.superpowers/sdd/2026-09-21-auth-error-ux/task-5-brief.md` (include the registry conversion and
+that Playwright has no `locator.paste`), then dispatches it. Dispatch: `codex exec -C <worktree> -s
+workspace-write -o <last.md> - < <prompt file>` detached; prompt = the Task 4 prompt with 4 -> 5 and
+the Task 5 spec sections. Wait on the `-o` file, or `grep -E "^ERROR: You.ve hit your usage limit"`
+in the log - a bare `usage limit` grep false-fires, because the log echoes this file.
 
-1. Codex: Task 4 (`task-4-brief.md`). Implement and verify; leave uncommitted; set
-   `- Owner: Claude` in this file when ready.
-2. Claude: review, re-verify, commit Task 4, then dispatch Task 5.
-3. After Task 7: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips,
+1. Claude: write the Task 5 packet, set `- Owner: Codex`, dispatch.
+2. Codex: Task 5. Implement and verify; leave uncommitted; set `- Owner: Claude` when ready.
+3. Claude: review, re-verify, commit Task 5; same loop for Tasks 6 and 7.
+4. After Task 7: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips,
    owner review in their Chrome, merge `--no-ff`.
-4. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
+5. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
    Supabase dashboard's *Confirm signup* template (spec §4.4).
