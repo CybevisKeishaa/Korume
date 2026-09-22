@@ -1,7 +1,30 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-22 (supersedes every block below,
-> including the correction banner, where they disagree)
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-22, evening (supersedes every block below)
+>
+> ⭐ **`auth-error-ux` is MERGED to master at `d7b1821` (`--no-ff`)**, branch and worktree kept.
+> `git branch --no-merged master` is EMPTY. Owner reviewed in Chrome and accepted. Review fixes
+> before merge: `bcd2565` auth poses now use hand-cut supplied PNGs (bye / quill-writing / proud;
+> the extractor-cut greeting / noting / looking-ahead have background-removal artefacts),
+> `cd9d0a4` a `short` screen (max-height 720px) so login fits the owner's 1280x529 viewport,
+> `2b8ebe5` AuthSplitShell is a centred pair (max-w-6xl, fixed w-96 card) instead of a
+> full-bleed 60/40 split, `03830ef` registry marks Error boundary `337:2055` built.
+> Branch gate: 340 files / 3209 tests exit 0, tsc 0, lint 0, e2e auth-layout 2/2.
+>
+> **Owner deferred to a later pass (do not do unasked):** Register fitting a short viewport
+> (still ~255px over at 529); forgot-password eyebrow = heading = "Account recovery".
+> **Still owed by the owner, by hand:** paste `supabase/templates/confirmation.html` into
+> Supabase *Confirm signup*. Landing page still uses the artefacted `greeting.png` (hero)
+> and `noting.png` (pitch showcase) — a separate small branch if the owner wants it.
+>
+> **▶ NEXT: continue the Figma screen port** (owner, 2026-09-22). Registry after the merge:
+> 18 Figma screens built, 5 placeholders (Pronunciation library, Global settings, Roadmap,
+> Companion home, Knowledge Assistant), 23 `none` screens (3 are Layer 8 billing, excluded).
+> Owner's viewport is 1280x529 (1080p at 150%) — measure there, not only at 1280x800.
+>
+> ---
+>
+> ## (previous block) 2026-09-22 morning
 >
 > **ONE BRANCH IS IN FLIGHT: `auth-error-ux`**, worktree `.worktrees/auth-error-ux`,
 > **ALL 7 TASKS COMMITTED, verified, WAITING ON OWNER REVIEW** (2026-09-22). Branch tip
