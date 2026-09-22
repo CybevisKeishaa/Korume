@@ -1683,8 +1683,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
-  // Real 404 page design. Repo has no not-found.tsx anywhere — Next's
-  // default 404 serves today.
+  // Standalone 404 page under the localized catch-all route.
   {
     screenId: "error404",
     name: "Error404",
@@ -1693,9 +1692,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "335:1976",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
-    route: null,
+    route: "/[...rest]",
     chrome: null,
-    impl: "none",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,

@@ -1,0 +1,13 @@
+{
+  "notFound": {
+    "back": "Quay lại",
+    "eyebrow": "404 · Rẽ nhầm đường",
+    "heading": "Chúng tôi không tìm thấy nơi này.",
+    "body": "Đường dẫn có thể đã đổi, hoặc có thể chưa từng tồn tại.",
+    "goHome": "Về trang chủ",
+    "goBack": "Quay lại"
+  },
+  "requestedPath": {
+    "label": "Bạn đang tìm"
+  }
+}

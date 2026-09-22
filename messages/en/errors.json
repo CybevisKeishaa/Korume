@@ -1,0 +1,13 @@
+{
+  "notFound": {
+    "back": "Back",
+    "eyebrow": "404 · Wrong turn",
+    "heading": "We couldn't find this place.",
+    "body": "The path may have moved, or it may never have existed.",
+    "goHome": "Go Home",
+    "goBack": "Go Back"
+  },
+  "requestedPath": {
+    "label": "You were looking for"
+  }
+}
