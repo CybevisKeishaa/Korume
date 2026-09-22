@@ -122,9 +122,15 @@ desktop-density-scale merge gate; re-measure before relying on it).
 
 ## Next actions
 
-**Resume here:** Task 7 accepted at `b8a96e2`; every task is committed.
+**Resume here:** Task 7 accepted at `b8a96e2`. Whole-branch review (`/code-review high`,
+2026-09-22) found 2, both confirmed and fixed at `933f61d`: a failed recovery-link exchange
+landed on `/login?error=auth` with no message (callback now routes it to `/reset-password`'s
+expired state; spec §4.2 updated; first callback tests, red 1 -> green 3); retyping a digit of a
+complete OTP left focus in the box (red 1 -> green). Re-ran: full 340 files / 3209 tests exit 0,
+tsc 0, lint 0, Playwright `--workers=1` `auth-password-reset`, `auth-verify-email`,
+`auth-layout` 3/3.
 
-1. Claude: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips (include the
+1. Claude: spec §8.2 measurement, spec §8.3 hand round trips (include the
    reset email through Mailpit: `additional_redirect_urls` lists the bare `/auth/callback` while
    `redirectTo` carries `?next=`), owner review in their Chrome, merge `--no-ff`.
 2. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
