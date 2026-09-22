@@ -27,5 +27,12 @@ export async function GET(request: Request) {
     }
   }
 
+  // A failed recovery link (opened in another browser, so no PKCE verifier,
+  // or expired) still goes to /reset-password: with no session that page
+  // shows its "link expired, request a new one" state (spec §4.2).
+  if (next && stripLocale(next).pathname === "/reset-password") {
+    return NextResponse.redirect(`${origin}${next}`);
+  }
+
   return NextResponse.redirect(`${origin}/${locale}/login?error=auth`);
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { loginSchema, registerSchema } from "./auth";
+import {
+  emailOnlySchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from "./auth";
 
 /**
  * This schema is deliberately locale-free (see the comment in ./auth.ts): its
@@ -42,6 +48,29 @@ describe("loginSchema", () => {
 });
 
 describe("registerSchema", () => {
+  describe("confirmPassword", () => {
+    const base = { name: "A", email: "a@b.com", password: "password123" };
+
+    it("accepts a matching confirmation", () => {
+      expect(
+        registerSchema.safeParse({ ...base, confirmPassword: "password123" })
+          .success,
+      ).toBe(true);
+    });
+
+    it("reports a mismatch on confirmPassword with the catalog key", () => {
+      const result = registerSchema.safeParse({
+        ...base,
+        confirmPassword: "password124",
+      });
+
+      expect(result.success).toBe(false);
+      expect(
+        !result.success && result.error.flatten().fieldErrors.confirmPassword,
+      ).toEqual(["validation.passwordMismatch"]);
+    });
+  });
+
   it("requires a password of at least 8 characters, keyed passwordTooShort", () => {
     const short = registerSchema.safeParse({
       name: "Aki",
@@ -57,6 +86,7 @@ describe("registerSchema", () => {
       name: "Aki",
       email: "a@b.co",
       password: "12345678",
+      confirmPassword: "12345678",
     });
     expect(ok.success).toBe(true);
   });
@@ -92,6 +122,57 @@ describe("registerSchema", () => {
     });
     expect(!r.success && r.error.flatten().fieldErrors.email).toEqual([
       "validation.emailInvalid",
+    ]);
+  });
+});
+
+describe("verifyEmailSchema", () => {
+  const email = "a@b.com";
+
+  it.each(["12345", "1234567", "12345a"])(
+    "rejects %s with the codeInvalid key",
+    (token) => {
+      const result = verifyEmailSchema.safeParse({ email, token });
+
+      expect(!result.success && result.error.flatten().fieldErrors.token).toEqual([
+        "validation.codeInvalid",
+      ]);
+    },
+  );
+
+  it("accepts six ASCII digits including a leading zero", () => {
+    expect(verifyEmailSchema.safeParse({ email, token: "012345" }).success).toBe(true);
+  });
+});
+
+describe("emailOnlySchema", () => {
+  it("trims and accepts a valid email", () => {
+    const result = emailOnlySchema.safeParse({ email: "  a@b.com  " });
+
+    expect(result.success && result.data.email).toBe("a@b.com");
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  it("reports a mismatched confirmation with the catalog key", () => {
+    const result = resetPasswordSchema.safeParse({
+      password: "password123",
+      confirmPassword: "password124",
+    });
+
+    expect(!result.success && result.error.flatten().fieldErrors.confirmPassword).toEqual([
+      "validation.passwordMismatch",
+    ]);
+  });
+
+  it("reuses the eight-character password minimum", () => {
+    const result = resetPasswordSchema.safeParse({
+      password: "1234567",
+      confirmPassword: "1234567",
+    });
+
+    expect(!result.success && result.error.flatten().fieldErrors.password).toEqual([
+      "validation.passwordTooShort",
     ]);
   });
 });

@@ -21,6 +21,7 @@ import type admin from "../messages/en/admin.json";
 import type companion from "../messages/en/companion.json";
 import type upcoming from "../messages/en/upcoming.json";
 import type settings from "../messages/en/settings.json";
+import type errors from "../messages/en/errors.json";
 import type { routing } from "../lib/i18n/routing";
 
 declare module "next-intl" {
@@ -50,6 +51,7 @@ declare module "next-intl" {
       companion: typeof companion;
       upcoming: typeof upcoming;
       settings: typeof settings;
+      errors: typeof errors;
     };
   }
 }

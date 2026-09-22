@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { registerViaUi } from "./fixtures/auth";
 
 /**
  * Spec §8.1 — the gate for the whole chrome architecture.
@@ -35,10 +36,7 @@ test("Companion state survives the (app) <-> (immersive) boundary", async ({ pag
   });
 
   await page.goto("/en/register");
-  await page.getByLabel("Name").fill("E2E Route Group Tester");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /create account/i }).click();
+  await registerViaUi(page, { name: "E2E Route Group Tester", email, password });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
 
   // The dashboard mounts a CompanionAnchor, which triggers the provider's
@@ -143,10 +141,7 @@ test("Companion state survives the (app) -> (focus) boundary, and the hidden nav
   });
 
   await page.goto("/en/register");
-  await page.getByLabel("Name").fill("E2E Route Group Focus Tester");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /create account/i }).click();
+  await registerViaUi(page, { name: "E2E Route Group Focus Tester", email, password });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
 
   await expect.poll(() => statsRequests, { timeout: 15000 }).toBe(1);

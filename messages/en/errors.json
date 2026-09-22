@@ -1,0 +1,24 @@
+{
+  "notFound": {
+    "back": "Back",
+    "eyebrow": "404 · Wrong turn",
+    "heading": "We couldn't find this place.",
+    "body": "The path may have moved, or it may never have existed.",
+    "goHome": "Go Home",
+    "goBack": "Go Back"
+  },
+  "requestedPath": {
+    "label": "You were looking for"
+  },
+  "routeError": {
+    "eyebrow": "Route error",
+    "heading": "Something interrupted this page.",
+    "body": "We ran into a problem while opening this page.",
+    "scene": "Don't worry. We haven't lost your place.",
+    "retry": "Try again",
+    "dashboard": "Go to Dashboard",
+    "goBack": "Go Back",
+    "reassurance": "Your progress is still saved.",
+    "requestedPath": "We had trouble opening"
+  }
+}

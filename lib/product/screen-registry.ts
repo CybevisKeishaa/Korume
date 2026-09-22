@@ -1632,24 +1632,42 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // action, no route exists for any of these yet.
   // ===================================================================
 
-  // Auth flow — Reset password. Same OAuth+email split layout as
-  // register/login; Supabase Auth supplies the primitive, no code exists.
+  // Auth flow — Forgot password. Figma names this frame "Reset password", but
+  // it is the reset-link request screen (auth-error-ux spec §1), built as
+  // /forgot-password. The derived /reset-password is recorded below, repo-only.
   {
-    screenId: "reset-password",
-    name: "Reset password",
+    screenId: "forgot-password",
+    name: "Forgot password",
     kind: "screen",
     variantOf: null,
     figmaNodeId: "333:210",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
-    route: null,
-    chrome: null,
-    impl: "none",
+    route: "/forgot-password",
+    chrome: "auth",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,
   },
-  // Auth flow — Email OTP (6-digit code entry, resend link). No code exists.
+  // Derived reset screen: the recovery email leads here to set a new password.
+  {
+    screenId: "reset-password",
+    name: "Reset password",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-09-22",
+    route: "/reset-password",
+    chrome: "auth",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Auth flow — Email OTP (6-digit code entry, resend link). Built as
+  // /verify-email by auth-error-ux Task 4.
   {
     screenId: "email-otp",
     name: "Email OTP",
@@ -1658,15 +1676,14 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "335:306",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
-    route: null,
-    chrome: null,
-    impl: "none",
+    route: "/verify-email",
+    chrome: "auth",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,
   },
-  // Real 404 page design. Repo has no not-found.tsx anywhere — Next's
-  // default 404 serves today.
+  // Standalone 404 page under the localized catch-all route.
   {
     screenId: "error404",
     name: "Error404",
@@ -1675,15 +1692,32 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "335:1976",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
-    route: null,
+    route: "/[...rest]",
     chrome: null,
-    impl: "none",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Inert e2e trigger (404 unless E2E_ROUTE_ERROR=1); no product navigation.
+  {
+    screenId: "e2e-route-error",
+    name: "E2E route-error trigger",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-09-22",
+    route: "/e2e-route-error",
+    chrome: "app",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,
   },
   // Real in-app route-error screen, rendered inside actual app chrome
-  // (sidebar + topbar visible in the frame). Repo has no error.tsx anywhere.
+  // (sidebar + topbar visible in the frame). Built as the (app) error.tsx
+  // boundaries by auth-error-ux Task 7; a boundary has no route of its own.
   {
     screenId: "error-boundary",
     name: "Error boundary",
@@ -1693,8 +1727,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
     route: null,
-    chrome: null,
-    impl: "none",
+    chrome: "app",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,

@@ -16,13 +16,43 @@ export const loginSchema = z.object({
   password: z.string().min(1, "validation.passwordRequired"),
 });
 
-export const registerSchema = z.object({
-  name: z.string().trim().min(1, "validation.nameRequired").max(80),
+/** The one password rule (spec §4.3). Register and reset both derive from it. */
+export const passwordRule = z
+  .string()
+  .min(8, "validation.passwordTooShort")
+  .max(72, "validation.passwordTooLong");
+
+const passwordsMatch = (value: { password: string; confirmPassword: string }) =>
+  value.password === value.confirmPassword;
+
+const passwordMismatch = {
+  message: "validation.passwordMismatch",
+  path: ["confirmPassword"],
+};
+
+export const registerSchema = z
+  .object({
+    name: z.string().trim().min(1, "validation.nameRequired").max(80),
+    email: z.string().trim().email("validation.emailInvalid"),
+    password: passwordRule,
+    confirmPassword: z.string(),
+  })
+  .refine(passwordsMatch, passwordMismatch);
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordRule,
+    confirmPassword: z.string(),
+  })
+  .refine(passwordsMatch, passwordMismatch);
+
+export const verifyEmailSchema = z.object({
   email: z.string().trim().email("validation.emailInvalid"),
-  password: z
-    .string()
-    .min(8, "validation.passwordTooShort")
-    .max(72, "validation.passwordTooLong"),
+  token: z.string().regex(/^\d{6}$/, "validation.codeInvalid"),
+});
+
+export const emailOnlySchema = z.object({
+  email: z.string().trim().email("validation.emailInvalid"),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

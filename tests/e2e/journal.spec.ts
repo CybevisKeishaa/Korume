@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { registerViaUi } from "./fixtures/auth";
 
 // End-to-end: proves the Journal exists as a real, reachable surface and that
 // opening it IS the first-meeting domain event (spec D8).
@@ -20,10 +21,7 @@ test("a brand-new learner opens the Journal and finds the first page already wri
   const password = "password123";
 
   await page.goto("/en/register");
-  await page.getByLabel("Name").fill("E2E Journal Tester");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /create account/i }).click();
+  await registerViaUi(page, { name: "E2E Journal Tester", email, password });
 
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
 

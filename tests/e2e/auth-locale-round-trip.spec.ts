@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { registerViaUi, signInViaUi } from "./fixtures/auth";
 
 // End-to-end: proves the locale survives a full login round trip.
 //
@@ -22,10 +23,7 @@ test("register -> sign out -> sign in bounces back to /en/dashboard, not double-
   const password = "password123";
 
   await page.goto("/en/register");
-  await page.getByLabel("Name").fill("E2E Locale Tester");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /create account/i }).click();
+  await registerViaUi(page, { name: "E2E Locale Tester", email, password });
 
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
 
@@ -44,9 +42,7 @@ test("register -> sign out -> sign in bounces back to /en/dashboard, not double-
     timeout: 15000,
   });
 
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  await signInViaUi(page, { email, password });
 
   // Assert on the URL settling, not on page.url() read synchronously after
   // the click — the submit goes through a pending transition (the button

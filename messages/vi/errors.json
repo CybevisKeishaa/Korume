@@ -1,0 +1,24 @@
+{
+  "notFound": {
+    "back": "Quay lại",
+    "eyebrow": "404 · Rẽ nhầm đường",
+    "heading": "Chúng tôi không tìm thấy nơi này.",
+    "body": "Đường dẫn có thể đã đổi, hoặc có thể chưa từng tồn tại.",
+    "goHome": "Về trang chủ",
+    "goBack": "Quay lại"
+  },
+  "requestedPath": {
+    "label": "Bạn đang tìm"
+  },
+  "routeError": {
+    "eyebrow": "Lỗi tuyến đường",
+    "heading": "Đã có sự cố làm gián đoạn trang này.",
+    "body": "Chúng tôi gặp sự cố khi mở trang này.",
+    "scene": "Đừng lo. Chúng tôi vẫn giữ nguyên vị trí của bạn.",
+    "retry": "Thử lại",
+    "dashboard": "Về trang tổng quan",
+    "goBack": "Quay lại",
+    "reassurance": "Tiến độ của bạn vẫn được lưu.",
+    "requestedPath": "Chúng tôi gặp sự cố khi mở"
+  }
+}

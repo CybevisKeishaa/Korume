@@ -47,8 +47,9 @@ describe("route protection", () => {
       "/content-manager",
       "/video-curator",
       "/admin",
+      "/e2e-route-error",
     ]);
-    expect(AUTH_ROUTES).toEqual(["/login", "/register"]);
+    expect(AUTH_ROUTES).toEqual(["/login", "/register", "/verify-email", "/forgot-password"]);
   });
 
   it("protects a mis-cased locale prefix (defence in depth, not reliance on next-intl's redirect)", () => {
@@ -86,6 +87,16 @@ describe("route protection", () => {
         expect(isAuthRoute(stripLocale(`/${locale}${route}`).pathname)).toBe(true);
       }
     }
+  });
+
+  it("recognises verify-email as an auth route", () => {
+    expect(isAuthRoute("/verify-email")).toBe(true);
+  });
+
+  it("recognises forgot-password but keeps reset-password out of auth routes", () => {
+    expect(isAuthRoute("/forgot-password")).toBe(true);
+    // Spec 4.2: the reset recovery session must reach this page before middleware bounces it.
+    expect(isAuthRoute("/reset-password")).toBe(false);
   });
 
   it("leaves public routes unprotected", () => {

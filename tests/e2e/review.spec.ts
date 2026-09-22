@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { registerViaUi } from "./fixtures/auth";
 
 // End-to-end: a new user registers, opens a vocab review, reveals and grades a
 // card, and the session advances (which means POST /api/srs/review succeeded and
@@ -7,10 +8,7 @@ test("register → review a vocab card → session advances", async ({ page }) =
   const email = `e2e_${Date.now()}@example.com`;
 
   await page.goto("/en/register");
-  await page.getByLabel("Name").fill("E2E Tester");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password123");
-  await page.getByRole("button", { name: /create account/i }).click();
+  await registerViaUi(page, { name: "E2E Tester", email, password: "password123" });
 
   await expect(page).toHaveURL(/\/en\/dashboard/, { timeout: 15000 });
 
