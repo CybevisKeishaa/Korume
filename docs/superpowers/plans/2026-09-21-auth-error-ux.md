@@ -999,16 +999,21 @@ export default function AppRouteError({ error, reset }: { error: Error & { diges
     languages ("Đã có lỗi xảy ra. · Something went wrong.") and a button calling `reset()`.
 
 - [ ] **Step 3: e2e trigger.** Throwing on purpose needs a route. Add
-  `app/[locale]/(protected)/(app)/__e2e/route-error/page.tsx` that throws **only** when
+  `app/[locale]/(protected)/(app)/e2e-route-error/page.tsx` that throws **only** when
   `process.env.E2E_ROUTE_ERROR === "1"` (read at request time — the route is dynamic under
   `(protected)`) and otherwise calls `notFound()`; add `env: { E2E_ROUTE_ERROR: "1" }` to
   `playwright.config.ts`'s `webServer`. That config has `reuseExistingServer: !process.env.CI`, so an
   already-running server started without the variable will not throw: the spec must first check
   that the trigger page does **not** show the 404 view, and fail with a message naming
   `E2E_ROUTE_ERROR` if it does, instead of failing obscurely. Document in the page's comment that it
-  is inert in every non-e2e environment; add the path nowhere else (no nav entry, no registry row).
+  is inert in every non-e2e environment; add no nav entry. It needs one registry row (below).
+  *(Corrected 2026-09-22 before dispatch: the plan said `__e2e/` and "no registry row". Next 14
+  treats a `_`-prefixed folder as private and never routes it, so the trigger would always 404; and
+  `screen-registry.routes.test.ts` T1 demands a row for every `page.tsx`. The row is `kind:
+  "repo-only"`, `repoOnlyReason: "no-frame-at-last-pass"`, `route: "/e2e-route-error"`, `chrome:
+  "app"`, with a comment naming it an inert e2e trigger.)*
   `tests/e2e/route-error.spec.ts` at 1280: register via `registerViaUi`, measure the sidebar
-  (`nav` landmark) bounding box on `/en/dashboard`, visit `/en/__e2e/route-error`, assert
+  (`nav` landmark) bounding box on `/en/dashboard`, visit `/en/e2e-route-error`, assert
   "Something interrupted this page." is visible, the sidebar is still present with the **same**
   width (±0.5 px), no ancestor of the panel carries `data-density="reference"`, and "Try again" is
   focusable by keyboard.

@@ -103,11 +103,11 @@ desktop-density-scale merge gate; re-measure before relying on it).
   `npx supabase status` before any Playwright run.
 - Never build or serve from the main checkout; the owner's dev server uses its `.next`.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
-- None. Task 7 has no packet yet.
+- None. Task 7 packet written 2026-09-22 and dispatched to Codex (plan Task 7 Step 3 corrected first: `e2e-route-error/`, not the private `__e2e/`, plus one registry row).
 
 ## Next actions
 
