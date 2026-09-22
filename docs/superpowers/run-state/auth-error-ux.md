@@ -72,9 +72,19 @@ desktop-density-scale merge gate; re-measure before relying on it).
 
 ## Blockers
 
-None.
+- **Paused 2026-09-22 00:46 at the owner's request.** Codex hit its usage limit while reading for
+  Task 4 ("try again at 3:41 AM"); it wrote nothing - the worktree was verified clean at `83d055e`.
+  Owner chose to wait for Codex rather than have Claude implement.
 
 ## Next actions
+
+**Resume here (next session):** Task 4 has NOT started. The packet
+`.superpowers/sdd/2026-09-21-auth-error-ux/task-4-brief.md` (main checkout, gitignored) and the
+prompt pattern are ready. Re-dispatch: `codex exec -C <worktree> -s workspace-write -o <last.md> -
+< <prompt file>` run detached (`nohup ... &`), prompt = the Task 3 prompt with 3 -> 4 and spec
+sections "3, 4, 4.1-4.4 and 5.3". Wait on the `-o` file; do NOT detect exit by grepping `codex` in
+`tasklist` - the `codex-windows-sandbox-ser` service always matches, which hid the usage-limit
+stop for 30 minutes. Also grep the log for `usage limit`.
 
 1. Codex: Task 4 (`task-4-brief.md`). Implement and verify; leave uncommitted; set
    `- Owner: Claude` in this file when ready.
