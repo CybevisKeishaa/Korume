@@ -1,39 +1,42 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-21 (supersedes every block below,
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-22 (supersedes every block below,
 > including the correction banner, where they disagree)
 >
-> **NO BRANCH IS IN FLIGHT.** `desktop-density-scale` is **MERGED to `master`**
-> at `02a0d57` + a CRLF test fix merged at `1099c5a` (`--no-ff`, branch and
-> worktree kept). Merged-master gate: `tsc` 0, `lint` 0, `npm test` **324 files /
-> 3125**, `verify:protocol` 0. Not pushed by Claude — the owner pushes by hand.
+> **ONE BRANCH IS IN FLIGHT: `auth-error-ux`**, worktree `.worktrees/auth-error-ux`,
+> **PAUSED before Task 4** at the owner's request (Codex hit its usage limit
+> 2026-09-22 00:46; worktree verified clean). Branch tip `d268327`, 3 of 7 tasks
+> accepted: `f8d565f` mascot module · `13a6739` auth shell + per-flow forms +
+> confirm password · `6031351` OtpInput. Suite at Task 3: 329 files / 3157 tests.
 >
-> ⭐ **The density symptom is CLOSED, and the owner verified it themselves:** they
-> viewed `/vi/shadowing` at 1280 in their own Chrome and said it is right. At 1280
-> the shell matches master-at-zoom-90% **in screen px** within 0.2% (column 703.7
-> vs 702.7). Spec §1's "≈768px" target was the wrong unit (CSS px of the 1422
-> zoom-90% viewport) — corrected in the spec.
-> **Accepted gap, owner told:** ~86 unmigrated files keep `text-sm/xs/lg` beside
-> scaled cards; each screen port migrates its own. The Toast viewport stays fluid.
-> The rule every later screen follows is `docs/design/screens/adaptive-layouts.md`
-> § Frame Fidelity: 1536 frame values ARE the 1440 values, no 0.9375 factor.
-> `docs/superpowers/run-state/desktop-density-scale.md` is the record.
+> **Authority, in order:** `docs/superpowers/run-state/auth-error-ux.md` on the
+> branch (its `- Owner:` line and "Resume here" block say exactly what to do) →
+> spec `docs/superpowers/specs/2026-09-21-auth-error-ux-design.md` → plan
+> `docs/superpowers/plans/2026-09-21-auth-error-ux.md` → task packets in the
+> gitignored `.superpowers/sdd/2026-09-21-auth-error-ux/` (Task 4 packet ready).
 >
-> **▶ NEXT ACTION: Auth + Error UX** (details in the block below, unchanged).
+> **How the loop runs (owner rulings 2026-09-21):** Claude dispatches ONE task per
+> `codex exec -s workspace-write` (prompt from a file on stdin, detached). Codex's
+> Windows sandbox cannot write `.git`, so Codex implements + verifies and leaves
+> changes uncommitted; Claude reviews the diff, re-runs tsc/lint/full vitest and the
+> e2e specs (`--workers=1`, after checking `:3000` is free), then commits with Codex
+> as co-author. Codex never runs Playwright.
 >
-> **Resume checklist for the next session (state at end of 2026-09-21):**
-> 1. `master` tip = the commit that added this checklist (`git log -1`), clean except a tool-generated `.serena/project.yml`
->    diff (not ours, left uncommitted). Run `git ls-remote origin
->    refs/heads/master` before saying anything about what is pushed.
-> 2. Environment: no server running on `:3000`; the main checkout's `.next` was
->    deleted, so the owner's next `npm run dev` rebuilds it. Docker Desktop and
->    local Supabase were left running — authenticated e2e and measurements need
->    them (`npx supabase start`). **Never build in the main checkout**; build and
->    serve only from a worktree with absolute paths.
-> 3. Auth + Error starts from brainstorming → spec → plan (Claude), then one task
->    per `codex exec` with a Claude review between. Its screens are 1280-canvas,
->    reference scope (`data-density="reference"`, values used as drawn). Toast is
->    NOT density-scoped yet — a toast on an auth screen renders fluid.
+> **Scope rulings that bind the branch (spec §2-§3):** no Apple (owner, needs a
+> developer account — P14 itself allows Apple), no GitHub (P14), no ToS/legal/help
+> links, no OTP expiry text, email verification by 6-digit code, local
+> `enable_confirmations` stays false, one mascot pose per screen. Auth floor is
+> **1024 px** — below it `MobileAppHandoff` replaces the whole web app.
+>
+> **Remaining:** Task 4 OTP slice (+ deferred `OtpInput` `invalid` prop fix) ·
+> Task 5 password reset · Task 6 404 · Task 7 route-error boundaries · then Claude
+> whole-branch review, spec §8.2 measurement at 1280, §8.3 hand round trips via
+> Mailpit, owner review in their Chrome, merge `--no-ff`. Owner must paste
+> `supabase/templates/confirmation.html` into the production Supabase dashboard.
+>
+> Environment left: Docker + local Supabase running; no server on `:3000`; the main
+> checkout's `.next` untouched. `desktop-density-scale` is merged and closed
+> (`02a0d57` + `1099c5a`, owner-verified); its record is its run state.
 >
 > ✅ **The "something pushes master" mystery is CLOSED, 2026-09-21: the owner
 > pushes it themselves.** They said so in as many words when this file's
@@ -135,8 +138,9 @@
 > **Auth + Error UX**, unchanged: reset
 > password `333:210`, email OTP `335:306`, restyle Login/Register, Error404
 > `335:1976`, error boundary `337:2055`. `docs/product/decision-register.md`
-> **P14** still binds it — Apple and GitHub OAuth buttons are **not** ported,
-> auth stays email + Google — and those frames are drawn on a **1280** canvas.
+> **P14** reads "email + Google + Apple. GitHub: no" — *corrected 2026-09-21: this
+> line used to say P14 excludes Apple; it does not. Apple is out of `auth-error-ux`
+> by a separate owner ruling (spec §2).* Those frames are drawn on a **1280** canvas.
 >
 > ⚠ Three `next dev` servers were found running from the MAIN checkout on
 > ports 3000/3001/3002, all sharing one `.next` and overwriting each other's
