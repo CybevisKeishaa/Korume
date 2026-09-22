@@ -23,8 +23,12 @@
    platform cannot do that.
 5. **Camera toggle ships** although no feature uses the camera yet: every future camera feature
    must go through the same gate (§4.4).
-6. **One settings page.** `/settings/privacy` redirects to `/settings#privacy`;
-   `/settings/privacy/memory` keeps its confirmation flow and is reached from **Erase Memory**.
+6. **Both privacy surfaces stay** (owner, 2026-09-22, superseding an earlier "merge and
+   redirect" answer given before it was known that `/settings/privacy` is its own Figma frame,
+   Data privacy `337:3323`, already built). `/settings` shows the Danger zone the Global settings
+   frame draws **plus an "Erase all data" row**, because AGENTS.md §2 rule 2 requires a full
+   "delete all my data" and the Global settings frame omits it; `/settings/privacy` is unchanged
+   and not redirected.
 7. **External rows render only with a real Korume destination** (owner review, 2026-09-22,
    superseding the first answer). Korume has no Discord, Facebook or TikTok account and no
    Privacy Policy, Terms of Service, Send Feedback or Contact Support destination yet, so all
@@ -33,6 +37,8 @@
    Korume's `/` is not one.
 8. **Reminders are in-app only** (the notification bell). No email, no web push. That is the
    `study-reminders` branch, not this one.
+9. **Erase Memory is built in this branch** (owner, 2026-09-22). It is a placeholder today
+   (`/settings/privacy/memory` renders `UpcomingScreen`); §4.8 defines it.
 
 ## 2. The frame, section by section
 
@@ -46,7 +52,7 @@ shell's main area. The page scrolls — it is a long settings page by design.
 | Learning Reminders | Daily · Review · Streak · Weekly Reflection · Sensei Generation Finished | → `study-reminders`. Section absent here. |
 | Appearance | Theme · Accent Color · Display Scale · Reduced Motion | Display Scale, Reduced Motion. Theme + Accent deferred (§1.3). |
 | Privacy & Data | Microphone · Camera · AI Training · Export Data · Download Learning History | All five. |
-| Danger zone | Delete Korume Memory · Delete Account | Both, wired to the existing flows. |
+| Danger zone | Delete Korume Memory · Delete Account | Both, plus Erase all data (§1.6). Delete Account and Erase all data reuse the existing deletion flow; Erase Memory is new (§4.8). |
 | About | Version · Discord · Facebook · TikTok · Privacy Policy · Terms of Service · Send Feedback | Version only; the six others omitted (§1.7). |
 | Support card | "Need a hand?" · Talk with Korume · Contact Support | Talk with Korume → `/sensei`; Contact Support omitted (§1.7). |
 | Footer | "Korume · Version 1.0 · Built quietly in Vietnam…" | Port; the version comes from `package.json`. |
@@ -153,9 +159,30 @@ branch adds no timezone concept of its own.
   earned badges, one CSV (via `lib/csv`), newest first.
 
 ### 4.7 AI Training, Danger zone
-Existing behaviour moved onto this page unchanged: the model-training consent toggle, the pending
-deletion notice and the Delete Account flow from `components/settings/privacy-screen.tsx`, and
-Erase Memory linking to `/settings/privacy/memory`.
+Reused, not moved: `/settings` renders the existing `AiTrainingToggle`, `DeletionPendingBanner`
+and deletion dialog (`erase_all` and `close_account` tiers) from `components/settings/`, and
+`/settings/privacy` keeps rendering `PrivacyScreen` exactly as today. The Danger zone rows follow
+the Global settings frame's layout; its **Erase Memory** button opens `/settings/privacy/memory`.
+
+### 4.8 Erase Korume Memory (new)
+What Korume remembers, and what this erases — the frame's copy says learning progress remains:
+
+| Erased | Kept |
+| --- | --- |
+| `companion_memories` (the diary, reflections and observations the journal reads) | SRS and all `user_*_progress`, `user_stats`, `xp_events`, badges |
+| `conversation_sessions` and their `conversation_messages` (conversation memories) | shadowing sessions and recordings, mining cards, library, playlists |
+
+Recommendations are computed on read and hold no stored memory, so nothing else is deleted.
+
+- `POST /api/user/memory-erase` with body `{ "confirm": "ERASE" }` (zod literal). Deletes both
+  sets for the caller under the RLS client, in one Postgres function
+  `erase_companion_memory()` (`security invoker`, deletes only `auth.uid()` rows) so the two
+  deletes commit together. Rate limited (3 per hour). Opaque 500 like the other `/api/user` routes.
+- `/settings/privacy/memory` replaces `UpcomingScreen` with a confirmation page: what is erased,
+  what stays (the table above in plain words), a typed confirmation, and the button. On success
+  it returns to `/settings#privacy` with a toast.
+- The registry row `privacy-memory` becomes `impl: "built"`, and `upcoming-routes.test.tsx` drops
+  `settings/privacy/memory` and `settings` from its list (size 12 → 10).
 
 ## 5. Components
 
@@ -176,14 +203,18 @@ poses look broken).
 
 ## 7. Registry
 
-`global-settings` becomes `impl: "built"`. `/settings/privacy` stays registered as a redirect.
+Row `settings` (`220:16032`) becomes `impl: "built"`; row `privacy-memory` becomes `impl: "built"`
+(§4.8); row `data-privacy` (`337:3323`) is unchanged.
 
 ## 8. Verification
 
 - Unit: preferences schema and route (401, 400 on unknown key, upsert), `reviewItem` multiplier,
   `scoreComprehension` bands, `advanceStreak` with schedules, device gate, export and CSV.
-- RLS: a second user cannot read or write another user's preferences row.
-- e2e: change each control, reload, value persists; `/settings/privacy` redirects.
+- e2e: change each control, reload, value persists; `/settings/privacy` still renders its own
+  page; Erase Memory empties the journal while SRS progress and XP are unchanged.
+- Live Postgres gate (`supabase/tests/settings-page.sql`, run by `npm run verify:db:settings`):
+  `user_preferences` RLS (a second user can neither read nor write the row), the schedule CHECK
+  constraints, and `erase_companion_memory()` deleting only the caller's rows.
 - Unit: PATCH rejects a mixed `daily_minutes` + preferences payload; schedule canonicalisation
   and the `custom` rules; the stale-response rule in the settings client (an older response
   arriving after a newer one changes nothing).
