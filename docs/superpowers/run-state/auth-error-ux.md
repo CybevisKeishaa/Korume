@@ -59,6 +59,17 @@ each, one `codex exec` dispatch per task, Claude review between tasks.
   stopped reading all of `docs/lessons.md`.
   **Owner check at the end:** forgot-password card eyebrow and heading are both "Account
   recovery" (story copy follows frame `333:210`); confirm or pick a heading.
+- `51fd8d5` Task 6: standalone localized 404 and catch-all, errors catalogs, and
+  `error404` registry conversion. TDD red: components 3 missing-module suites; registry T1 1 red
+  (`/[...rest]`). Green: focused 36 files / 446 tests; tsc 0; lint 0 errors (85 existing warnings);
+  full 338 files / 3202 tests. Mutations: density -> `mutated` 1 red; `<code>` -> `<span>` 2 red;
+  both restored green. Derived catch-all route: `"/[...rest]"`, chrome `null`; registry counts unchanged.
+  E2E written, not run per packet. Claude fix wave: `BackButton` props stop declaring
+  `className` twice; e2e asserts the 404 status in both locales. Claude re-ran: tsc 0, lint 0, full
+  338 files / 3202 tests exit 0; Playwright `--workers=1`: `not-found`, `route-rename-redirects`,
+  `auth-layout`, `auth-password-reset` pass. `landing-page` 20/25: the 3 master-known reds (h1, §3
+  keyboard, §3 thumbnail - desktop-density-scale run state) still red with Task 6's two route
+  files moved out, so not caused here; 2 `page.goto` timeouts pass 2/2 alone. Codex ~212k tokens.
 
 ## Contracts and decisions
 
@@ -92,24 +103,25 @@ desktop-density-scale merge gate; re-measure before relying on it).
   `npx supabase status` before any Playwright run.
 - Never build or serve from the main checkout; the owner's dev server uses its `.next`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
-- None. Task 6 packet written 2026-09-22 and dispatched to Codex.
+- None. Task 7 has no packet yet.
 
 ## Next actions
 
-**Resume here:** Task 5 accepted at `57529e9`. Claude writes `task-6-brief.md` (404; check the
-registry `error404` entry `335:1976` needs converting), then dispatches it with the Task 5 prompt
-(4 -> 6, Task 6 spec sections, named lessons only - never the whole `docs/lessons.md`). Wait on the
-`-o` file, or `grep -E "^ERROR: You.ve hit your usage limit"` in the log.
+**Resume here:** Task 6 accepted at `51fd8d5`. Claude writes `task-7-brief.md` (route-error
+boundaries; spec §6.2-6.4; check whether the registry `error-boundary` entry `337:2055` needs
+anything - `error.tsx` is not a `page.tsx`, so T1 likely does not fire), then dispatches with the
+Task 6 prompt (6 -> 7, Task 7 spec sections, named lessons only). Wait on the `-o` file, or
+`grep -E "^ERROR: You.ve hit your usage limit"` in the log.
 
-1. Claude: write the Task 6 packet, set `- Owner: Codex`, dispatch.
-2. Codex: Task 6; leave uncommitted; set `- Owner: Claude` when ready.
-3. Claude: review, re-verify, commit Task 6; same loop for Task 7.
-4. After Task 7: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips
-   (include the reset email through Mailpit: `additional_redirect_urls` lists the bare
-   `/auth/callback` while `redirectTo` carries `?next=`), owner review in their Chrome, merge `--no-ff`.
+1. Claude: write the Task 7 packet, set `- Owner: Codex`, dispatch.
+2. Codex: Task 7; leave uncommitted; set `- Owner: Claude` when ready.
+3. Claude: review, re-verify, commit Task 7.
+4. Then: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips (include the
+   reset email through Mailpit: `additional_redirect_urls` lists the bare `/auth/callback` while
+   `redirectTo` carries `?next=`), owner review in their Chrome, merge `--no-ff`.
 5. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
    Supabase dashboard's *Confirm signup* template (spec §4.4).
