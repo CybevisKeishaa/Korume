@@ -131,7 +131,7 @@ Figma's Inter maps to `font-sans` (Plus Jakarta Sans); Outfit is `font-display`.
 
 ### 5.1 Auth primitives (`components/auth/`)
 
-- **`AuthSplitShell`** — the 60/40 split (≈768/512 at 1280), background, a left slot and a right
+- **`AuthSplitShell`** — a centred pair, story beside a fixed `w-96` card column inside `max-w-6xl` (at 1280: story 128-704, card 768-1152; owner ruling 2026-09-22 replaced the full-bleed 60/40 split, whose columns sat too far apart around a too-wide card), background, a left slot and a right
   slot. It has **no per-screen variants**; a screen differs only by what it puts in the slots.
 - **Minimum responsive contract for `AuthSplitShell` — corrected 2026-09-21 during Task 2 review.**
   The first version of this bullet set a 320 px floor with a single-column fallback. That rested on
@@ -283,7 +283,7 @@ assertion over a pattern-gathered collection also asserts its size.
 ### 8.2 Measurement
 
 Claude measures at the whole-branch review, in a browser, at viewport 1280, from a server built in
-the worktree (never the main checkout): each auth screen's split widths against ≈768/512, and the
+the worktree (never the main checkout): each auth screen's columns against the centred pair of §5.1 (equal side margins, 384 px card) and no vertical scroll at 1280x529 for login, and the
 route-error case against the live shell's own widths on master.
 
 ### 8.3 Pre-merge code round trip (by hand, once)

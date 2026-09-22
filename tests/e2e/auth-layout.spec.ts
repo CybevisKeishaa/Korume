@@ -22,8 +22,7 @@ test("auth routes keep the card usable without extra providers", async ({ page }
     await page.goto(route);
     const card = page.getByRole("main");
     await expect(card).toBeVisible();
-    expect((await card.boundingBox())?.width).toBeGreaterThanOrEqual(480);
-    expect((await card.boundingBox())?.width).toBeLessThanOrEqual(544);
+    expect((await card.boundingBox())?.width).toBe(384);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByRole("button", { name: /apple|github/i })).toHaveCount(0);
     await page.setViewportSize({ width: 1024, height: 768 });
@@ -47,4 +46,12 @@ test("auth routes keep the card usable without extra providers", async ({ page }
       await page.getByRole("button", { name: SUBMIT_LABEL[pathname] }).scrollIntoViewIfNeeded();
     }
   }
+});
+
+// Owner's Chrome: a 1080p screen at 150% scaling leaves a 1280x529 viewport.
+test("login fits a short laptop viewport without scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 529 });
+  await page.goto("/en/login");
+  await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(529);
 });

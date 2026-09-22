@@ -20,7 +20,7 @@ export async function AuthStory({
 }) {
   const t = await getTranslations("common");
   return (
-    <section className="flex h-full flex-col justify-center gap-lg px-3xl py-xl short:gap-md short:py-md">
+    <section className="flex flex-col gap-lg py-xl short:gap-md short:py-md">
       <Link href="/" className="font-jp text-title font-bold text-foreground">
         {t("appNameJp")}
       </Link>
