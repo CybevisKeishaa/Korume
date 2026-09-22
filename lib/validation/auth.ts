@@ -22,6 +22,14 @@ export const passwordRule = z
   .min(8, "validation.passwordTooShort")
   .max(72, "validation.passwordTooLong");
 
+const passwordsMatch = (value: { password: string; confirmPassword: string }) =>
+  value.password === value.confirmPassword;
+
+const passwordMismatch = {
+  message: "validation.passwordMismatch",
+  path: ["confirmPassword"],
+};
+
 export const registerSchema = z
   .object({
     name: z.string().trim().min(1, "validation.nameRequired").max(80),
@@ -29,10 +37,14 @@ export const registerSchema = z
     password: passwordRule,
     confirmPassword: z.string(),
   })
-  .refine((value) => value.password === value.confirmPassword, {
-    message: "validation.passwordMismatch",
-    path: ["confirmPassword"],
-  });
+  .refine(passwordsMatch, passwordMismatch);
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordRule,
+    confirmPassword: z.string(),
+  })
+  .refine(passwordsMatch, passwordMismatch);
 
 export const verifyEmailSchema = z.object({
   email: z.string().trim().email("validation.emailInvalid"),

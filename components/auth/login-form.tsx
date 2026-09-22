@@ -43,6 +43,11 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
           id="password"
           name="password"
           label={t("form.passwordLabel")}
+          labelAction={
+            <Link href="/forgot-password" className="text-caption text-primary-strong hover:underline">
+              {t("form.forgotPassword")}
+            </Link>
+          }
           autoComplete="current-password"
           errors={state.fieldErrors?.password}
         />

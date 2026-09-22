@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { emailOnlySchema, loginSchema, registerSchema, verifyEmailSchema } from "./auth";
+import {
+  emailOnlySchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from "./auth";
 
 /**
  * This schema is deliberately locale-free (see the comment in ./auth.ts): its
@@ -144,5 +150,29 @@ describe("emailOnlySchema", () => {
     const result = emailOnlySchema.safeParse({ email: "  a@b.com  " });
 
     expect(result.success && result.data.email).toBe("a@b.com");
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  it("reports a mismatched confirmation with the catalog key", () => {
+    const result = resetPasswordSchema.safeParse({
+      password: "password123",
+      confirmPassword: "password124",
+    });
+
+    expect(!result.success && result.error.flatten().fieldErrors.confirmPassword).toEqual([
+      "validation.passwordMismatch",
+    ]);
+  });
+
+  it("reuses the eight-character password minimum", () => {
+    const result = resetPasswordSchema.safeParse({
+      password: "1234567",
+      confirmPassword: "1234567",
+    });
+
+    expect(!result.success && result.error.flatten().fieldErrors.password).toEqual([
+      "validation.passwordTooShort",
+    ]);
   });
 });

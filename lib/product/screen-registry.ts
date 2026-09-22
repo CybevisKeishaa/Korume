@@ -1632,19 +1632,36 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
   // action, no route exists for any of these yet.
   // ===================================================================
 
-  // Auth flow — Reset password. Same OAuth+email split layout as
-  // register/login; Supabase Auth supplies the primitive, no code exists.
+  // Auth flow — Forgot password. Figma names this frame "Reset password", but
+  // it is the reset-link request screen (auth-error-ux spec §1), built as
+  // /forgot-password. The derived /reset-password is recorded below, repo-only.
   {
-    screenId: "reset-password",
-    name: "Reset password",
+    screenId: "forgot-password",
+    name: "Forgot password",
     kind: "screen",
     variantOf: null,
     figmaNodeId: "333:210",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
-    route: null,
-    chrome: null,
-    impl: "none",
+    route: "/forgot-password",
+    chrome: "auth",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+  // Derived reset screen: the recovery email leads here to set a new password.
+  {
+    screenId: "reset-password",
+    name: "Reset password",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-09-22",
+    route: "/reset-password",
+    chrome: "auth",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,

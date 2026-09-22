@@ -9,6 +9,7 @@ import {
   emailOnlySchema,
   loginSchema,
   registerSchema,
+  resetPasswordSchema,
   verifyEmailSchema,
 } from "@/lib/validation/auth";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
@@ -21,6 +22,11 @@ export interface AuthState {
 
 export interface ResendState {
   status?: "sent" | "rateLimited";
+}
+
+export interface ResetRequestState {
+  sent?: boolean;
+  fieldErrors?: Record<string, string[] | undefined>;
 }
 
 type AuthTranslator = Awaited<ReturnType<typeof getTranslations<"auth">>>;
@@ -209,6 +215,65 @@ export async function resendCode(
     email: parsed.data.email,
   });
   return { status: error?.code === "over_email_send_rate_limit" ? "rateLimited" : "sent" };
+}
+
+export async function requestPasswordReset(
+  _prev: ResetRequestState,
+  formData: FormData,
+): Promise<ResetRequestState> {
+  const parsed = emailOnlySchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) {
+    const t = await getTranslations("auth");
+    return {
+      fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t),
+    };
+  }
+
+  const supabase = createClient();
+  const origin = headers().get("origin") ?? "";
+  const locale = await getLocale();
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${origin}/auth/callback?next=/${locale}/reset-password`,
+  });
+  return { sent: true };
+}
+
+export async function updatePassword(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const parsed = resetPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+  if (!parsed.success) {
+    const t = await getTranslations("auth");
+    return {
+      fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t),
+    };
+  }
+
+  const supabase = createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) {
+    const t = await getTranslations("auth");
+    return { error: t("errors.resetExpired") };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    const t = await getTranslations("auth");
+    return {
+      error:
+        error.code === "same_password"
+          ? t("errors.samePassword")
+          : t("errors.passwordUpdateFailed"),
+    };
+  }
+
+  revalidatePath("/", "layout");
+  const locale = await getLocale();
+  redirect({ href: "/dashboard", locale });
 }
 
 export async function signInWithGoogle(): Promise<void> {

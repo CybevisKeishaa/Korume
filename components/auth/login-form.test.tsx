@@ -56,7 +56,10 @@ describe("LoginForm", () => {
     expect(screen.getByText("OR")).toBeInTheDocument();
     expect(screen.getByText("New here?")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Create an account" })).toHaveAttribute("href", "/en/register");
-    expect(screen.queryByRole("link", { name: /forgot password/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute(
+      "href",
+      "/en/forgot-password",
+    );
   });
 
   it("shows the pending label while a submission is in flight", () => {

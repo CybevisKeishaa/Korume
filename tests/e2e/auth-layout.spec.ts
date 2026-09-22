@@ -4,16 +4,19 @@ export const AUTH_ROUTES_UNDER_TEST = [
   "/en/login",
   "/en/register",
   "/en/verify-email?email=e2e%40example.com",
+  "/en/forgot-password",
+  "/en/reset-password",
 ];
 
 const SUBMIT_LABEL: Record<string, string> = {
   "/en/login": "Sign in",
   "/en/register": "Create account",
   "/en/verify-email": "Verify email",
+  "/en/forgot-password": "Send reset link",
 };
 
 test("auth routes keep the card usable without extra providers", async ({ page }) => {
-  expect(AUTH_ROUTES_UNDER_TEST).toHaveLength(3);
+  expect(AUTH_ROUTES_UNDER_TEST).toHaveLength(5);
   for (const route of AUTH_ROUTES_UNDER_TEST) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(route);
@@ -34,6 +37,14 @@ test("auth routes keep the card usable without extra providers", async ({ page }
     const [storyBox, cardColumnBox] = await Promise.all([story.boundingBox(), cardColumn.boundingBox()]);
     if (!storyBox || !cardColumnBox) throw new Error("Expected both auth columns to have bounds");
     expect(storyBox.x + storyBox.width).toBeLessThanOrEqual(cardColumnBox.x);
-    await page.getByRole("button", { name: SUBMIT_LABEL[new URL(route, "http://x").pathname] }).scrollIntoViewIfNeeded();
+    const pathname = new URL(route, "http://x").pathname;
+    if (pathname === "/en/reset-password") {
+      await expect(card.getByRole("link", { name: "Request a new link" })).toHaveAttribute(
+        "href",
+        "/en/forgot-password",
+      );
+    } else {
+      await page.getByRole("button", { name: SUBMIT_LABEL[pathname] }).scrollIntoViewIfNeeded();
+    }
   }
 });

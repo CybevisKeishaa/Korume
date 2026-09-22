@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { signInWithGoogle } from "@/app/[locale]/(auth)/actions";
 import { Button } from "@/components/ui/button";
@@ -57,12 +58,14 @@ export function PasswordField({
   id,
   name,
   label,
+  labelAction,
   autoComplete,
   errors,
 }: {
   id: string;
   name: string;
   label: string;
+  labelAction?: ReactNode;
   autoComplete: "current-password" | "new-password";
   errors?: string[];
 }) {
@@ -70,7 +73,10 @@ export function PasswordField({
   const t = useTranslations("auth");
   return (
     <div className="space-y-xs">
-      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-center justify-between gap-sm">
+        <Label htmlFor={id}>{label}</Label>
+        {labelAction}
+      </div>
       <div className="relative">
         <Input
           id={id}
