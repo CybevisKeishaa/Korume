@@ -9,5 +9,16 @@
   },
   "requestedPath": {
     "label": "Bạn đang tìm"
+  },
+  "routeError": {
+    "eyebrow": "Lỗi tuyến đường",
+    "heading": "Đã có sự cố làm gián đoạn trang này.",
+    "body": "Chúng tôi gặp sự cố khi mở trang này.",
+    "scene": "Đừng lo. Chúng tôi vẫn giữ nguyên vị trí của bạn.",
+    "retry": "Thử lại",
+    "dashboard": "Về trang tổng quan",
+    "goBack": "Quay lại",
+    "reassurance": "Tiến độ của bạn vẫn được lưu.",
+    "requestedPath": "Chúng tôi gặp sự cố khi mở"
   }
 }

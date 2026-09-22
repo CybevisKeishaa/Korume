@@ -24,6 +24,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run build && npm run start",
+    env: { E2E_ROUTE_ERROR: "1" },
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

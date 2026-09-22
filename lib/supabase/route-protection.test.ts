@@ -47,6 +47,7 @@ describe("route protection", () => {
       "/content-manager",
       "/video-curator",
       "/admin",
+      "/e2e-route-error",
     ]);
     expect(AUTH_ROUTES).toEqual(["/login", "/register", "/verify-email", "/forgot-password"]);
   });

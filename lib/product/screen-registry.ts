@@ -1699,8 +1699,24 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
+  // Inert e2e trigger (404 unless E2E_ROUTE_ERROR=1); no product navigation.
+  {
+    screenId: "e2e-route-error",
+    name: "E2E route-error trigger",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-09-22",
+    route: "/e2e-route-error",
+    chrome: "app",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
   // Real in-app route-error screen, rendered inside actual app chrome
-  // (sidebar + topbar visible in the frame). Repo has no error.tsx anywhere.
+  // (sidebar + topbar visible in the frame). Its error.tsx has no route of its own.
   {
     screenId: "error-boundary",
     name: "Error boundary",

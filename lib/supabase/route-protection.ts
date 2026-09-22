@@ -50,6 +50,9 @@ export const PROTECTED_PREFIXES = [
   // required", not "admin required" — the two checks are deliberately split
   // across two layers.
   "/admin",
+  // Inert e2e trigger under `(protected)/(app)/` (404 unless E2E_ROUTE_ERROR=1),
+  // covered for the same redirectTo reason as the placeholder routes above.
+  "/e2e-route-error",
 ] as const;
 
 export const AUTH_ROUTES = ["/login", "/register", "/verify-email", "/forgot-password"] as const;
