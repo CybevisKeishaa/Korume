@@ -4,16 +4,31 @@
 > including the correction banner, where they disagree)
 >
 > **ONE BRANCH IS IN FLIGHT: `auth-error-ux`**, worktree `.worktrees/auth-error-ux`,
-> **PAUSED before Task 4** at the owner's request (Codex hit its usage limit
-> 2026-09-22 00:46; worktree verified clean). Branch tip `d268327`, 3 of 7 tasks
-> accepted: `f8d565f` mascot module · `13a6739` auth shell + per-flow forms +
-> confirm password · `6031351` OtpInput. Suite at Task 3: 329 files / 3157 tests.
+> **ALL 7 TASKS COMMITTED, verified, WAITING ON OWNER REVIEW** (2026-09-22). Branch tip
+> `2f69587`. Tasks: `f8d565f` mascot · `13a6739` auth shell · `6031351` OtpInput ·
+> `9c8c081` verify-email OTP · `57529e9` password reset · `51fd8d5` 404 · `b8a96e2`
+> route-error boundaries (Codex hit its usage limit mid-task; Claude finished it).
+> Whole-branch review (`/code-review high`) found 2, both fixed at `933f61d`: failed
+> recovery-link exchange now lands on `/reset-password`'s expired state (not a silent
+> `/login?error=auth`); retyping a digit of a full OTP moves focus to Verify.
+> Suite 340 files / 3209 tests; tsc 0; lint 0; Playwright auth + route-error green.
+> Spec §8.2 measured (auth split 768/512 exact; route-error nav 199.11 / main 1056.89 =
+> dashboard) and §8.3 round trips pass against real local Supabase + Mailpit.
+>
+> **▶ NEXT SESSION:** (1) owner reviews in Chrome. The owner's dev server on `:3000` runs
+> from the MAIN checkout on `master`, so it does NOT show this branch — run
+> `npx next dev -p 3001` inside `.worktrees/auth-error-ux` (add `E2E_ROUTE_ERROR=1` to see
+> the route-error panel at `/vi/e2e-route-error`); email links point at `:3000`.
+> (2) owner rules on the forgot-password card: eyebrow and heading are both
+> "Account recovery". (3) Claude merges `--no-ff` to master. (4) Owner, by hand, before
+> production: paste `supabase/templates/confirmation.html` into Supabase *Confirm signup*.
+> A 3001 dev server was reaped by Claude Code for low RAM — do not assume one is running.
 >
 > **Authority, in order:** `docs/superpowers/run-state/auth-error-ux.md` on the
 > branch (its `- Owner:` line and "Resume here" block say exactly what to do) →
 > spec `docs/superpowers/specs/2026-09-21-auth-error-ux-design.md` → plan
 > `docs/superpowers/plans/2026-09-21-auth-error-ux.md` → task packets in the
-> gitignored `.superpowers/sdd/2026-09-21-auth-error-ux/` (Task 4 packet ready).
+> gitignored `.superpowers/sdd/2026-09-21-auth-error-ux/` (all 7 packets).
 >
 > **How the loop runs (owner rulings 2026-09-21):** Claude dispatches ONE task per
 > `codex exec -s workspace-write` (prompt from a file on stdin, detached). Codex's
@@ -28,14 +43,9 @@
 > `enable_confirmations` stays false, one mascot pose per screen. Auth floor is
 > **1024 px** — below it `MobileAppHandoff` replaces the whole web app.
 >
-> **Remaining:** Task 4 OTP slice (+ deferred `OtpInput` `invalid` prop fix) ·
-> Task 5 password reset · Task 6 404 · Task 7 route-error boundaries · then Claude
-> whole-branch review, spec §8.2 measurement at 1280, §8.3 hand round trips via
-> Mailpit, owner review in their Chrome, merge `--no-ff`. Owner must paste
-> `supabase/templates/confirmation.html` into the production Supabase dashboard.
->
-> Environment left: Docker + local Supabase running; no server on `:3000`; the main
-> checkout's `.next` untouched. `desktop-density-scale` is merged and closed
+> Environment left 2026-09-22: Docker + local Supabase running with the repo default
+> config (`enable_confirmations = false`, restored after §8.3); the only server on `:3000`
+> is the owner's own `next dev` from the main checkout; main checkout's `.next` untouched. `desktop-density-scale` is merged and closed
 > (`02a0d57` + `1099c5a`, owner-verified); its record is its run state.
 >
 > ✅ **The "something pushes master" mystery is CLOSED, 2026-09-21: the owner
