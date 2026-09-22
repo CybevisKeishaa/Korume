@@ -193,13 +193,16 @@ never name a file and never set an offset.
 
 | Screen | Pose file (`public/mascot/poses/`) |
 | --- | --- |
-| login | `greeting.png` |
+| login | `bye.png` |
 | register | `excited.png` |
 | forgot-password | `thinking.png` |
-| verify-email | `noting.png` |
-| reset-password | `looking-ahead.png` |
+| verify-email | `quill-writing.png` |
+| reset-password | `proud.png` |
 | 404 | `curious-question-mark.png` |
 | route error | `worry.png` |
+
+Owner ruling 2026-09-22: the three extractor-cut poses (`greeting`, `noting`, `looking-ahead`) show
+background-removal artefacts, so every auth screen now uses a hand-cut `supplied` pose.
 
 `MascotPose` owns sizing and placement of the image. A test proves every mapped file exists **and**
 is recorded in `scripts/mascot/poses.json` (whose own test already pins manifest ↔ disk). The pose

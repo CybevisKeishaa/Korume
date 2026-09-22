@@ -26,11 +26,11 @@ describe("MASCOT_POSES", () => {
 
   it("pins the owner-approved pose for each screen (spec §5.4)", () => {
     expect(Object.fromEntries(entries.map(([n, p]) => [n, p.file]))).toEqual({
-      login: "greeting.png",
+      login: "bye.png",
       register: "excited.png",
       "forgot-password": "thinking.png",
-      "verify-email": "noting.png",
-      "reset-password": "looking-ahead.png",
+      "verify-email": "quill-writing.png",
+      "reset-password": "proud.png",
       "not-found": "curious-question-mark.png",
       "route-error": "worry.png",
     });

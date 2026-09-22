@@ -13,11 +13,11 @@ export type MascotPoseName =
   | "route-error";
 
 export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number; height: number }> = {
-  login: { file: "greeting.png", width: 200, height: 272 },
+  login: { file: "bye.png", width: 572, height: 436 },
   register: { file: "excited.png", width: 436, height: 364 },
   "forgot-password": { file: "thinking.png", width: 427, height: 406 },
-  "verify-email": { file: "noting.png", width: 340, height: 304 },
-  "reset-password": { file: "looking-ahead.png", width: 620, height: 1015 },
+  "verify-email": { file: "quill-writing.png", width: 495, height: 424 },
+  "reset-password": { file: "proud.png", width: 442, height: 406 },
   "not-found": { file: "curious-question-mark.png", width: 423, height: 370 },
   "route-error": { file: "worry.png", width: 370, height: 397 },
 };
