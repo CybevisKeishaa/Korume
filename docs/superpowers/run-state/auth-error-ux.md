@@ -46,6 +46,19 @@ each, one `codex exec` dispatch per task, Claude review between tasks.
   `auth-layout`, `auth-locale-round-trip`, both `route-group-provider-identity` pass.
   **Carry to Task 5:** the registry's `reset-password` entry (`333:210`, `route: null`) needs the
   same conversion, and every new page needs its e2e run by Claude before commit.
+- `57529e9` Task 5: password-reset schemas/actions/forms/pages, auth route and
+  registry conversion, login link, and unrun e2e coverage. TDD red: schema 2, actions 7, forms
+  missing-suite, reset page missing-suite, route 2, login 1, a11y 1, registry T1 1. Green:
+  focused 36 files / 305 tests; tsc 0; lint 0 errors; full 335 files / 3197 tests. Mutation:
+  adding `/reset-password` to `AUTH_ROUTES` made 2 route tests red; restored green. Playwright
+  was written but not run per the packet. Claude fix wave: registry comments moved back above
+  their own entries; the reset-link confirmation is a `role="status"` live region. Claude re-ran:
+  tsc 0, lint 0, full 335 files / 3197 tests exit 0; Playwright `--workers=1` 6/6 first run
+  (`auth-password-reset`, `auth-layout`, `auth-verify-email`, `auth-locale-round-trip`, both
+  `route-group-provider-identity`). Codex used ~232k tokens (Task 4: ~265k) after the prompt
+  stopped reading all of `docs/lessons.md`.
+  **Owner check at the end:** forgot-password card eyebrow and heading are both "Account
+  recovery" (story copy follows frame `333:210`); confirm or pick a heading.
 
 ## Contracts and decisions
 
@@ -79,25 +92,24 @@ desktop-density-scale merge gate; re-measure before relying on it).
   `npx supabase status` before any Playwright run.
 - Never build or serve from the main checkout; the owner's dev server uses its `.next`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
-- None. Task 5 packet written 2026-09-22 and dispatched to Codex.
+- None. Task 6 has no packet yet.
 
 ## Next actions
 
-**Resume here:** Task 4 accepted at `9c8c081`. Claude writes
-`.superpowers/sdd/2026-09-21-auth-error-ux/task-5-brief.md` (include the registry conversion and
-that Playwright has no `locator.paste`), then dispatches it. Dispatch: `codex exec -C <worktree> -s
-workspace-write -o <last.md> - < <prompt file>` detached; prompt = the Task 4 prompt with 4 -> 5 and
-the Task 5 spec sections. Wait on the `-o` file, or `grep -E "^ERROR: You.ve hit your usage limit"`
-in the log - a bare `usage limit` grep false-fires, because the log echoes this file.
+**Resume here:** Task 5 accepted at `57529e9`. Claude writes `task-6-brief.md` (404; check the
+registry `error404` entry `335:1976` needs converting), then dispatches it with the Task 5 prompt
+(4 -> 6, Task 6 spec sections, named lessons only - never the whole `docs/lessons.md`). Wait on the
+`-o` file, or `grep -E "^ERROR: You.ve hit your usage limit"` in the log.
 
-1. Claude: write the Task 5 packet, set `- Owner: Codex`, dispatch.
-2. Codex: Task 5. Implement and verify; leave uncommitted; set `- Owner: Claude` when ready.
-3. Claude: review, re-verify, commit Task 5; same loop for Tasks 6 and 7.
-4. After Task 7: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips,
-   owner review in their Chrome, merge `--no-ff`.
+1. Claude: write the Task 6 packet, set `- Owner: Codex`, dispatch.
+2. Codex: Task 6; leave uncommitted; set `- Owner: Claude` when ready.
+3. Claude: review, re-verify, commit Task 6; same loop for Task 7.
+4. After Task 7: Claude whole-branch review, spec §8.2 measurement, spec §8.3 hand round trips
+   (include the reset email through Mailpit: `additional_redirect_urls` lists the bare
+   `/auth/callback` while `redirectTo` carries `?next=`), owner review in their Chrome, merge `--no-ff`.
 5. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
    Supabase dashboard's *Confirm signup* template (spec §4.4).
