@@ -20,7 +20,7 @@ export async function AuthStory({
 }) {
   const t = await getTranslations("common");
   return (
-    <section className="flex h-full flex-col justify-center gap-lg px-3xl py-xl">
+    <section className="flex h-full flex-col justify-center gap-lg px-3xl py-xl short:gap-md short:py-md">
       <Link href="/" className="font-jp text-title font-bold text-foreground">
         {t("appNameJp")}
       </Link>
@@ -30,7 +30,7 @@ export async function AuthStory({
         <p className="text-body-lg text-muted-foreground">{body}</p>
       </div>
       <div className="space-y-md">
-        <MascotPose pose={pose} size="lg" />
+        <MascotPose pose={pose} size="lg" className="short:h-32" />
         <blockquote className="text-body text-muted-foreground">{quote}</blockquote>
         <p className="text-caption uppercase tracking-wide text-muted-foreground">{quoteAttribution}</p>
       </div>

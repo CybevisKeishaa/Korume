@@ -11,7 +11,7 @@ export function AuthSplitShell({
   return (
     <div className="grid min-h-dvh grid-cols-[3fr_2fr] bg-background">
       {story}
-      <main className="flex items-center justify-center px-xl py-xl">
+      <main className="flex items-center justify-center px-xl py-xl short:py-md">
         <div className="w-full max-w-md">{children}</div>
       </main>
     </div>

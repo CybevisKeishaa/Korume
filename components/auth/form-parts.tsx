@@ -13,7 +13,7 @@ export function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   const t = useTranslations("auth");
   return (
-    <Button type="submit" size="lg" className="w-full" disabled={pending}>
+    <Button type="submit" size="lg" className="w-full short:h-control-lg" disabled={pending}>
       {pending ? t("form.pending") : label}
     </Button>
   );
@@ -107,7 +107,7 @@ export function GoogleButton() {
   const t = useTranslations("auth");
   return (
     <form action={signInWithGoogle}>
-      <Button type="submit" variant="outline" size="lg" className="w-full">
+      <Button type="submit" variant="outline" size="lg" className="w-full short:h-control-lg">
         {t("form.continueWithGoogle")}
       </Button>
     </form>

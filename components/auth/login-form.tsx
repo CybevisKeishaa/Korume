@@ -22,8 +22,8 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
   return (
-    <div className="space-y-lg">
-      <form action={formAction} className="space-y-md" noValidate>
+    <div className="space-y-lg short:space-y-md">
+      <form action={formAction} className="space-y-md short:space-y-sm" noValidate>
         {redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
         <FormError message={state.error} />
         <div className="space-y-xs">

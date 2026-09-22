@@ -25,6 +25,8 @@ const config: Config = {
       full: "9999px",
     },
     extend: {
+      // Laptop viewports: a 1080p screen at 150% scaling leaves ~529px under Chrome's toolbars.
+      screens: { short: { raw: "(max-height: 720px)" } },
       colors: {
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
