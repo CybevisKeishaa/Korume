@@ -11,6 +11,8 @@
 
 1. **Figma is the frame.** Every control the frame shows must do something real; where the repo
    lacks the backend, this branch builds it. Only a contradiction with the repo goes to the owner.
+   A row whose destination does not exist yet is **omitted**, never rendered as fake navigation
+   (§1.7).
 2. **Chrome:** keep the live `(app)` shell with the sidebar. The frame's own top bar (`← Back ·
    Korume · Settings`, "Your learning space") is **not** ported.
 3. **Theme (Dark / System / Light) and Accent Color are deferred** to a later theming branch,
@@ -23,10 +25,12 @@
    must go through the same gate (§4.4).
 6. **One settings page.** `/settings/privacy` redirects to `/settings#privacy`;
    `/settings/privacy/memory` keeps its confirmation flow and is reached from **Erase Memory**.
-7. **About links:** Discord, Facebook and TikTok open the platforms' home pages
-   (`https://discord.com`, `https://www.facebook.com`, `https://www.tiktok.com`) in a new tab.
-   Privacy Policy, Terms of Service, Send Feedback and Contact Support link to Korume's `/` until
-   those pages exist.
+7. **External rows render only with a real Korume destination** (owner review, 2026-09-22,
+   superseding the first answer). Korume has no Discord, Facebook or TikTok account and no
+   Privacy Policy, Terms of Service, Send Feedback or Contact Support destination yet, so all
+   seven rows are **omitted** from this branch — the same ruling Auth + Error made for its legal
+   and help links. They return when a destination exists; a platform's generic home page or
+   Korume's `/` is not one.
 8. **Reminders are in-app only** (the notification bell). No email, no web push. That is the
    `study-reminders` branch, not this one.
 
@@ -43,8 +47,8 @@ shell's main area. The page scrolls — it is a long settings page by design.
 | Appearance | Theme · Accent Color · Display Scale · Reduced Motion | Display Scale, Reduced Motion. Theme + Accent deferred (§1.3). |
 | Privacy & Data | Microphone · Camera · AI Training · Export Data · Download Learning History | All five. |
 | Danger zone | Delete Korume Memory · Delete Account | Both, wired to the existing flows. |
-| About | Version · Discord · Facebook · TikTok · Privacy Policy · Terms of Service · Send Feedback | All (§1.7). |
-| Support card | "Need a hand?" · Talk with Korume · Contact Support | Talk with Korume → `/sensei`; Contact Support → `/` (§1.7). |
+| About | Version · Discord · Facebook · TikTok · Privacy Policy · Terms of Service · Send Feedback | Version only; the six others omitted (§1.7). |
+| Support card | "Need a hand?" · Talk with Korume · Contact Support | Talk with Korume → `/sensei`; Contact Support omitted (§1.7). |
 | Footer | "Korume · Version 1.0 · Built quietly in Vietnam…" | Port; the version comes from `package.json`. |
 
 ## 3. Storage — `user_preferences`
@@ -64,6 +68,13 @@ New table, one row per user, created lazily on first write (reads fall back to d
 | `camera_enabled` | boolean | `false` | Camera |
 | `updated_at` | timestamptz | `now()` | — |
 
+**Schedule invariant.** `every_day` canonicalises `schedule_days` to `{1,2,3,4,5,6,7}`;
+`weekdays` to `{1,2,3,4,5}`; `custom` requires a non-empty, unique, ascending subset of 1–7.
+The zod schema enforces it and derives the canonical days (a client never sends them for
+`every_day`/`weekdays`); the table carries CHECK constraints for the same rules (element range,
+non-empty, and the two canonical arrays for their modes). Uniqueness and order are enforced in
+zod and normalised before the write, since a CHECK on array uniqueness is not practical.
+
 RLS: a user selects, inserts and updates only their own row; no delete policy (the row goes with
 the account through the `users` cascade, which is how account deletion removes every user-owned
 table). The GDPR export (§4.6) includes this table. `daily_minutes` stays on `users` where it already lives; Interface Language stays the locale
@@ -74,6 +85,11 @@ zod schema in `lib/validation`, upserts, and returns the full row. Unknown keys 
 The same `PATCH` also accepts `daily_minutes` (one of 5, 10, 15, 20, 30, 45, 60) and writes it to
 `users`; `GET` returns it alongside the preferences. There is no separate profile endpoint.
 
+**One PATCH mutates one logical control.** A payload is either `{ daily_minutes }` or the fields
+of `user_preferences` belonging to one control (`learning_schedule` may carry `schedule_days`).
+A payload mixing `daily_minutes` with any preferences field is rejected with 400, so no request
+can half-succeed across the two tables.
+
 ## 4. Every row has a consumer
 
 ### 4.1 Interface Language
@@ -82,13 +98,17 @@ A select of the supported locales. Changing it navigates to the same path under 
 
 ### 4.2 Daily Learning Goal
 Writes `users.daily_minutes`. Consumer: the Shadowing hub rail's "Today's goal", which today always
-renders `noGoal`, shows the chosen goal. **Open question for the owner (§9):** the repo records no
-study time, so "minutes done today" cannot be shown yet.
+renders `noGoal`, shows the goal as **"Daily goal: 20 min"**. It renders **no** progress — no
+bar, no "0 of 20": the repo records no study time, and tracking it is out of scope (§10).
 
 ### 4.3 Learning Schedule
 Every Day / Weekdays / Custom; Custom reveals seven day chips. Consumer: `advanceStreak`
 (`lib/gamification/streak.ts`) — a gap made only of unscheduled days does not break the streak.
 Every read that decays a streak takes the same schedule. `study-reminders` is its second consumer.
+
+**Day boundary.** The streak system already fixes one: VN-local, `Asia/Ho_Chi_Minh` (UTC+7, no
+DST) for every user, via `vnDateString`. A day's ISO weekday is taken from that same VN date. This
+branch adds no timezone concept of its own.
 
 ### 4.4 Review Frequency, Difficulty, Microphone, Camera
 - **Review Frequency** multiplies the interval `reviewItem` (`lib/srs/sm2.ts`) returns on a passed
@@ -106,14 +126,22 @@ Every read that decays a streak takes the same schedule. `study-reminders` is it
   device) so a future camera feature has one place to ask.
 
 ### 4.5 Display Scale and Reduced Motion
-- **Display Scale** multiplies `--density-unit` by 1, 1.125 or 1.25. It is rendered server-side
-  as `data-display-scale` on the `(protected)` layout's wrapper so there is no flash. Because a
-  derived token resolves where it is declared, the scope re-declares the derived token layer the
-  way `[data-density]` already does (see `app/globals.css`), and `lib/design-tokens.test.ts`
-  asserts the lists stay equal. Only a browser measurement proves this works (§8).
-- **Reduced Motion** moves from `localStorage` to the account. The server renders
-  `data-reduce-motion` from preferences; the theme provider keeps writing the attribute live and
-  now also `PATCH`es. The `localStorage` key remains the logged-out fallback.
+- **Display Scale composes with density; it never replaces a density mode.** `normal`, `large`
+  and `extra_large` multiply whatever unit the current density resolves to by 1, 1.125 and 1.25:
+  the fluid `:root` unit in the `(app)` shell, and the fixed `0.0625rem` inside any
+  `[data-density="reference"]` subtree (inside `(protected)` that is the `(immersive)` layout).
+  Mechanism: a plain `--display-scale` number on `<html>` (so dialogs and other portals scale
+  too), set before paint by an inline script the `(protected)` layout emits from the server-read
+  preference, the same pattern the theme provider already uses. Both the `:root` unit and the
+  `[data-density]` reset multiply by `var(--display-scale, 1)`. Because a custom property's
+  `var()` resolves on the element that declares it, this is only believable after a browser
+  measurement of the computed values (§8), not from reading the CSS.
+- **Reduced Motion: Korume can only add reduction, never remove the OS's.**
+  `effectiveReduceMotion = accountPreference || prefers-reduced-motion: reduce`. Setting it Off in
+  Korume while the OS asks for reduced motion leaves motion reduced. `motionEnabled()`
+  (`lib/motion/motion-enabled.ts`) already ORs the two; the preference moves from `localStorage`
+  to the account and is rendered server-side as `data-reduce-motion="true"` only when on. The
+  `localStorage` key remains the logged-out fallback.
 
 ### 4.6 Export Data and Download Learning History
 - **Export Data** → `GET /api/user/export`: a JSON download of every row the user owns, read under
@@ -136,7 +164,9 @@ description, control slot). Controls: the existing `components/ui/select.tsx`, p
 primitives in `components/ui` — `Switch` (`role="switch"`, `aria-checked`) and `SegmentedControl`
 (a radio group, arrow keys move the selection) — tokens only, covered by the existing
 `token-scale-adoption` guard. Saving is per control, optimistic, with a
-toast and rollback on failure. Every control has an accessible name equal to its visible label.
+toast and rollback on failure. **A stale response never overwrites newer state:** each control
+keeps its own mutation sequence number, and a response (success or failure) is applied only if it
+belongs to that control's latest request. Two controls saving at once do not touch each other. Every control has an accessible name equal to its visible label.
 
 ## 6. Copy and assets
 
@@ -154,18 +184,23 @@ poses look broken).
   `scoreComprehension` bands, `advanceStreak` with schedules, device gate, export and CSV.
 - RLS: a second user cannot read or write another user's preferences row.
 - e2e: change each control, reload, value persists; `/settings/privacy` redirects.
-- Browser measurement at 1280 × 800 **and** 1280 × 529 (the owner's viewport): display scale
-  changes the rendered size of a `--space-*` padding by the ratio; no horizontal overflow.
+- Unit: PATCH rejects a mixed `daily_minutes` + preferences payload; schedule canonicalisation
+  and the `custom` rules; the stale-response rule in the settings client (an older response
+  arriving after a newer one changes nothing).
+- Unit: effective reduce-motion for each of the four account/OS combinations.
+- Browser measurement of **computed** values, Playwright: a `--space-*` padding at `normal`,
+  `large` and `extra_large` scales by the ratio (a) on a fluid `(app)` route, (b) inside the
+  `(immersive)` `data-density="reference"` subtree, (c) inside an open dialog; at 1280 × 800 and
+  at 1280 × 529 with `extra_large`, with no horizontal overflow anywhere.
 
-## 9. Open question for the owner
+## 9. Closed questions
 
-**Daily goal progress.** The repo does not record study time, so the rail can show the goal but
-not progress towards it. Measuring minutes studied is a new tracking feature (session timing
-across shadowing, dictation, reading, review). Proposed: out of this branch; ask whether it
-belongs to `study-reminders` or its own branch.
+**Daily goal progress** — closed by the owner, 2026-09-22: study-time tracking is out of this
+branch; the rail shows the goal only (§4.2).
 
 ## 10. Out of scope
 
 Reminder rows, reminder time and every reminder delivery (`study-reminders`); Theme and Accent
-Color (theming branch); real Privacy Policy, Terms, Feedback and Support pages; Register and the
+Color (theming branch); study-time tracking and any daily-goal progress; the seven About and
+Support rows without a destination (§1.7) and the pages behind them; Register and the
 forgot-password heading from `auth-error-ux` (owner deferred).
