@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loginSchema, registerSchema } from "./auth";
+import { emailOnlySchema, loginSchema, registerSchema, verifyEmailSchema } from "./auth";
 
 /**
  * This schema is deliberately locale-free (see the comment in ./auth.ts): its
@@ -117,5 +117,32 @@ describe("registerSchema", () => {
     expect(!r.success && r.error.flatten().fieldErrors.email).toEqual([
       "validation.emailInvalid",
     ]);
+  });
+});
+
+describe("verifyEmailSchema", () => {
+  const email = "a@b.com";
+
+  it.each(["12345", "1234567", "12345a"])(
+    "rejects %s with the codeInvalid key",
+    (token) => {
+      const result = verifyEmailSchema.safeParse({ email, token });
+
+      expect(!result.success && result.error.flatten().fieldErrors.token).toEqual([
+        "validation.codeInvalid",
+      ]);
+    },
+  );
+
+  it("accepts six ASCII digits including a leading zero", () => {
+    expect(verifyEmailSchema.safeParse({ email, token: "012345" }).success).toBe(true);
+  });
+});
+
+describe("emailOnlySchema", () => {
+  it("trims and accepts a valid email", () => {
+    const result = emailOnlySchema.safeParse({ email: "  a@b.com  " });
+
+    expect(result.success && result.data.email).toBe("a@b.com");
   });
 });

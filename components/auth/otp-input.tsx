@@ -10,10 +10,12 @@ export function OtpInput({
   name,
   onComplete,
   errorId,
+  invalid,
 }: {
   name: string;
   onComplete?: () => void;
   errorId?: string;
+  invalid?: boolean;
 }) {
   const t = useTranslations("auth");
   const [digits, setDigits] = useState<string[]>(() => Array(LENGTH).fill(""));
@@ -71,7 +73,7 @@ export function OtpInput({
           inputMode="numeric"
           autoComplete={index === 0 ? "one-time-code" : "off"}
           aria-label={t("otp.digitLabel", { index: index + 1, total: LENGTH })}
-          aria-invalid={Boolean(errorId)}
+          aria-invalid={invalid}
           onChange={(event) => {
             const inserted = (event.nativeEvent as InputEvent).data;
 

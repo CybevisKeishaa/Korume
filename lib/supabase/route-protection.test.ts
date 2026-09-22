@@ -48,7 +48,7 @@ describe("route protection", () => {
       "/video-curator",
       "/admin",
     ]);
-    expect(AUTH_ROUTES).toEqual(["/login", "/register"]);
+    expect(AUTH_ROUTES).toEqual(["/login", "/register", "/verify-email"]);
   });
 
   it("protects a mis-cased locale prefix (defence in depth, not reliance on next-intl's redirect)", () => {
@@ -86,6 +86,10 @@ describe("route protection", () => {
         expect(isAuthRoute(stripLocale(`/${locale}${route}`).pathname)).toBe(true);
       }
     }
+  });
+
+  it("recognises verify-email as an auth route", () => {
+    expect(isAuthRoute("/verify-email")).toBe(true);
   });
 
   it("leaves public routes unprotected", () => {

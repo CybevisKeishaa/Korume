@@ -18,7 +18,7 @@ export async function generateMetadata({
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { redirectTo?: string; checkEmail?: string };
+  searchParams: { redirectTo?: string };
 }) {
   const t = await getTranslations("auth");
   return (
@@ -39,11 +39,6 @@ export default async function LoginPage({
         heading={t("login.heading")}
         subtitle={t("login.subtitle")}
       >
-        {searchParams.checkEmail ? (
-          <p className="mb-md rounded-md bg-accent/10 px-sm py-xs text-body text-foreground">
-            {t("login.checkEmail")}
-          </p>
-        ) : null}
         <LoginForm redirectTo={searchParams.redirectTo} />
       </AuthCard>
     </AuthSplitShell>

@@ -5,13 +5,22 @@ import { redirect } from "@/lib/i18n/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { safeRedirectPath } from "@/lib/safe-redirect";
-import { loginSchema, registerSchema } from "@/lib/validation/auth";
+import {
+  emailOnlySchema,
+  loginSchema,
+  registerSchema,
+  verifyEmailSchema,
+} from "@/lib/validation/auth";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { stripLocale } from "@/lib/i18n/locale-path";
 
 export interface AuthState {
   error?: string;
   fieldErrors?: Record<string, string[] | undefined>;
+}
+
+export interface ResendState {
+  status?: "sent" | "rateLimited";
 }
 
 type AuthTranslator = Awaited<ReturnType<typeof getTranslations<"auth">>>;
@@ -42,6 +51,8 @@ function translateValidationKey(key: string, t: AuthTranslator): string {
       return t("validation.passwordTooLong");
     case "validation.passwordMismatch":
       return t("validation.passwordMismatch");
+    case "validation.codeInvalid":
+      return t("validation.codeInvalid");
     default:
       return key;
   }
@@ -77,6 +88,13 @@ export async function login(
 
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  if (error?.code === "email_not_confirmed") {
+    const locale = await getLocale();
+    redirect({
+      href: `/verify-email?email=${encodeURIComponent(parsed.data.email)}&resend=1`,
+      locale,
+    });
+  }
   if (error) {
     // Don't reveal which of email/password was wrong. Translated at the
     // point of return — the client receives display text, never a catalog
@@ -140,9 +158,57 @@ export async function register(
   // If email confirmation is required, there is no session yet — send them to
   // sign in; otherwise they're already authenticated.
   redirect({
-    href: data.session ? "/dashboard" : "/login?checkEmail=1",
+    href: data.session
+      ? "/dashboard"
+      : `/verify-email?email=${encodeURIComponent(parsed.data.email)}`,
     locale,
   });
+}
+
+export async function verifyEmail(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const parsed = verifyEmailSchema.safeParse({
+    email: formData.get("email"),
+    token: formData.get("token"),
+  });
+  if (!parsed.success) {
+    const t = await getTranslations("auth");
+    return {
+      fieldErrors: translateFieldErrors(parsed.error.flatten().fieldErrors, t),
+    };
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email: parsed.data.email,
+    token: parsed.data.token,
+    type: "email",
+  });
+  if (error) {
+    const t = await getTranslations("auth");
+    return { error: t("errors.codeInvalid") };
+  }
+
+  revalidatePath("/", "layout");
+  const locale = await getLocale();
+  redirect({ href: "/dashboard", locale });
+}
+
+export async function resendCode(
+  _prev: ResendState,
+  formData: FormData,
+): Promise<ResendState> {
+  const parsed = emailOnlySchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) return { status: "sent" };
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: parsed.data.email,
+  });
+  return { status: error?.code === "over_email_send_rate_limit" ? "rateLimited" : "sent" };
 }
 
 export async function signInWithGoogle(): Promise<void> {

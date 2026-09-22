@@ -1649,7 +1649,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
-  // Auth flow — Email OTP (6-digit code entry, resend link). No code exists.
+  // Auth flow — Email OTP (6-digit code entry, resend link). Built as
+  // /verify-email by auth-error-ux Task 4.
   {
     screenId: "email-otp",
     name: "Email OTP",
@@ -1658,9 +1659,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "335:306",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
-    route: null,
-    chrome: null,
-    impl: "none",
+    route: "/verify-email",
+    chrome: "auth",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,

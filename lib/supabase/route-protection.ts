@@ -52,7 +52,7 @@ export const PROTECTED_PREFIXES = [
   "/admin",
 ] as const;
 
-export const AUTH_ROUTES = ["/login", "/register"] as const;
+export const AUTH_ROUTES = ["/login", "/register", "/verify-email"] as const;
 
 /**
  * @param pathname MUST already be locale-stripped (see `stripLocale`).

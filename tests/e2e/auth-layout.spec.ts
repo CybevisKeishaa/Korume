@@ -1,9 +1,19 @@
 import { test, expect } from "@playwright/test";
 
-export const AUTH_ROUTES_UNDER_TEST = ["/en/login", "/en/register"];
+export const AUTH_ROUTES_UNDER_TEST = [
+  "/en/login",
+  "/en/register",
+  "/en/verify-email?email=e2e%40example.com",
+];
+
+const SUBMIT_LABEL: Record<string, string> = {
+  "/en/login": "Sign in",
+  "/en/register": "Create account",
+  "/en/verify-email": "Verify email",
+};
 
 test("auth routes keep the card usable without extra providers", async ({ page }) => {
-  expect(AUTH_ROUTES_UNDER_TEST).toHaveLength(2);
+  expect(AUTH_ROUTES_UNDER_TEST).toHaveLength(3);
   for (const route of AUTH_ROUTES_UNDER_TEST) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto(route);
@@ -24,8 +34,6 @@ test("auth routes keep the card usable without extra providers", async ({ page }
     const [storyBox, cardColumnBox] = await Promise.all([story.boundingBox(), cardColumn.boundingBox()]);
     if (!storyBox || !cardColumnBox) throw new Error("Expected both auth columns to have bounds");
     expect(storyBox.x + storyBox.width).toBeLessThanOrEqual(cardColumnBox.x);
-    await page
-      .getByRole("button", { name: route.endsWith("login") ? "Sign in" : "Create account" })
-      .scrollIntoViewIfNeeded();
+    await page.getByRole("button", { name: SUBMIT_LABEL[new URL(route, "http://x").pathname] }).scrollIntoViewIfNeeded();
   }
 });

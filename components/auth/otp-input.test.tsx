@@ -29,6 +29,19 @@ describe("OtpInput (spec 5.2)", () => {
     boxes().forEach((box) => expect(box).toHaveAttribute("inputmode", "numeric"));
   });
 
+  it("keeps boxes valid when they only describe an error", () => {
+    render(<OtpInput name="token" errorId="token-error" />);
+
+    boxes().forEach((input) => expect(input).not.toHaveAttribute("aria-invalid", "true"));
+  });
+
+  it("marks every box invalid when invalid is true", () => {
+    const invalidProps = { invalid: true };
+    render(<OtpInput name="token" errorId="token-error" {...invalidProps} />);
+
+    boxes().forEach((input) => expect(input).toHaveAttribute("aria-invalid", "true"));
+  });
+
   it("discards non-digits and advances on a digit", async () => {
     const user = userEvent.setup();
     render(<OtpInput name="token" />);

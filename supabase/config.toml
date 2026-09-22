@@ -27,6 +27,10 @@ enable_signup = true
 enable_signup = true
 enable_confirmations = false
 
+[auth.email.template.confirmation]
+subject = "Your Korume verification code"
+content_path = "./supabase/templates/confirmation.html"
+
 [auth.external.google]
 enabled = false
 client_id = ""

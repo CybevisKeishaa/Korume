@@ -34,5 +34,14 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
+export const verifyEmailSchema = z.object({
+  email: z.string().trim().email("validation.emailInvalid"),
+  token: z.string().regex(/^\d{6}$/, "validation.codeInvalid"),
+});
+
+export const emailOnlySchema = z.object({
+  email: z.string().trim().email("validation.emailInvalid"),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
