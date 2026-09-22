@@ -1716,7 +1716,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
   // Real in-app route-error screen, rendered inside actual app chrome
-  // (sidebar + topbar visible in the frame). Its error.tsx has no route of its own.
+  // (sidebar + topbar visible in the frame). Built as the (app) error.tsx
+  // boundaries by auth-error-ux Task 7; a boundary has no route of its own.
   {
     screenId: "error-boundary",
     name: "Error boundary",
@@ -1726,8 +1727,8 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-23",
     route: null,
-    chrome: null,
-    impl: "none",
+    chrome: "app",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,

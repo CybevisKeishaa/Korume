@@ -114,7 +114,7 @@ desktop-density-scale merge gate; re-measure before relying on it).
   `npx supabase status` before any Playwright run.
 - Never build or serve from the main checkout; the owner's dev server uses its `.next`.
 
-- Owner: Claude
+- Owner: none (branch closed, merged to master 2026-09-22)
 
 ## Blockers
 
@@ -145,7 +145,9 @@ restarted, then reverted and restarted again): register -> `/en/verify-email?ema
 `/en/dashboard`, fresh-browser sign-in with it -> `/en/dashboard`. The same link opened in another
 browser -> `/en/reset-password` expired alert (the `933f61d` fix, live).
 
-1. Owner: review in their Chrome; decide the forgot-password heading (Task 5 note). Then Claude
-   merges `--no-ff`.
+1. DONE 2026-09-22: owner reviewed in Chrome and accepted. Review-driven fixes: `bcd2565`
+   (auth poses swapped to hand-cut supplied PNGs), `cd9d0a4` (login fits 1280x529), `2b8ebe5`
+   (story + card as one centred pair). Forgot-password heading and Register fitting a short
+   viewport are deferred by the owner to a later pass. Merged `--no-ff` to master.
 2. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
    Supabase dashboard's *Confirm signup* template (spec §4.4).
