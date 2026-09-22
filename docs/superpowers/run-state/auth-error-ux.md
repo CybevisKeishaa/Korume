@@ -130,8 +130,22 @@ complete OTP left focus in the box (red 1 -> green). Re-ran: full 340 files / 32
 tsc 0, lint 0, Playwright `--workers=1` `auth-password-reset`, `auth-verify-email`,
 `auth-layout` 3/3.
 
-1. Claude: spec §8.2 measurement, spec §8.3 hand round trips (include the
-   reset email through Mailpit: `additional_redirect_urls` lists the bare `/auth/callback` while
-   `redirectTo` carries `?next=`), owner review in their Chrome, merge `--no-ff`.
+**Spec §8.2 measured 2026-09-22** (Playwright, 1280x800, `next start` built in the worktree):
+login, register, forgot-password, verify-email, reset-password and `/vi/login` split exactly
+768/512, no horizontal overflow. Route error vs dashboard in the same session: nav 199.11 / main
+1056.89 on both, no `data-density` on or inside `main`. The branch touches no layout, nav,
+`globals.css` or `tailwind.config.ts`, so dashboard widths here are master's. Screenshot checked.
+(Measure the visible `main`: `MobileAppHandoff` renders a hidden `main` first in the DOM.)
+
+**Spec §8.3 round trips 2026-09-22** (`enable_confirmations = true` uncommitted, Supabase
+restarted, then reverted and restarted again): register -> `/en/verify-email?email=`, Mailpit
+"Your Korume verification code", 6 digits typed -> `/en/dashboard` signed in (confirms
+`verifyOtp` `type: "email"` on the real server). Reset: Mailpit link -> `/en/reset-password`
+(the `?next=` redirect is accepted despite the bare `additional_redirect_urls`), new password ->
+`/en/dashboard`, fresh-browser sign-in with it -> `/en/dashboard`. The same link opened in another
+browser -> `/en/reset-password` expired alert (the `933f61d` fix, live).
+
+1. Owner: review in their Chrome; decide the forgot-password heading (Task 5 note). Then Claude
+   merges `--no-ff`.
 2. Owner, by hand, before production: paste `supabase/templates/confirmation.html` into the
    Supabase dashboard's *Confirm signup* template (spec §4.4).
