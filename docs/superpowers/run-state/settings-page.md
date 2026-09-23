@@ -17,19 +17,19 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
 
 ## Accepted commits
 
-- `87ebac7` spec · `8786544` spec review contracts · `0632308` keep /settings/privacy, Erase Memory
-  in scope · `45a89f0` plan + this run state · `9edebbb` Task 1 dispatch record
-- **Task 1 — `c7526b8` `feat(settings): user preferences storage and API`** (Codex implemented,
-  Claude reviewed and committed) · `a7cf5bb` run state + protocol gate · `ababe68` Task 2 dispatch.
-- **Task 2 — `5779b88` `feat(settings): SRS, difficulty and streak read the user's preferences`**
-  (Codex implemented most of it, hit its usage limit before the handoff; Claude finished, reviewed
-  and committed) · `1fffa1a` run state.
-- **Task 3 — `49d7043` `feat(ui): Switch and SegmentedControl primitives`** (Claude, start to
-  finish — Codex was still rate-limited) · `c7a9f57` run state.
-- **Task 4 — `b15b6d7` `feat(settings): display scale and account reduced motion`** (Claude) ·
-  `7e29332` run state.
-- **Task 5 — `12ac6ce` `feat(settings): Korume's own microphone and camera switches`** (Claude).
-- **Task 6 — `4a5deb5` `feat(settings): export data and learning history`** (Claude).
+Scaffolding: `87ebac7` spec · `8786544` spec review contracts · `0632308` keep /settings/privacy,
+Erase Memory in scope · `45a89f0` plan + this run state · `9edebbb`/`ababe68` Task 1–2 dispatches ·
+`a7cf5bb`, `1fffa1a`, `c7a9f57`, `7e29332` run states.
+
+| Task | Commit | Title | By |
+| --- | --- | --- | --- |
+| 1 | `c7526b8` | `feat(settings): user preferences storage and API` | Codex, Claude committed |
+| 2 | `5779b88` | `feat(settings): SRS, difficulty and streak read the user's preferences` | Codex part, Claude finished |
+| 3 | `49d7043` | `feat(ui): Switch and SegmentedControl primitives` | Claude |
+| 4 | `b15b6d7` | `feat(settings): display scale and account reduced motion` | Claude |
+| 5 | `12ac6ce` | `feat(settings): Korume's own microphone and camera switches` | Claude |
+| 6 | `4a5deb5` | `feat(settings): export data and learning history` | Claude |
+| 7 | `3a5dd2e` | `feat(settings): erase Korume memory` | Claude |
 
 ## Contracts and decisions
 
@@ -56,10 +56,10 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   compile error instead. **Tasks 4 and 8 add preferences — expect TS2741 if a column is forgotten,
   and treat it as the guard working.**
 - **A Tailwind utility is not real until the compiled CSS says so.** `--icon-md` is in the `size`
-  scale and not in `height`, so `size-icon-sm` works and `h-icon-md` emits nothing. Check a class
-  with `npx tailwindcss -i app/globals.css -o <file> --content <sources>` and grep the output — with
-  a control, because CSS escapes `(`, `)` and `*` in selectors and a naive grep reports a rule that
-  is there as missing. That mis-grep happened here and briefly produced a wrong diagnosis.
+  scale and not in `height`, so `size-icon-sm` works and `h-icon-md` emits nothing. Check with
+  `npx tailwindcss -i app/globals.css -o <file> --content <sources>` and grep — with a control,
+  because CSS escapes `(`, `)` and `*` in selectors and a naive grep calls a rule that IS there
+  missing. That mis-grep happened here and briefly produced a wrong diagnosis.
 - Do **not** add an icon token to the `height` scale or a new rung to `--control-*`:
   `lib/design-tokens.test.ts` encodes the split (controls → `height`, icons → `size`), and
   `desktop-density-pass` deleted a rung rather than add one. Read the token through
@@ -90,15 +90,40 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   computes the one-hop set from the DIRECT set minus the exclusions, never from the list it guards
   (`L-006`). A new table with a `users` foreign key fails the guard until it is exported or
   excluded with a written reason.
-- `test/render.tsx`'s `renderHook` takes a `wrapper`, nested inside the intl provider. Use it —
-  hand-rolling one means importing `next-intl`, which spec P1 forbids outside `lib/i18n/`.
+- `test/render.tsx`'s `renderHook` takes a `wrapper`, nested inside the intl provider; its `render`
+  takes a `locale` (see below). Use both — hand-rolling either means importing `next-intl`, which
+  spec P1 forbids outside `lib/i18n/`.
 - `token-scale.test.ts` pins `components/ui` at a hardcoded `sources:` count — **18** as of Task 3.
   Any task that adds a primitive must bump it, and will see it go red first.
 - No Radix switch or radio-group package is installed, and neither was added. `Switch` is a native
   `<button role="switch">`; `SegmentedControl` hand-rolls the radiogroup roving-tabindex pattern.
 - `erase_companion_memory()` stays `security invoker`: `companion_memories_delete_own` and
-  `conversation_sessions_own` are what scope it, and `conversation_messages` goes with the session
-  through its `on delete cascade`.
+  `conversation_sessions_own` scope it, and `conversation_messages` goes with the session through
+  its `on delete cascade`. The data layer sends NO user id, so it cannot widen the blast radius,
+  and throws on an rpc error — "could not erase" and "erased" are not interchangeable.
+- ⚠️ **`token-scale-adoption.test.ts` scans `components/ui` ONLY** — its green says nothing about
+  `components/settings` or `app/`, where Tasks 8 and 9 write most of their markup. Check any
+  utility with no repo precedent against compiled CSS yourself. Two traps there: a `--content` glob
+  containing an app route path matches NOTHING (`[locale]` is a glob character class,
+  `(protected)` a group), so copy the files to a plain directory; and always grep a class you KNOW
+  exists as a positive control. Task 7's first run reported every class missing, `list-disc`
+  included — the control is what separates "four missing utilities" from "an empty scan"
+  (`mem:korume-false-green-before-believing`).
+- **`render`'s `locale` option** (Task 7; `test/messages.ts` gained `loadViMessages()`). Default
+  stays `en`, text assertions stay English (spec D6). Use it only where behaviour is
+  locale-dependent and an `en` render cannot see it — `MemoryEraseForm` has the user type a
+  TRANSLATED word and posts an UNTRANSLATED literal, identical under `en`, so `{ confirm: typed }`
+  passed every EN test byte-for-byte.
+- **`messages/settings.pin.test.ts`'s forbidden-phrase scans cover the WHOLE catalog**, including
+  `memoryErase` — the one block that genuinely IS immediate with no undo. Deliberate: the bans
+  exist because those phrases were FALSE about the 7-day lifecycle, and `memoryErase.finality`
+  states the same finality in words true about itself. If Task 8 or 9 trips a ban, reword as
+  `finality` does; do NOT carve a subtree out, which would drop the guard the day someone nests
+  deletion strings under it. Four new pins run the opposite way, catching memory-erase copy that
+  goes quiet about a finality that is real.
+- Erase Memory does NOT reuse `DeleteDataDialog` — it lands on confirm with no cancellation window
+  while both deletion tiers are cancelable for 7 days, so a shared dialog means copy true for one
+  and false for the other. It is also unaffected by `pendingRequest`, deliberately.
 
 ## Verification
 
@@ -114,13 +139,26 @@ figures, full suite via `npm test -- --reporter=dot`:
 | 4 | 353 / 3294 | Playwright `display-scale` 2/2; 5 mutation checks red |
 | 5 | 354 / 3306 | 2 mutation checks red |
 | 6 | 359 / 3336 | 9 mutation checks red |
+| 7 | 363 / 3362 | `verify:db:settings` exit 0, 5 `PASS`; `npm run build` exit 0; 12 mutation checks red; compiled-CSS check |
 
 `master` at `e44a4ea` was 340 / 3209. `npx tsc --noEmit` 0 and `npm run lint` 0 errors at every
 task. Every mutated source was restored byte-for-byte and re-verified with SHA-256.
 
-⚠️ **Not yet run on this branch:** `npm run verify:db:lesson-jobs`, the C4 Playwright spec, and
-`next build` since Task 4 (the worktree's `.next` was deleted after the display-scale measurement).
-Task 9 adds `tests/e2e/settings.spec.ts`; run the whole e2e suite before proposing a merge.
+Task 7's +4 files / +25 tests is arithmetic: four new test files (6+4+8+5) plus four pins in
+`settings.pin.test.ts` minus one `it.each` row from `upcoming-routes.test.tsx`.
+
+⚠️ **One mutation came back GREEN, and is why Task 7 took an extra pass.** `{ confirm: typed }` in
+place of the wire literal passed every test written for it, because `test/render.tsx` pinned every
+component test to `en`, where the typed word and the literal are the same string — sampled exactly
+where the two implementations agree (`mem:guard-sampled-when-idle`). Tasks 8 and 9 add many
+controls with translated values: ask of each guard *is there a locale, state or input where a
+wrong implementation still passes?*
+
+⚠️ **Not yet run:** `verify:db:lesson-jobs` and the C4 Playwright spec. `next build` ran green at
+Task 7, so this worktree's `.next` is populated — stop any `:3001` server here before an e2e run.
+Task 9 adds `tests/e2e/settings.spec.ts`; run the whole e2e suite before proposing a merge. (That
+build logs `Dynamic server usage` for Task 6's two export routes: both are `ƒ` dynamic and it
+exits 0 — console noise from their own `opaque500` logger, not a failure.)
 
 ## Working tree and environment
 
@@ -138,28 +176,24 @@ Task 9 adds `tests/e2e/settings.spec.ts`; run the whole e2e suite before proposi
 
 ## Blockers
 
-- None. Task 4 has a design collision to resolve first, recorded under Next actions.
+- None. (Task 4's design collision was resolved in that task; this line is no longer live.)
 
 ## Next actions
 
-**Resume here: Task 7 — Erase Korume Memory.** The SQL half already shipped in Task 1:
-`erase_companion_memory()` is `security invoker`, granted to `authenticated`, and the live gate
-proves it removes only the caller's rows and leaves `user_stats` untouched. Task 7 is the API
-(`lib/data/memory-erase.ts`, `app/api/user/memory-erase/route.ts`), the confirmation page
-(`app/[locale]/(protected)/(app)/settings/privacy/memory/page.tsx`,
-`components/settings/memory-erase-form.tsx`) and the registry entry. Then Task 8 (save hook + the
-three control sections) and Task 9 (page assembly, danger zone, daily goal, registry, e2e).
+**Resume here: Task 8 — the save hook and the three control sections.** Then Task 9 (page
+assembly, danger zone, daily goal, registry, e2e). Task 7 shipped whole; nothing still calls
+`/settings/privacy/memory` a placeholder. Task 8 inherits three Contracts above: `render`'s
+`locale` option, the `token-scale-adoption` scope limit, and the compiled-CSS `--content` trap.
 
-**Plan defects found so far — expect more, and measure before trusting a plan snippet.** Task 1's
+**Plan defects found so far — expect more, measure before trusting a snippet.** Task 1's
 `Record<string, string>` did not compile; Task 3's `h-icon-md` generates no CSS and its
-`sources: 16` count was stale; Task 6's history section named four SRS tables where there are
-three and a column that does not exist. The plan is a strong guide, not an authority over the
-repo.
+`sources: 16` was stale; Task 6 named four SRS tables where there are three, and a column that
+does not exist. Task 7's `upcoming-routes` length of 11 held — the first plan number in a while.
 
-**Codex has not been used since Task 2**, when it hit its ChatGPT usage limit (~15:50 on
-2026-09-23, resetting 20:01). Tasks 3–6 are Claude's own work, at the owner's instruction. When
-dispatching again: a run that dies partway writes `ERROR: You've hit your usage limit` to its log
-and no `-o` file — grep `^ERROR: You.ve hit your usage limit` before diagnosing anything else.
+**Codex unused since Task 2** (ChatGPT usage limit ~15:50 2026-09-23, reset 20:01); Tasks 3–7 are
+Claude's, at the owner's instruction. A dispatch that dies partway writes
+`ERROR: You've hit your usage limit` and no `-o` file — grep `^ERROR: You.ve hit your usage limit`
+before diagnosing anything else.
 
 Per task: the task's own tests red → green, `npx tsc --noEmit` 0, `npm run lint` 0 errors, full
 `npm test -- --reporter=dot > <file>` exit 0 (read the file), and the task's named live gate or
