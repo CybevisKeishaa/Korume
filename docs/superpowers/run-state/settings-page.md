@@ -25,7 +25,8 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   (Codex implemented most of it, hit its usage limit before the handoff; Claude finished, reviewed
   and committed) · `1fffa1a` run state.
 - **Task 3 — `49d7043` `feat(ui): Switch and SegmentedControl primitives`** (Claude, start to
-  finish — Codex was still rate-limited).
+  finish — Codex was still rate-limited) · `c7a9f57` run state.
+- **Task 4 — `b15b6d7` `feat(settings): display scale and account reduced motion`** (Claude).
 
 ## Contracts and decisions
 
@@ -60,6 +61,22 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   `lib/design-tokens.test.ts` encodes the split (controls → `height`, icons → `size`), and
   `desktop-density-pass` deleted a rung rather than add one. Read the token through
   `h-[--icon-md]` / `w-[calc(2_*_var(--icon-md))]` instead; both compile.
+- **Reduced motion has ONE runtime home: `theme-provider.tsx`** (owner ruling, 2026-09-23).
+  `appearanceScript` only *seeds* `data-reduce-motion` before paint, the way `themeInitScript`
+  already does, adding the one thing that script cannot know — the account preference.
+  `PreferencesProvider` applies nothing itself; it calls `setReduceMotion`.
+  `reduce-motion-toggle.tsx` was not touched and must stay that way.
+  `effectiveReduceMotion = account || OS` in all three places.
+- Display Scale needs the factor in **both** unit declarations, `:root` and the
+  `[data-density="reference"]` reset. Only a browser measurement proves the second one works;
+  `tests/e2e/display-scale.spec.ts` is that proof and the CSS comment points at it.
+- ⚠️ **`MobileAppHandoff` renders its own `<main data-density="reference">` into every protected
+  page.** Any browser measurement must use `:visible` and assert a count of exactly 1, or it
+  measures the replacement app instead of the shell under test.
+- ⚠️ **`playwright.config.ts` gives `npm run build && npm run start` a 120s `webServer.timeout`,
+  which the build exceeds.** Build first, start the server from the worktree by absolute path, and
+  let `reuseExistingServer` pick it up — and check `:3000` is free first, because the owner's dev
+  server lives there and `reuseExistingServer` would silently test the main checkout (`L-017`).
 - `token-scale.test.ts` pins `components/ui` at a hardcoded `sources:` count — **18** as of Task 3.
   Any task that adds a primitive must bump it, and will see it go red first.
 - No Radix switch or radio-group package is installed, and neither was added. `Switch` is a native
@@ -117,6 +134,24 @@ Task 3, Claude:
   `onCheckedChange(checked)` instead of `!checked`; no `disabled` attribute; `tabIndex={0}` on
   every option; `move()` without `focus()`; `from + step` without the wrap.
 
+Task 4, Claude:
+
+- Failure first: `appearance-script.test.ts` and `preferences-provider.test.tsx` both failed to
+  resolve their module; `design-tokens.test.ts` went red on all three density pins before they
+  were updated to pin the new declarations.
+- `npx vitest run components/providers lib/preferences` — exit 0, 22 tests.
+- `npx tsc --noEmit` exit 0 · `npm run lint` exit 0, 0 errors.
+- `npm test -- --reporter=dot` — exit 0, **353 files / 3294 tests** (Task 3: 350 / 3275).
+- `npx playwright test tests/e2e/display-scale.spec.ts --workers=1` — **2 passed**, against a
+  server built and started from this worktree with `:3000` verified free beforehand.
+- Mutation checks, all red, every source restored byte-for-byte and verified by SHA-256:
+  dropping the factor from the reference reset (red in the token pin, and — rebuilt and re-run in
+  the browser — red in the e2e with `reference at large: expected 1.125, received 1`); the script
+  ignoring the OS query; the provider trusting the account value; the provider not writing
+  `--display-scale`; `motionEnabled` reading only the attribute.
+- Afterwards: the worktree's `.next` deleted, the server stopped, the main checkout's `.next`
+  never touched.
+
 ## Working tree and environment
 
 - Worktree: `.worktrees/settings-page`, branch `settings-page` off `master` `e44a4ea`.
@@ -137,20 +172,13 @@ Task 3, Claude:
 
 ## Next actions
 
-**Resume here: Task 4 — session-wide appearance (display scale and reduced motion).**
+**Resume here: Task 5 — the microphone and camera gate** (`lib/media/device-gate.ts`,
+`components/video-player/recorder.tsx`). Then 6, 7, 8, 9 in order; Task 9 wires the registry and
+the settings e2e.
 
-⚠️ **Task 4 collides with code the plan does not mention.** `components/ui/reduce-motion-toggle.tsx`
-already exists and drives reduce-motion through `components/providers/theme-provider.tsx`
-(`useTheme().reduceMotion`), rendered in the `(focus)` nav rail and the admin style guide. The plan
-introduces a `PreferencesProvider` and a pre-paint `<html>` script for the same fact. Decide
-**one home** before writing code — most likely the existing theme provider reads the preference and
-the toggle stays as the compact control — and do not ship a second source of truth (`L-026`).
-
-Then Tasks 5–9 in order. Task 9 wires the registry and the e2e spec.
-
-**Codex was rate-limited from ~15:50 on 2026-09-23, resetting 20:01.** Tasks 3 onward have been
-Claude's own work. When Codex is available again, a dispatch dies partway with
-`ERROR: You've hit your usage limit` in its log and writes no `-o` file — check the log for
+Tasks 3 and 4 were Claude's own work because **Codex was rate-limited from ~15:50 on 2026-09-23,
+resetting 20:01.** When it is available again a dispatch that dies partway writes
+`ERROR: You've hit your usage limit` to its log and no `-o` file — grep
 `^ERROR: You.ve hit your usage limit` before diagnosing anything else.
 
 Per task: the task's own tests red → green, `npx tsc --noEmit` 0, `npm run lint` 0 errors, full
