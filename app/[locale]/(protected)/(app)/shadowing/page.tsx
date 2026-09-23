@@ -3,6 +3,7 @@ import type { Locale } from "@/lib/i18n";
 import { getPathname, redirect } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { getShadowingHub } from "@/lib/data/shadowing-hub";
+import { getMyPreferences } from "@/lib/data/preferences";
 import { TwoColumnShell } from "@/components/layout/two-column-shell";
 import { HubShelves } from "@/components/shadowing/hub-shelves";
 import { HubImportSection } from "@/components/shadowing/hub-import-section";
@@ -30,12 +31,13 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
     filter: typeof searchParams?.filter === "string" ? searchParams.filter : undefined,
   });
   const hubQuery = query.success ? query.data : {};
-  const [t, tCommon, tHub, result, locale] = await Promise.all([
+  const [t, tCommon, tHub, result, locale, preferences] = await Promise.all([
     getTranslations("videos"),
     getTranslations("common"),
     getTranslations("shadowing"),
     getShadowingHub({ query: hubQuery.q, filter: hubQuery.filter }),
     getLocale(),
+    getMyPreferences(),
   ]);
   if (!result.ok) redirect({ href: "/login", locale });
 
@@ -43,11 +45,12 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
   return (
     <TwoColumnShell
       railLabel={tHub("hub.railLabel")}
-      rail={<HubCompanionRail rail={hub.rail} labels={{
+      rail={<HubCompanionRail rail={hub.rail} dailyGoalMinutes={preferences?.dailyMinutes ?? null} labels={{
         preparation: tHub("hub.rail.preparation"),
         noPreparation: tHub("hub.rail.noPreparation"),
         todayGoal: tHub("hub.rail.todayGoal"),
         noGoal: tHub("hub.rail.noGoal"),
+        dailyGoal: (minutes) => tHub("hub.rail.dailyGoal", { minutes }),
         weeklyProgress: tHub("hub.rail.weeklyProgress"),
         noWeeklyActivity: tHub("hub.rail.noWeeklyActivity"),
         suggestion: tHub("hub.rail.suggestion"),

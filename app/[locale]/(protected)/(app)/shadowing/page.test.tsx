@@ -21,6 +21,14 @@ vi.mock("@/lib/data/shadowing-hub", () => ({
   }),
 }));
 
+// The page reads the user's daily goal for the rail's "Today's goal" card.
+// Unmocked it reaches `createClient()` → `cookies()`, which throws outside a
+// request scope; `null` is the signed-out answer, and the rail's `noGoal`
+// empty state is what the assertions below already expect.
+vi.mock("@/lib/data/preferences", () => ({
+  getMyPreferences: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/lib/i18n/server", () => ({
   getLocale: vi.fn().mockResolvedValue("en"),
   getTranslations: vi.fn().mockImplementation(async (namespace: string) => translate(namespace)),

@@ -172,6 +172,7 @@
       "noPreparation": "No lesson is being prepared right now.",
       "todayGoal": "Today's goal",
       "noGoal": "No daily goal is set yet.",
+      "dailyGoal": "Daily goal: {minutes} min",
       "weeklyProgress": "Weekly progress",
       "noWeeklyActivity": "No weekly shadowing activity has been recorded yet.",
       "suggestion": "Suggested next lesson",

@@ -22,7 +22,7 @@ type CatalogNode = Record<string, unknown>;
 type Locale = "en" | "vi";
 
 const COPY_ROOTS = ["hub", "mobileHandoff", "explore"] as const;
-const EXPECTED_LEAF_COUNT = 81;
+const EXPECTED_LEAF_COUNT = 82;
 
 function collectLeaves(value: unknown, path = ""): Record<string, string> {
   if (typeof value === "string") return { [path]: value };
@@ -187,11 +187,13 @@ function LocalizedEmptyHub(): JSX.Element {
       />
       <HubCompanionRail
         rail={null}
+        dailyGoalMinutes={null}
         labels={{
           preparation: t("hub.rail.preparation"),
           noPreparation: t("hub.rail.noPreparation"),
           todayGoal: t("hub.rail.todayGoal"),
           noGoal: t("hub.rail.noGoal"),
+          dailyGoal: (minutes) => t("hub.rail.dailyGoal", { minutes }),
           weeklyProgress: t("hub.rail.weeklyProgress"),
           noWeeklyActivity: t("hub.rail.noWeeklyActivity"),
           suggestion: t("hub.rail.suggestion"),
