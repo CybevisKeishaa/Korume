@@ -36,14 +36,12 @@ Erase Memory in scope · `45a89f0` plan · `9edebbb`/`ababe68` dispatches · `a7
 
 - Each task is bounded by its packet, the spec and its own plan section — no other task's scope.
 - **Engine preferences are parameters defaulting to today's behaviour** (`intervalMultiplier = 1`,
-  `band = DIFFICULTY_BANDS.adaptive`, `scheduleDays = ALL_DAYS`), so a user with no
-  `user_preferences` row is unaffected and every pre-existing engine test passes unchanged.
-  `advanceStreak`'s "consecutive" now means every day strictly between the last active date and
-  today is unscheduled — under `ALL_DAYS`, the old `gap === 1` rule exactly.
-- **Never restate `REVIEW_FREQUENCY_MULTIPLIER` or `DIFFICULTY_BANDS` inside a `vi.mock`** — spread
-  the real module with `importActual` (`L-034`; the first draft checked the mock against itself).
-  Wiring and value stay separate layers (`L-007`): the data-layer tests prove the right constant
-  REACHES the engine, `sm2.test.ts` proves its value.
+  `band = adaptive`, `scheduleDays = ALL_DAYS`), so a user with no `user_preferences` row is
+  unaffected. `advanceStreak`'s "consecutive" now means every day strictly between the last active
+  date and today is unscheduled — under `ALL_DAYS`, the old `gap === 1` rule exactly.
+- **Never restate `REVIEW_FREQUENCY_MULTIPLIER` or `DIFFICULTY_BANDS` in a `vi.mock`** — spread the
+  real module with `importActual` (`L-034`). Wiring and value stay separate layers (`L-007`): the
+  data-layer tests prove the constant REACHES the engine, `sm2.test.ts` proves its value.
 - One PATCH mutates one logical control, so no request half-succeeds across `users` and
   `user_preferences`. `readPreferences` never throws; any failure yields `DEFAULT_PREFERENCES`.
 - `TO_COLUMN` is keyed by the preference union, not `string`: a runtime `if (column)` guard would
@@ -64,18 +62,16 @@ Erase Memory in scope · `45a89f0` plan · `9edebbb`/`ababe68` dispatches · `a7
   `[data-density="reference"]` reset; only a browser measurement proves the second
   (`tests/e2e/display-scale.spec.ts`).
 - ⚠️ **`MobileAppHandoff` renders its own `<main data-density="reference">` into every protected
-  page.** A browser measurement must use `:visible` and assert a count of exactly 1, or it measures
-  the replacement app, not the shell under test.
+  page** — a browser measurement must use `:visible` and assert a count of exactly 1, or it
+  measures the replacement app.
 - ⚠️ **`playwright.config.ts`'s 120s `webServer.timeout` is shorter than the build.** Build first,
-  start the server from the worktree by absolute path, let `reuseExistingServer` pick it up — and
-  check `:3000` is free, or it silently tests the owner's main checkout (`L-017`).
+  start the server from the worktree by absolute path, let `reuseExistingServer` take it — and
+  check `:3000` is free, or it silently tests the owner's checkout (`L-017`).
 - **`canUseDevice` is the one gate for every capture device** (`lib/media/device-gate.ts`), inside
-  `useRecorder`, which both capture surfaces route through. `disabled-in-settings` is its own
-  `RecorderState`, deliberately NOT `"error"`: nothing failed, so the UI offers the settings link
-  rather than a retry down the same blocked path.
-- **`USER_EXPORT_TABLES` is the only enumeration of personal data in the codebase.** Its guard
-  reads the migrations and computes the one-hop set itself, never from the list it guards
-  (`L-006`), so a new `users`-FK table fails it until exported or excluded with a written reason.
+  `useRecorder`. `disabled-in-settings` is its own `RecorderState`, deliberately NOT `"error"`:
+  nothing failed, so the UI offers the settings link, not a retry down the same blocked path.
+- **`USER_EXPORT_TABLES` is the only enumeration of personal data here.** Its guard reads the
+  migrations and computes the one-hop set itself, never from the list it guards (`L-006`).
 - `test/render.tsx`'s `renderHook` takes a `wrapper` and its `render` takes a `locale` (below).
   Use both — hand-rolling either imports `next-intl`, which spec P1 forbids outside `lib/i18n/`.
 - `token-scale.test.ts` pins `components/ui` at a hardcoded `sources:` count — **18** as of Task 3.
@@ -93,20 +89,22 @@ Erase Memory in scope · `45a89f0` plan · `9edebbb`/`ababe68` dispatches · `a7
   endonyms in `lib/i18n/routing.ts`, deliberately NOT in the catalogs — a translator rendering
   "Tiếng Việt" as "Vietnamese" defeats a language picker.
 - ⚠️ **A fetch mock for a settings control must ECHO the patch.** One answering
-  `DEFAULT_PREFERENCES` made every save revert, so only REQUEST assertions could pass and a correct
-  component failed. Task 9's e2e and any new section test inherit this.
+  `DEFAULT_PREFERENCES` made every save revert, so a correct component failed its own test.
+- **Tests read labels FROM the catalog, never as literals** (`messages/README.md`, owner request
+  2026-09-23): the owner edits copy directly, and a hardcoded string makes the test a second owner
+  of it. Measured — rewording 8 strings across both catalogs leaves 520/522 green; the 2 reds are
+  the memory-erase claim pins, whose failures now carry the instruction. Pin a literal only when
+  the literal IS the subject (a wire value; a wrong word asserted absent).
 - `erase_companion_memory()` stays `security invoker`: `companion_memories_delete_own` and
   `conversation_sessions_own` scope it, and `conversation_messages` goes with the session through
   its `on delete cascade`. The data layer sends NO user id, so it cannot widen the blast radius,
   and throws on an rpc error — "could not erase" and "erased" are not interchangeable.
 - ⚠️ **`token-scale-adoption.test.ts` scans `components/ui` ONLY** — its green says nothing about
-  `components/settings` or `app/`, where Tasks 8 and 9 write most of their markup. Check any
-  utility with no repo precedent against compiled CSS yourself. Two traps there: a `--content` glob
-  containing an app route path matches NOTHING (`[locale]` is a glob character class,
-  `(protected)` a group), so copy the files to a plain directory; and always grep a class you KNOW
-  exists as a positive control. Task 7's first run reported every class missing, `list-disc`
-  included — the control is what separates "four missing utilities" from "an empty scan"
-  (`mem:korume-false-green-before-believing`).
+  `components/settings` or `app/`. Check any utility with no repo precedent against compiled CSS.
+  Two traps: a `--content` glob containing an app route path matches NOTHING (`[locale]` is a glob
+  character class, `(protected)` a group), so copy the files to a plain directory; and always grep
+  a class you KNOW exists as a control. Task 7's first run reported every class missing,
+  `list-disc` included (`mem:korume-false-green-before-believing`).
 - **`render`'s `locale` option** (Task 7; `test/messages.ts` gained `loadViMessages()`). Default
   stays `en`, text assertions stay English (spec D6). Use it only where behaviour is
   locale-dependent and an `en` render cannot see it — `MemoryEraseForm` has the user type a
