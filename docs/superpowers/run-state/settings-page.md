@@ -17,9 +17,9 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
 
 ## Accepted commits
 
-Scaffolding: `87ebac7` spec · `8786544` spec review contracts · `0632308` keep /settings/privacy,
-Erase Memory in scope · `45a89f0` plan · `9edebbb`/`ababe68` dispatches · `a7cf5bb`, `1fffa1a`,
-`c7a9f57`, `7e29332`, `e1c9b3c`, `6829eed` run states.
+Scaffolding: `87ebac7` spec · `8786544` spec contracts · `0632308` scope · `45a89f0` plan ·
+`9edebbb`/`ababe68` dispatches · run states `a7cf5bb`, `1fffa1a`, `c7a9f57`, `7e29332`, `e1c9b3c`,
+`6829eed`, `c9a6e1b`.
 
 | Task | Commit | Title | By |
 | --- | --- | --- | --- |
@@ -31,47 +31,46 @@ Erase Memory in scope · `45a89f0` plan · `9edebbb`/`ababe68` dispatches · `a7
 | 6 | `4a5deb5` | `feat(settings): export data and learning history` | Claude |
 | 7 | `3a5dd2e` | `feat(settings): erase Korume memory` | Claude |
 | 8 | `2eeb87c` | `feat(settings): settings controls with per-control saving` | Claude |
+| 8+ | `66038e8` | `refactor(tests): the copy is the owner's to edit` | Claude |
+| 9a | `0a53fdc` | `feat(settings): extract DeletionControls, daily goal on the rail` | Codex, Claude fixed + committed |
+| 9b | `0d9f32f` | `feat(settings): the settings page` | Claude |
+| 9c | `2abe635` | `test(settings): end-to-end proof every control survives a round trip` | Claude |
 
 ## Contracts and decisions
 
 - Each task is bounded by its packet, the spec and its own plan section — no other task's scope.
 - **Engine preferences are parameters defaulting to today's behaviour** (`intervalMultiplier = 1`,
-  `band = adaptive`, `scheduleDays = ALL_DAYS`), so a user with no `user_preferences` row is
-  unaffected. `advanceStreak`'s "consecutive" now means every day strictly between the last active
-  date and today is unscheduled — under `ALL_DAYS`, the old `gap === 1` rule exactly.
+  `band = adaptive`, `scheduleDays = ALL_DAYS`), so a user with no row is unaffected.
+  `advanceStreak`'s "consecutive" now means every day strictly between the last active date and
+  today is unscheduled — under `ALL_DAYS`, the old `gap === 1` rule exactly.
 - **Never restate `REVIEW_FREQUENCY_MULTIPLIER` or `DIFFICULTY_BANDS` in a `vi.mock`** — spread the
-  real module with `importActual` (`L-034`). Wiring and value stay separate layers (`L-007`): the
-  data-layer tests prove the constant REACHES the engine, `sm2.test.ts` proves its value.
+  real module with `importActual` (`L-034`). Wiring and value are separate layers (`L-007`).
 - One PATCH mutates one logical control, so no request half-succeeds across `users` and
   `user_preferences`. `readPreferences` never throws; any failure yields `DEFAULT_PREFERENCES`.
 - `TO_COLUMN` is keyed by the preference union, not `string`: a runtime `if (column)` guard would
-  turn a preference with no column mapping into a PATCH that returns 200 and saves nothing, so a
-  forgotten column is a TS2741 instead. If a later task sees that error, the guard is working.
-- **A Tailwind utility is not real until the compiled CSS says so** — `--icon-md` is in `size`,
-  not `height`, so `h-icon-md` emits nothing. Compile with `npx tailwindcss -i app/globals.css -o
-  <file> --content <sources>` and grep, with a control: CSS escapes `(`, `)` and `*`.
+  turn an unmapped preference into a PATCH that returns 200 and saves nothing, so a forgotten
+  column is a TS2741 instead.
 - Do **not** add an icon token to `height` or a rung to `--control-*`: `lib/design-tokens.test.ts`
   encodes the split (controls → `height`, icons → `size`). Read it through `h-[--icon-md]` /
   `w-[calc(2_*_var(--icon-md))]` instead; both compile.
 - **Reduced motion has ONE runtime home: `theme-provider.tsx`** (owner ruling, 2026-09-23).
-  `appearanceScript` only *seeds* `data-reduce-motion` before paint; `PreferencesProvider` applies
-  nothing itself, it calls `setReduceMotion`; `reduce-motion-toggle.tsx` stays untouched.
-  `effectiveReduceMotion = account || OS` in all three places — Korume may ADD reduction, never
-  remove the OS's, which is why `AppearanceSection` shows a note instead of a dead switch.
-- Display Scale needs the factor in **both** unit declarations, `:root` and the
-  `[data-density="reference"]` reset; only a browser measurement proves the second
-  (`tests/e2e/display-scale.spec.ts`).
+  `appearanceScript` only *seeds* `data-reduce-motion`; `PreferencesProvider` calls
+  `setReduceMotion`; `reduce-motion-toggle.tsx` stays untouched. `effectiveReduceMotion =
+  account || OS` everywhere — Korume may ADD reduction, never remove the OS's, which is why
+  `AppearanceSection` shows a note instead of a dead switch.
+- Display Scale needs the factor in **both** `:root` and the `[data-density="reference"]` reset;
+  only a browser measurement proves the second (`tests/e2e/display-scale.spec.ts`).
 - ⚠️ **`MobileAppHandoff` renders its own `<main data-density="reference">` into every protected
-  page** — a browser measurement must use `:visible` and assert a count of exactly 1, or it
-  measures the replacement app.
-- ⚠️ **`playwright.config.ts`'s 120s `webServer.timeout` is shorter than the build.** Build first,
-  start the server from the worktree by absolute path, let `reuseExistingServer` take it — and
-  check `:3000` is free, or it silently tests the owner's checkout (`L-017`).
+  page** — browser measurements need `:visible` and a count of exactly 1.
+- ⚠️ **`playwright.config.ts`'s 120s `webServer.timeout` is shorter than the build.** Build, start
+  the server from the worktree by absolute path, let `reuseExistingServer` take it, and check
+  `:3000` is free first (`L-017`). `getByRole("alert")` is ambiguous on ANY Next page —
+  `__next-route-announcer__` carries that role.
 - **`canUseDevice` is the one gate for every capture device** (`lib/media/device-gate.ts`), inside
-  `useRecorder`. `disabled-in-settings` is its own `RecorderState`, deliberately NOT `"error"`:
-  nothing failed, so the UI offers the settings link, not a retry down the same blocked path.
-- **`USER_EXPORT_TABLES` is the only enumeration of personal data here.** Its guard reads the
-  migrations and computes the one-hop set itself, never from the list it guards (`L-006`).
+  `useRecorder`. `disabled-in-settings` is its own `RecorderState`, NOT `"error"`: nothing failed,
+  so the UI offers the settings link, not a retry down a blocked path.
+- **`USER_EXPORT_TABLES` is the only enumeration of personal data here**; its guard computes the
+  one-hop set from the migrations, never from the list it guards (`L-006`).
 - `test/render.tsx`'s `renderHook` takes a `wrapper` and its `render` takes a `locale` (below).
   Use both — hand-rolling either imports `next-intl`, which spec P1 forbids outside `lib/i18n/`.
 - `token-scale.test.ts` pins `components/ui` at a hardcoded `sources:` count — **18** as of Task 3.
@@ -80,16 +79,15 @@ Erase Memory in scope · `45a89f0` plan · `9edebbb`/`ababe68` dispatches · `a7
   `<button role="switch">`; `SegmentedControl` hand-rolls the radiogroup roving-tabindex pattern.
 - **`usePreferenceSave` is the ONLY save path for a settings control**, AI Training included (via
   an endpoint override — its value is a `users` column). It resolves `true`/`false` and never
-  rejects: a caller holding state outside `UserPreferences` reads that result, a `.catch()` cannot
-  fire. Three rules, in its docstring, all mutation-checked.
+  rejects, so a caller holding state outside `UserPreferences` reads that result. Three rules, in
+  its docstring, all mutation-checked.
 - **`SettingsRow` renders `<label htmlFor>` only when the control is labelable** — a `<label for>`
-  aimed at a radiogroup is ignored by browsers while reading as correct in source. Non-labelable
-  controls use `aria-label`.
+  aimed at a radiogroup is ignored by browsers while reading as correct; others use `aria-label`.
 - **Interface Language navigates, it never PATCHes** (the locale lives in the URL). Its labels are
   endonyms in `lib/i18n/routing.ts`, deliberately NOT in the catalogs — a translator rendering
   "Tiếng Việt" as "Vietnamese" defeats a language picker.
-- ⚠️ **A fetch mock for a settings control must ECHO the patch.** One answering
-  `DEFAULT_PREFERENCES` made every save revert, so a correct component failed its own test.
+- ⚠️ **A fetch mock for a settings control must ECHO the patch** — one answering
+  `DEFAULT_PREFERENCES` made every save revert, failing a CORRECT component.
 - **Tests read labels FROM the catalog, never as literals** (`messages/README.md`, owner request
   2026-09-23): the owner edits copy directly, and a hardcoded string makes the test a second owner
   of it. Measured — rewording 8 strings across both catalogs leaves 520/522 green; the 2 reds are
@@ -99,17 +97,18 @@ Erase Memory in scope · `45a89f0` plan · `9edebbb`/`ababe68` dispatches · `a7
   `conversation_sessions_own` scope it, and `conversation_messages` goes with the session through
   its `on delete cascade`. The data layer sends NO user id, so it cannot widen the blast radius,
   and throws on an rpc error — "could not erase" and "erased" are not interchangeable.
-- ⚠️ **`token-scale-adoption.test.ts` scans `components/ui` ONLY** — its green says nothing about
-  `components/settings` or `app/`. Check any utility with no repo precedent against compiled CSS.
-  Two traps: a `--content` glob containing an app route path matches NOTHING (`[locale]` is a glob
-  character class, `(protected)` a group), so copy the files to a plain directory; and always grep
-  a class you KNOW exists as a control. Task 7's first run reported every class missing,
-  `list-disc` included (`mem:korume-false-green-before-believing`).
+- ⚠️ **A Tailwind utility is not real until the compiled CSS says so, and NOTHING checks it for
+  you outside `components/ui`** — `token-scale-adoption.test.ts` scans only that directory, and
+  `--icon-md` lives in `size`, not `height`, so `h-icon-md` emits nothing. Compile with
+  `npx tailwindcss -i app/globals.css -o <file> --content <sources>` and grep. Three traps: CSS
+  escapes `(`, `)` and `*`; a `--content` glob containing an app route path matches NOTHING
+  (`[locale]` is a character class, `(protected)` a group), so copy the files to a plain directory;
+  and always grep a class you KNOW exists as a control — without one, Task 7's empty scan read as
+  four missing utilities (`mem:korume-false-green-before-believing`).
 - **`render`'s `locale` option** (Task 7; `test/messages.ts` gained `loadViMessages()`). Default
-  stays `en`, text assertions stay English (spec D6). Use it only where behaviour is
-  locale-dependent and an `en` render cannot see it — `MemoryEraseForm` has the user type a
-  TRANSLATED word and posts an UNTRANSLATED literal, identical under `en`, so `{ confirm: typed }`
-  passed every EN test byte-for-byte.
+  `en`, text assertions stay English (spec D6). Use it only where behaviour is locale-dependent and
+  an `en` render cannot see it — `MemoryEraseForm` types a TRANSLATED word and posts an
+  UNTRANSLATED literal, identical under `en`, so `{ confirm: typed }` passed every EN test.
 - **`messages/settings.pin.test.ts`'s forbidden-phrase scans cover the WHOLE catalog**, including
   `memoryErase` — the one block that genuinely IS immediate with no undo. Deliberate: the bans
   exist because those phrases were FALSE about the 7-day lifecycle, and `memoryErase.finality`
@@ -136,6 +135,7 @@ a report. Headline figures, full suite via `npm test -- --reporter=dot`:
 | 6 | 359 / 3336 | 9 mutation checks red |
 | 7 | 363 / 3362 | `verify:db:settings` exit 0, 5 `PASS`; `npm run build` exit 0; 12 mutation checks red; compiled-CSS check |
 | 8 | 366 / 3409 | 16 mutation checks red; compiled-CSS check on the six new component files |
+| 9 | 368 / 3419 | `npm run build` exit 0; `settings.spec.ts` 8/8; 13 mutation checks red |
 
 `master` at `e44a4ea` was 340 / 3209. `npx tsc --noEmit` 0 and `npm run lint` 0 errors at every
 task. Every mutated source was restored byte-for-byte and re-verified with SHA-256.
@@ -175,13 +175,15 @@ console noise from their own `opaque500` logger. Run the whole e2e suite before 
 
 ## Next actions
 
-**Resume here: Task 9 — the last task: page assembly, danger zone, daily goal, registry, e2e.**
-Mount `LearningSection` / `AppearanceSection` / `PrivacyDataSection` (built and tested, but NOT yet
-rendered anywhere) on `/settings`; extract `deletion-controls.tsx` so both privacy surfaces share
-it; feed the daily goal to the shadowing rail; flip `settings` to `built` in the registry and drop
-it from `upcoming-routes.test.tsx` (11 → 10); write `tests/e2e/settings.spec.ts`. Bump
-`token-scale.test.ts`'s `sources:` count only if it adds a `components/ui` primitive (Task 8 added
-none).
+**All nine tasks are committed. Nothing is merged.** ▶ Next is the post-Task-9 sequence: a
+whole-branch review (`/code-review high`), its fix wave, spec §8 measurements recorded here, owner
+review on a `:3001` worktree server, then a `--no-ff` merge.
+
+⚠️ **Seven e2e tests fail on this branch and NONE is from this work** — measured, not assumed, by
+building `master` `e44a4ea` in a throwaway worktree and running the same specs. On `landing-page` +
+`route-error` master fails six and this branch four, a strict subset; the branch FIXES master's
+horizontal-scroll and reduce-motion-at-768 cases. The three `lesson-creation-jobs` failures are
+identical on both and need `LESSON_CREATION_WORKER_ENABLED`. Do not chase these as regressions.
 
 **Plan defects found so far — expect more, measure before trusting a snippet.** Task 1's
 `Record<string, string>` did not compile; Task 3's `h-icon-md` generates no CSS and its
