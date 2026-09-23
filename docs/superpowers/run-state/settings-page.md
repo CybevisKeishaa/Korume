@@ -26,7 +26,10 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   and committed) · `1fffa1a` run state.
 - **Task 3 — `49d7043` `feat(ui): Switch and SegmentedControl primitives`** (Claude, start to
   finish — Codex was still rate-limited) · `c7a9f57` run state.
-- **Task 4 — `b15b6d7` `feat(settings): display scale and account reduced motion`** (Claude).
+- **Task 4 — `b15b6d7` `feat(settings): display scale and account reduced motion`** (Claude) ·
+  `7e29332` run state.
+- **Task 5 — `12ac6ce` `feat(settings): Korume's own microphone and camera switches`** (Claude).
+- **Task 6 — `4a5deb5` `feat(settings): export data and learning history`** (Claude).
 
 ## Contracts and decisions
 
@@ -77,6 +80,18 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   which the build exceeds.** Build first, start the server from the worktree by absolute path, and
   let `reuseExistingServer` pick it up — and check `:3000` is free first, because the owner's dev
   server lives there and `reuseExistingServer` would silently test the main checkout (`L-017`).
+- **`canUseDevice` is the one gate for every capture device** (`lib/media/device-gate.ts`). It sits
+  in `useRecorder`, which both capture surfaces route through — the shadowing panel and the
+  conversation voice button. Every future camera or microphone feature must call it.
+  `disabled-in-settings` is a `RecorderState` of its own, deliberately NOT `"error"`: nothing
+  failed, so the UI offers the settings link instead of a retry down the same blocked path.
+- **`USER_EXPORT_TABLES` is the only enumeration of personal data in the codebase** — account
+  deletion relies on the `users` cascade and keeps no list. Its guard reads the migrations and
+  computes the one-hop set from the DIRECT set minus the exclusions, never from the list it guards
+  (`L-006`). A new table with a `users` foreign key fails the guard until it is exported or
+  excluded with a written reason.
+- `test/render.tsx`'s `renderHook` takes a `wrapper`, nested inside the intl provider. Use it —
+  hand-rolling one means importing `next-intl`, which spec P1 forbids outside `lib/i18n/`.
 - `token-scale.test.ts` pins `components/ui` at a hardcoded `sources:` count — **18** as of Task 3.
   Any task that adds a primitive must bump it, and will see it go red first.
 - No Radix switch or radio-group package is installed, and neither was added. `Switch` is a native
@@ -87,70 +102,25 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
 
 ## Verification
 
-Task 1, re-run by Claude at review on 2026-09-23 (not copied from the implementer's report):
+Each task's own commit message carries its full evidence — failure-first output, mutation checks and
+gate numbers. Claude re-ran every gate itself rather than copying an implementer's report. Headline
+figures, full suite via `npm test -- --reporter=dot`:
 
-- `npx vitest run lib/preferences lib/validation/preferences.test.ts lib/data/preferences.test.ts
-  app/api/user/preferences supabase/migrations` — exit 0, 6 files / 43 tests.
-- `npx supabase db reset` exit 0, then `npm run verify:db:settings` — exit 0, 5 `PASS` lines
-  (A reads own row · B cannot read or update A · schedule constraints · scoped memory erase ·
-  teardown).
-- `npx tsc --noEmit` exit 0 · `npm run lint` exit 0, 0 errors (pre-existing warnings elsewhere).
-- `npm test -- --reporter=dot` — exit 0, **345 files / 3238 tests** (master at `e44a4ea` was
-  340 / 3209).
-- Mutation checks, both restored byte-for-byte and re-verified by SHA-256:
-  - migration source test: removing `'relaxed'` from the `review_frequency` CHECK → red (Codex).
-  - `TO_COLUMN`: removing `cameraEnabled` → `TS2741`, tsc exit 2; restored → exit 0.
-  - live gate: deleting user A's `user_stats` row → `FAIL erase: user A memory removal affected
-    the wrong data`, gate exit 3. Before the `coalesce` fix that comparison was against NULL and
-    the gate passed while proving nothing (`L-004`).
+| Task | Full suite | Other gates |
+| --- | --- | --- |
+| 1 | 345 files / 3238 tests | `npm run verify:db:settings` exit 0, 5 `PASS` lines |
+| 2 | 348 / 3255 | 4 mutation checks red |
+| 3 | 350 / 3275 | compiled-CSS check; 5 mutation checks red |
+| 4 | 353 / 3294 | Playwright `display-scale` 2/2; 5 mutation checks red |
+| 5 | 354 / 3306 | 2 mutation checks red |
+| 6 | 359 / 3336 | 9 mutation checks red |
 
-Task 2, run by Claude after taking the task over:
+`master` at `e44a4ea` was 340 / 3209. `npx tsc --noEmit` 0 and `npm run lint` 0 errors at every
+task. Every mutated source was restored byte-for-byte and re-verified with SHA-256.
 
-- `npx vitest run lib/srs lib/difficulty lib/gamification lib/data` — exit 0, 40 files / 428 tests.
-- `npx tsc --noEmit` exit 0 · `npm run lint` exit 0, 0 errors.
-- `npm test -- --reporter=dot` — exit 0, **348 files / 3255 tests** (+3 files, +17 tests over
-  Task 1's 345 / 3238: the three new `lib/data/*-preferences.test.ts`).
-- No live DB gate: this task changes no SQL.
-- Mutation checks, all four red, all three source files restored byte-for-byte and verified with
-  `sha256sum -c`:
-  - `REVIEW_FREQUENCY_MULTIPLIER.relaxed` 1.4 → 1 → `sm2.test.ts` red.
-  - swap `DIFFICULTY_BANDS.easy` and `.challenge` → 3 red, including
-    `recommendations.test.ts`'s band case.
-  - drop `prefs.scheduleDays` at the `advanceStreak` call site → `gamification.test.ts` red.
-  - leak the multiplier into `reviewItem`'s lapse branch → the failed-review case red. It was
-    green before Claude changed that case's multiplier from 1.4 to 5.
-
-Task 3, Claude:
-
-- Failure first: both new test files failed to resolve their module before it existed.
-- `npx vitest run components/ui` — exit 0, 15 files / 173 tests, including `token-scale`,
-  `token-scale-adoption` and `logical-properties`.
-- `npx tsc --noEmit` exit 0 · `npm run lint` exit 0, 0 errors.
-- `npm test -- --reporter=dot` — exit 0, **350 files / 3275 tests** (Task 2: 348 / 3255).
-- Compiled-CSS check: `.h-\[--icon-md\]` → `height: var(--icon-md)` and
-  `.w-\[calc\(2_\*_var\(--icon-md\)\)\]` → `width: calc(2 * var(--icon-md))`; control
-  `.h-icon-md` absent, as the plan's class would have been.
-- Mutation checks, all five red, both sources restored byte-for-byte and verified by SHA-256:
-  `onCheckedChange(checked)` instead of `!checked`; no `disabled` attribute; `tabIndex={0}` on
-  every option; `move()` without `focus()`; `from + step` without the wrap.
-
-Task 4, Claude:
-
-- Failure first: `appearance-script.test.ts` and `preferences-provider.test.tsx` both failed to
-  resolve their module; `design-tokens.test.ts` went red on all three density pins before they
-  were updated to pin the new declarations.
-- `npx vitest run components/providers lib/preferences` — exit 0, 22 tests.
-- `npx tsc --noEmit` exit 0 · `npm run lint` exit 0, 0 errors.
-- `npm test -- --reporter=dot` — exit 0, **353 files / 3294 tests** (Task 3: 350 / 3275).
-- `npx playwright test tests/e2e/display-scale.spec.ts --workers=1` — **2 passed**, against a
-  server built and started from this worktree with `:3000` verified free beforehand.
-- Mutation checks, all red, every source restored byte-for-byte and verified by SHA-256:
-  dropping the factor from the reference reset (red in the token pin, and — rebuilt and re-run in
-  the browser — red in the e2e with `reference at large: expected 1.125, received 1`); the script
-  ignoring the OS query; the provider trusting the account value; the provider not writing
-  `--display-scale`; `motionEnabled` reading only the attribute.
-- Afterwards: the worktree's `.next` deleted, the server stopped, the main checkout's `.next`
-  never touched.
+⚠️ **Not yet run on this branch:** `npm run verify:db:lesson-jobs`, the C4 Playwright spec, and
+`next build` since Task 4 (the worktree's `.next` was deleted after the display-scale measurement).
+Task 9 adds `tests/e2e/settings.spec.ts`; run the whole e2e suite before proposing a merge.
 
 ## Working tree and environment
 
@@ -172,14 +142,24 @@ Task 4, Claude:
 
 ## Next actions
 
-**Resume here: Task 5 — the microphone and camera gate** (`lib/media/device-gate.ts`,
-`components/video-player/recorder.tsx`). Then 6, 7, 8, 9 in order; Task 9 wires the registry and
-the settings e2e.
+**Resume here: Task 7 — Erase Korume Memory.** The SQL half already shipped in Task 1:
+`erase_companion_memory()` is `security invoker`, granted to `authenticated`, and the live gate
+proves it removes only the caller's rows and leaves `user_stats` untouched. Task 7 is the API
+(`lib/data/memory-erase.ts`, `app/api/user/memory-erase/route.ts`), the confirmation page
+(`app/[locale]/(protected)/(app)/settings/privacy/memory/page.tsx`,
+`components/settings/memory-erase-form.tsx`) and the registry entry. Then Task 8 (save hook + the
+three control sections) and Task 9 (page assembly, danger zone, daily goal, registry, e2e).
 
-Tasks 3 and 4 were Claude's own work because **Codex was rate-limited from ~15:50 on 2026-09-23,
-resetting 20:01.** When it is available again a dispatch that dies partway writes
-`ERROR: You've hit your usage limit` to its log and no `-o` file — grep
-`^ERROR: You.ve hit your usage limit` before diagnosing anything else.
+**Plan defects found so far — expect more, and measure before trusting a plan snippet.** Task 1's
+`Record<string, string>` did not compile; Task 3's `h-icon-md` generates no CSS and its
+`sources: 16` count was stale; Task 6's history section named four SRS tables where there are
+three and a column that does not exist. The plan is a strong guide, not an authority over the
+repo.
+
+**Codex has not been used since Task 2**, when it hit its ChatGPT usage limit (~15:50 on
+2026-09-23, resetting 20:01). Tasks 3–6 are Claude's own work, at the owner's instruction. When
+dispatching again: a run that dies partway writes `ERROR: You've hit your usage limit` to its log
+and no `-o` file — grep `^ERROR: You.ve hit your usage limit` before diagnosing anything else.
 
 Per task: the task's own tests red → green, `npx tsc --noEmit` 0, `npm run lint` 0 errors, full
 `npm test -- --reporter=dot > <file>` exit 0 (read the file), and the task's named live gate or
