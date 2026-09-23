@@ -28,7 +28,7 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   Task 1's live gate or any Playwright run.
 - Never build or serve from the main checkout; the owner's dev server uses its `.next`.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
@@ -36,7 +36,10 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
 
 ## Next actions
 
-**Resume here:** plan written. Waiting for the owner to approve the plan, then dispatch Task 1.
+**Resume here:** owner approved the plan on 2026-09-23 ("làm luôn đi"). Task 1 dispatched to Codex;
+packet `<main checkout>/.superpowers/sdd/2026-09-22-settings-page/task-1-brief.md`. `npm ci` has
+been run in this worktree (exit 0). Codex leaves the work uncommitted and flips `- Owner:` back to
+Claude; Claude reviews the diff, re-runs the gates and commits.
 
 Per task: the task's own tests red → green, `npx tsc --noEmit` 0, `npm run lint` 0 errors, full
 `npm test -- --reporter=dot > <file>` exit 0 (read the file), and the task's named live gate or
