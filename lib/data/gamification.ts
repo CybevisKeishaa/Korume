@@ -14,6 +14,7 @@ import {
   type StreakState,
 } from "@/lib/gamification";
 import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
+import { readPreferences } from "@/lib/data/preferences";
 import { captureCompanionMemories } from "@/lib/data/companion";
 import { emitNotification } from "@/lib/notifications/emit";
 
@@ -126,7 +127,8 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
     longest: stats?.streak_longest ?? 0,
     lastActiveDate: stats?.last_active_date ?? null,
   };
-  const nextStreak = advanceStreak(prevStreak, now);
+  const prefs = await readPreferences(supabase, input.userId);
+  const nextStreak = advanceStreak(prevStreak, now, prefs.scheduleDays);
   const nextXp = prevXp + xpAwarded;
   const leveledUp = levelForXp(prevXp).level < levelForXp(nextXp).level;
   const streakChanged =

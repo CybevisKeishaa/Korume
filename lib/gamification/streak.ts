@@ -4,6 +4,7 @@
  * every user rather than per-user timezones. Pure and deterministic: the
  * caller always passes `now`; nothing here reads the system clock.
  */
+import { ALL_DAYS, type IsoWeekday } from "@/lib/preferences/options";
 import type { StreakState } from "./types";
 
 const MS_PER_HOUR = 60 * 60 * 1000;
@@ -34,22 +35,41 @@ function daysBetween(a: string, b: string): number {
   return Math.round(diffMs / MS_PER_DAY);
 }
 
+/** ISO weekday (Mon = 1 … Sun = 7) of a VN-local yyyy-MM-dd date (spec §4.3 day boundary). */
+export function isoWeekdayOfVnDate(date: string): IsoWeekday {
+  const day = parseDateOnly(date).getUTCDay();
+  return (day === 0 ? 7 : day) as IsoWeekday;
+}
+
 /**
  * Advance a streak given a new activity instant.
  * - Same VN day as `lastActiveDate` -> unchanged.
- * - Exactly the VN-next day -> current + 1.
- * - Anything older (or `lastActiveDate` is null) -> reset to 1.
+ * - Every scheduled day between activities -> reset to 1.
+ * - Gaps made only of unscheduled days -> current + 1.
  * `longest` is always the max of its previous value and the new `current`.
  */
-export function advanceStreak(prev: StreakState, now: Date): StreakState {
+export function advanceStreak(
+  prev: StreakState,
+  now: Date,
+  scheduleDays: readonly IsoWeekday[] = ALL_DAYS,
+): StreakState {
   const today = vnDateString(now);
 
   if (prev.lastActiveDate === today) {
     return prev;
   }
 
-  const isConsecutive =
-    prev.lastActiveDate !== null && daysBetween(prev.lastActiveDate, today) === 1;
+  let isConsecutive = false;
+  if (prev.lastActiveDate !== null) {
+    const gap = daysBetween(prev.lastActiveDate, today);
+    isConsecutive = gap >= 1;
+    for (let offset = 1; offset < gap && isConsecutive; offset += 1) {
+      const between = new Date(parseDateOnly(prev.lastActiveDate).getTime() + offset * MS_PER_DAY)
+        .toISOString()
+        .slice(0, 10);
+      if (scheduleDays.includes(isoWeekdayOfVnDate(between))) isConsecutive = false;
+    }
+  }
 
   const current = isConsecutive ? prev.current + 1 : 1;
   const longest = Math.max(prev.longest, current);

@@ -8,6 +8,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 // the candidate-video scan/scoring/ordering, not vocab-mastery derivation
 // (same isolation precedent as mocking recordActivity in lib/data/jlpt.test.ts).
 vi.mock("@/lib/data/difficulty", () => ({ getKnownVocabLemmas: vi.fn() }));
+vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 // kuromoji tokenization is real dictionary I/O — stub it with a simple
 // whitespace-split "tokenizer" that tags every word as a noun so
 // contentLemmas() (which is the real, unmocked implementation) keeps it.
@@ -19,6 +20,8 @@ vi.mock("@/lib/japanese/tokenizer", () => ({
 
 import { getRecommendations } from "./recommendations";
 import { getKnownVocabLemmas } from "@/lib/data/difficulty";
+import { readPreferences } from "@/lib/data/preferences";
+import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 
 const USER = { id: "u1" };
 
@@ -35,9 +38,25 @@ const VIDEO_C = { id: "vc", youtube_video_id: "ytc", title: "C", thumbnail_url: 
 beforeEach(() => {
   vi.mocked(createClient).mockReset();
   vi.mocked(getKnownVocabLemmas).mockReset();
+  vi.mocked(readPreferences).mockResolvedValue({ ...DEFAULT_PREFERENCES });
 });
 
 describe("getRecommendations", () => {
+  it("uses the easy comprehension band", async () => {
+    vi.mocked(readPreferences).mockResolvedValue({ ...DEFAULT_PREFERENCES, difficulty: "easy" as const });
+    vi.mocked(getKnownVocabLemmas).mockResolvedValue(new Set(["known"]));
+    mockClient({
+      user_video_progress: () => ({ data: [], error: null }),
+      videos: () => ({ data: [VIDEO_A], error: null }),
+      transcripts: () => ({ data: [{ id: "t1", video_id: "va", created_at: "2026-07-01T00:00:00Z" }], error: null }),
+      transcript_lines: () => ({ data: [{ transcript_id: "t1", text_jp: `${Array(96).fill("known").join(" ")} unknown unknown unknown unknown` }], error: null }),
+    });
+
+    const result = await getRecommendations({ limit: 12 });
+
+    expect(result).toMatchObject({ ok: true, data: [{ videoId: "va", band: "ideal", knownRatio: 0.96 }] });
+  });
+
   it("returns 401 when signed out", async () => {
     mockClient({}, null);
     const result = await getRecommendations({ limit: 12 });

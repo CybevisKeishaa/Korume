@@ -13,6 +13,13 @@
  *    floored at 1.3. On a lapse the item restarts (reps→0, interval→1) and the
  *    E-Factor is left unchanged (SM-2 step 6).
  */
+import type { ReviewFrequency } from "@/lib/preferences/options";
+
+export const REVIEW_FREQUENCY_MULTIPLIER: Record<ReviewFrequency, number> = {
+  normal: 1,
+  more: 0.7,
+  relaxed: 1.4,
+};
 
 export type Quality = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -61,6 +68,7 @@ export function reviewItem(
   state: SrsState,
   quality: Quality,
   now: Date = new Date(),
+  intervalMultiplier = 1,
 ): SrsUpdate {
   if (!Number.isInteger(quality) || quality < 0 || quality > 5) {
     throw new RangeError(`quality must be an integer 0–5, got ${quality}`);
@@ -89,6 +97,7 @@ export function reviewItem(
   } else {
     intervalDays = Math.round(state.intervalDays * easeFactor);
   }
+  intervalDays = Math.max(1, Math.round(intervalDays * intervalMultiplier));
 
   return {
     repetitions: state.repetitions + 1,

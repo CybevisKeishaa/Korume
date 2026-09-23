@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { vnDateString, advanceStreak } from "./streak";
+import { vnDateString, advanceStreak, isoWeekdayOfVnDate } from "./streak";
 import type { StreakState } from "./types";
 
 describe("vnDateString — Asia/Ho_Chi_Minh (UTC+7, no DST) conversion", () => {
@@ -103,5 +103,30 @@ describe("advanceStreak", () => {
     const second = new Date("2026-07-13T01:00:00.000Z"); // VN 2026-07-13 08:00, same VN day
     const afterSecond = advanceStreak(afterFirst, second);
     expect(afterSecond).toEqual(afterFirst);
+  });
+});
+
+describe("schedule-aware streak (settings spec §4.3)", () => {
+  const at = (vnDate: string) => new Date(`${vnDate}T05:00:00Z`);
+  const fri = { current: 4, longest: 4, lastActiveDate: "2026-09-18" };
+
+  it("every day: a missed weekend breaks the streak", () => {
+    expect(advanceStreak(fri, at("2026-09-21")).current).toBe(1);
+  });
+
+  it("weekdays: Friday then Monday continues", () => {
+    expect(advanceStreak(fri, at("2026-09-21"), [1, 2, 3, 4, 5]).current).toBe(5);
+  });
+
+  it("weekdays: a missed scheduled Monday still breaks it on Tuesday", () => {
+    expect(advanceStreak(fri, at("2026-09-22"), [1, 2, 3, 4, 5]).current).toBe(1);
+  });
+
+  it("activity on an unscheduled day still counts", () => {
+    expect(advanceStreak(fri, at("2026-09-19"), [1, 2, 3, 4, 5]).current).toBe(5);
+  });
+
+  it("weekday is taken from the VN date, not UTC", () => {
+    expect(isoWeekdayOfVnDate(vnDateString(new Date("2026-09-20T18:00:00Z")))).toBe(1);
   });
 });

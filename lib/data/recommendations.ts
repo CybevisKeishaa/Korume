@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data/videos";
 import { getKnownVocabLemmas } from "@/lib/data/difficulty";
 import { tokenize } from "@/lib/japanese/tokenizer";
-import { contentLemmas, scoreComprehension } from "@/lib/difficulty";
+import { contentLemmas, DIFFICULTY_BANDS, scoreComprehension } from "@/lib/difficulty";
+import { readPreferences } from "@/lib/data/preferences";
 import type { RecommendationBand, RecommendationReason, VideoRecommendation } from "@/lib/recommendation-types";
 import type { RecommendationsQuery } from "@/lib/validation/recommendations";
 
@@ -94,6 +95,7 @@ export async function getRecommendations(query: RecommendationsQuery): Promise<G
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
+  const prefs = await readPreferences(supabase, user.id);
 
   const known = await getKnownVocabLemmas(supabase, user.id);
 
@@ -167,7 +169,7 @@ export async function getRecommendations(query: RecommendationsQuery): Promise<G
       lemmas.push(...contentLemmas(tokens));
     }
 
-    const score = scoreComprehension(lemmas, known);
+    const score = scoreComprehension(lemmas, known, DIFFICULTY_BANDS[prefs.difficulty]);
     const band = score.band;
     if (band === "insufficient-data") continue;
 
