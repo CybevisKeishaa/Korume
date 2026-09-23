@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data/videos";
 import { getTranscript } from "@/lib/data/transcripts";
 import { tokenize } from "@/lib/japanese/tokenizer";
-import { contentLemmas, scoreComprehension } from "@/lib/difficulty";
+import { contentLemmas, DIFFICULTY_BANDS, scoreComprehension } from "@/lib/difficulty";
+import { readPreferences } from "@/lib/data/preferences";
 import type { ComprehensionScore } from "@/lib/difficulty";
 
 /**
@@ -31,10 +32,11 @@ export async function getVideoDifficulty(videoId: string): Promise<VideoDifficul
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
+  const prefs = await readPreferences(supabase, user.id);
 
   const transcript = transcriptResult.data;
   if (!transcript || transcript.lines.length === 0) {
-    return { ok: true, data: scoreComprehension([], new Set()) };
+    return { ok: true, data: scoreComprehension([], new Set(), DIFFICULTY_BANDS[prefs.difficulty]) };
   }
 
   const lemmas: string[] = [];
@@ -44,7 +46,7 @@ export async function getVideoDifficulty(videoId: string): Promise<VideoDifficul
   }
 
   const known = await getKnownVocabLemmas(supabase, user.id);
-  return { ok: true, data: scoreComprehension(lemmas, known) };
+  return { ok: true, data: scoreComprehension(lemmas, known, DIFFICULTY_BANDS[prefs.difficulty]) };
 }
 
 /**

@@ -2,9 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createServiceClient } from "@/lib/supabase/service";
 import { emitNotification } from "@/lib/notifications/emit";
+import { readPreferences } from "@/lib/data/preferences";
+import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/notifications/emit", () => ({ emitNotification: vi.fn() }));
+vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 
 // Imported after the mocks above are registered.
 import { recordActivity } from "./gamification";
@@ -35,9 +38,33 @@ beforeEach(() => {
   vi.mocked(createServiceClient).mockReset();
   vi.mocked(emitNotification).mockReset();
   vi.mocked(emitNotification).mockResolvedValue(undefined);
+  vi.mocked(readPreferences).mockResolvedValue({ ...DEFAULT_PREFERENCES });
 });
 
 describe("recordActivity", () => {
+  it("uses the learning schedule when advancing a streak", async () => {
+    let statsUpdate: unknown;
+    vi.mocked(readPreferences).mockResolvedValue({ ...DEFAULT_PREFERENCES, learningSchedule: "weekdays" as const, scheduleDays: [1, 2, 3, 4, 5] });
+    mockService({
+      xp_events: (calls) => (hasOp(calls, "upsert") ? { data: { id: "xpe-1" }, error: null } : { data: [], error: null }),
+      user_stats: (calls) => {
+        if (hasOp(calls, "upsert")) {
+          statsUpdate = calls.find((call) => call.op === "upsert")?.values;
+          return { data: null, error: null };
+        }
+        return { data: { xp: 0, streak_current: 4, streak_longest: 4, last_active_date: "2026-09-18" }, error: null };
+      },
+      user_kanji_progress: () => ({ data: [], error: null }),
+      user_test_attempts: () => ({ data: [], error: null }),
+      ...NO_BADGES_TABLES,
+    });
+
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: new Date("2026-09-21T05:00:00Z") });
+
+    expect(result.ok).toBe(true);
+    expect((statsUpdate as Record<string, unknown>).streak_current).toBe(5);
+  });
+
   it("awards xp, starts the streak, and updates user_stats on a fresh outcome", async () => {
     let statsUpdate: unknown;
     mockService({

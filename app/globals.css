@@ -125,7 +125,15 @@
      their default size. Verified in Chrome at viewport 1422, not reasoned
      about: calc(28 * unit) gives 27.654px at a 16px root and 31.111px at a
      20px root (spec §5.2 carries the command). */
-  --density-unit: clamp(0.0555556rem, calc(100vw / 1440), 0.0625rem);
+  /* Display Scale (settings spec §4.5) multiplies whatever density resolves
+     to; it never replaces a density mode. `--display-scale` is a plain number
+     set on <html> — which IS :root — by the inline script the (protected)
+     layout emits, so this declaration substitutes it on the same element it is
+     declared on, and every [data-density] subtree inherits the number and
+     multiplies its own unit by it. Portals scale too, because they are still
+     inside <html>. Proof is a browser measurement of the computed values:
+     tests/e2e/display-scale.spec.ts, not a reading of this file. */
+  --density-unit: calc(clamp(0.0555556rem, calc(100vw / 1440), 0.0625rem) * var(--display-scale, 1));
 
   /* Font families. next/font in app/[locale]/layout.tsx sets these at runtime;
      the values here are only the pre-hydration fallback. */
@@ -338,7 +346,7 @@
    away from their own design. A custom property is what makes this possible —
    a root font-size change is all-or-nothing per document (spec §5.3). */
 [data-density="reference"] {
-  --density-unit: 0.0625rem;
+  --density-unit: calc(0.0625rem * var(--display-scale, 1));
 }
 
 /* THE OPT-OUT'S SECOND HALF, and the half that actually does the work.

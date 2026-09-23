@@ -6,6 +6,7 @@ export interface HubCompanionRailLabels {
   noPreparation: string;
   todayGoal: string;
   noGoal: string;
+  dailyGoal: (minutes: number) => string;
   weeklyProgress: string;
   noWeeklyActivity: string;
   suggestion: string;
@@ -17,6 +18,7 @@ export interface HubCompanionRailLabels {
 export interface HubCompanionRailProps {
   rail: HubRailProjection | null;
   labels: HubCompanionRailLabels;
+  dailyGoalMinutes: number | null;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface HubCompanionRailProps {
  * This is intentionally not a Companion anchor: the non-empty Shadowing Hub
  * has no approved Companion presence yet. It is a truthful study summary.
  */
-export function HubCompanionRail({ rail, labels }: HubCompanionRailProps) {
+export function HubCompanionRail({ rail, labels, dailyGoalMinutes }: HubCompanionRailProps) {
   const suggestion = rail?.suggestion ?? null;
   const suggestionDetail =
     suggestion?.reason.kind === "known-word-fit"
@@ -43,7 +45,9 @@ export function HubCompanionRail({ rail, labels }: HubCompanionRailProps) {
 
       <section aria-label={labels.todayGoal} className="rounded-lg border border-border bg-card p-md-lg">
         <h2 className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{labels.todayGoal}</h2>
-        <p className="mt-sm text-body text-muted-foreground">{labels.noGoal}</p>
+        <p className="mt-sm text-body text-muted-foreground">
+          {dailyGoalMinutes === null ? labels.noGoal : labels.dailyGoal(dailyGoalMinutes)}
+        </p>
       </section>
 
       <section aria-label={labels.weeklyProgress} className="rounded-lg border border-border bg-card p-md-lg">

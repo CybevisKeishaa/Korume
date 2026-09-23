@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/data/videos";
 import { recordActivity } from "@/lib/data/gamification";
-import { reviewItem, type Quality, type SrsState } from "@/lib/srs";
+import { REVIEW_FREQUENCY_MULTIPLIER, reviewItem, type Quality, type SrsState } from "@/lib/srs";
+import { readPreferences } from "@/lib/data/preferences";
 import type { CreateMiningCardInput, ReviewMiningCardInput } from "@/lib/validation/mining";
 
 /**
@@ -135,6 +136,7 @@ export async function reviewMiningCard(
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
+  const prefs = await readPreferences(supabase, user.id);
 
   const { data: existing, error: loadError } = await supabase
     .from("sentence_mining_cards")
@@ -151,7 +153,7 @@ export async function reviewMiningCard(
     easeFactor: Number(existing.ease_factor),
   };
 
-  const next = reviewItem(state, input.quality as Quality, now);
+  const next = reviewItem(state, input.quality as Quality, now, REVIEW_FREQUENCY_MULTIPLIER[prefs.reviewFrequency]);
 
   const { error: updateError } = await supabase
     .from("sentence_mining_cards")

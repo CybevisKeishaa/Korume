@@ -16,17 +16,21 @@ export interface DangerZoneProps {
    * so the user is never invited into an action that cannot succeed;
    * `DeletionPendingBanner`, rendered above this section by `PrivacyScreen`
    * whenever this is true, is what explains why (Task 11). The memory row
-   * is untouched — it has no confirmation flow in this branch and nothing
-   * to do with the deletion-request lifecycle.
+   * is untouched — it has nothing to do with the deletion-request lifecycle,
+   * and erasing memory while an account request is pending is a coherent
+   * thing to want. That was true when the row pointed at a placeholder and
+   * stays true now that Task 7 gave it a working confirmation page.
    */
   pendingRequest: boolean;
 }
 
 /**
  * `337:3323`'s Danger Zone, built as drawn: three rows, none greyed out, none
- * dropped (spec §13). The memory row's behaviour is not built yet, so its
- * action points at an honest "not built" destination — appearing functional
- * and pointing somewhere honest are different things.
+ * dropped (spec §13). All three now lead somewhere that works — the memory
+ * row's action reached an honest "not built yet" surface until Task 7 put the
+ * Erase Korume Memory confirmation page behind it (spec §4.8). The row itself
+ * was never redesigned for that, by design: spec §13 shipped it in its final
+ * form precisely so building the behaviour would not move it.
  *
  * Text on the destructive fill is `text-danger-foreground`, which aliases
  * `--ink-950` (app/globals.css). There is no bare `ink-950` Tailwind utility

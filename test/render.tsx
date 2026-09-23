@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ComponentType, ReactElement, ReactNode } from "react";
 import {
   render as rtlRender,
   renderHook as rtlRenderHook,
@@ -6,7 +6,7 @@ import {
   type RenderHookOptions,
 } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import { loadEnMessages } from "./messages";
+import { loadEnMessages, loadViMessages } from "./messages";
 
 /**
  * `@testing-library/react`'s `render`, wrapped in `NextIntlClientProvider`.
@@ -29,15 +29,32 @@ import { loadEnMessages } from "./messages";
  * `lib/i18n/**` and `app/[locale]/layout.tsx`.
  */
 const messages = loadEnMessages();
+const CATALOGS = { en: messages, vi: loadViMessages() } as const;
 
-function customRender(ui: ReactElement, options?: RenderOptions) {
+/**
+ * `locale` opts a single test out of the `en` default above.
+ *
+ * Reach for it ONLY when the behaviour under test is locale-dependent and an
+ * `en` render cannot observe it — not to spot-check translations, which
+ * `catalog.test.ts` (structure) and the `*.pin.test.ts` files (copy) already
+ * own, and not for assertions on user-visible text, which stay English by
+ * spec D6. The motivating case is `MemoryEraseForm`: it asks the user to type
+ * a TRANSLATED confirmation word and sends an UNTRANSLATED literal, and those
+ * two strings are the same string under `en`, so only a non-`en` render can
+ * tell a correct implementation from one that posts whatever was typed.
+ */
+function customRender(
+  ui: ReactElement,
+  options?: RenderOptions & { locale?: keyof typeof CATALOGS },
+) {
+  const { locale = "en", ...rest } = options ?? {};
   return rtlRender(ui, {
     wrapper: ({ children }) => (
-      <NextIntlClientProvider locale="en" messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={CATALOGS[locale]}>
         {children}
       </NextIntlClientProvider>
     ),
-    ...options,
+    ...rest,
   });
 }
 
@@ -49,15 +66,24 @@ function customRender(ui: ReactElement, options?: RenderOptions) {
  */
 function customRenderHook<Result, Props>(
   callback: (props: Props) => Result,
-  options?: Omit<RenderHookOptions<Props>, "wrapper">,
+  options?: Omit<RenderHookOptions<Props>, "wrapper"> & {
+    /**
+     * Extra providers the hook needs, nested INSIDE the intl provider so both
+     * apply. Without this a caller has to hand-roll a wrapper and import
+     * `next-intl` itself, which spec P1 forbids outside `lib/i18n/` — this
+     * file is the one exemption, so the seam belongs here.
+     */
+    wrapper?: ComponentType<{ children: ReactNode }>;
+  },
 ) {
+  const { wrapper: Inner, ...rest } = options ?? {};
   return rtlRenderHook(callback, {
     wrapper: ({ children }) => (
       <NextIntlClientProvider locale="en" messages={messages}>
-        {children}
+        {Inner ? <Inner>{children}</Inner> : children}
       </NextIntlClientProvider>
     ),
-    ...options,
+    ...rest,
   });
 }
 

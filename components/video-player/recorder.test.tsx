@@ -7,6 +7,9 @@ import {
   type GetUserMediaMockHandle,
   type MediaRecorderMockHandle,
 } from "@/test/media-mocks";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { PreferencesProvider } from "@/components/providers/preferences-provider";
+import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import { useRecorder } from "./recorder";
 
 describe("useRecorder", () => {
@@ -185,5 +188,56 @@ describe("useRecorder", () => {
 
     expect(result.current.state).toBe("error");
     expect(result.current.error).toMatch(/isn't supported/i);
+  });
+});
+
+describe("useRecorder — Korume's own microphone switch (settings spec §1.5, §4.4)", () => {
+  let gum: GetUserMediaMockHandle | undefined;
+  let mr: MediaRecorderMockHandle | undefined;
+
+  afterEach(() => {
+    gum?.restore();
+    mr?.restore();
+    gum = undefined;
+    mr = undefined;
+  });
+
+  const withPreferences = (microphoneEnabled: boolean) =>
+    function Wrapper({ children }: { children: React.ReactNode }) {
+      return (
+        <ThemeProvider>
+          <PreferencesProvider initial={{ ...DEFAULT_PREFERENCES, microphoneEnabled }}>
+            {children}
+          </PreferencesProvider>
+        </ThemeProvider>
+      );
+    };
+
+  it("never reaches getUserMedia when the reader has switched the microphone off", async () => {
+    mr = mockMediaRecorder();
+    gum = mockGetUserMedia();
+    const { result } = renderHook(() => useRecorder(), { wrapper: withPreferences(false) });
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    // The point of the switch: no permission prompt, no capture, no stream.
+    expect(gum.calls).toHaveLength(0);
+    expect(result.current.state).toBe("disabled-in-settings");
+    expect(result.current.error).not.toBeNull();
+  });
+
+  it("records normally when the switch is on, so the gate adds no behaviour of its own", async () => {
+    mr = mockMediaRecorder();
+    gum = mockGetUserMedia();
+    const { result } = renderHook(() => useRecorder(), { wrapper: withPreferences(true) });
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(gum.calls).toHaveLength(1);
+    await waitFor(() => expect(result.current.state).toBe("recording"));
   });
 });

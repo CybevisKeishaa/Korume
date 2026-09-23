@@ -4,6 +4,7 @@ import {
   INITIAL_STATE,
   MIN_EASE_FACTOR,
   DEFAULT_EASE_FACTOR,
+  REVIEW_FREQUENCY_MULTIPLIER,
   type SrsState,
 } from "./sm2";
 
@@ -84,5 +85,32 @@ describe("reviewItem — validation", () => {
   it("exposes sane defaults", () => {
     expect(DEFAULT_EASE_FACTOR).toBe(2.5);
     expect(INITIAL_STATE.repetitions).toBe(0);
+  });
+});
+
+describe("review frequency multiplier (settings spec §4.4)", () => {
+  const passed = { repetitions: 3, intervalDays: 10, easeFactor: 2.5 };
+  const now = new Date("2026-09-22T00:00:00Z");
+
+  it("leaves normal unchanged", () => {
+    expect(reviewItem(passed, 4, now, 1).intervalDays).toBe(reviewItem(passed, 4, now).intervalDays);
+  });
+
+  it("shortens for more and lengthens for relaxed, rounded, minimum 1", () => {
+    const base = reviewItem(passed, 4, now).intervalDays;
+    expect(reviewItem(passed, 4, now, REVIEW_FREQUENCY_MULTIPLIER.more).intervalDays).toBe(Math.max(1, Math.round(base * 0.7)));
+    expect(reviewItem(passed, 4, now, REVIEW_FREQUENCY_MULTIPLIER.relaxed).intervalDays).toBe(Math.round(base * 1.4));
+    expect(reviewItem({ repetitions: 0, intervalDays: 0, easeFactor: 2.5 }, 4, now, 0.7).intervalDays).toBe(1);
+  });
+
+  it("nextReviewAt follows the multiplied interval", () => {
+    const result = reviewItem(passed, 4, now, 1.4);
+    expect(result.nextReviewAt.getTime() - now.getTime()).toBe(result.intervalDays * 86_400_000);
+  });
+
+  it("does not touch a failed review", () => {
+    // 5, not 1.4: a lapse resets the interval to 1, and max(1, round(1 * 1.4))
+    // is also 1, so 1.4 cannot tell a leak from correct behaviour.
+    expect(reviewItem(passed, 1, now, 5).intervalDays).toBe(1);
   });
 });

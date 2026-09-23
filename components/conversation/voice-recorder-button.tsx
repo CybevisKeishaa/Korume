@@ -146,7 +146,13 @@ export function VoiceRecorderButton({
   let statusMessage = "";
   if (recorder.state === "requesting-permission") statusMessage = t("voiceRecorder.requestingPermission");
   else if (isRecording) statusMessage = t("voiceRecorder.recording");
-  else if (recorder.state === "error" && recorder.error) statusMessage = recorder.error;
+  // `disabled-in-settings` is not an error, but it is the reason nothing
+  // happened — silence here would read as a broken button.
+  else if (
+    (recorder.state === "error" || recorder.state === "disabled-in-settings") &&
+    recorder.error
+  )
+    statusMessage = recorder.error;
   else if (phase === "transcribing") statusMessage = t("voiceRecorder.transcribing");
   else if (message) statusMessage = message;
 

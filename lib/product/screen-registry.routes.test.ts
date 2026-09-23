@@ -22,6 +22,31 @@ describe("registry ↔ repo routes", () => {
     expect(lying).toEqual([]);
   });
 
+  /**
+   * T2 runs one way only: it catches a registry that OVER-claims (`built`
+   * with no page behind it) and exempts `impl: "none"` entirely. So the
+   * opposite lie was free — a route with a real, shipping page could be
+   * recorded as rendering nothing and every test stayed green. Found by
+   * mutation-checking Task 9: flipping `/settings` to `"none"` after building
+   * it reddened nothing, and `upcoming-routes.test.tsx` no longer lists it.
+   *
+   * That direction matters because this registry is how the Figma port
+   * backlog is counted. Under-claiming does not break a screen; it makes the
+   * project report itself as further behind than it is, and the correction
+   * arrives as a surprise rather than as progress.
+   *
+   * Measured before being written: 35 entries are `"none"` today and NONE of
+   * them has a page, so this starts green with no exemption list to maintain.
+   * A screen that genuinely ships a page while rendering nothing real does
+   * not exist — that is what `"placeholder"` is for.
+   */
+  it("T12: no entry claims 'none' while a real page.tsx sits at its route", () => {
+    const understating = SCREEN_REGISTRY.filter(
+      (e) => e.route !== null && e.impl === "none" && derivedRoutes.has(e.route),
+    ).map((e) => e.screenId);
+    expect(understating).toEqual([]);
+  });
+
   it("T11: every nav destination resolves to a real page.tsx", () => {
     // T11, not T2b: the spec's §4.1 table already uses T2b for the resolver
     // unit test, and this assertion took the same id by accident. Renamed

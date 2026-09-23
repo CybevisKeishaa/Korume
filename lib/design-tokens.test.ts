@@ -384,7 +384,7 @@ describe("desktop density scale", () => {
     // preference and fails WCAG 1.4.4. rem bounds rise above the vw term
     // when the reader raises their default size, so type still grows.
     expect(css).toMatch(
-      /--density-unit:\s*clamp\(\s*0\.0555556rem\s*,\s*calc\(100vw\s*\/\s*1440\)\s*,\s*0\.0625rem\s*\)/,
+      /--density-unit:\s*calc\(\s*clamp\(\s*0\.0555556rem\s*,\s*calc\(100vw\s*\/\s*1440\)\s*,\s*0\.0625rem\s*\)\s*\*\s*var\(--display-scale,\s*1\)\s*\)/,
     );
     const declaration = css.match(/--density-unit:[^;]+;/)?.[0] ?? "";
     expect(declaration).not.toMatch(/\d+px/);
@@ -399,7 +399,7 @@ describe("desktop density scale", () => {
     // entirely — a check that measures nothing, which is exactly how the
     // density defect survived a branch.
     const bounds = css.match(
-      /--density-unit:\s*clamp\(\s*([\d.]+)rem\s*,\s*calc\(100vw\s*\/\s*(\d+)\)\s*,\s*([\d.]+)rem\s*\)/,
+      /--density-unit:\s*calc\(\s*clamp\(\s*([\d.]+)rem\s*,\s*calc\(100vw\s*\/\s*(\d+)\)\s*,\s*([\d.]+)rem\s*\)/,
     );
     expect(bounds).not.toBeNull();
     const [, lower, reference, upper] = bounds!;
@@ -484,7 +484,13 @@ describe("desktop density scale", () => {
   it("lets a route group opt out, because a custom property cascades", () => {
     // Spec §5.3: rem resolves against the root and is all-or-nothing per
     // document, which is the reason this is a custom property at all.
-    expect(css).toMatch(/\[data-density="reference"\]\s*\{\s*--density-unit:\s*0\.0625rem;?\s*\}/);
+    expect(css).toMatch(
+      /\[data-density="reference"\]\s*\{\s*--density-unit:\s*calc\(\s*0\.0625rem\s*\*\s*var\(--display-scale,\s*1\)\s*\);?\s*\}/,
+    );
+    // Settings spec §4.5: the opt-out holds density at 1.0 but must still obey
+    // Display Scale, so the factor belongs in BOTH declarations. Dropping it
+    // here is the mutation this assertion exists to catch.
+    expect(css).toMatch(/--density-unit:\s*calc\(\s*0\.0625rem\s*\*\s*var\(--display-scale/);
   });
 
   it("scales every rung of every scale through the one unit", () => {

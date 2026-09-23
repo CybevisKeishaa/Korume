@@ -148,7 +148,11 @@ describe("PrivacyScreen", () => {
     const destination = matches[0] as (typeof SCREEN_REGISTRY)[number];
     expect(destination.route).toBe("/settings/privacy/memory");
     // "none" would mean the registry itself admits nothing renders there.
-    expect(destination.impl).toBe("placeholder");
+    // `"built"` since Task 7 replaced the placeholder with the real Erase
+    // Korume Memory confirmation page; the assertion moved with it rather
+    // than being relaxed to "not none", because the point of this test is
+    // that the registry's claim about this route is exact.
+    expect(destination.impl).toBe("built");
 
     // And the page module the registry claims exists really does. The route's
     // segments sit under the (protected)/(app) chrome groups, which

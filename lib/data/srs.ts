@@ -1,8 +1,9 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { reviewItem, INITIAL_STATE, type Quality, type SrsState } from "@/lib/srs";
+import { reviewItem, INITIAL_STATE, REVIEW_FREQUENCY_MULTIPLIER, type Quality, type SrsState } from "@/lib/srs";
 import { getKanjiList, getVocabList } from "@/lib/data/content";
 import { recordActivity } from "@/lib/data/gamification";
+import { readPreferences } from "@/lib/data/preferences";
 import type { ReviewItem } from "@/lib/learning-types";
 import type { ItemType, JlptLevel, SrsReviewInput } from "@/lib/validation/content";
 
@@ -30,6 +31,7 @@ export async function submitReview(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, status: 401 };
+  const prefs = await readPreferences(supabase, user.id);
 
   const { table, fk } = PROGRESS[input.itemType];
 
@@ -49,7 +51,7 @@ export async function submitReview(
       }
     : { ...INITIAL_STATE };
 
-  const next = reviewItem(state, input.quality as Quality, now);
+  const next = reviewItem(state, input.quality as Quality, now, REVIEW_FREQUENCY_MULTIPLIER[prefs.reviewFrequency]);
 
   const { error: upsertError } = await supabase.from(table).upsert(
     {

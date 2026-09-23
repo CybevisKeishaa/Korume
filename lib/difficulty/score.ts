@@ -8,6 +8,7 @@
  * plain unit test.
  */
 import type { Token } from "@/lib/japanese/types";
+import type { Difficulty } from "@/lib/preferences/options";
 import type { ComprehensionBand, ComprehensionScore } from "./types";
 
 /**
@@ -21,6 +22,17 @@ const CONTENT_POS_TAGS: ReadonlySet<string> = new Set(["名詞", "動詞", "形�
 /** i+1 band boundaries on knownRatio. Named so the thresholds are a single source of truth. */
 export const TOO_HARD_MAX = 0.8; // ratio < this => too-hard
 export const IDEAL_MAX = 0.95; // this < ratio <= ... => too-easy above; ideal is [TOO_HARD_MAX, IDEAL_MAX]
+
+export interface DifficultyBand {
+  tooHardMax: number;
+  idealMax: number;
+}
+
+export const DIFFICULTY_BANDS: Record<Difficulty, DifficultyBand> = {
+  adaptive: { tooHardMax: TOO_HARD_MAX, idealMax: IDEAL_MAX },
+  easy: { tooHardMax: 0.88, idealMax: 0.98 },
+  challenge: { tooHardMax: 0.7, idealMax: 0.9 },
+};
 
 /**
  * Reduce tokens to the content-word lemmas ("base" forms) used for
@@ -43,6 +55,7 @@ export function contentLemmas(tokens: Token[]): string[] {
 export function scoreComprehension(
   contentLemmasList: string[],
   knownLemmas: Set<string>,
+  band: DifficultyBand = DIFFICULTY_BANDS.adaptive,
 ): ComprehensionScore {
   const totalWords = contentLemmasList.length;
 
@@ -53,14 +66,14 @@ export function scoreComprehension(
   const knownWords = contentLemmasList.reduce((count, lemma) => count + (knownLemmas.has(lemma) ? 1 : 0), 0);
   const knownRatio = knownWords / totalWords;
 
-  let band: ComprehensionBand;
-  if (knownRatio < TOO_HARD_MAX) {
-    band = "too-hard";
-  } else if (knownRatio > IDEAL_MAX) {
-    band = "too-easy";
+  let comprehensionBand: ComprehensionBand;
+  if (knownRatio < band.tooHardMax) {
+    comprehensionBand = "too-hard";
+  } else if (knownRatio > band.idealMax) {
+    comprehensionBand = "too-easy";
   } else {
-    band = "ideal";
+    comprehensionBand = "ideal";
   }
 
-  return { totalWords, knownWords, knownRatio, band };
+  return { totalWords, knownWords, knownRatio, band: comprehensionBand };
 }

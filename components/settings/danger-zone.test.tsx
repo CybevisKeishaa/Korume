@@ -50,8 +50,9 @@ describe("DangerZone", () => {
    * while one is pending can only produce the 409 the API already refuses.
    * The user must never be invited into an action that cannot succeed, so
    * both destructive rows are disabled while `pendingRequest` is true. The
-   * memory row is untouched: it has no confirmation flow of its own in this
-   * branch and is unrelated to the deletion-request lifecycle.
+   * memory row is untouched: it is unrelated to the deletion-request
+   * lifecycle, so Task 7 giving it a working confirmation page of its own
+   * does not bring it under this rule.
    */
   it("disables the two destructive rows while a deletion request is already pending", () => {
     const onCloseAccount = vi.fn();

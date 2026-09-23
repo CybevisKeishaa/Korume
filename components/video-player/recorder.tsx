@@ -2,9 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
+import { useOptionalPreferences } from "@/components/providers/preferences-provider";
+import { canUseDevice } from "@/lib/media/device-gate";
 
-/** Lifecycle of a single shadowing recording attempt. */
-export type RecorderState = "idle" | "requesting-permission" | "recording" | "recorded" | "error";
+/**
+ * Lifecycle of a single shadowing recording attempt.
+ *
+ * `disabled-in-settings` is NOT an error: nothing went wrong, the reader
+ * turned the microphone off. Keeping it out of `"error"` is what lets the UI
+ * offer the settings link instead of a retry.
+ */
+export type RecorderState =
+  | "idle"
+  | "requesting-permission"
+  | "recording"
+  | "recorded"
+  | "error"
+  | "disabled-in-settings";
 
 export interface UseRecorderResult {
   state: RecorderState;
@@ -58,6 +72,7 @@ function classifyMicError(err: unknown): MicErrorKey {
  */
 export function useRecorder(): UseRecorderResult {
   const t = useTranslations("shadowing");
+  const preferences = useOptionalPreferences();
   const [state, setState] = useState<RecorderState>("idle");
   const [blob, setBlob] = useState<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +102,16 @@ export function useRecorder(): UseRecorderResult {
 
     setError(null);
     setBlob(null);
+
+    // Korume's own switch is checked BEFORE anything touches the device, so a
+    // reader who turned the microphone off never sees a permission prompt
+    // (settings spec §1.5).
+    if (!canUseDevice(preferences, "microphone")) {
+      setError(t("recorder.errors.disabledInSettings"));
+      setState("disabled-in-settings");
+      return;
+    }
+
     setState("requesting-permission");
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {

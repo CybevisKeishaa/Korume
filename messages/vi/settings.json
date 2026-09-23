@@ -85,5 +85,129 @@
       "body": "Tài khoản của bạn sẽ đóng vào {date}. Dữ liệu học của bạn vẫn được giữ lại, không bị xóa.",
       "switchNote": "Muốn xóa toàn bộ dữ liệu thay vì đóng tài khoản? Hãy hủy yêu cầu này trước, sau đó chọn \"Xóa toàn bộ dữ liệu của tôi\"."
     }
+  },
+  "page": {
+    "title": "Cài đặt",
+    "eyebrow": "Không gian riêng",
+    "subtitle": "Một nơi yên tĩnh để Korume trở nên giống bạn hơn.",
+    "about": {
+      "title": "Giới thiệu",
+      "subtitle": "Phiên bản bạn đang dùng.",
+      "versionLabel": "Phiên bản",
+      "versionDescription": "Bản Korume mà trình duyệt này đang tải."
+    },
+    "support": {
+      "title": "Cần giúp một tay?",
+      "body": "Korume của bạn luôn ở đây mỗi khi bạn cần.",
+      "action": "Trò chuyện với Korume"
+    },
+    "footer": {
+      "line": "Korume · Phiên bản {version}",
+      "tagline": "Được làm lặng lẽ tại Việt Nam. Dành cho những người học suốt đời."
+    },
+    "learning": {
+      "title": "Học tập",
+      "subtitle": "Cá nhân hóa cách bạn học mỗi ngày."
+    },
+    "appearance": {
+      "title": "Giao diện",
+      "subtitle": "Điều chỉnh cách Korume hiển thị khi bạn học."
+    },
+    "privacy": {
+      "title": "Quyền riêng tư & Dữ liệu",
+      "subtitle": "Kiểm soát dữ liệu học tập và quyền riêng tư của bạn."
+    },
+    "language": {
+      "label": "Ngôn ngữ giao diện",
+      "description": "Ngôn ngữ của các màn hình Korume. Tài liệu học của bạn không bị ảnh hưởng."
+    },
+    "dailyGoal": {
+      "label": "Mục tiêu học mỗi ngày",
+      "description": "Thời lượng bạn muốn học mỗi ngày. Chuỗi ngày được tính khi bạn đạt mục tiêu.",
+      "option": "{minutes} phút"
+    },
+    "schedule": {
+      "label": "Lịch học",
+      "description": "Những ngày bạn định học. Chuỗi ngày sẽ bỏ qua các ngày bạn không chọn.",
+      "every_day": "Mỗi ngày",
+      "weekdays": "Ngày trong tuần",
+      "custom": "Tùy chọn",
+      "daysLabel": "Ngày học",
+      "atLeastOne": "Hãy chọn ít nhất một ngày. Lịch không có ngày nào sẽ làm mất chuỗi của bạn ngay ngày mai.",
+      "day": {
+        "1": "T2",
+        "2": "T3",
+        "3": "T4",
+        "4": "T5",
+        "5": "T6",
+        "6": "T7",
+        "7": "CN"
+      }
+    },
+    "reviewFrequency": {
+      "label": "Tần suất ôn tập",
+      "description": "Thẻ quay lại thường xuyên đến mức nào. Thong thả thì giãn ra, Nhiều hơn thì quay lại sớm hơn.",
+      "normal": "Bình thường",
+      "more": "Nhiều hơn",
+      "relaxed": "Thong thả"
+    },
+    "difficulty": {
+      "label": "Độ khó",
+      "description": "Mức khó của nội dung mới. Tự điều chỉnh sẽ bám theo khả năng hiện tại của bạn.",
+      "adaptive": "Tự điều chỉnh",
+      "easy": "Dễ hơn",
+      "challenge": "Thử thách"
+    },
+    "displayScale": {
+      "label": "Cỡ hiển thị",
+      "description": "Kích thước mọi thứ trên màn hình. Áp dụng ngay khi bạn chọn.",
+      "normal": "Bình thường",
+      "large": "Lớn",
+      "extra_large": "Rất lớn"
+    },
+    "reducedMotion": {
+      "label": "Giảm chuyển động",
+      "description": "Cắt bớt hiệu ứng, chỉ giữ lại những gì mang ý nghĩa.",
+      "osOverrides": "Thiết bị của bạn đã yêu cầu giảm chuyển động, nên Korume vẫn đang giảm dù tắt hay bật."
+    },
+    "microphone": {
+      "label": "Micro",
+      "description": "Cho phép Korume ghi âm khi bạn luyện nói và luyện nhại."
+    },
+    "camera": {
+      "label": "Camera",
+      "description": "Mặc định tắt. Korume không cần camera để dạy bạn."
+    },
+    "exportData": {
+      "label": "Xuất dữ liệu",
+      "description": "Tải về mọi thứ Korume lưu về bạn, trong một tệp JSON.",
+      "action": "Tải về"
+    },
+    "history": {
+      "label": "Tải lịch sử học tập",
+      "description": "Các buổi học, lượt ôn tập và tiến độ theo thời gian, dạng bảng tính.",
+      "action": "Tải CSV"
+    }
+  },
+  "save": {
+    "failed": "Chưa lưu được thay đổi. Vui lòng thử lại."
+  },
+  "memoryErase": {
+    "eyebrow": "VÙNG NGUY HIỂM",
+    "title": "Xóa ký ức Korume",
+    "subtitle": "Korume sẽ quên những gì đã biết về bạn. Việc học của bạn không bị ảnh hưởng.",
+    "erasedHeading": "Những gì Korume sẽ quên",
+    "erasedDiary": "Nhật ký, những suy ngẫm và ghi nhận mà Korume đã viết về các buổi học của bạn.",
+    "erasedConversations": "Mọi cuộc trò chuyện bạn đã có với Korume, cùng toàn bộ tin nhắn bên trong.",
+    "keptHeading": "Những gì vẫn giữ nguyên",
+    "keptProgress": "Toàn bộ tiến độ học — thẻ ôn tập, chuỗi ngày, XP, huy hiệu và thống kê.",
+    "keptPractice": "Các buổi luyện nói và bản ghi âm, thẻ đã khai thác, thư viện và danh sách phát.",
+    "finality": "Việc này diễn ra ngay khi bạn xác nhận, và không có bản sao nào để phục hồi. Korume sẽ bắt đầu tìm hiểu lại về bạn từ buổi học kế tiếp.",
+    "typePrompt": "Nhập {word} để xác nhận",
+    "confirmWord": "XOA",
+    "submit": "Xóa ký ức Korume",
+    "cancel": "Giữ lại ký ức",
+    "done": "Korume đã quên những gì từng biết về bạn.",
+    "failed": "Hiện chưa xóa được ký ức. Vui lòng thử lại."
   }
 }

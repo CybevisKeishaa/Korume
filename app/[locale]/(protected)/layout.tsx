@@ -1,8 +1,12 @@
 import { redirect } from "@/lib/i18n/navigation";
 import { AmbientProvider } from "@/components/companion/ambient-provider";
+import { PreferencesProvider } from "@/components/providers/preferences-provider";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { hasPublicSupabaseEnv } from "@/lib/env";
 import { getLocale } from "@/lib/i18n/server";
+import { getMyPreferences } from "@/lib/data/preferences";
+import { appearanceScript } from "@/lib/preferences/appearance-script";
+import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 
 export const dynamic = "force-dynamic";
 
@@ -28,5 +32,18 @@ export default async function ProtectedLayout({
   const user = await getCurrentUser();
   if (!user) redirect({ href: "/login", locale });
 
-  return <AmbientProvider>{children}</AmbientProvider>;
+  // Appearance is settled before paint, here rather than in the root layout
+  // because only a signed-in request can read the account preference
+  // (settings spec §4.5). `readPreferences` never throws, so a failed read
+  // renders the defaults instead of the session.
+  const preferences = (await getMyPreferences()) ?? DEFAULT_PREFERENCES;
+
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: appearanceScript(preferences) }} />
+      <PreferencesProvider initial={preferences}>
+        <AmbientProvider>{children}</AmbientProvider>
+      </PreferencesProvider>
+    </>
+  );
 }

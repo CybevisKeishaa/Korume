@@ -114,7 +114,7 @@ desktop-density-scale merge gate; re-measure before relying on it).
   `npx supabase status` before any Playwright run.
 - Never build or serve from the main checkout; the owner's dev server uses its `.next`.
 
-- Owner: none (branch closed, merged to master 2026-09-22)
+- Owner: Claude — branch closed, merged to master `d7b1821` 2026-09-22; nobody is working in it.
 
 ## Blockers
 

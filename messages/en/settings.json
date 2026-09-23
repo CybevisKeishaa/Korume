@@ -85,5 +85,129 @@
       "body": "Your account is scheduled to close on {date}. Your learning data will be kept, not deleted.",
       "switchNote": "Want to delete all your data instead? Cancel this request first, then choose \"Delete all my data.\""
     }
+  },
+  "page": {
+    "title": "Settings",
+    "eyebrow": "Personal space",
+    "subtitle": "A quiet place to make Korume feel more like yours.",
+    "about": {
+      "title": "About",
+      "subtitle": "What you are running.",
+      "versionLabel": "Version",
+      "versionDescription": "The build of Korume this browser has loaded."
+    },
+    "support": {
+      "title": "Need a hand?",
+      "body": "Your Korume is always here whenever you need help.",
+      "action": "Talk with Korume"
+    },
+    "footer": {
+      "line": "Korume · Version {version}",
+      "tagline": "Built quietly in Vietnam. Crafted for lifelong learners."
+    },
+    "learning": {
+      "title": "Learning",
+      "subtitle": "Personalize how you learn every day."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "subtitle": "Adjust how Korume looks while you study."
+    },
+    "privacy": {
+      "title": "Privacy & Data",
+      "subtitle": "Control your learning data and privacy."
+    },
+    "language": {
+      "label": "Interface Language",
+      "description": "The language Korume's own screens are written in. Your study material is unaffected."
+    },
+    "dailyGoal": {
+      "label": "Daily Learning Goal",
+      "description": "How long you aim to study each day. Your streak counts a day once you reach it.",
+      "option": "{minutes} min"
+    },
+    "schedule": {
+      "label": "Learning Schedule",
+      "description": "The days you plan to study. Your streak skips the days you leave out.",
+      "every_day": "Every day",
+      "weekdays": "Weekdays",
+      "custom": "Custom",
+      "daysLabel": "Study days",
+      "atLeastOne": "Pick at least one day. A schedule with no days would end your streak tomorrow.",
+      "day": {
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat",
+        "7": "Sun"
+      }
+    },
+    "reviewFrequency": {
+      "label": "Review Frequency",
+      "description": "How often cards come back. Relaxed spaces them out; More brings them round sooner.",
+      "normal": "Normal",
+      "more": "More",
+      "relaxed": "Relaxed"
+    },
+    "difficulty": {
+      "label": "Difficulty Preference",
+      "description": "How hard new material runs. Adaptive follows what you can already handle.",
+      "adaptive": "Adaptive",
+      "easy": "Easier",
+      "challenge": "Challenge"
+    },
+    "displayScale": {
+      "label": "Display Scale",
+      "description": "The size of everything on screen. Takes effect as you choose it.",
+      "normal": "Normal",
+      "large": "Large",
+      "extra_large": "Extra large"
+    },
+    "reducedMotion": {
+      "label": "Reduced Motion",
+      "description": "Cuts animation down to what carries meaning.",
+      "osOverrides": "Your device already asks for reduced motion, so Korume is reducing it either way."
+    },
+    "microphone": {
+      "label": "Microphone",
+      "description": "Lets Korume record you for shadowing and speaking practice."
+    },
+    "camera": {
+      "label": "Camera",
+      "description": "Off unless you turn it on. Korume does not need it to teach you."
+    },
+    "exportData": {
+      "label": "Export Data",
+      "description": "Download everything Korume stores about you, as one JSON file.",
+      "action": "Download"
+    },
+    "history": {
+      "label": "Download Learning History",
+      "description": "Your sessions, reviews and progress over time, as a spreadsheet.",
+      "action": "Download CSV"
+    }
+  },
+  "save": {
+    "failed": "We could not save that change. Please try again."
+  },
+  "memoryErase": {
+    "eyebrow": "DANGER ZONE",
+    "title": "Erase Korume Memory",
+    "subtitle": "Korume forgets what it has learned about you. Your studying is not affected.",
+    "erasedHeading": "What Korume forgets",
+    "erasedDiary": "The diary, reflections and observations Korume has written about your sessions.",
+    "erasedConversations": "Every conversation you have had with Korume, and the messages inside them.",
+    "keptHeading": "What stays exactly as it is",
+    "keptProgress": "All your learning progress — reviews, streak, XP, badges and statistics.",
+    "keptPractice": "Your shadowing sessions and recordings, mined cards, library and playlists.",
+    "finality": "This happens the moment you confirm, and there is no copy to restore from. Korume starts learning about you again from your next session.",
+    "typePrompt": "Type {word} to confirm",
+    "confirmWord": "ERASE",
+    "submit": "Erase Korume Memory",
+    "cancel": "Keep my memory",
+    "done": "Korume has forgotten what it knew about you.",
+    "failed": "We could not erase the memory just now. Please try again."
   }
 }

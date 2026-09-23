@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
+import { Link } from "@/lib/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PronunciationAssessmentResult, WordPronunciationScore } from "@/lib/speech-types";
@@ -374,7 +375,10 @@ export function ShadowingRecorderPanel({
     statusMessage = t("recorder.status.requestingPermission");
   } else if (recorder.state === "recording") {
     statusMessage = t("recorder.status.recording");
-  } else if (recorder.state === "error" && recorder.error) {
+  } else if (
+    (recorder.state === "error" || recorder.state === "disabled-in-settings") &&
+    recorder.error
+  ) {
     statusMessage = recorder.error;
   } else if (upload.status === "uploading") {
     statusMessage = t("recorder.status.saving");
@@ -409,6 +413,13 @@ export function ShadowingRecorderPanel({
         <p role="status" className="text-xs text-muted-foreground">
           {statusMessage}
         </p>
+        {recorder.state === "disabled-in-settings" && (
+          // Nothing failed, so the panel offers the way to fix it rather than
+          // a retry that would take the same blocked path.
+          <Link href="/settings#privacy" className="text-xs underline">
+            {t("recorder.errors.disabledInSettingsAction")}
+          </Link>
+        )}
       </div>
 
       {recorder.blob && (

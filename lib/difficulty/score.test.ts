@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contentLemmas, scoreComprehension, TOO_HARD_MAX, IDEAL_MAX } from "./score";
+import { contentLemmas, DIFFICULTY_BANDS, scoreComprehension, TOO_HARD_MAX, IDEAL_MAX } from "./score";
 import type { Token } from "@/lib/japanese/types";
 
 function token(surface: string, pos: string, base = surface): Token {
@@ -91,6 +91,34 @@ describe("scoreComprehension — determinism", () => {
     expect(r.totalWords).toBe(4);
     expect(r.knownWords).toBe(3);
     expect(r.knownRatio).toBe(0.75);
+  });
+});
+
+describe("difficulty preference bands (settings spec §4.4)", () => {
+  function lemmasWithKnownCount(knownCount: number): { lemmas: string[]; known: Set<string> } {
+    return {
+      lemmas: Array.from({ length: 100 }, (_, index) => (index < knownCount ? "known" : `unknown-${index}`)),
+      known: new Set(["known"]),
+    };
+  }
+
+  it("keeps 90% ideal for every preference", () => {
+    const { lemmas, known } = lemmasWithKnownCount(90);
+    expect(scoreComprehension(lemmas, known, DIFFICULTY_BANDS.adaptive).band).toBe("ideal");
+    expect(scoreComprehension(lemmas, known, DIFFICULTY_BANDS.easy).band).toBe("ideal");
+    expect(scoreComprehension(lemmas, known, DIFFICULTY_BANDS.challenge).band).toBe("ideal");
+  });
+
+  it("makes 96% ideal only for easy", () => {
+    const { lemmas, known } = lemmasWithKnownCount(96);
+    expect(scoreComprehension(lemmas, known, DIFFICULTY_BANDS.adaptive).band).toBe("too-easy");
+    expect(scoreComprehension(lemmas, known, DIFFICULTY_BANDS.easy).band).toBe("ideal");
+  });
+
+  it("makes 75% ideal only for challenge", () => {
+    const { lemmas, known } = lemmasWithKnownCount(75);
+    expect(scoreComprehension(lemmas, known, DIFFICULTY_BANDS.adaptive).band).toBe("too-hard");
+    expect(scoreComprehension(lemmas, known, DIFFICULTY_BANDS.challenge).band).toBe("ideal");
   });
 });
 
