@@ -19,9 +19,28 @@ const modules = import.meta.glob<{ default: Record<string, unknown> }>(
   { eager: true },
 );
 
-export function loadEnMessages(): Record<string, unknown> {
+/**
+ * The VI catalogs, loaded the same way.
+ *
+ * `routing.defaultLocale` is `"vi"` — the catalog this product's primary
+ * audience actually reads. Almost every component test asserts English text
+ * (spec D6) and should keep doing so; this exists for the narrow case where
+ * the behaviour under test is *locale-dependent* and an EN-only render
+ * cannot see it at all. `MemoryEraseForm` is the first: the word a user types
+ * to confirm is translated while the word sent to the server is not, and
+ * under `en` those two strings are identical, so an EN render proves nothing
+ * about the distinction.
+ */
+const viModules = import.meta.glob<{ default: Record<string, unknown> }>(
+  "../messages/vi/*.json",
+  { eager: true },
+);
+
+function declaredOnly(
+  loaded: Record<string, { default: Record<string, unknown> }>,
+): Record<string, unknown> {
   const byNamespace = Object.fromEntries(
-    Object.entries(modules).map(([path, mod]) => [
+    Object.entries(loaded).map(([path, mod]) => [
       path.replace(/^.*\/(.+)\.json$/, "$1"),
       mod.default,
     ]),
@@ -31,4 +50,12 @@ export function loadEnMessages(): Record<string, unknown> {
   return Object.fromEntries(
     NAMESPACES.map((namespace) => [namespace, byNamespace[namespace]]),
   );
+}
+
+export function loadEnMessages(): Record<string, unknown> {
+  return declaredOnly(modules);
+}
+
+export function loadViMessages(): Record<string, unknown> {
+  return declaredOnly(viModules);
 }

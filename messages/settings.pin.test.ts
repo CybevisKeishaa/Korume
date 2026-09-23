@@ -95,6 +95,63 @@ describe("settings.json EN — the 7-day window", () => {
 });
 
 /**
+ * Erase Korume Memory (spec §4.8), added by the settings-page branch's Task 7.
+ *
+ * ⚠️ This block is the ONE thing in `settings.json` that genuinely IS
+ * immediate and has no undo — it runs `erase_companion_memory()` on confirm,
+ * with no 7-day window and no copy to restore from. Every guard above it
+ * scans the whole catalog, so those bans apply here too, and that is
+ * deliberate rather than an oversight: the banned phrases were banned for
+ * being FALSE about the deletion lifecycle, and `memoryErase` states the same
+ * finality in words that are true about itself ("the moment you confirm",
+ * "there is no copy to restore from"). If a future writer trips one of those
+ * bans while editing THIS block, the fix is to say it the way `finality`
+ * does — not to carve `memoryErase` out of the scans, which would drop the
+ * guard for the deletion copy the day someone nests deletion strings here.
+ *
+ * The tests below run in the OPPOSITE direction to every other test in this
+ * file. The bans stop false irreversibility claims; these stop the reverse
+ * failure — memory-erase copy that goes quiet about a finality that is real,
+ * which is the more likely mistake for a writer working around a ban they
+ * have just hit.
+ */
+describe("settings.json — Erase Korume Memory states a finality that is real", () => {
+  it("tells an EN reader that the erase lands on confirm and cannot be restored", () => {
+    expect(en.memoryErase.finality).toContain("the moment you confirm");
+    expect(en.memoryErase.finality).toContain("no copy to restore from");
+  });
+
+  it("tells a VI reader the same, in the locale most of them read", () => {
+    expect(vi.memoryErase.finality).toContain("ngay khi bạn xác nhận");
+    expect(vi.memoryErase.finality).toContain("không có bản sao nào để phục hồi");
+  });
+
+  // The kept/erased split is the decision the user is actually making, and
+  // the frame's own promise: learning progress survives. Copy that dropped
+  // either half would leave them confirming a destructive action without
+  // the one fact that makes it safe to confirm.
+  it("promises in both locales that learning progress survives", () => {
+    expect(en.memoryErase.subtitle).toContain("Your studying is not affected");
+    expect(en.memoryErase.keptProgress).toContain("All your learning progress");
+    expect(vi.memoryErase.subtitle).toContain("Việc học của bạn không bị ảnh hưởng");
+    expect(vi.memoryErase.keptProgress).toContain("Toàn bộ tiến độ học");
+  });
+
+  /**
+   * The typed word is translated; the wire literal is not. `confirmWord` is
+   * what the user types, `lib/validation/memory-erase.ts` pins what is sent.
+   * A translator changing VI's word is fine and expected — this asserts only
+   * that the two locales do not accidentally converge back on one word,
+   * which would quietly turn the Vietnamese confirmation into a test of
+   * English spelling.
+   */
+  it("asks each locale for its own confirmation word", () => {
+    expect(en.memoryErase.confirmWord).toBe("ERASE");
+    expect(vi.memoryErase.confirmWord).toBe("XOA");
+  });
+});
+
+/**
  * `close_account` reuses `DeleteDataDialog`'s structure with `tier`
  * (fix round 1, 2026-08-21) — `dangerZone.closeAccount.body` states "Your
  * account closes and stays closed. Your learning data is kept, not deleted"

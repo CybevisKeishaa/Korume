@@ -43,9 +43,13 @@ export interface PrivacyScreenProps {
  * `dangerZone.closeAccount.body` ("Your account closes and stays closed. Your
  * learning data is kept, not deleted" — reworded by the whole-branch review's
  * C1, which found the previous "you can come back" promising a reopen path
- * the repo does not contain). Only the memory row still points at an honest
- * not-built destination — that feature genuinely has no confirmation flow
- * anywhere in this branch.
+ * the repo does not contain). The memory row does NOT open this dialog: since
+ * Task 7 it links to `/settings/privacy/memory`, which carries its own
+ * confirmation on a page of its own. Deliberately not folded into
+ * `DeleteDataDialog` — erasing memory takes effect on confirm and has no
+ * cancellation window, while both tiers here are cancelable for 7 days, so
+ * sharing a dialog would mean sharing copy that is true for one and false for
+ * the other.
  *
  * `key={openTier ?? "closed"}` on `<DeleteDataDialog>` below is load-bearing
  * — fix round 2, Critical. `DeleteDataDialog` is mounted unconditionally and

@@ -85,5 +85,23 @@
       "body": "Your account is scheduled to close on {date}. Your learning data will be kept, not deleted.",
       "switchNote": "Want to delete all your data instead? Cancel this request first, then choose \"Delete all my data.\""
     }
+  },
+  "memoryErase": {
+    "eyebrow": "DANGER ZONE",
+    "title": "Erase Korume Memory",
+    "subtitle": "Korume forgets what it has learned about you. Your studying is not affected.",
+    "erasedHeading": "What Korume forgets",
+    "erasedDiary": "The diary, reflections and observations Korume has written about your sessions.",
+    "erasedConversations": "Every conversation you have had with Korume, and the messages inside them.",
+    "keptHeading": "What stays exactly as it is",
+    "keptProgress": "All your learning progress — reviews, streak, XP, badges and statistics.",
+    "keptPractice": "Your shadowing sessions and recordings, mined cards, library and playlists.",
+    "finality": "This happens the moment you confirm, and there is no copy to restore from. Korume starts learning about you again from your next session.",
+    "typePrompt": "Type {word} to confirm",
+    "confirmWord": "ERASE",
+    "submit": "Erase Korume Memory",
+    "cancel": "Keep my memory",
+    "done": "Korume has forgotten what it knew about you.",
+    "failed": "We could not erase the memory just now. Please try again."
   }
 }

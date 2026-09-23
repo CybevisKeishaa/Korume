@@ -85,5 +85,23 @@
       "body": "Tài khoản của bạn sẽ đóng vào {date}. Dữ liệu học của bạn vẫn được giữ lại, không bị xóa.",
       "switchNote": "Muốn xóa toàn bộ dữ liệu thay vì đóng tài khoản? Hãy hủy yêu cầu này trước, sau đó chọn \"Xóa toàn bộ dữ liệu của tôi\"."
     }
+  },
+  "memoryErase": {
+    "eyebrow": "VÙNG NGUY HIỂM",
+    "title": "Xóa ký ức Korume",
+    "subtitle": "Korume sẽ quên những gì đã biết về bạn. Việc học của bạn không bị ảnh hưởng.",
+    "erasedHeading": "Những gì Korume sẽ quên",
+    "erasedDiary": "Nhật ký, những suy ngẫm và ghi nhận mà Korume đã viết về các buổi học của bạn.",
+    "erasedConversations": "Mọi cuộc trò chuyện bạn đã có với Korume, cùng toàn bộ tin nhắn bên trong.",
+    "keptHeading": "Những gì vẫn giữ nguyên",
+    "keptProgress": "Toàn bộ tiến độ học — thẻ ôn tập, chuỗi ngày, XP, huy hiệu và thống kê.",
+    "keptPractice": "Các buổi luyện nói và bản ghi âm, thẻ đã khai thác, thư viện và danh sách phát.",
+    "finality": "Việc này diễn ra ngay khi bạn xác nhận, và không có bản sao nào để phục hồi. Korume sẽ bắt đầu tìm hiểu lại về bạn từ buổi học kế tiếp.",
+    "typePrompt": "Nhập {word} để xác nhận",
+    "confirmWord": "XOA",
+    "submit": "Xóa ký ức Korume",
+    "cancel": "Giữ lại ký ức",
+    "done": "Korume đã quên những gì từng biết về bạn.",
+    "failed": "Hiện chưa xóa được ký ức. Vui lòng thử lại."
   }
 }

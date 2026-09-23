@@ -6,7 +6,7 @@ import {
   type RenderHookOptions,
 } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
-import { loadEnMessages } from "./messages";
+import { loadEnMessages, loadViMessages } from "./messages";
 
 /**
  * `@testing-library/react`'s `render`, wrapped in `NextIntlClientProvider`.
@@ -29,15 +29,32 @@ import { loadEnMessages } from "./messages";
  * `lib/i18n/**` and `app/[locale]/layout.tsx`.
  */
 const messages = loadEnMessages();
+const CATALOGS = { en: messages, vi: loadViMessages() } as const;
 
-function customRender(ui: ReactElement, options?: RenderOptions) {
+/**
+ * `locale` opts a single test out of the `en` default above.
+ *
+ * Reach for it ONLY when the behaviour under test is locale-dependent and an
+ * `en` render cannot observe it — not to spot-check translations, which
+ * `catalog.test.ts` (structure) and the `*.pin.test.ts` files (copy) already
+ * own, and not for assertions on user-visible text, which stay English by
+ * spec D6. The motivating case is `MemoryEraseForm`: it asks the user to type
+ * a TRANSLATED confirmation word and sends an UNTRANSLATED literal, and those
+ * two strings are the same string under `en`, so only a non-`en` render can
+ * tell a correct implementation from one that posts whatever was typed.
+ */
+function customRender(
+  ui: ReactElement,
+  options?: RenderOptions & { locale?: keyof typeof CATALOGS },
+) {
+  const { locale = "en", ...rest } = options ?? {};
   return rtlRender(ui, {
     wrapper: ({ children }) => (
-      <NextIntlClientProvider locale="en" messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={CATALOGS[locale]}>
         {children}
       </NextIntlClientProvider>
     ),
-    ...options,
+    ...rest,
   });
 }
 

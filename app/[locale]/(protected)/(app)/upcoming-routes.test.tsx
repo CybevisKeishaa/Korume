@@ -13,10 +13,16 @@ import { describe, expect, it } from "vitest";
 // and the whole-branch review caught them missing from here. L9b Plan 1's own
 // whole-branch review added `settings/privacy/memory` — the Danger Zone's
 // third row had been linking at a route with no page behind it.
+//
+// `settings/privacy/memory` left again in the settings-page branch's Task 7:
+// it is no longer a placeholder but the Erase Korume Memory confirmation page,
+// so pinning it here would assert the opposite of what it now renders. Its
+// `impl: "built"` registry entry and T2/T11 cover the route's existence.
+// `settings` itself leaves in Task 9, for the same reason.
 const ROUTES = [
   "review", "challenges", "sensei", "roadmap", "weekly-report",
   "statistics", "achievements", "settings", "shadowing/explore",
-  "companion", "pronunciation", "settings/privacy/memory",
+  "companion", "pronunciation",
 ];
 
 describe("upcoming routes", () => {
@@ -24,7 +30,7 @@ describe("upcoming routes", () => {
   // length is the only thing standing between a bad merge and a vacuous suite.
   // CLAUDE.md §7: assert the size of any collection an assertion iterates.
   it("checks every placeholder route, not an empty list", () => {
-    expect(ROUTES).toHaveLength(12);
+    expect(ROUTES).toHaveLength(11);
     expect(new Set(ROUTES).size).toBe(ROUTES.length);
   });
 

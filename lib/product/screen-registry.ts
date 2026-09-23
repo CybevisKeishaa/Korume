@@ -600,16 +600,21 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
   // The Danger Zone's `Delete Korume Memory` destination. NO frame designs
-  // it: `337:3323` draws the ROW, and spec §13 (a user ruling) says the row
-  // ships now with its behaviour deferred behind an honest "not built yet"
+  // it: `337:3323` draws the ROW, and spec §13 (a user ruling) said the row
+  // ships with its behaviour deferred behind an honest "not built yet"
   // surface. So this is `repo-only`/`no-frame-at-last-pass` — a route the
-  // repo needs and the design file has never covered — with `impl:
-  // "placeholder"` because that is exactly what it renders. `navGroup` is
-  // null: it is reached from the Danger Zone, never from the sidebar.
+  // repo needs and the design file has never covered. `navGroup` is null: it
+  // is reached from the Danger Zone, never from the sidebar.
   //
   // Added by the whole-branch review (I3): the row linked here with no page
   // behind it, so it 404'd into Next's default English error page, outside the
   // app chrome. T1 below is what forces a registry entry to exist for it.
+  //
+  // `impl: "built"` since the settings-page branch's Task 7: the route now
+  // renders the Erase Korume Memory confirmation page (spec §4.8) over a live
+  // `POST /api/user/memory-erase`, and `UpcomingScreen` is gone from it.
+  // The deferral above is history — it is kept because it explains why a
+  // `repo-only` row exists at all, not because anything is still deferred.
   //
   // `figmaCheckedAt: null` — NOT a stamp. R7 defines the field as the date of
   // the last HUMAN Figma↔registry comparison, and no human opened Figma for
@@ -629,7 +634,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaCheckedAt: null,
     route: "/settings/privacy/memory",
     chrome: "app",
-    impl: "placeholder",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,
