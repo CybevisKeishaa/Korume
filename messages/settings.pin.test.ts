@@ -115,15 +115,31 @@ describe("settings.json EN — the 7-day window", () => {
  * which is the more likely mistake for a writer working around a ban they
  * have just hit.
  */
+/**
+ * ⚠️ If one of the next three tests is why you are here: you reworded this
+ * copy and the suite went red. That is this file working, not a bug — but it
+ * is NOT telling you the wording was wrong.
+ *
+ * These pin a CLAIM, and a claim cannot be checked mechanically, so each is
+ * written as a phrase. Reword the copy however you like; if the new wording
+ * still makes the claim, update the expected phrase here in the same commit
+ * and the pin goes on protecting it. What must never happen is the claim
+ * quietly disappearing — see `messages/README.md`.
+ */
+const REWORD = (claim: string) =>
+  `Reword freely — but this copy must still say: ${claim}. If your new wording does, update the expected phrase in messages/settings.pin.test.ts in the same commit. See messages/README.md.`;
+
 describe("settings.json — Erase Korume Memory states a finality that is real", () => {
   it("tells an EN reader that the erase lands on confirm and cannot be restored", () => {
-    expect(en.memoryErase.finality).toContain("the moment you confirm");
-    expect(en.memoryErase.finality).toContain("no copy to restore from");
+    const claim = REWORD("the erase takes effect on confirm, and nothing is kept to restore from");
+    expect(en.memoryErase.finality, claim).toContain("the moment you confirm");
+    expect(en.memoryErase.finality, claim).toContain("no copy to restore from");
   });
 
   it("tells a VI reader the same, in the locale most of them read", () => {
-    expect(vi.memoryErase.finality).toContain("ngay khi bạn xác nhận");
-    expect(vi.memoryErase.finality).toContain("không có bản sao nào để phục hồi");
+    const claim = REWORD("việc xóa có hiệu lực ngay khi xác nhận, và không có bản sao để phục hồi");
+    expect(vi.memoryErase.finality, claim).toContain("ngay khi bạn xác nhận");
+    expect(vi.memoryErase.finality, claim).toContain("không có bản sao nào để phục hồi");
   });
 
   // The kept/erased split is the decision the user is actually making, and
@@ -131,10 +147,11 @@ describe("settings.json — Erase Korume Memory states a finality that is real",
   // either half would leave them confirming a destructive action without
   // the one fact that makes it safe to confirm.
   it("promises in both locales that learning progress survives", () => {
-    expect(en.memoryErase.subtitle).toContain("Your studying is not affected");
-    expect(en.memoryErase.keptProgress).toContain("All your learning progress");
-    expect(vi.memoryErase.subtitle).toContain("Việc học của bạn không bị ảnh hưởng");
-    expect(vi.memoryErase.keptProgress).toContain("Toàn bộ tiến độ học");
+    const claim = REWORD("erasing the memory leaves every bit of learning progress untouched");
+    expect(en.memoryErase.subtitle, claim).toContain("Your studying is not affected");
+    expect(en.memoryErase.keptProgress, claim).toContain("All your learning progress");
+    expect(vi.memoryErase.subtitle, claim).toContain("Việc học của bạn không bị ảnh hưởng");
+    expect(vi.memoryErase.keptProgress, claim).toContain("Toàn bộ tiến độ học");
   });
 
   /**

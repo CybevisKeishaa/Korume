@@ -5,9 +5,26 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { PreferencesProvider } from "@/components/providers/preferences-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { DEFAULT_PREFERENCES, type UserPreferences } from "@/lib/preferences/options";
+import en from "@/messages/en/settings.json";
+import { LOCALE_ENDONYMS } from "@/lib/i18n/routing";
 import { LearningSection } from "./learning-section";
 import { AppearanceSection } from "./appearance-section";
 import { PrivacyDataSection } from "./privacy-data-section";
+
+/**
+ * Every label below is read from the CATALOG, never typed as a literal.
+ *
+ * These assertions are about wiring — that a control carries the accessible
+ * name of its own visible label, that the right row saved, that the hint
+ * appeared. None of them is about the words. Hardcoding the English would
+ * make this suite a second, invisible owner of the copy: rewording
+ * `settings.json` would break a dozen tests with "Unable to find an
+ * accessible element", which says nothing about what actually changed.
+ *
+ * Read `messages/README.md` before pinning a literal anywhere. The catalog is
+ * the owner's to edit; a test that stops them editing it needs a reason.
+ */
+const copy = en.page;
 
 const replace = vi.fn();
 vi.mock("@/lib/i18n/navigation", () => ({
@@ -73,16 +90,21 @@ function sentBody(): unknown {
 describe("LearningSection", () => {
   beforeEach(() => stubMatchMedia());
 
+  // Gathered by a list, so its size is asserted (CLAUDE.md §7): a `for` over an
+  // empty array asserts nothing and reports green.
   it("gives every control the accessible name of its visible label", () => {
     mount(<LearningSection />);
-    for (const name of [
-      "Interface Language",
-      "Daily Learning Goal",
-      "Learning Schedule",
-      "Review Frequency",
-      "Difficulty Preference",
-    ]) {
-      expect(screen.getByRole(/Language|Goal/.test(name) ? "combobox" : "radiogroup", { name })).toBeInTheDocument();
+    const rows: [role: string, name: string][] = [
+      ["combobox", copy.language.label],
+      ["combobox", copy.dailyGoal.label],
+      ["radiogroup", copy.schedule.label],
+      ["radiogroup", copy.reviewFrequency.label],
+      ["radiogroup", copy.difficulty.label],
+    ];
+
+    expect(rows).toHaveLength(5);
+    for (const [role, name] of rows) {
+      expect(screen.getByRole(role, { name })).toBeInTheDocument();
     }
   });
 
@@ -98,8 +120,8 @@ describe("LearningSection", () => {
     // The harness renders at `en`, so Vietnamese is the row's OTHER option —
     // picking the already-selected one fires no change at all, in Radix or in
     // a real browser.
-    await user.click(screen.getByRole("combobox", { name: "Interface Language" }));
-    await user.click(await screen.findByRole("option", { name: "Tiếng Việt" }));
+    await user.click(screen.getByRole("combobox", { name: copy.language.label }));
+    await user.click(await screen.findByRole("option", { name: LOCALE_ENDONYMS.vi }));
 
     expect(replace).toHaveBeenCalledWith("/settings", { locale: "vi" });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -111,10 +133,13 @@ describe("LearningSection", () => {
     const user = userEvent.setup();
     mount(<LearningSection />);
 
-    await user.click(screen.getByRole("combobox", { name: "Interface Language" }));
+    await user.click(screen.getByRole("combobox", { name: copy.language.label }));
 
-    expect(await screen.findByRole("option", { name: "Tiếng Việt" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "English" })).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: LOCALE_ENDONYMS.vi })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: LOCALE_ENDONYMS.en })).toBeInTheDocument();
+    // The one deliberate literal in this file: "Vietnamese" is the WRONG label,
+    // and naming it is the whole assertion. Reading it from the catalog would
+    // be circular.
     expect(screen.queryByRole("option", { name: "Vietnamese" })).not.toBeInTheDocument();
   });
 
@@ -122,7 +147,7 @@ describe("LearningSection", () => {
     const user = userEvent.setup();
     mount(<LearningSection />);
 
-    await user.click(screen.getByRole("radio", { name: "Challenge" }));
+    await user.click(screen.getByRole("radio", { name: copy.difficulty.challenge }));
 
     expect(sentBody()).toEqual({ difficulty: "challenge" });
   });
@@ -131,7 +156,7 @@ describe("LearningSection", () => {
     const user = userEvent.setup();
     mount(<LearningSection />);
 
-    await user.click(screen.getByRole("radio", { name: "Weekdays" }));
+    await user.click(screen.getByRole("radio", { name: copy.schedule.weekdays }));
 
     expect(sentBody()).toEqual({ learningSchedule: "weekdays" });
   });
@@ -139,11 +164,11 @@ describe("LearningSection", () => {
   it("reveals the day picker only for Custom", async () => {
     const user = userEvent.setup();
     mount(<LearningSection />);
-    expect(screen.queryByRole("group", { name: "Study days" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: copy.schedule.daysLabel })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("radio", { name: "Custom" }));
+    await user.click(screen.getByRole("radio", { name: copy.schedule.custom }));
 
-    const group = screen.getByRole("group", { name: "Study days" });
+    const group = screen.getByRole("group", { name: copy.schedule.daysLabel });
     expect(within(group).getAllByRole("button")).toHaveLength(7);
   });
 
@@ -151,7 +176,7 @@ describe("LearningSection", () => {
     const user = userEvent.setup();
     mount(<LearningSection />, { learningSchedule: "custom", scheduleDays: [1, 2, 3] });
 
-    await user.click(screen.getByRole("button", { name: "Tue", pressed: true }));
+    await user.click(screen.getByRole("button", { name: copy.schedule.day["2"], pressed: true }));
 
     expect(sentBody()).toEqual({ learningSchedule: "custom", scheduleDays: [1, 3] });
   });
@@ -165,11 +190,11 @@ describe("LearningSection", () => {
     const user = userEvent.setup();
     mount(<LearningSection />, { learningSchedule: "custom", scheduleDays: [3] });
 
-    await user.click(screen.getByRole("button", { name: "Wed", pressed: true }));
+    await user.click(screen.getByRole("button", { name: copy.schedule.day["3"], pressed: true }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Pick at least one day");
+    expect(screen.getByRole("alert")).toHaveTextContent(copy.schedule.atLeastOne);
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Wed" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: copy.schedule.day["3"] })).toHaveAttribute("aria-pressed", "true");
   });
 });
 
@@ -179,7 +204,7 @@ describe("AppearanceSection", () => {
     const user = userEvent.setup();
     mount(<AppearanceSection />);
 
-    await user.click(screen.getByRole("radio", { name: "Large" }));
+    await user.click(screen.getByRole("radio", { name: copy.displayScale.large }));
 
     expect(sentBody()).toEqual({ displayScale: "large" });
   });
@@ -189,7 +214,7 @@ describe("AppearanceSection", () => {
     const user = userEvent.setup();
     mount(<AppearanceSection />);
 
-    await user.click(screen.getByRole("switch", { name: "Reduced Motion" }));
+    await user.click(screen.getByRole("switch", { name: copy.reducedMotion.label }));
 
     expect(sentBody()).toEqual({ reduceMotion: true });
   });
@@ -203,8 +228,8 @@ describe("AppearanceSection", () => {
     stubMatchMedia(true);
     mount(<AppearanceSection />);
 
-    const note = screen.getByText(/device already asks for reduced motion/);
-    expect(screen.getByRole("switch", { name: "Reduced Motion" })).toHaveAttribute(
+    const note = screen.getByText(copy.reducedMotion.osOverrides);
+    expect(screen.getByRole("switch", { name: copy.reducedMotion.label })).toHaveAttribute(
       "aria-describedby",
       note.getAttribute("id"),
     );
@@ -213,13 +238,13 @@ describe("AppearanceSection", () => {
   it("drops the note once the account switch is on, because it is no longer true", () => {
     stubMatchMedia(true);
     mount(<AppearanceSection />, { reduceMotion: true });
-    expect(screen.queryByText(/device already asks for reduced motion/)).not.toBeInTheDocument();
+    expect(screen.queryByText(copy.reducedMotion.osOverrides)).not.toBeInTheDocument();
   });
 
   it("shows no note when the OS does not ask", () => {
     stubMatchMedia(false);
     mount(<AppearanceSection />);
-    expect(screen.queryByText(/device already asks for reduced motion/)).not.toBeInTheDocument();
+    expect(screen.queryByText(copy.reducedMotion.osOverrides)).not.toBeInTheDocument();
   });
 });
 
@@ -228,14 +253,14 @@ describe("PrivacyDataSection", () => {
 
   it("is the #privacy anchor the Danger Zone returns to", () => {
     mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
-    expect(screen.getByRole("region", { name: "Privacy & Data" })).toHaveAttribute("id", "privacy");
+    expect(screen.getByRole("region", { name: copy.privacy.title })).toHaveAttribute("id", "privacy");
   });
 
   it("saves the microphone switch on its own", async () => {
     const user = userEvent.setup();
     mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
 
-    await user.click(screen.getByRole("switch", { name: "Microphone" }));
+    await user.click(screen.getByRole("switch", { name: copy.microphone.label }));
 
     expect(sentBody()).toEqual({ microphoneEnabled: false });
   });
@@ -273,11 +298,11 @@ describe("PrivacyDataSection", () => {
   it("offers both downloads as real links the browser handles", () => {
     mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
 
-    expect(screen.getByRole("link", { name: "Download" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: copy.exportData.action })).toHaveAttribute(
       "href",
       "/api/user/export",
     );
-    expect(screen.getByRole("link", { name: "Download CSV" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: copy.history.action })).toHaveAttribute(
       "href",
       "/api/user/history.csv",
     );
