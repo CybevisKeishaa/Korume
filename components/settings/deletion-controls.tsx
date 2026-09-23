@@ -22,9 +22,17 @@ export interface DeletionControlsProps {
    * re-sync updates the screen without a reload — Task 11 / fix round 1.
    */
   initialPending: PendingDeletionRead;
-  /** "privacy" keeps today's markup exactly. "settings" is for Claude's page. */
-  variant?: "privacy" | "settings";
 }
+
+/**
+ * ⚠️ There is deliberately NO `variant` prop, against the plan, which asked
+ * for `"privacy" | "settings"` so the settings page could show "the frame's
+ * Danger zone eyebrow". `DangerZone` already renders that eyebrow and title
+ * itself, identically on both pages — so the prop would have had one
+ * implementation, no behaviour, and a name implying a difference that does
+ * not exist. `/settings` and `/settings/privacy` show the same Danger Zone
+ * because the frame draws the same Danger Zone.
+ */
 
 /**
  * `337:3323`, the client half — holds which dialog is open (and which

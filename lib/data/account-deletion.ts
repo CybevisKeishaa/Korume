@@ -231,3 +231,40 @@ export async function getPendingDeletion(
 
   return { ok: true, data: data ? toPending(data as Row) : null };
 }
+
+/**
+ * `getPendingDeletion` for a PAGE rather than for its route.
+ *
+ * The route needs the throw so it can answer 500; a page does not — the
+ * pending banner is ancillary to both surfaces that show it (`/settings` and
+ * `/settings/privacy`), and a transient read failure must not take the whole
+ * page down over it.
+ *
+ * ⚠️ A failure returns the explicit `"unknown"` sentinel, never `null`.
+ * `null` is indistinguishable from "genuinely no pending request" to every
+ * consumer, and during the 7-day cancellation window collapsing a failure to
+ * "no request" is the dangerous direction to be wrong in: it would hide a
+ * scheduled deletion behind a screen that looks untouched. `DeletionControls`
+ * shows a neutral "couldn't check" notice on `"unknown"` and leaves the
+ * Danger Zone enabled — a read failure must not lock a user out of the GDPR
+ * right these pages exist to serve.
+ *
+ * The 401 branch folds into the same outcome. It is defence in depth only:
+ * the `(protected)` layout already redirects an unauthenticated request
+ * before either page renders, so there is no "confidently no request" case to
+ * carve out for it.
+ *
+ * Lives here rather than beside one page because BOTH pages read it, and a
+ * second copy of this reasoning is a second place for it to drift.
+ */
+export async function readPendingDeletionSafe(): Promise<PendingDeletionRead> {
+  try {
+    const result = await getPendingDeletion();
+    return result.ok ? result.data : "unknown";
+  } catch (error) {
+    // eslint-disable-next-line no-console -- server-side only; a failed read
+    // must not crash the page and must never be mistaken for "no request".
+    console.error("[data/account-deletion] readPendingDeletionSafe failed:", error);
+    return "unknown";
+  }
+}

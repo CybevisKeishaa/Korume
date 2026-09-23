@@ -87,6 +87,24 @@
     }
   },
   "page": {
+    "title": "Settings",
+    "eyebrow": "Personal space",
+    "subtitle": "A quiet place to make Korume feel more like yours.",
+    "about": {
+      "title": "About",
+      "subtitle": "What you are running.",
+      "versionLabel": "Version",
+      "versionDescription": "The build of Korume this browser has loaded."
+    },
+    "support": {
+      "title": "Need a hand?",
+      "body": "Your Korume is always here whenever you need help.",
+      "action": "Talk with Korume"
+    },
+    "footer": {
+      "line": "Korume · Version {version}",
+      "tagline": "Built quietly in Vietnam. Crafted for lifelong learners."
+    },
     "learning": {
       "title": "Learning",
       "subtitle": "Personalize how you learn every day."

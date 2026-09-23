@@ -87,6 +87,24 @@
     }
   },
   "page": {
+    "title": "Cài đặt",
+    "eyebrow": "Không gian riêng",
+    "subtitle": "Một nơi yên tĩnh để Korume trở nên giống bạn hơn.",
+    "about": {
+      "title": "Giới thiệu",
+      "subtitle": "Phiên bản bạn đang dùng.",
+      "versionLabel": "Phiên bản",
+      "versionDescription": "Bản Korume mà trình duyệt này đang tải."
+    },
+    "support": {
+      "title": "Cần giúp một tay?",
+      "body": "Korume của bạn luôn ở đây mỗi khi bạn cần.",
+      "action": "Trò chuyện với Korume"
+    },
+    "footer": {
+      "line": "Korume · Phiên bản {version}",
+      "tagline": "Được làm lặng lẽ tại Việt Nam. Dành cho những người học suốt đời."
+    },
     "learning": {
       "title": "Học tập",
       "subtitle": "Cá nhân hóa cách bạn học mỗi ngày."

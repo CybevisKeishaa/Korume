@@ -10,7 +10,8 @@ export type MascotPoseName =
   | "verify-email"
   | "reset-password"
   | "not-found"
-  | "route-error";
+  | "route-error"
+  | "settings";
 
 export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number; height: number }> = {
   login: { file: "bye.png", width: 572, height: 436 },
@@ -20,4 +21,9 @@ export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number;
   "reset-password": { file: "proud.png", width: 442, height: 406 },
   "not-found": { file: "curious-question-mark.png", width: 423, height: 370 },
   "route-error": { file: "worry.png", width: 370, height: 397 },
+  // `relax.png` ("THƯ GIÃN — relaxed, eyes closed"), for the Settings header's
+  // "Personal space · A quiet place to make Korume feel more like yours".
+  // A `supplied` hand-cut pose, per the owner's ruling that the extractor-cut
+  // `poses` entries read as broken. One line to change if they prefer another.
+  settings: { file: "relax.png", width: 423, height: 375 },
 };

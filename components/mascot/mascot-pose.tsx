@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 import { MASCOT_POSES, type MascotPoseName } from "./mascot-poses";
 
 // Height is the one size a caller may pick; width follows the PNG's aspect ratio.
-const SIZE_CLASS = { md: "h-40 w-auto", lg: "h-56 w-auto" } as const;
+// `sm` is the Settings header's thumbnail (spec §2): the mascot sits beside
+// the title rather than anchoring the screen the way it does on the auth and
+// error surfaces, so it needs to be markedly smaller than `md`.
+const SIZE_CLASS = { sm: "h-24 w-auto", md: "h-40 w-auto", lg: "h-56 w-auto" } as const;
 
 export function MascotPose({
   pose,

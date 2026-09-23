@@ -12,7 +12,7 @@ const recorded = new Set([...manifest.poses, ...manifest.supplied].map((p) => p.
 describe("MASCOT_POSES", () => {
   const entries = Object.entries(MASCOT_POSES);
 
-  it("maps exactly the seven screens the spec names", () => {
+  it("maps exactly the screens the spec names", () => {
     expect(entries.map(([name]) => name).sort()).toEqual([
       "forgot-password",
       "login",
@@ -20,6 +20,7 @@ describe("MASCOT_POSES", () => {
       "register",
       "reset-password",
       "route-error",
+      "settings",
       "verify-email",
     ]);
   });
@@ -33,6 +34,7 @@ describe("MASCOT_POSES", () => {
       "reset-password": "proud.png",
       "not-found": "curious-question-mark.png",
       "route-error": "worry.png",
+      settings: "relax.png",
     });
   });
 

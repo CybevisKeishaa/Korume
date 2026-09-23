@@ -86,15 +86,11 @@ describe("upcoming.json EN — catalog literals", () => {
     );
   });
 
-  it("pins the settings screen copy", () => {
-    expect(en.settings.title).toBe("Settings");
-    expect(en.settings.body).toBe(
-      "Account, language, motion, and control over your own data.",
-    );
-    expect(en.settings.unlocks).toBe(
-      "Nothing yet. Data export and deletion land with this screen.",
-    );
-  });
+  // The `settings` block and its pin left together in the settings-page
+  // branch's Task 9: `/settings` renders the real page now, so a catalog entry
+  // calling it unbuilt — and a test pinning that entry's wording — would both
+  // be asserting the opposite of what ships. Deleting the strings without
+  // deleting this test is what would have gone red.
 
   // Phase 1b's two additions. Both routes ship as UpcomingScreen because the
   // LOCKED IA gives them a nav row before the feature exists — A6 for
