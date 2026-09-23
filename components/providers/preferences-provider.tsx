@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useTheme } from "@/components/providers/theme-provider";
 import { REDUCE_MOTION_QUERY } from "@/lib/motion/motion-enabled";
-import { DISPLAY_SCALE_FACTOR, type UserPreferences } from "@/lib/preferences/options";
+import { DEFAULT_PREFERENCES, DISPLAY_SCALE_FACTOR, type UserPreferences } from "@/lib/preferences/options";
 
 interface PreferencesContextValue {
   preferences: UserPreferences;
@@ -63,4 +63,20 @@ export function usePreferences(): PreferencesContextValue {
   const ctx = useContext(PreferencesContext);
   if (!ctx) throw new Error("usePreferences must be used within <PreferencesProvider>");
   return ctx;
+}
+
+/**
+ * The preferences, or the defaults when there is no provider.
+ *
+ * For shared hooks that a surface outside the session shell may mount —
+ * `useRecorder` is one, and it is rendered in tests and stories without the
+ * `(protected)` layout. Defaulting matches `readPreferences`, which also never
+ * throws: a missing provider must not break recording, and the defaults are
+ * the behaviour every reader had before preferences existed.
+ *
+ * A component that genuinely needs the session's own values, or `setLocal`,
+ * uses `usePreferences` and gets a loud failure instead.
+ */
+export function useOptionalPreferences(): UserPreferences {
+  return useContext(PreferencesContext)?.preferences ?? DEFAULT_PREFERENCES;
 }

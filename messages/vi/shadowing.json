@@ -39,6 +39,8 @@
   },
   "recorder": {
     "errors": {
+      "disabledInSettings": "Micro của bạn đang tắt trong cài đặt Korume.",
+      "disabledInSettingsAction": "Mở cài đặt micro",
       "micDenied": "Korume chưa thể dùng micro. Hãy cho phép truy cập micro trong cài đặt trình duyệt rồi thử lại.",
       "micNotFound": "Không tìm thấy micro. Hãy kiểm tra thiết bị rồi thử lại.",
       "micUnavailable": "Chưa thể truy cập micro. Hãy kiểm tra thiết bị rồi thử lại.",

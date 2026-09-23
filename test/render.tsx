@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ComponentType, ReactElement, ReactNode } from "react";
 import {
   render as rtlRender,
   renderHook as rtlRenderHook,
@@ -49,15 +49,24 @@ function customRender(ui: ReactElement, options?: RenderOptions) {
  */
 function customRenderHook<Result, Props>(
   callback: (props: Props) => Result,
-  options?: Omit<RenderHookOptions<Props>, "wrapper">,
+  options?: Omit<RenderHookOptions<Props>, "wrapper"> & {
+    /**
+     * Extra providers the hook needs, nested INSIDE the intl provider so both
+     * apply. Without this a caller has to hand-roll a wrapper and import
+     * `next-intl` itself, which spec P1 forbids outside `lib/i18n/` — this
+     * file is the one exemption, so the seam belongs here.
+     */
+    wrapper?: ComponentType<{ children: ReactNode }>;
+  },
 ) {
+  const { wrapper: Inner, ...rest } = options ?? {};
   return rtlRenderHook(callback, {
     wrapper: ({ children }) => (
       <NextIntlClientProvider locale="en" messages={messages}>
-        {children}
+        {Inner ? <Inner>{children}</Inner> : children}
       </NextIntlClientProvider>
     ),
-    ...options,
+    ...rest,
   });
 }
 

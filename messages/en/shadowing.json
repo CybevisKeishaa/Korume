@@ -37,6 +37,8 @@
   },
   "recorder": {
     "errors": {
+      "disabledInSettings": "Your microphone is switched off in Korume settings.",
+      "disabledInSettingsAction": "Open microphone settings",
       "micDenied": "Microphone access was denied. Allow microphone access in your browser settings to record.",
       "micNotFound": "No microphone was found. Connect a microphone and try again.",
       "micUnavailable": "Couldn't access your microphone. Check your device and try again.",
