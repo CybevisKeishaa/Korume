@@ -23,7 +23,9 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   Claude reviewed and committed) · `a7cf5bb` run state + protocol gate · `ababe68` Task 2 dispatch.
 - **Task 2 — `5779b88` `feat(settings): SRS, difficulty and streak read the user's preferences`**
   (Codex implemented most of it, hit its usage limit before the handoff; Claude finished, reviewed
-  and committed).
+  and committed) · `1fffa1a` run state.
+- **Task 3 — `49d7043` `feat(ui): Switch and SegmentedControl primitives`** (Claude, start to
+  finish — Codex was still rate-limited).
 
 ## Contracts and decisions
 
@@ -49,6 +51,19 @@ Claude review between tasks. Reminders ship in the next branch, `study-reminders
   no column mapping into a PATCH that returns 200 and saves nothing. Typing the record makes that a
   compile error instead. **Tasks 4 and 8 add preferences — expect TS2741 if a column is forgotten,
   and treat it as the guard working.**
+- **A Tailwind utility is not real until the compiled CSS says so.** `--icon-md` is in the `size`
+  scale and not in `height`, so `size-icon-sm` works and `h-icon-md` emits nothing. Check a class
+  with `npx tailwindcss -i app/globals.css -o <file> --content <sources>` and grep the output — with
+  a control, because CSS escapes `(`, `)` and `*` in selectors and a naive grep reports a rule that
+  is there as missing. That mis-grep happened here and briefly produced a wrong diagnosis.
+- Do **not** add an icon token to the `height` scale or a new rung to `--control-*`:
+  `lib/design-tokens.test.ts` encodes the split (controls → `height`, icons → `size`), and
+  `desktop-density-pass` deleted a rung rather than add one. Read the token through
+  `h-[--icon-md]` / `w-[calc(2_*_var(--icon-md))]` instead; both compile.
+- `token-scale.test.ts` pins `components/ui` at a hardcoded `sources:` count — **18** as of Task 3.
+  Any task that adds a primitive must bump it, and will see it go red first.
+- No Radix switch or radio-group package is installed, and neither was added. `Switch` is a native
+  `<button role="switch">`; `SegmentedControl` hand-rolls the radiogroup roving-tabindex pattern.
 - `erase_companion_memory()` stays `security invoker`: `companion_memories_delete_own` and
   `conversation_sessions_own` are what scope it, and `conversation_messages` goes with the session
   through its `on delete cascade`.
@@ -88,6 +103,20 @@ Task 2, run by Claude after taking the task over:
   - leak the multiplier into `reviewItem`'s lapse branch → the failed-review case red. It was
     green before Claude changed that case's multiplier from 1.4 to 5.
 
+Task 3, Claude:
+
+- Failure first: both new test files failed to resolve their module before it existed.
+- `npx vitest run components/ui` — exit 0, 15 files / 173 tests, including `token-scale`,
+  `token-scale-adoption` and `logical-properties`.
+- `npx tsc --noEmit` exit 0 · `npm run lint` exit 0, 0 errors.
+- `npm test -- --reporter=dot` — exit 0, **350 files / 3275 tests** (Task 2: 348 / 3255).
+- Compiled-CSS check: `.h-\[--icon-md\]` → `height: var(--icon-md)` and
+  `.w-\[calc\(2_\*_var\(--icon-md\)\)\]` → `width: calc(2 * var(--icon-md))`; control
+  `.h-icon-md` absent, as the plan's class would have been.
+- Mutation checks, all five red, both sources restored byte-for-byte and verified by SHA-256:
+  `onCheckedChange(checked)` instead of `!checked`; no `disabled` attribute; `tabIndex={0}` on
+  every option; `move()` without `focus()`; `from + step` without the wrap.
+
 ## Working tree and environment
 
 - Worktree: `.worktrees/settings-page`, branch `settings-page` off `master` `e44a4ea`.
@@ -104,20 +133,25 @@ Task 2, run by Claude after taking the task over:
 
 ## Blockers
 
-- None for Task 3, except Codex's usage limit until 20:01 (see Next actions).
+- None. Task 4 has a design collision to resolve first, recorded under Next actions.
 
 ## Next actions
 
-**Resume here: dispatch Task 3 — "`Switch` and `SegmentedControl` primitives."** Write
-`<main checkout>/.superpowers/sdd/2026-09-22-settings-page/task-3-brief.md` from the plan's Task 3
-section, flip `- Owner: Codex`, then `codex exec -s workspace-write -C <this worktree> -o <file>`
-with the prompt on stdin.
+**Resume here: Task 4 — session-wide appearance (display scale and reduced motion).**
 
-⚠️ **Codex hit its ChatGPT usage limit during Task 2 on 2026-09-23 at ~15:50; it resets at 20:01.**
-Until then a dispatch dies partway with `ERROR: You've hit your usage limit` in the log and writes
-no `-o` file, leaving the work uncommitted in the tree. Check the log for
-`^ERROR: You.ve hit your usage limit` before assuming a dispatch failed for any other reason, and
-be ready to finish the task as Claude, which is what happened to Task 2.
+⚠️ **Task 4 collides with code the plan does not mention.** `components/ui/reduce-motion-toggle.tsx`
+already exists and drives reduce-motion through `components/providers/theme-provider.tsx`
+(`useTheme().reduceMotion`), rendered in the `(focus)` nav rail and the admin style guide. The plan
+introduces a `PreferencesProvider` and a pre-paint `<html>` script for the same fact. Decide
+**one home** before writing code — most likely the existing theme provider reads the preference and
+the toggle stays as the compact control — and do not ship a second source of truth (`L-026`).
+
+Then Tasks 5–9 in order. Task 9 wires the registry and the e2e spec.
+
+**Codex was rate-limited from ~15:50 on 2026-09-23, resetting 20:01.** Tasks 3 onward have been
+Claude's own work. When Codex is available again, a dispatch dies partway with
+`ERROR: You've hit your usage limit` in its log and writes no `-o` file — check the log for
+`^ERROR: You.ve hit your usage limit` before diagnosing anything else.
 
 Per task: the task's own tests red → green, `npx tsc --noEmit` 0, `npm run lint` 0 errors, full
 `npm test -- --reporter=dot > <file>` exit 0 (read the file), and the task's named live gate or
