@@ -69,7 +69,7 @@ Task 1, re-run by Claude at review on 2026-09-23 (not copied from the implemente
   This branch's own run state passes the same gate. **Do not "fix" it from here** — it needs its
   own commit on master, and it is the one thing blocking a clean protocol gate.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
