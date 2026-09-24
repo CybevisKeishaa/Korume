@@ -8,6 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { REDUCE_MOTION_QUERY } from "@/lib/motion/motion-enabled";
 
 type Theme = "light" | "dark";
 
@@ -35,9 +36,13 @@ export const themeInitScript = `
     var t = localStorage.getItem("${THEME_KEY}");
     if (!t) t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", t);
-    var m = localStorage.getItem("${MOTION_KEY}");
-    if (m === null) m = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "true" : "false";
-    document.documentElement.setAttribute("data-reduce-motion", m);
+    // The stored value is the ACCOUNT's own choice; the attribute is the
+    // effective one. Deriving it here rather than trusting a non-null stored
+    // value is what lets an account's own "false" survive the OS setting
+    // being turned off later.
+    var m = localStorage.getItem("${MOTION_KEY}") === "true";
+    var os = window.matchMedia("${REDUCE_MOTION_QUERY}").matches;
+    document.documentElement.setAttribute("data-reduce-motion", (m || os) ? "true" : "false");
   } catch (e) {}
 })();
 `;
@@ -64,12 +69,28 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /**
+   * `value` is the ACCOUNT's own choice, and that is what gets STORED. The
+   * attribute and the exposed state carry the EFFECTIVE value, `account || OS`
+   * — the same truth table `appearanceScript` writes before paint.
+   *
+   * ⚠️ The OR used to happen before this call, so the OR'd value was what
+   * reached `localStorage`. A reader whose OS asked for reduced motion and who
+   * then switched Korume off stored `"true"`; once they turned the OS setting
+   * off, `themeInitScript` found a non-null `"true"`, never consulted
+   * `matchMedia` again, and every public page kept reducing motion forever.
+   * The account's own `false` was unrecoverable. Spec §4.5 lets Korume ADD
+   * reduction, not remember one that is no longer asked for.
+   */
   const setReduceMotion = useCallback((value: boolean) => {
-    setReduceMotionState(value);
-    document.documentElement.setAttribute("data-reduce-motion", String(value));
     try {
       localStorage.setItem(MOTION_KEY, String(value));
     } catch {}
+    // Optional-call: jsdom provides no `matchMedia` unless a test stubs one,
+    // and `reduce-motion-toggle.test.tsx` deliberately does not.
+    const effective = value || (window.matchMedia?.(REDUCE_MOTION_QUERY).matches ?? false);
+    setReduceMotionState(effective);
+    document.documentElement.setAttribute("data-reduce-motion", String(effective));
   }, []);
 
   const value = useMemo(

@@ -46,10 +46,12 @@ export function PreferencesProvider({
       }
 
       if (patch.reduceMotion !== undefined) {
-        // Spec §4.5: Korume may add reduction, never remove the OS's, so the
-        // account value is ORed with the live media query rather than trusted.
-        const osReduces = window.matchMedia(REDUCE_MOTION_QUERY).matches;
-        setReduceMotion(patch.reduceMotion || osReduces);
+        // Spec §4.5 — Korume may add reduction, never remove the OS's — is
+        // still the rule, but the OR now lives in `setReduceMotion` and in
+        // `themeInitScript`, at the READ. Passing the OR'd value here stored
+        // it, and an account's own `false` could then never be recovered on a
+        // public page once the OS setting changed.
+        setReduceMotion(patch.reduceMotion);
       }
     },
     [setReduceMotion],

@@ -93,4 +93,28 @@ describe("usePreferences", () => {
     expect(result.current.preferences.reduceMotion).toBe(false); // the account value is what it says
     expect(document.documentElement.getAttribute(REDUCE_MOTION_ATTR)).toBe("true"); // the effect is not
   });
+
+  /**
+   * ⚠️ What is STORED must be the account's answer, never the OR'd one.
+   *
+   * `setLocal` used to hand `setReduceMotion` the value already ORed with the
+   * live media query, and `theme-provider` writes its argument to
+   * `localStorage`. So a reader whose OS asked for reduced motion and who then
+   * switched Korume off stored `"true"` — and once they turned the OS setting
+   * off, `themeInitScript` saw a non-null `"true"` and kept every public page
+   * reduced forever, with no way to recover the `false` they had chosen.
+   *
+   * The effect is still `account || OS`; that OR just belongs at the read.
+   * This asserts storage rather than the attribute because the attribute is
+   * the effective value and cannot tell the two implementations apart — the
+   * mutation that restored the bug left every other test in this file green.
+   */
+  it("stores the account's own answer, not the one ORed with the OS", () => {
+    stubOsReduces(true);
+    const { result } = mount({ ...DEFAULT_PREFERENCES, reduceMotion: true });
+
+    act(() => result.current.setLocal({ reduceMotion: false }));
+
+    expect(localStorage.getItem("nc-reduce-motion")).toBe("false");
+  });
 });
