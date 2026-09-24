@@ -21,6 +21,24 @@ re-verified by Claude against `git show 1011dee:` before being written down here
 | Task | Commit | Title | By |
 | --- | --- | --- | --- |
 | 1 | `57025c6` | `fix(srs): the review-frequency multiplier stops compounding` | Codex, Claude finished + committed |
+| 2 | `0df92d6` | `fix(export): the data export reads every row, in pages` | Codex + one fix round, Claude committed |
+| 3 | `8cc0cf4` | `fix(a11y): a preference save no longer costs a keyboard user their place` | Claude |
+| 4 | `9481bde` | `fix(settings): a preference is read fresh, stored honestly, and never invented` | Claude |
+
+**All seven findings are fixed.** ▶ Next: owner review on a `:3001` worktree server, then a
+`--no-ff` merge.
+
+⚠️ **Codex hit its usage limit mid-branch** (reset 2026-09-27) after Task 2's fix round, so Tasks
+3 and 4 are Claude's — the same precedent the owner set on `settings-page`. Before that it stopped
+**three times** on brief errors rather than working around them, which is the behaviour to keep
+asking for: a single unique ordering column that does not exist on seven tables, two test files
+that do not exist, and an existing test that encoded the very defect Task 1 was fixing.
+
+⚠️ **Two mutation checks came back GREEN and exposed useless tests** — both caught only because
+the check was run at all. Task 3's first test asserted focus directly, which **jsdom cannot see**:
+probed, a disabled element keeps `document.activeElement` there, so the real proof had to move to
+Playwright. Task 4c's storage assertion sat in `theme-provider.test.tsx` and called
+`setReduceMotion` directly, bypassing the provider that held the bug.
 
 ## The seven findings
 
@@ -78,10 +96,16 @@ full suite `npm test -- --reporter=dot` exit 0. `master` `1011dee` is **368 file
 **mutation-checked** instead: mutate, watch red, restore, report both outputs (`AGENTS.md` §7).
 Restore byte-for-byte and verify with a hash.
 
-⚠️ **Seven e2e tests already fail on `master`** and none is from this work — three
-`lesson-creation-jobs` (need `LESSON_CREATION_WORKER_ENABLED`) and four on
-`landing-page`/`route-error`. Do not chase them. Claude runs Playwright, never Codex, and checks
-`:3000` is free first (`L-017`).
+⚠️ **`landing-page` + `route-error` fail 6 e2e tests and none is from this work.** Measured at
+Task 4, not assumed: the motion changes were reverted in the working tree, rebuilt, and the same
+6 failed identically. ⚠️ **They include the horizontal-scroll and reduce-motion-at-768 cases the
+`settings-page` run state claimed that branch had FIXED** — that claim does not hold now. Three
+`lesson-creation-jobs` failures also need `LESSON_CREATION_WORKER_ENABLED`. Do not chase any of
+them here; they are a ticket of their own.
+
+`settings.spec.ts` + `display-scale.spec.ts` are 11/11. ⚠️ `every control keeps its value across
+a reload` failed once in a full run and passed standalone and on re-run — a flake, recorded rather
+than hidden. Claude runs Playwright, never Codex, and checks `:3000` is free first (`L-017`).
 
 ## Working tree and environment
 
@@ -90,7 +114,7 @@ Restore byte-for-byte and verify with a hash.
 - Codex cannot commit here (sandbox ACL on `.git/worktrees`): it implements and verifies, Claude
   reviews the diff, re-runs the gates and commits with `Co-Authored-By: Codex`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
@@ -98,5 +122,11 @@ Restore byte-for-byte and verify with a hash.
 
 ## Next actions
 
-▶ Task 1 (SRS multiplier) is dispatched first; 2, 3 and 4 follow one at a time, one agent in
-flight. After Task 4: whole-branch review, e2e, owner review, `--no-ff` merge.
+**All four tasks are committed and every one of the seven findings is fixed.** Nothing is merged.
+
+▶ Next: **owner review** on a `:3001` server started from this worktree, then `--no-ff` merge.
+
+A whole-branch review is worth running before that merge — skipping it is exactly what produced
+this branch. Note what a reviewer should NOT re-litigate: the `data-reduce-motion` meaning (ruled
+in Task 4, see its commit message), the decision not to add a migration (the feature has never run
+outside local development), and the 6 pre-existing e2e failures measured above.
