@@ -246,6 +246,50 @@ describe("AppearanceSection", () => {
     mount(<AppearanceSection />);
     expect(screen.queryByText(copy.reducedMotion.osOverrides)).not.toBeInTheDocument();
   });
+
+  /**
+   * ⚠️ This asserts that the options stay ENABLED mid-save, not that focus
+   * survives — because **jsdom cannot see the focus bug at all**. Probed
+   * directly: give jsdom a focused `<button>`, set `disabled = true`, and
+   * `document.activeElement` is still that button. A real browser moves it to
+   * `<body>`. A focus assertion here passes against the defect and proves
+   * nothing; the first version of this test did exactly that, and only the
+   * mutation check caught it.
+   *
+   * So the real proof lives in a browser — `tests/e2e/settings.spec.ts`,
+   * "keyboard focus survives a display-scale change". This test guards the
+   * structural cause that spec depends on, deterministically and in
+   * milliseconds: `SegmentedControl.move()` focuses an option and only then
+   * calls `onValueChange`, so as long as the save never disables the group,
+   * there is nothing for the browser to blur.
+   *
+   * `usePreferenceSave` is what makes the `disabled` unnecessary: its rule 1
+   * applies a response only if it belongs to the control's latest request, and
+   * rule 3 rolls back to the last confirmed value.
+   *
+   * The fetch is held open by hand because the whole question is what the DOM
+   * looks like WHILE the request is in flight.
+   */
+  it("leaves every option enabled while the save is still in flight", async () => {
+    stubMatchMedia();
+    let release!: (value: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () => new Promise<Response>((resolve) => { release = resolve; }),
+    );
+    const user = userEvent.setup();
+    mount(<AppearanceSection />);
+    const group = screen.getByRole("radiogroup", { name: copy.displayScale.label });
+    within(group).getByRole("radio", { name: copy.displayScale.normal }).focus();
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const options = within(group).getAllByRole("radio");
+    expect(options).toHaveLength(3);
+    for (const option of options) expect(option).toBeEnabled();
+
+    release(new Response(JSON.stringify({ data: { ...DEFAULT_PREFERENCES, displayScale: "large" } }), { status: 200 }));
+  });
 });
 
 describe("PrivacyDataSection", () => {

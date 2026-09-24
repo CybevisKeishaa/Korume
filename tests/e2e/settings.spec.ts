@@ -198,6 +198,36 @@ test.describe("settings", () => {
     expect(after.tables.user_stats).toEqual(before.tables.user_stats);
   });
 
+  /**
+   * ⚠️ This case exists because **jsdom cannot host it**. Probed directly:
+   * focus a `<button>` in jsdom, set `disabled = true`, and
+   * `document.activeElement` is still that button — so a unit test asserting
+   * focus passes whether or not the control disables itself mid-save. A real
+   * browser moves focus to `<body>`.
+   *
+   * The defect: `SegmentedControl.move()` focuses the next option and then
+   * calls `onValueChange`; while the controls rendered `disabled={saving}`,
+   * the save blurred the element the arrow key had just focused. With a
+   * roving tabindex, recovering meant tabbing from the top of the page.
+   *
+   * `sections.test.tsx` guards the structural cause — the options stay
+   * enabled mid-save. This proves the consequence the user actually feels.
+   */
+  test("keyboard focus survives a display-scale change", async ({ page }) => {
+    await page.goto("/en/settings");
+    const group = page.getByRole("radiogroup", { name: copy.displayScale.label, exact: true });
+    await expect(group).toBeVisible();
+    await group.getByRole("radio", { name: copy.displayScale.normal, exact: true }).focus();
+
+    await page.keyboard.press("ArrowRight");
+
+    // Asserted while the PATCH is still in flight AND after it settles: the
+    // bug lived entirely in the window between the two.
+    await expect(group.getByRole("radio", { name: copy.displayScale.large, exact: true })).toBeFocused();
+    await expect(group.getByRole("radio", { name: copy.displayScale.large, exact: true })).toBeChecked();
+    await expect(group.getByRole("radio", { name: copy.displayScale.large, exact: true })).toBeFocused();
+  });
+
   test("fits the owner's viewport without horizontal scrolling", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 529 });
     await page.goto("/en/settings");

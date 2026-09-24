@@ -56,7 +56,6 @@ export function PrivacyDataSection({ initialAiTrainingConsent }: { initialAiTrai
             onCheckedChange={(checked) =>
               void microphone.save({ microphoneEnabled: checked }, { microphoneEnabled: checked })
             }
-            disabled={microphone.saving}
           />
         }
       />
@@ -73,7 +72,6 @@ export function PrivacyDataSection({ initialAiTrainingConsent }: { initialAiTrai
             onCheckedChange={(checked) =>
               void camera.save({ cameraEnabled: checked }, { cameraEnabled: checked })
             }
-            disabled={camera.saving}
           />
         }
       />
@@ -133,7 +131,6 @@ function AiTrainingRow({ id, initialConsent }: { id: string; initialConsent: boo
               if (!ok) setConsent(previous);
             });
           }}
-          disabled={save.saving}
         />
       }
     />

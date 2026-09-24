@@ -59,7 +59,6 @@ export function AppearanceSection() {
               label: t(`page.displayScale.${value}`),
             }))}
             aria-label={t("page.displayScale.label")}
-            disabled={scale.saving}
           />
         }
       />
@@ -77,7 +76,6 @@ export function AppearanceSection() {
               void motion.save({ reduceMotion: checked }, { reduceMotion: checked })
             }
             aria-describedby={showOsNote ? noteId : undefined}
-            disabled={motion.saving}
           />
         }
       >

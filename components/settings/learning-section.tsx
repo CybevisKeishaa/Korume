@@ -124,7 +124,6 @@ export function LearningSection() {
               label: t("page.dailyGoal.option", { minutes }),
             }))}
             aria-label={t("page.dailyGoal.label")}
-            disabled={goal.saving}
           />
         }
       />
@@ -142,7 +141,6 @@ export function LearningSection() {
               label: t(`page.schedule.${value}`),
             }))}
             aria-label={t("page.schedule.label")}
-            disabled={schedule.saving}
           />
         }
       >
@@ -166,7 +164,6 @@ export function LearningSection() {
                     // per day.
                     aria-pressed={on}
                     onClick={() => toggleDay(day)}
-                    disabled={schedule.saving}
                     className={`h-control-sm rounded-full border px-sm text-caption ${
                       on
                         ? "border-primary bg-primary text-primary-foreground"
@@ -202,7 +199,6 @@ export function LearningSection() {
               label: t(`page.reviewFrequency.${value}`),
             }))}
             aria-label={t("page.reviewFrequency.label")}
-            disabled={frequency.saving}
           />
         }
       />
@@ -220,7 +216,6 @@ export function LearningSection() {
               label: t(`page.difficulty.${value}`),
             }))}
             aria-label={t("page.difficulty.label")}
-            disabled={difficulty.saving}
           />
         }
       />
