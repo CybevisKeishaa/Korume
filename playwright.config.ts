@@ -19,7 +19,15 @@ export default defineConfig({
   // who already knew this config existed — L-004's own words, "a guard no
   // command invokes is not a weaker version of a vacuous assertion, it is the
   // same defect in better clothes". So it ships as an invocation:
-  // `npm run test:e2e:c4` (and `test:e2e:c3`, which had the same gap).
+  // `npm run test:e2e:c4`. That command builds into the SAME `.next` as this
+  // config and runs with `reuseExistingServer: false`, so it must not run
+  // concurrently with `npm run test:e2e` — it would rebuild underneath it.
+  //
+  // `c3` deliberately gets NO such script: its specs already run here, so one
+  // would only add a second build of the same coverage, and
+  // `playwright.c3.config.ts` sets `reuseExistingServer: true`, which is how
+  // a run ends up measuring a server built from somebody else's worktree
+  // (`docs/lessons.md` L-004, the `desktop-density-pass` evidence).
   testIgnore: "lesson-creation-jobs.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

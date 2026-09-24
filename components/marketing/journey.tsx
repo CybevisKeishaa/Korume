@@ -132,7 +132,7 @@ const JOURNEY_THUMB = "/marketing/journey-thumb.png";
  * ⚠️ The trailing `300px` was the below-`lg` branch, measured at 768 and 896.
  * It is now UNREACHABLE and is kept for a different reason than it was
  * written for — see `asset-slot.tsx`'s `DEFAULT_SIZES`, which holds that fact
- * once for all five `sizes` constants on this page.
+ * once for every `sizes` constant on this page that has a below-1024 clause.
  *
  * ▶ Not cosmetic: at DPR 1 the old 220 selected `w=256` where 292 selects
  * `w=384`, and at DPR 1.5 `w=384` where 292 selects `w=640`. At DPR 2 both

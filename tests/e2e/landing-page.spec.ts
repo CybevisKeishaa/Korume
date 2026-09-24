@@ -379,9 +379,13 @@ test.describe("landing page", () => {
 
     // L-004: the sweep is gathered by a loop, so pin its size — a short sweep
     // would pass this test without measuring anything.
-    expect(samples, "viewport/locale samples").toHaveLength(
-      widths.length * locales.length,
-    );
+    // ⚠️ A LITERAL. `widths.length * locales.length` was here and is L-006:
+    // a threshold derived from the list it guards shrinks along with it, so
+    // trimming the sweep leaves this green while it measures less. Same fix
+    // as `mobile-app-handoff.spec.ts` — and the floor is pinned separately,
+    // because a count does not say WHICH widths survived.
+    expect(samples, "viewport/locale samples").toHaveLength(8);
+    expect(widths).toContain(LANDING_MIN_WIDTH);
 
     const scrolling = samples.filter((s) => s.over > 0);
     expect(
@@ -453,10 +457,17 @@ test.describe("landing page", () => {
       .evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
     expect(section.scrollWidth).toBe(section.clientWidth);
 
-    // WCAG 2.1.1: no card is a link or a button, so the row itself is the only
-    // thing a keyboard can land on to scroll it. `tabIndex={0}` is what makes
-    // that possible. `journey.test.tsx` pins the attribute; this pins that a
-    // browser will actually put focus there, which jsdom cannot say.
+    // ⚠️ This proves PROGRAMMATIC focusability only — `el.focus()` succeeds on
+    // a `tabindex="-1"` element too, so it is not the WCAG 2.1.1 proof an
+    // earlier version of this comment claimed (`docs/lessons.md` L-004 records
+    // that exact overclaim twice, on Shadowing Hub C2 and Explore C3). It is
+    // left at that on purpose: the row no longer overflows at any supported
+    // width, so there is nothing past the fold to Tab to, and a sequential
+    // traversal here would assert a reach that has no destination. What it
+    // does buy is that the element accepts focus at all, which is the half of
+    // `tabIndex={0}` jsdom cannot see. If the row ever overflows again — the
+    // `overflow-x` pin above is what will notice — this becomes a real Tab
+    // traversal, like `mobile-app-handoff.spec.ts` does.
     const focusable = await row.evaluate((el) => {
       el.focus();
       return document.activeElement === el;

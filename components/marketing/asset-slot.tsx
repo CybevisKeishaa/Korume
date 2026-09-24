@@ -43,18 +43,29 @@ export interface AssetSlotProps {
  * actually needs — 4.8x and 6.6x (measured 2026-08-29 against the dev
  * optimizer). Hence `sizes`: a slot far below the bound passes its own.
  *
- * ⚠️ ONE FACT FOR EVERY `sizes` CONSTANT ON THIS PAGE, stated here because
- * this is the shared boundary they all pass through. Since the mobile handoff
- * gate (`app/[locale]/layout.tsx`, hidden in `globals.css` below 1024) the
- * marketing page never renders below 1024, so **every below-1024 clause in
- * every one of these constants is unreachable** — here, `journey.tsx`'s
- * trailing `300px`, `cta.tsx`'s `1px`, `trust.tsx`'s `100vw`, and
- * `recommendation.tsx`'s `(min-width: 640px) 440px, 560px`, which is a whole
- * dead media-query branch rather than just a tail. They all stay, because
- * HTML's source-size-list grammar requires a final unconditional value and an
- * attribute without one is invalid — the browser then falls back to 100vw,
- * which is the opposite of what any of them are for. Do not re-derive an
- * unreachable clause from a measurement; there is nothing left to measure.
+ * ⚠️ ONE FACT FOR EVERY `sizes` CONSTANT THAT HAS A BELOW-1024 CLAUSE, stated
+ * here because this is the shared boundary they all pass through. Since the
+ * mobile handoff gate (`app/[locale]/layout.tsx`, hidden in `globals.css`
+ * below 1024) the marketing page never renders below 1024, so **no below-1024
+ * clause in any of them can be selected**. Five of the page's eight `sizes`
+ * constants have one: this file's own trailing `100vw`, `journey.tsx`'s
+ * `300px`, `cta.tsx`'s `MASCOT_SIZES` `1px`, `trust.tsx`'s `100vw`, and
+ * `recommendation.tsx`'s `560px`. (`cta.tsx`'s `BACKGROUND_SIZES = "100vw"`,
+ * `capability-chain.tsx` and `pitch-showcase.tsx` are not in the list —
+ * unconditional values are reachable at every width.)
+ *
+ * **Those five all STAY**, and for a reason that is about grammar, not about
+ * layout: `<source-size-list>` requires a final unconditional
+ * `<source-size-value>`, and an attribute without one is invalid — the browser
+ * then falls back to 100vw, which is the opposite of what each of them exists
+ * for. Do not re-derive one of these tails from a measurement; there is
+ * nothing left to measure.
+ *
+ * ⚠️ That reason does NOT extend to an unreachable *media-query branch*, which
+ * the grammar does not require. `recommendation.tsx` had one — `(min-width:
+ * 640px) 440px` — and it was deleted rather than annotated (`AGENTS.md` §6,
+ * no dead code). An earlier version of this docblock told the reader to keep
+ * it, which would have preserved dead code under a false justification.
  */
 const DEFAULT_SIZES = "(min-width: 1024px) 45vw, 100vw";
 

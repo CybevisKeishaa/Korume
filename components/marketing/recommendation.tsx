@@ -93,7 +93,12 @@ const STILL = "/marketing/recommend-commute.png";
  * crops nothing and the required source width is the slot's own width — the
  * height-driven derivation `journey.tsx` documents does not apply here.
  */
-export const STILL_SIZES = "(min-width: 1024px) 240px, (min-width: 640px) 440px, 560px";
+// ⚠️ The `(min-width: 640px) 440px` branch was DELETED 2026-09-25. It covered
+// 640-1023, and the marketing page does not render below 1024 any more — see
+// `asset-slot.tsx`'s `DEFAULT_SIZES`. Unlike the trailing `560px`, which the
+// source-size-list grammar requires and which stays, that clause was simply
+// unreachable code (`AGENTS.md` §6).
+export const STILL_SIZES = "(min-width: 1024px) 240px, 560px";
 
 /** ~2.5:1 — the main card against the "Why this video?" card, as measured above. */
 const SHOWCASE_COLUMNS = "lg:grid-cols-[minmax(0,5fr)_minmax(0,2fr)]";
