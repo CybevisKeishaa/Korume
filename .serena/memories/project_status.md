@@ -1,6 +1,59 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-22, evening (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-25 (supersedes every block below)
+>
+> **NOTHING IS IN FLIGHT.** `git branch --no-merged master` is EMPTY. The next screen-port group
+> is unchosen — ask the owner before starting one.
+>
+> ⭐ Two merges landed since the block below was written, and it described neither:
+> **`1011dee`** the Settings page port (`settings-page`, nine tasks, 2026-09-23), and
+> **`eb38ee9`** its missing review plus the fixes (`settings-review-fixes`, 2026-09-25).
+> Master is at `eb38ee9` and is **NOT pushed** — the owner pushes by hand.
+>
+> Gate on merged master: **368 files / 3434 tests exit 0** (was 340 / 3209 before `settings-page`),
+> tsc 0, lint 0 errors, `npm run verify:protocol` valid, `settings.spec.ts` +
+> `display-scale.spec.ts` 11/11.
+>
+> ⭐ **The run states on master are the authority**, not this file:
+> `docs/superpowers/run-state/settings-page.md` (what the port shipped and its contracts) and
+> `docs/superpowers/run-state/settings-review-fixes.md` (what was wrong with it).
+>
+> 🚨 **`settings-page` was merged with its whole-branch review deliberately SKIPPED.** The review
+> ran afterwards and found seven defects in merged code — the worst being the Review Frequency
+> multiplier folded into the PERSISTED SRS interval, so it compounded: `relaxed` reached 10286 days
+> by a card's seventh review, and switching back to `normal` could not undo it. Also a GDPR export
+> silently truncated at PostgREST's row cap, and keyboard focus dropped to `<body>` on every
+> settings control. **Do not skip that step again.**
+>
+> 🚨 **The review of the FIX branch found seven more, four of them regressions the fixes had just
+> introduced** — a held arrow key firing ~30 PATCHes a second against a 30-a-MINUTE limit, the
+> reduce-motion context conflating the account's answer with the effective one, a superseded save
+> rolling back a newer value, and an export loop stopping on a short page. Two reviews, fourteen
+> defects. The step pays for itself.
+>
+> ⚠️ **Still broken, and none of it is from that work** (measured by reverting and rebuilding):
+> 6 e2e failures on `landing-page` + `route-error`, and 3 on `lesson-creation-jobs` which need
+> `LESSON_CREATION_WORKER_ENABLED`. ⚠️ The `landing-page` six include the horizontal-scroll and
+> reduce-motion-at-768 cases the `settings-page` run state claimed that branch FIXED — that claim
+> does not hold. They are a ticket of their own.
+>
+> **Deferred, not forgotten:** Study Reminder Time and Learning Reminders go to a `study-reminders`
+> branch; Theme and Accent Color and eleven About/Contact rows are deliberately absent from
+> `/settings`, with a test asserting their absence.
+>
+> ⚠️ **Codex hit its ChatGPT usage limit on 2026-09-24, reset 2026-09-27.** Besides the usage-limit
+> line, a dispatch can also die on `ERROR: Selected model is at capacity`; neither writes the `-o`
+> file. Grep the log for both.
+>
+> ⚠️ **`.worktrees/settings-page` does NOT hold `settings-page`** — it holds
+> `screen-registry-phase-2a`, switched out of band. Run `git worktree list` before assuming.
+>
+> Environment left 2026-09-25: Docker + local Supabase up; no server on `:3000` or `:3001`;
+> the main checkout's `.next` never touched.
+>
+> ---
+>
+> ## (previous block) 2026-09-22 evening — auth-error-ux merged; superseded by the block above
 >
 > ⭐ **`auth-error-ux` is MERGED to master at `d7b1821` (`--no-ff`)**, branch and worktree kept.
 > `git branch --no-merged master` is EMPTY. Owner reviewed in Chrome and accepted. Review fixes
