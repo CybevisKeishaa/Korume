@@ -16,6 +16,12 @@ re-verified by Claude against `git show 1011dee:` before being written down here
 - Rules: `AGENTS.md`, `docs/lessons.md`, `.codex/docs/workflow.md` §8.
 - Contracts the fixes must not break: `docs/superpowers/run-state/settings-page.md` on `master`.
 
+## Accepted commits
+
+| Task | Commit | Title | By |
+| --- | --- | --- | --- |
+| 1 | `57025c6` | `fix(srs): the review-frequency multiplier stops compounding` | Codex, Claude finished + committed |
+
 ## The seven findings
 
 | # | Where | Defect | Task |

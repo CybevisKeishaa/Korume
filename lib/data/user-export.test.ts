@@ -1,18 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase } from "@/test/supabase-mock";
+import { createMockSupabase, type TableResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { parseCsv } from "@/lib/csv/parse";
 import { USER_EXPORT_TABLES } from "@/lib/user-export/tables";
-import { exportMyData, myLearningHistoryCsv } from "./user-export";
+import { EXPORT_PAGE_SIZE, exportMyData, myLearningHistoryCsv } from "./user-export";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 beforeEach(() => vi.clearAllMocks());
 
-/** Answers every export table with `rows`, so no query is left unregistered. */
+function page(rows: unknown[], calls: { op: string; from?: number; to?: number }[]): unknown[] {
+  const range = calls.find((call) => call.op === "range");
+  return rows.slice(range?.from ?? 0, (range?.to ?? EXPORT_PAGE_SIZE - 1) + 1);
+}
+
+/** Answers every export table with a PostgREST-sized page, so no query is left unregistered. */
 function mockAllTables(rows: Record<string, unknown[]> = {}) {
-  const tables: Record<string, () => { data: unknown; error: null }> = {};
+  const tables: Record<string, TableResolver> = {};
   for (const entry of USER_EXPORT_TABLES) {
-    tables[entry.table] = () => ({ data: rows[entry.table] ?? [], error: null });
+    tables[entry.table] = (calls) => ({ data: page(rows[entry.table] ?? [], calls), error: null });
   }
   return tables;
 }
@@ -73,6 +78,55 @@ describe("exportMyData", () => {
 
     await expect(exportMyData()).rejects.toBeTruthy();
   });
+
+  it("exports every row when a table exceeds one PostgREST page", async () => {
+    const events = Array.from({ length: EXPORT_PAGE_SIZE + 1 }, (_, index) => ({ id: `event-${index}` }));
+    vi.mocked(createClient).mockReturnValue(
+      createMockSupabase({
+        user: { id: "u-pages" },
+        tables: mockAllTables({ xp_events: events }),
+      }) as ReturnType<typeof createClient>,
+    );
+
+    const result = await exportMyData();
+
+    expect(result).toMatchObject({ ok: true });
+    if (!result.ok) return;
+    expect(result.data.tables.xp_events).toHaveLength(EXPORT_PAGE_SIZE + 1);
+  });
+
+  it("chunks parent ids before exporting dependent rows", async () => {
+    const playlistIds = Array.from({ length: 101 }, (_, index) => `playlist-${index}`);
+    const inCalls: unknown[][] = [];
+    vi.mocked(createClient).mockReturnValue(
+      createMockSupabase({
+        user: { id: "u-chunks" },
+        tables: {
+          ...mockAllTables({ user_playlists: playlistIds.map((id) => ({ id })) }),
+          user_playlist_items: (calls) => {
+            const parentIds = calls.find((call) => call.op === "in")?.values ?? [];
+            inCalls.push(parentIds);
+            return {
+              data: page(
+                parentIds.map((playlist_id) => ({ playlist_id, video_id: `video-${playlist_id}` })),
+                calls,
+              ),
+              error: null,
+            };
+          },
+        },
+      }) as ReturnType<typeof createClient>,
+    );
+
+    const result = await exportMyData();
+
+    expect(result).toMatchObject({ ok: true });
+    if (!result.ok) return;
+    expect(inCalls).not.toHaveLength(0);
+    expect(inCalls.flat()).toEqual(playlistIds);
+    expect(inCalls.every((ids) => ids.length <= 100)).toBe(true);
+    expect(result.data.tables.user_playlist_items).toHaveLength(playlistIds.length);
+  });
 });
 
 describe("myLearningHistoryCsv", () => {
@@ -124,5 +178,27 @@ describe("myLearningHistoryCsv", () => {
       ["practice", "〜てから", "60"],
       ["lesson", "Lesson A", ""],
     ]);
+  });
+
+  it("includes every history row when a source exceeds one PostgREST page", async () => {
+    const videos = Array.from({ length: EXPORT_PAGE_SIZE + 1 }, (_, index) => ({
+      completed_at: `2026-09-20T08:${String(index % 60).padStart(2, "0")}Z`,
+      videos: { title: `Lesson ${index}` },
+    }));
+    vi.mocked(createClient).mockReturnValue(
+      createMockSupabase({
+        user: { id: "u-history-pages" },
+        tables: {
+          ...historyTables,
+          user_video_progress: (calls) => ({ data: page(videos, calls), error: null }),
+        },
+      }) as ReturnType<typeof createClient>,
+    );
+
+    const result = await myLearningHistoryCsv();
+
+    expect(result).toMatchObject({ ok: true });
+    if (!result.ok) return;
+    expect(parseCsv(result.csv).records).toHaveLength(EXPORT_PAGE_SIZE + 4);
   });
 });

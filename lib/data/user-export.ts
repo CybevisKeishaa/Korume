@@ -6,6 +6,64 @@ import { toCsv } from "@/lib/csv/write";
 import { USER_EXPORT_TABLES } from "@/lib/user-export/tables";
 
 const EXPORT_LIMIT = { limit: 3, windowMs: 60 * 60 * 1000 };
+/** Matches `supabase/config.toml`'s `max_rows`, so every query can detect its cap. */
+export const EXPORT_PAGE_SIZE = 1_000;
+/** 100 UUIDs x ~37 bytes leaves over 4 KB of the ~8 KB request-line budget for query overhead. */
+const PARENT_ID_CHUNK_SIZE = 100;
+
+export const PRIMARY_KEY_COLUMNS: Record<string, readonly string[]> = {
+  users: ["id"],
+  user_preferences: ["user_id"],
+  user_stats: ["user_id"],
+  user_badges: ["user_id", "badge_id"],
+  xp_events: ["id"],
+  user_kanji_progress: ["user_id", "kanji_id"],
+  user_vocab_progress: ["user_id", "vocab_id"],
+  user_grammar_progress: ["user_id", "grammar_id"],
+  user_reading_attempts: ["id"],
+  user_test_attempts: ["id"],
+  user_video_progress: ["user_id", "video_id"],
+  user_lesson_library: ["user_id", "lesson_id"],
+  user_playlists: ["id"],
+  user_playlist_items: ["playlist_id", "video_id"],
+  sentence_mining_cards: ["id"],
+  shadowing_sessions: ["id"],
+  dictation_attempts: ["id"],
+  companion_memories: ["id"],
+  conversation_sessions: ["id"],
+  conversation_messages: ["id"],
+  notifications: ["id"],
+  forum_posts: ["id"],
+  forum_comments: ["id"],
+  peer_reviews: ["id"],
+  peer_review_shares: ["id"],
+  subscriptions: ["id"],
+  account_deletion_requests: ["id"],
+  lesson_creation_jobs: ["id"],
+  lesson_creation_job_events: ["id"],
+};
+
+type PagedResult<T> = { data: T[] | null; error: unknown };
+
+async function fetchAllPages<T>(fetchPage: (from: number, to: number) => Promise<PagedResult<T>>): Promise<T[]> {
+  const rows: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await fetchPage(from, from + EXPORT_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < EXPORT_PAGE_SIZE) return rows;
+    from += page.length;
+  }
+}
+
+function primaryKeyColumns(table: string): readonly string[] {
+  const columns = PRIMARY_KEY_COLUMNS[table];
+  if (!columns) throw new Error(`No primary key order registered for ${table}`);
+  return columns;
+}
 
 export type ExportResult =
   | { ok: true; data: { exportedAt: string; userId: string; tables: Record<string, unknown[]> } }
@@ -35,10 +93,13 @@ export async function exportMyData(now: Date = new Date()): Promise<ExportResult
   const tables: Record<string, unknown[]> = {};
 
   for (const entry of USER_EXPORT_TABLES) {
-    if (entry.userColumn) {
-      const { data, error } = await supabase.from(entry.table).select("*").eq(entry.userColumn, user.id);
-      if (error) throw error;
-      tables[entry.table] = data ?? [];
+    const userColumn = entry.userColumn;
+    if (userColumn) {
+      tables[entry.table] = await fetchAllPages(async (from, to) => {
+        let query = supabase.from(entry.table).select("*").eq(userColumn, user.id);
+        for (const column of primaryKeyColumns(entry.table)) query = query.order(column);
+        return query.range(from, to);
+      });
       continue;
     }
 
@@ -53,9 +114,18 @@ export async function exportMyData(now: Date = new Date()): Promise<ExportResult
       tables[entry.table] = [];
       continue;
     }
-    const { data, error } = await supabase.from(entry.table).select("*").in(via.column, parentIds);
-    if (error) throw error;
-    tables[entry.table] = data ?? [];
+    const childRows: unknown[] = [];
+    for (let start = 0; start < parentIds.length; start += PARENT_ID_CHUNK_SIZE) {
+      const parentIdChunk = parentIds.slice(start, start + PARENT_ID_CHUNK_SIZE);
+      childRows.push(
+        ...(await fetchAllPages(async (from, to) => {
+          let query = supabase.from(entry.table).select("*").in(via.column, parentIdChunk);
+          for (const column of primaryKeyColumns(entry.table)) query = query.order(column);
+          return query.range(from, to);
+        })),
+      );
+    }
+    tables[entry.table] = childRows;
   }
 
   return { ok: true, data: { exportedAt: now.toISOString(), userId: user.id, tables } };
@@ -72,7 +142,7 @@ export async function exportMyData(now: Date = new Date()): Promise<ExportResult
  * `user_grammar_progress` records a mastery score against `last_practiced_at`
  * rather than an SRS review. The detail column reflects what each table has.
  */
-const HISTORY_SOURCES = [
+export const HISTORY_SOURCES = [
   {
     table: "user_video_progress",
     kind: "lesson",
@@ -126,13 +196,13 @@ export async function myLearningHistoryCsv(now: Date = new Date()): Promise<Hist
   const rows: { date: string; kind: string; item: string; detail: string | number | null }[] = [];
 
   for (const source of HISTORY_SOURCES) {
-    const { data, error } = await supabase
-      .from(source.table)
-      .select(source.join.select)
-      .eq("user_id", user.id);
-    if (error) throw error;
+    const data = await fetchAllPages(async (from, to) => {
+      let query = supabase.from(source.table).select(source.join.select).eq("user_id", user.id);
+      for (const column of primaryKeyColumns(source.table)) query = query.order(column);
+      return query.range(from, to);
+    });
 
-    for (const row of (data ?? []) as unknown as Record<string, unknown>[]) {
+    for (const row of data as unknown as Record<string, unknown>[]) {
       const date = row[source.dateColumn];
       // A row the reader has not reached yet has no date, and a history line
       // with an empty date cannot be sorted or read. Skipped, not invented.
