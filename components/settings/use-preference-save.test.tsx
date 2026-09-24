@@ -4,7 +4,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { PreferencesProvider, usePreferences } from "@/components/providers/preferences-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { DEFAULT_PREFERENCES, type UserPreferences } from "@/lib/preferences/options";
-import { usePreferenceSave } from "./use-preference-save";
+import { usePreferenceSave, type PreferenceSaveOutcome } from "./use-preference-save";
 
 type Deferred = { resolve: (response: Response) => void };
 const pending: Deferred[] = [];
@@ -76,8 +76,8 @@ describe("usePreferenceSave (settings spec §5)", () => {
 
   it("an older response arriving after a newer one changes nothing", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
-    let b!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
+    let b!: Promise<PreferenceSaveOutcome>;
     act(() => {
       a = result.current.difficulty.save({ difficulty: "easy" }, { difficulty: "easy" });
     });
@@ -99,7 +99,7 @@ describe("usePreferenceSave (settings spec §5)", () => {
 
   it("a failed latest request rolls back to the last confirmed value", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
     act(() => {
       a = result.current.difficulty.save({ difficulty: "easy" }, { difficulty: "easy" });
     });
@@ -116,8 +116,8 @@ describe("usePreferenceSave (settings spec §5)", () => {
 
   it("a failed stale request is ignored", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
-    let b!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
+    let b!: Promise<PreferenceSaveOutcome>;
     act(() => {
       a = result.current.difficulty.save({ difficulty: "easy" }, { difficulty: "easy" });
     });
@@ -139,8 +139,8 @@ describe("usePreferenceSave (settings spec §5)", () => {
 
   it("two different controls saving at once do not affect each other", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
-    let b!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
+    let b!: Promise<PreferenceSaveOutcome>;
     act(() => {
       a = result.current.difficulty.save({ difficulty: "easy" }, { difficulty: "easy" });
     });
@@ -170,7 +170,7 @@ describe("usePreferenceSave (settings spec §5)", () => {
    */
   it("applies the server's canonical value, not the optimistic one", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
     act(() => {
       a = result.current.difficulty.save({ difficulty: "easy" }, { difficulty: "easy" });
     });
@@ -190,8 +190,8 @@ describe("usePreferenceSave (settings spec §5)", () => {
    */
   it("never applies response keys the caller did not save", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
-    let b!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
+    let b!: Promise<PreferenceSaveOutcome>;
     act(() => {
       b = result.current.scale.save({ displayScale: "large" }, { displayScale: "large" });
     });
@@ -222,8 +222,8 @@ describe("usePreferenceSave (settings spec §5)", () => {
    */
   it("resolves true on a confirmed save and false on a failed one, never rejecting", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
-    let b!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
+    let b!: Promise<PreferenceSaveOutcome>;
 
     act(() => {
       a = result.current.difficulty.save({ difficulty: "easy" }, { difficulty: "easy" });
@@ -231,7 +231,7 @@ describe("usePreferenceSave (settings spec §5)", () => {
     await act(async () => {
       (pending[0] as Deferred).resolve(ok({ difficulty: "easy" }));
     });
-    await expect(a).resolves.toBe(true);
+    await expect(a).resolves.toBe("saved");
 
     act(() => {
       b = result.current.scale.save({ displayScale: "large" }, { displayScale: "large" });
@@ -239,13 +239,13 @@ describe("usePreferenceSave (settings spec §5)", () => {
     await act(async () => {
       (pending[1] as Deferred).resolve(fail());
     });
-    await expect(b).resolves.toBe(false);
+    await expect(b).resolves.toBe("failed");
   });
 
   it("resolves false for a superseded save, so its caller does not roll back a newer value", async () => {
     const { result } = setup();
-    let a!: Promise<boolean>;
-    let b!: Promise<boolean>;
+    let a!: Promise<PreferenceSaveOutcome>;
+    let b!: Promise<PreferenceSaveOutcome>;
     act(() => {
       a = result.current.difficulty.save({ difficulty: "easy" }, { difficulty: "easy" });
     });
@@ -261,8 +261,8 @@ describe("usePreferenceSave (settings spec §5)", () => {
       (pending[0] as Deferred).resolve(ok({ difficulty: "easy" }));
     });
 
-    await expect(a).resolves.toBe(false);
-    await expect(b).resolves.toBe(true);
+    await expect(a).resolves.toBe("superseded");
+    await expect(b).resolves.toBe("saved");
   });
 
   it("reports a rejected request the same way a failed one is reported", async () => {

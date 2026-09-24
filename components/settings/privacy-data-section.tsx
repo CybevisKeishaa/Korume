@@ -127,8 +127,15 @@ function AiTrainingRow({ id, initialConsent }: { id: string; initialConsent: boo
             // anything in `UserPreferences`. `consent` is not in there, so
             // this row puts its own value back — and reads the RESULT to do
             // it, because `save` resolves rather than rejects on failure.
-            void save.save({ consent: checked }, {}).then((ok) => {
-              if (!ok) setConsent(previous);
+            //
+            // ⚠️ Only `"failed"` rolls back. A `"superseded"` save's value is
+            // already stale — restoring what IT saw would undo the newer save
+            // that replaced it, leaving this switch disagreeing with the row
+            // until a reload. That became reachable when the `disabled` was
+            // removed from this control, so two of its PATCHes can now be in
+            // flight at once.
+            void save.save({ consent: checked }, {}).then((outcome) => {
+              if (outcome === "failed") setConsent(previous);
             });
           }}
         />

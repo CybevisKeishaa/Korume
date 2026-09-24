@@ -221,11 +221,17 @@ test.describe("settings", () => {
 
     await page.keyboard.press("ArrowRight");
 
-    // Asserted while the PATCH is still in flight AND after it settles: the
-    // bug lived entirely in the window between the two.
-    await expect(group.getByRole("radio", { name: copy.displayScale.large, exact: true })).toBeFocused();
-    await expect(group.getByRole("radio", { name: copy.displayScale.large, exact: true })).toBeChecked();
-    await expect(group.getByRole("radio", { name: copy.displayScale.large, exact: true })).toBeFocused();
+    // ⚠️ These assertions auto-retry and nothing holds the response open, so
+    // they do NOT sample the in-flight window — an earlier version of this
+    // comment claimed they did. What they prove is that focus is still on the
+    // option AFTER the save settles, which is the part that actually broke:
+    // the defect blurred the element and never gave focus back. Measured, with
+    // `disabled={scale.saving}` restored and rebuilt, this went red with the
+    // trace showing `<button disabled role="radio">` and focus "inactive"
+    // across 11 polls — long past the PATCH completing.
+    const large = group.getByRole("radio", { name: copy.displayScale.large, exact: true });
+    await expect(large).toBeChecked();
+    await expect(large).toBeFocused();
   });
 
   test("fits the owner's viewport without horizontal scrolling", async ({ page }) => {

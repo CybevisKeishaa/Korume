@@ -123,36 +123,51 @@ describe("exportMyData", () => {
     expect(result).toMatchObject({ ok: true });
     if (!result.ok) return;
     expect(inCalls).not.toHaveLength(0);
-    expect(inCalls.flat()).toEqual(playlistIds);
+    // ⚠️ Deduplicated by chunk, because each chunk is now queried TWICE: the
+    // page carrying its rows, then the empty page that ends the loop. The
+    // reader stops on an EMPTY page rather than a short one so that a server
+    // whose row cap is below `EXPORT_PAGE_SIZE` cannot make a full page look
+    // like the last one. Asserting the raw call list would pin that round-trip
+    // count, which is an implementation detail; what matters is that every
+    // parent id was asked for, once per chunk, in order.
+    const distinctChunks = inCalls.filter(
+      (ids, index) => index === 0 || JSON.stringify(ids) !== JSON.stringify(inCalls[index - 1]),
+    );
+    expect(distinctChunks.flat()).toEqual(playlistIds);
+    expect(distinctChunks).toHaveLength(2); // 101 ids at 100 per chunk
     expect(inCalls.every((ids) => ids.length <= 100)).toBe(true);
     expect(result.data.tables.user_playlist_items).toHaveLength(playlistIds.length);
   });
 });
 
 describe("myLearningHistoryCsv", () => {
-  const historyTables = {
-    user_video_progress: () => ({
-      data: [{ completed_at: "2026-09-20T08:00:00Z", videos: { title: "Lesson A" } }],
-      error: null,
-    }),
-    user_kanji_progress: () => ({
-      data: [
-        { last_reviewed_at: "2026-09-22T08:00:00Z", srs_stage: 4, kanji: { character: "日" } },
-        // No review yet: no date, so no history line.
-        { last_reviewed_at: null, srs_stage: 0, kanji: { character: "月" } },
-      ],
-      error: null,
-    }),
-    user_vocab_progress: () => ({ data: [], error: null }),
-    user_grammar_progress: () => ({
-      data: [{ last_practiced_at: "2026-09-21T08:00:00Z", mastery_score: 60, grammar_points: { title: "〜てから" } }],
-      error: null,
-    }),
-    user_badges: () => ({
-      data: [{ earned_at: "2026-09-23T08:00:00Z", badges: { name: "First week" } }],
-      error: null,
-    }),
+  /**
+   * ⚠️ Every resolver here pages through `page()`. A resolver that returned
+   * its fixture whatever `range` asked for used to be harmless — the reader
+   * stopped on a SHORT page, and one row is short. It now stops only on an
+   * EMPTY one, so a range-blind resolver loops for ever and kills the worker
+   * with an out-of-memory crash rather than a readable failure.
+   */
+  const historyRows: Record<string, unknown[]> = {
+    user_video_progress: [{ completed_at: "2026-09-20T08:00:00Z", videos: { title: "Lesson A" } }],
+    user_kanji_progress: [
+      { last_reviewed_at: "2026-09-22T08:00:00Z", srs_stage: 4, kanji: { character: "日" } },
+      // No review yet: no date, so no history line.
+      { last_reviewed_at: null, srs_stage: 0, kanji: { character: "月" } },
+    ],
+    user_vocab_progress: [],
+    user_grammar_progress: [
+      { last_practiced_at: "2026-09-21T08:00:00Z", mastery_score: 60, grammar_points: { title: "〜てから" } },
+    ],
+    user_badges: [{ earned_at: "2026-09-23T08:00:00Z", badges: { name: "First week" } }],
   };
+
+  const historyTables: Record<string, TableResolver> = Object.fromEntries(
+    Object.entries(historyRows).map(([table, rows]) => [
+      table,
+      ((calls) => ({ data: page(rows, calls), error: null })) as TableResolver,
+    ]),
+  );
 
   it("refuses an anonymous caller", async () => {
     vi.mocked(createClient).mockReturnValue(

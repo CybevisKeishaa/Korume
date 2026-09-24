@@ -52,6 +52,21 @@ describe("ThemeProvider reduced motion", () => {
     expect(document.documentElement.getAttribute(REDUCE_MOTION_ATTR)).toBe("true");
     expect(motionEnabled()).toBe(false);
     expect(localStorage.getItem("nc-reduce-motion")).toBe("false");
+    // ⚠️ Two fields, two questions, and the split is the whole point.
+    //
+    // `accountReduceMotion` is the ACCOUNT's answer and drives
+    // `ReduceMotionToggle`'s `checked` — the toggle is in the nav on every
+    // protected page, and binding it to the effective value made the box snap
+    // straight back to checked, for ever, on any machine whose OS asks for
+    // reduced motion.
+    //
+    // `reduceMotion` stays EFFECTIVE because four components gate animation on
+    // it (`companion-sprite`, `smooth-scroll`, `stroke-order`,
+    // `transcript-pane`); making it the account value let the companion keep
+    // breathing for an OS-level reduce-motion reader, which
+    // `ambient.test.tsx` caught.
+    expect(result.current.accountReduceMotion).toBe(false);
+    expect(result.current.reduceMotion).toBe(true);
   });
 
   /**

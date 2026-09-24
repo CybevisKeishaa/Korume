@@ -339,6 +339,45 @@ describe("PrivacyDataSection", () => {
     expect(toggle).toHaveAttribute("aria-checked", "false");
   });
 
+  /**
+   * ⚠️ The other half of the rollback, and the one that only became reachable
+   * when this control stopped rendering `disabled` while saving: two of its
+   * PATCHes can now be in flight at once.
+   *
+   * A SUPERSEDED save must not roll back. Its value is already stale, so
+   * restoring what it saw would undo the newer save that replaced it, leaving
+   * the switch disagreeing with the database until a reload. `save` used to
+   * answer a single `false` for "failed" and "superseded" alike, which made
+   * the distinction impossible — even though this hook's own test is named
+   * for keeping it.
+   *
+   * The first response is held open so the second click genuinely supersedes
+   * it; then the first is failed, which is the case that would wrongly roll
+   * back.
+   */
+  it("does not roll the AI Training switch back when a save is merely superseded", async () => {
+    const user = userEvent.setup();
+    let failFirst!: (value: Response) => void;
+    fetchMock
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => { failFirst = resolve; }))
+      // ⚠️ A fresh `Response` PER CALL. `mockResolvedValue` hands every call
+      // the SAME object, and a `Response` body can only be read once — the
+      // second `.json()` throws, the hook takes its catch branch, and a
+      // correct component fails. Cost half an hour of debugging here.
+      .mockImplementation(async () => new Response(JSON.stringify({}), { status: 200 }) as Response);
+
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    const toggle = screen.getByRole("switch", { name: /Help improve Korume/ });
+
+    await user.click(toggle); // -> true, held open
+    await user.click(toggle); // -> false, resolves and supersedes the first
+    await user.click(toggle); // -> true, the value that must survive
+
+    failFirst(new Response(JSON.stringify({ error: "x" }), { status: 500 }) as Response);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+  });
+
   it("offers both downloads as real links the browser handles", () => {
     mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
 

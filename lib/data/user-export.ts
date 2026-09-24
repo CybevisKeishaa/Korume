@@ -45,16 +45,29 @@ export const PRIMARY_KEY_COLUMNS: Record<string, readonly string[]> = {
 
 type PagedResult<T> = { data: T[] | null; error: unknown };
 
+/**
+ * Every row the query matches, read in pages.
+ *
+ * ⚠️ Stops only on an EMPTY page, never on a short one. A short page looks
+ * like the end but is also exactly what a server whose row cap is BELOW
+ * `EXPORT_PAGE_SIZE` returns for a full one — and stopping there would ship a
+ * silently truncated GDPR export with a 200, which is the whole defect this
+ * function exists to remove. Costs one extra round trip per query and makes
+ * the loop independent of what the deployment's cap actually is.
+ */
 async function fetchAllPages<T>(fetchPage: (from: number, to: number) => Promise<PagedResult<T>>): Promise<T[]> {
-  const rows: T[] = [];
+  let rows: T[] = [];
   let from = 0;
 
   while (true) {
     const { data, error } = await fetchPage(from, from + EXPORT_PAGE_SIZE - 1);
     if (error) throw error;
     const page = data ?? [];
-    rows.push(...page);
-    if (page.length < EXPORT_PAGE_SIZE) return rows;
+    if (page.length === 0) return rows;
+    // `concat`, not `push(...page)`: spreading goes through `Function.apply`,
+    // which throws `RangeError: Maximum call stack size exceeded` past ~100k
+    // elements — reachable for one account's `conversation_messages`.
+    rows = rows.concat(page);
     from += page.length;
   }
 }
@@ -114,15 +127,17 @@ export async function exportMyData(now: Date = new Date()): Promise<ExportResult
       tables[entry.table] = [];
       continue;
     }
-    const childRows: unknown[] = [];
+    let childRows: unknown[] = [];
     for (let start = 0; start < parentIds.length; start += PARENT_ID_CHUNK_SIZE) {
       const parentIdChunk = parentIds.slice(start, start + PARENT_ID_CHUNK_SIZE);
-      childRows.push(
-        ...(await fetchAllPages(async (from, to) => {
+      // `concat`, not `push(...)` — see `fetchAllPages` for why spreading an
+      // unbounded array is a crash waiting for the heaviest account.
+      childRows = childRows.concat(
+        await fetchAllPages(async (from, to) => {
           let query = supabase.from(entry.table).select("*").in(via.column, parentIdChunk);
           for (const column of primaryKeyColumns(entry.table)) query = query.order(column);
           return query.range(from, to);
-        })),
+        }),
       );
     }
     tables[entry.table] = childRows;

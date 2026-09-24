@@ -6,21 +6,33 @@ import { usePreferences } from "@/components/providers/preferences-provider";
 import { useToast } from "@/components/ui/toast";
 import type { UserPreferences } from "@/lib/preferences/options";
 
+/**
+ * What became of one save.
+ *
+ * ⚠️ `"failed"` and `"superseded"` must stay distinguishable, and this used to
+ * be a single `false` for both. A caller that keeps its own copy of the value
+ * — AI Training does, because `consent` is a `users` column — rolls back on
+ * `"failed"`, and must NOT roll back on `"superseded"`: that save's value is
+ * already stale, and restoring the value it saw would undo the newer save that
+ * replaced it. This file's own test is named for that promise; the boolean
+ * made it impossible to keep.
+ */
+export type PreferenceSaveOutcome = "saved" | "failed" | "superseded";
+
 export interface PreferenceSave {
   /**
    * `body` is the PATCH body (one logical control, per `preferencesPatchSchema`).
    * `optimistic` is what to show immediately, and doubles as the key set this
    * save owns — nothing outside it is ever written or rolled back.
    *
-   * Resolves `true` when the server confirmed this save, `false` when it
-   * failed or was superseded. It never REJECTS: a caller that only cares about
-   * `preferences` can ignore the result entirely, and the hook has already
-   * rolled back and toasted by the time it resolves. The boolean exists for a
-   * caller holding state the provider does not — AI Training is a `users`
-   * column, so its row keeps its own `consent` and must learn to put it back.
-   * A `.catch()` there would never fire.
+   * It never REJECTS: a caller that only cares about `preferences` can ignore
+   * the result entirely, because the hook has already rolled back and toasted
+   * by the time it resolves. A `.catch()` there would never fire.
    */
-  save: (body: Record<string, unknown>, optimistic: Partial<UserPreferences>) => Promise<boolean>;
+  save: (
+    body: Record<string, unknown>,
+    optimistic: Partial<UserPreferences>,
+  ) => Promise<PreferenceSaveOutcome>;
   saving: boolean;
 }
 
@@ -70,7 +82,10 @@ export function usePreferenceSave(
   preferencesRef.current = preferences;
 
   const save = useCallback(
-    async (body: Record<string, unknown>, optimistic: Partial<UserPreferences>): Promise<boolean> => {
+    async (
+      body: Record<string, unknown>,
+      optimistic: Partial<UserPreferences>,
+    ): Promise<PreferenceSaveOutcome> => {
       const keys = Object.keys(optimistic) as (keyof UserPreferences)[];
 
       // Seed the confirmed snapshot from what is on screen the FIRST time this
@@ -104,11 +119,11 @@ export function usePreferenceSave(
         // more — neither its success nor its failure. Checked before the body
         // is read so a stale failure cannot raise a toast about a value the
         // user has already moved past.
-        if (seq !== sequence.current) return false;
+        if (seq !== sequence.current) return "superseded";
 
         if (!response.ok) {
           rollback();
-          return false;
+          return "failed";
         }
 
         // The server canonicalises (`every_day` rewrites `scheduleDays`), so
@@ -122,11 +137,11 @@ export function usePreferenceSave(
         }
         Object.assign(confirmed.current, applied);
         setLocal(applied);
-        return true;
+        return "saved";
       } catch {
-        if (seq !== sequence.current) return false;
+        if (seq !== sequence.current) return "superseded";
         rollback();
-        return false;
+        return "failed";
       } finally {
         if (seq === sequence.current) setSaving(false);
       }

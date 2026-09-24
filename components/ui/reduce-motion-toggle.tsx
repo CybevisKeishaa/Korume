@@ -19,14 +19,14 @@ import { useTheme } from "@/components/providers/theme-provider";
  * caption documents the control instead of fighting a width budget.
  */
 export function ReduceMotionToggle({ compact = false }: { compact?: boolean }) {
-  const { reduceMotion, setReduceMotion } = useTheme();
+  const { accountReduceMotion, setReduceMotion } = useTheme();
   const id = useId();
   return (
     <label htmlFor={id} className="flex items-center gap-xs text-body">
       <input
         id={id}
         type="checkbox"
-        checked={reduceMotion}
+        checked={accountReduceMotion}
         onChange={(e) => setReduceMotion(e.target.checked)}
         className="h-4 w-4 rounded border-input accent-primary"
       />
