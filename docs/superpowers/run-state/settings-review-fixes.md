@@ -24,9 +24,17 @@ re-verified by Claude against `git show 1011dee:` before being written down here
 | 2 | `0df92d6` | `fix(export): the data export reads every row, in pages` | Codex + one fix round, Claude committed |
 | 3 | `8cc0cf4` | `fix(a11y): a preference save no longer costs a keyboard user their place` | Claude |
 | 4 | `9481bde` | `fix(settings): a preference is read fresh, stored honestly, and never invented` | Claude |
+| review | `febc9c7` | `fix(settings): the whole-branch review's seven findings` | Claude |
+| owner | `fb63e00` | `style(scroll): scrollbars stop looking like a piece of Windows` | Claude |
 
-**All seven findings are fixed.** ▶ Next: owner review on a `:3001` worktree server, then a
-`--no-ff` merge.
+**All seven findings are fixed, the whole-branch review ran and its own seven findings are fixed,
+and the owner reviewed and accepted on a `:3001` worktree server (2026-09-25).**
+
+⚠️ **The whole-branch review found four regressions introduced by Tasks 3 and 4** — auto-repeat
+firing ~30 PATCHes a second against a 30-a-MINUTE limit, the reduce-motion context conflating the
+account's answer with the effective one, a superseded save rolling back a newer value, and an
+export that stopped on a short page. Read `febc9c7` before touching any of them again; skipping
+this step is what produced this branch in the first place.
 
 ⚠️ **Codex hit its usage limit mid-branch** (reset 2026-09-27) after Task 2's fix round, so Tasks
 3 and 4 are Claude's — the same precedent the owner set on `settings-page`. Before that it stopped
@@ -122,9 +130,7 @@ than hidden. Claude runs Playwright, never Codex, and checks `:3000` is free fir
 
 ## Next actions
 
-**All four tasks are committed and every one of the seven findings is fixed.** Nothing is merged.
-
-▶ Next: **owner review** on a `:3001` server started from this worktree, then `--no-ff` merge.
+**Everything is done and the owner has accepted.** ▶ Next and last: `--no-ff` merge to `master`.
 
 A whole-branch review is worth running before that merge — skipping it is exactly what produced
 this branch. Note what a reviewer should NOT re-litigate: the `data-reduce-motion` meaning (ruled
