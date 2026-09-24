@@ -82,6 +82,12 @@ export function useRecorder(): UseRecorderResult {
   // ref alongside the state used for rendering.
   const stateRef = useRef<RecorderState>("idle");
   stateRef.current = state;
+  // Same reason, one layer up: `start` is a stable callback, so without this
+  // it would gate on the preferences captured when it was created and never
+  // see the microphone being switched off (or back on) while it stays
+  // mounted. `usePreferenceSave` keeps its own refs for exactly this.
+  const preferencesRef = useRef(preferences);
+  preferencesRef.current = preferences;
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -106,7 +112,7 @@ export function useRecorder(): UseRecorderResult {
     // Korume's own switch is checked BEFORE anything touches the device, so a
     // reader who turned the microphone off never sees a permission prompt
     // (settings spec §1.5).
-    if (!canUseDevice(preferences, "microphone")) {
+    if (!canUseDevice(preferencesRef.current, "microphone")) {
       setError(t("recorder.errors.disabledInSettings"));
       setState("disabled-in-settings");
       return;

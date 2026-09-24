@@ -47,6 +47,15 @@ export function SegmentedControl<T extends string>({
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
     if (step === undefined) return;
     event.preventDefault();
+    // ⚠️ Auto-repeat is ignored because every move here is a network write.
+    // The OS repeats a held key ~30 times a second, and `WRITE_LIMIT` allows
+    // 30 preference writes a MINUTE — so one second of a leaning finger used
+    // to exhaust the budget and 429 every save for the rest of the minute.
+    // This used to be masked: the first save rendered the group `disabled`,
+    // which dropped focus, so the repeats reached nothing. Removing that
+    // `disabled` fixed the focus bug and exposed this, so the throttle is now
+    // explicit rather than a side effect of a control going dead.
+    if (event.repeat) return;
     move(index, step);
   };
 

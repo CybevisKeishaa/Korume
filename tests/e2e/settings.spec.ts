@@ -198,6 +198,42 @@ test.describe("settings", () => {
     expect(after.tables.user_stats).toEqual(before.tables.user_stats);
   });
 
+  /**
+   * ⚠️ This case exists because **jsdom cannot host it**. Probed directly:
+   * focus a `<button>` in jsdom, set `disabled = true`, and
+   * `document.activeElement` is still that button — so a unit test asserting
+   * focus passes whether or not the control disables itself mid-save. A real
+   * browser moves focus to `<body>`.
+   *
+   * The defect: `SegmentedControl.move()` focuses the next option and then
+   * calls `onValueChange`; while the controls rendered `disabled={saving}`,
+   * the save blurred the element the arrow key had just focused. With a
+   * roving tabindex, recovering meant tabbing from the top of the page.
+   *
+   * `sections.test.tsx` guards the structural cause — the options stay
+   * enabled mid-save. This proves the consequence the user actually feels.
+   */
+  test("keyboard focus survives a display-scale change", async ({ page }) => {
+    await page.goto("/en/settings");
+    const group = page.getByRole("radiogroup", { name: copy.displayScale.label, exact: true });
+    await expect(group).toBeVisible();
+    await group.getByRole("radio", { name: copy.displayScale.normal, exact: true }).focus();
+
+    await page.keyboard.press("ArrowRight");
+
+    // ⚠️ These assertions auto-retry and nothing holds the response open, so
+    // they do NOT sample the in-flight window — an earlier version of this
+    // comment claimed they did. What they prove is that focus is still on the
+    // option AFTER the save settles, which is the part that actually broke:
+    // the defect blurred the element and never gave focus back. Measured, with
+    // `disabled={scale.saving}` restored and rebuilt, this went red with the
+    // trace showing `<button disabled role="radio">` and focus "inactive"
+    // across 11 polls — long past the PATCH completing.
+    const large = group.getByRole("radio", { name: copy.displayScale.large, exact: true });
+    await expect(large).toBeChecked();
+    await expect(large).toBeFocused();
+  });
+
   test("fits the owner's viewport without horizontal scrolling", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 529 });
     await page.goto("/en/settings");

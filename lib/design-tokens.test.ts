@@ -335,6 +335,40 @@ describe("design tokens", () => {
     expect(css).toMatch(/:root\s*\{[^}]*color-scheme:\s*dark;/);
   });
 
+  /**
+   * ⚠️ The trap this pins is not "someone deleted the rules". It is that
+   * Chromium 121+ understands `scrollbar-width`/`scrollbar-color`, and
+   * honouring them makes it DROP every `::-webkit-scrollbar` rule — so adding
+   * those two properties unguarded, which looks like broadening support,
+   * silently reverts Chrome to a square scrollbar. They are allowed only
+   * inside `@supports not selector(::-webkit-scrollbar)`, i.e. Firefox.
+   *
+   * Measured in a real browser rather than trusted from the source (owner
+   * review, 2026-09-24): `getComputedStyle(el, "::-webkit-scrollbar").width`
+   * is `12px`, the thumb's radius `9999px`, its border `3px`, its
+   * background-clip `content-box` and its colour `rgb(37, 40, 45)` — which is
+   * `--border`. `offsetWidth - clientWidth` proves NOTHING here: headless
+   * Chromium uses overlay scrollbars and answers 0 either way.
+   */
+  it("styles scrollbars without letting the standard properties cancel them in Chrome", () => {
+    expect(css).toMatch(/::-webkit-scrollbar\s*\{[^}]*width:\s*12px;/);
+    expect(css).toMatch(/::-webkit-scrollbar-thumb\s*\{[^}]*background-clip:\s*content-box;/);
+
+    // Comments come out FIRST: the block below is documented, and prose
+    // naming `scrollbar-width` is not a declaration. Skipping this step made
+    // the assertion fail against correct CSS.
+    const declarations = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    const guarded = declarations.match(
+      /@supports not selector\(::-webkit-scrollbar\)\s*\{[\s\S]*?\n {2}\}/,
+    );
+    // Non-vacuity: the guarded block must actually have been found and cut,
+    // or the assertions below pass against a file that never had one.
+    expect(guarded).not.toBeNull();
+    const standalone = declarations.replace(guarded?.[0] ?? "", "");
+    expect(standalone).not.toContain("scrollbar-width");
+    expect(standalone).not.toContain("scrollbar-color");
+  });
+
   it("defines all five typeface roles", () => {
     for (const token of ["--font-sans", "--font-display", "--font-serif", "--font-mono", "--font-jp"]) {
       expect(css, `${token} must be defined`).toMatch(new RegExp(`${token}\\s*:`));

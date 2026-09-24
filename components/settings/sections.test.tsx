@@ -246,6 +246,50 @@ describe("AppearanceSection", () => {
     mount(<AppearanceSection />);
     expect(screen.queryByText(copy.reducedMotion.osOverrides)).not.toBeInTheDocument();
   });
+
+  /**
+   * ⚠️ This asserts that the options stay ENABLED mid-save, not that focus
+   * survives — because **jsdom cannot see the focus bug at all**. Probed
+   * directly: give jsdom a focused `<button>`, set `disabled = true`, and
+   * `document.activeElement` is still that button. A real browser moves it to
+   * `<body>`. A focus assertion here passes against the defect and proves
+   * nothing; the first version of this test did exactly that, and only the
+   * mutation check caught it.
+   *
+   * So the real proof lives in a browser — `tests/e2e/settings.spec.ts`,
+   * "keyboard focus survives a display-scale change". This test guards the
+   * structural cause that spec depends on, deterministically and in
+   * milliseconds: `SegmentedControl.move()` focuses an option and only then
+   * calls `onValueChange`, so as long as the save never disables the group,
+   * there is nothing for the browser to blur.
+   *
+   * `usePreferenceSave` is what makes the `disabled` unnecessary: its rule 1
+   * applies a response only if it belongs to the control's latest request, and
+   * rule 3 rolls back to the last confirmed value.
+   *
+   * The fetch is held open by hand because the whole question is what the DOM
+   * looks like WHILE the request is in flight.
+   */
+  it("leaves every option enabled while the save is still in flight", async () => {
+    stubMatchMedia();
+    let release!: (value: Response) => void;
+    fetchMock.mockImplementationOnce(
+      () => new Promise<Response>((resolve) => { release = resolve; }),
+    );
+    const user = userEvent.setup();
+    mount(<AppearanceSection />);
+    const group = screen.getByRole("radiogroup", { name: copy.displayScale.label });
+    within(group).getByRole("radio", { name: copy.displayScale.normal }).focus();
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const options = within(group).getAllByRole("radio");
+    expect(options).toHaveLength(3);
+    for (const option of options) expect(option).toBeEnabled();
+
+    release(new Response(JSON.stringify({ data: { ...DEFAULT_PREFERENCES, displayScale: "large" } }), { status: 200 }));
+  });
 });
 
 describe("PrivacyDataSection", () => {
@@ -293,6 +337,45 @@ describe("PrivacyDataSection", () => {
     await user.click(toggle);
 
     expect(toggle).toHaveAttribute("aria-checked", "false");
+  });
+
+  /**
+   * ⚠️ The other half of the rollback, and the one that only became reachable
+   * when this control stopped rendering `disabled` while saving: two of its
+   * PATCHes can now be in flight at once.
+   *
+   * A SUPERSEDED save must not roll back. Its value is already stale, so
+   * restoring what it saw would undo the newer save that replaced it, leaving
+   * the switch disagreeing with the database until a reload. `save` used to
+   * answer a single `false` for "failed" and "superseded" alike, which made
+   * the distinction impossible — even though this hook's own test is named
+   * for keeping it.
+   *
+   * The first response is held open so the second click genuinely supersedes
+   * it; then the first is failed, which is the case that would wrongly roll
+   * back.
+   */
+  it("does not roll the AI Training switch back when a save is merely superseded", async () => {
+    const user = userEvent.setup();
+    let failFirst!: (value: Response) => void;
+    fetchMock
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => { failFirst = resolve; }))
+      // ⚠️ A fresh `Response` PER CALL. `mockResolvedValue` hands every call
+      // the SAME object, and a `Response` body can only be read once — the
+      // second `.json()` throws, the hook takes its catch branch, and a
+      // correct component fails. Cost half an hour of debugging here.
+      .mockImplementation(async () => new Response(JSON.stringify({}), { status: 200 }) as Response);
+
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    const toggle = screen.getByRole("switch", { name: /Help improve Korume/ });
+
+    await user.click(toggle); // -> true, held open
+    await user.click(toggle); // -> false, resolves and supersedes the first
+    await user.click(toggle); // -> true, the value that must survive
+
+    failFirst(new Response(JSON.stringify({ error: "x" }), { status: 500 }) as Response);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(toggle).toHaveAttribute("aria-checked", "true");
   });
 
   it("offers both downloads as real links the browser handles", () => {

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { HISTORY_SOURCES, PRIMARY_KEY_COLUMNS } from "@/lib/data/user-export";
 import { USER_EXPORT_EXCLUSIONS, USER_EXPORT_TABLES } from "./tables";
 
 /**
@@ -25,6 +26,14 @@ function tableBodies(): Map<string, string> {
     for (const match of sql.matchAll(pattern)) bodies.set(match[1] as string, match[2] as string);
   }
   return bodies;
+}
+
+function declaredPrimaryKeyColumns(body: string): readonly string[] | undefined {
+  const tableKey = body.match(/\bprimary\s+key\s*\(([^)]+)\)/i);
+  if (tableKey) return tableKey[1]?.split(",").map((column) => column.trim());
+
+  const inlineKey = body.match(/^\s*(\w+)\s+[^,\n]*?\bprimary\s+key\b/im);
+  return inlineKey?.[1] ? [inlineKey[1]] : undefined;
 }
 
 const BODIES = tableBodies();
@@ -105,5 +114,26 @@ describe("USER_EXPORT_TABLES covers everything a reader owns", () => {
 
   it("exports the preferences this branch added", () => {
     expect(listed.has("user_preferences")).toBe(true);
+  });
+});
+
+describe("export pagination uses the primary-key order declared by the schema", () => {
+  it("covers each exported table with its declared primary-key columns in order", () => {
+    const tables = new Set([...USER_EXPORT_TABLES, ...HISTORY_SOURCES].map((entry) => entry.table));
+    const declaredKeys = new Map(
+      [...tables].flatMap((table) => {
+        const columns = declaredPrimaryKeyColumns(BODIES.get(table) ?? "");
+        return columns ? [[table, columns] as const] : [];
+      }),
+    );
+
+    expect(tables.size).toBe(29);
+    expect(declaredKeys.size).toBe(29);
+    for (const table of tables) {
+      expect(Object.hasOwn(PRIMARY_KEY_COLUMNS, table), `${table} needs a paging key`).toBe(true);
+      expect(PRIMARY_KEY_COLUMNS[table], `${table}'s paging key must match the schema`).toEqual(
+        declaredKeys.get(table),
+      );
+    }
   });
 });

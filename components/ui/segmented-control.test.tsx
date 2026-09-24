@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/test/render";
+import { fireEvent, render, screen } from "@/test/render";
 import { SegmentedControl } from "./segmented-control";
 
 const OPTIONS = [
@@ -85,6 +85,34 @@ describe("SegmentedControl", () => {
     // The parent owns `value`, so the rendered selection has not moved yet —
     // focus must follow the key anyway, or the next arrow starts over.
     expect(screen.getByRole("radio", { name: "Large" })).toHaveFocus();
+  });
+
+  /**
+   * ⚠️ Every move here is a network write, and `WRITE_LIMIT` allows 30
+   * preference writes a MINUTE while an OS repeats a held key ~30 times a
+   * SECOND. One second of a leaning finger would exhaust the budget and 429
+   * every save for the rest of the minute.
+   *
+   * This was masked until the focus fix: the first save rendered the group
+   * `disabled`, which blurred it, so the repeats reached nothing. Removing
+   * that `disabled` was right and exposed the throttle it had been doing by
+   * accident, so the throttle is now explicit.
+   *
+   * `fireEvent`, not `userEvent`: only a raw KeyboardEvent carries `repeat`.
+   */
+  it("ignores auto-repeat, because every move is a network write", () => {
+    const onValueChange = renderControl("normal");
+    const first = screen.getByRole("radio", { name: "Normal" });
+    first.focus();
+
+    fireEvent.keyDown(first, { key: "ArrowRight" });
+    expect(onValueChange).toHaveBeenCalledTimes(1);
+
+    for (let i = 0; i < 20; i += 1) {
+      fireEvent.keyDown(first, { key: "ArrowRight", repeat: true });
+    }
+
+    expect(onValueChange).toHaveBeenCalledTimes(1);
   });
 
   it("does nothing when disabled", async () => {

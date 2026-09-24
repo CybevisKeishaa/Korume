@@ -8,7 +8,7 @@ import {
   type MediaRecorderMockHandle,
 } from "@/test/media-mocks";
 import { ThemeProvider } from "@/components/providers/theme-provider";
-import { PreferencesProvider } from "@/components/providers/preferences-provider";
+import { PreferencesProvider, usePreferences } from "@/components/providers/preferences-provider";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import { useRecorder } from "./recorder";
 
@@ -239,5 +239,39 @@ describe("useRecorder — Korume's own microphone switch (settings spec §1.5, �
 
     expect(gum.calls).toHaveLength(1);
     await waitFor(() => expect(result.current.state).toBe("recording"));
+  });
+
+  /**
+   * ⚠️ The switch is flipped on the SAME mounted hook, which is the whole
+   * point. `start` is a stable `useCallback`, so it used to gate on the
+   * preferences captured when it was first created: a reader who turned the
+   * microphone back on in another tab — or in the settings panel this app
+   * renders beside the player — stayed blocked until something remounted the
+   * recorder, and the reverse left a disabled microphone still recording.
+   *
+   * A test that re-renders with a fresh `initial` cannot see it: the bug is
+   * precisely that the callback outlives the change.
+   */
+  it("sees a microphone switch flipped while it stays mounted", async () => {
+    mr = mockMediaRecorder();
+    gum = mockGetUserMedia();
+    const { result } = renderHook(
+      () => ({ recorder: useRecorder(), preferences: usePreferences() }),
+      { wrapper: withPreferences(false) },
+    );
+
+    await act(async () => {
+      await result.current.recorder.start();
+    });
+    expect(result.current.recorder.state).toBe("disabled-in-settings");
+    expect(gum.calls).toHaveLength(0);
+
+    act(() => result.current.preferences.setLocal({ microphoneEnabled: true }));
+    await act(async () => {
+      await result.current.recorder.start();
+    });
+
+    expect(gum.calls).toHaveLength(1);
+    await waitFor(() => expect(result.current.recorder.state).toBe("recording"));
   });
 });

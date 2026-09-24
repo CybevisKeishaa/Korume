@@ -44,19 +44,40 @@ function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferen
  */
 export async function readPreferences(supabase: Supabase, userId: string): Promise<UserPreferences> {
   try {
-    const [prefs, user] = await Promise.all([
-      supabase.from("user_preferences").select(COLUMNS).eq("user_id", userId).maybeSingle(),
-      supabase.from("users").select("daily_minutes").eq("id", userId).maybeSingle(),
-    ]);
-    if (prefs.error) throw prefs.error;
-    if (user.error) throw user.error;
-    const dailyMinutes = (user.data as { daily_minutes: number } | null)?.daily_minutes ?? DEFAULT_PREFERENCES.dailyMinutes;
-    return fromRow(prefs.data as PreferencesRow | null, dailyMinutes);
+    return await readPreferencesOrThrow(supabase, userId);
   } catch (error) {
     // eslint-disable-next-line no-console -- server-side only.
     console.error("[data/preferences] readPreferences failed:", error);
     return { ...DEFAULT_PREFERENCES };
   }
+}
+
+/**
+ * The same read, failing loud.
+ *
+ * ⚠️ Use this wherever the defaults would be a LIE rather than a fallback.
+ * After a write has committed, `readPreferences` swallowing the read error and
+ * answering `DEFAULT_PREFERENCES` produces a `200` that says the user's new
+ * value is the default — and `usePreferenceSave` believes the response over
+ * its own optimistic value, writing it into the UI and into `confirmed`. The
+ * control snaps back while the database holds the new value, and the reset
+ * `dailyMinutes` rides along with it.
+ *
+ * A missing row is NOT an error: `fromRow(null, ...)` is how a user with no
+ * preferences row gets the defaults, and that path still returns normally.
+ */
+export async function readPreferencesOrThrow(
+  supabase: Supabase,
+  userId: string,
+): Promise<UserPreferences> {
+  const [prefs, user] = await Promise.all([
+    supabase.from("user_preferences").select(COLUMNS).eq("user_id", userId).maybeSingle(),
+    supabase.from("users").select("daily_minutes").eq("id", userId).maybeSingle(),
+  ]);
+  if (prefs.error) throw prefs.error;
+  if (user.error) throw user.error;
+  const dailyMinutes = (user.data as { daily_minutes: number } | null)?.daily_minutes ?? DEFAULT_PREFERENCES.dailyMinutes;
+  return fromRow(prefs.data as PreferencesRow | null, dailyMinutes);
 }
 
 export async function getMyPreferences(): Promise<UserPreferences | null> {
@@ -110,5 +131,7 @@ export async function updateMyPreferences(
     const { error } = await supabase.from("user_preferences").upsert(row, { onConflict: "user_id" });
     if (error) throw error;
   }
-  return { ok: true, data: await readPreferences(supabase, user.id) };
+  // Deliberately the throwing read: the write has COMMITTED by now, so the
+  // defaults would be a false report of what the database holds.
+  return { ok: true, data: await readPreferencesOrThrow(supabase, user.id) };
 }
