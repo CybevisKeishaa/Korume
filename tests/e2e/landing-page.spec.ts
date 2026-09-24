@@ -441,7 +441,13 @@ test.describe("landing page", () => {
     // And if that ever stops holding, the overflow is contained here...
     expect(measured.overflowX).toBe("auto");
 
-    // ...rather than reaching the page.
+    // ⚠️ Not a containment proof any more, and the line above is why: with the
+    // row asserted not to overflow, this cannot tell "the row contained its
+    // overflow" from "there was none to contain". It is kept as a cheap
+    // regression net on the section box; the containment claim rests on the
+    // `overflow-x` pin, not here. The old test also asserted the row really
+    // scrolled (`scrollLeft` moved); that assertion is unsatisfiable once the
+    // row fits and was dropped rather than weakened into a tautology.
     const section = await page
       .locator("#journey")
       .evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
@@ -449,7 +455,8 @@ test.describe("landing page", () => {
 
     // WCAG 2.1.1: no card is a link or a button, so the row itself is the only
     // thing a keyboard can land on to scroll it. `tabIndex={0}` is what makes
-    // that possible, and nothing else in the suite pins it.
+    // that possible. `journey.test.tsx` pins the attribute; this pins that a
+    // browser will actually put focus there, which jsdom cannot say.
     const focusable = await row.evaluate((el) => {
       el.focus();
       return document.activeElement === el;
@@ -462,13 +469,22 @@ test.describe("landing page", () => {
    *
    * The ledger carried this from task A2 as "no `break-words`, so a single
    * unbreakable token overflows the panel (276px inside 105px)". With today's
-   * copy it does not reproduce at any width in either locale — the panels are
-   * ~86px and the widest rendered line is 67px — but the latent rule is still
-   * wrong: `overflow-wrap` is `normal`, so the FIRST long token anyone writes
+   * copy it does not reproduce at any width in either locale — but the latent
+   * rule is still wrong: `overflow-wrap` is `normal`, so the FIRST long token
+   * anyone writes
    * escapes. Card 4's own comment already promises the opposite ("forcing
    * nowrap would make a longer fragment overflow the card, which is the class
    * of bug this fix round exists to remove"), and a promise the CSS does not
    * keep is worse than no promise.
+   *
+   * ⚠️ The numbers that used to sit in the paragraph above — "the panels are
+   * ~86px and the widest rendered line is 67px" — were measured at 320, a
+   * width this test no longer visits and this page no longer renders at. At
+   * the 1024 it now runs at the panels are 69.36px and the widest line is
+   * 56px in both locales (measured 2026-09-25). They are not restated here:
+   * the point of injecting the token is that this test must not depend on
+   * what today's copy happens to measure (L-002 — record the command, not the
+   * figure).
    *
    * So the token is injected rather than waited for. This asserts the RULE,
    * which is what the comment claims, not today's copy, which happens to be
@@ -726,7 +742,8 @@ test.describe("motion never hides content", () => {
     const page = await context.newPage();
     await page.goto("/en");
 
-    await expect(page.locator("main section[id]")).toHaveCount(9);
+    // Works with JS off: the gate is CSS, and `landingRendered` reads geometry.
+    await landingRendered(page);
 
     const opacities = await page
       .locator("main section[id] [data-section-heading]")
@@ -741,7 +758,7 @@ test.describe("motion never hides content", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/en");
 
-    await expect(page.locator("main section[id]")).toHaveCount(9);
+    await landingRendered(page);
 
     for (const id of ["problem", "journey", "pitch", "recommend", "chain", "trust", "cta", "signoff"]) {
       await page.locator(`#${id}`).scrollIntoViewIfNeeded();

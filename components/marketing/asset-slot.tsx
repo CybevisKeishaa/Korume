@@ -42,6 +42,19 @@ export interface AssetSlotProps {
  * PNG, against **15.6 KB** / **149 KB** for the 384px variant that slot
  * actually needs — 4.8x and 6.6x (measured 2026-08-29 against the dev
  * optimizer). Hence `sizes`: a slot far below the bound passes its own.
+ *
+ * ⚠️ ONE FACT FOR EVERY `sizes` CONSTANT ON THIS PAGE, stated here because
+ * this is the shared boundary they all pass through. Since the mobile handoff
+ * gate (`app/[locale]/layout.tsx`, hidden in `globals.css` below 1024) the
+ * marketing page never renders below 1024, so **every below-1024 clause in
+ * every one of these constants is unreachable** — here, `journey.tsx`'s
+ * trailing `300px`, `cta.tsx`'s `1px`, `trust.tsx`'s `100vw`, and
+ * `recommendation.tsx`'s `(min-width: 640px) 440px, 560px`, which is a whole
+ * dead media-query branch rather than just a tail. They all stay, because
+ * HTML's source-size-list grammar requires a final unconditional value and an
+ * attribute without one is invalid — the browser then falls back to 100vw,
+ * which is the opposite of what any of them are for. Do not re-derive an
+ * unreachable clause from a measurement; there is nothing left to measure.
  */
 const DEFAULT_SIZES = "(min-width: 1024px) 45vw, 100vw";
 

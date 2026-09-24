@@ -14,6 +14,12 @@ export default defineConfig({
   // 2026-09-13 and never closed, which is the cost of a red suite nobody can
   // read. `shadowing-*.spec.ts` is deliberately NOT ignored: `c3.config.ts`
   // matches it too, but it passes under this one as well.
+  //
+  // ⚠️ Ignoring it here would otherwise have left it runnable only by someone
+  // who already knew this config existed — L-004's own words, "a guard no
+  // command invokes is not a weaker version of a vacuous assertion, it is the
+  // same defect in better clothes". So it ships as an invocation:
+  // `npm run test:e2e:c4` (and `test:e2e:c3`, which had the same gap).
   testIgnore: "lesson-creation-jobs.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

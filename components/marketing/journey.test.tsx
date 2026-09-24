@@ -121,7 +121,9 @@ describe("Journey", () => {
     // This environment loads no CSS, so the slot has no measurable size, and
     // the numbers come from the rendered height at several viewports. That is
     // `tests/e2e/landing-page.spec.ts`'s "covers its whole branch", which
-    // sweeps both locales and every branch in a real browser. If you change
+    // sweeps both locales and every REACHABLE branch in a real browser — the
+    // trailing `300px` is not one of them, see `asset-slot.tsx`'s
+    // `DEFAULT_SIZES`. If you change
     // `THUMB_SIZES`, this test tells you that you did; that one tells you
     // whether you were right.
     expect(photo.getAttribute("sizes")).toBe(
