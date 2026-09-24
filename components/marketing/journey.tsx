@@ -127,9 +127,15 @@ const JOURNEY_THUMB = "/marketing/journey-thumb.png";
  *
  * So one value for `>= 1024` under-declared by up to 33% at the bottom of its
  * own branch. Split at 1120, where the row has finished reflowing: 292 covers
- * 1024-1119 (worst case 291.6), 220 covers everything above (220.4). Below
- * `lg` the card reaches its 11rem maximum and 300 still covers it — measured
- * at 768 and 896.
+ * 1024-1119 (worst case 291.6), 220 covers everything above (220.4).
+ *
+ * ⚠️ The trailing `300px` is now UNREACHABLE and is kept for a different
+ * reason than it was written for. It was the below-`lg` branch, measured at
+ * 768 and 896; since the mobile handoff gate (`app/[locale]/layout.tsx`,
+ * hidden in `globals.css` below 1024) this page does not render at any width
+ * that selects it. It stays because `sizes` requires an unconditional final
+ * value — not because a viewport reaches it. Do not re-derive it from a
+ * measurement; there is nothing left to measure.
  *
  * ▶ Not cosmetic: at DPR 1 the old 220 selected `w=256` where 292 selects
  * `w=384`, and at DPR 1.5 `w=384` where 292 selects `w=640`. At DPR 2 both
