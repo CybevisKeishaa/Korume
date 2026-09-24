@@ -96,21 +96,58 @@ describe("review frequency multiplier (settings spec §4.4)", () => {
     expect(reviewItem(passed, 4, now, 1).intervalDays).toBe(reviewItem(passed, 4, now).intervalDays);
   });
 
-  it("shortens for more and lengthens for relaxed, rounded, minimum 1", () => {
+  it("keeps the persisted SM-2 interval pure while scheduling more and relaxed differently", () => {
     const base = reviewItem(passed, 4, now).intervalDays;
-    expect(reviewItem(passed, 4, now, REVIEW_FREQUENCY_MULTIPLIER.more).intervalDays).toBe(Math.max(1, Math.round(base * 0.7)));
-    expect(reviewItem(passed, 4, now, REVIEW_FREQUENCY_MULTIPLIER.relaxed).intervalDays).toBe(Math.round(base * 1.4));
+    expect(reviewItem(passed, 4, now, REVIEW_FREQUENCY_MULTIPLIER.more).intervalDays).toBe(base);
+    expect(reviewItem(passed, 4, now, REVIEW_FREQUENCY_MULTIPLIER.relaxed).intervalDays).toBe(base);
     expect(reviewItem({ repetitions: 0, intervalDays: 0, easeFactor: 2.5 }, 4, now, 0.7).intervalDays).toBe(1);
   });
 
-  it("nextReviewAt follows the multiplied interval", () => {
-    const result = reviewItem(passed, 4, now, 1.4);
-    expect(result.nextReviewAt.getTime() - now.getTime()).toBe(result.intervalDays * 86_400_000);
+  it("applies the multiplier to nextReviewAt instead of the persisted interval", () => {
+    const result = reviewItem(passed, 4, now, REVIEW_FREQUENCY_MULTIPLIER.relaxed);
+    expect(result.nextReviewAt.getTime() - now.getTime()).toBe(35 * DAY);
+    expect(result.nextReviewAt.getTime() - now.getTime()).not.toBe(result.intervalDays * DAY);
   });
 
   it("does not touch a failed review", () => {
     // 5, not 1.4: a lapse resets the interval to 1, and max(1, round(1 * 1.4))
     // is also 1, so 1.4 cannot tell a leak from correct behaviour.
-    expect(reviewItem(passed, 1, now, 5).intervalDays).toBe(1);
+    const result = reviewItem(passed, 1, now, 5);
+    expect(result.intervalDays).toBe(1);
+    // `nextReviewAt` needs its own assertion: the interval is already 1 here, so
+    // a multiplier leaking into the lapse branch moves only the date. Measured —
+    // without this line, multiplying the lapse's `nextReviewAt` leaves all 14
+    // tests green.
+    expect(result.nextReviewAt.getTime() - now.getTime()).toBe(DAY);
+  });
+
+  it("keeps persisted intervals pure across repeated successful reviews", () => {
+    const multipliers = [
+      REVIEW_FREQUENCY_MULTIPLIER.normal,
+      REVIEW_FREQUENCY_MULTIPLIER.more,
+      REVIEW_FREQUENCY_MULTIPLIER.relaxed,
+    ] as const;
+    const expectedIntervals = [1, 6, 17, 49, 147, 456, 1459];
+    const expectedScheduledDays = [
+      [1, 6, 17, 49, 147, 456, 1459],
+      [1, 4, 12, 34, 103, 319, 1021],
+      [1, 8, 24, 69, 206, 638, 2043],
+    ];
+
+    for (const [index, multiplier] of multipliers.entries()) {
+      let state: SrsState = { ...INITIAL_STATE };
+      const intervals: number[] = [];
+      const scheduledDays: number[] = [];
+
+      for (let review = 0; review < expectedIntervals.length; review++) {
+        const result = reviewItem(state, 5, now, multiplier);
+        intervals.push(result.intervalDays);
+        scheduledDays.push((result.nextReviewAt.getTime() - now.getTime()) / DAY);
+        state = result;
+      }
+
+      expect(intervals).toEqual(expectedIntervals);
+      expect(scheduledDays).toEqual(expectedScheduledDays[index]);
+    }
   });
 });

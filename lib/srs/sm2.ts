@@ -12,6 +12,8 @@
  *  - EF is updated ONLY on success: EF += 0.1 − (5−q)(0.08 + (5−q)·0.02),
  *    floored at 1.3. On a lapse the item restarts (reps→0, interval→1) and the
  *    E-Factor is left unchanged (SM-2 step 6).
+ * The review-frequency multiplier applies only to `nextReviewAt`, never the
+ * persisted `intervalDays`.
  */
 import type { ReviewFrequency } from "@/lib/preferences/options";
 
@@ -97,13 +99,13 @@ export function reviewItem(
   } else {
     intervalDays = Math.round(state.intervalDays * easeFactor);
   }
-  intervalDays = Math.max(1, Math.round(intervalDays * intervalMultiplier));
+  const scheduledIntervalDays = Math.max(1, Math.round(intervalDays * intervalMultiplier));
 
   return {
     repetitions: state.repetitions + 1,
     intervalDays,
     easeFactor,
-    nextReviewAt: addDays(now, intervalDays),
+    nextReviewAt: addDays(now, scheduledIntervalDays),
     lastReviewedAt: now,
   };
 }
