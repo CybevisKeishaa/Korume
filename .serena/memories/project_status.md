@@ -1,6 +1,40 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-25 (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-25 late (supersedes every block below)
+>
+> **NOTHING IS IN FLIGHT.** `git branch --no-merged master` is EMPTY. Master is at
+> **`7a6f3f1`**, the `--no-ff` merge of `e2e-failure-repair`, and is **NOT pushed** —
+> the owner pushes by hand. Branch and worktree kept.
+>
+> ⭐ **The e2e suite's SIX structural failures are closed.** They had been carried as
+> "pre-existing" by four consecutive branches. Two causes, not six: the sub-1024 mobile
+> handoff gate that `landing-page.spec.ts` never learned (a product decision — a phone
+> never sees the landing page), and a spec the default Playwright config collected
+> although `playwright.c4.config.ts` owns it. Measured in one worktree, same config,
+> same eight workers: master `133618a` **6 failed / 60 passed**, tip **the six gone**.
+>
+> 🚨 **The `toHaveCount(9)` render guard in that spec was VACUOUS** — `display: none`
+> removes no node, so it read 9 against a zero-box page. Three tests were red for
+> sixteen days and **three more were silently GREEN**. Replaced by `landingRendered`,
+> which asserts visibility. A rendering guard must assert GEOMETRY, not presence.
+>
+> ⚠️ **What is left is the parallel-load flake family, and it is now the top blocker to a
+> trustworthy suite** — `display-scale` / `settings` / `shadowing-explore`, 1–2 red per
+> run, a DIFFERENT set each run, all green when run alone, and they fire on master too.
+> `settings.spec.ts:179` (erase) is the one with a captured trace; start there. Its
+> mechanism is **unproven** — `first_meeting` has one producer (`journal/page.tsx:34`),
+> and the probe shows one render finishing 5.6s before the erase with none after, so the
+> open candidate is a stale second `GET /api/user/export`, NOT a surviving row.
+>
+> ⚠️ Recorded because it cost a full run: **Playwright's `webServer` pipes stderr and
+> DISCARDS stdout**, so a `console.log` probe yields an empty log. Use `console.error`.
+>
+> Gate on merged master: vitest **368 files / 3434 tests** 0 failed, tsc 0, lint 0 errors
+> (86 warnings, baseline), `npm run verify:protocol` valid.
+>
+> ---
+>
+> ## (previous block) 2026-09-25 — settings-review-fixes merged; superseded by the block above
 >
 > **NOTHING IS IN FLIGHT.** `git branch --no-merged master` is EMPTY. The next screen-port group
 > is unchosen — ask the owner before starting one.
