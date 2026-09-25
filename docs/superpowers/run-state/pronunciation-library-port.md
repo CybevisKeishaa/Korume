@@ -70,24 +70,65 @@ both are deliberate:
    (`slug = 'featured'`), not a boolean and not a fourth `library_access`
    value. The featured hero reads that row; it does not invent a flag.
 
-2. **The rail shows only the two metrics something actually measures.**
-   The frame's "Weekly Improvement" lists Accuracy **+8%**, Pitch Accent
-   **+13%**, Rhythm **+6%**, Confidence **+11%**. Azure scoring
-   (`lib/speech-scoring`) measures accuracy and `lib/pitch` measures pitch
-   accent. **Nothing in this repo measures rhythm or confidence.** Rendering a
-   number for them would put a fabricated figure in front of a learner, which
-   is worse than an absent row — so the rail ships Accuracy and Pitch Accent
-   only. Rhythm and Confidence need a real measurement first; that is their own
-   ticket, not a number invented here.
+2. **Weekly Improvement renders only metrics backed by a persisted
+   measurement.** The frame lists Accuracy **+8%**, Pitch Accent **+13%**,
+   Rhythm **+6%**, Confidence **+11%**.
 
-▶ **Three contradictions found and NOT yet ruled on** — each still open:
+   | Row | Backing | Ships |
+   |---|---|---|
+   | Accuracy | `shadowing_sessions.pronunciation_score` | ✅ |
+   | Pitch Accent | `shadowing_sessions.pitch_score` | ✅ |
+   | Rhythm | `shadowing_sessions.rhythm_score` | ✅ |
+   | Confidence | *nothing* | ❌ omitted entirely |
+
+   **No metric value or delta may be fabricated to match Figma.** Confidence
+   disappears from the UI until a real measurement exists — it does not ship as
+   an empty row kept for the frame's sake.
+
+   🚨 **An earlier version of this ruling said "Accuracy and Pitch Accent only,
+   nothing measures rhythm". That premise was FALSE and the ruling above
+   replaces it.** Azure's `FluencyScore` maps to `rhythm_score`
+   (`lib/speech-scoring/types.ts:26`) and `lib/data/pronunciation.ts:97-100`
+   writes it. The wrong claim came from noting that no `components/pronunciation/`
+   directory exists and inferring the capability was missing. **"No component"
+   is not evidence of "no capability"** — grep the persisted FIELD. This one
+   cost a product ruling that had to be reversed.
+
+3. **The deltas are IMPROVEMENT deltas, not scores.** `+8%` is not a score of
+   92 rendered with a plus sign. Task 5 defines a real comparison window — the
+   current week against the previous one — and computes the change across it.
+   When either period lacks data, the row shows a neutral `—` / "Not enough
+   data". **A fabricated `+0%` is not an acceptable stand-in for an unknown.**
+
+4. **One lesson pool, two hubs, no duplicated records.** `/pronunciation` is
+   the speaking/pronunciation discovery + progress hub; `/shadowing` is the hub
+   for shadowing practice. Pronunciation re-surfaces `Shadowing Collections` as
+   one of its shelves — the frame puts that shelf inside Pronunciation Studio
+   alongside Situation, Goal, JLPT and Learning Paths — and it re-shelves the
+   SAME lesson and content records. It never copies them.
+
+5. **JLPT Speaking is an aggregation VIEW, not an entity.** No table, and no
+   migration. `shadowing_sessions` carries `user_id`, `video_id` and
+   `created_at`; joining `video_id → videos.jlpt_level_estimate` and grouping
+   N5–N1 yields the practice count, the completion figure and the average score
+   the frame shows. The same join feeds Today's Speaking and Recently Practiced.
+
+6. **AI Sensei Recommendation ships on the real engine.**
+   `lib/data/recommendations.ts` is the i+1 comprehensible-input scorer — it
+   ranks candidates by the fraction of content words the caller already knows
+   through SRS mastery, in `ideal` / `too-easy` / `too-hard` bands. Task 5 ports
+   the card against it. It is **not** a deliberate omission.
+
+▶ **One data contract is still genuinely open:**
 - **"Practice by Goal"** (Improve Pitch Accent / Improve Fluency / Native
-  Rhythm Training) has no entity of any kind behind it.
-- **"JLPT Speaking"** N5–N1 with a per-level `Avg score` needs an aggregation
-  that does not exist; `videos.jlpt_level_estimate` is the only level fact.
-- **Two hubs over one lesson pool.** `/shadowing` already ships a hub over the
-  same taxonomy. Whether `/pronunciation` is a second shelf of the same
-  lessons or a distinct content domain is a product question, not a port one.
+  Rhythm Training). The frame gives each a title, a description, a duration and
+  a `Start` — which reads as three **curated practice programs**, not as a
+  filter. ⚠️ Do NOT mint an entity for it reflexively. The plan must first test
+  whether an ordered collection plus a classification / semantic role can
+  express it, now that `collections` is becoming ordered content. What this
+  branch must not produce is `learning_paths` AND `practice_goals` AND
+  `collections` all holding lessons. Only if that test fails does it become an
+  owner decision.
 
 ## Verification
 
@@ -124,16 +165,35 @@ owner's dev server. Build and serve only in this worktree, by absolute path.
 
 ## Blockers
 
-None. Three open contradictions are recorded above; none blocks the first tasks.
+**One open data contract remains — "Practice by Goal".** It does not block
+Tasks 1–3 or the existing-data shelves, but it blocks Task 4b. Nothing else is
+open: JLPT Speaking, the AI Sensei card and the shared lesson pool are all
+settled above.
 
 ## Next actions
 
-1. Task 1 — migration: ordering on `lesson_collections` + the progress rollup
-   read, with its own tests.
-2. Task 2 — the page shell: eyebrow/h1/subtitle + discovery row, over the
-   existing `hub-discovery-controls`.
-3. Task 3 — featured hero from the `featured` collections row.
-4. Task 4 — the shelves (Situation, Collections) over `hub-shelves`.
-5. Task 5 — the right rail: Today's Speaking, Your Progress (two metrics),
-   Recently Practiced.
-6. Whole-branch review, then `--no-ff` merge. **Owner decision, not taken.**
+1. **Task 1 — migration + rollup, GENERIC.** Ordering on `lesson_collections`
+   and a progress rollup read from `user_video_progress`, with tests.
+   ⚠️ **Nothing pronunciation-specific goes in this migration** — no `goal`, no
+   JLPT, no speaking semantics. It is ordered-collection machinery that any
+   caller can use, and the pronunciation screen is merely its first consumer.
+2. **Task 2 — the page shell.** Eyebrow / h1 / subtitle + the discovery row,
+   over the existing `hub-discovery-controls`.
+3. **Task 3 — the featured hero**, from the `featured` collections row
+   (`slug = 'featured'`, never an invented boolean).
+4. **Task 3b — Popular Learning Paths.** Its own step, not a shelf: it is the
+   first real consumer of Task 1's ordering + progress rollup, which makes it a
+   different shape from a plain collection shelf.
+5. **Task 4a — shelves that have their data today:** Practice by Situation
+   (`lesson_situations`) and Shadowing Collections (`collections`), over
+   `hub-shelves`.
+6. **Task 4b — Practice by Goal.** ONLY after its data contract is settled
+   (see Blockers).
+7. **Task 4c — JLPT Speaking**, as the aggregation view described above. No
+   migration.
+8. **Task 5 — the right rail:** Today's Speaking + Weekly Improvement
+   (Accuracy, Pitch Accent, Rhythm only) + AI Sensei Recommendation + Recently
+   Practiced. Every value derives from persisted session data or the
+   recommendation engine, and **empty-history states are explicit**, never a
+   zero standing in for an unknown.
+9. Whole-branch review, then `--no-ff` merge. **Owner decision, not taken.**
