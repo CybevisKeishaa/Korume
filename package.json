@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:c4": "playwright test --config=playwright.c4.config.ts",
     "verify:db:lesson-jobs": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-lesson-creation-gate.ps1",
     "verify:db:settings": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-settings-gate.ps1",
     "verify:protocol": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1",

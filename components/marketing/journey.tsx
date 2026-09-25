@@ -127,15 +127,18 @@ const JOURNEY_THUMB = "/marketing/journey-thumb.png";
  *
  * So one value for `>= 1024` under-declared by up to 33% at the bottom of its
  * own branch. Split at 1120, where the row has finished reflowing: 292 covers
- * 1024-1119 (worst case 291.6), 220 covers everything above (220.4). Below
- * `lg` the card reaches its 11rem maximum and 300 still covers it — measured
- * at 768 and 896.
+ * 1024-1119 (worst case 291.6), 220 covers everything above (220.4).
+ *
+ * ⚠️ The trailing `300px` was the below-`lg` branch, measured at 768 and 896.
+ * It is now UNREACHABLE and is kept for a different reason than it was
+ * written for — see `asset-slot.tsx`'s `DEFAULT_SIZES`, which holds that fact
+ * once for every `sizes` constant on this page that has a below-1024 clause.
  *
  * ▶ Not cosmetic: at DPR 1 the old 220 selected `w=256` where 292 selects
  * `w=384`, and at DPR 1.5 `w=384` where 292 selects `w=640`. At DPR 2 both
  * land on `w=640`, which is why measuring at one DPR would have hidden it.
  *
- * `tests/e2e/landing-page.spec.ts` now sweeps every branch in both locales and
+ * `tests/e2e/landing-page.spec.ts` now sweeps every reachable branch in both locales and
  * compares the declared value against the measured need, so the next person to
  * move a breakpoint is told rather than trusted.
  */

@@ -36,6 +36,31 @@ const SECTION_IDS = [
 const sectionIds = (page: import("@playwright/test").Page) =>
   page.locator("main section[id]").evaluateAll((nodes) => nodes.map((n) => n.id));
 
+/**
+ * The narrowest viewport at which this page exists at all.
+ *
+ * ⭐ The locale layout renders `MobileAppHandoff` above every route group and
+ * `globals.css` hides `[data-desktop-web]` outright below 1024 (`0014ea2`,
+ * 2026-09-09). That is the owner's ruling and not a bug: a phone never sees
+ * the landing page, it sees the App Store / Google Play handoff. Nothing in
+ * this file may sample below this width — it would be measuring a different
+ * screen.
+ *
+ * ⚠️ AND THE GUARD THIS FILE ALREADY HAD DOES NOT CATCH IT. `display: none` on
+ * an ancestor leaves every section in the DOM with a zero-sized box, so
+ * `main section[id]` still counts 9 — the check three docblocks below call
+ * "non-negotiable" against a dead server passes happily against a hidden page.
+ * Between 2026-09-09 and 2026-09-25 that cost three red tests and at least
+ * three silently vacuous ones. `landingRendered` asserts what the count cannot.
+ */
+const LANDING_MIN_WIDTH = 1024;
+
+/** The nine sections are present AND actually laid out. See `LANDING_MIN_WIDTH`. */
+const landingRendered = async (page: import("@playwright/test").Page) => {
+  await expect(page.locator("main section[id]")).toHaveCount(9);
+  await expect(page.locator("#hero")).toBeVisible();
+};
+
 test.describe("landing page", () => {
   test("renders all nine sections in the frame's order", async ({ page }) => {
     await page.goto("/en");
@@ -54,11 +79,22 @@ test.describe("landing page", () => {
     expect(await sectionIds(page)).toEqual([...SECTION_IDS]);
   });
 
+  /**
+   * ⚠️ Scoped to `[data-desktop-web]`, and that scope is the assertion's
+   * subject, not decoration. The mobile handoff (`LANDING_MIN_WIDTH`) carries
+   * its own `<h1>` and its own `<main>`, and both are in the DOM at every
+   * width — below 1024 it is the visible one, above it is `display: none`.
+   * An unscoped `locator("h1")` counts DOM nodes, not painted ones, so it has
+   * read 2 since 2026-09-09. "One h1" is a claim about the page a reader is
+   * looking at; the selector has to say which page that is.
+   */
   test("has exactly one h1, and it is the hero's", async ({ page }) => {
     await page.goto("/en");
+    await landingRendered(page);
 
-    await expect(page.locator("h1")).toHaveCount(1);
-    await expect(page.locator("h1")).toHaveText(en.hero.heading);
+    const h1 = page.locator("[data-desktop-web] h1");
+    await expect(h1).toHaveCount(1);
+    await expect(h1).toHaveText(en.hero.heading);
   });
 
   test("renders the hero's copy and both of its calls to action", async ({
@@ -251,17 +287,23 @@ test.describe("landing page", () => {
   test("never scrolls horizontally, at any width, in either locale", async ({
     page,
   }) => {
-    // Eighteen navigations in one test. Alone it finishes in ~8s; against the
-    // one `next dev` this suite shares between five parallel workers it went
-    // past the 30s default. The sweep's breadth is the whole point — a number
+    // Several navigations in one test. Alone it finishes in seconds; against
+    // the one server this suite shares between parallel workers it went past
+    // the 30s default. The sweep's breadth is the whole point — a number
     // derived at one width is a guess at every other — so the budget moves,
     // not the sample.
     test.slow();
 
-    // 320 is the WCAG floor; 414 is the control that proved the hero `h1` was
-    // the offender (the run is 390.5px wide and clears the viewport there
-    // without changing size); 768 is where the footer's email token bites.
-    const widths = [320, 360, 390, 414, 480, 640, 768, 1024, 1280];
+    // ⚠️ This sweep used to run [320, 360, 390, 414, 480, 640, 768, 1024,
+    // 1280], and the notes on those widths — 320 the WCAG floor, 414 the
+    // control that proved the hero `h1` was the offender, 768 where the
+    // footer's email token bites — described a page that no longer renders
+    // there (`LANDING_MIN_WIDTH`). Seven of the nine samples were measuring
+    // the mobile handoff while claiming to measure this page, and passing.
+    // The floor is now the gate, and the breadth moves up rather than away:
+    // 1024 is the tightest column, 1120 is where §3's row finishes reflowing,
+    // 1256 is where the container caps, 1440 is past it.
+    const widths = [LANDING_MIN_WIDTH, 1120, 1256, 1440];
     const locales = ["en", "vi"] as const;
     const samples: Array<{ where: string; over: number; offenders: string[] }> = [];
 
@@ -269,8 +311,10 @@ test.describe("landing page", () => {
       for (const width of widths) {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(`/${locale}`);
-        // Non-negotiable: "no overflow" on an unrendered page is a false green.
-        await expect(page.locator("main section[id]")).toHaveCount(9);
+        // Non-negotiable: "no overflow" on an unrendered page is a false
+        // green — and so is "no overflow" on a HIDDEN one, which the count
+        // alone could not tell apart. See `landingRendered`.
+        await landingRendered(page);
 
         samples.push({
           where: `${locale} @${width}`,
@@ -335,9 +379,13 @@ test.describe("landing page", () => {
 
     // L-004: the sweep is gathered by a loop, so pin its size — a short sweep
     // would pass this test without measuring anything.
-    expect(samples, "viewport/locale samples").toHaveLength(
-      widths.length * locales.length,
-    );
+    // ⚠️ A LITERAL. `widths.length * locales.length` was here and is L-006:
+    // a threshold derived from the list it guards shrinks along with it, so
+    // trimming the sweep leaves this green while it measures less. Same fix
+    // as `mobile-app-handoff.spec.ts` — and the floor is pinned separately,
+    // because a count does not say WHICH widths survived.
+    expect(samples, "viewport/locale samples").toHaveLength(8);
+    expect(widths).toContain(LANDING_MIN_WIDTH);
 
     const scrolling = samples.filter((s) => s.over > 0);
     expect(
@@ -349,54 +397,82 @@ test.describe("landing page", () => {
   });
 
   /**
-   * §3's card row is the one place on the page that is WIDER than the viewport
-   * on purpose, and the ledger owed this assertion from task A2.
+   * §3's five step cards all fit in one row, at every width this page renders
+   * at — and the row keeps the machinery to degrade safely if they stop.
    *
-   * ⚠️ Two facts, and the second is the one that is easy to lose. The row
-   * CONTAINS its overflow (`overflow-x: auto`), which is why it never reached
-   * the page — and for a long time this row was blamed for the page overflow
-   * that the hero `h1` was actually causing. But a region you can only reach
-   * by scrolling sideways must also be reachable WITHOUT a mouse (WCAG 2.1.1);
-   * browsers make a scrollable box focusable for exactly that reason, and a
-   * refactor to `overflow-x: clip` or a wrapper that hides the overflow would
-   * keep this row looking right while silently making two of its five cards
-   * unreachable by keyboard.
+   * ⚠️ REWRITTEN 2026-09-25, and the old version is worth knowing about. It
+   * measured at 320 and asserted the OPPOSITE: that the row overflows and
+   * contains its own overflow. That was true when it was written. Since the
+   * mobile handoff gate (`LANDING_MIN_WIDTH`) this page does not render at 320
+   * at all, so it was measuring a `display: none` subtree in which every box
+   * is 0 — and `0 > 0` is false, which is the only reason it went red instead
+   * of passing silently like its neighbours did.
+   *
+   * Re-measured across 1024-1440 in both locales: `scrollWidth ===
+   * clientWidth` at every sample. The row never overflows inside the supported
+   * range, so the invariant flips — what must hold now is that a reader sees
+   * all five steps without scrolling sideways, at the narrowest width there is.
+   *
+   * ⚠️ The containment machinery is still asserted, because 1024 has NO slack:
+   * the row is 663px and the five cards fill it exactly. `CARD_BASIS` floors a
+   * card at 8rem, so one more card, a wider gap or a larger root font tips it
+   * over. `overflow-x: auto` on a focusable row means that lands as a
+   * scrollable row every step of which is reachable without a mouse (WCAG
+   * 2.1.1) — not as a page that scrolls sideways, and not as a `clip` that
+   * silently puts two cards out of reach.
    */
-  test("keeps §3's card row self-contained and still reachable by keyboard", async ({
+  test("fits §3's five step cards in one row at the narrowest supported width", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 320, height: 900 });
+    await page.setViewportSize({ width: LANDING_MIN_WIDTH, height: 900 });
     await page.goto("/en");
-    await expect(page.locator("main section[id]")).toHaveCount(9);
+    await landingRendered(page);
 
     const row = page.locator("#journey ol");
+    await expect(page.locator("#journey ol > li")).toHaveCount(5);
+
     const measured = await row.evaluate((el) => ({
       scrollWidth: el.scrollWidth,
       clientWidth: el.clientWidth,
       overflowX: getComputedStyle(el).overflowX,
     }));
 
-    // It really is overflowing — otherwise "contains its overflow" is a claim
-    // about nothing, and this test would pass on an empty row.
-    expect(measured.scrollWidth).toBeGreaterThan(measured.clientWidth);
+    // The row is really laid out. This is the assertion that would have caught
+    // the hidden-subtree reading described above, where all three were 0.
+    expect(measured.clientWidth).toBeGreaterThan(0);
+    // All five fit: nobody has to scroll sideways to reach step 5.
+    expect(measured.scrollWidth).toBe(measured.clientWidth);
+    // And if that ever stops holding, the overflow is contained here...
     expect(measured.overflowX).toBe("auto");
 
-    // And the overflow stops there rather than reaching the page.
+    // ⚠️ Not a containment proof any more, and the line above is why: with the
+    // row asserted not to overflow, this cannot tell "the row contained its
+    // overflow" from "there was none to contain". It is kept as a cheap
+    // regression net on the section box; the containment claim rests on the
+    // `overflow-x` pin, not here. The old test also asserted the row really
+    // scrolled (`scrollLeft` moved); that assertion is unsatisfiable once the
+    // row fits and was dropped rather than weakened into a tautology.
     const section = await page
       .locator("#journey")
       .evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
     expect(section.scrollWidth).toBe(section.clientWidth);
 
-    // WCAG 2.1.1: the cards past the fold must be reachable without a mouse.
-    const reachable = await row.evaluate((el) => {
+    // ⚠️ This proves PROGRAMMATIC focusability only — `el.focus()` succeeds on
+    // a `tabindex="-1"` element too, so it is not the WCAG 2.1.1 proof an
+    // earlier version of this comment claimed (`docs/lessons.md` L-004 records
+    // that exact overclaim twice, on Shadowing Hub C2 and Explore C3). It is
+    // left at that on purpose: the row no longer overflows at any supported
+    // width, so there is nothing past the fold to Tab to, and a sequential
+    // traversal here would assert a reach that has no destination. What it
+    // does buy is that the element accepts focus at all, which is the half of
+    // `tabIndex={0}` jsdom cannot see. If the row ever overflows again — the
+    // `overflow-x` pin above is what will notice — this becomes a real Tab
+    // traversal, like `mobile-app-handoff.spec.ts` does.
+    const focusable = await row.evaluate((el) => {
       el.focus();
-      if (document.activeElement !== el) return { focusable: false, scrolled: 0 };
-      const before = el.scrollLeft;
-      el.scrollLeft = el.scrollWidth;
-      return { focusable: true, scrolled: el.scrollLeft - before };
+      return document.activeElement === el;
     });
-    expect(reachable.focusable).toBe(true);
-    expect(reachable.scrolled).toBeGreaterThan(0);
+    expect(focusable).toBe(true);
   });
 
   /**
@@ -404,13 +480,22 @@ test.describe("landing page", () => {
    *
    * The ledger carried this from task A2 as "no `break-words`, so a single
    * unbreakable token overflows the panel (276px inside 105px)". With today's
-   * copy it does not reproduce at any width in either locale — the panels are
-   * ~86px and the widest rendered line is 67px — but the latent rule is still
-   * wrong: `overflow-wrap` is `normal`, so the FIRST long token anyone writes
+   * copy it does not reproduce at any width in either locale — but the latent
+   * rule is still wrong: `overflow-wrap` is `normal`, so the FIRST long token
+   * anyone writes
    * escapes. Card 4's own comment already promises the opposite ("forcing
    * nowrap would make a longer fragment overflow the card, which is the class
    * of bug this fix round exists to remove"), and a promise the CSS does not
    * keep is worse than no promise.
+   *
+   * ⚠️ The numbers that used to sit in the paragraph above — "the panels are
+   * ~86px and the widest rendered line is 67px" — were measured at 320, a
+   * width this test no longer visits and this page no longer renders at. At
+   * the 1024 it now runs at the panels are 69.36px and the widest line is
+   * 56px in both locales (measured 2026-09-25). They are not restated here:
+   * the point of injecting the token is that this test must not depend on
+   * what today's copy happens to measure (L-002 — record the command, not the
+   * figure).
    *
    * So the token is injected rather than waited for. This asserts the RULE,
    * which is what the comment claims, not today's copy, which happens to be
@@ -419,9 +504,14 @@ test.describe("landing page", () => {
   test("keeps a long unbreakable token inside §3's sentence panels", async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 320, height: 900 });
+    // ⚠️ Was 320, where this page no longer renders (`LANDING_MIN_WIDTH`) —
+    // the panels measured 0 wide, so "the token did not spill" was a claim
+    // about nothing and this test passed without testing. 1024 is both the
+    // narrowest supported width and the narrowest the panels ever get, which
+    // is the condition the rule is about.
+    await page.setViewportSize({ width: LANDING_MIN_WIDTH, height: 900 });
     await page.goto("/en");
-    await expect(page.locator("main section[id]")).toHaveCount(9);
+    await landingRendered(page);
 
     const lines = page.locator("#journey [data-step] p.font-jp");
     // The pair the ledger names: card 2's line and card 4's. Pinned, so a
@@ -516,11 +606,18 @@ test.describe("landing page", () => {
    * branch.
    */
   test("declares a §3 thumbnail `sizes` that covers its whole branch", async ({ page }) => {
-    // Both ends of the `(min-width: 1024px)` branch plus the container cap,
-    // and two widths below it so the fallback branch is measured too — in both
-    // locales, because the Vietnamese copy wraps differently and so reflows the
-    // row at different widths.
-    const widths = [768, 896, 1024, 1080, 1120, 1256, 1440];
+    // Both ends of the `(min-width: 1024px)` branch plus the container cap, in
+    // both locales, because the Vietnamese copy wraps differently and so
+    // reflows the row at different widths.
+    //
+    // ⚠️ 768 and 896 were here to measure the `300px` fallback branch. They
+    // measured nothing: this page does not render below 1024
+    // (`LANDING_MIN_WIDTH`), so the image had a zero box and the visibility
+    // assertion below has been RED since 2026-09-09. That fallback branch is
+    // now unreachable in the browser — it stays in `THUMB_SIZES` because
+    // `sizes` requires an unconditional final value, not because any viewport
+    // selects it, and `journey.tsx` says so at the declaration.
+    const widths = [LANDING_MIN_WIDTH, 1080, 1120, 1256, 1440];
     const locales = ["en", "vi"] as const;
     const samples: Array<{ where: string; needed: number; declared: number }> = [];
 
@@ -593,13 +690,19 @@ test.describe("motion never hides content", () => {
 
   const PARTS = "[data-eyebrow], [data-section-heading], [data-section-body], [data-section-showcase]";
 
-  for (const width of [320, 390, 768, 1280]) {
+  // ⚠️ Was [320, 390, 768, 1280]. `opacity` is unaffected by an ancestor's
+  // `display: none`, so the three widths below 1024 reported a perfect 1.0 for
+  // a page that was not being rendered at all (`LANDING_MIN_WIDTH`) — three of
+  // the four cases were vacuous and green. The docblock above calls the
+  // nine-section check the thing that stops exactly this; it could not, and
+  // `landingRendered` is why.
+  for (const width of [LANDING_MIN_WIDTH, 1280, 1440]) {
     test(`renders every section opaque under reduce-motion at ${width}`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "reduce" });
       await page.setViewportSize({ width, height: 900 });
       await page.goto("/en");
 
-      await expect(page.locator("main section[id]")).toHaveCount(9);
+      await landingRendered(page);
 
       const opacities = await page.locator(`main section[id] :is(${PARTS})`).evaluateAll((nodes) =>
         nodes.map((n) => Number(getComputedStyle(n).opacity)),
@@ -650,7 +753,8 @@ test.describe("motion never hides content", () => {
     const page = await context.newPage();
     await page.goto("/en");
 
-    await expect(page.locator("main section[id]")).toHaveCount(9);
+    // Works with JS off: the gate is CSS, and `landingRendered` reads geometry.
+    await landingRendered(page);
 
     const opacities = await page
       .locator("main section[id] [data-section-heading]")
@@ -665,7 +769,7 @@ test.describe("motion never hides content", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/en");
 
-    await expect(page.locator("main section[id]")).toHaveCount(9);
+    await landingRendered(page);
 
     for (const id of ["problem", "journey", "pitch", "recommend", "chain", "trust", "cta", "signoff"]) {
       await page.locator(`#${id}`).scrollIntoViewIfNeeded();

@@ -42,7 +42,12 @@ tùy chọn (mặc định tắt) và không tham gia validate provider, nhưng 
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint (có rule cấm import SDK provider ngoài `lib/ai/providers/`) |
 | `npm test` | Vitest (unit/integration) |
-| `npm run test:e2e` | Playwright |
+| `npm run test:e2e` | Playwright (mọi spec trừ `lesson-creation-jobs`, xem `playwright.config.ts`) |
+| `npm run test:e2e:c4` | Playwright cho `lesson-creation-jobs` (cần worker flag + YouTube stub) |
+| `npm run verify:protocol` | Kiểm tra protocol hai harness (bắt buộc trước khi merge) |
+
+⚠️ `test:e2e` và `test:e2e:c4` **không chạy song song được** — cả hai build vào cùng `.next`, và
+`c4` dựng server riêng với `reuseExistingServer: false` nên sẽ build đè lên server của lệnh kia.
 
 TDD là mặc định: test viết trước, và không claim "chạy được" nếu chưa chạy lệnh và thấy nó pass
 (`AGENTS.md` §7, §9).
