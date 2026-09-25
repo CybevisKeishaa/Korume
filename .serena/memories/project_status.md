@@ -2,9 +2,18 @@
 
 > ## ▶ WHERE EXECUTION STANDS — 2026-09-25 late (supersedes every block below)
 >
-> **NOTHING IS IN FLIGHT.** `git branch --no-merged master` is EMPTY. Master is at
-> **`7a6f3f1`**, the `--no-ff` merge of `e2e-failure-repair`, and is **NOT pushed** —
-> the owner pushes by hand. Branch and worktree kept.
+> ▶ **IN FLIGHT: `pronunciation-library-port`** (worktree `.worktrees/pronunciation-library-port`,
+> Owner: Claude), parked by the owner on 2026-09-25 to resume in a later session. Four commits,
+> **all documentation — no production code yet**. ⭐ Read
+> `docs/superpowers/run-state/pronunciation-library-port.md`: it carries the owner's rulings and a
+> complete Task 1 recipe that was written, seen RED, then reverted on purpose, so the next session
+> re-lands it rather than re-deriving it. **Task 1 must land the migration and the reads in ONE
+> commit** — the data layer selects `lesson_collections.position`, and `listCollectionLessons` is
+> what `/shadowing/explore` calls, so a half-landed Task 1 breaks a shipped screen at runtime while
+> every mocked unit test still passes.
+>
+> Master is at **`a84bd79`** (the `--no-ff` merge of `e2e-failure-repair` at `7a6f3f1`, plus a
+> memory commit), and is **NOT pushed** — the owner pushes by hand. Branches and worktrees kept.
 >
 > ⭐ **The e2e suite's SIX structural failures are closed.** They had been carried as
 > "pre-existing" by four consecutive branches. Two causes, not six: the sub-1024 mobile
