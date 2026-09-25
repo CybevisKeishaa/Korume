@@ -134,6 +134,11 @@ both are deliberate:
 
 Measured in this worktree, never in the main checkout.
 
+**No production code has been written on this branch yet.** Two commits, both
+documentation. The tree is clean and identical to `master` `a84bd79` apart from
+this file, so the branch inherits master's green gate and nothing here needs
+re-measuring until Task 1 lands.
+
 | Gate | Result |
 |---|---|
 | `npx vitest run` | *(not yet run on this branch)* |
@@ -172,11 +177,48 @@ settled above.
 
 ## Next actions
 
-1. **Task 1 — migration + rollup, GENERIC.** Ordering on `lesson_collections`
-   and a progress rollup read from `user_video_progress`, with tests.
+1. **Task 1 — migration + rollup, GENERIC. ▶ START HERE; the design below is
+   already settled, do not re-derive it.**
    ⚠️ **Nothing pronunciation-specific goes in this migration** — no `goal`, no
    JLPT, no speaking semantics. It is ordered-collection machinery that any
    caller can use, and the pronunciation screen is merely its first consumer.
+
+   Written once and reverted deliberately on 2026-09-25, because the data-layer
+   half selects a column the migration had not yet added — leaving it in the
+   tree would have broken `/shadowing/explore`, which calls the same function.
+   **Land the migration and the reads in ONE commit.**
+
+   *Migration* `supabase/migrations/20260925000034_collection_ordering.sql`:
+   add `position int not null default 0` to `lesson_collections`. Default 0
+   means every existing row keeps working and Explore's shelves do not move.
+   Add the SQL-contract test beside it — `20260922000033_user_preferences.test.ts`
+   is the pattern (read the file, strip comments, assert the text; it also
+   asserts the subsystem lives in exactly ONE migration).
+
+   *`lib/data/collections.ts`*:
+   - Extract `listMemberships(collectionId)` — selects `lesson_id, position`,
+     `.order("position")` then `.order("lesson_id")`. The second order is not
+     decoration: two rows at the same position must still return stably.
+   - `listCollectionLessons` reapplies that order after the `videos` query.
+     The member query reads a DIFFERENT table through `.in()` and cannot order
+     by a membership column, so build a `Map(id → index)` and sort by it. The
+     sort must be STABLE, which is what keeps an unordered collection on its
+     existing `created_at`/`id` order and leaves Explore untouched.
+   - `getCollectionProgress(collectionId) → { total, completed }`. `total` is
+     the MEMBERSHIP count, never the RLS-visible count — a path is 120 lessons
+     long whether or not a PLUS lesson is hidden from this viewer, and a
+     per-viewer denominator would make the percentage mean something different
+     for each of them. `completed` counts `completed_at !== null` only: a
+     `user_video_progress` row with a null `completed_at` is a lesson STARTED.
+     No user id is passed — `video_progress_own` is owner-only RLS.
+
+   *Tests* (all four were written and seen RED before the revert, so TDD order
+   is already established): memberships ordered by `position`; member lessons
+   returned in editorial order **with the fixture handing the videos back in
+   the opposite order**, so the reordering cannot pass by coincidence; the
+   rollup ignoring started-but-unfinished; and an empty collection returning
+   `{0, 0}` **without** a `user_video_progress` resolver registered, which
+   proves the second query is skipped (the mock throws on an unresolved table).
 2. **Task 2 — the page shell.** Eyebrow / h1 / subtitle + the discovery row,
    over the existing `hub-discovery-controls`.
 3. **Task 3 — the featured hero**, from the `featured` collections row
