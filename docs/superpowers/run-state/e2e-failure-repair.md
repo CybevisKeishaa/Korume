@@ -70,13 +70,37 @@ Measured in this worktree, never in the main checkout.
 
 | Gate | Result |
 |---|---|
-| `npm run test:e2e` (branch) | see below — re-measure at the tip |
-| `npm run test:e2e` (`master` `133618a`, detached, same worktree) | **7 failed / 59 passed** |
+| `npm run test:e2e` (branch tip `74b0d74`) | **1–2 failed / 62–63 passed**, five runs — see the table below |
+| `npm run test:e2e` (`master` `133618a`, detached, same worktree, 2026-09-25) | **6 failed / 60 passed** — exactly the six this branch targets |
 | `npm run test:e2e:c4` | **3 passed** |
 | `npm run typecheck` | 0 |
 | `npm run lint` | 0 errors, warning baseline unchanged |
 | `npm run verify:protocol` | valid |
 | `npx vitest run --reporter=dot` | 368 files / 3434 tests, 0 failed |
+
+**The six the branch targets are gone; the residue is the flake family, and it MOVES.**
+Measured at the tip `74b0d74`, same config, same eight workers, same worktree:
+
+| Run | Red |
+|---|---|
+| A, B, C | `settings.spec.ts:179` (erase) |
+| D | `settings.spec.ts:87` + `shadowing-explore.spec.ts:135` — `179` green |
+| E | `display-scale.spec.ts:59` — `179` green |
+| `master` `133618a` | the six structural ones only — `179` green |
+
+⚠️ **`settings:179` was called "deterministic, 2/2" mid-session and that was wrong** — it
+passed twice as soon as a probe shifted the timing. Three reds then two greens is the
+parallel-load family (L-009), not a regression: no file in this diff reaches
+`/journal`, the erase route or the export route.
+
+▶ **The mechanism is NOT established, and the leading hypothesis changed once measured.**
+`first_meeting` has exactly one producer — `journal/page.tsx:34` — so a row that truly
+came back would need a SECOND journal render after the erase. Probed with `console.error`
+on both sides (Playwright's `webServer` pipes stderr and **discards stdout** — a
+`console.log` probe returns nothing, which cost one whole run): the clean trace shows
+**one** render, finishing 5.6s BEFORE the erase, and no render after it. So "the row
+survived the delete" and "a late render rewrote it" are both unsupported; the open
+candidate is the second `GET /api/user/export` returning a stale body. Its own ticket.
 
 ⚠️ **Quote the commit with any figure.** `b212544`'s own message and the
 `docs/lessons.md` entry both carried "3 failed / 59 passed", which was measured
@@ -114,16 +138,19 @@ None.
 
 ## Next actions
 
-1. Re-run the full gate at the tip and record the figures against that commit.
-2. A third review, of this L-012 wave, if the owner wants the chain closed —
-   the previous two each found real defects, the second a Critical.
-3. `--no-ff` merge to `master`. **Owner decision, not taken.**
+1. ~~Re-run the full gate at the tip~~ — done 2026-09-25, figures above.
+2. A third review of the L-012 wave — **the owner declined it**, on the grounds that
+   two reviews had already run.
+3. ~~`--no-ff` merge to `master`~~ — owner instructed it, taken 2026-09-25.
 
 ▶ **Found here, deliberately not fixed** — each wants its own ticket:
 - **Every phone visitor downloads the landing page's hero still (~400 KB).**
   The image carries `priority`, so Next emits a preload link, and a preload
   fetches regardless of `display: none`. Measured: at 1023 the `load` event
   never fires on a cold cache because of it.
-- `display-scale` / `settings` e2e failures under parallel load; they fire on
-  master too, differ between runs, and pass 11/11 alone.
+- `display-scale` / `settings` / `shadowing-explore` e2e failures under parallel load;
+  they fire on master too, differ between runs, and pass alone. **This is now the top
+  blocker to a trustworthy suite** — the six structural failures are closed, so the
+  flake family is all that stands between here and a green run. `settings:179` above is
+  the one with a captured trace; start there.
 - `README.md`'s script table was two commands out of date before this branch.
