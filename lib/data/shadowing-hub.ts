@@ -81,6 +81,10 @@ interface ProgressRow {
   completed_at: string | null;
 }
 
+interface HubDiscoveryFilterTag extends HubDiscoveryFilter {
+  id: string;
+}
+
 function toHubLesson(video: VideoRow): HubLesson {
   return {
     id: video.id,
@@ -89,6 +93,38 @@ function toHubLesson(video: VideoRow): HubLesson {
     durationSeconds: video.duration_seconds,
     thumbnailUrl: video.thumbnail_url,
     jlptLevelEstimate: video.jlpt_level_estimate,
+  };
+}
+
+/** Shared taxonomy-backed discovery read for the Shadowing and Pronunciation hubs. */
+export async function getHubDiscovery(
+  options: { query?: string; filter?: string } = {},
+): Promise<{ filters: HubDiscoveryFilter[]; discovery: HubDiscoveryProjection | null }> {
+  const supabase = createClient();
+  const [situations, sources] = await Promise.all([listSituations(), listSources()]);
+  const filterTags: HubDiscoveryFilterTag[] = [
+    ...situations.map((tag) => ({ kind: "situation" as const, slug: tag.slug, id: tag.id })),
+    ...sources.map((tag) => ({ kind: "source" as const, slug: tag.slug, id: tag.id })),
+  ];
+  const filters = filterTags.map(({ kind, slug }) => ({ kind, slug }));
+  const query = options.query?.trim() ?? "";
+  const activeFilter = filterTags.find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
+
+  if (!query && !activeFilter) return { filters, discovery: null };
+
+  let search = supabase.from("videos").select(VIDEO_COLUMNS);
+  if (query) search = search.ilike("title", `%${query}%`);
+  if (activeFilter) search = search.eq(activeFilter.kind === "situation" ? "situation_id" : "source_id", activeFilter.id);
+  const { data, error } = await search.order("created_at", { ascending: false }).limit(SHELF_LIMIT);
+  if (error) throw error;
+
+  return {
+    filters,
+    discovery: {
+      query,
+      activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
+      lessons: ((data as VideoRow[] | null) ?? []).map(toHubLesson),
+    },
   };
 }
 
@@ -102,7 +138,7 @@ export async function getShadowingHub(options: { query?: string; filter?: string
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
 
-  const [libraryResult, videosResult, progressResult, tier, used, popularResult, recommendationsResult, featured, situations, sources] =
+  const [libraryResult, videosResult, progressResult, tier, used, popularResult, recommendationsResult, featured, hubDiscovery] =
     await Promise.all([
       supabase.from("user_lesson_library").select("lesson_id").eq("user_id", user.id),
       supabase.from("videos").select(VIDEO_COLUMNS).order("created_at", { ascending: false }),
@@ -115,8 +151,7 @@ export async function getShadowingHub(options: { query?: string; filter?: string
       PopularStrategyV1.rank({ userId: user.id, limit: SHELF_LIMIT }),
       getRecommendations({ limit: SHELF_LIMIT }),
       getCollectionBySlug("featured"),
-      listSituations(),
-      listSources(),
+      getHubDiscovery(options),
     ]);
 
   if (libraryResult.error) throw libraryResult.error;
@@ -144,27 +179,6 @@ export async function getShadowingHub(options: { query?: string; filter?: string
   const featuredLessons = featured ? await listCollectionLessons(featured.id) : [];
   const recommendations = recommendationsResult.ok ? recommendationsResult.data : [];
   const suggestedRecommendation = recommendations.find((recommendation) => recommendation.reason !== null) ?? null;
-  const filterTags = [
-    ...situations.map((tag) => ({ kind: "situation" as const, slug: tag.slug, id: tag.id })),
-    ...sources.map((tag) => ({ kind: "source" as const, slug: tag.slug, id: tag.id })),
-  ];
-  const filters: HubDiscoveryFilter[] = filterTags.map(({ kind, slug }) => ({ kind, slug }));
-  const query = options.query?.trim() ?? "";
-  const activeFilter = filterTags.find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
-  let discovery: HubDiscoveryProjection | null = null;
-  if (query || activeFilter) {
-    let search = supabase.from("videos").select(VIDEO_COLUMNS);
-    if (query) search = search.ilike("title", `%${query}%`);
-    if (activeFilter) search = search.eq(activeFilter.kind === "situation" ? "situation_id" : "source_id", activeFilter.id);
-    const { data, error } = await search.order("created_at", { ascending: false }).limit(SHELF_LIMIT);
-    if (error) throw error;
-    discovery = {
-      query,
-      activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
-      lessons: ((data as VideoRow[] | null) ?? []).map(toHubLesson),
-    };
-  }
-
   return {
     ok: true,
     data: {
@@ -203,8 +217,8 @@ export async function getShadowingHub(options: { query?: string; filter?: string
             }
           : null,
       },
-      filters,
-      discovery,
+      filters: hubDiscovery.filters,
+      discovery: hubDiscovery.discovery,
     },
   };
 }

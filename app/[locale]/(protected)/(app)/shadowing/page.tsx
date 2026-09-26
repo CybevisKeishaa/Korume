@@ -121,6 +121,7 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
           activeFilter={hub.discovery?.activeFilter ?? null}
           results={hub.discovery?.lessons ?? null}
           action={getPathname({ href: "/shadowing", locale })}
+          basePath="/shadowing"
           labels={{
             searchLabel: tHub("hub.sections.search"),
             searchPlaceholder: tHub("hub.search.placeholder"),

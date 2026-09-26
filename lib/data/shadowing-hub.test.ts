@@ -20,7 +20,7 @@ vi.mock("@/lib/data/lesson-ranking", () => ({
 vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: vi.fn() }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listSituations: vi.fn(), listSources: vi.fn() }));
 
-import { getShadowingHub } from "./shadowing-hub";
+import { getHubDiscovery, getShadowingHub } from "./shadowing-hub";
 import { getCollectionBySlug, listCollectionLessons } from "@/lib/data/collections";
 import { countMonthlyCreations, hasTranscript } from "@/lib/data/lesson-library";
 import { getActivePlanTier } from "@/lib/data/subscriptions";
@@ -210,5 +210,47 @@ describe("getShadowingHub", () => {
         rail: { suggestion: null },
       },
     });
+  });
+});
+
+describe("getHubDiscovery", () => {
+  it("returns filters without querying videos until discovery is requested", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { onVideosQuery: (calls) => videoQueries.push([...calls]) });
+    vi.mocked(listSituations).mockResolvedValue([{ id: "s1", slug: "restaurant", displayOrder: 1 }]);
+
+    await expect(getHubDiscovery()).resolves.toEqual({
+      filters: [{ kind: "situation", slug: "restaurant" }],
+      discovery: null,
+    });
+    expect(videoQueries).toEqual([]);
+  });
+
+  it("searches titles with the selected known filter", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
+    vi.mocked(listSituations).mockResolvedValue([{ id: "s1", slug: "restaurant", displayOrder: 1 }]);
+
+    await expect(getHubDiscovery({ query: "private", filter: "situation:restaurant" })).resolves.toMatchObject({
+      discovery: { query: "private", activeFilter: "situation:restaurant", lessons: [{ id: PRIVATE_LESSON.id }] },
+    });
+    expect(videoQueries).toContainEqual(expect.arrayContaining([
+      { op: "ilike", column: "title", pattern: "%private%" },
+      { op: "eq", column: "situation_id", value: "s1" },
+    ]));
+  });
+
+  it("ignores an unknown filter while retaining a submitted query", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
+    vi.mocked(listSituations).mockResolvedValue([{ id: "s1", slug: "restaurant", displayOrder: 1 }]);
+
+    await expect(getHubDiscovery({ query: "private", filter: "source:unknown" })).resolves.toMatchObject({
+      discovery: { query: "private", activeFilter: null, lessons: [{ id: PRIVATE_LESSON.id }] },
+    });
+    expect(videoQueries).toContainEqual(expect.arrayContaining([
+      { op: "ilike", column: "title", pattern: "%private%" },
+    ]));
+    expect(videoQueries.flat()).not.toContainEqual(expect.objectContaining({ op: "eq" }));
   });
 });

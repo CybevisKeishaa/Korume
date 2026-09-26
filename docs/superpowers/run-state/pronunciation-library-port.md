@@ -131,7 +131,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -153,9 +153,13 @@ shelves are clear.
    - Correction: sort by `position` value, not membership index; stable ties keep video query order.
    - Correction: apply `slice` after sorting; never limit the videos query.
    - Correction: assert the `position` addition is in one migration, not the whole collections subsystem.
-2. **Task 2 — implemented-pending-review.** The shared Hub read and controls
-   now power the pronunciation shell; required checks are green and sliders
-   stay omitted pending an owner ruling.
+2. **Task 2 — committed, e2e NOT yet run.** `getHubDiscovery` is shared by
+   both hubs; `HubDiscoveryControls` gained `basePath` + `heading` (filters in
+   the shared `Popover`, sliders omitted pending the owner). Unit gate green:
+   vitest 370 / 3444, tsc 0, lint 0. ⚠️ `tests/e2e/pronunciation.spec.ts`
+   failed at REGISTRATION ("fetch failed"): local Supabase was down (Docker
+   off). Run it before Task 3 is accepted. Its narrow case is 1024, not 320 —
+   below 1024 every route is the app-store handoff.
 3. **Task 3 — featured hero**, from the `featured` collections row.
 4. **Task 3b — Popular Learning Paths.** Its own step, not a shelf: the first
    consumer of Task 1's ordering + rollup, so a different shape from a plain

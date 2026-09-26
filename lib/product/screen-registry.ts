@@ -684,7 +684,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaCheckedAt: "2026-08-12",
     route: "/pronunciation",
     chrome: "app",
-    impl: "placeholder",
+    impl: "built",
     navGroup: "practice",
     navOrder: 2,
     specRef: null,

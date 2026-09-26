@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { SCREEN_REGISTRY } from "./screen-registry";
 
 describe("screen registry invariants", () => {
+  it("records the pronunciation library as built", () => {
+    expect(SCREEN_REGISTRY.find((entry) => entry.screenId === "pronunciation-library")).toMatchObject({
+      impl: "built",
+    });
+  });
+
   it("T3: figmaNodeId is null iff the entry is repo-only or spec-only", () => {
     for (const entry of SCREEN_REGISTRY) {
       if (entry.kind === "repo-only" || entry.kind === "spec-only") {
