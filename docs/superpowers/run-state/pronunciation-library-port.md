@@ -28,7 +28,7 @@ that machinery and does not rebuild it.
 ## Accepted commits
 
 `672d507` the contract · `898da5a` the rulings · `fc74c78` the parked Task 1
-design. All documentation; no production code on this branch yet.
+design · Task 1 (the commit after `6718b6d`, the handoff to Codex).
 
 ## Contracts and decisions
 
@@ -131,7 +131,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -141,48 +141,15 @@ shelves are clear.
 
 ## Next actions
 
-1. **Task 1 — migration + rollup, GENERIC. ▶ START HERE; the design below is
-   already settled, do not re-derive it.**
-   ⚠️ **Nothing pronunciation-specific goes in this migration** — no `goal`, no
-   JLPT, no speaking semantics. It is ordered-collection machinery that any
-   caller can use, and the pronunciation screen is merely its first consumer.
-
-   Written once and reverted on 2026-09-25: the data-layer half selects a
-   column the migration had not added, and `listCollectionLessons` is what
-   `/shadowing/explore` calls, so leaving it would have broken a shipped screen
-   at runtime while every mocked unit test passed. **Land the migration and the
-   reads in ONE commit.**
-
-   *Migration* `20260925000034_collection_ordering.sql`: add `position int not
-   null default 0` to `lesson_collections` — default 0 keeps every existing row
-   working and leaves Explore's shelves where they are. SQL-contract test
-   beside it, patterned on `20260922000033_user_preferences.test.ts` (strip
-   comments, assert the text, assert the subsystem lives in ONE migration).
-
-   *`lib/data/collections.ts`*:
-   - Extract `listMemberships(collectionId)` — selects `lesson_id, position`,
-     `.order("position")` then `.order("lesson_id")`. The second order is not
-     decoration: two rows at one position must still return stably.
-   - `listCollectionLessons` reapplies that order after the `videos` query,
-     which reads a DIFFERENT table through `.in()` and cannot order by a
-     membership column: build `Map(id → index)` and sort by it. The sort must
-     be STABLE — that is what keeps an unordered collection on its existing
-     `created_at`/`id` order and leaves Explore untouched.
-   - `getCollectionProgress(id) → { total, completed }`. `total` counts
-     MEMBERSHIPS, never RLS-visible rows: a path is 120 lessons long whether or
-     not a PLUS lesson is hidden from this viewer, and a per-viewer denominator
-     would make the percentage mean something different for each of them.
-     `completed` counts `completed_at !== null` only — a `user_video_progress`
-     row with a null one is a lesson STARTED. No user id is passed;
-     `video_progress_own` is owner-only RLS.
-
-   *Tests* — all four were written and seen RED before the revert: memberships
-   ordered by `position`; lessons in editorial order **with the fixture handing
-   the videos back in the OPPOSITE order**, so the reordering cannot pass by
-   coincidence; the rollup ignoring started-but-unfinished; and an empty
-   collection returning `{0,0}` with **no** `user_video_progress` resolver
-   registered, proving the second query is skipped (the mock throws on an
-   unresolved table).
+1. **Task 1 — DONE, accepted by Claude 2026-09-27** (Codex implemented; see
+   Accepted commits). Generic `position` migration, ordered memberships/lesson
+   reads and membership-based progress rollup, landed in ONE commit. Gate:
+   vitest 369 files / 3441 tests, tsc 0, lint 0, `verify:protocol` 0.
+   ⚠️ The live DB needs `20260925000034` applied before this code serves
+   `/shadowing/explore` — it selects `lesson_collections.position`.
+   - Correction: sort by `position` value, not membership index; stable ties keep video query order.
+   - Correction: apply `slice` after sorting; never limit the videos query.
+   - Correction: assert the `position` addition is in one migration, not the whole collections subsystem.
 2. **Task 2 — page shell.** Eyebrow / h1 / subtitle + the discovery row, over
    the existing `hub-discovery-controls`.
 3. **Task 3 — featured hero**, from the `featured` collections row.
