@@ -131,7 +131,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
