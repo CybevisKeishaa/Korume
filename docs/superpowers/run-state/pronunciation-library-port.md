@@ -139,6 +139,9 @@ owner's dev server) — build only in this worktree, by absolute path.
 restated here). It blocks Task 4b only; Tasks 1–3 and the existing-data
 shelves are clear.
 
+- Sliders button in the header — behaviour undefined, omitted pending owner.
+- Search placeholder promises JLPT/business search; search matches titles only.
+
 ## Next actions
 
 1. **Task 1 — DONE, accepted by Claude 2026-09-27** (Codex implemented; see
@@ -150,8 +153,9 @@ shelves are clear.
    - Correction: sort by `position` value, not membership index; stable ties keep video query order.
    - Correction: apply `slice` after sorting; never limit the videos query.
    - Correction: assert the `position` addition is in one migration, not the whole collections subsystem.
-2. **Task 2 — page shell.** Eyebrow / h1 / subtitle + the discovery row, over
-   the existing `hub-discovery-controls`.
+2. **Task 2 — implemented-pending-review.** The shared Hub read and controls
+   now power the pronunciation shell; required checks are green and sliders
+   stay omitted pending an owner ruling.
 3. **Task 3 — featured hero**, from the `featured` collections row.
 4. **Task 3b — Popular Learning Paths.** Its own step, not a shelf: the first
    consumer of Task 1's ordering + rollup, so a different shape from a plain
