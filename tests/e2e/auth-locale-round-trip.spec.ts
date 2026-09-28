@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerViaUi, signInViaUi } from "./fixtures/auth";
+import { registerViaUi, signInViaUi, uniqueEmail } from "./fixtures/auth";
 
 // End-to-end: proves the locale survives a full login round trip.
 //
@@ -19,7 +19,7 @@ import { registerViaUi, signInViaUi } from "./fixtures/auth";
 test("register -> sign out -> sign in bounces back to /en/dashboard, not double-prefixed", async ({
   page,
 }) => {
-  const email = `e2e_locale_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e_locale");
   const password = "password123";
 
   await page.goto("/en/register");
