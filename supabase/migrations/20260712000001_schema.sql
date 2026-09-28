@@ -212,8 +212,27 @@ create table user_video_progress (
   video_id uuid not null references videos (id) on delete cascade,
   last_watched_position numeric(10, 3) not null default 0,
   completed_at timestamptz,
+  -- When the learner last moved this row; maintained by the trigger below.
+  -- Nullable: a row with no known time is never given a fabricated one.
+  last_watched_at timestamptz,
   primary key (user_id, video_id)
 );
+
+create or replace function set_user_video_progress_last_watched_at()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if tg_op = 'INSERT'
+    or new.last_watched_position is distinct from old.last_watched_position
+    or new.completed_at is distinct from old.completed_at then
+    new.last_watched_at = now();
+  end if;
+  return new;
+end;
+$$;
+
+create trigger user_video_progress_set_last_watched_at
+  before insert or update on user_video_progress
+  for each row execute function set_user_video_progress_last_watched_at();
 
 create table user_playlists (
   id uuid primary key default gen_random_uuid(),

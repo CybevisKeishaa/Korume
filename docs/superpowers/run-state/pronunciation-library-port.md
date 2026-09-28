@@ -28,7 +28,8 @@ that machinery and does not rebuild it.
 ## Accepted commits
 
 `672d507` the contract · `898da5a` the rulings · `fc74c78` the parked Task 1
-design · Task 1 (the commit after `6718b6d`, the handoff to Codex).
+design · Task 1 `675494f` · Task 2 `f6347c1` · Task 3 (the commit after
+`d8fe11d`).
 
 ## Contracts and decisions
 
@@ -117,25 +118,30 @@ filter standing in for a curated program is not an acceptable outcome.
 9. **Search placeholder** becomes honest copy — "Search by lesson title"
    (EN/VI) — rather than widening search.
 
+Earlier rulings, 2026-09-27: the hero features a **course = a `kind = 'path'`
+collection chosen by derivation** (recent activity → in progress → first), and
+"Preview Course" opens `/pronunciation/collections/[slug]` (repo-only; no frame).
+Claude, 2026-09-29: `user_video_progress.last_watched_at` (nullable, trigger-
+stamped, no backfill) orders "Continue where you left off", nulls last.
+
 ## Verification
 
 Measured in this worktree, never in the main checkout.
 
-The tree matches `master` `a84bd79` apart from this file, so master's gate
-stands and nothing needs measuring until Task 1 lands. `verify:protocol` exits
-0 — this file sits at the 200-line cap, so keep it there.
+**Task 3 gate, 2026-09-29** (after the independent review's 17 findings;
+`cache()` skipped — vitest's React 18 has none): vitest 375 files / 3481 tests
+exit 0, tsc 0, lint 0 errors, `verify:protocol` 0; `supabase db reset` clean;
+trigger proven live; e2e `pronunciation` + `shadowing-hub` + `-explore` 11/11.
 
 ⚠️ **1–2 e2e reds per run are the parallel-load flake family** (`display-scale`
 / `settings` / `shadowing-explore`), a DIFFERENT set each run, green run alone,
 and firing on `master` too — read `run-state/e2e-failure-repair.md` before
 calling one a regression.
 
-**Task 2 e2e, 2026-09-28** (local DB migrated to `20260925000034` first):
-`pronunciation.spec.ts` 3/3 green. `shadowing-explore.spec.ts:35` red 2 of 3
-runs at REGISTRATION — **not a flake**: auth logs `users_email_partial_key`
-duplicate; `e2e_…_${Date.now()}` collides across parallel workers (accounts
-created 1–15 ms apart). Specs without `workerIndex`/`testId` in the email all
-share it — a separate test-infra ticket, not this branch's code.
+🚨 **Registration reds are not a flake:** `e2e_…_${Date.now()}` emails collide
+across parallel workers (auth log: `users_email_partial_key`, accounts 1–15 ms
+apart). `pronunciation.spec` now uses a UUID; the other specs are a test-infra
+ticket.
 
 ⚠️ **`cmd | tail` hides the exit code.** This file was committed once over a
 RED `verify:protocol`, because the check was piped and `tail` exits 0.
@@ -151,13 +157,16 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
-None. All three open decisions were ruled on 2026-09-28 (rulings 7–9).
-⚠️ The Task 3 dispatch of 2026-09-27 died on Codex's usage limit after reading
-files only — it wrote nothing; Task 3 restarts from scratch.
+None.
+
+⚠️ **Protocol exception, owner-approved 2026-09-29:** Codex hit its 5-hour
+limit (97%) with Task 3 unfinished, and Claude finished the implementation
+(migrations folded in place, review fixes) instead of reviewing only. An
+independent `code-reviewer` subagent reviewed the result.
 
 ## Next actions
 
@@ -165,24 +174,23 @@ files only — it wrote nothing; Task 3 restarts from scratch.
    Accepted commits). Generic `position` migration, ordered memberships/lesson
    reads and membership-based progress rollup, landed in ONE commit. Gate:
    vitest 369 files / 3441 tests, tsc 0, lint 0, `verify:protocol` 0.
-   ⚠️ The live DB needs `20260925000034` applied before this code serves
-   `/shadowing/explore` — it selects `lesson_collections.position`.
-   - Correction: sort by `position` value, not membership index; stable ties keep video query order.
-   - Correction: apply `slice` after sorting; never limit the videos query.
-   - Correction: assert the `position` addition is in one migration, not the whole collections subsystem.
+   ⚠️ Its additive `20260925000034` broke AGENTS.md §6; Task 3 folded
+   `position` into `20260731000019` and deleted it. Apply by `db reset`.
+   Rules: sort by `position` value (stable: ties keep the videos query order),
+   `slice` after sorting, never limit the videos query.
 2. **Task 2 — DONE**, e2e run 2026-09-28 (see Verification). `getHubDiscovery`
    is shared by both hubs; `HubDiscoveryControls` gained `basePath` + `heading`.
    Its narrow case is 1024, not 320 — below 1024 every route is the handoff.
-3. **Task 3 — featured course hero** — handed to Codex 2026-09-28; brief
-   `.superpowers/sdd/pronunciation-library-port/task-3-brief.md`.
-4. **Task 3b — Popular Learning Paths.** Its own step, not a shelf: the first
-   consumer of Task 1's ordering + rollup, so a different shape from a plain
-   collection shelf. It lands the `collections.kind` / `skill_focus`
-   migration (ruling 7) and marks the path rows `kind = 'path'`.
+3. **Task 3 — DONE 2026-09-29.** `kind`/`skill_focus`/`position` in
+   `20260731000019`, paths + goals seeded in `20260807000026`,
+   `last_watched_at` in `20260712000001`; course hero, continue strip, and
+   the collection page. Codex implemented most; Claude finished (see Blockers).
+4. **Task 3b — Popular Learning Paths** shelf over the `kind = 'path'` rows
+   Task 3 seeded; "View all" reuses the collection page.
 5. **Task 4a — shelves whose data exists today:** Practice by Situation
    (`lesson_situations`) + Shadowing Collections, over `hub-shelves`.
 6. **Task 4b — Practice by Goal** per ruling 7 (migration + seed + reads +
-   shelf + weakest-metric badge), on the `kind` column 3b landed.
+   shelf + weakest-metric badge), on the `kind` column Task 3 landed.
 6b. **Task 2b — Sort & display panel + placeholder copy**, per rulings 8–9.
 7. **Task 4c — JLPT Speaking**, the aggregation view above. No migration.
 8. **Task 5 — right rail:** Today's Speaking + Weekly Improvement (Accuracy,

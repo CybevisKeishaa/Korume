@@ -30,7 +30,7 @@ describe("collections", () => {
     expect(result.map((c) => c.slug)).toEqual(["featured", "beginner-foundation"]);
     expect(result[1]).toEqual({
       id: "c1", slug: "beginner-foundation", title: "Beginner Foundation",
-      description: "Start…", coverImageUrl: null, displayOrder: 1,
+      description: "Start…", coverImageUrl: null, displayOrder: 1, kind: "shelf", skillFocus: null,
     });
   });
 
@@ -157,14 +157,14 @@ describe("collections", () => {
           data: [
             { video_id: "v1", completed_at: "2026-09-25T00:00:00Z" },
             { video_id: "v2", completed_at: null },
-            { video_id: "v3", completed_at: null },
+            { video_id: "v3", completed_at: "2026-09-26T00:00:00Z" },
           ],
           error: null,
         };
       },
     });
     const { getCollectionProgress } = await import("@/lib/data/collections");
-    await expect(getCollectionProgress("c1")).resolves.toEqual({ total: 3, completed: 1 });
+    await expect(getCollectionProgress("c1")).resolves.toEqual({ total: 3, completed: 2 });
   });
 
   it("skips progress lookup for an empty collection", async () => {
@@ -173,5 +173,160 @@ describe("collections", () => {
     });
     const { getCollectionProgress } = await import("@/lib/data/collections");
     await expect(getCollectionProgress("c1")).resolves.toEqual({ total: 0, completed: 0 });
+  });
+
+  it("selects only path collections for the featured course and derives its visible progress", async () => {
+    useTables({
+      collections: (calls) => {
+        expect(calls).toContainEqual({ op: "eq", column: "kind", value: "path" });
+        return { data: [{ id: "path", slug: "everyday", title: "Everyday", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null };
+      },
+      lesson_collections: () => ({ data: [{ collection_id: "path", lesson_id: "v1", position: 0 }, { collection_id: "path", lesson_id: "v2", position: 1 }], error: null }),
+      videos: () => ({ data: [
+        { id: "v1", youtube_video_id: "yt1", title: "First", duration_seconds: 1800, thumbnail_url: "https://example.com/one.jpg", jlpt_level_estimate: "N4", created_at: "2026-01-01" },
+        { id: "v2", youtube_video_id: "yt2", title: "Second", duration_seconds: 1800, thumbnail_url: null, jlpt_level_estimate: "N3", created_at: "2026-01-02" },
+      ], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "v1", last_watched_position: 900, completed_at: "2026-09-01" }, { video_id: "v2", last_watched_position: 300, completed_at: null }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({
+      collection: { slug: "everyday", kind: "path" }, total: 2, completed: 1,
+      next: { id: "v2" }, durationMinutes: 60, jlptRange: "N4–N3", levelBand: { from: "beginner", to: "intermediate" },
+      resume: { lesson: { id: "v2" }, index: 2, percent: 17 },
+    });
+  });
+
+  it("orders featured-course lessons exactly as listCollectionLessons does: equal positions keep the videos query order", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "path", slug: "path", title: "Path", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),
+      lesson_collections: () => ({ data: [{ collection_id: "path", lesson_id: "a-old", position: 0 }, { collection_id: "path", lesson_id: "b-new", position: 0 }], error: null }),
+      videos: () => ({ data: [
+        { id: "b-new", duration_seconds: 60, jlpt_level_estimate: null, created_at: "2026-02-01" },
+        { id: "a-old", duration_seconds: 60, jlpt_level_estimate: null, created_at: "2026-01-01" },
+      ], error: null }),
+      user_video_progress: () => ({ data: [], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    const course = await getFeaturedCourse();
+    expect(course?.lessons.map((lesson) => lesson.id)).toEqual(["b-new", "a-old"]);
+    expect(course?.next?.id).toBe("b-new");
+  });
+
+  it("prefers an in-progress course over an earlier untouched one when there is no recent activity (rule 2 over rule 3)", async () => {
+    useTables({
+      collections: () => ({ data: [
+        { id: "untouched", slug: "untouched", title: "Untouched", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null },
+        { id: "begun", slug: "begun", title: "Begun", description: null, cover_image_url: null, display_order: 2, kind: "path", skill_focus: null },
+      ], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "untouched", lesson_id: "v1", position: 0 },
+        { collection_id: "begun", lesson_id: "v2", position: 0 },
+        { collection_id: "begun", lesson_id: "v3", position: 1 },
+      ], error: null }),
+      videos: () => ({ data: [
+        { id: "v1", duration_seconds: 60, jlpt_level_estimate: null },
+        { id: "v2", duration_seconds: 60, jlpt_level_estimate: null },
+        { id: "v3", duration_seconds: 60, jlpt_level_estimate: null },
+      ], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "v2", last_watched_position: 60, completed_at: "2026-09-28T00:00:00Z", last_watched_at: null }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({ collection: { slug: "begun" }, completed: 1, selectedByRecentActivity: false });
+  });
+
+  it("resumes in editorial order when every started lesson predates last_watched_at (all null)", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "path", slug: "path", title: "Path", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),
+      lesson_collections: () => ({ data: [{ collection_id: "path", lesson_id: "v1", position: 0 }, { collection_id: "path", lesson_id: "v2", position: 1 }], error: null }),
+      videos: () => ({ data: [{ id: "v1", duration_seconds: 100, jlpt_level_estimate: null }, { id: "v2", duration_seconds: 100, jlpt_level_estimate: null }], error: null }),
+      user_video_progress: () => ({ data: [
+        { video_id: "v2", last_watched_position: 80, completed_at: null, last_watched_at: null },
+        { video_id: "v1", last_watched_position: 10, completed_at: null, last_watched_at: null },
+      ], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({ resume: { lesson: { id: "v1" }, index: 1, percent: 10 } });
+  });
+
+  it("covers the course with the first member, in editorial order, that has a thumbnail", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "path", slug: "path", title: "Path", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),
+      lesson_collections: () => ({ data: [{ collection_id: "path", lesson_id: "v1", position: 0 }, { collection_id: "path", lesson_id: "v2", position: 1 }, { collection_id: "path", lesson_id: "v3", position: 2 }], error: null }),
+      videos: () => ({ data: [
+        { id: "v3", thumbnail_url: "https://example.com/three.jpg", duration_seconds: 60, jlpt_level_estimate: null },
+        { id: "v2", thumbnail_url: "https://example.com/two.jpg", duration_seconds: 60, jlpt_level_estimate: null },
+        { id: "v1", thumbnail_url: null, duration_seconds: 60, jlpt_level_estimate: null },
+      ], error: null }),
+      user_video_progress: () => ({ data: [], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({ coverUrl: "https://example.com/two.jpg" });
+  });
+
+  it("returns null when no path has a visible lesson", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "path", slug: "empty", title: "Empty", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),
+      lesson_collections: () => ({ data: [], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toBeNull();
+  });
+
+  it("derives a null level band when no lesson has a JLPT level", async () => {
+    const { collectionMeta } = await import("@/lib/data/collections");
+    expect(collectionMeta([{ duration_seconds: null, jlpt_level_estimate: null }])).toEqual({ durationMinutes: null, jlptRange: null, levelBand: null });
+  });
+
+  it("sums every available duration instead of discarding a collection with one missing duration", async () => {
+    const { collectionMeta } = await import("@/lib/data/collections");
+    expect(collectionMeta([
+      { duration_seconds: 1200, jlpt_level_estimate: null },
+      { duration_seconds: null, jlpt_level_estimate: null },
+    ]).durationMinutes).toBe(20);
+  });
+
+  it("chooses the most recently active course before an in-progress course and marks it as such", async () => {
+    useTables({
+      collections: () => ({ data: [
+        { id: "recent", slug: "recent", title: "Recent", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null },
+        { id: "progress", slug: "progress", title: "Progress", description: null, cover_image_url: null, display_order: 2, kind: "path", skill_focus: null },
+      ], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "recent", lesson_id: "v1", position: 0 },
+        { collection_id: "progress", lesson_id: "v2", position: 0 },
+        { collection_id: "progress", lesson_id: "v3", position: 1 },
+      ], error: null }),
+      videos: () => ({ data: [
+        { id: "v1", duration_seconds: 60, jlpt_level_estimate: null },
+        { id: "v2", duration_seconds: 60, jlpt_level_estimate: null },
+        { id: "v3", duration_seconds: 60, jlpt_level_estimate: null },
+      ], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "v2", last_watched_position: 30, completed_at: "2026-09-29T00:00:00Z", last_watched_at: "2026-09-29T00:00:00Z" }], error: null }),
+      shadowing_sessions: () => ({ data: [{ video_id: "v1", created_at: "2026-09-29T01:00:00Z" }], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({
+      collection: { slug: "recent" },
+      completed: 0,
+      selectedByRecentActivity: true,
+    });
+  });
+
+  it("chooses the most recently watched unfinished lesson, then editorial order for legacy null timestamps", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "path", slug: "path", title: "Path", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),
+      lesson_collections: () => ({ data: [{ collection_id: "path", lesson_id: "v1", position: 0 }, { collection_id: "path", lesson_id: "v2", position: 1 }], error: null }),
+      videos: () => ({ data: [{ id: "v1", duration_seconds: 100, jlpt_level_estimate: null }, { id: "v2", duration_seconds: 100, jlpt_level_estimate: null }], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "v1", last_watched_position: 90, completed_at: null, last_watched_at: null }, { video_id: "v2", last_watched_position: 10, completed_at: null, last_watched_at: "2026-09-29T10:00:00Z" }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({ resume: { lesson: { id: "v2" }, index: 2 } });
   });
 });

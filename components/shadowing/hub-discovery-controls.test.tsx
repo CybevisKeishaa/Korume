@@ -100,4 +100,16 @@ describe("HubDiscoveryControls", () => {
       "text-primary-foreground",
     );
   });
+
+  it("places optional content between the header row and discovery results", () => {
+    render(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={[lesson]} action="/en/pronunciation" basePath="/pronunciation" heading={<h1>Pronunciation</h1>} beforeResults={<p>Continue here</p>} labels={labels} />);
+    expect(screen.getByText("Continue here").compareDocumentPosition(screen.getByRole("heading", { name: labels.results })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The gap from the header row is owned by the controls, not left to each page.
+    expect(screen.getByText("Continue here").parentElement).toHaveClass("mt-xl");
+  });
+
+  it("keeps the between-content in the heading-less layout too", () => {
+    render(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={[lesson]} action="/en/shadowing" basePath="/shadowing" beforeResults={<p>Continue here</p>} labels={labels} />);
+    expect(screen.getByText("Continue here").compareDocumentPosition(screen.getByRole("heading", { name: labels.results })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

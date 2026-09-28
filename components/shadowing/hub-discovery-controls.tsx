@@ -29,6 +29,7 @@ export interface HubDiscoveryControlsProps {
   action: string;
   basePath: string;
   heading?: React.ReactNode;
+  beforeResults?: React.ReactNode;
   filterToggleLabel?: string;
   /** Null means the learner has not searched or filtered yet. */
   results: HubLesson[] | null;
@@ -47,6 +48,7 @@ export function HubDiscoveryControls({
   action,
   basePath,
   heading,
+  beforeResults,
   filterToggleLabel,
   labels,
 }: HubDiscoveryControlsProps) {
@@ -141,6 +143,10 @@ export function HubDiscoveryControls({
     </div>
   ) : null;
 
+  // Content a page places between the controls and the results (a featured
+  // hero, say). The spacing is owned here so both layouts get the same gap.
+  const between = beforeResults ? <div className="mt-xl space-y-md">{beforeResults}</div> : null;
+
   return (
     <section aria-label={labels.searchLabel}>
       {heading ? (
@@ -166,12 +172,14 @@ export function HubDiscoveryControls({
               </Popover>
             </div>
           </div>
+          {between}
           {resultsContent}
         </>
       ) : (
         <>
           {searchForm}
           {filterLinks}
+          {between}
           {resultsContent}
         </>
       )}

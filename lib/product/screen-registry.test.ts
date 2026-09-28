@@ -222,7 +222,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(84);
+    expect(stamped).toHaveLength(85);
     const stampedByDate = new Map<string, number>();
     for (const entry of stamped) {
       const date = entry.figmaCheckedAt as string;
@@ -243,6 +243,7 @@ describe("screen registry invariants", () => {
       "2026-08-23": 8,
       "2026-08-26": 1,
       "2026-09-22": 2,
+      "2026-09-28": 1,
     });
   });
 });

@@ -56,7 +56,7 @@ export type QueryCall =
   | { op: "is"; column: string; value: unknown }
   | { op: "not"; column: string; operator: string; value: unknown }
   | { op: "ilike"; column: string; pattern: string }
-  | { op: "order"; column: string; ascending: boolean }
+  | { op: "order"; column: string; ascending: boolean; nullsFirst?: boolean }
   | { op: "limit"; count: number }
   | { op: "range"; from: number; to: number }
   | { op: "single" }
@@ -191,8 +191,13 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
         calls.push({ op: "ilike", column, pattern });
         return builder;
       },
-      order(column: string, options?: { ascending?: boolean }) {
-        calls.push({ op: "order", column, ascending: options?.ascending ?? true });
+      order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }) {
+        calls.push({
+          op: "order",
+          column,
+          ascending: options?.ascending ?? true,
+          ...(options?.nullsFirst === undefined ? {} : { nullsFirst: options.nullsFirst }),
+        });
         return builder;
       },
       limit(count: number) {

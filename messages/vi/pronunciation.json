@@ -5,6 +5,38 @@
     "subtitle": "Làm chủ phát âm tiếng Nhật qua các khóa luyện nói được thiết kế kỹ lưỡng và những tình huống thực tế.",
     "searchLabel": "Tìm khóa học phát âm",
     "searchPlaceholder": "Tìm khóa học, tình huống, JLPT, tiếng Nhật công sở...",
-    "filterToggleLabel": "Lọc khóa học"
+    "filterToggleLabel": "Lọc khóa học",
+    "featuredCourse": "KHÓA HỌC NỔI BẬT",
+    "continueWhereLeftOff": "TIẾP TỤC NƠI BẠN ĐÃ DỪNG",
+    "startCourse": "Bắt đầu khóa học",
+    "continueLearning": "Tiếp tục học",
+    "previewCourse": "Xem trước khóa học",
+    "lessons": "{count, plural, other {{count} bài học}}",
+    "lessonsLabel": "Bài học",
+    "percent": "{percent}%",
+    "complete": "Hoàn thành {percent}%",
+    "courseProgress": "{completed} / {total} bài học",
+    "durationHours": "{hours, plural, other {{hoursText} giờ}}",
+    "durationMinutes": "{minutes} phút",
+    "lessonNumber": "Bài {number}",
+    "level": "Trình độ",
+    "levels": {
+      "beginner": "Sơ cấp",
+      "intermediate": "Trung cấp",
+      "advanced": "Cao cấp"
+    },
+    "levelRange": "{from}–{to}",
+    "duration": "Thời lượng",
+    "startLesson": "Bắt đầu",
+    "jlpt": "JLPT",
+    "course": "Khóa học",
+    "goal": "Mục tiêu",
+    "collection": "Bộ sưu tập",
+    "backToPronunciation": "Quay lại Phòng luyện phát âm",
+    "emptyCourse": {
+      "title": "Chưa có khóa học nổi bật",
+      "body": "Khóa học nổi bật sẽ xuất hiện ở đây khi một lộ trình học có bài học."
+    },
+    "emptyCollection": "Bộ sưu tập này chưa có bài học nào khả dụng."
   }
 }

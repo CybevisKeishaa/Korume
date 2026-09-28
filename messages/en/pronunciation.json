@@ -5,6 +5,38 @@
     "subtitle": "Master Japanese pronunciation through carefully designed speaking courses and real-world scenarios.",
     "searchLabel": "Search pronunciation courses",
     "searchPlaceholder": "Search courses, situations, JLPT, business...",
-    "filterToggleLabel": "Filter courses"
+    "filterToggleLabel": "Filter courses",
+    "featuredCourse": "FEATURED COURSE",
+    "continueWhereLeftOff": "CONTINUE WHERE YOU LEFT OFF",
+    "startCourse": "Start Course",
+    "continueLearning": "Continue Learning",
+    "previewCourse": "Preview Course",
+    "lessons": "{count, plural, one {{count} lesson} other {{count} lessons}}",
+    "lessonsLabel": "Lessons",
+    "percent": "{percent}%",
+    "complete": "{percent}% complete",
+    "courseProgress": "{completed} / {total} lessons",
+    "durationHours": "{hours, plural, one {{hoursText} hour} other {{hoursText} hours}}",
+    "durationMinutes": "{minutes} min",
+    "lessonNumber": "Lesson {number}",
+    "level": "Level",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "levelRange": "{from}–{to}",
+    "duration": "Duration",
+    "startLesson": "Start",
+    "jlpt": "JLPT",
+    "course": "Course",
+    "goal": "Goal",
+    "collection": "Collection",
+    "backToPronunciation": "Back to Pronunciation Studio",
+    "emptyCourse": {
+      "title": "No course to feature yet",
+      "body": "A featured course appears here once a learning path has lessons."
+    },
+    "emptyCollection": "This collection has no available lessons yet."
   }
 }

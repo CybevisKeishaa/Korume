@@ -85,7 +85,7 @@ interface HubDiscoveryFilterTag extends HubDiscoveryFilter {
   id: string;
 }
 
-function toHubLesson(video: VideoRow): HubLesson {
+export function toHubLesson(video: VideoRow): HubLesson {
   return {
     id: video.id,
     youtubeVideoId: video.youtube_video_id,

@@ -6,7 +6,8 @@ async function registerLearner(page: import("@playwright/test").Page): Promise<v
   await page.goto("/en/register");
   await registerViaUi(page, {
     name: "E2E Pronunciation Tester",
-    email: `e2e_pronunciation_${Date.now()}@example.com`,
+    // A UUID, not Date.now(): parallel workers collided on the same millisecond (run state, 2026-09-28).
+    email: `e2e_pronunciation_${crypto.randomUUID()}@example.com`,
     password: "password123",
   });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });
@@ -68,5 +69,32 @@ test("at 1024px, pronunciation renders without horizontal overflow", async ({ pa
   await registerLearner(page);
   await page.goto("/en/pronunciation");
   await expect(page.getByRole("heading", { name: enPronunciation.hub.title })).toBeVisible();
+  await assertNoHorizontalOverflow(page);
+});
+
+test("at 1280px, the featured course region is visible and its preview is responsive", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 529 });
+  await registerLearner(page);
+  await page.goto("/en/pronunciation");
+  const hero = page.getByRole("region", { name: enPronunciation.hub.featuredCourse });
+  await expect(hero).toBeVisible();
+  const heroBox = await hero.boundingBox();
+  expect(heroBox).not.toBeNull();
+  expect(heroBox?.width).toBeGreaterThan(0);
+  expect(heroBox?.height).toBeGreaterThan(0);
+  // The hero sits BELOW the search row with a real gap, not flush against it.
+  const searchBox = await page.getByRole("search", { name: enPronunciation.hub.searchLabel }).boundingBox();
+  expect(searchBox).not.toBeNull();
+  expect((heroBox?.y ?? 0) - ((searchBox?.y ?? 0) + (searchBox?.height ?? 0))).toBeGreaterThanOrEqual(16);
+  // The seed puts a lesson in `everyday-conversation`, so a course hero MUST render:
+  // no `if (count)` escape hatch that would let an empty page pass (L-004).
+  const preview = hero.getByRole("link", { name: new RegExp(`^${enPronunciation.hub.previewCourse}:`) });
+  await expect(preview).toBeVisible();
+  await preview.click();
+  await expect(page).toHaveURL(/\/en\/pronunciation\/collections\/everyday-conversation$/);
+  const heading = page.getByRole("heading", { level: 1 });
+  await expect(heading).toBeVisible();
+  expect((await heading.boundingBox())?.height ?? 0).toBeGreaterThan(0);
+  await page.setViewportSize({ width: 1024, height: 900 });
   await assertNoHorizontalOverflow(page);
 });

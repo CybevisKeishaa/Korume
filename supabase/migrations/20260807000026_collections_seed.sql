@@ -23,3 +23,15 @@ insert into collections (slug, title, description, display_order) values
    'Stay present through nuance, preferences and the unexpected.', 4),
   ('native-fluency', 'Native Fluency',
    'Step into full-speed scenes, podcasts and the details underneath them.', 5);
+
+-- Learning paths and practice goals from the Pronunciation Studio frame
+-- (Figma 37:5439, 37:5668). Membership is editorial content tied to real video
+-- ids, so none is seeded here.
+insert into collections (slug, title, description, display_order, kind, skill_focus) values
+  ('everyday-conversation', 'Everyday Conversation', 'Natural phrases for daily life.', 6, 'path', null),
+  ('business-japanese', 'Business Japanese', 'Meetings, emails and confident introductions.', 7, 'path', null),
+  ('it-engineer-communication', 'IT Engineer Communication', 'Stand-ups, specs and product discussion.', 8, 'path', null),
+  ('travel-in-japan', 'Travel in Japan', 'Navigate every journey with ease.', 9, 'path', null),
+  ('improve-pitch-accent', 'Improve Pitch Accent', 'Train your ear to hear Japanese pitch patterns.', 10, 'goal', 'pitch'),
+  ('improve-fluency', 'Improve Fluency', 'Build calm, connected speaking habits.', 11, 'goal', 'rhythm'),
+  ('native-rhythm-training', 'Native Rhythm Training', 'Find a natural pace through real dialogues.', 12, 'goal', 'rhythm');
