@@ -130,6 +130,13 @@ stands and nothing needs measuring until Task 1 lands. `verify:protocol` exits
 and firing on `master` too — read `run-state/e2e-failure-repair.md` before
 calling one a regression.
 
+**Task 2 e2e, 2026-09-28** (local DB migrated to `20260925000034` first):
+`pronunciation.spec.ts` 3/3 green. `shadowing-explore.spec.ts:35` red 2 of 3
+runs at REGISTRATION — **not a flake**: auth logs `users_email_partial_key`
+duplicate; `e2e_…_${Date.now()}` collides across parallel workers (accounts
+created 1–15 ms apart). Specs without `workerIndex`/`testId` in the email all
+share it — a separate test-infra ticket, not this branch's code.
+
 ⚠️ **`cmd | tail` hides the exit code.** This file was committed once over a
 RED `verify:protocol`, because the check was piped and `tail` exits 0.
 
@@ -144,7 +151,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -163,14 +170,11 @@ files only — it wrote nothing; Task 3 restarts from scratch.
    - Correction: sort by `position` value, not membership index; stable ties keep video query order.
    - Correction: apply `slice` after sorting; never limit the videos query.
    - Correction: assert the `position` addition is in one migration, not the whole collections subsystem.
-2. **Task 2 — committed, e2e NOT yet run.** `getHubDiscovery` is shared by
-   both hubs; `HubDiscoveryControls` gained `basePath` + `heading` (filters in
-   the shared `Popover`, sliders omitted pending the owner). Unit gate green:
-   vitest 370 / 3444, tsc 0, lint 0. ⚠️ `tests/e2e/pronunciation.spec.ts`
-   failed at REGISTRATION ("fetch failed"): local Supabase was down (Docker
-   off). Run it before Task 3 is accepted. Its narrow case is 1024, not 320 —
-   below 1024 every route is the app-store handoff.
-3. **Task 3 — featured hero**, from the `featured` collections row.
+2. **Task 2 — DONE**, e2e run 2026-09-28 (see Verification). `getHubDiscovery`
+   is shared by both hubs; `HubDiscoveryControls` gained `basePath` + `heading`.
+   Its narrow case is 1024, not 320 — below 1024 every route is the handoff.
+3. **Task 3 — featured course hero** — handed to Codex 2026-09-28; brief
+   `.superpowers/sdd/pronunciation-library-port/task-3-brief.md`.
 4. **Task 3b — Popular Learning Paths.** Its own step, not a shelf: the first
    consumer of Task 1's ordering + rollup, so a different shape from a plain
    collection shelf. It lands the `collections.kind` / `skill_focus`
