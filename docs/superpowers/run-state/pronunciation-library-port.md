@@ -95,14 +95,27 @@ needs a variant it gets a prop, not a fork.
    fraction of content words the caller knows through SRS mastery into
    `ideal` / `too-easy` / `too-hard` bands. Task 5 ports the card against it.
 
-▶ **One data contract is still genuinely open — "Practice by Goal"** (Improve
-Pitch Accent / Improve Fluency / Native Rhythm Training). Title, description,
-duration and a `Start` on each reads as three **curated practice programs**,
-not a filter. ⚠️ Do NOT mint an entity reflexively: test first whether an
-ordered collection plus a classification / semantic role expresses it, now that
-`collections` is becoming ordered content. `learning_paths` AND
-`practice_goals` AND `collections` all holding lessons is the outcome to avoid.
-Only if that test fails does this become an owner decision.
+⚠️ **Owner rulings, 2026-09-28** — and a standing one: **build the complete,
+well-made version; do not trim toward minimal.** An omitted control or a
+filter standing in for a curated program is not an acceptable outcome.
+
+7. **Practice by Goal = ordered collections with a role, no new table.** Add
+   `collections.kind` (`shelf` | `path` | `goal`, default `shelf`) and
+   `collections.skill_focus` (goal only; maps to a persisted score:
+   `pitch` → `pitch_score`, `rhythm`/fluency → `rhythm_score`, `accuracy` →
+   `pronunciation_score`). Learning Paths (3b) use `kind = 'path'` too. Seed
+   the three frame goals. Duration is DERIVED from member video durations,
+   never stored; `Start` opens the first uncompleted lesson in `position`
+   order; the card shows the goal's progress rollup. A **"Recommended for
+   you"** badge marks the goal whose `skill_focus` is the learner's weakest
+   metric this week — no badge when there is no history.
+8. **Sliders = "Sort & display" panel** (the funnel keeps *what* to filter).
+   Sort: Recommended (the i+1 engine) / Newest / Shortest / In progress;
+   duration band (<10 / 10–30 / >30 min); hide completed. State lives in the
+   URL (shareable, Back works) **and** persists to the user's profile so the
+   next visit restores it — a migration + validated PATCH, URL wins when set.
+9. **Search placeholder** becomes honest copy — "Search by lesson title"
+   (EN/VI) — rather than widening search.
 
 ## Verification
 
@@ -131,16 +144,13 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
-**"Practice by Goal"** (the open data contract in Contracts — one home, not
-restated here). It blocks Task 4b only; Tasks 1–3 and the existing-data
-shelves are clear.
-
-- Sliders button in the header — behaviour undefined, omitted pending owner.
-- Search placeholder promises JLPT/business search; search matches titles only.
+None. All three open decisions were ruled on 2026-09-28 (rulings 7–9).
+⚠️ The Task 3 dispatch of 2026-09-27 died on Codex's usage limit after reading
+files only — it wrote nothing; Task 3 restarts from scratch.
 
 ## Next actions
 
@@ -163,10 +173,13 @@ shelves are clear.
 3. **Task 3 — featured hero**, from the `featured` collections row.
 4. **Task 3b — Popular Learning Paths.** Its own step, not a shelf: the first
    consumer of Task 1's ordering + rollup, so a different shape from a plain
-   collection shelf.
+   collection shelf. It lands the `collections.kind` / `skill_focus`
+   migration (ruling 7) and marks the path rows `kind = 'path'`.
 5. **Task 4a — shelves whose data exists today:** Practice by Situation
    (`lesson_situations`) + Shadowing Collections, over `hub-shelves`.
-6. **Task 4b — Practice by Goal.** ONLY once its contract is settled.
+6. **Task 4b — Practice by Goal** per ruling 7 (migration + seed + reads +
+   shelf + weakest-metric badge), on the `kind` column 3b landed.
+6b. **Task 2b — Sort & display panel + placeholder copy**, per rulings 8–9.
 7. **Task 4c — JLPT Speaking**, the aggregation view above. No migration.
 8. **Task 5 — right rail:** Today's Speaking + Weekly Improvement (Accuracy,
    Pitch Accent, Rhythm) + AI Sensei Recommendation + Recently Practiced. Every
