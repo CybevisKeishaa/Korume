@@ -21,9 +21,11 @@ function translation(namespace: keyof typeof catalogs) {
 const data = vi.hoisted(() => ({
   getHubDiscovery: vi.fn(),
   getLearningPaths: vi.fn(),
+  getPracticeGoals: vi.fn().mockResolvedValue([]),
   // Both shelves default to empty; a test that cares supplies its own rows.
   getShadowingCollections: vi.fn().mockResolvedValue([]),
   listPracticeSituations: vi.fn().mockResolvedValue([]),
+  getWeeklyPronunciationMetrics: vi.fn().mockResolvedValue({ means: { accuracy: null, pitch: null, rhythm: null }, weakest: null }),
 }));
 
 vi.mock("@/lib/data/shadowing-hub", async (importOriginal) => ({
@@ -31,8 +33,14 @@ vi.mock("@/lib/data/shadowing-hub", async (importOriginal) => ({
   getHubDiscovery: data.getHubDiscovery,
 }));
 
-vi.mock("@/lib/data/collections", () => ({ getLearningPaths: data.getLearningPaths, getShadowingCollections: data.getShadowingCollections }));
+vi.mock("@/lib/data/collections", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/data/collections")>()),
+  getLearningPaths: data.getLearningPaths,
+  getPracticeGoals: data.getPracticeGoals,
+  getShadowingCollections: data.getShadowingCollections,
+}));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listPracticeSituations: data.listPracticeSituations }));
+vi.mock("@/lib/data/pronunciation-metrics", () => ({ getWeeklyPronunciationMetrics: data.getWeeklyPronunciationMetrics }));
 
 const noDiscovery = { filters: [{ kind: "situation", slug: "restaurant" }], discovery: null };
 
@@ -164,12 +172,53 @@ describe("PronunciationPage", () => {
     expect(first).toHaveTextContent("38 sentences");
   });
 
+  it("places goals between situations and collections, with one weakest-metric recommendation", async () => {
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.listPracticeSituations.mockResolvedValueOnce([{ slug: "cafe", icon: "â˜•" }]);
+    const summary = (id: string, skillFocus: "pitch" | "rhythm", started = false) => ({
+      collection: { id, slug: id, title: `Goal ${id}`, description: `Description ${id}`, coverImageUrl: null, displayOrder: 1, kind: "goal", skillFocus, icon: "â—Œ" },
+      total: 2, completed: started ? 1 : 0, next: video(`${id}-lesson`, "First"), started, lessonCount: 2, durationMinutes: 30,
+    });
+    data.getPracticeGoals.mockResolvedValueOnce([summary("pitch", "pitch"), summary("rhythm-first", "rhythm", true), summary("rhythm-second", "rhythm")]);
+    data.getWeeklyPronunciationMetrics.mockResolvedValueOnce({ means: { accuracy: 80, pitch: 70, rhythm: 50 }, weakest: "rhythm" });
+    data.getShadowingCollections.mockResolvedValueOnce([]);
+    render(await PronunciationPage({}));
+
+    const situations = screen.getByRole("region", { name: pronunciationCopy.hub.situations.title });
+    const goals = screen.getByRole("region", { name: pronunciationCopy.hub.goals.title });
+    const collections = screen.getByRole("region", { name: pronunciationCopy.hub.shadowingCollections.title });
+    expect(situations.compareDocumentPosition(goals) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(goals.compareDocumentPosition(collections) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(goals).getByText(pronunciationCopy.hub.goals.recommended)).toBeInTheDocument();
+    expect(within(goals).getAllByText(pronunciationCopy.hub.goals.recommended)).toHaveLength(1);
+    expect(within(goals).queryByRole("button", { name: /Save Goal/ })).not.toBeInTheDocument();
+    expect(goals.querySelector("ul")).toHaveClass("xl:grid-cols-3");
+    expect(within(goals).getByRole("link", { name: `Continue: Goal rhythm-first` })).toHaveAttribute("href", "/shadowing/rhythm-first-lesson");
+    expect(within(goals).getByRole("link", { name: `Start: Goal pitch` })).toHaveAttribute("href", "/shadowing/pitch-lesson");
+    expect(goals).toHaveTextContent("2 lessons · 30m");
+  });
+
+  it("does not recommend a goal when the learner has no scored history", async () => {
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getPracticeGoals.mockResolvedValueOnce([{
+      collection: { id: "pitch", slug: "pitch", title: "Goal pitch", description: null, coverImageUrl: null, displayOrder: 1, kind: "goal", skillFocus: "pitch", icon: "〽" },
+      total: 1, completed: 0, next: video("pitch-lesson", "First"), started: false, lessonCount: 1, durationMinutes: 10,
+    }]);
+    data.getWeeklyPronunciationMetrics.mockResolvedValueOnce({ means: { accuracy: null, pitch: null, rhythm: null }, weakest: null });
+    render(await PronunciationPage({}));
+
+    expect(within(screen.getByRole("region", { name: pronunciationCopy.hub.goals.title })).queryByText(pronunciationCopy.hub.goals.recommended)).not.toBeInTheDocument();
+  });
+
   it("gives each new shelf its own empty copy", async () => {
     data.getHubDiscovery.mockResolvedValue(noDiscovery);
     data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
     render(await PronunciationPage({}));
 
     expect(screen.getByRole("heading", { name: pronunciationCopy.hub.situations.emptyTitle })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: pronunciationCopy.hub.goals.emptyTitle })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: pronunciationCopy.hub.shadowingCollections.emptyTitle })).toBeInTheDocument();
   });
 });

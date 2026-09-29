@@ -3,7 +3,8 @@ import type { Locale } from "@/lib/i18n";
 import { getPathname } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { getHubDiscovery, toHubLesson } from "@/lib/data/shadowing-hub";
-import { getLearningPaths, getShadowingCollections } from "@/lib/data/collections";
+import { getLearningPaths, getPracticeGoals, getShadowingCollections, recommendedPracticeGoalId } from "@/lib/data/collections";
+import { getWeeklyPronunciationMetrics } from "@/lib/data/pronunciation-metrics";
 import { listPracticeSituations } from "@/lib/data/lesson-taxonomy";
 import { formatCourseDuration, formatHours, formatLevelBand } from "@/lib/format-course-duration";
 import { TwoColumnShell } from "@/components/layout/two-column-shell";
@@ -13,7 +14,8 @@ import { HubContinueStrip } from "@/components/shadowing/hub-continue-strip";
 import { HubPathShelf } from "@/components/shadowing/hub-path-shelf";
 import { HubShelf } from "@/components/shadowing/hub-shelf";
 import { HubCollectionCard, HubSituationTile } from "@/components/shadowing/hub-practice-cards";
-import { pathCardLabels, pathCards } from "./path-card-copy";
+import { HubPathCard } from "@/components/shadowing/hub-path-card";
+import { pathCardLabels, pathCards, goalCards } from "./path-card-copy";
 import { shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
 import enShadowing from "@/messages/en/shadowing.json";
 
@@ -38,7 +40,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     filter: typeof searchParams?.filter === "string" ? searchParams.filter : undefined,
   });
   const hubQuery = query.success ? query.data : {};
-  const [t, tCommon, tHub, hub, learning, locale, situations, shadowingCollections] = await Promise.all([
+  const [t, tCommon, tHub, hub, learning, locale, situations, goals, weeklyMetrics, shadowingCollections] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
     getTranslations("shadowing"),
@@ -46,9 +48,12 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     getLearningPaths(),
     getLocale(),
     listPracticeSituations(),
+    getPracticeGoals(),
+    getWeeklyPronunciationMetrics(),
     getShadowingCollections(),
   ]);
   const course = learning.featured;
+  const recommendedGoalId = recommendedPracticeGoalId(goals, weeklyMetrics.weakest);
   const duration = (minutes: number) => formatCourseDuration(minutes, {
     minutes: (value) => t("hub.durationMinutes", { minutes: value }),
     hours: (value) => t("hub.durationHours", { hours: value, hoursText: formatHours(value, locale) }),
@@ -57,6 +62,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     band: (value) => t(`hub.levels.${value}`),
     range: (from, to) => t("hub.levelRange", { from, to }),
   });
+  const cards = pathCardLabels(t);
 
   return (
     <TwoColumnShell railLabel={t("hub.searchLabel")} className="py-2xl">
@@ -142,7 +148,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           title={t("hub.paths.title")}
           // The frame shelves four; "View all" holds the rest.
           paths={pathCards(learning.paths.slice(0, 4), t)}
-          labels={pathCardLabels(t)}
+          labels={cards}
           viewAll={{ href: "/pronunciation/paths", label: t("hub.paths.viewAll") }}
           empty={{ title: t("hub.paths.emptyTitle"), body: t("hub.paths.emptyBody") }}
         />
@@ -163,6 +169,13 @@ export default async function PronunciationPage({ searchParams }: { searchParams
               />
             );
           })}
+        </HubShelf>
+      </div>
+      <div className="mt-3xl">
+        <HubShelf columns={3} title={t("hub.goals.title")} empty={{ title: t("hub.goals.emptyTitle"), body: t("hub.goals.emptyBody") }}>
+          {goalCards(goals, t, recommendedGoalId).map((goal) => (
+            <HubPathCard key={goal.id} path={goal} labels={cards} />
+          ))}
         </HubShelf>
       </div>
       <div className="mt-3xl">

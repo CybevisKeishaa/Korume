@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
+import type { PronunciationMetric } from "@/lib/data/pronunciation-metrics";
 
 /**
  * A curated set that CONTAINS lessons. Not an attribute of a lesson, and not
@@ -118,7 +119,7 @@ export interface FeaturedCourse {
 }
 
 /** One card on the Popular Learning Paths shelf. */
-export interface PathSummary {
+export interface CollectionProgressSummary {
   collection: Collection;
   total: number;
   completed: number;
@@ -126,10 +127,16 @@ export interface PathSummary {
   next: VideoRow | null;
   /** True once any member lesson has been watched or completed. */
   started: boolean;
-  saved: boolean;
   lessonCount: number;
   durationMinutes: number | null;
 }
+
+export interface PathSummary extends CollectionProgressSummary {
+  saved: boolean;
+}
+
+/** A goal shares the paths' ordered-collection progress derivation, without path-only save state. */
+export type PracticeGoalSummary = CollectionProgressSummary;
 
 export interface LearningPaths {
   featured: FeaturedCourse | null;
@@ -144,20 +151,20 @@ interface ProgressRow {
   last_watched_at: string | null;
 }
 
-/**
- * Every `kind = 'path'` collection the viewer can use, and the one the studio
- * features, read together so the hero and the shelf cost one set of queries.
- *
- * Featured choice, in order: the path holding the learner's latest session
- * (unless finished), a saved unfinished path, a path in progress, the first.
- */
-export async function getLearningPaths(): Promise<LearningPaths> {
+interface CollectionView extends CollectionProgressSummary {
+  memberRows: { collection_id: string; lesson_id: string; position: number }[];
+  lessons: VideoRow[];
+  progressById: Map<string, ProgressRow>;
+}
+
+/** The shared per-collection progress view for paths and goals. */
+async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView[]> {
   const supabase = createClient();
   const { data: candidateRows, error: candidateError } = await supabase
-    .from("collections").select(COLLECTION_COLUMNS).eq("kind", "path").order("display_order", { ascending: true });
+    .from("collections").select(COLLECTION_COLUMNS).eq("kind", kind).order("display_order", { ascending: true });
   if (candidateError) throw candidateError;
   const candidates = ((candidateRows as CollectionRow[] | null) ?? []).map(toCollection);
-  if (!candidates.length) return { featured: null, paths: [] };
+  if (!candidates.length) return [];
 
   const { data: membershipRows, error: membershipError } = await supabase
     .from("lesson_collections").select("collection_id, lesson_id, position")
@@ -166,30 +173,22 @@ export async function getLearningPaths(): Promise<LearningPaths> {
   if (membershipError) throw membershipError;
   const memberships = (membershipRows as { collection_id: string; lesson_id: string; position: number }[] | null) ?? [];
   const lessonIds = [...new Set(memberships.map((membership) => membership.lesson_id))];
-  if (!lessonIds.length) return { featured: null, paths: [] };
+  if (!lessonIds.length) return [];
 
   const [
     { data: videos, error: videoError },
     { data: progressRows, error: progressError },
-    { data: sessions, error: sessionError },
-    { data: savedRows, error: savedError },
   ] = await Promise.all([
     supabase.from("videos").select(VIDEO_COLUMNS).in("id", lessonIds).order("created_at", { ascending: false }).order("id", { ascending: true }),
     supabase.from("user_video_progress").select("video_id, last_watched_position, completed_at, last_watched_at").in("video_id", lessonIds),
-    supabase.from("shadowing_sessions").select("video_id, created_at").order("created_at", { ascending: false }).limit(1),
-    // RLS scopes both user tables to the caller.
-    supabase.from("user_saved_collections").select("collection_id"),
   ]);
   if (videoError) throw videoError;
   if (progressError) throw progressError;
-  if (sessionError) throw sessionError;
-  if (savedError) throw savedError;
   const orderedVideos = (videos as VideoRow[] | null) ?? [];
   const progressById = new Map(((progressRows as ProgressRow[] | null) ?? []).map((row) => [row.video_id, row]));
-  const savedIds = new Set(((savedRows as { collection_id: string }[] | null) ?? []).map((row) => row.collection_id));
   const isCompleted = (lessonId: string) => Boolean(progressById.get(lessonId)?.completed_at);
 
-  const views = candidates.map((collection) => {
+  return candidates.map((collection) => {
     const memberRows = memberships.filter((membership) => membership.collection_id === collection.id);
     const lessons = sortByPosition(
       orderedVideos.filter((video) => memberRows.some((membership) => membership.lesson_id === video.id)),
@@ -201,8 +200,34 @@ export async function getLearningPaths(): Promise<LearningPaths> {
       const progress = progressById.get(membership.lesson_id);
       return Boolean(progress && (progress.completed_at || progress.last_watched_position > 0));
     });
-    return { collection, memberRows, lessons, total: memberRows.length, completed, next, started, saved: savedIds.has(collection.id) };
+    const { lessonCount, durationMinutes } = collectionMeta(lessons);
+    return { collection, memberRows, lessons, progressById, total: memberRows.length, completed, next, started, lessonCount, durationMinutes };
   }).filter((view) => view.lessons.length > 0);
+}
+
+/**
+ * Every `kind = 'path'` collection the viewer can use, and the one the studio
+ * features, read together so the hero and the shelf cost one set of queries.
+ *
+ * Featured choice, in order: the path holding the learner's latest session
+ * (unless finished), a saved unfinished path, a path in progress, the first.
+ */
+export async function getLearningPaths(): Promise<LearningPaths> {
+  const views = await getCollectionViews("path");
+  if (!views.length) return { featured: null, paths: [] };
+
+  const supabase = createClient();
+  const [
+    { data: sessions, error: sessionError },
+    { data: savedRows, error: savedError },
+  ] = await Promise.all([
+    supabase.from("shadowing_sessions").select("video_id, created_at").order("created_at", { ascending: false }).limit(1),
+    // RLS scopes both user tables to the caller.
+    supabase.from("user_saved_collections").select("collection_id"),
+  ]);
+  if (sessionError) throw sessionError;
+  if (savedError) throw savedError;
+  const savedIds = new Set(((savedRows as { collection_id: string }[] | null) ?? []).map((row) => row.collection_id));
 
   const paths: PathSummary[] = views.map((view) => ({
     collection: view.collection,
@@ -210,11 +235,10 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     completed: view.completed,
     next: view.next,
     started: view.started,
-    saved: view.saved,
-    lessonCount: view.lessons.length,
-    durationMinutes: collectionMeta(view.lessons).durationMinutes,
+    lessonCount: view.lessonCount,
+    durationMinutes: view.durationMinutes,
+    saved: savedIds.has(view.collection.id),
   }));
-  if (!views.length) return { featured: null, paths };
 
   const unfinished = (view: (typeof views)[number]) => view.completed < view.total;
   const latestVideoId = (sessions as { video_id: string; created_at: string }[] | null)?.[0]?.video_id;
@@ -222,13 +246,13 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     ? views.find((view) => view.memberRows.some((membership) => membership.lesson_id === latestVideoId) && unfinished(view))
     : undefined;
   const selected = activitySelected
-    ?? views.find((view) => view.saved && unfinished(view))
+    ?? views.find((view) => savedIds.has(view.collection.id) && unfinished(view))
     ?? views.find((view) => view.completed > 0 && unfinished(view))
     ?? views[0];
   if (!selected) return { featured: null, paths };
 
   const resumeCandidates = selected.lessons.flatMap((lesson, index) => {
-    const progress = progressById.get(lesson.id);
+    const progress = selected.progressById.get(lesson.id);
     return progress && progress.last_watched_position > 0 && progress.completed_at === null ? [{ lesson, index: index + 1, progress }] : [];
   });
   // Most recently watched first; rows with no known time (null) last, in editorial order.
@@ -262,6 +286,19 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     },
     paths,
   };
+}
+
+/** Every visible goal, in authored display order, with the same progress derivation as paths. */
+export async function getPracticeGoals(): Promise<PracticeGoalSummary[]> {
+  const views = await getCollectionViews("goal");
+  return views.map(({ collection, total, completed, next, started, lessonCount, durationMinutes }) => (
+    { collection, total, completed, next, started, lessonCount, durationMinutes }
+  ));
+}
+
+/** Exactly one recommended badge: the first authored goal training the weakest measured metric. */
+export function recommendedPracticeGoalId(goals: PracticeGoalSummary[], weakest: PronunciationMetric | null): string | null {
+  return weakest === null ? null : goals.find((goal) => goal.collection.skillFocus === weakest)?.collection.id ?? null;
 }
 
 /**

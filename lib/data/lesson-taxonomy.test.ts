@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { createMockSupabase, eqValue, type TableResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
@@ -86,5 +87,9 @@ describe("lesson taxonomy", () => {
       { slug: "conversation", icon: "💬" },
       { slug: "cafe", icon: "☕" },
     ]);
+  });
+
+  it("keeps each existence-probe result with its situation instead of indexing with a non-null assertion", () => {
+    expect(readFileSync("lib/data/lesson-taxonomy.ts", "utf8")).not.toContain("probes[index]!");
   });
 });

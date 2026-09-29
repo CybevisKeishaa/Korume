@@ -137,10 +137,11 @@ stamped, no backfill) orders "Continue where you left off", nulls last.
 
 Measured in this worktree, never in the main checkout.
 
-**Task 3b gate, 2026-09-29** (after an independent review's 11 findings; #11,
-a `withFeatured` flag for `/paths`, skipped as a micro-cost): vitest 380 files /
-3513 tests, tsc 0, lint 0, protocol 0; fresh `db reset` clean; RLS proven live;
-e2e `pronunciation` + `shadowing-hub` + `-explore` 12/12 on the reset DB.
+**Task 3b gate, 2026-09-29:** vitest 380/3513, tsc/lint/protocol 0, fresh
+reset, RLS proven live, e2e 12/12.
+**Task 4a+4b gate, 2026-09-29** (Codex review + 2 Claude review passes): vitest
+383 / 3534, tsc 0, lint 0, protocol 0; fresh reset; both RPCs proven live as
+two users + anon denied; the same three e2e specs 13/13.
 
 ⚠️ **1–2 e2e reds per run are the parallel-load flake family** (`display-scale`
 / `settings` / `shadowing-explore`), a DIFFERENT set each run, green run alone,
@@ -167,7 +168,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -182,15 +183,14 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
 1–4. **Tasks 1, 2, 3, 3b — DONE** (`675494f`, `f6347c1`, `8999492`, `c86b523`).
    Rules they left: sort by `position` (stable), `slice` after sorting; the
    narrow case is 1024, not 320 (below it every route is the handoff).
-5. **Task 4a — CODE DONE 2026-09-29, UNREVIEWED, LIVE GATE OWED** (rulings 11–12).
-   `listPracticeSituations` (existence probe per situation, `lesson-taxonomy.ts`),
-   `lesson_situations.icon` (in `…025`), `getShadowingCollections` + the
-   `video_sentence_counts` RPC (SECURITY INVOKER, in `…001`: a PostgREST read of
-   lines stops at max_rows 1000), a shared `HubShelf`, `hub-practice-cards.tsx`.
-   **Owed before 4b:** the independent `code-reviewer`; a `db reset` (ASK the
-   owner) then prove the RPC under RLS live; e2e for both shelves.
-6. **Task 4b — Practice by Goal** per ruling 7 (migration + seed + reads +
-   shelf + weakest-metric badge), on the `kind` column Task 3 landed.
+5. **Task 4a — DONE 2026-09-29** (rulings 11–12): situation + shadowing
+   collection shelves, `video_sentence_counts`, shared `HubShelf`.
+6. **Task 4b — DONE 2026-09-29** (ruling 7): `getCollectionViews(kind)` backs
+   paths AND goals; goals render through `HubPathCard` (no save, optional
+   badge); `pronunciation_metric_means` (rolling 7 days, DB-side avg) picks
+   the weakest metric → one badge. Task 5 reuses that window read.
+   🚨 **Supabase grants `anon` EXECUTE on new functions by default**:
+   `revoke ... from public` alone leaves it; revoke `from public, anon`.
 6b. **Task 2b — Sort & display panel + placeholder copy**, per rulings 8–9.
 7. **Task 4c — JLPT Speaking**, the aggregation view above. No migration.
 8. **Task 5 — right rail:** Today's Speaking + Weekly Improvement (Accuracy,

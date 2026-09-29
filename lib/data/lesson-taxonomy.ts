@@ -98,11 +98,11 @@ export async function listPracticeSituations(): Promise<PracticeSituation[]> {
   const situations = (data as { id: string; slug: string; icon: string | null }[] | null) ?? [];
   // One existence probe per situation: correct at any catalog size, where a
   // read of every tagged lesson would stop at PostgREST's max_rows.
-  const probes = await Promise.all(situations.map((situation) => (
-    supabase.from("videos").select("id").eq("situation_id", situation.id).limit(1)
-  )));
-  return situations.flatMap(({ slug, icon }, index) => {
-    const probe = probes[index]!;
+  const probes = await Promise.all(situations.map(async (situation) => ({
+    situation,
+    probe: await supabase.from("videos").select("id").eq("situation_id", situation.id).limit(1),
+  })));
+  return probes.flatMap(({ situation: { slug, icon }, probe }) => {
     if (probe.error) throw probe.error;
     return (probe.data as unknown[] | null)?.length ? [{ slug, icon }] : [];
   });

@@ -66,6 +66,12 @@
       "emptyTitle": "No situations to practise yet",
       "emptyBody": "Situations appear here once they tag a lesson."
     },
+    "goals": {
+      "title": "Practice by Goal",
+      "recommended": "Recommended for you",
+      "emptyTitle": "No practice goals yet",
+      "emptyBody": "Goals appear here once they have lessons."
+    },
     "shadowingCollections": {
       "title": "Shadowing Collections",
       "viewAll": "View all",

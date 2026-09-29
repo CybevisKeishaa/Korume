@@ -56,6 +56,13 @@ describe("HubPathCard", () => {
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
+  it("renders a goal as the same card without a save toggle, with its optional badge", () => {
+    render(<HubPathCard path={{ ...path, saveable: false, badgeLabel: "Recommended for you" }} labels={labels} />);
+
+    expect(screen.queryByRole("button", { name: "Save Business Japanese" })).not.toBeInTheDocument();
+    expect(screen.getByText("Recommended for you")).toBeInTheDocument();
+  });
+
   it("keeps ONE name and lets aria-pressed carry the state; PUT saves, DELETE unsaves, then it refreshes", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);

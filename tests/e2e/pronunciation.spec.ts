@@ -116,7 +116,8 @@ test("at 1280px, a learning path saved from the shelf stays saved and is listed 
   expect((await saved).status()).toBe(200);
 
   // Client-side navigation, not a reload: a reload would hide a stale router cache.
-  await page.getByRole("link", { name: new RegExp(`^${paths.viewAll}`) }).click();
+  // Scoped: the Shadowing Collections shelf has its own "View all".
+  await page.getByRole("region", { name: paths.title }).getByRole("link", { name: new RegExp(`^${paths.viewAll}`) }).click();
   await expect(page).toHaveURL(/\/en\/pronunciation\/paths$/);
   const savedSection = page.getByRole("region", { name: paths.saved });
   await expect(savedSection.getByRole("heading", { level: 3, name: "Everyday Conversation" })).toBeVisible();
@@ -134,6 +135,41 @@ test("at 1280px, a learning path saved from the shelf stays saved and is listed 
   await expect(shelfToggle()).toHaveAttribute("aria-pressed", "false");
 
   await page.goto("/en/pronunciation/paths");
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await assertNoHorizontalOverflow(page);
+});
+
+test("at 1280px, the situation, goal and shadowing collection shelves render the seeded lesson and link where it practises", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 529 });
+  await registerLearner(page);
+  await page.goto("/en/pronunciation");
+  const { hub } = enPronunciation;
+
+  // The seed tags its lesson `restaurant`, so that tile MUST render (L-004: no escape hatch).
+  const situations = page.getByRole("region", { name: hub.situations.title });
+  const restaurant = situations.getByRole("link", { name: hub.situations.startLabel.replace("{situation}", "Restaurant") });
+  await restaurant.scrollIntoViewIfNeeded();
+  await expect(restaurant).toBeVisible();
+  expect((await restaurant.boundingBox())?.height ?? 0).toBeGreaterThan(0);
+
+  // The seed puts the lesson in `improve-pitch-accent`; a fresh learner has no sessions, so no badge.
+  const goals = page.getByRole("region", { name: hub.goals.title });
+  const start = goals.getByRole("link", { name: /Improve Pitch Accent/ });
+  await expect(start).toHaveAttribute("href", "/en/shadowing/e2e00000-0000-0000-0000-000000000002");
+  await expect(goals.getByText(hub.goals.recommended)).toHaveCount(0);
+  await expect(goals.getByRole("button")).toHaveCount(0);
+
+  // `beginner-foundation` holds the lesson, whose transcript has three lines.
+  const collections = page.getByRole("region", { name: hub.shadowingCollections.title });
+  const card = collections.getByRole("link", { name: /Beginner Foundation/ });
+  await expect(card).toContainText("3 sentences");
+  await expect(collections.getByRole("link", { name: new RegExp(`^${hub.shadowingCollections.viewAll}`) })).toHaveAttribute("href", "/en/shadowing/explore");
+  await card.click();
+  await expect(page).toHaveURL(/\/en\/pronunciation\/collections\/beginner-foundation$/);
+
+  await page.goto("/en/pronunciation");
+  await page.getByRole("region", { name: hub.situations.title }).getByRole("link", { name: hub.situations.startLabel.replace("{situation}", "Restaurant") }).click();
+  await expect(page).toHaveURL(/\/en\/pronunciation\?filter=situation%3Arestaurant$/);
   await page.setViewportSize({ width: 1024, height: 900 });
   await assertNoHorizontalOverflow(page);
 });

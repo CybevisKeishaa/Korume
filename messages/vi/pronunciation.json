@@ -66,6 +66,12 @@
       "emptyTitle": "Chưa có tình huống để luyện",
       "emptyBody": "Tình huống sẽ hiện ở đây khi có bài học được gắn."
     },
+    "goals": {
+      "title": "Luyện theo mục tiêu",
+      "recommended": "Đề xuất cho bạn",
+      "emptyTitle": "Chưa có mục tiêu để luyện",
+      "emptyBody": "Mục tiêu sẽ xuất hiện ở đây khi đã có bài học."
+    },
     "shadowingCollections": {
       "title": "Bộ sưu tập shadowing",
       "viewAll": "Xem tất cả",

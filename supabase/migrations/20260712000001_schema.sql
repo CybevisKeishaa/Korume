@@ -224,13 +224,14 @@ as $$
     select distinct on (t.video_id) t.video_id, t.id
     from transcripts t
     where t.video_id = any (p_video_ids)
-    order by t.video_id, t.created_at desc
+    order by t.video_id, t.created_at desc, t.id desc
   ) latest
   left join transcript_lines l on l.transcript_id = latest.id
   group by latest.video_id;
 $$;
 
-revoke all on function video_sentence_counts(uuid[]) from public;
+-- Supabase grants anon EXECUTE by default, so revoking from public alone leaves it.
+revoke all on function video_sentence_counts(uuid[]) from public, anon;
 grant execute on function video_sentence_counts(uuid[]) to authenticated;
 
 create table user_video_progress (
@@ -288,6 +289,29 @@ create table shadowing_sessions (
   pitch_score numeric(5, 2), -- differentiator #1: pitch-accent scoring (CLAUDE.md §5)
   created_at timestamptz not null default now()
 );
+
+-- Aggregate before PostgREST applies its max_rows cap. SECURITY INVOKER keeps
+-- the caller's table permissions and RLS in force; the explicit user predicate
+-- makes the function's scope unambiguous.
+create function pronunciation_metric_means(p_start timestamptz, p_end timestamptz)
+  returns table (pronunciation_score numeric, pitch_score numeric, rhythm_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select
+    avg(s.pronunciation_score),
+    avg(s.pitch_score),
+    avg(s.rhythm_score)
+  from shadowing_sessions s
+  where s.user_id = auth.uid()
+    and s.created_at >= p_start
+    and s.created_at < p_end;
+$$;
+
+revoke all on function pronunciation_metric_means(timestamptz, timestamptz) from public, anon;
+grant execute on function pronunciation_metric_means(timestamptz, timestamptz) to authenticated;
 
 create table dictation_attempts (
   id uuid primary key default gen_random_uuid(),

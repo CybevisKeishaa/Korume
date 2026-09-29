@@ -394,6 +394,47 @@ describe("learning paths", () => {
   });
 });
 
+describe("practice goals", () => {
+  const goal = (id: string, order: number, skillFocus: "accuracy" | "pitch" | "rhythm") => ({ id, slug: id, title: id, description: null, cover_image_url: null, display_order: order, kind: "goal", skill_focus: skillFocus, icon: "â—Œ" });
+  const lesson = (id: string, duration: number | null = 600) => ({ id, duration_seconds: duration, jlpt_level_estimate: null, thumbnail_url: null });
+
+  it("uses the path derivation for goals: visible lessons are ordered, progressed, and timed", async () => {
+    useTables({
+      collections: (calls) => {
+        expect(calls).toContainEqual({ op: "eq", column: "kind", value: "goal" });
+        return { data: [goal("pitch", 1, "pitch"), goal("rhythm", 2, "rhythm"), goal("empty", 3, "accuracy")], error: null };
+      },
+      lesson_collections: () => ({ data: [
+        { collection_id: "pitch", lesson_id: "pitch-next", position: 1 },
+        { collection_id: "pitch", lesson_id: "pitch-done", position: 0 },
+        { collection_id: "rhythm", lesson_id: "rhythm-first", position: 0 },
+        { collection_id: "empty", lesson_id: "hidden", position: 0 },
+      ], error: null }),
+      videos: () => ({ data: [lesson("pitch-next", 1200), lesson("pitch-done", 600), lesson("rhythm-first", 300)], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "pitch-done", last_watched_position: 600, completed_at: "2026-09-29T00:00:00Z", last_watched_at: null }], error: null }),
+    });
+    const { getPracticeGoals } = await import("@/lib/data/collections");
+
+    await expect(getPracticeGoals()).resolves.toMatchObject([
+      { collection: { slug: "pitch" }, total: 2, completed: 1, started: true, next: { id: "pitch-next" }, lessonCount: 2, durationMinutes: 30 },
+      { collection: { slug: "rhythm" }, total: 1, completed: 0, started: false, next: { id: "rhythm-first" }, lessonCount: 1, durationMinutes: 5 },
+    ]);
+  });
+
+  it("recommends only the first displayed goal matching the weakest metric", async () => {
+    const { recommendedPracticeGoalId } = await import("@/lib/data/collections");
+    const goals = [
+      { collection: { id: "pitch", skillFocus: "pitch" } },
+      { collection: { id: "rhythm-first", skillFocus: "rhythm" } },
+      { collection: { id: "rhythm-second", skillFocus: "rhythm" } },
+    ] as Awaited<ReturnType<typeof import("@/lib/data/collections")["getPracticeGoals"]>>;
+
+    expect(recommendedPracticeGoalId(goals, "rhythm")).toBe("rhythm-first");
+    expect(recommendedPracticeGoalId(goals, null)).toBeNull();
+    expect(recommendedPracticeGoalId(goals, "accuracy")).toBeNull();
+  });
+});
+
 describe("setCollectionSaved", () => {
   const COLLECTION = "0b9c1d2e-3f40-4a5b-8c6d-7e8f90a1b2c3";
 

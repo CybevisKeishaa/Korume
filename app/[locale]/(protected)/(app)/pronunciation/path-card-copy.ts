@@ -1,5 +1,5 @@
 import type { getTranslations } from "@/lib/i18n/server";
-import type { PathSummary } from "@/lib/data/collections";
+import type { CollectionProgressSummary, PathSummary, PracticeGoalSummary } from "@/lib/data/collections";
 import { formatCompactDuration } from "@/lib/format-course-duration";
 import type { HubPathCardData, HubPathCardLabels } from "@/components/shadowing/hub-path-card";
 import { toHubPathCard } from "@/components/shadowing/hub-path-shelf";
@@ -15,7 +15,11 @@ export function pathCardLabels(t: PronunciationTranslator): HubPathCardLabels {
   };
 }
 
-export function pathCards(summaries: PathSummary[], t: PronunciationTranslator): HubPathCardData[] {
+function collectionCards(
+  summaries: CollectionProgressSummary[],
+  t: PronunciationTranslator,
+  options: { saveable: boolean; badgeLabel?: (summary: CollectionProgressSummary) => string | undefined },
+): HubPathCardData[] {
   const format = {
     lessons: (count: number) => t("hub.lessons", { count }),
     duration: (minutes: number) => formatCompactDuration(minutes, {
@@ -27,5 +31,25 @@ export function pathCards(summaries: PathSummary[], t: PronunciationTranslator):
     save: (title: string) => t("hub.paths.save", { title }),
     complete: (percent: number) => t("hub.complete", { percent }),
   };
-  return summaries.map((summary) => toHubPathCard(summary, format));
+  return summaries.map((summary) => ({
+    ...toHubPathCard({ ...summary, saved: options.saveable && (summary as PathSummary).saved }, format),
+    saveable: options.saveable,
+    badgeLabel: options.badgeLabel?.(summary),
+  }));
+}
+
+export function pathCards(summaries: PathSummary[], t: PronunciationTranslator): HubPathCardData[] {
+  return collectionCards(summaries, t, { saveable: true });
+}
+
+/** Goals are the same ordered-collection card, without path-only saving. */
+export function goalCards(
+  summaries: PracticeGoalSummary[],
+  t: PronunciationTranslator,
+  recommendedGoalId: string | null,
+): HubPathCardData[] {
+  return collectionCards(summaries, t, {
+    saveable: false,
+    badgeLabel: (summary) => summary.collection.id === recommendedGoalId ? t("hub.goals.recommended") : undefined,
+  });
 }

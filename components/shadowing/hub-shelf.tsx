@@ -4,14 +4,15 @@ import { HubEmptyState } from "./hub-empty-state";
 import { HubSectionHeading } from "./hub-section-heading";
 
 /**
- * A titled four-up grid of studio cards with an optional "View all" and its
+ * A titled three- or four-up grid of studio cards with an optional "View all" and its
  * own empty copy. The cards are `<li>`s; an empty list shows the empty state.
  */
-export function HubShelf({ title, viewAll, empty, children }: {
+export function HubShelf({ title, viewAll, empty, children, columns = 4 }: {
   title: string;
   viewAll?: { href: string; label: string };
   empty: { title: string; body: string };
   children: ReactNode[];
+  columns?: 3 | 4;
 }) {
   return (
     <section aria-label={title}>
@@ -24,7 +25,7 @@ export function HubShelf({ title, viewAll, empty, children }: {
         ) : undefined}
       />
       {children.length ? (
-        <ul className="mt-md grid grid-cols-2 gap-md xl:grid-cols-4">{children}</ul>
+        <ul className={`mt-md grid grid-cols-2 gap-md ${columns === 3 ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>{children}</ul>
       ) : (
         <HubEmptyState title={empty.title} body={empty.body} />
       )}

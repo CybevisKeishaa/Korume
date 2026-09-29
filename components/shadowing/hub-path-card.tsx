@@ -14,6 +14,10 @@ export interface HubPathCardData {
   completed: number;
   started: boolean;
   saved: boolean;
+  /** Goals share the card but are never saveable. Defaults to true for paths. */
+  saveable?: boolean;
+  /** A server-formatted, optional recommendation badge. */
+  badgeLabel?: string;
   /** Already formatted: "48 lessons · 3h 20m". */
   meta: string;
   /** The lesson the card's action opens; null hides the action. */
@@ -83,13 +87,15 @@ export function HubPathCard({ path, labels }: { path: HubPathCardData; labels: H
   }
 
   const action = path.started ? labels.continue : labels.start;
+  const saveable = path.saveable ?? true;
 
   return (
     <li className="flex flex-col rounded-lg border border-border bg-card p-md shadow-raised">
       <div className="flex items-start justify-between gap-sm">
         <span aria-hidden="true" className="text-heading-lg">{path.icon}</span>
+        {path.badgeLabel ? <span className="rounded-full bg-secondary px-sm py-2xs text-caption font-semibold text-primary-strong">{path.badgeLabel}</span> : null}
         {/* A toggle keeps one name; aria-pressed carries the state (WAI-ARIA toggle button). */}
-        <button
+        {saveable ? <button
           type="button"
           aria-pressed={saved}
           aria-label={path.saveLabel}
@@ -100,7 +106,7 @@ export function HubPathCard({ path, labels }: { path: HubPathCardData; labels: H
           )}
         >
           <span aria-hidden="true">✦</span>
-        </button>
+        </button> : null}
       </div>
       <h3 className="mt-sm text-body font-semibold text-foreground">{path.title}</h3>
       {path.description ? <p className="mt-xs text-caption text-muted-foreground">{path.description}</p> : null}
