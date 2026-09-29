@@ -3,7 +3,12 @@ import { createMockSupabase } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
-vi.mock("@/lib/data/collections", () => ({ listCollections: vi.fn(), listCollectionLessons: vi.fn() }));
+vi.mock("@/lib/data/collections", async (importOriginal) => ({
+  // The real shelf selection: Explore and the Pronunciation Studio share it.
+  selectShadowingCollections: (await importOriginal<typeof import("@/lib/data/collections")>()).selectShadowingCollections,
+  listCollections: vi.fn(),
+  listCollectionLessons: vi.fn(),
+}));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listSituations: vi.fn() }));
 vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: vi.fn() }));
 vi.mock("@/lib/japanese/tokenizer", () => ({ tokenize: vi.fn() }));

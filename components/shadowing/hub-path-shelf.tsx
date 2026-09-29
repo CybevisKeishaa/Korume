@@ -1,9 +1,7 @@
-import { Link } from "@/lib/i18n/navigation";
 import type { PathSummary } from "@/lib/data/collections";
 import { courseProgressPercent } from "./hub-course-progress";
-import { HubEmptyState } from "./hub-empty-state";
 import { HubPathCard, type HubPathCardData, type HubPathCardLabels } from "./hub-path-card";
-import { HubSectionHeading } from "./hub-section-heading";
+import { HubShelf } from "./hub-shelf";
 
 /** Maps a path read model onto its card, formatting the "48 lessons · 3h 20m" line. */
 export function toHubPathCard(
@@ -43,22 +41,8 @@ export function HubPathShelf({ title, paths, labels, viewAll, empty }: {
   empty: { title: string; body: string };
 }) {
   return (
-    <section aria-label={title}>
-      <HubSectionHeading
-        title={title}
-        action={viewAll ? (
-          <Link href={viewAll.href} className="inline-flex min-h-hit-target items-center text-caption font-semibold text-primary-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            {viewAll.label} <span aria-hidden="true">&nbsp;→</span>
-          </Link>
-        ) : undefined}
-      />
-      {paths.length ? (
-        <ul className="mt-md grid grid-cols-2 gap-md xl:grid-cols-4">
-          {paths.map((path) => <HubPathCard key={path.id} path={path} labels={labels} />)}
-        </ul>
-      ) : (
-        <HubEmptyState title={empty.title} body={empty.body} />
-      )}
-    </section>
+    <HubShelf title={title} viewAll={viewAll} empty={empty}>
+      {paths.map((path) => <HubPathCard key={path.id} path={path} labels={labels} />)}
+    </HubShelf>
   );
 }

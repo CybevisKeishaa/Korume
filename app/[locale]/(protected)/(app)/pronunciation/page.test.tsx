@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/test/render";
+import { render, screen, within } from "@/test/render";
 import commonCopy from "@/messages/en/common.json";
 import pronunciationCopy from "@/messages/en/pronunciation.json";
 import shadowingCopy from "@/messages/en/shadowing.json";
@@ -18,14 +18,21 @@ function translation(namespace: keyof typeof catalogs) {
   };
 }
 
-const data = vi.hoisted(() => ({ getHubDiscovery: vi.fn(), getLearningPaths: vi.fn() }));
+const data = vi.hoisted(() => ({
+  getHubDiscovery: vi.fn(),
+  getLearningPaths: vi.fn(),
+  // Both shelves default to empty; a test that cares supplies its own rows.
+  getShadowingCollections: vi.fn().mockResolvedValue([]),
+  listPracticeSituations: vi.fn().mockResolvedValue([]),
+}));
 
 vi.mock("@/lib/data/shadowing-hub", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/data/shadowing-hub")>()),
   getHubDiscovery: data.getHubDiscovery,
 }));
 
-vi.mock("@/lib/data/collections", () => ({ getLearningPaths: data.getLearningPaths }));
+vi.mock("@/lib/data/collections", () => ({ getLearningPaths: data.getLearningPaths, getShadowingCollections: data.getShadowingCollections }));
+vi.mock("@/lib/data/lesson-taxonomy", () => ({ listPracticeSituations: data.listPracticeSituations }));
 
 const noDiscovery = { filters: [{ kind: "situation", slug: "restaurant" }], discovery: null };
 
@@ -125,7 +132,44 @@ describe("PronunciationPage", () => {
     expect(shelf.querySelectorAll("li")).toHaveLength(4);
     expect(shelf).not.toHaveTextContent("Path five");
     expect(shelf).toHaveTextContent("48 lessons · 3h 20m");
-    expect(screen.getByRole("link", { name: /^View all/ })).toHaveAttribute("href", "/pronunciation/paths");
+    expect(within(shelf).getByRole("link", { name: /^View all/ })).toHaveAttribute("href", "/pronunciation/paths");
     expect(screen.getByRole("button", { name: "Save Path one" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("shelves the situations with lessons and the shadowing collections, each linking where it practises", async () => {
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.listPracticeSituations.mockResolvedValueOnce([{ slug: "cafe", icon: "☕" }]);
+    const collection = (slug: string) => ({ id: slug, slug, title: `Title ${slug}`, description: null, coverImageUrl: null, displayOrder: 0, kind: "shelf" });
+    data.getShadowingCollections.mockResolvedValueOnce([
+      { collection: collection("c1"), lessonCount: 3, durationMinutes: 42, levelBand: { from: "intermediate", to: "intermediate" }, sentenceCount: 38 },
+      { collection: collection("c2"), lessonCount: 1, durationMinutes: null, levelBand: null, sentenceCount: 0 },
+      { collection: collection("c3"), lessonCount: 1, durationMinutes: null, levelBand: null, sentenceCount: 1 },
+      { collection: collection("c4"), lessonCount: 1, durationMinutes: null, levelBand: null, sentenceCount: 1 },
+      { collection: collection("c5"), lessonCount: 1, durationMinutes: null, levelBand: null, sentenceCount: 1 },
+    ]);
+    render(await PronunciationPage({}));
+
+    const situations = screen.getByRole("region", { name: pronunciationCopy.hub.situations.title });
+    expect(within(situations).getByRole("link", { name: `Start practice: ${shadowingCopy.situations.cafe}` }))
+      .toHaveAttribute("href", "/pronunciation?filter=situation%3Acafe");
+
+    const shelf = screen.getByRole("region", { name: pronunciationCopy.hub.shadowingCollections.title });
+    // The frame shelves four; "View all" opens the collections' own home.
+    expect(within(shelf).getAllByRole("listitem")).toHaveLength(4);
+    expect(within(shelf).getByRole("link", { name: /View all/ })).toHaveAttribute("href", "/shadowing/explore");
+    const first = within(shelf).getByRole("link", { name: /Title c1/ });
+    expect(first).toHaveAttribute("href", "/pronunciation/collections/c1");
+    expect(first).toHaveTextContent("Intermediate · 42 min");
+    expect(first).toHaveTextContent("38 sentences");
+  });
+
+  it("gives each new shelf its own empty copy", async () => {
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    render(await PronunciationPage({}));
+
+    expect(screen.getByRole("heading", { name: pronunciationCopy.hub.situations.emptyTitle })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: pronunciationCopy.hub.shadowingCollections.emptyTitle })).toBeInTheDocument();
   });
 });

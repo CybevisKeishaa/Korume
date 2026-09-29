@@ -58,6 +58,21 @@
       "title": "No course to feature yet",
       "body": "A featured course appears here once a learning path has lessons."
     },
-    "emptyCollection": "This collection has no available lessons yet."
+    "emptyCollection": "This collection has no available lessons yet.",
+    "situations": {
+      "title": "Practice by Situation",
+      "start": "Start practice",
+      "startLabel": "Start practice: {situation}",
+      "emptyTitle": "No situations to practise yet",
+      "emptyBody": "Situations appear here once they tag a lesson."
+    },
+    "shadowingCollections": {
+      "title": "Shadowing Collections",
+      "viewAll": "View all",
+      "glyph": "話",
+      "sentences": "{count, plural, one {{count} sentence} other {{count} sentences}}",
+      "emptyTitle": "No shadowing collections yet",
+      "emptyBody": "Collections appear here once they have lessons."
+    }
   }
 }

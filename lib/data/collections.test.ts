@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMockSupabase, eqValue, type TableResolver } from "@/test/supabase-mock";
+import { createMockSupabase, eqValue, type RpcResolver, type TableResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true, retryAfter: 0 })) }));
 
-function useTables(tables: Record<string, TableResolver>) {
+function useTables(tables: Record<string, TableResolver>, rpcs?: Record<string, RpcResolver>) {
   // Saved paths default to none; a test that cares supplies its own rows.
-  const supabase = createMockSupabase({ user: { id: "u1" }, tables: { user_saved_collections: () => ({ data: [], error: null }), ...tables } });
+  const supabase = createMockSupabase({ user: { id: "u1" }, tables: { user_saved_collections: () => ({ data: [], error: null }), ...tables }, rpcs });
   vi.mocked(createClient).mockReturnValue(
     supabase as unknown as ReturnType<typeof createClient>,
   );
@@ -446,5 +446,51 @@ describe("setCollectionSaved", () => {
     useTables({ user_saved_collections: () => { throw new Error("must not write while rate-limited"); } });
     const { setCollectionSaved } = await import("@/lib/data/collections");
     await expect(setCollectionSaved(COLLECTION, true)).resolves.toEqual({ ok: false, status: 429, retryAfter: 5_000 });
+  });
+});
+
+describe("shadowing collections", () => {
+  const shelf = (slug: string) => ({ id: slug, slug, title: slug, description: null, cover_image_url: null, display_order: 0, kind: "shelf", skill_focus: null, icon: null });
+  const lesson = (id: string, duration: number | null, jlpt: string | null) => ({ id, duration_seconds: duration, jlpt_level_estimate: jlpt, thumbnail_url: null });
+
+  it("summarises the explore collections in their authored order, and drops one with no visible lesson", async () => {
+    useTables({
+      collections: (calls) => {
+        expect(calls).toContainEqual({ op: "in", column: "slug", values: ["beginner-foundation", "daily-conversation", "natural-japanese", "advanced-expression", "native-fluency"] });
+        // Returned out of order: the authored sequence, not the read, decides the shelf.
+        return { data: [shelf("native-fluency"), shelf("daily-conversation"), shelf("beginner-foundation")], error: null };
+      },
+      lesson_collections: () => ({ data: [
+        { collection_id: "beginner-foundation", lesson_id: "a1" },
+        { collection_id: "beginner-foundation", lesson_id: "a2" },
+        { collection_id: "daily-conversation", lesson_id: "plus-only" },
+        { collection_id: "native-fluency", lesson_id: "a2" },
+        { collection_id: "native-fluency", lesson_id: "c1" },
+      ], error: null }),
+      // RLS hides `plus-only`, so the videos read never returns it.
+      videos: () => ({ data: [lesson("a1", 1200, "N5"), lesson("a2", null, "N4"), lesson("c1", 600, "N1")], error: null }),
+    }, {
+      video_sentence_counts: (args) => {
+        expect(args).toEqual({ p_video_ids: ["a1", "a2", "c1"] });
+        // `a2` has no readable transcript, so the function returns no row for it.
+        return { data: [{ video_id: "a1", sentence_count: 38 }, { video_id: "c1", sentence_count: 4 }], error: null };
+      },
+    });
+    const { getShadowingCollections } = await import("@/lib/data/collections");
+    const summaries = await getShadowingCollections();
+
+    expect(summaries.map((summary) => summary.collection.slug)).toEqual(["beginner-foundation", "native-fluency"]);
+    expect(summaries[0]).toMatchObject({ lessonCount: 2, durationMinutes: 20, sentenceCount: 38, levelBand: { from: "beginner", to: "beginner" } });
+    expect(summaries[1]).toMatchObject({ lessonCount: 2, durationMinutes: 10, sentenceCount: 4, levelBand: { from: "beginner", to: "advanced" } });
+  });
+
+  it("reads no lessons when no collection has members", async () => {
+    // No `videos` resolver and no RPC on purpose: the mock throws for either.
+    useTables({
+      collections: () => ({ data: [shelf("beginner-foundation")], error: null }),
+      lesson_collections: () => ({ data: [], error: null }),
+    });
+    const { getShadowingCollections } = await import("@/lib/data/collections");
+    expect(await getShadowingCollections()).toEqual([]);
   });
 });

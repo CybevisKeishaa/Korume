@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { listCollections, listCollectionLessons, type Collection } from "@/lib/data/collections";
+import { listCollections, listCollectionLessons, selectShadowingCollections, type Collection } from "@/lib/data/collections";
 import { listSituations, type LessonTag } from "@/lib/data/lesson-taxonomy";
 import { getRecommendations } from "@/lib/data/recommendations";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
@@ -53,24 +53,8 @@ interface TranscriptRow { id: string; video_id: string; created_at: string }
 interface TranscriptLineRow { transcript_id: string; text_jp: string; start_time: number }
 interface VideoSummaryProjection { video_id: string; summary: string; key_vocab: unknown; key_grammar: unknown }
 
-/** C3's authored learning-path sequence; editorial collections stay on the Hub. */
-const EXPLORE_COLLECTION_SLUGS = [
-  "beginner-foundation",
-  "daily-conversation",
-  "natural-japanese",
-  "advanced-expression",
-  "native-fluency",
-] as const;
-
 /** One Figma shelf is a four-by-two grid; fetch one extra row to disclose truncation honestly. */
 const EXPLORE_SHELF_LIMIT = 8;
-
-function selectExploreCollections(collections: Collection[]): Collection[] {
-  const rank = new Map(EXPLORE_COLLECTION_SLUGS.map((slug, index) => [slug, index]));
-  return collections
-    .filter((collection) => rank.has(collection.slug as (typeof EXPLORE_COLLECTION_SLUGS)[number]))
-    .sort((a, b) => (rank.get(a.slug as (typeof EXPLORE_COLLECTION_SLUGS)[number]) ?? 0) - (rank.get(b.slug as (typeof EXPLORE_COLLECTION_SLUGS)[number]) ?? 0));
-}
 
 async function countContentWords(lines: TranscriptLineRow[]): Promise<number> {
   const lemmaGroups = await Promise.all(lines.map(async (line) => contentLemmas(await tokenize(line.text_jp))));
@@ -104,7 +88,7 @@ export async function getShadowingExplore(
   const visibleVideos = (videosData as VideoRow[] | null) ?? [];
   const visibleVideoIds = new Set(visibleVideos.map((video) => video.id));
   const libraryVideos = visibleVideos.filter((video) => libraryIds.has(video.id) || (video.library_access === "PRIVATE" && video.added_by_user_id === user.id));
-  const rawShelves = await Promise.all(selectExploreCollections(collections).map(async (collection) => {
+  const rawShelves = await Promise.all(selectShadowingCollections(collections).map(async (collection) => {
     const allLessons = await listCollectionLessons(collection.id, { situationId: activeSituation?.id, query, limit: EXPLORE_SHELF_LIMIT + 1 });
     return { collection, lessons: allLessons.slice(0, EXPLORE_SHELF_LIMIT), hasMore: allLessons.length > EXPLORE_SHELF_LIMIT };
   }));

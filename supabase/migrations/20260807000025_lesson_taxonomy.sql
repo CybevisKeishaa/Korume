@@ -20,7 +20,10 @@
 create table lesson_situations (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
-  display_order int not null default 0
+  display_order int not null default 0,
+  -- The glyph a Practice by Situation tile shows (Figma 37:5331); decorative,
+  -- so nullable. Same shape as collections.icon.
+  icon text check (char_length(icon) <= 16)
 );
 
 create table lesson_sources (
@@ -43,9 +46,9 @@ create policy lesson_sources_read on lesson_sources for select to authenticated 
 -- Writes are service-role only (admin curation), same convention as
 -- collections/radicals/kanji/badges: no insert/update/delete policy needed.
 
-insert into lesson_situations (slug, display_order) values
-  ('conversation', 1), ('restaurant', 2), ('business', 3), ('daily-life', 4),
-  ('travel', 5), ('office', 6), ('shopping', 7), ('cafe', 8);
+insert into lesson_situations (slug, display_order, icon) values
+  ('conversation', 1, '💬'), ('restaurant', 2, '🍜'), ('business', 3, '💼'), ('daily-life', 4, '🏠'),
+  ('travel', 5, '🚆'), ('office', 6, '🏢'), ('shopping', 7, '🛍️'), ('cafe', 8, '☕');
 
 insert into lesson_sources (slug, display_order) values
   ('youtube', 1), ('nhk', 2), ('podcast', 3), ('drama', 4),

@@ -264,6 +264,77 @@ export async function getLearningPaths(): Promise<LearningPaths> {
   };
 }
 
+/**
+ * The shadowing collections, in their authored sequence: the shelves of
+ * /shadowing/explore, re-shelved by the Pronunciation Studio. Editorial
+ * collections (`featured`) stay on the Hub.
+ */
+export const SHADOWING_COLLECTION_SLUGS = [
+  "beginner-foundation",
+  "daily-conversation",
+  "natural-japanese",
+  "advanced-expression",
+  "native-fluency",
+] as const;
+
+type ShadowingCollectionSlug = (typeof SHADOWING_COLLECTION_SLUGS)[number];
+
+export function selectShadowingCollections(collections: Collection[]): Collection[] {
+  const rank = new Map<string, number>(SHADOWING_COLLECTION_SLUGS.map((slug, index) => [slug, index]));
+  return collections
+    .filter((collection) => rank.has(collection.slug as ShadowingCollectionSlug))
+    .sort((a, b) => (rank.get(a.slug) ?? 0) - (rank.get(b.slug) ?? 0));
+}
+
+/** One card on the studio's Shadowing Collections shelf. */
+export interface ShadowingCollectionSummary {
+  collection: Collection;
+  /** Lessons the viewer can see; RLS hides the rest. */
+  lessonCount: number;
+  durationMinutes: number | null;
+  levelBand: { from: LevelBand; to: LevelBand } | null;
+  /** Lines of each visible lesson's latest transcript the viewer can read. */
+  sentenceCount: number;
+}
+
+/** The shadowing collections with at least one lesson the viewer can see. */
+export async function getShadowingCollections(): Promise<ShadowingCollectionSummary[]> {
+  const supabase = createClient();
+  const { data: collectionRows, error: collectionError } = await supabase
+    .from("collections").select(COLLECTION_COLUMNS).in("slug", [...SHADOWING_COLLECTION_SLUGS]);
+  if (collectionError) throw collectionError;
+  const collections = selectShadowingCollections(((collectionRows as CollectionRow[] | null) ?? []).map(toCollection));
+  if (!collections.length) return [];
+
+  const { data: membershipRows, error: membershipError } = await supabase
+    .from("lesson_collections").select("collection_id, lesson_id")
+    .in("collection_id", collections.map((collection) => collection.id));
+  if (membershipError) throw membershipError;
+  const memberships = (membershipRows as { collection_id: string; lesson_id: string }[] | null) ?? [];
+  const lessonIds = [...new Set(memberships.map((membership) => membership.lesson_id))];
+  if (!lessonIds.length) return [];
+
+  const { data: videos, error: videoError } = await supabase.from("videos").select(VIDEO_COLUMNS).in("id", lessonIds);
+  if (videoError) throw videoError;
+  const videoById = new Map(((videos as VideoRow[] | null) ?? []).map((video) => [video.id, video]));
+  if (!videoById.size) return [];
+
+  const { data: countRows, error: countError } = await supabase.rpc("video_sentence_counts", { p_video_ids: [...videoById.keys()] });
+  if (countError) throw countError;
+  const sentencesById = new Map(((countRows as { video_id: string; sentence_count: number }[] | null) ?? [])
+    .map((row) => [row.video_id, row.sentence_count]));
+
+  return collections.flatMap((collection) => {
+    const lessons = memberships
+      .filter((membership) => membership.collection_id === collection.id)
+      .flatMap((membership) => videoById.get(membership.lesson_id) ?? []);
+    if (!lessons.length) return [];
+    const { lessonCount, durationMinutes, levelBand } = collectionMeta(lessons);
+    const sentenceCount = lessons.reduce((total, lesson) => total + (sentencesById.get(lesson.id) ?? 0), 0);
+    return [{ collection, lessonCount, durationMinutes, levelBand, sentenceCount }];
+  });
+}
+
 export async function getFeaturedCourse(): Promise<FeaturedCourse | null> {
   return (await getLearningPaths()).featured;
 }

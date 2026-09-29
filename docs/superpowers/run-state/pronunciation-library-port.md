@@ -127,6 +127,11 @@ stamped, no backfill) orders "Continue where you left off", nulls last.
     RLS: own rows, `kind = 'path'` only, no UPDATE; in the GDPR export). Saved
     paths feed the hero's choice: activity → **saved** → in progress → first.
     ⚠️ Activity outranks saved; the owner has not ruled on that order.
+11. (owner, 2026-09-29) **Practice by Situation shows the REPO taxonomy**, not
+    the frame's eight; only situations tagging a visible lesson; no "View all".
+12. (owner, 2026-09-29) **Shadowing Collections = the explore `kind='shelf'`
+    collections** (`SHADOWING_COLLECTION_SLUGS`), not `lesson_sources`; card →
+    `/pronunciation/collections/[slug]`, "View all" → `/shadowing/explore`.
 
 ## Verification
 
@@ -174,21 +179,16 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
 
 ## Next actions
 
-1. **Task 1 — DONE 2026-09-27** (Codex): `position`, ordered membership reads
-   and the membership-based progress rollup, in ONE commit.
-   ⚠️ Its additive `20260925000034` broke §6; Task 3 folded it into `…019`.
-   Rules: sort by `position` (stable), `slice` after sorting.
-2. **Task 2 — DONE**, e2e run 2026-09-28 (see Verification). `getHubDiscovery`
-   is shared by both hubs; `HubDiscoveryControls` gained `basePath` + `heading`.
-   Its narrow case is 1024, not 320 — below 1024 every route is the handoff.
-3. **Task 3 — DONE 2026-09-29.** `kind`/`skill_focus`/`position` in
-   `20260731000019`, paths + goals seeded in `20260807000026`,
-   `last_watched_at` in `20260712000001`; course hero, continue strip, and
-   the collection page. Codex implemented most; Claude finished (see Blockers).
-4. **Task 3b — DONE 2026-09-29.** Shelf of 4 path cards (icon, ✦ save, meta,
-   progress, Continue/Start) + `/pronunciation/paths` (Saved, then All).
-5. **Task 4a — shelves whose data exists today:** Practice by Situation
-   (`lesson_situations`) + Shadowing Collections, over `hub-shelves`.
+1–4. **Tasks 1, 2, 3, 3b — DONE** (`675494f`, `f6347c1`, `8999492`, `c86b523`).
+   Rules they left: sort by `position` (stable), `slice` after sorting; the
+   narrow case is 1024, not 320 (below it every route is the handoff).
+5. **Task 4a — CODE DONE 2026-09-29, UNREVIEWED, LIVE GATE OWED** (rulings 11–12).
+   `listPracticeSituations` (existence probe per situation, `lesson-taxonomy.ts`),
+   `lesson_situations.icon` (in `…025`), `getShadowingCollections` + the
+   `video_sentence_counts` RPC (SECURITY INVOKER, in `…001`: a PostgREST read of
+   lines stops at max_rows 1000), a shared `HubShelf`, `hub-practice-cards.tsx`.
+   **Owed before 4b:** the independent `code-reviewer`; a `db reset` (ASK the
+   owner) then prove the RPC under RLS live; e2e for both shelves.
 6. **Task 4b — Practice by Goal** per ruling 7 (migration + seed + reads +
    shelf + weakest-metric badge), on the `kind` column Task 3 landed.
 6b. **Task 2b — Sort & display panel + placeholder copy**, per rulings 8–9.

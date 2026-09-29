@@ -58,6 +58,21 @@
       "title": "Chưa có khóa học nổi bật",
       "body": "Khóa học nổi bật sẽ xuất hiện ở đây khi một lộ trình học có bài học."
     },
-    "emptyCollection": "Bộ sưu tập này chưa có bài học nào khả dụng."
+    "emptyCollection": "Bộ sưu tập này chưa có bài học nào khả dụng.",
+    "situations": {
+      "title": "Luyện theo tình huống",
+      "start": "Bắt đầu luyện",
+      "startLabel": "Bắt đầu luyện: {situation}",
+      "emptyTitle": "Chưa có tình huống để luyện",
+      "emptyBody": "Tình huống sẽ hiện ở đây khi có bài học được gắn."
+    },
+    "shadowingCollections": {
+      "title": "Bộ sưu tập shadowing",
+      "viewAll": "Xem tất cả",
+      "glyph": "話",
+      "sentences": "{count, plural, other {{count} câu}}",
+      "emptyTitle": "Chưa có bộ sưu tập shadowing",
+      "emptyBody": "Bộ sưu tập sẽ hiện ở đây khi có bài học."
+    }
   }
 }

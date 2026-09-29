@@ -207,6 +207,32 @@ create table transcript_lines (
   furigana_json jsonb
 );
 
+-- Sentences per lesson: the line count of each video's latest transcript, the
+-- one every reader shows. Counted here because a PostgREST read of the lines
+-- is capped at max_rows (1000) and would undercount without an error.
+-- SECURITY INVOKER: the transcript RLS decides which lessons the caller counts;
+-- a lesson with no readable transcript returns no row.
+create function video_sentence_counts(p_video_ids uuid[])
+  returns table (video_id uuid, sentence_count int)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select latest.video_id, count(l.id)::int
+  from (
+    select distinct on (t.video_id) t.video_id, t.id
+    from transcripts t
+    where t.video_id = any (p_video_ids)
+    order by t.video_id, t.created_at desc
+  ) latest
+  left join transcript_lines l on l.transcript_id = latest.id
+  group by latest.video_id;
+$$;
+
+revoke all on function video_sentence_counts(uuid[]) from public;
+grant execute on function video_sentence_counts(uuid[]) to authenticated;
+
 create table user_video_progress (
   user_id uuid not null references users (id) on delete cascade,
   video_id uuid not null references videos (id) on delete cascade,

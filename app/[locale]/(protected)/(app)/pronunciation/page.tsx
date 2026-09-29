@@ -3,13 +3,16 @@ import type { Locale } from "@/lib/i18n";
 import { getPathname } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { getHubDiscovery, toHubLesson } from "@/lib/data/shadowing-hub";
-import { getLearningPaths } from "@/lib/data/collections";
+import { getLearningPaths, getShadowingCollections } from "@/lib/data/collections";
+import { listPracticeSituations } from "@/lib/data/lesson-taxonomy";
 import { formatCourseDuration, formatHours, formatLevelBand } from "@/lib/format-course-duration";
 import { TwoColumnShell } from "@/components/layout/two-column-shell";
 import { HubDiscoveryControls } from "@/components/shadowing/hub-discovery-controls";
 import { HubFeaturedHero } from "@/components/shadowing/hub-featured-hero";
 import { HubContinueStrip } from "@/components/shadowing/hub-continue-strip";
 import { HubPathShelf } from "@/components/shadowing/hub-path-shelf";
+import { HubShelf } from "@/components/shadowing/hub-shelf";
+import { HubCollectionCard, HubSituationTile } from "@/components/shadowing/hub-practice-cards";
 import { pathCardLabels, pathCards } from "./path-card-copy";
 import { shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
 import enShadowing from "@/messages/en/shadowing.json";
@@ -35,13 +38,15 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     filter: typeof searchParams?.filter === "string" ? searchParams.filter : undefined,
   });
   const hubQuery = query.success ? query.data : {};
-  const [t, tCommon, tHub, hub, learning, locale] = await Promise.all([
+  const [t, tCommon, tHub, hub, learning, locale, situations, shadowingCollections] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
     getTranslations("shadowing"),
     getHubDiscovery({ query: hubQuery.q, filter: hubQuery.filter }),
     getLearningPaths(),
     getLocale(),
+    listPracticeSituations(),
+    getShadowingCollections(),
   ]);
   const course = learning.featured;
   const duration = (minutes: number) => formatCourseDuration(minutes, {
@@ -141,6 +146,49 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           viewAll={{ href: "/pronunciation/paths", label: t("hub.paths.viewAll") }}
           empty={{ title: t("hub.paths.emptyTitle"), body: t("hub.paths.emptyBody") }}
         />
+      </div>
+      <div className="mt-3xl">
+        {/* Every situation with a lesson fits the frame's four-by-two grid, so there is no "View all". */}
+        <HubShelf title={t("hub.situations.title")} empty={{ title: t("hub.situations.emptyTitle"), body: t("hub.situations.emptyBody") }}>
+          {situations.map((situation) => {
+            const label = tHub(`situations.${situation.slug}` as TaxonomyTranslationKey);
+            return (
+              <HubSituationTile
+                key={situation.slug}
+                label={label}
+                icon={situation.icon}
+                href={`/pronunciation?filter=${encodeURIComponent(`situation:${situation.slug}`)}`}
+                action={t("hub.situations.start")}
+                actionLabel={t("hub.situations.startLabel", { situation: label })}
+              />
+            );
+          })}
+        </HubShelf>
+      </div>
+      <div className="mt-3xl">
+        <HubShelf
+          title={t("hub.shadowingCollections.title")}
+          // The shadowing collections' own home lists them all.
+          viewAll={{ href: "/shadowing/explore", label: t("hub.shadowingCollections.viewAll") }}
+          empty={{ title: t("hub.shadowingCollections.emptyTitle"), body: t("hub.shadowingCollections.emptyBody") }}
+        >
+          {shadowingCollections.slice(0, 4).map((summary) => {
+            const level = formatLevelBand(summary.levelBand, {
+              band: (value) => t(`hub.levels.${value}`),
+              range: (from, to) => t("hub.levelRange", { from, to }),
+            });
+            return (
+              <HubCollectionCard
+                key={summary.collection.id}
+                title={summary.collection.title}
+                href={`/pronunciation/collections/${summary.collection.slug}`}
+                meta={[level, summary.durationMinutes === null ? null : duration(summary.durationMinutes)].filter(Boolean).join(" · ")}
+                sentences={t("hub.shadowingCollections.sentences", { count: summary.sentenceCount })}
+                glyph={t("hub.shadowingCollections.glyph")}
+              />
+            );
+          })}
+        </HubShelf>
       </div>
     </TwoColumnShell>
   );
