@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getCollectionBySlug, listCollectionLessons } from "@/lib/data/collections";
+import { containsPattern } from "@/lib/data/query-pagination";
 import { FREE_MONTHLY_LESSON_QUOTA, countMonthlyCreations, hasTranscript } from "@/lib/data/lesson-library";
 import { PopularStrategyV1 } from "@/lib/data/lesson-ranking";
 import { getRecommendations } from "@/lib/data/recommendations";
@@ -123,7 +124,7 @@ export async function getHubDiscovery(
 
   const sort = options.sort ?? "newest";
   let search = supabase.from("videos").select(VIDEO_COLUMNS);
-  if (query) search = search.ilike("title", `%${query}%`);
+  if (query) search = search.ilike("title", containsPattern(query));
   if (activeFilter) search = search.eq(FILTER_COLUMNS[activeFilter.kind], activeFilter.id);
   // A band excludes a lesson with no duration: SQL comparisons drop nulls.
   if (options.duration === "under_10") search = search.lt("duration_seconds", 600);

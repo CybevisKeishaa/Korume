@@ -124,11 +124,12 @@ export default async function PronunciationPage({ searchParams }: { searchParams
         </header>
       )}
       filterToggleLabel={t("hub.filterToggleLabel")}
+      preservedParams={{ sort: param("sort"), duration: param("duration"), hideCompleted: param("hideCompleted") }}
       toolbar={(
         <HubDisplayPanel
           value={display}
           labels={{
-            trigger: t("hub.display.trigger"), title: t("hub.display.title"), sort: t("hub.display.sort"),
+            trigger: t("hub.display.trigger"), triggerCustomised: t.raw("hub.display.triggerCustomised") as string, title: t("hub.display.title"), sort: t("hub.display.sort"),
             recommended: t("hub.display.recommended"), newest: t("hub.display.newest"), shortest: t("hub.display.shortest"), inProgress: t("hub.display.inProgress"),
             duration: t("hub.display.duration"), anyDuration: t("hub.display.anyDuration"), underTen: t("hub.display.underTen"), tenToThirty: t("hub.display.tenToThirty"), overThirty: t("hub.display.overThirty"),
             hideCompleted: t("hub.display.hideCompleted"), apply: t("hub.display.apply"), reset: t("hub.display.reset"), close: t("hub.display.close"), saveFailed: t("hub.display.saveFailed"),
@@ -252,7 +253,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           // The frame shelves four; "View all" holds the rest.
           paths={pathCards(learning.paths.slice(0, 4), t)}
           labels={cards}
-          viewAll={{ href: "/pronunciation/paths", label: t("hub.paths.viewAll") }}
+          viewAll={{ href: "/pronunciation/paths", label: t("hub.paths.viewAll"), accessibleSuffix: t("hub.paths.title") }}
           empty={{ title: t("hub.paths.emptyTitle"), body: t("hub.paths.emptyBody") }}
         />
       </div>
@@ -306,7 +307,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
         <HubShelf
           title={t("hub.shadowingCollections.title")}
           // The shadowing collections' own home lists them all.
-          viewAll={{ href: "/shadowing/explore", label: t("hub.shadowingCollections.viewAll") }}
+          viewAll={{ href: "/shadowing/explore", label: t("hub.shadowingCollections.viewAll"), accessibleSuffix: t("hub.shadowingCollections.title") }}
           empty={{ title: t("hub.shadowingCollections.emptyTitle"), body: t("hub.shadowingCollections.emptyBody") }}
         >
           {shadowingCollections.slice(0, 4).map((summary) => {
@@ -320,7 +321,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
                 title={summary.collection.title}
                 href={`/pronunciation/collections/${summary.collection.slug}`}
                 meta={[level, summary.durationMinutes === null ? null : duration(summary.durationMinutes)].filter(Boolean).join(" · ")}
-                sentences={t("hub.shadowingCollections.sentences", { count: summary.sentenceCount })}
+                sentences={summary.sentenceCount === null ? null : t("hub.shadowingCollections.sentences", { count: summary.sentenceCount })}
                 glyph={t("hub.shadowingCollections.glyph")}
               />
             );

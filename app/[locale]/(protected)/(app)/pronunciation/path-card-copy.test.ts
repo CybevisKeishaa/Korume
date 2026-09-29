@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import pronunciationCopy from "@/messages/en/pronunciation.json";
 import type { PathSummary } from "@/lib/data/collections";
-import { pathCardLabels, pathCards } from "./path-card-copy";
+import { goalCards, pathCardLabels, pathCards } from "./path-card-copy";
 
 function t(key: string, values: Record<string, string | number> = {}): string {
   const message = key.split(".").reduce<unknown>((value, part) => (
@@ -29,6 +29,7 @@ describe("path card copy", () => {
     // structuredClone throws on a function, which is exactly what RSC refuses to send.
     expect(() => structuredClone(pathCardLabels(translator))).not.toThrow();
     expect(() => structuredClone(pathCards([summary], translator))).not.toThrow();
+    expect(() => structuredClone(goalCards([], translator, null))).not.toThrow();
   });
 
   it("formats the per-path copy from the catalog", () => {

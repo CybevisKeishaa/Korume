@@ -10,6 +10,7 @@ import { DEFAULT_PREFERENCES, type PronunciationDuration, type PronunciationSort
 
 export interface HubDisplayPanelLabels {
   trigger: string;
+  triggerCustomised?: string;
   title: string;
   sort: string;
   recommended: string;
@@ -56,6 +57,11 @@ export function HubDisplayPanel({ value, labels }: { value: HubDisplayValue; lab
   const [draft, setDraft] = useState(value);
   const [saveFailed, setSaveFailed] = useState(false);
   const customised = value.sort !== DEFAULTS.sort || value.duration !== DEFAULTS.duration || value.hideCompleted !== DEFAULTS.hideCompleted;
+  const summary = [
+    value.sort === "recommended" ? labels.recommended : value.sort === "newest" ? labels.newest : value.sort === "shortest" ? labels.shortest : labels.inProgress,
+    value.duration === null ? null : value.duration === "under_10" ? labels.underTen : value.duration === "10_30" ? labels.tenToThirty : labels.overThirty,
+    value.hideCompleted ? labels.hideCompleted : null,
+  ].filter(Boolean).join(", ");
 
   // Every opening starts from the applied view, so a cancelled draft is never saved later.
   function openPanel(): void {
@@ -111,7 +117,7 @@ export function HubDisplayPanel({ value, labels }: { value: HubDisplayValue; lab
     <div className="relative shrink-0">
       <button
         type="button"
-        aria-label={labels.trigger}
+        aria-label={customised ? (labels.triggerCustomised ?? "{trigger}: {value}").replace("{trigger}", labels.trigger).replace("{value}", summary) : labels.trigger}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={openPanel}

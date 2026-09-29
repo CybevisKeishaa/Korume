@@ -32,12 +32,15 @@ export default async function LearningPathsPage() {
           title={t("hub.paths.saved")}
           paths={pathCards(paths.filter((path) => path.saved), t)}
           labels={labels}
+          saveToggleIdPrefix="saved-path-save-"
+          focusAfterUnsaveIdPrefix="all-path-save-"
           empty={{ title: t("hub.paths.savedEmptyTitle"), body: t("hub.paths.savedEmptyBody") }}
         />
         <HubPathShelf
           title={t("hub.paths.all")}
           paths={pathCards(paths, t)}
           labels={labels}
+          saveToggleIdPrefix="all-path-save-"
           empty={{ title: t("hub.paths.emptyTitle"), body: t("hub.paths.emptyBody") }}
         />
       </div>

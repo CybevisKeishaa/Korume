@@ -37,7 +37,7 @@ export interface HubPathCardLabels {
 }
 
 /** A Popular Learning Paths card (Figma 37:5447), with its ✦ save toggle. */
-export function HubPathCard({ path, labels }: { path: HubPathCardData; labels: HubPathCardLabels }) {
+export function HubPathCard({ path, labels, saveToggleId, focusAfterUnsaveId }: { path: HubPathCardData; labels: HubPathCardLabels; saveToggleId?: string; focusAfterUnsaveId?: string }) {
   const router = useRouter();
   const [saved, setSaved] = useState(path.saved);
   const [failed, setFailed] = useState(false);
@@ -47,6 +47,7 @@ export function HubPathCard({ path, labels }: { path: HubPathCardData; labels: H
   const desired = useRef(path.saved);
   const confirmed = useRef(path.saved);
   const inFlight = useRef(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   // A refresh (this card's, or another card's for the same path) hands down
   // the server's truth; adopt it unless a write of ours is still settling.
@@ -69,6 +70,11 @@ export function HubPathCard({ path, labels }: { path: HubPathCardData; labels: H
       }
       // Other views of this path (the shelf, the paths page, the featured
       // course, which prefers saved paths) re-read the server's answer.
+      // The refresh unmounts this card from the Saved list; hand focus on only
+      // if the learner is still on its toggle, never pull it back from elsewhere.
+      if (!confirmed.current && focusAfterUnsaveId && document.activeElement === toggleRef.current) {
+        document.getElementById(focusAfterUnsaveId)?.focus();
+      }
       router.refresh();
     } catch {
       desired.current = confirmed.current;
@@ -97,6 +103,8 @@ export function HubPathCard({ path, labels }: { path: HubPathCardData; labels: H
         {/* A toggle keeps one name; aria-pressed carries the state (WAI-ARIA toggle button). */}
         {saveable ? <button
           type="button"
+          id={saveToggleId}
+          ref={toggleRef}
           aria-pressed={saved}
           aria-label={path.saveLabel}
           onClick={toggle}

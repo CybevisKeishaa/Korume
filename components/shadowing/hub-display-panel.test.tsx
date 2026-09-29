@@ -23,11 +23,19 @@ afterEach(() => vi.unstubAllGlobals());
 async function open(value: HubDisplayValue = DEFAULTS) {
   const user = userEvent.setup();
   render(<HubDisplayPanel value={value} labels={labels} />);
-  await user.click(screen.getByRole("button", { name: labels.trigger }));
+  await user.click(screen.getByRole("button", { name: new RegExp(`^${labels.trigger}`) }));
   return user;
 }
 
 describe("HubDisplayPanel", () => {
+  it("says a customised view in the trigger's name, not in its colour alone", () => {
+    const { rerender } = render(<HubDisplayPanel value={DEFAULTS} labels={labels} />);
+    expect(screen.getByRole("button", { name: labels.trigger })).toBeInTheDocument();
+
+    rerender(<HubDisplayPanel value={{ sort: "shortest", duration: "under_10", hideCompleted: true }} labels={labels} />);
+    expect(screen.getByRole("button", { name: `${labels.trigger}: ${labels.shortest}, ${labels.underTen}, ${labels.hideCompleted}` })).toBeInTheDocument();
+  });
+
   it("opens a named dialog with the two radio groups and the checkbox, starting from the applied view", async () => {
     await open({ sort: "shortest", duration: "over_30", hideCompleted: true });
     expect(screen.getByRole("dialog", { name: labels.title })).toBeInTheDocument();

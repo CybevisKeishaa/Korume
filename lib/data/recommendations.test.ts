@@ -225,4 +225,39 @@ describe("getRecommendations", () => {
     if (!result.ok) return;
     expect(result.data).toEqual([]);
   });
+
+  it("pages all transcript lines and progress rows before scoring", async () => {
+    vi.mocked(getKnownVocabLemmas).mockResolvedValue(new Set(["known"]));
+    const progressRanges: unknown[] = [];
+    const lineRanges: unknown[] = [];
+    mockClient({
+      user_video_progress: (calls) => {
+        progressRanges.push(calls.find((call) => call.op === "range"));
+        return { data: progressRanges.length === 1
+          ? Array.from({ length: 1_000 }, (_, index) => ({ video_id: `done-${index}`, completed_at: null }))
+          : Array.from({ length: 200 }, (_, index) => ({ video_id: `done-${index + 1_000}`, completed_at: null })), error: null };
+      },
+      videos: () => ({ data: [VIDEO_A], error: null }),
+      transcripts: () => ({ data: [{ id: "t1", video_id: "va", created_at: "2026-07-01T00:00:00Z" }], error: null }),
+      transcript_lines: (calls) => {
+        lineRanges.push(calls.find((call) => call.op === "range"));
+        return { data: lineRanges.length === 1
+          ? Array.from({ length: 1_000 }, () => ({ transcript_id: "t1", text_jp: "known" }))
+          : Array.from({ length: 200 }, () => ({ transcript_id: "t1", text_jp: "unknown" })), error: null };
+      },
+    });
+
+    await expect(getRecommendations({ limit: 1 })).resolves.toMatchObject({
+      ok: true,
+      data: [{ totalWords: 1_200, knownWords: 1_000, knownRatio: 1_000 / 1_200 }],
+    });
+    expect(progressRanges).toEqual([
+      { op: "range", from: 0, to: 999 },
+      { op: "range", from: 1_000, to: 1_999 },
+    ]);
+    expect(lineRanges).toEqual([
+      { op: "range", from: 0, to: 999 },
+      { op: "range", from: 1_000, to: 1_999 },
+    ]);
+  });
 });

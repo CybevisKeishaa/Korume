@@ -104,6 +104,7 @@ describe("collections", () => {
           { op: "eq", column: "collection_id", value: "c1" },
           { op: "order", column: "position", ascending: true },
           { op: "order", column: "lesson_id", ascending: true },
+          { op: "range", from: 0, to: 999 },
         ]);
         return { data: [{ lesson_id: "v2", position: 0 }, { lesson_id: "v1", position: 1 }], error: null };
       },
@@ -132,13 +133,14 @@ describe("collections", () => {
     expect((await listCollectionLessons("c1")).map((v) => v.id)).toEqual(["v2", "v1"]);
   });
 
-  it("keeps the videos query order for an unordered collection", async () => {
+  it("orders an unordered collection newest first, as the videos query does", async () => {
     useTables({
       lesson_collections: () => ({
         data: [{ lesson_id: "v1", position: 0 }, { lesson_id: "v2", position: 0 }],
         error: null,
       }),
-      videos: () => ({ data: [{ id: "v2" }, { id: "v1" }], error: null }),
+      // Returned oldest first: the order comes from created_at, not from the response.
+      videos: () => ({ data: [{ id: "v1", created_at: "2026-01-01T00:00:00Z" }, { id: "v2", created_at: "2026-02-01T00:00:00Z" }], error: null }),
     });
     const { listCollectionLessons } = await import("@/lib/data/collections");
     expect((await listCollectionLessons("c1")).map((video) => video.id)).toEqual(["v2", "v1"]);
@@ -190,6 +192,7 @@ describe("collections", () => {
         ],
         error: null,
       }),
+      videos: () => ({ data: [{ id: "v1" }, { id: "v2" }, { id: "v3" }], error: null }),
       user_video_progress: (calls) => {
         expect(calls).toContainEqual({ op: "select", columns: "video_id, completed_at" });
         expect(calls).toContainEqual({ op: "in", column: "video_id", values: ["v1", "v2", "v3"] });
@@ -275,6 +278,45 @@ describe("collections", () => {
     });
     const { getFeaturedCourse } = await import("@/lib/data/collections");
     await expect(getFeaturedCourse()).resolves.toMatchObject({ collection: { slug: "begun" }, completed: 1, selectedByRecentActivity: false });
+  });
+
+  it("features a half-watched path over an earlier untouched path", async () => {
+    useTables({
+      collections: () => ({ data: [
+        { id: "untouched", slug: "untouched", title: "Untouched", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null },
+        { id: "watched", slug: "watched", title: "Watched", description: null, cover_image_url: null, display_order: 2, kind: "path", skill_focus: null },
+      ], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "untouched", lesson_id: "v1", position: 0 },
+        { collection_id: "watched", lesson_id: "v2", position: 0 },
+      ], error: null }),
+      videos: () => ({ data: [
+        { id: "v1", duration_seconds: 100, jlpt_level_estimate: null },
+        { id: "v2", duration_seconds: 100, jlpt_level_estimate: null },
+      ], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "v2", last_watched_position: 50, completed_at: null, last_watched_at: null }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({
+      collection: { slug: "watched" },
+      resume: { lesson: { id: "v2" }, percent: 50 },
+    });
+  });
+
+  it("excludes deleted lessons from the latest-session query", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "path", slug: "path", title: "Path", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),
+      lesson_collections: () => ({ data: [{ collection_id: "path", lesson_id: "v1", position: 0 }], error: null }),
+      videos: () => ({ data: [{ id: "v1", duration_seconds: 100, jlpt_level_estimate: null }], error: null }),
+      user_video_progress: () => ({ data: [], error: null }),
+      shadowing_sessions: (calls) => {
+        expect(calls).toContainEqual({ op: "not", column: "video_id", operator: "is", value: null });
+        return { data: [], error: null };
+      },
+    });
+    const { getFeaturedCourse } = await import("@/lib/data/collections");
+    await expect(getFeaturedCourse()).resolves.toMatchObject({ collection: { slug: "path" } });
   });
 
   it("resumes in editorial order when every started lesson predates last_watched_at (all null)", async () => {
@@ -396,6 +438,103 @@ describe("learning paths", () => {
     expect(paths.map((summary) => summary.collection.slug)).toEqual(["started", "fresh"]);
     expect(paths[0]).toMatchObject({ total: 2, completed: 0, started: true, saved: false, next: { id: "a1" }, durationMinutes: 20 });
     expect(paths[1]).toMatchObject({ total: 1, completed: 0, started: false, saved: true, next: { id: "b1" } });
+  });
+
+  it("counts only visible members in a path's progress", async () => {
+    useTables({
+      collections: () => ({ data: [path("mixed", 1)], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "mixed", lesson_id: "visible", position: 0 },
+        { collection_id: "mixed", lesson_id: "hidden", position: 1 },
+      ], error: null }),
+      videos: () => ({ data: [lesson("visible")], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "hidden", last_watched_position: 600, completed_at: "2026-09-29T00:00:00Z", last_watched_at: null }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await expect(getLearningPaths()).resolves.toMatchObject({ paths: [{ total: 1, completed: 0 }] });
+  });
+
+  it("pages memberships and chunks 250 lesson ids for path reads", async () => {
+    const membershipRanges: unknown[] = [];
+    const videoChunks: unknown[] = [];
+    const progressChunks: unknown[] = [];
+    const ids = Array.from({ length: 250 }, (_, index) => `v${index}`);
+    useTables({
+      collections: () => ({ data: [path("path", 1)], error: null }),
+      lesson_collections: (calls) => {
+        membershipRanges.push(calls.find((call) => call.op === "range"));
+        return { data: membershipRanges.length === 1
+          ? ids.map((lesson_id, position) => ({ collection_id: "path", lesson_id, position }))
+          : [], error: null };
+      },
+      videos: (calls) => {
+        videoChunks.push(calls.find((call) => call.op === "in"));
+        return { data: [], error: null };
+      },
+      user_video_progress: (calls) => {
+        progressChunks.push(calls.find((call) => call.op === "in"));
+        return { data: [], error: null };
+      },
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await getLearningPaths();
+    expect(membershipRanges).toEqual([{ op: "range", from: 0, to: 999 }]);
+    expect(videoChunks).toHaveLength(3);
+    expect(progressChunks).toHaveLength(3);
+  });
+
+  it("reads memberships past PostgREST's 1000-row cap, in an order unique over the primary key", async () => {
+    const ranges: unknown[] = [];
+    const orders: unknown[][] = [];
+    const ids = Array.from({ length: 1_001 }, (_, index) => `v${index}`);
+    useTables({
+      collections: () => ({ data: [path("path", 1)], error: null }),
+      lesson_collections: (calls) => {
+        ranges.push(calls.find((call) => call.op === "range"));
+        orders.push(calls.filter((call) => call.op === "order").map((call) => (call as { column: string }).column));
+        return { data: ranges.length === 1
+          ? ids.slice(0, 1_000).map((lesson_id, position) => ({ collection_id: "path", lesson_id, position }))
+          : [{ collection_id: "path", lesson_id: ids[1_000], position: 1_000 }], error: null };
+      },
+      videos: () => ({ data: [], error: null }),
+      user_video_progress: () => ({ data: [], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await getLearningPaths();
+    expect(ranges).toEqual([
+      { op: "range", from: 0, to: 999 },
+      { op: "range", from: 1_000, to: 1_999 },
+    ]);
+    // A page boundary between two collections sharing a lesson and a position must not repeat or skip it.
+    for (const columns of orders) expect(columns).toEqual(expect.arrayContaining(["lesson_id", "collection_id"]));
+  });
+
+  it("orders a path's lessons as one query would, even when their read is split into id chunks", async () => {
+    // 150 unordered members (position 0) span two chunks of 100. Newest-first
+    // across the WHOLE set is the tie-break, not each chunk's own order.
+    const ids = Array.from({ length: 150 }, (_, index) => `v${String(index).padStart(3, "0")}`);
+    // The highest ids are the newest lessons, so the second chunk holds the head of the true order.
+    const video = (id: string) => ({
+      id, youtube_video_id: `yt-${id}`, title: id, duration_seconds: 60, thumbnail_url: null, jlpt_level_estimate: null,
+      added_by_user_id: null, library_access: "FREE", promotion_starred: false,
+      created_at: new Date(Date.UTC(2026, 0, 1) + Number(id.slice(1)) * 1000).toISOString(),
+    });
+    useTables({
+      collections: () => ({ data: [path("long", 1)], error: null }),
+      lesson_collections: () => ({ data: ids.map((lesson_id) => ({ collection_id: "long", lesson_id, position: 0 })), error: null }),
+      videos: (calls) => {
+        const requested = (calls.find((call) => call.op === "in") as { values: string[] }).values;
+        return { data: requested.map(video).sort((a, b) => b.created_at.localeCompare(a.created_at)), error: null };
+      },
+      user_video_progress: () => ({ data: [], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    const { featured } = await getLearningPaths();
+    const expected = ids.map(video).sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id)).map((row) => row.id);
+    expect(featured?.lessons.map((row) => row.id)).toEqual(expected);
+    expect(featured?.next?.id).toBe(expected[0]);
   });
 
   it("features a saved unfinished path over one merely in progress (saved beats rule 3)", async () => {
@@ -591,8 +730,21 @@ describe("shadowing collections", () => {
     const summaries = await getShadowingCollections();
 
     expect(summaries.map((summary) => summary.collection.slug)).toEqual(["beginner-foundation", "native-fluency"]);
-    expect(summaries[0]).toMatchObject({ lessonCount: 2, durationMinutes: 20, sentenceCount: 38, levelBand: { from: "beginner", to: "beginner" } });
-    expect(summaries[1]).toMatchObject({ lessonCount: 2, durationMinutes: 10, sentenceCount: 4, levelBand: { from: "beginner", to: "advanced" } });
+    expect(summaries[0]).toMatchObject({ lessonCount: 2, durationMinutes: 20, sentenceCount: null, levelBand: { from: "beginner", to: "beginner" } });
+    expect(summaries[1]).toMatchObject({ lessonCount: 2, durationMinutes: 10, sentenceCount: null, levelBand: { from: "beginner", to: "advanced" } });
+  });
+
+  it("sums sentence counts only when every visible lesson has a readable count", async () => {
+    useTables({
+      collections: () => ({ data: [shelf("beginner-foundation")], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "beginner-foundation", lesson_id: "a1" },
+        { collection_id: "beginner-foundation", lesson_id: "a2" },
+      ], error: null }),
+      videos: () => ({ data: [lesson("a1", 60, "N5"), lesson("a2", 60, "N5")], error: null }),
+    }, { video_sentence_counts: () => ({ data: [{ video_id: "a1", sentence_count: 3 }, { video_id: "a2", sentence_count: 4 }], error: null }) });
+    const { getShadowingCollections } = await import("@/lib/data/collections");
+    await expect(getShadowingCollections()).resolves.toMatchObject([{ sentenceCount: 7 }]);
   });
 
   it("reads no lessons when no collection has members", async () => {

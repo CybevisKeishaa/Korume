@@ -1,14 +1,9 @@
 import { Link } from "@/lib/i18n/navigation";
+import { ProgressRing, ValueOrDash } from "./progress-display";
 
 const CARD = "rounded-lg border border-border bg-card p-md-lg";
 const EYEBROW = "text-caption font-semibold uppercase tracking-wide text-muted-foreground";
 const BUTTON = "mt-md-lg flex min-h-hit-target w-full items-center justify-center rounded-full bg-primary px-md text-body font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
-
-/** A value the learner has, or a dash that says it is unknown — never a stand-in zero. */
-function Value({ value, missing, className }: { value: string | null; missing: string; className: string }) {
-  if (value !== null) return <span className={className}>{value}</span>;
-  return <><span aria-hidden="true" className={className}>—</span><span className="sr-only">{missing}</span></>;
-}
 
 export interface HubSpeakingRailProps {
   today: {
@@ -57,7 +52,6 @@ export interface HubSpeakingRailProps {
 
 /** The Pronunciation Studio rail (Figma 37:5929): four cards, each a labelled region. */
 export function HubSpeakingRail({ today, weekly, sensei, recent }: HubSpeakingRailProps) {
-  const ring = 2 * Math.PI * 32;
   const { points } = weekly.trend;
   // Plot coordinates to a tenth of a unit: exact enough, and no float noise in the markup.
   const tenth = (value: number) => Math.round(value * 10) / 10;
@@ -69,26 +63,15 @@ export function HubSpeakingRail({ today, weekly, sensei, recent }: HubSpeakingRa
       <section aria-label={today.title} className={CARD}>
         <h2 className={EYEBROW}>{today.title}</h2>
         <div className="mt-md flex items-center gap-md">
-          <div className="relative size-20 shrink-0">
-            <svg viewBox="0 0 72 72" aria-hidden="true" className="size-20 -rotate-90">
-              <circle cx="36" cy="36" r="32" fill="none" strokeWidth="5" className="stroke-primary/25" />
-              {today.goalPercent > 0 ? (
-                <circle
-                  cx="36" cy="36" r="32" fill="none" strokeWidth="5" strokeLinecap="round" className="stroke-primary"
-                  strokeDasharray={ring} strokeDashoffset={ring * (1 - today.goalPercent / 100)}
-                />
-              ) : null}
-            </svg>
-            <span aria-hidden="true" className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-heading font-semibold text-foreground">{today.minutes}</span>
-              <span className="text-caption text-muted-foreground">{today.minutesUnit}</span>
-            </span>
-            <span className="sr-only">{today.minutesLabel}</span>
-          </div>
+          <ProgressRing percent={today.goalPercent} size="lg" className="flex-col">
+            <span className="text-heading font-semibold text-foreground">{today.minutes}</span>
+            <span className="text-caption text-muted-foreground">{today.minutesUnit}</span>
+          </ProgressRing>
+          <span className="sr-only">{today.minutesLabel}</span>
           <div className="min-w-0 text-caption text-muted-foreground">
             <p>{today.lessons}</p>
             <p className="mt-xs">
-              {today.scoreLabel}&nbsp; <Value value={today.score} missing={today.scoreMissing} className="font-semibold text-primary-strong" />
+              {today.scoreLabel}&nbsp; <ValueOrDash value={today.score} missing={today.scoreMissing} className="font-semibold text-primary-strong" />
             </p>
           </div>
         </div>
@@ -102,7 +85,7 @@ export function HubSpeakingRail({ today, weekly, sensei, recent }: HubSpeakingRa
           {weekly.metrics.map((metric) => (
             <div key={metric.label} className="flex items-center justify-between gap-sm text-caption">
               <dt className="text-muted-foreground">{metric.label}</dt>
-              <dd><Value value={metric.value} missing={weekly.notEnoughData} className="font-semibold text-primary-strong" /></dd>
+              <dd><ValueOrDash value={metric.value} missing={weekly.notEnoughData} className="font-semibold text-primary-strong" /></dd>
             </div>
           ))}
         </dl>
@@ -164,7 +147,7 @@ export function HubSpeakingRail({ today, weekly, sensei, recent }: HubSpeakingRa
                   </span>
                   <span className="shrink-0">
                     <span className="sr-only">{recent.scoreLabel} </span>
-                    <Value value={row.score} missing={recent.scoreMissing} className="text-body font-semibold text-primary-strong" />
+                    <ValueOrDash value={row.score} missing={recent.scoreMissing} className="text-body font-semibold text-primary-strong" />
                   </span>
                 </Link>
               </li>

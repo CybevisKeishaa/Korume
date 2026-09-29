@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { listCollections, listCollectionLessons, selectShadowingCollections, type Collection } from "@/lib/data/collections";
+import { containsPattern } from "@/lib/data/query-pagination";
 import { listSituations, type LessonTag } from "@/lib/data/lesson-taxonomy";
 import { getRecommendations } from "@/lib/data/recommendations";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
@@ -81,7 +82,7 @@ export async function getShadowingExplore(
   const query = options.query?.trim() ?? "";
   let videosQuery = supabase.from("videos").select(VIDEO_COLUMNS);
   if (activeSituation) videosQuery = videosQuery.eq("situation_id", activeSituation.id);
-  if (query) videosQuery = videosQuery.ilike("title", `%${query}%`);
+  if (query) videosQuery = videosQuery.ilike("title", containsPattern(query));
   const { data: videosData, error: videosError } = await videosQuery.order("created_at", { ascending: false });
   if (videosError) throw videosError;
   const libraryIds = new Set(((libraryResult.data as { lesson_id: string }[] | null) ?? []).map((row) => row.lesson_id));

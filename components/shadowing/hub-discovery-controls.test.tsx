@@ -75,8 +75,31 @@ describe("HubDiscoveryControls", () => {
     expect(document.querySelector("details")).toBeNull();
 
     await user.click(trigger);
+    expect(await screen.findByRole("dialog", { name: pronunciationCopy.hub.filterToggleLabel })).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: labels.all })).toHaveAttribute("href", "/en/pronunciation");
     expect(screen.getByRole("link", { name: shadowingCopy.situations.restaurant })).toHaveAttribute("href", "/en/pronunciation?filter=situation%3Arestaurant");
+  });
+
+  it("keeps the studio's filter and display URL state in searches and chips", async () => {
+    render(
+      <HubDiscoveryControls
+        filters={[{ kind: "level", slug: "n5", label: "N5" }]}
+        query="meeting"
+        activeFilter="level:n5"
+        results={null}
+        action="/en/pronunciation"
+        basePath="/pronunciation"
+        heading={<h1>Studio</h1>}
+        filterToggleLabel="Filter"
+        preservedParams={{ sort: "shortest", duration: "under_10", hideCompleted: "true" }}
+        labels={labels}
+      />,
+    );
+    const form = screen.getByRole("search", { name: labels.searchLabel });
+    expect(form).toHaveFormValues({ filter: "level:n5", sort: "shortest", duration: "under_10", hideCompleted: "true" });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Filter: N5" }));
+    expect(await screen.findByRole("link", { name: "N5" })).toHaveAttribute("href", "/en/pronunciation?q=meeting&sort=shortest&duration=under_10&hideCompleted=true&filter=level%3An5");
   });
 
   it("marks the heading filter trigger with its active filter", () => {
@@ -116,9 +139,23 @@ describe("HubDiscoveryControls", () => {
   it("places a supplied toolbar after the filter trigger, and renders nothing extra without one", () => {
     const { rerender } = render(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={null} action="/en/pronunciation" basePath="/pronunciation" heading={<h1>Studio</h1>} filterToggleLabel="Filter" labels={labels} toolbar={<button type="button">Sort & display</button>} />);
     const buttons = screen.getAllByRole("button").map((button) => button.getAttribute("aria-label") ?? button.textContent);
+    // Both must exist, or a missing one (-1) would pass the order check.
+    expect(buttons.indexOf("Filter")).toBeGreaterThanOrEqual(0);
     expect(buttons.indexOf("Sort & display")).toBeGreaterThan(buttons.indexOf("Filter"));
-    // /shadowing passes no toolbar and gets exactly the controls it had.
-    rerender(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={null} action="/en/shadowing" basePath="/shadowing" heading={<h1>Shadowing</h1>} filterToggleLabel="Filter" labels={labels} />);
+    // /shadowing renders without a heading or toolbar, and gets exactly the controls it had.
+    rerender(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={null} action="/en/shadowing" basePath="/shadowing" labels={labels} />);
     expect(screen.queryByRole("button", { name: "Sort & display" })).toBeNull();
+  });
+
+  it("names its landmarks apart where the page heading sits inside, and keeps /shadowing's names", () => {
+    const filters = [{ kind: "situation" as const, slug: "restaurant", label: "Restaurant" }];
+    const { rerender } = render(<HubDiscoveryControls filters={filters} query="" activeFilter={null} results={null} action="/en/pronunciation" basePath="/pronunciation" heading={<h1>Studio</h1>} filterToggleLabel="Filter" labels={labels} />);
+    // The section wraps the page's h1, so it is not a region named after search.
+    expect(screen.queryByRole("region", { name: labels.searchLabel })).toBeNull();
+    expect(screen.getByRole("search", { name: labels.searchLabel })).toBeInTheDocument();
+
+    rerender(<HubDiscoveryControls filters={filters} query="" activeFilter={null} results={null} action="/en/shadowing" basePath="/shadowing" labels={labels} />);
+    expect(screen.getByRole("region", { name: labels.searchLabel })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: labels.searchLabel })).toBeInTheDocument();
   });
 });

@@ -12,7 +12,7 @@ const COLUMNS = { 3: "xl:grid-cols-3", 4: "xl:grid-cols-4", 5: "xl:grid-cols-5" 
 
 export function HubShelf({ title, viewAll, empty, children, columns = 4 }: {
   title: string;
-  viewAll?: { href: string; label: string };
+  viewAll?: { href: string; label: string; accessibleSuffix?: string };
   empty: { title: string; body: string };
   children: ReactNode[];
   columns?: 3 | 4 | 5;
@@ -24,6 +24,7 @@ export function HubShelf({ title, viewAll, empty, children, columns = 4 }: {
         action={viewAll ? (
           <Link href={viewAll.href} className="inline-flex min-h-hit-target items-center text-caption font-semibold text-primary-strong hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             {viewAll.label} <span aria-hidden="true">&nbsp;→</span>
+            {viewAll.accessibleSuffix ? <span className="sr-only"> {viewAll.accessibleSuffix}</span> : null}
           </Link>
         ) : undefined}
       />

@@ -1,6 +1,6 @@
 {
   "hub": {
-    "eyebrow": "SPEAK WITH CONTEXT",
+    "eyebrow": "Speak with context",
     "title": "Pronunciation Studio",
     "subtitle": "Master Japanese pronunciation through carefully designed speaking courses and real-world scenarios.",
     "searchLabel": "Search pronunciation courses",
@@ -8,6 +8,7 @@
     "filterToggleLabel": "Filter courses",
     "display": {
       "trigger": "Sort & display",
+      "triggerCustomised": "{trigger}: {value}",
       "title": "Sort & display",
       "sort": "Sort",
       "recommended": "Recommended",
@@ -25,8 +26,8 @@
       "close": "Close dialog",
       "saveFailed": "Applied here, but not saved for your next visit."
     },
-    "featuredCourse": "FEATURED COURSE",
-    "continueWhereLeftOff": "CONTINUE WHERE YOU LEFT OFF",
+    "featuredCourse": "Featured course",
+    "continueWhereLeftOff": "Continue where you left off",
     "startCourse": "Start Course",
     "continueLearning": "Continue Learning",
     "previewCourse": "Preview Course",
@@ -61,7 +62,7 @@
       "saveFailed": "Your saved paths could not be updated. Try again.",
       "emptyTitle": "No learning paths yet",
       "emptyBody": "Learning paths appear here once they have lessons.",
-      "pageEyebrow": "LEARNING PATHS",
+      "pageEyebrow": "Learning paths",
       "pageTitle": "Learning Paths",
       "pageSubtitle": "Structured courses that take you from first phrases to confident conversation.",
       "saved": "Saved paths",

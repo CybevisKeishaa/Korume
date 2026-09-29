@@ -49,4 +49,13 @@ describe("/api/collections/[id]/save", () => {
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("5");
   });
+
+  it("returns an opaque JSON 500 when saving fails unexpectedly", async () => {
+    vi.mocked(setCollectionSaved).mockRejectedValueOnce(new Error("Supabase unavailable"));
+
+    const response = await PUT(request("PUT"), { params: { id: COLLECTION_ID } });
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "Something went wrong. Please try again." });
+  });
 });

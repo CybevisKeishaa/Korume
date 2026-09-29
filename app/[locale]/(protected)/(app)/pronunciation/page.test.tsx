@@ -8,14 +8,20 @@ import shadowingCopy from "@/messages/en/shadowing.json";
 const catalogs = { common: commonCopy, pronunciation: pronunciationCopy, shadowing: shadowingCopy } as const;
 
 function translation(namespace: keyof typeof catalogs) {
-  return (key: string, values: Record<string, string | number> = {}) => {
-    const message = key.split(".").reduce<unknown>((value, part) => (
-      value && typeof value === "object" ? (value as Record<string, unknown>)[part] : undefined
-    ), catalogs[namespace]) as string;
+  const raw = (key: string) => key.split(".").reduce<unknown>((value, part) => (
+    value && typeof value === "object" ? (value as Record<string, unknown>)[part] : undefined
+  ), catalogs[namespace]) as string;
+  const t = (key: string, values: Record<string, string | number> = {}) => {
     // Enough ICU for these assertions: take a plural's `other` branch, then fill named arguments.
-    const flat = message.replace(/^\{\w+, plural,.*other \{(.*)\}\}$/, "$1");
-    return Object.entries(values).reduce((copy, [name, value]) => copy.split(`{${name}}`).join(String(value)), flat);
+    const flat = raw(key).replace(/^\{\w+, plural,.*other \{(.*)\}\}$/, "$1");
+    const filled = Object.entries(values).reduce((copy, [name, value]) => copy.split(`{${name}}`).join(String(value)), flat);
+    // use-intl's development build refuses a template with an unfilled argument; so does this mock.
+    const missing = filled.match(/\{(\w+)\}/);
+    if (missing) throw new Error(`${key}: argument "${missing[1]}" was not provided`);
+    return filled;
   };
+  // `t.raw` returns the template unformatted, as next-intl does.
+  return Object.assign(t, { raw });
 }
 
 const data = vi.hoisted(() => ({
@@ -96,6 +102,7 @@ describe("PronunciationPage", () => {
     data.getWeeklyImprovement.mockResolvedValue({ deltas: { accuracy: null, pitch: null, rhythm: null }, trend: [] });
     data.getRecentPractice.mockResolvedValue([]);
     data.getSenseiRecommendation.mockResolvedValue(null);
+    data.getMyPreferences.mockResolvedValue(null);
   });
 
   it("renders the pronunciation progress rail in the complementary landmark", async () => {
@@ -169,6 +176,15 @@ describe("PronunciationPage", () => {
     expect(within(rail).getByText("You already know 64% of this lesson's words — the right stretch for you.")).toBeInTheDocument();
   });
 
+  it("names a customised Sort & display trigger by its applied view", async () => {
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    render(await PronunciationPage({ searchParams: { sort: "shortest", duration: "under_10" } }));
+
+    const { display } = pronunciationCopy.hub;
+    expect(screen.getByRole("button", { name: `${display.trigger}: ${display.shortest}, ${display.underTen}` })).toBeInTheDocument();
+  });
+
   it("uses profile display settings only when the URL supplies none, and URL wins otherwise", async () => {
     data.getHubDiscovery.mockResolvedValue(noDiscovery);
     data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
@@ -194,7 +210,7 @@ describe("PronunciationPage", () => {
     await user.click(screen.getByRole("button", { name: pronunciationCopy.hub.filterToggleLabel }));
     expect(await screen.findByRole("link", { name: shadowingCopy.situations.restaurant })).toHaveAttribute("href", "/pronunciation?filter=situation%3Arestaurant");
     expect(screen.queryByTestId("upcoming-screen")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: pronunciationCopy.hub.display.trigger })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: new RegExp(`^${pronunciationCopy.hub.display.trigger}`) })).toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: pronunciationCopy.hub.searchLabel })).toHaveAttribute("placeholder", "Search by lesson title");
   });
 
@@ -289,9 +305,9 @@ describe("PronunciationPage", () => {
   it("places goals between situations and collections, with one weakest-metric recommendation", async () => {
     data.getHubDiscovery.mockResolvedValue(noDiscovery);
     data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
-    data.listPracticeSituations.mockResolvedValueOnce([{ slug: "cafe", icon: "â˜•" }]);
+    data.listPracticeSituations.mockResolvedValueOnce([{ slug: "cafe", icon: "☕" }]);
     const summary = (id: string, skillFocus: "pitch" | "rhythm", started = false) => ({
-      collection: { id, slug: id, title: `Goal ${id}`, description: `Description ${id}`, coverImageUrl: null, displayOrder: 1, kind: "goal", skillFocus, icon: "â—Œ" },
+      collection: { id, slug: id, title: `Goal ${id}`, description: `Description ${id}`, coverImageUrl: null, displayOrder: 1, kind: "goal", skillFocus, icon: "◌" },
       total: 2, completed: started ? 1 : 0, next: video(`${id}-lesson`, "First"), started, lessonCount: 2, durationMinutes: 30,
     });
     data.getPracticeGoals.mockResolvedValueOnce([summary("pitch", "pitch"), summary("rhythm-first", "rhythm", true), summary("rhythm-second", "rhythm")]);

@@ -80,6 +80,34 @@ describe("HubPathCard", () => {
     expect(toggle()).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("hands focus to the same path's other toggle after an unsave, but only if focus is still on this one", async () => {
+    let settle: (response: Response) => void = () => undefined;
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { settle = resolve; })));
+    const user = userEvent.setup();
+    render(
+      <>
+        <HubPathCard path={{ ...path, saved: true }} labels={labels} saveToggleId="saved-path-save-path-1" focusAfterUnsaveId="all-path-save-path-1" />
+        <button type="button" id="all-path-save-path-1">All paths toggle</button>
+        <button type="button">Elsewhere</button>
+      </>,
+    );
+    const target = screen.getByRole("button", { name: "All paths toggle" });
+
+    await user.click(toggle());
+    settle(new Response(null, { status: 200 }));
+    await vi.waitFor(() => expect(target).toHaveFocus());
+
+    // Second time the learner moves on while the DELETE is in flight: focus stays where they put it.
+    target.blur();
+    const { unmount } = render(<HubPathCard path={{ ...path, id: "path-2", saveLabel: "Save Second path", saved: true }} labels={labels} focusAfterUnsaveId="all-path-save-path-1" />);
+    await user.click(screen.getByRole("button", { name: "Save Second path" }));
+    await user.click(screen.getByRole("button", { name: "Elsewhere" }));
+    settle(new Response(null, { status: 200 }));
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("button", { name: "Elsewhere" })).toHaveFocus();
+    unmount();
+  });
+
   it("rolls a failed save back to what the server last accepted, and says so", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 429 })));
     const user = userEvent.setup();

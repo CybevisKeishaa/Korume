@@ -4,6 +4,7 @@ import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
 import type { PronunciationMetric } from "@/lib/data/pronunciation-metrics";
 import { getRecommendations } from "@/lib/data/recommendations";
+import { containsPattern, fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 
 /**
  * A curated set that CONTAINS lessons. Not an attribute of a lesson, and not
@@ -169,26 +170,33 @@ async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView
   const candidates = ((candidateRows as CollectionRow[] | null) ?? []).map(toCollection);
   if (!candidates.length) return [];
 
-  const { data: membershipRows, error: membershipError } = await supabase
-    .from("lesson_collections").select("collection_id, lesson_id, position")
-    .in("collection_id", candidates.map((candidate) => candidate.id))
-    .order("position", { ascending: true }).order("lesson_id", { ascending: true });
-  if (membershipError) throw membershipError;
-  const memberships = (membershipRows as { collection_id: string; lesson_id: string; position: number }[] | null) ?? [];
+  const memberships = await fetchByIdChunks(
+    candidates.map((candidate) => candidate.id),
+    (collectionIds) => fetchAllPages((from, to) => supabase
+      .from("lesson_collections").select("collection_id, lesson_id, position")
+      .in("collection_id", collectionIds)
+      // Unique over the primary key, so pages neither repeat nor skip a row
+      // shared by two collections at the same position.
+      .order("position", { ascending: true }).order("lesson_id", { ascending: true }).order("collection_id", { ascending: true })
+      .range(from, to),
+    ),
+  ) as { collection_id: string; lesson_id: string; position: number }[];
   const lessonIds = [...new Set(memberships.map((membership) => membership.lesson_id))];
   if (!lessonIds.length) return [];
 
-  const [
-    { data: videos, error: videoError },
-    { data: progressRows, error: progressError },
-  ] = await Promise.all([
-    supabase.from("videos").select(VIDEO_COLUMNS).in("id", lessonIds).order("created_at", { ascending: false }).order("id", { ascending: true }),
-    supabase.from("user_video_progress").select("video_id, last_watched_position, completed_at, last_watched_at").in("video_id", lessonIds),
+  const [orderedVideos, progressRows] = await Promise.all([
+    fetchByIdChunks(lessonIds, async (ids) => {
+      const { data, error } = await supabase.from("videos").select(VIDEO_COLUMNS).in("id", ids).order("created_at", { ascending: false }).order("id", { ascending: true });
+      if (error) throw error;
+      return (data as VideoRow[] | null) ?? [];
+    }),
+    fetchByIdChunks(lessonIds, async (ids) => {
+      const { data, error } = await supabase.from("user_video_progress").select("video_id, last_watched_position, completed_at, last_watched_at").in("video_id", ids);
+      if (error) throw error;
+      return (data as ProgressRow[] | null) ?? [];
+    }),
   ]);
-  if (videoError) throw videoError;
-  if (progressError) throw progressError;
-  const orderedVideos = (videos as VideoRow[] | null) ?? [];
-  const progressById = new Map(((progressRows as ProgressRow[] | null) ?? []).map((row) => [row.video_id, row]));
+  const progressById = new Map(progressRows.map((row) => [row.video_id, row]));
   const isCompleted = (lessonId: string) => Boolean(progressById.get(lessonId)?.completed_at);
 
   return candidates.map((collection) => {
@@ -197,14 +205,14 @@ async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView
       orderedVideos.filter((video) => memberRows.some((membership) => membership.lesson_id === video.id)),
       new Map(memberRows.map((membership) => [membership.lesson_id, membership.position])),
     );
-    const completed = memberRows.filter((membership) => isCompleted(membership.lesson_id)).length;
+    const completed = lessons.filter((lesson) => isCompleted(lesson.id)).length;
     const next = lessons.find((lesson) => !isCompleted(lesson.id)) ?? lessons[0] ?? null;
-    const started = memberRows.some((membership) => {
-      const progress = progressById.get(membership.lesson_id);
+    const started = lessons.some((lesson) => {
+      const progress = progressById.get(lesson.id);
       return Boolean(progress && (progress.completed_at || progress.last_watched_position > 0));
     });
     const { lessonCount, durationMinutes } = collectionMeta(lessons);
-    return { collection, memberRows, lessons, progressById, total: memberRows.length, completed, next, started, lessonCount, durationMinutes, lessonIds: lessons.map((lesson) => lesson.id) };
+    return { collection, memberRows, lessons, progressById, total: lessons.length, completed, next, started, lessonCount, durationMinutes, lessonIds: lessons.map((lesson) => lesson.id) };
   }).filter((view) => view.lessons.length > 0);
 }
 
@@ -224,7 +232,7 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     { data: sessions, error: sessionError },
     { data: savedRows, error: savedError },
   ] = await Promise.all([
-    supabase.from("shadowing_sessions").select("video_id, created_at").order("created_at", { ascending: false }).limit(1),
+    supabase.from("shadowing_sessions").select("video_id, created_at").not("video_id", "is", null).order("created_at", { ascending: false }).limit(1),
     // RLS scopes both user tables to the caller.
     supabase.from("user_saved_collections").select("collection_id"),
   ]);
@@ -251,7 +259,7 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     : undefined;
   const selected = views.find((view) => savedIds.has(view.collection.id) && unfinished(view))
     ?? activitySelected
-    ?? views.find((view) => view.completed > 0 && unfinished(view))
+    ?? views.find((view) => view.started && unfinished(view))
     ?? views[0];
   if (!selected) return { featured: null, paths };
 
@@ -382,7 +390,7 @@ export interface ShadowingCollectionSummary {
   durationMinutes: number | null;
   levelBand: { from: LevelBand; to: LevelBand } | null;
   /** Lines of each visible lesson's latest transcript the viewer can read. */
-  sentenceCount: number;
+  sentenceCount: number | null;
 }
 
 /** The shadowing collections with at least one lesson the viewer can see. */
@@ -394,22 +402,33 @@ export async function getShadowingCollections(): Promise<ShadowingCollectionSumm
   const collections = selectShadowingCollections(((collectionRows as CollectionRow[] | null) ?? []).map(toCollection));
   if (!collections.length) return [];
 
-  const { data: membershipRows, error: membershipError } = await supabase
-    .from("lesson_collections").select("collection_id, lesson_id")
-    .in("collection_id", collections.map((collection) => collection.id));
-  if (membershipError) throw membershipError;
-  const memberships = (membershipRows as { collection_id: string; lesson_id: string }[] | null) ?? [];
+  const memberships = await fetchByIdChunks(
+    collections.map((collection) => collection.id),
+    (collectionIds) => fetchAllPages((from, to) => supabase
+      .from("lesson_collections").select("collection_id, lesson_id")
+      .in("collection_id", collectionIds)
+      // A paged read needs a total order; the primary key is one.
+      .order("collection_id", { ascending: true }).order("lesson_id", { ascending: true })
+      .range(from, to),
+    ),
+  ) as { collection_id: string; lesson_id: string }[];
   const lessonIds = [...new Set(memberships.map((membership) => membership.lesson_id))];
   if (!lessonIds.length) return [];
 
-  const { data: videos, error: videoError } = await supabase.from("videos").select(VIDEO_COLUMNS).in("id", lessonIds);
-  if (videoError) throw videoError;
-  const videoById = new Map(((videos as VideoRow[] | null) ?? []).map((video) => [video.id, video]));
+  const videos = await fetchByIdChunks(lessonIds, async (ids) => {
+    const { data, error } = await supabase.from("videos").select(VIDEO_COLUMNS).in("id", ids);
+    if (error) throw error;
+    return (data as VideoRow[] | null) ?? [];
+  });
+  const videoById = new Map(videos.map((video) => [video.id, video]));
   if (!videoById.size) return [];
 
-  const { data: countRows, error: countError } = await supabase.rpc("video_sentence_counts", { p_video_ids: [...videoById.keys()] });
-  if (countError) throw countError;
-  const sentencesById = new Map(((countRows as { video_id: string; sentence_count: number }[] | null) ?? [])
+  const countRows = await fetchByIdChunks([...videoById.keys()], async (ids) => {
+    const { data, error } = await supabase.rpc("video_sentence_counts", { p_video_ids: ids });
+    if (error) throw error;
+    return (data as { video_id: string; sentence_count: number }[] | null) ?? [];
+  });
+  const sentencesById = new Map(countRows
     .map((row) => [row.video_id, row.sentence_count]));
 
   return collections.flatMap((collection) => {
@@ -418,7 +437,9 @@ export async function getShadowingCollections(): Promise<ShadowingCollectionSumm
       .flatMap((membership) => videoById.get(membership.lesson_id) ?? []);
     if (!lessons.length) return [];
     const { lessonCount, durationMinutes, levelBand } = collectionMeta(lessons);
-    const sentenceCount = lessons.reduce((total, lesson) => total + (sentencesById.get(lesson.id) ?? 0), 0);
+    const sentenceCount = lessons.every((lesson) => sentencesById.has(lesson.id))
+      ? lessons.reduce((total, lesson) => total + (sentencesById.get(lesson.id) ?? 0), 0)
+      : null;
     return [{ collection, lessonCount, durationMinutes, levelBand, sentenceCount }];
   });
 }
@@ -465,22 +486,30 @@ export async function setCollectionSaved(collectionId: string, saved: boolean): 
  * is stable, so equal positions (0 = unordered) keep the videos query order
  * (`created_at desc, id`).
  */
+/**
+ * Editorial order, then newest, then id: a total order of its own, so a list
+ * merged from several chunked reads sorts exactly as one query would.
+ */
 function sortByPosition(videos: VideoRow[], positionById: Map<string, number>): VideoRow[] {
-  return [...videos].sort((left, right) => (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0));
+  return [...videos].sort((left, right) =>
+    (positionById.get(left.id) ?? 0) - (positionById.get(right.id) ?? 0)
+    || right.created_at.localeCompare(left.created_at)
+    || (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
 }
 
 export async function listMemberships(
   collectionId: string,
 ): Promise<{ lessonId: string; position: number }[]> {
   const supabase = createClient();
-  const { data, error } = await supabase
+  const data = await fetchAllPages((from, to) => supabase
     .from("lesson_collections")
     .select("lesson_id, position")
     .eq("collection_id", collectionId)
     .order("position", { ascending: true })
-    .order("lesson_id", { ascending: true });
-  if (error) throw error;
-  return ((data as { lesson_id: string; position: number }[] | null) ?? []).map(
+    .order("lesson_id", { ascending: true })
+    .range(from, to),
+  ) as { lesson_id: string; position: number }[];
+  return data.map(
     ({ lesson_id, position }) => ({ lessonId: lesson_id, position }),
   );
 }
@@ -496,13 +525,16 @@ export async function listCollectionLessons(
 
   // RLS on `videos` still applies: a PLUS lesson the viewer cannot read is
   // filtered by the database, not by this function.
-  let query = supabase.from("videos").select(VIDEO_COLUMNS).in("id", ids);
-  if (options.situationId) query = query.eq("situation_id", options.situationId);
-  if (options.query) query = query.ilike("title", `%${options.query}%`);
-  const { data, error } = await query.order("created_at", { ascending: false }).order("id", { ascending: true });
-  if (error) throw error;
+  const videos = await fetchByIdChunks(ids, async (chunk) => {
+    let query = supabase.from("videos").select(VIDEO_COLUMNS).in("id", chunk);
+    if (options.situationId) query = query.eq("situation_id", options.situationId);
+    if (options.query) query = query.ilike("title", containsPattern(options.query));
+    const { data, error } = await query.order("created_at", { ascending: false }).order("id", { ascending: true });
+    if (error) throw error;
+    return (data as VideoRow[] | null) ?? [];
+  });
   const positionById = new Map(memberships.map(({ lessonId, position }) => [lessonId, position]));
-  const lessons = sortByPosition((data as VideoRow[] | null) ?? [], positionById);
+  const lessons = sortByPosition(videos, positionById);
   return options.limit ? lessons.slice(0, options.limit) : lessons;
 }
 
@@ -514,12 +546,19 @@ export async function getCollectionProgress(
   if (ids.length === 0) return { total: 0, completed: 0 };
 
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("user_video_progress")
-    .select("video_id, completed_at")
-    .in("video_id", ids);
-  if (error) throw error;
-  const completed = ((data as { video_id: string; completed_at: string | null }[] | null) ?? [])
-    .filter(({ completed_at }) => completed_at !== null).length;
-  return { total: ids.length, completed };
+  const [videos, progress] = await Promise.all([
+    fetchByIdChunks(ids, async (chunk) => {
+      const { data, error } = await supabase.from("videos").select("id").in("id", chunk);
+      if (error) throw error;
+      return (data as { id: string }[] | null) ?? [];
+    }),
+    fetchByIdChunks(ids, async (chunk) => {
+      const { data, error } = await supabase.from("user_video_progress").select("video_id, completed_at").in("video_id", chunk);
+      if (error) throw error;
+      return (data as { video_id: string; completed_at: string | null }[] | null) ?? [];
+    }),
+  ]);
+  const visibleIds = new Set(videos.map((video) => video.id));
+  const completed = progress.filter(({ video_id, completed_at }) => visibleIds.has(video_id) && completed_at !== null).length;
+  return { total: visibleIds.size, completed };
 }

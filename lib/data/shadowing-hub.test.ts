@@ -240,6 +240,17 @@ describe("getHubDiscovery", () => {
     ]));
   });
 
+  it("escapes ilike wildcard characters in a submitted search", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
+
+    await getHubDiscovery({ query: "100%_ready\\now" });
+
+    expect(videoQueries).toContainEqual(expect.arrayContaining([
+      { op: "ilike", column: "title", pattern: "%100\\%\\_ready\\\\now%" },
+    ]));
+  });
+
   it("filters by a JLPT level on the lesson's estimate, without listing levels among the Hub's chips", async () => {
     const videoQueries: QueryCall[][] = [];
     mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });

@@ -31,6 +31,8 @@ export interface HubDiscoveryControlsProps {
   heading?: React.ReactNode;
   beforeResults?: React.ReactNode;
   filterToggleLabel?: string;
+  /** URL state the Pronunciation Studio must preserve across search and chips. */
+  preservedParams?: Record<string, string | undefined>;
   /** Extra controls after the filter toggle (the studio's Sort & display); Shadowing passes none. */
   toolbar?: React.ReactNode;
   /** Null means the learner has not searched or filtered yet. */
@@ -58,16 +60,27 @@ export function HubDiscoveryControls({
   heading,
   beforeResults,
   filterToggleLabel,
+  preservedParams,
   toolbar,
   labels,
   part = "all",
 }: HubDiscoveryControlsProps) {
   const activeFilterLabel = filters.find((filter) => `${filter.kind}:${filter.slug}` === activeFilter)?.label;
   const filterTriggerLabel = activeFilterLabel ? `${filterToggleLabel}: ${activeFilterLabel}` : filterToggleLabel;
+  // Only a page that passes `preservedParams` keeps its URL state across
+  // chips and search; /shadowing keeps its original links.
+  const hrefForFilter = (filter: string | null): string => {
+    const params = new URLSearchParams();
+    if (preservedParams && query) params.set("q", query);
+    for (const [key, value] of Object.entries(preservedParams ?? {})) if (value) params.set(key, value);
+    if (filter) params.set("filter", filter);
+    const suffix = params.toString();
+    return suffix ? `${basePath}?${suffix}` : basePath;
+  };
   const filterLinks = (
-    <nav aria-label={labels.searchLabel} className={cn("flex flex-wrap gap-xs", !heading && "mt-md")}>
+    <nav aria-label={heading ? filterToggleLabel : labels.searchLabel} className={cn("flex flex-wrap gap-xs", !heading && "mt-md")}>
       <Link
-        href={basePath}
+        href={hrefForFilter(null)}
         aria-current={activeFilter === null ? "page" : undefined}
         className={cn(
           "rounded-full border px-sm py-xs text-caption font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -81,7 +94,7 @@ export function HubDiscoveryControls({
         return (
           <Link
             key={value}
-            href={`${basePath}?filter=${encodeURIComponent(value)}`}
+            href={hrefForFilter(value)}
             aria-current={activeFilter === value ? "page" : undefined}
             className={cn(
               "rounded-full border px-sm py-xs text-caption font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -104,6 +117,8 @@ export function HubDiscoveryControls({
       className={heading ? "min-w-0 flex-1" : undefined}
     >
       <label htmlFor="hub-search" className="sr-only">{labels.searchLabel}</label>
+      {preservedParams && activeFilter ? <input type="hidden" name="filter" value={activeFilter} /> : null}
+      {Object.entries(preservedParams ?? {}).map(([name, value]) => value ? <input key={name} type="hidden" name={name} value={value} /> : null)}
       {heading ? (
         <div className="relative">
           <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute inset-y-0 left-sm my-auto size-icon-sm text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
@@ -161,7 +176,7 @@ export function HubDiscoveryControls({
   if (heading && part === "results") return <div>{between}{resultsContent}</div>;
 
   return (
-    <section aria-label={labels.searchLabel}>
+    <section aria-label={heading ? undefined : labels.searchLabel}>
       {heading ? (
         <>
           <div className="lg:flex lg:items-end lg:justify-between lg:gap-xl">
@@ -170,6 +185,7 @@ export function HubDiscoveryControls({
               {searchForm}
               <Popover
                 align="end"
+                label={filterToggleLabel}
                 trigger={(
                   <button type="button" aria-label={filterTriggerLabel} className={cn(
                     "flex h-control-lg min-h-hit-target aspect-square items-center justify-center rounded-lg border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

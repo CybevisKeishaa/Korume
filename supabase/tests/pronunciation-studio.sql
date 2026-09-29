@@ -136,5 +136,52 @@ exception when insufficient_privilege then
 end $$;
 commit;
 
+-- Saved-path policy, progress timestamp trigger, and the two RPC grants added
+-- for the Studio. Claude runs this live after a fresh reset.
+select id as path_id from public.collections where kind = 'path' order by display_order limit 1 \gset
+select id as shelf_id from public.collections where kind = 'shelf' order by display_order limit 1 \gset
+-- psql does not expand :'var' inside a DO body, so the blocks read session settings.
+select set_config('gate.uid_a', :'uid_a', false), set_config('gate.shelf_id', :'shelf_id', false),
+  set_config('gate.n2_one', :'n2_one', false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_a', 'role', 'authenticated')::text, true);
+insert into public.user_saved_collections (user_id, collection_id) values (:'uid_a', :'path_id');
+do $$ begin
+  insert into public.user_saved_collections (user_id, collection_id) values (current_setting('gate.uid_a')::uuid, current_setting('gate.shelf_id')::uuid);
+  raise exception 'FAIL saved paths: a shelf was saved';
+exception when insufficient_privilege then raise notice 'PASS saved paths: shelf refused'; end $$;
+do $$ begin
+  update public.user_saved_collections set saved_at = now() where user_id = auth.uid();
+  raise exception 'FAIL saved paths: UPDATE was allowed';
+exception when insufficient_privilege then raise notice 'PASS saved paths: UPDATE denied'; end $$;
+insert into public.user_video_progress (user_id, video_id, last_watched_position) values (:'uid_a', :'n2_one', 1);
+update public.user_video_progress set last_watched_at = now() - interval '1 hour' where user_id = :'uid_a' and video_id = :'n2_one';
+select last_watched_at as watched_before from public.user_video_progress where user_id = :'uid_a' and video_id = :'n2_one' \gset
+select set_config('gate.watched_before', :'watched_before', false);
+update public.user_video_progress set last_watched_position = 2 where user_id = :'uid_a' and video_id = :'n2_one';
+do $$ begin
+  if (select last_watched_at <= current_setting('gate.watched_before')::timestamptz from public.user_video_progress where user_id = current_setting('gate.uid_a')::uuid and video_id = current_setting('gate.n2_one')::uuid) then raise exception 'FAIL progress trigger: position change did not stamp'; end if;
+end $$;
+select last_watched_at as watched_after from public.user_video_progress where user_id = :'uid_a' and video_id = :'n2_one' \gset
+select set_config('gate.watched_after', :'watched_after', false);
+update public.user_video_progress set completed_at = completed_at where user_id = :'uid_a' and video_id = :'n2_one';
+do $$ begin
+  if (select last_watched_at is distinct from current_setting('gate.watched_after')::timestamptz from public.user_video_progress where user_id = current_setting('gate.uid_a')::uuid and video_id = current_setting('gate.n2_one')::uuid) then raise exception 'FAIL progress trigger: unrelated update changed timestamp'; end if;
+end $$;
+commit;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_b', 'role', 'authenticated')::text, true);
+do $$ begin
+  if exists (select 1 from public.user_saved_collections where user_id = current_setting('gate.uid_a')::uuid) then raise exception 'FAIL saved paths: user B read user A row'; end if;
+end $$;
+commit;
+begin;
+set local role anon;
+do $$ begin perform video_sentence_counts(array[]::uuid[]); raise exception 'FAIL grant: anon can call video_sentence_counts()'; exception when insufficient_privilege then raise notice 'PASS grant: anon denied sentence counts'; end $$;
+do $$ begin perform pronunciation_metric_means(now() - interval '1 day', now()); raise exception 'FAIL grant: anon can call pronunciation_metric_means()'; exception when insufficient_privilege then raise notice 'PASS grant: anon denied metric means'; end $$;
+commit;
+
 delete from auth.users where email like 'jlptgate-%@example.invalid';
 delete from public.videos where youtube_video_id like 'jlptgate-%';

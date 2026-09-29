@@ -62,9 +62,10 @@ const SCANNED_DIRS = [
   // still write `text-[8px]` has not been given one source of truth, it has
   // been given a detour. `explore-lesson-card.tsx` had taken that detour four
   // times over before this scope was widened.
-  { dir: "components/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 20 },
+  { dir: "components/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 21 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
+  { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
   // The Shadowing Hub renders into this tree and the first pass missed it:
   // hub-import-section imports VideoImportForm, and both it and
   // hub-library-section import LessonCreationProgress. A calibration screen

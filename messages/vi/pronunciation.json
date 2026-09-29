@@ -1,6 +1,6 @@
 {
   "hub": {
-    "eyebrow": "LUYỆN NÓI THEO NGỮ CẢNH",
+    "eyebrow": "Luyện nói theo ngữ cảnh",
     "title": "Phòng luyện phát âm",
     "subtitle": "Làm chủ phát âm tiếng Nhật qua các khóa luyện nói được thiết kế kỹ lưỡng và những tình huống thực tế.",
     "searchLabel": "Tìm khóa học phát âm",
@@ -8,6 +8,7 @@
     "filterToggleLabel": "Lọc khóa học",
     "display": {
       "trigger": "Sắp xếp và hiển thị",
+      "triggerCustomised": "{trigger}: {value}",
       "title": "Sắp xếp và hiển thị",
       "sort": "Sắp xếp",
       "recommended": "Đề xuất",
@@ -25,8 +26,8 @@
       "close": "Đóng hộp thoại",
       "saveFailed": "Đã áp dụng, nhưng chưa lưu được cho lần sau."
     },
-    "featuredCourse": "KHÓA HỌC NỔI BẬT",
-    "continueWhereLeftOff": "TIẾP TỤC NƠI BẠN ĐÃ DỪNG",
+    "featuredCourse": "Khóa học nổi bật",
+    "continueWhereLeftOff": "Tiếp tục nơi bạn đã dừng",
     "startCourse": "Bắt đầu khóa học",
     "continueLearning": "Tiếp tục học",
     "previewCourse": "Xem trước khóa học",
@@ -61,7 +62,7 @@
       "saveFailed": "Không thể cập nhật lộ trình đã lưu. Hãy thử lại.",
       "emptyTitle": "Chưa có lộ trình học",
       "emptyBody": "Lộ trình học sẽ xuất hiện ở đây khi đã có bài học.",
-      "pageEyebrow": "LỘ TRÌNH HỌC",
+      "pageEyebrow": "Lộ trình học",
       "pageTitle": "Lộ trình học",
       "pageSubtitle": "Các khóa học có cấu trúc, đưa bạn từ những câu đầu tiên đến hội thoại tự tin.",
       "saved": "Lộ trình đã lưu",

@@ -7,6 +7,7 @@ import { contentLemmas, DIFFICULTY_BANDS, scoreComprehension } from "@/lib/diffi
 import { readPreferences } from "@/lib/data/preferences";
 import type { RecommendationBand, RecommendationReason, VideoRecommendation } from "@/lib/recommendation-types";
 import type { RecommendationsQuery } from "@/lib/validation/recommendations";
+import { fetchAllPages } from "@/lib/data/query-pagination";
 
 /**
  * i+1 comprehensible-input video recommendations (CLAUDE.md §5.2). Scores
@@ -56,6 +57,7 @@ interface TranscriptRow {
 }
 
 interface LineRow {
+  id: string;
   transcript_id: string;
   text_jp: string;
 }
@@ -99,13 +101,15 @@ export async function getRecommendations(query: RecommendationsQuery & { candida
 
   const known = await getKnownVocabLemmas(supabase, user.id);
 
-  const { data: progressRows, error: progressError } = await supabase
+  const progressRows = await fetchAllPages((from, to) => supabase
     .from("user_video_progress")
     .select("video_id, completed_at")
-    .eq("user_id", user.id);
-  if (progressError) throw progressError;
+    .eq("user_id", user.id)
+    .order("video_id", { ascending: true })
+    .range(from, to),
+  ) as ProgressRow[];
   const completedVideoIds = new Set(
-    ((progressRows as ProgressRow[] | null) ?? []).filter((row) => row.completed_at).map((row) => row.video_id),
+    progressRows.filter((row) => row.completed_at).map((row) => row.video_id),
   );
 
   let videoQuery = supabase.from("videos")
@@ -142,12 +146,15 @@ export async function getRecommendations(query: RecommendationsQuery & { candida
   const transcriptIds = Array.from(new Set(latestTranscriptIdByVideoId.values()));
   const linesByTranscriptId = new Map<string, string[]>();
   if (transcriptIds.length > 0) {
-    const { data: lineRows, error: lineError } = await supabase
+    const lineRows = await fetchAllPages((from, to) => supabase
       .from("transcript_lines")
-      .select("transcript_id, text_jp")
-      .in("transcript_id", transcriptIds);
-    if (lineError) throw lineError;
-    for (const row of (lineRows as LineRow[] | null) ?? []) {
+      .select("id, transcript_id, text_jp")
+      .in("transcript_id", transcriptIds)
+      .order("transcript_id", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to),
+    ) as LineRow[];
+    for (const row of lineRows) {
       const lines = linesByTranscriptId.get(row.transcript_id) ?? [];
       lines.push(row.text_jp);
       linesByTranscriptId.set(row.transcript_id, lines);

@@ -182,19 +182,15 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
 
 ## Next actions
 
-1–6b. **Tasks 1, 2, 3, 3b, 4a, 4b, 2b — DONE** (last: `fa65eba`, then 2b).
-   Rules they left: sort by `position` (stable), `slice` after sorting; the
-   narrow case is 1024, not 320. Paths AND goals share `getCollectionViews`
-   (goals = `HubPathCard` without save). `pronunciation_metric_means` is the
-   rolling-window read Task 5 reuses. 2b's panel is `HubDisplayPanel` in the
-   controls' `toolbar` slot; Codex hit its quota mid-2b and Claude finished it.
-   🚨 Supabase grants `anon` EXECUTE on new functions: revoke `from public, anon`.
-7. **Task 4c — DONE.** `jlpt_speaking_summary()` (in place in the schema, SQL-aggregated) +
-   `level:nX` filter (studio-only chips; `/shadowing` drops it). "Practiced" = ≥1 session on
-   the lesson. **Ruling 14 (owner, 2026-09-29):** the JLPT "View all" is omitted (all five fit).
-8. **Task 5 — DONE** (part 2: Codex + Claude review fixes). The heading row spans the rail
-   (`TwoColumnShell` `header`, controls `part`), as the frame. ⚠️ **Owner questions:** up to 3
-   i+1 engine runs per load (discovery + Sensei goal + catalogue); the shell's "rail never the only
-   place" comment vs a frame whose rail cards live only in the rail.
-9. **Whole-branch review — RUN** (two reviewers, 0 Critical). Fixes → Codex, packet
-   `whole-branch-review-fixes-brief.md`. Then a final review; **merge waits for the owner.**
+1–8. **Tasks 1–5 DONE** (last `bddb22a`). Paths AND goals share `getCollectionViews`; sort by
+   `position`, `slice` after sorting; the narrow case is 1024. Ruling 14 (owner): JLPT "View all"
+   omitted. The heading row spans the rail (`TwoColumnShell` `header`, controls `part`).
+9. **Whole-branch review — RUN** (two reviewers, 0 Critical); fixes: Codex A1–B7 + Part C, then
+   quota; Claude finished B8 and re-gated.
+10. **Rulings 15–20 (owner, 2026-09-29)**, verbatim in `docs/superpowers/specs/2026-09-29-pronunciation-owner-decisions.md`:
+   15 engine: context loaded once, scored once, many consumers; skip useless runs; no cache ·
+   16 rail may hold unique info (rewrite the shell invariant; no duplication) · 17 one
+   `lastActivityAt = max(last_watched_at, latest session)` for hero AND resume · 18 non-default
+   search/filter/sort/display → an All-lessons result surface; default = curated shelves ·
+   19 no aggregate over an unpaginated select; >1000-row regression tests · 20 merge only after
+   15–19 + full gates, **then the owner looks in Chrome, then decides.**

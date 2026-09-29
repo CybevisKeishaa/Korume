@@ -33,16 +33,18 @@ export function toHubPathCard(
 }
 
 /** A titled grid of path cards: the studio's shelf, and each section of the paths page. */
-export function HubPathShelf({ title, paths, labels, viewAll, empty }: {
+export function HubPathShelf({ title, paths, labels, viewAll, empty, saveToggleIdPrefix, focusAfterUnsaveIdPrefix }: {
   title: string;
   paths: HubPathCardData[];
   labels: HubPathCardLabels;
-  viewAll?: { href: string; label: string };
+  viewAll?: { href: string; label: string; accessibleSuffix?: string };
   empty: { title: string; body: string };
+  saveToggleIdPrefix?: string;
+  focusAfterUnsaveIdPrefix?: string;
 }) {
   return (
     <HubShelf title={title} viewAll={viewAll} empty={empty}>
-      {paths.map((path) => <HubPathCard key={path.id} path={path} labels={labels} />)}
+      {paths.map((path) => <HubPathCard key={path.id} path={path} labels={labels} saveToggleId={saveToggleIdPrefix ? `${saveToggleIdPrefix}${path.id}` : undefined} focusAfterUnsaveId={focusAfterUnsaveIdPrefix ? `${focusAfterUnsaveIdPrefix}${path.id}` : undefined} />)}
     </HubShelf>
   );
 }

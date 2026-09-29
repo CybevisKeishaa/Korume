@@ -51,7 +51,8 @@ test("at 1280px, pronunciation discovery controls share the heading row and sear
   expect(searchBox.width).toBeGreaterThanOrEqual(200);
 
   await trigger.click();
-  const panel = page.getByRole("dialog");
+  // The popover is named after the control that opened it.
+  const panel = page.getByRole("dialog", { name: enPronunciation.hub.filterToggleLabel });
   await expect(panel).toBeVisible();
   expect((await panel.boundingBox())?.width).toBeGreaterThan(120);
   await expect(panel.getByRole("link").first()).toHaveAttribute("href", /^\/en\/pronunciation/);
@@ -147,7 +148,9 @@ test("at 1280px, a learning path saved from the shelf stays saved and is listed 
   const removed = page.waitForResponse((response) => response.url().includes("/save") && response.request().method() === "DELETE");
   await savedSection.getByRole("button", { name: saveName }).click();
   expect((await removed).status()).toBe(200);
-  await expect(page.getByRole("region", { name: paths.all }).getByRole("button", { name: saveName })).toHaveAttribute("aria-pressed", "false");
+  const allToggle = page.getByRole("region", { name: paths.all }).getByRole("button", { name: saveName });
+  await expect(allToggle).toHaveAttribute("aria-pressed", "false");
+  await expect(allToggle).toBeFocused();
   await expect(savedSection.getByRole("heading", { level: 3, name: "Everyday Conversation" })).toHaveCount(0);
 
   // Back to the studio through the app, and the shelf shows the server's answer.
