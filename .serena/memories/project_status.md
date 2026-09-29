@@ -1,34 +1,36 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-29 (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-29 late (supersedes every block below)
 >
 > ▶ **RESUME HERE: `pronunciation-library-port`** (worktree `.worktrees/pronunciation-library-port`,
-> **Owner: Claude**, tip `c86b523`, NOT merged). Tasks 1–3b DONE: ordered collections, shared
-> search/filter, featured-course hero + resume strip + `/pronunciation/collections/[slug]`, Popular
-> Learning Paths with a ✦ SAVE toggle (`user_saved_collections`) + `/pronunciation/paths`.
-> ⭐ Read `docs/superpowers/run-state/pronunciation-library-port.md` on the branch FIRST: owner
-> rulings 1–10 and the ordered task list. **Next: Task 4a** (Situation + Shadowing Collections
-> shelves) → 4b Practice by Goal → 2b Sort & display panel + "Search by lesson title" → 4c JLPT
-> Speaking → 5 right rail → whole-branch review → merge (owner decides).
+> **Owner: Claude**, tip **`1b3d220`**, NOT merged; master `53ab111` merged into it first).
+> ⭐ Read `docs/superpowers/run-state/pronunciation-library-port.md` on the branch FIRST (rulings
+> 1–13, task list). **DONE and gated:** T1 ordered collections · T2 shared search/filter · T3 course
+> hero + resume strip + collection page · T3b Learning Paths + ✦ save · **T4a** Practice by Situation
+> (repo taxonomy, ruling 11) + Shadowing Collections (explore `kind='shelf'`, ruling 12) ·
+> **T4b** Practice by Goal (goals share `getCollectionViews` + `HubPathCard`; weakest-metric badge via
+> DB-side `pronunciation_metric_means`) · **T2b** Sort & display panel (URL + `user_preferences`,
+> URL wins) + "Search by lesson title" · **ruling 13**: a saved path outranks recent activity.
+> **Next: T4c JLPT Speaking** (aggregation view, no migration) → **T5 right rail** (reuse
+> `getPronunciationMetricWindow` for Weekly Improvement) → whole-branch review → merge (owner decides).
 >
-> ⚠️ **How the owner wants it run (2026-09-29):** Claude implements directly — "tự làm, không đợi
-> Codex" — with an independent `code-reviewer` subagent per task BEFORE commit (the two reviews so
-> far found 17 and 11 real defects). **Build the complete version; never trim toward minimal.**
-> ▶ Open owner question: featured-course order is activity → saved → in progress → first; may a
-> saved path outrank recent activity?
+> ⚠️ **How the owner runs it (2026-09-29):** Codex implements from a packet in
+> `.superpowers/sdd/pronunciation-library-port/` (gitignored); **if Codex hits its usage limit, Claude
+> finishes the task itself without asking**. Every task gets an independent `code-reviewer` before
+> commit — on this branch each one found real defects Codex's own reviewer approved (max_rows
+> truncation ×2, a forked card, a stale router cache). **`db reset` is standing-approved on this
+> branch** ("Reset đi, và khỏi hỏi lại"). Build the complete version; never trim toward minimal.
 >
-> ⭐ **Merged 2026-09-29: `e2e-unique-emails` at `bf3cd1c`.** Registration emails come from
-> `uniqueEmail()` (UUID); `test/e2e-registration-emails.test.ts` fails on any `Date.now()` in e2e
-> code. That was a REAL cause behind the "parallel-load flake family" (duplicate signup →
-> `users_email_partial_key` → "{}" alert): 40/40 on 5 specs x2 after the fix. Re-measure the
-> family before blaming load for anything that is left.
+> 🚨 Lessons from this branch: (1) PostgREST `max_rows = 1000` silently truncates — aggregate in SQL
+> (`video_sentence_counts`, `pronunciation_metric_means`) instead of reading rows; (2) Supabase grants
+> `anon` EXECUTE on new functions — revoke `from public, anon`; (3) `fa65eba` was committed RED: run
+> the unit gate AFTER the last edit, including edits a live/e2e check provoked; (4) the supabase test
+> mock ignores filters — assert the recorded query calls, not the returned rows.
 >
-> ⚠️ Local Supabase was `db reset` 2026-09-29 (owner-approved each time — ask again before the
-> next). Migrations are edited IN PLACE (AGENTS.md §6); a new table gets a new file.
-> 🚨 A "use client" component must receive strings, never catalog formatter functions: it blanks
-> the page in e2e while jsdom stays green (Task 3b).
+> ⭐ **Merged 2026-09-29: `e2e-unique-emails` at `bf3cd1c`** (UUID registration emails).
+> 🚨 A "use client" component must receive strings, never catalog formatter functions.
 >
-> Master is at **`bf3cd1c`** and is **NOT pushed** — the owner pushes by hand.
+> Master is at **`53ab111`** (+ this memory commit) and is **NOT pushed** — the owner pushes by hand.
 >
 > ---
 >
