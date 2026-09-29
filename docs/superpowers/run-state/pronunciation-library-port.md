@@ -170,7 +170,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -196,4 +196,5 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
    (`TwoColumnShell` `header`, controls `part`), as the frame. ⚠️ **Owner questions:** up to 3
    i+1 engine runs per load (discovery + Sensei goal + catalogue); the shell's "rail never the only
    place" comment vs a frame whose rail cards live only in the rail.
-9. Whole-branch review, then `--no-ff` merge. **Owner decision, not taken.**
+9. **Whole-branch review — RUN** (two reviewers, 0 Critical). Fixes → Codex, packet
+   `whole-branch-review-fixes-brief.md`. Then a final review; **merge waits for the owner.**
