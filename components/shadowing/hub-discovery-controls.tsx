@@ -36,6 +36,12 @@ export interface HubDiscoveryControlsProps {
   /** Null means the learner has not searched or filtered yet. */
   results: HubLesson[] | null;
   labels: HubDiscoveryControlsLabels;
+  /**
+   * With a `heading`, which half to render: the heading row alone, or what
+   * follows it. A page whose heading row spans a rail renders both; the
+   * default renders the whole section.
+   */
+  part?: "all" | "controls" | "results";
 }
 
 /**
@@ -54,6 +60,7 @@ export function HubDiscoveryControls({
   filterToggleLabel,
   toolbar,
   labels,
+  part = "all",
 }: HubDiscoveryControlsProps) {
   const activeFilterLabel = filters.find((filter) => `${filter.kind}:${filter.slug}` === activeFilter)?.label;
   const filterTriggerLabel = activeFilterLabel ? `${filterToggleLabel}: ${activeFilterLabel}` : filterToggleLabel;
@@ -109,7 +116,7 @@ export function HubDiscoveryControls({
             type="search"
             defaultValue={query}
             placeholder={labels.searchPlaceholder}
-            className="h-control-lg rounded-lg bg-card pl-lg"
+            className="h-control-lg rounded-lg bg-card pl-xl"
           />
         </div>
       ) : (
@@ -148,13 +155,16 @@ export function HubDiscoveryControls({
 
   // Content a page places between the controls and the results (a featured
   // hero, say). The spacing is owned here so both layouts get the same gap.
-  const between = beforeResults ? <div className="mt-xl space-y-md">{beforeResults}</div> : null;
+  // Rendered alone, the results half starts its column, so it carries no top gap.
+  const between = beforeResults ? <div className={cn("space-y-md", part !== "results" && "mt-xl")}>{beforeResults}</div> : null;
+
+  if (heading && part === "results") return <div>{between}{resultsContent}</div>;
 
   return (
     <section aria-label={labels.searchLabel}>
       {heading ? (
         <>
-          <div className="lg:flex lg:items-end lg:justify-between">
+          <div className="lg:flex lg:items-end lg:justify-between lg:gap-xl">
             <div className="min-w-0">{heading}</div>
             <div className="mt-lg flex items-end gap-xs lg:mt-0 lg:basis-2/5 lg:shrink-0">
               {searchForm}
@@ -176,8 +186,7 @@ export function HubDiscoveryControls({
               {toolbar}
             </div>
           </div>
-          {between}
-          {resultsContent}
+          {part === "all" ? <>{between}{resultsContent}</> : null}
         </>
       ) : (
         <>

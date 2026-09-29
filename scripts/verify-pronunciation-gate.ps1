@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-  Live PostgreSQL acceptance gate for the JLPT Speaking aggregate.
+  Live PostgreSQL acceptance gate for Pronunciation Studio aggregates.
 
 .DESCRIPTION
   Requires Docker and a running local Supabase stack (`npx supabase start`).
-  The Supabase mock models no SQL, so this gate proves the aggregate and grants.
+  The Supabase mock models no SQL, so this gate proves the aggregates and grants.
 #>
 [CmdletBinding()]
 param(
@@ -13,7 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$sqlPath = Join-Path $repoRoot 'supabase/tests/jlpt-speaking.sql'
+$sqlPath = Join-Path $repoRoot 'supabase/tests/pronunciation-studio.sql'
 
 if (-not (Test-Path -LiteralPath $sqlPath)) {
   Write-Output "missing gate script: $sqlPath"
@@ -34,8 +34,8 @@ Write-Output "database container: $Container"
 Get-Content -LiteralPath $sqlPath -Raw |
   & docker exec -i $Container psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q
 if ($LASTEXITCODE -ne 0) {
-  Write-Output "FAIL: JLPT Speaking gate exited $LASTEXITCODE"
+  Write-Output "FAIL: Pronunciation Studio gate exited $LASTEXITCODE"
   exit 1
 }
 
-Write-Output 'JLPT Speaking: live PostgreSQL gate passed'
+Write-Output 'Pronunciation Studio: live PostgreSQL gate passed'

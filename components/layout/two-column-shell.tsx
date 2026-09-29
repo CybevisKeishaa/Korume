@@ -11,12 +11,15 @@ import { cn } from "@/lib/utils";
  */
 export function TwoColumnShell({
   children,
+  header,
   rail,
   railLabel,
   className,
   ...props
 }: {
   children: React.ReactNode;
+  /** A row above both columns, so the rail starts below it (frame 37:5331's heading row). */
+  header?: React.ReactNode;
   rail?: React.ReactNode;
   railLabel: string;
 } & React.HTMLAttributes<HTMLDivElement>) {
@@ -34,6 +37,7 @@ export function TwoColumnShell({
       )}
       {...props}
     >
+      {header ? <div className="col-span-full min-w-0">{header}</div> : null}
       <div className="min-w-0">{children}</div>
       {rail ? (
         <aside

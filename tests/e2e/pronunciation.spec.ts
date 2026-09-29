@@ -72,6 +72,27 @@ test("at 1024px, pronunciation renders without horizontal overflow", async ({ pa
   await assertNoHorizontalOverflow(page);
 });
 
+test("at desktop widths, a fresh learner sees the four honest Pronunciation Studio rail cards", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await registerLearner(page);
+  await page.goto("/en/pronunciation");
+  const rail = page.getByRole("complementary", { name: enPronunciation.hub.rail.label });
+  for (const title of [enPronunciation.hub.rail.today.title, enPronunciation.hub.rail.weekly.title, enPronunciation.hub.rail.sensei.title, enPronunciation.hub.rail.recent.title]) {
+    await expect(rail.getByRole("region", { name: title })).toBeVisible();
+  }
+  const today = rail.getByRole("region", { name: enPronunciation.hub.rail.today.title });
+  await expect(today.locator(".text-heading", { hasText: "0" })).toBeVisible();
+  await expect(today.getByText(enPronunciation.hub.rail.today.minutesUnit, { exact: true })).toBeVisible();
+  await expect(rail.getByText(enPronunciation.hub.rail.scoreMissing)).toBeVisible();
+  await expect(rail.getByText(enPronunciation.hub.rail.notEnoughData, { exact: true })).toHaveCount(3);
+  await expect(rail.getByText("Confidence")).toHaveCount(0);
+  await expect(rail.getByText(enPronunciation.hub.rail.sensei.empty)).toBeVisible();
+  await expect(rail.getByText(enPronunciation.hub.rail.recent.empty)).toBeVisible();
+
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await assertNoHorizontalOverflow(page);
+});
+
 test("at 1280px, the featured course region is visible and its preview is responsive", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 529 });
   await registerLearner(page);

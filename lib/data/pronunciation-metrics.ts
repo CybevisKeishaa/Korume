@@ -102,7 +102,7 @@ export async function getTodaySpeaking(now: Date = new Date()): Promise<TodaySpe
 export interface WeeklyImprovement {
   /** This week's mean minus last week's, in score points; null when either week has none. */
   deltas: PronunciationMetricMeans;
-  /** Mean score per VN-local day over the two compared weeks; days without a score are absent. */
+  /** Mean score per VN-local day, the 14 whole days ending today; days without a score are absent. */
   trend: { day: string; score: number }[];
 }
 
@@ -113,7 +113,8 @@ export async function getWeeklyImprovement(now: Date = new Date()): Promise<Week
   const [current, previous, daily] = await Promise.all([
     getPronunciationMetricWindow(weekAgo, now),
     getPronunciationMetricWindow(twoWeeksAgo, weekAgo),
-    supabase.rpc("pronunciation_daily_means", { p_start: twoWeeksAgo.toISOString(), p_end: now.toISOString() }),
+    // Whole VN days, so the oldest point is not an average of a partial day.
+    supabase.rpc("pronunciation_daily_means", { p_start: vnDayStart(new Date(now.getTime() - 13 * DAY_MS)).toISOString(), p_end: now.toISOString() }),
   ]);
   if (daily.error) throw daily.error;
   const deltas = Object.fromEntries(METRIC_ORDER.map((metric) => {
@@ -135,7 +136,9 @@ export interface RecentPractice {
 
 export async function getRecentPractice(limit = 3): Promise<RecentPractice[]> {
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("pronunciation_recent_practice", { p_limit: limit });
+  // ponytail: over-fetches by 3 because a lesson RLS now hides still holds a slot in the SQL
+  // limit; more than 3 hidden among the newest shows fewer rows. Filter in SQL if that bites.
+  const { data, error } = await supabase.rpc("pronunciation_recent_practice", { p_limit: limit + 3 });
   if (error) throw error;
   const rows = (data as { video_id: string; practiced_at: string; pronunciation_score: number | string | null }[] | null) ?? [];
   if (!rows.length) return [];
@@ -150,7 +153,7 @@ export async function getRecentPractice(limit = 3): Promise<RecentPractice[]> {
       practicedAt: row.practiced_at,
       averageScore: row.pronunciation_score === null ? null : Math.round(Number(row.pronunciation_score)),
     }];
-  });
+  }).slice(0, limit);
 }
 
 

@@ -107,6 +107,49 @@
       "sentences": "{count, plural, one {{count} sentence} other {{count} sentences}}",
       "emptyTitle": "No shadowing collections yet",
       "emptyBody": "Collections appear here once they have lessons."
+    },
+    "rail": {
+      "label": "Pronunciation progress",
+      "scoreMissing": "No score yet",
+      "notEnoughData": "Not enough data",
+      "metrics": {
+        "accuracy": "Accuracy",
+        "pitch": "Pitch Accent",
+        "rhythm": "Rhythm"
+      },
+      "today": {
+        "title": "Today's Speaking",
+        "minutesUnit": "min",
+        "minutesLabel": "{minutes} of your {goal}-minute goal spoken today",
+        "lessons": "{count, plural, one {{count} lesson completed} other {{count} lessons completed}}",
+        "averageScore": "Average Score",
+        "continue": "Continue Practice"
+      },
+      "weekly": {
+        "title": "Weekly Improvement",
+        "heading": "Your Progress",
+        "chartLabel": "Daily average score, last two weeks",
+        "chartEmpty": "Not enough data to show your trend.",
+        "point": "{date}: {score}"
+      },
+      "sensei": {
+        "title": "AI Sensei Recommendation",
+        "heading": "Today's Recommendation",
+        "focus": "{metric} was your lowest score this week. This lesson trains it, and you already know {percent}% of its words.",
+        "stretch": "You already know {percent}% of this lesson's words — the right stretch for you.",
+        "recommendedCourse": "Recommended Course",
+        "recommendedGoal": "Recommended Goal",
+        "recommendedLesson": "Recommended Lesson",
+        "lessonDetail": "Lesson {number} · {title}",
+        "start": "Start Lesson",
+        "startLabel": "Start lesson: {title}",
+        "empty": "Review a few words and Sensei will match a lesson to your level."
+      },
+      "recent": {
+        "title": "Recently Practiced",
+        "empty": "Practice a lesson and it will appear here.",
+        "scoreLabel": "Score"
+      }
     }
   }
 }

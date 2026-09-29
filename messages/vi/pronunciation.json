@@ -107,6 +107,49 @@
       "sentences": "{count, plural, other {{count} câu}}",
       "emptyTitle": "Chưa có bộ sưu tập shadowing",
       "emptyBody": "Bộ sưu tập sẽ hiện ở đây khi có bài học."
+    },
+    "rail": {
+      "label": "Tiến độ phát âm",
+      "scoreMissing": "Chưa có điểm",
+      "notEnoughData": "Chưa đủ dữ liệu",
+      "metrics": {
+        "accuracy": "Độ chính xác",
+        "pitch": "Trọng âm cao độ",
+        "rhythm": "Nhịp điệu"
+      },
+      "today": {
+        "title": "Luyện nói hôm nay",
+        "minutesUnit": "phút",
+        "minutesLabel": "Hôm nay đã nói {minutes} phút, mục tiêu {goal} phút",
+        "lessons": "{count, plural, other {{count} bài học đã hoàn thành}}",
+        "averageScore": "Điểm trung bình",
+        "continue": "Tiếp tục luyện tập"
+      },
+      "weekly": {
+        "title": "Cải thiện hàng tuần",
+        "heading": "Tiến độ của bạn",
+        "chartLabel": "Điểm trung bình mỗi ngày trong hai tuần qua",
+        "chartEmpty": "Chưa đủ dữ liệu để hiển thị xu hướng.",
+        "point": "{date}: {score}"
+      },
+      "sensei": {
+        "title": "Đề xuất từ AI Sensei",
+        "heading": "Đề xuất hôm nay",
+        "focus": "{metric} là điểm thấp nhất của bạn tuần này. Bài học này rèn kỹ năng đó, và bạn đã biết {percent}% số từ.",
+        "stretch": "Bạn đã biết {percent}% số từ trong bài học này — một thử thách vừa sức.",
+        "recommendedCourse": "Khóa học đề xuất",
+        "recommendedGoal": "Mục tiêu đề xuất",
+        "recommendedLesson": "Bài học đề xuất",
+        "lessonDetail": "Bài {number} · {title}",
+        "start": "Bắt đầu bài học",
+        "startLabel": "Bắt đầu bài học: {title}",
+        "empty": "Hãy ôn vài từ để Sensei ghép bài học phù hợp với trình độ của bạn."
+      },
+      "recent": {
+        "title": "Đã luyện gần đây",
+        "empty": "Hãy luyện một bài để bài đó xuất hiện ở đây.",
+        "scoreLabel": "Điểm"
+      }
     }
   }
 }

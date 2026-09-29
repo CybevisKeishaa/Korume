@@ -1,9 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, eqValue, type RpcResolver, type TableResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
+const recommendationEngine = vi.hoisted(() => ({ getRecommendations: vi.fn() }));
+
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true, retryAfter: 0 })) }));
+vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: recommendationEngine.getRecommendations }));
 
 function useTables(tables: Record<string, TableResolver>, rpcs?: Record<string, RpcResolver>) {
   // Saved paths default to none; a test that cares supplies its own rows.
@@ -14,6 +17,41 @@ function useTables(tables: Record<string, TableResolver>, rpcs?: Record<string, 
 }
 
 describe("collections", () => {
+  beforeEach(() => recommendationEngine.getRecommendations.mockReset());
+
+  it("tries the weakest goal's ordered lessons before the catalogue and returns its home", async () => {
+    recommendationEngine.getRecommendations.mockResolvedValue({ ok: true, data: [{ videoId: "lesson-2", title: "Meeting introductions", reason: { knownRatio: 0.78 } }] });
+    const { getSenseiRecommendation } = await import("@/lib/data/collections");
+    const goal = { collection: { id: "goal", slug: "pitch", title: "Pitch practice", description: null, coverImageUrl: null, displayOrder: 1, kind: "goal" as const, skillFocus: "pitch" as const, icon: null }, total: 2, completed: 0, next: null, started: false, lessonCount: 2, durationMinutes: 20, lessonIds: ["lesson-1", "lesson-2"] };
+    await expect(getSenseiRecommendation([goal], [], "pitch")).resolves.toEqual({ lesson: { id: "lesson-2", title: "Meeting introductions" }, knownRatio: 0.78, focus: "pitch", home: { kind: "goal", title: "Pitch practice", lessonNumber: 2 } });
+    expect(recommendationEngine.getRecommendations).toHaveBeenCalledWith({ limit: 24, candidateIds: ["lesson-1", "lesson-2"] });
+  });
+
+  it("falls back to the catalogue only for a reasoned pick and omits focus", async () => {
+    recommendationEngine.getRecommendations
+      .mockResolvedValueOnce({ ok: true, data: [{ videoId: "goal-lesson", title: "Ignored", reason: null }] })
+      .mockResolvedValueOnce({ ok: true, data: [{ videoId: "catalogue", title: "Fallback", reason: { knownRatio: 0.64 } }] });
+    const { getSenseiRecommendation } = await import("@/lib/data/collections");
+    const goal = { collection: { id: "goal", slug: "accuracy", title: "Accuracy", description: null, coverImageUrl: null, displayOrder: 1, kind: "goal" as const, skillFocus: "accuracy" as const, icon: null }, total: 1, completed: 0, next: null, started: false, lessonCount: 1, durationMinutes: 10, lessonIds: ["goal-lesson"] };
+    await expect(getSenseiRecommendation([goal], [], "accuracy")).resolves.toEqual({ lesson: { id: "catalogue", title: "Fallback" }, knownRatio: 0.64, focus: null, home: null });
+    expect(recommendationEngine.getRecommendations).toHaveBeenNthCalledWith(2, { limit: 24, candidateIds: undefined });
+  });
+
+  it("never returns an unreasoned Sensei pick", async () => {
+    recommendationEngine.getRecommendations.mockResolvedValue({ ok: true, data: [{ videoId: "lesson", title: "Unmeasured", reason: null }] });
+    const { getSenseiRecommendation } = await import("@/lib/data/collections");
+    await expect(getSenseiRecommendation([], [], null)).resolves.toBeNull();
+  });
+
+  it("empties Sensei instead of failing the page when the engine throws, and names a path home as a path", async () => {
+    const { getSenseiRecommendation } = await import("@/lib/data/collections");
+    recommendationEngine.getRecommendations.mockRejectedValue(new Error("tokenizer failed"));
+    await expect(getSenseiRecommendation([], [], null)).resolves.toBeNull();
+
+    recommendationEngine.getRecommendations.mockReset().mockResolvedValue({ ok: true, data: [{ videoId: "b", title: "Lesson B", reason: { knownRatio: 0.9 } }] });
+    const path = { collection: { id: "path", slug: "business", title: "Business Japanese", description: null, coverImageUrl: null, displayOrder: 1, kind: "path" as const, skillFocus: null, icon: null }, total: 3, completed: 0, next: null, started: false, lessonCount: 3, durationMinutes: 30, lessonIds: ["a", "c", "b"] };
+    await expect(getSenseiRecommendation([], [path], null)).resolves.toMatchObject({ focus: null, home: { kind: "path", title: "Business Japanese", lessonNumber: 3 } });
+  });
   it("lists collections ordered by display_order", async () => {
     useTables({
       collections: (calls) => {

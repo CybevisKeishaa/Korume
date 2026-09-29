@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@/test/render";
 import commonCopy from "@/messages/en/common.json";
 import pronunciationCopy from "@/messages/en/pronunciation.json";
@@ -26,6 +26,10 @@ const data = vi.hoisted(() => ({
   getShadowingCollections: vi.fn().mockResolvedValue([]),
   listPracticeSituations: vi.fn().mockResolvedValue([]),
   getWeeklyPronunciationMetrics: vi.fn().mockResolvedValue({ means: { accuracy: null, pitch: null, rhythm: null }, weakest: null }),
+  getTodaySpeaking: vi.fn().mockResolvedValue({ minutes: 0, lessonsCompleted: 0, averageScore: null }),
+  getWeeklyImprovement: vi.fn().mockResolvedValue({ deltas: { accuracy: null, pitch: null, rhythm: null }, trend: [] }),
+  getRecentPractice: vi.fn().mockResolvedValue([]),
+  getSenseiRecommendation: vi.fn().mockResolvedValue(null),
   getMyPreferences: vi.fn().mockResolvedValue(null),
   getJlptSpeakingSummary: vi.fn().mockResolvedValue([]),
 }));
@@ -40,10 +44,16 @@ vi.mock("@/lib/data/collections", async (importOriginal) => ({
   getLearningPaths: data.getLearningPaths,
   getPracticeGoals: data.getPracticeGoals,
   getShadowingCollections: data.getShadowingCollections,
+  getSenseiRecommendation: data.getSenseiRecommendation,
 }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listPracticeSituations: data.listPracticeSituations }));
-vi.mock("@/lib/data/pronunciation-metrics", () => ({
+vi.mock("@/lib/data/pronunciation-metrics", async (importOriginal) => ({
+  // The real VN-day math: the page's "Yesterday" and trend x must cross UTC+7 midnight correctly.
+  vnDaysAgo: (await importOriginal<typeof import("@/lib/data/pronunciation-metrics")>()).vnDaysAgo,
   getWeeklyPronunciationMetrics: data.getWeeklyPronunciationMetrics,
+  getTodaySpeaking: data.getTodaySpeaking,
+  getWeeklyImprovement: data.getWeeklyImprovement,
+  getRecentPractice: data.getRecentPractice,
   getJlptSpeakingSummary: data.getJlptSpeakingSummary,
 }));
 vi.mock("@/lib/data/preferences", () => ({ getMyPreferences: data.getMyPreferences }));
@@ -80,6 +90,85 @@ vi.mock("@/components/layout/upcoming-screen", () => ({
 import PronunciationPage from "./page";
 
 describe("PronunciationPage", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    data.getTodaySpeaking.mockResolvedValue({ minutes: 0, lessonsCompleted: 0, averageScore: null });
+    data.getWeeklyImprovement.mockResolvedValue({ deltas: { accuracy: null, pitch: null, rhythm: null }, trend: [] });
+    data.getRecentPractice.mockResolvedValue([]);
+    data.getSenseiRecommendation.mockResolvedValue(null);
+  });
+
+  it("renders the pronunciation progress rail in the complementary landmark", async () => {
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+
+    render(await PronunciationPage({}));
+
+    expect(screen.getByRole("complementary", { name: "Pronunciation progress" })).toBeInTheDocument();
+  });
+
+  it("projects honest rail data, prioritizing recent practice and measured Sensei focus", async () => {
+    vi.useFakeTimers();
+    // 00:01 on 2026-09-30 in VN: two minutes earlier was 2026-09-29, "Yesterday", though the same UTC day.
+    vi.setSystemTime(new Date("2026-09-29T17:01:00.000Z"));
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getWeeklyImprovement.mockResolvedValue({
+      deltas: { accuracy: null, pitch: 0, rhythm: -3 },
+      trend: [{ day: "2026-09-17", score: 50 }, { day: "2026-09-30", score: 90 }],
+    });
+    data.getRecentPractice.mockResolvedValue([{ lesson: { id: "recent", title: "Recent lesson" }, practicedAt: "2026-09-29T16:59:00.000Z", averageScore: 94 }]);
+    data.getSenseiRecommendation.mockResolvedValue({ lesson: { id: "sensei", title: "Pitch lesson" }, knownRatio: 0.78, focus: "pitch", home: { kind: "goal", title: "Improve Pitch Accent", lessonNumber: 12 } });
+
+    render(await PronunciationPage({}));
+
+    const rail = screen.getByRole("complementary", { name: "Pronunciation progress" });
+    expect(within(rail).getAllByRole("region").map((region) => region.getAttribute("aria-label"))).toEqual(["Today's Speaking", "Weekly Improvement", "AI Sensei Recommendation", "Recently Practiced"]);
+    expect(within(rail).queryByText("Confidence")).not.toBeInTheDocument();
+    expect(within(rail).getAllByText("Not enough data", { selector: ".sr-only" })).toHaveLength(1);
+    expect(within(rail).getByRole("link", { name: "Continue Practice" })).toHaveAttribute("href", "/shadowing/recent");
+    expect(within(rail).getByText("Pitch Accent was your lowest score this week. This lesson trains it, and you already know 78% of its words.")).toBeInTheDocument();
+    expect(within(rail).getByText("Yesterday")).toBeInTheDocument();
+    // A measured 0 is "0%"; a fall carries a real minus sign (U+2212).
+    expect(within(rail).getByText("0%")).toBeInTheDocument();
+    expect(within(rail).getByText("−3%")).toBeInTheDocument();
+    // 13 VN days back is the chart's left edge, today its right.
+    const chart = within(rail).getByRole("img", { name: pronunciationCopy.hub.rail.weekly.chartLabel });
+    expect(chart.querySelector("polyline")).toHaveAttribute("points", "0,34 240,13.2");
+    expect(within(rail).getByText("Sep 17: 50", { selector: "li" })).toBeInTheDocument();
+    expect(within(rail).getByText(pronunciationCopy.hub.rail.sensei.recommendedGoal)).toBeInTheDocument();
+    expect(within(rail).getByText("Lesson 12 · Pitch lesson")).toBeInTheDocument();
+  });
+
+  it("reads a session the database stamped just after this request, across VN midnight, as today, never tomorrow", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-29T16:59:59.000Z"));
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getRecentPractice.mockResolvedValue([{ lesson: { id: "late", title: "Late lesson" }, practicedAt: "2026-09-29T17:00:01.000Z", averageScore: 88 }]);
+
+    render(await PronunciationPage({}));
+
+    const recent = screen.getByRole("region", { name: pronunciationCopy.hub.rail.recent.title });
+    expect(within(recent).getByText("Today")).toBeInTheDocument();
+    expect(within(recent).queryByText("Tomorrow")).not.toBeInTheDocument();
+  });
+
+  it("uses the featured course next lesson only when recent practice is absent, and renders unfocused Sensei copy", async () => {
+    const next = video("featured-next", "Featured next");
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ paths: [], featured: {
+      collection: { id: "course", slug: "course", title: "Course", description: null, coverImageUrl: null, displayOrder: 1, kind: "path", skillFocus: null }, total: 1, completed: 0, lessonCount: 1, next, lessons: [next], resume: null, coverUrl: null, durationMinutes: 10, jlptRange: null, levelBand: null, selectedByRecentActivity: false,
+    } });
+    data.getSenseiRecommendation.mockResolvedValue({ lesson: { id: "stretch", title: "Stretch lesson" }, knownRatio: 0.64, focus: null, home: null });
+
+    render(await PronunciationPage({}));
+
+    const rail = screen.getByRole("complementary", { name: "Pronunciation progress" });
+    expect(within(rail).getByRole("link", { name: "Continue Practice" })).toHaveAttribute("href", "/shadowing/featured-next");
+    expect(within(rail).getByText("You already know 64% of this lesson's words — the right stretch for you.")).toBeInTheDocument();
+  });
+
   it("uses profile display settings only when the URL supplies none, and URL wins otherwise", async () => {
     data.getHubDiscovery.mockResolvedValue(noDiscovery);
     data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });

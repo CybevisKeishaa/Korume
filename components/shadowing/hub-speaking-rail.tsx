@@ -49,6 +49,8 @@ export interface HubSpeakingRailProps {
     title: string;
     empty: string;
     scoreMissing: string;
+    /** "Score" — names the bare number at the row's end. */
+    scoreLabel: string;
     rows: { id: string; title: string; href: string; when: string; dateTime: string; score: string | null }[];
   };
 }
@@ -57,7 +59,10 @@ export interface HubSpeakingRailProps {
 export function HubSpeakingRail({ today, weekly, sensei, recent }: HubSpeakingRailProps) {
   const ring = 2 * Math.PI * 32;
   const { points } = weekly.trend;
-  const y = (score: number) => 60 - (score / 100) * 52;
+  // Plot coordinates to a tenth of a unit: exact enough, and no float noise in the markup.
+  const tenth = (value: number) => Math.round(value * 10) / 10;
+  const x = (fraction: number) => tenth(fraction * 240);
+  const y = (score: number) => tenth(60 - (score / 100) * 52);
 
   return (
     <div className="space-y-md-lg">
@@ -107,13 +112,13 @@ export function HubSpeakingRail({ today, weekly, sensei, recent }: HubSpeakingRa
               <line x1="0" y1="63" x2="240" y2="63" strokeWidth="1" className="stroke-border" />
               <polyline
                 fill="none" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" className="stroke-primary"
-                points={points.map((point) => `${point.x * 240},${y(point.score)}`).join(" ")}
+                points={points.map((point) => `${x(point.x)},${y(point.score)}`).join(" ")}
               />
               {points.map((point) => (
                 // A hit target wider than the 8px marker, each with its own tooltip.
                 <g key={point.x}>
-                  <circle cx={point.x * 240} cy={y(point.score)} r="4" strokeWidth="2" className="fill-primary stroke-card" />
-                  <circle cx={point.x * 240} cy={y(point.score)} r="10" className="fill-transparent">
+                  <circle cx={x(point.x)} cy={y(point.score)} r="4" strokeWidth="2" className="fill-primary stroke-card" />
+                  <circle cx={x(point.x)} cy={y(point.score)} r="10" className="fill-transparent">
                     <title>{point.label}</title>
                   </circle>
                 </g>
@@ -157,7 +162,10 @@ export function HubSpeakingRail({ today, weekly, sensei, recent }: HubSpeakingRa
                     <span className="block truncate text-body text-foreground">{row.title}</span>
                     <time dateTime={row.dateTime} className="block text-caption text-muted-foreground">{row.when}</time>
                   </span>
-                  <Value value={row.score} missing={recent.scoreMissing} className="shrink-0 text-body font-semibold text-primary-strong" />
+                  <span className="shrink-0">
+                    <span className="sr-only">{recent.scoreLabel} </span>
+                    <Value value={row.score} missing={recent.scoreMissing} className="text-body font-semibold text-primary-strong" />
+                  </span>
                 </Link>
               </li>
             ))}

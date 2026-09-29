@@ -148,11 +148,11 @@ and firing on `master` too — read `run-state/e2e-failure-repair.md` before
 calling one a regression.
 
 🚨 **Registration reds were `Date.now()` emails**, fixed on master and merged in.
+**Task 5 gate, 2026-09-29:** vitest 385/3576, tsc/lint/protocol 0; fresh reset;
+`verify:db:pronunciation` + 7 SQL mutations red; e2e pronunciation+hub+settings 21/21.
 **Task 4c gate, 2026-09-29:** vitest 384/3562, tsc/lint/protocol 0; fresh reset;
-`npm run verify:db:jlpt-speaking` live (mutation-checked); e2e 19/20, the red `settings:179`.
-**Task 2b gate, 2026-09-29:** vitest 384/3555, tsc/lint/protocol 0; fresh reset;
-the new CHECKs proven live; e2e pronunciation+hubs+settings 23/23. 🚨 `fa65eba`
-was NOT green: a pin was edited after its last vitest run. Gate after the LAST edit.
+`npm run verify:db:pronunciation` (then `…:jlpt-speaking`) live, mutation-checked; e2e 19/20, the red `settings:179`.
+🚨 `fa65eba` was NOT green: a pin was edited after its last vitest run. Gate after the LAST edit.
 🚨 **A Client Component takes strings, never catalog formatters** — passing one
 blanked the page in e2e while jsdom stayed green; `path-card-copy.test.ts` guards.
 
@@ -170,7 +170,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -192,7 +192,8 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
 7. **Task 4c — DONE.** `jlpt_speaking_summary()` (in place in the schema, SQL-aggregated) +
    `level:nX` filter (studio-only chips; `/shadowing` drops it). "Practiced" = ≥1 session on
    the lesson. **Ruling 14 (owner, 2026-09-29):** the JLPT "View all" is omitted (all five fit).
-8. **Task 5 — right rail.** Part 1 `e528f7c` (Claude): three SQL aggregates, the readers,
-   `getSenseiRecommendation`, `HubSpeakingRail` — untested, not wired. **Part 2 → Codex**,
-   packet `.superpowers/sdd/pronunciation-library-port/task-5-brief.md` (wire, copy, tests).
+8. **Task 5 — DONE** (part 2: Codex + Claude review fixes). The heading row spans the rail
+   (`TwoColumnShell` `header`, controls `part`), as the frame. ⚠️ **Owner questions:** up to 3
+   i+1 engine runs per load (discovery + Sensei goal + catalogue); the shell's "rail never the only
+   place" comment vs a frame whose rail cards live only in the rail.
 9. Whole-branch review, then `--no-ff` merge. **Owner decision, not taken.**

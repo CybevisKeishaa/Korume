@@ -313,7 +313,7 @@ export interface SenseiRecommendation {
   /** The weakest metric, when the lesson comes from the goal that trains it. */
   focus: PronunciationMetric | null;
   /** The path or goal holding the lesson, with its 1-based place there. */
-  home: { title: string; lessonNumber: number } | null;
+  home: { kind: "path" | "goal"; title: string; lessonNumber: number } | null;
 }
 
 /**
@@ -328,9 +328,11 @@ export async function getSenseiRecommendation(
 ): Promise<SenseiRecommendation | null> {
   const goalId = recommendedPracticeGoalId(goals, weakest);
   const goal = goals.find((candidate) => candidate.collection.id === goalId) ?? null;
+  // A rail card only suggests: an engine failure empties it instead of failing the page,
+  // as getHubDiscovery treats the same engine.
   const pick = async (candidateIds?: string[]) => {
-    const result = await getRecommendations({ limit: 24, candidateIds });
-    return result.ok ? result.data.find((recommendation) => recommendation.reason !== null) ?? null : null;
+    const result = await getRecommendations({ limit: 24, candidateIds }).catch(() => null);
+    return result?.ok ? result.data.find((recommendation) => recommendation.reason !== null) ?? null : null;
   };
   const fromGoal = goal?.lessonIds.length ? await pick(goal.lessonIds) : null;
   const recommendation = fromGoal ?? await pick();
@@ -342,7 +344,11 @@ export async function getSenseiRecommendation(
     lesson: { id: recommendation.videoId, title: recommendation.title },
     knownRatio: recommendation.reason.knownRatio,
     focus: fromGoal ? weakest : null,
-    home: home ? { title: home.collection.title, lessonNumber: home.lessonIds.indexOf(recommendation.videoId) + 1 } : null,
+    home: home ? {
+      kind: home.collection.kind === "goal" ? "goal" : "path",
+      title: home.collection.title,
+      lessonNumber: home.lessonIds.indexOf(recommendation.videoId) + 1,
+    } : null,
   };
 }
 
