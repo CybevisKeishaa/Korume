@@ -138,8 +138,6 @@ stamped, no backfill) orders "Continue where you left off", nulls last.
 
 Measured in this worktree, never in the main checkout.
 
-**Task 3b gate, 2026-09-29:** vitest 380/3513, tsc/lint/protocol 0, fresh
-reset, RLS proven live, e2e 12/12.
 **Task 4a+4b gate, 2026-09-29** (Codex review + 2 Claude review passes): vitest
 383 / 3534, tsc 0, lint 0, protocol 0; fresh reset; both RPCs proven live as
 two users + anon denied; the same three e2e specs 13/13.
@@ -150,6 +148,8 @@ and firing on `master` too — read `run-state/e2e-failure-repair.md` before
 calling one a regression.
 
 🚨 **Registration reds were `Date.now()` emails**, fixed on master and merged in.
+**Task 4c gate, 2026-09-29:** vitest 384/3562, tsc/lint/protocol 0; fresh reset;
+`npm run verify:db:jlpt-speaking` live (mutation-checked); e2e 19/20, the red `settings:179`.
 **Task 2b gate, 2026-09-29:** vitest 384/3555, tsc/lint/protocol 0; fresh reset;
 the new CHECKs proven live; e2e pronunciation+hubs+settings 23/23. 🚨 `fa65eba`
 was NOT green: a pin was edited after its last vitest run. Gate after the LAST edit.
@@ -189,7 +189,9 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
    rolling-window read Task 5 reuses. 2b's panel is `HubDisplayPanel` in the
    controls' `toolbar` slot; Codex hit its quota mid-2b and Claude finished it.
    🚨 Supabase grants `anon` EXECUTE on new functions: revoke `from public, anon`.
-7. **Task 4c — JLPT Speaking**, the aggregation view above. No migration.
+7. **Task 4c — DONE.** `jlpt_speaking_summary()` (in place in the schema, SQL-aggregated) +
+   `level:nX` filter (studio-only chips; `/shadowing` drops it). "Practiced" = ≥1 session on
+   the lesson. ⚠️ **Owner decision open:** the frame's JLPT "View all" is omitted (all five fit).
 8. **Task 5 — right rail:** Today's Speaking + Weekly Improvement (Accuracy,
    Pitch Accent, Rhythm) + AI Sensei Recommendation + Recently Practiced. Every
    value derives from persisted session data or the recommendation engine, and

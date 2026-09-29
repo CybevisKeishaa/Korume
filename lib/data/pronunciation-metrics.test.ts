@@ -34,3 +34,31 @@ describe("weekly pronunciation metrics", () => {
     expect(weakestPronunciationMetric({ accuracy: null, pitch: null, rhythm: null })).toBeNull();
   });
 });
+
+describe("JLPT Speaking summary", () => {
+  it("orders the database aggregate N5 to N1, coerces bigint/numeric strings and drops levels without lessons", async () => {
+    useTables({}, {
+      jlpt_speaking_summary: () => ({
+        data: [
+          { level: "N1", lesson_count: "2", practiced_count: "0", average_score: null },
+          { level: "N5", lesson_count: "18", practiced_count: "15", average_score: "90.6" },
+          { level: "N3", lesson_count: "0", practiced_count: "0", average_score: null },
+        ],
+        error: null,
+      }),
+    });
+    const { getJlptSpeakingSummary } = await import("@/lib/data/pronunciation-metrics");
+
+    await expect(getJlptSpeakingSummary()).resolves.toEqual([
+      { level: "N5", lessonCount: 18, practicedCount: 15, averageScore: 91 },
+      { level: "N1", lessonCount: 2, practicedCount: 0, averageScore: null },
+    ]);
+  });
+
+  it("surfaces an RPC failure instead of rendering empty levels", async () => {
+    useTables({}, { jlpt_speaking_summary: () => ({ data: null, error: { message: "denied" } }) });
+    const { getJlptSpeakingSummary } = await import("@/lib/data/pronunciation-metrics");
+
+    await expect(getJlptSpeakingSummary()).rejects.toMatchObject({ message: "denied" });
+  });
+});

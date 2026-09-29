@@ -91,6 +91,15 @@
       "emptyTitle": "No practice goals yet",
       "emptyBody": "Goals appear here once they have lessons."
     },
+    "jlptSpeaking": {
+      "title": "JLPT Speaking",
+      "lessons": "{count, plural, one {{count} lesson} other {{count} lessons}}",
+      "practiced": "{percent}% practiced",
+      "averageScore": "Avg score",
+      "noScore": "No score yet",
+      "emptyTitle": "No JLPT lessons yet",
+      "emptyBody": "Levels appear here once a lesson carries a JLPT level."
+    },
     "shadowingCollections": {
       "title": "Shadowing Collections",
       "viewAll": "View all",

@@ -27,6 +27,7 @@ const data = vi.hoisted(() => ({
   listPracticeSituations: vi.fn().mockResolvedValue([]),
   getWeeklyPronunciationMetrics: vi.fn().mockResolvedValue({ means: { accuracy: null, pitch: null, rhythm: null }, weakest: null }),
   getMyPreferences: vi.fn().mockResolvedValue(null),
+  getJlptSpeakingSummary: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/data/shadowing-hub", async (importOriginal) => ({
@@ -41,7 +42,10 @@ vi.mock("@/lib/data/collections", async (importOriginal) => ({
   getShadowingCollections: data.getShadowingCollections,
 }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listPracticeSituations: data.listPracticeSituations }));
-vi.mock("@/lib/data/pronunciation-metrics", () => ({ getWeeklyPronunciationMetrics: data.getWeeklyPronunciationMetrics }));
+vi.mock("@/lib/data/pronunciation-metrics", () => ({
+  getWeeklyPronunciationMetrics: data.getWeeklyPronunciationMetrics,
+  getJlptSpeakingSummary: data.getJlptSpeakingSummary,
+}));
 vi.mock("@/lib/data/preferences", () => ({ getMyPreferences: data.getMyPreferences }));
 
 const noDiscovery = { filters: [{ kind: "situation", slug: "restaurant" }], discovery: null };
@@ -241,5 +245,41 @@ describe("PronunciationPage", () => {
     expect(screen.getByRole("heading", { name: pronunciationCopy.hub.situations.emptyTitle })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: pronunciationCopy.hub.goals.emptyTitle })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: pronunciationCopy.hub.shadowingCollections.emptyTitle })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: pronunciationCopy.hub.jlptSpeaking.emptyTitle })).toBeInTheDocument();
+  });
+
+  it("shelves JLPT Speaking between goals and collections: practiced share, lessons, and a dash for no score", async () => {
+    const user = userEvent.setup();
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getJlptSpeakingSummary.mockResolvedValueOnce([
+      { level: "N5", lessonCount: 18, practicedCount: 15, averageScore: 91 },
+      // Nothing practiced is a measured 0%; no scored session is unknown, so a dash.
+      { level: "N1", lessonCount: 48, practicedCount: 0, averageScore: null },
+      // Every lesson but one practiced never reads 100%.
+      { level: "N3", lessonCount: 200, practicedCount: 199, averageScore: 70 },
+    ]);
+    render(await PronunciationPage({}));
+
+    const goals = screen.getByRole("region", { name: pronunciationCopy.hub.goals.title });
+    const jlpt = screen.getByRole("region", { name: pronunciationCopy.hub.jlptSpeaking.title });
+    const collections = screen.getByRole("region", { name: pronunciationCopy.hub.shadowingCollections.title });
+    expect(goals.compareDocumentPosition(jlpt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(jlpt.compareDocumentPosition(collections) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(jlpt.querySelector("ul")).toHaveClass("xl:grid-cols-5");
+    expect(within(jlpt).queryByRole("link", { name: /View all/ })).not.toBeInTheDocument();
+
+    const n5 = within(jlpt).getByRole("link", { name: /^N5/ });
+    expect(n5).toHaveAttribute("href", "/pronunciation?filter=level%3An5");
+    expect(n5).toHaveTextContent("83% practiced");
+    expect(n5).toHaveTextContent("18 lessons");
+    expect(n5).toHaveTextContent("Avg score 91");
+    const n1 = within(jlpt).getByRole("link", { name: /^N1/ });
+    expect(n1).toHaveTextContent("0% practiced");
+    expect(n1).toHaveTextContent(pronunciationCopy.hub.jlptSpeaking.noScore);
+    expect(within(jlpt).getByRole("link", { name: /^N3/ })).toHaveTextContent("99% practiced");
+
+    await user.click(screen.getByRole("button", { name: pronunciationCopy.hub.filterToggleLabel }));
+    expect(await screen.findByRole("link", { name: "N4" })).toHaveAttribute("href", "/pronunciation?filter=level%3An4");
   });
 });

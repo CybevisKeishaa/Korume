@@ -10,7 +10,9 @@ describe("shadowingHubQuerySchema", () => {
   });
 
   it("rejects unknown filter axes and overlong search strings", () => {
+    expect(shadowingHubQuerySchema.safeParse({ filter: "level:n3" }).success).toBe(true);
     expect(shadowingHubQuerySchema.safeParse({ filter: "level:N3" }).success).toBe(false);
+    expect(shadowingHubQuerySchema.safeParse({ filter: "level:n6" }).success).toBe(false);
     expect(shadowingHubQuerySchema.safeParse({ q: "x".repeat(101) }).success).toBe(false);
   });
 

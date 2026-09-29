@@ -240,6 +240,20 @@ describe("getHubDiscovery", () => {
     ]));
   });
 
+  it("filters by a JLPT level on the lesson's estimate, without listing levels among the Hub's chips", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
+    vi.mocked(listSituations).mockResolvedValue([{ id: "s1", slug: "restaurant", displayOrder: 1 }]);
+
+    await expect(getHubDiscovery({ filter: "level:n3" })).resolves.toEqual({
+      filters: [{ kind: "situation", slug: "restaurant" }],
+      discovery: expect.objectContaining({ query: "", activeFilter: "level:n3" }),
+    });
+    expect(videoQueries).toContainEqual(expect.arrayContaining([
+      { op: "eq", column: "jlpt_level_estimate", value: "N3" },
+    ]));
+  });
+
   it("ignores an unknown filter while retaining a submitted query", async () => {
     const videoQueries: QueryCall[][] = [];
     mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });

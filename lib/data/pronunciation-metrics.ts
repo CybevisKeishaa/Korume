@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { JLPT_LEVELS, type JlptLevel } from "@/lib/conversation-types";
 
 export type PronunciationMetric = "accuracy" | "pitch" | "rhythm";
 export type PronunciationMetricMeans = Record<PronunciationMetric, number | null>;
@@ -54,4 +55,40 @@ export async function getPronunciationMetricWindow(start: Date, end: Date): Prom
 /** The caller's rolling seven-day pronunciation read. `now` is injected for deterministic tests. */
 export function getWeeklyPronunciationMetrics(now: Date = new Date()) {
   return getPronunciationMetricWindow(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), now);
+}
+
+
+/** One JLPT Speaking card: lessons at the level, how many the caller has shadowed, and the caller's mean score there. */
+export interface JlptSpeakingLevel {
+  level: JlptLevel;
+  lessonCount: number;
+  practicedCount: number;
+  /** Null until the caller has a scored session at this level; never a stand-in zero. */
+  averageScore: number | null;
+}
+
+interface JlptSpeakingRow {
+  level: JlptLevel;
+  lesson_count: number | string;
+  practiced_count: number | string;
+  average_score: number | string | null;
+}
+
+/** The levels holding a lesson the caller can see, N5 first. */
+export async function getJlptSpeakingSummary(): Promise<JlptSpeakingLevel[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc("jlpt_speaking_summary");
+  if (error) throw error;
+  const byLevel = new Map(((data as JlptSpeakingRow[] | null) ?? []).map((row) => [row.level, row]));
+  return JLPT_LEVELS.flatMap((level) => {
+    const row = byLevel.get(level);
+    const lessonCount = row ? Number(row.lesson_count) : 0;
+    if (!row || lessonCount === 0) return [];
+    return [{
+      level,
+      lessonCount,
+      practicedCount: Number(row.practiced_count),
+      averageScore: row.average_score === null ? null : Math.round(Number(row.average_score)),
+    }];
+  });
 }

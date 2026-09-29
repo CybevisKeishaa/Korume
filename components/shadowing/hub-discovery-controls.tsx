@@ -7,7 +7,7 @@ import { HubLessonCard } from "./hub-lesson-card";
 import { HubSectionHeading } from "./hub-section-heading";
 
 export interface HubDiscoveryFilter {
-  kind: "situation" | "source";
+  kind: "situation" | "source" | "level";
   slug: string;
   label: string;
 }

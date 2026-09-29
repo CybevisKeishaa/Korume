@@ -4,7 +4,8 @@ import { getPathname } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { getHubDiscovery, toHubLesson } from "@/lib/data/shadowing-hub";
 import { getLearningPaths, getPracticeGoals, getShadowingCollections, recommendedPracticeGoalId } from "@/lib/data/collections";
-import { getWeeklyPronunciationMetrics } from "@/lib/data/pronunciation-metrics";
+import { getJlptSpeakingSummary, getWeeklyPronunciationMetrics } from "@/lib/data/pronunciation-metrics";
+import { JLPT_LEVELS } from "@/lib/conversation-types";
 import { listPracticeSituations } from "@/lib/data/lesson-taxonomy";
 import { formatCourseDuration, formatHours, formatLevelBand } from "@/lib/format-course-duration";
 import { TwoColumnShell } from "@/components/layout/two-column-shell";
@@ -13,7 +14,8 @@ import { HubFeaturedHero } from "@/components/shadowing/hub-featured-hero";
 import { HubContinueStrip } from "@/components/shadowing/hub-continue-strip";
 import { HubPathShelf } from "@/components/shadowing/hub-path-shelf";
 import { HubShelf } from "@/components/shadowing/hub-shelf";
-import { HubCollectionCard, HubSituationTile } from "@/components/shadowing/hub-practice-cards";
+import { HubCollectionCard, HubLevelCard, HubSituationTile } from "@/components/shadowing/hub-practice-cards";
+import { courseProgressPercent } from "@/components/shadowing/hub-course-progress";
 import { HubPathCard } from "@/components/shadowing/hub-path-card";
 import { pathCardLabels, pathCards, goalCards } from "./path-card-copy";
 import { pronunciationDisplaySchema, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
@@ -52,7 +54,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       duration: preferences?.pronunciationDuration ?? DEFAULT_PREFERENCES.pronunciationDuration,
       hideCompleted: preferences?.pronunciationHideCompleted ?? DEFAULT_PREFERENCES.pronunciationHideCompleted,
     }));
-  const [t, tCommon, tHub, hub, display, learning, locale, situations, goals, weeklyMetrics, shadowingCollections] = await Promise.all([
+  const [t, tCommon, tHub, hub, display, learning, locale, situations, goals, weeklyMetrics, shadowingCollections, jlptLevels] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
     getTranslations("shadowing"),
@@ -64,6 +66,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     getPracticeGoals(),
     getWeeklyPronunciationMetrics(),
     getShadowingCollections(),
+    getJlptSpeakingSummary(),
   ]);
   const course = learning.featured;
   const recommendedGoalId = recommendedPracticeGoalId(goals, weeklyMetrics.weakest);
@@ -80,9 +83,12 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   return (
     <TwoColumnShell railLabel={t("hub.searchLabel")} className="py-2xl">
       <HubDiscoveryControls
-        filters={hub.filters.map((filter) => ({
+        // The studio adds the JLPT levels to the Hub's taxonomy chips; a level's label is its code.
+        filters={[...hub.filters, ...JLPT_LEVELS.map((level) => ({ kind: "level" as const, slug: level.toLowerCase() }))].map((filter) => ({
           ...filter,
-          label: tHub(`${filter.kind === "situation" ? "situations" : "sources"}.${filter.slug}` as TaxonomyTranslationKey),
+          label: filter.kind === "level"
+            ? filter.slug.toUpperCase()
+            : tHub(`${filter.kind === "situation" ? "situations" : "sources"}.${filter.slug}` as TaxonomyTranslationKey),
         }))}
         query={hub.discovery?.query ?? ""}
         activeFilter={hub.discovery?.activeFilter ?? null}
@@ -200,6 +206,27 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           {goalCards(goals, t, recommendedGoalId).map((goal) => (
             <HubPathCard key={goal.id} path={goal} labels={cards} />
           ))}
+        </HubShelf>
+      </div>
+      <div className="mt-3xl">
+        {/* Every level fits the frame's five-up row, so there is no "View all". */}
+        <HubShelf columns={5} title={t("hub.jlptSpeaking.title")} empty={{ title: t("hub.jlptSpeaking.emptyTitle"), body: t("hub.jlptSpeaking.emptyBody") }}>
+          {jlptLevels.map((row) => {
+            const percent = courseProgressPercent(row.lessonCount, row.practicedCount);
+            return (
+              <HubLevelCard
+                key={row.level}
+                level={row.level}
+                href={`/pronunciation?filter=${encodeURIComponent(`level:${row.level.toLowerCase()}`)}`}
+                percent={percent}
+                practiced={t("hub.jlptSpeaking.practiced", { percent })}
+                lessons={t("hub.jlptSpeaking.lessons", { count: row.lessonCount })}
+                scoreLabel={t("hub.jlptSpeaking.averageScore")}
+                score={row.averageScore === null ? null : String(row.averageScore)}
+                scoreMissing={t("hub.jlptSpeaking.noScore")}
+              />
+            );
+          })}
         </HubShelf>
       </div>
       <div className="mt-3xl">

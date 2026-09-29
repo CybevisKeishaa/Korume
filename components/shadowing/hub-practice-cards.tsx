@@ -47,3 +47,52 @@ export function HubCollectionCard({ title, href, meta, sentences, glyph }: {
     </li>
   );
 }
+
+/** A JLPT Speaking card (Figma 37:5737): the whole card opens that level's lessons. */
+export function HubLevelCard({ level, href, percent, practiced, lessons, scoreLabel, score, scoreMissing }: {
+  level: string;
+  href: string;
+  /** Share of the level's lessons the learner has shadowed, 0–100. */
+  percent: number;
+  /** "82% practiced" — the ring's meaning, for assistive technology. */
+  practiced: string;
+  lessons: string;
+  scoreLabel: string;
+  /** Null when no session at this level is scored yet; the card shows a dash. */
+  score: string | null;
+  /** "No score yet" — what the dash means. */
+  scoreMissing: string;
+}) {
+  const radius = 15;
+  const circumference = 2 * Math.PI * radius;
+  return (
+    <li>
+      <Link href={href} className={CARD}>
+        <span className="flex items-start justify-between gap-sm">
+          <span className="text-title font-semibold text-foreground">{level}</span>
+          <span aria-hidden="true" className="relative size-10 shrink-0">
+            <svg viewBox="0 0 36 36" className="size-10 -rotate-90">
+              <circle cx="18" cy="18" r={radius} fill="none" strokeWidth="3" className="stroke-primary/25" />
+              {/* A round cap on an empty arc still paints a dot, so 0% draws no arc. */}
+              {percent > 0 ? (
+                <circle
+                  cx="18" cy="18" r={radius} fill="none" strokeWidth="3" strokeLinecap="round" className="stroke-primary"
+                  strokeDasharray={circumference} strokeDashoffset={circumference * (1 - percent / 100)}
+                />
+              ) : null}
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-caption text-primary-strong">{percent}%</span>
+          </span>
+          <span className="sr-only">{practiced}</span>
+        </span>
+        <span className="mt-md block text-caption text-muted-foreground">{lessons}</span>
+        <span className="mt-xs block text-caption text-muted-foreground">
+          {scoreLabel}&nbsp;
+          {score === null ? (
+            <><span aria-hidden="true" className="font-semibold text-foreground">—</span><span className="sr-only">{scoreMissing}</span></>
+          ) : <span className="font-semibold text-foreground">{score}</span>}
+        </span>
+      </Link>
+    </li>
+  );
+}

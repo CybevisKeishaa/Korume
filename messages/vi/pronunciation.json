@@ -91,6 +91,15 @@
       "emptyTitle": "Chưa có mục tiêu để luyện",
       "emptyBody": "Mục tiêu sẽ xuất hiện ở đây khi đã có bài học."
     },
+    "jlptSpeaking": {
+      "title": "Luyện nói theo JLPT",
+      "lessons": "{count, plural, other {{count} bài học}}",
+      "practiced": "Đã luyện {percent}%",
+      "averageScore": "Điểm TB",
+      "noScore": "Chưa có điểm",
+      "emptyTitle": "Chưa có bài học JLPT",
+      "emptyBody": "Các cấp độ sẽ hiện ở đây khi có bài học được gắn cấp JLPT."
+    },
     "shadowingCollections": {
       "title": "Bộ sưu tập shadowing",
       "viewAll": "Xem tất cả",

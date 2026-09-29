@@ -313,6 +313,31 @@ $$;
 revoke all on function pronunciation_metric_means(timestamptz, timestamptz) from public, anon;
 grant execute on function pronunciation_metric_means(timestamptz, timestamptz) to authenticated;
 
+-- JLPT Speaking is a view over lessons and the caller's sessions, not an
+-- entity: per level, the lessons the caller can see (videos RLS, via SECURITY
+-- INVOKER), how many of them the caller has shadowed, and the caller's mean
+-- score there. Aggregated here for the same max_rows reason as above.
+create function jlpt_speaking_summary()
+  returns table (level jlpt_level, lesson_count bigint, practiced_count bigint, average_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select
+    v.jlpt_level_estimate,
+    count(distinct v.id),
+    count(distinct s.video_id),
+    avg(s.pronunciation_score)
+  from videos v
+  left join shadowing_sessions s on s.video_id = v.id and s.user_id = auth.uid()
+  where v.jlpt_level_estimate is not null
+  group by v.jlpt_level_estimate;
+$$;
+
+revoke all on function jlpt_speaking_summary() from public, anon;
+grant execute on function jlpt_speaking_summary() to authenticated;
+
 create table dictation_attempts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users (id) on delete cascade,

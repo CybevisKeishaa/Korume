@@ -62,4 +62,11 @@ describe("ShadowingHubPage", () => {
       screen.getByRole("region", { name: "shadowing.hub.rail.suggestion" }),
     ]);
   });
+
+  it("drops a Pronunciation Studio level filter instead of filtering with no chip to show it", async () => {
+    const { getShadowingHub } = await import("@/lib/data/shadowing-hub");
+    render(await ShadowingHubPage({ searchParams: { q: "cafe", filter: "level:n3" } }));
+
+    expect(getShadowingHub).toHaveBeenLastCalledWith({ query: "cafe", filter: undefined });
+  });
 });

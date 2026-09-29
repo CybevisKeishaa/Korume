@@ -35,7 +35,8 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
     getTranslations("videos"),
     getTranslations("common"),
     getTranslations("shadowing"),
-    getShadowingHub({ query: hubQuery.q, filter: hubQuery.filter }),
+    // Level chips belong to the Pronunciation Studio; the Hub has none to show one as active.
+    getShadowingHub({ query: hubQuery.q, filter: hubQuery.filter?.startsWith("level:") ? undefined : hubQuery.filter }),
     getLocale(),
     getMyPreferences(),
   ]);

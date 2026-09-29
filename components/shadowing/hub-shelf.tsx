@@ -4,15 +4,18 @@ import { HubEmptyState } from "./hub-empty-state";
 import { HubSectionHeading } from "./hub-section-heading";
 
 /**
- * A titled three- or four-up grid of studio cards with an optional "View all" and its
+ * A titled three-, four- or five-up grid of studio cards with an optional "View all" and its
  * own empty copy. The cards are `<li>`s; an empty list shows the empty state.
  */
+// Whole class names, so Tailwind's scanner sees every one.
+const COLUMNS = { 3: "xl:grid-cols-3", 4: "xl:grid-cols-4", 5: "xl:grid-cols-5" } as const;
+
 export function HubShelf({ title, viewAll, empty, children, columns = 4 }: {
   title: string;
   viewAll?: { href: string; label: string };
   empty: { title: string; body: string };
   children: ReactNode[];
-  columns?: 3 | 4;
+  columns?: 3 | 4 | 5;
 }) {
   return (
     <section aria-label={title}>
@@ -25,7 +28,7 @@ export function HubShelf({ title, viewAll, empty, children, columns = 4 }: {
         ) : undefined}
       />
       {children.length ? (
-        <ul className={`mt-md grid grid-cols-2 gap-md ${columns === 3 ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>{children}</ul>
+        <ul className={`mt-md grid grid-cols-2 gap-md ${COLUMNS[columns]}`}>{children}</ul>
       ) : (
         <HubEmptyState title={empty.title} body={empty.body} />
       )}

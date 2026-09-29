@@ -10,8 +10,10 @@ import { getActivePlanTier, type PlanTier } from "@/lib/data/subscriptions";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { listSituations, listSources } from "@/lib/data/lesson-taxonomy";
 import type { PronunciationDuration, PronunciationSort } from "@/lib/preferences/options";
+import { JLPT_LEVELS } from "@/lib/conversation-types";
 
 const SHELF_LIMIT = 4;
+const FILTER_COLUMNS = { situation: "situation_id", source: "source_id", level: "jlpt_level_estimate" } as const;
 /** How many matches a learner-dependent sort ranks; see getHubDiscovery. */
 const CANDIDATE_LIMIT = 100;
 
@@ -48,7 +50,8 @@ export interface HubRailProjection {
 }
 
 export interface HubDiscoveryFilter {
-  kind: "situation" | "source";
+  /** `level` is a JLPT level (`n5`…`n1`); the studio shows it, the Hub does not. */
+  kind: "situation" | "source" | "level";
   slug: string;
 }
 
@@ -111,15 +114,17 @@ export async function getHubDiscovery(
     ...sources.map((tag) => ({ kind: "source" as const, slug: tag.slug, id: tag.id })),
   ];
   const filters = filterTags.map(({ kind, slug }) => ({ kind, slug }));
+  // Levels are not taxonomy rows: `id` is the `jlpt_level` value itself.
+  const levelTags: HubDiscoveryFilterTag[] = JLPT_LEVELS.map((level) => ({ kind: "level", slug: level.toLowerCase(), id: level }));
   const query = options.query?.trim() ?? "";
-  const activeFilter = filterTags.find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
+  const activeFilter = [...filterTags, ...levelTags].find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
 
   if (!query && !activeFilter) return { filters, discovery: null };
 
   const sort = options.sort ?? "newest";
   let search = supabase.from("videos").select(VIDEO_COLUMNS);
   if (query) search = search.ilike("title", `%${query}%`);
-  if (activeFilter) search = search.eq(activeFilter.kind === "situation" ? "situation_id" : "source_id", activeFilter.id);
+  if (activeFilter) search = search.eq(FILTER_COLUMNS[activeFilter.kind], activeFilter.id);
   // A band excludes a lesson with no duration: SQL comparisons drop nulls.
   if (options.duration === "under_10") search = search.lt("duration_seconds", 600);
   if (options.duration === "10_30") search = search.gte("duration_seconds", 600).lte("duration_seconds", 1800);

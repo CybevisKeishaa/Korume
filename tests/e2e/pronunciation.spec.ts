@@ -174,6 +174,31 @@ test("at 1280px, the situation, goal and shadowing collection shelves render the
   await assertNoHorizontalOverflow(page);
 });
 
+test("at 1280px, JLPT Speaking shows the seeded level, unpracticed and unscored, and opens its lessons", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 529 });
+  await registerLearner(page);
+  await page.goto("/en/pronunciation");
+  const { jlptSpeaking } = enPronunciation.hub;
+
+  // The seed's one lesson is N5, so the N5 card MUST render (L-004) and no other level may.
+  const shelf = page.getByRole("region", { name: jlptSpeaking.title });
+  const n5 = shelf.getByRole("link", { name: /^N5/ });
+  await n5.scrollIntoViewIfNeeded();
+  await expect(n5).toBeVisible();
+  await expect(shelf.getByRole("listitem")).toHaveCount(1);
+  // A fresh learner: a measured 0% practiced, and no score is a dash, never a 0.
+  await expect(n5).toContainText("1 lesson");
+  await expect(n5).toContainText("0% practiced");
+  await expect(n5).toContainText(jlptSpeaking.noScore);
+  expect((await n5.boundingBox())?.height ?? 0).toBeGreaterThan(0);
+
+  await n5.click();
+  await expect(page).toHaveURL(/\/en\/pronunciation\?filter=level%3An5$/);
+  await expect(page.getByRole("link", { name: /E2E Explore Lesson/ }).first()).toBeVisible();
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await assertNoHorizontalOverflow(page);
+});
+
 test("at 1280px, Sort & display applies through the URL, is saved to the profile, and a reset is never served stale", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 529 });
   await registerLearner(page);
