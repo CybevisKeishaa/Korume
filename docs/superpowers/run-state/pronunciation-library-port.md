@@ -170,7 +170,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -192,8 +192,7 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
 7. **Task 4c — DONE.** `jlpt_speaking_summary()` (in place in the schema, SQL-aggregated) +
    `level:nX` filter (studio-only chips; `/shadowing` drops it). "Practiced" = ≥1 session on
    the lesson. **Ruling 14 (owner, 2026-09-29):** the JLPT "View all" is omitted (all five fit).
-8. **Task 5 — right rail:** Today's Speaking + Weekly Improvement (Accuracy,
-   Pitch Accent, Rhythm) + AI Sensei Recommendation + Recently Practiced. Every
-   value derives from persisted session data or the recommendation engine, and
-   **empty-history states are explicit** — never a zero standing for an unknown.
+8. **Task 5 — right rail.** Part 1 `e528f7c` (Claude): three SQL aggregates, the readers,
+   `getSenseiRecommendation`, `HubSpeakingRail` — untested, not wired. **Part 2 → Codex**,
+   packet `.superpowers/sdd/pronunciation-library-port/task-5-brief.md` (wire, copy, tests).
 9. Whole-branch review, then `--no-ff` merge. **Owner decision, not taken.**
