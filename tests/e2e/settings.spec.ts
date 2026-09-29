@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import en from "../../messages/en/settings.json";
 
 /**
@@ -20,8 +20,8 @@ import en from "../../messages/en/settings.json";
 const copy = en.page;
 
 /** A fresh account per test: every preference below is per-user server state. */
-async function signUp(page: Page, tag: string, testInfo: { workerIndex: number; testId: string }) {
-  const email = `e2e_settings_${tag}_${Date.now()}_${testInfo.workerIndex}_${testInfo.testId}@example.com`;
+async function signUp(page: Page, tag: string) {
+  const email = uniqueEmail(`e2e_settings_${tag}`);
   await page.goto("/en/register");
   await registerViaUi(page, { name: "E2E Settings Tester", email, password: "password123" });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
@@ -31,9 +31,9 @@ const radio = (page: Page, name: string) => page.getByRole("radio", { name, exac
 const switchFor = (page: Page, name: string) => page.getByRole("switch", { name, exact: true });
 
 test.describe("settings", () => {
-  test.beforeEach(async ({ page }, testInfo) => {
+  test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await signUp(page, "main", testInfo);
+    await signUp(page, "main");
   });
 
   /**

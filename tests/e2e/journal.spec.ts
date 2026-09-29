@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 
 // End-to-end: proves the Journal exists as a real, reachable surface and that
 // opening it IS the first-meeting domain event (spec D8).
@@ -17,7 +17,7 @@ import { registerViaUi } from "./fixtures/auth";
 test("a brand-new learner opens the Journal and finds the first page already written", async ({
   page,
 }) => {
-  const email = `e2e_journal_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e_journal");
   const password = "password123";
 
   await page.goto("/en/register");

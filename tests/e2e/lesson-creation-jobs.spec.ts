@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import enVideos from "@/messages/en/videos.json";
 
 /**
@@ -25,7 +25,7 @@ const PROGRESS_STRINGS = [
 ];
 
 async function registerLearner(page: Page, label: string): Promise<void> {
-  const email = `e2e_lesson_jobs_${label}_${Date.now()}@example.com`;
+  const email = uniqueEmail(`e2e_lesson_jobs_${label}`);
   await page.goto("/en/register");
   await registerViaUi(page, { name: "E2E Job Tester", email, password: "password123" });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });

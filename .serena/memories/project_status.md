@@ -1,10 +1,41 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-25 late (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-29 (supersedes every block below)
 >
-> **NOTHING IS IN FLIGHT.** `git branch --no-merged master` is EMPTY. Master is at
-> **`7a6f3f1`**, the `--no-ff` merge of `e2e-failure-repair`, and is **NOT pushed** —
-> the owner pushes by hand. Branch and worktree kept.
+> ▶ **RESUME HERE: `pronunciation-library-port`** (worktree `.worktrees/pronunciation-library-port`,
+> **Owner: Claude**, tip `c86b523`, NOT merged). Tasks 1–3b DONE: ordered collections, shared
+> search/filter, featured-course hero + resume strip + `/pronunciation/collections/[slug]`, Popular
+> Learning Paths with a ✦ SAVE toggle (`user_saved_collections`) + `/pronunciation/paths`.
+> ⭐ Read `docs/superpowers/run-state/pronunciation-library-port.md` on the branch FIRST: owner
+> rulings 1–10 and the ordered task list. **Next: Task 4a** (Situation + Shadowing Collections
+> shelves) → 4b Practice by Goal → 2b Sort & display panel + "Search by lesson title" → 4c JLPT
+> Speaking → 5 right rail → whole-branch review → merge (owner decides).
+>
+> ⚠️ **How the owner wants it run (2026-09-29):** Claude implements directly — "tự làm, không đợi
+> Codex" — with an independent `code-reviewer` subagent per task BEFORE commit (the two reviews so
+> far found 17 and 11 real defects). **Build the complete version; never trim toward minimal.**
+> ▶ Open owner question: featured-course order is activity → saved → in progress → first; may a
+> saved path outrank recent activity?
+>
+> ⭐ **Merged 2026-09-29: `e2e-unique-emails` at `bf3cd1c`.** Registration emails come from
+> `uniqueEmail()` (UUID); `test/e2e-registration-emails.test.ts` fails on any `Date.now()` in e2e
+> code. That was a REAL cause behind the "parallel-load flake family" (duplicate signup →
+> `users_email_partial_key` → "{}" alert): 40/40 on 5 specs x2 after the fix. Re-measure the
+> family before blaming load for anything that is left.
+>
+> ⚠️ Local Supabase was `db reset` 2026-09-29 (owner-approved each time — ask again before the
+> next). Migrations are edited IN PLACE (AGENTS.md §6); a new table gets a new file.
+> 🚨 A "use client" component must receive strings, never catalog formatter functions: it blanks
+> the page in e2e while jsdom stays green (Task 3b).
+>
+> Master is at **`bf3cd1c`** and is **NOT pushed** — the owner pushes by hand.
+>
+> ---
+>
+> ## (previous block) 2026-09-25 late — superseded by the block above
+>
+> Master is at **`a84bd79`** (the `--no-ff` merge of `e2e-failure-repair` at `7a6f3f1`, plus a
+> memory commit), and is **NOT pushed** — the owner pushes by hand. Branches and worktrees kept.
 >
 > ⭐ **The e2e suite's SIX structural failures are closed.** They had been carried as
 > "pre-existing" by four consecutive branches. Two causes, not six: the sub-1024 mobile

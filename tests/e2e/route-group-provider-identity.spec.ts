@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 
 /**
  * Spec §8.1 — the gate for the whole chrome architecture.
@@ -27,7 +27,7 @@ import { registerViaUi } from "./fixtures/auth";
  * tests/e2e/journal.spec.ts.
  */
 test("Companion state survives the (app) <-> (immersive) boundary", async ({ page }) => {
-  const email = `e2e_group_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e_group");
   const password = "password123";
 
   let statsRequests = 0;
@@ -132,7 +132,7 @@ test("Companion state survives the (app) <-> (immersive) boundary", async ({ pag
 test("Companion state survives the (app) -> (focus) boundary, and the hidden nav stays recoverable", async ({
   page,
 }) => {
-  const email = `e2e_group_focus_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e_group_focus");
   const password = "password123";
 
   let statsRequests = 0;
