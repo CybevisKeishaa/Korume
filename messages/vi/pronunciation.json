@@ -33,6 +33,27 @@
     "goal": "Mục tiêu",
     "collection": "Bộ sưu tập",
     "backToPronunciation": "Quay lại Phòng luyện phát âm",
+    "paths": {
+      "title": "Lộ trình học phổ biến",
+      "viewAll": "Xem tất cả",
+      "start": "Bắt đầu",
+      "continue": "Tiếp tục",
+      "save": "Lưu {title}",
+      "saveFailed": "Không thể cập nhật lộ trình đã lưu. Hãy thử lại.",
+      "emptyTitle": "Chưa có lộ trình học",
+      "emptyBody": "Lộ trình học sẽ xuất hiện ở đây khi đã có bài học.",
+      "pageEyebrow": "LỘ TRÌNH HỌC",
+      "pageTitle": "Lộ trình học",
+      "pageSubtitle": "Các khóa học có cấu trúc, đưa bạn từ những câu đầu tiên đến hội thoại tự tin.",
+      "saved": "Lộ trình đã lưu",
+      "savedEmptyTitle": "Chưa lưu lộ trình nào",
+      "savedEmptyBody": "Chạm vào ngôi sao trên một lộ trình để giữ nó ở đây.",
+      "all": "Tất cả lộ trình",
+      "meta": "{lessons} · {duration}",
+      "durationMinutes": "{minutes} phút",
+      "durationHours": "{hours} giờ",
+      "durationHoursMinutes": "{hours} giờ {minutes} phút"
+    },
     "emptyCourse": {
       "title": "Chưa có khóa học nổi bật",
       "body": "Khóa học nổi bật sẽ xuất hiện ở đây khi một lộ trình học có bài học."

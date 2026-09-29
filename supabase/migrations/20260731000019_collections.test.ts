@@ -20,15 +20,16 @@ describe("collections SQL contract", () => {
     expect(schema).toContain("skill_focus text check (skill_focus in ('accuracy', 'pitch', 'rhythm'))");
     expect(schema).toContain("check ((kind = 'goal') = (skill_focus is not null))");
     expect(schema).toContain("position int not null default 0, primary key (lesson_id, collection_id)");
+    expect(schema).toContain("icon text check (char_length(icon) <= 16)");
   });
 
   it("seeds the frame's four paths and three goals with their skill focus", () => {
     for (const slug of ["everyday-conversation", "business-japanese", "it-engineer-communication", "travel-in-japan"]) {
-      expect(seed).toMatch(new RegExp(`\('${slug}', [^)]*, 'path', null\)`));
+      expect(seed).toMatch(new RegExp(`\\('${slug}', [^)]*, 'path', null, '[^']+'\\)`));
     }
-    expect(seed).toMatch(/\('improve-pitch-accent', [^)]*, 'goal', 'pitch'\)/);
-    expect(seed).toMatch(/\('improve-fluency', [^)]*, 'goal', 'rhythm'\)/);
-    expect(seed).toMatch(/\('native-rhythm-training', [^)]*, 'goal', 'rhythm'\)/);
+    expect(seed).toMatch(/\('improve-pitch-accent', [^)]*, 'goal', 'pitch', '[^']+'\)/);
+    expect(seed).toMatch(/\('improve-fluency', [^)]*, 'goal', 'rhythm', '[^']+'\)/);
+    expect(seed).toMatch(/\('native-rhythm-training', [^)]*, 'goal', 'rhythm', '[^']+'\)/);
   });
 
   it("is edited in place: no later migration alters either table (AGENTS.md §6)", () => {

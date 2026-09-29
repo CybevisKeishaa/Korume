@@ -98,3 +98,42 @@ test("at 1280px, the featured course region is visible and its preview is respon
   await page.setViewportSize({ width: 1024, height: 900 });
   await assertNoHorizontalOverflow(page);
 });
+
+test("at 1280px, a learning path saved from the shelf stays saved and is listed under Saved paths", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 529 });
+  await registerLearner(page);
+  await page.goto("/en/pronunciation");
+
+  const { paths } = enPronunciation.hub;
+  // A toggle keeps ONE name; aria-pressed carries the state.
+  const saveName = paths.save.replace("{title}", "Everyday Conversation");
+  const shelfToggle = () => page.getByRole("region", { name: paths.title }).getByRole("button", { name: saveName });
+  // The seed gives `everyday-conversation` a lesson, so its card MUST be on the shelf.
+  await shelfToggle().scrollIntoViewIfNeeded();
+  await expect(shelfToggle()).toHaveAttribute("aria-pressed", "false");
+  const saved = page.waitForResponse((response) => response.url().includes("/save") && response.request().method() === "PUT");
+  await shelfToggle().click();
+  expect((await saved).status()).toBe(200);
+
+  // Client-side navigation, not a reload: a reload would hide a stale router cache.
+  await page.getByRole("link", { name: new RegExp(`^${paths.viewAll}`) }).click();
+  await expect(page).toHaveURL(/\/en\/pronunciation\/paths$/);
+  const savedSection = page.getByRole("region", { name: paths.saved });
+  await expect(savedSection.getByRole("heading", { level: 3, name: "Everyday Conversation" })).toBeVisible();
+
+  // Unsave from the Saved section: the All-paths copy of the same path must follow.
+  const removed = page.waitForResponse((response) => response.url().includes("/save") && response.request().method() === "DELETE");
+  await savedSection.getByRole("button", { name: saveName }).click();
+  expect((await removed).status()).toBe(200);
+  await expect(page.getByRole("region", { name: paths.all }).getByRole("button", { name: saveName })).toHaveAttribute("aria-pressed", "false");
+  await expect(savedSection.getByRole("heading", { level: 3, name: "Everyday Conversation" })).toHaveCount(0);
+
+  // Back to the studio through the app, and the shelf shows the server's answer.
+  await page.getByRole("link", { name: enPronunciation.hub.backToPronunciation }).click();
+  await expect(page).toHaveURL(/\/en\/pronunciation$/);
+  await expect(shelfToggle()).toHaveAttribute("aria-pressed", "false");
+
+  await page.goto("/en/pronunciation/paths");
+  await page.setViewportSize({ width: 1024, height: 900 });
+  await assertNoHorizontalOverflow(page);
+});

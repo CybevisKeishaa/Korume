@@ -16,6 +16,8 @@ create table collections (
   -- Goals only: the persisted score a goal trains (accuracy ->
   -- pronunciation_score, pitch -> pitch_score, rhythm -> rhythm_score).
   skill_focus text check (skill_focus in ('accuracy', 'pitch', 'rhythm')),
+  -- A short glyph the path and goal cards show (Figma 37:5450); decorative, so nullable.
+  icon text check (char_length(icon) <= 16),
   created_at timestamptz not null default now(),
   constraint collections_skill_focus_goal_check check ((kind = 'goal') = (skill_focus is not null))
 );

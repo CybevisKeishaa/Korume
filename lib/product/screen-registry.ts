@@ -704,6 +704,21 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
+  {
+    screenId: "pronunciation-learning-paths",
+    name: "Pronunciation learning paths",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: "2026-09-29",
+    route: "/pronunciation/paths",
+    chrome: "app",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
   // journey/2 — designed, honest placeholder. A2: Companion is ONE destination
   // over six screens (home · diary · sensei · memory · growth), which is what
   // absorbs /sensei, /journal and /weekly-report above.

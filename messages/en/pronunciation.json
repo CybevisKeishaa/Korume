@@ -33,6 +33,27 @@
     "goal": "Goal",
     "collection": "Collection",
     "backToPronunciation": "Back to Pronunciation Studio",
+    "paths": {
+      "title": "Popular Learning Paths",
+      "viewAll": "View all",
+      "start": "Start",
+      "continue": "Continue",
+      "save": "Save {title}",
+      "saveFailed": "Your saved paths could not be updated. Try again.",
+      "emptyTitle": "No learning paths yet",
+      "emptyBody": "Learning paths appear here once they have lessons.",
+      "pageEyebrow": "LEARNING PATHS",
+      "pageTitle": "Learning Paths",
+      "pageSubtitle": "Structured courses that take you from first phrases to confident conversation.",
+      "saved": "Saved paths",
+      "savedEmptyTitle": "No saved paths yet",
+      "savedEmptyBody": "Tap the star on a path to keep it here.",
+      "all": "All paths",
+      "meta": "{lessons} · {duration}",
+      "durationMinutes": "{minutes}m",
+      "durationHours": "{hours}h",
+      "durationHoursMinutes": "{hours}h {minutes}m"
+    },
     "emptyCourse": {
       "title": "No course to feature yet",
       "body": "A featured course appears here once a learning path has lessons."

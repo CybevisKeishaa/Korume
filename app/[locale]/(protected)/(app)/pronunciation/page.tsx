@@ -3,12 +3,14 @@ import type { Locale } from "@/lib/i18n";
 import { getPathname } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
 import { getHubDiscovery, toHubLesson } from "@/lib/data/shadowing-hub";
-import { getFeaturedCourse } from "@/lib/data/collections";
+import { getLearningPaths } from "@/lib/data/collections";
 import { formatCourseDuration, formatHours, formatLevelBand } from "@/lib/format-course-duration";
 import { TwoColumnShell } from "@/components/layout/two-column-shell";
 import { HubDiscoveryControls } from "@/components/shadowing/hub-discovery-controls";
 import { HubFeaturedHero } from "@/components/shadowing/hub-featured-hero";
 import { HubContinueStrip } from "@/components/shadowing/hub-continue-strip";
+import { HubPathShelf } from "@/components/shadowing/hub-path-shelf";
+import { pathCardLabels, pathCards } from "./path-card-copy";
 import { shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
 import enShadowing from "@/messages/en/shadowing.json";
 
@@ -33,14 +35,15 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     filter: typeof searchParams?.filter === "string" ? searchParams.filter : undefined,
   });
   const hubQuery = query.success ? query.data : {};
-  const [t, tCommon, tHub, hub, course, locale] = await Promise.all([
+  const [t, tCommon, tHub, hub, learning, locale] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
     getTranslations("shadowing"),
     getHubDiscovery({ query: hubQuery.q, filter: hubQuery.filter }),
-    getFeaturedCourse(),
+    getLearningPaths(),
     getLocale(),
   ]);
+  const course = learning.featured;
   const duration = (minutes: number) => formatCourseDuration(minutes, {
     minutes: (value) => t("hub.durationMinutes", { minutes: value }),
     hours: (value) => t("hub.durationHours", { hours: value, hoursText: formatHours(value, locale) }),
@@ -78,6 +81,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
                 description: course.collection.description,
                 total: course.total,
                 completed: course.completed,
+                lessonCount: course.lessonCount,
                 durationMinutes: course.durationMinutes,
                 jlptRange: course.jlptRange,
                 levelBand,
@@ -128,6 +132,16 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           noThumbnail: tCommon("noThumbnail"),
         }}
       />
+      <div className="mt-3xl">
+        <HubPathShelf
+          title={t("hub.paths.title")}
+          // The frame shelves four; "View all" holds the rest.
+          paths={pathCards(learning.paths.slice(0, 4), t)}
+          labels={pathCardLabels(t)}
+          viewAll={{ href: "/pronunciation/paths", label: t("hub.paths.viewAll") }}
+          empty={{ title: t("hub.paths.emptyTitle"), body: t("hub.paths.emptyBody") }}
+        />
+      </div>
     </TwoColumnShell>
   );
 }

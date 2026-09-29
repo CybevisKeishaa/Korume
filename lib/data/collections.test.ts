@@ -3,9 +3,11 @@ import { createMockSupabase, eqValue, type TableResolver } from "@/test/supabase
 import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true, retryAfter: 0 })) }));
 
 function useTables(tables: Record<string, TableResolver>) {
-  const supabase = createMockSupabase({ user: { id: "u1" }, tables });
+  // Saved paths default to none; a test that cares supplies its own rows.
+  const supabase = createMockSupabase({ user: { id: "u1" }, tables: { user_saved_collections: () => ({ data: [], error: null }), ...tables } });
   vi.mocked(createClient).mockReturnValue(
     supabase as unknown as ReturnType<typeof createClient>,
   );
@@ -30,7 +32,7 @@ describe("collections", () => {
     expect(result.map((c) => c.slug)).toEqual(["featured", "beginner-foundation"]);
     expect(result[1]).toEqual({
       id: "c1", slug: "beginner-foundation", title: "Beginner Foundation",
-      description: "Start…", coverImageUrl: null, displayOrder: 1, kind: "shelf", skillFocus: null,
+      description: "Start…", coverImageUrl: null, displayOrder: 1, kind: "shelf", skillFocus: null, icon: null,
     });
   });
 
@@ -280,7 +282,7 @@ describe("collections", () => {
 
   it("derives a null level band when no lesson has a JLPT level", async () => {
     const { collectionMeta } = await import("@/lib/data/collections");
-    expect(collectionMeta([{ duration_seconds: null, jlpt_level_estimate: null }])).toEqual({ durationMinutes: null, jlptRange: null, levelBand: null });
+    expect(collectionMeta([{ duration_seconds: null, jlpt_level_estimate: null }])).toEqual({ lessonCount: 1, durationMinutes: null, jlptRange: null, levelBand: null });
   });
 
   it("sums every available duration instead of discarding a collection with one missing duration", async () => {
@@ -328,5 +330,121 @@ describe("collections", () => {
     });
     const { getFeaturedCourse } = await import("@/lib/data/collections");
     await expect(getFeaturedCourse()).resolves.toMatchObject({ resume: { lesson: { id: "v2" }, index: 2 } });
+  });
+});
+
+describe("learning paths", () => {
+  const path = (id: string, order: number) => ({ id, slug: id, title: id, description: null, cover_image_url: null, display_order: order, kind: "path", skill_focus: null, icon: null });
+  const lesson = (id: string, duration: number | null = 600) => ({ id, duration_seconds: duration, jlpt_level_estimate: null, thumbnail_url: null });
+
+  it("summarises every path with a visible lesson, and drops a path whose lessons the viewer cannot see", async () => {
+    useTables({
+      collections: () => ({ data: [path("started", 1), path("fresh", 2), path("hidden", 3)], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "started", lesson_id: "a1", position: 0 },
+        { collection_id: "started", lesson_id: "a2", position: 1 },
+        { collection_id: "fresh", lesson_id: "b1", position: 0 },
+        { collection_id: "hidden", lesson_id: "plus-only", position: 0 },
+      ], error: null }),
+      // RLS hides `plus-only`, so the videos read never returns it.
+      videos: () => ({ data: [lesson("a1", 1200), lesson("a2", null), lesson("b1", 600)], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "a1", last_watched_position: 30, completed_at: null, last_watched_at: null }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+      user_saved_collections: () => ({ data: [{ collection_id: "fresh" }], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    const { paths } = await getLearningPaths();
+
+    expect(paths.map((summary) => summary.collection.slug)).toEqual(["started", "fresh"]);
+    expect(paths[0]).toMatchObject({ total: 2, completed: 0, started: true, saved: false, next: { id: "a1" }, durationMinutes: 20 });
+    expect(paths[1]).toMatchObject({ total: 1, completed: 0, started: false, saved: true, next: { id: "b1" } });
+  });
+
+  it("features a saved unfinished path over one merely in progress (saved beats rule 3)", async () => {
+    useTables({
+      collections: () => ({ data: [path("in-progress", 1), path("saved", 2)], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "in-progress", lesson_id: "a1", position: 0 },
+        { collection_id: "in-progress", lesson_id: "a2", position: 1 },
+        { collection_id: "saved", lesson_id: "b1", position: 0 },
+      ], error: null }),
+      videos: () => ({ data: [lesson("a1"), lesson("a2"), lesson("b1")], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "a1", last_watched_position: 600, completed_at: "2026-09-28T00:00:00Z", last_watched_at: null }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+      user_saved_collections: () => ({ data: [{ collection_id: "saved" }], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await expect(getLearningPaths()).resolves.toMatchObject({ featured: { collection: { slug: "saved" }, selectedByRecentActivity: false } });
+  });
+
+  it("does not feature a saved path the learner has finished", async () => {
+    useTables({
+      collections: () => ({ data: [path("first", 1), path("done", 2)], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "first", lesson_id: "a1", position: 0 },
+        { collection_id: "done", lesson_id: "b1", position: 0 },
+      ], error: null }),
+      videos: () => ({ data: [lesson("a1"), lesson("b1")], error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "b1", last_watched_position: 600, completed_at: "2026-09-28T00:00:00Z", last_watched_at: null }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+      user_saved_collections: () => ({ data: [{ collection_id: "done" }], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await expect(getLearningPaths()).resolves.toMatchObject({ featured: { collection: { slug: "first" } } });
+  });
+});
+
+describe("setCollectionSaved", () => {
+  const COLLECTION = "0b9c1d2e-3f40-4a5b-8c6d-7e8f90a1b2c3";
+
+  it("refuses an anonymous caller without touching the table", async () => {
+    const supabase = createMockSupabase({ user: null, tables: {} });
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
+    const { setCollectionSaved } = await import("@/lib/data/collections");
+    await expect(setCollectionSaved(COLLECTION, true)).resolves.toEqual({ ok: false, status: 401 });
+  });
+
+  it("saves the path for the caller, and treats an existing save as success", async () => {
+    let attempt = 0;
+    useTables({
+      user_saved_collections: (calls) => {
+        expect(calls).toContainEqual({ op: "insert", values: { user_id: "u1", collection_id: COLLECTION } });
+        attempt += 1;
+        return attempt === 1 ? { data: null, error: null } : { data: null, error: { code: "23505", message: "duplicate" } };
+      },
+    });
+    const { setCollectionSaved } = await import("@/lib/data/collections");
+    await expect(setCollectionSaved(COLLECTION, true)).resolves.toEqual({ ok: true });
+    await expect(setCollectionSaved(COLLECTION, true)).resolves.toEqual({ ok: true });
+  });
+
+  it.each([
+    ["42501", "the insert policy refused it (not a path)"],
+    ["23503", "no such collection"],
+  ])("reads %s (%s) as 404", async (code) => {
+    useTables({ user_saved_collections: () => ({ data: null, error: { code, message: "refused" } }) });
+    const { setCollectionSaved } = await import("@/lib/data/collections");
+    await expect(setCollectionSaved(COLLECTION, true)).resolves.toEqual({ ok: false, status: 404 });
+  });
+
+  it("unsaves only the caller's own row", async () => {
+    useTables({
+      user_saved_collections: (calls) => {
+        expect(calls).toContainEqual({ op: "delete" });
+        expect(eqValue(calls, "user_id")).toBe("u1");
+        expect(eqValue(calls, "collection_id")).toBe(COLLECTION);
+        return { data: null, error: null };
+      },
+    });
+    const { setCollectionSaved } = await import("@/lib/data/collections");
+    await expect(setCollectionSaved(COLLECTION, false)).resolves.toEqual({ ok: true });
+  });
+
+  it("rate-limits a caller before any write", async () => {
+    const { rateLimit } = await import("@/lib/rate-limit");
+    vi.mocked(rateLimit).mockReturnValueOnce({ ok: false, retryAfter: 5_000 });
+    useTables({ user_saved_collections: () => { throw new Error("must not write while rate-limited"); } });
+    const { setCollectionSaved } = await import("@/lib/data/collections");
+    await expect(setCollectionSaved(COLLECTION, true)).resolves.toEqual({ ok: false, status: 429, retryAfter: 5_000 });
   });
 });

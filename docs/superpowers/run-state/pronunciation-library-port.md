@@ -28,8 +28,8 @@ that machinery and does not rebuild it.
 ## Accepted commits
 
 `672d507` the contract · `898da5a` the rulings · `fc74c78` the parked Task 1
-design · Task 1 `675494f` · Task 2 `f6347c1` · Task 3 (the commit after
-`d8fe11d`).
+design · Task 1 `675494f` · Task 2 `f6347c1` · Task 3 `8999492` · Task 3b
+(the commit after it).
 
 ## Contracts and decisions
 
@@ -123,25 +123,30 @@ collection chosen by derivation** (recent activity → in progress → first), a
 "Preview Course" opens `/pronunciation/collections/[slug]` (repo-only; no frame).
 Claude, 2026-09-29: `user_video_progress.last_watched_at` (nullable, trigger-
 stamped, no backfill) orders "Continue where you left off", nulls last.
+10. (owner, 2026-09-29) **The card's ✦ SAVES a path** (`user_saved_collections`,
+    RLS: own rows, `kind = 'path'` only, no UPDATE; in the GDPR export). Saved
+    paths feed the hero's choice: activity → **saved** → in progress → first.
+    ⚠️ Activity outranks saved; the owner has not ruled on that order.
 
 ## Verification
 
 Measured in this worktree, never in the main checkout.
 
-**Task 3 gate, 2026-09-29** (after the independent review's 17 findings;
-`cache()` skipped — vitest's React 18 has none): vitest 375 files / 3481 tests
-exit 0, tsc 0, lint 0 errors, `verify:protocol` 0; `supabase db reset` clean;
-trigger proven live; e2e `pronunciation` + `shadowing-hub` + `-explore` 11/11.
+**Task 3b gate, 2026-09-29** (after an independent review's 11 findings; #11,
+a `withFeatured` flag for `/paths`, skipped as a micro-cost): vitest 380 files /
+3513 tests, tsc 0, lint 0, protocol 0; fresh `db reset` clean; RLS proven live;
+e2e `pronunciation` + `shadowing-hub` + `-explore` 12/12 on the reset DB.
 
 ⚠️ **1–2 e2e reds per run are the parallel-load flake family** (`display-scale`
 / `settings` / `shadowing-explore`), a DIFFERENT set each run, green run alone,
 and firing on `master` too — read `run-state/e2e-failure-repair.md` before
 calling one a regression.
 
-🚨 **Registration reds are not a flake:** `e2e_…_${Date.now()}` emails collide
-across parallel workers (auth log: `users_email_partial_key`, accounts 1–15 ms
-apart). `pronunciation.spec` now uses a UUID; the other specs are a test-infra
-ticket.
+🚨 **Registration reds are not a flake:** `Date.now()` emails collided across
+parallel workers. Fixed for every spec on branch `e2e-unique-emails` (`a7d5ce9`,
+unmerged); `pronunciation.spec` here already uses a UUID.
+🚨 **A Client Component takes strings, never catalog formatters** — passing one
+blanked the page in e2e while jsdom stayed green; `path-card-copy.test.ts` guards.
 
 ⚠️ **`cmd | tail` hides the exit code.** This file was committed once over a
 RED `verify:protocol`, because the check was piped and `tail` exits 0.
@@ -163,21 +168,16 @@ owner's dev server) — build only in this worktree, by absolute path.
 
 None.
 
-⚠️ **Protocol exception, owner-approved 2026-09-29:** Codex hit its 5-hour
-limit (97%) with Task 3 unfinished, and Claude finished the implementation
-(migrations folded in place, review fixes) instead of reviewing only. An
-independent `code-reviewer` subagent reviewed the result.
+⚠️ **Protocol exception, owner-approved 2026-09-29:** Codex hit its usage limit
+mid-Task 3; Claude finished it, and the owner then had Claude implement 3b
+itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
 
 ## Next actions
 
-1. **Task 1 — DONE, accepted by Claude 2026-09-27** (Codex implemented; see
-   Accepted commits). Generic `position` migration, ordered memberships/lesson
-   reads and membership-based progress rollup, landed in ONE commit. Gate:
-   vitest 369 files / 3441 tests, tsc 0, lint 0, `verify:protocol` 0.
-   ⚠️ Its additive `20260925000034` broke AGENTS.md §6; Task 3 folded
-   `position` into `20260731000019` and deleted it. Apply by `db reset`.
-   Rules: sort by `position` value (stable: ties keep the videos query order),
-   `slice` after sorting, never limit the videos query.
+1. **Task 1 — DONE 2026-09-27** (Codex): `position`, ordered membership reads
+   and the membership-based progress rollup, in ONE commit.
+   ⚠️ Its additive `20260925000034` broke §6; Task 3 folded it into `…019`.
+   Rules: sort by `position` (stable), `slice` after sorting.
 2. **Task 2 — DONE**, e2e run 2026-09-28 (see Verification). `getHubDiscovery`
    is shared by both hubs; `HubDiscoveryControls` gained `basePath` + `heading`.
    Its narrow case is 1024, not 320 — below 1024 every route is the handoff.
@@ -185,8 +185,8 @@ independent `code-reviewer` subagent reviewed the result.
    `20260731000019`, paths + goals seeded in `20260807000026`,
    `last_watched_at` in `20260712000001`; course hero, continue strip, and
    the collection page. Codex implemented most; Claude finished (see Blockers).
-4. **Task 3b — Popular Learning Paths** shelf over the `kind = 'path'` rows
-   Task 3 seeded; "View all" reuses the collection page.
+4. **Task 3b — DONE 2026-09-29.** Shelf of 4 path cards (icon, ✦ save, meta,
+   progress, Continue/Start) + `/pronunciation/paths` (Saved, then All).
 5. **Task 4a — shelves whose data exists today:** Practice by Situation
    (`lesson_situations`) + Shadowing Collections, over `hub-shelves`.
 6. **Task 4b — Practice by Goal** per ruling 7 (migration + seed + reads +

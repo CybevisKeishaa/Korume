@@ -16,6 +16,7 @@ const course = {
   description: null,
   total: 2,
   completed: 0,
+  lessonCount: 2,
   durationMinutes: 30,
   jlptRange: null,
   levelBand: null,
@@ -95,7 +96,7 @@ describe("HubFeaturedHero", () => {
   });
 
   it("renders the course variant with progress and separate preview action", () => {
-    render(<HubFeaturedHero course={{ ...course, description: "Natural phrases.", total: 120, completed: 80, durationMinutes: 480, jlptRange: "N3–N2", levelBand: "Intermediate–Advanced" }} labels={courseLabels} />);
+    render(<HubFeaturedHero course={{ ...course, description: "Natural phrases.", total: 120, completed: 80, lessonCount: 120, durationMinutes: 480, jlptRange: "N3–N2", levelBand: "Intermediate–Advanced" }} labels={courseLabels} />);
     expect(screen.getByRole("heading", { name: "Everyday Conversation" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Continue Learning: Everyday Conversation" })).toHaveAttribute("href", "/en/shadowing/featured-1");
     expect(screen.getByRole("link", { name: "Preview Course: Everyday Conversation" })).toHaveAttribute("href", "/en/pronunciation/collections/everyday-conversation");

@@ -20,8 +20,11 @@ export interface HubFeaturedHeroLabels {
 export interface HubFeaturedCourse {
   title: string;
   description: string | null;
+  /** Memberships: the denominator of the progress bar. */
   total: number;
   completed: number;
+  /** Lessons the viewer can see: what the meta line counts and times. */
+  lessonCount: number;
   durationMinutes: number | null;
   jlptRange: string | null;
   /** Already localised by the page; null when no member lesson carries a JLPT level. */
@@ -92,7 +95,7 @@ function FeaturedCourse({ course, labels }: { course: HubFeaturedCourse; labels:
     <HeroShell eyebrow={labels.eyebrow} coverUrl={course.coverUrl} title={course.title}>
       {course.description ? <p className="mt-sm text-body text-muted-foreground">{course.description}</p> : null}
       <dl className="mt-md flex flex-wrap gap-x-md gap-y-xs text-caption text-muted-foreground">
-        <div><dt className="sr-only">{labels.lessonsLabel}</dt><dd>{labels.lessons(course.total)}</dd></div>
+        <div><dt className="sr-only">{labels.lessonsLabel}</dt><dd>{labels.lessons(course.lessonCount)}</dd></div>
         {course.jlptRange && course.levelBand ? <div><dt className="sr-only">{labels.levelLabel}</dt><dd>{course.levelBand}</dd></div> : null}
         {course.durationMinutes === null ? null : <div><dt className="sr-only">{labels.durationLabel}</dt><dd>{labels.duration(course.durationMinutes)}</dd></div>}
         {course.jlptRange ? <div><dt className="sr-only">{labels.jlptLabel}</dt><dd>{course.jlptRange}</dd></div> : null}

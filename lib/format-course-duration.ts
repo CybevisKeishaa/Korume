@@ -22,3 +22,14 @@ export function formatLevelBand<Band extends string>(
 export function formatHours(hours: number, locale: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(hours);
 }
+
+/** The card form of a duration, as the path cards show it ("3h 20m", "8h", "45m"). */
+export function formatCompactDuration(
+  minutes: number,
+  labels: { minutes: (value: number) => string; hours: (value: number) => string; hoursMinutes: (hours: number, minutes: number) => string },
+): string {
+  if (minutes < 60) return labels.minutes(minutes);
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? labels.hours(hours) : labels.hoursMinutes(hours, rest);
+}
