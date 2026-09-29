@@ -3,19 +3,21 @@
 > ## ▶ WHERE EXECUTION STANDS — 2026-09-25 late (supersedes every block below)
 >
 > ▶ **IN FLIGHT: `pronunciation-library-port`** (worktree `.worktrees/pronunciation-library-port`,
-> Owner: Claude). **Tasks 1–3 are DONE** (tip `8999492`, 2026-09-29): ordered collections, the
-> shared search/filter row, and the featured-course hero + resume strip + collection page.
+> Owner: Claude). **Tasks 1–3b are DONE** (tip `c86b523`, 2026-09-29): ordered collections, the
+> shared search/filter row, the featured-course hero + resume strip + collection page, and Popular
+> Learning Paths with a SAVE toggle (`user_saved_collections`) + `/pronunciation/paths`.
 > ⭐ Read `docs/superpowers/run-state/pronunciation-library-port.md` — it holds the owner's rulings
 > 1–9 (incl. 2026-09-28: **build the complete version, never trim toward minimal**; Sliders = a
 > Sort & display panel; Practice by Goal = `collections.kind = 'goal'`; honest search copy).
-> Next: Task 3b (Popular Learning Paths). ⚠️ Local DB was `db reset` on 2026-09-29 (owner-approved):
+> Next: Task 4a (Situation + Shadowing Collections shelves). ⚠️ Local DB was `db reset` on 2026-09-29 (owner-approved):
 > migrations are folded IN PLACE (AGENTS.md §6), so a DB that applied the deleted
 > `20260925000034` needs a reset, not a migrate.
 >
 > 🚨 **Most e2e "registration flakes" are one real bug:** specs build emails from `Date.now()`
 > and parallel workers collide on the same millisecond (auth log: duplicate
 > `users_email_partial_key`). `pronunciation.spec` now uses a UUID; the rest is a test-infra
-> ticket and likely explains part of the flake family below.
+> ticket and likely explains part of the flake family below. ▶ FIXED on branch `e2e-unique-emails`
+> (`a7d5ce9`, unmerged, 40/40 on 5 specs x2): `uniqueEmail()` + a vitest guard.
 >
 > Master is at **`a84bd79`** (the `--no-ff` merge of `e2e-failure-repair` at `7a6f3f1`, plus a
 > memory commit), and is **NOT pushed** — the owner pushes by hand. Branches and worktrees kept.
