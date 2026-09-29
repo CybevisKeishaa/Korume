@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 
 test("route errors stay in the live app shell", async ({ page }) => {
-  const email = `e2e_route_error_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e_route_error");
   const password = "password123";
 
   await page.setViewportSize({ width: 1280, height: 800 });

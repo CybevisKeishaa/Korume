@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 
 /**
  * Display Scale, measured rather than read (settings spec §4.5, §8).
@@ -49,8 +49,8 @@ async function spaceMd(page: Page, selector: string): Promise<number> {
 test.describe("display scale", () => {
   // A fresh account per test: the preference is per-user server state, so two
   // cases sharing one account would leak the scale one set into the other.
-  test.beforeEach(async ({ page }, testInfo) => {
-    const email = `e2e_scale_${Date.now()}_${testInfo.workerIndex}_${testInfo.testId}@example.com`;
+  test.beforeEach(async ({ page }) => {
+    const email = uniqueEmail("e2e_scale");
     await page.goto("/en/register");
     await registerViaUi(page, { name: "E2E Scale Tester", email, password: "password123" });
     await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });

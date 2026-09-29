@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import enShadowing from "@/messages/en/shadowing.json";
 import enVideos from "@/messages/en/videos.json";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 
 async function registerLearner(page: import("@playwright/test").Page): Promise<void> {
-  const email = `e2e_shadowing_hub_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e_shadowing_hub");
 
   await page.goto("/en/register");
   await registerViaUi(page, { name: "E2E Shadowing Hub Tester", email, password: "password123" });

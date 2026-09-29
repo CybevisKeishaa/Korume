@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import enShadowing from "@/messages/en/shadowing.json";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
 
@@ -15,7 +15,7 @@ async function tabTo(page: import("@playwright/test").Page, target: import("@pla
 }
 
 async function registerLearner(page: import("@playwright/test").Page): Promise<void> {
-  const email = `e2e_shadowing_explore_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e_shadowing_explore");
   await page.goto("/en/register");
   await registerViaUi(page, { name: "E2E Explore Tester", email, password: "password123" });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });

@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { registerViaUi } from "./fixtures/auth";
+import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 
 // End-to-end: a new user registers, opens a vocab review, reveals and grades a
 // card, and the session advances (which means POST /api/srs/review succeeded and
 // persisted progress under RLS).
 test("register → review a vocab card → session advances", async ({ page }) => {
-  const email = `e2e_${Date.now()}@example.com`;
+  const email = uniqueEmail("e2e");
 
   await page.goto("/en/register");
   await registerViaUi(page, { name: "E2E Tester", email, password: "password123" });
