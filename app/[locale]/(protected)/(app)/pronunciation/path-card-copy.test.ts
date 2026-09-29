@@ -20,6 +20,7 @@ const summary: PathSummary = {
   started: true,
   saved: false,
   lessonCount: 120,
+  lessonIds: [],
   durationMinutes: 480,
 };
 

@@ -338,6 +338,82 @@ $$;
 revoke all on function jlpt_speaking_summary() from public, anon;
 grant execute on function jlpt_speaking_summary() to authenticated;
 
+-- The studio rail's reads, aggregated here for the same max_rows reason. Days
+-- are VN-local (fixed UTC+7, as lib/gamification/streak.ts decides).
+
+-- Seconds spoken in a window: the reference length of each line the caller
+-- shadowed. A line with no end time has no known length and adds nothing.
+create function pronunciation_speaking_seconds(p_start timestamptz, p_end timestamptz)
+  returns numeric
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select coalesce(sum(greatest(l.end_time - l.start_time, 0)), 0)
+  from shadowing_sessions s
+  join transcript_lines l on l.id = s.transcript_line_id
+  where s.user_id = auth.uid()
+    and s.created_at >= p_start
+    and s.created_at < p_end
+    and l.end_time is not null;
+$$;
+
+revoke all on function pronunciation_speaking_seconds(timestamptz, timestamptz) from public, anon;
+grant execute on function pronunciation_speaking_seconds(timestamptz, timestamptz) to authenticated;
+
+-- The caller's mean score per VN-local day in a window; a day without a
+-- scored session has no row.
+create function pronunciation_daily_means(p_start timestamptz, p_end timestamptz)
+  returns table (day date, pronunciation_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select (s.created_at at time zone 'Asia/Ho_Chi_Minh')::date, avg(s.pronunciation_score)
+  from shadowing_sessions s
+  where s.user_id = auth.uid()
+    and s.created_at >= p_start
+    and s.created_at < p_end
+    and s.pronunciation_score is not null
+  group by 1
+  order by 1;
+$$;
+
+revoke all on function pronunciation_daily_means(timestamptz, timestamptz) from public, anon;
+grant execute on function pronunciation_daily_means(timestamptz, timestamptz) to authenticated;
+
+-- The caller's most recently shadowed lessons, newest first. The score is the
+-- mean over that lesson's sessions on the VN-local day of its last practice.
+create function pronunciation_recent_practice(p_limit int)
+  returns table (video_id uuid, practiced_at timestamptz, pronunciation_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  with latest as (
+    select s.video_id, max(s.created_at) as practiced_at
+    from shadowing_sessions s
+    where s.user_id = auth.uid() and s.video_id is not null
+    group by s.video_id
+    order by 2 desc, 1
+    limit least(greatest(p_limit, 0), 20)
+  )
+  select latest.video_id, latest.practiced_at, avg(s.pronunciation_score)
+  from latest
+  join shadowing_sessions s
+    on s.video_id = latest.video_id
+    and s.user_id = auth.uid()
+    and (s.created_at at time zone 'Asia/Ho_Chi_Minh')::date = (latest.practiced_at at time zone 'Asia/Ho_Chi_Minh')::date
+  group by latest.video_id, latest.practiced_at
+  order by latest.practiced_at desc, latest.video_id;
+$$;
+
+revoke all on function pronunciation_recent_practice(int) from public, anon;
+grant execute on function pronunciation_recent_practice(int) to authenticated;
+
 create table dictation_attempts (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users (id) on delete cascade,

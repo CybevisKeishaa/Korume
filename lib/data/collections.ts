@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
 import type { PronunciationMetric } from "@/lib/data/pronunciation-metrics";
+import { getRecommendations } from "@/lib/data/recommendations";
 
 /**
  * A curated set that CONTAINS lessons. Not an attribute of a lesson, and not
@@ -129,6 +130,8 @@ export interface CollectionProgressSummary {
   started: boolean;
   lessonCount: number;
   durationMinutes: number | null;
+  /** The visible member lessons, in `position` order. */
+  lessonIds: string[];
 }
 
 export interface PathSummary extends CollectionProgressSummary {
@@ -201,7 +204,7 @@ async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView
       return Boolean(progress && (progress.completed_at || progress.last_watched_position > 0));
     });
     const { lessonCount, durationMinutes } = collectionMeta(lessons);
-    return { collection, memberRows, lessons, progressById, total: memberRows.length, completed, next, started, lessonCount, durationMinutes };
+    return { collection, memberRows, lessons, progressById, total: memberRows.length, completed, next, started, lessonCount, durationMinutes, lessonIds: lessons.map((lesson) => lesson.id) };
   }).filter((view) => view.lessons.length > 0);
 }
 
@@ -237,6 +240,7 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     started: view.started,
     lessonCount: view.lessonCount,
     durationMinutes: view.durationMinutes,
+    lessonIds: view.lessonIds,
     saved: savedIds.has(view.collection.id),
   }));
 
@@ -291,14 +295,55 @@ export async function getLearningPaths(): Promise<LearningPaths> {
 /** Every visible goal, in authored display order, with the same progress derivation as paths. */
 export async function getPracticeGoals(): Promise<PracticeGoalSummary[]> {
   const views = await getCollectionViews("goal");
-  return views.map(({ collection, total, completed, next, started, lessonCount, durationMinutes }) => (
-    { collection, total, completed, next, started, lessonCount, durationMinutes }
+  return views.map(({ collection, total, completed, next, started, lessonCount, durationMinutes, lessonIds }) => (
+    { collection, total, completed, next, started, lessonCount, durationMinutes, lessonIds }
   ));
 }
 
 /** Exactly one recommended badge: the first authored goal training the weakest measured metric. */
 export function recommendedPracticeGoalId(goals: PracticeGoalSummary[], weakest: PronunciationMetric | null): string | null {
   return weakest === null ? null : goals.find((goal) => goal.collection.skillFocus === weakest)?.collection.id ?? null;
+}
+
+/** AI Sensei's pick: a lesson the i+1 engine placed in the learner's band, and where it sits. */
+export interface SenseiRecommendation {
+  lesson: { id: string; title: string };
+  /** Share of the lesson's content words the learner knows, 0–1 (the engine's measured reason). */
+  knownRatio: number;
+  /** The weakest metric, when the lesson comes from the goal that trains it. */
+  focus: PronunciationMetric | null;
+  /** The path or goal holding the lesson, with its 1-based place there. */
+  home: { title: string; lessonNumber: number } | null;
+}
+
+/**
+ * Ranks the lessons of the goal training the weakest metric through the i+1
+ * engine, then the whole catalogue when that yields nothing. Only a pick
+ * carrying a measured reason is returned — the engine never invents one.
+ */
+export async function getSenseiRecommendation(
+  goals: PracticeGoalSummary[],
+  paths: CollectionProgressSummary[],
+  weakest: PronunciationMetric | null,
+): Promise<SenseiRecommendation | null> {
+  const goalId = recommendedPracticeGoalId(goals, weakest);
+  const goal = goals.find((candidate) => candidate.collection.id === goalId) ?? null;
+  const pick = async (candidateIds?: string[]) => {
+    const result = await getRecommendations({ limit: 24, candidateIds });
+    return result.ok ? result.data.find((recommendation) => recommendation.reason !== null) ?? null : null;
+  };
+  const fromGoal = goal?.lessonIds.length ? await pick(goal.lessonIds) : null;
+  const recommendation = fromGoal ?? await pick();
+  if (!recommendation?.reason) return null;
+
+  const home = [...(fromGoal && goal ? [goal] : []), ...paths, ...goals]
+    .find((collection) => collection.lessonIds.includes(recommendation.videoId));
+  return {
+    lesson: { id: recommendation.videoId, title: recommendation.title },
+    knownRatio: recommendation.reason.knownRatio,
+    focus: fromGoal ? weakest : null,
+    home: home ? { title: home.collection.title, lessonNumber: home.lessonIds.indexOf(recommendation.videoId) + 1 } : null,
+  };
 }
 
 /**

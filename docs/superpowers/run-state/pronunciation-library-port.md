@@ -191,7 +191,7 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
    🚨 Supabase grants `anon` EXECUTE on new functions: revoke `from public, anon`.
 7. **Task 4c — DONE.** `jlpt_speaking_summary()` (in place in the schema, SQL-aggregated) +
    `level:nX` filter (studio-only chips; `/shadowing` drops it). "Practiced" = ≥1 session on
-   the lesson. ⚠️ **Owner decision open:** the frame's JLPT "View all" is omitted (all five fit).
+   the lesson. **Ruling 14 (owner, 2026-09-29):** the JLPT "View all" is omitted (all five fit).
 8. **Task 5 — right rail:** Today's Speaking + Weekly Improvement (Accuracy,
    Pitch Accent, Rhythm) + AI Sensei Recommendation + Recently Practiced. Every
    value derives from persisted session data or the recommendation engine, and
