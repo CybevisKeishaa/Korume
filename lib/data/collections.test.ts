@@ -377,6 +377,38 @@ describe("learning paths", () => {
     await expect(getLearningPaths()).resolves.toMatchObject({ featured: { collection: { slug: "saved" }, selectedByRecentActivity: false } });
   });
 
+  // Ruling 13 (owner, 2026-09-29): a saved path outranks recent activity.
+  const useThreePaths = (saved: string[], latest: string | null) => useTables({
+    collections: () => ({ data: [path("active", 1), path("saved", 2), path("both", 3)], error: null }),
+    lesson_collections: () => ({ data: [
+      { collection_id: "active", lesson_id: "a1", position: 0 },
+      { collection_id: "saved", lesson_id: "b1", position: 0 },
+      { collection_id: "both", lesson_id: "c1", position: 0 },
+    ], error: null }),
+    videos: () => ({ data: [lesson("a1"), lesson("b1"), lesson("c1")], error: null }),
+    user_video_progress: () => ({ data: [], error: null }),
+    shadowing_sessions: () => ({ data: latest ? [{ video_id: latest, created_at: "2026-09-29T00:00:00Z" }] : [], error: null }),
+    user_saved_collections: () => ({ data: saved.map((collection_id) => ({ collection_id })), error: null }),
+  });
+
+  it("features a saved path over the path holding the latest session", async () => {
+    useThreePaths(["saved"], "a1");
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await expect(getLearningPaths()).resolves.toMatchObject({ featured: { collection: { slug: "saved" }, selectedByRecentActivity: false } });
+  });
+
+  it("falls back to recent activity when nothing is saved", async () => {
+    useThreePaths([], "a1");
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await expect(getLearningPaths()).resolves.toMatchObject({ featured: { collection: { slug: "active" }, selectedByRecentActivity: true } });
+  });
+
+  it("marks a saved path that also holds the latest session as chosen by activity", async () => {
+    useThreePaths(["both"], "c1");
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    await expect(getLearningPaths()).resolves.toMatchObject({ featured: { collection: { slug: "both" }, selectedByRecentActivity: true } });
+  });
+
   it("does not feature a saved path the learner has finished", async () => {
     useTables({
       collections: () => ({ data: [path("first", 1), path("done", 2)], error: null }),

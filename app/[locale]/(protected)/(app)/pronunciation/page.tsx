@@ -16,7 +16,10 @@ import { HubShelf } from "@/components/shadowing/hub-shelf";
 import { HubCollectionCard, HubSituationTile } from "@/components/shadowing/hub-practice-cards";
 import { HubPathCard } from "@/components/shadowing/hub-path-card";
 import { pathCardLabels, pathCards, goalCards } from "./path-card-copy";
-import { shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
+import { pronunciationDisplaySchema, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
+import { getMyPreferences } from "@/lib/data/preferences";
+import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
+import { HubDisplayPanel } from "@/components/shadowing/hub-display-panel";
 import enShadowing from "@/messages/en/shadowing.json";
 
 type TaxonomyTranslationKey =
@@ -35,16 +38,26 @@ export async function generateMetadata({
 export const dynamic = "force-dynamic";
 
 export default async function PronunciationPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
-  const query = shadowingHubQuerySchema.safeParse({
-    q: typeof searchParams?.q === "string" ? searchParams.q : undefined,
-    filter: typeof searchParams?.filter === "string" ? searchParams.filter : undefined,
-  });
+  const param = (key: string) => typeof searchParams?.[key] === "string" ? searchParams[key] as string : undefined;
+  const query = shadowingHubQuerySchema.safeParse({ q: param("q"), filter: param("filter") });
   const hubQuery = query.success ? query.data : {};
-  const [t, tCommon, tHub, hub, learning, locale, situations, goals, weeklyMetrics, shadowingCollections] = await Promise.all([
+  // Parsed on their own: every display field falls back alone, never fails.
+  const urlDisplay = pronunciationDisplaySchema.parse({ sort: param("sort"), duration: param("duration"), hideCompleted: param("hideCompleted") });
+  // The URL wins when it sets any display value; otherwise the saved profile applies.
+  const urlControlsDisplay = ["sort", "duration", "hideCompleted"].some((key) => typeof searchParams?.[key] === "string");
+  const displayPromise = urlControlsDisplay
+    ? Promise.resolve(urlDisplay)
+    : getMyPreferences().then((preferences) => ({
+      sort: preferences?.pronunciationSort ?? DEFAULT_PREFERENCES.pronunciationSort,
+      duration: preferences?.pronunciationDuration ?? DEFAULT_PREFERENCES.pronunciationDuration,
+      hideCompleted: preferences?.pronunciationHideCompleted ?? DEFAULT_PREFERENCES.pronunciationHideCompleted,
+    }));
+  const [t, tCommon, tHub, hub, display, learning, locale, situations, goals, weeklyMetrics, shadowingCollections] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
     getTranslations("shadowing"),
-    getHubDiscovery({ query: hubQuery.q, filter: hubQuery.filter }),
+    displayPromise.then((value) => getHubDiscovery({ query: hubQuery.q, filter: hubQuery.filter, ...value })),
+    displayPromise,
     getLearningPaths(),
     getLocale(),
     listPracticeSituations(),
@@ -84,6 +97,17 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           </header>
         )}
         filterToggleLabel={t("hub.filterToggleLabel")}
+        toolbar={(
+          <HubDisplayPanel
+            value={display}
+            labels={{
+              trigger: t("hub.display.trigger"), title: t("hub.display.title"), sort: t("hub.display.sort"),
+              recommended: t("hub.display.recommended"), newest: t("hub.display.newest"), shortest: t("hub.display.shortest"), inProgress: t("hub.display.inProgress"),
+              duration: t("hub.display.duration"), anyDuration: t("hub.display.anyDuration"), underTen: t("hub.display.underTen"), tenToThirty: t("hub.display.tenToThirty"), overThirty: t("hub.display.overThirty"),
+              hideCompleted: t("hub.display.hideCompleted"), apply: t("hub.display.apply"), reset: t("hub.display.reset"), close: t("hub.display.close"), saveFailed: t("hub.display.saveFailed"),
+            }}
+          />
+        )}
         beforeResults={(
           <>
             <HubFeaturedHero

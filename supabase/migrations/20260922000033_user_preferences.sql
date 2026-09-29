@@ -14,6 +14,11 @@ create table user_preferences (
   reduce_motion boolean not null default false,
   microphone_enabled boolean not null default true,
   camera_enabled boolean not null default false,
+  pronunciation_sort text not null default 'recommended'
+    check (pronunciation_sort in ('recommended', 'newest', 'shortest', 'in_progress')),
+  pronunciation_duration text
+    check (pronunciation_duration in ('under_10', '10_30', 'over_30')),
+  pronunciation_hide_completed boolean not null default false,
   updated_at timestamptz not null default now(),
   -- Range and non-empty. Uniqueness/order are normalised by zod before the
   -- write (a CHECK on array uniqueness is not practical, spec §3).

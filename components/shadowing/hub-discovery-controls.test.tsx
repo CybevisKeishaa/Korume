@@ -112,4 +112,13 @@ describe("HubDiscoveryControls", () => {
     render(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={[lesson]} action="/en/shadowing" basePath="/shadowing" beforeResults={<p>Continue here</p>} labels={labels} />);
     expect(screen.getByText("Continue here").compareDocumentPosition(screen.getByRole("heading", { name: labels.results })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it("places a supplied toolbar after the filter trigger, and renders nothing extra without one", () => {
+    const { rerender } = render(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={null} action="/en/pronunciation" basePath="/pronunciation" heading={<h1>Studio</h1>} filterToggleLabel="Filter" labels={labels} toolbar={<button type="button">Sort & display</button>} />);
+    const buttons = screen.getAllByRole("button").map((button) => button.getAttribute("aria-label") ?? button.textContent);
+    expect(buttons.indexOf("Sort & display")).toBeGreaterThan(buttons.indexOf("Filter"));
+    // /shadowing passes no toolbar and gets exactly the controls it had.
+    rerender(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={null} action="/en/shadowing" basePath="/shadowing" heading={<h1>Shadowing</h1>} filterToggleLabel="Filter" labels={labels} />);
+    expect(screen.queryByRole("button", { name: "Sort & display" })).toBeNull();
+  });
 });

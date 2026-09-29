@@ -31,6 +31,8 @@ export interface HubDiscoveryControlsProps {
   heading?: React.ReactNode;
   beforeResults?: React.ReactNode;
   filterToggleLabel?: string;
+  /** Extra controls after the filter toggle (the studio's Sort & display); Shadowing passes none. */
+  toolbar?: React.ReactNode;
   /** Null means the learner has not searched or filtered yet. */
   results: HubLesson[] | null;
   labels: HubDiscoveryControlsLabels;
@@ -50,6 +52,7 @@ export function HubDiscoveryControls({
   heading,
   beforeResults,
   filterToggleLabel,
+  toolbar,
   labels,
 }: HubDiscoveryControlsProps) {
   const activeFilterLabel = filters.find((filter) => `${filter.kind}:${filter.slug}` === activeFilter)?.label;
@@ -170,6 +173,7 @@ export function HubDiscoveryControls({
               >
                 {filterLinks}
               </Popover>
+              {toolbar}
             </div>
           </div>
           {between}
@@ -179,6 +183,7 @@ export function HubDiscoveryControls({
         <>
           {searchForm}
           {filterLinks}
+          {toolbar}
           {between}
           {resultsContent}
         </>

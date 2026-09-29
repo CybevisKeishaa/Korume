@@ -57,6 +57,23 @@ describe("getRecommendations", () => {
     expect(result).toMatchObject({ ok: true, data: [{ videoId: "va", band: "ideal", knownRatio: 0.96 }] });
   });
 
+  it("scans only the supplied candidates, bounded by their count", async () => {
+    vi.mocked(getKnownVocabLemmas).mockResolvedValue(new Set());
+    const videoQueries: QueryCall[][] = [];
+    mockClient({
+      user_video_progress: () => ({ data: [], error: null }),
+      videos: (calls) => { videoQueries.push([...calls]); return { data: [], error: null }; },
+    });
+
+    await getRecommendations({ limit: 2, candidateIds: ["va", "vb"] });
+    await getRecommendations({ limit: 12 });
+
+    // The mock ignores filters, so the recorded calls are the proof.
+    expect(videoQueries[0]).toEqual(expect.arrayContaining([{ op: "in", column: "id", values: ["va", "vb"] }, { op: "limit", count: 2 }]));
+    expect(videoQueries[1]).not.toContainEqual(expect.objectContaining({ op: "in", column: "id" }));
+    expect(videoQueries[1]).toContainEqual({ op: "limit", count: 100 });
+  });
+
   it("returns 401 when signed out", async () => {
     mockClient({}, null);
     const result = await getRecommendations({ limit: 12 });

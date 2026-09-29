@@ -15,6 +15,9 @@ const row = {
   reduce_motion: true,
   microphone_enabled: false,
   camera_enabled: true,
+  pronunciation_sort: "shortest" as const,
+  pronunciation_duration: "10_30" as const,
+  pronunciation_hide_completed: true,
 };
 
 beforeEach(() => vi.clearAllMocks());
@@ -51,6 +54,9 @@ describe("readPreferences", () => {
       reduceMotion: true,
       microphoneEnabled: false,
       cameraEnabled: true,
+      pronunciationSort: "shortest",
+      pronunciationDuration: "10_30",
+      pronunciationHideCompleted: true,
       dailyMinutes: 20,
     });
   });
@@ -118,6 +124,7 @@ describe("updateMyPreferences", () => {
       data: { ...DEFAULT_PREFERENCES, ...{
         learningSchedule: "custom", scheduleDays: [1, 3, 5], reviewFrequency: "relaxed", difficulty: "challenge",
         displayScale: "large", reduceMotion: true, microphoneEnabled: false, cameraEnabled: true, dailyMinutes: 20,
+        pronunciationSort: "shortest", pronunciationDuration: "10_30", pronunciationHideCompleted: true,
       } },
     });
     expect(calls.users.some((tableCalls) => hasCall(tableCalls, "update"))).toBe(true);

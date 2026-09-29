@@ -91,7 +91,7 @@ function reasonForKnownWordFit(input: {
  * count stays flat regardless of how many videos are scanned. Only the
  * tokenization work scales with `SCAN_LIMIT`.
  */
-export async function getRecommendations(query: RecommendationsQuery): Promise<GetRecommendationsResult> {
+export async function getRecommendations(query: RecommendationsQuery & { candidateIds?: string[] }): Promise<GetRecommendationsResult> {
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
@@ -108,12 +108,11 @@ export async function getRecommendations(query: RecommendationsQuery): Promise<G
     ((progressRows as ProgressRow[] | null) ?? []).filter((row) => row.completed_at).map((row) => row.video_id),
   );
 
-  const { data: videoRows, error: videoError } = await supabase
-    .from("videos")
+  let videoQuery = supabase.from("videos")
     .select("id, youtube_video_id, title, thumbnail_url, jlpt_level_estimate")
-    .in("library_access", ["FREE", "PLUS"])
-    .order("created_at", { ascending: false })
-    .limit(SCAN_LIMIT);
+    .in("library_access", ["FREE", "PLUS"]);
+  if (query.candidateIds) videoQuery = videoQuery.in("id", query.candidateIds);
+  const { data: videoRows, error: videoError } = await videoQuery.order("created_at", { ascending: false }).limit(query.candidateIds ? Math.min(query.candidateIds.length, SCAN_LIMIT) : SCAN_LIMIT);
   if (videoError) throw videoError;
 
   const candidates = ((videoRows as CandidateVideoRow[] | null) ?? []).filter(

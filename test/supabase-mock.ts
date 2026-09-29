@@ -1,7 +1,7 @@
 /**
  * Minimal chainable mock of the subset of the `@supabase/supabase-js` query
  * builder actually used under `lib/data/*` (select/insert/upsert/update/
- * delete + eq/in/gte/is/order/limit + single/maybeSingle, and the builder
+ * delete + eq/in/gte/lte/is/order/limit + single/maybeSingle, and the builder
  * itself being `await`-able without a terminal call — see e.g.
  * `lib/data/content.ts::getKanjiList`).
  *
@@ -51,6 +51,7 @@ export type QueryCall =
   | { op: "neq"; column: string; value: unknown }
   | { op: "in"; column: string; values: unknown[] }
   | { op: "gte"; column: string; value: unknown }
+  | { op: "lte"; column: string; value: unknown }
   | { op: "gt"; column: string; value: unknown }
   | { op: "lt"; column: string; value: unknown }
   | { op: "is"; column: string; value: unknown }
@@ -169,6 +170,10 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
       },
       gte(column: string, value: unknown) {
         calls.push({ op: "gte", column, value });
+        return builder;
+      },
+      lte(column: string, value: unknown) {
+        calls.push({ op: "lte", column, value });
         return builder;
       },
       lt(column: string, value: unknown) {

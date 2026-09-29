@@ -173,3 +173,43 @@ test("at 1280px, the situation, goal and shadowing collection shelves render the
   await page.setViewportSize({ width: 1024, height: 900 });
   await assertNoHorizontalOverflow(page);
 });
+
+test("at 1280px, Sort & display applies through the URL, is saved to the profile, and a reset is never served stale", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 529 });
+  await registerLearner(page);
+  const { display, searchLabel } = enPronunciation.hub;
+  await page.goto("/en/pronunciation?q=Explore");
+  await expect(page.getByRole("searchbox", { name: searchLabel })).toHaveAttribute("placeholder", "Search by lesson title");
+
+  const trigger = page.getByRole("button", { name: display.trigger });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: display.title });
+  await dialog.getByRole("radio", { name: display.shortest }).check();
+  await dialog.getByRole("checkbox", { name: display.hideCompleted }).check();
+  const saved = page.waitForResponse((response) => response.url().includes("/api/user/preferences") && response.request().method() === "PATCH");
+  await dialog.getByRole("button", { name: display.apply }).click();
+  expect((await saved).status()).toBe(200);
+  await expect(page).toHaveURL(/\/en\/pronunciation\?q=Explore&sort=shortest&hideCompleted=true$/);
+  // The seeded lesson (180 s) still matches: the view shapes results, it does not empty them.
+  await expect(page.getByRole("link", { name: /E2E Explore Lesson/ }).first()).toBeVisible();
+
+  // A bare visit sets no display param, so the saved profile applies.
+  await page.goto("/en/pronunciation?q=Explore");
+  await page.getByRole("button", { name: display.trigger }).click();
+  await expect(page.getByRole("radio", { name: display.shortest })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: display.hideCompleted })).toBeChecked();
+
+  // Reset lands on this SAME URL; the router must not serve its pre-save payload (review I1).
+  await page.getByRole("button", { name: display.reset }).click();
+  const reset = page.waitForResponse((response) => response.url().includes("/api/user/preferences") && response.request().method() === "PATCH");
+  await page.getByRole("button", { name: display.apply }).click();
+  expect((await reset).status()).toBe(200);
+  await expect(page).toHaveURL(/\/en\/pronunciation\?q=Explore$/);
+  const reopened = page.getByRole("button", { name: display.trigger });
+  await expect(reopened).not.toHaveClass(/bg-primary /);
+  await reopened.click();
+  await expect(page.getByRole("radio", { name: display.recommended })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: display.hideCompleted })).not.toBeChecked();
+  await page.keyboard.press("Escape");
+  await expect(reopened).toBeFocused();
+});

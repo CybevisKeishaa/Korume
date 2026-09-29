@@ -9,8 +9,11 @@ import type { RecommendationReason } from "@/lib/recommendation-types";
 import { getActivePlanTier, type PlanTier } from "@/lib/data/subscriptions";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { listSituations, listSources } from "@/lib/data/lesson-taxonomy";
+import type { PronunciationDuration, PronunciationSort } from "@/lib/preferences/options";
 
 const SHELF_LIMIT = 4;
+/** How many matches a learner-dependent sort ranks; see getHubDiscovery. */
+const CANDIDATE_LIMIT = 100;
 
 export interface HubLesson {
   id: string;
@@ -79,6 +82,7 @@ interface ProgressRow {
   video_id: string;
   last_watched_position: number;
   completed_at: string | null;
+  last_watched_at?: string | null;
 }
 
 interface HubDiscoveryFilterTag extends HubDiscoveryFilter {
@@ -98,7 +102,7 @@ export function toHubLesson(video: VideoRow): HubLesson {
 
 /** Shared taxonomy-backed discovery read for the Shadowing and Pronunciation hubs. */
 export async function getHubDiscovery(
-  options: { query?: string; filter?: string } = {},
+  options: { query?: string; filter?: string; sort?: PronunciationSort; duration?: PronunciationDuration; hideCompleted?: boolean } = {},
 ): Promise<{ filters: HubDiscoveryFilter[]; discovery: HubDiscoveryProjection | null }> {
   const supabase = createClient();
   const [situations, sources] = await Promise.all([listSituations(), listSources()]);
@@ -112,18 +116,72 @@ export async function getHubDiscovery(
 
   if (!query && !activeFilter) return { filters, discovery: null };
 
+  const sort = options.sort ?? "newest";
   let search = supabase.from("videos").select(VIDEO_COLUMNS);
   if (query) search = search.ilike("title", `%${query}%`);
   if (activeFilter) search = search.eq(activeFilter.kind === "situation" ? "situation_id" : "source_id", activeFilter.id);
-  const { data, error } = await search.order("created_at", { ascending: false }).limit(SHELF_LIMIT);
+  // A band excludes a lesson with no duration: SQL comparisons drop nulls.
+  if (options.duration === "under_10") search = search.lt("duration_seconds", 600);
+  if (options.duration === "10_30") search = search.gte("duration_seconds", 600).lte("duration_seconds", 1800);
+  if (options.duration === "over_30") search = search.gt("duration_seconds", 1800);
+  search = sort === "shortest"
+    ? search.order("duration_seconds", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false })
+    : search.order("created_at", { ascending: false });
+  search = search.order("id", { ascending: true });
+
+  // Newest and Shortest are whole orders in SQL, so the database cuts the list.
+  const needsLearnerOrder = sort === "recommended" || sort === "in_progress" || Boolean(options.hideCompleted);
+  if (!needsLearnerOrder) {
+    const { data, error } = await search.limit(SHELF_LIMIT);
+    if (error) throw error;
+    return { filters, discovery: { query, activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null, lessons: ((data as VideoRow[] | null) ?? []).map(toHubLesson) } };
+  }
+
+  // ponytail: the learner-dependent orders rank the newest (or shortest)
+  // CANDIDATE_LIMIT matches, not the whole catalogue — the ids travel in the
+  // request URL of the progress read and the i+1 engine, and the engine scans
+  // at most 100 anyway. Page the candidates if a query ever matches more.
+  const { data, error } = await search.limit(CANDIDATE_LIMIT);
   if (error) throw error;
+  const candidates = (data as VideoRow[] | null) ?? [];
+  const { data: progressRows, error: progressError } = candidates.length
+    ? await supabase.from("user_video_progress").select("video_id, last_watched_position, completed_at, last_watched_at").in("video_id", candidates.map((video) => video.id))
+    : { data: [], error: null };
+  if (progressError) throw progressError;
+  const progress = new Map(((progressRows as ProgressRow[] | null) ?? []).map((row) => [row.video_id, row]));
+  const visible = candidates.filter((video) => !options.hideCompleted || !progress.get(video.id)?.completed_at);
+
+  // Array.sort is stable, so every tie keeps the SQL order (newest, or shortest).
+  let ordered = visible;
+  if (sort === "in_progress") {
+    // Started and not finished, most recently watched first (unknown time last); then the rest.
+    const inProgressAt = (video: VideoRow): number | null => {
+      const row = progress.get(video.id);
+      if (!row || row.completed_at || row.last_watched_position <= 0) return null;
+      return row.last_watched_at ? Date.parse(row.last_watched_at) : Number.NEGATIVE_INFINITY;
+    };
+    ordered = [...visible].sort((left, right) => {
+      const leftAt = inProgressAt(left);
+      const rightAt = inProgressAt(right);
+      if (leftAt === null || rightAt === null) return leftAt === rightAt ? 0 : leftAt === null ? 1 : -1;
+      return rightAt === leftAt ? 0 : rightAt > leftAt ? 1 : -1;
+    });
+  } else if (sort === "recommended" && visible.length) {
+    // The i+1 engine's order first; the lessons it did not score keep the SQL order after it.
+    // The engine only reorders: a failure keeps the SQL order instead of failing the search.
+    const recommendations = await getRecommendations({ limit: visible.length, candidateIds: visible.map((video) => video.id) })
+      .catch(() => ({ ok: false as const, status: 401 as const }));
+    const rank = new Map(recommendations.ok ? recommendations.data.map((video, index) => [video.videoId, index]) : []);
+    const rankOf = (video: VideoRow) => rank.get(video.id) ?? Number.MAX_SAFE_INTEGER;
+    ordered = [...visible].sort((left, right) => rankOf(left) - rankOf(right));
+  }
 
   return {
     filters,
     discovery: {
       query,
       activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
-      lessons: ((data as VideoRow[] | null) ?? []).map(toHubLesson),
+      lessons: ordered.slice(0, SHELF_LIMIT).map(toHubLesson),
     },
   };
 }

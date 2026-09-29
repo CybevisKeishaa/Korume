@@ -253,4 +253,95 @@ describe("getHubDiscovery", () => {
     ]));
     expect(videoQueries.flat()).not.toContainEqual(expect.objectContaining({ op: "eq" }));
   });
+
+  it("puts Newest and Shortest, and every duration band, into SQL and lets the database cut the list", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
+
+    await getHubDiscovery({ query: "lesson", sort: "shortest", duration: "10_30" });
+    await getHubDiscovery({ query: "lesson", sort: "newest", duration: "under_10" });
+    await getHubDiscovery({ query: "lesson", duration: "over_30" });
+    // /shadowing passes no display options at all: the old four-row read.
+    await getHubDiscovery({ query: "lesson" });
+
+    const [shortest, newest, over, plain] = videoQueries;
+    // Band edges: 600 and 1800 are inside 10–30; under 10 stops before 600; over 30 starts after 1800.
+    expect(shortest).toEqual(expect.arrayContaining([
+      { op: "gte", column: "duration_seconds", value: 600 },
+      { op: "lte", column: "duration_seconds", value: 1800 },
+      { op: "order", column: "duration_seconds", ascending: true, nullsFirst: false },
+      { op: "limit", count: 4 },
+    ]));
+    expect(newest).toEqual(expect.arrayContaining([
+      { op: "lt", column: "duration_seconds", value: 600 },
+      { op: "order", column: "created_at", ascending: false },
+      { op: "limit", count: 4 },
+    ]));
+    expect(over).toContainEqual({ op: "gt", column: "duration_seconds", value: 1800 });
+    expect(plain).toContainEqual({ op: "limit", count: 4 });
+    expect(plain?.flat()).not.toContainEqual(expect.objectContaining({ column: "duration_seconds" }));
+    expect(getRecommendations).not.toHaveBeenCalled();
+  });
+
+  it("hides completed lessons before the four-lesson cut, reading a bounded candidate set", async () => {
+    const videoQueries: QueryCall[][] = [];
+    const videos = ["a", "b", "c", "d", "e", "f"].map((id) => ({ ...PRIVATE_LESSON, id }));
+    mockClient(USER, {
+      videos,
+      progress: [{ video_id: "a", completed_at: "2026-09-29", last_watched_position: 60 }, { video_id: "c", completed_at: "2026-09-29", last_watched_position: 60 }],
+      onVideosQuery: (calls) => videoQueries.push([...calls]),
+    });
+
+    await expect(getHubDiscovery({ query: "lesson", sort: "newest", hideCompleted: true })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "b" }, { id: "d" }, { id: "e" }, { id: "f" }] },
+    });
+    expect(videoQueries[0]).toContainEqual({ op: "limit", count: 100 });
+  });
+
+  it("puts lessons started and not finished first, most recently watched first, and leaves finished ones in place", async () => {
+    const videos = ["new", "finished", "unwatched", "stale", "recent", "unknown-time"].map((id) => ({ ...PRIVATE_LESSON, id }));
+    mockClient(USER, {
+      videos,
+      progress: [
+        { video_id: "finished", completed_at: "2026-09-29", last_watched_position: 90, last_watched_at: "2026-09-29T10:00:00Z" },
+        { video_id: "unwatched", completed_at: null, last_watched_position: 0, last_watched_at: "2026-09-29T11:00:00Z" },
+        { video_id: "stale", completed_at: null, last_watched_position: 30, last_watched_at: "2026-09-01T00:00:00Z" },
+        { video_id: "recent", completed_at: null, last_watched_position: 30, last_watched_at: "2026-09-28T00:00:00Z" },
+        { video_id: "unknown-time", completed_at: null, last_watched_position: 30, last_watched_at: null },
+      ],
+    });
+
+    await expect(getHubDiscovery({ query: "lesson", sort: "in_progress" })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "recent" }, { id: "stale" }, { id: "unknown-time" }, { id: "new" }] },
+    });
+  });
+
+  it("uses the recommendation engine order before unscored lessons and only then limits", async () => {
+    const videos = ["newest", "recommended", "older", "oldest", "fifth"].map((id, index) => ({
+      ...PRIVATE_LESSON, id, created_at: `2026-09-${String(29 - index).padStart(2, "0")}T00:00:00Z`,
+    }));
+    mockClient(USER, { videos });
+    vi.mocked(getRecommendations).mockResolvedValue({ ok: true, data: [{ videoId: "recommended" }] as never });
+
+    await expect(getHubDiscovery({ sort: "recommended", query: "lesson" })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "recommended" }, { id: "newest" }, { id: "older" }, { id: "oldest" }] },
+    });
+    expect(getRecommendations).toHaveBeenCalledWith(expect.objectContaining({ candidateIds: ["newest", "recommended", "older", "oldest", "fifth"] }));
+  });
+
+  it("keeps the SQL order when the engine throws, instead of failing the search", async () => {
+    mockClient(USER, { videos: ["x", "y"].map((id) => ({ ...PRIVATE_LESSON, id })) });
+    vi.mocked(getRecommendations).mockRejectedValue(new Error("transcripts read failed"));
+    await expect(getHubDiscovery({ sort: "recommended", query: "lesson" })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "x" }, { id: "y" }] },
+    });
+  });
+
+  it("keeps the SQL order when the engine is unavailable", async () => {
+    mockClient(USER, { videos: ["x", "y"].map((id) => ({ ...PRIVATE_LESSON, id })) });
+    vi.mocked(getRecommendations).mockResolvedValue({ ok: false, status: 401 });
+    await expect(getHubDiscovery({ sort: "recommended", query: "lesson" })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "x" }, { id: "y" }] },
+    });
+  });
 });

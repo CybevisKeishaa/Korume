@@ -14,7 +14,7 @@ describe("schema migration", () => {
     expect(schema).toContain("where s.user_id = auth.uid()");
     expect(schema).toContain("and s.created_at >= p_start");
     expect(schema).toContain("and s.created_at < p_end");
-    expect(schema).toContain("revoke all on function pronunciation_metric_means(timestamptz, timestamptz) from public;");
+    expect(schema).toContain("revoke all on function pronunciation_metric_means(timestamptz, timestamptz) from public, anon;");
     expect(schema).toContain("grant execute on function pronunciation_metric_means(timestamptz, timestamptz) to authenticated;");
   });
 });

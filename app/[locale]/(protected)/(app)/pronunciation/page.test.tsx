@@ -26,6 +26,7 @@ const data = vi.hoisted(() => ({
   getShadowingCollections: vi.fn().mockResolvedValue([]),
   listPracticeSituations: vi.fn().mockResolvedValue([]),
   getWeeklyPronunciationMetrics: vi.fn().mockResolvedValue({ means: { accuracy: null, pitch: null, rhythm: null }, weakest: null }),
+  getMyPreferences: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock("@/lib/data/shadowing-hub", async (importOriginal) => ({
@@ -41,6 +42,7 @@ vi.mock("@/lib/data/collections", async (importOriginal) => ({
 }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listPracticeSituations: data.listPracticeSituations }));
 vi.mock("@/lib/data/pronunciation-metrics", () => ({ getWeeklyPronunciationMetrics: data.getWeeklyPronunciationMetrics }));
+vi.mock("@/lib/data/preferences", () => ({ getMyPreferences: data.getMyPreferences }));
 
 const noDiscovery = { filters: [{ kind: "situation", slug: "restaurant" }], discovery: null };
 
@@ -60,9 +62,12 @@ vi.mock("@/lib/i18n/server", () => ({
 
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ href, ...props }: React.ComponentProps<"a">) => <a href={href} {...props} />,
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/pronunciation",
   getPathname: vi.fn().mockReturnValue("/pronunciation"),
 }));
+
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
 
 vi.mock("@/components/layout/upcoming-screen", () => ({
   UpcomingScreen: () => <div data-testid="upcoming-screen" />,
@@ -71,6 +76,20 @@ vi.mock("@/components/layout/upcoming-screen", () => ({
 import PronunciationPage from "./page";
 
 describe("PronunciationPage", () => {
+  it("uses profile display settings only when the URL supplies none, and URL wins otherwise", async () => {
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getMyPreferences.mockResolvedValue({ pronunciationSort: "shortest", pronunciationDuration: "under_10", pronunciationHideCompleted: true });
+
+    await PronunciationPage({});
+    expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "shortest", duration: "under_10", hideCompleted: true }));
+    await PronunciationPage({ searchParams: { sort: "newest" } });
+    expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "newest", duration: null, hideCompleted: false }));
+    // A bad `q` fails only the search params; the display params still win.
+    await PronunciationPage({ searchParams: { q: "x".repeat(101), sort: "shortest" } });
+    expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "shortest", duration: null, hideCompleted: false }));
+  });
+
   it("renders the catalog heading and pronunciation discovery controls without undefined sliders", async () => {
     const user = userEvent.setup();
     data.getHubDiscovery.mockResolvedValue(noDiscovery);
@@ -82,6 +101,8 @@ describe("PronunciationPage", () => {
     await user.click(screen.getByRole("button", { name: pronunciationCopy.hub.filterToggleLabel }));
     expect(await screen.findByRole("link", { name: shadowingCopy.situations.restaurant })).toHaveAttribute("href", "/pronunciation?filter=situation%3Arestaurant");
     expect(screen.queryByTestId("upcoming-screen")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: pronunciationCopy.hub.display.trigger })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: pronunciationCopy.hub.searchLabel })).toHaveAttribute("placeholder", "Search by lesson title");
   });
 
   it("keeps the course region with its own empty copy when no path has lessons", async () => {

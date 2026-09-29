@@ -125,8 +125,9 @@ Claude, 2026-09-29: `user_video_progress.last_watched_at` (nullable, trigger-
 stamped, no backfill) orders "Continue where you left off", nulls last.
 10. (owner, 2026-09-29) **The card's ✦ SAVES a path** (`user_saved_collections`,
     RLS: own rows, `kind = 'path'` only, no UPDATE; in the GDPR export). Saved
-    paths feed the hero's choice: activity → **saved** → in progress → first.
-    ⚠️ Activity outranks saved; the owner has not ruled on that order.
+    paths feed the hero's choice (order: ruling 13).
+13. (owner, 2026-09-29) **A saved path outranks recent activity**: featured =
+    saved → activity → in progress → first.
 11. (owner, 2026-09-29) **Practice by Situation shows the REPO taxonomy**, not
     the frame's eight; only situations tagging a visible lesson; no "View all".
 12. (owner, 2026-09-29) **Shadowing Collections = the explore `kind='shelf'`
@@ -148,9 +149,10 @@ two users + anon denied; the same three e2e specs 13/13.
 and firing on `master` too — read `run-state/e2e-failure-repair.md` before
 calling one a regression.
 
-🚨 **Registration reds are not a flake:** `Date.now()` emails collided across
-parallel workers. Fixed for every spec on branch `e2e-unique-emails` (`a7d5ce9`,
-unmerged); `pronunciation.spec` here already uses a UUID.
+🚨 **Registration reds were `Date.now()` emails**, fixed on master and merged in.
+**Task 2b gate, 2026-09-29:** vitest 384/3555, tsc/lint/protocol 0; fresh reset;
+the new CHECKs proven live; e2e pronunciation+hubs+settings 23/23. 🚨 `fa65eba`
+was NOT green: a pin was edited after its last vitest run. Gate after the LAST edit.
 🚨 **A Client Component takes strings, never catalog formatters** — passing one
 blanked the page in e2e while jsdom stayed green; `path-card-copy.test.ts` guards.
 
@@ -168,7 +170,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -180,18 +182,13 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
 
 ## Next actions
 
-1–4. **Tasks 1, 2, 3, 3b — DONE** (`675494f`, `f6347c1`, `8999492`, `c86b523`).
+1–6b. **Tasks 1, 2, 3, 3b, 4a, 4b, 2b — DONE** (last: `fa65eba`, then 2b).
    Rules they left: sort by `position` (stable), `slice` after sorting; the
-   narrow case is 1024, not 320 (below it every route is the handoff).
-5. **Task 4a — DONE 2026-09-29** (rulings 11–12): situation + shadowing
-   collection shelves, `video_sentence_counts`, shared `HubShelf`.
-6. **Task 4b — DONE 2026-09-29** (ruling 7): `getCollectionViews(kind)` backs
-   paths AND goals; goals render through `HubPathCard` (no save, optional
-   badge); `pronunciation_metric_means` (rolling 7 days, DB-side avg) picks
-   the weakest metric → one badge. Task 5 reuses that window read.
-   🚨 **Supabase grants `anon` EXECUTE on new functions by default**:
-   `revoke ... from public` alone leaves it; revoke `from public, anon`.
-6b. **Task 2b — Sort & display panel + placeholder copy**, per rulings 8–9.
+   narrow case is 1024, not 320. Paths AND goals share `getCollectionViews`
+   (goals = `HubPathCard` without save). `pronunciation_metric_means` is the
+   rolling-window read Task 5 reuses. 2b's panel is `HubDisplayPanel` in the
+   controls' `toolbar` slot; Codex hit its quota mid-2b and Claude finished it.
+   🚨 Supabase grants `anon` EXECUTE on new functions: revoke `from public, anon`.
 7. **Task 4c — JLPT Speaking**, the aggregation view above. No migration.
 8. **Task 5 — right rail:** Today's Speaking + Weekly Improvement (Accuracy,
    Pitch Accent, Rhythm) + AI Sensei Recommendation + Recently Practiced. Every

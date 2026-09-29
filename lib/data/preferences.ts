@@ -17,10 +17,13 @@ interface PreferencesRow {
   reduce_motion: boolean;
   microphone_enabled: boolean;
   camera_enabled: boolean;
+  pronunciation_sort: UserPreferences["pronunciationSort"];
+  pronunciation_duration: NonNullable<UserPreferences["pronunciationDuration"]> | null;
+  pronunciation_hide_completed: boolean;
 }
 
 const COLUMNS =
-  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled";
+  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled, pronunciation_sort, pronunciation_duration, pronunciation_hide_completed";
 
 function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferences {
   if (!row) return { ...DEFAULT_PREFERENCES, dailyMinutes };
@@ -33,6 +36,9 @@ function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferen
     reduceMotion: row.reduce_motion,
     microphoneEnabled: row.microphone_enabled,
     cameraEnabled: row.camera_enabled,
+    pronunciationSort: row.pronunciation_sort,
+    pronunciationDuration: row.pronunciation_duration,
+    pronunciationHideCompleted: row.pronunciation_hide_completed,
     dailyMinutes,
   };
 }
@@ -106,6 +112,9 @@ const TO_COLUMN: Record<Exclude<keyof UserPreferences, "dailyMinutes">, string> 
   reduceMotion: "reduce_motion",
   microphoneEnabled: "microphone_enabled",
   cameraEnabled: "camera_enabled",
+  pronunciationSort: "pronunciation_sort",
+  pronunciationDuration: "pronunciation_duration",
+  pronunciationHideCompleted: "pronunciation_hide_completed",
 };
 
 export async function updateMyPreferences(

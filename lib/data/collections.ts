@@ -209,8 +209,8 @@ async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView
  * Every `kind = 'path'` collection the viewer can use, and the one the studio
  * features, read together so the hero and the shelf cost one set of queries.
  *
- * Featured choice, in order: the path holding the learner's latest session
- * (unless finished), a saved unfinished path, a path in progress, the first.
+ * Featured choice, in order: the first saved unfinished path, the path holding
+ * the learner's latest session (unless finished), a path in progress, the first.
  */
 export async function getLearningPaths(): Promise<LearningPaths> {
   const views = await getCollectionViews("path");
@@ -245,8 +245,8 @@ export async function getLearningPaths(): Promise<LearningPaths> {
   const activitySelected = latestVideoId
     ? views.find((view) => view.memberRows.some((membership) => membership.lesson_id === latestVideoId) && unfinished(view))
     : undefined;
-  const selected = activitySelected
-    ?? views.find((view) => savedIds.has(view.collection.id) && unfinished(view))
+  const selected = views.find((view) => savedIds.has(view.collection.id) && unfinished(view))
+    ?? activitySelected
     ?? views.find((view) => view.completed > 0 && unfinished(view))
     ?? views[0];
   if (!selected) return { featured: null, paths };
@@ -281,7 +281,7 @@ export async function getLearningPaths(): Promise<LearningPaths> {
       lessons: selected.lessons,
       resume,
       coverUrl: selected.lessons.find((lesson) => lesson.thumbnail_url)?.thumbnail_url ?? null,
-      selectedByRecentActivity: Boolean(activitySelected),
+      selectedByRecentActivity: selected === activitySelected,
       ...collectionMeta(selected.lessons),
     },
     paths,
