@@ -528,6 +528,62 @@
   }
 }
 
+/* Overlay surfaces (components/ui/dialog.tsx, popover.tsx): a quiet fade and
+   settle on open, a quicker fade on close. Radix keeps a closing element
+   mounted until its `closed` animation ends, so exit needs no JS. Individual
+   `scale`/`translate` properties compose with the Tailwind `transform` that
+   centres a dialog instead of overwriting it. The reduce-motion blocks below
+   collapse every one of these to an instant. */
+.motion-overlay[data-state="open"] {
+  animation: overlay-in var(--duration-base) var(--ease-standard) both;
+}
+.motion-overlay[data-state="closed"] {
+  animation: overlay-out var(--duration-fast) var(--ease-standard) both;
+}
+.motion-dialog[data-state="open"] {
+  animation: surface-in var(--duration-base) var(--ease-out-expo) both;
+}
+.motion-dialog[data-state="closed"] {
+  animation: surface-out var(--duration-fast) var(--ease-standard) both;
+}
+/* A side drawer slides from the inline end instead of settling in place. */
+.motion-drawer[data-state="open"] {
+  animation: drawer-in var(--duration-base) var(--ease-out-expo) both;
+}
+.motion-drawer[data-state="closed"] {
+  animation: drawer-out var(--duration-fast) var(--ease-standard) both;
+}
+.motion-popover {
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+.motion-popover[data-state="open"] {
+  animation: popover-in var(--duration-fast) var(--ease-out-expo) both;
+}
+.motion-popover[data-state="closed"] {
+  animation: surface-out var(--duration-fast) var(--ease-standard) both;
+}
+@keyframes overlay-in {
+  from { opacity: 0; }
+}
+@keyframes overlay-out {
+  to { opacity: 0; }
+}
+@keyframes surface-in {
+  from { opacity: 0; scale: 0.97; }
+}
+@keyframes surface-out {
+  to { opacity: 0; scale: 0.97; }
+}
+@keyframes drawer-in {
+  from { translate: 100% 0; }
+}
+@keyframes drawer-out {
+  to { translate: 100% 0; }
+}
+@keyframes popover-in {
+  from { opacity: 0; scale: 0.97; translate: 0 -4px; }
+}
+
 /* Notification panel: light fade + rise on open (notification-bell.tsx). */
 .panel-in {
   animation: panel-in var(--duration-fast) var(--ease-standard) both;

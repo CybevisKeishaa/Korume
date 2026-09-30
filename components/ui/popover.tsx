@@ -48,7 +48,7 @@ export function Popover({
           sideOffset={6}
           aria-label={label}
           className={cn(
-            "z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay",
+            "motion-popover z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay",
             className,
           )}
         >

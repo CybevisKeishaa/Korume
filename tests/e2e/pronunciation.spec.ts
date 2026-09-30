@@ -282,3 +282,29 @@ test("at 1280px, a non-default display uses All lessons and Reset restores curat
   await expect(page.getByRole("region", { name: paths.title })).toBeVisible();
   await expect(page.getByRole("heading", { name: allLessons })).toHaveCount(0);
 });
+
+test("at 1280px, Sort & display settles in and fades out, and reduced motion makes both instant", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await registerLearner(page);
+  await page.goto("/en/pronunciation");
+  const { display } = enPronunciation.hub;
+  const trigger = page.getByRole("button", { name: display.trigger });
+  const dialog = page.getByRole("dialog", { name: display.title });
+  const motion = () => dialog.evaluate((node) => {
+    const style = getComputedStyle(node);
+    return { name: style.animationName, duration: parseFloat(style.animationDuration) };
+  });
+
+  await trigger.click();
+  await expect(dialog).toBeVisible();
+  expect(await motion()).toEqual({ name: "surface-in", duration: 0.3 });
+  // Radix keeps the closing dialog mounted for its exit animation, then removes it.
+  await page.keyboard.press("Escape");
+  expect((await motion()).name).toBe("surface-out");
+  await expect(dialog).toHaveCount(0);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await trigger.click();
+  await expect(dialog).toBeVisible();
+  expect((await motion()).duration).toBeLessThan(0.001);
+});
