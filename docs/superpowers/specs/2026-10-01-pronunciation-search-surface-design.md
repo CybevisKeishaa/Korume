@@ -1,6 +1,6 @@
 # Pronunciation search surface — design
 
-Date: 2026-10-01 · Branch: `pronunciation-show-more` · Owner-approved in chat (brainstorming, parts 1–2 with corrections).
+Date: 2026-10-01 · Branch: `pronunciation-show-more` · **Owner-approved to implement** (brainstorming parts 1–2, then two required corrections: bounded concrete tabs, the `library` merge rule).
 
 ## Why
 
@@ -26,16 +26,19 @@ situations, so a browse without a query shows lessons only.
 
 - `q` is trimmed; an empty string is **no query**.
 - `type` ∈ `lessons | paths | goals | library`. Absent means **All**; `type=all` is never written
-  (one state, one URL). Any other value is treated as All; it never fails the page.
+  (one state, one URL). Any other value is treated as All and the page **redirects to the same URL
+  without `type`**, so an invalid value never survives as a second URL for All; it never fails the page.
 - `library` is the combined **Collections & situations** tab. Code must not assume it holds
   collections only.
 - A **new search** (submitting the search form) drops `type` and `shown`.
-- `shown` (pages of 24, `pronunciationResultLimit`) is meaningful only in Browse lessons and in
-  Search with `type=lessons`; every other state ignores it.
+- `shown` (pages of 24, `pronunciationResultLimit`) is meaningful in Browse lessons and in Search
+  with **any concrete tab** (`type=lessons|paths|goals|library`); All ignores it. **No search tab ever
+  fetches unbounded**: every concrete tab reads a fixed page size and offers Show more while its
+  count exceeds what is rendered.
 - **Lesson settings are lesson-only state.** `sort`, `duration`, `hideCompleted` and `filter` stay in
   the URL on every tab — *preserved but ignored outside lessons* — so switching to Paths and back to
   Lessons, or Back/Forward, never loses the learner's configuration.
-- Tab links keep `q` and the lesson settings, and drop `shown`.
+- Tab links keep `q` and the lesson settings, and drop `shown` (switching tab starts at one page).
 
 ## Search mode
 
@@ -59,7 +62,22 @@ accessibility tree — not merely clipped.
 
 **Lessons tab:** the full lesson grid with the normal lesson controls and Show more (as today).
 
-**Paths / Goals / Library tabs:** every match in that kind, no lesson controls.
+**Paths / Goals / Library tabs:** that kind's matches a page at a time (`shown` + Show more, same
+pager and focus behaviour as Lessons), no lesson controls.
+
+**Library = Collections & situations — the merge rule:**
+- `searchLibrary` returns one typed list of `{ kind: "collection" } | { kind: "situation" }` items.
+  A collection's label is its DB title; a situation's is its **localized display label**.
+- The two sources are merged into one list, sorted **stably by the current display label**
+  (`Intl.Collator` for the request locale; ties by kind, then id), and only then sliced to the page
+  limit / `shown`. So collections never take every slot merely because they were queried first.
+- The tab's count is collection count + situation count.
+- The renderer picks `HubCollectionCard` or `HubSituationTile` by the `kind` discriminator.
+- All's library preview is the first ≤4 items of **that same merged ordering**, so the preview and
+  "See all" agree.
+- ponytail: collections are read in SQL `order by title` (up to the page limit) and re-sorted in code
+  with the collator; for plain titles the two orders agree. If titles ever need a locale collation
+  SQL disagrees with, read the collections with an ICU collation matching the request locale.
 
 ## Grid and cards
 
@@ -88,13 +106,14 @@ getPronunciationSearch({ q, type, lessonSettings, shown })
   ├─ searchLessons(q, lessonSettings, limit)   reuses getHubDiscovery's query/order logic
   ├─ searchPaths(q, limit)                     collections kind=path, title ilike
   ├─ searchGoals(q, limit)                     collections kind=goal, title ilike
-  ├─ searchCollections(q, limit)               shadowing collections, title ilike
-  ├─ searchSituations(q, locale labels)        in code: match translated label or slug
-  └─ getSearchCounts(q, lessonSettings)        head counts, no rows
+  ├─ searchLibrary(q, locale labels, limit)    typed merge of:
+  │    ├─ searchCollections(q, limit)          shadowing collections, title ilike, order by title
+  │    └─ searchSituations(q, locale labels)   in code: match translated label or slug
+  └─ getSearchCounts(q, lessonSettings)        head counts, no rows (library = sum of both)
 ```
 
-- The active tab fetches only its own rows; `type` absent (All) fetches the ≤4-item previews of every
-  group. Counts always run and are light: `count: "exact", head: true` in SQL (the lesson count on
+- The active tab fetches only its own rows, one page (`shown`) at a time; `type` absent (All) fetches
+  the ≤4-item previews of every group. Counts always run and are light: `count: "exact", head: true` in SQL (the lesson count on
   `learner_videos` when a learner filter applies), situations counted in code.
 - Every text match goes through `containsPattern` (escaped `ilike`).
 - Situation names live in the message files, not the DB: matching the **current locale's label**
@@ -112,8 +131,9 @@ getPronunciationSearch({ q, type, lessonSettings, shown })
 
 ## Testing and acceptance
 
-- **Unit:** `q`/`type` normalisation (empty, unknown, never `type=all`); a new search drops `type`
-  and `shown`; lesson settings preserved but ignored outside lessons; each search function and the
+- **Unit:** `q`/`type` normalisation (empty, unknown → redirect without `type`, never `type=all`); a
+  new search drops `type` and `shown`; every concrete tab is bounded and pages with `shown`; the
+  library merge (interleaved by label, count = sum, All preview = first items of the same order); lesson settings preserved but ignored outside lessons; each search function and the
   counts (lesson count follows filters, not sort); empty groups hidden; the shared empty state; tab
   hrefs. Mutation-check each rule (AGENTS.md §7).
 - **Playwright at 1280×529, AppNav expanded and collapsed:** measured column count (3 / 4), card
