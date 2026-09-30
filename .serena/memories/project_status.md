@@ -1,6 +1,21 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-29 late (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-09-30 end of day (supersedes every block below)
+>
+> ▶ **RESUME HERE: `pronunciation-library-port`**, Owner: Claude, committed tip **`27d761f`**, worktree
+> clean, NOT merged. Landed today: `3c9ec5e` rulings 15–17 (engine context once per request + score
+> memo; rail comment; `lastActivityAt` + SQL `lesson_last_spoken_at`) · `37fba9f` ruling 18 (All-lessons
+> result surface; Codex impl + Claude review fixes) · `27d761f` smooth enter/exit motion on Dialog,
+> Popover and the Explore drawer (owner request after looking at the page: "khá ok").
+> **Next:** ruling 19 (unpaginated aggregates in `lib/data/**`, incl. learner-order discovery ranking
+> only 100 candidates; >1000-row regression test; review /shadowing) → independent review → fresh reset
+> + live SQL gate + mutations → e2e → STOP for the owner's Chrome look → merge decision.
+> Open owner questions: "Show more" past 24 results?; hero vs resume strip naming different lessons?
+> Rulings 15–20 verbatim: `docs/superpowers/specs/2026-09-29-pronunciation-owner-decisions.md`.
+> Environment gotchas (WinNAT ports, Codex via Bash for UTF-8, flake family): Claude auto-memory
+> `pronunciation-library-port.md`.
+>
+> ## (previous block) 2026-09-29 late
 >
 > ▶ **RESUME HERE: `pronunciation-library-port`** (worktree `.worktrees/pronunciation-library-port`,
 > **Owner: Claude**, tip **`1b3d220`**, NOT merged; master `53ab111` merged into it first).
