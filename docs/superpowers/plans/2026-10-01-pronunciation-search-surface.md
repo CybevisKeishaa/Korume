@@ -404,6 +404,8 @@ export async function searchLibrary(q: string, situationLabels: Record<string, s
   - CSS classes: `.result-pane` (the container, `container: results / inline-size`), `.result-grid` (the grid), `.result-preview` (on a `.result-grid` whose items past one row are hidden).
   - `HubLessonResultCard({ lesson, noThumbnailLabel, durationLabel }: { lesson: HubLesson; noThumbnailLabel: string; durationLabel: string | null })` — an `<li>` whose whole body is one `Link` to `/shadowing/{id}`, accessible name = `lesson.title`.
 
+> Correction 2026-10-01: the gap is NOT bounded by 1rem — `--space-md` scales with `--display-scale` up to 1.25 (`DISPLAY_SCALE_FACTOR`), so the breakpoints below wrap at Display size extra large. Superseded by `.superpowers/sdd/pronunciation-show-more/task-4-brief.md` (breakpoints from the largest factor, pinned by a test).
+
 - [ ] **Step 1: CSS** (in `app/globals.css`, `@layer components`):
 
 ```css

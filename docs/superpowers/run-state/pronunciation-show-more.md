@@ -19,7 +19,8 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 `dac0259` Show more + resume lesson · `aebe7a0` `fd58d6f` `c64a4e6` spec ·
 `84fd661` plan · `d8b1cf1` run state · `3eccde0` **Task 1** URL contract
 (reviewed; fix: q cut to the schema bound) · `3535787` plan correction · `4d2be4a` **Task 2** `search_learning_collections`
-(live gate + 2 live mutations red).
+(live gate + 2 live mutations red) · `21a3d4b` **Task 3** data facade
+(reviewed; fixes: counts = the shown group's own total, one shelf-visibility rule).
 
 ## Contracts and decisions
 
@@ -34,11 +35,16 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
   `q: normalizeSearchQuery(raw q)` and parse `filter` on its own, so a long q
   can never make the schema drop the filter; redirect a non-canonical `type`
   whatever the q (no bad `type` may survive on Browse/Default either).
+- `*` in q is dropped on every tab (containsPattern cannot escape it through
+  PostgREST; the library matcher drops it too) — uniform, not a wildcard.
+- The preview-row container breakpoints use the LARGEST display scale (gap
+  up to 1.25rem), not 1rem; see the Task 4 packet.
 
 ## Verification
 
 `dac0259`: vitest 3644, e2e green. `3eccde0`: tsc/lint/protocol/vitest 0 (3659). `4d2be4a`: db reset,
-verify:db pronunciation/settings/lesson-jobs 0; same four gates 0.
+verify:db pronunciation/settings/lesson-jobs 0; same four gates 0. `21a3d4b`:
+four gates 0 (3672), 4 mutations red.
 
 ## Working tree and environment
 
@@ -55,6 +61,6 @@ None.
 
 ## Next actions
 
-1. Codex: Task 3 (data facade), packet `.superpowers/sdd/pronunciation-show-more/task-3-brief.md`.
+1. Codex: Task 4 (grid CSS + compact card), packet `.superpowers/sdd/pronunciation-show-more/task-4-brief.md`.
 2. Claude: independent `code-reviewer`, commit; then Tasks 2-5 the same way;
    Task 6 (Playwright) by Claude.
