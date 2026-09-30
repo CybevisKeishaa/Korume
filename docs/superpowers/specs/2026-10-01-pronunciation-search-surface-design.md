@@ -58,7 +58,10 @@ each with its result count. The active tab is marked (`aria-current="page"`); ta
 **One row means one row:** each group fetches at most 4 previews; items that would wrap to a second
 row at the current column count are `display: none` (native CSS `@container` rules on the result
 pane, next to the grid definition), so hidden links are out of the keyboard order and the
-accessibility tree — not merely clipped.
+accessibility tree — not merely clipped. A container query cannot read a custom property, so its
+breakpoints are literal: `n × 12rem + (n − 1) × 1rem` (the gap's upper bound, 16 px). Where the real
+gap is smaller the query errs toward hiding one more item — a row may end one card short, never
+wrap.
 
 **Lessons tab:** the full lesson grid with the normal lesson controls and Show more (as today).
 
@@ -81,14 +84,17 @@ pager and focus behaviour as Lessons), no lesson controls.
 
 ## Grid and cards
 
-- One result grid for every group and state:
-  `grid-template-columns: repeat(auto-fill, minmax(<min>, <max>))`, `justify-content: start`, gap
-  from the spacing tokens. Tracks have a **maximum**, so a card never stretches: extra width becomes
-  another column. The grid reacts to its own container width, not the viewport and not the AppNav
-  state.
-- **Acceptance (owner's viewport 1280×529):** 3 columns with the AppNav expanded, 4 with it collapsed;
-  every card 240–290 px wide; no horizontal overflow in either state. `<min>`/`<max>` and the
-  `@container` breakpoints are tuned to meet this, measured in the browser.
+- One result grid for every group and state: `grid-template-columns: repeat(auto-fill,
+  minmax(12rem, 1fr))`, gap `--space-md`. Extra width becomes another column as soon as one fits,
+  so a card never stretches past ≈ 12rem + (12rem + gap) / columns (≈ 295 px worst case, at two
+  columns). The grid reacts to its own container width, not the viewport and not the AppNav state.
+- **Measured 2026-10-01 at the owner's viewport 1280×529:** result pane 704 px with the AppNav shown,
+  876 px hidden; rail 275 / 302 px; gap 14.2 px. The owner's first target (3/4 columns *and* 240–290 px
+  cards) is geometrically impossible beside the rail (3 × 240 + gaps > 704); the owner chose
+  **columns over width**.
+- **Acceptance:** at 1280×529, **3 columns (≈ 225 px cards) with the AppNav shown, 4 (≈ 208 px) with it
+  hidden**; cards 200–235 px there; no card wider than 300 px at any tested width (1024, 1280, 1440);
+  no horizontal overflow.
 - The right rail keeps its width; the space freed by collapsing the nav goes to the result pane.
 - **`HubLessonResultCard`** (new; the `/shadowing` card is untouched): 16:9 thumbnail scaled to the
   card width, title clamped to 2 lines, one meta line (duration · JLPT), the whole card is the link
@@ -136,13 +142,15 @@ getPronunciationSearch({ q, type, lessonSettings, shown })
   library merge (interleaved by label, count = sum, All preview = first items of the same order); lesson settings preserved but ignored outside lessons; each search function and the
   counts (lesson count follows filters, not sort); empty groups hidden; the shared empty state; tab
   hrefs. Mutation-check each rule (AGENTS.md §7).
-- **Playwright at 1280×529, AppNav expanded and collapsed:** measured column count (3 / 4), card
-  widths 240–290 px, no horizontal overflow; an All preview shows exactly one row with the extra
+- **Playwright at 1280×529, AppNav shown and hidden:** measured column count (3 / 4), card widths
+  200–235 px, ≤ 300 px at 1024 and 1440, no horizontal overflow; an All preview shows exactly one row with the extra
   items out of the accessibility tree; tab switching keeps the lesson settings; keyboard focus on
   Show more.
 - **E2E data:** the seed holds two lessons, so a fixture creates search data with the service role
   (`SUPABASE_SERVICE_ROLE_KEY`) **only in test setup** (never in a browser bundle), under a dedicated
-  prefix, and cleans it up in teardown even when a test fails. New pattern for this repo.
+  prefix, and cleans it up in teardown even when a test fails. New pattern for this repo. The spec
+  process loads `.env.local` with `loadEnvConfig` from `@next/env` (ships with Next; no new
+  dependency).
 - `/shadowing` and `/shadowing/explore` render and test exactly as before.
 
 ## Out of scope
