@@ -226,11 +226,12 @@ test("at 1280px, JLPT Speaking shows the seeded level, unpracticed and unscored,
 test("at 1280px, Sort & display applies through the URL, is saved to the profile, and a reset is never served stale", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 529 });
   await registerLearner(page);
-  const { display, searchLabel } = enPronunciation.hub;
+  const { display, searchLabel, search } = enPronunciation.hub;
+  // On a search All tab the display controls are named for what they shape: lessons.
   await page.goto("/en/pronunciation?q=Explore");
   await expect(page.getByRole("searchbox", { name: searchLabel })).toHaveAttribute("placeholder", "Search by lesson title");
 
-  const trigger = page.getByRole("button", { name: display.trigger });
+  const trigger = page.getByRole("button", { name: search.lessonControls });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: display.title });
   await dialog.getByRole("radio", { name: display.shortest }).check();
@@ -244,7 +245,7 @@ test("at 1280px, Sort & display applies through the URL, is saved to the profile
 
   // A bare visit sets no display param, so the saved profile applies.
   await page.goto("/en/pronunciation?q=Explore");
-  await page.getByRole("button", { name: display.trigger }).click();
+  await page.getByRole("button", { name: search.lessonControls }).click();
   await expect(page.getByRole("radio", { name: display.shortest })).toBeChecked();
   await expect(page.getByRole("checkbox", { name: display.hideCompleted })).toBeChecked();
 
@@ -254,7 +255,7 @@ test("at 1280px, Sort & display applies through the URL, is saved to the profile
   await page.getByRole("button", { name: display.apply }).click();
   expect((await reset).status()).toBe(200);
   await expect(page).toHaveURL(/\/en\/pronunciation\?q=Explore$/);
-  const reopened = page.getByRole("button", { name: display.trigger });
+  const reopened = page.getByRole("button", { name: search.lessonControls });
   await expect(reopened).not.toHaveClass(/bg-primary /);
   await reopened.click();
   await expect(page.getByRole("radio", { name: display.recommended })).toBeChecked();
