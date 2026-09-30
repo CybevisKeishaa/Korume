@@ -59,7 +59,7 @@ each with its result count. The active tab is marked (`aria-current="page"`); ta
 row at the current column count are `display: none` (native CSS `@container` rules on the result
 pane, next to the grid definition), so hidden links are out of the keyboard order and the
 accessibility tree — not merely clipped. A container query cannot read a custom property, so its
-breakpoints are literal: `n × 12rem + (n − 1) × 1rem` (the gap's upper bound, 16 px). Where the real
+breakpoints are literal: `n × 12rem + (n − 1) × 1.25rem` (the gap's upper bound: `--space-md` grows with the Display size setting up to ×1.25; corrected 2026-10-01, pinned by `lib/design-tokens.test.ts`). Where the real
 gap is smaller the query errs toward hiding one more item — a row may end one card short, never
 wrap.
 

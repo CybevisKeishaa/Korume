@@ -2,6 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  /* The pronunciation result grid (search spec 2026-10-01): a column is at
+     least 12rem and each additional column appears as soon as it fits, so the
+     grid responds to its own width when the AppNav collapses.
+
+     A preview must never wrap. Display size changes --display-scale and thus
+     --space-md, but not the root font-size: `rem` and the 12rem minimum stay
+     stable while the gap reaches 1.25rem at the largest scale. Container
+     queries cannot read that custom property, so their 25.25rem / 38.5rem /
+     51.75rem thresholds reserve n × 12rem + (n - 1) × 1.25rem. At smaller
+     gaps this can hide one extra item, leaving a short row instead of a wrap.
+     lib/design-tokens.test.ts derives these values from DISPLAY_SCALE_FACTOR. */
+  .result-pane {
+    container: results / inline-size;
+  }
+
+  .result-grid {
+    display: grid;
+    gap: var(--space-md);
+    /* min(): a pane narrower than 12rem (large browser font at 320 px) gets
+       one full-width column instead of overflowing (WCAG 1.4.10). */
+    grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr));
+  }
+
+  @container results (width < 25.25rem) {
+    .result-preview > :nth-child(n + 2) {
+      display: none;
+    }
+  }
+
+  @container results (25.25rem <= width < 38.5rem) {
+    .result-preview > :nth-child(n + 3) {
+      display: none;
+    }
+  }
+
+  @container results (38.5rem <= width < 51.75rem) {
+    .result-preview > :nth-child(n + 4) {
+      display: none;
+    }
+  }
+
+  @container results (width >= 51.75rem) {
+    .result-preview > :nth-child(n + 5) {
+      display: none;
+    }
+  }
+}
+
 /**
  * Colour, two tiers (adoption spec 2026-08-06 §2).
  *
