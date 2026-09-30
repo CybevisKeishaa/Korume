@@ -134,6 +134,48 @@ begin
 exception when insufficient_privilege then
   raise notice 'PASS grant: anon is denied recent practice';
 end $$;
+do $$
+begin
+  perform lesson_last_spoken_at(array[]::uuid[]);
+  raise exception 'FAIL grant: anon can call lesson_last_spoken_at()';
+exception when insufficient_privilege then
+  raise notice 'PASS grant: anon is denied last spoken at';
+end $$;
+commit;
+
+-- Ruling 17's speaking half: the caller's newest session per lesson, never
+-- another learner's, and one row per lesson asked for.
+select set_config('gate.pron_one', :'pron_one', false), set_config('gate.pron_two', :'pron_two', false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_a', 'role', 'authenticated')::text, true);
+do $$
+declare spoken timestamptz; rows_back int;
+begin
+  select count(*) into rows_back from lesson_last_spoken_at(array[current_setting('gate.pron_one')::uuid, current_setting('gate.pron_two')::uuid]);
+  if rows_back <> 2 then raise exception 'FAIL last spoken: % rows, want one per lesson (2)', rows_back; end if;
+  select spoken_at into spoken from lesson_last_spoken_at(array[current_setting('gate.pron_one')::uuid]);
+  if spoken is distinct from '2026-09-20 17:31:00+00'::timestamptz then
+    raise exception 'FAIL last spoken: A''s newest session on pron_one is %, want 2026-09-20 17:31', spoken;
+  end if;
+  raise notice 'PASS last spoken: newest own session per lesson';
+end $$;
+commit;
+
+-- B spoke only pron_one, and earlier than A: a leak of A's sessions shows as a
+-- second row or as 17:31.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_b', 'role', 'authenticated')::text, true);
+do $$
+declare spoken timestamptz; rows_back int;
+begin
+  select count(*), max(spoken_at) into rows_back, spoken from lesson_last_spoken_at(array[current_setting('gate.pron_one')::uuid, current_setting('gate.pron_two')::uuid]);
+  if rows_back <> 1 or spoken is distinct from '2026-09-20 17:30:00+00'::timestamptz then
+    raise exception 'FAIL last spoken: B sees % rows, newest %, want 1 row at 17:30 (A leaked)', rows_back, spoken;
+  end if;
+  raise notice 'PASS last spoken: never another learner''s session';
+end $$;
 commit;
 
 -- Saved-path policy, progress timestamp trigger, and the two RPC grants added

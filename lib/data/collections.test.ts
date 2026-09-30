@@ -2,22 +2,42 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, eqValue, type RpcResolver, type TableResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
-const recommendationEngine = vi.hoisted(() => ({ getRecommendations: vi.fn() }));
+const recommendationEngine = vi.hoisted(() => ({ getRecommendations: vi.fn(), knowsAnyVocabulary: vi.fn() }));
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true, retryAfter: 0 })) }));
-vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: recommendationEngine.getRecommendations }));
+vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: recommendationEngine.getRecommendations, knowsAnyVocabulary: recommendationEngine.knowsAnyVocabulary }));
 
 function useTables(tables: Record<string, TableResolver>, rpcs?: Record<string, RpcResolver>) {
+  // `lesson_last_spoken_at` is the SQL `max(created_at) group by video_id` over
+  // the caller's sessions; a test states its sessions as rows and this derives it.
+  const lastSpokenAt: RpcResolver = async (args) => {
+    const sessions = tables.shadowing_sessions ? ((await tables.shadowing_sessions([])).data as { video_id: string; created_at: string }[] | null) ?? [] : [];
+    const latest = new Map<string, string>();
+    for (const row of sessions) {
+      if ((args.p_video_ids as string[]).includes(row.video_id) && (!latest.has(row.video_id) || row.created_at > (latest.get(row.video_id) ?? ""))) latest.set(row.video_id, row.created_at);
+    }
+    return { data: [...latest].map(([video_id, spoken_at]) => ({ video_id, spoken_at })), error: null };
+  };
   // Saved paths default to none; a test that cares supplies its own rows.
-  const supabase = createMockSupabase({ user: { id: "u1" }, tables: { user_saved_collections: () => ({ data: [], error: null }), ...tables }, rpcs });
+  const supabase = createMockSupabase({ user: { id: "u1" }, tables: { user_saved_collections: () => ({ data: [], error: null }), ...tables }, rpcs: { lesson_last_spoken_at: lastSpokenAt, ...rpcs } });
   vi.mocked(createClient).mockReturnValue(
     supabase as unknown as ReturnType<typeof createClient>,
   );
 }
 
 describe("collections", () => {
-  beforeEach(() => recommendationEngine.getRecommendations.mockReset());
+  beforeEach(() => {
+    recommendationEngine.getRecommendations.mockReset();
+    recommendationEngine.knowsAnyVocabulary.mockReset().mockResolvedValue(true);
+  });
+
+  it("skips both engine passes when the learner knows no word, since no pick could carry a reason", async () => {
+    recommendationEngine.knowsAnyVocabulary.mockResolvedValue(false);
+    const { getSenseiRecommendation } = await import("@/lib/data/collections");
+    await expect(getSenseiRecommendation([], [], "pitch")).resolves.toBeNull();
+    expect(recommendationEngine.getRecommendations).not.toHaveBeenCalled();
+  });
 
   it("tries the weakest goal's ordered lessons before the catalogue and returns its home", async () => {
     recommendationEngine.getRecommendations.mockResolvedValue({ ok: true, data: [{ videoId: "lesson-2", title: "Meeting introductions", reason: { knownRatio: 0.78 } }] });
@@ -304,19 +324,62 @@ describe("collections", () => {
     });
   });
 
-  it("excludes deleted lessons from the latest-session query", async () => {
+  it("asks SQL for the newest session of exactly the paths' lessons", async () => {
+    const asked: unknown[] = [];
     useTables({
       collections: () => ({ data: [{ id: "path", slug: "path", title: "Path", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),
       lesson_collections: () => ({ data: [{ collection_id: "path", lesson_id: "v1", position: 0 }], error: null }),
       videos: () => ({ data: [{ id: "v1", duration_seconds: 100, jlpt_level_estimate: null }], error: null }),
       user_video_progress: () => ({ data: [], error: null }),
-      shadowing_sessions: (calls) => {
-        expect(calls).toContainEqual({ op: "not", column: "video_id", operator: "is", value: null });
-        return { data: [], error: null };
-      },
+    }, {
+      lesson_last_spoken_at: (args) => { asked.push(args.p_video_ids); return { data: [], error: null }; },
     });
     const { getFeaturedCourse } = await import("@/lib/data/collections");
     await expect(getFeaturedCourse()).resolves.toMatchObject({ collection: { slug: "path" } });
+    // `video_id = any(...)` also leaves out sessions whose lesson was deleted.
+    expect(asked).toEqual([["v1"]]);
+  });
+
+  it("counts watching as recent activity too: the path watched last outranks one spoken in earlier", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "spoken", slug: "spoken", title: "spoken", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null, icon: null }, { id: "watched", slug: "watched", title: "watched", description: null, cover_image_url: null, display_order: 2, kind: "path", skill_focus: null, icon: null }], error: null }),
+      lesson_collections: () => ({ data: [
+        { collection_id: "spoken", lesson_id: "s1", position: 0 },
+        { collection_id: "watched", lesson_id: "w1", position: 0 },
+        { collection_id: "watched", lesson_id: "w2", position: 1 },
+      ], error: null }),
+      videos: () => ({ data: ["s1", "w1", "w2"].map((id) => ({ id, duration_seconds: 100, jlpt_level_estimate: null, created_at: "2026-01-01T00:00:00Z" })), error: null }),
+      user_video_progress: () => ({ data: [
+        { video_id: "w1", last_watched_position: 40, completed_at: null, last_watched_at: "2026-09-29T09:00:00Z" },
+        { video_id: "w2", last_watched_position: 20, completed_at: null, last_watched_at: "2026-09-29T05:00:00Z" },
+      ], error: null }),
+      // "spoken" (08:30) beats every speaking time in "watched" (w2 at 08:00),
+      // so "watched" wins the hero only through w1's watch at 09:00.
+      shadowing_sessions: () => ({ data: [
+        { video_id: "s1", created_at: "2026-09-29T08:30:00Z" },
+        { video_id: "w2", created_at: "2026-09-29T08:00:00Z" },
+      ], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    const { featured } = await getLearningPaths();
+    expect(featured).toMatchObject({ collection: { slug: "watched" }, selectedByRecentActivity: true });
+    // The resume strip reads the same rule: w1 (watched 09:00) beats w2 (spoken 08:00).
+    expect(featured?.resume?.lesson.id).toBe("w1");
+  });
+
+  it("resumes the lesson spoken last when speaking is its newest activity", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "one", slug: "one", title: "one", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null, icon: null }], error: null }),
+      lesson_collections: () => ({ data: [{ collection_id: "one", lesson_id: "a", position: 0 }, { collection_id: "one", lesson_id: "b", position: 1 }], error: null }),
+      videos: () => ({ data: ["a", "b"].map((id) => ({ id, duration_seconds: 100, jlpt_level_estimate: null, created_at: "2026-01-01T00:00:00Z" })), error: null }),
+      user_video_progress: () => ({ data: [
+        { video_id: "a", last_watched_position: 40, completed_at: null, last_watched_at: "2026-09-29T09:00:00Z" },
+        { video_id: "b", last_watched_position: 20, completed_at: null, last_watched_at: "2026-09-29T01:00:00Z" },
+      ], error: null }),
+      shadowing_sessions: () => ({ data: [{ video_id: "b", created_at: "2026-09-29T10:00:00Z" }], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    expect((await getLearningPaths()).featured?.resume?.lesson.id).toBe("b");
   });
 
   it("resumes in editorial order when every started lesson predates last_watched_at (all null)", async () => {

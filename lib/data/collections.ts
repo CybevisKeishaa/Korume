@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
 import type { PronunciationMetric } from "@/lib/data/pronunciation-metrics";
-import { getRecommendations } from "@/lib/data/recommendations";
+import { getRecommendations, knowsAnyVocabulary } from "@/lib/data/recommendations";
 import { containsPattern, fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 
 /**
@@ -161,6 +161,16 @@ interface CollectionView extends CollectionProgressSummary {
   progressById: Map<string, ProgressRow>;
 }
 
+/**
+ * A lesson's last activity: the later of the learner watching it and speaking
+ * it (owner ruling 17). The one source for "recent activity" — the featured
+ * course and "Continue where you left off" both read it.
+ */
+export function lastActivityAt(watchedAt: string | null | undefined, spokenAt: string | null | undefined): number | null {
+  const times = [watchedAt, spokenAt].flatMap((value) => value ? [Date.parse(value)] : []);
+  return times.length ? Math.max(...times) : null;
+}
+
 /** The shared per-collection progress view for paths and goals. */
 async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView[]> {
   const supabase = createClient();
@@ -228,17 +238,25 @@ export async function getLearningPaths(): Promise<LearningPaths> {
   if (!views.length) return { featured: null, paths: [] };
 
   const supabase = createClient();
-  const [
-    { data: sessions, error: sessionError },
-    { data: savedRows, error: savedError },
-  ] = await Promise.all([
-    supabase.from("shadowing_sessions").select("video_id, created_at").not("video_id", "is", null).order("created_at", { ascending: false }).limit(1),
-    // RLS scopes both user tables to the caller.
+  const [spokenRows, { data: savedRows, error: savedError }] = await Promise.all([
+    // The newest session per lesson, aggregated in SQL: sessions outgrow max_rows.
+    fetchByIdChunks([...new Set(views.flatMap((view) => view.lessonIds))], async (ids) => {
+      const { data, error } = await supabase.rpc("lesson_last_spoken_at", { p_video_ids: ids });
+      if (error) throw error;
+      return (data as { video_id: string; spoken_at: string }[] | null) ?? [];
+    }),
+    // RLS scopes the user table to the caller.
     supabase.from("user_saved_collections").select("collection_id"),
   ]);
-  if (sessionError) throw sessionError;
   if (savedError) throw savedError;
   const savedIds = new Set(((savedRows as { collection_id: string }[] | null) ?? []).map((row) => row.collection_id));
+  const spokenAtById = new Map(spokenRows.map((row) => [row.video_id, row.spoken_at]));
+  const activityOf = (view: CollectionView, lessonId: string) =>
+    lastActivityAt(view.progressById.get(lessonId)?.last_watched_at, spokenAtById.get(lessonId));
+  const latestActivity = (view: CollectionView) => view.lessonIds.reduce<number | null>((latest, lessonId) => {
+    const at = activityOf(view, lessonId);
+    return at !== null && (latest === null || at > latest) ? at : latest;
+  }, null);
 
   const paths: PathSummary[] = views.map((view) => ({
     collection: view.collection,
@@ -252,11 +270,13 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     saved: savedIds.has(view.collection.id),
   }));
 
-  const unfinished = (view: (typeof views)[number]) => view.completed < view.total;
-  const latestVideoId = (sessions as { video_id: string; created_at: string }[] | null)?.[0]?.video_id;
-  const activitySelected = latestVideoId
-    ? views.find((view) => view.memberRows.some((membership) => membership.lesson_id === latestVideoId) && unfinished(view))
-    : undefined;
+  const unfinished = (view: CollectionView) => view.completed < view.total;
+  // Rule 2: the unfinished path the learner touched last, watching or speaking
+  // (owner ruling 17); ties keep display order.
+  const activitySelected = views.reduce<{ view: CollectionView; at: number } | undefined>((best, view) => {
+    const at = latestActivity(view);
+    return unfinished(view) && at !== null && (!best || at > best.at) ? { view, at } : best;
+  }, undefined)?.view;
   const selected = views.find((view) => savedIds.has(view.collection.id) && unfinished(view))
     ?? activitySelected
     ?? views.find((view) => view.started && unfinished(view))
@@ -267,10 +287,11 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     const progress = selected.progressById.get(lesson.id);
     return progress && progress.last_watched_position > 0 && progress.completed_at === null ? [{ lesson, index: index + 1, progress }] : [];
   });
-  // Most recently watched first; rows with no known time (null) last, in editorial order.
+  // Most recent activity first, by the same rule the hero used (ruling 17);
+  // rows with no known time last, in editorial order.
   const resumeCandidate = resumeCandidates.sort((left, right) => {
-    const leftAt = left.progress.last_watched_at ? Date.parse(left.progress.last_watched_at) : null;
-    const rightAt = right.progress.last_watched_at ? Date.parse(right.progress.last_watched_at) : null;
+    const leftAt = activityOf(selected, left.lesson.id);
+    const rightAt = activityOf(selected, right.lesson.id);
     if (leftAt !== null && rightAt !== null && leftAt !== rightAt) return rightAt - leftAt;
     if (leftAt !== null && rightAt === null) return -1;
     if (leftAt === null && rightAt !== null) return 1;
@@ -334,6 +355,9 @@ export async function getSenseiRecommendation(
   paths: CollectionProgressSummary[],
   weakest: PronunciationMetric | null,
 ): Promise<SenseiRecommendation | null> {
+  // Owner ruling 15 (B): with no known word no pick can carry a reason, so
+  // neither engine pass could return anything; skip them both.
+  if (!(await knowsAnyVocabulary().catch(() => false))) return null;
   const goalId = recommendedPracticeGoalId(goals, weakest);
   const goal = goals.find((candidate) => candidate.collection.id === goalId) ?? null;
   // A rail card only suggests: an engine failure empties it instead of failing the page,

@@ -338,6 +338,25 @@ $$;
 revoke all on function jlpt_speaking_summary() from public, anon;
 grant execute on function jlpt_speaking_summary() to authenticated;
 
+-- The caller's newest session per lesson: half of a lesson's "last activity"
+-- (owner ruling 17), with user_video_progress.last_watched_at the other half.
+create function lesson_last_spoken_at(p_video_ids uuid[])
+  returns table (video_id uuid, spoken_at timestamptz)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select s.video_id, max(s.created_at)
+  from shadowing_sessions s
+  where s.user_id = auth.uid()
+    and s.video_id = any (p_video_ids)
+  group by s.video_id;
+$$;
+
+revoke all on function lesson_last_spoken_at(uuid[]) from public, anon;
+grant execute on function lesson_last_spoken_at(uuid[]) to authenticated;
+
 -- The studio rail's reads, aggregated here for the same max_rows reason. Days
 -- are VN-local (fixed UTC+7, as lib/gamification/streak.ts decides).
 
