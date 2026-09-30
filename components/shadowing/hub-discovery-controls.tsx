@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { HubResultsPager } from "@/components/shadowing/hub-results-pager";
 import { Popover } from "@/components/ui/popover";
 import { Link } from "@/lib/i18n/navigation";
 import type { HubLesson } from "@/lib/data/shadowing-hub";
@@ -43,6 +44,8 @@ export interface HubDiscoveryControlsProps {
   resultsSummary?: string;
   /** Optional empty-state copy for a result surface the learner did not search. */
   resultsEmpty?: string;
+  /** A link that shows the next page of results; the page supplies it only while more exist. */
+  resultsMore?: { href: string; label: string; pendingLabel: string };
   labels: HubDiscoveryControlsLabels;
   /**
    * With a `heading`, which half to render: the heading row alone, or what
@@ -71,6 +74,7 @@ export function HubDiscoveryControls({
   resultsHeading,
   resultsSummary,
   resultsEmpty,
+  resultsMore,
   labels,
   part = "all",
 }: HubDiscoveryControlsProps) {
@@ -161,17 +165,21 @@ export function HubDiscoveryControls({
       <HubSectionHeading title={resultsHeading ?? labels.results} />
       {resultsSummary ? <p className="mt-xs text-body text-muted-foreground">{resultsSummary}</p> : null}
       {results.length ? (
-        <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2">
-          {results.map((lesson) => (
-            <HubLessonCard
-              key={lesson.id}
-              lesson={lesson}
-              href={`/shadowing/${lesson.id}`}
-              actionLabel={labels.start}
-              noThumbnailLabel={labels.noThumbnail}
-            />
-          ))}
-        </ul>
+        // Always the pager, even with no next page: it must stay mounted across
+        // the last "Show more" to put focus on the cards that page added.
+        <HubResultsPager count={results.length} more={resultsMore ?? null}>
+          <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2">
+            {results.map((lesson) => (
+              <HubLessonCard
+                key={lesson.id}
+                lesson={lesson}
+                href={`/shadowing/${lesson.id}`}
+                actionLabel={labels.start}
+                noThumbnailLabel={labels.noThumbnail}
+              />
+            ))}
+          </ul>
+        </HubResultsPager>
       ) : (
         <p className="mt-md text-body text-muted-foreground">{resultsEmpty ?? labels.noResults}</p>
       )}

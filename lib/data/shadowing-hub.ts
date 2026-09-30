@@ -138,7 +138,8 @@ export async function getHubDiscovery(
   // Newest and Shortest are whole orders in SQL, so the database cuts the list.
   const needsLearnerOrder = sort === "recommended" || sort === "in_progress" || Boolean(options.hideCompleted);
   if (!needsLearnerOrder) {
-    const { data, error } = await search.limit(limit + 1);
+    // `id` makes the order total: a longer page ("Show more") keeps the cards already shown in place.
+    const { data, error } = await search.order("id", { ascending: true }).limit(limit + 1);
     if (error) throw error;
     const rows = (data as VideoRow[] | null) ?? [];
     return {

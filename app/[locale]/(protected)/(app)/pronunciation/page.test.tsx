@@ -94,6 +94,7 @@ vi.mock("@/components/layout/upcoming-screen", () => ({
 }));
 
 import PronunciationPage from "./page";
+import { RESULT_MAX_LIMIT } from "@/lib/validation/shadowing-hub";
 
 describe("PronunciationPage", () => {
   afterEach(() => {
@@ -275,6 +276,34 @@ describe("PronunciationPage", () => {
     expect(screen.queryByRole("region", { name: pronunciationCopy.hub.goals.title })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: pronunciationCopy.hub.jlptSpeaking.title })).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: pronunciationCopy.hub.shadowingCollections.title })).not.toBeInTheDocument();
+  });
+
+  it("shows more by growing the page in the URL, keeping every discovery setting, only while more exist", async () => {
+    const result = { id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null };
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "ramen", activeFilter: "level:n5", lessons: [result], hasMore: true } });
+
+    const { unmount } = render(await PronunciationPage({ searchParams: { q: "ramen", filter: "level:n5", sort: "shortest", hideCompleted: "true", shown: "48" } }));
+
+    expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ browse: true, limit: 48 }));
+    const more = new URL(screen.getByRole("link", { name: pronunciationCopy.hub.showMore }).getAttribute("href")!, "http://app");
+    expect(more.pathname).toMatch(/\/pronunciation$/);
+    expect(Object.fromEntries(more.searchParams)).toEqual({ q: "ramen", filter: "level:n5", sort: "shortest", hideCompleted: "true", shown: "72" });
+    // A new search or chip is a new result set: only Show more carries `shown`.
+    expect(document.querySelector('input[name="shown"]')).toBeNull();
+    expect(screen.getAllByRole("link").filter((link) => link.getAttribute("href")?.includes("shown=")).map((link) => link.textContent)).toEqual([pronunciationCopy.hub.showMore]);
+    unmount();
+
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "ramen", activeFilter: null, lessons: [result], hasMore: false } });
+    const { unmount: unmountWhole } = render(await PronunciationPage({ searchParams: { q: "ramen" } }));
+    expect(screen.queryByRole("link", { name: pronunciationCopy.hub.showMore })).not.toBeInTheDocument();
+    unmountWhole();
+
+    // At the surface's ceiling the summary still says more exist, but there is no next page to offer.
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "ramen", activeFilter: null, lessons: [result], hasMore: true } });
+    render(await PronunciationPage({ searchParams: { q: "ramen", shown: String(RESULT_MAX_LIMIT) } }));
+    expect(screen.queryByRole("link", { name: pronunciationCopy.hub.showMore })).not.toBeInTheDocument();
+    expect(screen.getByText(pronunciationCopy.hub.showingFirstLessons.replace("{count}", "1"))).toBeInTheDocument();
   });
 
   it("labels searched discovery as Search results without a truncation line", async () => {

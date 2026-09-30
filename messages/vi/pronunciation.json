@@ -2,6 +2,8 @@
   "hub": {
     "allLessons": "Tất cả bài học",
     "showingFirstLessons": "Đang hiển thị {count} bài học đầu tiên",
+    "showMore": "Xem thêm bài học",
+    "loadingMore": "Đang tải thêm bài học…",
     "noLessonsForDisplay": "Không có bài học nào phù hợp với cài đặt hiển thị này.",
     "eyebrow": "Luyện nói theo ngữ cảnh",
     "title": "Phòng luyện phát âm",

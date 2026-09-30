@@ -120,6 +120,13 @@ describe("HubFeaturedHero", () => {
     expect(screen.getByRole("link", { name: "Continue Learning: Everyday Conversation" })).toBeInTheDocument();
   });
 
+  it("continues a course whose action resumes a started lesson, even one not chosen by recent activity", () => {
+    // A saved path the learner watched part of: the action opens that lesson mid-way, so it cannot say "Start".
+    render(<HubFeaturedHero course={{ ...course, resuming: true }} labels={courseLabels} />);
+
+    expect(screen.getByRole("link", { name: "Continue Learning: Everyday Conversation" })).toBeInTheDocument();
+  });
+
   it("uses the course cover, not the next lesson's thumbnail", () => {
     render(<HubFeaturedHero course={{ ...course, coverUrl: "https://example.com/cover.jpg", next: { ...lesson, thumbnailUrl: "https://example.com/next.jpg" } }} labels={courseLabels} />);
 

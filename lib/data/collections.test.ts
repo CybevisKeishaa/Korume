@@ -382,6 +382,35 @@ describe("collections", () => {
     expect((await getLearningPaths()).featured?.resume?.lesson.id).toBe("b");
   });
 
+  it("resumes a lesson only spoken, with no percent, and the hero's action opens that same lesson", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "one", slug: "one", title: "one", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null, icon: null }], error: null }),
+      lesson_collections: () => ({ data: ["a", "b", "c"].map((lesson_id, position) => ({ collection_id: "one", lesson_id, position })), error: null }),
+      videos: () => ({ data: ["a", "b", "c"].map((id) => ({ id, duration_seconds: 100, jlpt_level_estimate: null, created_at: "2026-01-01T00:00:00Z" })), error: null }),
+      // "a" was watched at 09:00; "b" has no watch position at all, only a session at 10:00.
+      user_video_progress: () => ({ data: [{ video_id: "a", last_watched_position: 40, completed_at: null, last_watched_at: "2026-09-29T09:00:00Z" }], error: null }),
+      shadowing_sessions: () => ({ data: [{ video_id: "b", created_at: "2026-09-29T10:00:00Z" }], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    const { featured } = await getLearningPaths();
+    expect(featured?.resume).toMatchObject({ lesson: { id: "b" }, index: 2, percent: null });
+    expect(featured?.next?.id).toBe("b");
+  });
+
+  it("opens the first unfinished lesson from the hero when nothing in the course was started", async () => {
+    useTables({
+      collections: () => ({ data: [{ id: "one", slug: "one", title: "one", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null, icon: null }], error: null }),
+      lesson_collections: () => ({ data: ["a", "b"].map((lesson_id, position) => ({ collection_id: "one", lesson_id, position })), error: null }),
+      videos: () => ({ data: ["a", "b"].map((id) => ({ id, duration_seconds: 100, jlpt_level_estimate: null, created_at: "2026-01-01T00:00:00Z" })), error: null }),
+      user_video_progress: () => ({ data: [{ video_id: "a", last_watched_position: 100, completed_at: "2026-09-20T00:00:00Z", last_watched_at: "2026-09-20T00:00:00Z" }], error: null }),
+      shadowing_sessions: () => ({ data: [], error: null }),
+    });
+    const { getLearningPaths } = await import("@/lib/data/collections");
+    const { featured } = await getLearningPaths();
+    expect(featured?.resume).toBeNull();
+    expect(featured?.next?.id).toBe("b");
+  });
+
   it("resumes in editorial order when every started lesson predates last_watched_at (all null)", async () => {
     useTables({
       collections: () => ({ data: [{ id: "path", slug: "path", title: "Path", description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null }], error: null }),

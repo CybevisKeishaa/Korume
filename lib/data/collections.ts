@@ -109,6 +109,7 @@ export interface FeaturedCourse {
   collection: Collection;
   total: number;
   completed: number;
+  /** The lesson the hero opens: `resume`'s lesson when there is one, else the first not completed. */
   next: VideoRow | null;
   lessons: VideoRow[];
   resume: { lesson: VideoRow; index: number; percent: number | null } | null;
@@ -285,9 +286,14 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     ?? views[0];
   if (!selected) return { featured: null, paths };
 
+  // Every unfinished lesson the learner started, by watching OR speaking: a
+  // lesson only spoken has no watch position, yet it may be what put this
+  // course in the hero, so the strip must be able to name it.
   const resumeCandidates = selected.lessons.flatMap((lesson, index) => {
     const progress = selected.progressById.get(lesson.id);
-    return progress && progress.last_watched_position > 0 && progress.completed_at === null ? [{ lesson, index: index + 1, progress }] : [];
+    if (progress?.completed_at) return [];
+    const watched = (progress?.last_watched_position ?? 0) > 0;
+    return watched || spokenAtById.has(lesson.id) ? [{ lesson, index: index + 1, position: progress?.last_watched_position ?? 0 }] : [];
   });
   // Most recent activity first, by the same rule the hero used (ruling 17);
   // rows with no known time last, in editorial order.
@@ -302,8 +308,9 @@ export async function getLearningPaths(): Promise<LearningPaths> {
   const resume = resumeCandidate ? {
     lesson: resumeCandidate.lesson,
     index: resumeCandidate.index,
-    percent: resumeCandidate.lesson.duration_seconds && resumeCandidate.lesson.duration_seconds > 0
-      ? Math.min(99, Math.max(0, Math.round(100 * resumeCandidate.progress.last_watched_position / resumeCandidate.lesson.duration_seconds)))
+    // No watch position (a lesson only spoken) is no percent, not 0%.
+    percent: resumeCandidate.position > 0 && resumeCandidate.lesson.duration_seconds && resumeCandidate.lesson.duration_seconds > 0
+      ? Math.min(99, Math.max(0, Math.round(100 * resumeCandidate.position / resumeCandidate.lesson.duration_seconds)))
       : null,
   } : null;
 
@@ -312,7 +319,8 @@ export async function getLearningPaths(): Promise<LearningPaths> {
       collection: selected.collection,
       total: selected.total,
       completed: selected.completed,
-      next: selected.next,
+      // One "continue" for the whole page: the hero opens the lesson the strip names.
+      next: resume?.lesson ?? selected.next,
       lessons: selected.lessons,
       resume,
       coverUrl: selected.lessons.find((lesson) => lesson.thumbnail_url)?.thumbnail_url ?? null,

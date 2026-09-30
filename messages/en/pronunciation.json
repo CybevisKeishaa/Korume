@@ -8,6 +8,8 @@
     "filterToggleLabel": "Filter courses",
     "allLessons": "All lessons",
     "showingFirstLessons": "Showing the first {count} lessons",
+    "showMore": "Show more lessons",
+    "loadingMore": "Loading more lessons…",
     "noLessonsForDisplay": "No lessons match these display settings.",
     "display": {
       "trigger": "Sort & display",

@@ -34,6 +34,8 @@ export interface HubFeaturedCourse {
   /** The lesson the primary action opens; null when no member lesson is visible. */
   next: HubLesson | null;
   selectedByRecentActivity: boolean;
+  /** True when `next` is a lesson the learner already started (the resume lesson). */
+  resuming?: boolean;
 }
 
 export interface HubFeaturedCourseLabels {
@@ -90,7 +92,7 @@ function EmptyHero({ eyebrow, title, body }: { eyebrow: string; title: string; b
 }
 
 function FeaturedCourse({ course, labels }: { course: HubFeaturedCourse; labels: HubFeaturedCourseLabels }) {
-  const action = course.completed > 0 || course.selectedByRecentActivity ? labels.continue : labels.start;
+  const action = course.completed > 0 || course.selectedByRecentActivity || course.resuming ? labels.continue : labels.start;
   return (
     <HeroShell eyebrow={labels.eyebrow} coverUrl={course.coverUrl} title={course.title}>
       {course.description ? <p className="mt-sm text-body text-muted-foreground">{course.description}</p> : null}

@@ -18,14 +18,13 @@ import { HubCollectionCard, HubLevelCard, HubSituationTile } from "@/components/
 import { courseProgressPercent } from "@/components/shadowing/hub-course-progress";
 import { HubPathCard } from "@/components/shadowing/hub-path-card";
 import { pathCardLabels, pathCards, goalCards } from "./path-card-copy";
-import { isPronunciationResultMode, pronunciationDisplaySchema, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
+import { isPronunciationResultMode, pronunciationDisplaySchema, pronunciationResultLimit, RESULT_MAX_LIMIT, RESULT_PAGE_SIZE, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
 import { getMyPreferences } from "@/lib/data/preferences";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import { HubDisplayPanel } from "@/components/shadowing/hub-display-panel";
 import { HubSpeakingRail } from "@/components/shadowing/hub-speaking-rail";
 import enShadowing from "@/messages/en/shadowing.json";
 
-const ALL_LESSONS_LIMIT = 24;
 
 type TaxonomyTranslationKey =
   | `situations.${keyof typeof enShadowing.situations}`
@@ -59,6 +58,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       duration: preferences?.pronunciationDuration ?? DEFAULT_PREFERENCES.pronunciationDuration,
       hideCompleted: preferences?.pronunciationHideCompleted ?? DEFAULT_PREFERENCES.pronunciationHideCompleted,
     }));
+  const resultLimit = pronunciationResultLimit(param("shown"));
   const displayStatePromise = displayPromise.then((display) => ({
     display,
     resultMode: isPronunciationResultMode(hubQuery, display),
@@ -77,7 +77,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       filter: hubQuery.filter,
       ...display,
       browse: resultMode,
-      limit: resultMode ? ALL_LESSONS_LIMIT : 4,
+      limit: resultMode ? resultLimit : 4,
     })),
     displayStatePromise,
     preferencesPromise,
@@ -112,6 +112,16 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   const shortDate = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "Asia/Ho_Chi_Minh" });
   const relativeDay = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const continueLesson = recent[0]?.lesson ?? course?.next ?? null;
+  // "Show more" is the same URL one page longer: what the data layer applied
+  // (query, filter) plus the display values the URL set, so nothing resets.
+  const moreHref = discovery?.hasMore && resultLimit < RESULT_MAX_LIMIT ? (() => {
+    const params = new URLSearchParams();
+    if (discovery.query) params.set("q", discovery.query);
+    if (discovery.activeFilter) params.set("filter", discovery.activeFilter);
+    for (const key of ["sort", "duration", "hideCompleted"]) { const value = param(key); if (value) params.set(key, value); }
+    params.set("shown", String(resultLimit + RESULT_PAGE_SIZE));
+    return `/pronunciation?${params.toString()}`;
+  })() : null;
 
   // One set of controls, rendered as two halves: the heading row spans the
   // rail (frame 37:5331), the hero and results sit in the main column.
@@ -132,6 +142,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       resultsHeading={discovery?.query || discovery?.activeFilter ? undefined : t("hub.allLessons")}
       resultsEmpty={discovery?.query || discovery?.activeFilter ? undefined : t("hub.noLessonsForDisplay")}
       resultsSummary={discovery?.hasMore ? t("hub.showingFirstLessons", { count: discovery.lessons.length }) : undefined}
+      resultsMore={moreHref ? { href: moreHref, label: t("hub.showMore"), pendingLabel: t("hub.loadingMore") } : undefined}
       action={getPathname({ href: "/pronunciation", locale })}
       basePath="/pronunciation"
       heading={(
@@ -170,6 +181,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
               previewHref: `/pronunciation/collections/${course.collection.slug}`,
               next: course.next ? toHubLesson(course.next) : null,
               selectedByRecentActivity: course.selectedByRecentActivity,
+              resuming: course.resume !== null,
             } : null}
             labels={{
               eyebrow: t("hub.featuredCourse"),
