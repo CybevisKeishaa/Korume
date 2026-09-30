@@ -37,6 +37,12 @@ export interface HubDiscoveryControlsProps {
   toolbar?: React.ReactNode;
   /** Null means the learner has not searched or filtered yet. */
   results: HubLesson[] | null;
+  /** Optional page-specific heading for a result surface. */
+  resultsHeading?: string;
+  /** Optional result-limit explanation supplied by the server page. */
+  resultsSummary?: string;
+  /** Optional empty-state copy for a result surface the learner did not search. */
+  resultsEmpty?: string;
   labels: HubDiscoveryControlsLabels;
   /**
    * With a `heading`, which half to render: the heading row alone, or what
@@ -62,6 +68,9 @@ export function HubDiscoveryControls({
   filterToggleLabel,
   preservedParams,
   toolbar,
+  resultsHeading,
+  resultsSummary,
+  resultsEmpty,
   labels,
   part = "all",
 }: HubDiscoveryControlsProps) {
@@ -149,7 +158,8 @@ export function HubDiscoveryControls({
 
   const resultsContent = results ? (
     <div className="mt-xl">
-      <HubSectionHeading title={labels.results} />
+      <HubSectionHeading title={resultsHeading ?? labels.results} />
+      {resultsSummary ? <p className="mt-xs text-body text-muted-foreground">{resultsSummary}</p> : null}
       {results.length ? (
         <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2">
           {results.map((lesson) => (
@@ -163,7 +173,7 @@ export function HubDiscoveryControls({
           ))}
         </ul>
       ) : (
-        <p className="mt-md text-body text-muted-foreground">{labels.noResults}</p>
+        <p className="mt-md text-body text-muted-foreground">{resultsEmpty ?? labels.noResults}</p>
       )}
     </div>
   ) : null;

@@ -191,7 +191,8 @@ describe("PronunciationPage", () => {
     data.getMyPreferences.mockResolvedValue({ pronunciationSort: "shortest", pronunciationDuration: "under_10", pronunciationHideCompleted: true });
 
     await PronunciationPage({});
-    expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "shortest", duration: "under_10", hideCompleted: true }));
+    // A saved non-default display on a bare URL is result mode too (ruling 18).
+    expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "shortest", duration: "under_10", hideCompleted: true, browse: true, limit: 24 }));
     await PronunciationPage({ searchParams: { sort: "newest" } });
     expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "newest", duration: null, hideCompleted: false }));
     // A bad `q` fails only the search params; the display params still win.
@@ -223,12 +224,12 @@ describe("PronunciationPage", () => {
     expect(screen.getByRole("heading", { name: pronunciationCopy.hub.emptyCourse.title })).toBeInTheDocument();
   });
 
-  it("mounts the featured course, then the resume strip, then the results, with catalog copy", async () => {
+  it("mounts the featured course and resume strip in the default curated surface", async () => {
     const first = video("v1", "Greetings");
     const second = video("v2", "Meeting introductions");
     data.getHubDiscovery.mockResolvedValue({
       filters: [],
-      discovery: { query: "meet", activeFilter: null, lessons: [{ id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null }] },
+      discovery: { query: "meet", activeFilter: null, lessons: [{ id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null }], hasMore: false },
     });
     data.getLearningPaths.mockResolvedValue({ paths: [], featured: {
       collection: { id: "c1", slug: "business-japanese", title: "Business Japanese", description: "Meetings and emails.", coverImageUrl: null, displayOrder: 7, kind: "path", skillFocus: null },
@@ -249,9 +250,57 @@ describe("PronunciationPage", () => {
     expect(strip).toHaveAttribute("href", "/shadowing/v2");
     expect(strip).toHaveTextContent("92%");
 
-    const results = screen.getByRole("heading", { name: shadowingCopy.hub.search.results });
-    expect(hero.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(strip.compareDocumentPosition(results) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The default surface asks for no browse and shows no result list, even if handed one.
+    expect(data.getHubDiscovery).toHaveBeenCalledWith(expect.objectContaining({ browse: false, limit: 4 }));
+    expect(screen.queryByRole("heading", { name: shadowingCopy.hub.search.results })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Result/ })).not.toBeInTheDocument();
+  });
+
+  it("renders a result surface for a non-default display, without the hero, resume strip, or curated shelves", async () => {
+    data.getHubDiscovery.mockResolvedValue({
+      filters: [],
+      discovery: { query: "", activeFilter: null, lessons: [{ id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null }], hasMore: true },
+    });
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+
+    render(await PronunciationPage({ searchParams: { sort: "shortest" } }));
+
+    expect(data.getHubDiscovery).toHaveBeenCalledWith(expect.objectContaining({ browse: true, limit: 24 }));
+    expect(screen.getByRole("heading", { name: pronunciationCopy.hub.allLessons })).toBeInTheDocument();
+    // The count is what is shown, not the cap: more matches exist beyond the one visible lesson.
+    expect(screen.getByText(pronunciationCopy.hub.showingFirstLessons.replace("{count}", "1"))).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.featuredCourse })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.paths.title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.situations.title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.goals.title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.jlptSpeaking.title })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.shadowingCollections.title })).not.toBeInTheDocument();
+  });
+
+  it("labels searched discovery as Search results without a truncation line", async () => {
+    data.getHubDiscovery.mockResolvedValue({
+      filters: [],
+      discovery: { query: "meet", activeFilter: null, lessons: [{ id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null }], hasMore: false },
+    });
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+
+    render(await PronunciationPage({ searchParams: { q: "meet" } }));
+
+    expect(screen.getByRole("heading", { name: shadowingCopy.hub.search.results })).toBeInTheDocument();
+    expect(screen.queryByText(/^Showing the first/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.featuredCourse })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.paths.title })).not.toBeInTheDocument();
+  });
+
+  it("titles a browse by what the data layer applied: an unknown filter is All lessons, and an empty browse says the settings match nothing", async () => {
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "", activeFilter: null, lessons: [], hasMore: false } });
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+
+    render(await PronunciationPage({ searchParams: { filter: "source:unknown" } }));
+
+    expect(screen.getByRole("heading", { name: pronunciationCopy.hub.allLessons })).toBeInTheDocument();
+    expect(screen.getByText(pronunciationCopy.hub.noLessonsForDisplay)).toBeInTheDocument();
+    expect(screen.queryByText(shadowingCopy.hub.search.noResults)).not.toBeInTheDocument();
   });
 
   it("shelves the first four learning paths, with the frame's meta line and a View all link", async () => {

@@ -9,6 +9,7 @@ const hideCompleted = z.preprocess((value) => value === "true" ? true : value ==
 
 /** The studio's display params alone: each falls back by itself, so a bad `q` cannot discard them. */
 export const pronunciationDisplaySchema = z.object({ sort, duration, hideCompleted });
+export type PronunciationDisplay = z.infer<typeof pronunciationDisplaySchema>;
 
 /** Server-rendered Hub discovery controls accept only one bounded term and a known taxonomy axis. */
 export const shadowingHubQuerySchema = z.object({
@@ -17,3 +18,15 @@ export const shadowingHubQuerySchema = z.object({
 });
 
 export type ShadowingHubQuery = z.infer<typeof shadowingHubQuerySchema>;
+
+/** A non-default discovery state uses the All-lessons result surface. */
+export function isPronunciationResultMode(
+  query: Partial<ShadowingHubQuery>,
+  display: PronunciationDisplay,
+): boolean {
+  return Boolean(query.q?.trim())
+    || Boolean(query.filter)
+    || display.sort !== DEFAULT_PREFERENCES.pronunciationSort
+    || display.duration !== DEFAULT_PREFERENCES.pronunciationDuration
+    || display.hideCompleted !== DEFAULT_PREFERENCES.pronunciationHideCompleted;
+}

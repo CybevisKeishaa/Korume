@@ -226,6 +226,41 @@ describe("getHubDiscovery", () => {
     expect(videoQueries).toEqual([]);
   });
 
+  it("browses lessons only when explicitly requested without a query or filter", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, {
+      videos: ["one", "two"].map((id) => ({ ...PRIVATE_LESSON, id })),
+      onVideosQuery: (calls) => videoQueries.push([...calls]),
+    });
+
+    await expect(getHubDiscovery()).resolves.toMatchObject({ discovery: null });
+    await expect(getHubDiscovery({ browse: true })).resolves.toMatchObject({
+      discovery: { query: "", activeFilter: null, lessons: [{ id: "one" }, { id: "two" }], hasMore: false },
+    });
+    expect(videoQueries).toHaveLength(1);
+  });
+
+  it("uses the requested SQL result limit plus one to report truncation exactly", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, {
+      videos: ["one", "two", "three"].map((id) => ({ ...PRIVATE_LESSON, id })),
+      onVideosQuery: (calls) => videoQueries.push([...calls]),
+    });
+
+    await expect(getHubDiscovery({ browse: true, limit: 2 })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "one" }, { id: "two" }], hasMore: true },
+    });
+    expect(videoQueries).toContainEqual(expect.arrayContaining([{ op: "limit", count: 3 }]));
+  });
+
+  it("does not report truncation for an SQL result that exactly fills its limit", async () => {
+    mockClient(USER, { videos: ["one", "two"].map((id) => ({ ...PRIVATE_LESSON, id })) });
+
+    await expect(getHubDiscovery({ browse: true, limit: 2 })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "one" }, { id: "two" }], hasMore: false },
+    });
+  });
+
   it("searches titles with the selected known filter", async () => {
     const videoQueries: QueryCall[][] = [];
     mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
@@ -286,7 +321,7 @@ describe("getHubDiscovery", () => {
     await getHubDiscovery({ query: "lesson", sort: "shortest", duration: "10_30" });
     await getHubDiscovery({ query: "lesson", sort: "newest", duration: "under_10" });
     await getHubDiscovery({ query: "lesson", duration: "over_30" });
-    // /shadowing passes no display options at all: the old four-row read.
+    // /shadowing keeps its four-card projection while the SQL read fetches one extra row for hasMore.
     await getHubDiscovery({ query: "lesson" });
 
     const [shortest, newest, over, plain] = videoQueries;
@@ -295,15 +330,15 @@ describe("getHubDiscovery", () => {
       { op: "gte", column: "duration_seconds", value: 600 },
       { op: "lte", column: "duration_seconds", value: 1800 },
       { op: "order", column: "duration_seconds", ascending: true, nullsFirst: false },
-      { op: "limit", count: 4 },
+      { op: "limit", count: 5 },
     ]));
     expect(newest).toEqual(expect.arrayContaining([
       { op: "lt", column: "duration_seconds", value: 600 },
       { op: "order", column: "created_at", ascending: false },
-      { op: "limit", count: 4 },
+      { op: "limit", count: 5 },
     ]));
     expect(over).toContainEqual({ op: "gt", column: "duration_seconds", value: 1800 });
-    expect(plain).toContainEqual({ op: "limit", count: 4 });
+    expect(plain).toContainEqual({ op: "limit", count: 5 });
     expect(plain?.flat()).not.toContainEqual(expect.objectContaining({ column: "duration_seconds" }));
     expect(getRecommendations).not.toHaveBeenCalled();
   });
@@ -320,7 +355,38 @@ describe("getHubDiscovery", () => {
     await expect(getHubDiscovery({ query: "lesson", sort: "newest", hideCompleted: true })).resolves.toMatchObject({
       discovery: { lessons: [{ id: "b" }, { id: "d" }, { id: "e" }, { id: "f" }] },
     });
-    expect(videoQueries[0]).toContainEqual({ op: "limit", count: 100 });
+    expect(videoQueries[0]).toContainEqual({ op: "limit", count: 101 });
+  });
+
+  it("reports more lessons when matches beyond the candidate set were left out, however few are visible", async () => {
+    // 101 matches, the newest 99 finished: one lesson is visible, yet the 101st was never ranked.
+    const videos = Array.from({ length: 101 }, (_, index) => ({ ...PRIVATE_LESSON, id: `v${index}` }));
+    mockClient(USER, {
+      videos,
+      progress: videos.slice(0, 99).map((video) => ({ video_id: video.id, completed_at: "2026-09-29", last_watched_position: 60 })),
+    });
+
+    await expect(getHubDiscovery({ browse: true, sort: "newest", hideCompleted: true, limit: 24 })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "v99" }], hasMore: true },
+    });
+  });
+
+  it("limits learner-ordered results and reports whether more visible lessons remain", async () => {
+    const videos = ["one", "two", "three"].map((id) => ({ ...PRIVATE_LESSON, id }));
+    mockClient(USER, { videos });
+
+    await expect(getHubDiscovery({ browse: true, sort: "in_progress", limit: 2 })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "one" }, { id: "two" }], hasMore: true },
+    });
+  });
+
+  it("does not report truncation for a learner-ordered result that exactly fills its limit", async () => {
+    const videos = ["one", "two"].map((id) => ({ ...PRIVATE_LESSON, id }));
+    mockClient(USER, { videos });
+
+    await expect(getHubDiscovery({ browse: true, sort: "in_progress", limit: 2 })).resolves.toMatchObject({
+      discovery: { lessons: [{ id: "one" }, { id: "two" }], hasMore: false },
+    });
   });
 
   it("puts lessons started and not finished first, most recently watched first, and leaves finished ones in place", async () => {

@@ -262,3 +262,23 @@ test("at 1280px, Sort & display applies through the URL, is saved to the profile
   await page.keyboard.press("Escape");
   await expect(reopened).toBeFocused();
 });
+
+test("at 1280px, a non-default display uses All lessons and Reset restores curated shelves", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await registerLearner(page);
+  await page.goto("/en/pronunciation");
+
+  const { display, paths, allLessons } = enPronunciation.hub;
+  await page.getByRole("button", { name: display.trigger }).click();
+  const dialog = page.getByRole("dialog", { name: display.title });
+  await dialog.getByRole("radio", { name: display.shortest }).check();
+  await dialog.getByRole("button", { name: display.apply }).click();
+  await expect(page.getByRole("heading", { name: allLessons })).toBeVisible();
+  await expect(page.getByRole("heading", { name: paths.title })).toHaveCount(0);
+
+  await page.getByRole("button", { name: new RegExp(`^${display.trigger}`) }).click();
+  await page.getByRole("button", { name: display.reset }).click();
+  await page.getByRole("button", { name: display.apply }).click();
+  await expect(page.getByRole("region", { name: paths.title })).toBeVisible();
+  await expect(page.getByRole("heading", { name: allLessons })).toHaveCount(0);
+});

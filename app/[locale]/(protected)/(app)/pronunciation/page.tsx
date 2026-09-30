@@ -18,12 +18,14 @@ import { HubCollectionCard, HubLevelCard, HubSituationTile } from "@/components/
 import { courseProgressPercent } from "@/components/shadowing/hub-course-progress";
 import { HubPathCard } from "@/components/shadowing/hub-path-card";
 import { pathCardLabels, pathCards, goalCards } from "./path-card-copy";
-import { pronunciationDisplaySchema, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
+import { isPronunciationResultMode, pronunciationDisplaySchema, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
 import { getMyPreferences } from "@/lib/data/preferences";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import { HubDisplayPanel } from "@/components/shadowing/hub-display-panel";
 import { HubSpeakingRail } from "@/components/shadowing/hub-speaking-rail";
 import enShadowing from "@/messages/en/shadowing.json";
+
+const ALL_LESSONS_LIMIT = 24;
 
 type TaxonomyTranslationKey =
   | `situations.${keyof typeof enShadowing.situations}`
@@ -57,17 +59,27 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       duration: preferences?.pronunciationDuration ?? DEFAULT_PREFERENCES.pronunciationDuration,
       hideCompleted: preferences?.pronunciationHideCompleted ?? DEFAULT_PREFERENCES.pronunciationHideCompleted,
     }));
+  const displayStatePromise = displayPromise.then((display) => ({
+    display,
+    resultMode: isPronunciationResultMode(hubQuery, display),
+  }));
   const learningPromise = getLearningPaths();
   const goalsPromise = getPracticeGoals();
   const weeklyMetricsPromise = getWeeklyPronunciationMetrics(now);
   const senseiPromise = Promise.all([goalsPromise, learningPromise, weeklyMetricsPromise])
     .then(([goals, learning, weeklyMetrics]) => getSenseiRecommendation(goals, learning.paths, weeklyMetrics.weakest));
-  const [t, tCommon, tHub, hub, display, preferences, learning, locale, situations, goals, weeklyMetrics, shadowingCollections, jlptLevels, today, weekly, recent, sensei] = await Promise.all([
+  const [t, tCommon, tHub, hub, displayState, preferences, learning, locale, situations, goals, weeklyMetrics, shadowingCollections, jlptLevels, today, weekly, recent, sensei] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
     getTranslations("shadowing"),
-    displayPromise.then((value) => getHubDiscovery({ query: hubQuery.q, filter: hubQuery.filter, ...value })),
-    displayPromise,
+    displayStatePromise.then(({ display, resultMode }) => getHubDiscovery({
+      query: hubQuery.q,
+      filter: hubQuery.filter,
+      ...display,
+      browse: resultMode,
+      limit: resultMode ? ALL_LESSONS_LIMIT : 4,
+    })),
+    displayStatePromise,
     preferencesPromise,
     learningPromise,
     getLocale(),
@@ -81,6 +93,8 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     getRecentPractice(3),
     senseiPromise,
   ]);
+  const { display, resultMode } = displayState;
+  const discovery = resultMode ? hub.discovery : null;
   const course = learning.featured;
   const recommendedGoalId = recommendedPracticeGoalId(goals, weeklyMetrics.weakest);
   const duration = (minutes: number) => formatCourseDuration(minutes, {
@@ -111,9 +125,13 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           ? filter.slug.toUpperCase()
           : tHub(`${filter.kind === "situation" ? "situations" : "sources"}.${filter.slug}` as TaxonomyTranslationKey),
       }))}
-      query={hub.discovery?.query ?? ""}
-      activeFilter={hub.discovery?.activeFilter ?? null}
-      results={hub.discovery?.lessons ?? null}
+      query={discovery?.query ?? ""}
+      activeFilter={discovery?.activeFilter ?? null}
+      results={discovery?.lessons ?? null}
+      // What the data layer applied, not the raw URL: an unknown filter browses everything.
+      resultsHeading={discovery?.query || discovery?.activeFilter ? undefined : t("hub.allLessons")}
+      resultsEmpty={discovery?.query || discovery?.activeFilter ? undefined : t("hub.noLessonsForDisplay")}
+      resultsSummary={discovery?.hasMore ? t("hub.showingFirstLessons", { count: discovery.lessons.length }) : undefined}
       action={getPathname({ href: "/pronunciation", locale })}
       basePath="/pronunciation"
       heading={(
@@ -136,7 +154,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           }}
         />
       )}
-      beforeResults={(
+      beforeResults={resultMode ? undefined : (
         <>
           <HubFeaturedHero
             course={course ? {
@@ -247,6 +265,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       />}
     >
       {discoveryControls("results")}
+      {!resultMode ? <>
       <div className="mt-3xl">
         <HubPathShelf
           title={t("hub.paths.title")}
@@ -328,6 +347,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           })}
         </HubShelf>
       </div>
+      </> : null}
     </TwoColumnShell>
   );
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { pronunciationDisplaySchema, shadowingHubQuerySchema } from "./shadowing-hub";
+import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
+import { isPronunciationResultMode, pronunciationDisplaySchema, shadowingHubQuerySchema } from "./shadowing-hub";
 
 describe("shadowingHubQuerySchema", () => {
   it("normalizes a bounded search query and a two-axis filter", () => {
@@ -25,5 +26,28 @@ describe("shadowingHubQuerySchema", () => {
     expect(pronunciationDisplaySchema.parse({ sort: "shortest", duration: "10_30", hideCompleted: "true" })).toMatchObject({
       sort: "shortest", duration: "10_30", hideCompleted: true,
     });
+  });
+});
+
+describe("isPronunciationResultMode", () => {
+  const defaults = {
+    sort: DEFAULT_PREFERENCES.pronunciationSort,
+    duration: DEFAULT_PREFERENCES.pronunciationDuration,
+    hideCompleted: DEFAULT_PREFERENCES.pronunciationHideCompleted,
+  };
+
+  it.each([
+    [{ q: "lesson" }, defaults],
+    [{ q: "  lesson  " }, defaults],
+    [{ filter: "situation:restaurant" }, defaults],
+    [{}, { ...defaults, sort: "shortest" as const }],
+    [{}, { ...defaults, duration: "under_10" as const }],
+    [{}, { ...defaults, hideCompleted: true }],
+  ])("enters result mode for each catalogue-affecting trigger", (query, display) => {
+    expect(isPronunciationResultMode(query, display)).toBe(true);
+  });
+
+  it("keeps the curated surface only when every discovery setting is default", () => {
+    expect(isPronunciationResultMode({}, defaults)).toBe(false);
   });
 });

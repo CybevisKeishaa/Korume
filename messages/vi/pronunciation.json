@@ -1,5 +1,8 @@
 {
   "hub": {
+    "allLessons": "Tất cả bài học",
+    "showingFirstLessons": "Đang hiển thị {count} bài học đầu tiên",
+    "noLessonsForDisplay": "Không có bài học nào phù hợp với cài đặt hiển thị này.",
     "eyebrow": "Luyện nói theo ngữ cảnh",
     "title": "Phòng luyện phát âm",
     "subtitle": "Làm chủ phát âm tiếng Nhật qua các khóa luyện nói được thiết kế kỹ lưỡng và những tình huống thực tế.",

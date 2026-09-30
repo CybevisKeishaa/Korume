@@ -60,6 +60,7 @@ export interface HubDiscoveryProjection {
   query: string;
   activeFilter: string | null;
   lessons: HubLesson[];
+  hasMore: boolean;
 }
 
 export interface ShadowingHubData {
@@ -106,7 +107,7 @@ export function toHubLesson(video: VideoRow): HubLesson {
 
 /** Shared taxonomy-backed discovery read for the Shadowing and Pronunciation hubs. */
 export async function getHubDiscovery(
-  options: { query?: string; filter?: string; sort?: PronunciationSort; duration?: PronunciationDuration; hideCompleted?: boolean } = {},
+  options: { query?: string; filter?: string; browse?: boolean; limit?: number; sort?: PronunciationSort; duration?: PronunciationDuration; hideCompleted?: boolean } = {},
 ): Promise<{ filters: HubDiscoveryFilter[]; discovery: HubDiscoveryProjection | null }> {
   const supabase = createClient();
   const [situations, sources] = await Promise.all([listSituations(), listSources()]);
@@ -120,9 +121,10 @@ export async function getHubDiscovery(
   const query = options.query?.trim() ?? "";
   const activeFilter = [...filterTags, ...levelTags].find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
 
-  if (!query && !activeFilter) return { filters, discovery: null };
+  if (!query && !activeFilter && !options.browse) return { filters, discovery: null };
 
   const sort = options.sort ?? "newest";
+  const limit = options.limit ?? SHELF_LIMIT;
   let search = supabase.from("videos").select(VIDEO_COLUMNS);
   if (query) search = search.ilike("title", containsPattern(query));
   if (activeFilter) search = search.eq(FILTER_COLUMNS[activeFilter.kind], activeFilter.id);
@@ -138,18 +140,31 @@ export async function getHubDiscovery(
   // Newest and Shortest are whole orders in SQL, so the database cuts the list.
   const needsLearnerOrder = sort === "recommended" || sort === "in_progress" || Boolean(options.hideCompleted);
   if (!needsLearnerOrder) {
-    const { data, error } = await search.limit(SHELF_LIMIT);
+    const { data, error } = await search.limit(limit + 1);
     if (error) throw error;
-    return { filters, discovery: { query, activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null, lessons: ((data as VideoRow[] | null) ?? []).map(toHubLesson) } };
+    const rows = (data as VideoRow[] | null) ?? [];
+    return {
+      filters,
+      discovery: {
+        query,
+        activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
+        lessons: rows.slice(0, limit).map(toHubLesson),
+        hasMore: rows.length > limit,
+      },
+    };
   }
 
   // ponytail: the learner-dependent orders rank the newest (or shortest)
   // CANDIDATE_LIMIT matches, not the whole catalogue — the ids travel in the
   // request URL of the progress read and the i+1 engine, and the engine scans
   // at most 100 anyway. Page the candidates if a query ever matches more.
-  const { data, error } = await search.limit(CANDIDATE_LIMIT);
+  // One extra row says whether matches were left out, so `hasMore` never
+  // claims the list is whole when it is not.
+  const { data, error } = await search.limit(CANDIDATE_LIMIT + 1);
   if (error) throw error;
-  const candidates = (data as VideoRow[] | null) ?? [];
+  const fetched = (data as VideoRow[] | null) ?? [];
+  const candidatesOverflow = fetched.length > CANDIDATE_LIMIT;
+  const candidates = fetched.slice(0, CANDIDATE_LIMIT);
   const { data: progressRows, error: progressError } = candidates.length
     ? await supabase.from("user_video_progress").select("video_id, last_watched_position, completed_at, last_watched_at").in("video_id", candidates.map((video) => video.id))
     : { data: [], error: null };
@@ -187,7 +202,8 @@ export async function getHubDiscovery(
     discovery: {
       query,
       activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
-      lessons: ordered.slice(0, SHELF_LIMIT).map(toHubLesson),
+      lessons: ordered.slice(0, limit).map(toHubLesson),
+      hasMore: ordered.length > limit || candidatesOverflow,
     },
   };
 }

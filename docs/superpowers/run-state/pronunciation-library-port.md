@@ -170,7 +170,7 @@ against the project root and ignore the shell cwd, so here they silently patch
 ⚠️ **never build or serve in the main checkout** (shared `.next` with the
 owner's dev server) — build only in this worktree, by absolute path.
 
-- Owner: Codex  <!-- exactly one; the handoff is the commit that changes this line -->
+- Owner: Claude  <!-- exactly one; the handoff is the commit that changes this line -->
 
 ## Blockers
 
@@ -194,4 +194,6 @@ itself ("do not wait for Codex"). Each task got an independent `code-reviewer`.
    search/filter/sort/display → an All-lessons result surface; default = curated shelves ·
    19 no aggregate over an unpaginated select; >1000-row regression tests · 20 merge only after
    15–19 + full gates, **then the owner looks in Chrome, then decides.**
-   15–17 DONE `3c9ec5e`. 18 → Codex, packet `.superpowers/sdd/pronunciation-library-port/ruling-18-brief.md`.
+   15–17 DONE `3c9ec5e`. 18 DONE (Codex + Claude review fixes: `hasMore` on candidate overflow, count = shown,
+   heading/empty copy from what the data layer applied). ⚠️ Result mode caps at 24, no "Show more" — owner question.
+   Learner orders still rank only 100 candidates — page them in ruling 19. Next: 19.

@@ -6,6 +6,9 @@
     "searchLabel": "Search pronunciation courses",
     "searchPlaceholder": "Search by lesson title",
     "filterToggleLabel": "Filter courses",
+    "allLessons": "All lessons",
+    "showingFirstLessons": "Showing the first {count} lessons",
+    "noLessonsForDisplay": "No lessons match these display settings.",
     "display": {
       "trigger": "Sort & display",
       "triggerCustomised": "{trigger}: {value}",
