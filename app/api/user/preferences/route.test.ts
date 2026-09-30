@@ -16,6 +16,9 @@ const patchRaw = (body: string) =>
 
 beforeEach(() => vi.clearAllMocks());
 
+// Exactly the body `HubDisplayPanel` sends.
+const DISPLAY = { pronunciationSort: "shortest", pronunciationDuration: "10_30", pronunciationHideCompleted: true };
+
 describe("PATCH /api/user/preferences", () => {
   it("rejects invalid JSON without calling the data layer", async () => {
     const response = await PATCH(patchRaw("not json{"));
@@ -24,11 +27,19 @@ describe("PATCH /api/user/preferences", () => {
   });
 
   it("rejects schema failures, including mixed controls, without calling the data layer", async () => {
-    for (const body of [{ theme: "light" }, { dailyMinutes: 20, reduceMotion: true }]) {
+    for (const body of [{ theme: "light" }, { dailyMinutes: 20, reduceMotion: true }, { pronunciationSort: "newest" }, { ...DISPLAY, pronunciationSort: "unknown" }, { ...DISPLAY, pronunciationDuration: "forever" }, { ...DISPLAY, reduceMotion: true }]) {
       const response = await PATCH(patch(body));
       expect(response.status).toBe(400);
     }
     expect(updateMyPreferences).not.toHaveBeenCalled();
+  });
+
+  it("accepts the whole display view the studio panel sends", async () => {
+    vi.mocked(updateMyPreferences).mockResolvedValue({ ok: true, data: DEFAULT_PREFERENCES });
+    for (const body of [DISPLAY, { ...DISPLAY, pronunciationDuration: null }]) {
+      expect((await PATCH(patch(body))).status).toBe(200);
+      expect(updateMyPreferences).toHaveBeenLastCalledWith(body);
+    }
   });
 
   it("returns 401 when unauthenticated", async () => {

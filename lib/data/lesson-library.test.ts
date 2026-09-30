@@ -13,7 +13,6 @@ import {
   addVisibleLessonToLibrary,
   countMonthlyCreations,
   findExistingLesson,
-  hasTranscript,
   isInLibrary,
   isUnderQuota,
 } from "./lesson-library";
@@ -22,8 +21,8 @@ const USER_ID = "u-lib-1";
 const LESSON_ID = "l-0000-0000-0000-000000000001";
 const NOW = new Date("2026-07-31T12:00:00.000Z");
 
-function mockService(tables: Parameters<typeof createMockSupabase>[0]["tables"]) {
-  const supabase = createMockSupabase({ tables });
+function mockService(tables: Parameters<typeof createMockSupabase>[0]["tables"], enforcePostgrestCap = false) {
+  const supabase = createMockSupabase({ tables, enforcePostgrestCap });
   vi.mocked(createServiceClient).mockReturnValue(supabase as unknown as ReturnType<typeof createServiceClient>);
   return supabase;
 }
@@ -52,18 +51,6 @@ describe("findExistingLesson", () => {
   });
 });
 
-describe("hasTranscript", () => {
-  it("returns true when at least one transcript row exists for the lesson", async () => {
-    mockService({ transcripts: () => ({ data: [{ id: "t1" }], error: null }) });
-    await expect(hasTranscript(LESSON_ID)).resolves.toBe(true);
-  });
-
-  it("returns false when no transcript row exists", async () => {
-    mockService({ transcripts: () => ({ data: [], error: null }) });
-    await expect(hasTranscript(LESSON_ID)).resolves.toBe(false);
-  });
-});
-
 describe("countMonthlyCreations / isUnderQuota", () => {
   it("counts user_lesson_library rows added this calendar month", async () => {
     mockService({
@@ -76,11 +63,21 @@ describe("countMonthlyCreations / isUnderQuota", () => {
     await expect(countMonthlyCreations(USER_ID, NOW)).resolves.toBe(2);
   });
 
+  it("counts all 1,001 monthly private imports instead of a capped response body", async () => {
+    mockService({
+      user_lesson_library: () => ({
+        data: Array.from({ length: 1_001 }, (_, index) => ({ lesson_id: `private-${index}` })),
+        error: null,
+      }),
+    }, true);
+    await expect(countMonthlyCreations(USER_ID, NOW)).resolves.toBe(1_001);
+  });
+
   it("counts only the learner's private imports, never saved public catalogue lessons", async () => {
     mockService({
       user_lesson_library: (calls: QueryCall[]) => {
         expect(calls).toEqual(expect.arrayContaining([
-          { op: "select", columns: "lesson_id, videos!inner(added_by_user_id, library_access)" },
+          { op: "select", columns: "lesson_id, videos!inner(added_by_user_id, library_access)", options: { count: "exact", head: true } },
           { op: "eq", column: "videos.added_by_user_id", value: USER_ID },
           { op: "eq", column: "videos.library_access", value: "PRIVATE" },
         ]));

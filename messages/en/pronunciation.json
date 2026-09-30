@@ -1,0 +1,159 @@
+{
+  "hub": {
+    "eyebrow": "Speak with context",
+    "title": "Pronunciation Studio",
+    "subtitle": "Master Japanese pronunciation through carefully designed speaking courses and real-world scenarios.",
+    "searchLabel": "Search pronunciation courses",
+    "searchPlaceholder": "Search by lesson title",
+    "filterToggleLabel": "Filter courses",
+    "allLessons": "All lessons",
+    "showingFirstLessons": "Showing the first {count} lessons",
+    "noLessonsForDisplay": "No lessons match these display settings.",
+    "display": {
+      "trigger": "Sort & display",
+      "triggerCustomised": "{trigger}: {value}",
+      "title": "Sort & display",
+      "sort": "Sort",
+      "recommended": "Recommended",
+      "newest": "Newest",
+      "shortest": "Shortest",
+      "inProgress": "In progress",
+      "duration": "Duration",
+      "anyDuration": "Any",
+      "underTen": "Under 10 min",
+      "tenToThirty": "10–30 min",
+      "overThirty": "Over 30 min",
+      "hideCompleted": "Hide completed",
+      "apply": "Apply",
+      "reset": "Reset",
+      "close": "Close dialog",
+      "saveFailed": "Applied here, but not saved for your next visit."
+    },
+    "featuredCourse": "Featured course",
+    "continueWhereLeftOff": "Continue where you left off",
+    "startCourse": "Start Course",
+    "continueLearning": "Continue Learning",
+    "previewCourse": "Preview Course",
+    "lessons": "{count, plural, one {{count} lesson} other {{count} lessons}}",
+    "lessonsLabel": "Lessons",
+    "percent": "{percent}%",
+    "complete": "{percent}% complete",
+    "courseProgress": "{completed} / {total} lessons",
+    "durationHours": "{hours, plural, one {{hoursText} hour} other {{hoursText} hours}}",
+    "durationMinutes": "{minutes} min",
+    "lessonNumber": "Lesson {number}",
+    "level": "Level",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "levelRange": "{from}–{to}",
+    "duration": "Duration",
+    "startLesson": "Start",
+    "jlpt": "JLPT",
+    "course": "Course",
+    "goal": "Goal",
+    "collection": "Collection",
+    "backToPronunciation": "Back to Pronunciation Studio",
+    "paths": {
+      "title": "Popular Learning Paths",
+      "viewAll": "View all",
+      "start": "Start",
+      "continue": "Continue",
+      "save": "Save {title}",
+      "saveFailed": "Your saved paths could not be updated. Try again.",
+      "emptyTitle": "No learning paths yet",
+      "emptyBody": "Learning paths appear here once they have lessons.",
+      "pageEyebrow": "Learning paths",
+      "pageTitle": "Learning Paths",
+      "pageSubtitle": "Structured courses that take you from first phrases to confident conversation.",
+      "saved": "Saved paths",
+      "savedEmptyTitle": "No saved paths yet",
+      "savedEmptyBody": "Tap the star on a path to keep it here.",
+      "all": "All paths",
+      "meta": "{lessons} · {duration}",
+      "durationMinutes": "{minutes}m",
+      "durationHours": "{hours}h",
+      "durationHoursMinutes": "{hours}h {minutes}m"
+    },
+    "emptyCourse": {
+      "title": "No course to feature yet",
+      "body": "A featured course appears here once a learning path has lessons."
+    },
+    "emptyCollection": "This collection has no available lessons yet.",
+    "situations": {
+      "title": "Practice by Situation",
+      "start": "Start practice",
+      "startLabel": "Start practice: {situation}",
+      "emptyTitle": "No situations to practise yet",
+      "emptyBody": "Situations appear here once they tag a lesson."
+    },
+    "goals": {
+      "title": "Practice by Goal",
+      "recommended": "Recommended for you",
+      "emptyTitle": "No practice goals yet",
+      "emptyBody": "Goals appear here once they have lessons."
+    },
+    "jlptSpeaking": {
+      "title": "JLPT Speaking",
+      "lessons": "{count, plural, one {{count} lesson} other {{count} lessons}}",
+      "practiced": "{percent}% practiced",
+      "averageScore": "Avg score",
+      "noScore": "No score yet",
+      "emptyTitle": "No JLPT lessons yet",
+      "emptyBody": "Levels appear here once a lesson carries a JLPT level."
+    },
+    "shadowingCollections": {
+      "title": "Shadowing Collections",
+      "viewAll": "View all",
+      "glyph": "話",
+      "sentences": "{count, plural, one {{count} sentence} other {{count} sentences}}",
+      "emptyTitle": "No shadowing collections yet",
+      "emptyBody": "Collections appear here once they have lessons."
+    },
+    "rail": {
+      "label": "Pronunciation progress",
+      "scoreMissing": "No score yet",
+      "notEnoughData": "Not enough data",
+      "metrics": {
+        "accuracy": "Accuracy",
+        "pitch": "Pitch Accent",
+        "rhythm": "Rhythm"
+      },
+      "today": {
+        "title": "Today's Speaking",
+        "minutesUnit": "min",
+        "minutesLabel": "{minutes} of your {goal}-minute goal spoken today",
+        "lessons": "{count, plural, one {{count} lesson completed} other {{count} lessons completed}}",
+        "averageScore": "Average Score",
+        "continue": "Continue Practice"
+      },
+      "weekly": {
+        "title": "Weekly Improvement",
+        "heading": "Your Progress",
+        "chartLabel": "Daily average score, last two weeks",
+        "chartEmpty": "Not enough data to show your trend.",
+        "point": "{date}: {score}"
+      },
+      "sensei": {
+        "title": "AI Sensei Recommendation",
+        "heading": "Today's Recommendation",
+        "focus": "{metric} was your lowest score this week. This lesson trains it, and you already know {percent}% of its words.",
+        "stretch": "You already know {percent}% of this lesson's words — the right stretch for you.",
+        "recommendedCourse": "Recommended Course",
+        "recommendedGoal": "Recommended Goal",
+        "recommendedLesson": "Recommended Lesson",
+        "lessonDetail": "Lesson {number} · {title}",
+        "start": "Start Lesson",
+        "startLabel": "Start lesson: {title}",
+        "empty": "Review a few words and Sensei will match a lesson to your level."
+      },
+      "recent": {
+        "title": "Recently Practiced",
+        "empty": "Practice a lesson and it will appear here.",
+        "scoreLabel": "Score"
+      }
+    }
+  }
+}

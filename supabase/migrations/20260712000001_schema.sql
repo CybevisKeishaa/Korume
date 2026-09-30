@@ -207,13 +207,75 @@ create table transcript_lines (
   furigana_json jsonb
 );
 
+create function latest_transcript_ids(p_video_ids uuid[])
+  returns table (video_id uuid, transcript_id uuid)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select distinct on (t.video_id) t.video_id, t.id
+  from transcripts t
+  where t.video_id = any (p_video_ids)
+  order by t.video_id, t.created_at desc, t.id desc;
+$$;
+
+revoke all on function latest_transcript_ids(uuid[]) from public, anon;
+grant execute on function latest_transcript_ids(uuid[]) to authenticated, service_role;
+
+-- Sentences per lesson: the line count of each video's latest transcript, the
+-- one every reader shows. Counted here because a PostgREST read of the lines
+-- is capped at max_rows (1000) and would undercount without an error.
+-- SECURITY INVOKER: the transcript RLS decides which lessons the caller counts;
+-- a lesson with no readable transcript returns no row.
+create function video_sentence_counts(p_video_ids uuid[])
+  returns table (video_id uuid, sentence_count int)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select latest.video_id, count(l.id)::int
+  from (
+    select distinct on (t.video_id) t.video_id, t.id
+    from transcripts t
+    where t.video_id = any (p_video_ids)
+    order by t.video_id, t.created_at desc, t.id desc
+  ) latest
+  left join transcript_lines l on l.transcript_id = latest.id
+  group by latest.video_id;
+$$;
+
+-- Supabase grants anon EXECUTE by default, so revoking from public alone leaves it.
+revoke all on function video_sentence_counts(uuid[]) from public, anon;
+grant execute on function video_sentence_counts(uuid[]) to authenticated;
+
 create table user_video_progress (
   user_id uuid not null references users (id) on delete cascade,
   video_id uuid not null references videos (id) on delete cascade,
   last_watched_position numeric(10, 3) not null default 0,
   completed_at timestamptz,
+  -- When the learner last moved this row; maintained by the trigger below.
+  -- Nullable: a row with no known time is never given a fabricated one.
+  last_watched_at timestamptz,
   primary key (user_id, video_id)
 );
+
+create or replace function set_user_video_progress_last_watched_at()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if tg_op = 'INSERT'
+    or new.last_watched_position is distinct from old.last_watched_position
+    or new.completed_at is distinct from old.completed_at then
+    new.last_watched_at = now();
+  end if;
+  return new;
+end;
+$$;
+
+create trigger user_video_progress_set_last_watched_at
+  before insert or update on user_video_progress
+  for each row execute function set_user_video_progress_last_watched_at();
 
 create table user_playlists (
   id uuid primary key default gen_random_uuid(),
@@ -243,6 +305,149 @@ create table shadowing_sessions (
   pitch_score numeric(5, 2), -- differentiator #1: pitch-accent scoring (CLAUDE.md §5)
   created_at timestamptz not null default now()
 );
+
+-- Aggregate before PostgREST applies its max_rows cap. SECURITY INVOKER keeps
+-- the caller's table permissions and RLS in force; the explicit user predicate
+-- makes the function's scope unambiguous.
+create function pronunciation_metric_means(p_start timestamptz, p_end timestamptz)
+  returns table (pronunciation_score numeric, pitch_score numeric, rhythm_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select
+    avg(s.pronunciation_score),
+    avg(s.pitch_score),
+    avg(s.rhythm_score)
+  from shadowing_sessions s
+  where s.user_id = auth.uid()
+    and s.created_at >= p_start
+    and s.created_at < p_end;
+$$;
+
+revoke all on function pronunciation_metric_means(timestamptz, timestamptz) from public, anon;
+grant execute on function pronunciation_metric_means(timestamptz, timestamptz) to authenticated;
+
+-- JLPT Speaking is a view over lessons and the caller's sessions, not an
+-- entity: per level, the lessons the caller can see (videos RLS, via SECURITY
+-- INVOKER), how many of them the caller has shadowed, and the caller's mean
+-- score there. Aggregated here for the same max_rows reason as above.
+create function jlpt_speaking_summary()
+  returns table (level jlpt_level, lesson_count bigint, practiced_count bigint, average_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select
+    v.jlpt_level_estimate,
+    count(distinct v.id),
+    count(distinct s.video_id),
+    avg(s.pronunciation_score)
+  from videos v
+  left join shadowing_sessions s on s.video_id = v.id and s.user_id = auth.uid()
+  where v.jlpt_level_estimate is not null
+  group by v.jlpt_level_estimate;
+$$;
+
+revoke all on function jlpt_speaking_summary() from public, anon;
+grant execute on function jlpt_speaking_summary() to authenticated;
+
+-- The caller's newest session per lesson: half of a lesson's "last activity"
+-- (owner ruling 17), with user_video_progress.last_watched_at the other half.
+create function lesson_last_spoken_at(p_video_ids uuid[])
+  returns table (video_id uuid, spoken_at timestamptz)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select s.video_id, max(s.created_at)
+  from shadowing_sessions s
+  where s.user_id = auth.uid()
+    and s.video_id = any (p_video_ids)
+  group by s.video_id;
+$$;
+
+revoke all on function lesson_last_spoken_at(uuid[]) from public, anon;
+grant execute on function lesson_last_spoken_at(uuid[]) to authenticated;
+
+-- The studio rail's reads, aggregated here for the same max_rows reason. Days
+-- are VN-local (fixed UTC+7, as lib/gamification/streak.ts decides).
+
+-- Seconds spoken in a window: the reference length of each line the caller
+-- shadowed. A line with no end time has no known length and adds nothing.
+create function pronunciation_speaking_seconds(p_start timestamptz, p_end timestamptz)
+  returns numeric
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select coalesce(sum(greatest(l.end_time - l.start_time, 0)), 0)
+  from shadowing_sessions s
+  join transcript_lines l on l.id = s.transcript_line_id
+  where s.user_id = auth.uid()
+    and s.created_at >= p_start
+    and s.created_at < p_end
+    and l.end_time is not null;
+$$;
+
+revoke all on function pronunciation_speaking_seconds(timestamptz, timestamptz) from public, anon;
+grant execute on function pronunciation_speaking_seconds(timestamptz, timestamptz) to authenticated;
+
+-- The caller's mean score per VN-local day in a window; a day without a
+-- scored session has no row.
+create function pronunciation_daily_means(p_start timestamptz, p_end timestamptz)
+  returns table (day date, pronunciation_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select (s.created_at at time zone 'Asia/Ho_Chi_Minh')::date, avg(s.pronunciation_score)
+  from shadowing_sessions s
+  where s.user_id = auth.uid()
+    and s.created_at >= p_start
+    and s.created_at < p_end
+    and s.pronunciation_score is not null
+  group by 1
+  order by 1;
+$$;
+
+revoke all on function pronunciation_daily_means(timestamptz, timestamptz) from public, anon;
+grant execute on function pronunciation_daily_means(timestamptz, timestamptz) to authenticated;
+
+-- The caller's most recently shadowed lessons, newest first. The score is the
+-- mean over that lesson's sessions on the VN-local day of its last practice.
+create function pronunciation_recent_practice(p_limit int)
+  returns table (video_id uuid, practiced_at timestamptz, pronunciation_score numeric)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  with latest as (
+    select s.video_id, max(s.created_at) as practiced_at
+    from shadowing_sessions s
+    where s.user_id = auth.uid() and s.video_id is not null
+    group by s.video_id
+    order by 2 desc, 1
+    limit least(greatest(p_limit, 0), 20)
+  )
+  select latest.video_id, latest.practiced_at, avg(s.pronunciation_score)
+  from latest
+  join shadowing_sessions s
+    on s.video_id = latest.video_id
+    and s.user_id = auth.uid()
+    and (s.created_at at time zone 'Asia/Ho_Chi_Minh')::date = (latest.practiced_at at time zone 'Asia/Ho_Chi_Minh')::date
+  group by latest.video_id, latest.practiced_at
+  order by latest.practiced_at desc, latest.video_id;
+$$;
+
+revoke all on function pronunciation_recent_practice(int) from public, anon;
+grant execute on function pronunciation_recent_practice(int) to authenticated;
 
 create table dictation_attempts (
   id uuid primary key default gen_random_uuid(),

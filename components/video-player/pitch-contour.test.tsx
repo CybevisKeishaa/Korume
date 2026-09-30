@@ -123,9 +123,13 @@ describe("PitchContour", () => {
       { timeout: 5000 },
     );
     // At least the baseline gridline + the contour line were stroked, and
-    // voiced frames were marked with dots.
-    expect(strokeCalls).toBeGreaterThan(0);
-    expect(arcCalls).toBeGreaterThan(0);
+    // voiced frames were marked with dots. Waited for, not read once: the
+    // canvas mounts in one commit and is drawn by a later effect, so under
+    // full-suite load the img can be found before the draw has run.
+    await waitFor(() => {
+      expect(strokeCalls).toBeGreaterThan(0);
+      expect(arcCalls).toBeGreaterThan(0);
+    }, { timeout: 5000 });
   });
 
   it("uses the translated default accessible label when no override is passed — proves shadowing.pitch.contour.a11y.label is wired", async () => {

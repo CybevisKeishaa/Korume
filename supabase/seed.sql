@@ -50,6 +50,23 @@ from collections
 where slug = 'beginner-foundation'
 on conflict (lesson_id, collection_id) do nothing;
 
+-- Local-only course fixture. Real path memberships are editorial content that
+-- an admin curates against real video ids, so no migration inserts any; this
+-- one row makes the featured-course hero render after a local reset.
+insert into lesson_collections (lesson_id, collection_id, position)
+select 'e2e00000-0000-0000-0000-000000000002', id, 0
+from collections
+where slug = 'everyday-conversation'
+on conflict (lesson_id, collection_id) do nothing;
+
+-- Local-only goal fixture: editorial memberships belong to real content in
+-- production, while this makes the Practice by Goal shelf testable after reset.
+insert into lesson_collections (lesson_id, collection_id, position)
+select 'e2e00000-0000-0000-0000-000000000002', id, 0
+from collections
+where slug = 'improve-pitch-accent'
+on conflict (lesson_id, collection_id) do nothing;
+
 insert into transcripts (id, video_id, source)
 values ('e2e00000-0000-0000-0000-000000000003', 'e2e00000-0000-0000-0000-000000000002', 'youtube_caption')
 on conflict (id) do nothing;

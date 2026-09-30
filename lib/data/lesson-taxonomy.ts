@@ -24,6 +24,7 @@ function toTag(row: TagRow): LessonTag {
 
 async function listTable(table: "lesson_situations" | "lesson_sources"): Promise<LessonTag[]> {
   const supabase = createClient();
+  // Curated taxonomy: cardinality stays far below PostgREST max_rows.
   const { data, error } = await supabase
     .from(table)
     .select("id, slug, display_order")
@@ -76,4 +77,35 @@ export async function getLessonSituations(lessonId: string): Promise<LessonTag[]
 
 export async function getLessonSources(lessonId: string): Promise<LessonTag[]> {
   return lessonTags(lessonId, "source_id", "lesson_sources");
+}
+
+/** A Practice by Situation tile: a situation the viewer has lessons for. */
+export interface PracticeSituation {
+  slug: string;
+  icon: string | null;
+}
+
+/**
+ * Situations, in `display_order`, that tag at least one lesson the viewer can
+ * see — a tile that opened an empty search would be a dead end.
+ */
+export async function listPracticeSituations(): Promise<PracticeSituation[]> {
+  const supabase = createClient();
+  // Curated taxonomy: cardinality stays far below PostgREST max_rows.
+  const { data, error } = await supabase
+    .from("lesson_situations")
+    .select("id, slug, icon")
+    .order("display_order", { ascending: true });
+  if (error) throw error;
+  const situations = (data as { id: string; slug: string; icon: string | null }[] | null) ?? [];
+  // One existence probe per situation: correct at any catalog size, where a
+  // read of every tagged lesson would stop at PostgREST's max_rows.
+  const probes = await Promise.all(situations.map(async (situation) => ({
+    situation,
+    probe: await supabase.from("videos").select("id").eq("situation_id", situation.id).limit(1),
+  })));
+  return probes.flatMap(({ situation: { slug, icon }, probe }) => {
+    if (probe.error) throw probe.error;
+    return (probe.data as unknown[] | null)?.length ? [{ slug, icon }] : [];
+  });
 }

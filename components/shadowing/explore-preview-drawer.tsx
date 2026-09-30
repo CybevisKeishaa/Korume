@@ -61,7 +61,7 @@ export function ExplorePreviewDrawer({ lesson, onClose, labels }: {
       onClose={onClose}
       title={lesson.title}
       closeLabel={labels.close}
-      className="!left-auto !right-0 !top-0 h-[100svh] max-h-none !w-[420px] max-w-full !translate-x-0 !translate-y-0 rounded-none border-y-0 border-r-0 p-lg motion-reduce:transition-none"
+      className="motion-drawer !left-auto !right-0 !top-0 h-[100svh] max-h-none !w-[420px] max-w-full !translate-x-0 !translate-y-0 rounded-none border-y-0 border-r-0 p-lg motion-reduce:transition-none"
     >
       <div className="space-y-lg">
         <div className="relative aspect-video overflow-hidden rounded-lg bg-muted">

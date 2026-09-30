@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  DAILY_MINUTES_OPTIONS, DIFFICULTY_OPTIONS, DISPLAY_SCALE_OPTIONS, REVIEW_FREQUENCY_OPTIONS,
+  DAILY_MINUTES_OPTIONS, DIFFICULTY_OPTIONS, DISPLAY_SCALE_OPTIONS, PRONUNCIATION_DURATION_OPTIONS, PRONUNCIATION_SORT_OPTIONS, REVIEW_FREQUENCY_OPTIONS,
   canonicalScheduleDays, type IsoWeekday,
 } from "@/lib/preferences/options";
 
@@ -24,6 +24,12 @@ const dailyMinutes = z.object({
   dailyMinutes: z.number().refine((value) => (DAILY_MINUTES_OPTIONS as readonly number[]).includes(value)),
 }).strict();
 
+const pronunciationDisplay = z.object({
+  pronunciationSort: z.enum(PRONUNCIATION_SORT_OPTIONS),
+  pronunciationDuration: z.enum(PRONUNCIATION_DURATION_OPTIONS).nullable(),
+  pronunciationHideCompleted: z.boolean(),
+}).strict();
+
 export const preferencesPatchSchema = z.union([
   dailyMinutes,
   schedule,
@@ -33,6 +39,8 @@ export const preferencesPatchSchema = z.union([
   z.object({ reduceMotion: z.boolean() }).strict(),
   z.object({ microphoneEnabled: z.boolean() }).strict(),
   z.object({ cameraEnabled: z.boolean() }).strict(),
+  // The studio's panel always saves its whole view at once.
+  pronunciationDisplay,
 ]);
 
 export type PreferencesPatch = z.output<typeof preferencesPatchSchema>;

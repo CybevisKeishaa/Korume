@@ -2,6 +2,12 @@ import { describe, expect, it } from "vitest";
 import { SCREEN_REGISTRY } from "./screen-registry";
 
 describe("screen registry invariants", () => {
+  it("records the pronunciation library as built", () => {
+    expect(SCREEN_REGISTRY.find((entry) => entry.screenId === "pronunciation-library")).toMatchObject({
+      impl: "built",
+    });
+  });
+
   it("T3: figmaNodeId is null iff the entry is repo-only or spec-only", () => {
     for (const entry of SCREEN_REGISTRY) {
       if (entry.kind === "repo-only" || entry.kind === "spec-only") {
@@ -216,7 +222,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(84);
+    expect(stamped).toHaveLength(86);
     const stampedByDate = new Map<string, number>();
     for (const entry of stamped) {
       const date = entry.figmaCheckedAt as string;
@@ -237,6 +243,8 @@ describe("screen registry invariants", () => {
       "2026-08-23": 8,
       "2026-08-26": 1,
       "2026-09-22": 2,
+      "2026-09-28": 1,
+      "2026-09-29": 1,
     });
   });
 });

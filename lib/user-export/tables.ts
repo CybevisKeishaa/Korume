@@ -33,6 +33,7 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
   { table: "user_test_attempts", userColumn: "user_id" },
   { table: "user_video_progress", userColumn: "user_id" },
   { table: "user_lesson_library", userColumn: "user_id" },
+  { table: "user_saved_collections", userColumn: "user_id" },
   { table: "user_playlists", userColumn: "user_id" },
   {
     table: "user_playlist_items",

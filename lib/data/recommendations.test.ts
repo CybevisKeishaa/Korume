@@ -26,14 +26,30 @@ import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 const USER = { id: "u1" };
 
 function mockClient(tables: Parameters<typeof createMockSupabase>[0]["tables"], user: { id: string } | null = USER) {
-  const supabase = createMockSupabase({ user, tables });
+  const supabase = createMockSupabase({
+    user,
+    tables,
+    rpcs: {
+      latest_transcript_ids: async ({ p_video_ids }) => {
+        const result = tables.transcripts ? await tables.transcripts([{ op: "in", column: "video_id", values: p_video_ids as string[] }]) : { data: [], error: null };
+        const rows = (result.data as { id: string; video_id: string; created_at: string }[] | null) ?? [];
+        return {
+          data: (p_video_ids as string[]).flatMap((video_id) => {
+            const latest = rows.filter((row) => row.video_id === video_id).sort((left, right) => right.created_at.localeCompare(left.created_at) || right.id.localeCompare(left.id))[0];
+            return latest ? [{ video_id, transcript_id: latest.id }] : [];
+          }),
+          error: result.error,
+        };
+      },
+    },
+  });
   vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
   return supabase;
 }
 
-const VIDEO_A = { id: "va", youtube_video_id: "yta", title: "A", thumbnail_url: "a.jpg", jlpt_level_estimate: "N5" };
-const VIDEO_B = { id: "vb", youtube_video_id: "ytb", title: "B", thumbnail_url: null, jlpt_level_estimate: "N4" };
-const VIDEO_C = { id: "vc", youtube_video_id: "ytc", title: "C", thumbnail_url: null, jlpt_level_estimate: null };
+const VIDEO_A = { id: "va", youtube_video_id: "yta", title: "A", thumbnail_url: "a.jpg", jlpt_level_estimate: "N5", created_at: "2026-07-03T00:00:00Z" };
+const VIDEO_B = { id: "vb", youtube_video_id: "ytb", title: "B", thumbnail_url: null, jlpt_level_estimate: "N4", created_at: "2026-07-02T00:00:00Z" };
+const VIDEO_C = { id: "vc", youtube_video_id: "ytc", title: "C", thumbnail_url: null, jlpt_level_estimate: null, created_at: "2026-07-01T00:00:00Z" };
 
 beforeEach(() => {
   vi.mocked(createClient).mockReset();
@@ -55,6 +71,50 @@ describe("getRecommendations", () => {
     const result = await getRecommendations({ limit: 12 });
 
     expect(result).toMatchObject({ ok: true, data: [{ videoId: "va", band: "ideal", knownRatio: 0.96 }] });
+  });
+
+  it("scans only the supplied candidates; without them, the newest SCAN_LIMIT of the catalogue", async () => {
+    vi.mocked(getKnownVocabLemmas).mockResolvedValue(new Set());
+    const videoQueries: QueryCall[][] = [];
+    mockClient({
+      user_video_progress: () => ({ data: [], error: null }),
+      videos: (calls) => { videoQueries.push([...calls]); return { data: [], error: null }; },
+    });
+
+    await getRecommendations({ limit: 2, candidateIds: ["va", "vb"] });
+    await getRecommendations({ limit: 12 });
+
+    // The mock ignores filters, so the recorded calls are the proof.
+    expect(videoQueries[0]).toContainEqual({ op: "in", column: "id", values: ["va", "vb"] });
+    expect(videoQueries[1]).not.toContainEqual(expect.objectContaining({ op: "in", column: "id" }));
+    expect(videoQueries[1]).toContainEqual({ op: "limit", count: 100 });
+  });
+
+  it("sends a long candidate list in URL-safe chunks and scans the newest 100 of it, whatever its order", async () => {
+    vi.mocked(getKnownVocabLemmas).mockResolvedValue(new Set());
+    const ids = Array.from({ length: 1_001 }, (_, index) => `lesson-${String(index).padStart(4, "0")}`);
+    const idChunks: string[][] = [];
+    const scanned: string[][] = [];
+    const client = mockClient({
+      user_video_progress: () => ({ data: [], error: null }),
+      videos: (calls) => {
+        const chunk = (calls.find((call) => call.op === "in" && call.column === "id") as { values: string[] }).values;
+        idChunks.push(chunk);
+        // lesson-1000 is the newest; the caller's order is oldest first.
+        return { data: chunk.map((id) => ({ ...VIDEO_A, id, created_at: `2026-01-01T00:00:00.${id.slice(-4)}Z` })), error: null };
+      },
+    });
+    vi.spyOn(client, "rpc").mockImplementation(((name: string, args: Record<string, unknown>) => {
+      if (name === "latest_transcript_ids") scanned.push(args.p_video_ids as string[]);
+      return Promise.resolve({ data: [], error: null });
+    }) as never);
+
+    await getRecommendations({ limit: 4, candidateIds: ids });
+
+    expect(idChunks.every((chunk) => chunk.length <= 100)).toBe(true);
+    expect(idChunks.flat()).toEqual(ids);
+    expect(scanned.flat()).toHaveLength(100);
+    expect(new Set(scanned.flat())).toEqual(new Set(ids.slice(-100)));
   });
 
   it("returns 401 when signed out", async () => {
@@ -207,5 +267,40 @@ describe("getRecommendations", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data).toEqual([]);
+  });
+
+  it("pages all transcript lines and progress rows before scoring", async () => {
+    vi.mocked(getKnownVocabLemmas).mockResolvedValue(new Set(["known"]));
+    const progressRanges: unknown[] = [];
+    const lineRanges: unknown[] = [];
+    mockClient({
+      user_video_progress: (calls) => {
+        progressRanges.push(calls.find((call) => call.op === "range"));
+        return { data: progressRanges.length === 1
+          ? Array.from({ length: 1_000 }, (_, index) => ({ video_id: `done-${index}`, completed_at: null }))
+          : Array.from({ length: 200 }, (_, index) => ({ video_id: `done-${index + 1_000}`, completed_at: null })), error: null };
+      },
+      videos: () => ({ data: [VIDEO_A], error: null }),
+      transcripts: () => ({ data: [{ id: "t1", video_id: "va", created_at: "2026-07-01T00:00:00Z" }], error: null }),
+      transcript_lines: (calls) => {
+        lineRanges.push(calls.find((call) => call.op === "range"));
+        return { data: lineRanges.length === 1
+          ? Array.from({ length: 1_000 }, () => ({ transcript_id: "t1", text_jp: "known" }))
+          : Array.from({ length: 200 }, () => ({ transcript_id: "t1", text_jp: "unknown" })), error: null };
+      },
+    });
+
+    await expect(getRecommendations({ limit: 1 })).resolves.toMatchObject({
+      ok: true,
+      data: [{ totalWords: 1_200, knownWords: 1_000, knownRatio: 1_000 / 1_200 }],
+    });
+    expect(progressRanges).toEqual([
+      { op: "range", from: 0, to: 999 },
+      { op: "range", from: 1_000, to: 1_999 },
+    ]);
+    expect(lineRanges).toEqual([
+      { op: "range", from: 0, to: 999 },
+      { op: "range", from: 1_000, to: 1_999 },
+    ]);
   });
 });

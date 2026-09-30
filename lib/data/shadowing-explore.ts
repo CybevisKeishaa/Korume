@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { listCollections, listCollectionLessons, type Collection } from "@/lib/data/collections";
+import { listCollections, listCollectionLessons, selectShadowingCollections, type Collection } from "@/lib/data/collections";
+import { containsPattern, fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 import { listSituations, type LessonTag } from "@/lib/data/lesson-taxonomy";
 import { getRecommendations } from "@/lib/data/recommendations";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
@@ -49,28 +50,11 @@ function toLesson(video: VideoRow): HubLesson {
   };
 }
 
-interface TranscriptRow { id: string; video_id: string; created_at: string }
 interface TranscriptLineRow { transcript_id: string; text_jp: string; start_time: number }
 interface VideoSummaryProjection { video_id: string; summary: string; key_vocab: unknown; key_grammar: unknown }
 
-/** C3's authored learning-path sequence; editorial collections stay on the Hub. */
-const EXPLORE_COLLECTION_SLUGS = [
-  "beginner-foundation",
-  "daily-conversation",
-  "natural-japanese",
-  "advanced-expression",
-  "native-fluency",
-] as const;
-
 /** One Figma shelf is a four-by-two grid; fetch one extra row to disclose truncation honestly. */
 const EXPLORE_SHELF_LIMIT = 8;
-
-function selectExploreCollections(collections: Collection[]): Collection[] {
-  const rank = new Map(EXPLORE_COLLECTION_SLUGS.map((slug, index) => [slug, index]));
-  return collections
-    .filter((collection) => rank.has(collection.slug as (typeof EXPLORE_COLLECTION_SLUGS)[number]))
-    .sort((a, b) => (rank.get(a.slug as (typeof EXPLORE_COLLECTION_SLUGS)[number]) ?? 0) - (rank.get(b.slug as (typeof EXPLORE_COLLECTION_SLUGS)[number]) ?? 0));
-}
 
 async function countContentWords(lines: TranscriptLineRow[]): Promise<number> {
   const lemmaGroups = await Promise.all(lines.map(async (line) => contentLemmas(await tokenize(line.text_jp))));
@@ -85,51 +69,69 @@ export async function getShadowingExplore(
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
 
-  const [libraryResult, situations, collections, recommendationsResult] = await Promise.all([
-    supabase.from("user_lesson_library").select("lesson_id").eq("user_id", user.id),
+  const [situations, collections, recommendationsResult] = await Promise.all([
     listSituations(),
     listCollections(),
     getRecommendations({ limit: 4 }),
   ]);
-  if (libraryResult.error) throw libraryResult.error;
-
   const activeSituation = situations.find((tag) => tag.slug === options.situation) ?? null;
   const query = options.query?.trim() ?? "";
-  let videosQuery = supabase.from("videos").select(VIDEO_COLUMNS);
-  if (activeSituation) videosQuery = videosQuery.eq("situation_id", activeSituation.id);
-  if (query) videosQuery = videosQuery.ilike("title", `%${query}%`);
-  const { data: videosData, error: videosError } = await videosQuery.order("created_at", { ascending: false });
-  if (videosError) throw videosError;
-  const libraryIds = new Set(((libraryResult.data as { lesson_id: string }[] | null) ?? []).map((row) => row.lesson_id));
-  const visibleVideos = (videosData as VideoRow[] | null) ?? [];
-  const visibleVideoIds = new Set(visibleVideos.map((video) => video.id));
-  const libraryVideos = visibleVideos.filter((video) => libraryIds.has(video.id) || (video.library_access === "PRIVATE" && video.added_by_user_id === user.id));
-  const rawShelves = await Promise.all(selectExploreCollections(collections).map(async (collection) => {
+  // Every catalogue read on Explore shares the situation and title filters.
+  // A structural bound on the builder makes tsc recurse too deep (TS2589), so
+  // the builder passes through untyped; only `eq` and `ilike` touch it.
+  const inContext = <T,>(search: T): T => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let filtered = search as any;
+    if (activeSituation) filtered = filtered.eq("situation_id", activeSituation.id);
+    if (query) filtered = filtered.ilike("title", containsPattern(query));
+    return filtered;
+  };
+  const recommendationIds = recommendationsResult.ok ? recommendationsResult.data.map((recommendation) => recommendation.videoId) : [];
+  const [libraryVideos, recentResult, recommendationMatches] = await Promise.all([
+    fetchAllPages((from, to) => inContext(supabase.from("learner_videos").select(VIDEO_COLUMNS).eq("in_library", true))
+      .order("created_at", { ascending: false }).order("id", { ascending: true }).range(from, to)) as Promise<VideoRow[]>,
+    inContext(supabase.from("videos").select(VIDEO_COLUMNS).neq("library_access", "PRIVATE"))
+      .order("created_at", { ascending: false }).order("id", { ascending: true }).limit(4),
+    recommendationIds.length
+      ? inContext(supabase.from("videos").select("id").in("id", recommendationIds))
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (recentResult.error) throw recentResult.error;
+  if (recommendationMatches.error) throw recommendationMatches.error;
+  const recentlyAdded = (recentResult.data as VideoRow[] | null) ?? [];
+  const visibleVideoIds = new Set(((recommendationMatches.data as { id: string }[] | null) ?? []).map((video) => video.id));
+  const rawShelves = await Promise.all(selectShadowingCollections(collections).map(async (collection) => {
     const allLessons = await listCollectionLessons(collection.id, { situationId: activeSituation?.id, query, limit: EXPLORE_SHELF_LIMIT + 1 });
     return { collection, lessons: allLessons.slice(0, EXPLORE_SHELF_LIMIT), hasMore: allLessons.length > EXPLORE_SHELF_LIMIT };
   }));
-  const lessonIds = Array.from(new Set([
-    ...libraryVideos.map((video) => video.id),
-    ...rawShelves.flatMap((shelf) => shelf.lessons.map((lesson) => lesson.id)),
-  ]));
+  // Library cards only need "is there a transcript"; lines and summaries feed
+  // the shelf cards alone, so only shelf lessons pay for them.
+  const shelfLessonIds = Array.from(new Set(rawShelves.flatMap((shelf) => shelf.lessons.map((lesson) => lesson.id))));
+  const lessonIds = Array.from(new Set([...libraryVideos.map((video) => video.id), ...shelfLessonIds]));
   const latestTranscriptByVideo = new Map<string, string>();
   const linesByTranscript = new Map<string, TranscriptLineRow[]>();
   const summaryByVideo = new Map<string, VideoSummaryProjection>();
   if (lessonIds.length) {
-    const [transcriptResult, summaryResult] = await Promise.all([
-      supabase.from("transcripts").select("id, video_id, created_at").in("video_id", lessonIds).order("created_at", { ascending: false }),
-      supabase.from("video_summaries").select("video_id, summary, key_vocab, key_grammar").in("video_id", lessonIds),
+    const [transcripts, summaries] = await Promise.all([
+      fetchByIdChunks(lessonIds, async (videoIds) => {
+        const { data, error } = await supabase.rpc("latest_transcript_ids", { p_video_ids: videoIds });
+        if (error) throw error;
+        return (data as { video_id: string; transcript_id: string }[] | null) ?? [];
+      }),
+      fetchByIdChunks(shelfLessonIds, async (videoIds) => {
+        const { data, error } = await supabase.from("video_summaries").select("video_id, summary, key_vocab, key_grammar").in("video_id", videoIds);
+        if (error) throw error;
+        return (data as VideoSummaryProjection[] | null) ?? [];
+      }),
     ]);
-    const { data: transcriptData, error: transcriptError } = transcriptResult;
-    if (transcriptError) throw transcriptError;
-    if (summaryResult.error) throw summaryResult.error;
-    for (const summary of (summaryResult.data as VideoSummaryProjection[] | null) ?? []) summaryByVideo.set(summary.video_id, summary);
-    for (const transcript of (transcriptData as TranscriptRow[] | null) ?? []) if (!latestTranscriptByVideo.has(transcript.video_id)) latestTranscriptByVideo.set(transcript.video_id, transcript.id);
-    const transcriptIds = Array.from(new Set(latestTranscriptByVideo.values()));
-    if (transcriptIds.length) {
-      const { data: lineData, error: lineError } = await supabase.from("transcript_lines").select("transcript_id, text_jp, start_time").in("transcript_id", transcriptIds).order("start_time", { ascending: true });
-      if (lineError) throw lineError;
-      for (const line of (lineData as TranscriptLineRow[] | null) ?? []) linesByTranscript.set(line.transcript_id, [...(linesByTranscript.get(line.transcript_id) ?? []), line]);
+    for (const summary of summaries) summaryByVideo.set(summary.video_id, summary);
+    for (const transcript of transcripts) latestTranscriptByVideo.set(transcript.video_id, transcript.transcript_id);
+    const shelfTranscriptIds = Array.from(new Set(shelfLessonIds.flatMap((id) => latestTranscriptByVideo.get(id) ?? [])));
+    if (shelfTranscriptIds.length) {
+      const lines = await fetchByIdChunks(shelfTranscriptIds, (ids) => fetchAllPages((from, to) => supabase
+        .from("transcript_lines").select("id, transcript_id, text_jp, start_time").in("transcript_id", ids)
+        .order("transcript_id", { ascending: true }).order("start_time", { ascending: true }).order("id", { ascending: true }).range(from, to))) as TranscriptLineRow[];
+      for (const line of lines) linesByTranscript.set(line.transcript_id, [...(linesByTranscript.get(line.transcript_id) ?? []), line]);
     }
   }
   const wordCountByTranscript = new Map<string, Promise<number>>();
@@ -173,10 +175,7 @@ export async function getShadowingExplore(
       activeSituation: activeSituation?.slug ?? null,
       situations,
       library,
-      recentlyAdded: visibleVideos
-        .filter((video) => video.library_access !== "PRIVATE")
-        .slice(0, 4)
-        .map(toLesson),
+      recentlyAdded: recentlyAdded.map(toLesson),
       recommendations,
       quietSuggestion: recommendations.find((recommendation) => recommendation.reason !== null) ?? null,
       shelves,

@@ -3,12 +3,16 @@ export const LEARNING_SCHEDULE_OPTIONS = ["every_day", "weekdays", "custom"] as 
 export const REVIEW_FREQUENCY_OPTIONS = ["normal", "more", "relaxed"] as const;
 export const DIFFICULTY_OPTIONS = ["adaptive", "easy", "challenge"] as const;
 export const DISPLAY_SCALE_OPTIONS = ["normal", "large", "extra_large"] as const;
+export const PRONUNCIATION_SORT_OPTIONS = ["recommended", "newest", "shortest", "in_progress"] as const;
+export const PRONUNCIATION_DURATION_OPTIONS = ["under_10", "10_30", "over_30"] as const;
 export const DAILY_MINUTES_OPTIONS = [5, 10, 15, 20, 30, 45, 60] as const;
 
 export type LearningSchedule = (typeof LEARNING_SCHEDULE_OPTIONS)[number];
 export type ReviewFrequency = (typeof REVIEW_FREQUENCY_OPTIONS)[number];
 export type Difficulty = (typeof DIFFICULTY_OPTIONS)[number];
 export type DisplayScale = (typeof DISPLAY_SCALE_OPTIONS)[number];
+export type PronunciationSort = (typeof PRONUNCIATION_SORT_OPTIONS)[number];
+export type PronunciationDuration = (typeof PRONUNCIATION_DURATION_OPTIONS)[number] | null;
 /** ISO weekday, Monday = 1 … Sunday = 7, taken from the VN-local date (spec §4.3). */
 export type IsoWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -24,6 +28,9 @@ export interface UserPreferences {
   reduceMotion: boolean;
   microphoneEnabled: boolean;
   cameraEnabled: boolean;
+  pronunciationSort: PronunciationSort;
+  pronunciationDuration: PronunciationDuration;
+  pronunciationHideCompleted: boolean;
   /** Lives on `users.daily_minutes`; carried here so one read serves the page. */
   dailyMinutes: number;
 }
@@ -37,6 +44,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   reduceMotion: false,
   microphoneEnabled: true,
   cameraEnabled: false,
+  pronunciationSort: "recommended",
+  pronunciationDuration: null,
+  pronunciationHideCompleted: false,
   dailyMinutes: 15,
 };
 

@@ -14,6 +14,8 @@ export interface PopoverProps {
   side?: Side;
   align?: "start" | "center" | "end";
   className?: string;
+  /** Accessible name for the interactive popover content. */
+  label?: string;
   children: React.ReactNode;
 }
 
@@ -30,6 +32,7 @@ export function Popover({
   side = "bottom",
   align = "center",
   className,
+  label,
   children,
 }: PopoverProps) {
   const { anchorRef, contentRef } = useDensityScope();
@@ -43,8 +46,9 @@ export function Popover({
           side={side}
           align={align}
           sideOffset={6}
+          aria-label={label}
           className={cn(
-            "z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay",
+            "motion-popover z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay",
             className,
           )}
         >

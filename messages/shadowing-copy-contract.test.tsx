@@ -153,6 +153,7 @@ function LocalizedEmptyHub(): JSX.Element {
         activeFilter={null}
         results={null}
         action="/shadowing"
+        basePath="/shadowing"
         labels={{
           searchLabel: t("hub.sections.search"),
           searchPlaceholder: t("hub.search.placeholder"),

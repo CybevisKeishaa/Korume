@@ -10,12 +10,23 @@ create table collections (
   description text,
   cover_image_url text,
   display_order int not null default 0,
-  created_at timestamptz not null default now()
+  -- A collection's role: a hub shelf, a learning path (a course), or a
+  -- practice goal. A path and a goal are ordered collections, not new entities.
+  kind text not null default 'shelf' check (kind in ('shelf', 'path', 'goal')),
+  -- Goals only: the persisted score a goal trains (accuracy ->
+  -- pronunciation_score, pitch -> pitch_score, rhythm -> rhythm_score).
+  skill_focus text check (skill_focus in ('accuracy', 'pitch', 'rhythm')),
+  -- A short glyph the path and goal cards show (Figma 37:5450); decorative, so nullable.
+  icon text check (char_length(icon) <= 16),
+  created_at timestamptz not null default now(),
+  constraint collections_skill_focus_goal_check check ((kind = 'goal') = (skill_focus is not null))
 );
 
 create table lesson_collections (
   lesson_id uuid not null references videos (id) on delete cascade,
   collection_id uuid not null references collections (id) on delete cascade,
+  -- Editorial order inside a collection; 0 means unordered, so callers keep their existing order.
+  position int not null default 0,
   primary key (lesson_id, collection_id)
 );
 

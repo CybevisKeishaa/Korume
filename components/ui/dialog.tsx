@@ -67,7 +67,7 @@ export function Dialog({
     >
       <span hidden ref={anchorRef} />
       <RadixDialog.Portal>
-        <RadixDialog.Overlay className="fixed inset-0 z-overlay bg-scrim/50" />
+        <RadixDialog.Overlay className="motion-overlay fixed inset-0 z-overlay bg-scrim/50" />
         <RadixDialog.Content
           aria-modal="true"
           ref={contentRef}
@@ -87,7 +87,7 @@ export function Dialog({
           // to override it and avoid a dangling reference.
           {...(description ? {} : { "aria-describedby": undefined })}
           className={cn(
-            "fixed left-1/2 top-1/2 z-overlay max-h-[90vh] w-[calc(100%-2rem)] max-w-lg",
+            "motion-dialog fixed left-1/2 top-1/2 z-overlay max-h-[90vh] w-[calc(100%-2rem)] max-w-lg",
             "-translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border",
             "bg-overlay p-md text-foreground shadow-floating",
             className,

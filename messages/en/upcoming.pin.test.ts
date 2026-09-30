@@ -92,20 +92,10 @@ describe("upcoming.json EN — catalog literals", () => {
   // be asserting the opposite of what ships. Deleting the strings without
   // deleting this test is what would have gone red.
 
-  // Phase 1b's two additions. Both routes ship as UpcomingScreen because the
-  // LOCKED IA gives them a nav row before the feature exists — A6 for
-  // Pronunciation, A2 for Companion — and a row pointing nowhere would make
-  // `deriveNavGroups` throw rather than degrade.
-  it("pins the pronunciation screen copy", () => {
-    expect(en.pronunciation.title).toBe("Pronunciation");
-    expect(en.pronunciation.body).toBe(
-      "Pitch accent, rhythm, and the sounds that keep slipping — practised on their own rather than only inside a lesson.",
-    );
-    expect(en.pronunciation.unlocks).toBe(
-      "Scoring already runs inside Shadowing. This screen is where it becomes practice you can choose.",
-    );
-  });
-
+  // Phase 1b added Companion (A2) with a nav row before the feature exists, so
+  // it ships as UpcomingScreen; a row pointing nowhere would make
+  // `deriveNavGroups` throw rather than degrade. Pronunciation (A6) left this
+  // catalog when /pronunciation became a real page, as `settings` did above.
   it("pins the companion screen copy", () => {
     expect(en.companion.title).toBe("Companion");
     expect(en.companion.body).toBe(

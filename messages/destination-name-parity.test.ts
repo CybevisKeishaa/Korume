@@ -69,7 +69,6 @@ const ONE_NAME_SCREENS: ReadonlyArray<{
   ruling: string;
 }> = [
   { navKey: "companion-home", upcomingKey: "companion", ruling: "A15" },
-  { navKey: "pronunciation-library", upcomingKey: "pronunciation", ruling: "A6" },
 ];
 
 describe("destination name parity — nav row and page title agree", () => {
@@ -78,7 +77,7 @@ describe("destination name parity — nav row and page title agree", () => {
   it("covers both locales and both bound screens", () => {
     expect(LOCALES).toHaveLength(2);
     expect(LOCALES.map((l) => l.locale)).toEqual(["en", "vi"]);
-    expect(ONE_NAME_SCREENS).toHaveLength(2);
+    expect(ONE_NAME_SCREENS).toHaveLength(1);
   });
 
   for (const { locale, nav, upcoming } of LOCALES) {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { createMockSupabase, eqValue, type TableResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
@@ -60,5 +61,35 @@ describe("lesson taxonomy", () => {
     });
     const { getLessonSituations } = await import("@/lib/data/lesson-taxonomy");
     expect(await getLessonSituations("lesson-1")).toEqual([]);
+  });
+
+  it("offers only situations that tag a lesson the viewer can see, in display order", async () => {
+    useTables({
+      lesson_situations: (calls) => {
+        expect(calls).toContainEqual({ op: "order", column: "display_order", ascending: true });
+        return {
+          data: [
+            { id: "s1", slug: "conversation", icon: "💬" },
+            { id: "s2", slug: "restaurant", icon: null },
+            { id: "s3", slug: "cafe", icon: "☕" },
+          ],
+          error: null,
+        };
+      },
+      // An existence probe, not a read of every tagged lesson: it must stop at one row.
+      videos: (calls) => {
+        expect(calls).toContainEqual({ op: "limit", count: 1 });
+        return { data: eqValue(calls, "situation_id") === "s2" ? [] : [{ id: "v" }], error: null };
+      },
+    });
+    const { listPracticeSituations } = await import("@/lib/data/lesson-taxonomy");
+    expect(await listPracticeSituations()).toEqual([
+      { slug: "conversation", icon: "💬" },
+      { slug: "cafe", icon: "☕" },
+    ]);
+  });
+
+  it("keeps each existence-probe result with its situation instead of indexing with a non-null assertion", () => {
+    expect(readFileSync("lib/data/lesson-taxonomy.ts", "utf8")).not.toContain("probes[index]!");
   });
 });

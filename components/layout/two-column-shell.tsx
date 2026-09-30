@@ -6,17 +6,26 @@ import { cn } from "@/lib/utils";
  * rail is a share of the shell — 27.5%, frame 149:2's 339 of 1240 — capped at
  * that frame's own 340px. It was a fixed 300px until 2026-09-20; at a 1280
  * viewport that constant took 19% off the main column, which is the whole of
- * what read as "the right side is too big". The rail must never be the only
- * place information appears.
+ * what read as "the right side is too big".
+ *
+ * The rail may hold unique supplementary information (owner ruling 16,
+ * 2026-09-29), because it stays rendered at every supported layout (below
+ * 1024px the app shows its handoff instead), it is a labelled complementary
+ * landmark, and each card is a labelled region reachable by keyboard and
+ * screen reader. If a future responsive layout can hide or remove the rail,
+ * task-critical information in it needs another accessible home first.
  */
 export function TwoColumnShell({
   children,
+  header,
   rail,
   railLabel,
   className,
   ...props
 }: {
   children: React.ReactNode;
+  /** A row above both columns, so the rail starts below it (frame 37:5331's heading row). */
+  header?: React.ReactNode;
   rail?: React.ReactNode;
   railLabel: string;
 } & React.HTMLAttributes<HTMLDivElement>) {
@@ -34,6 +43,7 @@ export function TwoColumnShell({
       )}
       {...props}
     >
+      {header ? <div className="col-span-full min-w-0">{header}</div> : null}
       <div className="min-w-0">{children}</div>
       {rail ? (
         <aside

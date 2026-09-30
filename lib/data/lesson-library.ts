@@ -25,13 +25,6 @@ export async function findExistingLesson(youtubeVideoId: string): Promise<VideoR
   return (data as VideoRow | null) ?? null;
 }
 
-export async function hasTranscript(lessonId: string): Promise<boolean> {
-  const service = createServiceClient();
-  const { data, error } = await service.from("transcripts").select("id").eq("video_id", lessonId);
-  if (error) throw error;
-  return ((data as { id: string }[] | null) ?? []).length > 0;
-}
-
 function startOfMonth(now: Date): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
@@ -39,15 +32,15 @@ function startOfMonth(now: Date): string {
 /** Count of `user_lesson_library` rows added this calendar month — the ONLY quota ledger (spec §3.2). */
 export async function countMonthlyCreations(userId: string, now: Date = new Date()): Promise<number> {
   const service = createServiceClient();
-  const { data, error } = await service
+  const { count, error } = await service
     .from("user_lesson_library")
-    .select("lesson_id, videos!inner(added_by_user_id, library_access)")
+    .select("lesson_id, videos!inner(added_by_user_id, library_access)", { count: "exact", head: true })
     .eq("user_id", userId)
     .eq("videos.added_by_user_id", userId)
     .eq("videos.library_access", "PRIVATE")
     .gte("added_at", startOfMonth(now));
   if (error) throw error;
-  return ((data as { lesson_id: string }[] | null) ?? []).length;
+  return count ?? 0;
 }
 
 /** Plus is always unlimited; Free is capped at `FREE_MONTHLY_LESSON_QUOTA` per calendar month. */

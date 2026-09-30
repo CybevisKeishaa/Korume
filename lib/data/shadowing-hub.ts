@@ -1,7 +1,9 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getCollectionBySlug, listCollectionLessons } from "@/lib/data/collections";
-import { FREE_MONTHLY_LESSON_QUOTA, countMonthlyCreations, hasTranscript } from "@/lib/data/lesson-library";
+import { containsPattern, fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
+import { FREE_MONTHLY_LESSON_QUOTA, countMonthlyCreations } from "@/lib/data/lesson-library";
 import { PopularStrategyV1 } from "@/lib/data/lesson-ranking";
 import { getRecommendations } from "@/lib/data/recommendations";
 import type { VideoRecommendation } from "@/lib/recommendation-types";
@@ -9,8 +11,12 @@ import type { RecommendationReason } from "@/lib/recommendation-types";
 import { getActivePlanTier, type PlanTier } from "@/lib/data/subscriptions";
 import { requireUser, VIDEO_COLUMNS, type VideoRow } from "@/lib/data/videos";
 import { listSituations, listSources } from "@/lib/data/lesson-taxonomy";
+import type { PronunciationDuration, PronunciationSort } from "@/lib/preferences/options";
+import { JLPT_LEVELS } from "@/lib/conversation-types";
 
 const SHELF_LIMIT = 4;
+const FILTER_COLUMNS = { situation: "situation_id", source: "source_id", level: "jlpt_level_estimate" } as const;
+const RECOMMENDATION_SCAN_LIMIT = 100;
 
 export interface HubLesson {
   id: string;
@@ -45,7 +51,8 @@ export interface HubRailProjection {
 }
 
 export interface HubDiscoveryFilter {
-  kind: "situation" | "source";
+  /** `level` is a JLPT level (`n5`…`n1`); the studio shows it, the Hub does not. */
+  kind: "situation" | "source" | "level";
   slug: string;
 }
 
@@ -53,6 +60,7 @@ export interface HubDiscoveryProjection {
   query: string;
   activeFilter: string | null;
   lessons: HubLesson[];
+  hasMore: boolean;
 }
 
 export interface ShadowingHubData {
@@ -71,17 +79,19 @@ export interface ShadowingHubData {
 
 export type GetShadowingHubResult = { ok: true; data: ShadowingHubData } | { ok: false; status: 401 };
 
-interface LibraryRow {
-  lesson_id: string;
-}
-
-interface ProgressRow {
-  video_id: string;
+interface LearnerVideoRow extends VideoRow {
   last_watched_position: number;
   completed_at: string | null;
+  last_watched_at: string | null;
+  in_progress: boolean;
+  in_library: boolean;
 }
 
-function toHubLesson(video: VideoRow): HubLesson {
+interface HubDiscoveryFilterTag extends HubDiscoveryFilter {
+  id: string;
+}
+
+export function toHubLesson(video: VideoRow): HubLesson {
   return {
     id: video.id,
     youtubeVideoId: video.youtube_video_id,
@@ -89,6 +99,92 @@ function toHubLesson(video: VideoRow): HubLesson {
     durationSeconds: video.duration_seconds,
     thumbnailUrl: video.thumbnail_url,
     jlptLevelEstimate: video.jlpt_level_estimate,
+  };
+}
+
+/** Shared taxonomy-backed discovery read for the Shadowing and Pronunciation hubs. */
+export async function getHubDiscovery(
+  options: { query?: string; filter?: string; browse?: boolean; limit?: number; sort?: PronunciationSort; duration?: PronunciationDuration; hideCompleted?: boolean } = {},
+): Promise<{ filters: HubDiscoveryFilter[]; discovery: HubDiscoveryProjection | null }> {
+  const supabase = createClient();
+  const [situations, sources] = await Promise.all([listSituations(), listSources()]);
+  const filterTags: HubDiscoveryFilterTag[] = [
+    ...situations.map((tag) => ({ kind: "situation" as const, slug: tag.slug, id: tag.id })),
+    ...sources.map((tag) => ({ kind: "source" as const, slug: tag.slug, id: tag.id })),
+  ];
+  const filters = filterTags.map(({ kind, slug }) => ({ kind, slug }));
+  // Levels are not taxonomy rows: `id` is the `jlpt_level` value itself.
+  const levelTags: HubDiscoveryFilterTag[] = JLPT_LEVELS.map((level) => ({ kind: "level", slug: level.toLowerCase(), id: level }));
+  const query = options.query?.trim() ?? "";
+  const activeFilter = [...filterTags, ...levelTags].find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
+
+  if (!query && !activeFilter && !options.browse) return { filters, discovery: null };
+
+  const sort = options.sort ?? "newest";
+  const limit = options.limit ?? SHELF_LIMIT;
+  let search = supabase.from("learner_videos").select(VIDEO_COLUMNS);
+  if (query) search = search.ilike("title", containsPattern(query));
+  if (activeFilter) search = search.eq(FILTER_COLUMNS[activeFilter.kind], activeFilter.id);
+  // A band excludes a lesson with no duration: SQL comparisons drop nulls.
+  if (options.duration === "under_10") search = search.lt("duration_seconds", 600);
+  if (options.duration === "10_30") search = search.gte("duration_seconds", 600).lte("duration_seconds", 1800);
+  if (options.duration === "over_30") search = search.gt("duration_seconds", 1800);
+  if (sort === "shortest") {
+    search = search.order("duration_seconds", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false });
+  } else if (sort !== "in_progress") {
+    search = search.order("created_at", { ascending: false });
+  }
+
+  // Newest and Shortest are whole orders in SQL, so the database cuts the list.
+  const needsLearnerOrder = sort === "recommended" || sort === "in_progress" || Boolean(options.hideCompleted);
+  if (!needsLearnerOrder) {
+    const { data, error } = await search.limit(limit + 1);
+    if (error) throw error;
+    const rows = (data as VideoRow[] | null) ?? [];
+    return {
+      filters,
+      discovery: {
+        query,
+        activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
+        lessons: rows.slice(0, limit).map(toHubLesson),
+        hasMore: rows.length > limit,
+      },
+    };
+  }
+
+  if (options.hideCompleted) search = search.is("completed_at", null);
+  if (sort === "in_progress") {
+    search = search.order("in_progress", { ascending: false })
+      .order("in_progress_last_watched_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false });
+  }
+  search = search.order("id", { ascending: true });
+  const recommendationReadLimit = Math.max(RECOMMENDATION_SCAN_LIMIT, limit) + 1;
+  const { data, error } = await search.limit(sort === "recommended" ? recommendationReadLimit : limit + 1);
+  if (error) throw error;
+  const fetched = (data as LearnerVideoRow[] | null) ?? [];
+  const candidates = fetched.slice(0, sort === "recommended" ? Math.max(RECOMMENDATION_SCAN_LIMIT, limit) : limit + 1);
+
+  // Array.sort is stable, so every tie keeps the SQL order (newest, or shortest).
+  let ordered = candidates;
+  if (sort === "recommended" && candidates.length) {
+    // The i+1 engine's order first; the lessons it did not score keep the SQL order after it.
+    // The engine only reorders: a failure keeps the SQL order instead of failing the search.
+    const recommendations = await getRecommendations({ limit: candidates.length, candidateIds: candidates.map((video) => video.id) })
+      .catch(() => ({ ok: false as const, status: 401 as const }));
+    const rank = new Map(recommendations.ok ? recommendations.data.map((video, index) => [video.videoId, index]) : []);
+    const rankOf = (video: VideoRow) => rank.get(video.id) ?? Number.MAX_SAFE_INTEGER;
+    ordered = [...candidates].sort((left, right) => rankOf(left) - rankOf(right));
+  }
+
+  return {
+    filters,
+    discovery: {
+      query,
+      activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
+      lessons: ordered.slice(0, limit).map(toHubLesson),
+      hasMore: fetched.length > limit,
+    },
   };
 }
 
@@ -102,85 +198,45 @@ export async function getShadowingHub(options: { query?: string; filter?: string
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
 
-  const [libraryResult, videosResult, progressResult, tier, used, popularResult, recommendationsResult, featured, situations, sources] =
+  const [libraryVideos, continueResult, recentResult, tier, used, popularResult, recommendationsResult, featured, hubDiscovery] =
     await Promise.all([
-      supabase.from("user_lesson_library").select("lesson_id").eq("user_id", user.id),
-      supabase.from("videos").select(VIDEO_COLUMNS).order("created_at", { ascending: false }),
-      supabase
-        .from("user_video_progress")
-        .select("video_id, last_watched_position, completed_at")
-        .eq("user_id", user.id),
+      fetchAllPages((from, to) => supabase.from("learner_videos").select(VIDEO_COLUMNS).eq("in_library", true)
+        .order("created_at", { ascending: false }).order("id", { ascending: true }).range(from, to)) as Promise<VideoRow[]>,
+      supabase.from("learner_videos").select(`${VIDEO_COLUMNS}, last_watched_position`).eq("in_progress", true)
+        .order("created_at", { ascending: false }).order("id", { ascending: true }).limit(SHELF_LIMIT),
+      supabase.from("videos").select(VIDEO_COLUMNS).order("created_at", { ascending: false }).order("id", { ascending: true }).limit(SHELF_LIMIT),
       getActivePlanTier(user.id),
       countMonthlyCreations(user.id),
       PopularStrategyV1.rank({ userId: user.id, limit: SHELF_LIMIT }),
       getRecommendations({ limit: SHELF_LIMIT }),
       getCollectionBySlug("featured"),
-      listSituations(),
-      listSources(),
+      getHubDiscovery(options),
     ]);
 
-  if (libraryResult.error) throw libraryResult.error;
-  if (videosResult.error) throw videosResult.error;
-  if (progressResult.error) throw progressResult.error;
-
-  const videos = (videosResult.data as VideoRow[] | null) ?? [];
-  const libraryIds = new Set(((libraryResult.data as LibraryRow[] | null) ?? []).map((row) => row.lesson_id));
-  const libraryVideos = videos.filter(
-    (video) =>
-      libraryIds.has(video.id) ||
-      // A private import whose captions were unavailable has not consumed a
-      // quota slot and is deliberately absent from user_lesson_library. It is
-      // nevertheless the learner's failed import and must remain retryable.
-      (video.library_access === "PRIVATE" && video.added_by_user_id === user.id),
-  );
-
-  const transcriptAvailability = await Promise.all(
-    libraryVideos.map(async (video) => ({ video, available: await hasTranscript(video.id) })),
-  );
-
-  const progressByVideoId = new Map(
-    ((progressResult.data as ProgressRow[] | null) ?? []).map((progress) => [progress.video_id, progress]),
-  );
+  if (continueResult.error) throw continueResult.error;
+  if (recentResult.error) throw recentResult.error;
+  // "Ready" means a transcript exists, whether or not this learner may read it
+  // today (a lapsed PLUS lesson stays ready), so the check reads past RLS.
+  const service = createServiceClient();
+  const transcriptRows = await fetchByIdChunks(libraryVideos.map((video) => video.id), async (ids) => {
+    const { data, error } = await service.rpc("latest_transcript_ids", { p_video_ids: ids });
+    if (error) throw error;
+    return (data as { video_id: string; transcript_id: string }[] | null) ?? [];
+  });
+  const transcriptVideoIds = new Set(transcriptRows.map((row) => row.video_id));
   const featuredLessons = featured ? await listCollectionLessons(featured.id) : [];
   const recommendations = recommendationsResult.ok ? recommendationsResult.data : [];
   const suggestedRecommendation = recommendations.find((recommendation) => recommendation.reason !== null) ?? null;
-  const filterTags = [
-    ...situations.map((tag) => ({ kind: "situation" as const, slug: tag.slug, id: tag.id })),
-    ...sources.map((tag) => ({ kind: "source" as const, slug: tag.slug, id: tag.id })),
-  ];
-  const filters: HubDiscoveryFilter[] = filterTags.map(({ kind, slug }) => ({ kind, slug }));
-  const query = options.query?.trim() ?? "";
-  const activeFilter = filterTags.find((filter) => `${filter.kind}:${filter.slug}` === options.filter) ?? null;
-  let discovery: HubDiscoveryProjection | null = null;
-  if (query || activeFilter) {
-    let search = supabase.from("videos").select(VIDEO_COLUMNS);
-    if (query) search = search.ilike("title", `%${query}%`);
-    if (activeFilter) search = search.eq(activeFilter.kind === "situation" ? "situation_id" : "source_id", activeFilter.id);
-    const { data, error } = await search.order("created_at", { ascending: false }).limit(SHELF_LIMIT);
-    if (error) throw error;
-    discovery = {
-      query,
-      activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
-      lessons: ((data as VideoRow[] | null) ?? []).map(toHubLesson),
-    };
-  }
-
   return {
     ok: true,
     data: {
       featured: featuredLessons[0] ? toHubLesson(featuredLessons[0]) : null,
-      library: transcriptAvailability.map(({ video, available }) => ({
+      library: libraryVideos.map((video) => ({
         lesson: toHubLesson(video),
-        state: available ? "ready" : "unavailable",
+        state: transcriptVideoIds.has(video.id) ? "ready" : "unavailable",
       })),
-      continueLearning: videos
-        .flatMap((video) => {
-          const progress = progressByVideoId.get(video.id);
-          if (!progress || progress.completed_at || progress.last_watched_position <= 0) return [];
-          return [{ lesson: toHubLesson(video), lastWatchedPosition: progress.last_watched_position }];
-        })
-        .slice(0, SHELF_LIMIT),
-      recentlyAdded: videos.slice(0, SHELF_LIMIT).map(toHubLesson),
+      continueLearning: ((continueResult.data as LearnerVideoRow[] | null) ?? []).map((video) => ({ lesson: toHubLesson(video), lastWatchedPosition: video.last_watched_position })),
+      recentlyAdded: ((recentResult.data as VideoRow[] | null) ?? []).map(toHubLesson),
       popular: popularResult.map(toHubLesson),
       recommendations,
       quota: {
@@ -203,8 +259,8 @@ export async function getShadowingHub(options: { query?: string; filter?: string
             }
           : null,
       },
-      filters,
-      discovery,
+      filters: hubDiscovery.filters,
+      discovery: hubDiscovery.discovery,
     },
   };
 }
