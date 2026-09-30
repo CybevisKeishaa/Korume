@@ -21,7 +21,8 @@ describe("HubLessonResultCard", () => {
 
     const link = screen.getByRole("link", { name: lesson.title });
     expect(link).toHaveAttribute("href", "/en/shadowing/l1");
-    expect(link).toHaveAccessibleDescription("7 minutes · N4");
+    // The level badge is described too: it sits on the thumbnail, outside the meta line.
+    expect(link).toHaveAccessibleDescription("N4 7 minutes · N4");
     expect(link).toHaveClass("focus-visible:ring-2");
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(screen.getByText("N4")).toBeInTheDocument();

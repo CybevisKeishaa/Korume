@@ -326,6 +326,17 @@ describe("PronunciationPage", () => {
     expect(screen.getByText(pronunciationCopy.hub.showingFirstLessons.replace("{count}", "1"))).toBeInTheDocument();
   });
 
+  it("keeps an unknown filter in Show more, so a longer page stays the same Browse", async () => {
+    const result = { id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null };
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "", activeFilter: null, lessons: [result], hasMore: true } });
+
+    render(await PronunciationPage({ searchParams: { filter: "situation:removed-slug" } }));
+
+    const more = new URL(screen.getByRole("link", { name: pronunciationCopy.hub.showMore }).getAttribute("href") ?? "", "http://app");
+    expect(Object.fromEntries(more.searchParams)).toEqual({ filter: "situation:removed-slug", shown: "48" });
+  });
+
   it("titles a browse under a known filter as results, with the search empty copy", async () => {
     data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "", activeFilter: "level:n5", lessons: [], hasMore: false } });
     data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
@@ -591,7 +602,7 @@ describe("PronunciationPage", () => {
       expect(within(screen.getByRole("region", { name: "Practice goals" })).getByText(pronunciationCopy.hub.goals.recommended)).toBeInTheDocument();
       expect(within(screen.getByRole("region", { name: "Collections & situations" })).getByRole("link", { name: /Ramen shelf/ })).toHaveAttribute("href", "/pronunciation/collections/ramen-shelf");
       // 70 s is two started minutes, as the featured hero counts them.
-      expect(screen.getByRole("link", { name: "Ramen night" })).toHaveAccessibleDescription("2 min");
+      expect(screen.getByRole("link", { name: "Ramen night" })).toHaveAccessibleDescription("N4 2 min");
       data.getWeeklyPronunciationMetrics.mockResolvedValue({ means: { accuracy: null, pitch: null, rhythm: null }, weakest: null });
       data.getPracticeGoals.mockResolvedValue([]);
     });

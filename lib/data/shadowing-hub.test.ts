@@ -356,6 +356,12 @@ describe("getHubDiscovery", () => {
     await expect(getHubDiscovery({ query: "lesson", sort: "recommended", limit: 1, withTotal: true })).resolves.toMatchObject({ discovery: { total: 150 } });
   });
 
+  it("counts on countOnly alone: a count-only read never silently answers 0", async () => {
+    mockClient(USER, { videos: [PRIVATE_LESSON] });
+
+    await expect(getHubDiscovery({ query: "lesson", browse: true, countOnly: true })).resolves.toMatchObject({ discovery: { total: 1, lessons: [] } });
+  });
+
   it("counts discovery matches with only the filtered head query", async () => {
     const videoQueries: QueryCall[][] = [];
     mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });

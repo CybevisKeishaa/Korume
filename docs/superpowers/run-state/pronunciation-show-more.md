@@ -21,7 +21,10 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 (reviewed; fix: q cut to the schema bound) · `3535787` plan correction · `4d2be4a` **Task 2** `search_learning_collections`
 (live gate + 2 live mutations red) · `21a3d4b` **Task 3** data facade
 (reviewed; fixes: counts = the shown group's own total, one shelf-visibility rule) ·
-`ccd5e56` **Task 4** grid CSS + compact card (reviewed; fixes: min() for 1.4.10, pinned gap).
+`ccd5e56` **Task 4** grid CSS + compact card (reviewed; fixes: min() for 1.4.10, pinned gap) ·
+`83340ba` **Task 5** page, three states, tabs (Claude; reviewed; fixes: chip keeps the Lessons tab,
+any type without q redirects, pager focus by card) · `8c8a38c` **Task 6** e2e · whole-branch review:
+MERGEABLE, minors fixed in the follow-up commit.
 
 ## Contracts and decisions
 
@@ -46,7 +49,9 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 `dac0259`: vitest 3644, e2e green. `3eccde0`: tsc/lint/protocol/vitest 0 (3659). `4d2be4a`: db reset,
 verify:db pronunciation/settings/lesson-jobs 0; same four gates 0. `21a3d4b`:
 four gates 0 (3672), 4 mutations red. `ccd5e56`: four gates 0
-(3676), mutations red (1rem breakpoints, nth-child swap, no min(), name).
+(3676), mutations red (1rem breakpoints, nth-child swap, no min(), name). Branch tip: fresh
+db reset, verify:db pronunciation/settings/lesson-jobs 0, vitest 3691, e2e pronunciation-search +
+pronunciation + shadowing-hub + shadowing-explore 24/24 on a worktree build (port 3000).
 
 ## Working tree and environment
 
@@ -64,7 +69,10 @@ None.
 
 ## Next actions
 
-1. Claude: Task 5 (page, three states, tabs), packet `.superpowers/sdd/pronunciation-show-more/task-5-brief.md`;
-   a lesson renders once per page (the card's element ids rely on it).
-2. Claude: independent `code-reviewer`, commit; then Tasks 2-5 the same way;
-   Task 6 (Playwright) by Claude.
+1. OWNER: look in Chrome (nav shown and hidden) — `npx next dev -p 3001` from the worktree, or the
+   built server on 3000; try `?q=ramen`, each tab, Show more, Hide navigation.
+2. OWNER: merge decision (`git merge --no-ff pronunciation-show-more` on master; owner pushes).
+3. Known, not scheduled: `isPronunciationResultMode`'s q branch is unreachable (tested, harmless);
+   `search_learning_collections.p_offset` is always 0 (pages grow by limit); a search request still
+   reads the curated shelves' data it does not render (as master did in result mode); the e2e seed's
+   30 FREE lessons are visible to specs running in parallel (no current assertion depends on counts).

@@ -97,12 +97,19 @@ pager and focus behaviour as Lessons), no lesson controls.
   no horizontal overflow.
 - The right rail keeps its width; the space freed by collapsing the nav goes to the result pane.
 - **`HubLessonResultCard`** (new; the `/shadowing` card is untouched): 16:9 thumbnail scaled to the
-  card width, title clamped to 2 lines, one meta line (duration · JLPT), the whole card is the link
-  (accessible name = lesson title), no separate "Start" button.
+  card width, title clamped to 2 lines, the whole card is the link (accessible name = lesson title),
+  no separate "Start" button. As built: the JLPT level is a badge on the thumbnail and the meta line is the
+  duration; both are the link's accessible description.
 - Paths and goals reuse `HubPathCard`; collections `HubCollectionCard`; situations `HubSituationTile` —
   inside the same grid, so the search shares the default screen's design language.
 
 ## Data
+
+> **As built (correction 2026-10-01):** paths and goals are one `searchLearningCollections(kind)` over the
+> SQL function `search_learning_collections` (rows + `count(*) over ()`, security invoker, so a collection
+> counts only with a lesson the caller can see; PLUS lessons are visible to everyone). The library is
+> `searchLibrary`, counted in code. A group whose rows are read reports its own total as its count; only
+> the other groups are counted. The tree below is the original design.
 
 `getPronunciationSearch(...)` is a thin **facade** over typed, independent functions; adding a sixth
 kind adds a function, not a branch:

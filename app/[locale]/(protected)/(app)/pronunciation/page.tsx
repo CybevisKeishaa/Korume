@@ -147,11 +147,12 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   const shortDate = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "Asia/Ho_Chi_Minh" });
   const relativeDay = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const continueLesson = recent[0]?.lesson ?? course?.next ?? null;
-  // "Show more" in Browse is the same URL one page longer: the filter the data
-  // layer applied plus the display values the URL set, so nothing resets.
+  // "Show more" in Browse is the same URL one page longer: the URL's own
+  // filter (even one the data layer did not know, so the page stays Browse)
+  // plus the display values the URL set, so nothing resets.
   const moreHref = discovery?.hasMore && resultLimit < RESULT_MAX_LIMIT ? (() => {
     const params = new URLSearchParams();
-    if (discovery.activeFilter) params.set("filter", discovery.activeFilter);
+    if (filter) params.set("filter", filter);
     for (const key of ["sort", "duration", "hideCompleted"]) { const value = param(key); if (value) params.set(key, value); }
     params.set("shown", String(resultLimit + RESULT_PAGE_SIZE));
     return `/pronunciation?${params.toString()}`;

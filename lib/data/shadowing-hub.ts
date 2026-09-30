@@ -145,7 +145,8 @@ export async function getHubDiscovery(
     return search as unknown as T;
   };
   let search = applyDiscoveryFilters(supabase.from("learner_videos").select(VIDEO_COLUMNS));
-  const totalRead = options.withTotal
+  // A count-only read is a count read: countOnly implies withTotal.
+  const totalRead = options.withTotal || options.countOnly
     ? applyDiscoveryFilters(supabase.from("learner_videos").select("id", { count: "exact", head: true }))
     : null;
   if (options.countOnly) {
