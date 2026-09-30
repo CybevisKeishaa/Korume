@@ -35,5 +35,31 @@ alter table lesson_collections enable row level security;
 
 create policy collections_read on collections for select to authenticated using (true);
 create policy lesson_collections_read on lesson_collections for select to authenticated using (true);
+
+-- The pronunciation search's paths and goals: one home for rows and count so
+-- a tab count cannot include a collection whose member lessons RLS hides.
+create function search_learning_collections(p_kind text, p_pattern text, p_limit int, p_offset int)
+  returns table (collection_id uuid, total bigint)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select c.id, count(*) over ()
+  from collections c
+  where c.kind = p_kind
+    and c.title ilike p_pattern
+    and exists (
+      select 1
+      from lesson_collections lc
+      join videos v on v.id = lc.lesson_id
+      where lc.collection_id = c.id
+    )
+  order by c.display_order, c.id
+  limit greatest(p_limit, 0) offset greatest(p_offset, 0);
+$$;
+
+revoke all on function search_learning_collections(text, text, int, int) from public, anon;
+grant execute on function search_learning_collections(text, text, int, int) to authenticated;
 -- Writes are service-role only (admin curation flow) — no insert/update/delete policy needed, same
 -- convention as radicals/kanji/vocab/grammar_points/badges/jlpt_tests.
