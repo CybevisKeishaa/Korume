@@ -27,7 +27,7 @@
 
 1. A query of only spaces, or of `%`, `_`, `\`, `*` → spaces mean no search (Default/Browse); the others match literally, never as wildcards.
 2. `type=foo&shown=48&sort=shortest` → one redirect to the same URL without `type` (and without `shown`, which All ignores), keeping `q` and the lesson settings; no redirect loop.
-3. A path whose every lesson is PLUS, for a Free learner → absent from the Paths rows **and** from `Learning paths (N)`; never "count 4, three cards".
+3. A path whose every lesson is hidden by `videos` RLS (another learner's PRIVATE lesson) → absent from the Paths rows **and** from `Learning paths (N)`; never "count 4, three cards". (Correction 2026-10-01: PLUS lessons are NOT hidden — `20260731000023_plus_metadata_visible.sql` shows them to everyone for upsell, so a PLUS-only path is visible and counted, exactly as `getCollectionViews` shows it. The Task 2 gate draft below is superseded by `.superpowers/sdd/pronunciation-show-more/task-2-brief.md`.)
 4. Library ordering with Vietnamese diacritics and equal labels → `Intl.Collator` order for the request locale, ties by kind then id; the All preview is the first four of exactly that order.
 5. Toggling the AppNav on the result page → the grid reflows from 3 to 4 columns without reload, and the hidden preview items leave the accessibility tree.
 
