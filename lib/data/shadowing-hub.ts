@@ -61,6 +61,8 @@ export interface HubDiscoveryProjection {
   activeFilter: string | null;
   lessons: HubLesson[];
   hasMore: boolean;
+  /** Exact filtered match count, requested only by the pronunciation search facade. */
+  total?: number;
 }
 
 export interface ShadowingHubData {
@@ -104,7 +106,7 @@ export function toHubLesson(video: VideoRow): HubLesson {
 
 /** Shared taxonomy-backed discovery read for the Shadowing and Pronunciation hubs. */
 export async function getHubDiscovery(
-  options: { query?: string; filter?: string; browse?: boolean; limit?: number; sort?: PronunciationSort; duration?: PronunciationDuration; hideCompleted?: boolean } = {},
+  options: { query?: string; filter?: string; browse?: boolean; limit?: number; sort?: PronunciationSort; duration?: PronunciationDuration; hideCompleted?: boolean; withTotal?: boolean; countOnly?: boolean } = {},
 ): Promise<{ filters: HubDiscoveryFilter[]; discovery: HubDiscoveryProjection | null }> {
   const supabase = createClient();
   const [situations, sources] = await Promise.all([listSituations(), listSources()]);
@@ -122,13 +124,38 @@ export async function getHubDiscovery(
 
   const sort = options.sort ?? "newest";
   const limit = options.limit ?? SHELF_LIMIT;
-  let search = supabase.from("learner_videos").select(VIDEO_COLUMNS);
-  if (query) search = search.ilike("title", containsPattern(query));
-  if (activeFilter) search = search.eq(FILTER_COLUMNS[activeFilter.kind], activeFilter.id);
-  // A band excludes a lesson with no duration: SQL comparisons drop nulls.
-  if (options.duration === "under_10") search = search.lt("duration_seconds", 600);
-  if (options.duration === "10_30") search = search.gte("duration_seconds", 600).lte("duration_seconds", 1800);
-  if (options.duration === "over_30") search = search.gt("duration_seconds", 1800);
+  type FilterableDiscoveryQuery = {
+    ilike(column: string, pattern: string): FilterableDiscoveryQuery;
+    eq(column: string, value: string): FilterableDiscoveryQuery;
+    lt(column: string, value: number): FilterableDiscoveryQuery;
+    gte(column: string, value: number): FilterableDiscoveryQuery;
+    lte(column: string, value: number): FilterableDiscoveryQuery;
+    gt(column: string, value: number): FilterableDiscoveryQuery;
+    is(column: string, value: null): FilterableDiscoveryQuery;
+  };
+  const applyDiscoveryFilters = <T,>(queryBuilder: T): T => {
+    let search = queryBuilder as unknown as FilterableDiscoveryQuery;
+    if (query) search = search.ilike("title", containsPattern(query));
+    if (activeFilter) search = search.eq(FILTER_COLUMNS[activeFilter.kind], activeFilter.id);
+    // A band excludes a lesson with no duration: SQL comparisons drop nulls.
+    if (options.duration === "under_10") search = search.lt("duration_seconds", 600);
+    if (options.duration === "10_30") search = search.gte("duration_seconds", 600).lte("duration_seconds", 1800);
+    if (options.duration === "over_30") search = search.gt("duration_seconds", 1800);
+    if (options.hideCompleted) search = search.is("completed_at", null);
+    return search as unknown as T;
+  };
+  let search = applyDiscoveryFilters(supabase.from("learner_videos").select(VIDEO_COLUMNS));
+  const totalRead = options.withTotal
+    ? applyDiscoveryFilters(supabase.from("learner_videos").select("id", { count: "exact", head: true }))
+    : null;
+  if (options.countOnly) {
+    const totalResult = await totalRead;
+    if (totalResult?.error) throw totalResult.error;
+    return {
+      filters,
+      discovery: { query, activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null, lessons: [], hasMore: false, total: totalResult?.count ?? 0 },
+    };
+  }
   if (sort === "shortest") {
     search = search.order("duration_seconds", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false });
   } else if (sort !== "in_progress") {
@@ -139,8 +166,9 @@ export async function getHubDiscovery(
   const needsLearnerOrder = sort === "recommended" || sort === "in_progress" || Boolean(options.hideCompleted);
   if (!needsLearnerOrder) {
     // `id` makes the order total: a longer page ("Show more") keeps the cards already shown in place.
-    const { data, error } = await search.order("id", { ascending: true }).limit(limit + 1);
+    const [{ data, error }, totalResult] = await Promise.all([search.order("id", { ascending: true }).limit(limit + 1), totalRead]);
     if (error) throw error;
+    if (totalResult?.error) throw totalResult.error;
     const rows = (data as VideoRow[] | null) ?? [];
     return {
       filters,
@@ -149,11 +177,11 @@ export async function getHubDiscovery(
         activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
         lessons: rows.slice(0, limit).map(toHubLesson),
         hasMore: rows.length > limit,
+        ...(options.withTotal ? { total: totalResult?.count ?? 0 } : {}),
       },
     };
   }
 
-  if (options.hideCompleted) search = search.is("completed_at", null);
   if (sort === "in_progress") {
     search = search.order("in_progress", { ascending: false })
       .order("in_progress_last_watched_at", { ascending: false, nullsFirst: false })
@@ -161,8 +189,9 @@ export async function getHubDiscovery(
   }
   search = search.order("id", { ascending: true });
   const recommendationReadLimit = Math.max(RECOMMENDATION_SCAN_LIMIT, limit) + 1;
-  const { data, error } = await search.limit(sort === "recommended" ? recommendationReadLimit : limit + 1);
+  const [{ data, error }, totalResult] = await Promise.all([search.limit(sort === "recommended" ? recommendationReadLimit : limit + 1), totalRead]);
   if (error) throw error;
+  if (totalResult?.error) throw totalResult.error;
   const fetched = (data as LearnerVideoRow[] | null) ?? [];
   const candidates = fetched.slice(0, sort === "recommended" ? Math.max(RECOMMENDATION_SCAN_LIMIT, limit) : limit + 1);
 
@@ -185,8 +214,20 @@ export async function getHubDiscovery(
       activeFilter: activeFilter ? `${activeFilter.kind}:${activeFilter.slug}` : null,
       lessons: ordered.slice(0, limit).map(toHubLesson),
       hasMore: fetched.length > limit,
+      ...(options.withTotal ? { total: totalResult?.count ?? 0 } : {}),
     },
   };
+}
+
+/** Exact discovery count without loading a candidate lesson row. */
+export async function getHubDiscoveryCount(options: {
+  query: string;
+  filter?: string;
+  duration?: PronunciationDuration;
+  hideCompleted?: boolean;
+}): Promise<number> {
+  const { discovery } = await getHubDiscovery({ ...options, browse: true, withTotal: true, countOnly: true });
+  return discovery?.total ?? 0;
 }
 
 /**

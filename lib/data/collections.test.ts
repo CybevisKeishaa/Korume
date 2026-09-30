@@ -32,6 +32,46 @@ describe("collections", () => {
     recommendationEngine.knowsAnyVocabulary.mockReset().mockResolvedValue(true);
   });
 
+  it("returns requested collection views in RPC id order", async () => {
+    const collection = (id: string, display_order: number) => ({ id, slug: id, title: id, description: null, cover_image_url: null, display_order, kind: "path", skill_focus: null, icon: null });
+    const video = (id: string) => ({ id, youtube_video_id: `yt-${id}`, title: id, duration_seconds: 60, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-01-01T00:00:00Z" });
+    let collectionCalls: import("@/test/supabase-mock").QueryCall[] = [];
+    useTables({
+      collections: (calls) => { collectionCalls = calls; return { data: [collection("a", 1), collection("b", 2)], error: null }; },
+      lesson_collections: () => ({ data: [{ collection_id: "a", lesson_id: "a", position: 1 }, { collection_id: "b", lesson_id: "b", position: 1 }], error: null }),
+      videos: () => ({ data: [video("a"), video("b")], error: null }),
+      user_video_progress: () => ({ data: [], error: null }),
+    });
+    const { getCollectionViews } = await import("@/lib/data/collections");
+
+    await expect(getCollectionViews("path", { ids: ["b", "a"] })).resolves.toMatchObject([{ collection: { id: "b" } }, { collection: { id: "a" } }]);
+    expect(collectionCalls).toContainEqual({ op: "in", column: "id", values: ["b", "a"] });
+  });
+
+  it("drops a requested collection whose every lesson RLS hides, without failing", async () => {
+    const collection = (id: string) => ({ id, slug: id, title: id, description: null, cover_image_url: null, display_order: 1, kind: "path", skill_focus: null, icon: null });
+    const video = (id: string) => ({ id, youtube_video_id: `yt-${id}`, title: id, duration_seconds: 60, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-01-01T00:00:00Z" });
+    useTables({
+      collections: () => ({ data: [collection("open"), collection("hidden")], error: null }),
+      lesson_collections: () => ({ data: [{ collection_id: "open", lesson_id: "v-open", position: 1 }, { collection_id: "hidden", lesson_id: "v-hidden", position: 1 }], error: null }),
+      // RLS returns only the visible lesson.
+      videos: () => ({ data: [video("v-open")], error: null }),
+      user_video_progress: () => ({ data: [], error: null }),
+    });
+    const { getCollectionViews } = await import("@/lib/data/collections");
+
+    const views = await getCollectionViews("path", { ids: ["hidden", "open"] });
+    expect(views.map((view) => view.collection.id)).toEqual(["open"]);
+  });
+
+  it("does not create a query for an empty collection id page", async () => {
+    vi.mocked(createClient).mockClear();
+    const { getCollectionViews } = await import("@/lib/data/collections");
+
+    await expect(getCollectionViews("path", { ids: [] })).resolves.toEqual([]);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
   it("skips both engine passes when the learner knows no word, since no pick could carry a reason", async () => {
     recommendationEngine.knowsAnyVocabulary.mockResolvedValue(false);
     const { getSenseiRecommendation } = await import("@/lib/data/collections");

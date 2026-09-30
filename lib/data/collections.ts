@@ -157,10 +157,16 @@ interface ProgressRow {
   last_watched_at: string | null;
 }
 
-interface CollectionView extends CollectionProgressSummary {
+export interface CollectionView extends CollectionProgressSummary {
   memberRows: { collection_id: string; lesson_id: string; position: number }[];
   lessons: VideoRow[];
   progressById: Map<string, ProgressRow>;
+}
+
+/** The shared card projection for paths, goals, and pronunciation search results. */
+export function toCollectionProgressSummary(view: CollectionView): CollectionProgressSummary {
+  const { collection, total, completed, next, started, lessonCount, durationMinutes, lessonIds } = view;
+  return { collection, total, completed, next, started, lessonCount, durationMinutes, lessonIds };
 }
 
 /**
@@ -174,13 +180,18 @@ export function lastActivityAt(watchedAt: string | null | undefined, spokenAt: s
 }
 
 /** The shared per-collection progress view for paths and goals. */
-async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView[]> {
+export async function getCollectionViews(kind: "path" | "goal", options?: { ids?: string[] }): Promise<CollectionView[]> {
+  if (options?.ids?.length === 0) return [];
   const supabase = createClient();
   // Curated paths and goals: cardinality stays far below PostgREST max_rows.
-  const { data: candidateRows, error: candidateError } = await supabase
-    .from("collections").select(COLLECTION_COLUMNS).eq("kind", kind).order("display_order", { ascending: true });
+  let candidatesQuery = supabase.from("collections").select(COLLECTION_COLUMNS).eq("kind", kind);
+  if (options?.ids) candidatesQuery = candidatesQuery.in("id", options.ids);
+  const { data: candidateRows, error: candidateError } = await candidatesQuery.order("display_order", { ascending: true });
   if (candidateError) throw candidateError;
-  const candidates = ((candidateRows as CollectionRow[] | null) ?? []).map(toCollection);
+  const rows = ((candidateRows as CollectionRow[] | null) ?? []).map(toCollection);
+  const candidates = options?.ids
+    ? options.ids.flatMap((id) => rows.filter((collection) => collection.id === id))
+    : rows;
   if (!candidates.length) return [];
 
   const memberships = await fetchByIdChunks(
@@ -241,18 +252,15 @@ export async function getLearningPaths(): Promise<LearningPaths> {
   if (!views.length) return { featured: null, paths: [] };
 
   const supabase = createClient();
-  const [spokenRows, { data: savedRows, error: savedError }] = await Promise.all([
+  const [spokenRows, savedIds] = await Promise.all([
     // The newest session per lesson, aggregated in SQL: sessions outgrow max_rows.
     fetchByIdChunks([...new Set(views.flatMap((view) => view.lessonIds))], async (ids) => {
       const { data, error } = await supabase.rpc("lesson_last_spoken_at", { p_video_ids: ids });
       if (error) throw error;
       return (data as { video_id: string; spoken_at: string }[] | null) ?? [];
     }),
-    // At most one saved row per collection for this caller (primary key).
-    supabase.from("user_saved_collections").select("collection_id"),
+    savedCollectionIds(),
   ]);
-  if (savedError) throw savedError;
-  const savedIds = new Set(((savedRows as { collection_id: string }[] | null) ?? []).map((row) => row.collection_id));
   const spokenAtById = new Map(spokenRows.map((row) => [row.video_id, row.spoken_at]));
   const activityOf = (view: CollectionView, lessonId: string) =>
     lastActivityAt(view.progressById.get(lessonId)?.last_watched_at, spokenAtById.get(lessonId));
@@ -261,17 +269,7 @@ export async function getLearningPaths(): Promise<LearningPaths> {
     return at !== null && (latest === null || at > latest) ? at : latest;
   }, null);
 
-  const paths: PathSummary[] = views.map((view) => ({
-    collection: view.collection,
-    total: view.total,
-    completed: view.completed,
-    next: view.next,
-    started: view.started,
-    lessonCount: view.lessonCount,
-    durationMinutes: view.durationMinutes,
-    lessonIds: view.lessonIds,
-    saved: savedIds.has(view.collection.id),
-  }));
+  const paths: PathSummary[] = views.map((view) => ({ ...toCollectionProgressSummary(view), saved: savedIds.has(view.collection.id) }));
 
   const unfinished = (view: CollectionView) => view.completed < view.total;
   // Rule 2: the unfinished path the learner touched last, watching or speaking
@@ -334,9 +332,7 @@ export async function getLearningPaths(): Promise<LearningPaths> {
 /** Every visible goal, in authored display order, with the same progress derivation as paths. */
 export async function getPracticeGoals(): Promise<PracticeGoalSummary[]> {
   const views = await getCollectionViews("goal");
-  return views.map(({ collection, total, completed, next, started, lessonCount, durationMinutes, lessonIds }) => (
-    { collection, total, completed, next, started, lessonCount, durationMinutes, lessonIds }
-  ));
+  return views.map(toCollectionProgressSummary);
 }
 
 /** Exactly one recommended badge: the first authored goal training the weakest measured metric. */
@@ -481,6 +477,14 @@ export async function getShadowingCollections(): Promise<ShadowingCollectionSumm
 
 export async function getFeaturedCourse(): Promise<FeaturedCourse | null> {
   return (await getLearningPaths()).featured;
+}
+
+/** At most one saved row per collection for this caller (primary key). */
+export async function savedCollectionIds(): Promise<Set<string>> {
+  const supabase = createClient();
+  const { data, error } = await supabase.from("user_saved_collections").select("collection_id");
+  if (error) throw error;
+  return new Set(((data as { collection_id: string }[] | null) ?? []).map((row) => row.collection_id));
 }
 
 const SAVE_LIMIT = { limit: 30, windowMs: 60_000 };
