@@ -20,7 +20,8 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 `84fd661` plan · `d8b1cf1` run state · `3eccde0` **Task 1** URL contract
 (reviewed; fix: q cut to the schema bound) · `3535787` plan correction · `4d2be4a` **Task 2** `search_learning_collections`
 (live gate + 2 live mutations red) · `21a3d4b` **Task 3** data facade
-(reviewed; fixes: counts = the shown group's own total, one shelf-visibility rule).
+(reviewed; fixes: counts = the shown group's own total, one shelf-visibility rule) ·
+`ccd5e56` **Task 4** grid CSS + compact card (reviewed; fixes: min() for 1.4.10, pinned gap).
 
 ## Contracts and decisions
 
@@ -44,14 +45,16 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 
 `dac0259`: vitest 3644, e2e green. `3eccde0`: tsc/lint/protocol/vitest 0 (3659). `4d2be4a`: db reset,
 verify:db pronunciation/settings/lesson-jobs 0; same four gates 0. `21a3d4b`:
-four gates 0 (3672), 4 mutations red.
+four gates 0 (3672), 4 mutations red. `ccd5e56`: four gates 0
+(3676), mutations red (1rem breakpoints, nth-child swap, no min(), name).
 
 ## Working tree and environment
 
-- Owner: Codex
+- Owner: Claude
 
 Worktree `.worktrees/pronunciation-show-more` (own `node_modules`, `.env.local`).
-Codex never commits, never runs Playwright or Docker; Claude runs DB steps,
+Codex hit its usage limit during Task 4 (back 06:45); Claude implements
+Task 5 itself (standing rule). Codex never commits, never runs Playwright or Docker; Claude runs DB steps,
 reviews, commits. Untracked `tests/e2e/.probe/` and 30 local rows
 `showmore-probe-%` rows were wiped by the Task 2 db reset; Task 6 deletes `.probe/`.
 
@@ -61,6 +64,7 @@ None.
 
 ## Next actions
 
-1. Codex: Task 4 (grid CSS + compact card), packet `.superpowers/sdd/pronunciation-show-more/task-4-brief.md`.
+1. Claude: Task 5 (page, three states, tabs), packet `.superpowers/sdd/pronunciation-show-more/task-5-brief.md`;
+   a lesson renders once per page (the card's element ids rely on it).
 2. Claude: independent `code-reviewer`, commit; then Tasks 2-5 the same way;
    Task 6 (Playwright) by Claude.
