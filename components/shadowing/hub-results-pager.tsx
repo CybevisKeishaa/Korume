@@ -26,7 +26,13 @@ export function HubResultsPager({ count, more, children }: {
     const from = focusFrom.current;
     if (from === null || pending || count <= from) return;
     focusFrom.current = null;
-    listRef.current?.querySelectorAll<HTMLElement>("li a")[from]?.focus();
+    // The first new card, then its link (else its first control, else the
+    // card itself): a card may hold no link at all (a path with no next
+    // lesson), so links are never counted across cards.
+    const card = listRef.current?.querySelectorAll<HTMLElement>(":scope > ul > li")[from];
+    const target = card?.querySelector<HTMLElement>("a[href]") ?? card?.querySelector<HTMLElement>("button") ?? card;
+    if (target === card && card) card.tabIndex = -1;
+    target?.focus();
   }, [count, pending]);
 
   return (

@@ -29,6 +29,21 @@ describe("HubResultsPager", () => {
     expect(screen.getByRole("link", { name: "Lesson 2" })).toHaveFocus();
   });
 
+  it("counts cards, not links: a card without a link never shifts focus onto the wrong card", async () => {
+    const user = userEvent.setup();
+    const cards = (count: number) => (
+      <ul>{Array.from({ length: count }, (_, index) => (
+        // Card 0 holds no link (a path with no next lesson) but a Save button.
+        <li key={index}>{index === 0 ? <button type="button">Save {index}</button> : <a href={`/shadowing/l${index}`}>Lesson {index}</a>}</li>
+      ))}</ul>
+    );
+    const { rerender } = render(<HubResultsPager count={2} more={more}>{cards(2)}</HubResultsPager>);
+
+    await user.click(screen.getByRole("link", { name: more.label }));
+    rerender(<HubResultsPager count={4} more={null}>{cards(4)}</HubResultsPager>);
+    expect(screen.getByRole("link", { name: "Lesson 2" })).toHaveFocus();
+  });
+
   it("does not drop focus to the page top when the last page removes the link", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<HubResultsPager count={2} more={more}>{list(2)}</HubResultsPager>);

@@ -38,6 +38,17 @@ const data = vi.hoisted(() => ({
   getSenseiRecommendation: vi.fn().mockResolvedValue(null),
   getMyPreferences: vi.fn().mockResolvedValue(null),
   getJlptSpeakingSummary: vi.fn().mockResolvedValue([]),
+  getPronunciationSearch: vi.fn(),
+  // next-intl redirect: the href object it receives, flattened to the URL it would produce.
+  redirect: vi.fn(({ href }: { href: { pathname: string; query: Record<string, string> } }) => {
+    const suffix = new URLSearchParams(href.query).toString();
+    throw new Error(`NEXT_REDIRECT ${suffix ? `${href.pathname}?${suffix}` : href.pathname}`);
+  }),
+}));
+
+vi.mock("@/lib/data/pronunciation-search", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/data/pronunciation-search")>()),
+  getPronunciationSearch: data.getPronunciationSearch,
 }));
 
 vi.mock("@/lib/data/shadowing-hub", async (importOriginal) => ({
@@ -65,6 +76,7 @@ vi.mock("@/lib/data/pronunciation-metrics", async (importOriginal) => ({
 vi.mock("@/lib/data/preferences", () => ({ getMyPreferences: data.getMyPreferences }));
 
 const noDiscovery = { filters: [{ kind: "situation", slug: "restaurant" }], discovery: null };
+const emptySearch = { counts: { lessons: 0, paths: 0, goals: 0, library: 0 } };
 
 function video(id: string, title: string) {
   return {
@@ -84,7 +96,12 @@ vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ href, ...props }: React.ComponentProps<"a">) => <a href={href} {...props} />,
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
   usePathname: () => "/pronunciation",
-  getPathname: vi.fn().mockReturnValue("/pronunciation"),
+  redirect: data.redirect,
+  getPathname: vi.fn(({ href }: { href: string | { pathname: string; query: Record<string, string> } }) => {
+    if (typeof href === "string") return href;
+    const suffix = new URLSearchParams(href.query).toString();
+    return suffix ? `${href.pathname}?${suffix}` : href.pathname;
+  }),
 }));
 
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
@@ -196,9 +213,12 @@ describe("PronunciationPage", () => {
     expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "shortest", duration: "under_10", hideCompleted: true, browse: true, limit: 24 }));
     await PronunciationPage({ searchParams: { sort: "newest" } });
     expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "newest", duration: null, hideCompleted: false }));
-    // A bad `q` fails only the search params; the display params still win.
-    await PronunciationPage({ searchParams: { q: "x".repeat(101), sort: "shortest" } });
-    expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "shortest", duration: null, hideCompleted: false }));
+    // An over-long q is searched by its start and never drops the filter or the display params.
+    data.getPronunciationSearch.mockResolvedValue(emptySearch);
+    await PronunciationPage({ searchParams: { q: "x".repeat(101), filter: "level:n5", sort: "shortest" } });
+    expect(data.getPronunciationSearch).toHaveBeenLastCalledWith(expect.objectContaining({
+      q: "x".repeat(100), settings: { filter: "level:n5", sort: "shortest", duration: null, hideCompleted: false },
+    }));
   });
 
   it("renders the catalog heading and pronunciation discovery controls without undefined sliders", async () => {
@@ -281,44 +301,40 @@ describe("PronunciationPage", () => {
   it("shows more by growing the page in the URL, keeping every discovery setting, only while more exist", async () => {
     const result = { id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null };
     data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
-    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "ramen", activeFilter: "level:n5", lessons: [result], hasMore: true } });
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "", activeFilter: "level:n5", lessons: [result], hasMore: true } });
 
-    const { unmount } = render(await PronunciationPage({ searchParams: { q: "ramen", filter: "level:n5", sort: "shortest", hideCompleted: "true", shown: "48" } }));
+    const { unmount } = render(await PronunciationPage({ searchParams: { filter: "level:n5", sort: "shortest", hideCompleted: "true", shown: "48" } }));
 
     expect(data.getHubDiscovery).toHaveBeenLastCalledWith(expect.objectContaining({ browse: true, limit: 48 }));
     const more = new URL(screen.getByRole("link", { name: pronunciationCopy.hub.showMore }).getAttribute("href")!, "http://app");
     expect(more.pathname).toMatch(/\/pronunciation$/);
-    expect(Object.fromEntries(more.searchParams)).toEqual({ q: "ramen", filter: "level:n5", sort: "shortest", hideCompleted: "true", shown: "72" });
+    expect(Object.fromEntries(more.searchParams)).toEqual({ filter: "level:n5", sort: "shortest", hideCompleted: "true", shown: "72" });
     // A new search or chip is a new result set: only Show more carries `shown`.
     expect(document.querySelector('input[name="shown"]')).toBeNull();
     expect(screen.getAllByRole("link").filter((link) => link.getAttribute("href")?.includes("shown=")).map((link) => link.textContent)).toEqual([pronunciationCopy.hub.showMore]);
     unmount();
 
-    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "ramen", activeFilter: null, lessons: [result], hasMore: false } });
-    const { unmount: unmountWhole } = render(await PronunciationPage({ searchParams: { q: "ramen" } }));
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "", activeFilter: null, lessons: [result], hasMore: false } });
+    const { unmount: unmountWhole } = render(await PronunciationPage({ searchParams: { sort: "shortest" } }));
     expect(screen.queryByRole("link", { name: pronunciationCopy.hub.showMore })).not.toBeInTheDocument();
     unmountWhole();
 
     // At the surface's ceiling the summary still says more exist, but there is no next page to offer.
-    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "ramen", activeFilter: null, lessons: [result], hasMore: true } });
-    render(await PronunciationPage({ searchParams: { q: "ramen", shown: String(RESULT_MAX_LIMIT) } }));
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "", activeFilter: null, lessons: [result], hasMore: true } });
+    render(await PronunciationPage({ searchParams: { sort: "shortest", shown: String(RESULT_MAX_LIMIT) } }));
     expect(screen.queryByRole("link", { name: pronunciationCopy.hub.showMore })).not.toBeInTheDocument();
     expect(screen.getByText(pronunciationCopy.hub.showingFirstLessons.replace("{count}", "1"))).toBeInTheDocument();
   });
 
-  it("labels searched discovery as Search results without a truncation line", async () => {
-    data.getHubDiscovery.mockResolvedValue({
-      filters: [],
-      discovery: { query: "meet", activeFilter: null, lessons: [{ id: "r1", youtubeVideoId: "yt-r1", title: "Result", durationSeconds: 60, thumbnailUrl: null, jlptLevelEstimate: null }], hasMore: false },
-    });
+  it("titles a browse under a known filter as results, with the search empty copy", async () => {
+    data.getHubDiscovery.mockResolvedValue({ filters: [], discovery: { query: "", activeFilter: "level:n5", lessons: [], hasMore: false } });
     data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
 
-    render(await PronunciationPage({ searchParams: { q: "meet" } }));
+    render(await PronunciationPage({ searchParams: { filter: "level:n5" } }));
 
     expect(screen.getByRole("heading", { name: shadowingCopy.hub.search.results })).toBeInTheDocument();
-    expect(screen.queryByText(/^Showing the first/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.featuredCourse })).not.toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: pronunciationCopy.hub.paths.title })).not.toBeInTheDocument();
+    expect(screen.getByText(shadowingCopy.hub.search.noResults)).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: pronunciationCopy.hub.search.tabsLabel })).not.toBeInTheDocument();
   });
 
   it("titles a browse by what the data layer applied: an unknown filter is All lessons, and an empty browse says the settings match nothing", async () => {
@@ -464,5 +480,172 @@ describe("PronunciationPage", () => {
 
     await user.click(screen.getByRole("button", { name: pronunciationCopy.hub.filterToggleLabel }));
     expect(await screen.findByRole("link", { name: "N4" })).toHaveAttribute("href", "/pronunciation?filter=level%3An4");
+  });
+
+  describe("search", () => {
+    const lesson = { id: "r1", youtubeVideoId: "yt-r1", title: "Ramen night", durationSeconds: 420, thumbnailUrl: null, jlptLevelEstimate: "N4" };
+    const path = (id: string, title: string) => ({
+      collection: { id, slug: id, title, description: null, coverImageUrl: null, displayOrder: 1, kind: "path", skillFocus: null, icon: null },
+      total: 3, completed: 0, next: video(`${id}-1`, "First"), started: false, saved: false, lessonCount: 3, durationMinutes: 30, lessonIds: [`${id}-1`],
+    });
+    const found = {
+      counts: { lessons: 7, paths: 30, goals: 0, library: 1 },
+      lessons: { items: [lesson], total: 7 },
+      paths: { items: [path("p1", "Ramen path")], total: 30 },
+      goals: { items: [], total: 0 },
+      library: { items: [{ kind: "situation", id: "restaurant", label: "Restaurant", situation: { slug: "restaurant", icon: null } }], total: 1 },
+    };
+    const tabHrefs = () => within(screen.getByRole("navigation", { name: pronunciationCopy.hub.search.tabsLabel })).getAllByRole("link").map((link) => link.getAttribute("href"));
+    const resultGroups = () => screen.queryAllByRole("region").filter((region) => region.getAttribute("aria-labelledby")?.startsWith("result-group-"));
+
+    it("groups All into one-row previews under counted tabs, without the curated shelves", async () => {
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+      data.getPronunciationSearch.mockResolvedValue(found);
+
+      render(await PronunciationPage({ searchParams: { q: " ramen ", sort: "shortest" } }));
+
+      expect(data.getPronunciationSearch).toHaveBeenLastCalledWith(expect.objectContaining({ q: "ramen", type: null, limit: 4, locale: "en" }));
+      expect(data.getPronunciationSearch.mock.lastCall?.[0].situationLabels).toMatchObject({ restaurant: shadowingCopy.situations.restaurant });
+      expect(screen.getByRole("heading", { name: "Results for “ramen”" })).toBeInTheDocument();
+      const tabs = within(screen.getByRole("navigation", { name: "Result types" })).getAllByRole("link");
+      expect(tabs.map((tab) => tab.textContent)).toEqual(["All", "Lessons (7)", "Learning paths (30)", "Practice goals (0)", "Collections & situations (1)"]);
+      expect(tabs[0]).toHaveAttribute("aria-current", "page");
+      expect(tabs.slice(1).every((tab) => !tab.hasAttribute("aria-current"))).toBe(true);
+      // Tabs keep q and the lesson settings, never `type=all`, never `shown`.
+      expect(tabHrefs()).toEqual([
+        "/pronunciation?q=ramen&sort=shortest",
+        "/pronunciation?q=ramen&type=lessons&sort=shortest",
+        "/pronunciation?q=ramen&type=paths&sort=shortest",
+        "/pronunciation?q=ramen&type=goals&sort=shortest",
+        "/pronunciation?q=ramen&type=library&sort=shortest",
+      ]);
+      // An empty group is not rendered; every other group is a one-row preview with See all.
+      const groups = resultGroups();
+      expect(groups.map((group) => group.getAttribute("aria-labelledby"))).toEqual(["result-group-lessons", "result-group-paths", "result-group-library"]);
+      for (const group of groups) expect(group.querySelector("ul")).toHaveClass("result-grid", "result-preview");
+      expect(within(groups[1]!).getByRole("link", { name: /See all Learning paths/ })).toHaveAttribute("href", "/pronunciation?q=ramen&type=paths&sort=shortest");
+      expect(screen.getByRole("link", { name: "Ramen night" })).toHaveAttribute("href", "/shadowing/r1");
+      expect(within(groups[2]!).getByRole("link", { name: pronunciationCopy.hub.situations.startLabel.replace("{situation}", "Restaurant") })).toHaveAttribute("href", "/pronunciation?filter=situation%3Arestaurant");
+      // The lesson controls say they apply to lessons.
+      expect(screen.getByRole("button", { name: /^Lesson filters & sort/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: pronunciationCopy.hub.search.lessonFilterToggle })).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: pronunciationCopy.hub.featuredCourse })).not.toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: pronunciationCopy.hub.paths.title })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: pronunciationCopy.hub.search.showMore.lessons })).not.toBeInTheDocument();
+      // A new search drops type and shown, and keeps the lesson settings.
+      const form = screen.getByRole("search", { name: pronunciationCopy.hub.searchLabel });
+      expect(form.querySelector("input[name=type]")).toBeNull();
+      expect(form.querySelector("input[name=shown]")).toBeNull();
+      expect(form.querySelector("input[name=sort]")).toHaveAttribute("value", "shortest");
+    });
+
+    it("pages a concrete tab with shown, and offers no lesson controls outside lessons", async () => {
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+      data.getPronunciationSearch.mockResolvedValue({ counts: found.counts, paths: found.paths });
+
+      render(await PronunciationPage({ searchParams: { q: "ramen", type: "paths", shown: "48", sort: "shortest", filter: "level:n5" } }));
+
+      expect(data.getPronunciationSearch).toHaveBeenLastCalledWith(expect.objectContaining({ q: "ramen", type: "paths", limit: 48 }));
+      expect(screen.getByRole("link", { name: "Learning paths (30)" })).toHaveAttribute("aria-current", "page");
+      expect(screen.queryByRole("button", { name: /^(Sort & display|Lesson filters & sort)/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Filter/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /See all/ })).not.toBeInTheDocument();
+      const more = new URL(screen.getByRole("link", { name: pronunciationCopy.hub.search.showMore.paths }).getAttribute("href")!, "http://app");
+      expect(Object.fromEntries(more.searchParams)).toEqual({ q: "ramen", type: "paths", filter: "level:n5", sort: "shortest", shown: "72" });
+      expect(tabHrefs().some((href) => href?.includes("shown="))).toBe(false);
+    });
+
+    it("keeps the Lessons tab when a filter chip is chosen there, and never carries shown", async () => {
+      const user = userEvent.setup();
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+      data.getPronunciationSearch.mockResolvedValue({ counts: found.counts, lessons: found.lessons });
+
+      render(await PronunciationPage({ searchParams: { q: "ramen", type: "lessons", shown: "48" } }));
+
+      await user.click(screen.getByRole("button", { name: pronunciationCopy.hub.search.lessonFilterToggle }));
+      const chip = new URL((await screen.findByRole("link", { name: shadowingCopy.situations.restaurant })).getAttribute("href")!, "http://app");
+      expect(Object.fromEntries(chip.searchParams)).toEqual({ q: "ramen", type: "lessons", filter: "situation:restaurant" });
+      // A new search still starts on All.
+      expect(screen.getByRole("search", { name: pronunciationCopy.hub.searchLabel }).querySelector("input[name=type]")).toBeNull();
+    });
+
+    it("renders goals with the page's one recommendation, library collections, and the lesson's rounded-up minutes", async () => {
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+      data.getWeeklyPronunciationMetrics.mockResolvedValue({ means: { accuracy: 50, pitch: 90, rhythm: 90 }, weakest: "accuracy" });
+      const goal = { ...path("g1", "Clear vowels"), collection: { ...path("g1", "Clear vowels").collection, kind: "goal", skillFocus: "accuracy" } };
+      data.getPracticeGoals.mockResolvedValue([goal]);
+      data.getPronunciationSearch.mockResolvedValue({
+        counts: { lessons: 1, paths: 0, goals: 1, library: 1 },
+        lessons: { items: [{ ...lesson, durationSeconds: 70 }], total: 1 },
+        paths: { items: [], total: 0 },
+        goals: { items: [goal], total: 1 },
+        library: { items: [{ kind: "collection", id: "c1", label: "Ramen shelf", summary: { collection: { id: "c1", slug: "ramen-shelf", title: "Ramen shelf" }, lessonCount: 2, durationMinutes: null, levelBand: null, sentenceCount: null } }], total: 1 },
+      });
+
+      render(await PronunciationPage({ searchParams: { q: "ramen", filter: "source:unknown" } }));
+
+      expect(within(screen.getByRole("region", { name: "Practice goals" })).getByText(pronunciationCopy.hub.goals.recommended)).toBeInTheDocument();
+      expect(within(screen.getByRole("region", { name: "Collections & situations" })).getByRole("link", { name: /Ramen shelf/ })).toHaveAttribute("href", "/pronunciation/collections/ramen-shelf");
+      // 70 s is two started minutes, as the featured hero counts them.
+      expect(screen.getByRole("link", { name: "Ramen night" })).toHaveAccessibleDescription("2 min");
+      data.getWeeklyPronunciationMetrics.mockResolvedValue({ means: { accuracy: null, pitch: null, rhythm: null }, weakest: null });
+      data.getPracticeGoals.mockResolvedValue([]);
+    });
+
+    it("leaves no chip active for a filter the taxonomy does not know", async () => {
+      const user = userEvent.setup();
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+      data.getPronunciationSearch.mockResolvedValue(emptySearch);
+
+      render(await PronunciationPage({ searchParams: { q: "ramen", filter: "source:unknown" } }));
+
+      await user.click(screen.getByRole("button", { name: pronunciationCopy.hub.search.lessonFilterToggle }));
+      const chips = await screen.findByRole("dialog", { name: pronunciationCopy.hub.search.lessonFilterToggle });
+      expect(within(chips).getByRole("link", { name: commonCopy.filters.all })).toHaveAttribute("aria-current", "page");
+    });
+
+    it("keeps the lesson controls on the Lessons tab under their own name", async () => {
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+      data.getPronunciationSearch.mockResolvedValue({ counts: found.counts, lessons: found.lessons });
+
+      render(await PronunciationPage({ searchParams: { q: "ramen", type: "lessons" } }));
+
+      expect(screen.getByRole("button", { name: new RegExp(`^${pronunciationCopy.hub.display.trigger}`) })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: pronunciationCopy.hub.search.showMore.lessons })).toBeInTheDocument();
+    });
+
+    it("says there are no results once, and renders no group, when every kind is empty", async () => {
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+      data.getPronunciationSearch.mockResolvedValue({ ...emptySearch, lessons: { items: [], total: 0 }, paths: { items: [], total: 0 }, goals: { items: [], total: 0 }, library: { items: [], total: 0 } });
+
+      render(await PronunciationPage({ searchParams: { q: "zzz" } }));
+
+      expect(screen.getByText("No results for “zzz”.")).toBeInTheDocument();
+      expect(resultGroups()).toHaveLength(0);
+    });
+
+    it("redirects any other spelling of All to the URL without type, with or without a query", async () => {
+      data.getHubDiscovery.mockResolvedValue(noDiscovery);
+      data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+
+      await expect(PronunciationPage({ searchParams: { q: "ramen", type: "xyz", shown: "48", sort: "shortest" } })).rejects.toThrow(/^NEXT_REDIRECT \/pronunciation\?q=ramen&sort=shortest$/);
+      await expect(PronunciationPage({ searchParams: { q: "ramen", type: "all" } })).rejects.toThrow(/^NEXT_REDIRECT \/pronunciation\?q=ramen$/);
+      // No search: any type goes (Browse and Default have no tabs), and Browse keeps its page length.
+      await expect(PronunciationPage({ searchParams: { type: "paths", sort: "shortest", shown: "48" } })).rejects.toThrow(/^NEXT_REDIRECT \/pronunciation\?sort=shortest&shown=48$/);
+      await expect(PronunciationPage({ searchParams: { type: "", sort: "shortest", shown: "48" } })).rejects.toThrow(/^NEXT_REDIRECT \/pronunciation\?sort=shortest&shown=48$/);
+      // The canonical URL does not redirect again.
+      data.redirect.mockClear();
+      data.getPronunciationSearch.mockResolvedValue(emptySearch);
+      await PronunciationPage({ searchParams: { q: "ramen", sort: "shortest" } });
+      await PronunciationPage({ searchParams: { q: "ramen", type: "paths", sort: "shortest" } });
+      expect(data.redirect).not.toHaveBeenCalled();
+    });
   });
 });

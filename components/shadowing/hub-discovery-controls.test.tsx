@@ -1,15 +1,9 @@
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@/test/render";
 import pronunciationCopy from "@/messages/en/pronunciation.json";
 import shadowingCopy from "@/messages/en/shadowing.json";
 import { HubDiscoveryControls } from "./hub-discovery-controls";
-
-// The results pager navigates with the app router, which a unit render does not mount.
-vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/i18n/navigation")>()),
-  useRouter: () => ({ push: vi.fn() }),
-}));
 
 const lesson = { id: "lesson-1", youtubeVideoId: "yt-1", title: "Restaurant conversation", durationSeconds: 600, thumbnailUrl: null, jlptLevelEstimate: "N4" };
 
@@ -57,21 +51,6 @@ describe("HubDiscoveryControls", () => {
 
     rerender(<HubDiscoveryControls filters={[]} query="restaurant" activeFilter={null} results={[]} action="/vi/shadowing" basePath="/shadowing" labels={labels} />);
     expect(screen.getByText("No lessons matched your search.")).toBeInTheDocument();
-  });
-
-  it("offers a Show more link after the results only when the page supplies one", () => {
-    const { rerender } = render(
-      <HubDiscoveryControls filters={[]} query="" activeFilter={null} results={[lesson]} action="/en/pronunciation" basePath="/pronunciation" labels={labels}
-        resultsMore={{ href: "/pronunciation?sort=shortest&shown=48", label: "Show more lessons", pendingLabel: "Loading more lessons…" }} />,
-    );
-    const more = screen.getByRole("link", { name: "Show more lessons" });
-    expect(more).toHaveAttribute("href", "/en/pronunciation?sort=shortest&shown=48");
-    // After the last result card, so keyboard order reaches it once the list is read.
-    const cards = screen.getAllByRole("listitem");
-    expect(cards.at(-1)!.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-
-    rerender(<HubDiscoveryControls filters={[]} query="" activeFilter={null} results={[lesson]} action="/en/pronunciation" basePath="/pronunciation" labels={labels} />);
-    expect(screen.queryByRole("link", { name: "Show more lessons" })).not.toBeInTheDocument();
   });
 
   it("uses the supplied base path in a popover opened by the heading filter button", async () => {

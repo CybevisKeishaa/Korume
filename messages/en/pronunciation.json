@@ -156,6 +156,34 @@
         "empty": "Practice a lesson and it will appear here.",
         "scoreLabel": "Score"
       }
+    },
+    "search": {
+      "heading": "Results for “{q}”",
+      "tabsLabel": "Result types",
+      "tabs": {
+        "all": "All",
+        "lessons": "Lessons ({count})",
+        "paths": "Learning paths ({count})",
+        "goals": "Practice goals ({count})",
+        "library": "Collections & situations ({count})"
+      },
+      "groups": {
+        "lessons": "Lessons",
+        "paths": "Learning paths",
+        "goals": "Practice goals",
+        "library": "Collections & situations"
+      },
+      "seeAll": "See all {group}",
+      "empty": "No results for “{q}”.",
+      "lessonControls": "Lesson filters & sort",
+      "lessonFilterToggle": "Filter lessons",
+      "showMore": {
+        "lessons": "Show more lessons",
+        "paths": "Show more paths",
+        "goals": "Show more goals",
+        "library": "Show more"
+      },
+      "loadingMore": "Loading more…"
     }
   }
 }

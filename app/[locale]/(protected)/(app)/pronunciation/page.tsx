@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import type { Locale } from "@/lib/i18n";
-import { getPathname } from "@/lib/i18n/navigation";
+import { getPathname, redirect } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
-import { getHubDiscovery, toHubLesson } from "@/lib/data/shadowing-hub";
+import { getHubDiscovery, toHubLesson, type HubLesson } from "@/lib/data/shadowing-hub";
+import { getPronunciationSearch, SEARCH_PREVIEW_LIMIT, type LibraryItem } from "@/lib/data/pronunciation-search";
+import type { PracticeSituation } from "@/lib/data/lesson-taxonomy";
+import type { ShadowingCollectionSummary } from "@/lib/data/collections";
+import { normalizeSearchQuery, parseSearchType, pronunciationSurface, SEARCH_TYPES, searchHref, type LessonParams, type SearchType } from "@/lib/validation/pronunciation-search";
+import { HubLessonResultCard } from "@/components/shadowing/hub-lesson-result-card";
+import { PronunciationSearchResults, type PronunciationResultGroup } from "@/components/shadowing/pronunciation-search-results";
 import { getLearningPaths, getPracticeGoals, getSenseiRecommendation, getShadowingCollections, recommendedPracticeGoalId } from "@/lib/data/collections";
 import { getJlptSpeakingSummary, getRecentPractice, getTodaySpeaking, getWeeklyImprovement, getWeeklyPronunciationMetrics, vnDaysAgo } from "@/lib/data/pronunciation-metrics";
 import { JLPT_LEVELS } from "@/lib/conversation-types";
@@ -18,7 +25,7 @@ import { HubCollectionCard, HubLevelCard, HubSituationTile } from "@/components/
 import { courseProgressPercent } from "@/components/shadowing/hub-course-progress";
 import { HubPathCard } from "@/components/shadowing/hub-path-card";
 import { pathCardLabels, pathCards, goalCards } from "./path-card-copy";
-import { isPronunciationResultMode, pronunciationDisplaySchema, pronunciationResultLimit, RESULT_MAX_LIMIT, RESULT_PAGE_SIZE, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
+import { pronunciationDisplaySchema, pronunciationResultLimit, RESULT_MAX_LIMIT, RESULT_PAGE_SIZE, shadowingHubQuerySchema } from "@/lib/validation/shadowing-hub";
 import { getMyPreferences } from "@/lib/data/preferences";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import { HubDisplayPanel } from "@/components/shadowing/hub-display-panel";
@@ -44,8 +51,21 @@ export const dynamic = "force-dynamic";
 export default async function PronunciationPage({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }) {
   const now = new Date();
   const param = (key: string) => typeof searchParams?.[key] === "string" ? searchParams[key] as string : undefined;
-  const query = shadowingHubQuerySchema.safeParse({ q: param("q"), filter: param("filter") });
-  const hubQuery = query.success ? query.data : {};
+  // q and filter parse apart, so an over-long q can never drop a valid filter;
+  // the q is cut to the schema's own bound instead of rejected.
+  const q = normalizeSearchQuery(param("q"));
+  const filterParse = shadowingHubQuerySchema.shape.filter.safeParse(param("filter"));
+  const filter = filterParse.success ? filterParse.data : undefined;
+  const { type, canonical } = parseSearchType(param("type"));
+  if (param("type") !== undefined && (!canonical || !q)) {
+    // One state, one URL: any other spelling of All, and any type on a page
+    // with no search (Browse and Default have no tabs), redirect without it.
+    // All ignores `shown`; Browse keeps it (Default ignores it harmlessly).
+    const query = Object.fromEntries(Object.entries(searchParams ?? {}).filter((entry): entry is [string, string] => (
+      typeof entry[1] === "string" && entry[0] !== "type" && !(q && entry[0] === "shown")
+    )));
+    redirect({ href: { pathname: "/pronunciation", query }, locale: await getLocale() });
+  }
   // Parsed on their own: every display field falls back alone, never fails.
   const urlDisplay = pronunciationDisplaySchema.parse({ sort: param("sort"), duration: param("duration"), hideCompleted: param("hideCompleted") });
   // The URL wins when it sets any display value; otherwise the saved profile applies.
@@ -61,28 +81,42 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   const resultLimit = pronunciationResultLimit(param("shown"));
   const displayStatePromise = displayPromise.then((display) => ({
     display,
-    resultMode: isPronunciationResultMode(hubQuery, display),
+    surface: pronunciationSurface({ q, filter, display, type }),
   }));
+  const tHubPromise = getTranslations("shadowing");
+  const localePromise = getLocale();
+  const searchPromise = Promise.all([displayStatePromise, tHubPromise, localePromise]).then(([{ display, surface }, tHub, locale]) => (
+    surface.state === "search" ? getPronunciationSearch({
+      q: surface.q,
+      type: surface.type,
+      settings: { filter, ...display },
+      limit: surface.type ? resultLimit : SEARCH_PREVIEW_LIMIT,
+      // Situations match their label in the request locale (and their slug).
+      situationLabels: Object.fromEntries(Object.keys(enShadowing.situations).map((slug) => [slug, tHub(`situations.${slug}` as TaxonomyTranslationKey)])),
+      locale,
+    }) : null
+  ));
   const learningPromise = getLearningPaths();
   const goalsPromise = getPracticeGoals();
   const weeklyMetricsPromise = getWeeklyPronunciationMetrics(now);
   const senseiPromise = Promise.all([goalsPromise, learningPromise, weeklyMetricsPromise])
     .then(([goals, learning, weeklyMetrics]) => getSenseiRecommendation(goals, learning.paths, weeklyMetrics.weakest));
-  const [t, tCommon, tHub, hub, displayState, preferences, learning, locale, situations, goals, weeklyMetrics, shadowingCollections, jlptLevels, today, weekly, recent, sensei] = await Promise.all([
+  const [t, tCommon, tHub, hub, search, displayState, preferences, learning, locale, situations, goals, weeklyMetrics, shadowingCollections, jlptLevels, today, weekly, recent, sensei] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
-    getTranslations("shadowing"),
-    displayStatePromise.then(({ display, resultMode }) => getHubDiscovery({
-      query: hubQuery.q,
-      filter: hubQuery.filter,
+    tHubPromise,
+    // A search reads its own rows; here it needs only the chips' taxonomy.
+    displayStatePromise.then(({ display, surface }) => surface.state === "search" ? getHubDiscovery({}) : getHubDiscovery({
+      filter,
       ...display,
-      browse: resultMode,
-      limit: resultMode ? resultLimit : 4,
+      browse: surface.state === "browse",
+      limit: surface.state === "browse" ? resultLimit : 4,
     })),
+    searchPromise,
     displayStatePromise,
     preferencesPromise,
     learningPromise,
-    getLocale(),
+    localePromise,
     listPracticeSituations(),
     goalsPromise,
     weeklyMetricsPromise,
@@ -93,8 +127,9 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     getRecentPractice(3),
     senseiPromise,
   ]);
-  const { display, resultMode } = displayState;
-  const discovery = resultMode ? hub.discovery : null;
+  const { display, surface } = displayState;
+  const resultMode = surface.state !== "default";
+  const discovery = surface.state === "browse" ? hub.discovery : null;
   const course = learning.featured;
   const recommendedGoalId = recommendedPracticeGoalId(goals, weeklyMetrics.weakest);
   const duration = (minutes: number) => formatCourseDuration(minutes, {
@@ -112,16 +147,115 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   const shortDate = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "Asia/Ho_Chi_Minh" });
   const relativeDay = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const continueLesson = recent[0]?.lesson ?? course?.next ?? null;
-  // "Show more" is the same URL one page longer: what the data layer applied
-  // (query, filter) plus the display values the URL set, so nothing resets.
+  // "Show more" in Browse is the same URL one page longer: the filter the data
+  // layer applied plus the display values the URL set, so nothing resets.
   const moreHref = discovery?.hasMore && resultLimit < RESULT_MAX_LIMIT ? (() => {
     const params = new URLSearchParams();
-    if (discovery.query) params.set("q", discovery.query);
     if (discovery.activeFilter) params.set("filter", discovery.activeFilter);
     for (const key of ["sort", "duration", "hideCompleted"]) { const value = param(key); if (value) params.set(key, value); }
     params.set("shown", String(resultLimit + RESULT_PAGE_SIZE));
     return `/pronunciation?${params.toString()}`;
   })() : null;
+
+  // One mapping per card kind, shared by the curated shelves and the results.
+  const lessonCard = (lesson: HubLesson) => (
+    <HubLessonResultCard
+      key={lesson.id}
+      lesson={lesson}
+      noThumbnailLabel={tCommon("noThumbnail")}
+      // Rounded up, as the featured hero rounds a lesson's minutes.
+      durationLabel={lesson.durationSeconds ? duration(Math.ceil(lesson.durationSeconds / 60)) : null}
+    />
+  );
+  const situationTile = (situation: PracticeSituation, label = tHub(`situations.${situation.slug}` as TaxonomyTranslationKey)) => (
+    <HubSituationTile
+      key={situation.slug}
+      label={label}
+      icon={situation.icon}
+      href={`/pronunciation?filter=${encodeURIComponent(`situation:${situation.slug}`)}`}
+      action={t("hub.situations.start")}
+      actionLabel={t("hub.situations.startLabel", { situation: label })}
+    />
+  );
+  const collectionCard = (summary: ShadowingCollectionSummary) => {
+    const level = formatLevelBand(summary.levelBand, {
+      band: (value) => t(`hub.levels.${value}`),
+      range: (from, to) => t("hub.levelRange", { from, to }),
+    });
+    return (
+      <HubCollectionCard
+        key={summary.collection.id}
+        title={summary.collection.title}
+        href={`/pronunciation/collections/${summary.collection.slug}`}
+        meta={[level, summary.durationMinutes === null ? null : duration(summary.durationMinutes)].filter(Boolean).join(" · ")}
+        sentences={summary.sentenceCount === null ? null : t("hub.shadowingCollections.sentences", { count: summary.sentenceCount })}
+        glyph={t("hub.shadowingCollections.glyph")}
+      />
+    );
+  };
+  const libraryCard = (item: LibraryItem) => item.kind === "collection" ? collectionCard(item.summary) : situationTile(item.situation, item.label);
+
+  // Lesson settings ride along on every search link: preserved, ignored outside lessons.
+  const lessonParams: LessonParams = { filter, sort: param("sort"), duration: param("duration"), hideCompleted: param("hideCompleted") };
+  const searchResults = surface.state === "search" && search ? (() => {
+    const { q: term, type: active } = surface;
+    const rows: Record<SearchType, ReactNode[]> = {
+      lessons: search.lessons?.items.map(lessonCard) ?? [],
+      paths: search.paths ? pathCards(search.paths.items, t).map((path) => <HubPathCard key={path.id} path={path} labels={cards} />) : [],
+      goals: search.goals ? goalCards(search.goals.items, t, recommendedGoalId).map((goal) => <HubPathCard key={goal.id} path={goal} labels={cards} />) : [],
+      library: search.library?.items.map(libraryCard) ?? [],
+    };
+    const groups: PronunciationResultGroup[] = SEARCH_TYPES.filter((key) => active === null || key === active).map((key) => {
+      const title = t(`hub.search.groups.${key}`);
+      return {
+        key,
+        title,
+        seeAll: active === null ? { href: searchHref({ q: term, type: key, lesson: lessonParams }), label: t("hub.search.seeAll", { group: title }) } : null,
+        items: rows[key],
+      };
+    });
+    const page = active ? search[active] : undefined;
+    return {
+      heading: t("hub.search.heading", { q: term }),
+      tabs: {
+        label: t("hub.search.tabsLabel"),
+        items: [
+          { key: "all" as const, label: t("hub.search.tabs.all"), href: searchHref({ q: term, type: null, lesson: lessonParams }), current: active === null },
+          ...SEARCH_TYPES.map((key) => ({
+            key,
+            label: t(`hub.search.tabs.${key}`, { count: search.counts[key] }),
+            href: searchHref({ q: term, type: key, lesson: lessonParams }),
+            current: active === key,
+          })),
+        ],
+      },
+      groups,
+      preview: active === null,
+      more: active && page && page.items.length < page.total && resultLimit < RESULT_MAX_LIMIT
+        ? { href: searchHref({ q: term, type: active, lesson: lessonParams, shown: resultLimit + RESULT_PAGE_SIZE }), label: t(`hub.search.showMore.${active}`), pendingLabel: t("hub.search.loadingMore") }
+        : null,
+      empty: t("hub.search.empty", { q: term }),
+    };
+  })() : null;
+  const browseResults = discovery ? {
+    // What the data layer applied, not the raw URL: an unknown filter browses everything.
+    heading: discovery.activeFilter ? tHub("hub.search.results") : t("hub.allLessons"),
+    summary: discovery.hasMore ? t("hub.showingFirstLessons", { count: discovery.lessons.length }) : undefined,
+    tabs: null,
+    groups: [{ key: "lessons" as const, title: t("hub.allLessons"), seeAll: null, items: discovery.lessons.map(lessonCard) }],
+    preview: false,
+    more: moreHref ? { href: moreHref, label: t("hub.showMore"), pendingLabel: t("hub.loadingMore") } : null,
+    empty: discovery.activeFilter ? tHub("hub.search.noResults") : t("hub.noLessonsForDisplay"),
+  } : null;
+  const results = searchResults ?? browseResults;
+  // The lesson controls belong to lessons: on All they say so, and on a tab of
+  // another kind (paths, goals, library) they are not offered at all.
+  const searchType = surface.state === "search" ? surface.type : undefined;
+  const lessonControlsShown = searchType === undefined || searchType === null || searchType === "lessons";
+  const knownFilters = [...hub.filters, ...JLPT_LEVELS.map((level) => ({ kind: "level" as const, slug: level.toLowerCase() }))];
+  const appliedFilter = surface.state === "search"
+    ? (filter && knownFilters.some((known) => `${known.kind}:${known.slug}` === filter) ? filter : null)
+    : discovery?.activeFilter ?? null;
 
   // One set of controls, rendered as two halves: the heading row spans the
   // rail (frame 37:5331), the hero and results sit in the main column.
@@ -129,20 +263,16 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     <HubDiscoveryControls
       part={part}
       // The studio adds the JLPT levels to the Hub's taxonomy chips; a level's label is its code.
-      filters={[...hub.filters, ...JLPT_LEVELS.map((level) => ({ kind: "level" as const, slug: level.toLowerCase() }))].map((filter) => ({
-        ...filter,
-        label: filter.kind === "level"
-          ? filter.slug.toUpperCase()
-          : tHub(`${filter.kind === "situation" ? "situations" : "sources"}.${filter.slug}` as TaxonomyTranslationKey),
+      filters={knownFilters.map((known) => ({
+        ...known,
+        label: known.kind === "level"
+          ? known.slug.toUpperCase()
+          : tHub(`${known.kind === "situation" ? "situations" : "sources"}.${known.slug}` as TaxonomyTranslationKey),
       }))}
-      query={discovery?.query ?? ""}
-      activeFilter={discovery?.activeFilter ?? null}
-      results={discovery?.lessons ?? null}
-      // What the data layer applied, not the raw URL: an unknown filter browses everything.
-      resultsHeading={discovery?.query || discovery?.activeFilter ? undefined : t("hub.allLessons")}
-      resultsEmpty={discovery?.query || discovery?.activeFilter ? undefined : t("hub.noLessonsForDisplay")}
-      resultsSummary={discovery?.hasMore ? t("hub.showingFirstLessons", { count: discovery.lessons.length }) : undefined}
-      resultsMore={moreHref ? { href: moreHref, label: t("hub.showMore"), pendingLabel: t("hub.loadingMore") } : undefined}
+      query={q ?? ""}
+      activeFilter={appliedFilter}
+      // The page renders its own result surface below.
+      results={null}
       action={getPathname({ href: "/pronunciation", locale })}
       basePath="/pronunciation"
       heading={(
@@ -152,19 +282,21 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           <p className="mt-sm text-body text-muted-foreground">{t("hub.subtitle")}</p>
         </header>
       )}
-      filterToggleLabel={t("hub.filterToggleLabel")}
+      filterToggleLabel={!lessonControlsShown ? undefined : surface.state === "search" ? t("hub.search.lessonFilterToggle") : t("hub.filterToggleLabel")}
       preservedParams={{ sort: param("sort"), duration: param("duration"), hideCompleted: param("hideCompleted") }}
-      toolbar={(
+      // A chip on the Lessons tab filters that tab; a new search starts on All.
+      filterHrefParams={searchType === "lessons" ? { type: "lessons" } : undefined}
+      toolbar={lessonControlsShown ? (
         <HubDisplayPanel
           value={display}
           labels={{
-            trigger: t("hub.display.trigger"), triggerCustomised: t.raw("hub.display.triggerCustomised") as string, title: t("hub.display.title"), sort: t("hub.display.sort"),
+            trigger: searchType === null ? t("hub.search.lessonControls") : t("hub.display.trigger"), triggerCustomised: t.raw("hub.display.triggerCustomised") as string, title: t("hub.display.title"), sort: t("hub.display.sort"),
             recommended: t("hub.display.recommended"), newest: t("hub.display.newest"), shortest: t("hub.display.shortest"), inProgress: t("hub.display.inProgress"),
             duration: t("hub.display.duration"), anyDuration: t("hub.display.anyDuration"), underTen: t("hub.display.underTen"), tenToThirty: t("hub.display.tenToThirty"), overThirty: t("hub.display.overThirty"),
             hideCompleted: t("hub.display.hideCompleted"), apply: t("hub.display.apply"), reset: t("hub.display.reset"), close: t("hub.display.close"), saveFailed: t("hub.display.saveFailed"),
           }}
         />
-      )}
+      ) : undefined}
       beforeResults={resultMode ? undefined : (
         <>
           <HubFeaturedHero
@@ -277,6 +409,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       />}
     >
       {discoveryControls("results")}
+      {results ? <PronunciationSearchResults {...results} /> : null}
       {!resultMode ? <>
       <div className="mt-3xl">
         <HubPathShelf
@@ -291,19 +424,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       <div className="mt-3xl">
         {/* Every situation with a lesson fits the frame's four-by-two grid, so there is no "View all". */}
         <HubShelf title={t("hub.situations.title")} empty={{ title: t("hub.situations.emptyTitle"), body: t("hub.situations.emptyBody") }}>
-          {situations.map((situation) => {
-            const label = tHub(`situations.${situation.slug}` as TaxonomyTranslationKey);
-            return (
-              <HubSituationTile
-                key={situation.slug}
-                label={label}
-                icon={situation.icon}
-                href={`/pronunciation?filter=${encodeURIComponent(`situation:${situation.slug}`)}`}
-                action={t("hub.situations.start")}
-                actionLabel={t("hub.situations.startLabel", { situation: label })}
-              />
-            );
-          })}
+          {situations.map((situation) => situationTile(situation))}
         </HubShelf>
       </div>
       <div className="mt-3xl">
@@ -341,22 +462,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           viewAll={{ href: "/shadowing/explore", label: t("hub.shadowingCollections.viewAll"), accessibleSuffix: t("hub.shadowingCollections.title") }}
           empty={{ title: t("hub.shadowingCollections.emptyTitle"), body: t("hub.shadowingCollections.emptyBody") }}
         >
-          {shadowingCollections.slice(0, 4).map((summary) => {
-            const level = formatLevelBand(summary.levelBand, {
-              band: (value) => t(`hub.levels.${value}`),
-              range: (from, to) => t("hub.levelRange", { from, to }),
-            });
-            return (
-              <HubCollectionCard
-                key={summary.collection.id}
-                title={summary.collection.title}
-                href={`/pronunciation/collections/${summary.collection.slug}`}
-                meta={[level, summary.durationMinutes === null ? null : duration(summary.durationMinutes)].filter(Boolean).join(" · ")}
-                sentences={summary.sentenceCount === null ? null : t("hub.shadowingCollections.sentences", { count: summary.sentenceCount })}
-                glyph={t("hub.shadowingCollections.glyph")}
-              />
-            );
-          })}
+          {shadowingCollections.slice(0, 4).map(collectionCard)}
         </HubShelf>
       </div>
       </> : null}
