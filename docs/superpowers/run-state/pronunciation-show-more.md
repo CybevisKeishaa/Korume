@@ -18,7 +18,8 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 
 `dac0259` Show more + resume lesson · `aebe7a0` `fd58d6f` `c64a4e6` spec ·
 `84fd661` plan · `d8b1cf1` run state · `3eccde0` **Task 1** URL contract
-(reviewed; fix: q cut to the schema bound) · `3535787` plan correction.
+(reviewed; fix: q cut to the schema bound) · `3535787` plan correction · `4d2be4a` **Task 2** `search_learning_collections`
+(live gate + 2 live mutations red).
 
 ## Contracts and decisions
 
@@ -36,7 +37,8 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 
 ## Verification
 
-`dac0259`: vitest 3644, e2e green. `3eccde0`: tsc/lint/protocol/vitest 0 (3659).
+`dac0259`: vitest 3644, e2e green. `3eccde0`: tsc/lint/protocol/vitest 0 (3659). `4d2be4a`: db reset,
+verify:db pronunciation/settings/lesson-jobs 0; same four gates 0.
 
 ## Working tree and environment
 
@@ -45,7 +47,7 @@ unchanged. Also carries `dac0259` (Show more + one resume lesson).
 Worktree `.worktrees/pronunciation-show-more` (own `node_modules`, `.env.local`).
 Codex never commits, never runs Playwright or Docker; Claude runs DB steps,
 reviews, commits. Untracked `tests/e2e/.probe/` and 30 local rows
-`showmore-probe-%` are measurement leftovers; Task 6 deletes both.
+`showmore-probe-%` rows were wiped by the Task 2 db reset; Task 6 deletes `.probe/`.
 
 ## Blockers
 
@@ -53,7 +55,6 @@ None.
 
 ## Next actions
 
-1. Codex: Task 2 (SQL), packet `.superpowers/sdd/pronunciation-show-more/task-2-brief.md`;
-   Claude runs db reset + `verify:db:pronunciation` + live mutations.
+1. Codex: Task 3 (data facade), packet `.superpowers/sdd/pronunciation-show-more/task-3-brief.md`.
 2. Claude: independent `code-reviewer`, commit; then Tasks 2-5 the same way;
    Task 6 (Playwright) by Claude.
