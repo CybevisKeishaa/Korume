@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase } from "@/test/supabase-mock";
+import { createMockSupabase, type MockSupabaseOptions, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -24,6 +24,32 @@ import type { VideoRow } from "@/lib/data/videos";
 
 const USER = { id: "explore-learner" };
 
+/**
+ * Explore reads each lesson's newest transcript through `latest_transcript_ids`;
+ * this derives that RPC from the test's `transcripts` rows, and gives the
+ * library view and summaries an empty default.
+ */
+function exploreClient(options: MockSupabaseOptions) {
+  const transcripts = options.tables.transcripts;
+  return createMockSupabase({
+    ...options,
+    tables: { learner_videos: () => ({ data: [], error: null }), video_summaries: () => ({ data: [], error: null }), ...options.tables },
+    rpcs: {
+      latest_transcript_ids: async ({ p_video_ids }) => {
+        const rows = transcripts ? (((await transcripts([])).data as { id: string; video_id: string; created_at: string }[] | null) ?? []) : [];
+        return {
+          data: (p_video_ids as string[]).flatMap((video_id) => {
+            const latest = rows.filter((row) => row.video_id === video_id).sort((left, right) => right.created_at.localeCompare(left.created_at))[0];
+            return latest ? [{ video_id, transcript_id: latest.id }] : [];
+          }),
+          error: null,
+        };
+      },
+      ...options.rpcs,
+    },
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(listCollections).mockResolvedValue([]);
@@ -36,7 +62,7 @@ beforeEach(() => {
 
 describe("getShadowingExplore", () => {
   it("does not compose catalogue or learner data without an authenticated learner", async () => {
-    const client = createMockSupabase({ user: null, tables: {} });
+    const client = exploreClient({ user: null, tables: {} });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
 
     await expect(getShadowingExplore()).resolves.toEqual({ ok: false, status: 401 });
@@ -45,11 +71,12 @@ describe("getShadowingExplore", () => {
   });
 
   it("projects every curated shelf with the same selected situation context", async () => {
-    const client = createMockSupabase({
+    const client = exploreClient({
       user: USER,
       tables: {
         user_lesson_library: () => ({ data: [], error: null }),
         videos: () => ({ data: [], error: null }),
+        learner_videos: () => ({ data: [], error: null }),
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
@@ -77,7 +104,7 @@ describe("getShadowingExplore", () => {
 
   it("omits recommendations and the quiet suggestion when they fall outside the selected catalogue context", async () => {
     const restaurantLesson: VideoRow = { id: "restaurant-lesson", youtube_video_id: "yt-restaurant", title: "Restaurant Japanese", duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" };
-    const client = createMockSupabase({
+    const client = exploreClient({
       user: USER,
       tables: {
         user_lesson_library: () => ({ data: [], error: null }),
@@ -94,8 +121,61 @@ describe("getShadowingExplore", () => {
     expect(result).toMatchObject({ ok: true, data: { recommendations: [], quietSuggestion: null } });
   });
 
+  it("keeps an in-context recommendation that is not among the newest lessons, and filters the library by the same context", async () => {
+    const lesson = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
+    const libraryReads: QueryCall[][] = [];
+    const client = exploreClient({
+      user: USER,
+      tables: {
+        // The membership read names its ids; the recent shelf gets four newer lessons.
+        videos: (calls) => calls.some((call) => call.op === "in" && call.column === "id")
+          ? { data: [{ id: "older-in-context" }], error: null }
+          : { data: ["n1", "n2", "n3", "n4"].map(lesson), error: null },
+        learner_videos: (calls) => { libraryReads.push([...calls]); return { data: [], error: null }; },
+        transcripts: () => ({ data: [], error: null }),
+      },
+    });
+    vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
+    vi.mocked(listSituations).mockResolvedValue([{ id: "s-restaurant", slug: "restaurant", displayOrder: 1 }]);
+    vi.mocked(getRecommendations).mockResolvedValue({ ok: true, data: [{ videoId: "older-in-context", youtubeVideoId: "yt-older", title: "Older", thumbnailUrl: null, jlptLevelEstimate: "N5", knownRatio: 0.9, band: "ideal", totalWords: 10, knownWords: 9, reason: null }] });
+
+    const result = await getShadowingExplore({ situation: "restaurant", query: "ramen" });
+
+    expect(result).toMatchObject({ ok: true, data: { recommendations: [{ videoId: "older-in-context" }] } });
+    expect(libraryReads[0]).toEqual(expect.arrayContaining([
+      { op: "eq", column: "situation_id", value: "s-restaurant" },
+      { op: "ilike", column: "title", pattern: "%ramen%" },
+    ]));
+  });
+
+  it("reads lines and summaries for shelf lessons only; a library card needs just its transcript's existence", async () => {
+    const lesson = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
+    const lineReads: unknown[][] = [];
+    const summaryReads: unknown[][] = [];
+    const inValues = (calls: QueryCall[]) => (calls.find((call) => call.op === "in") as { values: unknown[] }).values;
+    const client = exploreClient({
+      user: USER,
+      tables: {
+        videos: () => ({ data: [], error: null }),
+        learner_videos: () => ({ data: [lesson("lib")], error: null }),
+        transcripts: () => ({ data: [{ id: "t-lib", video_id: "lib", created_at: "2026-09-09T00:00:00Z" }, { id: "t-shelf", video_id: "shelf", created_at: "2026-09-09T00:00:00Z" }], error: null }),
+        video_summaries: (calls) => { summaryReads.push(inValues(calls)); return { data: [], error: null }; },
+        transcript_lines: (calls) => { lineReads.push(inValues(calls)); return { data: [], error: null }; },
+      },
+    });
+    vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
+    vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
+    vi.mocked(listCollectionLessons).mockResolvedValue([lesson("shelf")]);
+
+    const result = await getShadowingExplore();
+
+    expect(result).toMatchObject({ ok: true, data: { library: [{ lesson: { id: "lib" }, state: "ready" }] } });
+    expect(lineReads).toEqual([["t-shelf"]]);
+    expect(summaryReads).toEqual([["shelf"]]);
+  });
+
   it("attaches the first three stored transcript lines to a shelf lesson in playback order", async () => {
-    const client = createMockSupabase({
+    const client = exploreClient({
       user: USER,
       tables: {
         user_lesson_library: () => ({ data: [], error: null }),
@@ -123,12 +203,41 @@ describe("getShadowingExplore", () => {
     expect(tokenize).toHaveBeenCalledTimes(4);
   });
 
+  it("pages all 1,001 transcript lines for an explore card", async () => {
+    const lineCalls: unknown[][] = [];
+    const client = exploreClient({
+      user: USER,
+      enforcePostgrestCap: true,
+      tables: {
+        videos: () => ({ data: [], error: null }),
+        transcripts: () => ({ data: [{ id: "t1", video_id: "v1", created_at: "2026-09-09T00:00:00Z" }], error: null }),
+        video_summaries: () => ({ data: [], error: null }),
+        transcript_lines: (calls) => {
+          lineCalls.push(calls);
+          return { data: Array.from({ length: 1_001 }, (_, index) => ({ id: `line-${index}`, transcript_id: "t1", text_jp: "word", start_time: index })), error: null };
+        },
+      },
+    });
+    vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
+    vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
+    vi.mocked(listCollectionLessons).mockResolvedValue([{ id: "v1", youtube_video_id: "yt1", title: "Catalogued", duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" }]);
+
+    const result = await getShadowingExplore();
+
+    expect(result).toMatchObject({ ok: true, data: { shelves: [{ lessons: [{ id: "v1", lineCount: 1_001 }] }] } });
+    expect(lineCalls).toEqual([
+      expect.arrayContaining([{ op: "range", from: 0, to: 999 }]),
+      expect.arrayContaining([{ op: "range", from: 1_000, to: 1_999 }]),
+    ]);
+  });
+
   it("projects all five authored shelves while leaving missing transcript data and unmeasured suggestions absent", async () => {
     const video = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
-    const client = createMockSupabase({
+    const client = exploreClient({
       user: USER,
       tables: {
-        user_lesson_library: () => ({ data: [{ lesson_id: "library" }], error: null }),
+        // The view answers "in my library"; the catalogue answers "recently added".
+        learner_videos: () => ({ data: [video("library")], error: null }),
         videos: () => ({ data: [video("library"), video("recent")], error: null }),
         transcripts: () => ({ data: [], error: null }),
         video_summaries: () => ({ data: [], error: null }),
@@ -152,7 +261,7 @@ describe("getShadowingExplore", () => {
   });
 
   it("tokenizes a repeated lesson transcript once per request even when editorial shelves overlap", async () => {
-    const client = createMockSupabase({
+    const client = exploreClient({
       user: USER,
       tables: {
         user_lesson_library: () => ({ data: [], error: null }), videos: () => ({ data: [], error: null }),
@@ -177,7 +286,7 @@ describe("getShadowingExplore", () => {
   });
 
   it("bounds a shelf to the Figma grid and records that later lessons are not silently omitted", async () => {
-    const client = createMockSupabase({
+    const client = exploreClient({
       user: USER,
       tables: {
         user_lesson_library: () => ({ data: [], error: null }), videos: () => ({ data: [], error: null }),

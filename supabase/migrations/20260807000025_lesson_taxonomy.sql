@@ -38,6 +38,22 @@ alter table videos add column source_id uuid references lesson_sources (id);
 create index idx_videos_situation_id on videos (situation_id);
 create index idx_videos_source_id on videos (source_id);
 
+create view learner_videos with (security_invoker = true) as
+select
+  v.id, v.youtube_video_id, v.title, v.duration_seconds, v.thumbnail_url,
+  v.jlpt_level_estimate, v.added_by_user_id, v.library_access,
+  v.promotion_starred, v.created_at, v.situation_id, v.source_id,
+  p.last_watched_position, p.completed_at, p.last_watched_at,
+  (p.video_id is not null and p.completed_at is null and p.last_watched_position > 0) as in_progress,
+  (case when p.video_id is not null and p.completed_at is null and p.last_watched_position > 0 then p.last_watched_at end) as in_progress_last_watched_at,
+  (exists (select 1 from user_lesson_library ull where ull.user_id = auth.uid() and ull.lesson_id = v.id)
+    or (v.library_access = 'PRIVATE' and v.added_by_user_id = auth.uid())) as in_library
+from videos v
+left join user_video_progress p on p.user_id = auth.uid() and p.video_id = v.id;
+
+revoke all on learner_videos from public, anon, authenticated;
+grant select on learner_videos to authenticated;
+
 alter table lesson_situations enable row level security;
 alter table lesson_sources enable row level security;
 

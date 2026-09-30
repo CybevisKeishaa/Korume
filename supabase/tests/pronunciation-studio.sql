@@ -32,12 +32,14 @@ select id as n2_two from public.videos where youtube_video_id = 'jlptgate-n2-two
 select id as pron_one from public.videos where youtube_video_id = 'jlptgate-pron-one' \gset
 select id as pron_two from public.videos where youtube_video_id = 'jlptgate-pron-two' \gset
 
-insert into public.transcripts (video_id, source) values (:'pron_one', 'ai_generated');
+insert into public.transcripts (video_id, source, created_at) values (:'pron_one', 'ai_generated', '2026-09-20 17:00:00+00');
 select id as transcript_id from public.transcripts where video_id = :'pron_one' order by created_at desc limit 1 \gset
 insert into public.transcript_lines (transcript_id, start_time, end_time, text_jp) values
   (:'transcript_id', 0, 15, 'measured line'), (:'transcript_id', 15, null, 'unknown length');
 select id as measured_line from public.transcript_lines where transcript_id = :'transcript_id' and end_time = 15 \gset
 select id as unknown_line from public.transcript_lines where transcript_id = :'transcript_id' and end_time is null \gset
+insert into public.transcripts (video_id, source, created_at) values (:'pron_one', 'user_submitted', '2026-09-20 18:00:00+00');
+select id as latest_transcript_id from public.transcripts where video_id = :'pron_one' order by created_at desc, id desc limit 1 \gset
 insert into public.shadowing_sessions (user_id, video_id, transcript_line_id, pronunciation_score, created_at) values
   -- Outside every window below: proves the window's lower bound.
   (:'uid_a', :'pron_one', :'measured_line', 50, '2026-09-19 12:00:00+00'),
@@ -146,6 +148,68 @@ commit;
 -- Ruling 17's speaking half: the caller's newest session per lesson, never
 -- another learner's, and one row per lesson asked for.
 select set_config('gate.pron_one', :'pron_one', false), set_config('gate.pron_two', :'pron_two', false);
+
+-- Ruling 19: past max_rows (1000). SQL has no cap, so this proves the view's
+-- meaning at that size and its caller scoping; the cap itself is the unit
+-- tests' (test/supabase-mock.ts `enforcePostgrestCap`).
+insert into public.videos (youtube_video_id, title, library_access)
+select 'jlptgate-page-' || n, 'Pagination gate ' || n, 'FREE' from generate_series(1, 1001) n;
+insert into public.user_lesson_library (user_id, lesson_id)
+select :'uid_a', id from public.videos where youtube_video_id like 'jlptgate-page-%';
+insert into public.user_video_progress (user_id, video_id, last_watched_position)
+select :'uid_a', id, 1 from public.videos where youtube_video_id = 'jlptgate-page-1001';
+select set_config('gate.transcript_id', :'latest_transcript_id', false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_a', 'role', 'authenticated')::text, true);
+do $$ begin
+  if (select count(*) from learner_videos where in_library) < 1001 then raise exception 'FAIL learner_videos: A''s 1001 library lessons are not all in_library'; end if;
+  if not (select in_progress from learner_videos where youtube_video_id = 'jlptgate-page-1001') then raise exception 'FAIL learner_videos: missing progress'; end if;
+  if (select transcript_id from latest_transcript_ids(array[current_setting('gate.pron_one')::uuid])) is distinct from current_setting('gate.transcript_id')::uuid then raise exception 'FAIL latest transcript'; end if;
+end $$;
+commit;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_b', 'role', 'authenticated')::text, true);
+do $$
+declare progress record;
+begin
+  select in_library, in_progress, last_watched_position, last_watched_at into progress
+  from learner_videos where youtube_video_id = 'jlptgate-page-1001';
+  if progress.in_library or progress.in_progress or progress.last_watched_position is not null or progress.last_watched_at is not null then
+    raise exception 'FAIL learner_videos RLS: B observed A progress';
+  end if;
+  -- B's own private import, never added to a library, still counts as B's.
+  if not coalesce((select in_library from learner_videos where youtube_video_id = 'jlptgate-n3-private'), false) then
+    raise exception 'FAIL learner_videos: own private import is not in_library';
+  end if;
+end $$;
+commit;
+
+insert into public.videos (youtube_video_id, title, library_access) values
+  ('jlptgate-rank-a', 'Rank A', 'FREE'), ('jlptgate-rank-b', 'Rank B', 'FREE');
+insert into public.user_lesson_library (user_id, lesson_id)
+select learner.id, lesson.id
+from (values (:'uid_a'::uuid), (:'uid_b'::uuid)) as learner(id)
+cross join (select id from public.videos where youtube_video_id in ('jlptgate-rank-a', 'jlptgate-rank-b')) as lesson;
+begin;
+set local role service_role;
+do $$
+declare actual uuid[]; expected uuid[];
+begin
+  select array_agg(lesson_id order by ord) into actual from popular_lesson_ids(2) with ordinality as ranked(lesson_id, ord);
+  select array_agg(id order by id) into expected from public.videos where youtube_video_id in ('jlptgate-rank-a', 'jlptgate-rank-b');
+  if actual is distinct from expected then raise exception 'FAIL popular rank: %, want %', actual, expected; end if;
+end $$;
+commit;
+begin;
+set local role anon;
+do $$ begin perform popular_lesson_ids(1); raise exception 'FAIL popular anon grant'; exception when insufficient_privilege then raise notice 'PASS popular anon denied'; end $$;
+commit;
+begin;
+set local role authenticated;
+do $$ begin perform popular_lesson_ids(1); raise exception 'FAIL popular authenticated grant'; exception when insufficient_privilege then raise notice 'PASS popular authenticated denied'; end $$;
+commit;
 begin;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'uid_a', 'role', 'authenticated')::text, true);

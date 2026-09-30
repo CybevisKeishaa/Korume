@@ -42,7 +42,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type QueryCall =
-  | { op: "select"; columns: string }
+  | { op: "select"; columns: string; options?: { count?: "exact"; head?: boolean } }
   | { op: "insert"; values: unknown }
   | { op: "upsert"; values: unknown; options?: { onConflict?: string; ignoreDuplicates?: boolean } }
   | { op: "update"; values: unknown }
@@ -66,6 +66,7 @@ export type QueryCall =
 export interface MockResult {
   data: unknown;
   error: { message: string; code?: string } | null;
+  count?: number | null;
 }
 
 export type TableResolver = (calls: QueryCall[]) => MockResult | Promise<MockResult>;
@@ -83,6 +84,8 @@ export interface MockSupabaseOptions {
   tables: Record<string, TableResolver>;
   /** Registered RPC responses; unknown names fail instead of silently returning empty data. */
   rpcs?: Record<string, RpcResolver>;
+  /** Opt-in PostgREST response cap for regression tests that exercise pagination. */
+  enforcePostgrestCap?: boolean;
   /**
    * Optional per-bucket `createSignedUrl` stub for code that calls
    * `supabase.storage.from(bucket).createSignedUrl(path, ttl)` (e.g.
@@ -136,8 +139,8 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
     }
 
     const builder: Builder = {
-      select(columns: string) {
-        calls.push({ op: "select", columns });
+      select(columns: string, options?: { count?: "exact"; head?: boolean }) {
+        calls.push({ op: "select", columns, ...(options ? { options } : {}) });
         return builder;
       },
       insert(values: unknown) {
@@ -224,7 +227,20 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
       // Makes the builder itself awaitable (`await supabase.from(t).select(...)`),
       // matching real supabase-js behaviour where every query is a thenable.
       then(onFulfilled: (r: MockResult) => unknown, onRejected?: (e: unknown) => unknown) {
-        return Promise.resolve(resolver(calls)).then(onFulfilled, onRejected);
+        return Promise.resolve(resolver(calls)).then((result) => {
+          if (!Array.isArray(result.data)) return result;
+          const select = calls.find((call): call is Extract<QueryCall, { op: "select" }> => call.op === "select");
+          const range = calls.find((call): call is Extract<QueryCall, { op: "range" }> => call.op === "range");
+          const limit = calls.find((call): call is Extract<QueryCall, { op: "limit" }> => call.op === "limit");
+          if (select?.options?.head) return { ...result, data: null, count: result.data.length };
+          if (!limit && !opts.enforcePostgrestCap) return result;
+          // Like PostgREST's max_rows, the cap bounds a range AND a limit.
+          const cap = opts.enforcePostgrestCap ? 1_000 : Number.POSITIVE_INFINITY;
+          const rows = range && opts.enforcePostgrestCap
+            ? result.data.slice(range.from, range.from + Math.min(range.to - range.from + 1, cap))
+            : result.data.slice(0, Math.min(limit?.count ?? cap, cap));
+          return { ...result, data: rows };
+        }).then(onFulfilled, onRejected);
       },
     };
     return builder;

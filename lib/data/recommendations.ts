@@ -8,7 +8,7 @@ import { contentLemmas, DIFFICULTY_BANDS, scoreComprehension } from "@/lib/diffi
 import { readPreferences } from "@/lib/data/preferences";
 import type { RecommendationBand, RecommendationReason, VideoRecommendation } from "@/lib/recommendation-types";
 import type { RecommendationsQuery } from "@/lib/validation/recommendations";
-import { fetchAllPages } from "@/lib/data/query-pagination";
+import { fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 
 /**
  * i+1 comprehensible-input video recommendations (CLAUDE.md §5.2). Scores
@@ -44,17 +44,12 @@ interface CandidateVideoRow {
   title: string;
   thumbnail_url: string | null;
   jlpt_level_estimate: string | null;
+  created_at: string;
 }
 
 interface ProgressRow {
   video_id: string;
   completed_at: string | null;
-}
-
-interface TranscriptRow {
-  id: string;
-  video_id: string;
-  created_at: string;
 }
 
 interface LineRow {
@@ -144,23 +139,15 @@ export async function knowsAnyVocabulary(): Promise<boolean> {
 async function scoreBatch(context: RecommendationContext, videos: CandidateVideoRow[]): Promise<Map<string, VideoRecommendation | null>> {
   const { supabase } = context;
   const ids = videos.map((video) => video.id);
-  const { data: transcriptRows, error: transcriptError } = await supabase
-    .from("transcripts")
-    .select("id, video_id, created_at")
-    .in("video_id", ids)
-    .order("created_at", { ascending: false });
-  if (transcriptError) throw transcriptError;
+  const latestTranscriptRows = await fetchByIdChunks(ids, async (videoIds) => {
+    const { data, error } = await supabase.rpc("latest_transcript_ids", { p_video_ids: videoIds });
+    if (error) throw error;
+    return (data as { video_id: string; transcript_id: string }[] | null) ?? [];
+  });
 
-  // First occurrence per video_id in this globally-desc-sorted list is that
-  // video's newest transcript — same "most recent transcript" convention as
-  // `lib/data/transcripts.ts::getTranscript`, generalized to many videos in
-  // one query instead of one `order().limit(1)` per video.
-  const latestTranscriptIdByVideoId = new Map<string, string>();
-  for (const row of (transcriptRows as TranscriptRow[] | null) ?? []) {
-    if (!latestTranscriptIdByVideoId.has(row.video_id)) {
-      latestTranscriptIdByVideoId.set(row.video_id, row.id);
-    }
-  }
+  // `latest_transcript_ids` picks each video's newest transcript in SQL — the
+  // same "most recent transcript" convention as `lib/data/transcripts.ts::getTranscript`.
+  const latestTranscriptIdByVideoId = new Map(latestTranscriptRows.map((row) => [row.video_id, row.transcript_id]));
 
   const transcriptIds = Array.from(new Set(latestTranscriptIdByVideoId.values()));
   const linesByTranscriptId = new Map<string, string[]>();
@@ -170,6 +157,7 @@ async function scoreBatch(context: RecommendationContext, videos: CandidateVideo
       .select("id, transcript_id, text_jp")
       .in("transcript_id", transcriptIds)
       .order("transcript_id", { ascending: true })
+      .order("start_time", { ascending: true })
       .order("id", { ascending: true })
       .range(from, to),
     ) as LineRow[];
@@ -247,14 +235,27 @@ export async function getRecommendations(query: RecommendationsQuery & { candida
   const context = await getRecommendationContext();
   if (!context) return { ok: false, status: 401 };
 
-  let videoQuery = context.supabase.from("videos")
-    .select("id, youtube_video_id, title, thumbnail_url, jlpt_level_estimate")
-    .in("library_access", ["FREE", "PLUS"]);
-  if (query.candidateIds) videoQuery = videoQuery.in("id", query.candidateIds);
-  const { data: videoRows, error: videoError } = await videoQuery.order("created_at", { ascending: false }).limit(query.candidateIds ? Math.min(query.candidateIds.length, SCAN_LIMIT) : SCAN_LIMIT);
-  if (videoError) throw videoError;
+  const columns = "id, youtube_video_id, title, thumbnail_url, jlpt_level_estimate, created_at";
+  const scannable = () => context.supabase.from("videos").select(columns).in("library_access", ["FREE", "PLUS"]);
+  let videoRows: CandidateVideoRow[];
+  if (query.candidateIds) {
+    // The newest SCAN_LIMIT of the caller's ids, whatever order they came in;
+    // the ids travel in chunks so a long list stays inside the request URL.
+    const rows = await fetchByIdChunks(query.candidateIds, async (ids) => {
+      const { data, error } = await scannable().in("id", ids);
+      if (error) throw error;
+      return (data as CandidateVideoRow[] | null) ?? [];
+    });
+    videoRows = rows
+      .sort((left, right) => right.created_at.localeCompare(left.created_at) || left.id.localeCompare(right.id))
+      .slice(0, SCAN_LIMIT);
+  } else {
+    const { data, error } = await scannable().order("created_at", { ascending: false }).order("id", { ascending: true }).limit(SCAN_LIMIT);
+    if (error) throw error;
+    videoRows = (data as CandidateVideoRow[] | null) ?? [];
+  }
 
-  const candidates = ((videoRows as CandidateVideoRow[] | null) ?? []).filter(
+  const candidates = videoRows.filter(
     (video) => !context.completedVideoIds.has(video.id),
   );
   if (candidates.length === 0) return { ok: true, data: [] };

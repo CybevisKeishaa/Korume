@@ -84,8 +84,7 @@ export async function getTodaySpeaking(now: Date = new Date()): Promise<TodaySpe
   const start = vnDayStart(now);
   const [seconds, completed, window] = await Promise.all([
     supabase.rpc("pronunciation_speaking_seconds", { p_start: start.toISOString(), p_end: now.toISOString() }),
-    // RLS scopes progress to the caller; a day's completions stay far below max_rows.
-    supabase.from("user_video_progress").select("video_id")
+    supabase.from("user_video_progress").select("video_id", { count: "exact", head: true })
       .gte("completed_at", start.toISOString()).lt("completed_at", now.toISOString()),
     getPronunciationMetricWindow(start, now),
   ]);
@@ -93,7 +92,7 @@ export async function getTodaySpeaking(now: Date = new Date()): Promise<TodaySpe
   if (completed.error) throw completed.error;
   return {
     minutes: Math.round(Number(seconds.data ?? 0) / 60),
-    lessonsCompleted: ((completed.data as { video_id: string }[] | null) ?? []).length,
+    lessonsCompleted: completed.count ?? 0,
     averageScore: window.means.accuracy === null ? null : Math.round(window.means.accuracy),
   };
 }

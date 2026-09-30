@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
-function useMock(tables: Record<string, TableResolver>, rpcs: Record<string, RpcResolver>) {
-  const supabase = createMockSupabase({ tables, rpcs });
+function useMock(tables: Record<string, TableResolver>, rpcs: Record<string, RpcResolver>, enforcePostgrestCap = false) {
+  const supabase = createMockSupabase({ tables, rpcs, enforcePostgrestCap });
   vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
   return supabase;
 }
@@ -54,6 +54,18 @@ describe("pronunciation metrics", () => {
     await expect(getTodaySpeaking(new Date("2026-09-30T01:00:00.000Z"))).resolves.toEqual({ minutes: 2, lessonsCompleted: 2, averageScore: null });
     expect(supabase.rpcCalls).toContainEqual({ name: "pronunciation_speaking_seconds", args: { p_start: "2026-09-29T17:00:00.000Z", p_end: "2026-09-30T01:00:00.000Z" } });
     expect(calls).toEqual(expect.arrayContaining([{ op: "gte", column: "completed_at", value: "2026-09-29T17:00:00.000Z" }, { op: "lt", column: "completed_at", value: "2026-09-30T01:00:00.000Z" }]));
+  });
+
+  it("counts all 1,001 completed lessons in SQL instead of a capped row body", async () => {
+    useMock({
+      user_video_progress: () => ({ data: Array.from({ length: 1_001 }, (_, index) => ({ video_id: `lesson-${index}` })), error: null }),
+    }, {
+      pronunciation_speaking_seconds: () => ({ data: 0, error: null }),
+      pronunciation_metric_means: () => ({ data: [], error: null }),
+    }, true);
+    const { getTodaySpeaking } = await import("./pronunciation-metrics");
+
+    await expect(getTodaySpeaking(new Date("2026-09-30T01:00:00.000Z"))).resolves.toMatchObject({ lessonsCompleted: 1_001 });
   });
 
   it("keeps unknown weekly deltas unknown, retains measured zero, and coerces trend numbers", async () => {

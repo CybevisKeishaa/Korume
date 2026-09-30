@@ -5,6 +5,7 @@ import { getTranscript } from "@/lib/data/transcripts";
 import { tokenize } from "@/lib/japanese/tokenizer";
 import { contentLemmas, DIFFICULTY_BANDS, scoreComprehension } from "@/lib/difficulty";
 import { readPreferences } from "@/lib/data/preferences";
+import { fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 import type { ComprehensionScore } from "@/lib/difficulty";
 
 /**
@@ -63,24 +64,24 @@ export async function getKnownVocabLemmas(
   supabase: ReturnType<typeof createClient>,
   userId: string,
 ): Promise<Set<string>> {
-  const { data: progress, error: progressError } = await supabase
+  const progress = await fetchAllPages((from, to) => supabase
     .from("user_vocab_progress")
     .select("vocab_id")
     .eq("user_id", userId)
-    .gte("srs_stage", MASTERY_THRESHOLD);
-  if (progressError) throw progressError;
-
-  const vocabIds = ((progress ?? []) as { vocab_id: string }[]).map((row) => row.vocab_id);
+    .gte("srs_stage", MASTERY_THRESHOLD)
+    .order("vocab_id", { ascending: true })
+    .range(from, to)) as { vocab_id: string }[];
+  const vocabIds = progress.map((row) => row.vocab_id);
   if (vocabIds.length === 0) return new Set();
 
-  const { data: vocabRows, error: vocabError } = await supabase
-    .from("vocab")
-    .select("word, reading")
-    .in("id", vocabIds);
-  if (vocabError) throw vocabError;
+  const vocabRows = await fetchByIdChunks(vocabIds, async (ids) => {
+    const { data, error } = await supabase.from("vocab").select("word, reading").in("id", ids);
+    if (error) throw error;
+    return (data as { word: string; reading: string | null }[] | null) ?? [];
+  });
 
   const known = new Set<string>();
-  for (const row of (vocabRows ?? []) as { word: string; reading: string | null }[]) {
+  for (const row of vocabRows) {
     known.add(row.word);
     if (row.reading) known.add(row.reading);
   }

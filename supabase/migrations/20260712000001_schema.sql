@@ -207,6 +207,22 @@ create table transcript_lines (
   furigana_json jsonb
 );
 
+create function latest_transcript_ids(p_video_ids uuid[])
+  returns table (video_id uuid, transcript_id uuid)
+  language sql
+  stable
+  security invoker
+  set search_path = public
+as $$
+  select distinct on (t.video_id) t.video_id, t.id
+  from transcripts t
+  where t.video_id = any (p_video_ids)
+  order by t.video_id, t.created_at desc, t.id desc;
+$$;
+
+revoke all on function latest_transcript_ids(uuid[]) from public, anon;
+grant execute on function latest_transcript_ids(uuid[]) to authenticated, service_role;
+
 -- Sentences per lesson: the line count of each video's latest transcript, the
 -- one every reader shows. Counted here because a PostgREST read of the lines
 -- is capped at max_rows (1000) and would undercount without an error.

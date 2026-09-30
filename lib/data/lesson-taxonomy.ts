@@ -24,6 +24,7 @@ function toTag(row: TagRow): LessonTag {
 
 async function listTable(table: "lesson_situations" | "lesson_sources"): Promise<LessonTag[]> {
   const supabase = createClient();
+  // Curated taxonomy: cardinality stays far below PostgREST max_rows.
   const { data, error } = await supabase
     .from(table)
     .select("id, slug, display_order")
@@ -90,6 +91,7 @@ export interface PracticeSituation {
  */
 export async function listPracticeSituations(): Promise<PracticeSituation[]> {
   const supabase = createClient();
+  // Curated taxonomy: cardinality stays far below PostgREST max_rows.
   const { data, error } = await supabase
     .from("lesson_situations")
     .select("id, slug, icon")

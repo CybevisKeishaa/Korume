@@ -54,6 +54,7 @@ function toCollection(row: CollectionRow): Collection {
 
 export async function listCollections(): Promise<Collection[]> {
   const supabase = createClient();
+  // Curated admin catalogue: cardinality stays far below PostgREST max_rows.
   const { data, error } = await supabase
     .from("collections")
     .select(COLLECTION_COLUMNS)
@@ -174,6 +175,7 @@ export function lastActivityAt(watchedAt: string | null | undefined, spokenAt: s
 /** The shared per-collection progress view for paths and goals. */
 async function getCollectionViews(kind: "path" | "goal"): Promise<CollectionView[]> {
   const supabase = createClient();
+  // Curated paths and goals: cardinality stays far below PostgREST max_rows.
   const { data: candidateRows, error: candidateError } = await supabase
     .from("collections").select(COLLECTION_COLUMNS).eq("kind", kind).order("display_order", { ascending: true });
   if (candidateError) throw candidateError;
@@ -245,7 +247,7 @@ export async function getLearningPaths(): Promise<LearningPaths> {
       if (error) throw error;
       return (data as { video_id: string; spoken_at: string }[] | null) ?? [];
     }),
-    // RLS scopes the user table to the caller.
+    // At most one saved row per collection for this caller (primary key).
     supabase.from("user_saved_collections").select("collection_id"),
   ]);
   if (savedError) throw savedError;
@@ -420,6 +422,7 @@ export interface ShadowingCollectionSummary {
 /** The shadowing collections with at least one lesson the viewer can see. */
 export async function getShadowingCollections(): Promise<ShadowingCollectionSummary[]> {
   const supabase = createClient();
+  // Fixed five-slug editorial shelf, so this cannot approach max_rows.
   const { data: collectionRows, error: collectionError } = await supabase
     .from("collections").select(COLLECTION_COLUMNS).in("slug", [...SHADOWING_COLLECTION_SLUGS]);
   if (collectionError) throw collectionError;
