@@ -121,6 +121,13 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   - Known flake, not this branch: `shadowing-explore.spec.ts` "seeded shelf card…" timed out 2/3 alone on this
     build and 1/3 on a master build (`4c2d983`, throwaway worktree) at the same step (waiting for "Add to My
     Lessons"); 8/8 on the fresh-DB run.
+- T11 review (independent): CHANGES REQUIRED 0C/3I/9M. Fixed in `fix(e2e): T11 review`: I-1 a rollback that
+  lands after leave-and-return now reaches the mounted providers (broadcast; mutation red); I-2 the live
+  latency is now measured against the media crossing extrapolated from per-frame (now, currentTime) samples —
+  Ep.729 8 boundaries 6.2–18.8 ms (max = p95 18.8), iframe clock update median 8 ms / max 20 ms; I-3 test 7
+  reloads and re-asserts (server persistence, not the overlay); M3 one-definition guard; M9 env check in
+  beforeAll; M1 race noted in the overlay comment. Kept (accepted): M2 `resetTabWritesForTests` (precedent:
+  `resetSchedulerForTests`), M4/M5/M6/M7/M8 (pre-existing or test-data hygiene, no defect).
 
 ### Carried forward (open, owned by a later task)
 

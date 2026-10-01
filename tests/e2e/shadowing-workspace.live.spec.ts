@@ -1,5 +1,5 @@
 import { loadEnvConfig } from "@next/env";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 
@@ -18,8 +18,8 @@ const BOUNDARIES = 8;
 test.use({ viewport: { width: 1280, height: 529 } });
 
 loadEnvConfig(process.cwd());
-const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
 const videoId = process.env.EP729_VIDEO_ID;
+let admin: SupabaseClient;
 
 interface Line { start: number; end: number | null; translation: string | null }
 let lines: Line[] = [];
@@ -27,6 +27,10 @@ let lines: Line[] = [];
 test.beforeAll(async () => {
   const missing = new Error("fixture missing: run scripts/seed-real-lesson.ts and set EP729_VIDEO_ID");
   if (!videoId) throw missing;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) throw new Error("the live gate needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local");
+  admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const video = await admin.from("videos").select("id, youtube_video_id").eq("id", videoId).maybeSingle();
   if (video.error || !video.data || video.data.youtube_video_id !== YOUTUBE_ID) throw missing;
   const transcript = await admin.from("transcripts").select("id").eq("video_id", videoId).single();
@@ -103,40 +107,48 @@ test("Ep.729: the real player, boundary latency, follow, replay, loop, speed, re
     return time >= line.start && time < (lines[index + 1]?.start ?? Infinity);
   }).toBe(true);
 
-  // 3. Boundary latency at 1×: row change (MutationObserver) − first frame the player's clock reached the
-  //    next line's start (rAF poll of getCurrentTime), for 8 consecutive boundaries.
+  // 3. Boundary latency at 1× (spec §7.4: the row follows the line's TIMESTAMP within 300 ms). The iframe
+  //    reports media time through a cache, and the app reads that same cache in rAF — so "first frame the
+  //    cache reached start" would be ~0 by construction (T11 review I-2). Instead every frame logs
+  //    (performance.now(), getCurrentTime()); the wall-clock instant the media crossed each line start is
+  //    extrapolated from the last sample before it (t + (start − ct) / rate), and the row change is measured
+  //    against that. The report also carries how often the cached time actually changes.
   const starts = lines.map((line) => line.start);
-  const deltas = await page.evaluate(async ({ starts, count }) => {
-    const players = (window as unknown as { __players: { getCurrentTime(): number }[] }).__players;
+  const latency = await page.evaluate(async ({ starts, count }) => {
+    const players = (window as unknown as { __players: { getCurrentTime(): number; getPlaybackRate(): number }[] }).__players;
     const yt = players[players.length - 1]!;
-    const reached = new Map<number, number>();
     const changed = new Map<number, number>();
+    const samples: [number, number][] = [];
     const list = document.querySelector("[data-testid='transcript-scroll'] ol")!;
-    const observer = new MutationObserver((records) => {
-      for (const record of records) {
-        const li = record.target as HTMLElement;
-        if (li.dataset.state === "current" && !changed.has(Number(li.dataset.index))) changed.set(Number(li.dataset.index), performance.now());
-      }
+    const observer = new MutationObserver(() => {
+      const now = performance.now();
+      const li = list.querySelector<HTMLElement>("li[data-state='current']");
+      if (li && !changed.has(Number(li.dataset.index))) changed.set(Number(li.dataset.index), now);
     });
     observer.observe(list, { subtree: true, attributes: true, attributeFilter: ["data-state"] });
     const first = starts.findIndex((start) => start > yt.getCurrentTime() + 0.3);
     const wanted = Array.from({ length: count }, (_, i) => first + i);
     await new Promise<void>((resolve) => {
       const poll = () => {
-        const now = yt.getCurrentTime();
-        for (const index of wanted) if (!reached.has(index) && now >= starts[index]!) reached.set(index, performance.now());
-        if (wanted.every((index) => reached.has(index) && changed.has(index))) return resolve();
+        samples.push([performance.now(), yt.getCurrentTime()]);
+        if (wanted.every((index) => changed.has(index)) && samples[samples.length - 1]![1] > starts[wanted[wanted.length - 1]!]! + 0.5) return resolve();
         requestAnimationFrame(poll);
       };
       requestAnimationFrame(poll);
     });
     observer.disconnect();
-    // Tenths of a millisecond: rounding to whole ms would print a same-frame −0.3 as 0 and hide its sign.
-    return wanted.map((index) => ({ index, deltaMs: Math.round((changed.get(index)! - reached.get(index)!) * 10) / 10 }));
+    const rate = yt.getPlaybackRate();
+    const crossings = wanted.map((index) => {
+      const start = starts[index]!;
+      const before = [...samples].reverse().find(([, time]) => time < start)!;
+      return { index, deltaMs: Math.round((changed.get(index)! - (before[0] + ((start - before[1]) / rate) * 1000)) * 10) / 10 };
+    });
+    const updates = samples.filter((sample, i) => i > 0 && sample[1] !== samples[i - 1]![1]).map((sample, i, all) => (i ? sample[0] - all[i - 1]![0] : 0)).slice(1).sort((a, b) => a - b);
+    return { crossings, clockUpdateMedianMs: Math.round(updates[Math.floor(updates.length / 2)] ?? -1), clockUpdateMaxMs: Math.round(updates[updates.length - 1] ?? -1) };
   }, { starts, count: BOUNDARIES });
-  const values = deltas.map((delta) => delta.deltaMs);
+  const values = latency.crossings.map((crossing) => crossing.deltaMs);
   const sorted = [...values].sort((a, b) => a - b);
-  const summary = { deltas, maxMs: sorted.at(-1), p95Ms: sorted[Math.ceil(sorted.length * 0.95) - 1] };
+  const summary = { ...latency, maxMs: sorted.at(-1), p95Ms: sorted[Math.ceil(sorted.length * 0.95) - 1] };
   await testInfo.attach("boundary-latency.json", { body: JSON.stringify(summary, null, 2), contentType: "application/json" });
   console.log("boundary latency", JSON.stringify(summary));
   expect(values.length).toBe(BOUNDARIES);

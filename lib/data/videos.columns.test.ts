@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
@@ -20,5 +20,12 @@ describe("VIDEO_COLUMNS against the learner_videos view", () => {
     expect(exposed.size).toBeGreaterThan(10);
     const columns = VIDEO_COLUMNS.split(",").map((column) => column.trim());
     expect(columns.filter((column) => !exposed.has(column))).toEqual([]);
+  });
+
+  it("reads the view's only definition: no later migration redefines learner_videos", () => {
+    const directory = path.join(process.cwd(), "supabase/migrations");
+    const definers = readdirSync(directory)
+      .filter((file) => file.endsWith(".sql") && /create\s+(or\s+replace\s+)?view\s+(public\.)?learner_videos\b/i.test(readFileSync(path.join(directory, file), "utf8")));
+    expect(definers).toEqual(["20260807000025_lesson_taxonomy.sql"]);
   });
 });

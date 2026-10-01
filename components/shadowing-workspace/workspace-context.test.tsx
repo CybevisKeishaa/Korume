@@ -267,6 +267,23 @@ describe("a stale bootstrap after this tab's own writes (spec §4.3)", () => {
     expect(later.result.current.preferences.preferences.studyAtmosphere).toBe("quiet_library");
   });
 
+  it("a write that fails after the learner left and came back is rolled back on the mounted page (review I-1)", async () => {
+    const pending: (() => void)[] = [];
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { pending.push(() => resolve(new Response(null, { status: 500 }))); })));
+    const first = mount(stale("tab-late"));
+    act(() => first.result.current.preferences.setPreference("studyAtmosphere", "rainy_day"));
+    act(() => first.result.current.marks.toggleMark("line-1", "bookmark"));
+    first.unmount();
+    const again = mount(stale("tab-late"));
+    expect(again.result.current.preferences.preferences.studyAtmosphere).toBe("rainy_day");
+    expect(again.result.current.marks.isMarked("line-1", "bookmark")).toBe(true);
+    expect(pending).toHaveLength(2);
+    await act(async () => { for (const reject of pending) reject(); await Promise.resolve(); });
+    await flush();
+    expect(again.result.current.preferences.preferences.studyAtmosphere).toBe("none");
+    expect(again.result.current.marks.isMarked("line-1", "bookmark")).toBe(false);
+  });
+
   it("records a rollback too: a failed write does not come back on the next mount", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
     const first = mount(stale("tab-failed"));

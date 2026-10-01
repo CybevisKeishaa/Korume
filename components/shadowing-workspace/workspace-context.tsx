@@ -125,11 +125,24 @@ function useRefreshAfterWrite(mutator: KeyedMutator) {
  * leaves at once returns (client-side Back) to the payload from BEFORE the write (T11, measured: 3 of 3 runs
  * stale with no wait, 0 of 3 after 3 s). Every optimistic apply and rollback records its value here; a
  * remount takes the recorded value over the bootstrap's, and forgets it once a bootstrap agrees.
+ * A rollback can land after the learner left and came back: it then belongs to an unmounted instance, so it
+ * is also broadcast and the mounted providers take it (T11 review I-1) — a failed write never stays "saved".
  * ponytail: lives for the tab; a later change from another device is masked here until a bootstrap shows
- * this tab's value or the tab reloads (a full load drops the map).
+ * this tab's value or the tab reloads (a full load drops the map). "Agrees" compares values, not newness:
+ * two in-flight writes of the same key that land out of order can still leave the server on the older one —
+ * a race the keyed mutator already had, which this map neither causes nor fixes.
  */
 const tabWrites = new Map<string, unknown>();
+const tabWriteListeners = new Set<(key: string, value: unknown) => void>();
 function rememberWrite(key: string, value: unknown) { tabWrites.set(key, value); }
+function rollbackWrite(key: string, value: unknown) {
+  tabWrites.set(key, value);
+  for (const listener of tabWriteListeners) listener(key, value);
+}
+function onRollback(listener: (key: string, value: unknown) => void): () => void {
+  tabWriteListeners.add(listener);
+  return () => { tabWriteListeners.delete(listener); };
+}
 /** Tests share one module (one "tab") across cases; each case starts with a fresh tab. */
 export function resetTabWritesForTests() { tabWrites.clear(); }
 function reconcileWrite<V>(key: string, server: V): V {
@@ -166,12 +179,21 @@ function PreferencesProvider({ userId, initial, dispatch, children }: { userId: 
       rollback: () => {
         const next = { ...preferencesRef.current, [key]: previous } as UserPreferences;
         preferencesRef.current = next;
-        rememberWrite(`pref:${userId}:${key}`, previous);
         setPreferences(next);
+        rollbackWrite(`pref:${userId}:${key}`, previous);
       },
       onSettled: (ok) => { setMutationRevision((revision) => revision + 1); refreshAfterWrite(`pref:${key}`, ok); },
     });
   }, [dispatch, mutator, refreshAfterWrite, userId]);
+  useEffect(() => onRollback((key, value) => {
+    const prefix = `pref:${userId}:`;
+    if (!key.startsWith(prefix)) return;
+    const name = key.slice(prefix.length) as keyof UserPreferences;
+    if (Object.is(preferencesRef.current[name], value)) return;
+    const next = { ...preferencesRef.current, [name]: value } as UserPreferences;
+    preferencesRef.current = next;
+    setPreferences(next);
+  }), [userId]);
   // mutationRevision is load-bearing: it re-renders consumers so pending() reflects a settled request.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const value = useMemo(() => ({ preferences, setPreference, pending: (key: PreferenceKey) => mutator.isPending(`pref:${key}`) }), [mutationRevision, mutator, preferences, setPreference]);
@@ -220,7 +242,7 @@ function MarksProvider({ bootstrap, children }: { bootstrap: WorkspaceBootstrap;
         });
         if (!response.ok) throw new Error("Sentence mark update failed");
       },
-      rollback: () => { rememberWrite(`mark:${userId}:${id}`, marked); updateMarks((next) => marked ? next.add(id) : next.delete(id)); },
+      rollback: () => { updateMarks((next) => marked ? next.add(id) : next.delete(id)); rollbackWrite(`mark:${userId}:${id}`, marked); },
       onSettled: (ok) => { setMutationRevision((revision) => revision + 1); refreshAfterWrite(`mark:${lineId}:${kind}`, ok); },
     });
   }, [mutator, refreshAfterWrite, updateMarks, userId]);
@@ -232,10 +254,20 @@ function MarksProvider({ bootstrap, children }: { bootstrap: WorkspaceBootstrap;
         const response = await fetch(`/api/videos/${bootstrap.video.id}/bookmark`, { method: bookmarked ? "DELETE" : "PUT", headers: { "Content-Type": "application/json" } });
         if (!response.ok) throw new Error("Lesson bookmark update failed");
       },
-      rollback: () => { bookmarkRef.current = bookmarked; rememberWrite(`bookmark:${userId}:${bootstrap.video.id}`, bookmarked); setLessonBookmarked(bookmarked); },
+      rollback: () => { bookmarkRef.current = bookmarked; setLessonBookmarked(bookmarked); rollbackWrite(`bookmark:${userId}:${bootstrap.video.id}`, bookmarked); },
       onSettled: (ok) => { setMutationRevision((revision) => revision + 1); refreshAfterWrite("lesson-bookmark", ok); },
     });
   }, [bootstrap.video.id, mutator, refreshAfterWrite, userId]);
+  useEffect(() => onRollback((key, value) => {
+    if (key === `bookmark:${userId}:${bootstrap.video.id}`) {
+      if (bookmarkRef.current !== value) { bookmarkRef.current = value as boolean; setLessonBookmarked(value as boolean); }
+      return;
+    }
+    const prefix = `mark:${userId}:`;
+    if (!key.startsWith(prefix)) return;
+    const id = key.slice(prefix.length);
+    if (marksRef.current.has(id) !== value) updateMarks((next) => value ? next.add(id) : next.delete(id));
+  }), [bootstrap.video.id, updateMarks, userId]);
   const value = useMemo(() => ({
     isMarked: (lineId: string, kind: SentenceMarkKind) => marks.has(markKey(lineId, kind)), toggleMark, lessonBookmarked, toggleLessonBookmark,
     pending: (key: string) => mutator.isPending(key),

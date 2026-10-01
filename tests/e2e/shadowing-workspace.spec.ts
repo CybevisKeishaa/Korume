@@ -186,9 +186,16 @@ test("7 · a mark, the lesson bookmark and a preference survive a client-side le
   await page.keyboard.press("Escape");
 
   await leaveAndReturn(page);
-  await expect(row(page, 2).getByText("Bookmarked", { exact: true })).toBeAttached();
-  await expect(page.getByRole("button", { name: "Bookmark lesson" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("shadowing-workspace")).toHaveAttribute("data-atmosphere", "rainy_day");
+  const assertSaved = async () => {
+    await expect(row(page, 2).getByText("Bookmarked", { exact: true })).toBeAttached();
+    await expect(page.getByRole("button", { name: "Bookmark lesson" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("shadowing-workspace")).toHaveAttribute("data-atmosphere", "rainy_day");
+  };
+  await assertSaved();
+  // A reload drops the tab's own-write overlay: only what the server persisted can come back (review I-3).
+  await page.reload();
+  await expect(page.getByTestId("fake-yt")).toHaveCount(1);
+  await assertSaved();
 });
 
 test("8 · Focus and Full Transcript never remount the player, nor do a divider drag or a settings change", async ({ page }) => {
