@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server";
-import { render } from "@/test/render";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, TestIntlProvider } from "@/test/render";
+import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { usePositionStore } from "./workspace-context";
@@ -39,7 +40,10 @@ function StoreProbe(): null {
 }
 
 describe("ShadowingWorkspaceShell", () => {
+  let yt: YouTubeStubHandle;
+  afterEach(() => yt.restore());
   beforeEach(() => {
+    yt = installYouTubeStub();
     sessionStorage.clear();
     observedStore = undefined;
     pathname = "/en/shadowing/video-1";
@@ -78,7 +82,7 @@ describe("ShadowingWorkspaceShell", () => {
     function Position(): JSX.Element { return <output>{usePositionStore().get()}</output>; }
 
     // No effects run in a server render: the markup must come from the server resume (12), never sessionStorage.
-    expect(renderToString(<ShadowingWorkspaceShell bootstrap={resumed}><Position /></ShadowingWorkspaceShell>)).toContain("<output>12</output>");
+    expect(renderToString(<TestIntlProvider><ShadowingWorkspaceShell bootstrap={resumed}><Position /></ShadowingWorkspaceShell></TestIntlProvider>)).toContain("<output>12</output>");
 
     const view = render(<ShadowingWorkspaceShell bootstrap={resumed}><StoreProbe /></ShadowingWorkspaceShell>);
     expect(observedStore?.get()).toBe(16);

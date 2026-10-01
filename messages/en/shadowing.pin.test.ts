@@ -494,3 +494,28 @@ describe("shadowing.json EN workspace transcript recovery", () => {
     expect(en.workspace.regionLabel).toBe("Shadowing practice");
   });
 });
+
+describe("shadowing.json EN workspace player", () => {
+  it("pins the player control names", () => {
+    expect(en.workspace.player).toEqual({
+      label: "Player",
+      play: "Play",
+      pause: "Pause",
+      previous: "Previous sentence",
+      next: "Next sentence",
+      rewind5: "Back 5 seconds",
+      seek: "Seek",
+      seekValue: "{current} of {total}",
+      loop: "Sentence",
+      loopToggle: "Sentence loop",
+      loopCount: "Plays per sentence",
+      speed: "Playback speed",
+      speedValue: "Playback speed {rate}",
+      mute: "Mute",
+      unmute: "Unmute",
+      subtitlesShow: "Show subtitles",
+      subtitlesHide: "Hide subtitles",
+      fullscreen: "Player fullscreen",
+    });
+  });
+});

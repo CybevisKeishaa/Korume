@@ -205,6 +205,26 @@
       "retry": "Thử lại",
       "backToHub": "Quay lại Shadowing Hub"
     },
-    "regionLabel": "Luyện shadowing"
+    "regionLabel": "Luyện shadowing",
+    "player": {
+      "label": "Trình phát",
+      "play": "Phát",
+      "pause": "Tạm dừng",
+      "previous": "Câu trước",
+      "next": "Câu tiếp theo",
+      "rewind5": "Lùi 5 giây",
+      "seek": "Tua",
+      "seekValue": "{current} / {total}",
+      "loop": "Câu",
+      "loopToggle": "Lặp câu",
+      "loopCount": "Số lần phát mỗi câu",
+      "speed": "Tốc độ phát",
+      "speedValue": "Tốc độ phát {rate}",
+      "mute": "Tắt tiếng",
+      "unmute": "Bật tiếng",
+      "subtitlesShow": "Hiện phụ đề",
+      "subtitlesHide": "Ẩn phụ đề",
+      "fullscreen": "Toàn màn hình trình phát"
+    }
   }
 }

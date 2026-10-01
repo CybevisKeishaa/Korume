@@ -242,6 +242,11 @@
      section's own `py-2xl`, so the heading still clears — measured, not
      assumed. */
   --layout-header-height: calc(64 * var(--density-unit));
+  /* Shadowing workspace (spec §7.1): the viewport height the 16:9 video must leave for the workspace header
+     (48), the control bar (64), the Live Sentence label + one Japanese line (~120) and paddings (56). The
+     video's width is min(column, (100dvh - this) * 16/9), so at the owner's 1280x529 the Japanese line of
+     Live Sentence stays visible. Declared in both density blocks, like every derived token. */
+  --workspace-video-reserve: calc(288 * var(--density-unit));
   /* The MARKETING pages' content column — wider than the rest of the app on
      purpose, and a separate fact from --layout-content-max (the shadowing
      shell). Frame 347:6277, the binding design for `/`, is 1280 wide and puts
@@ -434,6 +439,7 @@
   --layout-content-max: calc(1240 * var(--density-unit));
   --layout-companion-width: clamp( calc(240 * var(--density-unit)), 27.5%, calc(340 * var(--density-unit)) );
   --layout-header-height: calc(64 * var(--density-unit));
+  --workspace-video-reserve: calc(288 * var(--density-unit));
   --text-caption: max(0.6875rem, calc(12 * var(--density-unit)));
   --leading-caption: max(1.03125rem, calc(18 * var(--density-unit)));
   --text-body: calc(14 * var(--density-unit));

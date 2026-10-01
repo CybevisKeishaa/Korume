@@ -16,7 +16,9 @@ Shadowing workspace Part 1a: the core Shadowing loop at `/[locale]/shadowing/[id
 
 ## Accepted commits
 
-- `6ec1133` `8c8f2f6` spec · `e8d4b13` `797b35e` `5cec887` plan · Task 1 (this commit)
+- `6ec1133` `8c8f2f6` spec · `e8d4b13` `797b35e` `5cec887` plan · T1 `7f1d4bf` · T2 `2b18574` · T3 `a623da5` ·
+  T4a `a4020dc` · T4b `8c6c083` · T5 `e643374` · T6a (this commit). Per-task evidence (REDs, mutations,
+  review verdicts and what each closed) is in those commit messages.
 
 ## Contracts and decisions
 
@@ -51,129 +53,30 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Verification
 
-- Task 4a (Codex): `lib/data/shadowing-workspace.test.ts` 0 (6 tests), `components/shadowing-workspace/playback-position-store.test.ts` 0 (4 tests), and `components/shadowing-workspace/workspace-context.test.tsx` 0 (11 tests), each run separately through `C:/nvm4w/nodejs/node.exe`. Mutations red then byte-restored: fresh current-sentence snapshot (context: 7 failures); stale keyed rollback (context: preference latest-only test); Date DTO payload (loader: serializable bootstrap test). `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` 0 before handoff; `git diff --check` 0. Report: `.superpowers/sdd/shadowing-workspace-1a/task-4a-report.md`. Claude-only: full Vitest, tsc, lint, full protocol, review, commit.
+Every accepted task above ended with tsc 0, lint 0, `verify:protocol` 0 and full vitest 0 (after T5:
+423 files / 3858 tests; vitest runs `--minWorkers=1 --maxWorkers=2` — see Working tree). Each had an
+independent `code-reviewer`; fixes were re-reviewed when they touched logic (the T5 re-review caught a
+regression the fixes introduced). DB gates after T1/T2: fresh reset, `verify:db:shadowing`,
+`lesson-jobs`, `settings`, `pronunciation` all 0. Browser checks (worktree `next dev -p 3001`, temp auth
+user, Playwright Chrome at 1280×529, script in the session scratchpad `ws-check.mjs` / `ws-6a.mjs`):
+T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scroll).
 
-- Task 3 (Codex): test files were written before production modules. The prescribed bare-node focused command exited 1 before Vitest (`node` is not on this shell PATH); the usable local equivalent `& 'C:\nvm4w\nodejs\node.exe' node_modules/vitest/vitest.mjs run lib/shadowing-workspace --reporter=dot` exited 0 twice (13 files, 42 tests), once after all restores. Mutations each red then restored: lookup `<=`â†’`<` (two sentence boundary assertions); stale keyed rollback (latest-success test); server/session `>`â†’`<` (arbitration + invalid-winner tests); remove slider selector (interactive-target test). `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` â†’ 0. Report: `.superpowers/sdd/shadowing-workspace-1a/task-3-report.md`. Claude-only: full suite, tsc, lint, full protocol, review, commit.
+### Carried forward (open, owned by a later task)
 
-- Task 1 failure-first: `npx vitest run supabase/migrations --reporter=dot` — exit 1 before SQL; shell could not resolve `npx`, so Vitest did not start.
-- Task 1 mutation: renaming `create table sentence_marks` to `sentence_marks_broken` made the local migration test exit 1 on the exact table assertion; restored.
-- Task 1: local-node equivalent of `npx vitest run supabase/migrations --reporter=dot` — exit 0 (8 files, 39 tests).
-- Task 1: full Vitest, `tsc --noEmit`, and lint each had no exit code because this environment ended commands at 30 seconds; Claude must run the prescribed commands.
-- Task 1: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` — exit 0 (`Codex protocol: valid`).
-- Task 1 (Claude review): Codex's "failure-first" never ran (no `npx` in its shell); the table-rename
-  mutation stands in as the seen-failing proof. Claude ran: tsc 0, lint 0, protocol 0; full vitest
-  first RED 2 tests in `lib/user-export/tables.test.ts` — the two new user-owned tables were not in the
-  GDPR export registry. Fixed by Claude: `lib/user-export/tables.ts` + paging keys in
-  `lib/data/user-export.ts` + counts 28→30 / 30→32 in the test; then vitest green.
-- Task 1 live: fresh `npx supabase db reset` 0; `verify:db:shadowing` 0, `lesson-jobs` 0, `settings` 0,
-  `pronunciation` 0. Mutation: removing the sentence_marks insert `exists` → gate exit 1 at
-  `FAIL 4: B marked A private line`; restored → 0.
-
-- Task 1 independent review (code-reviewer): CHANGES REQUIRED, 0 Critical / 2 Important / 5 Minor,
-  all fixed by Claude: I-1 gate F6 could not fail (NULL <> x, non-strict select, perform) → strict
-  select, `is distinct from`, asserts `state = succeeded`; I-2 a >200-char oEmbed author would fail the
-  whole lesson on the CHECK → finalize stores `left(nullif(btrim(x, E' 	
-　'), ''), 200)`
-  (M-1 full-width blank → null), live cases for 201 chars and whitespace-only; M-2 bookmark spoof/update
-  cases added to gate 6/7; M-3 case 9 asserts the rows exist first; M-4 comment reworded.
-- Task 1 final: mutation `channel_title → null` in finalize → lesson-jobs gate exit 1
-  (`F6 channel title was <NULL>`); restored. Fresh reset; verify:db lesson-jobs/shadowing/settings/
-  pronunciation all 0; tsc 0, lint 0, protocol 0, vitest 0 (3700 tests).
-
-- Task 2 (Codex resume): focused data/API test batch exited 1 as expected before fix because an insert `42501` refusal was returned as success. Removing that success case made the focused marks/routes batch pass (13 tests); required mutation restoring it exited 1 at the 404 assertion and restore passed. Pipeline/store/worker/videos/progress: 0 (5 files, 104 tests); preferences/transcripts/marks/bookmarks/routes: 0 (7 files, 41 tests); VideoRow fixture tests: 0 (5 files, 76 tests); videos/bookmarks: 0 (13 tests). No-row resume/bookmark mutations both failed, then restored and passed. `git diff --check`: 0; `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1`: 0 (`Codex protocol: valid`). Full Vitest, tsc, lint, protocol, reset/lesson-jobs, independent review, and live embedded-filter verification remain Claude-only. Report: `.superpowers/sdd/shadowing-workspace-1a/task-2-report.md`.
-- Task 2 command ledger: `node node_modules/vitest/vitest.mjs run lib/data/preferences.test.ts lib/validation/preferences.test.ts lib/data/transcripts.test.ts lib/data/videos.test.ts lib/data/sentence-marks.test.ts lib/data/lesson-bookmarks.test.ts app/api/sentence-marks/route.test.ts app/api/videos/[id]/bookmark/route.test.ts app/api/videos/[id]/progress/route.test.ts --reporter=dot` -> 1 (expected audit RED); marks/routes -> 0; marks mutation -> 1; marks restore -> 0; pipeline/store/worker/videos/progress -> 0 (104); preferences/transcripts/marks/bookmarks/routes -> 0 (41); VideoRow fixtures -> 0 (76); videos/bookmarks -> 0 (13); videos/bookmarks mutations -> 1; restore -> 0; `git diff --check` -> 0; `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` -> 0. Exact expanded commands: `.superpowers/sdd/shadowing-workspace-1a/task-2-report.md`.
-
-- Task 2 (Claude review): Codex run 1 stopped at its usage limit; run 2 resumed the partial tree
-  (174k tokens). Claude fixes: oEmbed author >200 code points is truncated (was nulled; matches the plan
-  and finalize's `left(…,200)`); `author_name` missing/non-string → `authorName: null` in
-  `lib/youtube/oembed.ts` (was a whole-job `metadata_unavailable`); `options.test.ts` defaults pin gained
-  the 14 new fields (full vitest had 1 red); Codex's unrequested `docs/lessons.md` edit reverted.
-  Independent review: 0 Critical / 2 Important / 7 Minor-nit, all test gaps — added: unknown insert/delete
-  error throws (marks + bookmarks), `!inner` select pinned, bookmark insert/delete/read shape,
-  `getMyLessonResume` user/video filters, route 400 for bad uuid / unknown kind. Mutations, each red then
-  restored: drop `!inner`; swallow insert error; drop resume `video_id` filter.
-  Live: embedded filter `transcript_lines!inner(transcript_id)` against local PostgREST with a temp auth
-  user — transcript A returned exactly its two marks in (line, kind) order, transcript B's mark absent;
-  temp user deleted. `verify:db:lesson-jobs` 0 (no SQL change in Task 2, so no reset).
-- Task 2 final (after the last edit): tsc 0, lint 0, protocol 0, vitest 0 (402 files, 3738 tests).
-
-- Task 3 (Claude review): Codex 129k tokens; its failure-first RED was never observed (bare `node`
-  missing in its shell — packets now name `C:/nvm4w/nodejs/node.exe`); its 4 plan mutations stand in.
-  Full gates found `tsc` red (loop-machine test `state` typed as `{sentenceIndex: number}`) — fixed.
-  Independent review: 1 Critical (that tsc) / 2 Important / 8 Minor. Fixed: exactly-1.5 s ⏮ test;
-  `nextTarget(null)` → first line (⏭ during an intro; was a no-op); shortcut guard adds ARIA widget roles
-  and excludes `contenteditable="false"`; keyed mutator survives a throwing `apply`/`rollback` and stays
-  pending until the latest settles (tested); coalescer never writes a non-finite position; SRT end never
-  precedes start + hour formatting test; NFD search test made explicit. Not changed (nits): redundant
-  `> duration` check, extra session-record cases, `localeCompare` tie-break.
-  Mutations, each red then restored: `>`→`>=` in ⏮; `nextTarget(null)`→null; drop `:not(contenteditable=false)`;
-  drop finite guard; drop SRT `Math.max`.
-  **Note for Task 9:** `isInteractiveTarget` treats anything inside `[role="dialog"]` as interactive — Focus
-  Mode / fullscreen must not render the workspace inside a `role="dialog"` or every shortcut goes dead.
-- Task 3 final: tsc 0, lint 0, protocol 0, vitest 0 (415 files, 3783 tests); keyed-mutations test re-run after its lint fix.
-
-- Task 4a (Claude review): plan Task 4 split 4a/4b for Codex's ~288k window. Run 1 was reaped by
-  Claude Code for host low memory (not a bug; Serena's pywebview dashboard held ~1.2 GB — disabled in
-  `~/.serena/serena_config.yml`); run 2 resumed the partial tree (156k tokens). No missing-module RED
-  exists for the inherited files; mutations stand in. Independent review: 0 Critical / 4 Important /
-  5 Minor. Fixed: lint (empty `act` bodies); 3-click race tests for marks AND lesson bookmark (the
-  2-click test could not detect a missing latest-only guard — rollback is absolute); non-2xx → rollback
-  tests; loader asserts marks/resume/bookmark and the `DEFAULT_PREFERENCES` fallback; `PreferenceKey`
-  excludes the pronunciation trio (only valid together); memoised session tuple; one mutator per provider.
-  **§4.3 stale-bootstrap mechanism (decided here, as the spec defers to T4):** after a successful write,
-  once the key has no newer write in flight, `router.refresh()` (i18n `useRouter`) — refreshes the
-  layout bootstrap and purges Next 14's client router cache. T11-7 must prove it with a client-side
-  leave-and-return in a real browser; if browser Back still restores a stale payload, add
-  `experimental.staleTimes.dynamic = 0`.
-  Mutations, each red then restored: refresh without the in-flight guard; drop marks `response.ok`
-  check; drop the keyed mutator's latest-only guard (caught by the 3-click test); break the preferences fallback.
-- Task 4a final: tsc 0, lint 0, protocol 0, vitest 0 (418 files, 3808 tests, `--minWorkers=1 --maxWorkers=2`).
-
-- Task 4b (Codex): REDs observed with `C:/nvm4w/nodejs/node.exe`: missing shell/body/layout modules (each exit 1), missing `en.workspace` pin (1), and token scan source pin (1). Green: shell 0 (2), body 0 (2), layout 0 (3), EN pin 0 (69), token scale 0 (104), messages 0 (26 files/391); `git diff --check` 0; `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` 0. Mutation `key={pathname}` made the provider-store identity test red; byte-restored and hash-checked. Report: `.superpowers/sdd/shadowing-workspace-1a/task-4b-report.md`. Claude-only: full Vitest, tsc, lint, full protocol, dev server/browser check, review, commit.
-
-- Task 4b (Claude review): Codex 166k tokens, real failure-first REDs this time (full node path). Lint
-  caught a direct `next-intl` import (must go through `@/lib/i18n`) — fixed. Worktree `next dev -p 3001`
-  + Playwright (temp auth user, 1280x529, `?line=bogus`): 200, region "Shadowing practice" present, no
-  console errors on the route, no scroll, `[id]/dictation` still 200. The browser caught what jsdom could
-  not: the grid had no `grid-rows`, so the empty header row took half the height (region at y=264) —
-  fixed with `grid-rows-[auto_minmax(0,1fr)]`, re-measured y=0. Independent review MERGEABLE, 1 Important
-  (in 4a's loader: transcript `!ok` → 404; now `transcript: null` + empty state, as the legacy page did) /
-  5 Minor, all fixed: empty-state heading `h2` (Task 8 owns the title `h1`); VI "Quay lại Shadowing Hub";
-  no-remount test uses a different child + fresh bootstrap; layout props pinned by exact key set;
-  `?line=` consumption assigned to the Task 5 packet (4b only parks it on `data-line-id`).
-  Legacy page's `SaveToPlaylistButton` and title `h1` are Task 8 (plan line ~826), not dropped.
-- Task 4b final: tsc 0, lint 0, protocol 0, vitest 0 (421 files, 3825 tests, 2 workers).
-
-- Task 5 (Codex): failure-first REDs through `C:/nvm4w/nodejs/node.exe` for missing controller/persistence, configurable fake rates, `initialPosition`, and real `?line=` consumption; focused green controller 0 (6), persistence 0 (2), YouTube stub 0 (5), YouTube player 0 (9), shell 0 (3), dictation 0 (9), mining 0 (5), shadowing 0 (20). Mutations red then restored: remove the <1.5-second boundary guard, publish every tick, remove paused initialisation. `tsc --noEmit` 0; lint 0 with pre-existing warnings only; protocol 0; diff check 0. Report: `.superpowers/sdd/shadowing-workspace-1a/task-5-report.md`. Claude-only: full Vitest/review/commit/live Task 11 clock proof.
-
-- Task 5 (Claude review): Codex 196k tokens (near the ~220k split threshold); real REDs; tsc/lint/protocol 0.
-  Independent review CHANGES REQUIRED: 1 Critical (Auto Pause leaves the store at the boundary, so the
-  current sentence shows the NEXT line while paused) / 7 Important (⏮/⏭ before first play; persistence
-  effect re-runs every render and PATCHes the unplayed start; no real pause/ended flush; shell reads
-  sessionStorage during render — hydration mismatch — and recomputes on refresh; null-end last line never
-  crosses; possible infinite loop from a stale read right after a replay seek; plan Step 1 tests missing or
-  vacuous). Sent back to Codex as `.superpowers/sdd/shadowing-workspace-1a/task-5-fix-brief.md`.
-  **For Task 11:** prove live on Ep.729 that `getCurrentTime()` right after `seekTo` does not return the
-  pre-seek time (the I6 guard is defensive; T0 never measured it).
-- Task 5 fix: Codex's fix run hit its usage limit at 112k tokens mid-way (controller items mostly done, no
-  report); per the standing rule Claude finished it: Auto Pause hold cleared by any controller seek; loop test
-  ticks realistically past the post-seek guard; persistence rewritten (callbacks via ref, `lastSent` seeded,
-  newest-server-clock max, `initialSyncedServerAt`); shell decides the start ONCE (server-only first render for
-  SSR/hydration, session record in a layout effect after mount), `WorkspaceProviders` syncs the store and
-  exposes `useStartPosition()` for Task 6's `YouTubePlayer initialPosition`. Persistence tests rewritten (8
-  real cases; the hidden/pagehide/unmount one was vacuous).
-  Re-review of the fixes (memory: fixes add regressions) found **1 new Critical**: the I5 ENDED handler
-  decided the last sentence again after ticks had already completed its loop → infinite replay of the last
-  line on any video with an outro (scratch probe confirmed). Fixed: ENDED is a boundary only if no tick
-  crossed that end. Minor fixed: persistence re-seeds when the store settles on `startPosition` (opening the
-  page no longer PATCHes the snapped start); unparsable server clocks never lock in. Minor accepted:
-  duplicate-start lines — controller pins the earlier line but `useCurrentSentence` shows the later (Task 6
-  may drive the active row from `onSentence`); a queued PLAYING between `pause()` and PAUSED can still show
-  the next line for a frame (closing it would ignore a learner's own play in the iframe).
-  Mutations, each red then restored: C1 clamp; I6 guard; hold cleared on seek; `isPlaying` in deps;
-  `lastSent` seed; newest-clock max; SSR first render from session; store sync effect; ENDED double decision;
-  start-position re-seed; unparsable clock.
-- Task 5 final: tsc 0, lint 0, protocol 0, vitest 0 (423 files, 3858 tests, 2 workers).
+- **T11:** prove live on Ep.729 that `getCurrentTime()` right after `seekTo` does not return the pre-seek
+  time (T5's post-seek guard is defensive; T0 never measured it). Prove the §4.3 stale-bootstrap mechanism
+  (`router.refresh()` after a successful write) with a client-side leave-and-return; if browser Back still
+  restores a stale payload, add `experimental.staleTimes.dynamic = 0`.
+- **T9:** `isInteractiveTarget` treats anything inside `[role="dialog"]` as interactive — Focus Mode /
+  fullscreen must not render the workspace inside a dialog. The loop pill and speed label keep their own
+  copy of state: an `L` shortcut (or YouTube's own controls) will not update them — lift into PlaybackRoot.
+- **T10:** speed label starts from the preference, not the rate `onReady` snapped to; `muted` starts false
+  even if the embed starts muted.
+- **Accepted gaps:** duplicate `start_time` lines — controller pins the earlier, `useCurrentSentence` shows
+  the later; a PLAYING queued between `pause()` and PAUSED can show the next line for one frame.
+- **Plan corrections so far:** no `lucide-react` in the repo (inline SVG glyphs); `lib/data/transcripts.test.ts`
+  and the progress-route test were new files; `LessonCreationContent` lives in `store.ts`; token-scale scans
+  `(workspace)` only, not all of `(focus)/shadowing`; transcript `!ok` keeps the lesson on its empty state.
 
 ## Working tree and environment
 

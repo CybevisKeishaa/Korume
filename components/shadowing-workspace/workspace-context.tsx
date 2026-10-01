@@ -230,6 +230,14 @@ export function WorkspaceProviders({ bootstrap, controller, initialPosition, chi
   );
 }
 
+/**
+ * Supplies the playback controller below `WorkspaceProviders`: the controller needs the position store those
+ * providers create, and both columns (player, transcript) consume it, so `PlaybackRoot` mounts it around the grid.
+ */
+export function ControllerProvider({ controller, children }: { controller: PlaybackController; children: ReactNode }) {
+  return <ControllerContext.Provider value={controller}>{children}</ControllerContext.Provider>;
+}
+
 export function useLesson() { return useRequired(useContext(LessonContext), "useLesson"); }
 export function usePlaybackController(): PlaybackController {
   const controller = useContext(ControllerContext);

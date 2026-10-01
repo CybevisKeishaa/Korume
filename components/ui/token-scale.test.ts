@@ -65,7 +65,9 @@ const SCANNED_DIRS = [
   { dir: "components/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 24 },
   // Task 4b: shell, mode body, context, playback store, and controller hook.
   // Task 5: + player-adapter.ts and use-progress-persistence.ts.
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 7 },
+  // Task 6a: + playback-root, workspace-player, player-glyphs, progress-bar, beat-markers,
+  // sentence-loop-control, speed-control.
+  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 14 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },

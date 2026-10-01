@@ -191,6 +191,26 @@
       "retry": "Try again",
       "backToHub": "Back to Shadowing Hub"
     },
-    "regionLabel": "Shadowing practice"
+    "regionLabel": "Shadowing practice",
+    "player": {
+      "label": "Player",
+      "play": "Play",
+      "pause": "Pause",
+      "previous": "Previous sentence",
+      "next": "Next sentence",
+      "rewind5": "Back 5 seconds",
+      "seek": "Seek",
+      "seekValue": "{current} of {total}",
+      "loop": "Sentence",
+      "loopToggle": "Sentence loop",
+      "loopCount": "Plays per sentence",
+      "speed": "Playback speed",
+      "speedValue": "Playback speed {rate}",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "subtitlesShow": "Show subtitles",
+      "subtitlesHide": "Hide subtitles",
+      "fullscreen": "Player fullscreen"
+    }
   }
 }
