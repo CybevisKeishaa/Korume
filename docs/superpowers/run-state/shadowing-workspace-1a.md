@@ -112,7 +112,7 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude (T8 done; T9 next)
+- Owner: Codex (Task 9, dispatched 2026-10-02)
 
 ## Blockers
 
