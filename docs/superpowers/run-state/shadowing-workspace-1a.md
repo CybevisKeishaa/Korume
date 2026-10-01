@@ -1,4 +1,6 @@
-# Branch Run State — shadowing-workspace-1a
+# Branch Run State
+
+Branch `shadowing-workspace-1a`.
 
 ## Goal and scope
 
