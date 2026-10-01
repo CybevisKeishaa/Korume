@@ -99,9 +99,16 @@ app/[locale]/(protected)/(focus)/shadowing/[id]/
 `getMyPreferences` (extended, §6), **new** `getMyLessonResume(videoId)` (position +
 `last_watched_at`), **new** `getMyLessonBookmark(videoId)`, **new**
 `listMySentenceMarks(transcriptId)`. It normalises everything into explicit, serializable DTOs
-before the client boundary: no `Map`, no class instance, no function — a non-serializable prop blanks the page while jsdom stays green.
+before the client boundary: no `Map`, no class instance, no function — a non-serializable prop
+blanks the page while jsdom stays green.
 The transcript gets **one canonical order at bootstrap** — `(start_time, id)` — and every consumer
 uses that array; no component sorts on its own.
+
+**No silent 1000-row truncation.** `supabase/config.toml` sets `max_rows = 1000` while ingest accepts
+up to 2000 lines (`MAX_TRANSCRIPT_LINES`), and today's `getTranscript` reads the lines in one
+unpaginated select ordered by `start_time` only — a 1500-line lesson loses its last 500 lines with
+no error. T2 fixes `getTranscript` to a paged read under the total order `(start_time, id)`, and
+`listMySentenceMarks` reads the same way; both get a test with more than 1000 rows.
 
 ### 4.3 Client state — separate stores, separate hooks
 
@@ -110,20 +117,31 @@ uses that array; no component sorts on its own.
 | `LessonContext` | video, ordered transcript, metadata, mastery map | never during a session |
 | `PlaybackController` (context) | stable commands: `play`, `pause`, `seekTo`, `setRate`, `getCurrentTime`, sentence prev/next, rewind 5s, loop config | never re-renders on a tick |
 | `PlaybackPositionStore` | `currentTime` | every tick; read with `useSyncExternalStore`, subscribed only by the progress bar and the subtitle overlay |
-| `CurrentSentenceContext` | current sentence index + `isSpoken` | only when the derived index changes |
-| `SessionContext` | Focus Mode, Full Transcript Mode, Live Sentence hidden, transcript query, split ratio, open popovers | user toggles |
+| `CurrentSentenceContext` | current sentence `index` + `isSpoken` | only when `index` **or** `isSpoken` changes |
+| `SessionContext` | `workspaceView`, fullscreen target, Live Sentence hidden, transcript translation override, per-line furigana and translation reveals, transcript query, split ratio, open popovers | user toggles |
 | `PreferencesContext` | Reading Settings (§6) | user edits |
 | `MarksContext` | sentence marks, lesson bookmark | user toggles |
 
-- The current sentence is **derived** from playback time by binary search over the canonical
-  `start_time` array and published only when the index changes. There is no second source of truth
-  for it.
+- The current sentence is **derived** from playback time; there is no second source of truth for it.
+  `index` = the last sentence in canonical order whose `start_time ≤ t` (binary search), none before
+  the first. `isSpoken` = `t < effectiveEnd(index)`, where `effectiveEnd` is the sentence's
+  `end_time`, else the next sentence's `start_time`, else the video's duration. The context publishes
+  when either value changes, so a gap (same `index`, `isSpoken` turning false) is published without
+  the index changing.
+- **`workspaceView` is one state machine, `normal | focus | full-transcript`**, not two booleans.
+  Entering a view replaces the current one; `Esc` returns to `normal`. Fullscreen is a separate state
+  (`none | workspace | player`) and combines with any view.
 - The real player instance lives in a `ref` inside the shell, behind a `PlayerAdapter` interface;
   production uses `YouTubeAdapter` (wrapping the existing `components/video-player/youtube-player.tsx`),
   unit tests a `FakePlayerAdapter`. No component outside the controller touches the YouTube API.
 - **Optimistic writes are race-safe per key.** Marks are keyed `(lineId, kind)`, the lesson bookmark
-  by lesson, preferences by field. The last mutation for a key wins; a failed request rolls back only
+  by video, preferences by field. The last mutation for a key wins; a failed request rolls back only
   if it is still the latest mutation for that key; a key may be disabled while pending.
+- **Mutable bootstrap must never come back stale.** Preferences, marks, the lesson bookmark and the
+  resume position all arrive through the layout. Acceptance: after a successful preference, mark or
+  bookmark mutation, a client-side leave-and-return shows the latest persisted state, not a router-cache
+  snapshot. The mechanism (`router.refresh`, revalidation, or reconciling the bootstrap with the
+  client's newer state) is chosen in T4; the acceptance is fixed.
 
 ### 4.4 What happens to the old view
 
@@ -151,9 +169,10 @@ policy. Insert `with check (user_id = auth.uid() and exists (select 1 from trans
 = transcript_line_id))` — the `exists` runs under the learner's own RLS on `transcript_lines`, so a
 line the learner cannot read cannot be marked.
 
-**`user_lesson_bookmarks`** — `user_id` (cascade), `lesson_id uuid not null references videos (id) on
-delete cascade`, `created_at`; primary key `(user_id, lesson_id)`; the same RLS shape, insert
-checked with `exists (select 1 from videos where id = lesson_id)`.
+**`user_lesson_bookmarks`** — `user_id` (cascade), `video_id uuid not null references videos (id) on
+delete cascade`, `created_at`; primary key `(user_id, video_id)`; the same RLS shape, insert
+checked with `exists (select 1 from videos where id = video_id)`. The column is `video_id`, as in
+`user_video_progress`, so one UUID has one name; the product still calls it a Lesson Bookmark.
 
 `text + CHECK` follows the recent migrations (`user_preferences`, `collections.kind`).
 
@@ -184,8 +203,8 @@ in one module (`lib/preferences/options.ts`) from which zod schemas, the UI and 
 
 | Setting | Column | Values (default **bold**) | Applies to |
 |---|---|---|---|
-| Furigana | `reading_furigana` | always / **adaptive** / hidden | Live Sentence, Full Transcript, the per-sentence quick toggle |
-| Translation | `reading_translation` | hidden / reveal (tap to show) / **always** | Live Sentence, transcript, the panel's 👁 quick toggle |
+| Furigana | `reading_furigana` | always / **adaptive** / hidden | Live Sentence, Full Transcript; per-line overrides are session-only (§7.8) |
+| Translation | `reading_translation` | hidden / reveal (tap to show) / **always** | Live Sentence, transcript; the panel's 👁 is a session-only override (§7.8) |
 | Japanese font | `reading_jp_font` | **gothic** (Noto Sans JP) / mincho (Noto Serif JP) | Japanese text in the workspace; mincho loaded only by the workspace layout |
 | Font size | `reading_text_size` | s / **m** / l / xl | multiplies on top of the app-wide Display scale |
 | Line height | `reading_line_height` | compact / **comfortable** / airy | |
@@ -200,8 +219,8 @@ in one module (`lib/preferences/options.ts`) from which zod schemas, the UI and 
 | Study Environment | `study_atmosphere` | **none** + the six of §6.2 | §6.2 |
 
 Persisted (account, cross-device): the table above. Session-only: current sentence and position,
-Focus Mode, Full Transcript Mode, Live Sentence hidden, transcript query, split ratio, every
-popover's open state.
+`workspaceView`, fullscreen, Live Sentence hidden, translation and furigana overrides (§7.8),
+transcript query, split ratio, every popover's open state.
 
 ### 6.2 Study Environment (Study Atmosphere)
 
@@ -271,13 +290,18 @@ nothing while one mode is complete (Q1).
   button, link, slider, menu item, `[contenteditable]`. A focused progress slider keeps ←/→ for itself.
 - **Escape priority:** dialog/popover → fullscreen → Focus / Full Transcript. One press does one thing.
 - **Resume priority:** `?line=` deep link (an explicit intent; it beats `restart`) → if
-  `resume_behavior = resume`, the newest valid saved position → 0. A saved position `< 5 s`, beyond
+  `resume_behavior = resume`, the newest valid saved position → 0. `?line=` is honoured **only if the
+  id is present in this video's bootstrapped canonical transcript**; an id from another video, or one
+  that no longer exists, is ignored and resolution continues with resume → 0. (A link to a line of
+  another video must carry that video's `[id]`.) A saved position `< 5 s`, beyond
   the video's duration, or inside its last 10 s means 0. A valid position snaps back to the start of
   the sentence that contains it. The player is **initialised once, paused, at that position, without
   remounting or replacing the instance**; which player call achieves that is chosen in T0. The stores
   start at that position, so the right sentence shows before Play.
-- **Progress writes:** `sessionStorage` is written frequently (local only) as
-  `{ position, savedAt, syncedServerAt }`. Server writes are coalesced — at most every 10–15 s and
+- **Progress writes:** `sessionStorage` is written frequently (local only) under the key
+  `shadowing-resume:${userId}:${videoId}` as `{ userId, videoId, position, savedAt, syncedServerAt }`;
+  a record whose `userId` or `videoId` does not match the current session and lesson is ignored, so a
+  sign-out / sign-in as another account in the same tab cannot inherit a position. Server writes are coalesced — at most every 10–15 s and
   only when the position moved meaningfully — plus on pause, `visibilitychange → hidden`, `pagehide`
   and leaving the workspace, using `fetch(…, { keepalive: true })` (PATCH, so not `sendBeacon`).
   Unmount is an extra write, never the only safety net.
@@ -292,19 +316,19 @@ nothing while one mode is complete (Q1).
 ### 7.5 Live Sentence
 
 Label "LIVE SENTENCE"; large Japanese with ruby over each word group (furigana mode applies);
-Vietnamese translation beneath (translation mode applies). 👁̸ is a **session-only "hide/reveal the
+Vietnamese translation beneath (translation mode applies — see §7.8). 👁̸ is a **session-only "hide/reveal the
 Japanese sentence"** toggle for listening recall: it does not pause, does not change the sentence,
 and does not touch the persisted translation or furigana preferences. ✨ is absent until 1b.
 
 ### 7.6 Transcript panel
 
-- Header: "TRANSCRIPT", `282 sentences · 23 min`, 👁 quick toggle (writes the global translation
-  preference between hidden and always), ⤢ Full Transcript Mode, search field.
+- Header: "TRANSCRIPT", `282 sentences · 23 min`, 👁 translation show/hide (a
+  **session-only override**, §7.8), ⤢ Full Transcript Mode, search field.
 - Rows: number, Japanese, small translation. States: current (warm background, orange left border,
   highest contrast), past (softer), future (neutral), bookmarked (tiny indicator), difficult (tiny
   indicator).
-- Hover/focus actions, hidden otherwise: Replay · Bookmark · Difficult · Mine · Pin · furigana quick
-  toggle (writes the global furigana preference). "Practice this sentence" is absent until
+- Hover/focus actions, hidden otherwise: Replay · Bookmark · Difficult · Mine · Pin · furigana
+  reveal for this line (a **session-only per-line override**, §7.8). "Practice this sentence" is absent until
   Pronunciation exists (Part 2).
 - **Auto-follow:** the current row is scrolled to the centre (instant under Reduce Motion). A
   learner scroll suspends auto-follow and shows a "Back to current" pill. Scrolls the app performs
@@ -314,24 +338,44 @@ and does not touch the persisted translation or furigana preferences. ✨ is abs
 
 ### 7.7 Modes and the divider
 
-- **Focus Mode:** transcript hidden; Player + Live Sentence centred, ≈ 960 px max width.
-- **Full Transcript Mode** (⤢ on the panel): transcript near full width with furigana, video as a
-  small window bottom-right, Live Sentence hidden.
-- **Fullscreen:** ⛶ in the header → the workspace root; ⛶ in the player → the player container.
-  Neither changes the learning mode.
+`workspaceView` (§4.3) is `normal | focus | full-transcript`; entering one replaces the other.
+
+- **`focus`:** transcript hidden; Player + Live Sentence centred, ≈ 960 px max width.
+- **`full-transcript`** (⤢ on the panel): transcript near full width with furigana, video as a small
+  window bottom-right, Live Sentence hidden.
+- **Fullscreen** (`none | workspace | player`, independent of `workspaceView`): ⛶ in the header → the
+  workspace root; ⛶ in the player → the player container. Neither changes the view.
 - **Divider:** `role="separator"` with `aria-orientation="vertical"` and value attributes; drag with
   the mouse; Arrow Left/Right move it by a fixed step; visible focus ring; both panes keep a minimum
   width; ratio is session-only; default 50/50.
 - None of these remount the player.
 
+### 7.8 Translation and furigana: persisted mode vs session overrides
+
+**Only the Reading Settings popover changes a persisted mode.** Every quick control elsewhere is a
+session-only override that never writes `user_preferences` and never destroys the learner's chosen
+mode.
+
+| Control | Scope | Effect |
+|---|---|---|
+| ⚙ Translation / Furigana | persisted | sets `reading_translation` / `reading_furigana` |
+| 👁 on the transcript panel | session, whole transcript | forces translation shown or hidden in the transcript; cleared when the session ends or the persisted mode changes |
+| per-line furigana action | session, one line | reveals (or hides, when the mode is `always`) furigana on that line only; `adaptive` stays `adaptive` everywhere else |
+| tapping a hidden translation (mode `reveal`) | session, one line | shows that line's translation |
+| 👁̸ on Live Sentence | session | hides/reveals the Japanese of Live Sentence (§7.5) |
+
+`reading_translation = reveal` means: translations render covered by default; a tap (or Enter on the
+focused cover) reveals that line's translation; reveals are remembered per line for the session and
+never persisted.
+
 ## 8. Testing and acceptance
 
 | Layer | Covers | Runs |
 |---|---|---|
-| Unit (vitest) | canonical order + sentence lookup (duplicates, gaps, missing `end_time`); loop/Auto Pause machine; resume arbitration (`?line`, `restart`, <5 s, end, overflow, `syncedServerAt`); progress coalescer; shortcut guard + Escape priority; per-key optimistic race; contrast cross-product | CI |
+| Unit (vitest) | canonical order + sentence lookup (duplicates, gaps, missing `end_time`); loop/Auto Pause machine; resume arbitration (`?line` valid / from another video / missing, `restart`, <5 s, end, overflow, `syncedServerAt`, session record of another user or video ignored); `isSpoken` across gaps; `workspaceView` transitions; translation/furigana overrides never write preferences; progress coalescer; shortcut guard + Escape priority; per-key optimistic race; contrast cross-product | CI |
 | Component (vitest + RTL) | Live Sentence (ruby, 👁̸, translation modes), transcript row states, search, Settings and Environment popovers, header with no mode bar, divider keyboard | CI |
 | SQL gate (`verify:db:shadowing`, new, same shape as the existing gates) | B cannot INSERT a mark on A's PRIVATE line; B cannot SELECT or DELETE A's marks; B cannot bookmark A's PRIVATE lesson; the owner can PUT/DELETE marks and bookmarks on permitted content; deleting a line cascades its marks; deleting a lesson cascades its bookmarks; every new preference CHECK | local DB |
-| Playwright, deterministic | a fake `window.YT.Player` installed with `page.addInitScript`, defining exactly the API `YouTubeAdapter` uses, with a test-driven clock: sentence switching, loop ×3, Auto Pause, resume after leaving the route, corrupt saved position, Focus / Full Transcript / Esc, divider keyboard + drag, marks and bookmark survive reload, settings survive reload, Focus/Full Transcript/resize/settings do not remount the player. Fullscreen API is shimmed to test the state machine, Escape priority and focus restoration. | CI |
+| Playwright, deterministic | a fake `window.YT.Player` installed with `page.addInitScript`, defining exactly the API `YouTubeAdapter` uses, with a test-driven clock: sentence switching, loop ×3, Auto Pause, resume after leaving the route, corrupt saved position, Focus / Full Transcript / Esc, divider keyboard + drag, marks and bookmark survive reload, settings survive reload, **a preference, a mark and the lesson bookmark changed, then a client-side leave-and-return (not a reload) shows the new state**, Focus/Full Transcript/resize/settings do not remount the player. Fullscreen API is shimmed to test the state machine, Escape priority and focus restoration. | CI |
 | Playwright live, Ep.729 (`@live`) | the real YouTube iframe. It first asserts the iframe loaded from `youtube.com` and `getDuration()` ≈ 1396 s, so it cannot pass while measuring nothing. Then the owner's gate: seek mid-video → right sentence; **5–10 consecutive boundaries, each delta reported with max and p95, each ≤ 300 ms**; auto-follow; replay; loop ×3; speed 0.75; furigana; Vietnamese translation; open → seek to X → leave → return → X restored, sentence in sync, not playing; corrupt position → safe 0. If YouTube cannot meet 300 ms the test reports the real numbers — the threshold is not loosened. | locally, before merge |
 | Manual, Chrome | real workspace and player fullscreen; the owner's visual look | before merge |
 
@@ -359,7 +403,7 @@ decision.
 |---|---|---|
 | T0 | Chrome probe: effective `getCurrentTime()` update cadence; how to initialise paused at a position (`seekTo` / `cueVideoById` / player option). Throwaway; numbers recorded in the run state. | — |
 | T1 | Migrations (`sentence_marks`, `user_lesson_bookmarks`, preference columns) + `verify:db:shadowing` | — |
-| T2 | Data + API: marks, lesson bookmark, preferences schema, progress response, resume read | T1 |
+| T2 | Data + API: marks, lesson bookmark, preferences schema, progress response, resume read; paged `getTranscript` / marks reads (>1000-row test) | T1 |
 | T3 | Pure logic: ordering, lookup, loop/Auto Pause machine, resume arbitration, coalescer, shortcut guard | T0 |
 | T4 | Shell: `(workspace)` route group, DTOs, stores, `PlayerAdapter` + `PlaybackController`, session/keepalive writes | T2, T3 |
 | T5 | Player, subtitle overlay, beat markers, Live Sentence | T4 |
