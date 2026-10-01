@@ -120,7 +120,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
@@ -128,7 +128,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Next actions
 
-1. Codex: Task 3 (pure workspace logic) from `.superpowers/sdd/shadowing-workspace-1a/task-3-brief.md`.
-   Packet rulings beyond the plan: session `syncedServerAt` null + server `lastWatchedAt` set → server
-   wins; an invalid winner → 0, never the losing candidate; `canonicalLines` narrows `furigana_json: unknown`.
-2. Claude: review Task 3, gates, commit; then Task 4 packet (check Codex `tokens used`; split if ~220k+).
+1. Codex: Task 4a (bootstrap DTO, loader, position store, contexts/hooks) from
+   `.superpowers/sdd/shadowing-workspace-1a/task-4a-brief.md`. Plan Task 4 is split 4a/4b for Codex's
+   ~288k context window; 4b = route group, shell, legacy page removal, messages, token-scale.
+2. Claude: review 4a, gates, commit; dispatch 4b (packet already written); dev-server check after 4b.
