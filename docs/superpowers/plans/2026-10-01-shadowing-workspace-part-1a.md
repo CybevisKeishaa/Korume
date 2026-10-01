@@ -65,13 +65,14 @@ Each line has its test in the task named after it.
 
 ---
 
-## Open question for the owner (blocks Task 8 only)
+## Owner ruling — header source line (2026-10-01, option b)
 
-The spec's header "source line (channel · JLPT)" has no data: `videos` has no channel/author column, and the
-lesson-creation pipeline does not store one. Options: (a) show `YouTube · N3 · 23 min` (true facts only, no
-channel); (b) add `videos.channel_title`, filled by the pipeline from oEmbed `author_name` and by
-`scripts/seed-real-lesson.ts`, with existing rows null (line then falls back to (a)). Task 8 implements
-whichever the owner picks; the run state records the answer.
+`videos` gains a nullable `channel_title`. The lesson-creation pipeline persists it from the oEmbed
+`author_name` it already fetches (`lib/youtube/oembed.ts` returns `authorName`; `parseMetadata` in
+`lib/lesson-creation/pipeline.ts` drops it today). `scripts/seed-real-lesson.ts` writes it too.
+Existing rows stay null and the header falls back to `YouTube · N3 · 23 min`. Never fetch oEmbed at
+render time; no catalogue backfill on this branch. Implemented in Task 1 (column + finalize function),
+Task 2 (pipeline + types), Task 8 (header), Task 11 (seed).
 
 ---
 
@@ -98,6 +99,7 @@ Throwaway. Nothing from this task is committed except the numbers, into the run 
 - Create: `supabase/migrations/20261001000035_sentence_marks.sql`, `supabase/migrations/20261001000035_sentence_marks.test.ts`
 - Create: `supabase/migrations/20261001000036_user_lesson_bookmarks.sql`, `supabase/migrations/20261001000036_user_lesson_bookmarks.test.ts`
 - Modify: `supabase/migrations/20260922000033_user_preferences.sql` (+ its existing `.test.ts`)
+- Modify: `supabase/migrations/20260712000001_schema.sql` (`videos.channel_title`, in place) and `supabase/migrations/20260913000032_lesson_creation_jobs.sql` (`finalize_lesson_creation_job` accepts and inserts it, in place) + their tests
 - Modify: `lib/preferences/options.ts` (option lists — the migration test imports them)
 - Create: `supabase/tests/shadowing-workspace.sql`, `scripts/verify-shadowing-gate.ps1`
 - Modify: `package.json` (script `verify:db:shadowing`)
@@ -243,6 +245,8 @@ In `20260922000033_user_preferences.sql`, inside `create table user_preferences 
     ('none', 'evening_study', 'coffee_shop', 'rainy_day', 'quiet_library', 'spring_morning', 'summer_night')),
 ```
 
+`20260712000001_schema.sql`, inside `create table videos (…)` after `thumbnail_url text,`: `channel_title text check (char_length(channel_title) <= 200),`. In `20260913000032_lesson_creation_jobs.sql` `finalize_lesson_creation_job`: reject `invalid_content` when `p_content->>'channel_title' is not null and jsonb_typeof(p_content->'channel_title') <> 'string'` (beside the existing `thumbnail_url` check), and insert `channel_title` from `p_content->>'channel_title'` (a blank string is stored as null: `nullif(btrim(p_content->>'channel_title'), '')`); the existing-video branch leaves an existing value untouched. Add assertions for both to the migrations' existing tests and one finalize case (with and without `channel_title`) to `supabase/tests/lesson-creation-jobs.sql`.
+
 Adjust the Step 1 test's expected literal format to whatever the file actually normalises to (e.g.
 line breaks inside `check (…)` collapse to single spaces).
 
@@ -346,6 +350,8 @@ const lines = await fetchAllPages<TranscriptLineRow>((from, to) => supabase
 ```
 
 `start_time`/`end_time` are `numeric` → normalise with `Number(…)` (and `null` stays `null`) before returning; add that to the test.
+
+- [ ] **Step 4b: Channel title.** Failing tests first: `parseMetadata` keeps a sanitised `channelTitle` (blank → null, >200 chars → truncated to 200); `LessonCreationContent` gains `channelTitle: string | null`; the store's finalize payload carries `channel_title`; `VIDEO_COLUMNS` and both `VideoRow` types (`lib/data/videos.ts`, `lib/video-types.ts`) gain `channel_title: string | null`. Then implement: widen the `fetchOembed` dependency type in `pipeline.ts` to include `authorName`, map it in `parseMetadata`, pass it through `LessonCreationContent` and `lib/lesson-creation/store.ts`. Run `npm run verify:db:lesson-jobs` after a reset.
 
 - [ ] **Step 5: Failing tests — progress + resume.** `updateProgress` selects and returns `last_watched_at`; the route's JSON includes it. `getMyLessonResume(videoId)` returns `null` when signed out or no row, else `{ position: Number(last_watched_position), lastWatchedAt }`.
 
@@ -599,7 +605,7 @@ candidate (`session` vs `server` by `server.lastWatchedAt > session.syncedServer
 // lib/shadowing-workspace/bootstrap.ts
 export interface WorkspaceBootstrap {
   userId: string;
-  video: { id: string; youtubeVideoId: string; title: string; durationSeconds: number | null; jlptLevel: JlptLevel | null };
+  video: { id: string; youtubeVideoId: string; title: string; channelTitle: string | null; durationSeconds: number | null; jlptLevel: JlptLevel | null };
   transcript: { id: string; lines: WorkspaceLine[] } | null;
   masteryMap: Record<string, number>;
   preferences: UserPreferences;
@@ -808,15 +814,15 @@ Behaviour (spec §7.6, §7.8):
 
 ### Task 8: Header, lesson bookmark, overflow and mode navigation
 
-Blocked on the owner's answer to the Open question above.
+Source line per the owner ruling above (option b).
 
 **Files:**
 - Create: `components/shadowing-workspace/workspace-header.tsx`, `lesson-bookmark-button.tsx`, `workspace-overflow-menu.tsx`, `mode-nav.tsx` (+ tests)
-- Modify: shell (header slot), messages (+ pins); if the owner picked (b): the videos migration (in place), `VIDEO_COLUMNS`, the lesson-creation pipeline's persist step, Task 11's seed script
+- Modify: shell (header slot), messages (+ pins); `WorkspaceBootstrap.video` gains `channelTitle: string | null` (Task 4's DTO and loader)
 
 **Behaviour (spec §7.2, Q1):**
 - ← Back: `Link` to `/shadowing` (`@/lib/i18n` navigation), label `workspace.header.back`.
-- Title (`h1`), source line (per the owner's answer), JLPT badge (existing `Badge`), `workspace.header.sentenceCounter` "Sentence {current} / {total}" (current = `index + 1`, or `—` before the first line).
+- Title (`h1`), source line `{channelTitle} · {JLPT} · {minutes} min` — when `channelTitle` is null it reads `YouTube · {JLPT} · {minutes} min`; a missing JLPT or duration drops that part, never shows a placeholder (`workspace.header.sourceLine` / `sourceFallback` with values), JLPT badge (existing `Badge`), `workspace.header.sentenceCounter` "Sentence {current} / {total}" (current = `index + 1`, or `—` before the first line).
 - Right: Study Environment (Task 10 popover trigger), Focus Mode (`toggle-view: focus`, `aria-pressed`), ⛶ workspace fullscreen (Task 9), ⚙ Reading Settings (Task 10 trigger), `LessonBookmarkButton` (`aria-pressed`, PUT/DELETE `/api/videos/[id]/bookmark` through `useMarks().toggleLessonBookmark`), `⋯` overflow (Radix Popover with a `role="menu"` list): **Save to playlist** — reuse `components/community/save-to-playlist-button.tsx` (check its API; render it inside the menu) — and **Download transcript** with two items `.srt` / `.txt` using `toSrt` / `toPlainText` and a `Blob` + object URL download (`<video title>.srt`), absent when there is no transcript.
 - `ModeNav`: renders `null` when `shouldRenderModeNav()` is false; otherwise a `nav` with `aria-label` and one `Link` per completed mode, `aria-current="page"` on the active one. A test injects a two-mode registry to prove the bar renders.
 
@@ -895,7 +901,7 @@ Blocked on the owner's answer to the Open question above.
 11. Shortcuts: Space toggles play on body; Space with the progress slider focused does not.
 12. Atmosphere: choose Rainy Day → `data-atmosphere="rainy_day"`; with reduce motion on, no `.atmosphere-particles` in the DOM.
 
-**scripts/seed-real-lesson.ts** — run with `npx vite-node scripts/seed-real-lesson.ts -- --dir <path> --youtube <id>`: reads the `*[ja].srt` and `*[ja-vi]*.srt` in `--dir`, `parseTranscript` both, fails unless counts and every `startTime` match, upserts the video by `youtube_video_id` (FREE, title from the file name, `duration_seconds` from the last end), replaces its transcript (`youtube_caption`), inserts lines with `toFurigana` and the Vietnamese text, and prints `video <uuid> lines <n>`. Idempotent: a second run leaves exactly one video and one transcript. (Starts from the session scratchpad seed of 2026-10-01; `videos` has no `status` column any more.)
+**scripts/seed-real-lesson.ts** — run with `npx vite-node scripts/seed-real-lesson.ts -- --dir <path> --youtube <id>`: reads the `*[ja].srt` and `*[ja-vi]*.srt` in `--dir`, `parseTranscript` both, fails unless counts and every `startTime` match, fetches oEmbed once via `fetchOembed` (`lib/youtube`) for the title and `channel_title` (`authorName`), upserts the video by `youtube_video_id` (FREE, `duration_seconds` from the last end, `channel_title`), replaces its transcript (`youtube_caption`), inserts lines with `toFurigana` and the Vietnamese text, and prints `video <uuid> lines <n>`. Idempotent: a second run leaves exactly one video and one transcript. (Starts from the session scratchpad seed of 2026-10-01; `videos` has no `status` column any more.)
 
 **playwright.live.config.ts** — same as `playwright.config.ts` but `testMatch: "*.live.spec.ts"`, no `testIgnore`, and `webServer` reused only (`reuseExistingServer: true`, no build) — the live run is against a server the operator started in the worktree.
 
