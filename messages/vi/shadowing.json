@@ -250,6 +250,26 @@
       "difficult": "Khó",
       "lineFurigana": "Cách đọc cho câu này",
       "showTranslation": "Hiện bản dịch"
+    },
+    "header": {
+      "back": "Quay lại Shadowing Hub",
+      "sourceFallback": "YouTube",
+      "jlpt": "JLPT {level}",
+      "minutes": "{minutes} phút",
+      "sentenceCounter": "Câu {current} / {total}",
+      "focusMode": "Chế độ tập trung",
+      "bookmarkLesson": "Đánh dấu bài học",
+      "more": "Thao tác khác",
+      "downloadTranscript": "Tải phụ đề",
+      "downloadSrt": "Phụ đề (.srt)",
+      "downloadTxt": "Văn bản thường (.txt)",
+      "modeNav": "Chế độ học",
+      "modes": {
+        "shadowing": "Shadowing",
+        "pronunciation": "Phát âm",
+        "listening": "Nghe",
+        "summary": "Tóm tắt"
+      }
     }
   }
 }

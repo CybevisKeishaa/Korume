@@ -16,6 +16,8 @@ export interface PopoverProps {
   className?: string;
   /** Accessible name for the interactive popover content. */
   label?: string;
+  /** Radix's Escape dismiss; `event.preventDefault()` keeps the popover open (e.g. a nested panel owns this Escape). */
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
   children: React.ReactNode;
 }
 
@@ -33,6 +35,7 @@ export function Popover({
   align = "center",
   className,
   label,
+  onEscapeKeyDown,
   children,
 }: PopoverProps) {
   const { anchorRef, contentRef } = useDensityScope();
@@ -47,6 +50,7 @@ export function Popover({
           align={align}
           sideOffset={6}
           aria-label={label}
+          onEscapeKeyDown={onEscapeKeyDown}
           className={cn(
             "motion-popover z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay",
             className,

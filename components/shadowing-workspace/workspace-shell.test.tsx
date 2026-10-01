@@ -1,4 +1,5 @@
 import { renderToString } from "react-dom/server";
+import { within } from "@testing-library/react";
 import { render, TestIntlProvider } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -50,14 +51,14 @@ describe("ShadowingWorkspaceShell", () => {
     searchParams = new URLSearchParams("line=line-1");
   });
 
-  it("starts at a known requested line and leaves structural slots free of route data", () => {
+  it("starts at a known requested line, renders the header, and leaves structural slots free of route data", () => {
     const linkedBootstrap = { ...bootstrap, transcript: { id: "transcript-1", lines: [{ id: "line-1", index: 0, startTime: 12, endTime: 15, textJp: "one", textTranslation: null, furigana: null }] } };
     const { getByTestId } = render(
       <ShadowingWorkspaceShell bootstrap={linkedBootstrap}><StoreProbe /><section aria-label="Shadowing practice" /></ShadowingWorkspaceShell>,
     );
 
     expect(getByTestId("shadowing-workspace")).toHaveClass("grid");
-    expect(getByTestId("workspace-header-slot")).toBeEmptyDOMElement();
+    expect(within(getByTestId("workspace-header-slot")).getByRole("heading", { level: 1, name: "Episode 1" })).toBeInTheDocument();
     expect(getByTestId("workspace-player-slot")).not.toHaveAttribute("data-line-id");
     expect(observedStore?.get()).toBe(12);
     expect(getByTestId("workspace-divider-slot")).toBeEmptyDOMElement();

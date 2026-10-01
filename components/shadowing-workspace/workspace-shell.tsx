@@ -9,6 +9,7 @@ import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot } from "./playback-root";
 import { WorkspacePlayer } from "./workspace-player";
 import { WorkspaceProviders } from "./workspace-context";
+import { WorkspaceHeader } from "./workspace-header";
 
 // useLayoutEffect warns during SSR; on the client it runs before paint, so the session position never flashes.
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -44,7 +45,7 @@ export function ShadowingWorkspaceShell({
       <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={bootstrap.resume?.lastWatchedAt ?? null}>
         {/* Bounded to the viewport: the transcript scrolls inside its own column and the page never does. */}
         <div className="grid h-dvh grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]" data-testid="shadowing-workspace">
-          <div className="col-span-3" data-testid="workspace-header-slot" />
+          <div className="col-span-3" data-testid="workspace-header-slot"><WorkspaceHeader /></div>
           <div className="flex min-w-0 flex-col gap-md p-md" data-testid="workspace-player-slot">
             <WorkspacePlayer />
             <LiveSentence />

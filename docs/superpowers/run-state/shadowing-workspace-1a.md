@@ -17,7 +17,7 @@ Shadowing workspace Part 1a: the core Shadowing loop at `/[locale]/shadowing/[id
 ## Accepted commits
 
 - `6ec1133` `8c8f2f6` spec · `e8d4b13` `797b35e` `5cec887` plan · T1 `7f1d4bf` · T2 `2b18574` · T3 `a623da5` ·
-  T4a `a4020dc` · T4b `8c6c083` · T5 `e643374` · T6a `22cff1e` · T6b `1822788`. Per-task evidence (REDs, mutations,
+  T4a `a4020dc` · T4b `8c6c083` · T5 `e643374` · T6a `22cff1e` · T6b `1822788` · T7 `7dd2036` + review fix `e1514ed` · T8 (header). Per-task evidence (REDs, mutations,
   review verdicts and what each closed) is in those commit messages.
 
 ## Contracts and decisions
@@ -64,14 +64,22 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   centred (offset 0), pill clears, page 1280×529 no scroll. Review: 0C/4I/9M, all fixed by Claude
   in `fix(shadowing): T7 review` (every fix mutation-proven red). Re-review: 0C/1I (I-A: a `has-[]` pin
   the M-5 fix added would keep a mined row's toolbar up for the session — removed) + minors fixed; gates
-  re-run after the last edit. NOT browser-checked (Docker off): the CSS-only fixes M-3/M-4/M-5/M-7 are
-  proven only by a Tailwind compile — T9/T11's Playwright pass must look at them.
+  re-run after the last edit. CSS fixes browser-checked later in the T8 pass (one ring on the row body,
+  current-row bg under focus-within, idle actions `pointer-events: none`).
+- T8 (Claude, no Codex): tsc/lint/protocol 0, full vitest 430 files 0; 13 mutations red. Browser Ep.729
+  1280×529 (`ws-8.mjs`): header 44px, no page scroll, Live Sentence JP line visible; counter follows ⏭;
+  bookmark survives reload; one Escape closes Save's panel, the next the popover (focus back on ⋯); .srt
+  download 282 blocks. Review: APPROVE WITH NITS (0C/1I/6M) — Save panel overlapped Download (measured,
+  fixed: anchored beneath the popover), revoke delay 10 s; Focus Mode carried to T9 (below).
 
 ### Carried forward (open, owned by a later task)
 
-- **T9/T11 (from T7 review):** browser-check the transcript row CSS (current-row warm bg under
-  focus-within, a single focus ring on the row body, hidden actions not tappable, translation text
-  selectable) and Back-to-current keyboard focus. Known quirk, accepted: the per-line あ press flips the
+- **T9 (from T8 review, MUST land before merge):** Focus Mode in the header only flips `session.view`
+  today; nothing lays out the focus view until T9, so it is a dead control until then. The overflow
+  popover's open state is local: T9's workspace Escape handler must honour `defaultPrevented` (or learn
+  the popover is open) so one Escape never also exits a view.
+- **T9/T11 (from T7 review):** browser-check translation text selectable under the stretched row button
+  and Back-to-current keyboard focus (the other row CSS was measured in the T8 pass). Known quirk, accepted: the per-line あ press flips the
   row's VIEW mode (`hidden` in normal view), so an override made in one view can look like a no-op in the
   other while still showing pressed (honest). Not fixed (low risk): a no-op skip while a smooth scroll is
   mid-flight leaves that scroll running to the previous row.
@@ -104,7 +112,7 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude (T7 review fixed; T8 next)
+- Owner: Claude (T8 done; T9 next)
 
 ## Blockers
 
@@ -113,4 +121,5 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 ## Next actions
 
 1. Done: T7 review fixed (`fix(shadowing): T7 review`).
-2. Next: dispatch T8 (header) — packet `task-8-brief.md` ready (Codex, or Claude if Codex is limited) → T9 → write T10 packet.
+2. Done: T8 header (`feat(shadowing): workspace header, …`), built by Claude without Codex.
+3. Next: T9 (views / fullscreen / shortcuts / divider) — packet `task-9-brief.md` ready; then write T10 packet.

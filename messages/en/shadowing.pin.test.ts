@@ -554,3 +554,23 @@ describe("shadowing.json EN workspace transcript panel", () => {
     });
   });
 });
+
+describe("shadowing.json EN workspace header", () => {
+  it("pins the header copy", () => {
+    expect(en.workspace.header).toEqual({
+      back: "Back to Shadowing Hub",
+      sourceFallback: "YouTube",
+      jlpt: "JLPT {level}",
+      minutes: "{minutes} min",
+      sentenceCounter: "Sentence {current} / {total}",
+      focusMode: "Focus Mode",
+      bookmarkLesson: "Bookmark lesson",
+      more: "More actions",
+      downloadTranscript: "Download transcript",
+      downloadSrt: "Subtitles (.srt)",
+      downloadTxt: "Plain text (.txt)",
+      modeNav: "Learning modes",
+      modes: { shadowing: "Shadowing", pronunciation: "Pronunciation", listening: "Listening", summary: "Summary" },
+    });
+  });
+});

@@ -68,7 +68,8 @@ const SCANNED_DIRS = [
   // Task 6a: + playback-root, workspace-player, player-glyphs, progress-bar, beat-markers,
   // sentence-loop-control, speed-control. Task 6b: + live-sentence, ruby-sentence.
   // Task 7: + transcript-panel, transcript-row, use-auto-follow.
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 19 },
+  // Task 8: + workspace-header, lesson-bookmark-button, workspace-overflow-menu, mode-nav.
+  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 23 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },

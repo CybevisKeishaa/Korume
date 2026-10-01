@@ -77,3 +77,9 @@ export const BookmarkGlyph = ({ className, filled }: GlyphProps & { filled?: boo
 export const FlagGlyph = ({ className, filled }: GlyphProps & { filled?: boolean }) => (
   <Glyph className={className} filled={filled}><path d="M5 21V4M5 4h11l-2 4 2 4H5" /></Glyph>
 );
+/** Header ← Back. */
+export const BackGlyph = ({ className }: GlyphProps) => <Glyph className={className}><path d="M19 12H5M11 18l-6-6 6-6" /></Glyph>;
+/** Header `⋯` overflow. */
+export const MoreGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className} filled><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></Glyph>
+);
