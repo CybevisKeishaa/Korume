@@ -154,7 +154,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
@@ -162,7 +162,6 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Next actions
 
-1. Codex: Task 4b (route group, shell, legacy page removal, messages, token-scale) from
-   `.superpowers/sdd/shadowing-workspace-1a/task-4b-brief.md`.
-2. Claude: review 4b, gates, dev-server check of `/en/shadowing/<ep729 id>` on a worktree `next dev -p 3001`,
-   commit; then Task 5 (packet already written).
+1. Codex: Task 5 (player adapter, playback controller, progress persistence, `?line=` start position) from
+   `.superpowers/sdd/shadowing-workspace-1a/task-5-brief.md`, applying the T0 rulings.
+2. Claude: review Task 5, gates, commit; then Task 6 packet.
