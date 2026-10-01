@@ -51,6 +51,8 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Verification
 
+- Task 4a (Codex): `lib/data/shadowing-workspace.test.ts` 0 (6 tests), `components/shadowing-workspace/playback-position-store.test.ts` 0 (4 tests), and `components/shadowing-workspace/workspace-context.test.tsx` 0 (11 tests), each run separately through `C:/nvm4w/nodejs/node.exe`. Mutations red then byte-restored: fresh current-sentence snapshot (context: 7 failures); stale keyed rollback (context: preference latest-only test); Date DTO payload (loader: serializable bootstrap test). `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` 0 before handoff; `git diff --check` 0. Report: `.superpowers/sdd/shadowing-workspace-1a/task-4a-report.md`. Claude-only: full Vitest, tsc, lint, full protocol, review, commit.
+
 - Task 3 (Codex): test files were written before production modules. The prescribed bare-node focused command exited 1 before Vitest (`node` is not on this shell PATH); the usable local equivalent `& 'C:\nvm4w\nodejs\node.exe' node_modules/vitest/vitest.mjs run lib/shadowing-workspace --reporter=dot` exited 0 twice (13 files, 42 tests), once after all restores. Mutations each red then restored: lookup `<=`â†’`<` (two sentence boundary assertions); stale keyed rollback (latest-success test); server/session `>`â†’`<` (arbitration + invalid-winner tests); remove slider selector (interactive-target test). `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` â†’ 0. Report: `.superpowers/sdd/shadowing-workspace-1a/task-3-report.md`. Claude-only: full suite, tsc, lint, full protocol, review, commit.
 
 - Task 1 failure-first: `npx vitest run supabase/migrations --reporter=dot` — exit 1 before SQL; shell could not resolve `npx`, so Vitest did not start.
@@ -110,6 +112,23 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   Mode / fullscreen must not render the workspace inside a `role="dialog"` or every shortcut goes dead.
 - Task 3 final: tsc 0, lint 0, protocol 0, vitest 0 (415 files, 3783 tests); keyed-mutations test re-run after its lint fix.
 
+- Task 4a (Claude review): plan Task 4 split 4a/4b for Codex's ~288k window. Run 1 was reaped by
+  Claude Code for host low memory (not a bug; Serena's pywebview dashboard held ~1.2 GB — disabled in
+  `~/.serena/serena_config.yml`); run 2 resumed the partial tree (156k tokens). No missing-module RED
+  exists for the inherited files; mutations stand in. Independent review: 0 Critical / 4 Important /
+  5 Minor. Fixed: lint (empty `act` bodies); 3-click race tests for marks AND lesson bookmark (the
+  2-click test could not detect a missing latest-only guard — rollback is absolute); non-2xx → rollback
+  tests; loader asserts marks/resume/bookmark and the `DEFAULT_PREFERENCES` fallback; `PreferenceKey`
+  excludes the pronunciation trio (only valid together); memoised session tuple; one mutator per provider.
+  **§4.3 stale-bootstrap mechanism (decided here, as the spec defers to T4):** after a successful write,
+  once the key has no newer write in flight, `router.refresh()` (i18n `useRouter`) — refreshes the
+  layout bootstrap and purges Next 14's client router cache. T11-7 must prove it with a client-side
+  leave-and-return in a real browser; if browser Back still restores a stale payload, add
+  `experimental.staleTimes.dynamic = 0`.
+  Mutations, each red then restored: refresh without the in-flight guard; drop marks `response.ok`
+  check; drop the keyed mutator's latest-only guard (caught by the 3-click test); break the preferences fallback.
+- Task 4a final: tsc 0, lint 0, protocol 0, vitest 0 (418 files, 3808 tests, `--minWorkers=1 --maxWorkers=2`).
+
 ## Working tree and environment
 
 - Worktree `.worktrees/shadowing-workspace-1a`; `.env.local` copied; `npm ci` run 2026-10-01.
@@ -120,7 +139,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
@@ -128,7 +147,4 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Next actions
 
-1. Codex: Task 4a (bootstrap DTO, loader, position store, contexts/hooks) from
-   `.superpowers/sdd/shadowing-workspace-1a/task-4a-brief.md`. Plan Task 4 is split 4a/4b for Codex's
-   ~288k context window; 4b = route group, shell, legacy page removal, messages, token-scale.
-2. Claude: review 4a, gates, commit; dispatch 4b (packet already written); dev-server check after 4b.
+1. Claude: review Task 4a, run the full gates, and commit; then dispatch 4b (the packet is written). 4b owns the route group, shell, legacy-page removal, messages, and token-scale; its dev-server check follows implementation.
