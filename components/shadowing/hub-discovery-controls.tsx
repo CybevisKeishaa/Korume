@@ -30,19 +30,19 @@ export interface HubDiscoveryControlsProps {
   basePath: string;
   heading?: React.ReactNode;
   beforeResults?: React.ReactNode;
+  /** With a heading: the filter toggle's name; without one the toggle is not rendered. */
   filterToggleLabel?: string;
   /** URL state the Pronunciation Studio must preserve across search and chips. */
   preservedParams?: Record<string, string | undefined>;
+  /**
+   * State the filter chips keep but a new search drops (the studio's search
+   * tab): merged into chip hrefs only, never into the search form.
+   */
+  filterHrefParams?: Record<string, string | undefined>;
   /** Extra controls after the filter toggle (the studio's Sort & display); Shadowing passes none. */
   toolbar?: React.ReactNode;
   /** Null means the learner has not searched or filtered yet. */
   results: HubLesson[] | null;
-  /** Optional page-specific heading for a result surface. */
-  resultsHeading?: string;
-  /** Optional result-limit explanation supplied by the server page. */
-  resultsSummary?: string;
-  /** Optional empty-state copy for a result surface the learner did not search. */
-  resultsEmpty?: string;
   labels: HubDiscoveryControlsLabels;
   /**
    * With a `heading`, which half to render: the heading row alone, or what
@@ -67,10 +67,8 @@ export function HubDiscoveryControls({
   beforeResults,
   filterToggleLabel,
   preservedParams,
+  filterHrefParams,
   toolbar,
-  resultsHeading,
-  resultsSummary,
-  resultsEmpty,
   labels,
   part = "all",
 }: HubDiscoveryControlsProps) {
@@ -82,6 +80,7 @@ export function HubDiscoveryControls({
     const params = new URLSearchParams();
     if (preservedParams && query) params.set("q", query);
     for (const [key, value] of Object.entries(preservedParams ?? {})) if (value) params.set(key, value);
+    for (const [key, value] of Object.entries(filterHrefParams ?? {})) if (value) params.set(key, value);
     if (filter) params.set("filter", filter);
     const suffix = params.toString();
     return suffix ? `${basePath}?${suffix}` : basePath;
@@ -158,8 +157,7 @@ export function HubDiscoveryControls({
 
   const resultsContent = results ? (
     <div className="mt-xl">
-      <HubSectionHeading title={resultsHeading ?? labels.results} />
-      {resultsSummary ? <p className="mt-xs text-body text-muted-foreground">{resultsSummary}</p> : null}
+      <HubSectionHeading title={labels.results} />
       {results.length ? (
         <ul className="mt-md grid grid-cols-1 gap-md sm:grid-cols-2">
           {results.map((lesson) => (
@@ -173,7 +171,7 @@ export function HubDiscoveryControls({
           ))}
         </ul>
       ) : (
-        <p className="mt-md text-body text-muted-foreground">{resultsEmpty ?? labels.noResults}</p>
+        <p className="mt-md text-body text-muted-foreground">{labels.noResults}</p>
       )}
     </div>
   ) : null;
@@ -193,7 +191,8 @@ export function HubDiscoveryControls({
             <div className="min-w-0">{heading}</div>
             <div className="mt-lg flex items-end gap-xs lg:mt-0 lg:basis-2/5 lg:shrink-0">
               {searchForm}
-              <Popover
+              {/* No label, no toggle: a page view the chips cannot filter omits it. */}
+              {filterToggleLabel ? <Popover
                 align="end"
                 label={filterToggleLabel}
                 trigger={(
@@ -208,7 +207,7 @@ export function HubDiscoveryControls({
                 )}
               >
                 {filterLinks}
-              </Popover>
+              </Popover> : null}
               {toolbar}
             </div>
           </div>

@@ -3,6 +3,7 @@
 -- Live gate for the Pronunciation Studio's SQL aggregates (JLPT Speaking and
 -- the rail's three reads): the Supabase mock models no SQL, so this proves
 -- the aggregates, the VN-day boundary, the caller scoping and the grants.
+delete from public.collections where slug like 'jlptgate-search-%';
 delete from auth.users where email like 'jlptgate-%@example.invalid';
 delete from public.videos where youtube_video_id like 'jlptgate-%';
 
@@ -289,5 +290,105 @@ do $$ begin perform video_sentence_counts(array[]::uuid[]); raise exception 'FAI
 do $$ begin perform pronunciation_metric_means(now() - interval '1 day', now()); raise exception 'FAIL grant: anon can call pronunciation_metric_means()'; exception when insufficient_privilege then raise notice 'PASS grant: anon denied metric means'; end $$;
 commit;
 
+-- Search paths under the caller's videos RLS: FREE and PLUS are visible to A,
+-- while B's unshared PRIVATE lesson is not. Rows and total must agree.
+insert into public.videos (youtube_video_id, title, library_access, added_by_user_id) values
+  ('jlptgate-search-free', 'Search gate free', 'FREE', null),
+  ('jlptgate-search-plus', 'Search gate plus', 'PLUS', null),
+  ('jlptgate-search-private', 'Search gate private', 'PRIVATE', :'uid_b');
+insert into public.collections (slug, title, kind, display_order) values
+  ('jlptgate-search-open', 'Gate Ramen Path Open', 'path', 900),
+  ('jlptgate-search-hidden', 'Gate Ramen Path Hidden', 'path', 901),
+  ('jlptgate-search-plus', 'Gate Ramen Path Plus', 'path', 902),
+  ('jlptgate-search-percent', 'Gate Ramen 100% Path', 'path', 903),
+  ('jlptgate-search-percent-word', 'Gate Ramen 100 Percent Path', 'path', 904);
+insert into public.collections (slug, title, kind, skill_focus, display_order) values
+  ('jlptgate-search-goal', 'Gate Ramen Goal', 'goal', 'accuracy', 905);
+insert into public.lesson_collections (collection_id, lesson_id, position)
+select c.id, v.id, 0
+from public.collections c
+join public.videos v on (c.slug, v.youtube_video_id) in (
+  ('jlptgate-search-open', 'jlptgate-search-free'),
+  ('jlptgate-search-hidden', 'jlptgate-search-private'),
+  ('jlptgate-search-plus', 'jlptgate-search-plus'),
+  ('jlptgate-search-percent', 'jlptgate-search-free'),
+  ('jlptgate-search-percent-word', 'jlptgate-search-free'),
+  ('jlptgate-search-goal', 'jlptgate-search-free')
+);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_a', 'role', 'authenticated')::text, true);
+do $$
+declare got text[]; total bigint;
+begin
+  select array_agg(c.slug order by r.ord), max(r.total) into got, total
+  from search_learning_collections('path', '%Gate Ramen%', 10, 0)
+    with ordinality as r(collection_id, total, ord)
+  join collections c on c.id = r.collection_id;
+  if got is distinct from array[
+    'jlptgate-search-open',
+    'jlptgate-search-plus',
+    'jlptgate-search-percent',
+    'jlptgate-search-percent-word'
+  ] or total <> 4 then
+    raise exception 'FAIL search paths A: got % total %, want visible FREE/PLUS paths only, total 4', got, total;
+  end if;
+  select array_agg(c.slug order by r.ord), max(r.total) into got, total
+  from search_learning_collections('path', E'%100\\%%', 10, 0)
+    with ordinality as r(collection_id, total, ord)
+  join collections c on c.id = r.collection_id;
+  if got is distinct from array['jlptgate-search-percent'] or total <> 1 then
+    raise exception 'FAIL search paths escape: literal %% did not match only its title (got % total %)', got, total;
+  end if;
+  select array_agg(c.slug order by r.ord), max(r.total) into got, total
+  from search_learning_collections('goal', '%Gate Ramen%', 10, 0)
+    with ordinality as r(collection_id, total, ord)
+  join collections c on c.id = r.collection_id;
+  if got is distinct from array['jlptgate-search-goal'] or total <> 1 then
+    raise exception 'FAIL search goals: p_kind did not return only the matching goal (got % total %)', got, total;
+  end if;
+  -- The facade's count-only call: one row, carrying the full total.
+  if (select array[count(*), max(r.total)] from search_learning_collections('path', '%Gate Ramen%', 1, 0) r) <> array[1, 4]::bigint[] then
+    raise exception 'FAIL search paths count-only: limit 1 must return one row with total 4';
+  end if;
+  if (select count(*) from search_learning_collections('path', '%Gate Ramen%', 10, 4)) <> 0 then
+    raise exception 'FAIL search paths: offset past the end returned rows';
+  end if;
+  raise notice 'PASS search paths A: FREE/PLUS visible, B private hidden, literal %% escaped';
+end $$;
+commit;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'uid_b', 'role', 'authenticated')::text, true);
+do $$
+declare got text[]; total bigint;
+begin
+  select array_agg(c.slug order by r.ord), max(r.total) into got, total
+  from search_learning_collections('path', '%Gate Ramen%', 10, 0)
+    with ordinality as r(collection_id, total, ord)
+  join collections c on c.id = r.collection_id;
+  if got is distinct from array[
+    'jlptgate-search-open',
+    'jlptgate-search-hidden',
+    'jlptgate-search-plus',
+    'jlptgate-search-percent',
+    'jlptgate-search-percent-word'
+  ] or total <> 5 then
+    raise exception 'FAIL search paths B: got % total %, want own private path included, total 5', got, total;
+  end if;
+  raise notice 'PASS search paths B: own private path visible';
+end $$;
+commit;
+begin;
+set local role anon;
+do $$ begin
+  perform search_learning_collections('path', '%', 1, 0);
+  raise exception 'FAIL grant: anon can search collections';
+exception when insufficient_privilege then
+  raise notice 'PASS grant: anon denied collection search';
+end $$;
+commit;
+
+delete from public.collections where slug like 'jlptgate-search-%';
 delete from auth.users where email like 'jlptgate-%@example.invalid';
 delete from public.videos where youtube_video_id like 'jlptgate-%';

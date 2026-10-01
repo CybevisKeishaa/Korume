@@ -21,7 +21,7 @@ vi.mock("@/lib/data/lesson-ranking", () => ({
 vi.mock("@/lib/data/recommendations", () => ({ getRecommendations: vi.fn() }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listSituations: vi.fn(), listSources: vi.fn() }));
 
-import { getHubDiscovery, getShadowingHub } from "./shadowing-hub";
+import { getHubDiscovery, getHubDiscoveryCount, getShadowingHub } from "./shadowing-hub";
 import { getCollectionBySlug, listCollectionLessons } from "@/lib/data/collections";
 import { countMonthlyCreations } from "@/lib/data/lesson-library";
 import { getActivePlanTier } from "@/lib/data/subscriptions";
@@ -326,6 +326,53 @@ describe("getHubDiscovery", () => {
     await expect(getHubDiscovery({ browse: true, limit: 2 })).resolves.toMatchObject({
       discovery: { lessons: [{ id: "one" }, { id: "two" }], hasMore: false },
     });
+  });
+
+  it("counts the complete filtered set without carrying row ordering into the head read", async () => {
+    const videoQueries: QueryCall[][] = [];
+    const videos = ["one", "two", "three"].map((id) => ({ ...PRIVATE_LESSON, id }));
+    mockClient(USER, { videos, onVideosQuery: (calls) => videoQueries.push([...calls]) });
+    vi.mocked(listSituations).mockResolvedValue([{ id: "s1", slug: "restaurant", displayOrder: 1 }]);
+
+    await expect(getHubDiscovery({ query: "lesson", filter: "situation:restaurant", duration: "under_10", hideCompleted: true, sort: "shortest", limit: 1, withTotal: true })).resolves.toMatchObject({ discovery: { total: 3 } });
+
+    const countRead = videoQueries.find((calls) => calls.some((call) => call.op === "select" && call.options?.head));
+    expect(countRead).toEqual(expect.arrayContaining([
+      { op: "select", columns: "id", options: { count: "exact", head: true } },
+      { op: "ilike", column: "title", pattern: "%lesson%" },
+      { op: "eq", column: "situation_id", value: "s1" },
+      { op: "lt", column: "duration_seconds", value: 600 },
+      { op: "is", column: "completed_at", value: null },
+    ]));
+    expect(countRead?.some((call) => call.op === "order")).toBe(false);
+  });
+
+  it("counts every recommended candidate match, not only the ranking window", async () => {
+    // More rows than the ranking read (RECOMMENDATION_SCAN_LIMIT + 1), so a
+    // total taken from the candidate window would come out short.
+    const videos = Array.from({ length: 150 }, (_, index) => ({ ...PRIVATE_LESSON, id: `lesson-${index}` }));
+    mockClient(USER, { videos });
+
+    await expect(getHubDiscovery({ query: "lesson", sort: "recommended", limit: 1, withTotal: true })).resolves.toMatchObject({ discovery: { total: 150 } });
+  });
+
+  it("counts on countOnly alone: a count-only read never silently answers 0", async () => {
+    mockClient(USER, { videos: [PRIVATE_LESSON] });
+
+    await expect(getHubDiscovery({ query: "lesson", browse: true, countOnly: true })).resolves.toMatchObject({ discovery: { total: 1, lessons: [] } });
+  });
+
+  it("counts discovery matches with only the filtered head query", async () => {
+    const videoQueries: QueryCall[][] = [];
+    mockClient(USER, { videos: [PRIVATE_LESSON], onVideosQuery: (calls) => videoQueries.push([...calls]) });
+
+    await expect(getHubDiscoveryCount({ query: "lesson", duration: "under_10" })).resolves.toBe(1);
+
+    expect(videoQueries).toEqual([[
+      { op: "select", columns: "id", options: { count: "exact", head: true } },
+      { op: "ilike", column: "title", pattern: "%lesson%" },
+      { op: "lt", column: "duration_seconds", value: 600 },
+    ]]);
   });
 
   it("searches titles with the selected known filter", async () => {

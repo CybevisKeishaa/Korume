@@ -2,6 +2,8 @@
   "hub": {
     "allLessons": "Tất cả bài học",
     "showingFirstLessons": "Đang hiển thị {count} bài học đầu tiên",
+    "showMore": "Xem thêm bài học",
+    "loadingMore": "Đang tải thêm bài học…",
     "noLessonsForDisplay": "Không có bài học nào phù hợp với cài đặt hiển thị này.",
     "eyebrow": "Luyện nói theo ngữ cảnh",
     "title": "Phòng luyện phát âm",
@@ -154,6 +156,34 @@
         "empty": "Hãy luyện một bài để bài đó xuất hiện ở đây.",
         "scoreLabel": "Điểm"
       }
+    },
+    "search": {
+      "heading": "Kết quả cho “{q}”",
+      "tabsLabel": "Loại kết quả",
+      "tabs": {
+        "all": "Tất cả",
+        "lessons": "Bài học ({count})",
+        "paths": "Lộ trình học ({count})",
+        "goals": "Mục tiêu luyện tập ({count})",
+        "library": "Bộ sưu tập & tình huống ({count})"
+      },
+      "groups": {
+        "lessons": "Bài học",
+        "paths": "Lộ trình học",
+        "goals": "Mục tiêu luyện tập",
+        "library": "Bộ sưu tập & tình huống"
+      },
+      "seeAll": "Xem tất cả {group}",
+      "empty": "Không có kết quả cho “{q}”.",
+      "lessonControls": "Lọc & sắp xếp bài học",
+      "lessonFilterToggle": "Lọc bài học",
+      "showMore": {
+        "lessons": "Xem thêm bài học",
+        "paths": "Xem thêm lộ trình",
+        "goals": "Xem thêm mục tiêu",
+        "library": "Xem thêm"
+      },
+      "loadingMore": "Đang tải thêm…"
     }
   }
 }

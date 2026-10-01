@@ -45,8 +45,8 @@ describe("HubDisplayPanel", () => {
     expect(screen.getByRole("checkbox", { name: labels.hideCompleted })).toBeChecked();
   });
 
-  it("saves the choice to the profile and puts only non-defaults in the URL, keeping the search", async () => {
-    nav.search = "q=ramen&filter=situation%3Arestaurant&sort=newest";
+  it("saves the choice to the profile and puts only non-defaults in the URL, keeping the search and opening its first page", async () => {
+    nav.search = "q=ramen&filter=situation%3Arestaurant&sort=newest&shown=96";
     const fetchMock = respond(true);
     const user = await open({ ...DEFAULTS, sort: "newest" });
     await user.click(screen.getByRole("radio", { name: labels.recommended }));

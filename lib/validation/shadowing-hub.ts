@@ -30,3 +30,21 @@ export function isPronunciationResultMode(
     || display.duration !== DEFAULT_PREFERENCES.pronunciationDuration
     || display.hideCompleted !== DEFAULT_PREFERENCES.pronunciationHideCompleted;
 }
+
+/** One page of the All-lessons result surface; "Show more" adds one more. */
+export const RESULT_PAGE_SIZE = 24;
+/**
+ * ponytail: the most lessons the surface shows. The data layer reads one
+ * extra row to know whether more exist, and one PostgREST request returns at
+ * most max_rows (1000), so limit + 1 must fit in it. Past this the summary
+ * still says only the first lessons are shown; page the read if 41 pages of
+ * "Show more" ever stop being enough.
+ */
+export const RESULT_MAX_LIMIT = Math.floor(999 / RESULT_PAGE_SIZE) * RESULT_PAGE_SIZE;
+
+/** The `shown` URL value as a whole number of pages, within the surface's bounds. */
+export function pronunciationResultLimit(raw: string | undefined): number {
+  const shown = raw && /^\d+$/.test(raw) ? Number(raw) : 0;
+  if (shown <= 0) return RESULT_PAGE_SIZE;
+  return Math.min(RESULT_MAX_LIMIT, Math.ceil(shown / RESULT_PAGE_SIZE) * RESULT_PAGE_SIZE);
+}

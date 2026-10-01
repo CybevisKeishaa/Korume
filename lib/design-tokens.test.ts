@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { REVEAL_FAILSAFE_ATTR } from "@/components/motion/reveal-failsafe";
+import { DISPLAY_SCALE_FACTOR } from "@/lib/preferences/options";
 
 /**
  * The token system's automated contract (spec §2.9: architectural invariants
@@ -440,6 +441,36 @@ describe("desktop density scale", () => {
     expect(Number(reference)).toBe(1440);
     expect(Number(upper) * 16).toBe(1); // 1px at the reference viewport
     expect(Number(lower) * 16).toBeCloseTo(1280 / 1440, 4); // 0.889 at 1280
+  });
+
+  it("keeps result previews to one row at every display scale", () => {
+    // `rem` keeps the reader's browser font-size; Display size changes only
+    // --display-scale, which makes --space-md as large as 1.25rem today.
+    // Container queries cannot read that custom property, so these thresholds
+    // reserve the largest possible gap: n × 12rem + (n - 1) × maxGap.
+    const gridMinimum = css.match(/grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(([\d.]+)rem,\s*100%\),\s*1fr\)\)/);
+    expect(gridMinimum).not.toBeNull();
+    expect(Number(gridMinimum?.[1])).toBe(12);
+
+    const previewBreakpoints = [...new Set(
+      [...css.matchAll(/@container results \([^)]*?(\d+(?:\.\d+)?)rem/g)].map((match) => Number(match[1])),
+    )];
+    // L-004: the collection must be present and exact; an empty regex match
+    // must not turn the invariant into an unconditional pass.
+    expect(previewBreakpoints).toHaveLength(3);
+
+    // The gap is --space-md = N × --density-unit, whose largest value is the
+    // unit's rem ceiling × the largest display scale. Read both from the sheet.
+    const gapUnits = css.match(/--space-md:\s*calc\((\d+)\s*\*\s*var\(--density-unit\)\)/);
+    const unitCeilings = [...css.matchAll(/--density-unit:\s*calc\((?:clamp\([^,]+,[^,]+,\s*)?([\d.]+)rem/g)].map((match) => Number(match[1]));
+    expect(gapUnits).not.toBeNull();
+    expect(unitCeilings.length).toBeGreaterThan(0);
+    const maxGap = Number(gapUnits?.[1]) * Math.max(...unitCeilings) * Math.max(...Object.values(DISPLAY_SCALE_FACTOR));
+    expect(previewBreakpoints).toEqual([2, 3, 4].map((columns) => columns * 12 + (columns - 1) * maxGap));
+
+    // Each query hides from item columns + 1: below 2 columns keep 1, and so on.
+    const hiddenFrom = [...css.matchAll(/@container results [^{]*\{\s*\.result-preview > :nth-child\(n \+ (\d+)\)/g)].map((match) => Number(match[1]));
+    expect(hiddenFrom).toEqual([2, 3, 4, 5]);
   });
 
   it("re-declares the whole derived layer on the opt-out scope, not just the unit", () => {

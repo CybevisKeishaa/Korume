@@ -87,6 +87,8 @@ export function HubDisplayPanel({ value, labels }: { value: HubDisplayValue; lab
     // matches it; when the save failed every value is spelled out, because an
     // empty URL would bring the OLD profile back.
     const params = new URLSearchParams(searchParams?.toString() ?? "");
+    // New display settings are a new result set: it opens at its first page.
+    params.delete("shown");
     const entries: Array<[string, string, boolean]> = [
       ["sort", draft.sort, draft.sort === DEFAULTS.sort],
       ["duration", draft.duration ?? "any", draft.duration === DEFAULTS.duration],

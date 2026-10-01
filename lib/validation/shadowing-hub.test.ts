@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
-import { isPronunciationResultMode, pronunciationDisplaySchema, shadowingHubQuerySchema } from "./shadowing-hub";
+import { isPronunciationResultMode, pronunciationDisplaySchema, shadowingHubQuerySchema, pronunciationResultLimit, RESULT_MAX_LIMIT, RESULT_PAGE_SIZE } from "./shadowing-hub";
 
 describe("shadowingHubQuerySchema", () => {
   it("normalizes a bounded search query and a two-axis filter", () => {
@@ -49,5 +49,24 @@ describe("isPronunciationResultMode", () => {
 
   it("keeps the curated surface only when every discovery setting is default", () => {
     expect(isPronunciationResultMode({}, defaults)).toBe(false);
+  });
+});
+
+describe("pronunciationResultLimit", () => {
+  it("starts at one page and grows by whole pages", () => {
+    expect(pronunciationResultLimit(undefined)).toBe(RESULT_PAGE_SIZE);
+    expect(pronunciationResultLimit("48")).toBe(48);
+    // A hand-edited value rounds up to a whole page.
+    expect(pronunciationResultLimit("30")).toBe(48);
+  });
+
+  it("falls back to one page for anything that is not a positive count", () => {
+    for (const raw of ["", "0", "-24", "abc", "24.5", "1e3"]) expect(pronunciationResultLimit(raw)).toBe(RESULT_PAGE_SIZE);
+  });
+
+  it("stops where one PostgREST request can still say whether more exist", () => {
+    expect(RESULT_MAX_LIMIT % RESULT_PAGE_SIZE).toBe(0);
+    expect(RESULT_MAX_LIMIT + 1).toBeLessThanOrEqual(1_000);
+    expect(pronunciationResultLimit("100000")).toBe(RESULT_MAX_LIMIT);
   });
 });
