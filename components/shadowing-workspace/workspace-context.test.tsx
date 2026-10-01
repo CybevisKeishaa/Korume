@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
-import { WorkspaceProviders, sessionReducer, useCurrentSentence, useMarks, usePlaybackController, usePositionStore, usePreferences, useSession } from "./workspace-context";
+import { resetTabWritesForTests, WorkspaceProviders, sessionReducer, useCurrentSentence, useMarks, usePlaybackController, usePositionStore, usePreferences, useSession } from "./workspace-context";
 
 const refresh = vi.fn();
 vi.mock("@/lib/i18n/navigation", () => ({ useRouter: () => ({ refresh }) }));
@@ -30,6 +30,7 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 beforeEach(() => {
+  resetTabWritesForTests();
   refresh.mockReset();
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
 });
@@ -230,5 +231,50 @@ describe("workspace contexts", () => {
     } finally {
       consoleError.mockRestore();
     }
+  });
+});
+
+describe("a stale bootstrap after this tab's own writes (spec §4.3)", () => {
+  // Each test is its own learner: the tab-write map is module state, like the tab it models.
+  const stale = (userId: string): WorkspaceBootstrap => ({ ...BOOTSTRAP, userId });
+  const mount = (bootstrap: WorkspaceBootstrap) => renderHook(() => ({ preferences: usePreferences(), marks: useMarks() }), {
+    wrapper: ({ children }) => <WorkspaceProviders bootstrap={bootstrap}>{children}</WorkspaceProviders>,
+  });
+
+  it("remounts with this tab's preference, mark and bookmark over the payload from before them", async () => {
+    const first = mount(stale("tab-writer"));
+    act(() => first.result.current.preferences.setPreference("studyAtmosphere", "rainy_day"));
+    act(() => first.result.current.marks.toggleMark("line-2", "difficult"));
+    act(() => first.result.current.marks.toggleLessonBookmark());
+    await flush();
+    first.unmount();
+
+    // The learner left before router.refresh() landed: the restored payload predates every write.
+    const again = mount(stale("tab-writer"));
+    expect(again.result.current.preferences.preferences.studyAtmosphere).toBe("rainy_day");
+    expect(again.result.current.marks.isMarked("line-2", "difficult")).toBe(true);
+    expect(again.result.current.marks.lessonBookmarked).toBe(true);
+  });
+
+  it("forgets a write once a bootstrap agrees, so a later server value wins again", async () => {
+    const first = mount(stale("tab-agrees"));
+    act(() => first.result.current.preferences.setPreference("studyAtmosphere", "rainy_day"));
+    await flush();
+    first.unmount();
+    mount({ ...stale("tab-agrees"), preferences: { ...DEFAULT_PREFERENCES, studyAtmosphere: "rainy_day" } }).unmount();
+    // Another device changed it afterwards; this tab no longer masks the server.
+    const later = mount({ ...stale("tab-agrees"), preferences: { ...DEFAULT_PREFERENCES, studyAtmosphere: "quiet_library" } });
+    expect(later.result.current.preferences.preferences.studyAtmosphere).toBe("quiet_library");
+  });
+
+  it("records a rollback too: a failed write does not come back on the next mount", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
+    const first = mount(stale("tab-failed"));
+    act(() => first.result.current.preferences.setPreference("studyAtmosphere", "rainy_day"));
+    await flush();
+    await flush();
+    expect(first.result.current.preferences.preferences.studyAtmosphere).toBe("none");
+    first.unmount();
+    expect(mount(stale("tab-failed")).result.current.preferences.preferences.studyAtmosphere).toBe("none");
   });
 });

@@ -98,6 +98,29 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   Escape closes the Select listbox only and the next the popover, speed label 0.75× after a reload, every
   choice survives reload, atmosphere layer z −10 behind content (hit-test lands on rows), 0 console errors.
   Also fixed the T9 leftover: `setLoop` no longer calls the controller inside a setState updater.
+- T10 review (independent): CHANGES REQUIRED 0C/2I/5M — all fixed in `fix(shadowing): T10 review` (3 mutations red).
+- T11 (Claude): deterministic e2e 13/13 (×3 repeats 36/36 before test 13 was added), hub + explore 8/8, live
+  Ep.729 2/2 on a fresh `db reset` (all four `verify:db:*` 0). Boundary latency, 8 consecutive boundaries at 1×:
+  deltas −0.1…0 ms (max 0, p95 0; an earlier run max/p95 14.6 ms = one frame) — the row changes in the same
+  animation frame the player's clock crosses the line start, because both read `getCurrentTime()` in rAF
+  (T0). Not vacuous: the threshold mutated to −1 goes red; a missing/foreign `EP729_VIDEO_ID` fails "fixture
+  missing". Found and fixed on the way:
+  - **T2 regression (Critical):** `VIDEO_COLUMNS` gained `channel_title` but is also selected from the
+    `learner_videos` view, which lacked it → the Hub and Explore 500'd (`42703`). Fixed in the view's migration
+    (edited in place) + `lib/data/videos.columns.test.ts` (mutation red). Every unit test was green: they mock
+    PostgREST.
+  - **Stale bootstrap (spec §4.3, measured):** a setting changed then an immediate client-side leave/return came
+    back stale 3/3 (0/3 after a 3 s wait) — `router.refresh()` lost mid-flight. `staleTimes` cannot fix it (Next
+    back/forward always reads the router cache), so `workspace-context` now layers this tab's own writes over
+    the bootstrap and forgets each once a bootstrap agrees (3 mutations red; e2e test 7 was the natural RED).
+  - Post-seek clock (T5 guard, measured live): before the first play the real API keeps reporting the
+    pre-seek time (0) after `seekTo(700)`, while the app shows 700; Play then starts at 700.x. The app's store,
+    not `getCurrentTime()`, is the truth while unstarted — the guard and the store already behave that way.
+  - T7 carry-forward closed in the browser (test 13): the translation sits above the stretched row button and
+    is selectable; "Back to current" from the keyboard focuses the current row (both mutation-checked).
+  - Known flake, not this branch: `shadowing-explore.spec.ts` "seeded shelf card…" timed out 2/3 alone on this
+    build and 1/3 on a master build (`4c2d983`, throwaway worktree) at the same step (waiting for "Add to My
+    Lessons"); 8/8 on the fresh-DB run.
 
 ### Carried forward (open, owned by a later task)
 
@@ -136,8 +159,9 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 - Codex: never commit (sandbox ACL), never run Playwright, never build or `next start`.
 - Port 3000 may hold an orphan `next start` from the `pronunciation-show-more` worktree; Claude uses it
   for T0 probing only, and kills it before T11.
-- Local DB holds Ep.729 (`videos.id = 85351ebd-714e-44af-9ba0-89efd8589c00`, re-seeded after the T1 review resets); any `db reset` wipes it —
-  re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
+- Local DB holds Ep.729 (`videos.id = 1d29ad00-a500-4134-9812-cdd2ec7469fd` since the T11 reset, 2026-10-02); any
+  `db reset` wipes it — re-seed with `npx vite-node --config vitest.config.ts scripts/seed-real-lesson.ts -- --dir
+  "C:/Users/tplon/Desktop/Japan/Korume/shadowing" --youtube Fwj3tH4Uls8` (keeps the uuid on a re-run).
 - `npx supabase db reset` on this branch is approved by the owner.
 
 - Owner: Claude
@@ -152,4 +176,5 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 2. Done: T8 header (`feat(shadowing): workspace header, …`), built by Claude without Codex.
 3. Done: T9 views / fullscreen / shortcuts / divider (Codex + Claude fix pass).
 4. Done: T10 reading settings / study environment / contrast (Claude).
-5. Next: T11 (Claude: deterministic e2e, seed script, live Ep.729), then T12.
+5. Done: T11 deterministic + live acceptance (Claude), incl. the T2 view regression and the stale-bootstrap fix.
+6. Next: T12 (parity, retire ShadowingView, docs, full gate), then the whole-branch review.

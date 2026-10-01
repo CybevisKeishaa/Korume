@@ -31,7 +31,8 @@ describe("user_video_progress recency SQL contract", () => {
     expect(schema).toContain("thumbnail_url text, channel_title text check (char_length(channel_title) <= 200),");
     const altering = readdirSync(directory)
       .filter((file) => file.endsWith(".sql") && file !== "20260712000001_schema.sql")
-      .filter((file) => /alter table videos add\b[\s\S]*?channel_title/.test(normalized(file)));
+      // One statement only (`[^;]`): the learner_videos view in a later file SELECTS v.channel_title, which is not adding it.
+      .filter((file) => /alter table videos add\b[^;]*channel_title/.test(normalized(file)));
     expect(altering).toEqual([]);
   });
 

@@ -5,6 +5,8 @@ const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3001);
 export default defineConfig({
   testDir: "./tests/e2e",
   testMatch: "shadowing-*.spec.ts",
+  // The Ep.729 live gate has its own config (`playwright.live.config.ts`).
+  testIgnore: "*.live.spec.ts",
   reporter: "list",
   use: { baseURL: `http://localhost:${PORT}`, locale: "en", trace: "on-first-retry" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

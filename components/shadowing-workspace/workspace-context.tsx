@@ -7,7 +7,7 @@ import { locateSentence, sameSentencePosition, type SentencePosition } from "@/l
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import type { WorkspaceLine } from "@/lib/shadowing-workspace/types";
 import { toggleView, type FullscreenTarget, type WorkspaceView } from "@/lib/shadowing-workspace/workspace-view";
-import type { ReadingTranslation, SentenceMarkKind, UserPreferences } from "@/lib/preferences/options";
+import { SENTENCE_MARK_KINDS, type ReadingTranslation, type SentenceMarkKind, type UserPreferences } from "@/lib/preferences/options";
 import { createPlaybackPositionStore, type PlaybackPositionStore } from "./playback-position-store";
 import type { PlaybackController } from "./use-playback-controller";
 
@@ -119,8 +119,30 @@ function useRefreshAfterWrite(mutator: KeyedMutator) {
   }, [mutator, router]);
 }
 
-function PreferencesProvider({ initial, dispatch, children }: { initial: UserPreferences; dispatch: Dispatch<SessionAction>; children: ReactNode }) {
-  const [preferences, setPreferences] = useState(initial);
+/**
+ * This tab's own writes, layered over a bootstrap that can be older than them (spec §4.3). `router.refresh()`
+ * after a write purges the router cache — but only once it completes: a learner who changes a setting and
+ * leaves at once returns (client-side Back) to the payload from BEFORE the write (T11, measured: 3 of 3 runs
+ * stale with no wait, 0 of 3 after 3 s). Every optimistic apply and rollback records its value here; a
+ * remount takes the recorded value over the bootstrap's, and forgets it once a bootstrap agrees.
+ * ponytail: lives for the tab; a later change from another device is masked here until a bootstrap shows
+ * this tab's value or the tab reloads (a full load drops the map).
+ */
+const tabWrites = new Map<string, unknown>();
+function rememberWrite(key: string, value: unknown) { tabWrites.set(key, value); }
+/** Tests share one module (one "tab") across cases; each case starts with a fresh tab. */
+export function resetTabWritesForTests() { tabWrites.clear(); }
+function reconcileWrite<V>(key: string, server: V): V {
+  if (!tabWrites.has(key)) return server;
+  const mine = tabWrites.get(key) as V;
+  if (Object.is(mine, server)) tabWrites.delete(key);
+  return mine;
+}
+
+function PreferencesProvider({ userId, initial, dispatch, children }: { userId: string; initial: UserPreferences; dispatch: Dispatch<SessionAction>; children: ReactNode }) {
+  const [preferences, setPreferences] = useState(() => Object.fromEntries(
+    Object.entries(initial).map(([key, value]) => [key, reconcileWrite(`pref:${userId}:${key}`, value)]),
+  ) as unknown as UserPreferences);
   const [mutationRevision, setMutationRevision] = useState(0);
   const preferencesRef = useRef(preferences);
   preferencesRef.current = preferences;
@@ -132,6 +154,7 @@ function PreferencesProvider({ initial, dispatch, children }: { initial: UserPre
       apply: () => {
         const next = { ...preferencesRef.current, [key]: value } as UserPreferences;
         preferencesRef.current = next;
+        rememberWrite(`pref:${userId}:${key}`, value);
         setPreferences(next);
         if (key === "readingTranslation") dispatch({ type: "reset-overrides", scope: "translation" });
         if (key === "readingFurigana") dispatch({ type: "reset-overrides", scope: "furigana" });
@@ -143,11 +166,12 @@ function PreferencesProvider({ initial, dispatch, children }: { initial: UserPre
       rollback: () => {
         const next = { ...preferencesRef.current, [key]: previous } as UserPreferences;
         preferencesRef.current = next;
+        rememberWrite(`pref:${userId}:${key}`, previous);
         setPreferences(next);
       },
       onSettled: (ok) => { setMutationRevision((revision) => revision + 1); refreshAfterWrite(`pref:${key}`, ok); },
     });
-  }, [dispatch, mutator, refreshAfterWrite]);
+  }, [dispatch, mutator, refreshAfterWrite, userId]);
   // mutationRevision is load-bearing: it re-renders consumers so pending() reflects a settled request.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const value = useMemo(() => ({ preferences, setPreference, pending: (key: PreferenceKey) => mutator.isPending(`pref:${key}`) }), [mutationRevision, mutator, preferences, setPreference]);
@@ -159,8 +183,19 @@ function markKey(lineId: string, kind: SentenceMarkKind): string {
 }
 
 function MarksProvider({ bootstrap, children }: { bootstrap: WorkspaceBootstrap; children: ReactNode }) {
-  const [marks, setMarks] = useState(() => new Set(bootstrap.marks.map(({ lineId, kind }) => markKey(lineId, kind))));
-  const [lessonBookmarked, setLessonBookmarked] = useState(bootstrap.lessonBookmarked);
+  const { userId } = bootstrap;
+  const [marks, setMarks] = useState(() => {
+    const server = new Set(bootstrap.marks.map(({ lineId, kind }) => markKey(lineId, kind)));
+    const reconciled = new Set<string>();
+    for (const line of bootstrap.transcript?.lines ?? []) {
+      for (const kind of SENTENCE_MARK_KINDS) {
+        const id = markKey(line.id, kind);
+        if (reconcileWrite(`mark:${userId}:${id}`, server.has(id))) reconciled.add(id);
+      }
+    }
+    return reconciled;
+  });
+  const [lessonBookmarked, setLessonBookmarked] = useState(() => reconcileWrite(`bookmark:${userId}:${bootstrap.video.id}`, bootstrap.lessonBookmarked));
   const [mutationRevision, setMutationRevision] = useState(0);
   const marksRef = useRef(marks);
   const bookmarkRef = useRef(lessonBookmarked);
@@ -178,29 +213,29 @@ function MarksProvider({ bootstrap, children }: { bootstrap: WorkspaceBootstrap;
     const id = markKey(lineId, kind);
     const marked = marksRef.current.has(id);
     void mutator.run(`mark:${lineId}:${kind}`, {
-      apply: () => updateMarks((next) => marked ? next.delete(id) : next.add(id)),
+      apply: () => { rememberWrite(`mark:${userId}:${id}`, !marked); updateMarks((next) => marked ? next.delete(id) : next.add(id)); },
       request: async () => {
         const response = await fetch("/api/sentence-marks", {
           method: marked ? "DELETE" : "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ transcriptLineId: lineId, kind }),
         });
         if (!response.ok) throw new Error("Sentence mark update failed");
       },
-      rollback: () => updateMarks((next) => marked ? next.add(id) : next.delete(id)),
+      rollback: () => { rememberWrite(`mark:${userId}:${id}`, marked); updateMarks((next) => marked ? next.add(id) : next.delete(id)); },
       onSettled: (ok) => { setMutationRevision((revision) => revision + 1); refreshAfterWrite(`mark:${lineId}:${kind}`, ok); },
     });
-  }, [mutator, refreshAfterWrite, updateMarks]);
+  }, [mutator, refreshAfterWrite, updateMarks, userId]);
   const toggleLessonBookmark = useCallback(() => {
     const bookmarked = bookmarkRef.current;
     void mutator.run("lesson-bookmark", {
-      apply: () => { bookmarkRef.current = !bookmarked; setLessonBookmarked(!bookmarked); },
+      apply: () => { bookmarkRef.current = !bookmarked; rememberWrite(`bookmark:${userId}:${bootstrap.video.id}`, !bookmarked); setLessonBookmarked(!bookmarked); },
       request: async () => {
         const response = await fetch(`/api/videos/${bootstrap.video.id}/bookmark`, { method: bookmarked ? "DELETE" : "PUT", headers: { "Content-Type": "application/json" } });
         if (!response.ok) throw new Error("Lesson bookmark update failed");
       },
-      rollback: () => { bookmarkRef.current = bookmarked; setLessonBookmarked(bookmarked); },
+      rollback: () => { bookmarkRef.current = bookmarked; rememberWrite(`bookmark:${userId}:${bootstrap.video.id}`, bookmarked); setLessonBookmarked(bookmarked); },
       onSettled: (ok) => { setMutationRevision((revision) => revision + 1); refreshAfterWrite("lesson-bookmark", ok); },
     });
-  }, [bootstrap.video.id, mutator, refreshAfterWrite]);
+  }, [bootstrap.video.id, mutator, refreshAfterWrite, userId]);
   const value = useMemo(() => ({
     isMarked: (lineId: string, kind: SentenceMarkKind) => marks.has(markKey(lineId, kind)), toggleMark, lessonBookmarked, toggleLessonBookmark,
     pending: (key: string) => mutator.isPending(key),
@@ -228,7 +263,7 @@ export function WorkspaceProviders({ bootstrap, controller, initialPosition, chi
           <StartPositionContext.Provider value={startPosition}>
           <SessionContext.Provider value={sessionValue}>
             <CurrentSentenceProvider lines={lesson.lines} duration={lesson.video.durationSeconds} store={store}>
-              <PreferencesProvider initial={bootstrap.preferences} dispatch={dispatch}>
+              <PreferencesProvider userId={bootstrap.userId} initial={bootstrap.preferences} dispatch={dispatch}>
                 <MarksProvider bootstrap={bootstrap}>{children}</MarksProvider>
               </PreferencesProvider>
             </CurrentSentenceProvider>

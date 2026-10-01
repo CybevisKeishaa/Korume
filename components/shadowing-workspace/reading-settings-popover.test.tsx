@@ -6,6 +6,7 @@ import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub"
 import { DEFAULT_PREFERENCES, type UserPreferences } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { usePlayerWiring } from "./playback-root";
+import { resetTabWritesForTests } from "./workspace-context";
 import { ShadowingWorkspaceShell } from "./workspace-shell";
 
 const router = vi.hoisted(() => ({ refresh: () => undefined }));
@@ -40,6 +41,7 @@ describe("Reading Settings and Study Environment (spec §6)", () => {
   beforeEach(() => {
     yt = installYouTubeStub();
     sessionStorage.clear();
+    resetTabWritesForTests();
     wiring = undefined;
     fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
