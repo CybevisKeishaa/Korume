@@ -42,14 +42,15 @@ export function ShadowingWorkspaceShell({
   return (
     <WorkspaceProviders bootstrap={bootstrap} initialPosition={initialPosition}>
       <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={bootstrap.resume?.lastWatchedAt ?? null}>
-        <div className="grid min-h-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]" data-testid="shadowing-workspace">
+        {/* Bounded to the viewport: the transcript scrolls inside its own column and the page never does. */}
+        <div className="grid h-dvh grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]" data-testid="shadowing-workspace">
           <div className="col-span-3" data-testid="workspace-header-slot" />
           <div className="flex min-w-0 flex-col gap-md p-md" data-testid="workspace-player-slot">
             <WorkspacePlayer />
             <LiveSentence />
           </div>
           <div aria-hidden="true" className="w-px bg-border" data-testid="workspace-divider-slot" />
-          <div className="min-w-0">{children}</div>
+          <div className="min-h-0 min-w-0">{children}</div>
         </div>
       </PlaybackRoot>
     </WorkspaceProviders>

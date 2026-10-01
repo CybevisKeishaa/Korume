@@ -60,3 +60,20 @@ export const HideTextGlyph = ({ className }: GlyphProps) => (
 export const ShowTextGlyph = ({ className }: GlyphProps) => (
   <Glyph className={className}><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></Glyph>
 );
+/** Transcript panel (Figma `105:3708`): search field, row actions, Full Transcript ⤢. */
+export const SearchGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></Glyph>
+);
+export const ExpandGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></Glyph>
+);
+export const ReplayGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></Glyph>
+);
+export const BookmarkGlyph = ({ className, filled }: GlyphProps & { filled?: boolean }) => (
+  <Glyph className={className} filled={filled}><path d="M6 3h12v18l-6-4-6 4z" /></Glyph>
+);
+/** "Difficult" mark: a flag. */
+export const FlagGlyph = ({ className, filled }: GlyphProps & { filled?: boolean }) => (
+  <Glyph className={className} filled={filled}><path d="M5 21V4M5 4h11l-2 4 2 4H5" /></Glyph>
+);

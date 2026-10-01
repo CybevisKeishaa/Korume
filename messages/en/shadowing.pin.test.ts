@@ -530,3 +530,27 @@ describe("shadowing.json EN workspace Live Sentence", () => {
     });
   });
 });
+
+describe("shadowing.json EN workspace transcript panel", () => {
+  it("pins the transcript panel copy", () => {
+    expect(en.workspace.transcript).toEqual({
+      label: "Transcript",
+      meta: "{count, plural, one {{count} sentence} other {{count} sentences}} · {minutes} min",
+      translations: "Translations",
+      fullTranscript: "Full transcript",
+      search: "Search transcript",
+      matches: "{count, plural, =0 {No matching sentences} one {{count} matching sentence} other {{count} matching sentences}}",
+      noMatches: "No sentences match",
+      backToCurrent: "Back to current",
+      lineNumber: "Sentence {number}",
+      bookmarked: "Bookmarked",
+      markedDifficult: "Marked difficult",
+      actions: "Sentence actions",
+      replay: "Replay",
+      bookmark: "Bookmark",
+      difficult: "Difficult",
+      lineFurigana: "Readings for this line",
+      showTranslation: "Show translation",
+    });
+  });
+});

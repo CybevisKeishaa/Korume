@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@/test/render";
+import { fireEvent, render, screen, within } from "@/test/render";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
+import type { PlaybackController } from "./use-playback-controller";
 import { WorkspaceProviders } from "./workspace-context";
 import { ShadowingModeBody } from "./shadowing-mode-body";
 
@@ -35,13 +36,17 @@ describe("ShadowingModeBody", () => {
     expect(screen.getByRole("link", { name: "Back to Shadowing Hub" })).toHaveAttribute("href", "/shadowing");
   });
 
-  it("renders the replacement region when a transcript is present", () => {
+  it("renders the transcript panel inside the region when a transcript is present", () => {
+    HTMLElement.prototype.scrollTo = vi.fn() as unknown as HTMLElement["scrollTo"];
+    const lines = [{ id: "l1", index: 0, startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: "Hello", furigana: null }];
     render(
-      <WorkspaceProviders bootstrap={{ ...bootstrap, transcript: { id: "transcript-1", lines: [] } }}>
+      <WorkspaceProviders bootstrap={{ ...bootstrap, transcript: { id: "transcript-1", lines } }} controller={{ seekToSentence: vi.fn() } as unknown as PlaybackController}>
         <ShadowingModeBody />
       </WorkspaceProviders>,
     );
 
-    expect(screen.getByRole("region", { name: "Shadowing practice" })).toBeEmptyDOMElement();
+    const region = screen.getByRole("region", { name: "Shadowing practice" });
+    expect(within(region).getByRole("list", { name: "Transcript" })).toBeInTheDocument();
+    expect(within(region).getByText("こんにちは")).toBeInTheDocument();
   });
 });

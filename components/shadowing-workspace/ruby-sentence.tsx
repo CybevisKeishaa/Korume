@@ -22,7 +22,7 @@ export function furiganaShownByMode(mode: ReadingFurigana): boolean {
  * persisted mode for this line only; under `adaptive` a revealed line shows mastered readings too.
  * Task 7's Full Transcript rows reuse it.
  */
-export function RubySentence({ segments, text, mode, lineId, hidden = false, className }: {
+export function RubySentence({ segments, text, mode, lineId, hidden = false, as: Tag = "p", className }: {
   segments: FuriganaSegment[] | null;
   /** The plain line, rendered as-is when there are no segments. */
   text: string;
@@ -30,6 +30,8 @@ export function RubySentence({ segments, text, mode, lineId, hidden = false, cla
   lineId: string;
   /** Visually hidden by the caller: keep it out of the accessibility tree too. */
   hidden?: boolean;
+  /** `span` inside a button (a transcript row), where a paragraph is not allowed. */
+  as?: "p" | "span";
   className?: string;
 }) {
   const { masteryMap } = useLesson();
@@ -41,8 +43,8 @@ export function RubySentence({ segments, text, mode, lineId, hidden = false, cla
         : mode === "hidden" ? () => false
           : adaptiveShouldShowReading(masteryMap);
   return (
-    <p lang="ja" aria-hidden={hidden || undefined} className={cn("font-jp", className)}>
+    <Tag lang="ja" aria-hidden={hidden || undefined} className={cn("font-jp", className)}>
       {segments?.length ? <FuriganaText segments={segments} shouldShowReading={show} /> : text}
-    </p>
+    </Tag>
   );
 }

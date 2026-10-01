@@ -2,6 +2,7 @@
 
 import { useTranslations } from "@/lib/i18n";
 import { Link, useRouter } from "@/lib/i18n/navigation";
+import { TranscriptPanel } from "./transcript-panel";
 import { useLesson } from "./workspace-context";
 
 export function ShadowingModeBody() {
@@ -19,5 +20,9 @@ export function ShadowingModeBody() {
     );
   }
 
-  return <section aria-label={t("workspace.regionLabel")} />;
+  return (
+    <section aria-label={t("workspace.regionLabel")} className="h-full p-md">
+      <TranscriptPanel />
+    </section>
+  );
 }

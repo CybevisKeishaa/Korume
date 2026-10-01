@@ -231,6 +231,25 @@
       "hideJapanese": "Ẩn tiếng Nhật",
       "showJapanese": "Hiện tiếng Nhật",
       "showTranslation": "Hiện bản dịch"
+    },
+    "transcript": {
+      "label": "Phụ đề",
+      "meta": "{count, plural, other {{count} câu}} · {minutes} phút",
+      "translations": "Bản dịch",
+      "fullTranscript": "Toàn bộ phụ đề",
+      "search": "Tìm trong phụ đề",
+      "matches": "{count, plural, =0 {Không có câu nào khớp} other {{count} câu khớp}}",
+      "noMatches": "Không có câu nào khớp",
+      "backToCurrent": "Về câu hiện tại",
+      "lineNumber": "Câu {number}",
+      "bookmarked": "Đã đánh dấu",
+      "markedDifficult": "Đã đánh dấu khó",
+      "actions": "Thao tác với câu",
+      "replay": "Phát lại",
+      "bookmark": "Đánh dấu",
+      "difficult": "Khó",
+      "lineFurigana": "Cách đọc cho câu này",
+      "showTranslation": "Hiện bản dịch"
     }
   }
 }

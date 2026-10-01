@@ -60,6 +60,8 @@ regression the fixes introduced). DB gates after T1/T2: fresh reset, `verify:db:
 `lesson-jobs`, `settings`, `pronunciation` all 0. Browser checks (worktree `next dev -p 3001`, temp auth
 user, Playwright Chrome at 1280×529, script in the session scratchpad `ws-check.mjs` / `ws-6a.mjs`):
 T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scroll).
+- T7 (Claude, Codex at limit): tsc/lint/protocol 0, full vitest 427 files 0; browser Ep.729 282 rows, current row
+  centred (offset 0), pill clears, page 1280×529 no scroll. Review: 0C/4I/9M, NOT yet fixed (list in `task-7-report.md`).
 
 ### Carried forward (open, owned by a later task)
 
@@ -91,7 +93,7 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Codex
+- Owner: Claude (T7 review fixes pending)
 
 ## Blockers
 
@@ -99,6 +101,6 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 ## Next actions
 
-1. Codex: Task 7 (transcript panel) from `.superpowers/sdd/shadowing-workspace-1a/task-7-brief.md` —
-   dispatched when its quota resets (19:36). T6a/T6b were built by Claude during Codex's limit.
-2. Claude: review T7, gates, browser check, commit; then T8 (header) → T9 → T10 packets.
+1. Claude: fix the T7 review findings I-1..I-4 + M-1..M-5, M-7, M-9 (`task-7-report.md`, incl. the
+   `toggle-line-furigana` reducer change), re-run gates + re-review, commit `fix(shadowing): T7 review`.
+2. Then dispatch T8 (header) — packet `task-8-brief.md` ready (Codex, or Claude if Codex is limited) → T9 → write T10 packet.
