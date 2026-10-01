@@ -14,7 +14,6 @@
     "appStoreLabel": "Tải trên App Store",
     "playStoreLabel": "Tải trên Google Play"
   },
-  "translationToggle": "Bản dịch",
   "summary": {
     "heading": "Tóm tắt",
     "aiGenerated": "Tạo bởi AI",
@@ -129,26 +128,11 @@
     }
   },
   "player": {
-    "transcriptEmpty": "Chưa có dòng phụ đề nào.",
     "a11y": {
-      "transcript": "Phụ đề",
-      "waveform": "Dạng sóng bản ghi âm",
-      "playbackSpeed": "Tốc độ phát",
-      "abLoop": "Lặp A–B",
-      "furigana": "Furigana"
+      "waveform": "Dạng sóng bản ghi âm"
     },
     "processingRecording": "Đang xử lý bản ghi âm…",
-    "waveformUnavailable": "Chưa có bản xem trước dạng sóng.",
-    "furigana": {
-      "adaptive": "Thích ứng",
-      "all": "Tất cả",
-      "off": "Tắt"
-    },
-    "loop": {
-      "setA": "Đặt A",
-      "setB": "Đặt B",
-      "clear": "Xóa vòng lặp"
-    }
+    "waveformUnavailable": "Chưa có bản xem trước dạng sóng."
   },
   "hub": {
     "eyebrow": "Korume \u00b7 Th\u01b0 vi\u1ec7n b\u00e0i h\u1ecdc",

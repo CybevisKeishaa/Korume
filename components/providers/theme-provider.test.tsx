@@ -60,9 +60,9 @@ describe("ThemeProvider reduced motion", () => {
     // straight back to checked, for ever, on any machine whose OS asks for
     // reduced motion.
     //
-    // `reduceMotion` stays EFFECTIVE because four components gate animation on
-    // it (`companion-sprite`, `smooth-scroll`, `stroke-order`,
-    // `transcript-pane`); making it the account value let the companion keep
+    // `reduceMotion` stays EFFECTIVE because three components gate animation on
+    // it (`companion-sprite`, `smooth-scroll`, `stroke-order`); making it the
+    // account value let the companion keep
     // breathing for an OS-level reduce-motion reader, which
     // `ambient.test.tsx` caught.
     expect(result.current.accountReduceMotion).toBe(false);

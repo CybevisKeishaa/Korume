@@ -5,15 +5,10 @@ import en from "./shadowing.json";
  * Characterization test for `shadowing.json` (Task 11c): the literal `toBe`
  * pin against the catalog, per the standing convention from the Task 10
  * review (`toHaveTextContent` given a string is a CONTAINMENT match, not
- * equality — `shadowing-view.test.tsx` / `video-summary-panel.test.tsx`
- * prove the RTL wiring; this file's job is to pin every leaf byte-exact).
- * Every expected value below is a literal copied verbatim from the
- * pre-extraction source of `components/video-player/shadowing-view.tsx` and
- * `components/video-player/video-summary-panel.tsx` on
- * `layer-9a-string-extraction` before Task 11c (never derived from the
- * catalog itself — binding pattern 2).
+ * equality — component tests prove the RTL wiring; this file's job is to pin
+ * every leaf byte-exact).
  */
-describe("shadowing.json EN — shadowing-view.tsx literals", () => {
+describe("shadowing.json EN — player-error and no-transcript literals", () => {
   it("pins the player-error alert (region-lock / private / embed-disabled)", () => {
     expect(en.playerError.title).toBe("This video can't be played here.");
     expect(en.playerError.body).toBe(
@@ -26,10 +21,6 @@ describe("shadowing.json EN — shadowing-view.tsx literals", () => {
     expect(en.noTranscript.body).toBe(
       "This video doesn't have a transcript to shadow against yet. Transcript submission is coming soon.",
     );
-  });
-
-  it("pins the translation toggle's label", () => {
-    expect(en.translationToggle).toBe("Translation");
   });
 });
 
@@ -428,26 +419,10 @@ describe("shadowing.json EN — shadowing-recorder-panel.tsx word errorType labe
 });
 
 /**
- * The player-shell strings (`transcript-pane.tsx`, `waveform.tsx`,
- * `playback-controls.tsx`) were promoted to `common.player.*` in Tasks
- * 11a/11c, provisionally, ahead of a real multi-surface consumer. Task 19's
- * `common.*` audit BY SURFACE found all three components serve ONLY the
- * shadowing surface (dictation-view.tsx consumes none of them), so the whole
- * `player.*` block was DEMOTED back under `shadowing.*` per the standing
- * gate criterion (run-state convention #5). These pins moved with it — from
- * `common.pin.test.ts` — and now assert against `shadowing.json`;
- * `transcript-pane.test.tsx` / `waveform.test.tsx` / `playback-controls.test.tsx`
- * prove the RTL wiring. Values are unchanged, byte-for-byte.
+ * The waveform strings remain under `shadowing.player.*` because that surface
+ * is their only consumer. These pins assert the byte-exact catalog values.
  */
-describe("shadowing.json EN — player shell literals (demoted from common in Task 19)", () => {
-  it("pins the empty-transcript message", () => {
-    expect(en.player.transcriptEmpty).toBe("This transcript has no lines yet.");
-  });
-
-  it("pins the transcript list's accessible name", () => {
-    expect(en.player.a11y.transcript).toBe("Transcript");
-  });
-
+describe("shadowing.json EN — waveform literals", () => {
   it("pins the waveform canvas's default accessible name", () => {
     expect(en.player.a11y.waveform).toBe("Recording waveform");
   });
@@ -460,30 +435,6 @@ describe("shadowing.json EN — player shell literals (demoted from common in Ta
     expect(en.player.waveformUnavailable).toBe("Waveform preview unavailable.");
   });
 
-  it("pins the speed control's accessible group name", () => {
-    expect(en.player.a11y.playbackSpeed).toBe("Playback speed");
-  });
-
-  it("pins the A–B loop group's accessible name (EN DASH U+2013, not a hyphen)", () => {
-    expect(en.player.a11y.abLoop).toBe("A–B loop");
-    expect(en.player.a11y.abLoop).not.toBe("A-B loop");
-  });
-
-  it("pins the furigana control's accessible group name", () => {
-    expect(en.player.a11y.furigana).toBe("Furigana");
-  });
-
-  it("pins the three furigana mode labels", () => {
-    expect(en.player.furigana.adaptive).toBe("Adaptive");
-    expect(en.player.furigana.all).toBe("All");
-    expect(en.player.furigana.off).toBe("Off");
-  });
-
-  it("pins the loop control labels", () => {
-    expect(en.player.loop.setA).toBe("Set A");
-    expect(en.player.loop.setB).toBe("Set B");
-    expect(en.player.loop.clear).toBe("Clear loop");
-  });
 });
 
 describe("shadowing.json EN workspace transcript recovery", () => {

@@ -31,6 +31,8 @@ doesn't define, add it here first — don't coin a new synonym for an existing t
 | **View Mode** | *How do I want to see it?* Exists only inside the Shadowing Learning Mode: Reading / Normal / Immersion. **⚠ Superseded** — View Mode was retired outright, not merely renamed; see `docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2 and `docs/design/screens/screen-shadowing-practice.md` § Two-Layer Model for the current model. |
 | **Reading Settings** | *How should the UI behave?* Font, subtitle size/color, speed, auto-pause, repeat count, etc. — persisted per learner, not a mode. |
 | **Analysis** | A per-sentence utility (select text → Analyze), not a mode at any layer — not a View Mode option, not a Learning Mode, not a tab. (The "View Mode" reference here is to the now-retired term above, kept for historical context.) |
+| **Sentence Mark** | A learner's per-line bookmark or difficult flag. It is not a Pin, Mining, My Lessons (library), or a Playlist. |
+| **Lesson Bookmark** | A learner's flag on a whole Lesson. It is not a Pin, Mining, My Lessons (library), or a Playlist. |
 
 ## Explicitly not part of this model
 

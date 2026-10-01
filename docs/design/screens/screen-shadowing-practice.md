@@ -251,18 +251,9 @@ visible layer — this is lesson context, not app navigation, and is unaffected 
 
 # Header
 
-Minimal height.
-
-Contains only
-
-- Back
-- Title
-- Source
-- Learning Mode tabs
-- JLPT level
-- Bookmark
-- Download transcript
-- Overflow menu
+Minimal height. Part 1a shows ← Back, title, source line, JLPT level, and the sentence counter.
+Its controls are Study Environment, Focus Mode, ⛶, ⚙, ⌨, Bookmark, and ⋯. Learning-mode tabs stay hidden
+until a second mode ships.
 
 No colorful actions.
 
@@ -277,6 +268,9 @@ orientation context (which sentence the learner is on), not a measure of how muc
 remains, and is fine to show.
 
 No unnecessary controls.
+
+**Part 1a deviations:** see the deviation register in
+`docs/superpowers/specs/2026-10-01-shadowing-workspace-part-1a-design.md` §3.
 
 ---
 
@@ -359,8 +353,7 @@ Never use strong colors.
 Each sentence supports
 
 - Replay
-- Bookmark
-- Save difficult sentence
+- Bookmark / Difficult — per-line `sentence_marks`, not Pins or Mining
 - Vocabulary
 - Grammar
 - Mining
@@ -508,6 +501,8 @@ Translation language
 - English
 - Japanese
 
+Deferred in Part 1a (the workspace shows the lesson's Vietnamese translation).
+
 Sentence emphasis
 
 - Minimal
@@ -521,7 +516,7 @@ colors" spirit and avoids a contrast-failure support burden
 
 Playback speed — remembered as the learner's own default.
 
-Auto-Pause sensitivity — silence-based vs. existing beat-marker-based.
+Silence-based Auto-Pause sensitivity is deferred in Part 1a; existing beat-marker-based behavior remains.
 
 Loop count before auto-advancing to the next sentence.
 
@@ -531,6 +526,8 @@ Keyboard-shortcut cheat sheet — togglable, off by default.
 lesson.
 
 Changes are immediate.
+
+Quick controls are session overrides; persisted Reading Settings remain the learner defaults (spec §7.8).
 
 Everything feels like adjusting a physical book.
 

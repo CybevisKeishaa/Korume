@@ -160,13 +160,35 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   and the progress-route test were new files; `LessonCreationContent` lives in `store.ts`; token-scale scans
   `(workspace)` only, not all of `(focus)/shadowing`; transcript `!ok` keeps the lesson on its empty state.
 
+- T12 (Codex, reviewed by Claude: one doc fix — the Translation language options were restored with a
+  deferral note). Full gate 2026-10-02 on a fresh `db reset`: verify:db lesson-jobs/settings/pronunciation/
+  shadowing 0/0/0/0; tsc 0, lint 0, protocol 0, vitest 0 (433 files / 3943 tests after the legacy deletions);
+  `npm run build` 0; deterministic e2e 13/13; hub + explore 8/8; live Ep.729 2/2 (lesson
+  `f885cf07-d6f5-4e01-b38c-236008b2a0a3`), boundary latency 8.7–15 ms (max = p95 15), clock update median 8 ms.
+
+### T12 parity checklist
+
+| Capability | Evidence |
+| --- | --- |
+| Player controls | T6 `components/shadowing-workspace/workspace-player.test.tsx`; e2e 2 and 11 (`tests/e2e/shadowing-workspace.spec.ts`) |
+| Resume | e2e 4, 5, and 6; live Ep.729 acceptance (`tests/e2e/shadowing-workspace.live.spec.ts`) |
+| Transcript sync | e2e 2; live Ep.729 latency acceptance (`tests/e2e/shadowing-workspace.live.spec.ts`) |
+| Mining / pin | `components/shadowing-workspace/transcript-panel.test.tsx` — “renders Mine and Pin to journal controls in a transcript row” |
+| Speed / loop | T6 `components/shadowing-workspace/workspace-player.test.tsx`; e2e 3 |
+| Persistence | e2e 7 |
+| Player-error overlay | `components/shadowing-workspace/workspace-player.test.tsx` — “replaces the centre button with an alert when the embed fails” |
+| No-transcript empty state | T4 `components/shadowing-workspace/shadowing-mode-body.test.tsx` |
+### T12 dead-code audit
+
+**Audit:** `shadowing-view.tsx` + test — 0 external importers; `playback-controls.tsx` + test — 1 legacy importer (`shadowing-view.tsx`), 0 surviving; `transcript-pane.tsx` + test — 1 legacy importer (`shadowing-view.tsx`), 0 surviving. All deleted.
+
 ## Working tree and environment
 
 - Worktree `.worktrees/shadowing-workspace-1a`; `.env.local` copied; `npm ci` run 2026-10-01.
 - Codex: never commit (sandbox ACL), never run Playwright, never build or `next start`.
 - Port 3000 may hold an orphan `next start` from the `pronunciation-show-more` worktree; Claude uses it
   for T0 probing only, and kills it before T11.
-- Local DB holds Ep.729 (`videos.id = 1d29ad00-a500-4134-9812-cdd2ec7469fd` since the T11 reset, 2026-10-02); any
+- Local DB holds Ep.729 (`videos.id = f885cf07-d6f5-4e01-b38c-236008b2a0a3` since the T12 gate reset, 2026-10-02); any
   `db reset` wipes it — re-seed with `npx vite-node --config vitest.config.ts scripts/seed-real-lesson.ts -- --dir
   "C:/Users/tplon/Desktop/Japan/Korume/shadowing" --youtube Fwj3tH4Uls8` (keeps the uuid on a re-run).
 - `npx supabase db reset` on this branch is approved by the owner.
@@ -179,9 +201,6 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 ## Next actions
 
-1. Done: T7 review fixed (`fix(shadowing): T7 review`).
+1. Done: T7 review plus T9-T11 workspace acceptance, including the T2 regression and stale-bootstrap fixes.
 2. Done: T8 header (`feat(shadowing): workspace header, …`), built by Claude without Codex.
-3. Done: T9 views / fullscreen / shortcuts / divider (Codex + Claude fix pass).
-4. Done: T10 reading settings / study environment / contrast (Claude).
-5. Done: T11 deterministic + live acceptance (Claude), incl. the T2 view regression and the stale-bootstrap fix.
-6. Next: T12 (parity, retire ShadowingView, docs, full gate), then the whole-branch review.
+3. Next: whole-branch review.

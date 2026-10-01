@@ -79,6 +79,13 @@ describe("TranscriptPanel", () => {
     expect(rowOf("先月の売上")).toHaveAttribute("data-state", "future");
   });
 
+  it("renders Mine and Pin to journal controls in a transcript row", () => {
+    renderPanel();
+    const row = within(rowAt(2));
+    expect(row.getByRole("button", { name: "Mine" })).toBeInTheDocument();
+    expect(row.getByRole("button", { name: "Pin to journal" })).toBeInTheDocument();
+  });
+
   it("softens the current row in the gap after it ends", () => {
     renderPanel({ at: 4.5 });
     expect(rowOf("本日はお集まりいただき")).toHaveAttribute("data-spoken", "false");
