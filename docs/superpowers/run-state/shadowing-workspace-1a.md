@@ -17,7 +17,7 @@ Shadowing workspace Part 1a: the core Shadowing loop at `/[locale]/shadowing/[id
 ## Accepted commits
 
 - `6ec1133` `8c8f2f6` spec · `e8d4b13` `797b35e` `5cec887` plan · T1 `7f1d4bf` · T2 `2b18574` · T3 `a623da5` ·
-  T4a `a4020dc` · T4b `8c6c083` · T5 `e643374` · T6a `22cff1e` · T6b (this commit). Per-task evidence (REDs, mutations,
+  T4a `a4020dc` · T4b `8c6c083` · T5 `e643374` · T6a `22cff1e` · T6b `1822788`. Per-task evidence (REDs, mutations,
   review verdicts and what each closed) is in those commit messages.
 
 ## Contracts and decisions
@@ -91,7 +91,7 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
@@ -99,4 +99,6 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 ## Next actions
 
-1. Claude: review Task 5, gates, commit; then Task 6 packet.
+1. Codex: Task 7 (transcript panel) from `.superpowers/sdd/shadowing-workspace-1a/task-7-brief.md` —
+   dispatched when its quota resets (19:36). T6a/T6b were built by Claude during Codex's limit.
+2. Claude: review T7, gates, browser check, commit; then T8 (header) → T9 → T10 packets.
