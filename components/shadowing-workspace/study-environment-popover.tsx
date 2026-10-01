@@ -2,7 +2,7 @@
 
 import { useTranslations } from "@/lib/i18n";
 import { Popover } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { STUDY_ATMOSPHERE_OPTIONS } from "@/lib/preferences/options";
 import { usePreferences, useSession } from "./workspace-context";
 
@@ -26,28 +26,19 @@ export function StudyEnvironmentPopover() {
       align="end"
       label={t("workspace.environment.open")}
       trigger={(
-        <button type="button" aria-expanded={open} className="h-control-sm rounded-md px-sm text-caption font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+        <button type="button" className="h-control-sm rounded-md px-sm text-caption font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
           {t("workspace.environment.open")}
         </button>
       )}
     >
-      <div role="radiogroup" aria-label={t("workspace.environment.open")} className="flex flex-col gap-2xs">
-        {STUDY_ATMOSPHERE_OPTIONS.map((atmosphere) => (
-          <button
-            key={atmosphere}
-            type="button"
-            role="radio"
-            aria-checked={preferences.studyAtmosphere === atmosphere}
-            onClick={() => setPreference("studyAtmosphere", atmosphere)}
-            className={cn(
-              "rounded-md px-sm py-2xs text-left text-caption",
-              preferences.studyAtmosphere === atmosphere ? "bg-primary/15 text-primary-strong" : "hover:bg-muted",
-            )}
-          >
-            {t(`workspace.environment.options.${atmosphere}`)}
-          </button>
-        ))}
-      </div>
+      {/* The radiogroup pattern (one tab stop, arrows move and select), laid out as a vertical list of places. */}
+      <SegmentedControl
+        aria-label={t("workspace.environment.open")}
+        value={preferences.studyAtmosphere}
+        onValueChange={(atmosphere) => setPreference("studyAtmosphere", atmosphere)}
+        options={STUDY_ATMOSPHERE_OPTIONS.map((atmosphere) => ({ value: atmosphere, label: t(`workspace.environment.options.${atmosphere}`) }))}
+        className="flex w-full flex-col items-stretch rounded-md [&>button]:rounded-md [&>button]:text-left"
+      />
     </Popover>
   );
 }

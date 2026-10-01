@@ -12,7 +12,9 @@ import { alphaBlend, contrastRatio, hslToRgb, numberToken, parseAliases, parsePr
  */
 const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8").replace(/\r\n/g, "\n");
 const primitives = parsePrimitives(css);
-const rootAliases = parseAliases(css);
+// Only what `:root` itself declares: a whole-file alias map is last-one-wins, so a token missing from a preset
+// rule would silently be measured with ANOTHER preset's value (T10 review M-3).
+const rootAliases = parseAliases([...css.matchAll(/^:root \{([\s\S]*?)\n\}/gm)].map((match) => match[1]).join("\n"));
 const AA = 4.5;
 
 function colour(body: string, token: string): Rgb {
@@ -24,6 +26,13 @@ function colour(body: string, token: string): Rgb {
 }
 
 describe("reading theme contrast (spec §6.2, WCAG AA)", () => {
+  it("finds every reading colour in its own preset rule, never by fallback", () => {
+    for (const preset of READING_COLOR_PRESET_OPTIONS) {
+      const own = parseAliases(ruleBody(css, `[data-reading-preset="${preset}"]`));
+      for (const token of ["--reading-surface", "--reading-foreground", "--reading-muted", "--reading-current-surface"]) expect(own.has(token), `${preset} ${token}`).toBe(true);
+    }
+  });
+
   it("covers every preset, atmosphere and emphasis the options module defines", () => {
     for (const preset of READING_COLOR_PRESET_OPTIONS) expect(() => ruleBody(css, `[data-reading-preset="${preset}"]`)).not.toThrow();
     for (const atmosphere of STUDY_ATMOSPHERE_OPTIONS) expect(() => ruleBody(css, `[data-atmosphere="${atmosphere}"]`)).not.toThrow();

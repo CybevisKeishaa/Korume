@@ -11,6 +11,7 @@ import {
   READING_TRANSLATION_OPTIONS, READING_WIDTH_OPTIONS, RESUME_BEHAVIOR_OPTIONS, type PlaybackLoopCount, type PlaybackRate,
 } from "@/lib/preferences/options";
 import { HEADER_ICON_BUTTON } from "./lesson-bookmark-button";
+import { usePlayerWiring } from "./playback-root";
 import { SlidersGlyph } from "./player-glyphs";
 import { usePreferences, useSession, type PreferenceKey } from "./workspace-context";
 
@@ -47,7 +48,13 @@ export function ReadingSettingsPopover() {
   const { preferences, setPreference } = usePreferences();
   const [session, dispatch] = useSession();
   const open = session.openPopover === READING_SETTINGS_POPOVER;
+  const { setRate, setLoop } = usePlayerWiring();
   const set = <K extends PreferenceKey>(key: K) => (value: (typeof preferences)[K]) => setPreference(key, value);
+  // The playback defaults also apply to the running session (spec §6.1), from the learner's change itself —
+  // never from the preference value, which a failed PATCH rolls back over the learner's own session choices.
+  const setDefaultRate = (rate: PlaybackRate) => { setPreference("playbackDefaultRate", rate); setRate(rate); };
+  const setLoopCount = (count: PlaybackLoopCount) => { setPreference("playbackLoopCount", count); setLoop({ count, enabled: count !== 1 }); };
+  const setAutoPause = (autoPause: boolean) => { setPreference("playbackAutoPause", autoPause); setLoop({ autoPause }); };
   return (
     <Popover
       open={open}
@@ -57,7 +64,7 @@ export function ReadingSettingsPopover() {
       label={t("workspace.settings.open")}
       className="max-h-[--radix-popover-content-available-height] w-80 space-y-sm overflow-y-auto"
       trigger={(
-        <button type="button" aria-label={t("workspace.settings.open")} title={t("workspace.settings.open")} aria-expanded={open} className={HEADER_ICON_BUTTON}>
+        <button type="button" aria-label={t("workspace.settings.open")} title={t("workspace.settings.open")} className={HEADER_ICON_BUTTON}>
           <SlidersGlyph className="size-icon-sm" />
         </button>
       )}
@@ -81,7 +88,7 @@ export function ReadingSettingsPopover() {
         <Select
           aria-label={t("workspace.settings.speed")}
           value={String(preferences.playbackDefaultRate)}
-          onValueChange={(value) => set("playbackDefaultRate")(Number(value) as PlaybackRate)}
+          onValueChange={(value) => setDefaultRate(Number(value) as PlaybackRate)}
           options={PLAYBACK_RATE_OPTIONS.map((rate) => ({ value: String(rate), label: `${rate}×` }))}
         />
       </Row>
@@ -89,17 +96,17 @@ export function ReadingSettingsPopover() {
         <SegmentedControl
           aria-label={t("workspace.settings.loopCount")}
           value={String(preferences.playbackLoopCount)}
-          onValueChange={(value) => set("playbackLoopCount")(Number(value) as PlaybackLoopCount)}
+          onValueChange={(value) => setLoopCount(Number(value) as PlaybackLoopCount)}
           options={PLAYBACK_LOOP_COUNT_OPTIONS.map((count) => ({ value: String(count), label: loopLabel(count) }))}
         />
       </Row>
       <label className="flex items-center justify-between gap-sm text-caption font-medium text-muted-foreground">
         {t("workspace.settings.autoPause")}
-        <Switch checked={preferences.playbackAutoPause} onCheckedChange={set("playbackAutoPause")} aria-label={t("workspace.settings.autoPause")} />
+        <Switch checked={preferences.playbackAutoPause} onCheckedChange={setAutoPause} />
       </label>
       <label className="flex items-center justify-between gap-sm text-caption font-medium text-muted-foreground">
         {t("workspace.settings.shortcutHints")}
-        <Switch checked={preferences.showShortcutHints} onCheckedChange={set("showShortcutHints")} aria-label={t("workspace.settings.shortcutHints")} />
+        <Switch checked={preferences.showShortcutHints} onCheckedChange={set("showShortcutHints")} />
       </label>
       <SegmentedRow label={t("workspace.settings.resume")} value={preferences.resumeBehavior} options={RESUME_BEHAVIOR_OPTIONS} optionLabel={(v) => t(`workspace.settings.resumeOptions.${v}`)} onChange={set("resumeBehavior")} />
     </Popover>

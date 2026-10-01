@@ -1460,6 +1460,8 @@
   }
   .reading-foreground { color: hsl(var(--reading-foreground)); }
   .reading-muted { color: hsl(var(--reading-muted)); }
+  /* Muted controls on a reading surface brighten to the PRESET foreground, not the app's (T10 review M-7). */
+  .reading-hover:hover { color: hsl(var(--reading-foreground)); }
   .reading-current { background-color: hsl(var(--reading-current-surface) / var(--reading-current-alpha)); }
   /* The gap after a sentence ends: the same tint, softened. */
   .reading-current-gap { background-color: hsl(var(--reading-current-surface) / calc(var(--reading-current-alpha) / 2)); }

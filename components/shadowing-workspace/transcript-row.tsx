@@ -101,7 +101,7 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
             <button
               type="button"
               onClick={() => props.onRevealTranslation(line.id)}
-              className="reading-muted relative rounded-md text-caption underline-offset-2 hover:text-foreground hover:underline"
+              className="reading-muted relative rounded-md text-caption underline-offset-2 reading-hover hover:underline"
             >
               {t("workspace.transcript.showTranslation")}
             </button>

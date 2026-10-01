@@ -25,12 +25,15 @@ export function ShortcutHintsPopover() {
     <Popover
       open={open}
       onOpenChange={(next) => dispatch({ type: "set-popover", id: next ? SHORTCUT_HINTS_POPOVER : null })}
+      // It never takes focus, so closing must not hand focus to the ⌨ trigger either: after an Escape from the
+      // page the next Space would press that button (reopening the sheet) instead of playing (T10 review I-1).
       onOpenAutoFocus={(event) => event.preventDefault()}
+      onCloseAutoFocus={(event) => event.preventDefault()}
       side="bottom"
       align="end"
       label={t("workspace.shortcuts.open")}
       trigger={(
-        <button type="button" aria-label={t("workspace.shortcuts.open")} title={t("workspace.shortcuts.open")} aria-expanded={open} className={HEADER_ICON_BUTTON}>
+        <button type="button" aria-label={t("workspace.shortcuts.open")} title={t("workspace.shortcuts.open")} className={HEADER_ICON_BUTTON}>
           <KeyboardGlyph className="size-icon-sm" />
         </button>
       )}

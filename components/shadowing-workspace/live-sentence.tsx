@@ -43,7 +43,7 @@ export function LiveSentence() {
         aria-pressed={hidden}
         aria-label={t(hidden ? "workspace.liveSentence.showJapanese" : "workspace.liveSentence.hideJapanese")}
         onClick={() => dispatch({ type: "toggle-live-sentence" })}
-        className="reading-muted absolute right-sm top-sm flex h-control-sm aspect-square items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
+        className="reading-muted absolute right-sm top-sm flex h-control-sm aspect-square items-center justify-center rounded-md hover:bg-muted reading-hover"
       >
         {hidden ? <ShowTextGlyph className="size-icon-sm" /> : <HideTextGlyph className="size-icon-sm" />}
       </button>
@@ -71,7 +71,7 @@ export function LiveSentence() {
           <button
             type="button"
             onClick={() => dispatch({ type: "reveal-line-translation", lineId: line.id })}
-            className="reading-muted rounded-md px-sm py-2xs text-caption underline-offset-2 hover:text-foreground hover:underline"
+            className="reading-muted rounded-md px-sm py-2xs text-caption underline-offset-2 reading-hover hover:underline"
           >
             {t("workspace.liveSentence.showTranslation")}
           </button>

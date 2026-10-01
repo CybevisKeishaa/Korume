@@ -120,5 +120,23 @@ describe("Reading Settings and Study Environment (spec §6)", () => {
     expect(sheet.contains(document.activeElement)).toBe(false);
     act(() => { fireEvent.keyDown(document.body, { key: "Escape" }); });
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Keyboard shortcuts" })).toBeNull());
+    // Closing hands focus to nobody: on the ⌨ trigger, the next Space would reopen the sheet, not play (review I-1).
+    expect(document.activeElement).not.toBe(screen.getByRole("button", { name: "Keyboard shortcuts" }));
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it("keeps the learner's session choices when a playback-default write fails and rolls back", async () => {
+    fetchMock.mockImplementation(async () => new Response(null, { status: 500 }));
+    renderShell();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Reading settings" }));
+    const panel = await screen.findByRole("dialog", { name: "Reading settings" });
+    fireEvent.click(within(within(panel).getByRole("radiogroup", { name: "Plays per sentence" })).getByRole("radio", { name: "3×" }));
+    expect(wiring?.loop.count).toBe(3);
+    // The learner then turns the Sentence loop off for this session while the write is still failing.
+    act(() => wiring?.toggleLoop());
+    await waitFor(() => expect(within(within(panel).getByRole("radiogroup", { name: "Plays per sentence" })).getByRole("radio", { name: "1×" })).toHaveAttribute("aria-checked", "true"));
+    // The preference rolled back to 1×; the session keeps the learner's own last choice (off at 3×).
+    expect(wiring?.loop).toEqual({ enabled: false, count: 3, autoPause: false });
   });
 });
