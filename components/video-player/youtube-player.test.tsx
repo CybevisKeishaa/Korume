@@ -51,6 +51,16 @@ describe("YouTubePlayer", () => {
     expect(ref.current?.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
   });
 
+  it("seeks and pauses once before notifying ready when given an initial position", async () => {
+    const onReady = vi.fn();
+    render(<YouTubePlayer videoId="abc123" initialPosition={42} onReady={onReady} />);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const player = yt.players[0]!;
+    expect(player.getCurrentTime()).toBe(42);
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
+    expect(onReady).toHaveBeenCalledOnce();
+  });
+
   it("returns safe defaults from the handle before the player is ready", () => {
     const ref = createRef<YouTubePlayerHandle>();
     render(<YouTubePlayer ref={ref} videoId="abc123" />);

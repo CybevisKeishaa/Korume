@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, startTransition, useCallback, useContext, useMemo, useReducer, useRef, useState, useSyncExternalStore, type Dispatch, type ReactNode } from "react";
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore, type Dispatch, type ReactNode } from "react";
 import { useRouter } from "@/lib/i18n/navigation";
 import { createKeyedMutator, type KeyedMutator } from "@/lib/shadowing-workspace/keyed-mutations";
 import { locateSentence, sameSentencePosition, type SentencePosition } from "@/lib/shadowing-workspace/sentence-lookup";
@@ -78,6 +78,7 @@ const LessonContext = createContext<{ video: WorkspaceBootstrap["video"]; lines:
 const ControllerContext = createContext<PlaybackController | null>(null);
 const PositionStoreContext = createContext<PlaybackPositionStore | null>(null);
 const CurrentSentenceContext = createContext<SentencePosition | null>(null);
+const StartPositionContext = createContext<number>(0);
 const SessionContext = createContext<[SessionState, Dispatch<SessionAction>] | null>(null);
 const PreferencesContext = createContext<{ preferences: UserPreferences; setPreference<K extends PreferenceKey>(key: K, value: UserPreferences[K]): void; pending(key: PreferenceKey): boolean } | null>(null);
 const MarksContext = createContext<{ isMarked(lineId: string, kind: SentenceMarkKind): boolean; toggleMark(lineId: string, kind: SentenceMarkKind): void; lessonBookmarked: boolean; toggleLessonBookmark(): void; pending(key: string): boolean } | null>(null);
@@ -202,15 +203,19 @@ function MarksProvider({ bootstrap, children }: { bootstrap: WorkspaceBootstrap;
   return <MarksContext.Provider value={value}>{children}</MarksContext.Provider>;
 }
 
-export function WorkspaceProviders({ bootstrap, controller, children }: { bootstrap: WorkspaceBootstrap; controller?: PlaybackController; children: ReactNode }) {
+export function WorkspaceProviders({ bootstrap, controller, initialPosition, children }: { bootstrap: WorkspaceBootstrap; controller?: PlaybackController; initialPosition?: number; children: ReactNode }) {
   const [session, dispatch] = useReducer(sessionReducer, initialSessionState);
-  const store = useState(() => createPlaybackPositionStore(bootstrap.resume?.position ?? 0))[0];
+  const startPosition = initialPosition ?? bootstrap.resume?.position ?? 0;
+  const store = useState(() => createPlaybackPositionStore(startPosition))[0];
+  // The shell settles the start position once after mount (session record); move the store with it.
+  useEffect(() => { store.set(startPosition); }, [startPosition, store]);
   const sessionValue = useMemo((): [SessionState, Dispatch<SessionAction>] => [session, dispatch], [session]);
   const lesson = useMemo(() => ({ video: bootstrap.video, lines: bootstrap.transcript?.lines ?? [], masteryMap: bootstrap.masteryMap, transcriptId: bootstrap.transcript?.id ?? null }), [bootstrap]);
   return (
     <LessonContext.Provider value={lesson}>
       <ControllerContext.Provider value={controller ?? null}>
         <PositionStoreContext.Provider value={store}>
+          <StartPositionContext.Provider value={startPosition}>
           <SessionContext.Provider value={sessionValue}>
             <CurrentSentenceProvider lines={lesson.lines} duration={lesson.video.durationSeconds} store={store}>
               <PreferencesProvider initial={bootstrap.preferences} dispatch={dispatch}>
@@ -218,6 +223,7 @@ export function WorkspaceProviders({ bootstrap, controller, children }: { bootst
               </PreferencesProvider>
             </CurrentSentenceProvider>
           </SessionContext.Provider>
+          </StartPositionContext.Provider>
         </PositionStoreContext.Provider>
       </ControllerContext.Provider>
     </LessonContext.Provider>
@@ -230,6 +236,8 @@ export function usePlaybackController(): PlaybackController {
   if (controller === null) throw new Error("PlaybackController was not provided to WorkspaceProviders");
   return controller;
 }
+/** Where the player is initialised (paused) — Task 6 passes it to `YouTubePlayer initialPosition`. */
+export function useStartPosition(): number { return useContext(StartPositionContext); }
 export function usePositionStore(): PlaybackPositionStore { return useRequired(useContext(PositionStoreContext), "usePositionStore"); }
 export function useCurrentSentence(): SentencePosition { return useRequired(useContext(CurrentSentenceContext), "useCurrentSentence"); }
 export function useSession(): [SessionState, Dispatch<SessionAction>] { return useRequired(useContext(SessionContext), "useSession"); }

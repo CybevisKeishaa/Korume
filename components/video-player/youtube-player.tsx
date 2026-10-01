@@ -25,6 +25,10 @@ export interface YouTubePlayerHandle {
   play(): void;
   pause(): void;
   setPlaybackRate(rate: number): void;
+  getAvailablePlaybackRates(): number[];
+  mute(): void;
+  unMute(): void;
+  isMuted(): boolean;
 }
 
 export interface YouTubePlayerProps {
@@ -47,6 +51,8 @@ export interface YouTubePlayerProps {
   onTick?: (currentTime: number) => void;
   /** Interval in ms for `onTick` while playing. Defaults to 250. */
   tickIntervalMs?: number;
+  /** Applied once when ready; the player remains paused for an explicit learner gesture. */
+  initialPosition?: number;
 }
 
 /**
@@ -56,7 +62,7 @@ export interface YouTubePlayerProps {
  */
 export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(
   function YouTubePlayer(
-    { videoId, className, onReady, onStateChange, onError, onTick, tickIntervalMs = 250 },
+    { videoId, className, onReady, onStateChange, onError, onTick, tickIntervalMs = 250, initialPosition },
     ref,
   ) {
     const reactId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -74,6 +80,8 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
     onErrorRef.current = onError;
     const onTickRef = useRef(onTick);
     onTickRef.current = onTick;
+    const initialPositionRef = useRef(initialPosition);
+    initialPositionRef.current = initialPosition;
 
     useImperativeHandle(
       ref,
@@ -86,6 +94,10 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
         play: () => playerRef.current?.playVideo(),
         pause: () => playerRef.current?.pauseVideo(),
         setPlaybackRate: (rate: number) => playerRef.current?.setPlaybackRate(rate),
+        getAvailablePlaybackRates: () => playerRef.current?.getAvailablePlaybackRates() ?? [],
+        mute: () => playerRef.current?.mute(),
+        unMute: () => playerRef.current?.unMute(),
+        isMuted: () => playerRef.current?.isMuted() ?? false,
       }),
       [],
     );
@@ -121,6 +133,10 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
           events: {
             onReady: (event) => {
               playerRef.current = event.target;
+              if (initialPositionRef.current !== undefined) {
+                event.target.seekTo(initialPositionRef.current, true);
+                event.target.pauseVideo();
+              }
               onReadyRef.current?.();
             },
             onStateChange: (event) => {

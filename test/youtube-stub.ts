@@ -65,6 +65,8 @@ export interface FakeYtPlayerOptions {
   initialState?: YtPlayerStateValue;
   /** If true (default), `onReady` fires synchronously at the end of construction. */
   autoReady?: boolean;
+  /** Reported playback rates. Mirrors the real iframe API's per-video list. */
+  availablePlaybackRates?: number[];
 }
 
 /**
@@ -83,6 +85,8 @@ export class FakeYtPlayer {
   private currentTime = 0;
   private duration: number;
   private playbackRate = 1;
+  private readonly availablePlaybackRates: number[];
+  private muted = false;
   private state: YtPlayerStateValue;
   private destroyed = false;
 
@@ -98,6 +102,7 @@ export class FakeYtPlayer {
     this.events = config.events ?? {};
     this.duration = options.duration ?? 120;
     this.state = options.initialState ?? YT_PLAYER_STATE.UNSTARTED;
+    this.availablePlaybackRates = options.availablePlaybackRates ?? [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
     if (options.autoReady !== false) {
       this.triggerReady();
@@ -163,7 +168,19 @@ export class FakeYtPlayer {
   }
 
   getAvailablePlaybackRates(): number[] {
-    return [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+    return [...this.availablePlaybackRates];
+  }
+
+  mute(): void {
+    this.muted = true;
+  }
+
+  unMute(): void {
+    this.muted = false;
+  }
+
+  isMuted(): boolean {
+    return this.muted;
   }
 
   getPlayerState(): YtPlayerStateValue {

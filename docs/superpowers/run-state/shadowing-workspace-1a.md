@@ -144,6 +144,37 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   Legacy page's `SaveToPlaylistButton` and title `h1` are Task 8 (plan line ~826), not dropped.
 - Task 4b final: tsc 0, lint 0, protocol 0, vitest 0 (421 files, 3825 tests, 2 workers).
 
+- Task 5 (Codex): failure-first REDs through `C:/nvm4w/nodejs/node.exe` for missing controller/persistence, configurable fake rates, `initialPosition`, and real `?line=` consumption; focused green controller 0 (6), persistence 0 (2), YouTube stub 0 (5), YouTube player 0 (9), shell 0 (3), dictation 0 (9), mining 0 (5), shadowing 0 (20). Mutations red then restored: remove the <1.5-second boundary guard, publish every tick, remove paused initialisation. `tsc --noEmit` 0; lint 0 with pre-existing warnings only; protocol 0; diff check 0. Report: `.superpowers/sdd/shadowing-workspace-1a/task-5-report.md`. Claude-only: full Vitest/review/commit/live Task 11 clock proof.
+
+- Task 5 (Claude review): Codex 196k tokens (near the ~220k split threshold); real REDs; tsc/lint/protocol 0.
+  Independent review CHANGES REQUIRED: 1 Critical (Auto Pause leaves the store at the boundary, so the
+  current sentence shows the NEXT line while paused) / 7 Important (⏮/⏭ before first play; persistence
+  effect re-runs every render and PATCHes the unplayed start; no real pause/ended flush; shell reads
+  sessionStorage during render — hydration mismatch — and recomputes on refresh; null-end last line never
+  crosses; possible infinite loop from a stale read right after a replay seek; plan Step 1 tests missing or
+  vacuous). Sent back to Codex as `.superpowers/sdd/shadowing-workspace-1a/task-5-fix-brief.md`.
+  **For Task 11:** prove live on Ep.729 that `getCurrentTime()` right after `seekTo` does not return the
+  pre-seek time (the I6 guard is defensive; T0 never measured it).
+- Task 5 fix: Codex's fix run hit its usage limit at 112k tokens mid-way (controller items mostly done, no
+  report); per the standing rule Claude finished it: Auto Pause hold cleared by any controller seek; loop test
+  ticks realistically past the post-seek guard; persistence rewritten (callbacks via ref, `lastSent` seeded,
+  newest-server-clock max, `initialSyncedServerAt`); shell decides the start ONCE (server-only first render for
+  SSR/hydration, session record in a layout effect after mount), `WorkspaceProviders` syncs the store and
+  exposes `useStartPosition()` for Task 6's `YouTubePlayer initialPosition`. Persistence tests rewritten (8
+  real cases; the hidden/pagehide/unmount one was vacuous).
+  Re-review of the fixes (memory: fixes add regressions) found **1 new Critical**: the I5 ENDED handler
+  decided the last sentence again after ticks had already completed its loop → infinite replay of the last
+  line on any video with an outro (scratch probe confirmed). Fixed: ENDED is a boundary only if no tick
+  crossed that end. Minor fixed: persistence re-seeds when the store settles on `startPosition` (opening the
+  page no longer PATCHes the snapped start); unparsable server clocks never lock in. Minor accepted:
+  duplicate-start lines — controller pins the earlier line but `useCurrentSentence` shows the later (Task 6
+  may drive the active row from `onSentence`); a queued PLAYING between `pause()` and PAUSED can still show
+  the next line for a frame (closing it would ignore a learner's own play in the iframe).
+  Mutations, each red then restored: C1 clamp; I6 guard; hold cleared on seek; `isPlaying` in deps;
+  `lastSent` seed; newest-clock max; SSR first render from session; store sync effect; ENDED double decision;
+  start-position re-seed; unparsable clock.
+- Task 5 final: tsc 0, lint 0, protocol 0, vitest 0 (423 files, 3858 tests, 2 workers).
+
 ## Working tree and environment
 
 - Worktree `.worktrees/shadowing-workspace-1a`; `.env.local` copied; `npm ci` run 2026-10-01.
@@ -154,7 +185,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
@@ -162,6 +193,4 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Next actions
 
-1. Codex: Task 5 (player adapter, playback controller, progress persistence, `?line=` start position) from
-   `.superpowers/sdd/shadowing-workspace-1a/task-5-brief.md`, applying the T0 rulings.
-2. Claude: review Task 5, gates, commit; then Task 6 packet.
+1. Claude: review Task 5, gates, commit; then Task 6 packet.
