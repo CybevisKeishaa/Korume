@@ -57,7 +57,7 @@ export function sessionReducer(state: SessionState = initialSessionState, action
     case "cycle-transcript-translation": {
       const next = state.transcriptTranslation === "follow"
         ? action.persisted === "always" ? "hidden" : "shown"
-        : state.transcriptTranslation === "hidden" ? "shown" : "follow";
+        : "follow";
       return { ...state, transcriptTranslation: next };
     }
     case "toggle-line-furigana": {
@@ -81,7 +81,7 @@ export function sessionReducer(state: SessionState = initialSessionState, action
   }
 }
 
-const LessonContext = createContext<{ video: WorkspaceBootstrap["video"]; lines: WorkspaceLine[]; masteryMap: Record<string, number>; transcriptId: string | null } | null>(null);
+const LessonContext = createContext<{ video: WorkspaceBootstrap["video"]; setDurationSeconds(durationSeconds: number | null): void; lines: WorkspaceLine[]; masteryMap: Record<string, number>; transcriptId: string | null } | null>(null);
 const ControllerContext = createContext<PlaybackController | null>(null);
 const PositionStoreContext = createContext<PlaybackPositionStore | null>(null);
 const CurrentSentenceContext = createContext<SentencePosition | null>(null);
@@ -152,9 +152,14 @@ function reconcileWrite<V>(key: string, server: V): V {
   return mine;
 }
 
+/** The latest value this tab wrote, layered over a bootstrap that can be stale. */
+export function tabPreference<K extends PreferenceKey>(userId: string, key: K, server: UserPreferences[K]): UserPreferences[K] {
+  return reconcileWrite(`pref:${userId}:${key}`, server);
+}
+
 function PreferencesProvider({ userId, initial, dispatch, children }: { userId: string; initial: UserPreferences; dispatch: Dispatch<SessionAction>; children: ReactNode }) {
   const [preferences, setPreferences] = useState(() => Object.fromEntries(
-    Object.entries(initial).map(([key, value]) => [key, reconcileWrite(`pref:${userId}:${key}`, value)]),
+    Object.entries(initial).map(([key, value]) => [key, tabPreference(userId, key as PreferenceKey, value as UserPreferences[PreferenceKey])]),
   ) as unknown as UserPreferences);
   const [mutationRevision, setMutationRevision] = useState(0);
   const preferencesRef = useRef(preferences);
@@ -279,15 +284,17 @@ function MarksProvider({ bootstrap, children }: { bootstrap: WorkspaceBootstrap;
 
 export function WorkspaceProviders({ bootstrap, controller, initialPosition, children }: { bootstrap: WorkspaceBootstrap; controller?: PlaybackController; initialPosition?: number; children: ReactNode }) {
   // The shortcut hint sheet starts open only when the learner asked for hints (spec §6.1); after that it is session state.
-  const [session, dispatch] = useReducer(sessionReducer, bootstrap.preferences.showShortcutHints, (hints): SessionState => (
+  // A full page load starts the tab-write map empty, so this cannot change hydrated server markup.
+  const [session, dispatch] = useReducer(sessionReducer, tabPreference(bootstrap.userId, "showShortcutHints", bootstrap.preferences.showShortcutHints), (hints): SessionState => (
     { ...initialSessionState, openPopover: hints ? SHORTCUT_HINTS_POPOVER : null }
   ));
   const startPosition = initialPosition ?? bootstrap.resume?.position ?? 0;
   const store = useState(() => createPlaybackPositionStore(startPosition))[0];
+  const [durationSeconds, setDurationSeconds] = useState(bootstrap.video.durationSeconds);
   // The shell settles the start position once after mount (session record); move the store with it.
   useEffect(() => { store.set(startPosition); }, [startPosition, store]);
   const sessionValue = useMemo((): [SessionState, Dispatch<SessionAction>] => [session, dispatch], [session]);
-  const lesson = useMemo(() => ({ video: bootstrap.video, lines: bootstrap.transcript?.lines ?? [], masteryMap: bootstrap.masteryMap, transcriptId: bootstrap.transcript?.id ?? null }), [bootstrap]);
+  const lesson = useMemo(() => ({ video: { ...bootstrap.video, durationSeconds }, setDurationSeconds, lines: bootstrap.transcript?.lines ?? [], masteryMap: bootstrap.masteryMap, transcriptId: bootstrap.transcript?.id ?? null }), [bootstrap, durationSeconds]);
   return (
     <LessonContext.Provider value={lesson}>
       <ControllerContext.Provider value={controller ?? null}>

@@ -348,3 +348,36 @@ test("13 · a row's translation is selectable above its stretched button; Back t
   await expect(pill).toHaveCount(0);
   await expect(row(page, 0).getByRole("button", { name: /Sentence 1\b/ })).toBeFocused();
 });
+
+test("14 · a lesson stored without a duration takes the player's: the seek bar works and the duration is saved", async ({ page }) => {
+  const learner = await registerLearner(page);
+  // Lesson creation stores no duration and the importer owns the lesson; videos UPDATE is owner-only (RLS),
+  // exactly as the legacy view relied on: the first open by its owner fills it in.
+  const owned = await data.admin.from("videos").update({ added_by_user_id: await data.userIdByEmail(learner.email), duration_seconds: null }).eq("id", data.noDurationVideoId);
+  if (owned.error) throw owned.error;
+  await page.goto(`/en/shadowing/${data.noDurationVideoId}`);
+  await expect(page.getByTestId("fake-yt")).toHaveCount(1);
+  const slider = page.getByRole("slider", { name: "Seek" });
+  await expect(slider).toHaveAttribute("max", String(VIDEO_DURATION));
+  await slider.fill("5");
+  await expect.poll(async () => (await fakeYt(page)).time).toBe(5);
+  await expect.poll(async () => {
+    const { data: video } = await data.admin.from("videos").select("duration_seconds").eq("id", data.noDurationVideoId).single();
+    return video?.duration_seconds;
+  }).toBe(VIDEO_DURATION);
+});
+
+test("15 · watching to the end marks the lesson completed", async ({ page }) => {
+  const learner = await registerLearner(page);
+  await openLesson(page);
+  await controls(page, "Play").click();
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
+  await setTime(page, VIDEO_DURATION - 2);
+  await advance(page, 3);
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.ENDED);
+  const userId = await data.userIdByEmail(learner.email);
+  await expect.poll(async () => {
+    const { data: progress } = await data.admin.from("user_video_progress").select("completed_at").eq("user_id", userId).eq("video_id", data.videoId).maybeSingle();
+    return progress?.completed_at ?? null;
+  }, { timeout: 10_000 }).not.toBeNull();
+});

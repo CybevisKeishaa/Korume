@@ -39,7 +39,7 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
   initialSyncedServerAt: string | null;
   children: ReactNode;
 }) {
-  const { lines, video } = useLesson();
+  const { lines, video, setDurationSeconds } = useLesson();
   const positionStore = usePositionStore();
   const startPosition = useStartPosition();
   const { preferences } = usePreferences();
@@ -55,9 +55,10 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
   const lastLoopCount = useRef<PlaybackLoopCount>(initialLoop.count === 1 ? 0 : initialLoop.count);
   const [rate, setRateState] = useState<number>(preferences.playbackDefaultRate);
   const flushRef = useRef<(reason: "pause" | "ended") => void>(() => undefined);
+  const durationPatched = useRef(false);
   const onSentence = useCallback(() => undefined, []);
 
-  const { controller, onStateChange, onReady } = usePlaybackControllerState({
+  const { controller, onStateChange, onReady: onControllerReady } = usePlaybackControllerState({
     adapterRef,
     lines,
     duration: video.durationSeconds,
@@ -76,6 +77,22 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
     startPosition,
   });
   flushRef.current = flush;
+
+  const onReady = useCallback(() => {
+    onControllerReady();
+    if (video.durationSeconds !== null || durationPatched.current) return;
+    const durationSeconds = Math.round(adapterRef.current?.getDuration() ?? 0);
+    if (durationSeconds <= 0) return;
+    durationPatched.current = true;
+    setDurationSeconds(durationSeconds);
+    try {
+      void fetch(`/api/videos/${video.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ durationSeconds }),
+      }).catch(() => undefined);
+    } catch {
+      // Persisting metadata is best-effort; the local duration keeps the lesson usable.
+    }
+  }, [onControllerReady, setDurationSeconds, video.durationSeconds, video.id]);
 
   const handleStateChange = useCallback((state: YtPlayerStateValue) => {
     onStateChange(state);

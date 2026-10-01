@@ -11,11 +11,12 @@ describe("shouldWriteServer", () => {
     expect(shouldWriteServer({ position: 10, at: 100 }, 13, 100 + SERVER_WRITE_INTERVAL_MS, "tick")).toBe(true);
   });
 
-  it("writes non-tick lifecycle events only for meaningful change", () => {
-    for (const reason of ["pause", "ended", "hidden", "pagehide", "leave"] as const) {
+  it("writes non-ending lifecycle events only for meaningful change", () => {
+    for (const reason of ["pause", "hidden", "pagehide", "leave"] as const) {
       expect(shouldWriteServer({ position: 10, at: 100 }, 10.05, 101, reason)).toBe(true);
       expect(shouldWriteServer({ position: 10, at: 100 }, 10.04, 101, reason)).toBe(false);
       expect(shouldWriteServer(null, 0, 101, reason)).toBe(true);
     }
+    expect(shouldWriteServer({ position: 10, at: 100 }, 10, 101, "ended")).toBe(true);
   });
 });

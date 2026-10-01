@@ -1,4 +1,5 @@
 import "server-only";
+import { z } from "zod";
 import { isLessonBookmarked } from "@/lib/data/lesson-bookmarks";
 import { getMyPreferences } from "@/lib/data/preferences";
 import { listMySentenceMarks } from "@/lib/data/sentence-marks";
@@ -14,6 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 export type LoadWorkspaceResult = { ok: true; data: WorkspaceBootstrap } | { ok: false; status: 401 | 404 };
 
 const JLPT_LEVELS: readonly JlptLevel[] = ["N5", "N4", "N3", "N2", "N1"];
+const videoIdSchema = z.string().uuid();
 
 function isJlptLevel(value: string): value is JlptLevel {
   return JLPT_LEVELS.some((level) => level === value);
@@ -24,6 +26,7 @@ function asJlptLevel(value: string | null): JlptLevel | null {
 }
 
 export async function loadWorkspaceBootstrap(videoId: string): Promise<LoadWorkspaceResult> {
+  if (!videoIdSchema.safeParse(videoId).success) return { ok: false, status: 404 };
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };

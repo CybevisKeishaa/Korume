@@ -42,13 +42,12 @@ describe("sessionReducer", () => {
     expect(sessionReducer({ ...initial, view: "focus" }, { type: "toggle-view", view: "focus" }).view).toBe("normal");
   });
 
-  it("cycles translation overrides through the persisted mode's opposite", () => {
+  it("toggles translation overrides between follow and the persisted mode's opposite", () => {
     const initial = sessionReducer(undefined, { type: "exit-view" });
     const hidden = sessionReducer(initial, { type: "cycle-transcript-translation", persisted: "always" });
-    const shown = sessionReducer(hidden, { type: "cycle-transcript-translation", persisted: "always" });
+    const follow = sessionReducer(hidden, { type: "cycle-transcript-translation", persisted: "always" });
     expect(hidden.transcriptTranslation).toBe("hidden");
-    expect(shown.transcriptTranslation).toBe("shown");
-    expect(sessionReducer(shown, { type: "cycle-transcript-translation", persisted: "always" }).transcriptTranslation).toBe("follow");
+    expect(follow.transcriptTranslation).toBe("follow");
   });
 
   it("stores a per-line furigana override on the first press and deletes it on the second", () => {

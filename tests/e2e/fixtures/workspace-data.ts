@@ -20,6 +20,8 @@ export interface WorkspaceData {
   lineIds: string[];
   /** A line of a different video, for the `?line=` from-another-video case. */
   foreignLineId: string;
+  /** A lesson created without a duration (lesson creation never stores one): the player must supply it. */
+  noDurationVideoId: string;
   userIdByEmail(email: string): Promise<string>;
   cleanup(): Promise<void>;
 }
@@ -43,9 +45,9 @@ export async function seedWorkspaceData(): Promise<WorkspaceData> {
     if (error) throw error;
   };
 
-  async function lesson(suffix: string, title: string, count: number): Promise<{ videoId: string; lineIds: string[] }> {
+  async function lesson(suffix: string, title: string, count: number, duration: number | null = VIDEO_DURATION): Promise<{ videoId: string; lineIds: string[] }> {
     const video = await admin.from("videos").insert({
-      youtube_video_id: `${prefix}-${suffix}`, title, library_access: "FREE", duration_seconds: VIDEO_DURATION, jlpt_level_estimate: "N3",
+      youtube_video_id: `${prefix}-${suffix}`, title, library_access: "FREE", duration_seconds: duration, jlpt_level_estimate: "N3",
     }).select("id").single();
     if (video.error) throw video.error;
     const transcript = await admin.from("transcripts").insert({ video_id: video.data.id, source: "youtube_caption", language: "ja" }).select("id").single();
@@ -70,11 +72,13 @@ export async function seedWorkspaceData(): Promise<WorkspaceData> {
   try {
     const main = await lesson("main", `${prefix} 会話の練習`, LINE_COUNT);
     const other = await lesson("other", `${prefix} 別のレッスン`, 1);
+    const noDuration = await lesson("noduration", `${prefix} 長さ不明`, 3, null);
     return {
       admin,
       videoId: main.videoId,
       lineIds: main.lineIds,
       foreignLineId: other.lineIds[0]!,
+      noDurationVideoId: noDuration.videoId,
       async userIdByEmail(email) {
         const user = await admin.from("users").select("id").eq("email", email).single();
         if (user.error) throw user.error;

@@ -8,7 +8,7 @@ import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-work
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { WorkspacePlayer } from "./workspace-player";
-import { usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
+import { tabPreference, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceDivider } from "./workspace-divider";
 import { useFullscreen } from "./use-fullscreen";
@@ -33,6 +33,12 @@ function readSessionRecord(bootstrap: WorkspaceBootstrap) {
   }
 }
 
+function newerSyncedServerAt(server: string | null, session: string | null): string | null {
+  const serverAt = server === null ? Number.NEGATIVE_INFINITY : Date.parse(server);
+  const sessionAt = session === null ? Number.NEGATIVE_INFINITY : Date.parse(session);
+  return (Number.isFinite(sessionAt) ? sessionAt : Number.NEGATIVE_INFINITY) > (Number.isFinite(serverAt) ? serverAt : Number.NEGATIVE_INFINITY) ? session : server;
+}
+
 export function ShadowingWorkspaceShell({
   bootstrap,
   children,
@@ -41,19 +47,30 @@ export function ShadowingWorkspaceShell({
   children: React.ReactNode;
 }) {
   const requestedLineId = useSearchParams().get("line");
-  const resolve = (session: ReturnType<typeof readSessionRecord>) => resolveStartPosition({
+  const resolve = (session: ReturnType<typeof readSessionRecord>, resumeBehavior = bootstrap.preferences.resumeBehavior) => resolveStartPosition({
     lines: bootstrap.transcript?.lines ?? [], duration: bootstrap.video.durationSeconds, deepLinkLineId: requestedLineId,
-    resumeBehavior: bootstrap.preferences.resumeBehavior, server: bootstrap.resume, session,
+    resumeBehavior, server: bootstrap.resume, session,
   }).position;
   // The start position is decided ONCE. The first render (server and hydration) uses server facts only, so the
   // markup matches; the tab's session record is read after mount. A later bootstrap (router.refresh) never moves it.
   const [initialPosition, setInitialPosition] = useState(() => resolve(null));
-  const resolveOnMount = useRef(() => resolve(readSessionRecord(bootstrap)));
-  useIsomorphicLayoutEffect(() => setInitialPosition(resolveOnMount.current()), []);
+  const [initialSyncedServerAt, setInitialSyncedServerAt] = useState(() => bootstrap.resume?.lastWatchedAt ?? null);
+  const resolveOnMount = useRef(() => {
+    const session = readSessionRecord(bootstrap);
+    return {
+      position: resolve(session, tabPreference(bootstrap.userId, "resumeBehavior", bootstrap.preferences.resumeBehavior)),
+      syncedServerAt: newerSyncedServerAt(bootstrap.resume?.lastWatchedAt ?? null, session?.syncedServerAt ?? null),
+    };
+  });
+  useIsomorphicLayoutEffect(() => {
+    const initial = resolveOnMount.current();
+    setInitialPosition(initial.position);
+    setInitialSyncedServerAt(initial.syncedServerAt);
+  }, []);
 
   return (
     <WorkspaceProviders bootstrap={bootstrap} initialPosition={initialPosition}>
-      <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={bootstrap.resume?.lastWatchedAt ?? null}>
+      <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={initialSyncedServerAt}>
         <WorkspaceLayout>{children}</WorkspaceLayout>
       </PlaybackRoot>
     </WorkspaceProviders>

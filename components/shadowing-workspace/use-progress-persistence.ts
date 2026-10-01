@@ -21,6 +21,9 @@ export function useProgressPersistence(args: {
   const lastSessionWriteAt = useRef(0);
   const sessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncedServerAt = useRef<string | null>(args.initialSyncedServerAt ?? null);
+  const incomingServerAt = args.initialSyncedServerAt === null || args.initialSyncedServerAt === undefined ? Number.NEGATIVE_INFINITY : Date.parse(args.initialSyncedServerAt);
+  const knownServerAt = syncedServerAt.current === null ? Number.NEGATIVE_INFINITY : Date.parse(syncedServerAt.current);
+  if (Number.isFinite(incomingServerAt) && (!Number.isFinite(knownServerAt) || incomingServerAt > knownServerAt)) syncedServerAt.current = args.initialSyncedServerAt ?? null;
   // Seeded with the opening position, so opening the page (restart, ?line=) never overwrites saved progress.
   const lastSent = useRef<ProgressSent | null>(null);
   if (lastSent.current === null) lastSent.current = { position: positionStore.get(), at: Date.now() };
@@ -49,7 +52,7 @@ export function useProgressPersistence(args: {
     if (!shouldWriteServer(lastSent.current, position, now, reason)) return;
     lastSent.current = { position, at: now };
     void fetch(`/api/videos/${videoId}/progress`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position }), keepalive: reason !== "tick",
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position, ...(reason === "ended" ? { completed: true } : {}) }), keepalive: reason !== "tick",
     }).then(async (response) => {
       if (!response.ok) return;
       const payload: unknown = await response.json();
@@ -75,7 +78,7 @@ export function useProgressPersistence(args: {
       }
       moved.current = true;
       writeSession();
-      flush(argsRef.current.isPlaying() ? "tick" : "pause");
+      flush("tick");
     });
     const hidden = () => { if (document.visibilityState === "hidden") flush("hidden"); };
     document.addEventListener("visibilitychange", hidden);

@@ -129,36 +129,20 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   beforeAll; M1 race noted in the overlay comment. Kept (accepted): M2 `resetTabWritesForTests` (precedent:
   `resetSchedulerForTests`), M4/M5/M6/M7/M8 (pre-existing or test-data hygiene, no defect).
 
-### Carried forward (open, owned by a later task)
+### Carried forward (still open after T12 — for the owner / Part 1b)
 
-- **Done in T9:** Focus Mode now lays out the focus view, and the shell's Escape handler honours
-  `defaultPrevented`. Browser-proven: Escape with ⋯ open in focus view closes only the popover.
-- **Open (non-blocking, T9 re-review):** `PlaybackRoot` calls `controller.setLoop` inside a `setState`
-  updater. It is idempotent, so it is harmless under StrictMode, but it is impure; make it pure if that code
-  is touched again.
-- **T9/T11 (from T7 review):** browser-check translation text selectable under the stretched row button
-  and Back-to-current keyboard focus (the other row CSS was measured in the T8 pass). Known quirk, accepted: the per-line あ press flips the
-  row's VIEW mode (`hidden` in normal view), so an override made in one view can look like a no-op in the
-  other while still showing pressed (honest). Not fixed (low risk): a no-op skip while a smooth scroll is
-  mid-flight leaves that scroll running to the previous row.
-
-- **T11:** prove live on Ep.729 that `getCurrentTime()` right after `seekTo` does not return the pre-seek
-  time (T5's post-seek guard is defensive; T0 never measured it). Prove the §4.3 stale-bootstrap mechanism
-  (`router.refresh()` after a successful write) with a client-side leave-and-return; if browser Back still
-  restores a stale payload, add `experimental.staleTimes.dynamic = 0`.
-- **T9:** `isInteractiveTarget` treats anything inside `[role="dialog"]` as interactive — Focus Mode /
-  fullscreen must not render the workspace inside a dialog. The loop pill and speed label keep their own
-  copy of state: an `L` shortcut (or YouTube's own controls) will not update them — lift into PlaybackRoot.
-- **T10:** speed label starts from the preference, not the rate `onReady` snapped to; `muted` starts false
-  even if the embed starts muted.
-- **Owner question (T6b review, a11y):** toggles whose accessible name follows their state AND carry
-  `aria-pressed` (Live Sentence hide-Japanese, subtitle toggle, mute) read as "Show Japanese, pressed" — the
-  ARIA practices advise one or the other. Built as the plan specifies; flip to fixed names if the owner agrees.
-- **Accepted gaps:** duplicate `start_time` lines — controller pins the earlier, `useCurrentSentence` shows
-  the later; a PLAYING queued between `pause()` and PAUSED can show the next line for one frame.
-- **Plan corrections so far:** no `lucide-react` in the repo (inline SVG glyphs); `lib/data/transcripts.test.ts`
-  and the progress-route test were new files; `LessonCreationContent` lives in `store.ts`; token-scale scans
-  `(workspace)` only, not all of `(focus)/shadowing`; transcript `!ok` keeps the lesson on its empty state.
+- Closed: T9 Focus Mode + Escape; T9 setLoop purity (T10); T7 selectable translation + Back-to-current focus
+  (T11 test 13); T11 post-seek clock + stale bootstrap (measured, fixed); T9 loop/speed lifted into PlaybackRoot.
+- **Owner question (T6b, a11y):** toggles whose name follows their state AND carry `aria-pressed` read as
+  "Show Japanese, pressed"; flip to fixed names if the owner agrees.
+- **Accepted:** duplicate `start_time` lines (controller pins the earlier, the view shows the later); a PLAYING
+  queued between pause() and PAUSED can show the next line for one frame; the per-line あ override is per view;
+  `muted` starts false and the speed label starts from the preference (T10 rulings); §7.3 ships mute only,
+  no volume slider; WBR M2 (a rollback broadcast has no sequence number: leave with A in flight, return, B on the
+  same key succeeds, A fails late → the UI shows pre-A until the next load).
+- **Plan corrections:** inline SVG glyphs (no lucide); new `lib/data/transcripts.test.ts` and progress-route
+  test; `LessonCreationContent` in `store.ts`; token-scale scans `(workspace)` only; transcript `!ok` keeps the
+  empty state; seed script needs `vite-node --config vitest.config.ts` (the `@/` alias).
 
 - T12 (Codex, reviewed by Claude: one doc fix — the Translation language options were restored with a
   deferral note). Full gate 2026-10-02 on a fresh `db reset`: verify:db lesson-jobs/settings/pronunciation/
@@ -182,12 +166,15 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 **Audit:** `shadowing-view.tsx` + test — 0 external importers; `playback-controls.tsx` + test — 1 legacy importer (`shadowing-view.tsx`), 0 surviving; `transcript-pane.tsx` + test — 1 legacy importer (`shadowing-view.tsx`), 0 surviving. All deleted.
 
+- Whole-branch review: CHANGES REQUIRED 2C/2I/5M. Fixed (Codex, reviewed by Claude): C1 completion written on
+  ENDED; C2 duration taken from the player and PATCHed when null; I1 resume/hint prefs through the tab overlay;
+  I2 paused seeks coalesced as ticks; M1 newer syncedServerAt; M3 👁 is a two-state toggle; M5 non-UUID id → 404
+  (report `task-wbr-report.md`). e2e 14 (null duration) + 15 (completion) added by Claude.
+
 ## Working tree and environment
 
 - Worktree `.worktrees/shadowing-workspace-1a`; `.env.local` copied; `npm ci` run 2026-10-01.
 - Codex: never commit (sandbox ACL), never run Playwright, never build or `next start`.
-- Port 3000 may hold an orphan `next start` from the `pronunciation-show-more` worktree; Claude uses it
-  for T0 probing only, and kills it before T11.
 - Local DB holds Ep.729 (`videos.id = f885cf07-d6f5-4e01-b38c-236008b2a0a3` since the T12 gate reset, 2026-10-02); any
   `db reset` wipes it — re-seed with `npx vite-node --config vitest.config.ts scripts/seed-real-lesson.ts -- --dir
   "C:/Users/tplon/Desktop/Japan/Korume/shadowing" --youtube Fwj3tH4Uls8` (keeps the uuid on a re-run).
@@ -201,6 +188,5 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 ## Next actions
 
-1. Done: T7 review plus T9-T11 workspace acceptance, including the T2 regression and stale-bootstrap fixes.
-2. Done: T8 header (`feat(shadowing): workspace header, …`), built by Claude without Codex.
-3. Next: whole-branch review.
+1. Done: Tasks 0–12 and every per-task review; whole-branch review fixed.
+2. Next: the owner's Chrome look at 1280×529 and the merge decision (do not merge without the owner).

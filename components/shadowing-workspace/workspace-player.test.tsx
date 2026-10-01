@@ -32,9 +32,9 @@ function Probe(): null {
   return null;
 }
 
-function renderPlayer(onFullscreen = vi.fn()) {
+function renderPlayer(onFullscreen = vi.fn(), workspaceBootstrap = bootstrap) {
   return render(
-    <WorkspaceProviders bootstrap={bootstrap}>
+    <WorkspaceProviders bootstrap={workspaceBootstrap}>
       <PlaybackRoot userId="user-1" initialSyncedServerAt={null}>
         <WorkspacePlayer onFullscreen={onFullscreen} fullscreenAvailable />
         <Probe />
@@ -79,6 +79,31 @@ describe("WorkspacePlayer", () => {
     fireEvent.change(screen.getByRole("slider", { name: "Seek" }), { target: { value: "6.5" } });
     expect(yt.players[0]!.getCurrentTime()).toBe(6.5);
     expect(store?.get()).toBe(6.5);
+  });
+
+  it("learns a missing duration for every consumer and persists it only once", async () => {
+    yt.restore();
+    yt = installYouTubeStub({ autoReady: false, duration: 120, availablePlaybackRates: [0.25, 0.5, 0.75, 1, 1.5] });
+    const missingDuration = { ...bootstrap, video: { ...bootstrap.video, durationSeconds: null } };
+    const missing = renderPlayer(vi.fn(), missingDuration);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    act(() => {
+      yt.players[0]!.triggerReady();
+      yt.players[0]!.triggerReady();
+    });
+    await waitFor(() => expect(screen.getByRole("slider", { name: "Seek" })).toHaveAttribute("max", "120"));
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).toHaveBeenCalledWith("/api/videos/video-1", expect.objectContaining({
+      method: "PATCH", body: JSON.stringify({ durationSeconds: 120 }),
+    }));
+    missing.unmount();
+
+    vi.mocked(fetch).mockClear();
+    yt.restore();
+    yt = installYouTubeStub({ duration: 9, availablePlaybackRates: [0.25, 0.5, 0.75, 1, 1.5] });
+    renderPlayer();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("shows the centre play button only while paused", async () => {

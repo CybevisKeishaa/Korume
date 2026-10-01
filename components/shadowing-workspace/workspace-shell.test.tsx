@@ -5,7 +5,7 @@ import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
-import { usePlaybackController, usePositionStore } from "./workspace-context";
+import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences } from "./workspace-context";
 import { ShadowingWorkspaceShell, workspaceGridTemplateColumns } from "./workspace-shell";
 import { TranscriptPanel } from "./transcript-panel";
 
@@ -36,6 +36,7 @@ const bootstrap: WorkspaceBootstrap = {
 
 let observedStore: ReturnType<typeof usePositionStore> | undefined;
 let observedController: ReturnType<typeof usePlaybackController> | undefined;
+let setPreference: ReturnType<typeof usePreferences>["setPreference"] | undefined;
 
 function StoreProbe(): null {
   observedStore = usePositionStore();
@@ -43,14 +44,22 @@ function StoreProbe(): null {
   return null;
 }
 
+function PreferenceProbe(): null {
+  setPreference = usePreferences().setPreference;
+  return null;
+}
+
 describe("ShadowingWorkspaceShell", () => {
   let yt: YouTubeStubHandle;
-  afterEach(() => yt.restore());
+  afterEach(() => { yt.restore(); vi.unstubAllGlobals(); });
   beforeEach(() => {
     yt = installYouTubeStub();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
     sessionStorage.clear();
+    resetTabWritesForTests();
     observedStore = undefined;
     observedController = undefined;
+    setPreference = undefined;
     pathname = "/en/shadowing/video-1";
     searchParams = new URLSearchParams("line=line-1");
   });
@@ -104,6 +113,32 @@ describe("ShadowingWorkspaceShell", () => {
     // A refreshed bootstrap with a newer server resume does not move the already-decided start.
     view.rerender(<ShadowingWorkspaceShell bootstrap={{ ...resumed, resume: { position: 21, lastWatchedAt: "2026-10-01T12:00:00Z" } }}><StoreProbe /></ShadowingWorkspaceShell>);
     expect(observedStore?.get()).toBe(16);
+  });
+
+  it("uses this tab's newer resume behavior only after mount", async () => {
+    searchParams = new URLSearchParams();
+    const stale = {
+      ...bootstrap,
+      video: { ...bootstrap.video, durationSeconds: 120 },
+      transcript: { id: "transcript-1", lines: [{ id: "line-1", index: 0, startTime: 10, endTime: 20, textJp: "one", textTranslation: null, furigana: null }] },
+      preferences: { ...DEFAULT_PREFERENCES, resumeBehavior: "resume" as const }, resume: { position: 13, lastWatchedAt: null },
+    };
+    const first = render(<ShadowingWorkspaceShell bootstrap={stale}><PreferenceProbe /></ShadowingWorkspaceShell>);
+    act(() => setPreference?.("resumeBehavior", "restart"));
+    await act(async () => { await Promise.resolve(); });
+    first.unmount();
+
+    render(<ShadowingWorkspaceShell bootstrap={stale}><StoreProbe /></ShadowingWorkspaceShell>);
+    expect(observedStore?.get()).toBe(0);
+  });
+
+  it("seeds progress persistence with the newer session server clock", () => {
+    searchParams = new URLSearchParams();
+    sessionStorage.setItem("shadowing-resume:user-1:video-1", JSON.stringify({ userId: "user-1", videoId: "video-1", position: 2, savedAt: 1, syncedServerAt: "2026-10-01T10:00:00.000Z" }));
+    const stale = { ...bootstrap, resume: { position: 1, lastWatchedAt: "2026-10-01T09:00:00.000Z" } };
+    render(<ShadowingWorkspaceShell bootstrap={stale}><StoreProbe /></ShadowingWorkspaceShell>);
+    act(() => observedStore?.set(3));
+    expect(JSON.parse(sessionStorage.getItem("shadowing-resume:user-1:video-1") ?? "{}").syncedServerAt).toBe("2026-10-01T10:00:00.000Z");
   });
 
   it("does not remount providers when the rendered child changes", () => {

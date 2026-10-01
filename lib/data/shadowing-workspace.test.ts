@@ -18,7 +18,7 @@ vi.mock("@/lib/data/lesson-bookmarks", () => ({ isLessonBookmarked: vi.fn() }));
 vi.mock("@/lib/data/sentence-marks", () => ({ listMySentenceMarks: vi.fn() }));
 
 const VIDEO = {
-  id: "video-1", youtube_video_id: "yt-1", title: "Episode 1", duration_seconds: 120,
+  id: "00000000-0000-4000-8000-000000000001", youtube_video_id: "yt-1", title: "Episode 1", duration_seconds: 120,
   thumbnail_url: null, channel_title: "Channel", jlpt_level_estimate: "N3", added_by_user_id: null,
   library_access: "FREE" as const, promotion_starred: false, created_at: "2026-10-01T00:00:00.000Z",
 };
@@ -54,6 +54,13 @@ beforeEach(() => {
 });
 
 describe("loadWorkspaceBootstrap", () => {
+  it("returns 404 before any workspace read for a malformed video id", async () => {
+    await expect(loadWorkspaceBootstrap("not-a-uuid")).resolves.toEqual({ ok: false, status: 404 });
+    expect(requireUser).not.toHaveBeenCalled();
+    expect(getVideo).not.toHaveBeenCalled();
+    expect(getTranscript).not.toHaveBeenCalled();
+  });
+
   it("returns 401 before reading workspace data when signed out", async () => {
     vi.mocked(requireUser).mockResolvedValue(null);
 

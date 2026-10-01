@@ -43,6 +43,29 @@ describe("useProgressPersistence", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it("writes completion when ended follows a pause at the same position", () => {
+    const { result, store } = mount(() => false);
+    act(() => store.set(30));
+    act(() => {
+      result.current.flush("pause");
+      result.current.flush("ended");
+    });
+    expect(vi.mocked(fetch).mock.calls.map(([, init]) => JSON.parse(String(init?.body)))).toEqual([
+      { position: 30 },
+      { position: 30, completed: true },
+    ]);
+  });
+
+  it("coalesces paused seeks but writes when playback actually pauses", () => {
+    const { result, store } = mount(() => false);
+    act(() => {
+      for (let position = 1; position <= 50; position += 1) store.set(position);
+    });
+    expect(fetch).not.toHaveBeenCalled();
+    act(() => result.current.flush("pause"));
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it("never writes the opening position when nothing moved (restart or ?line= must not overwrite progress)", () => {
     const { unmount } = mount(() => false, createPlaybackPositionStore(42));
     unmount();
@@ -55,16 +78,19 @@ describe("useProgressPersistence", () => {
     act(() => store.set(16));
     expect(fetch).not.toHaveBeenCalled();
     act(() => store.set(30));
+    act(() => hook.result.current.flush("pause"));
     expect(fetch).toHaveBeenCalledOnce();
     hook.unmount();
   });
 
   it("does not lock in an unparsable server clock", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(respond("not-a-date")).mockResolvedValueOnce(respond("2026-10-01T11:00:00.000Z"));
-    const { store } = mount(() => false, createPlaybackPositionStore(0), "garbage");
+    const { result, store } = mount(() => false, createPlaybackPositionStore(0), "garbage");
     act(() => store.set(10));
+    act(() => result.current.flush("pause"));
     await settle();
     act(() => store.set(20));
+    act(() => result.current.flush("pause"));
     await settle();
     expect(record().syncedServerAt).toBe("2026-10-01T11:00:00.000Z");
   });
@@ -107,9 +133,11 @@ describe("useProgressPersistence", () => {
     vi.mocked(fetch)
       .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
       .mockResolvedValueOnce(respond("2026-10-01T10:05:00.000Z"));
-    const { store } = mount(() => false, createPlaybackPositionStore(0), "2026-10-01T09:00:00.000Z");
+    const { result, store } = mount(() => false, createPlaybackPositionStore(0), "2026-10-01T09:00:00.000Z");
     act(() => store.set(10));
+    act(() => result.current.flush("pause"));
     act(() => store.set(20));
+    act(() => result.current.flush("pause"));
     await settle();
     resolveFirst(respond("2026-10-01T10:00:00.000Z"));
     await settle();
