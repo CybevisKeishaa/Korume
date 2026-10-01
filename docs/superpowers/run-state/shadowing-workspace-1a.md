@@ -61,9 +61,20 @@ regression the fixes introduced). DB gates after T1/T2: fresh reset, `verify:db:
 user, Playwright Chrome at 1280×529, script in the session scratchpad `ws-check.mjs` / `ws-6a.mjs`):
 T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scroll).
 - T7 (Claude, Codex at limit): tsc/lint/protocol 0, full vitest 427 files 0; browser Ep.729 282 rows, current row
-  centred (offset 0), pill clears, page 1280×529 no scroll. Review: 0C/4I/9M, NOT yet fixed (list in `task-7-report.md`).
+  centred (offset 0), pill clears, page 1280×529 no scroll. Review: 0C/4I/9M, all fixed by Claude
+  in `fix(shadowing): T7 review` (every fix mutation-proven red). Re-review: 0C/1I (I-A: a `has-[]` pin
+  the M-5 fix added would keep a mined row's toolbar up for the session — removed) + minors fixed; gates
+  re-run after the last edit. NOT browser-checked (Docker off): the CSS-only fixes M-3/M-4/M-5/M-7 are
+  proven only by a Tailwind compile — T9/T11's Playwright pass must look at them.
 
 ### Carried forward (open, owned by a later task)
+
+- **T9/T11 (from T7 review):** browser-check the transcript row CSS (current-row warm bg under
+  focus-within, a single focus ring on the row body, hidden actions not tappable, translation text
+  selectable) and Back-to-current keyboard focus. Known quirk, accepted: the per-line あ press flips the
+  row's VIEW mode (`hidden` in normal view), so an override made in one view can look like a no-op in the
+  other while still showing pressed (honest). Not fixed (low risk): a no-op skip while a smooth scroll is
+  mid-flight leaves that scroll running to the previous row.
 
 - **T11:** prove live on Ep.729 that `getCurrentTime()` right after `seekTo` does not return the pre-seek
   time (T5's post-seek guard is defensive; T0 never measured it). Prove the §4.3 stale-bootstrap mechanism
@@ -93,7 +104,7 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude (T7 review fixes pending)
+- Owner: Claude (T7 review fixed; T8 next)
 
 ## Blockers
 
@@ -101,6 +112,5 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 ## Next actions
 
-1. Claude: fix the T7 review findings I-1..I-4 + M-1..M-5, M-7, M-9 (`task-7-report.md`, incl. the
-   `toggle-line-furigana` reducer change), re-run gates + re-review, commit `fix(shadowing): T7 review`.
-2. Then dispatch T8 (header) — packet `task-8-brief.md` ready (Codex, or Claude if Codex is limited) → T9 → write T10 packet.
+1. Done: T7 review fixed (`fix(shadowing): T7 review`).
+2. Next: dispatch T8 (header) — packet `task-8-brief.md` ready (Codex, or Claude if Codex is limited) → T9 → write T10 packet.

@@ -16,6 +16,14 @@ function Harness({ index, enabled = true, layout }: { index: number | null; enab
   );
 }
 
+// jsdom has no layout: give the scroller overflow and each row a top, so following has somewhere to go.
+let scrollHeight = 1000;
+const geometry = {
+  scrollHeight: Object.getOwnPropertyDescriptor(Element.prototype, "scrollHeight")!,
+  clientHeight: Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight")!,
+  rect: Element.prototype.getBoundingClientRect,
+};
+
 const scroller = () => document.querySelector<HTMLElement>("[data-testid='scroller']")!;
 const lastBehavior = () => scrollTo.mock.calls.at(-1)?.[0].behavior;
 
@@ -24,8 +32,18 @@ describe("useAutoFollow", () => {
     vi.useFakeTimers();
     scrollTo.mockClear();
     HTMLElement.prototype.scrollTo = scrollTo as unknown as HTMLElement["scrollTo"];
+    scrollHeight = 1000;
+    Object.defineProperty(Element.prototype, "scrollHeight", { configurable: true, get: () => scrollHeight });
+    Object.defineProperty(Element.prototype, "clientHeight", { configurable: true, get: () => 100 });
+    Element.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      const index = this.dataset.index;
+      return { top: index === undefined ? 0 : 200 + Number(index) * 100 } as DOMRect;
+    };
   });
   afterEach(() => {
+    Object.defineProperty(Element.prototype, "scrollHeight", geometry.scrollHeight);
+    Object.defineProperty(Element.prototype, "clientHeight", geometry.clientHeight);
+    Element.prototype.getBoundingClientRect = geometry.rect;
     vi.useRealTimers();
     document.documentElement.removeAttribute("data-reduce-motion");
   });
@@ -66,6 +84,14 @@ describe("useAutoFollow", () => {
   it("closes the window early on scrollend", () => {
     render(<Harness index={0} />);
     fireEvent(scroller(), new Event("scrollend"));
+    fireEvent.scroll(scroller());
+    expect(follow?.suspended).toBe(true);
+  });
+
+  it("skips a scroll that cannot move, without blinding the learner's next scroll", () => {
+    scrollHeight = 100; // no overflow: the clamped target is the current scrollTop
+    render(<Harness index={2} />);
+    expect(scrollTo).not.toHaveBeenCalled();
     fireEvent.scroll(scroller());
     expect(follow?.suspended).toBe(true);
   });

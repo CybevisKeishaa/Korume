@@ -52,7 +52,7 @@ export function LiveSentence() {
             segments={line.furigana}
             text={line.textJp}
             mode={preferences.readingFurigana}
-            lineId={line.id}
+            override={session.lineFurigana[line.id]}
             // Hidden keeps the box (no jump) and leaves the line out of the accessibility tree.
             hidden={hidden}
             // Softened between sentences by colour, never by opacity on already-muted text (contrast).

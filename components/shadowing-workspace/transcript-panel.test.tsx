@@ -8,10 +8,20 @@ import type { PlaybackController } from "./use-playback-controller";
 import { TranscriptPanel } from "./transcript-panel";
 import { usePositionStore, useSession, WorkspaceProviders } from "./workspace-context";
 
+// One router object, as next-intl's memoised useRouter gives: a fresh one per call would change toggleMark
+// on every provider render and defeat the row memo the render-count test measures.
+const router = vi.hoisted(() => ({ refresh: () => undefined }));
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => router,
 }));
+
+// Counts RubySentence renders by line text, to prove a sentence change re-renders only the rows that moved.
+const rubyRenders: string[] = [];
+vi.mock("./ruby-sentence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./ruby-sentence")>();
+  return { ...actual, RubySentence: (props: Parameters<typeof actual.RubySentence>[0]) => { rubyRenders.push(props.text); return actual.RubySentence(props); } };
+});
 
 const line = (id: string, index: number, textJp: string, textTranslation: string, furigana: WorkspaceLine["furigana"] = null): WorkspaceLine =>
   ({ id, index, startTime: index * 5, endTime: index * 5 + 4, textJp, textTranslation, furigana });
@@ -89,18 +99,22 @@ describe("TranscriptPanel", () => {
     expect(seekToSentence).toHaveBeenLastCalledWith(3, { play: true });
   });
 
-  it("toggles a mark with aria-pressed, PUT then DELETE, disabled while pending", async () => {
+  it("toggles a mark with aria-pressed, PUT then DELETE, aria-disabled (still focusable) while pending", async () => {
     let settle: ((response: Response) => void) | undefined;
     fetchMock().mockImplementationOnce(() => new Promise<Response>((resolve) => { settle = resolve; }));
     renderPanel();
     const bookmark = () => within(rowOf("先月の売上")).getByRole("button", { name: "Bookmark" });
     fireEvent.click(bookmark());
     expect(bookmark()).toHaveAttribute("aria-pressed", "true");
-    expect(bookmark()).toBeDisabled();
+    // Not `disabled`: that would drop keyboard focus, and focus-within is what keeps the actions shown.
+    expect(bookmark()).toBeEnabled();
+    expect(bookmark()).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(bookmark());
+    expect(fetchMock()).toHaveBeenCalledTimes(1);
     expect(within(rowOf("先月の売上")).getByText("Bookmarked")).toBeInTheDocument();
     expect(fetchMock()).toHaveBeenLastCalledWith("/api/sentence-marks", expect.objectContaining({ method: "PUT", body: JSON.stringify({ transcriptLineId: "c", kind: "bookmark" }) }));
     await act(async () => { settle?.(new Response(null, { status: 204 })); });
-    expect(bookmark()).toBeEnabled();
+    expect(bookmark()).not.toHaveAttribute("aria-disabled");
     fireEvent.click(bookmark());
     expect(bookmark()).toHaveAttribute("aria-pressed", "false");
     expect(fetchMock()).toHaveBeenLastCalledWith("/api/sentence-marks", expect.objectContaining({ method: "DELETE" }));
@@ -180,12 +194,67 @@ describe("TranscriptPanel", () => {
     // Under "always" the per-line action hides.
     fireEvent.click(within(rowAt(1)).getByRole("button", { name: "Readings for this line" }));
     expect(readingsIn(document.body)).toEqual(["ほんじつ"]);
+    expect(within(rowAt(1)).getByRole("button", { name: "Readings for this line" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(within(rowAt(1)).getByRole("button", { name: "Readings for this line" }));
+    expect(readingsIn(document.body)).toEqual(["ほんじつ", "かいぎ"]);
+    expect(session?.[0].lineFurigana).toEqual({});
+  });
+
+  it("puts a Full Transcript line back on adaptive after a second press", () => {
+    renderPanel({ preferences: { readingFurigana: "adaptive" } });
+    fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
+    const toggle = () => within(rowAt(1)).getByRole("button", { name: "Readings for this line" });
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute("aria-pressed", "true");
+    expect(session?.[0].lineFurigana).toEqual({ b: true });
+    fireEvent.click(toggle());
+    expect(toggle()).toHaveAttribute("aria-pressed", "false");
+    expect(session?.[0].lineFurigana).toEqual({});
+  });
+
+  it("keeps the Japanese line-height after the size class (tailwind-merge)", () => {
+    renderPanel({ preferences: { readingFurigana: "always" } });
+    fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
+    expect(rowAt(1).querySelector("[lang='ja']")).toHaveClass("leading-jp", "text-heading");
+  });
+
+  it("numbers, replays and follows by the line's position, not its stored index", () => {
+    const gapped = [line("x", 4, "一つ目", "first"), line("y", 9, "二つ目", "second")];
+    renderPanel({ rows: gapped, at: 0 });
+    expect(rowAt(1)).toHaveTextContent("二つ目");
+    expect(within(rowAt(1)).getByText("02")).toBeInTheDocument();
+    fireEvent.click(within(rowAt(1)).getByRole("button", { name: "Replay" }));
+    expect(seekToSentence).toHaveBeenLastCalledWith(1, { play: true });
+  });
+
+  it("re-renders only the two rows whose state moved on a sentence change", () => {
+    renderPanel({ preferences: { readingFurigana: "always" }, at: 6 });
+    fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
+    rubyRenders.length = 0;
+    act(() => store?.set(11));
+    expect(rubyRenders.sort()).toEqual(["会議を始めます", "先月の売上"].sort());
+    // A session change that leaves every row as it was (a blank query) re-renders none of them.
+    rubyRenders.length = 0;
+    act(() => session?.[1]({ type: "set-query", query: " " }));
+    expect(rubyRenders).toEqual([]);
   });
 
   it("offers Back to current after a learner scroll and follows again on click", () => {
     renderPanel();
     fireEvent.wheel(screen.getByTestId("transcript-scroll"));
-    fireEvent.click(screen.getByRole("button", { name: "Back to current" }));
+    const pill = screen.getByRole("button", { name: "Back to current" });
+    pill.focus();
+    fireEvent.click(pill, { detail: 1 });
     expect(screen.queryByRole("button", { name: "Back to current" })).not.toBeInTheDocument();
+    // A mouse click does not move focus onto the row (focus-within would open its actions).
+    expect(document.activeElement).not.toBe(bodyOf("会議を始めます"));
+  });
+
+  it("hands focus to the current row when Back to current is pressed from the keyboard", () => {
+    renderPanel();
+    fireEvent.wheel(screen.getByTestId("transcript-scroll"));
+    // Keyboard activation of a button dispatches a click with detail 0.
+    fireEvent.click(screen.getByRole("button", { name: "Back to current" }), { detail: 0 });
+    expect(document.activeElement).toBe(bodyOf("会議を始めます"));
   });
 });

@@ -50,6 +50,15 @@ describe("sessionReducer", () => {
     expect(sessionReducer(shown, { type: "cycle-transcript-translation", persisted: "always" }).transcriptTranslation).toBe("follow");
   });
 
+  it("stores a per-line furigana override on the first press and deletes it on the second", () => {
+    const initial = sessionReducer(undefined, { type: "exit-view" });
+    const revealed = sessionReducer(initial, { type: "toggle-line-furigana", lineId: "a", shownByMode: false });
+    expect(revealed.lineFurigana).toEqual({ a: true });
+    // The second press ignores shownByMode: the line goes back to whatever its mode says.
+    expect(sessionReducer(revealed, { type: "toggle-line-furigana", lineId: "a", shownByMode: true }).lineFurigana).toEqual({});
+    expect(sessionReducer(initial, { type: "toggle-line-furigana", lineId: "a", shownByMode: true }).lineFurigana).toEqual({ a: false });
+  });
+
   it("clears scoped session-only overrides", () => {
     const state = {
       ...sessionReducer(undefined, { type: "exit-view" }), transcriptTranslation: "shown" as const,

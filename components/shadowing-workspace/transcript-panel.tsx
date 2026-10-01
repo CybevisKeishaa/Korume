@@ -122,6 +122,7 @@ export function TranscriptPanel() {
                   <TranscriptRow
                     key={line.id}
                     line={line}
+                    position={index}
                     number={String(index + 1).padStart(digits, "0")}
                     state={state}
                     spoken={state === "current" ? isSpoken : true}
@@ -146,7 +147,12 @@ export function TranscriptPanel() {
         {suspended && currentIndex !== null && (
           <button
             type="button"
-            onClick={resume}
+            onClick={(event) => {
+              resume();
+              // The pill unmounts on resume: from the keyboard (detail 0), hand focus to the current row so it
+              // is not dropped to <body>. A mouse click leaves focus alone (focus-within would open the actions).
+              if (event.detail === 0) scrollRef.current?.querySelector<HTMLElement>(`[data-index="${currentIndex}"] button`)?.focus({ preventScroll: true });
+            }}
             className="absolute bottom-sm left-1/2 -translate-x-1/2 rounded-full bg-primary px-md py-2xs text-caption font-semibold text-primary-foreground shadow-raised"
           >
             {t("workspace.transcript.backToCurrent")}

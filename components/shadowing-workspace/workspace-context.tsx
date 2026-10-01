@@ -58,7 +58,12 @@ export function sessionReducer(state: SessionState = initialSessionState, action
         : state.transcriptTranslation === "hidden" ? "shown" : "follow";
       return { ...state, transcriptTranslation: next };
     }
-    case "toggle-line-furigana": return { ...state, lineFurigana: { ...state.lineFurigana, [action.lineId]: !action.shownByMode } };
+    case "toggle-line-furigana": {
+      // A second press puts the line back on its mode: storing a flipped value instead would leave a
+      // stale override that Live Sentence (persisted mode) and the row (view mode) read differently.
+      const { [action.lineId]: existing, ...rest } = state.lineFurigana;
+      return { ...state, lineFurigana: existing === undefined ? { ...rest, [action.lineId]: !action.shownByMode } : rest };
+    }
     case "reveal-line-translation": return { ...state, lineTranslationRevealed: { ...state.lineTranslationRevealed, [action.lineId]: true } };
     case "reset-overrides": {
       const scope = action.scope ?? "all";
