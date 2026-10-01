@@ -103,7 +103,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
@@ -111,8 +111,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Next actions
 
-1. Codex: Task 2 from `.superpowers/sdd/shadowing-workspace-1a/task-2-brief.md` (packet corrections vs
-   the plan: transcripts and progress-route tests are new files; `LessonCreationContent` is in
-   `lib/lesson-creation/store.ts`; a bad oEmbed author becomes null, never fails the job).
-2. Claude: review Task 2 (code-reviewer, full gates, reset + `verify:db:lesson-jobs`, live check of the
-   `transcript_lines!inner` embedded filter), commit; then Task 3.
+1. Codex: Task 3 (pure workspace logic) from `.superpowers/sdd/shadowing-workspace-1a/task-3-brief.md`.
+   Packet rulings beyond the plan: session `syncedServerAt` null + server `lastWatchedAt` set → server
+   wins; an invalid winner → 0, never the losing candidate; `canonicalLines` narrows `furigana_json: unknown`.
+2. Claude: review Task 3, gates, commit; then Task 4 packet (check Codex `tokens used`; split if ~220k+).
