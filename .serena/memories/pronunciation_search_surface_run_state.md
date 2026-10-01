@@ -31,3 +31,8 @@ CSS + compact card · `83340ba` T5 page (Claude — Codex hit its quota mid-T4) 
 reads curated-shelf data it does not render (as master did); the e2e seed's 30 FREE lessons are visible
 to parallel specs (no count assertion depends on it). Older follow-ups: `collections.ts` "in progress"
 second home; `getKnownVocabLemmas` one paged read.
+
+## Session end (2026-10-01)
+The Claude Code wrapper for the port-3000 server was reaped for low memory; an orphan `next start`
+(PID 41088, built from the worktree at 71ed603) may still hold port 3000 — check `netstat -ano | grep :3000`
+and `taskkill /PID <pid> /T /F` before running Playwright again. Codex quota resets 06:45.
