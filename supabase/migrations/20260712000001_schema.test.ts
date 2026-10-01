@@ -27,6 +27,14 @@ describe("user_video_progress recency SQL contract", () => {
     );
   });
 
+  it("stores an optional bounded channel title in the videos definition", () => {
+    expect(schema).toContain("thumbnail_url text, channel_title text check (char_length(channel_title) <= 200),");
+    const altering = readdirSync(directory)
+      .filter((file) => file.endsWith(".sql") && file !== "20260712000001_schema.sql")
+      .filter((file) => /alter table videos add\b[\s\S]*?channel_title/.test(normalized(file)));
+    expect(altering).toEqual([]);
+  });
+
   it("is edited in place: no later migration alters user_video_progress (AGENTS.md §6)", () => {
     const altering = readdirSync(directory)
       .filter((file) => file.endsWith(".sql"))

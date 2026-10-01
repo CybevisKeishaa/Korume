@@ -340,12 +340,13 @@ begin
         (line->>'end_time' is not null and (jsonb_typeof(line->'end_time') <> 'number' or
           (line->>'end_time')::numeric < (line->>'start_time')::numeric)) or
         (line->>'text_translation' is not null and jsonb_typeof(line->'text_translation') <> 'string')
-    ) or (p_content->>'thumbnail_url' is not null and jsonb_typeof(p_content->'thumbnail_url') <> 'string') then
+    ) or (p_content->>'thumbnail_url' is not null and jsonb_typeof(p_content->'thumbnail_url') <> 'string')
+      or (p_content->>'channel_title' is not null and jsonb_typeof(p_content->'channel_title') <> 'string') then
       raise exception 'invalid_content' using errcode = '22023';
     end if;
     if v.id is null then
-      insert into public.videos(youtube_video_id, title, thumbnail_url, added_by_user_id, library_access)
-        values (j.youtube_video_id, p_content->>'title', p_content->>'thumbnail_url',
+      insert into public.videos(youtube_video_id, title, thumbnail_url, channel_title, added_by_user_id, library_access)
+        values (j.youtube_video_id, p_content->>'title', p_content->>'thumbnail_url', left(nullif(btrim(p_content->>'channel_title', E' \t\n\r\u3000'), ''), 200),
           case when j.origin = 'learner' then p_requester end, j.requested_library_access)
         on conflict (youtube_video_id) do nothing returning * into v;
       if v.id is null then select * into v from public.videos where youtube_video_id = j.youtube_video_id for update; end if;

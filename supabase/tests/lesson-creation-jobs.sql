@@ -660,6 +660,69 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- F6  Optional creator metadata is written for a newly finalized lesson and
+-- omitted metadata remains null. This stays here because only the live RPC
+-- proves the payload reached the table rather than merely matching source text.
+-- ---------------------------------------------------------------------------
+do $$
+declare uid_admin uuid; job uuid; tok uuid := gen_random_uuid(); title_with text;
+  title_without text; content_with jsonb; content_without jsonb; done public.lesson_creation_jobs;
+begin
+  select id into strict uid_admin from public.users where email = 'c4gate-admin@example.invalid';
+  content_with := jsonb_build_object(
+    'title', 'C4 channel title lesson', 'thumbnail_url', null, 'channel_title', 'Korume Channel',
+    'source', 'youtube_caption', 'lines', jsonb_build_array(jsonb_build_object(
+      'start_time', 0, 'end_time', 2, 'text_jp', 'チャンネルあり', 'text_translation', null, 'furigana_json', null)));
+  content_without := jsonb_build_object(
+    'title', 'C4 no channel title lesson', 'thumbnail_url', null, 'source', 'youtube_caption',
+    'lines', jsonb_build_array(jsonb_build_object(
+      'start_time', 0, 'end_time', 2, 'text_jp', 'チャンネルなし', 'text_translation', null, 'furigana_json', null)));
+
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, lease_expires_at, lease_token)
+  values (uid_admin, 'admin', 'FREE', 'C4GATECHAN1', 'running', 'persisting', 1,
+    now() + interval '10 minutes', tok) returning id into job;
+  done := public.finalize_lesson_creation_job(job, null, uid_admin, tok, content_with);
+  if done.state is distinct from 'succeeded' then raise exception 'F6 finalize with channel_title ended %', done.state; end if;
+  select channel_title into strict title_with from public.videos where youtube_video_id = 'C4GATECHAN1';
+  if title_with is distinct from 'Korume Channel' then raise exception 'F6 channel title was %, expected Korume Channel', title_with; end if;
+
+  tok := gen_random_uuid();
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, lease_expires_at, lease_token)
+  values (uid_admin, 'admin', 'FREE', 'C4GATECHAN2', 'running', 'persisting', 1,
+    now() + interval '10 minutes', tok) returning id into job;
+  done := public.finalize_lesson_creation_job(job, null, uid_admin, tok, content_without);
+  if done.state is distinct from 'succeeded' then raise exception 'F6 finalize without channel_title ended %', done.state; end if;
+  select channel_title into strict title_without from public.videos where youtube_video_id = 'C4GATECHAN2';
+  if title_without is not null then raise exception 'F6 omitted channel title became %', title_without; end if;
+
+  -- Optional metadata never fails a lesson: 201 chars are truncated, a full-width-space-only title is null.
+  tok := gen_random_uuid();
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, lease_expires_at, lease_token)
+  values (uid_admin, 'admin', 'FREE', 'C4GATECHAN3', 'running', 'persisting', 1,
+    now() + interval '10 minutes', tok) returning id into job;
+  done := public.finalize_lesson_creation_job(job, null, uid_admin, tok,
+    jsonb_set(content_with, '{channel_title}', to_jsonb(repeat('長', 201))));
+  if done.state is distinct from 'succeeded' then raise exception 'F6 over-long channel_title ended %', done.state; end if;
+  select channel_title into strict title_with from public.videos where youtube_video_id = 'C4GATECHAN3';
+  if char_length(title_with) is distinct from 200 then raise exception 'F6 over-long channel_title stored % chars', char_length(title_with); end if;
+
+  tok := gen_random_uuid();
+  insert into public.lesson_creation_jobs(requester_user_id, origin, requested_library_access,
+    youtube_video_id, state, step, attempt_count, lease_expires_at, lease_token)
+  values (uid_admin, 'admin', 'FREE', 'C4GATECHAN4', 'running', 'persisting', 1,
+    now() + interval '10 minutes', tok) returning id into job;
+  done := public.finalize_lesson_creation_job(job, null, uid_admin, tok,
+    jsonb_set(content_with, '{channel_title}', to_jsonb(E'\u3000\t '::text)));
+  if done.state is distinct from 'succeeded' then raise exception 'F6 blank channel_title ended %', done.state; end if;
+  select channel_title into strict title_without from public.videos where youtube_video_id = 'C4GATECHAN4';
+  if title_without is not null then raise exception 'F6 whitespace-only channel title became %', title_without; end if;
+  raise notice 'F6 PASS  finalize stores, omits, truncates and blanks channel_title';
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Teardown. Deleting the auth users cascades to public.users and to the jobs.
 -- ---------------------------------------------------------------------------
 delete from public.videos where youtube_video_id like 'C4GATE%';
