@@ -48,7 +48,8 @@ export function ShadowingWorkspaceShell({
 }) {
   const requestedLineId = useSearchParams().get("line");
   const resolve = (session: ReturnType<typeof readSessionRecord>, resumeBehavior = bootstrap.preferences.resumeBehavior) => resolveStartPosition({
-    lines: bootstrap.transcript?.lines ?? [], duration: bootstrap.video.durationSeconds, deepLinkLineId: requestedLineId,
+    // A lesson stored without a duration still gets the end-of-video guard: the last line's end stands in.
+    lines: bootstrap.transcript?.lines ?? [], duration: bootstrap.video.durationSeconds ?? bootstrap.transcript?.lines.at(-1)?.endTime ?? null, deepLinkLineId: requestedLineId,
     resumeBehavior, server: bootstrap.resume, session,
   }).position;
   // The start position is decided ONCE. The first render (server and hydration) uses server facts only, so the

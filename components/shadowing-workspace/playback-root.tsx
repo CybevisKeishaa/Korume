@@ -72,7 +72,6 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
     userId,
     videoId: video.id,
     positionStore,
-    isPlaying: () => controller.isPlaying(),
     initialSyncedServerAt,
     startPosition,
   });

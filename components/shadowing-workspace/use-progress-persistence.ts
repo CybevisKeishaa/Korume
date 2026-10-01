@@ -9,7 +9,6 @@ export function useProgressPersistence(args: {
   userId: string;
   videoId: string;
   positionStore: PlaybackPositionStore;
-  isPlaying: () => boolean;
   /** The server timestamp this tab already knows (session record or bootstrap), so a failed first PATCH does not reset it. */
   initialSyncedServerAt?: string | null;
   /** The settled start position: the store moving TO it after mount is the opening, not progress. */
@@ -19,6 +18,7 @@ export function useProgressPersistence(args: {
   const argsRef = useRef(args);
   argsRef.current = args;
   const lastSessionWriteAt = useRef(0);
+  const completedSent = useRef(false);
   const sessionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncedServerAt = useRef<string | null>(args.initialSyncedServerAt ?? null);
   const incomingServerAt = args.initialSyncedServerAt === null || args.initialSyncedServerAt === undefined ? Number.NEGATIVE_INFINITY : Date.parse(args.initialSyncedServerAt);
@@ -49,10 +49,13 @@ export function useProgressPersistence(args: {
     const position = positionStore.get();
     writeSession(reason !== "tick");
     const now = Date.now();
-    if (!shouldWriteServer(lastSent.current, position, now, reason)) return;
+    // Completion is sent once per mount; a loop that passes through ENDED again is an ordinary pause write.
+    const completing = reason === "ended" && !completedSent.current;
+    if (!shouldWriteServer(lastSent.current, position, now, completing ? "ended" : reason === "ended" ? "pause" : reason)) return;
+    if (completing) completedSent.current = true;
     lastSent.current = { position, at: now };
     void fetch(`/api/videos/${videoId}/progress`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position, ...(reason === "ended" ? { completed: true } : {}) }), keepalive: reason !== "tick",
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ position, ...(completing ? { completed: true } : {}) }), keepalive: reason !== "tick",
     }).then(async (response) => {
       if (!response.ok) return;
       const payload: unknown = await response.json();
@@ -91,7 +94,6 @@ export function useProgressPersistence(args: {
       if (sessionTimer.current !== null) clearTimeout(sessionTimer.current);
       flush("leave");
     };
-    // Callbacks are read through argsRef: a fresh isPlaying() each render must not tear this down (and "leave"-flush).
   }, [flush, positionStore, writeSession]);
 
   return { flush };

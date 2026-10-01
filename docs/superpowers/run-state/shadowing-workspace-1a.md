@@ -170,6 +170,9 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   ENDED; C2 duration taken from the player and PATCHed when null; I1 resume/hint prefs through the tab overlay;
   I2 paused seeks coalesced as ticks; M1 newer syncedServerAt; M3 👁 is a two-state toggle; M5 non-UUID id → 404
   (report `task-wbr-report.md`). e2e 14 (null duration) + 15 (completion) added by Claude.
+- Re-review of `845fb9e`: APPROVE WITH NITS (0C/0I/3M), all three fixed (completed once per mount, dead
+  `isPlaying` arg removed, end guard falls back to the last line's end); gates 0 (3951 tests), build 0, det
+  e2e 15/15, hub+explore 8/8, live Ep.729 2/2 (5.7–23.7 ms).
 
 ## Working tree and environment
 

@@ -87,6 +87,18 @@ describe("ShadowingWorkspaceShell", () => {
     expect(factors.every((factor) => factor >= 1)).toBe(true);
   });
 
+  it("applies the end-of-video guard with the last line's end when the lesson has no stored duration (re-review M3)", () => {
+    searchParams = new URLSearchParams();
+    const lines = [
+      { id: "a", index: 0, startTime: 0, endTime: 20, textJp: "一", textTranslation: null, furigana: null },
+      { id: "b", index: 1, startTime: 20, endTime: 60, textJp: "二", textTranslation: null, furigana: null },
+    ];
+    // Saved at the very end (an ENDED write) of a lesson whose duration was never stored.
+    const ended = { ...bootstrap, video: { ...bootstrap.video, durationSeconds: null }, transcript: { id: "t", lines }, resume: { position: 59.5, lastWatchedAt: "2026-10-01T00:00:00.000Z" } };
+    render(<ShadowingWorkspaceShell bootstrap={ended}><StoreProbe /></ShadowingWorkspaceShell>);
+    expect(observedStore?.get()).toBe(0);
+  });
+
   it("ignores an unknown requested line and resumes the matching session record", () => {
     searchParams = new URLSearchParams("line=other-video-line");
     sessionStorage.setItem("shadowing-resume:user-1:video-1", JSON.stringify({ userId: "user-1", videoId: "video-1", position: 12, savedAt: 1, syncedServerAt: null }));
