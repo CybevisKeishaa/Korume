@@ -51,6 +51,8 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Verification
 
+- Task 3 (Codex): test files were written before production modules. The prescribed bare-node focused command exited 1 before Vitest (`node` is not on this shell PATH); the usable local equivalent `& 'C:\nvm4w\nodejs\node.exe' node_modules/vitest/vitest.mjs run lib/shadowing-workspace --reporter=dot` exited 0 twice (13 files, 42 tests), once after all restores. Mutations each red then restored: lookup `<=`â†’`<` (two sentence boundary assertions); stale keyed rollback (latest-success test); server/session `>`â†’`<` (arbitration + invalid-winner tests); remove slider selector (interactive-target test). `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` â†’ 0. Report: `.superpowers/sdd/shadowing-workspace-1a/task-3-report.md`. Claude-only: full suite, tsc, lint, full protocol, review, commit.
+
 - Task 1 failure-first: `npx vitest run supabase/migrations --reporter=dot` — exit 1 before SQL; shell could not resolve `npx`, so Vitest did not start.
 - Task 1 mutation: renaming `create table sentence_marks` to `sentence_marks_broken` made the local migration test exit 1 on the exact table assertion; restored.
 - Task 1: local-node equivalent of `npx vitest run supabase/migrations --reporter=dot` — exit 0 (8 files, 39 tests).
@@ -93,6 +95,21 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   temp user deleted. `verify:db:lesson-jobs` 0 (no SQL change in Task 2, so no reset).
 - Task 2 final (after the last edit): tsc 0, lint 0, protocol 0, vitest 0 (402 files, 3738 tests).
 
+- Task 3 (Claude review): Codex 129k tokens; its failure-first RED was never observed (bare `node`
+  missing in its shell — packets now name `C:/nvm4w/nodejs/node.exe`); its 4 plan mutations stand in.
+  Full gates found `tsc` red (loop-machine test `state` typed as `{sentenceIndex: number}`) — fixed.
+  Independent review: 1 Critical (that tsc) / 2 Important / 8 Minor. Fixed: exactly-1.5 s ⏮ test;
+  `nextTarget(null)` → first line (⏭ during an intro; was a no-op); shortcut guard adds ARIA widget roles
+  and excludes `contenteditable="false"`; keyed mutator survives a throwing `apply`/`rollback` and stays
+  pending until the latest settles (tested); coalescer never writes a non-finite position; SRT end never
+  precedes start + hour formatting test; NFD search test made explicit. Not changed (nits): redundant
+  `> duration` check, extra session-record cases, `localeCompare` tie-break.
+  Mutations, each red then restored: `>`→`>=` in ⏮; `nextTarget(null)`→null; drop `:not(contenteditable=false)`;
+  drop finite guard; drop SRT `Math.max`.
+  **Note for Task 9:** `isInteractiveTarget` treats anything inside `[role="dialog"]` as interactive — Focus
+  Mode / fullscreen must not render the workspace inside a `role="dialog"` or every shortcut goes dead.
+- Task 3 final: tsc 0, lint 0, protocol 0, vitest 0 (415 files, 3783 tests); keyed-mutations test re-run after its lint fix.
+
 ## Working tree and environment
 
 - Worktree `.worktrees/shadowing-workspace-1a`; `.env.local` copied; `npm ci` run 2026-10-01.
@@ -103,7 +120,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 
