@@ -80,7 +80,7 @@ whichever the owner picks; the run state records the answer.
 Throwaway. Nothing from this task is committed except the numbers, into the run state.
 
 **Files:**
-- Create (scratch, not committed — `tests/e2e/.probe/` is gitignored and absent from a fresh worktree): `tests/e2e/.probe/probe.config.ts` (a copy of `playwright.config.ts` with `testDir: "./tests/e2e/.probe"` and **no** `webServer`, so it cannot rebuild over a running server) and `tests/e2e/.probe/yt-probe.spec.ts`.
+- Create (scratch, not committed — `tests/e2e/.probe/` does not exist on this branch and is NOT gitignored, so never `git add` it): `tests/e2e/.probe/probe.config.ts` (a copy of `playwright.config.ts` with `testDir: "./tests/e2e/.probe"` and **no** `webServer`, so it cannot rebuild over a running server) and `tests/e2e/.probe/yt-probe.spec.ts`.
 
 - [ ] **Step 1: Serve a built worktree app on port 3000** (`npm run build && npm run start` in the worktree; never the main checkout). Sign in as a fresh learner; Ep.729 must be seeded (session scratchpad script or Task 11's `scripts/seed-real-lesson.ts`).
 
