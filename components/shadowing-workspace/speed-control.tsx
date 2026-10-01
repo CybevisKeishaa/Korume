@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { Popover } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { usePlaybackController, usePreferences, useSession } from "./workspace-context";
+import { usePlaybackController, useSession } from "./workspace-context";
+import { usePlayerWiring } from "./playback-root";
 
 const POPOVER_ID = "speed";
 const rateLabel = (rate: number) => `${rate}×`;
@@ -12,15 +12,13 @@ const rateLabel = (rate: number) => `${rate}×`;
 /** Playback speed for this session; the list is what this video's player actually offers (T0). */
 export function SpeedControl() {
   const t = useTranslations("shadowing");
+  const { rate, setRate } = usePlayerWiring();
   const controller = usePlaybackController();
-  const { preferences } = usePreferences();
   const [session, dispatch] = useSession();
-  const [rate, setRate] = useState<number>(preferences.playbackDefaultRate);
   const open = session.openPopover === POPOVER_ID;
   const rates = open ? controller.availableRates() : [];
 
   function choose(next: number) {
-    controller.setRate(next);
     setRate(next);
     dispatch({ type: "set-popover", id: null });
   }

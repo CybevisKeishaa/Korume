@@ -53,6 +53,21 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Verification
 
+- T9 (Codex, then Claude): first pass by Codex. Review CHANGES REQUIRED: 4 Important, plus 2 Important found only
+  in the real browser:
+  - a 225px grid gap at the divider max (the `auto` track absorbed flex < 1);
+  - the player ⛶ fullscreened the slot, Live Sentence included.
+
+  Fix pass by Codex, which hit its usage limit; Claude finished it. That included a vacuous `/\bauto\b/` test
+  regex, PiP control wrap and measured tokens. The re-review's nits were fixed as well (nested-fullscreen focus
+  per level, Escape-while-fullscreen and real-drag tests).
+
+  Evidence:
+  - 10 mutations red.
+  - Gates 0.
+  - Browser Ep.729 1280×529 (`ws-9.mjs`): page never scrolls, 1 iframe throughout; grid at max `964/7/284`;
+    divider arrows leave the sentence; PiP 284×267 with all controls; second ⛶ click exits with focus back;
+    player fullscreen video 802×451.
 Every accepted task above ended with tsc 0, lint 0, `verify:protocol` 0 and full vitest 0 (after T5:
 423 files / 3858 tests; vitest runs `--minWorkers=1 --maxWorkers=2` — see Working tree). Each had an
 independent `code-reviewer`; fixes were re-reviewed when they touched logic (the T5 re-review caught a
@@ -74,10 +89,11 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 ### Carried forward (open, owned by a later task)
 
-- **T9 (from T8 review, MUST land before merge):** Focus Mode in the header only flips `session.view`
-  today; nothing lays out the focus view until T9, so it is a dead control until then. The overflow
-  popover's open state is local: T9's workspace Escape handler must honour `defaultPrevented` (or learn
-  the popover is open) so one Escape never also exits a view.
+- **Done in T9:** Focus Mode now lays out the focus view, and the shell's Escape handler honours
+  `defaultPrevented`. Browser-proven: Escape with ⋯ open in focus view closes only the popover.
+- **Open (non-blocking, T9 re-review):** `PlaybackRoot` calls `controller.setLoop` inside a `setState`
+  updater. It is idempotent, so it is harmless under StrictMode, but it is impure; make it pure if that code
+  is touched again.
 - **T9/T11 (from T7 review):** browser-check translation text selectable under the stretched row button
   and Back-to-current keyboard focus (the other row CSS was measured in the T8 pass). Known quirk, accepted: the per-line あ press flips the
   row's VIEW mode (`hidden` in normal view), so an override made in one view can look like a no-op in the
@@ -112,7 +128,7 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Codex (Task 9, dispatched 2026-10-02)
+- Owner: Claude
 
 ## Blockers
 
@@ -122,4 +138,5 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 1. Done: T7 review fixed (`fix(shadowing): T7 review`).
 2. Done: T8 header (`feat(shadowing): workspace header, …`), built by Claude without Codex.
-3. Next: T9 (views / fullscreen / shortcuts / divider) — packet `task-9-brief.md` ready; then write T10 packet.
+3. Done: T9 views / fullscreen / shortcuts / divider (Codex + Claude fix pass).
+4. Next: write the T10 packet (settings / environment / contrast), then T11, T12.

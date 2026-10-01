@@ -192,6 +192,7 @@
       "backToHub": "Back to Shadowing Hub"
     },
     "regionLabel": "Shadowing practice",
+    "divider": "Resize workspace panes",
     "player": {
       "label": "Player",
       "play": "Play",
@@ -244,6 +245,7 @@
       "minutes": "{minutes} min",
       "sentenceCounter": "Sentence {current} / {total}",
       "focusMode": "Focus Mode",
+      "fullscreen": "Workspace fullscreen",
       "bookmarkLesson": "Bookmark lesson",
       "more": "More actions",
       "downloadTranscript": "Download transcript",

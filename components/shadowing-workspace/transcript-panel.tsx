@@ -109,7 +109,7 @@ export function TranscriptPanel() {
         <p role="status" className="sr-only">{searching ? t("workspace.transcript.matches", { count: visible.length }) : ""}</p>
       </div>
       <div className="relative min-h-0 flex-1">
-        <div ref={scrollRef} className="h-full overflow-y-auto overscroll-contain" data-testid="transcript-scroll">
+        <div ref={scrollRef} className={cn("h-full overflow-y-auto overscroll-contain", full && "pb-[--workspace-pip-clearance]")} data-testid="transcript-scroll">
           {visible.length === 0 ? (
             <p className="p-md text-body text-muted-foreground">{t("workspace.transcript.noMatches")}</p>
           ) : (

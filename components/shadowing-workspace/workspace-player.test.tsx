@@ -32,11 +32,11 @@ function Probe(): null {
   return null;
 }
 
-function renderPlayer() {
+function renderPlayer(onFullscreen = vi.fn()) {
   return render(
     <WorkspaceProviders bootstrap={bootstrap}>
       <PlaybackRoot userId="user-1" initialSyncedServerAt={null}>
-        <WorkspacePlayer />
+        <WorkspacePlayer onFullscreen={onFullscreen} fullscreenAvailable />
         <Probe />
       </PlaybackRoot>
     </WorkspaceProviders>,
@@ -149,7 +149,8 @@ describe("WorkspacePlayer", () => {
   });
 
   it("drives the transport buttons through the controller", async () => {
-    renderPlayer();
+    const onFullscreen = vi.fn();
+    renderPlayer(onFullscreen);
     await waitFor(() => expect(yt.players).toHaveLength(1));
     act(() => store?.set(4));
     fireEvent.click(screen.getByRole("button", { name: "Next sentence" }));
@@ -160,6 +161,6 @@ describe("WorkspacePlayer", () => {
     expect(yt.players[0]!.isMuted()).toBe(true);
     expect(screen.getByRole("button", { name: "Unmute" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Player fullscreen" }));
-    expect(sessionView?.fullscreen).toBe("player");
+    expect(onFullscreen).toHaveBeenCalledOnce();
   });
 });

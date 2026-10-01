@@ -247,6 +247,13 @@
      video's width is min(column, (100dvh - this) * 16/9), so at the owner's 1280x529 the Japanese line of
      Live Sentence stays visible. Declared in both density blocks, like every derived token. */
   --workspace-video-reserve: calc(288 * var(--density-unit));
+  --workspace-focus-max: calc(960 * var(--density-unit));
+  --workspace-left-min: calc(352 * var(--density-unit));
+  --workspace-right-min: calc(320 * var(--density-unit));
+  --workspace-divider-width: calc(8 * var(--density-unit));
+  --workspace-pip-width: calc(320 * var(--density-unit));
+  --workspace-pip-clearance: calc(320 * var(--density-unit));
+  --workspace-player-controls: calc(88 * var(--density-unit));
   /* The MARKETING pages' content column — wider than the rest of the app on
      purpose, and a separate fact from --layout-content-max (the shadowing
      shell). Frame 347:6277, the binding design for `/`, is 1280 wide and puts
@@ -440,6 +447,13 @@
   --layout-companion-width: clamp( calc(240 * var(--density-unit)), 27.5%, calc(340 * var(--density-unit)) );
   --layout-header-height: calc(64 * var(--density-unit));
   --workspace-video-reserve: calc(288 * var(--density-unit));
+  --workspace-focus-max: calc(960 * var(--density-unit));
+  --workspace-left-min: calc(352 * var(--density-unit));
+  --workspace-right-min: calc(320 * var(--density-unit));
+  --workspace-divider-width: calc(8 * var(--density-unit));
+  --workspace-pip-width: calc(320 * var(--density-unit));
+  --workspace-pip-clearance: calc(320 * var(--density-unit));
+  --workspace-player-controls: calc(88 * var(--density-unit));
   --text-caption: max(0.6875rem, calc(12 * var(--density-unit)));
   --leading-caption: max(1.03125rem, calc(18 * var(--density-unit)));
   --text-body: calc(14 * var(--density-unit));
@@ -1235,6 +1249,23 @@
   transition-duration: 0.001ms !important;
   transition-delay: 0s !important;
   scroll-behavior: auto !important;
+}
+
+[data-workspace-player]:fullscreen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: black;
+}
+
+[data-workspace-player]:fullscreen [data-workspace-player-video] {
+  width: min(100%, calc((100dvh - var(--workspace-player-controls)) * 16 / 9));
+}
+
+[data-workspace-player]:fullscreen [data-workspace-player-controls] {
+  background: hsl(var(--card));
 }
 
 .mobile-app-handoff {

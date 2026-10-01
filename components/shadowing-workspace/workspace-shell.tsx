@@ -1,15 +1,22 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
 import { LiveSentence } from "./live-sentence";
-import { PlaybackRoot } from "./playback-root";
+import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { WorkspacePlayer } from "./workspace-player";
-import { WorkspaceProviders } from "./workspace-context";
+import { usePlaybackController, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
+import { WorkspaceDivider } from "./workspace-divider";
+import { useFullscreen } from "./use-fullscreen";
+import { useWorkspaceShortcuts } from "./use-workspace-shortcuts";
+import { escapeAction, type FullscreenTarget } from "@/lib/shadowing-workspace/workspace-view";
+import { useTranslations } from "@/lib/i18n";
+import { HEADER_ICON_BUTTON } from "./lesson-bookmark-button";
+import { FullscreenGlyph } from "./player-glyphs";
 
 // useLayoutEffect warns during SSR; on the client it runs before paint, so the session position never flashes.
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -43,17 +50,62 @@ export function ShadowingWorkspaceShell({
   return (
     <WorkspaceProviders bootstrap={bootstrap} initialPosition={initialPosition}>
       <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={bootstrap.resume?.lastWatchedAt ?? null}>
-        {/* Bounded to the viewport: the transcript scrolls inside its own column and the page never does. */}
-        <div className="grid h-dvh grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]" data-testid="shadowing-workspace">
-          <div className="col-span-3" data-testid="workspace-header-slot"><WorkspaceHeader /></div>
-          <div className="flex min-w-0 flex-col gap-md p-md" data-testid="workspace-player-slot">
-            <WorkspacePlayer />
-            <LiveSentence />
-          </div>
-          <div aria-hidden="true" className="w-px bg-border" data-testid="workspace-divider-slot" />
-          <div className="min-h-0 min-w-0">{children}</div>
-        </div>
+        <WorkspaceLayout>{children}</WorkspaceLayout>
       </PlaybackRoot>
     </WorkspaceProviders>
+  );
+}
+
+export function workspaceGridTemplateColumns(ratio: number): string {
+  return `minmax(var(--workspace-left-min), ${ratio * 100}fr) var(--workspace-divider-width) minmax(var(--workspace-right-min), ${(1 - ratio) * 100}fr)`;
+}
+
+function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("shadowing");
+  const [session, dispatch] = useSession();
+  const controller = usePlaybackController();
+  const { toggleLoop } = usePlayerWiring();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<HTMLElement>(null);
+  const setFullscreen = useCallback((target: FullscreenTarget) => dispatch({ type: "set-fullscreen", target }), [dispatch]);
+  const { requestFullscreen, supported: fullscreenSupported } = useFullscreen(rootRef, playerRef, setFullscreen);
+  const focusFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("workspace", trigger), [requestFullscreen]);
+  const playerFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("player", trigger), [requestFullscreen]);
+  const shortcuts = useMemo(() => ({
+    togglePlay: () => controller.togglePlay(), previousSentence: () => controller.previousSentence(), nextSentence: () => controller.nextSentence(), rewind: (seconds: number) => controller.rewind(seconds),
+    toggleLoop, toggleFocus: () => dispatch({ type: "toggle-view", view: "focus" }),
+  }), [controller, dispatch, toggleLoop]);
+  useWorkspaceShortcuts(shortcuts);
+
+  useEffect(() => {
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented || !(event.target instanceof Element) || event.target.closest("[role='dialog'], [data-radix-popper-content-wrapper]")) return;
+      const action = escapeAction({ popoverOpen: session.openPopover !== null, fullscreen: session.fullscreen, view: session.view });
+      if (action === "close-popover") dispatch({ type: "set-popover", id: null });
+      if (action === "exit-view") dispatch({ type: "exit-view" });
+    };
+    document.addEventListener("keydown", onEscape);
+    return () => document.removeEventListener("keydown", onEscape);
+  }, [dispatch, session.fullscreen, session.openPopover, session.view]);
+
+  const normal = session.view === "normal";
+  const fullTranscript = session.view === "full-transcript";
+  return (
+    <div
+      ref={rootRef}
+      className={normal ? "grid h-dvh overflow-hidden grid-rows-[auto_minmax(0,1fr)]" : "grid h-dvh overflow-hidden grid-cols-1 grid-rows-[auto_minmax(0,1fr)]"}
+      style={normal ? { gridTemplateColumns: workspaceGridTemplateColumns(session.splitRatio) } : undefined}
+      data-testid="shadowing-workspace"
+    >
+      <div className={normal ? "col-span-3" : "col-span-1"} data-testid="workspace-header-slot">
+        <WorkspaceHeader afterFocus={fullscreenSupported ? <button type="button" aria-label={t("workspace.header.fullscreen")} title={t("workspace.header.fullscreen")} aria-pressed={session.fullscreen === "workspace"} onClick={(event) => focusFullscreen(event.currentTarget)} className={HEADER_ICON_BUTTON}><FullscreenGlyph className="size-icon-sm" /></button> : undefined} />
+      </div>
+      <div id="workspace-player-pane" className={fullTranscript ? "fixed bottom-md right-md z-10 w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-w-0 flex-col gap-md p-md"} data-testid="workspace-player-slot">
+        <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
+        {!fullTranscript && <LiveSentence />}
+      </div>
+      {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
+      {session.view !== "focus" && <div className={fullTranscript ? "col-span-1 row-start-2 min-h-0 min-w-0 p-md" : "min-h-0 min-w-0"}>{children}</div>}
+    </div>
   );
 }

@@ -206,6 +206,7 @@
       "backToHub": "Quay lại Shadowing Hub"
     },
     "regionLabel": "Luyện shadowing",
+    "divider": "Thay đổi kích thước các khung học",
     "player": {
       "label": "Trình phát",
       "play": "Phát",
@@ -258,6 +259,7 @@
       "minutes": "{minutes} phút",
       "sentenceCounter": "Câu {current} / {total}",
       "focusMode": "Chế độ tập trung",
+      "fullscreen": "Toàn màn hình không gian học",
       "bookmarkLesson": "Đánh dấu bài học",
       "more": "Thao tác khác",
       "downloadTranscript": "Tải phụ đề",

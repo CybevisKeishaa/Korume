@@ -1,12 +1,13 @@
 import { renderToString } from "react-dom/server";
-import { within } from "@testing-library/react";
-import { render, TestIntlProvider } from "@/test/render";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { render, TestIntlProvider, waitFor } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
-import { usePositionStore } from "./workspace-context";
-import { ShadowingWorkspaceShell } from "./workspace-shell";
+import { usePlaybackController, usePositionStore } from "./workspace-context";
+import { ShadowingWorkspaceShell, workspaceGridTemplateColumns } from "./workspace-shell";
+import { TranscriptPanel } from "./transcript-panel";
 
 const router = { refresh: vi.fn() };
 let pathname = "/en/shadowing/video-1";
@@ -34,9 +35,11 @@ const bootstrap: WorkspaceBootstrap = {
 };
 
 let observedStore: ReturnType<typeof usePositionStore> | undefined;
+let observedController: ReturnType<typeof usePlaybackController> | undefined;
 
 function StoreProbe(): null {
   observedStore = usePositionStore();
+  observedController = usePlaybackController();
   return null;
 }
 
@@ -47,13 +50,14 @@ describe("ShadowingWorkspaceShell", () => {
     yt = installYouTubeStub();
     sessionStorage.clear();
     observedStore = undefined;
+    observedController = undefined;
     pathname = "/en/shadowing/video-1";
     searchParams = new URLSearchParams("line=line-1");
   });
 
   it("starts at a known requested line, renders the header, and leaves structural slots free of route data", () => {
     const linkedBootstrap = { ...bootstrap, transcript: { id: "transcript-1", lines: [{ id: "line-1", index: 0, startTime: 12, endTime: 15, textJp: "one", textTranslation: null, furigana: null }] } };
-    const { getByTestId } = render(
+    const { getByRole, getByTestId } = render(
       <ShadowingWorkspaceShell bootstrap={linkedBootstrap}><StoreProbe /><section aria-label="Shadowing practice" /></ShadowingWorkspaceShell>,
     );
 
@@ -61,7 +65,17 @@ describe("ShadowingWorkspaceShell", () => {
     expect(within(getByTestId("workspace-header-slot")).getByRole("heading", { level: 1, name: "Episode 1" })).toBeInTheDocument();
     expect(getByTestId("workspace-player-slot")).not.toHaveAttribute("data-line-id");
     expect(observedStore?.get()).toBe(12);
-    expect(getByTestId("workspace-divider-slot")).toBeEmptyDOMElement();
+    expect(getByRole("separator")).toHaveAttribute("aria-orientation", "vertical");
+  });
+
+  it("uses a definite divider track and flex factors that cannot leave an empty grid gap", () => {
+    const template = workspaceGridTemplateColumns(0.7735);
+    const factors = [...template.matchAll(/([\d.]+)fr/g)].map(([, factor]) => Number(factor));
+
+    expect(template).not.toMatch(/\bauto\b/);
+    expect(template).toContain("var(--workspace-divider-width)");
+    expect(factors).toHaveLength(2);
+    expect(factors.every((factor) => factor >= 1)).toBe(true);
   });
 
   it("ignores an unknown requested line and resumes the matching session record", () => {
@@ -105,5 +119,183 @@ describe("ShadowingWorkspaceShell", () => {
     );
 
     expect(observedStore).toBe(initialStore);
+  });
+
+  it("turns the header Focus Mode control into a focused player view without remounting the YouTube player", async () => {
+    render(
+      <ShadowingWorkspaceShell bootstrap={bootstrap}>
+        <TranscriptPanel />
+      </ShadowingWorkspaceShell>,
+    );
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Focus Mode" }));
+
+    expect(screen.getByRole("button", { name: "Focus Mode" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("heading", { name: "Transcript" })).not.toBeInTheDocument();
+    expect(yt.players).toHaveLength(1);
+  });
+
+  it("keeps global shortcuts active in focus view and reflects L on the shared Sentence pill", async () => {
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /><TranscriptPanel /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Focus Mode" }));
+
+    const loop = screen.getByRole("button", { name: "Sentence loop" });
+    fireEvent.keyDown(document.body, { key: "l" });
+    expect(loop).toHaveAttribute("aria-pressed", "true");
+    expect(observedController?.loopConfig()).toMatchObject({ enabled: true, count: 0 });
+    fireEvent.keyDown(document.body, { key: "l" });
+    expect(loop).toHaveAttribute("aria-pressed", "false");
+    expect(observedController?.loopConfig()).toMatchObject({ enabled: false, count: 0 });
+    fireEvent.keyDown(document.body, { key: "l" });
+    fireEvent.keyDown(document.body, { key: " " });
+    const player = yt.players[0];
+    expect(player).toBeDefined();
+    expect(player?.getPlayerState()).toBe(1);
+    fireEvent.keyDown(screen.getByTestId("shadowing-workspace"), { key: " " });
+    expect(player?.getPlayerState()).toBe(2);
+  });
+
+  it("lets the overflow popover consume Escape in focus view instead of also exiting the view", async () => {
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Focus Mode" }));
+    const more = screen.getByRole("button", { name: "More actions" });
+    fireEvent.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.keyDown(document.body, { key: "Escape" });
+
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Focus Mode" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("uses one player wrapper as a bottom-right PiP while the full transcript takes the workspace", async () => {
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
+
+    expect(screen.queryByRole("heading", { name: "Live sentence" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("workspace-player-slot")).toHaveClass("fixed");
+    expect(screen.getByTestId("workspace-player-slot")).toHaveClass("w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]");
+    expect(screen.getByTestId("transcript-scroll")).toHaveClass("pb-[--workspace-pip-clearance]");
+    expect(screen.getByRole("heading", { name: "Transcript" })).toBeInTheDocument();
+    expect(yt.players).toHaveLength(1);
+  });
+
+  it("keeps one player through normal, focus, full-transcript, and normal again", async () => {
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const focus = screen.getByRole("button", { name: "Focus Mode" });
+    fireEvent.click(focus);
+    expect(yt.players).toHaveLength(1);
+    fireEvent.click(focus);
+    fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
+    expect(yt.players).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
+    expect(yt.players).toHaveLength(1);
+    expect(screen.getByRole("separator")).toBeInTheDocument();
+  });
+
+  it("keeps the YouTube player mounted through a divider drag and refreshed settings", async () => {
+    const view = render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const divider = screen.getByRole("separator");
+    // jsdom has no layout: a 1000px workspace whose token minimums (the divider's probe nodes) are 300px.
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+      const width = this.style.width.startsWith("var(") ? 300 : 1000;
+      return { x: 0, y: 0, top: 0, left: 0, bottom: 0, right: width, width, height: 0, toJSON: () => ({}) };
+    });
+    try {
+      Object.assign(divider, { setPointerCapture: vi.fn(), hasPointerCapture: () => true });
+      fireEvent(divider, new MouseEvent("pointerdown", { bubbles: true, clientX: 100 }));
+      // The drag really dispatched a split (clamped to the 300px left minimum), not a no-op.
+      expect(screen.getByRole("separator")).toHaveAttribute("aria-valuenow", "30");
+      expect(yt.players).toHaveLength(1);
+    } finally {
+      vi.restoreAllMocks();
+    }
+    view.rerender(<ShadowingWorkspaceShell bootstrap={{ ...bootstrap, preferences: { ...bootstrap.preferences, playbackDefaultRate: 0.75 } }}><TranscriptPanel /></ShadowingWorkspaceShell>);
+
+    expect(yt.players).toHaveLength(1);
+  });
+
+  it("fullscreens the player container, not its Live Sentence sibling", async () => {
+    const originalEnabled = Object.getOwnPropertyDescriptor(document, "fullscreenEnabled");
+    const originalRequest = HTMLElement.prototype.requestFullscreen;
+    Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: true });
+    const requestFullscreen = vi.fn(function (this: HTMLElement) { return Promise.resolve(); });
+    HTMLElement.prototype.requestFullscreen = requestFullscreen;
+    try {
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Player fullscreen" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Workspace fullscreen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Player fullscreen" }));
+
+    expect(requestFullscreen.mock.instances[0]).toBe(screen.getByTestId("shadowing-workspace"));
+    const target = requestFullscreen.mock.instances[1] as unknown as HTMLElement;
+    expect(target).toBe(screen.getByRole("region", { name: "Player" }));
+    expect(target.contains(screen.getByRole("region", { name: "Live sentence" }))).toBe(false);
+    } finally {
+      HTMLElement.prototype.requestFullscreen = originalRequest;
+      if (originalEnabled) Object.defineProperty(document, "fullscreenEnabled", originalEnabled);
+      else delete (document as { fullscreenEnabled?: boolean }).fullscreenEnabled;
+    }
+  });
+
+  it("leaves Escape to the browser while fullscreen, so one press exits fullscreen and not also the view", async () => {
+    const originalEnabled = Object.getOwnPropertyDescriptor(document, "fullscreenEnabled");
+    const originalElement = Object.getOwnPropertyDescriptor(document, "fullscreenElement");
+    const originalRequest = HTMLElement.prototype.requestFullscreen;
+    let fullscreenElement: Element | null = null;
+    Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: true });
+    Object.defineProperty(document, "fullscreenElement", { configurable: true, get: () => fullscreenElement });
+    HTMLElement.prototype.requestFullscreen = vi.fn(function (this: HTMLElement) {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- the shim records which element went fullscreen
+      fullscreenElement = this;
+      document.dispatchEvent(new Event("fullscreenchange"));
+      return Promise.resolve();
+    });
+    try {
+      render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
+      const focus = screen.getByRole("button", { name: "Focus Mode" });
+      fireEvent.click(focus);
+      const fullscreen = await screen.findByRole("button", { name: "Workspace fullscreen" });
+      fireEvent.click(fullscreen);
+      expect(fullscreen).toHaveAttribute("aria-pressed", "true");
+
+      // The browser consumes this Escape to leave fullscreen; the shell must not also exit Focus.
+      fireEvent.keyDown(document.body, { key: "Escape" });
+      expect(focus).toHaveAttribute("aria-pressed", "true");
+      act(() => {
+        fullscreenElement = null;
+        document.dispatchEvent(new Event("fullscreenchange"));
+      });
+      expect(fullscreen).toHaveAttribute("aria-pressed", "false");
+      expect(document.activeElement).toBe(fullscreen);
+
+      // Out of fullscreen, the next Escape exits the view.
+      fireEvent.keyDown(document.body, { key: "Escape" });
+      expect(focus).toHaveAttribute("aria-pressed", "false");
+    } finally {
+      HTMLElement.prototype.requestFullscreen = originalRequest;
+      if (originalElement) Object.defineProperty(document, "fullscreenElement", originalElement);
+      else delete (document as { fullscreenElement?: Element | null }).fullscreenElement;
+      if (originalEnabled) Object.defineProperty(document, "fullscreenEnabled", originalEnabled);
+      else delete (document as { fullscreenEnabled?: boolean }).fullscreenEnabled;
+    }
+  });
+
+  it("hides both fullscreen controls when the browser does not support fullscreen", async () => {
+    const originalEnabled = Object.getOwnPropertyDescriptor(document, "fullscreenEnabled");
+    Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: false });
+    try {
+      render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
+      await waitFor(() => expect(screen.queryByRole("button", { name: "Workspace fullscreen" })).toBeNull());
+      expect(screen.queryByRole("button", { name: "Player fullscreen" })).toBeNull();
+    } finally {
+      if (originalEnabled) Object.defineProperty(document, "fullscreenEnabled", originalEnabled);
+      else delete (document as { fullscreenEnabled?: boolean }).fullscreenEnabled;
+    }
   });
 });

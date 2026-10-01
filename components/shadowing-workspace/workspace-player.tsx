@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { YouTubePlayer } from "@/components/video-player/youtube-player";
 import { usePlayerWiring } from "./playback-root";
@@ -11,7 +11,7 @@ import {
 import { ProgressBar } from "./progress-bar";
 import { SentenceLoopControl } from "./sentence-loop-control";
 import { SpeedControl } from "./speed-control";
-import { useCurrentSentence, useLesson, usePlaybackController, useSession, useStartPosition } from "./workspace-context";
+import { useCurrentSentence, useLesson, usePlaybackController, useStartPosition } from "./workspace-context";
 
 const ICON_BUTTON = "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-pressed:text-primary-strong";
 
@@ -19,24 +19,23 @@ const ICON_BUTTON = "flex h-control-sm aspect-square items-center justify-center
  * The workspace player (Figma `105:3593`, spec §7.3): a real 16:9 YouTube embed (not the frame's crop),
  * the current-line subtitle overlay, a centre play button while paused, then the control bar.
  */
-export function WorkspacePlayer() {
+export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: HTMLElement): void; fullscreenAvailable: boolean }>(function WorkspacePlayer({ onFullscreen, fullscreenAvailable }, ref) {
   const t = useTranslations("shadowing");
   const { video, lines } = useLesson();
   const controller = usePlaybackController();
   const { adapterRef, onReady, onStateChange, playing } = usePlayerWiring();
   const startPosition = useStartPosition();
   const { index } = useCurrentSentence();
-  const [, dispatch] = useSession();
   const [subtitles, setSubtitles] = useState(true);
   const [muted, setMuted] = useState(false);
   const [playerError, setPlayerError] = useState<number | null>(null);
   const subtitle = index === null ? null : lines[index]?.textJp ?? null;
 
   return (
-    <section aria-label={t("workspace.player.label")} className="overflow-hidden rounded-lg border border-border bg-card">
+    <section ref={ref} aria-label={t("workspace.player.label")} data-workspace-player className="overflow-hidden rounded-lg border border-border bg-card">
       {/* Width = min(column, (viewport height − the reserve) × 16/9): at 1280×529 Live Sentence stays in view (§7.1). */}
       <div className="bg-black">
-      <div className="relative mx-auto aspect-video w-[min(100%,calc((100dvh-var(--workspace-video-reserve))*16/9))]">
+      <div data-workspace-player-video className="relative mx-auto aspect-video w-[min(100%,calc((100dvh-var(--workspace-video-reserve))*16/9))]">
         <YouTubePlayer
           ref={adapterRef}
           videoId={video.youtubeVideoId}
@@ -70,9 +69,9 @@ export function WorkspacePlayer() {
       </div>
       </div>
 
-      <div className="px-sm pb-xs pt-2xs">
+      <div data-workspace-player-controls className="px-sm pb-xs pt-2xs">
         <ProgressBar duration={video.durationSeconds} />
-        <div className="flex items-center justify-between gap-sm">
+        <div className="flex flex-wrap items-center justify-between gap-x-sm">
           <div className="flex items-center gap-2xs">
             <button type="button" className={ICON_BUTTON} aria-label={t("workspace.player.previous")} onClick={() => controller.previousSentence()}>
               <PreviousGlyph className="size-icon-sm" />
@@ -109,17 +108,17 @@ export function WorkspacePlayer() {
             >
               {subtitles ? <SubtitlesGlyph className="size-icon-sm" /> : <SubtitlesOffGlyph className="size-icon-sm" />}
             </button>
-            <button
+            {fullscreenAvailable && <button
               type="button"
               className={ICON_BUTTON}
               aria-label={t("workspace.player.fullscreen")}
-              onClick={() => dispatch({ type: "set-fullscreen", target: "player" })}
+              onClick={(event) => onFullscreen(event.currentTarget)}
             >
               <FullscreenGlyph className="size-icon-sm" />
-            </button>
+            </button>}
           </div>
         </div>
       </div>
     </section>
   );
-}
+});

@@ -492,6 +492,7 @@ describe("shadowing.json EN workspace transcript recovery", () => {
     expect(en.workspace.emptyTranscript.retry).toBe("Try again");
     expect(en.workspace.emptyTranscript.backToHub).toBe("Back to Shadowing Hub");
     expect(en.workspace.regionLabel).toBe("Shadowing practice");
+    expect(en.workspace.divider).toBe("Resize workspace panes");
   });
 });
 
@@ -564,6 +565,7 @@ describe("shadowing.json EN workspace header", () => {
       minutes: "{minutes} min",
       sentenceCounter: "Sentence {current} / {total}",
       focusMode: "Focus Mode",
+      fullscreen: "Workspace fullscreen",
       bookmarkLesson: "Bookmark lesson",
       more: "More actions",
       downloadTranscript: "Download transcript",

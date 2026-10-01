@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { Popover } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { PLAYBACK_LOOP_COUNT_OPTIONS, type PlaybackLoopCount } from "@/lib/preferences/options";
-import { usePlaybackController, useSession } from "./workspace-context";
+import { useSession } from "./workspace-context";
+import { usePlayerWiring } from "./playback-root";
 
 const POPOVER_ID = "sentence-loop";
 const countLabel = (count: PlaybackLoopCount) => (count === 0 ? "∞" : `${count}×`);
@@ -16,16 +16,14 @@ const countLabel = (count: PlaybackLoopCount) => (count === 0 ? "∞" : `${count
  */
 export function SentenceLoopControl() {
   const t = useTranslations("shadowing");
-  const controller = usePlaybackController();
+  const { loop, setLoop } = usePlayerWiring();
   const [session, dispatch] = useSession();
-  const [loop, setLoop] = useState(() => controller.loopConfig());
   const open = session.openPopover === POPOVER_ID;
 
   function choose(count: PlaybackLoopCount) {
     // Choosing a count is choosing to loop; 1× is "play once", i.e. loop off.
     const next = { count, enabled: count !== 1 };
-    controller.setLoop(next);
-    setLoop((current) => ({ ...current, ...next }));
+    setLoop(next);
     dispatch({ type: "set-popover", id: null });
   }
 

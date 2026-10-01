@@ -20,7 +20,7 @@ describe("workspace shortcuts", () => {
   });
 
   it("leaves interactive and editable targets alone", () => {
-    const targets = ["input", "textarea", "select", "button", "a[href]", '[role="slider"]', '[role="menuitem"]', '[role="option"]', '[contenteditable="true"]', '[role="dialog"] span'];
+    const targets = ["input", "textarea", "select", "button", "a[href]", '[role="slider"]', '[role="separator"]', '[role="menuitem"]', '[role="option"]', '[contenteditable="true"]', '[role="dialog"] span'];
     for (const selector of targets) {
       let target: Element = document.createElement("div");
       if (selector === "a[href]") target = Object.assign(document.createElement("a"), { href: "#" });

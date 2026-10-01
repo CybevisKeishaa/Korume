@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { YT_PLAYER_STATE, type YtPlayerStateValue } from "@/components/video-player/youtube-player";
 import type { LoopConfig } from "@/lib/shadowing-workspace/loop-machine";
+import type { PlaybackLoopCount } from "@/lib/preferences/options";
 import type { PlayerAdapter } from "./player-adapter";
 import { usePlaybackControllerState } from "./use-playback-controller";
 import { useProgressPersistence } from "./use-progress-persistence";
@@ -14,6 +15,11 @@ interface PlayerWiring {
   onStateChange(state: YtPlayerStateValue): void;
   /** Re-renders the controls when the player starts or stops (the controller's own state lives in refs). */
   playing: boolean;
+  loop: LoopConfig;
+  setLoop(config: Partial<LoopConfig>): void;
+  toggleLoop(): void;
+  rate: number;
+  setRate(rate: number): void;
 }
 
 const PlayerWiringContext = createContext<PlayerWiring | null>(null);
@@ -45,6 +51,9 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
     count: preferences.playbackLoopCount,
     autoPause: preferences.playbackAutoPause,
   }).current;
+  const [loop, setLoopState] = useState(initialLoop);
+  const lastLoopCount = useRef<PlaybackLoopCount>(initialLoop.count === 1 ? 0 : initialLoop.count);
+  const [rate, setRateState] = useState<number>(preferences.playbackDefaultRate);
   const flushRef = useRef<(reason: "pause" | "ended") => void>(() => undefined);
   const onSentence = useCallback(() => undefined, []);
 
@@ -73,7 +82,30 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
     setPlaying(state === YT_PLAYER_STATE.PLAYING || state === YT_PLAYER_STATE.BUFFERING);
   }, [onStateChange]);
 
-  const wiring = useMemo(() => ({ adapterRef, onReady, onStateChange: handleStateChange, playing }), [handleStateChange, onReady, playing]);
+  const setLoop = useCallback((config: Partial<LoopConfig>) => {
+    setLoopState((current) => {
+      const next = { ...current, ...config };
+      if (next.count !== 1) lastLoopCount.current = next.count;
+      controller.setLoop(next);
+      return next;
+    });
+  }, [controller]);
+  const toggleLoop = useCallback(() => {
+    setLoopState((current) => {
+      const next = current.enabled
+        ? { ...current, enabled: false }
+        : { ...current, enabled: true, count: current.count === 1 ? lastLoopCount.current : current.count };
+      if (next.count !== 1) lastLoopCount.current = next.count;
+      controller.setLoop(next);
+      return next;
+    });
+  }, [controller]);
+  const setRate = useCallback((next: number) => {
+    controller.setRate(next);
+    setRateState(next);
+  }, [controller]);
+
+  const wiring = useMemo(() => ({ adapterRef, onReady, onStateChange: handleStateChange, playing, loop, setLoop, toggleLoop, rate, setRate }), [handleStateChange, loop, onReady, playing, rate, setLoop, setRate, toggleLoop]);
   return (
     <ControllerProvider controller={controller}>
       <PlayerWiringContext.Provider value={wiring}>{children}</PlayerWiringContext.Provider>

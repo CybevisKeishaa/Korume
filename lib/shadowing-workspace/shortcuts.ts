@@ -1,7 +1,7 @@
 export type WorkspaceShortcut = "toggle-play" | "previous-sentence" | "next-sentence" | "rewind-5" | "toggle-loop" | "toggle-focus";
 
 export function isInteractiveTarget(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest('input, textarea, select, button, a[href], [role="slider"], [role="menuitem"], [role="menuitemradio"], [role="option"], [role="dialog"], [role="button"], [role="switch"], [role="tab"], [role="checkbox"], [role="menuitemcheckbox"], [role="combobox"], [role="textbox"], [role="spinbutton"], [contenteditable]:not([contenteditable="false"])') !== null;
+  return target instanceof Element && target.closest('input, textarea, select, button, a[href], [role="slider"], [role="separator"], [role="menuitem"], [role="menuitemradio"], [role="option"], [role="dialog"], [role="button"], [role="switch"], [role="tab"], [role="checkbox"], [role="menuitemcheckbox"], [role="combobox"], [role="textbox"], [role="spinbutton"], [contenteditable]:not([contenteditable="false"])') !== null;
 }
 
 export function shortcutFor(event: Pick<KeyboardEvent, "key" | "shiftKey" | "ctrlKey" | "metaKey" | "altKey" | "target">): WorkspaceShortcut | null {
