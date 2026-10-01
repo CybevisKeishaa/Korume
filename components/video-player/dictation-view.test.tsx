@@ -12,6 +12,7 @@ const VIDEO: VideoRow = {
   title: "Test Video",
   duration_seconds: null,
   thumbnail_url: null,
+  channel_title: null,
   jlpt_level_estimate: null,
   added_by_user_id: "user-1",
   library_access: "FREE",

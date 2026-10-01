@@ -34,6 +34,7 @@ function video(libraryAccess: VideoRow["library_access"]): VideoRow {
     title: "Existing lesson",
     duration_seconds: null,
     thumbnail_url: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+    channel_title: null,
     jlpt_level_estimate: null,
     added_by_user_id: libraryAccess === "PRIVATE" ? REQUESTER_ID : null,
     library_access: libraryAccess,
@@ -81,6 +82,7 @@ function providers(overrides: Partial<LessonCreationDependencies> = {}): LessonC
     fetchOembed: vi.fn().mockResolvedValue({
       title: "  A useful lesson  ",
       thumbnailUrl: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+      authorName: "  Korume Channel  ",
     }),
     fetchCaptions: vi.fn().mockResolvedValue({
       source: "youtube_caption",
@@ -220,6 +222,7 @@ describe("processClaimedLessonCreationJob", () => {
     expect(store.finalizations[0]?.content).toEqual({
       title: "A useful lesson",
       thumbnailUrl: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+      channelTitle: "Korume Channel",
       source: "youtube_caption",
       lines: [
         {
@@ -251,6 +254,23 @@ describe("processClaimedLessonCreationJob", () => {
       }),
     );
     expect(store.finalizations).toEqual([]);
+  });
+
+  it.each([
+    [" \t\n\r\u3000 ", null],
+    [undefined, null],
+    ["Normal channel", "Normal channel"],
+    ["x".repeat(201), "x".repeat(200)],
+    ["😀".repeat(201), "😀".repeat(200)],
+  ])("normalizes an optional oEmbed author name", async (authorName, channelTitle) => {
+    const dependency = providers({ fetchOembed: vi.fn().mockResolvedValue({
+      title: "Lesson", thumbnailUrl: "https://i.ytimg.com/vi/id/hq.jpg", authorName,
+    }) as never });
+    const store = persistence();
+
+    await processClaimedLessonCreationJob(claim(), dependency, store);
+
+    expect(store.finalizations[0]?.content?.channelTitle).toBe(channelTitle);
   });
 
   it.each([

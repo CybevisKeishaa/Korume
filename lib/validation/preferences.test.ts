@@ -15,6 +15,20 @@ describe("preferencesPatchSchema — one logical control per PATCH (spec §3)", 
       { reduceMotion: true },
       { microphoneEnabled: false },
       { cameraEnabled: true },
+      { readingFurigana: "adaptive" },
+      { readingTranslation: "reveal" },
+      { readingJpFont: "mincho" },
+      { readingTextSize: "xl" },
+      { readingLineHeight: "airy" },
+      { readingWidth: "wide" },
+      { readingEmphasis: "strong" },
+      { readingColorPreset: "night" },
+      { playbackDefaultRate: 0.75 },
+      { playbackLoopCount: 3 },
+      { playbackAutoPause: true },
+      { showShortcutHints: false },
+      { resumeBehavior: "restart" },
+      { studyAtmosphere: "rainy_day" },
     ]) expect(parse(body).success, JSON.stringify(body)).toBe(true);
   });
 
@@ -43,5 +57,9 @@ describe("preferencesPatchSchema — one logical control per PATCH (spec §3)", 
     expect(parse({}).success).toBe(false);
     expect(parse({ theme: "light" }).success).toBe(false);
     expect(parse({ dailyMinutes: 25 }).success).toBe(false);
+    expect(parse({ readingFurigana: "all" }).success).toBe(false);
+    expect(parse({ playbackDefaultRate: 0.8 }).success).toBe(false);
+    expect(parse({ playbackLoopCount: 2 }).success).toBe(false);
+    expect(parse({ readingFurigana: "always", readingWidth: "wide" }).success).toBe(false);
   });
 });

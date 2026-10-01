@@ -76,6 +76,23 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   (`F6 channel title was <NULL>`); restored. Fresh reset; verify:db lesson-jobs/shadowing/settings/
   pronunciation all 0; tsc 0, lint 0, protocol 0, vitest 0 (3700 tests).
 
+- Task 2 (Codex resume): focused data/API test batch exited 1 as expected before fix because an insert `42501` refusal was returned as success. Removing that success case made the focused marks/routes batch pass (13 tests); required mutation restoring it exited 1 at the 404 assertion and restore passed. Pipeline/store/worker/videos/progress: 0 (5 files, 104 tests); preferences/transcripts/marks/bookmarks/routes: 0 (7 files, 41 tests); VideoRow fixture tests: 0 (5 files, 76 tests); videos/bookmarks: 0 (13 tests). No-row resume/bookmark mutations both failed, then restored and passed. `git diff --check`: 0; `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1`: 0 (`Codex protocol: valid`). Full Vitest, tsc, lint, protocol, reset/lesson-jobs, independent review, and live embedded-filter verification remain Claude-only. Report: `.superpowers/sdd/shadowing-workspace-1a/task-2-report.md`.
+- Task 2 command ledger: `node node_modules/vitest/vitest.mjs run lib/data/preferences.test.ts lib/validation/preferences.test.ts lib/data/transcripts.test.ts lib/data/videos.test.ts lib/data/sentence-marks.test.ts lib/data/lesson-bookmarks.test.ts app/api/sentence-marks/route.test.ts app/api/videos/[id]/bookmark/route.test.ts app/api/videos/[id]/progress/route.test.ts --reporter=dot` -> 1 (expected audit RED); marks/routes -> 0; marks mutation -> 1; marks restore -> 0; pipeline/store/worker/videos/progress -> 0 (104); preferences/transcripts/marks/bookmarks/routes -> 0 (41); VideoRow fixtures -> 0 (76); videos/bookmarks -> 0 (13); videos/bookmarks mutations -> 1; restore -> 0; `git diff --check` -> 0; `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` -> 0. Exact expanded commands: `.superpowers/sdd/shadowing-workspace-1a/task-2-report.md`.
+
+- Task 2 (Claude review): Codex run 1 stopped at its usage limit; run 2 resumed the partial tree
+  (174k tokens). Claude fixes: oEmbed author >200 code points is truncated (was nulled; matches the plan
+  and finalize's `left(…,200)`); `author_name` missing/non-string → `authorName: null` in
+  `lib/youtube/oembed.ts` (was a whole-job `metadata_unavailable`); `options.test.ts` defaults pin gained
+  the 14 new fields (full vitest had 1 red); Codex's unrequested `docs/lessons.md` edit reverted.
+  Independent review: 0 Critical / 2 Important / 7 Minor-nit, all test gaps — added: unknown insert/delete
+  error throws (marks + bookmarks), `!inner` select pinned, bookmark insert/delete/read shape,
+  `getMyLessonResume` user/video filters, route 400 for bad uuid / unknown kind. Mutations, each red then
+  restored: drop `!inner`; swallow insert error; drop resume `video_id` filter.
+  Live: embedded filter `transcript_lines!inner(transcript_id)` against local PostgREST with a temp auth
+  user — transcript A returned exactly its two marks in (line, kind) order, transcript B's mark absent;
+  temp user deleted. `verify:db:lesson-jobs` 0 (no SQL change in Task 2, so no reset).
+- Task 2 final (after the last edit): tsc 0, lint 0, protocol 0, vitest 0 (402 files, 3738 tests).
+
 ## Working tree and environment
 
 - Worktree `.worktrees/shadowing-workspace-1a`; `.env.local` copied; `npm ci` run 2026-10-01.
@@ -86,7 +103,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 

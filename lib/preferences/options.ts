@@ -60,6 +60,20 @@ export interface UserPreferences {
   pronunciationSort: PronunciationSort;
   pronunciationDuration: PronunciationDuration;
   pronunciationHideCompleted: boolean;
+  readingFurigana: ReadingFurigana;
+  readingTranslation: ReadingTranslation;
+  readingJpFont: ReadingJpFont;
+  readingTextSize: ReadingTextSize;
+  readingLineHeight: ReadingLineHeight;
+  readingWidth: ReadingWidth;
+  readingEmphasis: ReadingEmphasis;
+  readingColorPreset: ReadingColorPreset;
+  playbackDefaultRate: PlaybackRate;
+  playbackLoopCount: PlaybackLoopCount;
+  playbackAutoPause: boolean;
+  showShortcutHints: boolean;
+  resumeBehavior: ResumeBehavior;
+  studyAtmosphere: StudyAtmosphere;
   /** Lives on `users.daily_minutes`; carried here so one read serves the page. */
   dailyMinutes: number;
 }
@@ -76,6 +90,20 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   pronunciationSort: "recommended",
   pronunciationDuration: null,
   pronunciationHideCompleted: false,
+  readingFurigana: "adaptive",
+  readingTranslation: "always",
+  readingJpFont: "gothic",
+  readingTextSize: "m",
+  readingLineHeight: "comfortable",
+  readingWidth: "normal",
+  readingEmphasis: "soft",
+  readingColorPreset: "warm_cream",
+  playbackDefaultRate: 1,
+  playbackLoopCount: 1,
+  playbackAutoPause: false,
+  showShortcutHints: false,
+  resumeBehavior: "resume",
+  studyAtmosphere: "none",
   dailyMinutes: 15,
 };
 

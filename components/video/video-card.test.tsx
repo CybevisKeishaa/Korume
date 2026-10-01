@@ -9,6 +9,7 @@ const base: VideoRow = {
   title: "はじめての日本語",
   duration_seconds: 300,
   thumbnail_url: "https://i.ytimg.com/vi/yt1/hqdefault.jpg",
+  channel_title: null,
   jlpt_level_estimate: "N5",
   added_by_user_id: null,
   library_access: "FREE",

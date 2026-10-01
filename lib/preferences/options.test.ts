@@ -38,6 +38,10 @@ describe("preference options", () => {
       reviewFrequency: "normal", difficulty: "adaptive", displayScale: "normal",
       reduceMotion: false, microphoneEnabled: true, cameraEnabled: false, dailyMinutes: 15,
       pronunciationSort: "recommended", pronunciationDuration: null, pronunciationHideCompleted: false,
+      readingFurigana: "adaptive", readingTranslation: "always", readingJpFont: "gothic", readingTextSize: "m",
+      readingLineHeight: "comfortable", readingWidth: "normal", readingEmphasis: "soft",
+      readingColorPreset: "warm_cream", playbackDefaultRate: 1, playbackLoopCount: 1, playbackAutoPause: false,
+      showShortcutHints: false, resumeBehavior: "resume", studyAtmosphere: "none",
     });
   });
 });

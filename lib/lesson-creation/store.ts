@@ -47,6 +47,7 @@ export interface TransitionClaimedJobInput {
 export interface LessonCreationContent {
   title: string;
   thumbnailUrl: string | null;
+  channelTitle: string | null;
   source: "youtube_caption";
   lines: {
     startTime: number;
@@ -243,6 +244,7 @@ export async function finalizeClaimedJob(input: FinalizeClaimedJobInput): Promis
     p_content: content == null ? null : {
       title: content.title,
       thumbnail_url: content.thumbnailUrl,
+      channel_title: content.channelTitle,
       source: content.source,
       lines: content.lines.map((line) => ({
         start_time: line.startTime,

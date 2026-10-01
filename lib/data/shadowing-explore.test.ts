@@ -103,7 +103,7 @@ describe("getShadowingExplore", () => {
   });
 
   it("omits recommendations and the quiet suggestion when they fall outside the selected catalogue context", async () => {
-    const restaurantLesson: VideoRow = { id: "restaurant-lesson", youtube_video_id: "yt-restaurant", title: "Restaurant Japanese", duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" };
+    const restaurantLesson: VideoRow = { id: "restaurant-lesson", youtube_video_id: "yt-restaurant", title: "Restaurant Japanese", duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" };
     const client = exploreClient({
       user: USER,
       tables: {
@@ -122,7 +122,7 @@ describe("getShadowingExplore", () => {
   });
 
   it("keeps an in-context recommendation that is not among the newest lessons, and filters the library by the same context", async () => {
-    const lesson = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
+    const lesson = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
     const libraryReads: QueryCall[][] = [];
     const client = exploreClient({
       user: USER,
@@ -149,7 +149,7 @@ describe("getShadowingExplore", () => {
   });
 
   it("reads lines and summaries for shelf lessons only; a library card needs just its transcript's existence", async () => {
-    const lesson = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
+    const lesson = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
     const lineReads: unknown[][] = [];
     const summaryReads: unknown[][] = [];
     const inValues = (calls: QueryCall[]) => (calls.find((call) => call.op === "in") as { values: unknown[] }).values;
@@ -192,7 +192,7 @@ describe("getShadowingExplore", () => {
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
     vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
-    vi.mocked(listCollectionLessons).mockResolvedValue([{ id: "v1", youtube_video_id: "yt1", title: "Catalogued", duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" }]);
+    vi.mocked(listCollectionLessons).mockResolvedValue([{ id: "v1", youtube_video_id: "yt1", title: "Catalogued", duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" }]);
     vi.mocked(tokenize).mockResolvedValue([{ base: "食べる", pos: "動詞" }] as never);
     vi.mocked(contentLemmas).mockReturnValue(["食べる"]);
 
@@ -220,7 +220,7 @@ describe("getShadowingExplore", () => {
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
     vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
-    vi.mocked(listCollectionLessons).mockResolvedValue([{ id: "v1", youtube_video_id: "yt1", title: "Catalogued", duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" }]);
+    vi.mocked(listCollectionLessons).mockResolvedValue([{ id: "v1", youtube_video_id: "yt1", title: "Catalogued", duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" }]);
 
     const result = await getShadowingExplore();
 
@@ -232,7 +232,7 @@ describe("getShadowingExplore", () => {
   });
 
   it("projects all five authored shelves while leaving missing transcript data and unmeasured suggestions absent", async () => {
-    const video = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
+    const video = (id: string): VideoRow => ({ id, youtube_video_id: `yt-${id}`, title: `Lesson ${id}`, duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" });
     const client = exploreClient({
       user: USER,
       tables: {
@@ -275,7 +275,7 @@ describe("getShadowingExplore", () => {
       { id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 },
       { id: "c2", slug: "daily-conversation", title: "Daily", description: null, coverImageUrl: null, displayOrder: 2 },
     ]);
-    const repeated: VideoRow = { id: "v1", youtube_video_id: "yt1", title: "Repeated", duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" };
+    const repeated: VideoRow = { id: "v1", youtube_video_id: "yt1", title: "Repeated", duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" };
     vi.mocked(listCollectionLessons).mockResolvedValue([repeated]);
     vi.mocked(tokenize).mockResolvedValue([{ base: "åŒã˜", pos: "åè©ž" }] as never);
     vi.mocked(contentLemmas).mockReturnValue(["åŒã˜"]);
@@ -296,7 +296,7 @@ describe("getShadowingExplore", () => {
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
     vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
-    vi.mocked(listCollectionLessons).mockResolvedValue(Array.from({ length: 9 }, (_, index): VideoRow => ({ id: `v${index}`, youtube_video_id: `yt${index}`, title: `Lesson ${index}`, duration_seconds: 120, thumbnail_url: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" })));
+    vi.mocked(listCollectionLessons).mockResolvedValue(Array.from({ length: 9 }, (_, index): VideoRow => ({ id: `v${index}`, youtube_video_id: `yt${index}`, title: `Lesson ${index}`, duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" })));
 
     const result = await getShadowingExplore();
 

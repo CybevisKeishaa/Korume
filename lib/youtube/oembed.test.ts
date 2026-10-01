@@ -41,6 +41,16 @@ describe("fetchOembed — success", () => {
     });
   });
 
+  it.each([[undefined], [42]])("maps a missing or non-string author_name (%s) to null instead of failing", async (author) => {
+    mockFetchOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ title: "t", author_name: author, thumbnail_url: "u" }),
+    });
+
+    await expect(fetchOembed(ID)).resolves.toEqual({ title: "t", thumbnailUrl: "u", authorName: null });
+  });
+
   it("calls the keyless oEmbed endpoint with the correct video URL, no API key", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,

@@ -234,11 +234,11 @@ describe("lesson creation store", () => {
   it("translates atomic content payload keys exactly", async () => {
     const client = rpcFixture("finalize_lesson_creation_job", { ...row, state: "succeeded", step: "ready", lesson_id: lessonId });
     await finalizeClaimedJob({ ...finalizeInput, lessonId: null, content: {
-      title: "Lesson", thumbnailUrl: null, source: "youtube_caption",
+      title: "Lesson", thumbnailUrl: null, channelTitle: "Channel", source: "youtube_caption",
       lines: [{ startTime: 0, endTime: 2.5, textJp: "Caption", textTranslation: null, furiganaJson: null }],
     } });
     expectRpc(client, "finalize_lesson_creation_job", { ...finalizeArgs, p_lesson_id: null, p_content: {
-      title: "Lesson", thumbnail_url: null, source: "youtube_caption",
+      title: "Lesson", thumbnail_url: null, channel_title: "Channel", source: "youtube_caption",
       lines: [{ start_time: 0, end_time: 2.5, text_jp: "Caption", text_translation: null, furigana_json: null }],
     } });
   });

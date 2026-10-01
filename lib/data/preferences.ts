@@ -20,10 +20,24 @@ interface PreferencesRow {
   pronunciation_sort: UserPreferences["pronunciationSort"];
   pronunciation_duration: NonNullable<UserPreferences["pronunciationDuration"]> | null;
   pronunciation_hide_completed: boolean;
+  reading_furigana: UserPreferences["readingFurigana"];
+  reading_translation: UserPreferences["readingTranslation"];
+  reading_jp_font: UserPreferences["readingJpFont"];
+  reading_text_size: UserPreferences["readingTextSize"];
+  reading_line_height: UserPreferences["readingLineHeight"];
+  reading_width: UserPreferences["readingWidth"];
+  reading_emphasis: UserPreferences["readingEmphasis"];
+  reading_color_preset: UserPreferences["readingColorPreset"];
+  playback_default_rate: number | string;
+  playback_loop_count: UserPreferences["playbackLoopCount"];
+  playback_auto_pause: boolean;
+  show_shortcut_hints: boolean;
+  resume_behavior: UserPreferences["resumeBehavior"];
+  study_atmosphere: UserPreferences["studyAtmosphere"];
 }
 
 const COLUMNS =
-  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled, pronunciation_sort, pronunciation_duration, pronunciation_hide_completed";
+  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled, pronunciation_sort, pronunciation_duration, pronunciation_hide_completed, reading_furigana, reading_translation, reading_jp_font, reading_text_size, reading_line_height, reading_width, reading_emphasis, reading_color_preset, playback_default_rate, playback_loop_count, playback_auto_pause, show_shortcut_hints, resume_behavior, study_atmosphere";
 
 function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferences {
   if (!row) return { ...DEFAULT_PREFERENCES, dailyMinutes };
@@ -39,6 +53,20 @@ function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferen
     pronunciationSort: row.pronunciation_sort,
     pronunciationDuration: row.pronunciation_duration,
     pronunciationHideCompleted: row.pronunciation_hide_completed,
+    readingFurigana: row.reading_furigana,
+    readingTranslation: row.reading_translation,
+    readingJpFont: row.reading_jp_font,
+    readingTextSize: row.reading_text_size,
+    readingLineHeight: row.reading_line_height,
+    readingWidth: row.reading_width,
+    readingEmphasis: row.reading_emphasis,
+    readingColorPreset: row.reading_color_preset,
+    playbackDefaultRate: Number(row.playback_default_rate) as UserPreferences["playbackDefaultRate"],
+    playbackLoopCount: row.playback_loop_count,
+    playbackAutoPause: row.playback_auto_pause,
+    showShortcutHints: row.show_shortcut_hints,
+    resumeBehavior: row.resume_behavior,
+    studyAtmosphere: row.study_atmosphere,
     dailyMinutes,
   };
 }
@@ -115,6 +143,20 @@ const TO_COLUMN: Record<Exclude<keyof UserPreferences, "dailyMinutes">, string> 
   pronunciationSort: "pronunciation_sort",
   pronunciationDuration: "pronunciation_duration",
   pronunciationHideCompleted: "pronunciation_hide_completed",
+  readingFurigana: "reading_furigana",
+  readingTranslation: "reading_translation",
+  readingJpFont: "reading_jp_font",
+  readingTextSize: "reading_text_size",
+  readingLineHeight: "reading_line_height",
+  readingWidth: "reading_width",
+  readingEmphasis: "reading_emphasis",
+  readingColorPreset: "reading_color_preset",
+  playbackDefaultRate: "playback_default_rate",
+  playbackLoopCount: "playback_loop_count",
+  playbackAutoPause: "playback_auto_pause",
+  showShortcutHints: "show_shortcut_hints",
+  resumeBehavior: "resume_behavior",
+  studyAtmosphere: "study_atmosphere",
 };
 
 export async function updateMyPreferences(
