@@ -225,6 +225,12 @@
       "subtitlesShow": "Hiện phụ đề",
       "subtitlesHide": "Ẩn phụ đề",
       "fullscreen": "Toàn màn hình trình phát"
+    },
+    "liveSentence": {
+      "label": "Câu đang phát",
+      "hideJapanese": "Ẩn tiếng Nhật",
+      "showJapanese": "Hiện tiếng Nhật",
+      "showTranslation": "Hiện bản dịch"
     }
   }
 }

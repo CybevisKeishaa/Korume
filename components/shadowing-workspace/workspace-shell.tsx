@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
+import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot } from "./playback-root";
 import { WorkspacePlayer } from "./workspace-player";
 import { WorkspaceProviders } from "./workspace-context";
@@ -45,7 +46,7 @@ export function ShadowingWorkspaceShell({
           <div className="col-span-3" data-testid="workspace-header-slot" />
           <div className="flex min-w-0 flex-col gap-md p-md" data-testid="workspace-player-slot">
             <WorkspacePlayer />
-            <div data-testid="workspace-live-sentence-slot" />
+            <LiveSentence />
           </div>
           <div aria-hidden="true" className="w-px bg-border" data-testid="workspace-divider-slot" />
           <div className="min-w-0">{children}</div>

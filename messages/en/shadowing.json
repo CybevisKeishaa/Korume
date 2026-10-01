@@ -211,6 +211,12 @@
       "subtitlesShow": "Show subtitles",
       "subtitlesHide": "Hide subtitles",
       "fullscreen": "Player fullscreen"
+    },
+    "liveSentence": {
+      "label": "Live sentence",
+      "hideJapanese": "Hide Japanese",
+      "showJapanese": "Show Japanese",
+      "showTranslation": "Show translation"
     }
   }
 }

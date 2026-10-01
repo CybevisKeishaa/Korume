@@ -5,7 +5,7 @@ import { useTranslations } from "@/lib/i18n";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import type { FuriganaDisplayMode, FuriganaSegment, TranscriptLineRow, VocabMasteryMap } from "@/lib/video-types";
-import { FuriganaText } from "./furigana-text";
+import { adaptiveShouldShowReading, FuriganaText } from "./furigana-text";
 import { MineLineControl } from "./mine-line-control";
 import { PinLineControl } from "./pin-line-control";
 
@@ -23,11 +23,6 @@ export interface TranscriptPaneProps {
   masteryMap: VocabMasteryMap;
   showTranslation: boolean;
   className?: string;
-}
-
-/** Adaptive furigana seam: hide a reading once its word is mastered. */
-function shouldShowReading(masteryMap: VocabMasteryMap) {
-  return (segment: FuriganaSegment): boolean => !(segment.text in masteryMap);
 }
 
 /**
@@ -88,7 +83,7 @@ export function TranscriptPane({
                     segments={line.furigana_json}
                     mode={furiganaMode === "all" ? "all" : "none"}
                     shouldShowReading={
-                      furiganaMode === "adaptive" ? shouldShowReading(masteryMap) : undefined
+                      furiganaMode === "adaptive" ? adaptiveShouldShowReading(masteryMap) : undefined
                     }
                   />
                 ) : (

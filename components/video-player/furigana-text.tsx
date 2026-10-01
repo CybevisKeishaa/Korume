@@ -1,6 +1,14 @@
-import type { FuriganaSegment } from "@/lib/video-types";
+import type { FuriganaSegment, VocabMasteryMap } from "@/lib/video-types";
 
 export type FuriganaMode = "all" | "none";
+
+/**
+ * The adaptive-furigana rule (CLAUDE.md §5.4): hide a reading once its word is mastered. One home, shared by
+ * the legacy transcript pane and the shadowing workspace (`RubySentence`).
+ */
+export function adaptiveShouldShowReading(masteryMap: VocabMasteryMap) {
+  return (segment: FuriganaSegment): boolean => !(segment.text in masteryMap);
+}
 
 export interface FuriganaTextProps {
   segments: FuriganaSegment[];

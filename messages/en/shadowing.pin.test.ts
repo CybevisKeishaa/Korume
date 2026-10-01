@@ -519,3 +519,14 @@ describe("shadowing.json EN workspace player", () => {
     });
   });
 });
+
+describe("shadowing.json EN workspace Live Sentence", () => {
+  it("pins the Live Sentence copy", () => {
+    expect(en.workspace.liveSentence).toEqual({
+      label: "Live sentence",
+      hideJapanese: "Hide Japanese",
+      showJapanese: "Show Japanese",
+      showTranslation: "Show translation",
+    });
+  });
+});

@@ -17,7 +17,7 @@ Shadowing workspace Part 1a: the core Shadowing loop at `/[locale]/shadowing/[id
 ## Accepted commits
 
 - `6ec1133` `8c8f2f6` spec · `e8d4b13` `797b35e` `5cec887` plan · T1 `7f1d4bf` · T2 `2b18574` · T3 `a623da5` ·
-  T4a `a4020dc` · T4b `8c6c083` · T5 `e643374` · T6a (this commit). Per-task evidence (REDs, mutations,
+  T4a `a4020dc` · T4b `8c6c083` · T5 `e643374` · T6a `22cff1e` · T6b (this commit). Per-task evidence (REDs, mutations,
   review verdicts and what each closed) is in those commit messages.
 
 ## Contracts and decisions
@@ -72,6 +72,9 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   copy of state: an `L` shortcut (or YouTube's own controls) will not update them — lift into PlaybackRoot.
 - **T10:** speed label starts from the preference, not the rate `onReady` snapped to; `muted` starts false
   even if the embed starts muted.
+- **Owner question (T6b review, a11y):** toggles whose accessible name follows their state AND carry
+  `aria-pressed` (Live Sentence hide-Japanese, subtitle toggle, mute) read as "Show Japanese, pressed" — the
+  ARIA practices advise one or the other. Built as the plan specifies; flip to fixed names if the owner agrees.
 - **Accepted gaps:** duplicate `start_time` lines — controller pins the earlier, `useCurrentSentence` shows
   the later; a PLAYING queued between `pause()` and PAUSED can show the next line for one frame.
 - **Plan corrections so far:** no `lucide-react` in the repo (inline SVG glyphs); `lib/data/transcripts.test.ts`
