@@ -86,7 +86,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Blockers
 
@@ -94,5 +94,8 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
 
 ## Next actions
 
-1. Claude: write Task 2 packet (incl. plan Step 4b channel_title pipeline), set `- Owner: Codex`, dispatch.
-2. Then Task 3 (pure logic, uses T0 rulings: rAF clock, seekTo+pauseVideo init).
+1. Codex: Task 2 from `.superpowers/sdd/shadowing-workspace-1a/task-2-brief.md` (packet corrections vs
+   the plan: transcripts and progress-route tests are new files; `LessonCreationContent` is in
+   `lib/lesson-creation/store.ts`; a bad oEmbed author becomes null, never fails the job).
+2. Claude: review Task 2 (code-reviewer, full gates, reset + `verify:db:lesson-jobs`, live check of the
+   `transcript_lines!inner` embedded filter), commit; then Task 3.
