@@ -68,10 +68,11 @@ describe("loadWorkspaceBootstrap", () => {
     await expect(loadWorkspaceBootstrap(VIDEO.id)).resolves.toEqual({ ok: false, status: 404 });
   });
 
-  it("treats an unavailable transcript as an unavailable workspace", async () => {
-    vi.mocked(getTranscript).mockResolvedValue({ ok: false, status: 401 });
+  it("keeps the lesson open with no transcript when the transcript read is unavailable", async () => {
+    vi.mocked(getTranscript).mockResolvedValue({ ok: false, status: 404 });
 
-    await expect(loadWorkspaceBootstrap(VIDEO.id)).resolves.toEqual({ ok: false, status: 404 });
+    await expect(loadWorkspaceBootstrap(VIDEO.id)).resolves.toMatchObject({ ok: true, data: { transcript: null, marks: [] } });
+    expect(listMySentenceMarks).not.toHaveBeenCalled();
   });
 
   it("keeps a missing transcript null and does not read its marks", async () => {

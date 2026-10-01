@@ -129,6 +129,21 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   check; drop the keyed mutator's latest-only guard (caught by the 3-click test); break the preferences fallback.
 - Task 4a final: tsc 0, lint 0, protocol 0, vitest 0 (418 files, 3808 tests, `--minWorkers=1 --maxWorkers=2`).
 
+- Task 4b (Codex): REDs observed with `C:/nvm4w/nodejs/node.exe`: missing shell/body/layout modules (each exit 1), missing `en.workspace` pin (1), and token scan source pin (1). Green: shell 0 (2), body 0 (2), layout 0 (3), EN pin 0 (69), token scale 0 (104), messages 0 (26 files/391); `git diff --check` 0; `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1` 0. Mutation `key={pathname}` made the provider-store identity test red; byte-restored and hash-checked. Report: `.superpowers/sdd/shadowing-workspace-1a/task-4b-report.md`. Claude-only: full Vitest, tsc, lint, full protocol, dev server/browser check, review, commit.
+
+- Task 4b (Claude review): Codex 166k tokens, real failure-first REDs this time (full node path). Lint
+  caught a direct `next-intl` import (must go through `@/lib/i18n`) — fixed. Worktree `next dev -p 3001`
+  + Playwright (temp auth user, 1280x529, `?line=bogus`): 200, region "Shadowing practice" present, no
+  console errors on the route, no scroll, `[id]/dictation` still 200. The browser caught what jsdom could
+  not: the grid had no `grid-rows`, so the empty header row took half the height (region at y=264) —
+  fixed with `grid-rows-[auto_minmax(0,1fr)]`, re-measured y=0. Independent review MERGEABLE, 1 Important
+  (in 4a's loader: transcript `!ok` → 404; now `transcript: null` + empty state, as the legacy page did) /
+  5 Minor, all fixed: empty-state heading `h2` (Task 8 owns the title `h1`); VI "Quay lại Shadowing Hub";
+  no-remount test uses a different child + fresh bootstrap; layout props pinned by exact key set;
+  `?line=` consumption assigned to the Task 5 packet (4b only parks it on `data-line-id`).
+  Legacy page's `SaveToPlaylistButton` and title `h1` are Task 8 (plan line ~826), not dropped.
+- Task 4b final: tsc 0, lint 0, protocol 0, vitest 0 (421 files, 3825 tests, 2 workers).
+
 ## Working tree and environment
 
 - Worktree `.worktrees/shadowing-workspace-1a`; `.env.local` copied; `npm ci` run 2026-10-01.
@@ -139,7 +154,7 @@ Probe: headless Chrome (`channel: "chrome"`), real IFrame API, Ep.729 `Fwj3tH4Ul
   re-seed from the session scratchpad script until Task 11 ships `scripts/seed-real-lesson.ts`.
 - `npx supabase db reset` on this branch is approved by the owner.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Blockers
 

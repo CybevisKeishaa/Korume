@@ -31,9 +31,10 @@ export async function loadWorkspaceBootstrap(videoId: string): Promise<LoadWorks
   const [videoResult, transcriptResult, masteryMap, preferences, resume, lessonBookmarked] = await Promise.all([
     getVideo(videoId), getTranscript(videoId), getVocabMasteryMap(), getMyPreferences(), getMyLessonResume(videoId), isLessonBookmarked(videoId),
   ]);
-  if (!videoResult.ok || !transcriptResult.ok) return { ok: false, status: 404 };
+  if (!videoResult.ok) return { ok: false, status: 404 };
 
-  const transcript = transcriptResult.data;
+  // An unavailable transcript keeps the lesson open on its empty state (with Try again), as the legacy page did.
+  const transcript = transcriptResult.ok ? transcriptResult.data : null;
   const marks = transcript ? await listMySentenceMarks(transcript.id) : [];
   const video = videoResult.data;
   const selectedPreferences = preferences ?? DEFAULT_PREFERENCES;

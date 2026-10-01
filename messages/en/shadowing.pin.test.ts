@@ -485,3 +485,12 @@ describe("shadowing.json EN — player shell literals (demoted from common in Ta
     expect(en.player.loop.clear).toBe("Clear loop");
   });
 });
+
+describe("shadowing.json EN workspace transcript recovery", () => {
+  it("pins the unavailable-transcript recovery copy", () => {
+    expect(en.workspace.emptyTranscript.title).toBe("This lesson is temporarily missing its transcript.");
+    expect(en.workspace.emptyTranscript.retry).toBe("Try again");
+    expect(en.workspace.emptyTranscript.backToHub).toBe("Back to Shadowing Hub");
+    expect(en.workspace.regionLabel).toBe("Shadowing practice");
+  });
+});
