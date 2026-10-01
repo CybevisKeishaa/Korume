@@ -1268,6 +1268,248 @@
   background: hsl(var(--card));
 }
 
+/**
+ * Shadowing workspace — Reading Settings and Study Environment (spec §6).
+ *
+ * The workspace root carries `data-reading-*` and `data-atmosphere`; these rules turn them into variables
+ * that only the reading surfaces (Live Sentence, transcript, subtitle overlay) consume. Every colour is an
+ * HSL primitive plus a var() alias, the format `test/css-tokens.ts` parses, and every preset × atmosphere
+ * pair is held to 4.5:1 by `lib/shadowing-workspace/reading-theme.contrast.test.ts` on the EFFECTIVE
+ * surface (preset → glass → overlay). Atmospheres never set a text colour.
+ */
+:root {
+  /* — reading preset primitives (warm_cream reuses the app's own card and text colour) — */
+  --reading-cream-muted: 221 12% 70%;
+  --reading-night-surface: 225 30% 7%;
+  --reading-night-text: 214 32% 88%;
+  --reading-night-muted: 215 18% 66%;
+  --reading-sepia-surface: 30 24% 10%;
+  --reading-sepia-text: 38 50% 86%;
+  --reading-sepia-muted: 34 26% 66%;
+  --reading-contrast-surface: 0 0% 0%;
+  --reading-contrast-text: 0 0% 100%;
+  --reading-contrast-muted: 0 0% 82%;
+
+  /* — atmosphere primitives: glow, temperature overlay, glass tint, particle — */
+  --atmosphere-evening-glow: 32 85% 58%;
+  --atmosphere-evening-overlay: 28 70% 50%;
+  --atmosphere-evening-glass: 30 40% 40%;
+  --atmosphere-coffee-glow: 26 55% 48%;
+  --atmosphere-coffee-overlay: 30 45% 40%;
+  --atmosphere-coffee-glass: 28 30% 36%;
+  --atmosphere-rain-glow: 210 60% 55%;
+  --atmosphere-rain-overlay: 212 50% 45%;
+  --atmosphere-rain-glass: 210 30% 40%;
+  --atmosphere-rain-particle: 205 40% 75%;
+  --atmosphere-library-glow: 40 15% 60%;
+  --atmosphere-library-overlay: 40 10% 50%;
+  --atmosphere-library-glass: 220 8% 40%;
+  --atmosphere-spring-glow: 340 70% 75%;
+  --atmosphere-spring-overlay: 350 60% 70%;
+  --atmosphere-spring-glass: 340 30% 50%;
+  --atmosphere-spring-particle: 345 70% 82%;
+  --atmosphere-summer-glow: 230 60% 45%;
+  --atmosphere-summer-overlay: 235 50% 30%;
+  --atmosphere-summer-glass: 230 30% 35%;
+  --atmosphere-summer-particle: 60 90% 70%;
+}
+
+[data-reading-preset="warm_cream"] {
+  --reading-surface: var(--void-850);
+  --reading-foreground: var(--paper-50);
+  /* Lighter than the app's --slate-400: muted text also sits on the current-sentence tint here. */
+  --reading-muted: var(--reading-cream-muted);
+  --reading-current-surface: var(--ember-500);
+}
+
+[data-reading-preset="night"] {
+  --reading-surface: var(--reading-night-surface);
+  --reading-foreground: var(--reading-night-text);
+  --reading-muted: var(--reading-night-muted);
+  --reading-current-surface: var(--ember-500);
+}
+
+[data-reading-preset="sepia"] {
+  --reading-surface: var(--reading-sepia-surface);
+  --reading-foreground: var(--reading-sepia-text);
+  --reading-muted: var(--reading-sepia-muted);
+  --reading-current-surface: var(--ember-500);
+}
+
+[data-reading-preset="high_contrast"] {
+  --reading-surface: var(--reading-contrast-surface);
+  --reading-foreground: var(--reading-contrast-text);
+  --reading-muted: var(--reading-contrast-muted);
+  --reading-current-surface: var(--ember-500);
+}
+
+/* Font size multiplies the app-wide Display scale (the --text-* tokens already carry it). */
+[data-reading-size="s"] { --reading-scale: 0.875; }
+[data-reading-size="m"] { --reading-scale: 1; }
+[data-reading-size="l"] { --reading-scale: 1.125; }
+[data-reading-size="xl"] { --reading-scale: 1.25; }
+
+/* Japanese wants more room than Latin script at the same size (kanji + readings). */
+[data-reading-line-height="compact"] { --reading-leading: 1.5; --reading-leading-latin: 1.35; }
+[data-reading-line-height="comfortable"] { --reading-leading: 1.8; --reading-leading-latin: 1.5; }
+[data-reading-line-height="airy"] { --reading-leading: 2.1; --reading-leading-latin: 1.7; }
+
+[data-reading-width="narrow"] { --reading-measure: 52ch; }
+[data-reading-width="normal"] { --reading-measure: 68ch; }
+[data-reading-width="wide"] { --reading-measure: 84ch; }
+
+/* How strongly the current sentence stands out: the tint alpha over the reading surface. */
+[data-reading-emphasis="minimal"] { --reading-current-alpha: 0; }
+[data-reading-emphasis="soft"] { --reading-current-alpha: 0.1; }
+[data-reading-emphasis="strong"] { --reading-current-alpha: 0.2; }
+
+[data-reading-font="mincho"] { --font-jp: var(--font-jp-serif), serif; }
+
+/* — Study Environment: "almost imperceptible" (screen-shadowing-practice.md § Study Atmosphere) — */
+[data-atmosphere="none"] {
+  --atmosphere-glow: var(--void-950);
+  --atmosphere-glow-alpha: 0;
+  --atmosphere-overlay: var(--void-950);
+  --atmosphere-overlay-alpha: 0;
+  --atmosphere-glass: var(--void-950);
+  --atmosphere-glass-alpha: 0;
+  --atmosphere-shadow: none;
+}
+
+[data-atmosphere="evening_study"] {
+  --atmosphere-glow: var(--atmosphere-evening-glow);
+  --atmosphere-glow-alpha: 0.1;
+  --atmosphere-overlay: var(--atmosphere-evening-overlay);
+  --atmosphere-overlay-alpha: 0.04;
+  --atmosphere-glass: var(--atmosphere-evening-glass);
+  --atmosphere-glass-alpha: 0.06;
+  --atmosphere-shadow: 0 0.75rem 2.5rem hsl(24 60% 8% / 0.55);
+}
+
+[data-atmosphere="coffee_shop"] {
+  --atmosphere-glow: var(--atmosphere-coffee-glow);
+  --atmosphere-glow-alpha: 0.12;
+  --atmosphere-overlay: var(--atmosphere-coffee-overlay);
+  --atmosphere-overlay-alpha: 0.05;
+  --atmosphere-glass: var(--atmosphere-coffee-glass);
+  --atmosphere-glass-alpha: 0.07;
+  --atmosphere-shadow: 0 0.625rem 2.25rem hsl(26 40% 6% / 0.5);
+}
+
+[data-atmosphere="rainy_day"] {
+  --atmosphere-glow: var(--atmosphere-rain-glow);
+  --atmosphere-glow-alpha: 0.08;
+  --atmosphere-overlay: var(--atmosphere-rain-overlay);
+  --atmosphere-overlay-alpha: 0.06;
+  --atmosphere-glass: var(--atmosphere-rain-glass);
+  --atmosphere-glass-alpha: 0.06;
+  --atmosphere-shadow: 0 0.5rem 2rem hsl(215 40% 5% / 0.45);
+  --atmosphere-particle: var(--atmosphere-rain-particle);
+  --atmosphere-particle-width: 0.0625rem;
+  --atmosphere-particle-height: 1.125rem;
+  --atmosphere-particle-animation: atmosphere-fall 1.6s linear infinite;
+}
+
+[data-atmosphere="quiet_library"] {
+  --atmosphere-glow: var(--atmosphere-library-glow);
+  --atmosphere-glow-alpha: 0.05;
+  --atmosphere-overlay: var(--atmosphere-library-overlay);
+  --atmosphere-overlay-alpha: 0.02;
+  --atmosphere-glass: var(--atmosphere-library-glass);
+  --atmosphere-glass-alpha: 0.05;
+  --atmosphere-shadow: 0 0.25rem 1.5rem hsl(220 20% 4% / 0.35);
+}
+
+[data-atmosphere="spring_morning"] {
+  --atmosphere-glow: var(--atmosphere-spring-glow);
+  --atmosphere-glow-alpha: 0.08;
+  --atmosphere-overlay: var(--atmosphere-spring-overlay);
+  --atmosphere-overlay-alpha: 0.03;
+  --atmosphere-glass: var(--atmosphere-spring-glass);
+  --atmosphere-glass-alpha: 0.05;
+  --atmosphere-shadow: 0 0.375rem 1.75rem hsl(340 30% 6% / 0.4);
+  --atmosphere-particle: var(--atmosphere-spring-particle);
+  --atmosphere-particle-width: 0.375rem;
+  --atmosphere-particle-height: 0.3125rem;
+  --atmosphere-particle-animation: atmosphere-fall 14s linear infinite;
+}
+
+[data-atmosphere="summer_night"] {
+  --atmosphere-glow: var(--atmosphere-summer-glow);
+  --atmosphere-glow-alpha: 0.1;
+  --atmosphere-overlay: var(--atmosphere-summer-overlay);
+  --atmosphere-overlay-alpha: 0.05;
+  --atmosphere-glass: var(--atmosphere-summer-glass);
+  --atmosphere-glass-alpha: 0.06;
+  --atmosphere-shadow: 0 0.625rem 2.5rem hsl(235 40% 4% / 0.55);
+  --atmosphere-particle: var(--atmosphere-summer-particle);
+  --atmosphere-particle-width: 0.1875rem;
+  --atmosphere-particle-height: 0.1875rem;
+  --atmosphere-particle-animation: atmosphere-glimmer 6s ease-in-out infinite;
+}
+
+@layer components {
+  /* Text sits on the preset surface with the atmosphere's glass, then its temperature overlay, on top. */
+  .reading-surface {
+    background-color: hsl(var(--reading-surface));
+    background-image:
+      linear-gradient(hsl(var(--atmosphere-overlay) / var(--atmosphere-overlay-alpha)), hsl(var(--atmosphere-overlay) / var(--atmosphere-overlay-alpha))),
+      linear-gradient(hsl(var(--atmosphere-glass) / var(--atmosphere-glass-alpha)), hsl(var(--atmosphere-glass) / var(--atmosphere-glass-alpha)));
+    box-shadow: var(--atmosphere-shadow);
+    color: hsl(var(--reading-foreground));
+  }
+  .reading-foreground { color: hsl(var(--reading-foreground)); }
+  .reading-muted { color: hsl(var(--reading-muted)); }
+  .reading-current { background-color: hsl(var(--reading-current-surface) / var(--reading-current-alpha)); }
+  /* The gap after a sentence ends: the same tint, softened. */
+  .reading-current-gap { background-color: hsl(var(--reading-current-surface) / calc(var(--reading-current-alpha) / 2)); }
+  .reading-measure { max-width: var(--reading-measure); }
+
+  /* Reading text: the size rung × the Reading Settings size; Japanese and Latin leading apart. */
+  .reading-jp-body { font-size: calc(var(--reading-scale, 1) * var(--text-body)); line-height: var(--reading-leading, 1.8); }
+  .reading-jp-body-lg { font-size: calc(var(--reading-scale, 1) * var(--text-body-lg)); line-height: var(--reading-leading, 1.8); }
+  .reading-jp-heading { font-size: calc(var(--reading-scale, 1) * var(--text-heading)); line-height: var(--reading-leading, 1.8); }
+  .reading-jp-heading-lg { font-size: calc(var(--reading-scale, 1) * var(--text-heading-lg)); line-height: var(--reading-leading, 1.8); }
+  .reading-latin-caption { font-size: calc(var(--reading-scale, 1) * var(--text-caption)); line-height: var(--reading-leading-latin, 1.5); }
+  .reading-latin-body { font-size: calc(var(--reading-scale, 1) * var(--text-body)); line-height: var(--reading-leading-latin, 1.5); }
+
+  .atmosphere-layer {
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, hsl(var(--atmosphere-glow) / var(--atmosphere-glow-alpha)), transparent 70%),
+      linear-gradient(hsl(var(--atmosphere-overlay) / var(--atmosphere-overlay-alpha)), hsl(var(--atmosphere-overlay) / var(--atmosphere-overlay-alpha)));
+  }
+  .atmosphere-particles > span {
+    position: absolute;
+    top: -5%;
+    width: var(--atmosphere-particle-width);
+    height: var(--atmosphere-particle-height);
+    border-radius: 9999px;
+    background: hsl(var(--atmosphere-particle) / 0.35);
+    animation: var(--atmosphere-particle-animation);
+  }
+}
+
+@keyframes atmosphere-fall {
+  from { transform: translateY(0); }
+  to { transform: translateY(110dvh); }
+}
+
+@keyframes atmosphere-glimmer {
+  0%, 100% { opacity: 0; transform: translateY(40dvh); }
+  50% { opacity: 1; transform: translateY(36dvh); }
+}
+
+/* Reduce Motion (spec §6.2): glow and tint stay, particles are removed — not slowed. */
+:root[data-reduce-motion="true"] .atmosphere-particles {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere-particles {
+    display: none;
+  }
+}
+
 .mobile-app-handoff {
   display: none;
 }

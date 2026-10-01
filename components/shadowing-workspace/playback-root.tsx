@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { YT_PLAYER_STATE, type YtPlayerStateValue } from "@/components/video-player/youtube-player";
 import type { LoopConfig } from "@/lib/shadowing-workspace/loop-machine";
 import type { PlaybackLoopCount } from "@/lib/preferences/options";
@@ -82,28 +82,38 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
     setPlaying(state === YT_PLAYER_STATE.PLAYING || state === YT_PLAYER_STATE.BUFFERING);
   }, [onStateChange]);
 
-  const setLoop = useCallback((config: Partial<LoopConfig>) => {
-    setLoopState((current) => {
-      const next = { ...current, ...config };
-      if (next.count !== 1) lastLoopCount.current = next.count;
-      controller.setLoop(next);
-      return next;
-    });
+  // The loop lives in a ref as well as state so these handlers stay pure: the controller is told once per
+  // change, never from inside a setState updater (T9 re-review).
+  const loopRef = useRef(initialLoop);
+  const applyLoop = useCallback((next: LoopConfig) => {
+    loopRef.current = next;
+    if (next.count !== 1) lastLoopCount.current = next.count;
+    controller.setLoop(next);
+    setLoopState(next);
   }, [controller]);
+  const setLoop = useCallback((config: Partial<LoopConfig>) => applyLoop({ ...loopRef.current, ...config }), [applyLoop]);
   const toggleLoop = useCallback(() => {
-    setLoopState((current) => {
-      const next = current.enabled
-        ? { ...current, enabled: false }
-        : { ...current, enabled: true, count: current.count === 1 ? lastLoopCount.current : current.count };
-      if (next.count !== 1) lastLoopCount.current = next.count;
-      controller.setLoop(next);
-      return next;
-    });
-  }, [controller]);
+    const current = loopRef.current;
+    applyLoop(current.enabled
+      ? { ...current, enabled: false }
+      : { ...current, enabled: true, count: current.count === 1 ? lastLoopCount.current : current.count });
+  }, [applyLoop]);
   const setRate = useCallback((next: number) => {
     controller.setRate(next);
     setRateState(next);
   }, [controller]);
+
+  // Reading Settings changes apply to the running session too (spec §6.1): a new default speed sets the live
+  // rate, a new loop count or Auto Pause becomes the Sentence loop. Only a CHANGE applies — the first values
+  // are already the controller's initial state.
+  const appliedPreferences = useRef(preferences);
+  useEffect(() => {
+    const before = appliedPreferences.current;
+    appliedPreferences.current = preferences;
+    if (before.playbackDefaultRate !== preferences.playbackDefaultRate) setRate(preferences.playbackDefaultRate);
+    if (before.playbackLoopCount !== preferences.playbackLoopCount) setLoop({ count: preferences.playbackLoopCount, enabled: preferences.playbackLoopCount !== 1 });
+    if (before.playbackAutoPause !== preferences.playbackAutoPause) setLoop({ autoPause: preferences.playbackAutoPause });
+  }, [preferences, setLoop, setRate]);
 
   const wiring = useMemo(() => ({ adapterRef, onReady, onStateChange: handleStateChange, playing, loop, setLoop, toggleLoop, rate, setRate }), [handleStateChange, loop, onReady, playing, rate, setLoop, setRate, toggleLoop]);
   return (

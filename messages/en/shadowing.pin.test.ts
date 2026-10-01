@@ -576,3 +576,50 @@ describe("shadowing.json EN workspace header", () => {
     });
   });
 });
+
+describe("shadowing.json EN workspace Reading Settings, Study Environment and shortcut hints", () => {
+  it("pins the Reading Settings copy", () => {
+    expect(en.workspace.settings).toEqual({
+      open: "Reading settings",
+      furigana: "Furigana",
+      furiganaOptions: { always: "Always", adaptive: "Adaptive", hidden: "Hidden" },
+      translation: "Translation",
+      translationOptions: { hidden: "Hidden", reveal: "Tap to show", always: "Always" },
+      jpFont: "Japanese font",
+      jpFontOptions: { gothic: "Gothic", mincho: "Mincho" },
+      textSize: "Font size",
+      textSizeOptions: { s: "S", m: "M", l: "L", xl: "XL" },
+      lineHeight: "Line height",
+      lineHeightOptions: { compact: "Compact", comfortable: "Comfortable", airy: "Airy" },
+      width: "Reading width",
+      widthOptions: { narrow: "Narrow", normal: "Normal", wide: "Wide" },
+      emphasis: "Sentence emphasis",
+      emphasisOptions: { minimal: "Minimal", soft: "Soft", strong: "Strong" },
+      colorPreset: "Text colour",
+      colorPresetOptions: { warm_cream: "Warm Cream", night: "Night", sepia: "Sepia", high_contrast: "High Contrast" },
+      speed: "Default speed",
+      loopCount: "Plays per sentence",
+      autoPause: "Pause after each sentence",
+      shortcutHints: "Show keyboard shortcuts",
+      resume: "Reopening a lesson",
+      resumeOptions: { resume: "Resume", restart: "Start over" },
+    });
+  });
+
+  it("pins the Study Environment copy", () => {
+    expect(en.workspace.environment).toEqual({
+      open: "Study Environment",
+      options: {
+        none: "None", evening_study: "Evening Study", coffee_shop: "Coffee Shop", rainy_day: "Rainy Day",
+        quiet_library: "Quiet Library", spring_morning: "Spring Morning", summer_night: "Summer Night",
+      },
+    });
+  });
+
+  it("pins the shortcut hint copy", () => {
+    expect(en.workspace.shortcuts).toEqual({
+      open: "Keyboard shortcuts", togglePlay: "Play / pause", previous: "Previous sentence", next: "Next sentence",
+      rewind: "Back 5 seconds", loop: "Sentence loop", focus: "Focus Mode",
+    });
+  });
+});

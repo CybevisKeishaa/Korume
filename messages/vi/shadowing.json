@@ -272,6 +272,88 @@
         "listening": "Nghe",
         "summary": "Tóm tắt"
       }
+    },
+    "settings": {
+      "open": "Cài đặt đọc",
+      "furigana": "Furigana",
+      "furiganaOptions": {
+        "always": "Luôn hiện",
+        "adaptive": "Thích ứng",
+        "hidden": "Ẩn"
+      },
+      "translation": "Bản dịch",
+      "translationOptions": {
+        "hidden": "Ẩn",
+        "reveal": "Chạm để hiện",
+        "always": "Luôn hiện"
+      },
+      "jpFont": "Phông tiếng Nhật",
+      "jpFontOptions": {
+        "gothic": "Gothic",
+        "mincho": "Mincho"
+      },
+      "textSize": "Cỡ chữ",
+      "textSizeOptions": {
+        "s": "S",
+        "m": "M",
+        "l": "L",
+        "xl": "XL"
+      },
+      "lineHeight": "Giãn dòng",
+      "lineHeightOptions": {
+        "compact": "Gọn",
+        "comfortable": "Vừa",
+        "airy": "Thoáng"
+      },
+      "width": "Độ rộng dòng",
+      "widthOptions": {
+        "narrow": "Hẹp",
+        "normal": "Vừa",
+        "wide": "Rộng"
+      },
+      "emphasis": "Làm nổi câu hiện tại",
+      "emphasisOptions": {
+        "minimal": "Nhẹ nhất",
+        "soft": "Nhẹ",
+        "strong": "Rõ"
+      },
+      "colorPreset": "Màu chữ",
+      "colorPresetOptions": {
+        "warm_cream": "Kem ấm",
+        "night": "Ban đêm",
+        "sepia": "Sepia",
+        "high_contrast": "Tương phản cao"
+      },
+      "speed": "Tốc độ mặc định",
+      "loopCount": "Số lần phát mỗi câu",
+      "autoPause": "Tạm dừng sau mỗi câu",
+      "shortcutHints": "Hiện phím tắt",
+      "resume": "Khi mở lại bài học",
+      "resumeOptions": {
+        "resume": "Học tiếp",
+        "restart": "Học lại từ đầu"
+      }
+    },
+    "environment": {
+      "open": "Không gian học",
+      "options": {
+        "none": "Không",
+        "evening_study": "Buổi tối học bài",
+        "coffee_shop": "Quán cà phê",
+        "rainy_day": "Ngày mưa",
+        "quiet_library": "Thư viện yên tĩnh",
+        "spring_morning": "Sáng mùa xuân",
+        "summer_night": "Đêm mùa hè"
+      }
+    },
+    "shortcuts": {
+      "open": "Phím tắt",
+      "togglePlay": "Phát / tạm dừng",
+      "previous": "Câu trước",
+      "next": "Câu tiếp theo",
+      "rewind": "Lùi 5 giây",
+      "loop": "Lặp câu",
+      "focus": "Chế độ tập trung"
     }
   }
 }

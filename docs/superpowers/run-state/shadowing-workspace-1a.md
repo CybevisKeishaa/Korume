@@ -87,6 +87,18 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
   download 282 blocks. Review: APPROVE WITH NITS (0C/1I/6M) — Save panel overlapped Download (measured,
   fixed: anchored beneath the popover), revoke delay 10 s; Focus Mode carried to T9 (below).
 
+- T10 (Claude, Codex at its usage limit; owner 2026-10-02: "do all remaining tasks, Codex when it is back"):
+  reading presets × atmospheres as CSS tokens, ⚙ popover (13 settings), Study Environment, shortcut hint sheet,
+  AtmosphereLayer, Mincho via `next/font` on the workspace only. Contrast gate 4 × 7 × 3 emphases on the
+  effective surface; it went red on its first run (warm_cream muted on the current-row tint 3.4–4.4:1, sepia
+  accent 4.3:1) and the tokens were fixed, not the bar. Gates 0 (435 files / 3982 tests); 9 mutations red
+  (pref effects ×2, focus steal, reduce motion, size attr, hint initial state, contrast pair named, particle
+  CSS, atmosphere colour). Browser Ep.729 1280×529 (`ws-10.mjs`): XL = ×1.25 (21.33→26.67px), Airy 2.1,
+  Mincho loaded, header 44px no overflow, page never scrolls, settings popover 486px tall and scrolls, one
+  Escape closes the Select listbox only and the next the popover, speed label 0.75× after a reload, every
+  choice survives reload, atmosphere layer z −10 behind content (hit-test lands on rows), 0 console errors.
+  Also fixed the T9 leftover: `setLoop` no longer calls the controller inside a setState updater.
+
 ### Carried forward (open, owned by a later task)
 
 - **Done in T9:** Focus Mode now lays out the focus view, and the shell's Escape handler honours
@@ -139,4 +151,5 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 1. Done: T7 review fixed (`fix(shadowing): T7 review`).
 2. Done: T8 header (`feat(shadowing): workspace header, …`), built by Claude without Codex.
 3. Done: T9 views / fullscreen / shortcuts / divider (Codex + Claude fix pass).
-4. Next: write the T10 packet (settings / environment / contrast), then T11, T12.
+4. Done: T10 reading settings / study environment / contrast (Claude).
+5. Next: T11 (Claude: deterministic e2e, seed script, live Ep.729), then T12.

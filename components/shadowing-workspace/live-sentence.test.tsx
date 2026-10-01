@@ -133,6 +133,6 @@ describe("LiveSentence", () => {
     act(() => store?.set(4));
     expect(card).toHaveAttribute("data-spoken", "false");
     expect(card).not.toHaveClass("opacity-70");
-    expect(document.querySelector("p[lang='ja']")).toHaveClass("text-muted-foreground");
+    expect(document.querySelector("p[lang='ja']")).toHaveClass("reading-muted");
   });
 });

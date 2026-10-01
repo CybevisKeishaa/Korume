@@ -2,7 +2,7 @@
 
 import { useCallback, useId, useMemo, useRef } from "react";
 import { useTranslations } from "@/lib/i18n";
-import type { ReadingTranslation, ReadingWidth, SentenceMarkKind } from "@/lib/preferences/options";
+import type { ReadingTranslation, SentenceMarkKind } from "@/lib/preferences/options";
 import { matchingLineIndexes } from "@/lib/shadowing-workspace/transcript-search";
 import { cn } from "@/lib/utils";
 import { ExpandGlyph, SearchGlyph, ShowTextGlyph } from "./player-glyphs";
@@ -11,8 +11,6 @@ import { useAutoFollow } from "./use-auto-follow";
 import { useCurrentSentence, useLesson, useMarks, usePlaybackController, usePreferences, useSession, type SessionState } from "./workspace-context";
 
 const HEADER_BUTTON = "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-pressed:text-primary-strong";
-/** Full Transcript reading measure (Reading Settings › Width). */
-const MEASURE: Record<ReadingWidth, string> = { narrow: "max-w-[52ch]", normal: "max-w-[68ch]", wide: "max-w-[84ch]" };
 
 /** spec §7.8: the 👁 session override beats the persisted mode; `reveal` covers until the line is revealed. */
 function rowTranslation(override: SessionState["transcriptTranslation"], persisted: ReadingTranslation, revealed: boolean): RowTranslation {
@@ -57,12 +55,12 @@ export function TranscriptPanel() {
   const searching = query.trim() !== "";
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card">
+    <div className="reading-surface flex h-full min-h-0 flex-col overflow-hidden rounded-lg border">
       <div className="space-y-sm border-b p-md">
         <div className="flex items-start justify-between gap-sm">
           <div>
             <h2 className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{t("workspace.transcript.label")}</h2>
-            <p className="text-caption text-muted-foreground">{t("workspace.transcript.meta", { count: lines.length, minutes })}</p>
+            <p className="reading-muted text-caption">{t("workspace.transcript.meta", { count: lines.length, minutes })}</p>
           </div>
           <div className="flex gap-2xs">
             <button
@@ -111,9 +109,9 @@ export function TranscriptPanel() {
       <div className="relative min-h-0 flex-1">
         <div ref={scrollRef} className={cn("h-full overflow-y-auto overscroll-contain", full && "pb-[--workspace-pip-clearance]")} data-testid="transcript-scroll">
           {visible.length === 0 ? (
-            <p className="p-md text-body text-muted-foreground">{t("workspace.transcript.noMatches")}</p>
+            <p className="reading-muted p-md text-body">{t("workspace.transcript.noMatches")}</p>
           ) : (
-            <ol aria-label={t("workspace.transcript.label")} className={cn("space-y-2xs p-xs", full && cn("mx-auto", MEASURE[preferences.readingWidth]))}>
+            <ol aria-label={t("workspace.transcript.label")} className={cn("space-y-2xs p-xs", full && "reading-measure mx-auto")}>
               {visible.map((index) => {
                 const line = lines[index];
                 if (!line) return null;

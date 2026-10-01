@@ -18,6 +18,8 @@ export interface PopoverProps {
   label?: string;
   /** Radix's Escape dismiss; `event.preventDefault()` keeps the popover open (e.g. a nested panel owns this Escape). */
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
+  /** Radix's focus-on-open; `event.preventDefault()` leaves focus where it was (content that holds no control). */
+  onOpenAutoFocus?: (event: Event) => void;
   children: React.ReactNode;
 }
 
@@ -36,6 +38,7 @@ export function Popover({
   className,
   label,
   onEscapeKeyDown,
+  onOpenAutoFocus,
   children,
 }: PopoverProps) {
   const { anchorRef, contentRef } = useDensityScope();
@@ -51,6 +54,7 @@ export function Popover({
           sideOffset={6}
           aria-label={label}
           onEscapeKeyDown={onEscapeKeyDown}
+          onOpenAutoFocus={onOpenAutoFocus}
           className={cn(
             "motion-popover z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay",
             className,

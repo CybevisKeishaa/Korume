@@ -46,7 +46,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
           onError={setPlayerError}
         />
         {subtitles && subtitle !== null && (
-          <p lang="ja" className="pointer-events-none absolute inset-x-0 bottom-0 bg-background/85 font-jp px-md py-sm text-center text-body text-foreground" data-testid="workspace-subtitle">
+          <p lang="ja" className="reading-foreground reading-jp-body pointer-events-none absolute inset-x-0 bottom-0 bg-[hsl(var(--reading-surface)/0.85)] px-md py-sm text-center font-jp" data-testid="workspace-subtitle">
             {subtitle}
           </p>
         )}

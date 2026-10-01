@@ -83,3 +83,11 @@ export const BackGlyph = ({ className }: GlyphProps) => <Glyph className={classN
 export const MoreGlyph = ({ className }: GlyphProps) => (
   <Glyph className={className} filled><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></Glyph>
 );
+/** Header ⚙ Reading Settings: the frame's sliders. */
+export const SlidersGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></Glyph>
+);
+/** Header keyboard-shortcut hints. */
+export const KeyboardGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><rect x="2.5" y="6" width="19" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /></Glyph>
+);

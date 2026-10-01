@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
+vi.mock("next/font/google", () => ({ Noto_Serif_JP: () => ({ variable: "font-jp-serif-variable" }) }));
 vi.mock("@/lib/data/shadowing-workspace", () => ({ loadWorkspaceBootstrap: mocks.load }));
 vi.mock("@/lib/i18n/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/components/shadowing-workspace/workspace-shell", () => ({ ShadowingWorkspaceShell: mocks.shell }));
@@ -25,9 +26,12 @@ describe("ShadowingWorkspaceLayout", () => {
     const result = await ShadowingWorkspaceLayout({ children, params: { locale: "en", id: "video-1" } });
 
     expect(mocks.load).toHaveBeenCalledWith("video-1");
-    expect(result.type).toBe(mocks.shell);
-    expect(Object.keys(result.props).sort()).toEqual(["bootstrap", "children"]);
-    expect(result.props).toEqual({ bootstrap, children });
+    // The Mincho variable is scoped to the workspace by a box-less wrapper (Reading Settings › Japanese font).
+    expect(result.props.className).toBe("font-jp-serif-variable contents");
+    const shell = result.props.children;
+    expect(shell.type).toBe(mocks.shell);
+    expect(Object.keys(shell.props).sort()).toEqual(["bootstrap", "children"]);
+    expect(shell.props).toEqual({ bootstrap, children });
   });
 
   it("redirects an unauthorized bootstrap request with the route locale", async () => {

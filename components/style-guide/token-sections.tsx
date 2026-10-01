@@ -12,6 +12,16 @@ const PRIMITIVE_COLORS = [
   "--paper-50", "--ink-950",
   "--ember-500", "--sand-400",
   "--mint-400", "--coral-400", "--coral-300",
+  // Shadowing workspace Reading Settings presets and Study Environment places (spec §6).
+  "--reading-cream-muted", "--reading-night-surface", "--reading-night-text", "--reading-night-muted",
+  "--reading-sepia-surface", "--reading-sepia-text", "--reading-sepia-muted",
+  "--reading-contrast-surface", "--reading-contrast-text", "--reading-contrast-muted",
+  "--atmosphere-evening-glow", "--atmosphere-evening-overlay", "--atmosphere-evening-glass",
+  "--atmosphere-coffee-glow", "--atmosphere-coffee-overlay", "--atmosphere-coffee-glass",
+  "--atmosphere-rain-glow", "--atmosphere-rain-overlay", "--atmosphere-rain-glass", "--atmosphere-rain-particle",
+  "--atmosphere-library-glow", "--atmosphere-library-overlay", "--atmosphere-library-glass",
+  "--atmosphere-spring-glow", "--atmosphere-spring-overlay", "--atmosphere-spring-glass", "--atmosphere-spring-particle",
+  "--atmosphere-summer-glow", "--atmosphere-summer-overlay", "--atmosphere-summer-glass", "--atmosphere-summer-particle",
 ];
 
 const SEMANTIC_COLORS = [
@@ -30,6 +40,9 @@ const SEMANTIC_COLORS = [
   // accent colour and moves with it if the palette changes.
   "--thread-color",
   "--scrim",
+  // Workspace-scoped: declared per `data-reading-preset` / `data-atmosphere`, so the grid below sets one of each.
+  "--reading-surface", "--reading-foreground", "--reading-muted", "--reading-current-surface",
+  "--atmosphere-glow", "--atmosphere-overlay", "--atmosphere-glass", "--atmosphere-particle",
 ];
 
 const SPACING = ["2xs", "xs", "sm", "md", "lg", "xl", "2xl", "3xl"];
@@ -98,7 +111,7 @@ export function ColorSection() {
       </div>
       <h3 className="mt-md text-body-lg font-medium">{t("styleGuide.sections.colour.semanticTier")}</h3>
       <p className="text-body text-muted-foreground">{t("styleGuide.sections.colour.semanticNote")}</p>
-      <div className="mt-xs grid grid-cols-2 gap-xs sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-xs grid grid-cols-2 gap-xs sm:grid-cols-3 lg:grid-cols-4" data-reading-preset="warm_cream" data-atmosphere="rainy_day">
         {SEMANTIC_COLORS.map((token) => (
           <Swatch key={token} token={token} />
         ))}

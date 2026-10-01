@@ -51,9 +51,11 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
   const t = useTranslations("shadowing");
   const row = useMemo(() => toTranscriptLineRow(line), [line]);
   const current = state === "current";
+  // Reading Settings size, leading and Text colour preset (globals.css `.reading-*`); the gap after the current
+  // line ends is softened by colour, never by opacity (contrast is gated on these exact tokens).
   const japaneseClass = cn(
-    full ? "text-heading" : "text-body-lg",
-    current ? cn("font-semibold", spoken ? "text-foreground" : "text-foreground/80") : state === "past" ? "text-muted-foreground" : "text-foreground/90",
+    full ? "reading-jp-heading" : "reading-jp-body-lg",
+    current ? cn("font-semibold", spoken ? "reading-foreground" : "reading-muted") : state === "past" ? "reading-muted" : "reading-foreground",
   );
 
   return (
@@ -62,14 +64,15 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
       data-state={state}
       data-spoken={current ? spoken : undefined}
       className={cn(
-        "group relative rounded-lg border-l-2 py-sm pl-sm pr-xs transition-colors focus-within:bg-muted/60 hover:bg-muted/60",
+        "group relative rounded-lg border-l-2 py-sm pl-sm pr-xs transition-colors",
+        // Sentence emphasis (Reading Settings) sets the current row's tint; other rows take the hover wash.
         current
-          ? spoken ? "border-primary bg-primary/10 hover:bg-primary/10 focus-within:bg-primary/10" : "border-primary/50 bg-primary/5 hover:bg-primary/5 focus-within:bg-primary/5"
-          : "border-transparent",
+          ? spoken ? "reading-current border-primary" : "reading-current-gap border-primary/50"
+          : "border-transparent focus-within:bg-muted/60 hover:bg-muted/60",
       )}
     >
       <div className="flex gap-sm">
-        <span className={cn("flex shrink-0 flex-col items-center gap-2xs pt-2xs text-caption tabular-nums", current ? "text-primary-strong" : "text-muted-foreground")}>
+        <span className={cn("flex shrink-0 flex-col items-center gap-2xs pt-2xs text-caption tabular-nums", current ? "text-primary-strong" : "reading-muted")}>
           <span aria-hidden="true">{number}</span>
           {bookmarked && <BookmarkGlyph filled className="size-icon-xs text-primary-strong" />}
           {bookmarked && <span className="sr-only">{t("workspace.transcript.bookmarked")}</span>}
@@ -86,19 +89,19 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
           >
             <span className="sr-only">{t("workspace.transcript.lineNumber", { number: position + 1 })} </span>
             {full || furiganaOverride !== undefined ? (
-              <RubySentence as="span" segments={line.furigana} text={line.textJp} mode={furiganaMode} override={furiganaOverride} className={cn("block", japaneseClass, "leading-jp")} />
+              <RubySentence as="span" segments={line.furigana} text={line.textJp} mode={furiganaMode} override={furiganaOverride} className={cn("block", japaneseClass)} />
             ) : (
               <span lang="ja" className={cn("block font-jp", japaneseClass)}>{line.textJp}</span>
             )}
           </button>
           {line.textTranslation !== null && translation === "shown" && (
-            <p className={cn("relative", full ? "text-body" : "text-caption", current ? "text-foreground/80" : "text-muted-foreground")}>{line.textTranslation}</p>
+            <p className={cn("relative", full ? "reading-latin-body" : "reading-latin-caption", current ? "reading-foreground" : "reading-muted")}>{line.textTranslation}</p>
           )}
           {line.textTranslation !== null && translation === "covered" && (
             <button
               type="button"
               onClick={() => props.onRevealTranslation(line.id)}
-              className="relative rounded-md text-caption text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              className="reading-muted relative rounded-md text-caption underline-offset-2 hover:text-foreground hover:underline"
             >
               {t("workspace.transcript.showTranslation")}
             </button>
@@ -111,7 +114,7 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
         // Invisible actions must not take taps (touch has no hover). Not pinned by Mine's status: it is never
         // cleared, so the toolbar would cover the line for the session; Mine returns focus to its trigger instead.
         className={cn(
-          "pointer-events-none absolute right-xs top-2xs flex items-start gap-2xs rounded-md bg-card opacity-0 shadow-raised transition-opacity",
+          "reading-surface pointer-events-none absolute right-xs top-2xs flex items-start gap-2xs rounded-md opacity-0 shadow-raised transition-opacity",
           "focus-within:pointer-events-auto focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100",
         )}
       >

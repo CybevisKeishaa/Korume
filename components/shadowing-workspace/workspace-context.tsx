@@ -12,6 +12,8 @@ import { createPlaybackPositionStore, type PlaybackPositionStore } from "./playb
 import type { PlaybackController } from "./use-playback-controller";
 
 export const DEFAULT_SPLIT_RATIO = 0.5;
+/** The shortcut hint sheet's `openPopover` id (its component imports the context, so the id lives here). */
+export const SHORTCUT_HINTS_POPOVER = "shortcut-hints";
 // The pronunciation trio only validates together (lib/validation/preferences.ts), so a single-field PATCH would 400.
 export type PreferenceKey = Exclude<keyof UserPreferences,
   "dailyMinutes" | "learningSchedule" | "scheduleDays" | "pronunciationSort" | "pronunciationDuration" | "pronunciationHideCompleted">;
@@ -209,7 +211,10 @@ function MarksProvider({ bootstrap, children }: { bootstrap: WorkspaceBootstrap;
 }
 
 export function WorkspaceProviders({ bootstrap, controller, initialPosition, children }: { bootstrap: WorkspaceBootstrap; controller?: PlaybackController; initialPosition?: number; children: ReactNode }) {
-  const [session, dispatch] = useReducer(sessionReducer, initialSessionState);
+  // The shortcut hint sheet starts open only when the learner asked for hints (spec §6.1); after that it is session state.
+  const [session, dispatch] = useReducer(sessionReducer, bootstrap.preferences.showShortcutHints, (hints): SessionState => (
+    { ...initialSessionState, openPopover: hints ? SHORTCUT_HINTS_POPOVER : null }
+  ));
   const startPosition = initialPosition ?? bootstrap.resume?.position ?? 0;
   const store = useState(() => createPlaybackPositionStore(startPosition))[0];
   // The shell settles the start position once after mount (session record); move the store with it.

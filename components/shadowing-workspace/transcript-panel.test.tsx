@@ -212,10 +212,13 @@ describe("TranscriptPanel", () => {
     expect(session?.[0].lineFurigana).toEqual({});
   });
 
-  it("keeps the Japanese line-height after the size class (tailwind-merge)", () => {
+  it("sizes the Japanese line by the Reading Settings class alone (no text-/leading- utility to override it)", () => {
     renderPanel({ preferences: { readingFurigana: "always" } });
     fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
-    expect(rowAt(1).querySelector("[lang='ja']")).toHaveClass("leading-jp", "text-heading");
+    const japanese = rowAt(1).querySelector("[lang='ja']");
+    expect(japanese).toHaveClass("reading-jp-heading");
+    // A Tailwind size or leading utility sits in a later layer and would silently beat the reading class.
+    expect([...(japanese?.classList ?? [])].filter((name) => /^(text-(caption|body|heading)|leading-)/.test(name))).toEqual([]);
   });
 
   it("numbers, replays and follows by the line's position, not its stored index", () => {
