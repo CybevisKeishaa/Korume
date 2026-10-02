@@ -255,7 +255,8 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  --drawer-collapsed-height: calc(36 * var(--density-unit));
+  /* The collapsed bar: its top border, the separator (space-xs) and the header row (control-sm). */
+  --drawer-collapsed-height: calc(44 * var(--density-unit) + 1px);
   --drawer-peek-min: calc(160 * var(--density-unit));
   /* The shell sets the open drawer's height here; the 1a video budget subtracts it. */
   --workspace-drawer-height: 0px;
@@ -460,7 +461,8 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  --drawer-collapsed-height: calc(36 * var(--density-unit));
+  /* The collapsed bar: its top border, the separator (space-xs) and the header row (control-sm). */
+  --drawer-collapsed-height: calc(44 * var(--density-unit) + 1px);
   --drawer-peek-min: calc(160 * var(--density-unit));
   /* The shell sets the open drawer's height here; the 1a video budget subtracts it. */
   --workspace-drawer-height: 0px;

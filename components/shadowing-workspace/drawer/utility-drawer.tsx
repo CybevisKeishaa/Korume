@@ -34,7 +34,7 @@ export function UtilityDrawer({ workspaceRef, headerRef }: {
       role="region"
       aria-label={t("workspace.drawer.region")}
       data-drawer-level={state.level}
-      className={cn("reading-surface flex min-h-0 flex-col border-t border-border", !preferences.reduceMotion && "transition-[height]")}
+      className={cn("reading-surface flex h-full min-h-0 flex-col overflow-hidden border-t border-border", !preferences.reduceMotion && "transition-[height]")}
     >
       <DrawerSeparator
         level={state.level}

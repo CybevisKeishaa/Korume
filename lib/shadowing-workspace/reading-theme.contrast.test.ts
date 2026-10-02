@@ -68,6 +68,43 @@ describe("reading theme contrast (spec §6.2, WCAG AA)", () => {
   });
 });
 
+describe("Part 1b drawer and popover contrast (plan Task 15, WCAG AA)", () => {
+  /** The text tokens the drawer tabs, cards and the selection popover actually paint with. */
+  const APP_TEXT = ["--foreground", "--muted-foreground", "--primary-strong"] as const;
+
+  it("keeps the drawer's text ≥ 4.5:1 on the drawer's own surface, every preset × atmosphere", () => {
+    // The drawer is a `.reading-surface`: the preset surface under the atmosphere's glass and overlay.
+    const failures: string[] = [];
+    for (const preset of READING_COLOR_PRESET_OPTIONS) {
+      const presetBody = ruleBody(css, `[data-reading-preset="${preset}"]`);
+      for (const atmosphere of STUDY_ATMOSPHERE_OPTIONS) {
+        const place = ruleBody(css, `[data-atmosphere="${atmosphere}"]`);
+        const glassed = alphaBlend(colour(place, "--atmosphere-glass"), colour(presetBody, "--reading-surface"), numberToken(place, "--atmosphere-glass-alpha"));
+        const surface = alphaBlend(colour(place, "--atmosphere-overlay"), glassed, numberToken(place, "--atmosphere-overlay-alpha"));
+        for (const text of APP_TEXT) {
+          const ratio = contrastRatio(colour(presetBody, text), surface);
+          if (ratio < AA) failures.push(`${preset} × ${atmosphere}: ${text} ${ratio.toFixed(2)}:1`);
+        }
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+
+  it("keeps the selection popover's text ≥ 4.5:1 on its overlay surface, every preset", () => {
+    const failures: string[] = [];
+    for (const preset of READING_COLOR_PRESET_OPTIONS) {
+      const presetBody = ruleBody(css, `[data-reading-preset="${preset}"]`);
+      // `bg-overlay` is `--surface-overlay` (tailwind.config.ts).
+      const surface = colour(presetBody, "--surface-overlay");
+      for (const text of APP_TEXT) {
+        const ratio = contrastRatio(colour(presetBody, text), surface);
+        if (ratio < AA) failures.push(`${preset}: ${text} ${ratio.toFixed(2)}:1`);
+      }
+    }
+    expect(failures).toEqual([]);
+  });
+});
+
 describe("study environment CSS (spec §6.2)", () => {
   it("removes particles under Reduce Motion — the app toggle and the OS setting — instead of slowing them", () => {
     expect(css).toMatch(/:root\[data-reduce-motion="true"\] \.atmosphere-particles \{\s*display: none;\s*\}/);
