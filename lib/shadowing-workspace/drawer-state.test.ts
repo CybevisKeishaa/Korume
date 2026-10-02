@@ -2,22 +2,19 @@ import { describe, expect, it } from "vitest";
 import { DRAWER_LEVELS, drawerReducer, effectiveTarget, initialDrawerState, nearestDrawerLevel, type DrawerState } from "./drawer-state";
 
 const LINE_42 = { lineId: "line-42", span: null };
-const PHRASE = { lineId: "line-7", span: { start: 2, end: 5 } };
+const PHRASE = { lineId: "line-42", span: { start: 2, end: 5 } };
+const WORD = { entSeq: 1358280, headword: "\u98df\u3079\u308b", reading: "\u305f\u3079\u308b", glossEn: "to eat" };
 const at = (overrides: Partial<DrawerState>): DrawerState => ({ ...initialDrawerState, ...overrides });
 
 describe("drawerReducer", () => {
-  it("starts collapsed on Vocabulary, following playback", () => {
-    expect(initialDrawerState).toEqual({ level: "collapsed", tab: "vocabulary", tracking: "follow", pinned: null, kanji: null, wordEntSeq: null, aiSection: null });
+  it("starts collapsed on Mining, following playback, without an inspector", () => {
+    expect(initialDrawerState).toEqual({ level: "collapsed", tab: "mining", tracking: "follow", pinned: null, inspector: null });
   });
 
   it("opens a collapsed drawer to peek and pins the target; an open drawer keeps its level", () => {
-    expect(drawerReducer(initialDrawerState, { type: "open", tab: "ai", target: LINE_42 }))
-      .toEqual(at({ level: "peek", tab: "ai", tracking: "pinned", pinned: LINE_42 }));
-    expect(drawerReducer(at({ level: "maximized" }), { type: "open", tab: "notes", target: PHRASE }))
-      .toMatchObject({ level: "maximized", tab: "notes", pinned: PHRASE });
-    // Without a target, opening a tab keeps whatever is pinned or followed.
-    expect(drawerReducer(at({ tracking: "pinned", pinned: LINE_42 }), { type: "open", tab: "grammar" }))
-      .toMatchObject({ level: "peek", tab: "grammar", tracking: "pinned", pinned: LINE_42 });
+    expect(drawerReducer(initialDrawerState, { type: "open", tab: "mining", target: LINE_42 })).toEqual(at({ level: "peek", tab: "mining", tracking: "pinned", pinned: LINE_42 }));
+    expect(drawerReducer(at({ level: "maximized" }), { type: "open", tab: "notes", target: PHRASE })).toMatchObject({ level: "maximized", tab: "notes", pinned: PHRASE });
+    expect(drawerReducer(at({ tracking: "pinned", pinned: LINE_42 }), { type: "open", tab: "mining" })).toMatchObject({ level: "peek", tab: "mining", tracking: "pinned", pinned: LINE_42 });
   });
 
   it("selecting a tab while collapsed opens peek; while open keeps the level", () => {
@@ -35,30 +32,58 @@ describe("drawerReducer", () => {
   });
 
   it("collapses keeping tab and target; follow clears the pin", () => {
-    const pinned = at({ level: "expanded", tab: "ai", tracking: "pinned", pinned: LINE_42 });
+    const pinned = at({ level: "expanded", tab: "notes", tracking: "pinned", pinned: LINE_42 });
     expect(drawerReducer(pinned, { type: "collapse" })).toEqual({ ...pinned, level: "collapsed" });
     expect(drawerReducer(pinned, { type: "follow" })).toEqual({ ...pinned, tracking: "follow", pinned: null });
   });
 
-  it("opens a word, then a kanji, in Vocabulary, and walks back one step at a time", () => {
-    const word = drawerReducer(initialDrawerState, { type: "open-word", entSeq: 1358280, target: LINE_42 });
-    expect(word).toMatchObject({ level: "peek", tab: "vocabulary", pinned: LINE_42, wordEntSeq: 1358280, kanji: null });
-    const kanji = drawerReducer(word, { type: "open-kanji", literal: "食", target: LINE_42 });
-    expect(kanji).toMatchObject({ wordEntSeq: 1358280, kanji: "食" });
-    const back = drawerReducer(kanji, { type: "back" });
-    expect(back).toMatchObject({ wordEntSeq: 1358280, kanji: null });
-    expect(drawerReducer(back, { type: "back" })).toMatchObject({ wordEntSeq: null, kanji: null });
+  it("opens an inspector without changing its pinned target, and preserves its first snapshot while pushing", () => {
+    const opened = drawerReducer(at({ tab: "notes", tracking: "pinned", pinned: PHRASE }), { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    const snapshot = { tab: "notes", level: "collapsed", tracking: "pinned" as const, drawerTarget: PHRASE };
+    expect(opened).toMatchObject({ level: "peek", tab: "notes", tracking: "pinned", pinned: PHRASE, inspector: { stack: [{ kind: "kanji", literal: "\u98df" }], returnState: snapshot } });
+    const word = drawerReducer(opened, { type: "inspect", entry: { kind: "word", word: WORD } });
+    const kanji = drawerReducer(word, { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    expect(kanji.inspector?.stack).toHaveLength(3);
+    expect(kanji.inspector?.returnState).toEqual(snapshot);
   });
 
-  it("an explicit shortcut names the AI section to request; any other open clears it", () => {
-    const shortcut = drawerReducer(initialDrawerState, { type: "open", tab: "ai", target: LINE_42, section: "grammar_breakdown" });
-    expect(shortcut).toMatchObject({ tab: "ai", pinned: LINE_42, aiSection: "grammar_breakdown" });
-    expect(drawerReducer(shortcut, { type: "open", tab: "ai", target: LINE_42 }).aiSection).toBeNull();
+  it("backs through the inspector and restores the exact pinned snapshot at its root", () => {
+    const opened = drawerReducer(at({ tab: "notes", tracking: "pinned", pinned: PHRASE }), { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    const depthThree = drawerReducer(drawerReducer(opened, { type: "inspect", entry: { kind: "word", word: WORD } }), { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    const root = drawerReducer(drawerReducer(depthThree, { type: "inspector-back" }), { type: "inspector-back" });
+    expect(root.inspector?.stack).toHaveLength(1);
+    expect(drawerReducer(root, { type: "inspector-back" })).toMatchObject({ inspector: null, level: "collapsed", tab: "notes", tracking: "pinned", pinned: PHRASE });
   });
 
-  it("a new target drops the word and kanji of the old one", () => {
-    const deep = at({ tracking: "pinned", pinned: LINE_42, wordEntSeq: 1, kanji: "食" });
-    expect(drawerReducer(deep, { type: "open", tab: "vocabulary", target: PHRASE })).toMatchObject({ wordEntSeq: null, kanji: null });
+  it("closes an inspector from any depth and restores its snapshot", () => {
+    const opened = drawerReducer(at({ tab: "notes", tracking: "pinned", pinned: PHRASE }), { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    const depthThree = drawerReducer(drawerReducer(opened, { type: "inspect", entry: { kind: "word", word: WORD } }), { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    expect(drawerReducer(depthThree, { type: "inspector-close" })).toMatchObject({ inspector: null, level: "collapsed", tab: "notes", tracking: "pinned", pinned: PHRASE });
+  });
+
+  it("an explicit Follow while inspecting closes the Inspector into its tab, at the current height, following", () => {
+    const opened = drawerReducer(at({ tab: "notes", tracking: "pinned", pinned: PHRASE }), { type: "inspect", entry: { kind: "kanji", literal: "食" } });
+    expect(drawerReducer(opened, { type: "follow" })).toMatchObject({ inspector: null, tab: "notes", level: "peek", tracking: "follow", pinned: null });
+  });
+
+  it("restores following without pinning after close (Review Focus 2)", () => {
+    const opened = drawerReducer(initialDrawerState, { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    expect(drawerReducer(opened, { type: "inspector-close" })).toMatchObject({ tracking: "follow", pinned: null });
+  });
+
+  it("choosing a tab while inspecting restores its target before opening that tab (Review Focus 1)", () => {
+    const opened = drawerReducer(at({ tab: "notes", tracking: "pinned", pinned: PHRASE }), { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    expect(drawerReducer(opened, { type: "select-tab", tab: "mining" })).toMatchObject({ inspector: null, tab: "mining", level: "peek", tracking: "pinned", pinned: PHRASE });
+  });
+
+  it("opens a row action while inspecting by closing it and pinning the new target", () => {
+    const opened = drawerReducer(initialDrawerState, { type: "inspect", entry: { kind: "kanji", literal: "\u98df" } });
+    expect(drawerReducer(opened, { type: "open", tab: "notes", target: LINE_42 })).toMatchObject({ inspector: null, tab: "notes", tracking: "pinned", pinned: LINE_42 });
+  });
+
+  it("returns the same state for inspector navigation with no inspector", () => {
+    expect(drawerReducer(initialDrawerState, { type: "inspector-back" })).toBe(initialDrawerState);
+    expect(drawerReducer(initialDrawerState, { type: "inspector-close" })).toBe(initialDrawerState);
   });
 });
 

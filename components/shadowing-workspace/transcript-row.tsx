@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { MineLineControl } from "@/components/video-player/mine-line-control";
 import { PinLineControl } from "@/components/video-player/pin-line-control";
 import type { DrawerTab } from "@/lib/shadowing-workspace/drawer-state";
-import { BookmarkGlyph, FlagGlyph, GrammarGlyph, NoteGlyph, ReplayGlyph, SparklesGlyph, VocabularyGlyph } from "./player-glyphs";
+import { BookmarkGlyph, CardsGlyph, FlagGlyph, NoteGlyph, ReplayGlyph } from "./player-glyphs";
 import { furiganaShownByMode, RubySentence } from "./ruby-sentence";
 
 export type RowState = "past" | "current" | "future";
@@ -44,9 +44,7 @@ export interface TranscriptRowProps {
 }
 
 const DRAWER_ACTIONS = [
-  { tab: "vocabulary", label: "workspace.transcript.openVocabulary", Glyph: VocabularyGlyph },
-  { tab: "grammar", label: "workspace.transcript.openGrammar", Glyph: GrammarGlyph },
-  { tab: "ai", label: "workspace.transcript.openAi", Glyph: SparklesGlyph },
+  { tab: "mining", label: "workspace.transcript.openMining", Glyph: CardsGlyph },
   { tab: "notes", label: "workspace.transcript.openNote", Glyph: NoteGlyph },
 ] as const;
 

@@ -1,8 +1,9 @@
 import type { Utf16Span } from "@/lib/analysis/types";
+import type { KanjiCommonWord } from "@/lib/dictionary/types";
 
 export const DRAWER_LEVELS = ["collapsed", "peek", "expanded", "maximized"] as const;
 export type DrawerLevel = (typeof DRAWER_LEVELS)[number];
-export const DRAWER_TABS = ["vocabulary", "grammar", "mining", "notes", "ai"] as const;
+export const DRAWER_TABS = ["mining", "notes"] as const;
 export type DrawerTab = (typeof DRAWER_TABS)[number];
 
 /** The sentence (and optional span) the drawer is about (spec §6.2). */
@@ -11,61 +12,79 @@ export interface DrawerTarget {
   span: Utf16Span | null;
 }
 
+export type InspectorEntry = { kind: "kanji"; literal: string } | { kind: "word"; word: KanjiCommonWord };
+
+export interface InspectorReturnState {
+  tab: DrawerTab;
+  level: DrawerLevel;
+  tracking: "follow" | "pinned";
+  drawerTarget: DrawerTarget | null;
+}
+
 export interface DrawerState {
   level: DrawerLevel;
   tab: DrawerTab;
   tracking: "follow" | "pinned";
   pinned: DrawerTarget | null;
-  /** Vocabulary's drill-down: a word card, then a kanji inside it. */
-  kanji: string | null;
-  wordEntSeq: number | null;
-  /** An AI section an explicit shortcut asked for (Grammar's "AI Grammar Breakdown →"); the AI tab requests it. */
-  aiSection: string | null;
+  inspector: { stack: InspectorEntry[]; returnState: InspectorReturnState } | null;
 }
 
 export type DrawerAction =
-  | { type: "open"; tab: DrawerTab; target?: DrawerTarget; section?: string }
+  | { type: "open"; tab: DrawerTab; target?: DrawerTarget }
   | { type: "set-level"; level: DrawerLevel }
   | { type: "step"; delta: 1 | -1 }
   | { type: "select-tab"; tab: DrawerTab }
   | { type: "follow" }
   | { type: "collapse" }
-  | { type: "open-kanji"; literal: string; target: DrawerTarget }
-  | { type: "open-word"; entSeq: number; target: DrawerTarget }
-  | { type: "back" };
+  | { type: "inspect"; entry: InspectorEntry }
+  | { type: "inspector-back" }
+  | { type: "inspector-close" };
 
 export const initialDrawerState: DrawerState = {
-  level: "collapsed", tab: "vocabulary", tracking: "follow", pinned: null, kanji: null, wordEntSeq: null, aiSection: null,
+  level: "collapsed", tab: "mining", tracking: "follow", pinned: null, inspector: null,
 };
 
 /** Every entry point opens a collapsed drawer to peek; an open drawer keeps the height the learner chose. */
 const opened = (level: DrawerLevel): DrawerLevel => (level === "collapsed" ? "peek" : level);
-const pin = (state: DrawerState, target: DrawerTarget): DrawerState => ({ ...state, tracking: "pinned", pinned: target, kanji: null, wordEntSeq: null });
+const snapshot = (state: DrawerState): InspectorReturnState => ({
+  tab: state.tab, level: state.level, tracking: state.tracking, drawerTarget: state.pinned,
+});
+const restore = (state: DrawerState, back: InspectorReturnState): DrawerState => ({
+  ...state, inspector: null, tab: back.tab, level: back.level, tracking: back.tracking, pinned: back.drawerTarget,
+});
 
 export function drawerReducer(state: DrawerState, action: DrawerAction): DrawerState {
   switch (action.type) {
     case "open": {
-      const next = action.target ? pin(state, action.target) : state;
-      return { ...next, tab: action.tab, level: opened(state.level), aiSection: action.section ?? null };
+      const base = state.inspector ? { ...state, inspector: null } : state;
+      const next = action.target ? { ...base, tracking: "pinned" as const, pinned: action.target } : base;
+      return { ...next, tab: action.tab, level: opened(state.level) };
     }
     case "set-level": return { ...state, level: action.level };
     case "step": {
       const index = Math.min(DRAWER_LEVELS.length - 1, Math.max(0, DRAWER_LEVELS.indexOf(state.level) + action.delta));
       return { ...state, level: DRAWER_LEVELS[index] ?? state.level };
     }
-    case "select-tab": return { ...state, tab: action.tab, level: opened(state.level) };
-    case "follow": return { ...state, tracking: "follow", pinned: null };
-    case "collapse": return { ...state, level: "collapsed" };
-    case "open-word": return { ...pin(state, action.target), tab: "vocabulary", level: opened(state.level), wordEntSeq: action.entSeq };
-    case "open-kanji": {
-      // Inside a word card the kanji opens on top of it; from anywhere else it starts a fresh drill-down.
-      const sameTarget = state.pinned?.lineId === action.target.lineId;
-      const base = sameTarget ? state : pin(state, action.target);
-      return { ...base, tracking: "pinned", pinned: action.target, tab: "vocabulary", level: opened(state.level), kanji: action.literal };
+    case "select-tab": {
+      const base = state.inspector ? restore(state, state.inspector.returnState) : state;
+      return { ...base, tab: action.tab, level: opened(base.level) };
     }
-    case "back":
-      if (state.kanji !== null) return { ...state, kanji: null };
-      return { ...state, wordEntSeq: null };
+    case "follow": {
+      // An explicit Follow outranks the snapshot: it closes the Inspector into its tab at the current height.
+      const base = state.inspector ? { ...restore(state, state.inspector.returnState), level: state.level } : state;
+      return { ...base, tracking: "follow", pinned: null };
+    }
+    case "collapse": return { ...state, level: "collapsed" };
+    case "inspect":
+      return state.inspector
+        ? { ...state, inspector: { ...state.inspector, stack: [...state.inspector.stack, action.entry] } }
+        : { ...state, level: opened(state.level), inspector: { stack: [action.entry], returnState: snapshot(state) } };
+    case "inspector-back": {
+      if (!state.inspector) return state;
+      const stack = state.inspector.stack.slice(0, -1);
+      return stack.length > 0 ? { ...state, inspector: { ...state.inspector, stack } } : restore(state, state.inspector.returnState);
+    }
+    case "inspector-close": return state.inspector ? restore(state, state.inspector.returnState) : state;
   }
 }
 

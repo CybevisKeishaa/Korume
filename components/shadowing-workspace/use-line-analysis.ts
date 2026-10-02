@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { LineAnalysisDto } from "@/lib/analysis/types";
+import type { LexicalLineAnalysisDto } from "@/lib/analysis/types";
 
-type LineAnalysisState = { status: "loading" } | { status: "ready"; analysis: LineAnalysisDto } | { status: "error" };
+type LineAnalysisState = { status: "loading" } | { status: "ready"; analysis: LexicalLineAnalysisDto } | { status: "error" };
 
 // ponytail: a tab-lifetime cache of one GET per line; mastery inside can go stale after an SRS review in another
 // tab, which only changes a badge. A line's analysis is otherwise fixed for a dictionary snapshot.
-const cache = new Map<string, Promise<LineAnalysisDto>>();
+const cache = new Map<string, Promise<LexicalLineAnalysisDto>>();
 
-export function fetchLineAnalysis(lineId: string): Promise<LineAnalysisDto> {
+export function fetchLineAnalysis(lineId: string): Promise<LexicalLineAnalysisDto> {
   let pending = cache.get(lineId);
   if (!pending) {
-    pending = fetch(`/api/lines/${lineId}/analysis`).then(async (response) => {
+    pending = fetch(`/api/lines/${lineId}/analysis?scope=lexical`).then(async (response) => {
       if (!response.ok) throw new Error(`analysis ${response.status}`);
-      return ((await response.json()) as { data: LineAnalysisDto }).data;
+      return ((await response.json()) as { data: LexicalLineAnalysisDto }).data;
     });
     // A failure is not cached: the next open retries.
     pending.catch(() => cache.delete(lineId));

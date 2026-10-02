@@ -12,7 +12,7 @@ const CONTROL = "flex h-control-sm items-center rounded-md px-sm text-caption te
 export const drawerTabId = (tab: DrawerTab) => `workspace-drawer-tab-${tab}`;
 export const DRAWER_PANEL_ID = "workspace-drawer-panel";
 
-/** The five tabs (a roving-focus tablist), the target label and its Follow / level controls (spec §6.1–6.2). */
+/** The two tabs, Mining and Notes (a roving-focus tablist), the target label and its Follow / level controls (spec §6.1–6.2). */
 export function DrawerHeader() {
   const t = useTranslations("shadowing");
   const { state, dispatch, target } = useDrawer();

@@ -9,10 +9,11 @@ describe("workspace views", () => {
   });
 
   it("applies escape priority", () => {
-    expect(escapeAction({ popoverOpen: true, drawerOpen: true, fullscreen: "player", view: "focus" })).toBe("close-popover");
-    expect(escapeAction({ popoverOpen: false, drawerOpen: true, fullscreen: "player", view: "focus" })).toBe("collapse-drawer");
-    expect(escapeAction({ popoverOpen: false, drawerOpen: false, fullscreen: "player", view: "focus" })).toBe("exit-fullscreen");
-    expect(escapeAction({ popoverOpen: false, drawerOpen: false, fullscreen: "none", view: "focus" })).toBe("exit-view");
-    expect(escapeAction({ popoverOpen: false, drawerOpen: false, fullscreen: "none", view: "normal" })).toBe("none");
+    expect(escapeAction({ popoverOpen: true, inspectorOpen: true, drawerOpen: true, fullscreen: "player", view: "focus" })).toBe("close-popover");
+    expect(escapeAction({ popoverOpen: false, inspectorOpen: true, drawerOpen: true, fullscreen: "player", view: "focus" })).toBe("close-inspector");
+    expect(escapeAction({ popoverOpen: false, inspectorOpen: false, drawerOpen: true, fullscreen: "player", view: "focus" })).toBe("collapse-drawer");
+    expect(escapeAction({ popoverOpen: false, inspectorOpen: false, drawerOpen: false, fullscreen: "player", view: "focus" })).toBe("exit-fullscreen");
+    expect(escapeAction({ popoverOpen: false, inspectorOpen: false, drawerOpen: false, fullscreen: "none", view: "focus" })).toBe("exit-view");
+    expect(escapeAction({ popoverOpen: false, inspectorOpen: false, drawerOpen: false, fullscreen: "none", view: "normal" })).toBe("none");
   });
 });

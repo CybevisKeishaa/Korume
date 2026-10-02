@@ -178,48 +178,10 @@
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
-    "ai": {
-      "generate": "Generate",
-      "generating": "Writing this section…",
-      "ready": "{section} is ready.",
-      "quota": "You've used today's free AI sentences. Resets in {hours} h.",
-      "resting": "AI is resting right now. Sections already loaded stay here.",
-      "failed": "Couldn't load this section.",
-      "retry": "Try again",
-      "locked": "Preview. The full section comes with Plus.",
-      "playTurn": "Play line {number}",
-      "ttsUnavailable": "Audio isn't available right now.",
-      "quiz": { "correct": "Correct.", "incorrect": "Not quite." },
-      "fields": { "literal": "Literally", "register": "Register", "whenToUse": "When to use", "whenNotTo": "When not to" },
-      "usage": {
-        "free": "{used}/{limit} sentences today · resets in {hours} h",
-        "plus": "{percent}% of this month's AI left",
-        "plusLabel": "AI left this month"
-      },
-      "sections": {
-        "lite": "Explanation",
-        "grammar_breakdown": "Grammar breakdown",
-        "culture_notes": "Culture notes",
-        "common_mistakes": "Common mistakes",
-        "alternative_expressions": "Other ways to say it",
-        "native_nuance": "Native nuance",
-        "more_examples": "More examples",
-        "quiz": "Quiz",
-        "conversation": "Conversation",
-        "phrase_analysis": "Phrase analysis"
-      }
-    },
     "mining": {
       "loading": "Loading your cards…",
       "failed": "Couldn't load your cards.",
       "none": "You haven't mined a sentence from this lesson yet."
-    },
-    "grammar": {
-      "aiBreakdown": "AI Grammar Breakdown →",
-      "loading": "Matching grammar…",
-      "failed": "Couldn't load the grammar of this sentence.",
-      "none": "No grammar patterns from the library match this sentence.",
-      "open": "Open in Grammar"
     },
     "notes": {
       "sentence": "Note for sentence {number}",
@@ -235,21 +197,6 @@
         "idle": ""
       }
     },
-    "vocabulary": {
-      "scope": "Show words from",
-      "thisSentence": "This sentence",
-      "wholeLesson": "Whole lesson",
-      "loading": "Loading words…",
-      "failed": "Couldn't load the words.",
-      "retry": "Try again",
-      "noWords": "No dictionary words here.",
-      "back": "Back",
-      "showMore": "Show more",
-      "total": "{count, plural, one {{count} word} other {{count} words}} in this lesson",
-      "occurrences": "{count}×",
-      "mastery": "SRS {stage}",
-      "sentences": "Sentences with {word}"
-    },
     "selection": {
       "loading": "Looking up the words…",
       "failed": "Couldn't load the words of this sentence.",
@@ -259,21 +206,18 @@
       "glossPending": "Writing the Vietnamese meaning…",
       "glossUnavailable": "No Vietnamese meaning yet.",
       "aiGenerated": "AI-generated",
-      "analyze": "Analyze",
       "play": "Play sentence",
       "bookmark": "Bookmark sentence",
       "mine": "Add to Mining",
       "mineTooLong": "Select {max} characters or fewer to add to Mining."
     },
+    "inspector": { "label": "Look-up: {title}", "back": "Back", "close": "Close" },
     "drawer": {
       "region": "Study tools",
       "tabList": "Study tools",
       "tabs": {
-        "vocabulary": "Vocabulary",
-        "grammar": "Grammar",
         "mining": "Mining",
-        "notes": "Notes",
-        "ai": "AI"
+        "notes": "Notes"
       },
       "separator": "Resize study tools",
       "levels": {
@@ -321,7 +265,6 @@
       "fullscreen": "Player fullscreen"
     },
     "liveSentence": {
-      "explain": "Explain with AI",
       "label": "Live sentence",
       "hideJapanese": "Hide Japanese",
       "showJapanese": "Show Japanese",
@@ -329,9 +272,7 @@
     },
     "transcript": {
       "hasNote": "Has a note",
-      "openVocabulary": "Vocabulary",
-      "openGrammar": "Grammar",
-      "openAi": "AI explanation",
+      "openMining": "Cards from this sentence",
       "openNote": "Note",
       "label": "Transcript",
       "meta": "{count, plural, one {{count} sentence} other {{count} sentences}} · {minutes} min",

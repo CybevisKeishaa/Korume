@@ -5,18 +5,17 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { RubySentence } from "../ruby-sentence";
 import { useLesson, usePreferences } from "../workspace-context";
-import { AiTab } from "./ai-tab";
 import { useDrawer } from "./drawer-context";
 import { DRAWER_PANEL_ID, DrawerHeader, drawerTabId } from "./drawer-header";
 import { DrawerSeparator } from "./drawer-separator";
-import { GrammarTab } from "./grammar-tab";
+import { INSPECTOR_HEADING_ID, Inspector } from "./inspector";
 import { MiningTab } from "./mining-tab";
 import { NotesTab } from "./notes-tab";
-import { VocabularyTab } from "./vocabulary-tab";
 
 /**
  * The Utility Drawer (spec §6.1): a band under both columns. The shell sizes its grid row; this renders the
- * resize handle, the header and — unless collapsed — the selected tab about the drawer's target.
+ * resize handle, the header and — unless collapsed — the selected tab about the
+ * drawer's target, or the Inspector while a kanji or word is open over it.
  */
 export function UtilityDrawer({ workspaceRef, headerRef }: {
   workspaceRef: RefObject<HTMLElement>;
@@ -50,27 +49,25 @@ export function UtilityDrawer({ workspaceRef, headerRef }: {
         <div
           role="tabpanel"
           id={DRAWER_PANEL_ID}
-          aria-labelledby={drawerTabId(state.tab)}
+          aria-labelledby={state.inspector ? INSPECTOR_HEADING_ID : drawerTabId(state.tab)}
           tabIndex={0}
           className="min-h-0 flex-1 overflow-y-auto px-md pb-md pt-xs"
         >
-          {line && (
-            // A span shows exactly the selected characters: the line's ruby segments do not cut at a span.
-            <RubySentence
-              segments={target?.span ? null : line.furigana}
-              text={target?.span ? line.textJp.slice(target.span.start, target.span.end) : line.textJp}
-              mode={preferences.readingFurigana}
-              override={undefined}
-              className="reading-jp-body-lg reading-foreground"
-            />
+          {state.inspector ? <Inspector /> : (
+            <>
+              {line && (
+                // A span shows exactly the selected characters: the line's ruby segments do not cut at a span.
+                <RubySentence
+                  segments={target?.span ? null : line.furigana}
+                  text={target?.span ? line.textJp.slice(target.span.start, target.span.end) : line.textJp}
+                  mode={preferences.readingFurigana}
+                  override={undefined}
+                  className="reading-jp-body-lg reading-foreground"
+                />
+              )}
+              <div className="mt-sm">{state.tab === "mining" ? <MiningTab /> : <NotesTab />}</div>
+            </>
           )}
-          <div className="mt-sm">
-            {state.tab === "vocabulary" && <VocabularyTab />}
-            {state.tab === "grammar" && <GrammarTab />}
-            {state.tab === "mining" && <MiningTab />}
-            {state.tab === "notes" && <NotesTab />}
-            {state.tab === "ai" && <AiTab />}
-          </div>
         </div>
       )}
     </section>

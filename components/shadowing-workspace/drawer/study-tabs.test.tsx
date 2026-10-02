@@ -4,7 +4,7 @@ import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
-import type { LineAnalysisDto } from "@/lib/analysis/types";
+import type { LexicalLineAnalysisDto } from "@/lib/analysis/types";
 import { resetTabWritesForTests, usePositionStore } from "../workspace-context";
 import { ShadowingWorkspaceShell } from "../workspace-shell";
 import { TranscriptPanel } from "../transcript-panel";
@@ -28,13 +28,7 @@ const bootstrap: WorkspaceBootstrap = {
   masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked: false, marks: [],
   notes: { lessonNote: null, sentenceNotes: [note("line-5", "fifth"), note("line-2", "second")] },
 };
-const GRAMMAR_ANALYSIS: LineAnalysisDto = {
-  lineId: "line-3", snapshotId: "s", tokens: [], mastery: {},
-  grammar: [{
-    grammarPointId: "g-te", title: "〜てしまう", structure: "〔verb て-form〕しまう", explanation: "Completion or regret.",
-    examples: [{ jp: "食べてしまった。", en: "I ate it all." }], span: { start: 0, end: 2 },
-  }],
-};
+const analysis = (lineId: string): LexicalLineAnalysisDto => ({ lineId, snapshotId: "s", tokens: [], mastery: {} });
 
 let fetchMock: ReturnType<typeof vi.fn>;
 let failNotes = false;
@@ -52,7 +46,7 @@ beforeEach(() => {
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
     if (url.includes("/api/lines/")) {
       const lineId = url.split("/")[3] ?? "";
-      return json({ data: lineId === "line-3" ? GRAMMAR_ANALYSIS : { ...GRAMMAR_ANALYSIS, lineId, grammar: [] } });
+      return json({ data: analysis(lineId) });
     }
     if (url === "/api/sentence-notes" || url.endsWith("/notes")) return failNotes ? json({ error: "x" }, 500) : json({ data: { saved: init?.method === "PUT" } });
     if (url === "/api/videos/video-1/mining-cards") {
@@ -138,27 +132,6 @@ describe("Notes tab", () => {
     fireEvent.click(within(panel()).getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(within(panel()).getByText("Saved")).toBeInTheDocument());
     expect(noteWrites()).toHaveLength(2);
-  });
-});
-
-describe("Grammar tab", () => {
-  it("shows each match's structure, explanation, examples and grammar-page link", async () => {
-    renderShell();
-    openFromRow(3, "Grammar");
-    const match = await within(panel()).findByRole("article", { name: "〜てしまう" });
-    expect(match).toHaveTextContent("〔verb て-form〕しまう");
-    expect(match).toHaveTextContent("Completion or regret.");
-    expect(match).toHaveTextContent("食べてしまった。I ate it all.");
-    expect(within(match).getByRole("link", { name: "Open in Grammar" })).toHaveAttribute("href", "/grammar#grammar-g-te");
-  });
-
-  it("says when nothing matches, and the AI shortcut opens AI on the same target without generating here", async () => {
-    renderShell();
-    openFromRow(4, "Grammar");
-    expect(await within(panel()).findByText("No grammar patterns from the library match this sentence.")).toBeInTheDocument();
-    fireEvent.click(within(panel()).getByRole("button", { name: "AI Grammar Breakdown →" }));
-    expect(screen.getByRole("tab", { name: "AI" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("region", { name: "Study tools" })).toHaveTextContent("Sentence 4 / 6· Pinned");
   });
 });
 

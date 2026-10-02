@@ -8,7 +8,6 @@ import { caretToOffset, selectionToSpan } from "@/lib/shadowing-workspace/select
 import { cn } from "@/lib/utils";
 import { AnchoredPopover } from "@/components/ui/popover";
 import { useDrawer } from "./drawer/drawer-context";
-import { PhraseCard } from "./drawer/phrase-card";
 import { WordCard } from "./drawer/word-card";
 import { BookmarkGlyph, PlayGlyph } from "./player-glyphs";
 import { useLineAnalysis } from "./use-line-analysis";
@@ -84,7 +83,7 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
   const { lines } = useLesson();
   const controller = usePlaybackController();
   const marks = useMarks();
-  const { dispatch } = useDrawer();
+  const { dispatch, focusOrigin } = useDrawer();
   const index = lines.findIndex((line) => line.id === opened.lineId);
   const line = lines[index];
   const analysis = useLineAnalysis(opened.lineId);
@@ -107,7 +106,6 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
   }, [analysis, line, opened.at]);
 
   const selectedText = line && "span" in opened.at ? line.textJp.slice(opened.at.span.start, opened.at.span.end) : resolved?.text ?? "";
-  const target = { lineId: opened.lineId, span: resolved?.span ?? ("span" in opened.at ? opened.at.span : null) };
   const close = () => onClose();
 
   const [mining, setMining] = useState<{ status: "idle" | "submitting" | "done" | "error"; message: string }>({ status: "idle", message: "" });
@@ -149,11 +147,11 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
       {resolved?.word && (
         <WordCard
           token={resolved.word}
-          onOpenKanji={(literal) => { dispatch({ type: "open-kanji", literal, target }); close(); }}
+          onOpenKanji={(literal) => { focusOrigin.current = opened.returnFocus; dispatch({ type: "inspect", entry: { kind: "kanji", literal } }); close(); }}
         />
       )}
       {resolved && !resolved.word && (
-        <PhraseCard text={resolved.text} onAnalyze={() => { dispatch({ type: "open", tab: "ai", target }); close(); }} />
+        <p lang="ja" className="font-jp text-body text-foreground">{resolved.text}</p>
       )}
       <div className="flex flex-wrap gap-2xs border-t border-border pt-sm">
         <button type="button" className={ACTION} onClick={() => { if (index >= 0) controller.seekToSentence(index, { play: true }); }}>

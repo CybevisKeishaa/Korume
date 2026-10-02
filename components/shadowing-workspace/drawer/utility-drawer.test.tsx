@@ -58,28 +58,29 @@ const separator = () => screen.getByRole("separator", { name: "Resize study tool
 const at = (seconds: number) => act(() => { store?.set(seconds); });
 
 describe("UtilityDrawer in the workspace", () => {
-  it("is a bottom row spanning every column, collapsed at first, with five tabs", () => {
+  it("is a bottom row spanning every column, collapsed at first, with Mining and Notes", () => {
     renderShell();
     const slot = screen.getByTestId("workspace-drawer-slot");
     expect(slot).toHaveClass("col-span-3", "row-start-3");
     expect(screen.getByTestId("shadowing-workspace").style.gridTemplateRows).toBe("auto minmax(0, 1fr) var(--drawer-collapsed-height)");
     expect(level()).toBe("collapsed");
-    expect(within(drawer()).getAllByRole("tab").map((node) => node.textContent)).toEqual(["Vocabulary", "Grammar", "Mining", "Notes", "AI"]);
+    expect(within(drawer()).getAllByRole("tab").map((node) => node.textContent)).toEqual(["Mining", "Notes"]);
+    expect(within(drawer()).queryByRole("tab", { name: /Vocabulary|Grammar|AI/ })).toBeNull();
     expect(within(drawer()).queryByRole("tabpanel")).toBeNull();
   });
 
   it("selecting a tab while collapsed opens peek; arrow keys rove the tablist", () => {
     renderShell();
-    fireEvent.click(tab("Grammar"));
+    fireEvent.click(tab("Notes"));
     expect(level()).toBe("peek");
-    expect(tab("Grammar")).toHaveAttribute("aria-selected", "true");
-    expect(within(drawer()).getByRole("tabpanel")).toHaveAttribute("aria-labelledby", tab("Grammar").id);
-    fireEvent.keyDown(tab("Grammar"), { key: "ArrowRight" });
+    expect(tab("Notes")).toHaveAttribute("aria-selected", "true");
+    expect(within(drawer()).getByRole("tabpanel")).toHaveAttribute("aria-labelledby", tab("Notes").id);
+    fireEvent.keyDown(tab("Notes"), { key: "ArrowRight" });
     expect(tab("Mining")).toHaveAttribute("aria-selected", "true");
     expect(tab("Mining")).toHaveFocus();
     fireEvent.keyDown(tab("Mining"), { key: "End" });
-    expect(tab("AI")).toHaveFocus();
-    expect(within(drawer()).getAllByRole("tab").filter((node) => node.tabIndex === 0)).toEqual([tab("AI")]);
+    expect(tab("Notes")).toHaveFocus();
+    expect(within(drawer()).getAllByRole("tab").filter((node) => node.tabIndex === 0)).toEqual([tab("Notes")]);
   });
 
   it("keeps the player the same DOM node through every level", () => {
@@ -99,9 +100,9 @@ describe("UtilityDrawer in the workspace", () => {
   it("a row action pins that line, and Follow returns to the current sentence", () => {
     renderShell();
     at(3);
-    fireEvent.click(within(screen.getAllByRole("listitem")[6] as HTMLElement).getByRole("button", { name: "Grammar" }));
+    fireEvent.click(within(screen.getAllByRole("listitem")[6] as HTMLElement).getByRole("button", { name: "Cards from this sentence" }));
     expect(level()).toBe("peek");
-    expect(tab("Grammar")).toHaveAttribute("aria-selected", "true");
+    expect(tab("Mining")).toHaveAttribute("aria-selected", "true");
     expect(drawer()).toHaveTextContent("Sentence 7 / 12· Pinned");
     // Review Focus 2: playback moves on, the pinned target does not.
     for (let second = 4; second < 24; second += 2) at(second);
@@ -111,12 +112,16 @@ describe("UtilityDrawer in the workspace", () => {
     expect(drawer()).toHaveTextContent("Current sentence · 12 / 12");
   });
 
-  it("Live Sentence ✨ pins the current line and opens AI", () => {
+  it("offers no AI, Vocabulary or Grammar entry point: Live Sentence has no ✨ and rows offer only Mining and Note", () => {
     renderShell();
     at(5);
-    fireEvent.click(screen.getByRole("button", { name: "Explain with AI" }));
-    expect(tab("AI")).toHaveAttribute("aria-selected", "true");
-    expect(drawer()).toHaveTextContent("Sentence 3 / 12· Pinned");
+    const live = screen.getByRole("region", { name: "Live sentence" });
+    expect(within(live).queryAllByRole("button").filter((button) => /AI|Explain|✨/i.test(button.getAttribute("aria-label") ?? button.textContent ?? ""))).toEqual([]);
+    const row = screen.getAllByRole("listitem")[2] as HTMLElement;
+    fireEvent.mouseEnter(row);
+    const names = within(row).getAllByRole("button").map((button) => button.getAttribute("aria-label") ?? button.textContent ?? "");
+    expect(names).toEqual(expect.arrayContaining(["Cards from this sentence", "Note"]));
+    expect(names.filter((name) => /Vocabulary|Grammar|AI explanation/.test(name))).toEqual([]);
   });
 
   it("Focus Mode hides the drawer and leaving it restores tab, level and target", () => {
@@ -135,7 +140,7 @@ describe("UtilityDrawer in the workspace", () => {
 
   it("Escape collapses an open drawer before it leaves a view", () => {
     renderShell();
-    fireEvent.click(tab("Vocabulary"));
+    fireEvent.click(tab("Mining"));
     act(() => sessionDispatch?.({ type: "toggle-view", view: "full-transcript" }));
     fireEvent.keyDown(document.body, { key: "Escape" });
     expect(level()).toBe("collapsed");
@@ -144,13 +149,13 @@ describe("UtilityDrawer in the workspace", () => {
     expect(screen.getByTestId("shadowing-workspace")).not.toHaveClass("grid-cols-1");
   });
 
-  it("follows ten sentence changes on the AI tab without a single request (R11)", () => {
+  it("follows ten sentence changes on Notes without knowledge or vocabulary requests", () => {
     renderShell();
-    fireEvent.click(tab("AI"));
+    fireEvent.click(tab("Notes"));
     fetchMock.mockClear();
     for (let second = 1; second <= 21; second += 2) at(second);
     expect(drawer()).toHaveTextContent("Current sentence · 11 / 12");
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock.mock.calls.some(([input]) => /\/api\/knowledge\/|\/vocabulary/.test(String(input)))).toBe(false);
   });
 });
 

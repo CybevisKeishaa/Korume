@@ -124,28 +124,32 @@ describe("selection popover", () => {
     expect(screen.getByRole("dialog")).not.toHaveAttribute("aria-modal");
   });
 
-  it("each kanji of the headword opens QuickInspect in the Vocabulary tab, pinned to the line", async () => {
+  it("each kanji of the headword opens the Inspector without changing the drawer target", async () => {
     renderShell();
     selectIn(rowText("line-2"), 0, 2);
     fireEvent.mouseUp(rowText("line-2"));
     const dialog = await screen.findByRole("dialog");
     fireEvent.click(await within(dialog).findByRole("button", { name: "Kanji 日" }));
     const drawer = screen.getByRole("region", { name: "Công cụ học" });
-    expect(within(drawer).getByRole("tab", { name: "Từ vựng" })).toHaveAttribute("aria-selected", "true");
-    expect(drawer).toHaveTextContent("Câu 2 / 3");
+    expect(within(drawer).getByRole("button", { name: "Quay lại" })).toBeInTheDocument();
+    expect(within(drawer).getByRole("heading", { name: "日" })).toBeInTheDocument();
+    expect(drawer).toHaveTextContent("Câu hiện tại · 1 / 3");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
-  it("several tokens → a phrase card whose Analyze opens AI on that span", async () => {
+  it("several tokens show phrase text and actions without Analyze", async () => {
     renderShell();
     selectIn(rowText("line-2"), 1, 4); // 日は雨 → snaps to 明日は雨
     fireEvent.mouseUp(rowText("line-2"));
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("明日は雨")).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Phân tích" }));
-    const drawer = screen.getByRole("region", { name: "Công cụ học" });
-    expect(within(drawer).getByRole("tab", { name: "AI" })).toHaveAttribute("aria-selected", "true");
-    expect(within(drawer).getByRole("tabpanel")).toHaveTextContent("明日は雨");
+    expect(within(dialog).getByRole("button", { name: "Phát câu" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Đánh dấu câu" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Thêm vào thẻ câu" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Phân tích" })).toBeNull();
+    const analysisUrls = fetchMock.mock.calls.map(([input]) => String(input)).filter((url) => url.includes("/analysis"));
+    expect(analysisUrls.length).toBeGreaterThan(0);
+    expect(analysisUrls.every((url) => url.endsWith("?scope=lexical"))).toBe(true);
     expect(posts("/api/dictionary/gloss")).toHaveLength(0);
   });
 

@@ -36,7 +36,7 @@ function requestGloss(entSeq: number): Promise<GlossDto | null> {
  * The Vietnamese gloss of one entry: read first; only when nothing exists is a system-funded generation
  * requested — from this card being open, an explicit learner action, never from playback.
  */
-export function useVietnameseGloss(entSeq: number | null, { request = true }: { request?: boolean } = {}): GlossState | null {
+export function useVietnameseGloss(entSeq: number | null): GlossState | null {
   const locale = useLocale();
   const enabled = entSeq !== null && locale === "vi";
   const [state, setState] = useState<{ entSeq: number; value: GlossState } | null>(null);
@@ -45,10 +45,10 @@ export function useVietnameseGloss(entSeq: number | null, { request = true }: { 
     let live = true;
     const settle = (value: GlossState) => { if (live) setState({ entSeq, value }); };
     readGloss(entSeq)
-      .then((gloss) => (request && gloss && gloss.status === "missing" ? requestGloss(entSeq) : gloss))
+      .then((gloss) => (gloss && gloss.status === "missing" ? requestGloss(entSeq) : gloss))
       .then((gloss) => settle(gloss ? { status: "done", gloss } : { status: "unavailable" }), () => settle({ status: "unavailable" }));
     return () => { live = false; };
-  }, [enabled, entSeq, request]);
+  }, [enabled, entSeq]);
   if (!enabled || entSeq === null) return null;
   return state?.entSeq === entSeq ? state.value : { status: "loading" };
 }
@@ -57,18 +57,16 @@ const isKanji = (character: string) => /\p{Script=Han}/u.test(character);
 
 /**
  * One token as a word card (spec §6.3): headword (each kanji a button to QuickInspect), reading, part of
- * speech, up to three English senses and the Vietnamese gloss. Shared by the popover and the Vocabulary tab.
+ * speech, up to three English senses and the Vietnamese gloss. Shared by the popover and the Inspector.
  */
-export function WordCard({ token, onOpenKanji, requestGloss: request = true }: {
+export function WordCard({ token, onOpenKanji }: {
   token: AnalysisToken;
   onOpenKanji(literal: string): void;
-  /** False for words the learner did not pick from a sentence (QuickInspect's common words): read, never generate. */
-  requestGloss?: boolean;
 }) {
   const t = useTranslations("shadowing");
   const best = token.entries[0] ?? null;
   const headword = best?.headword ?? token.base;
-  const gloss = useVietnameseGloss(best?.entSeq ?? null, { request });
+  const gloss = useVietnameseGloss(best?.entSeq ?? null);
 
   return (
     <div className="space-y-xs">

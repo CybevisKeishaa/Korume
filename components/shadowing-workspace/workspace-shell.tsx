@@ -131,14 +131,15 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented || !(event.target instanceof Element) || event.target.closest("[role='dialog'], [data-radix-popper-content-wrapper]")) return;
-      const action = escapeAction({ popoverOpen: session.openPopover !== null, drawerOpen, fullscreen: session.fullscreen, view: session.view });
+      const action = escapeAction({ popoverOpen: session.openPopover !== null, inspectorOpen: drawerOpen && drawer.state.inspector !== null, drawerOpen, fullscreen: session.fullscreen, view: session.view });
       if (action === "close-popover") dispatch({ type: "set-popover", id: null });
+      if (action === "close-inspector") drawerDispatch({ type: "inspector-close" });
       if (action === "collapse-drawer") drawerDispatch({ type: "collapse" });
       if (action === "exit-view") dispatch({ type: "exit-view" });
     };
     document.addEventListener("keydown", onEscape);
     return () => document.removeEventListener("keydown", onEscape);
-  }, [dispatch, drawerDispatch, drawerOpen, session.fullscreen, session.openPopover, session.view]);
+  }, [dispatch, drawer.state.inspector, drawerDispatch, drawerOpen, session.fullscreen, session.openPopover, session.view]);
 
   const normal = session.view === "normal";
   const fullTranscript = session.view === "full-transcript";

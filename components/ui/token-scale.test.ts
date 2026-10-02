@@ -75,7 +75,8 @@ const SCANNED_DIRS = [
   // Part 1b Task 12: + drawer/vocabulary-tab.
   // Part 1b Task 13: + drawer/notes-context, drawer/notes-tab, drawer/grammar-tab, drawer/mining-tab.
   // Part 1b Task 14: + drawer/ai-knowledge-context, drawer/ai-tab, drawer/ai-section, drawer/ai-usage, drawer/section-renderers.
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 49 },
+  // Part 1b reframe: - drawer/phrase-card, vocabulary-tab, grammar-tab and the five Task 14 AI files; + drawer/inspector.
+  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 42 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   // Part 1b Task 12: + kanji-quick-inspect.
   { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },

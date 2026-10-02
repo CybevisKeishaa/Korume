@@ -475,7 +475,6 @@ describe("shadowing.json EN workspace player", () => {
 describe("shadowing.json EN workspace Live Sentence", () => {
   it("pins the Live Sentence copy", () => {
     expect(en.workspace.liveSentence).toEqual({
-      explain: "Explain with AI",
       label: "Live sentence",
       hideJapanese: "Hide Japanese",
       showJapanese: "Show Japanese",
@@ -489,7 +488,7 @@ describe("shadowing.json EN workspace Utility Drawer", () => {
     expect(en.workspace.drawer).toEqual({
       region: "Study tools",
       tabList: "Study tools",
-      tabs: { vocabulary: "Vocabulary", grammar: "Grammar", mining: "Mining", notes: "Notes", ai: "AI" },
+      tabs: { mining: "Mining", notes: "Notes" },
       separator: "Resize study tools",
       levels: { collapsed: "Collapsed", peek: "Peek", expanded: "Expanded", maximized: "Fullscreen" },
       open: "Open study tools",
@@ -505,27 +504,21 @@ describe("shadowing.json EN workspace Utility Drawer", () => {
   });
 });
 
-describe("shadowing.json EN workspace selection popover", () => {
-  it("pins the selection popover copy", () => {
-    expect(en.workspace.selection).toEqual({"loading": "Looking up the words…", "failed": "Couldn't load the words of this sentence.", "noEntry": "No dictionary entry for this word.", "kanji": "Kanji {literal}", "glossLoading": "Looking up the Vietnamese meaning…", "glossPending": "Writing the Vietnamese meaning…", "glossUnavailable": "No Vietnamese meaning yet.", "aiGenerated": "AI-generated", "analyze": "Analyze", "play": "Play sentence", "bookmark": "Bookmark sentence", "mine": "Add to Mining", "mineTooLong": "Select {max} characters or fewer to add to Mining."});
+describe("shadowing.json EN workspace Inspector", () => {
+  it("pins the Inspector copy", () => {
+    expect(en.workspace.inspector).toEqual({"label": "Look-up: {title}", "back": "Back", "close": "Close"});
   });
 });
 
-describe("shadowing.json EN workspace Vocabulary tab", () => {
-  it("pins the Vocabulary tab copy", () => {
-    expect(en.workspace.vocabulary).toEqual({"scope": "Show words from", "thisSentence": "This sentence", "wholeLesson": "Whole lesson", "loading": "Loading words…", "failed": "Couldn't load the words.", "retry": "Try again", "noWords": "No dictionary words here.", "back": "Back", "showMore": "Show more", "total": "{count, plural, one {{count} word} other {{count} words}} in this lesson", "occurrences": "{count}×", "mastery": "SRS {stage}", "sentences": "Sentences with {word}"});
+describe("shadowing.json EN workspace selection popover", () => {
+  it("pins the selection popover copy", () => {
+    expect(en.workspace.selection).toEqual({"loading": "Looking up the words…", "failed": "Couldn't load the words of this sentence.", "noEntry": "No dictionary entry for this word.", "kanji": "Kanji {literal}", "glossLoading": "Looking up the Vietnamese meaning…", "glossPending": "Writing the Vietnamese meaning…", "glossUnavailable": "No Vietnamese meaning yet.", "aiGenerated": "AI-generated", "play": "Play sentence", "bookmark": "Bookmark sentence", "mine": "Add to Mining", "mineTooLong": "Select {max} characters or fewer to add to Mining."});
   });
 });
 
 describe("shadowing.json EN workspace notes tab", () => {
   it("pins the notes tab copy", () => {
     expect(en.workspace.notes).toEqual({"sentence": "Note for sentence {number}", "lesson": "Lesson note", "placeholder": "Write a note…", "all": "All notes in this lesson", "none": "No notes yet.", "retry": "Retry", "status": {"saved": "Saved", "saving": "Saving…", "failed": "Couldn't save.", "idle": ""}});
-  });
-});
-
-describe("shadowing.json EN workspace grammar tab", () => {
-  it("pins the grammar tab copy", () => {
-    expect(en.workspace.grammar).toEqual({"aiBreakdown": "AI Grammar Breakdown →", "loading": "Matching grammar…", "failed": "Couldn't load the grammar of this sentence.", "none": "No grammar patterns from the library match this sentence.", "open": "Open in Grammar"});
   });
 });
 
@@ -539,9 +532,7 @@ describe("shadowing.json EN workspace transcript panel", () => {
   it("pins the transcript panel copy", () => {
     expect(en.workspace.transcript).toEqual({
       hasNote: "Has a note",
-      openVocabulary: "Vocabulary",
-      openGrammar: "Grammar",
-      openAi: "AI explanation",
+      openMining: "Cards from this sentence",
       openNote: "Note",
       label: "Transcript",
       meta: "{count, plural, one {{count} sentence} other {{count} sentences}} · {minutes} min",
@@ -632,8 +623,3 @@ describe("shadowing.json EN workspace Reading Settings, Study Environment and sh
   });
 });
 
-describe("shadowing.json EN workspace AI tab", () => {
-  it("pins the AI tab copy", () => {
-    expect(en.workspace.ai).toEqual({"generate": "Generate", "generating": "Writing this section…", "ready": "{section} is ready.", "quota": "You've used today's free AI sentences. Resets in {hours} h.", "resting": "AI is resting right now. Sections already loaded stay here.", "failed": "Couldn't load this section.", "retry": "Try again", "locked": "Preview. The full section comes with Plus.", "playTurn": "Play line {number}", "ttsUnavailable": "Audio isn't available right now.", "quiz": {"correct": "Correct.", "incorrect": "Not quite."}, "fields": {"literal": "Literally", "register": "Register", "whenToUse": "When to use", "whenNotTo": "When not to"}, "usage": {"free": "{used}/{limit} sentences today · resets in {hours} h", "plus": "{percent}% of this month's AI left", "plusLabel": "AI left this month"}, "sections": {"lite": "Explanation", "grammar_breakdown": "Grammar breakdown", "culture_notes": "Culture notes", "common_mistakes": "Common mistakes", "alternative_expressions": "Other ways to say it", "native_nuance": "Native nuance", "more_examples": "More examples", "quiz": "Quiz", "conversation": "Conversation", "phrase_analysis": "Phrase analysis"}});
-  });
-});
