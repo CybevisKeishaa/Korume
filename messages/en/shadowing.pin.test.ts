@@ -517,9 +517,28 @@ describe("shadowing.json EN workspace Vocabulary tab", () => {
   });
 });
 
+describe("shadowing.json EN workspace notes tab", () => {
+  it("pins the notes tab copy", () => {
+    expect(en.workspace.notes).toEqual({"sentence": "Note for sentence {number}", "lesson": "Lesson note", "placeholder": "Write a note…", "all": "All notes in this lesson", "none": "No notes yet.", "retry": "Retry", "status": {"saved": "Saved", "saving": "Saving…", "failed": "Couldn't save.", "idle": ""}});
+  });
+});
+
+describe("shadowing.json EN workspace grammar tab", () => {
+  it("pins the grammar tab copy", () => {
+    expect(en.workspace.grammar).toEqual({"aiBreakdown": "AI Grammar Breakdown →", "loading": "Matching grammar…", "failed": "Couldn't load the grammar of this sentence.", "none": "No grammar patterns from the library match this sentence.", "open": "Open in Grammar"});
+  });
+});
+
+describe("shadowing.json EN workspace mining tab", () => {
+  it("pins the mining tab copy", () => {
+    expect(en.workspace.mining).toEqual({"loading": "Loading your cards…", "failed": "Couldn't load your cards.", "none": "You haven't mined a sentence from this lesson yet."});
+  });
+});
+
 describe("shadowing.json EN workspace transcript panel", () => {
   it("pins the transcript panel copy", () => {
     expect(en.workspace.transcript).toEqual({
+      hasNote: "Has a note",
       openVocabulary: "Vocabulary",
       openGrammar: "Grammar",
       openAi: "AI explanation",

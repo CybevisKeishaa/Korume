@@ -73,7 +73,8 @@ const SCANNED_DIRS = [
   // Part 1b Task 10: + drawer/drawer-context, drawer/drawer-header, drawer/drawer-separator, drawer/utility-drawer.
   // Part 1b Task 11: + selection-popover, use-line-analysis, drawer/word-card, drawer/phrase-card.
   // Part 1b Task 12: + drawer/vocabulary-tab.
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 40 },
+  // Part 1b Task 13: + drawer/notes-context, drawer/notes-tab, drawer/grammar-tab, drawer/mining-tab.
+  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 44 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   // Part 1b Task 12: + kanji-quick-inspect.
   { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },

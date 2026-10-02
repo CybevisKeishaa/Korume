@@ -21,7 +21,7 @@ const bootstrap: WorkspaceBootstrap = {
   userId: "user-1",
   video: { id: "video-1", youtubeVideoId: "yt-1", title: "Episode", channelTitle: null, durationSeconds: 9, jlptLevel: "N3" },
   transcript: { id: "t-1", lines },
-  masteryMap: {}, preferences: { ...DEFAULT_PREFERENCES }, resume: null, lessonBookmarked: false, marks: [],
+  masteryMap: {}, preferences: { ...DEFAULT_PREFERENCES }, resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
 };
 
 let store: ReturnType<typeof usePositionStore> | undefined;

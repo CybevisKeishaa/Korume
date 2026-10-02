@@ -18,6 +18,8 @@ export const KNOWLEDGE_SECTIONS = [
 ] as const;
 
 export type CascadeSection = (typeof KNOWLEDGE_SECTIONS)[number];
+/** The section Grammar's "AI Grammar Breakdown →" shortcut asks the AI tab for — named here, beside the list. */
+export const AI_GRAMMAR_SHORTCUT: CascadeSection = "grammar_breakdown";
 export type KnowledgeSection = CascadeSection | "phrase_analysis" | "word_gloss_vi";
 export type ContentVariant = "full" | "preview";
 export type KnowledgeLocale = "vi" | "en";

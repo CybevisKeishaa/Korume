@@ -22,6 +22,7 @@ const bootstrap: WorkspaceBootstrap = {
   resume: null,
   lessonBookmarked: false,
   marks: [],
+  notes: { lessonNote: null, sentenceNotes: [] },
 };
 
 describe("ShadowingModeBody", () => {

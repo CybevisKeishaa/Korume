@@ -23,6 +23,7 @@ import { ShortcutHintsPopover } from "./shortcut-hints-popover";
 import { StudyEnvironmentPopover } from "./study-environment-popover";
 import { PipDragHandle } from "./pip-drag-handle";
 import { DrawerProvider, useDrawer } from "./drawer/drawer-context";
+import { NotesProvider } from "./drawer/notes-context";
 import { UtilityDrawer } from "./drawer/utility-drawer";
 import { SelectionPopoverHost } from "./selection-popover";
 import { drawerRowHeight, type DrawerLevel } from "@/lib/shadowing-workspace/drawer-state";
@@ -78,7 +79,9 @@ export function ShadowingWorkspaceShell({
     <WorkspaceProviders bootstrap={bootstrap} initialPosition={initialPosition}>
       <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={initialSyncedServerAt}>
         <DrawerProvider>
-          <WorkspaceLayout>{children}</WorkspaceLayout>
+          <NotesProvider bootstrap={bootstrap}>
+            <WorkspaceLayout>{children}</WorkspaceLayout>
+          </NotesProvider>
         </DrawerProvider>
       </PlaybackRoot>
     </WorkspaceProviders>

@@ -8,6 +8,9 @@ import { useLesson, usePreferences } from "../workspace-context";
 import { useDrawer } from "./drawer-context";
 import { DRAWER_PANEL_ID, DrawerHeader, drawerTabId } from "./drawer-header";
 import { DrawerSeparator } from "./drawer-separator";
+import { GrammarTab } from "./grammar-tab";
+import { MiningTab } from "./mining-tab";
+import { NotesTab } from "./notes-tab";
 import { VocabularyTab } from "./vocabulary-tab";
 
 /**
@@ -62,6 +65,9 @@ export function UtilityDrawer({ workspaceRef, headerRef }: {
           )}
           <div className="mt-sm">
             {state.tab === "vocabulary" && <VocabularyTab />}
+            {state.tab === "grammar" && <GrammarTab />}
+            {state.tab === "mining" && <MiningTab />}
+            {state.tab === "notes" && <NotesTab />}
           </div>
         </div>
       )}

@@ -19,10 +19,12 @@ export interface DrawerState {
   /** Vocabulary's drill-down: a word card, then a kanji inside it. */
   kanji: string | null;
   wordEntSeq: number | null;
+  /** An AI section an explicit shortcut asked for (Grammar's "AI Grammar Breakdown →"); the AI tab requests it. */
+  aiSection: string | null;
 }
 
 export type DrawerAction =
-  | { type: "open"; tab: DrawerTab; target?: DrawerTarget }
+  | { type: "open"; tab: DrawerTab; target?: DrawerTarget; section?: string }
   | { type: "set-level"; level: DrawerLevel }
   | { type: "step"; delta: 1 | -1 }
   | { type: "select-tab"; tab: DrawerTab }
@@ -33,7 +35,7 @@ export type DrawerAction =
   | { type: "back" };
 
 export const initialDrawerState: DrawerState = {
-  level: "collapsed", tab: "vocabulary", tracking: "follow", pinned: null, kanji: null, wordEntSeq: null,
+  level: "collapsed", tab: "vocabulary", tracking: "follow", pinned: null, kanji: null, wordEntSeq: null, aiSection: null,
 };
 
 /** Every entry point opens a collapsed drawer to peek; an open drawer keeps the height the learner chose. */
@@ -44,7 +46,7 @@ export function drawerReducer(state: DrawerState, action: DrawerAction): DrawerS
   switch (action.type) {
     case "open": {
       const next = action.target ? pin(state, action.target) : state;
-      return { ...next, tab: action.tab, level: opened(state.level) };
+      return { ...next, tab: action.tab, level: opened(state.level), aiSection: action.section ?? null };
     }
     case "set-level": return { ...state, level: action.level };
     case "step": {

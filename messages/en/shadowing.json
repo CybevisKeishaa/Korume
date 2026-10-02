@@ -178,6 +178,32 @@
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
+    "mining": {
+      "loading": "Loading your cards…",
+      "failed": "Couldn't load your cards.",
+      "none": "You haven't mined a sentence from this lesson yet."
+    },
+    "grammar": {
+      "aiBreakdown": "AI Grammar Breakdown →",
+      "loading": "Matching grammar…",
+      "failed": "Couldn't load the grammar of this sentence.",
+      "none": "No grammar patterns from the library match this sentence.",
+      "open": "Open in Grammar"
+    },
+    "notes": {
+      "sentence": "Note for sentence {number}",
+      "lesson": "Lesson note",
+      "placeholder": "Write a note…",
+      "all": "All notes in this lesson",
+      "none": "No notes yet.",
+      "retry": "Retry",
+      "status": {
+        "saved": "Saved",
+        "saving": "Saving…",
+        "failed": "Couldn't save.",
+        "idle": ""
+      }
+    },
     "vocabulary": {
       "scope": "Show words from",
       "thisSentence": "This sentence",
@@ -271,6 +297,7 @@
       "showTranslation": "Show translation"
     },
     "transcript": {
+      "hasNote": "Has a note",
       "openVocabulary": "Vocabulary",
       "openGrammar": "Grammar",
       "openAi": "AI explanation",

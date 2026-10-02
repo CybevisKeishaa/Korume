@@ -35,6 +35,9 @@ export interface GrammarMatch {
   grammarPointId: string;
   title: string;
   structure: string | null;
+  /** The curated grammar point's own explanation and examples (grammar_points), shown by the Grammar tab. */
+  explanation: string | null;
+  examples: { jp: string; en: string }[];
   span: Utf16Span;
 }
 

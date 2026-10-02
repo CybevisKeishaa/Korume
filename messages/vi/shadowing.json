@@ -184,6 +184,32 @@
   "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
   "workspace": {
+    "mining": {
+      "loading": "Đang tải thẻ của bạn…",
+      "failed": "Không tải được thẻ.",
+      "none": "Bạn chưa lưu câu nào từ bài này."
+    },
+    "grammar": {
+      "aiBreakdown": "Phân tích ngữ pháp bằng AI →",
+      "loading": "Đang đối chiếu ngữ pháp…",
+      "failed": "Không tải được ngữ pháp của câu này.",
+      "none": "Không có mẫu ngữ pháp nào trong thư viện khớp với câu này.",
+      "open": "Mở trong Ngữ pháp"
+    },
+    "notes": {
+      "sentence": "Ghi chú cho câu {number}",
+      "lesson": "Ghi chú bài học",
+      "placeholder": "Viết ghi chú…",
+      "all": "Mọi ghi chú trong bài",
+      "none": "Chưa có ghi chú nào.",
+      "retry": "Thử lại",
+      "status": {
+        "saved": "Đã lưu",
+        "saving": "Đang lưu…",
+        "failed": "Không lưu được.",
+        "idle": ""
+      }
+    },
     "vocabulary": {
       "scope": "Hiện từ của",
       "thisSentence": "Câu này",
@@ -277,6 +303,7 @@
       "showTranslation": "Hiện bản dịch"
     },
     "transcript": {
+      "hasNote": "Có ghi chú",
       "openVocabulary": "Từ vựng",
       "openGrammar": "Ngữ pháp",
       "openAi": "Giải thích bằng AI",

@@ -61,14 +61,15 @@ export function deleteLessonNote(videoId: string): Promise<NoteWriteResult> {
 
 export async function listMyLessonNotes(
   videoId: string,
-  transcriptId: string,
+  /** null for a lesson without a transcript: only its lesson note is read. */
+  transcriptId: string | null,
 ): Promise<{ lessonNote: NoteDto | null; sentenceNotes: NoteDto[] }> {
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { lessonNote: null, sentenceNotes: [] };
   const [lesson, rows] = await Promise.all([
     supabase.from("lesson_notes").select("body, updated_at").eq("user_id", user.id).eq("video_id", videoId).maybeSingle(),
-    fetchAllPages<{ transcript_line_id: string; body: string; updated_at: string }>((from, to) => supabase
+    transcriptId === null ? Promise.resolve([]) : fetchAllPages<{ transcript_line_id: string; body: string; updated_at: string }>((from, to) => supabase
       .from("sentence_notes")
       .select("transcript_line_id, body, updated_at, transcript_lines!inner(transcript_id)")
       .eq("user_id", user.id)

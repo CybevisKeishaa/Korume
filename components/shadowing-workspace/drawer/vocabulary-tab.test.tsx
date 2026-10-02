@@ -30,7 +30,7 @@ const bootstrap: WorkspaceBootstrap = {
   userId: "user-1",
   video: { id: "video-1", youtubeVideoId: "yt-1", title: "Episode 1", channelTitle: null, durationSeconds: 4, jlptLevel: "N5" },
   transcript: { id: "transcript-1", lines: LINES },
-  masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked: false, marks: [],
+  masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
 };
 const spans = tokenSpans(TEXT, ["緑", "の", "雨", "です"]);
 const ANALYSIS: LineAnalysisDto = {

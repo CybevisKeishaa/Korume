@@ -27,7 +27,7 @@ function renderShell(preferences: Partial<UserPreferences> = {}) {
     userId: "user-1",
     video: { id: "video-1", youtubeVideoId: "yt-1", title: "Episode 1", channelTitle: null, durationSeconds: 30, jlptLevel: "N3" },
     transcript: { id: "transcript-1", lines: [{ id: "line-1", index: 0, startTime: 1, endTime: 4, textJp: "一つ目", textTranslation: "first", furigana: null }] },
-    masteryMap: {}, preferences: { ...DEFAULT_PREFERENCES, ...preferences }, resume: null, lessonBookmarked: false, marks: [],
+    masteryMap: {}, preferences: { ...DEFAULT_PREFERENCES, ...preferences }, resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
   };
   return render(<ShadowingWorkspaceShell bootstrap={bootstrap}><WiringProbe /></ShadowingWorkspaceShell>);
 }

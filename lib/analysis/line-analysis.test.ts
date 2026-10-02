@@ -20,7 +20,10 @@ const TEXT = "全部食べてしまった";
 const TABERU = { ent_seq: 1358280, kanji_forms: ["食べる", "喰べる"], kana_forms: ["たべる"], senses: [{ gloss: ["to eat"] }], common: true, jlpt: 5 };
 const ZENBU = { ent_seq: 1384080, kanji_forms: ["全部"], kana_forms: ["ぜんぶ"], senses: [{ gloss: ["all", "entire"] }], common: true, jlpt: null };
 const SHIMAU_HOMOGRAPH = { ent_seq: 1305800, kanji_forms: ["仕舞う"], kana_forms: ["しまう"], senses: [{ gloss: ["to finish"] }], common: true, jlpt: null };
-const GRAMMAR = [{ id: "g-shimau", title: "〜てしまう", structure_pattern: "〜てしまう", created_at: "2026-07-12T00:00:00Z" }];
+const GRAMMAR = [{
+  id: "g-shimau", title: "〜てしまう", structure_pattern: "〜てしまう", explanation: "Completion or regret.",
+  example_sentences: [{ jp: "食べてしまった。", en: "I ate it all." }], created_at: "2026-07-12T00:00:00Z",
+}];
 
 let dictQueries: QueryCall[][];
 let mastery: Record<string, number>;
@@ -71,7 +74,10 @@ describe("getLineAnalysisForLearner", () => {
     expect(tabe?.entries).toEqual([{ entSeq: 1358280, headword: "食べる", reading: "たべる", glossEn: "to eat", jlpt: 5 }]);
     expect(tabe?.vocabId).toBe("v-taberu");
     expect(tokens.find((token) => token.surface === "て")?.entries).toEqual([]); // particles are not looked up
-    expect(grammar).toEqual([{ grammarPointId: "g-shimau", title: "〜てしまう", structure: "〜てしまう", span: { start: 4, end: 8 } }]);
+    expect(grammar).toEqual([{
+      grammarPointId: "g-shimau", title: "〜てしまう", structure: "〜てしまう", explanation: "Completion or regret.",
+      examples: [{ jp: "食べてしまった。", en: "I ate it all." }], span: { start: 4, end: 8 },
+    }]);
     expect(result.analysis.snapshotId).toBe("snap-1");
     for (const query of dictQueries) expect(eqValue(query, "snapshot_id")).toBe("snap-1");
   });

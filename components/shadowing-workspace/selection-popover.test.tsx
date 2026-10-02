@@ -34,6 +34,7 @@ const bootstrap: WorkspaceBootstrap = {
   resume: null,
   lessonBookmarked: false,
   marks: [],
+  notes: { lessonNote: null, sentenceNotes: [] },
 };
 
 function analysis(lineId: string, text: string, tokens: [string, string, Partial<AnalysisToken>?][]): LineAnalysisDto {

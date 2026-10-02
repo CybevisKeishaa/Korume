@@ -4,6 +4,8 @@ export interface GrammarPattern {
   id: string;
   title: string;
   structurePattern: string | null;
+  explanation?: string | null;
+  examples?: { jp: string; en: string }[];
 }
 
 interface MatchableToken {
@@ -69,6 +71,8 @@ export function matchGrammar(tokens: MatchableToken[], patterns: GrammarPattern[
         grammarPointId: pattern.id,
         title: pattern.title,
         structure: pattern.structurePattern,
+        explanation: pattern.explanation ?? null,
+        examples: (pattern.examples ?? []).map((example) => ({ ...example })),
         span: { start: from.span.start, end: to.span.end },
       });
       start = end;

@@ -25,6 +25,8 @@ export interface TranscriptRowProps {
   spoken: boolean;
   bookmarked: boolean;
   difficult: boolean;
+  /** The learner has a note on this line (spec §6.2). */
+  noted?: boolean;
   bookmarkPending: boolean;
   difficultPending: boolean;
   translation: RowTranslation;
@@ -91,6 +93,8 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
           {bookmarked && <span className="sr-only">{t("workspace.transcript.bookmarked")}</span>}
           {difficult && <FlagGlyph filled className="size-icon-xs text-accent-strong" />}
           {difficult && <span className="sr-only">{t("workspace.transcript.markedDifficult")}</span>}
+          {props.noted && <NoteGlyph filled className="size-icon-xs text-primary-strong" />}
+          {props.noted && <span className="sr-only">{t("workspace.transcript.hasNote")}</span>}
         </span>
         <div className="min-w-0 flex-1 space-y-2xs">
           <button

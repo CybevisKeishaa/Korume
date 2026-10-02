@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { isLessonBookmarked } from "@/lib/data/lesson-bookmarks";
 import { getMyPreferences } from "@/lib/data/preferences";
+import { listMyLessonNotes } from "@/lib/data/notes";
 import { listMySentenceMarks } from "@/lib/data/sentence-marks";
 import { getTranscript } from "@/lib/data/transcripts";
 import { getMyLessonResume, getVideo, requireUser } from "@/lib/data/videos";
@@ -38,7 +39,10 @@ export async function loadWorkspaceBootstrap(videoId: string): Promise<LoadWorks
 
   // An unavailable transcript keeps the lesson open on its empty state (with Try again), as the legacy page did.
   const transcript = transcriptResult.ok ? transcriptResult.data : null;
-  const marks = transcript ? await listMySentenceMarks(transcript.id) : [];
+  const [marks, notes] = await Promise.all([
+    transcript ? listMySentenceMarks(transcript.id) : Promise.resolve([]),
+    listMyLessonNotes(videoId, transcript?.id ?? null),
+  ]);
   const video = videoResult.data;
   const selectedPreferences = preferences ?? DEFAULT_PREFERENCES;
 
@@ -56,6 +60,10 @@ export async function loadWorkspaceBootstrap(videoId: string): Promise<LoadWorks
       resume: resume ? { ...resume } : null,
       lessonBookmarked,
       marks: marks.map((mark) => ({ ...mark })),
+      notes: {
+        lessonNote: notes.lessonNote ? { ...notes.lessonNote } : null,
+        sentenceNotes: notes.sentenceNotes.map((note) => ({ ...note })),
+      },
     },
   };
 }

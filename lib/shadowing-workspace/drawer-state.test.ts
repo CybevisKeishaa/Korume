@@ -7,7 +7,7 @@ const at = (overrides: Partial<DrawerState>): DrawerState => ({ ...initialDrawer
 
 describe("drawerReducer", () => {
   it("starts collapsed on Vocabulary, following playback", () => {
-    expect(initialDrawerState).toEqual({ level: "collapsed", tab: "vocabulary", tracking: "follow", pinned: null, kanji: null, wordEntSeq: null });
+    expect(initialDrawerState).toEqual({ level: "collapsed", tab: "vocabulary", tracking: "follow", pinned: null, kanji: null, wordEntSeq: null, aiSection: null });
   });
 
   it("opens a collapsed drawer to peek and pins the target; an open drawer keeps its level", () => {
@@ -48,6 +48,12 @@ describe("drawerReducer", () => {
     const back = drawerReducer(kanji, { type: "back" });
     expect(back).toMatchObject({ wordEntSeq: 1358280, kanji: null });
     expect(drawerReducer(back, { type: "back" })).toMatchObject({ wordEntSeq: null, kanji: null });
+  });
+
+  it("an explicit shortcut names the AI section to request; any other open clears it", () => {
+    const shortcut = drawerReducer(initialDrawerState, { type: "open", tab: "ai", target: LINE_42, section: "grammar_breakdown" });
+    expect(shortcut).toMatchObject({ tab: "ai", pinned: LINE_42, aiSection: "grammar_breakdown" });
+    expect(drawerReducer(shortcut, { type: "open", tab: "ai", target: LINE_42 }).aiSection).toBeNull();
   });
 
   it("a new target drops the word and kanji of the old one", () => {

@@ -30,7 +30,7 @@ describe("matchGrammar", () => {
   it("matches a conjugated pattern through the base form of its last token", () => {
     const tokens = line("全部食べてしまった", [["全部", "全部", "名詞"], ["食べ", "食べる", "動詞"], ["て", "て", "助詞"], ["しまっ", "しまう", "動詞"], ["た", "た", "助動詞"]]);
     expect(matchGrammar(tokens, PATTERNS)).toEqual([
-      { grammarPointId: "g-shimau", title: "〜てしまう (end up)", structure: "〜てしまう", span: { start: 4, end: 8 } },
+      { grammarPointId: "g-shimau", title: "〜てしまう (end up)", structure: "〜てしまう", explanation: null, examples: [], span: { start: 4, end: 8 } },
     ]);
   });
 

@@ -32,6 +32,7 @@ const bootstrap: WorkspaceBootstrap = {
   resume: null,
   lessonBookmarked: false,
   marks: [],
+  notes: { lessonNote: null, sentenceNotes: [] },
 };
 
 let observedStore: ReturnType<typeof usePositionStore> | undefined;

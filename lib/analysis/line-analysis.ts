@@ -49,13 +49,26 @@ export function resetLineAnalysisCache(): void {
  */
 async function grammarPatterns(supabase: Supabase, now: number): Promise<{ revision: string; patterns: GrammarPattern[] }> {
   if (grammarCache && now - grammarCache.at < GRAMMAR_TTL_MS) return grammarCache;
-  const rows = await fetchAllPages<{ id: string; title: string; structure_pattern: string | null; created_at: string }>((from, to) => supabase
+  const rows = await fetchAllPages<{
+    id: string; title: string; structure_pattern: string | null; explanation: string | null;
+    example_sentences: { jp?: string; en?: string }[] | null; created_at: string;
+  }>((from, to) => supabase
     .from("grammar_points")
-    .select("id, title, structure_pattern, created_at")
+    .select("id, title, structure_pattern, explanation, example_sentences, created_at")
     .order("id", { ascending: true })
     .range(from, to));
   const revision = `${rows.length}:${rows.reduce((max, row) => (row.created_at > max ? row.created_at : max), "")}`;
-  grammarCache = { at: now, revision, patterns: rows.map((row) => ({ id: row.id, title: row.title, structurePattern: row.structure_pattern })) };
+  grammarCache = {
+    at: now,
+    revision,
+    patterns: rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      structurePattern: row.structure_pattern,
+      explanation: row.explanation,
+      examples: (row.example_sentences ?? []).flatMap((example) => (example.jp ? [{ jp: example.jp, en: example.en ?? "" }] : [])),
+    })),
+  };
   return grammarCache;
 }
 
