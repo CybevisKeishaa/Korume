@@ -1,3 +1,5 @@
+import type { z } from "zod/v4";
+import type { SystemBlock } from "@/lib/ai/port";
 import type { PlanTier } from "@/lib/data/subscriptions";
 
 export type { PlanTier };
@@ -31,4 +33,93 @@ export interface KnowledgeKey {
   schemaVersion: number;
   generatorVersion: number;
   contentVariant: ContentVariant;
+}
+
+/** What a section prompt may read. Sentence text is data: prompts put it in a delimited block, never in instructions. */
+export interface SectionPromptInput {
+  sentence: string;
+  phrase?: string;
+  locale: KnowledgeLocale;
+  videoTitle?: string;
+  jlpt?: string | null;
+  headword?: string;
+  reading?: string;
+  senseGlossesEn?: string[];
+}
+
+/** One section, declared once (spec §5.3). The registry (Task 8a) maps names to these; nothing else switches on names. */
+export interface SectionDefinition<Full = unknown, Preview = unknown> {
+  section: KnowledgeSection;
+  schema: z.ZodType<Full>;
+  /** null = no preview variant (Free reads it in full, or it is system-funded). */
+  previewSchema: z.ZodType<Preview> | null;
+  schemaVersion: number;
+  generatorVersion: number;
+  contextPolicy: "none" | "video" | "parent_sentence" | "dictionary_sense";
+  access: SectionAccess;
+  maxOutputTokens: { full: number; preview: number | null };
+  buildPrompt(input: SectionPromptInput, variant: ContentVariant): { system: SystemBlock[]; user: string };
+  /** Deterministic; null exactly when previewSchema is null. */
+  projectPreview(full: Full): Preview | null;
+}
+
+export type ClaimResult =
+  | { outcome: "ready"; entryId: string; content: unknown; model: string | null }
+  | { outcome: "leader"; entryId: string; leaseToken: string; attempts: number }
+  | { outcome: "follower"; entryId: string }
+  | { outcome: "backoff"; entryId: string; retryAfter: string };
+
+export type ReserveOutcome =
+  | "reserved"
+  | "already_charged"
+  | "quota_exhausted"
+  | "credits_exhausted"
+  | "fuse_tripped"
+  | "budget_exhausted";
+
+export interface ReserveLimits {
+  globalUsdPerDay: number;
+  freeSentencesPerDay: number;
+  plusMaxSectionsPerDay: number;
+  plusCreditsPerMonth: number;
+}
+
+export interface ReserveInput {
+  requestedBy: string | null;
+  billingScope: "learner" | "system";
+  entitlementKind: "free_sentence" | "plus_section" | null;
+  fingerprint: string;
+  reservedCredits: number;
+  reservedUsd: number;
+  limits: ReserveLimits;
+  ttlSeconds: number;
+}
+
+export interface GenerationRow {
+  requestedByUserId: string | null;
+  billingScope: "learner" | "system";
+  knowledgeEntryId: string;
+  reservationId: string;
+  section: KnowledgeSection;
+  provider: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  latencyMs: number;
+  estimatedCostUsd: number;
+  outcome: "success" | "provider_error" | "validation_error";
+}
+
+/** The SQL contract of migration 038, one method per function (plus a read of a ready entry). */
+export interface KnowledgeStore {
+  claimLease(key: KnowledgeKey, leaseSeconds: number): Promise<ClaimResult>;
+  /** A ready entry's content, or null. Never writes — the kill-switch path reads through this. */
+  readReady(key: KnowledgeKey): Promise<{ content: unknown; model: string | null } | null>;
+  complete(entryId: string, leaseToken: string, content: unknown, model: string, provider: string): Promise<boolean>;
+  fail(entryId: string, leaseToken: string, errorCode: string, retryAfter: Date): Promise<boolean>;
+  reserve(input: ReserveInput): Promise<{ outcome: ReserveOutcome; reservationId: string | null; resetsAt: string | null }>;
+  recordGeneration(row: GenerationRow): Promise<string>;
+  settle(reservationId: string, generationId: string, actualCredits: number, actualUsd: number): Promise<boolean>;
+  release(reservationId: string, spentUsd: number): Promise<boolean>;
 }

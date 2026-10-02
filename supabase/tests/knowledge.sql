@@ -43,6 +43,7 @@ begin
   if again.outcome <> 'follower' then raise exception 'FAIL 1: live lease gave %', again.outcome; end if;
   update knowledge_entries set lease_until = now() - interval '1 second' where id = first.entry_id;
   select * into second from knowledge_claim_lease(pg_temp.kgate_key('kgate-lease'), 30);
+  if first.attempts <> 1 or second.attempts <> 2 then raise exception 'FAIL 1: attempts % then %', first.attempts, second.attempts; end if;
   if second.outcome <> 'leader' or second.lease_token = first.lease_token then
     raise exception 'FAIL 1: expired lease was not taken over with a new token';
   end if;
@@ -55,7 +56,7 @@ begin
     raise exception 'FAIL 1: current leader could not complete';
   end if;
   select * into again from knowledge_claim_lease(pg_temp.kgate_key('kgate-lease'), 30);
-  if again.outcome <> 'ready' or again.content->>'by' <> 'second' then raise exception 'FAIL 1: ready read'; end if;
+  if again.outcome <> 'ready' or again.content->>'by' <> 'second' or again.model <> 'm' then raise exception 'FAIL 1: ready read'; end if;
   raise notice 'PASS 1 CAS takeover of an expired lease; stale leader is a no-op';
 end $$;
 

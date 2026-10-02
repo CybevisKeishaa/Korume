@@ -115,13 +115,16 @@ grant all on ai_budget_days to service_role;
 
 -- ready → content; failed inside its backoff → backoff; a miss, an expired lease or a failure past its
 -- backoff → this caller becomes the leader (insert, or compare-and-swap takeover); otherwise follower.
+-- attempts is the entry's attempt count after this claim: the caller derives the next backoff from it.
 create function knowledge_claim_lease(p_key jsonb, p_lease_seconds int)
-returns table (entry_id uuid, outcome text, lease_token uuid, content jsonb, retry_after timestamptz)
+returns table (entry_id uuid, outcome text, lease_token uuid, content jsonb, retry_after timestamptz, attempts int,
+  model text)
 language plpgsql security definer set search_path = public as $$
 declare
   v_entry knowledge_entries%rowtype;
   v_id uuid;
   v_token uuid;
+  v_attempts int;
   v_lease timestamptz := now() + make_interval(secs => p_lease_seconds);
 begin
   insert into knowledge_entries as k (fingerprint, section, locale, context_key, schema_version, generator_version,
@@ -132,7 +135,7 @@ begin
   on conflict (fingerprint, section, locale, context_key, schema_version, generator_version, content_variant) do nothing
   returning k.id, k.lease_token into v_id, v_token;
   if v_id is not null then
-    return query select v_id, 'leader'::text, v_token, null::jsonb, null::timestamptz;
+    return query select v_id, 'leader'::text, v_token, null::jsonb, null::timestamptz, 1, null::text;
     return;
   end if;
 
@@ -143,18 +146,21 @@ begin
   for update;
 
   if v_entry.status = 'ready' then
-    return query select v_entry.id, 'ready'::text, null::uuid, v_entry.content, null::timestamptz;
+    return query select v_entry.id, 'ready'::text, null::uuid, v_entry.content, null::timestamptz, v_entry.attempts,
+      v_entry.model;
   elsif v_entry.status = 'failed' and v_entry.retry_after > now() then
-    return query select v_entry.id, 'backoff'::text, null::uuid, null::jsonb, v_entry.retry_after;
+    return query select v_entry.id, 'backoff'::text, null::uuid, null::jsonb, v_entry.retry_after, v_entry.attempts,
+      null::text;
   elsif v_entry.status = 'failed' or v_entry.lease_until < now() then
     update knowledge_entries k
       set status = 'pending', lease_until = v_lease, lease_token = gen_random_uuid(), attempts = k.attempts + 1,
           updated_at = now()
       where k.id = v_entry.id
-      returning k.lease_token into v_token;
-    return query select v_entry.id, 'leader'::text, v_token, null::jsonb, null::timestamptz;
+      returning k.lease_token, k.attempts into v_token, v_attempts;
+    return query select v_entry.id, 'leader'::text, v_token, null::jsonb, null::timestamptz, v_attempts, null::text;
   else
-    return query select v_entry.id, 'follower'::text, null::uuid, null::jsonb, null::timestamptz;
+    return query select v_entry.id, 'follower'::text, null::uuid, null::jsonb, null::timestamptz, v_entry.attempts,
+      null::text;
   end if;
 end $$;
 
