@@ -2,10 +2,13 @@
 
 -- Live gate for the versioned dictionary snapshots (spec 2026-10-02 part 1b §4.1, §7).
 -- Gate rows carry source_version 'dictgate-*' and are removed at the start and the end.
--- It assumes no real snapshot is active; with one active, the gate first retires it and restores it last.
+-- It assumes no real snapshot is active; with one active, the gate parks it and restores it last. Parked as
+-- 'staging', never 'retired': step 6 runs dict_gc_snapshots(0), which deletes every retired snapshot and would
+-- take the real dictionary with it.
+-- Real snapshots already retired are kept out of step 6's reach the same way.
 
-create temp table dictgate_prev as select id from dict_snapshots where status = 'active';
-update dict_snapshots set status = 'retired' where status = 'active';
+create temp table dictgate_prev as select id, status from dict_snapshots where status in ('active', 'retired');
+update dict_snapshots set status = 'staging' where id in (select id from dictgate_prev);
 
 delete from dict_snapshots where jmdict_import_id in (select id from dict_imports where source_version like 'dictgate-%');
 delete from dict_imports where source_version like 'dictgate-%';
@@ -177,7 +180,7 @@ begin
 end $$;
 commit;
 
--- Cleanup, then restore any real snapshot that was active before the gate.
+-- Cleanup, then restore every real snapshot to the status it had before the gate.
 delete from dict_snapshots where jmdict_import_id in (select id from dict_imports where source_version like 'dictgate-%');
 delete from dict_imports where source_version like 'dictgate-%';
-update dict_snapshots set status = 'active' where id in (select id from dictgate_prev);
+update dict_snapshots s set status = p.status from dictgate_prev p where s.id = p.id;

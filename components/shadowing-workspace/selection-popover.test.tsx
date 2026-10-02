@@ -182,6 +182,18 @@ describe("selection popover", () => {
     fireEvent.keyDown(dialog, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(rowText("line-2")).toHaveFocus();
+    // The Escape key coming back up, with the selection still there (Chrome keeps it), must not open it again.
+    selectIn(rowText("line-2"), 3, 4);
+    fireEvent.keyUp(rowText("line-2"), { key: "Escape" });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("a keyboard selection (Shift held) still opens the popover on key up", async () => {
+    renderShell();
+    selectIn(rowText("line-2"), 3, 4);
+    fireEvent.keyUp(rowText("line-2"), { key: "ArrowRight", shiftKey: true });
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
   it("a selection across two rows opens nothing", async () => {

@@ -72,12 +72,15 @@ export function SelectionPopoverHost({ workspaceRef }: { workspaceRef: RefObject
       setOpened({ lineId, at: { list: true }, anchor: element.getBoundingClientRect(), returnFocus: element });
     };
     document.addEventListener("mouseup", fromSelection);
-    document.addEventListener("keyup", fromSelection);
+    // A keyboard selection is made with Shift held; any other key coming up (Escape, Enter, Tab) leaves the
+    // selection as it was and must not reopen the popover that key just closed.
+    const fromKeyboardSelection = (event: KeyboardEvent) => { if (event.shiftKey || event.key === "Shift") fromSelection(event); };
+    document.addEventListener("keyup", fromKeyboardSelection);
     document.addEventListener("click", fromWordClick);
     window.addEventListener(LOOKUP_EVENT, fromLookup);
     return () => {
       document.removeEventListener("mouseup", fromSelection);
-      document.removeEventListener("keyup", fromSelection);
+      document.removeEventListener("keyup", fromKeyboardSelection);
       document.removeEventListener("click", fromWordClick);
       window.removeEventListener(LOOKUP_EVENT, fromLookup);
     };

@@ -59,6 +59,7 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 - R1 lexical line analysis: focused tests, TypeScript, and protocol verification passed (2026-10-03).
 - R2+R3 (Codex R2, R3a part; Claude finished R3a + R3b after the Codex quota): tsc/lint/protocol 0, vitest 482/4351, 8 mutations RED, code-reviewer 0 Critical.
 - R4 keyboard lookup (Claude): tsc/lint/protocol 0, vitest 482/4355, 4 mutations RED.
+- R5 acceptance (Claude): e2e intelligence+1a 26/26, verify:db:* all 0, Chrome vi/en, vitest 482/4356; fixed: popover reopening on Escape keyup; dictionary gate wiping the local dictionary.
 - R2 drawer Inspector reducer: focused tests and protocol verification passed; TypeScript has the expected R3-only consumer errors (2026-10-03).
 
 ## Working tree and environment
