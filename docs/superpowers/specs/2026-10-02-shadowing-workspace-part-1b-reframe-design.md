@@ -2,8 +2,8 @@
 
 - Date: 2026-10-02
 - Branch: `shadowing-workspace-1b` (same branch; the reframe lands before T16 and before merge)
-- Status: brainstormed with the owner 2026-10-02, approved in conversation with five locked points (all folded
-  in below); this file awaits the owner's review of the written text before `writing-plans`.
+- Status: brainstormed with the owner 2026-10-02; the written text reviewed by the owner with five corrections,
+  all folded in below — **locked**. Next: `writing-plans`.
 - Parent: `2026-10-02-shadowing-workspace-part-1b-design.md` (the original 1b spec).
 
 ## 0. What this file supersedes
@@ -20,7 +20,7 @@ accordion make Shadowing cramped and belong elsewhere:
 | Original 1b spec | Status after this file |
 |---|---|
 | §6.1 drawer: five tabs, collapsed shows five tabs | **Superseded**: two tabs, Mining · Notes (§2 here) |
-| §6.2 entry points: ✨ on Live Sentence, row actions Vocabulary · Grammar · ✨ AI · Note | **Superseded**: the only drawer row action is Note; no ✨ anywhere |
+| §6.2 entry points: ✨ on Live Sentence, row actions Vocabulary · Grammar · ✨ AI · Note | **Superseded**: row drawer actions are Mining cards · Note; no ✨ anywhere |
 | §6.3 popover: kanji → QuickInspect in the Vocabulary tab; phrase card ✨ Analyze; keyboard path through the Vocabulary tab | **Superseded**: kanji → drawer Inspector (§3); no Analyze; keyboard path §4 |
 | §6.4 tabs Vocabulary, Grammar, AI | **Removed** from Shadowing |
 | §6.4 tabs Mining, Notes; §6.5 KanjiQuickInspect content and the kanji page; §6.6 | Still in force (QuickInspect's *host* changes, §3) |
@@ -44,17 +44,24 @@ and never fetches lesson vocabulary or grammar. The routes keep auth, validation
 kill-switch and their transport and security tests. Korume or Summary defines the product-facing flow when it
 first calls them.
 
-What Shadowing still calls: line analysis and the dictionary for a word card (only when a selection or the
+What Shadowing still calls: the **lexical** line analysis for a word card (only when a selection or the
 keyboard path asks), the gloss GET / POST of §6.3 (unchanged), kanji data for the Inspector, the
 mining-cards endpoint when the Mining tab opens, notes.
+
+**Lexical projection.** `GET /api/lines/[id]/analysis` gains `?scope=lexical | full` (default `full`, the
+original contract). `lexical` returns tokens, dictionary matches and mastery with no `grammar` field, and does
+not load grammar patterns or run the grammar matcher; its memo key does not depend on the grammar revision.
+Shadowing requests `scope=lexical` only. `full` stays for Korume / Summary. The grammar matcher is kept.
 
 ## 2. Drawer
 
 - Tabs: exactly **Mining · Notes**. Header, separator and its four levels, Follow / pinned, Focus hiding and
   restoring, player identity, and the T15 layout fixes are unchanged.
-- Transcript rows keep one drawer action, **Note** (opens Notes pinned to that row, as before), beside the 1a
-  controls (Mine, Pin to journal and the rest are unchanged); the Vocabulary, Grammar and ✨ AI actions go.
-  The Mining tab is reached from the tab bar. Live Sentence loses its ✨ button.
+- Transcript rows keep two drawer actions, both pinned to that row: **Mining cards** (opens the Mining tab;
+  labelled "Cards from this sentence" / "Thẻ của câu này") and **Note** (opens Notes, as before). The 1a
+  **Mine** control (adds a card; "Thu thập") and Pin to journal stay unchanged — the names keep "open the
+  cards" and "make a card" apart. The Vocabulary, Grammar and ✨ AI actions go. Live Sentence loses its ✨
+  button.
 - Drawer state loses `aiSection` and the Vocabulary drill-down (`wordEntSeq`, `kanji`); it gains the Inspector
   (§3).
 
@@ -66,19 +73,25 @@ Vocabulary tab into a transient **Inspector** state of the drawer. The Inspector
 ```text
 inspector: null | {
   stack:       [InspectorEntry, ...]      kanji (literal) | word (a KanjiCommonWord, shown as a word card)
-  returnState: { tab, level, tracking, pinned }   snapshot taken once, when the Inspector opens
+  returnState: {                          snapshot taken once, when the Inspector opens
+    tab, level, tracking,
+    drawerTarget                           the exact pinned target — line id and span, or null
+  }
 }
 focusOrigin: the element that opened it    kept in a ref beside the reducer, not in state
 ```
 
 - **Open**: a kanji button in a word card (popover or Inspector). From no Inspector: snapshot `returnState`,
   start `stack = [kanji]`, open the drawer to peek if it was collapsed. Inside the Inspector: push.
-- A common word in a kanji entry pushes a **word** entry (its card is built from the KanjiCommonWord data, GET
-  only, never a gloss generation — the T12 ruling); a kanji in that card pushes a kanji entry. One drawer, one
-  stack; nothing nests.
+- A common word in a kanji entry pushes a **word** entry (its card is built from the KanjiCommonWord data); a
+  kanji in that card pushes a kanji entry. One drawer, one stack; nothing nests.
+- Vietnamese gloss: rendering a kanji's common-word list generates nothing. Opening one word's card is an
+  explicit lookup: it uses the word card's existing GET → POST-if-missing flow, one request per card, pending
+  deduplicated (this reverses the T12 ruling that made common-word cards GET-only).
 - **Back** pops; Back on the root entry closes. **Close** and **Escape** close from any depth.
 - **Closing restores `returnState` exactly** — tab, level (a drawer opened from collapsed collapses again),
-  tracking and pinned target. Navigation inside the Inspector never edits the snapshot.
+  tracking, and the very same target: pinned to sentence 42 (span included) before opening means pinned to
+  sentence 42 after closing. Navigation inside the Inspector never edits the snapshot.
 - The Inspector **never changes the drawer's target**: opening a kanji neither pins nor unpins a sentence and
   never switches follow / pinned. It is a lexical lookup, not a learning-session target.
 - Focus: on close, return to `focusOrigin` if it is still connected; otherwise to the drawer's tab list.
@@ -98,7 +111,7 @@ focusOrigin: the element that opened it    kept in a ref beside the reducer, not
 - **Keyboard path (replaces the Vocabulary tab's token buttons):** Live Sentence's Japanese text becomes
   focusable (`tabIndex=0`, labelled "Look up words in this sentence"). **Enter** opens the popover in a
   *token list* state: the sentence's tokens as buttons; choosing one shows its word card, with ← back to the
-  list. Same popover, same data (line analysis, fetched only on this Enter). Transcript rows keep their 1a
+  list. Same popover, same data (lexical line analysis, fetched only on this Enter). Transcript rows keep their 1a
   keyboard behaviour (the seek button); a keyboard learner looks words up on Live Sentence.
 
 ## 5. What is deleted
@@ -112,8 +125,8 @@ page's per-point anchors stay (harmless, linkable). Git history keeps everything
 
 Proves what remains **and** that the removed surfaces are gone.
 
-- **Unit:** Inspector open → push word → push kanji → Back ×2 → Close restores tab, level, tracking and pinned
-  exactly; opened from collapsed → closes to collapsed; opening never changes the target (pinned and follow);
+- **Unit:** Inspector open → push word → push kanji → Back ×2 → Close restores tab, level, tracking and the
+  exact target (pinned to line 42 with a span → the same line and span); opened from collapsed → closes to collapsed; opening never changes the target (pinned and follow);
   Escape closes the Inspector before collapsing the drawer; focus returns to the origin, or the tab list when
   the origin is gone; choosing a tab while inspecting closes into that tab. Keyboard path: Enter on Live
   Sentence lists tokens, a token opens its word card, Back returns to the list.
@@ -121,9 +134,13 @@ Proves what remains **and** that the removed surfaces are gone.
   or AI tab; no ✨ / AI control on Live Sentence or any row; a multi-token selection shows no Analyze; opening
   the lesson and playing 10 sentences sends **no** `POST /api/knowledge/sections`, **no** `GET
   /api/knowledge/usage`, no lesson-vocabulary request, and creates no `ai_reservations` or `ai_generations` row
-  for the learner.
+  for the learner; every analysis request Shadowing sends carries `scope=lexical`.
+- **Lexical scope (route and service):** `scope=lexical` returns no `grammar` key and never reads
+  `grammar_points` (a spy on the pattern loader stays at zero calls); `full` and the default keep the original
+  response; an unknown scope is a 400.
 - **Kept flows (e2e):** select → word card → kanji → Inspector → common word → Back → Close (tab and level
-  restored, player identity, no pause); note survives a reload; Mining tab lists the lesson's cards; separator
+  restored, player identity, no pause); a common word's card shows its Vietnamese gloss after one POST;
+  note survives a reload; Mining tab lists the lesson's cards; separator
   keys and drag; Escape order; Focus hides and restores; layout at 1280×529 (the T15 test 11 contract).
 - **Knowledge core stays proven:** every `verify:db:*` gate, the orchestrator / store / registry suites, and
   the API-level transport tests — a Free learner's response for a locked section never contains the full
