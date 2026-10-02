@@ -8,7 +8,6 @@ import { readKnowledgeConfig, type KnowledgeConfig } from "./config";
 import { creditsFor, estimateCostUsd, upperBoundCostUsd } from "./pricing";
 import { createSqlKnowledgeStore } from "./store";
 import type {
-  ContentVariant,
   KnowledgeKey,
   KnowledgeLocale,
   KnowledgeStore,
@@ -62,11 +61,15 @@ function isValidationError(error: unknown): boolean {
   return error instanceof z.ZodError || (error instanceof AiError && error.kind === "invalid_output");
 }
 
-/** §5.3: read through the shared cache; on a miss exactly one caller generates, reserving before it spends. */
-export async function getOrGenerateSection(input: GenerateInput, deps: GenerateDeps = {}): Promise<GenerateOutcome> {
-  const { definition, tier } = input;
-  const store = deps.store ?? createSqlKnowledgeStore();
-  const now = input.now ?? new Date();
+type ReadyOutcome = Extract<GenerateOutcome, { status: "ready" }>;
+type CacheInput = Pick<GenerateInput, "definition" | "locale" | "targetText" | "contextKey" | "tier">;
+
+/**
+ * The key this learner reads, and — for Free on a locked section — the projection of a cached full entry.
+ * Free never receives a full payload: a full entry leaves the server only as its projection (§5.4).
+ */
+async function resolveKey(input: CacheInput, store: KnowledgeStore): Promise<{ key: KnowledgeKey; projected: ReadyOutcome | null }> {
+  const { definition } = input;
   const base: Omit<KnowledgeKey, "contentVariant"> = {
     fingerprint: fingerprint(input.targetText),
     section: definition.section,
@@ -75,22 +78,42 @@ export async function getOrGenerateSection(input: GenerateInput, deps: GenerateD
     schemaVersion: definition.schemaVersion,
     generatorVersion: definition.generatorVersion,
   };
-
-  // Free never receives a full payload: a cached full entry leaves the server only as its projection (§5.4).
-  const freePreview = tier === "free" && definition.access === "free_preview";
+  const freePreview = input.tier === "free" && definition.access === "free_preview";
   if (freePreview) {
     const full = await store.readReady({ ...base, contentVariant: "full" });
-    if (full) return { status: "ready", content: definition.projectPreview(full.content), access: "preview", model: full.model };
+    if (full) {
+      return {
+        key: { ...base, contentVariant: "full" },
+        projected: { status: "ready", content: definition.projectPreview(full.content), access: "preview", model: full.model },
+      };
+    }
   }
-  const variant: ContentVariant = freePreview ? "preview" : "full";
-  const key: KnowledgeKey = { ...base, contentVariant: variant };
-  const access = variant;
+  return { key: { ...base, contentVariant: freePreview ? "preview" : "full" }, projected: null };
+}
+
+/** A read-only cache lookup with the exact key a generation would use. Never claims, reserves or writes. */
+export async function readCachedSection(input: CacheInput, deps: Pick<GenerateDeps, "store"> = {}): Promise<ReadyOutcome | null> {
+  const store = deps.store ?? createSqlKnowledgeStore();
+  const { key, projected } = await resolveKey(input, store);
+  if (projected) return projected;
+  const hit = await store.readReady(key);
+  return hit ? { status: "ready", content: hit.content, access: key.contentVariant, model: hit.model } : null;
+}
+
+/** §5.3: read through the shared cache; on a miss exactly one caller generates, reserving before it spends. */
+export async function getOrGenerateSection(input: GenerateInput, deps: GenerateDeps = {}): Promise<GenerateOutcome> {
+  const { definition, tier } = input;
+  const store = deps.store ?? createSqlKnowledgeStore();
+  const now = input.now ?? new Date();
 
   // The kill-switch reads without claiming: a disabled deployment writes nothing and still serves the cache.
   if (!(deps.aiEnabled ?? isAiEnabled())) {
-    const hit = await store.readReady(key);
-    return hit ? { status: "ready", content: hit.content, access, model: hit.model } : { status: "ai_unavailable", reason: "disabled" };
+    return (await readCachedSection(input, { store })) ?? { status: "ai_unavailable", reason: "disabled" };
   }
+  const { key, projected } = await resolveKey(input, store);
+  if (projected) return projected;
+  const variant = key.contentVariant;
+  const access = variant;
 
   const claim = await store.claimLease(key, LEASE_SECONDS);
   if (claim.outcome === "ready") return { status: "ready", content: claim.content, access, model: claim.model };
