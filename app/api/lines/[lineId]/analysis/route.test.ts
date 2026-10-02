@@ -10,6 +10,22 @@ const get = (lineId = LINE_ID) => GET(new Request(`http://localhost/api/lines/${
 beforeEach(() => vi.clearAllMocks());
 
 describe("GET /api/lines/[lineId]/analysis", () => {
+  it("forwards lexical scope and defaults omitted scope to full", async () => {
+    const analysis = { lineId: LINE_ID, snapshotId: "s", tokens: [], grammar: [], mastery: {} };
+    vi.mocked(getLineAnalysisForLearner).mockResolvedValue({ kind: "ok", analysis });
+    await GET(new Request(`http://localhost/api/lines/${LINE_ID}/analysis?scope=lexical`), { params: { lineId: LINE_ID } });
+    expect(getLineAnalysisForLearner).toHaveBeenLastCalledWith(LINE_ID, "lexical");
+    await get();
+    expect(getLineAnalysisForLearner).toHaveBeenLastCalledWith(LINE_ID, "full");
+  });
+
+  it("rejects an unknown scope without reading", async () => {
+    const response = await GET(new Request(`http://localhost/api/lines/${LINE_ID}/analysis?scope=other`), { params: { lineId: LINE_ID } });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Invalid input" });
+    expect(getLineAnalysisForLearner).not.toHaveBeenCalled();
+  });
+
   it("rejects a malformed id without reading", async () => {
     expect((await get("nope")).status).toBe(400);
     expect(getLineAnalysisForLearner).not.toHaveBeenCalled();

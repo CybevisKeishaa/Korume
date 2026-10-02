@@ -41,6 +41,8 @@ export interface GrammarMatch {
   span: Utf16Span;
 }
 
+export type AnalysisScope = "lexical" | "full";
+
 /** Shared by every learner: cached per (lineId, snapshotId, grammarRevision). Never holds learner state. */
 export interface StaticLineAnalysis {
   lineId: string;
@@ -50,10 +52,14 @@ export interface StaticLineAnalysis {
   grammar: GrammarMatch[];
 }
 
+export type LexicalLineAnalysis = Omit<StaticLineAnalysis, "grammar">;
+
 /** The static analysis joined, per request, with this learner's SRS stage for each vocab id. */
 export interface LineAnalysisDto extends StaticLineAnalysis {
   mastery: Record<string, number>;
 }
+
+export type LexicalLineAnalysisDto = Omit<LineAnalysisDto, "grammar">;
 
 export interface LessonVocabularyItem {
   entSeq: number;

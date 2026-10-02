@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getLineAnalysisForLearner } from "@/lib/analysis/line-analysis";
 
-export async function GET(_request: Request, { params }: { params: { lineId: string } }): Promise<NextResponse> {
+export async function GET(request: Request, { params }: { params: { lineId: string } }): Promise<NextResponse> {
   if (!z.string().uuid().safeParse(params.lineId).success) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  const scope = new URL(request.url).searchParams.get("scope") ?? "full";
+  if (scope !== "lexical" && scope !== "full") return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   try {
-    const result = await getLineAnalysisForLearner(params.lineId);
+    const result = await getLineAnalysisForLearner(params.lineId, scope);
     switch (result.kind) {
       case "unauthorized": return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       case "not_found": return NextResponse.json({ error: "Not found" }, { status: 404 });

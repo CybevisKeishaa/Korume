@@ -27,13 +27,17 @@ const GRAMMAR = [{
 
 let dictQueries: QueryCall[][];
 let mastery: Record<string, number>;
+let grammarReads: number;
 
 function useUser(user: { id: string } | null, lineVisible = true) {
   vi.mocked(createClient).mockReturnValue(createMockSupabase({
     user,
     tables: {
       transcript_lines: () => ({ data: lineVisible ? { id: LINE_ID, text_jp: TEXT } : null, error: null }),
-      grammar_points: () => ({ data: GRAMMAR, error: null }),
+      grammar_points: () => {
+        grammarReads += 1;
+        return { data: GRAMMAR, error: null };
+      },
       dict_entries: (calls) => {
         dictQueries.push(calls);
         const overlap = calls.find((call) => call.op === "overlaps");
@@ -55,12 +59,41 @@ beforeEach(() => {
   resetLineAnalysisCache();
   dictQueries = [];
   mastery = {};
+  grammarReads = 0;
   vi.mocked(rateLimit).mockReturnValue({ ok: true, retryAfter: 0 });
   vi.mocked(getActiveSnapshotId).mockResolvedValue("snap-1");
   useUser({ id: "u-a" });
 });
 
 describe("getLineAnalysisForLearner", () => {
+  it("returns lexical analysis without grammar and never reads grammar points", async () => {
+    const analysis = (await staticAnalyses(createClient(), [{ id: LINE_ID, textJp: TEXT }], 0, "lexical")).get(LINE_ID);
+    expect(analysis).toBeDefined();
+    expect(analysis).not.toHaveProperty("grammar");
+    expect(grammarReads).toBe(0);
+  });
+
+  it("keeps lexical and full memo entries separate when full follows lexical", async () => {
+    await staticAnalyses(createClient(), [{ id: LINE_ID, textJp: TEXT }], 0, "lexical");
+    const full = (await staticAnalyses(createClient(), [{ id: LINE_ID, textJp: TEXT }], 0, "full")).get(LINE_ID);
+    expect(full?.grammar).toHaveLength(1);
+    expect(grammarReads).toBe(1);
+  });
+
+  it("does not return a full memo entry for a later lexical analysis", async () => {
+    await staticAnalyses(createClient(), [{ id: LINE_ID, textJp: TEXT }], 0, "full");
+    const lexical = (await staticAnalyses(createClient(), [{ id: LINE_ID, textJp: TEXT }], 0, "lexical")).get(LINE_ID);
+    expect(lexical).not.toHaveProperty("grammar");
+  });
+
+  it("returns lexical learner DTOs without grammar", async () => {
+    const result = await getLineAnalysisForLearner(LINE_ID, "lexical");
+    expect(result.kind).toBe("ok");
+    if (result.kind !== "ok") return;
+    expect(result.analysis.mastery).toEqual({});
+    expect(result.analysis).not.toHaveProperty("grammar");
+  });
+
   it("tokenizes with UTF-16 spans, matches JMdict on the base form and grammar on the real segmentation", async () => {
     const result = await getLineAnalysisForLearner(LINE_ID);
     expect(result.kind).toBe("ok");

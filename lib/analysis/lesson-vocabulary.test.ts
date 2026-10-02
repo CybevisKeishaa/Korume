@@ -6,7 +6,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getTranscript } from "@/lib/data/transcripts";
 import { staticAnalyses } from "./line-analysis";
 import { getLessonVocabulary } from "./lesson-vocabulary";
-import type { AnalysisToken, StaticLineAnalysis } from "./types";
+import type { AnalysisToken, LexicalLineAnalysis } from "./types";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
@@ -35,9 +35,9 @@ beforeEach(() => {
   }) as ReturnType<typeof createClient>);
   vi.mocked(getTranscript).mockResolvedValue({ ok: true, data: { id: "t-1", video_id: VIDEO_ID, source: "x", language: "ja", created_at: "", lines: LINES } } as never);
   // Every line: entry 10 once and a particle; every third line also entry 20 (curated as v-ame); line 0 has entry 30.
-  vi.mocked(staticAnalyses).mockImplementation(async (_supabase, lines) => new Map(lines.map((line, i): [string, StaticLineAnalysis] => [
+  vi.mocked(staticAnalyses).mockImplementation(async (_supabase, lines) => new Map(lines.map((line, i): [string, LexicalLineAnalysis] => [
     line.id,
-    { lineId: line.id, snapshotId: "s", grammar: [], tokens: [token(10), token(null), ...(i % 3 === 0 ? [token(20, "v-ame")] : []), ...(i === 0 ? [token(30)] : [])] },
+    { lineId: line.id, snapshotId: "s", tokens: [token(10), token(null), ...(i % 3 === 0 ? [token(20, "v-ame")] : []), ...(i === 0 ? [token(30)] : [])] },
   ])));
 });
 
@@ -45,6 +45,7 @@ describe("getLessonVocabulary", () => {
   it("aggregates every line of the lesson, not a capped first page", async () => {
     const result = await getLessonVocabulary(VIDEO_ID, {});
     expect(vi.mocked(staticAnalyses).mock.calls[0]?.[1]).toHaveLength(1_500);
+    expect(vi.mocked(staticAnalyses).mock.calls[0]?.[3]).toBe("lexical");
     expect(result.kind === "ok" && result.page.items.map((item) => [item.entSeq, item.occurrences])).toEqual([[10, 1_500], [20, 500], [30, 1]]);
   });
 

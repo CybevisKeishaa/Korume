@@ -59,7 +59,7 @@ export async function getLessonVocabulary(videoId: string, query: { cursor?: str
   const transcript = await getTranscript(videoId);
   if (!transcript.ok) return transcript.status === 401 ? { kind: "unauthorized" } : { kind: "not_found" };
   const lines = (transcript.data?.lines ?? []).flatMap((line) => (line.text_jp ? [{ id: line.id, textJp: line.text_jp }] : []));
-  const analyses = await staticAnalyses(supabase, lines);
+  const analyses = await staticAnalyses(supabase, lines, undefined, "lexical");
   const all = aggregateVocabulary(lines.flatMap((line) => {
     const analysis = analyses.get(line.id);
     return analysis ? [{ id: line.id, tokens: analysis.tokens }] : [];

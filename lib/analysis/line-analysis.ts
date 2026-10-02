@@ -8,7 +8,7 @@ import { tokenize } from "@/lib/japanese/tokenizer";
 import { matchGrammar, type GrammarPattern } from "./grammar-matcher";
 import { readMastery } from "./learning-state";
 import { tokenSpans } from "./spans";
-import type { AnalysisToken, DictionaryMatch, LineAnalysisDto, StaticLineAnalysis } from "./types";
+import type { AnalysisScope, AnalysisToken, DictionaryMatch, LexicalLineAnalysis, LexicalLineAnalysisDto, LineAnalysisDto, StaticLineAnalysis } from "./types";
 
 type Supabase = ReturnType<typeof createClient>;
 
@@ -34,7 +34,7 @@ export interface LineText {
   textJp: string;
 }
 
-const memo = new Map<string, StaticLineAnalysis>();
+const memo = new Map<string, StaticLineAnalysis | LexicalLineAnalysis>();
 let grammarCache: { at: number; revision: string; patterns: GrammarPattern[] } | null = null;
 
 /** Test seam: forget every memoised analysis and the grammar pattern cache. */
@@ -119,10 +119,18 @@ function entriesFor(base: string, surface: string, entries: EntryRow[]): Diction
  * Shared, learner-free analyses for many lines at once: memo hits are returned as they are, and every miss is
  * tokenized and looked up in ONE batched dictionary pass. Never holds mastery or any learner state.
  */
-export async function staticAnalyses(supabase: Supabase, lines: LineText[], now = Date.now()): Promise<Map<string, StaticLineAnalysis>> {
-  const [snapshotId, grammar] = await Promise.all([getActiveSnapshotId(), grammarPatterns(supabase, now)]);
-  const keyOf = (lineId: string) => `${lineId}|${snapshotId ?? "none"}|${grammar.revision}`;
-  const result = new Map<string, StaticLineAnalysis>();
+export function staticAnalyses(supabase: Supabase, lines: LineText[], now?: number, scope?: "full"): Promise<Map<string, StaticLineAnalysis>>;
+export function staticAnalyses(supabase: Supabase, lines: LineText[], now: number | undefined, scope: "lexical"): Promise<Map<string, LexicalLineAnalysis>>;
+export function staticAnalyses(supabase: Supabase, lines: LineText[], now: number | undefined, scope: AnalysisScope): Promise<Map<string, StaticLineAnalysis | LexicalLineAnalysis>>;
+export async function staticAnalyses(
+  supabase: Supabase, lines: LineText[], now = Date.now(), scope: AnalysisScope = "full",
+): Promise<Map<string, StaticLineAnalysis | LexicalLineAnalysis>> {
+  const [snapshotId, grammar] = await Promise.all([
+    getActiveSnapshotId(),
+    scope === "full" ? grammarPatterns(supabase, now) : Promise.resolve(null),
+  ]);
+  const keyOf = (lineId: string) => `${scope}|${lineId}|${snapshotId ?? "none"}|${grammar?.revision ?? ""}`;
+  const result = new Map<string, StaticLineAnalysis | LexicalLineAnalysis>();
   const misses: LineText[] = [];
   for (const line of lines) {
     const hit = memo.get(keyOf(line.id));
@@ -161,12 +169,9 @@ export async function staticAnalyses(supabase: Supabase, lines: LineText[], now 
         vocabId: lookedUp ? vocabByWord.get(token.base) ?? vocabByWord.get(matches[0]?.headword ?? "") ?? null : null,
       };
     });
-    const analysis: StaticLineAnalysis = {
-      lineId: line.id,
-      snapshotId,
-      tokens: analysisTokens,
-      grammar: matchGrammar(analysisTokens, grammar.patterns),
-    };
+    const analysis = grammar
+      ? { lineId: line.id, snapshotId, tokens: analysisTokens, grammar: matchGrammar(analysisTokens, grammar.patterns) }
+      : { lineId: line.id, snapshotId, tokens: analysisTokens };
     if (memo.size >= MEMO_LIMIT) memo.delete(memo.keys().next().value ?? "");
     memo.set(keyOf(line.id), analysis);
     result.set(line.id, analysis);
@@ -174,14 +179,19 @@ export async function staticAnalyses(supabase: Supabase, lines: LineText[], now 
   return result;
 }
 
-export type LineAnalysisResult =
+export type LineAnalysisResult<TAnalysis extends LineAnalysisDto | LexicalLineAnalysisDto = LineAnalysisDto> =
   | { kind: "unauthorized" }
   | { kind: "rate_limited"; retryAfter: number }
   | { kind: "not_found" }
-  | { kind: "ok"; analysis: LineAnalysisDto };
+  | { kind: "ok"; analysis: TAnalysis };
 
 /** GET /api/lines/[lineId]/analysis: the line under the learner's RLS, its shared analysis, their mastery. */
-export async function getLineAnalysisForLearner(lineId: string): Promise<LineAnalysisResult> {
+export function getLineAnalysisForLearner(lineId: string, scope?: "full"): Promise<LineAnalysisResult>;
+export function getLineAnalysisForLearner(lineId: string, scope: "lexical"): Promise<LineAnalysisResult<LexicalLineAnalysisDto>>;
+export function getLineAnalysisForLearner(lineId: string, scope: AnalysisScope): Promise<LineAnalysisResult<LineAnalysisDto | LexicalLineAnalysisDto>>;
+export async function getLineAnalysisForLearner(
+  lineId: string, scope: AnalysisScope = "full",
+): Promise<LineAnalysisResult<LineAnalysisDto | LexicalLineAnalysisDto>> {
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { kind: "unauthorized" };
@@ -192,7 +202,7 @@ export async function getLineAnalysisForLearner(lineId: string): Promise<LineAna
   const row = data as { id: string; text_jp: string | null } | null;
   if (!row?.text_jp) return { kind: "not_found" };
 
-  const shared = (await staticAnalyses(supabase, [{ id: row.id, textJp: row.text_jp }])).get(row.id);
+  const shared = (await staticAnalyses(supabase, [{ id: row.id, textJp: row.text_jp }], undefined, scope)).get(row.id);
   if (!shared) return { kind: "not_found" };
   const vocabIds = shared.tokens.flatMap((token) => (token.vocabId ? [token.vocabId] : []));
   // A fresh object: the memoised analysis is shared by every learner and must never carry anyone's mastery.

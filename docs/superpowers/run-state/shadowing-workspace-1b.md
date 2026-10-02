@@ -56,11 +56,11 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 
 ## Verification
 
-- None yet (docs only).
+- R1 lexical line analysis: focused tests, TypeScript, and protocol verification passed (2026-10-03).
 
 ## Working tree and environment
 
-- Owner: Codex
+- Owner: Claude
 - Worktree `.worktrees/shadowing-workspace-1b`, branched from master `13e9ab9`.
 - Dictionary sources on the owner's machine: `C:/Users/tplon/Desktop/Japan/Korume/DataKanji/`
   (`kanjidic2.xml.gz`, `kanjivg-20260714-{all,main,stripped}.zip`, `kanjivg-r20260714.zip`). JMdict not yet
