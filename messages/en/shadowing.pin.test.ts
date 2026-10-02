@@ -631,3 +631,9 @@ describe("shadowing.json EN workspace Reading Settings, Study Environment and sh
     });
   });
 });
+
+describe("shadowing.json EN workspace AI tab", () => {
+  it("pins the AI tab copy", () => {
+    expect(en.workspace.ai).toEqual({"generate": "Generate", "generating": "Writing this section…", "ready": "{section} is ready.", "quota": "You've used today's free AI sentences. Resets in {hours} h.", "resting": "AI is resting right now. Sections already loaded stay here.", "failed": "Couldn't load this section.", "retry": "Try again", "locked": "Preview. The full section comes with Plus.", "playTurn": "Play line {number}", "ttsUnavailable": "Audio isn't available right now.", "quiz": {"correct": "Correct.", "incorrect": "Not quite."}, "fields": {"literal": "Literally", "register": "Register", "whenToUse": "When to use", "whenNotTo": "When not to"}, "usage": {"free": "{used}/{limit} sentences today · resets in {hours} h", "plus": "{percent}% of this month's AI left", "plusLabel": "AI left this month"}, "sections": {"lite": "Explanation", "grammar_breakdown": "Grammar breakdown", "culture_notes": "Culture notes", "common_mistakes": "Common mistakes", "alternative_expressions": "Other ways to say it", "native_nuance": "Native nuance", "more_examples": "More examples", "quiz": "Quiz", "conversation": "Conversation", "phrase_analysis": "Phrase analysis"}});
+  });
+});

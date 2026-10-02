@@ -5,6 +5,7 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { RubySentence } from "../ruby-sentence";
 import { useLesson, usePreferences } from "../workspace-context";
+import { AiTab } from "./ai-tab";
 import { useDrawer } from "./drawer-context";
 import { DRAWER_PANEL_ID, DrawerHeader, drawerTabId } from "./drawer-header";
 import { DrawerSeparator } from "./drawer-separator";
@@ -68,6 +69,7 @@ export function UtilityDrawer({ workspaceRef, headerRef }: {
             {state.tab === "grammar" && <GrammarTab />}
             {state.tab === "mining" && <MiningTab />}
             {state.tab === "notes" && <NotesTab />}
+            {state.tab === "ai" && <AiTab />}
           </div>
         </div>
       )}

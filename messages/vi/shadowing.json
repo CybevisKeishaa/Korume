@@ -184,6 +184,37 @@
   "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
   "workspace": {
+    "ai": {
+      "generate": "Tạo",
+      "generating": "Đang viết phần này…",
+      "ready": "{section} đã sẵn sàng.",
+      "quota": "Bạn đã dùng hết số câu AI miễn phí hôm nay. Làm mới sau {hours} giờ.",
+      "resting": "AI đang tạm nghỉ. Các phần đã tải vẫn được giữ lại.",
+      "failed": "Không tải được phần này.",
+      "retry": "Thử lại",
+      "locked": "Bản xem trước. Bản đầy đủ có trong gói Plus.",
+      "playTurn": "Phát câu {number}",
+      "ttsUnavailable": "Hiện chưa phát được âm thanh.",
+      "quiz": { "correct": "Chính xác.", "incorrect": "Chưa đúng." },
+      "fields": { "literal": "Nghĩa đen", "register": "Sắc thái", "whenToUse": "Khi nào dùng", "whenNotTo": "Khi nào không dùng" },
+      "usage": {
+        "free": "{used}/{limit} câu hôm nay · làm mới sau {hours} giờ",
+        "plus": "Còn {percent}% lượt AI tháng này",
+        "plusLabel": "Lượt AI còn lại tháng này"
+      },
+      "sections": {
+        "lite": "Giải thích",
+        "grammar_breakdown": "Phân tích ngữ pháp",
+        "culture_notes": "Ghi chú văn hóa",
+        "common_mistakes": "Lỗi thường gặp",
+        "alternative_expressions": "Cách nói khác",
+        "native_nuance": "Sắc thái bản ngữ",
+        "more_examples": "Thêm ví dụ",
+        "quiz": "Câu đố",
+        "conversation": "Hội thoại",
+        "phrase_analysis": "Phân tích cụm từ"
+      }
+    },
     "mining": {
       "loading": "Đang tải thẻ của bạn…",
       "failed": "Không tải được thẻ.",
