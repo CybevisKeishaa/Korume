@@ -27,9 +27,10 @@ const bootstrap: WorkspaceBootstrap = {
 let store: ReturnType<typeof usePositionStore> | undefined;
 let sessionView: ReturnType<typeof useSession>[0] | undefined;
 let controllerView: ReturnType<typeof usePlaybackController> | undefined;
+let dispatchView: ReturnType<typeof useSession>[1] | undefined;
 function Probe(): null {
   store = usePositionStore();
-  sessionView = useSession()[0];
+  [sessionView, dispatchView] = useSession();
   controllerView = usePlaybackController();
   return null;
 }
@@ -254,7 +255,32 @@ describe("WorkspacePlayer", () => {
     const bar = document.querySelector<HTMLElement>("[data-workspace-player-controls]")!.parentElement!;
     act(() => yt.players[0]!.triggerStateChange(YT_PLAYER_STATE.PLAYING));
     expect(bar).not.toHaveAttribute("data-shown");
+    act(() => dispatchView?.({ type: "set-popover", id: "reading-settings" }));
+    expect(bar).not.toHaveAttribute("data-shown"); // a header popover does not hold the player bar open
+    act(() => dispatchView?.({ type: "set-popover", id: null }));
     fireEvent.click(screen.getByRole("button", { name: /^Playback speed/ }));
     expect(bar).toHaveAttribute("data-shown");
+  });
+
+  it("on touch, each tap on the bar restarts its idle timer", async () => {
+    renderPlayer();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const bar = document.querySelector<HTMLElement>("[data-workspace-player-controls]")!.parentElement!;
+    act(() => yt.players[0]!.triggerStateChange(YT_PLAYER_STATE.PLAYING));
+    vi.useFakeTimers();
+    try {
+      const surface = screen.getByTestId("workspace-player-surface");
+      fireEvent.pointerDown(surface, { pointerType: "touch" });
+      fireEvent.click(surface);
+      expect(bar).toHaveAttribute("data-shown");
+      act(() => { vi.advanceTimersByTime(2000); });
+      fireEvent.pointerDown(screen.getByRole("button", { name: "Next sentence" }), { pointerType: "touch" });
+      act(() => { vi.advanceTimersByTime(2000); });
+      expect(bar).toHaveAttribute("data-shown");
+      act(() => { vi.advanceTimersByTime(500); });
+      expect(bar).not.toHaveAttribute("data-shown");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

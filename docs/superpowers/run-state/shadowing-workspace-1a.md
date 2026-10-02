@@ -173,6 +173,10 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 - Re-review of `845fb9e`: APPROVE WITH NITS (0C/0I/3M), all three fixed (completed once per mount, dead
   `isPlaying` arg removed, end guard falls back to the last line's end); gates 0 (3951 tests), build 0, det
   e2e 15/15, hub+explore 8/8, live Ep.729 2/2 (5.7–23.7 ms).
+- Owner look 2026-10-02 → `34983a5` (Claude): control bar over the video (surface over the iframe; YouTube's own
+  bar kept ON — `controls: 0` made the embed refuse an unmuted `playVideo()`, proven by A/B live runs), whole-pane
+  PiP drag, one-row PiP bar. Review CHANGES REQUIRED 0C/3I/4M, all fixed; 10 unit + 1 browser mutation red;
+  vitest 434 / 3962, det e2e 16/16, live Ep.729 2/2 (max 19.7 ms).
 
 ## Working tree and environment
 
@@ -191,5 +195,6 @@ T4b route + shell, T6a player (video 485×273, Live Sentence slot y=378, no scro
 
 ## Next actions
 
-1. Done: Tasks 0–12 and every per-task review; whole-branch review fixed.
-2. Next: the owner's Chrome look at 1280×529 and the merge decision (do not merge without the owner).
+1. Done: Tasks 0–12 and every per-task review; whole-branch review fixed; owner look + `34983a5`.
+2. Owner approved the merge (2026-10-02, "có thể merge").
+3. Known, not this branch: the video shows black until the first play (same with YouTube's controls on).

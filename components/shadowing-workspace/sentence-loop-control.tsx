@@ -7,7 +7,7 @@ import { PLAYBACK_LOOP_COUNT_OPTIONS, type PlaybackLoopCount } from "@/lib/prefe
 import { useSession } from "./workspace-context";
 import { usePlayerWiring } from "./playback-root";
 
-const POPOVER_ID = "sentence-loop";
+export const POPOVER_ID = "sentence-loop";
 const countLabel = (count: PlaybackLoopCount) => (count === 0 ? "∞" : `${count}×`);
 
 /**

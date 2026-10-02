@@ -9,8 +9,8 @@ import {
   SubtitlesGlyph, SubtitlesOffGlyph, VolumeGlyph,
 } from "./player-glyphs";
 import { ProgressBar } from "./progress-bar";
-import { SentenceLoopControl } from "./sentence-loop-control";
-import { SpeedControl } from "./speed-control";
+import { POPOVER_ID as LOOP_POPOVER, SentenceLoopControl } from "./sentence-loop-control";
+import { POPOVER_ID as SPEED_POPOVER, SpeedControl } from "./speed-control";
 import { useCurrentSentence, useLesson, usePlaybackController, useSession, useStartPosition } from "./workspace-context";
 
 const IDLE_HIDE_MS = 2500;
@@ -56,7 +56,8 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
     setPointerActive(false);
   };
   const [session] = useSession();
-  const barShown = !playing || pointerActive || session.openPopover !== null;
+  // Only the bar's own popovers hold it open; Reading Settings and the other header popovers do not.
+  const barShown = !playing || pointerActive || session.openPopover === SPEED_POPOVER || session.openPopover === LOOP_POPOVER;
   const pressType = useRef("");
   const onSurfaceClick = () => {
     // Space must reach play/pause, not the transcript row that held focus before this pointer press.
@@ -106,6 +107,8 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
           {/* Hidden = zero rows tall (not just transparent), so the subtitle sits on the video's edge until the bar shows. */}
           <div
             data-shown={barShown ? "" : undefined}
+            // A tap sends no pointermove: each tap on the bar restarts the idle timer, or it collapses mid-use.
+            onPointerDown={(event) => { if (event.pointerType === "touch") wake(); }}
             className="pointer-events-auto grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] has-[:focus-visible]:grid-rows-[1fr] has-[:focus-visible]:opacity-100 hover:grid-rows-[1fr] hover:opacity-100 data-[shown]:grid-rows-[1fr] data-[shown]:opacity-100"
           >
           <div data-workspace-player-controls className="min-h-0 overflow-hidden bg-gradient-to-t from-black/90 via-black/75 to-transparent px-sm">

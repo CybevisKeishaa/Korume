@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { usePlaybackController, useSession } from "./workspace-context";
 import { usePlayerWiring } from "./playback-root";
 
-const POPOVER_ID = "speed";
+export const POPOVER_ID = "speed";
 const rateLabel = (rate: number) => `${rate}×`;
 
 /** Playback speed for this session; the list is what this video's player actually offers (T0). */
