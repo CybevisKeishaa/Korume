@@ -475,6 +475,7 @@ describe("shadowing.json EN workspace player", () => {
 describe("shadowing.json EN workspace Live Sentence", () => {
   it("pins the Live Sentence copy", () => {
     expect(en.workspace.liveSentence).toEqual({
+      explain: "Explain with AI",
       label: "Live sentence",
       hideJapanese: "Hide Japanese",
       showJapanese: "Show Japanese",
@@ -483,9 +484,34 @@ describe("shadowing.json EN workspace Live Sentence", () => {
   });
 });
 
+describe("shadowing.json EN workspace Utility Drawer", () => {
+  it("pins the drawer copy", () => {
+    expect(en.workspace.drawer).toEqual({
+      region: "Study tools",
+      tabList: "Study tools",
+      tabs: { vocabulary: "Vocabulary", grammar: "Grammar", mining: "Mining", notes: "Notes", ai: "AI" },
+      separator: "Resize study tools",
+      levels: { collapsed: "Collapsed", peek: "Peek", expanded: "Expanded", maximized: "Fullscreen" },
+      open: "Open study tools",
+      collapse: "Collapse study tools",
+      fullscreen: "Study tools fullscreen",
+      following: "Current sentence · {number} / {total}",
+      pinnedTarget: "Sentence {number} / {total}",
+      pinned: "Pinned",
+      follow: "Follow current sentence",
+      noTarget: "No sentence yet",
+      selection: "Selection: {text}",
+    });
+  });
+});
+
 describe("shadowing.json EN workspace transcript panel", () => {
   it("pins the transcript panel copy", () => {
     expect(en.workspace.transcript).toEqual({
+      openVocabulary: "Vocabulary",
+      openGrammar: "Grammar",
+      openAi: "AI explanation",
+      openNote: "Note",
       label: "Transcript",
       meta: "{count, plural, one {{count} sentence} other {{count} sentences}} · {minutes} min",
       translations: "Translations",

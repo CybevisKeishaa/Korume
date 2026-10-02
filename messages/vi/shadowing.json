@@ -184,6 +184,33 @@
   "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
   "workspace": {
+    "drawer": {
+      "region": "Công cụ học",
+      "tabList": "Công cụ học",
+      "tabs": {
+        "vocabulary": "Từ vựng",
+        "grammar": "Ngữ pháp",
+        "mining": "Thẻ câu",
+        "notes": "Ghi chú",
+        "ai": "AI"
+      },
+      "separator": "Đổi kích thước công cụ học",
+      "levels": {
+        "collapsed": "Thu gọn",
+        "peek": "Xem nhanh",
+        "expanded": "Mở rộng",
+        "maximized": "Toàn màn hình"
+      },
+      "open": "Mở công cụ học",
+      "collapse": "Thu gọn công cụ học",
+      "fullscreen": "Công cụ học toàn màn hình",
+      "following": "Câu hiện tại · {number} / {total}",
+      "pinnedTarget": "Câu {number} / {total}",
+      "pinned": "Đã ghim",
+      "follow": "Theo câu đang phát",
+      "noTarget": "Chưa có câu nào",
+      "selection": "Đoạn chọn: {text}"
+    },
     "emptyTranscript": {
       "title": "Bài học này tạm thời thiếu phụ đề.",
       "retry": "Thử lại",
@@ -213,12 +240,17 @@
       "fullscreen": "Toàn màn hình trình phát"
     },
     "liveSentence": {
+      "explain": "Giải thích bằng AI",
       "label": "Câu đang phát",
       "hideJapanese": "Ẩn tiếng Nhật",
       "showJapanese": "Hiện tiếng Nhật",
       "showTranslation": "Hiện bản dịch"
     },
     "transcript": {
+      "openVocabulary": "Từ vựng",
+      "openGrammar": "Ngữ pháp",
+      "openAi": "Giải thích bằng AI",
+      "openNote": "Ghi chú",
       "label": "Phụ đề",
       "meta": "{count, plural, other {{count} câu}} · {minutes} phút",
       "translations": "Bản dịch",

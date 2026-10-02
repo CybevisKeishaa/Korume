@@ -91,3 +91,19 @@ export const SlidersGlyph = ({ className }: GlyphProps) => (
 export const KeyboardGlyph = ({ className }: GlyphProps) => (
   <Glyph className={className}><rect x="2.5" y="6" width="19" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /></Glyph>
 );
+/** ✨ — an explicit AI action (Live Sentence, row actions, Analyze). */
+export const SparklesGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" /><path d="M19 15v4M17 17h4" /></Glyph>
+);
+/** Drawer Vocabulary: an open book. */
+export const VocabularyGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H11v17H5.5A2.5 2.5 0 0 0 3 22.5zM21 5.5A2.5 2.5 0 0 0 18.5 3H13v17h5.5a2.5 2.5 0 0 1 2.5 2.5z" /></Glyph>
+);
+/** Drawer Grammar: a sentence split into linked parts. */
+export const GrammarGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><rect x="3" y="4" width="7" height="6" rx="1.5" /><rect x="14" y="4" width="7" height="6" rx="1.5" /><rect x="8.5" y="14" width="7" height="6" rx="1.5" /><path d="M6.5 10v2h11v-2M12 12v2" /></Glyph>
+);
+/** A learner note, also the transcript row's note indicator. */
+export const NoteGlyph = ({ className, filled }: GlyphProps & { filled?: boolean }) => (
+  <Glyph className={className} filled={filled}><path d="M5 3h10l4 4v14H5z" /><path d="M15 3v4h4M8.5 12h7M8.5 16h5" /></Glyph>
+);

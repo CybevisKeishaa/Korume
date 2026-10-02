@@ -74,7 +74,7 @@ describe("ShadowingWorkspaceShell", () => {
     expect(within(getByTestId("workspace-header-slot")).getByRole("heading", { level: 1, name: "Episode 1" })).toBeInTheDocument();
     expect(getByTestId("workspace-player-slot")).not.toHaveAttribute("data-line-id");
     expect(observedStore?.get()).toBe(12);
-    expect(getByRole("separator")).toHaveAttribute("aria-orientation", "vertical");
+    expect(getByRole("separator", { name: "Resize workspace panes" })).toHaveAttribute("aria-orientation", "vertical");
   });
 
   it("uses a definite divider track and flex factors that cannot leave an empty grid gap", () => {
@@ -241,13 +241,13 @@ describe("ShadowingWorkspaceShell", () => {
     expect(yt.players).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Full transcript" }));
     expect(yt.players).toHaveLength(1);
-    expect(screen.getByRole("separator")).toBeInTheDocument();
+    expect(screen.getByRole("separator", { name: "Resize workspace panes" })).toBeInTheDocument();
   });
 
   it("keeps the YouTube player mounted through a divider drag and refreshed settings", async () => {
     const view = render(<ShadowingWorkspaceShell bootstrap={bootstrap}><TranscriptPanel /></ShadowingWorkspaceShell>);
     await waitFor(() => expect(yt.players).toHaveLength(1));
-    const divider = screen.getByRole("separator");
+    const divider = screen.getByRole("separator", { name: "Resize workspace panes" });
     // jsdom has no layout: a 1000px workspace whose token minimums (the divider's probe nodes) are 300px.
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
       const width = this.style.width.startsWith("var(") ? 300 : 1000;
@@ -257,7 +257,7 @@ describe("ShadowingWorkspaceShell", () => {
       Object.assign(divider, { setPointerCapture: vi.fn(), hasPointerCapture: () => true });
       fireEvent(divider, new MouseEvent("pointerdown", { bubbles: true, clientX: 100 }));
       // The drag really dispatched a split (clamped to the 300px left minimum), not a no-op.
-      expect(screen.getByRole("separator")).toHaveAttribute("aria-valuenow", "30");
+      expect(screen.getByRole("separator", { name: "Resize workspace panes" })).toHaveAttribute("aria-valuenow", "30");
       expect(yt.players).toHaveLength(1);
     } finally {
       vi.restoreAllMocks();

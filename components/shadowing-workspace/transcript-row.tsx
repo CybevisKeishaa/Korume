@@ -7,7 +7,8 @@ import { toTranscriptLineRow, type WorkspaceLine } from "@/lib/shadowing-workspa
 import { cn } from "@/lib/utils";
 import { MineLineControl } from "@/components/video-player/mine-line-control";
 import { PinLineControl } from "@/components/video-player/pin-line-control";
-import { BookmarkGlyph, FlagGlyph, ReplayGlyph } from "./player-glyphs";
+import type { DrawerTab } from "@/lib/shadowing-workspace/drawer-state";
+import { BookmarkGlyph, FlagGlyph, GrammarGlyph, NoteGlyph, ReplayGlyph, SparklesGlyph, VocabularyGlyph } from "./player-glyphs";
 import { furiganaShownByMode, RubySentence } from "./ruby-sentence";
 
 export type RowState = "past" | "current" | "future";
@@ -36,7 +37,16 @@ export interface TranscriptRowProps {
   onToggleMark(lineId: string, kind: SentenceMarkKind): void;
   onRevealTranslation(lineId: string): void;
   onToggleFurigana(lineId: string, shownByMode: boolean): void;
+  /** Opens the Utility Drawer on this line (spec §6.2); absent outside the workspace. */
+  onOpenDrawer?(lineId: string, tab: DrawerTab): void;
 }
+
+const DRAWER_ACTIONS = [
+  { tab: "vocabulary", label: "workspace.transcript.openVocabulary", Glyph: VocabularyGlyph },
+  { tab: "grammar", label: "workspace.transcript.openGrammar", Glyph: GrammarGlyph },
+  { tab: "ai", label: "workspace.transcript.openAi", Glyph: SparklesGlyph },
+  { tab: "notes", label: "workspace.transcript.openNote", Glyph: NoteGlyph },
+] as const;
 
 const ACTION = "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-pressed:text-primary-strong aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
 
@@ -156,6 +166,11 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
             <span aria-hidden="true">あ</span>
           </button>
         )}
+        {props.onOpenDrawer && DRAWER_ACTIONS.map(({ tab, label, Glyph }) => (
+          <button key={tab} type="button" aria-label={t(label)} title={t(label)} onClick={() => props.onOpenDrawer?.(line.id, tab)} className={ACTION}>
+            <Glyph className="size-icon-sm" />
+          </button>
+        ))}
         <MineLineControl line={row} />
         <PinLineControl line={row} />
       </div>

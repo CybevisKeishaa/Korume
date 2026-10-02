@@ -178,6 +178,33 @@
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
+    "drawer": {
+      "region": "Study tools",
+      "tabList": "Study tools",
+      "tabs": {
+        "vocabulary": "Vocabulary",
+        "grammar": "Grammar",
+        "mining": "Mining",
+        "notes": "Notes",
+        "ai": "AI"
+      },
+      "separator": "Resize study tools",
+      "levels": {
+        "collapsed": "Collapsed",
+        "peek": "Peek",
+        "expanded": "Expanded",
+        "maximized": "Fullscreen"
+      },
+      "open": "Open study tools",
+      "collapse": "Collapse study tools",
+      "fullscreen": "Study tools fullscreen",
+      "following": "Current sentence · {number} / {total}",
+      "pinnedTarget": "Sentence {number} / {total}",
+      "pinned": "Pinned",
+      "follow": "Follow current sentence",
+      "noTarget": "No sentence yet",
+      "selection": "Selection: {text}"
+    },
     "emptyTranscript": {
       "title": "This lesson is temporarily missing its transcript.",
       "retry": "Try again",
@@ -207,12 +234,17 @@
       "fullscreen": "Player fullscreen"
     },
     "liveSentence": {
+      "explain": "Explain with AI",
       "label": "Live sentence",
       "hideJapanese": "Hide Japanese",
       "showJapanese": "Show Japanese",
       "showTranslation": "Show translation"
     },
     "transcript": {
+      "openVocabulary": "Vocabulary",
+      "openGrammar": "Grammar",
+      "openAi": "AI explanation",
+      "openNote": "Note",
       "label": "Transcript",
       "meta": "{count, plural, one {{count} sentence} other {{count} sentences}} · {minutes} min",
       "translations": "Translations",

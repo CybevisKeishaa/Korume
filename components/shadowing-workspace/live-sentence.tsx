@@ -3,7 +3,8 @@
 import { useId } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { HideTextGlyph, ShowTextGlyph } from "./player-glyphs";
+import { HideTextGlyph, ShowTextGlyph, SparklesGlyph } from "./player-glyphs";
+import { useOptionalDrawer } from "./drawer/drawer-context";
 import { RubySentence } from "./ruby-sentence";
 import { useCurrentSentence, useLesson, usePreferences, useSession } from "./workspace-context";
 
@@ -14,8 +15,9 @@ const TRANSLATION = "reading-latin-body";
 /**
  * Live Sentence (Figma `105:3654`, spec §7.5): the current line, large, with readings and its translation.
  * The hide toggle is a session-only listening-recall aid: it hides only the Japanese, never pauses and never
- * writes a preference. No ✨ until Part 1b. The card keeps its height through an intro, a hidden line and
- * gaps, so the player above never jumps.
+ * writes a preference. ✨ pins the current line and opens the drawer on AI (spec §6.2) — the click is the only
+ * thing that can start a generation; a sentence change never does. The card keeps its height through an
+ * intro, a hidden line and gaps, so the player above never jumps.
  */
 export function LiveSentence() {
   const t = useTranslations("shadowing");
@@ -28,6 +30,7 @@ export function LiveSentence() {
   const hidden = session.liveSentenceHidden;
   const translationMode = preferences.readingTranslation;
   const revealed = line ? session.lineTranslationRevealed[line.id] === true : false;
+  const drawer = useOptionalDrawer();
 
   return (
     <section
@@ -47,6 +50,17 @@ export function LiveSentence() {
       >
         {hidden ? <ShowTextGlyph className="size-icon-sm" /> : <HideTextGlyph className="size-icon-sm" />}
       </button>
+      {drawer && line && (
+        <button
+          type="button"
+          aria-label={t("workspace.liveSentence.explain")}
+          title={t("workspace.liveSentence.explain")}
+          onClick={() => drawer.dispatch({ type: "open", tab: "ai", target: { lineId: line.id, span: null } })}
+          className="absolute left-sm top-sm flex h-control-sm aspect-square items-center justify-center rounded-md text-primary-strong hover:bg-muted reading-hover"
+        >
+          <SparklesGlyph className="size-icon-sm" />
+        </button>
+      )}
       <div className="reading-measure mx-auto mt-xs space-y-xs text-center">
         {line ? (
           <RubySentence
