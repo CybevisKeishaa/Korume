@@ -18,6 +18,7 @@
     "verify:db:pronunciation": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-pronunciation-gate.ps1",
     "verify:db:shadowing": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-shadowing-gate.ps1",
     "verify:db:dictionary": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-dictionary-gate.ps1",
+    "verify:db:knowledge": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-knowledge-gate.ps1",
     "dict:import": "vite-node --config vitest.config.ts scripts/import-dictionaries.ts --",
     "dict:gc": "vite-node --config vitest.config.ts scripts/dictionary-gc.ts --",
     "verify:protocol": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1",
