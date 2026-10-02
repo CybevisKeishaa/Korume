@@ -85,8 +85,10 @@ dict_kanji_strokes  PK (snapshot_id, literal)  paths jsonb (ordered stroke geome
 dict_kanji_words    PK (snapshot_id, literal, ent_seq)  rank (common first)
 ```
 
-- Exactly one snapshot is `active`; a unique partial index enforces it. Activation is one transaction that
-  flips the pointer; the app never sees JMdict from one snapshot with KanjiVG from another.
+- A unique partial index enforces **at most one** `active` snapshot. The activation / rollback transaction
+  guarantees the system finishes with **exactly one** active snapshot, and a failed staging import never
+  deactivates the current one. Activation flips the pointer in one transaction; the app never sees JMdict
+  from one snapshot with KanjiVG from another.
 - The previous snapshot is **kept** (`retired`) for rollback. Retired snapshots are removed only by an
   explicit GC command.
 - Indexes: GIN on `kanji_forms` and `kana_forms`; btree on the PKs.
@@ -97,13 +99,17 @@ dict_kanji_words    PK (snapshot_id, literal, ent_seq)  rank (common first)
   snapshot → no-op. Source files are not committed.
 - **KanjiVG is sanitised on import:** only path geometry and element grouping are kept; any markup, script,
   event attribute or external reference is rejected, never rendered.
-- License and source URL are stored **per source**; attribution (EDRDG CC BY-SA for JMdict/KANJIDIC2,
-  KanjiVG CC BY-SA) appears in the footer of the word card, `KanjiQuickInspect` and the `/kanji/[literal]`
-  page, read from `dict_imports` (never hard-coded).
+- The exact source URL, version and license text of each dictionary source are verified in T0 and persisted
+  in `dict_imports`. UI attribution — in the footer of the word card, `KanjiQuickInspect` and the
+  `/kanji/[literal]` page — is rendered from that metadata and is never hard-coded. Docs get the exact license
+  wording after T0.
 
 ### 4.2 Knowledge cache
 
-`knowledge_entries` — shared content, service-role writes only, SELECT for `authenticated`.
+`knowledge_entries` — shared on the server, **service role only** for every direct statement (SELECT
+included); `authenticated` and `anon` have no table access. Content may come from PRIVATE lessons or video
+context, so learners read knowledge only through the authenticated API, after the content-access check and the
+entitlement projection (§5.3). The ledger tables (§4.3) follow the same rule.
 
 Cache identity (**7 dimensions**): `fingerprint, section, locale, context_key, schema_version,
 generator_version, content_variant`.
@@ -125,13 +131,17 @@ generator_version, content_variant`.
   `requested_by_user_id` (nullable), `billing_scope (learner|system)`, `knowledge_entry_id`, `reservation_id`,
   `section`, `provider`, `model`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `latency_ms`,
   `estimated_cost_usd`, `outcome (success|provider_error|validation_error)`, `created_at`.
-- **`ai_reservations`** — `id`, `user_id`, `kind (free_sentence|plus_section)`, `fingerprint` (Free: the
-  parent sentence), `reserved_credits`, `reserved_usd`, `status (held|settled|released)`, `expires_at`,
-  `period_day`, `period_month`.
-- **`ai_usage_charges`** — the settled entitlement charge: `user_id`, `kind`, `fingerprint`, `credits`,
+- **`ai_reservations`** — `id`, `requested_by_user_id`, `billing_scope (learner|system)`,
+  `entitlement_kind (free_sentence|plus_section)` — **null when `billing_scope='system'`**, enforced by a CHECK —
+  `fingerprint` (Free: the parent sentence), `reserved_credits`, `reserved_usd`,
+  `status (held|settled|released)`, `expires_at`, `period_day`, `period_month`.
+  - `learner` reserves learner entitlement **and** global budget.
+  - `system` (`word_gloss_vi`) reserves global budget only; it never passes through Free/Plus accounting.
+    `requested_by_user_id` is still recorded for attribution and per-user rate limiting.
+- **`ai_usage_charges`** — the settled entitlement charge: `user_id`, `entitlement_kind`, `fingerprint`, `credits`,
   `generation_id`, `reservation_id`, `period_day`, `period_month`.
-  - `UNIQUE (user_id, period_day, fingerprint) WHERE kind = 'free_sentence'`
-  - `UNIQUE (generation_id) WHERE kind = 'plus_section'` — one settled charge per generation.
+  - `UNIQUE (user_id, period_day, fingerprint) WHERE entitlement_kind = 'free_sentence'`
+  - `UNIQUE (generation_id) WHERE entitlement_kind = 'plus_section'` — one settled charge per generation.
 - **Global budget** — a per-day row (`period_day`, `reserved_usd`, `spent_usd`) updated under row lock.
 - SQL functions (security definer, service role only): `knowledge_claim_lease`, `ai_reserve`,
   `ai_settle(reservation_id, generation_id, actual)`, `ai_release(reservation_id)`. Settle and release are
@@ -148,7 +158,10 @@ generator_version, content_variant`.
 - `sentence_notes` — PK `(user_id, transcript_line_id)`, `body text check (char_length(body) <= 4000)`,
   `updated_at`. Insert checked with `exists` on `transcript_lines` under the learner's RLS (as
   `sentence_marks`).
-- `lesson_notes` — PK `(user_id, video_id)`, `body check (char_length(body) <= 20000)`, `updated_at`.
+- `lesson_notes` — PK `(user_id, video_id)`, `body check (char_length(body) <= 20000)`, `updated_at`. Insert
+  and upsert `with check (user_id = auth.uid() and exists (select 1 from videos where id = video_id))`; the
+  `exists` runs under the learner's RLS, so a note cannot be created on a PRIVATE lesson by UUID. The API
+  returns a generic 404 for a video the learner cannot read.
 - Own-row RLS; cascades on user, line and video deletion; included in `lib/data/user-export.ts` and the
   account-deletion path.
 
@@ -356,8 +369,8 @@ serializable DTOs.
 | Unit (vitest) | canonicalisation (`？/！/…` kept, は≠が, NFKC, whitespace) · 7-dimension cache key · UTF-16 spans + snapping incl. `𠮷` and ruby-adjacent selections · preview projection (never contains full-only content; quiz preview has no answers; conversation preview ≤ 2 turns) · credit and upper-bound estimation · failure backoff · drawer state machine, separator keys, Escape chain · target model (`follow`/`pinned`) · **10 sentence changes while following → zero generations, zero provider calls, zero reservations** · autosave serialisation · grammar matcher · `assertPlainSerializableDto()` on every data façade output (rejects functions, class instances, `Map`, `Set`, `BigInt`) | CI |
 | Component (RTL) | drawer + separator (Up/Down/Home/End) · tablist keyboard · five tabs in every state · word/phrase cards and their action names · Mining disabled > 50 chars · QuickInspect · usage line · popover focus return, no focus trap · no dead control | CI |
 | Integration (deterministic) | **N concurrent requests on one cache miss → the fake provider is called exactly once** · Free never receives a full payload over the network, even when `full` is cached; request fields cannot raise tier or variant · PRIVATE line of another user → generic 404 on `/analysis` and `/knowledge/sections` · span on another line / bad offsets → rejected · `vi` and `en` never share a cache entry | CI |
-| SQL gate `verify:db:knowledge` | **N independent connections released by a barrier:** exactly one lease leader; CAS takeover of an expired lease; a Plus user's parallel reserves never overshoot fuse or credits; the global hard budget never overshoots · lifecycle: provider error → release restores capacity; validation error → cost recorded, learner reservation released; expired held reservation does not lock quota; settle below upper bound refunds the difference; repeated settle/release changes nothing; one charge per generation · Free: nine sections of one sentence = one slot; the fourth sentence refused · `authenticated`/`anon` cannot EXECUTE the functions nor write entries/ledger · notes own-row RLS, insert on another user's PRIVATE line refused, cascades, length CHECKs | local DB |
-| SQL gate `verify:db:dictionary` | install A, install B, activate B → reads see only B; roll back to A; GC deletes only retired; read-only for `authenticated`, nothing for `anon` | local DB |
+| SQL gate `verify:db:knowledge` | **N independent connections released by a barrier:** exactly one lease leader; CAS takeover of an expired lease; a Plus user's parallel reserves never overshoot fuse or credits; the global hard budget never overshoots · lifecycle: provider error → release restores capacity; validation error → cost recorded, learner reservation released; expired held reservation does not lock quota; settle below upper bound refunds the difference; repeated settle/release changes nothing; one charge per generation · Free: nine sections of one sentence = one slot; the fourth sentence refused · `authenticated`/`anon` cannot EXECUTE the functions and cannot SELECT or write `knowledge_entries` or any ledger table · a `system` reservation consumes global budget only, never Free/Plus entitlement, and a `learner` reservation with a null `entitlement_kind` is rejected · notes own-row RLS; a sentence note on another user's PRIVATE line and a lesson note on another user's PRIVATE video are both refused; cascades; length CHECKs | local DB |
+| SQL gate `verify:db:dictionary` | install A, install B, activate B → reads see only B; a staging import that fails validation or activation leaves A active (never zero active); roll back to A; GC deletes only retired; read-only for `authenticated`, nothing for `anon` | local DB |
 | Real import | each source's `entry_count` equals the count parsed from that file and passes a sanity lower bound; `緑` = 14 strokes and 14 geometry paths; `苦手` has senses; no stored geometry contains markup, script, `on*` or external refs; a second run with the same files is a no-op. Records source, version, hash, counts, duration, peak memory when measurable | local, in T2 |
 | > 1000 rows | line analysis and lesson vocabulary on a transcript longer than 1000 lines are complete | CI / local DB |
 | Playwright deterministic | 1a's fake `YT.Player` + the existing `fake` AI provider: select → popover → QuickInspect · ✨ → pinned → AI tab → Lite · play 10 sentences with the AI tab open → no generation · Free fourth sentence → 402 · kill-switch → 503 with cached content visible · note survives reload · separator drag/keys, Escape order, Focus hides and restores · follow vs pinned · **the player does not remount** on any drawer change | CI |

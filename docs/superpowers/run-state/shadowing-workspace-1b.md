@@ -11,7 +11,7 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 
 ## Authorities
 
-- Spec (awaiting owner review): `docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-design.md`
+- Spec (LOCKED 2026-10-02 after the owner's 5 written-spec corrections): `docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-design.md`
 - Plan: not written yet (`writing-plans` after spec approval)
 - `AGENTS.md`, `docs/lessons.md`, `.codex/docs/workflow.md` §8
 
@@ -37,8 +37,8 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 
 ## Blockers
 
-- Owner review of the written spec.
+- None.
 
 ## Next actions
 
-- Owner reads the spec → `writing-plans` → packets → T0.
+- `writing-plans` → packets → T0.
