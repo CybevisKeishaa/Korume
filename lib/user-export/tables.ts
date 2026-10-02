@@ -42,6 +42,8 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
   },
   { table: "sentence_mining_cards", userColumn: "user_id" },
   { table: "sentence_marks", userColumn: "user_id" },
+  { table: "sentence_notes", userColumn: "user_id" },
+  { table: "lesson_notes", userColumn: "user_id" },
   { table: "shadowing_sessions", userColumn: "user_id" },
   { table: "dictation_attempts", userColumn: "user_id" },
   { table: "companion_memories", userColumn: "user_id" },
