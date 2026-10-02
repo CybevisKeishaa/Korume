@@ -55,7 +55,7 @@ function claim(attemptCount = 1): ClaimedLessonCreationJob {
 function providers(overrides: Partial<LessonCreationDependencies> = {}): LessonCreationDependencies {
   return {
     findExistingLesson: vi.fn().mockResolvedValue(null),
-    fetchOembed: vi.fn().mockResolvedValue({ title: "Lesson", thumbnailUrl: "https://i.ytimg.com/vi/id/hq.jpg" }),
+    fetchOembed: vi.fn().mockResolvedValue({ title: "Lesson", thumbnailUrl: "https://i.ytimg.com/vi/id/hq.jpg", authorName: "Channel" }),
     fetchCaptions: vi.fn().mockResolvedValue({
       source: "youtube_caption",
       lines: [{ startTime: 0, endTime: 1, textJp: "日本語", textTranslation: null }],

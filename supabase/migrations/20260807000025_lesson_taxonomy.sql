@@ -42,7 +42,7 @@ create view learner_videos with (security_invoker = true) as
 select
   v.id, v.youtube_video_id, v.title, v.duration_seconds, v.thumbnail_url,
   v.jlpt_level_estimate, v.added_by_user_id, v.library_access,
-  v.promotion_starred, v.created_at, v.situation_id, v.source_id,
+  v.promotion_starred, v.created_at, v.situation_id, v.source_id, v.channel_title,
   p.last_watched_position, p.completed_at, p.last_watched_at,
   (p.video_id is not null and p.completed_at is null and p.last_watched_position > 0) as in_progress,
   (case when p.video_id is not null and p.completed_at is null and p.last_watched_position > 0 then p.last_watched_at end) as in_progress_last_watched_at,

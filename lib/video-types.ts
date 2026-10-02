@@ -23,6 +23,7 @@ export interface VideoRow {
   title: string;
   duration_seconds: number | null;
   thumbnail_url: string | null;
+  channel_title: string | null;
   jlpt_level_estimate: JlptLevel | null;
   added_by_user_id: string | null;
   library_access: LibraryAccess;
@@ -53,6 +54,7 @@ export interface VideoProgressRow {
   video_id: string;
   last_watched_position: number;
   completed_at: string | null;
+  last_watched_at: string | null;
 }
 
 /**

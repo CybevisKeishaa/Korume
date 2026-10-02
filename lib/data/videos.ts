@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ProgressInput } from "@/lib/validation/video";
 
 export const VIDEO_COLUMNS =
-  "id, youtube_video_id, title, duration_seconds, thumbnail_url, jlpt_level_estimate, added_by_user_id, library_access, promotion_starred, created_at";
+  "id, youtube_video_id, title, duration_seconds, thumbnail_url, channel_title, jlpt_level_estimate, added_by_user_id, library_access, promotion_starred, created_at";
 
 export type LibraryAccess = "PRIVATE" | "FREE" | "PLUS";
 
@@ -13,6 +13,7 @@ export interface VideoRow {
   title: string;
   duration_seconds: number | null;
   thumbnail_url: string | null;
+  channel_title: string | null;
   jlpt_level_estimate: string | null;
   added_by_user_id: string | null;
   library_access: LibraryAccess;
@@ -25,6 +26,7 @@ export interface VideoProgressRow {
   video_id: string;
   last_watched_position: number;
   completed_at: string | null;
+  last_watched_at: string | null;
 }
 
 /** Shared by every `lib/data/videos*` module — resolves the signed-in user, or `null`. */
@@ -127,7 +129,7 @@ export async function updateProgress(
   const { data, error } = await supabase
     .from("user_video_progress")
     .upsert(row, { onConflict: "user_id,video_id" })
-    .select("user_id, video_id, last_watched_position, completed_at")
+    .select("user_id, video_id, last_watched_position, completed_at, last_watched_at")
     .maybeSingle();
   // A bad videoId violates the FK — surface as a 400 rather than a 500.
   if (error) return { ok: false, status: 400 };
@@ -160,4 +162,19 @@ export async function updateProgress(
   }
 
   return { ok: true, data: data as VideoProgressRow };
+}
+
+export async function getMyLessonResume(videoId: string): Promise<{ position: number; lastWatchedAt: string | null } | null> {
+  const supabase = createClient();
+  const user = await requireUser(supabase);
+  if (!user) return null;
+  const { data, error } = await supabase.from("user_video_progress")
+    .select("last_watched_position, last_watched_at")
+    .eq("user_id", user.id)
+    .eq("video_id", videoId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const row = data as { last_watched_position: number | string; last_watched_at: string | null };
+  return { position: Number(row.last_watched_position), lastWatchedAt: row.last_watched_at };
 }

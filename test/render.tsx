@@ -87,5 +87,10 @@ function customRenderHook<Result, Props>(
   });
 }
 
+/** The same EN provider, for code paths that render without RTL (e.g. `renderToString` SSR checks). */
+export function TestIntlProvider({ children }: { children: React.ReactNode }) {
+  return <NextIntlClientProvider locale="en" messages={messages}>{children}</NextIntlClientProvider>;
+}
+
 export * from "@testing-library/react";
 export { customRender as render, customRenderHook as renderHook };

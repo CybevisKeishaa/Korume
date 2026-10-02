@@ -18,6 +18,20 @@ const row = {
   pronunciation_sort: "shortest" as const,
   pronunciation_duration: "10_30" as const,
   pronunciation_hide_completed: true,
+  reading_furigana: "always" as const,
+  reading_translation: "always" as const,
+  reading_jp_font: "mincho" as const,
+  reading_text_size: "xl" as const,
+  reading_line_height: "airy" as const,
+  reading_width: "wide" as const,
+  reading_emphasis: "strong" as const,
+  reading_color_preset: "high_contrast" as const,
+  playback_default_rate: "0.75",
+  playback_loop_count: 5 as const,
+  playback_auto_pause: true,
+  show_shortcut_hints: false,
+  resume_behavior: "restart" as const,
+  study_atmosphere: "rainy_day" as const,
 };
 
 beforeEach(() => vi.clearAllMocks());
@@ -57,6 +71,20 @@ describe("readPreferences", () => {
       pronunciationSort: "shortest",
       pronunciationDuration: "10_30",
       pronunciationHideCompleted: true,
+      readingFurigana: "always",
+      readingTranslation: "always",
+      readingJpFont: "mincho",
+      readingTextSize: "xl",
+      readingLineHeight: "airy",
+      readingWidth: "wide",
+      readingEmphasis: "strong",
+      readingColorPreset: "high_contrast",
+      playbackDefaultRate: 0.75,
+      playbackLoopCount: 5,
+      playbackAutoPause: true,
+      showShortcutHints: false,
+      resumeBehavior: "restart",
+      studyAtmosphere: "rainy_day",
       dailyMinutes: 20,
     });
   });
@@ -125,6 +153,10 @@ describe("updateMyPreferences", () => {
         learningSchedule: "custom", scheduleDays: [1, 3, 5], reviewFrequency: "relaxed", difficulty: "challenge",
         displayScale: "large", reduceMotion: true, microphoneEnabled: false, cameraEnabled: true, dailyMinutes: 20,
         pronunciationSort: "shortest", pronunciationDuration: "10_30", pronunciationHideCompleted: true,
+        readingFurigana: "always", readingTranslation: "always", readingJpFont: "mincho", readingTextSize: "xl",
+        readingLineHeight: "airy", readingWidth: "wide", readingEmphasis: "strong", readingColorPreset: "high_contrast",
+        playbackDefaultRate: 0.75, playbackLoopCount: 5, playbackAutoPause: true, showShortcutHints: false,
+        resumeBehavior: "restart", studyAtmosphere: "rainy_day",
       } },
     });
     expect(calls.users.some((tableCalls) => hasCall(tableCalls, "update"))).toBe(true);
@@ -158,6 +190,27 @@ describe("updateMyPreferences", () => {
       options: { onConflict: "user_id" },
     });
     expect(calls.users.some((tableCalls) => hasCall(tableCalls, "update"))).toBe(false);
+  });
+
+  it("maps a new reading preference to its database column", async () => {
+    const calls: QueryCall[][] = [];
+    vi.mocked(createClient).mockReturnValue(
+      createMockSupabase({
+        user: { id: "reading-preference" },
+        tables: {
+          users: () => ({ data: { daily_minutes: 15 }, error: null }),
+          user_preferences: (tableCalls) => {
+            calls.push(tableCalls);
+            return { data: row, error: null };
+          },
+        },
+      }) as ReturnType<typeof createClient>,
+    );
+
+    await expect(updateMyPreferences({ readingFurigana: "always" })).resolves.toMatchObject({ ok: true });
+    expect(calls.flat().find((call) => call.op === "upsert")).toMatchObject({
+      values: expect.objectContaining({ reading_furigana: "always" }),
+    });
   });
 
   /**

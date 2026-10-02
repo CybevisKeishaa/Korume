@@ -178,6 +178,7 @@ create table videos (
   title text not null,
   duration_seconds int check (duration_seconds >= 0),
   thumbnail_url text,
+  channel_title text check (char_length(channel_title) <= 200),
   jlpt_level_estimate jlpt_level,
   added_by_user_id uuid references users (id) on delete set null,
   status video_status not null default 'pending',

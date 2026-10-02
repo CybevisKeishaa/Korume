@@ -75,6 +75,18 @@ describe("installYouTubeStub", () => {
     expect(readyFired).toBe(true);
   });
 
+  it("exposes configurable rates and mute controls", () => {
+    handle = installYouTubeStub({ availablePlaybackRates: [0.5, 1] });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see above.
+    const player = new (window as any).YT.Player("player-el");
+    expect(player.getAvailablePlaybackRates()).toEqual([0.5, 1]);
+    expect(player.isMuted()).toBe(false);
+    player.mute();
+    expect(player.isMuted()).toBe(true);
+    player.unMute();
+    expect(player.isMuted()).toBe(false);
+  });
+
   it("restore() removes window.YT", () => {
     handle = installYouTubeStub();
     handle.restore();

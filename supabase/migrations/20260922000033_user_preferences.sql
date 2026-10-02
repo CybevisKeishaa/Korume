@@ -19,6 +19,23 @@ create table user_preferences (
   pronunciation_duration text
     check (pronunciation_duration in ('under_10', '10_30', 'over_30')),
   pronunciation_hide_completed boolean not null default false,
+  reading_furigana text not null default 'adaptive' check (reading_furigana in ('always', 'adaptive', 'hidden')),
+  reading_translation text not null default 'always' check (reading_translation in ('hidden', 'reveal', 'always')),
+  reading_jp_font text not null default 'gothic' check (reading_jp_font in ('gothic', 'mincho')),
+  reading_text_size text not null default 'm' check (reading_text_size in ('s', 'm', 'l', 'xl')),
+  reading_line_height text not null default 'comfortable' check (reading_line_height in ('compact', 'comfortable', 'airy')),
+  reading_width text not null default 'normal' check (reading_width in ('narrow', 'normal', 'wide')),
+  reading_emphasis text not null default 'soft' check (reading_emphasis in ('minimal', 'soft', 'strong')),
+  reading_color_preset text not null default 'warm_cream'
+    check (reading_color_preset in ('warm_cream', 'night', 'sepia', 'high_contrast')),
+  playback_default_rate numeric(3, 2) not null default 1
+    check (playback_default_rate in (0.5, 0.75, 1, 1.25, 1.5, 1.75, 2)),
+  playback_loop_count smallint not null default 1 check (playback_loop_count in (1, 3, 5, 0)),
+  playback_auto_pause boolean not null default false,
+  show_shortcut_hints boolean not null default false,
+  resume_behavior text not null default 'resume' check (resume_behavior in ('resume', 'restart')),
+  study_atmosphere text not null default 'none' check (study_atmosphere in
+    ('none', 'evening_study', 'coffee_shop', 'rainy_day', 'quiet_library', 'spring_morning', 'summer_night')),
   updated_at timestamptz not null default now(),
   -- Range and non-empty. Uniqueness/order are normalised by zod before the
   -- write (a CHECK on array uniqueness is not practical, spec §3).

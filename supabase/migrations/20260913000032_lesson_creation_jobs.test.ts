@@ -253,6 +253,15 @@ describe("durable lesson creation SQL contract", () => {
     expect(body).toContain("pg_advisory_xact_lock");
     expect(body).toContain("state = 'succeeded', step = 'ready', lesson_id = v.id");
   });
+  it("accepts an optional channel title only when it is text and persists it only on creation", () => {
+    const body = migration().match(/create function public\.finalize_lesson_creation_job\([\s\S]*?\$\$;/)?.[0];
+    expect(body).toBeDefined();
+    if (!body) throw new Error("Missing finalize");
+    expect(body).toContain("p_content->>'channel_title' is not null and jsonb_typeof(p_content->'channel_title') <> 'string'");
+    expect(body).toContain("insert into public.videos(youtube_video_id, title, thumbnail_url, channel_title, added_by_user_id, library_access)");
+    expect(body).toContain(/* migration() lowercases the source */ String.raw`left(nullif(btrim(p_content->>'channel_title', e' \t\n\r\u3000'), ''), 200)`);
+    expect(body).toContain("on conflict (youtube_video_id) do nothing returning * into v");
+  });
   /**
    * Guards the ruling itself (AGENTS.md §6a): if a later commit ever adds a
    * second subsystem migration, these scans and the definer check below would

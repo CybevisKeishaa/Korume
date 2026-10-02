@@ -25,6 +25,8 @@ export const PRIMARY_KEY_COLUMNS: Record<string, readonly string[]> = {
   user_video_progress: ["user_id", "video_id"],
   user_lesson_library: ["user_id", "lesson_id"],
   user_saved_collections: ["user_id", "collection_id"],
+  user_lesson_bookmarks: ["user_id", "video_id"],
+  sentence_marks: ["user_id", "transcript_line_id", "kind"],
   user_playlists: ["id"],
   user_playlist_items: ["playlist_id", "video_id"],
   sentence_mining_cards: ["id"],

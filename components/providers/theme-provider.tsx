@@ -17,7 +17,7 @@ interface ThemeContextValue {
   toggleTheme: () => void;
   /**
    * EFFECTIVE reduced motion, `account || OS`. This is what gates animation —
-   * `companion-sprite`, `smooth-scroll`, `stroke-order` and `transcript-pane`
+   * `companion-sprite`, `smooth-scroll`, and `stroke-order`
    * all read it, and under-reducing is an accessibility defect (`AGENTS.md`
    * §2.4), so the OS must be folded in here.
    */
@@ -102,7 +102,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
    * - **`data-reduce-motion` and `reduceMotion` get the EFFECTIVE value**,
    *   `account || OS` — the same truth table `appearanceScript` writes before
    *   paint, so the two pre-paint writers cannot disagree about what `<html>`
-   *   says, and the four components that gate animation on `reduceMotion`
+   *   says, and the three components that gate animation on `reduceMotion`
    *   cannot under-reduce.
    *
    * ⚠️ The OR used to happen before this call, so the OR'd value was what

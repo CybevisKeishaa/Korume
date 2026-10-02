@@ -26,7 +26,7 @@ export type CaptionResult = ProviderTranscriptResult;
 
 export interface LessonCreationDependencies {
   findExistingLesson(youtubeVideoId: string): Promise<VideoRow | null>;
-  fetchOembed(youtubeVideoId: string): Promise<{ title: string; thumbnailUrl: string }>;
+  fetchOembed(youtubeVideoId: string): Promise<{ title: string; thumbnailUrl: string; authorName: string | null }>;
   fetchCaptions(youtubeVideoId: string): Promise<CaptionResult | null>;
   toFurigana(text: string): Promise<unknown>;
 }
@@ -143,9 +143,10 @@ function requireFinalOutcome(outcome: FinalizeOutcome, jobId: string): LessonCre
   return outcome;
 }
 
-function parseMetadata(metadata: { title: string; thumbnailUrl: string }): {
+function parseMetadata(metadata: { title: string; thumbnailUrl: string; authorName: string | null }): {
   title: string;
   thumbnailUrl: string;
+  channelTitle: string | null;
 } {
   const title = sanitizeTranscriptText(metadata.title);
   const parsed = z.object({
@@ -155,7 +156,9 @@ function parseMetadata(metadata: { title: string; thumbnailUrl: string }): {
   if (!parsed.success) {
     throw new LessonCreationPipelineError("metadata_unavailable", { cause: parsed.error });
   }
-  return parsed.data;
+  const authorName = typeof metadata.authorName === "string" ? metadata.authorName.trim() : "";
+  // Same cut as finalize's left(…, 200): code points, so a surrogate pair is never split.
+  return { ...parsed.data, channelTitle: authorName.length > 0 ? Array.from(authorName).slice(0, 200).join("") : null };
 }
 
 function parseCaptions(result: CaptionResult | null): CaptionResult {
@@ -227,7 +230,7 @@ export async function processClaimedLessonCreationJob(
   }
 
   await transitionAndRead(claim, store, "fetching_metadata");
-  let metadata: { title: string; thumbnailUrl: string };
+  let metadata: { title: string; thumbnailUrl: string; channelTitle: string | null };
   try {
     metadata = parseMetadata(await dependencies.fetchOembed(claim.youtubeVideoId));
   } catch (error) {
@@ -255,6 +258,7 @@ export async function processClaimedLessonCreationJob(
     content: {
       title: metadata.title,
       thumbnailUrl: metadata.thumbnailUrl,
+      channelTitle: metadata.channelTitle,
       source: "youtube_caption",
       lines,
     },

@@ -37,6 +37,7 @@ const PRIVATE_LESSON: VideoRow = {
   title: "My private lesson",
   duration_seconds: 420,
   thumbnail_url: "https://img.example/private.jpg",
+  channel_title: null,
   jlpt_level_estimate: "N4",
   added_by_user_id: USER.id,
   library_access: "PRIVATE",

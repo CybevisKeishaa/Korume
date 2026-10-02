@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  DAILY_MINUTES_OPTIONS, DIFFICULTY_OPTIONS, DISPLAY_SCALE_OPTIONS, PRONUNCIATION_DURATION_OPTIONS, PRONUNCIATION_SORT_OPTIONS, REVIEW_FREQUENCY_OPTIONS,
+  DAILY_MINUTES_OPTIONS, DIFFICULTY_OPTIONS, DISPLAY_SCALE_OPTIONS, PLAYBACK_LOOP_COUNT_OPTIONS, PLAYBACK_RATE_OPTIONS, PRONUNCIATION_DURATION_OPTIONS, PRONUNCIATION_SORT_OPTIONS, READING_COLOR_PRESET_OPTIONS, READING_EMPHASIS_OPTIONS, READING_FURIGANA_OPTIONS, READING_JP_FONT_OPTIONS, READING_LINE_HEIGHT_OPTIONS, READING_TEXT_SIZE_OPTIONS, READING_TRANSLATION_OPTIONS, READING_WIDTH_OPTIONS, RESUME_BEHAVIOR_OPTIONS, REVIEW_FREQUENCY_OPTIONS, STUDY_ATMOSPHERE_OPTIONS,
   canonicalScheduleDays, type IsoWeekday,
 } from "@/lib/preferences/options";
 
@@ -41,6 +41,20 @@ export const preferencesPatchSchema = z.union([
   z.object({ cameraEnabled: z.boolean() }).strict(),
   // The studio's panel always saves its whole view at once.
   pronunciationDisplay,
+  z.object({ readingFurigana: z.enum(READING_FURIGANA_OPTIONS) }).strict(),
+  z.object({ readingTranslation: z.enum(READING_TRANSLATION_OPTIONS) }).strict(),
+  z.object({ readingJpFont: z.enum(READING_JP_FONT_OPTIONS) }).strict(),
+  z.object({ readingTextSize: z.enum(READING_TEXT_SIZE_OPTIONS) }).strict(),
+  z.object({ readingLineHeight: z.enum(READING_LINE_HEIGHT_OPTIONS) }).strict(),
+  z.object({ readingWidth: z.enum(READING_WIDTH_OPTIONS) }).strict(),
+  z.object({ readingEmphasis: z.enum(READING_EMPHASIS_OPTIONS) }).strict(),
+  z.object({ readingColorPreset: z.enum(READING_COLOR_PRESET_OPTIONS) }).strict(),
+  z.object({ playbackDefaultRate: z.number().refine((value) => (PLAYBACK_RATE_OPTIONS as readonly number[]).includes(value)) }).strict(),
+  z.object({ playbackLoopCount: z.number().refine((value) => (PLAYBACK_LOOP_COUNT_OPTIONS as readonly number[]).includes(value)) }).strict(),
+  z.object({ playbackAutoPause: z.boolean() }).strict(),
+  z.object({ showShortcutHints: z.boolean() }).strict(),
+  z.object({ resumeBehavior: z.enum(RESUME_BEHAVIOR_OPTIONS) }).strict(),
+  z.object({ studyAtmosphere: z.enum(STUDY_ATMOSPHERE_OPTIONS) }).strict(),
 ]);
 
 export type PreferencesPatch = z.output<typeof preferencesPatchSchema>;

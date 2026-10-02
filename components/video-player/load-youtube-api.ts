@@ -28,6 +28,10 @@ export interface YtPlayerLike {
   playVideo(): void;
   pauseVideo(): void;
   setPlaybackRate(rate: number): void;
+  getAvailablePlaybackRates(): number[];
+  mute(): void;
+  unMute(): void;
+  isMuted(): boolean;
   destroy(): void;
 }
 

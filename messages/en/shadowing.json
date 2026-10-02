@@ -14,7 +14,6 @@
     "appStoreLabel": "Download on the App Store",
     "playStoreLabel": "Get it on Google Play"
   },
-  "translationToggle": "Translation",
   "summary": {
     "heading": "Summary",
     "aiGenerated": "AI-generated",
@@ -123,18 +122,11 @@
     }
   },
   "player": {
-    "transcriptEmpty": "This transcript has no lines yet.",
     "a11y": {
-      "transcript": "Transcript",
-      "waveform": "Recording waveform",
-      "playbackSpeed": "Playback speed",
-      "abLoop": "A–B loop",
-      "furigana": "Furigana"
+      "waveform": "Recording waveform"
     },
     "processingRecording": "Processing recording…",
-    "waveformUnavailable": "Waveform preview unavailable.",
-    "furigana": { "adaptive": "Adaptive", "all": "All", "off": "Off" },
-    "loop": { "setA": "Set A", "setB": "Set B", "clear": "Clear loop" }
+    "waveformUnavailable": "Waveform preview unavailable."
   },
   "hub": {
     "eyebrow": "Korume \u00b7 Lesson library",
@@ -184,5 +176,163 @@
   },
   "explore": { "eyebrow": "Shadowing library", "title": "Explore Lessons", "subtitle": "Browse Japanese lessons grounded in real transcripts.", "imported": "My imported lessons", "recent": "Recently added", "recommended": "Recommended for you", "situations": "Browse by situation", "all": "All situations", "preview": "Preview lesson", "empty": "No lessons are available for this selection yet.", "moreAvailable": "This collection contains more lessons than are shown here.", "card": { "minutes": "{count} min", "lines": "{count} lines", "grammarWords": "{grammar} grammar · {words} words", "grammarUnavailable": "Grammar unavailable" }, "drawer": { "close": "Close preview", "start": "Start lesson", "add": "Add to My Lessons", "added": "Added to My Lessons", "adding": "Adding lesson", "addFailed": "Could not add lesson", "transcript": "Transcript preview", "transcriptUnavailable": "Transcript preview unavailable", "jlpt": "JLPT", "duration": "Duration", "vocabulary": "Vocabulary", "sentences": "Sentences" } },
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
-  "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" }
+  "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
+  "workspace": {
+    "emptyTranscript": {
+      "title": "This lesson is temporarily missing its transcript.",
+      "retry": "Try again",
+      "backToHub": "Back to Shadowing Hub"
+    },
+    "regionLabel": "Shadowing practice",
+    "divider": "Resize workspace panes",
+    "pipMove": "Move the video window (drag, or use the arrow keys)",
+    "player": {
+      "label": "Player",
+      "play": "Play",
+      "pause": "Pause",
+      "previous": "Previous sentence",
+      "next": "Next sentence",
+      "rewind5": "Back 5 seconds",
+      "seek": "Seek",
+      "seekValue": "{current} of {total}",
+      "loop": "Sentence",
+      "loopToggle": "Sentence loop",
+      "loopCount": "Plays per sentence",
+      "speed": "Playback speed",
+      "speedValue": "Playback speed {rate}",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "subtitlesShow": "Show subtitles",
+      "subtitlesHide": "Hide subtitles",
+      "fullscreen": "Player fullscreen"
+    },
+    "liveSentence": {
+      "label": "Live sentence",
+      "hideJapanese": "Hide Japanese",
+      "showJapanese": "Show Japanese",
+      "showTranslation": "Show translation"
+    },
+    "transcript": {
+      "label": "Transcript",
+      "meta": "{count, plural, one {{count} sentence} other {{count} sentences}} · {minutes} min",
+      "translations": "Translations",
+      "fullTranscript": "Full transcript",
+      "search": "Search transcript",
+      "matches": "{count, plural, =0 {No matching sentences} one {{count} matching sentence} other {{count} matching sentences}}",
+      "noMatches": "No sentences match",
+      "backToCurrent": "Back to current",
+      "lineNumber": "Sentence {number}",
+      "bookmarked": "Bookmarked",
+      "markedDifficult": "Marked difficult",
+      "actions": "Sentence actions",
+      "replay": "Replay",
+      "bookmark": "Bookmark",
+      "difficult": "Difficult",
+      "lineFurigana": "Readings for this line",
+      "showTranslation": "Show translation"
+    },
+    "header": {
+      "back": "Back to Shadowing Hub",
+      "sourceFallback": "YouTube",
+      "jlpt": "JLPT {level}",
+      "minutes": "{minutes} min",
+      "sentenceCounter": "Sentence {current} / {total}",
+      "focusMode": "Focus Mode",
+      "fullscreen": "Workspace fullscreen",
+      "bookmarkLesson": "Bookmark lesson",
+      "more": "More actions",
+      "downloadTranscript": "Download transcript",
+      "downloadSrt": "Subtitles (.srt)",
+      "downloadTxt": "Plain text (.txt)",
+      "modeNav": "Learning modes",
+      "modes": {
+        "shadowing": "Shadowing",
+        "pronunciation": "Pronunciation",
+        "listening": "Listening",
+        "summary": "Summary"
+      }
+    },
+    "settings": {
+      "open": "Reading settings",
+      "furigana": "Furigana",
+      "furiganaOptions": {
+        "always": "Always",
+        "adaptive": "Adaptive",
+        "hidden": "Hidden"
+      },
+      "translation": "Translation",
+      "translationOptions": {
+        "hidden": "Hidden",
+        "reveal": "Tap to show",
+        "always": "Always"
+      },
+      "jpFont": "Japanese font",
+      "jpFontOptions": {
+        "gothic": "Gothic",
+        "mincho": "Mincho"
+      },
+      "textSize": "Font size",
+      "textSizeOptions": {
+        "s": "S",
+        "m": "M",
+        "l": "L",
+        "xl": "XL"
+      },
+      "lineHeight": "Line height",
+      "lineHeightOptions": {
+        "compact": "Compact",
+        "comfortable": "Comfortable",
+        "airy": "Airy"
+      },
+      "width": "Reading width",
+      "widthOptions": {
+        "narrow": "Narrow",
+        "normal": "Normal",
+        "wide": "Wide"
+      },
+      "emphasis": "Sentence emphasis",
+      "emphasisOptions": {
+        "minimal": "Minimal",
+        "soft": "Soft",
+        "strong": "Strong"
+      },
+      "colorPreset": "Text colour",
+      "colorPresetOptions": {
+        "warm_cream": "Warm Cream",
+        "night": "Night",
+        "sepia": "Sepia",
+        "high_contrast": "High Contrast"
+      },
+      "speed": "Default speed",
+      "loopCount": "Plays per sentence",
+      "autoPause": "Pause after each sentence",
+      "shortcutHints": "Show keyboard shortcuts",
+      "resume": "Reopening a lesson",
+      "resumeOptions": {
+        "resume": "Resume",
+        "restart": "Start over"
+      }
+    },
+    "environment": {
+      "open": "Study Environment",
+      "options": {
+        "none": "None",
+        "evening_study": "Evening Study",
+        "coffee_shop": "Coffee Shop",
+        "rainy_day": "Rainy Day",
+        "quiet_library": "Quiet Library",
+        "spring_morning": "Spring Morning",
+        "summer_night": "Summer Night"
+      }
+    },
+    "shortcuts": {
+      "open": "Keyboard shortcuts",
+      "togglePlay": "Play / pause",
+      "previous": "Previous sentence",
+      "next": "Next sentence",
+      "rewind": "Back 5 seconds",
+      "loop": "Sentence loop",
+      "focus": "Focus Mode"
+    }
+  }
 }

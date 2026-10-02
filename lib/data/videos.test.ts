@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
+import { createMockSupabase, eqValue, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -23,7 +23,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 // rather than silently.
 vi.mock("@/lib/data/companion", () => ({ captureFirstVideoCompleted: companion.capture }));
 
-import { updateProgress } from "./videos";
+import { getMyLessonResume, updateProgress } from "./videos";
 
 const VIDEO_ID = "c0000000-0000-0000-0000-000000000010";
 const USER = { id: "u-video-1" };
@@ -76,6 +76,36 @@ describe("updateProgress", () => {
       last_watched_position: 10,
       completed_at: NOW.toISOString(),
     });
+  });
+
+  it("selects the server timestamp returned by the progress trigger", async () => {
+    let progressCalls: QueryCall[] = [];
+    mockClient({ user_video_progress: progressTable((c) => (progressCalls = c)) }, USER);
+
+    await updateProgress(VIDEO_ID, { position: 10 }, NOW);
+
+    expect(progressCalls).toContainEqual({
+      op: "select", columns: "user_id, video_id, last_watched_position, completed_at, last_watched_at",
+    });
+  });
+
+  it("returns the caller's numeric lesson resume or null", async () => {
+    mockClient({
+      user_video_progress: (calls) => {
+        expect(eqValue(calls, "user_id")).toBe(USER.id);
+        expect(eqValue(calls, "video_id")).toBe(VIDEO_ID);
+        return { data: { last_watched_position: "12.5", last_watched_at: "2026-10-01T10:00:00.000Z" }, error: null };
+      },
+    }, USER);
+    await expect(getMyLessonResume(VIDEO_ID)).resolves.toEqual({
+      position: 12.5, lastWatchedAt: "2026-10-01T10:00:00.000Z",
+    });
+
+    mockClient({ user_video_progress: () => ({ data: null, error: null }) }, USER);
+    await expect(getMyLessonResume(VIDEO_ID)).resolves.toBeNull();
+
+    mockClient({}, null);
+    await expect(getMyLessonResume(VIDEO_ID)).resolves.toBeNull();
   });
 
   it("captures first_video_completed only when the PATCH marks completion", async () => {

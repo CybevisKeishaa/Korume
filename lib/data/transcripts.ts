@@ -4,6 +4,7 @@ import { parseTranscript } from "@/lib/transcript";
 import { toFurigana } from "@/lib/japanese";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireUser, selectVideoById } from "@/lib/data/videos";
+import { fetchAllPages } from "@/lib/data/query-pagination";
 import type { TranscriptIngestInput } from "@/lib/validation/video";
 
 export interface TranscriptLineRow {
@@ -112,15 +113,18 @@ export async function getTranscript(videoId: string): Promise<GetTranscriptResul
   if (transcriptError) throw transcriptError;
   if (!transcript) return { ok: true, data: null };
 
-  const { data: lines, error: linesError } = await supabase
+  const lines = await fetchAllPages<TranscriptLineRow>((from, to) => supabase
     .from("transcript_lines")
     .select("id, start_time, end_time, text_jp, text_translation, furigana_json")
     .eq("transcript_id", (transcript as { id: string }).id)
-    .order("start_time", { ascending: true });
-  if (linesError) throw linesError;
+    .order("start_time", { ascending: true })
+    .order("id", { ascending: true })
+    .range(from, to)) as TranscriptLineRow[];
 
   return {
     ok: true,
-    data: { ...(transcript as Omit<TranscriptWithLines, "lines">), lines: (lines as TranscriptLineRow[]) ?? [] },
+    data: { ...(transcript as Omit<TranscriptWithLines, "lines">), lines: lines.map((line) => ({
+      ...line, start_time: Number(line.start_time), end_time: line.end_time === null ? null : Number(line.end_time),
+    })) },
   };
 }

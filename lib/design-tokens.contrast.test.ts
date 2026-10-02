@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { alphaBlend, contrastRatio, hslToRgb, parseAliases, parsePrimitives, type Hsl } from "@/test/css-tokens";
 
 /**
  * WCAG AA contrast contract for the semantic colour tiers (CLAUDE.md §5 — a11y
@@ -30,31 +31,7 @@ const css = readFileSync(path.join(process.cwd(), "app/globals.css"), "utf8");
 
 const AA_NORMAL_TEXT = 4.5;
 
-type Hsl = readonly [number, number, number];
-type Rgb = readonly [number, number, number];
-
-/** Parses `--ember-500: 24 100% 62%;` definitions into an HSL lookup. */
-function parsePrimitives(source: string): Map<string, Hsl> {
-  const primitives = new Map<string, Hsl>();
-  const pattern = /(--[a-z0-9-]+):\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%/g;
-  for (const match of source.matchAll(pattern)) {
-    const [, name, h, s, l] = match;
-    if (name && h && s && l) primitives.set(name, [Number(h), Number(s), Number(l)]);
-  }
-  return primitives;
-}
-
 const primitives = parsePrimitives(css);
-
-/** Parses `--primary: var(--ember-500)` aliases. */
-function parseAliases(source: string): Map<string, string> {
-  const aliases = new Map<string, string>();
-  for (const match of source.matchAll(/(--[a-z0-9-]+):\s*var\((--[a-z0-9-]+)\)/g)) {
-    const [, name, target] = match;
-    if (name && target) aliases.set(name, target);
-  }
-  return aliases;
-}
 
 /**
  * Korume ships dark-only (2026-08-06 adoption spec §2.2): every semantic value
@@ -70,40 +47,6 @@ function resolve(token: string): Hsl {
   const hsl = primitives.get(target);
   if (!hsl) throw new Error(`${token} aliases ${target}, which has no HSL definition`);
   return hsl;
-}
-
-function hslToRgb([h, s, l]: Hsl): Rgb {
-  const sat = s / 100;
-  const light = l / 100;
-  const k = (n: number) => (n + h / 30) % 12;
-  const a = sat * Math.min(light, 1 - light);
-  const f = (n: number) =>
-    light - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  return [f(0) * 255, f(8) * 255, f(4) * 255];
-}
-
-function relativeLuminance([r, g, b]: Rgb): number {
-  const channel = (value: number) => {
-    const c = value / 255;
-    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
-}
-
-function contrastRatio(a: Rgb, b: Rgb): number {
-  const [lighter, darker] = [relativeLuminance(a), relativeLuminance(b)].sort(
-    (x, y) => y - x,
-  );
-  return ((lighter ?? 0) + 0.05) / ((darker ?? 0) + 0.05);
-}
-
-/** Composites `fg` at `alpha` over `bg` — what `bg-primary/10` actually paints. */
-function alphaBlend(fg: Rgb, bg: Rgb, alpha: number): Rgb {
-  return [
-    fg[0] * alpha + bg[0] * (1 - alpha),
-    fg[1] * alpha + bg[1] * (1 - alpha),
-    fg[2] * alpha + bg[2] * (1 - alpha),
-  ];
 }
 
 /** Surfaces a tinted element can actually sit on in this app. */

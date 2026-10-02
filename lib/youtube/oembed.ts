@@ -10,7 +10,8 @@ import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/erro
 export interface OembedResult {
   title: string;
   thumbnailUrl: string;
-  authorName: string;
+  /** Null when YouTube omits it or sends a non-string: the lesson never fails on the channel name. */
+  authorName: string | null;
 }
 
 /** Thrown for any non-success outcome (network, HTTP status, or bad body). */
@@ -26,7 +27,7 @@ export class OembedFetchError extends Error {
 
 const oembedResponseSchema = z.object({
   title: z.string(),
-  author_name: z.string(),
+  author_name: z.unknown().optional(),
   thumbnail_url: z.string(),
 });
 
@@ -89,6 +90,6 @@ export async function fetchOembed(videoId: string): Promise<OembedResult> {
   return {
     title: parsed.data.title,
     thumbnailUrl: parsed.data.thumbnail_url,
-    authorName: parsed.data.author_name,
+    authorName: typeof parsed.data.author_name === "string" ? parsed.data.author_name : null,
   };
 }

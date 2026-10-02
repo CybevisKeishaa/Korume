@@ -5,7 +5,19 @@ import {
   DIFFICULTY_OPTIONS,
   DISPLAY_SCALE_OPTIONS,
   LEARNING_SCHEDULE_OPTIONS,
+  PLAYBACK_LOOP_COUNT_OPTIONS,
+  PLAYBACK_RATE_OPTIONS,
+  READING_COLOR_PRESET_OPTIONS,
+  READING_EMPHASIS_OPTIONS,
+  READING_FURIGANA_OPTIONS,
+  READING_JP_FONT_OPTIONS,
+  READING_LINE_HEIGHT_OPTIONS,
+  READING_TEXT_SIZE_OPTIONS,
+  READING_TRANSLATION_OPTIONS,
+  READING_WIDTH_OPTIONS,
   REVIEW_FREQUENCY_OPTIONS,
+  RESUME_BEHAVIOR_OPTIONS,
+  STUDY_ATMOSPHERE_OPTIONS,
 } from "../../lib/preferences/options";
 
 const directory = join(process.cwd(), "supabase/migrations");
@@ -29,6 +41,7 @@ function subsystemMigrations(): string[] {
 }
 
 const quoted = (values: readonly string[]): string => values.map((value) => `'${value}'`).join(", ");
+const literals = (values: readonly (string | number)[]): string => values.map((value) => typeof value === "number" ? String(value) : `'${value}'`).join(", ");
 
 describe("durable user preferences SQL contract", () => {
   it("keeps user_preferences in exactly one migration", () => {
@@ -41,6 +54,32 @@ describe("durable user preferences SQL contract", () => {
     expect(sql).toContain(`check (review_frequency in (${quoted(REVIEW_FREQUENCY_OPTIONS)}))`);
     expect(sql).toContain(`check (difficulty in (${quoted(DIFFICULTY_OPTIONS)}))`);
     expect(sql).toContain(`check (display_scale in (${quoted(DISPLAY_SCALE_OPTIONS)}))`);
+  });
+
+  it("pins every reading and playback setting to its option list and default", () => {
+    const sql = migration();
+    const columns = [
+      ["reading_furigana", READING_FURIGANA_OPTIONS, "'adaptive'"],
+      ["reading_translation", READING_TRANSLATION_OPTIONS, "'always'"],
+      ["reading_jp_font", READING_JP_FONT_OPTIONS, "'gothic'"],
+      ["reading_text_size", READING_TEXT_SIZE_OPTIONS, "'m'"],
+      ["reading_line_height", READING_LINE_HEIGHT_OPTIONS, "'comfortable'"],
+      ["reading_width", READING_WIDTH_OPTIONS, "'normal'"],
+      ["reading_emphasis", READING_EMPHASIS_OPTIONS, "'soft'"],
+      ["reading_color_preset", READING_COLOR_PRESET_OPTIONS, "'warm_cream'"],
+      ["playback_default_rate", PLAYBACK_RATE_OPTIONS, "1"],
+      ["playback_loop_count", PLAYBACK_LOOP_COUNT_OPTIONS, "1"],
+      ["resume_behavior", RESUME_BEHAVIOR_OPTIONS, "'resume'"],
+      ["study_atmosphere", STUDY_ATMOSPHERE_OPTIONS, "'none'"],
+    ] as const;
+    expect(columns).toHaveLength(12);
+    for (const [column, options, defaultValue] of columns) {
+      const type = column === "playback_default_rate" ? "numeric(3, 2)" : column === "playback_loop_count" ? "smallint" : "text";
+      expect(sql).toContain(`${column} ${type} not null default ${defaultValue}`);
+      expect(sql).toContain(`check (${column} in (${literals(options)}))`);
+    }
+    expect(sql).toContain("playback_auto_pause boolean not null default false");
+    expect(sql).toContain("show_shortcut_hints boolean not null default false");
   });
 
   it("enables only the three owner policies and denies direct deletion", () => {

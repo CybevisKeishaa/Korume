@@ -14,7 +14,6 @@
     "appStoreLabel": "Tải trên App Store",
     "playStoreLabel": "Tải trên Google Play"
   },
-  "translationToggle": "Bản dịch",
   "summary": {
     "heading": "Tóm tắt",
     "aiGenerated": "Tạo bởi AI",
@@ -129,26 +128,11 @@
     }
   },
   "player": {
-    "transcriptEmpty": "Chưa có dòng phụ đề nào.",
     "a11y": {
-      "transcript": "Phụ đề",
-      "waveform": "Dạng sóng bản ghi âm",
-      "playbackSpeed": "Tốc độ phát",
-      "abLoop": "Lặp A–B",
-      "furigana": "Furigana"
+      "waveform": "Dạng sóng bản ghi âm"
     },
     "processingRecording": "Đang xử lý bản ghi âm…",
-    "waveformUnavailable": "Chưa có bản xem trước dạng sóng.",
-    "furigana": {
-      "adaptive": "Thích ứng",
-      "all": "Tất cả",
-      "off": "Tắt"
-    },
-    "loop": {
-      "setA": "Đặt A",
-      "setB": "Đặt B",
-      "clear": "Xóa vòng lặp"
-    }
+    "waveformUnavailable": "Chưa có bản xem trước dạng sóng."
   },
   "hub": {
     "eyebrow": "Korume \u00b7 Th\u01b0 vi\u1ec7n b\u00e0i h\u1ecdc",
@@ -198,5 +182,163 @@
   },
   "explore": { "eyebrow": "Thư viện shadowing", "title": "Khám phá bài học", "subtitle": "Khám phá bài học tiếng Nhật từ phụ đề có thật.", "imported": "Bài học bạn đã nhập", "recent": "Mới thêm", "recommended": "Gợi ý cho bạn", "situations": "Khám phá theo tình huống", "all": "Mọi tình huống", "preview": "Xem trước bài học", "empty": "Chưa có bài học cho lựa chọn này.", "moreAvailable": "Bộ sưu tập này có thêm bài học ngoài những bài đang hiển thị.", "card": { "minutes": "{count} phút", "lines": "{count} dòng", "grammarWords": "{grammar} ngữ pháp · {words} từ", "grammarUnavailable": "Chưa có ngữ pháp" }, "drawer": { "close": "Đóng xem trước", "start": "Bắt đầu bài học", "add": "Thêm vào bài học của tôi", "added": "Đã thêm vào bài học của tôi", "adding": "Đang thêm bài học", "addFailed": "Chưa thể thêm bài học", "transcript": "Xem trước phụ đề", "transcriptUnavailable": "Chưa có phần xem trước phụ đề", "jlpt": "JLPT", "duration": "Thời lượng", "vocabulary": "Từ vựng", "sentences": "Câu" } },
   "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
-  "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" }
+  "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
+  "workspace": {
+    "emptyTranscript": {
+      "title": "Bài học này tạm thời thiếu phụ đề.",
+      "retry": "Thử lại",
+      "backToHub": "Quay lại Shadowing Hub"
+    },
+    "regionLabel": "Luyện shadowing",
+    "divider": "Thay đổi kích thước các khung học",
+    "pipMove": "Di chuyển cửa sổ video (kéo, hoặc dùng phím mũi tên)",
+    "player": {
+      "label": "Trình phát",
+      "play": "Phát",
+      "pause": "Tạm dừng",
+      "previous": "Câu trước",
+      "next": "Câu tiếp theo",
+      "rewind5": "Lùi 5 giây",
+      "seek": "Tua",
+      "seekValue": "{current} / {total}",
+      "loop": "Câu",
+      "loopToggle": "Lặp câu",
+      "loopCount": "Số lần phát mỗi câu",
+      "speed": "Tốc độ phát",
+      "speedValue": "Tốc độ phát {rate}",
+      "mute": "Tắt tiếng",
+      "unmute": "Bật tiếng",
+      "subtitlesShow": "Hiện phụ đề",
+      "subtitlesHide": "Ẩn phụ đề",
+      "fullscreen": "Toàn màn hình trình phát"
+    },
+    "liveSentence": {
+      "label": "Câu đang phát",
+      "hideJapanese": "Ẩn tiếng Nhật",
+      "showJapanese": "Hiện tiếng Nhật",
+      "showTranslation": "Hiện bản dịch"
+    },
+    "transcript": {
+      "label": "Phụ đề",
+      "meta": "{count, plural, other {{count} câu}} · {minutes} phút",
+      "translations": "Bản dịch",
+      "fullTranscript": "Toàn bộ phụ đề",
+      "search": "Tìm trong phụ đề",
+      "matches": "{count, plural, =0 {Không có câu nào khớp} other {{count} câu khớp}}",
+      "noMatches": "Không có câu nào khớp",
+      "backToCurrent": "Về câu hiện tại",
+      "lineNumber": "Câu {number}",
+      "bookmarked": "Đã đánh dấu",
+      "markedDifficult": "Đã đánh dấu khó",
+      "actions": "Thao tác với câu",
+      "replay": "Phát lại",
+      "bookmark": "Đánh dấu",
+      "difficult": "Khó",
+      "lineFurigana": "Cách đọc cho câu này",
+      "showTranslation": "Hiện bản dịch"
+    },
+    "header": {
+      "back": "Quay lại Shadowing Hub",
+      "sourceFallback": "YouTube",
+      "jlpt": "JLPT {level}",
+      "minutes": "{minutes} phút",
+      "sentenceCounter": "Câu {current} / {total}",
+      "focusMode": "Chế độ tập trung",
+      "fullscreen": "Toàn màn hình không gian học",
+      "bookmarkLesson": "Đánh dấu bài học",
+      "more": "Thao tác khác",
+      "downloadTranscript": "Tải phụ đề",
+      "downloadSrt": "Phụ đề (.srt)",
+      "downloadTxt": "Văn bản thường (.txt)",
+      "modeNav": "Chế độ học",
+      "modes": {
+        "shadowing": "Shadowing",
+        "pronunciation": "Phát âm",
+        "listening": "Nghe",
+        "summary": "Tóm tắt"
+      }
+    },
+    "settings": {
+      "open": "Cài đặt đọc",
+      "furigana": "Furigana",
+      "furiganaOptions": {
+        "always": "Luôn hiện",
+        "adaptive": "Thích ứng",
+        "hidden": "Ẩn"
+      },
+      "translation": "Bản dịch",
+      "translationOptions": {
+        "hidden": "Ẩn",
+        "reveal": "Chạm để hiện",
+        "always": "Luôn hiện"
+      },
+      "jpFont": "Phông tiếng Nhật",
+      "jpFontOptions": {
+        "gothic": "Gothic",
+        "mincho": "Mincho"
+      },
+      "textSize": "Cỡ chữ",
+      "textSizeOptions": {
+        "s": "S",
+        "m": "M",
+        "l": "L",
+        "xl": "XL"
+      },
+      "lineHeight": "Giãn dòng",
+      "lineHeightOptions": {
+        "compact": "Gọn",
+        "comfortable": "Vừa",
+        "airy": "Thoáng"
+      },
+      "width": "Độ rộng dòng",
+      "widthOptions": {
+        "narrow": "Hẹp",
+        "normal": "Vừa",
+        "wide": "Rộng"
+      },
+      "emphasis": "Làm nổi câu hiện tại",
+      "emphasisOptions": {
+        "minimal": "Nhẹ nhất",
+        "soft": "Nhẹ",
+        "strong": "Rõ"
+      },
+      "colorPreset": "Màu chữ",
+      "colorPresetOptions": {
+        "warm_cream": "Kem ấm",
+        "night": "Ban đêm",
+        "sepia": "Sepia",
+        "high_contrast": "Tương phản cao"
+      },
+      "speed": "Tốc độ mặc định",
+      "loopCount": "Số lần phát mỗi câu",
+      "autoPause": "Tạm dừng sau mỗi câu",
+      "shortcutHints": "Hiện phím tắt",
+      "resume": "Khi mở lại bài học",
+      "resumeOptions": {
+        "resume": "Học tiếp",
+        "restart": "Học lại từ đầu"
+      }
+    },
+    "environment": {
+      "open": "Không gian học",
+      "options": {
+        "none": "Không",
+        "evening_study": "Buổi tối học bài",
+        "coffee_shop": "Quán cà phê",
+        "rainy_day": "Ngày mưa",
+        "quiet_library": "Thư viện yên tĩnh",
+        "spring_morning": "Sáng mùa xuân",
+        "summer_night": "Đêm mùa hè"
+      }
+    },
+    "shortcuts": {
+      "open": "Phím tắt",
+      "togglePlay": "Phát / tạm dừng",
+      "previous": "Câu trước",
+      "next": "Câu tiếp theo",
+      "rewind": "Lùi 5 giây",
+      "loop": "Lặp câu",
+      "focus": "Chế độ tập trung"
+    }
+  }
 }

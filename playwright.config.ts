@@ -28,7 +28,10 @@ export default defineConfig({
   // `playwright.c3.config.ts` sets `reuseExistingServer: true`, which is how
   // a run ends up measuring a server built from somebody else's worktree
   // (`docs/lessons.md` L-004, the `desktop-density-pass` evidence).
-  testIgnore: "lesson-creation-jobs.spec.ts",
+  //
+  // `*.live.spec.ts` measures the REAL YouTube iframe on a locally seeded lesson (`npm run test:e2e:live`,
+  // `playwright.live.config.ts`); it needs a fixture and the network, so it is never part of the default run.
+  testIgnore: ["lesson-creation-jobs.spec.ts", "*.live.spec.ts"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
