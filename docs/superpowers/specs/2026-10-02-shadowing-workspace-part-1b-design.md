@@ -1,5 +1,10 @@
 # Shadowing Workspace — Part 1b: the intelligence layer — Design
 
+> ⚠️ **UI scope superseded (2026-10-02)** by `2026-10-02-shadowing-workspace-part-1b-reframe-design.md`: the
+> Vocabulary, Grammar and AI tabs, every ✨ / Analyze entry point and the Vocabulary-tab QuickInspect host are
+> removed from Shadowing. Data, services, APIs, the Knowledge core, security and R11 below still hold. Read
+> the reframe's §0 table before acting on §6 or §7 of this file; never restore a removed surface from here.
+
 - Date: 2026-10-02
 - Branch: `shadowing-workspace-1b` (worktree `.worktrees/shadowing-workspace-1b`, from master `13e9ab9`)
 - Status: brainstormed with the owner, sections 1–5 approved in conversation with corrections (all folded in
