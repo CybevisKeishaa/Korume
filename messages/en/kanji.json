@@ -10,5 +10,9 @@
   "reviewTitle": "Kanji review",
   "a11y": {
     "strokeOrder": "Stroke order for {character}"
-  }
+  },
+  "grade": "Grade {grade}",
+  "frequency": "Frequency #{rank}",
+  "commonWords": "Common words",
+  "dictionarySources": "Dictionary data"
 }

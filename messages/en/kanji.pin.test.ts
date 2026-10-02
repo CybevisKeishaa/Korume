@@ -52,4 +52,11 @@ describe("kanji.json EN — page.tsx literals", () => {
   it("pins the stroke-order aria-label (components/motion/stroke-order.tsx, rendered on the detail page)", () => {
     expect(en.a11y.strokeOrder).toBe("Stroke order for {character}");
   });
+
+  it("pins the dictionary-backed detail page copy (Part 1b §6.5)", () => {
+    expect(en.grade).toBe("Grade {grade}");
+    expect(en.frequency).toBe("Frequency #{rank}");
+    expect(en.commonWords).toBe("Common words");
+    expect(en.dictionarySources).toBe("Dictionary data");
+  });
 });

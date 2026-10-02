@@ -53,7 +53,7 @@ export default async function KanjiPage({
         {kanji.map((k) => (
           <li key={k.id}>
             <Link
-              href={`/kanji/${k.id}`}
+              href={`/kanji/${encodeURIComponent(k.character)}`}
               className="flex h-full flex-col items-center rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-primary"
             >
               <span className="font-jp text-4xl leading-none">{k.character}</span>

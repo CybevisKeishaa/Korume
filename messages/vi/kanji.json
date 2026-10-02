@@ -10,5 +10,9 @@
   "reviewTitle": "Ôn lại Kanji",
   "a11y": {
     "strokeOrder": "Thứ tự nét của {character}"
-  }
+  },
+  "grade": "Lớp {grade}",
+  "frequency": "Tần suất #{rank}",
+  "commonWords": "Từ thông dụng",
+  "dictionarySources": "Dữ liệu từ điển"
 }

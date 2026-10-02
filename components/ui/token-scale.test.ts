@@ -72,6 +72,7 @@ const SCANNED_DIRS = [
   // Task 10: + reading-settings-popover, study-environment-popover, shortcut-hints-popover, atmosphere-layer.
   { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 31 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
+  { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 1 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
   // Task 4b: the workspace route group only; dictation stays outside this scope.
