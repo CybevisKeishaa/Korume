@@ -75,7 +75,7 @@ describe("USER_EXPORT_TABLES covers everything a reader owns", () => {
 
   it("reaches the whole schema, not an empty or truncated slice", () => {
     expect(BODIES.size).toBeGreaterThan(40);
-    expect(direct.size).toBe(30);
+    expect(direct.size).toBe(33);
     expect(viaParent.size).toBe(3);
     // A positive control: a table everyone can read must NOT be collected, or
     // the regex is matching something other than ownership.
