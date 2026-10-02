@@ -51,8 +51,10 @@ const DRAWER_ACTIONS = [
 const ACTION = "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-pressed:text-primary-strong aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
 
 /**
- * One transcript line (Figma `105:3731`, spec §7.6). The row body is a button stretched over the whole row
- * (click = Replay); the translation cover and the actions sit above it. Actions show on hover and keyboard
+ * One transcript line (Figma `105:3731`, spec §7.6). A button stretched over the whole row (click = Replay)
+ * sits under the text; the text, the translation cover and the actions sit above it. The text is outside the
+ * button (Part 1b Correction 3: browsers do not drag-select button text) so it can be selected; a click on it
+ * still seeks unless the learner just made a selection. Actions show on hover and keyboard
  * focus but stay in the accessibility tree. Memoised: every prop changes only on a sentence change or a
  * user toggle, so a sentence change re-renders the two rows whose state moved, not all 282.
  */
@@ -61,6 +63,7 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
   const t = useTranslations("shadowing");
   const row = useMemo(() => toTranscriptLineRow(line), [line]);
   const current = state === "current";
+  const textId = `transcript-line-text-${line.id}`;
   // Reading Settings size, leading and Text colour preset (globals.css `.reading-*`); the gap after the current
   // line ends is softened by colour, never by opacity (contrast is gated on these exact tokens).
   const japaneseClass = cn(
@@ -93,17 +96,26 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
           <button
             type="button"
             aria-current={current ? "true" : undefined}
+            aria-describedby={textId}
             onClick={() => props.onReplay(position)}
             // The ring is drawn on the stretched ::before; drop the global :focus-visible ring so there is one.
             className="block w-full text-left outline-none focus-visible:ring-0 focus-visible:ring-offset-0 before:absolute before:inset-0 before:rounded-lg focus-visible:before:ring-2 focus-visible:before:ring-ring"
           >
-            <span className="sr-only">{t("workspace.transcript.lineNumber", { number: position + 1 })} </span>
+            <span className="sr-only">{t("workspace.transcript.lineNumber", { number: position + 1 })}</span>
+          </button>
+          <div
+            id={textId}
+            data-line-id={line.id}
+            tabIndex={-1}
+            onClick={() => { if (document.getSelection()?.isCollapsed !== false) props.onReplay(position); }}
+            className="relative cursor-pointer outline-none"
+          >
             {full || furiganaOverride !== undefined ? (
               <RubySentence as="span" segments={line.furigana} text={line.textJp} mode={furiganaMode} override={furiganaOverride} className={cn("block", japaneseClass)} />
             ) : (
-              <span lang="ja" className={cn("block font-jp", japaneseClass)}>{line.textJp}</span>
+              <span lang="ja" className={cn("block font-jp [&_rt]:select-none", japaneseClass)}>{line.textJp}</span>
             )}
-          </button>
+          </div>
           {line.textTranslation !== null && translation === "shown" && (
             <p className={cn("relative", full ? "reading-latin-body" : "reading-latin-caption", current ? "reading-foreground" : "reading-muted")}>{line.textTranslation}</p>
           )}

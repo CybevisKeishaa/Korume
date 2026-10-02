@@ -24,6 +24,7 @@ import { StudyEnvironmentPopover } from "./study-environment-popover";
 import { PipDragHandle } from "./pip-drag-handle";
 import { DrawerProvider, useDrawer } from "./drawer/drawer-context";
 import { UtilityDrawer } from "./drawer/utility-drawer";
+import { SelectionPopoverHost } from "./selection-popover";
 import { drawerRowHeight, type DrawerLevel } from "@/lib/shadowing-workspace/drawer-state";
 
 // useLayoutEffect warns during SSR; on the client it runs before paint, so the session position never flashes.
@@ -177,6 +178,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       </div>
       {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
       {session.view !== "focus" && <div className={fullTranscript ? "col-span-1 row-start-2 min-h-0 min-w-0 p-md" : "min-h-0 min-w-0"}>{children}</div>}
+      <SelectionPopoverHost workspaceRef={rootRef} />
       {/* Focus Mode hides the drawer; its state lives in DrawerProvider above, so leaving Focus restores it. */}
       {drawerShown && (
         <div className={normal ? "col-span-3 row-start-3 min-h-0" : "col-span-1 row-start-3 min-h-0"} data-testid="workspace-drawer-slot">

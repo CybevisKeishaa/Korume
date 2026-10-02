@@ -259,6 +259,7 @@
   --drawer-peek-min: calc(160 * var(--density-unit));
   /* The shell sets the open drawer's height here; the 1a video budget subtracts it. */
   --workspace-drawer-height: 0px;
+  --selection-popover-width: calc(360 * var(--density-unit));
   /* The MARKETING pages' content column — wider than the rest of the app on
      purpose, and a separate fact from --layout-content-max (the shadowing
      shell). Frame 347:6277, the binding design for `/`, is 1280 wide and puts
@@ -462,6 +463,7 @@
   --drawer-peek-min: calc(160 * var(--density-unit));
   /* The shell sets the open drawer's height here; the 1a video budget subtracts it. */
   --workspace-drawer-height: 0px;
+  --selection-popover-width: calc(360 * var(--density-unit));
   --text-caption: max(0.6875rem, calc(12 * var(--density-unit)));
   --leading-caption: max(1.03125rem, calc(18 * var(--density-unit)));
   --text-body: calc(14 * var(--density-unit));

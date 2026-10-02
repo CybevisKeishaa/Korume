@@ -184,6 +184,21 @@
   "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
   "workspace": {
+    "selection": {
+      "loading": "Đang tra từ…",
+      "failed": "Không tải được các từ của câu này.",
+      "noEntry": "Không có mục từ điển cho từ này.",
+      "kanji": "Kanji {literal}",
+      "glossLoading": "Đang tìm nghĩa tiếng Việt…",
+      "glossPending": "Đang viết nghĩa tiếng Việt…",
+      "glossUnavailable": "Chưa có nghĩa tiếng Việt.",
+      "aiGenerated": "Do AI tạo",
+      "analyze": "Phân tích",
+      "play": "Phát câu",
+      "bookmark": "Đánh dấu câu",
+      "mine": "Thêm vào thẻ câu",
+      "mineTooLong": "Chọn tối đa {max} ký tự để thêm vào thẻ câu."
+    },
     "drawer": {
       "region": "Công cụ học",
       "tabList": "Công cụ học",

@@ -178,6 +178,21 @@
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
+    "selection": {
+      "loading": "Looking up the words…",
+      "failed": "Couldn't load the words of this sentence.",
+      "noEntry": "No dictionary entry for this word.",
+      "kanji": "Kanji {literal}",
+      "glossLoading": "Looking up the Vietnamese meaning…",
+      "glossPending": "Writing the Vietnamese meaning…",
+      "glossUnavailable": "No Vietnamese meaning yet.",
+      "aiGenerated": "AI-generated",
+      "analyze": "Analyze",
+      "play": "Play sentence",
+      "bookmark": "Bookmark sentence",
+      "mine": "Add to Mining",
+      "mineTooLong": "Select {max} characters or fewer to add to Mining."
+    },
     "drawer": {
       "region": "Study tools",
       "tabList": "Study tools",

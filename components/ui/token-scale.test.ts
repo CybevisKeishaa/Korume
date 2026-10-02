@@ -71,7 +71,8 @@ const SCANNED_DIRS = [
   // Task 8: + workspace-header, lesson-bookmark-button, workspace-overflow-menu, mode-nav.
   // Task 10: + reading-settings-popover, study-environment-popover, shortcut-hints-popover, atmosphere-layer.
   // Part 1b Task 10: + drawer/drawer-context, drawer/drawer-header, drawer/drawer-separator, drawer/utility-drawer.
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 35 },
+  // Part 1b Task 11: + selection-popover, use-line-analysis, drawer/word-card, drawer/phrase-card.
+  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 39 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 1 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },

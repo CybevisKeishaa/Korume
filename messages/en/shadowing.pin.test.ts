@@ -505,6 +505,12 @@ describe("shadowing.json EN workspace Utility Drawer", () => {
   });
 });
 
+describe("shadowing.json EN workspace selection popover", () => {
+  it("pins the selection popover copy", () => {
+    expect(en.workspace.selection).toEqual({"loading": "Looking up the words…", "failed": "Couldn't load the words of this sentence.", "noEntry": "No dictionary entry for this word.", "kanji": "Kanji {literal}", "glossLoading": "Looking up the Vietnamese meaning…", "glossPending": "Writing the Vietnamese meaning…", "glossUnavailable": "No Vietnamese meaning yet.", "aiGenerated": "AI-generated", "analyze": "Analyze", "play": "Play sentence", "bookmark": "Bookmark sentence", "mine": "Add to Mining", "mineTooLong": "Select {max} characters or fewer to add to Mining."});
+  });
+});
+
 describe("shadowing.json EN workspace transcript panel", () => {
   it("pins the transcript panel copy", () => {
     expect(en.workspace.transcript).toEqual({

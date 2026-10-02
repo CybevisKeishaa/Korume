@@ -63,16 +63,19 @@ export function LiveSentence() {
       )}
       <div className="reading-measure mx-auto mt-xs space-y-xs text-center">
         {line ? (
-          <RubySentence
-            segments={line.furigana}
-            text={line.textJp}
-            mode={preferences.readingFurigana}
-            override={session.lineFurigana[line.id]}
-            // Hidden keeps the box (no jump) and leaves the line out of the accessibility tree.
-            hidden={hidden}
-            // Softened between sentences by colour, never by opacity on already-muted text (contrast).
-            className={cn(JAPANESE, hidden && "invisible", isSpoken ? "reading-foreground" : "reading-muted")}
-          />
+          // A selection here, or a plain click on a word, opens the selection popover (spec §6.3).
+          <div data-line-id={line.id} data-word-click="" tabIndex={-1} className="cursor-text outline-none">
+            <RubySentence
+              segments={line.furigana}
+              text={line.textJp}
+              mode={preferences.readingFurigana}
+              override={session.lineFurigana[line.id]}
+              // Hidden keeps the box (no jump) and leaves the line out of the accessibility tree.
+              hidden={hidden}
+              // Softened between sentences by colour, never by opacity on already-muted text (contrast).
+              className={cn(JAPANESE, hidden && "invisible", isSpoken ? "reading-foreground" : "reading-muted")}
+            />
+          </div>
         ) : (
           <p aria-hidden="true" className={cn(JAPANESE, "invisible")}>&nbsp;</p>
         )}

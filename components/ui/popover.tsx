@@ -70,3 +70,51 @@ export function Popover({
     </RadixPopover.Root>
   );
 }
+
+export interface AnchoredPopoverProps {
+  /** The box to float next to — a text selection has no element to be a trigger. */
+  anchor: DOMRect;
+  onClose(): void;
+  side?: Side;
+  align?: "start" | "center" | "end";
+  className?: string;
+  label: string;
+  /** Receives the content element (or null), e.g. to tell clicks inside it from clicks outside. */
+  contentRef?: (node: HTMLDivElement | null) => void;
+  onOpenAutoFocus?: (event: Event) => void;
+  onCloseAutoFocus?: (event: Event) => void;
+  children: React.ReactNode;
+  [dataAttribute: `data-${string}`]: string | undefined;
+}
+
+/**
+ * A non-modal popover anchored to a rectangle instead of a trigger (a text selection). Open while mounted;
+ * Escape and an outside click call `onClose`. Same surface, density scope and motion as `Popover`.
+ */
+export function AnchoredPopover({
+  anchor, onClose, side = "bottom", align = "start", className, label, contentRef: onContent, onOpenAutoFocus, onCloseAutoFocus, children, ...data
+}: AnchoredPopoverProps) {
+  const { anchorRef, contentRef } = useDensityScope();
+  const virtualRef = { current: { getBoundingClientRect: () => anchor } };
+  return (
+    <RadixPopover.Root open modal={false} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <RadixPopover.Anchor virtualRef={virtualRef} />
+      <span hidden ref={anchorRef} />
+      <RadixPopover.Portal>
+        <RadixPopover.Content
+          ref={(node) => { contentRef(node); onContent?.(node); }}
+          side={side}
+          align={align}
+          sideOffset={6}
+          aria-label={label}
+          onOpenAutoFocus={onOpenAutoFocus}
+          onCloseAutoFocus={onCloseAutoFocus}
+          {...data}
+          className={cn("motion-popover z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay", className)}
+        >
+          {children}
+        </RadixPopover.Content>
+      </RadixPopover.Portal>
+    </RadixPopover.Root>
+  );
+}
