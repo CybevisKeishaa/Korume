@@ -50,6 +50,7 @@ export type QueryCall =
   | { op: "eq"; column: string; value: unknown }
   | { op: "neq"; column: string; value: unknown }
   | { op: "in"; column: string; values: unknown[] }
+  | { op: "overlaps"; column: string; values: unknown[] }
   | { op: "gte"; column: string; value: unknown }
   | { op: "lte"; column: string; value: unknown }
   | { op: "gt"; column: string; value: unknown }
@@ -169,6 +170,10 @@ export function createMockSupabase(opts: MockSupabaseOptions) {
       },
       in(column: string, values: unknown[]) {
         calls.push({ op: "in", column, values });
+        return builder;
+      },
+      overlaps(column: string, values: unknown[]) {
+        calls.push({ op: "overlaps", column, values });
         return builder;
       },
       gte(column: string, value: unknown) {

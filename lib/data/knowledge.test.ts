@@ -9,12 +9,15 @@ import type { AiProvider } from "@/lib/ai/port";
 import { createMemoryKnowledgeStore, type MemoryKnowledgeStore } from "@/lib/knowledge/memory-store";
 import { fingerprint } from "@/lib/knowledge/canonical";
 import type { KnowledgeConfig } from "@/lib/knowledge/config";
+import { staticAnalyses } from "@/lib/analysis/line-analysis";
+import { tokenSpans } from "@/lib/analysis/spans";
 import { getKnowledgeUsage, requestKnowledgeSection } from "./knowledge";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/data/subscriptions", () => ({ getActivePlanTier: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
+vi.mock("@/lib/analysis/line-analysis", () => ({ staticAnalyses: vi.fn() }));
 
 const USER = { id: "u-know" };
 const LINE_ID = "a0000000-0000-0000-0000-000000000001";
@@ -36,6 +39,12 @@ beforeEach(() => {
   provider = { ...fake.provider, name: "anthropic" };
   vi.mocked(rateLimit).mockReturnValue({ ok: true, retryAfter: 0 });
   vi.mocked(getActivePlanTier).mockResolvedValue("plus");
+  // The line's segmentation, written out: 𠮷野家 | で | 今日 | は | 雨 | です | 。
+  const spans = tokenSpans(TEXT, ["𠮷野家", "で", "今日", "は", "雨", "です", "。"]);
+  vi.mocked(staticAnalyses).mockResolvedValue(new Map([[LINE_ID, {
+    lineId: LINE_ID, snapshotId: "s", grammar: [],
+    tokens: spans.map((span, index) => ({ index, surface: TEXT.slice(span.start, span.end), base: "", reading: null, pos: "名詞", span, entries: [], vocabId: null })),
+  }]]));
   useUser(USER);
 });
 
@@ -79,7 +88,6 @@ describe("requestKnowledgeSection", () => {
     [{ section: "phrase_analysis" }],
     [{ section: "lite", span: { start: 0, end: 2 } }],
     [{ section: "phrase_analysis", span: { start: 0, end: 99 } }],
-    [{ section: "phrase_analysis", span: { start: 1, end: 4 } }],
   ])("rejects %j as invalid without generating", async (overrides) => {
     await expect(request(overrides)).resolves.toEqual({ kind: "invalid" });
     expect(store.entries.size).toBe(0);
@@ -110,7 +118,8 @@ describe("requestKnowledgeSection", () => {
   it("analyses a phrase keyed by its parent sentence and charges the parent's Free slot", async () => {
     vi.mocked(getActivePlanTier).mockResolvedValue("free");
     fake.queueStructured({ phrase: "𠮷野家", breakdown: [], nuance: "" }, USAGE);
-    await expect(request({ section: "phrase_analysis", span: { start: 0, end: 4 } })).resolves.toMatchObject({ outcome: { status: "ready" } });
+    // {1, 3} cuts 𠮷 in half and ends mid-word: the server snaps it to the whole token 𠮷野家.
+    await expect(request({ section: "phrase_analysis", span: { start: 1, end: 3 } })).resolves.toMatchObject({ outcome: { status: "ready" } });
     const [entry] = [...store.entries.values()];
     expect(entry?.key).toMatchObject({ fingerprint: fingerprint("𠮷野家"), contextKey: fingerprint(TEXT) });
     expect(store.charges).toEqual([expect.objectContaining({ entitlementKind: "free_sentence", fingerprint: fingerprint(TEXT) })]);

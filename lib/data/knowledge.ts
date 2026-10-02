@@ -4,6 +4,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/data/videos";
 import { getActivePlanTier } from "@/lib/data/subscriptions";
 import { rateLimit } from "@/lib/rate-limit";
+import { staticAnalyses } from "@/lib/analysis/line-analysis";
+import { snapSpanToTokens } from "@/lib/analysis/spans";
 import { fingerprint } from "@/lib/knowledge/canonical";
 import { readKnowledgeConfig } from "@/lib/knowledge/config";
 import { getOrGenerateSection, type GenerateDeps, type GenerateOutcome } from "@/lib/knowledge/orchestrator";
@@ -43,13 +45,6 @@ export async function getLineForLearner(supabase: ReturnType<typeof createClient
   return { id: row.id, textJp: row.text_jp, videoId: row.transcripts.video_id, videoTitle: row.transcripts.videos.title };
 }
 
-/** A span must lie inside the text and must not cut a surrogate pair (𠮷 is two UTF-16 units). Task 9 snaps to tokens. */
-function spanIsValid(text: string, span: { start: number; end: number }): boolean {
-  if (span.end > text.length) return false;
-  const splits = (index: number) => index > 0 && index < text.length && /[\uDC00-\uDFFF]/.test(text.charAt(index));
-  return !splits(span.start) && !splits(span.end);
-}
-
 /** POST /api/knowledge/sections (spec §5.3 flow, steps 1–2; the orchestrator does the rest). */
 export async function requestKnowledgeSection(body: KnowledgeSectionRequest, deps: GenerateDeps = {}): Promise<KnowledgeSectionResult> {
   const supabase = createClient();
@@ -66,10 +61,16 @@ export async function requestKnowledgeSection(body: KnowledgeSectionRequest, dep
 
   const line = await getLineForLearner(supabase, body.transcriptLineId);
   if (!line) return { kind: "not_found" };
-  if (body.span && !spanIsValid(line.textJp, body.span)) return { kind: "invalid" };
+  // The server never trusts a client span: it snaps it to whole tokens of the line, or refuses it (spec §5.1).
+  let phrase: string | undefined;
+  if (body.span) {
+    const tokens = (await staticAnalyses(supabase, [{ id: line.id, textJp: line.textJp }])).get(line.id)?.tokens ?? [];
+    const snapped = snapSpanToTokens(line.textJp, tokens, body.span);
+    if (!snapped) return { kind: "invalid" };
+    phrase = line.textJp.slice(snapped.start, snapped.end);
+  }
 
   const parentFingerprint = fingerprint(line.textJp);
-  const phrase = body.span ? line.textJp.slice(body.span.start, body.span.end) : undefined;
   const outcome = await getOrGenerateSection({
     definition,
     locale: body.locale,
