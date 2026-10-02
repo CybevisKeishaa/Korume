@@ -14,5 +14,15 @@
   "grade": "Grade {grade}",
   "frequency": "Frequency #{rank}",
   "commonWords": "Common words",
-  "dictionarySources": "Dictionary data"
+  "dictionarySources": "Dictionary data",
+  "quickInspect": {
+    "label": "Kanji {literal}",
+    "loading": "Loading kanji…",
+    "failed": "Couldn't load this kanji.",
+    "replay": "Replay strokes",
+    "listen": "Listen to {reading}",
+    "ttsUnavailable": "Speech is not available right now",
+    "jlpt": "JLPT {level}",
+    "viewFullDetails": "View full details"
+  }
 }

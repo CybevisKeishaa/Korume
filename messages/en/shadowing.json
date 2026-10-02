@@ -178,6 +178,21 @@
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
+    "vocabulary": {
+      "scope": "Show words from",
+      "thisSentence": "This sentence",
+      "wholeLesson": "Whole lesson",
+      "loading": "Loading words…",
+      "failed": "Couldn't load the words.",
+      "retry": "Try again",
+      "noWords": "No dictionary words here.",
+      "back": "Back",
+      "showMore": "Show more",
+      "total": "{count, plural, one {{count} word} other {{count} words}} in this lesson",
+      "occurrences": "{count}×",
+      "mastery": "SRS {stage}",
+      "sentences": "Sentences with {word}"
+    },
     "selection": {
       "loading": "Looking up the words…",
       "failed": "Couldn't load the words of this sentence.",

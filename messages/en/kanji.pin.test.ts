@@ -60,3 +60,9 @@ describe("kanji.json EN — page.tsx literals", () => {
     expect(en.dictionarySources).toBe("Dictionary data");
   });
 });
+
+describe("kanji.json EN quickInspect", () => {
+  it("pins the KanjiQuickInspect copy", () => {
+    expect(en.quickInspect).toEqual({"label": "Kanji {literal}", "loading": "Loading kanji…", "failed": "Couldn't load this kanji.", "replay": "Replay strokes", "listen": "Listen to {reading}", "ttsUnavailable": "Speech is not available right now", "jlpt": "JLPT {level}", "viewFullDetails": "View full details"});
+  });
+});

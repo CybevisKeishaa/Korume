@@ -14,5 +14,15 @@
   "grade": "Lớp {grade}",
   "frequency": "Tần suất #{rank}",
   "commonWords": "Từ thông dụng",
-  "dictionarySources": "Dữ liệu từ điển"
+  "dictionarySources": "Dữ liệu từ điển",
+  "quickInspect": {
+    "label": "Kanji {literal}",
+    "loading": "Đang tải kanji…",
+    "failed": "Không tải được kanji này.",
+    "replay": "Xem lại nét viết",
+    "listen": "Nghe {reading}",
+    "ttsUnavailable": "Hiện chưa phát âm được",
+    "jlpt": "JLPT {level}",
+    "viewFullDetails": "Xem đầy đủ"
+  }
 }

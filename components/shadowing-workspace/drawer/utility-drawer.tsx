@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
+import type { RefObject } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { RubySentence } from "../ruby-sentence";
@@ -8,16 +8,15 @@ import { useLesson, usePreferences } from "../workspace-context";
 import { useDrawer } from "./drawer-context";
 import { DRAWER_PANEL_ID, DrawerHeader, drawerTabId } from "./drawer-header";
 import { DrawerSeparator } from "./drawer-separator";
+import { VocabularyTab } from "./vocabulary-tab";
 
 /**
  * The Utility Drawer (spec §6.1): a band under both columns. The shell sizes its grid row; this renders the
  * resize handle, the header and — unless collapsed — the selected tab about the drawer's target.
  */
-export function UtilityDrawer({ workspaceRef, headerRef, children }: {
+export function UtilityDrawer({ workspaceRef, headerRef }: {
   workspaceRef: RefObject<HTMLElement>;
   headerRef: RefObject<HTMLElement>;
-  /** The selected tab's body (Tasks 12–14); the target sentence heads every tab. */
-  children?: ReactNode;
 }) {
   const t = useTranslations("shadowing");
   const { state, dispatch, target } = useDrawer();
@@ -61,7 +60,9 @@ export function UtilityDrawer({ workspaceRef, headerRef, children }: {
               className="reading-jp-body-lg reading-foreground"
             />
           )}
-          {children}
+          <div className="mt-sm">
+            {state.tab === "vocabulary" && <VocabularyTab />}
+          </div>
         </div>
       )}
     </section>

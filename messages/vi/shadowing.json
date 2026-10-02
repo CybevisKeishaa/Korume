@@ -184,6 +184,21 @@
   "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
   "workspace": {
+    "vocabulary": {
+      "scope": "Hiện từ của",
+      "thisSentence": "Câu này",
+      "wholeLesson": "Cả bài",
+      "loading": "Đang tải từ…",
+      "failed": "Không tải được danh sách từ.",
+      "retry": "Thử lại",
+      "noWords": "Không có từ nào trong từ điển ở đây.",
+      "back": "Quay lại",
+      "showMore": "Xem thêm",
+      "total": "{count, plural, other {{count} từ trong bài này}}",
+      "occurrences": "{count}×",
+      "mastery": "SRS {stage}",
+      "sentences": "Các câu có {word}"
+    },
     "selection": {
       "loading": "Đang tra từ…",
       "failed": "Không tải được các từ của câu này.",

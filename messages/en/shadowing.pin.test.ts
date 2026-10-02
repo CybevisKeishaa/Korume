@@ -511,6 +511,12 @@ describe("shadowing.json EN workspace selection popover", () => {
   });
 });
 
+describe("shadowing.json EN workspace Vocabulary tab", () => {
+  it("pins the Vocabulary tab copy", () => {
+    expect(en.workspace.vocabulary).toEqual({"scope": "Show words from", "thisSentence": "This sentence", "wholeLesson": "Whole lesson", "loading": "Loading words…", "failed": "Couldn't load the words.", "retry": "Try again", "noWords": "No dictionary words here.", "back": "Back", "showMore": "Show more", "total": "{count, plural, one {{count} word} other {{count} words}} in this lesson", "occurrences": "{count}×", "mastery": "SRS {stage}", "sentences": "Sentences with {word}"});
+  });
+});
+
 describe("shadowing.json EN workspace transcript panel", () => {
   it("pins the transcript panel copy", () => {
     expect(en.workspace.transcript).toEqual({
