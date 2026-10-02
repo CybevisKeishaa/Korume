@@ -149,6 +149,35 @@ begin
   raise notice 'PASS 7 settle and release are idempotent';
 end $$;
 
+-- 7b. A call that outlives its hold: the expired release spends nothing, the late settle (or release) spends the
+--     real cost exactly once and charges no learner; a normal release stays final.
+do $$
+declare a record; b record; c record; before ai_budget_days%rowtype; after ai_budget_days%rowtype;
+begin
+  select * into a from ai_reserve(pg_temp.kgate_user('plus'), 'learner', 'plus_section', 'kgate-p7b', 3, 0.05, pg_temp.kgate_limits(), -1);
+  select * into b from ai_reserve(pg_temp.kgate_user('system'), 'system', null, 'kgate-s7b', 0, 0.05, pg_temp.kgate_limits(0, 0, 0), -1);
+  perform ai_release_expired();
+  select * into before from ai_budget_days where period_day = (now() at time zone 'utc')::date;
+  if ai_settle(a.reservation_id, null, 1, 0.04) then raise exception 'FAIL 7b: late settle returned true'; end if;
+  if ai_release(b.reservation_id, 0.03) then raise exception 'FAIL 7b: late release returned true'; end if;
+  perform ai_settle(a.reservation_id, null, 1, 0.04);
+  perform ai_release(b.reservation_id, 0.03);
+  select * into after from ai_budget_days where period_day = (now() at time zone 'utc')::date;
+  if after.spent_usd - before.spent_usd <> 0.07 or after.reserved_usd <> before.reserved_usd then
+    raise exception 'FAIL 7b: late cost spent %, reserved moved %', after.spent_usd - before.spent_usd, after.reserved_usd - before.reserved_usd;
+  end if;
+  if exists (select 1 from ai_usage_charges where reservation_id = a.reservation_id) then
+    raise exception 'FAIL 7b: a late settle charged the learner';
+  end if;
+  select * into c from ai_reserve(pg_temp.kgate_user('system'), 'system', null, 'kgate-s7c', 0, 0.05, pg_temp.kgate_limits(0, 0, 0), 120);
+  perform ai_release(c.reservation_id, 0.01);
+  select * into before from ai_budget_days where period_day = (now() at time zone 'utc')::date;
+  perform ai_release(c.reservation_id, 0.5);
+  select * into after from ai_budget_days where period_day = (now() at time zone 'utc')::date;
+  if after is distinct from before then raise exception 'FAIL 7b: a second normal release spent again'; end if;
+  raise notice 'PASS 7b a late settle or release spends its cost once; a normal release stays final';
+end $$;
+
 -- 8. System scope consumes global budget only, never Free/Plus entitlement.
 do $$
 declare r record; before ai_budget_days%rowtype; after ai_budget_days%rowtype;

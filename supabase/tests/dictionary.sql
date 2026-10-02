@@ -6,12 +6,18 @@
 -- 'staging', never 'retired': step 6 runs dict_gc_snapshots(0), which deletes every retired snapshot and would
 -- take the real dictionary with it.
 -- Real snapshots already retired are kept out of step 6's reach the same way.
-
-create temp table dictgate_prev as select id, status from dict_snapshots where status in ('active', 'retired');
-update dict_snapshots set status = 'staging' where id in (select id from dictgate_prev);
+-- The parked statuses live in a real table, not a temp one: a failing step stops psql before the restore at the
+-- end, and the next run must still be able to put the real dictionary back (it does so first).
 
 delete from dict_snapshots where jmdict_import_id in (select id from dict_imports where source_version like 'dictgate-%');
 delete from dict_imports where source_version like 'dictgate-%';
+
+create table if not exists public.dictgate_parked (id uuid primary key, status text not null);
+revoke all on public.dictgate_parked from public, anon, authenticated;
+update dict_snapshots s set status = p.status from public.dictgate_parked p where s.id = p.id;
+delete from public.dictgate_parked;
+insert into public.dictgate_parked select id, status from dict_snapshots where status in ('active', 'retired');
+update dict_snapshots set status = 'staging' where id in (select id from public.dictgate_parked);
 
 create or replace function pg_temp.dictgate_snapshot(p_name text, p_gloss text, p_strokes boolean, p_dangling boolean)
 returns uuid language plpgsql as $$
@@ -183,4 +189,5 @@ commit;
 -- Cleanup, then restore every real snapshot to the status it had before the gate.
 delete from dict_snapshots where jmdict_import_id in (select id from dict_imports where source_version like 'dictgate-%');
 delete from dict_imports where source_version like 'dictgate-%';
-update dict_snapshots s set status = p.status from dictgate_prev p where s.id = p.id;
+update dict_snapshots s set status = p.status from public.dictgate_parked p where s.id = p.id;
+drop table public.dictgate_parked;

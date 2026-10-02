@@ -191,7 +191,14 @@ test("7 · ten sentences with Notes open: no knowledge or vocabulary request, le
   // The keyboard lookup is the one analysis request this test makes on purpose.
   await page.getByRole("group", { name: "Look up words in this sentence" }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("dialog").getByRole("list", { name: "Words in this sentence" })).toBeVisible();
+  const words = page.getByRole("dialog").getByRole("list", { name: "Words in this sentence" });
+  await expect(words).toBeVisible();
+  // Keyboard only: the first word holds focus, Enter opens its card with focus on Back, Back returns to the list.
+  await expect(words.getByRole("button").first()).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Back" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(words.getByRole("button").first()).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await play(page);

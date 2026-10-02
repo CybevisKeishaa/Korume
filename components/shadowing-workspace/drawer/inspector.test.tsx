@@ -116,6 +116,9 @@ describe("Inspector", () => {
     await openKanjiFromPopover();
     expect(level()).toBe("peek");
     expect(heading()).toBe("緑");
+    // Focus moves into the Inspector it opened; the closing popover does not take it back to the sentence.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(within(drawer()).getByRole("heading", { level: 3 })).toHaveFocus();
     expect(within(drawer()).getByRole("button", { name: "Quay lại" })).toBeInTheDocument();
     expect(within(drawer()).getByRole("button", { name: "Đóng" })).toBeInTheDocument();
     expect(await within(drawer()).findByRole("article", { name: "Kanji 緑" })).toBeInTheDocument();

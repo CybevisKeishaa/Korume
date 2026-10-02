@@ -24,6 +24,7 @@
 import { ApiError, FinishReason, GoogleGenAI } from "@google/genai";
 import type { GenerateContentResponseUsageMetadata } from "@google/genai";
 import { z } from "zod/v4";
+import { PROVIDER_TIMEOUT_MS } from "../constants";
 import { AiError } from "../errors";
 import type { AiProvider, AiRequest, AiResult, Tier, TokenUsage } from "../port";
 
@@ -109,7 +110,7 @@ export function createGeminiProvider(cfg: {
   fastModel: string;
   deepModel: string;
 }): AiProvider {
-  const client = new GoogleGenAI({ apiKey: cfg.apiKey });
+  const client = new GoogleGenAI({ apiKey: cfg.apiKey, httpOptions: { timeout: PROVIDER_TIMEOUT_MS } });
   const MODEL_BY_TIER: Record<Tier, string> = { fast: cfg.fastModel, deep: cfg.deepModel };
 
   return {

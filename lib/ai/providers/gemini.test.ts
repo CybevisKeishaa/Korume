@@ -17,12 +17,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod/v4";
 
 const generateContent = vi.fn();
+const clientOptions: unknown[] = [];
 vi.mock("@google/genai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@google/genai")>();
   return {
     ...actual,
     GoogleGenAI: class {
       models = { generateContent };
+      constructor(options: unknown) { clientOptions.push(options); }
     },
   };
 });
@@ -129,5 +131,15 @@ describe("gemini adapter", () => {
       reasoning: false,
       structuredOutput: true,
     });
+  });
+});
+
+describe("gemini adapter timeout", () => {
+  it("gives up before the knowledge lease ends, so a slow call never outlives its budget hold", async () => {
+    const { PROVIDER_TIMEOUT_MS } = await import("../constants");
+    const { LEASE_SECONDS } = await import("@/lib/knowledge/orchestrator");
+    createGeminiProvider(cfg);
+    expect(clientOptions.at(-1)).toMatchObject({ httpOptions: { timeout: PROVIDER_TIMEOUT_MS } });
+    expect(PROVIDER_TIMEOUT_MS).toBeLessThan(LEASE_SECONDS * 1000);
   });
 });

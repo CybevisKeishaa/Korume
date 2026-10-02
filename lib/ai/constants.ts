@@ -30,3 +30,9 @@ export const MAX_TOKENS = {
  * budget with room for the model's output.
  */
 export const TRANSCRIPT_CHAR_CAP = 6000;
+
+/**
+ * A provider call gives up after this long. It must end well inside the knowledge lease (90 s), so a slow call
+ * never outlives the reservation that holds its budget (whole-branch review of part 1b, finding 1).
+ */
+export const PROVIDER_TIMEOUT_MS = 60_000;

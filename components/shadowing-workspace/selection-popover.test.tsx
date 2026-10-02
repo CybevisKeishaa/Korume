@@ -259,8 +259,11 @@ describe("Live Sentence keyboard lookup", () => {
     expect(within(list).getAllByRole("button").map((button) => button.textContent)).toEqual([expect.stringContaining("明日"), expect.stringContaining("雨")]);
     expect(analysisCalls()).toEqual(["/api/lines/line-2/analysis?scope=lexical"]);
     expect(within(dialog).queryByRole("button", { name: "Thêm vào thẻ câu" })).toBeNull();
+    // Keyboard-reachable: the list takes focus on its first word, a picked word hands it to Back.
+    await waitFor(() => expect(within(list).getAllByRole("button")[0]).toHaveFocus());
     fireEvent.click(within(list).getAllByRole("button")[1] as HTMLElement);
     expect(await within(dialog).findByText("rain")).toBeInTheDocument();
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: "Quay lại" })).toHaveFocus());
     expect(within(dialog).getByRole("button", { name: "Thêm vào thẻ câu" })).toBeEnabled();
     fireEvent.click(within(dialog).getByRole("button", { name: "Quay lại" }));
     const back = within(dialog).getByRole("list", { name: "Các từ trong câu" });

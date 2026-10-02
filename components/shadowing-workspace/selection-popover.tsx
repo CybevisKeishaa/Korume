@@ -104,6 +104,19 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
   // The keyboard list: the word picked from it, and the one Back returns focus to.
   const [picked, setPicked] = useState<AnalysisToken | null>(null);
   const [returnTo, setReturnTo] = useState<number | null>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const backRef = useRef<HTMLButtonElement>(null);
+  const listReady = listMode && analysis?.status === "ready";
+  // A keyboard learner lands in what Enter opened: the first word, the picked word's Back, then that word again.
+  useEffect(() => {
+    if (!listReady) return;
+    if (picked) { backRef.current?.focus(); return; }
+    const words = listRef.current?.querySelectorAll<HTMLButtonElement>("button[data-token-index]");
+    const target = returnTo === null ? words?.[0] : Array.from(words ?? []).find((word) => word.dataset.tokenIndex === String(returnTo));
+    target?.focus();
+  }, [listReady, picked, returnTo]);
+  // A kanji hands focus to the Inspector it opens; the closing popover must not take it back to the text.
+  const handedOff = useRef(false);
 
   // The selection as the server will read it: snapped to whole tokens once the analysis is here.
   const resolved = useMemo(() => {
@@ -157,18 +170,18 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
       data-selection-popover=""
       // Opening never moves focus away from the text the learner is selecting in.
       onOpenAutoFocus={(event) => event.preventDefault()}
-      onCloseAutoFocus={(event) => { event.preventDefault(); opened.returnFocus?.focus(); }}
+      onCloseAutoFocus={(event) => { event.preventDefault(); if (!handedOff.current) opened.returnFocus?.focus(); }}
       className="w-[min(calc(100vw-var(--space-2xl)),var(--selection-popover-width))] space-y-sm"
     >
       {analysis?.status === "error" && <p className="text-body text-muted-foreground">{t("workspace.selection.failed")}</p>}
       {(!analysis || analysis.status === "loading") && <p role="status" className="text-body text-muted-foreground">{t("workspace.selection.loading")}</p>}
       {listMode && !picked && analysis?.status === "ready" && (
-        <ul aria-label={t("workspace.selection.words")} className="flex flex-wrap gap-2xs">
+        <ul ref={listRef} aria-label={t("workspace.selection.words")} className="flex flex-wrap gap-2xs">
           {analysis.analysis.tokens.filter((token) => token.entries.length > 0).map((token) => (
             <li key={token.index}>
               <button
                 type="button"
-                ref={(node) => { if (node && returnTo === token.index) node.focus(); }}
+                data-token-index={token.index}
                 onClick={() => { setPicked(token); setReturnTo(token.index); }}
                 className={ACTION}
               >
@@ -182,7 +195,7 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
         </ul>
       )}
       {listMode && picked && (
-        <button type="button" onClick={() => setPicked(null)} className="inline-flex h-control-sm items-center gap-2xs rounded-md px-xs text-caption text-muted-foreground hover:bg-muted hover:text-foreground">
+        <button ref={backRef} type="button" onClick={() => setPicked(null)} className="inline-flex h-control-sm items-center gap-2xs rounded-md px-xs text-caption text-muted-foreground hover:bg-muted hover:text-foreground">
           <BackGlyph className="size-icon-xs" />
           {t("workspace.selection.back")}
         </button>
@@ -190,7 +203,7 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
       {resolved?.word && (
         <WordCard
           token={resolved.word}
-          onOpenKanji={(literal) => { focusOrigin.current = opened.returnFocus; dispatch({ type: "inspect", entry: { kind: "kanji", literal } }); close(); }}
+          onOpenKanji={(literal) => { handedOff.current = true; focusOrigin.current = opened.returnFocus; dispatch({ type: "inspect", entry: { kind: "kanji", literal } }); close(); }}
         />
       )}
       {resolved && !resolved.word && (

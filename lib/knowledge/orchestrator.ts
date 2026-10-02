@@ -17,7 +17,7 @@ import type {
 } from "./types";
 
 /** A leader whose provider call outlives this is presumed dead; the next caller takes over (spec §5.3 step 3). */
-const LEASE_SECONDS = 90;
+export const LEASE_SECONDS = 90;
 /** Outlives the lease, so a live leader never loses its hold; an abandoned hold frees itself. */
 const RESERVATION_TTL_SECONDS = 180;
 const FOLLOWER_RETRY_MS = 1500;
