@@ -13,17 +13,23 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 
 - Spec (LOCKED 2026-10-02 after the owner's 5 written-spec corrections): `docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-design.md`
 - Plan (APPROVED by the owner 2026-10-02): `docs/superpowers/plans/2026-10-02-shadowing-workspace-part-1b.md`
+- REFRAME spec (locked `32b5e07`, supersedes the 1b UI scope): `docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-reframe-design.md`
+- REFRAME plan (`63fdc1f`, tasks R1–R5): `docs/superpowers/plans/2026-10-02-shadowing-workspace-part-1b-reframe.md`
 - `AGENTS.md`, `docs/lessons.md`, `.codex/docs/workflow.md` §8
 
 ## Accepted commits
 
 - `6148a85` `5f43650` `881af6c` spec (locked at `881af6c`) · plan
+- T0–T15 `419c8af`..`62107ca` (Claude inline) · reframe spec `32b5e07` · reframe plan `63fdc1f`
 
 ## Contracts and decisions
 
 - Owner rulings R1–R11 in spec §2; deviation register in spec §3.
 - 2026-10-02 owner: Codex is busy elsewhere — Claude implements every task inline (no packets). Ledger:
   `.superpowers/sdd/2026-10-02-shadowing-workspace-part-1b/progress.md` (gitignored).
+- 2026-10-03 owner: the reframe tasks go to Codex, one packet per `codex exec`
+  (`.superpowers/sdd/2026-10-02-shadowing-workspace-part-1b/task-R<n>-brief.md`). Codex never commits; Claude
+  reviews, runs mutations and the gates, and commits.
 
 ### T0 findings (2026-10-02)
 
@@ -54,7 +60,7 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 
 ## Working tree and environment
 
-- Owner: Claude
+- Owner: Codex
 - Worktree `.worktrees/shadowing-workspace-1b`, branched from master `13e9ab9`.
 - Dictionary sources on the owner's machine: `C:/Users/tplon/Desktop/Japan/Korume/DataKanji/`
   (`kanjidic2.xml.gz`, `kanjivg-20260714-{all,main,stripped}.zip`, `kanjivg-r20260714.zip`). JMdict not yet
@@ -66,4 +72,4 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 
 ## Next actions
 
-- Packets in `.superpowers/sdd/shadowing-workspace-1b/` → T0 (Claude) beside T1, T4, T5, T6 (Codex).
+- R1 (Codex) → R2+R3 → R4 → R5 (e2e/Chrome by Claude) → original T16a/T16b.
