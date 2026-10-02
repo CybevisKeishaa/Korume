@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
+import { fetchAllPages } from "@/lib/data/query-pagination";
 import { requireUser } from "@/lib/data/videos";
 import { recordActivity } from "@/lib/data/gamification";
 import { REVIEW_FREQUENCY_MULTIPLIER, reviewItem, type Quality, type SrsState } from "@/lib/srs";
@@ -299,6 +300,44 @@ export async function listMiningCards(): Promise<ListMiningCardsResult> {
       easeFactor: Number(row.ease_factor),
       nextReviewAt: row.next_review_at,
       lastReviewedAt: row.last_reviewed_at,
+    })),
+  };
+}
+
+/** One of this learner's cards from one lesson, for the workspace Mining tab (Part 1b §6.4). */
+export interface LessonMiningCard {
+  id: string;
+  targetWord: string;
+  reading: string | null;
+  sentenceJp: string;
+  lineId: string | null;
+  startTime: number | null;
+}
+
+export type ListLessonMiningCardsResult = { ok: true; data: LessonMiningCard[] } | { ok: false; status: 401 };
+
+/** Every card the learner mined from `videoId`, in lesson order — paged, so no `max_rows` cap can cut it. */
+export async function listMyMiningCardsForVideo(videoId: string): Promise<ListLessonMiningCardsResult> {
+  const supabase = createClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, status: 401 };
+  const rows = await fetchAllPages<{ id: string; target_word: string; reading: string | null; sentence_jp: string; transcript_line_id: string | null; start_time: number | string | null }>((from, to) => supabase
+    .from("sentence_mining_cards")
+    .select("id, target_word, reading, sentence_jp, transcript_line_id, start_time")
+    .eq("user_id", user.id)
+    .eq("video_id", videoId)
+    .order("start_time", { ascending: true, nullsFirst: false })
+    .order("id", { ascending: true })
+    .range(from, to));
+  return {
+    ok: true,
+    data: rows.map((row) => ({
+      id: row.id,
+      targetWord: row.target_word,
+      reading: row.reading,
+      sentenceJp: row.sentence_jp,
+      lineId: row.transcript_line_id,
+      startTime: row.start_time === null ? null : Number(row.start_time),
     })),
   };
 }

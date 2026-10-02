@@ -49,7 +49,7 @@ function renderPanel({ preferences = {}, at = 6, marks = [], rows = lines }: {
   const bootstrap: WorkspaceBootstrap = {
     userId: "u", video: { id: "v", youtubeVideoId: "yt", title: "T", channelTitle: null, durationSeconds: 380, jlptLevel: null },
     transcript: { id: "t", lines: rows }, masteryMap: {}, preferences: { ...DEFAULT_PREFERENCES, ...preferences },
-    resume: null, lessonBookmarked: false, marks,
+    resume: null, lessonBookmarked: false, marks, notes: { lessonNote: null, sentenceNotes: [] },
   };
   const view = render(<WorkspaceProviders bootstrap={bootstrap} controller={controller}><TranscriptPanel /><Probe /></WorkspaceProviders>);
   act(() => store?.set(at));

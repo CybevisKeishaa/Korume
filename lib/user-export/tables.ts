@@ -42,6 +42,8 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
   },
   { table: "sentence_mining_cards", userColumn: "user_id" },
   { table: "sentence_marks", userColumn: "user_id" },
+  { table: "sentence_notes", userColumn: "user_id" },
+  { table: "lesson_notes", userColumn: "user_id" },
   { table: "shadowing_sessions", userColumn: "user_id" },
   { table: "dictation_attempts", userColumn: "user_id" },
   { table: "companion_memories", userColumn: "user_id" },
@@ -64,7 +66,13 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
   },
 ];
 
+const AI_LEDGER_EXCLUSION =
+  "Service-role-only AI cost ledger (Part 1b spec §4.2–§4.3): learners have no table access, not even SELECT, so the RLS export client cannot read it. It holds token counts and estimated cost per call, no content; the learner sees their own usage through GET /api/knowledge/usage.";
+
 export const USER_EXPORT_EXCLUSIONS: Record<string, string> = {
+  ai_generations: AI_LEDGER_EXCLUSION,
+  ai_reservations: AI_LEDGER_EXCLUSION,
+  ai_usage_charges: AI_LEDGER_EXCLUSION,
   videos:
     "Shared catalogue content, not personal data: `added_by_user_id` records who imported a lesson everyone can watch, and exporting the row would hand one reader the catalogue. Excluding it also keeps its children — transcripts, video_summaries, lesson_collections — out, since they describe the lesson rather than the reader.",
 };

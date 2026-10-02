@@ -475,6 +475,7 @@ describe("shadowing.json EN workspace player", () => {
 describe("shadowing.json EN workspace Live Sentence", () => {
   it("pins the Live Sentence copy", () => {
     expect(en.workspace.liveSentence).toEqual({
+      lookUp: "Look up words in this sentence",
       label: "Live sentence",
       hideJapanese: "Hide Japanese",
       showJapanese: "Show Japanese",
@@ -483,9 +484,57 @@ describe("shadowing.json EN workspace Live Sentence", () => {
   });
 });
 
+describe("shadowing.json EN workspace Utility Drawer", () => {
+  it("pins the drawer copy", () => {
+    expect(en.workspace.drawer).toEqual({
+      region: "Study tools",
+      tabList: "Study tools",
+      tabs: { mining: "Mining", notes: "Notes" },
+      separator: "Resize study tools",
+      levels: { collapsed: "Collapsed", peek: "Peek", expanded: "Expanded", maximized: "Fullscreen" },
+      open: "Open study tools",
+      collapse: "Collapse study tools",
+      fullscreen: "Study tools fullscreen",
+      following: "Current sentence · {number} / {total}",
+      pinnedTarget: "Sentence {number} / {total}",
+      pinned: "Pinned",
+      follow: "Follow current sentence",
+      noTarget: "No sentence yet",
+      selection: "Selection: {text}",
+    });
+  });
+});
+
+describe("shadowing.json EN workspace Inspector", () => {
+  it("pins the Inspector copy", () => {
+    expect(en.workspace.inspector).toEqual({"label": "Look-up: {title}", "back": "Back", "close": "Close"});
+  });
+});
+
+describe("shadowing.json EN workspace selection popover", () => {
+  it("pins the selection popover copy", () => {
+    expect(en.workspace.selection).toEqual({"words": "Words in this sentence", "back": "Back", "loading": "Looking up the words…", "failed": "Couldn't load the words of this sentence.", "noEntry": "No dictionary entry for this word.", "kanji": "Kanji {literal}", "glossLoading": "Looking up the Vietnamese meaning…", "glossPending": "Writing the Vietnamese meaning…", "glossUnavailable": "No Vietnamese meaning yet.", "aiGenerated": "AI-generated", "play": "Play sentence", "bookmark": "Bookmark sentence", "mine": "Add to Mining", "mineTooLong": "Select {max} characters or fewer to add to Mining."});
+  });
+});
+
+describe("shadowing.json EN workspace notes tab", () => {
+  it("pins the notes tab copy", () => {
+    expect(en.workspace.notes).toEqual({"sentence": "Note for sentence {number}", "lesson": "Lesson note", "placeholder": "Write a note…", "all": "All notes in this lesson", "none": "No notes yet.", "retry": "Retry", "status": {"saved": "Saved", "saving": "Saving…", "failed": "Couldn't save.", "idle": ""}});
+  });
+});
+
+describe("shadowing.json EN workspace mining tab", () => {
+  it("pins the mining tab copy", () => {
+    expect(en.workspace.mining).toEqual({"loading": "Loading your cards…", "failed": "Couldn't load your cards.", "none": "You haven't mined a sentence from this lesson yet."});
+  });
+});
+
 describe("shadowing.json EN workspace transcript panel", () => {
   it("pins the transcript panel copy", () => {
     expect(en.workspace.transcript).toEqual({
+      hasNote: "Has a note",
+      openMining: "Cards from this sentence",
+      openNote: "Note",
       label: "Transcript",
       meta: "{count, plural, one {{count} sentence} other {{count} sentences}} · {minutes} min",
       translations: "Translations",
@@ -574,3 +623,4 @@ describe("shadowing.json EN workspace Reading Settings, Study Environment and sh
     });
   });
 });
+

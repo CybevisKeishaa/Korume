@@ -7,6 +7,9 @@ import { matchingLineIndexes } from "@/lib/shadowing-workspace/transcript-search
 import { cn } from "@/lib/utils";
 import { ExpandGlyph, SearchGlyph, ShowTextGlyph } from "./player-glyphs";
 import { TranscriptRow, type RowState, type RowTranslation } from "./transcript-row";
+import { useOptionalDrawer } from "./drawer/drawer-context";
+import { useOptionalNotes } from "./drawer/notes-context";
+import type { DrawerTab } from "@/lib/shadowing-workspace/drawer-state";
 import { useAutoFollow } from "./use-auto-follow";
 import { useCurrentSentence, useLesson, useMarks, usePlaybackController, usePreferences, useSession, type SessionState } from "./workspace-context";
 
@@ -45,6 +48,12 @@ export function TranscriptPanel() {
   const onToggleMark = useCallback((lineId: string, kind: SentenceMarkKind) => toggleMark(lineId, kind), [toggleMark]);
   const onRevealTranslation = useCallback((lineId: string) => dispatch({ type: "reveal-line-translation", lineId }), [dispatch]);
   const onToggleFurigana = useCallback((lineId: string, shownByMode: boolean) => dispatch({ type: "toggle-line-furigana", lineId, shownByMode }), [dispatch]);
+  const drawerDispatch = useOptionalDrawer()?.dispatch;
+  const notes = useOptionalNotes();
+  // Stable per dispatch: rows are memoised, and a new callback each render would re-render all 282 of them.
+  const onOpenDrawer = useMemo(() => (drawerDispatch
+    ? (lineId: string, tab: DrawerTab) => drawerDispatch({ type: "open", tab, target: { lineId, span: null } })
+    : undefined), [drawerDispatch]);
 
   const persisted = preferences.readingTranslation;
   const translationShown = session.transcriptTranslation === "shown" || (session.transcriptTranslation === "follow" && persisted === "always");
@@ -126,6 +135,7 @@ export function TranscriptPanel() {
                     spoken={state === "current" ? isSpoken : true}
                     bookmarked={marks.isMarked(line.id, "bookmark")}
                     difficult={marks.isMarked(line.id, "difficult")}
+                    noted={notes?.hasNote(line.id) ?? false}
                     bookmarkPending={marks.pending(`mark:${line.id}:bookmark`)}
                     difficultPending={marks.pending(`mark:${line.id}:difficult`)}
                     translation={rowTranslation(session.transcriptTranslation, persisted, session.lineTranslationRevealed[line.id] === true)}
@@ -136,6 +146,7 @@ export function TranscriptPanel() {
                     onToggleMark={onToggleMark}
                     onRevealTranslation={onRevealTranslation}
                     onToggleFurigana={onToggleFurigana}
+                    onOpenDrawer={onOpenDrawer}
                   />
                 );
               })}

@@ -30,7 +30,7 @@ function renderHeader(video: Partial<WorkspaceBootstrap["video"]> = {}, { lesson
   const bootstrap: WorkspaceBootstrap = {
     userId: "u",
     video: { id: "v", youtubeVideoId: "yt", title: "Ep.729 会議の始め方", channelTitle: "Nihongo Pod", durationSeconds: 1380, jlptLevel: "N3", ...video },
-    transcript: { id: "t", lines }, masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked, marks: [],
+    transcript: { id: "t", lines }, masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
   };
   return render(<WorkspaceProviders bootstrap={bootstrap}><WorkspaceHeader /><Probe /></WorkspaceProviders>);
 }

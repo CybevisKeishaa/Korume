@@ -126,7 +126,9 @@ test("3 · Loop 3× + Auto Pause: exactly three plays of the sentence, then paus
   await expect(page.getByRole("button", { name: "Sentence loop" })).toHaveAttribute("aria-pressed", "true");
 
   const before = (await fakeYt(page)).seeks.length;
-  await row(page, 4).getByRole("button", { name: /Sentence 5/ }).click();
+  // Part 1b T11: the seek button keeps only its sr-only number (0×0); a mouse click lands on the row's text —
+  // at its start, clear of the hover toolbar at the row's right.
+  await row(page, 4).locator("[data-line-id]").click({ position: { x: 8, y: 8 } });
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   for (let pass = 0; pass < 3; pass += 1) await advance(page, 2.6);
   const after = await fakeYt(page);
@@ -141,7 +143,7 @@ test("3 · Loop 3× + Auto Pause: exactly three plays of the sentence, then paus
 test("4 · resumes after leaving the route: same sentence, paused, a fresh player", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  await row(page, 11).getByRole("button", { name: /Sentence 12/ }).click();
+  await row(page, 11).locator("[data-line-id]").click({ position: { x: 8, y: 8 } });
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   await advance(page, 1);
   await clickControl(page, "Pause");
@@ -216,9 +218,9 @@ test("8 · Focus and Full Transcript never remount the player, nor do a divider 
   await expect(row(page, 0).locator("rt").first()).toBeAttached();
   expect(await page.getByTestId("workspace-player-slot").evaluate((slot) => getComputedStyle(slot).position)).toBe("fixed");
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("separator")).toBeVisible();
+  await expect(page.getByRole("separator", { name: "Resize workspace panes" })).toBeVisible();
 
-  const divider = await page.getByRole("separator").boundingBox();
+  const divider = await page.getByRole("separator", { name: "Resize workspace panes" }).boundingBox();
   if (!divider) throw new Error("divider has no box");
   await page.mouse.move(divider.x + divider.width / 2, divider.y + divider.height / 2);
   await page.mouse.down();
@@ -234,7 +236,8 @@ test("8 · Focus and Full Transcript never remount the player, nor do a divider 
 test("9 · the divider moves by keyboard and by drag, and neither pane passes its minimum", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  const separator = page.getByRole("separator");
+  // Part 1b T10: the Utility Drawer adds a second separator.
+  const separator = page.getByRole("separator", { name: "Resize workspace panes" });
   await separator.focus();
   await expect(separator).toHaveAttribute("aria-valuenow", "50");
   await page.keyboard.press("ArrowLeft");

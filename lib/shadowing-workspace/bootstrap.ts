@@ -1,3 +1,4 @@
+import type { NoteDto } from "@/lib/data/notes";
 import type { SentenceMarkDto } from "@/lib/data/sentence-marks";
 import type { UserPreferences } from "@/lib/preferences/options";
 import type { JlptLevel } from "@/lib/video-types";
@@ -19,4 +20,6 @@ export interface WorkspaceBootstrap {
   resume: { position: number; lastWatchedAt: string | null } | null;
   lessonBookmarked: boolean;
   marks: SentenceMarkDto[];
+  /** The learner's lesson note and every sentence note of this transcript (Part 1b §4.4). */
+  notes: { lessonNote: NoteDto | null; sentenceNotes: NoteDto[] };
 }

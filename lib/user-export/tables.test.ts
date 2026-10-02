@@ -75,7 +75,7 @@ describe("USER_EXPORT_TABLES covers everything a reader owns", () => {
 
   it("reaches the whole schema, not an empty or truncated slice", () => {
     expect(BODIES.size).toBeGreaterThan(40);
-    expect(direct.size).toBe(30);
+    expect(direct.size).toBe(35);
     expect(viaParent.size).toBe(3);
     // A positive control: a table everyone can read must NOT be collected, or
     // the regex is matching something other than ownership.
@@ -127,8 +127,8 @@ describe("export pagination uses the primary-key order declared by the schema", 
       }),
     );
 
-    expect(tables.size).toBe(32);
-    expect(declaredKeys.size).toBe(32);
+    expect(tables.size).toBe(34);
+    expect(declaredKeys.size).toBe(34);
     for (const table of tables) {
       expect(Object.hasOwn(PRIMARY_KEY_COLUMNS, table), `${table} needs a paging key`).toBe(true);
       expect(PRIMARY_KEY_COLUMNS[table], `${table}'s paging key must match the schema`).toEqual(

@@ -35,7 +35,7 @@ function renderLive(preferences: Partial<UserPreferences> = {}, masteryMap: Reco
   const bootstrap: WorkspaceBootstrap = {
     userId: "u", video: { id: "v", youtubeVideoId: "yt", title: "T", channelTitle: null, durationSeconds: 20, jlptLevel: null },
     transcript: { id: "t", lines }, masteryMap, preferences: { ...DEFAULT_PREFERENCES, ...preferences },
-    resume: null, lessonBookmarked: false, marks: [],
+    resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
   };
   const view = render(<WorkspaceProviders bootstrap={bootstrap} controller={controller}><LiveSentence /><Probe /></WorkspaceProviders>);
   act(() => store?.set(at));

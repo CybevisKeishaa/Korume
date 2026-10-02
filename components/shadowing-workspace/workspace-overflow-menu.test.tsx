@@ -23,7 +23,7 @@ const lines: WorkspaceLine[] = [
 function renderMenu({ title = "Ep.729: 会議/始め方?", transcript = { id: "t", lines } as WorkspaceBootstrap["transcript"] } = {}) {
   const bootstrap: WorkspaceBootstrap = {
     userId: "u", video: { id: "v", youtubeVideoId: "yt", title, channelTitle: null, durationSeconds: 12, jlptLevel: null },
-    transcript, masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked: false, marks: [],
+    transcript, masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
   };
   return render(<WorkspaceProviders bootstrap={bootstrap}><WorkspaceOverflowMenu /></WorkspaceProviders>);
 }

@@ -5,6 +5,7 @@ import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { HideTextGlyph, ShowTextGlyph } from "./player-glyphs";
 import { RubySentence } from "./ruby-sentence";
+import { LOOKUP_EVENT, type LookupDetail } from "./selection-popover";
 import { useCurrentSentence, useLesson, usePreferences, useSession } from "./workspace-context";
 
 // Reading Settings size and leading (globals.css `.reading-*`), on the Text colour preset's surface.
@@ -14,8 +15,8 @@ const TRANSLATION = "reading-latin-body";
 /**
  * Live Sentence (Figma `105:3654`, spec §7.5): the current line, large, with readings and its translation.
  * The hide toggle is a session-only listening-recall aid: it hides only the Japanese, never pauses and never
- * writes a preference. No ✨ until Part 1b. The card keeps its height through an intro, a hidden line and
- * gaps, so the player above never jumps.
+ * writes a preference. The card keeps its height through an intro, a hidden line and gaps, so the player
+ * above never jumps.
  */
 export function LiveSentence() {
   const t = useTranslations("shadowing");
@@ -49,16 +50,32 @@ export function LiveSentence() {
       </button>
       <div className="reading-measure mx-auto mt-xs space-y-xs text-center">
         {line ? (
-          <RubySentence
-            segments={line.furigana}
-            text={line.textJp}
-            mode={preferences.readingFurigana}
-            override={session.lineFurigana[line.id]}
-            // Hidden keeps the box (no jump) and leaves the line out of the accessibility tree.
-            hidden={hidden}
-            // Softened between sentences by colour, never by opacity on already-muted text (contrast).
-            className={cn(JAPANESE, hidden && "invisible", isSpoken ? "reading-foreground" : "reading-muted")}
-          />
+          // A selection here, or a plain click on a word, opens the selection popover (spec §6.3); Enter opens it
+          // as a list of the line's words (reframe spec §4), the keyboard path. A hidden line is not a tab stop.
+          <div
+            role="group"
+            aria-label={t("workspace.liveSentence.lookUp")}
+            data-line-id={line.id}
+            data-word-click=""
+            tabIndex={hidden ? -1 : 0}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+              event.preventDefault();
+              window.dispatchEvent(new CustomEvent<LookupDetail>(LOOKUP_EVENT, { detail: { lineId: line.id, element: event.currentTarget } }));
+            }}
+            className="cursor-text rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <RubySentence
+              segments={line.furigana}
+              text={line.textJp}
+              mode={preferences.readingFurigana}
+              override={session.lineFurigana[line.id]}
+              // Hidden keeps the box (no jump) and leaves the line out of the accessibility tree.
+              hidden={hidden}
+              // Softened between sentences by colour, never by opacity on already-muted text (contrast).
+              className={cn(JAPANESE, hidden && "invisible", isSpoken ? "reading-foreground" : "reading-muted")}
+            />
+          </div>
         ) : (
           <p aria-hidden="true" className={cn(JAPANESE, "invisible")}>&nbsp;</p>
         )}

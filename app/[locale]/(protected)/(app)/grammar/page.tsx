@@ -41,7 +41,8 @@ export default async function GrammarPage({
 
       <div className="space-y-4">
         {grammar.map((g) => (
-          <Card key={g.id}>
+          // The anchor the workspace Grammar tab links to (Part 1b §6.4).
+          <Card key={g.id} id={`grammar-${g.id}`} className="scroll-mt-xl">
             <CardHeader>
               <div className="flex items-center justify-between gap-4">
                 <CardTitle className="font-jp">{g.title}</CardTitle>

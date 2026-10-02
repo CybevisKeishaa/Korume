@@ -44,7 +44,8 @@ export function RubySentence({ segments, text, mode, override, hidden = false, a
         : mode === "hidden" ? () => false
           : adaptiveShouldShowReading(masteryMap);
   return (
-    <Tag lang="ja" aria-hidden={hidden || undefined} className={cn("font-jp", className)}>
+    // Readings are never part of a selection (spec §6.3): selection offsets count base text only.
+    <Tag lang="ja" aria-hidden={hidden || undefined} className={cn("font-jp [&_rt]:select-none", className)}>
       {segments?.length ? <FuriganaText segments={segments} shouldShowReading={show} /> : text}
     </Tag>
   );

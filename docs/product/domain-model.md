@@ -30,9 +30,25 @@ doesn't define, add it here first — don't coin a new synonym for an existing t
 | **Learning Mode** | *What skill am I practicing?* One of Shadowing / Pronunciation / Dictation / Summary. Each is a full route inside the Lesson (`/shadowing/[id]`, `/shadowing/[id]/pronunciation`, …), sharing one transcript, one timeline, one progress record. **⚠ Superseded** — "Dictation" was restructured into "Listening Practice"; see `docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §1 and `docs/design/screens/screen-shadowing-practice.md` § Learning Modes for the current definition. |
 | **View Mode** | *How do I want to see it?* Exists only inside the Shadowing Learning Mode: Reading / Normal / Immersion. **⚠ Superseded** — View Mode was retired outright, not merely renamed; see `docs/superpowers/specs/2026-08-01-shadowing-practice-figma-reconciliation-design.md` §2 and `docs/design/screens/screen-shadowing-practice.md` § Two-Layer Model for the current model. |
 | **Reading Settings** | *How should the UI behave?* Font, subtitle size/color, speed, auto-pause, repeat count, etc. — persisted per learner, not a mode. |
-| **Analysis** | A per-sentence utility (select text → Analyze), not a mode at any layer — not a View Mode option, not a Learning Mode, not a tab. (The "View Mode" reference here is to the now-retired term above, kept for historical context.) |
+| **Look-up** | A per-sentence utility (select a word, or Enter on Live Sentence → a word card; a kanji → the Inspector), not a mode at any layer — not a Learning Mode, not a tab. It replaced **Analysis** (select text → Analyze); per-sentence AI explanation is not part of Shadowing (`docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-reframe-design.md`). |
+| **Inspector** | A transient state of the Shadowing Utility Drawer showing a kanji (QuickInspect) or a common word's card, with Back / Close. Not a tab; it never changes the drawer's target. |
+| **Sentence Note** | A learner's private note on one transcript line (`sentence_notes`, one row per learner and line). Exported and erased with the account. |
+| **Lesson Note** | A learner's private note on a whole Lesson (`lesson_notes`, one row per learner and lesson). Same rules as a Sentence Note. |
 | **Sentence Mark** | A learner's per-line bookmark or difficult flag. It is not a Pin, Mining, My Lessons (library), or a Playlist. |
 | **Lesson Bookmark** | A learner's flag on a whole Lesson. It is not a Pin, Mining, My Lessons (library), or a Playlist. |
+
+## Dictionary and knowledge (server-side)
+
+| Term | Meaning |
+|---|---|
+| **Dictionary Snapshot** | One versioned import of JMdict, KANJIDIC2 and KanjiVG (`dict_snapshots`, `dict_entries`, `dict_kanji`). Exactly one is active; a new one is staged, then activated in one step; retired ones are garbage-collected. JMdict and KANJIDIC2 are © EDRDG, CC BY-SA 4.0; KanjiVG is © Ulrich Apel, CC BY-SA 3.0 — the attribution ships with the data. |
+| **Knowledge Entry** | A cached AI section about a sentence (or span), keyed by the sentence text's fingerprint, section, locale, context, schema and generator version, and content variant (full / preview). Shared by every learner; holds no learner state. |
+| **AI Reservation** | The budget hold taken before a generation (`ai_reservations`): reserved, then settled at the real cost or released. It is how the hard global USD budget and per-learner quotas stay exact under concurrency. |
+| **AI Generation** | One provider call that produced (or failed to produce) a Knowledge Entry (`ai_generations`), with model and tokens. |
+| **AI Charge** | The settled cost of a generation attributed to a learner's quota (`ai_usage_charges`). Prices never reach the client. |
+
+The Knowledge core is dormant in Shadowing after the 1b reframe: no Shadowing surface calls it; Korume
+Companion and Summary will be its first product callers.
 
 ## Explicitly not part of this model
 

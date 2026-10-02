@@ -8,6 +8,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod/v4";
+import { PROVIDER_TIMEOUT_MS } from "../constants";
 import { AiError, type AiErrorKind } from "../errors";
 import type { AiProvider, AiRequest, AiResult, Tier, TokenUsage } from "../port";
 
@@ -90,7 +91,7 @@ function baseParams(req: AiRequest) {
 
 /** Builds an {@link AiProvider} backed by the real Anthropic Messages API. */
 export function createAnthropicProvider(apiKey: string): AiProvider {
-  const client = new Anthropic({ apiKey, maxRetries: 0 });
+  const client = new Anthropic({ apiKey, maxRetries: 0, timeout: PROVIDER_TIMEOUT_MS });
 
   return {
     name: "anthropic",

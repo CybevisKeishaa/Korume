@@ -23,6 +23,7 @@ const BOOTSTRAP: WorkspaceBootstrap = {
   },
   masteryMap: {}, preferences: { ...DEFAULT_PREFERENCES }, resume: { position: 0, lastWatchedAt: null }, lessonBookmarked: false,
   marks: [],
+  notes: { lessonNote: null, sentenceNotes: [] },
 };
 
 function wrapper({ children }: { children: ReactNode }) {

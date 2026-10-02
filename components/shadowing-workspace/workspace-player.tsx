@@ -70,7 +70,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
     <section ref={ref} aria-label={t("workspace.player.label")} data-workspace-player className="overflow-hidden rounded-lg border border-border bg-card">
       {/* Width = min(column, (viewport height − the reserve) × 16/9): at 1280×529 Live Sentence stays in view (§7.1). */}
       <div className="bg-black">
-      <div data-workspace-player-video onPointerMove={wake} onPointerLeave={sleep} className="relative mx-auto aspect-video w-[min(100%,calc((100dvh-var(--workspace-video-reserve))*16/9))]">
+      <div data-workspace-player-video onPointerMove={wake} onPointerLeave={sleep} className="relative mx-auto aspect-video w-[min(100%,calc((100dvh-var(--workspace-video-reserve)-var(--workspace-drawer-height))*16/9))]">
         <YouTubePlayer
           ref={adapterRef}
           videoId={video.youtubeVideoId}

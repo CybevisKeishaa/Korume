@@ -255,6 +255,13 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
+  /* The collapsed bar: its top border, the separator (space-xs) and the header row (control-sm). */
+  --drawer-collapsed-height: calc(44 * var(--density-unit) + 1px);
+  --drawer-peek-min: calc(160 * var(--density-unit));
+  /* The shell sets the open drawer's height here; the 1a video budget subtracts it. */
+  --workspace-drawer-height: 0px;
+  --selection-popover-width: calc(360 * var(--density-unit));
+  --kanji-quick-glyph: calc(112 * var(--density-unit));
   /* The MARKETING pages' content column — wider than the rest of the app on
      purpose, and a separate fact from --layout-content-max (the shadowing
      shell). Frame 347:6277, the binding design for `/`, is 1280 wide and puts
@@ -454,6 +461,13 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
+  /* The collapsed bar: its top border, the separator (space-xs) and the header row (control-sm). */
+  --drawer-collapsed-height: calc(44 * var(--density-unit) + 1px);
+  --drawer-peek-min: calc(160 * var(--density-unit));
+  /* The shell sets the open drawer's height here; the 1a video budget subtracts it. */
+  --workspace-drawer-height: 0px;
+  --selection-popover-width: calc(360 * var(--density-unit));
+  --kanji-quick-glyph: calc(112 * var(--density-unit));
   --text-caption: max(0.6875rem, calc(12 * var(--density-unit)));
   --leading-caption: max(1.03125rem, calc(18 * var(--density-unit)));
   --text-body: calc(14 * var(--density-unit));

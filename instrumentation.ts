@@ -23,12 +23,14 @@ export async function register() {
   // kept accepting requests. Registered here — two lines above the call site
   // it gates — so a near-miss fails startup instead.
   const { schedulerEnvSpec } = await import("@/lib/scheduler/env");
+  const { knowledgeEnvSpec } = await import("@/lib/knowledge/config");
 
   registerEnvSpec(aiEnvSpec);
   registerEnvSpec(speechEnvSpec);
   registerEnvSpec(lessonCreationWorkerEnvSpec);
   registerEnvSpec(schedulerEnvSpec);
   registerEnvSpec(emailEnvSpec);
+  registerEnvSpec(knowledgeEnvSpec);
   validateEnv();
 
   // No task in the plan wired this up before now — without it, account

@@ -174,7 +174,9 @@ test("Ep.729: the real player, boundary latency, follow, replay, loop, speed, re
 
   // 4b. Replay: clicking the current row goes back to its start and keeps playing.
   const replayed = await currentIndex(page);
-  await page.locator(`li[data-index='${replayed}'] button[aria-current]`).click();
+  await expect(page.locator(`li[data-index='${replayed}'] button[aria-current]`)).toHaveCount(1);
+  // Part 1b T11: the seek button is 0×0 (sr-only number); a click lands on the row's text, clear of the hover toolbar.
+  await page.locator(`li[data-index='${replayed}'] [data-line-id]`).click({ position: { x: 8, y: 8 } });
   await expect.poll(() => player(page, (yt) => yt.getCurrentTime())).toBeLessThan(lines[replayed]!.start + 1);
   await expect.poll(() => player(page, (yt) => yt.getPlayerState())).toBe(1);
 
@@ -184,7 +186,9 @@ test("Ep.729: the real player, boundary latency, follow, replay, loop, speed, re
   await page.getByRole("radiogroup", { name: "Plays per sentence" }).getByRole("radio", { name: "3×" }).click();
   const looped = await currentIndex(page);
   const loopStart = lines[looped]!.start;
-  await page.locator(`li[data-index='${looped}'] button[aria-current]`).click();
+  await expect(page.locator(`li[data-index='${looped}'] button[aria-current]`)).toHaveCount(1);
+  // Part 1b T11: the seek button is 0×0 (sr-only number); a click lands on the row's text, clear of the hover toolbar.
+  await page.locator(`li[data-index='${looped}'] [data-line-id]`).click({ position: { x: 8, y: 8 } });
   const backJumps = await page.evaluate(async ({ next }) => {
     const players = (window as unknown as { __players: { getCurrentTime(): number }[] }).__players;
     const yt = players[players.length - 1]!;

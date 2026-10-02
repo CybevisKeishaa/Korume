@@ -91,3 +91,11 @@ export const SlidersGlyph = ({ className }: GlyphProps) => (
 export const KeyboardGlyph = ({ className }: GlyphProps) => (
   <Glyph className={className}><rect x="2.5" y="6" width="19" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /></Glyph>
 );
+/** Mining cards made from a sentence: two stacked cards. */
+export const CardsGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><rect x="3" y="7" width="14" height="13" rx="2" /><path d="M7 4h12a2 2 0 0 1 2 2v11" /></Glyph>
+);
+/** A learner note, also the transcript row's note indicator. */
+export const NoteGlyph = ({ className, filled }: GlyphProps & { filled?: boolean }) => (
+  <Glyph className={className} filled={filled}><path d="M5 3h10l4 4v14H5z" /><path d="M15 3v4h4M8.5 12h7M8.5 16h5" /></Glyph>
+);

@@ -70,8 +70,16 @@ const SCANNED_DIRS = [
   // Task 7: + transcript-panel, transcript-row, use-auto-follow.
   // Task 8: + workspace-header, lesson-bookmark-button, workspace-overflow-menu, mode-nav.
   // Task 10: + reading-settings-popover, study-environment-popover, shortcut-hints-popover, atmosphere-layer.
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 31 },
+  // Part 1b Task 10: + drawer/drawer-context, drawer/drawer-header, drawer/drawer-separator, drawer/utility-drawer.
+  // Part 1b Task 11: + selection-popover, use-line-analysis, drawer/word-card, drawer/phrase-card.
+  // Part 1b Task 12: + drawer/vocabulary-tab.
+  // Part 1b Task 13: + drawer/notes-context, drawer/notes-tab, drawer/grammar-tab, drawer/mining-tab.
+  // Part 1b Task 14: + drawer/ai-knowledge-context, drawer/ai-tab, drawer/ai-section, drawer/ai-usage, drawer/section-renderers.
+  // Part 1b reframe: - drawer/phrase-card, vocabulary-tab, grammar-tab and the five Task 14 AI files; + drawer/inspector.
+  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 42 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
+  // Part 1b Task 12: + kanji-quick-inspect.
+  { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
   // Task 4b: the workspace route group only; dictation stays outside this scope.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
@@ -22,6 +22,11 @@ import { ReadingSettingsPopover } from "./reading-settings-popover";
 import { ShortcutHintsPopover } from "./shortcut-hints-popover";
 import { StudyEnvironmentPopover } from "./study-environment-popover";
 import { PipDragHandle } from "./pip-drag-handle";
+import { DrawerProvider, useDrawer } from "./drawer/drawer-context";
+import { NotesProvider } from "./drawer/notes-context";
+import { UtilityDrawer } from "./drawer/utility-drawer";
+import { SelectionPopoverHost } from "./selection-popover";
+import { drawerRowHeight, type DrawerLevel } from "@/lib/shadowing-workspace/drawer-state";
 
 // useLayoutEffect warns during SSR; on the client it runs before paint, so the session position never flashes.
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -73,7 +78,11 @@ export function ShadowingWorkspaceShell({
   return (
     <WorkspaceProviders bootstrap={bootstrap} initialPosition={initialPosition}>
       <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={initialSyncedServerAt}>
-        <WorkspaceLayout>{children}</WorkspaceLayout>
+        <DrawerProvider>
+          <NotesProvider bootstrap={bootstrap}>
+            <WorkspaceLayout>{children}</WorkspaceLayout>
+          </NotesProvider>
+        </DrawerProvider>
       </PlaybackRoot>
     </WorkspaceProviders>
   );
@@ -83,13 +92,27 @@ export function workspaceGridTemplateColumns(ratio: number): string {
   return `minmax(var(--workspace-left-min), ${ratio * 100}fr) var(--workspace-divider-width) minmax(var(--workspace-right-min), ${(1 - ratio) * 100}fr)`;
 }
 
+/**
+ * The shell's rows: header, columns, drawer (spec §6.1). Opening the drawer shortens the columns, never narrows
+ * them, and `--workspace-drawer-height` takes the same height out of the 1a video budget. Maximized gives the
+ * drawer everything below the header; the columns' row shrinks to nothing but the player stays mounted.
+ */
+export function workspaceGridRows(level: DrawerLevel | null): CSSProperties {
+  if (level === null) return { gridTemplateRows: "auto minmax(0, 1fr)", ["--workspace-drawer-height" as string]: "0px" };
+  if (level === "maximized") return { gridTemplateRows: "auto 0 minmax(0, 1fr)", ["--workspace-drawer-height" as string]: "0px" };
+  const height = drawerRowHeight(level);
+  return { gridTemplateRows: `auto minmax(0, 1fr) ${height}`, ["--workspace-drawer-height" as string]: height };
+}
+
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations("shadowing");
   const [session, dispatch] = useSession();
   const { preferences } = usePreferences();
   const controller = usePlaybackController();
   const { toggleLoop } = usePlayerWiring();
+  const drawer = useDrawer();
   const rootRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<HTMLElement>(null);
   const paneRef = useRef<HTMLDivElement>(null);
   const setFullscreen = useCallback((target: FullscreenTarget) => dispatch({ type: "set-fullscreen", target }), [dispatch]);
@@ -101,25 +124,33 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     toggleLoop, toggleFocus: () => dispatch({ type: "toggle-view", view: "focus" }),
   }), [controller, dispatch, toggleLoop]);
   useWorkspaceShortcuts(shortcuts);
+  const drawerShown = session.view !== "focus";
+  const drawerOpen = drawerShown && drawer.state.level !== "collapsed";
+  const drawerDispatch = drawer.dispatch;
 
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented || !(event.target instanceof Element) || event.target.closest("[role='dialog'], [data-radix-popper-content-wrapper]")) return;
-      const action = escapeAction({ popoverOpen: session.openPopover !== null, fullscreen: session.fullscreen, view: session.view });
+      const action = escapeAction({ popoverOpen: session.openPopover !== null, inspectorOpen: drawerOpen && drawer.state.inspector !== null, drawerOpen, fullscreen: session.fullscreen, view: session.view });
       if (action === "close-popover") dispatch({ type: "set-popover", id: null });
+      if (action === "close-inspector") drawerDispatch({ type: "inspector-close" });
+      if (action === "collapse-drawer") drawerDispatch({ type: "collapse" });
       if (action === "exit-view") dispatch({ type: "exit-view" });
     };
     document.addEventListener("keydown", onEscape);
     return () => document.removeEventListener("keydown", onEscape);
-  }, [dispatch, session.fullscreen, session.openPopover, session.view]);
+  }, [dispatch, drawer.state.inspector, drawerDispatch, drawerOpen, session.fullscreen, session.openPopover, session.view]);
 
   const normal = session.view === "normal";
   const fullTranscript = session.view === "full-transcript";
   return (
     <div
       ref={rootRef}
-      className={normal ? "relative isolate grid h-dvh overflow-hidden grid-rows-[auto_minmax(0,1fr)]" : "relative isolate grid h-dvh overflow-hidden grid-cols-1 grid-rows-[auto_minmax(0,1fr)]"}
-      style={normal ? { gridTemplateColumns: workspaceGridTemplateColumns(session.splitRatio) } : undefined}
+      className={normal ? "relative isolate grid h-dvh overflow-hidden" : "relative isolate grid h-dvh overflow-hidden grid-cols-1"}
+      style={{
+        ...(normal ? { gridTemplateColumns: workspaceGridTemplateColumns(session.splitRatio) } : {}),
+        ...workspaceGridRows(drawerShown ? drawer.state.level : null),
+      }}
       data-testid="shadowing-workspace"
       // Reading Settings and Study Environment (spec §6): globals.css maps these to the --reading-* and
       // --atmosphere-* variables the reading surfaces consume, so a change re-styles without a re-render below.
@@ -132,7 +163,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       data-atmosphere={preferences.studyAtmosphere}
     >
       <AtmosphereLayer atmosphere={preferences.studyAtmosphere} reduceMotion={preferences.reduceMotion} />
-      <div className={normal ? "col-span-3" : "col-span-1"} data-testid="workspace-header-slot">
+      <div ref={headerRef} className={normal ? "col-span-3" : "col-span-1"} data-testid="workspace-header-slot">
         <WorkspaceHeader
           beforeFocus={<StudyEnvironmentPopover />}
           afterFocus={(
@@ -144,13 +175,20 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
           )}
         />
       </div>
-      <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-w-0 flex-col gap-md p-md"} data-testid="workspace-player-slot">
+      <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-h-0 min-w-0 flex-col gap-md overflow-hidden p-md"} data-testid="workspace-player-slot">
         {fullTranscript && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
         <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
         {!fullTranscript && <LiveSentence />}
       </div>
       {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
       {session.view !== "focus" && <div className={fullTranscript ? "col-span-1 row-start-2 min-h-0 min-w-0 p-md" : "min-h-0 min-w-0"}>{children}</div>}
+      <SelectionPopoverHost workspaceRef={rootRef} />
+      {/* Focus Mode hides the drawer; its state lives in DrawerProvider above, so leaving Focus restores it. */}
+      {drawerShown && (
+        <div className={normal ? "col-span-3 row-start-3 min-h-0" : "col-span-1 row-start-3 min-h-0"} data-testid="workspace-drawer-slot">
+          <UtilityDrawer workspaceRef={rootRef} headerRef={headerRef} />
+        </div>
+      )}
     </div>
   );
 }
