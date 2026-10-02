@@ -12,7 +12,7 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 ## Authorities
 
 - Spec (LOCKED 2026-10-02 after the owner's 5 written-spec corrections): `docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-design.md`
-- Plan (awaiting owner review): `docs/superpowers/plans/2026-10-02-shadowing-workspace-part-1b.md`
+- Plan (APPROVED by the owner 2026-10-02): `docs/superpowers/plans/2026-10-02-shadowing-workspace-part-1b.md`
 - `AGENTS.md`, `docs/lessons.md`, `.codex/docs/workflow.md` §8
 
 ## Accepted commits
@@ -37,8 +37,8 @@ snapshot (JMdict + KANJIDIC2 + KanjiVG). Web only.
 
 ## Blockers
 
-- Owner review of the plan.
+- None.
 
 ## Next actions
 
-- Owner reviews the plan → packets in `.superpowers/sdd/shadowing-workspace-1b/` → T0 (Claude) beside T1, T4, T5, T6 (Codex).
+- Packets in `.superpowers/sdd/shadowing-workspace-1b/` → T0 (Claude) beside T1, T4, T5, T6 (Codex).
