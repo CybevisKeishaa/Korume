@@ -3,10 +3,12 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod/v4";
 import { SECTION_REGISTRY, contextKeyFor, sectionDefinition } from "./registry";
-import type { KnowledgeSection, SectionDefinition, SectionPromptInput } from "./types";
+import { KNOWLEDGE_SECTIONS, type KnowledgeSection, type SectionDefinition, type SectionPromptInput } from "./types";
+
+const SENTINEL = "ANSWER-ONLY-SENTINEL";
 
 /** A valid full sample and one malformed sample per registered section. */
-const SAMPLES: Partial<Record<KnowledgeSection, { valid: unknown; malformed: unknown }>> = {
+const SAMPLES: Record<KnowledgeSection, { valid: unknown; malformed: unknown }> = {
   lite: { valid: { summary: "It is raining today.", literal: "today TOPIC rain is", keyPoints: ["は marks the topic"] }, malformed: { summary: "x" } },
   grammar_breakdown: {
     valid: { items: [{ surface: "ています", pattern: "〜ている", meaning: "ongoing", explanation: "progressive" }] },
@@ -25,6 +27,35 @@ const SAMPLES: Partial<Record<KnowledgeSection, { valid: unknown; malformed: unk
     malformed: { phrase: "雨です", breakdown: [], nuance: 3 },
   },
   word_gloss_vi: { valid: { glosses: ["mưa"], note: "" }, malformed: { glosses: "mưa" } },
+  culture_notes: {
+    valid: { notes: [{ title: "天気の挨拶", body: "Weather small talk opens conversations." }, { title: "b", body: "c" }] },
+    malformed: { notes: [{ title: "x" }] },
+  },
+  native_nuance: {
+    valid: { register: "polite", nuance: "neutral report", whenToUse: "with anyone", whenNotTo: "never odd" },
+    malformed: { register: "polite", nuance: "neutral report" },
+  },
+  alternative_expressions: {
+    valid: { items: [{ jp: "雨だよ。", reading: "あめだよ。", translation: "It's raining.", difference: "casual" }, { jp: "a", reading: "b", translation: "c", difference: "d" }] },
+    malformed: { items: [{ jp: "雨だよ。", reading: "あめだよ。" }] },
+  },
+  quiz: {
+    valid: {
+      questions: [
+        { prompt: "What is 雨?", choices: ["rain", "snow", "wind"], answerIndex: 0, explanation: `雨 is rain. ${SENTINEL}` },
+        { prompt: "Q2", choices: ["a", "b", "c"], answerIndex: 2, explanation: SENTINEL },
+      ],
+    },
+    malformed: { questions: [{ prompt: "Q", choices: ["a"], answerIndex: "0", explanation: "" }] },
+  },
+  conversation: {
+    valid: {
+      context: "Two friends at a station.",
+      roles: ["A", "B"],
+      turns: [0, 1, 0, 1].map((role, i) => ({ role, jp: `${i}番目`, reading: "ばんめ", translation: `turn ${i}` })),
+    },
+    malformed: { context: "x", roles: ["A", "B"], turns: [{ role: "A" }] },
+  },
 };
 
 const INPUT: SectionPromptInput = {
@@ -42,8 +73,34 @@ const entries = Object.entries(SECTION_REGISTRY) as [KnowledgeSection, SectionDe
 describe("SECTION_REGISTRY", () => {
   it.each(entries)("%s is declared under its own name with a sample", (name, definition) => {
     expect(definition.section).toBe(name);
-    expect(SAMPLES[name], `add a sample for ${name}`).toBeDefined();
     expect(sectionDefinition(name)).toBe(definition);
+  });
+
+  it("declares every section, cascade and extra, exactly once", () => {
+    expect(Object.keys(SECTION_REGISTRY).sort()).toEqual([...KNOWLEDGE_SECTIONS, "phrase_analysis", "word_gloss_vi"].sort());
+  });
+
+  it("gives Free in full only lite, grammar and phrase analysis", () => {
+    expect(entries.filter(([, d]) => d.access === "free_full").map(([name]) => name).sort())
+      .toEqual(["grammar_breakdown", "lite", "phrase_analysis"]);
+  });
+
+  it("keeps quiz answers and explanations out of the preview at any depth", () => {
+    const preview = SECTION_REGISTRY.quiz.projectPreview(SAMPLES.quiz.valid);
+    const json = JSON.stringify(preview);
+    expect(json).not.toMatch(/answerIndex|explanation/);
+    expect(json).not.toContain(SENTINEL);
+    expect(preview).toEqual({ questions: [{ prompt: "What is 雨?", choices: ["rain", "snow", "wind"] }] });
+  });
+
+  it("previews at most two conversation turns, with context and roles", () => {
+    expect(SECTION_REGISTRY.conversation.projectPreview(SAMPLES.conversation.valid)).toEqual({
+      context: "Two friends at a station.", roles: ["A", "B"],
+      turns: [
+        { role: 0, jp: "0番目", reading: "ばんめ", translation: "turn 0" },
+        { role: 1, jp: "1番目", reading: "ばんめ", translation: "turn 1" },
+      ],
+    });
   });
 
   it("resolves only registered names", () => {
@@ -111,19 +168,30 @@ describe("section prompts", () => {
 describe("contextKeyFor", () => {
   const context = { videoId: "v-1", parentFingerprint: "p".repeat(64), senseKey: "1000220:1:2026-10-02" };
   it("follows each section's context policy", () => {
-    expect(contextKeyFor(SECTION_REGISTRY.lite as SectionDefinition, context)).toBe("");
-    expect(contextKeyFor(SECTION_REGISTRY.phrase_analysis as SectionDefinition, context)).toBe(context.parentFingerprint);
-    expect(contextKeyFor(SECTION_REGISTRY.word_gloss_vi as SectionDefinition, context)).toBe(context.senseKey);
+    expect(contextKeyFor(SECTION_REGISTRY.lite, context)).toBe("");
+    expect(contextKeyFor(SECTION_REGISTRY.phrase_analysis, context)).toBe(context.parentFingerprint);
+    expect(contextKeyFor(SECTION_REGISTRY.word_gloss_vi, context)).toBe(context.senseKey);
+  });
+
+  it("keys culture notes and native nuance by the video, and reads its title; alternatives by nothing", () => {
+    for (const definition of [SECTION_REGISTRY.culture_notes, SECTION_REGISTRY.native_nuance]) {
+      expect(contextKeyFor(definition, context)).toBe("v-1");
+      expect(definition.buildPrompt(INPUT, "full").user).toContain("<video_title>天気の話</video_title>");
+    }
+    expect(contextKeyFor(SECTION_REGISTRY.alternative_expressions, context)).toBe("");
   });
 
   it("refuses to key a contextual section without its context", () => {
-    expect(() => contextKeyFor(SECTION_REGISTRY.phrase_analysis as SectionDefinition, { videoId: "v", parentFingerprint: null })).toThrow();
+    expect(() => contextKeyFor(SECTION_REGISTRY.phrase_analysis, { videoId: "v", parentFingerprint: null })).toThrow();
   });
 });
 
 describe("section names", () => {
   it("are switched on only inside lib/knowledge", () => {
-    const names = Object.keys(SECTION_REGISTRY).filter((name) => name !== "lite");
+    // "lite", "quiz" and "conversation" are ordinary words (the Conversation Partner namespace); only the
+    // compound names are unambiguous section identifiers. T14 renders sections by iterating the registry.
+    const names = Object.keys(SECTION_REGISTRY).filter((name) => name.includes("_"));
+    expect(names).toHaveLength(8);
     const offenders: string[] = [];
     const walk = (dir: string) => {
       for (const name of readdirSync(dir)) {
