@@ -7,6 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { cacheKeyJson } from "./cache-key";
+import { nextUtcMidnight, nextUtcMonth, utcDay, utcMonth } from "./periods";
 import type { GenerationRow, KnowledgeKey, KnowledgeStore, ReserveInput } from "./types";
 
 interface MemoryEntry {
@@ -59,10 +60,10 @@ export interface MemoryKnowledgeStore {
   budgetFor(date: Date): { reservedUsd: number; spentUsd: number };
 }
 
-const day = (date: Date) => date.toISOString().slice(0, 10);
-const month = (date: Date) => `${date.toISOString().slice(0, 7)}-01`;
-const nextDay = (date: Date) => new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1)).toISOString();
-const nextMonth = (date: Date) => new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1)).toISOString();
+const day = utcDay;
+const month = utcMonth;
+const nextDay = (date: Date) => nextUtcMidnight(date).toISOString();
+const nextMonth = (date: Date) => nextUtcMonth(date).toISOString();
 
 export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
   let clock = new Date(start);
