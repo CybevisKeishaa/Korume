@@ -188,4 +188,36 @@ describe("WorkspacePlayer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Player fullscreen" }));
     expect(onFullscreen).toHaveBeenCalledOnce();
   });
+
+  it("lays its own bar over the video with YouTube's bar off; a click on the video toggles play; the bar idles out", async () => {
+    renderPlayer();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const player = yt.players[0]!;
+    expect(player.playerVars).toMatchObject({ controls: 0 });
+    const video = document.querySelector<HTMLElement>("[data-workspace-player-video]")!;
+    const bar = document.querySelector<HTMLElement>("[data-workspace-player-controls]")!.parentElement!;
+    expect(video).toContainElement(bar);
+    expect(bar).toHaveAttribute("data-shown");
+    const surface = screen.getByTestId("workspace-player-surface");
+    fireEvent.click(surface);
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PLAYING);
+    expect(bar).not.toHaveAttribute("data-shown");
+    fireEvent.pointerMove(video);
+    expect(bar).toHaveAttribute("data-shown");
+    fireEvent.pointerLeave(video);
+    expect(bar).not.toHaveAttribute("data-shown");
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerMove(video);
+      act(() => { vi.advanceTimersByTime(2499); });
+      expect(bar).toHaveAttribute("data-shown");
+      act(() => { vi.advanceTimersByTime(1); });
+      expect(bar).not.toHaveAttribute("data-shown");
+    } finally {
+      vi.useRealTimers();
+    }
+    fireEvent.click(surface);
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
+    expect(bar).toHaveAttribute("data-shown");
+  });
 });

@@ -21,6 +21,7 @@ import { AtmosphereLayer } from "./atmosphere-layer";
 import { ReadingSettingsPopover } from "./reading-settings-popover";
 import { ShortcutHintsPopover } from "./shortcut-hints-popover";
 import { StudyEnvironmentPopover } from "./study-environment-popover";
+import { PipDragHandle } from "./pip-drag-handle";
 
 // useLayoutEffect warns during SSR; on the client it runs before paint, so the session position never flashes.
 const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
@@ -90,6 +91,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const { toggleLoop } = usePlayerWiring();
   const rootRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<HTMLElement>(null);
+  const paneRef = useRef<HTMLDivElement>(null);
   const setFullscreen = useCallback((target: FullscreenTarget) => dispatch({ type: "set-fullscreen", target }), [dispatch]);
   const { requestFullscreen, supported: fullscreenSupported } = useFullscreen(rootRef, playerRef, setFullscreen);
   const focusFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("workspace", trigger), [requestFullscreen]);
@@ -142,7 +144,8 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
           )}
         />
       </div>
-      <div id="workspace-player-pane" className={fullTranscript ? "fixed bottom-md right-md z-10 w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-w-0 flex-col gap-md p-md"} data-testid="workspace-player-slot">
+      <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-w-0 flex-col gap-md p-md"} data-testid="workspace-player-slot">
+        {fullTranscript && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
         <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
         {!fullTranscript && <LiveSentence />}
       </div>

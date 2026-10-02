@@ -53,6 +53,8 @@ export interface YouTubePlayerProps {
   tickIntervalMs?: number;
   /** Applied once when ready; the player remains paused for an explicit learner gesture. */
   initialPosition?: number;
+  /** false hides YouTube's own control bar (`controls: 0`) for a caller that draws its own. Defaults to true. */
+  nativeControls?: boolean;
 }
 
 /**
@@ -62,7 +64,7 @@ export interface YouTubePlayerProps {
  */
 export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(
   function YouTubePlayer(
-    { videoId, className, onReady, onStateChange, onError, onTick, tickIntervalMs = 250, initialPosition },
+    { videoId, className, onReady, onStateChange, onError, onTick, tickIntervalMs = 250, initialPosition, nativeControls = true },
     ref,
   ) {
     const reactId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -129,7 +131,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
         // be in its temporal dead zone at that point.
         new window.YT.Player(hostRef.current, {
           videoId,
-          playerVars: { rel: 0 },
+          playerVars: nativeControls ? { rel: 0 } : { rel: 0, controls: 0 },
           events: {
             onReady: (event) => {
               playerRef.current = event.target;
@@ -158,7 +160,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>
         playerRef.current?.destroy();
         playerRef.current = null;
       };
-    }, [videoId, tickIntervalMs]);
+    }, [videoId, tickIntervalMs, nativeControls]);
 
     return (
       <div

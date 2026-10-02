@@ -185,6 +185,7 @@
     },
     "regionLabel": "Shadowing practice",
     "divider": "Resize workspace panes",
+    "pipMove": "Move the video window (drag, or use the arrow keys)",
     "player": {
       "label": "Player",
       "play": "Play",

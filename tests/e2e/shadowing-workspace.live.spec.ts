@@ -68,8 +68,14 @@ async function openLesson(page: Page): Promise<void> {
   await expect.poll(() => player(page, (yt) => typeof yt?.getDuration === "function" && yt.getDuration()), { timeout: 30_000 }).toBeGreaterThan(0);
 }
 
-/** The player's own control-bar button: a bare `name: "Play"` would also match every row's "Replay". */
-const controls = (page: Page, name: "Play" | "Pause") => page.getByRole("region", { name: "Player" }).getByRole("button", { name, exact: true }).last();
+/** Clicks the player's own control-bar button (a bare `name: "Play"` would also match every row's "Replay"). That bar hides while playing until the pointer moves over the video,
+ *  so the pointer goes there first (a corner, clear of the centre play button). */
+async function clickControl(page: Page, name: "Play" | "Pause"): Promise<void> {
+  const box = await page.locator("[data-workspace-player-video]").boundingBox();
+  if (!box) throw new Error("player video has no box");
+  await page.mouse.move(box.x + 8, box.y + 8);
+  await page.getByRole("region", { name: "Player" }).getByRole("button", { name, exact: true }).last().click();
+}
 const currentIndex = (page: Page) => page.locator("li[data-state='current']").getAttribute("data-index").then(Number);
 const seek = (page: Page, seconds: number) => page.getByRole("slider", { name: "Seek" }).fill(String(seconds));
 const lineAt = (time: number) => lines.reduce((found, line, index) => (line.start <= time ? index : found), -1);
@@ -96,7 +102,7 @@ test("Ep.729: the real player, boundary latency, follow, replay, loop, speed, re
   //    play the real API reports 0 from getCurrentTime() (measured), so the proof is where playback starts.
   await seek(page, 700);
   await expect.poll(() => currentIndex(page)).toBe(lineAt(700));
-  await controls(page, "Play").click();
+  await clickControl(page, "Play");
   await expect.poll(() => player(page, (yt) => yt.getPlayerState()), { timeout: 20_000 }).toBe(1);
   const playedFrom = await player(page, (yt) => yt.getCurrentTime());
   expect(playedFrom).toBeGreaterThanOrEqual(699.5);
@@ -218,9 +224,9 @@ test("Ep.729: resume after a client-side leave and return; a corrupt position op
   await seek(page, X);
   await expect.poll(() => currentIndex(page)).toBe(lineAt(X));
   // A play/pause writes the position to the server as well as the tab's session record.
-  await controls(page, "Play").click();
+  await clickControl(page, "Play");
   await expect.poll(() => player(page, (yt) => yt.getPlayerState())).toBe(1);
-  await controls(page, "Pause").click();
+  await clickControl(page, "Pause");
   await expect.poll(() => player(page, (yt) => yt.getPlayerState())).toBe(2);
   const at = await player(page, (yt) => yt.getCurrentTime());
 

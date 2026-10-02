@@ -35,14 +35,20 @@ async function openLesson(page: Page, query = ""): Promise<void> {
   await expect.poll(async () => (await fakeYt(page)).seeks.length).toBeGreaterThan(0);
 }
 
-/** The player's own control-bar button: a bare `name: "Play"` would also match every row's "Replay". */
-const controls = (page: Page, name: "Play" | "Pause") => page.getByRole("region", { name: "Player" }).getByRole("button", { name, exact: true }).last();
+/** Clicks the player's own control-bar button (a bare `name: "Play"` would also match every row's "Replay"). That bar hides while playing until the pointer moves over the video,
+ *  so the pointer goes there first (a corner, clear of the centre play button). */
+async function clickControl(page: Page, name: "Play" | "Pause"): Promise<void> {
+  const box = await page.locator("[data-workspace-player-video]").boundingBox();
+  if (!box) throw new Error("player video has no box");
+  await page.mouse.move(box.x + 8, box.y + 8);
+  await page.getByRole("region", { name: "Player" }).getByRole("button", { name, exact: true }).last().click();
+}
 const currentIndex = (page: Page) => page.locator("li[data-state='current']").getAttribute("data-index").then(Number);
 const liveSentence = (page: Page) => page.getByRole("region", { name: "Live sentence" });
 const row = (page: Page, index: number) => page.locator(`li[data-index='${index}']`);
 
 async function play(page: Page): Promise<void> {
-  await controls(page, "Play").click();
+  await clickControl(page, "Play");
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
 }
 
@@ -138,7 +144,7 @@ test("4 · resumes after leaving the route: same sentence, paused, a fresh playe
   await row(page, 11).getByRole("button", { name: /Sentence 12/ }).click();
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   await advance(page, 1);
-  await controls(page, "Pause").click();
+  await clickControl(page, "Pause");
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
   await leaveAndReturn(page);
   await expect.poll(() => currentIndex(page)).toBe(11);
@@ -370,7 +376,7 @@ test("14 · a lesson stored without a duration takes the player's: the seek bar 
 test("15 · watching to the end marks the lesson completed", async ({ page }) => {
   const learner = await registerLearner(page);
   await openLesson(page);
-  await controls(page, "Play").click();
+  await clickControl(page, "Play");
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   await setTime(page, VIDEO_DURATION - 2);
   await advance(page, 3);
