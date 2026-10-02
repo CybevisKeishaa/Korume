@@ -35,14 +35,20 @@ async function openLesson(page: Page, query = ""): Promise<void> {
   await expect.poll(async () => (await fakeYt(page)).seeks.length).toBeGreaterThan(0);
 }
 
-/** The player's own control-bar button: a bare `name: "Play"` would also match every row's "Replay". */
-const controls = (page: Page, name: "Play" | "Pause") => page.getByRole("region", { name: "Player" }).getByRole("button", { name, exact: true }).last();
+/** Clicks the player's own control-bar button (a bare `name: "Play"` would also match every row's "Replay"). That bar hides while playing until the pointer moves over the video,
+ *  so the pointer goes there first (a corner, clear of the centre play button). */
+async function clickControl(page: Page, name: "Play" | "Pause"): Promise<void> {
+  const box = await page.locator("[data-workspace-player-video]").boundingBox();
+  if (!box) throw new Error("player video has no box");
+  await page.mouse.move(box.x + 8, box.y + 8);
+  await page.getByRole("region", { name: "Player" }).getByRole("button", { name, exact: true }).last().click();
+}
 const currentIndex = (page: Page) => page.locator("li[data-state='current']").getAttribute("data-index").then(Number);
 const liveSentence = (page: Page) => page.getByRole("region", { name: "Live sentence" });
 const row = (page: Page, index: number) => page.locator(`li[data-index='${index}']`);
 
 async function play(page: Page): Promise<void> {
-  await controls(page, "Play").click();
+  await clickControl(page, "Play");
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
 }
 
@@ -138,7 +144,7 @@ test("4 · resumes after leaving the route: same sentence, paused, a fresh playe
   await row(page, 11).getByRole("button", { name: /Sentence 12/ }).click();
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   await advance(page, 1);
-  await controls(page, "Pause").click();
+  await clickControl(page, "Pause");
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
   await leaveAndReturn(page);
   await expect.poll(() => currentIndex(page)).toBe(11);
@@ -370,7 +376,7 @@ test("14 · a lesson stored without a duration takes the player's: the seek bar 
 test("15 · watching to the end marks the lesson completed", async ({ page }) => {
   const learner = await registerLearner(page);
   await openLesson(page);
-  await controls(page, "Play").click();
+  await clickControl(page, "Play");
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   await setTime(page, VIDEO_DURATION - 2);
   await advance(page, 3);
@@ -380,4 +386,50 @@ test("15 · watching to the end marks the lesson completed", async ({ page }) =>
     const { data: progress } = await data.admin.from("user_video_progress").select("completed_at").eq("user_id", userId).eq("video_id", data.videoId).maybeSingle();
     return progress?.completed_at ?? null;
   }, { timeout: 10_000 }).not.toBeNull();
+});
+test("16 · the bar over the video hides while playing until the pointer or the keyboard needs it; the PiP drags as a whole", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  await play(page);
+  const barHeight = async () => (await page.locator("[data-workspace-player-controls]").boundingBox())?.height ?? 0;
+
+  // Playing with the pointer elsewhere: the bar has no height at all, so it can neither be seen nor hit.
+  await page.mouse.move(640, 520);
+  await expect.poll(barHeight).toBe(0);
+  // The pointer over the video shows it; still for longer than the idle delay hides it again.
+  const video = await page.locator("[data-workspace-player-video]").boundingBox();
+  if (!video) throw new Error("player video has no box");
+  await page.mouse.move(video.x + 20, video.y + 20);
+  await expect.poll(barHeight).toBeGreaterThan(0);
+  await expect.poll(barHeight, { timeout: 5_000 }).toBe(0);
+  // Keyboard: Tab into the collapsed bar shows it (`:focus-visible` inside it).
+  await page.mouse.move(640, 520);
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press("Tab");
+    if (await page.evaluate(() => Boolean(document.activeElement?.closest("[data-workspace-player-controls]")))) break;
+  }
+  expect(await page.evaluate(() => Boolean(document.activeElement?.closest("[data-workspace-player-controls]")))).toBe(true);
+  await expect.poll(barHeight).toBeGreaterThan(0);
+
+  // Full Transcript: drag the PiP by its video, then a plain click on the video still toggles play.
+  await page.getByRole("button", { name: "Full transcript" }).click();
+  const pane = page.getByTestId("workspace-player-slot");
+  const before = await pane.boundingBox();
+  if (!before) throw new Error("PiP has no box");
+  const from = { x: before.x + before.width / 2, y: before.y + 30 };
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x - 300, from.y - 150, { steps: 6 });
+  await page.mouse.up();
+  const after = await pane.boundingBox();
+  if (!after) throw new Error("PiP has no box after the drag");
+  expect(Math.round(after.x - before.x)).toBe(-300);
+  expect(Math.round(after.y - before.y)).toBe(-150);
+  expect((await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING); // the drag was not a click
+  await page.mouse.click(after.x + after.width / 2, after.y + 30);
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
+  // Leaving Full Transcript puts the player back with no inline transform.
+  await page.keyboard.press("Escape");
+  expect(await pane.evaluate((el) => el.style.transform)).toBe("");
+  expect((await fakeYt(page)).mounts).toBe(1);
 });

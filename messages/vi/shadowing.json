@@ -191,6 +191,7 @@
     },
     "regionLabel": "Luyện shadowing",
     "divider": "Thay đổi kích thước các khung học",
+    "pipMove": "Di chuyển cửa sổ video (kéo, hoặc dùng phím mũi tên)",
     "player": {
       "label": "Trình phát",
       "play": "Phát",

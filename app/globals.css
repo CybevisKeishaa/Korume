@@ -243,7 +243,9 @@
      assumed. */
   --layout-header-height: calc(64 * var(--density-unit));
   /* Shadowing workspace (spec §7.1): the viewport height the 16:9 video must leave for the workspace header
-     (48), the control bar (64), the Live Sentence label + one Japanese line (~120) and paddings (56). The
+     (48), the Live Sentence label + one Japanese line (~120), paddings (56) and 64 more. The control bar now
+     lies over the video, so those 64 (its old height) go to Live Sentence, whose line wraps and carries a
+     translation; shrinking the reserve instead squeezed the player box and clipped the bar. The
      video's width is min(column, (100dvh - this) * 16/9), so at the owner's 1280x529 the Japanese line of
      Live Sentence stays visible. Declared in both density blocks, like every derived token. */
   --workspace-video-reserve: calc(288 * var(--density-unit));
@@ -253,7 +255,6 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  --workspace-player-controls: calc(88 * var(--density-unit));
   /* The MARKETING pages' content column — wider than the rest of the app on
      purpose, and a separate fact from --layout-content-max (the shadowing
      shell). Frame 347:6277, the binding design for `/`, is 1280 wide and puts
@@ -453,7 +454,6 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  --workspace-player-controls: calc(88 * var(--density-unit));
   --text-caption: max(0.6875rem, calc(12 * var(--density-unit)));
   --leading-caption: max(1.03125rem, calc(18 * var(--density-unit)));
   --text-body: calc(14 * var(--density-unit));
@@ -1261,11 +1261,7 @@
 }
 
 [data-workspace-player]:fullscreen [data-workspace-player-video] {
-  width: min(100%, calc((100dvh - var(--workspace-player-controls)) * 16 / 9));
-}
-
-[data-workspace-player]:fullscreen [data-workspace-player-controls] {
-  background: hsl(var(--card));
+  width: min(100%, calc(100dvh * 16 / 9));
 }
 
 /**

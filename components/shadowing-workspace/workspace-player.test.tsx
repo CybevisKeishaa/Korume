@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { installPointerEventShim } from "@/test/pointer-event-shim";
 import { render } from "@/test/render";
 import { installYouTubeStub, YT_PLAYER_STATE, type YouTubeStubHandle } from "@/test/youtube-stub";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
@@ -9,6 +10,7 @@ import { WorkspacePlayer } from "./workspace-player";
 import { usePlaybackController, usePositionStore, useSession, WorkspaceProviders } from "./workspace-context";
 
 vi.mock("@/lib/i18n/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+installPointerEventShim();
 
 const lines = [
   { id: "a", index: 0, startTime: 0, endTime: 3, textJp: "一つ目", textTranslation: null, furigana: null },
@@ -125,7 +127,9 @@ describe("WorkspacePlayer", () => {
     await waitFor(() => expect(yt.players).toHaveLength(1));
     act(() => yt.players[0]!.triggerError(150));
     expect(screen.getByRole("alert")).toHaveTextContent("This video can't be played here.");
-    expect(screen.getAllByRole("button", { name: "Play" })).toHaveLength(1);
+    // Neither the centre button nor a bar of dead controls stays over the alert.
+    expect(screen.queryAllByRole("button", { name: "Play" })).toHaveLength(0);
+    expect(document.querySelector("[data-workspace-player-controls]")).toBeNull();
   });
 
   it("labels mute from the state before toggling, not the iframe's lagging cache", async () => {
@@ -187,5 +191,70 @@ describe("WorkspacePlayer", () => {
     expect(screen.getByRole("button", { name: "Unmute" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Player fullscreen" }));
     expect(onFullscreen).toHaveBeenCalledOnce();
+  });
+
+  it("lays its own bar over the video; a click on the video toggles play; the bar idles out", async () => {
+    renderPlayer();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const player = yt.players[0]!;
+    // YouTube's own bar stays on: `controls: 0` made the embed refuse an unmuted playVideo() (live Ep.729 gate).
+    expect(player.playerVars).not.toHaveProperty("controls");
+    const video = document.querySelector<HTMLElement>("[data-workspace-player-video]")!;
+    const bar = document.querySelector<HTMLElement>("[data-workspace-player-controls]")!.parentElement!;
+    expect(video).toContainElement(bar);
+    expect(bar).toHaveAttribute("data-shown");
+    const surface = screen.getByTestId("workspace-player-surface");
+    fireEvent.click(surface);
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PLAYING);
+    expect(bar).not.toHaveAttribute("data-shown");
+    fireEvent.pointerMove(video);
+    expect(bar).toHaveAttribute("data-shown");
+    fireEvent.pointerLeave(video);
+    expect(bar).not.toHaveAttribute("data-shown");
+    vi.useFakeTimers();
+    try {
+      fireEvent.pointerMove(video);
+      act(() => { vi.advanceTimersByTime(2499); });
+      expect(bar).toHaveAttribute("data-shown");
+      act(() => { vi.advanceTimersByTime(1); });
+      expect(bar).not.toHaveAttribute("data-shown");
+    } finally {
+      vi.useRealTimers();
+    }
+    fireEvent.click(surface);
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
+    expect(bar).toHaveAttribute("data-shown");
+  });
+
+  it("on touch, a tap on a hidden bar only shows it, a lifted finger does not hide it, and a tap on a shown bar toggles play", async () => {
+    renderPlayer();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const player = yt.players[0]!;
+    const video = document.querySelector<HTMLElement>("[data-workspace-player-video]")!;
+    const bar = document.querySelector<HTMLElement>("[data-workspace-player-controls]")!.parentElement!;
+    const surface = screen.getByTestId("workspace-player-surface");
+    act(() => player.triggerStateChange(YT_PLAYER_STATE.PLAYING));
+    expect(bar).not.toHaveAttribute("data-shown");
+    const tap = () => {
+      fireEvent.pointerDown(surface, { pointerType: "touch" });
+      fireEvent.pointerUp(surface, { pointerType: "touch" });
+      fireEvent.pointerLeave(video, { pointerType: "touch" });
+      fireEvent.click(surface);
+    };
+    tap();
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PLAYING);
+    expect(bar).toHaveAttribute("data-shown");
+    tap();
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
+  });
+
+  it("keeps the bar shown while one of its popovers is open during playback", async () => {
+    renderPlayer();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const bar = document.querySelector<HTMLElement>("[data-workspace-player-controls]")!.parentElement!;
+    act(() => yt.players[0]!.triggerStateChange(YT_PLAYER_STATE.PLAYING));
+    expect(bar).not.toHaveAttribute("data-shown");
+    fireEvent.click(screen.getByRole("button", { name: /^Playback speed/ }));
+    expect(bar).toHaveAttribute("data-shown");
   });
 });
