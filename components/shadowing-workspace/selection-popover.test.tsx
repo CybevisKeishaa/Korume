@@ -229,3 +229,64 @@ describe("Live Sentence word click", () => {
     expect(await within(dialog).findByText("rain")).toBeInTheDocument();
   });
 });
+
+describe("Live Sentence keyboard lookup", () => {
+  const liveText = () => screen.getByRole("group", { name: "Tra từ trong câu này" });
+  const analysisCalls = () => fetchMock.mock.calls.map(([input]) => String(input)).filter((url) => url.includes("/analysis"));
+
+  it("the text is a tab stop; Enter lists the line's dictionary words, one opens its card and Back returns to the list", async () => {
+    renderShell();
+    act(() => store?.set(2.5));
+    expect(liveText()).toHaveAttribute("tabindex", "0");
+    liveText().focus();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(analysisCalls()).toEqual([]);
+    fireEvent.keyDown(liveText(), { key: "Enter" });
+    const dialog = await screen.findByRole("dialog");
+    const list = await within(dialog).findByRole("list", { name: "Các từ trong câu" });
+    expect(within(list).getAllByRole("button").map((button) => button.textContent)).toEqual([expect.stringContaining("明日"), expect.stringContaining("雨")]);
+    expect(analysisCalls()).toEqual(["/api/lines/line-2/analysis?scope=lexical"]);
+    expect(within(dialog).queryByRole("button", { name: "Thêm vào thẻ câu" })).toBeNull();
+    fireEvent.click(within(list).getAllByRole("button")[1] as HTMLElement);
+    expect(await within(dialog).findByText("rain")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Thêm vào thẻ câu" })).toBeEnabled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Quay lại" }));
+    const back = within(dialog).getByRole("list", { name: "Các từ trong câu" });
+    expect(within(back).getAllByRole("button")[1]).toHaveFocus();
+  });
+
+  it("Escape closes the list and returns focus to the sentence text", async () => {
+    renderShell();
+    act(() => store?.set(2.5));
+    liveText().focus();
+    fireEvent.keyDown(liveText(), { key: "Enter" });
+    const dialog = await screen.findByRole("dialog");
+    await within(dialog).findByRole("list", { name: "Các từ trong câu" });
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(liveText()).toHaveFocus();
+  });
+
+  it("keeps the line it opened on while the sentence advances (Review Focus 4), and a sentence change alone fetches nothing", async () => {
+    renderShell();
+    act(() => store?.set(0.5));
+    liveText().focus();
+    act(() => store?.set(2.5));
+    act(() => store?.set(4.5));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(analysisCalls()).toEqual([]);
+    act(() => store?.set(2.5));
+    fireEvent.keyDown(liveText(), { key: "Enter" });
+    const list = await within(await screen.findByRole("dialog")).findByRole("list", { name: "Các từ trong câu" });
+    act(() => store?.set(4.5));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(within(list).getAllByRole("button").map((button) => button.textContent)).toEqual([expect.stringContaining("明日"), expect.stringContaining("雨")]);
+  });
+
+  it("is not a tab stop while the Japanese is hidden", () => {
+    renderShell();
+    act(() => store?.set(2.5));
+    fireEvent.click(screen.getByRole("button", { name: "Ẩn tiếng Nhật" }));
+    expect(document.querySelector("[data-word-click]")).toHaveAttribute("tabindex", "-1");
+  });
+});

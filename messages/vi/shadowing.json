@@ -204,6 +204,8 @@
       }
     },
     "selection": {
+      "words": "Các từ trong câu",
+      "back": "Quay lại",
       "loading": "Đang tra từ…",
       "failed": "Không tải được các từ của câu này.",
       "noEntry": "Không có mục từ điển cho từ này.",
@@ -271,6 +273,7 @@
       "fullscreen": "Toàn màn hình trình phát"
     },
     "liveSentence": {
+      "lookUp": "Tra từ trong câu này",
       "label": "Câu đang phát",
       "hideJapanese": "Ẩn tiếng Nhật",
       "showJapanese": "Hiện tiếng Nhật",

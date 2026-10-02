@@ -198,6 +198,8 @@
       }
     },
     "selection": {
+      "words": "Words in this sentence",
+      "back": "Back",
       "loading": "Looking up the words…",
       "failed": "Couldn't load the words of this sentence.",
       "noEntry": "No dictionary entry for this word.",
@@ -265,6 +267,7 @@
       "fullscreen": "Player fullscreen"
     },
     "liveSentence": {
+      "lookUp": "Look up words in this sentence",
       "label": "Live sentence",
       "hideJapanese": "Hide Japanese",
       "showJapanese": "Show Japanese",

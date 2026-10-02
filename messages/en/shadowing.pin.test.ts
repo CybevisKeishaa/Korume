@@ -475,6 +475,7 @@ describe("shadowing.json EN workspace player", () => {
 describe("shadowing.json EN workspace Live Sentence", () => {
   it("pins the Live Sentence copy", () => {
     expect(en.workspace.liveSentence).toEqual({
+      lookUp: "Look up words in this sentence",
       label: "Live sentence",
       hideJapanese: "Hide Japanese",
       showJapanese: "Show Japanese",
@@ -512,7 +513,7 @@ describe("shadowing.json EN workspace Inspector", () => {
 
 describe("shadowing.json EN workspace selection popover", () => {
   it("pins the selection popover copy", () => {
-    expect(en.workspace.selection).toEqual({"loading": "Looking up the words…", "failed": "Couldn't load the words of this sentence.", "noEntry": "No dictionary entry for this word.", "kanji": "Kanji {literal}", "glossLoading": "Looking up the Vietnamese meaning…", "glossPending": "Writing the Vietnamese meaning…", "glossUnavailable": "No Vietnamese meaning yet.", "aiGenerated": "AI-generated", "play": "Play sentence", "bookmark": "Bookmark sentence", "mine": "Add to Mining", "mineTooLong": "Select {max} characters or fewer to add to Mining."});
+    expect(en.workspace.selection).toEqual({"words": "Words in this sentence", "back": "Back", "loading": "Looking up the words…", "failed": "Couldn't load the words of this sentence.", "noEntry": "No dictionary entry for this word.", "kanji": "Kanji {literal}", "glossLoading": "Looking up the Vietnamese meaning…", "glossPending": "Writing the Vietnamese meaning…", "glossUnavailable": "No Vietnamese meaning yet.", "aiGenerated": "AI-generated", "play": "Play sentence", "bookmark": "Bookmark sentence", "mine": "Add to Mining", "mineTooLong": "Select {max} characters or fewer to add to Mining."});
   });
 });
 

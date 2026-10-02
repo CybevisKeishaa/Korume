@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { snapSpanToTokens } from "@/lib/analysis/spans";
-import type { Utf16Span } from "@/lib/analysis/types";
+import type { AnalysisToken, Utf16Span } from "@/lib/analysis/types";
 import { caretToOffset, selectionToSpan } from "@/lib/shadowing-workspace/selection-offsets";
 import { cn } from "@/lib/utils";
 import { AnchoredPopover } from "@/components/ui/popover";
 import { useDrawer } from "./drawer/drawer-context";
 import { WordCard } from "./drawer/word-card";
-import { BookmarkGlyph, PlayGlyph } from "./player-glyphs";
+import { BackGlyph, BookmarkGlyph, PlayGlyph } from "./player-glyphs";
 import { useLineAnalysis } from "./use-line-analysis";
 import { useLesson, useMarks, usePlaybackController } from "./workspace-context";
 
@@ -17,10 +17,14 @@ import { useLesson, useMarks, usePlaybackController } from "./workspace-context"
 const MINING_MAX = 50;
 const ACTION = "inline-flex h-control-sm items-center gap-2xs rounded-md border border-border px-sm text-caption font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60 aria-pressed:text-primary-strong";
 
+/** Live Sentence's Enter: open the popover as the list of that line's words (the keyboard path). */
+export const LOOKUP_EVENT = "workspace:lookup";
+export interface LookupDetail { lineId: string; element: HTMLElement }
+
 interface Opened {
   lineId: string;
-  /** A selection's span, or — for a Live Sentence click — the caret offset of the word to show. */
-  at: { span: Utf16Span } | { offset: number };
+  /** A selection's span; for a Live Sentence click, the caret offset of the word; for Enter, the word list. */
+  at: { span: Utf16Span } | { offset: number } | { list: true };
   anchor: DOMRect;
   /** Where focus returns on close: the text the learner selected in. */
   returnFocus: HTMLElement | null;
@@ -63,13 +67,19 @@ export function SelectionPopoverHost({ workspaceRef }: { workspaceRef: RefObject
       const target = event.target;
       setOpened({ lineId: caret.lineId, at: { offset: caret.offset }, anchor: target.getBoundingClientRect(), returnFocus: lineElementOf(target) });
     };
+    const fromLookup = (event: Event) => {
+      const { lineId, element } = (event as CustomEvent<LookupDetail>).detail;
+      setOpened({ lineId, at: { list: true }, anchor: element.getBoundingClientRect(), returnFocus: element });
+    };
     document.addEventListener("mouseup", fromSelection);
     document.addEventListener("keyup", fromSelection);
     document.addEventListener("click", fromWordClick);
+    window.addEventListener(LOOKUP_EVENT, fromLookup);
     return () => {
       document.removeEventListener("mouseup", fromSelection);
       document.removeEventListener("keyup", fromSelection);
       document.removeEventListener("click", fromWordClick);
+      window.removeEventListener(LOOKUP_EVENT, fromLookup);
     };
   }, [workspaceRef]);
 
@@ -87,10 +97,15 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
   const index = lines.findIndex((line) => line.id === opened.lineId);
   const line = lines[index];
   const analysis = useLineAnalysis(opened.lineId);
+  const listMode = "list" in opened.at;
+  // The keyboard list: the word picked from it, and the one Back returns focus to.
+  const [picked, setPicked] = useState<AnalysisToken | null>(null);
+  const [returnTo, setReturnTo] = useState<number | null>(null);
 
   // The selection as the server will read it: snapped to whole tokens once the analysis is here.
   const resolved = useMemo(() => {
     if (!line || analysis?.status !== "ready") return null;
+    if ("list" in opened.at) return picked ? { span: picked.span, text: line.textJp.slice(picked.span.start, picked.span.end), word: picked } : null;
     const { tokens } = analysis.analysis;
     const touched = "span" in opened.at
       ? (() => {
@@ -103,7 +118,7 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
     if (!first || !last) return null;
     const span = { start: first.span.start, end: last.span.end };
     return { span, text: line.textJp.slice(span.start, span.end), word: touched.length === 1 ? first : null };
-  }, [analysis, line, opened.at]);
+  }, [analysis, line, opened.at, picked]);
 
   const selectedText = line && "span" in opened.at ? line.textJp.slice(opened.at.span.start, opened.at.span.end) : resolved?.text ?? "";
   const close = () => onClose();
@@ -144,6 +159,31 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
     >
       {analysis?.status === "error" && <p className="text-body text-muted-foreground">{t("workspace.selection.failed")}</p>}
       {(!analysis || analysis.status === "loading") && <p role="status" className="text-body text-muted-foreground">{t("workspace.selection.loading")}</p>}
+      {listMode && !picked && analysis?.status === "ready" && (
+        <ul aria-label={t("workspace.selection.words")} className="flex flex-wrap gap-2xs">
+          {analysis.analysis.tokens.filter((token) => token.entries.length > 0).map((token) => (
+            <li key={token.index}>
+              <button
+                type="button"
+                ref={(node) => { if (node && returnTo === token.index) node.focus(); }}
+                onClick={() => { setPicked(token); setReturnTo(token.index); }}
+                className={ACTION}
+              >
+                <span lang="ja" className="font-jp">{token.surface}</span>
+                {token.entries[0]?.reading && token.entries[0].reading !== token.surface && (
+                  <span lang="ja" className="font-jp text-muted-foreground">{token.entries[0].reading}</span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {listMode && picked && (
+        <button type="button" onClick={() => setPicked(null)} className="inline-flex h-control-sm items-center gap-2xs rounded-md px-xs text-caption text-muted-foreground hover:bg-muted hover:text-foreground">
+          <BackGlyph className="size-icon-xs" />
+          {t("workspace.selection.back")}
+        </button>
+      )}
       {resolved?.word && (
         <WordCard
           token={resolved.word}
@@ -168,7 +208,7 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
           <BookmarkGlyph filled={bookmarked} className="size-icon-xs" />
           {t("workspace.selection.bookmark")}
         </button>
-        <button
+        {!(listMode && !picked) && <button
           type="button"
           disabled={tooLong || selectedText.length === 0 || mining.status === "submitting" || mining.status === "done"}
           aria-describedby={tooLong ? "selection-mining-reason" : undefined}
@@ -176,7 +216,7 @@ function SelectionPopover({ opened, contentRef, onClose }: { opened: Opened; con
           onClick={() => void mine()}
         >
           {t("workspace.selection.mine")}
-        </button>
+        </button>}
       </div>
       {tooLong && <p id="selection-mining-reason" className="text-caption text-muted-foreground">{t("workspace.selection.mineTooLong", { max: MINING_MAX })}</p>}
       {mining.message && <p role="status" className="text-caption text-muted-foreground">{mining.message}</p>}
