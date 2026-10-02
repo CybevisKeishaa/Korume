@@ -54,7 +54,7 @@ Not one flat set of tabs — two independent axes, each with a single responsibi
 Lesson
 ├── Learning Mode     "What skill am I practicing?"   — Shadowing / Pronunciation / Listening Practice / Summary
 ├── Reading Settings  "How should the UI behave?"       — Font, Subtitle Size, Subtitle Color, Speed, Auto Pause, Repeat, ...
-└── Analysis          a per-sentence utility (highlight → Analyze), not a mode at any layer
+└── Look-up           a per-sentence utility (select a word, or Enter on Live Sentence), not a mode at any layer
 ```
 
 Shadowing renders with one fixed presentation, the same as Pronunciation, Listening Practice, and
@@ -354,10 +354,9 @@ Each sentence supports
 
 - Replay
 - Bookmark / Difficult — per-line `sentence_marks`, not Pins or Mining
-- Vocabulary
-- Grammar
-- Mining
-- AI explanation
+- Cards from this sentence — opens the Utility Drawer's Mining tab pinned to that sentence
+- Note — opens the Notes tab pinned to that sentence
+- Mine — makes a mining card from the sentence (1a); "Cards from this sentence" opens cards, "Mine" makes one
 - Toggle furigana — a shortcut to the global Reading Settings furigana setting (Always / Adaptive /
   Hidden); flipping it here changes the same global setting, there is no separate per-sentence
   furigana state
@@ -365,6 +364,10 @@ Each sentence supports
   playback positioned at that sentence
 
 These actions remain hidden until hover or focus.
+
+Per-sentence Vocabulary, Grammar and AI explanation are **not** Sentence Actions (owner ruling 2026-10-02,
+`docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-reframe-design.md` §0, §2): Shadowing is the practice surface. Deep questions about a
+sentence belong to Korume Companion; curated lesson-level vocabulary, grammar and culture belong to Summary.
 
 The reading flow should remain uninterrupted.
 
@@ -402,21 +405,24 @@ No settings page.
 
 ---
 
-# Analysis
+# Look-up
 
 A per-sentence **utility**, not a mode at any layer — not a Learning Mode, not a tab, not
-a screen (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.6).
-Extends the existing Sentence Actions rather than replacing them: free-form text selection (not just
-whole-sentence tap) opens a popover at the selection.
+a screen (`docs/superpowers/specs/2026-07-31-shadowing-hub-lesson-workspace-design.md` §6.6; the
+reframe `docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-reframe-design.md` §3–§4 replaces the earlier "Analysis" with Analyze).
+Free-form text selection (not just whole-sentence tap) opens a popover at the selection.
 
-Single-word selections resolve instantly (dictionary + reading, no AI, same cost profile as the
-existing Vocabulary Preview).
+- One word: a word card — headword (each kanji a button), reading, part of speech, senses, the
+  Vietnamese gloss. Dictionary data only (the versioned JMdict / KANJIDIC2 / KanjiVG snapshot); no AI
+  except the Vietnamese gloss of a word the learner opened, generated once and shared.
+- Several words: the selected text. No Analyze, no AI explanation.
+- Keyboard: Live Sentence's Japanese text is a tab stop; Enter lists the sentence's dictionary words, one
+  opens its word card, Back returns to the list.
+- A kanji opens the **Inspector** in the Utility Drawer (§ Utility Drawer). It never changes what the
+  drawer is about.
 
-Phrase/clause selections surface an "Analyze" action into the existing AI cascade (Lite free-
-preview, Deep Plus — `business-model.md` §2/§3.1, no new gate).
-
-The popover also carries Play (replay just that span), Bookmark, Add to Mining — all reusing
-existing Sentence Actions, no new primitives.
+The popover also carries Play sentence, Bookmark sentence, Add to Mining — all reusing existing
+Sentence Actions, no new primitives.
 
 The transcript never shrinks.
 
@@ -455,12 +461,14 @@ secondary tools live here.
 
 Tabs
 
-- Vocabulary
-- Grammar
-- Mining
-- Notes
-- AI
-- Settings
+- Mining — this lesson's cards, the target sentence's highlighted
+- Notes — a note per sentence and one for the lesson, autosaved
+
+Exactly two (`docs/superpowers/specs/2026-10-02-shadowing-workspace-part-1b-reframe-design.md` §2). Reading Settings stay in their own popover.
+
+**Inspector** — a transient state of the drawer, not a tab: a kanji's QuickInspect, a common word's card
+inside it, a kanji inside that card, with Back and Close. Closing returns the drawer to the tab, height,
+follow / pinned state and target it had; Escape closes the popover, then the Inspector, then the drawer.
 
 Collapsed by default.
 
