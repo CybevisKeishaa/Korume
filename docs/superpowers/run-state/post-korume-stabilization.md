@@ -73,6 +73,29 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
   exists); m4 `readJsonBody` maps a rejected `reader.cancel()` to 400; m5 released late-spent system calls do not count
   toward the system cap; m6 e2e 6 waits on a fixed 1 s timer.
 
+- Review minors (Claude, 2026-10-04), each RED without its fix:
+  - m1 FIXED: Back/Forward (`popstate`, in a transition) starts a new conversation. Without it, Back from a created
+    thread to `?thread=<missing>` kept the old conversation and replaced the URL with its thread again. Unit: RED
+    without the listener. e2e 8 covers the round trip in the browser.
+  - m2 ACCEPTED (same on master): New conversation from a thread mounts twice. Every single-mount key rule traced
+    either still mounts twice in the created-thread case or shows the wrong conversation on a later ⋯ switch back to
+    that thread.
+  - m3 FIXED: the Gemini strip keeps names under `properties`/`$defs`. Unit: RED on the old strip.
+  - m4 FIXED: a rejected `reader.cancel()` no longer turns 413 into 400. Unit: RED without the catch.
+  - m5 FIXED: late-spent released system holds count toward the per-user system cap (038, in place). Gate 9b was
+    RED on the old function (`reserved`) and PASS after a fresh reset; the pin is RED without it; `verify:db:knowledge`
+    and `verify:db:korume` both 0.
+  - m6 FIXED: e2e 6 waits for the refresh's RSC response, not a 1 s timer.
+- Lessons: L-042 (new: a live provider call is the only test of the provider's request rules); L-004 evidence (the
+  stateful `/gi` pin); L-017 evidence (one `Stop-Process` left a second :3000 listener).
+- Final gates after the last product edit (2026-10-04): vitest 514 files / 4595 tests; `tsc` 0; `npm run lint` 0;
+  `verify:protocol` 0; fresh reset → `verify:db:knowledge` 0 and `verify:db:korume` 0; `korume` + `korume-threads`
+  e2e 9/9 on a clean worktree build (`AI_PROVIDER=none`, one :3000 listener started after `BUILD_ID`). e2e mutation
+  (no popstate listener) → test 8 RED (the created conversation stayed after Back).
+- Live Gemini smoke re-run after m3: NOT RUN. Docker Desktop stopped between the e2e run and the smoke
+  (`ECONNREFUSED 127.0.0.1:54321`; the engine pipe is gone). It is still owed before merge, because m3 changes the
+  Gemini request.
+
 ## Working tree and environment
 
 - Owner: Claude
@@ -80,12 +103,11 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
 
 ## Blockers
 
-- Codex usage limit until 2026-10-04 02:01 — Claude implements S4 onward (owner standing rule).
+- Docker Desktop is down (2026-10-04 ~02:02): no local Supabase, so the live smoke cannot run until it is back.
 
 ## Next actions
 
-- Decide the review minors m1–m6 (m1 is the only one with a reachable wrong screen; fix it or accept).
-- After the last edit: full vitest + `korume.spec.ts` e2e once more on a fresh worktree build, then `verify:protocol`.
-- Lessons into `docs/lessons.md` (live smoke found a provider-schema defect every unit test missed; the stateful
-  regex pin; the stale :3000 server that served a mutated build).
+- With Docker up: the DB was reset, so the local dictionary and the Ep.729 demo are gone (re-import before a Chrome
+  look). Build in the worktree with `.env.local` (gemini), start, then
+  `KORUME_LIVE=1 npx playwright test --config=playwright.live.config.ts korume.live`, and stop every :3000 listener.
 - Owner decides the merge (`git merge --no-ff`); owner pushes master by hand.
