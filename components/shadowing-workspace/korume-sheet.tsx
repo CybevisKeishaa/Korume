@@ -16,8 +16,9 @@ function clock(seconds: number): string {
 }
 
 /**
- * Korume beside the transcript (spec §6.2): a non-modal dialog laid over the transcript column's grid area, so the
- * player is never wrapped, resized or remounted. The anchor is fixed for the life of the draft — playback moving on
+ * Korume beside the transcript (spec §6.2): a non-modal popup floating at the bottom right of the transcript column's
+ * grid area, where the mascot sits (owner ruling 2026-10-03: a popup, not a full-height sheet), so the player is
+ * never wrapped, resized or remounted. The anchor is fixed for the life of the draft — playback moving on
  * offers a NEW draft, it never re-points this one. Kept mounted while closed, so reopening returns to the thread.
  */
 export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus }: {
@@ -67,8 +68,10 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
         event.preventDefault();
         onClose();
       }}
-      className={`${open ? "flex" : "hidden"} absolute inset-y-0 right-0 z-20 w-[--korume-sheet-width] min-w-[--korume-sheet-min] max-w-[100vw] flex-col border-l border-border bg-background shadow-overlay`}
-      style={{ gridRow: "2", gridColumn: "-2 / -1" }}
+      className={`${open ? "flex" : "hidden"} absolute bottom-md right-md z-20 h-[--korume-popup-height] max-h-[calc(100%-2*var(--space-md))] w-[--korume-sheet-width] min-w-[--korume-sheet-min] max-w-[100vw] flex-col overflow-hidden rounded-lg border border-border bg-background shadow-overlay`}
+      // Both lines explicit: an absolutely positioned grid item's `auto` end line is the container's EDGE, so
+      // `gridRow: "2"` alone ran the popup down under the drawer bar (measured 2026-10-03).
+      style={{ gridRow: "2 / 3", gridColumn: "-2 / -1" }}
     >
       <header className="flex items-center gap-sm border-b border-border px-md py-sm">
         <h2 id={titleId} className="flex-1 text-body-lg font-semibold text-foreground">{t("ask.sheet.title")}</h2>

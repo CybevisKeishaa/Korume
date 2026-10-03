@@ -26,6 +26,8 @@ export function Composer({ onSend, disabled = false, placeholder }: {
     event.preventDefault();
     submit();
   };
+  // The form's focus-within ring IS the focus indicator; the global :focus-visible ring on the textarea would draw a
+  // second, square one inside it.
   return (
     <form
       className="rounded-lg border border-border bg-card px-md py-sm focus-within:ring-2 focus-within:ring-ring"
@@ -43,7 +45,7 @@ export function Composer({ onSend, disabled = false, placeholder }: {
           disabled={disabled}
           rows={1}
           maxLength={2000}
-          className="max-h-[40vh] min-h-hit-target flex-1 resize-none bg-transparent py-xs text-body text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-60"
+          className="max-h-[40vh] min-h-hit-target flex-1 resize-none bg-transparent py-xs text-body text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-60"
         />
         <button
           type="submit"

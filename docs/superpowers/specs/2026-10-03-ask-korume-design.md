@@ -433,7 +433,8 @@ type AnswerV1 = { blocks: Block[] };                                   // 1..12
 - **Shortcut `K`** via `use-workspace-shortcuts`, ignored when focus is in an `input`, `textarea`,
   `contenteditable`, the selection popover, or any composer; not registered when Korume is disabled.
 - **Opening** captures the anchor: the active line, or the open selection's span when there is one. It opens a
-  right **side sheet** over the transcript column: `width: min(400px, 40vw)`, `min-width: 340px`, height bounded by
+  right **side sheet** over the transcript column (**owner ruling 2026-10-03: a floating popup at the bottom right of
+  the transcript column, where the mascot sits, at most 420px tall — not a full-height sheet**): `width: min(400px, 40vw)`, `min-width: 340px`, height bounded by
   the workspace. It overlays; it never resizes or remounts the player. At a viewport too narrow for 340 px beside
   the player it may cover most of the transcript, still without a player remount. The video keeps playing.
 - The sheet is **not** a drawer tab and does not touch Mining / Notes.

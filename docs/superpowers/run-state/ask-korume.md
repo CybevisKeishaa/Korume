@@ -133,6 +133,22 @@ Task 0 probe (Claude, 2026-10-03):
   never rendered), comments. Root design docs (`error-state-guildline.md`, `japanese-learning-app-spec.md`) still say
   Sensei — guarded by no-sensei if ever copied into a catalog. 4 mutations red. Independent review: 0 Critical /
   0 Important, 7 Minor (6 applied, the 7th partially — comments). vitest 513 / 4566; tsc/lint/protocol 0.
+- Task 11 part 1 (Claude, 2026-10-03): `tests/e2e/fixtures/korume-data.ts` (seeded completed thread + retryable
+  thread, fixed instants) and `tests/e2e/korume.spec.ts` (5 tests at 1280x529: sheet anchor/new draft/no remount/
+  geometry/Escape/Expand/Back; seeded /korume/chat with persisted grounding, zero /api/korume on reload, ⋯ thread switch
+  round trip; 402×2/429/503/409 inline + 502 Try again same turnId; Korume off → no mascot, 0 requests in 5 s, disabled
+  page; no Sensei on Settings/Pronunciation, /companion has no composer). All green with korume-threads (6/6) and the
+  redirect spec (11/11). Shadowing workspace e2e 16/16 green after T9.
+  **Owner ruling 2026-10-03: the Shadowing sheet is a floating POPUP, not a full-height drawer** — bottom-right of the
+  transcript column, 420 reference px tall (`--korume-popup-height`), rounded, bordered; spec §6.2 amended. Found while
+  doing it: `gridRow: "2"` on an abspos grid item ends at the container EDGE (`2 / auto`), so the T9 sheet always ran
+  under the drawer bar — now `2 / 3` (measured: 515 → 475 bottom; drawer bar at 489). Width is density-scaled
+  (400 × 1280/1440 ≈ 355.6 px at the owner viewport) like every workspace size — the e2e measures the unit.
+  Composer: removed the second (square) focus ring the global `:focus-visible` drew inside the form's ring.
+  Full default e2e: 7 failures NOT from this branch's code — 3 `shadowing-intelligence` need dictionary data and the
+  local DB has 0 dict snapshots (no source files on disk to import); 4 `landing-page` time out loading /en (the branch
+  touches no landing file) — unverified against master.
+  vitest 513 / 4566; tsc/lint/protocol 0.
 - Execution model (owner 2026-10-03): Codex is dispatched through Paseo (`paseo run --provider codex --model
   gpt-5.6-terra --mode auto-review`), replacing raw `codex exec -m gpt-6-sol`. Task 10 is split: 10a page/rail/menu,
   10b `/sensei` redirect + persona sweep + docs (packets in `.superpowers/sdd/ask-korume/`).
@@ -148,6 +164,7 @@ None.
 
 ## Next actions
 
-1. Task 11 (seeded Playwright §7.6, then ASK THE OWNER before the live Gemini smoke §7.7, then whole-branch review).
-   Still open from Task 9 for Task 11: a selection-span anchor test and the 1280x529 geometry / no-remount proof.
+1. Task 11 remaining: ASK THE OWNER before the live Gemini smoke §7.7 (step 4); whole-branch review (step 5); owner
+   Chrome look. Still open: a selection-span anchor e2e; M5 (free-chat URL does not follow its new thread); focus
+   after a ⋯ thread switch lands on body (m3); landing-page e2e timeouts vs master.
    Plan Correction 11 lists the as-built Task 4 interface.

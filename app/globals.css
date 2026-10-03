@@ -255,9 +255,11 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  /* Ask Korume's side sheet (spec 2026-10-03 §6.2): min(400px, 40vw), never narrower than 340px. */
+  /* Ask Korume's popup (spec 2026-10-03 §6.2, owner ruling: a floating popup, not a full-height sheet):
+     min(400px, 40vw) wide, never narrower than 340px; 420px tall at most, always inside the transcript column. */
   --korume-sheet-width: min(calc(400 * var(--density-unit)), 40vw);
   --korume-sheet-min: calc(340 * var(--density-unit));
+  --korume-popup-height: calc(420 * var(--density-unit));
   /* The collapsed bar: its top border, the separator (space-xs) and the header row (control-sm). */
   --drawer-collapsed-height: calc(44 * var(--density-unit) + 1px);
   --drawer-peek-min: calc(160 * var(--density-unit));
@@ -464,9 +466,11 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  /* Ask Korume's side sheet (spec 2026-10-03 §6.2): min(400px, 40vw), never narrower than 340px. */
+  /* Ask Korume's popup (spec 2026-10-03 §6.2, owner ruling: a floating popup, not a full-height sheet):
+     min(400px, 40vw) wide, never narrower than 340px; 420px tall at most, always inside the transcript column. */
   --korume-sheet-width: min(calc(400 * var(--density-unit)), 40vw);
   --korume-sheet-min: calc(340 * var(--density-unit));
+  --korume-popup-height: calc(420 * var(--density-unit));
   /* The collapsed bar: its top border, the separator (space-xs) and the header row (control-sm). */
   --drawer-collapsed-height: calc(44 * var(--density-unit) + 1px);
   --drawer-peek-min: calc(160 * var(--density-unit));
