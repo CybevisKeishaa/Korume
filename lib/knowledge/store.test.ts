@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createSqlKnowledgeStore } from "./store";
-import type { KnowledgeKey } from "./types";
+import type { GenerationRow, KnowledgeKey } from "./types";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 
@@ -74,6 +74,16 @@ describe("createSqlKnowledgeStore", () => {
     await expect(createSqlKnowledgeStore().recordGeneration(row)).resolves.toBe("g1");
     const sql = readFileSync(join(process.cwd(), "supabase/migrations/20261002000038_knowledge.sql"), "utf8");
     for (const field of Object.keys(row)) expect(sql, field).toContain(`p_row->>'${field}'`);
+    expect(mock.rpcCalls).toEqual([{ name: "ai_record_generation", args: { p_row: row } }]);
+  });
+
+  it("passes an optional Korume turn ID and nullable knowledge entry to generation telemetry", async () => {
+    const row: GenerationRow = {
+      requestedByUserId: "u", billingScope: "learner", knowledgeEntryId: null, reservationId: "r1",
+      section: "korume_plan", turnId: "turn-1", provider: "anthropic", model: "m", inputTokens: 1,
+      outputTokens: 2, cacheReadTokens: 0, latencyMs: 4, estimatedCostUsd: 0.5, outcome: "success",
+    };
+    await expect(createSqlKnowledgeStore().recordGeneration(row)).resolves.toBe("g1");
     expect(mock.rpcCalls).toEqual([{ name: "ai_record_generation", args: { p_row: row } }]);
   });
 

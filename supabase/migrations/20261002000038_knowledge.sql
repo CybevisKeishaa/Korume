@@ -66,8 +66,10 @@ create table ai_generations (
   latency_ms int,
   estimated_cost_usd numeric(12, 6) not null default 0 check (estimated_cost_usd >= 0),
   outcome text not null check (outcome in ('success', 'provider_error', 'validation_error')),
+  turn_id uuid,
   created_at timestamptz not null default now()
 );
+create index ai_generations_turn on ai_generations (turn_id) where turn_id is not null;
 
 -- The settled entitlement charge.
 create table ai_usage_charges (
@@ -287,13 +289,13 @@ create function ai_record_generation(p_row jsonb) returns uuid
 language plpgsql security definer set search_path = public as $$
 declare v_id uuid;
 begin
-  insert into ai_generations (requested_by_user_id, billing_scope, knowledge_entry_id, reservation_id, section,
-    provider, model, input_tokens, output_tokens, cache_read_tokens, latency_ms, estimated_cost_usd, outcome)
+  insert into public.ai_generations (requested_by_user_id, billing_scope, knowledge_entry_id, reservation_id, section,
+    provider, model, input_tokens, output_tokens, cache_read_tokens, latency_ms, estimated_cost_usd, outcome, turn_id)
   values ((p_row->>'requestedByUserId')::uuid, p_row->>'billingScope', (p_row->>'knowledgeEntryId')::uuid,
     (p_row->>'reservationId')::uuid, p_row->>'section', p_row->>'provider', p_row->>'model',
     coalesce((p_row->>'inputTokens')::int, 0), coalesce((p_row->>'outputTokens')::int, 0),
     coalesce((p_row->>'cacheReadTokens')::int, 0), (p_row->>'latencyMs')::int,
-    coalesce((p_row->>'estimatedCostUsd')::numeric, 0), p_row->>'outcome')
+    coalesce((p_row->>'estimatedCostUsd')::numeric, 0), p_row->>'outcome', (p_row->>'turnId')::uuid)
   returning id into v_id;
   return v_id;
 end $$;

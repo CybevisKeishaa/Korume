@@ -58,6 +58,12 @@ describe("knowledge and AI ledger SQL contract", () => {
     expect(sql).toMatch(/create table ai_usage_charges \(.*user_id uuid not null references users \(id\) on delete cascade/);
   });
 
+  it("records optional Korume turn IDs in generation telemetry", () => {
+    expect(sql).toContain("turn_id uuid");
+    expect(sql).toContain("create index ai_generations_turn on ai_generations (turn_id) where turn_id is not null");
+    expect(sql).toContain("(p_row->>'turnid')::uuid");
+  });
+
   it("gives learners no direct access to the cache or the ledger", () => {
     for (const table of TABLES) {
       expect(sql).toContain(`alter table ${table} enable row level security`);

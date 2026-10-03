@@ -47,6 +47,14 @@
    must not hard-code it (owner, Part 4 correction 1). The Free 402 body is
    `{ error: "quota_exhausted", reason: "free_daily_limit", limit, resetsAt }`; the Plus body is unchanged.
 
+10. **Ask Korume rows are service-written (found in Task 1).** Migration 041 adds restrictive RLS policies: an
+    `authenticated` learner may not insert/update `ask_korume` sessions or insert/update/delete their messages
+    directly (no forged assistant answers or `origin_route` through PostgREST); deleting a whole thread and
+    `erase_companion_memory()` still work. Therefore Task 4's `insertThread` / `insertUserMessage` use the
+    **service client with an explicit `user_id`** (after the gate has authenticated the caller); reads
+    (`readThreadRow`, messages) stay on the learner's client under RLS. `ai_generations.turn_id` and
+    `ai_record_generation` were edited in place in migration 038 (AGENTS.md §6), not in 041.
+
 ## Review Focus
 
 1. A learner opens Korume on line 12, the video plays on to line 40, they send — the thread, the first turn's prompt and the chip all name line 12; a reload of `/korume/chat?thread=…` still names line 12 (Task 9, Task 10).
