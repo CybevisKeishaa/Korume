@@ -58,7 +58,7 @@
     "hint": "Enter để gửi · Shift+Enter để xuống dòng",
     "send": "Gửi",
     "listen": "Nghe",
-    "seen": "Đã gặp {count} lần",
+    "seen": "{count, plural, other {Đã gặp {count} lần}}",
     "seenCapped": "Đã gặp {count}+ lần",
     "signature": "KORUME",
     "messages": "Cuộc trò chuyện với Korume",
@@ -70,6 +70,32 @@
       "close": "Đóng Korume",
       "askCurrent": "Hỏi về câu đang phát",
       "anchor": "Đang hỏi về câu này"
+    },
+    "chat": {
+      "brand": "Korume",
+      "knowledge": "Kiến thức tiếng Nhật",
+      "signature": "KORUME",
+      "back": "Quay lại",
+      "subtitle": "Một nơi yên tĩnh để hiểu tiếng Nhật.",
+      "memory": "Ký ức Korume",
+      "settings": "Cài đặt",
+      "learningContext": "Ngữ cảnh học tập",
+      "inConversation": "Trong cuộc trò chuyện này",
+      "smallMemory": "Một ký ức nhỏ",
+      "openMemory": "Mở Ký ức Korume",
+      "openLesson": "Mở bài học",
+      "disabledTitle": "Korume đã tắt",
+      "disabledDescription": "Bật lại Korume trong Cài đặt để tiếp tục cuộc trò chuyện này.",
+      "notFound": "Không tìm thấy cuộc trò chuyện đó. Bạn có thể bắt đầu một cuộc trò chuyện mới tại đây.",
+      "today": "Hôm nay",
+      "grounding": "Bạn đã thấy {label} trong {count, plural, other {{count} câu Shadowing}}.",
+      "groundingCapped": "Bạn đã thấy {label} trong {count}+ câu Shadowing.",
+      "unavailableTitle": "Korume hiện không khả dụng",
+      "unavailableDescription": "Korume chưa thể tải an toàn lúc này. Hãy thử lại sau.",
+      "newConversation": "Cuộc trò chuyện mới",
+      "untitledConversation": "Cuộc trò chuyện chưa có tên",
+      "pastConversations": "Cuộc trò chuyện trước",
+      "loadMore": "Tải thêm"
     }
   }
 }

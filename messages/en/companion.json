@@ -58,7 +58,7 @@
     "hint": "Enter to send · Shift+Enter for a new line",
     "send": "Send",
     "listen": "Listen",
-    "seen": "Seen {count} times",
+    "seen": "{count, plural, one {Seen {count} time} other {Seen {count} times}}",
     "seenCapped": "Seen {count}+ times",
     "signature": "KORUME",
     "messages": "Conversation with Korume",
@@ -70,6 +70,32 @@
       "close": "Close Korume",
       "askCurrent": "Ask about the current line",
       "anchor": "Asking about this line"
+    },
+    "chat": {
+      "brand": "Korume",
+      "knowledge": "Japanese Knowledge",
+      "signature": "KORUME",
+      "back": "Back",
+      "subtitle": "A quiet place to understand Japanese.",
+      "memory": "Korume Memory",
+      "settings": "Settings",
+      "learningContext": "Learning context",
+      "inConversation": "In this conversation",
+      "smallMemory": "A small memory",
+      "openMemory": "Open Korume Memory",
+      "openLesson": "Open lesson",
+      "disabledTitle": "Korume is turned off",
+      "disabledDescription": "Turn Korume back on in Settings to continue this conversation.",
+      "notFound": "That conversation could not be found. You can start a new one here.",
+      "today": "Today",
+      "grounding": "You've seen {label} in {count, plural, one {{count} Shadowing line} other {{count} Shadowing lines}}.",
+      "groundingCapped": "You've seen {label} in {count}+ Shadowing lines.",
+      "unavailableTitle": "Korume is unavailable",
+      "unavailableDescription": "Korume cannot safely load right now. Please try again shortly.",
+      "newConversation": "New conversation",
+      "untitledConversation": "Untitled conversation",
+      "pastConversations": "Past conversations",
+      "loadMore": "Load more"
     }
   }
 }

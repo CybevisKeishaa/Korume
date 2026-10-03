@@ -1,5 +1,7 @@
 import "server-only";
 import { rateLimit } from "@/lib/rate-limit";
+import { containsPattern } from "@/lib/data/query-pagination";
+import type { createClient } from "@/lib/supabase/server";
 import { getLineForLearner } from "@/lib/data/knowledge";
 import { korumeGate } from "@/lib/korume/gate";
 import { originRouteFor } from "@/lib/korume/route";
@@ -13,6 +15,26 @@ const THREAD_CREATE_LIMIT = { limit: 20, windowMs: 60_000 };
 const THREAD_READ_LIMIT = { limit: 120, windowMs: 60_000 };
 const TURN_LIMIT = { limit: 20, windowMs: 60_000 };
 export const THREAD_PAGE_SIZE = 20;
+
+export interface SmallMemoryResult { title: string | null; lineTextJp: string | null; occurredAt: string }
+
+/** The newest private journal memory that literally mentions an entity in this thread. */
+export async function smallMemoryFor(userId: string, entities: { label: string }[], supabase: ReturnType<typeof createClient>): Promise<SmallMemoryResult | null> {
+  const labels = [...new Set(entities.map((entity) => entity.label.trim()).filter(Boolean))].slice(0, 4);
+  if (!labels.length) return null;
+  try {
+    const rows = await Promise.all(labels.map(async (label) => {
+      const { data, error } = await supabase.from("companion_memories").select("title,line_text_jp,occurred_at")
+        .eq("user_id", userId).ilike("line_text_jp", containsPattern(label)).order("occurred_at", { ascending: false }).limit(1);
+      if (error) return null;
+      const row = data?.[0];
+      return row ? { title: row.title, lineTextJp: row.line_text_jp, occurredAt: row.occurred_at } : null;
+    }));
+    return rows.filter((row): row is SmallMemoryResult => row !== null).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0] ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type GateRefusal = { kind: "unauthorized" } | { kind: "disabled" } | { kind: "unavailable" };
 type RateLimited = { kind: "rate_limited"; retryAfter: number };

@@ -26,6 +26,13 @@ function merge(into: Map<string, GroundedEntity>, entity: GroundedEntity): void 
   into.set(entity.id, seen ? { ...entity, ...seen, ...(entity.seenCount !== undefined ? { seenCount: entity.seenCount, seenCapped: entity.seenCapped } : {}) } : entity);
 }
 
+/** A thread's entities across its answers (the rail, §6.3): one per id, a later turn's exposure count wins. */
+export function unionGrounding(messages: readonly { grounding: GroundedEntity[] | null }[]): GroundedEntity[] {
+  const byId = new Map<string, GroundedEntity>();
+  for (const message of messages) for (const entity of message.grounding ?? []) merge(byId, entity);
+  return [...byId.values()];
+}
+
 /**
  * The rail's entities (spec §5.4), built by the server from VALIDATED retrieval results — never from model text.
  * A context card in the answer may only reference one of these ids. A lesson link survives only to a video the

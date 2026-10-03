@@ -60,6 +60,9 @@ export function useKorumeThread(init: { threadId?: string; anchor: DraftAnchor |
   stateRef.current = state;
   const anchorRef = useRef(init.anchor);
   const poll = useRef<{ timer: ReturnType<typeof setTimeout> | null; startedAt: number }>({ timer: null, startedAt: 0 });
+  // A poll in flight, or a 202 that lands after unmount, must not re-arm the timer: switching threads would leave
+  // a GET every 2 s running for 180 s against the shared read limit.
+  const mounted = useRef(true);
 
   const stopPolling = useCallback(() => {
     if (poll.current.timer) clearTimeout(poll.current.timer);
@@ -73,7 +76,7 @@ export function useKorumeThread(init: { threadId?: string; anchor: DraftAnchor |
       const response = await fetch(`/api/korume/threads/${threadId}`, { cache: "no-store" });
       if (response.ok) detail = (await response.json()) as KorumeThreadDetail;
     } catch { /* a missed poll is retried on the next tick */ }
-    if (stateRef.current.pending?.turnId !== turnId) return;
+    if (!mounted.current || stateRef.current.pending?.turnId !== turnId) return;
     const answered = detail?.messages.some((m) => m.role === "assistant" && m.turnId === turnId);
     const retryable = detail?.pendingTurns.some((p) => p.turnId === turnId && p.status === "retryable");
     if (detail && answered) {
@@ -91,14 +94,16 @@ export function useKorumeThread(init: { threadId?: string; anchor: DraftAnchor |
 
   const startPolling = useCallback((turnId: string) => {
     stopPolling();
+    if (!mounted.current) return;
     poll.current.startedAt = Date.now();
     poll.current.timer = setTimeout(() => void pollOnce(turnId), POLL_MS);
   }, [pollOnce, stopPolling]);
 
   useEffect(() => {
+    mounted.current = true;
     const pending = stateRef.current.pending;
     if (pending?.status === "running") startPolling(pending.turnId);
-    return stopPolling;
+    return () => { mounted.current = false; stopPolling(); };
   }, [startPolling, stopPolling]);
 
   const fail = (turnId: string, notice: TurnNotice | null, keep: boolean) => setState((s) => ({

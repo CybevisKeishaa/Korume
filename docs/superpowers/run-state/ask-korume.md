@@ -106,13 +106,28 @@ Task 0 probe (Claude, 2026-10-03):
   `CompanionSprite` `label` prop + `useThemeOrNull` (workspace tests have no ThemeProvider), `ask.open` /
   `ask.sheet.*` copy. 7 overlay tests green; 6 mutations red (the "k when disabled" one survived until a
   Focus-view k case was added).
+- Task 10a (Codex via Paseo `gpt-5.6-terra`, 2 runs; quota out in round 2 at 15:30 → Claude finished): `/korume/chat`
+  server page (gate first, fail closed on `unavailable`; `?thread` uuid-parsed, an invalid/missing/unreadable thread →
+  quiet not-found over free chat; `KorumeChatPage` keyed by thread id because Next keys a page without its search
+  params — without it ⋯ thread switching kept and posted into the old thread), `KorumeConversation` re-keyed by a
+  client nonce for "New conversation", `router.refresh()` after an answered turn (`staleTimes.dynamic` 30 s would
+  otherwise re-seed a revisited thread without it), rail (`unionGrounding` shared with the server, merge keeps Seen
+  N), ⋯ `ThreadMenu` (keyset load-more), Back (origin → same-origin referrer + history > 1 → /dashboard), divider
+  date after mount, `smallMemoryFor` (escaped, ≤4 labels, null on error). Hook: polling never re-arms after unmount.
+  `ask.seen` / `ask.chat.grounding` ICU plurals ("Shadowing lines" — what seenCount counts). Screen registry row
+  `korume-chat` (215:15164, stamped 2026-10-03; `/sensei` row goes with 10b). Two independent code-reviewer passes
+  (1 Critical + 4 Important, then 1 Important — all fixed); 29 mutations red then restored (one vacuous
+  structuredClone test found and fixed). vitest 512 / 4566; tsc/lint/protocol 0.
+  Deferred: M5 the URL does not follow a free chat's new thread (reload loses it from view); m2 not-found copy also
+  covers read failures; m3 focus lands on body after a ⋯ switch — check in Task 11 Playwright with the thread-switch
+  round trip and the 1280x529 layout.
 - Execution model (owner 2026-10-03): Codex is dispatched through Paseo (`paseo run --provider codex --model
   gpt-5.6-terra --mode auto-review`), replacing raw `codex exec -m gpt-6-sol`. Task 10 is split: 10a page/rail/menu,
   10b `/sensei` redirect + persona sweep + docs (packets in `.superpowers/sdd/ask-korume/`).
 
 ## Working tree and environment
 
-- Owner: Codex (Task 10a, packet `.superpowers/sdd/ask-korume/task-10a-brief.md`)
+- Owner: Claude (Task 10a committed; Codex quota resets 19:46 — Task 10b goes to Codex if it is back, else Claude)
 - Worktree `.worktrees/ask-korume`, branched from master `ede3833`.
 
 ## Blockers
@@ -121,9 +136,7 @@ None.
 
 ## Next actions
 
-1. Task 10a (Codex): `/korume/chat` page, rail, thread menu, Back, disabled state, `smallMemoryFor`. Claude reviews,
-   runs mutations, measures in Chrome at 1280x529, commits.
-2. Task 10b: `/sensei` redirect, delete the upcoming page, §6.5 persona sweep, `messages/no-sensei.test.ts`, docs.
-3. Task 11 (seeded Playwright §7.6, then ASK THE OWNER before the live Gemini smoke §7.7, then whole-branch review).
+1. Task 10b: `/sensei` redirect, delete the upcoming page, §6.5 persona sweep, `messages/no-sensei.test.ts`, docs.
+2. Task 11 (seeded Playwright §7.6, then ASK THE OWNER before the live Gemini smoke §7.7, then whole-branch review).
    Still open from Task 9 for Task 11: a selection-span anchor test and the 1280x529 geometry / no-remount proof.
    Plan Correction 11 lists the as-built Task 4 interface.

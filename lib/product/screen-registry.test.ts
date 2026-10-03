@@ -222,7 +222,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(86);
+    expect(stamped).toHaveLength(87);
     const stampedByDate = new Map<string, number>();
     for (const entry of stamped) {
       const date = entry.figmaCheckedAt as string;
@@ -245,6 +245,8 @@ describe("screen registry invariants", () => {
       "2026-09-22": 2,
       "2026-09-28": 1,
       "2026-09-29": 1,
+      // `korume-chat`: a new row for /korume/chat, built against 215:15164 on this day (Ask Korume Task 10a).
+      "2026-10-03": 1,
     });
   });
 });

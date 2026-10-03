@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildGroundedEntities } from "./grounding";
+import { buildGroundedEntities, unionGrounding } from "./grounding";
 import type { ToolResult } from "./retrieval";
 
 const dictionary: ToolResult = {
@@ -46,5 +46,19 @@ describe("buildGroundedEntities", () => {
       { ...dictionary, status: "not_found", data: undefined },
       exposure({ seenCount: 0 }),
     ], new Set(["v1"]))).toEqual([]);
+  });
+});
+
+describe("unionGrounding", () => {
+  it("keeps one entity per id, and a later answer without exposure never erases an earlier Seen count", () => {
+    const entities = unionGrounding([
+      { grounding: [{ id: "ent:1", label: "は", kind: "particle", seenCount: 5 }] },
+      { grounding: null },
+      { grounding: [{ id: "ent:1", label: "は", kind: "particle", gloss: "topic" }, { id: "ent:2", label: "が", kind: "particle" }] },
+      { grounding: [{ id: "ent:2", label: "が", kind: "particle", seenCount: 2, seenCapped: false }] },
+    ]);
+    expect(entities).toHaveLength(2);
+    expect(entities.find((e) => e.id === "ent:1")).toMatchObject({ seenCount: 5, gloss: "topic" });
+    expect(entities.find((e) => e.id === "ent:2")).toMatchObject({ seenCount: 2 });
   });
 });

@@ -106,6 +106,20 @@ describe("useKorumeThread", () => {
     expect(second.result.current.pending?.status).toBe("retryable");
   });
 
+  it("stops polling for good on unmount, even when a poll was in flight", async () => {
+    vi.useFakeTimers();
+    const running: KorumeThreadDetail = { thread, pendingTurns: [{ turnId: "t1", status: "running" }], messages: [{ id: "u", turnId: "t1", role: "user", text: "Q", answer: null, grounding: null, createdAt: "x" }] };
+    let release: (r: Response) => void = () => undefined;
+    fetchMock.mockImplementationOnce(() => new Promise<Response>((resolve) => { release = resolve; }));
+    fetchMock.mockImplementation(async () => json(200, running));
+    const hook = renderHook(() => useKorumeThread({ anchor: null, initial: running }));
+    await act(async () => { await vi.advanceTimersByTimeAsync(POLL_MS); });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    hook.unmount();
+    await act(async () => { release(json(200, running)); await vi.advanceTimersByTimeAsync(POLL_MS * 5); });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("maps each refusal to its notice", async () => {
     const cases: [Response, unknown][] = [
       [json(402, { error: "quota_exhausted", reason: "free_daily_limit", limit: 7, resetsAt: "R" }), { kind: "free_daily_limit", limit: 7, resetsAt: "R" }],

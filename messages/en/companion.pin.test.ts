@@ -309,7 +309,7 @@ describe("companion.json — Ask Korume (spec 2026-10-03 §6.4)", () => {
     expect(en.ask.slowDown).toBe("Slow down a little · {seconds}s");
     expect(en.ask.resting).toBe("Korume is resting");
     expect(en.ask.hint).toBe("Enter to send · Shift+Enter for a new line");
-    expect(en.ask.seen).toBe("Seen {count} times");
+    expect(en.ask.seen).toBe("{count, plural, one {Seen {count} time} other {Seen {count} times}}");
     expect(en.ask.seenCapped).toBe("Seen {count}+ times");
   });
 
@@ -318,5 +318,15 @@ describe("companion.json — Ask Korume (spec 2026-10-03 §6.4)", () => {
       expect(ask.limitFree).toContain("{limit}");
       expect(JSON.stringify(ask)).not.toMatch(/sensei/i);
     }
+  });
+
+  it("pins the full-chat chrome and line-exposure wording", () => {
+    expect(en.ask.chat.brand).toBe("Korume");
+    expect(en.ask.chat.knowledge).toBe("Japanese Knowledge");
+    expect(en.ask.chat.signature).toBe("KORUME");
+    expect(en.ask.chat.memory).toBe("Korume Memory");
+    expect(en.ask.chat.grounding).toBe("You've seen {label} in {count, plural, one {{count} Shadowing line} other {{count} Shadowing lines}}.");
+    expect(en.ask.chat.groundingCapped).toBe("You've seen {label} in {count}+ Shadowing lines.");
+    expect(en.ask.chat.untitledConversation).toBe("Untitled conversation");
   });
 });

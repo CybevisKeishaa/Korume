@@ -444,6 +444,23 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
+  // Ask Korume (spec 2026-10-03 §6.3): 215:15164 is built here, under the single persona Korume. Not a nav row —
+  // reached from the Shadowing sheet's Expand, Settings and the Korume Memory home.
+  {
+    screenId: "korume-chat",
+    name: "Korume Chat",
+    kind: "screen",
+    variantOf: null,
+    figmaNodeId: "215:15164",
+    repoOnlyReason: null,
+    figmaCheckedAt: "2026-10-03",
+    route: "/korume/chat",
+    chrome: "app",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
   // journey/1 — designed, honest placeholder (Plan C1).
   // ⭐ This row now carries the "Journey" LABEL (A8). Figma's `journey` names
   // the Roadmap, while the nav had pinned that label on the Diary — the
