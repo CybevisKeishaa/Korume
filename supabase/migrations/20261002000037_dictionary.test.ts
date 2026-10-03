@@ -63,6 +63,13 @@ describe("dictionary SQL contract", () => {
     expect(sql).toMatch(/grant execute on function dict_active_snapshot_id\(\) to authenticated, service_role/);
   });
 
+  it("purges only abandoned staging imports: never activated and older than the grace", () => {
+    const gc = sql.slice(sql.indexOf("create function dict_gc_snapshots"), sql.indexOf("create function dict_active_snapshot_id"));
+    expect(gc).toContain("status = 'staging' and activated_at is null and created_at < now() - p_staging_grace");
+    expect(gc).toContain("imported_at < now() - p_staging_grace");
+    expect(gc).toContain("p_staging_grace interval default interval '1 day'");
+  });
+
   it("validates a snapshot before flipping the active pointer", () => {
     const activate = sql.slice(sql.indexOf("create function dict_activate_snapshot"));
     const incomplete = activate.indexOf("is incomplete");

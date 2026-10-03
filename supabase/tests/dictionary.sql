@@ -5,7 +5,10 @@
 -- It assumes no real snapshot is active; with one active, the gate parks it and restores it last. Parked as
 -- 'staging', never 'retired': step 6 runs dict_gc_snapshots(0), which deletes every retired snapshot and would
 -- take the real dictionary with it.
--- Real snapshots already retired are kept out of step 6's reach the same way.
+-- Real snapshots already retired are kept out of step 6's reach the same way. Parking as 'staging' is safe from
+-- GC's staging purge because that purge takes only snapshots never activated (activated_at is null), and a real
+-- active or retired snapshot always was. A REAL abandoned import (never activated, older than a day) IS purged
+-- by step 6: that is the function's job.
 -- The parked statuses live in a real table, not a temp one: a failing step stops psql before the restore at the
 -- end, and the next run must still be able to put the real dictionary back (it does so first).
 
@@ -141,6 +144,41 @@ begin
     raise exception 'FAIL 6: GC deleted a staging snapshot';
   end if;
   raise notice 'PASS 6 GC deletes only retired snapshots';
+end $$;
+
+-- 6b. GC purges an abandoned import (staging, never activated, older than the grace) and orphan imports past the
+--     grace; a fresh staging snapshot and an old staging snapshot that was once active (the parked shape) stay.
+select pg_temp.dictgate_snapshot('old', 'green old', true, false) as snap_old \gset
+select pg_temp.dictgate_snapshot('parked', 'green parked', true, false) as snap_parked \gset
+insert into dict_imports (source, source_version, source_url, license, file_sha256, entry_count)
+  values ('jmdict', 'dictgate-orphan-old', 'https://example.invalid/o', 'test', 'orphan-old', 1),
+         ('jmdict', 'dictgate-orphan-new', 'https://example.invalid/o', 'test', 'orphan-new', 1);
+update dict_imports set imported_at = now() - interval '2 days'
+  where source_version in ('dictgate-orphan-old', 'dictgate-old', 'dictgate-parked');
+update dict_snapshots set created_at = now() - interval '2 days' where id in (:'snap_old', :'snap_parked');
+update dict_snapshots set activated_at = now() - interval '2 days' where id = :'snap_parked';
+select set_config('dictgate.old', :'snap_old', false), set_config('dictgate.parked', :'snap_parked', false);
+do $$
+begin
+  perform dict_gc_snapshots(0);
+  if exists (select 1 from dict_snapshots where id = current_setting('dictgate.old')::uuid)
+     or exists (select 1 from dict_entries where snapshot_id = current_setting('dictgate.old')::uuid) then
+    raise exception 'FAIL 6b: an abandoned staging import survived GC';
+  end if;
+  if not exists (select 1 from dict_snapshots where id = current_setting('dictgate.parked')::uuid) then
+    raise exception 'FAIL 6b: GC purged an old staging snapshot that was once active';
+  end if;
+  if not exists (select 1 from dict_snapshots where id = current_setting('dictgate.c')::uuid) then
+    raise exception 'FAIL 6b: GC purged a staging snapshot inside the grace';
+  end if;
+  if exists (select 1 from dict_imports where source_version = 'dictgate-orphan-old')
+     or not exists (select 1 from dict_imports where source_version = 'dictgate-orphan-new') then
+    raise exception 'FAIL 6b: orphan imports not purged by age';
+  end if;
+  if exists (select 1 from dict_imports where file_sha256 like 'old-%') then
+    raise exception 'FAIL 6b: the imports of the purged snapshot survived';
+  end if;
+  raise notice 'PASS 6b GC purges abandoned imports only';
 end $$;
 
 -- 7. authenticated reads, but cannot write or administer.

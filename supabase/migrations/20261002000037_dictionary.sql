@@ -156,12 +156,17 @@ begin
   update dict_snapshots set status = 'active', activated_at = now() where id = p_snapshot;
 end $$;
 
--- Deletes retired snapshots beyond the newest p_keep retired ones; their rows go by cascade.
-create function dict_gc_snapshots(p_keep int default 1) returns int
+-- Deletes retired snapshots beyond the newest p_keep retired ones, and abandoned imports: staging snapshots never
+-- activated and older than p_staging_grace (a failed import keeps its staging snapshot that long for diagnosis).
+-- Their rows go by cascade; import rows no snapshot references, older than the grace, go too. activated_at is
+-- what keeps a snapshot that was ever active out of the staging purge — the dictionary gate parks real ones as
+-- 'staging'. Returns the number of snapshots deleted.
+create function dict_gc_snapshots(p_keep int default 1, p_staging_grace interval default interval '1 day') returns int
 language plpgsql security definer set search_path = public as $$
-declare v_count int;
+declare v_retired int; v_staging int;
 begin
-  if p_keep < 0 then raise exception 'p_keep must be >= 0'; end if;
+  if p_keep is null or p_keep < 0 then raise exception 'p_keep must be >= 0'; end if;
+  if p_staging_grace is null or p_staging_grace < interval '0' then raise exception 'p_staging_grace must be >= 0'; end if;
   with doomed as (
     select id from dict_snapshots
     where status = 'retired'
@@ -169,8 +174,15 @@ begin
     offset p_keep
   )
   delete from dict_snapshots s using doomed where s.id = doomed.id;
-  get diagnostics v_count = row_count;
-  return v_count;
+  get diagnostics v_retired = row_count;
+  delete from dict_snapshots
+    where status = 'staging' and activated_at is null and created_at < now() - p_staging_grace;
+  get diagnostics v_staging = row_count;
+  delete from dict_imports i
+    where imported_at < now() - p_staging_grace
+      and not exists (select 1 from dict_snapshots s
+                      where i.id in (s.jmdict_import_id, s.kanjidic_import_id, s.kanjivg_import_id));
+  return v_retired + v_staging;
 end $$;
 
 create function dict_active_snapshot_id() returns uuid
@@ -181,11 +193,11 @@ $$;
 revoke all on function dict_stage_snapshot(uuid, uuid, uuid) from public, anon, authenticated;
 revoke all on function dict_activate_snapshot(uuid) from public, anon, authenticated;
 revoke all on function dict_rollback_snapshot(uuid) from public, anon, authenticated;
-revoke all on function dict_gc_snapshots(int) from public, anon, authenticated;
+revoke all on function dict_gc_snapshots(int, interval) from public, anon, authenticated;
 revoke all on function dict_active_snapshot_id() from public, anon;
 
 grant execute on function dict_stage_snapshot(uuid, uuid, uuid) to service_role;
 grant execute on function dict_activate_snapshot(uuid) to service_role;
 grant execute on function dict_rollback_snapshot(uuid) to service_role;
-grant execute on function dict_gc_snapshots(int) to service_role;
+grant execute on function dict_gc_snapshots(int, interval) to service_role;
 grant execute on function dict_active_snapshot_id() to authenticated, service_role;

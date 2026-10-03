@@ -1,5 +1,6 @@
 /**
- * Deletes retired dictionary snapshots beyond the newest `--keep` (default 1) and their rows.
+ * Deletes retired dictionary snapshots beyond the newest `--keep` (default 1), abandoned imports (staging snapshots
+ * never activated, older than a day) and orphan import rows past that day, with their rows.
  *
  *   npm run dict:gc -- [--keep 1] [--allow-remote]
  */
@@ -21,7 +22,7 @@ async function main(): Promise<void> {
   const client = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await client.rpc("dict_gc_snapshots", { p_keep: keep });
   if (error) throw new Error(error.message);
-  console.log(`deleted ${data} retired snapshot(s)`);
+  console.log(`deleted ${data} snapshot(s): retired beyond --keep and abandoned staging imports`);
 }
 
 main().catch((error: unknown) => {

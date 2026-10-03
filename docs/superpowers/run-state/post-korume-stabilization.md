@@ -39,15 +39,19 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
   streams with a byte cap (413) on both note routes; caps = 12 x code-point max + 1 KiB (worst JSON escape is a
   12-byte surrogate pair; Codex's 6x refused valid escaped notes — review fix); memo key includes the line text.
   Mutations RED: no stream count, text dropped from key, route back on `request.json()`, 6x cap. tsc/lint/protocol 0.
+- S4 (Claude): `dict_gc_snapshots(p_keep, p_staging_grace '1 day')` also purges never-activated staging snapshots
+  past the grace and orphan imports; gate case 6b RED on the old function (abandoned import survived), GREEN after a
+  fresh reset; mutation (drop `activated_at is null`) → gate FAIL 6b (purged the parked shape) + pin RED. Migration
+  test 7/7, tsc/lint 0.
 
 ## Working tree and environment
 
-- Owner: Codex
+- Owner: Claude
 - Worktree `.worktrees/post-korume-stabilization`, from master `ea456b8`; `.env.local` copied from the main checkout.
 
 ## Blockers
 
-- None.
+- Codex usage limit until 2026-10-04 02:01 — Claude implements S4 onward (owner standing rule).
 
 ## Next actions
 
