@@ -50,6 +50,20 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
   (AI_PROVIDER=none); e2e mutation build (no alias + no focus) → test 6 RED (question lost on remount) and test 2 RED
   (focus). New e2e 6 (URL by replace, Back → dashboard) and 7 (selection span posted as {start 0, end 2}).
   Note: the sheet chip always shows the whole line, not the span — unchanged design, not invented here.
+- S6 (Claude, 2026-10-04):
+  - Landing: `landing-page.spec.ts` 24/24, then 72/72 with `--repeat-each=3`, on this branch's worktree build — the 4
+    ask-korume timeouts do not reproduce; no landing fix here.
+  - Full gates after the last product edit before S6: vitest 514 files / 4591 tests; full default e2e 116 passed,
+    1 failed = `shadowing-explore` at 1024px (Enter on the card before the dialog opens under parallel load), 12/12
+    alone with `--repeat-each=3` — the known parallel-load flake family (2026-09-25), untouched by this branch.
+  - LIVE GEMINI SMOKE (owner-approved, synthetic fixture data only): `tests/e2e/korume.live.spec.ts`. First run
+    FAILED — a real defect: every Ask Korume answer through Gemini was `provider_error` (HTTP 400 INVALID_ARGUMENT).
+    Root cause, bisected with probes: Gemini rejects a `maxItems` array nested in a `maxItems` array
+    (answer `blocks[].runs[]`); removing any `maxItems` is accepted. Fix in the Gemini adapter (one place, every
+    structured caller): `responseJsonSchema` is sent without `maxItems`; the zod parse still enforces it. Unit test RED
+    first; then the live smoke passed twice: 2 turns each with exactly one plan + one answer success, one settled
+    reservation, one charge; rail "Seen N" = SQL oracle; a double POST of one turnId → one answer, one reservation.
+    Anthropic (production) is unaffected; Ask Korume had never answered on Gemini before this.
 
 ## Working tree and environment
 

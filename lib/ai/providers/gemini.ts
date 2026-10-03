@@ -78,6 +78,21 @@ function mapError(err: unknown): AiError {
   });
 }
 
+/**
+ * The JSON Schema sent as `responseJsonSchema`, minus every `maxItems`: Gemini answers 400 INVALID_ARGUMENT to a
+ * bounded array nested in a bounded array (measured on gemini-3.1-flash-lite 2026-10-04 with Ask Korume's answer
+ * schema; any one `maxItems` removed and it is accepted). The bound is not lost — {@link parseStructured} validates
+ * the response against the full zod schema, so an overlong array is still refused as `invalid_output`.
+ */
+function toResponseJsonSchema(schema: z.ZodType): unknown {
+  const strip = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(strip);
+    if (!node || typeof node !== "object") return node;
+    return Object.fromEntries(Object.entries(node).filter(([key]) => key !== "maxItems").map(([key, value]) => [key, strip(value)]));
+  };
+  return strip(z.toJSONSchema(schema));
+}
+
 /** Parses and validates a Gemini structured-output response against `schema`. */
 function parseStructured<T>(text: string | undefined, schema: z.ZodType<T>): T {
   if (text == null) {
@@ -157,7 +172,7 @@ export function createGeminiProvider(cfg: {
             // reroute. Passing it here directly avoids relying on that
             // undocumented behavior. `responseSchema` must stay omitted: the
             // SDK requires exactly one of the two.
-            responseJsonSchema: z.toJSONSchema(schema),
+            responseJsonSchema: toResponseJsonSchema(schema),
           },
         });
         const parsed = parseStructured(response.text, schema);
