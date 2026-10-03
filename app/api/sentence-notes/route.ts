@@ -1,19 +1,16 @@
 import { NextResponse } from "next/server";
-import { sentenceNoteBodySchema, sentenceNoteKeySchema } from "@/lib/validation/notes";
+import { SENTENCE_NOTE_MAX_BYTES, sentenceNoteBodySchema, sentenceNoteKeySchema } from "@/lib/validation/notes";
 import { deleteSentenceNote, setSentenceNote, type NoteWriteResult } from "@/lib/data/notes";
+import { readJsonBody } from "@/lib/http/read-json-body";
 
 const OPAQUE_ERROR = "Something went wrong. Please try again.";
 
 async function handle(request: Request, save: boolean): Promise<NextResponse> {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const body = await readJsonBody(request, SENTENCE_NOTE_MAX_BYTES);
+  if (!body.ok) return NextResponse.json({ error: body.status === 413 ? "Payload too large" : "Invalid JSON" }, { status: body.status });
   const parsed = save
-    ? sentenceNoteBodySchema.safeParse(body)
-    : sentenceNoteKeySchema.transform((key) => ({ ...key, body: null })).safeParse(body);
+    ? sentenceNoteBodySchema.safeParse(body.value)
+    : sentenceNoteKeySchema.transform((key) => ({ ...key, body: null })).safeParse(body.value);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
   const { transcriptLineId, body: note } = parsed.data;
   try {

@@ -30,7 +30,7 @@ export type ImportResult =
       counts: { jmdict: number; kanjidic: number; kanjivg: number; kanjiWords: number };
     };
 
-/** The staging snapshot is kept for diagnosis; the active snapshot was never touched. */
+/** The staging snapshot is kept for diagnosis (`npm run dict:gc` purges it after a day); the active one was never touched. */
 export class StagingImportError extends Error {
   constructor(
     readonly snapshotId: string | null,

@@ -33,14 +33,13 @@ describe("KorumeChatRoute", () => {
     mocks.getThread.mockResolvedValueOnce({ kind: "ok", detail }).mockResolvedValueOnce({ kind: "not_found" });
     mocks.listThreads.mockResolvedValue({ kind: "ok", threads: [], nextCursor: null }); mocks.memory.mockResolvedValue(null);
     const element = await KorumeChatRoute({ ...request, searchParams: { thread: ID } });
-    // Next keys a page without its search params; the key is what remounts the conversation per thread.
-    expect(element.key).toBe("a");
+    // Not keyed on the server: KorumeChatPage keys its own conversation (a free chat's new thread must not remount).
+    expect(element.key).toBeNull();
     render(element);
     // The real props object, as React would hand it across the RSC boundary: a function here blanks the page.
     expect(() => structuredClone(mocks.props.at(-1))).not.toThrow();
     expect(mocks.props.at(-1)).toMatchObject({ detail, notFound: false });
     const gone = await KorumeChatRoute({ ...request, searchParams: { thread: GONE } });
-    expect(gone.key).toBe(`new:${GONE}`);
     render(gone);
     expect(JSON.parse(screen.getAllByTestId("props").at(-1)?.textContent ?? "{}")).toMatchObject({ detail: null, notFound: true });
   });

@@ -123,6 +123,13 @@ describe("getLineAnalysisForLearner", () => {
     expect(dictQueries).toHaveLength(dictionaryReads);
   });
 
+  it("re-analyses a line when its text changes despite retaining its id", async () => {
+    await staticAnalyses(createClient(), [{ id: LINE_ID, textJp: TEXT }]);
+    const changed = (await staticAnalyses(createClient(), [{ id: LINE_ID, textJp: "食べる" }])).get(LINE_ID);
+    expect(changed?.tokens.map((token) => token.surface).join("")).toBe("食べる");
+    expect(tokenize).toHaveBeenCalledTimes(2);
+  });
+
   it("joins mastery per request and never stores it in the shared analysis", async () => {
     mastery = { "v-taberu": 3 };
     const a = await getLineAnalysisForLearner(LINE_ID);

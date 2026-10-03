@@ -34,7 +34,9 @@ describe("/api/dictionary/gloss", () => {
     vi.mocked(requestGloss).mockResolvedValueOnce({ kind: "unavailable" });
     expect((await post({ entryId: 1 })).status).toBe(503);
     vi.mocked(requestGloss).mockResolvedValueOnce({ kind: "rate_limited", retryAfter: 2_000 });
-    expect((await post({ entryId: 1 })).headers.get("Retry-After")).toBe("2");
+    const limited = await post({ entryId: 1 });
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("Retry-After")).toBe("2");
     vi.mocked(getGloss).mockResolvedValueOnce({ kind: "not_found" });
     expect((await get("?entryId=1")).status).toBe(404);
     vi.mocked(getGloss).mockResolvedValueOnce({ kind: "unauthorized" });

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DELETE, PUT } from "./route";
 import { deleteSentenceNote, setSentenceNote } from "@/lib/data/notes";
+import { SENTENCE_NOTE_MAX_BYTES } from "@/lib/validation/notes";
 
 vi.mock("@/lib/data/notes", () => ({ setSentenceNote: vi.fn(), deleteSentenceNote: vi.fn() }));
 
@@ -12,6 +13,17 @@ const request = (method: string, body?: unknown) => new Request("http://localhos
 beforeEach(() => vi.clearAllMocks());
 
 describe("/api/sentence-notes", () => {
+  it("refuses oversized save and delete bodies before they reach the data layer", async () => {
+    const save = await PUT(request("PUT", { transcriptLineId: LINE_ID, body: "x".repeat(SENTENCE_NOTE_MAX_BYTES) }));
+    expect(save.status).toBe(413);
+    await expect(save.json()).resolves.toEqual({ error: "Payload too large" });
+    const remove = await DELETE(request("DELETE", { transcriptLineId: LINE_ID, ignored: "x".repeat(SENTENCE_NOTE_MAX_BYTES) }));
+    expect(remove.status).toBe(413);
+    await expect(remove.json()).resolves.toEqual({ error: "Payload too large" });
+    expect(setSentenceNote).not.toHaveBeenCalled();
+    expect(deleteSentenceNote).not.toHaveBeenCalled();
+  });
+
   it("rejects malformed JSON and invalid bodies", async () => {
     const malformed = await PUT(new Request("http://localhost/api/sentence-notes", { method: "PUT", body: "{" }));
     expect(malformed.status).toBe(400);

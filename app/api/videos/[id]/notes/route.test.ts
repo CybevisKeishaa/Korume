@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DELETE, PUT } from "./route";
 import { deleteLessonNote, setLessonNote } from "@/lib/data/notes";
+import { LESSON_NOTE_MAX_BYTES } from "@/lib/validation/notes";
 
 vi.mock("@/lib/data/notes", () => ({ setLessonNote: vi.fn(), deleteLessonNote: vi.fn() }));
 
@@ -13,6 +14,14 @@ const params = (id = VIDEO_ID) => ({ params: { id } });
 beforeEach(() => vi.clearAllMocks());
 
 describe("/api/videos/[id]/notes", () => {
+  it("refuses an oversized body before it reaches the data layer", async () => {
+    const response = await PUT(request("PUT", { body: "x".repeat(LESSON_NOTE_MAX_BYTES) }), params());
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({ error: "Payload too large" });
+    expect(setLessonNote).not.toHaveBeenCalled();
+    expect(deleteLessonNote).not.toHaveBeenCalled();
+  });
+
   it("rejects a bad id, malformed JSON and invalid bodies", async () => {
     expect((await PUT(request("PUT", { body: "a" }), params("nope"))).status).toBe(400);
     expect((await DELETE(request("DELETE"), params("nope"))).status).toBe(400);

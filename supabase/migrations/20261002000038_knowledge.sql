@@ -46,6 +46,8 @@ create table ai_reservations (
   period_month date not null,
   created_at timestamptz not null default now(),
   closed_at timestamptz,
+  expired_at timestamptz,
+  late_spent_at timestamptz,
   check ((billing_scope = 'system') = (entitlement_kind is null))
 );
 create index ai_reservations_user_day on ai_reservations (requested_by_user_id, period_day, status);
@@ -195,8 +197,10 @@ end $$;
 create function ai_release_expired() returns void
 language plpgsql security definer set search_path = public as $$
 begin
+  -- Every ai_reserve sweeps; different learners are not serialised by the user lock, so two sweepers can deadlock on expired rows; one sweeper at a time preserves user → sweep → reservations → budget order.
+  perform pg_advisory_xact_lock(hashtext('ai-release-expired'));
   with expired as (
-    update ai_reservations set status = 'released', closed_at = now()
+    update ai_reservations set status = 'released', closed_at = now(), expired_at = now()
     where status = 'held' and expires_at < now()
     returning period_day, reserved_usd
   ), per_day as (
@@ -206,8 +210,22 @@ begin
   from per_day where b.period_day = per_day.period_day;
 end $$;
 
+-- The cost of a call whose hold expired before it finished: spent once, on the hold's day.
+create function ai_record_late_spend(p_reservation uuid, p_usd numeric) returns void
+language plpgsql security definer set search_path = public as $$
+declare v_day date;
+begin
+  if coalesce(p_usd, 0) <= 0 then return; end if;
+  update ai_reservations set late_spent_at = now()
+    where id = p_reservation and status = 'released' and expired_at is not null and late_spent_at is null
+    returning period_day into v_day;
+  if not found then return; end if;
+  update ai_budget_days set spent_usd = spent_usd + p_usd where period_day = v_day;
+end $$;
+
 -- One transaction: global budget, then the learner's Free slot or Plus fuse/credits, then the hold.
--- p_limits: { globalUsdPerDay, freeSentencesPerDay, plusMaxSectionsPerDay, plusCreditsPerMonth }.
+-- p_limits: { globalUsdPerDay, freeSentencesPerDay, plusMaxSectionsPerDay, plusCreditsPerMonth,
+--             systemGenerationsPerUserPerDay? }.
 -- A Free sentence that already holds today's slot gets 'already_charged' WITH a reservation: the
 -- generation still holds global budget, and settle's charge insert dedupes on the partial unique index.
 create function ai_reserve(p_requested_by uuid, p_billing_scope text, p_entitlement_kind text, p_fingerprint text,
@@ -228,7 +246,7 @@ begin
   if p_billing_scope = 'learner' and (p_requested_by is null or p_entitlement_kind is null) then
     raise exception 'learner reservations need a user and an entitlement kind' using errcode = 'check_violation';
   end if;
-  if p_billing_scope = 'learner' then
+  if p_billing_scope = 'learner' or (p_billing_scope = 'system' and p_requested_by is not null) then
     -- Serialises one learner's reservations; different learners only meet at the budget row.
     perform pg_advisory_xact_lock(hashtext('ai-user:' || p_requested_by::text));
   end if;
@@ -247,6 +265,17 @@ begin
   if v_budget.reserved_usd + v_budget.spent_usd + p_reserved_usd > (p_limits->>'globalUsdPerDay')::numeric then
     return query select null::uuid, 'budget_exhausted'::text, v_next_day;
     return;
+  end if;
+
+  if p_billing_scope = 'system' and p_requested_by is not null then
+    select count(*) into v_count from ai_reservations r
+    where r.requested_by_user_id = p_requested_by and r.period_day = v_day and r.billing_scope = 'system'
+      -- A hold that expired before its call finished was still spent (late_spent_at): it counts.
+      and (r.status in ('held', 'settled') or r.late_spent_at is not null);
+    if v_count >= coalesce((p_limits->>'systemGenerationsPerUserPerDay')::int, 2147483647) then
+      return query select null::uuid, 'quota_exhausted'::text, v_next_day;
+      return;
+    end if;
   end if;
 
   if p_billing_scope = 'learner' and p_entitlement_kind = 'free_sentence' then
@@ -331,7 +360,10 @@ begin
   update ai_reservations set status = 'settled', closed_at = now()
     where id = p_reservation and status = 'held'
     returning * into v_res;
-  if not found then return false; end if;
+  if not found then
+    perform ai_record_late_spend(p_reservation, p_actual_usd);
+    return false;
+  end if;
   update ai_budget_days
     set reserved_usd = greatest(reserved_usd - v_res.reserved_usd, 0), spent_usd = spent_usd + p_actual_usd
     where period_day = v_res.period_day;
@@ -356,7 +388,10 @@ begin
   update ai_reservations set status = 'released', closed_at = now()
     where id = p_reservation and status = 'held'
     returning * into v_res;
-  if not found then return false; end if;
+  if not found then
+    perform ai_record_late_spend(p_reservation, p_spent_usd);
+    return false;
+  end if;
   update ai_budget_days
     set reserved_usd = greatest(reserved_usd - v_res.reserved_usd, 0), spent_usd = spent_usd + p_spent_usd
     where period_day = v_res.period_day;
@@ -389,6 +424,7 @@ revoke all on function knowledge_fail(uuid, uuid, text, timestamptz) from public
 revoke all on function ai_release_expired() from public, anon, authenticated;
 revoke all on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) from public, anon, authenticated;
 revoke all on function ai_record_generation(jsonb) from public, anon, authenticated;
+revoke all on function ai_record_late_spend(uuid, numeric) from public, anon, authenticated;
 revoke all on function ai_settle(uuid, uuid, int, numeric) from public, anon, authenticated;
 revoke all on function ai_release(uuid, numeric) from public, anon, authenticated;
 revoke all on function ai_usage_snapshot(uuid, date, date) from public, anon, authenticated;
@@ -399,6 +435,7 @@ grant execute on function knowledge_fail(uuid, uuid, text, timestamptz) to servi
 grant execute on function ai_release_expired() to service_role;
 grant execute on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) to service_role;
 grant execute on function ai_record_generation(jsonb) to service_role;
+grant execute on function ai_record_late_spend(uuid, numeric) to service_role;
 grant execute on function ai_settle(uuid, uuid, int, numeric) to service_role;
 grant execute on function ai_release(uuid, numeric) to service_role;
 grant execute on function ai_usage_snapshot(uuid, date, date) to service_role;

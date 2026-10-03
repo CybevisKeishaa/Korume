@@ -26,6 +26,7 @@ round() { # <worker file> [extra psql -v args...]; worker i also gets -v i=<i>
 }
 
 "${P[@]}" -f "$dir/setup.sql"
+round expiry-worker.sql
 round lease-worker.sql
 round plus-worker.sql -v case=b -v email=knowledgegate-race-plus-b@example.invalid -v fuse=5 -v credits=1000000 -v reserve_credits=1
 round plus-worker.sql -v case=c -v email=knowledgegate-race-plus-c@example.invalid -v fuse=200 -v credits=10 -v reserve_credits=3
@@ -33,4 +34,5 @@ round plus-worker.sql -v case=c -v email=knowledgegate-race-plus-c@example.inval
 round budget-worker.sql
 round free-worker.sql -v case=e1 -v email=knowledgegate-race-free-a@example.invalid -v same=1
 round free-worker.sql -v case=e2 -v email=knowledgegate-race-free-b@example.invalid -v same=0
+round system-worker.sql
 "${P[@]}" -f "$dir/assert.sql"

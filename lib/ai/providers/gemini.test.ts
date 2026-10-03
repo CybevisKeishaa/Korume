@@ -89,6 +89,24 @@ describe("gemini adapter", () => {
     expect(generateContent.mock.calls[0]?.[0].config.responseSchema).toBeUndefined();
   });
 
+  it("never sends maxItems — Gemini 400s on nested bounded arrays — while the zod parse still enforces the bound", async () => {
+    const schema = z.object({ blocks: z.array(z.object({ runs: z.array(z.string()).min(1).max(2) })).min(1).max(2) });
+    generateContent.mockResolvedValue({ text: JSON.stringify({ blocks: [{ runs: ["a", "b", "c"] }] }) });
+    const provider = createGeminiProvider(cfg);
+    await expect(provider.generateStructured(req, schema)).rejects.toMatchObject({ kind: "invalid_output" });
+    const sent = JSON.stringify(generateContent.mock.calls[0]?.[0].config.responseJsonSchema);
+    expect(sent).not.toContain("maxItems");
+    expect(sent).toContain("minItems"); // only the bound Gemini rejects is dropped
+  });
+
+  it("keeps a property that happens to be named maxItems — only the keyword is stripped", async () => {
+    generateContent.mockResolvedValue({ text: JSON.stringify({ maxItems: 3 }) });
+    await createGeminiProvider(cfg).generateStructured(req, z.object({ maxItems: z.number() }));
+    const sent = generateContent.mock.calls[0]?.[0].config.responseJsonSchema as { properties: object; required: string[] };
+    expect(sent.properties).toHaveProperty("maxItems");
+    expect(sent.required).toContain("maxItems");
+  });
+
   it("maps a 429 onto the shared rate_limited kind", async () => {
     generateContent.mockRejectedValue(apiError(429));
     await expect(createGeminiProvider(cfg).generateText(req)).rejects.toMatchObject({

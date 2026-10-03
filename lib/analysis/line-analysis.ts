@@ -129,11 +129,11 @@ export async function staticAnalyses(
     getActiveSnapshotId(),
     scope === "full" ? grammarPatterns(supabase, now) : Promise.resolve(null),
   ]);
-  const keyOf = (lineId: string) => `${scope}|${lineId}|${snapshotId ?? "none"}|${grammar?.revision ?? ""}`;
+  const keyOf = (line: LineText) => `${scope}|${line.id}|${snapshotId ?? "none"}|${grammar?.revision ?? ""}|${line.textJp}`;
   const result = new Map<string, StaticLineAnalysis | LexicalLineAnalysis>();
   const misses: LineText[] = [];
   for (const line of lines) {
-    const hit = memo.get(keyOf(line.id));
+    const hit = memo.get(keyOf(line));
     if (hit) result.set(line.id, hit);
     else misses.push(line);
   }
@@ -173,7 +173,7 @@ export async function staticAnalyses(
       ? { lineId: line.id, snapshotId, tokens: analysisTokens, grammar: matchGrammar(analysisTokens, grammar.patterns) }
       : { lineId: line.id, snapshotId, tokens: analysisTokens };
     if (memo.size >= MEMO_LIMIT) memo.delete(memo.keys().next().value ?? "");
-    memo.set(keyOf(line.id), analysis);
+    memo.set(keyOf(line), analysis);
     result.set(line.id, analysis);
   }
   return result;
