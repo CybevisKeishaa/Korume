@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { creditsFor, estimateCostUsd, upperBoundCostUsd } from "./pricing";
+import { creditsFor, estimateCostUsd, upperBoundCostUsd, upperBoundCostUsdForTier } from "./pricing";
 
 describe("pricing", () => {
   it("prices Claude Haiku 4.5 per million tokens, cache reads separately", () => {
@@ -24,6 +24,19 @@ describe("pricing", () => {
 
   it("bounds a call by its full input and its maximum output", () => {
     expect(upperBoundCostUsd("anthropic", 3000, 800)).toBeCloseTo((3000 * 1 + 800 * 5) / 1_000_000, 10);
+  });
+
+  it("bounds each tier with its provider model price", () => {
+    expect(upperBoundCostUsdForTier("anthropic", "deep", 1_000_000, 1_000_000)).toBe(30);
+    expect(upperBoundCostUsdForTier("anthropic", "fast", 1_000_000, 0)).toBe(1);
+    expect(upperBoundCostUsdForTier("gemini", "deep", 1_000_000, 1_000_000)).toBe(0);
+    expect(upperBoundCostUsd("anthropic", 1_000_000, 0)).toBe(1);
+  });
+
+  it("prices Opus 4.8 actual input, output and cache reads", () => {
+    expect(estimateCostUsd("claude-opus-4-8", {
+      inputTokens: 1_000_000, outputTokens: 1_000_000, cacheReadTokens: 1_000_000,
+    })).toBe(30.5);
   });
 
   it.each([

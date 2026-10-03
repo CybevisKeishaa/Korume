@@ -2,8 +2,12 @@
 
 -- Single-session Ask Korume gate. All fixtures use korumegate-* identities.
 delete from ai_generations where model = 'korumegate-fixture';
+delete from ai_usage_charges where fingerprint like 'korumegate-ent-%';
+delete from ai_reservations where fingerprint like 'korumegate-ent-%';
 delete from videos where title like 'korumegate-%';
 delete from auth.users where email like 'korumegate-%@example.invalid';
+insert into ai_budget_days (period_day) values ((now() at time zone 'utc')::date) on conflict do nothing;
+create temp table korumegate_budget as select * from ai_budget_days where period_day = (now() at time zone 'utc')::date;
 
 -- 1. Existing scenario sessions remain valid after the discriminator is added.
 do $$
@@ -216,38 +220,38 @@ do $$
 declare v_thread uuid; v_scenario uuid; v_changed int;
 begin
   select id into v_thread from conversation_sessions where title = 'A' and kind = 'ask_korume';
-  if v_thread is null then raise exception 'FAIL 8 setup: Ask Korume thread is not readable'; end if;
+  if v_thread is null then raise exception 'FAIL 7a setup: Ask Korume thread is not readable'; end if;
   begin
     insert into conversation_sessions (user_id, kind) values (auth.uid(), 'ask_korume');
-    raise exception 'FAIL 8a: learner created an Ask Korume thread directly';
+    raise exception 'FAIL 7a: learner created an Ask Korume thread directly';
   exception when insufficient_privilege then null;
   end;
   begin
     insert into conversation_messages (session_id, role, content, content_json, content_schema_version)
       values (v_thread, 'ai', 'forged', '{"blocks":[]}', 1);
-    raise exception 'FAIL 8b: learner forged an assistant message';
+    raise exception 'FAIL 7b: learner forged an assistant message';
   exception when insufficient_privilege then null;
   end;
   update conversation_sessions set title = 'forged' where id = v_thread;
   get diagnostics v_changed = row_count;
-  if v_changed <> 0 then raise exception 'FAIL 8c: learner changed an Ask Korume thread'; end if;
+  if v_changed <> 0 then raise exception 'FAIL 7c: learner changed an Ask Korume thread'; end if;
   update conversation_messages set role = 'ai' where session_id = v_thread;
   get diagnostics v_changed = row_count;
-  if v_changed <> 0 then raise exception 'FAIL 8d: learner changed an Ask Korume message'; end if;
+  if v_changed <> 0 then raise exception 'FAIL 7d: learner changed an Ask Korume message'; end if;
   delete from conversation_messages where session_id = v_thread;
   get diagnostics v_changed = row_count;
-  if v_changed <> 0 then raise exception 'FAIL 8e: learner deleted an Ask Korume message directly'; end if;
+  if v_changed <> 0 then raise exception 'FAIL 7e: learner deleted an Ask Korume message directly'; end if;
   insert into conversation_sessions (user_id) values (auth.uid()) returning id into v_scenario;
   insert into conversation_messages (session_id, role, content) values (v_scenario, 'user', 'scenario');
   begin
     update conversation_sessions set kind = 'ask_korume' where id = v_scenario;
-    raise exception 'FAIL 8f: learner changed a scenario into an Ask Korume thread';
+    raise exception 'FAIL 7f: learner changed a scenario into an Ask Korume thread';
   exception when insufficient_privilege then null;
   end;
   if (select count(*) from conversation_messages where session_id = v_scenario) <> 1 then
-    raise exception 'FAIL 8g: scenario writes were blocked';
+    raise exception 'FAIL 7g: scenario writes were blocked';
   end if;
-  raise notice 'PASS 8 direct Ask Korume writes blocked; scenario writes preserved';
+  raise notice 'PASS 7a direct Ask Korume writes blocked; scenario writes preserved';
 end $$;
 commit;
 
@@ -269,6 +273,176 @@ begin
   raise notice 'PASS 7 memory erasure removes only the caller''s Korume chat';
 end $$;
 
+-- 8–13. Per-turn entitlement. Each case has its own learner so previous held rows cannot mask its result.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+select gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+  'korumegate-' || name || '@example.invalid', crypt('password123', gen_salt('bf')), now(), now(), now(),
+  '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
+from unnest(array['ent-free', 'ent-expired', 'ent-fuse', 'ent-pool-a', 'ent-pool-b', 'ent-turn', 'ent-complete']) as name;
+
+create or replace function pg_temp.korume_limits(p_free int default 10, p_plus int default 100,
+  p_credits int default 1000) returns jsonb language sql as $$
+  select jsonb_build_object('globalUsdPerDay', 1000000, 'freeSentencesPerDay', 3,
+    'plusMaxSectionsPerDay', 200, 'plusCreditsPerMonth', p_credits,
+    'askKorumeFreeTurnsPerDay', p_free, 'askKorumePlusTurnsPerDay', p_plus)
+$$;
+
+-- 8. Free counts turns, even when their fingerprints repeat; released holds restore a slot.
+do $$
+declare r record; first_id uuid; today date := (now() at time zone 'utc')::date;
+begin
+  for i in 1..10 loop
+    select * into r from ai_reserve(pg_temp.kgate_user('ent-free'), 'learner', 'korume_free_turn',
+      'korumegate-ent-free', 0, 0.01, pg_temp.korume_limits(), 120, gen_random_uuid());
+    if r.outcome <> 'reserved' then raise exception 'FAIL 8: turn % yielded %', i, r.outcome; end if;
+    if i = 1 then first_id := r.reservation_id; end if;
+  end loop;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-free'), 'learner', 'korume_free_turn',
+    'korumegate-ent-free', 0, 0.01, pg_temp.korume_limits(), 120, gen_random_uuid());
+  if r.outcome <> 'quota_exhausted' or r.resets_at is distinct from ((today + 1)::timestamp at time zone 'utc') then
+    raise exception 'FAIL 8: Free limit or UTC reset incorrect: %, %', r.outcome, r.resets_at;
+  end if;
+  perform ai_release(first_id);
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-free'), 'learner', 'korume_free_turn',
+    'korumegate-ent-free', 0, 0.01, pg_temp.korume_limits(), 120, gen_random_uuid());
+  if r.outcome <> 'reserved' then raise exception 'FAIL 8: released slot still counted (%)', r.outcome; end if;
+  raise notice 'PASS 8 Free per-turn quota and UTC reset';
+end $$;
+
+-- 9. ai_reserve reclaims expired holds before counting the Free limit.
+do $$
+declare r record;
+begin
+  for i in 1..10 loop
+    select * into r from ai_reserve(pg_temp.kgate_user('ent-expired'), 'learner', 'korume_free_turn',
+      'korumegate-ent-expired', 0, 0.01, pg_temp.korume_limits(), 120, gen_random_uuid());
+    if r.outcome <> 'reserved' then raise exception 'FAIL 9 setup: %', r.outcome; end if;
+    update ai_reservations set expires_at = now() - interval '1 second' where id = r.reservation_id;
+  end loop;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-expired'), 'learner', 'korume_free_turn',
+    'korumegate-ent-expired', 0, 0.01, pg_temp.korume_limits(), 120, gen_random_uuid());
+  if r.outcome <> 'reserved' or (select count(*) from ai_reservations
+      where requested_by_user_id = pg_temp.kgate_user('ent-expired') and status = 'released') <> 10 then
+    raise exception 'FAIL 9: expired holds ate quota (%)', r.outcome;
+  end if;
+  raise notice 'PASS 9 expired holds do not eat the Free day';
+end $$;
+
+-- 10. Plus has its own turn fuse; Knowledge sections do not enter that count.
+do $$
+declare r record;
+begin
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-fuse'), 'learner', 'plus_section',
+    'korumegate-ent-section', 1, 0.01, pg_temp.korume_limits(10, 2), 120);
+  if r.outcome <> 'reserved' then raise exception 'FAIL 10 section setup: %', r.outcome; end if;
+  for i in 1..3 loop
+    select * into r from ai_reserve(pg_temp.kgate_user('ent-fuse'), 'learner', 'korume_plus_turn',
+      'korumegate-ent-fuse', 1, 0.01, pg_temp.korume_limits(10, 2), 120, gen_random_uuid());
+    if r.outcome is distinct from (case when i <= 2 then 'reserved' else 'fuse_tripped' end) then
+      raise exception 'FAIL 10: turn % yielded %', i, r.outcome;
+    end if;
+  end loop;
+  raise notice 'PASS 10 Plus turn fuse excludes Knowledge sections';
+end $$;
+
+-- 11. Settled credits from either paid kind reduce the other's monthly capacity.
+do $$
+declare r record; snap jsonb; day date := (now() at time zone 'utc')::date;
+  month date := date_trunc('month', now() at time zone 'utc')::date;
+begin
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-pool-a'), 'learner', 'plus_section',
+    'korumegate-ent-pool-a', 6, 0.01, pg_temp.korume_limits(10, 100, 10), 120);
+  if r.outcome <> 'reserved' or not ai_settle(r.reservation_id, null, 6, 0.01) then
+    raise exception 'FAIL 11a setup: Plus section did not settle';
+  end if;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-pool-a'), 'learner', 'korume_plus_turn',
+    'korumegate-ent-pool-a', 5, 0.01, pg_temp.korume_limits(10, 100, 10), 120, gen_random_uuid());
+  snap := ai_usage_snapshot(pg_temp.kgate_user('ent-pool-a'), day, month);
+  if r.outcome <> 'credits_exhausted' or (snap->>'plusCreditsUsed')::int <> 6 then
+    raise exception 'FAIL 11a: shared pool % / %', r.outcome, snap;
+  end if;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-pool-b'), 'learner', 'korume_plus_turn',
+    'korumegate-ent-pool-b', 6, 0.01, pg_temp.korume_limits(10, 100, 10), 120, gen_random_uuid());
+  if r.outcome <> 'reserved' or not ai_settle(r.reservation_id, null, 6, 0.01) then
+    raise exception 'FAIL 11b setup: Korume turn did not settle';
+  end if;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-pool-b'), 'learner', 'plus_section',
+    'korumegate-ent-pool-b', 5, 0.01, pg_temp.korume_limits(10, 100, 10), 120);
+  snap := ai_usage_snapshot(pg_temp.kgate_user('ent-pool-b'), day, month);
+  if r.outcome <> 'credits_exhausted' or (snap->>'plusCreditsUsed')::int <> 6
+    or (snap->>'askKorumeTurnsUsed')::int <> 1 then
+    raise exception 'FAIL 11b: shared pool % / %', r.outcome, snap;
+  end if;
+  raise notice 'PASS 11 Plus credit pool is shared both ways';
+end $$;
+
+-- 12. A turn reserves the budget once. A release allows a new attempt with that turn ID.
+do $$
+declare r record; first_id uuid; turn uuid := gen_random_uuid(); before_usd numeric; after_usd numeric;
+begin
+  select reserved_usd into before_usd from ai_budget_days where period_day = (now() at time zone 'utc')::date;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-turn'), 'learner', 'korume_free_turn',
+    'korumegate-ent-turn', 0, 0.25, pg_temp.korume_limits(), 120, turn);
+  first_id := r.reservation_id;
+  if r.outcome <> 'reserved' then raise exception 'FAIL 12 setup: %', r.outcome; end if;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-turn'), 'learner', 'korume_free_turn',
+    'korumegate-ent-turn', 0, 0.25, pg_temp.korume_limits(), 120, turn);
+  select reserved_usd into after_usd from ai_budget_days where period_day = (now() at time zone 'utc')::date;
+  if r.outcome <> 'turn_exists' or after_usd - before_usd <> 0.25 then
+    raise exception 'FAIL 12: duplicate turn reserved budget twice: %, %', r.outcome, after_usd - before_usd;
+  end if;
+  perform ai_release(first_id);
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-turn'), 'learner', 'korume_free_turn',
+    'korumegate-ent-turn', 0, 0.25, pg_temp.korume_limits(), 120, turn);
+  if r.outcome <> 'reserved' then raise exception 'FAIL 12: released turn cannot retry (%)', r.outcome; end if;
+  raise notice 'PASS 12 one active reservation and one budget hold per turn';
+end $$;
+
+-- 13. The answer, charge, title and touch are one transaction; a repeated completion is inert.
+do $$
+declare s uuid; t uuid := gen_random_uuid(); r record; answer record; again record; old_update timestamptz;
+  free_s uuid; free_t uuid := gen_random_uuid(); free_r record; free_answer record;
+begin
+  insert into conversation_sessions (user_id, kind) values (pg_temp.kgate_user('ent-complete'), 'ask_korume') returning id into s;
+  insert into conversation_messages (session_id, role, turn_id, content) values (s, 'user', t, 'question');
+  update conversation_sessions set updated_at = now() - interval '1 hour' where id = s;
+  select updated_at into old_update from conversation_sessions where id = s;
+  select * into r from ai_reserve(pg_temp.kgate_user('ent-complete'), 'learner', 'korume_plus_turn',
+    'korumegate-ent-complete-plus', 3, 0.02, pg_temp.korume_limits(), 120, t);
+  if r.outcome <> 'reserved' then raise exception 'FAIL 13 setup: %', r.outcome; end if;
+  select * into answer from korume_complete_turn(s, t, r.reservation_id, null, 3, 0.01,
+    'answer', '{"blocks":[]}', '{"sources":[]}', 'first title');
+  select * into again from korume_complete_turn(s, t, r.reservation_id, null, 3, 0.01,
+    'duplicate', '{"blocks":[]}', '{"sources":[]}', 'second title');
+  if not answer.charged or again.charged or answer.message_id is distinct from again.message_id
+    or (select count(*) from conversation_messages where session_id = s and turn_id = t and role = 'ai') <> 1
+    or (select count(*) from ai_usage_charges where reservation_id = r.reservation_id and credits = 3) <> 1
+    or (select status from ai_reservations where id = r.reservation_id) <> 'settled'
+    or (select title from conversation_sessions where id = s) <> 'first title'
+    or (select updated_at from conversation_sessions where id = s) <= old_update
+    or (select count(*) from conversation_messages where id = answer.message_id
+        and content_schema_version = 1 and grounding_schema_version = 1) <> 1 then
+    raise exception 'FAIL 13: Plus completion or idempotency';
+  end if;
+  insert into conversation_sessions (user_id, kind, title)
+    values (pg_temp.kgate_user('ent-complete'), 'ask_korume', 'saved title') returning id into free_s;
+  insert into conversation_messages (session_id, role, turn_id, content) values (free_s, 'user', free_t, 'question');
+  select * into free_r from ai_reserve(pg_temp.kgate_user('ent-complete'), 'learner', 'korume_free_turn',
+    'korumegate-ent-complete-free', 0, 0.02, pg_temp.korume_limits(), 120, free_t);
+  select * into free_answer from korume_complete_turn(free_s, free_t, free_r.reservation_id, null, 99, 0.01,
+    'free answer', '{"blocks":[]}', '{"sources":[]}', 'new title');
+  if not free_answer.charged or (select credits from ai_usage_charges where reservation_id = free_r.reservation_id) <> 0
+    or (select title from conversation_sessions where id = free_s) <> 'saved title' then
+    raise exception 'FAIL 13: Free completion charged credits or replaced title';
+  end if;
+  raise notice 'PASS 13 atomic and idempotent completion';
+end $$;
+
 delete from ai_generations where model = 'korumegate-fixture';
+delete from ai_usage_charges where fingerprint like 'korumegate-ent-%';
+delete from ai_reservations where fingerprint like 'korumegate-ent-%';
 delete from videos where title like 'korumegate-%';
 delete from auth.users where email like 'korumegate-%@example.invalid';
+update ai_budget_days b set reserved_usd = k.reserved_usd, spent_usd = k.spent_usd
+  from korumegate_budget k where b.period_day = k.period_day;

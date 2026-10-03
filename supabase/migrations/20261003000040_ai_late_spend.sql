@@ -56,7 +56,7 @@ begin
     insert into ai_usage_charges (user_id, entitlement_kind, fingerprint, credits, generation_id, reservation_id,
       period_day, period_month)
     values (v_res.requested_by_user_id, v_res.entitlement_kind, v_res.fingerprint,
-      case when v_res.entitlement_kind = 'plus_section' then greatest(p_actual_credits, 0) else 0 end,
+      case when v_res.entitlement_kind in ('plus_section', 'korume_plus_turn') then greatest(p_actual_credits, 0) else 0 end,
       p_generation, v_res.id, v_res.period_day, v_res.period_month)
     on conflict do nothing;
   end if;

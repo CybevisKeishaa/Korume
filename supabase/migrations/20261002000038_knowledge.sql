@@ -35,7 +35,8 @@ create table ai_reservations (
   id uuid primary key default gen_random_uuid(),
   requested_by_user_id uuid references users (id) on delete set null,
   billing_scope text not null check (billing_scope in ('learner', 'system')),
-  entitlement_kind text check (entitlement_kind in ('free_sentence', 'plus_section')),
+  entitlement_kind text check (entitlement_kind in ('free_sentence', 'plus_section', 'korume_free_turn', 'korume_plus_turn')),
+  turn_id uuid,
   fingerprint text not null,
   reserved_credits int not null default 0 check (reserved_credits >= 0),
   reserved_usd numeric(12, 6) not null check (reserved_usd >= 0),
@@ -49,6 +50,8 @@ create table ai_reservations (
 );
 create index ai_reservations_user_day on ai_reservations (requested_by_user_id, period_day, status);
 create index ai_reservations_held_expiry on ai_reservations (expires_at) where status = 'held';
+create unique index ai_reservations_turn_active on ai_reservations (turn_id)
+  where turn_id is not null and status in ('held', 'settled');
 
 -- Append-only: one row per provider call, failures included.
 create table ai_generations (
@@ -75,7 +78,7 @@ create index ai_generations_turn on ai_generations (turn_id) where turn_id is no
 create table ai_usage_charges (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users (id) on delete cascade,
-  entitlement_kind text not null check (entitlement_kind in ('free_sentence', 'plus_section')),
+  entitlement_kind text not null check (entitlement_kind in ('free_sentence', 'plus_section', 'korume_free_turn', 'korume_plus_turn')),
   fingerprint text not null,
   credits int not null default 0 check (credits >= 0),
   generation_id uuid references ai_generations (id) on delete set null,
@@ -87,7 +90,7 @@ create table ai_usage_charges (
 create unique index ai_usage_charges_free_sentence_once on ai_usage_charges (user_id, period_day, fingerprint)
   where entitlement_kind = 'free_sentence';
 create unique index ai_usage_charges_plus_generation_once on ai_usage_charges (generation_id)
-  where entitlement_kind = 'plus_section';
+  where entitlement_kind in ('plus_section', 'korume_plus_turn');
 create index ai_usage_charges_user_month on ai_usage_charges (user_id, period_month);
 
 -- The hard global budget, one row per UTC day, updated only under its row lock.
@@ -208,7 +211,7 @@ end $$;
 -- A Free sentence that already holds today's slot gets 'already_charged' WITH a reservation: the
 -- generation still holds global budget, and settle's charge insert dedupes on the partial unique index.
 create function ai_reserve(p_requested_by uuid, p_billing_scope text, p_entitlement_kind text, p_fingerprint text,
-  p_reserved_credits int, p_reserved_usd numeric, p_limits jsonb, p_ttl_seconds int)
+  p_reserved_credits int, p_reserved_usd numeric, p_limits jsonb, p_ttl_seconds int, p_turn_id uuid default null)
 returns table (reservation_id uuid, outcome text, resets_at timestamptz)
 language plpgsql security definer set search_path = public as $$
 declare
@@ -231,6 +234,13 @@ begin
   end if;
 
   perform ai_release_expired();
+
+  if p_turn_id is not null and exists (
+    select 1 from ai_reservations r where r.turn_id = p_turn_id and r.status in ('held', 'settled')
+  ) then
+    return query select null::uuid, 'turn_exists'::text, null::timestamptz;
+    return;
+  end if;
 
   insert into ai_budget_days (period_day) values (v_day) on conflict do nothing;
   select * into v_budget from ai_budget_days where period_day = v_day for update;
@@ -255,19 +265,30 @@ begin
         return;
       end if;
     end if;
-  elsif p_billing_scope = 'learner' and p_entitlement_kind = 'plus_section' then
+  elsif p_billing_scope = 'learner' and p_entitlement_kind = 'korume_free_turn' then
     select count(*) into v_count from ai_reservations r
-    where r.requested_by_user_id = p_requested_by and r.period_day = v_day and r.entitlement_kind = 'plus_section'
+    where r.requested_by_user_id = p_requested_by and r.period_day = v_day and r.entitlement_kind = 'korume_free_turn'
       and r.status in ('held', 'settled');
-    if v_count >= (p_limits->>'plusMaxSectionsPerDay')::int then
+    if v_count >= (p_limits->>'askKorumeFreeTurnsPerDay')::int then
+      return query select null::uuid, 'quota_exhausted'::text, v_next_day;
+      return;
+    end if;
+  elsif p_billing_scope = 'learner' and p_entitlement_kind in ('plus_section', 'korume_plus_turn') then
+    select count(*) into v_count from ai_reservations r
+    where r.requested_by_user_id = p_requested_by and r.period_day = v_day and r.entitlement_kind = p_entitlement_kind
+      and r.status in ('held', 'settled');
+    if v_count >= (case when p_entitlement_kind = 'plus_section'
+                        then (p_limits->>'plusMaxSectionsPerDay')::int
+                        else (p_limits->>'askKorumePlusTurnsPerDay')::int end) then
       return query select null::uuid, 'fuse_tripped'::text, v_next_day;
       return;
     end if;
     select coalesce((select sum(c.credits) from ai_usage_charges c
-                     where c.user_id = p_requested_by and c.period_month = v_month and c.entitlement_kind = 'plus_section'), 0)
+                     where c.user_id = p_requested_by and c.period_month = v_month
+                       and c.entitlement_kind in ('plus_section', 'korume_plus_turn')), 0)
          + coalesce((select sum(r.reserved_credits) from ai_reservations r
                      where r.requested_by_user_id = p_requested_by and r.period_month = v_month
-                       and r.entitlement_kind = 'plus_section' and r.status = 'held'), 0)
+                       and r.entitlement_kind in ('plus_section', 'korume_plus_turn') and r.status = 'held'), 0)
       into v_credits;
     if v_credits + p_reserved_credits > (p_limits->>'plusCreditsPerMonth')::int then
       return query select null::uuid, 'credits_exhausted'::text, v_next_month;
@@ -276,10 +297,10 @@ begin
   end if;
 
   insert into ai_reservations (requested_by_user_id, billing_scope, entitlement_kind, fingerprint, reserved_credits,
-    reserved_usd, expires_at, period_day, period_month)
+    reserved_usd, expires_at, period_day, period_month, turn_id)
   values (p_requested_by, p_billing_scope, p_entitlement_kind, p_fingerprint,
-    case when p_entitlement_kind = 'plus_section' then p_reserved_credits else 0 end,
-    p_reserved_usd, now() + make_interval(secs => p_ttl_seconds), v_day, v_month)
+    case when p_entitlement_kind in ('plus_section', 'korume_plus_turn') then p_reserved_credits else 0 end,
+    p_reserved_usd, now() + make_interval(secs => p_ttl_seconds), v_day, v_month, p_turn_id)
   returning id into v_id;
   update ai_budget_days set reserved_usd = reserved_usd + p_reserved_usd where period_day = v_day;
   return query select v_id, v_outcome, null::timestamptz;
@@ -318,7 +339,7 @@ begin
     insert into ai_usage_charges (user_id, entitlement_kind, fingerprint, credits, generation_id, reservation_id,
       period_day, period_month)
     values (v_res.requested_by_user_id, v_res.entitlement_kind, v_res.fingerprint,
-      case when v_res.entitlement_kind = 'plus_section' then greatest(p_actual_credits, 0) else 0 end,
+      case when v_res.entitlement_kind in ('plus_section', 'korume_plus_turn') then greatest(p_actual_credits, 0) else 0 end,
       p_generation, v_res.id, v_res.period_day, v_res.period_month)
     on conflict do nothing;
   end if;
@@ -352,17 +373,21 @@ language sql stable security definer set search_path = public as $$
         and r.status in ('held', 'settled')),
     'plusCreditsUsed', (
       coalesce((select sum(c.credits) from ai_usage_charges c
-                where c.user_id = p_user and c.period_month = p_month and c.entitlement_kind = 'plus_section'), 0)
+                where c.user_id = p_user and c.period_month = p_month
+                  and c.entitlement_kind in ('plus_section', 'korume_plus_turn')), 0)
       + coalesce((select sum(r.reserved_credits) from ai_reservations r
                   where r.requested_by_user_id = p_user and r.period_month = p_month
-                    and r.entitlement_kind = 'plus_section' and r.status = 'held'), 0)))
+                    and r.entitlement_kind in ('plus_section', 'korume_plus_turn') and r.status = 'held'), 0)),
+    'askKorumeTurnsUsed', (
+      select count(*) from ai_reservations r where r.requested_by_user_id = p_user and r.period_day = p_day
+        and r.entitlement_kind in ('korume_free_turn', 'korume_plus_turn') and r.status in ('held', 'settled')))
 $$;
 
 revoke all on function knowledge_claim_lease(jsonb, int) from public, anon, authenticated;
 revoke all on function knowledge_complete(uuid, uuid, jsonb, text, text) from public, anon, authenticated;
 revoke all on function knowledge_fail(uuid, uuid, text, timestamptz) from public, anon, authenticated;
 revoke all on function ai_release_expired() from public, anon, authenticated;
-revoke all on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int) from public, anon, authenticated;
+revoke all on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) from public, anon, authenticated;
 revoke all on function ai_record_generation(jsonb) from public, anon, authenticated;
 revoke all on function ai_settle(uuid, uuid, int, numeric) from public, anon, authenticated;
 revoke all on function ai_release(uuid, numeric) from public, anon, authenticated;
@@ -372,7 +397,7 @@ grant execute on function knowledge_claim_lease(jsonb, int) to service_role;
 grant execute on function knowledge_complete(uuid, uuid, jsonb, text, text) to service_role;
 grant execute on function knowledge_fail(uuid, uuid, text, timestamptz) to service_role;
 grant execute on function ai_release_expired() to service_role;
-grant execute on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int) to service_role;
+grant execute on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) to service_role;
 grant execute on function ai_record_generation(jsonb) to service_role;
 grant execute on function ai_settle(uuid, uuid, int, numeric) to service_role;
 grant execute on function ai_release(uuid, numeric) to service_role;

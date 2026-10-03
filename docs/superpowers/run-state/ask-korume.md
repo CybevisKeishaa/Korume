@@ -43,6 +43,12 @@ Task 0 probe (Claude, 2026-10-03):
 - Task 1 (Codex, 183k tokens; Claude reviewed): `npx supabase db reset` 0; `verify:db:` korume, knowledge, settings,
   lesson-jobs, pronunciation, shadowing, dictionary, notes all 0; live mutation (drop the line-anchor trigger) →
   korume gate red on `span_needs_line`, restored → green. tsc/lint/protocol 0; vitest 483 files / 4365 tests.
+- Task 2 (Codex, 164k tokens, hit its usage limit after writing the report; Claude reviewed): per AGENTS.md §6 the
+  ledger changes are IN PLACE in 038 (`ai_reserve` + `p_turn_id`, kinds, `turn_id` index, snapshot) and 040
+  (`ai_settle`); 042 holds only `korume_complete_turn`. Claude fixed one ambiguous column in
+  `korume-race/assert.sql`. Reset 0; all 8 `verify:db:*` 0 (korume = single-session + 20-connection race). Live
+  mutations each red then restored green: Free `>=`→`>` (case 8), no `ai_release_expired` (9), held turns ignored
+  (12), no per-user advisory lock (race), `ai_settle` skipped (13). tsc/lint/protocol 0; vitest 486 / 4374.
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
@@ -57,5 +63,6 @@ None.
 
 ## Next actions
 
-1. Write Task 2's packet (migration 042 entitlement + `korume_complete_turn` + race gate + pricing/config), hand to
-   Codex (`-m gpt-6-sol`). Plan Correction 10 applies to Task 4.
+1. Task 3 (`companion_enabled` in place in migration 033 per AGENTS.md §6, not a new 043; Settings row; fail-closed
+   `korumeGate()`). Codex quota resets ~14:30 2026-10-03; if still out, Claude implements (memory
+   `codex-limit-claude-continues`). Plan Correction 10 applies to Task 4.

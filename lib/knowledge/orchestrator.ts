@@ -141,6 +141,8 @@ export async function getOrGenerateSection(input: GenerateInput, deps: GenerateD
       freeSentencesPerDay: config.freeSentencesPerDay,
       plusMaxSectionsPerDay: config.plusMaxSectionsPerDay,
       plusCreditsPerMonth: config.plusCreditsPerMonth,
+      askKorumeFreeTurnsPerDay: config.askKorumeFreeTurnsPerDay,
+      askKorumePlusTurnsPerDay: config.askKorumePlusTurnsPerDay,
     },
     ttlSeconds: RESERVATION_TTL_SECONDS,
   });

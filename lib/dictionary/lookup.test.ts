@@ -19,7 +19,7 @@ vi.mock("@/lib/knowledge/orchestrator", async (importOriginal) => {
 });
 
 const AME = { ent_seq: 1141070, kanji_forms: ["雨"], kana_forms: ["あめ"], senses: [{ gloss: ["rain"] }, { gloss: ["rainy day"] }] };
-const CONFIG: KnowledgeConfig = { freeSentencesPerDay: 3, plusCreditsPerMonth: 1000, plusMaxSectionsPerDay: 200, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001 };
+const CONFIG: KnowledgeConfig = { freeSentencesPerDay: 3, plusCreditsPerMonth: 1000, plusMaxSectionsPerDay: 200, askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001 };
 const USAGE = { model: "claude-haiku-4-5", usage: { inputTokens: 100, outputTokens: 20, cacheReadTokens: 0, cacheWriteTokens: 0 } };
 
 let store: MemoryKnowledgeStore;

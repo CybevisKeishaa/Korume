@@ -75,19 +75,23 @@ export type ReserveOutcome =
   | "quota_exhausted"
   | "credits_exhausted"
   | "fuse_tripped"
-  | "budget_exhausted";
+  | "budget_exhausted"
+  | "turn_exists";
 
 export interface ReserveLimits {
   globalUsdPerDay: number;
   freeSentencesPerDay: number;
   plusMaxSectionsPerDay: number;
   plusCreditsPerMonth: number;
+  askKorumeFreeTurnsPerDay: number;
+  askKorumePlusTurnsPerDay: number;
 }
 
 export interface ReserveInput {
   requestedBy: string | null;
   billingScope: "learner" | "system";
-  entitlementKind: "free_sentence" | "plus_section" | null;
+  entitlementKind: "free_sentence" | "plus_section" | "korume_free_turn" | "korume_plus_turn" | null;
+  turnId?: string;
   fingerprint: string;
   reservedCredits: number;
   reservedUsd: number;

@@ -1,4 +1,5 @@
 import type { AiProviderName } from "@/lib/ai/env";
+import type { Tier } from "@/lib/ai/port";
 
 export interface ModelPrice {
   inputPerMTok: number;
@@ -6,14 +7,16 @@ export interface ModelPrice {
   cacheReadPerMTok: number;
 }
 
-/** USD per million tokens, read 2026-10-02 (claude-api skill, cached 2026-09-25). */
+/** USD per million tokens, checked 2026-10-03 (claude-api skill, cached 2026-09-25). */
 const CLAUDE_HAIKU_4_5: ModelPrice = { inputPerMTok: 1, outputPerMTok: 5, cacheReadPerMTok: 0.1 };
+const CLAUDE_OPUS_4_8: ModelPrice = { inputPerMTok: 5, outputPerMTok: 25, cacheReadPerMTok: 0.5 };
 /** Gemini runs only outside production, on its free tier (lib/ai/env.ts forbids it in production). */
 const GEMINI_FREE_TIER: ModelPrice = { inputPerMTok: 0, outputPerMTok: 0, cacheReadPerMTok: 0 };
 
 const MODEL_PRICES: Record<string, ModelPrice> = {
   "claude-haiku-4-5-20251001": CLAUDE_HAIKU_4_5,
   "claude-haiku-4-5": CLAUDE_HAIKU_4_5,
+  "claude-opus-4-8": CLAUDE_OPUS_4_8,
 };
 
 /**
@@ -22,6 +25,10 @@ const MODEL_PRICES: Record<string, ModelPrice> = {
  */
 const FAST_TIER_PRICE: Partial<Record<AiProviderName, ModelPrice>> = {
   anthropic: CLAUDE_HAIKU_4_5,
+  gemini: GEMINI_FREE_TIER,
+};
+const DEEP_TIER_PRICE: Partial<Record<AiProviderName, ModelPrice>> = {
+  anthropic: CLAUDE_OPUS_4_8,
   gemini: GEMINI_FREE_TIER,
 };
 
@@ -44,7 +51,11 @@ export function estimateCostUsd(
 
 /** Every input token uncached and the full output budget spent: what a reservation must hold. */
 export function upperBoundCostUsd(provider: AiProviderName, inputTokens: number, maxOutputTokens: number): number {
-  const price = FAST_TIER_PRICE[provider];
+  return upperBoundCostUsdForTier(provider, "fast", inputTokens, maxOutputTokens);
+}
+
+export function upperBoundCostUsdForTier(provider: AiProviderName, tier: Tier, inputTokens: number, maxOutputTokens: number): number {
+  const price = (tier === "deep" ? DEEP_TIER_PRICE : FAST_TIER_PRICE)[provider];
   if (!price) throw new Error(`no price for provider ${provider}`);
   return (inputTokens * price.inputPerMTok + maxOutputTokens * price.outputPerMTok) / 1_000_000;
 }

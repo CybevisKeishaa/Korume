@@ -22,7 +22,7 @@ vi.mock("@/lib/analysis/line-analysis", () => ({ staticAnalyses: vi.fn() }));
 const USER = { id: "u-know" };
 const LINE_ID = "a0000000-0000-0000-0000-000000000001";
 const TEXT = "𠮷野家で今日は雨です。";
-const CONFIG: KnowledgeConfig = { freeSentencesPerDay: 3, plusCreditsPerMonth: 1000, plusMaxSectionsPerDay: 200, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001 };
+const CONFIG: KnowledgeConfig = { freeSentencesPerDay: 3, plusCreditsPerMonth: 1000, plusMaxSectionsPerDay: 200, askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001 };
 const USAGE = { model: "claude-haiku-4-5", usage: { inputTokens: 400, outputTokens: 300, cacheReadTokens: 0, cacheWriteTokens: 0 } };
 const SENTINEL = "FULL-ONLY-SENTINEL";
 

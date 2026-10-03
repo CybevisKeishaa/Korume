@@ -4,7 +4,7 @@
 
 .DESCRIPTION
   Requires Docker and a running local Supabase stack (`npx supabase start`).
-  Runs supabase/tests/korume.sql in one psql session.
+  Runs supabase/tests/korume.sql, then the twenty-connection turn race.
 #>
 [CmdletBinding()]
 param(
@@ -14,9 +14,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $sqlPath = Join-Path $repoRoot 'supabase/tests/korume.sql'
-if (-not (Test-Path -LiteralPath $sqlPath)) {
-  Write-Output "missing gate input: $sqlPath"
-  exit 1
+$raceDir = Join-Path $repoRoot 'supabase/tests/korume-race'
+foreach ($path in @($sqlPath, $raceDir)) {
+  if (-not (Test-Path -LiteralPath $path)) {
+    Write-Output "missing gate input: $path"
+    exit 1
+  }
 }
 
 if ([string]::IsNullOrWhiteSpace($Container)) {
@@ -39,4 +42,16 @@ if ($LASTEXITCODE -ne 0) {
   exit 1
 }
 
-Write-Output 'Korume: live PostgreSQL gate passed (single-session)'
+& docker exec $Container rm -rf /tmp/korume-race
+& docker cp $raceDir "${Container}:/tmp/korume-race"
+if ($LASTEXITCODE -ne 0) {
+  Write-Output 'FAIL: could not copy the Korume race harness into the container'
+  exit 1
+}
+& docker exec $Container bash -c "tr -d '\r' < /tmp/korume-race/run.sh | bash -s -- /tmp/korume-race"
+if ($LASTEXITCODE -ne 0) {
+  Write-Output "FAIL: Korume race gate exited $LASTEXITCODE"
+  exit 1
+}
+
+Write-Output 'Korume: live PostgreSQL gate passed (single-session + 20-connection race)'
