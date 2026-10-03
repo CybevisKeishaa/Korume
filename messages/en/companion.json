@@ -62,6 +62,14 @@
     "seenCapped": "Seen {count}+ times",
     "signature": "KORUME",
     "messages": "Conversation with Korume",
-    "followups": "Suggested questions"
+    "followups": "Suggested questions",
+    "open": "Ask Korume",
+    "sheet": {
+      "title": "Korume",
+      "expand": "Open full chat",
+      "close": "Close Korume",
+      "askCurrent": "Ask about the current line",
+      "anchor": "Asking about this line"
+    }
   }
 }

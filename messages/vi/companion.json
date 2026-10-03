@@ -62,6 +62,14 @@
     "seenCapped": "Đã gặp {count}+ lần",
     "signature": "KORUME",
     "messages": "Cuộc trò chuyện với Korume",
-    "followups": "Câu hỏi gợi ý"
+    "followups": "Câu hỏi gợi ý",
+    "open": "Hỏi Korume",
+    "sheet": {
+      "title": "Korume",
+      "expand": "Mở trang trò chuyện",
+      "close": "Đóng Korume",
+      "askCurrent": "Hỏi về câu đang phát",
+      "anchor": "Đang hỏi về câu này"
+    }
   }
 }

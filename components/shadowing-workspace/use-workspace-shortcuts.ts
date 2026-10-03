@@ -10,6 +10,8 @@ export interface WorkspaceShortcutActions {
   rewind(seconds: number): void;
   toggleLoop(): void;
   toggleFocus(): void;
+  /** Absent when Korume is turned off: then `k` does nothing at all (Ask Korume spec §6.2). */
+  askKorume?: () => void;
 }
 
 /** Global workspace keys deliberately delegate to the same controller/setters as visible controls. */
@@ -26,6 +28,7 @@ export function useWorkspaceShortcuts(actions: WorkspaceShortcutActions): void {
         case "rewind-5": actions.rewind(5); break;
         case "toggle-loop": actions.toggleLoop(); break;
         case "toggle-focus": actions.toggleFocus(); break;
+        case "ask-korume": if (actions.askKorume && !event.repeat) { event.preventDefault(); actions.askKorume(); } break;
         default: break;
       }
     };

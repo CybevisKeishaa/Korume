@@ -1,4 +1,4 @@
-export type WorkspaceShortcut = "toggle-play" | "previous-sentence" | "next-sentence" | "rewind-5" | "toggle-loop" | "toggle-focus";
+export type WorkspaceShortcut = "toggle-play" | "previous-sentence" | "next-sentence" | "rewind-5" | "toggle-loop" | "toggle-focus" | "ask-korume";
 
 export function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest('input, textarea, select, button, a[href], [role="slider"], [role="separator"], [role="menuitem"], [role="menuitemradio"], [role="option"], [role="dialog"], [role="button"], [role="switch"], [role="tab"], [role="checkbox"], [role="menuitemcheckbox"], [role="combobox"], [role="textbox"], [role="spinbutton"], [contenteditable]:not([contenteditable="false"])') !== null;
@@ -11,5 +11,6 @@ export function shortcutFor(event: Pick<KeyboardEvent, "key" | "shiftKey" | "ctr
   if (event.key === "ArrowRight") return "next-sentence";
   if (event.key.toLocaleLowerCase() === "l") return "toggle-loop";
   if (event.key.toLocaleLowerCase() === "f") return "toggle-focus";
+  if (event.key.toLocaleLowerCase() === "k") return "ask-korume";
   return null;
 }
