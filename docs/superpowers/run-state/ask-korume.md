@@ -149,6 +149,15 @@ Task 0 probe (Claude, 2026-10-03):
   local DB has 0 dict snapshots (no source files on disk to import); 4 `landing-page` time out loading /en (the branch
   touches no landing file) — unverified against master.
   vitest 513 / 4566; tsc/lint/protocol 0.
+- Whole-branch review (Task 11 step 5, Claude, 2026-10-03), `git diff master...ask-korume`: migrations, turn
+  pipeline, store, routes, client hook, sheet, chat page, tools. Three findings, each fixed with a mutation-proven test:
+  (1) Important — persisted grounding was never held to the read-side `groundingSchema` (gloss ≤300, ≤40 entities):
+  one long JMdict gloss or a long line made every card of that answer vanish on reload; `buildGroundedEntities` now
+  clips, filters by `groundedEntitySchema` and caps. (2) Important — before the first line (an intro, index null) the
+  mascot and `k` did nothing; the anchor falls back to the first line, as `nextTarget` does. (3) Minor — the exposure
+  tool's shadowed-line read put up to 3 000 ids in one `in` filter; now `fetchByIdChunks`. Checked and sound: per-user
+  advisory lock serialises `turn_exists`, RLS-first ownership, release on every failure, escaped rendering.
+  vitest 513 / 4569; tsc/lint/protocol 0.
 - Execution model (owner 2026-10-03): Codex is dispatched through Paseo (`paseo run --provider codex --model
   gpt-5.6-terra --mode auto-review`), replacing raw `codex exec -m gpt-6-sol`. Task 10 is split: 10a page/rail/menu,
   10b `/sensei` redirect + persona sweep + docs (packets in `.superpowers/sdd/ask-korume/`).
@@ -164,7 +173,7 @@ None.
 
 ## Next actions
 
-1. Task 11 remaining: ASK THE OWNER before the live Gemini smoke §7.7 (step 4); whole-branch review (step 5); owner
-   Chrome look. Still open: a selection-span anchor e2e; M5 (free-chat URL does not follow its new thread); focus
+1. Task 11 remaining: ASK THE OWNER before the live Gemini smoke §7.7 (step 4); owner Chrome look. Whole-branch
+   review done (above). Still open: a selection-span anchor e2e; M5 (free-chat URL does not follow its new thread); focus
    after a ⋯ thread switch lands on body (m3); landing-page e2e timeouts vs master.
    Plan Correction 11 lists the as-built Task 4 interface.

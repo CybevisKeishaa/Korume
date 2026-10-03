@@ -1,6 +1,7 @@
 import "server-only";
 import { entriesFor, lookupForms, staticAnalyses } from "@/lib/analysis/line-analysis";
 import { getActiveSnapshotId } from "@/lib/dictionary/snapshot";
+import { fetchByIdChunks } from "@/lib/data/query-pagination";
 import type { AnalysisToken } from "@/lib/analysis/types";
 import type { Tool } from "../retrieval";
 
@@ -119,9 +120,13 @@ export const exposureTool: Tool = async (step, ctx) => {
   const extraIds = [...shadowed].filter((id) => !known.has(id));
   const extra: ExposureLine[] = [];
   if (extraIds.length) {
-    const { data, error } = await supabase.from("transcript_lines").select("id, transcript_id, start_time, text_jp").in("id", extraIds.slice(0, EXPOSURE_MAX_LINES));
-    if (error) throw error;
-    for (const l of (data ?? []) as { id: string; transcript_id: string; start_time: number | string; text_jp: string | null }[]) {
+    // Chunked: thousands of ids in one `in` filter overflow the request URL.
+    const lines = await fetchByIdChunks(extraIds.slice(0, EXPOSURE_MAX_LINES), async (ids) => {
+      const { data, error } = await supabase.from("transcript_lines").select("id, transcript_id, start_time, text_jp").in("id", ids);
+      if (error) throw error;
+      return (data ?? []) as { id: string; transcript_id: string; start_time: number | string; text_jp: string | null }[];
+    });
+    for (const l of lines) {
       const videoId = videoOf.get(l.transcript_id);
       if (videoId && l.text_jp) extra.push({ id: l.id, videoId, startTime: Number(l.start_time), textJp: l.text_jp });
     }

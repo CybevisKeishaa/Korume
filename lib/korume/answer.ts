@@ -35,18 +35,23 @@ export const answerV1Schema: z.ZodType<AnswerV1> = z.object({
   ])).min(1).max(12),
 }).strict();
 
-/** Persisted grounding, re-validated on every read so a malformed row can never reach the rail. */
-export const groundingSchema: z.ZodType<GroundedEntity[]> = z.array(z.object({
+export const GLOSS_MAX = 300;
+export const GROUNDING_MAX = 40;
+
+export const groundedEntitySchema: z.ZodType<GroundedEntity> = z.object({
   id: z.string().regex(/^(ent|tok):/).max(120),
   label: z.string().min(1).max(80),
   reading: z.string().max(80).optional(),
   kind: z.enum(["vocabulary", "grammar", "particle"]),
   jlpt: z.enum(["N5", "N4", "N3", "N2", "N1"]).optional(),
-  gloss: z.string().max(300).optional(),
+  gloss: z.string().max(GLOSS_MAX).optional(),
   seenCount: z.number().int().min(0).optional(),
   seenCapped: z.boolean().optional(),
   lessonLink: z.object({ videoId: z.string().uuid(), lineId: z.string().uuid().optional() }).strict().optional(),
-}).strict()).max(40);
+}).strict();
+
+/** Persisted grounding, re-validated on every read so a malformed row can never reach the rail. */
+export const groundingSchema: z.ZodType<GroundedEntity[]> = z.array(groundedEntitySchema).max(GROUNDING_MAX);
 
 /** A context card may only name an entity the server grounded (spec §5.4); anything else is dropped. */
 export function dropUngroundedCards(answer: AnswerV1, grounding: GroundedEntity[]): AnswerV1 {

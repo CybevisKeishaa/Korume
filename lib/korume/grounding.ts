@@ -1,4 +1,5 @@
 import type { DictionaryMatch } from "@/lib/analysis/types";
+import { GLOSS_MAX, GROUNDING_MAX, groundedEntitySchema } from "./answer";
 import type { ToolResult } from "./retrieval";
 import type { ExposureData } from "./tools/exposure";
 import type { GroundedEntity } from "./types";
@@ -68,5 +69,10 @@ export function buildGroundedEntities(results: ToolResult[], readableVideoIds: S
         break;
     }
   }
-  return [...out.values()];
+  // Stored exactly as the read side re-validates it (`groundingSchema`): one entity it would reject drops the whole
+  // array on reload, and with it every card the learner already saw. A long JMdict gloss is clipped, not fatal.
+  return [...out.values()]
+    .map((e) => (e.gloss && e.gloss.length > GLOSS_MAX ? { ...e, gloss: `${e.gloss.slice(0, GLOSS_MAX - 1)}…` } : e))
+    .filter((e) => groundedEntitySchema.safeParse(e).success)
+    .slice(0, GROUNDING_MAX);
 }

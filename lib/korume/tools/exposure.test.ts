@@ -114,6 +114,28 @@ describe("exposureTool", () => {
     expect(result).toMatchObject({ status: "ok", data: { identity: "tok:は:助詞", seenCount: EXPOSURE_MAX_LINES, capped: true } });
   });
 
+  it("reads shadowed lines outside the watched window in chunks, never one oversized id filter", async () => {
+    vi.mocked(getActiveSnapshotId).mockResolvedValue(null);
+    vi.mocked(staticAnalyses).mockResolvedValue(new Map() as never);
+    const shadowed = Array.from({ length: 250 }, (_, i) => ({ transcript_line_id: `s${i}` }));
+    const idFilters: number[] = [];
+    const supabase = createMockSupabase({
+      tables: {
+        user_video_progress: () => ({ data: [{ video_id: "A", last_watched_position: 0, completed_at: null }], error: null }),
+        shadowing_sessions: () => ({ data: shadowed, error: null }),
+        transcript_lines: (c) => {
+          const ids = c.find((q) => q.op === "in" && q.column === "id") as { values: string[] } | undefined;
+          if (ids) idFilters.push(ids.values.length);
+          return { data: [], error: null };
+        },
+      },
+      rpcs: { latest_transcript_ids: () => ({ data: [{ video_id: "A", transcript_id: "tA" }], error: null }) },
+    });
+    const ctx = { supabase, userId: "u1", tier: "free", locale: "en", anchor: null } as unknown as RetrievalContext;
+    await exposureTool({ tool: "learner_exposure", term: "は" }, ctx);
+    expect(idFilters).toEqual([100, 100, 50]);
+  });
+
   it("answers zero without reading lines for a learner with no progress", async () => {
     const supabase = createMockSupabase({ tables: { user_video_progress: () => ({ data: [], error: null }) } });
     const ctx = { supabase, userId: "u1", tier: "free", locale: "en", anchor: null } as unknown as RetrievalContext;

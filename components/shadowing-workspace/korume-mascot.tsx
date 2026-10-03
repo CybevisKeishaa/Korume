@@ -23,7 +23,9 @@ export function useKorumeOverlay(workspaceRef: RefObject<HTMLElement>) {
   const pressedSelection = useRef<ReturnType<typeof selectionToSpan>>(null);
 
   const currentAnchor = useCallback((): DraftAnchor | null => {
-    const line = current.index === null ? undefined : lines[current.index];
+    // Before the first line (an intro) the first line is the one about to play — as `nextTarget` reads it — so the
+    // mascot and `k` never go dead.
+    const line = lines[current.index ?? 0];
     return line ? { videoId: video.id, lineId: line.id, span: null } : null;
   }, [current.index, lines, video.id]);
 

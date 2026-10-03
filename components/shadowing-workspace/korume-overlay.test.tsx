@@ -62,6 +62,14 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     expect(korumeCalls()).toEqual([]);
   });
 
+  it("opens on the first line during an intro, before any line has started", () => {
+    const intro = { ...bootstrap(), transcript: { id: "transcript-1", lines: [{ ...line(1), startTime: 5 }, line(2)] } };
+    render(<ShadowingWorkspaceShell bootstrap={intro}><StoreProbe /><div>transcript</div></ShadowingWorkspaceShell>);
+    act(() => { store?.set(0); });
+    fireEvent.click(mascot() as HTMLElement);
+    expect(sheet()).toHaveTextContent("「今日は1番目の文です」 · 00:05");
+  });
+
   it("opens with k outside editable fields, and k typed in the composer is just a k", () => {
     mount();
     fireEvent.keyDown(document.body, { key: "k" });

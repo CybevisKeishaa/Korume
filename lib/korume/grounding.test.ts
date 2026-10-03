@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { groundingSchema } from "./answer";
 import { buildGroundedEntities, unionGrounding } from "./grounding";
 import type { ToolResult } from "./retrieval";
 
@@ -14,9 +15,11 @@ const analysis: ToolResult = {
     { surface: "は", base: "は", reading: "ハ", pos: "助詞" },
   ], grammar: [] },
 };
+const VIDEO = "6f1c2a52-8e0b-4a4f-9d55-0c1f2a3b4c5d";
+const LINE = "0b7e9a11-2c3d-4e5f-8a9b-1c2d3e4f5a6b";
 const exposure = (over: object): ToolResult => ({
   tool: "learner_exposure", key: "learner_exposure:は", status: "ok",
-  data: { term: "は", identity: "tok:は:助詞", seenCount: 12, capped: false, label: "は", pos: "助詞", firstSeen: { videoId: "v1", lineId: "l1" }, ...over },
+  data: { term: "は", identity: "tok:は:助詞", seenCount: 12, capped: false, label: "は", pos: "助詞", firstSeen: { videoId: VIDEO, lineId: LINE }, ...over },
 });
 
 describe("buildGroundedEntities", () => {
@@ -29,8 +32,8 @@ describe("buildGroundedEntities", () => {
   });
 
   it("adds a particle from exposure with its count and a lesson link only to a readable video", () => {
-    expect(buildGroundedEntities([exposure({})], new Set(["v1"]))).toEqual([
-      { id: "tok:は:助詞", label: "は", kind: "particle", seenCount: 12, seenCapped: false, lessonLink: { videoId: "v1", lineId: "l1" } },
+    expect(buildGroundedEntities([exposure({})], new Set([VIDEO]))).toEqual([
+      { id: "tok:は:助詞", label: "は", kind: "particle", seenCount: 12, seenCapped: false, lessonLink: { videoId: VIDEO, lineId: LINE } },
     ]);
     expect(buildGroundedEntities([exposure({})], new Set())[0]).not.toHaveProperty("lessonLink");
   });
@@ -40,12 +43,20 @@ describe("buildGroundedEntities", () => {
     expect(out).toEqual([{ id: "ent:1", label: "今日", kind: "vocabulary", reading: "きょう", gloss: "today", jlpt: "N5", seenCount: 12, seenCapped: true }]);
   });
 
+  it("stores only what the read side accepts: a long gloss is clipped and a long line is capped", () => {
+    const tokens = Array.from({ length: 50 }, (_, i) => ({ surface: `語${i}`, base: `語${i}`, reading: null, pos: "名詞", entSeq: 100 + i, headword: `語${i}`, gloss: "x".repeat(400), jlpt: null }));
+    const out = buildGroundedEntities([{ ...analysis, data: { tokens, grammar: [] } }], new Set());
+    expect(groundingSchema.safeParse(out).success).toBe(true);
+    expect(out).toHaveLength(40);
+    expect(out[0]!.gloss).toHaveLength(300);
+  });
+
   it("ignores failed, empty and unseen results", () => {
     expect(buildGroundedEntities([
       { ...dictionary, status: "error", errorCode: "timeout" },
       { ...dictionary, status: "not_found", data: undefined },
       exposure({ seenCount: 0 }),
-    ], new Set(["v1"]))).toEqual([]);
+    ], new Set([VIDEO]))).toEqual([]);
   });
 });
 
