@@ -41,5 +41,27 @@
   "a11y": {
     "sprite": "Linh thú của bạn — mở nhật ký",
     "dismissSpeech": "Đóng lời nhắn"
+  },
+  "ask": {
+    "thinking": "Korume đang suy nghĩ…",
+    "tryAgain": "Thử lại",
+    "failed": "Korume chưa trả lời được câu này.",
+    "limitFree": "Hôm nay bạn đã hỏi {limit} câu · quay lại lúc {time}",
+    "limitPlus": "Đã dùng hết tín dụng AI tháng này · gia hạn vào {date}",
+    "slowDown": "Chậm lại một chút · {seconds}s",
+    "resting": "Korume đang nghỉ",
+    "conflict": "Câu hỏi đã thay đổi — hãy gửi lại như một câu mới",
+    "disabled": "Korume đang tắt trong Cài đặt",
+    "composerLabel": "Nhắn cho Korume",
+    "composerPlaceholder": "Hỏi Korume về câu này…",
+    "composerPlaceholderFree": "Hỏi Korume bất cứ điều gì về tiếng Nhật…",
+    "hint": "Enter để gửi · Shift+Enter để xuống dòng",
+    "send": "Gửi",
+    "listen": "Nghe",
+    "seen": "Đã gặp {count} lần",
+    "seenCapped": "Đã gặp {count}+ lần",
+    "signature": "KORUME",
+    "messages": "Cuộc trò chuyện với Korume",
+    "followups": "Câu hỏi gợi ý"
   }
 }

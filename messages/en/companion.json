@@ -41,5 +41,27 @@
   "a11y": {
     "sprite": "Your companion — open the journal",
     "dismissSpeech": "Dismiss"
+  },
+  "ask": {
+    "thinking": "Korume is thinking…",
+    "tryAgain": "Try again",
+    "failed": "Korume couldn't answer that.",
+    "limitFree": "You've asked {limit} questions today · back at {time}",
+    "limitPlus": "This month's AI credits are used up · renews on {date}",
+    "slowDown": "Slow down a little · {seconds}s",
+    "resting": "Korume is resting",
+    "conflict": "That question changed — send it again as a new one",
+    "disabled": "Korume is turned off in Settings",
+    "composerLabel": "Message Korume",
+    "composerPlaceholder": "Ask Korume about this sentence…",
+    "composerPlaceholderFree": "Ask Korume anything about Japanese…",
+    "hint": "Enter to send · Shift+Enter for a new line",
+    "send": "Send",
+    "listen": "Listen",
+    "seen": "Seen {count} times",
+    "seenCapped": "Seen {count}+ times",
+    "signature": "KORUME",
+    "messages": "Conversation with Korume",
+    "followups": "Suggested questions"
   }
 }

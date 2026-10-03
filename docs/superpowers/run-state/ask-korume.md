@@ -87,6 +87,14 @@ Task 0 probe (Claude, 2026-10-03):
   `lib/data/account-deletion.ts` note). 11 mutations red (conflict, AI gate, release, spend, card drop,
   turn_exists, turn id, Plus credits, limit literal, memory unique, chip cap). vitest 504 / 4492.
   The SQL store's `insertUserMessage` / `completeTurn` RPC shapes are proven only by the Task 11 live smoke.
+- Task 8 (Claude): `components/korume/` — `AnswerBlocks` (text nodes only; ruby via `FuriganaText` only when the
+  ruby bases spell the sentence, since `RubySentence` needs the lesson context), `ListenButton` +
+  `useJapaneseVoice` (absent without a `ja*` voice, `cancel()` before `speak()`), `MessageList` (follow-ups live
+  only on the latest answer), `Composer` (IME-safe Enter), `TurnNotice` (client-side time formatting, countdown),
+  `useKorumeThread` (draft id, same ids on retry, 2 s poll capped at 180 s, notice mapping; Plus fuse → "resting").
+  `ask.*` copy EN/VI + pins; `components/korume` scanned by the token rule. 10 mutations red (the hard-coded-limit
+  one first SURVIVED — the test used 10; now 7). `rounded-xl` caught by the style-guide radius rule (no such rung).
+  vitest 506 / 4519.
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
@@ -101,5 +109,5 @@ None.
 
 ## Next actions
 
-1. Task 8 (shared chat core: AnswerV1 renderer, Listen, message list, composer, error states, `useKorumeThread`). Codex (`-m gpt-6-sol`) if its
+1. Task 9 (Shadowing overlay: mascot, sheet, `K`, Escape order, reopen rule, draft anchor). Codex (`-m gpt-6-sol`) if its
    quota is back (~14:30 2026-10-03), else Claude. Plan Correction 11 lists the as-built Task 4 interface.

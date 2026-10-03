@@ -80,6 +80,8 @@ const SCANNED_DIRS = [
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   // Part 1b Task 12: + kanji-quick-inspect.
   { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
+  // Ask Korume's shared chat core (Task 8): every viewport renders through it.
+  { dir: "components/korume", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 7 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
   // Task 4b: the workspace route group only; dictation stays outside this scope.
