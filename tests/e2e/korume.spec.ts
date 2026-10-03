@@ -65,9 +65,9 @@ async function stubTurns(page: Page, respond: (body: { turnId: string; text: str
 }
 
 async function threadPosts(page: Page) {
-  const posts: { threadId: string; lineId?: string }[] = [];
+  const posts: { threadId: string; lineId?: string; span?: { start: number; end: number } }[] = [];
   page.on("request", (request) => {
-    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/korume/threads") posts.push(request.postDataJSON() as { threadId: string; lineId?: string });
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/korume/threads") posts.push(request.postDataJSON() as (typeof posts)[number]);
   });
   return posts;
 }
@@ -179,11 +179,14 @@ test("2 · /korume/chat renders a seeded thread from persisted grounding, with n
     await expect(page.getByText(RETRY_QUESTION)).toBeVisible();
     await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
     await expect(page.getByText(SEEDED_ANSWER)).toHaveCount(0);
+    // The switch remounts the conversation: focus lands in its composer, never on <body> (jsdom cannot see this).
+    await expect(composer(page)).toBeFocused();
     // … and back again shows the first one, not a stale copy of either.
     await page.getByRole("button", { name: "Past conversations" }).click();
     await page.getByRole("link", { name: /Topic particle/ }).click();
     await expect(page.getByText(SEEDED_ANSWER)).toBeVisible();
     await expect(page.getByText(RETRY_QUESTION)).toHaveCount(0);
+    await expect(composer(page)).toBeFocused();
 
     await page.getByRole("button", { name: "Back" }).click();
     await expect(page).toHaveURL(new RegExp(`/en/shadowing/${data.videoId}\\?line=${data.lineIds[3]}$`));
@@ -246,4 +249,57 @@ test("5 · one persona: no Sensei on Settings or Pronunciation, and /companion h
   await expect(page).toHaveTitle(/^(?![\s\S]*sensei)/i);
   await page.goto("/en/companion");
   await expect(page.getByRole("textbox")).toHaveCount(0);
+});
+
+test("6 · a free chat's first send puts its new thread in the URL by replace; the page is not remounted", async ({ page }) => {
+  await registerLearner(page, "e2e_korume_free_url");
+  const posts = await threadPosts(page);
+  await stubTurns(page, (body) => ({ status: 200, body: answerOf(body.turnId, `Answer to: ${body.text}`) }));
+  await page.goto("/en/korume/chat");
+  await composer(page).fill("A free question");
+  await composer(page).press("Enter");
+  await expect(page.getByText("Answer to: A free question")).toBeVisible();
+  expect(posts).toHaveLength(1);
+  await expect(page).toHaveURL(new RegExp(`/en/korume/chat\\?thread=${posts[0]!.threadId}$`));
+  // router.refresh() after the answer re-renders the page under ?thread: same conversation, focus kept.
+  await page.waitForTimeout(1_000);
+  await expect(page.getByText("A free question", { exact: true })).toBeVisible();
+  await expect(composer(page)).toBeFocused();
+  // Reload shows that thread (it exists for real; the stubbed turn was never persisted), not a not-found line.
+  await page.reload();
+  await expect(composer(page)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "could not be found" })).toHaveCount(0);
+  // Replace, not push: Back leaves the chat instead of landing on an empty free chat.
+  await page.goBack();
+  await expect(page).toHaveURL(/\/en\/dashboard$/);
+});
+
+test("7 · a selected span of a transcript line is the anchor the sheet asks about", async ({ page }) => {
+  await registerLearner(page, "e2e_korume_span");
+  const posts = await threadPosts(page);
+  await stubTurns(page, (body) => ({ status: 200, body: answerOf(body.turnId, `Answer to: ${body.text}`) }));
+  await openLessonAt(page, 3);
+  // UTF-16 [0, 2) of line 4 (今日), selected with a real Range as a drag would leave it.
+  await page.locator("li[data-index='4'] [data-line-id]").evaluate((element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => (node.parentElement?.closest("rt, rp") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+    });
+    const range = document.createRange();
+    let node = walker.nextNode() as Text;
+    range.setStart(node, 0);
+    let remaining = 2;
+    while (remaining > node.length) { remaining -= node.length; node = walker.nextNode() as Text; }
+    range.setEnd(node, remaining);
+    window.getSelection()?.removeAllRanges();
+    window.getSelection()?.addRange(range);
+  });
+  // The mascot reads the selection on pointerdown — a click can collapse it before onClick.
+  await openMascot(page);
+  await expect(sheet(page)).toBeVisible();
+  await expect(sheet(page).getByRole("button", { name: `Asking about this line: ${lineText(4)}` })).toBeVisible();
+  await composer(sheet(page)).fill("What is this word?");
+  await composer(sheet(page)).press("Enter");
+  await expect(sheet(page).getByText("Answer to: What is this word?")).toBeVisible();
+  expect(posts).toHaveLength(1);
+  expect(posts[0]).toMatchObject({ lineId: data.lineIds[4], span: { start: 0, end: 2 } });
 });

@@ -136,6 +136,56 @@ describe("KorumeChatPage", () => {
     expect(screen.queryByText("First question")).toBeNull();
   });
 
+  describe("a free chat's new thread", () => {
+    const sendFirst = async () => {
+      let created = "";
+      vi.mocked(fetch)
+        .mockImplementationOnce(async (_url, init) => { created = JSON.parse(String(init?.body)).threadId; return new Response(JSON.stringify({ thread: thread() }), { status: 201 }); })
+        .mockImplementationOnce(async (_url, init) => new Response(JSON.stringify({ message: answer(JSON.parse(String(init?.body)).turnId, []) }), { status: 200 }));
+      const view = render(page());
+      await userEvent.type(screen.getByRole("textbox"), "First question{Enter}");
+      expect(await screen.findByText("Because.")).toBeInTheDocument();
+      return { view, created };
+    };
+
+    it("is put in the URL by REPLACE — reload shows it, Back does not land on an empty free chat", async () => {
+      const replace = vi.spyOn(window.history, "replaceState");
+      const push = vi.spyOn(window.history, "pushState");
+      const { created } = await sendFirst();
+      expect(created).toMatch(/^[0-9a-f-]{36}$/);
+      expect(replace).toHaveBeenCalledWith(null, "", expect.objectContaining({ search: `?thread=${created}` }));
+      expect(push).not.toHaveBeenCalled();
+    });
+
+    it("stays the same conversation when the server re-renders it under ?thread — no remount, focus kept", async () => {
+      const { view, created } = await sendFirst();
+      const box = screen.getByRole("textbox");
+      box.focus();
+      view.rerender(page({ detail: detailWith({ id: created }, [answer("server", [])]) }));
+      expect(screen.getByRole("textbox")).toBe(box);
+      expect(document.activeElement).toBe(box);
+      expect(screen.getByText("First question")).toBeInTheDocument();
+    });
+  });
+
+  describe("focus", () => {
+    const OTHER = "00000000-0000-4000-8000-000000000002";
+    it("a first load does not take focus", () => {
+      render(page({ detail: detailWith() }));
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it("switching to another thread puts focus in the new conversation's composer, never on body", async () => {
+      const view = render(page({ detail: detailWith({}, [answer("t1", [])]) }));
+      const before = screen.getByRole("textbox");
+      view.rerender(page({ detail: detailWith({ id: OTHER }, [{ ...answer("t9", []), answer: { blocks: [{ type: "paragraph", runs: [{ text: "Other thread." }] }] } as never }]) }));
+      expect(await screen.findByText("Other thread.")).toBeInTheDocument();
+      const after = screen.getByRole("textbox");
+      expect(after).not.toBe(before);
+      expect(document.activeElement).toBe(after);
+    });
+  });
+
   it("shows a quiet not-found line, never an error page", () => {
     render(page({ notFound: true }));
     expect(screen.getByRole("status")).toHaveTextContent("That conversation could not be found");

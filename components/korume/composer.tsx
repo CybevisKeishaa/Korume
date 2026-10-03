@@ -7,10 +7,12 @@ import { useTranslations } from "@/lib/i18n";
  * The message box. Enter sends, Shift+Enter breaks the line, and an Enter that confirms an IME conversion never
  * sends — Japanese input commits kana→kanji with Enter. No mic and no correction mode: no dead controls (§6.3).
  */
-export function Composer({ onSend, disabled = false, placeholder }: {
+export function Composer({ onSend, disabled = false, placeholder, autoFocus = false }: {
   onSend: (text: string) => void;
   disabled?: boolean;
   placeholder: string;
+  /** Focus on mount — only when the learner moved to this conversation, never on a first page load. */
+  autoFocus?: boolean;
 }) {
   const t = useTranslations("companion");
   const [text, setText] = useState("");
@@ -42,6 +44,7 @@ export function Composer({ onSend, disabled = false, placeholder }: {
           onChange={(event) => setText(event.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
+          autoFocus={autoFocus}
           disabled={disabled}
           rows={1}
           maxLength={2000}

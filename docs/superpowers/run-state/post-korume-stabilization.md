@@ -43,6 +43,13 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
   past the grace and orphan imports; gate case 6b RED on the old function (abandoned import survived), GREEN after a
   fresh reset; mutation (drop `activated_at is null`) → gate FAIL 6b (purged the parked shape) + pin RED. Migration
   test 7/7, tsc/lint 0.
+- S5 (Claude): `KorumeChatPage` keys its own conversation (server page no longer keys it); a free chat's created
+  thread shares the free key, so `router.refresh()` under `?thread` does not remount; `history.replaceState` puts the
+  thread in the URL (Next 14.2.35 patches it); every remount after the first autofocuses the composer. Unit: 4 new,
+  mutations RED (no replaceState / no alias / no focus). e2e korume + korume-threads 8/8 on a clean worktree build
+  (AI_PROVIDER=none); e2e mutation build (no alias + no focus) → test 6 RED (question lost on remount) and test 2 RED
+  (focus). New e2e 6 (URL by replace, Back → dashboard) and 7 (selection span posted as {start 0, end 2}).
+  Note: the sheet chip always shows the whole line, not the span — unchanged design, not invented here.
 
 ## Working tree and environment
 

@@ -24,10 +24,28 @@ type KorumeChatPageProps = {
   notFound: boolean;
 };
 
-/** "New conversation" on an unsaved free chat stays on the same URL, so the conversation is re-keyed here too. */
+/**
+ * The conversation is keyed here, not by the server page: Next keeps this page mounted across `?thread` changes, so
+ * another thread must remount it — but the thread a free chat just created must NOT (the server re-renders it under
+ * `?thread=<id>` after `router.refresh()`; a remount would drop focus and scroll). "New conversation" on an unsaved
+ * free chat stays on the same URL, so it re-keys too. Every remount after the first moves focus to the composer.
+ */
 export function KorumeChatPage(props: KorumeChatPageProps) {
   const [conversation, setConversation] = useState(0);
-  return <KorumeConversation key={conversation} {...props} onNewConversation={() => setConversation((n) => n + 1)} />;
+  const [created, setCreated] = useState<string | null>(null);
+  const [settled, setSettled] = useState(false);
+  useEffect(() => setSettled(true), []);
+  const threadId = props.detail?.thread.id ?? null;
+  const key = threadId === null || threadId === created ? `free:${conversation}` : `${threadId}:${conversation}`;
+  return (
+    <KorumeConversation
+      key={key}
+      {...props}
+      focusComposer={settled}
+      onThreadCreated={setCreated}
+      onNewConversation={() => { setCreated(null); setConversation((n) => n + 1); }}
+    />
+  );
 }
 
 /** "Today" for today, else the locale's date — computed after mount: server and learner may be in different days. */
@@ -51,8 +69,10 @@ function KorumeConversation({
   disabled,
   unavailable,
   notFound,
+  focusComposer,
+  onThreadCreated,
   onNewConversation,
-}: KorumeChatPageProps & { onNewConversation: () => void }) {
+}: KorumeChatPageProps & { focusComposer: boolean; onThreadCreated: (id: string) => void; onNewConversation: () => void }) {
   const t = useTranslations("companion");
   const router = useRouter();
   const state = useKorumeThread({
@@ -71,6 +91,15 @@ function KorumeConversation({
     answersSeen.current = answers;
     router.refresh();
   }, [answers, router]);
+  // A free chat's thread goes into the URL as soon as it exists — by replace, so Back never lands on an empty free
+  // chat, and reload (or a refresh mid-answer) shows the thread. Next 14.2 syncs useSearchParams with replaceState.
+  useEffect(() => {
+    if (!state.created || detail) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("thread", state.threadId);
+    window.history.replaceState(null, "", url);
+    onThreadCreated(state.threadId);
+  }, [state.created, state.threadId, detail, onThreadCreated]);
   const latest = [...state.messages]
     .reverse()
     .find((message) => message.role === "assistant");
@@ -223,6 +252,7 @@ function KorumeConversation({
                   </div>
                 ) : null}
                 <Composer
+                  autoFocus={focusComposer}
                   onSend={(text) => void state.send(text)}
                   disabled={locked}
                   placeholder={

@@ -26,10 +26,8 @@ export default async function KorumeChatRoute({ searchParams, params }: { search
   const detail = result?.kind === "ok" ? result.detail : null;
   const memory = await smallMemoryFor(gate.userId, unionGrounding(detail?.messages ?? []), gate.supabase);
   return (
+    // Not keyed here: KorumeChatPage keys its conversation itself, so the thread a free chat creates is not remounted.
     <KorumeChatPage
-      // The client keeps its conversation in state, and Next keys a page without its search params: without this key
-      // picking another thread from ⋯ would show the old conversation and post into it.
-      key={detail?.thread.id ?? `new:${String(requested ?? "")}`}
       detail={detail}
       threads={threads?.kind === "ok" ? threads.threads : []}
       nextCursor={threads?.kind === "ok" ? threads.nextCursor : null}
