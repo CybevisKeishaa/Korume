@@ -18,7 +18,7 @@ insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
 select gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
   'knowledgegate-' || name || '@example.invalid', crypt('password123', gen_salt('bf')), now(), now(), now(),
   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
-from unnest(array['plus', 'free', 'free2', 'free3', 'system']) as name;
+from unnest(array['plus', 'free', 'free2', 'free3', 'system', 'system-cap', 'system-other']) as name;
 
 create or replace function pg_temp.kgate_user(p_name text) returns uuid language sql as $$
   select id from public.users where email = 'knowledgegate-' || p_name || '@example.invalid'
@@ -27,10 +27,13 @@ create or replace function pg_temp.kgate_key(p_fp text, p_section text default '
   select jsonb_build_object('fingerprint', p_fp, 'section', p_section, 'locale', 'vi', 'contextKey', '',
     'schemaVersion', 1, 'generatorVersion', 1, 'contentVariant', 'full')
 $$;
-create or replace function pg_temp.kgate_limits(p_free int default 3, p_fuse int default 200, p_credits int default 1000)
+create or replace function pg_temp.kgate_limits(p_free int default 3, p_fuse int default 200, p_credits int default 1000,
+  p_system_generations int default null)
 returns jsonb language sql as $$
   select jsonb_build_object('globalUsdPerDay', 1000000, 'freeSentencesPerDay', p_free,
     'plusMaxSectionsPerDay', p_fuse, 'plusCreditsPerMonth', p_credits)
+    || case when p_system_generations is null then '{}'::jsonb
+            else jsonb_build_object('systemGenerationsPerUserPerDay', p_system_generations) end
 $$;
 
 -- 1. An expired lease is taken over by compare-and-swap; the stale token can no longer complete.
@@ -210,6 +213,25 @@ begin
   exception when check_violation then null;
   end;
   raise notice 'PASS 9 learner reservation needs an entitlement kind';
+end $$;
+
+-- 9b. System-funded generations are capped per requesting user; released holds do not count.
+do $$
+declare a record; b record; c record; other record; anonymous record; after_release record;
+begin
+  select * into a from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-a', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
+  select * into b from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-b', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
+  select * into c from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-c', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
+  select * into other from ai_reserve(pg_temp.kgate_user('system-other'), 'system', null, 'kgate-s9b-other', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
+  select * into anonymous from ai_reserve(null, 'system', null, 'kgate-s9b-null', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
+  if a.outcome <> 'reserved' or b.outcome <> 'reserved' or c.outcome <> 'quota_exhausted'
+     or other.outcome <> 'reserved' or anonymous.outcome <> 'reserved' then
+    raise exception 'FAIL 9b: outcomes % / % / % / % / %', a.outcome, b.outcome, c.outcome, other.outcome, anonymous.outcome;
+  end if;
+  perform ai_release(a.reservation_id);
+  select * into after_release from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-after-release', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
+  if after_release.outcome <> 'reserved' then raise exception 'FAIL 9b: released system hold still counted (%)', after_release.outcome; end if;
+  raise notice 'PASS 9b system cap is per user; null users and released holds are uncapped';
 end $$;
 
 -- 10. Free: nine sections of one sentence use one slot; the fourth sentence is refused.

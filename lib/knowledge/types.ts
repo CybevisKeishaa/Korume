@@ -85,6 +85,7 @@ export interface ReserveLimits {
   plusCreditsPerMonth: number;
   askKorumeFreeTurnsPerDay: number;
   askKorumePlusTurnsPerDay: number;
+  systemGenerationsPerUserPerDay: number;
 }
 
 export interface ReserveInput {

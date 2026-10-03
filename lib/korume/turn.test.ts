@@ -125,7 +125,7 @@ describe("runTurn — idempotency (spec §5.1)", () => {
     await knowledge.store.reserve({
       requestedBy: ME, billingScope: "learner", entitlementKind: "korume_free_turn", fingerprint: `korume:${TURN}`, turnId: TURN,
       reservedCredits: 0, reservedUsd: 0.01, ttlSeconds: 180,
-      limits: { globalUsdPerDay: 5, freeSentencesPerDay: 3, plusMaxSectionsPerDay: 200, plusCreditsPerMonth: 1000, askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100 },
+      limits: { globalUsdPerDay: 5, freeSentencesPerDay: 3, plusMaxSectionsPerDay: 200, plusCreditsPerMonth: 1000, askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100, systemGenerationsPerUserPerDay: 100 },
     });
     await expect(runTurn(input(), deps())).resolves.toEqual({ status: "pending" });
     expect(fake.requests).toHaveLength(0);

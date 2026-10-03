@@ -126,5 +126,8 @@ export async function requestGloss(entSeq: number, deps: GenerateDeps = {}): Pro
   }, deps);
   if (outcome.status === "ready") return { kind: "ok", gloss: fromContent(entSeq, outcome.content) };
   if (outcome.status === "pending") return { kind: "ok", gloss: { entSeq, status: "pending", glossesVi: [], note: null, source: null } };
+  if (outcome.status === "quota_exhausted") {
+    return { kind: "rate_limited", retryAfter: Math.max(new Date(outcome.resetsAt).getTime() - Date.now(), 1_000) };
+  }
   return { kind: "unavailable" };
 }

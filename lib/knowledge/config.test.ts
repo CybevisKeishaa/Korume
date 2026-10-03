@@ -9,6 +9,7 @@ describe("readKnowledgeConfig", () => {
       plusMaxSectionsPerDay: 200,
       askKorumeFreeTurnsPerDay: 10,
       askKorumePlusTurnsPerDay: 100,
+      systemGenerationsPerUserPerDay: 100,
       globalBudgetUsdPerDay: 5,
       creditUsdUnit: 0.001,
     });
@@ -24,6 +25,7 @@ describe("readKnowledgeConfig", () => {
         AI_PLUS_MAX_SECTIONS_PER_DAY: "150",
         AI_ASK_KORUME_FREE_TURNS_PER_DAY: "4",
         AI_ASK_KORUME_PLUS_TURNS_PER_DAY: "75",
+        AI_SYSTEM_GENERATIONS_PER_USER_PER_DAY: "50",
         AI_GLOBAL_BUDGET_USD_PER_DAY: "12.5",
         AI_CREDIT_USD_UNIT: "0.002",
       }),
@@ -33,6 +35,7 @@ describe("readKnowledgeConfig", () => {
       plusMaxSectionsPerDay: 150,
       askKorumeFreeTurnsPerDay: 4,
       askKorumePlusTurnsPerDay: 75,
+      systemGenerationsPerUserPerDay: 50,
       globalBudgetUsdPerDay: 12.5,
       creditUsdUnit: 0.002,
     });

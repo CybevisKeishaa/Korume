@@ -5,8 +5,8 @@ $$;
 
 do $$
 begin
-  if (select count(*) from knowledge_race_results) <> 140 then
-    raise exception 'FAIL race: % results recorded, expected 140', (select count(*) from knowledge_race_results);
+  if (select count(*) from knowledge_race_results) <> 160 then
+    raise exception 'FAIL race: % results recorded, expected 160', (select count(*) from knowledge_race_results);
   end if;
   if (select count(*) from ai_reservations where fingerprint like 'kgate-race-expseed-%') <> 40
      or exists (select 1 from ai_reservations where fingerprint like 'kgate-race-expseed-%'
@@ -55,6 +55,10 @@ begin
     raise exception 'FAIL race e2: % reserved under a Free limit of 3', pg_temp.race_count('e2', 'reserved');
   end if;
   raise notice 'PASS race e2: twenty sentences at once, exactly 3 slots';
+  if pg_temp.race_count('f', 'reserved') <> 5 or pg_temp.race_count('f', 'quota_exhausted') <> 15 then
+    raise exception 'FAIL race f: % reserved under a system cap of 5', pg_temp.race_count('f', 'reserved');
+  end if;
+  raise notice 'PASS race f: system cap of 5, exactly 5 reserved';
 end $$;
 
 delete from ai_usage_charges where fingerprint like 'kgate-race-%';

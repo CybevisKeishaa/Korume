@@ -150,6 +150,11 @@ export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
       if (row.reservedUsd + row.spentUsd + input.reservedUsd > input.limits.globalUsdPerDay) {
         return { outcome: "budget_exhausted" as const, reservationId: null, resetsAt: nextDay(clock) };
       }
+      if (input.billingScope === "system" && input.requestedBy &&
+        reservations.filter((r) => r.requestedBy === input.requestedBy && r.billingScope === "system" && r.day === today && used(r)).length
+          >= input.limits.systemGenerationsPerUserPerDay) {
+        return { outcome: "quota_exhausted" as const, reservationId: null, resetsAt: nextDay(clock) };
+      }
       let outcome: "reserved" | "already_charged" = "reserved";
       const mine = reservations.filter((r) => r.requestedBy === input.requestedBy && used(r));
       if (input.billingScope === "learner" && input.entitlementKind === "free_sentence") {

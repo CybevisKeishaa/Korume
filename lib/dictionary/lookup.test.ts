@@ -19,7 +19,7 @@ vi.mock("@/lib/knowledge/orchestrator", async (importOriginal) => {
 });
 
 const AME = { ent_seq: 1141070, kanji_forms: ["雨"], kana_forms: ["あめ"], senses: [{ gloss: ["rain"] }, { gloss: ["rainy day"] }] };
-const CONFIG: KnowledgeConfig = { freeSentencesPerDay: 3, plusCreditsPerMonth: 1000, plusMaxSectionsPerDay: 200, askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001 };
+const CONFIG: KnowledgeConfig = { freeSentencesPerDay: 3, plusCreditsPerMonth: 1000, plusMaxSectionsPerDay: 200, askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100, systemGenerationsPerUserPerDay: 100, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001 };
 const USAGE = { model: "claude-haiku-4-5", usage: { inputTokens: 100, outputTokens: 20, cacheReadTokens: 0, cacheWriteTokens: 0 } };
 
 let store: MemoryKnowledgeStore;
@@ -104,5 +104,13 @@ describe("requestGloss", () => {
     expect(rateLimit).toHaveBeenCalledWith("dictionary:gloss:generate:u-gloss", { limit: 20, windowMs: 60_000 });
     vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 1_000 });
     await expect(requestGloss(AME.ent_seq, deps())).resolves.toEqual({ kind: "rate_limited", retryAfter: 1_000 });
+  });
+
+  it("maps a system-funded per-user quota refusal to a rate limit until reset", async () => {
+    const result = await requestGloss(AME.ent_seq, {
+      ...deps(), config: { ...CONFIG, systemGenerationsPerUserPerDay: 0 },
+    });
+    expect(result).toMatchObject({ kind: "rate_limited" });
+    if (result.kind === "rate_limited") expect(result.retryAfter).toBeGreaterThanOrEqual(1_000);
   });
 });

@@ -224,7 +224,8 @@ begin
 end $$;
 
 -- One transaction: global budget, then the learner's Free slot or Plus fuse/credits, then the hold.
--- p_limits: { globalUsdPerDay, freeSentencesPerDay, plusMaxSectionsPerDay, plusCreditsPerMonth }.
+-- p_limits: { globalUsdPerDay, freeSentencesPerDay, plusMaxSectionsPerDay, plusCreditsPerMonth,
+--             systemGenerationsPerUserPerDay? }.
 -- A Free sentence that already holds today's slot gets 'already_charged' WITH a reservation: the
 -- generation still holds global budget, and settle's charge insert dedupes on the partial unique index.
 create function ai_reserve(p_requested_by uuid, p_billing_scope text, p_entitlement_kind text, p_fingerprint text,
@@ -245,7 +246,7 @@ begin
   if p_billing_scope = 'learner' and (p_requested_by is null or p_entitlement_kind is null) then
     raise exception 'learner reservations need a user and an entitlement kind' using errcode = 'check_violation';
   end if;
-  if p_billing_scope = 'learner' then
+  if p_billing_scope = 'learner' or (p_billing_scope = 'system' and p_requested_by is not null) then
     -- Serialises one learner's reservations; different learners only meet at the budget row.
     perform pg_advisory_xact_lock(hashtext('ai-user:' || p_requested_by::text));
   end if;
@@ -264,6 +265,16 @@ begin
   if v_budget.reserved_usd + v_budget.spent_usd + p_reserved_usd > (p_limits->>'globalUsdPerDay')::numeric then
     return query select null::uuid, 'budget_exhausted'::text, v_next_day;
     return;
+  end if;
+
+  if p_billing_scope = 'system' and p_requested_by is not null then
+    select count(*) into v_count from ai_reservations r
+    where r.requested_by_user_id = p_requested_by and r.period_day = v_day and r.billing_scope = 'system'
+      and r.status in ('held', 'settled');
+    if v_count >= coalesce((p_limits->>'systemGenerationsPerUserPerDay')::int, 2147483647) then
+      return query select null::uuid, 'quota_exhausted'::text, v_next_day;
+      return;
+    end if;
   end if;
 
   if p_billing_scope = 'learner' and p_entitlement_kind = 'free_sentence' then

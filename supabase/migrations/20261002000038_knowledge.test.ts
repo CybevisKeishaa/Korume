@@ -108,6 +108,14 @@ describe("knowledge and AI ledger SQL contract", () => {
     expect(sql).toContain("grant execute on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) to service_role");
   });
 
+  it("caps system-funded generations per user under the shared user lock", () => {
+    const reserve = sql.slice(sql.indexOf("create function ai_reserve"), sql.indexOf("create function ai_record_generation"));
+    expect(reserve).toContain("p_billing_scope = 'learner' or (p_billing_scope = 'system' and p_requested_by is not null)");
+    expect(reserve).toContain("r.billing_scope = 'system'");
+    expect(reserve).toContain("p_limits->>'systemgenerationsperuserperday'");
+    expect(reserve).toContain("'quota_exhausted'::text, v_next_day");
+  });
+
   it("serializes every expiry sweep before it updates expired reservations", () => {
     const releaseExpired = sql.slice(sql.indexOf("create function ai_release_expired"), sql.indexOf("create function ai_reserve"));
     expect(releaseExpired).toContain("pg_advisory_xact_lock(hashtext('ai-release-expired'))");

@@ -143,6 +143,7 @@ export async function getOrGenerateSection(input: GenerateInput, deps: GenerateD
       plusCreditsPerMonth: config.plusCreditsPerMonth,
       askKorumeFreeTurnsPerDay: config.askKorumeFreeTurnsPerDay,
       askKorumePlusTurnsPerDay: config.askKorumePlusTurnsPerDay,
+      systemGenerationsPerUserPerDay: config.systemGenerationsPerUserPerDay,
     },
     ttlSeconds: RESERVATION_TTL_SECONDS,
   });

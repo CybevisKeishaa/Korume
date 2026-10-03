@@ -32,6 +32,9 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
   race-round defects (all seeds on one day; worker fingerprints matched the seed pattern). DB mutation (sweep
   without the lock, 3 runs) stayed GREEN: the race round is a no-deadlock regression check, not a RED proof; the
   migration pin is the RED guard. vitest supabase/migrations 73/73, tsc 0.
+- S2 (Codex, 2026-10-03): added the per-user system-generation daily cap in `038` under the shared user lock, config and dictionary 429 mapping, SQL gate/race coverage, and mutation proofs. Focused Vitest, `tsc`, lint, and `verify:protocol` evidence is recorded in the S2 report; Claude owns the required fresh-reset/live DB gates.
+  Claude S2: fresh reset; `verify:db:knowledge` 0 (9b + race f PASS), `verify:db:korume` 0; vitest knowledge/dictionary/
+  korume/migrations 348/348; tsc 0.
 
 ## Working tree and environment
 

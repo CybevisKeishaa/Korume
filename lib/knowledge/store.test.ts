@@ -45,7 +45,7 @@ describe("createSqlKnowledgeStore", () => {
     await expect(store.complete("e1", "t1", { a: 1 }, "m", "anthropic")).resolves.toBe(true);
     await expect(store.fail("e1", "t1", "provider_error", new Date("2026-10-02T09:00:30Z"))).resolves.toBe(true);
     const limits = { globalUsdPerDay: 5, freeSentencesPerDay: 3, plusMaxSectionsPerDay: 200, plusCreditsPerMonth: 1000,
-      askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100 };
+      askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100, systemGenerationsPerUserPerDay: 100 };
     await expect(store.reserve({
       requestedBy: "u", billingScope: "learner", entitlementKind: "free_sentence", fingerprint: "p", reservedCredits: 0,
       reservedUsd: 0.01, limits, ttlSeconds: 180, turnId: "turn-1",

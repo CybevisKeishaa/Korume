@@ -4,7 +4,7 @@ import type { ReserveInput } from "./types";
 
 const limits = {
   globalUsdPerDay: 100, freeSentencesPerDay: 3, plusMaxSectionsPerDay: 200, plusCreditsPerMonth: 10,
-  askKorumeFreeTurnsPerDay: 2, askKorumePlusTurnsPerDay: 2,
+  askKorumeFreeTurnsPerDay: 2, askKorumePlusTurnsPerDay: 2, systemGenerationsPerUserPerDay: 2,
 };
 const input = (overrides: Partial<ReserveInput> = {}): ReserveInput => ({
   requestedBy: "learner", billingScope: "learner", entitlementKind: "korume_free_turn", fingerprint: "same",
@@ -28,6 +28,21 @@ it("counts Free Korume turns by turn, and reclaims expired holds before the quot
   expect((await memory.store.reserve(input({ turnId: "c" }))).outcome).toBe("quota_exhausted");
   memory.advance(2000);
   expect((await memory.store.reserve(input({ turnId: "c" }))).outcome).toBe("reserved");
+});
+
+it("caps active system reservations per requesting user without limiting other or null users", async () => {
+  const memory = createMemoryKnowledgeStore(new Date("2026-10-03T09:00:00Z"));
+  const system = (fingerprint: string, requestedBy: string | null = "system-user") => input({
+    billingScope: "system", entitlementKind: null, requestedBy, fingerprint,
+  });
+  const first = await memory.store.reserve(system("one"));
+  expect(first.outcome).toBe("reserved");
+  expect((await memory.store.reserve(system("two"))).outcome).toBe("reserved");
+  expect((await memory.store.reserve(system("three"))).outcome).toBe("quota_exhausted");
+  expect((await memory.store.reserve(system("other", "other-user"))).outcome).toBe("reserved");
+  expect((await memory.store.reserve(system("null", null))).outcome).toBe("reserved");
+  await memory.store.release(first.reservationId ?? "", 0);
+  expect((await memory.store.reserve(system("after-release"))).outcome).toBe("reserved");
 });
 
 it("shares settled Plus credits both ways and keeps the Korume turn fuse separate", async () => {

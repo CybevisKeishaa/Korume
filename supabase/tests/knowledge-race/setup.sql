@@ -24,7 +24,7 @@ insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
 select gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
   'knowledgegate-race-' || name || '@example.invalid', crypt('password123', gen_salt('bf')), now(), now(), now(),
   '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb
-from unnest(array['plus-b', 'plus-c', 'free-a', 'free-b']
+from unnest(array['plus-b', 'plus-c', 'free-a', 'free-b', 'system']
   || array(select 'budget-' || i from generate_series(1, 20) i)
   || array(select 'expiry-' || i from generate_series(1, 20) i)) as name;
 

@@ -124,6 +124,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
       plusCreditsPerMonth: config.plusCreditsPerMonth,
       askKorumeFreeTurnsPerDay: config.askKorumeFreeTurnsPerDay,
       askKorumePlusTurnsPerDay: config.askKorumePlusTurnsPerDay,
+      systemGenerationsPerUserPerDay: config.systemGenerationsPerUserPerDay,
     },
     ttlSeconds: TURN_RESERVATION_TTL_SECONDS,
   });

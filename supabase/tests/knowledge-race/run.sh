@@ -34,4 +34,5 @@ round plus-worker.sql -v case=c -v email=knowledgegate-race-plus-c@example.inval
 round budget-worker.sql
 round free-worker.sql -v case=e1 -v email=knowledgegate-race-free-a@example.invalid -v same=1
 round free-worker.sql -v case=e2 -v email=knowledgegate-race-free-b@example.invalid -v same=0
+round system-worker.sql
 "${P[@]}" -f "$dir/assert.sql"
