@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -18,6 +18,8 @@ const FUNCTIONS = [
   "knowledge_fail",
   "ai_reserve",
   "ai_record_generation",
+  "ai_release_expired",
+  "ai_record_late_spend",
   "ai_settle",
   "ai_release",
   "ai_usage_snapshot",
@@ -104,6 +106,34 @@ describe("knowledge and AI ledger SQL contract", () => {
     expect(reserve).toContain("'turn_exists'::text");
     expect(sql).toContain("revoke all on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) from public, anon, authenticated");
     expect(sql).toContain("grant execute on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) to service_role");
+  });
+
+  it("serializes every expiry sweep before it updates expired reservations", () => {
+    const releaseExpired = sql.slice(sql.indexOf("create function ai_release_expired"), sql.indexOf("create function ai_reserve"));
+    expect(releaseExpired).toContain("pg_advisory_xact_lock(hashtext('ai-release-expired'))");
+    expect(releaseExpired.indexOf("pg_advisory_xact_lock(hashtext('ai-release-expired'))")).toBeLessThan(
+      releaseExpired.indexOf("update ai_reservations"),
+    );
+  });
+
+  it("keeps late-spend settlement in the defining migration", () => {
+    const settle = sql.slice(sql.indexOf("create function ai_settle"), sql.indexOf("create function ai_release("));
+    expect(sql).toContain("expired_at timestamptz");
+    expect(sql).toContain("late_spent_at timestamptz");
+    expect(sql).toContain("create function ai_record_late_spend");
+    expect(sql).not.toContain("create or replace function");
+    expect(settle).toContain("perform ai_record_late_spend(p_reservation, p_actual_usd)");
+    expect(settle).toContain("case when v_res.entitlement_kind in ('plus_section', 'korume_plus_turn') then greatest(p_actual_credits, 0) else 0 end");
+  });
+
+  it("defines every reservation lifecycle function only in the defining migration", () => {
+    const files = readdirSync(directory).filter((file) => file.endsWith(".sql"));
+    expect(files).not.toHaveLength(0);
+    expect(files).toContain("20261002000038_knowledge.sql");
+
+    const definitions = /create(?:\s+or\s+replace)?\s+function\s+(ai_release_expired|ai_settle|ai_release|ai_record_late_spend)\b/gi;
+    const definingFiles = files.filter((file) => definitions.test(readFileSync(join(directory, file), "utf8")));
+    expect(definingFiles).toEqual(["20261002000038_knowledge.sql"]);
   });
 
   it("shares Plus credit capacity while keeping the two daily fuses separate", () => {

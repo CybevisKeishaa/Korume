@@ -27,7 +27,11 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
 
 ## Verification
 
-- (none yet)
+- S1 (Codex, 2026-10-03): folded late-spend lifecycle SQL into 038; added the single expiry-sweeper lock, migration pins (mutation-checked), and the 40-hold/two-day expiry race round. Focused migration tests, `tsc`, lint, and `verify:protocol` passed; Claude owns the required fresh-reset/live DB gates.
+  Claude: fresh `db reset`, `verify:db:knowledge` 0 (expiry race PASS) and `verify:db:korume` 0; review fixed two
+  race-round defects (all seeds on one day; worker fingerprints matched the seed pattern). DB mutation (sweep
+  without the lock, 3 runs) stayed GREEN: the race round is a no-deadlock regression check, not a RED proof; the
+  migration pin is the RED guard. vitest supabase/migrations 73/73, tsc 0.
 
 ## Working tree and environment
 

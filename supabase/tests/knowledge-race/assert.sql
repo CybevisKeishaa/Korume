@@ -5,9 +5,29 @@ $$;
 
 do $$
 begin
-  if (select count(*) from knowledge_race_results) <> 120 then
-    raise exception 'FAIL race: % results recorded, expected 120', (select count(*) from knowledge_race_results);
+  if (select count(*) from knowledge_race_results) <> 140 then
+    raise exception 'FAIL race: % results recorded, expected 140', (select count(*) from knowledge_race_results);
   end if;
+  if (select count(*) from ai_reservations where fingerprint like 'kgate-race-expseed-%') <> 40
+     or exists (select 1 from ai_reservations where fingerprint like 'kgate-race-expseed-%'
+                and (status <> 'released' or expired_at is null)) then
+    raise exception 'FAIL expiry race: every seeded expired hold must be released and marked expired';
+  end if;
+  if (select count(*) from ai_reservations where fingerprint like 'kgate-race-expseed-%'
+      and period_day = (now() at time zone 'utc')::date) <> 20
+     or (select count(*) from ai_reservations where fingerprint like 'kgate-race-expseed-%'
+         and period_day = (now() at time zone 'utc')::date - 1) <> 20 then
+    raise exception 'FAIL expiry race: expected 20 seeded expired holds on each of today and yesterday';
+  end if;
+  if exists (
+    select 1 from ai_budget_days b
+    where b.period_day in ((now() at time zone 'utc')::date, (now() at time zone 'utc')::date - 1)
+      and b.reserved_usd <> coalesce((select sum(r.reserved_usd) from ai_reservations r
+                                      where r.period_day = b.period_day and r.status = 'held'), 0)
+  ) then
+    raise exception 'FAIL expiry race: budget reserved USD does not equal the live holds for an expiry day';
+  end if;
+  raise notice 'PASS expiry race: 20 sweepers released 40 expired holds across two days without deadlock';
   if pg_temp.race_count('a', 'leader') <> 1 or pg_temp.race_count('a', 'follower') <> 19 then
     raise exception 'FAIL race a: % leaders, % followers', pg_temp.race_count('a', 'leader'), pg_temp.race_count('a', 'follower');
   end if;
@@ -42,5 +62,7 @@ delete from ai_reservations where fingerprint like 'kgate-race-%';
 delete from knowledge_entries where fingerprint like 'kgate-race-%';
 delete from auth.users where email like 'knowledgegate-race-%@example.invalid';
 update ai_budget_days b set reserved_usd = k.reserved_usd, spent_usd = k.spent_usd
-  from knowledge_race_budget k where b.period_day = k.period_day;
+  from knowledge_race_budget k where b.period_day = k.period_day and k.existed;
+delete from ai_budget_days b using knowledge_race_budget k
+  where b.period_day = k.period_day and not k.existed;
 drop table knowledge_race_results, knowledge_race_state, knowledge_race_budget;

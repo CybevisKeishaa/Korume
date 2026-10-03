@@ -82,11 +82,13 @@ Sources of the findings: 1b ledger `.worktrees/shadowing-workspace-1b/.superpowe
 - `keyOf` includes `line.textJp`. Test: same id, changed text → re-analysed (mutation: drop text from the key → red).
 
 ### S4 — purge abandoned staging snapshots
-- `dict_gc_snapshots(p_keep int default 1, p_staging_older_than interval default interval '1 day')`: also deletes
-  `staging` snapshots with `created_at < now() - p_staging_older_than`; `null` skips the staging purge. Orphan
-  `dict_imports` rows older than the same interval (no snapshot references them) are deleted too.
-- `supabase/tests/dictionary.sql` passes `null` wherever it GCs while real snapshots are parked; a new case proves an
-  old staging snapshot goes and a fresh one stays. `scripts/dictionary-gc.ts` keeps working with its default.
+- `dict_gc_snapshots(p_keep int default 1, p_staging_grace interval default interval '1 day')`: also deletes
+  ABANDONED imports — `status = 'staging' and activated_at is null and created_at < now() - p_staging_grace`.
+  `activated_at is null` is what makes it safe: a snapshot that was ever active (the gate's parked real dictionary,
+  or a parked retired one) is never purged, even when a crashed gate run leaves it parked as `staging`. Orphan
+  `dict_imports` rows (no snapshot references them) older than the grace go too.
+- `supabase/tests/dictionary.sql`: a case proves an old never-activated staging snapshot goes, a fresh one stays, and
+  an old staging snapshot WITH `activated_at` stays. `scripts/dictionary-gc.ts` reports both counts.
 - Gate run protocol: count `dict_kanji` of the active snapshot before and after `verify:db:dictionary` — equal.
 
 ### S5 — Korume chat URL, focus, span e2e
