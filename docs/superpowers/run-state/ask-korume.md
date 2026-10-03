@@ -95,12 +95,23 @@ Task 0 probe (Claude, 2026-10-03):
   `ask.*` copy EN/VI + pins; `components/korume` scanned by the token rule. 10 mutations red (the hard-coded-limit
   one first SURVIVED — the test used 10; now 7). `rounded-xl` caught by the style-guide radius rule (no such rung).
   vitest 506 / 4519.
+- Task 9 (Claude) — **IMPLEMENTED, NOT COMMITTED** (owner stopped the session 2026-10-03 ~12:55 while the full
+  vitest run was in progress; tsc/lint/protocol were 0). Files: `korume-mascot.tsx` (`useKorumeOverlay`: draft per
+  mount, anchor = selection span read on pointerdown else active line, `askCurrent` = new draft),
+  `korume-sheet.tsx` (non-modal dialog placed in the transcript column's grid area via gridRow 2 / gridColumn
+  -2/-1, `w-[--korume-sheet-width] min-w-[--korume-sheet-min]`, kept mounted while closed, conditional
+  `flex`/`hidden` class because Tailwind `flex` overrides the `hidden` attribute), shell wiring (mascot inside the
+  transcript cell, hidden in Focus / fullscreen / when `companionEnabled` is false; `k` only when visible; Escape
+  `close-korume` after popover), `escapeAction` + `ask-korume` shortcut, globals tokens in BOTH density blocks,
+  `CompanionSprite` `label` prop + `useThemeOrNull` (workspace tests have no ThemeProvider), `ask.open` /
+  `ask.sheet.*` copy. 7 overlay tests green; 6 mutations red (the "k when disabled" one survived until a
+  Focus-view k case was added).
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
 ## Working tree and environment
 
-- Owner: Claude
+- Owner: Claude (session stopped by the owner mid-Task 9; Task 9 changes are uncommitted in the worktree)
 - Worktree `.worktrees/ask-korume`, branched from master `ede3833`.
 
 ## Blockers
@@ -109,5 +120,15 @@ None.
 
 ## Next actions
 
-1. Task 9 (Shadowing overlay: mascot, sheet, `K`, Escape order, reopen rule, draft anchor). Codex (`-m gpt-6-sol`) if its
+1. **Resume Task 9:** in the worktree run full vitest (`npx vitest run --reporter=dot --minWorkers=1 --maxWorkers=2`);
+   if green, add `components/shadowing-workspace` source count bump in `components/ui/token-scale.test.ts` if it
+   fails (+2 files), review the diff (`git status`), commit `feat(korume): anchored Korume sheet in the Shadowing
+   workspace`. Still open for Task 9: a selection-span anchor test (Playwright in Task 11) and the 1280x529
+   geometry / no-remount proof (Task 11).
+2. Task 10 (`/korume/chat` page + rail + Back + thread menu + disabled state; `/sensei` redirect; §6.5 persona
+   sweep). Figma 215:15164 screenshot already reviewed (header Back · "Korume / Japanese Knowledge", right
+   "Korume Memory" + settings; chat column with TODAY divider, grounding line, bubbles, KORUME answer cards,
+   followup chips, composer; rail: Learning context / In this conversation / A small memory). No mic, no correction
+   mode (spec §6.3).
+3. Task 11 (seeded Playwright §7.6, then ASK THE OWNER before the live Gemini smoke §7.7, then whole-branch review). Codex (`-m gpt-6-sol`) if its
    quota is back (~14:30 2026-10-03), else Claude. Plan Correction 11 lists the as-built Task 4 interface.
