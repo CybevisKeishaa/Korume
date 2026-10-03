@@ -55,6 +55,14 @@ Task 0 probe (Claude, 2026-10-03):
   fail-closed via `readPreferencesOrThrow`. RED 8 tests first; mutation (gate → `readPreferences`) → fail-closed
   test red, restored green. Reset 0; all 8 `verify:db:*` 0; live column default `true`, NOT NULL. tsc/lint/protocol
   0; vitest 487 / 4381.
+- Task 4 (Claude — Codex quota out): text/route/validation modules, `lib/korume/store.ts` (service writes, RLS
+  reads — Correction 10), `lib/data/korume.ts` (createThread / listThreads with keyset cursor / getThread +
+  `pendingTurnsFor`), `lib/korume/http.ts`, routes `POST|GET /api/korume/threads`, `GET /api/korume/threads/[id]`,
+  `/korume` protected. As-built interface recorded as plan Correction 11 (memory-store deferred to Task 7; answer
+  and grounding stay null until Task 7 validates them). Mutations (anchor compare, UTF-16 span length, held →
+  running) each turned one test red, restored green. E2E `tests/e2e/korume-threads.spec.ts` on the worktree build
+  (`.env.local` copied from main with `AI_PROVIDER=none`, gitignored): parallel POSTs → {200, 201}, one row; moved
+  anchor → 409; client `originRoute` → 400; other learner GET/POST → 404. tsc/lint/protocol 0; vitest 493 / 4414.
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
@@ -69,6 +77,5 @@ None.
 
 ## Next actions
 
-1. Task 4 (threads: validation, idempotent create, read, pending projection, HTTP create race). Plan Correction 10:
-   writes through the service client with explicit `user_id`. Codex (`-m gpt-6-sol`) if its quota is back
-   (~14:30 2026-10-03), else Claude.
+1. Task 5 (planner, plan validation, the four simple tools). Codex (`-m gpt-6-sol`) if its quota is back
+   (~14:30 2026-10-03), else Claude. Plan Correction 11 lists the as-built Task 4 interface.

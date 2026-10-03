@@ -54,6 +54,15 @@
     **service client with an explicit `user_id`** (after the gate has authenticated the caller); reads
     (`readThreadRow`, messages) stay on the learner's client under RLS. `ai_generations.turn_id` and
     `ai_record_generation` were edited in place in migration 038 (AGENTS.md §6), not in 041.
+11. **Task 4 as built (Claude, 2026-10-03).** `lib/korume/store.ts` `KorumeStore` has only what Task 4 uses:
+    `insertThread(row)` (service, no `supabase` param), `readThreadRow`, `listThreadRows(supabase, limit, before)`,
+    `readMessages`, `readAnchorLines`, `reservationStates`. **Task 7 adds** `insertUserMessage(sessionId, userId,
+    turnId, text)` (service), `readTurn`, `completeTurn`, and creates `lib/korume/memory-store.ts` (deferred from
+    Task 4 — nothing needed it yet; Task 4's tests use an inline fake). `getThread` returns `answer: null,
+    grounding: null` until Task 7 validates `content_json` / `grounding_json` and fills them. Shared refusal bodies
+    live in `lib/korume/http.ts` (`korumeRefusal`); a gate `unavailable` is 503
+    `{ error: "ai_unavailable", reason: "preferences_unavailable" }`. Ask Korume migrations are 041 + 042 only;
+    `companion_enabled` went in place into 033 (its contract pins one migration for `user_preferences`).
 
 ## Review Focus
 

@@ -25,6 +25,8 @@ describe("route protection", () => {
       "/shadowing",
       "/reading",
       "/conversation",
+      // Ask Korume's full chat; a conscious edit, as this pin requires.
+      "/korume",
       "/certification",
       "/community",
       "/playlists",
