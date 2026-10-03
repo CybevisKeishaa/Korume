@@ -238,13 +238,16 @@ describe("screen registry invariants", () => {
     // repo-only route — the ruling moved a stamp, it did not add one, which
     // is why 2026-08-12 drops by the same one.
     expect(Object.fromEntries(stampedByDate)).toEqual({
-      "2026-08-12": 70,
+      // 69: Ask Korume deleted the `sensei` row (its 215:15164 frame moved to `korume-chat`, 2026-10-03).
+      "2026-08-12": 69,
       "2026-08-20": 3,
       "2026-08-23": 8,
       "2026-08-26": 1,
       "2026-09-22": 2,
       "2026-09-28": 1,
       "2026-09-29": 1,
+      // `korume-chat`: a new row for /korume/chat, built against 215:15164 on this day (Ask Korume Task 10a).
+      "2026-10-03": 1,
     });
   });
 });

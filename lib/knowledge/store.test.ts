@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createSqlKnowledgeStore } from "./store";
-import type { KnowledgeKey } from "./types";
+import type { GenerationRow, KnowledgeKey } from "./types";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 
@@ -44,10 +44,11 @@ describe("createSqlKnowledgeStore", () => {
     await expect(store.claimLease(KEY, 90)).resolves.toEqual({ outcome: "leader", entryId: "e1", leaseToken: "t1", attempts: 2 });
     await expect(store.complete("e1", "t1", { a: 1 }, "m", "anthropic")).resolves.toBe(true);
     await expect(store.fail("e1", "t1", "provider_error", new Date("2026-10-02T09:00:30Z"))).resolves.toBe(true);
-    const limits = { globalUsdPerDay: 5, freeSentencesPerDay: 3, plusMaxSectionsPerDay: 200, plusCreditsPerMonth: 1000 };
+    const limits = { globalUsdPerDay: 5, freeSentencesPerDay: 3, plusMaxSectionsPerDay: 200, plusCreditsPerMonth: 1000,
+      askKorumeFreeTurnsPerDay: 10, askKorumePlusTurnsPerDay: 100 };
     await expect(store.reserve({
       requestedBy: "u", billingScope: "learner", entitlementKind: "free_sentence", fingerprint: "p", reservedCredits: 0,
-      reservedUsd: 0.01, limits, ttlSeconds: 180,
+      reservedUsd: 0.01, limits, ttlSeconds: 180, turnId: "turn-1",
     })).resolves.toEqual({ outcome: "already_charged", reservationId: "r1", resetsAt: null });
     await expect(store.settle("r1", "g1", 2, 0.0019)).resolves.toBe(true);
     await expect(store.release("r1", 0.02)).resolves.toBe(false);
@@ -58,7 +59,7 @@ describe("createSqlKnowledgeStore", () => {
       { name: "knowledge_fail", args: { p_entry: "e1", p_lease_token: "t1", p_error_code: "provider_error", p_retry_after: "2026-10-02T09:00:30.000Z" } },
       { name: "ai_reserve", args: {
         p_requested_by: "u", p_billing_scope: "learner", p_entitlement_kind: "free_sentence", p_fingerprint: "p",
-        p_reserved_credits: 0, p_reserved_usd: 0.01, p_limits: limits, p_ttl_seconds: 180,
+        p_reserved_credits: 0, p_reserved_usd: 0.01, p_limits: limits, p_ttl_seconds: 180, p_turn_id: "turn-1",
       } },
       { name: "ai_settle", args: { p_reservation: "r1", p_generation: "g1", p_actual_credits: 2, p_actual_usd: 0.0019 } },
       { name: "ai_release", args: { p_reservation: "r1", p_spent_usd: 0.02 } },
@@ -74,6 +75,16 @@ describe("createSqlKnowledgeStore", () => {
     await expect(createSqlKnowledgeStore().recordGeneration(row)).resolves.toBe("g1");
     const sql = readFileSync(join(process.cwd(), "supabase/migrations/20261002000038_knowledge.sql"), "utf8");
     for (const field of Object.keys(row)) expect(sql, field).toContain(`p_row->>'${field}'`);
+    expect(mock.rpcCalls).toEqual([{ name: "ai_record_generation", args: { p_row: row } }]);
+  });
+
+  it("passes an optional Korume turn ID and nullable knowledge entry to generation telemetry", async () => {
+    const row: GenerationRow = {
+      requestedByUserId: "u", billingScope: "learner", knowledgeEntryId: null, reservationId: "r1",
+      section: "korume_plan", turnId: "turn-1", provider: "anthropic", model: "m", inputTokens: 1,
+      outputTokens: 2, cacheReadTokens: 0, latencyMs: 4, estimatedCostUsd: 0.5, outcome: "success",
+    };
+    await expect(createSqlKnowledgeStore().recordGeneration(row)).resolves.toBe("g1");
     expect(mock.rpcCalls).toEqual([{ name: "ai_record_generation", args: { p_row: row } }]);
   });
 

@@ -5,6 +5,8 @@ export interface KnowledgeConfig {
   freeSentencesPerDay: number;
   plusCreditsPerMonth: number;
   plusMaxSectionsPerDay: number;
+  askKorumeFreeTurnsPerDay: number;
+  askKorumePlusTurnsPerDay: number;
   globalBudgetUsdPerDay: number;
   creditUsdUnit: number;
 }
@@ -19,6 +21,8 @@ export const knowledgeEnvSchema = z.object({
   AI_FREE_SENTENCES_PER_DAY: count.default(3),
   AI_PLUS_CREDITS_PER_MONTH: count.optional(),
   AI_PLUS_MAX_SECTIONS_PER_DAY: count.default(200),
+  AI_ASK_KORUME_FREE_TURNS_PER_DAY: count.default(10),
+  AI_ASK_KORUME_PLUS_TURNS_PER_DAY: count.default(100),
   AI_GLOBAL_BUDGET_USD_PER_DAY: usd.default(5),
   AI_CREDIT_USD_UNIT: usd.optional(),
 });
@@ -50,6 +54,8 @@ export function readKnowledgeConfig(env: EnvSource = process.env): KnowledgeConf
     freeSentencesPerDay: parsed.AI_FREE_SENTENCES_PER_DAY,
     plusCreditsPerMonth: parsed.AI_PLUS_CREDITS_PER_MONTH ?? DEV_PLUS_CREDITS_PER_MONTH,
     plusMaxSectionsPerDay: parsed.AI_PLUS_MAX_SECTIONS_PER_DAY,
+    askKorumeFreeTurnsPerDay: parsed.AI_ASK_KORUME_FREE_TURNS_PER_DAY,
+    askKorumePlusTurnsPerDay: parsed.AI_ASK_KORUME_PLUS_TURNS_PER_DAY,
     globalBudgetUsdPerDay: parsed.AI_GLOBAL_BUDGET_USD_PER_DAY,
     creditUsdUnit: parsed.AI_CREDIT_USD_UNIT ?? DEV_CREDIT_USD_UNIT,
   };

@@ -89,7 +89,7 @@ never leave the route.
 | Welcome Companion page | `companion-welcome` | — | none |
 | Companion home | `companion-home` | — | none |
 | Companion Diary | `companion-diary` | `/journal` | built |
-| Companion Knowledge Assistant | `companion-knowledge-assistant` | ❓ `/sensei`? | **placeholder** |
+| Companion Knowledge Assistant | `companion-knowledge-assistant` | ~~❓ `/sensei`?~~ **`/korume/chat`** (2026-10-03, `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume)) | **built** |
 | Learning memory | `learning-memory` | — | none |
 | Conversation memory | `conversation-memory` | — | none |
 | Growth Areas | `growth-areas` | — | none |
@@ -227,6 +227,9 @@ the table before treating any row as freshly verified:**
 > `figmaNodeId`s, which is the contradiction that surfaced this. **The strike moves nothing on the
 > decision axis** — §3's subject is whether a frame exists, and rulings live in
 > `decision-register.md`. `/sensei` remains governed by **A2**.
+>
+> **Superseded 2026-10-03:** `215:15164` is built at **`/korume/chat`** as Korume Chat; the `/sensei`
+> placeholder is deleted and the route redirects there. See `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume).
 
 ---
 
@@ -285,7 +288,7 @@ Frameless with no such conflict: `/review`, `/achievements`, `/challenges`, `/st
    `/admin/style-guide`, not the registry.
 4. ~~**`Companion Knowledge Assistant` → `/sensei`? `Growth Areas` → `/weekly-report`?**~~
    **RESOLVED — both halves, in this file** (struck 2026-08-14). `Companion Knowledge Assistant`
-   (`215:15164`) **→ `/sensei`**: §11.3 analyses the frame and §11.5's verdict row records the route
+   (`215:15164`) **→ `/sensei`** (**superseded 2026-10-03 → `/korume/chat`**, `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume)): §11.3 analyses the frame and §11.5's verdict row records the route
    as `/sensei` ✅ `(app)`. `Growth Areas` (`187:6556`) **→ NOT `/weekly-report`**: §12.4 rules the
    guess out in as many words — *"a persistent skill-progress map, not a periodic report"* — and §3's
    table above carries the same answer on the `/weekly-report` row (**A2**).
@@ -1558,7 +1561,7 @@ on its own screen.
 `lib/companion/presence/{state-machine,arbitration,contexts,speech,config}.ts`, plus
 `lib/companion/{dedupe,mastery,phase}.ts`, `components/companion/use-companion.ts`,
 `/api/companion/journal` and `/api/companion/memories`. Routes: **`/journal` (immersive)** and
-**`/sensei` (app)**. There is **no Companion home route.**
+**`/sensei` (app)** (superseded 2026-10-03: deleted, redirects to `/korume/chat`). There is **no Companion home route.**
 
 ### 11.1 `156:1310` — **Companion home** · `CONFIRMED` screen
 
@@ -1626,7 +1629,9 @@ Header `Companion / Japanese Knowledge`, badge `Learning with you`, right-hand `
   · **Seen 31 times**"* — and a link to the lesson that teaches them.
 - Rail `A SMALL MEMORY`: *"Last month you asked about 失礼します. Today you naturally used it correctly."*
 
-- **Repo:** `/sensei` exists (`(app)` chrome) ✅. `lib/ai` + the conversation module exist. **Not
+- **Repo (2026-10-03):** built at **`/korume/chat`** (`(app)` chrome) by Ask Korume — grounding and per-entity
+  exposure counts now exist; correction mode and the strategy statement are still not built (`docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume)).
+- **Repo (2026-08, superseded):** `/sensei` exists (`(app)` chrome) ✅. `lib/ai` + the conversation module exist. **Not
   modelled:** cross-module grounding, per-entity exposure counts, correction mode, in-conversation
   entity extraction, or the strategy statement.
 - ⭐ This is the destination the search panel's `Ask Companion` branch points at (§7.2) — the edge is
@@ -1648,7 +1653,7 @@ time: the name said one screen, the picture said another.
 |---|---|---|---|---|
 | `156:1310` | Companion home | **screen** | ❌ none | unbuilt; resolves the vocabulary-shelf ownership question |
 | `190:7376` | Companion Diary | **screen** | `/journal` ✅ `(immersive)` | chrome already correct; mood/favourite/search/time-rail unmodelled |
-| `215:15164` | Companion Knowledge Assistant | **screen** | `/sensei` ✅ `(app)` | grounding, exposure counts and correction mode all unbuilt |
+| `215:15164` | Companion Knowledge Assistant | **screen** | ~~`/sensei`~~ **`/korume/chat`** ✅ `(app)` (2026-10-03) | correction mode and the strategy statement unbuilt; grounding + exposure built by Ask Korume |
 | `216:15648` | *"Empty state (Companion home)"* | `STATE-VARIANT` of `190:7376` | — | **misnamed frame** |
 
 **Capabilities added:** a companion identity with tenure · **presence surfaced as copy** · dated
@@ -2019,7 +2024,7 @@ character. **Needs the user; it decides whether the IA has one Companion entity 
 | **generated content** | — | not a frame kind at all; it is the payload of the other four |
 
 **Nothing obsolete. Routes: 2 of 10 screens exist** (`/journal` immersive ≈ Diary, `/sensei` app ≈
-Knowledge Assistant); `/roadmap` exists as a placeholder; the other seven have no route.
+Knowledge Assistant — superseded 2026-10-03 → `/korume/chat`, `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0); `/roadmap` exists as a placeholder; the other seven have no route.
 
 **⭐ The taxonomy earned its keep.** Without it, this cluster reads as "14 Companion screens" and the
 Companion becomes a pile of routes. With it: the Companion **owns 10 destinations**, **visits every

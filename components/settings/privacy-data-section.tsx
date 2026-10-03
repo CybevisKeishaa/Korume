@@ -9,7 +9,8 @@ import { SettingsRow } from "./settings-row";
 import { usePreferenceSave } from "./use-preference-save";
 
 /**
- * Privacy & Data (spec §2) — all five rows the frame draws.
+ * Privacy & Data (spec §2) — the five rows the frame draws, plus the Korume
+ * switch (Ask Korume spec 2026-10-03 §3.5), placed after Camera.
  *
  * `id="privacy"` is the anchor the Danger Zone and the memory-erase page both
  * return the reader to.
@@ -33,9 +34,11 @@ export function PrivacyDataSection({ initialAiTrainingConsent }: { initialAiTrai
   const { preferences } = usePreferences();
   const microphone = usePreferenceSave("microphoneEnabled");
   const camera = usePreferenceSave("cameraEnabled");
+  const companion = usePreferenceSave("companionEnabled");
 
   const micId = useId();
   const cameraId = useId();
+  const companionId = useId();
   const aiId = useId();
 
   return (
@@ -71,6 +74,22 @@ export function PrivacyDataSection({ initialAiTrainingConsent }: { initialAiTrai
             checked={preferences.cameraEnabled}
             onCheckedChange={(checked) =>
               void camera.save({ cameraEnabled: checked }, { cameraEnabled: checked })
+            }
+          />
+        }
+      />
+
+      <SettingsRow
+        icon="companion"
+        label={t("page.companion.label")}
+        description={t("page.companion.description")}
+        htmlFor={companionId}
+        control={
+          <Switch
+            id={companionId}
+            checked={preferences.companionEnabled}
+            onCheckedChange={(checked) =>
+              void companion.save({ companionEnabled: checked }, { companionEnabled: checked })
             }
           />
         }

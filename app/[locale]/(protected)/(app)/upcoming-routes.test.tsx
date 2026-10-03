@@ -23,7 +23,7 @@ import { describe, expect, it } from "vitest";
 // `pronunciation` left in this task once its discovery hub replaced the
 // placeholder.
 const ROUTES = [
-  "review", "challenges", "sensei", "roadmap", "weekly-report",
+  "review", "challenges", "roadmap", "weekly-report",
   "statistics", "achievements", "shadowing/explore",
   "companion",
 ];
@@ -33,7 +33,7 @@ describe("upcoming routes", () => {
   // length is the only thing standing between a bad merge and a vacuous suite.
   // CLAUDE.md §7: assert the size of any collection an assertion iterates.
   it("checks every placeholder route, not an empty list", () => {
-    expect(ROUTES).toHaveLength(9);
+    expect(ROUTES).toHaveLength(8);
     expect(new Set(ROUTES).size).toBe(ROUTES.length);
   });
 

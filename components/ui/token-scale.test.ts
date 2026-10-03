@@ -76,10 +76,13 @@ const SCANNED_DIRS = [
   // Part 1b Task 13: + drawer/notes-context, drawer/notes-tab, drawer/grammar-tab, drawer/mining-tab.
   // Part 1b Task 14: + drawer/ai-knowledge-context, drawer/ai-tab, drawer/ai-section, drawer/ai-usage, drawer/section-renderers.
   // Part 1b reframe: - drawer/phrase-card, vocabulary-tab, grammar-tab and the five Task 14 AI files; + drawer/inspector.
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 42 },
+  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 44 },
   { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
   // Part 1b Task 12: + kanji-quick-inspect.
   { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
+  // Ask Korume's shared chat core (Task 8): every viewport renders through it.
+  // Task 10a: + full chat page, contextual rail and thread menu.
+  { dir: "components/korume", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 10 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
   // Task 4b: the workspace route group only; dictation stays outside this scope.

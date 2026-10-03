@@ -139,7 +139,7 @@
         "point": "{date}: {score}"
       },
       "sensei": {
-        "title": "AI Sensei Recommendation",
+        "title": "Korume's Recommendation",
         "heading": "Today's Recommendation",
         "focus": "{metric} was your lowest score this week. This lesson trains it, and you already know {percent}% of its words.",
         "stretch": "You already know {percent}% of this lesson's words — the right stretch for you.",
@@ -149,7 +149,7 @@
         "lessonDetail": "Lesson {number} · {title}",
         "start": "Start Lesson",
         "startLabel": "Start lesson: {title}",
-        "empty": "Review a few words and Sensei will match a lesson to your level."
+        "empty": "Review a few words and Korume will match a lesson to your level."
       },
       "recent": {
         "title": "Recently Practiced",

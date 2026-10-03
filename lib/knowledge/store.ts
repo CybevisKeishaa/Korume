@@ -75,6 +75,7 @@ export function createSqlKnowledgeStore(): KnowledgeStore {
         p_reserved_usd: input.reservedUsd,
         p_limits: input.limits,
         p_ttl_seconds: input.ttlSeconds,
+        p_turn_id: input.turnId ?? null,
       });
       return { outcome: row.outcome, reservationId: row.reservation_id, resetsAt: row.resets_at };
     },

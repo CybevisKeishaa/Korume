@@ -309,6 +309,17 @@ describe("PrivacyDataSection", () => {
     expect(sentBody()).toEqual({ microphoneEnabled: false });
   });
 
+  it("saves the Korume switch on its own, checked from the preference", async () => {
+    const user = userEvent.setup();
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+
+    const korume = screen.getByRole("switch", { name: copy.companion.label });
+    expect(korume).toBeChecked();
+    await user.click(korume);
+
+    expect(sentBody()).toEqual({ companionEnabled: false });
+  });
+
   it("sends AI Training to its own endpoint, not the preferences one", async () => {
     const user = userEvent.setup();
     mount(<PrivacyDataSection initialAiTrainingConsent={false} />);

@@ -39,6 +39,7 @@ export const preferencesPatchSchema = z.union([
   z.object({ reduceMotion: z.boolean() }).strict(),
   z.object({ microphoneEnabled: z.boolean() }).strict(),
   z.object({ cameraEnabled: z.boolean() }).strict(),
+  z.object({ companionEnabled: z.boolean() }).strict(),
   // The studio's panel always saves its whole view at once.
   pronunciationDisplay,
   z.object({ readingFurigana: z.enum(READING_FURIGANA_OPTIONS) }).strict(),

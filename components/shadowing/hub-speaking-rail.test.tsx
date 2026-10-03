@@ -5,14 +5,14 @@ import { HubSpeakingRail } from "./hub-speaking-rail";
 const props = {
   today: { title: "Today's Speaking", minutes: 0, minutesUnit: "min", minutesLabel: "0 of your 15-minute goal spoken today", goalPercent: 0, lessons: "0 lessons completed", scoreLabel: "Average Score", score: null, scoreMissing: "No score yet", continue: null },
   weekly: { title: "Weekly Improvement", heading: "Your Progress", metrics: [{ label: "Accuracy", value: null }, { label: "Pitch Accent", value: null }, { label: "Rhythm", value: null }], notEnoughData: "Not enough data", trend: { label: "Daily average score, last two weeks", points: [], empty: "Not enough data to show your trend." } },
-  sensei: { title: "AI Sensei Recommendation", heading: "Today's Recommendation", body: null, empty: "Review a few words and Sensei will match a lesson to your level.", pick: null },
+  sensei: { title: "Korume's Recommendation", heading: "Today's Recommendation", body: null, empty: "Review a few words and Korume will match a lesson to your level.", pick: null },
   recent: { title: "Recently Practiced", empty: "Practice a lesson and it will appear here.", scoreMissing: "No score yet", scoreLabel: "Score", rows: [] },
 };
 
 describe("HubSpeakingRail", () => {
   it("renders the four cards in order with honest empty values", () => {
     const { container } = render(<HubSpeakingRail {...props} />);
-    expect(screen.getAllByRole("region").map((region) => region.getAttribute("aria-label"))).toEqual(["Today's Speaking", "Weekly Improvement", "AI Sensei Recommendation", "Recently Practiced"]);
+    expect(screen.getAllByRole("region").map((region) => region.getAttribute("aria-label"))).toEqual(["Today's Speaking", "Weekly Improvement", "Korume's Recommendation", "Recently Practiced"]);
     expect(screen.getAllByText("No score yet", { selector: ".sr-only" })).toHaveLength(1);
     expect(screen.getAllByText("Not enough data", { selector: ".sr-only" })).toHaveLength(3);
     expect(screen.queryByRole("img", { name: props.weekly.trend.label })).not.toBeInTheDocument();

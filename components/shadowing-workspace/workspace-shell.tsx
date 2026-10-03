@@ -26,6 +26,8 @@ import { DrawerProvider, useDrawer } from "./drawer/drawer-context";
 import { NotesProvider } from "./drawer/notes-context";
 import { UtilityDrawer } from "./drawer/utility-drawer";
 import { SelectionPopoverHost } from "./selection-popover";
+import { KorumeMascot, useKorumeOverlay } from "./korume-mascot";
+import { KorumeSheet } from "./korume-sheet";
 import { drawerRowHeight, type DrawerLevel } from "@/lib/shadowing-workspace/drawer-state";
 
 // useLayoutEffect warns during SSR; on the client it runs before paint, so the session position never flashes.
@@ -119,10 +121,19 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const { requestFullscreen, supported: fullscreenSupported } = useFullscreen(rootRef, playerRef, setFullscreen);
   const focusFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("workspace", trigger), [requestFullscreen]);
   const playerFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("player", trigger), [requestFullscreen]);
+  // Ask Korume (spec §6.2): off means no mascot, no sheet, no `k`, and so no request at all.
+  const korumeEnabled = preferences.companionEnabled;
+  const korume = useKorumeOverlay(rootRef);
+  const mascotRef = useRef<HTMLDivElement>(null);
+  const korumeVisible = korumeEnabled && session.view !== "focus" && session.fullscreen === "none";
+  const openKorume = korume.openSheet;
+  const closeKorume = korume.close;
+  const returnFocusToMascot = useCallback(() => mascotRef.current?.querySelector<HTMLElement>("button")?.focus(), []);
   const shortcuts = useMemo(() => ({
     togglePlay: () => controller.togglePlay(), previousSentence: () => controller.previousSentence(), nextSentence: () => controller.nextSentence(), rewind: (seconds: number) => controller.rewind(seconds),
     toggleLoop, toggleFocus: () => dispatch({ type: "toggle-view", view: "focus" }),
-  }), [controller, dispatch, toggleLoop]);
+    ...(korumeVisible ? { askKorume: openKorume } : {}),
+  }), [controller, dispatch, korumeVisible, openKorume, toggleLoop]);
   useWorkspaceShortcuts(shortcuts);
   const drawerShown = session.view !== "focus";
   const drawerOpen = drawerShown && drawer.state.level !== "collapsed";
@@ -131,15 +142,16 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented || !(event.target instanceof Element) || event.target.closest("[role='dialog'], [data-radix-popper-content-wrapper]")) return;
-      const action = escapeAction({ popoverOpen: session.openPopover !== null, inspectorOpen: drawerOpen && drawer.state.inspector !== null, drawerOpen, fullscreen: session.fullscreen, view: session.view });
+      const action = escapeAction({ popoverOpen: session.openPopover !== null, korumeOpen: korumeVisible && korume.open, inspectorOpen: drawerOpen && drawer.state.inspector !== null, drawerOpen, fullscreen: session.fullscreen, view: session.view });
       if (action === "close-popover") dispatch({ type: "set-popover", id: null });
+      if (action === "close-korume") closeKorume();
       if (action === "close-inspector") drawerDispatch({ type: "inspector-close" });
       if (action === "collapse-drawer") drawerDispatch({ type: "collapse" });
       if (action === "exit-view") dispatch({ type: "exit-view" });
     };
     document.addEventListener("keydown", onEscape);
     return () => document.removeEventListener("keydown", onEscape);
-  }, [dispatch, drawer.state.inspector, drawerDispatch, drawerOpen, session.fullscreen, session.openPopover, session.view]);
+  }, [closeKorume, dispatch, drawer.state.inspector, drawerDispatch, drawerOpen, korume.open, korumeVisible, session.fullscreen, session.openPopover, session.view]);
 
   const normal = session.view === "normal";
   const fullTranscript = session.view === "full-transcript";
@@ -181,7 +193,22 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
         {!fullTranscript && <LiveSentence />}
       </div>
       {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
-      {session.view !== "focus" && <div className={fullTranscript ? "col-span-1 row-start-2 min-h-0 min-w-0 p-md" : "min-h-0 min-w-0"}>{children}</div>}
+      {session.view !== "focus" && (
+        <div className={fullTranscript ? "relative col-span-1 row-start-2 min-h-0 min-w-0 p-md" : "relative min-h-0 min-w-0"}>
+          {children}
+          {korumeVisible && !korume.open && <KorumeMascot mascotRef={mascotRef} onOpen={openKorume} onPress={korume.rememberSelection} />}
+        </div>
+      )}
+      {korumeEnabled && korume.draft && (
+        <KorumeSheet
+          key={korume.draft.key}
+          open={korumeVisible && korume.open}
+          anchor={korume.draft.anchor}
+          onClose={closeKorume}
+          onAskCurrent={korume.askCurrent}
+          onReturnFocus={returnFocusToMascot}
+        />
+      )}
       <SelectionPopoverHost workspaceRef={rootRef} />
       {/* Focus Mode hides the drawer; its state lives in DrawerProvider above, so leaving Focus restores it. */}
       {drawerShown && (

@@ -84,7 +84,7 @@ describe("SettingsPage", () => {
   it("offers the support card's one real destination", () => {
     mount();
     const link = screen.getByRole("link", { name: copy.support.action });
-    expect(link).toHaveAttribute("href", "/en/sensei");
+    expect(link).toHaveAttribute("href", "/en/korume/chat");
   });
 
   /**

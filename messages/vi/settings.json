@@ -178,6 +178,10 @@
       "label": "Camera",
       "description": "Mặc định tắt. Korume không cần camera để dạy bạn."
     },
+    "companion": {
+      "label": "Korume",
+      "description": "Hiện Korume trong bài học và để Korume trả lời câu hỏi của bạn. Tắt đi vẫn giữ lại các cuộc trò chuyện."
+    },
     "exportData": {
       "label": "Xuất dữ liệu",
       "description": "Tải về mọi thứ Korume lưu về bạn, trong một tệp JSON.",

@@ -28,7 +28,8 @@ interface MemoryReservation {
   id: string;
   requestedBy: string | null;
   billingScope: "learner" | "system";
-  entitlementKind: "free_sentence" | "plus_section" | null;
+  entitlementKind: ReserveInput["entitlementKind"];
+  turnId: string | null;
   fingerprint: string;
   reservedCredits: number;
   reservedUsd: number;
@@ -40,7 +41,7 @@ interface MemoryReservation {
 
 interface MemoryCharge {
   userId: string;
-  entitlementKind: "free_sentence" | "plus_section";
+  entitlementKind: NonNullable<ReserveInput["entitlementKind"]>;
   fingerprint: string;
   credits: number;
   generationId: string;
@@ -140,6 +141,9 @@ export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
         const row = budgetRow(expired.day);
         row.reservedUsd = Math.max(row.reservedUsd - expired.reservedUsd, 0);
       }
+      if (input.turnId && reservations.some((r) => r.turnId === input.turnId && used(r))) {
+        return { outcome: "turn_exists" as const, reservationId: null, resetsAt: null };
+      }
       const today = day(clock);
       const thisMonth = month(clock);
       const row = budgetRow(today);
@@ -154,15 +158,24 @@ export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
         else if (new Set(freeToday.map((r) => r.fingerprint)).size >= input.limits.freeSentencesPerDay) {
           return { outcome: "quota_exhausted" as const, reservationId: null, resetsAt: nextDay(clock) };
         }
-      } else if (input.billingScope === "learner" && input.entitlementKind === "plus_section") {
-        const plus = mine.filter((r) => r.entitlementKind === "plus_section");
-        if (plus.filter((r) => r.day === today).length >= input.limits.plusMaxSectionsPerDay) {
+      } else if (input.billingScope === "learner" && input.entitlementKind === "korume_free_turn") {
+        if (mine.filter((r) => r.day === today && r.entitlementKind === "korume_free_turn").length
+            >= input.limits.askKorumeFreeTurnsPerDay) {
+          return { outcome: "quota_exhausted" as const, reservationId: null, resetsAt: nextDay(clock) };
+        }
+      } else if (input.billingScope === "learner" &&
+        (input.entitlementKind === "plus_section" || input.entitlementKind === "korume_plus_turn")) {
+        const sameKind = mine.filter((r) => r.entitlementKind === input.entitlementKind);
+        const fuse = input.entitlementKind === "plus_section" ? input.limits.plusMaxSectionsPerDay : input.limits.askKorumePlusTurnsPerDay;
+        if (sameKind.filter((r) => r.day === today).length >= fuse) {
           return { outcome: "fuse_tripped" as const, reservationId: null, resetsAt: nextDay(clock) };
         }
+        const paid = mine.filter((r) => r.entitlementKind === "plus_section" || r.entitlementKind === "korume_plus_turn");
         const credits =
-          charges.filter((c) => c.userId === input.requestedBy && c.month === thisMonth && c.entitlementKind === "plus_section")
+          charges.filter((c) => c.userId === input.requestedBy && c.month === thisMonth &&
+            (c.entitlementKind === "plus_section" || c.entitlementKind === "korume_plus_turn"))
             .reduce((sum, c) => sum + c.credits, 0) +
-          plus.filter((r) => r.month === thisMonth && r.status === "held").reduce((sum, r) => sum + r.reservedCredits, 0);
+          paid.filter((r) => r.month === thisMonth && r.status === "held").reduce((sum, r) => sum + r.reservedCredits, 0);
         if (credits + input.reservedCredits > input.limits.plusCreditsPerMonth) {
           return { outcome: "credits_exhausted" as const, reservationId: null, resetsAt: nextMonth(clock) };
         }
@@ -170,7 +183,8 @@ export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
       const reservation: MemoryReservation = {
         id: randomUUID(), requestedBy: input.requestedBy, billingScope: input.billingScope,
         entitlementKind: input.entitlementKind, fingerprint: input.fingerprint,
-        reservedCredits: input.entitlementKind === "plus_section" ? input.reservedCredits : 0,
+        turnId: input.turnId ?? null,
+        reservedCredits: input.entitlementKind === "plus_section" || input.entitlementKind === "korume_plus_turn" ? input.reservedCredits : 0,
         reservedUsd: input.reservedUsd, status: "held",
         expiresAt: new Date(clock.getTime() + input.ttlSeconds * 1000), day: today, month: thisMonth,
       };
@@ -199,7 +213,8 @@ export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
         if (!duplicate) {
           charges.push({
             userId: reservation.requestedBy, entitlementKind: reservation.entitlementKind, fingerprint: reservation.fingerprint,
-            credits: reservation.entitlementKind === "plus_section" ? Math.max(actualCredits, 0) : 0,
+            credits: reservation.entitlementKind === "plus_section" || reservation.entitlementKind === "korume_plus_turn"
+              ? Math.max(actualCredits, 0) : 0,
             generationId, reservationId, day: reservation.day, month: reservation.month,
           });
         }

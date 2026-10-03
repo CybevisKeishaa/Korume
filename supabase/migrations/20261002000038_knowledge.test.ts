@@ -38,7 +38,8 @@ describe("knowledge and AI ledger SQL contract", () => {
 
   it("ties entitlement kind to billing scope", () => {
     expect(sql).toContain("billing_scope text not null check (billing_scope in ('learner', 'system'))");
-    expect(sql).toContain("entitlement_kind text check (entitlement_kind in ('free_sentence', 'plus_section'))");
+    expect(sql).toContain("entitlement_kind text check (entitlement_kind in ('free_sentence', 'plus_section', 'korume_free_turn', 'korume_plus_turn'))");
+    expect(sql).toContain("entitlement_kind text not null check (entitlement_kind in ('free_sentence', 'plus_section', 'korume_free_turn', 'korume_plus_turn'))");
     expect(sql).toContain("check ((billing_scope = 'system') = (entitlement_kind is null))");
     expect(sql).toContain("check (status in ('held', 'settled', 'released'))");
   });
@@ -48,7 +49,7 @@ describe("knowledge and AI ledger SQL contract", () => {
       "create unique index ai_usage_charges_free_sentence_once on ai_usage_charges (user_id, period_day, fingerprint) where entitlement_kind = 'free_sentence'",
     );
     expect(sql).toContain(
-      "create unique index ai_usage_charges_plus_generation_once on ai_usage_charges (generation_id) where entitlement_kind = 'plus_section'",
+      "create unique index ai_usage_charges_plus_generation_once on ai_usage_charges (generation_id) where entitlement_kind in ('plus_section', 'korume_plus_turn')",
     );
   });
 
@@ -56,6 +57,12 @@ describe("knowledge and AI ledger SQL contract", () => {
     expect(sql).toMatch(/create table ai_generations \(.*requested_by_user_id uuid references users \(id\) on delete set null/);
     expect(sql).toMatch(/create table ai_reservations \(.*requested_by_user_id uuid references users \(id\) on delete set null/);
     expect(sql).toMatch(/create table ai_usage_charges \(.*user_id uuid not null references users \(id\) on delete cascade/);
+  });
+
+  it("records optional Korume turn IDs in generation telemetry", () => {
+    expect(sql).toContain("turn_id uuid");
+    expect(sql).toContain("create index ai_generations_turn on ai_generations (turn_id) where turn_id is not null");
+    expect(sql).toContain("(p_row->>'turnid')::uuid");
   });
 
   it("gives learners no direct access to the cache or the ledger", () => {
@@ -85,5 +92,31 @@ describe("knowledge and AI ledger SQL contract", () => {
     const reserve = sql.slice(sql.indexOf("create function ai_reserve"), sql.indexOf("create function ai_record_generation"));
     expect(reserve).toContain("pg_advisory_xact_lock");
     expect(reserve).toMatch(/from ai_budget_days where period_day = v_day for update/);
+  });
+
+  it("keys one active reservation per turn and checks it after reclaiming expired holds", () => {
+    const reserve = sql.slice(sql.indexOf("create function ai_reserve"), sql.indexOf("create function ai_record_generation"));
+    expect(sql).toContain("turn_id uuid");
+    expect(sql).toContain("create unique index ai_reservations_turn_active on ai_reservations (turn_id) where turn_id is not null and status in ('held', 'settled')");
+    expect(reserve).toContain("p_turn_id uuid default null");
+    expect(reserve.indexOf("perform ai_release_expired()")).toBeLessThan(reserve.indexOf("r.turn_id = p_turn_id"));
+    expect(reserve.indexOf("r.turn_id = p_turn_id")).toBeLessThan(reserve.indexOf("from ai_budget_days where period_day = v_day for update"));
+    expect(reserve).toContain("'turn_exists'::text");
+    expect(sql).toContain("revoke all on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) from public, anon, authenticated");
+    expect(sql).toContain("grant execute on function ai_reserve(uuid, text, text, text, int, numeric, jsonb, int, uuid) to service_role");
+  });
+
+  it("shares Plus credit capacity while keeping the two daily fuses separate", () => {
+    const reserve = sql.slice(sql.indexOf("create function ai_reserve"), sql.indexOf("create function ai_record_generation"));
+    const settle = sql.slice(sql.indexOf("create function ai_settle"), sql.indexOf("create function ai_release("));
+    const snapshot = sql.slice(sql.indexOf("create function ai_usage_snapshot"));
+    expect(reserve).toContain("r.entitlement_kind = 'korume_free_turn'");
+    expect(reserve).toContain("p_limits->>'askkorumefreeturnsperday'");
+    expect(reserve).toContain("r.entitlement_kind = p_entitlement_kind");
+    expect(reserve).toContain("p_limits->>'askkorumeplusturnsperday'");
+    expect(reserve.split("entitlement_kind in ('plus_section', 'korume_plus_turn')").length - 1).toBe(4);
+    expect(settle).toContain("case when v_res.entitlement_kind in ('plus_section', 'korume_plus_turn') then greatest(p_actual_credits, 0) else 0 end");
+    expect(snapshot.split("entitlement_kind in ('plus_section', 'korume_plus_turn')").length - 1).toBe(2);
+    expect(snapshot).toContain("'askkorumeturnsused'");
   });
 });

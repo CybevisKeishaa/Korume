@@ -25,6 +25,8 @@ describe("route protection", () => {
       "/shadowing",
       "/reading",
       "/conversation",
+      // Ask Korume's full chat; a conscious edit, as this pin requires.
+      "/korume",
       "/certification",
       "/community",
       "/playlists",
@@ -36,7 +38,6 @@ describe("route protection", () => {
       "/challenges",
       "/review",
       "/roadmap",
-      "/sensei",
       "/settings",
       // Phase 1b's two new destinations. Added here as a conscious edit,
       // which is exactly what this pin exists to force.

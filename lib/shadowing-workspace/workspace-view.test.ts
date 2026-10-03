@@ -16,4 +16,11 @@ describe("workspace views", () => {
     expect(escapeAction({ popoverOpen: false, inspectorOpen: false, drawerOpen: false, fullscreen: "none", view: "focus" })).toBe("exit-view");
     expect(escapeAction({ popoverOpen: false, inspectorOpen: false, drawerOpen: false, fullscreen: "none", view: "normal" })).toBe("none");
   });
+
+  it("closes the Korume sheet after a popover and before the Inspector (Ask Korume spec §6.2)", () => {
+    const base = { popoverOpen: false, korumeOpen: true, inspectorOpen: true, drawerOpen: true, fullscreen: "none" as const, view: "normal" as const };
+    expect(escapeAction({ ...base, popoverOpen: true })).toBe("close-popover");
+    expect(escapeAction(base)).toBe("close-korume");
+    expect(escapeAction({ ...base, korumeOpen: false })).toBe("close-inspector");
+  });
 });

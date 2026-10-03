@@ -299,3 +299,34 @@ describe("companion.json VI — Journal surface (primary learner locale)", () =>
     expect(vi.journal.empty).not.toMatch(/chưa có|không có|trống/i);
   });
 });
+
+describe("companion.json — Ask Korume (spec 2026-10-03 §6.4)", () => {
+  it("pins the EN turn states and the inline error copy", () => {
+    expect(en.ask.thinking).toBe("Korume is thinking…");
+    expect(en.ask.tryAgain).toBe("Try again");
+    expect(en.ask.limitFree).toBe("You've asked {limit} questions today · back at {time}");
+    expect(en.ask.limitPlus).toBe("This month's AI credits are used up · renews on {date}");
+    expect(en.ask.slowDown).toBe("Slow down a little · {seconds}s");
+    expect(en.ask.resting).toBe("Korume is resting");
+    expect(en.ask.hint).toBe("Enter to send · Shift+Enter for a new line");
+    expect(en.ask.seen).toBe("{count, plural, one {Seen {count} time} other {Seen {count} times}}");
+    expect(en.ask.seenCapped).toBe("Seen {count}+ times");
+  });
+
+  it("never hard-codes the Free limit and never says Sensei (spec §6.5)", () => {
+    for (const ask of [en.ask, vi.ask]) {
+      expect(ask.limitFree).toContain("{limit}");
+      expect(JSON.stringify(ask)).not.toMatch(/sensei/i);
+    }
+  });
+
+  it("pins the full-chat chrome and line-exposure wording", () => {
+    expect(en.ask.chat.brand).toBe("Korume");
+    expect(en.ask.chat.knowledge).toBe("Japanese Knowledge");
+    expect(en.ask.chat.signature).toBe("KORUME");
+    expect(en.ask.chat.memory).toBe("Korume Memory");
+    expect(en.ask.chat.grounding).toBe("You've seen {label} in {count, plural, one {{count} Shadowing line} other {{count} Shadowing lines}}.");
+    expect(en.ask.chat.groundingCapped).toBe("You've seen {label} in {count}+ Shadowing lines.");
+    expect(en.ask.chat.untitledConversation).toBe("Untitled conversation");
+  });
+});

@@ -139,7 +139,7 @@
         "point": "{date}: {score}"
       },
       "sensei": {
-        "title": "Đề xuất từ AI Sensei",
+        "title": "Đề xuất từ Korume",
         "heading": "Đề xuất hôm nay",
         "focus": "{metric} là điểm thấp nhất của bạn tuần này. Bài học này rèn kỹ năng đó, và bạn đã biết {percent}% số từ.",
         "stretch": "Bạn đã biết {percent}% số từ trong bài học này — một thử thách vừa sức.",
@@ -149,7 +149,7 @@
         "lessonDetail": "Bài {number} · {title}",
         "start": "Bắt đầu bài học",
         "startLabel": "Bắt đầu bài học: {title}",
-        "empty": "Hãy ôn vài từ để Sensei ghép bài học phù hợp với trình độ của bạn."
+        "empty": "Hãy ôn vài từ để Korume ghép bài học phù hợp với trình độ của bạn."
       },
       "recent": {
         "title": "Đã luyện gần đây",

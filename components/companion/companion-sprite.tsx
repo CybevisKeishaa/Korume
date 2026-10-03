@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "@/lib/i18n";
-import { useTheme } from "@/components/providers/theme-provider";
+import { useThemeOrNull } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 
 export type CompanionPose = "sitting" | "standing" | "reading";
@@ -24,14 +24,16 @@ const POSE_CLASS: Record<CompanionPose, string> = {
   reading: "-rotate-3",
 };
 
-export function CompanionSprite({ pose, onActivate }: { pose: CompanionPose; onActivate: () => void }) {
+/** `label` names what activating it does where the sprite is not the journal door (Ask Korume's mascot). */
+export function CompanionSprite({ pose, onActivate, label }: { pose: CompanionPose; onActivate: () => void; label?: string }) {
   const t = useTranslations("companion");
-  const { reduceMotion } = useTheme();
+  // No provider (outside the app shell) → hold still: the reduce-motion-safe default.
+  const reduceMotion = useThemeOrNull()?.reduceMotion ?? true;
   return (
     <button
       type="button"
       onClick={onActivate}
-      aria-label={t("a11y.sprite")}
+      aria-label={label ?? t("a11y.sprite")}
       className={cn(
         "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
         POSE_CLASS[pose],

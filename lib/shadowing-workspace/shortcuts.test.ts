@@ -15,6 +15,13 @@ describe("workspace shortcuts", () => {
     expect(shortcutFor(event("F"))).toBe("toggle-focus");
   });
 
+  it("maps k to Ask Korume only outside editable targets", () => {
+    expect(shortcutFor(event("k"))).toBe("ask-korume");
+    expect(shortcutFor(event("K"))).toBe("ask-korume");
+    expect(shortcutFor(event("k", document.createElement("textarea")))).toBeNull();
+    expect(shortcutFor(event("k", document.body, { metaKey: true }))).toBeNull();
+  });
+
   it("does not use modified keys", () => {
     for (const modifiers of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) expect(shortcutFor(event(" ", document.body, modifiers))).toBeNull();
   });

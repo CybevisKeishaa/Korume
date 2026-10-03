@@ -15,6 +15,8 @@ const CONFIG: KnowledgeConfig = {
   freeSentencesPerDay: 3,
   plusCreditsPerMonth: 1000,
   plusMaxSectionsPerDay: 200,
+  askKorumeFreeTurnsPerDay: 10,
+  askKorumePlusTurnsPerDay: 100,
   globalBudgetUsdPerDay: 5,
   creditUsdUnit: 0.001,
 };

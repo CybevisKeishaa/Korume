@@ -10,6 +10,8 @@ export const PROTECTED_PREFIXES = [
   // but deliberately kept the ROUTE at /conversation (see
   // korume-rebrand-plan-a-status). Protect the real route, not the label.
   "/conversation",
+  // Ask Korume's full chat (spec 2026-10-03 §6). /sensei is a redirect here (next.config.mjs), not a page.
+  "/korume",
   "/certification",
   "/community",
   "/playlists",
@@ -27,7 +29,6 @@ export const PROTECTED_PREFIXES = [
   "/challenges",
   "/review",
   "/roadmap",
-  "/sensei",
   "/settings",
   // Phase 1b's two new nav destinations, same terms as the Task 6 set above:
   // placeholder content today, but real protected routes under
