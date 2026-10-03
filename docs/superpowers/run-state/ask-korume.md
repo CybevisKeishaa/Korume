@@ -49,6 +49,12 @@ Task 0 probe (Claude, 2026-10-03):
   `korume-race/assert.sql`. Reset 0; all 8 `verify:db:*` 0 (korume = single-session + 20-connection race). Live
   mutations each red then restored green: Free `>=`→`>` (case 8), no `ai_release_expired` (9), held turns ignored
   (12), no per-user advisory lock (race), `ai_settle` skipped (13). tsc/lint/protocol 0; vitest 486 / 4374.
+- Task 3 (Claude — Codex quota out): `companion_enabled boolean not null default true` IN PLACE in migration 033
+  (its own contract test pins "user_preferences in exactly one migration", so the plan's 043 would have gone red);
+  options/data/validation wired; Settings row after Camera with a speech-bubble `companion` glyph; `korumeGate()`
+  fail-closed via `readPreferencesOrThrow`. RED 8 tests first; mutation (gate → `readPreferences`) → fail-closed
+  test red, restored green. Reset 0; all 8 `verify:db:*` 0; live column default `true`, NOT NULL. tsc/lint/protocol
+  0; vitest 487 / 4381.
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
@@ -63,6 +69,6 @@ None.
 
 ## Next actions
 
-1. Task 3 (`companion_enabled` in place in migration 033 per AGENTS.md §6, not a new 043; Settings row; fail-closed
-   `korumeGate()`). Codex quota resets ~14:30 2026-10-03; if still out, Claude implements (memory
-   `codex-limit-claude-continues`). Plan Correction 10 applies to Task 4.
+1. Task 4 (threads: validation, idempotent create, read, pending projection, HTTP create race). Plan Correction 10:
+   writes through the service client with explicit `user_id`. Codex (`-m gpt-6-sol`) if its quota is back
+   (~14:30 2026-10-03), else Claude.

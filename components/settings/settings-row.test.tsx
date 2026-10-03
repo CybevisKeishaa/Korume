@@ -6,7 +6,7 @@ import { SettingsIcon, type SettingsIconKey } from "./settings-icon";
 
 const ICON_KEYS: SettingsIconKey[] = [
   "language", "goal", "schedule", "frequency", "difficulty", "scale",
-  "motion", "microphone", "camera", "training", "export", "history",
+  "motion", "microphone", "camera", "companion", "training", "export", "history",
 ];
 
 describe("SettingsSection", () => {
@@ -98,7 +98,7 @@ describe("SettingsIcon", () => {
   // Gathered by a key list, so the list's own size is asserted (CLAUDE.md §7):
   // `it.each([])` generates zero tests and reports green.
   it("covers every row this branch draws", () => {
-    expect(ICON_KEYS).toHaveLength(12);
+    expect(ICON_KEYS).toHaveLength(13);
     expect(new Set(ICON_KEYS).size).toBe(ICON_KEYS.length);
   });
 

@@ -178,6 +178,10 @@
       "label": "Camera",
       "description": "Off unless you turn it on. Korume does not need it to teach you."
     },
+    "companion": {
+      "label": "Korume",
+      "description": "Show Korume in your lessons and let it answer your questions. Turning it off keeps your conversations."
+    },
     "exportData": {
       "label": "Export Data",
       "description": "Download everything Korume stores about you, as one JSON file.",

@@ -57,6 +57,7 @@ export interface UserPreferences {
   reduceMotion: boolean;
   microphoneEnabled: boolean;
   cameraEnabled: boolean;
+  companionEnabled: boolean;
   pronunciationSort: PronunciationSort;
   pronunciationDuration: PronunciationDuration;
   pronunciationHideCompleted: boolean;
@@ -87,6 +88,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   reduceMotion: false,
   microphoneEnabled: true,
   cameraEnabled: false,
+  companionEnabled: true,
   pronunciationSort: "recommended",
   pronunciationDuration: null,
   pronunciationHideCompleted: false,

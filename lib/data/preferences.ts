@@ -17,6 +17,7 @@ interface PreferencesRow {
   reduce_motion: boolean;
   microphone_enabled: boolean;
   camera_enabled: boolean;
+  companion_enabled: boolean;
   pronunciation_sort: UserPreferences["pronunciationSort"];
   pronunciation_duration: NonNullable<UserPreferences["pronunciationDuration"]> | null;
   pronunciation_hide_completed: boolean;
@@ -37,7 +38,7 @@ interface PreferencesRow {
 }
 
 const COLUMNS =
-  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled, pronunciation_sort, pronunciation_duration, pronunciation_hide_completed, reading_furigana, reading_translation, reading_jp_font, reading_text_size, reading_line_height, reading_width, reading_emphasis, reading_color_preset, playback_default_rate, playback_loop_count, playback_auto_pause, show_shortcut_hints, resume_behavior, study_atmosphere";
+  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled, companion_enabled, pronunciation_sort, pronunciation_duration, pronunciation_hide_completed, reading_furigana, reading_translation, reading_jp_font, reading_text_size, reading_line_height, reading_width, reading_emphasis, reading_color_preset, playback_default_rate, playback_loop_count, playback_auto_pause, show_shortcut_hints, resume_behavior, study_atmosphere";
 
 function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferences {
   if (!row) return { ...DEFAULT_PREFERENCES, dailyMinutes };
@@ -50,6 +51,7 @@ function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferen
     reduceMotion: row.reduce_motion,
     microphoneEnabled: row.microphone_enabled,
     cameraEnabled: row.camera_enabled,
+    companionEnabled: row.companion_enabled,
     pronunciationSort: row.pronunciation_sort,
     pronunciationDuration: row.pronunciation_duration,
     pronunciationHideCompleted: row.pronunciation_hide_completed,
@@ -140,6 +142,7 @@ const TO_COLUMN: Record<Exclude<keyof UserPreferences, "dailyMinutes">, string> 
   reduceMotion: "reduce_motion",
   microphoneEnabled: "microphone_enabled",
   cameraEnabled: "camera_enabled",
+  companionEnabled: "companion_enabled",
   pronunciationSort: "pronunciation_sort",
   pronunciationDuration: "pronunciation_duration",
   pronunciationHideCompleted: "pronunciation_hide_completed",

@@ -27,6 +27,7 @@ export type SettingsIconKey =
   | "motion"
   | "microphone"
   | "camera"
+  | "companion"
   | "training"
   | "export"
   | "history";
@@ -100,6 +101,13 @@ const GLYPHS: Record<SettingsIconKey, React.ReactNode> = {
     <>
       <rect x="3.4" y="6.6" width="12.4" height="10.8" rx="2.4" />
       <path d="M15.8 11.2 20.6 8.4v7.2l-4.8-2.8Z" />
+    </>
+  ),
+  // A speech bubble — Korume talks with you.
+  companion: (
+    <>
+      <path d="M4.4 6.6a2.2 2.2 0 0 1 2.2-2.2h10.8a2.2 2.2 0 0 1 2.2 2.2v7.2a2.2 2.2 0 0 1-2.2 2.2H10l-4 3.6V16h0.6a2.2 2.2 0 0 1-2.2-2.2Z" />
+      <path d="M8.6 10.2h6.8" />
     </>
   ),
   // A spark over a chip — "help improve our models", not a live switch.

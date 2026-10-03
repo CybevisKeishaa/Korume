@@ -14,6 +14,8 @@ create table user_preferences (
   reduce_motion boolean not null default false,
   microphone_enabled boolean not null default true,
   camera_enabled boolean not null default false,
+  -- Ask Korume (spec 2026-10-03 §3.5): the server gate reads this; off hides Korume and refuses its API.
+  companion_enabled boolean not null default true,
   pronunciation_sort text not null default 'recommended'
     check (pronunciation_sort in ('recommended', 'newest', 'shortest', 'in_progress')),
   pronunciation_duration text

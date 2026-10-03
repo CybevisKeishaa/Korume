@@ -48,6 +48,10 @@ describe("durable user preferences SQL contract", () => {
     expect(subsystemMigrations()).toEqual([filename]);
   });
 
+  it("keeps Korume on unless the learner turns it off (Ask Korume spec §3.5)", () => {
+    expect(migration()).toContain("companion_enabled boolean not null default true");
+  });
+
   it("pins the option lists from their one TypeScript home", () => {
     const sql = migration();
     expect(sql).toContain(`check (learning_schedule in (${quoted(LEARNING_SCHEDULE_OPTIONS)}))`);

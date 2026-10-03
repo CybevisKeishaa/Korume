@@ -36,7 +36,7 @@ describe("preference options", () => {
     expect(DEFAULT_PREFERENCES).toEqual({
       learningSchedule: "every_day", scheduleDays: [1, 2, 3, 4, 5, 6, 7],
       reviewFrequency: "normal", difficulty: "adaptive", displayScale: "normal",
-      reduceMotion: false, microphoneEnabled: true, cameraEnabled: false, dailyMinutes: 15,
+      reduceMotion: false, microphoneEnabled: true, cameraEnabled: false, companionEnabled: true, dailyMinutes: 15,
       pronunciationSort: "recommended", pronunciationDuration: null, pronunciationHideCompleted: false,
       readingFurigana: "adaptive", readingTranslation: "always", readingJpFont: "gothic", readingTextSize: "m",
       readingLineHeight: "comfortable", readingWidth: "normal", readingEmphasis: "soft",
