@@ -18,7 +18,7 @@ export async function readJsonBody(request: Request, maxBytes: number): Promise<
       if (done) break;
       bytes += value.byteLength;
       if (bytes > maxBytes) {
-        await reader.cancel();
+        await reader.cancel().catch(() => undefined); // a failed cancel must not turn the 413 into a 400
         return { ok: false, status: 413 };
       }
       text += decoder.decode(value, { stream: true });

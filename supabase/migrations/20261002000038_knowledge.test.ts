@@ -112,6 +112,7 @@ describe("knowledge and AI ledger SQL contract", () => {
     const reserve = sql.slice(sql.indexOf("create function ai_reserve"), sql.indexOf("create function ai_record_generation"));
     expect(reserve).toContain("p_billing_scope = 'learner' or (p_billing_scope = 'system' and p_requested_by is not null)");
     expect(reserve).toContain("r.billing_scope = 'system'");
+    expect(reserve).toContain("(r.status in ('held', 'settled') or r.late_spent_at is not null)");
     expect(reserve).toContain("p_limits->>'systemgenerationsperuserperday'");
     expect(reserve).toContain("'quota_exhausted'::text, v_next_day");
   });

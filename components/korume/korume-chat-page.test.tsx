@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render } from "@/test/render";
 import type { GroundedEntity, KorumeMessageView, KorumeThreadDetail } from "@/lib/korume/types";
@@ -165,6 +165,17 @@ describe("KorumeChatPage", () => {
       expect(screen.getByRole("textbox")).toBe(box);
       expect(document.activeElement).toBe(box);
       expect(screen.getByText("First question")).toBeInTheDocument();
+    });
+
+    it("Back to a not-found ?thread is another conversation — the created one does not stay, nor return to the URL", async () => {
+      const { view, created } = await sendFirst();
+      view.rerender(page({ detail: detailWith({ id: created }, [answer("server", [])]) }));
+      const replace = vi.spyOn(window.history, "replaceState");
+      act(() => { window.dispatchEvent(new PopStateEvent("popstate")); });
+      view.rerender(page({ notFound: true }));
+      expect(screen.getByRole("status")).toHaveTextContent("That conversation could not be found");
+      expect(screen.queryByText("First question")).toBeNull();
+      expect(replace).not.toHaveBeenCalled();
     });
   });
 

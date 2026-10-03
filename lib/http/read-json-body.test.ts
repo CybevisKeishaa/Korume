@@ -39,6 +39,15 @@ describe("readJsonBody", () => {
       .resolves.toEqual({ ok: false, status: 413 });
   });
 
+  it("still answers 413 when cancelling the oversized stream fails", async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) { controller.enqueue(encoder.encode("x".repeat(64))); },
+      cancel() { throw new Error("cancel failed"); },
+    });
+    const init = { method: "POST", body: stream, duplex: "half" } as RequestInit;
+    await expect(readJsonBody(new Request("http://localhost/test", init), 100)).resolves.toEqual({ ok: false, status: 413 });
+  });
+
   it("returns 400 for malformed JSON, an empty body, and a null body", async () => {
     await expect(readJsonBody(request("{"), 100)).resolves.toEqual({ ok: false, status: 400 });
     await expect(readJsonBody(request(""), 100)).resolves.toEqual({ ok: false, status: 400 });

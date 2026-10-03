@@ -217,7 +217,7 @@ end $$;
 
 -- 9b. System-funded generations are capped per requesting user; released holds do not count.
 do $$
-declare a record; b record; c record; other record; anonymous record; after_release record;
+declare a record; b record; c record; other record; anonymous record; after_release record; after_late record;
 begin
   select * into a from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-a', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
   select * into b from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-b', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
@@ -231,7 +231,14 @@ begin
   perform ai_release(a.reservation_id);
   select * into after_release from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-after-release', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
   if after_release.outcome <> 'reserved' then raise exception 'FAIL 9b: released system hold still counted (%)', after_release.outcome; end if;
-  raise notice 'PASS 9b system cap is per user; null users and released holds are uncapped';
+  -- b's hold expires mid-call and the call is then spent late: released, but it cost money — it still counts.
+  update ai_reservations set expires_at = now() - interval '1 second' where id = b.reservation_id;
+  perform ai_release_expired();
+  perform ai_record_late_spend(b.reservation_id, 0.01);
+  if (select late_spent_at from ai_reservations where id = b.reservation_id) is null then raise exception 'FAIL 9b: late spend not recorded'; end if;
+  select * into after_late from ai_reserve(pg_temp.kgate_user('system-cap'), 'system', null, 'kgate-s9b-after-late', 0, 0.01, pg_temp.kgate_limits(3, 200, 1000, 2), 120);
+  if after_late.outcome <> 'quota_exhausted' then raise exception 'FAIL 9b: a late-spent system call was not counted (%)', after_late.outcome; end if;
+  raise notice 'PASS 9b system cap is per user; null users and released holds are uncapped; late-spent holds count';
 end $$;
 
 -- 10. Free: nine sections of one sentence use one slot; the fourth sentence is refused.

@@ -99,6 +99,14 @@ describe("gemini adapter", () => {
     expect(sent).toContain("minItems"); // only the bound Gemini rejects is dropped
   });
 
+  it("keeps a property that happens to be named maxItems — only the keyword is stripped", async () => {
+    generateContent.mockResolvedValue({ text: JSON.stringify({ maxItems: 3 }) });
+    await createGeminiProvider(cfg).generateStructured(req, z.object({ maxItems: z.number() }));
+    const sent = generateContent.mock.calls[0]?.[0].config.responseJsonSchema as { properties: object; required: string[] };
+    expect(sent.properties).toHaveProperty("maxItems");
+    expect(sent.required).toContain("maxItems");
+  });
+
   it("maps a 429 onto the shared rate_limited kind", async () => {
     generateContent.mockRejectedValue(apiError(429));
     await expect(createGeminiProvider(cfg).generateText(req)).rejects.toMatchObject({

@@ -270,7 +270,8 @@ begin
   if p_billing_scope = 'system' and p_requested_by is not null then
     select count(*) into v_count from ai_reservations r
     where r.requested_by_user_id = p_requested_by and r.period_day = v_day and r.billing_scope = 'system'
-      and r.status in ('held', 'settled');
+      -- A hold that expired before its call finished was still spent (late_spent_at): it counts.
+      and (r.status in ('held', 'settled') or r.late_spent_at is not null);
     if v_count >= coalesce((p_limits->>'systemGenerationsPerUserPerDay')::int, 2147483647) then
       return query select null::uuid, 'quota_exhausted'::text, v_next_day;
       return;

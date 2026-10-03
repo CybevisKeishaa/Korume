@@ -85,10 +85,15 @@ function mapError(err: unknown): AiError {
  * the response against the full zod schema, so an overlong array is still refused as `invalid_output`.
  */
 function toResponseJsonSchema(schema: z.ZodType): unknown {
-  const strip = (node: unknown): unknown => {
-    if (Array.isArray(node)) return node.map(strip);
+  // Keys of `properties` / `$defs` are names, not keywords: a field called "maxItems" is kept.
+  const strip = (node: unknown, names = false): unknown => {
+    if (Array.isArray(node)) return node.map((item) => strip(item));
     if (!node || typeof node !== "object") return node;
-    return Object.fromEntries(Object.entries(node).filter(([key]) => key !== "maxItems").map(([key, value]) => [key, strip(value)]));
+    return Object.fromEntries(
+      Object.entries(node)
+        .filter(([key]) => names || key !== "maxItems")
+        .map(([key, value]) => [key, strip(value, !names && (key === "properties" || key === "$defs"))]),
+    );
   };
   return strip(z.toJSONSchema(schema));
 }

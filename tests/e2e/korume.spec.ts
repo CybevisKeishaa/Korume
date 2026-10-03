@@ -256,13 +256,18 @@ test("6 · a free chat's first send puts its new thread in the URL by replace; t
   const posts = await threadPosts(page);
   await stubTurns(page, (body) => ({ status: 200, body: answerOf(body.turnId, `Answer to: ${body.text}`) }));
   await page.goto("/en/korume/chat");
+  // router.refresh() after the answer: the RSC fetch of this page under ?thread (not a Link prefetch).
+  const refreshed = page.waitForResponse((response) => {
+    const headers = response.request().headers();
+    return headers.rsc === "1" && !headers["next-router-prefetch"] && /\/en\/korume\/chat\?thread=/.test(response.url());
+  });
   await composer(page).fill("A free question");
   await composer(page).press("Enter");
   await expect(page.getByText("Answer to: A free question")).toBeVisible();
   expect(posts).toHaveLength(1);
   await expect(page).toHaveURL(new RegExp(`/en/korume/chat\\?thread=${posts[0]!.threadId}$`));
-  // router.refresh() after the answer re-renders the page under ?thread: same conversation, focus kept.
-  await page.waitForTimeout(1_000);
+  // That refresh re-renders the page under ?thread: same conversation, focus kept.
+  await refreshed;
   await expect(page.getByText("A free question", { exact: true })).toBeVisible();
   await expect(composer(page)).toBeFocused();
   // Reload shows that thread (it exists for real; the stubbed turn was never persisted), not a not-found line.
@@ -302,4 +307,26 @@ test("7 · a selected span of a transcript line is the anchor the sheet asks abo
   await expect(sheet(page).getByText("Answer to: What is this word?")).toBeVisible();
   expect(posts).toHaveLength(1);
   expect(posts[0]).toMatchObject({ lineId: data.lineIds[4], span: { start: 0, end: 2 } });
+});
+
+test("8 · Back from a created thread to a not-found ?thread shows that page, not the created conversation", async ({ page }) => {
+  await registerLearner(page, "e2e_korume_back");
+  const posts = await threadPosts(page);
+  await stubTurns(page, (body) => ({ status: 200, body: answerOf(body.turnId, `Answer to: ${body.text}`) }));
+  const missing = "00000000-0000-4000-8000-00000000dead";
+  const notFound = () => page.getByRole("status").filter({ hasText: "could not be found" });
+  await page.goto(`/en/korume/chat?thread=${missing}`);
+  await expect(notFound()).toBeVisible();
+  // New conversation PUSHES the bare chat; its first send then REPLACES that entry with ?thread=<created>.
+  await page.getByRole("button", { name: "Past conversations" }).click();
+  await page.getByRole("link", { name: "New conversation" }).click();
+  await expect(page).toHaveURL(/\/en\/korume\/chat$/);
+  await composer(page).fill("Asked before Back");
+  await composer(page).press("Enter");
+  await expect(page.getByText("Answer to: Asked before Back")).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`thread=${posts[0]!.threadId}$`));
+  await page.goBack();
+  await expect(notFound()).toBeVisible();
+  await expect(page.getByText("Asked before Back", { exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`thread=${missing}$`));
 });

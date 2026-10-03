@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocale, useRouter, useTranslations } from "@/lib/i18n";
 import { unionGrounding } from "@/lib/korume/grounding";
 import { Composer } from "./composer";
@@ -35,6 +35,14 @@ export function KorumeChatPage(props: KorumeChatPageProps) {
   const [created, setCreated] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
   useEffect(() => setSettled(true), []);
+  // Back/Forward always lands in another conversation. Without this, Back from a created thread to a free or not-found
+  // URL keeps the free key, so the old conversation stays — and puts its thread back in the URL. In a transition, so
+  // it renders with the router's restore, not with the old props first.
+  useEffect(() => {
+    const leave = () => startTransition(startOver);
+    window.addEventListener("popstate", leave);
+    return () => window.removeEventListener("popstate", leave);
+  }, []);
   const threadId = props.detail?.thread.id ?? null;
   const key = threadId === null || threadId === created ? `free:${conversation}` : `${threadId}:${conversation}`;
   return (
@@ -43,9 +51,14 @@ export function KorumeChatPage(props: KorumeChatPageProps) {
       {...props}
       focusComposer={settled}
       onThreadCreated={setCreated}
-      onNewConversation={() => { setCreated(null); setConversation((n) => n + 1); }}
+      onNewConversation={startOver}
     />
   );
+
+  function startOver() {
+    setCreated(null);
+    setConversation((n) => n + 1);
+  }
 }
 
 /** "Today" for today, else the locale's date — computed after mount: server and learner may be in different days. */
