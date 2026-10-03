@@ -95,8 +95,8 @@ function KorumeConversation({
 
   return (
     // Desktop: exactly one viewport tall — the conversation scrolls inside its card, the composer never leaves view.
-    <div className="mx-auto flex max-w-screen-xl flex-col px-lg py-xl lg:h-dvh">
-      <header className="mb-xl flex shrink-0 items-center gap-md">
+    <div className="mx-auto flex max-w-screen-xl flex-col px-lg py-md lg:h-dvh">
+      <header className="mb-md flex shrink-0 items-center gap-md">
         <button
           type="button"
           onClick={goBack}
@@ -174,15 +174,15 @@ function KorumeConversation({
       ) : (
         <div className="grid gap-xl lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
           <section className="flex flex-col overflow-hidden rounded-lg border border-border bg-card lg:min-h-0">
-            <header className="flex shrink-0 items-start justify-between border-b border-border px-lg py-md">
-              <div>
-                <p className="text-caption font-semibold tracking-wide text-primary-strong">
+            <header className="flex shrink-0 items-center justify-between border-b border-border px-lg py-xs">
+              <p className="flex items-baseline gap-sm">
+                <span className="text-caption font-semibold tracking-wide text-primary-strong">
                   {t("ask.chat.signature")}
-                </p>
-                <p className="mt-xs text-body font-medium text-foreground">
+                </span>
+                <span className="text-body font-medium text-foreground">
                   {t("ask.chat.subtitle")}
-                </p>
-              </div>
+                </span>
+              </p>
               <ThreadMenu initialThreads={threads} initialCursor={nextCursor} onNewConversation={onNewConversation} />
             </header>
             <div className="flex min-h-[30rem] flex-1 flex-col lg:min-h-0">
@@ -216,7 +216,7 @@ function KorumeConversation({
                   onRetry={() => void state.retry()}
                 />
               </div>
-              <div className="shrink-0 border-t border-border px-lg py-md">
+              <div className="shrink-0 border-t border-border px-lg py-sm">
                 {state.notice ? (
                   <div className="mb-sm">
                     <TurnNotice notice={state.notice} />
