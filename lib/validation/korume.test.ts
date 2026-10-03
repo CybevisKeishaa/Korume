@@ -28,9 +28,10 @@ describe("createThreadSchema", () => {
 
 describe("postTurnSchema", () => {
   it("takes a turn id and 1–2000 characters of question after trimming", () => {
-    expect(postTurnSchema.safeParse({ turnId: U, text: " は? " }).success).toBe(true);
-    expect(postTurnSchema.safeParse({ turnId: U, text: "   " }).success).toBe(false);
-    expect(postTurnSchema.safeParse({ turnId: U, text: "x".repeat(2001) }).success).toBe(false);
-    expect(postTurnSchema.safeParse({ turnId: U, text: "x", role: "assistant" }).success).toBe(false);
+    expect(postTurnSchema.safeParse({ turnId: U, text: " は? ", locale: "vi" }).success).toBe(true);
+    expect(postTurnSchema.safeParse({ turnId: U, text: "   ", locale: "vi" }).success).toBe(false);
+    expect(postTurnSchema.safeParse({ turnId: U, text: "x".repeat(2001), locale: "vi" }).success).toBe(false);
+    expect(postTurnSchema.safeParse({ turnId: U, text: "x", locale: "vi", role: "assistant" }).success).toBe(false);
+    expect(postTurnSchema.safeParse({ turnId: U, text: "x", locale: "ja" }).success).toBe(false);
   });
 });

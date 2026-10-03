@@ -3,13 +3,16 @@ import { assertPlainSerializableDto } from "@/test/dto";
 import { korumeGate } from "@/lib/korume/gate";
 import { getLineForLearner } from "@/lib/data/knowledge";
 import type { AnchorLine, KorumeStore, MessageRow, NewThread, ReservationState, ThreadRow } from "@/lib/korume/store";
-import { createThread, decodeCursor, encodeCursor, getThread, listThreads, pendingTurnsFor, THREAD_PAGE_SIZE } from "./korume";
+import { rateLimit } from "@/lib/rate-limit";
+import { runTurn } from "@/lib/korume/turn";
+import { createThread, decodeCursor, encodeCursor, getThread, listThreads, pendingTurnsFor, postTurn, THREAD_PAGE_SIZE } from "./korume";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/korume/gate", () => ({ korumeGate: vi.fn() }));
 vi.mock("@/lib/data/knowledge", () => ({ getLineForLearner: vi.fn() }));
 vi.mock("@/lib/korume/store", () => ({ sqlKorumeStore: {} }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true })) }));
+vi.mock("@/lib/korume/turn", () => ({ runTurn: vi.fn(async () => ({ status: "pending" })) }));
 
 const ME = "a0000000-0000-4000-8000-000000000001";
 const THREAD = "b0000000-0000-4000-8000-000000000001";
@@ -44,6 +47,9 @@ function fakeStore(rows: ThreadRow[] = [], messages: MessageRow[] = [], states =
     async readMessages() { calls.push("readMessages"); return messages; },
     async readAnchorLines(_s, ids) { calls.push("readAnchorLines"); return new Map(ids.includes(LINE) ? [[LINE, line]] : []); },
     async reservationStates() { calls.push("reservationStates"); return states; },
+    async insertUserMessage() { calls.push("insertUserMessage"); return "created"; },
+    async readableVideoIds() { calls.push("readableVideoIds"); return new Set(); },
+    async completeTurn() { calls.push("completeTurn"); return { messageId: "m", charged: true }; },
   };
   return { store, calls, inserted, rows };
 }
@@ -174,5 +180,25 @@ describe("listThreads", () => {
     expect(decodeCursor(result.nextCursor as string)).toEqual({ updatedAt: rows[THREAD_PAGE_SIZE - 1]!.updatedAt, id: rows[THREAD_PAGE_SIZE - 1]!.id });
     await expect(listThreads("not-a-cursor", { store })).resolves.toEqual({ kind: "invalid" });
     await expect(listThreads(encodeCursor({ updatedAt: "x", id: THREAD }), { store })).resolves.toEqual({ kind: "invalid" });
+  });
+});
+
+describe("postTurn", () => {
+  const body = { turnId: "e0000000-0000-4000-8000-000000000001", text: "Why?", locale: "en" as const };
+
+  it("checks the gate before the rate limit and the rate limit before the pipeline", async () => {
+    vi.mocked(korumeGate).mockResolvedValueOnce({ kind: "disabled" });
+    await expect(postTurn(THREAD, body)).resolves.toEqual({ kind: "disabled" });
+    expect(rateLimit).not.toHaveBeenCalled();
+    expect(runTurn).not.toHaveBeenCalled();
+
+    vi.mocked(rateLimit).mockReturnValueOnce({ ok: false, retryAfter: 900 } as never);
+    await expect(postTurn(THREAD, body)).resolves.toEqual({ kind: "rate_limited", retryAfter: 900 });
+    expect(runTurn).not.toHaveBeenCalled();
+
+    await expect(postTurn(THREAD, body)).resolves.toEqual({ status: "pending" });
+    expect(runTurn).toHaveBeenCalledWith(
+      { supabase: client, userId: ME, threadId: THREAD, turnId: body.turnId, text: "Why?", locale: "en" }, {},
+    );
   });
 });

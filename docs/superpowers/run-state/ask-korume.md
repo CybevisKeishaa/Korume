@@ -77,6 +77,16 @@ Task 0 probe (Claude, 2026-10-03):
   link only to a readable video); exposure wired into `DEFAULT_TOOLS`. 7 mutations red — the substring one first
   SURVIVED (the max-identity choice masked it), fixed by a substring-only case. vitest 500 / 4451.
   Not yet proven against a live DB (PostgREST filter shapes): the Task 11 live smoke with its independent oracle.
+- Task 7 (Claude): `answer.ts` (zod/v4 `answerV1Schema`, `groundingSchema`, `dropUngroundedCards`,
+  `answerToPlainText`), `messages.ts` (`toMessageView` re-validates stored JSON on every read), `memory-store.ts`
+  (test-only, RLS + unique-index + complete-turn parity), `prompts.ts` `answerPrompt` (data block capped at
+  `ANSWER_DATA_MAX_BYTES` so the reserved input bound is a real ceiling), `turn.ts` `runTurn` (§5 order; any
+  unexpected error after the hold releases it with the spend so far; an answer left with only follow-ups after
+  dropping ungrounded cards is `answer_failed`), `postTurn` façade, `POST /api/korume/threads/[id]/turns`.
+  **Body gains `locale: "vi" | "en"`** — an API route cannot read the next-intl locale (see
+  `lib/data/account-deletion.ts` note). 11 mutations red (conflict, AI gate, release, spend, card drop,
+  turn_exists, turn id, Plus credits, limit literal, memory unique, chip cap). vitest 504 / 4492.
+  The SQL store's `insertUserMessage` / `completeTurn` RPC shapes are proven only by the Task 11 live smoke.
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
@@ -91,5 +101,5 @@ None.
 
 ## Next actions
 
-1. Task 7 (answer `AnswerV1`, turn pipeline, `POST /turns`, idempotency, settle/release, grounding persistence). Codex (`-m gpt-6-sol`) if its
+1. Task 8 (shared chat core: AnswerV1 renderer, Listen, message list, composer, error states, `useKorumeThread`). Codex (`-m gpt-6-sol`) if its
    quota is back (~14:30 2026-10-03), else Claude. Plan Correction 11 lists the as-built Task 4 interface.

@@ -22,6 +22,8 @@ export type CreateThreadBody = z.infer<typeof createThreadSchema>;
 export const postTurnSchema = z.object({
   turnId: z.string().uuid(),
   text: z.string().trim().min(1).max(2000),
+  /** The language Korume explains in. An API route cannot read the next-intl locale, so the client names it. */
+  locale: z.enum(["vi", "en"]),
 }).strict();
 
 export type PostTurnBody = z.infer<typeof postTurnSchema>;

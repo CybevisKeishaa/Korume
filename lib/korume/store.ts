@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 import type { Utf16Span } from "@/lib/analysis/types";
+import type { AnswerV1 } from "./answer";
+import type { GroundedEntity } from "./types";
 
 type Supabase = ReturnType<typeof createClient>;
 
@@ -47,6 +49,11 @@ export interface NewThread {
 
 export type ReservationState = "held" | "settled" | "released";
 
+export interface CompleteTurnArgs {
+  sessionId: string; turnId: string; reservationId: string; generationId: string;
+  credits: number; usd: number; content: string; contentJson: AnswerV1; groundingJson: GroundedEntity[]; title: string;
+}
+
 /**
  * Everything Ask Korume reads and writes in SQL. Reads go through the learner's client (RLS: another learner's
  * thread is indistinguishable from none). Writes go through the service client (plan Correction 10: migration
@@ -61,6 +68,12 @@ export interface KorumeStore {
   readAnchorLines(supabase: Supabase, lineIds: string[]): Promise<Map<string, AnchorLine>>;
   /** Newest reservation status per turn. Never leaves the server: only the projection does (spec §4.3). */
   reservationStates(turnIds: string[]): Promise<Map<string, ReservationState>>;
+  /** The learner's question; a second insert of the same `(session, turn, 'user')` is `exists`, never a 2nd row. */
+  insertUserMessage(sessionId: string, turnId: string, text: string): Promise<"created" | "exists">;
+  /** Of these video ids, the ones the learner can still read (RLS) — a lesson link points only there. */
+  readableVideoIds(supabase: Supabase, ids: string[]): Promise<Set<string>>;
+  /** `korume_complete_turn`: the answer, its grounding, the settle, the title and `updated_at` in ONE transaction. */
+  completeTurn(args: CompleteTurnArgs): Promise<{ messageId: string; charged: boolean }>;
 }
 
 const THREAD_COLUMNS = "id, user_id, kind, title, origin_video_id, origin_line_id, origin_span, origin_route, updated_at";
@@ -155,5 +168,35 @@ export const sqlKorumeStore: KorumeStore = {
     const states = new Map<string, ReservationState>();
     for (const r of rows) if (!states.has(r.turn_id)) states.set(r.turn_id, r.status);
     return states;
+  },
+
+  async insertUserMessage(sessionId, turnId, text) {
+    const { error } = await createServiceClient().from("conversation_messages")
+      .insert({ session_id: sessionId, role: "user", content: text, turn_id: turnId });
+    if (!error) return "created";
+    if (error.code === UNIQUE_VIOLATION) return "exists";
+    throw error;
+  },
+
+  async readableVideoIds(supabase, ids) {
+    if (ids.length === 0) return new Set();
+    const rows = await fetchByIdChunks(ids, async (chunk) => {
+      const { data, error } = await supabase.from("videos").select("id").in("id", chunk);
+      if (error) throw error;
+      return (data ?? []) as { id: string }[];
+    });
+    return new Set(rows.map((r) => r.id));
+  },
+
+  async completeTurn(args) {
+    const { data, error } = await createServiceClient().rpc("korume_complete_turn", {
+      p_session: args.sessionId, p_turn: args.turnId, p_reservation: args.reservationId, p_generation: args.generationId,
+      p_credits: args.credits, p_usd: args.usd, p_content: args.content, p_content_json: args.contentJson,
+      p_grounding_json: args.groundingJson, p_title: args.title,
+    });
+    if (error) throw error;
+    const row = (Array.isArray(data) ? data[0] : data) as { message_id: string; charged: boolean } | undefined;
+    if (!row?.message_id) throw new Error("korume_complete_turn returned no message");
+    return { messageId: row.message_id, charged: row.charged };
   },
 };

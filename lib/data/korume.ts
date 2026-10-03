@@ -3,12 +3,15 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getLineForLearner } from "@/lib/data/knowledge";
 import { korumeGate } from "@/lib/korume/gate";
 import { originRouteFor } from "@/lib/korume/route";
+import { toMessageView } from "@/lib/korume/messages";
+import { runTurn, type TurnDeps, type TurnOutcome } from "@/lib/korume/turn";
 import { sqlKorumeStore, type AnchorLine, type KorumeStore, type ReservationState, type ThreadRow } from "@/lib/korume/store";
 import type { KorumeMessageView, KorumeThreadDetail, KorumeThreadView, PendingTurn } from "@/lib/korume/types";
-import type { CreateThreadBody } from "@/lib/validation/korume";
+import type { CreateThreadBody, PostTurnBody } from "@/lib/validation/korume";
 
 const THREAD_CREATE_LIMIT = { limit: 20, windowMs: 60_000 };
 const THREAD_READ_LIMIT = { limit: 120, windowMs: 60_000 };
+const TURN_LIMIT = { limit: 20, windowMs: 60_000 };
 export const THREAD_PAGE_SIZE = 20;
 
 type GateRefusal = { kind: "unauthorized" } | { kind: "disabled" } | { kind: "unavailable" };
@@ -140,21 +143,25 @@ export async function getThread(id: string, deps: Deps = {}): Promise<GetThreadR
     row.originLineId ? store.readAnchorLines(gate.supabase, [row.originLineId]) : Promise.resolve(new Map<string, AnchorLine>()),
   ]);
 
-  const messages: KorumeMessageView[] = rows.map((m) => ({
-    id: m.id,
-    turnId: m.turnId ?? m.id,
-    role: m.role === "ai" ? "assistant" : "user",
-    text: m.content,
-    // The structured answer and its grounding are exposed only once Task 7 validates them against their schemas;
-    // until then nothing unvalidated from `content_json` / `grounding_json` reaches the client.
-    answer: null,
-    grounding: null,
-    createdAt: m.createdAt,
-  }));
+  const messages: KorumeMessageView[] = rows.map(toMessageView);
 
   const answered = new Set(rows.filter((m) => m.role === "ai" && m.turnId).map((m) => m.turnId as string));
   const userTurns = [...new Set(rows.filter((m) => m.role === "user" && m.turnId).map((m) => m.turnId as string))];
   const open = userTurns.filter((t) => !answered.has(t));
   const states = open.length ? await store.reservationStates(open) : new Map<string, ReservationState>();
   return { kind: "ok", detail: { thread: threadView(row, lines), messages, pendingTurns: pendingTurnsFor(userTurns, answered, states) } };
+}
+
+export type PostTurnResult = GateRefusal | RateLimited | TurnOutcome | { status: "not_found" };
+
+/**
+ * POST /api/korume/threads/[id]/turns — gate first (a disabled learner spends nothing and learns nothing), then
+ * the per-learner request rate, then the turn pipeline (spec §4.4, §5).
+ */
+export async function postTurn(threadId: string, body: PostTurnBody, deps: TurnDeps = {}): Promise<PostTurnResult> {
+  const gate = await korumeGate();
+  if (gate.kind !== "ok") return gate;
+  const limit = rateLimit(`korume:turn:${gate.userId}`, TURN_LIMIT);
+  if (!limit.ok) return { kind: "rate_limited", retryAfter: limit.retryAfter };
+  return runTurn({ supabase: gate.supabase, userId: gate.userId, threadId, turnId: body.turnId, text: body.text, locale: body.locale }, deps);
 }
