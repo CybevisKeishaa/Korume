@@ -163,13 +163,16 @@ Task 0 probe (Claude, 2026-10-03):
   button); `/korume/chat` is one viewport tall on desktop with internal scroll; MessageList keeps the newest turn in
   view. Measured at 1280×529: page scrollHeight 529, enlarged popup centred (178/178, 32/32). Spec §6.2/§6.3 amended.
   vitest 514 / 4572; Korume e2e 5/5. Real lesson Ep.729 imported locally (`scripts/seed-real-lesson.ts`).
+- `a9931f5`: slimmer bars on `/korume/chat` (message area 207 → 271 px at 1280×529).
+- **Owner approved the merge 2026-10-03** after the Chrome look ("Đẹp rồi đấy, merge đi"). The live Gemini smoke
+  (Task 11 step 4) was NOT run — the owner merged without it; it stays an open follow-up.
 - Execution model (owner 2026-10-03): Codex is dispatched through Paseo (`paseo run --provider codex --model
   gpt-5.6-terra --mode auto-review`), replacing raw `codex exec -m gpt-6-sol`. Task 10 is split: 10a page/rail/menu,
   10b `/sensei` redirect + persona sweep + docs (packets in `.superpowers/sdd/ask-korume/`).
 
 ## Working tree and environment
 
-- Owner: Claude (Tasks 10a + 10b committed; Task 11 next)
+- Owner: Claude — branch COMPLETE, merged to master
 - Worktree `.worktrees/ask-korume`, branched from master `ede3833`.
 
 ## Blockers
