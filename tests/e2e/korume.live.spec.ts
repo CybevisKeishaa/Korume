@@ -9,9 +9,11 @@ import { lineStart, seedWorkspaceData, type WorkspaceData } from "./fixtures/wor
  * one settled reservation and one charge; the rail's "Seen N" must equal an oracle computed here with SQL, not with
  * `countExposure`; and two concurrent POSTs of one new turnId must produce one answer and one reservation.
  *
- * Run against a worktree server started with `AI_PROVIDER=gemini` on :3000:
- *   npx playwright test --config=playwright.live.config.ts korume.live
+ * Opt-in (it spends provider quota, and shares `*.live.spec.ts` with the Ep.729 gate): run against a worktree server
+ * started with `AI_PROVIDER=gemini` on :3000:
+ *   KORUME_LIVE=1 npx playwright test --config=playwright.live.config.ts korume.live
  */
+test.skip(!process.env.KORUME_LIVE, "Ask Korume live smoke is opt-in: set KORUME_LIVE=1");
 test.use({ viewport: { width: 1280, height: 529 } });
 test.setTimeout(300_000);
 
@@ -45,7 +47,6 @@ async function turnIdsOf(threadId: string): Promise<string[]> {
 }
 
 test("live Gemini: two grounded turns, an exact ledger per turn, Seen N equals the oracle, and a double POST answers once", async ({ page }) => {
-  // Prove the subject exists first: a real provider is configured on the server under test.
   const email = uniqueEmail("e2e_korume_live");
   await page.goto("/en/register");
   await registerViaUi(page, { name: "E2E Korume Live", email, password: "password123" });

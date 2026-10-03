@@ -64,6 +64,14 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
     first; then the live smoke passed twice: 2 turns each with exactly one plan + one answer success, one settled
     reservation, one charge; rail "Seen N" = SQL oracle; a double POST of one turnId → one answer, one reservation.
     Anthropic (production) is unaffected; Ask Korume had never answered on Gemini before this.
+- Whole-branch review (code-reviewer, 2026-10-04): APPROVE WITH NITS, 0 Critical; locks, the 038 fold and GC safety
+  checked with no cycle found. Fixed both Important: (1) the "one home" pin used a `/gi` regex reused with `.test()`
+  (lastIndex leaked across files): a redefinition in 039 now turns it RED (mutation shown); (2) the live smoke is opt-in
+  (`KORUME_LIVE=1`; it shares `*.live.spec.ts` with the Ep.729 gate) — skipped without it. Minors left OPEN: m1
+  not-found page shares the free key with an aliased created thread (Back to `?thread=<bad>`); m2 New conversation from
+  a thread mounts twice (same on master); m3 the Gemini strip also drops a property named maxItems (latent, none
+  exists); m4 `readJsonBody` maps a rejected `reader.cancel()` to 400; m5 released late-spent system calls do not count
+  toward the system cap; m6 e2e 6 waits on a fixed 1 s timer.
 
 ## Working tree and environment
 
@@ -76,4 +84,8 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
 
 ## Next actions
 
-- S1 (Codex) → S2 → S3 → S4 → S5 → S6 (Claude).
+- Decide the review minors m1–m6 (m1 is the only one with a reachable wrong screen; fix it or accept).
+- After the last edit: full vitest + `korume.spec.ts` e2e once more on a fresh worktree build, then `verify:protocol`.
+- Lessons into `docs/lessons.md` (live smoke found a provider-schema defect every unit test missed; the stateful
+  regex pin; the stale :3000 server that served a mutated build).
+- Owner decides the merge (`git merge --no-ff`); owner pushes master by hand.

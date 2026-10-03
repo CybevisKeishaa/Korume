@@ -139,7 +139,8 @@ describe("knowledge and AI ledger SQL contract", () => {
     expect(files).not.toHaveLength(0);
     expect(files).toContain("20261002000038_knowledge.sql");
 
-    const definitions = /create(?:\s+or\s+replace)?\s+function\s+(ai_release_expired|ai_settle|ai_release|ai_record_late_spend)\b/gi;
+    // No `g` flag: a global regex keeps lastIndex across .test() calls and would skip a redefinition in the next file.
+    const definitions = /create(?:\s+or\s+replace)?\s+function\s+(ai_release_expired|ai_settle|ai_release|ai_record_late_spend)\b/i;
     const definingFiles = files.filter((file) => definitions.test(readFileSync(join(directory, file), "utf8")));
     expect(definingFiles).toEqual(["20261002000038_knowledge.sql"]);
   });
