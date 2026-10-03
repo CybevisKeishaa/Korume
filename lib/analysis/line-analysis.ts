@@ -20,7 +20,7 @@ const GRAMMAR_TTL_MS = 60_000;
 // ponytail: an in-process memo bounded by insertion order; a shared cache when the app runs on many instances.
 const MEMO_LIMIT = 5_000;
 
-interface EntryRow {
+export interface EntryRow {
   ent_seq: number;
   kanji_forms: string[];
   kana_forms: string[];
@@ -73,7 +73,7 @@ async function grammarPatterns(supabase: Supabase, now: number): Promise<{ revis
 }
 
 /** Every entry of the snapshot whose kanji or kana forms include one of `forms`, in batched, paged queries. */
-async function lookupForms(supabase: Supabase, snapshotId: string, forms: string[]): Promise<EntryRow[]> {
+export async function lookupForms(supabase: Supabase, snapshotId: string, forms: string[]): Promise<EntryRow[]> {
   const byEntSeq = new Map<number, EntryRow>();
   await fetchByIdChunks(forms, async (chunk) => {
     for (const column of ["kanji_forms", "kana_forms"]) {
@@ -102,7 +102,7 @@ function toMatch(entry: EntryRow, form: string): DictionaryMatch {
 }
 
 /** Base form first, then surface; a written (kanji) match beats a kana one, then common words, then ent_seq. */
-function entriesFor(base: string, surface: string, entries: EntryRow[]): DictionaryMatch[] {
+export function entriesFor(base: string, surface: string, entries: EntryRow[]): DictionaryMatch[] {
   for (const form of [base, surface]) {
     const hits = entries
       .filter((entry) => entry.kanji_forms.includes(form) || entry.kana_forms.includes(form))

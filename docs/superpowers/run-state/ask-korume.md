@@ -63,6 +63,13 @@ Task 0 probe (Claude, 2026-10-03):
   running) each turned one test red, restored green. E2E `tests/e2e/korume-threads.spec.ts` on the worktree build
   (`.env.local` copied from main with `AI_PROVIDER=none`, gitignored): parallel POSTs → {200, 201}, one row; moved
   anchor → 409; client `originRoute` → 400; other learner GET/POST → 404. tsc/lint/protocol 0; vitest 493 / 4414.
+- Task 5 (Claude): `plan.ts` (allowlist schema, `validatePlan` NFKC/letter/length/dedupe/anchor-only/max 4,
+  `fallbackPlan`), `limits.ts` (TTL invariant reuses `lib/ai/constants` `PROVIDER_TIMEOUT_MS`), `prompts.ts`
+  (`plannerPrompt`, `quoteBlock` escaping), `retrieval.ts` (parallel, per-tool + stage deadlines, error codes only),
+  tools line-analysis (staticAnalyses full scope, so grammar matches reach the answer), dictionary (active snapshot,
+  `lookupForms`/`entriesFor` now exported), memory (SELECT only, two escaped `ilike` reads instead of `or()`),
+  knowledge (`readCachedSection` only). `learner_exposure` reports `unavailable` until Task 6. 8 mutations each red
+  then restored. tsc/lint/protocol 0; vitest 498 / 4435.
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
@@ -77,5 +84,5 @@ None.
 
 ## Next actions
 
-1. Task 5 (planner, plan validation, the four simple tools). Codex (`-m gpt-6-sol`) if its quota is back
-   (~14:30 2026-10-03), else Claude. Plan Correction 11 lists the as-built Task 4 interface.
+1. Task 6 (progress-aware `learner_exposure` tool + `buildGroundedEntities`). Codex (`-m gpt-6-sol`) if its
+   quota is back (~14:30 2026-10-03), else Claude. Plan Correction 11 lists the as-built Task 4 interface.
