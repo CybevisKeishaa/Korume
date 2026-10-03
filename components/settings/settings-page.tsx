@@ -75,7 +75,7 @@ export function SettingsPage({ initialAiTrainingConsent, pending, version }: Set
           <h2 className="text-body-lg font-semibold">{t("page.support.title")}</h2>
           <p className="mt-2xs text-caption text-muted-foreground">{t("page.support.body")}</p>
           <Link
-            href="/sensei"
+            href="/korume/chat"
             className="mt-md inline-flex h-control-md items-center rounded-full bg-primary px-lg text-caption font-semibold text-primary-foreground"
           >
             {t("page.support.action")}

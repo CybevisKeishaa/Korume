@@ -222,7 +222,7 @@ describe("screen registry invariants", () => {
     ]);
 
     const stamped = SCREEN_REGISTRY.filter((e) => e.figmaCheckedAt !== null);
-    expect(stamped).toHaveLength(87);
+    expect(stamped).toHaveLength(86);
     const stampedByDate = new Map<string, number>();
     for (const entry of stamped) {
       const date = entry.figmaCheckedAt as string;
@@ -238,7 +238,8 @@ describe("screen registry invariants", () => {
     // repo-only route — the ruling moved a stamp, it did not add one, which
     // is why 2026-08-12 drops by the same one.
     expect(Object.fromEntries(stampedByDate)).toEqual({
-      "2026-08-12": 70,
+      // 69: Ask Korume deleted the `sensei` row (its 215:15164 frame moved to `korume-chat`, 2026-10-03).
+      "2026-08-12": 69,
       "2026-08-20": 3,
       "2026-08-23": 8,
       "2026-08-26": 1,

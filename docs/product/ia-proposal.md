@@ -167,7 +167,7 @@ members are checked against `GROUP_ORDER`.
 |---|---|---|---|
 | Companion home | `156:1310` | `/companion` | ❌ none |
 | Diary | `190:7376` | `/companion/diary` | `/journal` `(immersive)` ✅ |
-| Knowledge assistant (**Sensei**) | `215:15164` | `/companion/sensei` | `/sensei` ✅ |
+| Knowledge assistant (**Sensei**) | `215:15164` | ~~`/companion/sensei`~~ — not a Companion child: Ask Korume is its own surface (`docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0) | ~~`/sensei`~~ → **`/korume/chat`** ✅ (2026-10-03, superseded by `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume)) |
 | Learning memory | `180:1770` | `/companion/memory` (`Learning`) | ❌ none |
 | Conversation memories | `184:3974` | `/companion/memory` (`Conversations`) | ❌ none |
 | Growth areas | `187:6556` | `/companion/growth` | `/weekly-report` (placeholder) |
@@ -178,6 +178,9 @@ ruling just removed — the nav would be asserting a product fact that is false.
 
 **Three nav rows disappear into this one** (`/sensei`, `/journal`, `/weekly-report`). All three routes
 survive; §5 covers how without breaking links.
+
+> **Superseded 2026-10-03:** `215:15164` is built at **`/korume/chat`** as Korume Chat; the `/sensei`
+> placeholder is deleted and the route redirects there. See `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume).
 
 **⚑ Costs, stated rather than hidden:**
 - The Diary is `(immersive)` and Companion home is `(app)`. Nesting a route does **not** nest chrome —
@@ -304,7 +307,7 @@ So unblocking needs a source discriminator and an alternate derivation path — 
 
 | Ruling | Where it lands in this IA |
 |---|---|
-| Sensei = a Companion mode | one `Companion` row; `/sensei` becomes `/companion/sensei` (§3.1) |
+| Sensei = a Companion mode | one `Companion` row; `/sensei` becomes `/companion/sensei` (§3.1) — **superseded 2026-10-03:** `/sensei` → `/korume/chat`, `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume) |
 | Two-tier skill taxonomy | tier 1 is what `/dashboard` and `/companion/growth` may score and compare; tier 2 diagnoses inside them. **No skill gets a nav row** |
 | `Journey` = the Roadmap | the label moves to `/roadmap`; `/journal` becomes the Diary under Companion |
 | Both kanji surfaces, one row | `/kanji` defaults to curriculum; explorer is a browse mode inside it |
@@ -364,7 +367,7 @@ Today's literal is five groups: `learn · study · insights · progress · accou
 | `/challenges` `study` | **`ABSORB`** → Roadmap / Mission | ✅ ruled 2026-08-12. A challenge is a mission's measurable gate. No frame ⇒ no destination invented from a repo route (§3.4) |
 | `/community` `study` | **`HIDE`** | ✅ ruled 2026-08-11 |
 | `/leaderboard` `study` | **`HIDE`** | ✅ ruled 2026-08-11 |
-| `/sensei` `insights` | **`ABSORB`** → `/companion/sensei` | §3.1 |
+| `/sensei` `insights` | **`ABSORB`** → `/companion/sensei` — **superseded 2026-10-03:** redirect → `/korume/chat` | §3.1; `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume) |
 | `/roadmap` `insights` | → `journey`, label **Journey** | ⭐ ruling `capability-map.md` §3.3 |
 | `/weekly-report` `insights` | **`ABSORB`** → `/companion/growth` | `187:6556` is a persistent per-skill map, not a weekly digest |
 | `/journal` `progress` | **`ABSORB`** → `/companion/diary` | Loses the `journey` label to `/roadmap` |
@@ -489,7 +492,8 @@ moved into §3.2 (memory), §3.3 (achievements) and §3.4 (challenges). What rem
    page implementation.
 2. **Route naming for the Companion's children** — `/companion/diary` reads well but breaks the
    existing `/journal` URL. A redirect is cheap; whether the user wants the URL churn is not the
-   assistant's call. Same question for `/sensei` → `/companion/sensei`.
+   assistant's call. Same question for `/sensei` → `/companion/sensei` (**answered 2026-10-03:** `/sensei`
+   redirects to `/korume/chat`, `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume)).
 3. **How the Memory type switch is expressed** — query param, tab, or client state (§3.2). An
    implementation choice, deliberately left open.
 4. **Whether the achievement catalogue is readable independently of what a learner earned** — the

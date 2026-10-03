@@ -215,9 +215,10 @@ describe("AppNav", () => {
 
   it("drops every hidden and absorbed row from the sidebar", () => {
     // The substance of Phase 1b. HIDDEN by A10: vocab, reading, community,
-    // leaderboard. ABSORBED: challenges -> Roadmap (A5); sensei, journal,
+    // leaderboard. ABSORBED: challenges -> Roadmap (A5); journal,
     // weekly-report -> Companion (A2); statistics, achievements -> Dashboard
-    // / Profile (A4).
+    // / Profile (A4). (sensei was here too; Ask Korume deleted that route and
+    // redirects it to /korume/chat, so it is no longer a hidden route.)
     //
     // This asserts ONLY that the sidebar stopped linking them. Every one of
     // these routes still exists and still renders — `screen-registry.routes`
@@ -233,7 +234,6 @@ describe("AppNav", () => {
       "/en/community",
       "/en/leaderboard",
       "/en/challenges",
-      "/en/sensei",
       "/en/weekly-report",
       "/en/journal",
       "/en/statistics",

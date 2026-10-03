@@ -50,6 +50,16 @@ doesn't define, add it here first — don't coin a new synonym for an existing t
 The Knowledge core is dormant in Shadowing after the 1b reframe: no Shadowing surface calls it; Korume
 Companion and Summary will be its first product callers.
 
+## Ask Korume (spec `docs/superpowers/specs/2026-10-03-ask-korume-design.md`)
+
+| Term | Meaning |
+|---|---|
+| **Korume Thread** | One Ask Korume conversation: a `conversation_sessions` row with `kind = 'ask_korume'` (the same table as scenario Conversation practice, told apart by `kind`). Learners read their own threads and may delete them (Settings erase); only the server creates or edits them. Seen in two viewports — the Shadowing sheet and `/korume/chat` — never two separate stores. |
+| **Anchor** | The sentence a thread was asked about: `origin_video_id`, `origin_line_id`, an optional UTF-16 `origin_span`, and the server-built `origin_route` back to that line. Fixed when the thread is created and never re-pointed; asking about another line starts a new thread. A free-chat thread has no anchor. The anchor belongs to the thread, not the learner's progress: deleting the lesson clears it, the thread stays. |
+| **Turn** | One question and its answer, identified by a client-generated `turn_id` shared by the user message, the assistant message, its generations and its reservation. A clean run has one successful plan and one successful answer generation (retries and provider errors add rows) and at most one active reservation per `turn_id`. Re-sending a `turn_id` never produces a second answer or a second charge. |
+| **Grounded Entity** | A word, particle or grammar point the server proved from retrieval (dictionary, line analysis, exposure, memory), persisted with the answer (`grounding_json`). The rail and every context card render from it — never from model text. "Seen N times" counts the Shadowing lines the learner has actually reached. |
+| **Ask Korume entitlement** | Two reservation kinds on the AI ledger: `korume_free_turn` (a daily count of free turns) and `korume_plus_turn` (Plus, drawing on the same monthly credit pool as Plus Knowledge sections). Exactly one active reservation per `turn_id`. |
+
 ## Explicitly not part of this model
 
 - **Review** (`screen-review.md`) — the SRS review workspace. A separate surface entirely, not a Learning Mode or View Mode inside a Lesson.

@@ -121,13 +121,25 @@ Task 0 probe (Claude, 2026-10-03):
   Deferred: M5 the URL does not follow a free chat's new thread (reload loses it from view); m2 not-found copy also
   covers read failures; m3 focus lands on body after a ⋯ switch — check in Task 11 Playwright with the thread-switch
   round trip and the 1280x529 layout.
+- Task 10b (Claude — Codex quota out until 19:46): `/sensei` page deleted; `next.config.mjs` 5th rule
+  `/:locale(vi|en)/sensei` → `/:locale/korume/chat` (307, A17 removal terms) + pin; e2e cases for both locales and a
+  `/en/senseisomething` negative (Playwright not yet run — Task 11); `/sensei` out of PROTECTED_PREFIXES, upcoming
+  copy + pin, upcoming-routes / app-nav lists, registry `sensei` row (stamps 87→86, 2026-08-12 70→69); Settings "Talk
+  with Korume" → `/korume/chat`; Pronunciation hub rail copy EN/VI names Korume; `messages/no-sensei.test.ts` walks
+  every catalog leaf (RED first with 3 hits per locale). Docs: capability-map §3.1, ia-proposal, screen-inventory
+  amended with "superseded" pointers (history kept); domain-model gains the Ask Korume terms. Remaining "sensei" hits
+  are identifiers/comments only: `getSenseiRecommendation` + `SenseiRecommendation` (`lib/data/collections.ts`),
+  `hub.rail.sensei.*` key names and the `sensei` prop, registry `generate-sensei` (Figma frame name, route null,
+  never rendered), comments. Root design docs (`error-state-guildline.md`, `japanese-learning-app-spec.md`) still say
+  Sensei — guarded by no-sensei if ever copied into a catalog. 4 mutations red. Independent review: 0 Critical /
+  0 Important, 7 Minor (6 applied, the 7th partially — comments). vitest 513 / 4566; tsc/lint/protocol 0.
 - Execution model (owner 2026-10-03): Codex is dispatched through Paseo (`paseo run --provider codex --model
   gpt-5.6-terra --mode auto-review`), replacing raw `codex exec -m gpt-6-sol`. Task 10 is split: 10a page/rail/menu,
   10b `/sensei` redirect + persona sweep + docs (packets in `.superpowers/sdd/ask-korume/`).
 
 ## Working tree and environment
 
-- Owner: Claude (Task 10a committed; Codex quota resets 19:46 — Task 10b goes to Codex if it is back, else Claude)
+- Owner: Claude (Tasks 10a + 10b committed; Task 11 next)
 - Worktree `.worktrees/ask-korume`, branched from master `ede3833`.
 
 ## Blockers
@@ -136,7 +148,6 @@ None.
 
 ## Next actions
 
-1. Task 10b: `/sensei` redirect, delete the upcoming page, §6.5 persona sweep, `messages/no-sensei.test.ts`, docs.
-2. Task 11 (seeded Playwright §7.6, then ASK THE OWNER before the live Gemini smoke §7.7, then whole-branch review).
+1. Task 11 (seeded Playwright §7.6, then ASK THE OWNER before the live Gemini smoke §7.7, then whole-branch review).
    Still open from Task 9 for Task 11: a selection-span anchor test and the 1280x529 geometry / no-remount proof.
    Plan Correction 11 lists the as-built Task 4 interface.

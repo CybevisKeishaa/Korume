@@ -148,7 +148,7 @@ describe("PronunciationPage", () => {
     render(await PronunciationPage({}));
 
     const rail = screen.getByRole("complementary", { name: "Pronunciation progress" });
-    expect(within(rail).getAllByRole("region").map((region) => region.getAttribute("aria-label"))).toEqual(["Today's Speaking", "Weekly Improvement", "AI Sensei Recommendation", "Recently Practiced"]);
+    expect(within(rail).getAllByRole("region").map((region) => region.getAttribute("aria-label"))).toEqual(["Today's Speaking", "Weekly Improvement", "Korume's Recommendation", "Recently Practiced"]);
     expect(within(rail).queryByText("Confidence")).not.toBeInTheDocument();
     expect(within(rail).getAllByText("Not enough data", { selector: ".sr-only" })).toHaveLength(1);
     expect(within(rail).getByRole("link", { name: "Continue Practice" })).toHaveAttribute("href", "/shadowing/recent");

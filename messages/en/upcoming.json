@@ -10,11 +10,6 @@
     "body": "Short, timed sets that push one skill harder than a normal session does.",
     "unlocks": "Nothing yet. This screen arrives with the challenge engine."
   },
-  "sensei": {
-    "title": "Sensei",
-    "body": "A place to ask about anything you have studied, in your own words.",
-    "unlocks": "Nothing yet. Conversation practice already lives under Speaking."
-  },
   "roadmap": {
     "title": "Roadmap",
     "body": "The path Korume is drawing from what you actually study, not from a fixed syllabus.",

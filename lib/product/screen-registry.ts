@@ -12,7 +12,8 @@ import type { ScreenEntry } from "./screen-registry-types";
  * the product decision never shared a diff. This is the product decision.
  *
  * Applied: the five IA groups (A1) · `/vocab` `/reading` `/community`
- * `/leaderboard` HIDDEN — row removed, code kept (A10) · `/sensei`
+ * `/leaderboard` HIDDEN — row removed, code kept (A10) · `/sensei` (since
+ * 2026-10-03 a redirect to `/korume/chat`, Ask Korume spec §0)
  * `/journal` `/weekly-report` absorbed into Companion (A2), `/statistics`
  * `/achievements` into Dashboard/Profile (A4), `/challenges` into Roadmap
  * (A5) · the `Journey` label moved off the Diary onto `/roadmap` (A8) ·
@@ -426,26 +427,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
 
-  // ABSORBED into Companion in Phase 1b (A2) — one intelligent presence, not
-  // two. No nav row; the route and its placeholder stay. Designed.
-  // §11.3 Companion Knowledge Assistant.
-  {
-    screenId: "sensei",
-    name: "Companion Knowledge Assistant",
-    kind: "screen",
-    variantOf: null,
-    figmaNodeId: "215:15164",
-    repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
-    route: "/sensei",
-    chrome: "app",
-    impl: "placeholder",
-    navGroup: null,
-    navOrder: null,
-    specRef: null,
-  },
-  // Ask Korume (spec 2026-10-03 §6.3): 215:15164 is built here, under the single persona Korume. Not a nav row —
-  // reached from the Shadowing sheet's Expand, Settings and the Korume Memory home.
+  // Ask Korume (spec 2026-10-03 §6.3): 215:15164 (§11.3 "Companion Knowledge Assistant") is built here, under the
+  // single persona Korume. It replaces the `sensei` row: /sensei's placeholder page is deleted and the route
+  // redirects here (next.config.mjs). Not a nav row — reached from the Shadowing sheet's Expand and Settings.
   {
     screenId: "korume-chat",
     name: "Korume Chat",

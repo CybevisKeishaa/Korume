@@ -132,6 +132,10 @@ const nextConfig = {
         destination: "/:locale/certification/:path*",
         permanent: false,
       },
+      // Ask Korume (spec 2026-10-03 §6.5): one persona. The /sensei placeholder is gone; its frame 215:15164 is
+      // built at /korume/chat. Not a prefix rename — /sensei never had children — so no wildcard. TEMPORARY on the
+      // /jlpt rule's A17 terms: remove once the app is published and one release has passed, or at launch.
+      { source: "/:locale(vi|en)/sensei", destination: "/:locale/korume/chat", permanent: false },
     ];
   },
 };

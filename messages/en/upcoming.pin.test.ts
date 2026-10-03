@@ -36,16 +36,6 @@ describe("upcoming.json EN — catalog literals", () => {
     );
   });
 
-  it("pins the sensei screen copy", () => {
-    expect(en.sensei.title).toBe("Sensei");
-    expect(en.sensei.body).toBe(
-      "A place to ask about anything you have studied, in your own words.",
-    );
-    expect(en.sensei.unlocks).toBe(
-      "Nothing yet. Conversation practice already lives under Speaking.",
-    );
-  });
-
   it("pins the roadmap screen copy", () => {
     expect(en.roadmap.title).toBe("Roadmap");
     expect(en.roadmap.body).toBe(

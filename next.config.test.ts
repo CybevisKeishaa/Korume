@@ -56,15 +56,17 @@ describe("next.config.mjs redirects()", () => {
     return group ? group.split("|") : null;
   }
 
-  it("still ships exactly the four rules the specs define", async () => {
+  it("still ships exactly the five rules the specs define", async () => {
     const sources = (await rules).map((r) => r.source);
-    expect(sources).toHaveLength(4);
+    expect(sources).toHaveLength(5);
     expect(sources.map((s) => s.replace(/\(.*?\)/, ""))).toEqual([
       "/:locale/videos",
       "/:locale/videos/:id/shadowing",
       "/:locale/videos/:id/dictation",
       "/:locale/jlpt/:path*",
+      "/:locale/sensei",
     ]);
+    expect((await rules).find((r) => r.source.endsWith("/sensei"))?.destination).toBe("/:locale/korume/chat");
   });
 
   it("constrains :locale on EVERY rule, so no rule can match /api/...", async () => {

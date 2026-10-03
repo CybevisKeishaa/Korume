@@ -263,6 +263,10 @@ inventory's method rule 3 — a frame is a layer-B snapshot and can lag a ruling
 `/sensei` is the **Companion Knowledge Assistant** (`215:15164`). *"AI Sensei"* is the pre-rebrand
 name for the same entity, not a second character.
 
+> **Superseded 2026-10-03:** `215:15164` is built at **`/korume/chat`** as Korume Chat; the `/sensei`
+> placeholder is deleted and the route redirects there. Ask Korume is a surface of its own, not a Companion
+> mode or a `/companion` child — of this section only the "one presence" consequence stands. See `docs/superpowers/specs/2026-10-03-ask-korume-design.md` §0 (single persona Korume).
+
 **Consequences that bind the IA:**
 - The IA has **one** intelligent presence. There is no second persona to place, no arbitration rule
   needed between a "teacher" and a "companion", and no second voice to write.

@@ -115,3 +115,18 @@ test("certification: the rule is not over-broad — /en/jlptsomething is not swa
   const res = await request.get("/en/jlptsomething", { maxRedirects: 0 });
   expect([301, 302, 303, 307, 308]).not.toContain(res.status());
 });
+
+// Ask Korume (spec 2026-10-03 §6.5): one persona. /sensei's placeholder is deleted; both locales land on the chat.
+for (const locale of ["en", "vi"]) {
+  test(`korume: /${locale}/sensei redirects with 307 to /${locale}/korume/chat`, async ({ request }) => {
+    const res = await request.get(`/${locale}/sensei`, { maxRedirects: 0 });
+    expect(res.status()).toBe(307);
+    expect(locationPathname(res.headers()["location"])).toBe(`/${locale}/korume/chat`);
+  });
+}
+
+test("korume: the rule is not over-broad — /en/senseisomething is not swallowed", async ({ request }) => {
+  // Same shape as the jlpt guard: the segment matches exactly, so a longer one must not redirect at all.
+  const res = await request.get("/en/senseisomething", { maxRedirects: 0 });
+  expect([301, 302, 303, 307, 308]).not.toContain(res.status());
+});
