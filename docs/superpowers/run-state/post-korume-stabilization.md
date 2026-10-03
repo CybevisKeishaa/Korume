@@ -35,6 +35,10 @@ live Gemini smoke), and compare the landing e2e timeouts with master — before 
 - S2 (Codex, 2026-10-03): added the per-user system-generation daily cap in `038` under the shared user lock, config and dictionary 429 mapping, SQL gate/race coverage, and mutation proofs. Focused Vitest, `tsc`, lint, and `verify:protocol` evidence is recorded in the S2 report; Claude owns the required fresh-reset/live DB gates.
   Claude S2: fresh reset; `verify:db:knowledge` 0 (9b + race f PASS), `verify:db:korume` 0; vitest knowledge/dictionary/
   korume/migrations 348/348; tsc 0.
+- S3 (Codex, quota out mid-mutation 2026-10-03 ~21:40, reset 2026-10-04 02:01 → finished by Claude): `readJsonBody`
+  streams with a byte cap (413) on both note routes; caps = 12 x code-point max + 1 KiB (worst JSON escape is a
+  12-byte surrogate pair; Codex's 6x refused valid escaped notes — review fix); memo key includes the line text.
+  Mutations RED: no stream count, text dropped from key, route back on `request.json()`, 6x cap. tsc/lint/protocol 0.
 
 ## Working tree and environment
 

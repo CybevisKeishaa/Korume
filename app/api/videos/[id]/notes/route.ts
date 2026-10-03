@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { lessonNoteBodySchema } from "@/lib/validation/notes";
+import { LESSON_NOTE_MAX_BYTES, lessonNoteBodySchema } from "@/lib/validation/notes";
 import { deleteLessonNote, setLessonNote, type NoteWriteResult } from "@/lib/data/notes";
+import { readJsonBody } from "@/lib/http/read-json-body";
 
 const OPAQUE_ERROR = "Something went wrong. Please try again.";
 
@@ -9,13 +10,9 @@ async function handle(request: Request, id: string, save: boolean): Promise<Next
   if (!z.string().uuid().safeParse(id).success) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
   let note: string | null = null;
   if (save) {
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-    }
-    const parsed = lessonNoteBodySchema.safeParse(body);
+    const body = await readJsonBody(request, LESSON_NOTE_MAX_BYTES);
+    if (!body.ok) return NextResponse.json({ error: body.status === 413 ? "Payload too large" : "Invalid JSON" }, { status: body.status });
+    const parsed = lessonNoteBodySchema.safeParse(body.value);
     if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     note = parsed.data.body;
   }
