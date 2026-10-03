@@ -94,8 +94,9 @@ function KorumeConversation({
   const unavailableState = disabled || unavailable;
 
   return (
-    <div className="mx-auto max-w-screen-xl px-lg py-xl">
-      <header className="mb-xl flex items-center gap-md">
+    // Desktop: exactly one viewport tall — the conversation scrolls inside its card, the composer never leaves view.
+    <div className="mx-auto flex max-w-screen-xl flex-col px-lg py-xl lg:h-dvh">
+      <header className="mb-xl flex shrink-0 items-center gap-md">
         <button
           type="button"
           onClick={goBack}
@@ -171,9 +172,9 @@ function KorumeConversation({
           ) : null}
         </section>
       ) : (
-        <div className="grid gap-xl lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
-          <section className="overflow-hidden rounded-lg border border-border bg-card">
-            <header className="flex items-start justify-between border-b border-border px-lg py-md">
+        <div className="grid gap-xl lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
+          <section className="flex flex-col overflow-hidden rounded-lg border border-border bg-card lg:min-h-0">
+            <header className="flex shrink-0 items-start justify-between border-b border-border px-lg py-md">
               <div>
                 <p className="text-caption font-semibold tracking-wide text-primary-strong">
                   {t("ask.chat.signature")}
@@ -184,8 +185,8 @@ function KorumeConversation({
               </div>
               <ThreadMenu initialThreads={threads} initialCursor={nextCursor} onNewConversation={onNewConversation} />
             </header>
-            <div className="flex min-h-[30rem] flex-col">
-              <div className="flex-1 space-y-lg px-lg py-lg">
+            <div className="flex min-h-[30rem] flex-1 flex-col lg:min-h-0">
+              <div data-korume-scroll className="min-h-0 flex-1 space-y-lg overflow-y-auto px-lg py-lg">
                 {dividerLabel ? (
                   <p className="flex items-center gap-sm text-caption uppercase tracking-wide text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
                     {dividerLabel}
@@ -215,7 +216,7 @@ function KorumeConversation({
                   onRetry={() => void state.retry()}
                 />
               </div>
-              <div className="border-t border-border px-lg py-md">
+              <div className="shrink-0 border-t border-border px-lg py-md">
                 {state.notice ? (
                   <div className="mb-sm">
                     <TurnNotice notice={state.notice} />
@@ -233,11 +234,13 @@ function KorumeConversation({
               </div>
             </div>
           </section>
-          <KorumeRail
-            anchor={detail?.thread.anchor ?? null}
-            entities={entities}
-            memory={memory}
-          />
+          <div className="lg:min-h-0 lg:overflow-y-auto">
+            <KorumeRail
+              anchor={detail?.thread.anchor ?? null}
+              entities={entities}
+              memory={memory}
+            />
+          </div>
         </div>
       )}
     </div>

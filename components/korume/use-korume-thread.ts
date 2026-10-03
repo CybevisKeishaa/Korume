@@ -178,5 +178,5 @@ export function useKorumeThread(init: { threadId?: string; anchor: DraftAnchor |
     if (pending && (pending.status === "failed" || pending.status === "retryable")) await submit(pending.turnId, pending.text);
   }, [submit]);
 
-  return { ...state, send, retry };
+  return { ...state, send, retry, ensureThread };
 }

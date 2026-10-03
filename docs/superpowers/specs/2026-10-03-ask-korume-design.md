@@ -439,8 +439,12 @@ type AnswerV1 = { blocks: Block[] };                                   // 1..12
   the player it may cover most of the transcript, still without a player remount. The video keeps playing.
 - The sheet is **not** a drawer tab and does not touch Mining / Notes.
 - **Sheet content**: header "Korume", the anchor chip (`「私は日本語を…」 · 01:23`; click seeks to it), **Expand**
-  (`/korume/chat?thread=<id>`; disabled until the thread exists), close. Body: messages. Composer: textarea, send, hint
+  (`/korume/chat?thread=<id>`; **owner ruling 2026-10-03: never disabled — before the first send it creates the
+  anchored thread, then navigates**), **Enlarge**, close. Body: messages. Composer: textarea, send, hint
   "Enter to send · Shift+Enter for a new line".
+- **Enlarge** (owner ruling 2026-10-03): the same popup, same state, lifted to the middle of the viewport
+  (`min(1040px, 92vw)` × `min(680px, 88vh)`, density-scaled) over a dimmed backdrop, with the *Learning context*
+  rail (§6.3) beside the conversation. Escape or the backdrop shrinks it back to the popup; a second Escape closes.
 - **Anchor is immutable.** When playback has moved to another line the chip offers "Ask about the current line",
   which starts a new draft with the new anchor; the old thread is untouched.
 - **Reopen rule**: within one page session, closing and reopening the sheet returns to the active thread. After a
@@ -450,7 +454,8 @@ type AnswerV1 = { blocks: Block[] };                                   // 1..12
 
 ### 6.3 Viewport B — `/korume/chat`
 
-Built to `215:15164`, inside the `(app)` chrome.
+Built to `215:15164`, inside the `(app)` chrome. **Owner ruling 2026-10-03:** on desktop the page is exactly one
+viewport tall — the page never scrolls; the conversation scrolls inside its card and the composer stays in view.
 
 - **Header**: Back, "Korume · Japanese Knowledge", and on the right **"Korume Memory"** (links to `/companion`;
   not "Conversation Memory"), settings.

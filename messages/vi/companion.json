@@ -69,7 +69,9 @@
       "expand": "Mở trang trò chuyện",
       "close": "Đóng Korume",
       "askCurrent": "Hỏi về câu đang phát",
-      "anchor": "Đang hỏi về câu này"
+      "anchor": "Đang hỏi về câu này",
+      "enlarge": "Phóng to Korume",
+      "shrink": "Thu nhỏ Korume"
     },
     "chat": {
       "brand": "Korume",

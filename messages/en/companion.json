@@ -69,7 +69,9 @@
       "expand": "Open full chat",
       "close": "Close Korume",
       "askCurrent": "Ask about the current line",
-      "anchor": "Asking about this line"
+      "anchor": "Asking about this line",
+      "enlarge": "Enlarge Korume",
+      "shrink": "Shrink Korume"
     },
     "chat": {
       "brand": "Korume",

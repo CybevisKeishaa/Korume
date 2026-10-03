@@ -7,9 +7,10 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resetTabWritesForTests, usePositionStore } from "./workspace-context";
 import { ShadowingWorkspaceShell } from "./workspace-shell";
 
+const push = vi.fn();
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ refresh: vi.fn(), push }),
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/en/shadowing/video-1", useSearchParams: () => new URLSearchParams("line=line-1") }));
 
@@ -57,7 +58,6 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     const dialog = sheet() as HTMLElement;
     expect(dialog).toHaveAttribute("aria-modal", "false");
     expect(dialog).toHaveTextContent("「今日は1番目の文です」 · 00:00");
-    expect(screen.getByRole("button", { name: "Open full chat" })).toBeDisabled();
     expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Message Korume" }));
     expect(korumeCalls()).toEqual([]);
   });
@@ -68,6 +68,36 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     act(() => { store?.set(0); });
     fireEvent.click(mascot() as HTMLElement);
     expect(sheet()).toHaveTextContent("「今日は1番目の文です」 · 00:05");
+  });
+
+  it("Open full chat before any send creates the anchored thread, then goes to it", async () => {
+    push.mockClear();
+    mount();
+    fireEvent.click(mascot() as HTMLElement);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Open full chat" })); });
+    const [url, init] = korumeCalls()[0] as [string, RequestInit];
+    expect(url).toBe("/api/korume/threads");
+    const body = JSON.parse(String(init.body)) as { threadId: string; videoId: string; lineId: string };
+    expect(body).toMatchObject({ videoId: "video-1", lineId: "line-1" });
+    expect(push).toHaveBeenCalledWith(`/korume/chat?thread=${body.threadId}`);
+  });
+
+  it("enlarges to the middle with the Learning context, and Escape or the backdrop shrinks it before closing", () => {
+    mount();
+    fireEvent.click(mascot() as HTMLElement);
+    expect(screen.queryByRole("complementary", { name: "Learning context" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
+    expect(sheet()).toHaveAttribute("data-expanded", "true");
+    const context = screen.getByRole("complementary", { name: "Learning context" });
+    expect(context).toHaveTextContent("今日は1番目の文です");
+    expect(context).toHaveTextContent("Episode 1");
+    fireEvent.keyDown(sheet() as HTMLElement, { key: "Escape" });
+    expect(sheet()).toHaveAttribute("data-expanded", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
+    fireEvent.click(screen.getByTestId("korume-backdrop"));
+    expect(sheet()).toHaveAttribute("data-expanded", "false");
+    fireEvent.keyDown(sheet() as HTMLElement, { key: "Escape" });
+    expect(sheet()).toBeNull();
   });
 
   it("opens with k outside editable fields, and k typed in the composer is just a k", () => {

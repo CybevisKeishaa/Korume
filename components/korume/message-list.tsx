@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useTranslations } from "@/lib/i18n";
 import type { KorumeMessageView } from "@/lib/korume/types";
 import { AnswerBlocks } from "./answer-blocks";
@@ -30,8 +31,15 @@ export function MessageList({ messages, pending, onFollowup, onRetry }: {
 }) {
   const t = useTranslations("companion");
   const lastAnswer = [...messages].reverse().find((m) => m.role === "assistant")?.id;
+  const list = useRef<HTMLOListElement>(null);
+  // The newest turn in view. The scroller is the one the sheet or the chat page marks — never `scrollIntoView`, which
+  // would also move the workspace's overflow-hidden ancestors.
+  useEffect(() => {
+    const scroller = list.current?.closest<HTMLElement>("[data-korume-scroll]");
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+  }, [messages.length, pending?.turnId, pending?.status]);
   return (
-    <ol aria-label={t("ask.messages")} className="flex flex-col gap-lg">
+    <ol ref={list} aria-label={t("ask.messages")} className="flex flex-col gap-lg">
       {messages.map((m) => m.role === "user" ? <UserBubble key={m.id} text={m.text} /> : (
         <li key={m.id}>
           <Signature />
