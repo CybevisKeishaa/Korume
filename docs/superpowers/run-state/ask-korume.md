@@ -70,6 +70,13 @@ Task 0 probe (Claude, 2026-10-03):
   `lookupForms`/`entriesFor` now exported), memory (SELECT only, two escaped `ilike` reads instead of `or()`),
   knowledge (`readCachedSection` only). `learner_exposure` reports `unavailable` until Task 6. 8 mutations each red
   then restored. tsc/lint/protocol 0; vitest 498 / 4435.
+- Task 6 (Claude): `tools/exposure.ts` (`seenLines` progress-aware with no high-water mark, per-video
+  server-side `lte(start_time, position)`, shadowed lines added, cap 20 videos / 3000 lines → `capped`,
+  `countExposure` by identity — when a term names several identities the one on most lines wins, so は the
+  particle beats 歯), `grounding.ts` (`buildGroundedEntities` from ok results only, merge by id, JLPT label, lesson
+  link only to a readable video); exposure wired into `DEFAULT_TOOLS`. 7 mutations red — the substring one first
+  SURVIVED (the max-identity choice masked it), fixed by a substring-only case. vitest 500 / 4451.
+  Not yet proven against a live DB (PostgREST filter shapes): the Task 11 live smoke with its independent oracle.
 - Execution model: owner asked for "sol-6.1"; `-m sol-6.1` is rejected for a ChatGPT account (400) and no such slug
   exists, so Codex runs with `-m gpt-6-sol` (closest listed model).
 
@@ -84,5 +91,5 @@ None.
 
 ## Next actions
 
-1. Task 6 (progress-aware `learner_exposure` tool + `buildGroundedEntities`). Codex (`-m gpt-6-sol`) if its
+1. Task 7 (answer `AnswerV1`, turn pipeline, `POST /turns`, idempotency, settle/release, grounding persistence). Codex (`-m gpt-6-sol`) if its
    quota is back (~14:30 2026-10-03), else Claude. Plan Correction 11 lists the as-built Task 4 interface.

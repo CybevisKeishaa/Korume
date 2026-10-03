@@ -6,6 +6,7 @@ vi.mock("./tools/line-analysis", () => ({ lineAnalysisTool: vi.fn() }));
 vi.mock("./tools/dictionary", () => ({ dictionaryTool: vi.fn() }));
 vi.mock("./tools/memory", () => ({ memoryTool: vi.fn() }));
 vi.mock("./tools/knowledge", () => ({ knowledgeTool: vi.fn() }));
+vi.mock("./tools/exposure", () => ({ exposureTool: vi.fn() }));
 
 const ctx = { supabase: {}, userId: "u", tier: "free", locale: "en", anchor: null } as unknown as RetrievalContext;
 const clock = { toolMs: 20, stageMs: 30 };

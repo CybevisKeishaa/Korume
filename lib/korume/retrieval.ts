@@ -7,6 +7,7 @@ import { lineAnalysisTool } from "./tools/line-analysis";
 import { dictionaryTool } from "./tools/dictionary";
 import { memoryTool } from "./tools/memory";
 import { knowledgeTool } from "./tools/knowledge";
+import { exposureTool } from "./tools/exposure";
 
 type Supabase = ReturnType<typeof createClient>;
 
@@ -31,12 +32,12 @@ export interface RetrievalContext {
 
 export type Tool = (step: PlanStep, ctx: RetrievalContext) => Promise<Pick<ToolResult, "status" | "data">>;
 
-/** `learner_exposure` arrives with Task 6; until then a planned exposure step reports `unavailable`. */
-export const DEFAULT_TOOLS: Partial<Record<ToolName, Tool>> = {
+export const DEFAULT_TOOLS: Record<ToolName, Tool> = {
   line_analysis: lineAnalysisTool,
   dictionary_lookup: dictionaryTool,
   memory_lookup: memoryTool,
   knowledge_lookup: knowledgeTool,
+  learner_exposure: exposureTool,
 };
 
 const TIMED_OUT = Symbol("timeout");
