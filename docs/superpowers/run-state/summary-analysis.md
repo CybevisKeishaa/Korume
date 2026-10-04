@@ -46,6 +46,8 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   LeaseStore<KnowledgeKey>` (not `& BudgetStore` as the plan said — BudgetStore is a Pick of KnowledgeStore, so that
   would be circular); `createMemoryLeaseStore<K>`. Regression suite 266 → 274 (8 new, 0 changed); tsc 0; lint 0.
   Mutation: a reservation before the claim → 6/8 leased tests RED incl. "never lets a follower reserve".
+- Task 5 (Codex via Paseo, 1 run; Claude reviewed): snapshot/thresholds/loader, 16 tests (+1 refs) green on re-run;
+  mutations: retention denominator → RED, `p_mastery: 1` → RED, target ordering reversed → RED.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -64,4 +66,4 @@ None.
 
 ## Next actions
 
-1. Task 5 (deterministic snapshot) — Claude until the Codex quota resets (18:10), then Codex.
+1. Task 6 (Review Tomorrow) → Codex.
