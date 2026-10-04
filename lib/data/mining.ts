@@ -262,7 +262,7 @@ export type GetMiningQueueResult = { ok: true; data: MiningQueueItem[] } | { ok:
  * Due-then-fresh queue for the current user, mirroring
  * `getReviewQueue`'s ordering (`lib/data/srs.ts`): cards whose
  * `next_review_at` has passed (soonest first), then never-reviewed cards,
- * capped at `limit`. Cards reviewed but not yet due are held back.
+ * capped at `limit`. Cards not yet due are held back, reviewed or not.
  */
 export async function getMiningQueue(now: Date = new Date(), limit = 20): Promise<GetMiningQueueResult> {
   const supabase = createClient();
@@ -283,11 +283,12 @@ export async function getMiningQueue(now: Date = new Date(), limit = 20): Promis
   const due: { row: QueueRow; at: number }[] = [];
   const fresh: QueueRow[] = [];
   for (const row of rows) {
+    const at = row.next_review_at ? new Date(row.next_review_at).getTime() : 0;
     if (!row.last_reviewed_at) {
-      fresh.push(row);
+      // A never-reviewed card scheduled for later (Review Tomorrow, spec §6.2) waits until it is due.
+      if (at <= nowMs) fresh.push(row);
       continue;
     }
-    const at = row.next_review_at ? new Date(row.next_review_at).getTime() : 0;
     if (at <= nowMs) due.push({ row, at });
   }
   due.sort((a, b) => a.at - b.at);

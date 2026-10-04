@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
-import { createMiningCard, deleteMiningCard } from "./mining";
+import { createMiningCard, deleteMiningCard, getMiningQueue } from "./mining";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
@@ -94,5 +94,27 @@ describe("deleteMiningCard", () => {
     await expect(deleteMiningCard(CARD_ID)).resolves.toEqual({ ok: true });
     expect(cardQueries[0]).toEqual(expect.arrayContaining([{ op: "delete" }, { op: "eq", column: "id", value: CARD_ID }]));
     await expect(deleteMiningCard(MISSING_ID)).resolves.toEqual({ ok: false, status: 404 });
+  });
+});
+
+describe("getMiningQueue", () => {
+  const NOW = new Date("2026-10-05T10:00:00.000Z");
+  const card = (id: string, nextReviewAt: string | null, lastReviewedAt: string | null) =>
+    ({ ...CARD, id, next_review_at: nextReviewAt, last_reviewed_at: lastReviewedAt });
+
+  it("holds back a never-reviewed card scheduled for later (Review Tomorrow), serves fresh and due cards", async () => {
+    installSupabase("queue-user");
+    cardResponses.push({
+      data: [
+        card("tomorrow", "2026-10-05T17:00:00.000Z", null), // Review Tomorrow: due next local midnight
+        card("fresh", null, null),
+        card("due", "2026-10-05T09:00:00.000Z", "2026-10-01T00:00:00.000Z"),
+        card("later", "2026-10-06T00:00:00.000Z", "2026-10-01T00:00:00.000Z"),
+        card("tomorrow-now-due", "2026-10-05T10:00:00.000Z", null),
+      ],
+      error: null,
+    });
+    const result = await getMiningQueue(NOW);
+    expect(result.ok && result.data.map((item) => item.id)).toEqual(["due", "fresh", "tomorrow-now-due"]);
   });
 });

@@ -38,7 +38,7 @@ const NO_TRANSCRIPT: AnalysisResponse = { status: "no_transcript" };
 
 /**
  * The six areas that depend on the AI artifacts or on learner actions, in grid order: reflection, words,
- * expressions, grammar, culture, review. Analysis is polled first; the reflection chain starts once it settles.
+ * expressions, grammar, culture, review. Analysis is polled first; the reflection chain starts once it is ready.
  */
 export function SummaryIsland({ videoId, youtubeVideoId, locale, hasTranscript, reviewTargets, reviewTargetTotal, fallback, savedCards }: SummaryIslandProps) {
   const t = useTranslations("shadowing.lessonSummary");
@@ -53,7 +53,9 @@ export function SummaryIsland({ videoId, youtubeVideoId, locale, hasTranscript, 
   usePolledResource<ReflectionResponse>({
     url: `/api/videos/${videoId}/lesson-reflection?locale=${locale}`,
     postBody: { locale },
-    enabled: analysis.settled,
+    // Only on a ready analysis: an unusable one can only yield the fallback, and asking anyway polls `pending`
+    // forever once nobody is generating the analysis (whole-branch review I2).
+    enabled: analysis.settled && analysis.body?.status === "ready",
     policy: reflectionPolicy,
     onBody: (body) => {
       if ("reflection" in body && body.reflection) setShown(body.reflection);

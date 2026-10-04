@@ -124,6 +124,21 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   clean; ONE remaining violation — an en culture note says "crucial for the N3/N2 level context" (JLPT in prose,
   forbidden by the prompt). Spec §4.3 keeps this boundary prompt + manual only; a mechanical JLPT/romaji drop in
   finalize is an owner decision (open follow-up).
+- Task 17 (Claude, Codex quota out until 05:43): full vitest first run found 3 repo guards the scoped runs never
+  reached (registry row, sentence_marks DDL ownership, e2e clock read) — fixed `bb423f2`. Fresh `db reset` → all six
+  `verify:db:*` PASS (summary, knowledge, korume, shadowing, settings, dictionary). Whole-branch review
+  (`code-reviewer`): 0 Critical, 2 Important, both fixed with a RED test first — I1 never-reviewed Review Tomorrow
+  cards were served by `getMiningQueue` today (fresh bucket ignored `next_review_at`; the function had no test) →
+  a fresh card waits until due; I2 with the analysis unusable the reflection GET answered `pending` forever (~40
+  req/min) → the island asks for a reflection only on a ready analysis (spec §5.2 server order unchanged).
+  Minors left as follow-ups: m1 rate limit runs after the loads in the three services; m2 reflection loads the
+  context twice; m3 `DELETE /api/mining/[cardId]` has no rate limit; m4 `schedule_review_tomorrow` counts no-op
+  conflicts. Final gates after the last edit: vitest 549 / 4836, tsc 0, lint 0 (exit code), protocol valid; e2e
+  summary + workspace + korume + provider-identity + intelligence + review 46/47 — the one failure is
+  `route-group-provider-identity` focus case under parallel seeding (the hub lists newest lessons, so "E2E Seed
+  Video" is pushed off by other specs' seeds + Ep.729); 3/3 alone; the branch does not touch the hub listing.
+  Mutation ledger: every high-risk mutation of Tasks 1, 3, 4, 5, 8, 9, 10, 11, 14 is recorded RED in its task entry
+  above (plus 15 and 16). Lessons L-043, L-044, L-045 in `docs/lessons.md`.
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
 - Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
@@ -141,4 +156,4 @@ None.
 
 ## Next actions
 
-1. Task 17 (final gates, db reset gates, mutation ledger, whole-branch review, lessons, owner look).
+1. Owner Chrome look at 1280×529 (Ep.729 local `52ccaa25-f48b-4ea4-94c1-32dfbb936666`, AI_PROVIDER=gemini); merge is the owner's decision.

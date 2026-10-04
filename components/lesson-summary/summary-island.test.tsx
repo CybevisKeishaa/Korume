@@ -191,4 +191,15 @@ describe("SummaryIsland", () => {
     expect(within(area("words")).getByRole("button", { name: "Save 注文" })).toBeInTheDocument();
     expect(within(area("expressions")).getByRole("button", { name: "Save 失礼します" })).toBeInTheDocument();
   });
+  it("asks for no reflection when the analysis settles unusable (no endless pending poll)", async () => {
+    const requests = stubFetch({
+      [`GET ${ANALYSIS}`]: [{ status: "unavailable" }],
+      [`GET ${REFLECTION}`]: [{ state: "pending", retryAfterMs: 1500, reflection: null }],
+    });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+    expect(requests.filter((key) => key.includes("lesson-reflection"))).toEqual([]);
+    expect(within(area("reflection")).getByText("Korume")).toBeInTheDocument();
+  });
 });
