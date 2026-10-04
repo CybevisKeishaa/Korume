@@ -52,6 +52,9 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   in node by Claude for HCM, NY, Santiago DST (local 01:00), Paris, Kiritimati, Pago Pago, Kathmandu. Mutations:
   `now + 24h` → 6 RED; drop the `t > now` guard → RED via an added invariant test. Note for Task 14: the service
   schedules EVERY review target (spec §6.2), while the list shows at most 5 — UI copy must not promise "these 5".
+- Task 7 (Codex, 1 run, finished just before its quota ran out at 19:45): navigation 10 tests green on re-run;
+  the PostgREST `collections!inner(kind)` filter shape was probed live by Claude (200). Mutations: drop the
+  position filter → RED; first-not-last resume line → RED.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -70,4 +73,4 @@ None.
 
 ## Next actions
 
-1. Task 7 (navigation) → Codex.
+1. Task 8 (analysis pure core) — Claude while Codex quota is out (resets 00:24), brief already written.
