@@ -37,6 +37,11 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   live rolled-back exercise (evidence shape, Review Tomorrow least(), lease leader/follower/stale/ready, definer grants);
   pin test RED (missing) → GREEN 4/4; export guard RED (36 vs 35, `lesson_reflections` unaccounted) → GREEN; mutation
   (drop `authenticated` from one revoke) → pin RED; `db reset` 0; `tsc` 0.
+- Task 3 (Claude, Codex quota out): `npm run verify:db:summary` PASS — 12 single-session cases + 4 race checks
+  (20-connection reflection lease, lesson_analysis knowledge lease, Review Tomorrow one card, expired-lease takeover with
+  stale token refused). Mutations, live: policy `using (true)` → FAIL 8; drop `sentence_mining_cards_one_sentence` →
+  case 7 errors (42P10); `reflection_complete` without the token check → FAIL 11. After `db reset`:
+  `verify:db:summary` and `verify:db:knowledge` both PASS.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -55,4 +60,4 @@ None.
 
 ## Next actions
 
-1. Task 3 (`verify:db:summary`) — Claude while Codex quota is out (resets 18:10), then Codex from Task 4.
+1. Task 4 (extract `runLeasedGeneration`) — Claude while Codex quota is out (resets 18:10); Codex resumes after.
