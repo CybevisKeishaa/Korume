@@ -136,11 +136,12 @@ test("6 · Review Tomorrow writes all targets once and keeps button focus", asyn
   await page.waitForTimeout(300);
   expect(posts).toBe(1);
   await page.reload();
-  const cards = await data.admin.from("sentence_mining_cards").select("transcript_line_id, next_review_at")
+  const cards = await data.admin.from("sentence_mining_cards").select("transcript_line_id, created_at, next_review_at")
     .eq("user_id", userId).eq("video_id", data.videoId).eq("source_kind", "sentence");
   if (cards.error) throw cards.error;
   expect(cards.data.map((row) => row.transcript_line_id).sort()).toEqual([data.lineIds[0], data.lineIds[2], data.lineIds[3]].sort());
-  expect(cards.data.every((row) => Date.parse(row.next_review_at) > Date.now())).toBe(true);
+  // "In the future" against the server's own insert time: no clock read in an e2e source (test/e2e-registration-emails).
+  expect(cards.data.every((row) => Date.parse(row.next_review_at) > Date.parse(row.created_at))).toBe(true);
 });
 
 test("7 · mode bar and review deep link seek to the chosen line", async ({ page }) => {
