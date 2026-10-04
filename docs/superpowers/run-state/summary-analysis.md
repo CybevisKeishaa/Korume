@@ -64,6 +64,10 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
 - Task 9 (Claude, Codex quota out): view/hydrate/service/route; 29 new tests (service 12 over the real memory store
   + fake provider, hydrate 4, view 1, route 12). Mutations: grammar title from the artifact → RED; drop the read
   path's failed branch → RED; video id out of the cache key → RED. Rate limit runs before the no-transcript answer.
+- Task 10 (Claude): reflection evidence/schema/prompt/fallback/view, 13 tests. Plan deviation: the AI schema uses
+  empty strings for "no highlight" instead of `.nullable()` — no repo schema has sent a nullable field to Gemini,
+  so none starts here unmeasured. The type-boundary test is compile-only (tsc). Mutations: a score in evidence → 2
+  RED; `nextLesson?` accepted by `ReflectionEvidence` → tsc TS2578.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -82,4 +86,4 @@ None.
 
 ## Next actions
 
-1. Task 10 (reflection pure core) — Claude while Codex quota is out (resets 00:24).
+1. Task 11 (reflection store, service, route) — Claude while Codex quota is out (resets 00:24).
