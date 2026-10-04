@@ -48,6 +48,11 @@ export interface LeasedGeneration<K, T> {
   now: Date;
 }
 
+/** A `finalize` refusal: the output parsed but failed the caller's semantic checks (paid, retried with backoff). */
+export class FinalizeError extends Error {
+  override name = "FinalizeError";
+}
+
 export type LeasedOutcome =
   | { status: "ready"; content: unknown; model: string | null }
   | { status: "pending"; retryAfterMs: number }

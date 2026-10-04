@@ -55,6 +55,12 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
 - Task 7 (Codex, 1 run, finished just before its quota ran out at 19:45): navigation 10 tests green on re-run;
   the PostgREST `collections!inner(kind)` filter shape was probed live by Claude (200). Mutations: drop the
   position filter → RED; first-not-last resume line → RED.
+- Task 8 (Claude, Codex quota out): analysis input/schema/prompt/finalize + `FinalizeError`; 22 new tests. Plan
+  deviation: zod v4 types reject `looseObject(...).catch(null)`, so `schema.ts` keeps that exact runtime schema and
+  states the result type with a cast — `z.toJSONSchema` output re-checked: `default: null`, `additionalProperties: {}`,
+  the shape measured on Gemini (adding `.nullable()` instead would change the schema Gemini receives, unmeasured).
+  Mutations: span check → `true` → Review Focus 2 test RED; skip the strict word parse → extra-field test RED.
+  Note for Task 14: stored expression spans are NFKC (half-width `?`), so highlighting must match NFKC, not raw text.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -73,4 +79,4 @@ None.
 
 ## Next actions
 
-1. Task 8 (analysis pure core) — Claude while Codex quota is out (resets 00:24), brief already written.
+1. Task 9 (analysis hydration, service, route) — Claude while Codex quota is out (resets 00:24).
