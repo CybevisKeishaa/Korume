@@ -12,7 +12,8 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
 ## Authorities
 
 - Spec: `docs/superpowers/specs/2026-10-04-summary-analysis-design.md` — frozen by the owner at `2b701cd`.
-- Plan: `docs/superpowers/plans/2026-10-04-summary-analysis.md` (17 tasks; Plan corrections C1–C5 await the owner's review).
+- Plan: `docs/superpowers/plans/2026-10-04-summary-analysis.md` (17 tasks) — **approved by the owner 2026-10-04 with
+  Plan corrections C1–C5**; `selection` stays in the Vocabulary tile and Saved Knowledge Retention as the frozen spec says.
 - `AGENTS.md`, `docs/lessons.md`, `.codex/docs/workflow.md` §8.
 
 ## Accepted commits
@@ -34,6 +35,11 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
 
 - (none yet)
 
+- Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
+  Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
+- Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
+  the knowledge unique index is partial and `ON CONFLICT (cols)` without its predicate cannot infer it (42P10).
+
 ## Next
 
-Owner reviews the plan (and C1–C5), chooses the execution method; then Task 1.
+Task 1 dispatched to Codex.
