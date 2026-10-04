@@ -80,6 +80,8 @@ export function ClipPlayerProvider({ youtubeVideoId, children }: { youtubeVideoI
       if (!active || !alive.current || !host.current || player.current || !namespace?.Player) return;
       player.current = new namespace.Player(host.current, {
         videoId: youtubeVideoId,
+        width: "100%",
+        height: "100%",
         playerVars: { rel: 0, playsinline: 1 },
         events: {
           onReady: ({ target }) => {
@@ -124,7 +126,9 @@ export function ClipPlayerProvider({ youtubeVideoId, children }: { youtubeVideoI
             <span role="status" aria-live="polite" className="text-caption">{playing ? t("playing") : t("paused")}</span>
             <Button variant="ghost" size="sm" onClick={close} aria-label={t("close")}>×</Button>
           </div>
-          <div ref={host} className="aspect-video w-full" />
+          <div className="relative aspect-video w-full overflow-hidden rounded-md">
+            <div ref={host} className="absolute inset-0" />
+          </div>
         </aside>
       )}
     </ClipContext.Provider>

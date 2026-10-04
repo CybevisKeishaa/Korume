@@ -1,6 +1,6 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { YT_PLAYER_STATE } from "@/components/video-player/load-youtube-api";
+import { YT_PLAYER_STATE, type YtPlayerConfig } from "@/components/video-player/load-youtube-api";
 import { installYouTubeStub, type FakeYtPlayer, type YouTubeStubHandle } from "@/test/youtube-stub";
 import { render } from "@/test/render";
 import { ClipPlayerProvider, HearInLessonButton } from "./clip-player";
@@ -126,11 +126,29 @@ describe("ClipPlayerProvider", () => {
     await open();
     expect(firstPlayer().playerVars).not.toHaveProperty("controls", 0);
   });
+
+  it("constrains the iframe host and requests the dock dimensions", async () => {
+    const OriginalPlayer = window.YT!.Player;
+    let config: YtPlayerConfig | undefined;
+    window.YT!.Player = class extends OriginalPlayer {
+      constructor(element: string | HTMLElement, options: YtPlayerConfig) {
+        super(element, options);
+        config = options;
+      }
+    };
+    fixture();
+    await open();
+    expect(config).toMatchObject({ width: "100%", height: "100%" });
+    const dock = screen.getByRole("region", { name: "Lesson clip" });
+    const wrapper = dock.querySelector(".aspect-video");
+    expect(wrapper).toHaveClass("relative", "overflow-hidden");
+    expect(wrapper?.firstElementChild).toHaveClass("absolute", "inset-0");
+  });
   it("restarts the stop check when a second line plays while the first is still playing (no state event)", async () => {
     fixture();
     await open();
     const player = firstPlayer();
-    vi.spyOn(player, "playVideo").mockImplementation(() => {}); // already PLAYING: YouTube fires no new state
+    vi.spyOn(player, "playVideo").mockImplementation(() => undefined); // already PLAYING: YouTube fires no new state
     await open(1);
     player.setCurrentTimeForTest(30);
     frame();

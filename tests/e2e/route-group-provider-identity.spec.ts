@@ -192,7 +192,7 @@ test("Companion state survives the (app) -> (focus) boundary, and the hidden nav
   // 5. Activating the toggle recovers the column, and it is a real <nav>
   //    landmark once shown.
   await showNav.click();
-  await expect(page.getByRole("navigation")).toHaveCount(1);
+  await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: /hide navigation/i })).toHaveAttribute(
     "aria-expanded",
     "true",
