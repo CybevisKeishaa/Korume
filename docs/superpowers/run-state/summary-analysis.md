@@ -107,7 +107,7 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
 
 ## Working tree and environment
 
-- Owner: Claude
+- Owner: Codex
 - Worktree `.worktrees/summary-analysis`, branch `summary-analysis`, from master `09d2684`. Own `node_modules`
   (`npm ci`) and a copy of the main `.env.local`. Paseo workspace `wks_8b67611c339e7409`.
 
