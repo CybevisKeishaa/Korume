@@ -14,7 +14,7 @@ const SOURCES = ROOTS.flatMap((root) => files(join(process.cwd(), root))).map((p
 
 describe("Summary boundaries (spec R1, R7, §7.1)", () => {
   it("collects the Summary sources (a scan that finds nothing proves nothing)", () => {
-    expect(SOURCES.length).toBeGreaterThanOrEqual(40);
+    expect(SOURCES.length).toBeGreaterThanOrEqual(41);
   });
 
   it("never reads Companion memory", () => {

@@ -100,6 +100,13 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   `needsPost`; stale text kept only on `ready`; raw ref compare in SaveToggle; `disabled` instead of `aria-disabled`;
   Retry gate always open.
 
+- Task 15 (Codex gpt-6-sol, 1 run after the committed handoff `a7ca9df`; gpt-6.1-sol is refused for a ChatGPT
+  account): `clip-player.tsx` (provider, dock, `HearInLessonButton` on word cards only), 6 plan cases + island
+  placement test, 3 mutations RED. Claude review found three bugs, each with a RED test first: a second Hear while
+  already PLAYING fires no state change, so the stop loop never restarted (play() now restarts it); play() before
+  `onReady` drove a not-yet-ready player (now a `ready` ref, the last requested line plays on ready); the unmount
+  effect never reset `alive` after a StrictMode re-run (player never created in dev). Hear link `text-primary-strong`.
+  Clip suite 8. Boundary floor 41, token-scale lesson-summary 17.
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
 - Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
@@ -107,7 +114,7 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
 
 ## Working tree and environment
 
-- Owner: Codex
+- Owner: Claude
 - Worktree `.worktrees/summary-analysis`, branch `summary-analysis`, from master `09d2684`. Own `node_modules`
   (`npm ci`) and a copy of the main `.env.local`. Paseo workspace `wks_8b67611c339e7409`.
 
@@ -117,4 +124,4 @@ None.
 
 ## Next actions
 
-1. Task 15 (clip player: "Hear in lesson" buttons via the clip context).
+1. Task 16 (e2e + live Gemini smoke; Claude runs both; re-import dictionary + Ep.729 first).

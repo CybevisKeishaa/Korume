@@ -7,6 +7,7 @@ import type { ReflectionFallback } from "@/lib/summary/reflection/fallback";
 import type { ReflectionResponse, ReflectionView } from "@/lib/summary/reflection/view";
 import type { ReviewTarget, SavedCard } from "@/lib/summary/snapshot";
 import { AnalysisBlocks } from "./analysis-blocks";
+import { ClipPlayerProvider } from "./clip-player";
 import { ReflectionCard } from "./reflection-card";
 import { ReviewList } from "./review-list";
 import { type PollPolicy, usePolledResource } from "./use-polled-resource";
@@ -39,7 +40,7 @@ const NO_TRANSCRIPT: AnalysisResponse = { status: "no_transcript" };
  * The six areas that depend on the AI artifacts or on learner actions, in grid order: reflection, words,
  * expressions, grammar, culture, review. Analysis is polled first; the reflection chain starts once it settles.
  */
-export function SummaryIsland({ videoId, locale, hasTranscript, reviewTargets, reviewTargetTotal, fallback, savedCards }: SummaryIslandProps) {
+export function SummaryIsland({ videoId, youtubeVideoId, locale, hasTranscript, reviewTargets, reviewTargetTotal, fallback, savedCards }: SummaryIslandProps) {
   const t = useTranslations("shadowing.lessonSummary");
   // The last AI text stays on screen: a later `fallback` or `pending` answer never erases it.
   const [shown, setShown] = useState<ReflectionView | null>(null);
@@ -66,11 +67,11 @@ export function SummaryIsland({ videoId, locale, hasTranscript, reviewTargets, r
   }, [analysisReady]);
 
   return (
-    <>
+    <ClipPlayerProvider youtubeVideoId={youtubeVideoId}>
       <p role="status" aria-live="polite" className="sr-only">{announced ? t("ai.ready") : ""}</p>
       <ReflectionCard reflection={shown} fallback={fallback} videoId={videoId} reviewTargetTotal={reviewTargetTotal} />
       <AnalysisBlocks response={hasTranscript ? analysis.body : NO_TRANSCRIPT} onRetry={analysis.retry} savedCards={savedCards} />
       <ReviewList videoId={videoId} targets={reviewTargets} total={reviewTargetTotal} />
-    </>
+    </ClipPlayerProvider>
   );
 }

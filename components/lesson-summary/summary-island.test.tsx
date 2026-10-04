@@ -52,6 +52,16 @@ afterEach(() => {
 });
 
 describe("SummaryIsland", () => {
+  it("places Hear in lesson on each word card and nowhere else", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    expect(within(area("words")).getAllByRole("button", { name: "Hear in lesson" })).toHaveLength(view.words.length);
+    for (const name of ["reflection", "expressions", "grammar", "culture", "review"]) {
+      expect(within(area(name)).queryAllByRole("button", { name: "Hear in lesson" })).toHaveLength(0);
+    }
+  });
+
   it("pending: aria-busy skeletons in the four AI areas, the review list is visible at once", async () => {
     stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "pending", retryAfterMs: 1000 }] });
     render(<SummaryIsland {...props} />);

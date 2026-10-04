@@ -9,6 +9,7 @@ import { useTranslations } from "@/lib/i18n";
 import type { AnalysisResponse, CultureView, ExpressionView, GrammarView, WordView } from "@/lib/summary/analysis/view";
 import type { SavedCard } from "@/lib/summary/snapshot";
 import { areaProps } from "./area";
+import { HearInLessonButton } from "./clip-player";
 import { SaveToggle } from "./save-toggle";
 import { SectionHeading } from "./section-heading";
 
@@ -127,6 +128,7 @@ function Words({ words, savedCards }: { words: WordView[]; savedCards: SavedCard
               <span className="text-caption text-muted-foreground">{t(`pos.${word.posKey}`)}</span>
             </div>
             <p lang="ja" className="mt-auto border-t border-border pt-sm text-caption text-muted-foreground">{word.source.textJp}</p>
+            <HearInLessonButton source={word.source} label={t("words.hear")} />
           </Card>
         </li>
       ))}
