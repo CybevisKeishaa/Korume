@@ -42,6 +42,10 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   stale token refused). Mutations, live: policy `using (true)` → FAIL 8; drop `sentence_mining_cards_one_sentence` →
   case 7 errors (42P10); `reflection_complete` without the token check → FAIL 11. After `db reset`:
   `verify:db:summary` and `verify:db:knowledge` both PASS.
+- Task 4 (Claude): `runLeasedGeneration` in `lib/knowledge/leased.ts`; orchestrator delegates; `KnowledgeStore extends
+  LeaseStore<KnowledgeKey>` (not `& BudgetStore` as the plan said — BudgetStore is a Pick of KnowledgeStore, so that
+  would be circular); `createMemoryLeaseStore<K>`. Regression suite 266 → 274 (8 new, 0 changed); tsc 0; lint 0.
+  Mutation: a reservation before the claim → 6/8 leased tests RED incl. "never lets a follower reserve".
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -60,4 +64,4 @@ None.
 
 ## Next actions
 
-1. Task 4 (extract `runLeasedGeneration`) — Claude while Codex quota is out (resets 18:10); Codex resumes after.
+1. Task 5 (deterministic snapshot) — Claude until the Codex quota resets (18:10), then Codex.

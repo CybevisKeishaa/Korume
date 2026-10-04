@@ -1,11 +1,8 @@
-import { z } from "zod/v4";
-import { AiError } from "@/lib/ai/errors";
 import { getProvider, isAiEnabled } from "@/lib/ai/registry";
-import type { AiProvider, SystemBlock } from "@/lib/ai/port";
-import { retryAfterFor } from "./backoff";
+import type { AiProvider } from "@/lib/ai/port";
 import { fingerprint } from "./canonical";
 import { readKnowledgeConfig, type KnowledgeConfig } from "./config";
-import { creditsFor, estimateCostUsd, upperBoundCostUsd } from "./pricing";
+import { runLeasedGeneration } from "./leased";
 import { createSqlKnowledgeStore } from "./store";
 import type {
   KnowledgeKey,
@@ -16,11 +13,7 @@ import type {
   SectionPromptInput,
 } from "./types";
 
-/** A leader whose provider call outlives this is presumed dead; the next caller takes over (spec §5.3 step 3). */
-export const LEASE_SECONDS = 90;
-/** Outlives the lease, so a live leader never loses its hold; an abandoned hold frees itself. */
-const RESERVATION_TTL_SECONDS = 180;
-const FOLLOWER_RETRY_MS = 1500;
+export { LEASE_SECONDS } from "./leased";
 
 export type GenerateOutcome =
   | { status: "ready"; content: unknown; access: "full" | "preview"; model: string | null }
@@ -47,18 +40,6 @@ export interface GenerateDeps {
   provider?: AiProvider;
   config?: KnowledgeConfig;
   aiEnabled?: boolean;
-}
-
-/**
- * Every token is at least one UTF-8 byte, so the byte length bounds the input tokens from above —
- * whatever the tokenizer does with rare kanji. Overstates English ~4x, which only over-reserves.
- */
-function inputTokenUpperBound(system: SystemBlock[], user: string): number {
-  return [...system.map((block) => block.text), user].reduce((sum, text) => sum + Buffer.byteLength(text, "utf8"), 0);
-}
-
-function isValidationError(error: unknown): boolean {
-  return error instanceof z.ZodError || (error instanceof AiError && error.kind === "invalid_output");
 }
 
 type ReadyOutcome = Extract<GenerateOutcome, { status: "ready" }>;
@@ -115,93 +96,43 @@ export async function getOrGenerateSection(input: GenerateInput, deps: GenerateD
   const variant = key.contentVariant;
   const access = variant;
 
-  const claim = await store.claimLease(key, LEASE_SECONDS);
-  if (claim.outcome === "ready") return { status: "ready", content: claim.content, access, model: claim.model };
-  if (claim.outcome === "follower") return { status: "pending", retryAfterMs: FOLLOWER_RETRY_MS };
-  if (claim.outcome === "backoff") return { status: "ai_unavailable", reason: "backoff" };
-
-  const provider = deps.provider ?? getProvider();
-  const config = deps.config ?? readKnowledgeConfig();
   const schema = variant === "preview" ? definition.previewSchema : definition.schema;
   const maxTokens = variant === "preview" ? definition.maxOutputTokens.preview : definition.maxOutputTokens.full;
   if (!schema || !maxTokens) throw new Error(`section ${definition.section} has no ${variant} variant`);
-  const prompt = definition.buildPrompt(input.promptInput, variant);
-  const upperUsd = upperBoundCostUsd(provider.name, inputTokenUpperBound(prompt.system, prompt.user), maxTokens);
   const { billing } = input;
-
-  const reservation = await store.reserve({
-    requestedBy: billing.userId,
-    billingScope: billing.scope,
-    entitlementKind: billing.scope === "system" ? null : tier === "free" ? "free_sentence" : "plus_section",
-    fingerprint: input.parentFingerprint,
-    reservedCredits: tier === "plus" && billing.scope === "learner" ? creditsFor(upperUsd, config.creditUsdUnit) : 0,
-    reservedUsd: upperUsd,
-    limits: {
-      globalUsdPerDay: config.globalBudgetUsdPerDay,
-      freeSentencesPerDay: config.freeSentencesPerDay,
-      plusMaxSectionsPerDay: config.plusMaxSectionsPerDay,
-      plusCreditsPerMonth: config.plusCreditsPerMonth,
-      askKorumeFreeTurnsPerDay: config.askKorumeFreeTurnsPerDay,
-      askKorumePlusTurnsPerDay: config.askKorumePlusTurnsPerDay,
-      systemGenerationsPerUserPerDay: config.systemGenerationsPerUserPerDay,
-    },
-    ttlSeconds: RESERVATION_TTL_SECONDS,
-  });
-  if (!reservation.reservationId) {
-    // Refused before any spend: free the lease so the entry is retryable at once (spec §5.3 step 4).
-    await store.fail(claim.entryId, claim.leaseToken, reservation.outcome, now);
-    if (reservation.outcome === "budget_exhausted") return { status: "ai_unavailable", reason: "budget" };
-    return { status: "quota_exhausted", resetsAt: reservation.resetsAt ?? now.toISOString() };
-  }
-
-  const generation = {
-    requestedByUserId: billing.userId,
-    billingScope: billing.scope,
-    knowledgeEntryId: claim.entryId,
-    reservationId: reservation.reservationId,
+  const outcome = await runLeasedGeneration({
+    leases: store,
+    budget: store,
+    key,
     section: definition.section,
-    provider: provider.name,
-  };
-  const started = Date.now();
-  let result: Awaited<ReturnType<AiProvider["generateStructured"]>>;
-  try {
-    result = await provider.generateStructured(
-      { tier: "fast", system: prompt.system, messages: [{ role: "user", content: prompt.user }], maxTokens, reasoning: false },
-      schema,
-    );
-  } catch (error) {
-    // A schema failure was a paid call whose usage the adapter cannot report: count the upper bound as spent.
-    const validation = isValidationError(error);
-    const spentUsd = validation ? upperUsd : 0;
-    const outcome = validation ? "validation_error" : "provider_error";
-    await store.recordGeneration({
-      ...generation, model: "unknown", inputTokens: 0, outputTokens: 0, cacheReadTokens: 0,
-      latencyMs: Date.now() - started, estimatedCostUsd: spentUsd, outcome,
-    });
-    await store.release(reservation.reservationId, spentUsd);
-    await store.fail(claim.entryId, claim.leaseToken, outcome, retryAfterFor(claim.attempts, now));
-    return { status: "ai_unavailable", reason: "provider" };
-  }
-
-  const costUsd = result.usage ? estimateCostUsd(result.model, result.usage) : upperUsd;
-  const generationId = await store.recordGeneration({
-    ...generation,
-    model: result.model,
-    inputTokens: result.usage?.inputTokens ?? 0,
-    outputTokens: result.usage?.outputTokens ?? 0,
-    cacheReadTokens: result.usage?.cacheReadTokens ?? 0,
-    latencyMs: Date.now() - started,
-    estimatedCostUsd: costUsd,
-    outcome: "success",
+    knowledgeEntry: true,
+    billing: {
+      scope: billing.scope,
+      userId: billing.userId,
+      entitlementKind: billing.scope === "system" ? null : tier === "free" ? "free_sentence" : "plus_section",
+      chargesCredits: tier === "plus" && billing.scope === "learner",
+    },
+    reserveFingerprint: input.parentFingerprint,
+    prompt: definition.buildPrompt(input.promptInput, variant),
+    schema,
+    maxTokens,
+    finalize: (parsed) => parsed,
+    provider: () => deps.provider ?? getProvider(),
+    config: () => deps.config ?? readKnowledgeConfig(),
+    now,
   });
-  if (await store.complete(claim.entryId, claim.leaseToken, result.parsed, result.model, provider.name)) {
-    await store.settle(reservation.reservationId, generationId, creditsFor(costUsd, config.creditUsdUnit), costUsd);
-    return { status: "ready", content: result.parsed, access, model: result.model };
+  switch (outcome.status) {
+    case "ready":
+      return { status: "ready", content: outcome.content, access, model: outcome.model };
+    case "pending":
+      return { status: "pending", retryAfterMs: outcome.retryAfterMs };
+    case "backoff":
+      return { status: "ai_unavailable", reason: "backoff" };
+    case "refused":
+      return outcome.outcome === "budget_exhausted"
+        ? { status: "ai_unavailable", reason: "budget" }
+        : { status: "quota_exhausted", resetsAt: outcome.resetsAt ?? now.toISOString() };
+    default:
+      return { status: "ai_unavailable", reason: "provider" };
   }
-  // Stale leader: another caller took the lease and owns the entry. The money is spent; the learner is not charged.
-  await store.release(reservation.reservationId, costUsd);
-  const winner = await store.readReady(key);
-  return winner
-    ? { status: "ready", content: winner.content, access, model: winner.model }
-    : { status: "pending", retryAfterMs: FOLLOWER_RETRY_MS };
 }

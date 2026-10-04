@@ -1,3 +1,4 @@
+import type { LeaseStore } from "./leased";
 import type { z } from "zod/v4";
 import type { SystemBlock } from "@/lib/ai/port";
 import type { PlanTier } from "@/lib/data/subscriptions";
@@ -27,7 +28,8 @@ export type SectionAccess = "free_full" | "free_preview" | "system";
 /** The seven dimensions of a cache entry's identity (spec §4.2). */
 export interface KnowledgeKey {
   fingerprint: string;
-  section: KnowledgeSection;
+  /** `lesson_analysis` is a lesson-level entry outside SECTION_REGISTRY (summary plan correction C1). */
+  section: KnowledgeSection | "lesson_analysis";
   locale: KnowledgeLocale;
   contextKey: string;
   schemaVersion: number;
@@ -105,7 +107,7 @@ export interface GenerationRow {
   billingScope: "learner" | "system";
   knowledgeEntryId: string | null;
   reservationId: string;
-  section: KnowledgeSection | "korume_plan" | "korume_answer";
+  section: KnowledgeSection | "korume_plan" | "korume_answer" | "lesson_analysis" | "lesson_reflection";
   turnId?: string;
   provider: string;
   model: string;
@@ -117,13 +119,12 @@ export interface GenerationRow {
   outcome: "success" | "provider_error" | "validation_error";
 }
 
-/** The SQL contract of migration 038, one method per function (plus a read of a ready entry). */
-export interface KnowledgeStore {
-  claimLease(key: KnowledgeKey, leaseSeconds: number): Promise<ClaimResult>;
-  /** A ready entry's content, or null. Never writes — the kill-switch path reads through this. */
-  readReady(key: KnowledgeKey): Promise<{ content: unknown; model: string | null } | null>;
-  complete(entryId: string, leaseToken: string, content: unknown, model: string, provider: string): Promise<boolean>;
-  fail(entryId: string, leaseToken: string, errorCode: string, retryAfter: Date): Promise<boolean>;
+/**
+ * The SQL contract of migration 038, one method per function (plus a read of a ready entry). The lease half is
+ * `LeaseStore<KnowledgeKey>` (lib/knowledge/leased.ts); its `readReady` never writes — the kill-switch path reads
+ * through it.
+ */
+export interface KnowledgeStore extends LeaseStore<KnowledgeKey> {
   reserve(input: ReserveInput): Promise<{ outcome: ReserveOutcome; reservationId: string | null; resetsAt: string | null }>;
   recordGeneration(row: GenerationRow): Promise<string>;
   settle(reservationId: string, generationId: string, actualCredits: number, actualUsd: number): Promise<boolean>;
