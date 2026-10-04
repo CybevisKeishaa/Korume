@@ -50,5 +50,7 @@ describe("buildAnalysisPrompt", () => {
     expect(system[1]?.text).toContain(
       "Never state history, statistics, laws, etymology or broad customs that the line itself does not show",
     );
+    // Live smoke 2026-10-05: Gemini generalized two of three culture notes to "Japanese family dynamics" / "người Nhật".
+    expect(system[1]?.text).toContain("never generalize to Japanese people, Japanese culture or Japanese society as a whole");
   });
 });

@@ -9,7 +9,7 @@ const INSTRUCTION = [
   "words: pick 3 to 6 vocabulary candidates worth remembering (fewer only if fewer exist); candidate_id copied from <vocabulary_candidates>; why_it_matters: why a learner will use it again; usage_note: how it is used in this lesson.",
   "expressions: 2 to 5 natural set phrases spoken in the lesson; line: the line id; span: the phrase copied character for character from that line; meaning_use; nuance; commonness: very_common, common or situational.",
   "grammar: pick 2 to 4 grammar candidates (fewer only if fewer exist); candidate_id copied from <grammar_candidates>; meaning_short: a few words; explanation: one or two sentences about its use in this lesson; try_it: one NEW short Japanese practice sentence that uses the pattern.",
-  "culture: 0 to 3 notes, each interpreting how one specific line works socially or pragmatically (politeness, softening, what is left unsaid), anchored by its line id. Never state history, statistics, laws, etymology or broad customs that the line itself does not show; if nothing qualifies, return an empty list.",
+  "culture: 0 to 3 notes, each interpreting how one specific line works socially or pragmatically (politeness, softening, what is left unsaid), anchored by its line id. Never state history, statistics, laws, etymology or broad customs that the line itself does not show; never generalize to Japanese people, Japanese culture or Japanese society as a whole (no \"in Japan…\", \"Japanese people…\", \"in Japanese families…\") — describe only what this speaker does with this line; if nothing qualifies, return an empty list.",
   "Never write readings, romanization, dictionary meanings or JLPT levels in any field: the app shows those from its dictionary. Use only the ids given.",
 ].join("\n");
 

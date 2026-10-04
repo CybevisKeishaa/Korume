@@ -149,7 +149,7 @@ describe("requestLessonAnalysis", () => {
       status: "ready",
       key: {
         fingerprint: analysisFingerprint(input), section: "lesson_analysis", locale: "vi", contextKey: VIDEO,
-        schemaVersion: 1, generatorVersion: 1, contentVariant: "full",
+        schemaVersion: 1, generatorVersion: 2, contentVariant: "full",
       },
     });
     expect(store.reservations[0]).toMatchObject({ billingScope: "system", requestedBy: USER, entitlementKind: null });

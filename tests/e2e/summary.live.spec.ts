@@ -87,12 +87,13 @@ test("Ep.729: vi then en analysis is grounded and shared while reflections stay 
       for (const word of ready.data.words) {
         const text = lines.get(word.source.lineId);
         expect(text).toBeTruthy();
-        expect(text).toContain(word.surface);
+        expect(text?.normalize("NFKC")).toContain(word.surface.normalize("NFKC"));
       }
       for (const expression of ready.data.expressions) {
         const text = lines.get(expression.source.lineId);
         expect(text).toBeTruthy();
-        expect(text).toContain(expression.expression);
+        // Stored spans are NFKC (half-width "!"), the line keeps its original width.
+        expect(text?.normalize("NFKC")).toContain(expression.expression.normalize("NFKC"));
       }
       await expect.poll(() => bodies.reflections.some((body) => body.state === "ready"), { timeout: 90_000, intervals: [1_000] }).toBe(true);
       const analysisBefore = await generationCount("lesson_analysis");

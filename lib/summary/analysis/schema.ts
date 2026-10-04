@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 
-export const LESSON_ANALYSIS = { section: "lesson_analysis", schemaVersion: 1, generatorVersion: 1, maxOutputTokens: 4000 } as const;
+export const LESSON_ANALYSIS = { section: "lesson_analysis", schemaVersion: 1, generatorVersion: 2, maxOutputTokens: 4000 } as const;
 export const COMMONNESS = ["very_common", "common", "situational"] as const;
 export type Commonness = (typeof COMMONNESS)[number];
 

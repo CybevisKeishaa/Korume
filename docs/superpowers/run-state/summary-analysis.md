@@ -107,6 +107,23 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   `onReady` drove a not-yet-ready player (now a `ready` ref, the last requested line plays on ready); the unmount
   effect never reset `alive` after a StrictMode re-run (player never created in dev). Hear link `text-primary-strong`.
   Clip suite 8. Boundary floor 41, token-scale lesson-summary 17.
+- Task 16 (Codex gpt-6-sol wrote the three files; its fix round hit the quota at 05:43 reset, Claude finished):
+  `summary.spec.ts` 10/10 against the worktree build (AI off). Found by e2e: the clip host had no positioned
+  wrapper, so the player covered the dock's Close (the real 640 px iframe overflowed it) — fixed in `clip-player.tsx`
+  with a unit pin on `width/height: "100%"`; Playwright treats `aria-disabled` as disabled (case 6 uses
+  `dispatchEvent`); below 1024 px the app renders only the mobile store handoff, so the plan's 390 px layout case
+  is impossible — DOM order is asserted at 1280 instead; `route-group-provider-identity` step 5 still counted every
+  `<nav>` (Task 12 missed it) — now scoped to Main. Workspace + korume + provider-identity 26/26. Full e2e 121/128:
+  the same 7 as the Ask Korume baseline — 3 `shadowing-intelligence` (no dictionary; 10/10 after the import) and
+  4 `landing-page` load timeouts (untouched by this branch).
+  **Live smoke** (Gemini, Ep.729 local `1e4c3f88-…`, dictionary 218 849 entries): passes, run twice; analysis
+  generated once per locale and shared, one reflection per learner. Spans compare NFKC (stored `!` half-width).
+  **Manual review vs spec §4.3:** generator v1 — 2 of 3 culture notes generalized ("Japanese family dynamics";
+  "người Nhật… kuuki wo yomu", romaji too). Prompt now forbids generalizing to Japanese people/culture/society
+  (generator_version 1 → 2, prompt test RED on the old text). v2: no generalization, no romaji, words/expressions
+  clean; ONE remaining violation — an en culture note says "crucial for the N3/N2 level context" (JLPT in prose,
+  forbidden by the prompt). Spec §4.3 keeps this boundary prompt + manual only; a mechanical JLPT/romaji drop in
+  finalize is an owner decision (open follow-up).
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
 - Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
@@ -124,4 +141,4 @@ None.
 
 ## Next actions
 
-1. Task 16 (e2e + live Gemini smoke; Claude runs both; re-import dictionary + Ep.729 first).
+1. Task 17 (final gates, db reset gates, mutation ledger, whole-branch review, lessons, owner look).
