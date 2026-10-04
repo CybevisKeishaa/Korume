@@ -503,6 +503,7 @@
       "noTranscript": "Needs a transcript",
       "empty": "Nothing stood out in this lesson"
     },
+    "saveFailed": "Could not save. Try again.",
     "reflection": {
       "eyebrowAi": "AI Korume",
       "eyebrow": "Korume",

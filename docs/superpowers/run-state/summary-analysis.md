@@ -89,6 +89,17 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   scan now covers `components/lesson-summary` (11) and the summary route (1). Mutations: a real 0 shown as Not
   started → RED; Lesson Status before the hero → order test RED. 1037 tests across the touched suites green.
 
+- Task 14 (Codex 2 runs, then Claude): Codex delivered a thin first cut (7 tests, no mutations, unstyled, a
+  hard-coded English error) and stopped twice with the work unfinished; Claude rewrote the six files on the frame
+  (Card/Badge/Button/Skeleton, `HEADER_ICON_BUTTON` bookmark toggle) and wrote the plan's full cases: hook 6, island
+  11, save 6, Review Tomorrow 4. Found by the tests: when a stale GET and the follow-up POST land in one tick React
+  batches the stale body away, so the hook gained `onBody` (sees every body) and the island keeps the last AI text
+  from it. Deviations: `hasTranscript` added to the island props (plan gap); new copy key `lessonSummary.saveFailed`
+  (both catalogs); no-transcript lessons never fetch the reflection (plan: `enabled: analysis.settled`). Boundary
+  floor 15 → 40 (real count), token-scale lesson-summary 11 → 16. Mutations, each RED then reverted: stale ignored by
+  `needsPost`; stale text kept only on `ready`; raw ref compare in SaveToggle; `disabled` instead of `aria-disabled`;
+  Retry gate always open.
+
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
 - Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
@@ -106,4 +117,4 @@ None.
 
 ## Next actions
 
-1. Task 14 (client island: polling, AI blocks, reflection card, saves, Review Tomorrow).
+1. Task 15 (clip player: "Hear in lesson" buttons via the clip context).

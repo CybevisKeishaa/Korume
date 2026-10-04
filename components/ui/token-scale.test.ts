@@ -85,8 +85,8 @@ const SCANNED_DIRS = [
   // Task 10a: + full chat page, contextual rail and thread menu.
   { dir: "components/korume", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 10 },
   // Summary / Analysis (2026-10-04), Task 13: area, hero, lesson-status-card, next-lesson-card, props, review-list,
-  // saved-knowledge-card, section-heading, summary-header, summary-island, summary-page; and its route.
-  { dir: "components/lesson-summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 11 },
+  // saved-knowledge-card, section-heading, summary-header, summary-island, summary-page; Task 14 adds five client files.
+  { dir: "components/lesson-summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 16 },
   { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 1 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },

@@ -509,6 +509,7 @@
       "noTranscript": "Bài cần có phụ đề",
       "empty": "Bài này không có điểm nào nổi bật"
     },
+    "saveFailed": "Chưa lưu được. Hãy thử lại.",
     "reflection": {
       "eyebrowAi": "AI Korume",
       "eyebrow": "Korume",

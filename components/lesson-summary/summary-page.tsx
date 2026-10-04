@@ -30,6 +30,7 @@ export function SummaryPage(props: SummaryPageProps & { locale: "vi" | "en" }) {
           videoId={props.videoId}
           youtubeVideoId={props.youtubeVideoId}
           locale={props.locale}
+          hasTranscript={props.hasTranscript}
           reviewTargets={props.reviewTargets}
           reviewTargetTotal={props.reviewTargetTotal}
           fallback={props.fallback}
