@@ -48,6 +48,10 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   Mutation: a reservation before the claim → 6/8 leased tests RED incl. "never lets a follower reserve".
 - Task 5 (Codex via Paseo, 1 run; Claude reviewed): snapshot/thresholds/loader, 16 tests (+1 refs) green on re-run;
   mutations: retention denominator → RED, `p_mastery: 1` → RED, target ordering reversed → RED.
+- Task 6 (Codex, 1 run): Review Tomorrow service 13 + route 7 tests green on re-run; `nextLocalMidnightUtc` checked
+  in node by Claude for HCM, NY, Santiago DST (local 01:00), Paris, Kiritimati, Pago Pago, Kathmandu. Mutations:
+  `now + 24h` → 6 RED; drop the `t > now` guard → RED via an added invariant test. Note for Task 14: the service
+  schedules EVERY review target (spec §6.2), while the list shows at most 5 — UI copy must not promise "these 5".
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -66,4 +70,4 @@ None.
 
 ## Next actions
 
-1. Task 6 (Review Tomorrow) → Codex.
+1. Task 7 (navigation) → Codex.
