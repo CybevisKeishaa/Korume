@@ -404,5 +404,132 @@
       "loop": "Lặp câu",
       "focus": "Chế độ tập trung"
     }
+  },
+  "lessonSummary": {
+    "eyebrow": "Tổng kết",
+    "backToLesson": "Quay lại bài học",
+    "hero": {
+      "complete": "Đã hoàn thành bài",
+      "summary": "Tổng kết bài học",
+      "sentences": "{count} câu",
+      "minutes": "{minutes} phút",
+      "replay": "Học lại từ đầu",
+      "resume": "Tiếp tục Shadowing"
+    },
+    "words": {
+      "eyebrow": "Từ vựng đáng học",
+      "title": "Những từ đáng nhớ",
+      "subtitle": "Không phải mọi từ trong bài — chỉ những từ bạn sẽ dùng lại một cách tự nhiên.",
+      "common": "Thông dụng",
+      "hear": "Nghe trong bài",
+      "save": "Lưu {word}",
+      "unsave": "Bỏ lưu {word}"
+    },
+    "pos": {
+      "noun": "Danh từ",
+      "verb": "Động từ",
+      "adjective": "Tính từ",
+      "adverb": "Trạng từ",
+      "expression": "Cụm từ",
+      "other": "Từ"
+    },
+    "expressions": {
+      "eyebrow": "Cách nói của người bản xứ",
+      "title": "Tiếng Nhật tự nhiên",
+      "subtitle": "Những cụm nhỏ người Nhật dùng để cuộc trò chuyện hằng ngày thêm chu đáo.",
+      "meaningUse": "Nghĩa và cách dùng",
+      "nuance": "Sắc thái",
+      "commonness": {
+        "very_common": "Rất thông dụng",
+        "common": "Thông dụng",
+        "situational": "Tùy tình huống"
+      },
+      "save": "Lưu {expression}",
+      "unsave": "Bỏ lưu {expression}"
+    },
+    "grammar": {
+      "eyebrow": "Ngữ pháp",
+      "title": "Ngữ pháp trong bài",
+      "fromLesson": "Trong bài",
+      "tryIt": "Thử đặt câu",
+      "practiceLabel": "Câu luyện tập — không có trong bài"
+    },
+    "culture": {
+      "eyebrow": "Ghi chú văn hóa",
+      "title": "Văn hóa sau cuộc trò chuyện"
+    },
+    "review": {
+      "eyebrow": "Ôn tập",
+      "title": "Những điều nên ôn lại",
+      "again": "Ôn lại",
+      "empty": "Chưa có gì cần ôn từ bài này.",
+      "more": "+{count} câu nữa",
+      "reason": {
+        "pronunciation": "Phát âm",
+        "pitch": "Trọng âm cao độ",
+        "dictation": "Nghe chép",
+        "difficult": "Đã đánh dấu khó",
+        "grammar": "Ngữ pháp trong câu"
+      }
+    },
+    "status": {
+      "title": "Tình trạng bài học",
+      "shadowing": "Shadowing",
+      "pronunciation": "Phát âm",
+      "listening": "Nghe",
+      "retention": "Ghi nhớ",
+      "notStarted": "Chưa bắt đầu",
+      "notEnoughData": "Chưa đủ dữ liệu",
+      "complete": "Hoàn thành",
+      "percent": "{value}%",
+      "score": "{value}"
+    },
+    "saved": {
+      "title": "Kiến thức đã lưu",
+      "vocabulary": "Từ vựng",
+      "expressions": "Cụm từ",
+      "grammar": "Mẫu ngữ pháp",
+      "retention": "Ghi nhớ",
+      "remembered": "Nhớ {count}",
+      "notEnoughData": "Chưa đủ dữ liệu",
+      "footnote": "Đã lưu vào sổ tay của bạn."
+    },
+    "next": {
+      "title": "Học gì tiếp theo",
+      "path": "Bài tiếp theo trong lộ trình",
+      "recommended": "Gợi ý vừa sức bạn",
+      "start": "Bắt đầu bài tiếp theo"
+    },
+    "ai": {
+      "generating": "Đang chuẩn bị phần phân tích bài…",
+      "ready": "Phần phân tích bài đã sẵn sàng",
+      "unavailable": "Hiện chưa dùng được",
+      "retryableError": "Chưa chuẩn bị được phần phân tích.",
+      "retry": "Thử lại",
+      "noTranscript": "Bài cần có phụ đề",
+      "empty": "Bài này không có điểm nào nổi bật"
+    },
+    "reflection": {
+      "eyebrowAi": "AI Korume",
+      "eyebrow": "Korume",
+      "title": "Đôi lời nhìn lại",
+      "openMemory": "Mở Memory",
+      "reviewTomorrow": "Ôn vào ngày mai",
+      "scheduled": "Đã hẹn ôn ngày mai ✓",
+      "scheduleFailed": "Chưa hẹn được buổi ôn. Hãy thử lại.",
+      "fallback": {
+        "bestLine": "Bạn đã nói 「{line}」 rất tốt trong bài này. Mai quay lại để giữ nó nhé.",
+        "target": "「{line}」 đáng để nghe lại. Một lượt ngắn ngày mai sẽ giúp bạn nhớ lâu.",
+        "not_started": "Hãy bắt đầu shadowing bài này, mình sẽ nhìn lại những gì bạn đã luyện.",
+        "in_progress": "Bạn đã đi được một phần bài. Hoàn thành lượt shadowing và ôn lại chỗ còn khó nhé.",
+        "complete": "Bạn đã hoàn thành bài này. Ngày mai ôn lại những gì đã lưu để giữ chúng nhé."
+      }
+    },
+    "clip": {
+      "region": "Đoạn trích trong bài",
+      "close": "Đóng trình phát",
+      "playing": "Đang phát câu",
+      "paused": "Đã tạm dừng"
+    }
   }
 }

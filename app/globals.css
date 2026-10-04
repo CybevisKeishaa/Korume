@@ -1550,3 +1550,39 @@
     display: none !important;
   }
 }
+
+@layer components {
+  /* The Summary page grid (summary spec 2026-10-04 §7.2). One DOM in reading order; the areas place it. Below the
+     existing lg breakpoint everything is one column in that order. From lg: two main tracks plus a 300px rail; the
+     rail's status / saved / next stack in auto rows beside Words, and the flexible fifth row absorbs the rest of
+     Words so the rail cards stay together. Culture and Review share the last main row (the frame puts them side by
+     side under Grammar, not in the rail). */
+  .lesson-summary-grid {
+    display: grid;
+    gap: var(--space-lg);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "hero" "reflection" "words" "expressions" "grammar" "culture" "review" "status" "saved" "next";
+  }
+
+  .lesson-summary-grid > [data-summary-area] {
+    grid-area: var(--summary-area);
+    min-width: 0;
+    align-self: start;
+  }
+
+  @media (min-width: 1024px) {
+    .lesson-summary-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 18.75rem);
+      grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto auto;
+      grid-template-areas:
+        "hero        hero        reflection"
+        "words       words       status"
+        "words       words       saved"
+        "words       words       next"
+        "words       words       ."
+        "expressions expressions ."
+        "grammar     grammar     ."
+        "culture     review      .";
+    }
+  }
+}

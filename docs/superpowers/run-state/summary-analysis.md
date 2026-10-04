@@ -80,6 +80,14 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   `route-group-provider-identity` focus chrome now counts the Main nav (0) and the Learning-modes nav (1) — NOT RUN
   yet (Task 16). Mutation: a probe importing workspace-context + "isPlus" under lib/summary → 2 boundary tests RED.
   To check in Chrome (Task 17): the header with the mode bar must stay one row ≤ 48 px at 1280×529.
+  Follow-up `9b475ba`: Task 12 had left `components/ui/token-scale.test.ts` RED (shadowing-workspace source pin
+  44 → 45, lesson-header-frame) — I ran only the workspace suites before committing; now pinned.
+- Task 13 (Claude): route `(focus)/shadowing/[id]/summary/page.tsx`, `components/lesson-summary/*` (header, hero,
+  status, saved, review list, next, props, section heading, area helper, island placeholder), `.lesson-summary-grid`,
+  `lessonSummary` copy in both catalogs (parity tests green). Figma frame saved at
+  `.superpowers/sdd/summary-analysis/figma-125-1030.png`. Hero renders no AI overview (spec §7.2 has none). The token
+  scan now covers `components/lesson-summary` (11) and the summary route (1). Mutations: a real 0 shown as Not
+  started → RED; Lesson Status before the hero → order test RED. 1037 tests across the touched suites green.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -98,4 +106,4 @@ None.
 
 ## Next actions
 
-1. Task 13 (Summary page, deterministic blocks, copy).
+1. Task 14 (client island: polling, AI blocks, reflection card, saves, Review Tomorrow).
