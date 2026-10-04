@@ -24,7 +24,13 @@ create table sentence_mining_cards (
   interval_days int not null default 0,
   ease_factor numeric(4, 2) not null default 2.50,
   next_review_at timestamptz,
-  last_reviewed_at timestamptz
+  last_reviewed_at timestamptz,
+  -- Provenance (summary spec 2026-10-04 §6.1). selection = free mining from Look-up or a typed word (repeats
+  -- allowed, as before); vocabulary / expression = saved from Summary (one per line + ref); sentence = Review
+  -- Tomorrow (one per line). source_ref is the NFKC-normalized surface, null only for a sentence card.
+  source_kind text not null default 'selection' check (source_kind in ('selection', 'vocabulary', 'expression', 'sentence')),
+  source_ref text,
+  check ((source_kind = 'sentence') = (source_ref is null))
 );
 
 alter table sentence_mining_cards enable row level security;
@@ -52,6 +58,13 @@ create index idx_sentence_mining_cards_user_created
 create index idx_sentence_mining_cards_due
   on sentence_mining_cards (user_id, next_review_at)
   where next_review_at is not null;
+
+-- Review Tomorrow upserts one sentence card per line; Summary saves one card per line + ref.
+create unique index sentence_mining_cards_one_sentence
+  on sentence_mining_cards (user_id, transcript_line_id) where source_kind = 'sentence';
+create unique index sentence_mining_cards_one_knowledge
+  on sentence_mining_cards (user_id, transcript_line_id, source_kind, source_ref)
+  where source_kind in ('vocabulary', 'expression');
 
 -- NOTE: transcript_lines(transcript_id, start_time) already exists as
 -- idx_transcript_lines_transcript_time in 20260712000003_indexes.sql — not

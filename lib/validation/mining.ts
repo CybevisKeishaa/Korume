@@ -9,12 +9,13 @@ import { z } from "zod";
 export const createMiningCardSchema = z.object({
   lineId: z.string().uuid(),
   targetWord: z.string().min(1, "Target word is required.").max(50, "Target word is too long (max 50 characters)."),
+  sourceKind: z.enum(["vocabulary", "expression"]).optional(),
   reading: z.string().max(50, "Reading is too long (max 50 characters).").optional(),
   sentenceTranslation: z
     .string()
     .max(500, "Translation is too long (max 500 characters).")
     .optional(),
-});
+}).strict();
 export type CreateMiningCardInput = z.infer<typeof createMiningCardSchema>;
 
 /**

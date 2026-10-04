@@ -1,9 +1,5 @@
 # Branch Run State
 
-Branch `summary-analysis`, worktree `.worktrees/summary-analysis`, from master `09d2684`.
-
-- Owner: Claude
-
 ## Goal and scope
 
 Summary / Analysis mode (Part 4, Figma `125:1030`): deterministic lesson snapshot, shared grounded lesson analysis,
@@ -29,17 +25,30 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
 - Measured before planning (2026-10-04, live Gemini, 2/2 each): item schemas from `z.looseObject(...)` and
   `z.looseObject(...).catch(null)` are accepted; Gemini put a requested reading into free text instead of an extra
   field — strict item schemas cannot catch facts smuggled into prose (prompt rule + manual live review instead).
-- Worktree has its own `node_modules` (`npm ci`) and a copy of the main `.env.local`.
 
 ## Verification
 
-- (none yet)
+- Task 1 (Codex via Paseo, 1 run; Claude reviewed): 11 files / 68 tests green on re-run; `db reset` 0. Live Postgres
+  probe (rolled back): duplicate vocabulary → 23505 on `sentence_mining_cards_one_knowledge`; selection repeats OK;
+  null-ref selection and ref-carrying sentence → 23514; `ON CONFLICT (cols)` without predicate → 42P10 (proves the
+  brief's correction). Mutations: drop the 23505 branch → RED; drop `.strict()` → RED. Deferred nit: POST route
+  conflict test does not assert the body carries the existing card.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
 - Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
   the knowledge unique index is partial and `ON CONFLICT (cols)` without its predicate cannot infer it (42P10).
 
-## Next
+## Working tree and environment
 
-Task 1 dispatched to Codex.
+- Owner: Claude
+- Worktree `.worktrees/summary-analysis`, branch `summary-analysis`, from master `09d2684`. Own `node_modules`
+  (`npm ci`) and a copy of the main `.env.local`. Paseo workspace `wks_8b67611c339e7409`.
+
+## Blockers
+
+None.
+
+## Next actions
+
+1. Task 2 (migration 043 + export registry) → Codex.

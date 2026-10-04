@@ -7,6 +7,7 @@ import { recordActivity } from "@/lib/data/gamification";
 import { REVIEW_FREQUENCY_MULTIPLIER, reviewItem, type Quality, type SrsState } from "@/lib/srs";
 import { readPreferences } from "@/lib/data/preferences";
 import type { CreateMiningCardInput, ReviewMiningCardInput } from "@/lib/validation/mining";
+import { normalizeRef } from "@/lib/summary/refs";
 
 /**
  * Sentence mining (CLAUDE.md §5 differentiator #3). Self-contained data layer:
@@ -40,16 +41,20 @@ export interface MiningCardRow {
   ease_factor: number;
   next_review_at: string | null;
   last_reviewed_at: string | null;
+  source_kind: MiningSourceKind;
+  source_ref: string | null;
 }
+
+export type MiningSourceKind = "selection" | "vocabulary" | "expression" | "sentence";
 
 // A single string literal (not `+`-concatenated) so `const` preserves its
 // literal type — Supabase's `.select()` generic needs that to infer the
 // result shape; a widened `string` degrades it to a generic error type.
 const CARD_COLUMNS =
-  "id, user_id, video_id, transcript_line_id, target_word, reading, sentence_jp, sentence_translation, start_time, end_time, created_at, srs_stage, interval_days, ease_factor, next_review_at, last_reviewed_at";
+  "id, user_id, video_id, transcript_line_id, target_word, reading, sentence_jp, sentence_translation, start_time, end_time, created_at, srs_stage, interval_days, ease_factor, next_review_at, last_reviewed_at, source_kind, source_ref";
 
 export type CreateMiningCardResult =
-  | { ok: true; data: MiningCardRow }
+  | { ok: true; data: MiningCardRow; created: boolean }
   | { ok: false; status: 401 | 400 }
   | { ok: false; status: 429; retryAfter: number };
 
@@ -100,24 +105,50 @@ export async function createMiningCard(
   if (transcriptError) throw transcriptError;
   if (!transcript) return { ok: false, status: 400 };
 
+  const row = {
+    user_id: user.id,
+    video_id: (transcript as { video_id: string }).video_id,
+    transcript_line_id: lineRow.id,
+    target_word: input.targetWord,
+    reading: input.reading ?? null,
+    sentence_jp: lineRow.text_jp,
+    sentence_translation: lineRow.text_translation ?? input.sentenceTranslation ?? null,
+    start_time: lineRow.start_time,
+    end_time: lineRow.end_time,
+    source_kind: input.sourceKind ?? "selection",
+    source_ref: normalizeRef(input.targetWord),
+  };
+
   const { data: inserted, error: insertError } = await supabase
     .from("sentence_mining_cards")
-    .insert({
-      user_id: user.id,
-      video_id: (transcript as { video_id: string }).video_id,
-      transcript_line_id: lineRow.id,
-      target_word: input.targetWord,
-      reading: input.reading ?? null,
-      sentence_jp: lineRow.text_jp,
-      sentence_translation: lineRow.text_translation ?? input.sentenceTranslation ?? null,
-      start_time: lineRow.start_time,
-      end_time: lineRow.end_time,
-    })
+    .insert(row)
     .select(CARD_COLUMNS)
     .single();
-  if (insertError) return { ok: false, status: 400 };
+  if (!insertError) return { ok: true, data: inserted as MiningCardRow, created: true };
 
-  return { ok: true, data: inserted as MiningCardRow };
+  if (insertError.code !== "23505" || !input.sourceKind) return { ok: false, status: 400 };
+
+  const { data: existing, error: existingError } = await supabase
+    .from("sentence_mining_cards")
+    .select(CARD_COLUMNS)
+    .eq("user_id", user.id)
+    .eq("transcript_line_id", lineRow.id)
+    .eq("source_kind", row.source_kind)
+    .eq("source_ref", row.source_ref)
+    .maybeSingle();
+  if (existingError || !existing) return { ok: false, status: 400 };
+
+  return { ok: true, data: existing as MiningCardRow, created: false };
+}
+
+export async function deleteMiningCard(cardId: string): Promise<{ ok: true } | { ok: false; status: 401 | 404 }> {
+  const supabase = createClient();
+  const user = await requireUser(supabase);
+  if (!user) return { ok: false, status: 401 };
+
+  const { data, error } = await supabase.from("sentence_mining_cards").delete().eq("id", cardId).select("id");
+  if (error) throw error;
+  return (data as { id: string }[] | null)?.length ? { ok: true } : { ok: false, status: 404 };
 }
 
 export type ReviewMiningCardResult =
