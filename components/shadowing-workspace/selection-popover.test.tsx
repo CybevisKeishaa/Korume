@@ -1,3 +1,4 @@
+import viShadowing from "@/messages/vi/shadowing.json";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { render } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
@@ -15,6 +16,8 @@ import { resetGlossRequestsForTests } from "./drawer/word-card";
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
   useRouter: () => ({ refresh: vi.fn() }),
+  // The header renders the mode bar (Shadowing · Summary) since 2026-10-04; it reads the locale-less path.
+  usePathname: () => "/shadowing/video-1",
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/vi/shadowing/video-1", useSearchParams: () => new URLSearchParams() }));
 
@@ -85,7 +88,7 @@ function renderShell() {
   return render(<ShadowingWorkspaceShell bootstrap={bootstrap}><Probe /><TranscriptPanel /></ShadowingWorkspaceShell>, { locale: "vi" });
 }
 const rowText = (lineId: string) => {
-  const row = screen.getByRole("list").querySelector<HTMLElement>(`[data-line-id="${lineId}"]`);
+  const row = screen.getByRole("list", { name: viShadowing.workspace.transcript.label }).querySelector<HTMLElement>(`[data-line-id="${lineId}"]`);
   if (!row) throw new Error(lineId);
   return row;
 };

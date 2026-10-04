@@ -1,13 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { useTranslations } from "@/lib/i18n";
-import { Link } from "@/lib/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { HEADER_ICON_BUTTON, LessonBookmarkButton } from "./lesson-bookmark-button";
-import { ModeNav } from "./mode-nav";
-import { BackGlyph } from "./player-glyphs";
+import { LessonBookmarkButton } from "./lesson-bookmark-button";
+import { LessonHeaderFrame } from "./lesson-header-frame";
 import { useCurrentSentence, useLesson, useSession } from "./workspace-context";
 import { WorkspaceOverflowMenu } from "./workspace-overflow-menu";
 
@@ -29,7 +26,8 @@ function SentenceCounter() {
  * counter. Right, in frame order: [Study Environment] · Focus Mode · [⛶ · ⚙] · lesson Bookmark · `⋯`. The
  * bracketed triggers belong to Tasks 9/10 and arrive through `beforeFocus` / `afterFocus`: a trigger with no
  * behaviour yet would be a dead control (Q1). The frame's "72% complete" is deliberately absent (§3).
- * One row, ≤ 48px at 1280×529 (`--workspace-video-reserve` assumes it).
+ * One row, ≤ 48px at 1280×529 (`--workspace-video-reserve` assumes it). The frame is `LessonHeaderFrame`, shared
+ * with Summary (summary spec §7.1); everything that needs workspace context is passed in here.
  */
 export function WorkspaceHeader({ beforeFocus, afterFocus }: { beforeFocus?: ReactNode; afterFocus?: ReactNode }) {
   const t = useTranslations("shadowing");
@@ -44,35 +42,30 @@ export function WorkspaceHeader({ beforeFocus, afterFocus }: { beforeFocus?: Rea
   ].filter(Boolean).join(" · ");
 
   return (
-    <header className="flex items-center gap-md border-b px-md py-2xs">
-      <div className="flex min-w-0 flex-1 items-center gap-sm">
-        <Link href="/shadowing" aria-label={t("workspace.header.back")} title={t("workspace.header.back")} className={HEADER_ICON_BUTTON}>
-          <BackGlyph className="size-icon-sm" />
-        </Link>
-        <div className="min-w-0">
-          <h1 className="truncate text-body font-semibold">{video.title}</h1>
-          <p className="truncate text-caption text-muted-foreground">{source}</p>
-        </div>
-        {video.jlptLevel && (
-          <Badge variant="accent" className="shrink-0 border border-accent/40">{t("workspace.header.jlpt", { level: video.jlptLevel })}</Badge>
-        )}
-        <SentenceCounter />
-      </div>
-      <ModeNav videoId={video.id} />
-      <div className="flex shrink-0 items-center gap-2xs">
-        {beforeFocus}
-        <button
-          type="button"
-          aria-pressed={focus}
-          onClick={() => dispatch({ type: "toggle-view", view: "focus" })}
-          className={cn("h-control-sm rounded-md px-sm text-caption font-medium text-muted-foreground hover:bg-muted hover:text-foreground", focus && "bg-primary/10 text-primary-strong")}
-        >
-          {t("workspace.header.focusMode")}
-        </button>
-        {afterFocus}
-        <LessonBookmarkButton />
-        <WorkspaceOverflowMenu />
-      </div>
-    </header>
+    <LessonHeaderFrame
+      videoId={video.id}
+      backHref="/shadowing"
+      backLabel={t("workspace.header.back")}
+      title={video.title}
+      source={source}
+      jlptLabel={video.jlptLevel ? t("workspace.header.jlpt", { level: video.jlptLevel }) : null}
+      afterTitle={<SentenceCounter />}
+      actions={(
+        <>
+          {beforeFocus}
+          <button
+            type="button"
+            aria-pressed={focus}
+            onClick={() => dispatch({ type: "toggle-view", view: "focus" })}
+            className={cn("h-control-sm rounded-md px-sm text-caption font-medium text-muted-foreground hover:bg-muted hover:text-foreground", focus && "bg-primary/10 text-primary-strong")}
+          >
+            {t("workspace.header.focusMode")}
+          </button>
+          {afterFocus}
+          <LessonBookmarkButton />
+          <WorkspaceOverflowMenu />
+        </>
+      )}
+    />
   );
 }

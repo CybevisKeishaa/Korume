@@ -177,7 +177,10 @@ test("Companion state survives the (app) -> (focus) boundary, and the hidden nav
   // 3. The (focus) chrome contract: nav mounted but hidden by default. No
   //    <nav> landmark yet, but the show/hide affordance IS present — this is
   //    "hidden", not "not mounted" (that's (immersive), covered above).
-  await expect(page.getByRole("navigation")).toHaveCount(0);
+  //    Since 2026-10-04 the lesson header carries the Learning-modes bar (Shadowing · Summary), a <nav> of its
+  //    own; the contract here is about the app's Main nav, so the count is scoped to it.
+  await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Learning modes" })).toHaveCount(1);
   const showNav = page.getByRole("button", { name: /show navigation/i });
   await expect(showNav).toBeVisible();
   await expect(showNav).toHaveAttribute("aria-expanded", "false");

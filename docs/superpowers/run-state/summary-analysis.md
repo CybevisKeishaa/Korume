@@ -72,6 +72,14 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   `createMemoryLeaseStore`) + 11 route tests. The SQL store's RPC shapes were exercised through local PostgREST
   (claim → leader row array, complete → true, latest ready read, claim → ready, fail on ready → false). Mutations:
   stale reported as ready → 2 RED; evidence fingerprint constant → 3 RED.
+- Task 12 (Claude): `LessonHeaderFrame` (props only) + `WorkspaceHeader` on it; `HEADER_ICON_BUTTON` re-exported;
+  Summary `complete: true`, so the workspace header now shows the mode bar. Workspace suite 295 → 301. Existing tests
+  updated to that intended truth (named here): mode-nav "nothing with the real registry", workspace-header "no mode
+  bar", learning-modes 1a case; seven tests' `@/lib/i18n/navigation` mocks gained `usePathname`; selection-popover and
+  utility-drawer list queries now scope to the transcript list (the mode bar is a `<ul>` too); e2e
+  `route-group-provider-identity` focus chrome now counts the Main nav (0) and the Learning-modes nav (1) — NOT RUN
+  yet (Task 16). Mutation: a probe importing workspace-context + "isPlus" under lib/summary → 2 boundary tests RED.
+  To check in Chrome (Task 17): the header with the mode bar must stay one row ≤ 48 px at 1280×529.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -90,4 +98,4 @@ None.
 
 ## Next actions
 
-1. Task 12 (LessonHeaderFrame, mode registry, import boundaries).
+1. Task 13 (Summary page, deterministic blocks, copy).
