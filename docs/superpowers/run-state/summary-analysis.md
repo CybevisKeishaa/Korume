@@ -61,6 +61,9 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   the shape measured on Gemini (adding `.nullable()` instead would change the schema Gemini receives, unmeasured).
   Mutations: span check → `true` → Review Focus 2 test RED; skip the strict word parse → extra-field test RED.
   Note for Task 14: stored expression spans are NFKC (half-width `?`), so highlighting must match NFKC, not raw text.
+- Task 9 (Claude, Codex quota out): view/hydrate/service/route; 29 new tests (service 12 over the real memory store
+  + fake provider, hydrate 4, view 1, route 12). Mutations: grammar title from the artifact → RED; drop the read
+  path's failed branch → RED; video id out of the cache key → RED. Rate limit runs before the no-transcript answer.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -79,4 +82,4 @@ None.
 
 ## Next actions
 
-1. Task 9 (analysis hydration, service, route) — Claude while Codex quota is out (resets 00:24).
+1. Task 10 (reflection pure core) — Claude while Codex quota is out (resets 00:24).
