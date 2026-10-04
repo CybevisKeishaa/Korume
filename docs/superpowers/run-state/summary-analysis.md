@@ -156,4 +156,10 @@ None.
 
 ## Next actions
 
-1. Owner Chrome look at 1280×529 (Ep.729 local `52ccaa25-f48b-4ea4-94c1-32dfbb936666`, AI_PROVIDER=gemini); merge is the owner's decision.
+1. Owner Chrome look at 1280×529: worktree `next start` on :3000 with `AI_PROVIDER=gemini`, login
+   `demo.korume@example.com` / `password123` (seeded evidence), `http://localhost:3000/vi/shadowing/52ccaa25-f48b-4ea4-94c1-32dfbb936666/summary`.
+   Measured: header one row 44 px; reflection now spans two rows (`5ccc911`) so Words sits under the hero.
+   Open owner decisions: (a) when the rail is taller than Words a gap opens under Words — the frame puts Natural
+   Japanese beside "Where to go next", which needs two DOM columns (a deviation from spec §7.2's single DOM order);
+   (b) a mechanical JLPT/romaji drop for AI prose (live review found one JLPT mention in v2); (c) minors m1–m4.
+   Merge is the owner's decision.
