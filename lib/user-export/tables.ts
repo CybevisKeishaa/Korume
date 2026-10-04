@@ -46,6 +46,7 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
   { table: "lesson_notes", userColumn: "user_id" },
   { table: "shadowing_sessions", userColumn: "user_id" },
   { table: "dictation_attempts", userColumn: "user_id" },
+  { table: "lesson_reflections", userColumn: "user_id" },
   { table: "companion_memories", userColumn: "user_id" },
   { table: "conversation_sessions", userColumn: "user_id" },
   {

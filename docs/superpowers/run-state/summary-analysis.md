@@ -33,6 +33,10 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   null-ref selection and ref-carrying sentence → 23514; `ON CONFLICT (cols)` without predicate → 42P10 (proves the
   brief's correction). Mutations: drop the 23505 branch → RED; drop `.strict()` → RED. Deferred nit: POST route
   conflict test does not assert the body carries the existing card.
+- Task 2 (Codex hit its quota before writing anything, 14:50 — Claude implemented): plan SQL applied verbatim after a
+  live rolled-back exercise (evidence shape, Review Tomorrow least(), lease leader/follower/stale/ready, definer grants);
+  pin test RED (missing) → GREEN 4/4; export guard RED (36 vs 35, `lesson_reflections` unaccounted) → GREEN; mutation
+  (drop `authenticated` from one revoke) → pin RED; `db reset` 0; `tsc` 0.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -51,4 +55,4 @@ None.
 
 ## Next actions
 
-1. Task 2 (migration 043 + export registry) → Codex.
+1. Task 3 (`verify:db:summary`) — Claude while Codex quota is out (resets 18:10), then Codex from Task 4.
