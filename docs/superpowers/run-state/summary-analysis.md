@@ -68,6 +68,10 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   empty strings for "no highlight" instead of `.nullable()` — no repo schema has sent a nullable field to Gemini,
   so none starts here unmeasured. The type-boundary test is compile-only (tsc). Mutations: a score in evidence → 2
   RED; `nextLesson?` accepted by `ReflectionEvidence` → tsc TS2578.
+- Task 11 (Claude): reflection store/service/route, 13 service tests (per-user memory store over
+  `createMemoryLeaseStore`) + 11 route tests. The SQL store's RPC shapes were exercised through local PostgREST
+  (claim → leader row array, complete → true, latest ready read, claim → ready, fail on ready → false). Mutations:
+  stale reported as ready → 2 RED; evidence fingerprint constant → 3 RED.
 
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
@@ -86,4 +90,4 @@ None.
 
 ## Next actions
 
-1. Task 11 (reflection store, service, route) — Claude while Codex quota is out (resets 00:24).
+1. Task 12 (LessonHeaderFrame, mode registry, import boundaries).
