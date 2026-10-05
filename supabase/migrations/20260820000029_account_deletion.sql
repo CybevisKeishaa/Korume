@@ -66,3 +66,38 @@ comment on column users.model_training_consent is
 -- preference (same trust level as leaderboard_opt_in), so it belongs in the
 -- grant, not left as a column only the service role can write.
 grant update (model_training_consent) on users to authenticated;
+
+-- The rows half of `erase_all` (called last by lib/account-deletion/erase.ts).
+-- A shared PRIVATE import is one video row with several library holders
+-- (the 20260913000032 finalize step attaches a second learner to the existing
+-- row), so only a PRIVATE lesson held by nobody else is deleted; deleting the
+-- user then cascades the rest. Guarded by `npm run verify:db:erasure`.
+-- Not security definer: the caller is service_role, which bypasses RLS.
+create or replace function public.erase_account_rows(p_user uuid)
+returns void
+language plpgsql
+set search_path = ''
+as $$
+begin
+  -- Lock first, delete in a SEPARATE statement: a learner attaching to one of
+  -- these rows holds the same lock, and only a new statement snapshot sees the
+  -- library row they commit. One DELETE would test `not exists` against its
+  -- pre-lock snapshot and cascade that learner's data away.
+  perform 1 from public.videos
+  where added_by_user_id = p_user and library_access = 'PRIVATE'
+  for update;
+
+  delete from public.videos v
+  where v.added_by_user_id = p_user
+    and v.library_access = 'PRIVATE'
+    and not exists (
+      select 1 from public.user_lesson_library l
+      where l.lesson_id = v.id and l.user_id <> p_user
+    );
+
+  delete from public.users where id = p_user;
+end;
+$$;
+
+revoke all on function public.erase_account_rows(uuid) from public, anon, authenticated;
+grant execute on function public.erase_account_rows(uuid) to service_role;

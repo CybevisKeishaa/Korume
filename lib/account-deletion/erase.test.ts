@@ -9,7 +9,7 @@ type ListEntry = { name: string; id: string | null };
 const sequence: string[] = [];
 
 const removed: string[][] = [];
-const deletedUsers: string[] = [];
+const erasedUsers: string[] = [];
 const tombstones: unknown[] = [];
 const bans: { id: string; attrs: unknown }[] = [];
 const deletedAuthUsers: string[] = [];
@@ -40,6 +40,10 @@ let deleteUserError: { status?: number; message: string } | null = null;
  *  downstream of it runs when it fails (review N1). */
 let banError: { message: string } | null = null;
 
+/** When set, the `erase_account_rows` RPC reports this error — the rows step
+ *  is the point of no return, so its failure must reach the scheduler. */
+let eraseRowsError: { message: string } | null = null;
+
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
     storage: {
@@ -60,6 +64,14 @@ vi.mock("@/lib/supabase/service", () => ({
           return Promise.resolve({ data: reported.map((name) => ({ name })), error: null });
         },
       }),
+    },
+    rpc: (fn: string, args: { p_user: string }) => {
+      if (fn === "erase_account_rows") {
+        sequence.push("erase-account-rows");
+        if (eraseRowsError) return Promise.resolve({ error: eraseRowsError });
+        erasedUsers.push(args.p_user);
+      }
+      return Promise.resolve({ error: null });
     },
     from: (table: string) => ({
       // Real code path: `account_deletion_tombstones` upsert (I7 — not a
@@ -93,15 +105,6 @@ vi.mock("@/lib/supabase/service", () => ({
           }),
         }),
       }),
-      delete: () => ({
-        eq: (_c: string, id: string) => {
-          if (table === "users") {
-            sequence.push("delete-user");
-            deletedUsers.push(id);
-          }
-          return Promise.resolve({ error: null });
-        },
-      }),
     }),
     auth: {
       admin: {
@@ -125,7 +128,7 @@ vi.mock("@/lib/supabase/service", () => ({
 beforeEach(() => {
   sequence.length = 0;
   removed.length = 0;
-  deletedUsers.length = 0;
+  erasedUsers.length = 0;
   tombstones.length = 0;
   bans.length = 0;
   deletedAuthUsers.length = 0;
@@ -135,6 +138,7 @@ beforeEach(() => {
   pendingRequestsByUser = {};
   deleteUserError = null;
   banError = null;
+  eraseRowsError = null;
   // Default fixture: `u1` holds one folder "shadowing", which holds one file
   // "a.webm" — `list()` is one level deep, so reaching the file requires
   // recursing into the folder entry.
@@ -161,7 +165,8 @@ describe("executeDeletion — erase_all", () => {
       { id: "req1", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" },
       NOW,
     );
-    expect(sequence).toEqual(["ban", "list:u1", "list:u1/shadowing", "remove", "tombstone", "delete-user"]);
+    expect(sequence).toEqual(["ban", "list:u1", "list:u1/shadowing", "remove", "tombstone", "erase-account-rows"]);
+    expect(erasedUsers).toEqual(["u1"]);
   });
 
   it("throws when the ban fails, and touches nothing downstream — storage, tombstone, and the users row are all untouched (N1)", async () => {
@@ -175,7 +180,7 @@ describe("executeDeletion — erase_all", () => {
     expect(sequence).toEqual(["ban"]);
     expect(removed).toEqual([]);
     expect(tombstones).toEqual([]);
-    expect(deletedUsers).toEqual([]);
+    expect(erasedUsers).toEqual([]);
   });
 
   it("pages through more than one page of listings before recursing (list() defaults to 100 per page)", async () => {
@@ -234,7 +239,7 @@ describe("executeDeletion — erase_all", () => {
     for (const batch of removed) expect(batch.length).toBeLessThanOrEqual(100);
     expect(removed.flat()).toHaveLength(250);
     expect(new Set(removed.flat()).size).toBe(250);
-    expect(deletedUsers).toEqual(["u1"]);
+    expect(erasedUsers).toEqual(["u1"]);
   });
 
   it("throws when Storage reports removing fewer objects than it was asked to, and never reaches the users delete", async () => {
@@ -245,7 +250,19 @@ describe("executeDeletion — erase_all", () => {
         NOW,
       ),
     ).rejects.toThrow();
-    expect(deletedUsers).toEqual([]);
+    expect(erasedUsers).toEqual([]);
+  });
+
+  it("throws when erase_account_rows fails, after the tombstone, so the scheduler can retry", async () => {
+    eraseRowsError = { message: "statement timeout" };
+    await expect(
+      executeDeletion(
+        { id: "req5", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" },
+        NOW,
+      ),
+    ).rejects.toMatchObject({ message: "statement timeout" });
+    expect(sequence.slice(-2)).toEqual(["tombstone", "erase-account-rows"]);
+    expect(erasedUsers).toEqual([]);
   });
 
   it("writes a tombstone carrying the purge date", async () => {
@@ -265,7 +282,7 @@ describe("executeDeletion — close_account", () => {
     await executeDeletion({ id: "req2", userId: "u2", tier: "close_account", purgeAfter: null }, NOW);
     expect(bans.map((b) => b.id)).toEqual(["u2"]);
     expect(removed).toEqual([]);
-    expect(deletedUsers).toEqual([]);
+    expect(erasedUsers).toEqual([]);
     expect(tombstones).toEqual([]);
   });
 });
