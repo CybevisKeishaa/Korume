@@ -7,7 +7,7 @@ import type { WordView } from "@/lib/summary/analysis/view";
 import { LESSON_WORDS_FETCH, pageOf, wordRows } from "@/lib/summary/word-list";
 import { Button } from "@/components/ui/button";
 import { useLocale, useTranslations } from "@/lib/i18n";
-import { EnglishChip } from "./analysis-blocks";
+import { EnglishChip } from "./english-chip";
 import { SaveToggle } from "./save-toggle";
 
 const ROW = "grid min-w-0 flex-1 gap-2xs sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] sm:items-center sm:gap-md";
@@ -62,8 +62,8 @@ export function WordList({ videoId, words, savedCards }: { videoId: string; word
                 <span lang="ja" className="truncate text-body font-bold">{row.written}</span>
                 <span lang="ja" className="truncate text-caption text-muted-foreground">{row.reading}</span>
                 <span className="line-clamp-2 text-body sm:line-clamp-1" title={row.meaning}>
-                  {row.meaning}
                   {row.meaningLocale === "en" && <EnglishChip />}
+                  {row.meaning}
                 </span>
               </div>
               <SaveToggle sourceKind="vocabulary" lineId={row.lineId} targetWord={row.targetWord} savedCards={savedCards} />

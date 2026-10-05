@@ -193,6 +193,29 @@ describe("SummaryIsland", () => {
       .toHaveAttribute("href", "/vocab/print?source=lesson&lesson=v-1&set=all");
   });
 
+  it("the EN chip leads the meaning (a clamped long gloss must not cut it off) and carries a screen-reader label", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    const chip = within(area("words")).getByText("EN");
+    expect(chip.parentElement?.firstChild).toBe(chip);
+    expect(chip.parentElement).toHaveTextContent(/^EN.*warm$/);
+    expect(chip).toHaveTextContent("English meaning — no Vietnamese meaning yet");
+  });
+
+  it("View as list labels only the English row EN, ahead of its meaning", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    fireEvent.click(within(area("words")).getByRole("button", { name: "View as list" }));
+    await flush();
+    const list = within(within(area("words")).getByRole("list", { name: "Words from this lesson" }));
+    const chip = list.getByText("EN");
+    expect(chip.parentElement?.firstChild).toBe(chip);
+    expect(chip.parentElement).toHaveTextContent(/warm$/);
+    expect(list.getAllByRole("listitem")).toHaveLength(2);
+  });
+
   it("offers the print link even when the analysis is unavailable (Print needs no AI)", async () => {
     stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "unavailable" }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
     render(<SummaryIsland {...props} />);
