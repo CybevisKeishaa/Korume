@@ -122,8 +122,9 @@ export function resolveLexeme(token: ResolverToken, entries: EntryRow[], vocabRo
     // Spec §1.7: a fallback reading of a multi-reading entry is a guess; vocab data never confirms it.
     const unambiguous = best.reading.kind !== "fallback" || best.entry.kana_forms.length === 1;
     const resolved = matches[0];
+    // A row written as the matched token form joins too: curated する/する while JMdict's headword is 為る.
     const vocab = unambiguous && resolved
-      ? vocabRows.find((row) => row.word === resolved.headword && row.reading !== null
+      ? vocabRows.find((row) => (row.word === resolved.headword || row.word === form) && row.reading !== null
         && katakanaToHiragana(row.reading) === katakanaToHiragana(resolved.reading))
       : undefined;
     return { matches, readingMatch: best.reading.kind, vocabId: vocab?.id ?? null, curatedVi: vocab?.meaning_vi?.trim() || null };

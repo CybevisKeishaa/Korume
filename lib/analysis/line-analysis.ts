@@ -117,9 +117,10 @@ export async function staticAnalyses(
   const content = tokenized.flatMap(({ tokens }) => tokens).filter(isAutomaticLookupEligible);
   const forms = [...new Set(content.flatMap((token) => [token.base, token.surface]))];
   const entries = snapshotId && forms.length > 0 ? await lookupForms(supabase, snapshotId, forms) : [];
-  const headwords = [...new Set([...forms, ...entries.flatMap((entry) => entry.kanji_forms)])];
-  // Spec §1.7: the (word, reading) join happens in the resolver, so every candidate headword's rows come back.
-  const vocab = await fetchByIdChunks(headwords, async (chunk) => {
+  // Spec §1.7: the (word, reading) join happens in the resolver; fetch the rows it can join: a token form or an entry's headword.
+  const headwords = [...new Set([...forms, ...entries.flatMap((entry) => entry.kanji_forms[0] ?? entry.kana_forms[0] ?? [])])];
+  // Nothing can attach without a dictionary entry, so no entries means no vocab read.
+  const vocab = entries.length === 0 ? [] : await fetchByIdChunks(headwords, async (chunk) => {
     const { data, error } = await supabase.from("vocab").select("id, word, reading, meaning_vi").in("word", chunk);
     if (error) throw error;
     return (data ?? []) as VocabRow[];

@@ -106,6 +106,25 @@ describe("resolveLexeme — vocab join (spec §1.7)", () => {
     expect(resolveLexeme({ surface: "行っ", base: "行く", reading: "イッ" }, iku, ikuRows)?.vocabId).toBe("v-iku");
   });
 
+  it("also joins a row written as the matched token form, when the headword is another spelling (spec §1.7)", () => {
+    // Seed row (する, する, làm); JMdict's headword for the kana token is 為る.
+    const suru = entry(1157170, ["為る"], ["する"], "to do");
+    const resolved = resolveLexeme({ surface: "する", base: "する", reading: "スル" }, [suru], [vocab("v-suru", "する", "する", "làm")]);
+    expect(resolved?.matches[0]?.headword).toBe("為る");
+    expect(resolved).toMatchObject({ vocabId: "v-suru", curatedVi: "làm" });
+  });
+
+  it("keeps the reading guard on a form match, and the ambiguity guard before it", () => {
+    const suru = entry(1157170, ["為る"], ["する"], "to do");
+    expect(resolveLexeme({ surface: "する", base: "する", reading: "スル" }, [suru], [vocab("v-x", "する", "せる", "x")]))
+      .toMatchObject({ vocabId: null, curatedVi: null });
+    expect(resolveLexeme({ surface: "人", base: "人", reading: "ヒト" }, [JIN, HITO], [vocab("v-jin", "人", "じん", "người (nước)")]))
+      .toMatchObject({ vocabId: null, curatedVi: null });
+    const twoKana = entry(1157171, ["為る"], ["する", "すうる"], "to do");
+    expect(resolveLexeme({ surface: "する", base: "する", reading: null }, [twoKana], [vocab("v-suru", "する", "する", "làm")]))
+      .toMatchObject({ vocabId: null, curatedVi: null });
+  });
+
   it("normalises both readings to hiragana before joining (spec §1.7)", () => {
     // A vocab row stored in katakana still joins the hiragana entry reading.
     expect(resolveLexeme({ surface: "人", base: "人", reading: "ヒト" }, [HITO], [vocab("v-hito", "人", "ヒト", "người")])?.vocabId)

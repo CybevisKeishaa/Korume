@@ -248,6 +248,24 @@ describe("staticAnalyses on the shared resolver (spec §1)", () => {
     });
   });
 
+  it("fetches the headword of a kana-only entry matched through its second kana form", async () => {
+    // The token is ヒト; the resolver's headword is the entry's first kana form ひと, which no token asked for.
+    const kanaOnly = { ent_seq: 3100, kanji_forms: [], kana_forms: ["ひと", "ヒト"], senses: [{ gloss: ["person"] }], common: true, jlpt: null };
+    useDictionary([kanaOnly], [{ id: "v-hito", word: "ひと", reading: "ひと", meaning_vi: "người" }]);
+    const tokens = (await staticAnalyses(createClient(), [{ id: "l-6", textJp: "ヒトを見た" }], undefined, "lexical")).get("l-6")?.tokens ?? [];
+    expect(tokens.find((token) => token.surface === "ヒト")).toMatchObject({ vocabId: "v-hito", curatedVi: "người" });
+  });
+
+  it("reads no vocab when the dictionary returned no entry", async () => {
+    let vocabReads = 0;
+    vi.mocked(createClient).mockReturnValue(createMockSupabase({
+      user: { id: "u-a" },
+      tables: { dict_entries: () => ({ data: [], error: null }), vocab: () => { vocabReads += 1; return { data: [], error: null }; } },
+    }) as ReturnType<typeof createClient>);
+    await staticAnalyses(createClient(), [{ id: "l-7", textJp: "ヒトを見た" }], undefined, "lexical");
+    expect(vocabReads).toBe(0);
+  });
+
   it("does not attach a vocab row of the same word with another reading", async () => {
     useDictionary([JIN, HITO], [{ id: "v-jin", word: "人", reading: "じん", meaning_vi: "người (nước)" }]);
     const tokens = (await staticAnalyses(createClient(), [{ id: "l-2", textJp: "苦手な人" }], undefined, "lexical")).get("l-2")?.tokens ?? [];
