@@ -37,7 +37,13 @@ export function ExpandableCard({ children, className, ...props }: HTMLAttributes
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(card);
-    return () => observer.disconnect();
+    // New text can overflow a clamp box whose size does not change (4 lines → 6 lines clamped to 4).
+    const mutations = new MutationObserver(measure);
+    mutations.observe(card, { childList: true, subtree: true, characterData: true });
+    return () => {
+      observer.disconnect();
+      mutations.disconnect();
+    };
   }, [expanded]);
 
   const onCardClick = (event: MouseEvent<HTMLDivElement>) => {

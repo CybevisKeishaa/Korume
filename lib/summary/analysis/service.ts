@@ -38,6 +38,7 @@ export type AnalysisStatus =
   | { kind: "absent" };
 
 type Context =
+  | { kind: "unauthorized" }
   | { kind: "not_found" }
   | { kind: "no_transcript" }
   | { kind: "ok"; title: string; lines: SummaryLine[]; input: AnalysisInput; key: KnowledgeKey };
@@ -62,7 +63,7 @@ async function loadContext(supabase: SummaryAuth["supabase"], videoId: string, l
   const video = await selectVideoById(supabase, videoId);
   if (!video) return { kind: "not_found" };
   const transcript = await getTranscript(videoId);
-  if (!transcript.ok) return { kind: "not_found" };
+  if (!transcript.ok) return transcript.status === 401 ? { kind: "unauthorized" } : { kind: "not_found" };
   const lines: SummaryLine[] = (transcript.data?.lines ?? [])
     .filter((line) => line.text_jp.trim() !== "")
     .map((line, index) => ({
@@ -131,7 +132,7 @@ export async function requestLessonAnalysis(
   if (!limited.ok) return { kind: "rate_limited", retryAfter: limited.retryAfter };
 
   const ctx = await loadContext(auth.supabase, videoId, locale);
-  if (ctx.kind === "not_found") return ctx;
+  if (ctx.kind === "unauthorized" || ctx.kind === "not_found") return ctx;
   if (ctx.kind === "no_transcript") return ok({ status: "no_transcript" });
 
   const aiEnabled = deps.aiEnabled ?? isAiEnabled();

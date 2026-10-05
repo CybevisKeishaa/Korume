@@ -127,6 +127,8 @@ describe("requestLessonAnalysis", () => {
     await expect(requestLessonAnalysis(VIDEO, "vi", "read", deps())).resolves.toEqual({ kind: "not_found" });
     vi.mocked(getTranscript).mockResolvedValueOnce({ ok: true, data: null });
     await expect(requestLessonAnalysis(VIDEO, "vi", "generate", deps())).resolves.toEqual({ kind: "ok", body: { status: "no_transcript" } });
+    vi.mocked(getTranscript).mockResolvedValueOnce({ ok: false, status: 401 } as Awaited<ReturnType<typeof getTranscript>>);
+    await expect(requestLessonAnalysis(VIDEO, "vi", "read", deps())).resolves.toEqual({ kind: "unauthorized" });
     expect(fake.requests).toHaveLength(0);
   });
 

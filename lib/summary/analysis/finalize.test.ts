@@ -106,12 +106,27 @@ describe("finalizeAnalysis", () => {
   });
 
   it("flags only high-confidence romaji: a Hepburn gloss in brackets after Japanese, never English or model names", () => {
-    for (const text of ["Say it in a casual tone (not formal).", "Like a Nintendo N64 ad", "Bring 2 N95 masks", "コーヒー (coffee) is fine", "お茶 (tea)", "丁寧 (polite)"]) {
+    for (const text of [
+      "Say it in a casual tone (not formal).", "Like a Nintendo N64 ad", "Bring 2 N95 masks", "コーヒー (coffee) is fine",
+      "お茶 (tea)", "丁寧 (polite)", "じゃあね (see you)", "またね (see you soon)", "日本製 (made in Japan)",
+      "バイバイ (bye bye)", "バナナ (banana)", "トマト (tomato)", "家 (house)", "ボタン (button)", "子猫 (kitten)",
+      "輝く (shine)", "旅館 (inn)", "ルート (route)",
+    ]) {
       expect(cultureOutOfContract(text), text).toBe(false);
     }
-    for (const text of ["ありがとう（arigatou）", "いただきます (itadakimasu)", "抹茶 (matcha) を", "空気を読む (kuuki wo yomu)"]) {
+    for (const text of [
+      "ありがとう（arigatou）", "いただきます (itadakimasu)", "おはよう (ohayou)", "津波 (tsunami)", "空気を読む (kuuki wo yomu)",
+      "「ありがとう」(arigatō)", "ありがとう [arigatou]",
+    ]) {
       expect(cultureOutOfContract(text), text).toBe(true);
     }
+  });
+
+  it("rejects a long almost-romaji gloss in linear time (no catastrophic backtracking)", () => {
+    const started = performance.now();
+    // 79 chars: inside the 80-char gloss cap; the old pattern took seconds here.
+    expect(cultureOutOfContract(`日本 (${"tsu".repeat(26)}x)`)).toBe(false);
+    expect(performance.now() - started).toBeLessThan(50);
   });
 
   it("stores no request-local short id", () => {

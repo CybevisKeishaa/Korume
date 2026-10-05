@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render";
 import { Clamp, ExpandableCard } from "./expandable-card";
@@ -36,6 +36,16 @@ describe("ExpandableCard", () => {
     render(card());
     fireEvent.click(screen.getByRole("button", { name: "inner" }));
     expect(screen.getByText("long text")).toHaveClass("line-clamp-3");
+  });
+
+  it("re-measures when the text changes but the clamp box keeps its size", async () => {
+    fakeOverflow(false);
+    const { rerender } = render(<ExpandableCard><Clamp lines={3}>short</Clamp></ExpandableCard>);
+    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
+    fakeOverflow(true);
+    rerender(<ExpandableCard><Clamp lines={3}>now a much longer text</Clamp></ExpandableCard>);
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole("button", { name: "Show more" })).toBeInTheDocument();
   });
 
   it("text that fits gets no toggle and a card click does nothing", () => {

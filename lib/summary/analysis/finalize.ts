@@ -17,16 +17,29 @@ function spanIn(line: PromptLine, span: string): string | null {
  * brackets, e.g. 空気を読む (kuuki wo yomu).
  */
 const JLPT = [/\bJLPT\b/i, /(?<![A-Za-z0-9])N[1-5](?![A-Za-z0-9])/];
-/** One romanized word: Hepburn syllables, syllabic n, or a doubled consonant (small tsu). */
-const HEPBURN_WORD = /^(?:(?:[kgsztdnhbpmrjfwy]|sh|ch|ts|[kgnhbpmr]y)?[aiueoāīūēō]|n(?![aiueoy])|[kstpgc](?=[kstpgc]))+$/i;
-const BRACKETED_AFTER_JAPANESE = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]\s*[(（]([^()（）]+)[)）]/gu;
+/**
+ * One romanized word: Hepburn syllables, syllabic n, or a doubled consonant (small tsu). Every branch starts on a
+ * different letter sequence, so a failing word cannot backtrack exponentially ("tsutsu…x" is linear).
+ */
+const HEPBURN_WORD = /^(?:(?:[kgsztdnhbpmrjfwy]|sh|ch|ts|[kgnhbpmr]y)?[aiueoāīūēō]|n(?![aiueoy])|([kspgt])(?=\1)|t(?=ch))+$/i;
+/**
+ * Spelling English (almost) never produces but romaji routinely does; scanning as Hepburn alone also fits "see you".
+ * Deliberately absent, each an English gloss that would be dropped: doubled consonants (button), shi/chi (shine),
+ * nn (inn), a non-final ou (house).
+ */
+const ROMAJI_MARKER = /(?:ou|uu)$|[āīūēō]|tsu|(?:masu|masen|mashita|desu|deshita)$|^(?:wo|wa|ga)$/i;
+const ENGLISH_LOOKALIKE = /^you$/i;
+const BRACKETED_AFTER_JAPANESE =
+  /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}][」』]?\s*[(（[［]([^()（）[\]［］]{1,80})[)）\]］]/gu;
 
-// ponytail: romaji is caught only bracketed after Japanese; bare romaji in prose still relies on the prompt.
+// ponytail: romaji is caught only bracketed after Japanese and carrying a romaji-only marker; bare romaji in prose
+// and marker-less romaji ("(sakana)") still rely on the prompt.
 function hasRomajiGloss(text: string): boolean {
   for (const match of text.matchAll(BRACKETED_AFTER_JAPANESE)) {
     const words = (match[1] ?? "").trim().split(/[\s'-]+/).filter(Boolean);
-    // 6+ letters keeps short English glosses that happen to scan as Hepburn ("tea", "to be") out.
-    if (words.length > 0 && words.every((word) => HEPBURN_WORD.test(word)) && words.join("").length >= 6) return true;
+    if (words.length > 0 && words.every((word) => HEPBURN_WORD.test(word)) && words.some((word) => ROMAJI_MARKER.test(word) && !ENGLISH_LOOKALIKE.test(word))) {
+      return true;
+    }
   }
   return false;
 }
