@@ -13,9 +13,12 @@ vi.mock("@/lib/i18n/navigation", () => ({
 const twoModes: LearningMode[] = LEARNING_MODES.map((mode) => ({ ...mode, complete: mode.id === "shadowing" || mode.id === "pronunciation" }));
 
 describe("ModeNav", () => {
-  it("renders nothing with the real registry (one complete mode)", () => {
-    const { container } = render(<ModeNav videoId="v" />);
-    expect(container).toBeEmptyDOMElement();
+  it("renders Shadowing · Summary with the real registry (Summary is complete since 2026-10-04)", () => {
+    pathname.current = "/shadowing/v/summary";
+    render(<ModeNav videoId="v" />);
+    const links = screen.getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/shadowing/v", "/shadowing/v/summary"]);
+    expect(screen.getByRole("link", { current: "page" })).toHaveAttribute("href", "/shadowing/v/summary");
   });
 
   it("renders nothing for an injected one-mode registry: no disabled tab, no coming soon", () => {

@@ -38,5 +38,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: result.status });
   }
 
-  return NextResponse.json({ data: result.data }, { status: 201 });
+  return NextResponse.json({ data: result.data }, { status: result.created ? 201 : 200 });
 }

@@ -1,3 +1,4 @@
+import enShadowing from "@/messages/en/shadowing.json";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { render } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
@@ -11,6 +12,8 @@ import { TranscriptPanel } from "../transcript-panel";
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
   useRouter: () => ({ refresh: vi.fn() }),
+  // The header renders the mode bar (Shadowing · Summary) since 2026-10-04; it reads the locale-less path.
+  usePathname: () => "/shadowing/video-1",
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/en/shadowing/video-1", useSearchParams: () => new URLSearchParams() }));
 
@@ -52,6 +55,8 @@ function renderShell() {
   return render(<ShadowingWorkspaceShell bootstrap={bootstrap}><Probe /><TranscriptPanel /></ShadowingWorkspaceShell>);
 }
 const drawer = () => screen.getByRole("region", { name: "Study tools" });
+// Scoped to the transcript: the header's mode bar is a list too.
+const transcriptRows = () => within(screen.getByRole("list", { name: enShadowing.workspace.transcript.label })).getAllByRole("listitem");
 const tab = (name: string) => within(drawer()).getByRole("tab", { name });
 const level = () => drawer().getAttribute("data-drawer-level");
 const separator = () => screen.getByRole("separator", { name: "Resize study tools" });
@@ -100,7 +105,7 @@ describe("UtilityDrawer in the workspace", () => {
   it("a row action pins that line, and Follow returns to the current sentence", () => {
     renderShell();
     at(3);
-    fireEvent.click(within(screen.getAllByRole("listitem")[6] as HTMLElement).getByRole("button", { name: "Cards from this sentence" }));
+    fireEvent.click(within(transcriptRows()[6] as HTMLElement).getByRole("button", { name: "Cards from this sentence" }));
     expect(level()).toBe("peek");
     expect(tab("Mining")).toHaveAttribute("aria-selected", "true");
     expect(drawer()).toHaveTextContent("Sentence 7 / 12· Pinned");
@@ -117,7 +122,7 @@ describe("UtilityDrawer in the workspace", () => {
     at(5);
     const live = screen.getByRole("region", { name: "Live sentence" });
     expect(within(live).queryAllByRole("button").filter((button) => /AI|Explain|✨/i.test(button.getAttribute("aria-label") ?? button.textContent ?? ""))).toEqual([]);
-    const row = screen.getAllByRole("listitem")[2] as HTMLElement;
+    const row = transcriptRows()[2] as HTMLElement;
     fireEvent.mouseEnter(row);
     const names = within(row).getAllByRole("button").map((button) => button.getAttribute("aria-label") ?? button.textContent ?? "");
     expect(names).toEqual(expect.arrayContaining(["Cards from this sentence", "Note"]));
@@ -127,7 +132,7 @@ describe("UtilityDrawer in the workspace", () => {
   it("Focus Mode hides the drawer and leaving it restores tab, level and target", () => {
     renderShell();
     at(1);
-    fireEvent.click(within(screen.getAllByRole("listitem")[4] as HTMLElement).getByRole("button", { name: "Note" }));
+    fireEvent.click(within(transcriptRows()[4] as HTMLElement).getByRole("button", { name: "Note" }));
     fireEvent.keyDown(separator(), { key: "ArrowUp" });
     act(() => sessionDispatch?.({ type: "toggle-view", view: "focus" }));
     expect(screen.queryByRole("region", { name: "Study tools" })).toBeNull();

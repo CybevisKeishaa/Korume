@@ -19,6 +19,12 @@ describe("createMiningCardSchema", () => {
     expect(result.success).toBe(true);
   });
 
+  it("accepts Summary vocabulary provenance but rejects untrusted kinds and refs", () => {
+    expect(createMiningCardSchema.safeParse({ lineId: UUID, targetWord: "食べる", sourceKind: "vocabulary" }).success).toBe(true);
+    expect(createMiningCardSchema.safeParse({ lineId: UUID, targetWord: "食べる", sourceKind: "sentence" }).success).toBe(false);
+    expect(createMiningCardSchema.safeParse({ lineId: UUID, targetWord: "食べる", sourceRef: "食べる" }).success).toBe(false);
+  });
+
   it("rejects a non-uuid lineId", () => {
     const result = createMiningCardSchema.safeParse({ lineId: "not-a-uuid", targetWord: "食べる" });
     expect(result.success).toBe(false);

@@ -5,7 +5,7 @@ export const LEARNING_MODES: readonly LearningMode[] = [
   { id: "shadowing", segment: "", complete: true },
   { id: "pronunciation", segment: "pronunciation", complete: false },
   { id: "listening", segment: "listening", complete: false },
-  { id: "summary", segment: "summary", complete: false },
+  { id: "summary", segment: "summary", complete: true },
 ];
 
 export function completedModes(modes: readonly LearningMode[] = LEARNING_MODES): LearningMode[] {

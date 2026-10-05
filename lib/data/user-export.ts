@@ -34,6 +34,7 @@ export const PRIMARY_KEY_COLUMNS: Record<string, readonly string[]> = {
   sentence_mining_cards: ["id"],
   shadowing_sessions: ["id"],
   dictation_attempts: ["id"],
+  lesson_reflections: ["id"],
   companion_memories: ["id"],
   conversation_sessions: ["id"],
   conversation_messages: ["id"],

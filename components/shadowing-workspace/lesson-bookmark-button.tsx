@@ -2,10 +2,10 @@
 
 import { useTranslations } from "@/lib/i18n";
 import { BookmarkGlyph } from "./player-glyphs";
+import { HEADER_ICON_BUTTON } from "./lesson-header-frame";
 import { useMarks } from "./workspace-context";
 
-export const HEADER_ICON_BUTTON =
-  "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-pressed:text-primary-strong aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
+export { HEADER_ICON_BUTTON } from "./lesson-header-frame";
 
 /**
  * Lesson bookmark (spec §7.2, §3 deviation register: the frame lacks it). PUT/DELETE through the keyed

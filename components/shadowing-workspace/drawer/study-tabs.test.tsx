@@ -14,6 +14,8 @@ import { resetNoteWritesForTests } from "./notes-context";
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
   useRouter: () => ({ refresh: vi.fn() }),
+  // The header renders the mode bar (Shadowing · Summary) since 2026-10-04; it reads the locale-less path.
+  usePathname: () => "/shadowing/video-1",
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/en/shadowing/video-1", useSearchParams: () => new URLSearchParams() }));
 

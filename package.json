@@ -21,6 +21,7 @@
     "verify:db:knowledge": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-knowledge-gate.ps1",
     "verify:db:notes": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-notes-gate.ps1",
     "verify:db:korume": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-korume-gate.ps1",
+    "verify:db:summary": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-lesson-summary-gate.ps1",
     "dict:import": "vite-node --config vitest.config.ts scripts/import-dictionaries.ts --",
     "dict:gc": "vite-node --config vitest.config.ts scripts/dictionary-gc.ts --",
     "verify:protocol": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-protocol.ps1",

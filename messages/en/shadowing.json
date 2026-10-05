@@ -398,5 +398,135 @@
       "loop": "Sentence loop",
       "focus": "Focus Mode"
     }
+  },
+  "lessonSummary": {
+    "eyebrow": "Summary",
+    "backToLesson": "Back to Lesson",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "hero": {
+      "complete": "Lesson complete",
+      "summary": "Lesson summary",
+      "sentences": "{count} sentences",
+      "minutes": "{minutes} min",
+      "replay": "Replay Lesson",
+      "resume": "Return to Shadowing"
+    },
+    "words": {
+      "eyebrow": "Vocabulary worth learning",
+      "title": "Words Worth Remembering",
+      "subtitle": "Not every word from the lesson—only the ones you'll naturally use again.",
+      "common": "Common",
+      "hear": "Hear in lesson",
+      "save": "Save {word}",
+      "unsave": "Remove {word} from saved"
+    },
+    "pos": {
+      "noun": "Noun",
+      "verb": "Verb",
+      "adjective": "Adjective",
+      "adverb": "Adverb",
+      "expression": "Expression",
+      "other": "Word"
+    },
+    "expressions": {
+      "eyebrow": "Native expressions",
+      "title": "Natural Japanese",
+      "subtitle": "Small phrases Japanese people use to make everyday conversation feel considerate.",
+      "meaningUse": "Meaning & use",
+      "nuance": "Native nuance",
+      "commonness": {
+        "very_common": "Very common",
+        "common": "Common",
+        "situational": "Situational"
+      },
+      "save": "Save {expression}",
+      "unsave": "Remove {expression} from saved"
+    },
+    "grammar": {
+      "eyebrow": "Grammar",
+      "title": "Grammar Used in this Lesson",
+      "fromLesson": "From lesson",
+      "tryIt": "Try it",
+      "practiceLabel": "Practice example — not from the lesson"
+    },
+    "culture": {
+      "eyebrow": "Cultural notes",
+      "title": "Culture Behind the Conversation"
+    },
+    "review": {
+      "eyebrow": "Review",
+      "title": "Things You Should Review",
+      "again": "Review Again",
+      "empty": "Nothing to review from this lesson yet.",
+      "more": "+{count} more lines",
+      "reason": {
+        "pronunciation": "Pronunciation",
+        "pitch": "Pitch accent",
+        "dictation": "Listening",
+        "difficult": "Marked difficult",
+        "grammar": "Grammar in this line"
+      }
+    },
+    "status": {
+      "title": "Lesson status",
+      "shadowing": "Shadowing",
+      "pronunciation": "Pronunciation",
+      "listening": "Listening",
+      "retention": "Retention",
+      "notStarted": "Not started",
+      "notEnoughData": "Not enough data",
+      "complete": "Complete",
+      "percent": "{value}%",
+      "score": "{value}"
+    },
+    "saved": {
+      "title": "Saved knowledge",
+      "vocabulary": "Vocabulary",
+      "expressions": "Expressions",
+      "grammar": "Grammar patterns",
+      "retention": "Retention",
+      "remembered": "{count} remembered",
+      "notEnoughData": "Not enough data",
+      "footnote": "Saved to your personal notebook."
+    },
+    "next": {
+      "title": "Where to go next",
+      "path": "Next in this path",
+      "recommended": "Recommended for your level",
+      "start": "Start Next Lesson"
+    },
+    "ai": {
+      "generating": "Preparing the lesson analysis…",
+      "ready": "Lesson analysis ready",
+      "unavailable": "Not available right now",
+      "retryableError": "Could not prepare the analysis.",
+      "retry": "Retry",
+      "noTranscript": "Needs a transcript",
+      "empty": "Nothing stood out in this lesson"
+    },
+    "saveFailed": "Could not save. Try again.",
+    "reflection": {
+      "eyebrowAi": "AI Korume",
+      "eyebrow": "Korume",
+      "title": "A quiet reflection",
+      "openMemory": "Open Memory",
+      "reviewTomorrow": "Review Tomorrow",
+      "scheduled": "Scheduled for tomorrow ✓",
+      "scheduleFailed": "Could not schedule the review. Try again.",
+      "fallback": {
+        "bestLine": "You said 「{line}」 well in this lesson. Come back tomorrow to keep it.",
+        "target": "「{line}」 is worth another listen. A short pass tomorrow will help it stick.",
+        "not_started": "Start shadowing this lesson and I will reflect on what you practiced.",
+        "in_progress": "You are partway through this lesson. Finish the shadowing pass and review what felt hard.",
+        "complete": "You finished this lesson. Review what you saved tomorrow to keep it."
+      }
+    },
+    "clip": {
+      "region": "Lesson clip",
+      "close": "Close clip player",
+      "playing": "Playing the line",
+      "paused": "Paused"
+    }
   }
 }

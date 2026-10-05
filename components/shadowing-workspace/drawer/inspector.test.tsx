@@ -18,6 +18,8 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
   useRouter: () => ({ refresh: vi.fn() }),
+  // The header renders the mode bar (Shadowing · Summary) since 2026-10-04; it reads the locale-less path.
+  usePathname: () => "/shadowing/video-1",
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/vi/shadowing/video-1", useSearchParams: () => new URLSearchParams() }));
 

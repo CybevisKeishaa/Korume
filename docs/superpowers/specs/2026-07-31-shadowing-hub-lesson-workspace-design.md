@@ -76,6 +76,11 @@ Where a section seems to make an unusual call, it is following one of these.
    Dictation, and Summary are different ways of practicing/understanding the *same* Lesson, sharing
    one transcript, one timeline, one progress record. The learner never feels like they left the
    Lesson to use a different tool.
+   > **Amended 2026-10-04** (`2026-10-04-summary-analysis-design.md` §0, R1/R2): reworded as *Summary
+   > understands this lesson. Companion understands the learner across lessons.* What Summary may not do
+   > is retrieve Companion memory, prior-lesson history or a learner profile, or start a conversation.
+   > The Korume persona may appear in Summary as a one-way, lesson-local reflection. The text below is
+   > kept for history.
 5. **Summary understands the lesson. Companion understands the learner.** Summary is a read-only
    aggregation of *this Lesson's* own data (transcript, vocab, grammar, the learner's own
    session/attempt records for this lesson). It is not a chatbot, has no "Ask AI" box, and never
@@ -504,8 +509,9 @@ sentence.
 highlights, grammar highlights, expressions, culture notes, difficulty, related lessons, the
 learner's own completion state per sentence across the other three modes. **No chat box, no "Ask
 AI," no cross-lesson reasoning** — the moment a question needs history beyond this lesson, it is a
-Companion question, not a Summary one (§0.5). Content split follows the *existing* cascade
-free/deep line (§3.1) — this introduces no new gating mechanism.
+Companion question, not a Summary one (§0.5). ~~Content split follows the *existing* cascade
+free/deep line (§3.1) — this introduces no new gating mechanism.~~ **Deleted 2026-10-04**: within
+Summary, Free and Plus are identical (`2026-10-04-summary-analysis-design.md` R7).
 
 ### 6.3 Shared context and shared progress
 
@@ -589,9 +595,11 @@ Two independent layers, not to be confused with each other:
 ### 6.8 Companion
 
 Unchanged: Dormant/Not Supported across all four Learning Modes (`design-reconciliation.md` §4,
-untouched by this spec, same as the Consolidation spec left it). Summary Mode was explicitly
+untouched by this spec, same as the Consolidation spec left it). ~~Summary Mode was explicitly
 considered as a possible Companion touchpoint and rejected — see §0.5's rationale — to keep the
-Lesson/Companion boundary intact as more Learning Modes are added in the future.
+Lesson/Companion boundary intact as more Learning Modes are added in the future.~~ **Superseded
+2026-10-04** by `2026-10-04-summary-analysis-design.md` R1/R2: Summary carries a lesson-local Korume
+reflection; Companion memory retrieval stays forbidden there.
 
 ---
 
@@ -710,7 +718,7 @@ naturally sequenced alongside the Consolidation spec's own Phase 4 sweep (§8's 
 - Future Learning Modes beyond the four designed here (Speaking Drill, Recall, Roleplay, Quiz) — the
   three-layer model (§6.1) is built to admit them without further architecture work, but none are
   designed in this pass.
-- Summary Mode's AI-summary caching/generation strategy in implementation detail (it follows the
+- **Decided 2026-10-04** in `2026-10-04-summary-analysis-design.md` §4 — Summary Mode's AI-summary caching/generation strategy in implementation detail (it follows the
   existing Knowledge Economy cache-by-fingerprint pattern per `business-model.md` §4, but the
   specific fingerprint shape for a whole-lesson summary is an implementation decision).
 - PayOS enforcement plumbing itself (checking `subscriptions.plan`/`status` in practice) — this spec

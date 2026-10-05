@@ -8,11 +8,12 @@
 import { randomUUID } from "node:crypto";
 import { cacheKeyJson } from "./cache-key";
 import { nextUtcMidnight, nextUtcMonth, utcDay, utcMonth } from "./periods";
+import type { LeaseStore } from "./leased";
 import type { GenerationRow, KnowledgeKey, KnowledgeStore, ReserveInput } from "./types";
 
-interface MemoryEntry {
+export interface MemoryLeaseEntry<K> {
   id: string;
-  key: KnowledgeKey;
+  key: K;
   status: "pending" | "ready" | "failed";
   leaseUntil: Date | null;
   leaseToken: string | null;
@@ -52,7 +53,7 @@ interface MemoryCharge {
 
 export interface MemoryKnowledgeStore {
   store: KnowledgeStore;
-  entries: Map<string, MemoryEntry>;
+  entries: Map<string, MemoryLeaseEntry<KnowledgeKey>>;
   reservations: MemoryReservation[];
   charges: MemoryCharge[];
   generations: (GenerationRow & { id: string })[];
@@ -66,47 +67,34 @@ const month = utcMonth;
 const nextDay = (date: Date) => nextUtcMidnight(date).toISOString();
 const nextMonth = (date: Date) => nextUtcMonth(date).toISOString();
 
-export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
-  let clock = new Date(start);
-  const entries = new Map<string, MemoryEntry>();
-  const reservations: MemoryReservation[] = [];
-  const charges: MemoryCharge[] = [];
-  const generations: (GenerationRow & { id: string })[] = [];
-  const budget = new Map<string, { reservedUsd: number; spentUsd: number }>();
-
-  const budgetRow = (period: string) => {
-    let row = budget.get(period);
-    if (!row) budget.set(period, (row = { reservedUsd: 0, spentUsd: 0 }));
-    return row;
-  };
-  const keyString = (key: KnowledgeKey) => JSON.stringify(cacheKeyJson(key));
-  const close = (id: string, to: "settled" | "released") => {
-    const reservation = reservations.find((r) => r.id === id && r.status === "held");
-    if (!reservation) return null;
-    reservation.status = to;
-    return reservation;
-  };
-  const used = (r: MemoryReservation) => r.status === "held" || r.status === "settled";
-
-  const store: KnowledgeStore = {
+/**
+ * The lease state machine of migration 038 (and of `lesson_reflections`, migration 043) for any key, in memory.
+ * `clock` is read on every call so a test can advance time.
+ */
+export function createMemoryLeaseStore<K>(
+  clock: () => Date,
+  keyOf: (key: K) => string,
+): { store: LeaseStore<K>; entries: Map<string, MemoryLeaseEntry<K>> } {
+  const entries = new Map<string, MemoryLeaseEntry<K>>();
+  const store: LeaseStore<K> = {
     async claimLease(key, leaseSeconds) {
-      const lease = new Date(clock.getTime() + leaseSeconds * 1000);
-      const existing = entries.get(keyString(key));
+      const lease = new Date(clock().getTime() + leaseSeconds * 1000);
+      const existing = entries.get(keyOf(key));
       if (!existing) {
-        const entry: MemoryEntry = {
+        const entry: MemoryLeaseEntry<K> = {
           id: randomUUID(), key, status: "pending", leaseUntil: lease, leaseToken: randomUUID(),
           content: null, model: null, provider: null, errorCode: null, retryAfter: null, attempts: 1,
         };
-        entries.set(keyString(key), entry);
+        entries.set(keyOf(key), entry);
         return { outcome: "leader", entryId: entry.id, leaseToken: entry.leaseToken ?? "", attempts: 1 };
       }
       if (existing.status === "ready") {
         return { outcome: "ready", entryId: existing.id, content: existing.content, model: existing.model };
       }
-      if (existing.status === "failed" && existing.retryAfter && existing.retryAfter > clock) {
+      if (existing.status === "failed" && existing.retryAfter && existing.retryAfter > clock()) {
         return { outcome: "backoff", entryId: existing.id, retryAfter: existing.retryAfter.toISOString() };
       }
-      if (existing.status === "failed" || (existing.leaseUntil && existing.leaseUntil < clock)) {
+      if (existing.status === "failed" || (existing.leaseUntil && existing.leaseUntil < clock())) {
         Object.assign(existing, { status: "pending", leaseUntil: lease, leaseToken: randomUUID(), attempts: existing.attempts + 1 });
         return { outcome: "leader", entryId: existing.id, leaseToken: existing.leaseToken ?? "", attempts: existing.attempts };
       }
@@ -114,7 +102,7 @@ export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
     },
 
     async readReady(key) {
-      const entry = entries.get(keyString(key));
+      const entry = entries.get(keyOf(key));
       return entry?.status === "ready" ? { content: entry.content, model: entry.model } : null;
     },
 
@@ -131,6 +119,34 @@ export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
       Object.assign(entry, { status: "failed", errorCode, retryAfter, leaseUntil: null });
       return true;
     },
+  };
+  return { store, entries };
+}
+
+export function createMemoryKnowledgeStore(start: Date): MemoryKnowledgeStore {
+  let clock = new Date(start);
+  const leases = createMemoryLeaseStore<KnowledgeKey>(() => clock, (key) => JSON.stringify(cacheKeyJson(key)));
+  const entries = leases.entries;
+  const reservations: MemoryReservation[] = [];
+  const charges: MemoryCharge[] = [];
+  const generations: (GenerationRow & { id: string })[] = [];
+  const budget = new Map<string, { reservedUsd: number; spentUsd: number }>();
+
+  const budgetRow = (period: string) => {
+    let row = budget.get(period);
+    if (!row) budget.set(period, (row = { reservedUsd: 0, spentUsd: 0 }));
+    return row;
+  };
+  const close = (id: string, to: "settled" | "released") => {
+    const reservation = reservations.find((r) => r.id === id && r.status === "held");
+    if (!reservation) return null;
+    reservation.status = to;
+    return reservation;
+  };
+  const used = (r: MemoryReservation) => r.status === "held" || r.status === "settled";
+
+  const store: KnowledgeStore = {
+    ...leases.store,
 
     async reserve(input: ReserveInput) {
       if (input.billingScope === "learner" && (!input.requestedBy || !input.entitlementKind)) {
