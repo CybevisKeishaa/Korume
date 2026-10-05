@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLessonSnapshot, mistakeSpan, type LessonEvidence, type SummaryLine } from "./snapshot";
+import { buildLessonSnapshot, mistakeSpan, summaryLines, type LessonEvidence, type SummaryLine } from "./snapshot";
 
 const evidence = (overrides: Partial<LessonEvidence> = {}): LessonEvidence => ({
   hasTranscript: true,
@@ -111,5 +111,22 @@ describe("mistakeSpan", () => {
     expect(mistakeSpan("今日は雨です", "今日は雪です")).toBe("雨");
     expect(mistakeSpan("今日は雨です", "今日は雨です")).toBeNull();
     expect(mistakeSpan("注文をお願いします", "注文を")).toBe("お願いします");
+  });
+});
+
+describe("summaryLines", () => {
+  const row = (id: string, text: string) => ({
+    id, text_jp: text, text_translation: `${id} vi`, start_time: Number(id.slice(1)), end_time: null,
+  });
+
+  it("drops blank lines and numbers the rest from 0, so every caller derives the same analysis key", () => {
+    expect(summaryLines([row("l1", "一"), row("l2", " 　 "), row("l3", "三")])).toEqual([
+      { id: "l1", index: 0, textJp: "一", translation: "l1 vi", startTime: 1, endTime: null },
+      { id: "l3", index: 1, textJp: "三", translation: "l3 vi", startTime: 3, endTime: null },
+    ]);
+  });
+
+  it("returns an empty list for no transcript", () => {
+    expect(summaryLines(undefined)).toEqual([]);
   });
 });

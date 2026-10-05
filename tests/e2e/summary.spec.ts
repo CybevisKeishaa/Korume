@@ -212,3 +212,26 @@ test("10 · summary grid has desktop rail geometry and semantic document order",
   );
   expect(domOrder).toEqual(names);
 });
+
+test("11 · a double-click selects a word in a clamped card without toggling it; a click opens it (m6)", async ({ page }) => {
+  await learner(page);
+  await readyAnalysis(page);
+  const text = Array.from({ length: 12 }, () => "Persistence beats intensity when you shadow a little every day.").join(" ");
+  await page.route("**/lesson-reflection**", (route) => void route.fulfill({ json: { state: "ready", reflection: { text, highlight: null, generatedAt: new Date().toISOString() } } }));
+  await summary(page);
+  const card = area(page, "reflection");
+  const clamp = card.locator("[data-clamp]");
+  await expect(clamp).toContainText("Persistence");
+  await expect(card).toHaveClass(/cursor-pointer/); // positive control: the text really is cut
+  await expect(clamp).toHaveClass(/line-clamp-4/);
+
+  await clamp.dblclick({ position: { x: 8, y: 8 } });
+  // An absence: wait past the card's double-click window (500ms) before asserting nothing toggled.
+  await page.waitForTimeout(900);
+  expect(await page.evaluate(() => window.getSelection()?.toString() ?? "")).toContain("Persistence");
+  await expect(clamp).toHaveClass(/line-clamp-4/);
+
+  await page.evaluate(() => window.getSelection()?.removeAllRanges());
+  await clamp.click({ position: { x: 8, y: 8 } });
+  await expect(clamp).not.toHaveClass(/line-clamp-4/);
+});
