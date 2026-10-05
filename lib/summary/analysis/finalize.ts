@@ -10,6 +10,31 @@ function spanIn(line: PromptLine, span: string): string | null {
   return normalized !== "" && line.textJp.normalize("NFKC").includes(normalized) ? normalized : null;
 }
 
+/**
+ * Owner 2026-10-05: the prompt forbids JLPT levels and romaji in culture notes, yet live v2 output still said
+ * "N3/N2". A note matching one of these high-confidence patterns is dropped whole — never edited. Plain Latin words
+ * are not a signal (vi/en prose is Latin), so romaji is caught only as Japanese text followed by a Latin gloss in
+ * brackets, e.g. 空気を読む (kuuki wo yomu).
+ */
+const JLPT = [/\bJLPT\b/i, /(?<![A-Za-z0-9])N[1-5](?![A-Za-z0-9])/];
+/** One romanized word: Hepburn syllables, syllabic n, or a doubled consonant (small tsu). */
+const HEPBURN_WORD = /^(?:(?:[kgsztdnhbpmrjfwy]|sh|ch|ts|[kgnhbpmr]y)?[aiueoāīūēō]|n(?![aiueoy])|[kstpgc](?=[kstpgc]))+$/i;
+const BRACKETED_AFTER_JAPANESE = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]\s*[(（]([^()（）]+)[)）]/gu;
+
+// ponytail: romaji is caught only bracketed after Japanese; bare romaji in prose still relies on the prompt.
+function hasRomajiGloss(text: string): boolean {
+  for (const match of text.matchAll(BRACKETED_AFTER_JAPANESE)) {
+    const words = (match[1] ?? "").trim().split(/[\s'-]+/).filter(Boolean);
+    // 6+ letters keeps short English glosses that happen to scan as Hepburn ("tea", "to be") out.
+    if (words.length > 0 && words.every((word) => HEPBURN_WORD.test(word)) && words.join("").length >= 6) return true;
+  }
+  return false;
+}
+
+export function cultureOutOfContract(text: string): boolean {
+  return JLPT.some((pattern) => pattern.test(text)) || hasRomajiGloss(text);
+}
+
 /** Spec §4.4: strict per item, ids and spans checked against this request, duplicates and overflow dropped. */
 export function finalizeAnalysis(parsed: unknown, input: AnalysisInput): StoredAnalysis {
   const raw = analysisAiSchema.parse(parsed);
@@ -48,6 +73,7 @@ export function finalizeAnalysis(parsed: unknown, input: AnalysisInput): StoredA
     const strict = item ? cultureItem.safeParse(item) : null;
     const line = strict?.success ? lineOf.get(strict.data.line) : undefined;
     if (!strict?.success || !line || seenCulture.has(`${line.id}|${strict.data.title}`) || result.culture.length >= CAPS.culture) continue;
+    if (cultureOutOfContract(`${strict.data.title}\n${strict.data.body}`)) continue;
     seenCulture.add(`${line.id}|${strict.data.title}`);
     result.culture.push({ sourceLineId: line.id, title: strict.data.title, body: strict.data.body });
   }

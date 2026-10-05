@@ -23,6 +23,13 @@ describe("DELETE /api/mining/[cardId]", () => {
     expect(deleteMiningCard).toHaveBeenCalledWith(CARD_ID);
   });
 
+  it("maps a rate-limited delete to 429 with Retry-After in seconds", async () => {
+    vi.mocked(deleteMiningCard).mockResolvedValue({ ok: false, status: 429, retryAfter: 4_200 });
+    const response = await remove(CARD_ID);
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("5");
+  });
+
   it.each([401, 404] as const)("maps a %i data-layer refusal", async (status) => {
     vi.mocked(deleteMiningCard).mockResolvedValue({ ok: false, status });
     expect((await remove(CARD_ID)).status).toBe(status);

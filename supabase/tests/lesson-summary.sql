@@ -167,14 +167,16 @@ begin
   if (select target_word from sentence_mining_cards where source_kind = 'sentence' and transcript_line_id = v_l1) <> '雨' then
     raise exception 'FAIL 7: focusSpan must become the card''s target word';
   end if;
-  perform schedule_review_tomorrow(v_video, v_targets, v_due + interval '1 hour');
+  v_n := schedule_review_tomorrow(v_video, v_targets, v_due + interval '1 hour');
+  if v_n <> 0 then raise exception 'FAIL 7: a repeat call that changed nothing counted % rows', v_n; end if;
   if (select count(*) from sentence_mining_cards where source_kind = 'sentence') <> 2
      or exists (select 1 from sentence_mining_cards where source_kind = 'sentence' and next_review_at <> v_due) then
     raise exception 'FAIL 7: a repeat call duplicated a card or pushed a due date later';
   end if;
   update sentence_mining_cards set next_review_at = now() + interval '30 days' where source_kind = 'sentence' and transcript_line_id = v_l1;
   update sentence_mining_cards set next_review_at = null where source_kind = 'sentence' and transcript_line_id = v_l2;
-  perform schedule_review_tomorrow(v_video, v_targets, v_due);
+  v_n := schedule_review_tomorrow(v_video, v_targets, v_due);
+  if v_n <> 1 then raise exception 'FAIL 7: pulling in one card and leaving a null one counted % rows', v_n; end if;
   if (select next_review_at from sentence_mining_cards where source_kind = 'sentence' and transcript_line_id = v_l1) <> v_due then
     raise exception 'FAIL 7: a card due in 30 days was not pulled in to tomorrow';
   end if;
@@ -190,7 +192,7 @@ begin
     raise exception 'FAIL 7: a due time in the past was accepted';
   exception when invalid_parameter_value then null;
   end;
-  raise notice 'PASS 7 Review Tomorrow is idempotent, never later, lesson-scoped';
+  raise notice 'PASS 7 Review Tomorrow is idempotent, never later, lesson-scoped, counts only real writes';
 end $$;
 commit;
 

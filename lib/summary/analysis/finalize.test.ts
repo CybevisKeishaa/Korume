@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FinalizeError } from "@/lib/knowledge/leased";
-import { finalizeAnalysis } from "./finalize";
+import { cultureOutOfContract, finalizeAnalysis } from "./finalize";
 import type { AnalysisInput } from "./input";
 
 const L1 = "11111111-1111-4111-8111-111111111111";
@@ -92,6 +92,26 @@ describe("finalizeAnalysis", () => {
     expect(result.culture[0]).toEqual({ sourceLineId: L2, title: "t0", body: "b" });
     expect(result.overview).toBe("あ".repeat(400));
     expect(finalizeAnalysis(parsed(), INPUT).overview).toBe("A lesson.");
+  });
+
+  it("drops a whole culture note that names a JLPT level or glosses Japanese in romaji, and keeps the rest", () => {
+    const culture = [
+      { line: "L2", title: "Reading the room", body: "This is crucial for the N3/N2 level context." },
+      { line: "L2", title: "JLPT tip", body: "b" },
+      { line: "L2", title: "Air", body: "Người Nhật hay nói 空気を読む (kuuki wo yomu)." },
+      { line: "L2", title: "Kept", body: "Staff greet every customer; a nod back is enough." },
+    ];
+    const result = finalizeAnalysis(parsed({ culture }), INPUT);
+    expect(result.culture).toEqual([{ sourceLineId: L2, title: "Kept", body: "Staff greet every customer; a nod back is enough." }]);
+  });
+
+  it("flags only high-confidence romaji: a Hepburn gloss in brackets after Japanese, never English or model names", () => {
+    for (const text of ["Say it in a casual tone (not formal).", "Like a Nintendo N64 ad", "Bring 2 N95 masks", "コーヒー (coffee) is fine", "お茶 (tea)", "丁寧 (polite)"]) {
+      expect(cultureOutOfContract(text), text).toBe(false);
+    }
+    for (const text of ["ありがとう（arigatou）", "いただきます (itadakimasu)", "抹茶 (matcha) を", "空気を読む (kuuki wo yomu)"]) {
+      expect(cultureOutOfContract(text), text).toBe(true);
+    }
   });
 
   it("stores no request-local short id", () => {

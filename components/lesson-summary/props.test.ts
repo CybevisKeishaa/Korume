@@ -8,6 +8,7 @@ const DATA: LoadedSummary = {
   userId: "u-1",
   video: { id: "v-1", youtubeVideoId: "yt", title: "At the café", thumbnailUrl: null, jlptLevel: "N4", durationSeconds: 359 },
   lines: [0, 1, 2].map((i) => ({ id: `line-${i}`, index: i, textJp: `文${i}`, translation: null, startTime: i, endTime: i + 1 })),
+  analyses: new Map(),
   hasTranscript: true,
   completed: true,
   snapshot: {

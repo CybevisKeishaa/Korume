@@ -48,6 +48,8 @@ const EMPTY: LessonSnapshot = {
   reviewTargets: [],
   bestLine: null,
 };
+const LINES = [{ id: "line-b", index: 0, textJp: "ありがとうございました", translation: null, startTime: 0, endTime: 1 }];
+const ANALYSES = new Map();
 const VIEW: LessonAnalysisView = { overview: "Ordering coffee.", words: [], expressions: [], grammar: [], culture: [] };
 
 let budget: MemoryKnowledgeStore;
@@ -128,9 +130,10 @@ function deps(overrides: Partial<ReflectionDeps> = {}): ReflectionDeps {
     config: CONFIG,
     aiEnabled: true,
     now: budget.now(),
+    authenticate: async () => ({ supabase: {} as never, userId: user }),
     loadSummary: async () => ({
       ok: true,
-      data: { userId: user, snapshot, video: { id: VIDEO, title: "At the café" } } as unknown as LoadedSummary,
+      data: { userId: user, snapshot, video: { id: VIDEO, title: "At the café" }, lines: LINES, analyses: ANALYSES } as unknown as LoadedSummary,
     }),
     analysisStatus: async () => analysis,
     ...overrides,
@@ -272,6 +275,22 @@ describe("requestLessonReflection", () => {
       [`summary:reflection:read:${USER_A}`, { limit: 60, windowMs: 60_000 }],
       [`summary:reflection:generate:${USER_A}`, { limit: 10, windowMs: 60_000 }],
     ]);
+  });
+
+  it("refuses a signed-out caller and a rate-limited one before loading the lesson (m1)", async () => {
+    const loadSummary = vi.fn();
+    await expect(run("read", { authenticate: async () => null, loadSummary })).resolves.toEqual({ kind: "unauthorized" });
+    expect(rateLimit).not.toHaveBeenCalled();
+    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 3000 });
+    await expect(run("generate", { loadSummary })).resolves.toEqual({ kind: "rate_limited", retryAfter: 3000 });
+    expect(loadSummary).not.toHaveBeenCalled();
+  });
+
+  it("hands the analysis check the lines and analyses it already loaded (m2)", async () => {
+    const analysisStatus = vi.fn(async () => analysis);
+    fake.queueStructured(reply("Done."), USAGE);
+    await run("generate", { analysisStatus });
+    expect(analysisStatus).toHaveBeenCalledWith(VIDEO, "en", { supabase: {}, lines: LINES, analyses: ANALYSES });
   });
 
   it("passes the lesson-level refusals through", async () => {

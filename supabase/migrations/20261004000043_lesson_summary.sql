@@ -76,6 +76,7 @@ declare
   v_target jsonb;
   v_line record;
   v_count int := 0;
+  v_rows int;
 begin
   if v_user is null then raise exception 'not authenticated' using errcode = '42501'; end if;
   if p_due <= now() or p_due > now() + interval '49 hours' then
@@ -90,10 +91,14 @@ begin
       sentence_translation, start_time, end_time, source_kind, source_ref, next_review_at)
     values (v_user, p_video, v_line.id, coalesce(nullif(btrim(v_target->>'focusSpan'), ''), v_line.text_jp),
       v_line.text_jp, v_line.text_translation, v_line.start_time, v_line.end_time, 'sentence', null, p_due)
+    -- Only ever earlier, never a null (unscheduled) due date; a conflict that changes nothing writes no row and is
+    -- not counted, so the result is exactly the cards inserted or pulled in.
     on conflict (user_id, transcript_line_id) where source_kind = 'sentence' do update
-      set next_review_at = case when sentence_mining_cards.next_review_at is null then null
-                                else least(sentence_mining_cards.next_review_at, excluded.next_review_at) end;
-    v_count := v_count + 1;
+      set next_review_at = excluded.next_review_at
+      where sentence_mining_cards.next_review_at is not null
+        and excluded.next_review_at < sentence_mining_cards.next_review_at;
+    get diagnostics v_rows = row_count;
+    v_count := v_count + v_rows;
   end loop;
   return v_count;
 end $$;

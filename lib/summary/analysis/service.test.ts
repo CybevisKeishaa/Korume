@@ -149,7 +149,7 @@ describe("requestLessonAnalysis", () => {
       status: "ready",
       key: {
         fingerprint: analysisFingerprint(input), section: "lesson_analysis", locale: "vi", contextKey: VIDEO,
-        schemaVersion: 1, generatorVersion: 2, contentVariant: "full",
+        schemaVersion: 1, generatorVersion: 3, contentVariant: "full",
       },
     });
     expect(store.reservations[0]).toMatchObject({ billingScope: "system", requestedBy: USER, entitlementKind: null });
@@ -206,6 +206,14 @@ describe("requestLessonAnalysis", () => {
     expect(fake.requests).toHaveLength(0);
   });
 
+  it("rate-limits right after auth, before any lesson load (m1)", async () => {
+    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 4000 });
+    await expect(requestLessonAnalysis(VIDEO, "vi", "generate", deps())).resolves.toEqual({ kind: "rate_limited", retryAfter: 4000 });
+    expect(selectVideoById).not.toHaveBeenCalled();
+    expect(getTranscript).not.toHaveBeenCalled();
+    expect(staticAnalyses).not.toHaveBeenCalled();
+  });
+
   it("rate-limits read and generate under separate keys", async () => {
     vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 4000 });
     await expect(requestLessonAnalysis(VIDEO, "vi", "read", deps())).resolves.toEqual({ kind: "rate_limited", retryAfter: 4000 });
@@ -223,18 +231,24 @@ describe("requestLessonAnalysis", () => {
 });
 
 describe("analysisStatusForReflection", () => {
+  const LESSON = {
+    supabase: {} as never,
+    lines: [{ id: "line-1", index: 0, textJp: "注文をお願いします。", translation: null, startTime: 0, endTime: 2 }],
+    analyses: ANALYSES,
+  };
+
   it("reports ready with the fingerprint, pending, unusable and absent", async () => {
-    await expect(analysisStatusForReflection(VIDEO, "vi", deps())).resolves.toEqual({ kind: "absent" });
-    await expect(analysisStatusForReflection(VIDEO, "vi", deps({ aiEnabled: false }))).resolves.toEqual({ kind: "unusable" });
+    await expect(analysisStatusForReflection(VIDEO, "vi", LESSON, deps())).resolves.toEqual({ kind: "absent" });
+    await expect(analysisStatusForReflection(VIDEO, "vi", LESSON, deps({ aiEnabled: false }))).resolves.toEqual({ kind: "unusable" });
 
     const gate = controllableProvider();
     const first = requestLessonAnalysis(VIDEO, "vi", "generate", deps({ provider: gate.provider }));
     await gate.called(1);
-    await expect(analysisStatusForReflection(VIDEO, "vi", deps())).resolves.toEqual({ kind: "pending" });
+    await expect(analysisStatusForReflection(VIDEO, "vi", LESSON, deps())).resolves.toEqual({ kind: "pending" });
     gate.resolve(0, GOOD);
     await first;
     const input = buildAnalysisInput([{ id: "line-1", textJp: "注文をお願いします。" }], ANALYSES);
-    await expect(analysisStatusForReflection(VIDEO, "vi", deps())).resolves.toMatchObject({
+    await expect(analysisStatusForReflection(VIDEO, "vi", LESSON, deps())).resolves.toMatchObject({
       kind: "ready", fingerprint: analysisFingerprint(input), view: { overview: "Ordering at a counter." },
     });
   });
@@ -242,8 +256,17 @@ describe("analysisStatusForReflection", () => {
   it("is unusable for a failed analysis in backoff and for a lesson without transcript", async () => {
     fake.queueStructured({ ...GOOD, words: [{ candidate_id: "v9", why_it_matters: "x", usage_note: "y" }] }, USAGE);
     await requestLessonAnalysis(VIDEO, "en", "generate", deps());
-    await expect(analysisStatusForReflection(VIDEO, "en", deps())).resolves.toEqual({ kind: "unusable" });
-    vi.mocked(getTranscript).mockResolvedValueOnce({ ok: true, data: null });
-    await expect(analysisStatusForReflection(VIDEO, "vi", deps())).resolves.toEqual({ kind: "unusable" });
+    await expect(analysisStatusForReflection(VIDEO, "en", LESSON, deps())).resolves.toEqual({ kind: "unusable" });
+    await expect(analysisStatusForReflection(VIDEO, "vi", { ...LESSON, lines: [] }, deps())).resolves.toEqual({ kind: "unusable" });
+  });
+
+  it("builds the key from the lesson it is handed and never reloads it (m2)", async () => {
+    vi.clearAllMocks();
+    vi.mocked(createServiceClient).mockReturnValue(serviceClientOverMemory() as unknown as ReturnType<typeof createServiceClient>);
+    await expect(analysisStatusForReflection(VIDEO, "vi", LESSON, deps())).resolves.toEqual({ kind: "absent" });
+    expect(requireUser).not.toHaveBeenCalled();
+    expect(selectVideoById).not.toHaveBeenCalled();
+    expect(getTranscript).not.toHaveBeenCalled();
+    expect(staticAnalyses).not.toHaveBeenCalled();
   });
 });

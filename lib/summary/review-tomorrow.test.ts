@@ -2,14 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LoadedSummary } from "./load-snapshot";
 
 const mocks = vi.hoisted(() => ({
-  createClient: vi.fn(),
+  authenticateSummary: vi.fn(),
   loadLessonSummary: vi.fn(),
   rateLimit: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: mocks.rateLimit }));
-vi.mock("./load-snapshot", () => ({ loadLessonSummary: mocks.loadLessonSummary }));
+vi.mock("./load-snapshot", () => ({ authenticateSummary: mocks.authenticateSummary, loadLessonSummary: mocks.loadLessonSummary }));
 
 import { isValidTimeZone, nextLocalMidnightUtc, scheduleReviewTomorrow } from "./review-tomorrow";
 
@@ -27,6 +26,7 @@ const loadedSummary = (reviewTargets: LoadedSummary["snapshot"]["reviewTargets"]
   userId: USER_ID,
   video: { id: VIDEO_ID, youtubeVideoId: "youtube-id", title: "Lesson", thumbnailUrl: null, jlptLevel: null, durationSeconds: null },
   lines: [],
+  analyses: new Map(),
   hasTranscript: true,
   completed: false,
   snapshot: {
@@ -89,19 +89,23 @@ describe("scheduleReviewTomorrow", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createClient.mockReturnValue({ rpc });
+    mocks.authenticateSummary.mockResolvedValue({ supabase: { rpc }, userId: USER_ID });
     mocks.rateLimit.mockReturnValue({ ok: true, retryAfter: 0 });
     rpc.mockResolvedValue({ data: "2", error: null });
   });
 
-  it.each([
-    [{ ok: false, status: 401 }, "unauthorized"],
-    [{ ok: false, status: 404 }, "not_found"],
-  ] as const)("passes through %s", async (summary, kind) => {
-    mocks.loadLessonSummary.mockResolvedValue(summary);
+  it("refuses a signed-out caller before the rate limit and any load", async () => {
+    mocks.authenticateSummary.mockResolvedValue(null);
 
-    await expect(scheduleReviewTomorrow(VIDEO_ID, "Asia/Ho_Chi_Minh", now)).resolves.toEqual({ kind });
+    await expect(scheduleReviewTomorrow(VIDEO_ID, "Asia/Ho_Chi_Minh", now)).resolves.toEqual({ kind: "unauthorized" });
     expect(mocks.rateLimit).not.toHaveBeenCalled();
+    expect(mocks.loadLessonSummary).not.toHaveBeenCalled();
+  });
+
+  it("passes a lesson the learner cannot see through as not_found", async () => {
+    mocks.loadLessonSummary.mockResolvedValue({ ok: false, status: 404 });
+
+    await expect(scheduleReviewTomorrow(VIDEO_ID, "Asia/Ho_Chi_Minh", now)).resolves.toEqual({ kind: "not_found" });
     expect(rpc).not.toHaveBeenCalled();
   });
 
@@ -141,11 +145,11 @@ describe("scheduleReviewTomorrow", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
-  it("returns the rate-limit retry delay without writing", async () => {
-    mocks.loadLessonSummary.mockResolvedValue({ ok: true, data: loadedSummary([]) });
+  it("returns the rate-limit retry delay before loading the lesson or writing (m1)", async () => {
     mocks.rateLimit.mockReturnValue({ ok: false, retryAfter: 4_200 });
 
     await expect(scheduleReviewTomorrow(VIDEO_ID, "Asia/Ho_Chi_Minh", now)).resolves.toEqual({ kind: "rate_limited", retryAfter: 4_200 });
+    expect(mocks.loadLessonSummary).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });
 });

@@ -9,6 +9,12 @@ export async function DELETE(_request: Request, { params }: { params: { cardId: 
 
   const result = await deleteMiningCard(params.cardId);
   if (!result.ok) {
+    if (result.status === 429) {
+      return NextResponse.json(
+        { error: "Too many cards removed, slow down" },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(result.retryAfter / 1000)) } },
+      );
+    }
     return NextResponse.json({ error: result.status === 401 ? "Unauthorized" : "Not found" }, { status: result.status });
   }
   return new NextResponse(null, { status: 204 });

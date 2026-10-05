@@ -95,6 +95,17 @@ describe("deleteMiningCard", () => {
     expect(cardQueries[0]).toEqual(expect.arrayContaining([{ op: "delete" }, { op: "eq", column: "id", value: CARD_ID }]));
     await expect(deleteMiningCard(MISSING_ID)).resolves.toEqual({ ok: false, status: 404 });
   });
+
+  it("rate-limits deletes like creates (60/min per learner) and refuses before touching the table", async () => {
+    installSupabase("delete-limit-user");
+    const now = new Date("2026-10-05T09:00:00Z");
+    for (let i = 0; i < 60; i += 1) {
+      cardResponses.push({ data: [{ id: CARD_ID }], error: null });
+      await expect(deleteMiningCard(CARD_ID, now)).resolves.toEqual({ ok: true });
+    }
+    await expect(deleteMiningCard(CARD_ID, now)).resolves.toMatchObject({ ok: false, status: 429 });
+    expect(cardQueries).toHaveLength(60);
+  });
 });
 
 describe("getMiningQueue", () => {

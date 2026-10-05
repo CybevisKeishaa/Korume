@@ -402,6 +402,8 @@
   "lessonSummary": {
     "eyebrow": "Summary",
     "backToLesson": "Back to Lesson",
+    "showMore": "Show more",
+    "showLess": "Show less",
     "hero": {
       "complete": "Lesson complete",
       "summary": "Lesson summary",

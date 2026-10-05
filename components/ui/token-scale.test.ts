@@ -86,7 +86,7 @@ const SCANNED_DIRS = [
   { dir: "components/korume", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 10 },
   // Summary / Analysis (2026-10-04), Task 13: area, hero, lesson-status-card, next-lesson-card, props, review-list,
   // saved-knowledge-card, section-heading, summary-header, summary-island, summary-page; Task 14 adds five client files, Task 15 adds the clip player.
-  { dir: "components/lesson-summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 17 },
+  { dir: "components/lesson-summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 18 },
   { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 1 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },

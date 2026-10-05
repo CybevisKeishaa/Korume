@@ -141,10 +141,17 @@ export async function createMiningCard(
   return { ok: true, data: existing as MiningCardRow, created: false };
 }
 
-export async function deleteMiningCard(cardId: string): Promise<{ ok: true } | { ok: false; status: 401 | 404 }> {
+export async function deleteMiningCard(
+  cardId: string,
+  now: Date = new Date(),
+): Promise<{ ok: true } | { ok: false; status: 401 | 404 } | { ok: false; status: 429; retryAfter: number }> {
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
+
+  // Same class as create: a Summary save toggle is a create/delete pair, so both sides carry the same budget.
+  const limited = rateLimit(`mining:delete:${user.id}`, CREATE_LIMIT, now.getTime());
+  if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
 
   const { data, error } = await supabase.from("sentence_mining_cards").delete().eq("id", cardId).select("id");
   if (error) throw error;

@@ -2,15 +2,16 @@ import "server-only";
 import type { AiProvider } from "@/lib/ai/port";
 import { getProvider, isAiEnabled } from "@/lib/ai/registry";
 import { staticAnalyses } from "@/lib/analysis/line-analysis";
+import type { StaticLineAnalysis } from "@/lib/analysis/types";
 import { getTranscript } from "@/lib/data/transcripts";
-import { requireUser, selectVideoById } from "@/lib/data/videos";
+import { selectVideoById } from "@/lib/data/videos";
 import { readKnowledgeConfig, type KnowledgeConfig } from "@/lib/knowledge/config";
 import { FOLLOWER_RETRY_MS, runLeasedGeneration } from "@/lib/knowledge/leased";
 import { createSqlKnowledgeStore } from "@/lib/knowledge/store";
 import type { KnowledgeKey, KnowledgeLocale, KnowledgeStore } from "@/lib/knowledge/types";
 import { rateLimit } from "@/lib/rate-limit";
-import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { authenticateSummary, type SummaryAuth } from "../load-snapshot";
 import type { SummaryLine } from "../snapshot";
 import { finalizeAnalysis } from "./finalize";
 import { hydrateAnalysis } from "./hydrate";
@@ -37,36 +38,12 @@ export type AnalysisStatus =
   | { kind: "absent" };
 
 type Context =
-  | { kind: "unauthorized" }
   | { kind: "not_found" }
-  | { kind: "no_transcript"; userId: string }
-  | {
-    kind: "ok";
-    supabase: ReturnType<typeof createClient>;
-    userId: string;
-    title: string;
-    lines: SummaryLine[];
-    input: AnalysisInput;
-    key: KnowledgeKey;
-  };
+  | { kind: "no_transcript" }
+  | { kind: "ok"; title: string; lines: SummaryLine[]; input: AnalysisInput; key: KnowledgeKey };
 
-/** Everything both callers need: the learner, the lesson, its candidates and the shared cache key (spec §4.1). */
-async function loadContext(videoId: string, locale: KnowledgeLocale): Promise<Context> {
-  const supabase = createClient();
-  const user = await requireUser(supabase);
-  if (!user) return { kind: "unauthorized" };
-  const video = await selectVideoById(supabase, videoId);
-  if (!video) return { kind: "not_found" };
-  const transcript = await getTranscript(videoId);
-  if (!transcript.ok) return transcript.status === 401 ? { kind: "unauthorized" } : { kind: "not_found" };
-  const lines: SummaryLine[] = (transcript.data?.lines ?? [])
-    .filter((line) => line.text_jp.trim() !== "")
-    .map((line, index) => ({
-      id: line.id, index, textJp: line.text_jp, translation: line.text_translation,
-      startTime: line.start_time, endTime: line.end_time,
-    }));
-  if (lines.length === 0) return { kind: "no_transcript", userId: user.id };
-  const analyses = await staticAnalyses(supabase, lines.map((line) => ({ id: line.id, textJp: line.textJp })), undefined, "full");
+/** The shared cache key of a lesson's analysis (spec §4.1), from its non-empty lines and their static analyses. */
+function analysisKey(videoId: string, locale: KnowledgeLocale, lines: SummaryLine[], analyses: Map<string, StaticLineAnalysis>) {
   const input = buildAnalysisInput(lines, analyses);
   const key: KnowledgeKey = {
     fingerprint: analysisFingerprint(input),
@@ -77,7 +54,24 @@ async function loadContext(videoId: string, locale: KnowledgeLocale): Promise<Co
     generatorVersion: LESSON_ANALYSIS.generatorVersion,
     contentVariant: "full",
   };
-  return { kind: "ok", supabase, userId: user.id, title: video.title, lines, input, key };
+  return { input, key };
+}
+
+/** The lesson, its candidates and the cache key; the learner is already signed in and inside the rate limit. */
+async function loadContext(supabase: SummaryAuth["supabase"], videoId: string, locale: KnowledgeLocale): Promise<Context> {
+  const video = await selectVideoById(supabase, videoId);
+  if (!video) return { kind: "not_found" };
+  const transcript = await getTranscript(videoId);
+  if (!transcript.ok) return { kind: "not_found" };
+  const lines: SummaryLine[] = (transcript.data?.lines ?? [])
+    .filter((line) => line.text_jp.trim() !== "")
+    .map((line, index) => ({
+      id: line.id, index, textJp: line.text_jp, translation: line.text_translation,
+      startTime: line.start_time, endTime: line.end_time,
+    }));
+  if (lines.length === 0) return { kind: "no_transcript" };
+  const analyses = await staticAnalyses(supabase, lines.map((line) => ({ id: line.id, textJp: line.textJp })), undefined, "full");
+  return { kind: "ok", title: video.title, lines, ...analysisKey(videoId, locale, lines, analyses) };
 }
 
 type EntryState =
@@ -126,22 +120,24 @@ export async function requestLessonAnalysis(
   | { kind: "ok"; body: AnalysisResponse }
 > {
   const ok = (body: AnalysisResponse) => ({ kind: "ok" as const, body });
-  const ctx = await loadContext(videoId, locale);
-  if (ctx.kind === "unauthorized" || ctx.kind === "not_found") return ctx;
-
+  const auth = await authenticateSummary();
+  if (!auth) return { kind: "unauthorized" };
   const now = deps.now ?? new Date();
   const limited = rateLimit(
-    `summary:analysis:${mode}:${ctx.userId}`,
+    `summary:analysis:${mode}:${auth.userId}`,
     mode === "read" ? READ_LIMIT : GENERATE_LIMIT,
     now.getTime(),
   );
   if (!limited.ok) return { kind: "rate_limited", retryAfter: limited.retryAfter };
+
+  const ctx = await loadContext(auth.supabase, videoId, locale);
+  if (ctx.kind === "not_found") return ctx;
   if (ctx.kind === "no_transcript") return ok({ status: "no_transcript" });
 
   const aiEnabled = deps.aiEnabled ?? isAiEnabled();
   const ready = async (content: unknown): Promise<AnalysisResponse> => ({
     status: "ready",
-    data: await hydrateAnalysis(ctx.supabase, storedAnalysisSchema.parse(content), ctx.lines),
+    data: await hydrateAnalysis(auth.supabase, storedAnalysisSchema.parse(content), ctx.lines),
   });
 
   if (mode === "read") {
@@ -164,7 +160,7 @@ export async function requestLessonAnalysis(
     key: ctx.key,
     section: "lesson_analysis",
     knowledgeEntry: true,
-    billing: { scope: "system", userId: ctx.userId, entitlementKind: null, chargesCredits: false },
+    billing: { scope: "system", userId: auth.userId, entitlementKind: null, chargesCredits: false },
     reserveFingerprint: ctx.key.fingerprint,
     prompt: buildAnalysisPrompt(ctx.input, locale, ctx.title),
     schema: analysisAiSchema,
@@ -183,18 +179,22 @@ export async function requestLessonAnalysis(
   }
 }
 
-/** Spec §5.3: what the reflection may build on. Never generates; auth was already answered by the caller. */
+/**
+ * Spec §5.3: what the reflection may build on. Never generates and never reloads the lesson: the caller passes the
+ * lines and static analyses its Summary load already read (m2), so the key is the one the analysis route computes.
+ */
 export async function analysisStatusForReflection(
   videoId: string,
   locale: KnowledgeLocale,
+  lesson: { supabase: SummaryAuth["supabase"]; lines: SummaryLine[]; analyses: Map<string, StaticLineAnalysis> },
   deps: AnalysisDeps = {},
 ): Promise<AnalysisStatus> {
-  const ctx = await loadContext(videoId, locale);
-  if (ctx.kind !== "ok") return { kind: "unusable" };
-  const state = await readEntryState(ctx.key, deps.now ?? new Date());
+  if (lesson.lines.length === 0) return { kind: "unusable" };
+  const { key } = analysisKey(videoId, locale, lesson.lines, lesson.analyses);
+  const state = await readEntryState(key, deps.now ?? new Date());
   if (state.kind === "ready") {
-    const view = await hydrateAnalysis(ctx.supabase, storedAnalysisSchema.parse(state.content), ctx.lines);
-    return { kind: "ready", fingerprint: ctx.key.fingerprint, view };
+    const view = await hydrateAnalysis(lesson.supabase, storedAnalysisSchema.parse(state.content), lesson.lines);
+    return { kind: "ready", fingerprint: key.fingerprint, view };
   }
   if (state.kind === "pending") return { kind: "pending" };
   if (state.kind === "failed") return { kind: "unusable" };

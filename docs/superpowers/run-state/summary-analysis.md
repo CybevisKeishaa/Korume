@@ -139,6 +139,16 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   Video" is pushed off by other specs' seeds + Ep.729); 3/3 alone; the branch does not touch the hub listing.
   Mutation ledger: every high-risk mutation of Tasks 1, 3, 4, 5, 8, 9, 10, 11, 14 is recorded RED in its task entry
   above (plus 15 and 16). Lessons L-043, L-044, L-045 in `docs/lessons.md`.
+- Owner look 2026-10-05 (Claude): long card text stretched the page → `ExpandableCard` + `Clamp` (line-clamp with
+  "…", a click on the card opens it; no visible "Show more" — owner ruling — the toggle is `sr-only` until keyboard
+  focus). Owner decisions: (a) keep spec §7.2 single DOM, re-judge the Words gap at 1280×529 after the clamp;
+  (b) code validator added: a culture note with `JLPT`, `N1–N5` or a Hepburn romaji gloss in brackets after
+  Japanese is dropped whole (never edited), generator_version 2 → 3; (c) m1 auth → rate limit → load in all three
+  services; m2 reflection hands its loaded lines + static analyses to `analysisStatusForReflection` (no reload);
+  m3 `DELETE /api/mining/[cardId]` 60/min like create (`mining:delete:`); m4 `schedule_review_tomorrow` counts
+  `row_count` — a no-op conflict writes nothing and is not counted (SQL gate asserts 0 and 1). Each fix RED by
+  mutation (7/7). Full vitest 550/4848, tsc 0, lint 0 errors, protocol valid. DB gates + Summary e2e still owed:
+  Docker engine was down at commit time.
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
 - Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
@@ -156,6 +166,9 @@ None.
 
 ## Next actions
 
+0. With Docker up: `npx supabase db reset` (043 edited in place), re-import dictionary + Ep.729, all `verify:db:*`,
+   Summary e2e, then re-judge the Words gap at 1280×529 → full gates → whole-branch review (note
+   `route-group-provider-identity` as known test-isolation debt) → merge decision.
 1. Owner Chrome look at 1280×529: worktree `next start` on :3000 with `AI_PROVIDER=gemini`, login
    `demo.korume@example.com` / `password123` (seeded evidence), `http://localhost:3000/vi/shadowing/52ccaa25-f48b-4ea4-94c1-32dfbb936666/summary`.
    Measured: header one row 44 px; reflection now spans two rows (`5ccc911`) so Words sits under the hero.

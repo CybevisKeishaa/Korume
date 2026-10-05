@@ -3,13 +3,13 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "@/lib/i18n";
 import type { AnalysisResponse, CultureView, ExpressionView, GrammarView, WordView } from "@/lib/summary/analysis/view";
 import type { SavedCard } from "@/lib/summary/snapshot";
 import { areaProps } from "./area";
 import { HearInLessonButton } from "./clip-player";
+import { Clamp, ExpandableCard } from "./expandable-card";
 import { SaveToggle } from "./save-toggle";
 import { SectionHeading } from "./section-heading";
 
@@ -114,7 +114,7 @@ function Words({ words, savedCards }: { words: WordView[]; savedCards: SavedCard
     <ul className="grid gap-md sm:grid-cols-3">
       {words.map((word) => (
         <li key={`${word.entSeq}-${word.source.lineId}`}>
-          <Card className="flex h-full flex-col gap-sm p-lg">
+          <ExpandableCard className="flex h-full flex-col gap-sm p-lg">
             <div className="flex items-start justify-between gap-sm">
               <div className="min-w-0 space-y-2xs">
                 <p lang="ja" className="text-heading-lg font-bold">{word.written}</p>
@@ -122,14 +122,14 @@ function Words({ words, savedCards }: { words: WordView[]; savedCards: SavedCard
               </div>
               <SaveToggle sourceKind="vocabulary" lineId={word.source.lineId} targetWord={word.surface} savedCards={savedCards} />
             </div>
-            <p className="text-body">{word.meaning}</p>
+            <Clamp lines={2} className="text-body">{word.meaning}</Clamp>
             <div className="flex items-center justify-between gap-sm">
               {word.common ? <Badge variant="primary">{t("words.common")}</Badge> : <span />}
               <span className="text-caption text-muted-foreground">{t(`pos.${word.posKey}`)}</span>
             </div>
-            <p lang="ja" className="mt-auto border-t border-border pt-sm text-caption text-muted-foreground">{word.source.textJp}</p>
+            <Clamp lines={2} lang="ja" className="mt-auto border-t border-border pt-sm text-caption text-muted-foreground">{word.source.textJp}</Clamp>
             <HearInLessonButton source={word.source} label={t("words.hear")} />
-          </Card>
+          </ExpandableCard>
         </li>
       ))}
     </ul>
@@ -142,7 +142,7 @@ function Expressions({ items, savedCards }: { items: ExpressionView[]; savedCard
     <ul className="space-y-sm">
       {items.map((item) => (
         <li key={`${item.expression}-${item.source.lineId}`}>
-          <Card className="grid gap-md p-lg sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <ExpandableCard className="grid gap-md p-lg sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <div className="flex items-start justify-between gap-sm">
               <div className="space-y-xs">
                 <p lang="ja" className="text-heading font-bold">{item.expression}</p>
@@ -150,9 +150,9 @@ function Expressions({ items, savedCards }: { items: ExpressionView[]; savedCard
               </div>
               <SaveToggle sourceKind="expression" lineId={item.source.lineId} targetWord={item.expression} savedCards={savedCards} />
             </div>
-            <Labeled label={t("meaningUse")}>{item.meaningUse}</Labeled>
-            <Labeled label={t("nuance")}>{item.nuance}</Labeled>
-          </Card>
+            <Labeled label={t("meaningUse")} lines={3}>{item.meaningUse}</Labeled>
+            <Labeled label={t("nuance")} lines={3}>{item.nuance}</Labeled>
+          </ExpandableCard>
         </li>
       ))}
     </ul>
@@ -165,18 +165,18 @@ function Grammar({ items }: { items: GrammarView[] }) {
     <ul className="grid gap-md sm:grid-cols-2">
       {items.map((item) => (
         <li key={item.grammarId}>
-          <Card className="flex h-full flex-col gap-sm p-lg">
+          <ExpandableCard className="flex h-full flex-col gap-sm p-lg">
             <div className="flex items-start justify-between gap-sm">
               <p lang="ja" className="text-heading font-bold">{item.title}</p>
               {item.jlpt && <Badge variant="primary">{item.jlpt}</Badge>}
             </div>
-            <p className="text-body">{item.meaningShort}</p>
-            <p className="text-body text-muted-foreground">{item.explanation}</p>
+            <Clamp lines={2} className="text-body">{item.meaningShort}</Clamp>
+            <Clamp lines={3} className="text-body text-muted-foreground">{item.explanation}</Clamp>
             <div className="mt-auto space-y-sm border-t border-border pt-sm">
-              <Labeled label={t("fromLesson")} lang="ja">{item.source.textJp}</Labeled>
-              <Labeled label={t("tryIt")} lang="ja" description={t("practiceLabel")}>{item.tryIt}</Labeled>
+              <Labeled label={t("fromLesson")} lang="ja" lines={2}>{item.source.textJp}</Labeled>
+              <Labeled label={t("tryIt")} lang="ja" description={t("practiceLabel")} lines={2}>{item.tryIt}</Labeled>
             </div>
-          </Card>
+          </ExpandableCard>
         </li>
       ))}
     </ul>
@@ -188,10 +188,10 @@ function Culture({ items }: { items: CultureView[] }) {
     <ul className="grid gap-md sm:grid-cols-2">
       {items.map((item) => (
         <li key={`${item.title}-${item.source.lineId}`}>
-          <Card className="h-full space-y-sm p-lg">
+          <ExpandableCard className="flex h-full flex-col gap-sm p-lg">
             <h3 className="text-body-lg font-semibold">{item.title}</h3>
-            <p className="text-body text-muted-foreground">{item.body}</p>
-          </Card>
+            <Clamp lines={4} className="text-body text-muted-foreground">{item.body}</Clamp>
+          </ExpandableCard>
         </li>
       ))}
     </ul>
@@ -199,14 +199,20 @@ function Culture({ items }: { items: CultureView[] }) {
 }
 
 /** A small caption label over one value; `description` is screen-reader text (e.g. "practice example"). */
-function Labeled({ label, children, lang, description }: { label: string; children: ReactNode; lang?: string; description?: string }) {
+function Labeled({ label, children, lang, description, lines }: {
+  label: string;
+  children: ReactNode;
+  lang?: string;
+  description?: string;
+  lines: 2 | 3;
+}) {
   return (
     <div className="space-y-2xs">
       <p className="text-caption font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
         {description && <span className="sr-only"> — {description}</span>}
       </p>
-      <p lang={lang} className="text-body">{children}</p>
+      <Clamp lines={lines} lang={lang} className="text-body">{children}</Clamp>
     </div>
   );
 }

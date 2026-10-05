@@ -7,7 +7,7 @@ import { createSqlKnowledgeStore } from "@/lib/knowledge/store";
 import type { KnowledgeLocale } from "@/lib/knowledge/types";
 import { rateLimit } from "@/lib/rate-limit";
 import { analysisStatusForReflection } from "../analysis/service";
-import { loadLessonSummary } from "../load-snapshot";
+import { authenticateSummary, loadLessonSummary } from "../load-snapshot";
 import { evidenceFingerprint, isEmptyEvidence, projectEvidence } from "./evidence";
 import { buildReflectionInput } from "./prompt";
 import { finalizeReflection, LESSON_REFLECTION, reflectionAiSchema, storedReflectionSchema } from "./schema";
@@ -24,6 +24,7 @@ export interface ReflectionDeps {
   config?: KnowledgeConfig;
   aiEnabled?: boolean;
   now?: Date;
+  authenticate?: typeof authenticateSummary;
   loadSummary?: typeof loadLessonSummary;
   analysisStatus?: typeof analysisStatusForReflection;
 }
@@ -45,12 +46,15 @@ export async function requestLessonReflection(
   | { kind: "ok"; body: ReflectionResponse }
 > {
   const ok = (body: ReflectionResponse) => ({ kind: "ok" as const, body });
-  const summary = await (deps.loadSummary ?? loadLessonSummary)(videoId);
-  if (!summary.ok) return summary.status === 401 ? { kind: "unauthorized" } : { kind: "not_found" };
-  const { userId, snapshot, video } = summary.data;
+  const auth = await (deps.authenticate ?? authenticateSummary)();
+  if (!auth) return { kind: "unauthorized" };
+  const { userId } = auth;
   const now = deps.now ?? new Date();
   const limited = rateLimit(`summary:reflection:${mode}:${userId}`, mode === "read" ? READ_LIMIT : GENERATE_LIMIT, now.getTime());
   if (!limited.ok) return { kind: "rate_limited", retryAfter: limited.retryAfter };
+  const summary = await (deps.loadSummary ?? loadLessonSummary)(videoId, auth);
+  if (!summary.ok) return summary.status === 401 ? { kind: "unauthorized" } : { kind: "not_found" };
+  const { snapshot, video, lines, analyses } = summary.data;
 
   const store = (deps.reflections ?? createSqlReflectionStore)(userId);
   const toView = (content: unknown, at: string): ReflectionView => ({ ...storedReflectionSchema.parse(content), generatedAt: at });
@@ -61,7 +65,7 @@ export async function requestLessonReflection(
 
   const evidence = projectEvidence(snapshot);
   if (isEmptyEvidence(evidence)) return ok({ state: "fallback", reason: "no_evidence" });
-  const analysis = await (deps.analysisStatus ?? analysisStatusForReflection)(videoId, locale);
+  const analysis = await (deps.analysisStatus ?? analysisStatusForReflection)(videoId, locale, { supabase: auth.supabase, lines, analyses });
   if (analysis.kind === "unusable") return ok({ state: "fallback", reason: "analysis_unusable" });
   if (analysis.kind !== "ready") return ok({ state: "pending", retryAfterMs: FOLLOWER_RETRY_MS, reflection: await latest() });
 

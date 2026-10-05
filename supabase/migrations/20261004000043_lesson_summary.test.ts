@@ -16,7 +16,8 @@ describe("lesson summary SQL contract (spec §3, §5.5, §6.2)", () => {
   it("schedules Review Tomorrow as the invoker, idempotently, never pushing a due card later", () => {
     expect(sql).toMatch(/create function schedule_review_tomorrow\(p_video uuid, p_targets jsonb, p_due timestamptz\) returns int language plpgsql security invoker set search_path = public/);
     expect(sql).toContain("on conflict (user_id, transcript_line_id) where source_kind = 'sentence' do update");
-    expect(sql).toContain("least(sentence_mining_cards.next_review_at, excluded.next_review_at)");
+    expect(sql).toContain("where sentence_mining_cards.next_review_at is not null and excluded.next_review_at < sentence_mining_cards.next_review_at");
+    expect(sql).toContain("get diagnostics v_rows = row_count; v_count := v_count + v_rows;");
     expect(sql).toContain("revoke all on function schedule_review_tomorrow(uuid, jsonb, timestamptz) from public, anon");
   });
   it("lesson_reflections is user-owned, cascades, and is readable only by its owner", () => {

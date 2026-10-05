@@ -8,6 +8,18 @@ import { requireUser, selectVideoById } from "@/lib/data/videos";
 import { createClient } from "@/lib/supabase/server";
 import { buildLessonSnapshot, lessonEvidenceSchema, type LessonSnapshot, type SavedCard, type SummaryLine } from "./snapshot";
 
+/** The signed-in learner and the client that proved it; callers rate-limit on it before any lesson load (m1). */
+export interface SummaryAuth {
+  supabase: ReturnType<typeof createClient>;
+  userId: string;
+}
+
+export async function authenticateSummary(): Promise<SummaryAuth | null> {
+  const supabase = createClient();
+  const user = await requireUser(supabase);
+  return user ? { supabase, userId: user.id } : null;
+}
+
 export interface LoadedSummary {
   userId: string;
   video: {
@@ -19,6 +31,8 @@ export interface LoadedSummary {
     durationSeconds: number | null;
   };
   lines: SummaryLine[];
+  /** The static line analyses the snapshot was built from; the lesson analysis key reuses them (m2). */
+  analyses: Map<string, StaticLineAnalysis>;
   hasTranscript: boolean;
   completed: boolean;
   snapshot: LessonSnapshot;
@@ -27,10 +41,11 @@ export interface LoadedSummary {
 
 export async function loadLessonSummary(
   videoId: string,
+  signedIn?: SummaryAuth,
 ): Promise<{ ok: true; data: LoadedSummary } | { ok: false; status: 401 | 404 }> {
-  const supabase = createClient();
-  const user = await requireUser(supabase);
-  if (!user) return { ok: false, status: 401 };
+  const auth = signedIn ?? await authenticateSummary();
+  if (!auth) return { ok: false, status: 401 };
+  const { supabase, userId } = auth;
   const video = await selectVideoById(supabase, videoId);
   if (!video) return { ok: false, status: 404 };
   const transcript = await getTranscript(videoId);
@@ -70,7 +85,7 @@ export async function loadLessonSummary(
     const { data: rows, error: grammarError } = await supabase
       .from("user_grammar_progress")
       .select("grammar_id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .in("grammar_id", chunk);
     if (grammarError) throw grammarError;
     return (rows ?? []) as { grammar_id: string }[];
@@ -79,7 +94,7 @@ export async function loadLessonSummary(
   return {
     ok: true,
     data: {
-      userId: user.id,
+      userId,
       video: {
         id: video.id,
         youtubeVideoId: video.youtube_video_id,
@@ -89,6 +104,7 @@ export async function loadLessonSummary(
         durationSeconds: video.duration_seconds,
       },
       lines,
+      analyses,
       hasTranscript: evidence.hasTranscript,
       completed: evidence.completed,
       snapshot: buildLessonSnapshot(evidence, lines, grammarSpans, savedGrammar.length),
