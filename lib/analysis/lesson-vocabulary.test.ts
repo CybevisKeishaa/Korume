@@ -20,9 +20,9 @@ const LINES = Array.from({ length: 1_500 }, (_, i) => ({
 
 function token(entSeq: number | null, vocabId: string | null = null): AnalysisToken {
   return {
-    index: 0, surface: "x", base: "x", reading: null, pos: entSeq === null ? "助詞" : "名詞", span: { start: 0, end: 1 },
+    index: 0, surface: "x", base: "x", reading: null, pos: entSeq === null ? "助詞" : "名詞", posDetail1: null, span: { start: 0, end: 1 },
     entries: entSeq === null ? [] : [{ entSeq, headword: `w${entSeq}`, reading: "よみ", glossEn: `g${entSeq}`, jlpt: null }],
-    vocabId,
+    vocabId, curatedVi: null,
   };
 }
 

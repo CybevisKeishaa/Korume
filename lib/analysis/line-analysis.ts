@@ -6,28 +6,20 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getActiveSnapshotId } from "@/lib/dictionary/snapshot";
 import { tokenize } from "@/lib/japanese/tokenizer";
 import { matchGrammar, type GrammarPattern } from "./grammar-matcher";
+import { LEXICAL_RESOLVER_VERSION, isAutomaticLookupEligible, resolveLexeme, type EntryRow, type VocabRow } from "./lexical-resolver";
 import { readMastery } from "./learning-state";
 import { tokenSpans } from "./spans";
-import type { AnalysisScope, AnalysisToken, DictionaryMatch, LexicalLineAnalysis, LexicalLineAnalysisDto, LineAnalysisDto, StaticLineAnalysis } from "./types";
+import type { AnalysisScope, AnalysisToken, LexicalLineAnalysis, LexicalLineAnalysisDto, LineAnalysisDto, StaticLineAnalysis } from "./types";
+
+// Spec §1.1: Ask Korume's tools still import these from here; the one ranking and the one EntryRow live in the resolver.
+export { entriesFor, type EntryRow } from "./lexical-resolver";
 
 type Supabase = ReturnType<typeof createClient>;
 
 const ANALYSIS_LIMIT = { limit: 120, windowMs: 60_000 };
-/** Words worth a dictionary card. Particles, auxiliaries, symbols, fillers and prefixes are not looked up. */
-const CONTENT_POS = new Set(["名詞", "動詞", "形容詞", "副詞", "連体詞", "感動詞", "接続詞"]);
-const ENTRIES_PER_TOKEN = 3;
 const GRAMMAR_TTL_MS = 60_000;
 // ponytail: an in-process memo bounded by insertion order; a shared cache when the app runs on many instances.
 const MEMO_LIMIT = 5_000;
-
-export interface EntryRow {
-  ent_seq: number;
-  kanji_forms: string[];
-  kana_forms: string[];
-  senses: { gloss?: string[] }[];
-  common: boolean;
-  jlpt: number | null;
-}
 
 export interface LineText {
   id: string;
@@ -91,30 +83,6 @@ export async function lookupForms(supabase: Supabase, snapshotId: string, forms:
   return [...byEntSeq.values()];
 }
 
-function toMatch(entry: EntryRow, form: string): DictionaryMatch {
-  return {
-    entSeq: entry.ent_seq,
-    headword: entry.kanji_forms.includes(form) ? form : entry.kanji_forms[0] ?? entry.kana_forms[0] ?? form,
-    reading: entry.kana_forms[0] ?? "",
-    glossEn: (entry.senses[0]?.gloss ?? []).slice(0, 3).join("; "),
-    jlpt: entry.jlpt,
-  };
-}
-
-/** Base form first, then surface; a written (kanji) match beats a kana one, then common words, then ent_seq. */
-export function entriesFor(base: string, surface: string, entries: EntryRow[]): DictionaryMatch[] {
-  for (const form of [base, surface]) {
-    const hits = entries
-      .filter((entry) => entry.kanji_forms.includes(form) || entry.kana_forms.includes(form))
-      .sort((a, b) =>
-        Number(b.kanji_forms.includes(form)) - Number(a.kanji_forms.includes(form)) ||
-        Number(b.common) - Number(a.common) ||
-        a.ent_seq - b.ent_seq);
-    if (hits.length > 0) return hits.slice(0, ENTRIES_PER_TOKEN).map((entry) => toMatch(entry, form));
-  }
-  return [];
-}
-
 /**
  * Shared, learner-free analyses for many lines at once: memo hits are returned as they are, and every miss is
  * tokenized and looked up in ONE batched dictionary pass. Never holds mastery or any learner state.
@@ -129,7 +97,9 @@ export async function staticAnalyses(
     getActiveSnapshotId(),
     scope === "full" ? grammarPatterns(supabase, now) : Promise.resolve(null),
   ]);
-  const keyOf = (line: LineText) => `${scope}|${line.id}|${snapshotId ?? "none"}|${grammar?.revision ?? ""}|${line.textJp}`;
+  // Spec §1.10: a resolver change must not serve analyses ranked by the old one.
+  const keyOf = (line: LineText) =>
+    `${scope}|r${LEXICAL_RESOLVER_VERSION}|${line.id}|${snapshotId ?? "none"}|${grammar?.revision ?? ""}|${line.textJp}`;
   const result = new Map<string, StaticLineAnalysis | LexicalLineAnalysis>();
   const misses: LineText[] = [];
   for (const line of lines) {
@@ -144,29 +114,31 @@ export async function staticAnalyses(
     const spans = tokenSpans(line.textJp, tokens.map((token) => token.surface));
     return { line, tokens: tokens.map((token, index) => ({ ...token, span: spans[index] ?? { start: 0, end: 0 } })) };
   }));
-  const content = tokenized.flatMap(({ tokens }) => tokens).filter((token) => CONTENT_POS.has(token.pos));
+  const content = tokenized.flatMap(({ tokens }) => tokens).filter(isAutomaticLookupEligible);
   const forms = [...new Set(content.flatMap((token) => [token.base, token.surface]))];
   const entries = snapshotId && forms.length > 0 ? await lookupForms(supabase, snapshotId, forms) : [];
-  const vocab = await fetchByIdChunks(forms, async (chunk) => {
-    const { data, error } = await supabase.from("vocab").select("id, word").in("word", chunk);
+  const headwords = [...new Set([...forms, ...entries.flatMap((entry) => entry.kanji_forms)])];
+  // Spec §1.7: the (word, reading) join happens in the resolver, so every candidate headword's rows come back.
+  const vocab = await fetchByIdChunks(headwords, async (chunk) => {
+    const { data, error } = await supabase.from("vocab").select("id, word, reading, meaning_vi").in("word", chunk);
     if (error) throw error;
-    return (data ?? []) as { id: string; word: string }[];
+    return (data ?? []) as VocabRow[];
   });
-  const vocabByWord = new Map(vocab.map((row) => [row.word, row.id]));
 
   for (const { line, tokens } of tokenized) {
     const analysisTokens: AnalysisToken[] = tokens.map((token, index) => {
-      const lookedUp = CONTENT_POS.has(token.pos);
-      const matches = lookedUp ? entriesFor(token.base, token.surface, entries) : [];
+      const resolved = isAutomaticLookupEligible(token) ? resolveLexeme(token, entries, vocab) : null;
       return {
         index,
         surface: token.surface,
         base: token.base,
         reading: token.reading,
         pos: token.pos,
+        posDetail1: token.posDetail1,
         span: token.span,
-        entries: matches,
-        vocabId: lookedUp ? vocabByWord.get(token.base) ?? vocabByWord.get(matches[0]?.headword ?? "") ?? null : null,
+        entries: resolved?.matches ?? [],
+        vocabId: resolved?.vocabId ?? null,
+        curatedVi: resolved?.curatedVi ?? null,
       };
     });
     const analysis = grammar

@@ -43,7 +43,7 @@ beforeEach(() => {
   const spans = tokenSpans(TEXT, ["𠮷野家", "で", "今日", "は", "雨", "です", "。"]);
   vi.mocked(staticAnalyses).mockResolvedValue(new Map([[LINE_ID, {
     lineId: LINE_ID, snapshotId: "s", grammar: [],
-    tokens: spans.map((span, index) => ({ index, surface: TEXT.slice(span.start, span.end), base: "", reading: null, pos: "名詞", span, entries: [], vocabId: null })),
+    tokens: spans.map((span, index) => ({ index, surface: TEXT.slice(span.start, span.end), base: "", reading: null, pos: "名詞", posDetail1: null, span, entries: [], vocabId: null, curatedVi: null })),
   }]]));
   useUser(USER);
 });

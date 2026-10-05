@@ -4,9 +4,9 @@ import { analysisFingerprint, buildAnalysisInput, GRAMMAR_CANDIDATE_CAP, VOCABUL
 
 function token(surface: string, entSeq: number | null, start = 0): AnalysisToken {
   return {
-    index: 0, surface, base: surface, reading: null, pos: "名詞", span: { start, end: start + surface.length },
+    index: 0, surface, base: surface, reading: null, pos: "名詞", posDetail1: null, span: { start, end: start + surface.length },
     entries: entSeq === null ? [] : [{ entSeq, headword: surface, reading: "よみ", glossEn: "gloss", jlpt: null }],
-    vocabId: null,
+    vocabId: null, curatedVi: null,
   };
 }
 function grammar(grammarPointId: string, start: number, end: number): GrammarMatch {

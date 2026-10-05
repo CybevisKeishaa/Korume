@@ -15,8 +15,8 @@ const BACK = "inline-flex h-control-sm items-center gap-2xs rounded-md px-xs tex
 
 function commonWordToken(word: KanjiCommonWord): AnalysisToken {
   return {
-    index: -1, surface: word.headword, base: word.headword, reading: null, pos: "", span: { start: 0, end: 0 },
-    entries: [{ entSeq: word.entSeq, headword: word.headword, reading: word.reading, glossEn: word.glossEn, jlpt: null }], vocabId: null,
+    index: -1, surface: word.headword, base: word.headword, reading: null, pos: "", posDetail1: null, span: { start: 0, end: 0 },
+    entries: [{ entSeq: word.entSeq, headword: word.headword, reading: word.reading, glossEn: word.glossEn, jlpt: null }], vocabId: null, curatedVi: null,
   };
 }
 
