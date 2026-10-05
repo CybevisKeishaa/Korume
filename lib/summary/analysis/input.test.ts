@@ -91,4 +91,16 @@ describe("analysisFingerprint", () => {
     expect(analysisFingerprint({ ...input, vocabulary: [{ ...input.vocabulary[0]!, surface: "食" }] })).not.toBe(before);
     expect(analysisFingerprint({ ...input, grammar: [{ ...input.grammar[0]!, span: "もい" }] })).not.toBe(before);
   });
+
+  it("changes the analysis fingerprint when the resolver changes the candidate set (spec §1.10)", () => {
+    const line = { id: "l-1", textJp: "話すんです" };
+    const tok = (surface: string, posDetail1: string, entSeq: number): AnalysisToken => ({
+      index: 0, surface, base: surface, reading: null, pos: "名詞", posDetail1, span: { start: 0, end: surface.length },
+      entries: [{ entSeq, headword: surface, reading: surface, glossEn: "", jlpt: null }], vocabId: null, curatedVi: null,
+    });
+    const before = buildAnalysisInput([line], new Map([["l-1", { lineId: "l-1", snapshotId: "s", grammar: [], tokens: [tok("話す", "自立", 1), tok("ん", "自立", 2)] }]]));
+    const after = buildAnalysisInput([line], new Map([["l-1", { lineId: "l-1", snapshotId: "s", grammar: [], tokens: [tok("話す", "自立", 1), tok("ん", "非自立", 2)] }]]));
+    expect(after.vocabulary.map((item) => item.entSeq)).toEqual([1]);
+    expect(analysisFingerprint(after)).not.toBe(analysisFingerprint(before));
+  });
 });

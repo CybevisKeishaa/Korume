@@ -1,5 +1,8 @@
 import "server-only";
 import type { createClient } from "@/lib/supabase/server";
+import { meaningFor } from "@/lib/analysis/meaning";
+import type { AnalysisToken } from "@/lib/analysis/types";
+import type { KnowledgeLocale } from "@/lib/knowledge/types";
 import { getActiveSnapshotId } from "@/lib/dictionary/snapshot";
 import type { SummaryLine } from "../snapshot";
 import type { StoredAnalysis } from "./schema";
@@ -7,7 +10,13 @@ import { posKey, type LessonAnalysisView, type LineRef } from "./view";
 
 interface EntryRow { ent_seq: number; kanji_forms: string[]; kana_forms: string[]; senses: { pos?: string[]; gloss?: string[] }[]; common: boolean; jlpt: number | null }
 
-export async function hydrateAnalysis(supabase: ReturnType<typeof createClient>, stored: StoredAnalysis, lines: SummaryLine[]): Promise<LessonAnalysisView> {
+export async function hydrateAnalysis(
+  supabase: ReturnType<typeof createClient>,
+  stored: StoredAnalysis,
+  lines: SummaryLine[],
+  analyses: Map<string, { tokens: AnalysisToken[] }>,
+  locale: KnowledgeLocale,
+): Promise<LessonAnalysisView> {
   const lineOf = new Map(lines.map((line) => [line.id, line]));
   const ref = (lineId: string): LineRef | null => {
     const line = lineOf.get(lineId);
@@ -33,12 +42,16 @@ export async function hydrateAnalysis(supabase: ReturnType<typeof createClient>,
     words: stored.words.flatMap((word) => {
       const entry = entries.get(word.entSeq);
       const source = ref(word.sourceLineId);
-      if (!entry || !source) return [];
+      // Spec §1.9: the resolved token on the source line, never kanji_forms[0] / kana_forms[0].
+      const token = analyses.get(word.sourceLineId)?.tokens
+        .find((candidate) => candidate.surface === word.surface && candidate.entries[0]?.entSeq === word.entSeq);
+      const lexeme = token?.entries[0];
+      if (!entry || !source || !token || !lexeme) return [];
       const sense = entry.senses[0];
       return [{
-        entSeq: word.entSeq, surface: word.surface,
-        written: entry.kanji_forms[0] ?? entry.kana_forms[0] ?? word.surface, reading: entry.kana_forms[0] ?? "",
-        meaning: (sense?.gloss ?? []).slice(0, 3).join("; "), posKey: posKey(sense?.pos?.[0]),
+        entSeq: word.entSeq, surface: word.surface, written: lexeme.headword, reading: lexeme.reading,
+        ...meaningFor({ glossEn: lexeme.glossEn, curatedVi: token.curatedVi }, locale),
+        posKey: posKey(sense?.pos?.[0]),
         jlpt: entry.jlpt === null ? null : `N${entry.jlpt}`, common: entry.common,
         whyItMatters: word.whyItMatters, usageNote: word.usageNote, source,
       }];

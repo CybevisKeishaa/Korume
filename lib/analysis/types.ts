@@ -73,6 +73,8 @@ export interface LessonVocabularyItem {
   occurrences: number;
   jlpt: number | null;
   vocabId: string | null;
+  /** Curated Vietnamese meaning of the resolved (headword, reading), or null (spec §1.7). */
+  curatedVi: string | null;
   /** This learner's SRS stage, or null when the word is not curated or not yet studied. */
   mastery: number | null;
   exampleLineIds: string[];

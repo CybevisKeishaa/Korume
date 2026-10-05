@@ -18,7 +18,7 @@ const evidence: ReflectionEvidence = projectEvidence({
 const SOURCE = { lineId: "line-a", textJp: "注文をお願いします", startTime: 0, endTime: 2 };
 const view: LessonAnalysisView = {
   overview: "Ordering coffee at a café.",
-  words: [{ entSeq: 1, surface: "注文", written: "注文", reading: "ちゅうもん", meaning: "order", posKey: "noun", jlpt: "N3", common: true, whyItMatters: "w", usageNote: "u", source: SOURCE }],
+  words: [{ entSeq: 1, surface: "注文", written: "注文", reading: "ちゅうもん", meaning: "order", meaningLocale: "en", meaningSource: "jmdict", posKey: "noun", jlpt: "N3", common: true, whyItMatters: "w", usageNote: "u", source: SOURCE }],
   expressions: [{ expression: "お願いします", commonness: "very_common", meaningUse: "m", nuance: "n", source: SOURCE }],
   grammar: [{ grammarId: "g", title: "〜をお願いします", jlpt: "N5", meaningShort: "please", explanation: "e", tryIt: "t", span: "お願いします", source: SOURCE }],
   culture: [],

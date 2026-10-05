@@ -13,8 +13,8 @@ const line = { lineId: "11111111-1111-4111-8111-111111111111", textJp: "コー�
 const view: LessonAnalysisView = {
   overview: "",
   words: [
-    { entSeq: 1, surface: "注文", written: "注文", reading: "ちゅうもん", meaning: "order", posKey: "noun", jlpt: "N4", common: true, whyItMatters: "", usageNote: "", source: line },
-    { entSeq: 2, surface: "温かい", written: "温かい", reading: "あたたかい", meaning: "warm", posKey: "adjective", jlpt: null, common: false, whyItMatters: "", usageNote: "", source: line },
+    { entSeq: 1, surface: "注文", written: "注文", reading: "ちゅうもん", meaning: "order", meaningLocale: "en", meaningSource: "jmdict", posKey: "noun", jlpt: "N4", common: true, whyItMatters: "", usageNote: "", source: line },
+    { entSeq: 2, surface: "温かい", written: "温かい", reading: "あたたかい", meaning: "warm", meaningLocale: "en", meaningSource: "jmdict", posKey: "adjective", jlpt: null, common: false, whyItMatters: "", usageNote: "", source: line },
   ],
   expressions: [{ expression: "失礼します", commonness: "very_common", meaningUse: "Excuse me", nuance: "humble", source: line }],
   grammar: [{ grammarId: "g-1", title: "〜てもいいですか", jlpt: "N4", meaningShort: "May I", explanation: "Asks permission", tryIt: "写真を撮ってもいいですか。", span: "てもいい", source: line }],
@@ -187,7 +187,7 @@ describe("SummaryIsland", () => {
   it("View as list: the AI words, then the lesson's frequent words it did not pick, 8 per page; View as cards returns", async () => {
     const lessonWords = Array.from({ length: 12 }, (_, index) => ({
       entSeq: index + 1, headword: `語${index + 1}`, reading: `ご${index + 1}`, glossEn: `gloss ${index + 1}`, occurrences: 12 - index,
-      jlpt: null, vocabId: null, mastery: null, exampleLineIds: [line.lineId], exampleSurface: `語${index + 1}`,
+      jlpt: null, vocabId: null, curatedVi: null, mastery: null, exampleLineIds: [line.lineId], exampleSurface: `語${index + 1}`,
     }));
     const requests = stubFetch({
       [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }],

@@ -4,11 +4,11 @@ import type { WordView } from "./analysis/view";
 import { WORD_LIST_MAX, WORD_LIST_PAGE_SIZE, pageOf, wordRows } from "./word-list";
 
 const ai = (entSeq: number): WordView => ({
-  entSeq, surface: `s${entSeq}`, written: `w${entSeq}`, reading: `r${entSeq}`, meaning: `m${entSeq}`, posKey: "noun",
+  entSeq, surface: `s${entSeq}`, written: `w${entSeq}`, reading: `r${entSeq}`, meaning: `m${entSeq}`, meaningLocale: "en", meaningSource: "jmdict", posKey: "noun",
   jlpt: null, common: true, whyItMatters: "", usageNote: "", source: { lineId: `l${entSeq}`, textJp: "", startTime: 0, endTime: null },
 });
 const lesson = (entSeq: number, lines = [`x${entSeq}`]): LessonVocabularyItem => ({
-  entSeq, headword: `h${entSeq}`, reading: `k${entSeq}`, glossEn: `g${entSeq}`, occurrences: 1, jlpt: null, vocabId: null,
+  entSeq, headword: `h${entSeq}`, reading: `k${entSeq}`, glossEn: `g${entSeq}`, occurrences: 1, jlpt: null, vocabId: null, curatedVi: null,
   mastery: null, exampleLineIds: lines, exampleSurface: `e${entSeq}`,
 });
 
