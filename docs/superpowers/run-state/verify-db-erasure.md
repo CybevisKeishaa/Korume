@@ -53,11 +53,16 @@ Out of scope: the deletion UI, scheduler, Storage eraser, `close_account` tier (
 - Codex hit its quota (until 2026-10-10) mid round 1 and left mutation M7 written into the real gate
   file (FK drop + allowlist row removed); Claude removed both and finished the round.
 
+- Fresh `npx supabase db reset` (owner-approved, run by the owner from this worktree, 2026-10-05):
+  all ten `verify:db:*` PASS (erasure, summary, knowledge, korume, shadowing, settings, notes,
+  pronunciation, lesson-jobs, dictionary after the re-import).
+
 ## Working tree and environment
 
 - Owner: Claude
 - Worktree `.worktrees/verify-db-erasure` off master `0bdcfee`; `.env.local` copied from main.
-- Local DB holds the owner's Ep.729 + demo learner: no `db reset` without the owner's go-ahead.
+- Local DB restored after the reset: dictionary (jmdict 218 849), Ep.729 = `ba522023-8eba-4929-924f-35ae69eacf99`,
+  `demo.korume@example.com` / `password123` with its 5 evidence rows (matched by line text).
 
 ## Blockers
 
@@ -68,5 +73,4 @@ Out of scope: the deletion UI, scheduler, Storage eraser, `close_account` tier (
 
 ## Next actions
 
-1. Claude: full vitest, `code-reviewer` on the branch diff, commit.
-2. Owner: approve a fresh `db reset` for the final gate run, then merge decision.
+1. Owner: merge decision (`git merge --no-ff verify-db-erasure`, Claude merges).
