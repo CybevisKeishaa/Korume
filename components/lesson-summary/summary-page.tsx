@@ -9,7 +9,8 @@ import { SummaryIsland } from "./summary-island";
 /**
  * The Summary page (spec §7, Figma `125:1030`). Server-rendered deterministic blocks plus one client island; one
  * DOM in the order hero → reflection → words → expressions → grammar → culture → review → status → saved → next,
- * placed by `.lesson-summary-grid` areas.
+ * placed by `.lesson-summary-grid` areas; status / saved / next share one rail area so the main column never waits
+ * for the rail.
  */
 export function SummaryPage(props: SummaryPageProps & { locale: "vi" | "en" }) {
   return (
@@ -36,9 +37,11 @@ export function SummaryPage(props: SummaryPageProps & { locale: "vi" | "en" }) {
           fallback={props.fallback}
           savedCards={props.savedCards}
         />
-        <LessonStatusCard status={props.status} />
-        <SavedKnowledgeCard saved={props.saved} />
-        {props.nextLesson && <NextLessonCard next={props.nextLesson} />}
+        <div className="lesson-summary-rail">
+          <LessonStatusCard status={props.status} />
+          <SavedKnowledgeCard saved={props.saved} />
+          {props.nextLesson && <NextLessonCard next={props.nextLesson} />}
+        </div>
       </main>
     </div>
   );

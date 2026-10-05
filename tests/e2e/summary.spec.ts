@@ -206,6 +206,13 @@ test("10 · summary grid has desktop rail geometry and semantic document order",
   expect(status.x).toBeGreaterThan(words.x + words.width);
   expect(saved.y - (status.y + status.height)).toBeLessThanOrEqual(32);
   expect(next.y - (saved.y + saved.height)).toBeLessThanOrEqual(32);
+  // The main column never waits for the rail: Expressions follows Words and the rail follows Reflection.
+  const expressions = await box("expressions");
+  const reflection = await box("reflection");
+  const hero = await box("hero");
+  expect(expressions.y - (words.y + words.height)).toBeLessThanOrEqual(32);
+  expect(status.y - (reflection.y + reflection.height)).toBeLessThanOrEqual(32);
+  expect(words.y - (hero.y + hero.height)).toBeLessThanOrEqual(32);
   const names = ["hero", "reflection", "words", "expressions", "grammar", "culture", "review", "status", "saved", "next"];
   const domOrder = await page.locator("main [data-summary-area]").evaluateAll((elements) =>
     elements.map((element) => element.getAttribute("data-summary-area")),

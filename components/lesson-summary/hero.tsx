@@ -31,7 +31,7 @@ export function Hero({ title, thumbnailUrl, completed, jlptLevel, sentenceCount,
         <div aria-hidden className="absolute inset-0 -z-10 bg-cover bg-center" style={{ backgroundImage: `url(${JSON.stringify(thumbnailUrl)})` }} />
       )}
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-black/85 via-black/70 to-black/40" />
-      <div className="flex min-h-48 flex-col justify-end gap-md p-lg text-white">
+      <div className="flex h-full min-h-48 flex-col justify-end gap-md p-lg text-white">
         <p id="summary-hero-eyebrow" className="text-caption font-semibold uppercase tracking-wide text-primary">
           {completed ? t("complete") : t("summary")}
         </p>
