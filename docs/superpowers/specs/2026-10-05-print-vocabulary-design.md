@@ -5,7 +5,10 @@
 - Figma: none. Composition comes from the owner's sketch (§6) and existing tokens; the owner approves it in Chrome
   and on a real printout (§9).
 - Status: brainstormed with the owner 2026-10-05 in Q1–Q4 and sections (1)–(5) + (3b), each approved with
-  amendments, all folded in below — **frozen pending the owner's review of this text**. Next: `writing-plans`.
+  amendments, all folded in below. The owner reviewed the written text the same day; four technical amendments
+  (resolver default `vocabRows`, no vocab join on an ambiguous fallback, mascot decode inside the commit lifecycle,
+  logical-vs-scaled heights in the e2e) and one example fix are folded in — **approved and frozen**. Next:
+  `writing-plans`.
 - Parents: `2026-10-04-summary-analysis-design.md` (R5 lazy analysis, R6 grounded facts come from the database).
 - Implementer: Claude (Codex is out of quota until 2026-10-10).
 
@@ -29,7 +32,7 @@
 `lib/analysis/lexical-resolver.ts` — pure functions, no DB, no `server-only` I/O:
 
 ```ts
-resolveLexeme(token: ResolverToken, entries: EntryRow[], vocabRows: VocabRow[]): ResolvedLexeme | null
+resolveLexeme(token: ResolverToken, entries: EntryRow[], vocabRows: VocabRow[] = []): ResolvedLexeme | null
 isAutomaticLookupEligible(token): boolean   // popup: permissive
 isLessonVocabularyEligible(token): boolean  // lists: strict
 ```
@@ -40,7 +43,9 @@ shows. `readingMatch` is internal (tests, debugging); no UI reads it.
 
 `staticAnalyses` (`lib/analysis/line-analysis.ts`) keeps its batched DB reads and calls the resolver per token. Its
 `vocab` query widens from `id, word` to `id, word, reading, meaning_vi`. `entriesFor` and `toMatch` move into the
-resolver; `entriesFor(term, term, entries)` keeps its current signature for reading-less callers.
+resolver; `entriesFor(term, term, entries)` keeps its current signature for reading-less callers. Ask Korume tools
+call with no reading and no `vocabRows` (the default `[]`), so they get lexical resolution with `vocabId` and
+`curatedVi` null.
 
 Callers, all on the same resolution: Shadowing word popup (via `staticAnalyses`), `aggregateVocabulary`
 (`lib/analysis/lesson-vocabulary.ts`), `buildAnalysisInput` (`lib/summary/analysis/input.ts`), `hydrateAnalysis`
@@ -98,9 +103,10 @@ prefix" heuristic. Kana-only irregulars (`する → して`) may not stem-resol
 ### 1.7 `vocabId` and curated meaning
 
 Joined on `(word, reading)` = (resolved headword, resolved reading), both normalised to hiragana. Replaces
-`vocabByWord.get(token.base)`. When `readingMatch = "fallback"` and the entry has more than one kana form, no
-`vocabId` / `curatedVi` is attached unless exactly one `vocab` row has that `word` — a missing mastery is safer than a
-wrong one. `vocab` has no `ent_seq`; `(word, reading)` is its unique key (`vocab_word_reading_key`).
+`vocabByWord.get(token.base)`. When `readingMatch = "fallback"` and the entry has more than one kana form, **no
+`vocabId` and no `curatedVi` is attached** — `vocab` data never back-fills a reading the context did not confirm. They
+attach only when the resolved reading is unambiguous on its own (exact or stem match, or an entry with a single kana
+form). A missing mastery is safer than a wrong one. `vocab` has no `ent_seq`; `(word, reading)` is its unique key (`vocab_word_reading_key`).
 
 ### 1.8 Meaning at the edge
 
@@ -267,9 +273,17 @@ it. Content is never clipped and never shrunk.
 
 ### 3.5 Re-pagination and swap
 
-Selection, settings and font-load changes re-measure. A viewport resize does not. The preview keeps the last complete
-page set on screen while the hidden tree measures, then swaps to the new set **once**. Print is disabled while
-re-paginating, while anything is oversized, and until the first-page mascot's `decode()` resolves.
+Selection, settings and font-load changes re-measure. A viewport resize does not. A **complete page set** is
+committed only at the end of this lifecycle:
+
+```
+render measurement tree → await fonts.ready → measure + paginate → await mascot decode() → commit
+```
+
+Before the first complete commit, the preview shows a preparing state and the print root is empty. Afterwards the
+preview and the print root keep the last complete page set while a new generation runs, then swap to it **once**.
+Neither the Print button nor `Ctrl+P` can therefore capture a laid-out page whose mascot is not ready. The Print
+button is also disabled while re-paginating and while anything is oversized.
 
 ### 3.6 Preview scale
 
@@ -306,8 +320,8 @@ rendering them twice must not duplicate ids. Workspace controls live outside the
 ```
 
 The print root has no gap or margin outside the sheets. Each sheet is `210mm × 297mm`, `box-sizing: border-box`,
-`overflow: hidden` (absorbs sub-pixel rounding only; oversize is already blocked), `break-after: page` except the
-last.
+`overflow: hidden` (absorbs sub-pixel rounding only; oversize is already blocked), `break-inside: avoid` and
+`page-break-inside: avoid`, `break-after: page` except the last.
 
 Korume renders the complete page, header and footer itself and requests A4 with zero CSS page margin. Browser
 print-dialog options remain controlled by the browser and the user.
@@ -328,7 +342,7 @@ One template for both modes:
 
 ```
 苦手　にがて
-không giỏi; yếu về                       [EN] chip when meaningLocale = en
+poor (at); weak (in)  [EN]               chip shown because meaningLocale = en
 今回はね「私の苦手な人」について話します
 ───────────────────────────────────────
 ```
@@ -356,7 +370,7 @@ example in V1.
   "Ôn tập từ vựng" / "Tự kiểm tra từ vựng", the lesson title, a rule); continuation header on pages 2+ (one compact
   line: wordmark · lesson title, no mascot); footer on every page (`Korume · <document name>` left, `x / y` right).
 - **Mascot:** `public/mascot/poses/quill-writing.png` at a fixed 18mm box — layout never waits on the image's
-  intrinsic size. Print is enabled only after `decode()` resolves.
+  intrinsic size. Its `decode()` is part of the complete-page-set lifecycle (§3.5).
 - **Footer mark:** the same PNG with `grayscale(1)` and low opacity (~6–8%) in a fixed box inside the footer, clear of
   the wordmark and the page number, on every page. No new asset; no outline mark exists and none is invented. A design
   constant, on by default, not a learner setting; turned off in the design if the owner's real printout finds it
@@ -386,7 +400,8 @@ Written first, layer by layer.
 right-reading homophone with another headword does not beat the right headword; ん excluded from lesson vocabulary and
 from automatic lookup; one useful `非自立` token keeps its popup; アメリカ人's 人 keeps its popup and is not listed;
 Ask Korume without a reading ranks as today; same `word`, two `reading`s → two `vocabId`s, never cross-attached;
-fallback + ambiguous → no `vocabId`.
+fallback on a multi-reading entry → no `vocabId` and no `curatedVi`, even when exactly one `vocab` row has that word;
+a call without `vocabRows` resolves with both null.
 
 **Meaning (vitest, each with a mutation that turns it red).** `vi` + matching `(word, reading)` → curated, `vi`;
 `vi` without curated → JMdict EN, `meaningLocale: "en"`; curated row with the same word but another reading → not
@@ -405,12 +420,13 @@ reading or meaning; `JSON.parse(JSON.stringify(doc))` deep-equals `doc`; the `pr
 pages.
 
 **Workspace (component).** A setting change re-paginates; a resize does not; two quick `loadingdone`s commit only the
-newest; rapid setting changes never let a stale page set win; Print is disabled while re-paginating, when oversized,
-and before the mascot decodes.
+newest; rapid setting changes never let a stale page set win; Print is disabled while re-paginating and when
+oversized; nothing is committed to the preview or the print root before the mascot's `decode()` resolves.
 
 **Playwright (real Chrome, `AI_PROVIDER=none`, Ep.729).** `page.pdf()` page count equals DOM sheet count; no item's
-box crosses its sheet's bottom; at 1280×529 and at 375px wide the item heights are identical and only the scale
-differs; under `emulateMedia({ media: "print" })` only `[data-print-root]` is visible and the measurement tree is
+box crosses its sheet's bottom; at 1280×529 and at 375px wide, with the same settings, the **logical** item heights
+(measurement tree / `offsetHeight`, unscaled) and the page count are identical, and the preview's visual bounding box
+at 375px equals logical size × scale — only the scale changes with the viewport; under `emulateMedia({ media: "print" })` only `[data-print-root]` is visible and the measurement tree is
 absent; **dark theme + print-root computed font (Noto Sans JP) + page count in one case**, with paper text `#111` on
 white; a long lesson title still paginates correctly. Mutations: removing `await document.fonts.ready` and changing
 the paper height must each turn a test red.
