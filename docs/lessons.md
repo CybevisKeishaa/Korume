@@ -493,3 +493,9 @@ affected migration steps and both acceptance criteria with what replaced each.
 **Why:** A seeded row with a guessed key either misses (the test silently exercises the generate path) or matches only until the next version bump, and then fails for a reason unrelated to the change.
 **Evidence:** `summary-analysis` Task 16 — e2e cases 3, 4, 5, 9 and 10 stub `**/lesson-analysis**`; the live smoke (Ep.729, real Gemini) proved generation once per locale, sharing across learners and one reflection per learner. The v2 prompt change then moved `generator_version`, which a seeded row would have broken.
 **Applies to:** Summary analysis/reflection, knowledge sections, any fingerprint-keyed artifact.
+
+### L-046 — A "looks like romaji" check must be tested against English, and its regex against a failing input
+**Rule:** A heuristic that drops AI text for containing romaji needs a negative test list of real English glosses (not only short or obviously non-Hepburn words), and every alternation in its regex must start on a distinct letter sequence, proven by a timing test on a long almost-matching input.
+**Why:** English spelled in Latin often scans as valid Hepburn ("see you", "made in Japan", "banana", "button", "house"), so "every word is Hepburn" drops correct notes; and two branches that can both consume `ts` double the backtracking per `tsu` on a failing word, a ReDoS on model output.
+**Evidence:** `summary-analysis` `264ffeb` → review → `e8e074d`. The first validator flagged six English glosses and took 234 ms on 22 × `tsu` + `x` (≈2× per syllable). The fix requires a romaji-only marker (final ou/uu except "you", macron, tsu, -masu/-desu, standalone wo/wa/ga) and same-letter doubling; four mutations RED.
+**Applies to:** every content validator over AI prose (Summary culture, reflection, Ask Korume).

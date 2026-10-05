@@ -149,6 +149,12 @@ personal lesson-local Korume reflection, Review Tomorrow, saving words and expre
   `row_count` — a no-op conflict writes nothing and is not counted (SQL gate asserts 0 and 1). Each fix RED by
   mutation (7/7). Full vitest 550/4848, tsc 0, lint 0 errors, protocol valid. DB gates + Summary e2e still owed:
   Docker engine was down at commit time.
+- Review of `264ffeb` (code-reviewer): APPROVE WITH NITS, 0 Critical. I1 ReDoS in `HEPBURN_WORD` and I2 English
+  glosses dropped as romaji fixed in `e8e074d` (+ m4 transcript 401 → unauthorized, m7 re-measure on content change),
+  4/4 mutations RED. Follow-ups: m6 double-click toggles a card, m8 shared `summaryLines`, m9 covered by the owner
+  look. Owner 2026-10-05: "ổn rồi, merge đi" with a fresh reset first: `db reset` → all six `verify:db:*` PASS
+  (korume included), Summary + provider-identity e2e 12/12 (server `AI_PROVIDER=none`), full vitest 550 / 4850,
+  tsc 0, protocol valid. Owner accepted the layout as is (Words gap, rail gap under the clamped reflection).
 - Execution (owner 2026-10-04): Codex via Paseo, one task per run, packets in `.superpowers/sdd/summary-analysis/`;
   Claude reviews, runs DB/e2e gates and commits each task; tasks back to back.
 - Plan-code correction (Task 1 brief): Summary saves use insert + `23505` → re-read, not `upsert(onConflict)` —
@@ -166,9 +172,7 @@ None.
 
 ## Next actions
 
-0. With Docker up: `npx supabase db reset` (043 edited in place), re-import dictionary + Ep.729, all `verify:db:*`,
-   Summary e2e, then re-judge the Words gap at 1280×529 → full gates → whole-branch review (note
-   `route-group-provider-identity` as known test-isolation debt) → merge decision.
+0. MERGED to master (see the merge commit). Re-import dictionary + Ep.729 and restore the demo evidence locally.
 1. Owner Chrome look at 1280×529: worktree `next start` on :3000 with `AI_PROVIDER=gemini`, login
    `demo.korume@example.com` / `password123` (seeded evidence), `http://localhost:3000/vi/shadowing/52ccaa25-f48b-4ea4-94c1-32dfbb936666/summary`.
    Measured: header one row 44 px; reflection now spans two rows (`5ccc911`) so Words sits under the hero.
