@@ -77,4 +77,6 @@ Close the two Summary follow-ups left at the `summary-analysis` merge (`0bdcfee`
 ## Next actions
 
 1. Owner: Chrome look on :3000 (served from this worktree) and merge decision.
-2. Brainstorm the "Print vocabulary" screen (owner request; no implementation yet).
+2. Brainstorm the "Print vocabulary" screen (owner request; no implementation yet) — started 2026-10-05,
+   architectural path. Q1 asked and unanswered: what is the printout for — (1) review sheet word · reading ·
+   meaning · example line, (2) self-test with a hidden column, (3) cut-out flashcards, (4) other/combination.
