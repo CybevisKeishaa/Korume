@@ -4,6 +4,8 @@ export interface Token {
   reading: string | null;
   base: string;
   pos: string;
+  /** kuromoji's pos_detail_1 (非自立, 接尾, 数, …); null for "*". */
+  posDetail1: string | null;
 }
 
 /**

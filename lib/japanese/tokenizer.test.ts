@@ -60,3 +60,10 @@ describe(
     }, KUROMOJI_TIMEOUT);
   },
 );
+
+it("reports kuromoji's pos_detail_1, which separates a dependent ん from a content noun (spec §1.2)", async () => {
+  const tokens = await tokenize("話すんです");
+  expect(tokens.find((token) => token.surface === "ん")).toMatchObject({ pos: "名詞", posDetail1: "非自立", base: "ん" });
+  expect(tokens.find((token) => token.surface === "話す")).toMatchObject({ pos: "動詞", posDetail1: "自立" });
+  expect((await tokenize("です"))[0]?.posDetail1).toBeNull(); // kuromoji's "*"
+}, KUROMOJI_TIMEOUT);
