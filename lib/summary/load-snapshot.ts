@@ -6,7 +6,7 @@ import { fetchByIdChunks } from "@/lib/data/query-pagination";
 import { getTranscript } from "@/lib/data/transcripts";
 import { requireUser, selectVideoById } from "@/lib/data/videos";
 import { createClient } from "@/lib/supabase/server";
-import { buildLessonSnapshot, lessonEvidenceSchema, type LessonSnapshot, type SavedCard, type SummaryLine } from "./snapshot";
+import { buildLessonSnapshot, lessonEvidenceSchema, summaryLines, type LessonSnapshot, type SavedCard, type SummaryLine } from "./snapshot";
 
 /** The signed-in learner and the client that proved it; callers rate-limit on it before any lesson load (m1). */
 export interface SummaryAuth {
@@ -51,16 +51,7 @@ export async function loadLessonSummary(
   const transcript = await getTranscript(videoId);
   if (!transcript.ok) return { ok: false, status: transcript.status };
 
-  const lines: SummaryLine[] = (transcript.data?.lines ?? [])
-    .filter((line) => line.text_jp.trim() !== "")
-    .map((line, index) => ({
-      id: line.id,
-      index,
-      textJp: line.text_jp,
-      translation: line.text_translation,
-      startTime: line.start_time,
-      endTime: line.end_time,
-    }));
+  const lines = summaryLines(transcript.data?.lines);
 
   const { data, error } = await supabase.rpc("lesson_summary_evidence", {
     p_video: videoId,

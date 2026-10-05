@@ -95,10 +95,12 @@ describe("SummaryPage", () => {
     expect(screen.queryByRole("link", { name: "Start Next Lesson" })).toBeNull();
   });
 
-  it("puts the grid children in reading order: hero, island, status, saved, next", () => {
+  it("keeps reading order hero, island, status, saved, next, with the three rail cards in one rail area", () => {
     const { container } = render(<SummaryPage {...PROPS} />);
-    const areas = [...(container.querySelector("main")?.children ?? [])].map((child) => child.getAttribute("data-summary-area"));
+    const areas = [...container.querySelectorAll("main [data-summary-area]")].map((child) => child.getAttribute("data-summary-area"));
     expect(areas).toEqual(["hero", "island", "status", "saved", "next"]);
+    const rail = container.querySelector("main > .lesson-summary-rail");
+    expect([...(rail?.children ?? [])].map((child) => child.getAttribute("data-summary-area"))).toEqual(["status", "saved", "next"]);
   });
 });
 

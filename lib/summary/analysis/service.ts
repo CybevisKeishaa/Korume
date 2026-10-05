@@ -12,7 +12,7 @@ import type { KnowledgeKey, KnowledgeLocale, KnowledgeStore } from "@/lib/knowle
 import { rateLimit } from "@/lib/rate-limit";
 import { createServiceClient } from "@/lib/supabase/service";
 import { authenticateSummary, type SummaryAuth } from "../load-snapshot";
-import type { SummaryLine } from "../snapshot";
+import { summaryLines, type SummaryLine } from "../snapshot";
 import { finalizeAnalysis } from "./finalize";
 import { hydrateAnalysis } from "./hydrate";
 import { analysisFingerprint, buildAnalysisInput, type AnalysisInput } from "./input";
@@ -64,12 +64,7 @@ async function loadContext(supabase: SummaryAuth["supabase"], videoId: string, l
   if (!video) return { kind: "not_found" };
   const transcript = await getTranscript(videoId);
   if (!transcript.ok) return transcript.status === 401 ? { kind: "unauthorized" } : { kind: "not_found" };
-  const lines: SummaryLine[] = (transcript.data?.lines ?? [])
-    .filter((line) => line.text_jp.trim() !== "")
-    .map((line, index) => ({
-      id: line.id, index, textJp: line.text_jp, translation: line.text_translation,
-      startTime: line.start_time, endTime: line.end_time,
-    }));
+  const lines = summaryLines(transcript.data?.lines);
   if (lines.length === 0) return { kind: "no_transcript" };
   const analyses = await staticAnalyses(supabase, lines.map((line) => ({ id: line.id, textJp: line.textJp })), undefined, "full");
   return { kind: "ok", title: video.title, lines, ...analysisKey(videoId, locale, lines, analyses) };

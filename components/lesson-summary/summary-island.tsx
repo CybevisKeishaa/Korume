@@ -72,7 +72,7 @@ export function SummaryIsland({ videoId, youtubeVideoId, locale, hasTranscript, 
     <ClipPlayerProvider youtubeVideoId={youtubeVideoId}>
       <p role="status" aria-live="polite" className="sr-only">{announced ? t("ai.ready") : ""}</p>
       <ReflectionCard reflection={shown} fallback={fallback} videoId={videoId} reviewTargetTotal={reviewTargetTotal} />
-      <AnalysisBlocks response={hasTranscript ? analysis.body : NO_TRANSCRIPT} onRetry={analysis.retry} savedCards={savedCards} />
+      <AnalysisBlocks videoId={videoId} response={hasTranscript ? analysis.body : NO_TRANSCRIPT} onRetry={analysis.retry} savedCards={savedCards} />
       <ReviewList videoId={videoId} targets={reviewTargets} total={reviewTargetTotal} />
     </ClipPlayerProvider>
   );

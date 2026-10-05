@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { getTranscript } from "@/lib/data/transcripts";
 import { staticAnalyses } from "./line-analysis";
-import { getLessonVocabulary } from "./lesson-vocabulary";
+import { aggregateVocabulary, getLessonVocabulary } from "./lesson-vocabulary";
 import type { AnalysisToken, LexicalLineAnalysis } from "./types";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -55,7 +55,7 @@ describe("getLessonVocabulary", () => {
     assertPlainSerializableDto(result.page);
     expect(result.page.items[1]).toEqual({
       entSeq: 20, headword: "w20", reading: "よみ", glossEn: "g20", occurrences: 500, jlpt: null, vocabId: "v-ame", mastery: 4,
-      exampleLineIds: ["line-0000", "line-0003", "line-0006"],
+      exampleLineIds: ["line-0000", "line-0003", "line-0006"], exampleSurface: "x",
     });
     expect(result.page.items[0]?.mastery).toBeNull();
   });
@@ -77,5 +77,17 @@ describe("getLessonVocabulary", () => {
     await expect(getLessonVocabulary(VIDEO_ID, {})).resolves.toEqual({ kind: "not_found" });
     vi.mocked(createClient).mockReturnValue(createMockSupabase({ user: null, tables: {} }) as ReturnType<typeof createClient>);
     await expect(getLessonVocabulary(VIDEO_ID, {})).resolves.toEqual({ kind: "unauthorized" });
+  });
+});
+
+describe("aggregateVocabulary", () => {
+  it("keeps the form the word takes in its first example line, which a saved card must find in the sentence", () => {
+    const entry = { entSeq: 7, headword: "食べる", reading: "たべる", glossEn: "to eat", jlpt: null };
+    const items = aggregateVocabulary([
+      { id: "a", tokens: [{ surface: "食べた", entries: [entry], vocabId: null }] },
+      { id: "b", tokens: [{ surface: "食べる", entries: [entry], vocabId: null }] },
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ headword: "食べる", exampleLineIds: ["a", "b"], exampleSurface: "食べた" });
   });
 });

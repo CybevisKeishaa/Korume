@@ -1553,16 +1553,17 @@
 
 @layer components {
   /* The Summary page grid (summary spec 2026-10-04 §7.2). One DOM in reading order; the areas place it. Below the
-     existing lg breakpoint everything is one column in that order. From lg: two main tracks plus a 300px rail; the
-     rail's status / saved / next stack in auto rows beside Words, and the flexible sixth row absorbs the rest of
-     Words so the rail cards stay together. Reflection spans the hero row and the next one, so a reflection taller
-     than the hero pushes the rail down instead of opening a gap between the hero and Words. Culture and Review share the last main row (the frame puts them side by
-     side under Grammar, not in the rail). */
+     existing lg breakpoint everything is one column in that order. From lg: two main tracks plus a 300px rail. The
+     rail is ONE area holding status / saved / next (`.lesson-summary-rail`, contiguous in the DOM), spanning every
+     main row below the hero, so the main column never waits for the rail: a rail taller than Words used to share
+     Words' rows and left a ~200px hole above Expressions. The last row is flexible, so a short main column hands the
+     rail's spare height to the bottom instead of between sections. Reflection shares the hero row and the hero
+     stretches to it. Culture and Review share the last main row (the frame puts them side by side under Grammar). */
   .lesson-summary-grid {
     display: grid;
     gap: var(--space-lg);
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "hero" "reflection" "words" "expressions" "grammar" "culture" "review" "status" "saved" "next";
+    grid-template-areas: "hero" "reflection" "words" "expressions" "grammar" "culture" "review" "rail";
   }
 
   .lesson-summary-grid > [data-summary-area] {
@@ -1571,20 +1572,29 @@
     align-self: start;
   }
 
+  .lesson-summary-rail {
+    grid-area: rail;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    min-width: 0;
+    align-self: start;
+  }
+
   @media (min-width: 1024px) {
     .lesson-summary-grid {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 18.75rem);
-      grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto auto auto;
+      grid-template-rows: auto auto auto auto minmax(0, 1fr);
       grid-template-areas:
         "hero        hero        reflection"
-        "words       words       reflection"
-        "words       words       status"
-        "words       words       saved"
-        "words       words       next"
-        "words       words       ."
-        "expressions expressions ."
-        "grammar     grammar     ."
-        "culture     review      .";
+        "words       words       rail"
+        "expressions expressions rail"
+        "grammar     grammar     rail"
+        "culture     review      rail";
+    }
+
+    .lesson-summary-grid > [data-summary-area="hero"] {
+      align-self: stretch;
     }
   }
 }

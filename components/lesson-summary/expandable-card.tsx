@@ -7,6 +7,14 @@ import { cn } from "@/lib/utils";
 
 const Expanded = createContext(false);
 
+/** A card click waits this long before toggling, so the second click of a word-selecting double-click can cancel it.
+ *  500ms is the Windows default double-click time; it is also how long a card click takes to open the card.
+ *  ponytail: fixed window, a slower OS double-click setting still toggles once; read it from the OS if that is seen. */
+export const CARD_CLICK_DELAY_MS = 500;
+
+const isCut = (card: HTMLElement) =>
+  Array.from(card.querySelectorAll<HTMLElement>("[data-clamp]")).some((el) => el.scrollHeight > el.clientHeight + 1);
+
 /** Literal class names so Tailwind generates them. */
 const LINES = { 2: "line-clamp-2", 3: "line-clamp-3", 4: "line-clamp-4" } as const;
 
@@ -27,13 +35,14 @@ export function ExpandableCard({ children, className, ...props }: HTMLAttributes
   const ref = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [cut, setCut] = useState(false);
+  const pendingToggle = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(pendingToggle.current), []);
 
   useEffect(() => {
     const card = ref.current;
     // Open text is never cut: measuring now would drop `cut` and with it the "Show less" button.
     if (!card || expanded) return;
-    const measure = () =>
-      setCut(Array.from(card.querySelectorAll<HTMLElement>("[data-clamp]")).some((el) => el.scrollHeight > el.clientHeight + 1));
+    const measure = () => setCut(isCut(card));
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(card);
@@ -47,10 +56,15 @@ export function ExpandableCard({ children, className, ...props }: HTMLAttributes
   }, [expanded]);
 
   const onCardClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (!cut) return;
+    // Any click, a control's included, supersedes a pending card toggle.
+    window.clearTimeout(pendingToggle.current);
     if ((event.target as Element).closest("a, button, input, select, textarea, [role='button']")) return;
-    if (window.getSelection()?.toString()) return; // selecting text is not a toggle
-    setExpanded((value) => !value);
+    if (event.detail > 1) return; // the second click of a double-click cancels the first (m6)
+    pendingToggle.current = window.setTimeout(() => {
+      if (window.getSelection()?.toString()) return; // selecting text is not a toggle
+      // Opening text that stopped being cut would leave no "Show less" and no way back; closing is always allowed.
+      setExpanded((value) => (value || (ref.current && isCut(ref.current)) ? !value : value));
+    }, CARD_CLICK_DELAY_MS);
   };
 
   return (

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TranscriptLineRow } from "@/lib/data/transcripts";
 import { scoreDictation } from "@/lib/dictation/score";
 import {
   REVIEW_DICTATION_BELOW,
@@ -52,6 +53,23 @@ export interface SummaryLine {
   translation: string | null;
   startTime: number;
   endTime: number | null;
+}
+
+/** The Summary's view of a transcript: blank lines dropped, the rest numbered from 0. One home, because the
+ *  page load and the analysis route both derive the analysis cache key from these lines. */
+export function summaryLines(
+  rows: readonly Pick<TranscriptLineRow, "id" | "text_jp" | "text_translation" | "start_time" | "end_time">[] | undefined,
+): SummaryLine[] {
+  return (rows ?? [])
+    .filter((line) => line.text_jp.trim() !== "")
+    .map((line, index) => ({
+      id: line.id,
+      index,
+      textJp: line.text_jp,
+      translation: line.text_translation,
+      startTime: line.start_time,
+      endTime: line.end_time,
+    }));
 }
 
 export interface SavedCard {

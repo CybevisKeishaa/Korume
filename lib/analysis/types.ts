@@ -72,6 +72,8 @@ export interface LessonVocabularyItem {
   /** This learner's SRS stage, or null when the word is not curated or not yet studied. */
   mastery: number | null;
   exampleLineIds: string[];
+  /** The word as written in `exampleLineIds[0]` (e.g. 食べた for 食べる): what a saved card highlights in that line. */
+  exampleSurface: string;
 }
 
 export interface LessonVocabularyPage {

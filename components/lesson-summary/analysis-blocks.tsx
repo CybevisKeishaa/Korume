@@ -10,8 +10,9 @@ import type { SavedCard } from "@/lib/summary/snapshot";
 import { areaProps } from "./area";
 import { HearInLessonButton } from "./clip-player";
 import { Clamp, ExpandableCard } from "./expandable-card";
-import { SaveToggle } from "./save-toggle";
+import { SaveToggle, SavedCardsProvider } from "./save-toggle";
 import { SectionHeading } from "./section-heading";
+import { WordList } from "./word-list";
 
 type Kind = "words" | "expressions" | "grammar" | "culture";
 
@@ -24,13 +25,17 @@ const SKELETON: Record<Kind, { count: number; grid: string; height: string }> = 
 };
 
 /** Spec §7.2/§7.4: the four AI blocks and their pending, unavailable, retryable, empty and no-transcript states. */
-export function AnalysisBlocks({ response, onRetry, savedCards }: {
+export function AnalysisBlocks({ videoId, response, onRetry, savedCards }: {
+  videoId: string;
   response: AnalysisResponse | null;
   onRetry: () => void;
   savedCards: SavedCard[];
 }) {
   const t = useTranslations("shadowing.lessonSummary");
   const data = response?.status === "ready" ? response.data : null;
+  const [wordView, setWordView] = useState<"cards" | "list">("cards");
+  // Mounted on first use and then only hidden, so switching back and forth does not refetch the lesson words.
+  const [listOpened, setListOpened] = useState(false);
 
   const state = (kind: Kind): ReactNode => {
     switch (response?.status) {
@@ -55,27 +60,45 @@ export function AnalysisBlocks({ response, onRetry, savedCards }: {
     }
   };
 
-  const block = (kind: Kind, content: ReactNode, subtitle = false) => (
+  const block = (kind: Kind, content: ReactNode, subtitle = false, action?: ReactNode) => (
     <section {...areaProps(kind)} aria-labelledby={`summary-${kind}-title`} className="space-y-md">
-      <SectionHeading
-        id={`summary-${kind}-title`}
-        eyebrow={t(`${kind}.eyebrow`)}
-        title={t(`${kind}.title`)}
-        subtitle={subtitle ? t(`${kind}.subtitle` as "words.subtitle") : undefined}
-      />
+      <div className="flex flex-wrap items-end justify-between gap-sm">
+        <SectionHeading
+          id={`summary-${kind}-title`}
+          eyebrow={t(`${kind}.eyebrow`)}
+          title={t(`${kind}.title`)}
+          subtitle={subtitle ? t(`${kind}.subtitle` as "words.subtitle") : undefined}
+        />
+        {action}
+      </div>
       {content}
     </section>
   );
 
-  return (
+  const wordViewToggle = data && (
+    <Button variant="outline" size="sm" onClick={() => {
+      setListOpened(true);
+      setWordView((view) => (view === "cards" ? "list" : "cards"));
+    }}>
+      {wordView === "cards" ? t("words.viewList") : t("words.viewCards")}
+    </Button>
+  );
+  const words = data && (
     <>
-      {block("words", data ? <Words words={data.words} savedCards={savedCards} /> : state("words"), true)}
+      <div hidden={wordView !== "cards"}><Words words={data.words} savedCards={savedCards} /></div>
+      {listOpened && <div hidden={wordView !== "list"}><WordList videoId={videoId} words={data.words} savedCards={savedCards} /></div>}
+    </>
+  );
+
+  return (
+    <SavedCardsProvider savedCards={savedCards}>
+      {block("words", words ?? state("words"), true, wordViewToggle)}
       {block("expressions", data ? <Expressions items={data.expressions} savedCards={savedCards} /> : state("expressions"), true)}
       {block("grammar", data ? <Grammar items={data.grammar} /> : state("grammar"))}
       {block("culture", data
         ? data.culture.length > 0 ? <Culture items={data.culture} /> : <p className="text-body text-muted-foreground">{t("ai.empty")}</p>
         : state("culture"))}
-    </>
+    </SavedCardsProvider>
   );
 }
 

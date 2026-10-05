@@ -184,6 +184,47 @@ describe("SummaryIsland", () => {
     expect(grammar.getByText("写真を撮ってもいいですか。")).toBeInTheDocument();
   });
 
+  it("View as list: the AI words, then the lesson's frequent words it did not pick, 8 per page; View as cards returns", async () => {
+    const lessonWords = Array.from({ length: 12 }, (_, index) => ({
+      entSeq: index + 1, headword: `語${index + 1}`, reading: `ご${index + 1}`, glossEn: `gloss ${index + 1}`, occurrences: 12 - index,
+      jlpt: null, vocabId: null, mastery: null, exampleLineIds: [line.lineId], exampleSurface: `語${index + 1}`,
+    }));
+    const requests = stubFetch({
+      [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }],
+      [`GET ${REFLECTION}`]: [{ state: "ready", reflection }],
+      ["GET /api/videos/v-1/vocabulary"]: [{ data: { items: lessonWords, nextCursor: null, total: 12 } } as unknown as AnalysisResponse],
+    });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    fireEvent.click(within(area("words")).getByRole("button", { name: "View as list" }));
+    await flush();
+    expect(requests).toContain("GET /api/videos/v-1/vocabulary");
+    const list = within(area("words")).getByRole("list", { name: "Words from this lesson" });
+    const words = () => within(list).getAllByRole("listitem").map((item) => item.querySelector("[lang='ja']")?.textContent);
+    // 2 AI words + 10 lesson words (entSeq 1 and 2 are the AI's) = 12 rows → pages of 8 and 4.
+    expect(words()).toEqual(["注文", "温かい", "語3", "語4", "語5", "語6", "語7", "語8"]);
+    expect(within(area("words")).getByText("Page 1 of 2")).toBeInTheDocument();
+    expect(within(area("words")).getByRole("button", { name: "Previous page" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(within(area("words")).getByRole("button", { name: "Next page" }));
+    expect(words()).toEqual(["語9", "語10", "語11", "語12"]);
+    expect(within(area("words")).getByRole("button", { name: "Next page" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(within(area("words")).getByRole("button", { name: "View as cards" }));
+    expect(within(area("words")).getAllByRole("button", { name: "Hear in lesson" })).toHaveLength(view.words.length);
+    fireEvent.click(within(area("words")).getByRole("button", { name: "View as list" }));
+    await flush();
+    expect(requests.filter((request) => request === "GET /api/videos/v-1/vocabulary")).toHaveLength(1);
+  });
+
+  it("View as list still lists the AI words when the lesson words fail to load", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    fireEvent.click(within(area("words")).getByRole("button", { name: "View as list" }));
+    await flush();
+    expect(within(area("words")).getByRole("status")).toHaveTextContent("Could not load more words from the lesson.");
+    expect(within(within(area("words")).getByRole("list")).getAllByRole("listitem")).toHaveLength(view.words.length);
+  });
+
   it("puts a save toggle on each word and each Natural Japanese card", async () => {
     stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
     render(<SummaryIsland {...props} />);
