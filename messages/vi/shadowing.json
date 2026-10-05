@@ -425,7 +425,19 @@
       "common": "Thông dụng",
       "hear": "Nghe trong bài",
       "save": "Lưu {word}",
-      "unsave": "Bỏ lưu {word}"
+      "unsave": "Bỏ lưu {word}",
+      "viewList": "Xem dạng danh sách",
+      "viewCards": "Xem dạng thẻ",
+      "listLoading": "Đang tải thêm từ của bài…",
+      "listError": "Không tải được thêm từ của bài.",
+      "listLabel": "Từ vựng của bài",
+      "listPages": "Các trang danh sách từ",
+      "page": "Trang {page}/{count}",
+      "previous": "Trang trước",
+      "next": "Trang sau",
+      "columnWord": "Từ",
+      "columnReading": "Cách đọc",
+      "columnMeaning": "Nghĩa"
     },
     "pos": {
       "noun": "Danh từ",

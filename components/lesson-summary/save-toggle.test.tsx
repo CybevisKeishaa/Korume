@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render";
-import { SaveToggle } from "./save-toggle";
+import { SaveToggle, SavedCardsProvider } from "./save-toggle";
 
 const LINE = "11111111-1111-4111-8111-111111111111";
 const ok = (status: number, body?: unknown) => Promise.resolve({ ok: true, status, json: async () => body } as Response);
@@ -68,6 +68,26 @@ describe("SaveToggle", () => {
     resolve({ ok: true, status: 201, json: async () => ({ data: { id: "c-1" } }) } as Response);
     await flush();
     expect(button).not.toHaveAttribute("aria-busy");
+  });
+
+  it("under one provider, two toggles for the same word share one saved state (cards view and list view)", async () => {
+    const fetchMock = vi.fn().mockReturnValueOnce(ok(201, { data: { id: "c-9" } })).mockReturnValueOnce(ok(204));
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <SavedCardsProvider savedCards={[]}>
+        <div data-testid="cards"><SaveToggle sourceKind="vocabulary" lineId={LINE} targetWord="注文" savedCards={[]} /></div>
+        <div data-testid="list"><SaveToggle sourceKind="vocabulary" lineId={LINE} targetWord="注文" savedCards={[]} /></div>
+      </SavedCardsProvider>,
+    );
+    const toggles = screen.getAllByRole("button", { name: "Save 注文" });
+    expect(toggles).toHaveLength(2);
+    fireEvent.click(toggles[0] as HTMLElement);
+    await flush();
+    expect(screen.getAllByRole("button", { name: "Remove 注文 from saved" })).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole("button", { name: "Remove 注文 from saved" })[1] as HTMLElement);
+    await flush();
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/mining/c-9", { method: "DELETE" });
+    expect(screen.getAllByRole("button", { name: "Save 注文" })).toHaveLength(2);
   });
 
   it("reverts and shows the error text when the request fails", async () => {

@@ -25,7 +25,7 @@ type StaticItem = Omit<LessonVocabularyItem, "mastery">;
  * Every content word of the lesson, aggregated on the server by its best JMdict entry (spec §5.1): most
  * frequent first, then by ent_seq, so the order — and an offset cursor over it — is stable for a lesson.
  */
-export function aggregateVocabulary(lines: { id: string; tokens: { entries: { entSeq: number; headword: string; reading: string; glossEn: string; jlpt: number | null }[]; vocabId: string | null }[] }[]): StaticItem[] {
+export function aggregateVocabulary(lines: { id: string; tokens: { surface: string; entries: { entSeq: number; headword: string; reading: string; glossEn: string; jlpt: number | null }[]; vocabId: string | null }[] }[]): StaticItem[] {
   const byEntry = new Map<number, StaticItem>();
   for (const line of lines) {
     for (const token of line.tokens) {
@@ -33,7 +33,7 @@ export function aggregateVocabulary(lines: { id: string; tokens: { entries: { en
       if (!entry) continue;
       const item = byEntry.get(entry.entSeq) ?? {
         entSeq: entry.entSeq, headword: entry.headword, reading: entry.reading, glossEn: entry.glossEn,
-        occurrences: 0, jlpt: entry.jlpt, vocabId: token.vocabId, exampleLineIds: [],
+        occurrences: 0, jlpt: entry.jlpt, vocabId: token.vocabId, exampleLineIds: [], exampleSurface: token.surface,
       };
       item.occurrences += 1;
       item.vocabId ??= token.vocabId;

@@ -242,3 +242,22 @@ test("11 · a double-click selects a word in a clamped card without toggling it;
   await clamp.click({ position: { x: 8, y: 8 } });
   await expect(clamp).not.toHaveClass(/line-clamp-4/);
 });
+
+test("12 · View as list reads the real lesson vocabulary endpoint and lists the AI words first", async ({ page }) => {
+  await learner(page);
+  await readyAnalysis(page);
+  await summary(page);
+  const words = area(page, "words");
+  // Positive control, awaited: the analysis fixture rendered its word cards before anything is counted.
+  await expect(words.getByRole("button", { name: "Hear in lesson" }).first()).toBeVisible();
+  const cards = await words.getByRole("button", { name: "Hear in lesson" }).count();
+  const vocabulary = page.waitForResponse((response) => response.url().includes(`/api/videos/${data.videoId}/vocabulary`));
+  await words.getByRole("button", { name: "View as list" }).click();
+  expect((await vocabulary).status()).toBe(200);
+  const list = words.getByRole("list", { name: "Words from this lesson" });
+  await expect(list.getByRole("listitem")).not.toHaveCount(0);
+  expect(await list.getByRole("listitem").count()).toBeLessThanOrEqual(8);
+  await expect(words).not.toContainText("Could not load more words from the lesson.");
+  await words.getByRole("button", { name: "View as cards" }).click();
+  await expect(words.getByRole("button", { name: "Hear in lesson" })).toHaveCount(cards);
+});

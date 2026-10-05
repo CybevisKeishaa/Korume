@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { HEADER_ICON_BUTTON } from "@/components/shadowing-workspace/lesson-header-frame";
 import { BookmarkGlyph } from "@/components/shadowing-workspace/player-glyphs";
 import { useTranslations } from "@/lib/i18n";
 import { normalizeRef } from "@/lib/summary/refs";
 import type { SavedCard } from "@/lib/summary/snapshot";
+
+type CardsState = [SavedCard[], Dispatch<SetStateAction<SavedCard[]>>];
+const SharedSavedCards = createContext<CardsState | null>(null);
+
+/** One saved-card list for every toggle under it, so a word saved in the cards view shows saved in the list view
+ *  and the other way round (each toggle used to keep its own copy of the page-load snapshot). */
+export function SavedCardsProvider({ savedCards, children }: { savedCards: SavedCard[]; children: ReactNode }) {
+  const state = useState(savedCards);
+  return <SharedSavedCards.Provider value={state}>{children}</SharedSavedCards.Provider>;
+}
 
 /**
  * Spec §6.3: saves a word or expression as a sentence card from its source line, and removes it again. Initial
@@ -19,9 +29,11 @@ export function SaveToggle({ sourceKind, lineId, targetWord, savedCards }: {
 }) {
   const t = useTranslations("shadowing.lessonSummary");
   const ref = normalizeRef(targetWord);
-  const [cardId, setCardId] = useState<string | null>(
-    () => savedCards.find((card) => card.kind === sourceKind && card.lineId === lineId && normalizeRef(card.ref) === ref)?.cardId ?? null,
-  );
+  const shared = useContext(SharedSavedCards);
+  const local = useState(savedCards);
+  const [cards, setCards] = shared ?? local;
+  const isThis = (card: SavedCard) => card.kind === sourceKind && card.lineId === lineId && normalizeRef(card.ref) === ref;
+  const cardId = cards.find(isThis)?.cardId ?? null;
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -33,7 +45,7 @@ export function SaveToggle({ sourceKind, lineId, targetWord, savedCards }: {
       if (cardId) {
         const response = await fetch(`/api/mining/${cardId}`, { method: "DELETE" });
         if (!response.ok) throw new Error(String(response.status));
-        setCardId(null);
+        setCards((list) => list.filter((card) => card.cardId !== cardId));
       } else {
         const response = await fetch("/api/mining", {
           method: "POST",
@@ -42,7 +54,7 @@ export function SaveToggle({ sourceKind, lineId, targetWord, savedCards }: {
         });
         if (!response.ok) throw new Error(String(response.status));
         const created = (await response.json()) as { data: { id: string } };
-        setCardId(created.data.id);
+        setCards((list) => [...list.filter((card) => !isThis(card)), { cardId: created.data.id, kind: sourceKind, lineId, ref: targetWord }]);
       }
     } catch {
       setFailed(true);

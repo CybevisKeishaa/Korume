@@ -419,7 +419,19 @@
       "common": "Common",
       "hear": "Hear in lesson",
       "save": "Save {word}",
-      "unsave": "Remove {word} from saved"
+      "unsave": "Remove {word} from saved",
+      "viewList": "View as list",
+      "viewCards": "View as cards",
+      "listLoading": "Loading more words from the lesson…",
+      "listError": "Could not load more words from the lesson.",
+      "listLabel": "Words from this lesson",
+      "listPages": "Word list pages",
+      "page": "Page {page} of {count}",
+      "previous": "Previous page",
+      "next": "Next page",
+      "columnWord": "Word",
+      "columnReading": "Reading",
+      "columnMeaning": "Meaning"
     },
     "pos": {
       "noun": "Noun",
