@@ -38,8 +38,11 @@ export function aggregateVocabulary(lines: { id: string; tokens: AnalysisToken[]
         occurrences: 0, jlpt: entry.jlpt, vocabId: token.vocabId, curatedVi: token.curatedVi, exampleLineIds: [], exampleSurface: token.surface,
       };
       item.occurrences += 1;
-      item.vocabId ??= token.vocabId;
-      item.curatedVi ??= token.curatedVi;
+      // Spec P6/§1.7: a curated meaning and a mastery row belong to one reading; a later token read differently must not lend them.
+      if (entry.reading === item.reading) {
+        item.vocabId ??= token.vocabId;
+        item.curatedVi ??= token.curatedVi;
+      }
       if (item.exampleLineIds.length < EXAMPLE_LINES && !item.exampleLineIds.includes(line.id)) item.exampleLineIds.push(line.id);
       byEntry.set(entry.entSeq, item);
     }

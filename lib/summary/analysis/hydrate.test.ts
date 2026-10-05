@@ -78,9 +78,9 @@ describe("hydrateAnalysis", () => {
 
   it("takes written, reading and meaning from the resolved token, never kana_forms[0] (spec §1.9)", async () => {
     const view = await hydrateAnalysis(supabase(), STORED, LINES, ANALYSES, "vi");
-    const first = STORED.words[0]!;
+    const firstSeq = STORED.words[0]?.entSeq;
     expect(view.words[0]).toMatchObject({
-      written: `resolved-${first.entSeq}`, reading: `よみ${first.entSeq}`, meaning: "nghĩa", meaningLocale: "vi", meaningSource: "curated",
+      written: `resolved-${firstSeq}`, reading: `よみ${firstSeq}`, meaning: "nghĩa", meaningLocale: "vi", meaningSource: "curated",
     });
     expect(view.words[1]).toMatchObject({ entSeq: 200, meaningLocale: "en", meaningSource: "jmdict" });
   });

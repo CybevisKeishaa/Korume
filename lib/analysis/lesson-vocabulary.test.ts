@@ -101,3 +101,17 @@ describe("aggregateVocabulary eligibility (spec §1.6)", () => {
     expect(items.map((item) => [item.entSeq, item.curatedVi])).toEqual([[10, "mưa"]]);
   });
 });
+
+describe("aggregateVocabulary reading-bound fields (spec P6, §1.7)", () => {
+  const read = (reading: string, vocabId: string | null, curatedVi: string | null): AnalysisToken => {
+    return { ...token(7, vocabId, "一般", curatedVi), entries: [{ entSeq: 7, headword: "今日", reading, glossEn: "today", jlpt: null }] };
+  };
+  it("takes curatedVi and vocabId only from a token that shares the item's reading", () => {
+    const [item] = aggregateVocabulary([{ id: "a", tokens: [read("きょう", null, null), read("こんにち", "v-k", "xin chào")] }]);
+    expect(item).toMatchObject({ reading: "きょう", curatedVi: null, vocabId: null, occurrences: 2 });
+  });
+  it("still fills a null curatedVi from a later token with the same reading", () => {
+    const [item] = aggregateVocabulary([{ id: "a", tokens: [read("きょう", null, null), read("きょう", "v-k", "hôm nay")] }]);
+    expect(item).toMatchObject({ reading: "きょう", curatedVi: "hôm nay", vocabId: "v-k" });
+  });
+});
