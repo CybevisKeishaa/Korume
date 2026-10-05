@@ -23,6 +23,9 @@ import type { DeletionTier } from "./lifecycle";
  *  2. `on delete set null` columns — forum_posts.user_id, forum_comments.user_id,
  *     videos.added_by_user_id. Community content survives, anonymised. That is
  *     the intended GDPR outcome, not an oversight.
+ *     PRIVATE lessons owned solely by the user are instead deleted by
+ *     `erase_account_rows`; other videos keep their `set null` attribution.
+ *     `npm run verify:db:erasure` guards the complete cascade set.
  *  3. `auth.users`, banned here and deleted only at the 90-day purge.
  *
  * Step order inside `executeDeletion` — ban, THEN storage, THEN tombstone,
@@ -198,7 +201,7 @@ export async function executeDeletion(request: ExecuteDeletionRequest, now: Date
 
     // LAST: this cascades account_deletion_requests away too (see file
     // header) — the point past which revertToPending can no longer work.
-    const { error: deleteError } = await service.from("users").delete().eq("id", request.userId);
+    const { error: deleteError } = await service.rpc("erase_account_rows", { p_user: request.userId });
     if (deleteError) throw deleteError;
   }
 }
