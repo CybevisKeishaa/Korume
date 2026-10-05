@@ -2,11 +2,13 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonStyles } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "@/lib/i18n";
+import { Link } from "@/lib/i18n/navigation";
 import type { AnalysisResponse, CultureView, ExpressionView, GrammarView, WordView } from "@/lib/summary/analysis/view";
 import type { SavedCard } from "@/lib/summary/snapshot";
+import { printHref } from "@/lib/summary/word-list";
 import { areaProps } from "./area";
 import { HearInLessonButton } from "./clip-player";
 import { Clamp, ExpandableCard } from "./expandable-card";
@@ -83,6 +85,13 @@ export function AnalysisBlocks({ videoId, response, onRetry, savedCards }: {
       {wordView === "cards" ? t("words.viewList") : t("words.viewCards")}
     </Button>
   );
+  // Print works without the AI analysis, so the launcher shows in every state.
+  const wordActions = (
+    <div className="flex flex-wrap items-center gap-sm">
+      {wordViewToggle}
+      <Link href={printHref(videoId)} className={buttonStyles({ variant: "outline", size: "sm" })}>{t("words.print")}</Link>
+    </div>
+  );
   const words = data && (
     <>
       <div hidden={wordView !== "cards"}><Words words={data.words} savedCards={savedCards} /></div>
@@ -92,7 +101,7 @@ export function AnalysisBlocks({ videoId, response, onRetry, savedCards }: {
 
   return (
     <SavedCardsProvider savedCards={savedCards}>
-      {block("words", words ?? state("words"), true, wordViewToggle)}
+      {block("words", words ?? state("words"), true, wordActions)}
       {block("expressions", data ? <Expressions items={data.expressions} savedCards={savedCards} /> : state("expressions"), true)}
       {block("grammar", data ? <Grammar items={data.grammar} /> : state("grammar"))}
       {block("culture", data
@@ -131,6 +140,16 @@ function RetryButton({ retryAfter, onRetry }: { retryAfter: string; onRetry: () 
   );
 }
 
+/** Spec §1.8: an English fallback says so — it never passes for a Vietnamese meaning. */
+export function EnglishChip() {
+  const t = useTranslations("shadowing.lessonSummary.words");
+  return (
+    <abbr title={t("englishMeaningLabel")} className="ms-xs inline-block rounded-sm border border-border px-2xs align-middle text-caption font-semibold text-muted-foreground no-underline">
+      {t("englishMeaning")}
+    </abbr>
+  );
+}
+
 function Words({ words, savedCards }: { words: WordView[]; savedCards: SavedCard[] }) {
   const t = useTranslations("shadowing.lessonSummary");
   return (
@@ -145,7 +164,7 @@ function Words({ words, savedCards }: { words: WordView[]; savedCards: SavedCard
               </div>
               <SaveToggle sourceKind="vocabulary" lineId={word.source.lineId} targetWord={word.surface} savedCards={savedCards} />
             </div>
-            <Clamp lines={2} className="text-body">{word.meaning}</Clamp>
+            <Clamp lines={2} className="text-body">{word.meaning}{word.meaningLocale === "en" && <EnglishChip />}</Clamp>
             <div className="flex items-center justify-between gap-sm">
               {word.common ? <Badge variant="primary">{t("words.common")}</Badge> : <span />}
               <span className="text-caption text-muted-foreground">{t(`pos.${word.posKey}`)}</span>

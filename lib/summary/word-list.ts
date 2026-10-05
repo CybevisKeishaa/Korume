@@ -1,3 +1,4 @@
+import { meaningFor, type MeaningLocale, type MeaningSource } from "@/lib/analysis/meaning";
 import type { LessonVocabularyItem } from "@/lib/analysis/types";
 import type { WordView } from "./analysis/view";
 import { normalizeRef } from "./refs";
@@ -9,22 +10,33 @@ export const WORD_LIST_PAGE_SIZE = 8;
 /** One request covers the cap even when every AI pick is also near the top of the lesson list. */
 export const LESSON_WORDS_FETCH = 30;
 
+export type LessonWord = Pick<LessonVocabularyItem, "entSeq" | "headword" | "reading" | "glossEn" | "curatedVi" | "exampleLineIds" | "exampleSurface">;
+
 export interface WordRow {
   key: string;
   written: string;
   reading: string;
   meaning: string;
+  meaningLocale: MeaningLocale;
+  meaningSource: MeaningSource;
   /** The line a save attaches to, and the word saved. */
   lineId: string;
   targetWord: string;
 }
 
-export function wordRows(aiWords: WordView[], lessonWords: LessonVocabularyItem[] | null, max = WORD_LIST_MAX): WordRow[] {
+/** Spec §2.5: Summary's launcher; Print owns the route, Summary only links to it. */
+export function printHref(videoId: string): string {
+  return `/vocab/print?source=lesson&lesson=${videoId}&set=all`;
+}
+
+export function wordRows(aiWords: WordView[], lessonWords: LessonWord[] | null, locale: string, max = WORD_LIST_MAX): WordRow[] {
   const rows: WordRow[] = aiWords.map((word) => ({
     key: `ai-${word.entSeq}-${word.source.lineId}`,
     written: word.written,
     reading: word.reading,
     meaning: word.meaning,
+    meaningLocale: word.meaningLocale,
+    meaningSource: word.meaningSource,
     lineId: word.source.lineId,
     targetWord: word.surface,
   }));
@@ -36,7 +48,10 @@ export function wordRows(aiWords: WordView[], lessonWords: LessonVocabularyItem[
     const lineId = item.exampleLineIds[0];
     if (picked.has(item.entSeq) || !lineId) continue;
     // Saved as the form in that line, not the headword: review cards highlight the target inside the sentence.
-    const row = { key: `lesson-${item.entSeq}`, written: item.headword, reading: item.reading, meaning: item.glossEn, lineId, targetWord: item.exampleSurface };
+    const row = {
+      key: `lesson-${item.entSeq}`, written: item.headword, reading: item.reading,
+      ...meaningFor({ glossEn: item.glossEn, curatedVi: item.curatedVi }, locale), lineId, targetWord: item.exampleSurface,
+    };
     if (seen.has(saveIdentity(row))) continue;
     seen.add(saveIdentity(row));
     rows.push(row);

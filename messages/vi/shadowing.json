@@ -419,6 +419,9 @@
       "resume": "Tiếp tục Shadowing"
     },
     "words": {
+      "englishMeaning": "EN",
+      "englishMeaningLabel": "Nghĩa tiếng Anh — chưa có nghĩa tiếng Việt",
+      "print": "In từ vựng",
       "eyebrow": "Từ vựng đáng học",
       "title": "Những từ đáng nhớ",
       "subtitle": "Không phải mọi từ trong bài — chỉ những từ bạn sẽ dùng lại một cách tự nhiên.",
