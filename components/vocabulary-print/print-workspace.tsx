@@ -18,7 +18,7 @@ const FONT_DEBOUNCE_MS = 150;
 const SHEET_GAP_PX = 16;
 const SHEET_PX = { width: PAPER.widthMm * MM_TO_PX, height: PAPER.heightMm * MM_TO_PX };
 
-interface Committed { pages: VocabularyPrintItem[][]; settings: PrintSettings; oversized: VocabularyPrintItem[] }
+interface Committed { pages: VocabularyPrintItem[][]; settings: PrintSettings; oversized: VocabularyPrintItem[]; selected: number }
 
 /** Spec §3: one print workspace — selection and settings on the left, the committed A4 page set on the right. */
 export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { label: string; href: string; current: boolean }[] }) {
@@ -35,14 +35,17 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
   const measureRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
-  const labels: SheetLabels = {
+  const labelsFor = (mode: PrintSettings["mode"]): SheetLabels => ({
     wordmark: t("wordmark"),
-    documentName: settings.mode === "review" ? t("docReview") : t("docSelfTest"),
+    documentName: mode === "review" ? t("docReview") : t("docSelfTest"),
     title: doc.title,
-    footer: t("footer", { document: settings.mode === "review" ? t("docReview") : t("docSelfTest") }),
+    footer: t("footer", { document: mode === "review" ? t("docReview") : t("docSelfTest") }),
     pageNumber: (page, count) => t("pageNumber", { page, count }),
     englishMeaning: t("englishMeaning"),
-  };
+  });
+  const labels = labelsFor(settings.mode);
+  // Spec §3.5: the committed page set is atomic, so its labels follow the settings it was measured with.
+  const committedLabels = labelsFor(committed?.settings.mode ?? settings.mode);
 
   useEffect(() => setPortal(document.body), []);
 
@@ -71,14 +74,18 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
       const root = measureRef.current;
       if (mine !== generation.current || !root) return;
       const height = (role: string) => root.querySelector<HTMLElement>(`[data-measure="${role}"]`)?.getBoundingClientRect().height ?? 0;
-      const itemHeights = [...root.querySelectorAll<HTMLElement>('[data-measure="item"]')].map((el) => el.getBoundingClientRect().height);
+      const nodes = [...root.querySelectorAll<HTMLElement>('[data-measure="item"]')];
+      const itemHeights = nodes.map((el) => el.getBoundingClientRect().height);
+      // Map back by id read off the measured DOM, never by a closure index.
+      const byId = new Map(chosen.map((item) => [item.id, item]));
+      const itemsAt = (indexes: number[]) => indexes.flatMap((index) => byId.get(nodes[index]?.dataset.itemId ?? "") ?? []);
       const capacity = pageCapacity({
         content: height("content"), firstHeader: height("first-header"), continuationHeader: height("continuation-header"), footer: height("footer"),
       });
       const { pages, oversized } = paginate(itemHeights, capacity);
       await mascotReady();
       if (mine !== generation.current) return;
-      setCommitted({ pages: pages.map((page) => page.map((index) => chosen[index]!)), settings, oversized: oversized.map((index) => chosen[index]!) });
+      setCommitted({ pages: pages.map(itemsAt), settings, oversized: itemsAt(oversized), selected: chosen.length });
       setBusy(false);
     })();
   }, [chosen, settings, fontTick]);
@@ -119,7 +126,7 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
     <div className="grid gap-lg py-lg lg:grid-cols-[20rem_minmax(0,1fr)]">
       <aside className="flex max-h-[calc(100dvh-var(--header-height,4rem))] flex-col gap-md overflow-y-auto lg:sticky lg:top-0">
         <h1 className="text-heading font-bold">{t("heading")}</h1>
-        <nav className="flex gap-xs">
+        <nav aria-label={t("words")} className="flex gap-xs">
           {views.map((view) => (
             <Link key={view.href} href={view.href} aria-current={view.current ? "page" : undefined}
               className="rounded-md border border-border px-sm py-2xs text-caption aria-[current=page]:bg-muted aria-[current=page]:font-semibold">
@@ -169,13 +176,13 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
           </ul>
         </div>
         <p role="status" aria-live="polite" className="text-caption text-muted-foreground">
-          {busy && !committed ? t("preparing") : t("count", { selected: chosen.length, total: doc.items.length, pages: chosen.length === 0 ? 0 : pageCount })}
+          {!committed ? t("preparing") : t("count", { selected: committed.selected, total: doc.items.length, pages: committed.selected === 0 ? 0 : pageCount })}
         </p>
         {unresolved > 0 && <p className="text-caption text-muted-foreground">{t("unresolved", { count: unresolved })}</p>}
         {committed?.oversized.map((item) => (
           <p key={item.id} role="alert" className="text-caption text-destructive">{t("oversized", { word: item.surface })}</p>
         ))}
-        <Button className="sticky bottom-0 mt-auto" aria-disabled={blocked || undefined} onClick={() => { if (!blocked) window.print(); }}>
+        <Button className="sticky bottom-0 mt-auto aria-disabled:cursor-not-allowed aria-disabled:opacity-50" aria-disabled={blocked || undefined} onClick={() => { if (!blocked) window.print(); }}>
           {t("print")}
         </Button>
       </aside>
@@ -186,7 +193,7 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
           : committed && (
             <div style={{ height: previewHeight * scale }}>
               <div className="origin-top-left" style={{ width: SHEET_PX.width, transform: `scale(${scale})` }}>
-                <PrintSheets pages={committed.pages} settings={committed.settings} labels={labels} />
+                <PrintSheets pages={committed.pages} settings={committed.settings} labels={committedLabels} />
               </div>
             </div>
           )}
@@ -199,13 +206,13 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
         <div data-measure="continuation-header"><ContinuationHeader labels={labels} /></div>
         <div data-measure="footer"><Footer labels={labels} page={88} count={88} /></div>
         {chosen.map((item) => (
-          <div key={item.id} data-measure="item"><PrintItem item={item} settings={settings} englishMeaning={labels.englishMeaning} /></div>
+          <div key={item.id} data-measure="item" data-item-id={item.id}><PrintItem item={item} settings={settings} englishMeaning={labels.englishMeaning} /></div>
         ))}
       </div>
 
       {portal && createPortal(
         <div data-print-root="">
-          {committed && chosen.length > 0 && <PrintSheets pages={committed.pages} settings={committed.settings} labels={labels} />}
+          {committed && chosen.length > 0 && <PrintSheets pages={committed.pages} settings={committed.settings} labels={committedLabels} />}
         </div>,
         portal,
       )}

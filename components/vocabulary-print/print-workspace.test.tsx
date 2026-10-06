@@ -4,6 +4,7 @@ import { render } from "@/test/render";
 import type { PrintDocument, VocabularyPrintItem } from "@/lib/vocabulary/print/source";
 import * as paginateModule from "@/lib/vocabulary/print/paginate";
 import { mascotReady } from "@/lib/vocabulary/print/mascot";
+import { MM_TO_PX, PAPER } from "@/lib/vocabulary/print/paper";
 import { PrintWorkspace } from "./print-workspace";
 
 vi.mock("@/lib/i18n/navigation", () => ({ Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a> }));
@@ -30,7 +31,7 @@ beforeEach(() => {
   vi.spyOn(paginateModule, "paginate");
   vi.mocked(mascotReady).mockImplementation(() => Promise.resolve());
 });
-afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); itemHeight = 100; });
+afterEach(() => { vi.useRealTimers(); Reflect.deleteProperty(document, "fonts"); vi.restoreAllMocks(); vi.unstubAllGlobals(); itemHeight = 100; });
 
 const printButton = () => screen.getByRole("button", { name: "Print / Save PDF" });
 const printRoot = () => document.body.querySelector(":scope > [data-print-root]");
@@ -41,7 +42,11 @@ describe("PrintWorkspace (spec §3)", () => {
     // capacity: first 1000-100-60 = 840 → 8 items; continuation 1000-40-60 = 900 → 9 items; 20 items → 3 pages
     expect(await screen.findByText("20/20 words · 3 pages")).toBeInTheDocument();
     expect(printRoot()?.querySelectorAll(".vp-sheet")).toHaveLength(3);
+    expect(document.querySelectorAll("[data-preview] .vp-sheet")).toHaveLength(3);
     expect(printButton()).not.toHaveAttribute("aria-disabled");
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    fireEvent.click(printButton());
+    expect(print).toHaveBeenCalledTimes(1);
   });
 
   it("commits nothing and keeps Print disabled until the mascot decodes", async () => {
@@ -59,8 +64,10 @@ describe("PrintWorkspace (spec §3)", () => {
     render(<PrintWorkspace doc={doc(items(5))} views={views} />);
     await screen.findByText("5/5 words · 1 page");
     const calls = vi.mocked(paginateModule.paginate).mock.calls.length;
-    act(() => resizeCallback?.([{ contentRect: { width: 300 } } as ResizeObserverEntry], {} as ResizeObserver));
+    await act(async () => resizeCallback?.([{ contentRect: { width: 300 } } as ResizeObserverEntry], {} as ResizeObserver));
     expect(vi.mocked(paginateModule.paginate).mock.calls.length).toBe(calls);
+    const inner = document.querySelector<HTMLElement>("[data-preview] .origin-top-left");
+    expect(inner?.style.transform).toBe(`scale(${300 / (PAPER.widthMm * MM_TO_PX)})`);
     fireEvent.click(screen.getByRole("radio", { name: "Compact" }));
     await waitFor(() => expect(vi.mocked(paginateModule.paginate).mock.calls.length).toBe(calls + 1));
   });
@@ -84,11 +91,14 @@ describe("PrintWorkspace (spec §3)", () => {
     render(<PrintWorkspace doc={doc(items(4))} views={views} />);
     await screen.findByText("4/4 words · 1 page");
     const calls = vi.mocked(paginateModule.paginate).mock.calls.length;
-    act(() => { fonts.dispatchEvent(new Event("loadingdone")); fonts.dispatchEvent(new Event("loadingdone")); });
+    const paginated = () => vi.mocked(paginateModule.paginate).mock.calls.length;
+    await act(async () => { fonts.dispatchEvent(new Event("loadingdone")); });
+    await act(async () => { vi.advanceTimersByTime(50); });
+    await act(async () => { fonts.dispatchEvent(new Event("loadingdone")); });
+    await act(async () => { vi.advanceTimersByTime(200); });
+    await waitFor(() => expect(paginated()).toBe(calls + 1));
     await act(async () => { vi.advanceTimersByTime(300); });
-    await waitFor(() => expect(vi.mocked(paginateModule.paginate).mock.calls.length).toBe(calls + 1));
-    vi.useRealTimers();
-    Reflect.deleteProperty(document, "fonts");
+    expect(paginated()).toBe(calls + 1);
   });
 
   it("blocks printing, without clipping, when an item is taller than a page", async () => {
@@ -96,6 +106,12 @@ describe("PrintWorkspace (spec §3)", () => {
     render(<PrintWorkspace doc={doc(items(1))} views={views} />);
     expect(await screen.findByText(/is too long for one page/)).toBeInTheDocument();
     expect(printButton()).toHaveAttribute("aria-disabled", "true");
+    expect(printButton().className).toContain("aria-disabled:cursor-not-allowed");
+    expect(printButton().className).toContain("aria-disabled:opacity-50");
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined);
+    fireEvent.click(printButton());
+    expect(print).not.toHaveBeenCalled();
+    expect(document.querySelectorAll("[data-preview] .vp-item")).toHaveLength(1);
   });
 
   it("disables Print and shows the empty message when every word is deselected", async () => {
@@ -103,6 +119,7 @@ describe("PrintWorkspace (spec §3)", () => {
     await screen.findByText("2/2 words · 1 page");
     fireEvent.click(screen.getByRole("button", { name: "Select none" }));
     expect(await screen.findByText("0/2 words · 0 pages")).toBeInTheDocument();
+    expect(document.querySelector("[data-preview]")).toHaveTextContent("There are no words to print here yet.");
     expect(printButton()).toHaveAttribute("aria-disabled", "true");
   });
 
@@ -117,15 +134,34 @@ describe("PrintWorkspace (spec §3)", () => {
     expect(await screen.findByText("1 item has no reading or meaning on record.")).toBeInTheDocument();
   });
 
-  it("updates nothing after unmount while a measurement is in flight", async () => {
+  it("commits nothing after unmount while the font wait is still pending", async () => {
+    let ready!: () => void;
+    const fonts = Object.assign(new EventTarget(), { ready: new Promise<void>((resolve) => { ready = resolve; }) });
+    Object.defineProperty(document, "fonts", { value: fonts, configurable: true });
+    const { unmount } = render(<PrintWorkspace doc={doc(items(2))} views={views} />);
+    unmount();
+    await act(async () => ready());
+    expect(paginateModule.paginate).not.toHaveBeenCalled();
+    expect(printRoot()).toBeNull();
+  });
+
+  it("keeps the committed sheets' labels until the new page set commits", async () => {
+    render(<PrintWorkspace doc={doc(items(2))} views={views} />);
+    await screen.findByText("2/2 words · 1 page");
+    expect(printRoot()).toHaveTextContent("Vocabulary review");
     let decode!: () => void;
     vi.mocked(mascotReady).mockImplementation(() => new Promise<void>((resolve) => { decode = resolve; }));
-    const errors = vi.spyOn(console, "error");
-    const { unmount } = render(<PrintWorkspace doc={doc(items(2))} views={views} />);
-    await waitFor(() => expect(paginateModule.paginate).toHaveBeenCalled());
-    unmount();
+    fireEvent.click(screen.getByRole("radio", { name: "Self-test" }));
+    await waitFor(() => expect(decode).toBeDefined());
+    expect(printRoot()).toHaveTextContent("Vocabulary review");
+    expect(printRoot()).not.toHaveTextContent("Vocabulary self-test");
     await act(async () => decode());
-    expect(errors).not.toHaveBeenCalled();
-    expect(printRoot()).toBeNull();
+    expect(printRoot()).toHaveTextContent("Vocabulary self-test");
+  });
+
+  it("names the views navigation", async () => {
+    render(<PrintWorkspace doc={doc(items(1))} views={views} />);
+    await screen.findByText("1/1 words · 1 page");
+    expect(screen.getByRole("navigation", { name: "Words" })).toBeInTheDocument();
   });
 });
