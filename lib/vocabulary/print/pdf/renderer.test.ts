@@ -33,6 +33,21 @@ describe("renderPdf (spec W §6.3 steps 4–6)", () => {
     expect(page.pdf).toHaveBeenCalledWith({ preferCSSPageSize: true, printBackground: false });
     expect(context.close).toHaveBeenCalled();
   });
+  it("bounds the Chromium launch by the same 30s deadline", async () => {
+    await renderPdf("/vi/print-render/tok");
+    expect(chromium.launch).toHaveBeenCalledWith({ timeout: 30_000 });
+  });
+  it("normalises a PRINT_PDF_ORIGIN with a trailing slash, so same-origin requests still continue", async () => {
+    process.env.PRINT_PDF_ORIGIN = "http://127.0.0.1:3999/";
+    expect(printOrigin()).toBe("http://127.0.0.1:3999");
+    await renderPdf("/vi/print-render/tok");
+    expect(page.goto).toHaveBeenCalledWith("http://127.0.0.1:3999/vi/print-render/tok", expect.anything());
+    const handler = context.route.mock.calls[0]![1] as (route: { request: () => { url: () => string }; continue: () => void; abort: () => void }) => void;
+    const own = { request: () => ({ url: () => "http://127.0.0.1:3999/_next/static/x.css" }), continue: vi.fn(), abort: vi.fn() };
+    handler(own);
+    expect(own.continue).toHaveBeenCalled();
+    expect(own.abort).not.toHaveBeenCalled();
+  });
   it("aborts every request to another origin", async () => {
     await renderPdf("/vi/print-render/tok");
     const handler = context.route.mock.calls[0]![1] as (route: { request: () => { url: () => string }; continue: () => void; abort: () => void }) => void;

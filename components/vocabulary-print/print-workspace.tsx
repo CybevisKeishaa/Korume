@@ -203,7 +203,8 @@ export function PrintWorkspace({ doc, views, source, resources }: {
       anchor.href = url;
       anchor.download = pdfFilename(committedLabels.documentName, doc.title);
       anchor.click();
-      URL.revokeObjectURL(url);
+      // revoking synchronously after click() cancels the download in Safari / older Firefox
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch {
       toast({ title: t("pdfFailed"), variant: "danger" });
     } finally {

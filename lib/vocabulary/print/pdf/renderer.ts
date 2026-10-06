@@ -7,9 +7,9 @@ export class PdfUnavailableError extends Error {}
 const TIMEOUT_MS = 30_000;
 const IDLE_MS = 5 * 60_000;
 
-/** Spec W §6.3: Chromium only ever talks to this origin. */
+/** Spec W §6.3: Chromium only ever talks to this origin. Normalised (`.../` or a path would never equal a request's origin). */
 export function printOrigin(): string {
-  return process.env.PRINT_PDF_ORIGIN ?? `http://127.0.0.1:${process.env.PORT ?? 3000}`;
+  return new URL(process.env.PRINT_PDF_ORIGIN ?? `http://127.0.0.1:${process.env.PORT ?? 3000}`).origin;
 }
 
 let browser: Promise<Browser> | null = null;
@@ -17,7 +17,7 @@ let idle: ReturnType<typeof setTimeout> | undefined;
 
 function launch(): Promise<Browser> {
   if (browser) return browser;
-  const launching: Promise<Browser> = chromium.launch().then(
+  const launching: Promise<Browser> = chromium.launch({ timeout: TIMEOUT_MS }).then(
     (instance) => {
       // a dead Chromium must not stay cached: the next request launches a fresh one
       instance.on("disconnected", () => { if (browser === launching) browser = null; });

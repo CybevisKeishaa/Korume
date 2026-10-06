@@ -279,6 +279,7 @@ describe("PrintWorkspace (spec §3, W §2 + §5–§6)", () => {
 });
 
 it("Download PDF posts the committed ids and settings, then saves the returned file", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   const fetchMock = vi.fn(async () => new Response(new Blob(["%PDF-1.7"]), { status: 200 }));
   vi.stubGlobal("fetch", fetchMock);
   const createObjectURL = vi.fn(() => "blob:x");
@@ -289,6 +290,9 @@ it("Download PDF posts the committed ids and settings, then saves the returned f
   await screen.findByText("3/3 words · 1 page");
   fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
   await waitFor(() => expect(click).toHaveBeenCalled());
+  // revoking right after click() cancels the download in Safari / older Firefox: revoke a minute later
+  expect(revokeObjectURL).not.toHaveBeenCalled();
+  act(() => { vi.advanceTimersByTime(60_000); });
   expect(revokeObjectURL).toHaveBeenCalledWith("blob:x");
   const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
   expect(url).toBe("/api/vocab/print/pdf");
