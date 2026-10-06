@@ -450,3 +450,22 @@ Paper flashcard template; Saved Vocabulary / deck / collection sources; mixed mu
 server-side selection token, with the workspace unchanged); expressions in print; bold target in the example
 (`targetSpan`); persisted settings or selection; AI-generated Vietnamese meanings in print; a user toggle for the
 footer mark.
+
+## Amendments during execution (2026-10-05/06)
+
+The sections above are frozen as approved; each bullet records what changed, why, and the section it refines.
+
+- **ResolvedLexeme shape (§1.1).** The type is `{ matches, readingMatch, vocabId, curatedVi }` with the resolution in `matches[0]`, not flat fields. Same information; `matches[]` was already in the spec.
+- **Lesson vocabulary source (§2.3).** The page uses `analysisStatusForReflection` plus `aggregateVocabulary` over the already-loaded analyses, sliced to `LESSON_WORDS_FETCH`, instead of `requestLessonAnalysis("read")` + `getLessonVocabulary`. `getLessonVocabulary` is itself `aggregateVocabulary` over the same lines, so the order matches Summary.
+- **Scoped print CSS (§4).** Print isolation uses a scoped `@page` rule and a `body:has(...)` rule so that only `[data-print-root]` is visible under print media; the measurement tree is absent.
+- **Vocabulary join (§1.7).** A curated row attaches when `word` equals the resolved headword, the token's written form (base, else surface), or the entry's canonical kanji key (`kanji_forms[0] ?? kana_forms[0]`); the reading must still match (hiragana-normalised) and the unambiguity guard comes first. Why: the seeded `(する, する, làm)` row would otherwise never attach once display and headword diverge. Caveat: if kana-keyed rows are ever seeded, require a unique non-fallback candidate.
+- **P6 binding of `curatedVi`.** `aggregateVocabulary` takes `curatedVi`/`vocabId` only from tokens whose `entries[0].reading` equals the displayed item reading, so a curated meaning never attaches to a different reading of the same entry.
+- **EN chip leads the meaning (Summary UI, §5).** The chip precedes the meaning text, so no line clamp can hide it. `EnglishChip` lives in `components/lesson-summary/english-chip.tsx`.
+- **Chip radius (§4).** `.vp-chip` uses `border-radius: 0.5mm`, not the screen token: paper sizes are mm/pt only and `--radius-sm` scales with screen density.
+- **Self-test: hide wins over show (P1/§5).** In self-test the blank writing line is printed even if the matching show flag is off; review mode ignores hide.
+- **Zero-height measurement guard (§3).** The workspace skips the commit when the measured content height is 0 (a `display:none` tree, print media, or the sub-1024 handoff) and re-measures through a `ResizeObserver` on the measure content when its height changes. Why: a no-layout tree read 0, committed one clipped sheet with Print enabled, and an e2e settle sleep had hidden it. "Resize never re-paginates" still holds.
+- **Desktop floor 1024px (§8).** The 375px Playwright case is replaced by 1024px: below 1024px the app renders only the mobile store handoff, so desktop web does not exist there. The ratio and size assertions are kept at the floor.
+- **Workspace key (§3.5).** `<PrintWorkspace key={lessonId:set}>` resets selection and re-attaches the observer on All/Saved switches and lesson changes (search-param navigation keeps a client component mounted in the App Router).
+- **Paper typography on `.vp-paper` (§4).** `font-family`, size and line-height live on `.vp-paper`, which both the preview and the hidden measurement tree share. They were on `.vp-sheet`, so the measurement tree inherited app typography (16px / 1.5 instead of 10pt / 1.45) and fit only by the coincidence that 1.5 > 1.45. An e2e case pins measured heights equal to the paper's.
+- **Kana display form (§1.5, OWNER RULING 2026-10-06).** Quoted verbatim: "Display form follows the lesson surface when the token matched JMdict through a kana form. JMdict kanji forms are metadata, not a replacement display form." No warning in Summary or Print. The resolver version moves to 2 (cached Summary analysis regenerates once, §1.10). Future note, **out of scope for V1**: handwriting practice would add a separate `practiceForm` with a filter (Tất cả · Có Kanji · Kana) and never auto-replace kana.
+- **Registry (§7).** `/vocab/print` is a repo-only registry row (`vocab-print`), no nav row, inheriting `/vocab`'s hidden ruling (A10).
