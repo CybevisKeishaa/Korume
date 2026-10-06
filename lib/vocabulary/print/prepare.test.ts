@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_WORKSHEET_SETTINGS, type WorksheetSettings } from "./settings";
 import type { VocabularyPrintItem } from "./source";
+import { maskSet } from "./mask";
 import { prepareDocument } from "./prepare";
 
 const line = "苦手な人について話します";
@@ -60,6 +61,26 @@ describe("prepareDocument — self-test never leaks (spec W W6, §1.4, §2)", ()
     const doc = prepareDocument(items, new Set(["f"]), selfTest({ showReading: false, showMeaning: false }));
     expect(doc.items).toEqual([]);
     expect(doc.excluded).toEqual(["f"]);
+  });
+  it("property: no mask string of the printed set occurs in any printed example or reading prompt", () => {
+    const pool: VocabularyPrintItem[] = [...items,
+      { id: "g", surface: "ひと", entSeq: 6, reading: "ひと", meaning: "người (kana)", meaningLocale: "vi", resolution: "resolved" },
+      { id: "h", surface: "一人", entSeq: 7, reading: "ひとり", resolution: "resolved", example: { text: "一人で話した", spans: [{ surface: "一人", entSeq: 7 }, { surface: "話し", entSeq: 3 }] } }];
+    const on = [true, false];
+    for (const ids of [pool.map((item) => item.id), ["b", "g", "h"], ["a", "c", "h"]]) for (const includeKanaOnly of on) for (const showReading of on) for (const showMeaning of on) for (const showExample of on) {
+      const doc = prepareDocument(pool, new Set(ids), selfTest({ includeKanaOnly, showReading, showMeaning, showExample }));
+      const printed = new Set(doc.items.map((item) => item.id));
+      const mask = maskSet(pool.filter((item) => printed.has(item.id)));
+      for (const item of doc.items) for (const text of [item.example, item.reading]) for (const blank of text ? mask : []) expect(text, `${item.id}: ${blank}`).not.toContain(blank);
+    }
+  });
+  it("drops a reading prompt that contains another printed answer, then falls back (meaning) or excludes", () => {
+    const pool: VocabularyPrintItem[] = [items[1]!, { id: "g", surface: "ひと", entSeq: 6, reading: "ひと", meaning: "người (kana)", meaningLocale: "vi", resolution: "resolved" },
+      { id: "r", surface: "一人", entSeq: 7, reading: "ひとり", resolution: "resolved" }];
+    const doc = prepareDocument(pool, new Set(["b", "g", "r"]), selfTest({ includeKanaOnly: true, showMeaning: false, showExample: false }));
+    expect(doc.items.map((item) => [item.id, item.reading, item.meaning])).toEqual([["b", undefined, "người"], ["g", undefined, "người (kana)"]]);
+    expect(doc.excluded).toEqual(["r"]); // ひとり contains ひと, and 一人 has no meaning or example to fall back on
+    expect(doc.answers.map((answer) => [answer.id, answer.number])).toEqual([["b", 1], ["g", 2]]);
   });
   it("lists answers in item order with the target, and the reading only when it does not reveal it", () => {
     const doc = prepareDocument(items, new Set(["a", "d"]), selfTest({ includeKanaOnly: true }));

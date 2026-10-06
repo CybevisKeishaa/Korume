@@ -22,9 +22,11 @@ export interface PreparedDocument { items: PreparedItem[]; answers: AnswerRow[];
 
 type Prompts = Pick<PreparedItem, "reading" | "meaning" | "meaningLocale"> & { exampleSource?: VocabularyPrintItem };
 
-/** Spec W §2: the enabled prompts that do not reveal the answer, then the meaning / example fallback. */
-function selfTestPrompts(item: VocabularyPrintItem, settings: WorksheetSettings): Prompts | null {
-  const reading = settings.showReading && item.reading && !readingRevealsTarget(item.surface, item.reading) ? item.reading : undefined;
+/** Spec W §2: the enabled prompts that do not reveal the answer, then the meaning / example fallback.
+ *  §1.4: with a document mask set, a reading prompt that contains any printed answer is dropped too. */
+function selfTestPrompts(item: VocabularyPrintItem, settings: WorksheetSettings, mask: readonly string[] = []): Prompts | null {
+  const reading = settings.showReading && item.reading && !readingRevealsTarget(item.surface, item.reading)
+    && !mask.some((text) => item.reading!.includes(text)) ? item.reading : undefined;
   const meaning = settings.showMeaning && item.meaning ? item.meaning : undefined;
   const example = settings.showExample && ownAnswerLocatable(item);
   if (reading || meaning || example) {
@@ -56,13 +58,14 @@ export function prepareDocument(items: VocabularyPrintItem[], selected: Readonly
     };
   }
 
+  // M comes from every item that has a prompt before §1.4's reading drop; a smaller final set only over-masks.
+  const mask = maskSet(candidates.filter((item) => selfTestPrompts(item, settings)));
   const excluded: string[] = [];
   const kept: { item: VocabularyPrintItem; prompts: Prompts }[] = [];
   for (const item of candidates) {
-    const prompts = selfTestPrompts(item, settings);
+    const prompts = selfTestPrompts(item, settings, mask);
     if (prompts) kept.push({ item, prompts }); else excluded.push(item.id);
   }
-  const mask = maskSet(kept.map(({ item }) => item));
   return {
     items: kept.map(({ item, prompts }, index) => defined({
       id: item.id, number: index + 1, cells: graphemes(item.surface).length,
