@@ -1153,6 +1153,24 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
+  // Reached from the lesson Summary's "In từ vựng" launcher; never a nav row.
+  // Inherits /vocab's ruling (A10): hidden, code kept, not deprecated.
+  // Never compared with Figma (no frame exists), so no figmaCheckedAt stamp.
+  {
+    screenId: "vocab-print",
+    name: "Vocabulary — Print",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: null,
+    route: "/vocab/print",
+    chrome: "app",
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
 
   // ===================================================================
   // Designed, no route yet (R5) — legal and meaningful, NOT an error.
