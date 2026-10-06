@@ -42,7 +42,7 @@ describe("renderPdf (spec W §6.3 steps 4–6)", () => {
     expect(printOrigin()).toBe("http://127.0.0.1:3999");
     await renderPdf("/vi/print-render/tok");
     expect(page.goto).toHaveBeenCalledWith("http://127.0.0.1:3999/vi/print-render/tok", expect.anything());
-    const handler = context.route.mock.calls[0]![1] as (route: { request: () => { url: () => string }; continue: () => void; abort: () => void }) => void;
+    const [[, handler]] = context.route.mock.calls as unknown as [[string, (route: object) => void]];
     const own = { request: () => ({ url: () => "http://127.0.0.1:3999/_next/static/x.css" }), continue: vi.fn(), abort: vi.fn() };
     handler(own);
     expect(own.continue).toHaveBeenCalled();

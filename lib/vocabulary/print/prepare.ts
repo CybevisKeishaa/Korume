@@ -25,8 +25,9 @@ type Prompts = Pick<PreparedItem, "reading" | "meaning" | "meaningLocale"> & { e
 /** Spec W §2: the enabled prompts that do not reveal the answer, then the meaning / example fallback.
  *  §1.4: with a document mask set, a reading prompt that contains any printed answer is dropped too. */
 function selfTestPrompts(item: VocabularyPrintItem, settings: WorksheetSettings, mask: readonly string[] = []): Prompts | null {
-  const reading = settings.showReading && item.reading && !readingRevealsTarget(item.surface, item.reading)
-    && !mask.some((text) => item.reading!.includes(text)) ? item.reading : undefined;
+  const own = item.reading;
+  const reading = settings.showReading && own && !readingRevealsTarget(item.surface, own)
+    && !mask.some((text) => own.includes(text)) ? own : undefined;
   const meaning = settings.showMeaning && item.meaning ? item.meaning : undefined;
   const example = settings.showExample && ownAnswerLocatable(item);
   if (reading || meaning || example) {

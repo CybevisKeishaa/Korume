@@ -75,7 +75,8 @@ describe("prepareDocument — self-test never leaks (spec W W6, §1.4, §2)", ()
     }
   });
   it("drops a reading prompt that contains another printed answer, then falls back (meaning) or excludes", () => {
-    const pool: VocabularyPrintItem[] = [items[1]!, { id: "g", surface: "ひと", entSeq: 6, reading: "ひと", meaning: "người (kana)", meaningLocale: "vi", resolution: "resolved" },
+    const hito: VocabularyPrintItem = { id: "b", surface: "人", entSeq: 2, reading: "ひと", meaning: "người", meaningLocale: "vi", resolution: "resolved" };
+    const pool: VocabularyPrintItem[] = [hito, { id: "g", surface: "ひと", entSeq: 6, reading: "ひと", meaning: "người (kana)", meaningLocale: "vi", resolution: "resolved" },
       { id: "r", surface: "一人", entSeq: 7, reading: "ひとり", resolution: "resolved" }];
     const doc = prepareDocument(pool, new Set(["b", "g", "r"]), selfTest({ includeKanaOnly: true, showMeaning: false, showExample: false }));
     expect(doc.items.map((item) => [item.id, item.reading, item.meaning])).toEqual([["b", undefined, "người"], ["g", undefined, "người (kana)"]]);
