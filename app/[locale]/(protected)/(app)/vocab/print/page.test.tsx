@@ -45,11 +45,11 @@ describe("/vocab/print (spec §2.1)", () => {
     expect(await generateMetadata({ params, searchParams: { source: "lesson", lesson: LESSON } })).toEqual({ title: 'pageTitle{"title":"苦手な人"}' });
   });
 
-  it("keys the workspace by set so All and Saved remount instead of sharing selection", async () => {
+  it("keys the workspace by lesson and set so All and Saved remount instead of sharing selection", async () => {
     for (const set of ["all", "saved"]) {
       vi.mocked(loadPrintDocument).mockResolvedValueOnce({ kind: "ok", doc });
       const page = (await PrintPage({ params, searchParams: { source: "lesson", lesson: LESSON, set } })) as ReactElement<{ children: ReactElement }>;
-      expect(page.props.children.key).toBe(set);
+      expect(page.props.children.key).toBe(`${LESSON}:${set}`);
     }
   });
 });

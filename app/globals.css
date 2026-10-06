@@ -1601,11 +1601,12 @@
 
 /* Print vocabulary (spec 2026-10-05-print-vocabulary-design §3–§6): geometry in mm, type in pt, the paper's own
    palette in every theme. `.vp-paper` carries the --vp-* geometry variables (paper.ts). */
-.vp-paper { --vp-ink: #111; --vp-muted: #5c5c5c; --vp-rule: #c9c9c9; color: var(--vp-ink); }
+.vp-paper { --vp-ink: #111; --vp-muted: #5c5c5c; --vp-rule: #c9c9c9; color: var(--vp-ink);
+  /* Paper typography lives here, not on the sheet, so the measurement tree (a .vp-paper, not a sheet) measures what prints. */
+  font-family: var(--font-sans); font-size: 10pt; line-height: 1.45; }
 .vp-sheet {
   box-sizing: border-box; width: var(--vp-width); height: var(--vp-height); padding: var(--vp-margin);
   display: flex; flex-direction: column; overflow: hidden; background: #fff; color: var(--vp-ink);
-  font-family: var(--font-sans); font-size: 10pt; line-height: 1.45;
   break-inside: avoid; page-break-inside: avoid; page: vocab-sheet;
 }
 .vp-body { flex: 1 1 auto; }

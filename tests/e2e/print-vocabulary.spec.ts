@@ -163,3 +163,26 @@ test("9 · the document title carries the lesson title, which becomes the PDF fi
   await open(page);
   await expect(page).toHaveTitle(new RegExp(`^Vocabulary – ${LONG_TITLE.slice(0, 20)}`));
 });
+
+test("10 · the hidden measurement tree is as tall as the paper it predicts: items, first header and footer", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  const heights = await page.evaluate(() => {
+    const measured = [...document.querySelectorAll<HTMLElement>('[data-measure="item"]')];
+    // Pages are committed in chosen order, so the n-th rendered item is the n-th measured one.
+    const rendered = [...document.querySelectorAll<HTMLElement>("[data-preview] .vp-item")];
+    const paired = measured.map((el, index) => [el.offsetHeight, rendered[index]?.offsetHeight ?? -1]);
+    const height = (selector: string) => document.querySelector<HTMLElement>(selector)?.offsetHeight ?? -1;
+    return {
+      count: measured.length, renderedCount: rendered.length, paired,
+      header: [height('[data-measure="first-header"]'), height("[data-preview] .vp-head-first")],
+      footer: [height('[data-measure="footer"]'), height("[data-preview] .vp-foot")],
+    };
+  });
+  expect(heights.count).toBeGreaterThan(0);
+  expect(heights.renderedCount).toBe(heights.count);
+  for (const [measured, rendered] of [...heights.paired, heights.header, heights.footer]) {
+    expect(rendered).toBeGreaterThan(0);
+    expect(Math.abs(measured! - rendered!)).toBeLessThanOrEqual(0.5);
+  }
+});
