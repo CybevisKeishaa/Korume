@@ -110,8 +110,23 @@ describe("resolveLexeme — vocab join (spec §1.7)", () => {
     // Seed row (する, する, làm); JMdict's headword for the kana token is 為る.
     const suru = entry(1157170, ["為る"], ["する"], "to do");
     const resolved = resolveLexeme({ surface: "する", base: "する", reading: "スル" }, [suru], [vocab("v-suru", "する", "する", "làm")]);
-    expect(resolved?.matches[0]?.headword).toBe("為る");
+    expect(resolved?.matches[0]?.headword).toBe("する");
     expect(resolved).toMatchObject({ vocabId: "v-suru", curatedVi: "làm" });
+  });
+
+  it("still joins a row written as the entry's canonical kanji headword (為る, する) on a kana token", () => {
+    const suru = entry(1157170, ["為る"], ["する"], "to do");
+    expect(resolveLexeme({ surface: "する", base: "する", reading: "スル" }, [suru], [vocab("v-kanji", "為る", "する", "làm")]))
+      .toMatchObject({ vocabId: "v-kanji", curatedVi: "làm" });
+  });
+
+  it("displays the lesson's own spelling: kana stays kana, kanji stays kanji, katakana stays katakana (owner ruling 2026-10-06)", () => {
+    const suru = entry(1157170, ["為る"], ["する"], "to do");
+    expect(resolveLexeme({ surface: "する", base: "する", reading: "スル" }, [suru])?.matches[0]?.headword).toBe("する");
+    expect(resolveLexeme({ surface: "した", base: "する", reading: "シタ" }, [suru])?.matches[0]?.headword).toBe("する");
+    expect(resolveLexeme({ surface: "為る", base: "為る", reading: "スル" }, [suru])?.matches[0]?.headword).toBe("為る");
+    const tobacco = entry(1000001, ["煙草"], ["タバコ", "たばこ"], "tobacco");
+    expect(resolveLexeme({ surface: "タバコ", base: "タバコ", reading: "タバコ" }, [tobacco])?.matches[0]?.headword).toBe("タバコ");
   });
 
   it("keeps the reading guard on a form match, and the ambiguity guard before it", () => {

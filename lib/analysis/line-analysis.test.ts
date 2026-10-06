@@ -244,12 +244,12 @@ describe("staticAnalyses on the shared resolver (spec §1)", () => {
     useDictionary([HITO], [{ id: "v-hito", word: "人", reading: "ひと", meaning_vi: "người" }]);
     const tokens = (await staticAnalyses(createClient(), [{ id: "l-5", textJp: "ひとを見た" }], undefined, "lexical")).get("l-5")?.tokens ?? [];
     expect(tokens.find((token) => token.surface === "ひと")).toMatchObject({
-      entries: [expect.objectContaining({ headword: "人", reading: "ひと" })], vocabId: "v-hito", curatedVi: "người",
+      entries: [expect.objectContaining({ headword: "ひと", reading: "ひと" })], vocabId: "v-hito", curatedVi: "người",
     });
   });
 
   it("fetches the headword of a kana-only entry matched through its second kana form", async () => {
-    // The token is ヒト; the resolver's headword is the entry's first kana form ひと, which no token asked for.
+    // The token is ヒト, displayed as ヒト; the curated row is still keyed by the canonical first kana form ひと, which no token asked for.
     const kanaOnly = { ent_seq: 3100, kanji_forms: [], kana_forms: ["ひと", "ヒト"], senses: [{ gloss: ["person"] }], common: true, jlpt: null };
     useDictionary([kanaOnly], [{ id: "v-hito", word: "ひと", reading: "ひと", meaning_vi: "người" }]);
     const tokens = (await staticAnalyses(createClient(), [{ id: "l-6", textJp: "ヒトを見た" }], undefined, "lexical")).get("l-6")?.tokens ?? [];

@@ -5,7 +5,7 @@ import type { DictionaryMatch } from "./types";
  * Spec §1: one lexical resolution for every caller — the Shadowing popup, lesson vocabulary, Summary candidates and
  * hydration, Ask Korume and Print. Pure: the callers read the database in batches and pass the rows in.
  */
-export const LEXICAL_RESOLVER_VERSION = 1;
+export const LEXICAL_RESOLVER_VERSION = 2;
 
 export interface EntryRow {
   ent_seq: number;
@@ -95,7 +95,8 @@ function readingOf(entry: EntryRow, token: ResolverToken): { kind: ReadingMatch;
 function toMatch(entry: EntryRow, form: string, kana: string): DictionaryMatch {
   return {
     entSeq: entry.ent_seq,
-    headword: entry.kanji_forms.includes(form) ? form : entry.kanji_forms[0] ?? entry.kana_forms[0] ?? form,
+    // Owner ruling 2026-10-06: the lesson's own spelling is the display form; JMdict kanji forms are metadata.
+    headword: entry.kanji_forms.includes(form) || entry.kana_forms.includes(form) ? form : entry.kanji_forms[0] ?? entry.kana_forms[0] ?? form,
     reading: kana,
     glossEn: (entry.senses[0]?.gloss ?? []).slice(0, 3).join("; "),
     jlpt: entry.jlpt,
@@ -122,9 +123,10 @@ export function resolveLexeme(token: ResolverToken, entries: EntryRow[], vocabRo
     // Spec §1.7: a fallback reading of a multi-reading entry is a guess; vocab data never confirms it.
     const unambiguous = best.reading.kind !== "fallback" || best.entry.kana_forms.length === 1;
     const resolved = matches[0];
+    const entry0Kanji = best.entry.kanji_forms[0] ?? best.entry.kana_forms[0]; // the canonical spelling a curated row may still use
     // A row written as the matched token form joins too: curated する/する while JMdict's headword is 為る.
     const vocab = unambiguous && resolved
-      ? vocabRows.find((row) => (row.word === resolved.headword || row.word === form) && row.reading !== null
+      ? vocabRows.find((row) => (row.word === resolved.headword || row.word === form || row.word === entry0Kanji) && row.reading !== null
         && katakanaToHiragana(row.reading) === katakanaToHiragana(resolved.reading))
       : undefined;
     return { matches, readingMatch: best.reading.kind, vocabId: vocab?.id ?? null, curatedVi: vocab?.meaning_vi?.trim() || null };
