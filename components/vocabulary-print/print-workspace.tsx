@@ -5,8 +5,10 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Switch } from "@/components/ui/switch";
-import { useTranslations } from "@/lib/i18n";
+import { useToast } from "@/components/ui/toast";
+import { useLocale, useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
+import { pdfFilename } from "@/lib/vocabulary/print/filename";
 import { hasKanji } from "@/lib/vocabulary/print/japanese";
 import { writingLayout } from "@/lib/vocabulary/print/layout";
 import { mascotReady } from "@/lib/vocabulary/print/mascot";
@@ -45,7 +47,9 @@ export function PrintWorkspace({ doc, views, source, resources }: {
   resources: PrintResources;
 }) {
   const t = useTranslations("vocab.print");
-  void source; // Task 9's download consumes it.
+  const locale = useLocale();
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState(false);
   const [settings, setSettings] = useState<WorksheetSettings>(DEFAULT_WORKSHEET_SETTINGS);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set(doc.items.map((item) => item.id)));
   const visible = useMemo(
@@ -177,6 +181,36 @@ export function PrintWorkspace({ doc, views, source, resources }: {
   const pageCount = committed?.pages.length ?? 0;
   const unresolved = visible.filter((item) => item.resolution === "saved_raw" && selected.has(item.id)).length;
   const blocked = busy || !committed || committed.printed === 0 || committed.oversized.length > 0;
+  const download = async () => {
+    if (blocked || downloading || !committed) return;
+    setDownloading(true);
+    // Read at click time from the committed set, never the live selection (spec W §6.3 step 1).
+    const pages = committed.pages.map((page) => (page.kind === "items"
+      ? { kind: "items" as const, ids: page.items.map((item) => item.id) }
+      : { kind: "answers" as const, ids: page.answers.map((answer) => answer.id) }));
+    try {
+      const response = await fetch("/api/vocab/print/pdf", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lessonId: source.lessonId, set: source.set, locale, settings: committed.settings, pages }),
+      });
+      if (!response.ok) {
+        const key = response.status === 409 ? "pdfChanged" : response.status === 429 || response.status === 503 ? "pdfBusy" : "pdfFailed";
+        toast({ title: t(key), variant: "danger" });
+        return;
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = pdfFilename(committedLabels.documentName, doc.title);
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: t("pdfFailed"), variant: "danger" });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const previewHeight = pageCount * SHEET_PX.height + Math.max(0, pageCount - 1) * SHEET_GAP_PX;
   const enabledPrompts = PROMPT_KEYS.filter((key) => settings[key]);
   const locked = (key: (typeof PROMPT_KEYS)[number]) => settings.mode === "selfTest" && settings[key] && enabledPrompts.length === 1;
@@ -251,6 +285,10 @@ export function PrintWorkspace({ doc, views, source, resources }: {
           </p>
         ))}
         <div className="sticky bottom-0 mt-auto flex gap-sm bg-background pt-sm">
+          <Button className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+            aria-disabled={blocked || downloading || undefined} onClick={() => void download()}>
+            {downloading ? t("downloading") : t("download")}
+          </Button>
           <Button variant="outline" className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
             aria-disabled={blocked || undefined} onClick={() => { if (!blocked) window.print(); }}>
             {t("print")}

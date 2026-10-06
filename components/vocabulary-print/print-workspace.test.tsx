@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render";
+import { ToastProvider } from "@/components/ui/toast";
 import type { PrintDocument, PrintResources, VocabularyPrintItem } from "@/lib/vocabulary/print/source";
 import * as paginateModule from "@/lib/vocabulary/print/paginate";
 import { mascotReady } from "@/lib/vocabulary/print/mascot";
@@ -47,7 +48,9 @@ afterEach(() => { vi.useRealTimers(); Reflect.deleteProperty(document, "fonts");
 
 const printButton = () => screen.getByRole("button", { name: "Print" });
 const printRoot = () => document.body.querySelector(":scope > [data-print-root]");
-const workspace = (list: VocabularyPrintItem[]) => <PrintWorkspace doc={doc(list)} views={views} source={source} resources={resources} />;
+const workspace = (list: VocabularyPrintItem[]) => (
+  <ToastProvider dismissLabel="Dismiss"><PrintWorkspace doc={doc(list)} views={views} source={source} resources={resources} /></ToastProvider>
+);
 
 describe("PrintWorkspace (spec §3, W §2 + §5–§6)", () => {
   it("commits a complete page set into the preview and a body-level print root", async () => {
@@ -273,4 +276,57 @@ describe("PrintWorkspace (spec §3, W §2 + §5–§6)", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("is too long for the page");
     expect(printButton()).toHaveAttribute("aria-disabled", "true");
   });
+});
+
+it("Download PDF posts the committed ids and settings, then saves the returned file", async () => {
+  const fetchMock = vi.fn(async () => new Response(new Blob(["%PDF-1.7"]), { status: 200 }));
+  vi.stubGlobal("fetch", fetchMock);
+  const createObjectURL = vi.fn(() => "blob:x");
+  const revokeObjectURL = vi.fn();
+  Object.assign(URL, { createObjectURL, revokeObjectURL });
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+  render(workspace(items(3)));
+  await screen.findByText("3/3 words · 1 page");
+  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+  await waitFor(() => expect(click).toHaveBeenCalled());
+  expect(revokeObjectURL).toHaveBeenCalledWith("blob:x");
+  const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+  expect(url).toBe("/api/vocab/print/pdf");
+  expect(JSON.parse(init.body as string)).toEqual({
+    lessonId: "L", set: "all", locale: "en", settings: expect.objectContaining({ mode: "practice" }),
+    pages: [{ kind: "items", ids: ["i-0", "i-1", "i-2"] }],
+  });
+});
+
+it("keeps Download PDF busy while a request runs, even if the selection changes (Review Focus 3)", async () => {
+  let respond!: (response: Response) => void;
+  vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => { respond = resolve; })));
+  render(workspace(items(2)));
+  await screen.findByText("2/2 words · 1 page");
+  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+  expect(await screen.findByRole("button", { name: "Creating the PDF…" })).toHaveAttribute("aria-disabled", "true");
+  fireEvent.click(screen.getAllByRole("checkbox")[0]!);
+  fireEvent.click(screen.getByRole("button", { name: "Creating the PDF…" }));
+  expect(fetch).toHaveBeenCalledTimes(1);
+  respond(new Response(null, { status: 503 }));
+  expect(await screen.findByText("The server is busy — try again shortly.")).toBeInTheDocument();
+});
+
+it("disables both actions until a page set is committed", async () => {
+  vi.mocked(mascotReady).mockImplementation(() => new Promise(() => undefined));
+  render(workspace(items(2)));
+  expect(screen.getByRole("button", { name: "Download PDF" })).toHaveAttribute("aria-disabled", "true");
+  expect(printButton()).toHaveAttribute("aria-disabled", "true");
+});
+
+it("Download PDF sends the committed page split, not a re-derived one", async () => {
+  const fetchMock = vi.fn(async () => new Response(null, { status: 500 }));
+  vi.stubGlobal("fetch", fetchMock);
+  render(workspace(items(20)));
+  await screen.findByText("20/20 words · 3 pages"); // 8 + 9 + 3, as the measured capacities dictate
+  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+  await screen.findByText("Could not create the PDF.");
+  const init = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1];
+  const sent = JSON.parse(init.body as string) as { pages: { ids: string[] }[] };
+  expect(sent.pages.map((page) => page.ids.length)).toEqual([8, 9, 3]);
 });

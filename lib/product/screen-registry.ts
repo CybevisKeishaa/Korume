@@ -1172,6 +1172,23 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
 
+  // Internal render target for the server-side PDF (print spec W §6.3); never navigated to by a learner.
+  {
+    screenId: "print-render",
+    name: "Print — PDF render target",
+    kind: "repo-only",
+    variantOf: null,
+    figmaNodeId: null,
+    repoOnlyReason: "no-frame-at-last-pass",
+    figmaCheckedAt: null,
+    route: "/print-render/[token]",
+    chrome: null,
+    impl: "built",
+    navGroup: null,
+    navOrder: null,
+    specRef: null,
+  },
+
   // ===================================================================
   // Designed, no route yet (R5) — legal and meaningful, NOT an error.
   // ===================================================================
