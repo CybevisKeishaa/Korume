@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { ReactElement } from "react";
@@ -18,6 +18,8 @@ const params = { locale: "vi" as const };
 const doc = { title: "苦手な人", backHref: "/b", backLabel: "b", items: [] };
 
 describe("/vocab/print (spec §2.1)", () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it("is a static segment beside /vocab/[id], so Next routes /vocab/print here", () => {
     const dir = join(process.cwd(), "app/[locale]/(protected)/(app)/vocab");
     expect(existsSync(join(dir, "print/page.tsx"))).toBe(true);

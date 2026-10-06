@@ -17,21 +17,28 @@ const doc = (list: VocabularyPrintItem[]): PrintDocument => ({ title: "Lesson", 
 const views = [{ label: "All", href: "/vocab/print?set=all", current: true }, { label: "Saved", href: "/vocab/print?set=saved", current: false }];
 
 // jsdom lays nothing out: heights come from the element's role in the measurement tree.
-const HEIGHTS: Record<string, number> = { content: 1000, "first-header": 100, "continuation-header": 40, footer: 60 };
+const HEIGHTS: Record<string, number> = { "first-header": 100, "continuation-header": 40, footer: 60 };
 let itemHeight = 100;
-let resizeCallback: ResizeObserverCallback | null = null;
+let contentHeight = 1000;
+const observers = new Map<Element, ResizeObserverCallback>();
+const observedBy = (selector: string) => observers.get(document.querySelector(selector)!);
 
 beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
     const role = this.dataset.measure;
-    const height = role === "item" ? itemHeight : HEIGHTS[role ?? ""] ?? 0;
+    const height = role === "item" ? itemHeight : role === "content" ? contentHeight : HEIGHTS[role ?? ""] ?? 0;
     return { height, width: 600, top: 0, left: 0, bottom: height, right: 600, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
   });
-  vi.stubGlobal("ResizeObserver", class { constructor(cb: ResizeObserverCallback) { resizeCallback = cb; } observe() { /* noop */ } disconnect() { /* noop */ } });
+  observers.clear();
+  vi.stubGlobal("ResizeObserver", class {
+    constructor(private cb: ResizeObserverCallback) { /* callback kept per observed element */ }
+    observe(element: Element) { observers.set(element, this.cb); }
+    disconnect() { /* noop */ }
+  });
   vi.spyOn(paginateModule, "paginate");
   vi.mocked(mascotReady).mockImplementation(() => Promise.resolve());
 });
-afterEach(() => { vi.useRealTimers(); Reflect.deleteProperty(document, "fonts"); vi.restoreAllMocks(); vi.unstubAllGlobals(); itemHeight = 100; });
+afterEach(() => { vi.useRealTimers(); Reflect.deleteProperty(document, "fonts"); vi.restoreAllMocks(); vi.unstubAllGlobals(); itemHeight = 100; contentHeight = 1000; });
 
 const printButton = () => screen.getByRole("button", { name: "Print / Save PDF" });
 const printRoot = () => document.body.querySelector(":scope > [data-print-root]");
@@ -64,12 +71,34 @@ describe("PrintWorkspace (spec §3)", () => {
     render(<PrintWorkspace doc={doc(items(5))} views={views} />);
     await screen.findByText("5/5 words · 1 page");
     const calls = vi.mocked(paginateModule.paginate).mock.calls.length;
-    await act(async () => resizeCallback?.([{ contentRect: { width: 300 } } as ResizeObserverEntry], {} as ResizeObserver));
+    await act(async () => observedBy("[data-preview]")?.([{ contentRect: { width: 300 } } as ResizeObserverEntry], {} as ResizeObserver));
     expect(vi.mocked(paginateModule.paginate).mock.calls.length).toBe(calls);
     const inner = document.querySelector<HTMLElement>("[data-preview] .origin-top-left");
     expect(inner?.style.transform).toBe(`scale(${300 / (PAPER.widthMm * MM_TO_PX)})`);
     fireEvent.click(screen.getByRole("radio", { name: "Compact" }));
     await waitFor(() => expect(vi.mocked(paginateModule.paginate).mock.calls.length).toBe(calls + 1));
+  });
+
+  it("commits nothing while the measurement tree has no layout, and re-measures when layout returns", async () => {
+    contentHeight = 0;
+    render(<PrintWorkspace doc={doc(items(5))} views={views} />);
+    await waitFor(() => expect(observers.size).toBeGreaterThan(0));
+    await act(async () => { await Promise.resolve(); });
+    expect(printRoot()?.querySelectorAll(".vp-sheet") ?? []).toHaveLength(0);
+    expect(vi.mocked(paginateModule.paginate)).not.toHaveBeenCalled();
+    expect(printButton()).toHaveAttribute("aria-disabled", "true");
+    contentHeight = 1000;
+    await act(async () => observedBy('[data-measure="content"]')?.([{ contentRect: { height: 1000 } } as ResizeObserverEntry], {} as ResizeObserver));
+    expect(await screen.findByText("5/5 words · 1 page")).toBeInTheDocument();
+    expect(printButton()).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("ignores a content observation whose height did not change", async () => {
+    render(<PrintWorkspace doc={doc(items(5))} views={views} />);
+    await screen.findByText("5/5 words · 1 page");
+    const calls = vi.mocked(paginateModule.paginate).mock.calls.length;
+    await act(async () => observedBy('[data-measure="content"]')?.([{ contentRect: { height: 1000 } } as ResizeObserverEntry], {} as ResizeObserver));
+    expect(vi.mocked(paginateModule.paginate).mock.calls.length).toBe(calls);
   });
 
   it("never lets a stale generation win over a newer one", async () => {

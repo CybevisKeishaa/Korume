@@ -5,7 +5,8 @@ export const PRINT_NOUNS = [
   "学校", "先生", "電車", "天気", "時間", "写真", "映画", "料理", "音楽", "仕事", "会社", "家族", "友達", "部屋", "新聞",
   "手紙", "季節", "公園", "病院", "図書館", "銀行", "会議", "旅行", "野菜", "果物", "動物", "自転車", "飛行機", "番組", "世界",
 ];
-export const LONG_TITLE = `${"とても長いレッスンのタイトルが続きます".repeat(4)}-https://example.com/a/very/long/unbroken/path/segment`;
+/** A 130-letter run with no separator: far wider than the 182 mm title column, and (unlike CJK) only `overflow-wrap` can break it. */
+export const LONG_TITLE = `長いタイトル-${"ABCDEFGHIJKLMNOPQRSTUVWXYZ".repeat(5)}`;
 
 export async function seedPrintLesson(admin: SupabaseClient, prefix: string): Promise<{ videoId: string; lineIds: string[] }> {
   const video = await admin.from("videos").insert({

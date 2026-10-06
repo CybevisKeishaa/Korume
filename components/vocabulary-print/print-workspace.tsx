@@ -29,6 +29,7 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
   const [committed, setCommitted] = useState<Committed | null>(null);
   const [busy, setBusy] = useState(true);
   const [fontTick, setFontTick] = useState(0);
+  const [layoutTick, setLayoutTick] = useState(0);
   const [scale, setScale] = useState(1);
   const [portal, setPortal] = useState<HTMLElement | null>(null);
   const generation = useRef(0);
@@ -74,6 +75,8 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
       const root = measureRef.current;
       if (mine !== generation.current || !root) return;
       const height = (role: string) => root.querySelector<HTMLElement>(`[data-measure="${role}"]`)?.getBoundingClientRect().height ?? 0;
+      // Spec §3.5: a tree with no layout (print media, the mobile handoff) reads all zeros; commit nothing and stay busy until the content observer sees layout return.
+      if (height("content") === 0) return;
       const nodes = [...root.querySelectorAll<HTMLElement>('[data-measure="item"]')];
       const itemHeights = nodes.map((el) => el.getBoundingClientRect().height);
       // Map back by id read off the measured DOM, never by a closure index.
@@ -88,10 +91,25 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
       setCommitted({ pages: pages.map(itemsAt), settings, oversized: itemsAt(oversized), selected: chosen.length });
       setBusy(false);
     })();
-  }, [chosen, settings, fontTick]);
+  }, [chosen, settings, fontTick, layoutTick]);
 
   // Unmount: any in-flight generation becomes stale and commits nothing.
   useEffect(() => () => { generation.current += 1; }, []);
+
+  // Spec §3.5: the content node has a fixed mm height, so its observed height changes only when layout appears or disappears.
+  useEffect(() => {
+    const content = measureRef.current?.querySelector<HTMLElement>('[data-measure="content"]');
+    if (!content || typeof ResizeObserver === "undefined") return;
+    let last = content.getBoundingClientRect().height;
+    const observer = new ResizeObserver(([entry]) => {
+      const next = entry?.contentRect.height ?? last;
+      if (next === last) return;
+      last = next;
+      setLayoutTick((tick) => tick + 1);
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
 
   // Spec §3.6: the paper never reflows with the viewport; only the preview's scale follows the column.
   useEffect(() => {
