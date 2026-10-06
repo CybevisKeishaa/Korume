@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { MeaningLocale, MeaningSource } from "@/lib/analysis/meaning";
+import type { StrokeGuide } from "@/lib/strokes/types";
 
 /** Spec §2.2: the workspace knows only these types — never a lesson, a mining card or Summary. */
 export type PrintSet = "all" | "saved";
@@ -25,6 +26,13 @@ export interface PrintDocument {
 }
 
 export type PrintSourceResult = { kind: "ok"; doc: PrintDocument } | { kind: "not_found" } | { kind: "unauthorized" };
+
+/** Spec W §1.1, §1.5: everything the sheets need besides the items; plain data, crosses the RSC boundary. */
+export interface PrintResources {
+  strokeGuides: Record<string, StrokeGuide>;
+  /** Formatted `<name> <version> (<licence>)`, from the active snapshot; null when that source is not imported. */
+  credits: { jmdict: string | null; kanjivg: string | null };
+}
 
 const querySchema = z.object({
   source: z.literal("lesson"),
