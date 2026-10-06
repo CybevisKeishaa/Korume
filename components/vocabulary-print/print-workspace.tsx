@@ -7,25 +7,52 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Switch } from "@/components/ui/switch";
 import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
+import { hasKanji } from "@/lib/vocabulary/print/japanese";
+import { writingLayout } from "@/lib/vocabulary/print/layout";
 import { mascotReady } from "@/lib/vocabulary/print/mascot";
-import { MM_TO_PX, PAPER, paperVars } from "@/lib/vocabulary/print/paper";
 import { pageCapacity, paginate } from "@/lib/vocabulary/print/paginate";
-import { DEFAULT_PRINT_SETTINGS, type PrintSettings } from "@/lib/vocabulary/print/settings";
-import type { PrintDocument, VocabularyPrintItem } from "@/lib/vocabulary/print/source";
-import { ContinuationHeader, FirstHeader, Footer, PrintItem, PrintSheets, type SheetLabels } from "./print-sheets";
+import { MM_TO_PX, PAPER, paperVars } from "@/lib/vocabulary/print/paper";
+import { prepareDocument, type PreparedItem, type PreparedPage } from "@/lib/vocabulary/print/prepare";
+import { DEFAULT_WORKSHEET_SETTINGS, PROMPT_KEYS, type WorksheetSettings } from "@/lib/vocabulary/print/settings";
+import type { PrintDocument, PrintResources, PrintSet } from "@/lib/vocabulary/print/source";
+import { useSheetLabels } from "./labels";
+import {
+  AnswerLine, AnswersHeading, ContinuationHeader, FirstHeader, FooterBlock, PracticeItem, QuoteBand, SelfTestItem, Worksheet,
+} from "./worksheet";
 
 const FONT_DEBOUNCE_MS = 150;
 const SHEET_GAP_PX = 16;
 const SHEET_PX = { width: PAPER.widthMm * MM_TO_PX, height: PAPER.heightMm * MM_TO_PX };
 
-interface Committed { pages: VocabularyPrintItem[][]; settings: PrintSettings; oversized: VocabularyPrintItem[]; selected: number }
+export interface Committed {
+  pages: PreparedPage[];
+  settings: WorksheetSettings;
+  oversized: PreparedItem[];
+  printed: number;
+  excluded: number;
+  missingStrokes: number;
+}
 
-/** Spec §3: one print workspace — selection and settings on the left, the committed A4 page set on the right. */
-export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { label: string; href: string; current: boolean }[] }) {
+function missingStrokes(items: PreparedItem[], resources: PrintResources): number {
+  return new Set(items.flatMap((item) => item.glyphs ?? []).filter((glyph) => !resources.strokeGuides[glyph])).size;
+}
+
+/** Spec §3 + W §5–§6: selection and settings on the left, the committed A4 worksheet on the right. */
+export function PrintWorkspace({ doc, views, source, resources }: {
+  doc: PrintDocument;
+  views: { label: string; href: string; current: boolean }[];
+  source: { lessonId: string; set: PrintSet };
+  resources: PrintResources;
+}) {
   const t = useTranslations("vocab.print");
-  const [settings, setSettings] = useState<PrintSettings>(DEFAULT_PRINT_SETTINGS);
+  void source; // Task 9's download consumes it.
+  const [settings, setSettings] = useState<WorksheetSettings>(DEFAULT_WORKSHEET_SETTINGS);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set(doc.items.map((item) => item.id)));
-  const chosen = useMemo(() => doc.items.filter((item) => selected.has(item.id)), [doc.items, selected]);
+  const visible = useMemo(
+    () => (settings.includeKanaOnly ? doc.items : doc.items.filter((item) => hasKanji(item.surface))),
+    [doc.items, settings.includeKanaOnly],
+  );
+  const prepared = useMemo(() => prepareDocument(doc.items, selected, settings), [doc.items, selected, settings]);
   const [committed, setCommitted] = useState<Committed | null>(null);
   const [busy, setBusy] = useState(true);
   const [fontTick, setFontTick] = useState(0);
@@ -35,18 +62,9 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
   const generation = useRef(0);
   const measureRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-
-  const labelsFor = (mode: PrintSettings["mode"]): SheetLabels => ({
-    wordmark: t("wordmark"),
-    documentName: mode === "review" ? t("docReview") : t("docSelfTest"),
-    title: doc.title,
-    footer: t("footer", { document: mode === "review" ? t("docReview") : t("docSelfTest") }),
-    pageNumber: (page, count) => t("pageNumber", { page, count }),
-    englishMeaning: t("englishMeaning"),
-  });
-  const labels = labelsFor(settings.mode);
+  const labels = useSheetLabels(settings.mode, doc.title);
   // Spec §3.5: the committed page set is atomic, so its labels follow the settings it was measured with.
-  const committedLabels = labelsFor(committed?.settings.mode ?? settings.mode);
+  const committedLabels = useSheetLabels(committed?.settings.mode ?? settings.mode, doc.title);
 
   useEffect(() => setPortal(document.body), []);
 
@@ -66,7 +84,7 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
     };
   }, []);
 
-  // Spec §3.5: render tree → fonts.ready → measure + paginate → mascot decode → commit; only the newest generation commits.
+  // Spec §3.5 + W §5: render tree → fonts.ready → measure + paginate → mascot + watermark decode → commit.
   useEffect(() => {
     const mine = ++generation.current;
     setBusy(true);
@@ -75,23 +93,39 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
       const root = measureRef.current;
       if (mine !== generation.current || !root) return;
       const height = (role: string) => root.querySelector<HTMLElement>(`[data-measure="${role}"]`)?.getBoundingClientRect().height ?? 0;
-      // Spec §3.5: a tree with no layout (print media, the mobile handoff) reads all zeros; commit nothing and stay busy until the content observer sees layout return.
+      // A tree with no layout (print media, the mobile handoff) reads zeros; commit nothing until the observer sees layout.
       if (height("content") === 0) return;
-      const nodes = [...root.querySelectorAll<HTMLElement>('[data-measure="item"]')];
-      const itemHeights = nodes.map((el) => el.getBoundingClientRect().height);
-      // Map back by id read off the measured DOM, never by a closure index.
-      const byId = new Map(chosen.map((item) => [item.id, item]));
-      const itemsAt = (indexes: number[]) => indexes.flatMap((index) => byId.get(nodes[index]?.dataset.itemId ?? "") ?? []);
       const capacity = pageCapacity({
-        content: height("content"), firstHeader: height("first-header"), continuationHeader: height("continuation-header"), footer: height("footer"),
+        content: height("content"), firstHeader: height("first-header"), continuationHeader: height("continuation-header"),
+        quote: height("quote"), footer: height("footer"),
       });
-      const { pages, oversized } = paginate(itemHeights, capacity);
+      // Map back by id read off the measured DOM, never by a closure index.
+      const nodes = (role: string) => [...root.querySelectorAll<HTMLElement>(`[data-measure="${role}"]`)];
+      const itemNodes = nodes("item");
+      const itemById = new Map(prepared.items.map((item) => [item.id, item]));
+      const itemAt = (index: number) => itemById.get(itemNodes[index]?.dataset.itemId ?? "");
+      const items = paginate(itemNodes.map((el) => el.getBoundingClientRect().height), capacity);
+      const pages: PreparedPage[] = items.pages.map((indexes) => ({ kind: "items", items: indexes.flatMap((index) => itemAt(index) ?? []) }));
+      if (settings.mode === "selfTest" && prepared.answers.length > 0) {
+        const answerNodes = nodes("answer");
+        const answerById = new Map(prepared.answers.map((answer) => [answer.id, answer]));
+        const room = capacity.continuationPage - height("answers-heading");
+        const answers = paginate(answerNodes.map((el) => el.getBoundingClientRect().height), { firstPage: room, continuationPage: room });
+        pages.push(...answers.pages.map((indexes): PreparedPage => ({
+          kind: "answers", answers: indexes.flatMap((index) => answerById.get(answerNodes[index]?.dataset.itemId ?? "") ?? []),
+        })));
+      }
+      const tooWide = prepared.items.filter((item) => writingLayout(item.cells, settings.mode, settings.density).oversized);
+      const oversized = [...new Set([...items.oversized.flatMap((index) => itemAt(index) ?? []), ...tooWide])];
       await mascotReady();
       if (mine !== generation.current) return;
-      setCommitted({ pages: pages.map(itemsAt), settings, oversized: itemsAt(oversized), selected: chosen.length });
+      setCommitted({
+        pages, settings, oversized, printed: prepared.items.length, excluded: prepared.excluded.length,
+        missingStrokes: settings.mode === "practice" ? missingStrokes(prepared.items, resources) : 0,
+      });
       setBusy(false);
     })();
-  }, [chosen, settings, fontTick, layoutTick]);
+  }, [prepared, settings, resources, fontTick, layoutTick]);
 
   // Unmount: any in-flight generation becomes stale and commits nothing.
   useEffect(() => () => { generation.current += 1; }, []);
@@ -122,7 +156,7 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
     return () => observer.disconnect();
   }, []);
 
-  const update = useCallback(<K extends keyof PrintSettings>(key: K, value: PrintSettings[K]) => {
+  const update = useCallback(<K extends keyof WorksheetSettings>(key: K, value: WorksheetSettings[K]) => {
     setSettings((current) => ({ ...current, [key]: value }));
   }, []);
 
@@ -136,9 +170,12 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
   }
 
   const pageCount = committed?.pages.length ?? 0;
-  const unresolved = doc.items.filter((item) => item.resolution === "saved_raw" && selected.has(item.id)).length;
-  const blocked = busy || !committed || chosen.length === 0 || committed.oversized.length > 0;
+  const unresolved = visible.filter((item) => item.resolution === "saved_raw" && selected.has(item.id)).length;
+  const blocked = busy || !committed || committed.printed === 0 || committed.oversized.length > 0;
   const previewHeight = pageCount * SHEET_PX.height + Math.max(0, pageCount - 1) * SHEET_GAP_PX;
+  const enabledPrompts = PROMPT_KEYS.filter((key) => settings[key]);
+  const locked = (key: (typeof PROMPT_KEYS)[number]) => settings.mode === "selfTest" && settings[key] && enabledPrompts.length === 1;
+  const measureCredit = labels.credit("JMdict · KanjiVG"); // fixed-height line; its text never changes the height
 
   return (
     <div className="grid gap-lg py-lg lg:grid-cols-[20rem_minmax(0,1fr)]">
@@ -153,22 +190,26 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
           ))}
         </nav>
         <SegmentedControl aria-label={t("mode")} value={settings.mode} onValueChange={(value) => update("mode", value)}
-          options={[{ value: "review", label: t("modeReview") }, { value: "selfTest", label: t("modeSelfTest") }]} />
+          options={[{ value: "practice", label: t("modePractice") }, { value: "selfTest", label: t("modeSelfTest") }]} />
         <fieldset className="space-y-xs">
-          <legend className="text-caption font-semibold text-muted-foreground">{t("show")}</legend>
-          {(["showReading", "showMeaning", "showExample"] as const).map((key) => (
+          <legend className="text-caption font-semibold text-muted-foreground">{settings.mode === "selfTest" ? t("prompts") : t("metadata")}</legend>
+          {PROMPT_KEYS.map((key) => (
             <label key={key} className="flex items-center justify-between gap-sm text-body">
               {t(key)}
-              <Switch checked={settings[key]} onCheckedChange={(checked) => update(key, checked)} />
+              <Switch checked={settings[key]} disabled={locked(key)} aria-describedby={locked(key) ? "vp-last-prompt" : undefined}
+                onCheckedChange={(checked) => update(key, checked)} />
             </label>
           ))}
+          {enabledPrompts.length === 1 && settings.mode === "selfTest" && (
+            <p id="vp-last-prompt" className="text-caption text-muted-foreground">{t("lastPrompt")}</p>
+          )}
         </fieldset>
-        {settings.mode === "selfTest" && (
-          <SegmentedControl aria-label={t("hide")} value={settings.hide} onValueChange={(value) => update("hide", value)}
-            options={[{ value: "meaning", label: t("showMeaning") }, { value: "reading", label: t("showReading") }]} />
-        )}
         <SegmentedControl aria-label={t("density")} value={settings.density} onValueChange={(value) => update("density", value)}
           options={[{ value: "airy", label: t("densityAiry") }, { value: "compact", label: t("densityCompact") }]} />
+        <label className="flex items-center justify-between gap-sm text-body">
+          {t("includeKanaOnly")}
+          <Switch checked={settings.includeKanaOnly} onCheckedChange={(checked) => update("includeKanaOnly", checked)} />
+        </label>
         <div className="space-y-xs">
           <div className="flex items-center justify-between gap-sm">
             <span className="text-caption font-semibold text-muted-foreground">{t("words")}</span>
@@ -178,7 +219,7 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
             </span>
           </div>
           <ul className="space-y-2xs">
-            {doc.items.map((item) => (
+            {visible.map((item) => (
               <li key={item.id}>
                 <label className="flex items-center gap-sm text-body">
                   <input type="checkbox" checked={selected.has(item.id)} onChange={(event) => setSelected((current) => {
@@ -194,24 +235,31 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
           </ul>
         </div>
         <p role="status" aria-live="polite" className="text-caption text-muted-foreground">
-          {!committed ? t("preparing") : t("count", { selected: committed.selected, total: doc.items.length, pages: committed.selected === 0 ? 0 : pageCount })}
+          {!committed ? t("preparing") : t("count", { selected: committed.printed, total: visible.length, pages: committed.printed === 0 ? 0 : pageCount })}
         </p>
         {unresolved > 0 && <p className="text-caption text-muted-foreground">{t("unresolved", { count: unresolved })}</p>}
+        {committed && committed.missingStrokes > 0 && <p className="text-caption text-muted-foreground">{t("missingStrokes", { count: committed.missingStrokes })}</p>}
+        {committed && committed.excluded > 0 && <p className="text-caption text-muted-foreground">{t("noPrompt", { count: committed.excluded })}</p>}
         {committed?.oversized.map((item) => (
-          <p key={item.id} role="alert" className="text-caption text-destructive">{t("oversized", { word: item.surface })}</p>
+          <p key={item.id} role="alert" className="text-caption text-destructive">
+            {t("oversized", { word: doc.items.find((candidate) => candidate.id === item.id)?.surface ?? "" })}
+          </p>
         ))}
-        <Button className="sticky bottom-0 mt-auto aria-disabled:cursor-not-allowed aria-disabled:opacity-50" aria-disabled={blocked || undefined} onClick={() => { if (!blocked) window.print(); }}>
-          {t("print")}
-        </Button>
+        <div className="sticky bottom-0 mt-auto flex gap-sm bg-background pt-sm">
+          <Button variant="outline" className="aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+            aria-disabled={blocked || undefined} onClick={() => { if (!blocked) window.print(); }}>
+            {t("print")}
+          </Button>
+        </div>
       </aside>
 
       <div ref={previewRef} data-preview="" className="min-w-0">
-        {chosen.length === 0
+        {prepared.items.length === 0
           ? <p className="text-body text-muted-foreground">{t("empty")}</p>
           : committed && (
             <div style={{ height: previewHeight * scale }}>
               <div className="origin-top-left" style={{ width: SHEET_PX.width, transform: `scale(${scale})` }}>
-                <PrintSheets pages={committed.pages} settings={committed.settings} labels={committedLabels} />
+                <Worksheet pages={committed.pages} settings={committed.settings} labels={committedLabels} resources={resources} />
               </div>
             </div>
           )}
@@ -222,15 +270,24 @@ export function PrintWorkspace({ doc, views }: { doc: PrintDocument; views: { la
         <div data-measure="content" className="vp-measure-content" />
         <div data-measure="first-header"><FirstHeader labels={labels} /></div>
         <div data-measure="continuation-header"><ContinuationHeader labels={labels} /></div>
-        <div data-measure="footer"><Footer labels={labels} page={88} count={88} /></div>
-        {chosen.map((item) => (
-          <div key={item.id} data-measure="item" data-item-id={item.id}><PrintItem item={item} settings={settings} englishMeaning={labels.englishMeaning} /></div>
+        <div data-measure="quote"><QuoteBand text={labels.quote(0)} /></div>
+        <div data-measure="footer"><FooterBlock labels={labels} page={88} count={88} credit={measureCredit} /></div>
+        {prepared.items.map((item) => (
+          <div key={item.id} data-measure="item" data-item-id={item.id}>
+            {settings.mode === "practice"
+              ? <PracticeItem item={item} settings={settings} labels={labels} resources={resources} />
+              : <SelfTestItem item={item} settings={settings} labels={labels} />}
+          </div>
+        ))}
+        {settings.mode === "selfTest" && <div data-measure="answers-heading"><AnswersHeading labels={labels} /></div>}
+        {settings.mode === "selfTest" && prepared.answers.map((answer) => (
+          <div key={answer.id} data-measure="answer" data-item-id={answer.id}><AnswerLine answer={answer} /></div>
         ))}
       </div>
 
       {portal && createPortal(
         <div data-print-root="">
-          {committed && chosen.length > 0 && <PrintSheets pages={committed.pages} settings={committed.settings} labels={committedLabels} />}
+          {committed && committed.printed > 0 && <Worksheet pages={committed.pages} settings={committed.settings} labels={committedLabels} resources={resources} />}
         </div>,
         portal,
       )}

@@ -44,6 +44,11 @@ describe("paginate (spec §3.4)", () => {
 
 describe("pageCapacity", () => {
   it("subtracts each page kind's own measured header and the footer", () => {
-    expect(pageCapacity({ content: 1000, firstHeader: 120, continuationHeader: 40, footer: 30 })).toEqual({ firstPage: 850, continuationPage: 930 });
+    expect(pageCapacity({ content: 1000, firstHeader: 120, continuationHeader: 40, quote: 0, footer: 30 })).toEqual({ firstPage: 850, continuationPage: 930 });
+  });
+
+  it("subtracts the fixed quote band and footer from both capacities (spec W §5)", () => {
+    expect(pageCapacity({ content: 1000, firstHeader: 100, continuationHeader: 40, quote: 38, footer: 30 }))
+      .toEqual({ firstPage: 832, continuationPage: 892 });
   });
 });

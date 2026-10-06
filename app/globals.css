@@ -1626,10 +1626,7 @@
 .vp-chip { display: inline-block; margin-inline-start: 2mm; padding: 0 1mm; border: 0.2mm solid var(--vp-muted); border-radius: 0.5mm; font-size: 6.5pt; font-weight: 600; color: var(--vp-muted); vertical-align: middle; }
 .vp-example { margin-top: 1mm; font-family: var(--font-jp); font-size: 9.5pt; color: var(--vp-muted); }
 .vp-compact .vp-example { font-size: 8.5pt; }
-.vp-blank { height: 10mm; border-bottom: 0.3mm solid var(--vp-ink); }
-.vp-blank-inline { display: inline-block; width: 30mm; height: 6mm; margin-inline-start: 3mm; border-bottom: 0.3mm solid var(--vp-ink); vertical-align: bottom; }
 .vp-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 4mm; padding-top: 2mm; font-size: 7.5pt; color: var(--vp-muted); }
-.vp-foot-mark { width: 8mm; height: 8mm; margin-inline-start: auto; flex: none; object-fit: contain; filter: grayscale(1); opacity: 0.08; }
 .vp-measure { position: absolute; top: 0; inset-inline-start: -10000px; width: calc(var(--vp-width) - 2 * var(--vp-margin)); visibility: hidden; pointer-events: none; }
 .vp-measure-content { height: calc(var(--vp-height) - 2 * var(--vp-margin)); }
 /* The preview stacks its sheets with a gap; print never sees it (the print root is hidden on screen). */

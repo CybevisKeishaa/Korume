@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { ReactElement } from "react";
 import { loadPrintDocument } from "@/lib/vocabulary/print/load";
+import { loadPrintResources } from "@/lib/vocabulary/print/resources";
 import PrintPage, { generateMetadata } from "./page";
 
 // React 18.3.1 has no `cache` outside the RSC runtime; stubs suffice for a unit test.
@@ -11,6 +12,9 @@ vi.mock("@/components/vocabulary-print/print-workspace", () => ({ PrintWorkspace
 vi.mock("server-only", () => ({}));
 vi.mock("next/navigation", () => ({ notFound: vi.fn(() => { throw new Error("NEXT_NOT_FOUND"); }) }));
 vi.mock("@/lib/vocabulary/print/load", () => ({ loadPrintDocument: vi.fn() }));
+vi.mock("@/lib/vocabulary/print/resources", () => ({
+  loadPrintResources: vi.fn(async () => ({ strokeGuides: {}, credits: { jmdict: null, kanjivg: null } })),
+}));
 vi.mock("@/lib/i18n/server", () => ({ getTranslations: vi.fn(async () => (key: string, values?: Record<string, string>) => `${key}${values ? JSON.stringify(values) : ""}`) }));
 
 const LESSON = "ba522023-8eba-4929-924f-35ae69eacf99";
@@ -51,5 +55,17 @@ describe("/vocab/print (spec §2.1)", () => {
       const page = (await PrintPage({ params, searchParams: { source: "lesson", lesson: LESSON, set } })) as ReactElement<{ children: ReactElement }>;
       expect(page.props.children.key).toBe(`${LESSON}:${set}`);
     }
+  });
+
+  it("hands the workspace its source and the print resources, all plain data across the RSC boundary (spec W §1.1, §1.5)", async () => {
+    const items = [{ id: "a", surface: "苦手", resolution: "resolved" as const }, { id: "b", surface: "人", resolution: "resolved" as const }];
+    vi.mocked(loadPrintDocument).mockResolvedValueOnce({ kind: "ok", doc: { ...doc, items } });
+    const page = (await PrintPage({ params, searchParams: { source: "lesson", lesson: LESSON, set: "saved" } })) as ReactElement<{ children: ReactElement<Record<string, unknown>> }>;
+    const props = page.props.children.props;
+    expect(loadPrintResources).toHaveBeenCalledWith(["苦手", "人"]);
+    expect(props.resources).toEqual({ strokeGuides: {}, credits: { jmdict: null, kanjivg: null } });
+    expect(props.source).toEqual({ lessonId: LESSON, set: "saved" });
+    // A function prop would blank the page in production while jsdom stays green; structuredClone throws on one.
+    for (const value of Object.values(props)) expect(() => structuredClone(value)).not.toThrow();
   });
 });

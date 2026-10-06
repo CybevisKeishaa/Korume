@@ -1,11 +1,10 @@
 /** Spec §3.4: heights in CSS px from the measurement tree; capacities per page kind, all measured. */
 export type PageCapacity = { firstPage: number; continuationPage: number };
 
-export function pageCapacity(measured: { content: number; firstHeader: number; continuationHeader: number; footer: number }): PageCapacity {
-  return {
-    firstPage: measured.content - measured.firstHeader - measured.footer,
-    continuationPage: measured.content - measured.continuationHeader - measured.footer,
-  };
+/** Spec W §5: the quote band and footer sit on every page, so both capacities lose them. */
+export function pageCapacity(measured: { content: number; firstHeader: number; continuationHeader: number; quote: number; footer: number }): PageCapacity {
+  const bands = measured.quote + measured.footer;
+  return { firstPage: measured.content - measured.firstHeader - bands, continuationPage: measured.content - measured.continuationHeader - bands };
 }
 
 /** Greedy, one pass: each item is placed exactly once, so no input can loop. An item taller than its page is alone and reported. */

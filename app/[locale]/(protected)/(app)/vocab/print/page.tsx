@@ -6,6 +6,7 @@ import { PrintWorkspace } from "@/components/vocabulary-print/print-workspace";
 import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { loadPrintDocument } from "@/lib/vocabulary/print/load";
+import { loadPrintResources } from "@/lib/vocabulary/print/resources";
 import { parsePrintQuery, type PrintSource } from "@/lib/vocabulary/print/source";
 
 export const dynamic = "force-dynamic";
@@ -37,12 +38,14 @@ export default async function VocabularyPrintPage({ params, searchParams }: Prop
   if (!source) notFound();
   const result = await loadPrintDocument(source, params.locale);
   if (result.kind !== "ok") notFound();
+  const resources = await loadPrintResources(result.doc.items.map((item) => item.surface));
   const t = await getTranslations({ locale: params.locale, namespace: "vocab.print" });
   const href = (set: "all" | "saved") => `/vocab/print?source=lesson&lesson=${source.lessonId}&set=${set}`;
   return (
     <Container>
       {/* key: All↔Saved is a search-param navigation that keeps the client component mounted; remount drops the old selection. */}
-      <PrintWorkspace key={`${source.lessonId}:${source.set}`} doc={result.doc} views={[
+      <PrintWorkspace key={`${source.lessonId}:${source.set}`} doc={result.doc}
+        source={{ lessonId: source.lessonId, set: source.set }} resources={resources} views={[
         { label: t("setAll"), href: href("all"), current: source.set === "all" },
         { label: t("setSaved"), href: href("saved"), current: source.set === "saved" },
       ]} />
