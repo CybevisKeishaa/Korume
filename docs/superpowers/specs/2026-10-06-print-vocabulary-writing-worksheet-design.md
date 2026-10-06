@@ -9,7 +9,9 @@
 - Status: design approved by the owner 2026-10-06 with seven amendments (W2, W5, W6, W8, W9, W10, W12), all folded
   in below. Written-spec review round 1 (same day) added four amendments — document-level masking (§1.4),
   `readingRevealsTarget` (§2), a single-use render-job token bound server-side to the user and the validated payload instead of forwarded cookies (§6.3), `playwright` + its installer
-  (§6.4) — and the attribution check (§1.5). Awaiting the owner's final look, then frozen and `writing-plans`.
+  (§6.4) — and the attribution check (§1.5). The owner approved freezing on those terms — **frozen 2026-10-06**. Two
+  rulings made while folding them in stay open to the owner's veto: the JMdict credit on every page (§1.5) and the
+  unmasked lesson title in headers (§4). Next: `writing-plans`.
 - Implementer: Claude.
 
 ## 0. Rulings
