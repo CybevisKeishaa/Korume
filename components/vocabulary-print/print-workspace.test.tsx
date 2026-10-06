@@ -183,9 +183,9 @@ describe("PrintWorkspace (spec §3)", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Self-test" }));
     await waitFor(() => expect(decode).toBeDefined());
     expect(printRoot()).toHaveTextContent("Vocabulary review");
-    expect(printRoot()).not.toHaveTextContent("Vocabulary self-test");
+    expect(printRoot()).not.toHaveTextContent("Vocabulary Self-test");
     await act(async () => decode());
-    expect(printRoot()).toHaveTextContent("Vocabulary self-test");
+    expect(printRoot()).toHaveTextContent("Vocabulary Self-test");
   });
 
   it("names the views navigation", async () => {

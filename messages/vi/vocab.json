@@ -46,6 +46,21 @@
     "wordmark": "KORUME",
     "footer": "Korume · {document}",
     "pageNumber": "{page} / {count}",
-    "englishMeaning": "EN"
+    "englishMeaning": "EN",
+    "modePractice": "Luyện viết",
+    "docPractice": "Luyện viết từ vựng",
+    "strokeOrder": "Thứ tự nét",
+    "answers": "Đáp án",
+    "credit": "Dữ liệu: {sources}",
+    "quotes": {
+      "q1": "Viết chậm cũng là đang tiến lên.",
+      "q2": "Một chữ đẹp bắt đầu từ một nét chắc.",
+      "q3": "Nhớ bằng tay, không chỉ bằng mắt.",
+      "q4": "Mỗi lần viết lại là một lần nhớ sâu hơn.",
+      "q5": "Đúng thứ tự nét, chữ tự khắc vững.",
+      "q6": "Hôm nay một trang, mai thêm một chữ quen.",
+      "q7": "Sai một nét cũng không sao — viết lại thôi.",
+      "q8": "Từng ô nhỏ, từng bước vững."
+    }
   }
 }

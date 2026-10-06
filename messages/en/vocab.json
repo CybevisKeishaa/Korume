@@ -42,10 +42,25 @@
     "print": "Print / Save PDF",
     "empty": "There are no words to print here yet.",
     "docReview": "Vocabulary review",
-    "docSelfTest": "Vocabulary self-test",
+    "docSelfTest": "Vocabulary Self-test",
     "wordmark": "KORUME",
     "footer": "Korume · {document}",
     "pageNumber": "{page} / {count}",
-    "englishMeaning": "EN"
+    "englishMeaning": "EN",
+    "modePractice": "Writing practice",
+    "docPractice": "Vocabulary Writing Practice",
+    "strokeOrder": "Stroke order",
+    "answers": "Answers",
+    "credit": "Data: {sources}",
+    "quotes": {
+      "q1": "Writing slowly is still moving forward.",
+      "q2": "A good character starts with one sure stroke.",
+      "q3": "Remember with your hand, not just your eyes.",
+      "q4": "Every rewrite makes the memory deeper.",
+      "q5": "Get the stroke order right and the shape follows.",
+      "q6": "One page today, one more familiar word tomorrow.",
+      "q7": "A wrong stroke is fine — just write it again.",
+      "q8": "Small squares, steady steps."
+    }
   }
 }
