@@ -255,10 +255,14 @@ test("13 · a repetition is atomic: every group sits on one row line", async ({ 
   await learner(page);
   await open(page);
   await page.emulateMedia({ media: "print" });
-  const split = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-group")].filter((group) => {
-    const tops = [...group.querySelectorAll(".vp-cell")].map((cell) => Math.round(cell.getBoundingClientRect().top));
-    return new Set(tops).size > 1;
-  }).length);
+  const { groups, split } = await page.evaluate(() => {
+    const all = [...document.querySelectorAll("[data-print-root] .vp-group")];
+    return { groups: all.length, split: all.filter((group) => {
+      const tops = [...group.querySelectorAll(".vp-cell")].map((cell) => Math.round(cell.getBoundingClientRect().top));
+      return new Set(tops).size > 1;
+    }).length };
+  });
+  expect(groups).toBeGreaterThan(0); // positive control: an empty set would pass vacuously
   expect(split).toBe(0);
 });
 
@@ -308,4 +312,22 @@ test("16 · the PDF route rejects a forged id and a missing session", async ({ p
   const anonymous = await playwright.request.newContext({ baseURL: page.url().replace(/\/en\/.*$/, "") });
   expect((await anonymous.post("/api/vocab/print/pdf", { data: body })).status()).toBe(401);
   await anonymous.dispose();
+});
+
+test("17 · an overflowing sheet keeps its quote band in place, so the PDF overflow guard sees the crossing", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  await page.emulateMedia({ media: "print" });
+  // The geometry overflowing() (pdf-render.tsx) reads: an item bottom below its own sheet's quote band top.
+  const { before, after, crossing } = await page.evaluate(() => {
+    const sheet = document.querySelector("[data-print-root] .vp-sheet")!;
+    const quoteTop = () => sheet.querySelector(".vp-quote")!.getBoundingClientRect().top;
+    const before = quoteTop();
+    const tall = Object.assign(document.createElement("div"), { className: "vp-item" });
+    tall.style.height = "400mm";
+    sheet.querySelector(".vp-body")!.append(tall);
+    const after = quoteTop();
+    return { before, after, crossing: [...sheet.querySelectorAll(".vp-item")].some((item) => item.getBoundingClientRect().bottom > after + 0.5) };
+  });
+  expect({ bandMoved: Math.round(Math.abs(after - before)), crossing }).toEqual({ bandMoved: 0, crossing: true });
 });

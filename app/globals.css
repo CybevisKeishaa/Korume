@@ -1609,7 +1609,9 @@
   display: flex; flex-direction: column; overflow: hidden; background: #fff; color: var(--vp-ink);
   break-inside: avoid; page-break-inside: avoid; page: vocab-sheet;
 }
-.vp-body { flex: 1 1 auto; }
+/* min-height: 0 lets an overflowing body shrink, so the quote band and footer (flex: none) keep their y and an item
+   that overflows crosses the band, which the PDF overflow guard (pdf-render.tsx) reads (spec W §6.3 step 5). */
+.vp-body { flex: 1 1 auto; min-height: 0; }
 .vp-head-first { display: flex; align-items: center; gap: 4mm; padding-bottom: 4mm; border-bottom: 0.3mm solid var(--vp-rule); }
 .vp-head-cont { display: flex; justify-content: space-between; gap: 4mm; padding-bottom: 2mm; border-bottom: 0.3mm solid var(--vp-rule); font-size: 8pt; color: var(--vp-muted); }
 .vp-mascot { width: 18mm; height: 18mm; flex: none; object-fit: contain; }
@@ -1676,6 +1678,6 @@
 .vp-answers-title { padding-bottom: 2mm; font-size: 12pt; font-weight: 700; }
 .vp-answer { display: flex; align-items: baseline; gap: 3mm; padding: 1mm 0; border-bottom: 0.2mm solid var(--vp-rule); }
 .vp-answer-target { font-family: var(--font-jp); font-size: 12pt; font-weight: 700; }
-.vp-quote { box-sizing: border-box; height: 10mm; padding-top: 2mm; overflow: hidden; font-size: 8.5pt; font-style: italic; line-height: 1.35; color: var(--vp-muted); }
+.vp-quote { flex: none; box-sizing: border-box; height: 10mm; padding-top: 2mm; overflow: hidden; font-size: 8.5pt; font-style: italic; line-height: 1.35; color: var(--vp-muted); }
 .vp-foot-block { flex: none; }
 .vp-credit { height: 3.5mm; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 5.5pt; line-height: 3.5mm; color: var(--vp-muted); }
