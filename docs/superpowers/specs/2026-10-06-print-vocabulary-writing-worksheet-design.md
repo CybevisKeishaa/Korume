@@ -7,7 +7,9 @@
   parent — the resolver (§1), the source adapter (§2), measurement, generation tokens, isolation and the paper
   palette — still holds.
 - Status: design approved by the owner 2026-10-06 with seven amendments (W2, W5, W6, W8, W9, W10, W12), all folded
-  in below. Awaiting the owner's review of this text, then `writing-plans`.
+  in below. Written-spec review round 1 (same day) added four amendments — document-level masking (§1.4),
+  `readingRevealsTarget` (§2), a single-use render-job token bound server-side to the user and the validated payload instead of forwarded cookies (§6.3), `playwright` + its installer
+  (§6.4) — and the attribution check (§1.5). Awaiting the owner's final look, then frozen and `writing-plans`.
 - Implementer: Claude.
 
 ## 0. Rulings
@@ -62,20 +64,39 @@ code units.
 with `々` is never "kana-only"). Items without kanji — hiragana, katakana, `ー`, kana iteration marks `ゝゞヽヾ`,
 and mixed forms such as `Tシャツ` — are the "kana" bucket that `Bao gồm từ chỉ có kana` adds back.
 
-### 1.4 Example masking
+### 1.4 Example masking — document-level
 
-The adapter adds `targetSurfaces: string[]` to `example`: the surfaces of the tokens **in that example line** whose
-resolved `entSeq` equals the item's (for `saved_raw`, the saved `card.ref`). In self-test every occurrence of every
-target surface is replaced by a fixed `＿＿` (the owner's sketch; the cell group already tells the character count,
-so the blank need not mirror it, and an inflected surface's length would mislead). If
-`targetSurfaces` is empty, or none of them occurs in the text, the example is **not rendered** in self-test — the
-example never risks revealing the answer. Practice mode prints the example unmasked.
+The answer of **any** selected item must not appear in **any** example (W6): the example of `苦手` is
+`苦手な人について話します`, and `人` is another item's answer.
 
-### 1.5 Attribution
+- The adapter adds `spans: { surface: string; entSeq: number }[]` to `example`: every analysed token of that line
+  that resolved to a JMdict entry. Plain data, computed server-side.
+- In self-test the workspace builds one **document mask set** `M` from the items that will print (selected, kana
+  toggle applied, not excluded):
+  - every item's target form (`item.surface`; for `saved_raw`, the saved `card.ref`);
+  - every span surface, in any example, whose `entSeq` belongs to a printed item (catches inflected forms, e.g.
+    `話し` for `話す`).
+- Every example masks **every occurrence of every string in `M`**, longest first, each replaced by a fixed `＿＿`
+  (the owner's sketch; the cell group already tells the character count, and an inflected surface's length would
+  mislead). Over-masking a short kana target inside another word is accepted: safety over fidelity.
+- An item whose **own** answer cannot be located in its example (no span with its `entSeq`, and its target form does
+  not occur) drops its example in self-test — an unmasked inflection could still reveal it.
+- Practice mode prints examples unmasked.
+- `M` depends on the selection, so it is part of the measured state: changing the selection re-measures.
+- Invariant (pinned by tests): on self-test item pages, no printed item's target form and no span surface in `M`
+  occurs in any example or prompt. The header's lesson title is the document's identity and is not masked (§4).
 
-KanjiVG is CC BY-SA 3.0. The last page's footer carries one small credit line built from
-`getDictionaryAttribution` (real version and licence, never hard-coded): e.g. `Stroke data: KanjiVG <version>
-(CC BY-SA 3.0)`. Present in preview, print and PDF.
+### 1.5 Attribution — every page
+
+Checked against the repo: AGENTS.md requires licensed/open sources to be "checked and attributed", and both kanji
+surfaces (`/kanji/[id]`, the quick inspect) render `DictionaryAttribution` next to the data. Browser print lets the
+learner print pages 1–2 only, so a last-page credit would leave printed pages without it. Also found: readings and
+English meanings on paper come from **JMdict** (© EDRDG, CC BY-SA 4.0), which the frozen V1 never credited on paper.
+
+Rule: **every page's footer** carries one tiny credit line built from `getDictionaryAttribution` for the active
+snapshot (real versions and licences, never hard-coded), naming the sources that page's data uses — `JMdict` on every
+page, plus `KanjiVG` on practice pages (stroke guides). E.g. `Dữ liệu: JMdict 2026-09-xx (CC BY-SA 4.0) · KanjiVG
+r2026xxxx (CC BY-SA 3.0)`. The line has a fixed reserved height on every page, so capacity stays uniform.
 
 ## 2. Settings and prompts
 
@@ -98,11 +119,22 @@ DEFAULT = { mode: "practice", density: "airy", includeKanaOnly: false, showReadi
 **Self-test.** Reading, meaning and example are prompts. The workspace never lets the learner turn off the last
 enabled prompt (that switch is `aria-disabled` with a hint). The **effective prompts** of an item:
 
-1. the enabled prompts, minus `reading` when the item has no kanji (the reading *is* the answer), minus a field the
-   item lacks, minus an example that cannot be masked (§1.4);
+1. the enabled prompts, minus `reading` when `readingRevealsTarget(surface, reading)`, minus a field the item lacks,
+   minus an example dropped by §1.4;
 2. if that leaves nothing: the first available of meaning, then masked example;
 3. if still nothing: the item is **excluded from self-test**, and the workspace shows "N từ không có gợi ý nên không
    đưa vào Tự kiểm tra".
+
+```ts
+/** True when writing the reading down IS writing the answer. Pure. */
+readingRevealsTarget(surface: string, reading: string | undefined): boolean
+// = reading !== undefined && katakanaToHiragana(NFKC(surface)) === katakanaToHiragana(NFKC(reading))
+//   (katakanaToHiragana: lib/japanese/kana.ts, already used by the resolver)
+```
+
+`する`/`する`, `とても`/`とても`, `カメラ`/`かめら` → true (reading dropped). `Tシャツ`/`ティーシャツ` → false (the
+reading stays a valid prompt). Any kanji in the surface → false. Whether a word has kanji (§1.3) only decides the
+default selection, never which prompts are shown.
 
 ## 3. Item geometry
 
@@ -156,7 +188,7 @@ area remains the largest part of every item in both.
 ### 3.4 Answer key (self-test only)
 
 Starts on a new page after the last item page, headed `Đáp án` / `Answers`. A compact multi-column list: `n.` + target
-(`--font-jp`) + reading (small, grey; omitted when the item has no kanji). No writing cells, no stroke diagrams, no
+(`--font-jp`) + reading (small, grey; omitted when `readingRevealsTarget`). No writing cells, no stroke diagrams, no
 meanings. Answer pages use the continuation header, the quote band and the footer, and are paginated by the same
 greedy pass as item pages (answer rows are the measured units). Practice has no answer key.
 
@@ -184,8 +216,10 @@ greedy pass as item pages (answer rows are the measured units). Practice has no 
   measurement tree and changes no height. Its image `decode()` joins the mascot readiness of the commit lifecycle
   (parent §3.5). Identical in preview, print and PDF. If the owner's printout shows it competing with the cells,
   opacity or size drops — the writing area never does.
-- **Footer.** `Korume · <document name>` left, `x / y` right; the footer mascot mark is removed (W9). The last page
-  adds the KanjiVG credit (§1.5) in a reserved line, so every page's footer keeps one fixed height.
+- **Footer.** `Korume · <document name>` left, `x / y` right; the footer mascot mark is removed (W9). Below it, on
+  every page, the tiny data-credit line (§1.5) in a reserved fixed height.
+- **Lesson title.** Shown in the headers in both modes and not masked in self-test: it is the document's identity,
+  and the no-leak invariant (§1.4) covers the items, not the header.
 - **Quote band (W10).** Directly above the footer, fixed height (2 lines of its type), on every page.
   `printQuote(pageIndex, locale)` returns `quotes[pageIndex % quotes.length]` from `messages/{vi,en}/vocab.json`
   `print.quotes` (`q1…q8`). Rendered with quotation marks; in code it is a learning prompt, not an attributed quote.
@@ -250,29 +284,43 @@ the notices (`saved_raw`, oversized, "N ký tự chưa có hướng dẫn nét",
    Every id must belong to the document, appear at most once across item pages, answer pages must list exactly the
    item pages' ids in order, and `answers` pages only in self-test → otherwise 400. No text from the client is ever
    rendered.
-3. **Render.** One shared `playwright-core` Chromium, at most **one render at a time**, a queue of at most 4 (full →
-   503 with `Retry-After`), a 30s render timeout (→ 504). A fresh browser context per request receives the learner's
-   auth cookies scoped to `PRINT_PDF_ORIGIN` (default `http://127.0.0.1:$PORT`), and **aborts every request whose
-   origin is not `PRINT_PDF_ORIGIN`**. It opens `/{locale}/vocab/print?source=lesson&lesson=…&set=…&render=pdf` with
-   the validated `{ settings, pages }` injected by `addInitScript`.
-4. **Render mode** (same route, same `PrintSheets`). The page re-resolves the source itself, re-validates the
-   injected ids against it, and renders exactly the injected page assignment — **no measurement, no pagination** —
-   then awaits `document.fonts.ready` and both image decodes, checks that no sheet's body overflows its capacity, and
-   sets `data-pdf-ready` (or `data-pdf-error`).
-5. **PDF.** `page.pdf({ preferCSSPageSize: true, printBackground: false })`. On overflow → 409 and the client says
+3. **Render job — no forwarded cookies.** Production auth cookies may be `Secure`, domain-bound or `__Host-`
+   prefixed, so Chromium never receives them. Instead the route, still inside the learner's authenticated request,
+   builds the complete **render payload** server-side — the validated page assignment, the items re-resolved from the
+   document (never client text), the stroke guides, the labels, the quotes, the attribution line — and stores it as a
+   **render job**:
+   - key: a random 256-bit token (`crypto.randomBytes(32)`, base64url); value: `{ userId, lessonId, set, locale,
+     payload, expiresAt: now + 60s }`;
+   - in a process-local store on `globalThis` (the route handler and the page bundle may hold separate module
+     instances); valid for this deploy because production is a single long-running Node instance (AGENTS.md) —
+     `ponytail:` a multi-instance deploy needs a shared store;
+   - **single use**: the render page consumes the job on first read; an unknown, used or expired token → 404.
+4. **Render.** One shared `playwright` Chromium, at most **one render at a time**, a queue of at most 4 (full → 503
+   with `Retry-After`), a 30s render timeout (→ 504). A fresh browser context per request, **no cookies**, aborts every
+   request whose origin is not `PRINT_PDF_ORIGIN` (default `http://127.0.0.1:$PORT`; same-origin assets only). It
+   opens `PRINT_PDF_ORIGIN/{locale}/print-render/{token}`.
+5. **Render page** `app/[locale]/print-render/[token]/page.tsx`: outside `(protected)`; middleware lets exactly this
+   path through without a session (the token is the capability); `noindex`; renders the job's payload with the same
+   `PrintSheets` and exactly its page assignment — **no measurement, no pagination**, no database read. It awaits
+   `document.fonts.ready` and both image decodes, checks that no sheet's body overflows its capacity, and sets
+   `data-pdf-ready` (or `data-pdf-error`).
+6. **PDF.** `page.pdf({ preferCSSPageSize: true, printBackground: false })`. On overflow → 409 and the client says
    "Bố cục vừa thay đổi, hãy thử lại" — never a silently broken PDF.
-6. **Response.** `Content-Type: application/pdf`, `Content-Disposition: attachment;
+7. **Response.** `Content-Type: application/pdf`, `Content-Disposition: attachment;
    filename="Korume-Writing-Practice.pdf"; filename*=UTF-8''<percent-encoded name>`, with the name
    `Korume - Luyện viết từ vựng - <lesson title>.pdf` (vi) or `Korume - Vocabulary Writing Practice - <lesson
    title>.pdf` (en); self-test uses its document name. Characters invalid in file names (`/\:*?"<>|` and control
    characters) are replaced by a space.
-7. **Client.** `fetch` → `blob` → `<a download>` click → revoke the object URL. Busy state on the button; errors map to
+8. **Client.** `fetch` → `blob` → `<a download>` click → revoke the object URL. Busy state on the button; errors map to
    a toast (429 / 503 "đang bận, thử lại sau", 409 as above, others generic).
 
 ### 6.4 Ops
 
-- `playwright-core` (same version as `@playwright/test`) moves into `dependencies`.
-- The server needs Chromium: `npx playwright install --with-deps chromium`, recorded in the deploy docs together with
+- **`playwright`** (the full package, pinned to the same version as `@playwright/test`) is a production
+  `dependency`; runtime uses `import { chromium } from "playwright"` with its own managed browser — no
+  `executablePath`, no `playwright-core` split.
+- The server installs that browser with `npx playwright install --with-deps chromium` (same package, same version),
+  recorded in the deploy docs together with
   `PRINT_PDF_ORIGIN`. Without Chromium, the route returns 503 and the workspace hides nothing — `In` still works.
 - Memory: one browser, one render at a time; the browser closes after 5 idle minutes.
 
@@ -283,7 +331,7 @@ the notices (`saved_raw`, oversized, "N ký tự chưa có hướng dẫn nét",
 | Strokes | `lib/strokes/{types,guides}.ts` (new) |
 | Print lib | `lib/vocabulary/print/{settings,source,lesson-source,paginate}.ts`, `lib/vocabulary/print/{graphemes,prompts,mask,quotes,filename,layout}.ts` (new) |
 | Renderer | `components/vocabulary-print/{print-sheets,print-workspace}.tsx`, `components/vocabulary-print/{writing-cells,stroke-guide,answer-key,watermark}.tsx` (new) |
-| Route | `app/[locale]/(protected)/(app)/vocab/print/page.tsx` (render mode), `app/api/vocab/print/pdf/route.ts` (new), `lib/vocabulary/print/pdf/{renderer,queue}.ts` (new) |
+| Route | `app/[locale]/(protected)/(app)/vocab/print/page.tsx`, `app/api/vocab/print/pdf/route.ts` (new), `app/[locale]/print-render/[token]/page.tsx` (new), `middleware.ts` (one public path), `lib/vocabulary/print/pdf/{jobs,renderer,queue}.ts` (new) |
 | CSS / copy | `app/globals.css` (`.vp-*`), `messages/{vi,en}/vocab.json` |
 | Ops | `package.json`, deploy docs |
 
@@ -295,21 +343,29 @@ Written first; each guarantee below also gets a mutation that turns it red.
 
 - **Unit.** `graphemes` (small kana, `ー`, surrogate pairs); `hasKanji` (`々` counts as kanji, `Tシャツ` does not);
   `getStrokeGuides` (order kept, `start` from the first move, missing character absent, active snapshot only);
-  masking (every occurrence, fixed `＿＿`, unmaskable → no example); effective prompts (kana item drops reading; empty
-  → fallback; nothing → excluded); repetition layout (atomic groups, `groupsPerRow`, min repetitions, shrink floor →
-  oversized); `printQuote` deterministic; filename (`filename*`, unsafe characters); PDF route validation (401,
-  foreign id, duplicate id, answers mismatch, answers in practice, oversize caps, 429).
+  document masking (item `苦手`'s example masks another item's `人`; an inflected span `話し` of `話す` is masked;
+  every occurrence; longest first; fixed `＿＿`; own answer not locatable → no example; deselecting `人` unmasks it);
+  `readingRevealsTarget` (`する` true, `カメラ`/`かめら` true, `Tシャツ`/`ティーシャツ` false, kanji surface false);
+  effective prompts (revealing reading dropped; empty → fallback; nothing → excluded); repetition layout (atomic
+  groups, `groupsPerRow`, min repetitions, shrink floor → oversized); `printQuote` deterministic; filename
+  (`filename*`, unsafe characters); attribution line on every page (JMdict always, KanjiVG on practice pages only);
+  PDF route validation (401, foreign id, duplicate id, answers mismatch, answers in practice, oversize caps, 429);
+  render jobs (single use, 60s expiry, unknown token → 404, payload built from the re-resolved document, never from
+  request text).
 - **Component.** Practice renders guide → model → trace → blanks; self-test renders no target text, no `.vp-trace`,
   no stroke guide before the answer key (asserted on the whole sheet's text and SVG); the last prompt switch cannot be
   turned off; `Tải PDF` and `In` disabled until commit; kana toggle default off.
 - **Playwright (Ep.729).**
   - Real A4 geometry re-measured: no item crosses the quote band; quote band and footer at the same y on every
     page; watermark present and centred on every page and does not change any measured height.
-  - Self-test: the target surface of every item appears nowhere on item pages (text content, including examples)
-    and appears on the answer pages; answer pages are last.
+  - Self-test: no printed item's target form and no mask-set span appears anywhere in the item pages' bodies
+    (prompts and examples of **every** item, not only its own), and each appears on the answer pages; answer pages
+    are last.
+  - Printing pages 1–2 only still carries the data credit (asserted on every sheet's footer).
   - A group never spans two rows (every cell of a group shares one row box).
   - `Tải PDF`: the download is a file starting `%PDF`, its page count equals the preview's sheet count, and
-    extracted text contains a lesson kanji (vector text, not an image); a forged id → 400.
+    extracted text contains a lesson kanji (vector text, not an image); a forged id → 400; the render URL
+    opened a second time → 404 (single use); the render page sends no cookie and needs none.
 - **Gates** (unchanged from the parent §9) plus the owner's Chrome + real-paper review of both modes and a
   downloaded PDF.
 
