@@ -1598,3 +1598,49 @@
     }
   }
 }
+
+/* Print vocabulary (spec 2026-10-05-print-vocabulary-design §3–§6): geometry in mm, type in pt, the paper's own
+   palette in every theme. `.vp-paper` carries the --vp-* geometry variables (paper.ts). */
+.vp-paper { --vp-ink: #111; --vp-muted: #5c5c5c; --vp-rule: #c9c9c9; color: var(--vp-ink); }
+.vp-sheet {
+  box-sizing: border-box; width: var(--vp-width); height: var(--vp-height); padding: var(--vp-margin);
+  display: flex; flex-direction: column; overflow: hidden; background: #fff; color: var(--vp-ink);
+  font-family: var(--font-sans); font-size: 10pt; line-height: 1.45;
+  break-inside: avoid; page-break-inside: avoid; page: vocab-sheet;
+}
+.vp-body { flex: 1 1 auto; }
+.vp-head-first { display: flex; align-items: center; gap: 4mm; padding-bottom: 4mm; border-bottom: 0.3mm solid var(--vp-rule); }
+.vp-head-cont { display: flex; justify-content: space-between; gap: 4mm; padding-bottom: 2mm; border-bottom: 0.3mm solid var(--vp-rule); font-size: 8pt; color: var(--vp-muted); }
+.vp-mascot { width: 18mm; height: 18mm; flex: none; object-fit: contain; }
+.vp-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 9pt; letter-spacing: 0.12em; }
+.vp-docname { font-size: 14pt; font-weight: 600; }
+.vp-title { color: var(--vp-muted); overflow-wrap: anywhere; }
+.vp-item { padding: 4mm 0; border-bottom: 0.2mm solid var(--vp-rule); }
+.vp-compact .vp-item { padding: 2.2mm 0; }
+.vp-word { font-family: var(--font-jp); font-size: 16pt; font-weight: 700; }
+.vp-compact .vp-word { font-size: 13pt; }
+.vp-reading { margin-inline-start: 3mm; font-family: var(--font-jp); font-size: 10pt; color: var(--vp-muted); }
+.vp-meaning { margin-top: 1mm; font-size: 11pt; font-weight: 500; }
+.vp-compact .vp-meaning { font-size: 10pt; }
+.vp-chip { display: inline-block; margin-inline-start: 2mm; padding: 0 1mm; border: 0.2mm solid var(--vp-muted); border-radius: 0.5mm; font-size: 6.5pt; font-weight: 600; color: var(--vp-muted); vertical-align: middle; }
+.vp-example { margin-top: 1mm; font-family: var(--font-jp); font-size: 9.5pt; color: var(--vp-muted); }
+.vp-compact .vp-example { font-size: 8.5pt; }
+.vp-blank { height: 10mm; border-bottom: 0.3mm solid var(--vp-ink); }
+.vp-blank-inline { display: inline-block; width: 30mm; height: 6mm; margin-inline-start: 3mm; border-bottom: 0.3mm solid var(--vp-ink); vertical-align: bottom; }
+.vp-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 4mm; padding-top: 2mm; font-size: 7.5pt; color: var(--vp-muted); }
+.vp-foot-mark { width: 8mm; height: 8mm; margin-inline-start: auto; flex: none; object-fit: contain; filter: grayscale(1); opacity: 0.08; }
+.vp-measure { position: absolute; top: 0; inset-inline-start: -10000px; width: calc(var(--vp-width) - 2 * var(--vp-margin)); visibility: hidden; pointer-events: none; }
+.vp-measure-content { height: calc(var(--vp-height) - 2 * var(--vp-margin)); }
+/* The preview stacks its sheets with a gap; print never sees it (the print root is hidden on screen). */
+@media screen { .vp-paper:not(.vp-measure) { display: flex; flex-direction: column; gap: 16px; } }
+
+/* Scoped to the print page (plan refinement of spec §4.1/§4.2): unscoped, these rules would blank or re-margin the
+   printout of every other page of the app. */
+@page vocab-sheet { size: A4; margin: 0; }
+@media screen { [data-print-root] { display: none; } }
+@media print {
+  html:has(body > [data-print-root]), body:has(> [data-print-root]) { margin: 0; padding: 0; background: #fff; }
+  body:has(> [data-print-root]) > :not([data-print-root]) { display: none !important; }
+  [data-print-root] .vp-sheet { break-after: page; }
+  [data-print-root] .vp-sheet:last-child { break-after: auto; }
+}
