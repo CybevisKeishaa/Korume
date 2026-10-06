@@ -59,4 +59,21 @@ describe("PrintSheets (spec §5, §6)", () => {
   it("applies the compact density as a class, not a different template", () => {
     expect(sheets([[vi]], { ...DEFAULT_PRINT_SETTINGS, density: "compact" }).querySelector(".vp-paper.vp-compact")).not.toBeNull();
   });
+
+  it("applies hide only in self-test: review mode keeps the meaning and draws no writing line (spec P1)", () => {
+    const root = sheets([[vi]], { ...DEFAULT_PRINT_SETTINGS, mode: "review", hide: "meaning" });
+    expect(root.querySelector(".vp-meaning")).not.toBeNull();
+    expect(root.querySelector(".vp-blank, .vp-blank-inline")).toBeNull();
+  });
+
+  it("does not render toggled-off fields in review mode (spec §5)", () => {
+    const root = sheets([[vi]], { ...DEFAULT_PRINT_SETTINGS, showReading: false, showMeaning: false });
+    expect(root.querySelector(".vp-reading")).toBeNull();
+    expect(root.querySelector(".vp-meaning")).toBeNull();
+  });
+
+  it("lets hide win over a toggled-off field in self-test (spec P1)", () => {
+    const root = sheets([[vi]], { ...DEFAULT_PRINT_SETTINGS, mode: "selfTest", hide: "meaning", showMeaning: false });
+    expect(root.querySelector(".vp-blank")).not.toBeNull();
+  });
 });
