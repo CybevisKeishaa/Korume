@@ -233,14 +233,18 @@ test("12 · self-test: no printed answer appears anywhere on item pages; the ans
     const itemSheets = sheets.filter((sheet) => !sheet.querySelector(".vp-answers-title"));
     const answers = answerSheets.flatMap((sheet) => [...sheet.querySelectorAll(".vp-answer-target")].map((el) => el.textContent ?? ""));
     const bodies = itemSheets.map((sheet) => sheet.querySelector(".vp-body")?.textContent ?? "");
+    const ids = (list: Element[], selector: string) => list.flatMap((sheet) => [...sheet.querySelectorAll<HTMLElement>(selector)].map((el) => el.dataset.itemId ?? ""));
     return {
-      answers, lastIsAnswers: sheets.at(-1) === answerSheets.at(-1),
+      answers, itemIds: ids(itemSheets, ".vp-item[data-item-id]"), answerIds: ids(answerSheets, ".vp-answer[data-item-id]"), lastIsAnswers: sheets.at(-1) === answerSheets.at(-1),
       leaks: answers.filter((answer) => bodies.some((body) => body.includes(answer))),
       revealing: itemSheets.some((sheet) => sheet.querySelector(".vp-guide, .vp-trace, .vp-model, .vp-word")),
       crossMasked: bodies.some((body) => body.includes("＿＿の＿＿")),
     };
   });
   expect(result.answers.length).toBeGreaterThan(1);
+  // Spec: every self-test item appears on the answer pages, exactly once, in item order.
+  expect(result.answerIds.length).toBeGreaterThan(0);
+  expect(result.answerIds).toEqual(result.itemIds);
   expect(result.lastIsAnswers).toBe(true);
   expect(result.leaks).toEqual([]);
   expect(result.revealing).toBe(false);
@@ -258,7 +262,7 @@ test("13 · a repetition is atomic: every group sits on one row line", async ({ 
   expect(split).toBe(0);
 });
 
-test("14 · identity: watermark centred on every sheet, quote band at one height, data credit on every footer", async ({ page }) => {
+test("14 · identity: watermark centred on every sheet, quote band and footer at one height, data credit on every footer", async ({ page }) => {
   await learner(page);
   await open(page);
   await page.emulateMedia({ media: "print" });
@@ -268,6 +272,7 @@ test("14 · identity: watermark centred on every sheet, quote band at one height
     return {
       dx: Math.abs(mark.left + mark.width / 2 - (box.left + box.width / 2)),
       quoteTop: sheet.querySelector(".vp-quote")!.getBoundingClientRect().top - box.top,
+      footTop: sheet.querySelector(".vp-foot-block")!.getBoundingClientRect().top - box.top,
       credit: sheet.querySelector(".vp-credit")?.textContent ?? "",
       opacity: Number(getComputedStyle(sheet.querySelector(".vp-watermark")!).opacity),
     };
@@ -276,6 +281,7 @@ test("14 · identity: watermark centred on every sheet, quote band at one height
   for (const sheet of sheets) {
     expect(sheet.dx).toBeLessThan(1);
     expect(sheet.quoteTop).toBeCloseTo(sheets[0]!.quoteTop, 0);
+    expect(sheet.footTop).toBeCloseTo(sheets[0]!.footTop, 0);
     expect(sheet.credit).toContain("JMdict");
     expect(sheet.opacity).toBeLessThanOrEqual(0.06);
   }
