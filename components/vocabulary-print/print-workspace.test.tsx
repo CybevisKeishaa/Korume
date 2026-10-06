@@ -217,6 +217,20 @@ describe("PrintWorkspace (spec §3, W §2 + §5–§6)", () => {
     expect(screen.getByRole("switch", { name: "Meaning" })).toBeDisabled();
     expect(screen.getByRole("switch", { name: "Meaning" })).toHaveAccessibleDescription("Keep at least one prompt.");
     expect(screen.getByText("Keep at least one prompt.")).toBeInTheDocument();
+    expect(await screen.findByText("2/2 words · 2 pages")).toBeInTheDocument(); // the in-flight generation commits inside the test
+  });
+
+  it("self-test never starts with every prompt off: switching from a target-only practice sheet turns Meaning on", async () => {
+    render(workspace(items(2)));
+    await screen.findByText("2/2 words · 1 page");
+    for (const name of ["Reading", "Meaning", "Example"]) fireEvent.click(screen.getByRole("switch", { name }));
+    expect(screen.getByRole("switch", { name: "Meaning" })).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(screen.getByRole("radio", { name: "Self-test" }));
+    const meaning = screen.getByRole("switch", { name: "Meaning" });
+    expect(meaning).toHaveAttribute("aria-checked", "true");
+    expect(meaning).toBeDisabled();
+    expect(screen.getByText("Keep at least one prompt.")).toBeVisible();
+    expect(await screen.findByText("2/2 words · 2 pages")).toBeInTheDocument();
   });
 
   it("self-test commits item pages then answer pages, the answers measured with the heading", async () => {

@@ -157,7 +157,12 @@ export function PrintWorkspace({ doc, views, source, resources }: {
   }, []);
 
   const update = useCallback(<K extends keyof WorksheetSettings>(key: K, value: WorksheetSettings[K]) => {
-    setSettings((current) => ({ ...current, [key]: value }));
+    setSettings((current) => {
+      const next = { ...current, [key]: value };
+      // Spec W §2: self-test always has a prompt; meaning is rule 2's first fallback, so its switch states what prints.
+      if (next.mode === "selfTest" && !PROMPT_KEYS.some((prompt) => next[prompt])) next.showMeaning = true;
+      return next;
+    });
   }, []);
 
   if (doc.items.length === 0) {
