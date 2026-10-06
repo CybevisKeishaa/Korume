@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** 30 lines, one distinct common noun each, so set=all reaches its 24-word cap and spans pages. */
+/** 30 lines, one distinct common noun each, so set=all reaches its 24-word cap and spans pages.
+ *  Line 0 carries two printed nouns (学校, 先生), so a self-test example masks across items. */
 export const PRINT_NOUNS = [
   "学校", "先生", "電車", "天気", "時間", "写真", "映画", "料理", "音楽", "仕事", "会社", "家族", "友達", "部屋", "新聞",
   "手紙", "季節", "公園", "病院", "図書館", "銀行", "会議", "旅行", "野菜", "果物", "動物", "自転車", "飛行機", "番組", "世界",
@@ -16,7 +17,7 @@ export async function seedPrintLesson(admin: SupabaseClient, prefix: string): Pr
   const transcript = await admin.from("transcripts").insert({ video_id: video.data.id, source: "youtube_caption", language: "ja" }).select("id").single();
   if (transcript.error) throw transcript.error;
   const lines = await admin.from("transcript_lines").insert(PRINT_NOUNS.map((noun, index) => ({
-    transcript_id: transcript.data.id, start_time: index * 3, end_time: index * 3 + 2.5, text_jp: `これは${noun}の話です。`, text_translation: null,
+    transcript_id: transcript.data.id, start_time: index * 3, end_time: index * 3 + 2.5, text_jp: index === 0 ? "これは学校の先生の話です。" : `これは${noun}の話です。`, text_translation: null,
   }))).select("id");
   if (lines.error) throw lines.error;
   return { videoId: video.data.id, lineIds: lines.data.map((line) => line.id as string) };

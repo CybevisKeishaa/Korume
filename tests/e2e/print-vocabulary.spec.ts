@@ -1,5 +1,7 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { registerViaUi, uniqueEmail } from "./fixtures/auth";
+import { cmapHex, pdfPageCount, pdfStreams } from "./fixtures/pdf-text";
 import { LONG_TITLE, seedPrintLesson } from "./fixtures/print-data";
 import { seedWorkspaceData, type WorkspaceData } from "./fixtures/workspace-data";
 
@@ -21,6 +23,8 @@ const open = async (page: Page, set = "all") => {
   await page.goto(`/en/vocab/print?source=lesson&lesson=${lesson.videoId}&set=${set}`);
   await expect(page.getByRole("status").filter({ hasText: /words ·/ })).toBeVisible({ timeout: 30_000 });
 };
+/** set=all is Summary's 24-row cap: 話, これ and 22 nouns. これ is kana-only, which the default settings leave out (W4). */
+const ALL_WORDS = 23;
 /** A4 at 96 dpi: 210 x 297 mm. */
 const A4 = { width: 793.7, height: 1122.5 };
 const geometry = (page: Page) => page.evaluate(() => {
@@ -33,10 +37,10 @@ const saveFirstWord = async (page: Page) => {
   expect(saved.ok()).toBe(true);
 };
 
-test("1 · the PDF has one page per DOM sheet, every sheet is A4, and no item crosses its footer", async ({ page }) => {
+test("1 · the PDF has one page per DOM sheet, every sheet is A4, and no item crosses its quote band", async ({ page }) => {
   await learner(page);
   await open(page);
-  expect((await geometry(page)).sheets).toBeGreaterThan(1); // positive control: 24 words span several pages
+  expect((await geometry(page)).sheets).toBeGreaterThan(1); // positive control: 23 words span several pages
   await page.emulateMedia({ media: "print" });
   const sheetRects = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-sheet")].map((sheet) => {
     const rect = sheet.getBoundingClientRect();
@@ -47,14 +51,15 @@ test("1 · the PDF has one page per DOM sheet, every sheet is A4, and no item cr
     expect(Math.abs(rect.height - A4.height)).toBeLessThan(1);
   }
   const crossing = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-sheet")].flatMap((sheet) => {
-    const footTop = sheet.querySelector(".vp-foot")!.getBoundingClientRect().top;
-    return [...sheet.querySelectorAll(".vp-item")].filter((item) => item.getBoundingClientRect().bottom > footTop + 0.5).map((item) => item.textContent);
+    const quoteTop = sheet.querySelector(".vp-quote")!.getBoundingClientRect().top;
+    return [...sheet.querySelectorAll(".vp-item")].filter((item) => item.getBoundingClientRect().bottom > quoteTop + 0.5).map((item) => item.textContent);
   }));
   expect(crossing).toEqual([]);
   const { sheets } = await geometry(page); // re-read right before the PDF, in print media
   const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
-  const pdfPages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length;
-  expect(pdfPages).toBe(sheets);
+  expect(pdfPageCount(pdf)).toBe(sheets);
+  // Positive control for the PDF text helper test 15 relies on: a client PDF of this page carries 学 in a ToUnicode CMap.
+  expect(pdfStreams(pdf).toUpperCase()).toContain(cmapHex("学"));
 });
 
 test("2 · print media shows only the print root; the measurement tree and app shell are gone", async ({ page }) => {
@@ -133,14 +138,14 @@ test("6 · saved set: a word saved from Summary prints; nothing saved shows the 
   await expect(page.locator("[data-print-root] .vp-word")).toHaveText(["学校"]);
 });
 
-test("7 · switching Saved to All remounts the workspace: the selection of 1 does not carry over to the 24-word set", async ({ page }) => {
+test("7 · switching Saved to All remounts the workspace: the selection of 1 does not carry over to the full set", async ({ page }) => {
   await learner(page);
   await saveFirstWord(page);
   await open(page, "saved");
   await expect(page.getByRole("status").filter({ hasText: /^1\/1 words/ })).toBeVisible();
   await page.getByRole("link", { name: "All", exact: true }).click();
   await expect(page).toHaveURL(/set=all/);
-  await expect(page.getByRole("status").filter({ hasText: /^24\/24 words/ })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("status").filter({ hasText: new RegExp(`^${ALL_WORDS}/${ALL_WORDS} words`) })).toBeVisible({ timeout: 30_000 });
 });
 
 test("8 · a font-load re-measure while print media hides the measurement tree never collapses the page set", async ({ page }) => {
@@ -154,8 +159,8 @@ test("8 · a font-load re-measure while print media hides the measurement tree n
   expect((await geometry(page)).sheets).toBe(before); // in print, never 1 clipped sheet
   await page.emulateMedia({ media: "screen" });
   await expect.poll(async () => (await geometry(page)).sheets).toBe(before);
-  await expect(page.getByRole("status").filter({ hasText: new RegExp(`24/24 words · ${before} pages`) })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Print / Save PDF" })).not.toHaveAttribute("aria-disabled");
+  await expect(page.getByRole("status").filter({ hasText: new RegExp(`${ALL_WORDS}/${ALL_WORDS} words · ${before} pages`) })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Print", exact: true })).not.toHaveAttribute("aria-disabled");
 });
 
 test("9 · the document title carries the lesson title, which becomes the PDF file name", async ({ page }) => {
@@ -164,25 +169,137 @@ test("9 · the document title carries the lesson title, which becomes the PDF fi
   await expect(page).toHaveTitle(new RegExp(`^Vocabulary – ${LONG_TITLE.slice(0, 20)}`));
 });
 
-test("10 · the hidden measurement tree is as tall as the paper it predicts: items, first header and footer", async ({ page }) => {
+test("10 · the hidden measurement tree is as tall as the paper it predicts: items, first header, quote and footer", async ({ page }) => {
   await learner(page);
   await open(page);
-  const heights = await page.evaluate(() => {
-    const measured = [...document.querySelectorAll<HTMLElement>('[data-measure="item"]')];
-    // Pages are committed in chosen order, so the n-th rendered item is the n-th measured one.
-    const rendered = [...document.querySelectorAll<HTMLElement>("[data-preview] .vp-item")];
-    const paired = measured.map((el, index) => [el.offsetHeight, rendered[index]?.offsetHeight ?? -1]);
-    const height = (selector: string) => document.querySelector<HTMLElement>(selector)?.offsetHeight ?? -1;
+  // The measurement tree has layout only on screen, the print root only in print media.
+  const measured = await page.evaluate(() => {
+    const height = (role: string) => document.querySelector<HTMLElement>(`[data-measure="${role}"]`)?.offsetHeight ?? -1;
     return {
-      count: measured.length, renderedCount: rendered.length, paired,
-      header: [height('[data-measure="first-header"]'), height("[data-preview] .vp-head-first")],
-      footer: [height('[data-measure="footer"]'), height("[data-preview] .vp-foot")],
+      items: [...document.querySelectorAll<HTMLElement>('[data-measure="item"]')].map((el) => [el.dataset.itemId ?? "", el.offsetHeight] as const),
+      header: height("first-header"), quote: height("quote"), footer: height("footer"),
     };
   });
-  expect(heights.count).toBeGreaterThan(0);
-  expect(heights.renderedCount).toBe(heights.count);
-  for (const [measured, rendered] of [...heights.paired, heights.header, heights.footer]) {
-    expect(rendered).toBeGreaterThan(0);
-    expect(Math.abs(measured! - rendered!)).toBeLessThanOrEqual(0.5);
+  await page.emulateMedia({ media: "print" });
+  const printed = await page.evaluate(() => {
+    const root = document.querySelector("[data-print-root]")!;
+    const height = (selector: string) => root.querySelector<HTMLElement>(selector)?.offsetHeight ?? -1;
+    return {
+      items: Object.fromEntries([...root.querySelectorAll<HTMLElement>(".vp-item")].map((el) => [el.dataset.itemId ?? "", el.offsetHeight])),
+      header: height(".vp-head-first"), quote: height(".vp-quote"), footer: height(".vp-foot-block"),
+    };
+  });
+  expect(measured.items.length).toBeGreaterThan(0);
+  expect(Object.keys(printed.items).sort()).toEqual(measured.items.map(([id]) => id).sort());
+  const pairs = [
+    ...measured.items.map(([id, height]) => [height, printed.items[id] ?? -1]),
+    [measured.header, printed.header], [measured.quote, printed.quote], [measured.footer, printed.footer],
+  ];
+  for (const [predicted, actual] of pairs) {
+    expect(actual).toBeGreaterThan(0);
+    expect(Math.abs(predicted! - actual!)).toBeLessThanOrEqual(0.5);
   }
+});
+
+test("11 · practice: each item shows its stroke guide, then the black model, the grey trace, then blank groups", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  const items = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-item")].map((item) => ({
+    target: item.querySelector(".vp-word")?.textContent ?? "",
+    guides: item.querySelectorAll("svg.vp-guide").length,
+    numbers: item.querySelectorAll(".vp-guide-number").length,
+    model: [...(item.querySelector(".vp-group")?.querySelectorAll(".vp-model") ?? [])].map((cell) => cell.textContent).join(""),
+    trace: item.querySelectorAll(".vp-group:nth-child(2) .vp-trace").length,
+    blanks: [...item.querySelectorAll(".vp-group")].slice(2).every((group) => group.textContent === ""),
+  })));
+  expect(items.length).toBeGreaterThan(0);
+  for (const item of items) {
+    expect(item.guides).toBe([...item.target].length); // seeded nouns are all kanji, every one in KanjiVG
+    expect(item.numbers).toBeGreaterThan(0);
+    expect(item.model).toBe(item.target);
+    expect(item.trace).toBe([...item.target].length);
+    expect(item.blanks).toBe(true);
+  }
+});
+
+test("12 · self-test: no printed answer appears anywhere on item pages; the answer key is last", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  await page.getByRole("radio", { name: "Self-test" }).click();
+  await expect(page.locator("[data-print-root] .vp-answer").first()).toBeAttached({ timeout: 30_000 });
+  const result = await page.evaluate(() => {
+    const sheets = [...document.querySelectorAll("[data-print-root] .vp-sheet")];
+    const answerSheets = sheets.filter((sheet) => sheet.querySelector(".vp-answers-title"));
+    const itemSheets = sheets.filter((sheet) => !sheet.querySelector(".vp-answers-title"));
+    const answers = answerSheets.flatMap((sheet) => [...sheet.querySelectorAll(".vp-answer-target")].map((el) => el.textContent ?? ""));
+    const bodies = itemSheets.map((sheet) => sheet.querySelector(".vp-body")?.textContent ?? "");
+    return {
+      answers, lastIsAnswers: sheets.at(-1) === answerSheets.at(-1),
+      leaks: answers.filter((answer) => bodies.some((body) => body.includes(answer))),
+      revealing: itemSheets.some((sheet) => sheet.querySelector(".vp-guide, .vp-trace, .vp-model, .vp-word")),
+      crossMasked: bodies.some((body) => body.includes("＿＿の＿＿")),
+    };
+  });
+  expect(result.answers.length).toBeGreaterThan(1);
+  expect(result.lastIsAnswers).toBe(true);
+  expect(result.leaks).toEqual([]);
+  expect(result.revealing).toBe(false);
+  expect(result.crossMasked).toBe(true); // line 0: 学校 and 先生 both printed answers (fixture)
+});
+
+test("13 · a repetition is atomic: every group sits on one row line", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  await page.emulateMedia({ media: "print" });
+  const split = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-group")].filter((group) => {
+    const tops = [...group.querySelectorAll(".vp-cell")].map((cell) => Math.round(cell.getBoundingClientRect().top));
+    return new Set(tops).size > 1;
+  }).length);
+  expect(split).toBe(0);
+});
+
+test("14 · identity: watermark centred on every sheet, quote band at one height, data credit on every footer", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  await page.emulateMedia({ media: "print" });
+  const sheets = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-sheet")].map((sheet) => {
+    const box = sheet.getBoundingClientRect();
+    const mark = sheet.querySelector(".vp-watermark img")!.getBoundingClientRect();
+    return {
+      dx: Math.abs(mark.left + mark.width / 2 - (box.left + box.width / 2)),
+      quoteTop: sheet.querySelector(".vp-quote")!.getBoundingClientRect().top - box.top,
+      credit: sheet.querySelector(".vp-credit")?.textContent ?? "",
+      opacity: Number(getComputedStyle(sheet.querySelector(".vp-watermark")!).opacity),
+    };
+  }));
+  expect(sheets.length).toBeGreaterThan(1);
+  for (const sheet of sheets) {
+    expect(sheet.dx).toBeLessThan(1);
+    expect(sheet.quoteTop).toBeCloseTo(sheets[0]!.quoteTop, 0);
+    expect(sheet.credit).toContain("JMdict");
+    expect(sheet.opacity).toBeLessThanOrEqual(0.06);
+  }
+});
+
+test("15 · Download PDF: a real PDF file, one page per sheet, with the lesson's kanji as text", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  const { sheets } = await geometry(page);
+  const [download] = await Promise.all([page.waitForEvent("download", { timeout: 60_000 }), page.getByRole("button", { name: "Download PDF" }).click()]);
+  expect(download.suggestedFilename()).toMatch(/^Korume - Vocabulary Writing Practice - .+\.pdf$/);
+  const pdf = await readFile((await download.path())!);
+  expect(pdf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  expect(pdfPageCount(pdf)).toBe(sheets);
+  expect(pdfStreams(pdf).toUpperCase()).toContain(cmapHex("学"));
+});
+
+test("16 · the PDF route rejects a forged id and a missing session", async ({ page, playwright }) => {
+  await learner(page);
+  const body = { lessonId: lesson.videoId, set: "all", locale: "en",
+    settings: { mode: "practice", density: "airy", includeKanaOnly: false, showReading: true, showMeaning: true, showExample: true },
+    pages: [{ kind: "items", ids: ["lex-1:forged"] }] };
+  expect((await page.request.post("/api/vocab/print/pdf", { data: body })).status()).toBe(400);
+  const anonymous = await playwright.request.newContext({ baseURL: page.url().replace(/\/en\/.*$/, "") });
+  expect((await anonymous.post("/api/vocab/print/pdf", { data: body })).status()).toBe(401);
+  await anonymous.dispose();
 });
