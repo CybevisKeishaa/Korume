@@ -25,7 +25,10 @@ tech nits vẫn đọc ở project_status.
    không phải code. Có thể làm bất kỳ lúc nào.
 
 ## Nguồn: CLAUDE.md §2 — nợ từ L1 (ƯU TIÊN CAO NHẤT trong list này)
-5. **GDPR "delete all my data"** — là NON-NEGOTIABLE §2, hoãn từ Layer 1 tới giờ. PHẢI ship
+5. **✅ DONE — merged `4b1fef7` (2026-08-22, L9b Plan 1) + email `8865aed`; see `mem:l9b_plan1_gdpr_run_state`.**
+   Erase is cascade-based (delete `public.users`). Audit 2026-10-05: migrations 032–043 all cascade/set-null
+   correctly; NO gate enforces that for future tables. Original text below is history.
+   **GDPR "delete all my data"** — là NON-NEGOTIABLE §2, hoãn từ Layer 1 tới giờ. PHẢI ship
    trước khi mở cho user thật (khớp tự nhiên với L8 khi làm billing/account). Bao gồm: xoá
    recordings trong storage, mọi bảng user-owned, xp_events, notifications, peer shares/reviews
    (cascade đã có), forum content (user_id set null đã có sẵn trong schema).
@@ -93,6 +96,12 @@ tech nits vẫn đọc ở project_status.
     View Mode). Khác với 11 chỗ "Dictation" → "Listening Practice" (chỉ đổi tên cơ học), chỗ này cần
     restructure thật sự nên nằm ngoài phạm vi fix wave 2026-08-01 — cố tình không đụng vào
     `reading-patterns.md:5` hay § Reading Modes trong lần fix này.
+
+## Nguồn: Summary owner look 2026-10-05 (`mem:summary_followups_run_state`)
+19. **"In từ vựng" (Print vocabulary) từ trang Summary** — owner muốn nút in từ vựng; đang brainstorm (architectural),
+    chưa có spec. 3 ảnh trong Desktop/Japan/Korume/Idea là của MÀN KHÁC (tập viết tay) — không tham khảo.
+20. **Nghĩa sai trong danh sách từ của bài** — endpoint `/api/videos/[id]/vocabulary` lấy mục JMdict đầu tiên mỗi
+    token (人 → じん "-ian", ん → "yes; yeah"). Ảnh hưởng list view của Summary và panel từ vựng của workspace.
 
 ## Đã trả nợ (để đối chiếu, không cần làm lại)
 - Weekly leaderboard (L6→L7, ship `01ae59d`, opt-in + own-week-first).

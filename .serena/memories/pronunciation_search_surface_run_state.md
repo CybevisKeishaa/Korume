@@ -1,6 +1,9 @@
 # Pronunciation search surface — run state (2026-10-01, end of day)
 
-## Where things stand
+## ⭐ MERGED to master `4c2d983` (2026-10-01) after the owner's Chrome look. Post-merge: tsc 0,
+## vitest 3691. Local DB keeps demo rows prefixed `demo-search` (40 videos, 3 paths, 2 goals). History only.
+
+## Where things stood before the merge
 - Branch `pronunciation-show-more`, worktree `.worktrees/pronunciation-show-more`, tip **`71ed603`**,
   ALL 6 TASKS DONE, whole-branch review MERGEABLE (minors fixed in `71ed603`). **NOT merged.**
 - Canonical branch facts: `docs/superpowers/run-state/pronunciation-show-more.md` (on the branch).

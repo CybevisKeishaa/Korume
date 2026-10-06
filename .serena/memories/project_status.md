@@ -1,6 +1,28 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-09-30 end of day (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-06 (supersedes every block below)
+>
+> ▶ **RESUME HERE: `print-vocabulary`** (worktree `.worktrees/print-vocabulary`, NOT merged) — read
+> `mem:print_vocabulary_run_state` first. V1 (review template, 10 tasks, `f33dab0`) finished, then the owner changed
+> the requirement: handwriting worksheet + server PDF. Spec `bde0208` + plan `02fff0b` (11 tasks) owner-approved;
+> executing subagent-driven from Task 1, BASE `02fff0b`. Ledger
+> `.superpowers/sdd/2026-10-06-print-vocabulary-writing-worksheet/progress.md` (in the worktree, git-ignored).
+> Master = `22226d9` (merge of `summary-followups`). Codex out of quota until 2026-10-10 — Claude implements.
+>
+> ## (previous block) 2026-10-05 late
+>
+> `print-vocabulary` V1 Tasks 1–4 done at `503c107`; superseded by the block above.
+>
+> ## (previous block) 2026-10-05 end of day
+>
+> ▶ **RESUME HERE: `summary-followups`** (worktree `.worktrees/summary-followups`, tip `130e2f4`, NOT merged) —
+> read `mem:summary_followups_run_state` first. Waiting on: owner Chrome look + merge decision, and the answer to
+> the first brainstorm question for the "In từ vựng" (Print vocabulary) screen.
+> Master = `ac2f793` (merge of `verify-db-erasure`: erase_account_rows + `verify:db:erasure` gate), 40+ commits
+> ahead of origin, owner pushes. Summary/Analysis merged `0bdcfee`; Ask Korume `ea456b8`.
+> Every block below 2026-09-30 is history; for branch-level detail prefer the per-branch `*_run_state` memories.
+>
+> ## (previous block) 2026-09-30 end of day
 >
 > ▶ **RESUME HERE: `pronunciation-library-port`**, Owner: Claude, committed tip **`27d761f`**, worktree
 > clean, NOT merged. Landed today: `3c9ec5e` rulings 15–17 (engine context once per request + score
