@@ -9,6 +9,7 @@ vi.mock("@/lib/i18n/server", () => ({ getTranslations: vi.fn(async () => (key: s
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true, retryAfter: 0 })) }));
 
 import { errors } from "playwright";
+import { takeRenderJob } from "@/lib/vocabulary/print/pdf/jobs";
 import { rateLimit } from "@/lib/rate-limit";
 import { authenticateSummary } from "@/lib/summary/load-snapshot";
 import { resolveLessonSource } from "@/lib/vocabulary/print/lesson-source";
@@ -22,6 +23,9 @@ const body = { lessonId, set: "all", locale: "vi", settings: DEFAULT_WORKSHEET_S
 const post = (data: unknown) => POST(new Request("http://x/api/vocab/print/pdf", { method: "POST", body: JSON.stringify(data) }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(rateLimit).mockReturnValue({ ok: true, retryAfter: 0 });
+  vi.mocked(renderPdf).mockResolvedValue(Buffer.from("%PDF-1.7"));
   vi.mocked(authenticateSummary).mockResolvedValue({ userId: "u1", supabase: {} } as never);
   vi.mocked(resolveLessonSource).mockResolvedValue({ kind: "ok", doc: { title: "Ep.729", backHref: "/b", backLabel: "b", items: [
     { id: "a", surface: "苦手", entSeq: 1, resolution: "resolved", meaning: "kém", meaningLocale: "vi" },
@@ -60,5 +64,32 @@ describe("POST /api/vocab/print/pdf (spec W §6.3)", () => {
     expect(full.headers.get("retry-after")).toBe("10");
     vi.mocked(renderPdf).mockRejectedValueOnce(new errors.TimeoutError("slow"));
     expect((await post(body)).status).toBe(504);
+  });
+  it("413 for an oversized body, before the lesson is resolved", async () => {
+    const declared = new Request("http://x/api/vocab/print/pdf", { method: "POST", headers: { "Content-Length": "1000001" }, body: "{}" });
+    expect((await POST(declared)).status).toBe(413);
+    const streamed = new Request("http://x/api/vocab/print/pdf", { method: "POST", body: JSON.stringify({ ...body, pad: "x".repeat(1_000_001) }) });
+    expect((await POST(streamed)).status).toBe(413);
+    expect(resolveLessonSource).not.toHaveBeenCalled();
+  });
+  it("creates the render job only when the queued task runs, and it is still takeable then", async () => {
+    const store = (globalThis as { __korumePrintJobs?: Map<string, unknown> }).__korumePrintJobs!;
+    store.clear();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const seen: Array<{ token: string; size: number }> = [];
+    vi.mocked(renderPdf).mockImplementation(async (path: string) => {
+      seen.push({ token: path.split("/").pop()!, size: store.size });
+      await gate;
+      return Buffer.from("%PDF-1.7");
+    });
+    const first = post(body);
+    const second = post(body);
+    await vi.waitFor(() => expect(seen.length).toBe(1));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(store.size).toBe(1); // the waiting request has no job yet
+    expect(takeRenderJob(seen[0]!.token)).not.toBeNull();
+    release();
+    expect((await Promise.all([first, second])).map((response) => response.status)).toEqual([200, 200]);
   });
 });

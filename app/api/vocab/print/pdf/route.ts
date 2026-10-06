@@ -1,5 +1,6 @@
 import { errors } from "playwright";
 import { getTranslations } from "@/lib/i18n/server";
+import { readJsonBody } from "@/lib/http/read-json-body";
 import { rateLimit } from "@/lib/rate-limit";
 import { authenticateSummary } from "@/lib/summary/load-snapshot";
 import { contentDisposition, pdfFilename } from "@/lib/vocabulary/print/filename";
@@ -15,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 const LIMIT = { limit: 5, windowMs: 60_000 };
 const queue: ReturnType<typeof createQueue> = ((globalThis as { __korumePrintQueue?: ReturnType<typeof createQueue> }).__korumePrintQueue ??= createQueue(5));
+const MAX_BODY_BYTES = 1_000_000;
 const status = (code: number, headers?: Record<string, string>) => new Response(null, { status: code, headers });
 
 /** Spec W §6.3: a real PDF of exactly the committed pages, rendered by server Chromium; nothing from the client is trusted. */
@@ -23,7 +25,9 @@ export async function POST(request: Request): Promise<Response> {
   if (!auth) return status(401);
   const limited = rateLimit(`print-pdf:${auth.userId}`, LIMIT);
   if (!limited.ok) return status(429, { "Retry-After": String(Math.ceil(limited.retryAfter / 1000)) });
-  const parsed = pdfRequestSchema.safeParse(await request.json().catch(() => null));
+  const body = await readJsonBody(request, MAX_BODY_BYTES);
+  if (!body.ok) return status(body.status);
+  const parsed = pdfRequestSchema.safeParse(body.value);
   if (!parsed.success) return status(400);
   const { lessonId, set, locale, settings } = parsed.data;
   const source = await resolveLessonSource({ source: { kind: "lesson", lessonId, set }, locale, userId: auth.userId, db: auth.supabase });
@@ -31,9 +35,10 @@ export async function POST(request: Request): Promise<Response> {
   const assigned = assignPages(source.doc, parsed.data);
   if (!assigned.ok) return status(400);
   const resources = await loadPrintResources(assigned.items.flatMap((item) => (item.target ? [item.target] : [])));
-  const token = createRenderJob({ userId: auth.userId, lessonId, payload: { locale, title: source.doc.title, settings, pages: assigned.pages, resources } });
+  const payload = { locale, title: source.doc.title, settings, pages: assigned.pages, resources };
   try {
-    const pdf = await queue.run(() => renderPdf(`/${locale}/print-render/${token}`));
+    // the job is created when the task actually runs, so its 60s TTL never ticks while it waits in the queue
+    const pdf = await queue.run(async () => renderPdf(`/${locale}/print-render/${createRenderJob({ userId: auth.userId, lessonId, payload })}`));
     const t = await getTranslations({ locale, namespace: "vocab.print" });
     const name = pdfFilename(settings.mode === "practice" ? t("docPractice") : t("docSelfTest"), source.doc.title);
     return new Response(new Uint8Array(pdf), {
