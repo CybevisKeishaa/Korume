@@ -24,6 +24,13 @@ describe("StrokeGuideRow (spec W W5, §3.1)", () => {
     const { container } = render(<StrokeGuideRow glyphs={["T"]} guides={{}} label="Stroke order" />);
     expect(container.innerHTML).toBe("");
   });
+  it("a stroke without a start keeps its place: the next stroke is numbered 2, never renumbered", () => {
+    const nullThenStart: StrokeGuide = { character: "示", viewBox: 109, strokes: [{ d: "c1,2", start: null }, { d: "M55,50c1,1", start: [55, 50] }] };
+    const { container } = render(<StrokeGuideRow glyphs={["示"]} guides={{ "示": nullThenStart }} label="Stroke order" />);
+    const svg = container.querySelector("svg.vp-guide")!;
+    expect([...svg.querySelectorAll("text")].map((text) => text.textContent)).toEqual(["2"]);
+    expect(svg.querySelectorAll("circle")).toHaveLength(1);
+  });
   it("is presentational: no ids and the svg is hidden from assistive tech", () => {
     const { container } = render(<StrokeGuideRow glyphs={["人"]} guides={{ 人: hito }} label="Stroke order" />);
     expect(container.querySelector("[id]")).toBeNull();
