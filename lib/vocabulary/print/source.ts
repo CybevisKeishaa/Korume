@@ -6,16 +6,21 @@ import type { StrokeGuide } from "@/lib/strokes/types";
 export type PrintSet = "all" | "saved";
 export type PrintSource = { kind: "lesson"; lessonId: string; set: PrintSet };
 
+/** Spec W §1.4: an analysed token of the example line that resolved to a JMdict entry. */
+export interface ExampleSpan { surface: string; entSeq: number }
+
 export interface VocabularyPrintItem {
   /** Stable within the source: the lexical identity, or the saved word's identity when raw. */
   id: string;
   surface: string;
+  /** The resolved JMdict entry; absent for `saved_raw`. */
+  entSeq?: number;
   reading?: string;
   meaning?: string;
   meaningLocale?: MeaningLocale;
   meaningSource?: MeaningSource;
   resolution: "resolved" | "saved_raw";
-  example?: { text: string; sourceLabel?: string };
+  example?: { text: string; spans: ExampleSpan[]; sourceLabel?: string };
 }
 
 export interface PrintDocument {

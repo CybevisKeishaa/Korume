@@ -25,8 +25,13 @@ export async function resolveLessonSource({ source, locale, userId, db }: Args):
   return { kind: "ok", doc: { title: video.title, backHref: `/shadowing/${video.id}/summary`, backLabel: t("backToSummary"), items } };
 }
 
-function example(text: string | undefined): Pick<VocabularyPrintItem, "example"> {
-  return text ? { example: { text } } : {};
+function example(line: { textJp: string } | undefined, analysis: StaticLineAnalysis | undefined): Pick<VocabularyPrintItem, "example"> {
+  if (!line?.textJp) return {};
+  const spans = (analysis?.tokens ?? []).flatMap((token) => {
+    const entry = token.entries[0];
+    return entry ? [{ surface: token.surface, entSeq: entry.entSeq }] : [];
+  });
+  return { example: { text: line.textJp, spans } };
 }
 
 /** Spec §2.3: exactly Summary's Words list — the same `wordRows`, cap and order. */
@@ -39,11 +44,11 @@ async function allItems(
     const analysis = analyses.get(line.id);
     return analysis ? [{ id: line.id, tokens: analysis.tokens }] : [];
   })).slice(0, LESSON_WORDS_FETCH);
-  const textOf = new Map(lines.map((line) => [line.id, line.textJp]));
+  const lineOf = new Map(lines.map((line) => [line.id, line]));
   return wordRows(aiWords, lessonWords, locale).map((row) => ({
-    id: row.key, surface: row.written, ...(row.reading ? { reading: row.reading } : {}),
+    id: row.key, surface: row.written, entSeq: row.entSeq, ...(row.reading ? { reading: row.reading } : {}),
     meaning: row.meaning, meaningLocale: row.meaningLocale, meaningSource: row.meaningSource,
-    resolution: "resolved", ...example(textOf.get(row.lineId)),
+    resolution: "resolved", ...example(lineOf.get(row.lineId), analyses.get(row.lineId)),
   }));
 }
 
@@ -60,11 +65,11 @@ function savedItems(saved: SavedCard[], lines: SummaryLine[], analyses: Map<stri
     const lexeme = token?.entries[0];
     const [key, item]: [string, VocabularyPrintItem] = token && lexeme
       ? [`lex-${lexeme.entSeq}:${lexeme.reading}`, {
-        id: `lex-${lexeme.entSeq}:${lexeme.reading}`, surface: lexeme.headword, reading: lexeme.reading,
-        ...meaningFor({ glossEn: lexeme.glossEn, curatedVi: token.curatedVi }, locale), resolution: "resolved", ...example(line?.textJp),
+        id: `lex-${lexeme.entSeq}:${lexeme.reading}`, surface: lexeme.headword, entSeq: lexeme.entSeq, reading: lexeme.reading,
+        ...meaningFor({ glossEn: lexeme.glossEn, curatedVi: token.curatedVi }, locale), resolution: "resolved", ...example(line, analyses.get(card.lineId)),
       }]
       // Never a first-JMdict-entry guess: the learner saved it, so it prints as saved.
-      : [`raw-${normalizeRef(card.ref)}`, { id: `raw-${normalizeRef(card.ref)}`, surface: card.ref, resolution: "saved_raw", ...example(line?.textJp) }];
+      : [`raw-${normalizeRef(card.ref)}`, { id: `raw-${normalizeRef(card.ref)}`, surface: card.ref, resolution: "saved_raw", ...example(line, analyses.get(card.lineId)) }];
     const previous = kept.get(key);
     if (!previous || order < previous.order) kept.set(key, { order, item });
   }

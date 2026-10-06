@@ -14,6 +14,7 @@ export type LessonWord = Pick<LessonVocabularyItem, "entSeq" | "headword" | "rea
 
 export interface WordRow {
   key: string;
+  entSeq: number;
   written: string;
   reading: string;
   meaning: string;
@@ -32,6 +33,7 @@ export function printHref(videoId: string): string {
 export function wordRows(aiWords: WordView[], lessonWords: LessonWord[] | null, locale: string, max = WORD_LIST_MAX): WordRow[] {
   const rows: WordRow[] = aiWords.map((word) => ({
     key: `ai-${word.entSeq}-${word.source.lineId}`,
+    entSeq: word.entSeq,
     written: word.written,
     reading: word.reading,
     meaning: word.meaning,
@@ -49,7 +51,7 @@ export function wordRows(aiWords: WordView[], lessonWords: LessonWord[] | null, 
     if (picked.has(item.entSeq) || !lineId) continue;
     // Saved as the form in that line, not the headword: review cards highlight the target inside the sentence.
     const row = {
-      key: `lesson-${item.entSeq}`, written: item.headword, reading: item.reading,
+      key: `lesson-${item.entSeq}`, entSeq: item.entSeq, written: item.headword, reading: item.reading,
       ...meaningFor({ glossEn: item.glossEn, curatedVi: item.curatedVi }, locale), lineId, targetWord: item.exampleSurface,
     };
     if (seen.has(saveIdentity(row))) continue;

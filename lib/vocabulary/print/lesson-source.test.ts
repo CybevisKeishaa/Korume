@@ -19,12 +19,14 @@ const tok = (surface: string, entSeq: number, reading: string, curatedVi: string
   index: 0, surface, base: surface, reading: null, pos: "名詞", posDetail1: "一般", span: { start: 0, end: surface.length },
   entries: [{ entSeq, headword: surface, reading, glossEn: `${surface}-en`, jlpt: null }], vocabId: null, curatedVi,
 });
+const ENT_NIGATE = 10;
+const ENT_HITO = 20;
 const LINES = [
   { id: "l-1", index: 0, textJp: "苦手な人です", translation: null, startTime: 0, endTime: 1 },
   { id: "l-2", index: 1, textJp: "人が好き", translation: null, startTime: 1, endTime: 2 },
 ];
 const ANALYSES = new Map<string, StaticLineAnalysis>([
-  ["l-1", { lineId: "l-1", snapshotId: "s", grammar: [], tokens: [tok("苦手", 10, "にがて", "kém"), tok("人", 20, "ひと")] }],
+  ["l-1", { lineId: "l-1", snapshotId: "s", grammar: [], tokens: [tok("苦手", ENT_NIGATE, "にがて", "kém"), { ...tok("な", 0, "な"), pos: "助動詞", entries: [] }, tok("人", ENT_HITO, "ひと")] }],
   ["l-2", { lineId: "l-2", snapshotId: "s", grammar: [], tokens: [tok("人", 20, "ひと"), tok("好き", 30, "すき")] }],
 ]);
 
@@ -53,10 +55,23 @@ describe("resolveLessonSource — all (spec §2.3)", () => {
     expect(result.doc.backHref).toBe(`/shadowing/${LESSON}/summary`);
     expect(result.doc.items.map((item) => item.surface)).toEqual(["人", "苦手", "好き"]);
     expect(result.doc.items[1]).toEqual({
-      id: "lesson-10", surface: "苦手", reading: "にがて", meaning: "kém", meaningLocale: "vi", meaningSource: "curated",
-      resolution: "resolved", example: { text: "苦手な人です" },
+      id: "lesson-10", entSeq: ENT_NIGATE, surface: "苦手", reading: "にがて", meaning: "kém", meaningLocale: "vi", meaningSource: "curated",
+      resolution: "resolved", example: { text: "苦手な人です", spans: [{ surface: "苦手", entSeq: ENT_NIGATE }, { surface: "人", entSeq: ENT_HITO }] },
     });
     expect(result.doc.items[0]).toMatchObject({ meaning: "人-en", meaningLocale: "en", meaningSource: "jmdict" });
+  });
+
+  it("carries entSeq and every resolved token of the example line as spans (spec W 1.4)", async () => {
+    const result = await run("all");
+    if (result.kind !== "ok") throw new Error(result.kind);
+    const item = result.doc.items.find((candidate) => candidate.surface === "苦手")!;
+    expect(item.entSeq).toBe(ENT_NIGATE);
+    expect(item.example?.spans).toEqual(expect.arrayContaining([
+      { surface: "苦手", entSeq: ENT_NIGATE },
+      { surface: "人", entSeq: ENT_HITO },
+    ]));
+    // particles and auxiliaries have no entries, so they are never spans
+    expect(item.example?.spans.every((span) => span.surface !== "な" && span.surface !== "の")).toBe(true);
   });
 
   it("reads a ready analysis read-only and never generates (P8), and never reads the AI gloss cache (P6)", async () => {
@@ -99,8 +114,8 @@ describe("resolveLessonSource — saved (spec §2.4)", () => {
     ]);
     const result = await run("saved");
     expect(result.kind === "ok" && result.doc.items).toEqual([{
-      id: "lex-20:ひと", surface: "人", reading: "ひと", meaning: "人-en", meaningLocale: "en", meaningSource: "jmdict",
-      resolution: "resolved", example: { text: "苦手な人です" },
+      id: "lex-20:ひと", entSeq: ENT_HITO, surface: "人", reading: "ひと", meaning: "人-en", meaningLocale: "en", meaningSource: "jmdict",
+      resolution: "resolved", example: { text: "苦手な人です", spans: [{ surface: "苦手", entSeq: ENT_NIGATE }, { surface: "人", entSeq: ENT_HITO }] },
     }]);
   });
 
@@ -111,9 +126,18 @@ describe("resolveLessonSource — saved (spec §2.4)", () => {
     ]);
     const result = await run("saved");
     expect(result.kind === "ok" && result.doc.items).toEqual([
-      { id: "raw-消えた", surface: "消えた", resolution: "saved_raw", example: { text: "苦手な人です" } },
+      { id: "raw-消えた", surface: "消えた", resolution: "saved_raw", example: { text: "苦手な人です", spans: [{ surface: "苦手", entSeq: ENT_NIGATE }, { surface: "人", entSeq: ENT_HITO }] } },
       { id: "raw-幽霊", surface: "幽霊", resolution: "saved_raw" },
     ]);
+  });
+
+  it("gives a raw saved item spans but no entSeq (spec W 1.4)", async () => {
+    loaded([{ cardId: "c-9", kind: "vocabulary", ref: "消えた", lineId: "l-1" }]);
+    const result = await run("saved");
+    if (result.kind !== "ok") throw new Error(result.kind);
+    const raw = result.doc.items.find((candidate) => candidate.resolution === "saved_raw")!;
+    expect(raw.entSeq).toBeUndefined();
+    expect(Array.isArray(raw.example?.spans)).toBe(true);
   });
 
   it("returns an empty document when nothing is saved", async () => {

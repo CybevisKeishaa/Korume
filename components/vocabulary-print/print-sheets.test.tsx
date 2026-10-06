@@ -8,7 +8,7 @@ const labels: SheetLabels = {
   wordmark: "KORUME", documentName: "Vocabulary review", title: "苦手な人", footer: "Korume · Vocabulary review",
   pageNumber: (page, count) => `${page} / ${count}`, englishMeaning: "EN",
 };
-const vi: VocabularyPrintItem = { id: "a", surface: "苦手", reading: "にがて", meaning: "kém", meaningLocale: "vi", meaningSource: "curated", resolution: "resolved", example: { text: "今回はね「私の苦手な人」について話します" } };
+const vi: VocabularyPrintItem = { id: "a", surface: "苦手", reading: "にがて", meaning: "kém", meaningLocale: "vi", meaningSource: "curated", resolution: "resolved", example: { text: "今回はね「私の苦手な人」について話します", spans: [] } };
 const en: VocabularyPrintItem = { id: "b", surface: "人", reading: "ひと", meaning: "person", meaningLocale: "en", meaningSource: "jmdict", resolution: "resolved" };
 const raw: VocabularyPrintItem = { id: "c", surface: "消えた", resolution: "saved_raw" };
 
