@@ -36,7 +36,8 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T10 | accepted | `3dba0e9`, `157f50d` (R-10a: reader allowlists practices/language) |
 | T11 | accepted | `0cb6965`, `fa036a6`, `121187c` (R-11a frame fidelity; layout proof in T16) |
 | T12 | accepted | `044dd01`, `2855a84` (R-12a: no localeChanged; body guard before parse) |
-| T13–T16 | not started | — |
+| T13 | accepted | `2ee4a23`, `385a089`, `adbb500` (R-13a frame fidelity; one Back sentinel; refresh after save) |
+| T14–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -47,6 +48,7 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 
 ## Verification
 
+After T13 (`adbb500`): 92 files 1051/1051 (profile, route, messages, product, korume, mascot, ui, settings), tsc 0, lint 0.
 After T12 (`2855a84`): fresh reset, `verify:db:profile` + `verify:db:erasure` PASS; 14 files 143/143; tsc 0.
 After T11 (`121187c`): profile/mascot/route/messages/product vitest 45 files 507/507, tsc 0, lint 0.
 After T10 (`157f50d`): vitest lib/korume + lib/data/korume 103/103, tsc 0, `verify:db:korume` PASS.
@@ -69,6 +71,8 @@ None.
 
 ## Next actions
 
-1. Task 13 (`/profile/edit`, Figma `67:595`): brief from the plan + the ledger's `Task 12 → T13 carry` line.
-2. Review, gates, commit, checkpoint this file; then Task 14.
+1. Task 14 (integration, E2E, mutation): Claude runs Playwright from this worktree only (never the owner's :3000
+   dev server — check the port first); Codex may take Task 15 (docs) in parallel only if files do not overlap.
+2. Task 16: gates, whole-branch review, Chrome measurement 1280x529 / 1440x900 / 375x812 (ledger `T16 / owner`
+   lines), then the owner's review with every `Owner decision` / `Owner note` line and rulings R-5a, R-7a.
 3. Owner decisions queued in the ledger (`Owner decision` / `Owner note` lines, R-5a, R-7a) — list them at finish.
