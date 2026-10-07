@@ -35,7 +35,17 @@ function displayName(type: "region" | "language", locale: string, code: string):
 
 type Row = { icon: ProfileIconKey; label: string; value: string };
 
-export function IdentityCard({ identity, variant, actions }: { identity: ProfileIdentityModel; variant: "page" | "preview"; actions?: ReactNode }) {
+export function IdentityCard({
+  identity, variant, actions, interfaceLocale, onChangePhoto,
+}: {
+  identity: ProfileIdentityModel;
+  variant: "page" | "preview";
+  actions?: ReactNode;
+  /** The language the "Current interface" row names; defaults to the active locale (Edit Profile passes the unsaved choice). */
+  interfaceLocale?: string;
+  /** Preview only: makes the avatar badge a button (Edit Profile points it at its one file input). */
+  onChangePhoto?: () => void;
+}) {
   const t = useTranslations("profile");
   const locale = useLocale();
   const format = useFormatter();
@@ -44,7 +54,7 @@ export function IdentityCard({ identity, variant, actions }: { identity: Profile
     ? displayName("language", locale, identity.nativeLanguage) : null;
   const jlpt = identity.targetJlptLevel && JLPT.includes(identity.targetJlptLevel) ? identity.targetJlptLevel : null;
   const zone = offsetLabel(identity.timeZone);
-  const ui = displayName("language", locale, locale);
+  const ui = displayName("language", locale, interfaceLocale ?? locale);
   const since = identity.firstKnownLearningAt
     ? format.dateTime(new Date(identity.firstKnownLearningAt), { month: "long", year: "numeric" })
     : null;
@@ -77,6 +87,16 @@ export function IdentityCard({ identity, variant, actions }: { identity: Profile
           >
             <ProfileIcon name="camera" />
           </Link>
+        )}
+        {variant === "preview" && onChangePhoto && (
+          <button
+            type="button"
+            onClick={onChangePhoto}
+            aria-label={t("identity.changePhoto")}
+            className="absolute bottom-0 end-0 flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground"
+          >
+            <ProfileIcon name="camera" />
+          </button>
         )}
       </div>
       <Name className="text-2xl font-bold [overflow-wrap:anywhere]">{identity.displayName}</Name>

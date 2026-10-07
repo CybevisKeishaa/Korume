@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useState, type RefObject } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { AVATAR_INPUT_MAX_BYTES } from "@/lib/profile/avatar-limits";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,13 @@ const TYPES = ["image/jpeg", "image/png", "image/webp"];
  * an upload; the server re-checks everything (magic bytes, pixels) and is the authority.
  */
 export function AvatarPicker({
-  canRemove, onPick, onRemove,
+  input, canRemove, onPick, onRemove,
 }: {
+  /** The one file input; the preview badge clicks the same element. */
+  input: RefObject<HTMLInputElement>;
   canRemove: boolean; onPick: (file: File) => void; onRemove: () => void;
 }) {
   const t = useTranslations("profile");
-  const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<"type" | "size" | null>(null);
   const errorId = useId();
 

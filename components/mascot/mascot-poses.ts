@@ -12,7 +12,8 @@ export type MascotPoseName =
   | "not-found"
   | "route-error"
   | "settings"
-  | "korumeship";
+  | "korumeship"
+  | "edit-footer";
 
 export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number; height: number }> = {
   login: { file: "bye.png", width: 572, height: 436 },
@@ -29,4 +30,6 @@ export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number;
   settings: { file: "relax.png", width: 423, height: 375 },
   // The companion sitting on its orb with a scroll: the Profile Korumeship card's opening art (Figma 66:166).
   korumeship: { file: "reading-on-the-orb.png", width: 412, height: 454 },
+  // The Edit Profile footer (Figma 67:595): the companion cradling a small orb, beside "Korume will use these choices..." (spec 8.3).
+  "edit-footer": { file: "holding-memory.png", width: 320, height: 399 },
 };

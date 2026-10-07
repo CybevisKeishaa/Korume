@@ -297,4 +297,35 @@ describe("EditProfile", () => {
     expect(busy).toBeDisabled();
     await act(async () => { finish(json(200, { data: { avatarUrl: null } })); });
   });
+
+  it("shows the mascot beside the footer line, following the unsaved Show Korume switch", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<EditProfile view={makeView()} />);
+    expect(container.querySelector('[data-mascot-pose="edit-footer"]')).not.toBeNull();
+    await user.click(screen.getByRole("switch", { name: copy.fields.showKorume }));
+    expect(container.querySelector('[data-mascot-pose="edit-footer"]')).toBeNull();
+    expect(profileCalls()).toHaveLength(0);
+  });
+
+  it("opens the same file input from the preview camera badge, and the chosen photo previews", async () => {
+    const user = userEvent.setup();
+    render(<EditProfile view={makeView()} />);
+    const input = screen.getByLabelText(copy.avatar.label) as HTMLInputElement;
+    const click = vi.spyOn(input, "click");
+    const preview = screen.getByRole("region", { name: "Keishaa" });
+    await user.click(within(preview).getByRole("button", { name: copy.avatar.change }));
+    expect(click).toHaveBeenCalledTimes(1);
+    await user.upload(input, photo());
+    expect(within(preview).getByRole("img")).toHaveAttribute("src", "blob:local-1");
+  });
+
+  it("previews the unsaved Interface Language in the Current interface row", async () => {
+    const user = userEvent.setup();
+    render(<EditProfile view={makeView()} />);
+    const preview = screen.getByRole("region", { name: "Keishaa" });
+    expect(within(preview).getByText("English")).toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: copy.fields.interfaceLanguage }));
+    await user.click(await screen.findByRole("option", { name: "Tiếng Việt" }));
+    expect(within(screen.getByRole("region", { name: "Keishaa" })).queryByText("English")).toBeNull();
+  });
 });

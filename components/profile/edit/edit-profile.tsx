@@ -7,6 +7,7 @@ import { routing, type Locale } from "@/lib/i18n/routing";
 import { usePreferences } from "@/components/providers/preferences-provider";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import { MascotPose } from "@/components/mascot/mascot-pose";
 import { Dialog } from "@/components/ui/dialog";
 import { profileFieldsSchema } from "@/lib/profile/schema";
 import { normalizeUsername, validateUsername } from "@/lib/profile/username";
@@ -57,6 +58,7 @@ export function EditProfile({ view }: { view: ProfileView }) {
   const { pendingHref, setPendingHref } = useDirtyGuard(dirty);
   const usernameStatus = useUsernameAvailability(draft.username, initial.username || null);
   const stayRef = useRef<HTMLButtonElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   // Object URLs: revoke the previous on replace and the current on unmount.
   const urlRef = useRef<string | null>(null);
@@ -195,7 +197,7 @@ export function EditProfile({ view }: { view: ProfileView }) {
         <div className="profile-edit">
           <aside className="profile-edit-preview" aria-label={t("edit.previewEyebrow")}>
             <p className={`${EYEBROW} mb-xs`}>{t("edit.previewEyebrow")}</p>
-            <IdentityCard identity={identity} variant="preview" />
+            <IdentityCard identity={identity} variant="preview" interfaceLocale={draft.locale} onChangePhoto={() => fileInput.current?.click()} />
             <div className="profile-edit-extra grid gap-md">
               {draft.companionEnabled && (
                 <section className={CARD_WARM} aria-labelledby="profile-edit-current-korume">
@@ -240,13 +242,18 @@ export function EditProfile({ view }: { view: ProfileView }) {
                 if (canonicalTimeZone(draft.timeZone) === null) setErrors((prev) => ({ ...prev, timeZone: "time_zone" }));
               }}
               photo={
-                <AvatarPicker canRemove={view.identity.hasUploadedAvatar && avatar.action !== "remove"} onPick={pickPhoto} onRemove={removePhoto} />
+                <AvatarPicker input={fileInput} canRemove={view.identity.hasUploadedAvatar && avatar.action !== "remove"} onPick={pickPhoto} onRemove={removePhoto} />
               }
             />
             <PreferencesSection draft={draft} set={set} />
             <KorumeSection draft={draft} set={set} />
             <div className="profile-edit-actions grid gap-xs border-t border-border bg-card py-sm">
-              {draft.companionEnabled && <p className="text-caption text-muted-foreground">{t("edit.korumeFooter")}</p>}
+              {draft.companionEnabled && (
+                <div className="flex items-center gap-sm">
+                  <MascotPose pose="edit-footer" size="sm" />
+                  <p className="text-caption text-muted-foreground">{t("edit.korumeFooter")}</p>
+                </div>
+              )}
               {formError && <p role="alert" className="text-caption text-danger-strong">{formError}</p>}
               <p role="status" className="sr-only">{saving ? t("edit.saving") : ""}</p>
               <div className="flex flex-wrap justify-end gap-xs">

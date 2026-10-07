@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
 import en from "@/messages/en/profile.json";
 import { IdentityCard } from "./identity-card";
@@ -75,5 +76,13 @@ describe("IdentityCard", () => {
     const row = screen.getByText("Learning with Korume since March 2026");
     expect(row.closest("dt")).toBeNull();
     expect(row.closest("dl")).toBeNull();
+  });
+
+  it("shows the interface row for an explicit interfaceLocale and a photo button only in the preview", async () => {
+    const onChangePhoto = vi.fn();
+    render(<IdentityCard identity={model({ nativeLanguage: null })} variant="preview" interfaceLocale="vi" onChangePhoto={onChangePhoto} />);
+    expect(screen.getByText("Vietnamese")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: t.changePhoto }));
+    expect(onChangePhoto).toHaveBeenCalledTimes(1);
   });
 });
