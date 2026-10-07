@@ -23,8 +23,7 @@ export type SaveProfileInput = {
 
 export type SaveProfileResult =
   | { ok: true; data: { avatarUrl: string | null } }
-  | { ok: false; status: 401 | 413 | 415 | 422 }
-  | { ok: false; status: 429; retryAfter: number }
+  | { ok: false; status: 413 | 415 | 422 }
   | { ok: false; status: 400; fields: Record<string, string> }
   | { ok: false; status: 409; fields: { username: "taken" } };
 
@@ -38,19 +37,34 @@ function logCleanup(context: string, error: unknown): void {
   console.error(`[profile-write] ${context}:`, error);
 }
 
-/**
- * The one write path of Edit Profile (spec §8.4, §9). Order: auth → rate limit → validate everything → process the
- * avatar → upload → `save_profile` (one transaction) → cleanup. The user always comes from the session, never from the
- * input; nothing is written to any table except through the RPC.
- */
-export async function saveProfile(input: SaveProfileInput): Promise<SaveProfileResult> {
-  const supabase = createClient();
-  const user = await requireUser(supabase);
-  if (!user) return { ok: false, status: 401 };
+export type AuthorizeProfileSaveResult =
+  | { ok: true; user: { id: string } }
+  | { ok: false; status: 401 }
+  | { ok: false; status: 429; retryAfter: number };
 
+/**
+ * Step one of Edit Profile, run BEFORE the request body is read: the session user, then the rate limit. The returned
+ * user is the only identity `saveProfile` accepts; nothing from the request can name one.
+ */
+export async function authorizeProfileSave(): Promise<AuthorizeProfileSaveResult> {
+  const user = await requireUser(createClient());
+  if (!user) return { ok: false, status: 401 };
   const limited = rateLimit(`profile-save:${user.id}`, SAVE_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
+  return { ok: true, user: { id: user.id } };
+}
 
+/** A PostgREST/Postgres SQLSTATE is five characters; anything else (network, PGRST...) does not prove a rollback. */
+const isSqlState = (code: unknown): boolean => typeof code === "string" && /^[0-9A-Z]{5}$/.test(code);
+const violatesUsernameKey = (error: { message?: string; details?: string | null }): boolean =>
+  `${error.message ?? ""} ${error.details ?? ""}`.includes("users_username_key");
+
+/**
+ * The one write path of Edit Profile (spec §8.4, §9). `user` comes from `authorizeProfileSave` (auth and rate limit
+ * already done). Order: validate everything → process the avatar → upload → `save_profile` (one transaction) → cleanup.
+ * Nothing is written to any table except through the RPC.
+ */
+export async function saveProfile(input: SaveProfileInput, user: { id: string }): Promise<SaveProfileResult> {
   const errors: Record<string, string> = {};
   const parsedFields = profileFieldsSchema.safeParse(input.fields);
   if (!parsedFields.success) {
@@ -90,10 +104,16 @@ export async function saveProfile(input: SaveProfileInput): Promise<SaveProfileR
   });
   if (error) {
     if (newPath) {
-      const removed = await bucket.remove([newPath]).catch((cause: unknown) => ({ error: cause }));
-      if (removed.error) logCleanup("could not remove the orphaned upload", removed.error);
+      // Only a SQLSTATE proves the transaction rolled back. Otherwise the commit may have happened, and removing the
+      // object would leave a row pointing at nothing: keep the orphan (harmless, private) and say so.
+      if (isSqlState(error.code)) {
+        const removed = await bucket.remove([newPath]).catch((cause: unknown) => ({ error: cause }));
+        if (removed.error) logCleanup("could not remove the orphaned upload", removed.error);
+      } else {
+        logCleanup("save_profile outcome unknown; orphan kept", { path: newPath, error });
+      }
     }
-    if (error.code === "23505") return { ok: false, status: 409, fields: { username: "taken" } };
+    if (error.code === "23505" && violatesUsernameKey(error)) return { ok: false, status: 409, fields: { username: "taken" } };
     throw error;
   }
 
@@ -103,12 +123,10 @@ export async function saveProfile(input: SaveProfileInput): Promise<SaveProfileR
     if (removed.error) logCleanup("could not remove the previous avatar", removed.error);
   }
 
-  const { data: row } = await supabase.from("users").select("avatar_url, avatar_path").eq("id", user.id).maybeSingle();
-  const stored = row as { avatar_url: string | null; avatar_path: string | null } | null;
-  return {
-    ok: true,
-    data: { avatarUrl: stored ? await resolveAvatarUrl({ avatarPath: stored.avatar_path, avatarUrl: stored.avatar_url }) : null },
-  };
+  // The path the database now holds is known without a read: the new one, none, or (keep) the one the RPC returned.
+  // `null` means "no uploaded photo": the page falls back to the OAuth picture on its next load.
+  const storedPath = input.avatar.action === "replace" ? newPath : input.avatar.action === "remove" ? null : typeof previous === "string" ? previous : null;
+  return { ok: true, data: { avatarUrl: await resolveAvatarUrl({ avatarPath: storedPath, avatarUrl: null }) } };
 }
 
 export type CheckUsernameResult =

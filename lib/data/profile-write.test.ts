@@ -16,7 +16,10 @@ vi.mock("@/lib/profile/avatar", () => ({ processAvatar: vi.fn() }));
 vi.mock("@/lib/profile/avatar-url", () => ({ resolveAvatarUrl: vi.fn() }));
 vi.mock("@/lib/data/preferences", () => ({ updateMyPreferences: vi.fn() }));
 
-import { checkUsername, saveProfile, type SaveProfileInput } from "./profile-write";
+import { authorizeProfileSave, checkUsername, saveProfile as saveWith, type SaveProfileInput } from "./profile-write";
+
+// The user comes from authorizeProfileSave in production; tests hand it over directly.
+const saveProfile = (input: SaveProfileInput) => saveWith(input, { id: USER.id });
 
 const USER = { id: "11111111-1111-4111-8111-111111111111" };
 const NEW_PATH = /^11111111-1111-4111-8111-111111111111\/profile\/[0-9a-f-]{36}\.webp$/;
@@ -80,22 +83,6 @@ beforeEach(() => {
 const rpcArgs = () => service.rpcCalls?.[0]?.args;
 
 describe("saveProfile", () => {
-  it("401 and nothing written when signed out", async () => {
-    wire(null);
-    expect(await saveProfile(KEEP)).toEqual({ ok: false, status: 401 });
-    expect(rateLimit).not.toHaveBeenCalled();
-    expect(service.rpcCalls).toEqual([]);
-    expect(upload).not.toHaveBeenCalled();
-  });
-
-  it("429 with Retry-After before any validation or work", async () => {
-    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 4200 });
-    expect(await saveProfile(REPLACE)).toEqual({ ok: false, status: 429, retryAfter: 4200 });
-    expect(rateLimit).toHaveBeenCalledWith(`profile-save:${USER.id}`, { limit: 10, windowMs: 60_000 });
-    expect(processAvatar).not.toHaveBeenCalled();
-    expect(service.rpcCalls).toEqual([]);
-  });
-
   it("400 with fields keyed by form field when profileFieldsSchema fails; nothing processed or written", async () => {
     const result = await saveProfile({ ...REPLACE, fields: { ...FIELDS, username: "ab", bio: "x".repeat(161), country: "ZZ" } });
     expect(result.ok).toBe(false);
@@ -127,6 +114,7 @@ describe("saveProfile", () => {
   });
 
   it("keep: one save_profile call with the session user and validated values; no upload", async () => {
+    rpcImpl = () => ({ data: "stored/path.webp", error: null });
     const result = await saveProfile(KEEP);
     expect(result).toEqual({ ok: true, data: { avatarUrl: "signed:stored/path.webp" } });
     expect(rpcArgs()).toEqual({
@@ -145,7 +133,7 @@ describe("saveProfile", () => {
 
   it("replace: processes, uploads to <user>/profile/<uuid>.webp (webp, no upsert), then saves with replace", async () => {
     const result = await saveProfile(REPLACE);
-    expect(result.ok).toBe(true);
+    expect(result).toEqual({ ok: true, data: { avatarUrl: expect.stringMatching(/^signed:11111111-1111-4111-8111-111111111111\/profile\//) } });
     expect(processAvatar).toHaveBeenCalledWith(new Uint8Array([1, 2, 3]), "image/jpeg");
     const [path, body, options] = upload.mock.calls[0]!;
     expect(path).toMatch(NEW_PATH);
@@ -163,10 +151,24 @@ describe("saveProfile", () => {
     expect(events).toEqual(["upload", "rpc", "remove"]);
   });
 
-  it("23505 maps to 409 { username: taken } and still removes the new object", async () => {
-    rpcImpl = () => ({ data: null, error: { message: "duplicate key", code: "23505" } });
+  it("23505 on users_username_key maps to 409 { username: taken } and still removes the new object", async () => {
+    rpcImpl = () => ({ data: null, error: { message: 'duplicate key value violates unique constraint "users_username_key"', code: "23505" } });
     expect(await saveProfile(REPLACE)).toEqual({ ok: false, status: 409, fields: { username: "taken" } });
     expect(remove).toHaveBeenCalledWith([upload.mock.calls[0]![0]]);
+  });
+
+  it("a 23505 on any other constraint is a server error, not a username conflict", async () => {
+    rpcImpl = () => ({ data: null, error: { message: 'duplicate key value violates unique constraint "other_key"', code: "23505" } });
+    await expect(saveProfile(KEEP)).rejects.toMatchObject({ code: "23505" });
+  });
+
+  it("an error without a SQLSTATE (outcome unknown) keeps the new object and logs it", async () => {
+    rpcImpl = () => ({ data: null, error: { message: "fetch failed", code: "PGRST000" } });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(saveProfile(REPLACE)).rejects.toMatchObject({ message: "fetch failed" });
+    expect(remove).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   it("an upload failure never reaches the database", async () => {
@@ -190,7 +192,7 @@ describe("saveProfile", () => {
   it("remove: saves with remove and deletes the old object after the commit", async () => {
     rpcImpl = () => ({ data: "u/profile/old.webp", error: null });
     const result = await saveProfile({ ...KEEP, avatar: { action: "remove" } });
-    expect(result.ok).toBe(true);
+    expect(result).toEqual({ ok: true, data: { avatarUrl: null } });
     expect(rpcArgs()).toMatchObject({ p_avatar_action: "remove", p_avatar_path: null });
     expect(events).toEqual(["rpc", "remove"]);
     expect(remove).toHaveBeenCalledWith(["u/profile/old.webp"]);
@@ -223,6 +225,24 @@ describe("saveProfile", () => {
     expect(serviceTables).toEqual([]);
     expect(updateMyPreferences).not.toHaveBeenCalled();
     expect(service.rpcCalls?.every((c) => c.name === "save_profile")).toBe(true);
+  });
+});
+
+describe("authorizeProfileSave", () => {
+  it("401 when signed out, before any rate-limit hit", async () => {
+    wire(null);
+    expect(await authorizeProfileSave()).toEqual({ ok: false, status: 401 });
+    expect(rateLimit).not.toHaveBeenCalled();
+  });
+
+  it("429 with Retry-After at 10 per minute", async () => {
+    vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 4200 });
+    expect(await authorizeProfileSave()).toEqual({ ok: false, status: 429, retryAfter: 4200 });
+    expect(rateLimit).toHaveBeenCalledWith(`profile-save:${USER.id}`, { limit: 10, windowMs: 60_000 });
+  });
+
+  it("returns the session user and nothing else", async () => {
+    expect(await authorizeProfileSave()).toEqual({ ok: true, user: { id: USER.id } });
   });
 });
 

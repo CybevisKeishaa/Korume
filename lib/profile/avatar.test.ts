@@ -78,6 +78,18 @@ describe("processAvatar", () => {
     expect(result.webp.byteLength).toBeLessThan(512 * 1024); // measured ~186 KB
   });
 
+  it("stays under the bucket limit on 4-channel (RGBA) noise too", async () => {
+    const size = 512;
+    const noise = Buffer.alloc(size * size * 4);
+    for (let i = 0; i < noise.length; i++) noise[i] = Math.floor(Math.random() * 256);
+    const source = await build(noise, { raw: { width: size, height: size, channels: 4 } }).png().toBuffer();
+    expect(source.byteLength).toBeLessThanOrEqual(AVATAR_INPUT_MAX_BYTES);
+    const result = await processAvatar(source, "image/png");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.webp.byteLength).toBeLessThan(524288); // measured ~451 KB
+  });
+
   it("rejects 2 MB + 1 byte as too_large without decoding", async () => {
     const oversized = new Uint8Array(AVATAR_INPUT_MAX_BYTES + 1);
     oversized.set([0xff, 0xd8, 0xff]); // a valid JPEG signature: only the size check can stop it
@@ -96,6 +108,7 @@ describe("processAvatar", () => {
     expect(sharpSpy.calls).toBe(0);
     // positive control: the same bytes under their true type decode
     expect((await processAvatar(jpegBytes, "image/jpeg")).ok).toBe(true);
+    expect(sharpSpy.calls).toBe(1); // the spy does count real decodes, so the zero assertions above can fail
   });
 
   it("rejects a PNG whose IHDR claims 10000x10000 as pixels, before allocating a bitmap", async () => {
