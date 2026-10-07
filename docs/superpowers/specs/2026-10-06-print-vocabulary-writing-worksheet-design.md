@@ -375,3 +375,21 @@ Written first; each guarantee below also gets a mutation that turns it red.
 
 Progressive stroke diagrams; stroke guides in the answer key; stroke animation; a learner setting for the number of
 cells; persisted settings; paper flashcards; non-lesson sources; client-side PDF.
+
+## 10. Amendments during execution
+
+Rulings made while the plan ran; the SDD ledger holds the reasoning for each.
+
+- **Self-test with no prompt on (Task 7):** entering Self-test with all three prompts off turns `showMeaning` on, the
+  first fallback of §2, so the switch shows what will print. The at-least-one lock applies to Self-test only.
+- **PDF render deadline (Task 8):** one overall 30s deadline covers the whole render (504 on timeout). The render job
+  is created inside the queued task, right before rendering. A dead or disconnected Chromium clears the cache and
+  answers 503. The request body is capped at 1 MB (413).
+- **`PRINT_PDF_ORIGIN` (final fix wave):** normalised with `new URL(v).origin`, so a trailing slash is fine. A value
+  that cannot be parsed now throws instead of making every request abort.
+- **Reading prompts and §1.4 (final fix wave):** the no-leak invariant covers prompts too. In Self-test a reading
+  prompt that contains any string of `M` is dropped and the §2 fallback applies. With kana-only words on, a few more
+  words can end up with no prompt; the existing notice counts them. The answer key still shows readings unmasked,
+  because §1.4 covers item pages only.
+- **Quote band (final fix wave):** the band keeps a fixed position on the sheet and does not shrink, so the PDF
+  overflow guard can see the body cross it.
