@@ -13,9 +13,8 @@ import { profileFieldsSchema } from "@/lib/profile/schema";
 import { normalizeUsername, validateUsername } from "@/lib/profile/username";
 import type { ProfileView } from "@/lib/profile/view";
 import { canonicalTimeZone } from "@/lib/time/study-day";
-import { CARD, CARD_WARM, EYEBROW } from "../card-styles";
-import { IdentityCard } from "../identity-card";
-import { wholeMonths } from "../korumeship-card";
+import { CARD, EYEBROW } from "../card-styles";
+import { EditPreview } from "./edit-preview";
 import { AvatarPicker } from "./avatar-picker";
 import { BasicSection } from "./basic-section";
 import { draftReducer, initialDraft, pickPreferences, toPayload, type Draft } from "./draft";
@@ -53,6 +52,7 @@ export function EditProfile({ view }: { view: ProfileView }) {
   const [saving, setSaving] = useState(false);
   const [exit, setExit] = useState<Exit | null>(null);
   const [focusName, setFocusName] = useState<string | null>(null);
+  const [usernameTouched, setUsernameTouched] = useState(false);
 
   const dirty = exit === null && (avatar.action !== "keep" || JSON.stringify(draft) !== JSON.stringify(initial));
   const { pendingHref, setPendingHref } = useDirtyGuard(dirty);
@@ -75,6 +75,11 @@ export function EditProfile({ view }: { view: ProfileView }) {
   const removePhoto = () => {
     replaceUrl(null);
     setAvatar({ action: "remove", file: null, url: null });
+  };
+
+  const undoPhoto = () => {
+    replaceUrl(null);
+    setAvatar({ action: "keep", file: null, url: null });
   };
 
   const set = useCallback((patch: Partial<Draft>) => {
@@ -100,8 +105,13 @@ export function EditProfile({ view }: { view: ProfileView }) {
     if (exit.kind === "saved") {
       if (exit.locale) router.replace("/profile", { locale: exit.locale });
       else router.push("/profile");
-    } else if (exit.kind === "back") window.history.go(-2); // past the guard's sentinel entry
-    else {
+      // Next's client cache would otherwise serve the old /profile (name, avatar) for its dynamic stale window.
+      router.refresh();
+    } else if (exit.kind === "back") {
+      // Past the guard's sentinel entry; a fresh tab has nothing below this page, so go to /profile instead.
+      if (window.history.length > 2) window.history.go(-2);
+      else router.push("/profile");
+    } else {
       // The guard hands over a real URL, locale prefix included; the locale-aware router wants it split.
       const [, prefix, rest] = exit.href.match(/^\/([^/?#]+)(.*)$/) ?? [];
       const target = routing.locales.find((l) => l === prefix);
@@ -132,6 +142,7 @@ export function EditProfile({ view }: { view: ProfileView }) {
     }
     setSaving(true);
     setFormError(null);
+    let leaving = false;
     try {
       const body = new FormData();
       body.set("profile", JSON.stringify(payload));
@@ -139,6 +150,7 @@ export function EditProfile({ view }: { view: ProfileView }) {
       const response = await fetch("/api/profile", { method: "PATCH", body });
       if (response.ok) {
         setLocal(pickPreferences(draft));
+        leaving = true; // Save stays busy until the page is gone: no second PATCH during navigation
         setExit({ kind: "saved", locale: draft.locale !== locale ? draft.locale : null });
         return;
       }
@@ -151,12 +163,13 @@ export function EditProfile({ view }: { view: ProfileView }) {
         : response.status === 415 ? t("edit.avatar.errors.type")
         : response.status === 422 ? t("edit.avatar.errors.corrupt")
         : response.status === 429 ? t("edit.rateLimited")
+        : response.status === 401 ? t("edit.signedOut")
         : t("edit.saveFailed"),
       );
     } catch {
       setFormError(t("edit.saveFailed"));
     } finally {
-      setSaving(false);
+      if (!leaving) setSaving(false);
     }
   };
 
@@ -164,7 +177,7 @@ export function EditProfile({ view }: { view: ProfileView }) {
   const shown: Record<string, string | undefined> = {};
   for (const [field, code] of Object.entries(errors)) shown[field] = message(field, code);
   if (!shown.username) {
-    const local = draft.username.trim() === "" ? null : validateUsername(draft.username);
+    const local = !usernameTouched || draft.username.trim() === "" ? null : validateUsername(draft.username);
     if (local && !local.ok) shown.username = message("username", local.reason);
     else if (usernameStatus === "taken") shown.username = message("username", "taken");
   }
@@ -195,39 +208,14 @@ export function EditProfile({ view }: { view: ProfileView }) {
           <p className="text-sm text-muted-foreground">{t("edit.hint")}</p>
         </header>
         <div className="profile-edit">
-          <aside className="profile-edit-preview" aria-label={t("edit.previewEyebrow")}>
-            <p className={`${EYEBROW} mb-xs`}>{t("edit.previewEyebrow")}</p>
-            <IdentityCard identity={identity} variant="preview" interfaceLocale={draft.locale} onChangePhoto={() => fileInput.current?.click()} />
-            <div className="profile-edit-extra grid gap-md">
-              {draft.companionEnabled && (
-                <section className={CARD_WARM} aria-labelledby="profile-edit-current-korume">
-                  <h2 id="profile-edit-current-korume" className={EYEBROW}>{t("edit.currentKorume.eyebrow")}</h2>
-                  <p className="mt-xs text-xl font-semibold">{t("edit.currentKorume.title")}</p>
-                  <p className="mt-2xs text-sm text-muted-foreground">{t("edit.currentKorume.body")}</p>
-                </section>
-              )}
-              {goal && (
-                <section className={CARD} aria-labelledby="profile-edit-goal-preview">
-                  <h2 id="profile-edit-goal-preview" className={EYEBROW}>{t("goal.eyebrow")}</h2>
-                  <blockquote className="mt-sm text-lg leading-relaxed [overflow-wrap:anywhere]">“{goal}”</blockquote>
-                </section>
-              )}
-              {draft.companionEnabled && (
-                <section className={`${CARD} flex items-center justify-between gap-sm`} aria-labelledby="profile-edit-relationship">
-                  <div>
-                    <h2 id="profile-edit-relationship" className={EYEBROW}>{t("edit.relationship.eyebrow")}</h2>
-                    <p className="mt-xs text-lg font-semibold">{t("edit.relationship.title")}</p>
-                    <p className="mt-2xs text-sm text-muted-foreground">
-                      {since ? t("korume.together", { months: wholeMonths(since, identity.timeZone) }) : t("korume.fresh")}
-                    </p>
-                  </div>
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="size-icon-md shrink-0 text-primary" fill="currentColor">
-                    <path d="M12 20.6 4.6 13.3a4.6 4.6 0 0 1 6.5-6.5l.9.9.9-.9a4.6 4.6 0 0 1 6.5 6.5L12 20.6Z" />
-                  </svg>
-                </section>
-              )}
-            </div>
-          </aside>
+          <EditPreview
+            identity={identity}
+            interfaceLocale={draft.locale}
+            companionEnabled={draft.companionEnabled}
+            goal={goal}
+            since={since}
+            onChangePhoto={() => fileInput.current?.click()}
+          />
           <form className={`${CARD} grid gap-md`} aria-labelledby="profile-edit-form-title" noValidate onSubmit={submit}>
             <div>
               <p className={EYEBROW}>{t("edit.formEyebrow")}</p>
@@ -238,11 +226,12 @@ export function EditProfile({ view }: { view: ProfileView }) {
               set={set}
               errors={shown}
               usernameStatus={usernameStatus}
+              onUsernameBlur={() => setUsernameTouched(true)}
               onTimeZoneBlur={() => {
                 if (canonicalTimeZone(draft.timeZone) === null) setErrors((prev) => ({ ...prev, timeZone: "time_zone" }));
               }}
               photo={
-                <AvatarPicker input={fileInput} canRemove={view.identity.hasUploadedAvatar && avatar.action !== "remove"} onPick={pickPhoto} onRemove={removePhoto} />
+                <AvatarPicker input={fileInput} canRemove={view.identity.hasUploadedAvatar && avatar.action !== "remove"} canUndo={avatar.action !== "keep"} onUndo={undoPhoto} onPick={pickPhoto} onRemove={removePhoto} />
               }
             />
             <PreferencesSection draft={draft} set={set} />

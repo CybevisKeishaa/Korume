@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, renderHook } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { useDirtyGuard } from "./use-dirty-guard";
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => { vi.restoreAllMocks(); window.history.replaceState(null, ""); });
 
 function Harness({ dirty }: { dirty: boolean }) {
   const guard = useDirtyGuard(dirty);
@@ -48,6 +48,7 @@ describe("useDirtyGuard", () => {
     const push = vi.spyOn(window.history, "pushState");
     const { getByTestId } = render(<Harness dirty />);
     expect(push).toHaveBeenCalledTimes(1); // the sentinel
+    window.history.replaceState(null, ""); // Back lands on the page entry below the sentinel
     act(() => { fireEvent(window, new PopStateEvent("popstate")); });
     expect(push).toHaveBeenCalledTimes(2);
     expect(getByTestId("pending").textContent).toBe("__back__");
@@ -71,17 +72,13 @@ describe("useDirtyGuard", () => {
     expect(click(getByTestId("link"))).toBe(false);
   });
 
-  it("requestLeave opens the dialog only when dirty", () => {
-    const { result, rerender } = renderHook(({ dirty }) => useDirtyGuard(dirty), { initialProps: { dirty: true } });
-    act(() => result.current.requestLeave("/en/profile"));
-    expect(result.current.pendingHref).toBe("/en/profile");
-    act(() => result.current.setPendingHref(null));
-    const assign = vi.fn();
-    vi.stubGlobal("location", { ...window.location, assign, origin: window.location.origin, href: window.location.href });
-    rerender({ dirty: false });
-    act(() => result.current.requestLeave("/en/profile"));
-    expect(assign).toHaveBeenCalledWith("/en/profile");
-    expect(result.current.pendingHref).toBeNull();
-    vi.unstubAllGlobals();
+  it("pushes the Back sentinel at most once, however often it turns dirty again", () => {
+    const push = vi.spyOn(window.history, "pushState");
+    const { rerender } = render(<Harness dirty />);
+    rerender(<Harness dirty={false} />);
+    rerender(<Harness dirty />);
+    rerender(<Harness dirty={false} />);
+    rerender(<Harness dirty />);
+    expect(push).toHaveBeenCalledTimes(1);
   });
 });

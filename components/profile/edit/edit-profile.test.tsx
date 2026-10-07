@@ -11,9 +11,10 @@ const copy = en.edit;
 
 const push = vi.fn();
 const replace = vi.fn();
+const refresh = vi.fn();
 const setLocal = vi.fn();
 vi.mock("@/lib/i18n/navigation", () => ({
-  useRouter: () => ({ push, replace }),
+  useRouter: () => ({ push, replace, refresh }),
   usePathname: () => "/profile/edit",
 }));
 vi.mock("@/components/providers/preferences-provider", () => ({
@@ -29,13 +30,15 @@ const json = (status: number, body: unknown) => ({ ok: status >= 200 && status <
 
 beforeEach(() => {
   urlCount = 0;
-  for (const m of [push, replace, setLocal, createObjectURL, revokeObjectURL]) m.mockClear();
+  for (const m of [push, replace, refresh, setLocal, createObjectURL, revokeObjectURL]) m.mockClear();
   fetchMock = vi.fn(async (url: string) =>
     String(url).startsWith("/api/profile/username") ? json(200, { data: { available: true } }) : json(200, { data: { avatarUrl: null } }));
   vi.stubGlobal("fetch", fetchMock);
   vi.stubGlobal("URL", Object.assign(URL, { createObjectURL, revokeObjectURL }));
 });
 afterEach(() => {
+  Reflect.deleteProperty(window.history, "length");
+  window.history.replaceState(null, "");
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -91,6 +94,7 @@ describe("EditProfile", () => {
     vi.useFakeTimers();
     render(<EditProfile view={makeView()} />);
     fireEvent.change(field(copy.fields.username), { target: { value: "ab" } });
+    fireEvent.blur(field(copy.fields.username));
     await act(async () => { await vi.advanceTimersByTimeAsync(900); });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(field(copy.fields.username)).toHaveAttribute("aria-invalid", "true");
@@ -194,20 +198,106 @@ describe("EditProfile", () => {
     expect(screen.queryByText(copy.korumeFooter)).toBeNull();
   });
 
-  it("on success merges the four preferences, clears dirty first and goes to /profile", async () => {
+  it("on success merges the four preferences, detaches the guard BEFORE navigating, and refreshes /profile", async () => {
+    // At the instant router.push runs, a link click must already pass through the guard untouched.
+    const link = document.body.appendChild(Object.assign(document.createElement("a"), { href: "#later" }));
+    let guardedAtPush: boolean | null = null;
+    push.mockImplementation(() => {
+      let prevented = false;
+      const seen = (e: Event) => { prevented = e.defaultPrevented; e.preventDefault(); };
+      link.addEventListener("click", seen);
+      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
+      link.removeEventListener("click", seen);
+      guardedAtPush = prevented;
+    });
     const user = userEvent.setup();
     render(<EditProfile view={makeView()} />);
     await type(copy.fields.displayName, "Mika");
     await user.click(screen.getByRole("button", { name: copy.save }));
     expect(setLocal).toHaveBeenCalledWith({ dailyMinutes: 20, readingTranslation: "reveal", readingFurigana: "always", companionEnabled: true });
     expect(push).toHaveBeenCalledWith("/profile");
+    expect(guardedAtPush).toBe(false);
+    expect(refresh).toHaveBeenCalledTimes(1);
     expect(replace).not.toHaveBeenCalled();
-    // dirty is already clear: a link click is no longer intercepted
-    const link = document.body.appendChild(Object.assign(document.createElement("a"), { href: "#later" }));
-    const seen = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
-    link.addEventListener("click", (e) => e.preventDefault());
-    link.dispatchEvent(seen);
     expect(screen.queryByRole("dialog")).toBeNull();
+    link.remove();
+  });
+
+  it("keeps Save busy after success so a second PATCH cannot fire during navigation", async () => {
+    const user = userEvent.setup();
+    render(<EditProfile view={makeView()} />);
+    await type(copy.fields.bio, "x");
+    await user.click(screen.getByRole("button", { name: copy.save }));
+    const busy = screen.getByRole("button", { name: copy.saving });
+    expect(busy).toBeDisabled();
+    await user.click(busy);
+    expect(profileCalls()).toHaveLength(1);
+  });
+
+  it("tells a signed-out learner to sign in again (401)", async () => {
+    fetchMock.mockImplementation(async () => json(401, { error: "Unauthorized" }));
+    const user = userEvent.setup();
+    render(<EditProfile view={makeView()} />);
+    await type(copy.fields.bio, "x");
+    await user.click(screen.getByRole("button", { name: copy.save }));
+    expect(screen.getByRole("alert")).toHaveTextContent(copy.signedOut);
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("shows a local username format error on blur, not on the first keystroke", async () => {
+    render(<EditProfile view={makeView()} />);
+    const input = field(copy.fields.username);
+    fireEvent.change(input, { target: { value: "ab" } });
+    expect(input).not.toHaveAttribute("aria-invalid");
+    fireEvent.blur(input);
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByText(copy.errors.format)).toBeInTheDocument();
+  });
+
+  it("lets a picked photo be undone when there is no uploaded photo to remove", async () => {
+    const user = userEvent.setup();
+    render(<EditProfile view={makeView()} />);
+    expect(screen.queryByRole("button", { name: copy.avatar.undo })).toBeNull();
+    await user.upload(screen.getByLabelText(copy.avatar.label), photo());
+    await user.click(screen.getByRole("button", { name: copy.avatar.undo }));
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:local-1");
+    expect(within(screen.getByRole("region", { name: "Keishaa" })).queryByRole("img")).toBeNull();
+    expect(screen.queryByRole("button", { name: copy.avatar.undo })).toBeNull();
+    await user.type(field(copy.fields.bio), "x");
+    await user.click(screen.getByRole("button", { name: copy.save }));
+    expect(JSON.parse(String((profileCalls()[0]![1].body as FormData).get("profile"))).avatar).toBe("keep");
+  });
+
+  it("Back then Leave goes back past the one sentinel, exactly once, even after dirty-clean-dirty", async () => {
+    window.history.pushState(null, "");
+    window.history.pushState(null, "");
+    const pushState = vi.spyOn(window.history, "pushState");
+    const go = vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    const user = userEvent.setup();
+    render(<EditProfile view={makeView()} />);
+    const bio = field(copy.fields.bio);
+    await user.type(bio, "x");
+    await user.type(bio, "{Backspace}");
+    await user.type(bio, "y");
+    expect(pushState).toHaveBeenCalledTimes(1);
+    window.history.replaceState(null, ""); // Back lands on the page entry
+    act(() => { fireEvent(window, new PopStateEvent("popstate")); });
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: copy.dirty.leave }));
+    expect(go).toHaveBeenCalledTimes(1);
+    expect(go).toHaveBeenCalledWith(-2);
+  });
+
+  it("Back then Leave in a fresh tab (nothing below the page) goes to /profile instead", async () => {
+    Object.defineProperty(window.history, "length", { value: 1, configurable: true });
+    const go = vi.spyOn(window.history, "go").mockImplementation(() => undefined);
+    const user = userEvent.setup();
+    render(<EditProfile view={makeView()} />);
+    await user.type(field(copy.fields.bio), "y");
+    window.history.replaceState(null, "");
+    act(() => { fireEvent(window, new PopStateEvent("popstate")); });
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: copy.dirty.leave }));
+    expect(go).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith("/profile");
   });
 
   it("goes to /profile in the new locale when the interface language changed", async () => {
@@ -217,6 +307,7 @@ describe("EditProfile", () => {
     await user.click(await screen.findByRole("option", { name: "Tiếng Việt" }));
     await user.click(screen.getByRole("button", { name: copy.save }));
     expect(replace).toHaveBeenCalledWith("/profile", { locale: "vi" });
+    expect(refresh).toHaveBeenCalledTimes(1);
     expect(push).not.toHaveBeenCalled();
   });
 

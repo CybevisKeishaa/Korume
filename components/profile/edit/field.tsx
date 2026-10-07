@@ -23,7 +23,7 @@ export function Field({
       <Label htmlFor={fieldId(name)} className="mb-2xs block text-caption text-muted-foreground">{label}</Label>
       {children}
       {(error || hint) && (
-        <p id={messageId(name)} className={`mt-2xs text-caption ${error ? "text-danger-strong" : "text-muted-foreground"}`}>
+        <p id={messageId(name)} aria-live="polite" className={`mt-2xs text-caption ${error ? "text-danger-strong" : "text-muted-foreground"}`}>
           {error ?? hint}
         </p>
       )}
@@ -31,9 +31,11 @@ export function Field({
   );
 }
 
-/** Props that link a control to its message and flag it invalid. */
-export const describe = (name: string, has: boolean) =>
-  has ? ({ "aria-describedby": messageId(name), "aria-invalid": true as const }) : ({});
+/** Props that link a control to its message (error or hint) and flag it invalid only for an error. */
+export const describe = (name: string, error?: string | null, hint?: unknown) => ({
+  ...(error || hint ? { "aria-describedby": messageId(name) } : {}),
+  ...(error ? { "aria-invalid": true as const } : {}),
+});
 
 /** Multi-line input in the same skin as `Input` (the kit has no textarea). */
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
@@ -53,9 +55,9 @@ const NONE = "__none__";
 
 /** A closed list whose empty choice is stored as `""`. Radix forbids an empty item value, hence the sentinel. */
 export function OptionalSelect({
-  name, label, value, onChange, options, notSet,
+  name, label, value, onChange, options, notSet, error,
 }: {
-  name: string; label: string; value: string; onChange: (value: string) => void; options: SelectOption[]; notSet: string;
+  name: string; label: string; value: string; onChange: (value: string) => void; options: SelectOption[]; notSet: string; error?: string | null;
 }) {
   return (
     <Select
@@ -64,6 +66,7 @@ export function OptionalSelect({
       value={value === "" ? NONE : value}
       onValueChange={(next) => onChange(next === NONE ? "" : next)}
       options={[{ value: NONE, label: notSet }, ...options]}
+      {...describe(name, error)}
     />
   );
 }

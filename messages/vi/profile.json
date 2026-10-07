@@ -171,7 +171,8 @@
         "type": "Hãy dùng ảnh JPEG, PNG hoặc WebP.",
         "size": "Ảnh này lớn hơn 2 MB.",
         "corrupt": "Chúng tôi không xử lý được ảnh này. Ảnh có thể bị hỏng hoặc quá lớn. Hãy thử ảnh khác."
-      }
+      },
+      "undo": "Giữ ảnh hiện tại"
     },
     "currentKorume": {
       "eyebrow": "Korume hiện tại",
@@ -194,6 +195,7 @@
       "stay": "Tiếp tục chỉnh sửa",
       "leave": "Rời đi",
       "close": "Đóng hộp thoại"
-    }
+    },
+    "signedOut": "Phiên đăng nhập đã hết. Hãy đăng nhập lại để lưu hồ sơ."
   }
 }

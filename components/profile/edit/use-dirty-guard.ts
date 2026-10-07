@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Protects unsaved Edit Profile changes (spec §8.4, R12 #4). In-app links and browser Back open the app's dialog;
@@ -8,8 +8,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
  */
 export function useDirtyGuard(dirty: boolean) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const dirtyRef = useRef(dirty);
-  dirtyRef.current = dirty;
 
   useEffect(() => {
     if (!dirty) return;
@@ -26,9 +24,16 @@ export function useDirtyGuard(dirty: boolean) {
       setPendingHref(anchor.pathname + anchor.search + anchor.hash);
     };
     const here = window.location.href;
-    window.history.pushState({ korumeDirtyGuard: true }, "", here);
+    // One sentinel per page: turning dirty again must not stack another, or Leave's history.go(-2) lands back on this page.
+    // Spreading the current state keeps the router's own keys (Next patches pushState and reads them).
+    const ensureSentinel = () => {
+      if (!window.history.state?.korumeDirtyGuard) {
+        window.history.pushState({ ...window.history.state, korumeDirtyGuard: true }, "", here);
+      }
+    };
+    ensureSentinel();
     const onPopState = () => {
-      window.history.pushState({ korumeDirtyGuard: true }, "", here);
+      ensureSentinel();
       setPendingHref("__back__");
     };
     window.addEventListener("beforeunload", onBeforeUnload);
@@ -41,10 +46,5 @@ export function useDirtyGuard(dirty: boolean) {
     };
   }, [dirty]);
 
-  const requestLeave = useCallback((href: string) => {
-    if (dirtyRef.current) setPendingHref(href);
-    else window.location.assign(href);
-  }, []);
-
-  return { pendingHref, setPendingHref, requestLeave };
+  return { pendingHref, setPendingHref };
 }

@@ -31,13 +31,14 @@ export const TIME_ZONE_LIST_ID = "profile-edit-timezone-list";
 
 /** Basic information (spec §8.3). `errors` are already-translated messages keyed by field. */
 export function BasicSection({
-  draft, set, errors, usernameStatus, onTimeZoneBlur, photo,
+  draft, set, errors, usernameStatus, onTimeZoneBlur, onUsernameBlur, photo,
 }: {
   draft: Draft;
   set: (patch: Partial<Draft>) => void;
   errors: Record<string, string | undefined>;
   usernameStatus: UsernameStatus;
   onTimeZoneBlur: () => void;
+  onUsernameBlur: () => void;
   photo: ReactNode;
 }) {
   const t = useTranslations("profile");
@@ -62,7 +63,7 @@ export function BasicSection({
             maxLength={DISPLAY_NAME_MAX}
             autoComplete="nickname"
             onChange={(event) => set({ displayName: event.target.value })}
-            {...describe("displayName", Boolean(errors.displayName))}
+            {...describe("displayName", errors.displayName)}
           />
         </Field>
         <Field name="username" label={t("edit.fields.username")} error={errors.username} hint={usernameHint}>
@@ -73,7 +74,8 @@ export function BasicSection({
             autoCapitalize="none"
             spellCheck={false}
             onChange={(event) => set({ username: event.target.value })}
-            {...describe("username", Boolean(errors.username))}
+            onBlur={onUsernameBlur}
+            {...describe("username", errors.username, usernameHint)}
           />
         </Field>
       </div>
@@ -83,12 +85,12 @@ export function BasicSection({
           rows={3}
           value={draft.bio}
           onChange={(event) => set({ bio: event.target.value })}
-          {...describe("bio", Boolean(errors.bio))}
+          {...describe("bio", errors.bio)}
         />
       </Field>
       <div className="profile-edit-fields">
         <Field name="country" label={t("edit.fields.country")} error={errors.country}>
-          <OptionalSelect name="country" label={t("edit.fields.country")} value={draft.country} onChange={(country) => set({ country })} options={countries} notSet={t("edit.notSet")} />
+          <OptionalSelect name="country" label={t("edit.fields.country")} value={draft.country} onChange={(country) => set({ country })} options={countries} notSet={t("edit.notSet")} error={errors.country} />
         </Field>
         <Field name="timeZone" label={t("edit.fields.timeZone")} error={errors.timeZone} hint={t("edit.hints.timeZone")}>
           <Input
@@ -99,24 +101,25 @@ export function BasicSection({
             spellCheck={false}
             onChange={(event) => set({ timeZone: event.target.value })}
             onBlur={onTimeZoneBlur}
-            {...describe("timeZone", Boolean(errors.timeZone))}
+            {...describe("timeZone", errors.timeZone, t("edit.hints.timeZone"))}
           />
           <datalist id={TIME_ZONE_LIST_ID}>
             {zones.map((zone) => <option key={zone} value={zone} />)}
           </datalist>
         </Field>
-        <Field name="nativeLanguage" label={t("edit.fields.nativeLanguage")}>
-          <OptionalSelect name="nativeLanguage" label={t("edit.fields.nativeLanguage")} value={draft.nativeLanguage} onChange={(nativeLanguage) => set({ nativeLanguage })} options={languages} notSet={t("edit.notSet")} />
+        <Field name="nativeLanguage" label={t("edit.fields.nativeLanguage")} error={errors.nativeLanguage}>
+          <OptionalSelect name="nativeLanguage" label={t("edit.fields.nativeLanguage")} value={draft.nativeLanguage} onChange={(nativeLanguage) => set({ nativeLanguage })} options={languages} notSet={t("edit.notSet")} error={errors.nativeLanguage} />
         </Field>
-        <Field name="targetJlpt" label={t("edit.fields.targetJlpt")}>
-          <OptionalSelect name="targetJlpt" label={t("edit.fields.targetJlpt")} value={draft.targetJlptLevel} onChange={(targetJlptLevel) => set({ targetJlptLevel })} options={JLPT_LEVELS.map((level) => ({ value: level, label: level }))} notSet={t("edit.notSet")} />
+        <Field name="targetJlpt" label={t("edit.fields.targetJlpt")} error={errors.targetJlptLevel}>
+          <OptionalSelect name="targetJlpt" label={t("edit.fields.targetJlpt")} value={draft.targetJlptLevel} onChange={(targetJlptLevel) => set({ targetJlptLevel })} options={JLPT_LEVELS.map((level) => ({ value: level, label: level }))} notSet={t("edit.notSet")} error={errors.targetJlptLevel} />
         </Field>
-        <Field name="dailyGoal" label={t("edit.fields.dailyGoal")}>
+        <Field name="dailyGoal" label={t("edit.fields.dailyGoal")} error={errors.dailyMinutes}>
           <Select
             id={fieldId("dailyGoal")}
             aria-label={t("edit.fields.dailyGoal")}
             value={String(draft.dailyMinutes)}
             onValueChange={(minutes) => set({ dailyMinutes: Number(minutes) })}
+            {...describe("dailyGoal", errors.dailyMinutes)}
             options={DAILY_MINUTES_OPTIONS.map((minutes) => ({ value: String(minutes), label: t("edit.dailyMinutes", { minutes }) }))}
           />
         </Field>
@@ -127,7 +130,7 @@ export function BasicSection({
           rows={3}
           value={draft.learningGoal}
           onChange={(event) => set({ learningGoal: event.target.value })}
-          {...describe("learningGoal", Boolean(errors.learningGoal))}
+          {...describe("learningGoal", errors.learningGoal)}
         />
       </Field>
     </section>

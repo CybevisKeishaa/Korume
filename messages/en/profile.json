@@ -171,7 +171,8 @@
         "type": "Use a JPEG, PNG or WebP photo.",
         "size": "That photo is over 2 MB.",
         "corrupt": "We could not process that photo. It may be damaged or too large. Try another."
-      }
+      },
+      "undo": "Keep current photo"
     },
     "currentKorume": {
       "eyebrow": "Current Korume",
@@ -194,6 +195,7 @@
       "stay": "Keep editing",
       "leave": "Leave",
       "close": "Close dialog"
-    }
+    },
+    "signedOut": "Your session has ended. Sign in again to save your profile."
   }
 }

@@ -72,7 +72,7 @@
         918
       ],
       "caption": "ÔM KÝ ỨC — holding a memory",
-      "slot": "UNPLACED as of task 9. It was written for §6 (the companion holding a memory orb), but §6 shipped reading-on-the-orb.png instead: chain.mascotAlt describes the companion SITTING ON a glowing orb, and this pose sits on the ground cradling one, which would have made the alt false. Kept and still extracted so the asset stays reproducible; a later section may claim it.",
+      "slot": "§8 Edit Profile footer (spec 8.3, Figma 67:595), beside the line \"Korume will use these choices to support you better.\"; mapped as `edit-footer` in components/mascot/mascot-poses.ts, shown at size sm only while Show Korume is on. It was written for §6 (the companion holding a memory orb) but §6 shipped reading-on-the-orb.png instead: chain.mascotAlt describes the companion SITTING ON a glowing orb, and this pose sits on the ground cradling one, which would have made the alt false. The owner confirms the pose at the Task 16 Chrome review; one line in mascot-poses.ts changes it.",
       "width": 320,
       "fade": [
         0.9,

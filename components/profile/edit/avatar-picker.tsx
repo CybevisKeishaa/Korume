@@ -12,11 +12,14 @@ const TYPES = ["image/jpeg", "image/png", "image/webp"];
  * an upload; the server re-checks everything (magic bytes, pixels) and is the authority.
  */
 export function AvatarPicker({
-  input, canRemove, onPick, onRemove,
+  input, canRemove, canUndo, onUndo, onPick, onRemove,
 }: {
   /** The one file input; the preview badge clicks the same element. */
   input: RefObject<HTMLInputElement>;
-  canRemove: boolean; onPick: (file: File) => void; onRemove: () => void;
+  canRemove: boolean;
+  /** A photo change is pending (a picked file or a pending removal): offer to put the saved state back. */
+  canUndo: boolean;
+  onUndo: () => void; onPick: (file: File) => void; onRemove: () => void;
 }) {
   const t = useTranslations("profile");
   const [error, setError] = useState<"type" | "size" | null>(null);
@@ -51,6 +54,11 @@ export function AvatarPicker({
       {canRemove && (
         <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
           {t("edit.avatar.remove")}
+        </Button>
+      )}
+      {canUndo && (
+        <Button type="button" variant="ghost" size="sm" onClick={onUndo}>
+          {t("edit.avatar.undo")}
         </Button>
       )}
       {error && <p id={errorId} role="alert" className="w-full text-caption text-danger-strong">{t(`edit.avatar.errors.${error}`)}</p>}
