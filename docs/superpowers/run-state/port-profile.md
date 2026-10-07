@@ -24,8 +24,9 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 |---|---|---|
 | Spec | frozen | `f642803`, `66d6519` |
 | Plan | approved | `b313a41` |
-| T1 | accepted | (this commit) |
-| T2–T16 | not started | — |
+| T1 | accepted | `27eca6b` |
+| T2 | accepted | `6486526`, `28d6632` (Codex draft, quota stop; Claude finished) |
+| T3–T16 | not started | — |
 
 ## Contracts and decisions
 
