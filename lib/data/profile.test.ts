@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase, type MockResult, type RpcResolver } from "@/test/supabase-mock";
+import { createMockSupabase, eqValue, type MockResult, type QueryCall, type RpcResolver } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { getStudyTimezone } from "@/lib/time/study-timezone";
 import { getStreak } from "@/lib/data/streak";
@@ -27,6 +27,7 @@ const USER_ROW = {
 
 function rig(over: Record<string, RpcResolver> = {}, memoryRow: unknown = { occurred_at: "2026-05-01T00:00:00+00:00" }) {
   const calls: { name: string; args: unknown }[] = [];
+  const memoryCalls: QueryCall[][] = [];
   const track = (name: string, result: unknown): RpcResolver => (args) => { calls.push({ name, args }); return ok(result); };
   const rpcs: Record<string, RpcResolver> = {
     first_known_learning_at: track("first_known_learning_at", "2025-03-01T10:00:00+00:00"),
@@ -43,11 +44,11 @@ function rig(over: Record<string, RpcResolver> = {}, memoryRow: unknown = { occu
       users: () => ok(USER_ROW),
       user_stats: () => ok({ xp: 350 }),
       user_badges: () => ok([{ earned_at: "2026-02-01T00:00:00+00:00", badges: { id: "b1", name: "Streak", icon_url: null } }]),
-      companion_memories: () => ok(memoryRow),
+      companion_memories: (c) => { memoryCalls.push(c); return ok(memoryRow); },
     },
   });
   vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
-  return { calls };
+  return { calls, memoryCalls };
 }
 
 beforeEach(() => {
@@ -111,6 +112,14 @@ describe("getProfile", () => {
     const result = await getProfile();
     if (!result.ok) throw new Error("expected ok");
     expect(result.data.korumeship).toEqual({ since: null });
+  });
+
+  it("scopes the first_meeting read to the caller", async () => {
+    const { memoryCalls } = rig();
+    await getProfile();
+    expect(memoryCalls).toHaveLength(1);
+    expect(eqValue(memoryCalls[0] ?? [], "user_id")).toBe("u1");
+    expect(eqValue(memoryCalls[0] ?? [], "memory_type")).toBe("first_meeting");
   });
 
   it("with Korume off: no todays_memory call, no korumeship, no companion journey, no todaysMemory", async () => {

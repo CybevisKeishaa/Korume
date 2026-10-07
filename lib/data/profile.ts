@@ -54,7 +54,7 @@ export async function getProfile(): Promise<GetProfileResult> {
       supabase.rpc("favorite_lesson_sources", FAVORITES),
       // Korume off: nothing is read from the companion at all.
       companion
-        ? supabase.from("companion_memories").select("occurred_at").eq("memory_type", "first_meeting")
+        ? supabase.from("companion_memories").select("occurred_at").eq("user_id", user.id).eq("memory_type", "first_meeting")
             .order("occurred_at", { ascending: true }).limit(1).maybeSingle()
         : Promise.resolve(null),
       companion ? supabase.rpc("todays_memory", { p_tz: timeZone }) : Promise.resolve(null),

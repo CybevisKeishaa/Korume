@@ -893,7 +893,7 @@ begin
   delete from user_badges where user_id in (a, b);
   delete from companion_memories where user_id in (a, b);
 end $$;
-delete from videos where id in (select ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 7) i);
+delete from videos where id in (select ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 8) i);
 delete from lesson_sources where id in ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000d3');
 delete from badges where id = '00000000-0000-0000-0000-0000000000e1';
 delete from vocab where word like 'pgcount%';
@@ -998,10 +998,14 @@ commit;
 -- 6.3 profile_journey: system milestones plus companion ones, newest first; erasing the companion keeps the system ones.
 select pg_temp.clean_profile_evidence();
 insert into xp_events (user_id, source_type, source_id, xp, created_at)
-  values (current_setting('gate.a')::uuid, 'dictation', 'line:journey', 10, '2026-01-01 00:00Z');
+  values (current_setting('gate.a')::uuid, 'dictation', 'line:journey', 10, '2025-11-01 00:00Z');
 insert into user_video_progress (user_id, video_id, completed_at) values
   (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c1', '2026-01-02 00:00Z'),
   (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c2', '2026-01-05 00:00Z');
+-- the learner's real first completion is a lesson they can no longer read (PRIVATE, not in their library)
+insert into videos (id, youtube_video_id, title) values ('00000000-0000-0000-0000-0000000000c8', 'pgprofile-v8', 'pg hidden video');
+insert into user_video_progress (user_id, video_id, completed_at)
+  values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c8', '2025-12-01 00:00Z');
 update user_video_progress set last_watched_at = completed_at where user_id = current_setting('gate.a')::uuid;
 insert into vocab (id, word) values ('00000000-0000-0000-0002-000000000001', 'pgcountjourney') on conflict do nothing;
 insert into user_vocab_progress (user_id, vocab_id, srs_stage, mastered_at)
@@ -1027,10 +1031,13 @@ begin
   select string_agg(kind, ',' order by at desc), string_agg(coalesce(label, '-'), ',' order by at desc) into kinds, labels
     from profile_journey(20, true);
   if kinds is distinct from 'pinned_line,jlpt_passed,first_shadow,first_meeting,badge_earned,first_certification_passed,first_mastered_word,first_video_completed,first_activity'
-    or labels is distinct from 'こんにちは,N5,First shadow,Hello,pg badge,N5,pgcountjourney,pg video 1,-' then
+    or labels is distinct from 'こんにちは,N5,First shadow,Hello,pg badge,N5,pgcountjourney,-,-' then
     raise exception 'FAIL profile 6.3 journey for A: % / %', kinds, labels;
   end if;
   if (select count(*) from profile_journey(3, true)) <> 3 then raise exception 'FAIL profile 6.3 limit ignored'; end if;
+  if (select at from profile_journey(20, true) where kind = 'first_video_completed') is distinct from '2025-12-01 00:00Z'::timestamptz then
+    raise exception 'FAIL profile 6.3 a hidden first completion must still date the milestone';
+  end if;
   select string_agg(kind, ',' order by at desc) into kinds from profile_journey(20, false);
   if kinds is distinct from 'badge_earned,first_certification_passed,first_mastered_word,first_video_completed,first_activity' then
     raise exception 'FAIL profile 6.3 companion kinds not dropped when excluded: %', kinds;
@@ -1245,7 +1252,7 @@ end $$;
 commit;
 
 select pg_temp.clean_profile_evidence();
-delete from videos where id in (select ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 7) i);
+delete from videos where id in (select ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 8) i);
 delete from lesson_sources where id in ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000d3');
 delete from badges where id = '00000000-0000-0000-0000-0000000000e1';
 delete from vocab where word like 'pgcount%';

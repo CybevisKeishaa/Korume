@@ -304,8 +304,8 @@ as $$
   select milestones.kind, milestones.at, milestones.label from (
     select 'first_activity' as kind, first_known_learning_at() as at, null::text as label
     union all (
-      select 'first_video_completed', p.completed_at, v.title
-      from user_video_progress p join videos v on v.id = p.video_id
+      select 'first_video_completed', p.completed_at, (select v.title from videos v where v.id = p.video_id)
+      from user_video_progress p
       where p.user_id = auth.uid() and p.completed_at is not null order by p.completed_at limit 1)
     union all (
       select 'first_mastered_word', p.mastered_at, w.word
@@ -325,7 +325,7 @@ as $$
         and m.memory_type in ('first_meeting', 'first_shadow', 'jlpt_passed', 'pinned_line')
   ) milestones
   where milestones.at is not null
-  order by milestones.at desc
+  order by milestones.at desc, milestones.kind
   limit p_limit;
 $$;
 
