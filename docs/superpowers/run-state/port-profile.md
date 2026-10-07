@@ -26,7 +26,8 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | Plan | approved | `b313a41` |
 | T1 | accepted | `27eca6b` |
 | T2 | accepted | `6486526`, `28d6632` (Codex draft, quota stop; Claude finished) |
-| T3–T16 | not started | — |
+| T3 | accepted | `f3b105a`, `0d387d8` |
+| T4–T16 | not started | — |
 
 ## Contracts and decisions
 
