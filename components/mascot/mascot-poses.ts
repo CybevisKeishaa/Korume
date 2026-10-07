@@ -11,7 +11,8 @@ export type MascotPoseName =
   | "reset-password"
   | "not-found"
   | "route-error"
-  | "settings";
+  | "settings"
+  | "korumeship";
 
 export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number; height: number }> = {
   login: { file: "bye.png", width: 572, height: 436 },
@@ -26,4 +27,6 @@ export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number;
   // A `supplied` hand-cut pose, per the owner's ruling that the extractor-cut
   // `poses` entries read as broken. One line to change if they prefer another.
   settings: { file: "relax.png", width: 423, height: 375 },
+  // The companion sitting on its orb with a scroll: the Profile Korumeship card's opening art (Figma 66:166).
+  korumeship: { file: "reading-on-the-orb.png", width: 412, height: 454 },
 };

@@ -24,4 +24,10 @@ describe("KorumeshipCard", () => {
     expect(screen.getByText(en.korume.fresh)).toBeInTheDocument();
     expect(screen.queryByText(/walking together/)).toBeNull();
   });
+
+  it("opens with the decorative mascot art", () => {
+    const { container } = render(<KorumeshipCard since={null} />);
+    const art = container.querySelector("img[data-mascot-pose=\"korumeship\"]");
+    expect(art).toHaveAttribute("alt", "");
+  });
 });

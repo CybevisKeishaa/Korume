@@ -1,5 +1,6 @@
 import { Link } from "@/lib/i18n/navigation";
 import { useTranslations } from "@/lib/i18n";
+import { MascotPose } from "@/components/mascot/mascot-pose";
 import { CARD, EYEBROW, LINK } from "./card-styles";
 
 /** Whole calendar months from `sinceIso` to now, at least 1. */
@@ -15,6 +16,7 @@ export function KorumeshipCard({ since }: { since: string | null }) {
   const t = useTranslations("profile");
   return (
     <section className={CARD} aria-labelledby="profile-korume">
+      <div className="mb-sm flex justify-center"><MascotPose pose="korumeship" size="lg" /></div>
       <p className={EYEBROW}>{t("korume.eyebrow")}</p>
       <h2 id="profile-korume" className="mt-xs text-2xl font-bold">{t("korume.title")}</h2>
       <p className="mt-sm text-sm text-muted-foreground">

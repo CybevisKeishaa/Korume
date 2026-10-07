@@ -40,4 +40,10 @@ describe("QuickStats", () => {
     const hint = document.getElementById(button.getAttribute("aria-describedby") ?? "");
     expect(within(hint as HTMLElement).getByText(t.trackingStarts)).toBeInTheDocument();
   });
+
+  it("gives every stat row its decorative icon", () => {
+    const { container } = render(<QuickStats stats={makeView().stats} />);
+    const icons = Array.from(container.querySelectorAll("svg[data-profile-icon]")).map((n) => n.getAttribute("data-profile-icon"));
+    expect(icons).toEqual(["streak", "level", "xp", "video", "words", "hours"]);
+  });
 });

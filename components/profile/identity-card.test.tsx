@@ -55,4 +55,18 @@ describe("IdentityCard", () => {
     expect(screen.queryByRole("heading")).toBeNull();
     expect(screen.getByText("Keishaa")).toBeInTheDocument();
   });
+
+  it("gives every identity row its decorative icon", () => {
+    const { container } = render(<IdentityCard identity={model()} variant="page" />);
+    const icons = Array.from(container.querySelectorAll("svg[data-profile-icon]")).map((n) => n.getAttribute("data-profile-icon"));
+    expect(icons).toEqual(expect.arrayContaining(["country", "timeZone", "learningSince", "jlpt", "nativeLanguage", "interface", "subtitle"]));
+    for (const svg of container.querySelectorAll("svg")) expect(svg).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("offers a change-photo link to the editor on the page only", () => {
+    const { rerender } = render(<IdentityCard identity={model()} variant="page" />);
+    expect(screen.getByRole("link", { name: t.changePhoto })).toHaveAttribute("href", expect.stringContaining("/profile/edit"));
+    rerender(<IdentityCard identity={model()} variant="preview" />);
+    expect(screen.queryByRole("link", { name: t.changePhoto })).toBeNull();
+  });
 });

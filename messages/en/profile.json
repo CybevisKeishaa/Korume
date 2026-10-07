@@ -14,7 +14,8 @@
     "subtitle": "Current subtitle",
     "subtitleValue": "{translation, select, hidden {Japanese} other {Japanese + translation}}{furigana, select, hidden {} other { + furigana}}",
     "edit": "Edit profile",
-    "avatarAlt": "{name}'s photo"
+    "avatarAlt": "{name}'s photo",
+    "changePhoto": "Change photo"
   },
   "stats": {
     "title": "Quick stats",

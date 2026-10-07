@@ -14,7 +14,8 @@
     "subtitle": "Phụ đề hiện tại",
     "subtitleValue": "{translation, select, hidden {Tiếng Nhật} other {Tiếng Nhật + bản dịch}}{furigana, select, hidden {} other { + furigana}}",
     "edit": "Chỉnh sửa hồ sơ",
-    "avatarAlt": "Ảnh của {name}"
+    "avatarAlt": "Ảnh của {name}",
+    "changePhoto": "Đổi ảnh"
   },
   "stats": {
     "title": "Thống kê nhanh",
