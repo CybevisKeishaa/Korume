@@ -1,7 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { JLPT_LEVELS, type JlptLevel } from "@/lib/conversation-types";
-import { FALLBACK_STUDY_TIMEZONE, studyDate } from "@/lib/time/study-day";
+import { addDays, studyDate, studyDayStart } from "@/lib/time/study-day";
+import { getStudyTimezone } from "@/lib/time/study-timezone";
 
 export type PronunciationMetric = "accuracy" | "pitch" | "rhythm";
 export type PronunciationMetricMeans = Record<PronunciationMetric, number | null>;
@@ -60,17 +61,7 @@ export function getWeeklyPronunciationMetrics(now: Date = new Date()) {
   return getPronunciationMetricWindow(new Date(now.getTime() - 7 * DAY_MS), now);
 }
 
-/** Midnight of the VN-local day holding `instant` (the streak's fixed UTC+7 day). */
-export function vnDayStart(instant: Date): Date {
-  return new Date(`${studyDate(instant, FALLBACK_STUDY_TIMEZONE)}T00:00:00+07:00`);
-}
-
-/** Whole VN-local days from `instant` to `now`: 0 today, 1 yesterday. */
-export function vnDaysAgo(instant: Date, now: Date): number {
-  return Math.round((vnDayStart(now).getTime() - vnDayStart(instant).getTime()) / DAY_MS);
-}
-
-/** Today's Speaking: what the caller did since VN-local midnight. */
+/** Today's Speaking: what the caller did since midnight in the learner's study timezone. */
 export interface TodaySpeaking {
   /** Reference length of the lines shadowed today; a measured 0 when none. */
   minutes: number;
@@ -80,8 +71,9 @@ export interface TodaySpeaking {
 }
 
 export async function getTodaySpeaking(now: Date = new Date()): Promise<TodaySpeaking> {
+  const { timeZone } = await getStudyTimezone();
   const supabase = createClient();
-  const start = vnDayStart(now);
+  const start = studyDayStart(studyDate(now, timeZone), timeZone);
   const [seconds, completed, window] = await Promise.all([
     supabase.rpc("pronunciation_speaking_seconds", { p_start: start.toISOString(), p_end: now.toISOString() }),
     supabase.from("user_video_progress").select("video_id", { count: "exact", head: true })
@@ -101,19 +93,24 @@ export async function getTodaySpeaking(now: Date = new Date()): Promise<TodaySpe
 export interface WeeklyImprovement {
   /** This week's mean minus last week's, in score points; null when either week has none. */
   deltas: PronunciationMetricMeans;
-  /** Mean score per VN-local day, the 14 whole days ending today; days without a score are absent. */
+  /** Mean score per study-timezone day, the 14 whole days ending today; days without a score are absent. */
   trend: { day: string; score: number }[];
 }
 
 export async function getWeeklyImprovement(now: Date = new Date()): Promise<WeeklyImprovement> {
+  const { timeZone } = await getStudyTimezone();
   const weekAgo = new Date(now.getTime() - 7 * DAY_MS);
   const twoWeeksAgo = new Date(now.getTime() - 14 * DAY_MS);
   const supabase = createClient();
   const [current, previous, daily] = await Promise.all([
     getPronunciationMetricWindow(weekAgo, now),
     getPronunciationMetricWindow(twoWeeksAgo, weekAgo),
-    // Whole VN days, so the oldest point is not an average of a partial day.
-    supabase.rpc("pronunciation_daily_means", { p_start: vnDayStart(new Date(now.getTime() - 13 * DAY_MS)).toISOString(), p_end: now.toISOString() }),
+    // Whole study-timezone days, so the oldest point is not an average of a partial day.
+    supabase.rpc("pronunciation_daily_means", {
+      p_start: studyDayStart(addDays(studyDate(now, timeZone), -13), timeZone).toISOString(),
+      p_end: now.toISOString(),
+      p_tz: timeZone,
+    }),
   ]);
   if (daily.error) throw daily.error;
   const deltas = Object.fromEntries(METRIC_ORDER.map((metric) => {
@@ -134,10 +131,11 @@ export interface RecentPractice {
 }
 
 export async function getRecentPractice(limit = 3): Promise<RecentPractice[]> {
+  const { timeZone } = await getStudyTimezone();
   const supabase = createClient();
   // ponytail: over-fetches by 3 because a lesson RLS now hides still holds a slot in the SQL
   // limit; more than 3 hidden among the newest shows fewer rows. Filter in SQL if that bites.
-  const { data, error } = await supabase.rpc("pronunciation_recent_practice", { p_limit: limit + 3 });
+  const { data, error } = await supabase.rpc("pronunciation_recent_practice", { p_limit: limit + 3, p_tz: timeZone });
   if (error) throw error;
   const rows = (data as { video_id: string; practiced_at: string; pronunciation_score: number | string | null }[] | null) ?? [];
   if (!rows.length) return [];

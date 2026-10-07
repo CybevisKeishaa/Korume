@@ -3,6 +3,8 @@ import { createMockSupabase, type RpcResolver, type TableResolver } from "@/test
 import { createClient } from "@/lib/supabase/server";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+const zone = vi.hoisted(() => ({ timeZone: "Asia/Ho_Chi_Minh" }));
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezone: vi.fn(async () => ({ timeZone: zone.timeZone, needsDetection: false })) }));
 
 function useMock(tables: Record<string, TableResolver>, rpcs: Record<string, RpcResolver>, enforcePostgrestCap = false) {
   const supabase = createMockSupabase({ tables, rpcs, enforcePostgrestCap });
@@ -11,13 +13,6 @@ function useMock(tables: Record<string, TableResolver>, rpcs: Record<string, Rpc
 }
 
 describe("pronunciation metrics", () => {
-  it("uses the fixed VN midnight boundary", async () => {
-    const { vnDayStart, vnDaysAgo } = await import("./pronunciation-metrics");
-    expect(vnDayStart(new Date("2026-09-29T16:59:00.000Z")).toISOString()).toBe("2026-09-28T17:00:00.000Z");
-    expect(vnDayStart(new Date("2026-09-29T17:00:00.000Z")).toISOString()).toBe("2026-09-29T17:00:00.000Z");
-    expect(vnDaysAgo(new Date("2026-09-29T16:59:00.000Z"), new Date("2026-09-29T17:00:00.000Z"))).toBe(1);
-  });
-
   it("reads the rolling weekly aggregate and keeps the documented weakest-metric tie order", async () => {
     useMock({}, { pronunciation_metric_means: (args) => {
       expect(args).toEqual({ p_start: "2026-09-22T12:00:00.000Z", p_end: "2026-09-29T12:00:00.000Z" });
@@ -42,7 +37,7 @@ describe("pronunciation metrics", () => {
     await expect(getJlptSpeakingSummary()).rejects.toMatchObject({ message: "denied" });
   });
 
-  it("reads today's measured seconds, completions, and unknown score in the VN window", async () => {
+  it("reads today's measured seconds, completions, and unknown score in the study-zone window", async () => {
     let calls: unknown[] = [];
     const supabase = useMock({
       user_video_progress: (value) => { calls = value; return { data: [{ video_id: "a" }, { video_id: "b" }], error: null }; },
@@ -54,6 +49,19 @@ describe("pronunciation metrics", () => {
     await expect(getTodaySpeaking(new Date("2026-09-30T01:00:00.000Z"))).resolves.toEqual({ minutes: 2, lessonsCompleted: 2, averageScore: null });
     expect(supabase.rpcCalls).toContainEqual({ name: "pronunciation_speaking_seconds", args: { p_start: "2026-09-29T17:00:00.000Z", p_end: "2026-09-30T01:00:00.000Z" } });
     expect(calls).toEqual(expect.arrayContaining([{ op: "gte", column: "completed_at", value: "2026-09-29T17:00:00.000Z" }, { op: "lt", column: "completed_at", value: "2026-09-30T01:00:00.000Z" }]));
+  });
+
+  it("starts today's window at the study zone's midnight", async () => {
+    zone.timeZone = "America/Los_Angeles";
+    try {
+      const supabase = useMock({ user_video_progress: () => ({ data: [], error: null }) }, {
+        pronunciation_speaking_seconds: () => ({ data: 0, error: null }),
+        pronunciation_metric_means: () => ({ data: [], error: null }),
+      });
+      const { getTodaySpeaking } = await import("./pronunciation-metrics");
+      await getTodaySpeaking(new Date("2026-09-29T20:00:00.000Z"));
+      expect(supabase.rpcCalls).toContainEqual({ name: "pronunciation_speaking_seconds", args: { p_start: "2026-09-29T07:00:00.000Z", p_end: "2026-09-29T20:00:00.000Z" } });
+    } finally { zone.timeZone = "Asia/Ho_Chi_Minh"; }
   });
 
   it("counts all 1,001 completed lessons in SQL instead of a capped row body", async () => {
@@ -81,7 +89,7 @@ describe("pronunciation metrics", () => {
       { name: "pronunciation_metric_means", args: { p_start: "2026-09-23T01:00:00.000Z", p_end: "2026-09-30T01:00:00.000Z" } },
       { name: "pronunciation_metric_means", args: { p_start: "2026-09-16T01:00:00.000Z", p_end: "2026-09-23T01:00:00.000Z" } },
       // The 14 whole VN days ending today: 2026-09-17 00:00 VN is 09-16 17:00Z.
-      { name: "pronunciation_daily_means", args: { p_start: "2026-09-16T17:00:00.000Z", p_end: "2026-09-30T01:00:00.000Z" } },
+      { name: "pronunciation_daily_means", args: { p_start: "2026-09-16T17:00:00.000Z", p_end: "2026-09-30T01:00:00.000Z", p_tz: "Asia/Ho_Chi_Minh" } },
     ]));
   });
 
@@ -102,6 +110,6 @@ describe("pronunciation metrics", () => {
       { lesson: { id: "first", title: "First" }, practicedAt: "2026-09-28T19:00:00.000Z", averageScore: 94 },
       { lesson: { id: "second", title: "Second" }, practicedAt: "2026-09-27T18:00:00.000Z", averageScore: null },
     ]);
-    expect(supabase.rpcCalls).toEqual([{ name: "pronunciation_recent_practice", args: { p_limit: 5 } }]);
+    expect(supabase.rpcCalls).toEqual([{ name: "pronunciation_recent_practice", args: { p_limit: 5, p_tz: "Asia/Ho_Chi_Minh" } }]);
   });
 });

@@ -64,9 +64,8 @@ vi.mock("@/lib/data/collections", async (importOriginal) => ({
   getSenseiRecommendation: data.getSenseiRecommendation,
 }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listPracticeSituations: data.listPracticeSituations }));
-vi.mock("@/lib/data/pronunciation-metrics", async (importOriginal) => ({
-  // The real VN-day math: the page's "Yesterday" and trend x must cross UTC+7 midnight correctly.
-  vnDaysAgo: (await importOriginal<typeof import("@/lib/data/pronunciation-metrics")>()).vnDaysAgo,
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezone: async () => ({ timeZone: "Asia/Ho_Chi_Minh", needsDetection: false }) }));
+vi.mock("@/lib/data/pronunciation-metrics", () => ({
   getWeeklyPronunciationMetrics: data.getWeeklyPronunciationMetrics,
   getTodaySpeaking: data.getTodaySpeaking,
   getWeeklyImprovement: data.getWeeklyImprovement,
