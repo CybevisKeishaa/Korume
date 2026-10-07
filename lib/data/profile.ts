@@ -8,6 +8,7 @@ import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
 import { mapJourney } from "@/lib/data/profile-journey";
 import { levelForXp } from "@/lib/gamification/level";
 import { getStudyTimezone } from "@/lib/time/study-timezone";
+import { resolveAvatarUrl } from "@/lib/profile/avatar-url";
 import type { ProfileView } from "@/lib/profile/view";
 
 const JOURNEY_LIMIT = 20;
@@ -79,8 +80,8 @@ export async function getProfile(): Promise<GetProfileResult> {
         username: row.username, bio: row.bio, country: row.country, nativeLanguage: row.native_language,
         targetJlptLevel: row.target_jlpt_level, learningGoal: row.learning_goal,
         preferredPractices: row.preferred_practices ?? [], timeZone,
-        // Task 12 swaps in the signed avatar URL; until then the OAuth picture stands in.
-        avatarUrl: row.avatar_url, hasUploadedAvatar: row.avatar_path !== null,
+        avatarUrl: await resolveAvatarUrl({ avatarPath: row.avatar_path, avatarUrl: row.avatar_url }),
+        hasUploadedAvatar: row.avatar_path !== null,
         accountCreatedAt: iso(row.created_at), firstKnownLearningAt: isoOrNull(firstRes.data as string | null),
         subtitle: { translation: prefs.readingTranslation, furigana: prefs.readingFurigana },
         dailyMinutes: row.daily_minutes, companionEnabled: companion,

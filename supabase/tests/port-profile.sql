@@ -1251,6 +1251,151 @@ begin
 end $$;
 commit;
 
+-- 7. save_profile (spec §8.4, §9): one atomic write, callable by the service role only. Identities come from gate.a / gate.b
+-- (resolved as postgres, never read through RLS); p_user is always passed explicitly, as the server does after authenticating.
+update users set avatar_path = current_setting('gate.a') || '/profile/old.webp' where id = current_setting('gate.a')::uuid;
+create or replace function pg_temp.sp_fields(p_username text) returns jsonb language sql as $$
+  select jsonb_build_object('displayName', 'Saved A', 'username', p_username, 'bio', 'hello', 'country', 'JP',
+    'timeZone', 'Asia/Tokyo', 'nativeLanguage', 'vi', 'targetJlptLevel', 'N2', 'learningGoal', 'be fluent',
+    'preferredPractices', jsonb_build_array('kanji', 'reading'))
+$$;
+create or replace function pg_temp.sp_prefs() returns jsonb language sql as $$
+  select jsonb_build_object('dailyMinutes', 30, 'readingTranslation', 'reveal', 'readingFurigana', 'always', 'companionEnabled', false)
+$$;
+
+-- 7.1 A saves every field in one call and gets the previous avatar path back; B's row does not move (positive control: A moved)
+select set_config('gate.b_before', (select to_jsonb(u)::text from users u where id = current_setting('gate.b')::uuid), false);
+begin;
+set local role service_role;
+do $$
+declare a uuid := current_setting('gate.a')::uuid; prev text;
+begin
+  prev := save_profile(a, pg_temp.sp_fields('saved_a'), pg_temp.sp_prefs(), 'keep', null);
+  if prev is distinct from current_setting('gate.a') || '/profile/old.webp' then raise exception 'FAIL profile 7.1 previous avatar path: %', prev; end if;
+  if not exists (select 1 from users where id = a and name = 'Saved A' and username = 'saved_a' and bio = 'hello'
+      and country = 'JP' and study_timezone = 'Asia/Tokyo' and native_language = 'vi' and target_jlpt_level = 'N2'
+      and learning_goal = 'be fluent' and preferred_practices = array['kanji', 'reading'] and daily_minutes = 30
+      and avatar_path = current_setting('gate.a') || '/profile/old.webp') then
+    raise exception 'FAIL profile 7.1 A columns not all saved (keep leaves the avatar)';
+  end if;
+  if not exists (select 1 from user_preferences where user_id = a and reading_translation = 'reveal'
+      and reading_furigana = 'always' and companion_enabled = false) then
+    raise exception 'FAIL profile 7.1 A preferences not saved';
+  end if;
+  prev := save_profile(a, pg_temp.sp_fields('saved_a') || '{"bio": ""}'::jsonb, pg_temp.sp_prefs() || '{"companionEnabled": true}', 'keep', null);
+  if (select bio from users where id = a) is not null or not (select companion_enabled from user_preferences where user_id = a) then
+    raise exception 'FAIL profile 7.1 empty bio must store NULL and the second save must update the existing preferences row';
+  end if;
+  if (select to_jsonb(u)::text from users u where id = current_setting('gate.b')::uuid) is distinct from current_setting('gate.b_before') then
+    raise exception 'FAIL profile 7.1 saving for A changed B';
+  end if;
+  raise notice 'PASS profile save_profile writes every field once, returns the previous avatar path, leaves B alone';
+end $$;
+commit;
+
+-- 7.2 atomic: a username owned by B raises unique_violation and leaves EVERY A column and preference unchanged
+select set_config('gate.a_before', (select to_jsonb(u)::text from users u where id = current_setting('gate.a')::uuid), false);
+select set_config('gate.a_prefs_before', (select to_jsonb(p)::text from user_preferences p where user_id = current_setting('gate.a')::uuid), false);
+begin;
+set local role service_role;
+do $$
+declare a uuid := current_setting('gate.a')::uuid; caught text;
+begin
+  if (select username from users where id = current_setting('gate.b')::uuid) is distinct from 'keishaa_b' then raise exception 'FAIL profile 7.2 fixture: B owns keishaa_b'; end if;
+  begin
+    perform save_profile(a, pg_temp.sp_fields('keishaa_b') || '{"displayName": "Changed", "bio": "changed"}'::jsonb,
+      pg_temp.sp_prefs() || '{"dailyMinutes": 60, "readingFurigana": "hidden"}', 'replace', current_setting('gate.a') || '/profile/new.webp');
+  exception when unique_violation then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 7.2 a username taken by B was accepted'; end if;
+  if (select to_jsonb(u)::text from users u where id = a) is distinct from current_setting('gate.a_before')
+    or (select to_jsonb(p)::text from user_preferences p where user_id = a) is distinct from current_setting('gate.a_prefs_before') then
+    raise exception 'FAIL profile 7.2 a failed save changed A (not atomic)';
+  end if;
+  perform save_profile(a, pg_temp.sp_fields('saved_a2'), pg_temp.sp_prefs(), 'keep', null);
+  if (select username from users where id = a) is distinct from 'saved_a2' then raise exception 'FAIL profile 7.2 positive control: a free username must save'; end if;
+  raise notice 'PASS profile save_profile is atomic on a unique_violation (positive control: free username saves)';
+end $$;
+commit;
+
+-- 7.3 replace is confined to <A>/profile/; return value is the previous path; remove clears; keep leaves
+begin;
+set local role service_role;
+do $$
+declare a uuid := current_setting('gate.a')::uuid; b uuid := current_setting('gate.b')::uuid; bad text; caught text; prev text;
+begin
+  foreach bad in array array[current_setting('gate.b') || '/profile/x.webp', current_setting('gate.a') || '/other/x.webp',
+    current_setting('gate.a') || '/avatar.webp', '/profile/x.webp'] loop
+    caught := null;
+    begin perform save_profile(a, pg_temp.sp_fields('saved_a2'), pg_temp.sp_prefs(), 'replace', bad);
+    exception when check_violation then caught := 'ok'; end;
+    if caught is null then raise exception 'FAIL profile 7.3 replace accepted path %', bad; end if;
+  end loop;
+  caught := null;
+  begin perform save_profile(a, pg_temp.sp_fields('saved_a2'), pg_temp.sp_prefs(), 'replace', null);
+  exception when check_violation then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 7.3 replace with a null path accepted'; end if;
+  if (select avatar_path from users where id = a) is distinct from current_setting('gate.a') || '/profile/old.webp' then
+    raise exception 'FAIL profile 7.3 a rejected replace changed avatar_path';
+  end if;
+  prev := save_profile(a, pg_temp.sp_fields('saved_a2'), pg_temp.sp_prefs(), 'replace', current_setting('gate.a') || '/profile/new.webp');
+  if prev is distinct from current_setting('gate.a') || '/profile/old.webp'
+    or (select avatar_path from users where id = a) is distinct from current_setting('gate.a') || '/profile/new.webp' then
+    raise exception 'FAIL profile 7.3 positive control: a valid replace must save and return the old path (%)', prev;
+  end if;
+  prev := save_profile(a, pg_temp.sp_fields('saved_a2'), pg_temp.sp_prefs(), 'remove', null);
+  if prev is distinct from current_setting('gate.a') || '/profile/new.webp' or (select avatar_path from users where id = a) is not null then
+    raise exception 'FAIL profile 7.3 remove must clear avatar_path and return the old one (%)', prev;
+  end if;
+  prev := save_profile(a, pg_temp.sp_fields('saved_a2'), pg_temp.sp_prefs(), 'remove', null);
+  if prev is not null then raise exception 'FAIL profile 7.3 removing nothing returns null (%)', prev; end if;
+  caught := null;
+  begin perform save_profile(a, pg_temp.sp_fields('saved_a2'), pg_temp.sp_prefs(), 'drop', null);
+  exception when invalid_parameter_value then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 7.3 unknown avatar action accepted'; end if;
+  caught := null;
+  begin perform save_profile(gen_random_uuid(), pg_temp.sp_fields('ghost_user'), pg_temp.sp_prefs(), 'keep', null);
+  exception when no_data_found then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 7.3 unknown user accepted'; end if;
+  raise notice 'PASS profile save_profile avatar actions: replace confined to <A>/profile/, previous path returned';
+end $$;
+commit;
+
+-- 7.4 grants: the service role only. anon and authenticated (a real signed claim, valid arguments) are refused.
+begin;
+set local role anon;
+do $$
+declare caught text;
+begin
+  begin perform save_profile(current_setting('gate.a')::uuid, '{"displayName":"x","username":"anon_try","bio":"","country":"JP","timeZone":"Asia/Tokyo","nativeLanguage":"vi","targetJlptLevel":"N2","learningGoal":"","preferredPractices":[]}'::jsonb, '{"dailyMinutes":30,"readingTranslation":"reveal","readingFurigana":"always","companionEnabled":false}'::jsonb, 'keep', null);
+  exception when insufficient_privilege then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 7.4 anon executed save_profile'; end if;
+  raise notice 'PASS profile anon cannot execute save_profile';
+end $$;
+commit;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare caught text;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 7.4 claims for A: %', auth.uid(); end if;
+  begin perform save_profile(auth.uid(), '{"displayName":"x","username":"auth_try","bio":"","country":"JP","timeZone":"Asia/Tokyo","nativeLanguage":"vi","targetJlptLevel":"N2","learningGoal":"","preferredPractices":[]}'::jsonb, '{"dailyMinutes":30,"readingTranslation":"reveal","readingFurigana":"always","companionEnabled":false}'::jsonb, 'keep', null);
+  exception when insufficient_privilege then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 7.4 authenticated executed save_profile'; end if;
+  raise notice 'PASS profile authenticated cannot execute save_profile';
+end $$;
+commit;
+do $$
+begin
+  if exists (select 1 from pg_proc p, aclexplode(p.proacl) acl
+      where p.proname = 'save_profile' and acl.privilege_type = 'EXECUTE' and (acl.grantee = 0 or acl.grantee::regrole::text not in ('service_role', 'postgres')))
+    or not has_function_privilege('service_role', 'save_profile(uuid, jsonb, jsonb, text, text)', 'execute')
+    or not (select prosecdef from pg_proc where proname = 'save_profile') then
+    raise exception 'FAIL profile 7.4 save_profile must be security definer with EXECUTE for service_role only';
+  end if;
+  raise notice 'PASS profile save_profile: security definer, EXECUTE service_role only';
+end $$;
+
 select pg_temp.clean_profile_evidence();
 delete from videos where id in (select ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 8) i);
 delete from lesson_sources where id in ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000d3');

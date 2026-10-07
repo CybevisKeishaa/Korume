@@ -7,12 +7,14 @@ import { getStudyTime, getTrackedSince } from "@/lib/data/study-time";
 import { readPreferences } from "@/lib/data/preferences";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
+import { resolveAvatarUrl } from "@/lib/profile/avatar-url";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezone: vi.fn() }));
 vi.mock("@/lib/data/streak", () => ({ getStreak: vi.fn() }));
 vi.mock("@/lib/data/study-time", () => ({ getStudyTime: vi.fn(), getTrackedSince: vi.fn() }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
+vi.mock("@/lib/profile/avatar-url", () => ({ resolveAvatarUrl: vi.fn() }));
 
 import { getProfile } from "./profile";
 
@@ -53,6 +55,8 @@ function rig(over: Record<string, RpcResolver> = {}, memoryRow: unknown = { occu
 
 beforeEach(() => {
   vi.mocked(createClient).mockReset();
+  vi.mocked(resolveAvatarUrl).mockReset();
+  vi.mocked(resolveAvatarUrl).mockImplementation(async ({ avatarUrl }) => avatarUrl);
   vi.mocked(getStudyTimezone).mockResolvedValue({ timeZone: "Asia/Tokyo", needsDetection: false });
   vi.mocked(readPreferences).mockResolvedValue({ ...DEFAULT_PREFERENCES, companionEnabled: true, readingTranslation: "reveal", readingFurigana: "hidden" });
   vi.mocked(getStreak).mockResolvedValue({ current: 5, longest: 9, lastActiveDate: "2026-10-06" });
@@ -98,6 +102,15 @@ describe("getProfile", () => {
     expect(favoriteSources).toEqual(["anime", "nhk"]);
     expect(korumeship).toEqual({ since: "2026-05-01T00:00:00.000Z" });
     expect(todaysMemory).toEqual({ id: "m1", lineTextJp: "こんにちは", title: null, occurredAt: "2026-04-01T00:00:00.000Z" });
+  });
+
+  it("identity.avatarUrl is whatever the resolver returns for the stored path and OAuth picture", async () => {
+    vi.mocked(resolveAvatarUrl).mockResolvedValue("https://signed/me.webp");
+    rig();
+    const result = await getProfile();
+    if (!result.ok) throw new Error("expected ok");
+    expect(resolveAvatarUrl).toHaveBeenCalledWith({ avatarPath: null, avatarUrl: "https://x/a.png" });
+    expect(result.data.identity.avatarUrl).toBe("https://signed/me.webp");
   });
 
   it("favoriteSources is null when the RPC returns no rows", async () => {

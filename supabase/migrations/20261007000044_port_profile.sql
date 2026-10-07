@@ -382,3 +382,47 @@ revoke execute on function favorite_lesson_sources(int, int, int) from public, a
 revoke execute on function todays_memory(text) from public, anon;
 grant execute on function first_known_learning_at(), profile_counts(int), profile_journey(int, boolean),
   favorite_lesson_sources(int, int, int), todays_memory(text) to authenticated;
+
+-- §8.4 / §9 One atomic write for Edit Profile: users columns, the reused preferences, and avatar_path. Called by the
+-- server with the service role after it has validated every field (lib/profile/schema.ts) and authenticated the
+-- caller; p_user is never taken from the browser.
+create function save_profile(p_user uuid, p_fields jsonb, p_prefs jsonb, p_avatar_action text, p_avatar_path text)
+  returns text
+  language plpgsql security definer set search_path = public
+as $$
+declare
+  v_previous text;
+begin
+  if p_avatar_action not in ('keep', 'replace', 'remove') then
+    raise exception 'save_profile: bad avatar action' using errcode = '22023';
+  end if;
+  if p_avatar_action = 'replace' and (p_avatar_path is null or p_avatar_path not like p_user::text || '/profile/%') then
+    raise exception 'save_profile: avatar path outside the caller folder' using errcode = '23514';
+  end if;
+  select avatar_path into v_previous from users where id = p_user for update;
+  if not found then raise exception 'save_profile: unknown user' using errcode = 'P0002'; end if;
+  update users set
+    name = p_fields->>'displayName',
+    username = p_fields->>'username',
+    bio = nullif(p_fields->>'bio', ''),
+    country = p_fields->>'country',
+    study_timezone = p_fields->>'timeZone',
+    native_language = p_fields->>'nativeLanguage',
+    target_jlpt_level = (p_fields->>'targetJlptLevel')::jlpt_level,
+    learning_goal = nullif(p_fields->>'learningGoal', ''),
+    preferred_practices = array(select jsonb_array_elements_text(p_fields->'preferredPractices')),
+    daily_minutes = (p_prefs->>'dailyMinutes')::int,
+    avatar_path = case p_avatar_action when 'replace' then p_avatar_path when 'remove' then null else avatar_path end,
+    updated_at = now()
+  where id = p_user;
+  insert into user_preferences (user_id, reading_translation, reading_furigana, companion_enabled, updated_at)
+  values (p_user, p_prefs->>'readingTranslation', p_prefs->>'readingFurigana', (p_prefs->>'companionEnabled')::boolean, now())
+  on conflict (user_id) do update set
+    reading_translation = excluded.reading_translation,
+    reading_furigana = excluded.reading_furigana,
+    companion_enabled = excluded.companion_enabled,
+    updated_at = excluded.updated_at;
+  return v_previous;
+end $$;
+revoke execute on function save_profile(uuid, jsonb, jsonb, text, text) from public, anon, authenticated;
+grant execute on function save_profile(uuid, jsonb, jsonb, text, text) to service_role;
