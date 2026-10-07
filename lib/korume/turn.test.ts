@@ -6,6 +6,7 @@ import { createMemoryKnowledgeStore, type MemoryKnowledgeStore } from "@/lib/kno
 import { getOrGenerateSection, readCachedSection } from "@/lib/knowledge/orchestrator";
 import type { AiProvider } from "@/lib/ai/port";
 import { createMemoryKorumeStore, type MemoryKorumeStore } from "./memory-store";
+import { plannerPrompt } from "./prompts";
 import { runTurn, type TurnDeps, type TurnInput } from "./turn";
 import type { Tool } from "./retrieval";
 import { knowledgeTool } from "./tools/knowledge";
@@ -236,5 +237,39 @@ describe("runTurn — retrieval stays read-only", () => {
     await expect(runTurn(input(), deps())).resolves.toMatchObject({ status: "answered" });
     expect(readCachedSection).toHaveBeenCalled();
     expect(getOrGenerateSection).not.toHaveBeenCalled();
+  });
+});
+
+describe("runTurn — learner profile (spec §6.4, R4)", () => {
+  const PROFILE = { nativeLanguage: "vi", targetJlptLevel: "N2", learningGoal: "Zebra-quartz goal", preferredPractices: ["shadowing"] };
+  const text = (r: { system: { text: string }[]; messages: { content: unknown }[] }) => JSON.stringify([r.system, r.messages]);
+
+  it("hands the profile to the answer prompt only, never to the planner", async () => {
+    korume.profile = PROFILE;
+    fake.queueStructured({ steps: [{ tool: "knowledge_lookup", section: "lite" }] }, PLAN_USAGE);
+    fake.queueStructured(ANSWER, ANSWER_USAGE);
+    await expect(runTurn(input(), deps())).resolves.toMatchObject({ status: "answered" });
+    const [plan, answer] = fake.requests;
+    expect(korume.calls).toContain("readLearnerProfile");
+    expect(answer?.messages[0]?.content).toContain("<learner_profile>Native language: Vietnamese.");
+    expect(answer?.messages[0]?.content).toContain("<locale>English</locale>");
+    expect(text(plan!)).not.toMatch(/learner_profile|Zebra-quartz|Vietnamese/);
+    expect(plan?.messages[0]?.content).toBe(plannerPrompt({ question: "Why は here?", anchor: { lineText: "今日は晴れ", videoTitle: "Ep" }, recent: [] }).user);
+  });
+
+  it("lets no Knowledge read see a profile field", async () => {
+    korume.profile = PROFILE;
+    fake.queueStructured({ steps: [{ tool: "knowledge_lookup", section: "lite" }] }, PLAN_USAGE);
+    fake.queueStructured(ANSWER, ANSWER_USAGE);
+    await runTurn(input(), deps());
+    expect(readCachedSection).toHaveBeenCalled();
+    expect(JSON.stringify(vi.mocked(readCachedSection).mock.calls)).not.toMatch(/Zebra-quartz|"vi"|N2|shadowing|nativeLanguage|learner/);
+    expect(getOrGenerateSection).not.toHaveBeenCalled();
+  });
+
+  it("leaves the answer prompt as it was for a learner with no profile", async () => {
+    queueHappy();
+    await runTurn(input(), deps());
+    expect(fake.requests[1]?.messages[0]?.content).not.toContain("learner_profile");
   });
 });

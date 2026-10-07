@@ -45,6 +45,7 @@ function fakeStore(rows: ThreadRow[] = [], messages: MessageRow[] = [], states =
     },
     async listThreadRows(_s, limit) { calls.push("listThreadRows"); return rows.filter((r) => r.userId === ME).slice(0, limit); },
     async readMessages() { calls.push("readMessages"); return messages; },
+    async readLearnerProfile() { calls.push("readLearnerProfile"); return null; },
     async readAnchorLines(_s, ids) { calls.push("readAnchorLines"); return new Map(ids.includes(LINE) ? [[LINE, line]] : []); },
     async reservationStates() { calls.push("reservationStates"); return states; },
     async insertUserMessage() { calls.push("insertUserMessage"); return "created"; },

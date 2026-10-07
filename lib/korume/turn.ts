@@ -99,7 +99,10 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
   const config = deps.config ?? readKnowledgeConfig();
   const tier = deps.tier ?? await getActivePlanTier(userId);
 
-  const anchorLine = thread.originLineId ? (await korume.readAnchorLines(supabase, [thread.originLineId])).get(thread.originLineId) : undefined;
+  const [anchorLine, learnerProfile] = await Promise.all([
+    thread.originLineId ? korume.readAnchorLines(supabase, [thread.originLineId]).then((lines) => lines.get(thread.originLineId as string)) : undefined,
+    korume.readLearnerProfile(supabase, userId),
+  ]);
   const anchor = anchorLine && anchorLine.videoId === thread.originVideoId ? anchorLine : null;
   const promptAnchor: PromptAnchor | null = anchor ? { lineText: anchor.lineText, videoTitle: anchor.videoTitle } : null;
   const recent = recentTurns(rows, turnId);
@@ -193,7 +196,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
 
     // Stage 2: the answer. Its failure fails the turn and releases the hold.
     const prompt = answerPrompt({
-      question: text, locale: input.locale, anchor: promptAnchor, recent,
+      question: text, locale: input.locale, anchor: promptAnchor, recent, learnerProfile,
       retrieval: results.map(({ tool, status, data, errorCode }) => ({ tool, status, data, errorCode })),
       entities: grounding.map(({ id, label, kind }) => ({ id, label, kind })),
     });
