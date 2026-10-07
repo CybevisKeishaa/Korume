@@ -1,6 +1,15 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-07 (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-07 late (supersedes every block below)
+>
+> ▶ **RESUME HERE: `port-profile`** (worktree `.worktrees/port-profile`, NOT merged) — read
+> `mem:port_profile_run_state`, then the branch run state `docs/superpowers/run-state/port-profile.md`.
+> Spec frozen `66d6519`; plan `b313a41` (16 tasks) owner-approved incl. P1–P5. Next session: owner picks the
+> execution method (recommended subagent-driven), then Task 1. Port order the owner set: Dashboard+Profile
+> (profile first, then `port-dashboard`) → Certification → Conversation library → Kanji inspect/review →
+> Companion Diary → FAQ/Quickstart; Layer 8 stays out. Summary m6/m8 were closed in `f9bc2b2` (stale follow-up).
+>
+> ## (previous block) 2026-10-07
 >
 > ⭐ **`print-vocabulary` MERGED → master `b4eac34`** (owner approved after the Chrome review; not pushed — the
 > owner pushes). Detail: `mem:print_vocabulary_run_state`. **No branch in flight** — the owner picks the next one.
