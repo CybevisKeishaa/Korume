@@ -3,8 +3,7 @@
 Branch: print-vocabulary.
 
 - Owner: Claude
-- Status: writing-worksheet plan complete through Task 11 gates; awaiting the owner's Chrome and paper review; merge
-  `--no-ff` only after approval. NOT merged.
+- Status: owner approved after the Chrome review on 2026-10-07; merged `--no-ff` into master. The owner pushes by hand.
 
 ## Goal and scope
 
@@ -42,6 +41,8 @@ Branch: print-vocabulary.
 | 9 Render page, `Tải PDF`, registry row | `2b8d4f9..43ef1a4` | complete, review clean |
 | 10 Browser acceptance | `43ef1a4..532d3d1` | complete, review clean |
 | Final review fix wave (8 items) | `532d3d1..2ab3c13` | complete; items 1–6 each shown red by a mutation |
+| 11 Gates + docs | `9c744f3` | complete |
+| Owner review fixes | `6da3599`, `118b150`, `8b88497`, `bc32d93`, `7b59194` | spread to the band, credit last page only, 4 words/sheet, example beside the guides, Korume watermark |
 
 ## Contracts and decisions
 
@@ -50,8 +51,14 @@ Branch: print-vocabulary.
 - Final whole-branch review (opus, `02fff0b..532d3d1` plus the full branch for context): 0 Critical, 1 Important —
   the PDF overflow guard could never fire because the quote band shrank to meet the body. Fixed in `1016282`.
 - Execution rulings that change behaviour are in the worksheet spec §10; the rest are `Ruling:` lines in the ledger.
+- **OWNER RULINGS 2026-10-07 (Chrome review):** item sheets spread to the quote band; the data credit prints on the
+  last sheet only; four words per sheet (2mm item padding, 14mm stroke guides, the example beside the guides); the
+  watermark is `assets/mascot/source/Korume.png`, built by `scripts/mascot/watermark.js`. Details in spec §10.
 
 ## Verification
+
+Owner review fixes: vitest 576 files / 5048 tests and tsc/lint 0 on `8b88497`; print e2e 19/19 on `7b59194` (the two
+later commits change only the watermark filter). Each fix has a test shown red first (e2e 14, 17, 18, 19).
 
 Gates on `2ab3c13`:
 
@@ -76,15 +83,12 @@ Gates on `2ab3c13`:
 
 ## Blockers
 
-- None for the branch. Owner review (plan Task 11 Step 3) is outstanding.
+- None. Owner review done 2026-10-07; the paper printout was not part of it.
 
 ## Next actions
 
-1. Owner Chrome and paper review: serve this worktree's build (`npx next build`, `npx next start -p 3000`), then
-   `/vi/vocab/print?source=lesson&lesson=ba522023-8eba-4929-924f-35ae69eacf99&set=all` (Ep.729) in Luyện viết and
-   Tự kiểm tra, both densities, the kana toggle; a `Tải PDF` download and an `In` printout on real paper; the
-   self-test answer key at the end.
-2. After approval: `git merge --no-ff print-vocabulary` into master (the owner pushes by hand).
+1. Follow-up: a real-paper printout of both modes (stroke numbers at 14mm, watermark darkness) was not checked.
+2. Follow-up: Gọn density was not looked at after the padding change (2.2mm to 1.2mm).
 3. Follow-up: korume.spec.ts:75 — it failed only with `AI_PROVIDER=none` on the server in this round; start there.
 4. Follow-up: landing-page wide-viewport `load` timeouts while `/_next/image` wrote nothing; reproduce with a cold
    `.next/cache/images`.
