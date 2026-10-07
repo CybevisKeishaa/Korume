@@ -110,3 +110,103 @@ as $$
 $$;
 revoke execute on function study_streak(uuid, text, smallint[], date) from public, anon;
 grant execute on function study_streak(uuid, text, smallint[], date) to authenticated, service_role;
+
+-- §5.1 Active study time as UTC intervals. Only the server clock writes timestamps.
+create table study_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users (id) on delete cascade,
+  client_presence_id uuid not null,
+  segment_no int not null default 0,
+  surface text not null check (surface in (
+    'shadowing', 'dictation', 'summary', 'srs_review', 'kanji', 'certification', 'conversation', 'korume_chat'
+  )),
+  context_id text check (context_id is null or length(context_id) between 1 and 128),
+  started_at timestamptz not null,
+  last_heartbeat_at timestamptz not null,
+  ended_at timestamptz,
+  last_seq int not null check (last_seq >= 0),
+  unique (user_id, client_presence_id, segment_no),
+  check (last_heartbeat_at >= started_at),
+  check (ended_at is null or ended_at = last_heartbeat_at)
+);
+create index idx_study_sessions_user_started on study_sessions (user_id, started_at);
+create index idx_study_sessions_open on study_sessions (user_id) where ended_at is null;
+alter table study_sessions enable row level security;
+create policy study_sessions_select_own on study_sessions for select to authenticated using (user_id = auth.uid());
+revoke all on study_sessions from anon, authenticated;
+grant select on study_sessions to authenticated;
+grant all on study_sessions to service_role;
+
+-- §5.2 / §5.3 The only writer. The user comes from auth.uid(), never from the client.
+create function study_heartbeat(
+  p_client_presence uuid, p_session uuid, p_surface text, p_context text, p_seq int, p_kind text
+) returns table (session_id uuid, accepted_seq int, segmented boolean)
+  language plpgsql security definer set search_path = public
+as $$
+declare
+  v_user uuid := auth.uid();
+  v_now timestamptz := now();
+  v_gap interval := interval '90 seconds';
+  v_ext interval := interval '45 seconds';
+  s study_sessions%rowtype;
+  v_seg int;
+begin
+  if v_user is null then raise exception 'study_heartbeat: not signed in' using errcode = '42501'; end if;
+  if p_kind not in ('start', 'beat', 'stop') or p_seq < 0 then
+    raise exception 'study_heartbeat: bad request' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('study:' || v_user::text));
+
+  if p_kind = 'start' then
+    select * into s from study_sessions
+      where user_id = v_user and client_presence_id = p_client_presence and ended_at is null
+      order by segment_no desc limit 1;
+    if found and v_now - s.last_heartbeat_at <= v_gap then
+      return query select s.id, s.last_seq, false;
+      return;
+    end if;
+    -- Hygiene only: correctness never depends on it (duration is always coalesce(ended_at, last_heartbeat_at)).
+    update study_sessions set ended_at = last_heartbeat_at
+      where user_id = v_user and ended_at is null and v_now - last_heartbeat_at > v_gap;
+    select coalesce(max(segment_no) + 1, 0) into v_seg from study_sessions
+      where user_id = v_user and client_presence_id = p_client_presence;
+    insert into study_sessions (user_id, client_presence_id, segment_no, surface, context_id, started_at,
+      last_heartbeat_at, last_seq)
+      values (v_user, p_client_presence, v_seg, p_surface, p_context, v_now, v_now, p_seq)
+      returning * into s;
+    return query select s.id, s.last_seq, false;
+    return;
+  end if;
+
+  select * into s from study_sessions where id = p_session and user_id = v_user for update;
+  if not found then raise exception 'study_heartbeat: unknown session' using errcode = 'P0002'; end if;
+  -- Stale, duplicate, or aimed at a closed segment: a no-op that reports the current state (R10 #1, #2).
+  if s.ended_at is not null or p_seq <= s.last_seq then
+    return query select s.id, s.last_seq, false;
+    return;
+  end if;
+
+  if p_kind = 'stop' then
+    update study_sessions set ended_at = last_heartbeat_at, last_seq = p_seq where id = s.id;
+    return query select s.id, p_seq, false;
+    return;
+  end if;
+
+  if v_now - s.last_heartbeat_at > v_gap then
+    update study_sessions set ended_at = last_heartbeat_at, last_seq = p_seq where id = s.id;
+    select coalesce(max(segment_no) + 1, 0) into v_seg from study_sessions
+      where user_id = v_user and client_presence_id = s.client_presence_id;
+    insert into study_sessions (user_id, client_presence_id, segment_no, surface, context_id, started_at,
+      last_heartbeat_at, last_seq)
+      values (v_user, s.client_presence_id, v_seg, s.surface, s.context_id, v_now, v_now, p_seq)
+      returning * into s;
+    return query select s.id, p_seq, true;
+    return;
+  end if;
+
+  update study_sessions set last_heartbeat_at = least(v_now, last_heartbeat_at + v_ext), last_seq = p_seq
+    where id = s.id;
+  return query select s.id, p_seq, false;
+end $$;
+revoke execute on function study_heartbeat(uuid, uuid, text, text, int, text) from public, anon;
+grant execute on function study_heartbeat(uuid, uuid, text, text, int, text) to authenticated;

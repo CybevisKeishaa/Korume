@@ -302,7 +302,7 @@ do $$
 declare blocked boolean := false;
 begin
   begin
-    perform record_learning_outcome((select id from users where email = 'profilegate-a@example.invalid'), 'dictation', 'line:forbidden', 10, 'UTC', true);
+    perform record_learning_outcome(current_setting('gate.a')::uuid, 'dictation', 'line:forbidden', 10, 'UTC', true);
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL profile anon RPC grant'; end if;
@@ -315,11 +315,260 @@ begin
   blocked := false;
   begin
     insert into learning_outcomes (user_id, source_type, item_key)
-      values ((select id from users where email = 'profilegate-a@example.invalid'), 'dictation', 'line:forbidden');
+      values (current_setting('gate.a')::uuid, 'dictation', 'line:forbidden');
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL profile anon insert grant'; end if;
   raise notice 'PASS profile anon RPC and table grants';
+end $$;
+commit;
+
+-- 3. study_heartbeat / study_sessions (spec §5). Time moves by shifting started_at and last_heartbeat_at back as
+-- postgres between transactions (now() is fixed inside one). Identities come from gate.a / gate.b.
+delete from study_sessions where user_id in (current_setting('gate.a')::uuid, current_setting('gate.b')::uuid);
+select set_config('gate.p', gen_random_uuid()::text, false);
+
+-- 3.1 start creates segment 0
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record; s study_sessions%rowtype;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL study claims for A: %', auth.uid(); end if;
+  select * into r from study_heartbeat(current_setting('gate.p')::uuid, null, 'shadowing', '123e4567-e89b-12d3-a456-426614174000', 0, 'start');
+  select * into s from study_sessions where id = r.session_id;
+  if s.segment_no <> 0 or s.started_at <> now() or s.last_heartbeat_at <> now() or s.last_seq <> 0 or s.ended_at is not null or r.segmented then
+    raise exception 'FAIL study start: %', s;
+  end if;
+  perform set_config('gate.s0', r.session_id::text, false);
+  raise notice 'PASS study start creates segment 0';
+end $$;
+commit;
+
+-- 3.2 start again (lost response) -> same session, no new row
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record;
+begin
+  select * into r from study_heartbeat(current_setting('gate.p')::uuid, null, 'shadowing', '123e4567-e89b-12d3-a456-426614174000', 0, 'start');
+  if r.session_id <> current_setting('gate.s0')::uuid or (select count(*) from study_sessions) <> 1 then
+    raise exception 'FAIL study start retry created a row or a new id';
+  end if;
+  raise notice 'PASS study start retry is idempotent';
+end $$;
+commit;
+
+-- 3.3 beat 1 after 30 s
+update study_sessions set started_at = started_at - interval '30 seconds', last_heartbeat_at = last_heartbeat_at - interval '30 seconds'
+  where id = current_setting('gate.s0')::uuid;
+select set_config('gate.before', (select last_heartbeat_at::text from study_sessions where id = current_setting('gate.s0')::uuid), false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record; l timestamptz;
+begin
+  select * into r from study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s0')::uuid, 'shadowing', null, 1, 'beat');
+  select last_heartbeat_at into l from study_sessions where id = r.session_id;
+  if l - current_setting('gate.before')::timestamptz not between interval '30 seconds' and interval '31 seconds' or r.accepted_seq <> 1 then
+    raise exception 'FAIL study beat 1 advanced by %', l - current_setting('gate.before')::timestamptz;
+  end if;
+  raise notice 'PASS study beat advances by the elapsed 30 s';
+end $$;
+commit;
+
+-- 3.4 beat 2 after 60 s: capped at +45 s
+update study_sessions set started_at = started_at - interval '60 seconds', last_heartbeat_at = last_heartbeat_at - interval '60 seconds'
+  where id = current_setting('gate.s0')::uuid;
+select set_config('gate.before', (select last_heartbeat_at::text from study_sessions where id = current_setting('gate.s0')::uuid), false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare l timestamptz;
+begin
+  perform study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s0')::uuid, 'shadowing', null, 2, 'beat');
+  select last_heartbeat_at into l from study_sessions where id = current_setting('gate.s0')::uuid;
+  if l - current_setting('gate.before')::timestamptz <> interval '45 seconds' then
+    raise exception 'FAIL study extension not capped at 45 s: %', l - current_setting('gate.before')::timestamptz;
+  end if;
+  perform set_config('gate.before', l::text, false);
+  raise notice 'PASS study delayed beat is capped at 45 s';
+end $$;
+commit;
+
+-- 3.5 duplicate beat 2 / 3.6 stale stop 1
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record; s study_sessions%rowtype;
+begin
+  select * into r from study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s0')::uuid, 'shadowing', null, 2, 'beat');
+  select * into s from study_sessions where id = current_setting('gate.s0')::uuid;
+  if r.accepted_seq <> 2 or s.last_heartbeat_at <> current_setting('gate.before')::timestamptz then
+    raise exception 'FAIL study duplicate beat moved time or seq: % %', r.accepted_seq, s.last_heartbeat_at;
+  end if;
+  raise notice 'PASS study duplicate beat is a no-op';
+  perform study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s0')::uuid, 'shadowing', null, 1, 'stop');
+  select * into s from study_sessions where id = current_setting('gate.s0')::uuid;
+  if s.ended_at is not null or s.last_seq <> 2 then raise exception 'FAIL study stale stop closed the session'; end if;
+  raise notice 'PASS study stale stop leaves the session open';
+end $$;
+commit;
+
+-- 3.7 gap: 5 min silence, beat 3 starts segment 1
+update study_sessions set started_at = started_at - interval '5 minutes', last_heartbeat_at = last_heartbeat_at - interval '5 minutes'
+  where id = current_setting('gate.s0')::uuid;
+select set_config('gate.before', (select last_heartbeat_at::text from study_sessions where id = current_setting('gate.s0')::uuid), false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record; o study_sessions%rowtype; n study_sessions%rowtype;
+begin
+  select * into r from study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s0')::uuid, 'shadowing', null, 3, 'beat');
+  select * into o from study_sessions where id = current_setting('gate.s0')::uuid;
+  select * into n from study_sessions where id = r.session_id;
+  if not r.segmented or r.session_id = o.id or n.segment_no <> 1 or n.started_at <> now()
+    or o.ended_at is distinct from current_setting('gate.before')::timestamptz or o.last_heartbeat_at <> o.ended_at then
+    raise exception 'FAIL study gap segmentation: % % %', r, o, n;
+  end if;
+  perform set_config('gate.s1', r.session_id::text, false);
+  raise notice 'PASS study gap closes the old segment at its last heartbeat and opens segment 1';
+end $$;
+commit;
+
+-- 3.8 beat to the closed segment 0 with seq 9
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record;
+begin
+  select * into r from study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s0')::uuid, 'shadowing', null, 9, 'beat');
+  if r.session_id <> current_setting('gate.s0')::uuid or r.accepted_seq <> 3 or r.segmented
+    or (select count(*) from study_sessions) <> 2 then
+    raise exception 'FAIL study beat to a closed segment: %', r;
+  end if;
+  raise notice 'PASS study beat to a closed segment is a no-op';
+end $$;
+commit;
+
+-- 3.9 stop closes at last_heartbeat_at, not now()
+update study_sessions set started_at = started_at - interval '10 seconds', last_heartbeat_at = last_heartbeat_at - interval '10 seconds'
+  where id = current_setting('gate.s1')::uuid;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare s study_sessions%rowtype;
+begin
+  perform study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s1')::uuid, 'shadowing', null, 4, 'stop');
+  select * into s from study_sessions where id = current_setting('gate.s1')::uuid;
+  if s.ended_at is distinct from s.last_heartbeat_at or s.ended_at >= now() or s.last_seq <> 4 then
+    raise exception 'FAIL study stop ended_at: % vs %', s.ended_at, s.last_heartbeat_at;
+  end if;
+  raise notice 'PASS study stop ends at last_heartbeat_at';
+end $$;
+commit;
+
+-- 3.10 B cannot touch A's session; positive control: B can use its own
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+do $$
+declare blocked boolean := false; r record;
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL study claims for B: %', auth.uid(); end if;
+  begin
+    perform study_heartbeat(current_setting('gate.p')::uuid, current_setting('gate.s0')::uuid, 'shadowing', null, 99, 'beat');
+  exception when no_data_found then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL study B reached A session'; end if;
+  if (select count(*) from study_sessions) <> 0 then raise exception 'FAIL study B sees A rows'; end if;
+  select * into r from study_heartbeat(gen_random_uuid(), null, 'conversation', null, 0, 'start');
+  if (select count(*) from study_sessions where user_id = current_setting('gate.b')::uuid) <> 1 then
+    raise exception 'FAIL study B cannot start its own session (positive control)';
+  end if;
+  raise notice 'PASS study B is confined to its own sessions';
+end $$;
+commit;
+
+-- 3.11 grants
+begin;
+set local role anon;
+-- A signed claim makes auth.uid() non-null, so only the grant (not the function's own null-user guard) can block this call.
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'anon')::text, true);
+do $$
+declare blocked boolean := false;
+begin
+  begin
+    perform study_heartbeat(gen_random_uuid(), null, 'shadowing', null, 0, 'start');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL study anon rpc grant'; end if;
+  blocked := false;
+  begin perform 1 from study_sessions limit 1;
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL study anon select grant'; end if;
+  blocked := false;
+  begin
+    insert into study_sessions (user_id, client_presence_id, surface, started_at, last_heartbeat_at, last_seq)
+      values (current_setting('gate.a')::uuid, gen_random_uuid(), 'shadowing', now(), now(), 0);
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL study anon insert grant'; end if;
+  raise notice 'PASS study anon rpc and table grants';
+end $$;
+commit;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare blocked boolean; stmt text;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL study claims for A: %', auth.uid(); end if;
+  foreach stmt in array array[
+    'insert into study_sessions (user_id, client_presence_id, surface, started_at, last_heartbeat_at, last_seq) values (auth.uid(), gen_random_uuid(), ''shadowing'', now(), now(), 0)',
+    'update study_sessions set last_seq = 50',
+    'delete from study_sessions',
+    'truncate study_sessions'
+  ] loop
+    blocked := false;
+    begin execute stmt;
+    exception when insufficient_privilege then blocked := true;
+    end;
+    if not blocked then raise exception 'FAIL study authenticated write not blocked: %', stmt; end if;
+  end loop;
+  if (select count(*) from study_sessions) <> 2 then raise exception 'FAIL study A cannot read its own rows (positive control)'; end if;
+  raise notice 'PASS study authenticated has no direct write grant';
+end $$;
+commit;
+
+-- 3.12 check constraints
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare blocked boolean := false;
+begin
+  begin
+    perform study_heartbeat(gen_random_uuid(), null, 'karaoke', null, 0, 'start');
+  exception when check_violation then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL study unknown surface accepted'; end if;
+  blocked := false;
+  begin
+    perform study_heartbeat(gen_random_uuid(), null, 'kanji', repeat('x', 129), 0, 'start');
+  exception when check_violation then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL study 129-char context accepted'; end if;
+  raise notice 'PASS study surface and context checks';
 end $$;
 commit;
 
