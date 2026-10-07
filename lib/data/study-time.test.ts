@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
-import { heartbeat, type HeartbeatInput } from "./study-time";
+import { getStudyTimezone } from "@/lib/time/study-timezone";
+import { getStudyTime, getTrackedSince, heartbeat, type HeartbeatInput } from "./study-time";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn() }));
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezone: vi.fn() }));
 
 const INPUT: HeartbeatInput = {
   clientPresenceId: "11111111-1111-4111-8111-111111111111",
@@ -24,9 +26,66 @@ function mount(user: { id: string } | null, rpcResult: { data: unknown; error: u
   return rpc;
 }
 
+function mountStudyRows(rows: { day: string; seconds: number }[], error: unknown = null) {
+  const rpc = mount({ id: "u1" });
+  const range = vi.fn(async (from: number, to: number) => ({ data: rows.slice(from, to + 1), error }));
+  const order = vi.fn(() => ({ range }));
+  rpc.mockReturnValue({ order });
+  return { rpc, range, order };
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(rateLimit).mockReturnValue({ ok: true, retryAfter: 0 });
+  vi.mocked(getStudyTimezone).mockResolvedValue({ timeZone: "Asia/Ho_Chi_Minh", needsDetection: false });
+});
+
+describe("study-time reads", () => {
+  it("pages more than 1000 study days before summing lifetime time", async () => {
+    const rows = Array.from({ length: 1001 }, (_, i) => ({
+      day: new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10), seconds: 60,
+    }));
+    const { range, order } = mountStudyRows(rows);
+    const result = await getStudyTime(new Date("2020-01-01Z"), new Date("2023-01-01Z"));
+    expect(result.totalSeconds).toBe(60060);
+    expect(result.days).toHaveLength(1001);
+    expect(order).toHaveBeenCalledWith("day", { ascending: true });
+    expect(range.mock.calls).toEqual([[0, 999], [1000, 1999]]);
+  });
+
+  it("passes the study zone and ISO bounds, and sums returned daily seconds", async () => {
+    const { rpc } = mountStudyRows([
+      { day: "2026-10-01", seconds: 600 },
+      { day: "2026-10-02", seconds: 1200 },
+    ]);
+    const from = new Date("2026-10-01T16:00:00.000Z");
+    const to = new Date("2026-10-02T16:00:00.000Z");
+    expect(await getStudyTime(from, to)).toEqual({ totalSeconds: 1800, days: [
+      { day: "2026-10-01", seconds: 600 },
+      { day: "2026-10-02", seconds: 1200 },
+    ] });
+    expect(rpc).toHaveBeenCalledWith("study_time", {
+      p_tz: "Asia/Ho_Chi_Minh", p_from: from.toISOString(), p_to: to.toISOString(),
+    });
+  });
+
+  it("returns an empty total when no sessions exist", async () => {
+    mountStudyRows([]);
+    expect(await getStudyTime(new Date("2026-10-01Z"), new Date("2026-10-02Z"))).toEqual({ totalSeconds: 0, days: [] });
+  });
+
+  it("returns trackedSince or null from the RPC", async () => {
+    const rpc = mount({ id: "u1" }, { data: "2026-09-01T10:00:00+00:00", error: null });
+    expect(await getTrackedSince()).toBe("2026-09-01T10:00:00.000Z");
+    expect(rpc).toHaveBeenCalledWith("study_tracked_since");
+    rpc.mockResolvedValueOnce({ data: null, error: null });
+    expect(await getTrackedSince()).toBeNull();
+  });
+
+  it("propagates study-time RPC errors", async () => {
+    mountStudyRows([], { code: "XX000", message: "boom" });
+    await expect(getStudyTime(new Date("2026-10-01Z"), new Date("2026-10-02Z"))).rejects.toMatchObject({ code: "XX000" });
+  });
 });
 
 describe("heartbeat", () => {

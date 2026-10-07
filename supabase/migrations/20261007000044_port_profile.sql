@@ -213,3 +213,45 @@ begin
 end $$;
 revoke execute on function study_heartbeat(uuid, uuid, text, text, int, text) from public, anon;
 grant execute on function study_heartbeat(uuid, uuid, text, text, int, text) to authenticated;
+
+-- §5.5 Merge overlapping UTC intervals per caller, then split at local midnight.
+-- Open sessions stop at their last heartbeat, never at the time of the read.
+create function study_time(p_tz text, p_from timestamptz, p_to timestamptz)
+  returns table (day date, seconds bigint)
+  language sql stable security invoker set search_path = public
+as $$
+  with iv as (
+    select greatest(started_at, p_from) as s, least(coalesce(ended_at, last_heartbeat_at), p_to) as e
+    from study_sessions
+    where user_id = auth.uid() and started_at < p_to and coalesce(ended_at, last_heartbeat_at) > p_from
+  ),
+  ordered as (
+    select s, e, max(e) over (order by s, e rows between unbounded preceding and 1 preceding) as prev_end
+    from iv where e > s
+  ),
+  grouped as (
+    select s, e, sum(case when prev_end is null or s > prev_end then 1 else 0 end) over (order by s, e) as grp
+    from ordered
+  ),
+  merged as (
+    select min(s) as s, max(e) as e from grouped group by grp
+  ),
+  split as (
+    select g.d::date as day,
+      extract(epoch from
+        least(m.e, ((g.d::date + 1)::timestamp at time zone p_tz))
+        - greatest(m.s, (g.d::date::timestamp at time zone p_tz))
+      ) as secs
+    from merged m,
+      generate_series((m.s at time zone p_tz)::date, (m.e at time zone p_tz)::date, interval '1 day') as g(d)
+  )
+  select day, round(sum(secs))::bigint from split where secs > 0 group by day order by day;
+$$;
+revoke execute on function study_time(text, timestamptz, timestamptz) from public, anon;
+grant execute on function study_time(text, timestamptz, timestamptz) to authenticated;
+
+create function study_tracked_since() returns timestamptz
+  language sql stable security invoker set search_path = public
+as $$ select min(started_at) from study_sessions where user_id = auth.uid() $$;
+revoke execute on function study_tracked_since() from public, anon;
+grant execute on function study_tracked_since() to authenticated;

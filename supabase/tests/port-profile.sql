@@ -643,4 +643,75 @@ begin
 end $$;
 commit;
 
+-- 4. Study-time read model: independent fixed intervals, scoped through JWT claims.
+delete from study_sessions where user_id in (current_setting('gate.a')::uuid, current_setting('gate.b')::uuid);
+insert into study_sessions (user_id, client_presence_id, surface, started_at, last_heartbeat_at, ended_at, last_seq)
+values
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-01 10:00Z', '2026-09-01 10:30Z', '2026-09-01 10:30Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-02 10:00Z', '2026-09-02 10:30Z', '2026-09-02 10:30Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-02 10:15Z', '2026-09-02 10:45Z', '2026-09-02 10:45Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-03 10:00Z', '2026-09-03 10:10Z', '2026-09-03 10:10Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-03 10:10Z', '2026-09-03 10:20Z', '2026-09-03 10:20Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-04 10:00Z', '2026-09-04 10:12Z', null, 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-10-01 16:50Z', '2026-10-01 17:20Z', '2026-10-01 17:20Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-11-01 07:30Z', '2026-11-01 09:30Z', '2026-11-01 09:30Z', 1);
+
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare r record; n int; total bigint;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL study time A identity'; end if;
+  select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-01 00:00Z', '2026-09-02 00:00Z');
+  if n <> 1 or total <> 1800 then raise exception 'FAIL study time 4.1 single interval: %, %', n, total; end if;
+  select * into r from study_time('UTC', '2026-09-01 00:00Z', '2026-09-02 00:00Z');
+  if r.day is distinct from '2026-09-01'::date then raise exception 'FAIL study time 4.1 local day: %', r; end if;
+  raise notice 'PASS study time 4.1 single interval';
+  select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-02 00:00Z', '2026-09-03 00:00Z');
+  if n <> 1 or total <> 2700 then raise exception 'FAIL study time 4.2 overlap: %, %', n, total; end if;
+  raise notice 'PASS study time 4.2 overlap';
+  select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-03 00:00Z', '2026-09-04 00:00Z');
+  if n <> 1 or total <> 1200 then raise exception 'FAIL study time 4.3 touching: %, %', n, total; end if;
+  raise notice 'PASS study time 4.3 touching';
+  select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-04 00:00Z', '2026-09-05 00:00Z');
+  if n <> 1 or total <> 720 then raise exception 'FAIL study time 4.4 open heartbeat end: %, %', n, total; end if;
+  raise notice 'PASS study time 4.4 open heartbeat end';
+  select count(*), sum(seconds) into n, total from study_time('Asia/Ho_Chi_Minh', '2026-10-01 00:00Z', '2026-10-02 00:00Z');
+  if n <> 2 or total <> 1800 then raise exception 'FAIL study time 4.5 local split total: %, %', n, total; end if;
+  for r in select * from study_time('Asia/Ho_Chi_Minh', '2026-10-01 00:00Z', '2026-10-02 00:00Z') loop
+    if (r.day = '2026-10-01' and r.seconds <> 600) or (r.day = '2026-10-02' and r.seconds <> 1200)
+      or r.day not in ('2026-10-01', '2026-10-02') then raise exception 'FAIL study time 4.5 local bucket: %', r; end if;
+  end loop;
+  raise notice 'PASS study time 4.5 local midnight';
+  select * into r from study_time('America/Los_Angeles', '2026-10-01 00:00Z', '2026-10-02 00:00Z');
+  if r.day is distinct from '2026-10-01'::date or r.seconds is distinct from 1800
+    or (select count(*) from study_time('America/Los_Angeles', '2026-10-01 00:00Z', '2026-10-02 00:00Z')) <> 1
+    then raise exception 'FAIL study time 4.6 LA bucket: %', r; end if;
+  raise notice 'PASS study time 4.6 same interval LA bucket';
+  select * into r from study_time('America/Los_Angeles', '2026-11-01 00:00Z', '2026-11-02 00:00Z');
+  if r.day is distinct from '2026-11-01'::date or r.seconds is distinct from 7200
+    or (select count(*) from study_time('America/Los_Angeles', '2026-11-01 00:00Z', '2026-11-02 00:00Z')) <> 1
+    then raise exception 'FAIL study time 4.7 fall-back: %', r; end if;
+  raise notice 'PASS study time 4.7 DST fall-back';
+  if study_tracked_since() is distinct from '2026-09-01 10:00Z'::timestamptz then
+    raise exception 'FAIL study time 4.8 A tracked since'; end if;
+  raise notice 'PASS study time 4.8 A tracked since';
+end $$;
+commit;
+
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL study time B identity'; end if;
+  if (select count(*) from study_time('UTC', '2026-09-01 00:00Z', '2026-12-01 00:00Z')) <> 0
+    or study_tracked_since() is not null then raise exception 'FAIL study time 4.8 B privacy'; end if;
+  if (select prosecdef from pg_proc where oid = 'study_time(text,timestamptz,timestamptz)'::regprocedure) is distinct from false
+    then raise exception 'FAIL study time 4.8 invoker security'; end if;
+  raise notice 'PASS study time 4.8 B privacy and invoker security';
+end $$;
+commit;
+
 delete from auth.users where email in ('profilegate-a@example.invalid', 'profilegate-b@example.invalid');
