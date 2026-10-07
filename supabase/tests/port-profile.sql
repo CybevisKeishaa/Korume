@@ -653,8 +653,12 @@ values
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-03 10:00Z', '2026-09-03 10:10Z', '2026-09-03 10:10Z', 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-03 10:10Z', '2026-09-03 10:20Z', '2026-09-03 10:20Z', 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-04 10:00Z', '2026-09-04 10:12Z', null, 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-05 10:00Z', '2026-09-05 10:10Z', '2026-09-05 10:10Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-05 10:20Z', '2026-09-05 10:30Z', '2026-09-05 10:30Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-06 23:00Z', '2026-09-07 01:00Z', '2026-09-07 01:00Z', 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-10-01 16:50Z', '2026-10-01 17:20Z', '2026-10-01 17:20Z', 1),
-  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-11-01 07:30Z', '2026-11-01 09:30Z', '2026-11-01 09:30Z', 1);
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-11-01 07:30Z', '2026-11-01 09:30Z', '2026-11-01 09:30Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-11-02 07:30Z', '2026-11-02 08:30Z', '2026-11-02 08:30Z', 1);
 
 begin;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
@@ -672,11 +676,20 @@ begin
   if n <> 1 or total <> 2700 then raise exception 'FAIL study time 4.2 overlap: %, %', n, total; end if;
   raise notice 'PASS study time 4.2 overlap';
   select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-03 00:00Z', '2026-09-04 00:00Z');
+  -- The read model returns daily totals, so whether touching inputs formed one internal interval is unobservable here.
   if n <> 1 or total <> 1200 then raise exception 'FAIL study time 4.3 touching: %, %', n, total; end if;
   raise notice 'PASS study time 4.3 touching';
   select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-04 00:00Z', '2026-09-05 00:00Z');
   if n <> 1 or total <> 720 then raise exception 'FAIL study time 4.4 open heartbeat end: %, %', n, total; end if;
   raise notice 'PASS study time 4.4 open heartbeat end';
+  select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-05 00:00Z', '2026-09-06 00:00Z');
+  if n <> 1 or total <> 1200 then raise exception 'FAIL study time 4.9 disjoint gap: %, %', n, total; end if;
+  raise notice 'PASS study time 4.9 disjoint gap';
+  select * into r from study_time('UTC', '2026-09-07 00:00Z', '2026-09-08 00:00Z');
+  if r.day is distinct from '2026-09-07'::date or r.seconds is distinct from 3600
+    or (select count(*) from study_time('UTC', '2026-09-07 00:00Z', '2026-09-08 00:00Z')) <> 1
+    then raise exception 'FAIL study time 4.10 window clipping: %', r; end if;
+  raise notice 'PASS study time 4.10 window clipping';
   select count(*), sum(seconds) into n, total from study_time('Asia/Ho_Chi_Minh', '2026-10-01 00:00Z', '2026-10-02 00:00Z');
   if n <> 2 or total <> 1800 then raise exception 'FAIL study time 4.5 local split total: %, %', n, total; end if;
   for r in select * from study_time('Asia/Ho_Chi_Minh', '2026-10-01 00:00Z', '2026-10-02 00:00Z') loop
@@ -694,6 +707,14 @@ begin
     or (select count(*) from study_time('America/Los_Angeles', '2026-11-01 00:00Z', '2026-11-02 00:00Z')) <> 1
     then raise exception 'FAIL study time 4.7 fall-back: %', r; end if;
   raise notice 'PASS study time 4.7 DST fall-back';
+  select count(*), sum(seconds) into n, total from study_time('America/Los_Angeles', '2026-11-02 07:30Z', '2026-11-02 08:30Z');
+  if n <> 2 or total <> 3600 then raise exception 'FAIL study time 4.11 DST midnight count: %, %', n, total; end if;
+  if (select count(*) from study_time('America/Los_Angeles', '2026-11-02 07:30Z', '2026-11-02 08:30Z')
+      where day = '2026-11-01' and seconds = 1800) <> 1
+    or (select count(*) from study_time('America/Los_Angeles', '2026-11-02 07:30Z', '2026-11-02 08:30Z')
+      where day = '2026-11-02' and seconds = 1800) <> 1
+    then raise exception 'FAIL study time 4.11 DST midnight buckets'; end if;
+  raise notice 'PASS study time 4.11 DST midnight';
   if study_tracked_since() is distinct from '2026-09-01 10:00Z'::timestamptz then
     raise exception 'FAIL study time 4.8 A tracked since'; end if;
   raise notice 'PASS study time 4.8 A tracked since';

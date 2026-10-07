@@ -15,14 +15,13 @@ export interface StudyTime {
 export async function getStudyTime(from: Date, to: Date): Promise<StudyTime> {
   const { timeZone } = await getStudyTimezone();
   const supabase = createClient();
-  const query = supabase.rpc("study_time", {
+  const args = {
     p_tz: timeZone,
     p_from: from.toISOString(),
     p_to: to.toISOString(),
-  });
-  const ordered = query.order("day", { ascending: true });
+  };
   const rows = await fetchAllPages<{ day: string; seconds: number | string }>(
-    (start, end) => ordered.range(start, end),
+    (start, end) => supabase.rpc("study_time", args).order("day", { ascending: true }).range(start, end),
   );
   const days = rows.map(({ day, seconds }) => ({
     day, seconds: Number(seconds),

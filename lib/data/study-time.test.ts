@@ -45,12 +45,13 @@ describe("study-time reads", () => {
     const rows = Array.from({ length: 1001 }, (_, i) => ({
       day: new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10), seconds: 60,
     }));
-    const { range, order } = mountStudyRows(rows);
+    const { rpc, range, order } = mountStudyRows(rows);
     const result = await getStudyTime(new Date("2020-01-01Z"), new Date("2023-01-01Z"));
     expect(result.totalSeconds).toBe(60060);
     expect(result.days).toHaveLength(1001);
     expect(order).toHaveBeenCalledWith("day", { ascending: true });
     expect(range.mock.calls).toEqual([[0, 999], [1000, 1999]]);
+    expect(rpc).toHaveBeenCalledTimes(2);
   });
 
   it("passes the study zone and ISO bounds, and sums returned daily seconds", async () => {
@@ -80,6 +81,11 @@ describe("study-time reads", () => {
     expect(rpc).toHaveBeenCalledWith("study_tracked_since");
     rpc.mockResolvedValueOnce({ data: null, error: null });
     expect(await getTrackedSince()).toBeNull();
+  });
+
+  it("propagates trackedSince RPC errors", async () => {
+    mount({ id: "u1" }, { data: null, error: { code: "XX000", message: "tracked since failed" } });
+    await expect(getTrackedSince()).rejects.toMatchObject({ code: "XX000" });
   });
 
   it("propagates study-time RPC errors", async () => {
