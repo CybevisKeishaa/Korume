@@ -1618,8 +1618,8 @@
 .vp-wordmark { font-family: var(--font-display); font-weight: 700; font-size: 9pt; letter-spacing: 0.12em; }
 .vp-docname { font-size: 14pt; font-weight: 600; }
 .vp-title { color: var(--vp-muted); overflow-wrap: anywhere; }
-.vp-item { padding: 4mm 0; border-bottom: 0.2mm solid var(--vp-rule); }
-.vp-compact .vp-item { padding: 2.2mm 0; }
+.vp-item { padding: 2mm 0; border-bottom: 0.2mm solid var(--vp-rule); }
+.vp-compact .vp-item { padding: 1.2mm 0; }
 .vp-word { font-family: var(--font-jp); font-size: 16pt; font-weight: 700; }
 .vp-compact .vp-word { font-size: 13pt; }
 .vp-reading { margin-inline-start: 3mm; font-family: var(--font-jp); font-size: 10pt; color: var(--vp-muted); }
@@ -1646,7 +1646,7 @@
 }
 
 /* Writing worksheet (spec 2026-10-06 W). Geometry in mm/pt; layout.ts holds the same numbers. */
-.vp-paper { --vp-guide: 16mm; }
+.vp-paper { --vp-guide: 14mm; } /* owner 2026-10-07: with 2mm item padding and no example, four items per sheet */
 .vp-sheet { position: relative; }
 .vp-body { position: relative; z-index: 1; }
 .vp-spread { display: flex; flex-direction: column; justify-content: space-between; }

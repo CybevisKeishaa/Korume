@@ -11,7 +11,7 @@ export interface WorksheetSettings {
 }
 
 export const DEFAULT_WORKSHEET_SETTINGS: WorksheetSettings = {
-  mode: "practice", density: "airy", includeKanaOnly: false, showReading: true, showMeaning: true, showExample: true,
+  mode: "practice", density: "airy", includeKanaOnly: false, showReading: true, showMeaning: true, showExample: false,
 };
 
 /** In self-test these are prompts, and the last enabled one cannot be turned off. */

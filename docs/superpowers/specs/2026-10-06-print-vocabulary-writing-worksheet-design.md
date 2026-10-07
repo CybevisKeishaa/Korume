@@ -402,3 +402,8 @@ Rulings made while the plan ran; the SDD ledger holds the reasoning for each.
   item sheet spreads its items (`justify-content: space-between`) so the last item meets the quote band; the leftover
   goes between items, item heights and pagination are unchanged. The last item sheet and answer sheets stay packed
   at the top. Spread items never shrink (`flex: none`), so the PDF overflow guard still sees a crossing (test 17).
+- **OWNER RULING 2026-10-07 (owner review) — four items per sheet:** `Ví dụ` (showExample) is off by default; item
+  padding is 2mm (compact 1.2mm) and the stroke-guide box 14mm. A default practice item is 55.8mm, so a continuation
+  sheet holds 4 and sheet 1 holds 4 while the title takes at most two lines (Ep.729: 4,4,4,2). Turning `Ví dụ` on
+  gives 3 per sheet, spread. Rejected after measuring: dropping the example alone (247mm for 4) and three writing
+  rows per item (245mm for 3) both overflow a 243mm continuation body.

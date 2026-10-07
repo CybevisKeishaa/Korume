@@ -226,6 +226,8 @@ test("12 · self-test: no printed answer appears anywhere on item pages; the ans
   await learner(page);
   await open(page);
   await page.getByRole("radio", { name: "Self-test" }).click();
+  await page.getByRole("switch", { name: "Example" }).click(); // examples are off by default; the masking is the subject here
+  await expect(page.locator("[data-print-root] .vp-example").first()).toBeAttached({ timeout: 30_000 });
   await expect(page.locator("[data-print-root] .vp-answer").first()).toBeAttached({ timeout: 30_000 });
   const result = await page.evaluate(() => {
     const sheets = [...document.querySelectorAll("[data-print-root] .vp-sheet")];
@@ -355,4 +357,16 @@ test("18 · every item sheet but the last spreads its items down to the quote ba
     expect(sheet.maxGap).toBeGreaterThan(5); // the leftover really went between the items
   }
   expect(sheets.at(-1)!.maxGap).toBeCloseTo(0, 0);
+});
+
+test("19 · default practice settings fit four items on every continuation sheet but the last (owner 2026-10-07)", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  const counts = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-sheet")]
+    .map((sheet) => ({ items: sheet.querySelectorAll(".vp-item").length, examples: sheet.querySelectorAll(".vp-example").length })));
+  // The fixture title wraps to three lines on purpose, so sheet 1 keeps 3 items; a title of up to two lines keeps 4.
+  const middle = counts.slice(1, -1);
+  expect(middle.length).toBeGreaterThan(0); // positive control: there is a continuation sheet that is not the last
+  expect(counts.every((sheet) => sheet.examples === 0)).toBe(true);
+  expect(middle.map((sheet) => sheet.items)).toEqual(middle.map(() => 4));
 });

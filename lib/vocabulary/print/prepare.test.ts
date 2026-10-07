@@ -15,7 +15,7 @@ const items: VocabularyPrintItem[] = [
   { id: "f", surface: "消えた", resolution: "saved_raw" },
 ];
 const all = new Set(items.map((item) => item.id));
-const selfTest = (over: Partial<WorksheetSettings> = {}) => ({ ...DEFAULT_WORKSHEET_SETTINGS, mode: "selfTest" as const, ...over });
+const selfTest = (over: Partial<WorksheetSettings> = {}) => ({ ...DEFAULT_WORKSHEET_SETTINGS, mode: "selfTest" as const, showExample: true, ...over });
 
 describe("prepareDocument — selection and kana (spec W W4, §1.3)", () => {
   it("keeps document order, numbers from 1, and drops words without kanji by default", () => {
@@ -29,8 +29,11 @@ describe("prepareDocument — selection and kana (spec W W4, §1.3)", () => {
 });
 
 describe("prepareDocument — practice (spec W §3.1)", () => {
+  it("prints no example by default, so a full page holds four items (owner 2026-10-07)", () => {
+    expect(prepareDocument(items, new Set(["a"]), DEFAULT_WORKSHEET_SETTINGS).items[0]?.example).toBeUndefined();
+  });
   it("shows the target and glyphs, the toggled metadata and the raw example, and has no answers", () => {
-    const doc = prepareDocument(items, new Set(["a"]), { ...DEFAULT_WORKSHEET_SETTINGS, showMeaning: false });
+    const doc = prepareDocument(items, new Set(["a"]), { ...DEFAULT_WORKSHEET_SETTINGS, showMeaning: false, showExample: true });
     expect(doc.items[0]).toEqual({ id: "a", number: 1, cells: 2, target: "苦手", glyphs: ["苦", "手"], reading: "にがて", example: line });
     expect(doc.answers).toEqual([]);
   });

@@ -215,8 +215,8 @@ describe("PrintWorkspace (spec §3, W §2 + §5–§6)", () => {
   it("self-test: the last enabled prompt cannot be turned off", async () => {
     render(workspace(items(2)));
     fireEvent.click(await screen.findByRole("radio", { name: "Self-test" }));
+    expect(screen.getByRole("switch", { name: "Example" })).toHaveAttribute("aria-checked", "false"); // off by default
     fireEvent.click(screen.getByRole("switch", { name: "Reading" }));
-    fireEvent.click(screen.getByRole("switch", { name: "Example" }));
     expect(screen.getByRole("switch", { name: "Meaning" })).toBeDisabled();
     expect(screen.getByRole("switch", { name: "Meaning" })).toHaveAccessibleDescription("Keep at least one prompt.");
     expect(screen.getByText("Keep at least one prompt.")).toBeInTheDocument();
@@ -226,7 +226,7 @@ describe("PrintWorkspace (spec §3, W §2 + §5–§6)", () => {
   it("self-test never starts with every prompt off: switching from a target-only practice sheet turns Meaning on", async () => {
     render(workspace(items(2)));
     await screen.findByText("2/2 words · 1 page");
-    for (const name of ["Reading", "Meaning", "Example"]) fireEvent.click(screen.getByRole("switch", { name }));
+    for (const name of ["Reading", "Meaning"]) fireEvent.click(screen.getByRole("switch", { name }));
     expect(screen.getByRole("switch", { name: "Meaning" })).toHaveAttribute("aria-checked", "false");
     fireEvent.click(screen.getByRole("radio", { name: "Self-test" }));
     const meaning = screen.getByRole("switch", { name: "Meaning" });
