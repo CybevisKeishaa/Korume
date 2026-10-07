@@ -2,7 +2,7 @@
 
 Branch `port-profile`, worktree `.worktrees/port-profile`, base master `2cee918`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Goal and scope
 
@@ -30,7 +30,7 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T4 | accepted | `24bf403`, `970d3ce`, `600499c` |
 | T5 | accepted | `5cb4478`, `02b5fc7` (R-5a amends spec §5.2 start hygiene) |
 | T6 | accepted | `9583e50`, `73195dc` (Codex; fix round 1 pinned gaps, window clipping, DST-day midnight) |
-| T7 | dispatched to Codex | — |
+| T7 | accepted | `40090f0`, `37df9aa` (Codex quota stop mid-task; Claude finished + fix round 1; R-7a kanji owner-visible) |
 | T8–T16 | not started | — |
 
 ## Contracts and decisions
@@ -42,6 +42,7 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 
 ## Verification
 
+After T7 (`37df9aa`): T7 vitest dirs 75 files / 617 tests, tsc 0, lint 0; 13 hook + 9 surface mutations RED.
 After T6 (`73195dc`), Claude re-ran: fresh `npx supabase db reset` + `npm run verify:db:profile` → every notice
 PASS (study time 4.1–4.11), gate exit 0; `lib/data/study-time.test.ts` 12/12; `tsc --noEmit` 0.
 
@@ -58,6 +59,6 @@ None.
 
 ## Next actions
 
-1. Codex executes Task 7 (study presence on the eight surfaces) from
-   `.superpowers/sdd/2026-10-07-port-profile/task-7-packet.md`, BASE = this run-state commit, uncommitted.
-2. Claude reviews, re-runs the gates, commits, checkpoints this file; then Task 8.
+1. Task 8 (profile schema, validators, first-transition timestamps, avatar bucket), packets `task-8a-packet.md` /
+   `task-8b-packet.md`. Codex is out of quota until 23:27 2026-10-07 → Claude implements (owner: Claude).
+2. Review, gates, commit, checkpoint this file; then Task 9.
