@@ -263,3 +263,122 @@ values ('avatars', 'avatars', false, 524288, array['image/webp'])
 on conflict (id) do nothing;
 create policy avatars_select_own on storage.objects for select to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- §6 Profile read model. Every function is security invoker and scoped to auth.uid(); RLS is the second fence.
+-- §6.0 C5: the earliest evidence Korume holds, from every canonical learning table with a real timestamp.
+create function first_known_learning_at() returns timestamptz
+  language sql stable security invoker set search_path = public
+as $$
+  select min(t) from (
+    select min(created_at) as t from learning_outcomes where user_id = auth.uid()
+    union all select min(started_at) from study_sessions where user_id = auth.uid()
+    union all select min(created_at) from xp_events where user_id = auth.uid()
+    union all select min(least(last_watched_at, completed_at)) from user_video_progress where user_id = auth.uid()
+    union all select min(created_at) from shadowing_sessions where user_id = auth.uid()
+    union all select min(created_at) from dictation_attempts where user_id = auth.uid()
+    union all select min(created_at) from sentence_mining_cards where user_id = auth.uid()
+    union all select min(started_at) from conversation_sessions where user_id = auth.uid()
+    union all select min(completed_at) from user_test_attempts where user_id = auth.uid()
+    union all select min(completed_at) from user_reading_attempts where user_id = auth.uid()
+    union all select min(last_reviewed_at) from user_vocab_progress where user_id = auth.uid()
+    union all select min(last_reviewed_at) from user_kanji_progress where user_id = auth.uid()
+    union all select min(last_practiced_at) from user_grammar_progress where user_id = auth.uid()
+    union all select min(earned_at) from user_badges where user_id = auth.uid()
+  ) evidence;
+$$;
+
+create function profile_counts(p_mastery int)
+  returns table (video_lessons_completed int, words_learned int)
+  language sql stable security invoker set search_path = public
+as $$
+  select
+    (select count(*)::int from user_video_progress where user_id = auth.uid() and completed_at is not null),
+    (select count(*)::int from user_vocab_progress where user_id = auth.uid() and srs_stage >= p_mastery);
+$$;
+
+-- §6.1 Two sources, one axis. System milestones survive Delete Korume Memory; companion ones do not.
+create function profile_journey(p_limit int, p_include_companion boolean)
+  returns table (kind text, at timestamptz, label text)
+  language sql stable security invoker set search_path = public
+as $$
+  select milestones.kind, milestones.at, milestones.label from (
+    select 'first_activity' as kind, first_known_learning_at() as at, null::text as label
+    union all (
+      select 'first_video_completed', p.completed_at, v.title
+      from user_video_progress p join videos v on v.id = p.video_id
+      where p.user_id = auth.uid() and p.completed_at is not null order by p.completed_at limit 1)
+    union all (
+      select 'first_mastered_word', p.mastered_at, w.word
+      from user_vocab_progress p join vocab w on w.id = p.vocab_id
+      where p.user_id = auth.uid() and p.mastered_at is not null order by p.mastered_at limit 1)
+    union all (
+      select 'first_certification_passed', a.passed_at, t.level::text
+      from user_test_attempts a join certification_tests t on t.id = a.test_id
+      where a.user_id = auth.uid() and a.passed_at is not null order by a.passed_at limit 1)
+    union all
+      select 'badge_earned', ub.earned_at, b.name
+      from user_badges ub join badges b on b.id = ub.badge_id where ub.user_id = auth.uid()
+    union all
+      select m.memory_type, m.occurred_at, coalesce(m.line_text_jp, m.title)
+      from companion_memories m
+      where p_include_companion and m.user_id = auth.uid()
+        and m.memory_type in ('first_meeting', 'first_shadow', 'jlpt_passed', 'pinned_line')
+  ) milestones
+  where milestones.at is not null
+  order by milestones.at desc
+  limit p_limit;
+$$;
+
+-- §6.2 Content taxonomy only, and only with evidence (R11 #2).
+create function favorite_lesson_sources(p_min_total int, p_min_per_source int, p_limit int)
+  returns table (slug text, lessons int)
+  language sql stable security invoker set search_path = public
+as $$
+  with evidenced as (
+    select v.source_id, p.last_watched_at
+    from user_video_progress p join videos v on v.id = p.video_id
+    where p.user_id = auth.uid() and v.source_id is not null
+  ),
+  totals as (select count(*) as n from evidenced)
+  select s.slug, count(*)::int
+  from evidenced e join lesson_sources s on s.id = e.source_id, totals
+  where totals.n >= p_min_total
+  group by s.slug, s.display_order
+  having count(*) >= p_min_per_source
+  order by count(*) desc, max(e.last_watched_at) desc nulls last, s.display_order
+  limit p_limit;
+$$;
+
+-- §6.3 C4: candidates frozen at the start of the learner's study day; deterministic pick.
+create function todays_memory(p_tz text) returns setof companion_memories
+  language sql stable security invoker set search_path = public
+as $$
+  with day as (
+    select (now() at time zone p_tz)::date as d
+  ),
+  frozen as (
+    select m.* from companion_memories m, day
+    where m.user_id = auth.uid() and m.created_at < (day.d::timestamp at time zone p_tz)
+      and m.memory_type in ('pinned_line', 'line_mastered')
+  ),
+  pool as (
+    select * from frozen
+    where memory_type = case when exists (select 1 from frozen where memory_type = 'pinned_line')
+                             then 'pinned_line' else 'line_mastered' end
+  ),
+  ranked as (
+    select pool.*, row_number() over (order by id) - 1 as idx, count(*) over () as n from pool
+  )
+  select id, user_id, kind, memory_type, title, video_id, transcript_line_id, timestamp_seconds, line_text_jp, note,
+    is_anchor, dedupe_key, occurred_at, created_at
+  from ranked, day
+  where idx = abs(hashtext(auth.uid()::text || day.d::text)::bigint) % n;
+$$;
+
+revoke execute on function first_known_learning_at() from public, anon;
+revoke execute on function profile_counts(int) from public, anon;
+revoke execute on function profile_journey(int, boolean) from public, anon;
+revoke execute on function favorite_lesson_sources(int, int, int) from public, anon;
+revoke execute on function todays_memory(text) from public, anon;
+grant execute on function first_known_learning_at(), profile_counts(int), profile_journey(int, boolean),
+  favorite_lesson_sources(int, int, int), todays_memory(text) to authenticated;

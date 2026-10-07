@@ -877,6 +877,378 @@ begin
 end $$;
 commit;
 
+
+-- 6. Profile read model (spec §6): five security-invoker functions scoped to auth.uid(). Identities come from gate.a /
+-- gate.b, claims are built BEFORE the role switch, and every "B sees none" case has A's positive control beside it.
+-- Fixtures are inserted as postgres between transactions.
+create or replace function pg_temp.clean_profile_evidence() returns void language plpgsql as $$
+declare a uuid := current_setting('gate.a')::uuid; b uuid := current_setting('gate.b')::uuid;
+begin
+  delete from learning_outcomes where user_id in (a, b);
+  delete from xp_events where user_id in (a, b);
+  delete from study_sessions where user_id in (a, b);
+  delete from user_video_progress where user_id in (a, b);
+  delete from user_vocab_progress where user_id in (a, b);
+  delete from user_test_attempts where user_id in (a, b);
+  delete from user_badges where user_id in (a, b);
+  delete from companion_memories where user_id in (a, b);
+end $$;
+delete from videos where id in (select ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 7) i);
+delete from lesson_sources where id in ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000d3');
+delete from badges where id = '00000000-0000-0000-0000-0000000000e1';
+delete from vocab where word like 'pgcount%';
+insert into lesson_sources (id, slug, display_order) values
+  ('00000000-0000-0000-0000-0000000000d1', 'pg-anime', 90),
+  ('00000000-0000-0000-0000-0000000000d2', 'pg-nhk', 91),
+  ('00000000-0000-0000-0000-0000000000d3', 'pg-drama', 89);
+insert into videos (id, youtube_video_id, title, source_id, library_access) values
+  ('00000000-0000-0000-0000-0000000000c1', 'pgprofile-v1', 'pg video 1', '00000000-0000-0000-0000-0000000000d1', 'FREE'),
+  ('00000000-0000-0000-0000-0000000000c2', 'pgprofile-v2', 'pg video 2', '00000000-0000-0000-0000-0000000000d1', 'FREE'),
+  ('00000000-0000-0000-0000-0000000000c3', 'pgprofile-v3', 'pg video 3', '00000000-0000-0000-0000-0000000000d1', 'FREE'),
+  ('00000000-0000-0000-0000-0000000000c4', 'pgprofile-v4', 'pg video 4', '00000000-0000-0000-0000-0000000000d2', 'FREE'),
+  ('00000000-0000-0000-0000-0000000000c5', 'pgprofile-v5', 'pg video 5', '00000000-0000-0000-0000-0000000000d2', 'FREE'),
+  ('00000000-0000-0000-0000-0000000000c6', 'pgprofile-v6', 'pg video 6', '00000000-0000-0000-0000-0000000000d3', 'FREE'),
+  ('00000000-0000-0000-0000-0000000000c7', 'pgprofile-v7', 'pg video 7', '00000000-0000-0000-0000-0000000000d3', 'FREE');
+insert into badges (id, name) values ('00000000-0000-0000-0000-0000000000e1', 'pg badge');
+
+-- 6.1 first_known_learning_at: the earliest evidence in ANY canonical table (C5), not just the new ones.
+select pg_temp.clean_profile_evidence();
+insert into xp_events (user_id, source_type, source_id, xp, created_at)
+  values (current_setting('gate.a')::uuid, 'dictation', 'line:legacy', 10, '2025-03-01 10:00Z');
+insert into user_video_progress (user_id, video_id) values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c1');
+update user_video_progress set last_watched_at = '2025-05-01 10:00Z' where user_id = current_setting('gate.a')::uuid;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.1 claims for A: %', auth.uid(); end if;
+  if first_known_learning_at() is distinct from '2025-03-01 10:00Z'::timestamptz then
+    raise exception 'FAIL profile 6.1 A first evidence should be the xp_events row, got %', first_known_learning_at();
+  end if;
+  raise notice 'PASS profile first_known_learning_at takes the earliest source (positive control)';
+end $$;
+commit;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 6.1 claims for B: %', auth.uid(); end if;
+  if first_known_learning_at() is not null then raise exception 'FAIL profile 6.1 B sees evidence: %', first_known_learning_at(); end if;
+  raise notice 'PASS profile first_known_learning_at is null for a learner with nothing and never reads A';
+end $$;
+commit;
+
+-- 6.2 profile_counts: aggregated in SQL (1 200 rows exceed PostgREST max_rows).
+select pg_temp.clean_profile_evidence();
+insert into vocab (id, word) select ('00000000-0000-0000-0001-' || lpad(i::text, 12, '0'))::uuid, 'pgcount' || i from generate_series(1, 1200) i;
+insert into user_vocab_progress (user_id, vocab_id, srs_stage) values
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0001-000000000001', 1),
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0001-000000000002', 2),
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0001-000000000003', 5);
+insert into user_video_progress (user_id, video_id, completed_at) values
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c1', '2026-01-01 10:00Z'),
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c2', '2026-01-02 10:00Z'),
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c3', null);
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare r record;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.2 claims for A: %', auth.uid(); end if;
+  select * into r from profile_counts(2);
+  if r.words_learned <> 2 or r.video_lessons_completed <> 2 then
+    raise exception 'FAIL profile 6.2 counts for A: words %, videos %', r.words_learned, r.video_lessons_completed;
+  end if;
+  raise notice 'PASS profile_counts(2): stages 1,2,5 -> 2 words; 2 completed + 1 in-progress -> 2 videos (positive control)';
+end $$;
+commit;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare r record;
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 6.2 claims for B: %', auth.uid(); end if;
+  select * into r from profile_counts(2);
+  if r.words_learned <> 0 or r.video_lessons_completed <> 0 then
+    raise exception 'FAIL profile 6.2 B counted A rows: words %, videos %', r.words_learned, r.video_lessons_completed;
+  end if;
+  raise notice 'PASS profile_counts: B sees none of A rows';
+end $$;
+commit;
+delete from user_vocab_progress where user_id = current_setting('gate.a')::uuid;
+insert into user_vocab_progress (user_id, vocab_id, srs_stage, mastered_at)
+  select current_setting('gate.a')::uuid, id, 3, '2026-02-01 10:00Z' from vocab where word like 'pgcount%';
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.2b claims for A: %', auth.uid(); end if;
+  if (select words_learned from profile_counts(2)) <> 1200 then
+    raise exception 'FAIL profile 6.2b 1200 mastered rows counted as %', (select words_learned from profile_counts(2));
+  end if;
+  raise notice 'PASS profile_counts aggregates 1200 rows in SQL';
+end $$;
+commit;
+
+-- 6.3 profile_journey: system milestones plus companion ones, newest first; erasing the companion keeps the system ones.
+select pg_temp.clean_profile_evidence();
+insert into xp_events (user_id, source_type, source_id, xp, created_at)
+  values (current_setting('gate.a')::uuid, 'dictation', 'line:journey', 10, '2026-01-01 00:00Z');
+insert into user_video_progress (user_id, video_id, completed_at) values
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c1', '2026-01-02 00:00Z'),
+  (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c2', '2026-01-05 00:00Z');
+update user_video_progress set last_watched_at = completed_at where user_id = current_setting('gate.a')::uuid;
+insert into vocab (id, word) values ('00000000-0000-0000-0002-000000000001', 'pgcountjourney') on conflict do nothing;
+insert into user_vocab_progress (user_id, vocab_id, srs_stage, mastered_at)
+  values (current_setting('gate.a')::uuid, '00000000-0000-0000-0002-000000000001', 3, '2026-02-01 00:00Z');
+insert into certification_tests (id, level, title) values ('00000000-0000-0000-0000-0000000000b1', 'N5', 'profilegate') on conflict do nothing;
+insert into user_test_attempts (user_id, test_id, score, completed_at, passed_at)
+  values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000b1', 90, '2026-03-01 00:00Z', '2026-03-01 00:00Z');
+insert into user_badges (user_id, badge_id, earned_at)
+  values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000e1', '2026-04-01 00:00Z');
+insert into companion_memories (user_id, kind, memory_type, title, line_text_jp, dedupe_key, occurred_at) values
+  (current_setting('gate.a')::uuid, 'discovered', 'first_meeting', 'Hello', null, 'pg:meet', '2026-05-01 00:00Z'),
+  (current_setting('gate.a')::uuid, 'discovered', 'first_shadow', 'First shadow', null, 'pg:shadow', '2026-05-02 00:00Z'),
+  (current_setting('gate.a')::uuid, 'discovered', 'jlpt_passed', 'N5', null, 'pg:jlpt', '2026-05-03 00:00Z'),
+  (current_setting('gate.a')::uuid, 'gifted', 'pinned_line', 'Pinned', 'こんにちは', 'pg:pin', '2026-05-04 00:00Z'),
+  (current_setting('gate.a')::uuid, 'discovered', 'line_mastered', 'Not a milestone', 'x', 'pg:lm', '2026-05-05 00:00Z');
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare kinds text; labels text;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.3 claims for A: %', auth.uid(); end if;
+  select string_agg(kind, ',' order by at desc), string_agg(coalesce(label, '-'), ',' order by at desc) into kinds, labels
+    from profile_journey(20, true);
+  if kinds is distinct from 'pinned_line,jlpt_passed,first_shadow,first_meeting,badge_earned,first_certification_passed,first_mastered_word,first_video_completed,first_activity'
+    or labels is distinct from 'こんにちは,N5,First shadow,Hello,pg badge,N5,pgcountjourney,pg video 1,-' then
+    raise exception 'FAIL profile 6.3 journey for A: % / %', kinds, labels;
+  end if;
+  if (select count(*) from profile_journey(3, true)) <> 3 then raise exception 'FAIL profile 6.3 limit ignored'; end if;
+  select string_agg(kind, ',' order by at desc) into kinds from profile_journey(20, false);
+  if kinds is distinct from 'badge_earned,first_certification_passed,first_mastered_word,first_video_completed,first_activity' then
+    raise exception 'FAIL profile 6.3 companion kinds not dropped when excluded: %', kinds;
+  end if;
+  raise notice 'PASS profile_journey newest first with labels, limit, and p_include_companion = false (positive control)';
+end $$;
+commit;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 6.3 claims for B: %', auth.uid(); end if;
+  if (select count(*) from profile_journey(20, true)) <> 0 then raise exception 'FAIL profile 6.3 B sees A journey rows'; end if;
+  raise notice 'PASS profile_journey: B sees none of A rows';
+end $$;
+commit;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare kinds text;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.3b claims for A: %', auth.uid(); end if;
+  perform erase_companion_memory();
+  select string_agg(kind, ',' order by at desc) into kinds from profile_journey(20, true);
+  if kinds is distinct from 'badge_earned,first_certification_passed,first_mastered_word,first_video_completed,first_activity' then
+    raise exception 'FAIL profile 6.3b erase must leave every system milestone: %', kinds;
+  end if;
+  raise notice 'PASS profile_journey keeps system milestones after erase_companion_memory';
+end $$;
+commit;
+
+-- 6.4 favorite_lesson_sources(3, 2, 6): content taxonomy with evidence only.
+select pg_temp.clean_profile_evidence();
+insert into user_video_progress (user_id, video_id) select current_setting('gate.a')::uuid, ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 2) i;
+update user_video_progress set last_watched_at = '2026-01-01 00:00Z' where user_id = current_setting('gate.a')::uuid;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.4a claims for A: %', auth.uid(); end if;
+  if (select count(*) from favorite_lesson_sources(3, 2, 6)) <> 0 then raise exception 'FAIL profile 6.4a below the total must return nothing'; end if;
+  raise notice 'PASS favorite_lesson_sources: 2 evidenced lessons -> no rows';
+end $$;
+commit;
+insert into user_video_progress (user_id, video_id) values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c4');
+update user_video_progress set last_watched_at = '2026-02-01 00:00Z' where video_id = '00000000-0000-0000-0000-0000000000c4';
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare r record; n int := 0;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.4b claims for A: %', auth.uid(); end if;
+  for r in select * from favorite_lesson_sources(3, 2, 6) loop
+    n := n + 1;
+    if r.slug <> 'pg-anime' or r.lessons <> 2 then raise exception 'FAIL profile 6.4b unexpected row % %', r.slug, r.lessons; end if;
+  end loop;
+  if n <> 1 then raise exception 'FAIL profile 6.4b expected only anime, got % rows', n; end if;
+  raise notice 'PASS favorite_lesson_sources: anime, anime, nhk -> only anime (nhk has 1 < 2)';
+end $$;
+commit;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 6.4 claims for B: %', auth.uid(); end if;
+  if (select count(*) from favorite_lesson_sources(0, 0, 6)) <> 0 then raise exception 'FAIL profile 6.4 B sees A lessons'; end if;
+  raise notice 'PASS favorite_lesson_sources: B sees none of A rows';
+end $$;
+commit;
+-- ties: anime 2, nhk 2 (latest watch 02-02), drama 2 (latest watch 02-02) -> drama (display_order 89), nhk (91), anime (90, older)
+insert into user_video_progress (user_id, video_id) select current_setting('gate.a')::uuid, ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(5, 7) i;
+update user_video_progress set last_watched_at = '2026-02-02 00:00Z' where video_id in
+  ('00000000-0000-0000-0000-0000000000c5', '00000000-0000-0000-0000-0000000000c6', '00000000-0000-0000-0000-0000000000c7');
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare s text;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.4c claims for A: %', auth.uid(); end if;
+  select string_agg(slug, ',' order by ord) into s from (select slug, row_number() over () as ord from favorite_lesson_sources(3, 2, 6)) q;
+  if s is distinct from 'pg-drama,pg-nhk,pg-anime' then raise exception 'FAIL profile 6.4c tie order: %', s; end if;
+  if (select count(*) from favorite_lesson_sources(3, 2, 2)) <> 2 then raise exception 'FAIL profile 6.4c limit ignored'; end if;
+  raise notice 'PASS favorite_lesson_sources ties: latest watch, then display_order; limit honoured';
+end $$;
+commit;
+insert into user_video_progress (user_id, video_id, last_watched_position) values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000c3', 1);
+update user_video_progress set last_watched_at = '2025-01-01 00:00Z' where video_id = '00000000-0000-0000-0000-0000000000c3';
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare s text;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.4d claims for A: %', auth.uid(); end if;
+  select string_agg(slug || ':' || lessons, ',' order by ord) into s from (select slug, lessons, row_number() over () as ord from favorite_lesson_sources(3, 2, 6)) q;
+  if s is distinct from 'pg-anime:3,pg-drama:2,pg-nhk:2' then raise exception 'FAIL profile 6.4d count beats recency: %', s; end if;
+  if (select count(*) from favorite_lesson_sources(3, 3, 6)) <> 1 then raise exception 'FAIL profile 6.4d p_min_per_source ignored'; end if;
+  raise notice 'PASS favorite_lesson_sources: count first, p_min_per_source honoured';
+end $$;
+commit;
+
+-- 6.5 todays_memory (C4): candidates frozen at the start of the learner's local day; the pick is deterministic.
+select pg_temp.clean_profile_evidence();
+select set_config('gate.ds', (((now() at time zone 'Asia/Ho_Chi_Minh')::date)::timestamp at time zone 'Asia/Ho_Chi_Minh')::text, false);
+insert into companion_memories (id, user_id, kind, memory_type, title, dedupe_key, created_at, occurred_at) values
+  ('ffffffff-0000-0000-0000-000000000001', current_setting('gate.a')::uuid, 'gifted', 'pinned_line', 'y1', 'pg:y1', current_setting('gate.ds')::timestamptz - interval '2 hours', now()),
+  ('ffffffff-0000-0000-0000-000000000002', current_setting('gate.a')::uuid, 'gifted', 'pinned_line', 'y2', 'pg:y2', current_setting('gate.ds')::timestamptz - interval '3 hours', now());
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare picked uuid; n int;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.5 claims for A: %', auth.uid(); end if;
+  select count(*), min(id::text)::uuid into n, picked from todays_memory('Asia/Ho_Chi_Minh');
+  if n <> 1 or picked::text not like 'ffffffff-%' then raise exception 'FAIL profile 6.5 expected one yesterday pinned memory, got % %', n, picked; end if;
+  perform set_config('gate.pick', picked::text, false);
+  raise notice 'PASS todays_memory picks one of two pinned memories created yesterday (positive control)';
+end $$;
+commit;
+-- C4: memories created today must not change the pick. Insert enough of them, sorted BEFORE yesterday's, that an
+-- unfrozen pool would move the pick (idx = hash mod n lands on a today row).
+do $$
+declare h bigint := abs(hashtext(current_setting('gate.a') || ((now() at time zone 'Asia/Ho_Chi_Minh')::date)::text)::bigint);
+  k int := 1;
+begin
+  while h % (2 + k) >= k and k < 50 loop k := k + 1; end loop;
+  insert into companion_memories (id, user_id, kind, memory_type, title, dedupe_key, created_at, occurred_at)
+    select ('00000000-0000-0000-0003-' || lpad(i::text, 12, '0'))::uuid, current_setting('gate.a')::uuid, 'gifted', 'pinned_line',
+      'today' || i, 'pg:today' || i, current_setting('gate.ds')::timestamptz, now()
+    from generate_series(1, k) i;
+end $$;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare picked uuid; n int;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.5b claims for A: %', auth.uid(); end if;
+  select count(*), min(id::text)::uuid into n, picked from todays_memory('Asia/Ho_Chi_Minh');
+  if n <> 1 or picked::text is distinct from current_setting('gate.pick') then
+    raise exception 'FAIL profile 6.5b a memory created today moved the pick (% -> %)', current_setting('gate.pick'), picked;
+  end if;
+  raise notice 'PASS todays_memory pick is frozen against memories created today (C4)';
+end $$;
+commit;
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 6.5 claims for B: %', auth.uid(); end if;
+  if (select count(*) from todays_memory('Asia/Ho_Chi_Minh')) <> 0 then raise exception 'FAIL profile 6.5 B sees A memories'; end if;
+  raise notice 'PASS todays_memory: B sees none of A rows';
+end $$;
+commit;
+-- only today's memories -> nothing
+delete from companion_memories where user_id = current_setting('gate.a')::uuid and id::text like 'ffffffff-%';
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.5c claims for A: %', auth.uid(); end if;
+  if (select count(*) from todays_memory('Asia/Ho_Chi_Minh')) <> 0 then raise exception 'FAIL profile 6.5c only-today memories must give no row'; end if;
+  raise notice 'PASS todays_memory: only today memories -> no row';
+end $$;
+commit;
+-- no pinned yesterday, line_mastered yesterday -> a line_mastered row
+delete from companion_memories where user_id = current_setting('gate.a')::uuid;
+insert into companion_memories (user_id, kind, memory_type, title, dedupe_key, created_at, occurred_at) values
+  (current_setting('gate.a')::uuid, 'discovered', 'line_mastered', 'lm1', 'pg:lm1', current_setting('gate.ds')::timestamptz - interval '2 hours', now()),
+  (current_setting('gate.a')::uuid, 'gifted', 'pinned_line', 'today pin', 'pg:todaypin', current_setting('gate.ds')::timestamptz, now());
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.5d claims for A: %', auth.uid(); end if;
+  if (select count(*) from todays_memory('Asia/Ho_Chi_Minh') where memory_type = 'line_mastered') <> 1
+    or (select count(*) from todays_memory('Asia/Ho_Chi_Minh')) <> 1 then
+    raise exception 'FAIL profile 6.5d no pinned yesterday must fall back to line_mastered';
+  end if;
+  raise notice 'PASS todays_memory falls back to line_mastered';
+end $$;
+commit;
+
+-- 6.6 grants: anon cannot call any of the five; authenticated can (positive control is every case above)
+begin;
+set local role anon;
+do $$
+declare blocked int := 0;
+begin
+  begin perform first_known_learning_at(); exception when insufficient_privilege then blocked := blocked + 1; end;
+  begin perform * from profile_counts(2); exception when insufficient_privilege then blocked := blocked + 1; end;
+  begin perform * from profile_journey(1, true); exception when insufficient_privilege then blocked := blocked + 1; end;
+  begin perform * from favorite_lesson_sources(1, 1, 1); exception when insufficient_privilege then blocked := blocked + 1; end;
+  begin perform * from todays_memory('UTC'); exception when insufficient_privilege then blocked := blocked + 1; end;
+  if blocked <> 5 then raise exception 'FAIL profile 6.6 anon can call % of 5 read-model functions', 5 - blocked; end if;
+  if exists (select 1 from pg_proc where proname in ('first_known_learning_at', 'profile_counts', 'profile_journey', 'favorite_lesson_sources', 'todays_memory')
+      and (prosecdef or provolatile <> 's')) then
+    raise exception 'FAIL profile 6.6 read-model functions must be stable security invoker';
+  end if;
+  raise notice 'PASS profile read-model grants: anon blocked; all five stable security invoker';
+end $$;
+commit;
+
+select pg_temp.clean_profile_evidence();
+delete from videos where id in (select ('00000000-0000-0000-0000-0000000000c' || i)::uuid from generate_series(1, 7) i);
+delete from lesson_sources where id in ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000d2', '00000000-0000-0000-0000-0000000000d3');
+delete from badges where id = '00000000-0000-0000-0000-0000000000e1';
+delete from vocab where word like 'pgcount%';
 -- storage.protect_delete blocks direct deletes unless storage.allow_delete_query is true; the gate owns these throwaway rows.
 begin;
 set local storage.allow_delete_query = 'true';
