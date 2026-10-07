@@ -93,6 +93,20 @@ describe("pronunciation metrics", () => {
     ]));
   });
 
+  it("starts the daily trend at the study zone's midnight 13 days back", async () => {
+    zone.timeZone = "America/Los_Angeles";
+    try {
+      const supabase = useMock({}, {
+        pronunciation_metric_means: () => ({ data: [], error: null }),
+        pronunciation_daily_means: () => ({ data: [], error: null }),
+      });
+      const { getWeeklyImprovement } = await import("./pronunciation-metrics");
+      await getWeeklyImprovement(new Date("2026-09-30T20:00:00.000Z"));
+      // 2026-09-17 00:00 in Los Angeles (PDT, UTC-7).
+      expect(supabase.rpcCalls).toContainEqual({ name: "pronunciation_daily_means", args: { p_start: "2026-09-17T07:00:00.000Z", p_end: "2026-09-30T20:00:00.000Z", p_tz: "America/Los_Angeles" } });
+    } finally { zone.timeZone = "Asia/Ho_Chi_Minh"; }
+  });
+
   it("keeps the RPC's recent order, drops a lesson hidden by RLS and over-fetches to still fill the limit", async () => {
     const supabase = useMock({
       // Returned out of order: the rows must follow the RPC, not this read.

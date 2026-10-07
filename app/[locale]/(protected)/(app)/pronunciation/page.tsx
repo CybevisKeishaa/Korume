@@ -12,7 +12,7 @@ import { HubLessonResultCard } from "@/components/shadowing/hub-lesson-result-ca
 import { PronunciationSearchResults, type PronunciationResultGroup } from "@/components/shadowing/pronunciation-search-results";
 import { getLearningPaths, getPracticeGoals, getSenseiRecommendation, getShadowingCollections, recommendedPracticeGoalId } from "@/lib/data/collections";
 import { getJlptSpeakingSummary, getRecentPractice, getTodaySpeaking, getWeeklyImprovement, getWeeklyPronunciationMetrics } from "@/lib/data/pronunciation-metrics";
-import { studyDaysAgo } from "@/lib/time/study-day";
+import { studyDayStart, studyDaysAgo } from "@/lib/time/study-day";
 import { getStudyTimezone } from "@/lib/time/study-timezone";
 import { JLPT_LEVELS } from "@/lib/conversation-types";
 import { listPracticeSituations } from "@/lib/data/lesson-taxonomy";
@@ -383,8 +383,8 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           trend: {
             label: t("hub.rail.weekly.chartLabel"), empty: t("hub.rail.weekly.chartEmpty"),
             points: weekly.trend.map((point) => {
-              const day = new Date(`${point.day}T00:00:00+07:00`);
-              // The window is the 14 VN days ending today: 13 days back is the left edge.
+              const day = studyDayStart(point.day, timeZone);
+              // The window is the 14 study-timezone days ending today: 13 days back is the left edge.
               return { x: Math.max(0, Math.min(1, 1 - studyDaysAgo(day, now, timeZone) / 13)), score: point.score, label: t("hub.rail.weekly.point", { date: shortDate.format(day), score: point.score }) };
             }),
           },

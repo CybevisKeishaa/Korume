@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = process.cwd();
-const FORBIDDEN = /Asia\/Ho_Chi_Minh|Asia\/Saigon|VN_OFFSET_MS|VN_TIME_ZONE|vnDateString|vnDayStart|vnDaysAgo|isoWeekdayOfVnDate/;
+const FORBIDDEN = /Asia\/Ho_Chi_Minh|Asia\/Saigon|VN_OFFSET_MS|VN_TIME_ZONE|vnDateString|vnDayStart|vnDaysAgo|isoWeekdayOfVnDate|\+07:?00|(UTC|GMT)\+0?7b/;
 /** The only two declarations allowed to name the zone (spec §3.6). */
 const ALLOWED = new Map([
   ["lib/time/study-day.ts", 'export const FALLBACK_STUDY_TIMEZONE = "Asia/Ho_Chi_Minh";'],

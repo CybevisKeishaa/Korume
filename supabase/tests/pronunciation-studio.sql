@@ -82,6 +82,11 @@ begin
   if (select pronunciation_score from pronunciation_recent_practice(2, 'Asia/Ho_Chi_Minh') where video_id = (select id from public.videos where youtube_video_id = 'jlptgate-pron-one')) <> 80 then
     raise exception 'FAIL recent practice: score is not limited to the last VN day';
   end if;
+  -- The score window is the study-zone day of the last practice: A's pron-one sessions (70 at 16:30Z, 80 at 17:30Z)
+  -- share one Los Angeles day, so the mean is 75, not VN's 80.
+  if (select pronunciation_score from pronunciation_recent_practice(2, 'America/Los_Angeles') where video_id = (select id from public.videos where youtube_video_id = 'jlptgate-pron-one')) <> 75 then
+    raise exception 'FAIL recent practice: p_tz did not move the day window';
+  end if;
   -- The function's own row order, not one re-sorted here.
   if (select array_agg(rp.video_id order by rp.ord) from pronunciation_recent_practice(2, 'Asia/Ho_Chi_Minh') with ordinality as rp(video_id, practiced_at, pronunciation_score, ord)) is distinct from array[
     (select id from public.videos where youtube_video_id = 'jlptgate-pron-two'),
