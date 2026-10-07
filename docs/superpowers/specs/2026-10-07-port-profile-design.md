@@ -1,8 +1,8 @@
 # Port Profile + Edit Profile — design
 
-- **Status:** design frozen by the owner on 2026-10-07 across five sections (each approved with amendments);
-  this document folds every ruling and amendment into one text. §0.3 lists three corrections found while
-  writing it, which the owner must approve before the plan is written.
+- **Status:** **design frozen** by the owner on 2026-10-07 — five sections (each approved with amendments),
+  the three corrections of §0.3 (approved at spec review, C2 with an added invariant), and the two
+  corrections of §0.4 raised by the owner at spec review. Approved for `writing-plans`.
 - **Branch:** `port-profile`, worktree `.worktrees/port-profile`, base `master` at **`2cee918`** (the SHA at
   branch creation).
 - **Frames:** Profile `66:166`, Edit Profile `67:595` — file `IwFHZDZdHW7qsSFiNbWrkd`
@@ -39,7 +39,7 @@ never rendered as an inert control. Layer D (`AGENTS.md` §2) binds absolutely.
 | R11 | Section 4 amendments: layouts computed from real container widths; Favorite Content needs activity evidence; Hours Studied states when tracking began; avatar save is transactional multipart; username uniqueness is enforced by the DB; Korume copy does not say "remember". |
 | R12 | Section 5 amendments: daily XP eligibility under a per-user transaction lock with a concurrency test; `passed_at` / `mastered_at` are first-transition timestamps; avatar decode limits and corrupt-file tests, own rate limit; dirty-form guard covers every navigation; T15 split into T15/T16/T17; gates use the repo's real commands. |
 
-### 0.3 Corrections found while writing this spec — need owner approval
+### 0.3 Corrections found while writing this spec — approved by the owner at spec review
 
 Section 2 was approved on a claim I made: "streak derives directly from `xp_events`". Reading
 `recordActivity` (`lib/data/gamification.ts`) and `advanceStreak` (`lib/gamification/streak.ts`) while
@@ -54,11 +54,26 @@ writing shows the claim is wrong in three ways. The design below is corrected; t
   days that are not in `user_preferences.schedule_days` (Weekdays / Custom schedule). The derived streak
   keeps that rule and evaluates it with the **current** schedule and the **current** timezone — the same
   "projection with today's preferences, never a rewrite" semantics the owner ruled for timezone. A schedule
-  change can therefore change the derived current/longest streak; no history is rewritten.
+  change can therefore change the derived current/longest streak; no history is rewritten. **Invariant
+  (owner, spec review):** an earned badge is never revoked — `user_badges` is achievement history, the
+  streak number is a current projection; nothing that re-derives a streak deletes or rewrites a badge.
 - **C3 — the XP/stats write is a read-modify-write.** `user_stats.xp` is read, incremented in the app and
   upserted, so two concurrent outcomes can lose an award. Since the daily-eligibility check must move under
   a per-user lock anyway (R12), the whole write — outcome evidence, eligibility, XP insert, `user_stats.xp`
   increment — moves into one locked SQL function (§4).
+
+### 0.4 Corrections raised by the owner at spec review
+
+- **C4 — Today's Memory was not stable all day.** `hash(user, studyDate) mod candidateCount` changes its pick
+  when a memory is created mid-day, because the count changes. **Correction:** the candidate set is frozen at
+  the start of the study day — only memories created before `studyDayStart(today, tz)` are eligible today; a
+  memory created during the day joins tomorrow. No candidate at day start → the card is hidden all day. No
+  daily-pick table (§6.3).
+- **C5 — "Learning with Korume since" would jump to the rollout date.** `learning_outcomes` and
+  `study_sessions` are both new, so a long-standing learner would read the migration date. **Correction:**
+  an aggregate `firstKnownLearningAt` over every canonical learning table with a real timestamp (§6.0). The
+  system milestone "first learning outcome" becomes **first recorded learning activity**, from the same
+  aggregate. Nothing is backfilled into the new tables.
 
 ---
 
@@ -314,7 +329,7 @@ Not tracked, with reason: `pronunciation` and `listening` workspace modes are `c
 |---|---|---|
 | Avatar, display name, `@handle`, bio | `avatar_path`→OAuth `avatar_url`→initials; `users.name`; `username`; `bio` | Bio shown under the handle on `/profile` too: the Edit preview "renders the profile as it will look". |
 | Header "Korume · since …" | month of `users.created_at` | The account relationship. |
-| "Learning Japanese since" → **"Learning with Korume since …" / "Học cùng Korume từ …"** | month of the earliest of `learning_outcomes.created_at` and `study_sessions.started_at` | Korume does not know pre-Korume history and the copy does not claim it. Row hidden until there is a first activity. |
+| "Learning Japanese since" → **"Learning with Korume since …" / "Học cùng Korume từ …"** | month of `firstKnownLearningAt` (§6.0) | The earliest evidence Korume holds — not a claim about when the learner began Japanese. Row hidden while it is null. |
 | Country, Native Language, JLPT Goal | `country`, `native_language`, `target_jlpt_level` | JLPT Goal is a goal, never a competency. |
 | Current Interface | the URL locale | |
 | Current Subtitle | composed label from `reading_translation` + `reading_furigana` | |
@@ -336,10 +351,33 @@ When `companion_enabled = false`: Korumeship, Today's Memory and the companion m
 deleted). `/korume/chat` already renders a disabled state for that gate; it gets an action that turns Korume
 back on (writes `companion_enabled`), if the existing disabled view lacks one.
 
+### 6.0 `firstKnownLearningAt` (C5)
+
+SQL function `first_known_learning_at()`, `security invoker`, scoped to `auth.uid()`: the minimum non-null
+timestamp across the caller's rows in
+
+| Table | Column(s) |
+|---|---|
+| `learning_outcomes` | `created_at` |
+| `study_sessions` | `started_at` |
+| `xp_events` | `created_at` |
+| `user_video_progress` | `last_watched_at`, `completed_at` |
+| `shadowing_sessions`, `dictation_attempts`, `sentence_mining_cards` | `created_at` |
+| `conversation_sessions` | `started_at` |
+| `user_test_attempts`, `user_reading_attempts` | `completed_at` |
+| `user_vocab_progress`, `user_kanji_progress` | `last_reviewed_at` |
+| `user_grammar_progress` | `last_practiced_at` |
+| `user_badges` | `earned_at` |
+
+Each branch is a per-user `min()` (indexed by `user_id`), never a row read. Companion memories, notes,
+bookmarks and library adds are not learning evidence and are excluded. `last_reviewed_at` /
+`last_practiced_at` hold the latest touch per item, so their minimum is a real timestamp of real activity —
+an upper bound on the first one, which is all "earliest known evidence" claims.
+
 ### 6.1 Learning Journey — two sources, one axis
 
-- **System milestones** (canonical tables; survive Delete Korume Memory): first learning outcome
-  (`learning_outcomes`), first video lesson completed (`user_video_progress.completed_at`), first mastered
+- **System milestones** (canonical tables; survive Delete Korume Memory): **first recorded learning
+  activity** (`firstKnownLearningAt`, §6.0), first video lesson completed (`user_video_progress.completed_at`), first mastered
   word (`user_vocab_progress.mastered_at`), first certification passed (`user_test_attempts.passed_at`),
   badges earned (`user_badges.earned_at`).
 - **Companion milestones** (`companion_memories`; erased by Delete Korume Memory, hidden when Korume is
@@ -358,9 +396,12 @@ then most recent `last_watched_at`, then source `display_order`. Not enough evid
 
 ### 6.3 Today's Memory — deterministic per study day
 
-Candidates: the learner's `pinned_line` memories; if none, `line_mastered`. The pick is a stable function of
-`(user_id, studyDate(now, tz))` over the candidates ordered by id (`hashtext(user_id || studyDate)` modulo the candidate count), so the card does
-not change during the day when new memories appear. Empty → hidden.
+Candidates (C4) are **frozen at the start of the study day**: memories with
+`created_at < studyDayStart(today, tz)` only. Among them, the learner's `pinned_line` memories; if none,
+`line_mastered`. The pick is `hashtext(user_id || studyDate)` modulo the frozen candidate count, over the
+frozen candidates ordered by id — so a memory created during the day cannot change today's card; it becomes
+eligible tomorrow. No candidate at day start → hidden all day. (Deleting memories or turning Korume off
+still removes the card — those are the learner's own actions.)
 
 ### 6.4 Korume context (R4, R11)
 
@@ -487,7 +528,8 @@ XP eligibility, speaking metrics, `pronunciation_daily_means`, `study_time` buck
 day · guard red when a hardcode is inserted (mutation), file set non-empty.
 
 **Outcomes / XP:** a repeat outcome with no XP still counts for the streak (C1) · unscheduled-day gaps do
-not break the streak; changing `schedule_days` re-derives it (C2) · **N concurrent `record_learning_outcome`
+not break the streak; changing `schedule_days` re-derives it (C2) · a streak badge earned under one schedule
+is still in `user_badges` after a schedule (or timezone) change shrinks the derived streak (C2 invariant) · **N concurrent `record_learning_outcome`
 calls for the same daily source → exactly one `xp_events` row and `user_stats.xp` incremented once** (C3,
 live DB) · once-only source unique.
 
@@ -501,7 +543,10 @@ closed session never opens a segment.
 
 **Profile data:** username case and reserved names; 409 mapped to the field · `mastered_at` set once, not
 reset on stage drop · `passed_at` set once, not overwritten · Favorite Content thresholds and tie-breaks ·
-Today's Memory stable within a study day · Korume off hides exactly the companion parts · L1/goal/practices
+Today's Memory: a memory created mid-day does not change today's card and is eligible tomorrow; no
+candidate at day start → hidden all day (C4) · `firstKnownLearningAt` for a legacy learner whose only
+evidence predates the new tables (e.g. `xp_events`, `user_video_progress`) returns that date, not the
+migration date; null with no evidence (C5) · Korume off hides exactly the companion parts · L1/goal/practices
 reach `answerPrompt` and never a shared cache key.
 
 **Avatar:** wrong MIME/magic → 415/422 · oversize bytes · oversize decoded pixels · truncated file → 422 ·
@@ -530,13 +575,13 @@ inside the first task that can break them (L-029).
 | T6 | `study_time` (merge, midnight split, DST), `trackedSince`; export + erasure gate | T5 |
 | T7 | `useStudyPresence`; wire the 8 surfaces of §5.6 (media from `player-adapter`) | T5 |
 | T8 | Profile schema (§2.1), `mastered_at` in `submitReview`, `passed_at` in `submitJlptTest`; validators `lib/profile/{username,languages,practices}.ts`; `avatars` bucket + RLS; export + erasure | T1 |
-| T9 | Profile data layer: identity, Quick Stats, Learning Journey, Favorite Content, Korumeship, Today's Memory, Achievements — SQL aggregates | T3, T6, T8 |
+| T9 | Profile data layer: identity, Quick Stats, `first_known_learning_at`, Learning Journey, Favorite Content, Korumeship, Today's Memory (frozen candidates), Achievements — SQL aggregates | T3, T6, T8 |
 | T10 | Korume learner-profile context in `answerPrompt` | T8 |
 | T11 | `/profile` UI, three container layouts, empty states | T9 |
 | T12 | `PATCH /api/profile` multipart, avatar pipeline, avatar resolver migrated to forum/playlists/peer review | T8 |
 | T13 | `/profile/edit` UI: form, live preview, availability check, dirty guard, locale navigation, sticky bar; Korume re-enable action on `/korume/chat` if missing | T11, T12 |
 | T14 | Integration/E2E + mutation tests, incl. live-DB tests for timezone, XP race, heartbeat/RLS, avatar | T13 |
-| T15 | Docs: screen registry (`profile` stamped `figmaCheckedAt: "2026-10-07"`; `edit-profile` → route `/profile/edit`, `impl: "built"`, chrome `app`); decision-register (R3 beside G2, R4, R5, R6, R7, C1–C3); the `settings-page.tsx` header comment; deploy notes | T14 |
+| T15 | Docs: screen registry (`profile` stamped `figmaCheckedAt: "2026-10-07"`; `edit-profile` → route `/profile/edit`, `impl: "built"`, chrome `app`); decision-register (R3 beside G2, R4, R5, R6, R7, C1–C5); the `settings-page.tsx` header comment; deploy notes | T14 |
 | T16 | Full gates (§13), 3-viewport Chrome capture, independent whole-branch review, fix wave + its own review, then the owner's Chrome review | T15 |
 
 ---
@@ -550,7 +595,8 @@ inside the first task that can break them (L-029).
 `npm run test:e2e` with `AI_PROVIDER=none`, `:3000` stopped first (L-017), `.env.local` present (L-020) ·
 `npm run verify:protocol` · `npm run verify:db:erasure` · `npm run verify:db:pronunciation` ·
 `npm run verify:db:korume` · `npm run verify:db:settings` · a new `npm run verify:db:profile` live gate
-(timezone buckets, XP race, heartbeat semantics, RLS/grants, avatar bucket policy) on a **fresh**
+(timezone buckets, XP race, heartbeat semantics, `first_known_learning_at` on legacy rows, RLS/grants,
+avatar bucket policy) on a **fresh**
 `npx supabase db reset`.
 
 ### 13.2 Order
@@ -582,4 +628,4 @@ judged on hierarchy/reflow against frames `66:166` / `67:595`. Then the owner's 
 | `pronunciation`, `listening` study surfaces | the branches that complete those workspace modes |
 | JLPT journey level, Today's Mission, Journey Point, Weakness Snapshot, Weekly Evolution, heatmap | `port-dashboard` (consumes §3 and §5) |
 
-No open questions remain other than §0.3.
+No open questions remain.
