@@ -1,17 +1,97 @@
 {
   "page": {
-    "heading": "Hồ sơ",
-    "accountHeading": "Tài khoản của bạn",
-    "emailLabel": "Email",
-    "emailFallback": "Chưa có",
-    "statsHeading": "Một chút về hành trình của bạn",
-    "levelLabel": "Cấp độ",
-    "xpLabel": "XP",
-    "currentStreakLabel": "Chuỗi ngày hiện tại",
-    "longestStreakLabel": "Chuỗi ngày dài nhất",
-    "streakDays": "{count} ngày",
-    "badgesEarnedLabel": "Huy hiệu đã đạt",
-    "badgesCount": "{earned} / {total}",
-    "viewDashboard": "Xem hành trình của bạn"
+    "eyebrow": "Lưu trữ cá nhân",
+    "title": "Hồ sơ học tập của bạn",
+    "since": "Korume · từ {month}"
+  },
+  "identity": {
+    "country": "Quốc gia",
+    "timeZone": "Múi giờ",
+    "learningSince": "Học cùng Korume từ {month}",
+    "jlptGoal": "Mục tiêu JLPT",
+    "nativeLanguage": "Ngôn ngữ mẹ đẻ",
+    "interface": "Giao diện hiện tại",
+    "subtitle": "Phụ đề hiện tại",
+    "subtitleValue": "{translation, select, hidden {Tiếng Nhật} other {Tiếng Nhật + bản dịch}}{furigana, select, hidden {} other { + furigana}}",
+    "edit": "Chỉnh sửa hồ sơ",
+    "avatarAlt": "Ảnh của {name}"
+  },
+  "stats": {
+    "title": "Thống kê nhanh",
+    "streak": "Chuỗi ngày học",
+    "streakValue": "{count, plural, other {{count} ngày}}",
+    "level": "Cấp độ hiện tại",
+    "levelValue": "Lv. {level}",
+    "xp": "Tổng XP",
+    "videoLessons": "Bài học video đã hoàn thành",
+    "words": "Từ đã học",
+    "hours": "Giờ đã học",
+    "hoursValue": "{hours}g {minutes}p",
+    "hoursInfo": "Về số giờ đã học",
+    "trackedSince": "Korume ghi nhận từ {date}",
+    "trackingStarts": "Korume bắt đầu ghi nhận từ buổi học tiếp theo của bạn"
+  },
+  "journey": {
+    "eyebrow": "Hành trình học",
+    "title": "Con đường bạn đã đi",
+    "empty": "Con đường của bạn bắt đầu từ bài học đầu tiên.",
+    "emptyCta": "Bắt đầu một bài shadowing",
+    "kind": {
+      "first_activity": "Bắt đầu học",
+      "first_video_completed": "Hoàn thành bài học video đầu tiên",
+      "first_mastered_word": "Thuộc từ đầu tiên",
+      "first_certification_passed": "Đạt chứng chỉ đầu tiên",
+      "badge_earned": "Nhận một huy hiệu",
+      "first_meeting": "Gặp Korume",
+      "first_shadow": "Shadowing câu đầu tiên",
+      "jlpt_passed": "Đạt một cấp JLPT",
+      "pinned_line": "Ghim một câu"
+    },
+    "line": {
+      "first_activity": "Trang đầu tiên của một ngôn ngữ mới.",
+      "first_video_completed": "{hasLabel, select, yes {{label}, xem đến cuối.} other {Xem trọn đến cuối.}}",
+      "first_mastered_word": "{hasLabel, select, yes {{label} giờ là của bạn.} other {Một từ giờ đã thuộc về bạn.}}",
+      "first_certification_passed": "{hasLabel, select, yes {{label}, đã đạt.} other {Một cột mốc bạn đã giành được.}}",
+      "badge_earned": "{hasLabel, select, yes {{label}.} other {Một dấu mốc nhỏ của tiến bộ.}}",
+      "first_meeting": "Cuộc trò chuyện đầu tiên, và khởi đầu của một thói quen.",
+      "first_shadow": "{hasLabel, select, yes {{label}, đọc theo giọng mẫu.} other {Giọng bạn bắt đầu tìm thấy nhịp của mình.}}",
+      "jlpt_passed": "{hasLabel, select, yes {{label}, đã đạt.} other {Nền tảng bạn xây từng câu một.}}",
+      "pinned_line": "{hasLabel, select, yes {“{label}”} other {Một câu bạn muốn giữ lại.}}"
+    }
+  },
+  "favorite": {
+    "title": "Nội dung học yêu thích",
+    "source": {
+      "youtube": "YouTube",
+      "nhk": "NHK",
+      "podcast": "Podcast",
+      "drama": "Phim truyền hình",
+      "anime": "Anime",
+      "vlog": "Vlog",
+      "news": "Tin tức"
+    },
+    "empty": "Nội dung yêu thích sẽ hiện ra sau khi bạn học vài bài."
+  },
+  "goal": {
+    "eyebrow": "Mục tiêu cá nhân",
+    "caption": "Một điều bạn viết cho chính mình trong tương lai",
+    "empty": "Hãy viết một mục tiêu cho chính bạn trong tương lai.",
+    "emptyCta": "Thêm mục tiêu"
+  },
+  "korume": {
+    "eyebrow": "Korume",
+    "title": "Korumeship",
+    "together": "{months, plural, other {Chúng ta đã đồng hành cùng nhau được {months} tháng.}}",
+    "fresh": "Korume luôn ở đây cùng bạn.",
+    "open": "Mở Korume"
+  },
+  "memory": {
+    "eyebrow": "Ký ức hôm nay",
+    "caption": "Bạn đã luyện câu này cho đến khi nó thấy như của chính mình.",
+    "open": "Mở nhật ký"
+  },
+  "achievements": {
+    "title": "Thành tích",
+    "empty": "Huy hiệu bạn nhận được sẽ hiện ở đây."
   }
 }

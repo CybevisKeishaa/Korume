@@ -552,7 +552,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     variantOf: null,
     figmaNodeId: "66:166",
     repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
+    figmaCheckedAt: "2026-10-07",
     route: "/profile",
     chrome: "app",
     impl: "built",

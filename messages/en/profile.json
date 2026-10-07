@@ -1,17 +1,97 @@
 {
   "page": {
-    "heading": "Profile",
-    "accountHeading": "Account",
-    "emailLabel": "Email:",
-    "emailFallback": "—",
-    "statsHeading": "Stats",
-    "levelLabel": "Level",
-    "xpLabel": "XP",
-    "currentStreakLabel": "Current streak",
-    "longestStreakLabel": "Longest streak",
-    "streakDays": "{count} days",
-    "badgesEarnedLabel": "Badges earned",
-    "badgesCount": "{earned} / {total}",
-    "viewDashboard": "View full dashboard"
+    "eyebrow": "Personal archive",
+    "title": "Your learning identity",
+    "since": "Korume · since {month}"
+  },
+  "identity": {
+    "country": "Country",
+    "timeZone": "Timezone",
+    "learningSince": "Learning with Korume since {month}",
+    "jlptGoal": "JLPT goal",
+    "nativeLanguage": "Native language",
+    "interface": "Current interface",
+    "subtitle": "Current subtitle",
+    "subtitleValue": "{translation, select, hidden {Japanese} other {Japanese + translation}}{furigana, select, hidden {} other { + furigana}}",
+    "edit": "Edit profile",
+    "avatarAlt": "{name}'s photo"
+  },
+  "stats": {
+    "title": "Quick stats",
+    "streak": "Study streak",
+    "streakValue": "{count, plural, one {{count} day} other {{count} days}}",
+    "level": "Current level",
+    "levelValue": "Lv. {level}",
+    "xp": "Total XP",
+    "videoLessons": "Video lessons completed",
+    "words": "Words learned",
+    "hours": "Hours studied",
+    "hoursValue": "{hours}h {minutes}m",
+    "hoursInfo": "About hours studied",
+    "trackedSince": "Tracked by Korume since {date}",
+    "trackingStarts": "Tracking starts with your next study session"
+  },
+  "journey": {
+    "eyebrow": "Learning journey",
+    "title": "The road you have made",
+    "empty": "Your road starts with a first lesson.",
+    "emptyCta": "Start a shadowing lesson",
+    "kind": {
+      "first_activity": "Started learning",
+      "first_video_completed": "Finished a first video lesson",
+      "first_mastered_word": "Mastered a first word",
+      "first_certification_passed": "Passed a first certification",
+      "badge_earned": "Earned a badge",
+      "first_meeting": "Met Korume",
+      "first_shadow": "Shadowed a first line",
+      "jlpt_passed": "Passed a JLPT level",
+      "pinned_line": "Pinned a line"
+    },
+    "line": {
+      "first_activity": "The first page of a new language.",
+      "first_video_completed": "{hasLabel, select, yes {{label}, watched to the end.} other {Watched all the way to the end.}}",
+      "first_mastered_word": "{hasLabel, select, yes {{label} is yours now.} other {A word you can now call your own.}}",
+      "first_certification_passed": "{hasLabel, select, yes {{label}, passed.} other {A milestone you earned.}}",
+      "badge_earned": "{hasLabel, select, yes {{label}.} other {A small mark of progress.}}",
+      "first_meeting": "The first conversation, and the start of a habit.",
+      "first_shadow": "{hasLabel, select, yes {{label}, said aloud after the voice.} other {Your voice began to find its rhythm.}}",
+      "jlpt_passed": "{hasLabel, select, yes {{label}, passed.} other {A foundation you built line by line.}}",
+      "pinned_line": "{hasLabel, select, yes {“{label}”} other {A line you chose to keep.}}"
+    }
+  },
+  "favorite": {
+    "title": "Favorite learning content",
+    "source": {
+      "youtube": "YouTube",
+      "nhk": "NHK",
+      "podcast": "Podcasts",
+      "drama": "Drama",
+      "anime": "Anime",
+      "vlog": "Vlogs",
+      "news": "News"
+    },
+    "empty": "Your favorites appear once you have studied a few lessons."
+  },
+  "goal": {
+    "eyebrow": "Personal goal",
+    "caption": "A thought you wrote for your future self",
+    "empty": "Write a goal for your future self.",
+    "emptyCta": "Add a goal"
+  },
+  "korume": {
+    "eyebrow": "Korume",
+    "title": "Korumeship",
+    "together": "{months, plural, one {We've been walking together for a month.} other {We've been walking together for {months} months.}}",
+    "fresh": "Korume is here with you.",
+    "open": "Open Korume"
+  },
+  "memory": {
+    "eyebrow": "Today's memory",
+    "caption": "You practised this line until it started to feel like your own.",
+    "open": "Open journal"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "empty": "Badges you earn will appear here."
   }
 }
