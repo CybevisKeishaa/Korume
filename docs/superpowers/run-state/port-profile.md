@@ -29,32 +29,35 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T3 | accepted | `f3b105a`, `0d387d8` |
 | T4 | accepted | `24bf403`, `970d3ce`, `600499c` |
 | T5 | accepted | `5cb4478`, `02b5fc7` (R-5a amends spec §5.2 start hygiene) |
-| T6–T16 | not started | — |
+| T6 | accepted | `9583e50`, `73195dc` (Codex; fix round 1 pinned gaps, window clipping, DST-day midnight) |
+| T7 | dispatched to Codex | — |
+| T8–T16 | not started | — |
 
 ## Contracts and decisions
 
 - Owner rulings R1–R12 and corrections C1–C5: spec §0.
 - Plan-time corrections P1–P5: plan header.
-- Execution method: not chosen yet (Claude recommended subagent-driven). Codex is out of quota until 2026-10-10.
+- Execution: Codex implements via Paseo (ruling R-route2: every task from T6 on, DB tasks included); Claude
+  reviews (opus), re-runs the gates, commits. Ledger: `.superpowers/sdd/2026-10-07-port-profile/progress.md`.
 
 ## Verification
 
-Plan-time only: `lib/time/study-day.ts` was run on Node 24 against the Task 1 assertions (DST 23 h / 25 h days,
-skipped midnight, canonicalisation) — all pass. No live gate has run on this branch yet.
+After T6 (`73195dc`), Claude re-ran: fresh `npx supabase db reset` + `npm run verify:db:profile` → every notice
+PASS (study time 4.1–4.11), gate exit 0; `lib/data/study-time.test.ts` 12/12; `tsc --noEmit` 0.
 
 ## Working tree and environment
 
 - `node_modules` is a junction to `.worktrees/verify-db-erasure/node_modules` (sharp 0.35.4, yauzl, playwright);
   never `npm install` here. `.env.local` copied from the main checkout.
-- Docker Desktop was not running at plan time; start it before the first live gate
+- Docker Desktop must be running for live gates
   (`Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"`), then `npx supabase db reset`.
 
 ## Blockers
 
-None. Waiting on the owner's choice of execution method.
+None.
 
 ## Next actions
 
-1. Owner picks the execution method (subagent-driven recommended).
-2. Start Task 1 (study timezone foundation) from this run-state commit; checkpoint this file after every accepted
-   task.
+1. Codex executes Task 7 (study presence on the eight surfaces) from
+   `.superpowers/sdd/2026-10-07-port-profile/task-7-packet.md`, BASE = this run-state commit, uncommitted.
+2. Claude reviews, re-runs the gates, commits, checkpoints this file; then Task 8.
