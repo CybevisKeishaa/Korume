@@ -24,11 +24,15 @@ export interface AnalysisToken {
   /** Katakana, as kuromoji reports it; null for unknown words and symbols. */
   reading: string | null;
   pos: string;
+  /** kuromoji's pos_detail_1; drives lookup and list eligibility (spec §1.6). */
+  posDetail1: string | null;
   span: Utf16Span;
-  /** At most three JMdict entries, best first. Empty for particles, auxiliaries and symbols. */
+  /** At most three JMdict entries, best first. Empty for particles, auxiliaries, symbols and dependent ん/いる/しまう (spec §1.6). */
   entries: DictionaryMatch[];
-  /** The curated `vocab` row this token is, when one exists. */
+  /** The curated `vocab` row this token is: the (headword or matched form, reading) join of spec §1.7, when one exists. */
   vocabId: string | null;
+  /** `vocab.meaning_vi` when (headword, reading) matched unambiguously (spec §1.7); never an AI gloss. */
+  curatedVi: string | null;
 }
 
 export interface GrammarMatch {
@@ -69,6 +73,8 @@ export interface LessonVocabularyItem {
   occurrences: number;
   jlpt: number | null;
   vocabId: string | null;
+  /** Curated Vietnamese meaning of the resolved (headword, reading), or null (spec §1.7). */
+  curatedVi: string | null;
   /** This learner's SRS stage, or null when the word is not curated or not yet studied. */
   mastery: number | null;
   exampleLineIds: string[];

@@ -18,7 +18,7 @@ function tok(spec: string, index = 0): AnalysisToken {
   const [word, ent] = spec.split(":ent:");
   const [base, pos] = (word as string).split("/");
   return {
-    index, surface: base as string, base: base as string, reading: null, pos: pos as string, span: { start: 0, end: 1 }, vocabId: null,
+    index, surface: base as string, base: base as string, reading: null, pos: pos as string, posDetail1: null, span: { start: 0, end: 1 }, vocabId: null, curatedVi: null,
     entries: ent ? [{ entSeq: Number(ent), headword: base as string, reading: "", glossEn: "", jlpt: null }] : [],
   };
 }

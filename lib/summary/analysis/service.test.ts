@@ -39,8 +39,8 @@ const LINES = [
   { id: "line-2", start_time: 2, end_time: 4, text_jp: "   ", text_translation: null, furigana_json: null },
 ];
 const TOKEN: AnalysisToken = {
-  index: 0, surface: "注文", base: "注文", reading: "チュウモン", pos: "名詞", span: { start: 0, end: 2 },
-  entries: [{ entSeq: 1394140, headword: "注文", reading: "ちゅうもん", glossEn: "order", jlpt: 3 }], vocabId: null,
+  index: 0, surface: "注文", base: "注文", reading: "チュウモン", pos: "名詞", posDetail1: null, span: { start: 0, end: 2 },
+  entries: [{ entSeq: 1394140, headword: "注文", reading: "ちゅうもん", glossEn: "order", jlpt: 3 }], vocabId: null, curatedVi: null,
 };
 const ANALYSES = new Map<string, StaticLineAnalysis>([["line-1", { lineId: "line-1", snapshotId: "s", tokens: [TOKEN], grammar: [] }]]);
 const GOOD = {

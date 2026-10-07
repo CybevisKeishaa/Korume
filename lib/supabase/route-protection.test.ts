@@ -163,4 +163,8 @@ describe("route protection", () => {
       `these (protected) routes have no covering PROTECTED_PREFIXES entry, so middleware skips them: ${unprotected.join(", ")}`,
     ).toEqual([]);
   });
+
+  it("leaves the PDF render target public: the single-use token is its capability (spec W §6.3 step 5)", () => {
+    expect(isProtectedPath("/print-render/abc")).toBe(false);
+  });
 });

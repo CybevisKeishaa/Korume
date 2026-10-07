@@ -45,7 +45,7 @@ function analysis(lineId: string, text: string, tokens: [string, string, Partial
   return {
     lineId, snapshotId: "s", grammar: [], mastery: {},
     tokens: tokens.map(([surface, pos, extra], index) => ({
-      index, surface, base: surface, reading: null, pos, span: spans[index] ?? { start: 0, end: 0 }, entries: [], vocabId: null, ...extra,
+      index, surface, base: surface, reading: null, pos, posDetail1: null, span: spans[index] ?? { start: 0, end: 0 }, entries: [], vocabId: null, curatedVi: null, ...extra,
     })),
   };
 }

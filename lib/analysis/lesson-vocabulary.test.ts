@@ -18,11 +18,11 @@ const LINES = Array.from({ length: 1_500 }, (_, i) => ({
   id: `line-${String(i).padStart(4, "0")}`, start_time: i, end_time: i + 1, text_jp: `文${i}`, text_translation: null, furigana_json: null,
 }));
 
-function token(entSeq: number | null, vocabId: string | null = null): AnalysisToken {
+function token(entSeq: number | null, vocabId: string | null = null, posDetail1: string | null = "一般", curatedVi: string | null = null): AnalysisToken {
   return {
-    index: 0, surface: "x", base: "x", reading: null, pos: entSeq === null ? "助詞" : "名詞", span: { start: 0, end: 1 },
+    index: 0, surface: "x", base: "x", reading: null, pos: entSeq === null ? "助詞" : "名詞", posDetail1, span: { start: 0, end: 1 },
     entries: entSeq === null ? [] : [{ entSeq, headword: `w${entSeq}`, reading: "よみ", glossEn: `g${entSeq}`, jlpt: null }],
-    vocabId,
+    vocabId, curatedVi,
   };
 }
 
@@ -55,7 +55,7 @@ describe("getLessonVocabulary", () => {
     assertPlainSerializableDto(result.page);
     expect(result.page.items[1]).toEqual({
       entSeq: 20, headword: "w20", reading: "よみ", glossEn: "g20", occurrences: 500, jlpt: null, vocabId: "v-ame", mastery: 4,
-      exampleLineIds: ["line-0000", "line-0003", "line-0006"], exampleSurface: "x",
+      exampleLineIds: ["line-0000", "line-0003", "line-0006"], exampleSurface: "x", curatedVi: null,
     });
     expect(result.page.items[0]?.mastery).toBeNull();
   });
@@ -83,11 +83,35 @@ describe("getLessonVocabulary", () => {
 describe("aggregateVocabulary", () => {
   it("keeps the form the word takes in its first example line, which a saved card must find in the sentence", () => {
     const entry = { entSeq: 7, headword: "食べる", reading: "たべる", glossEn: "to eat", jlpt: null };
+    const eat = (surface: string): AnalysisToken => ({ ...token(7), surface, entries: [entry] });
     const items = aggregateVocabulary([
-      { id: "a", tokens: [{ surface: "食べた", entries: [entry], vocabId: null }] },
-      { id: "b", tokens: [{ surface: "食べる", entries: [entry], vocabId: null }] },
+      { id: "a", tokens: [eat("食べた")] },
+      { id: "b", tokens: [eat("食べる")] },
     ]);
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ headword: "食べる", exampleLineIds: ["a", "b"], exampleSurface: "食べた" });
+  });
+});
+
+describe("aggregateVocabulary eligibility (spec §1.6)", () => {
+  it("lists no dependent noun, suffix or number, and carries the curated meaning", () => {
+    const items = aggregateVocabulary([{ id: "l-1", tokens: [
+      token(10, "v-10", "一般", "mưa"), token(40, null, "非自立"), token(50, null, "接尾"), token(60, null, "数"),
+    ] }]);
+    expect(items.map((item) => [item.entSeq, item.curatedVi])).toEqual([[10, "mưa"]]);
+  });
+});
+
+describe("aggregateVocabulary reading-bound fields (spec P6, §1.7)", () => {
+  const read = (reading: string, vocabId: string | null, curatedVi: string | null): AnalysisToken => {
+    return { ...token(7, vocabId, "一般", curatedVi), entries: [{ entSeq: 7, headword: "今日", reading, glossEn: "today", jlpt: null }] };
+  };
+  it("takes curatedVi and vocabId only from a token that shares the item's reading", () => {
+    const [item] = aggregateVocabulary([{ id: "a", tokens: [read("きょう", null, null), read("こんにち", "v-k", "xin chào")] }]);
+    expect(item).toMatchObject({ reading: "きょう", curatedVi: null, vocabId: null, occurrences: 2 });
+  });
+  it("still fills a null curatedVi from a later token with the same reading", () => {
+    const [item] = aggregateVocabulary([{ id: "a", tokens: [read("きょう", null, null), read("きょう", "v-k", "hôm nay")] }]);
+    expect(item).toMatchObject({ reading: "きょう", curatedVi: "hôm nay", vocabId: "v-k" });
   });
 });

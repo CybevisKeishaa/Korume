@@ -14,6 +14,12 @@ vi.mock("@/lib/japanese/tokenizer", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/japanese/tokenizer")>();
   return { ...actual, tokenize: vi.fn(actual.tokenize) };
 });
+// A getter, so a test can bump the version the memo key reads (spec §1.10).
+const resolver = vi.hoisted(() => ({ version: 1 }));
+vi.mock("./lexical-resolver", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./lexical-resolver")>()),
+  get LEXICAL_RESOLVER_VERSION() { return resolver.version; },
+}));
 
 const LINE_ID = "a0000000-0000-0000-0000-000000000001";
 const TEXT = "全部食べてしまった";
@@ -45,7 +51,7 @@ function useUser(user: { id: string } | null, lineVisible = true) {
         const column = overlap?.op === "overlaps" ? (overlap.column as "kanji_forms" | "kana_forms") : "kanji_forms";
         return { data: [TABERU, ZENBU, SHIMAU_HOMOGRAPH].filter((row) => row[column].some((form) => forms.includes(form))), error: null };
       },
-      vocab: () => ({ data: [{ id: "v-taberu", word: "食べる" }], error: null }),
+      vocab: () => ({ data: [{ id: "v-taberu", word: "食べる", reading: "たべる", meaning_vi: "ăn" }], error: null }),
       user_vocab_progress: (calls) => {
         const ids = (calls.find((call) => call.op === "in") as { values: string[] } | undefined)?.values ?? [];
         return { data: ids.filter((id) => id in mastery).map((id) => ({ vocab_id: id, srs_stage: mastery[id] })), error: null };
@@ -60,6 +66,7 @@ beforeEach(() => {
   dictQueries = [];
   mastery = {};
   grammarReads = 0;
+  resolver.version = 1;
   vi.mocked(rateLimit).mockReturnValue({ ok: true, retryAfter: 0 });
   vi.mocked(getActiveSnapshotId).mockResolvedValue("snap-1");
   useUser({ id: "u-a" });
@@ -106,7 +113,10 @@ describe("getLineAnalysisForLearner", () => {
     const tabe = tokens.find((token) => token.base === "食べる");
     expect(tabe?.entries).toEqual([{ entSeq: 1358280, headword: "食べる", reading: "たべる", glossEn: "to eat", jlpt: 5 }]);
     expect(tabe?.vocabId).toBe("v-taberu");
+    expect(tabe).toMatchObject({ posDetail1: "自立", curatedVi: "ăn" });
     expect(tokens.find((token) => token.surface === "て")?.entries).toEqual([]); // particles are not looked up
+    // しまっ is 動詞/非自立 (spec §1.6): no popup, though 仕舞う shares its kana.
+    expect(tokens.find((token) => token.surface === "しまっ")?.entries).toEqual([]);
     expect(grammar).toEqual([{
       grammarPointId: "g-shimau", title: "〜てしまう", structure: "〜てしまう", explanation: "Completion or regret.",
       examples: [{ jp: "食べてしまった。", en: "I ate it all." }], span: { start: 4, end: 8 },
@@ -152,6 +162,13 @@ describe("getLineAnalysisForLearner", () => {
     expect(next.kind === "ok" && next.analysis.snapshotId).toBe("snap-2");
   });
 
+  it("re-analyses when the lexical resolver version changes", async () => {
+    await getLineAnalysisForLearner(LINE_ID);
+    resolver.version += 1;
+    await getLineAnalysisForLearner(LINE_ID);
+    expect(tokenize).toHaveBeenCalledTimes(2);
+  });
+
   it("still tokenizes and matches grammar before the first dictionary import", async () => {
     vi.mocked(getActiveSnapshotId).mockResolvedValue(null);
     const result = await getLineAnalysisForLearner(LINE_ID);
@@ -168,5 +185,90 @@ describe("getLineAnalysisForLearner", () => {
     vi.mocked(rateLimit).mockReturnValue({ ok: false, retryAfter: 3_000 });
     await expect(getLineAnalysisForLearner(LINE_ID)).resolves.toEqual({ kind: "rate_limited", retryAfter: 3_000 });
     expect(tokenize).not.toHaveBeenCalled();
+  });
+});
+
+describe("staticAnalyses on the shared resolver (spec §1)", () => {
+  const HITO = { ent_seq: 3000, kanji_forms: ["人"], kana_forms: ["ひと"], senses: [{ gloss: ["person"] }], common: true, jlpt: 5 };
+  const JIN = { ent_seq: 2000, kanji_forms: ["人"], kana_forms: ["じん"], senses: [{ gloss: ["-ian"] }], common: true, jlpt: null };
+  const N_YES = { ent_seq: 1000, kanji_forms: [], kana_forms: ["ん"], senses: [{ gloss: ["yes", "yeah"] }], common: true, jlpt: null };
+  /** Every form the dictionary was queried for, to prove what is never asked. */
+  let asked: string[];
+
+  beforeEach(() => { asked = []; });
+
+  function useDictionary(rows: unknown[], vocab: unknown[] = []) {
+    vi.mocked(createClient).mockReturnValue(createMockSupabase({
+      user: { id: "u-a" },
+      tables: {
+        dict_entries: (calls) => {
+          const overlap = calls.find((call) => call.op === "overlaps");
+          const forms = overlap?.op === "overlaps" ? (overlap.values as string[]) : [];
+          const column = overlap?.op === "overlaps" ? (overlap.column as "kanji_forms" | "kana_forms") : "kanji_forms";
+          asked.push(...forms);
+          return { data: (rows as { kanji_forms: string[]; kana_forms: string[] }[]).filter((row) => row[column].some((form) => forms.includes(form))), error: null };
+        },
+        // Like the real query, only the asked headwords come back: that is what `headwords` widening must satisfy.
+        vocab: (calls) => {
+          const words = (calls.find((call) => call.op === "in")?.values ?? []) as string[];
+          return { data: (vocab as { word: string }[]).filter((row) => words.includes(row.word)), error: null };
+        },
+      },
+    }) as ReturnType<typeof createClient>);
+  }
+
+  it("resolves 人 in 苦手な人 to ひと and never looks ん up", async () => {
+    useDictionary([JIN, HITO, N_YES], [{ id: "v-hito", word: "人", reading: "ひと", meaning_vi: "người" }]);
+    const analyses = await staticAnalyses(createClient(), [{ id: "l-1", textJp: "苦手な人について話すんです" }], undefined, "lexical");
+    const tokens = analyses.get("l-1")?.tokens ?? [];
+    expect(tokens.find((token) => token.surface === "人")).toMatchObject({
+      entries: [expect.objectContaining({ entSeq: 3000, reading: "ひと" }), expect.objectContaining({ entSeq: 2000 })],
+      vocabId: "v-hito", curatedVi: "người",
+    });
+    expect(tokens.find((token) => token.surface === "ん")).toMatchObject({ posDetail1: "非自立", entries: [], vocabId: null });
+    // Spec §1.6: the dictionary is not even asked about a dependent ん; 人 shows the capture works.
+    expect(asked).toContain("人");
+    expect(asked).not.toContain("ん");
+  });
+
+  it("keeps しまっ out of the popup even when another line of the batch looks しまう up", async () => {
+    useDictionary([SHIMAU_HOMOGRAPH]);
+    const lines = [{ id: "l-3", textJp: "荷物をしまう" }, { id: "l-4", textJp: TEXT }];
+    const analyses = await staticAnalyses(createClient(), lines, undefined, "lexical");
+    // しまう is 動詞/自立 on l-3, so the batch holds 仕舞う; しまっ (動詞/非自立) on l-4 must still not resolve to it.
+    expect(analyses.get("l-3")?.tokens.find((token) => token.surface === "しまう")?.entries).toEqual([expect.objectContaining({ entSeq: 1305800 })]);
+    expect(analyses.get("l-4")?.tokens.find((token) => token.surface === "しまっ")?.entries).toEqual([]);
+  });
+
+  it("joins the curated row of a kanji headword to a token written in kana", async () => {
+    useDictionary([HITO], [{ id: "v-hito", word: "人", reading: "ひと", meaning_vi: "người" }]);
+    const tokens = (await staticAnalyses(createClient(), [{ id: "l-5", textJp: "ひとを見た" }], undefined, "lexical")).get("l-5")?.tokens ?? [];
+    expect(tokens.find((token) => token.surface === "ひと")).toMatchObject({
+      entries: [expect.objectContaining({ headword: "ひと", reading: "ひと" })], vocabId: "v-hito", curatedVi: "người",
+    });
+  });
+
+  it("fetches the headword of a kana-only entry matched through its second kana form", async () => {
+    // The token is ヒト, displayed as ヒト; the curated row is still keyed by the canonical first kana form ひと, which no token asked for.
+    const kanaOnly = { ent_seq: 3100, kanji_forms: [], kana_forms: ["ひと", "ヒト"], senses: [{ gloss: ["person"] }], common: true, jlpt: null };
+    useDictionary([kanaOnly], [{ id: "v-hito", word: "ひと", reading: "ひと", meaning_vi: "người" }]);
+    const tokens = (await staticAnalyses(createClient(), [{ id: "l-6", textJp: "ヒトを見た" }], undefined, "lexical")).get("l-6")?.tokens ?? [];
+    expect(tokens.find((token) => token.surface === "ヒト")).toMatchObject({ vocabId: "v-hito", curatedVi: "người" });
+  });
+
+  it("reads no vocab when the dictionary returned no entry", async () => {
+    let vocabReads = 0;
+    vi.mocked(createClient).mockReturnValue(createMockSupabase({
+      user: { id: "u-a" },
+      tables: { dict_entries: () => ({ data: [], error: null }), vocab: () => { vocabReads += 1; return { data: [], error: null }; } },
+    }) as ReturnType<typeof createClient>);
+    await staticAnalyses(createClient(), [{ id: "l-7", textJp: "ヒトを見た" }], undefined, "lexical");
+    expect(vocabReads).toBe(0);
+  });
+
+  it("does not attach a vocab row of the same word with another reading", async () => {
+    useDictionary([JIN, HITO], [{ id: "v-jin", word: "人", reading: "じん", meaning_vi: "người (nước)" }]);
+    const tokens = (await staticAnalyses(createClient(), [{ id: "l-2", textJp: "苦手な人" }], undefined, "lexical")).get("l-2")?.tokens ?? [];
+    expect(tokens.find((token) => token.surface === "人")).toMatchObject({ vocabId: null, curatedVi: null });
   });
 });

@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data/videos";
 import { getTranscript } from "@/lib/data/transcripts";
 import { rateLimit } from "@/lib/rate-limit";
+import { isLessonVocabularyEligible } from "./lexical-resolver";
 import { readMastery } from "./learning-state";
 import { staticAnalyses } from "./line-analysis";
-import type { LessonVocabularyItem, LessonVocabularyPage } from "./types";
+import type { AnalysisToken, LessonVocabularyItem, LessonVocabularyPage } from "./types";
 
 const VOCABULARY_LIMIT = { limit: 30, windowMs: 60_000 };
 const EXAMPLE_LINES = 3;
@@ -22,21 +23,26 @@ export type LessonVocabularyResult =
 type StaticItem = Omit<LessonVocabularyItem, "mastery">;
 
 /**
- * Every content word of the lesson, aggregated on the server by its best JMdict entry (spec §5.1): most
+ * Every list-eligible content word of the lesson (spec §1.6), aggregated by its resolved JMdict entry (spec §5.1): most
  * frequent first, then by ent_seq, so the order — and an offset cursor over it — is stable for a lesson.
  */
-export function aggregateVocabulary(lines: { id: string; tokens: { surface: string; entries: { entSeq: number; headword: string; reading: string; glossEn: string; jlpt: number | null }[]; vocabId: string | null }[] }[]): StaticItem[] {
+export function aggregateVocabulary(lines: { id: string; tokens: AnalysisToken[] }[]): StaticItem[] {
   const byEntry = new Map<number, StaticItem>();
   for (const line of lines) {
     for (const token of line.tokens) {
+      if (!isLessonVocabularyEligible(token)) continue;
       const entry = token.entries[0];
       if (!entry) continue;
       const item = byEntry.get(entry.entSeq) ?? {
         entSeq: entry.entSeq, headword: entry.headword, reading: entry.reading, glossEn: entry.glossEn,
-        occurrences: 0, jlpt: entry.jlpt, vocabId: token.vocabId, exampleLineIds: [], exampleSurface: token.surface,
+        occurrences: 0, jlpt: entry.jlpt, vocabId: token.vocabId, curatedVi: token.curatedVi, exampleLineIds: [], exampleSurface: token.surface,
       };
       item.occurrences += 1;
-      item.vocabId ??= token.vocabId;
+      // Spec P6/§1.7: a curated meaning and a mastery row belong to one reading; a later token read differently must not lend them.
+      if (entry.reading === item.reading) {
+        item.vocabId ??= token.vocabId;
+        item.curatedVi ??= token.curatedVi;
+      }
       if (item.exampleLineIds.length < EXAMPLE_LINES && !item.exampleLineIds.includes(line.id)) item.exampleLineIds.push(line.id);
       byEntry.set(entry.entSeq, item);
     }

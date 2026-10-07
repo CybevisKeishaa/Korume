@@ -13,8 +13,8 @@ const line = { lineId: "11111111-1111-4111-8111-111111111111", textJp: "コー�
 const view: LessonAnalysisView = {
   overview: "",
   words: [
-    { entSeq: 1, surface: "注文", written: "注文", reading: "ちゅうもん", meaning: "order", posKey: "noun", jlpt: "N4", common: true, whyItMatters: "", usageNote: "", source: line },
-    { entSeq: 2, surface: "温かい", written: "温かい", reading: "あたたかい", meaning: "warm", posKey: "adjective", jlpt: null, common: false, whyItMatters: "", usageNote: "", source: line },
+    { entSeq: 1, surface: "注文", written: "注文", reading: "ちゅうもん", meaning: "đặt hàng", meaningLocale: "vi", meaningSource: "curated", posKey: "noun", jlpt: "N4", common: true, whyItMatters: "", usageNote: "", source: line },
+    { entSeq: 2, surface: "温かい", written: "温かい", reading: "あたたかい", meaning: "warm", meaningLocale: "en", meaningSource: "jmdict", posKey: "adjective", jlpt: null, common: false, whyItMatters: "", usageNote: "", source: line },
   ],
   expressions: [{ expression: "失礼します", commonness: "very_common", meaningUse: "Excuse me", nuance: "humble", source: line }],
   grammar: [{ grammarId: "g-1", title: "〜てもいいですか", jlpt: "N4", meaningShort: "May I", explanation: "Asks permission", tryIt: "写真を撮ってもいいですか。", span: "てもいい", source: line }],
@@ -85,7 +85,7 @@ describe("SummaryIsland", () => {
     const words = within(area("words"));
     expect(words.getByText("注文")).toBeInTheDocument();
     expect(words.getByText("ちゅうもん")).toBeInTheDocument();
-    expect(words.getByText("order")).toBeInTheDocument();
+    expect(words.getByText("đặt hàng")).toBeInTheDocument();
     expect(words.getByText("Noun")).toBeInTheDocument();
     expect(words.getAllByText("Common")).toHaveLength(1); // only the `common` word carries the tag
     expect(status).toHaveTextContent("Lesson analysis ready");
@@ -184,10 +184,49 @@ describe("SummaryIsland", () => {
     expect(grammar.getByText("写真を撮ってもいいですか。")).toBeInTheDocument();
   });
 
+  it("labels an English fallback meaning EN and links the lesson's print page", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    expect(within(area("words")).getAllByText("EN")).toHaveLength(1); // 温かい only; 注文 is curated vi
+    expect(within(area("words")).getByRole("link", { name: "Print vocabulary" }))
+      .toHaveAttribute("href", "/vocab/print?source=lesson&lesson=v-1&set=all");
+  });
+
+  it("the EN chip leads the meaning (a clamped long gloss must not cut it off) and carries a screen-reader label", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    const chip = within(area("words")).getByText("EN");
+    expect(chip.parentElement?.firstChild).toBe(chip);
+    expect(chip.parentElement).toHaveTextContent(/^EN.*warm$/);
+    expect(chip).toHaveTextContent("English meaning — no Vietnamese meaning yet");
+  });
+
+  it("View as list labels only the English row EN, ahead of its meaning", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    fireEvent.click(within(area("words")).getByRole("button", { name: "View as list" }));
+    await flush();
+    const list = within(within(area("words")).getByRole("list", { name: "Words from this lesson" }));
+    const chip = list.getByText("EN");
+    expect(chip.parentElement?.firstChild).toBe(chip);
+    expect(chip.parentElement).toHaveTextContent(/warm$/);
+    expect(list.getAllByRole("listitem")).toHaveLength(2);
+  });
+
+  it("offers the print link even when the analysis is unavailable (Print needs no AI)", async () => {
+    stubFetch({ [`GET ${ANALYSIS}`]: [{ status: "unavailable" }], [`GET ${REFLECTION}`]: [{ state: "ready", reflection }] });
+    render(<SummaryIsland {...props} />);
+    await flush();
+    expect(within(area("words")).getByRole("link", { name: "Print vocabulary" })).toBeInTheDocument();
+  });
+
   it("View as list: the AI words, then the lesson's frequent words it did not pick, 8 per page; View as cards returns", async () => {
     const lessonWords = Array.from({ length: 12 }, (_, index) => ({
       entSeq: index + 1, headword: `語${index + 1}`, reading: `ご${index + 1}`, glossEn: `gloss ${index + 1}`, occurrences: 12 - index,
-      jlpt: null, vocabId: null, mastery: null, exampleLineIds: [line.lineId], exampleSurface: `語${index + 1}`,
+      jlpt: null, vocabId: null, curatedVi: null, mastery: null, exampleLineIds: [line.lineId], exampleSurface: `語${index + 1}`,
     }));
     const requests = stubFetch({
       [`GET ${ANALYSIS}`]: [{ status: "ready", data: view }],

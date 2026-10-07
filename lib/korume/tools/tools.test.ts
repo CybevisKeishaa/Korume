@@ -45,7 +45,7 @@ describe("lineAnalysisTool", () => {
   it("analyses the anchored line directly, never through the rate-limited learner path (Correction 7)", async () => {
     vi.mocked(staticAnalyses).mockResolvedValue(new Map([["l1", {
       lineId: "l1", snapshotId: "s",
-      tokens: [{ index: 0, surface: "今日", base: "今日", reading: "キョウ", pos: "名詞", span: { start: 0, end: 2 }, vocabId: null,
+      tokens: [{ index: 0, surface: "今日", base: "今日", reading: "キョウ", pos: "名詞", posDetail1: null, span: { start: 0, end: 2 }, vocabId: null, curatedVi: null,
         entries: [{ entSeq: 1, headword: "今日", reading: "きょう", glossEn: "today", jlpt: 5 }, { entSeq: 2, headword: "今日", reading: "こんにち", glossEn: "these days", jlpt: null }] }],
       grammar: [],
     }]]) as never);

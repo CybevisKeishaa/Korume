@@ -16,6 +16,8 @@ export const VIDEO_DURATION = 95;
 
 export interface WorkspaceData {
   admin: SupabaseClient;
+  /** The `youtube_video_id` prefix `cleanup` deletes by; other fixtures may seed under it. */
+  prefix: string;
   videoId: string;
   lineIds: string[];
   /** A line of a different video, for the `?line=` from-another-video case. */
@@ -75,6 +77,7 @@ export async function seedWorkspaceData(): Promise<WorkspaceData> {
     const noDuration = await lesson("noduration", `${prefix} 長さ不明`, 3, null);
     return {
       admin,
+      prefix,
       videoId: main.videoId,
       lineIds: main.lineIds,
       foreignLineId: other.lineIds[0]!,

@@ -3,7 +3,7 @@ import { contentLemmas, DIFFICULTY_BANDS, scoreComprehension, TOO_HARD_MAX, IDEA
 import type { Token } from "@/lib/japanese/types";
 
 function token(surface: string, pos: string, base = surface): Token {
-  return { surface, reading: null, base, pos };
+  return { surface, reading: null, base, pos, posDetail1: null };
 }
 
 describe("scoreComprehension — empty input", () => {

@@ -41,7 +41,7 @@ type Context =
   | { kind: "unauthorized" }
   | { kind: "not_found" }
   | { kind: "no_transcript" }
-  | { kind: "ok"; title: string; lines: SummaryLine[]; input: AnalysisInput; key: KnowledgeKey };
+  | { kind: "ok"; title: string; lines: SummaryLine[]; analyses: Map<string, StaticLineAnalysis>; input: AnalysisInput; key: KnowledgeKey };
 
 /** The shared cache key of a lesson's analysis (spec §4.1), from its non-empty lines and their static analyses. */
 function analysisKey(videoId: string, locale: KnowledgeLocale, lines: SummaryLine[], analyses: Map<string, StaticLineAnalysis>) {
@@ -67,7 +67,7 @@ async function loadContext(supabase: SummaryAuth["supabase"], videoId: string, l
   const lines = summaryLines(transcript.data?.lines);
   if (lines.length === 0) return { kind: "no_transcript" };
   const analyses = await staticAnalyses(supabase, lines.map((line) => ({ id: line.id, textJp: line.textJp })), undefined, "full");
-  return { kind: "ok", title: video.title, lines, ...analysisKey(videoId, locale, lines, analyses) };
+  return { kind: "ok", title: video.title, lines, analyses, ...analysisKey(videoId, locale, lines, analyses) };
 }
 
 type EntryState =
@@ -133,7 +133,7 @@ export async function requestLessonAnalysis(
   const aiEnabled = deps.aiEnabled ?? isAiEnabled();
   const ready = async (content: unknown): Promise<AnalysisResponse> => ({
     status: "ready",
-    data: await hydrateAnalysis(auth.supabase, storedAnalysisSchema.parse(content), ctx.lines),
+    data: await hydrateAnalysis(auth.supabase, storedAnalysisSchema.parse(content), ctx.lines, ctx.analyses, locale),
   });
 
   if (mode === "read") {
@@ -189,7 +189,7 @@ export async function analysisStatusForReflection(
   const { key } = analysisKey(videoId, locale, lesson.lines, lesson.analyses);
   const state = await readEntryState(key, deps.now ?? new Date());
   if (state.kind === "ready") {
-    const view = await hydrateAnalysis(lesson.supabase, storedAnalysisSchema.parse(state.content), lesson.lines);
+    const view = await hydrateAnalysis(lesson.supabase, storedAnalysisSchema.parse(state.content), lesson.lines, lesson.analyses, locale);
     return { kind: "ready", fingerprint: key.fingerprint, view };
   }
   if (state.kind === "pending") return { kind: "pending" };

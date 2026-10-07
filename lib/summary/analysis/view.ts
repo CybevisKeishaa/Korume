@@ -1,3 +1,4 @@
+import type { MeaningLocale, MeaningSource } from "@/lib/analysis/meaning";
 import type { Commonness } from "./schema";
 
 /**
@@ -19,6 +20,8 @@ export interface WordView {
   written: string;
   reading: string;
   meaning: string;
+  meaningLocale: MeaningLocale;
+  meaningSource: MeaningSource;
   posKey: PosKey;
   jlpt: string | null;
   common: boolean;

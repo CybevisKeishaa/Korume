@@ -6,7 +6,8 @@ import type { SavedCard } from "@/lib/summary/snapshot";
 import type { WordView } from "@/lib/summary/analysis/view";
 import { LESSON_WORDS_FETCH, pageOf, wordRows } from "@/lib/summary/word-list";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "@/lib/i18n";
+import { useLocale, useTranslations } from "@/lib/i18n";
+import { EnglishChip } from "./english-chip";
 import { SaveToggle } from "./save-toggle";
 
 const ROW = "grid min-w-0 flex-1 gap-2xs sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] sm:items-center sm:gap-md";
@@ -14,6 +15,7 @@ const ROW = "grid min-w-0 flex-1 gap-2xs sm:grid-cols-[minmax(0,1fr)_minmax(0,1f
 /** The list view of "Words worth remembering": the AI's picks, then the lesson's most frequent words, 8 per page. */
 export function WordList({ videoId, words, savedCards }: { videoId: string; words: WordView[]; savedCards: SavedCard[] }) {
   const t = useTranslations("shadowing.lessonSummary.words");
+  const locale = useLocale();
   const [lessonWords, setLessonWords] = useState<LessonVocabularyItem[] | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [requestedPage, setRequestedPage] = useState(0);
@@ -35,7 +37,7 @@ export function WordList({ videoId, words, savedCards }: { videoId: string; word
     return () => controller.abort();
   }, [videoId]);
 
-  const { items, page, pageCount } = pageOf(wordRows(words, lessonWords), requestedPage);
+  const { items, page, pageCount } = pageOf(wordRows(words, lessonWords, locale), requestedPage);
   const atStart = page === 0;
   const atEnd = page === pageCount - 1;
 
@@ -59,7 +61,10 @@ export function WordList({ videoId, words, savedCards }: { videoId: string; word
               <div className={ROW}>
                 <span lang="ja" className="truncate text-body font-bold">{row.written}</span>
                 <span lang="ja" className="truncate text-caption text-muted-foreground">{row.reading}</span>
-                <span className="line-clamp-2 text-body sm:line-clamp-1" title={row.meaning}>{row.meaning}</span>
+                <span className="line-clamp-2 text-body sm:line-clamp-1" title={row.meaning}>
+                  {row.meaningLocale === "en" && <EnglishChip />}
+                  {row.meaning}
+                </span>
               </div>
               <SaveToggle sourceKind="vocabulary" lineId={row.lineId} targetWord={row.targetWord} savedCards={savedCards} />
             </li>

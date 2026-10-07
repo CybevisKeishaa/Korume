@@ -41,8 +41,8 @@ export function analysisFixture(lineIds: string[]): AnalysisResponse {
     data: {
       overview: "Everyday reading practice.",
       words: [
-        { entSeq: 1, surface: "今日", written: "今日", reading: "きょう", meaning: "today", posKey: "noun", jlpt: "N5", common: true, whyItMatters: "Useful every day.", usageNote: "Use it to refer to today.", source: source(0) },
-        { entSeq: 2, surface: "文", written: "文", reading: "ぶん", meaning: "sentence", posKey: "noun", jlpt: "N4", common: true, whyItMatters: "Names a written sentence.", usageNote: "Often used in study.", source: source(1) },
+        { entSeq: 1, surface: "今日", written: "今日", reading: "きょう", meaning: "today", meaningLocale: "en", meaningSource: "jmdict", posKey: "noun", jlpt: "N5", common: true, whyItMatters: "Useful every day.", usageNote: "Use it to refer to today.", source: source(0) },
+        { entSeq: 2, surface: "文", written: "文", reading: "ぶん", meaning: "sentence", meaningLocale: "en", meaningSource: "jmdict", posKey: "noun", jlpt: "N4", common: true, whyItMatters: "Names a written sentence.", usageNote: "Often used in study.", source: source(1) },
       ],
       expressions: [{ expression: "今日は", commonness: "very_common", meaningUse: "As for today", nuance: "Introduces today's topic.", source: source(2) }],
       grammar: [{ grammarId: "fixture-grammar", title: "〜ます", jlpt: "N5", meaningShort: "Polite present", explanation: "A polite verb ending.", tryIt: "文を読みます。", span: "読みます", source: source(3) }],

@@ -38,10 +38,10 @@ const spans = tokenSpans(TEXT, ["緑", "の", "雨", "です"]);
 const ANALYSIS: LexicalLineAnalysisDto = {
   lineId: "line-1", snapshotId: "s", mastery: {},
   tokens: [
-    { index: 0, surface: "緑", base: "緑", reading: "ミドリ", pos: "名詞", span: spans[0] ?? { start: 0, end: 0 }, entries: [{ entSeq: 10, headword: "緑", reading: "みどり", glossEn: "green", jlpt: null }], vocabId: null },
-    { index: 1, surface: "の", base: "の", reading: "ノ", pos: "助詞", span: spans[1] ?? { start: 0, end: 0 }, entries: [], vocabId: null },
-    { index: 2, surface: "雨", base: "雨", reading: "アメ", pos: "名詞", span: spans[2] ?? { start: 0, end: 0 }, entries: [{ entSeq: 20, headword: "雨", reading: "あめ", glossEn: "rain", jlpt: 5 }], vocabId: null },
-    { index: 3, surface: "です", base: "です", reading: "デス", pos: "助動詞", span: spans[3] ?? { start: 0, end: 0 }, entries: [], vocabId: null },
+    { index: 0, surface: "緑", base: "緑", reading: "ミドリ", pos: "名詞", posDetail1: null, span: spans[0] ?? { start: 0, end: 0 }, entries: [{ entSeq: 10, headword: "緑", reading: "みどり", glossEn: "green", jlpt: null }], vocabId: null, curatedVi: null },
+    { index: 1, surface: "の", base: "の", reading: "ノ", pos: "助詞", posDetail1: null, span: spans[1] ?? { start: 0, end: 0 }, entries: [], vocabId: null, curatedVi: null },
+    { index: 2, surface: "雨", base: "雨", reading: "アメ", pos: "名詞", posDetail1: null, span: spans[2] ?? { start: 0, end: 0 }, entries: [{ entSeq: 20, headword: "雨", reading: "あめ", glossEn: "rain", jlpt: 5 }], vocabId: null, curatedVi: null },
+    { index: 3, surface: "です", base: "です", reading: "デス", pos: "助動詞", posDetail1: null, span: spans[3] ?? { start: 0, end: 0 }, entries: [], vocabId: null, curatedVi: null },
   ],
 };
 const KANJI: KanjiData = {

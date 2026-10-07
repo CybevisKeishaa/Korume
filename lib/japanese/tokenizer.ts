@@ -52,6 +52,7 @@ function toToken(feature: kuromoji.IpadicFeatures): Token {
     reading,
     base,
     pos: feature.pos,
+    posDetail1: feature.pos_detail_1 && feature.pos_detail_1 !== "*" ? feature.pos_detail_1 : null,
   };
 }
 
