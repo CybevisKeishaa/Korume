@@ -2,7 +2,7 @@
 
 Branch `port-profile`, worktree `.worktrees/port-profile`, base master `2cee918`.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Goal and scope
 
@@ -28,7 +28,8 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T2 | accepted | `6486526`, `28d6632` (Codex draft, quota stop; Claude finished) |
 | T3 | accepted | `f3b105a`, `0d387d8` |
 | T4 | accepted | `24bf403`, `970d3ce`, `600499c` |
-| T5–T16 | not started | — |
+| T5 | accepted | `5cb4478`, `02b5fc7` (R-5a amends spec §5.2 start hygiene) |
+| T6–T16 | not started | — |
 
 ## Contracts and decisions
 
