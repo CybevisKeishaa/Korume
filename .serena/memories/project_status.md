@@ -1,6 +1,13 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-06 (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-07 (supersedes every block below)
+>
+> ⭐ **`print-vocabulary` MERGED → master `b4eac34`** (owner approved after the Chrome review; not pushed — the
+> owner pushes). Detail: `mem:print_vocabulary_run_state`. **No branch in flight** — the owner picks the next one.
+> Open: real-paper print check; Gọn density; main checkout needs `npm install` (`yauzl` missing → tsc red there).
+> Codex out of quota until 2026-10-10.
+>
+> ## (previous block) 2026-10-06
 >
 > ▶ **RESUME HERE: `print-vocabulary`** (worktree `.worktrees/print-vocabulary`, NOT merged) — read
 > `mem:print_vocabulary_run_state` first. V1 (review template, 10 tasks, `f33dab0`) finished, then the owner changed
