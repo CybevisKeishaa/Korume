@@ -97,9 +97,15 @@ describe("answerPrompt — learner profile (spec §6.4, R4)", () => {
     );
   });
 
-  it("keeps the input bound the system block plus the data cap, with the profile inside the cap", () => {
-    const { system, user } = answerPrompt({ ...base, learnerProfile: { ...full, learningGoal: "g".repeat(200) }, retrieval: [{ tool: "t", status: "ok", data: "x".repeat(40_000) }] });
-    expect(answerInputBytesUpperBound()).toBe(Buffer.byteLength(system[0]!.text, "utf8") + ANSWER_DATA_MAX_BYTES);
-    expect(Buffer.byteLength(user, "utf8")).toBeLessThanOrEqual(ANSWER_DATA_MAX_BYTES);
+  it("counts the profile inside the data cap: a result that fits without it is omitted with it", () => {
+    const bytes = (t: string) => Buffer.byteLength(t, "utf8");
+    const head0 = bytes(answerPrompt(base).user) - bytes("\n<retrieval></retrieval>");
+    const room = 24_000 - head0 - 64 - bytes(JSON.stringify({ tool: "t", status: "ok", data: "" }));
+    const retrieval = [{ tool: "t", status: "ok", data: "x".repeat(room) }];
+    expect(answerPrompt({ ...base, retrieval }).user).toContain('"status":"ok"');
+    const withProfile = answerPrompt({ ...base, retrieval, learnerProfile: { ...full, learningGoal: "g".repeat(200) } }).user;
+    expect(withProfile).toContain('"status":"omitted"');
+    expect(withProfile).not.toContain('"status":"ok"');
+    expect(answerInputBytesUpperBound()).toBe(bytes(answerPrompt(base).system[0]!.text) + ANSWER_DATA_MAX_BYTES);
   });
 });

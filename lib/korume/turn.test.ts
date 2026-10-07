@@ -264,6 +264,7 @@ describe("runTurn — learner profile (spec §6.4, R4)", () => {
     await runTurn(input(), deps());
     expect(readCachedSection).toHaveBeenCalled();
     expect(JSON.stringify(vi.mocked(readCachedSection).mock.calls)).not.toMatch(/Zebra-quartz|"vi"|N2|shadowing|nativeLanguage|learner/);
+    expect(JSON.stringify(knowledge.reservations)).not.toMatch(/Zebra-quartz|N2|shadowing|nativeLanguage|learner_profile/);
     expect(getOrGenerateSection).not.toHaveBeenCalled();
   });
 

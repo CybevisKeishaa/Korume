@@ -43,4 +43,11 @@ describe("readLearnerProfile", () => {
     const profile = await sqlKorumeStore.readLearnerProfile(client(row({ preferred_practices: ["reading"] })).supabase, ME);
     expect(profile).toEqual({ nativeLanguage: null, targetJlptLevel: null, learningGoal: null, preferredPractices: ["reading"] });
   });
+
+  it("drops what the app never allows: an unknown language and unknown or oversized practices", async () => {
+    const profile = await sqlKorumeStore.readLearnerProfile(
+      client(row({ native_language: "xx", preferred_practices: ["kanji", "x".repeat(30_000), "dancing"] })).supabase, ME);
+    expect(profile).toEqual({ nativeLanguage: null, targetJlptLevel: null, learningGoal: null, preferredPractices: ["kanji"] });
+    await expect(sqlKorumeStore.readLearnerProfile(client(row({ native_language: "xx", preferred_practices: ["dancing"] })).supabase, ME)).resolves.toBeNull();
+  });
 });
