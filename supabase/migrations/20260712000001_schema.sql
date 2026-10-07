@@ -45,10 +45,7 @@ create table users (
 
 create table user_stats (
   user_id uuid primary key references users (id) on delete cascade,
-  xp int not null default 0 check (xp >= 0),
-  streak_current int not null default 0 check (streak_current >= 0),
-  streak_longest int not null default 0 check (streak_longest >= 0),
-  last_active_date date
+  xp int not null default 0 check (xp >= 0)
 );
 
 -- Create the profile + stats rows automatically when an auth user is created.

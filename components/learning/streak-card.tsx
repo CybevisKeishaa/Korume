@@ -5,8 +5,8 @@ export interface StreakCardProps {
   streakCurrent: number;
   streakLongest: number;
   lastActiveDate: string | null;
-  /** VN-local 'yyyy-MM-dd' for "today", injected by the caller (`vnDateString(new Date())`
-   * server-side) so this component stays pure/deterministic and testable. */
+  /** The learner's local 'yyyy-MM-dd' for "today", injected by the caller (`getUserStats().today`)
+   * so this component stays pure/deterministic and testable. */
   today: string;
 }
 

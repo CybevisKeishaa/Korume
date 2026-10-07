@@ -41,10 +41,3 @@ export interface BadgeSnapshot {
   outcomeCounts: Partial<Record<LearningOutcomeSource, number>>;
   jlptMockLevelsCompleted: string[];
 }
-
-/** Daily streak state. `lastActiveDate` is a 'yyyy-MM-dd' VN-local (Asia/Ho_Chi_Minh) date string. */
-export interface StreakState {
-  current: number;
-  longest: number;
-  lastActiveDate: string | null;
-}

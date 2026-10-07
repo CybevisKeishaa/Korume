@@ -3,10 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data/videos";
 import { getReviewQueue } from "@/lib/data/srs";
 import { levelForXp, type LevelInfo } from "@/lib/gamification";
+import { readPreferences } from "@/lib/data/preferences";
+import { getStreak } from "@/lib/data/streak";
+import { getStudyTimezone } from "@/lib/time/study-timezone";
+import { studyDate } from "@/lib/time/study-day";
 
 /**
  * GET /api/user/stats data layer (spec §5 gamification dashboard). Reads
- * `user_stats` + the full badge catalog joined with the caller's earned
+ * `user_stats` + the derived streak + the full badge catalog joined with the caller's earned
  * badges + the SRS due-review count.
  */
 
@@ -34,6 +38,8 @@ export interface UserStatsData {
   streakCurrent: number;
   streakLongest: number;
   lastActiveDate: string | null;
+  /** The learner local date, 'yyyy-MM-dd', so callers never compute "today" themselves. */
+  today: string;
   badges: BadgeSummary[];
   srsDueCount: number;
 }
@@ -42,9 +48,6 @@ export type GetUserStatsResult = { ok: true; data: UserStatsData } | { ok: false
 
 interface StatsRow {
   xp: number;
-  streak_current: number;
-  streak_longest: number;
-  last_active_date: string | null;
 }
 
 interface BadgeRow {
@@ -77,13 +80,18 @@ export async function getUserStats(): Promise<GetUserStatsResult> {
 
   const { data: statsRow, error: statsError } = await supabase
     .from("user_stats")
-    .select("xp, streak_current, streak_longest, last_active_date")
+    .select("xp")
     .eq("user_id", user.id)
     .maybeSingle();
   if (statsError) throw statsError;
 
   const stats = statsRow as StatsRow | null;
   const xp = stats?.xp ?? 0;
+
+  const { timeZone } = await getStudyTimezone();
+  const now = new Date();
+  const prefs = await readPreferences(supabase, user.id);
+  const streak = await getStreak(supabase, user.id, timeZone, prefs.scheduleDays, now);
 
   const { data: badgeRows, error: badgeError } = await supabase
     .from("badges")
@@ -124,9 +132,10 @@ export async function getUserStats(): Promise<GetUserStatsResult> {
     data: {
       xp,
       level: levelForXp(xp),
-      streakCurrent: stats?.streak_current ?? 0,
-      streakLongest: stats?.streak_longest ?? 0,
-      lastActiveDate: stats?.last_active_date ?? null,
+      streakCurrent: streak.current,
+      streakLongest: streak.longest,
+      lastActiveDate: streak.lastActiveDate,
+      today: studyDate(now, timeZone),
       badges,
       srsDueCount: vocabDue.length + kanjiDue.length,
     },

@@ -1,3 +1,5 @@
+import type { IsoWeekday } from "@/lib/time/study-day";
+
 /** The one home of every Settings option list (spec §3). Zod, UI and the migration test import these. */
 export const LEARNING_SCHEDULE_OPTIONS = ["every_day", "weekdays", "custom"] as const;
 export const REVIEW_FREQUENCY_OPTIONS = ["normal", "more", "relaxed"] as const;
@@ -42,8 +44,7 @@ export type PlaybackLoopCount = (typeof PLAYBACK_LOOP_COUNT_OPTIONS)[number];
 export type ResumeBehavior = (typeof RESUME_BEHAVIOR_OPTIONS)[number];
 export type StudyAtmosphere = (typeof STUDY_ATMOSPHERE_OPTIONS)[number];
 export type SentenceMarkKind = (typeof SENTENCE_MARK_KINDS)[number];
-/** ISO weekday, Monday = 1 … Sunday = 7, taken from the VN-local date (spec §4.3). */
-export type IsoWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type { IsoWeekday };
 
 export const ALL_DAYS: IsoWeekday[] = [1, 2, 3, 4, 5, 6, 7];
 export const WEEKDAYS: IsoWeekday[] = [1, 2, 3, 4, 5];

@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { JLPT_LEVELS, type JlptLevel } from "@/lib/conversation-types";
-import { vnDateString } from "@/lib/gamification/streak";
+import { FALLBACK_STUDY_TIMEZONE, studyDate } from "@/lib/time/study-day";
 
 export type PronunciationMetric = "accuracy" | "pitch" | "rhythm";
 export type PronunciationMetricMeans = Record<PronunciationMetric, number | null>;
@@ -62,7 +62,7 @@ export function getWeeklyPronunciationMetrics(now: Date = new Date()) {
 
 /** Midnight of the VN-local day holding `instant` (the streak's fixed UTC+7 day). */
 export function vnDayStart(instant: Date): Date {
-  return new Date(`${vnDateString(instant)}T00:00:00+07:00`);
+  return new Date(`${studyDate(instant, FALLBACK_STUDY_TIMEZONE)}T00:00:00+07:00`);
 }
 
 /** Whole VN-local days from `instant` to `now`: 0 today, 1 yesterday. */

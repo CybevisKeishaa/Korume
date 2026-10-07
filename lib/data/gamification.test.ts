@@ -15,19 +15,26 @@ vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 import { recordActivity } from "./gamification";
 
 const USER_ID = "u1";
-// 2026-07-13T04:00:00Z + 7h (VN offset) = 2026-07-13T11:00 VN -> vnDateString = "2026-07-13".
+// 2026-07-13T04:00:00Z is 2026-07-12T21:00 in the mocked America/Los_Angeles zone.
 const NOW = new Date("2026-07-13T04:00:00.000Z");
 
-type Award = { xp_awarded: number; prev_xp: number; next_xp: number };
-const FRESH_AWARD: Award = { xp_awarded: 5, prev_xp: 0, next_xp: 5 };
-const DUPLICATE_AWARD: Award = { xp_awarded: 0, prev_xp: 50, next_xp: 50 };
+type Award = { xp_awarded: number; prev_xp: number; next_xp: number; had_outcome_today: boolean };
+const FRESH_AWARD: Award = { xp_awarded: 5, prev_xp: 0, next_xp: 5, had_outcome_today: false };
+const DUPLICATE_AWARD: Award = { xp_awarded: 0, prev_xp: 50, next_xp: 50, had_outcome_today: true };
+type StreakRow = { current_streak: number; longest_streak: number; last_active: string | null };
+const ONE_DAY: StreakRow = { current_streak: 1, longest_streak: 1, last_active: "2026-07-12" };
 
-function mockService(tables: Parameters<typeof createMockSupabase>[0]["tables"], award: Award | "error" = FRESH_AWARD) {
+function mockService(
+  tables: Parameters<typeof createMockSupabase>[0]["tables"],
+  award: Award | "error" = FRESH_AWARD,
+  streak: StreakRow = ONE_DAY,
+) {
   const supabase = createMockSupabase({
     tables,
     rpcs: {
       record_learning_outcome: () =>
         award === "error" ? { data: null, error: { message: "boom" } } : { data: [award], error: null },
+      study_streak: () => ({ data: [streak], error: null }),
     },
   });
   vi.mocked(createServiceClient).mockReturnValue(supabase as unknown as ReturnType<typeof createServiceClient>);
@@ -38,13 +45,18 @@ function hasOp(calls: QueryCall[], op: QueryCall["op"]) {
   return calls.some((c) => c.op === op);
 }
 
-/** No badges seeded / none earned yet — the common case for tests that don't care about badges. */
+/** No badges seeded / none earned yet - the common case for tests that do not care about badges. */
 const NO_BADGES_TABLES = {
   user_badges: () => ({ data: [], error: null }),
   badges: () => ({ data: [], error: null }),
 };
 
-const FRESH_STATS = { xp: 0, streak_current: 0, streak_longest: 0, last_active_date: null };
+/** The tables a badge-evaluating run reads; user_stats is deliberately absent (the RPC owns it). */
+const BASE_TABLES = {
+  xp_events: () => ({ data: [], error: null }),
+  user_kanji_progress: () => ({ data: [], error: null }),
+  user_test_attempts: () => ({ data: [], error: null }),
+};
 
 beforeEach(() => {
   vi.mocked(createServiceClient).mockReset();
@@ -56,77 +68,30 @@ beforeEach(() => {
 });
 
 describe("recordActivity", () => {
-  it("uses the learning schedule when advancing a streak", async () => {
-    let statsUpdate: unknown;
+  it("derives the streak from the learner zone, schedule and local date, and writes no user_stats", async () => {
     vi.mocked(readPreferences).mockResolvedValue({ ...DEFAULT_PREFERENCES, learningSchedule: "weekdays" as const, scheduleDays: [1, 2, 3, 4, 5] });
-    mockService({
-      xp_events: () => ({ data: [], error: null }),
-      user_stats: (calls) => {
-        if (hasOp(calls, "upsert")) {
-          statsUpdate = calls.find((call) => call.op === "upsert")?.values;
-          return { data: null, error: null };
-        }
-        return { data: { xp: 0, streak_current: 4, streak_longest: 4, last_active_date: "2026-09-18" }, error: null };
-      },
-      user_kanji_progress: () => ({ data: [], error: null }),
-      user_test_attempts: () => ({ data: [], error: null }),
-      ...NO_BADGES_TABLES,
-    });
+    const supabase = mockService({ ...BASE_TABLES, ...NO_BADGES_TABLES });
 
-    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: new Date("2026-09-21T05:00:00Z") });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
 
     expect(result.ok).toBe(true);
-    expect((statsUpdate as Record<string, unknown>).streak_current).toBe(5);
+    expect(supabase.rpcCalls).toContainEqual({
+      name: "study_streak",
+      args: { p_user: USER_ID, p_tz: "America/Los_Angeles", p_schedule: [1, 2, 3, 4, 5], p_today: "2026-07-12" },
+    });
   });
 
-  it("awards xp, starts the streak, and updates user_stats on a fresh outcome", async () => {
-    let statsUpdate: unknown;
-    mockService({
-      xp_events: () => ({ data: [], error: null }),
-      user_stats: (calls) => {
-        if (hasOp(calls, "upsert")) {
-          statsUpdate = calls.find((c) => c.op === "upsert")?.values;
-          return { data: null, error: null };
-        }
-        return { data: FRESH_STATS, error: null };
-      },
-      user_kanji_progress: () => ({ data: [], error: null }),
-      user_test_attempts: () => ({ data: [], error: null }),
-      ...NO_BADGES_TABLES,
-    });
-
-    const result = await recordActivity({
-      userId: USER_ID,
-      source: "srs_review",
-      parts: { itemType: "kanji", itemId: "k1" },
-      now: NOW,
-    });
-
+  it("awards xp on a fresh outcome", async () => {
+    mockService({ ...BASE_TABLES, ...NO_BADGES_TABLES });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
     expect(result).toEqual({ ok: true, xpAwarded: 5, newBadges: [], leveledUp: false });
-    expect(statsUpdate).not.toHaveProperty("xp");
-    expect((statsUpdate as Record<string, unknown>).streak_current).toBe(1);
-    expect((statsUpdate as Record<string, unknown>).last_active_date).toBe("2026-07-13");
   });
 
   it("detects a level-up boundary and emits a level_up notification", async () => {
-    mockService({
-      xp_events: () => ({ data: [], error: null }),
-      user_stats: (calls) =>
-        hasOp(calls, "upsert")
-          ? { data: null, error: null }
-          : { data: { xp: 95, streak_current: 3, streak_longest: 5, last_active_date: "2026-07-12" }, error: null },
-      user_kanji_progress: () => ({ data: [], error: null }),
-      user_test_attempts: () => ({ data: [], error: null }),
-      ...NO_BADGES_TABLES,
-    }, { xp_awarded: 5, prev_xp: 95, next_xp: 100 });
+    mockService({ ...BASE_TABLES, ...NO_BADGES_TABLES }, { xp_awarded: 5, prev_xp: 95, next_xp: 100, had_outcome_today: false });
 
     // 95 + 5 (srs_review) = 100 == thresholdForLevel(2) -> level 1 -> level 2.
-    const result = await recordActivity({
-      userId: USER_ID,
-      source: "srs_review",
-      parts: { itemType: "vocab", itemId: "v1" },
-      now: NOW,
-    });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "vocab", itemId: "v1" }, now: NOW });
 
     expect(result.leveledUp).toBe(true);
     expect(emitNotification).toHaveBeenCalledWith(expect.anything(), {
@@ -138,11 +103,8 @@ describe("recordActivity", () => {
 
   it("awards a newly-satisfied badge and emits badge_earned", async () => {
     mockService({
+      ...BASE_TABLES,
       xp_events: () => ({ data: [{ source_type: "dictation" }], error: null }),
-      user_stats: (calls) =>
-        hasOp(calls, "upsert") ? { data: null, error: null } : { data: FRESH_STATS, error: null },
-      user_kanji_progress: () => ({ data: [], error: null }),
-      user_test_attempts: () => ({ data: [], error: null }),
       user_badges: (calls) =>
         hasOp(calls, "upsert") ? { data: [{ badge_id: "badge-1" }], error: null } : { data: [], error: null },
       badges: () => ({
@@ -151,12 +113,7 @@ describe("recordActivity", () => {
       }),
     });
 
-    const result = await recordActivity({
-      userId: USER_ID,
-      source: "dictation",
-      parts: { lineId: "line-1" },
-      now: NOW,
-    });
+    const result = await recordActivity({ userId: USER_ID, source: "dictation", parts: { lineId: "line-1" }, now: NOW });
 
     expect(result.newBadges).toEqual(["badge-1"]);
     expect(emitNotification).toHaveBeenCalledWith(expect.anything(), {
@@ -166,13 +123,26 @@ describe("recordActivity", () => {
     });
   });
 
+  it("hands the RPC current_streak to the badge snapshot", async () => {
+    const tables = {
+      ...BASE_TABLES,
+      user_badges: (calls: QueryCall[]) =>
+        hasOp(calls, "upsert") ? { data: [{ badge_id: "streak-3" }], error: null } : { data: [], error: null },
+      badges: () => ({ data: [{ id: "streak-3", name: "three", criteria: { type: "streak", days: 3 } }], error: null }),
+    };
+    mockService(tables, FRESH_AWARD, { current_streak: 3, longest_streak: 3, last_active: "2026-07-12" });
+    const earned = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    expect(earned.newBadges).toEqual(["streak-3"]);
+
+    mockService(tables, FRESH_AWARD, { current_streak: 2, longest_streak: 9, last_active: "2026-07-12" });
+    const notYet = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    expect(notYet.newBadges).toEqual([]);
+  });
+
   it("does not re-emit or re-award a badge already earned", async () => {
     mockService({
+      ...BASE_TABLES,
       xp_events: () => ({ data: [{ source_type: "dictation" }], error: null }),
-      user_stats: (calls) =>
-        hasOp(calls, "upsert") ? { data: null, error: null } : { data: FRESH_STATS, error: null },
-      user_kanji_progress: () => ({ data: [], error: null }),
-      user_test_attempts: () => ({ data: [], error: null }),
       user_badges: () => ({ data: [{ badge_id: "badge-1" }], error: null }), // already earned
       badges: () => ({
         data: [{ id: "badge-1", name: "first_steps", criteria: { type: "sessions", count: 1 } }],
@@ -180,12 +150,7 @@ describe("recordActivity", () => {
       }),
     });
 
-    const result = await recordActivity({
-      userId: USER_ID,
-      source: "dictation",
-      parts: { lineId: "line-1" },
-      now: NOW,
-    });
+    const result = await recordActivity({ userId: USER_ID, source: "dictation", parts: { lineId: "line-1" }, now: NOW });
 
     expect(result.newBadges).toEqual([]);
     expect(emitNotification).not.toHaveBeenCalledWith(
@@ -194,62 +159,57 @@ describe("recordActivity", () => {
     );
   });
 
-  it("awards no xp on a duplicate outcome but still advances the streak", async () => {
-    let statsUpdate: unknown;
+  it("never revokes a badge when the derived streak shrinks", async () => {
+    const badgeCalls: QueryCall[] = [];
     mockService({
-      xp_events: () => ({ data: [], error: null }),
-      user_stats: (calls) => {
-        if (hasOp(calls, "upsert")) {
-          statsUpdate = calls.find((c) => c.op === "upsert")?.values;
-          return { data: null, error: null };
-        }
-        // last_active_date is "yesterday" (VN) relative to NOW -> consecutive day.
-        return { data: { xp: 50, streak_current: 2, streak_longest: 2, last_active_date: "2026-07-12" }, error: null };
+      ...BASE_TABLES,
+      user_badges: (calls) => {
+        badgeCalls.push(...calls);
+        return { data: [{ badge_id: "streak-7" }], error: null };
       },
-      user_kanji_progress: () => ({ data: [], error: null }),
-      user_test_attempts: () => ({ data: [], error: null }),
-      ...NO_BADGES_TABLES,
-    }, DUPLICATE_AWARD);
+      badges: () => ({ data: [{ id: "streak-7", name: "seven", criteria: { type: "streak", days: 7 } }], error: null }),
+    }, FRESH_AWARD, { current_streak: 0, longest_streak: 7, last_active: "2026-07-01" });
 
-    const result = await recordActivity({
-      userId: USER_ID,
-      source: "srs_review",
-      parts: { itemType: "kanji", itemId: "k1" },
-      now: NOW,
-    });
+    await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
 
-    expect(result.ok).toBe(true);
-    expect(result.xpAwarded).toBe(0);
-    expect((statsUpdate as Record<string, unknown>).streak_current).toBe(3);
-    expect(statsUpdate).not.toHaveProperty("xp");
+    expect(badgeCalls.length).toBeGreaterThan(0);
+    expect(hasOp(badgeCalls, "delete")).toBe(false);
+    expect(hasOp(badgeCalls, "update")).toBe(false);
   });
 
-  it("skips the badge-snapshot aggregate when the outcome is a duplicate AND the streak is unchanged", async () => {
+  it("still evaluates badges on a duplicate outcome that is the first of the learner day", async () => {
     let kanjiQueried = false;
     mockService({
-      xp_events: () => ({ data: [], error: null }),
-      user_stats: (calls) =>
-        hasOp(calls, "upsert")
-          ? { data: null, error: null }
-          // last_active_date already == today (VN) -> advanceStreak is a no-op.
-          : { data: { xp: 50, streak_current: 2, streak_longest: 2, last_active_date: "2026-07-13" }, error: null },
+      ...BASE_TABLES,
       user_kanji_progress: () => {
         kanjiQueried = true;
         return { data: [], error: null };
       },
-      user_test_attempts: () => ({ data: [], error: null }),
+      ...NO_BADGES_TABLES,
+    }, { ...DUPLICATE_AWARD, had_outcome_today: false });
+
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+
+    expect(result).toMatchObject({ ok: true, xpAwarded: 0 });
+    expect(kanjiQueried).toBe(true);
+  });
+
+  it("skips the streak and badge work when no xp was awarded AND the learner already had an outcome today", async () => {
+    let kanjiQueried = false;
+    const supabase = mockService({
+      ...BASE_TABLES,
+      user_kanji_progress: () => {
+        kanjiQueried = true;
+        return { data: [], error: null };
+      },
       ...NO_BADGES_TABLES,
     }, DUPLICATE_AWARD);
 
-    const result = await recordActivity({
-      userId: USER_ID,
-      source: "srs_review",
-      parts: { itemType: "kanji", itemId: "k1" },
-      now: NOW,
-    });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
 
     expect(result).toEqual({ ok: true, xpAwarded: 0, newBadges: [], leveledUp: false });
     expect(kanjiQueried).toBe(false);
+    expect(supabase.rpcCalls?.some((c) => c.name === "study_streak")).toBe(false);
     expect(emitNotification).not.toHaveBeenCalled();
   });
 
@@ -257,12 +217,7 @@ describe("recordActivity", () => {
     mockService({}, "error");
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const result = await recordActivity({
-      userId: USER_ID,
-      source: "srs_review",
-      parts: { itemType: "kanji", itemId: "k1" },
-      now: NOW,
-    });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
 
     expect(result).toEqual({ ok: false, xpAwarded: 0, newBadges: [], leveledUp: false });
     expect(consoleError).toHaveBeenCalled();
@@ -271,13 +226,9 @@ describe("recordActivity", () => {
 
   it("computes jlpt_submit xp by mode and awards through the locked RPC with a date-free source_id", async () => {
     const supabase = mockService({
-      xp_events: () => ({ data: [], error: null }),
-      user_stats: (calls) =>
-        hasOp(calls, "upsert") ? { data: null, error: null } : { data: FRESH_STATS, error: null },
-      user_kanji_progress: () => ({ data: [], error: null }),
-      user_test_attempts: () => ({ data: [], error: null }),
+      ...BASE_TABLES,
       ...NO_BADGES_TABLES,
-    }, { xp_awarded: 50, prev_xp: 0, next_xp: 50 });
+    }, { xp_awarded: 50, prev_xp: 0, next_xp: 50, had_outcome_today: false });
 
     const result = await recordActivity({
       userId: USER_ID,
@@ -297,8 +248,6 @@ describe("recordActivity", () => {
   it("resolves jlptMockLevelsCompleted from user_test_attempts joined to certification_tests for badge evaluation", async () => {
     mockService({
       xp_events: () => ({ data: [{ source_type: "jlpt_submit" }], error: null }),
-      user_stats: (calls) =>
-        hasOp(calls, "upsert") ? { data: null, error: null } : { data: FRESH_STATS, error: null },
       user_kanji_progress: () => ({ data: [], error: null }),
       user_test_attempts: (calls) => {
         expect(calls.some((c) => c.op === "eq" && c.column === "mode" && c.value === "full")).toBe(true);
@@ -330,7 +279,6 @@ describe("recordActivity", () => {
   it("treats conversation as once-only and takes the award from the RPC row", async () => {
     const supabase = mockService({
       xp_events: () => ({ data: [], error: null }),
-      user_stats: () => ({ data: FRESH_STATS, error: null }),
       user_kanji_progress: () => ({ data: [], error: null }),
       user_test_attempts: () => ({ data: [], error: null }),
       ...NO_BADGES_TABLES,
@@ -344,11 +292,6 @@ describe("recordActivity", () => {
     const writes: string[] = [];
     const supabase = mockService({
       xp_events: (calls) => { if (calls.some((c) => c.op === "upsert" || c.op === "insert")) writes.push("xp_events"); return { data: [], error: null }; },
-      user_stats: (calls) => {
-        const w = calls.find((c) => c.op === "upsert");
-        if (w) { writes.push(Object.keys(w.values as object).includes("xp") ? "xp" : "stats"); return { data: null, error: null }; }
-        return { data: FRESH_STATS, error: null };
-      },
       user_kanji_progress: () => ({ data: [], error: null }),
       user_test_attempts: () => ({ data: [], error: null }),
       ...NO_BADGES_TABLES,
@@ -356,6 +299,5 @@ describe("recordActivity", () => {
     await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "vocab", itemId: "v1" }, now: NOW });
     expect(getStudyTimezoneFor).toHaveBeenCalledWith(supabase, USER_ID);
     expect(writes).not.toContain("xp_events");
-    expect(writes).not.toContain("xp");
   });
 });
