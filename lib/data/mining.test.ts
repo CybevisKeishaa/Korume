@@ -3,6 +3,7 @@ import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { createMiningCard, deleteMiningCard, getMiningQueue } from "./mining";
 
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezoneFor: vi.fn().mockResolvedValue("Asia/Ho_Chi_Minh") }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
 const LINE_ID = "10000000-0000-4000-8000-000000000001";

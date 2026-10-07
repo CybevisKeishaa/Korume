@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   advanceStreak,
+  DAILY_SOURCES,
   evaluateBadges,
   levelForXp,
   sourceIdFor,
@@ -17,6 +18,7 @@ import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
 import { readPreferences } from "@/lib/data/preferences";
 import { captureCompanionMemories } from "@/lib/data/companion";
 import { emitNotification } from "@/lib/notifications/emit";
+import { getStudyTimezoneFor } from "@/lib/time/study-timezone";
 
 /**
  * Award pipeline for completed learning outcomes (CLAUDE.md §5,
@@ -89,24 +91,22 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
       ? xpForOutcome("jlpt_submit", { mode: parts.mode ?? "full" })
       : xpForOutcome(input.source);
 
-  const sourceId = sourceIdFor(input.source, parts, now);
-
-  // 1. Award XP — insert-or-ignore on the natural (user, source, sourceId)
-  // key. `data` comes back null only when the row already existed (the
-  // unique constraint fired and PostgREST's ON CONFLICT DO NOTHING skipped
-  // it) — principle G1: outcomes, not repetition, so re-grinding the same
-  // item on the same VN day never re-awards XP.
-  const { data: xpEventRow, error: xpEventError } = await supabase
-    .from("xp_events")
-    .upsert(
-      { user_id: input.userId, source_type: input.source, source_id: sourceId, xp: xpAmount },
-      { onConflict: "user_id,source_type,source_id", ignoreDuplicates: true },
-    )
-    .select("id")
-    .maybeSingle();
-  if (xpEventError) throw xpEventError;
-  const isNewXp = xpEventRow != null;
-  const xpAwarded = isNewXp ? xpAmount : 0;
+  const timeZone = await getStudyTimezoneFor(supabase, input.userId);
+  const { data: awardRows, error: awardError } = await supabase.rpc("record_learning_outcome", {
+    p_user: input.userId,
+    p_source: input.source,
+    p_source_id: sourceIdFor(input.source, parts),
+    p_xp: xpAmount,
+    p_tz: timeZone,
+    p_daily: DAILY_SOURCES.includes(input.source),
+  });
+  if (awardError) throw awardError;
+  const award = (awardRows as { xp_awarded: number; prev_xp: number; next_xp: number }[] | null)?.[0];
+  if (!award) throw new Error("record_learning_outcome returned no row");
+  const isNewXp = award.xp_awarded > 0;
+  const xpAwarded = award.xp_awarded;
+  const prevXp = award.prev_xp;
+  const nextXp = award.next_xp;
 
   // 2. Streak + xp bookkeeping. The user WAS active today regardless of
   // whether this specific outcome had already been awarded today, so the
@@ -121,7 +121,6 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
   const stats = statsRow as
     | { xp: number; streak_current: number; streak_longest: number; last_active_date: string | null }
     | null;
-  const prevXp = stats?.xp ?? 0;
   const prevStreak: StreakState = {
     current: stats?.streak_current ?? 0,
     longest: stats?.streak_longest ?? 0,
@@ -129,7 +128,6 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
   };
   const prefs = await readPreferences(supabase, input.userId);
   const nextStreak = advanceStreak(prevStreak, now, prefs.scheduleDays);
-  const nextXp = prevXp + xpAwarded;
   const leveledUp = levelForXp(prevXp).level < levelForXp(nextXp).level;
   const streakChanged =
     nextStreak.current !== prevStreak.current || nextStreak.lastActiveDate !== prevStreak.lastActiveDate;
@@ -137,7 +135,6 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
   const { error: statsUpdateError } = await supabase.from("user_stats").upsert(
     {
       user_id: input.userId,
-      xp: nextXp,
       streak_current: nextStreak.current,
       streak_longest: nextStreak.longest,
       last_active_date: nextStreak.lastActiveDate,

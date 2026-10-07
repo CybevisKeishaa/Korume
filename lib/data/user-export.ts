@@ -17,6 +17,7 @@ export const PRIMARY_KEY_COLUMNS: Record<string, readonly string[]> = {
   user_stats: ["user_id"],
   user_badges: ["user_id", "badge_id"],
   xp_events: ["id"],
+  learning_outcomes: ["id"],
   user_kanji_progress: ["user_id", "kanji_id"],
   user_vocab_progress: ["user_id", "vocab_id"],
   user_grammar_progress: ["user_id", "grammar_id"],

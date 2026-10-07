@@ -9,6 +9,17 @@ export interface StudyTimezone {
   needsDetection: boolean;
 }
 
+/** The stored zone for an explicit user, for server work that has no request. */
+export async function getStudyTimezoneFor(
+  service: import("@supabase/supabase-js").SupabaseClient,
+  userId: string,
+): Promise<string> {
+  const { data, error } = await service.from("users").select("study_timezone").eq("id", userId).maybeSingle();
+  if (error) throw error;
+  const stored = (data as { study_timezone: string | null } | null)?.study_timezone ?? null;
+  return (stored && canonicalTimeZone(stored)) ?? FALLBACK_STUDY_TIMEZONE;
+}
+
 /** Resolve once per request. Only a null column invites browser detection. */
 export const getStudyTimezone = cache(async (): Promise<StudyTimezone> => {
   if (!hasPublicSupabaseEnv()) return { timeZone: FALLBACK_STUDY_TIMEZONE, needsDetection: false };

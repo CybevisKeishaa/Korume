@@ -26,9 +26,14 @@ create table xp_events (
   )),
   source_id text not null,
   xp int not null check (xp > 0),
-  created_at timestamptz not null default now(),
-  unique (user_id, source_type, source_id)
+  created_at timestamptz not null default now()
 );
+
+-- Daily eligibility depends on the learner's local day and is checked under
+-- the per-user lock in record_learning_outcome.
+create unique index xp_events_once_only_uq on xp_events (user_id, source_type, source_id)
+  where source_type = 'conversation';
+create index idx_xp_events_user_source on xp_events (user_id, source_type, source_id, created_at);
 
 alter table xp_events enable row level security;
 

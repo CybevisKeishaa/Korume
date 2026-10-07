@@ -1,4 +1,4 @@
-﻿import { addDays, isoWeekday, studyDate, studyDayStart } from "@/lib/time/study-day";
+import { addDays, isoWeekday, studyDate, studyDayStart } from "@/lib/time/study-day";
 
 /** One shared competition week for every learner, independent of study timezone. */
 export const LEADERBOARD_WEEK_TIMEZONE = "Asia/Ho_Chi_Minh";

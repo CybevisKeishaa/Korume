@@ -26,6 +26,7 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
   { table: "user_stats", userColumn: "user_id" },
   { table: "user_badges", userColumn: "user_id" },
   { table: "xp_events", userColumn: "user_id" },
+  { table: "learning_outcomes", userColumn: "user_id" },
   { table: "user_kanji_progress", userColumn: "user_id" },
   { table: "user_vocab_progress", userColumn: "user_id" },
   { table: "user_grammar_progress", userColumn: "user_id" },
