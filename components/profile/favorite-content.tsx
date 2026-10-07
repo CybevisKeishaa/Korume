@@ -5,11 +5,11 @@ const KNOWN = ["youtube", "nhk", "podcast", "drama", "anime", "vlog", "news"] as
 type Known = (typeof KNOWN)[number];
 const isKnown = (s: string): s is Known => (KNOWN as readonly string[]).includes(s);
 
-export function FavoriteContent({ sources }: { sources: string[] | null }) {
+export function FavoriteContent({ sources, className }: { sources: string[] | null; className?: string }) {
   const t = useTranslations("profile");
   const known = (sources ?? []).filter(isKnown);
   return (
-    <section className={CARD} aria-labelledby="profile-favorite">
+    <section className={`${CARD} ${className ?? ""}`} aria-labelledby="profile-favorite">
       <h2 id="profile-favorite" className={EYEBROW}>{t("favorite.title")}</h2>
       {known.length === 0 ? (
         <p className="mt-sm text-sm text-muted-foreground">{t("favorite.empty")}</p>

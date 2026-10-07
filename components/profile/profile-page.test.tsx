@@ -30,4 +30,9 @@ describe("ProfilePage", () => {
     expect(screen.getByText(en.korume.title)).toBeInTheDocument();
     expect(screen.queryByText(en.memory.eyebrow)).toBeNull();
   });
+
+  it("puts Korumeship alone in its row when there is no memory today", () => {
+    const { container } = render(<ProfilePage view={makeView({ todaysMemory: null })} />);
+    expect(container.querySelector(".profile-pair")?.children).toHaveLength(1);
+  });
 });

@@ -2,10 +2,10 @@ import { Link } from "@/lib/i18n/navigation";
 import { useTranslations } from "@/lib/i18n";
 import { CARD_WARM, EYEBROW, LINK } from "./card-styles";
 
-export function PersonalGoal({ goal }: { goal: string | null }) {
+export function PersonalGoal({ goal, className }: { goal: string | null; className?: string }) {
   const t = useTranslations("profile");
   return (
-    <section className={CARD_WARM} aria-labelledby="profile-goal">
+    <section className={`${CARD_WARM} ${className ?? ""}`} aria-labelledby="profile-goal">
       <h2 id="profile-goal" className={EYEBROW}>{t("goal.eyebrow")}</h2>
       {goal ? (
         <>

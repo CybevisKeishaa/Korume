@@ -40,16 +40,16 @@ export function ProfilePage({ view }: { view: ProfileView }) {
             <QuickStats stats={view.stats} />
           </div>
           <div className="profile-main">
-            <LearningJourney items={view.journey} />
+            <LearningJourney items={view.journey} className="profile-card--journey" />
             {view.korumeship && (
-              <div className="profile-pair">
-                <KorumeshipCard since={view.korumeship.since} />
+              <div className="profile-pair profile-card--korume">
+                <KorumeshipCard since={view.korumeship.since} timeZone={view.identity.timeZone} />
                 {view.todaysMemory && <TodaysMemoryCard memory={view.todaysMemory} />}
               </div>
             )}
-            <FavoriteContent sources={view.favoriteSources} />
-            <PersonalGoal goal={view.identity.learningGoal} />
-            <AchievementsCard achievements={view.achievements} />
+            <FavoriteContent sources={view.favoriteSources} className="profile-card--favorite" />
+            <PersonalGoal goal={view.identity.learningGoal} className="profile-card--goal" />
+            <AchievementsCard achievements={view.achievements} className="profile-card--achievements" />
           </div>
         </div>
       </div>

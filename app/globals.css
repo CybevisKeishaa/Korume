@@ -1697,16 +1697,16 @@
 .profile-pair { grid-template-columns: minmax(0, 1fr); }
 @container profile (width >= 56.25rem) {
   .profile-grid { grid-template-columns: 17.5rem minmax(0, 1fr); }
-  .profile-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-pair { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
 }
 @container profile (width >= 72.5rem) {
-  .profile-grid { grid-template-columns: 17.5rem minmax(0, 1fr) 15.5rem; }
+  .profile-grid { grid-template-columns: 17.5rem minmax(0, 1fr) 15.5rem; grid-template-rows: auto auto 1fr; align-items: start; }
   .profile-main { display: contents; }
   .profile-rail { grid-column: 1 / 2; grid-row: 1 / span 3; }
-  .profile-main > :nth-child(1) { grid-column: 2 / 3; grid-row: 1 / 2; }
-  .profile-main > .profile-pair { grid-template-columns: minmax(0, 1fr); grid-column: 3 / 4; grid-row: 1 / 2; }
-  .profile-main > :nth-last-child(3) { grid-column: 2 / 3; grid-row: 2 / 3; }
-  .profile-main > :nth-last-child(2) { grid-column: 2 / 3; grid-row: 3 / 4; }
-  .profile-main > :last-child { grid-column: 3 / 4; grid-row: 2 / 3; align-self: start; }
-  .profile-grid:not(:has(.profile-pair)) .profile-main > :last-child { grid-row: 1 / 2; }
+  .profile-card--journey { grid-column: 2 / 3; grid-row: 1 / 2; }
+  .profile-card--korume { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); grid-column: 3 / 4; grid-row: 1 / 2; }
+  .profile-card--favorite { grid-column: 2 / 3; grid-row: 2 / 3; }
+  .profile-card--goal { grid-column: 2 / 3; grid-row: 3 / 4; }
+  .profile-card--achievements { grid-column: 3 / 4; grid-row: 1 / 2; }
+  .profile-card--korume ~ .profile-card--achievements { grid-row: 2 / 3; }
 }

@@ -69,4 +69,11 @@ describe("IdentityCard", () => {
     rerender(<IdentityCard identity={model()} variant="preview" />);
     expect(screen.queryByRole("link", { name: t.changePhoto })).toBeNull();
   });
+
+  it("keeps the since sentence out of any term/definition list", () => {
+    render(<IdentityCard identity={model()} variant="page" />);
+    const row = screen.getByText("Learning with Korume since March 2026");
+    expect(row.closest("dt")).toBeNull();
+    expect(row.closest("dl")).toBeNull();
+  });
 });

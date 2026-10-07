@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/test/render";
 import en from "@/messages/en/profile.json";
 import { LearningJourney } from "./learning-journey";
@@ -34,5 +34,14 @@ describe("LearningJourney", () => {
   it("invites the first lesson when empty", () => {
     render(<LearningJourney items={[]} />);
     expect(screen.getByRole("link", { name: t.emptyCta })).toHaveAttribute("href", expect.stringContaining("/shadowing"));
+  });
+
+  it("renders two same-kind same-instant milestones without a duplicate key", () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const at = "2026-08-01T00:00:00.000Z";
+    render(<LearningJourney items={[{ kind: "badge_earned", at, label: "A" }, { kind: "badge_earned", at, label: "B" }]} />);
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

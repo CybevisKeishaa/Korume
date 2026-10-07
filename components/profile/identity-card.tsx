@@ -82,14 +82,14 @@ export function IdentityCard({ identity, variant, actions }: { identity: Profile
       <Name className="text-2xl font-bold [overflow-wrap:anywhere]">{identity.displayName}</Name>
       {identity.username && <p className="text-sm text-muted-foreground">@{identity.username}</p>}
       {identity.bio && <p className="text-sm [overflow-wrap:anywhere]">{identity.bio}</p>}
-      <dl className="mt-sm grid w-full gap-sm border-t border-border pt-md text-start text-sm">
+      <ul className="mt-sm grid w-full gap-sm border-t border-border pt-md text-start text-sm">
         {rows.map((r) => (
-          <div key={r.label}>
-            <dt className="flex items-center gap-xs text-muted-foreground"><ProfileIcon name={r.icon} />{r.label}</dt>
-            {r.value && <dd className="ps-[calc(var(--icon-sm)+var(--space-xs))] font-medium">{r.value}</dd>}
-          </div>
+          <li key={r.label}>
+            <span className="flex items-center gap-xs text-muted-foreground"><ProfileIcon name={r.icon} />{r.label}</span>
+            {r.value && <span className="block ps-[calc(var(--icon-sm)+var(--space-xs))] font-medium">{r.value}</span>}
+          </li>
         ))}
-      </dl>
+      </ul>
       {actions && <div className="mt-sm w-full">{actions}</div>}
     </section>
   );

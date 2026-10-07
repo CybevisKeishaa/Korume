@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
 import { render, screen, within } from "@/test/render";
 import en from "@/messages/en/profile.json";
 import { QuickStats } from "./quick-stats";
@@ -45,5 +46,18 @@ describe("QuickStats", () => {
     const { container } = render(<QuickStats stats={makeView().stats} />);
     const icons = Array.from(container.querySelectorAll("svg[data-profile-icon]")).map((n) => n.getAttribute("data-profile-icon"));
     expect(icons).toEqual(["streak", "level", "xp", "video", "words", "hours"]);
+  });
+
+  it("has a 24px info target and Escape dismisses the hint", async () => {
+    const user = userEvent.setup();
+    render(<QuickStats stats={makeView().stats} />);
+    const button = screen.getByRole("button", { name: t.hoursInfo });
+    expect(button.className).toContain("size-6");
+    const hint = document.getElementById(button.getAttribute("aria-describedby") ?? "") as HTMLElement;
+    await user.tab();
+    while (document.activeElement !== button) await user.tab();
+    expect(hint).not.toHaveAttribute("data-dismissed", "true");
+    await user.keyboard("{Escape}");
+    expect(hint).toHaveAttribute("data-dismissed", "true");
   });
 });

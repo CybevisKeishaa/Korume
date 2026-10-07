@@ -544,7 +544,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
 
-  // account/1 — designed, built (far simpler than the frame — §18.2).
+  // account/1 — designed, built: the private learning archive of port-profile (frame 66:166, ported 2026-10-07).
   {
     screenId: "profile",
     name: "Profile",
