@@ -35,7 +35,8 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T9 | accepted | `5ab2cbf`, `d0eac07` (first video milestone survives a hidden lesson) |
 | T10 | accepted | `3dba0e9`, `157f50d` (R-10a: reader allowlists practices/language) |
 | T11 | accepted | `0cb6965`, `fa036a6`, `121187c` (R-11a frame fidelity; layout proof in T16) |
-| T12–T16 | not started | — |
+| T12 | accepted | `044dd01`, `2855a84` (R-12a: no localeChanged; body guard before parse) |
+| T13–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -46,6 +47,7 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 
 ## Verification
 
+After T12 (`2855a84`): fresh reset, `verify:db:profile` + `verify:db:erasure` PASS; 14 files 143/143; tsc 0.
 After T11 (`121187c`): profile/mascot/route/messages/product vitest 45 files 507/507, tsc 0, lint 0.
 After T10 (`157f50d`): vitest lib/korume + lib/data/korume 103/103, tsc 0, `verify:db:korume` PASS.
 After T9 (`d0eac07`): fresh reset, `verify:db:profile` + `verify:db:erasure` PASS; profile vitest 11/11; tsc 0.
@@ -67,7 +69,6 @@ None.
 
 ## Next actions
 
-1. Task 12 (save path + avatar pipeline): brief from the plan; Codex if its quota is back (after 23:27
-   2026-10-07), otherwise a Claude implementer. Carry: 512 KiB bucket limit — test the WebP encode with noise.
-2. Review, gates, commit, checkpoint this file; then Task 13.
+1. Task 13 (`/profile/edit`, Figma `67:595`): brief from the plan + the ledger's `Task 12 → T13 carry` line.
+2. Review, gates, commit, checkpoint this file; then Task 14.
 3. Owner decisions queued in the ledger (`Owner decision` / `Owner note` lines, R-5a, R-7a) — list them at finish.
