@@ -165,9 +165,12 @@ begin
       return query select s.id, s.last_seq, false;
       return;
     end if;
-    -- Hygiene only: correctness never depends on it (duration is always coalesce(ended_at, last_heartbeat_at)).
+    -- Hygiene only, and only for the starting presence: another presence's stale row is closed by its own
+    -- next beat/start (closing it here would turn that beat into a closed-session no-op). Reads never depend on
+    -- it: duration is always coalesce(ended_at, last_heartbeat_at).
     update study_sessions set ended_at = last_heartbeat_at
-      where user_id = v_user and ended_at is null and v_now - last_heartbeat_at > v_gap;
+      where user_id = v_user and client_presence_id = p_client_presence and ended_at is null
+        and v_now - last_heartbeat_at > v_gap;
     select coalesce(max(segment_no) + 1, 0) into v_seg from study_sessions
       where user_id = v_user and client_presence_id = p_client_presence;
     insert into study_sessions (user_id, client_presence_id, segment_no, surface, context_id, started_at,

@@ -550,6 +550,77 @@ begin
 end $$;
 commit;
 
+-- 3.13 start hygiene closes only the starting presence (R-5a): presence Y starting must not close idle presence X
+select set_config('gate.x', gen_random_uuid()::text, false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record;
+begin
+  select * into r from study_heartbeat(current_setting('gate.x')::uuid, null, 'kanji', '123e4567-e89b-12d3-a456-426614174000', 0, 'start');
+  perform set_config('gate.sx', r.session_id::text, false);
+end $$;
+commit;
+update study_sessions set started_at = started_at - interval '5 minutes', last_heartbeat_at = last_heartbeat_at - interval '5 minutes'
+  where id = current_setting('gate.sx')::uuid;
+select set_config('gate.before', (select last_heartbeat_at::text from study_sessions where id = current_setting('gate.sx')::uuid), false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record; o study_sessions%rowtype;
+begin
+  perform study_heartbeat(gen_random_uuid(), null, 'kanji', '123e4567-e89b-12d3-a456-426614174000', 0, 'start');
+  select * into o from study_sessions where id = current_setting('gate.sx')::uuid;
+  if o.ended_at is not null then raise exception 'FAIL study start of another presence closed this one'; end if;
+  select * into r from study_heartbeat(current_setting('gate.x')::uuid, current_setting('gate.sx')::uuid, 'kanji', null, 1, 'beat');
+  select * into o from study_sessions where id = current_setting('gate.sx')::uuid;
+  if not r.segmented or r.session_id = o.id or o.ended_at is distinct from current_setting('gate.before')::timestamptz then
+    raise exception 'FAIL study idle presence did not segment after another presence started: % %', r, o;
+  end if;
+  raise notice 'PASS study another presence start leaves an idle presence to its own next beat';
+end $$;
+commit;
+
+-- 3.14 the 90 s gap boundary (R-5b): 80 s stays, 100 s segments
+select set_config('gate.z', gen_random_uuid()::text, false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record;
+begin
+  select * into r from study_heartbeat(current_setting('gate.z')::uuid, null, 'kanji', '123e4567-e89b-12d3-a456-426614174000', 0, 'start');
+  perform set_config('gate.sz', r.session_id::text, false);
+end $$;
+commit;
+update study_sessions set started_at = started_at - interval '80 seconds', last_heartbeat_at = last_heartbeat_at - interval '80 seconds'
+  where id = current_setting('gate.sz')::uuid;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record;
+begin
+  select * into r from study_heartbeat(current_setting('gate.z')::uuid, current_setting('gate.sz')::uuid, 'kanji', null, 1, 'beat');
+  if r.segmented or r.session_id <> current_setting('gate.sz')::uuid then raise exception 'FAIL study 80 s silence segmented'; end if;
+end $$;
+commit;
+update study_sessions set started_at = started_at - interval '100 seconds', last_heartbeat_at = last_heartbeat_at - interval '100 seconds'
+  where id = current_setting('gate.sz')::uuid;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record;
+begin
+  select * into r from study_heartbeat(current_setting('gate.z')::uuid, current_setting('gate.sz')::uuid, 'kanji', null, 2, 'beat');
+  if not r.segmented or r.session_id = current_setting('gate.sz')::uuid then raise exception 'FAIL study 100 s silence did not segment'; end if;
+  raise notice 'PASS study 90 s gap boundary (80 s stays, 100 s segments)';
+end $$;
+commit;
+
 -- 3.12 check constraints
 begin;
 set local role authenticated;
