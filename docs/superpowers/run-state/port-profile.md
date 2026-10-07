@@ -2,7 +2,7 @@
 
 Branch `port-profile`, worktree `.worktrees/port-profile`, base master `2cee918`.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Goal and scope
 
