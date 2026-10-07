@@ -413,5 +413,5 @@ Rulings made while the plan ran; the SDD ledger holds the reasoning for each.
   `assets/mascot/source/Korume.png` above the KORUME wordmark, replacing `poses/neutral.png` (W9). The source is glow
   art on solid black, so `scripts/mascot/watermark.js` turns black into transparency (alpha = brightest channel,
   colour divided back out) and writes `public/mascot/watermark/korume.png` (900x720). It prints at 90x72mm with
-  `brightness(0.35) contrast(1.2)` under the same 4% group opacity: ~0.7 ink, close to the black wordmark's. A first
+  `brightness(0.25) contrast(1.2)` under the same 4% group opacity: ~0.8 ink (owner: "a little darker" than 0.35). A first
   value of `brightness(0.8)` matched the old pose's ink (0.25), and the owner saw only the wordmark on screen.
