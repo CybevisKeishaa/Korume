@@ -52,7 +52,8 @@ create index idx_users_admin on users (id) where is_admin;
 revoke update on users from authenticated;
 grant update (
   email, name, avatar_url, level, target_goal, daily_minutes, study_timezone,
-  created_at, updated_at, leaderboard_opt_in
+  created_at, updated_at, leaderboard_opt_in,
+  username, bio, country, native_language, target_jlpt_level, learning_goal, preferred_practices
 ) on users to authenticated;
 
 -- ---------------------------------------------------------------------------

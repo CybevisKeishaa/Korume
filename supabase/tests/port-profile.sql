@@ -735,4 +735,132 @@ begin
 end $$;
 commit;
 
+-- 5. Profile columns, first-transition timestamps, avatars bucket (spec §2.1, §2.2, §9). Identities from gate.a / gate.b,
+-- claims built BEFORE the role switch; every "cannot" has a "can" beside it.
+-- storage.protect_delete blocks direct deletes; the gate owns these throwaway rows, so replica mode skips it here only.
+begin;
+set local session_replication_role = replica;
+delete from storage.objects where bucket_id in ('avatars', 'recordings')
+  and (storage.foldername(name))[1] in (current_setting('gate.a'), current_setting('gate.b'));
+commit;
+delete from certification_tests where id = '00000000-0000-0000-0000-0000000000b1';
+delete from vocab where id = '00000000-0000-0000-0000-0000000000a1';
+insert into vocab (id, word) values ('00000000-0000-0000-0000-0000000000a1', 'profilegate');
+insert into certification_tests (id, level, title) values ('00000000-0000-0000-0000-0000000000b1', 'N5', 'profilegate');
+insert into user_vocab_progress (user_id, vocab_id, srs_stage, mastered_at)
+  values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000a1', 2, '2026-09-01 10:00Z');
+insert into user_test_attempts (user_id, test_id, score, completed_at, passed_at)
+  values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000b1', 90, '2026-09-02 10:00Z', '2026-09-02 10:00Z');
+insert into storage.objects (bucket_id, name) values
+  ('avatars', current_setting('gate.a') || '/avatar.webp'),
+  ('avatars', current_setting('gate.b') || '/avatar.webp');
+
+-- 5.1 bucket shape (postgres)
+do $$
+begin
+  if not exists (select 1 from storage.buckets where id = 'avatars' and public = false
+      and file_size_limit = 524288 and allowed_mime_types = array['image/webp']) then
+    raise exception 'FAIL profile avatars bucket must exist, private, 512 KiB, image/webp only';
+  end if;
+  raise notice 'PASS profile avatars bucket is private with its limits';
+end $$;
+
+-- 5.2 A writes each profile column within its limit, and reads its own avatar object (positive controls)
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 5.2 claims for A: %', auth.uid(); end if;
+  update users set username = 'keishaa', bio = repeat('b', 160), country = 'VN', native_language = 'vi',
+    target_jlpt_level = 'N3', learning_goal = repeat('g', 200),
+    preferred_practices = array['kanji','grammar','reading','vocabulary','shadowing','listening','pronunciation','conversation']
+    where id = auth.uid();
+  if not exists (select 1 from users where id = auth.uid() and username = 'keishaa' and char_length(bio) = 160
+      and country = 'VN' and native_language = 'vi' and target_jlpt_level = 'N3' and cardinality(preferred_practices) = 8) then
+    raise exception 'FAIL profile 5.2 A cannot update its own profile columns';
+  end if;
+  if (select count(*) from storage.objects where bucket_id = 'avatars') <> 1
+    or not exists (select 1 from storage.objects where bucket_id = 'avatars' and name = current_setting('gate.a') || '/avatar.webp') then
+    raise exception 'FAIL profile 5.2 A must read exactly its own avatar object';
+  end if;
+  raise notice 'PASS profile A updates its columns and reads only its own avatar (positive controls)';
+end $$;
+commit;
+
+-- 5.3 check constraints, server-only column, immutable timestamps
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare caught text;
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 5.3 claims for A: %', auth.uid(); end if;
+  caught := null;
+  begin update users set username = 'Keishaa' where id = auth.uid(); exception when check_violation then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.3 uppercase username accepted'; end if;
+  caught := null;
+  begin update users set bio = repeat('b', 161) where id = auth.uid(); exception when check_violation then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.3 161-char bio accepted'; end if;
+  caught := null;
+  begin update users set preferred_practices = array_fill('kanji'::text, array[9]) where id = auth.uid(); exception when check_violation then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.3 nine practices accepted'; end if;
+  -- positive control: bio is still writable by the same role
+  update users set bio = 'still writable' where id = auth.uid();
+  if (select bio from users where id = auth.uid()) <> 'still writable' then raise exception 'FAIL profile 5.3 A cannot update bio'; end if;
+  caught := null;
+  begin update users set avatar_path = current_setting('gate.a') || '/avatar.webp' where id = auth.uid(); exception when insufficient_privilege then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.3 avatar_path is client-writable'; end if;
+  -- passed_at: A reads its attempt (positive control) but can never rewrite it
+  if (select count(*) from user_test_attempts) <> 1 then raise exception 'FAIL profile 5.3 A cannot read its own attempt'; end if;
+  caught := null;
+  begin update user_test_attempts set passed_at = null; exception when insufficient_privilege then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.3 passed_at is client-updatable'; end if;
+  -- mastered_at: the update itself lands (stage drops) but the first-mastery instant stays
+  update user_vocab_progress set srs_stage = 0, mastered_at = null where vocab_id = '00000000-0000-0000-0000-0000000000a1';
+  if (select srs_stage from user_vocab_progress where vocab_id = '00000000-0000-0000-0000-0000000000a1') <> 0 then
+    raise exception 'FAIL profile 5.3 A cannot update its own progress row';
+  end if;
+  if (select mastered_at from user_vocab_progress where vocab_id = '00000000-0000-0000-0000-0000000000a1') is distinct from '2026-09-01 10:00Z'::timestamptz then
+    raise exception 'FAIL profile 5.3 mastered_at was reset';
+  end if;
+  raise notice 'PASS profile checks, server-only avatar_path, insert-only passed_at, immutable mastered_at';
+end $$;
+commit;
+
+-- 5.4 B: duplicate username, sees only its own avatar, cannot write the avatars bucket; positive control: own recordings insert
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare caught text;
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 5.4 claims for B: %', auth.uid(); end if;
+  caught := null;
+  begin update users set username = 'keishaa' where id = auth.uid(); exception when unique_violation then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.4 duplicate username accepted'; end if;
+  update users set username = 'keishaa_b' where id = auth.uid();
+  if (select count(*) from storage.objects where bucket_id = 'avatars') <> 1
+    or exists (select 1 from storage.objects where bucket_id = 'avatars' and name like current_setting('gate.a') || '/%') then
+    raise exception 'FAIL profile 5.4 B must read only its own avatar object';
+  end if;
+  caught := null;
+  begin
+    insert into storage.objects (bucket_id, name) values ('avatars', current_setting('gate.b') || '/new.webp');
+  exception when insufficient_privilege then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.4 B wrote into avatars'; end if;
+  insert into storage.objects (bucket_id, name) values ('recordings', current_setting('gate.b') || '/ok.webm');
+  raise notice 'PASS profile B: unique username, own avatar only, avatars server-write-only';
+end $$;
+commit;
+
+-- storage.protect_delete blocks direct deletes; the gate owns these throwaway rows, so replica mode skips it here only.
+begin;
+set local session_replication_role = replica;
+delete from storage.objects where bucket_id in ('avatars', 'recordings')
+  and (storage.foldername(name))[1] in (current_setting('gate.a'), current_setting('gate.b'));
+commit;
+delete from certification_tests where id = '00000000-0000-0000-0000-0000000000b1';
+delete from vocab where id = '00000000-0000-0000-0000-0000000000a1';
+
 delete from auth.users where email in ('profilegate-a@example.invalid', 'profilegate-b@example.invalid');

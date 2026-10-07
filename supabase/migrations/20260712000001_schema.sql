@@ -39,6 +39,16 @@ create table users (
   daily_minutes int not null default 15 check (daily_minutes between 0 and 1440),
   -- Null until one-shot browser detection or the learner chooses a zone.
   study_timezone text check (study_timezone is null or length(study_timezone) between 1 and 64),
+  -- Edit Profile fields (port-profile spec §2.1). Lists and allowlists live in lib/profile/*; the DB enforces shape.
+  username text unique check (username is null or username ~ '^[a-z0-9_]{3,20}$'),
+  bio text check (bio is null or char_length(bio) <= 160),
+  country text check (country is null or country ~ '^[A-Z]{2}$'),
+  native_language text check (native_language is null or native_language ~ '^[a-z]{2,3}$'),
+  target_jlpt_level jlpt_level,
+  learning_goal text check (learning_goal is null or char_length(learning_goal) <= 200),
+  preferred_practices text[] not null default '{}' check (cardinality(preferred_practices) <= 8),
+  -- Path inside the private `avatars` bucket; written only by the server (no client grant).
+  avatar_path text check (avatar_path is null or char_length(avatar_path) <= 200),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -144,8 +154,19 @@ create table user_vocab_progress (
   next_review_at timestamptz,
   ease_factor numeric(4, 2) not null default 2.50,
   last_reviewed_at timestamptz,
+  mastered_at timestamptz,
   primary key (user_id, vocab_id)
 );
+
+-- mastered_at is the FIRST time the word reached mastery (port-profile spec §2.2): once set it never changes,
+-- whatever later happens to srs_stage. The app decides when to set it (MASTERY_THRESHOLD lives in TypeScript).
+create function keep_first_mastered_at() returns trigger language plpgsql set search_path = public as $$
+begin
+  if old.mastered_at is not null then new.mastered_at := old.mastered_at; end if;
+  return new;
+end $$;
+create trigger user_vocab_progress_keep_mastered_at before update on user_vocab_progress
+  for each row execute function keep_first_mastered_at();
 
 -- ---------------------------------------------------------------------------
 -- Grammar

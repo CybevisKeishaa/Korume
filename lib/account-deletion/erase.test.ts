@@ -9,6 +9,7 @@ type ListEntry = { name: string; id: string | null };
 const sequence: string[] = [];
 
 const removed: string[][] = [];
+const removedAvatars: string[][] = [];
 const erasedUsers: string[] = [];
 const tombstones: unknown[] = [];
 const bans: { id: string; attrs: unknown }[] = [];
@@ -25,6 +26,7 @@ let listCallCounts: Record<string, number> = {};
  *  asked to — the "Storage silently left something behind" case C1 must
  *  catch by comparing what it asked for against what Storage confirms. */
 let removeShortfall = false;
+let avatarShortfall = false;
 
 /** userId -> the request id of a live pending row, or absent for "no
  *  pending request for this user". */
@@ -47,23 +49,30 @@ let eraseRowsError: { message: string } | null = null;
 vi.mock("@/lib/supabase/service", () => ({
   createServiceClient: () => ({
     storage: {
-      from: () => ({
-        list: (prefix: string, options?: { limit?: number; offset?: number }) => {
-          sequence.push(`list:${prefix}`);
-          void options;
-          const idx = listCallCounts[prefix] ?? 0;
-          listCallCounts[prefix] = idx + 1;
-          const pages = listPages[prefix] ?? [[]];
-          const page = pages[idx] ?? [];
-          return Promise.resolve({ data: page, error: null });
-        },
-        remove: (paths: string[]) => {
-          sequence.push("remove");
-          removed.push(paths);
-          const reported = removeShortfall ? paths.slice(0, paths.length - 1) : paths;
-          return Promise.resolve({ data: reported.map((name) => ({ name })), error: null });
-        },
-      }),
+      from: (bucket: string) => {
+        // `recordings` keeps the plain tags and the plain prefix keys the older tests use; `avatars` is
+        // tagged and keyed apart so the order between the two buckets is provable.
+        const avatars = bucket === "avatars";
+        return {
+          list: (prefix: string, options?: { limit?: number; offset?: number }) => {
+            sequence.push(avatars ? `list-avatars:${prefix}` : `list:${prefix}`);
+            void options;
+            const key = avatars ? `avatars:${prefix}` : prefix;
+            const idx = listCallCounts[key] ?? 0;
+            listCallCounts[key] = idx + 1;
+            const pages = listPages[key] ?? [[]];
+            const page = pages[idx] ?? [];
+            return Promise.resolve({ data: page, error: null });
+          },
+          remove: (paths: string[]) => {
+            sequence.push(avatars ? "remove-avatars" : "remove");
+            (avatars ? removedAvatars : removed).push(paths);
+            const short = avatars ? avatarShortfall : removeShortfall;
+            const reported = short ? paths.slice(0, paths.length - 1) : paths;
+            return Promise.resolve({ data: reported.map((name) => ({ name })), error: null });
+          },
+        };
+      },
     },
     rpc: (fn: string, args: { p_user: string }) => {
       if (fn === "erase_account_rows") {
@@ -128,6 +137,7 @@ vi.mock("@/lib/supabase/service", () => ({
 beforeEach(() => {
   sequence.length = 0;
   removed.length = 0;
+  removedAvatars.length = 0;
   erasedUsers.length = 0;
   tombstones.length = 0;
   bans.length = 0;
@@ -135,6 +145,7 @@ beforeEach(() => {
   cancelFilters.length = 0;
   listCallCounts = {};
   removeShortfall = false;
+  avatarShortfall = false;
   pendingRequestsByUser = {};
   deleteUserError = null;
   banError = null;
@@ -165,7 +176,9 @@ describe("executeDeletion — erase_all", () => {
       { id: "req1", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" },
       NOW,
     );
-    expect(sequence).toEqual(["ban", "list:u1", "list:u1/shadowing", "remove", "tombstone", "erase-account-rows"]);
+    expect(sequence).toEqual([
+      "ban", "list:u1", "list:u1/shadowing", "remove", "list-avatars:u1", "tombstone", "erase-account-rows",
+    ]);
     expect(erasedUsers).toEqual(["u1"]);
   });
 
@@ -253,6 +266,26 @@ describe("executeDeletion — erase_all", () => {
     expect(erasedUsers).toEqual([]);
   });
 
+  it("erases recordings, THEN avatars, both before the tombstone", async () => {
+    listPages["avatars:u1"] = [[{ name: "avatar.webp", id: "file-a" }]];
+    await executeDeletion({ id: "req7", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" }, NOW);
+    expect(sequence).toEqual([
+      "ban", "list:u1", "list:u1/shadowing", "remove", "list-avatars:u1", "remove-avatars", "tombstone", "erase-account-rows",
+    ]);
+    expect(removed).toEqual([["u1/shadowing/a.webm"]]);
+    expect(removedAvatars).toEqual([["u1/avatar.webp"]]);
+  });
+
+  it("throws on an avatar shortfall before the tombstone and the users delete, like recordings", async () => {
+    listPages["avatars:u1"] = [[{ name: "avatar.webp", id: "file-a" }]];
+    avatarShortfall = true;
+    await expect(
+      executeDeletion({ id: "req8", userId: "u1", tier: "erase_all", purgeAfter: "2026-11-18T10:00:00.000Z" }, NOW),
+    ).rejects.toThrow(/Storage erase incomplete/);
+    expect(tombstones).toEqual([]);
+    expect(erasedUsers).toEqual([]);
+  });
+
   it("throws when erase_account_rows fails, after the tombstone, so the scheduler can retry", async () => {
     eraseRowsError = { message: "statement timeout" };
     await expect(
@@ -282,6 +315,8 @@ describe("executeDeletion — close_account", () => {
     await executeDeletion({ id: "req2", userId: "u2", tier: "close_account", purgeAfter: null }, NOW);
     expect(bans.map((b) => b.id)).toEqual(["u2"]);
     expect(removed).toEqual([]);
+    expect(removedAvatars).toEqual([]);
+    expect(sequence).toEqual(["ban"]);
     expect(erasedUsers).toEqual([]);
     expect(tombstones).toEqual([]);
   });

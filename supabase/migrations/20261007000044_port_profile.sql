@@ -255,3 +255,11 @@ create function study_tracked_since() returns timestamptz
 as $$ select min(started_at) from study_sessions where user_id = auth.uid() $$;
 revoke execute on function study_tracked_since() from public, anon;
 grant execute on function study_tracked_since() to authenticated;
+
+-- §9 Avatars: a private bucket of its own (lifecycle, MIME and retention differ from recordings). The server writes
+-- with the service role; a learner may read only their own folder.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', false, 524288, array['image/webp'])
+on conflict (id) do nothing;
+create policy avatars_select_own on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);

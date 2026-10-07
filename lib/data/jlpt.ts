@@ -207,6 +207,7 @@ export async function submitJlptTest(testId: string, input: JlptSubmitInput): Pr
 
   const score = input.mode === "full" ? result.scaledTotal : result.totalPercent;
 
+  const completedAt = new Date().toISOString();
   const { data: inserted, error: insertError } = await supabase
     .from("user_test_attempts")
     .insert({
@@ -222,7 +223,9 @@ export async function submitJlptTest(testId: string, input: JlptSubmitInput): Pr
       // duration as authoritative (e.g. for leaderboards) without adding
       // server-side timing first.
       started_at: input.started_at ?? new Date().toISOString(),
-      completed_at: new Date().toISOString(),
+      completed_at: completedAt,
+      // First-pass instant (spec §2.2): set once at insert; the table is insert-only for clients.
+      passed_at: result.passed === true ? completedAt : null,
     })
     .select("id")
     .single();

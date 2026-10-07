@@ -128,7 +128,13 @@ alter table user_test_attempts
   add column started_at timestamptz not null default now(),
   add column answers jsonb,
   add column mode text not null default 'full' check (mode in ('full', 'section')),
-  add column section jlpt_section; -- nullable; set only when mode = 'section'
+  add column section jlpt_section, -- nullable; set only when mode = 'section'
+  -- First pass instant (port-profile spec §2.2), set at insert by submitJlptTest; never updated.
+  add column passed_at timestamptz;
+
+-- Attempts are insert-only (submitJlptTest inserts, nothing updates), so no client may UPDATE: that keeps
+-- passed_at from being rewritten. The default grant gave authenticated and anon UPDATE on every column.
+revoke update on user_test_attempts from anon, authenticated;
 
 -- user_test_attempts already has full owner CRUD via test_attempts_own
 -- (20260712000002_rls.sql: `for all ... using (user_id = auth.uid())

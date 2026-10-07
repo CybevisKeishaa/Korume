@@ -12,7 +12,7 @@ import type { DeletionTier } from "./lifecycle";
  *    where contype='f' and confrelid='public.users'::regclass;
  *
  * Three things cascade does NOT reach, and each is a real hole if skipped:
- *  1. Storage. The `recordings` bucket is keyed `{uid}/…` and Postgres cascade
+ *  1. Storage. The `recordings` bucket (and, after it, `avatars`) is keyed `{uid}/…` and Postgres cascade
  *     never touches it. This is the §2 rule-2 asset. `list()` is ONE LEVEL
  *     DEEP and paginates at 100 — a folder entry (`id === null`) has to be
  *     listed again to reach its contents, and a session with >100 objects
@@ -48,6 +48,8 @@ import type { DeletionTier } from "./lifecycle";
  */
 
 const RECORDINGS_BUCKET = "recordings";
+/** Profile photos (port-profile spec §9): a bucket of its own, keyed `{uid}/…` like recordings. */
+const AVATARS_BUCKET = "avatars";
 
 /** Ban for a century: Supabase has no "disable forever", and the 90-day purge
  *  is what actually removes the row. */
@@ -71,9 +73,10 @@ type StorageEntry = { name: string; id: string | null };
  *  session per object means a heavy user can exceed that easily. */
 async function listAllEntries(
   service: ReturnType<typeof createServiceClient>,
+  bucketName: string,
   prefix: string,
 ): Promise<StorageEntry[]> {
-  const bucket = service.storage.from(RECORDINGS_BUCKET);
+  const bucket = service.storage.from(bucketName);
   const entries: StorageEntry[] = [];
   let offset = 0;
   for (;;) {
@@ -92,14 +95,15 @@ async function listAllEntries(
  *  and has to be listed again to reach what is actually inside it. */
 async function collectFileKeys(
   service: ReturnType<typeof createServiceClient>,
+  bucket: string,
   prefix: string,
 ): Promise<string[]> {
-  const entries = await listAllEntries(service, prefix);
+  const entries = await listAllEntries(service, bucket, prefix);
   const keys: string[] = [];
   for (const entry of entries) {
     const path = `${prefix}/${entry.name}`;
     if (entry.id === null) {
-      keys.push(...(await collectFileKeys(service, path)));
+      keys.push(...(await collectFileKeys(service, bucket, path)));
     } else {
       keys.push(path);
     }
@@ -123,12 +127,13 @@ const REMOVE_BATCH_SIZE = 100;
 
 async function eraseStoragePrefix(
   service: ReturnType<typeof createServiceClient>,
+  bucketName: string,
   userId: string,
 ): Promise<void> {
-  const keys = await collectFileKeys(service, userId);
+  const keys = await collectFileKeys(service, bucketName, userId);
   if (keys.length === 0) return;
 
-  const bucket = service.storage.from(RECORDINGS_BUCKET);
+  const bucket = service.storage.from(bucketName);
 
   // The shortfall check runs PER BATCH, not once over the total: a batch that
   // silently under-deletes must be caught against what THAT call asked for,
@@ -146,7 +151,7 @@ async function eraseStoragePrefix(
     const removedCount = (data ?? []).length;
     if (removedCount !== batch.length) {
       throw new Error(
-        `Storage erase incomplete for user ${userId}: asked to remove ${batch.length} ` +
+        `Storage erase incomplete for user ${userId} in "${bucketName}": asked to remove ${batch.length} ` +
           `object(s) in this batch (${start + batch.length} of ${keys.length} overall), ` +
           `Storage reported ${removedCount}. Refusing to proceed to the ` +
           `irreversible users-row delete while recordings may remain.`,
@@ -179,7 +184,9 @@ export async function executeDeletion(request: ExecuteDeletionRequest, now: Date
 
   if (request.tier === "erase_all") {
     // Storage next, still BEFORE the users row (see file header).
-    await eraseStoragePrefix(service, request.userId);
+    // Recordings, then avatars: both buckets, both before the tombstone.
+    await eraseStoragePrefix(service, RECORDINGS_BUCKET, request.userId);
+    await eraseStoragePrefix(service, AVATARS_BUCKET, request.userId);
 
     // Upsert, not insert (I7): `user_id` is the tombstone's primary key, and
     // this step re-running after a downstream failure — the only recovery

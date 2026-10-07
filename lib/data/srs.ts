@@ -4,6 +4,7 @@ import { reviewItem, INITIAL_STATE, REVIEW_FREQUENCY_MULTIPLIER, type Quality, t
 import { getKanjiList, getVocabList } from "@/lib/data/content";
 import { recordActivity } from "@/lib/data/gamification";
 import { readPreferences } from "@/lib/data/preferences";
+import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
 import type { ReviewItem } from "@/lib/learning-types";
 import type { ItemType, JlptLevel, SrsReviewInput } from "@/lib/validation/content";
 
@@ -37,7 +38,12 @@ export async function submitReview(
 
   const { data: existing, error: loadError } = await supabase
     .from(table)
-    .select("srs_stage, interval_days, ease_factor")
+    // mastered_at exists on vocab progress only (kanji has no such column).
+    .select(
+      (input.itemType === "vocab"
+        ? "srs_stage, interval_days, ease_factor, mastered_at"
+        : "srs_stage, interval_days, ease_factor") as "srs_stage, interval_days, ease_factor",
+    )
     .eq("user_id", user.id)
     .eq(fk, input.itemId)
     .maybeSingle();
@@ -51,6 +57,8 @@ export async function submitReview(
       }
     : { ...INITIAL_STATE };
 
+  const existingMasteredAt = (existing as { mastered_at?: string | null } | null)?.mastered_at ?? null;
+
   const next = reviewItem(state, input.quality as Quality, now, REVIEW_FREQUENCY_MULTIPLIER[prefs.reviewFrequency]);
 
   const { error: upsertError } = await supabase.from(table).upsert(
@@ -62,6 +70,10 @@ export async function submitReview(
       ease_factor: next.easeFactor,
       next_review_at: next.nextReviewAt.toISOString(),
       last_reviewed_at: next.lastReviewedAt.toISOString(),
+      // First time the word reached mastery; the DB trigger keeps it once set (spec §2.2).
+      ...(input.itemType === "vocab"
+        ? { mastered_at: existingMasteredAt ?? (next.repetitions >= MASTERY_THRESHOLD ? now.toISOString() : null) }
+        : {}),
     },
     { onConflict: `user_id,${fk}` },
   );
