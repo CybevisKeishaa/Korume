@@ -109,6 +109,8 @@ function creditFor(page: PreparedPage, settings: WorksheetSettings, resources: P
 }
 
 export function Worksheet({ pages, settings, labels, resources }: { pages: PreparedPage[]; settings: WorksheetSettings; labels: SheetLabels; resources: PrintResources }) {
+  // Owner 2026-10-07: full item pages spread down to the band; the last item page stays packed at the top.
+  const lastItemPage = pages.findLastIndex((page) => page.kind === "items");
   return (
     <div className={`vp-paper${settings.density === "compact" ? " vp-compact" : ""}`} style={paperVars() as CSSProperties}>
       {pages.map((page, index) => (
@@ -118,7 +120,7 @@ export function Worksheet({ pages, settings, labels, resources }: { pages: Prepa
             <span>{labels.wordmark}</span>
           </div>
           {index === 0 ? <FirstHeader labels={labels} /> : <ContinuationHeader labels={labels} />}
-          <div className="vp-body">
+          <div className={index < lastItemPage ? "vp-body vp-spread" : "vp-body"}>
             {page.kind === "items"
               ? page.items.map((item) => settings.mode === "practice"
                 ? <PracticeItem key={item.id} item={item} settings={settings} labels={labels} resources={resources} />
@@ -126,7 +128,7 @@ export function Worksheet({ pages, settings, labels, resources }: { pages: Prepa
               : <><AnswersHeading labels={labels} />{page.answers.map((answer) => <AnswerLine key={answer.id} answer={answer} />)}</>}
           </div>
           <QuoteBand text={labels.quote(index)} />
-          <FooterBlock labels={labels} page={index + 1} count={pages.length} credit={creditFor(page, settings, resources, labels)} />
+          <FooterBlock labels={labels} page={index + 1} count={pages.length} credit={index === pages.length - 1 ? creditFor(page, settings, resources, labels) : ""} />
         </section>
       ))}
     </div>

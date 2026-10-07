@@ -266,7 +266,7 @@ test("13 · a repetition is atomic: every group sits on one row line", async ({ 
   expect(split).toBe(0);
 });
 
-test("14 · identity: watermark centred on every sheet, quote band and footer at one height, data credit on every footer", async ({ page }) => {
+test("14 · identity: watermark centred on every sheet, quote band and footer at one height, data credit on the last footer only", async ({ page }) => {
   await learner(page);
   await open(page);
   await page.emulateMedia({ media: "print" });
@@ -282,11 +282,12 @@ test("14 · identity: watermark centred on every sheet, quote band and footer at
     };
   }));
   expect(sheets.length).toBeGreaterThan(1);
-  for (const sheet of sheets) {
+  for (const [index, sheet] of sheets.entries()) {
     expect(sheet.dx).toBeLessThan(1);
     expect(sheet.quoteTop).toBeCloseTo(sheets[0]!.quoteTop, 0);
     expect(sheet.footTop).toBeCloseTo(sheets[0]!.footTop, 0);
-    expect(sheet.credit).toContain("JMdict");
+    if (index === sheets.length - 1) expect(sheet.credit).toContain("JMdict");
+    else expect(sheet.credit).toBe("");
     expect(sheet.opacity).toBeLessThanOrEqual(0.06);
   }
 });
@@ -330,4 +331,28 @@ test("17 · an overflowing sheet keeps its quote band in place, so the PDF overf
     return { before, after, crossing: [...sheet.querySelectorAll(".vp-item")].some((item) => item.getBoundingClientRect().bottom > after + 0.5) };
   });
   expect({ bandMoved: Math.round(Math.abs(after - before)), crossing }).toEqual({ bandMoved: 0, crossing: true });
+});
+
+test("18 · every item sheet but the last spreads its items down to the quote band; the last stays packed", async ({ page }) => {
+  await learner(page);
+  await open(page);
+  await page.emulateMedia({ media: "print" });
+  // Distance from each item sheet's last item bottom to its quote band top, and from its first item top to its body top.
+  const sheets = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-sheet")]
+    .filter((sheet) => sheet.querySelector(".vp-item"))
+    .map((sheet) => {
+      const items = [...sheet.querySelectorAll(".vp-item")];
+      const body = sheet.querySelector(".vp-body")!.getBoundingClientRect();
+      return {
+        toBand: sheet.querySelector(".vp-quote")!.getBoundingClientRect().top - items.at(-1)!.getBoundingClientRect().bottom,
+        fromTop: items[0]!.getBoundingClientRect().top - body.top,
+        maxGap: Math.max(0, ...items.slice(1).map((item, i) => item.getBoundingClientRect().top - items[i]!.getBoundingClientRect().bottom)),
+      };
+    }));
+  expect(sheets.length).toBeGreaterThan(1); // positive control: one sheet has nothing to spread
+  for (const sheet of sheets.slice(0, -1)) {
+    expect(sheet).toEqual({ toBand: expect.closeTo(0, 0), fromTop: expect.closeTo(0, 0), maxGap: expect.any(Number) });
+    expect(sheet.maxGap).toBeGreaterThan(5); // the leftover really went between the items
+  }
+  expect(sheets.at(-1)!.maxGap).toBeCloseTo(0, 0);
 });

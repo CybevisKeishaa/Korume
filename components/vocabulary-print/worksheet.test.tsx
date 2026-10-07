@@ -41,17 +41,18 @@ describe("Worksheet (spec W §3–§4)", () => {
       expect(page.querySelector(".vp-foot img")).toBeNull(); // footer mascot mark removed (W9)
     }
   });
-  it("practice items: target, stroke guide, model + trace cells, example; credit names JMdict and KanjiVG", () => {
-    const page = sheets(practice).querySelector(".vp-sheet")!;
+  it("practice items: target, stroke guide, model + trace cells, example; only the last page credits JMdict and KanjiVG", () => {
+    const [page, last] = [...sheets(practice).querySelectorAll(".vp-sheet")] as [Element, Element];
     const item = page.querySelector('.vp-item[data-item-id="a"]')!;
     expect(item.querySelector(".vp-word")?.textContent).toBe("苦手");
     expect(item.querySelector(".vp-guide")).not.toBeNull();
     expect(item.querySelectorAll(".vp-model")).toHaveLength(2);
     expect(item.querySelector(".vp-chip")?.textContent).toBe("EN");
     expect(item.querySelector(".vp-example")?.textContent).toBe("苦手な人");
-    expect(page.querySelector(".vp-credit")?.textContent).toBe("Data: JMdict v1 (CC BY-SA 4.0) · KanjiVG r1 (CC BY-SA 3.0)");
+    expect(page.querySelector(".vp-credit")?.textContent).toBe("");
+    expect(last.querySelector(".vp-credit")?.textContent).toBe("Data: JMdict v1 (CC BY-SA 4.0) · KanjiVG r1 (CC BY-SA 3.0)");
   });
-  it("self-test item pages carry no target, trace, model or stroke guide; answers come last and credit only JMdict", () => {
+  it("self-test item pages carry no target, trace, model or stroke guide; answers come last and alone credit JMdict", () => {
     const root = sheets(selfTest, "selfTest");
     const [itemsPage, answersPage] = [...root.querySelectorAll(".vp-sheet")];
     expect(itemsPage?.querySelector(".vp-body")?.textContent).not.toContain("苦手");
@@ -59,7 +60,13 @@ describe("Worksheet (spec W §3–§4)", () => {
     expect(itemsPage?.querySelector(".vp-number")?.textContent).toBe("1.");
     expect(answersPage?.querySelector(".vp-answers-title")?.textContent).toBe("Answers");
     expect(answersPage?.querySelector('.vp-answer[data-item-id="a"]')?.textContent).toBe("1.苦手にがて");
-    expect(itemsPage?.querySelector(".vp-credit")?.textContent).toBe("Data: JMdict v1 (CC BY-SA 4.0)");
+    expect(itemsPage?.querySelector(".vp-credit")?.textContent).toBe("");
+    expect(answersPage?.querySelector(".vp-credit")?.textContent).toBe("Data: JMdict v1 (CC BY-SA 4.0)");
+  });
+  it("spreads every item page but the last item page to the band; answer pages stay packed", () => {
+    const spread = (root: Element) => [...root.querySelectorAll(".vp-body")].map((body) => body.classList.contains("vp-spread"));
+    expect(spread(sheets(practice))).toEqual([true, false]);
+    expect(spread(sheets([selfTest[0]!, ...selfTest], "selfTest"))).toEqual([true, false, false]);
   });
   it("is presentational: no ids, buttons, inputs or aria references (it renders twice)", () => {
     const root = sheets(practice);

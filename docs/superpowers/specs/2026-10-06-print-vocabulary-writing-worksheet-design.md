@@ -393,3 +393,12 @@ Rulings made while the plan ran; the SDD ledger holds the reasoning for each.
   because §1.4 covers item pages only.
 - **Quote band (final fix wave):** the band keeps a fixed position on the sheet and does not shrink, so the PDF
   overflow guard can see the body cross it.
+- **OWNER RULING 2026-10-07 (owner review) — credit on the last page only:** replaces the "every page" rule of §1.5
+  and the "pages 1–2 only still carries the data credit" test of §8. The last sheet's footer carries the credit
+  (JMdict, plus KanjiVG in practice mode; in self-test the last sheet is the answer key and practice-only KanjiVG is
+  not used). Every other sheet keeps the reserved 3.5mm line empty, so capacity stays uniform. Accepted cost: a
+  partial browser print without the last page carries no credit.
+- **OWNER RULING 2026-10-07 (owner review) — item pages fill down to the band:** every item sheet except the last
+  item sheet spreads its items (`justify-content: space-between`) so the last item meets the quote band; the leftover
+  goes between items, item heights and pagination are unchanged. The last item sheet and answer sheets stay packed
+  at the top. Spread items never shrink (`flex: none`), so the PDF overflow guard still sees a crossing (test 17).

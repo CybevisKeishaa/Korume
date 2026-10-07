@@ -1649,6 +1649,8 @@
 .vp-paper { --vp-guide: 16mm; }
 .vp-sheet { position: relative; }
 .vp-body { position: relative; z-index: 1; }
+.vp-spread { display: flex; flex-direction: column; justify-content: space-between; }
+.vp-spread > * { flex: none; } /* never shrink an item to fit: the PDF overflow guard must see it cross the band */
 .vp-watermark { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4mm; opacity: 0.04; filter: grayscale(1); pointer-events: none; }
 .vp-watermark img { width: 70mm; height: 70mm; object-fit: contain; }
 .vp-watermark span { font-family: var(--font-display); font-weight: 700; font-size: 28pt; letter-spacing: 0.4em; color: #000; }
