@@ -8,7 +8,7 @@ const flush = () => act(async () => { await Promise.resolve(); await Promise.res
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ReviewTomorrowButton", () => {
-  it("POSTs the browser time zone to the lesson's review-tomorrow route", async () => {
+  it("POSTs without a browser timezone to the lesson's review-tomorrow route", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
     render(<ReviewTomorrowButton videoId="v-1" reviewTargetTotal={3} />);
@@ -16,7 +16,7 @@ describe("ReviewTomorrowButton", () => {
     await flush();
     expect(fetchMock).toHaveBeenCalledWith("/api/videos/v-1/review-tomorrow", expect.objectContaining({
       method: "POST",
-      body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+      body: JSON.stringify({}),
     }));
   });
 

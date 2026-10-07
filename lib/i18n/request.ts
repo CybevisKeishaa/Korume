@@ -2,6 +2,7 @@ import { getRequestConfig } from "next-intl/server";
 import { hasLocale } from "next-intl";
 import { routing, type Locale } from "./routing";
 import { NAMESPACES } from "./namespaces";
+import { getStudyTimezone } from "@/lib/time/study-timezone";
 
 /**
  * Merges the per-namespace catalogs into the single message object next-intl
@@ -28,5 +29,5 @@ export default getRequestConfig(async ({ requestLocale }) => {
     ? requested
     : routing.defaultLocale;
 
-  return { locale, messages: await loadMessages(locale) };
+  return { locale, messages: await loadMessages(locale), timeZone: (await getStudyTimezone()).timeZone };
 });

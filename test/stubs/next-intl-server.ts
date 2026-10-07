@@ -1,6 +1,6 @@
 import { createFormatter, createTranslator } from "use-intl/core";
 import { loadEnMessages } from "@/test/messages";
-import { VN_TIME_ZONE } from "@/lib/time/vn-timezone";
+import { FALLBACK_STUDY_TIMEZONE } from "@/lib/time/study-day";
 
 /**
  * Test-only stand-in for `next-intl/server` (real module: `lib/i18n/server.ts`).
@@ -81,12 +81,8 @@ export function setRequestLocale(): void {
 
 export async function getFormatter(opts?: { locale?: string }) {
   assertEnLocale(opts?.locale);
-  // Pinned to VN_TIME_ZONE (this product's one canonical timezone — see that
-  // module's doc comment: `lib/i18n/request.ts` sets no global `timeZone` of
-  // its own, so without an explicit zone here a date-rendering test would
-  // format in the test runner's local zone instead — green locally, wrong in
-  // CI, and wrong again the moment CI's zone changes).
-  return createFormatter({ locale: "en", timeZone: VN_TIME_ZONE });
+  // Tests without a request use the product fallback rather than the runner's zone.
+  return createFormatter({ locale: "en", timeZone: FALLBACK_STUDY_TIMEZONE });
 }
 
 /**

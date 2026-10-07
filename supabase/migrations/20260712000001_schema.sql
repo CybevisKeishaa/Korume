@@ -37,6 +37,8 @@ create table users (
   level jlpt_level not null default 'N5',
   target_goal target_goal,
   daily_minutes int not null default 15 check (daily_minutes between 0 and 1440),
+  -- Null until one-shot browser detection or the learner chooses a zone.
+  study_timezone text check (study_timezone is null or length(study_timezone) between 1 and 64),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

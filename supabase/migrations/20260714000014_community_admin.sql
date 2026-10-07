@@ -51,7 +51,7 @@ create index idx_users_admin on users (id) where is_admin;
 -- this migration, rather than silently changing behavior no one asked about.
 revoke update on users from authenticated;
 grant update (
-  email, name, avatar_url, level, target_goal, daily_minutes,
+  email, name, avatar_url, level, target_goal, daily_minutes, study_timezone,
   created_at, updated_at, leaderboard_opt_in
 ) on users to authenticated;
 

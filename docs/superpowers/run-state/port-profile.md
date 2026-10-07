@@ -2,7 +2,7 @@
 
 Branch `port-profile`, worktree `.worktrees/port-profile`, base master `2cee918`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Goal and scope
 
@@ -24,7 +24,8 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 |---|---|---|
 | Spec | frozen | `f642803`, `66d6519` |
 | Plan | approved | `b313a41` |
-| T1–T16 | not started | — |
+| T1 | accepted | (this commit) |
+| T2–T16 | not started | — |
 
 ## Contracts and decisions
 

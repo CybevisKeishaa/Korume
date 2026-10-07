@@ -30,6 +30,8 @@ export interface EmailTemplateVariables {
     tier: DeletionTier;
     /** ISO timestamp — the row's `execute_after`. The template formats it. */
     executeAfter: string;
+    /** Learner's stored study zone, or the fallback while unset. */
+    timeZone: string;
     /** Absolute URL to the settings page where the request can be reviewed or cancelled. */
     cancelUrl: string;
   };

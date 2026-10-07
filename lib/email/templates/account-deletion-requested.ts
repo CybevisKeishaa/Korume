@@ -28,7 +28,6 @@
  */
 import type { DeletionTier } from "@/lib/account-deletion/lifecycle";
 import { SUPPORT_EMAIL } from "@/lib/contact";
-import { VN_TIME_ZONE } from "@/lib/time/vn-timezone";
 import type { EmailTemplate, RenderedEmail } from "../types";
 
 const escapeHtml = (value: string): string =>
@@ -39,8 +38,8 @@ const escapeHtml = (value: string): string =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-const formatDate = (iso: string, intlLocale: string): string =>
-  new Intl.DateTimeFormat(intlLocale, { dateStyle: "long", timeZone: VN_TIME_ZONE }).format(new Date(iso));
+const formatDate = (iso: string, intlLocale: string, timeZone: string): string =>
+  new Intl.DateTimeFormat(intlLocale, { dateStyle: "long", timeZone }).format(new Date(iso));
 
 /** Tier-specific claims only. Shared wording (cancel/support) lives in `SHARED` below. */
 const TIER_COPY = {
@@ -86,10 +85,10 @@ const SHARED = {
 } as const;
 
 export const template: EmailTemplate<"account-deletion-requested"> = {
-  render(locale, { tier, executeAfter, cancelUrl }): RenderedEmail {
+  render(locale, { tier, executeAfter, cancelUrl, timeZone }): RenderedEmail {
     const copy = TIER_COPY[locale][tier];
     const shared = SHARED[locale];
-    const date = formatDate(executeAfter, shared.intlLocale);
+    const date = formatDate(executeAfter, shared.intlLocale, timeZone);
 
     const text = [
       copy.received,

@@ -26,12 +26,17 @@ describe("DeletionPendingBanner", () => {
     render(<DeletionPendingBanner pending={PENDING} onCancelled={vi.fn()} refreshPending={vi.fn()} />);
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent(/nothing has been removed yet/i);
-    // Locale-correctness (task constraint): the date is formatted through
-    // useFormatter against the same VN_TIME_ZONE the rest of the app pins
-    // (journal-view.tsx), not the environment's zone — 10:00 UTC on the 27th
-    // stays the 27th in Asia/Ho_Chi_Minh (UTC+7), so a day-boundary bug
-    // would show up here as "August 26" or "August 28" instead.
+    // This instant remains the 27th in the test provider's fallback zone.
     expect(status).toHaveTextContent(/August 27, 2026/);
+  });
+  it("shows the execution date in the learner's study timezone", () => {
+    const pending = { ...PENDING, executeAfter: "2026-08-27T03:00:00.000Z" };
+    const props = { pending, onCancelled: vi.fn(), refreshPending: vi.fn() };
+    const first = render(<DeletionPendingBanner {...props} />, { timeZone: "Asia/Ho_Chi_Minh" });
+    expect(screen.getByRole("status")).toHaveTextContent("August 27, 2026");
+    first.unmount();
+    render(<DeletionPendingBanner {...props} />, { timeZone: "America/Los_Angeles" });
+    expect(screen.getByRole("status")).toHaveTextContent("August 26, 2026");
   });
 
   /**
