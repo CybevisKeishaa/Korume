@@ -170,6 +170,28 @@ begin
   end if;
   raise notice 'PASS profile streak is derived in the current zone';
 
+  -- 5b. longest comes from the longest run, isodow (not dow) buckets the schedule
+  delete from learning_outcomes where user_id = uid;
+  insert into learning_outcomes (user_id, source_type, item_key, created_at)
+    select uid, 'srs_review', 'l' || d, pg_temp.noon(d::date, hcm)
+    from unnest(array['2026-10-01', '2026-10-02', '2026-10-03', '2026-10-05']) d;
+  select * into r from study_streak(uid, hcm, alld, '2026-10-05');
+  if r.current_streak <> 1 or r.longest_streak <> 3 then
+    raise exception 'FAIL profile longest run vs current run: % %', r.current_streak, r.longest_streak;
+  end if;
+  raise notice 'PASS profile longest run is kept apart from the current run';
+
+  -- 5c. activity on an unscheduled day still counts toward the run
+  delete from learning_outcomes where user_id = uid;
+  insert into learning_outcomes (user_id, source_type, item_key, created_at)
+    select uid, 'srs_review', 'w' || d, pg_temp.noon(d::date, hcm)
+    from unnest(array['2026-10-02', '2026-10-03', '2026-10-05']) d;
+  select * into r from study_streak(uid, hcm, '{1,2,3,4,5}', '2026-10-05');
+  if r.current_streak <> 3 or r.longest_streak <> 3 then
+    raise exception 'FAIL profile unscheduled-day activity dropped: % %', r.current_streak, r.longest_streak;
+  end if;
+  raise notice 'PASS profile unscheduled-day activity counts';
+
   -- 6. badge invariant: shrinking the streak never deletes a badge
   delete from learning_outcomes where user_id = uid;
   insert into learning_outcomes (user_id, source_type, item_key, created_at)
@@ -188,15 +210,37 @@ begin
   raise notice 'PASS profile badges are never revoked';
 end $$;
 
--- 7. study_streak is security invoker: B cannot read A's outcomes through it; anon cannot call it.
+-- 7. study_streak is security invoker. Identities are resolved as postgres BEFORE the role switch
+-- (under authenticated, users_select_own would hide every row and the claims would carry a null sub).
+select set_config('gate.a', (select id::text from users where email = 'profilegate-a@example.invalid'), false);
+select set_config('gate.b', (select id::text from users where email = 'profilegate-b@example.invalid'), false);
+delete from learning_outcomes where user_id in (current_setting('gate.a')::uuid, current_setting('gate.b')::uuid);
 insert into learning_outcomes (user_id, source_type, item_key, created_at)
-  select id, 'srs_review', 'seven', now() from users where email = 'profilegate-a@example.invalid';
+  values (current_setting('gate.a')::uuid, 'srs_review', 'seven', now()),
+         (current_setting('gate.b')::uuid, 'srs_review', 'seven-b', now());
+
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', json_build_object('sub', (select id from users where email = 'profilegate-b@example.invalid'), 'role', 'authenticated')::text, true);
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
 do $$
-declare r record; a uuid := (select id from users where email = 'profilegate-a@example.invalid');
+declare r record; a uuid := current_setting('gate.a')::uuid;
 begin
+  if auth.uid() is distinct from a then raise exception 'FAIL profile claims for A did not resolve: %', auth.uid(); end if;
+  select * into r from study_streak(a, 'UTC', '{1,2,3,4,5,6,7}', (now() at time zone 'UTC')::date);
+  if r.current_streak <> 1 or r.longest_streak <> 1 or r.last_active is distinct from (now() at time zone 'UTC')::date then
+    raise exception 'FAIL profile A cannot read its own streak: % % %', r.current_streak, r.longest_streak, r.last_active;
+  end if;
+  if (select count(*) from learning_outcomes) <> 1 then raise exception 'FAIL profile A should see exactly its own outcome'; end if;
+  raise notice 'PASS profile A reads its own streak and outcomes (positive control)';
+end $$;
+commit;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
+do $$
+declare r record; a uuid := current_setting('gate.a')::uuid;
+begin
+  if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile claims for B did not resolve: %', auth.uid(); end if;
   select * into r from study_streak(a, 'UTC', '{1,2,3,4,5,6,7}', (now() at time zone 'UTC')::date);
   if r.current_streak <> 0 or r.longest_streak <> 0 or r.last_active is not null then
     raise exception 'FAIL profile streak leaked across users: % % %', r.current_streak, r.longest_streak, r.last_active;
@@ -220,10 +264,11 @@ commit;
 
 begin;
 set local role authenticated;
-select set_config('request.jwt.claims', json_build_object('sub', (select id from users where email = 'profilegate-b@example.invalid'), 'role', 'authenticated')::text, true);
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
 do $$
-declare blocked boolean := false; uid uuid := (select id from users where email = 'profilegate-b@example.invalid');
+declare blocked boolean := false; uid uuid := current_setting('gate.b')::uuid;
 begin
+  if auth.uid() is distinct from uid then raise exception 'FAIL profile claims for B did not resolve: %', auth.uid(); end if;
   begin
     perform record_learning_outcome(uid, 'dictation', 'line:forbidden', 10, 'UTC', true);
   exception when insufficient_privilege then blocked := true;
@@ -243,6 +288,9 @@ begin
   if not blocked then raise exception 'FAIL profile authenticated truncate grant'; end if;
   if (select count(*) from learning_outcomes where user_id <> uid) <> 0 then
     raise exception 'FAIL profile outcomes RLS';
+  end if;
+  if (select count(*) from learning_outcomes where user_id = uid) < 1 then
+    raise exception 'FAIL profile B cannot see its own outcomes (positive control)';
   end if;
   raise notice 'PASS profile authenticated grants and cross-user RLS';
 end $$;
