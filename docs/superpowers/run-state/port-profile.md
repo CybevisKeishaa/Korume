@@ -2,7 +2,7 @@
 
 Branch `port-profile`, worktree `.worktrees/port-profile`, base master `2cee918`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Goal and scope
 
@@ -37,12 +37,23 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T11 | accepted | `0cb6965`, `fa036a6`, `121187c` (R-11a frame fidelity; layout proof in T16) |
 | T12 | accepted | `044dd01`, `2855a84` (R-12a: no localeChanged; body guard before parse) |
 | T13 | accepted | `2ee4a23`, `385a089`, `adbb500` (R-13a frame fidelity; one Back sentinel; refresh after save) |
-| T14–T16 | not started | — |
+| T14 | not started | — |
+| T15 | accepted | this commit (Codex; Claude repointed ruling citations to this file) |
+| T16 | not started | — |
 
 ## Contracts and decisions
 
 - Owner rulings R1–R12 and corrections C1–C5: spec §0.
 - Plan-time corrections P1–P5: plan header.
+- Execution rulings (full text in the git-ignored ledger; summaries here are the committed record, decision
+  register P26–P31):
+  - R-5a: heartbeat `start` hygiene closes stale sessions only for the starting presence (spec §5.2 amendment).
+  - R-7a: kanji study time only on curated kanji pages (context must be a uuid; dictionary-only kanji have none).
+  - R-8a: the JLPT tests table is `certification_tests` (renamed in `20260814000027`).
+  - R-8b: `user_test_attempts` is insert-only for learners (UPDATE revoked from anon, authenticated).
+  - R-10a: learner-profile practice/language codes are allowlist-filtered in the reader, not a DB CHECK (R8).
+  - R-11a / R-13a: frame fidelity — row icons, Korume art, photo badges as real controls, preview follows unsaved state.
+  - R-12a: `PATCH /api/profile` returns no `localeChanged`; the client decides a locale change from its pathname.
 - Execution: Codex implements via Paseo (ruling R-route2: every task from T6 on, DB tasks included); Claude
   reviews (opus), re-runs the gates, commits. Ledger: `.superpowers/sdd/2026-10-07-port-profile/progress.md`.
 
@@ -72,7 +83,7 @@ None.
 ## Next actions
 
 1. Task 14 (integration, E2E, mutation): Claude runs Playwright from this worktree only (never the owner's :3000
-   dev server — check the port first); Codex may take Task 15 (docs) in parallel only if files do not overlap.
+   dev server — check the port first).
 2. Task 16: gates, whole-branch review, Chrome measurement 1280x529 / 1440x900 / 375x812 (ledger `T16 / owner`
    lines), then the owner's review with every `Owner decision` / `Owner note` line and rulings R-5a, R-7a.
 3. Owner decisions queued in the ledger (`Owner decision` / `Owner note` lines, R-5a, R-7a) — list them at finish.

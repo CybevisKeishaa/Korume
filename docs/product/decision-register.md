@@ -34,6 +34,21 @@ the user's approval · `OPEN` = not decided.
 | P14 | **Auth = email + Google + Apple.** GitHub: no | `capability-map.md` §3.5 |
 | P15 | **Native mobile apps are planned** — store badges are a roadmap statement | `capability-map.md` §3.5 |
 | P16 | ~~**No landing/gateway page exists yet** — known and accepted, user will design it later~~ · **closed: the user designed it.** `347:6277` is the design for `/` | `screen-inventory.md` §19.0 · ruled 2026-08-26 · reasoning in `landing-page-reconciliation.md` |
+| P17 | **Profile is a private personal archive.** Profile Visibility, Journal Visibility and Show achievements wait for a social/public-profile capability beside G2 | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §0.2 R3, §14 |
+| P18 | **Native language (L1) informs only the learner's Korume chat context.** It does not set response language or enter shared Knowledge, analysis or cache keys | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §0.2 R4, §6.4 |
+| P19 | **Reminder controls ship together in `study-reminders`.** Preferred Study Time, learning reminders and weekly report email share one schema, validator and storage across Edit Profile and Settings | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §0.2 R5, §14 |
+| P20 | **The learner's study timezone sets the canonical day boundary.** UTC evidence is projected through the current zone; leaderboard week stays one shared exception | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §3.1–3.5 |
+| P21 | **Study time is heartbeat-backed UTC session intervals**, merged and split at local midnights when read; minutes award no XP | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §5.1–5.5 |
+| P22 | **Streak derives from `learning_outcomes` using the current zone and schedule.** Earned badges are never revoked when that projection changes | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §0.3 C1–C2, §4.3 |
+| P23 | **Today's Memory is fixed at study-day start.** Memories created later join tomorrow's candidate set | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §0.4 C4, §6.3 |
+| P24 | **“Learning with Korume since” uses `firstKnownLearningAt`**, the earliest known learning evidence, without claiming pre-Korume history | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §0.4 C5, §6.0 |
+| P25 | **Community avatars remain OAuth-only.** Private uploaded photos resolve only on the learner's own surfaces | `docs/superpowers/plans/2026-10-07-port-profile.md` plan correction P5 |
+| P26 | **Heartbeat start hygiene closes stale sessions only for the starting presence.** Another presence can resume and segment on its own beat | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §5.2; port-profile ruling R-5a, a spec amendment (`docs/superpowers/run-state/port-profile.md`) |
+| P27 | **Kanji study time counts only on curated kanji pages** with a kanji UUID; dictionary-only pages do not send a valid context | `docs/superpowers/specs/2026-10-07-port-profile-design.md` §5.6; port-profile ruling R-7a (`docs/superpowers/run-state/port-profile.md`) |
+| P28 | **Certification attempts are insert-only for learners.** `user_test_attempts` UPDATE is revoked; future updates need a narrow grant or definer function | port-profile ruling R-8b (`docs/superpowers/run-state/port-profile.md`) |
+| P29 | **Learner-profile practice and language codes are allowlist-filtered by the reader**, not constrained by a DB CHECK | port-profile ruling R-10a (`docs/superpowers/run-state/port-profile.md`) |
+| P30 | **Profile frame details ship as functional UI:** row icons and Korume hero art; photo badges link to Edit Profile or open its file input, and the preview follows unsaved choices | port-profile rulings R-11a, R-13a (`docs/superpowers/run-state/port-profile.md`) |
+| P31 | **Locale change after profile save is decided client-side** from the chosen locale and current pathname; the PATCH response has no `localeChanged` | port-profile ruling R-12a (`docs/superpowers/run-state/port-profile.md`) |
 
 **Note against P13 — SePay and MoMo are design exploration; P13 was re-affirmed, not reopened.**
 Figma frame `340:5402` *Choose method* (captured 2026-08-23 — `figma-frame-map.md` § "Second capture
@@ -267,8 +282,7 @@ three round-2 gaps are ruled.
 **Scope — answerable after the IA is locked** (`capability-map.md` §3.5): Vimeo / multi-platform
 import · `JLPT Speaking` as a Certification↔Conversation edge · `AI Coach` = flag or paid tier ·
 theme & accent vs the dark-only token system · camera permission · the social graph behind
-`Friends` visibility · the **L1 (native language)** field the Companion's *"without thinking in
-Vietnamese"* depends on.
+`Friends` visibility. L1 is decided in P18.
 
 **Model / schema, deferred to their own specs:** conversation scenario model (8 wizard dimensions +
 6 trait dials vs one text column) · save-everywhere → one collection surface (F-010/F-014) · curated

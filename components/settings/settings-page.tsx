@@ -32,7 +32,8 @@ export interface SettingsPageProps {
  *
  * Rows the frame draws that this page does NOT ship, each for a recorded
  * reason rather than an oversight — Study Reminder Time and the whole
- * Learning Reminders section (the `study-reminders` branch, spec §10), Theme
+ * Learning Reminders section and Edit Profile's three reminder-dependent
+ * controls (the `study-reminders` branch, port-profile spec R5), Theme
  * and Accent Color (spec §1.3), and the six About rows plus Contact Support
  * that have no destination in this repo (spec §1.7). A row that goes nowhere
  * is worse than an absent row: it looks finished.
