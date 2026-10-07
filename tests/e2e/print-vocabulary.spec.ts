@@ -226,8 +226,6 @@ test("12 · self-test: no printed answer appears anywhere on item pages; the ans
   await learner(page);
   await open(page);
   await page.getByRole("radio", { name: "Self-test" }).click();
-  await page.getByRole("switch", { name: "Example" }).click(); // examples are off by default; the masking is the subject here
-  await expect(page.locator("[data-print-root] .vp-example").first()).toBeAttached({ timeout: 30_000 });
   await expect(page.locator("[data-print-root] .vp-answer").first()).toBeAttached({ timeout: 30_000 });
   const result = await page.evaluate(() => {
     const sheets = [...document.querySelectorAll("[data-print-root] .vp-sheet")];
@@ -281,6 +279,8 @@ test("14 · identity: watermark centred on every sheet, quote band and footer at
       footTop: sheet.querySelector(".vp-foot-block")!.getBoundingClientRect().top - box.top,
       credit: sheet.querySelector(".vp-credit")?.textContent ?? "",
       opacity: Number(getComputedStyle(sheet.querySelector(".vp-watermark")!).opacity),
+      // A missing file still has its fixed mm box; only the decoded size proves the art loaded.
+      loaded: (sheet.querySelector(".vp-watermark img") as HTMLImageElement).naturalWidth > 0,
     };
   }));
   expect(sheets.length).toBeGreaterThan(1);
@@ -291,6 +291,7 @@ test("14 · identity: watermark centred on every sheet, quote band and footer at
     if (index === sheets.length - 1) expect(sheet.credit).toContain("JMdict");
     else expect(sheet.credit).toBe("");
     expect(sheet.opacity).toBeLessThanOrEqual(0.06);
+    expect(sheet.loaded).toBe(true);
   }
 });
 
@@ -359,14 +360,24 @@ test("18 · every item sheet but the last spreads its items down to the quote ba
   expect(sheets.at(-1)!.maxGap).toBeCloseTo(0, 0);
 });
 
-test("19 · default practice settings fit four items on every continuation sheet but the last (owner 2026-10-07)", async ({ page }) => {
+test("19 · default practice settings fit four items, example included, on every continuation sheet but the last (owner 2026-10-07)", async ({ page }) => {
   await learner(page);
   await open(page);
   const counts = await page.evaluate(() => [...document.querySelectorAll("[data-print-root] .vp-sheet")]
-    .map((sheet) => ({ items: sheet.querySelectorAll(".vp-item").length, examples: sheet.querySelectorAll(".vp-example").length })));
+    .map((sheet) => ({
+      items: sheet.querySelectorAll(".vp-item").length,
+      examples: sheet.querySelectorAll(".vp-example").length,
+      // The example shares the stroke-guide row: its box lies inside the guide boxes' vertical span.
+      offRow: [...sheet.querySelectorAll(".vp-item")].filter((item) => {
+        const example = item.querySelector(".vp-example")?.getBoundingClientRect();
+        const guide = item.querySelector(".vp-guide")?.getBoundingClientRect();
+        return example && guide && (example.top < guide.top - 0.5 || example.bottom > guide.bottom + 0.5);
+      }).length,
+    })));
   // The fixture title wraps to three lines on purpose, so sheet 1 keeps 3 items; a title of up to two lines keeps 4.
   const middle = counts.slice(1, -1);
   expect(middle.length).toBeGreaterThan(0); // positive control: there is a continuation sheet that is not the last
-  expect(counts.every((sheet) => sheet.examples === 0)).toBe(true);
+  expect(counts.reduce((sum, sheet) => sum + sheet.examples, 0)).toBeGreaterThan(0); // examples are on by default
+  expect(counts.map((sheet) => sheet.offRow)).toEqual(counts.map(() => 0));
   expect(middle.map((sheet) => sheet.items)).toEqual(middle.map(() => 4));
 });

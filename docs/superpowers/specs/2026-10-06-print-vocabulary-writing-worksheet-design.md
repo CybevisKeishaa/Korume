@@ -402,8 +402,15 @@ Rulings made while the plan ran; the SDD ledger holds the reasoning for each.
   item sheet spreads its items (`justify-content: space-between`) so the last item meets the quote band; the leftover
   goes between items, item heights and pagination are unchanged. The last item sheet and answer sheets stay packed
   at the top. Spread items never shrink (`flex: none`), so the PDF overflow guard still sees a crossing (test 17).
-- **OWNER RULING 2026-10-07 (owner review) — four items per sheet:** `Ví dụ` (showExample) is off by default; item
-  padding is 2mm (compact 1.2mm) and the stroke-guide box 14mm. A default practice item is 55.8mm, so a continuation
-  sheet holds 4 and sheet 1 holds 4 while the title takes at most two lines (Ep.729: 4,4,4,2). Turning `Ví dụ` on
-  gives 3 per sheet, spread. Rejected after measuring: dropping the example alone (247mm for 4) and three writing
-  rows per item (245mm for 3) both overflow a 243mm continuation body.
+- **OWNER RULING 2026-10-07 (owner review) — four items per sheet:** item padding is 2mm (compact 1.2mm) and the
+  stroke-guide box 14mm. In practice mode the example sits on the stroke-guide row, right of the guides, clamped to
+  two lines, so it adds no height; `Ví dụ` stays on by default (an interim default of off was reverted the same day).
+  A default practice item is 55.8mm, so a continuation sheet holds 4 and sheet 1 holds 4 while the title takes at
+  most two lines (Ep.729: 4,4,4,2). Self-test keeps the example on its own line. Rejected after measuring: dropping
+  the example alone (247mm for 4) and three writing rows per item (245mm for 3) both overflow a 243mm continuation
+  body.
+- **OWNER RULING 2026-10-07 (owner review) — watermark art:** the centre watermark is the owner's
+  `assets/mascot/source/Korume.png` above the KORUME wordmark, replacing `poses/neutral.png` (W9). The source is glow
+  art on solid black, so `scripts/mascot/watermark.js` turns black into transparency (alpha = brightest channel,
+  colour divided back out) and writes `public/mascot/watermark/korume.png` (900x720). It prints at 90x72mm with
+  `brightness(0.8)` under the same 4% group opacity, which matches the old pose's ink density (0.25 against 0.08 raw).

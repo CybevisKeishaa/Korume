@@ -1646,13 +1646,13 @@
 }
 
 /* Writing worksheet (spec 2026-10-06 W). Geometry in mm/pt; layout.ts holds the same numbers. */
-.vp-paper { --vp-guide: 14mm; } /* owner 2026-10-07: with 2mm item padding and no example, four items per sheet */
+.vp-paper { --vp-guide: 14mm; } /* owner 2026-10-07: with 2mm item padding and the example beside the guides, four items per sheet */
 .vp-sheet { position: relative; }
 .vp-body { position: relative; z-index: 1; }
 .vp-spread { display: flex; flex-direction: column; justify-content: space-between; }
 .vp-spread > * { flex: none; } /* never shrink an item to fit: the PDF overflow guard must see it cross the band */
 .vp-watermark { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4mm; opacity: 0.04; filter: grayscale(1); pointer-events: none; }
-.vp-watermark img { width: 70mm; height: 70mm; object-fit: contain; }
+.vp-watermark img { width: 90mm; height: 72mm; object-fit: contain; filter: brightness(0.8); } /* the glow art is light: 0.8 matches the old pose's ink at the same 4% */
 .vp-watermark span { font-family: var(--font-display); font-weight: 700; font-size: 28pt; letter-spacing: 0.4em; color: #000; }
 .vp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1mm 3mm; }
 .vp-meta .vp-reading { margin-inline-start: 0; }
@@ -1661,6 +1661,11 @@
 .vp-number { min-width: 6mm; font-weight: 700; }
 .vp-prompt { font-size: 12pt; color: var(--vp-ink); }
 .vp-guides { display: flex; flex-wrap: wrap; align-items: center; gap: 2mm; margin-top: 1.5mm; }
+.vp-guide-line { display: flex; align-items: center; gap: 4mm; margin-top: 1.5mm; }
+.vp-guide-line > .vp-guides { flex: none; margin-top: 0; }
+.vp-guide-line:empty { display: none; }
+/* Two lines at most, so the example never grows the row past the 14mm guide box. */
+.vp-guide-line > .vp-example { flex: 1 1 0; min-width: 0; margin-top: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .vp-guides-label { font-size: 7pt; color: var(--vp-muted); }
 .vp-guide { width: var(--vp-guide); height: var(--vp-guide); border: 0.2mm solid var(--vp-rule); }
 .vp-guide-cross { stroke: var(--vp-rule); stroke-width: 0.6; stroke-dasharray: 3 3; }

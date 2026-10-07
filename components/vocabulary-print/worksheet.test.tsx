@@ -34,7 +34,7 @@ describe("Worksheet (spec W §3–§4)", () => {
     expect(pages[0]?.querySelector(".vp-head-first img")).not.toBeNull();
     expect(pages[1]?.querySelector(".vp-head-cont")).not.toBeNull();
     for (const [index, page] of [...pages].entries()) {
-      expect(page.querySelector(".vp-watermark img")?.getAttribute("src")).toBe("/mascot/poses/neutral.png");
+      expect(page.querySelector(".vp-watermark img")?.getAttribute("src")).toBe("/mascot/watermark/korume.png"); // owner art 2026-10-07, built by scripts/mascot/watermark.js
       expect(page.querySelector(".vp-watermark")?.textContent).toBe("KORUME");
       expect(page.querySelector(".vp-quote")?.textContent).toBe(`“quote-${index}”`);
       expect(page.querySelector(".vp-foot")?.textContent).toContain(`${index + 1} / 2`);
@@ -48,7 +48,8 @@ describe("Worksheet (spec W §3–§4)", () => {
     expect(item.querySelector(".vp-guide")).not.toBeNull();
     expect(item.querySelectorAll(".vp-model")).toHaveLength(2);
     expect(item.querySelector(".vp-chip")?.textContent).toBe("EN");
-    expect(item.querySelector(".vp-example")?.textContent).toBe("苦手な人");
+    expect(item.querySelector(".vp-guide-line > .vp-example")?.textContent).toBe("苦手な人"); // same row as the stroke guides
+    expect(item.querySelector(".vp-guide-line > .vp-guides")).not.toBeNull();
     expect(page.querySelector(".vp-credit")?.textContent).toBe("");
     expect(last.querySelector(".vp-credit")?.textContent).toBe("Data: JMdict v1 (CC BY-SA 4.0) · KanjiVG r1 (CC BY-SA 3.0)");
   });

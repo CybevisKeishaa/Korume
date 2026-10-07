@@ -29,8 +29,8 @@ describe("prepareDocument — selection and kana (spec W W4, §1.3)", () => {
 });
 
 describe("prepareDocument — practice (spec W §3.1)", () => {
-  it("prints no example by default, so a full page holds four items (owner 2026-10-07)", () => {
-    expect(prepareDocument(items, new Set(["a"]), DEFAULT_WORKSHEET_SETTINGS).items[0]?.example).toBeUndefined();
+  it("prints the example by default; it shares the stroke-guide row, so it costs no height (owner 2026-10-07)", () => {
+    expect(prepareDocument(items, new Set(["a"]), DEFAULT_WORKSHEET_SETTINGS).items[0]?.example).toBe(line);
   });
   it("shows the target and glyphs, the toggled metadata and the raw example, and has no answers", () => {
     const doc = prepareDocument(items, new Set(["a"]), { ...DEFAULT_WORKSHEET_SETTINGS, showMeaning: false, showExample: true });

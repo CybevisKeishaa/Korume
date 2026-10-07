@@ -1,6 +1,6 @@
-/** Spec §6 + W W9: the first-page colour mascot, and the full-body pose for the centre watermark. No new artwork. */
+/** Spec §6 + W W9: the first-page colour mascot; the centre watermark is the owner's art (2026-10-07), built by scripts/mascot/watermark.js. */
 export const MASCOT_SRC = "/mascot/poses/quill-writing.png";
-export const WATERMARK_SRC = "/mascot/poses/neutral.png";
+export const WATERMARK_SRC = "/mascot/watermark/korume.png";
 
 let ready: Promise<void> | null = null;
 

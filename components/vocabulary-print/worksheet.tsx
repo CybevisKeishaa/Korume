@@ -67,9 +67,12 @@ export function PracticeItem({ item, settings, labels, resources }: { item: Prep
         {item.reading && <span lang="ja" className="vp-reading">{item.reading}</span>}
         <Meaning item={item} labels={labels} />
       </div>
-      <StrokeGuideRow glyphs={item.glyphs ?? []} guides={resources.strokeGuides} label={labels.strokeOrder} />
+      {/* Owner 2026-10-07: the example sits beside the stroke guides, so it adds no line to the item. */}
+      <div className="vp-guide-line">
+        <StrokeGuideRow glyphs={item.glyphs ?? []} guides={resources.strokeGuides} label={labels.strokeOrder} />
+        {item.example && <div lang="ja" className="vp-example">{item.example}</div>}
+      </div>
       <WritingRows cells={item.cells} model={item.glyphs ?? null} mode="practice" density={settings.density} />
-      {item.example && <div lang="ja" className="vp-example">{item.example}</div>}
     </div>
   );
 }
