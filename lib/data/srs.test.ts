@@ -81,6 +81,12 @@ describe("submitReview mastered_at (first transition)", () => {
     expect(row.mastered_at).toBeNull();
   });
 
+  it("does not invent a date for a row already at the threshold that never had one (not a first crossing)", async () => {
+    stage(3);
+    const { row } = await review("user_vocab_progress", "vocab", prior(2, null));
+    expect(row.mastered_at).toBeNull();
+  });
+
   it("sends no mastered_at key for kanji (no such column)", async () => {
     stage(3);
     const { row } = await review("user_kanji_progress", "kanji", { srs_stage: 2, interval_days: 3, ease_factor: 2.5 });

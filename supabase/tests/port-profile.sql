@@ -737,15 +737,15 @@ commit;
 
 -- 5. Profile columns, first-transition timestamps, avatars bucket (spec §2.1, §2.2, §9). Identities from gate.a / gate.b,
 -- claims built BEFORE the role switch; every "cannot" has a "can" beside it.
--- storage.protect_delete blocks direct deletes; the gate owns these throwaway rows, so replica mode skips it here only.
+-- storage.protect_delete blocks direct deletes unless storage.allow_delete_query is true; the gate owns these throwaway rows.
 begin;
-set local session_replication_role = replica;
+set local storage.allow_delete_query = 'true';
 delete from storage.objects where bucket_id in ('avatars', 'recordings')
   and (storage.foldername(name))[1] in (current_setting('gate.a'), current_setting('gate.b'));
 commit;
 delete from certification_tests where id = '00000000-0000-0000-0000-0000000000b1';
-delete from vocab where id = '00000000-0000-0000-0000-0000000000a1';
-insert into vocab (id, word) values ('00000000-0000-0000-0000-0000000000a1', 'profilegate');
+delete from vocab where id in ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a2');
+insert into vocab (id, word) values ('00000000-0000-0000-0000-0000000000a1', 'profilegate'), ('00000000-0000-0000-0000-0000000000a2', 'profilegate2');
 insert into certification_tests (id, level, title) values ('00000000-0000-0000-0000-0000000000b1', 'N5', 'profilegate');
 insert into user_vocab_progress (user_id, vocab_id, srs_stage, mastered_at)
   values (current_setting('gate.a')::uuid, '00000000-0000-0000-0000-0000000000a1', 2, '2026-09-01 10:00Z');
@@ -777,7 +777,8 @@ begin
     preferred_practices = array['kanji','grammar','reading','vocabulary','shadowing','listening','pronunciation','conversation']
     where id = auth.uid();
   if not exists (select 1 from users where id = auth.uid() and username = 'keishaa' and char_length(bio) = 160
-      and country = 'VN' and native_language = 'vi' and target_jlpt_level = 'N3' and cardinality(preferred_practices) = 8) then
+      and country = 'VN' and native_language = 'vi' and target_jlpt_level = 'N3' and char_length(learning_goal) = 200
+      and cardinality(preferred_practices) = 8) then
     raise exception 'FAIL profile 5.2 A cannot update its own profile columns';
   end if;
   if (select count(*) from storage.objects where bucket_id = 'avatars') <> 1
@@ -785,6 +786,27 @@ begin
     raise exception 'FAIL profile 5.2 A must read exactly its own avatar object';
   end if;
   raise notice 'PASS profile A updates its columns and reads only its own avatar (positive controls)';
+end $$;
+commit;
+
+-- 5.2b mastered_at: a NULL value can be SET by an update through the trigger (the only production path)
+begin;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+set local role authenticated;
+do $$
+declare v uuid := '00000000-0000-0000-0000-0000000000a2';
+begin
+  if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 5.2b claims for A: %', auth.uid(); end if;
+  insert into user_vocab_progress (user_id, vocab_id, srs_stage) values (auth.uid(), v, 1);
+  update user_vocab_progress set srs_stage = 2, mastered_at = '2026-09-05 10:00Z' where vocab_id = v;
+  if (select mastered_at from user_vocab_progress where vocab_id = v) is distinct from '2026-09-05 10:00Z'::timestamptz then
+    raise exception 'FAIL profile 5.2b first mastered_at did not land';
+  end if;
+  update user_vocab_progress set srs_stage = 0, mastered_at = null where vocab_id = v;
+  if (select mastered_at from user_vocab_progress where vocab_id = v) is distinct from '2026-09-05 10:00Z'::timestamptz then
+    raise exception 'FAIL profile 5.2b mastered_at changed after being set';
+  end if;
+  raise notice 'PASS profile mastered_at: NULL can be set once, then stays';
 end $$;
 commit;
 
@@ -840,6 +862,7 @@ begin
   begin update users set username = 'keishaa' where id = auth.uid(); exception when unique_violation then caught := 'ok'; end;
   if caught is null then raise exception 'FAIL profile 5.4 duplicate username accepted'; end if;
   update users set username = 'keishaa_b' where id = auth.uid();
+  if (select username from users where id = auth.uid()) is distinct from 'keishaa_b' then raise exception 'FAIL profile 5.4 B cannot update its own username'; end if;
   if (select count(*) from storage.objects where bucket_id = 'avatars') <> 1
     or exists (select 1 from storage.objects where bucket_id = 'avatars' and name like current_setting('gate.a') || '/%') then
     raise exception 'FAIL profile 5.4 B must read only its own avatar object';
@@ -854,13 +877,13 @@ begin
 end $$;
 commit;
 
--- storage.protect_delete blocks direct deletes; the gate owns these throwaway rows, so replica mode skips it here only.
+-- storage.protect_delete blocks direct deletes unless storage.allow_delete_query is true; the gate owns these throwaway rows.
 begin;
-set local session_replication_role = replica;
+set local storage.allow_delete_query = 'true';
 delete from storage.objects where bucket_id in ('avatars', 'recordings')
   and (storage.foldername(name))[1] in (current_setting('gate.a'), current_setting('gate.b'));
 commit;
 delete from certification_tests where id = '00000000-0000-0000-0000-0000000000b1';
-delete from vocab where id = '00000000-0000-0000-0000-0000000000a1';
+delete from vocab where id in ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-0000000000a2');
 
 delete from auth.users where email in ('profilegate-a@example.invalid', 'profilegate-b@example.invalid');

@@ -60,6 +60,8 @@ export async function submitReview(
   const existingMasteredAt = (existing as { mastered_at?: string | null } | null)?.mastered_at ?? null;
 
   const next = reviewItem(state, input.quality as Quality, now, REVIEW_FREQUENCY_MULTIPLIER[prefs.reviewFrequency]);
+  // A first crossing only: a row already at the threshold with no value never gets a date invented.
+  const crossed = (existing?.srs_stage ?? 0) < MASTERY_THRESHOLD && next.repetitions >= MASTERY_THRESHOLD;
 
   const { error: upsertError } = await supabase.from(table).upsert(
     {
@@ -72,7 +74,7 @@ export async function submitReview(
       last_reviewed_at: next.lastReviewedAt.toISOString(),
       // First time the word reached mastery; the DB trigger keeps it once set (spec §2.2).
       ...(input.itemType === "vocab"
-        ? { mastered_at: existingMasteredAt ?? (next.repetitions >= MASTERY_THRESHOLD ? now.toISOString() : null) }
+        ? { mastered_at: existingMasteredAt ?? (crossed ? now.toISOString() : null) }
         : {}),
     },
     { onConflict: `user_id,${fk}` },

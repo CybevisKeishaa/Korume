@@ -139,7 +139,7 @@ async function eraseStoragePrefix(
   // silently under-deletes must be caught against what THAT call asked for,
   // and stopping at the first shortfall keeps the message pointing at the
   // batch that actually failed. Either way nothing proceeds to the
-  // irreversible users-row delete while recordings may remain.
+  // irreversible users-row delete while objects may remain.
   for (let start = 0; start < keys.length; start += REMOVE_BATCH_SIZE) {
     const batch = keys.slice(start, start + REMOVE_BATCH_SIZE);
     const { data, error } = await bucket.remove(batch);
@@ -154,7 +154,7 @@ async function eraseStoragePrefix(
         `Storage erase incomplete for user ${userId} in "${bucketName}": asked to remove ${batch.length} ` +
           `object(s) in this batch (${start + batch.length} of ${keys.length} overall), ` +
           `Storage reported ${removedCount}. Refusing to proceed to the ` +
-          `irreversible users-row delete while recordings may remain.`,
+          `irreversible users-row delete while objects may remain.`,
       );
     }
   }

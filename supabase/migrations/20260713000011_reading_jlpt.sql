@@ -136,13 +136,11 @@ alter table user_test_attempts
 -- passed_at from being rewritten. The default grant gave authenticated and anon UPDATE on every column.
 revoke update on user_test_attempts from anon, authenticated;
 
--- user_test_attempts already has full owner CRUD via test_attempts_own
+-- user_test_attempts keeps owner insert/select via test_attempts_own
 -- (20260712000002_rls.sql: `for all ... using (user_id = auth.uid())
--- with check (user_id = auth.uid())`), which already covers the INSERT the
--- client needs to start an attempt (answers/started_at populated
--- client-side as the user progresses, score/section_scores/completed_at
--- filled by the server on submit through the same owner-scoped UPDATE).
--- Nothing further to add here — noted for the handoff record.
+-- with check (user_id = auth.uid())`). Attempts are insert-only: submitJlptTest
+-- writes the finished row (score, section_scores, completed_at, passed_at) in
+-- one INSERT and nothing updates it, hence the UPDATE revoke above.
 
 -- ---------------------------------------------------------------------------
 -- Indexes
