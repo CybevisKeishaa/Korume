@@ -1652,7 +1652,7 @@
 .vp-spread { display: flex; flex-direction: column; justify-content: space-between; }
 .vp-spread > * { flex: none; } /* never shrink an item to fit: the PDF overflow guard must see it cross the band */
 .vp-watermark { position: absolute; inset: 0; z-index: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4mm; opacity: 0.04; filter: grayscale(1); pointer-events: none; }
-.vp-watermark img { width: 90mm; height: 72mm; object-fit: contain; filter: brightness(0.8); } /* the glow art is light: 0.8 matches the old pose's ink at the same 4% */
+.vp-watermark img { width: 90mm; height: 72mm; object-fit: contain; filter: brightness(0.35) contrast(1.2); } /* calibration knob: the cream glow art needs ~0.7 ink to show as clearly as the black wordmark under the shared 4% opacity (owner 2026-10-07) */
 .vp-watermark span { font-family: var(--font-display); font-weight: 700; font-size: 28pt; letter-spacing: 0.4em; color: #000; }
 .vp-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1mm 3mm; }
 .vp-meta .vp-reading { margin-inline-start: 0; }
