@@ -81,8 +81,8 @@ export function IdentityCard({ identity, variant, actions }: { identity: Profile
       </div>
       <Name className="text-2xl font-bold [overflow-wrap:anywhere]">{identity.displayName}</Name>
       {identity.username && <p className="text-sm text-muted-foreground">@{identity.username}</p>}
-      {identity.bio && <p className="text-sm [overflow-wrap:anywhere]">{identity.bio}</p>}
-      <ul className="mt-sm grid w-full gap-sm border-t border-border pt-md text-start text-sm">
+      {identity.bio && <p data-identity-bio className="text-sm [overflow-wrap:anywhere]">{identity.bio}</p>}
+      <ul data-identity-rows className="mt-sm grid w-full gap-sm border-t border-border pt-md text-start text-sm">
         {rows.map((r) => (
           <li key={r.label}>
             <span className="flex items-center gap-xs text-muted-foreground"><ProfileIcon name={r.icon} />{r.label}</span>

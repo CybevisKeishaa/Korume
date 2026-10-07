@@ -1,7 +1,9 @@
 import "server-only";
 import sharp from "sharp";
 
-export const AVATAR_INPUT_MAX_BYTES = 2 * 1024 * 1024;
+import { AVATAR_INPUT_MAX_BYTES } from "./avatar-limits";
+
+export { AVATAR_INPUT_MAX_BYTES };
 export const AVATAR_MAX_PIXELS = 40_000_000;
 export const AVATAR_SIZE = 512;
 

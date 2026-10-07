@@ -94,5 +94,106 @@
   "achievements": {
     "title": "Achievements",
     "empty": "Badges you earn will appear here."
+  },
+  "edit": {
+    "eyebrow": "Profile identity",
+    "title": "Shape your learning identity",
+    "hint": "Changes appear in your profile preview.",
+    "previewEyebrow": "Live profile preview",
+    "formEyebrow": "Edit profile",
+    "formTitle": "Make this space yours",
+    "sections": {
+      "basic": "Basic information",
+      "preferences": "Learning preferences",
+      "korume": "Korume"
+    },
+    "fields": {
+      "displayName": "Display name",
+      "username": "Username",
+      "bio": "Bio",
+      "country": "Country",
+      "timeZone": "Timezone",
+      "nativeLanguage": "Native language",
+      "targetJlpt": "Target JLPT",
+      "dailyGoal": "Daily goal",
+      "learningGoal": "Learning goal",
+      "interfaceLanguage": "Interface language",
+      "subtitleStyle": "Subtitle style",
+      "defaultFurigana": "Default furigana",
+      "preferredPractice": "Preferred practice",
+      "showKorume": "Show Korume"
+    },
+    "hints": {
+      "username": "3 to 20 letters, numbers or underscores.",
+      "timeZone": "Choose from the list or type a zone such as Asia/Tokyo."
+    },
+    "notSet": "Not set",
+    "dailyMinutes": "{minutes} minutes",
+    "subtitle": {
+      "hidden": "Japanese",
+      "reveal": "Japanese, translation on tap",
+      "always": "Japanese + translation"
+    },
+    "furigana": {
+      "always": "Always on",
+      "adaptive": "Adaptive",
+      "hidden": "Off"
+    },
+    "practice": {
+      "shadowing": "Shadowing",
+      "listening": "Listening",
+      "pronunciation": "Pronunciation",
+      "vocabulary": "Vocabulary",
+      "kanji": "Kanji",
+      "grammar": "Grammar",
+      "reading": "Reading",
+      "conversation": "Conversation"
+    },
+    "errors": {
+      "format": "Use 3 to 20 lowercase letters, numbers or underscores.",
+      "reserved": "That name is reserved. Try another.",
+      "taken": "That username is taken.",
+      "too_long": "That is too long.",
+      "country": "Choose a country from the list.",
+      "time_zone": "That is not a timezone we recognise.",
+      "required": "This field is required.",
+      "invalid": "Check this field."
+    },
+    "username": {
+      "checking": "Checking…",
+      "available": "Available"
+    },
+    "avatar": {
+      "label": "Profile photo",
+      "change": "Change photo",
+      "remove": "Remove uploaded photo",
+      "errors": {
+        "type": "Use a JPEG, PNG or WebP photo.",
+        "size": "That photo is over 2 MB.",
+        "corrupt": "We could not process that photo. It may be damaged or too large. Try another."
+      }
+    },
+    "currentKorume": {
+      "eyebrow": "Current Korume",
+      "title": "Korume",
+      "body": "A quiet friend who keeps the small moments safe."
+    },
+    "relationship": {
+      "eyebrow": "Relationship",
+      "title": "Korumeship"
+    },
+    "korumeFooter": "Korume will use these choices to support you better.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "saveFailed": "We could not save your profile. Please try again.",
+    "rateLimited": "Too many saves. Wait a moment and try again.",
+    "dirty": {
+      "title": "Leave without saving?",
+      "body": "Your changes to this profile have not been saved.",
+      "stay": "Keep editing",
+      "leave": "Leave",
+      "close": "Close dialog"
+    }
   }
 }

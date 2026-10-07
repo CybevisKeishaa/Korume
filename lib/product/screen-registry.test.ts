@@ -239,7 +239,7 @@ describe("screen registry invariants", () => {
     // is why 2026-08-12 drops by the same one.
     expect(Object.fromEntries(stampedByDate)).toEqual({
       // 69: Ask Korume deleted the `sensei` row (its 215:15164 frame moved to `korume-chat`, 2026-10-03).
-      "2026-08-12": 68,
+      "2026-08-12": 67,
       "2026-08-20": 3,
       "2026-08-23": 8,
       "2026-08-26": 1,
@@ -248,8 +248,8 @@ describe("screen registry invariants", () => {
       "2026-09-29": 1,
       // `korume-chat`: a new row for /korume/chat, built against 215:15164 on this day (Ask Korume Task 10a).
       "2026-10-03": 1,
-      // `profile`: re-compared against frame 66:166 and ported (port-profile Task 11); one stamp moved off 2026-08-12.
-      "2026-10-07": 1,
+      // `profile` (66:166, Task 11) and `edit-profile` (67:595, Task 13): re-compared and ported; two stamps moved off 2026-08-12.
+      "2026-10-07": 2,
     });
   });
 });

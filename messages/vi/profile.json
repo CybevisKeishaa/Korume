@@ -94,5 +94,106 @@
   "achievements": {
     "title": "Thành tích",
     "empty": "Huy hiệu bạn nhận được sẽ hiện ở đây."
+  },
+  "edit": {
+    "eyebrow": "Danh tính hồ sơ",
+    "title": "Định hình danh tính học tập của bạn",
+    "hint": "Thay đổi sẽ hiện trong bản xem trước hồ sơ.",
+    "previewEyebrow": "Xem trước hồ sơ trực tiếp",
+    "formEyebrow": "Chỉnh sửa hồ sơ",
+    "formTitle": "Biến không gian này thành của bạn",
+    "sections": {
+      "basic": "Thông tin cơ bản",
+      "preferences": "Tùy chọn học tập",
+      "korume": "Korume"
+    },
+    "fields": {
+      "displayName": "Tên hiển thị",
+      "username": "Tên người dùng",
+      "bio": "Giới thiệu",
+      "country": "Quốc gia",
+      "timeZone": "Múi giờ",
+      "nativeLanguage": "Ngôn ngữ mẹ đẻ",
+      "targetJlpt": "JLPT mục tiêu",
+      "dailyGoal": "Mục tiêu mỗi ngày",
+      "learningGoal": "Mục tiêu học tập",
+      "interfaceLanguage": "Ngôn ngữ giao diện",
+      "subtitleStyle": "Kiểu phụ đề",
+      "defaultFurigana": "Furigana mặc định",
+      "preferredPractice": "Cách luyện tập ưa thích",
+      "showKorume": "Hiển thị Korume"
+    },
+    "hints": {
+      "username": "3 đến 20 chữ cái, số hoặc dấu gạch dưới.",
+      "timeZone": "Chọn trong danh sách hoặc nhập múi giờ như Asia/Tokyo."
+    },
+    "notSet": "Chưa đặt",
+    "dailyMinutes": "{minutes} phút",
+    "subtitle": {
+      "hidden": "Tiếng Nhật",
+      "reveal": "Tiếng Nhật, chạm để xem bản dịch",
+      "always": "Tiếng Nhật + bản dịch"
+    },
+    "furigana": {
+      "always": "Luôn bật",
+      "adaptive": "Thích ứng",
+      "hidden": "Tắt"
+    },
+    "practice": {
+      "shadowing": "Shadowing",
+      "listening": "Nghe",
+      "pronunciation": "Phát âm",
+      "vocabulary": "Từ vựng",
+      "kanji": "Kanji",
+      "grammar": "Ngữ pháp",
+      "reading": "Đọc",
+      "conversation": "Hội thoại"
+    },
+    "errors": {
+      "format": "Dùng 3 đến 20 chữ cái thường, số hoặc dấu gạch dưới.",
+      "reserved": "Tên này đã được giữ trước. Hãy thử tên khác.",
+      "taken": "Tên người dùng này đã có người dùng.",
+      "too_long": "Nội dung quá dài.",
+      "country": "Hãy chọn một quốc gia trong danh sách.",
+      "time_zone": "Chúng tôi không nhận ra múi giờ này.",
+      "required": "Trường này là bắt buộc.",
+      "invalid": "Hãy kiểm tra lại trường này."
+    },
+    "username": {
+      "checking": "Đang kiểm tra…",
+      "available": "Có thể dùng"
+    },
+    "avatar": {
+      "label": "Ảnh hồ sơ",
+      "change": "Đổi ảnh",
+      "remove": "Xóa ảnh đã tải lên",
+      "errors": {
+        "type": "Hãy dùng ảnh JPEG, PNG hoặc WebP.",
+        "size": "Ảnh này lớn hơn 2 MB.",
+        "corrupt": "Chúng tôi không xử lý được ảnh này. Ảnh có thể bị hỏng hoặc quá lớn. Hãy thử ảnh khác."
+      }
+    },
+    "currentKorume": {
+      "eyebrow": "Korume hiện tại",
+      "title": "Korume",
+      "body": "Một người bạn trầm lặng giữ gìn những khoảnh khắc nhỏ."
+    },
+    "relationship": {
+      "eyebrow": "Mối quan hệ",
+      "title": "Korumeship"
+    },
+    "korumeFooter": "Korume sẽ dùng những lựa chọn này để hỗ trợ bạn phù hợp hơn.",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu…",
+    "cancel": "Hủy",
+    "saveFailed": "Chúng tôi không lưu được hồ sơ của bạn. Vui lòng thử lại.",
+    "rateLimited": "Bạn lưu quá nhiều lần. Hãy đợi một lát rồi thử lại.",
+    "dirty": {
+      "title": "Rời đi mà không lưu?",
+      "body": "Các thay đổi trong hồ sơ này chưa được lưu.",
+      "stay": "Tiếp tục chỉnh sửa",
+      "leave": "Rời đi",
+      "close": "Đóng hộp thoại"
+    }
   }
 }

@@ -12,7 +12,7 @@ function zonedParts(date: Date, timeZone: string): { y: number; m: number; d: nu
 }
 
 /** Whole calendar months from `sinceIso` to now in `timeZone`, at least 1. */
-function wholeMonths(sinceIso: string, timeZone: string): number {
+export function wholeMonths(sinceIso: string, timeZone: string): number {
   const a = zonedParts(new Date(sinceIso), timeZone);
   const b = zonedParts(new Date(), timeZone);
   let m = (b.y - a.y) * 12 + (b.m - a.m);
