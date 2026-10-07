@@ -33,7 +33,8 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T7 | accepted | `40090f0`, `37df9aa` (Codex quota stop mid-task; Claude finished + fix round 1; R-7a kanji owner-visible) |
 | T8 | accepted | `2365ad5`, `9e7636d`, `2406d8a` (R-8b: UPDATE revoked on user_test_attempts; R-8a: table is certification_tests) |
 | T9 | accepted | `5ab2cbf`, `d0eac07` (first video milestone survives a hidden lesson) |
-| T10–T16 | not started | — |
+| T10 | accepted | `3dba0e9`, `157f50d` (R-10a: reader allowlists practices/language) |
+| T11–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -44,6 +45,7 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 
 ## Verification
 
+After T10 (`157f50d`): vitest lib/korume + lib/data/korume 103/103, tsc 0, `verify:db:korume` PASS.
 After T9 (`d0eac07`): fresh reset, `verify:db:profile` + `verify:db:erasure` PASS; profile vitest 11/11; tsc 0.
 After T8 (`2406d8a`): fresh reset, `verify:db:profile` + `verify:db:erasure` PASS; T8 vitest files 82/82; tsc 0.
 After T7 (`37df9aa`): T7 vitest dirs 75 files / 617 tests, tsc 0, lint 0; 13 hook + 9 surface mutations RED.
@@ -63,7 +65,7 @@ None.
 
 ## Next actions
 
-1. Task 10 (learner-profile context for Korume): Claude writes brief from the plan; Codex if its quota is back
-   (after 23:27 2026-10-07), otherwise a Claude implementer.
-2. Review, gates, commit, checkpoint this file; then Task 11.
+1. Task 11 (`/profile` page, Figma `66:166`): brief from the plan; Codex if its quota is back (after 23:27
+   2026-10-07), otherwise a Claude implementer. Render only known practice codes (R-10a note).
+2. Review, gates, commit, checkpoint this file; then Task 12.
 3. Owner decisions queued in the ledger (`Owner decision` / `Owner note` lines, R-5a, R-7a) — list them at finish.
