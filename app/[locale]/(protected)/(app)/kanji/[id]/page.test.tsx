@@ -69,11 +69,12 @@ describe("KanjiDetailPage", () => {
   it("tracks a curated kanji with its row id", async () => {
     mocks.getKanjiData.mockResolvedValue({ ...GREEN, curatedKanjiId: "a0000000-0000-4000-8000-000000000001" });
     render(await KanjiDetailPage({ params: { id: "緑" } }));
-    expect(presence).toHaveBeenCalledWith(expect.objectContaining({ surface: "kanji", contextId: "a0000000-0000-4000-8000-000000000001" }), expect.anything());
+    expect(presence).toHaveBeenCalledWith(expect.objectContaining({ surface: "kanji", contextId: "a0000000-0000-4000-8000-000000000001", enabled: true }), expect.anything());
   });
   it("renders a dictionary-only kanji from its literal", async () => {
     mocks.getKanjiData.mockResolvedValue(GREEN);
     render(await KanjiDetailPage({ params: { id: "緑" } }));
+    expect(presence).toHaveBeenCalledWith(expect.objectContaining({ surface: "kanji", contextId: null, enabled: false }), expect.anything());
     expect(mocks.getKanjiData).toHaveBeenCalledWith("緑", { commonWords: 10 });
     expect(screen.getByRole("heading", { level: 1, name: "緑" })).toBeInTheDocument();
     expect(screen.getByText("green")).toBeInTheDocument();

@@ -1,7 +1,7 @@
 import { renderToString } from "react-dom/server";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { render, TestIntlProvider, waitFor } from "@/test/render";
-import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
+import { installYouTubeStub, YT_PLAYER_STATE, type YouTubeStubHandle } from "@/test/youtube-stub";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
@@ -55,10 +55,6 @@ function PreferenceProbe(): null {
 }
 
 describe("ShadowingWorkspaceShell", () => {
-  it("tracks shadowing with the video id inside playback wiring", () => {
-    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><section /></ShadowingWorkspaceShell>);
-    expect(presence).toHaveBeenCalledWith({ surface: "shadowing", contextId: "video-1", mediaPlaying: false });
-  });
   let yt: YouTubeStubHandle;
   afterEach(() => { yt.restore(); vi.unstubAllGlobals(); });
   beforeEach(() => {
@@ -175,6 +171,14 @@ describe("ShadowingWorkspaceShell", () => {
     );
 
     expect(observedStore).toBe(initialStore);
+  });
+
+  it("tracks shadowing with the video id and the player's playing state", async () => {
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><section /></ShadowingWorkspaceShell>);
+    expect(presence).toHaveBeenCalledWith({ surface: "shadowing", contextId: "video-1", mediaPlaying: false });
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    act(() => yt.players[0]!.triggerStateChange(YT_PLAYER_STATE.PLAYING));
+    expect(presence).toHaveBeenLastCalledWith({ surface: "shadowing", contextId: "video-1", mediaPlaying: true });
   });
 
   it("turns the header Focus Mode control into a focused player view without remounting the YouTube player", async () => {

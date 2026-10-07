@@ -53,7 +53,14 @@ export function useStudyPresence({ surface, contextId, mediaPlaying = false, ena
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ clientPresenceId: presenceId, sessionId, surface, contextId, seq: sentSeq, kind }),
         });
-        if (!response.ok || disposed || currentRequest !== requestId) return;
+        if (disposed || currentRequest !== requestId) return;
+        if (kind === "beat" && response.status === 404) {
+          // The session is gone (e.g. erased): beating it again would never count.
+          reset();
+          void send();
+          return;
+        }
+        if (!response.ok) return;
         const { data } = (await response.json()) as { data: { sessionId: string; acceptedSeq: number; segmented: boolean } };
         if (disposed || currentRequest !== requestId) return;
         if (kind === "beat" && data.acceptedSeq < sentSeq && !data.segmented) {
@@ -71,9 +78,12 @@ export function useStudyPresence({ surface, contextId, mediaPlaying = false, ena
     };
 
     const tick = () => { void send(); };
+    // Only the inactive → active edge sends at once: a return from idle opens its segment immediately, and a failing
+    // start is retried by the interval rather than at the rate of input events.
     const onActivity = () => {
+      const wasActive = active();
       lastInteraction = Date.now();
-      if (!sessionId) tick();
+      if (!wasActive) tick();
     };
     const onPageHide = () => {
       if (!sessionId || stopped) return;

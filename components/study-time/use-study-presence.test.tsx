@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readBlobBytes } from "@/test/blob-utils";
 import { useStudyPresence } from "./use-study-presence";
 
 const beatBodies = () => vi.mocked(fetch).mock.calls.map(([, init]) => JSON.parse(String(init?.body)));
@@ -88,7 +89,8 @@ describe("useStudyPresence", () => {
     const call = beacon.mock.calls.at(0);
     expect(call?.[0]).toBe("/api/study/heartbeat");
     expect(call?.[1]).toMatchObject({ type: "application/json" });
-    expect(call?.[1].size).toBeGreaterThan(0);
+    vi.useRealTimers(); // jsdom reads a Blob through FileReader, which waits on real timers
+    expect(JSON.parse(new TextDecoder().decode(await readBlobBytes(call?.[1] as Blob)))).toMatchObject({ kind: "stop", sessionId: "s1" });
   });
 
   it("falls back to keepalive fetch when beacon is absent", async () => {
@@ -173,5 +175,36 @@ describe("useStudyPresence", () => {
     await act(async () => resolveOld?.({ ok: true, json: async () => ({ data: { sessionId: "s1", acceptedSeq: 1, segmented: false } }) } as Response));
     await advance(30_000);
     expect(beatBodies().filter(({ clientPresenceId }) => clientPresenceId === "p2")).toHaveLength(1);
+  });
+
+  it("a failing start is retried by the interval, never by input events", async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false, status: 500, json: async () => ({}) } as Response);
+    mount(); await flush();
+    for (let i = 0; i < 20; i += 1) act(() => { window.dispatchEvent(new Event("scroll")); });
+    await flush();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await advance(30_000);
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("returning from idle beats at once instead of waiting for the next tick", async () => {
+    mount(); await flush(); await advance(300_000);
+    const before = beatBodies().length;
+    act(() => { window.dispatchEvent(new Event("pointerdown")); });
+    await flush();
+    expect(beatBodies()).toHaveLength(before + 1);
+    expect(beatBodies().at(-1)?.kind).toBe("beat");
+  });
+
+  it("a beat to an unknown session starts a fresh presence", async () => {
+    vi.mocked(fetch).mockImplementation(async (_url, init) => {
+      const { kind, seq } = JSON.parse(String(init?.body));
+      if (kind === "beat") return { ok: false, status: 404, json: async () => ({ error: "Unknown session" }) } as Response;
+      return { ok: true, json: async () => ({ data: { sessionId: "s1", acceptedSeq: seq, segmented: false } }) } as Response;
+    });
+    mount(); await flush(); await advance(30_000);
+    expect(beatBodies().map(({ kind, clientPresenceId, seq }) => [kind, clientPresenceId, seq])).toEqual([
+      ["start", "p1", 0], ["beat", "p1", 1], ["start", "p2", 0],
+    ]);
   });
 });
