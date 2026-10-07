@@ -14,8 +14,8 @@ create index idx_learning_outcomes_user_created on learning_outcomes (user_id, c
 alter table learning_outcomes enable row level security;
 create policy learning_outcomes_select_own on learning_outcomes for select to authenticated
   using (user_id = auth.uid());
+revoke all on learning_outcomes from anon, authenticated;
 grant select on learning_outcomes to authenticated;
-revoke insert, update, delete on learning_outcomes from authenticated;
 grant all on learning_outcomes to service_role;
 
 -- §4.2 Evidence, eligibility and award share one transaction and one per-user lock.

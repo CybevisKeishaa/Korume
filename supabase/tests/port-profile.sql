@@ -70,6 +70,28 @@ begin
   raise notice 'PASS profile LA DST local day is 23 hours';
 end $$;
 
+do $$
+declare uid uuid := (select id from users where email = 'profilegate-a@example.invalid');
+  z text; ds timestamptz; awarded int;
+begin
+  foreach z in array array['America/Los_Angeles', 'Asia/Ho_Chi_Minh'] loop
+    ds := ((now() at time zone z)::date)::timestamp at time zone z;
+    insert into xp_events (user_id, source_type, source_id, xp, created_at)
+      values (uid, 'shadowing', 'win:before:' || z, 10, ds - interval '1 minute');
+    select xp_awarded into awarded from record_learning_outcome(uid, 'shadowing', 'win:before:' || z, 10, z, true);
+    if awarded <> 10 then raise exception 'FAIL profile % award from before local midnight was blocked', z; end if;
+    if now() < ds + interval '1 minute' then
+      raise notice 'SKIP profile % after-midnight half (local midnight is under a minute old)', z;
+    else
+      insert into xp_events (user_id, source_type, source_id, xp, created_at)
+        values (uid, 'shadowing', 'win:after:' || z, 10, ds + interval '1 minute');
+      select xp_awarded into awarded from record_learning_outcome(uid, 'shadowing', 'win:after:' || z, 10, z, true);
+      if awarded <> 0 then raise exception 'FAIL profile % award after local midnight re-awarded', z; end if;
+    end if;
+    raise notice 'PASS profile local-day window boundary in %', z;
+  end loop;
+end $$;
+
 begin;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', (select id from users where email = 'profilegate-b@example.invalid'), 'role', 'authenticated')::text, true);
@@ -87,6 +109,12 @@ begin
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL profile authenticated insert grant'; end if;
+  blocked := false;
+  begin
+    truncate learning_outcomes;
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL profile authenticated truncate grant'; end if;
   if (select count(*) from learning_outcomes where user_id <> uid) <> 0 then
     raise exception 'FAIL profile outcomes RLS';
   end if;
@@ -104,7 +132,20 @@ begin
   exception when insufficient_privilege then blocked := true;
   end;
   if not blocked then raise exception 'FAIL profile anon RPC grant'; end if;
-  raise notice 'PASS profile anon RPC grant';
+  blocked := false;
+  begin
+    perform 1 from learning_outcomes limit 1;
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL profile anon select grant'; end if;
+  blocked := false;
+  begin
+    insert into learning_outcomes (user_id, source_type, item_key)
+      values ((select id from users where email = 'profilegate-a@example.invalid'), 'dictation', 'line:forbidden');
+  exception when insufficient_privilege then blocked := true;
+  end;
+  if not blocked then raise exception 'FAIL profile anon insert grant'; end if;
+  raise notice 'PASS profile anon RPC and table grants';
 end $$;
 commit;
 
