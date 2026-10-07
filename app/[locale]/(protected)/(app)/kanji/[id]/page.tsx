@@ -7,6 +7,7 @@ import { parseKanjiLiteral } from "@/lib/dictionary/literal";
 import { StrokeOrder } from "@/components/motion/stroke-order";
 import { DictionaryAttribution } from "@/components/kanji/dictionary-attribution";
 import { Container } from "@/components/ui/container";
+import { StudyPresence } from "@/components/study-time/study-presence";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
 
   return (
     <Container className="py-10">
+      <StudyPresence surface="kanji" contextId={kanji.curatedKanjiId} enabled={kanji.curatedKanjiId !== null} />
       <Link href="/kanji" className="text-sm text-muted-foreground hover:text-foreground">
         {t("backToList")}
       </Link>

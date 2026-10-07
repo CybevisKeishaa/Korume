@@ -17,6 +17,7 @@ import { SessionHistoryList } from "./session-history-list";
 import { CorrectionsPanel } from "./corrections-panel";
 import { blobToWav16kMono } from "@/lib/audio/blob-to-wav";
 import { VoiceRecorderButton, type TranscribedVoiceMessage } from "./voice-recorder-button";
+import { useStudyPresence } from "@/components/study-time/use-study-presence";
 
 type View = "picker" | "chat";
 type Translator = ReturnType<typeof useTranslations<"conversation">>;
@@ -96,6 +97,7 @@ export function ConversationApp() {
   const [pickerError, setPickerError] = useState<string | null>(null);
 
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  useStudyPresence({ surface: "conversation", contextId: activeSessionId, enabled: activeSessionId !== null });
   const [activeScenario, setActiveScenario] = useState<string | null>(null);
   const [activeLevel, setActiveLevel] = useState<JlptLevel | undefined>(undefined);
   const [ended, setEnded] = useState(false);

@@ -7,6 +7,7 @@ import type { ItemType } from "@/lib/validation/content";
 import type { ReviewItem } from "@/lib/learning-types";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useStudyPresence } from "@/components/study-time/use-study-presence";
 
 export type { ReviewItem };
 
@@ -38,6 +39,7 @@ export function ReviewSession({
   items: ReviewItem[];
   backHref: string;
 }) {
+  useStudyPresence({ surface: "srs_review", contextId: itemType });
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);

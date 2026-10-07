@@ -13,6 +13,7 @@ import type {
   KorumeThreadDetail,
   KorumeThreadView,
 } from "@/lib/korume/types";
+import { useStudyPresence } from "@/components/study-time/use-study-presence";
 
 type KorumeChatPageProps = {
   detail: KorumeThreadDetail | null;
@@ -44,6 +45,7 @@ export function KorumeChatPage(props: KorumeChatPageProps) {
     return () => window.removeEventListener("popstate", leave);
   }, []);
   const threadId = props.detail?.thread.id ?? null;
+  useStudyPresence({ surface: "korume_chat", contextId: threadId, enabled: !props.disabled });
   const key = threadId === null || threadId === created ? `free:${conversation}` : `${threadId}:${conversation}`;
   return (
     <KorumeConversation

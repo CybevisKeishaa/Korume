@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@/test/render";
+import { act, render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
 import type { TranscriptWithLines, VideoRow } from "@/lib/video-types";
 import { DictationView } from "./dictation-view";
+import { YT_PLAYER_STATE } from "./youtube-player";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const VIDEO: VideoRow = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -79,6 +82,14 @@ describe("DictationView", () => {
   afterEach(() => {
     yt.restore();
     vi.unstubAllGlobals();
+  });
+
+  it("tracks dictation with the video id and playback state", async () => {
+    renderView();
+    expect(presence).toHaveBeenCalledWith({ surface: "dictation", contextId: VIDEO.id, mediaPlaying: false });
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    act(() => yt.players[0]!.triggerStateChange(YT_PLAYER_STATE.PLAYING));
+    expect(presence).toHaveBeenCalledWith({ surface: "dictation", contextId: VIDEO.id, mediaPlaying: true });
   });
 
   it("shows a no-transcript hint when the video has no transcript yet", async () => {

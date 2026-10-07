@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
 import type { MiningQueueItem } from "@/lib/mining-types";
 import { MiningReviewSession } from "./mining-review-session";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const ITEMS: MiningQueueItem[] = [
   {
@@ -49,6 +51,10 @@ function mockFetch(): FetchCall[] {
 }
 
 describe("MiningReviewSession", () => {
+  it("tracks the mining review deck", () => {
+    render(<MiningReviewSession items={[]} />);
+    expect(presence).toHaveBeenCalledWith({ surface: "srs_review", contextId: "mining" });
+  });
   let yt: YouTubeStubHandle;
   let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
 

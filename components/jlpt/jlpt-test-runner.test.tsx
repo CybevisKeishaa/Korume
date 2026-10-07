@@ -3,6 +3,8 @@ import { act, fireEvent, render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import type { JlptSubmitResult, JlptTestDetail } from "@/lib/jlpt-ui";
 import { JlptTestRunner } from "./jlpt-test-runner";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const TEST: JlptTestDetail = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -62,6 +64,10 @@ function jsonResponse(status: number, body: unknown): Response {
 }
 
 describe("JlptTestRunner", () => {
+  it("tracks certification with the test id", () => {
+    render(<JlptTestRunner test={TEST} />);
+    expect(presence).toHaveBeenCalledWith({ surface: "certification", contextId: TEST.id });
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();

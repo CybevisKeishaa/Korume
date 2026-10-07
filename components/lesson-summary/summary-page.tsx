@@ -5,6 +5,7 @@ import type { SummaryPageProps } from "./props";
 import { SavedKnowledgeCard } from "./saved-knowledge-card";
 import { SummaryHeader } from "./summary-header";
 import { SummaryIsland } from "./summary-island";
+import { StudyPresence } from "@/components/study-time/study-presence";
 
 /**
  * The Summary page (spec §7, Figma `125:1030`). Server-rendered deterministic blocks plus one client island; one
@@ -15,6 +16,7 @@ import { SummaryIsland } from "./summary-island";
 export function SummaryPage(props: SummaryPageProps & { locale: "vi" | "en" }) {
   return (
     <div className="min-h-dvh">
+      <StudyPresence surface="summary" contextId={props.videoId} />
       <SummaryHeader videoId={props.videoId} title={props.title} backHref={props.resumeHref} />
       <main className="lesson-summary-grid mx-auto w-full max-w-content px-md py-lg">
         <Hero

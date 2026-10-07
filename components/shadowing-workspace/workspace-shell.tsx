@@ -7,6 +7,7 @@ import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
+import { useStudyPresence } from "@/components/study-time/use-study-presence";
 import { WorkspacePlayer } from "./workspace-player";
 import { tabPreference, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
@@ -80,6 +81,7 @@ export function ShadowingWorkspaceShell({
   return (
     <WorkspaceProviders bootstrap={bootstrap} initialPosition={initialPosition}>
       <PlaybackRoot userId={bootstrap.userId} initialSyncedServerAt={initialSyncedServerAt}>
+        <WorkspacePresence videoId={bootstrap.video.id} />
         <DrawerProvider>
           <NotesProvider bootstrap={bootstrap}>
             <WorkspaceLayout>{children}</WorkspaceLayout>
@@ -88,6 +90,12 @@ export function ShadowingWorkspaceShell({
       </PlaybackRoot>
     </WorkspaceProviders>
   );
+}
+
+function WorkspacePresence({ videoId }: { videoId: string }) {
+  const { playing } = usePlayerWiring();
+  useStudyPresence({ surface: "shadowing", contextId: videoId, mediaPlaying: playing });
+  return null;
 }
 
 export function workspaceGridTemplateColumns(ratio: number): string {

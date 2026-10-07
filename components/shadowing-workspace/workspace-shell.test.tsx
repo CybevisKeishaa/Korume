@@ -8,6 +8,8 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences } from "./workspace-context";
 import { ShadowingWorkspaceShell, workspaceGridTemplateColumns } from "./workspace-shell";
 import { TranscriptPanel } from "./transcript-panel";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const router = { refresh: vi.fn() };
 let pathname = "/en/shadowing/video-1";
@@ -53,6 +55,10 @@ function PreferenceProbe(): null {
 }
 
 describe("ShadowingWorkspaceShell", () => {
+  it("tracks shadowing with the video id inside playback wiring", () => {
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><section /></ShadowingWorkspaceShell>);
+    expect(presence).toHaveBeenCalledWith({ surface: "shadowing", contextId: "video-1", mediaPlaying: false });
+  });
   let yt: YouTubeStubHandle;
   afterEach(() => { yt.restore(); vi.unstubAllGlobals(); });
   beforeEach(() => {

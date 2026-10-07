@@ -4,6 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { render } from "@/test/render";
 import type { GroundedEntity, KorumeMessageView, KorumeThreadDetail } from "@/lib/korume/types";
 import { KorumeChatPage } from "./korume-chat-page";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const push = vi.fn(); const back = vi.fn(); const refresh = vi.fn();
 vi.mock("@/lib/i18n", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/i18n")>()), useRouter: () => ({ push, back, refresh }) }));
@@ -18,6 +20,10 @@ const referrer = (value: string) => Object.defineProperty(document, "referrer", 
 const wa: GroundedEntity = { id: "ent:wa", label: "は", kind: "particle", seenCount: 3 };
 
 describe("KorumeChatPage", () => {
+  it("tracks the thread id when chat is enabled", () => {
+    render(page({ detail: detailWith() }));
+    expect(presence).toHaveBeenCalledWith({ surface: "korume_chat", contextId: THREAD, enabled: true });
+  });
   beforeEach(() => { push.mockReset(); back.mockReset(); refresh.mockReset(); vi.stubGlobal("fetch", vi.fn()); });
   afterEach(() => { referrer(""); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 

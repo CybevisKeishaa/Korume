@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@/test/render";
 import userEvent from "@testing-library/user-event";
 import { ReviewSession, type ReviewItem } from "./review-session";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const ITEMS: ReviewItem[] = [
   { id: "k-1", front: "水", sub: "みず", back: "water" },
@@ -37,6 +39,10 @@ function mockFetch(ok = true): FetchCall[] {
  * `components/video-player/mining-review-session.tsx` (Task 12).
  */
 describe("ReviewSession", () => {
+  it("tracks the review deck", () => {
+    render(<ReviewSession itemType="vocab" items={[]} backHref="/vocab" />);
+    expect(presence).toHaveBeenCalledWith({ surface: "srs_review", contextId: "vocab" });
+  });
   let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined;
 
   afterEach(() => {
