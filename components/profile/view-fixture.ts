@@ -6,7 +6,7 @@ export function makeView(over: Partial<ProfileView> = {}): ProfileView {
     identity: {
       displayName: "Keishaa", username: "keishaa", bio: "Learning slowly.", country: "VN", nativeLanguage: "vi",
       targetJlptLevel: "N2", learningGoal: "I want to speak naturally during my trip.", preferredPractices: ["shadowing"],
-      timeZone: "Asia/Ho_Chi_Minh", avatarUrl: null, hasUploadedAvatar: false, accountCreatedAt: "2026-03-05T00:00:00.000Z",
+      timeZone: "Asia/Bangkok", avatarUrl: null, hasUploadedAvatar: false, accountCreatedAt: "2026-03-05T00:00:00.000Z",
       firstKnownLearningAt: "2026-03-10T00:00:00.000Z", subtitle: { translation: "reveal", furigana: "always" },
       dailyMinutes: 20, companionEnabled: true,
     },

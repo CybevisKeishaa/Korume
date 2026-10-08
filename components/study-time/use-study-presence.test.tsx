@@ -60,6 +60,18 @@ describe("useStudyPresence", () => {
     expect(beatBodies()).toHaveLength(21);
   });
 
+  it("paused media adds nothing: once playback stops with no input, beats stop", async () => {
+    const hook = mount({ mediaPlaying: true }); await flush(); await advance(300_000);
+    hook.rerender({ contextId: "video-1", mediaPlaying: false, enabled: true }); await flush();
+    const atPause = beatBodies().length;
+    await advance(300_000);
+    expect(beatBodies().length - atPause).toBeLessThanOrEqual(1);
+    expect(beatBodies().at(-1)?.kind).not.toBe("stop");
+    const settled = beatBodies().length;
+    await advance(300_000);
+    expect(beatBodies()).toHaveLength(settled);
+  });
+
   it("scroll and selection extend the interaction window", async () => {
     mount(); await flush(); await advance(100_000);
     act(() => window.dispatchEvent(new Event("scroll")));

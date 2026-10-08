@@ -643,6 +643,38 @@ begin
 end $$;
 commit;
 
+-- 3.15 rapid beats cannot outrun real time (§11): a burst of beats advances the session by wall-clock only
+select set_config('gate.q', gen_random_uuid()::text, false);
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare r record;
+begin
+  select * into r from study_heartbeat(current_setting('gate.q')::uuid, null, 'kanji', '123e4567-e89b-12d3-a456-426614174000', 0, 'start');
+  perform set_config('gate.sq', r.session_id::text, false);
+end $$;
+commit;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$ begin perform study_heartbeat(current_setting('gate.q')::uuid, current_setting('gate.sq')::uuid, 'kanji', null, 1, 'beat'); end $$;
+commit;
+begin;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
+do $$ begin perform study_heartbeat(current_setting('gate.q')::uuid, current_setting('gate.sq')::uuid, 'kanji', null, 2, 'beat'); end $$;
+commit;
+do $$
+declare s study_sessions%rowtype;
+begin
+  select * into s from study_sessions where id = current_setting('gate.sq')::uuid;
+  if s.last_heartbeat_at - s.started_at > interval '10 seconds' or s.last_heartbeat_at > clock_timestamp() or s.last_seq <> 2 then
+    raise exception 'FAIL study rapid beats outran real time: % % %', s.started_at, s.last_heartbeat_at, s.last_seq;
+  end if;
+  raise notice 'PASS study rapid beats cannot outrun real time';
+end $$;
+
 -- 4. Study-time read model: independent fixed intervals, scoped through JWT claims.
 delete from study_sessions where user_id in (current_setting('gate.a')::uuid, current_setting('gate.b')::uuid);
 insert into study_sessions (user_id, client_presence_id, surface, started_at, last_heartbeat_at, ended_at, last_seq)
@@ -655,6 +687,8 @@ values
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-04 10:00Z', '2026-09-04 10:12Z', null, 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-05 10:00Z', '2026-09-05 10:10Z', '2026-09-05 10:10Z', 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-05 10:20Z', '2026-09-05 10:30Z', '2026-09-05 10:30Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-08 10:00Z', '2026-09-08 10:30Z', '2026-09-08 10:30Z', 1),
+  (current_setting('gate.a')::uuid, gen_random_uuid(), 'shadowing', '2026-09-08 10:10Z', '2026-09-08 10:40Z', '2026-09-08 10:40Z', 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-09-06 23:00Z', '2026-09-07 01:00Z', '2026-09-07 01:00Z', 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-10-01 16:50Z', '2026-10-01 17:20Z', '2026-10-01 17:20Z', 1),
   (current_setting('gate.a')::uuid, gen_random_uuid(), 'kanji', '2026-11-01 07:30Z', '2026-11-01 09:30Z', '2026-11-01 09:30Z', 1),
@@ -685,6 +719,9 @@ begin
   select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-05 00:00Z', '2026-09-06 00:00Z');
   if n <> 1 or total <> 1200 then raise exception 'FAIL study time 4.9 disjoint gap: %, %', n, total; end if;
   raise notice 'PASS study time 4.9 disjoint gap';
+  select count(*), sum(seconds) into n, total from study_time('UTC', '2026-09-08 00:00Z', '2026-09-09 00:00Z');
+  if n <> 1 or total <> 2400 then raise exception 'FAIL study time two surfaces at once double-counted: %, %', n, total; end if;
+  raise notice 'PASS study time two tabs on two surfaces never double-count';
   select * into r from study_time('UTC', '2026-09-07 00:00Z', '2026-09-08 00:00Z');
   if r.day is distinct from '2026-09-07'::date or r.seconds is distinct from 3600
     or (select count(*) from study_time('UTC', '2026-09-07 00:00Z', '2026-09-08 00:00Z')) <> 1
