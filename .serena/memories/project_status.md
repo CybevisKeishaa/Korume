@@ -1,6 +1,17 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-08 (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-08 late (supersedes every block below)
+>
+> ▶ **RESUME HERE: `port-dashboard`** (worktree `.worktrees/port-dashboard`, branch from master `b89f49d`, NOT merged,
+> no code yet) — read `mem:port_dashboard_run_state` first, then the branch run state
+> `docs/superpowers/run-state/port-dashboard.md`. Spec **approved** (`6cb8c70` + corrections `812c7c3`, rulings
+> D1–D12); plan **approved** (`74f2e55`, 16 tasks, plan-time corrections P1–P9); run state `6e3b99d`. The owner will
+> execute in the next session and has **not chosen the execution method yet** — ask first (recommended:
+> subagent-driven, Codex via Paseo). New owner rule 2026-10-08: **the web app is desktop-only** (mobile = separate
+> native app); every port reviews at 1280x529 + 1440x900 only. Port order after Dashboard unchanged: Certification →
+> Conversation library → Kanji inspect/review → Companion Diary → FAQ/Quickstart.
+>
+> ## (previous block) 2026-10-08
 >
 > ⭐ **`port-profile` MERGED → master `d57ad41`**, then **`mascot-cleanup` MERGED → `8ae9fa6`** (both not pushed — the
 > owner pushes). mascot-cleanup: the five extractor-cut poses (greeting, noting, resting, holding-memory, looking-ahead)
