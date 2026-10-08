@@ -39,7 +39,7 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T13 | accepted | `2ee4a23`, `385a089`, `adbb500` (R-13a frame fidelity; one Back sentinel; refresh after save) |
 | T14 | accepted | `46e172a` (e2e 7/7; 11 mutations red; fresh `db reset` still owed — denied by the auto-mode classifier) |
 | T15 | accepted | this commit (Codex; Claude repointed ruling citations to this file) |
-| T16 | not started | — |
+| T16 | in progress — owner review | `da2c943` lessons (Codex), `668b557` review r0 fixes (Codex), `6c00745` review r1 C1 security fix |
 
 ## Contracts and decisions
 
@@ -54,10 +54,23 @@ Dashboard blocks (`port-dashboard`), Layer 8.
   - R-10a: learner-profile practice/language codes are allowlist-filtered in the reader, not a DB CHECK (R8).
   - R-11a / R-13a: frame fidelity — row icons, Korume art, photo badges as real controls, preview follows unsaved state.
   - R-12a: `PATCH /api/profile` returns no `localeChanged`; the client decides a locale change from its pathname.
+  - R-16a (reverses plan T8 grant step): learners hold no UPDATE on the seven Edit Profile columns nor on
+    `name`, `email`, `created_at`; `save_profile` (service_role) is the only write path (review r0 I1, r1 C1).
+  - R-16b: `record_learning_outcome` serialises on the per-user advisory lock alone (row lock dropped, r0).
+  - R-16c: admin bootstrap (`ADMIN_EMAILS`) trusts the GoTrue email only. Ops: with `enable_confirmations =
+    false`, register each admin account before setting `ADMIN_EMAILS` in a deployment (r2 nit 4).
 - Execution: Codex implements via Paseo (ruling R-route2: every task from T6 on, DB tasks included); Claude
   reviews (opus), re-runs the gates, commits. Ledger: `.superpowers/sdd/2026-10-07-port-profile/progress.md`.
 
 ## Verification
+
+Final tree `6c00745`: fresh `npx supabase db reset` (owner-approved 2026-10-08) → `verify:db` profile, erasure,
+pronunciation, korume, settings, summary, shadowing all PASS; live mutation (advisory lock removed) → `FAIL XP race`,
+restored PASS; full vitest 620 files / 5347 tests after the last edit;
+tsc 0; lint 0 errors; `verify:protocol` valid. E2E on the `6c00745` build: 156/156 (also on `668b557`) (the 4 landing timeouts seen earlier
+were a wedged image optimizer in a long-running server — 24/24 on a fresh server; ledger T16 Step 4).
+Capture (§13.4, Playwright Chromium — the Chrome extension was not connected): no horizontal scroll at any viewport;
+2-column profile at 1280 and 1440; 375×812 shows the mobile store handoff by product rule.
 
 After T14 (`46e172a`): full vitest 616 files / 5338 tests, tsc 0, lint 0, `verify:protocol` valid; `verify:db:profile` (79 PASS + XP race) and `verify:db:erasure` PASS on the EXISTING local DB (not fresh); e2e profile 7/7; full e2e 130 passed / 26 failed outside the profile port (19 print-vocabulary + 3 shadowing-intelligence on an empty `dict_entries`/`dict_kanji`, 4 landing untraced, 2 load-sensitive) — diagnosed in T16 Step 4.
 
@@ -84,8 +97,6 @@ None.
 
 ## Next actions
 
-1. Task 14 (integration, E2E, mutation): Claude runs Playwright from this worktree only (never the owner's :3000
-   dev server — check the port first).
-2. Task 16: gates, whole-branch review, Chrome measurement 1280x529 / 1440x900 / 375x812 (ledger `T16 / owner`
-   lines), then the owner's review with every `Owner decision` / `Owner note` line and rulings R-5a, R-7a.
-3. Owner decisions queued in the ledger (`Owner decision` / `Owner note` lines, R-5a, R-7a) — list them at finish.
+1. Owner review (T16 Step 8): serve the worktree build, hand over URLs + demo learners, list every ledger
+   `Owner decision` / `Owner note` / `T16 / owner` line and rulings R-5a, R-7a, R-16a–c. Merge `--no-ff` only after approval.
+2. After merge: update memory (`port_profile_run_state`, `project_status`, MEMORY.md); next branch `port-dashboard`.
