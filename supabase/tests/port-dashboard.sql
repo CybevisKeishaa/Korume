@@ -303,6 +303,8 @@ end $$;
 rollback;
 
 -- S3 lexical_key parity: the SQL generated column equals normalizeRef for every lib/summary/lexical-key-fixture.ts case.
+-- Rollback block: the rows are matched by inserted id, and nothing touches real vocab (a word like お茶 may exist).
+begin;
 do $$
 declare bad text;
 begin
@@ -313,13 +315,16 @@ begin
     ('Ｔｏｋｙｏ', 'Tokyo'),
     (E'\u00a0日本\u3000', '日本'),
     ('お茶', 'お茶'),
-    (E'\u0009飲む\u000a', '飲む');
-  insert into vocab (word, jlpt_level) select input, 'N5' from lexical_cases;
-  select v.word into bad from vocab v join lexical_cases c on c.input = v.word where v.lexical_key is distinct from c.key limit 1;
-  delete from vocab where word in (select input from lexical_cases);
+    (E'\u0009飲む\u000a', '飲む'),
+    (E'\ufeff\u2028猫\u1680', '猫'),
+    (E'\u0085犬\u200b', E'\u0085犬\u200b');
+  with added as (insert into vocab (word, jlpt_level) select input, 'N5' from lexical_cases returning id, word)
+  select a.word into bad from added a join vocab v on v.id = a.id join lexical_cases c on c.input = a.word
+    where v.lexical_key is distinct from c.key limit 1;
   if bad is not null then raise exception 'FAIL dashboard lexical_key parity for %', bad; end if;
   raise notice 'PASS dashboard lexical_key parity';
 end $$;
+rollback;
 
 -- S3 "min before filter": curated 食べる mastered 30 days ago, mined again today -> not new this window; 飲む is new;
 -- a sentence card never counts. Current count: 食べる + 飲む.
@@ -330,7 +335,11 @@ begin
   insert into videos (youtube_video_id, title, library_access) values ('dashgate-s3', 's3', 'FREE') returning id into vid;
   insert into vocab (word, jlpt_level) values ('食べる', 'N5') returning id into voc;
   insert into user_vocab_progress (user_id, vocab_id, srs_stage, mastered_at) values (a, voc, 3, now() - interval '30 days');
+  -- 書く was mastered before tracking (no timestamp): mining it again today must not make it new.
+  insert into vocab (word, jlpt_level) values ('書く', 'N5') returning id into voc;
+  insert into user_vocab_progress (user_id, vocab_id, srs_stage, mastered_at) values (a, voc, 4, null);
   insert into sentence_mining_cards (user_id, video_id, target_word, sentence_jp, source_kind, source_ref, srs_stage, mastered_at) values
+    (a, vid, '書く', 's', 'vocabulary', '書く', 2, now()),
     (a, vid, '食べる', 's', 'vocabulary', '食べる', 2, now()),
     (a, vid, '飲む', 's', 'selection', '飲む', 2, now()),
     (a, vid, 'x', '文全体', 'sentence', null, 5, now());
@@ -343,7 +352,7 @@ begin
     raise exception 'FAIL dashboard S3 min before filter: new = %',
       newly_mastered_count(2, date_trunc('day', now()), date_trunc('day', now()) + interval '1 day');
   end if;
-  if current_mastered_count(2) <> 2 then
+  if current_mastered_count(2) <> 3 then
     raise exception 'FAIL dashboard S3 current mastered = %', current_mastered_count(2);
   end if;
   raise notice 'PASS dashboard S3 lexical mastery (min before filter, sentence excluded, current)';
@@ -370,26 +379,41 @@ rollback;
 -- card null or past, including exactly at p_at; a caller passing another learner's id sees nothing of theirs.
 begin;
 do $$
-declare a uuid := current_setting('dashgate.a')::uuid; k1 uuid; k2 uuid; vid uuid;
+declare a uuid := current_setting('dashgate.a')::uuid; k1 uuid; k2 uuid; k3 uuid; vid uuid;
 begin
   insert into kanji (character) values ('㐀') returning id into k1;
   insert into kanji (character) values ('㐁') returning id into k2;
-  insert into user_kanji_progress (user_id, kanji_id, next_review_at) values
-    (a, k1, now() - interval '1 hour'), (a, k2, now() + interval '1 day');
+  insert into kanji (character) values ('㐂') returning id into k3;
+  insert into user_kanji_progress (user_id, kanji_id, next_review_at, last_reviewed_at) values
+    (a, k1, now() - interval '1 hour', '2026-10-07T00:00:00Z'), (a, k2, now() + interval '1 day', null), (a, k3, null, null);
   insert into videos (youtube_video_id, title, library_access) values ('dashgate-d12', 'd12', 'FREE') returning id into vid;
   insert into sentence_mining_cards (user_id, video_id, target_word, sentence_jp, source_ref, next_review_at) values
-    (a, vid, '新', 's', '新', null),
+    (a, vid, '新', 's', '新', null),  -- never reviewed, unscheduled: due
     (a, vid, '境', 's', '境', '2026-10-08T12:00:00Z'),
     (a, vid, '先', 's', '先', '2026-10-08T12:00:01Z');
-  if (select count(*) from review_due_keys(a, array['kanji'], now())) <> 1
-    or not exists (select 1 from review_due_keys(a, array['kanji'], now()) where item_key = 'kanji:' || k1) then
+  if (select count(*) from review_due_keys(a, array['kanji'], now())) <> 2
+    or not exists (select 1 from review_due_keys(a, array['kanji'], now()) where item_key = 'kanji:' || k1)
+    or not exists (select 1 from review_due_keys(a, array['kanji'], now()) where item_key = 'kanji:' || k3) then
     raise exception 'FAIL dashboard D12 kanji due definition';
   end if;
   if (select count(*) from review_due_keys(a, array['mining'], '2026-10-08T12:00:00Z')) <> 2 then
     raise exception 'FAIL dashboard D12 mining due (null + exactly at p_at): %',
       (select count(*) from review_due_keys(a, array['mining'], '2026-10-08T12:00:00Z'));
   end if;
+  update sentence_mining_cards set last_reviewed_at = '2026-10-05T00:00:00Z' where user_id = a and target_word = '境';
 end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('dashgate.a'), 'role', 'authenticated')::text, true);
+do $$
+begin
+  -- The Review tile's aggregate: per-deck due over exactly that deck, and that deck's own last review.
+  if (select array_agg(row(deck, due, last_reviewed_at)::text order by deck) from review_deck_summary(array['mining', 'kanji']))
+     is distinct from array[row('kanji', 2, '2026-10-07T00:00:00Z'::timestamptz)::text, row('mining', 3, '2026-10-05T00:00:00Z'::timestamptz)::text] then
+    raise exception 'FAIL dashboard D12 review_deck_summary: %',
+      (select array_agg(row(deck, due, last_reviewed_at)::text order by deck) from review_deck_summary(array['mining', 'kanji']));
+  end if;
+end $$;
+reset role;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('dashgate.b'), 'role', 'authenticated')::text, true);
 do $$
@@ -398,5 +422,79 @@ begin
     raise exception 'FAIL dashboard D12 review_due_keys leaked another learner''s cards';
   end if;
   raise notice 'PASS dashboard D12 due definitions and RLS';
+end $$;
+rollback;
+
+-- M2 mission creation (rollback blocks; the superuser stands in for the service role that owns these calls).
+begin;
+do $$
+declare a uuid := current_setting('dashgate.a')::uuid; m1 uuid; m2 uuid; vid uuid; plus_v uuid; bare_v uuid; t uuid;
+  hints jsonb; targets jsonb := '{"review":20,"shadow_lines":3,"dictation_lines":5}';
+begin
+  delete from daily_missions where user_id = a;
+  -- 25 due kanji rows.
+  insert into kanji (character) select chr(13312 + 100 + i) from generate_series(1, 25) i on conflict do nothing;
+  insert into user_kanji_progress (user_id, kanji_id, next_review_at)
+    select a, k.id, now() - interval '1 hour' from kanji k where k.character in (select chr(13312 + 100 + i) from generate_series(1, 25) i);
+  -- A FREE lesson in progress with 4 lines, a PLUS lesson (no subscription), a FREE lesson with no transcript.
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-m2', 'm2', 'FREE') returning id into vid;
+  insert into transcripts (video_id, source) values (vid, 'user_submitted') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp) select t, i, 'l' || i from generate_series(1, 4) i;
+  insert into user_video_progress (user_id, video_id, last_watched_position) values (a, vid, 30);
+  -- Each skipped hint fails exactly ONE rule, so dropping that rule makes the gate red.
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-m2p', 'm2p', 'PLUS') returning id into plus_v;
+  insert into transcripts (video_id, source) values (plus_v, 'user_submitted') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp) values (t, 0, 'p');
+  insert into user_video_progress (user_id, video_id, last_watched_position) values (a, plus_v, 30);
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-m2b', 'm2b', 'FREE') returning id into bare_v;
+  insert into user_video_progress (user_id, video_id, last_watched_position) values (a, bare_v, 30);
+  hints := jsonb_build_array(
+    jsonb_build_object('type', 'finish_lesson', 'videoId', plus_v),
+    jsonb_build_object('type', 'finish_lesson', 'videoId', bare_v),
+    jsonb_build_object('type', 'shadow_lines', 'videoId', vid),
+    jsonb_build_object('type', 'dictation_lines', 'videoId', vid));
+
+  m1 := ensure_daily_mission(a, array['mining', 'kanji'], targets, hints);
+  m2 := ensure_daily_mission(a, array['mining', 'kanji'], targets, hints);
+  if m1 is null or m2 is distinct from m1 then raise exception 'FAIL dashboard M2 ensure not idempotent (% vs %)', m1, m2; end if;
+  if (select count(*) from daily_missions where user_id = a) <> 1 then raise exception 'FAIL dashboard M2 more than one cycle'; end if;
+  if (select array_agg(type || ':' || target order by slot) from daily_mission_items where mission_id = m1)
+     is distinct from array['review:20', 'shadow_lines:3', 'dictation_lines:4'] then
+    raise exception 'FAIL dashboard M2 items: %', (select array_agg(type || ':' || target order by slot) from daily_mission_items where mission_id = m1);
+  end if;
+  if (select count(*) from daily_mission_eligible e join daily_mission_items i on i.id = e.mission_item_id
+      where i.mission_id = m1 and i.type = 'review') <> 25 then
+    raise exception 'FAIL dashboard M2 review eligibility not frozen to all 25 due keys';
+  end if;
+
+  -- Timezone change keeps the active cycle.
+  update users set study_timezone = 'Pacific/Kiritimati' where id = a;
+  if ensure_daily_mission(a, array['mining', 'kanji'], targets, hints) is distinct from m1 then
+    raise exception 'FAIL dashboard M2 timezone change created a second cycle';
+  end if;
+
+  -- Window continuity: once the cycle has ended, the next one starts no earlier than its end.
+  update daily_missions set window_end = now() - interval '1 second', window_start = now() - interval '1 day' where id = m1;
+  m2 := ensure_daily_mission(a, array['mining', 'kanji'], targets, hints);
+  if m2 is null or m2 = m1 then raise exception 'FAIL dashboard M2 no new cycle after the window ended'; end if;
+  if (select window_start from daily_missions where id = m2) <>
+     greatest((select ((now() at time zone 'Pacific/Kiritimati')::date)::timestamp at time zone 'Pacific/Kiritimati'),
+              now() - interval '1 second') then
+    raise exception 'FAIL dashboard M2 window continuity: start %', (select window_start from daily_missions where id = m2);
+  end if;
+  raise notice 'PASS dashboard M2 ensure (idempotent, review 20/25 frozen, PLUS and transcript-less hints skipped, tz kept, continuity)';
+end $$;
+rollback;
+
+begin;
+do $$
+declare b uuid := current_setting('dashgate.b')::uuid; m uuid;
+begin
+  delete from daily_missions where user_id = b;
+  m := ensure_daily_mission(b, array['mining', 'kanji'], '{"review":20,"shadow_lines":3,"dictation_lines":5}', '[]');
+  if m is not null or exists (select 1 from daily_missions where user_id = b) then
+    raise exception 'FAIL dashboard M2 onboarding learner got a mission row';
+  end if;
+  raise notice 'PASS dashboard M2 nothing due and no hints -> no mission';
 end $$;
 rollback;

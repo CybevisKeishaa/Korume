@@ -32,7 +32,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T3 | accepted (Codex until its quota stop; Claude: reserved-word fix, gate) + T2 review nits | see git log |
 | T4 | accepted (Claude, Codex out of quota) + T3 review fixes | see git log |
 | T5 | accepted (Claude) | see git log |
-| T6–T16 | not started | — |
+| T6 | accepted (Claude) + T4/T5 review fixes | see git log |
+| T7–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -62,6 +63,10 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   Known: `mastered_at` is client-writable through RLS while still null (same as curated vocab since port-profile).
 - T5: gate PASS (kanji/mining due, exactly-at boundary, cross-learner RLS); mutations red (`<=`→`<`, kanji filter,
   TS recency tie-break).
+- T6: gate PASS (ensure idempotent, review 20 of 25 frozen, single-rule skipped hints, tz change keeps the cycle,
+  window continuity, onboarding = no row); erasure gate PASS; mutations red (access check, transcript check, active
+  lookup, review cap). Gate idempotency checks use `is distinct from` (a NULL second call passed `<>`).
+- S3 decision (T4 review): a key currently mastered on a row with no `mastered_at` (pre-tracking) is never "new".
 - Codex hit its usage limit 2026-10-08 ~21:40 (resets 2026-10-09 01:41); Claude continues per owner rule.
 
 ## Working tree and environment

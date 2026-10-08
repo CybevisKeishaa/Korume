@@ -7,19 +7,19 @@ import { normalizeRef } from "./refs";
 function sqlLiteral(text: string): string {
   const escaped = [...text].map((ch) => {
     const code = ch.codePointAt(0)!;
-    return code < 0x20 || code === 0xa0 || code === 0x3000 ? `\\u${code.toString(16).padStart(4, "0")}` : ch;
+    return code < 0x20 || code === 0x85 || code === 0x200b || /\s/.test(ch) ?`\\u${code.toString(16).padStart(4, "0")}` : ch;
   }).join("");
   return escaped === text ? `'${text}'` : `E'${escaped}'`;
 }
 
 describe("lexical key parity (port-dashboard S3)", () => {
   it("normalizeRef produces every fixture key", () => {
-    expect(LEXICAL_KEY_CASES).toHaveLength(6);
+    expect(LEXICAL_KEY_CASES).toHaveLength(8);
     for (const c of LEXICAL_KEY_CASES) expect(normalizeRef(c.input), JSON.stringify(c.input)).toBe(c.key);
   });
 
   it("the live SQL gate checks every fixture case", () => {
     const gate = readFileSync("supabase/tests/port-dashboard.sql", "utf8");
-    for (const c of LEXICAL_KEY_CASES) expect(gate).toContain(`(${sqlLiteral(c.input)}, '${c.key}')`);
+    for (const c of LEXICAL_KEY_CASES) expect(gate).toContain(`(${sqlLiteral(c.input)}, ${sqlLiteral(c.key)})`);
   });
 });

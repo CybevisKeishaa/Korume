@@ -13,6 +13,7 @@ insert into erasure_fk_allowlist values
   ('public.sentence_mining_cards','user_id','c'), ('public.user_reading_attempts','user_id','c'), ('public.xp_events','user_id','c'),
   ('public.learning_outcomes','user_id','c'),
   ('public.study_sessions','user_id','c'),
+  ('public.daily_missions','user_id','c'),
   ('public.notifications','user_id','c'), ('public.peer_review_shares','user_id','c'), ('public.peer_reviews','reviewer_id','c'),
   ('public.companion_memories','user_id','c'), ('public.user_lesson_library','user_id','c'), ('public.account_deletion_requests','user_id','c'),
   ('public.lesson_creation_jobs','requester_user_id','c'), ('public.user_preferences','user_id','c'), ('public.user_saved_collections','user_id','c'),

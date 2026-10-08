@@ -137,9 +137,10 @@ create table vocab (
   part_of_speech text,
   created_at timestamptz not null default now(),
   -- port-dashboard S3: the repo's saved-word identity (lib/summary/refs.ts normalizeRef = NFKC + JS trim) computed in
-  -- SQL. btrim() alone misses U+3000 and friends, so the trim set is explicit. Parity is tested both ways.
+  -- SQL. The trim set is ECMAScript WhiteSpace + LineTerminator spelled out \u2014 never \s, whose meaning depends on the
+  -- collation provider. Parity is tested both ways (lib/summary/lexical-key-fixture.ts).
   lexical_key text generated always as (
-    regexp_replace(normalize(word, NFKC), '^[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$', '', 'g')
+    regexp_replace(normalize(word, NFKC), '^[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$', '', 'g')
   ) stored
 );
 

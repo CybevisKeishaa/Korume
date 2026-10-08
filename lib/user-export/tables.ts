@@ -28,6 +28,13 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
   { table: "xp_events", userColumn: "user_id" },
   { table: "learning_outcomes", userColumn: "user_id" },
   { table: "study_sessions", userColumn: "user_id" },
+  // port-dashboard: daily mission cycles and their items. daily_mission_eligible (a grandchild holding only frozen
+  // review/line keys) is not collected by the guard and is not exported.
+  { table: "daily_missions", userColumn: "user_id" },
+  {
+    table: "daily_mission_items",
+    via: { parent: "daily_missions", column: "mission_id", parentKey: "id" },
+  },
   { table: "user_kanji_progress", userColumn: "user_id" },
   { table: "user_vocab_progress", userColumn: "user_id" },
   { table: "user_grammar_progress", userColumn: "user_id" },
