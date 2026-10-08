@@ -12,7 +12,7 @@ import { isAdmin, requireAdmin } from "./guard";
 const USER = { id: "u1" };
 const ORIGINAL_ADMIN_EMAILS = process.env.ADMIN_EMAILS;
 
-function mockAuthed(tables: Parameters<typeof createMockSupabase>[0]["tables"] = {}, user: { id: string } | null = USER) {
+function mockAuthed(tables: Parameters<typeof createMockSupabase>[0]["tables"] = {}, user: { id: string; email?: string } | null = USER) {
   const supabase = createMockSupabase({ user, tables });
   vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
   return supabase;
@@ -68,7 +68,7 @@ describe("requireAdmin", () => {
   });
 
   it("returns 403 when is_admin is false and ADMIN_EMAILS is unset", async () => {
-    mockAuthed();
+    mockAuthed({}, { id: USER.id, email: "nobody@example.com" });
     mockService({
       users: () => ({ data: { id: USER.id, email: "nobody@example.com", is_admin: false }, error: null }),
     });
@@ -78,7 +78,7 @@ describe("requireAdmin", () => {
 
   it("returns 403 when is_admin is false and the email is not on the ADMIN_EMAILS bootstrap list", async () => {
     process.env.ADMIN_EMAILS = "someone-else@example.com";
-    mockAuthed();
+    mockAuthed({}, { id: USER.id, email: "nobody@example.com" });
     mockService({
       users: () => ({ data: { id: USER.id, email: "nobody@example.com", is_admin: false }, error: null }),
     });
@@ -88,7 +88,7 @@ describe("requireAdmin", () => {
 
   it("bootstraps: promotes is_admin via ADMIN_EMAILS (case-insensitive, trimmed) then passes", async () => {
     process.env.ADMIN_EMAILS = " Founder@Example.com , other@example.com ";
-    mockAuthed();
+    mockAuthed({}, { id: USER.id, email: "Founder@example.com" });
     let updatePayload: unknown;
     mockService({
       users: (calls: QueryCall[]) => {
@@ -104,6 +104,20 @@ describe("requireAdmin", () => {
     const result = await requireAdmin();
     expect(result).toEqual({ ok: true, user: { id: USER.id, email: "founder@example.com" } });
     expect(updatePayload).toEqual({ is_admin: true });
+  });
+
+  it("never bootstraps from users.email - a learner-written row email on the list is refused", async () => {
+    process.env.ADMIN_EMAILS = "founder@example.com";
+    mockAuthed({}, { id: USER.id, email: "learner@example.com" });
+    let promoted = false;
+    mockService({
+      users: (calls: QueryCall[]) => {
+        if (calls.some((c) => c.op === "update")) { promoted = true; return { data: { id: USER.id }, error: null }; }
+        return { data: { id: USER.id, email: "Founder@example.com", is_admin: false }, error: null };
+      },
+    });
+    expect(await requireAdmin()).toEqual({ ok: false, status: 403 });
+    expect(promoted).toBe(false);
   });
 
   it("never trusts a client-supplied admin flag — only DB is_admin / ADMIN_EMAILS matter", async () => {

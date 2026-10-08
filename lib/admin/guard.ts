@@ -78,12 +78,13 @@ export async function requireAdmin(): Promise<RequireAdminResult> {
   }
 
   const bootstrapEmails = parseAdminEmails();
-  const normalizedEmail = row.email.trim().toLowerCase();
+  // The auth email, never `users.email`: only GoTrue can change it (review r1 C1).
+  const normalizedEmail = (authUser.email ?? "").trim().toLowerCase();
   if (bootstrapEmails.length > 0 && bootstrapEmails.includes(normalizedEmail)) {
     const { error: promoteError } = await service.from("users").update({ is_admin: true }).eq("id", row.id);
     if (promoteError) throw promoteError;
     // eslint-disable-next-line no-console -- deliberate one-line audit log for a privilege escalation, not debug noise.
-    console.log(`[admin] bootstrap: promoted ${row.email} to admin via ADMIN_EMAILS`);
+    console.log(`[admin] bootstrap: promoted ${normalizedEmail} (users row: ${row.email}) to admin via ADMIN_EMAILS`);
     return { ok: true, user: { id: row.id, email: row.email } };
   }
 

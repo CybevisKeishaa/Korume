@@ -814,7 +814,7 @@ do $$
 declare column_name text; caught boolean;
 begin
   if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 5.2 claims for A: %', auth.uid(); end if;
-  foreach column_name in array array['username', 'bio', 'country', 'native_language', 'target_jlpt_level', 'learning_goal', 'preferred_practices'] loop
+  foreach column_name in array array['username', 'bio', 'country', 'native_language', 'target_jlpt_level', 'learning_goal', 'preferred_practices', 'name', 'email', 'created_at'] loop
     caught := false;
     begin
       execute format('update users set %I = %I where id = auth.uid()', column_name, column_name);
@@ -830,7 +830,7 @@ begin
     or not exists (select 1 from storage.objects where bucket_id = 'avatars' and name = current_setting('gate.a') || '/avatar.webp') then
     raise exception 'FAIL profile 5.2 A must read exactly its own avatar object';
   end if;
-  raise notice 'PASS profile authenticated cannot update seven Edit Profile columns and reads only its own avatar';
+  raise notice 'PASS profile authenticated cannot update the save_profile and identity columns (ten) and reads only its own avatar';
 end $$;
 commit;
 

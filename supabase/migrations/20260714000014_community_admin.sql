@@ -15,7 +15,7 @@
 -- write through the service role, which bypasses RLS/grants entirely.
 --
 -- leaderboard_opt_in is the opposite case: an ordinary profile preference the
--- owner should be able to flip themselves, same trust level as name/level/
+-- owner should be able to flip themselves, same trust level as level/
 -- target_goal below.
 alter table users
   add column is_admin boolean not null default false,
@@ -35,8 +35,8 @@ create index idx_users_admin on users (id) where is_admin;
 -- inherit that same blanket permission, so close the table-level grant and
 -- reopen it column-scoped.
 --
--- Column set below = the pre-existing full column list (preserved, not
--- narrowed) plus leaderboard_opt_in (new, explicitly self-editable per this
+-- Column set below = the pre-existing full column list (narrowed later by
+-- port-profile, see the note on the grant) plus leaderboard_opt_in (new, explicitly self-editable per this
 -- layer's spec), minus is_admin (new, service-role only) — with one
 -- deliberate exception: `id` is excluded. Granting UPDATE on a primary key
 -- that is also a foreign key into auth.users has no legitimate client use
@@ -44,15 +44,17 @@ create index idx_users_admin on users (id) where is_admin;
 -- makes an actual id change impossible today (the new row would fail the
 -- check), there is no reason to also hand out the column privilege for it.
 -- This is a narrower judgment call than a byte-for-byte preservation of the
--- old grant, called out here for the record: `email` and `created_at` ARE
--- preserved as client-writable even though that is arguably too permissive
--- (email should probably sync from auth.users; created_at should probably be
--- immutable) — tightening those is left as a follow-up, out of scope for
--- this migration, rather than silently changing behavior no one asked about.
+-- old grant. `email` and `created_at` were first kept client-writable here;
+-- port-profile removed both (and `name`) — see the note on the grant below.
 revoke update on users from authenticated;
+-- port-profile (T16 review r1 C1): `email`, `name` and `created_at` are no longer
+-- client-writable. `requireAdmin` bootstraps admins from an email, and a writable,
+-- non-unique `users.email` let a learner claim an ADMIN_EMAILS address; `name` is
+-- the Display Name, set once at signup by `handle_new_auth_user`, then only
+-- through `save_profile` with its validator.
 grant update (
-  email, name, avatar_url, level, target_goal, daily_minutes, study_timezone,
-  created_at, updated_at, leaderboard_opt_in
+  avatar_url, level, target_goal, daily_minutes, study_timezone,
+  updated_at, leaderboard_opt_in
 ) on users to authenticated;
 
 -- ---------------------------------------------------------------------------

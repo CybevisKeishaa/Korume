@@ -20,4 +20,12 @@ describe("getStudyTimezoneOrFallback", () => {
     expect(log).toHaveBeenCalled();
     log.mockRestore();
   });
+
+  it("lets Next control-flow errors through instead of logging them as a failed read", async () => {
+    const dynamic = Object.assign(new Error("Dynamic server usage"), { digest: "DYNAMIC_SERVER_USAGE" });
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await expect(getStudyTimezoneOrFallback(async () => { throw dynamic; })).rejects.toBe(dynamic);
+    expect(log).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
 });

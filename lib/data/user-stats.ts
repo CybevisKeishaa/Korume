@@ -70,7 +70,7 @@ interface EarnedBadgeRow {
  * A user without a `user_stats` row yet (e.g. an account created before the
  * `handle_new_auth_user` trigger existed) reads back as all-zero stats
  * rather than a 500. `record_learning_outcome` creates the row on the
- * first learning award when it does not already exist.
+ * first recorded learning outcome, even one that awards no XP.
  */
 export async function getUserStats(): Promise<GetUserStatsResult> {
   const supabase = createClient();

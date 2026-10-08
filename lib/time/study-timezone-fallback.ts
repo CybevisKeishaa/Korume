@@ -6,6 +6,7 @@ export async function getStudyTimezoneOrFallback(read: () => Promise<StudyTimezo
   try {
     return await read();
   } catch (error) {
+    if (error && typeof error === "object" && "digest" in error) throw error; // Next control flow, not a failed read
     console.error("[study-timezone] read failed:", error);
     return { timeZone: FALLBACK_STUDY_TIMEZONE, needsDetection: false };
   }

@@ -7,12 +7,12 @@ const community = readFileSync(join(migrations, "20260714000014_community_admin.
 const profile = readFileSync(join(migrations, "20261007000044_port_profile.sql"), "utf8");
 
 describe("profile SQL contracts", () => {
-  it("reserves all seven profile columns for save_profile while retaining timezone detection", () => {
+  it("reserves the seven profile columns plus name, email and created_at for server writes while retaining timezone detection", () => {
     const grant = community.match(/grant update \(([\s\S]*?)\) on users to authenticated;/i);
     expect(grant).not.toBeNull();
     const columns = grant![1]!.split(",").map((column) => column.trim());
     expect(columns).toContain("study_timezone");
-    for (const column of ["username", "bio", "country", "native_language", "target_jlpt_level", "learning_goal", "preferred_practices"]) {
+    for (const column of ["username", "bio", "country", "native_language", "target_jlpt_level", "learning_goal", "preferred_practices", "name", "email", "created_at"]) {
       expect(columns).not.toContain(column);
     }
   });
