@@ -39,14 +39,15 @@ describe("buildJourney", () => {
     });
   });
 
-  it.each([
+  const C5_WINDOWS = [
     ["N5", ["N5", "N4", "N3"]],
     ["N4", ["N5", "N4", "N3"]],
     ["N3", ["N4", "N3", "N2"]],
     ["N2", ["N3", "N2", "N1"]],
     ["N1", ["N3", "N2", "N1"]],
-  ] as const)("uses the C5 window when %s is current", (current, expectedLevels) => {
-    expect(["N5", "N4", "N3", "N2", "N1"]).toHaveLength(5);
+  ] as const;
+  it("covers every level in the C5 window table", () => expect(C5_WINDOWS).toHaveLength(LEVELS.length));
+  it.each(C5_WINDOWS)("uses the C5 window when %s is current", (current, expectedLevels) => {
     const currentIndex = LEVELS.indexOf(current);
     const input = rows(Object.fromEntries(LEVELS.map((level, index) => [level, row(level, 1, index < currentIndex ? 1 : 0)])));
 
@@ -54,6 +55,17 @@ describe("buildJourney", () => {
     expect(journey.kind).toBe("active");
     if (journey.kind !== "active") return;
     expect(journey.nodes.map((node) => node.level)).toEqual(expectedLevels);
+  });
+
+  it("treats a PLUS-only level as unavailable", () => {
+    const plusOnly = { ...row("N4"), plusTotal: 4, plusAccessible: 4 };
+    const journey = buildJourney(rows({ N5: row("N5", 2, 1), N4: plusOnly }));
+    expect(journey.kind === "active" && journey.nodes.find((node) => node.level === "N4")).toEqual({ level: "N4", state: "unavailable", percent: null });
+  });
+
+  it("never shows 100% on a level that is not completed (floor, not round)", () => {
+    const journey = buildJourney(rows({ N5: row("N5", 200, 199) }));
+    expect(journey.kind === "active" && journey.nodes[0]).toEqual({ level: "N5", state: "current", percent: 99 });
   });
 
   it("keeps a completed later level completed while the first incomplete level is current", () => {

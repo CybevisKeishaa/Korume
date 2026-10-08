@@ -30,7 +30,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T1 | accepted (Codex; Claude fixed a same-transaction S7 test) | see git log |
 | T2 | accepted (Codex; Claude moved its gate block out of the migration) + T1 review nits | see git log |
 | T3 | accepted (Codex until its quota stop; Claude: reserved-word fix, gate) + T2 review nits | see git log |
-| T4–T16 | not started | — |
+| T4 | accepted (Claude, Codex out of quota) + T3 review fixes | see git log |
+| T5–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -54,6 +55,10 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 - T3: gate PASS (journey core vs PLUS, placement); mutations red (core_total without FREE filter, two-curricula
   check, null-manifest guard). Plan snippet bug: `position` is reserved in `returns table` -> `lesson_position`.
 - Plan Step 8 scan test (T2) dropped: `listCollections` now requires `kind`, so tsc is the guard.
+- T4: gate PASS (lexical_key parity, min-before-filter, sentence excluded, mining mastered_at kept); Profile gate
+  PASS with Words learned = `current_mastered_count`; mutations red (filter before min, keep trigger dropped,
+  journey `next` without FREE filter, mining masteryTransition input). Profile label: Vocabulary mastered / Từ & cụm từ đã học.
+  Known: `mastered_at` is client-writable through RLS while still null (same as curated vocab since port-profile).
 - Codex hit its usage limit 2026-10-08 ~21:40 (resets 2026-10-09 01:41); Claude continues per owner rule.
 
 ## Working tree and environment

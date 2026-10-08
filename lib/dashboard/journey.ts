@@ -63,7 +63,8 @@ export function buildJourney(rows: readonly JourneyLevelRow[]): JourneyView {
         : row.level === current.level
           ? "current"
           : "locked",
-    percent: row.coreTotal > 0 ? Math.round(100 * row.coreCompleted / row.coreTotal) : null,
+    // floor: a level shows 100% only when it is Completed (D2).
+    percent: row.coreTotal > 0 ? Math.floor(100 * row.coreCompleted / row.coreTotal) : null,
   }));
 
   return {

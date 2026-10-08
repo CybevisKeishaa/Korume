@@ -1023,8 +1023,9 @@ declare r record;
 begin
   if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.2 claims for A: %', auth.uid(); end if;
   select * into r from profile_counts(2);
-  if r.words_learned <> 2 or r.video_lessons_completed <> 2 then
-    raise exception 'FAIL profile 6.2 counts for A: words %, videos %', r.words_learned, r.video_lessons_completed;
+  -- Words learned is current_mastered_count since port-dashboard S3 (distinct lexical items).
+  if current_mastered_count(2) <> 2 or r.video_lessons_completed <> 2 then
+    raise exception 'FAIL profile 6.2 counts for A: words %, videos %', current_mastered_count(2), r.video_lessons_completed;
   end if;
   raise notice 'PASS profile_counts(2): stages 1,2,5 -> 2 words; 2 completed + 1 in-progress -> 2 videos (positive control)';
 end $$;
@@ -1037,8 +1038,8 @@ declare r record;
 begin
   if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 6.2 claims for B: %', auth.uid(); end if;
   select * into r from profile_counts(2);
-  if r.words_learned <> 0 or r.video_lessons_completed <> 0 then
-    raise exception 'FAIL profile 6.2 B counted A rows: words %, videos %', r.words_learned, r.video_lessons_completed;
+  if current_mastered_count(2) <> 0 or r.video_lessons_completed <> 0 then
+    raise exception 'FAIL profile 6.2 B counted A rows: words %, videos %', current_mastered_count(2), r.video_lessons_completed;
   end if;
   raise notice 'PASS profile_counts: B sees none of A rows';
 end $$;
@@ -1052,8 +1053,8 @@ set local role authenticated;
 do $$
 begin
   if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.2b claims for A: %', auth.uid(); end if;
-  if (select words_learned from profile_counts(2)) <> 1200 then
-    raise exception 'FAIL profile 6.2b 1200 mastered rows counted as %', (select words_learned from profile_counts(2));
+  if current_mastered_count(2) <> 1200 then
+    raise exception 'FAIL profile 6.2b 1200 mastered rows counted as %', current_mastered_count(2);
   end if;
   raise notice 'PASS profile_counts aggregates 1200 rows in SQL';
 end $$;

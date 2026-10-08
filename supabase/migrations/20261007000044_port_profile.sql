@@ -288,13 +288,13 @@ as $$
   ) evidence;
 $$;
 
+-- Words learned moved to current_mastered_count (port-dashboard S3: distinct lexical items across curated vocab and
+-- mined words). p_mastery stays so the signature and grants do not change.
 create function profile_counts(p_mastery int)
-  returns table (video_lessons_completed int, words_learned int)
+  returns table (video_lessons_completed int)
   language sql stable security invoker set search_path = public
 as $$
-  select
-    (select count(*)::int from user_video_progress where user_id = auth.uid() and completed_at is not null),
-    (select count(*)::int from user_vocab_progress where user_id = auth.uid() and srs_stage >= p_mastery);
+  select (select count(*)::int from user_video_progress where user_id = auth.uid() and completed_at is not null);
 $$;
 
 -- §6.1 Two sources, one axis. System milestones survive Delete Korume Memory; companion ones do not.

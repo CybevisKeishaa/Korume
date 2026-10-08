@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/data/videos";
 import { recordActivity } from "@/lib/data/gamification";
 import { REVIEW_FREQUENCY_MULTIPLIER, reviewItem, type Quality, type SrsState } from "@/lib/srs";
 import { readPreferences } from "@/lib/data/preferences";
+import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
+import { masteryTransition } from "@/lib/srs/mastery";
 import type { CreateMiningCardInput, ReviewMiningCardInput } from "@/lib/validation/mining";
 import { normalizeRef } from "@/lib/summary/refs";
 
@@ -179,7 +181,7 @@ export async function reviewMiningCard(
 
   const { data: existing, error: loadError } = await supabase
     .from("sentence_mining_cards")
-    .select("srs_stage, interval_days, ease_factor")
+    .select("srs_stage, interval_days, ease_factor, mastered_at")
     .eq("id", input.cardId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -202,6 +204,13 @@ export async function reviewMiningCard(
       ease_factor: next.easeFactor,
       next_review_at: next.nextReviewAt.toISOString(),
       last_reviewed_at: next.lastReviewedAt.toISOString(),
+      // First time this card reached mastery; the DB trigger keeps it once set (port-dashboard S2).
+      mastered_at: masteryTransition({
+        wasMastered: existing.srs_stage >= MASTERY_THRESHOLD,
+        isMastered: next.repetitions >= MASTERY_THRESHOLD,
+        existingMasteredAt: existing.mastered_at ?? null,
+        now,
+      }),
     })
     .eq("id", input.cardId)
     .eq("user_id", user.id);

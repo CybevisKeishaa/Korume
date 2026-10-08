@@ -135,7 +135,12 @@ create table vocab (
   jlpt_level jlpt_level,
   audio_url text,
   part_of_speech text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- port-dashboard S3: the repo's saved-word identity (lib/summary/refs.ts normalizeRef = NFKC + JS trim) computed in
+  -- SQL. btrim() alone misses U+3000 and friends, so the trim set is explicit. Parity is tested both ways.
+  lexical_key text generated always as (
+    regexp_replace(normalize(word, NFKC), '^[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+|[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+$', '', 'g')
+  ) stored
 );
 
 -- vocab_examples.source_video_id set null on video delete (declared after videos).

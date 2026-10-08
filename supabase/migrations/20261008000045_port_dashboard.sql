@@ -66,7 +66,39 @@ create function curriculum_membership(p_video_id uuid) returns table (collection
   language sql stable security invoker set search_path = public
 as $$
   select c.title, lc.position from lesson_collections lc join collections c on c.id = lc.collection_id
-  where lc.lesson_id = p_video_id and c.kind = 'curriculum' and lc.position > 0 limit 1;
+  where lc.lesson_id = p_video_id and c.kind = 'curriculum' and lc.position > 0
+  order by c.curriculum_level limit 1;  -- sync keeps a lesson in one curriculum; the order makes any slip deterministic
 $$;
 revoke execute on function curriculum_membership(uuid) from public, anon;
 grant execute on function curriculum_membership(uuid) to authenticated;
+
+-- S3 lexical mastery: one lexical key, one dedupe, two time predicates. Group FIRST, then filter the window, so a word
+-- mastered last month in one source and again this week in another is not "new" twice. Mining source_ref is already
+-- normalizeRef(surface); vocab.lexical_key is the same identity computed in SQL (parity tested). Homographs merge.
+create function mastered_lexemes(p_mastery int)
+  returns table (lexical_key text, first_mastered_at timestamptz, currently_mastered boolean)
+  language sql stable security invoker set search_path = public
+as $$
+  with items as (
+    select v.lexical_key as k, p.mastered_at as at, p.srs_stage >= p_mastery as cur
+    from user_vocab_progress p join vocab v on v.id = p.vocab_id
+    where p.user_id = auth.uid()
+    union all
+    select c.source_ref, c.mastered_at, c.srs_stage >= p_mastery
+    from sentence_mining_cards c
+    where c.user_id = auth.uid() and c.source_kind in ('selection', 'vocabulary', 'expression') and c.source_ref is not null
+  )
+  select k, min(at), bool_or(cur) from items where k <> '' group by k;
+$$;
+create function current_mastered_count(p_mastery int) returns int
+  language sql stable security invoker set search_path = public
+as $$ select count(*)::int from mastered_lexemes(p_mastery) where currently_mastered $$;
+create function newly_mastered_count(p_mastery int, p_from timestamptz, p_to timestamptz) returns int
+  language sql stable security invoker set search_path = public
+as $$ select count(*)::int from mastered_lexemes(p_mastery) where first_mastered_at >= p_from and first_mastered_at < p_to $$;
+revoke execute on function mastered_lexemes(int) from public, anon;
+revoke execute on function current_mastered_count(int) from public, anon;
+revoke execute on function newly_mastered_count(int, timestamptz, timestamptz) from public, anon;
+grant execute on function mastered_lexemes(int) to authenticated;
+grant execute on function current_mastered_count(int) to authenticated;
+grant execute on function newly_mastered_count(int, timestamptz, timestamptz) to authenticated;
