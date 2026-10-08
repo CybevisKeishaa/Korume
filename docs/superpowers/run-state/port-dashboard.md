@@ -28,7 +28,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | Spec | approved | `6cb8c70`, `812c7c3` |
 | Plan | approved | `74f2e55` |
 | T1 | accepted (Codex; Claude fixed a same-transaction S7 test) | see git log |
-| T2–T16 | not started | — |
+| T2 | accepted (Codex; Claude moved its gate block out of the migration) + T1 review nits | see git log |
+| T3–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -44,6 +45,11 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 - T1: `verify:db:dashboard` PASS; `verify:db:shadowing`, `verify:db:pronunciation` PASS; mutations red: PLUS
   `status <> 'active'`, S7 drop keep-branch. Dictionary NOT re-imported after resets (deferred to the last reset
   before Playwright/Chrome).
+- T2: gate PASS (sync order/idempotent/authoritative/PRIVATE/atomic/empty, rollback keeps the seed fixture);
+  mutations red (S7 INSERT branch, sync delete); script with a missing id prints all of them and exits 1.
+- Contract (T1 review): a legacy completed row keeps a null `first_completed_at` even after re-completion;
+  `finish_lesson` counts only first completions after mission creation. Perf to measure at T16:
+  `transcript_lines_read` evaluates `can_open_lesson` twice per line (nested transcripts RLS + explicit call).
 
 ## Working tree and environment
 

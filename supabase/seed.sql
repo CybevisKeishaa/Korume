@@ -50,6 +50,25 @@ from collections
 where slug = 'beginner-foundation'
 on conflict (lesson_id, collection_id) do nothing;
 
+-- port-dashboard C2: LOCAL/E2E curriculum fixture. It is replaced by content:sync-curriculum; fixture ids never enter the manifest.
+insert into videos (id, youtube_video_id, title, duration_seconds, jlpt_level_estimate, library_access) values
+  ('e2e00000-0000-0000-0000-0000000000c2', 'e2e_curriculum_n5_02', 'E2E Curriculum N5 lesson two', 120, 'N5', 'FREE'),
+  ('e2e00000-0000-0000-0000-0000000000c3', 'e2e_curriculum_n5_03', 'E2E Curriculum N5 lesson three', 120, 'N5', 'FREE'),
+  ('e2e00000-0000-0000-0000-0000000000c4', 'e2e_curriculum_n4_01', 'E2E Curriculum N4 lesson one', 120, 'N4', 'FREE'),
+  ('e2e00000-0000-0000-0000-0000000000c5', 'e2e_curriculum_n4_plus', 'E2E Curriculum N4 Plus lesson', 120, 'N4', 'PLUS')
+on conflict (id) do nothing;
+insert into lesson_collections (lesson_id, collection_id, position)
+select m.lesson_id, c.id, m.position
+from (values
+  ('e2e00000-0000-0000-0000-000000000002'::uuid, 'N5'::jlpt_level, 1),
+  ('e2e00000-0000-0000-0000-0000000000c2'::uuid, 'N5', 2),
+  ('e2e00000-0000-0000-0000-0000000000c3'::uuid, 'N5', 3),
+  ('e2e00000-0000-0000-0000-0000000000c4'::uuid, 'N4', 1),
+  ('e2e00000-0000-0000-0000-0000000000c5'::uuid, 'N4', 2)
+) as m(lesson_id, level, position)
+join collections c on c.kind = 'curriculum' and c.curriculum_level = m.level
+on conflict (lesson_id, collection_id) do nothing;
+
 -- Local-only course fixture. Real path memberships are editorial content that
 -- an admin curates against real video ids, so no migration inserts any; this
 -- one row makes the featured-course hero render after a local reset.

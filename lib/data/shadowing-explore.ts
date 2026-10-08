@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { listCollections, listCollectionLessons, selectShadowingCollections, type Collection } from "@/lib/data/collections";
+import { listBrowsableCollections, listCollectionLessons, selectShadowingCollections, type Collection } from "@/lib/data/collections";
 import { containsPattern, fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 import { listSituations, type LessonTag } from "@/lib/data/lesson-taxonomy";
 import { getRecommendations } from "@/lib/data/recommendations";
@@ -71,7 +71,7 @@ export async function getShadowingExplore(
 
   const [situations, collections, recommendationsResult] = await Promise.all([
     listSituations(),
-    listCollections(),
+    listBrowsableCollections(),
     getRecommendations({ limit: 4 }),
   ]);
   const activeSituation = situations.find((tag) => tag.slug === options.situation) ?? null;

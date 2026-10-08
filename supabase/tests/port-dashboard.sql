@@ -86,6 +86,11 @@ begin
     or (select count(*) from transcript_lines where transcript_id in (current_setting('dashgate.free_t')::uuid, current_setting('dashgate.plus_t')::uuid, current_setting('dashgate.priv_t')::uuid)) <> 1 then
     raise exception 'FAIL dashboard C4 leaked A access through transcript RLS';
   end if;
+  -- B passing A's id learns nothing: RLS hides A's subscription and library rows from B.
+  if can_open_lesson(current_setting('dashgate.plus_v')::uuid, current_setting('dashgate.a')::uuid)
+    or can_open_lesson(current_setting('dashgate.priv_v')::uuid, current_setting('dashgate.a')::uuid) then
+    raise exception 'FAIL dashboard can_open_lesson revealed another learner''s access';
+  end if;
   raise notice 'PASS dashboard can_open_lesson and transcript RLS';
 end $$;
 commit;
@@ -138,7 +143,28 @@ begin
   raise notice 'PASS dashboard first_completed_at';
 end $$;
 
+-- A first write that already carries the completion (PATCH completed=true, no row yet), and the upsert path.
+do $$
+declare a uuid := (select id from users where email = 'dashgate-a@example.invalid'); v uuid; w uuid; first_at timestamptz;
+begin
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-s7i', 'g s7i', 'FREE') returning id into v;
+  insert into user_video_progress (user_id, video_id, completed_at, first_completed_at) values (a, v, now(), '2000-01-01');
+  if (select first_completed_at from user_video_progress where user_id = a and video_id = v) is distinct from now() then
+    raise exception 'FAIL dashboard S7 insert-with-completion not stamped by the server';
+  end if;
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-s7u', 'g s7u', 'FREE') returning id into w;
+  insert into user_video_progress (user_id, video_id, last_watched_position) values (a, w, 5);
+  insert into user_video_progress (user_id, video_id, completed_at, first_completed_at) values (a, w, now(), '2000-01-01')
+    on conflict (user_id, video_id) do update
+      set completed_at = excluded.completed_at, first_completed_at = excluded.first_completed_at;
+  select first_completed_at into first_at from user_video_progress where user_id = a and video_id = w;
+  if first_at is distinct from now() then raise exception 'FAIL dashboard S7 upsert completion not stamped once'; end if;
+  delete from videos where id in (v, w);
+  raise notice 'PASS dashboard S7 insert and upsert completion';
+end $$;
+
 -- No backfill: an existing completed row with no first-completion timestamp stays outside future mission windows.
+begin;  -- the trigger is off only inside this transaction, even if a statement fails
 insert into videos (youtube_video_id, title, library_access) values ('dashgate-legacy', 'g legacy', 'FREE');
 alter table user_video_progress disable trigger user_video_progress_first_completed;
 insert into user_video_progress (user_id, video_id, completed_at)
@@ -147,6 +173,7 @@ insert into user_video_progress (user_id, video_id, completed_at)
 alter table user_video_progress enable trigger user_video_progress_first_completed;
 update user_video_progress set completed_at = now() + interval '1 day'
   where video_id = (select id from videos where youtube_video_id = 'dashgate-legacy');
+commit;
 do $$
 begin
   if (select first_completed_at from user_video_progress where video_id = (select id from videos where youtube_video_id = 'dashgate-legacy')) is not null then
@@ -155,3 +182,27 @@ begin
   raise notice 'PASS dashboard S7 never backfills existing completions';
 end $$;
 delete from videos where youtube_video_id = 'dashgate-legacy';
+
+-- C3 curriculum sync (rollback block: the seed curriculum fixture survives, spec E2 amendment 4).
+begin;
+do $$
+declare free1 uuid; free2 uuid; priv uuid; n int;
+begin
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-c1', 'c1', 'FREE') returning id into free1;
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-c2', 'c2', 'FREE') returning id into free2;
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-cp', 'cp', 'PRIVATE') returning id into priv;
+  perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free2, free1)));
+  if (select position from lesson_collections lc join collections c on c.id = lc.collection_id where c.curriculum_level = 'N5' and lc.lesson_id = free2) <> 1 then raise exception 'FAIL dashboard sync order'; end if;
+  perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free2, free1)));  -- idempotent
+  if (select count(*) from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum') <> 2
+    then raise exception 'FAIL dashboard sync not idempotent'; end if;
+  perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free1)));
+  select count(*) into n from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum';
+  if n <> 1 then raise exception 'FAIL dashboard sync not authoritative (% rows)', n; end if;
+  begin perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free1), 'N4', jsonb_build_array(priv))); raise exception 'FAIL dashboard sync accepted PRIVATE'; exception when others then if sqlerrm like 'FAIL%' then raise; end if; end;
+  if (select count(*) from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum') <> 1 then raise exception 'FAIL dashboard sync not atomic'; end if;
+  perform sync_curriculum_manifest('{}'::jsonb);
+  if exists (select 1 from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum') then raise exception 'FAIL dashboard empty manifest kept members'; end if;
+  raise notice 'PASS dashboard curriculum sync (order, idempotent, authoritative, PRIVATE, atomic, empty)';
+end $$;
+rollback;
