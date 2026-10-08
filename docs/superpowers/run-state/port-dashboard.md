@@ -2,7 +2,7 @@
 
 Branch `port-dashboard`, worktree `.worktrees/port-dashboard`, base master `b89f49d`.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Goal and scope
 
@@ -33,8 +33,10 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 
 - Owner rulings D1–D12: spec §1. Schema S1–S7 §2, mission engine M1–M5 §3, curriculum C1–C5 §4, layout L1–L5 §7,
   states/tests/gates E1–E4 §8–§12. Plan-time corrections P1–P9: plan header.
-- Execution method: **not chosen yet** — the owner picks it at the start of the next session (Claude recommended
-  subagent-driven, Codex via Paseo as implementer, Claude finishes a task if Codex hits its quota).
+- Execution method (owner 2026-10-08): **Codex via Paseo implements every task back to back, no check-in between
+  tasks.** Claude writes each packet, reviews (independent code-reviewer + mutations), runs db reset and live gates,
+  commits. If Codex hits its quota, Claude finishes the task itself without asking.
+- Packets/briefs/reports: `.superpowers/sdd/2026-10-08-port-dashboard/` (git-ignored).
 
 ## Verification
 
@@ -43,8 +45,7 @@ Nothing implemented yet; no gate has run on this branch.
 ## Working tree and environment
 
 - Worktree created from master `b89f49d`; clean after `74f2e55` + this file.
-- `node_modules` NOT linked yet and `.env.local` NOT copied (plan Global Constraints: junction to
-  `.worktrees/port-profile/node_modules`, copy `.env.local` from the main checkout).
+- `node_modules` = junction to `.worktrees/port-profile/node_modules`; `.env.local` copied; `verify:protocol` valid.
 - Local Supabase (Docker) was running on 2026-10-08; local DB holds only demo/e2e videos.
 
 ## Blockers
@@ -53,6 +54,4 @@ None. `npx supabase db reset` needs the owner's approval in auto mode.
 
 ## Next actions
 
-1. Owner chooses the execution method (subagent-driven recommended, or native).
-2. Link `node_modules`, copy `.env.local`, run `npm run verify:protocol`.
-3. Start Task 1 (lesson access helper, `first_completed_at`, live gate scaffold).
+1. Task 1 handed to Codex (packet `task-1-packet.md`); Claude then resets the DB, runs the gate, reviews, commits.
