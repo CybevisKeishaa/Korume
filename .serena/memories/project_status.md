@@ -2,8 +2,12 @@
 
 > ## ▶ WHERE EXECUTION STANDS — 2026-10-08 (supersedes every block below)
 >
-> ⭐ **`port-profile` MERGED → master `d57ad41`** (owner approved after the Chrome review; not pushed — the owner
-> pushes). Detail: `mem:port_profile_run_state`. **No branch in flight.** Next (owner 2026-10-08): port the next
+> ⭐ **`port-profile` MERGED → master `d57ad41`**, then **`mascot-cleanup` MERGED → `8ae9fa6`** (both not pushed — the
+> owner pushes). mascot-cleanup: the five extractor-cut poses (greeting, noting, resting, holding-memory, looking-ahead)
+> and `scripts/mascot/extract.js` deleted at the owner's ruling (broken cuts); landing re-sourced from `public/mascot/
+> actions/` (hero `celebrating.png`, pitch `note-taking-on-orb.png`, footer `sleeping.png`); owner's new
+> `branding/` + `animations/running-four-legs.*` committed; `poses.json` is supplied-only. Untracked
+> `.agents/skills/source-command-checkpoint-branch/` left alone (not an image). Detail: `mem:port_profile_run_state`. **No branch in flight.** Next (owner 2026-10-08): port the next
 > screen — `port-dashboard` (`111:515`), which consumes study timezone + study time. Port order: Dashboard → Certification
 > → Conversation library → Kanji inspect/review → Companion Diary → FAQ/Quickstart; Layer 8 stays out.
 > **UX/motion deferred by the owner** until after the ports: app screens have no motion yet (tokens, framer-motion, gsap
