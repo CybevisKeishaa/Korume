@@ -1,26 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { decode } from "./png.js";
 import { join } from "node:path";
 
 /**
- * `public/mascot/poses/` holds two classes of asset, both recorded in
- * `scripts/mascot/poses.json`:
- *
- *  - `poses` — cut out of the character sheets by `scripts/mascot/extract.js`.
- *    Only that script may write these files, and `--check` proves their bytes
- *    still match what the sheets produce.
- *  - `supplied` — hand-cut PNGs the project owner pasted in directly. No
- *    script produced them and none ever will (a human edit is not
- *    reproducible by re-running an extractor), so their record is the
- *    manifest's `origin` line, not a byte comparison.
- *
- * Either way, spec 5.2 requires a filled asset slot to name a source whose
- * origin is recorded, so the record is only worth anything if it still
- * describes the files on disk. These tests pin that: no file without a
- * record, no record without a file, and the `poses` bytes are what
- * re-running the extractor produces.
+ * Every PNG in `public/mascot/poses/` is a `supplied` entry in
+ * `scripts/mascot/poses.json`: hand-cut art the owner pasted in, or a trimmed,
+ * downscaled copy of the owner's action art. Spec 5.2 requires a filled asset
+ * slot to name a source whose origin is recorded, so the record is only worth
+ * anything if it still describes the files on disk. These tests pin that: no
+ * file without a record, no record without a file, and every recorded size is
+ * the file's real size.
  */
 
 const ROOT = join(__dirname, "..", "..");
@@ -48,15 +38,6 @@ function opaqueBox(path: string) {
 }
 
 
-type Pose = {
-  out: string;
-  sheet: string;
-  anchor: [number, number];
-  caption: string;
-  slot: string;
-  width: number;
-  fade?: [number, number];
-};
 type Supplied = {
   out: string;
   caption: string;
@@ -68,8 +49,6 @@ type Supplied = {
   slot?: string;
 };
 type Manifest = {
-  sheets: Record<string, string>;
-  poses: Pose[];
   supplied: Supplied[];
 };
 
@@ -78,43 +57,11 @@ const manifest: Manifest = JSON.parse(
 );
 
 describe("mascot pose manifest", () => {
-  // "the five EXTRACTED poses", not "the five placements": task 9 left
-  // holding-memory.png in this array with no landing-page slot (§6 shipped a
-  // supplied pose whose orb the frozen alt copy actually describes), and
-  // extract.js still reproduces it, so it still belongs here.
-  it("declares the five extracted poses", () => {
-    // Named individually: a bare length check passes just as happily when a
-    // placement is renamed out from under its slot.
-    expect(manifest.poses.map((p) => p.out)).toEqual([
-      "greeting.png",
-      "noting.png",
-      "holding-memory.png",
-      "looking-ahead.png",
-      "resting.png",
-    ]);
-  });
-
-  it("names a source sheet that exists for every pose", () => {
-    expect(manifest.poses.length).toBe(5);
-    for (const pose of manifest.poses) {
-      const rel: string | undefined = manifest.sheets[pose.sheet];
-      expect(rel, `${pose.out} names sheet "${pose.sheet}"`).toBeDefined();
-      expect(existsSync(join(ROOT, rel as string)), `${rel} exists`).toBe(true);
-    }
-  });
-
-  it("records what each pose is and where it goes", () => {
-    for (const pose of manifest.poses) {
-      expect(pose.caption.length, `${pose.out} caption`).toBeGreaterThan(0);
-      expect(pose.slot.length, `${pose.out} slot`).toBeGreaterThan(0);
-    }
-  });
-
   it("records a non-empty depiction and origin for every supplied pose", () => {
     // Pattern-gathered collection: assert its size explicitly too, so an
     // empty `supplied` array (or one that silently shrank) can't pass this
     // by vacuous truth.
-    expect(manifest.supplied.length).toBe(28);
+    expect(manifest.supplied.length).toBe(31);
     for (const pose of manifest.supplied) {
       expect(pose.depicts.length, `${pose.out} depicts`).toBeGreaterThan(0);
       expect(pose.origin.length, `${pose.out} origin`).toBeGreaterThan(0);
@@ -138,6 +85,9 @@ describe("mascot pose manifest", () => {
     expect(placed.map((pose) => pose.out)).toEqual([
       "hugging-an-orb.png",
       "reading-on-the-orb.png",
+      "celebrating.png",
+      "note-taking-on-orb.png",
+      "sleeping.png",
     ]);
     for (const pose of placed) {
       expect((pose.slot as string).length, `${pose.out} slot`).toBeGreaterThan(0);
@@ -185,10 +135,10 @@ describe("mascot pose manifest", () => {
     // `capability-chain.tsx` bottom-aligns it to.
     //
     // Scoped to what SHIPS, read from the components rather than from the
-    // manifest's `slot`. Both classes are scanned on purpose: three of the five
-    // poses a component references are `extract.js`'s output, and THEY are what
-    // proves the convention — a cutter emits a tight box, so all three measure
-    // 100% fill. The two that did not were hand-cut and pasted in.
+    // manifest's `slot`. "Transparent" means alpha <= 8, the same floor
+    // `opaqueBox` uses, so a derived cut must be trimmed at that floor too —
+    // a trim of exactly-zero alpha leaves a faint glow rim (celebrating.png
+    // first measured 89.5% wide that way, 2026-10-08).
     const stripComments = (src: string) =>
       src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
     const dir = join(process.cwd(), "components", "marketing");
@@ -197,86 +147,47 @@ describe("mascot pose manifest", () => {
       .map((f) => stripComments(readFileSync(join(dir, f), "utf8")));
     expect(sources.length, "no marketing components found to scan").toBeGreaterThan(0);
 
-    const shipped = [...manifest.poses, ...manifest.supplied].filter((pose) =>
+    const shipped = manifest.supplied.filter((pose) =>
       sources.some((src) => src.includes(pose.out)),
     );
     // L-004: without this, a scan that matched nothing would make the loop
     // below vacuously green — and this guard was written over existing code,
     // which is exactly when that happens unnoticed.
     expect(shipped.map((pose) => pose.out).sort()).toEqual([
-      "greeting.png",
+      "celebrating.png",
       "hugging-an-orb.png",
-      "noting.png",
+      "note-taking-on-orb.png",
       "reading-on-the-orb.png",
-      "resting.png",
+      "sleeping.png",
     ]);
 
     for (const pose of shipped) {
       const { w, h, boxW, boxH } = opaqueBox(join(POSES_DIR, pose.out));
       expect(boxW / w, `${pose.out} horizontal fill`).toBeGreaterThan(0.98);
       expect(boxH / h, `${pose.out} vertical fill`).toBeGreaterThan(0.98);
-      // A supplied entry records both dimensions, and they must describe the
-      // file on disk — otherwise a trim leaves two records disagreeing
-      // (CLAUDE.md 6, one fact one home). An extracted entry records only the
-      // cut `width`; its height comes from the sheet, and `extract.js --check`
-      // already byte-compares those files.
-      if ("height" in pose) {
-        expect({ width: w, height: h }, `${pose.out} manifest dimensions`).toEqual({
-          width: pose.width,
-          height: pose.height,
-        });
-      }
+      // The recorded size must describe the file on disk — otherwise a trim
+      // leaves two records disagreeing (CLAUDE.md 6, one fact one home).
+      expect({ width: w, height: h }, `${pose.out} manifest dimensions`).toEqual({
+        width: pose.width,
+        height: pose.height,
+      });
     }
   });
 
   it("has no asset in public/mascot/poses that the manifest does not name", () => {
     const onDisk = readdirSync(POSES_DIR).filter((f) => f.endsWith(".png"));
-    const named = [
-      ...manifest.poses.map((p) => p.out),
-      ...manifest.supplied.map((p) => p.out),
-    ];
+    const named = manifest.supplied.map((p) => p.out);
     // THE INVARIANT, permanent: the directory and the manifest name the same
     // set. A bare length check on `onDisk` alone would pass just as happily if
     // a file and a record drifted apart by the same count, so compare names.
     expect(onDisk.sort()).toEqual(named.sort());
 
-    // TODAY'S STATE. Not an invariant (L-031). 5 extracted + 28 supplied = 33 (syncing.png, 2026-10-08).
+    // TODAY'S STATE. Not an invariant (L-031). 31 supplied (2026-10-08: the 5 extracted cuts deleted, 3 action-art cuts added).
     // Adding a pose is legitimate and SHOULD fail here — update this number,
     // never the manifest, to make it green again. Kept separate from the
     // invariant above so a later reader can tell which is which.
-    expect(onDisk.length, "poses on disk today").toBe(33);
-    expect(named.length, "poses the manifest names today").toBe(33);
+    expect(onDisk.length, "poses on disk today").toBe(31);
+    expect(named.length, "poses the manifest names today").toBe(31);
   });
 
-  it("the extracted assets are what the extractor produces from the sheets", () => {
-    // Decoding two 3072x2048 sheets is the slow part; --check reuses one
-    // analysis per sheet and compares bytes without writing. This applies to
-    // manifest.poses only — a supplied pose is not extract.js's output and
-    // never can be (a human edit isn't reproducible by re-running a cutter).
-    const run = () =>
-      execFileSync(
-        process.execPath,
-        [join(__dirname, "extract.js"), "--check"],
-        { cwd: ROOT, encoding: "utf8" },
-      );
-    expect(run).not.toThrow();
-    const output = run();
-    // Every line must be a match line; a "!" line means an asset is stale, and
-    // extract.js exits non-zero for that, so assert the shape too. The line
-    // count is derived from the manifest, not retyped, so it can't drift.
-    const lines = output.trim().split(/\r?\n/);
-    expect(lines.length).toBe(manifest.poses.length);
-    for (const line of lines) expect(line.trimStart().startsWith("=")).toBe(true);
-
-    const suppliedNames = new Set(manifest.supplied.map((p) => p.out));
-    const extractedNames = output
-      .trim()
-      .split(/\r?\n/)
-      .map((line) => line.trim().slice(2).trim().split(/\s+/, 1)[0] ?? "");
-    expect(extractedNames.length).toBe(manifest.poses.length);
-    for (const name of extractedNames) {
-      expect(name.length, "extracted line names a file").toBeGreaterThan(0);
-      expect(suppliedNames.has(name), `${name} is not a supplied pose`).toBe(false);
-    }
-  }, 60_000);
 });

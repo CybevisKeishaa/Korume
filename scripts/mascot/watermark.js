@@ -6,7 +6,7 @@
  *
  *   node scripts/mascot/watermark.js
  *
- * Dependency-free, like extract.js.
+ * Dependency-free (png.js + matte.js only).
  */
 const fs = require("node:fs");
 const path = require("node:path");

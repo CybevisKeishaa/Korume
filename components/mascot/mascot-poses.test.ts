@@ -6,8 +6,8 @@ import { MASCOT_POSES } from "./mascot-poses";
 const ROOT = process.cwd();
 const manifest = JSON.parse(
   readFileSync(join(ROOT, "scripts/mascot/poses.json"), "utf8"),
-) as { poses: { out: string }[]; supplied: { out: string }[] };
-const recorded = new Set([...manifest.poses, ...manifest.supplied].map((p) => p.out));
+) as { supplied: { out: string }[] };
+const recorded = new Set(manifest.supplied.map((p) => p.out));
 
 describe("MASCOT_POSES", () => {
   const entries = Object.entries(MASCOT_POSES);

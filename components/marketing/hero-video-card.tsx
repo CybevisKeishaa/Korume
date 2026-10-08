@@ -229,17 +229,17 @@ export function HeroVideoCard({ t }: { t: Translator }) {
 
           <div className="flex items-center gap-xs px-md py-sm">
             {/* The reference puts the companion itself here, not an initial.
-                `greeting.png` is its first appearance on the page, so the pose
-                waves — see `scripts/mascot/poses.json` for the cut and the
+                `celebrating.png` is its first appearance on the page, so the pose
+                raises a paw in greeting — see `scripts/mascot/poses.json` for the cut and the
                 thread it starts. Intrinsic width/height do the sizing, so no
                 numeric Tailwind size class is coupled in (Rule #0). */}
             <Image
               data-mascot
               data-hero-step
               style={{ "--hero-step": 3 } as React.CSSProperties}
-              src="/mascot/poses/greeting.png"
+              src="/mascot/poses/celebrating.png"
               alt=""
-              width={44}
+              width={52}
               height={60}
               aria-hidden="true"
               className="shrink-0"

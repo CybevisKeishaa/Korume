@@ -1,5 +1,5 @@
-// Types for `png.js`, the dependency-free PNG codec that `extract.js`,
-// `trim.js` and the pose tests share. The implementation stays plain CommonJS
+// Types for `png.js`, the dependency-free PNG codec that `matte.js`,
+// `trim.js`, `watermark.js` and the pose tests share. The implementation stays plain CommonJS
 // JavaScript — it is a build-time script, not application code — so its
 // contract lives here rather than as annotations inside it.
 

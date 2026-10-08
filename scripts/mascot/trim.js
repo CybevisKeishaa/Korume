@@ -8,13 +8,12 @@
 // 61px against the left's 26, and its 16px bottom margin floated the orb 5.1
 // CSS px above the rail `capability-chain.tsx` bottom-aligns it to.
 //
-// `extract.js` already emits tight cuts, which is why all three of its outputs
-// that ship measure 100% fill. This is the same guarantee for the poses the
-// owner hand-cut and pasted in.
+// Every pose that ships must measure 100% fill (the pose tests enforce it);
+// this is how a hand-cut or newly derived pose gets there.
 //
 // LOSSLESS FOR THE CREATURE: only margin at or below ALPHA_FLOOR is removed, so
 // every pixel the artwork draws survives byte-identical. `--check` re-derives
-// the box and reports without writing, the contract `extract.js --check` has.
+// the box and reports without writing.
 //
 // Usage:
 //   node scripts/mascot/trim.js [--check] <path> [<path> ...]
