@@ -29,6 +29,12 @@ describe("validateCurriculumManifest", () => {
     ]);
   });
 
+  it("rejects any id that is not a YouTube video id (demo-search rows exist locally)", () => {
+    expect(validateCurriculumManifest({ ...empty, N4: ["demo-search1", "abc"] })).toEqual([
+      "N4: demo-search1 is a fixture id",
+      "N4: abc is not a YouTube video id",
+    ]);
+  });
   it("rejects an unknown level key", () => {
     expect(validateCurriculumManifest({ ...empty, N6: [] })).toEqual(["unknown level N6"]);
   });
