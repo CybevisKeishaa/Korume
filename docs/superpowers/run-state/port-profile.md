@@ -37,7 +37,7 @@ Dashboard blocks (`port-dashboard`), Layer 8.
 | T11 | accepted | `0cb6965`, `fa036a6`, `121187c` (R-11a frame fidelity; layout proof in T16) |
 | T12 | accepted | `044dd01`, `2855a84` (R-12a: no localeChanged; body guard before parse) |
 | T13 | accepted | `2ee4a23`, `385a089`, `adbb500` (R-13a frame fidelity; one Back sentinel; refresh after save) |
-| T14 | not started | — |
+| T14 | accepted | `46e172a` (e2e 7/7; 11 mutations red; fresh `db reset` still owed — denied by the auto-mode classifier) |
 | T15 | accepted | this commit (Codex; Claude repointed ruling citations to this file) |
 | T16 | not started | — |
 
@@ -58,6 +58,8 @@ Dashboard blocks (`port-dashboard`), Layer 8.
   reviews (opus), re-runs the gates, commits. Ledger: `.superpowers/sdd/2026-10-07-port-profile/progress.md`.
 
 ## Verification
+
+After T14 (`46e172a`): full vitest 616 files / 5338 tests, tsc 0, lint 0, `verify:protocol` valid; `verify:db:profile` (79 PASS + XP race) and `verify:db:erasure` PASS on the EXISTING local DB (not fresh); e2e profile 7/7; full e2e 130 passed / 26 failed outside the profile port (19 print-vocabulary + 3 shadowing-intelligence on an empty `dict_entries`/`dict_kanji`, 4 landing untraced, 2 load-sensitive) — diagnosed in T16 Step 4.
 
 After T13 (`adbb500`): 92 files 1051/1051 (profile, route, messages, product, korume, mascot, ui, settings), tsc 0, lint 0.
 After T12 (`2855a84`): fresh reset, `verify:db:profile` + `verify:db:erasure` PASS; 14 files 143/143; tsc 0.
