@@ -365,3 +365,38 @@ begin
   raise notice 'PASS dashboard S2 mining mastered_at kept';
 end $$;
 rollback;
+
+-- D12 due definitions (plan P2) and RLS: kanji due = progress row with next_review_at null or past; mining due = any
+-- card null or past, including exactly at p_at; a caller passing another learner's id sees nothing of theirs.
+begin;
+do $$
+declare a uuid := current_setting('dashgate.a')::uuid; k1 uuid; k2 uuid; vid uuid;
+begin
+  insert into kanji (character) values ('㐀') returning id into k1;
+  insert into kanji (character) values ('㐁') returning id into k2;
+  insert into user_kanji_progress (user_id, kanji_id, next_review_at) values
+    (a, k1, now() - interval '1 hour'), (a, k2, now() + interval '1 day');
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-d12', 'd12', 'FREE') returning id into vid;
+  insert into sentence_mining_cards (user_id, video_id, target_word, sentence_jp, source_ref, next_review_at) values
+    (a, vid, '新', 's', '新', null),
+    (a, vid, '境', 's', '境', '2026-10-08T12:00:00Z'),
+    (a, vid, '先', 's', '先', '2026-10-08T12:00:01Z');
+  if (select count(*) from review_due_keys(a, array['kanji'], now())) <> 1
+    or not exists (select 1 from review_due_keys(a, array['kanji'], now()) where item_key = 'kanji:' || k1) then
+    raise exception 'FAIL dashboard D12 kanji due definition';
+  end if;
+  if (select count(*) from review_due_keys(a, array['mining'], '2026-10-08T12:00:00Z')) <> 2 then
+    raise exception 'FAIL dashboard D12 mining due (null + exactly at p_at): %',
+      (select count(*) from review_due_keys(a, array['mining'], '2026-10-08T12:00:00Z'));
+  end if;
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('dashgate.b'), 'role', 'authenticated')::text, true);
+do $$
+begin
+  if exists (select 1 from review_due_keys(current_setting('dashgate.a')::uuid, array['kanji', 'mining'], now())) then
+    raise exception 'FAIL dashboard D12 review_due_keys leaked another learner''s cards';
+  end if;
+  raise notice 'PASS dashboard D12 due definitions and RLS';
+end $$;
+rollback;

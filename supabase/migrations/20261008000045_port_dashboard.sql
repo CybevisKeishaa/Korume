@@ -102,3 +102,38 @@ revoke execute on function newly_mastered_count(int, timestamptz, timestamptz) f
 grant execute on function mastered_lexemes(int) to authenticated;
 grant execute on function current_mastered_count(int) to authenticated;
 grant execute on function newly_mastered_count(int, timestamptz, timestamptz) to authenticated;
+
+-- D12 review surfaces (plan P2): one definition of "due" per deck, matching the review queues. Kanji: a progress row
+-- whose next_review_at is null or past (never-seen curated kanji are new material, not due). Mining: any card whose
+-- next_review_at is null or past, reviewed or not. Keys use the learning_outcomes.item_key format of each source
+-- (srs_review = '<itemType>:<id>', mining_review = the card id), so a mission can match outcomes to frozen keys.
+create function review_due_keys(p_user uuid, p_decks text[], p_at timestamptz)
+  returns table (deck text, item_key text)
+  language sql stable security invoker set search_path = public
+as $$
+  select 'kanji', 'kanji:' || k.kanji_id from user_kanji_progress k
+  where k.user_id = p_user and 'kanji' = any (p_decks) and (k.next_review_at is null or k.next_review_at <= p_at)
+  union all
+  select 'vocab', 'vocab:' || v.vocab_id from user_vocab_progress v
+  where v.user_id = p_user and 'vocab' = any (p_decks) and (v.next_review_at is null or v.next_review_at <= p_at)
+  union all
+  select 'mining', m.id::text from sentence_mining_cards m
+  where m.user_id = p_user and 'mining' = any (p_decks) and (m.next_review_at is null or m.next_review_at <= p_at);
+$$;
+revoke execute on function review_due_keys(uuid, text[], timestamptz) from public, anon;
+grant execute on function review_due_keys(uuid, text[], timestamptz) to authenticated, service_role;
+
+create function review_deck_summary(p_decks text[]) returns table (deck text, due int, last_reviewed_at timestamptz)
+  language sql stable security invoker set search_path = public
+as $$
+  select d.deck,
+    (select count(*)::int from review_due_keys(auth.uid(), array[d.deck], now())),
+    case d.deck
+      when 'kanji' then (select max(last_reviewed_at) from user_kanji_progress where user_id = auth.uid())
+      when 'vocab' then (select max(last_reviewed_at) from user_vocab_progress where user_id = auth.uid())
+      else (select max(last_reviewed_at) from sentence_mining_cards where user_id = auth.uid())
+    end
+  from unnest(p_decks) as d(deck);
+$$;
+revoke execute on function review_deck_summary(text[]) from public, anon;
+grant execute on function review_deck_summary(text[]) to authenticated;
