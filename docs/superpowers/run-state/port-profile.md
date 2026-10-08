@@ -59,12 +59,16 @@ Dashboard blocks (`port-dashboard`), Layer 8.
   - R-16b: `record_learning_outcome` serialises on the per-user advisory lock alone (row lock dropped, r0).
   - R-16c: admin bootstrap (`ADMIN_EMAILS`) trusts the GoTrue email only. Ops: with `enable_confirmations =
     false`, register each admin account before setting `ADMIN_EMAILS` in a deployment (r2 nit 4).
+  - R-17a (owner review 2026-10-08, amends spec §6 Korumeship row): **Open Korume** goes to the companion home
+    `/companion`, not `/korume/chat`. Same review: journey folds after 5 milestones; badge copy lives in
+    `common.badges`; the edit footer art is `syncing.png` (`67be5c7`).
 - Execution: Codex implements via Paseo (ruling R-route2: every task from T6 on, DB tasks included); Claude
   reviews (opus), re-runs the gates, commits. Ledger: `.superpowers/sdd/2026-10-07-port-profile/progress.md`.
 
 ## Verification
 
-Final tree `6c00745`: fresh `npx supabase db reset` (owner-approved 2026-10-08) → `verify:db` profile, erasure,
+Owner review round 1 `67be5c7`: vitest 621 files / 5354 tests, lint 0, build 0, e2e profile 7/7.
+Final tree before review `6c00745`: fresh `npx supabase db reset` (owner-approved 2026-10-08) → `verify:db` profile, erasure,
 pronunciation, korume, settings, summary, shadowing all PASS; live mutation (advisory lock removed) → `FAIL XP race`,
 restored PASS; full vitest 620 files / 5347 tests after the last edit;
 tsc 0; lint 0 errors; `verify:protocol` valid. E2E on the `6c00745` build: 156/156 (also on `668b557`) (the 4 landing timeouts seen earlier
