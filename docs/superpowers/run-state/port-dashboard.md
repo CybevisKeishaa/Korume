@@ -72,6 +72,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   row; second claim 0); mutations red (count distinct, window end, rewarded guard, P1 neq). buildBadgeSnapshot moved
   to `lib/data/badge-snapshot.ts`, awardNewBadges + afterXpAward to `lib/data/xp-award.ts` (no import cycle);
   existing gamification tests unchanged and green. Mission XP counts toward the weekly leaderboard (it is XP).
+- T6 review fixes: S4 RLS/grant gate, openable practice fallback, completed-lesson and window-bound cases
+  (mutations red). Accepted minors listed in `.superpowers/sdd/2026-10-08-port-dashboard/followups.md`.
 - Codex hit its usage limit 2026-10-08 ~21:40 (resets 2026-10-09 01:41); Claude continues per owner rule.
 
 ## Working tree and environment

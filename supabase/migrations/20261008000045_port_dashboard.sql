@@ -279,12 +279,13 @@ create function practice_activity(p_since timestamptz)
   returns table (type text, outcomes int, last_at timestamptz, last_video_id uuid)
   language sql stable security invoker set search_path = public
 as $$
+  -- The fallback lesson must still be openable today (M2): a lapsed PLUS lesson is skipped for an older one.
   select 'shadow_lines', count(*)::int, max(created_at),
-    (array_agg(video_id order by created_at desc) filter (where video_id is not null))[1]
+    (array_agg(video_id order by created_at desc) filter (where video_id is not null and can_open_lesson(video_id, auth.uid())))[1]
   from shadowing_sessions where user_id = auth.uid() and created_at >= p_since
   union all
   select 'dictation_lines', count(*)::int, max(created_at),
-    (array_agg(video_id order by created_at desc) filter (where video_id is not null))[1]
+    (array_agg(video_id order by created_at desc) filter (where video_id is not null and can_open_lesson(video_id, auth.uid())))[1]
   from dictation_attempts where user_id = auth.uid() and created_at >= p_since;
 $$;
 revoke execute on function practice_activity(timestamptz) from public, anon;

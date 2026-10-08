@@ -428,7 +428,7 @@ rollback;
 -- M2 mission creation (rollback blocks; the superuser stands in for the service role that owns these calls).
 begin;
 do $$
-declare a uuid := current_setting('dashgate.a')::uuid; m1 uuid; m2 uuid; vid uuid; plus_v uuid; bare_v uuid; t uuid;
+declare a uuid := current_setting('dashgate.a')::uuid; m1 uuid; m2 uuid; vid uuid; plus_v uuid; bare_v uuid; done_v uuid; t uuid;
   hints jsonb; targets jsonb := '{"review":20,"shadow_lines":3,"dictation_lines":5}';
 begin
   delete from daily_missions where user_id = a;
@@ -448,9 +448,15 @@ begin
   insert into user_video_progress (user_id, video_id, last_watched_position) values (a, plus_v, 30);
   insert into videos (youtube_video_id, title, library_access) values ('dashgate-m2b', 'm2b', 'FREE') returning id into bare_v;
   insert into user_video_progress (user_id, video_id, last_watched_position) values (a, bare_v, 30);
+  -- A FREE lesson with lines that is already COMPLETED: only the incomplete rule rejects it.
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-m2c', 'm2c', 'FREE') returning id into done_v;
+  insert into transcripts (video_id, source) values (done_v, 'user_submitted') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp) values (t, 0, 'c');
+  insert into user_video_progress (user_id, video_id, last_watched_position, completed_at) values (a, done_v, 30, now());
   hints := jsonb_build_array(
     jsonb_build_object('type', 'finish_lesson', 'videoId', plus_v),
     jsonb_build_object('type', 'finish_lesson', 'videoId', bare_v),
+    jsonb_build_object('type', 'finish_lesson', 'videoId', done_v),
     jsonb_build_object('type', 'shadow_lines', 'videoId', vid),
     jsonb_build_object('type', 'dictation_lines', 'videoId', vid));
 
@@ -458,6 +464,12 @@ begin
   m2 := ensure_daily_mission(a, array['mining', 'kanji'], targets, hints);
   if m1 is null or m2 is distinct from m1 then raise exception 'FAIL dashboard M2 ensure not idempotent (% vs %)', m1, m2; end if;
   if (select count(*) from daily_missions where user_id = a) <> 1 then raise exception 'FAIL dashboard M2 more than one cycle'; end if;
+  -- The first cycle starts at the learner's local day start (fallback zone) and ends at the next one.
+  if (select (window_start, window_end) from daily_missions where id = m1) is distinct from (
+       (select ((now() at time zone 'Asia/Ho_Chi_Minh')::date)::timestamp at time zone 'Asia/Ho_Chi_Minh'),
+       (select ((now() at time zone 'Asia/Ho_Chi_Minh')::date + 1)::timestamp at time zone 'Asia/Ho_Chi_Minh')) then
+    raise exception 'FAIL dashboard M2 first cycle window: %', (select (window_start, window_end) from daily_missions where id = m1);
+  end if;
   if (select array_agg(type || ':' || target order by slot) from daily_mission_items where mission_id = m1)
      is distinct from array['review:20', 'shadow_lines:3', 'dictation_lines:4'] then
     raise exception 'FAIL dashboard M2 items: %', (select array_agg(type || ':' || target order by slot) from daily_mission_items where mission_id = m1);
@@ -547,5 +559,43 @@ begin
     raise exception 'FAIL dashboard M4 second claim awarded again';
   end if;
   raise notice 'PASS dashboard M3/M4 progress and claim (distinct, eligible-only, window end, once, no outcome)';
+end $$;
+rollback;
+
+-- S4 RLS and grants: a learner reads only their own mission rows and can never write them or call the service RPCs.
+begin;
+do $$
+declare a uuid := current_setting('dashgate.a')::uuid; b uuid := current_setting('dashgate.b')::uuid; mb uuid;
+begin
+  delete from daily_missions where user_id in (a, b);
+  insert into daily_missions (user_id, study_date, timezone_at_creation, window_start, window_end)
+    values (b, current_date, 'UTC', now() - interval '1 hour', now() + interval '1 hour') returning id into mb;
+  insert into daily_mission_items (mission_id, slot, type, target) values (mb, 1, 'review', 1);
+  insert into daily_mission_eligible (mission_item_id, item_key) select id, 'kanji:x' from daily_mission_items where mission_id = mb;
+  perform set_config('dashgate.mb', mb::text, true);
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('dashgate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare denied int := 0;
+begin
+  if exists (select 1 from daily_missions) or exists (select 1 from daily_mission_items) or exists (select 1 from daily_mission_eligible) then
+    raise exception 'FAIL dashboard S4 A read another learner''s mission rows';
+  end if;
+  begin
+    insert into daily_missions (user_id, study_date, timezone_at_creation, window_start, window_end)
+      values (auth.uid(), current_date, 'UTC', now(), now() + interval '1 hour');
+  exception when insufficient_privilege then denied := denied + 1; end;
+  begin
+    update daily_missions set rewarded_at = now() where id = current_setting('dashgate.mb')::uuid;
+  exception when insufficient_privilege then denied := denied + 1; end;
+  begin
+    perform ensure_daily_mission(auth.uid(), array['kanji'], '{"review":20}', '[]');
+  exception when insufficient_privilege then denied := denied + 1; end;
+  begin
+    perform claim_daily_mission(auth.uid(), current_setting('dashgate.mb')::uuid, 50);
+  exception when insufficient_privilege then denied := denied + 1; end;
+  if denied <> 4 then raise exception 'FAIL dashboard S4 learner write/RPC denials: % of 4', denied; end if;
+  raise notice 'PASS dashboard S4 mission RLS and grants';
 end $$;
 rollback;

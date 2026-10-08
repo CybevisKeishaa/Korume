@@ -57,7 +57,7 @@ export async function ensureDailyMission(userId: string): Promise<string | null>
   try {
     const supabase = createClient();
     const now = new Date();
-    const active = await supabase.from("daily_missions").select("id")
+    const active = await supabase.from("daily_missions").select("id").eq("user_id", userId)
       .lte("window_start", now.toISOString()).gt("window_end", now.toISOString()).maybeSingle();
     if (active.error) throw active.error;
     if (active.data) return (active.data as { id: string }).id;
