@@ -192,17 +192,95 @@ begin
   insert into videos (youtube_video_id, title, library_access) values ('dashgate-c2', 'c2', 'FREE') returning id into free2;
   insert into videos (youtube_video_id, title, library_access) values ('dashgate-cp', 'cp', 'PRIVATE') returning id into priv;
   perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free2, free1)));
-  if (select position from lesson_collections lc join collections c on c.id = lc.collection_id where c.curriculum_level = 'N5' and lc.lesson_id = free2) <> 1 then raise exception 'FAIL dashboard sync order'; end if;
+  if (select position from lesson_collections lc join collections c on c.id = lc.collection_id where c.curriculum_level = 'N5' and lc.lesson_id = free2) <> 1
+    or (select position from lesson_collections lc join collections c on c.id = lc.collection_id where c.curriculum_level = 'N5' and lc.lesson_id = free1) <> 2
+    then raise exception 'FAIL dashboard sync order'; end if;
   perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free2, free1)));  -- idempotent
   if (select count(*) from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum') <> 2
     then raise exception 'FAIL dashboard sync not idempotent'; end if;
   perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free1)));
   select count(*) into n from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum';
   if n <> 1 then raise exception 'FAIL dashboard sync not authoritative (% rows)', n; end if;
-  begin perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free1), 'N4', jsonb_build_array(priv))); raise exception 'FAIL dashboard sync accepted PRIVATE'; exception when others then if sqlerrm like 'FAIL%' then raise; end if; end;
-  if (select count(*) from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum') <> 1 then raise exception 'FAIL dashboard sync not atomic'; end if;
+  -- N5 is rewritten before N4 fails on PRIVATE: atomic means N5 is still [free1] afterwards.
+  begin
+    perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free2), 'N4', jsonb_build_array(priv)));
+    raise exception 'FAIL dashboard sync accepted PRIVATE';
+  exception when others then
+    if sqlerrm like 'FAIL%' or sqlerrm not like '%PRIVATE video%' then raise; end if;
+  end;
+  if not exists (select 1 from lesson_collections lc join collections c on c.id = lc.collection_id
+                 where c.curriculum_level = 'N5' and lc.lesson_id = free1)
+    or (select count(*) from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum') <> 1
+    then raise exception 'FAIL dashboard sync not atomic'; end if;
+  begin
+    perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free1, free1)));
+    raise exception 'FAIL dashboard sync accepted a duplicate';
+  exception when others then if sqlerrm like 'FAIL%' or sqlerrm not like '%duplicate lesson%' then raise; end if;
+  end;
+  begin
+    perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free1), 'N4', jsonb_build_array(free1)));
+    raise exception 'FAIL dashboard sync accepted a lesson in two curricula';
+  exception when others then if sqlerrm like 'FAIL%' or sqlerrm not like '%two curricula%' then raise; end if;
+  end;
+  begin
+    perform sync_curriculum_manifest(null);
+    raise exception 'FAIL dashboard sync accepted a null manifest';
+  exception when others then if sqlerrm like 'FAIL%' or sqlerrm not like '%manifest must be an object%' then raise; end if;
+  end;
   perform sync_curriculum_manifest('{}'::jsonb);
   if exists (select 1 from lesson_collections lc join collections c on c.id = lc.collection_id where c.kind = 'curriculum') then raise exception 'FAIL dashboard empty manifest kept members'; end if;
-  raise notice 'PASS dashboard curriculum sync (order, idempotent, authoritative, PRIVATE, atomic, empty)';
+  raise notice 'PASS dashboard curriculum sync (order, idempotent, authoritative, PRIVATE, atomic, duplicate, two curricula, null, empty)';
 end $$;
 rollback;
+
+-- C4: a subscription can open PLUS curriculum but cannot change FREE progression.
+begin;
+do $$
+declare free1 uuid; free2 uuid; plus1 uuid;
+begin
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-j1', 'journey free 1', 'FREE') returning id into free1;
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-j2', 'journey free 2', 'FREE') returning id into free2;
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-jp', 'journey plus', 'PLUS') returning id into plus1;
+  perform sync_curriculum_manifest(jsonb_build_object('N5', jsonb_build_array(free1, free2, plus1)));
+  insert into user_video_progress (user_id, video_id, completed_at)
+    values (current_setting('dashgate.a')::uuid, free1, now());
+end $$;
+
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('dashgate.a'), 'role', 'authenticated')::text, true);
+do $$
+begin
+  if not exists (
+    select 1 from curriculum_journey()
+    where level = 'N5' and core_total = 2 and core_completed = 1 and plus_total = 1 and plus_accessible = 0
+  ) then
+    raise exception 'FAIL dashboard journey changed core progression before subscription';
+  end if;
+end $$;
+
+set local role postgres;
+insert into subscriptions (user_id, plan, status)
+  values (current_setting('dashgate.a')::uuid, 'premium_monthly', 'active');
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('dashgate.a'), 'role', 'authenticated')::text, true);
+do $$
+begin
+  if not exists (
+    select 1 from curriculum_journey()
+    where level = 'N5' and core_total = 2 and core_completed = 1 and plus_total = 1 and plus_accessible = 1
+  ) then
+    raise exception 'FAIL dashboard journey subscription changed core progression';
+  end if;
+  raise notice 'PASS dashboard curriculum journey subscription never changes core progression';
+end $$;
+rollback;
+
+-- D5 placement reads curriculum membership only (seed fixture: e2e_curriculum_n5_02 is JLPT N5 lesson 2).
+do $$
+begin
+  if (select row(collection_title, lesson_position)::text from curriculum_membership('e2e00000-0000-0000-0000-0000000000c2'))
+     is distinct from '("JLPT N5",2)' then
+    raise exception 'FAIL dashboard curriculum_membership placement';
+  end if;
+  raise notice 'PASS dashboard curriculum_membership placement';
+end $$;

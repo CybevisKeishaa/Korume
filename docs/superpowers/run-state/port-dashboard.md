@@ -2,7 +2,7 @@
 
 Branch `port-dashboard`, worktree `.worktrees/port-dashboard`, base master `b89f49d`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Goal and scope
 
@@ -29,7 +29,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | Plan | approved | `74f2e55` |
 | T1 | accepted (Codex; Claude fixed a same-transaction S7 test) | see git log |
 | T2 | accepted (Codex; Claude moved its gate block out of the migration) + T1 review nits | see git log |
-| T3–T16 | not started | — |
+| T3 | accepted (Codex until its quota stop; Claude: reserved-word fix, gate) + T2 review nits | see git log |
+| T4–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -50,6 +51,10 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 - Contract (T1 review): a legacy completed row keeps a null `first_completed_at` even after re-completion;
   `finish_lesson` counts only first completions after mission creation. Perf to measure at T16:
   `transcript_lines_read` evaluates `can_open_lesson` twice per line (nested transcripts RLS + explicit call).
+- T3: gate PASS (journey core vs PLUS, placement); mutations red (core_total without FREE filter, two-curricula
+  check, null-manifest guard). Plan snippet bug: `position` is reserved in `returns table` -> `lesson_position`.
+- Plan Step 8 scan test (T2) dropped: `listCollections` now requires `kind`, so tsc is the guard.
+- Codex hit its usage limit 2026-10-08 ~21:40 (resets 2026-10-09 01:41); Claude continues per owner rule.
 
 ## Working tree and environment
 
