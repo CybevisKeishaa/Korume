@@ -58,7 +58,9 @@
       "first_shadow": "{hasLabel, select, yes {{label}, said aloud after the voice.} other {Your voice began to find its rhythm.}}",
       "jlpt_passed": "{hasLabel, select, yes {{label}, passed.} other {A foundation you built line by line.}}",
       "pinned_line": "{hasLabel, select, yes {“{label}”} other {A line you chose to keep.}}"
-    }
+    },
+    "more": "Show {count} more",
+    "less": "Show less"
   },
   "favorite": {
     "title": "Favorite learning content",

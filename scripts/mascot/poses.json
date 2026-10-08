@@ -72,7 +72,7 @@
         918
       ],
       "caption": "ÔM KÝ ỨC — holding a memory",
-      "slot": "§8 Edit Profile footer (spec 8.3, Figma 67:595), beside the line \"Korume will use these choices to support you better.\"; mapped as `edit-footer` in components/mascot/mascot-poses.ts, shown at size sm only while Show Korume is on. It was written for §6 (the companion holding a memory orb) but §6 shipped reading-on-the-orb.png instead: chain.mascotAlt describes the companion SITTING ON a glowing orb, and this pose sits on the ground cradling one, which would have made the alt false. The owner confirms the pose at the Task 16 Chrome review; one line in mascot-poses.ts changes it.",
+      "slot": "None since 2026-10-08. It was the Edit Profile footer (`edit-footer`, spec 8.3) until the owner's Chrome review, where its soft extractor fringe read as broken at size sm; syncing.png (supplied) took the slot. extract.js still reproduces it, so it stays in `poses`.",
       "width": 320,
       "fade": [
         0.9,
@@ -328,6 +328,14 @@
       "width": 370,
       "height": 397,
       "origin": "Supplied by the project owner on 2026-09-01, hand-cut from the character sheets with the background removed."
+    },
+    {
+      "out": "syncing.png",
+      "caption": "ĐỒNG BỘ — holding a glowing charm",
+      "depicts": "Standing full body, front-facing, wide ears up, both paws holding a small glowing jade charm at the chest, calm open eyes, tail curled behind.",
+      "width": 330,
+      "height": 300,
+      "origin": "public/mascot/actions/syncing.png (owner-supplied action art, commit 13e9ab9), trimmed to its opaque bounding box (1342x1172 -> 1240x1127) and downscaled to 300 px high (about 3x the 96 px sm slot) with sharp on 2026-10-08. Shown as the Edit Profile footer (`edit-footer` in components/mascot/mascot-poses.ts) since the owner's review that day; app placements carry no `slot`, which is reserved for landing-page slots."
     }
   ]
 }

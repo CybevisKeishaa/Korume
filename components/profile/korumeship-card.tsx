@@ -30,7 +30,7 @@ export function KorumeshipCard({ since, timeZone }: { since: string | null; time
       <p className="mt-sm text-sm text-muted-foreground">
         {since ? t("korume.together", { months: wholeMonths(since, timeZone) }) : t("korume.fresh")}
       </p>
-      <Link href="/korume/chat" className={`${LINK} mt-sm inline-block`}>{t("korume.open")} <span aria-hidden="true">▸</span></Link>
+      <Link href="/companion" className={`${LINK} mt-sm inline-block`}>{t("korume.open")} <span aria-hidden="true">▸</span></Link>
     </section>
   );
 }

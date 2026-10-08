@@ -38,7 +38,7 @@ describe("MASCOT_POSES", () => {
       "route-error": "worry.png",
       settings: "relax.png",
       korumeship: "reading-on-the-orb.png",
-      "edit-footer": "holding-memory.png",
+      "edit-footer": "syncing.png",
     });
   });
 

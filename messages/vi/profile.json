@@ -58,7 +58,9 @@
       "first_shadow": "{hasLabel, select, yes {{label}, đọc theo giọng mẫu.} other {Giọng bạn bắt đầu tìm thấy nhịp của mình.}}",
       "jlpt_passed": "{hasLabel, select, yes {{label}, đã đạt.} other {Nền tảng bạn xây từng câu một.}}",
       "pinned_line": "{hasLabel, select, yes {“{label}”} other {Một câu bạn muốn giữ lại.}}"
-    }
+    },
+    "more": "Xem thêm {count} mốc",
+    "less": "Thu gọn"
   },
   "favorite": {
     "title": "Nội dung học yêu thích",

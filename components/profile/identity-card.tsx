@@ -36,7 +36,7 @@ function displayName(type: "region" | "language", locale: string, code: string):
 type Row = { icon: ProfileIconKey; label: string; value: string };
 
 export function IdentityCard({
-  identity, variant, actions, interfaceLocale, onChangePhoto,
+  identity, variant, actions, interfaceLocale, onChangePhoto, eyebrow,
 }: {
   identity: ProfileIdentityModel;
   variant: "page" | "preview";
@@ -45,6 +45,8 @@ export function IdentityCard({
   interfaceLocale?: string;
   /** Preview only: makes the avatar badge a button (Edit Profile points it at its one file input). */
   onChangePhoto?: () => void;
+  /** Rendered first, inside the card (Edit Profile's "Live profile preview" label, Figma 67:595). */
+  eyebrow?: ReactNode;
 }) {
   const t = useTranslations("profile");
   const locale = useLocale();
@@ -70,6 +72,7 @@ export function IdentityCard({
   const Name = variant === "page" ? "h2" : "p";
   return (
     <section className={`${CARD} grid justify-items-center gap-xs text-center`} aria-label={variant === "preview" ? identity.displayName : undefined}>
+      {eyebrow && <div className="w-full text-start">{eyebrow}</div>}
       <div className="relative">
         {identity.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- avatar from storage or OAuth, arbitrary origin.

@@ -22,8 +22,13 @@ export function EditPreview({
   const t = useTranslations("profile");
   return (
     <aside className="profile-edit-preview" aria-label={t("edit.previewEyebrow")}>
-      <p className={`${EYEBROW} mb-xs`}>{t("edit.previewEyebrow")}</p>
-      <IdentityCard identity={identity} variant="preview" interfaceLocale={interfaceLocale} onChangePhoto={onChangePhoto} />
+      <IdentityCard
+        identity={identity}
+        variant="preview"
+        interfaceLocale={interfaceLocale}
+        onChangePhoto={onChangePhoto}
+        eyebrow={<p className={EYEBROW}>{t("edit.previewEyebrow")}</p>}
+      />
       <div className="profile-edit-extra grid gap-md">
         {companionEnabled && (
           <section className={CARD_WARM} aria-labelledby="profile-edit-current-korume">

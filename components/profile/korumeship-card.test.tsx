@@ -11,7 +11,7 @@ describe("KorumeshipCard", () => {
     vi.setSystemTime(new Date("2026-10-07T00:00:00Z"));
     render(<KorumeshipCard timeZone="Asia/Ho_Chi_Minh" since="2026-04-08T00:00:00.000Z" />);
     expect(screen.getByText("We've been walking together for 5 months.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: en.korume.open })).toHaveAttribute("href", expect.stringContaining("/korume/chat"));
+    expect(screen.getByRole("link", { name: en.korume.open })).toHaveAttribute("href", expect.stringContaining("/companion"));
   });
   it("never says less than a month", () => {
     vi.useFakeTimers({ toFake: ["Date"] });

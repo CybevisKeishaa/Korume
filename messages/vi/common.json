@@ -62,5 +62,51 @@
     "complete": "Vậy là xong phiên ôn tập.",
     "reviewedCount": "{count, plural, other {Bạn đã ôn lại {count} thẻ.}}",
     "done": "Xong"
+  },
+  "badges": {
+    "first_steps": {
+      "name": "Bước chân đầu tiên",
+      "description": "Hoàn thành buổi học đầu tiên."
+    },
+    "week_streak": {
+      "name": "Chuỗi 7 ngày",
+      "description": "Học 7 ngày liên tiếp."
+    },
+    "month_streak": {
+      "name": "Chuỗi 30 ngày",
+      "description": "Học 30 ngày liên tiếp."
+    },
+    "hundred_kanji": {
+      "name": "100 chữ Kanji",
+      "description": "Đã học 100 chữ Kanji."
+    },
+    "dictation_50": {
+      "name": "50 bài chép chính tả",
+      "description": "Hoàn thành 50 bài chép chính tả."
+    },
+    "shadowing_50": {
+      "name": "50 buổi Shadowing",
+      "description": "Hoàn thành 50 buổi shadowing."
+    },
+    "reading_10": {
+      "name": "10 bài đọc",
+      "description": "Đọc xong 10 bài đọc."
+    },
+    "n5_mock": {
+      "name": "Thi thử N5",
+      "description": "Hoàn thành một bài thi thử N5 đầy đủ."
+    },
+    "n4_mock": {
+      "name": "Thi thử N4",
+      "description": "Hoàn thành một bài thi thử N4 đầy đủ."
+    },
+    "xp_1000": {
+      "name": "1.000 XP",
+      "description": "Đạt 1.000 XP."
+    },
+    "xp_10000": {
+      "name": "10.000 XP",
+      "description": "Đạt 10.000 XP."
+    }
   }
 }

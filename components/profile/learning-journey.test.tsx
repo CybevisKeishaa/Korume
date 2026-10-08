@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/test/render";
 import en from "@/messages/en/profile.json";
-import { LearningJourney } from "./learning-journey";
+import common from "@/messages/en/common.json";
+import { JOURNEY_VISIBLE, LearningJourney } from "./learning-journey";
 import { makeView } from "./view-fixture";
 
 const t = en.journey;
@@ -43,5 +44,28 @@ describe("LearningJourney", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+
+  it("names an earned badge with its copy, never its snake_case key", () => {
+    render(<LearningJourney items={[{ kind: "badge_earned", at: "2026-08-01T00:00:00.000Z", label: "week_streak" }]} />);
+    expect(screen.getByText(`${common.badges.week_streak.name}.`)).toBeInTheDocument();
+    expect(screen.queryByText(/week_streak/)).toBeNull();
+  });
+
+  it("shows the first five milestones and folds the rest behind Show more", () => {
+    const items = Array.from({ length: JOURNEY_VISIBLE + 2 }, (_, i) => ({
+      kind: "pinned_line" as const, at: `2026-0${i + 1}-01T00:00:00.000Z`, label: `line ${i}`,
+    }));
+    const { container } = render(<LearningJourney items={items} />);
+    const [shown, folded] = container.querySelectorAll("ol");
+    expect(shown?.querySelectorAll("li")).toHaveLength(JOURNEY_VISIBLE);
+    expect(folded?.closest("details")).not.toBeNull();
+    expect(folded?.querySelectorAll("li")).toHaveLength(2);
+    expect(screen.getByText(t.more.replace("{count}", "2"))).toBeInTheDocument();
+  });
+
+  it("needs no Show more when everything fits", () => {
+    const { container } = render(<LearningJourney items={makeView().journey} />);
+    expect(container.querySelector("details")).toBeNull();
   });
 });

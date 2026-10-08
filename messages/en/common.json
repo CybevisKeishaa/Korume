@@ -52,5 +52,51 @@
     "complete": "Session complete 🎉",
     "reviewedCount": "{count, plural, one {You reviewed {count} item.} other {You reviewed {count} items.}}",
     "done": "Done"
+  },
+  "badges": {
+    "first_steps": {
+      "name": "First Steps",
+      "description": "Completed your first study session."
+    },
+    "week_streak": {
+      "name": "7-Day Streak",
+      "description": "Studied 7 days in a row."
+    },
+    "month_streak": {
+      "name": "30-Day Streak",
+      "description": "Studied 30 days in a row."
+    },
+    "hundred_kanji": {
+      "name": "100 Kanji",
+      "description": "Learned 100 kanji."
+    },
+    "dictation_50": {
+      "name": "50 Dictations",
+      "description": "Completed 50 dictation exercises."
+    },
+    "shadowing_50": {
+      "name": "50 Shadowing Sessions",
+      "description": "Completed 50 shadowing sessions."
+    },
+    "reading_10": {
+      "name": "10 Readings",
+      "description": "Finished 10 reading passages."
+    },
+    "n5_mock": {
+      "name": "N5 Mock Test",
+      "description": "Completed a full N5 mock test."
+    },
+    "n4_mock": {
+      "name": "N4 Mock Test",
+      "description": "Completed a full N4 mock test."
+    },
+    "xp_1000": {
+      "name": "1,000 XP",
+      "description": "Earned 1,000 XP."
+    },
+    "xp_10000": {
+      "name": "10,000 XP",
+      "description": "Earned 10,000 XP."
+    }
   }
 }
