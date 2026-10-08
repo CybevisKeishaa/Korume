@@ -1,6 +1,20 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-07 late (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-08 (supersedes every block below)
+>
+> ⭐ **`port-profile` MERGED → master `d57ad41`** (owner approved after the Chrome review; not pushed — the owner
+> pushes). Detail: `mem:port_profile_run_state`. **No branch in flight.** Next (owner 2026-10-08): port the next
+> screen — `port-dashboard` (`111:515`), which consumes study timezone + study time. Port order: Dashboard → Certification
+> → Conversation library → Kanji inspect/review → Companion Diary → FAQ/Quickstart; Layer 8 stays out.
+> **UX/motion deferred by the owner** until after the ports: app screens have no motion yet (tokens, framer-motion, gsap
+> and the reduce-motion kill switch exist; only the landing has a doctrine). Plan then: an app motion vocabulary spec,
+> piloted on Profile, then retrofitted. Profile UX backlog: journey still dominates the first screen, quick stats below
+> the fold, Save at the end of a long form with no unsaved signal, raw `Asia/Saigon` in the timezone field, tall empty
+> Today's-memory card. Open owner notes from the branch ledger: CSV vs JSON export (§2.3), signup name unbounded,
+> avatar_url client-writable, device-zone date sites, Storage not in the erasure live gate, bell notification text
+> English-only with badge slugs.
+>
+> ## (previous block) 2026-10-07 late
 >
 > ▶ **RESUME HERE: `port-profile`** (worktree `.worktrees/port-profile`, NOT merged) — read
 > `mem:port_profile_run_state`, then the branch run state `docs/superpowers/run-state/port-profile.md`.

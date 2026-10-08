@@ -1,31 +1,23 @@
-# Port Profile — run state (2026-10-07, ▶ RESUME POINT)
+# Port Profile — run state (2026-10-08, ⭐ MERGED → master `d57ad41`)
 
-Branch `port-profile`, worktree `.worktrees/port-profile`, base master `2cee918`. NOT merged. Owner: Claude.
-Authoritative branch run state: `docs/superpowers/run-state/port-profile.md` (on the branch) — read it first.
+Branch `port-profile`, worktree `.worktrees/port-profile`, base master `2cee918`, tip `26ea3bb`. **MERGED `--no-ff` → master `d57ad41` 2026-10-08** (owner approved). History, not a resume point.
+Authoritative: branch run state `docs/superpowers/run-state/port-profile.md` + git-ignored ledger
+`.superpowers/sdd/2026-10-07-port-profile/progress.md` (14 `Owner decision` / `Owner note` / `T16 / owner` lines).
 
 ## Where it stands
-- Spec `docs/superpowers/specs/2026-10-07-port-profile-design.md` FROZEN at `66d6519`: owner rulings R1–R12 over
-  five design sections + corrections C1–C5 (C1 streak evidence = new `learning_outcomes`; C2 streak honours
-  `schedule_days`, badges never revoked; C3 XP write in one locked SQL fn; C4 Today's Memory candidates frozen at
-  study-day start; C5 "Learning with Korume since" = `firstKnownLearningAt` over canonical tables).
-- Plan `docs/superpowers/plans/2026-10-07-port-profile.md` at `b313a41`, **approved 2026-10-07** with plan-time
-  corrections P1–P5 (review-tomorrow → study tz; 4th VN display site; leaderboard week was offset math; ICU
-  canonicalises `Asia/Ho_Chi_Minh` → `Asia/Saigon`; community surfaces keep OAuth `avatar_url`).
-- Execution method NOT chosen yet (recommended: subagent-driven). Codex out of quota until 2026-10-10.
-- Next: owner starts in a new session → pick method → Task 1.
-
-## Scope in one breath
-Profile `66:166` + Edit Profile `67:595` (private archive; no visibility tiers; reminder controls deferred to
-`study-reminders`), plus two foundations `port-dashboard` will consume: study timezone (IANA, canonical day
-boundary, one-shot browser detection) and study time (heartbeat → UTC `study_sessions`, merged and split at local
-midnight on read). Successor branch: `port-dashboard` (`111:515`).
-
-## Owner rules this session (apply to every port)
-- Viewport normalization: reflow, never shrink; review 1280×529 + 1440×900 + 375×812; hierarchy, not pixels.
-- Port = complete: real data/backend for every approved capability; undecided semantics decided first, never
-  rendered as inert controls.
-- Look at the Figma frame before asking a field-level question.
+- All 16 tasks done. T14 `46e172a`; lessons `da2c943`; review r0 fixes `668b557`; review r1 Critical fix `6c00745`
+  (pre-existing: `users.email` client-writable + `requireAdmin` bootstrapped from it → self-promotion to admin; grant
+  now drops email/name/created_at, guard uses the GoTrue email); r2 APPROVE.
+- Final gates on `6c00745`: fresh `db reset` (owner-approved) + 7 `verify:db:*` PASS; vitest 620/5347; tsc/lint 0;
+  e2e 156/156; protocol valid. Owner confirmed no deployed DB (§13.3).
+- Next: owner review (Step 8) on the worktree build at :3000 with demo learners profile.full / profile.empty
+  @example.com; merge `--no-ff` only after approval; then `port-dashboard`.
 
 ## Environment
-- Worktree node_modules = junction → `.worktrees/verify-db-erasure/node_modules` (sharp 0.35.4). No npm install.
-- Docker Desktop was not running; start it before the first live gate.
+- `node_modules` junction → `.worktrees/verify-db-erasure/node_modules`. Every reset wipes the dictionary → re-import
+  with `bash ../shadowing-workspace-1b/.tmp/import.sh`.
+- Landing e2e goto timeouts = Next 14.2 image optimizer wedged in a long-running `next start`; restart the server.
+
+## Owner review round 1 (`67be5c7`)
+Readable badge copy (`common.badges`, en+vi, used by journey/Achievements/dashboard grid), journey folds after 5,
+edit preview label inside the card (columns aligned), Open Korume → `/companion` (R-17a), edit footer art `syncing.png`.
