@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
-  advanceStreak,
+  DAILY_SOURCES,
   evaluateBadges,
   levelForXp,
   sourceIdFor,
@@ -11,12 +11,13 @@ import {
   type BadgeSnapshot,
   type LearningOutcomeSource,
   type SourceIdParts,
-  type StreakState,
 } from "@/lib/gamification";
 import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
 import { readPreferences } from "@/lib/data/preferences";
+import { getStreak } from "@/lib/data/streak";
 import { captureCompanionMemories } from "@/lib/data/companion";
 import { emitNotification } from "@/lib/notifications/emit";
+import { getStudyTimezoneFor } from "@/lib/time/study-timezone";
 
 /**
  * Award pipeline for completed learning outcomes (CLAUDE.md §5,
@@ -57,7 +58,7 @@ export interface RecordActivityResult {
 const FAILURE_RESULT: RecordActivityResult = { ok: false, xpAwarded: 0, newBadges: [], leveledUp: false };
 
 /**
- * Award XP/streak/badges for one completed learning outcome, and emit
+ * Record an outcome, award XP and badges, and emit
  * `level_up`/`badge_earned` notifications when they newly occur.
  *
  * MUST NEVER throw into the caller — this runs on the hot path of every
@@ -89,62 +90,24 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
       ? xpForOutcome("jlpt_submit", { mode: parts.mode ?? "full" })
       : xpForOutcome(input.source);
 
-  const sourceId = sourceIdFor(input.source, parts, now);
+  const timeZone = await getStudyTimezoneFor(supabase, input.userId);
+  const { data: awardRows, error: awardError } = await supabase.rpc("record_learning_outcome", {
+    p_user: input.userId,
+    p_source: input.source,
+    p_source_id: sourceIdFor(input.source, parts),
+    p_xp: xpAmount,
+    p_tz: timeZone,
+    p_daily: DAILY_SOURCES.includes(input.source),
+  });
+  if (awardError) throw awardError;
+  const award = (awardRows as { xp_awarded: number; prev_xp: number; next_xp: number; had_outcome_today: boolean }[] | null)?.[0];
+  if (!award) throw new Error("record_learning_outcome returned no row");
+  const isNewXp = award.xp_awarded > 0;
+  const xpAwarded = award.xp_awarded;
+  const prevXp = award.prev_xp;
+  const nextXp = award.next_xp;
 
-  // 1. Award XP — insert-or-ignore on the natural (user, source, sourceId)
-  // key. `data` comes back null only when the row already existed (the
-  // unique constraint fired and PostgREST's ON CONFLICT DO NOTHING skipped
-  // it) — principle G1: outcomes, not repetition, so re-grinding the same
-  // item on the same VN day never re-awards XP.
-  const { data: xpEventRow, error: xpEventError } = await supabase
-    .from("xp_events")
-    .upsert(
-      { user_id: input.userId, source_type: input.source, source_id: sourceId, xp: xpAmount },
-      { onConflict: "user_id,source_type,source_id", ignoreDuplicates: true },
-    )
-    .select("id")
-    .maybeSingle();
-  if (xpEventError) throw xpEventError;
-  const isNewXp = xpEventRow != null;
-  const xpAwarded = isNewXp ? xpAmount : 0;
-
-  // 2. Streak + xp bookkeeping. The user WAS active today regardless of
-  // whether this specific outcome had already been awarded today, so the
-  // streak always advances; XP only accrues for a genuinely new outcome.
-  const { data: statsRow, error: statsError } = await supabase
-    .from("user_stats")
-    .select("xp, streak_current, streak_longest, last_active_date")
-    .eq("user_id", input.userId)
-    .maybeSingle();
-  if (statsError) throw statsError;
-
-  const stats = statsRow as
-    | { xp: number; streak_current: number; streak_longest: number; last_active_date: string | null }
-    | null;
-  const prevXp = stats?.xp ?? 0;
-  const prevStreak: StreakState = {
-    current: stats?.streak_current ?? 0,
-    longest: stats?.streak_longest ?? 0,
-    lastActiveDate: stats?.last_active_date ?? null,
-  };
-  const prefs = await readPreferences(supabase, input.userId);
-  const nextStreak = advanceStreak(prevStreak, now, prefs.scheduleDays);
-  const nextXp = prevXp + xpAwarded;
   const leveledUp = levelForXp(prevXp).level < levelForXp(nextXp).level;
-  const streakChanged =
-    nextStreak.current !== prevStreak.current || nextStreak.lastActiveDate !== prevStreak.lastActiveDate;
-
-  const { error: statsUpdateError } = await supabase.from("user_stats").upsert(
-    {
-      user_id: input.userId,
-      xp: nextXp,
-      streak_current: nextStreak.current,
-      streak_longest: nextStreak.longest,
-      last_active_date: nextStreak.lastActiveDate,
-    },
-    { onConflict: "user_id" },
-  );
-  if (statsUpdateError) throw statsUpdateError;
 
   // Companion capture gate (spec §4.3) — best-effort, never throws (§6.5).
   await captureCompanionMemories(supabase, {
@@ -165,16 +128,17 @@ async function recordActivityInner(input: RecordActivityInput): Promise<RecordAc
     });
   }
 
-  // Perf: skip the badge-snapshot aggregate (5 more queries) entirely when
-  // nothing any badge criterion reads could have changed — a duplicate
-  // outcome (no XP) on an already-unchanged streak. This is the common
-  // "re-grinding an already-done-today item" path, which otherwise runs on
-  // every single review submission.
-  if (!isNewXp && !streakChanged) {
+  // Perf: skip the streak read and the badge-snapshot aggregate (5 more queries) when nothing any badge
+  // criterion reads could have changed: no XP was awarded and the learner already had an outcome today (so
+  // today is already counted in the derived streak). This is the common "re-grinding an already-done-today
+  // item" path, which otherwise runs on every single review submission.
+  if (!isNewXp && award.had_outcome_today) {
     return { ok: true, xpAwarded: 0, newBadges: [], leveledUp: false };
   }
 
-  const snapshot = await buildBadgeSnapshot(supabase, input.userId, nextXp, nextStreak.current);
+  const prefs = await readPreferences(supabase, input.userId);
+  const streak = await getStreak(supabase, input.userId, timeZone, prefs.scheduleDays, now);
+  const snapshot = await buildBadgeSnapshot(supabase, input.userId, nextXp, streak.current);
   const newBadges = await awardNewBadges(supabase, input.userId, snapshot);
 
   return { ok: true, xpAwarded, newBadges, leveledUp };
@@ -201,8 +165,8 @@ async function buildBadgeSnapshot(
   // Outcome totals/counts: no GROUP BY available through the query builder
   // without a migration (out of scope for this task), so this fetches every
   // xp_events row for the user and aggregates client-side. Acceptable today
-  // because this whole block is already gated by the duplicate+streak-
-  // unchanged skip above, so it only runs on genuinely new activity; revisit
+  // because this whole block is already gated by the duplicate-outcome
+  // skip above, so it only runs on genuinely new activity; revisit
   // with a DB-side aggregate (view or RPC) if a single user's xp_events grows
   // large enough for this to matter.
   const { data: outcomeRows, error: outcomeError } = await supabase

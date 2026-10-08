@@ -3,7 +3,7 @@ import { z } from "zod";
 import { scheduleReviewTomorrow } from "@/lib/summary/review-tomorrow";
 
 const OPAQUE_ERROR = "Something went wrong. Please try again.";
-const bodySchema = z.object({ timeZone: z.string().min(1).max(64) }).strict();
+const bodySchema = z.object({}).strict();
 const retryAfterSeconds = (ms: number): string => String(Math.max(1, Math.ceil(ms / 1000)));
 
 export async function POST(request: Request, { params }: { params: { id: string } }): Promise<NextResponse> {
@@ -21,9 +21,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
   try {
-    const result = await scheduleReviewTomorrow(params.id, parsed.data.timeZone);
+    const result = await scheduleReviewTomorrow(params.id);
     switch (result.kind) {
-      case "invalid": return NextResponse.json({ error: "Invalid input" }, { status: 400 });
       case "unauthorized": return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       case "not_found": return NextResponse.json({ error: "Not found" }, { status: 404 });
       case "rate_limited": return NextResponse.json(

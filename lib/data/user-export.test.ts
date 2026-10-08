@@ -52,6 +52,31 @@ describe("exportMyData", () => {
     expect(result.data.tables.user_preferences).toHaveLength(1);
   });
 
+  it("exports the users row with the profile columns, selected with *", async () => {
+    let usersSelect: string | undefined;
+    const tables = mockAllTables({
+      users: [{ id: "u1", username: "keishaa", native_language: "vi", study_timezone: "Asia/Ho_Chi_Minh" }],
+    });
+    const base = tables.users as TableResolver;
+    tables.users = (calls) => {
+      const select = calls.find((call) => call.op === "select");
+      if (select?.op === "select") usersSelect = select.columns;
+      return base(calls);
+    };
+    vi.mocked(createClient).mockReturnValue(
+      createMockSupabase({ user: { id: "u1" }, tables }) as ReturnType<typeof createClient>,
+    );
+
+    const result = await exportMyData(new Date("2026-10-07T10:00:00Z"));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(usersSelect).toBe("*");
+    expect(result.data.tables.users?.[0]).toMatchObject({
+      username: "keishaa", native_language: "vi", study_timezone: "Asia/Ho_Chi_Minh",
+    });
+  });
+
   it("rate limits after three exports in the hour", async () => {
     vi.mocked(createClient).mockReturnValue(
       createMockSupabase({ user: { id: "rl-user" }, tables: mockAllTables() }) as ReturnType<

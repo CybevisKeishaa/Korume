@@ -89,6 +89,8 @@ describe("listForumPosts", () => {
 
     await listForumPosts({ limit: 20 });
     expect(selectedColumns).not.toMatch(/email/);
+    // P5: community JSON stays on the OAuth picture; the private uploaded photo (avatar_path) is never read here.
+    expect(selectedColumns).toBe("id, name, avatar_url");
   });
 
   it("returns null nextCursor when the page is not full", async () => {

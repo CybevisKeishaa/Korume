@@ -107,10 +107,18 @@ describe("getPlaylist", () => {
       }),
       videos: () => ({ data: [{ id: VIDEO_ID, title: "Video A", thumbnail_url: "thumb.jpg" }], error: null }),
     });
-    mockService({ users: () => ({ data: [{ id: USER.id, name: "Alice", avatar_url: null }], error: null }) });
+    let selectedColumns = "";
+    mockService({
+      users: (calls: QueryCall[]) => {
+        selectedColumns = calls.find((c): c is Extract<QueryCall, { op: "select" }> => c.op === "select")?.columns ?? "";
+        return { data: [{ id: USER.id, name: "Alice", avatar_url: null }], error: null };
+      },
+    });
 
     const detail = await getPlaylist(PLAYLIST_ID);
     expect(detail?.owner).toEqual({ id: USER.id, name: "Alice", avatarUrl: null });
+    // P5: community JSON stays on the OAuth picture; avatar_path (the private upload) is never read here.
+    expect(selectedColumns).toBe("id, name, avatar_url");
     expect(detail?.items).toEqual([{ videoId: VIDEO_ID, orderIndex: 0, title: "Video A", thumbnailUrl: "thumb.jpg" }]);
   });
 });

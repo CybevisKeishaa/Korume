@@ -11,7 +11,9 @@ import { normalizeSearchQuery, parseSearchType, pronunciationSurface, SEARCH_TYP
 import { HubLessonResultCard } from "@/components/shadowing/hub-lesson-result-card";
 import { PronunciationSearchResults, type PronunciationResultGroup } from "@/components/shadowing/pronunciation-search-results";
 import { getLearningPaths, getPracticeGoals, getSenseiRecommendation, getShadowingCollections, recommendedPracticeGoalId } from "@/lib/data/collections";
-import { getJlptSpeakingSummary, getRecentPractice, getTodaySpeaking, getWeeklyImprovement, getWeeklyPronunciationMetrics, vnDaysAgo } from "@/lib/data/pronunciation-metrics";
+import { getJlptSpeakingSummary, getRecentPractice, getTodaySpeaking, getWeeklyImprovement, getWeeklyPronunciationMetrics } from "@/lib/data/pronunciation-metrics";
+import { studyDayStart, studyDaysAgo } from "@/lib/time/study-day";
+import { getStudyTimezone } from "@/lib/time/study-timezone";
 import { JLPT_LEVELS } from "@/lib/conversation-types";
 import { listPracticeSituations } from "@/lib/data/lesson-taxonomy";
 import { formatCourseDuration, formatHours, formatLevelBand } from "@/lib/format-course-duration";
@@ -101,7 +103,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   const weeklyMetricsPromise = getWeeklyPronunciationMetrics(now);
   const senseiPromise = Promise.all([goalsPromise, learningPromise, weeklyMetricsPromise])
     .then(([goals, learning, weeklyMetrics]) => getSenseiRecommendation(goals, learning.paths, weeklyMetrics.weakest));
-  const [t, tCommon, tHub, hub, search, displayState, preferences, learning, locale, situations, goals, weeklyMetrics, shadowingCollections, jlptLevels, today, weekly, recent, sensei] = await Promise.all([
+  const [t, tCommon, tHub, hub, search, displayState, preferences, learning, locale, situations, goals, weeklyMetrics, shadowingCollections, jlptLevels, today, weekly, recent, sensei, { timeZone }] = await Promise.all([
     getTranslations("pronunciation"),
     getTranslations("common"),
     tHubPromise,
@@ -126,6 +128,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
     getWeeklyImprovement(now),
     getRecentPractice(3),
     senseiPromise,
+    getStudyTimezone(),
   ]);
   const { display, surface } = displayState;
   const resultMode = surface.state !== "default";
@@ -144,7 +147,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   const goal = preferences?.dailyMinutes ?? DEFAULT_PREFERENCES.dailyMinutes;
   const metricLabel = (metric: "accuracy" | "pitch" | "rhythm") => t(`hub.rail.metrics.${metric}`);
   const formatDelta = (delta: number | null) => delta === null ? null : delta > 0 ? `+${delta}%` : delta < 0 ? `−${Math.abs(delta)}%` : "0%";
-  const shortDate = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone: "Asia/Ho_Chi_Minh" });
+  const shortDate = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", timeZone });
   const relativeDay = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const continueLesson = recent[0]?.lesson ?? course?.next ?? null;
   // "Show more" in Browse is the same URL one page longer: the URL's own
@@ -380,9 +383,9 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           trend: {
             label: t("hub.rail.weekly.chartLabel"), empty: t("hub.rail.weekly.chartEmpty"),
             points: weekly.trend.map((point) => {
-              const day = new Date(`${point.day}T00:00:00+07:00`);
-              // The window is the 14 VN days ending today: 13 days back is the left edge.
-              return { x: Math.max(0, Math.min(1, 1 - vnDaysAgo(day, now) / 13)), score: point.score, label: t("hub.rail.weekly.point", { date: shortDate.format(day), score: point.score }) };
+              const day = studyDayStart(point.day, timeZone);
+              // The window is the 14 study-timezone days ending today: 13 days back is the left edge.
+              return { x: Math.max(0, Math.min(1, 1 - studyDaysAgo(day, now, timeZone) / 13)), score: point.score, label: t("hub.rail.weekly.point", { date: shortDate.format(day), score: point.score }) };
             }),
           },
         }}
@@ -402,7 +405,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
           title: t("hub.rail.recent.title"), empty: t("hub.rail.recent.empty"), scoreMissing: t("hub.rail.scoreMissing"), scoreLabel: t("hub.rail.recent.scoreLabel"),
           rows: recent.map((row) => {
             // A session the database stamped a moment after this request's `now` is still today.
-            const days = Math.max(0, vnDaysAgo(new Date(row.practicedAt), now));
+            const days = Math.max(0, studyDaysAgo(new Date(row.practicedAt), now, timeZone));
             const when = days > 6 ? shortDate.format(new Date(row.practicedAt)) : relativeDay.format(-days, "day");
             return { id: row.lesson.id, title: row.lesson.title, href: `/shadowing/${row.lesson.id}`, when: when.charAt(0).toLocaleUpperCase(locale) + when.slice(1), dateTime: row.practicedAt, score: row.averageScore === null ? null : String(row.averageScore) };
           }),

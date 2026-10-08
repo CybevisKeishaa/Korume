@@ -16,6 +16,7 @@ import { JlptTimer } from "./jlpt-timer";
 import { JlptQuestionNavigator } from "./jlpt-question-navigator";
 import { JlptQuestionCard } from "./jlpt-question-card";
 import { JlptResultsPanel } from "./jlpt-results-panel";
+import { useStudyPresence } from "@/components/study-time/use-study-presence";
 
 export interface JlptTestRunnerProps {
   test: JlptTestDetail;
@@ -43,6 +44,7 @@ const FALLBACK_MINUTES = 999;
  * transitions); section mode counts down just that section's limit.
  */
 export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
+  useStudyPresence({ surface: "certification", contextId: test.id });
   const t = useTranslations("jlpt");
   const tCommon = useTranslations("common");
   const mode: "full" | "section" = initialSection ? "section" : "full";

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n";
 import type { BadgeSummary } from "@/lib/user-stats-types";
+import { useBadgeCopy } from "./use-badge-copy";
 
 export interface BadgesGridProps {
   /** Full badge catalog, earned first then alphabetical (`getUserStats()`'s order). */
@@ -37,6 +38,7 @@ const ICON_URL_PATTERN = /^\/badges\/[a-z0-9_]+\.svg$/;
  */
 export function BadgesGrid({ badges }: BadgesGridProps) {
   const t = useTranslations("dashboard");
+  const copy = useBadgeCopy();
 
   if (badges.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("badges.empty")}</p>;
@@ -53,10 +55,12 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
       {badges.map((badge) => {
         const earned = !!badge.earnedAt;
         const earnedDate = badge.earnedAt ? new Date(badge.earnedAt).toLocaleDateString() : null;
+        const name = copy.name(badge.name);
+        const description = copy.description(badge.name, badge.description);
         const label = [
-          badge.name,
+          name,
           earned ? `${t("a11y.badgeEarned")}${earnedDate ? ` ${earnedDate}` : ""}` : t("a11y.badgeLocked"),
-          badge.description ?? undefined,
+          description ?? undefined,
         ]
           .filter(Boolean)
           .join(". ");
@@ -122,7 +126,7 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
                   </svg>
                 )}
               </div>
-              <p className="text-caption font-medium">{badge.name}</p>
+              <p className="text-caption font-medium">{name}</p>
               {earned ? (
                 earnedDate && <p className="text-caption text-muted-foreground">{earnedDate}</p>
               ) : (

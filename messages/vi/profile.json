@@ -1,17 +1,203 @@
 {
   "page": {
-    "heading": "Hồ sơ",
-    "accountHeading": "Tài khoản của bạn",
-    "emailLabel": "Email",
-    "emailFallback": "Chưa có",
-    "statsHeading": "Một chút về hành trình của bạn",
-    "levelLabel": "Cấp độ",
-    "xpLabel": "XP",
-    "currentStreakLabel": "Chuỗi ngày hiện tại",
-    "longestStreakLabel": "Chuỗi ngày dài nhất",
-    "streakDays": "{count} ngày",
-    "badgesEarnedLabel": "Huy hiệu đã đạt",
-    "badgesCount": "{earned} / {total}",
-    "viewDashboard": "Xem hành trình của bạn"
+    "eyebrow": "Lưu trữ cá nhân",
+    "title": "Hồ sơ học tập của bạn",
+    "since": "Korume · từ {month}"
+  },
+  "identity": {
+    "country": "Quốc gia",
+    "timeZone": "Múi giờ",
+    "learningSince": "Học cùng Korume từ {month}",
+    "jlptGoal": "Mục tiêu JLPT",
+    "nativeLanguage": "Ngôn ngữ mẹ đẻ",
+    "interface": "Giao diện hiện tại",
+    "subtitle": "Phụ đề hiện tại",
+    "subtitleValue": "{translation, select, hidden {Tiếng Nhật} other {Tiếng Nhật + bản dịch}}{furigana, select, hidden {} other { + furigana}}",
+    "edit": "Chỉnh sửa hồ sơ",
+    "avatarAlt": "Ảnh của {name}",
+    "changePhoto": "Đổi ảnh"
+  },
+  "stats": {
+    "title": "Thống kê nhanh",
+    "streak": "Chuỗi ngày học",
+    "streakValue": "{count, plural, other {{count} ngày}}",
+    "level": "Cấp độ hiện tại",
+    "levelValue": "Lv. {level}",
+    "xp": "Tổng XP",
+    "videoLessons": "Bài học video đã hoàn thành",
+    "words": "Từ đã học",
+    "hours": "Giờ đã học",
+    "hoursValue": "{hours}g {minutes}p",
+    "hoursInfo": "Về số giờ đã học",
+    "trackedSince": "Korume ghi nhận từ {date}",
+    "trackingStarts": "Korume bắt đầu ghi nhận từ buổi học tiếp theo của bạn"
+  },
+  "journey": {
+    "eyebrow": "Hành trình học",
+    "title": "Con đường bạn đã đi",
+    "empty": "Con đường của bạn bắt đầu từ bài học đầu tiên.",
+    "emptyCta": "Bắt đầu một bài shadowing",
+    "kind": {
+      "first_activity": "Bắt đầu học",
+      "first_video_completed": "Hoàn thành bài học video đầu tiên",
+      "first_mastered_word": "Thuộc từ đầu tiên",
+      "first_certification_passed": "Đạt chứng chỉ đầu tiên",
+      "badge_earned": "Nhận một huy hiệu",
+      "first_meeting": "Gặp Korume",
+      "first_shadow": "Shadowing câu đầu tiên",
+      "jlpt_passed": "Đạt một cấp JLPT",
+      "pinned_line": "Ghim một câu"
+    },
+    "line": {
+      "first_activity": "Trang đầu tiên của một ngôn ngữ mới.",
+      "first_video_completed": "{hasLabel, select, yes {{label}, xem đến cuối.} other {Xem trọn đến cuối.}}",
+      "first_mastered_word": "{hasLabel, select, yes {{label} giờ là của bạn.} other {Một từ giờ đã thuộc về bạn.}}",
+      "first_certification_passed": "{hasLabel, select, yes {{label}, đã đạt.} other {Một cột mốc bạn đã giành được.}}",
+      "badge_earned": "{hasLabel, select, yes {{label}.} other {Một dấu mốc nhỏ của tiến bộ.}}",
+      "first_meeting": "Cuộc trò chuyện đầu tiên, và khởi đầu của một thói quen.",
+      "first_shadow": "{hasLabel, select, yes {{label}, đọc theo giọng mẫu.} other {Giọng bạn bắt đầu tìm thấy nhịp của mình.}}",
+      "jlpt_passed": "{hasLabel, select, yes {{label}, đã đạt.} other {Nền tảng bạn xây từng câu một.}}",
+      "pinned_line": "{hasLabel, select, yes {“{label}”} other {Một câu bạn muốn giữ lại.}}"
+    },
+    "more": "Xem thêm {count} mốc",
+    "less": "Thu gọn"
+  },
+  "favorite": {
+    "title": "Nội dung học yêu thích",
+    "source": {
+      "youtube": "YouTube",
+      "nhk": "NHK",
+      "podcast": "Podcast",
+      "drama": "Phim truyền hình",
+      "anime": "Anime",
+      "vlog": "Vlog",
+      "news": "Tin tức"
+    },
+    "empty": "Nội dung yêu thích sẽ hiện ra sau khi bạn học vài bài."
+  },
+  "goal": {
+    "eyebrow": "Mục tiêu cá nhân",
+    "caption": "Một điều bạn viết cho chính mình trong tương lai",
+    "empty": "Hãy viết một mục tiêu cho chính bạn trong tương lai.",
+    "emptyCta": "Thêm mục tiêu"
+  },
+  "korume": {
+    "eyebrow": "Korume",
+    "title": "Korumeship",
+    "together": "{months, plural, other {Chúng ta đã đồng hành cùng nhau được {months} tháng.}}",
+    "fresh": "Korume luôn ở đây cùng bạn.",
+    "open": "Mở Korume"
+  },
+  "memory": {
+    "eyebrow": "Ký ức hôm nay",
+    "caption": "Bạn đã luyện câu này cho đến khi nó thấy như của chính mình.",
+    "open": "Mở nhật ký"
+  },
+  "achievements": {
+    "title": "Thành tích",
+    "empty": "Huy hiệu bạn nhận được sẽ hiện ở đây."
+  },
+  "edit": {
+    "eyebrow": "Danh tính hồ sơ",
+    "title": "Định hình danh tính học tập của bạn",
+    "hint": "Thay đổi sẽ hiện trong bản xem trước hồ sơ.",
+    "previewEyebrow": "Xem trước hồ sơ trực tiếp",
+    "formEyebrow": "Chỉnh sửa hồ sơ",
+    "formTitle": "Biến không gian này thành của bạn",
+    "sections": {
+      "basic": "Thông tin cơ bản",
+      "preferences": "Tùy chọn học tập",
+      "korume": "Korume"
+    },
+    "fields": {
+      "displayName": "Tên hiển thị",
+      "username": "Tên người dùng",
+      "bio": "Giới thiệu",
+      "country": "Quốc gia",
+      "timeZone": "Múi giờ",
+      "nativeLanguage": "Ngôn ngữ mẹ đẻ",
+      "targetJlpt": "JLPT mục tiêu",
+      "dailyGoal": "Mục tiêu mỗi ngày",
+      "learningGoal": "Mục tiêu học tập",
+      "interfaceLanguage": "Ngôn ngữ giao diện",
+      "subtitleStyle": "Kiểu phụ đề",
+      "defaultFurigana": "Furigana mặc định",
+      "preferredPractice": "Cách luyện tập ưa thích",
+      "showKorume": "Hiển thị Korume"
+    },
+    "hints": {
+      "username": "3 đến 20 chữ cái, số hoặc dấu gạch dưới.",
+      "timeZone": "Chọn trong danh sách hoặc nhập múi giờ như Asia/Tokyo."
+    },
+    "notSet": "Chưa đặt",
+    "dailyMinutes": "{minutes} phút",
+    "subtitle": {
+      "hidden": "Tiếng Nhật",
+      "reveal": "Tiếng Nhật, chạm để xem bản dịch",
+      "always": "Tiếng Nhật + bản dịch"
+    },
+    "furigana": {
+      "always": "Luôn bật",
+      "adaptive": "Thích ứng",
+      "hidden": "Tắt"
+    },
+    "practice": {
+      "shadowing": "Shadowing",
+      "listening": "Nghe",
+      "pronunciation": "Phát âm",
+      "vocabulary": "Từ vựng",
+      "kanji": "Kanji",
+      "grammar": "Ngữ pháp",
+      "reading": "Đọc",
+      "conversation": "Hội thoại"
+    },
+    "errors": {
+      "format": "Dùng 3 đến 20 chữ cái thường, số hoặc dấu gạch dưới.",
+      "reserved": "Tên này đã được giữ trước. Hãy thử tên khác.",
+      "taken": "Tên người dùng này đã có người dùng.",
+      "too_long": "Nội dung quá dài.",
+      "country": "Hãy chọn một quốc gia trong danh sách.",
+      "time_zone": "Chúng tôi không nhận ra múi giờ này.",
+      "required": "Trường này là bắt buộc.",
+      "invalid": "Hãy kiểm tra lại trường này."
+    },
+    "username": {
+      "checking": "Đang kiểm tra…",
+      "available": "Có thể dùng"
+    },
+    "avatar": {
+      "label": "Ảnh hồ sơ",
+      "change": "Đổi ảnh",
+      "remove": "Xóa ảnh đã tải lên",
+      "errors": {
+        "type": "Hãy dùng ảnh JPEG, PNG hoặc WebP.",
+        "size": "Ảnh này lớn hơn 2 MB.",
+        "corrupt": "Chúng tôi không xử lý được ảnh này. Ảnh có thể bị hỏng hoặc quá lớn. Hãy thử ảnh khác."
+      },
+      "undo": "Giữ ảnh hiện tại"
+    },
+    "currentKorume": {
+      "eyebrow": "Korume hiện tại",
+      "title": "Korume",
+      "body": "Một người bạn trầm lặng giữ gìn những khoảnh khắc nhỏ."
+    },
+    "relationship": {
+      "eyebrow": "Mối quan hệ",
+      "title": "Korumeship"
+    },
+    "korumeFooter": "Korume sẽ dùng những lựa chọn này để hỗ trợ bạn phù hợp hơn.",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu…",
+    "cancel": "Hủy",
+    "saveFailed": "Chúng tôi không lưu được hồ sơ của bạn. Vui lòng thử lại.",
+    "rateLimited": "Bạn lưu quá nhiều lần. Hãy đợi một lát rồi thử lại.",
+    "dirty": {
+      "title": "Rời đi mà không lưu?",
+      "body": "Các thay đổi trong hồ sơ này chưa được lưu.",
+      "stay": "Tiếp tục chỉnh sửa",
+      "leave": "Rời đi",
+      "close": "Đóng hộp thoại"
+    },
+    "signedOut": "Phiên đăng nhập đã hết. Hãy đăng nhập lại để lưu hồ sơ."
   }
 }

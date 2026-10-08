@@ -544,7 +544,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
 
-  // account/1 — designed, built (far simpler than the frame — §18.2).
+  // account/1 — designed, built: the private learning archive of port-profile (frame 66:166, ported 2026-10-07).
   {
     screenId: "profile",
     name: "Profile",
@@ -552,7 +552,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     variantOf: null,
     figmaNodeId: "66:166",
     repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
+    figmaCheckedAt: "2026-10-07",
     route: "/profile",
     chrome: "app",
     impl: "built",
@@ -1451,10 +1451,10 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     variantOf: null,
     figmaNodeId: "67:595",
     repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
-    route: null,
-    chrome: null,
-    impl: "none",
+    figmaCheckedAt: "2026-10-07",
+    route: "/profile/edit",
+    chrome: "app",
+    impl: "built",
     navGroup: null,
     navOrder: null,
     specRef: null,

@@ -14,7 +14,9 @@ describe("MASCOT_POSES", () => {
 
   it("maps exactly the screens the spec names", () => {
     expect(entries.map(([name]) => name).sort()).toEqual([
+      "edit-footer",
       "forgot-password",
+      "korumeship",
       "login",
       "not-found",
       "register",
@@ -35,6 +37,8 @@ describe("MASCOT_POSES", () => {
       "not-found": "curious-question-mark.png",
       "route-error": "worry.png",
       settings: "relax.png",
+      korumeship: "reading-on-the-orb.png",
+      "edit-footer": "syncing.png",
     });
   });
 

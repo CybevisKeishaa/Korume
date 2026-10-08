@@ -3,7 +3,6 @@
 import { useFormatter, useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { memoryTitleFor, refFromDedupeKey, type CompanionMemory } from "@/lib/companion";
-import { VN_TIME_ZONE } from "@/lib/time/vn-timezone";
 import { CompanionAnchor } from "./companion-anchor";
 
 /**
@@ -70,7 +69,6 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
               <p className="mt-1 text-sm text-muted-foreground">
                 {format.dateTime(new Date(m.occurredAt), {
                   dateStyle: "long",
-                  timeZone: VN_TIME_ZONE,
                 })}
                 {/* Provenance is carried visually by the ✎ mark, which is
                     decorative — assistive tech gets the words instead. */}

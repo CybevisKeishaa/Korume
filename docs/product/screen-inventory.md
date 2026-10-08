@@ -2364,6 +2364,8 @@ question, not a defect.
 
 ### 18.2 `66:166` — **Profile / "Your learning identity"** · `CONFIRMED` screen
 
+Ported 2026-10-07 (`port-profile`)
+
 `PERSONAL ARCHIVE` · avatar with an upload badge · display name + handle · then an identity block:
 **Country `Vietnam` · Timezone `UTC+7` · Learning Japanese since `March 2026` · JLPT Goal `N2` ·
 Native Language `Vietnamese` · Current Interface `English` · Current Subtitle `Japanese + Furigana`** ·
@@ -2386,6 +2388,8 @@ The repo's i18n handles the middle one. **L1 is a product concept** — it is wh
 carries four senses across the product.
 
 ### 18.3 `67:595` — **Edit Profile / "Shape your learning identity"** · `CONFIRMED` screen
+
+Ported 2026-10-07 (`port-profile`)
 
 A **live-preview** editor: the left column renders the profile as it will look (including
 `CURRENT COMPANION` and `RELATIONSHIP — "We've been walking together for 6 months."*`) while the right

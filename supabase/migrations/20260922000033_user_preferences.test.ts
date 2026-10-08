@@ -36,7 +36,7 @@ function migration(): string {
 
 function subsystemMigrations(): string[] {
   return readdirSync(directory).filter(
-    (file) => file.endsWith(".sql") && readFileSync(join(directory, file), "utf8").includes("user_preferences"),
+    (file) => file.endsWith(".sql") && /create table user_preferences\b/i.test(readFileSync(join(directory, file), "utf8")),
   );
 }
 
@@ -44,7 +44,7 @@ const quoted = (values: readonly string[]): string => values.map((value) => `'${
 const literals = (values: readonly (string | number)[]): string => values.map((value) => typeof value === "number" ? String(value) : `'${value}'`).join(", ");
 
 describe("durable user preferences SQL contract", () => {
-  it("keeps user_preferences in exactly one migration", () => {
+  it("defines user_preferences in exactly one migration (later migrations may write to it)", () => {
     expect(subsystemMigrations()).toEqual([filename]);
   });
 

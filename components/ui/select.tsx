@@ -20,6 +20,8 @@ export interface SelectProps {
   disabled?: boolean;
   className?: string;
   "aria-label"?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
 }
 
 /**
@@ -36,6 +38,8 @@ export function Select({
   disabled,
   className,
   "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
 }: SelectProps) {
   const { anchorRef, contentRef } = useDensityScope();
   return (
@@ -43,10 +47,12 @@ export function Select({
       <RadixSelect.Trigger
         id={id}
         aria-label={ariaLabel}
+        aria-describedby={ariaDescribedBy}
+        aria-invalid={ariaInvalid}
         className={cn(
           "flex h-control-md w-full items-center justify-between gap-xs rounded-md border border-input",
           "bg-input-background px-sm text-body text-foreground",
-          "disabled:cursor-not-allowed disabled:opacity-50",
+          "disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-danger",
           "data-[placeholder]:text-muted-foreground",
           className,
         )}

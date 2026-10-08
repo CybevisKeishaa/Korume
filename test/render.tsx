@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { loadEnMessages, loadViMessages } from "./messages";
+import { FALLBACK_STUDY_TIMEZONE } from "@/lib/time/study-day";
 
 /**
  * `@testing-library/react`'s `render`, wrapped in `NextIntlClientProvider`.
@@ -45,12 +46,12 @@ const CATALOGS = { en: messages, vi: loadViMessages() } as const;
  */
 function customRender(
   ui: ReactElement,
-  options?: RenderOptions & { locale?: keyof typeof CATALOGS },
+  options?: RenderOptions & { locale?: keyof typeof CATALOGS; timeZone?: string },
 ) {
-  const { locale = "en", ...rest } = options ?? {};
+  const { locale = "en", timeZone = FALLBACK_STUDY_TIMEZONE, ...rest } = options ?? {};
   return rtlRender(ui, {
     wrapper: ({ children }) => (
-      <NextIntlClientProvider locale={locale} messages={CATALOGS[locale]}>
+      <NextIntlClientProvider locale={locale} messages={CATALOGS[locale]} timeZone={timeZone}>
         {children}
       </NextIntlClientProvider>
     ),

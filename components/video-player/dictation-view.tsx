@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { TranscriptWithLines, VideoRow } from "@/lib/video-types";
 import { PinLineControl } from "./pin-line-control";
-import { YouTubePlayer, type YouTubePlayerHandle } from "./youtube-player";
+import { YT_PLAYER_STATE, YouTubePlayer, type YouTubePlayerHandle } from "./youtube-player";
+import { useStudyPresence } from "@/components/study-time/use-study-presence";
 
 export interface DictationViewProps {
   video: VideoRow;
@@ -148,6 +149,8 @@ function summarizeDiff(diff: DictationDiffPart[]): DiffCounts {
  * `/api/dictation/attempt`, and render the character-level diff.
  */
 export function DictationView({ video, transcript }: DictationViewProps) {
+  const [playing, setPlaying] = useState(false);
+  useStudyPresence({ surface: "dictation", contextId: video.id, mediaPlaying: playing });
   const t = useTranslations("dictation");
   const tCommon = useTranslations("common");
   const playerRef = useRef<YouTubePlayerHandle>(null);
@@ -226,6 +229,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
             ref={playerRef}
             videoId={video.youtube_video_id}
             className="h-full w-full"
+            onStateChange={(state) => setPlaying(state === YT_PLAYER_STATE.PLAYING)}
           />
         </div>
         <div className="text-sm text-muted-foreground">
@@ -243,6 +247,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
           ref={playerRef}
           videoId={video.youtube_video_id}
           className="h-full w-full"
+          onStateChange={(state) => setPlaying(state === YT_PLAYER_STATE.PLAYING)}
           onReady={handleReady}
           onTick={handleTick}
           tickIntervalMs={200}

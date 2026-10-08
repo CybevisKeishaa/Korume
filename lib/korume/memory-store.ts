@@ -9,6 +9,7 @@
  */
 import { randomUUID } from "node:crypto";
 import type { MemoryKnowledgeStore } from "@/lib/knowledge/memory-store";
+import type { LearnerProfileContext } from "./prompts";
 import type { AnchorLine, KorumeStore, MessageRow, ThreadRow } from "./store";
 
 export interface MemoryKorumeStore extends KorumeStore {
@@ -16,6 +17,8 @@ export interface MemoryKorumeStore extends KorumeStore {
   messages: (MessageRow & { sessionId: string })[];
   lines: AnchorLine[];
   readable: Set<string>;
+  /** The viewer's own profile row, as `readLearnerProfile` returns it. */
+  profile: LearnerProfileContext | null;
   /** Every method call in order: the "no write before the gate" proofs read this. */
   calls: string[];
 }
@@ -27,12 +30,20 @@ export function createMemoryKorumeStore(knowledge: MemoryKnowledgeStore, viewer:
   const lines: AnchorLine[] = [];
   const readable = new Set<string>();
   const calls: string[] = [];
+  const self = { profile: null as LearnerProfileContext | null };
   let tick = 0;
   const now = () => new Date(Date.UTC(2026, 9, 3, 0, 0, tick++)).toISOString();
   const mine = (sessionId: string) => threads.some((t) => t.id === sessionId && t.userId === viewer);
 
   return {
     threads, messages, lines, readable, calls,
+    get profile() { return self.profile; },
+    set profile(value) { self.profile = value; },
+
+    async readLearnerProfile() {
+      calls.push("readLearnerProfile");
+      return self.profile;
+    },
 
     async insertThread(row) {
       calls.push("insertThread");

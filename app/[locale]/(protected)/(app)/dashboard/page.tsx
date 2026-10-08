@@ -12,7 +12,6 @@ import { BadgesGrid } from "@/components/learning/badges-grid";
 import { RecommendationSection } from "@/components/learning/recommendation-section";
 import { CompanionAnchor } from "@/components/companion/companion-anchor";
 import { getUserStats } from "@/lib/data/user-stats";
-import { vnDateString } from "@/lib/gamification";
 
 export async function generateMetadata({
   params,
@@ -29,7 +28,6 @@ export default async function DashboardPage() {
   const tCommon = await getTranslations("common");
   const statsResult = await getUserStats();
   const stats = statsResult.ok ? statsResult.data : null;
-  const today = vnDateString(new Date());
 
   const MODULES = [
     { href: "/kanji", title: t("modules.kanjiTitle"), desc: t("modules.kanjiDesc") },
@@ -55,7 +53,7 @@ export default async function DashboardPage() {
             streakCurrent={stats.streakCurrent}
             streakLongest={stats.streakLongest}
             lastActiveDate={stats.lastActiveDate}
-            today={today}
+            today={stats.today}
           />
           <SrsDueCard srsDueCount={stats.srsDueCount} />
         </section>

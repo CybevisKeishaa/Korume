@@ -1688,3 +1688,48 @@
 .vp-quote { flex: none; box-sizing: border-box; height: 10mm; padding-top: 2mm; overflow: hidden; font-size: 8.5pt; font-style: italic; line-height: 1.35; color: var(--vp-muted); }
 .vp-foot-block { flex: none; }
 .vp-credit { height: 3.5mm; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 5.5pt; line-height: 3.5mm; color: var(--vp-muted); }
+
+/* /profile (port-profile spec 7.1): reflow by the content container, never shrink. DOM order is the reading
+   order at every width; the right rail below is placement only. Explicit lines are always given in pairs. */
+.profile-layout { container: profile / inline-size; }
+.profile-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
+.profile-rail, .profile-main, .profile-pair { display: grid; gap: var(--space-md); align-content: start; }
+.profile-pair { grid-template-columns: minmax(0, 1fr); }
+@container profile (width >= 56.25rem) {
+  .profile-grid { grid-template-columns: 17.5rem minmax(0, 1fr); }
+  .profile-pair { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+}
+@container profile (width >= 72.5rem) {
+  .profile-grid { grid-template-columns: 17.5rem minmax(0, 1fr) 15.5rem; grid-template-rows: auto auto 1fr; align-items: start; }
+  .profile-main { display: contents; }
+  .profile-rail { grid-column: 1 / 2; grid-row: 1 / span 3; }
+  .profile-card--journey { grid-column: 2 / 3; grid-row: 1 / 2; }
+  .profile-card--korume { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); grid-column: 3 / 4; grid-row: 1 / 2; }
+  .profile-card--favorite { grid-column: 2 / 3; grid-row: 2 / 3; }
+  .profile-card--goal { grid-column: 2 / 3; grid-row: 3 / 4; }
+  .profile-card--achievements { grid-column: 3 / 4; grid-row: 1 / 2; }
+  .profile-card--korume ~ .profile-card--achievements { grid-row: 2 / 3; }
+}
+
+/* /profile/edit (spec 8.1): reflow by the content container. Below 900px the preview is a compact header
+   (avatar, name, handle) and the Save bar sticks to the bottom; explicit grid lines are always given in pairs. */
+.profile-edit-wrap { container: profile-edit / inline-size; }
+.profile-edit { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
+.profile-edit-pair, .profile-edit-fields { display: grid; gap: var(--space-sm); grid-template-columns: minmax(0, 1fr); }
+.profile-edit-extra, .profile-edit-preview [data-identity-bio], .profile-edit-preview [data-identity-rows] { display: none; }
+.profile-edit-actions { position: sticky; bottom: 0; padding-bottom: calc(var(--space-sm) + env(safe-area-inset-bottom)); }
+@container profile-edit (width >= 33.75rem) {
+  .profile-edit-pair, .profile-edit-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container profile-edit (width >= 56.25rem) {
+  .profile-edit { grid-template-columns: 18.75rem minmax(0, 1fr); align-items: start; }
+  .profile-edit-preview { position: sticky; top: var(--space-md); display: grid; gap: var(--space-md); }
+  .profile-edit-extra { display: grid; }
+  .profile-edit-preview [data-identity-bio] { display: block; }
+  .profile-edit-preview [data-identity-rows] { display: grid; }
+  .profile-edit-actions { position: static; }
+}
+@container profile-edit (width >= 72.5rem) {
+  .profile-edit { grid-template-columns: 20rem minmax(0, 1fr); }
+  .profile-edit-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

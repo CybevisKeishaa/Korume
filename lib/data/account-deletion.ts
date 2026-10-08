@@ -7,6 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { scheduleFor, type DeletionTier } from "@/lib/account-deletion/lifecycle";
 import { cancelPendingDeletion } from "@/lib/account-deletion/erase";
 import { sendEmail } from "@/lib/email";
+import { getStudyTimezone } from "@/lib/time/study-timezone";
 import type { Locale } from "@/lib/i18n/routing";
 import type { DeletionRequestInput } from "@/lib/validation/account-deletion";
 
@@ -155,6 +156,7 @@ function safeOrigin(rawOrigin: string | null): string {
 async function notifyDeletionRequested(email: string, locale: Locale, pending: PendingDeletion): Promise<void> {
   try {
     const origin = safeOrigin(headers().get("origin"));
+    const { timeZone } = await getStudyTimezone();
     const result = await sendEmail({
       template: "account-deletion-requested",
       to: email,
@@ -162,6 +164,7 @@ async function notifyDeletionRequested(email: string, locale: Locale, pending: P
       variables: {
         tier: pending.tier,
         executeAfter: pending.executeAfter,
+        timeZone,
         cancelUrl: `${origin}/${locale}/settings/privacy`,
       },
     });

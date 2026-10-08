@@ -64,9 +64,9 @@ vi.mock("@/lib/data/collections", async (importOriginal) => ({
   getSenseiRecommendation: data.getSenseiRecommendation,
 }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listPracticeSituations: data.listPracticeSituations }));
-vi.mock("@/lib/data/pronunciation-metrics", async (importOriginal) => ({
-  // The real VN-day math: the page's "Yesterday" and trend x must cross UTC+7 midnight correctly.
-  vnDaysAgo: (await importOriginal<typeof import("@/lib/data/pronunciation-metrics")>()).vnDaysAgo,
+const zone = vi.hoisted(() => ({ timeZone: "Asia/Ho_Chi_Minh" }));
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezone: async () => ({ timeZone: zone.timeZone, needsDetection: false }) }));
+vi.mock("@/lib/data/pronunciation-metrics", () => ({
   getWeeklyPronunciationMetrics: data.getWeeklyPronunciationMetrics,
   getTodaySpeaking: data.getTodaySpeaking,
   getWeeklyImprovement: data.getWeeklyImprovement,
@@ -116,6 +116,7 @@ import { RESULT_MAX_LIMIT } from "@/lib/validation/shadowing-hub";
 describe("PronunciationPage", () => {
   afterEach(() => {
     vi.useRealTimers();
+    zone.timeZone = "Asia/Ho_Chi_Minh";
     data.getTodaySpeaking.mockResolvedValue({ minutes: 0, lessonsCompleted: 0, averageScore: null });
     data.getWeeklyImprovement.mockResolvedValue({ deltas: { accuracy: null, pitch: null, rhythm: null }, trend: [] });
     data.getRecentPractice.mockResolvedValue([]);
@@ -163,6 +164,27 @@ describe("PronunciationPage", () => {
     expect(within(rail).getByText("Sep 17: 50", { selector: "li" })).toBeInTheDocument();
     expect(within(rail).getByText(pronunciationCopy.hub.rail.sensei.recommendedGoal)).toBeInTheDocument();
     expect(within(rail).getByText("Lesson 12 · Pitch lesson")).toBeInTheDocument();
+  });
+
+  it("places the weekly trend on the study zone's days, not Vietnam's", async () => {
+    vi.useFakeTimers();
+    // 13:00 on 2026-09-30 in Los Angeles. The trend days are Los Angeles dates.
+    vi.setSystemTime(new Date("2026-09-30T20:00:00.000Z"));
+    zone.timeZone = "America/Los_Angeles";
+    data.getHubDiscovery.mockResolvedValue(noDiscovery);
+    data.getLearningPaths.mockResolvedValue({ featured: null, paths: [] });
+    data.getWeeklyImprovement.mockResolvedValue({
+      deltas: { accuracy: null, pitch: null, rhythm: null },
+      trend: [{ day: "2026-09-17", score: 50 }, { day: "2026-09-30", score: 90 }],
+    });
+
+    render(await PronunciationPage({}));
+
+    const rail = screen.getByRole("complementary", { name: "Pronunciation progress" });
+    expect(within(rail).getByText("Sep 17: 50", { selector: "li" })).toBeInTheDocument();
+    expect(within(rail).getByText("Sep 30: 90", { selector: "li" })).toBeInTheDocument();
+    const chart = within(rail).getByRole("img", { name: pronunciationCopy.hub.rail.weekly.chartLabel });
+    expect(chart.querySelector("polyline")).toHaveAttribute("points", "0,34 240,13.2");
   });
 
   it("reads a session the database stamped just after this request, across VN midnight, as today, never tomorrow", async () => {

@@ -4,6 +4,8 @@ import { render } from "@/test/render";
 import type { SummaryPageProps } from "./props";
 import { ReviewList } from "./review-list";
 import { SummaryPage } from "./summary-page";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/study-presence", () => ({ StudyPresence: presence }));
 
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
@@ -39,6 +41,10 @@ const PROPS: SummaryPageProps & { locale: "en" } = {
 };
 
 describe("SummaryPage", () => {
+  it("tracks the summary with its video id", () => {
+    render(<SummaryPage {...PROPS} />);
+    expect(presence).toHaveBeenCalledWith(expect.objectContaining({ surface: "summary", contextId: "v-1" }), expect.anything());
+  });
   it("has one h1 (the lesson title) and the deterministic h2s", () => {
     render(<SummaryPage {...PROPS} />);
     expect(screen.getAllByRole("heading", { level: 1 }).map((h) => h.textContent)).toEqual(["Ordering Coffee at a Cozy Café"]);

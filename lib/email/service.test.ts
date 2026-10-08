@@ -10,6 +10,7 @@ const INPUT = {
   variables: {
     tier: "erase_all",
     executeAfter: "2026-08-27T10:00:00.000Z",
+    timeZone: "Asia/Ho_Chi_Minh",
     cancelUrl: "https://app.korume.example/settings/privacy",
   },
 } as const;

@@ -3,7 +3,6 @@
 import { forwardRef, useState } from "react";
 import { useFormatter, useTranslations } from "@/lib/i18n";
 import type { PendingDeletion } from "@/lib/data/account-deletion";
-import { VN_TIME_ZONE } from "@/lib/time/vn-timezone";
 
 /**
  * The state `337:3323` does not draw (spec §2, Amendment C case 4). Built
@@ -128,7 +127,6 @@ export const DeletionPendingBanner = forwardRef<
           {t(`${copy}.body`, {
             date: format.dateTime(new Date(pending.executeAfter), {
               dateStyle: "long",
-              timeZone: VN_TIME_ZONE,
             }),
           })}
         </p>

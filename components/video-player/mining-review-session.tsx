@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import type { MiningQueueItem } from "@/lib/mining-types";
 import { splitSentenceForEmphasis } from "@/lib/mining-format";
 import { MiningClipPlayer } from "./mining-clip-player";
+import { useStudyPresence } from "@/components/study-time/use-study-presence";
 
 /**
  * Anki-style grades mapped to SM-2 quality (0–5) — mirrors
@@ -34,6 +35,7 @@ export interface MiningReviewSessionProps {
  * back is the reading + translation.
  */
 export function MiningReviewSession({ items }: MiningReviewSessionProps) {
+  useStudyPresence({ surface: "srs_review", contextId: "mining" });
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);

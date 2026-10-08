@@ -20,7 +20,7 @@ export function ReviewTomorrowButton({ videoId, reviewTargetTotal }: { videoId: 
       const response = await fetch(`/api/videos/${videoId}/review-tomorrow`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+        body: JSON.stringify({}),
       });
       setState(response.ok ? "scheduled" : "failed");
     } catch {

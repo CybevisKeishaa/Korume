@@ -11,6 +11,8 @@ import {
 import { mockAudioContext, type AudioContextMockHandle } from "@/test/audio-context-mock";
 import { readBlobBytes } from "@/test/blob-utils";
 import { ConversationApp } from "./conversation-app";
+const presence = vi.hoisted(() => vi.fn());
+vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 interface Route {
   match: (url: string, init: RequestInit | undefined) => boolean;
@@ -43,6 +45,10 @@ function methodOf(init?: RequestInit): string {
 }
 
 describe("ConversationApp", () => {
+  it("disables tracking until a conversation session exists", () => {
+    render(<ConversationApp />);
+    expect(presence).toHaveBeenCalledWith({ surface: "conversation", contextId: null, enabled: false });
+  });
   let gum: GetUserMediaMockHandle;
   let mr: MediaRecorderMockHandle;
   let audio: AudioContextMockHandle;

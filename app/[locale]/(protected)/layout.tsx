@@ -1,6 +1,8 @@
 import { redirect } from "@/lib/i18n/navigation";
 import { AmbientProvider } from "@/components/companion/ambient-provider";
 import { PreferencesProvider } from "@/components/providers/preferences-provider";
+import { StudyTimezoneDetector } from "@/components/providers/study-timezone-detector";
+import { getStudyTimezoneOrFallback } from "@/lib/time/study-timezone-fallback";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { hasPublicSupabaseEnv } from "@/lib/env";
 import { getLocale } from "@/lib/i18n/server";
@@ -37,11 +39,13 @@ export default async function ProtectedLayout({
   // (settings spec §4.5). `readPreferences` never throws, so a failed read
   // renders the defaults instead of the session.
   const preferences = (await getMyPreferences()) ?? DEFAULT_PREFERENCES;
+  const studyTimezone = await getStudyTimezoneOrFallback();
 
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: appearanceScript(preferences) }} />
       <PreferencesProvider initial={preferences}>
+        <StudyTimezoneDetector needsDetection={studyTimezone.needsDetection} />
         <AmbientProvider>{children}</AmbientProvider>
       </PreferencesProvider>
     </>

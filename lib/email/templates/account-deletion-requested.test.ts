@@ -7,10 +7,17 @@ const { render } = template;
 const EXECUTE_AFTER = "2026-08-27T10:00:00.000Z";
 const CANCEL_URL = "https://app.korume.example/settings/privacy?ref=email&tab=danger";
 
-const eraseAll = { tier: "erase_all" as const, executeAfter: EXECUTE_AFTER, cancelUrl: CANCEL_URL };
-const closeAccount = { tier: "close_account" as const, executeAfter: EXECUTE_AFTER, cancelUrl: CANCEL_URL };
+const eraseAll = { tier: "erase_all" as const, executeAfter: EXECUTE_AFTER, cancelUrl: CANCEL_URL, timeZone: "Asia/Ho_Chi_Minh" };
+const closeAccount = { tier: "close_account" as const, executeAfter: EXECUTE_AFTER, cancelUrl: CANCEL_URL, timeZone: "Asia/Ho_Chi_Minh" };
 
 describe("account-deletion-requested template", () => {
+  it("formats the same instant on different learner calendar days", () => {
+    const instant = "2026-08-27T03:00:00.000Z";
+    const hcm = render("en", { ...eraseAll, executeAfter: instant, timeZone: "Asia/Ho_Chi_Minh" });
+    const la = render("en", { ...eraseAll, executeAfter: instant, timeZone: "America/Los_Angeles" });
+    expect(hcm.text).toContain("August 27, 2026");
+    expect(la.text).toContain("August 26, 2026");
+  });
   /**
    * Parameterised over BOTH locale and tier (re-review N6): running only
    * `eraseAll` here would leave `close_account`'s own `nothingYet(date)`

@@ -4,6 +4,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 import type { Utf16Span } from "@/lib/analysis/types";
 import type { AnswerV1 } from "./answer";
+import { NATIVE_LANGUAGES } from "@/lib/profile/languages";
+import { PREFERRED_PRACTICES } from "@/lib/profile/practices";
+import type { LearnerProfileContext } from "./prompts";
 import type { GroundedEntity } from "./types";
 
 type Supabase = ReturnType<typeof createClient>;
@@ -72,6 +75,8 @@ export interface KorumeStore {
   insertUserMessage(sessionId: string, turnId: string, text: string): Promise<"created" | "exists">;
   /** Of these video ids, the ones the learner can still read (RLS) — a lesson link points only there. */
   readableVideoIds(supabase: Supabase, ids: string[]): Promise<Set<string>>;
+  /** The caller's own profile fields for the answer prompt (RLS: own row); null when nothing is set. */
+  readLearnerProfile(supabase: Supabase, userId: string): Promise<LearnerProfileContext | null>;
   /** `korume_complete_turn`: the answer, its grounding, the settle, the title and `updated_at` in ONE transaction. */
   completeTurn(args: CompleteTurnArgs): Promise<{ messageId: string; charged: boolean }>;
 }
@@ -186,6 +191,20 @@ export const sqlKorumeStore: KorumeStore = {
       return (data ?? []) as { id: string }[];
     });
     return new Set(rows.map((r) => r.id));
+  },
+
+  async readLearnerProfile(supabase, userId) {
+    const { data, error } = await supabase.from("users")
+      .select("native_language, target_jlpt_level, learning_goal, preferred_practices").eq("id", userId).maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    const profile: LearnerProfileContext = {
+      nativeLanguage: NATIVE_LANGUAGES.find((l) => l === data.native_language) ?? null, targetJlptLevel: data.target_jlpt_level ?? null,
+      learningGoal: data.learning_goal?.trim() || null, // The DB only caps the count (R8: codes are app-validated), so an unknown or huge value never reaches the prompt.
+      preferredPractices: (data.preferred_practices ?? []).filter((p: string) => (PREFERRED_PRACTICES as readonly string[]).includes(p)),
+    };
+    const empty = !profile.nativeLanguage && !profile.targetJlptLevel && !profile.learningGoal && profile.preferredPractices.length === 0;
+    return empty ? null : profile;
   },
 
   async completeTurn(args) {

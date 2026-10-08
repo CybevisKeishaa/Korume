@@ -11,6 +11,7 @@ vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/account-deletion/erase", () => ({ cancelPendingDeletion: vi.fn().mockResolvedValue(false) }));
 vi.mock("next/headers", () => ({ headers: vi.fn(() => new Headers({ origin: "https://app.korume.example" })) }));
 vi.mock("@/lib/email", () => ({ sendEmail: vi.fn().mockResolvedValue({ status: "sent", id: "email1", provider: "console" }) }));
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezone: vi.fn().mockResolvedValue({ timeZone: "Asia/Ho_Chi_Minh", needsDetection: false }) }));
 
 const NOW = new Date("2026-08-20T10:00:00.000Z");
 const VALID = { tier: "erase_all", confirmation: "DELETE", acknowledged: true, locale: "en" } as const;
@@ -212,6 +213,7 @@ describe("requestDeletion", () => {
       variables: {
         tier: "erase_all",
         executeAfter: "2026-08-27T10:00:00.000Z",
+        timeZone: "Asia/Ho_Chi_Minh",
         cancelUrl: "https://app.korume.example/en/settings/privacy",
       },
     });

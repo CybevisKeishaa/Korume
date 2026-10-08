@@ -297,3 +297,52 @@ describe("listJlptAttempts", () => {
     expect(result.data).toEqual([{ id: "attempt-1", test_id: TEST_ID, score: 80 }]);
   });
 });
+
+describe("submitJlptTest passed_at (first-transition timestamp)", () => {
+  const SECTIONS = ["vocab", "grammar", "reading", "listening"] as const;
+  const ids = SECTIONS.map((_, i) => `a0000000-0000-0000-0002-00000000000${i + 1}`);
+
+  async function submit(mode: "full" | "section", rightAnswers: boolean) {
+    let insertedRow: Record<string, unknown> = {};
+    mockClient({
+      certification_tests: () => ({ data: { id: TEST_ID, level: "N5" }, error: null }),
+      user_test_attempts: (calls: QueryCall[]) => {
+        const insertCall = calls.find((c): c is Extract<QueryCall, { op: "insert" }> => c.op === "insert");
+        insertedRow = (insertCall?.values ?? {}) as Record<string, unknown>;
+        return { data: { id: "attempt-p" }, error: null };
+      },
+    }, { id: "u-passed" }); // own user: the 429 test above saturates u1's rate-limit key
+    mockService({
+      certification_questions: () => ({
+        data: SECTIONS.map((section, i) => ({
+          id: ids[i], section, question_type: "kanji-reading", correct_answer: "0", explanation: null, order_index: i,
+        })),
+        error: null,
+      }),
+    });
+    const answers: Record<string, "0" | "1"> = Object.fromEntries(ids.map((id) => [id, rightAnswers ? "0" : "1"]));
+    const input: JlptSubmitInput = mode === "full" ? { answers, mode } : { answers, mode, section: "vocab" };
+    const result = await submitJlptTest(TEST_ID, input);
+    expect(result.ok).toBe(true);
+    return { row: insertedRow, result };
+  }
+
+  it("stamps passed_at with the same instant as completed_at on a passing full attempt", async () => {
+    const { row, result } = await submit("full", true);
+    expect(result.ok && result.data.result.passed).toBe(true);
+    expect(row.passed_at).toBe(row.completed_at);
+    expect(typeof row.passed_at).toBe("string");
+  });
+
+  it("inserts passed_at null for a failing full attempt", async () => {
+    const { row, result } = await submit("full", false);
+    expect(result.ok && result.data.result.passed).toBe(false);
+    expect(row.passed_at).toBeNull();
+  });
+
+  it("inserts passed_at null for a section-mode attempt", async () => {
+    const { row } = await submit("section", true);
+    expect(row.passed_at).toBeNull();
+    expect(typeof row.completed_at).toBe("string");
+  });
+});

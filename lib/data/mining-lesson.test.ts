@@ -4,6 +4,7 @@ import { assertPlainSerializableDto } from "@/test/dto";
 import { createClient } from "@/lib/supabase/server";
 import { listMyMiningCardsForVideo } from "./mining";
 
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezoneFor: vi.fn().mockResolvedValue("Asia/Ho_Chi_Minh") }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
 const VIDEO_ID = "c0000000-0000-0000-0000-000000000001";

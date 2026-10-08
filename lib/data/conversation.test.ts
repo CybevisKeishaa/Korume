@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 
+vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezoneFor: vi.fn().mockResolvedValue("Asia/Ho_Chi_Minh") }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 // Partial mock: only the two calls postConversationMessage makes into the AI
 // port are stubbed (isAiEnabled gates entry; conversationReply produces the

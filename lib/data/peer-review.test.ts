@@ -118,9 +118,17 @@ describe("listQueue", () => {
       },
       peer_reviews: () => ({ data: [{ share_id: SHARE_ID, reviewer_id: USER.id }], error: null }),
     });
-    mockService({ users: () => ({ data: [{ id: OTHER.id, name: "Bob", avatar_url: null }], error: null }) });
+    let selectedColumns = "";
+    mockService({
+      users: (calls: QueryCall[]) => {
+        selectedColumns = calls.find((c): c is Extract<QueryCall, { op: "select" }> => c.op === "select")?.columns ?? "";
+        return { data: [{ id: OTHER.id, name: "Bob", avatar_url: null }], error: null };
+      },
+    });
 
     const result = await listQueue({ limit: 1 });
+    // P5: community JSON stays on the OAuth picture; avatar_path (the private upload) is never read here.
+    expect(selectedColumns).toBe("id, name, avatar_url");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.shares[0]).toEqual({

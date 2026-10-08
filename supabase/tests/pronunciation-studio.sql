@@ -72,14 +72,23 @@ begin
   if pronunciation_speaking_seconds('2026-09-20 16:00:00+00', '2026-09-20 18:00:00+00') <> 30 then
     raise exception 'FAIL speaking seconds: caller lines or null end_time were counted incorrectly';
   end if;
-  if (select count(*) from pronunciation_daily_means('2026-09-20 16:00:00+00', '2026-09-20 18:00:00+00')) <> 2 then
+  if (select count(*) from pronunciation_daily_means('2026-09-20 16:00:00+00', '2026-09-20 18:00:00+00', 'Asia/Ho_Chi_Minh')) <> 2 then
     raise exception 'FAIL daily means: VN midnight did not split the two sessions';
   end if;
-  if (select pronunciation_score from pronunciation_recent_practice(2) where video_id = (select id from public.videos where youtube_video_id = 'jlptgate-pron-one')) <> 80 then
+  -- The same two sessions (16:30Z, 17:30Z) are one Los Angeles day.
+  if (select count(*) from pronunciation_daily_means('2026-09-20 16:00:00+00', '2026-09-20 18:00:00+00', 'America/Los_Angeles')) <> 1 then
+    raise exception 'FAIL daily means: p_tz did not move the day boundary';
+  end if;
+  if (select pronunciation_score from pronunciation_recent_practice(2, 'Asia/Ho_Chi_Minh') where video_id = (select id from public.videos where youtube_video_id = 'jlptgate-pron-one')) <> 80 then
     raise exception 'FAIL recent practice: score is not limited to the last VN day';
   end if;
+  -- The score window is the study-zone day of the last practice: A's pron-one sessions (70 at 16:30Z, 80 at 17:30Z)
+  -- share one Los Angeles day, so the mean is 75, not VN's 80.
+  if (select pronunciation_score from pronunciation_recent_practice(2, 'America/Los_Angeles') where video_id = (select id from public.videos where youtube_video_id = 'jlptgate-pron-one')) <> 75 then
+    raise exception 'FAIL recent practice: p_tz did not move the day window';
+  end if;
   -- The function's own row order, not one re-sorted here.
-  if (select array_agg(rp.video_id order by rp.ord) from pronunciation_recent_practice(2) with ordinality as rp(video_id, practiced_at, pronunciation_score, ord)) is distinct from array[
+  if (select array_agg(rp.video_id order by rp.ord) from pronunciation_recent_practice(2, 'Asia/Ho_Chi_Minh') with ordinality as rp(video_id, practiced_at, pronunciation_score, ord)) is distinct from array[
     (select id from public.videos where youtube_video_id = 'jlptgate-pron-two'),
     (select id from public.videos where youtube_video_id = 'jlptgate-pron-one')
   ] then
@@ -125,14 +134,14 @@ exception when insufficient_privilege then
 end $$;
 do $$
 begin
-  perform pronunciation_daily_means(now() - interval '1 day', now());
+  perform pronunciation_daily_means(now() - interval '1 day', now(), 'Asia/Ho_Chi_Minh');
   raise exception 'FAIL grant: anon can call pronunciation_daily_means()';
 exception when insufficient_privilege then
   raise notice 'PASS grant: anon is denied daily means';
 end $$;
 do $$
 begin
-  perform pronunciation_recent_practice(3);
+  perform pronunciation_recent_practice(3, 'Asia/Ho_Chi_Minh');
   raise exception 'FAIL grant: anon can call pronunciation_recent_practice()';
 exception when insufficient_privilege then
   raise notice 'PASS grant: anon is denied recent practice';

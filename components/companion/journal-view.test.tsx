@@ -111,15 +111,13 @@ describe("JournalView (spec §5 — a keepsake, never a log)", () => {
     expect(screen.queryByRole("link", { name: /return to this moment/i })).toBeNull();
   });
 
-  it("dates every memory in VN time, not in whatever zone the renderer happens to sit in", () => {
+  it("dates a memory in the learner's study timezone", () => {
     // 2026-07-24T18:00Z is already 2026-07-25 in Asia/Ho_Chi_Minh (UTC+7).
-    // Without an explicit zone next-intl falls back to the ENVIRONMENT's — the
-    // server's on first paint, the browser's after hydration — so the same
-    // instant could render as two different days. This also keeps the Journal
-    // consistent with the streak card, which is VN-local by construction
-    // (`vnDateString`, lib/gamification/streak.ts).
-    render(<JournalView memories={[memory({ occurredAt: "2026-07-24T18:00:00Z" })]} />);
+    // The request formatter supplies the zone on both server and client.
+    render(<JournalView memories={[memory({ occurredAt: "2026-07-24T18:00:00Z" })]} />, { timeZone: "Asia/Ho_Chi_Minh" });
     expect(screen.getByText("July 25, 2026")).toBeInTheDocument();
+    render(<JournalView memories={[memory({ id: "m2", occurredAt: "2026-07-24T18:00:00Z" })]} />, { timeZone: "America/Los_Angeles" });
+    expect(screen.getByText("July 24, 2026")).toBeInTheDocument();
   });
 
   it("empty journal looks forward, never apologizes (D9)", () => {

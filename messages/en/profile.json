@@ -1,17 +1,203 @@
 {
   "page": {
-    "heading": "Profile",
-    "accountHeading": "Account",
-    "emailLabel": "Email:",
-    "emailFallback": "—",
-    "statsHeading": "Stats",
-    "levelLabel": "Level",
-    "xpLabel": "XP",
-    "currentStreakLabel": "Current streak",
-    "longestStreakLabel": "Longest streak",
-    "streakDays": "{count} days",
-    "badgesEarnedLabel": "Badges earned",
-    "badgesCount": "{earned} / {total}",
-    "viewDashboard": "View full dashboard"
+    "eyebrow": "Personal archive",
+    "title": "Your learning identity",
+    "since": "Korume · since {month}"
+  },
+  "identity": {
+    "country": "Country",
+    "timeZone": "Timezone",
+    "learningSince": "Learning with Korume since {month}",
+    "jlptGoal": "JLPT goal",
+    "nativeLanguage": "Native language",
+    "interface": "Current interface",
+    "subtitle": "Current subtitle",
+    "subtitleValue": "{translation, select, hidden {Japanese} other {Japanese + translation}}{furigana, select, hidden {} other { + furigana}}",
+    "edit": "Edit profile",
+    "avatarAlt": "{name}'s photo",
+    "changePhoto": "Change photo"
+  },
+  "stats": {
+    "title": "Quick stats",
+    "streak": "Study streak",
+    "streakValue": "{count, plural, one {{count} day} other {{count} days}}",
+    "level": "Current level",
+    "levelValue": "Lv. {level}",
+    "xp": "Total XP",
+    "videoLessons": "Video lessons completed",
+    "words": "Words learned",
+    "hours": "Hours studied",
+    "hoursValue": "{hours}h {minutes}m",
+    "hoursInfo": "About hours studied",
+    "trackedSince": "Tracked by Korume since {date}",
+    "trackingStarts": "Tracking starts with your next study session"
+  },
+  "journey": {
+    "eyebrow": "Learning journey",
+    "title": "The road you have made",
+    "empty": "Your road starts with a first lesson.",
+    "emptyCta": "Start a shadowing lesson",
+    "kind": {
+      "first_activity": "Started learning",
+      "first_video_completed": "Finished a first video lesson",
+      "first_mastered_word": "Mastered a first word",
+      "first_certification_passed": "Passed a first certification",
+      "badge_earned": "Earned a badge",
+      "first_meeting": "Met Korume",
+      "first_shadow": "Shadowed a first line",
+      "jlpt_passed": "Passed a JLPT level",
+      "pinned_line": "Pinned a line"
+    },
+    "line": {
+      "first_activity": "The first page of a new language.",
+      "first_video_completed": "{hasLabel, select, yes {{label}, watched to the end.} other {Watched all the way to the end.}}",
+      "first_mastered_word": "{hasLabel, select, yes {{label} is yours now.} other {A word you can now call your own.}}",
+      "first_certification_passed": "{hasLabel, select, yes {{label}, passed.} other {A milestone you earned.}}",
+      "badge_earned": "{hasLabel, select, yes {{label}.} other {A small mark of progress.}}",
+      "first_meeting": "The first conversation, and the start of a habit.",
+      "first_shadow": "{hasLabel, select, yes {{label}, said aloud after the voice.} other {Your voice began to find its rhythm.}}",
+      "jlpt_passed": "{hasLabel, select, yes {{label}, passed.} other {A foundation you built line by line.}}",
+      "pinned_line": "{hasLabel, select, yes {“{label}”} other {A line you chose to keep.}}"
+    },
+    "more": "Show {count} more",
+    "less": "Show less"
+  },
+  "favorite": {
+    "title": "Favorite learning content",
+    "source": {
+      "youtube": "YouTube",
+      "nhk": "NHK",
+      "podcast": "Podcasts",
+      "drama": "Drama",
+      "anime": "Anime",
+      "vlog": "Vlogs",
+      "news": "News"
+    },
+    "empty": "Your favorites appear once you have studied a few lessons."
+  },
+  "goal": {
+    "eyebrow": "Personal goal",
+    "caption": "A thought you wrote for your future self",
+    "empty": "Write a goal for your future self.",
+    "emptyCta": "Add a goal"
+  },
+  "korume": {
+    "eyebrow": "Korume",
+    "title": "Korumeship",
+    "together": "{months, plural, one {We've been walking together for a month.} other {We've been walking together for {months} months.}}",
+    "fresh": "Korume is here with you.",
+    "open": "Open Korume"
+  },
+  "memory": {
+    "eyebrow": "Today's memory",
+    "caption": "You practised this line until it started to feel like your own.",
+    "open": "Open journal"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "empty": "Badges you earn will appear here."
+  },
+  "edit": {
+    "eyebrow": "Profile identity",
+    "title": "Shape your learning identity",
+    "hint": "Changes appear in your profile preview.",
+    "previewEyebrow": "Live profile preview",
+    "formEyebrow": "Edit profile",
+    "formTitle": "Make this space yours",
+    "sections": {
+      "basic": "Basic information",
+      "preferences": "Learning preferences",
+      "korume": "Korume"
+    },
+    "fields": {
+      "displayName": "Display name",
+      "username": "Username",
+      "bio": "Bio",
+      "country": "Country",
+      "timeZone": "Timezone",
+      "nativeLanguage": "Native language",
+      "targetJlpt": "Target JLPT",
+      "dailyGoal": "Daily goal",
+      "learningGoal": "Learning goal",
+      "interfaceLanguage": "Interface language",
+      "subtitleStyle": "Subtitle style",
+      "defaultFurigana": "Default furigana",
+      "preferredPractice": "Preferred practice",
+      "showKorume": "Show Korume"
+    },
+    "hints": {
+      "username": "3 to 20 letters, numbers or underscores.",
+      "timeZone": "Choose from the list or type a zone such as Asia/Tokyo."
+    },
+    "notSet": "Not set",
+    "dailyMinutes": "{minutes} minutes",
+    "subtitle": {
+      "hidden": "Japanese",
+      "reveal": "Japanese, translation on tap",
+      "always": "Japanese + translation"
+    },
+    "furigana": {
+      "always": "Always on",
+      "adaptive": "Adaptive",
+      "hidden": "Off"
+    },
+    "practice": {
+      "shadowing": "Shadowing",
+      "listening": "Listening",
+      "pronunciation": "Pronunciation",
+      "vocabulary": "Vocabulary",
+      "kanji": "Kanji",
+      "grammar": "Grammar",
+      "reading": "Reading",
+      "conversation": "Conversation"
+    },
+    "errors": {
+      "format": "Use 3 to 20 lowercase letters, numbers or underscores.",
+      "reserved": "That name is reserved. Try another.",
+      "taken": "That username is taken.",
+      "too_long": "That is too long.",
+      "country": "Choose a country from the list.",
+      "time_zone": "That is not a timezone we recognise.",
+      "required": "This field is required.",
+      "invalid": "Check this field."
+    },
+    "username": {
+      "checking": "Checking…",
+      "available": "Available"
+    },
+    "avatar": {
+      "label": "Profile photo",
+      "change": "Change photo",
+      "remove": "Remove uploaded photo",
+      "errors": {
+        "type": "Use a JPEG, PNG or WebP photo.",
+        "size": "That photo is over 2 MB.",
+        "corrupt": "We could not process that photo. It may be damaged or too large. Try another."
+      },
+      "undo": "Keep current photo"
+    },
+    "currentKorume": {
+      "eyebrow": "Current Korume",
+      "title": "Korume",
+      "body": "A quiet friend who keeps the small moments safe."
+    },
+    "relationship": {
+      "eyebrow": "Relationship",
+      "title": "Korumeship"
+    },
+    "korumeFooter": "Korume will use these choices to support you better.",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "saveFailed": "We could not save your profile. Please try again.",
+    "rateLimited": "Too many saves. Wait a moment and try again.",
+    "dirty": {
+      "title": "Leave without saving?",
+      "body": "Your changes to this profile have not been saved.",
+      "stay": "Keep editing",
+      "leave": "Leave",
+      "close": "Close dialog"
+    },
+    "signedOut": "Your session has ended. Sign in again to save your profile."
   }
 }
