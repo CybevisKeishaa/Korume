@@ -1,0 +1,1 @@
+-- port-dashboard (spec 2026-10-08). New objects only; changed objects are edited in their defining migrations.

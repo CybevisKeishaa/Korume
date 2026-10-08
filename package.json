@@ -23,6 +23,7 @@
     "verify:db:erasure": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-erasure-gate.ps1",
     "verify:db:korume": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-korume-gate.ps1",
     "verify:db:profile": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-profile-gate.ps1",
+    "verify:db:dashboard": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-dashboard-gate.ps1",
     "verify:db:summary": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-lesson-summary-gate.ps1",
     "dict:import": "vite-node --config vitest.config.ts scripts/import-dictionaries.ts --",
     "dict:gc": "vite-node --config vitest.config.ts scripts/dictionary-gc.ts --",

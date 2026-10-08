@@ -276,6 +276,7 @@ create table user_video_progress (
   video_id uuid not null references videos (id) on delete cascade,
   last_watched_position numeric(10, 3) not null default 0,
   completed_at timestamptz,
+  first_completed_at timestamptz,
   -- When the learner last moved this row; maintained by the trigger below.
   -- Nullable: a row with no known time is never given a fabricated one.
   last_watched_at timestamptz,
@@ -297,6 +298,23 @@ $$;
 create trigger user_video_progress_set_last_watched_at
   before insert or update on user_video_progress
   for each row execute function set_user_video_progress_last_watched_at();
+
+-- port-dashboard S7: the FIRST completion, stamped by the server clock. completed_at is overwritten on every
+-- completion and is client-writable through RLS, so this column ignores any client value (plan P8).
+create function keep_first_completed_at() returns trigger language plpgsql set search_path = public as $$
+begin
+  if tg_op = 'UPDATE' and old.first_completed_at is not null then
+    new.first_completed_at := old.first_completed_at;
+  elsif (tg_op = 'INSERT' and new.completed_at is not null)
+    or (tg_op = 'UPDATE' and old.completed_at is null and new.completed_at is not null) then
+    new.first_completed_at := now();
+  else
+    new.first_completed_at := null;
+  end if;
+  return new;
+end $$;
+create trigger user_video_progress_first_completed before insert or update on user_video_progress
+  for each row execute function keep_first_completed_at();
 
 create table user_playlists (
   id uuid primary key default gen_random_uuid(),
