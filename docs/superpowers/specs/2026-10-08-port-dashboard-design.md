@@ -1,8 +1,10 @@
 # Port Dashboard — design
 
-- **Status:** design approved section by section by the owner on 2026-10-08 (rulings D1–D12, schema S1–S6,
+- **Status:** design approved section by section by the owner on 2026-10-08 (rulings D1–D12, schema S1–S7,
   mission engine M1–M5, curriculum C1–C5, layout L1–L5, states/tests/gates E1–E4, each with the owner's
-  amendments folded in). **Awaiting owner review of this written spec** before `writing-plans`.
+  amendments folded in). Written-spec review 2026-10-08: five corrections (M2 access hints + practice lesson rule,
+  S7 `first_completed_at`, positive-only weekly cue, curriculum-query test, "up to three" levels) applied; **approved
+  by the owner** for `writing-plans`.
 - **Branch:** `port-dashboard`, worktree `.worktrees/port-dashboard`, base `master` at **`b89f49d`**.
 - **Frame:** Dashboard `111:515` (named "Homepage" in Figma) — file `IwFHZDZdHW7qsSFiNbWrkd`
   (`figma.com/design/IwFHZDZdHW7qsSFiNbWrkd/Korume?node-id=111-515`). Route `/dashboard`.
@@ -82,7 +84,7 @@ Viewport normalization applies: reflow, never shrink (Claude memory `port-viewpo
 
 ---
 
-## 2. Data and schema (S1–S6)
+## 2. Data and schema (S1–S7)
 
 New objects go in one new migration `supabase/migrations/20261008000045_port_dashboard.sql`. Changed objects are
 edited in their defining migration (`AGENTS.md` §6; resetability gate §11.3). Every aggregate is SQL — never read
@@ -183,6 +185,13 @@ RLS: a learner selects only rows of their own missions; writes are service-only.
 instrumentation boundary of `learning_outcomes`, not anyone's first activity. Activity history uses
 `greatest(users.created_at, learning_outcomes_instrumented_since())`.
 
+### S7 — First lesson completion
+
+`user_video_progress.first_completed_at timestamptz` — set on the first transition to completed, never overwritten
+(trigger guard on the `keep_first_mastered_at()` pattern), never reset, no backfill. `completed_at` keeps its current
+overwrite behaviour for compatibility. `finish_lesson` progress reads `first_completed_at` (M3), so a later
+re-completion can never move an old cycle's evidence out of its window.
+
 ---
 
 ## 3. Mission engine (M1–M5)
@@ -211,10 +220,15 @@ The UI never claims a mission was missed; nothing reconstructs a past due snapsh
 
 Two layers:
 
-- **TS `buildMissionCandidates(userClient)`** reads through RLS (so only lessons the learner can open) and returns
-  ranked **hints**: the D5 lesson as `finish_lesson`, and practice candidates (`shadow_lines`, `dictation_lines`)
-  ranked by **14-day activity share descending → recency → fixed `shadow_lines`, `dictation_lines`**. Ranking is a
-  pure function with unit tests.
+- **TS `buildMissionCandidates(userClient)`** returns ranked **hints only — never an authority on access.**
+  `videos_read` exposes PLUS metadata to everyone (§0.3), so reading through RLS does not prove a lesson can be
+  opened; SQL revalidates every hint with `can_open_lesson()` (step 5). Hints: the D5 lesson as `finish_lesson`, and
+  practice types (`shadow_lines`, `dictation_lines`) ranked by **14-day activity share descending → recency → fixed
+  `shadow_lines`, `dictation_lines`**. Ranking is a pure function with unit tests.
+- **Practice lesson choice (deterministic).** For each practice type: the D5 current incomplete lesson if it has
+  transcript lines; otherwise the most recently practised lesson **of that same modality** within the 14-day window
+  that is still openable; otherwise **no candidate** for that type. Never a random or recommended lesson to fill a
+  slot — one or two real missions beat three invented ones (D1).
 - **SQL `ensure_daily_mission(p_user uuid, p_candidates jsonb)`** — `SECURITY DEFINER`, executable by
   `service_role` only (denied to `anon` and `authenticated`, so a learner cannot inject easy missions). Under
   `pg_advisory_xact_lock(hashtext('xp:' || p_user))` — the **same** lock as XP awards — it:
@@ -238,7 +252,7 @@ Two layers:
 - `review`, `shadow_lines`, `dictation_lines`: distinct `learning_outcomes.item_key` present in
   `daily_mission_eligible` for that item (a card reviewed twice counts once; a card outside the frozen set never
   counts).
-- `finish_lesson`: the frozen `video_id` has `completed_at` in the range. The display bar shows playback % (D5);
+- `finish_lesson`: the frozen `video_id` has `first_completed_at` (S7) in the range. The display bar shows playback % (D5);
   completion is the boolean.
 
 ### M4 — Claim
@@ -268,8 +282,6 @@ inside the window. After an award, XP-badge evaluation and the level-up notifica
 | Timezone change mid-cycle | the active cycle is found by instant and lives to its pinned `window_end` |
 | Event exactly at `window_end` | belongs to the next cycle (`[start, end)`) |
 
-Known debt (recorded, not fixed): because `completed_at` is overwritten, re-completing a lesson after an old cycle's
-window makes that old cycle's `finish_lesson` look regressed; the reward is unaffected.
 
 ---
 
@@ -333,7 +345,7 @@ Three nodes, a window over real levels only:
 | N3 | N4 N3 N2 |
 | N2 | N3 N2 N1 |
 | N1 | N3 N2 N1 |
-| all completed | the three highest levels that have curriculum; no invented "next" |
+| all completed | up to three of the highest levels that have curriculum; no invented "next" |
 
 Unavailable nodes read "Đang biên soạn". Next milestone block = the real lesson title + "còn N bài" (core,
 incomplete, Current level). No "View Roadmap" link. Every level Unavailable → the whole card reads "Lộ trình JLPT
@@ -373,8 +385,8 @@ incomplete, Current level). No "View Roadmap" link. Every level Unavailable → 
 |---|---|---|---|
 | `review` | `min(20, eligible due items)` over Mining + Kanji | distinct eligible items reviewed | Review smart entry (§5.10) |
 | `finish_lesson` | the D5 lesson | completed in the window; bar shows playback % | `/shadowing/[id]` |
-| `shadow_lines` | `min(3, valid lines)` of a frozen lesson | distinct frozen line ids shadowed | the lesson workspace |
-| `dictation_lines` | `min(5, valid lines)` of a frozen lesson | distinct frozen line ids dictated | the lesson's dictation |
+| `shadow_lines` | `min(3, valid lines)` of the lesson chosen by the M2 practice rule | distinct frozen line ids shadowed | the lesson workspace |
+| `dictation_lines` | `min(5, valid lines)` of the lesson chosen by the M2 practice rule | distinct frozen line ids dictated | the lesson's dictation |
 
 Heading **"Three small promises"** only when the cycle has exactly three items; one or two items use **"Today's
 missions"**. Reward row: `+50 XP`; once `rewarded_at` is set it reads "+50 XP earned" — `rewarded_at`, not
@@ -388,7 +400,8 @@ mission in V1 (D11 audit); owner note: the conversation outcome should require a
   resolver** in `lib/companion/`; the copy catalog lives with the resolver, not in the card. No `entering_dashboard`
   context is added.
 - V1 priority: `mission_completed_today` → `weekly_improvement` (both windows have evidence and
-  `|delta| >= 5` points) → `weakest_actionable_skill`. No `streak_at_risk`.
+  a **positive** `delta >= +5` points) → `weakest_actionable_skill`. A decline is never a `weekly_improvement` cue;
+  reacting to declines would be a separate cue type with its own copy, not in V1. No `streak_at_risk`.
 - The same facts always yield the same cue; the cue changes only on a meaningful state transition (e.g. the mission
   completes).
 - Nothing worth saying → Korume present, silent: no bubble, no CTA.
@@ -536,7 +549,8 @@ Every invariant gets at least one **mutation** proving the test can fail.
 **Unit (vitest):** candidate ranking; window computation (DST, timezone change); `masteryTransition`; badge progress
 projection and the unreachable-target rule; cue resolver priority, determinism and significance threshold; daypart
 table; 56-date heatmap and 10 weekly windows with their boundaries; Journey window clamp table; manifest validation;
-`listCollections` never returns curriculum; per-card state rendering; RSC props are structured-cloneable;
+browsable/existing collection callers (`listBrowsableCollections()`, `shadowing-explore`) exclude curriculum while
+an explicit `kind: 'curriculum'` query does return it; per-card state rendering; RSC props are structured-cloneable;
 **mission-engine failure never fails** an SRS, mining, shadowing, dictation or video write.
 
 **Data-layer integration (pre-write snapshot):** the first due card reviewed is in the frozen set although its
@@ -553,6 +567,7 @@ port-dashboard.sql`, reusing the `xp-race` harness):
 - toggling a subscription never changes the Journey; transcript RLS behaves exactly as before the helper refactor;
 - sync is atomic (a mid-way failure writes nothing), idempotent and authoritative; PRIVATE is rejected; an empty
   manifest removes every managed membership — run in isolation, rolled back or followed by a reset (§11);
+- re-completing a lesson never changes `first_completed_at`, and an old cycle's `finish_lesson` stays complete;
 - `newly_mastered_count` takes `min` before filtering; `current_mastered_count` dedupes across sources;
 - **`anon` and `authenticated` both lack EXECUTE** on every service-only RPC (`ensure_daily_mission`,
   `claim_daily_mission`, `sync_curriculum_manifest`); invoker reads never return another learner's rows.
@@ -576,7 +591,7 @@ revisited by the content work item once real data exists — never silently tune
 | Mission reward | 50 XP | below the XP of the activities themselves (owner) |
 | Weakness minimum evidence | 3 scored attempts per family | one or two attempts are noise |
 | Weekly delta evidence | ≥ 3 scored attempts in each of W0 and W1 | same floor as Weakness |
-| Weekly significance (Korume cue) | `|delta| >= 5` points, evidence floor met | +1 is not worth coaching |
+| Weekly significance (Korume cue) | `delta >= +5` points (improvement only), evidence floor met | +1 is not worth coaching |
 | Heatmap thresholds | 1–4 · 5–14 · 15–29 · ≥ 30 outcomes | fixed so colours compare across time |
 | Daypart bounds | 05 / 12 / 17 / 21 | §5.1 |
 
@@ -611,7 +626,6 @@ revisited by the content work item once real data exists — never silently tune
 | Roadmap, Weekly Report, Weakness Explorer pages | their own screens |
 | Conversation mission | after the conversation outcome requires a minimum of learner turns (owner note) |
 | Grammar in Weakness Snapshot | after a real grammar-mastery writer exists |
-| First-transition lesson completion timestamp | when anything needs "first completed at" |
 | `hundred_kanji` unreachable | badge/content review |
 | N5/N4 curriculum curation | content work item: import real lessons → export candidates → owner orders → manifest diff review → sync |
 | Mock-test placement / skip | its own designed capability |
