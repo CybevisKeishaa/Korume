@@ -802,27 +802,35 @@ begin
   raise notice 'PASS profile avatars bucket is private with its limits';
 end $$;
 
--- 5.2 A writes each profile column within its limit, and reads its own avatar object (positive controls)
+-- 5.2 PostgreSQL seeds the boundary values; authenticated cannot bypass save_profile for any Edit Profile column.
+update users set username = 'keishaa', bio = repeat('b', 160), country = 'VN', native_language = 'vi',
+  target_jlpt_level = 'N3', learning_goal = repeat('g', 200),
+  preferred_practices = array['kanji','grammar','reading','vocabulary','shadowing','listening','pronunciation','conversation']
+  where id = current_setting('gate.a')::uuid;
 begin;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
 set local role authenticated;
 do $$
+declare column_name text; caught boolean;
 begin
   if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 5.2 claims for A: %', auth.uid(); end if;
-  update users set username = 'keishaa', bio = repeat('b', 160), country = 'VN', native_language = 'vi',
-    target_jlpt_level = 'N3', learning_goal = repeat('g', 200),
-    preferred_practices = array['kanji','grammar','reading','vocabulary','shadowing','listening','pronunciation','conversation']
-    where id = auth.uid();
+  foreach column_name in array array['username', 'bio', 'country', 'native_language', 'target_jlpt_level', 'learning_goal', 'preferred_practices'] loop
+    caught := false;
+    begin
+      execute format('update users set %I = %I where id = auth.uid()', column_name, column_name);
+    exception when insufficient_privilege then caught := true; end;
+    if not caught then raise exception 'FAIL profile 5.2 authenticated can update %', column_name; end if;
+  end loop;
   if not exists (select 1 from users where id = auth.uid() and username = 'keishaa' and char_length(bio) = 160
       and country = 'VN' and native_language = 'vi' and target_jlpt_level = 'N3' and char_length(learning_goal) = 200
       and cardinality(preferred_practices) = 8) then
-    raise exception 'FAIL profile 5.2 A cannot update its own profile columns';
+    raise exception 'FAIL profile 5.2 seeded boundary values did not persist';
   end if;
   if (select count(*) from storage.objects where bucket_id = 'avatars') <> 1
     or not exists (select 1 from storage.objects where bucket_id = 'avatars' and name = current_setting('gate.a') || '/avatar.webp') then
     raise exception 'FAIL profile 5.2 A must read exactly its own avatar object';
   end if;
-  raise notice 'PASS profile A updates its columns and reads only its own avatar (positive controls)';
+  raise notice 'PASS profile authenticated cannot update seven Edit Profile columns and reads only its own avatar';
 end $$;
 commit;
 
@@ -847,7 +855,7 @@ begin
 end $$;
 commit;
 
--- 5.3 check constraints, server-only column, immutable timestamps
+-- 5.3 server-only column and immutable timestamps
 begin;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.a'), 'role', 'authenticated')::text, true);
 set local role authenticated;
@@ -855,18 +863,6 @@ do $$
 declare caught text;
 begin
   if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 5.3 claims for A: %', auth.uid(); end if;
-  caught := null;
-  begin update users set username = 'Keishaa' where id = auth.uid(); exception when check_violation then caught := 'ok'; end;
-  if caught is null then raise exception 'FAIL profile 5.3 uppercase username accepted'; end if;
-  caught := null;
-  begin update users set bio = repeat('b', 161) where id = auth.uid(); exception when check_violation then caught := 'ok'; end;
-  if caught is null then raise exception 'FAIL profile 5.3 161-char bio accepted'; end if;
-  caught := null;
-  begin update users set preferred_practices = array_fill('kanji'::text, array[9]) where id = auth.uid(); exception when check_violation then caught := 'ok'; end;
-  if caught is null then raise exception 'FAIL profile 5.3 nine practices accepted'; end if;
-  -- positive control: bio is still writable by the same role
-  update users set bio = 'still writable' where id = auth.uid();
-  if (select bio from users where id = auth.uid()) <> 'still writable' then raise exception 'FAIL profile 5.3 A cannot update bio'; end if;
   caught := null;
   begin update users set avatar_path = current_setting('gate.a') || '/avatar.webp' where id = auth.uid(); exception when insufficient_privilege then caught := 'ok'; end;
   if caught is null then raise exception 'FAIL profile 5.3 avatar_path is client-writable'; end if;
@@ -883,11 +879,32 @@ begin
   if (select mastered_at from user_vocab_progress where vocab_id = '00000000-0000-0000-0000-0000000000a1') is distinct from '2026-09-01 10:00Z'::timestamptz then
     raise exception 'FAIL profile 5.3 mastered_at was reset';
   end if;
-  raise notice 'PASS profile checks, server-only avatar_path, insert-only passed_at, immutable mastered_at';
+  raise notice 'PASS profile server-only avatar_path, insert-only passed_at, immutable mastered_at';
 end $$;
 commit;
 
--- 5.4 B: duplicate username, sees only its own avatar, cannot write the avatars bucket; positive control: own recordings insert
+-- The database constraints still reject invalid values through a privileged write.
+do $$
+declare caught boolean;
+begin
+  caught := false;
+  begin update users set username = 'Keishaa' where id = current_setting('gate.a')::uuid;
+  exception when check_violation then caught := true; end;
+  if not caught then raise exception 'FAIL profile 5.3 uppercase username accepted'; end if;
+  caught := false;
+  begin update users set bio = repeat('b', 161) where id = current_setting('gate.a')::uuid;
+  exception when check_violation then caught := true; end;
+  if not caught then raise exception 'FAIL profile 5.3 161-char bio accepted'; end if;
+  caught := false;
+  begin update users set preferred_practices = array_fill('kanji'::text, array[9]) where id = current_setting('gate.a')::uuid;
+  exception when check_violation then caught := true; end;
+  if not caught then raise exception 'FAIL profile 5.3 nine practices accepted'; end if;
+  update users set bio = 'still writable' where id = current_setting('gate.a')::uuid;
+  if (select bio from users where id = current_setting('gate.a')::uuid) <> 'still writable' then raise exception 'FAIL profile 5.3 privileged bio update failed'; end if;
+  raise notice 'PASS profile privileged writes obey username, bio and practices checks';
+end $$;
+
+-- 5.4 B cannot write a username, sees only its own avatar, cannot write the avatars bucket; own recordings insert
 begin;
 select set_config('request.jwt.claims', json_build_object('sub', current_setting('gate.b'), 'role', 'authenticated')::text, true);
 set local role authenticated;
@@ -896,10 +913,8 @@ declare caught text;
 begin
   if auth.uid() is distinct from current_setting('gate.b')::uuid then raise exception 'FAIL profile 5.4 claims for B: %', auth.uid(); end if;
   caught := null;
-  begin update users set username = 'keishaa' where id = auth.uid(); exception when unique_violation then caught := 'ok'; end;
-  if caught is null then raise exception 'FAIL profile 5.4 duplicate username accepted'; end if;
-  update users set username = 'keishaa_b' where id = auth.uid();
-  if (select username from users where id = auth.uid()) is distinct from 'keishaa_b' then raise exception 'FAIL profile 5.4 B cannot update its own username'; end if;
+  begin update users set username = 'keishaa_b' where id = auth.uid(); exception when insufficient_privilege then caught := 'ok'; end;
+  if caught is null then raise exception 'FAIL profile 5.4 B can update its own username'; end if;
   if (select count(*) from storage.objects where bucket_id = 'avatars') <> 1
     or exists (select 1 from storage.objects where bucket_id = 'avatars' and name like current_setting('gate.a') || '/%') then
     raise exception 'FAIL profile 5.4 B must read only its own avatar object';
@@ -910,9 +925,21 @@ begin
   exception when insufficient_privilege then caught := 'ok'; end;
   if caught is null then raise exception 'FAIL profile 5.4 B wrote into avatars'; end if;
   insert into storage.objects (bucket_id, name) values ('recordings', current_setting('gate.b') || '/ok.webm');
-  raise notice 'PASS profile B: unique username, own avatar only, avatars server-write-only';
+  raise notice 'PASS profile B: username server-write-only, own avatar only, avatars server-write-only';
 end $$;
 commit;
+
+-- A privileged write keeps the unique-index check and creates B's username for save_profile 7.2.
+do $$
+declare caught boolean := false;
+begin
+  begin update users set username = 'keishaa' where id = current_setting('gate.b')::uuid;
+  exception when unique_violation then caught := true; end;
+  if not caught then raise exception 'FAIL profile 5.4 duplicate username accepted'; end if;
+  update users set username = 'keishaa_b' where id = current_setting('gate.b')::uuid;
+  if (select username from users where id = current_setting('gate.b')::uuid) is distinct from 'keishaa_b' then raise exception 'FAIL profile 5.4 privileged free username failed'; end if;
+  raise notice 'PASS profile privileged username writes reject duplicates and accept free names';
+end $$;
 
 
 -- 6. Profile read model (spec §6): five security-invoker functions scoped to auth.uid(). Identities come from gate.a /
@@ -1260,7 +1287,7 @@ set local role authenticated;
 do $$
 begin
   if auth.uid() is distinct from current_setting('gate.a')::uuid then raise exception 'FAIL profile 6.5d claims for A: %', auth.uid(); end if;
-  if (select count(*) from todays_memory('Asia/Ho_Chi_Minh') where memory_type = 'line_mastered') <> 1
+  if (select count(*) from todays_memory('Asia/Ho_Chi_Minh') where title = 'lm1') <> 1
     or (select count(*) from todays_memory('Asia/Ho_Chi_Minh')) <> 1 then
     raise exception 'FAIL profile 6.5d no pinned yesterday must fall back to line_mastered';
   end if;

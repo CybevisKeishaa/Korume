@@ -69,9 +69,8 @@ interface EarnedBadgeRow {
  *
  * A user without a `user_stats` row yet (e.g. an account created before the
  * `handle_new_auth_user` trigger existed) reads back as all-zero stats
- * rather than a 500 — the row is created lazily by the gamification award
- * pipeline's first `upsert` (`lib/data/gamification.ts`), not required to
- * pre-exist.
+ * rather than a 500. `record_learning_outcome` creates the row on the
+ * first learning award when it does not already exist.
  */
 export async function getUserStats(): Promise<GetUserStatsResult> {
   const supabase = createClient();

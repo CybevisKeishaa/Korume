@@ -58,7 +58,7 @@ export interface RecordActivityResult {
 const FAILURE_RESULT: RecordActivityResult = { ok: false, xpAwarded: 0, newBadges: [], leveledUp: false };
 
 /**
- * Award XP/streak/badges for one completed learning outcome, and emit
+ * Record an outcome, award XP and badges, and emit
  * `level_up`/`badge_earned` notifications when they newly occur.
  *
  * MUST NEVER throw into the caller — this runs on the hot path of every

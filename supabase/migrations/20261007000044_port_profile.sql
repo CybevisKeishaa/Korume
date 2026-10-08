@@ -34,13 +34,14 @@ declare
 begin
   if p_xp <= 0 then raise exception 'record_learning_outcome: xp must be positive'; end if;
   perform pg_advisory_xact_lock(hashtext('xp:' || p_user::text));
+  -- This lock serialises each learner's awards; the next READ COMMITTED select sees the prior commit.
   -- Read before the insert: did the learner already have an outcome today? (lets the caller skip badge work)
   select exists (
     select 1 from learning_outcomes where user_id = p_user and created_at >= v_day_start and created_at < v_day_end
   ) into v_had;
   insert into learning_outcomes (user_id, source_type, item_key) values (p_user, p_source, p_source_id);
   insert into user_stats (user_id) values (p_user) on conflict (user_id) do nothing;
-  select xp into v_prev from user_stats where user_id = p_user for update;
+  select xp into v_prev from user_stats where user_id = p_user;
   -- The eligibility check is a separate statement after taking the lock (L-040).
   if p_daily then
     if not exists (
@@ -350,7 +351,7 @@ as $$
 $$;
 
 -- §6.3 C4: candidates frozen at the start of the learner's study day; deterministic pick.
-create function todays_memory(p_tz text) returns setof companion_memories
+create function todays_memory(p_tz text) returns table (id uuid, line_text_jp text, title text, occurred_at timestamptz)
   language sql stable security invoker set search_path = public
 as $$
   with day as (
@@ -369,8 +370,7 @@ as $$
   ranked as (
     select pool.*, row_number() over (order by id) - 1 as idx, count(*) over () as n from pool
   )
-  select id, user_id, kind, memory_type, title, video_id, transcript_line_id, timestamp_seconds, line_text_jp, note,
-    is_anchor, dedupe_key, occurred_at, created_at
+  select ranked.id, ranked.line_text_jp, ranked.title, ranked.occurred_at
   from ranked, day
   where idx = abs(hashtext(auth.uid()::text || day.d::text)::bigint) % n;
 $$;

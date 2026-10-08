@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { webcrypto } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readBlobBytes } from "@/test/blob-utils";
 import { useStudyPresence } from "./use-study-presence";
@@ -40,6 +41,13 @@ describe("useStudyPresence", () => {
   it("starts on visible mount and beats every 30 seconds with increasing sequence", async () => {
     mount(); await flush(); await advance(60_000);
     expect(beatBodies().map(({ kind, seq }) => [kind, seq])).toEqual([["start", 0], ["beat", 1], ["beat", 2]]);
+  });
+
+  it("starts with a valid UUID when randomUUID is unavailable", async () => {
+    const getRandomValues = webcrypto.getRandomValues.bind(webcrypto);
+    vi.stubGlobal("crypto", { getRandomValues });
+    mount(); await flush();
+    expect(beatBodies()[0].clientPresenceId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it("does not beat while hidden", async () => {
