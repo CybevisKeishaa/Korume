@@ -289,3 +289,54 @@ as $$
 $$;
 revoke execute on function practice_activity(timestamptz) from public, anon;
 grant execute on function practice_activity(timestamptz) to authenticated;
+
+
+-- M3/M4 progress and claim
+-- M3: only outcomes inside [mission.created_at, window_end) count; count-based items count DISTINCT frozen keys.
+create function daily_mission_item_progress(p_mission_id uuid)
+  returns table (item_id uuid, slot int, type text, video_id uuid, target int, current int)
+  language sql stable security invoker set search_path = public
+as $$
+  select i.id, i.slot::int, i.type, i.video_id, i.target,
+    case when i.type = 'finish_lesson' then
+      (exists (select 1 from user_video_progress p where p.user_id = m.user_id and p.video_id = i.video_id
+         and p.first_completed_at >= m.created_at and p.first_completed_at < m.window_end))::int
+    else least(i.target, (
+      select count(distinct o.item_key)::int from learning_outcomes o
+      join daily_mission_eligible e on e.mission_item_id = i.id and e.item_key = o.item_key
+      where o.user_id = m.user_id and o.created_at >= m.created_at and o.created_at < m.window_end
+        and o.source_type = any (case i.type when 'review' then array['srs_review', 'mining_review']
+                                             when 'shadow_lines' then array['shadowing']
+                                             else array['dictation'] end)))
+    end
+  from daily_missions m join daily_mission_items i on i.mission_id = m.id
+  where m.id = p_mission_id order by i.slot;
+$$;
+revoke execute on function daily_mission_item_progress(uuid) from public, anon;
+grant execute on function daily_mission_item_progress(uuid) to authenticated, service_role;
+
+-- M4: one transaction under the XP lock. Never a learning outcome (D11): it cannot light the heatmap or streak.
+create function claim_daily_mission(p_user uuid, p_mission_id uuid, p_xp int)
+  returns table (completed boolean, xp_awarded int, prev_xp int, next_xp int)
+  language plpgsql security definer set search_path = public
+as $$
+declare v_rewarded timestamptz; v_done boolean; v_prev int;
+begin
+  if p_xp <= 0 then raise exception 'claim_daily_mission: xp must be positive'; end if;
+  perform pg_advisory_xact_lock(hashtext('xp:' || p_user::text));
+  select rewarded_at into v_rewarded from daily_missions where id = p_mission_id and user_id = p_user;
+  if not found then raise exception 'claim_daily_mission: no such mission for this user'; end if;
+  if v_rewarded is not null then return query select true, 0, null::int, null::int; return; end if;
+  select bool_and(p.current >= p.target) into v_done from daily_mission_item_progress(p_mission_id) p;
+  if not coalesce(v_done, false) then return query select false, 0, null::int, null::int; return; end if;
+  update daily_missions set completed_at = coalesce(completed_at, now()) where id = p_mission_id;
+  insert into user_stats (user_id) values (p_user) on conflict (user_id) do nothing;
+  select xp into v_prev from user_stats where user_id = p_user;
+  insert into xp_events (user_id, source_type, source_id, xp)
+    values (p_user, 'daily_mission_complete', 'mission:' || p_mission_id::text, p_xp);
+  update user_stats set xp = xp + p_xp where user_id = p_user;
+  update daily_missions set rewarded_at = now() where id = p_mission_id;
+  return query select true, p_xp, v_prev, v_prev + p_xp;
+end $$;
+revoke execute on function claim_daily_mission(uuid, uuid, int) from public, anon, authenticated;
+grant execute on function claim_daily_mission(uuid, uuid, int) to service_role;

@@ -33,7 +33,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T4 | accepted (Claude, Codex out of quota) + T3 review fixes | see git log |
 | T5 | accepted (Claude) | see git log |
 | T6 | accepted (Claude) + T4/T5 review fixes | see git log |
-| T7–T16 | not started | — |
+| T7a | accepted (Claude): progress, claim, award helper, P1 | see git log |
+| T7b–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -67,6 +68,10 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   window continuity, onboarding = no row); erasure gate PASS; mutations red (access check, transcript check, active
   lookup, review cap). Gate idempotency checks use `is distinct from` (a NULL second call passed `<>`).
 - S3 decision (T4 review): a key currently mastered on a row with no `mastered_at` (pre-tracking) is never "new".
+- T7a: gate PASS (incomplete no award; distinct eligible keys in [created_at, window_end); one +50 XP; no outcome
+  row; second claim 0); mutations red (count distinct, window end, rewarded guard, P1 neq). buildBadgeSnapshot moved
+  to `lib/data/badge-snapshot.ts`, awardNewBadges + afterXpAward to `lib/data/xp-award.ts` (no import cycle);
+  existing gamification tests unchanged and green. Mission XP counts toward the weekly leaderboard (it is XP).
 - Codex hit its usage limit 2026-10-08 ~21:40 (resets 2026-10-09 01:41); Claude continues per owner rule.
 
 ## Working tree and environment

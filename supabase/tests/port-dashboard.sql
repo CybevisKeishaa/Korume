@@ -498,3 +498,54 @@ begin
   raise notice 'PASS dashboard M2 nothing due and no hints -> no mission';
 end $$;
 rollback;
+
+-- M3/M4 progress and claim (rollback). The reward is XP only: never a learning_outcomes row (S5, D11).
+begin;
+do $$
+declare a uuid := current_setting('dashgate.a')::uuid; m uuid; k1 uuid; k2 uuid; xp0 int; r record; item uuid; w_end timestamptz;
+begin
+  delete from daily_missions where user_id = a;
+  delete from user_kanji_progress where user_id = a;
+  insert into kanji (character) values ('㑀') returning id into k1;
+  insert into kanji (character) values ('㑁') returning id into k2;
+  insert into user_kanji_progress (user_id, kanji_id, next_review_at) values (a, k1, now() - interval '1 hour'), (a, k2, null);
+  m := ensure_daily_mission(a, array['kanji'], '{"review":20,"shadow_lines":3,"dictation_lines":5}', '[]');
+  select id into item from daily_mission_items where mission_id = m and type = 'review';
+  select window_end into w_end from daily_missions where id = m;
+  insert into user_stats (user_id) values (a) on conflict (user_id) do nothing;
+  select xp into xp0 from user_stats where user_id = a;
+
+  -- Incomplete: no award, no xp_events row.
+  select * into r from claim_daily_mission(a, m, 50);
+  if r.completed or r.xp_awarded <> 0 or exists (select 1 from xp_events where user_id = a and source_type = 'daily_mission_complete') then
+    raise exception 'FAIL dashboard M4 claimed an incomplete mission';
+  end if;
+
+  -- Progress counts DISTINCT eligible keys inside [created_at, window_end): a repeat counts once, a non-eligible key
+  -- and an outcome exactly at window_end count zero.
+  insert into learning_outcomes (user_id, source_type, item_key) values
+    (a, 'srs_review', 'kanji:' || k1), (a, 'srs_review', 'kanji:' || k1), (a, 'srs_review', 'kanji:not-eligible');
+  insert into learning_outcomes (user_id, source_type, item_key, created_at) values (a, 'srs_review', 'kanji:' || k2, w_end);
+  if (select current from daily_mission_item_progress(m) where item_id = item) <> 1 then
+    raise exception 'FAIL dashboard M3 progress: %', (select current from daily_mission_item_progress(m) where item_id = item);
+  end if;
+
+  -- Complete it, claim once: +50 XP, first completed_at and rewarded_at set; a second claim awards nothing.
+  insert into learning_outcomes (user_id, source_type, item_key) values (a, 'srs_review', 'kanji:' || k2);
+  select * into r from claim_daily_mission(a, m, 50);
+  if not r.completed or r.xp_awarded <> 50 or r.prev_xp <> xp0 or r.next_xp <> xp0 + 50
+     or (select xp from user_stats where user_id = a) <> xp0 + 50
+     or (select count(*) from xp_events where user_id = a and source_type = 'daily_mission_complete' and source_id = 'mission:' || m) <> 1
+     or exists (select 1 from daily_missions where id = m and (completed_at is null or rewarded_at is null)) then
+    raise exception 'FAIL dashboard M4 claim of a complete mission: %', r;
+  end if;
+  if exists (select 1 from learning_outcomes where user_id = a and item_key like 'mission:%') then
+    raise exception 'FAIL dashboard S5 the reward wrote a learning outcome';
+  end if;
+  select * into r from claim_daily_mission(a, m, 50);
+  if r.xp_awarded <> 0 or (select xp from user_stats where user_id = a) <> xp0 + 50 then
+    raise exception 'FAIL dashboard M4 second claim awarded again';
+  end if;
+  raise notice 'PASS dashboard M3/M4 progress and claim (distinct, eligible-only, window end, once, no outcome)';
+end $$;
+rollback;

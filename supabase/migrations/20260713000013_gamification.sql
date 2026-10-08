@@ -22,7 +22,9 @@ create table xp_events (
   user_id uuid not null references users (id) on delete cascade,
   source_type text not null check (source_type in (
     'srs_review', 'dictation', 'shadowing', 'mining_review',
-    'jlpt_submit', 'reading_submit', 'conversation'
+    'jlpt_submit', 'reading_submit', 'conversation',
+    -- port-dashboard D11: the daily mission reward. XP only — never a learning_outcomes row (S5).
+    'daily_mission_complete'
   )),
   source_id text not null,
   xp int not null check (xp > 0),
@@ -32,7 +34,7 @@ create table xp_events (
 -- Daily eligibility depends on the learner's local day and is checked under
 -- the per-user lock in record_learning_outcome.
 create unique index xp_events_once_only_uq on xp_events (user_id, source_type, source_id)
-  where source_type = 'conversation';
+  where source_type in ('conversation', 'daily_mission_complete');
 create index idx_xp_events_user_source on xp_events (user_id, source_type, source_id, created_at);
 
 alter table xp_events enable row level security;

@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { exposedReviewSurfaces } from "@/lib/dashboard/review-surfaces";
+import { DAILY_MISSION_XP } from "@/lib/gamification/xp";
+import { afterXpAward } from "@/lib/data/xp-award";
 import {
   MISSION_PRACTICE_WINDOW_DAYS,
   MISSION_TARGETS,
@@ -71,5 +73,29 @@ export async function ensureDailyMission(userId: string): Promise<string | null>
   } catch (error) {
     console.error(JSON.stringify({ event: "mission_ensure_failed", userId, error: describeError(error) }));
     return null;
+  }
+}
+
+interface ClaimRow { completed: boolean; xp_awarded: number; prev_xp: number | null; next_xp: number | null }
+
+/** After a qualifying write committed: claim any unrewarded cycle that is now complete (spec M4). Cycles that closed
+ * at most a day ago stay claimable (a late claim), so at most two are read. Never throws. */
+export async function claimActiveMission(userId: string, now: Date = new Date()): Promise<void> {
+  try {
+    const service = createServiceClient();
+    const open = await service.from("daily_missions").select("id").eq("user_id", userId).is("rewarded_at", null)
+      .gt("window_end", new Date(now.getTime() - 86_400_000).toISOString())
+      .order("window_end", { ascending: true }).limit(2);
+    if (open.error) throw open.error;
+    for (const { id } of (open.data as { id: string }[] | null) ?? []) {
+      const { data, error } = await service.rpc("claim_daily_mission", { p_user: userId, p_mission_id: id, p_xp: DAILY_MISSION_XP });
+      if (error) throw error;
+      const row = (data as ClaimRow[] | null)?.[0];
+      if (row && row.xp_awarded > 0 && row.prev_xp !== null && row.next_xp !== null) {
+        await afterXpAward(service, { userId, prevXp: row.prev_xp, nextXp: row.next_xp, now });
+      }
+    }
+  } catch (error) {
+    console.error(JSON.stringify({ event: "mission_claim_failed", userId, error: describeError(error) }));
   }
 }
