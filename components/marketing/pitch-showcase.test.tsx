@@ -370,7 +370,7 @@ describe("PitchShowcase", () => {
     // ⚠️ Task A3 dropped `unoptimized` (166 KB shipped to paint 124 px), so
     // `src` is now the optimizer URL that encodes the same path rather than
     // the path itself.
-    expect(mascot?.getAttribute("src")).toContain(encodeURIComponent("/mascot/poses/noting.png"));
+    expect(mascot?.getAttribute("src")).toContain(encodeURIComponent("/mascot/poses/note-taking-on-orb.png"));
     expect(mascot?.getAttribute("src")).not.toContain("/renders/");
     // The alpha channel is what retired the screen-blend workaround; if that
     // class comes back, the asset is being composited the old, placement-

@@ -78,7 +78,7 @@ describe("SiteFooter", () => {
     // Only `scripts/mascot/extract.js` writes into poses/, and
     // `scripts/mascot/poses.test.ts` pins that directory to the manifest, so
     // asserting the path is asserting recorded provenance (spec §5.2).
-    expect(mascot?.getAttribute("src")).toBe("/mascot/poses/resting.png");
+    expect(mascot?.getAttribute("src")).toBe("/mascot/poses/sleeping.png");
     expect(mascot?.getAttribute("src")).not.toContain("/renders/");
     // Decorative — the link's name comes from `aria-label`, so the image must
     // not announce itself a second time.

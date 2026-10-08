@@ -148,7 +148,7 @@ describe("Hero", () => {
     // Only `scripts/mascot/extract.js` writes into poses/, and
     // `scripts/mascot/poses.test.ts` pins that directory to the manifest, so
     // asserting the path is asserting recorded provenance (spec §5.2).
-    expect(mascot?.getAttribute("src")).toBe("/mascot/poses/greeting.png");
+    expect(mascot?.getAttribute("src")).toBe("/mascot/poses/celebrating.png");
     expect(mascot?.getAttribute("src")).not.toContain("/renders/");
     expect(mascot?.getAttribute("alt")).toBe("");
     expect(mascot?.getAttribute("aria-hidden")).toBe("true");

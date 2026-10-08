@@ -74,23 +74,23 @@ import type { Translator } from "./translator";
 const SUB_SCORES = ["pitch", "rhythm", "pronunciation", "timing"] as const;
 
 /**
- * The Companion mascot. Already wired in an earlier task; do not re-cut or
- * re-source it, and do not reach for `mix-blend-mode: screen`, which the
- * asset's real alpha channel retired.
+ * The Companion mascot, taking notes on its orb (re-sourced 2026-10-08 from
+ * `actions/note-taking-on-orb.png`; the old extractor cut read as broken). Do
+ * not reach for `mix-blend-mode: screen`: the asset has a real alpha channel.
  */
-const MASCOT = "/mascot/poses/noting.png";
+const MASCOT = "/mascot/poses/note-taking-on-orb.png";
 
 /**
  * Rendered size of the mascot, in CSS px.
  *
  * Explicit width/height attributes rather than a `w-[6.5rem]` class: Rule #0 is
  * about class names copying frame pixels, and an intrinsic element size is the
- * escape the rule itself points at. 340x304 is the file's intrinsic size, so
- * 104x93 keeps its aspect ratio to within a rounding step.
+ * escape the rule itself points at. 312x253 is the file's intrinsic size, so
+ * 104x84 keeps its aspect ratio to within a rounding step.
  *
  * ⚠️ 104 is not a taste call, it is the widest value that CANNOT collide with
  * the Companion's copy. The image has NO transparent margin — measured, its
- * alpha bounding box is the full 340x304 — so any overlap with the text box is
+ * alpha bounding box is the full 312x253 — so any overlap with the text box is
  * opaque fur over words, which `z-10` only papers over. With the mascot pulled
  * `-right-lg` past the card and the copy reserving `pr-3xl`, the clearance is
  *
@@ -102,7 +102,7 @@ const MASCOT = "/mascot/poses/noting.png";
  * `3xl` is the top of the spacing scale.
  */
 const MASCOT_WIDTH = 104;
-const MASCOT_HEIGHT = 93;
+const MASCOT_HEIGHT = 84;
 /**
  * The slot renders at a fixed `MASCOT_WIDTH` CSS px at every viewport — it is a
  * decorative fixed-size element, not a fluid one — so `sizes` is that width,
@@ -112,7 +112,7 @@ const MASCOT_HEIGHT = 93;
  * test stays green.
  *
  * ⚠️ This replaces `unoptimized`, whose comment called this "a fixed local
- * decorative icon". It is not an icon: `noting.png` is 340x304 and 166 KB, and
+ * decorative icon". It is not an icon: the then `noting.png` was 340x304 and 166 KB, and
  * `unoptimized` shipped all 166 KB to paint ~100 px. With the optimizer and
  * this hint the browser picks a small variant instead — measured at 4.9 KB in
  * the browser at DPR 1, a 34x saving. See the task report.

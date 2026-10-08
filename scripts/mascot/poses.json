@@ -1,114 +1,22 @@
 {
   "$comment": [
-    "Which mascot pose fills which landing-page slot, and where each one is cut from — plus",
-    "the library of supplied poses that fill no slot yet. public/mascot/poses/ is NOT fully",
-    "machine-owned: `poses` below are cut by scripts/mascot/extract.js and nothing else may",
-    "write those five files; `supplied` are hand-cut PNGs the project owner pasted in directly",
-    "(background removed, cropped) — extract.js never touches them and never will, since a",
-    "human edit is not reproducible by re-running an extractor. Either way, every file on disk",
-    "has a record here, so an asset's provenance is always this manifest plus either the sheet",
-    "a `poses` entry names or the `origin` a `supplied` entry gives (spec 5.2: a slot may only",
+    "Which mascot pose fills which landing-page slot, and where each one came from — plus the",
+    "library of supplied poses that fill no slot yet. Every PNG in public/mascot/poses/ is a",
+    "`supplied` entry: hand-cut art the project owner pasted in, or a trimmed, downscaled copy",
+    "of the owner's action art in public/mascot/actions/. Every file on disk has a record here,",
+    "so an asset's provenance is always the `origin` its entry gives (spec 5.2: a slot may only",
     "be filled from a source whose origin is recorded).",
     "",
-    "A `poses` entry is addressed by an `anchor` — a point inside the drawing on the source",
-    "sheet — not by an index, so re-running after a change to the segmentation still resolves",
-    "to the same character. `node scripts/mascot/extract.js` rewrites its five outputs in",
-    "public/mascot/poses/ from this file.",
+    "History: until 2026-10-08 a `poses` array held five assets that scripts/mascot/extract.js",
+    "cut from two character sheets (greeting, noting, holding-memory, looking-ahead, resting).",
+    "The owner ruled those cuts broken (soft fringe, low resolution); they were deleted with",
+    "extract.js and replaced by crisper action art (see each landing slot's `origin`).",
     "",
-    "`fade` dissolves the bottom of the crop over [from,to] as a fraction of height. The orb",
-    "poses are drawn with the orb's warm light spilling onto a ground plane; cut straight,",
-    "that spill reads as an opaque plate the character sits on. Fading it out keeps the glow",
-    "and loses the plate.",
+    "`width`/`height` are the exported pixel size — roughly 3x the largest size the slot",
+    "renders at, so the asset holds up on a high-DPI screen without shipping the 1300px source.",
     "",
-    "`width` is the exported pixel width — roughly 3x the largest size the slot renders at,",
-    "so the asset holds up on a high-DPI screen without shipping the whole 3072px sheet.",
-    "",
-    "A `supplied` entry carries a `slot` only once it is wired into a component: the array is a",
-    "library to pick from, not a list of placements. Adding that `slot` does NOT migrate it to",
-    "`poses`, which is reserved for assets extract.js itself cuts from a sheet. The reverse is",
-    "also possible: a `poses` entry can lose its placement (holding-memory.png did, in task 9)",
-    "and still belong there, because extract.js still reproduces it."
-  ],
-  "sheets": {
-    "companion-a": "assets/mascot/sheets/upscalemedia-transformed (4).png",
-    "companion-b": "assets/mascot/sheets/upscalemedia-transformed (5).png"
-  },
-  "poses": [
-    {
-      "out": "greeting.png",
-      "sheet": "companion-b",
-      "anchor": [
-        1345,
-        900
-      ],
-      "caption": "VẪY TAY — waving",
-      "slot": "§1 hero, Companion card. The companion's first appearance on the page, so it waves. Renders ~48px, which is why a pose with a clear silhouette beats a detailed one.",
-      "width": 200,
-      "fade": [
-        0.92,
-        1
-      ]
-    },
-    {
-      "out": "noting.png",
-      "sheet": "companion-a",
-      "anchor": [
-        1775,
-        974
-      ],
-      "caption": "GHI LẠI — writing it down",
-      "slot": "§4 pitch showcase, Companion card. The card is the companion commenting on your pitch, so the pose is it taking notes on what it heard.",
-      "width": 340,
-      "fade": [
-        0.9,
-        1
-      ]
-    },
-    {
-      "out": "holding-memory.png",
-      "sheet": "companion-b",
-      "anchor": [
-        2126,
-        918
-      ],
-      "caption": "ÔM KÝ ỨC — holding a memory",
-      "slot": "None since 2026-10-08. It was the Edit Profile footer (`edit-footer`, spec 8.3) until the owner's Chrome review, where its soft extractor fringe read as broken at size sm; syncing.png (supplied) took the slot. extract.js still reproduces it, so it stays in `poses`.",
-      "width": 320,
-      "fade": [
-        0.9,
-        1
-      ]
-    },
-    {
-      "out": "looking-ahead.png",
-      "sheet": "companion-b",
-      "anchor": [
-        1660,
-        380
-      ],
-      "caption": "NHÌN XA — looking into the distance",
-      "slot": "§8 CTA, the largest placement. Keeps the glowing-orb motif the reference uses here, and the gaze points at what the section is asking for — the next step.",
-      "width": 620,
-      "fade": [
-        0.78,
-        0.97
-      ]
-    },
-    {
-      "out": "resting.png",
-      "sheet": "companion-b",
-      "anchor": [
-        2450,
-        1800
-      ],
-      "caption": "NGỦ GỤC — asleep, with a Zzz",
-      "slot": "§10 footer mascot card. The frame names this image KorumeSleepingPeacefullyOnABook (347:7101) and §9 directly above it reads \"The day can end softly\", so the frame and the copy both ask for a sleeping pose — not the farewell wave a footer would otherwise suggest.",
-      "width": 420,
-      "fade": [
-        0.94,
-        1
-      ]
-    }
+    "A `supplied` entry carries a `slot` only while it fills a landing-page slot",
+    "(components/marketing); app placements (components/mascot/mascot-poses.ts) carry none."
   ],
   "supplied": [
     {
@@ -336,6 +244,33 @@
       "width": 330,
       "height": 300,
       "origin": "public/mascot/actions/syncing.png (owner-supplied action art, commit 13e9ab9), trimmed to its opaque bounding box (1342x1172 -> 1240x1127) and downscaled to 300 px high (about 3x the 96 px sm slot) with sharp on 2026-10-08. Shown as the Edit Profile footer (`edit-footer` in components/mascot/mascot-poses.ts) since the owner's review that day; app placements carry no `slot`, which is reserved for landing-page slots."
+    },
+    {
+      "out": "celebrating.png",
+      "caption": "VUI MỪNG — one paw raised, eyes closed in a smile",
+      "depicts": "Standing full body, front-facing, right paw raised beside the face, eyes closed in a wide smile, small sparkles either side, tail curled behind.",
+      "slot": "Hero (§1) transcript card: the companion beside the caption, its first appearance on the page — the raised paw reads as a greeting. Rendered 52x60 CSS px in components/marketing/hero-video-card.tsx.",
+      "width": 156,
+      "height": 180,
+      "origin": "public/mascot/actions/celebrating.png (owner-supplied action art, commit 13e9ab9), trimmed to its bounding box of pixels with alpha > 8 (928x1070) and downscaled to 156x180 with sharp on 2026-10-08, replacing the extractor cut greeting.png the owner ruled broken."
+    },
+    {
+      "out": "note-taking-on-orb.png",
+      "caption": "GHI CHÉP — writing on the orb",
+      "depicts": "Seated atop the glowing ringed orb, holding a quill over a small scroll, a tiny orbiting charm to the side, tail flowing to the right.",
+      "slot": "Pitch showcase (§4) Companion card: the companion taking notes while the learner shadows. Rendered 104x84 CSS px (MASCOT_WIDTH is the collision bound documented in components/marketing/pitch-showcase.tsx).",
+      "width": 312,
+      "height": 253,
+      "origin": "public/mascot/actions/note-taking-on-orb.png (owner-supplied action art, commit 13e9ab9), trimmed to its bounding box of pixels with alpha > 8 (1349x1095) and downscaled to 312x253 with sharp on 2026-10-08, replacing the extractor cut noting.png the owner ruled broken."
+    },
+    {
+      "out": "sleeping.png",
+      "caption": "NGỦ — curled up asleep",
+      "depicts": "Curled into a ball, eyes closed, ears folded back, the large tail wrapped around the body.",
+      "slot": "Site footer Companion card: the companion asleep beside the 'meet Korume' call to action. Rendered 92x71 CSS px in components/marketing/site-footer.tsx.",
+      "width": 276,
+      "height": 213,
+      "origin": "public/mascot/actions/sleeping.png (owner-supplied action art, commit 13e9ab9), trimmed to its bounding box of pixels with alpha > 8 (1264x977) and downscaled to 276x213 with sharp on 2026-10-08, replacing the extractor cut resting.png the owner ruled broken."
     }
   ]
 }
