@@ -341,3 +341,63 @@ begin
 end $$;
 revoke execute on function claim_daily_mission(uuid, uuid, int) from public, anon, authenticated;
 grant execute on function claim_daily_mission(uuid, uuid, int) to service_role;
+
+-- S6: the instant learning_outcomes started recording (the port-profile merge, d57ad41, 2026-10-08 14:51:13 +07).
+-- An instrumentation boundary, not anyone's first activity.
+create function learning_outcomes_instrumented_since() returns timestamptz
+  language sql immutable set search_path = public
+as $$ select timestamptz '2026-10-08T07:51:13Z' $$;
+grant execute on function learning_outcomes_instrumented_since() to authenticated;
+revoke execute on function learning_outcomes_instrumented_since() from public, anon;
+
+create function activity_days(p_tz text, p_from date, p_to date) returns table (day date, outcomes int)
+  language sql stable security invoker set search_path = public
+as $$
+  select (created_at at time zone p_tz)::date, count(*)::int from learning_outcomes
+  where user_id = auth.uid()
+    and created_at >= (p_from::timestamp at time zone p_tz) and created_at < ((p_to + 1)::timestamp at time zone p_tz)
+  group by 1 order by 1;
+$$;
+revoke execute on function activity_days(text, date, date) from public, anon;
+grant execute on function activity_days(text, date, date) to authenticated;
+
+-- D4 (plan P4): Listening and Pronunciation accuracy per study-date window, with evidence counts.
+create function weekly_skill_windows(p_tz text, p_w1_from date, p_w0_from date, p_to date)
+  returns table (skill text, win int, attempts int, mean numeric)
+  language sql stable security invoker set search_path = public
+as $$
+  with ev as (
+    select 'listening' as skill, (created_at at time zone p_tz)::date as d, accuracy_score::numeric as s
+    from dictation_attempts where user_id = auth.uid() and accuracy_score is not null
+    union all
+    select 'pronunciation', (created_at at time zone p_tz)::date, pronunciation_score
+    from shadowing_sessions where user_id = auth.uid() and pronunciation_score is not null
+  )
+  select skill, case when d >= p_w0_from then 0 else 1 end, count(*)::int, round(avg(s), 2)
+  from ev where d >= p_w1_from and d <= p_to group by 1, 2;
+$$;
+revoke execute on function weekly_skill_windows(text, date, date, date) from public, anon;
+grant execute on function weekly_skill_windows(text, date, date, date) to authenticated;
+
+-- D3: each family/metric over its last p_dates study dates WITH evidence.
+create function weakness_scores(p_tz text, p_dates int) returns table (family text, metric text, attempts int, score numeric)
+  language sql stable security invoker set search_path = public
+as $$
+  with ev as (
+    select 'listening' as fam, 'accuracy' as met, created_at as at, accuracy_score::numeric as s
+      from dictation_attempts where user_id = auth.uid() and accuracy_score is not null
+    union all select 'reading', 'score', completed_at, score from user_reading_attempts where user_id = auth.uid()
+    union all select 'pronunciation', 'accuracy', created_at, pronunciation_score from shadowing_sessions
+      where user_id = auth.uid() and pronunciation_score is not null
+    union all select 'pronunciation', 'pitch', created_at, pitch_score from shadowing_sessions
+      where user_id = auth.uid() and pitch_score is not null
+    union all select 'pronunciation', 'rhythm', created_at, rhythm_score from shadowing_sessions
+      where user_id = auth.uid() and rhythm_score is not null
+  ),
+  ranked as (
+    select fam, met, s, dense_rank() over (partition by fam order by (at at time zone p_tz)::date desc) as r from ev
+  )
+  select fam, met, count(*)::int, round(avg(s), 2) from ranked where r <= p_dates group by fam, met;
+$$;
+revoke execute on function weakness_scores(text, int) from public, anon;
+grant execute on function weakness_scores(text, int) to authenticated;

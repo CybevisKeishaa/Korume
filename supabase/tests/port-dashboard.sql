@@ -681,9 +681,55 @@ begin
     'curriculum_journey()', 'curriculum_membership(uuid)', 'mastered_lexemes(integer)', 'current_mastered_count(integer)',
     'newly_mastered_count(integer,timestamp with time zone,timestamp with time zone)', 'review_deck_summary(text[])',
     'review_due_keys(uuid,text[],timestamp with time zone)', 'practice_activity(timestamp with time zone)',
-    'daily_mission_item_progress(uuid)', 'can_open_lesson(uuid,uuid)', 'current_transcript_id(uuid)'] loop
+    'daily_mission_item_progress(uuid)', 'can_open_lesson(uuid,uuid)', 'current_transcript_id(uuid)',
+    'learning_outcomes_instrumented_since()', 'activity_days(text,date,date)',
+    'weekly_skill_windows(text,date,date,date)', 'weakness_scores(text,integer)'] loop
     if has_function_privilege('anon', f, 'execute') then raise exception 'FAIL dashboard anon can execute %', f; end if;
   end loop;
   raise notice 'PASS dashboard function privileges';
+end $$;
+rollback;
+
+-- S6: dashboard facts preserve local-date boundaries, window ownership, and the requested number of study dates.
+begin;
+do $$
+declare a uuid := current_setting('dashgate.a')::uuid;
+begin
+  insert into learning_outcomes (user_id, source_type, item_key, created_at) values
+    (a, 'srs_review', 's6-local-before', '2026-01-02T04:59:59Z'),
+    (a, 'srs_review', 's6-local-after', '2026-01-02T05:00:00Z');
+  insert into dictation_attempts (user_id, user_input, accuracy_score, created_at) values
+    (a, 's6-week-boundary', 67, '2027-05-08T10:00:00Z');
+  insert into dictation_attempts (user_id, user_input, accuracy_score, created_at)
+    select a, 's6-weakness-' || d, case when d = 1 then 1 else 100 end, (date '2030-01-01' + (d - 1))::timestamptz
+    from generate_series(1, 31) d;
+  insert into shadowing_sessions (user_id, pronunciation_score, created_at)
+    select a, 100, (date '2031-01-01' + (d - 1))::timestamptz from generate_series(2, 31) d;
+  insert into shadowing_sessions (user_id, pitch_score, created_at)
+    values (a, 1, '2031-01-01T00:00:00Z');
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('dashgate.a'), 'role', 'authenticated')::text, true);
+do $$
+declare rows jsonb; s record;
+begin
+  select jsonb_agg(jsonb_build_object('day', day, 'outcomes', outcomes) order by day) into rows
+    from activity_days('America/New_York', '2026-01-01', '2026-01-02');
+  if rows is distinct from '[{"day":"2026-01-01","outcomes":1},{"day":"2026-01-02","outcomes":1}]'::jsonb then
+    raise exception 'FAIL dashboard S6 activity local-midnight split: %', rows;
+  end if;
+  select * into s from weekly_skill_windows('UTC', '2027-05-01', '2027-05-08', '2027-05-14')
+    where skill = 'listening' and win = 0;
+  if not found or s.attempts <> 1 or s.mean <> 67 then
+    raise exception 'FAIL dashboard S6 weekly window-zero boundary: %', s;
+  end if;
+  select * into s from weakness_scores('UTC', 30) where family = 'listening' and metric = 'accuracy';
+  if not found or s.attempts <> 30 or s.score <> 100 then
+    raise exception 'FAIL dashboard S6 last-30-study-dates: %', s;
+  end if;
+  if exists (select 1 from weakness_scores('UTC', 30) where family = 'pronunciation' and metric = 'pitch') then
+    raise exception 'FAIL dashboard S6 family window retained stale sparse metric';
+  end if;
+  raise notice 'PASS dashboard S6 fact queries';
 end $$;
 rollback;
