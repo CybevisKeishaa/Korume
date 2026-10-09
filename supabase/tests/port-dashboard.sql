@@ -663,3 +663,27 @@ begin
   raise notice 'PASS dashboard M1 pre-write order (ensure first counts; write first freezes nothing)';
 end $$;
 rollback;
+
+-- S4: callers never receive execute privilege on service-only mutation functions, and anon receives none of the
+-- authenticated dashboard read helpers.
+begin;
+do $$
+declare f text; r text;
+begin
+  foreach f in array array[
+    'ensure_daily_mission(uuid,text[],jsonb,jsonb)', 'claim_daily_mission(uuid,uuid,integer)',
+    'sync_curriculum_manifest(jsonb)'] loop
+    foreach r in array array['anon', 'authenticated'] loop
+      if has_function_privilege(r, f, 'execute') then raise exception 'FAIL dashboard % can execute %', r, f; end if;
+    end loop;
+  end loop;
+  foreach f in array array[
+    'curriculum_journey()', 'curriculum_membership(uuid)', 'mastered_lexemes(integer)', 'current_mastered_count(integer)',
+    'newly_mastered_count(integer,timestamp with time zone,timestamp with time zone)', 'review_deck_summary(text[])',
+    'review_due_keys(uuid,text[],timestamp with time zone)', 'practice_activity(timestamp with time zone)',
+    'daily_mission_item_progress(uuid)', 'can_open_lesson(uuid,uuid)', 'current_transcript_id(uuid)'] loop
+    if has_function_privilege('anon', f, 'execute') then raise exception 'FAIL dashboard anon can execute %', f; end if;
+  end loop;
+  raise notice 'PASS dashboard function privileges';
+end $$;
+rollback;

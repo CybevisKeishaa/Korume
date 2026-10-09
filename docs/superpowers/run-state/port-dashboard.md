@@ -35,7 +35,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T6 | accepted (Claude) + T4/T5 review fixes | see git log |
 | T7a | accepted (Claude): progress, claim, award helper, P1 | see git log |
 | T7b | accepted (Codex): mission pre-write wiring + invalid-reference guard | 2026-10-09 |
-| T8–T16 | not started | — |
+| T8 | accepted (Codex): two-phase 20-worker mission race + privilege sweep | 2026-10-09 |
+| T9–T16 | not started | — |
 
 ## Contracts and decisions
 
@@ -79,6 +80,9 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   `npm run typecheck` PASS, `npm run verify:protocol` PASS, and `npm run verify:db:dashboard` PASS. The M1 regression
   test proves missing SRS/video/transcript references return 400 without ensuring a mission, writing a row, or uploading audio.
   Independent reviewer approved the follow-up fix; its verification was source-only because its runner was unavailable.
+- T8: live gate PASS with function-privilege sweep and a two-phase 20-worker race (one mission, one +50 XP award,
+  20 outcomes). Mutations red: removing ensure's lock produced the mission-cycle unique violation; removing claim's
+  lock produced `xp_events_once_only_uq`. Both locks restored and the final fresh-reset gate passed.
 
 ## Working tree and environment
 
@@ -92,4 +96,4 @@ None. `npx supabase db reset` needs the owner's approval in auto mode.
 
 ## Next actions
 
-1. Continue with T8 from `task-8-packet.md`; read its direct dependency graph before dispatch.
+1. Continue with T9 from `task-9-packet.md`; read its direct dependency graph before dispatch.
