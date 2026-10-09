@@ -4,6 +4,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { fetchAllPages } from "@/lib/data/query-pagination";
 import { requireUser } from "@/lib/data/videos";
 import { recordActivity } from "@/lib/data/gamification";
+import { claimActiveMission, ensureDailyMission } from "@/lib/data/missions";
 import { REVIEW_FREQUENCY_MULTIPLIER, reviewItem, type Quality, type SrsState } from "@/lib/srs";
 import { readPreferences } from "@/lib/data/preferences";
 import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
@@ -187,6 +188,11 @@ export async function reviewMiningCard(
     .maybeSingle();
   if (loadError) throw loadError;
   if (!existing) return { ok: false, status: 400 };
+  try {
+    await ensureDailyMission(user.id);
+  } catch (err) {
+    console.error("[missions] ensure before mining review failed:", err);
+  }
 
   const state: SrsState = {
     repetitions: existing.srs_stage,
@@ -222,6 +228,7 @@ export async function reviewMiningCard(
   // Best-effort: gamification never fails a learning-flow request (see
   // lib/data/gamification.ts::recordActivity).
   await recordActivity({ userId: user.id, source: "mining_review", parts: { cardId: input.cardId }, now });
+  await claimActiveMission(user.id, now);
 
   return {
     ok: true,

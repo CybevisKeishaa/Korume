@@ -8,6 +8,7 @@ import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 vi.mock("@/lib/data/gamification", () => ({ recordActivity: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/data/missions", () => ({ ensureDailyMission: vi.fn().mockResolvedValue(null), claimActiveMission: vi.fn().mockResolvedValue(undefined) }));
 // Spread the real module so INITIAL_STATE and REVIEW_FREQUENCY_MULTIPLIER stay the
 // ones in sm2.ts. Restating them here would make the assertion below check the mock
 // against itself.
@@ -36,7 +37,10 @@ describe("submitReview preferences", () => {
   it("passes the relaxed interval multiplier to the shared SRS engine", async () => {
     const supabase = createMockSupabase({
       user: { id: "u1" },
-      tables: { user_kanji_progress: () => ({ data: { srs_stage: 2, interval_days: 10, ease_factor: 2.5 }, error: null }) },
+      tables: {
+        kanji: () => ({ data: { id: "k1" }, error: null }),
+        user_kanji_progress: () => ({ data: { srs_stage: 2, interval_days: 10, ease_factor: 2.5 }, error: null }),
+      },
     });
     vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
 

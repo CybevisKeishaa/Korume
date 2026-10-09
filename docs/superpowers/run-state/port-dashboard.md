@@ -2,7 +2,7 @@
 
 Branch `port-dashboard`, worktree `.worktrees/port-dashboard`, base master `b89f49d`.
 
-- Owner: Claude
+- Owner: Codex
 
 ## Goal and scope
 
@@ -34,15 +34,15 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T5 | accepted (Claude) | see git log |
 | T6 | accepted (Claude) + T4/T5 review fixes | see git log |
 | T7a | accepted (Claude): progress, claim, award helper, P1 | see git log |
-| T7b–T16 | not started | — |
+| T7b | accepted (Codex): mission pre-write wiring + invalid-reference guard | 2026-10-09 |
+| T8–T16 | not started | — |
 
 ## Contracts and decisions
 
 - Owner rulings D1–D12: spec §1. Schema S1–S7 §2, mission engine M1–M5 §3, curriculum C1–C5 §4, layout L1–L5 §7,
   states/tests/gates E1–E4 §8–§12. Plan-time corrections P1–P9: plan header.
-- Execution method (owner 2026-10-08): **Codex via Paseo implements every task back to back, no check-in between
-  tasks.** Claude writes each packet, reviews (independent code-reviewer + mutations), runs db reset and live gates,
-  commits. If Codex hits its quota, Claude finishes the task itself without asking.
+- Continuation authority (user, 2026-10-09): Codex owns this worktree and implements/checkpoints the remaining
+  packets because Claude's quota is exhausted.
 - Packets/briefs/reports: `.superpowers/sdd/2026-10-08-port-dashboard/` (git-ignored).
 
 ## Verification
@@ -75,6 +75,10 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 - T6 review fixes: S4 RLS/grant gate, openable practice fallback, completed-lesson and window-bound cases
   (mutations red). Accepted minors listed in `.superpowers/sdd/2026-10-08-port-dashboard/followups.md`.
 - Codex hit its usage limit 2026-10-08 ~21:40 (resets 2026-10-09 01:41); Claude continues per owner rule.
+- T7b: targeted learning/mission writers PASS (10 files, 54 tests); `npm run lint` PASS with pre-existing warnings,
+  `npm run typecheck` PASS, `npm run verify:protocol` PASS, and `npm run verify:db:dashboard` PASS. The M1 regression
+  test proves missing SRS/video/transcript references return 400 without ensuring a mission, writing a row, or uploading audio.
+  Independent reviewer approved the follow-up fix; its verification was source-only because its runner was unavailable.
 
 ## Working tree and environment
 
@@ -88,4 +92,4 @@ None. `npx supabase db reset` needs the owner's approval in auto mode.
 
 ## Next actions
 
-1. Task 1 handed to Codex (packet `task-1-packet.md`); Claude then resets the DB, runs the gate, reviews, commits.
+1. Continue with T8 from `task-8-packet.md`; read its direct dependency graph before dispatch.

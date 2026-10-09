@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { scoreDictation, type DictationDiff } from "@/lib/dictation";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordActivity } from "@/lib/data/gamification";
+import { claimActiveMission, ensureDailyMission } from "@/lib/data/missions";
 import type { DictationAttemptInput } from "@/lib/validation/dictation";
 
 const ATTEMPT_LIMIT = { limit: 60, windowMs: 60_000 };
@@ -33,11 +34,17 @@ export async function submitAttempt(
 
   const { data: line, error: lineError } = await supabase
     .from("transcript_lines")
-    .select("text_jp")
+    .select("text_jp, transcripts!inner(video_id)")
     .eq("id", input.lineId)
+    .eq("transcripts.video_id", input.videoId)
     .maybeSingle();
   if (lineError) throw lineError;
   if (!line) return { ok: false, status: 400 };
+  try {
+    await ensureDailyMission(user.id);
+  } catch (err) {
+    console.error("[missions] ensure before dictation failed:", err);
+  }
 
   const { accuracy, diff } = scoreDictation(line.text_jp, input.userInput);
 
@@ -54,6 +61,7 @@ export async function submitAttempt(
   // Best-effort: gamification never fails a learning-flow request (see
   // lib/data/gamification.ts::recordActivity).
   await recordActivity({ userId: user.id, source: "dictation", parts: { lineId: input.lineId } });
+  await claimActiveMission(user.id);
 
   return { ok: true, data: { accuracy, diff } };
 }

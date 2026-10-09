@@ -58,7 +58,7 @@ describe("ensureDailyMission (spec M1/M2)", () => {
   });
 
   it("never throws: an RPC error is logged as mission_ensure_failed with its message and returns null", async () => {
-    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     install({ ensure: () => ({ data: null, error: { message: "boom" } }) });
     await expect(ensureDailyMission("u1")).resolves.toBeNull();
     expect(log).toHaveBeenCalledWith(expect.stringContaining("\"event\":\"mission_ensure_failed\""));
@@ -101,7 +101,7 @@ describe("claimActiveMission (spec M4)", () => {
   });
 
   it("logs mission_claim_failed and never throws", async () => {
-    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     installClaims([{ id: "m1" }], () => ({ data: null, error: { message: "nope" } }));
     await expect(claimActiveMission("u1")).resolves.toBeUndefined();
     expect(log).toHaveBeenCalledWith(expect.stringContaining("mission_claim_failed"));

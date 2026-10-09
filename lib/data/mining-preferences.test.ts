@@ -9,6 +9,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 vi.mock("@/lib/data/videos", () => ({ requireUser: vi.fn().mockResolvedValue({ id: "u1" }) }));
 vi.mock("@/lib/data/gamification", () => ({ recordActivity: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/data/missions", () => ({ ensureDailyMission: vi.fn().mockResolvedValue(null), claimActiveMission: vi.fn().mockResolvedValue(undefined) }));
 // Spread the real module so REVIEW_FREQUENCY_MULTIPLIER stays the one in sm2.ts.
 // Restating it here would make the assertion below check the mock against itself.
 vi.mock("@/lib/srs", async (importActual) => ({

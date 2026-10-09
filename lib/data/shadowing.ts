@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordActivity } from "@/lib/data/gamification";
+import { claimActiveMission, ensureDailyMission } from "@/lib/data/missions";
 import { validateAudioFile, type AudioFileLike } from "@/lib/validation/shadowing";
 
 const SESSION_LIMIT = { limit: 30, windowMs: 60_000 };
@@ -51,6 +52,19 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
   const audioMeta: AudioFileLike = { size: input.audio.size, type: input.audio.type };
   const validation = validateAudioFile(audioMeta);
   if (!validation.ok) return { ok: false, status: 422 };
+  const { data: line, error: lineError } = await supabase
+    .from("transcript_lines")
+    .select("id, transcripts!inner(video_id)")
+    .eq("id", input.lineId)
+    .eq("transcripts.video_id", input.videoId)
+    .maybeSingle();
+  if (lineError) throw lineError;
+  if (!line) return { ok: false, status: 400 };
+  try {
+    await ensureDailyMission(user.id);
+  } catch (err) {
+    console.error("[missions] ensure before shadowing failed:", err);
+  }
 
   const sessionId = randomUUID();
   const recordingPath = `${user.id}/shadowing/${sessionId}.webm`;
@@ -88,6 +102,7 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
   // Best-effort: gamification never fails a learning-flow request (see
   // lib/data/gamification.ts::recordActivity).
   await recordActivity({ userId: user.id, source: "shadowing", parts: { lineId: input.lineId } });
+  await claimActiveMission(user.id);
 
   const row = inserted as { id: string; created_at: string };
   return {

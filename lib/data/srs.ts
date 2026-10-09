@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { reviewItem, INITIAL_STATE, REVIEW_FREQUENCY_MULTIPLIER, type Quality, type SrsState } from "@/lib/srs";
 import { getKanjiList, getVocabList } from "@/lib/data/content";
 import { recordActivity } from "@/lib/data/gamification";
+import { claimActiveMission, ensureDailyMission } from "@/lib/data/missions";
 import { readPreferences } from "@/lib/data/preferences";
 import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
 import { masteryTransition } from "@/lib/srs/mastery";
@@ -34,8 +35,20 @@ export async function submitReview(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, status: 401 };
   const prefs = await readPreferences(supabase, user.id);
-
   const { table, fk } = PROGRESS[input.itemType];
+  const { data: item, error: itemError } = await supabase
+    .from(input.itemType)
+    .select("id")
+    .eq("id", input.itemId)
+    .maybeSingle();
+  if (itemError) throw itemError;
+  if (!item) return { ok: false, status: 400 };
+  // Pre-write (spec M1): the day's mission must exist before this review moves the card out of the due set.
+  try {
+    await ensureDailyMission(user.id);
+  } catch (err) {
+    console.error("[missions] ensure before review failed:", err);
+  }
 
   const { data: existing, error: loadError } = await supabase
     .from(table)
@@ -96,6 +109,7 @@ export async function submitReview(
     parts: { itemType: input.itemType, itemId: input.itemId },
     now,
   });
+  await claimActiveMission(user.id, now);
 
   return {
     ok: true,

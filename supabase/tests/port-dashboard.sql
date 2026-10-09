@@ -599,3 +599,67 @@ begin
   raise notice 'PASS dashboard S4 mission RLS and grants';
 end $$;
 rollback;
+
+-- M3 finish_lesson counts a FIRST completion inside [created_at, window_end); a mission whose items were all
+-- cascade-deleted is never paid (bool_and over no rows is NULL -> not done).
+begin;
+do $$
+declare a uuid := current_setting('dashgate.a')::uuid; m uuid; vid uuid; t uuid; r record; w_end timestamptz;
+begin
+  delete from daily_missions where user_id = a;
+  delete from user_kanji_progress where user_id = a;
+  insert into videos (youtube_video_id, title, library_access) values ('dashgate-fl', 'fl', 'FREE') returning id into vid;
+  insert into transcripts (video_id, source) values (vid, 'user_submitted') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp) values (t, 0, 'f');
+  insert into user_video_progress (user_id, video_id, last_watched_position) values (a, vid, 30);
+  m := ensure_daily_mission(a, array['kanji'], '{"review":20,"shadow_lines":3,"dictation_lines":5}',
+    jsonb_build_array(jsonb_build_object('type', 'finish_lesson', 'videoId', vid)));
+  select window_end into w_end from daily_missions where id = m;
+  if (select array_agg(type order by slot) from daily_mission_items where mission_id = m) is distinct from array['finish_lesson'] then
+    raise exception 'FAIL dashboard M3 finish_lesson setup';
+  end if;
+  -- A first completion stamped exactly at window_end belongs to the next cycle.
+  alter table user_video_progress disable trigger user_video_progress_first_completed;
+  update user_video_progress set completed_at = w_end, first_completed_at = w_end where user_id = a and video_id = vid;
+  alter table user_video_progress enable trigger user_video_progress_first_completed;
+  if (select current from daily_mission_item_progress(m)) <> 0 then raise exception 'FAIL dashboard M3 finish_lesson counted window_end'; end if;
+  -- A completion inside the window, after creation: done, and the claim pays once.
+  alter table user_video_progress disable trigger user_video_progress_first_completed;
+  update user_video_progress set first_completed_at = now() where user_id = a and video_id = vid;
+  alter table user_video_progress enable trigger user_video_progress_first_completed;
+  select * into r from claim_daily_mission(a, m, 50);
+  if not r.completed or r.xp_awarded <> 50 then raise exception 'FAIL dashboard M3 finish_lesson claim: %', r; end if;
+
+  -- Zero items: a new cycle whose only item lost its video is never paid.
+  delete from daily_missions where id = m;
+  insert into daily_missions (user_id, study_date, timezone_at_creation, window_start, window_end)
+    values (a, current_date, 'UTC', now() - interval '1 hour', now() + interval '1 hour') returning id into m;
+  select * into r from claim_daily_mission(a, m, 50);
+  if r.completed or r.xp_awarded <> 0 then raise exception 'FAIL dashboard M4 paid a mission with no items'; end if;
+  raise notice 'PASS dashboard M3 finish_lesson window and M4 zero-item mission';
+end $$;
+rollback;
+
+-- M1 live pre-write proof: ensure BEFORE the review keeps the reviewed card in the frozen set (1/1); the reverse
+-- order (review first, ensure after) freezes nothing — exactly why the five writers ensure first.
+begin;
+do $$
+declare a uuid := current_setting('dashgate.a')::uuid; k uuid; m uuid;
+begin
+  delete from daily_missions where user_id = a;
+  delete from user_kanji_progress where user_id = a;
+  insert into kanji (character) values ('㒀') returning id into k;
+  insert into user_kanji_progress (user_id, kanji_id, next_review_at) values (a, k, now() - interval '1 hour');
+  m := ensure_daily_mission(a, array['kanji'], '{"review":20,"shadow_lines":3,"dictation_lines":5}', '[]');
+  update user_kanji_progress set next_review_at = now() + interval '1 day' where user_id = a and kanji_id = k;
+  insert into learning_outcomes (user_id, source_type, item_key) values (a, 'srs_review', 'kanji:' || k);
+  if (select current || '/' || target from daily_mission_item_progress(m) where type = 'review') is distinct from '1/1' then
+    raise exception 'FAIL dashboard M1 ensure-first did not count the reviewed card';
+  end if;
+  delete from daily_missions where id = m;
+  if ensure_daily_mission(a, array['kanji'], '{"review":20,"shadow_lines":3,"dictation_lines":5}', '[]') is not null then
+    raise exception 'FAIL dashboard M1 write-first unexpectedly froze a review item';
+  end if;
+  raise notice 'PASS dashboard M1 pre-write order (ensure first counts; write first freezes nothing)';
+end $$;
+rollback;
