@@ -10,6 +10,9 @@
   },
   "quick": { "eyebrow": "Quick access", "due": "{count} due", "caughtUp": "All caught up" },
   "card": { "error": "This part couldn't load right now." },
+  "continue": { "eyebrow": { "continue": "Continue learning", "startNext": "Start next lesson", "recommended": "Recommended for you", "onboarding": "Start learning" }, "lessonOrdinal": "Lesson {position}", "percent": "{percent}% completed", "remaining": "{minutes} min of video left", "cta": { "continue": "Continue learning", "start": "Start lesson", "review": "Review lesson", "explore": "Explore lessons" }, "onboarding": "Pick a first lesson and Korume will keep your place." },
+  "mission": { "eyebrow": "Today's mission", "titleThree": "Three small promises", "titleSome": "Today's missions", "item": { "review": "Review {target} cards", "finish": "Finish {title}", "shadow": "Shadow {target} sentences", "dictation": "Dictate {target} lines" }, "reward": "Reward", "rewardXp": "+{xp} XP", "rewardEarned": "+{xp} XP earned", "onboarding": "Your first missions appear once you start learning.", "error": "Today's missions couldn't load." },
+  "journey": { "eyebrow": "Learning journey", "state": { "completed": "Completed", "locked": "Locked", "unavailable": "Being prepared" }, "next": "Next milestone", "remaining": "{count, plural, one {{count} lesson remaining} other {{count} lessons remaining}}", "plus": "+{count} Plus lessons", "authoring": "The JLPT journey is being prepared.", "complete": "You've completed the current journey." },
   "subtitle": "Pick a module to start studying.",
   "a11y": {
     "progress": "Your progress",

@@ -17,6 +17,10 @@ describe("dashboard.json EN — port dashboard", () => {
 
 describe("dashboard.json EN — legacy cards", () => {
   it("pins legacy dashboard copy until Task 14 removes its remaining consumers", () => {
+    expect(en.continue.eyebrow).toEqual({ continue: "Continue learning", startNext: "Start next lesson", recommended: "Recommended for you", onboarding: "Start learning" });
+    expect(en.continue.cta).toEqual({ continue: "Continue learning", start: "Start lesson", review: "Review lesson", explore: "Explore lessons" });
+    expect(en.mission).toMatchObject({ eyebrow: "Today's mission", titleThree: "Three small promises", titleSome: "Today's missions", reward: "Reward", rewardEarned: "+{xp} XP earned" });
+    expect(en.journey).toMatchObject({ eyebrow: "Learning journey", next: "Next milestone", authoring: "The JLPT journey is being prepared.", complete: "You've completed the current journey." });
     expect(en.title).toBe("Dashboard");
     expect(en.subtitle).toBe("Pick a module to start studying.");
     expect(en.a11y.progress).toBe("Your progress");

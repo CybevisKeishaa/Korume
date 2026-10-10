@@ -9,6 +9,9 @@
   },
   "quick": { "eyebrow": "Truy cập nhanh", "due": "{count} thẻ đến hạn", "caughtUp": "Không có thẻ đến hạn" },
   "card": { "error": "Phần này tạm thời chưa tải được." },
+  "continue": { "eyebrow": { "continue": "Tiếp tục học", "startNext": "Bắt đầu bài tiếp theo", "recommended": "Gợi ý cho bạn", "onboarding": "Bắt đầu học" }, "lessonOrdinal": "Bài {position}", "percent": "Đã xong {percent}%", "remaining": "Còn {minutes} phút video", "cta": { "continue": "Học tiếp", "start": "Bắt đầu học", "review": "Xem lại bài", "explore": "Khám phá bài học" }, "onboarding": "Chọn bài đầu tiên, Korume sẽ giữ chỗ cho bạn." },
+  "mission": { "eyebrow": "Nhiệm vụ hôm nay", "titleThree": "Ba lời hẹn nhỏ", "titleSome": "Nhiệm vụ hôm nay", "item": { "review": "Ôn {target} thẻ", "finish": "Hoàn thành {title}", "shadow": "Shadow {target} câu", "dictation": "Chép chính tả {target} câu" }, "reward": "Phần thưởng", "rewardXp": "+{xp} XP", "rewardEarned": "Đã nhận +{xp} XP", "onboarding": "Nhiệm vụ đầu tiên sẽ xuất hiện khi bạn bắt đầu học.", "error": "Chưa tải được nhiệm vụ hôm nay." },
+  "journey": { "eyebrow": "Lộ trình học", "state": { "completed": "Đã hoàn thành", "locked": "Chưa mở", "unavailable": "Đang biên soạn" }, "next": "Cột mốc tiếp theo", "remaining": "{count, plural, other {Còn {count} bài}}", "plus": "+{count} bài Plus", "authoring": "Lộ trình JLPT đang được biên soạn.", "complete": "Đã hoàn thành lộ trình hiện có." },
   "title": "Bảng điều khiển",
   "subtitle": "Hôm nay mình học gì nhỉ? Chọn một học phần để bắt đầu nhé.",
   "a11y": {
