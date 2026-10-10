@@ -37,7 +37,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T7b | accepted (Codex): mission pre-write wiring + invalid-reference guard | 2026-10-09 |
 | T8 | accepted (Codex): two-phase 20-worker mission race + privilege sweep | 2026-10-09 |
 | T9a | accepted (Codex): pure dashboard facts, S6 RPCs/gate, review fix wave | 2026-10-09 |
-| T9b–T16 | not started | — |
+| T9b | accepted (Codex): request-cached facts, continuation taxonomy slugs, achievement cap, review fixes | pending commit |
+| T10-T16 | not started | - |
 
 ## Contracts and decisions
 
@@ -85,16 +86,22 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   20 outcomes). Mutations red: removing ensure's lock produced the mission-cycle unique violation; removing claim's
   lock produced `xp_events_once_only_uq`. Both locks restored and the final fresh-reset gate passed.
 
+- T9b: focused facts/cache/activity gate PASS (5 files, 17 tests); lint PASS with existing warnings; typecheck,
+  protocol and diff checks PASS. Fresh reset + dictionary import yielded one active snapshot (218849 entries, 13108
+  kanji); live dashboard gate PASS, including S6 and the 20-worker race. Mutations red: timezone conversion made
+  prior weekly history available, omitted weekly RPC failed the cache assertion, `r <= p_dates` returned 29 rows in
+  the S6 gate, and threshold `5 -> 6` returned level 1. All source hashes restored; see task-9b-report.md.
+
 ## Working tree and environment
 
 - Worktree created from master `b89f49d`; clean after `74f2e55` + this file.
 - `node_modules` = junction to `.worktrees/port-profile/node_modules`; `.env.local` copied; `verify:protocol` valid.
-- Local Supabase (Docker) was running on 2026-10-08; local DB holds only demo/e2e videos.
+- Local Supabase (Docker) was started for T9b; fresh reset and dictionary import completed 2026-10-10.
 
 ## Blockers
 
-None. `npx supabase db reset` needs the owner's approval in auto mode.
+None. The owner approved T9b's local reset on 2026-10-10.
 
 ## Next actions
 
-1. Continue with T9b from `.superpowers/sdd/2026-10-08-port-dashboard/task-9b-packet.md`; read its direct dependency graph before dispatch.
+1. Commit T9b after this checkpoint, then continue with T10 from `.superpowers/sdd/2026-10-08-port-dashboard/task-10-packet.md`; read its direct dependency graph before dispatch.
