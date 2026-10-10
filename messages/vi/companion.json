@@ -1,5 +1,10 @@
 {
   "backToDashboard": "Về bảng điều khiển",
+  "cue": {
+    "missionCompleted": "Bạn đã giữ trọn những lời hứa hôm nay.",
+    "weeklyImproved": "{skill} của bạn tăng {points} điểm so với 7 ngày trước.",
+    "weakSkill": "{skill} đang ở mức {score}%. Luyện vài phút sẽ giúp ích."
+  },
   "memoryTitle": {
     "firstShadow": "Câu thoại đầu tiên bạn shadowing được.",
     "lineMastered": "Câu bạn luyện mãi, rồi cuối cùng cũng nói được.",

@@ -38,7 +38,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T8 | accepted (Codex): two-phase 20-worker mission race + privilege sweep | 2026-10-09 |
 | T9a | accepted (Codex): pure dashboard facts, S6 RPCs/gate, review fix wave | 2026-10-09 |
 | T9b | accepted (Codex): request-cached facts, continuation taxonomy slugs, achievement cap, review fixes | `67c4d388` |
-| T10-T16 | not started | - |
+| T10 | accepted (Codex): deterministic Korume cue resolver and D6 copy | pending commit |
+| T11-T16 | not started | - |
 
 ## Contracts and decisions
 
@@ -91,6 +92,10 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   kanji); live dashboard gate PASS, including S6 and the 20-worker race. Mutations red: timezone conversion made
   prior weekly history available, omitted weekly RPC failed the cache assertion, `r <= p_dates` returned 29 rows in
   the S6 gate, and threshold `5 -> 6` returned level 1. All source hashes restored; see task-9b-report.md.
+- T10: resolver/copy focused gate PASS (46 tests); lint PASS with existing warnings; typecheck and diff check PASS.
+  Mutations red: `>=` to `>` rejected +5, and a punctuation change broke the EN copy pin. Reviewer approved with no
+  findings; no DB gate applies because T10 is pure TS and catalogs only. Task 13 must add the `dashboard.skills`
+  catalog that renders the resolver's skill keys; see task-10-report.md.
 
 ## Working tree and environment
 
@@ -104,4 +109,4 @@ None. The owner approved T9b's local reset on 2026-10-10.
 
 ## Next actions
 
-1. Commit T9b after this checkpoint, then continue with T10 from `.superpowers/sdd/2026-10-08-port-dashboard/task-10-packet.md`; read its direct dependency graph before dispatch.
+1. Commit T10 after this checkpoint, then continue with T11 from `.superpowers/sdd/2026-10-08-port-dashboard/task-11-packet.md`; read its direct dependency graph before dispatch.
