@@ -1,20 +1,23 @@
-import type { ReactNode } from "react";
+import type { KeyboardEventHandler, ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export type DashboardArea = "continue" | "mission" | "korume" | "journey" | "weakness" | "weekly" | "activity" | "achievements" | "quick";
 
-export function DashboardCard({ id, area, eyebrow, children, labelledBy, focusable = false }: {
+export function DashboardCard({ id, area, eyebrow, children, labelledBy, describedBy, focusable = false, tabIndex, onKeyDown }: {
   id: string;
   area: DashboardArea;
   eyebrow: string;
   children: ReactNode;
   labelledBy?: string;
+  describedBy?: string;
   focusable?: boolean;
+  tabIndex?: number;
+  onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 }) {
   const headingId = labelledBy ?? `${id}-title`;
   return (
-    <Card id={id} data-area={area} role="region" aria-labelledby={headingId} tabIndex={focusable ? -1 : undefined}>
+    <Card id={id} data-area={area} role="region" aria-labelledby={headingId} aria-describedby={describedBy} tabIndex={tabIndex ?? (focusable ? -1 : undefined)} onKeyDown={onKeyDown}>
       <CardHeader>
         <CardTitle id={headingId} className="text-xs uppercase tracking-[0.2em] text-primary-strong">{eyebrow}</CardTitle>
       </CardHeader>

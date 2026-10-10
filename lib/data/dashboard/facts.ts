@@ -45,12 +45,12 @@ export const getActivityFact = cache(async (context: DashboardContext): Promise<
   return buildActivityGrid({ today: context.today, counts, scheduleDays: context.scheduleDays, firstTrackedDate });
 });
 
-export interface StudyTimeFact { bars: WeeklyBar[]; hoursW0: number }
+export interface StudyTimeFact { bars: WeeklyBar[]; hoursW0: number; trackedSinceDate: string | null }
 
 export const getStudyTimeFact = cache(async (context: DashboardContext): Promise<StudyTimeFact> => {
   const windows = weeklyWindows(context.today);
   const oldest = windows.at(-1);
-  if (!oldest) return { bars: [], hoursW0: 0 };
+  if (!oldest) return { bars: [], hoursW0: 0, trackedSinceDate: null };
   const [time, trackedSince] = await Promise.all([
     getStudyTime(studyDayStart(oldest.from, context.timeZone), nextStudyDayStart(context.now, context.timeZone)),
     getTrackedSince(),
@@ -58,7 +58,7 @@ export const getStudyTimeFact = cache(async (context: DashboardContext): Promise
   const trackedSinceDate = trackedSince ? studyDate(new Date(trackedSince), context.timeZone) : null;
   const bars = weeklyBars(windows, time.days, trackedSinceDate);
   const current = bars.find((bar) => bar.index === 0);
-  return { bars, hoursW0: current && "seconds" in current ? current.seconds / 3600 : 0 };
+  return { bars, hoursW0: current && "seconds" in current ? current.seconds / 3600 : 0, trackedSinceDate };
 });
 
 export interface WeeklyFacts extends StudyTimeFact { vocabularyMastered: number; listeningDelta: number | null; pronunciationDelta: number | null }
@@ -68,7 +68,7 @@ export const getWeeklyFacts = cache(async (context: DashboardContext): Promise<W
   const current = windows[0];
   const previous = windows[1];
   if (!current || !previous) {
-    return { bars: [], hoursW0: 0, vocabularyMastered: 0, listeningDelta: null, pronunciationDelta: null };
+    return { bars: [], hoursW0: 0, trackedSinceDate: null, vocabularyMastered: 0, listeningDelta: null, pronunciationDelta: null };
   }
   const [study, skills, mastery] = await Promise.all([
     getStudyTimeFact(context),
