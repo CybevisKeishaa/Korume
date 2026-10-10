@@ -37,7 +37,7 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T7b | accepted (Codex): mission pre-write wiring + invalid-reference guard | 2026-10-09 |
 | T8 | accepted (Codex): two-phase 20-worker mission race + privilege sweep | 2026-10-09 |
 | T9a | accepted (Codex): pure dashboard facts, S6 RPCs/gate, review fix wave | 2026-10-09 |
-| T9b | accepted (Codex): request-cached facts, continuation taxonomy slugs, achievement cap, review fixes | pending commit |
+| T9b | accepted (Codex): request-cached facts, continuation taxonomy slugs, achievement cap, review fixes | `67c4d388` |
 | T10-T16 | not started | - |
 
 ## Contracts and decisions
