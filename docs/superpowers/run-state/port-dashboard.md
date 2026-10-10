@@ -41,7 +41,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T10 | accepted (Codex): deterministic Korume cue resolver and D6 copy | `973fd9d5` |
 | T11 | accepted (Codex): page shell, container layout, header, Quick Access, card boundary | `665f7a17` |
 | T12 | accepted (Codex): Continue, Mission, Journey cards + review fixes | `64d31f21` |
-| T13-T16 | not started | - |
+| T13 | accepted (Codex): Korume, Weakness, Weekly, Activity, Achievement cards + two review-fix passes | `ad1287f0` |
+| T14-T16 | not started | - |
 
 ## Contracts and decisions
 
@@ -107,6 +108,11 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   taxonomy slugs, named playback progress, nullable next-milestone handling, and a two-consumer request-cache test.
   Mutations red: continuation clamp, reward authority, mission cache removal, and playback percentage multiplier.
   No DB reset or Playwright applies; see task-12-report.md.
+- T13: focused dashboard facts/cache/cards/catalog suite PASS (8 files, 28 tests); typecheck, protocol, and diff checks
+  PASS; lint exits 0 with existing warnings only. Two review-fix passes added the RSC client boundary, 4x14 visible
+  activity grid with live roving-cell announcement, correct calendar yesterday, ten-bar fallback, localized weakness
+  metrics, local card errors, visible bar/cell states, and full EN/VI pins. No DB reset or Playwright applies; see
+  task-13-report.md.
 
 ## Working tree and environment
 
@@ -120,4 +126,4 @@ None. The owner approved T9b's local reset on 2026-10-10.
 
 ## Next actions
 
-1. Continue with T13 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
+1. Continue with T14 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
