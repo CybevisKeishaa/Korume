@@ -40,7 +40,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T9b | accepted (Codex): request-cached facts, continuation taxonomy slugs, achievement cap, review fixes | `67c4d388` |
 | T10 | accepted (Codex): deterministic Korume cue resolver and D6 copy | `973fd9d5` |
 | T11 | accepted (Codex): page shell, container layout, header, Quick Access, card boundary | `665f7a17` |
-| T12-T16 | not started | - |
+| T12 | accepted (Codex): Continue, Mission, Journey cards + review fixes | `64d31f21` |
+| T13-T16 | not started | - |
 
 ## Contracts and decisions
 
@@ -101,6 +102,11 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   protocol and diff checks PASS. Mutations red: 401 swallowed as card error, zero-streak chip, fewer than four Quick
   Access links, copy pin, and profile achievements target. Reviewer approved after context-fallback and deferred
   legacy-catalog compatibility fixes. No DB gate applies; see task-11-report.md.
+- T12: focused card/data/catalog gate PASS (7 files, 27 tests); typecheck, protocol, and diff checks PASS; lint PASS
+  with existing warnings. Reviewer fix pass added real `learner_videos` playback projection, rendered continuation
+  taxonomy slugs, named playback progress, nullable next-milestone handling, and a two-consumer request-cache test.
+  Mutations red: continuation clamp, reward authority, mission cache removal, and playback percentage multiplier.
+  No DB reset or Playwright applies; see task-12-report.md.
 
 ## Working tree and environment
 
@@ -114,4 +120,4 @@ None. The owner approved T9b's local reset on 2026-10-10.
 
 ## Next actions
 
-1. Continue with T12 from `.superpowers/sdd/2026-10-08-port-dashboard/task-12-packet.md`; read its direct dependency graph before dispatch.
+1. Continue with T13 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
