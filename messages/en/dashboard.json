@@ -1,5 +1,15 @@
 {
   "title": "Dashboard",
+  "header": {
+    "eyebrow": "{weekday} · {daypart}",
+    "daypart": { "morning": "Morning", "afternoon": "Afternoon", "evening": "Evening", "lateEvening": "Late evening" },
+    "title": "Welcome back, {name}",
+    "titleNoName": "Welcome back",
+    "subtitle": "Let's continue your Japanese journey.",
+    "streak": "{count}-day streak"
+  },
+  "quick": { "eyebrow": "Quick access", "due": "{count} due", "caughtUp": "All caught up" },
+  "card": { "error": "This part couldn't load right now." },
   "subtitle": "Pick a module to start studying.",
   "a11y": {
     "progress": "Your progress",

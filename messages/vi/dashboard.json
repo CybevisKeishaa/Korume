@@ -1,4 +1,14 @@
 {
+  "header": {
+    "eyebrow": "{weekday} · {daypart}",
+    "daypart": { "morning": "Buổi sáng", "afternoon": "Buổi chiều", "evening": "Buổi tối", "lateEvening": "Khuya" },
+    "title": "Chào mừng trở lại, {name}",
+    "titleNoName": "Chào mừng trở lại",
+    "subtitle": "Cùng tiếp tục hành trình tiếng Nhật của bạn.",
+    "streak": "Chuỗi {count} ngày"
+  },
+  "quick": { "eyebrow": "Truy cập nhanh", "due": "{count} thẻ đến hạn", "caughtUp": "Không có thẻ đến hạn" },
+  "card": { "error": "Phần này tạm thời chưa tải được." },
   "title": "Bảng điều khiển",
   "subtitle": "Hôm nay mình học gì nhỉ? Chọn một học phần để bắt đầu nhé.",
   "a11y": {

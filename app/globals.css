@@ -1692,6 +1692,36 @@
 /* /profile (port-profile spec 7.1): reflow by the content container, never shrink. DOM order is the reading
    order at every width; the right rail below is placement only. Explicit lines are always given in pairs. */
 .profile-layout { container: profile / inline-size; }
+
+/* /dashboard (port-dashboard spec Â§7): reflow by the content container, never shrink. */
+.dashboard-layout { container: dashboard / inline-size; max-width: 75rem; margin-inline: auto; }
+.dashboard-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-lg); }
+.dashboard-streak, .dashboard-avatar { display: inline-flex; align-items: center; justify-content: center; border: 1px solid hsl(var(--border)); }
+.dashboard-streak { min-block-size: 2.25rem; border-radius: 9999px; padding-inline: var(--space-sm); font-size: 0.875rem; font-weight: 600; }
+.dashboard-avatar { block-size: 2.5rem; inline-size: 2.5rem; overflow: hidden; border-radius: 9999px; background: hsl(var(--muted)); }
+.dashboard-avatar img { block-size: 100%; inline-size: 100%; object-fit: cover; }
+.dashboard-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
+.dashboard-row { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.dashboard-quick { display: grid; gap: var(--space-sm); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+.dashboard-quick-link { display: grid; gap: var(--space-2xs); border-radius: var(--radius-md); background: hsl(var(--muted)); padding: var(--space-md); font-weight: 600; }
+[data-area="continue"], [data-area="mission"] { min-block-size: 15rem; }
+[data-area="korume"], [data-area="journey"], [data-area="weakness"] { min-block-size: 12rem; }
+[data-area="weekly"], [data-area="activity"] { min-block-size: 14rem; }
+[data-area="achievements"], [data-area="quick"] { min-block-size: 8rem; }
+@container dashboard (width >= 40rem) {
+  .dashboard-row--three, .dashboard-row--pair, .dashboard-row--lead { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container dashboard (width >= 56.25rem) {
+  .dashboard-row--lead { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .dashboard-row--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dashboard-row--three:not(:has(> [data-area="korume"])) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-row--trend { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+  .dashboard-quick { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@container dashboard (width >= 68.75rem) {
+  .dashboard-row--lead { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .dashboard-row--trend { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+}
 .profile-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
 .profile-rail, .profile-main, .profile-pair { display: grid; gap: var(--space-md); align-content: start; }
 .profile-pair { grid-template-columns: minmax(0, 1fr); }

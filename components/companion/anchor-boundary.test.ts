@@ -24,7 +24,7 @@ import { describe, expect, it } from "vitest";
  * same commit that creates the routes.
  */
 const ALLOWLIST = new Set([
-  "app/[locale]/(protected)/(app)/dashboard/page.tsx",
+  "components/dashboard/korume-card.tsx",
   "app/[locale]/(protected)/(immersive)/journal/page.tsx",
   "app/[locale]/(protected)/(app)/shadowing/page.tsx",
   "components/companion/journal-view.tsx",
@@ -137,7 +137,7 @@ describe("CompanionAnchor import boundary (spec 1 §5.4)", () => {
     // …while an allowlisted surface with the same import is fine.
     expect(
       isOffender(
-        "app/[locale]/(protected)/(app)/dashboard/page.tsx",
+        "components/dashboard/korume-card.tsx",
         'import { CompanionAnchor } from "@/components/companion/companion-anchor";',
       ),
     ).toBe(false);

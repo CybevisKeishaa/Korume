@@ -10,6 +10,8 @@ describe("AchievementsCard", () => {
     render(<AchievementsCard achievements={makeView().achievements} />);
     expect(screen.getByRole("heading", { name: en.achievements.title })).toBeInTheDocument();
     expect(screen.getByText("First Shadow")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: en.achievements.title })).toHaveAttribute("id", "achievements");
+    expect(screen.getByRole("region", { name: en.achievements.title })).toHaveAttribute("tabindex", "-1");
   });
   it("shows the empty state", () => {
     render(<AchievementsCard achievements={[]} />);

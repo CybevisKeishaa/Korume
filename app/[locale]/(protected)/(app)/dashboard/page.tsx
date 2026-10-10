@@ -1,99 +1,49 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import type { Locale } from "@/lib/i18n";
-import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
 import { Container } from "@/components/ui/container";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LevelCard } from "@/components/learning/level-card";
-import { StreakCard } from "@/components/learning/streak-card";
-import { SrsDueCard } from "@/components/learning/srs-due-card";
-import { BadgesGrid } from "@/components/learning/badges-grid";
-import { RecommendationSection } from "@/components/learning/recommendation-section";
-import { CompanionAnchor } from "@/components/companion/companion-anchor";
-import { getUserStats } from "@/lib/data/user-stats";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { QuickAccess } from "@/components/dashboard/quick-access";
+import { CardSkeleton } from "@/components/dashboard/dashboard-card";
+import { loadCard } from "@/components/dashboard/card-boundary";
+import { getDashboardContext } from "@/lib/data/dashboard/context";
+import { getStreakFact } from "@/lib/data/dashboard/facts";
+import { getReviewSummary } from "@/lib/data/dashboard/review";
+import { daypartAt } from "@/lib/dashboard/daypart";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: Locale };
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { locale: Locale } }): Promise<Metadata> {
   const t = await getTranslations({ locale: params.locale, namespace: "dashboard" });
   return { title: t("title") };
 }
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
-  const t = await getTranslations("dashboard");
-  const tCommon = await getTranslations("common");
-  const statsResult = await getUserStats();
-  const stats = statsResult.ok ? statsResult.data : null;
+async function QuickAccessCard() {
+  const review = await loadCard("quick", getReviewSummary);
+  return <QuickAccess review={review.kind === "ok" ? review.data : null} />;
+}
 
-  const MODULES = [
-    { href: "/kanji", title: t("modules.kanjiTitle"), desc: t("modules.kanjiDesc") },
-    { href: "/vocab", title: t("modules.vocabTitle"), desc: t("modules.vocabDesc") },
-    { href: "/grammar", title: t("modules.grammarTitle"), desc: t("modules.grammarDesc") },
-  ] as const;
-
+export default async function DashboardPage({ params }: { params: { locale: Locale } }) {
+  const contextState = await loadCard("context", getDashboardContext);
+  const context = contextState.kind === "ok" ? contextState.data : null;
+  const streak = context ? await loadCard("header_streak", () => getStreakFact(context)) : { kind: "unavailable" } as const;
+  const now = context?.now ?? new Date();
+  const timeZone = context?.timeZone ?? "UTC";
+  const weekday = new Intl.DateTimeFormat(params.locale, { weekday: "long", timeZone }).format(now);
   return (
-    <Container className="py-12">
-      <h1 className="text-2xl font-bold">{t("title")}</h1>
-      <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
-
-      {/* The Dashboard is a rest point, not a learning loop — one of the
-          surfaces that may invite the Companion (spec 1 §5.2/§5.4). Kept
-          outside `{stats && …}` so a stats-fetch failure never makes the
-          creature vanish from its primary landing surface (§6.5). */}
-      <CompanionAnchor surface="dashboard" pose="sitting" />
-
-      {stats && (
-        <section aria-label={t("a11y.progress")} className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <LevelCard xp={stats.xp} level={stats.level} />
-          <StreakCard
-            streakCurrent={stats.streakCurrent}
-            streakLongest={stats.streakLongest}
-            lastActiveDate={stats.lastActiveDate}
-            today={stats.today}
-          />
-          <SrsDueCard srsDueCount={stats.srsDueCount} />
-        </section>
-      )}
-
-      {stats && (
-        <section aria-labelledby="badges-heading" className="mt-10">
-          <h2 id="badges-heading" className="mb-3 text-lg font-semibold">
-            {t("badges.heading")}
-          </h2>
-          <BadgesGrid badges={stats.badges} />
-        </section>
-      )}
-
-      <section aria-labelledby="recommendations-heading" className="mt-10">
-        <h2 id="recommendations-heading" className="mb-3 text-lg font-semibold">
-          {tCommon("recommendations.heading")}
-        </h2>
-        <Suspense fallback={<p className="text-sm text-muted-foreground">{tCommon("recommendations.loading")}</p>}>
-          <RecommendationSection limit={8} />
-        </Suspense>
-      </section>
-
-      <section aria-labelledby="modules-heading" className="mt-10">
-        <h2 id="modules-heading" className="mb-3 text-lg font-semibold">
-          {t("modules.heading")}
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {MODULES.map((m) => (
-            <Link key={m.href} href={m.href} className="group">
-              <Card className="h-full transition-colors group-hover:border-primary">
-                <CardHeader>
-                  <CardTitle>{m.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">{m.desc}</CardContent>
-              </Card>
-            </Link>
-          ))}
+    <Container className="py-xl">
+      <div className="dashboard-layout">
+        <DashboardHeader weekday={weekday} daypart={daypartAt(now, timeZone)} name={context?.name ?? null} avatarUrl={context?.avatarUrl ?? null} streak={streak.kind === "ok" ? streak.data.current : 0} />
+        <div className="dashboard-grid">
+          <div className="dashboard-row dashboard-row--lead" />
+          <div className="dashboard-row dashboard-row--three" />
+          <div className="dashboard-row dashboard-row--trend" />
+          <div className="dashboard-row dashboard-row--achievements" />
+          <div className="dashboard-row dashboard-row--quick">
+            <Suspense fallback={<CardSkeleton area="quick" />}><QuickAccessCard /></Suspense>
+          </div>
         </div>
-      </section>
+      </div>
     </Container>
   );
 }
