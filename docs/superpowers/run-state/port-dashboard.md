@@ -43,7 +43,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T12 | accepted (Codex): Continue, Mission, Journey cards + review fixes | `64d31f21` |
 | T13 | accepted (Codex): Korume, Weakness, Weekly, Activity, Achievement cards + two review-fix passes | `ad1287f0` |
 | T14 | accepted (Codex): legacy-card retirement, registry/inventory reconciliation, scoped review + re-review | `ce2cca05` |
-| T15-T16 | not started | - |
+| T15 | accepted (Codex): E2E states, focus, geometry, fan-out, isolation fix + scoped review | `3c369cbf` |
+| T16 | not started | - |
 
 ## Contracts and decisions
 
@@ -119,6 +120,9 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   typecheck, lint with existing warnings only, protocol, and diff checks PASS. Registry metadata mutation was RED then
   restored. Scoped review APPROVE; the one JSDoc nit was amended and re-review marked ADDRESSED. No DB or browser gate
   applies; see task-14-report.md.
+- T15: dashboard E2E, geometry/focus and fan-out coverage passed; final clean provider-none full E2E was 162/162.
+  Review found a capped-shelf fixture collision and signup cleanup leak; both were fixed, mutation-checked and
+  re-reviewed. Fan-out measured 30 requests with 14 distinct RPC primitives once each; see task-15-report.md.
 
 ## Working tree and environment
 
@@ -132,4 +136,4 @@ None. The owner approved T9b's local reset on 2026-10-10.
 
 ## Next actions
 
-1. Continue with T15 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
+1. Continue with T16 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
