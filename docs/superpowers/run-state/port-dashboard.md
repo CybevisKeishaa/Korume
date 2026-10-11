@@ -42,7 +42,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T11 | accepted (Codex): page shell, container layout, header, Quick Access, card boundary | `665f7a17` |
 | T12 | accepted (Codex): Continue, Mission, Journey cards + review fixes | `64d31f21` |
 | T13 | accepted (Codex): Korume, Weakness, Weekly, Activity, Achievement cards + two review-fix passes | `ad1287f0` |
-| T14-T16 | not started | - |
+| T14 | accepted (Codex): legacy-card retirement, registry/inventory reconciliation, scoped review + re-review | `ce2cca05` |
+| T15-T16 | not started | - |
 
 ## Contracts and decisions
 
@@ -113,6 +114,11 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   activity grid with live roving-cell announcement, correct calendar yesterday, ten-bar fallback, localized weakness
   metrics, local card errors, visible bar/cell states, and full EN/VI pins. No DB reset or Playwright applies; see
   task-13-report.md.
+- T14: removed the four zero-caller legacy Dashboard cards and their tests, retired their unused CSS/test hooks, and
+  reconciled the Dashboard registry, inventory, and screen documentation. Focused suite PASS (34 files, 369 tests),
+  typecheck, lint with existing warnings only, protocol, and diff checks PASS. Registry metadata mutation was RED then
+  restored. Scoped review APPROVE; the one JSDoc nit was amended and re-review marked ADDRESSED. No DB or browser gate
+  applies; see task-14-report.md.
 
 ## Working tree and environment
 
@@ -126,4 +132,4 @@ None. The owner approved T9b's local reset on 2026-10-10.
 
 ## Next actions
 
-1. Continue with T14 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
+1. Continue with T15 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
