@@ -10,7 +10,7 @@ test("route errors stay in the live app shell", async ({ page }) => {
   await registerViaUi(page, { name: "E2E Route Error Tester", email, password });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
 
-  const before = await page.getByRole("navigation").boundingBox();
+  const before = await page.getByRole("navigation", { name: "Main", exact: true }).boundingBox();
   if (!before) throw new Error("Expected the app sidebar before the route error");
 
   await page.goto("/en/e2e-route-error");
@@ -20,7 +20,7 @@ test("route errors stay in the live app shell", async ({ page }) => {
 
   const main = page.getByRole("main");
   await expect(main.getByRole("heading", { name: "Something interrupted this page." })).toBeVisible();
-  const after = await page.getByRole("navigation").boundingBox();
+  const after = await page.getByRole("navigation", { name: "Main", exact: true }).boundingBox();
   if (!after) throw new Error("Expected the app sidebar after the route error");
   expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(0.5);
 

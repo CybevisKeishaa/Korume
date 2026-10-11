@@ -155,7 +155,7 @@ test("Companion state survives the (app) -> (focus) boundary, and the hidden nav
   // below for the wrong reason. `NAV_GROUPS`' `lessons` entry ("Lessons")
   // still lives in `(app)`; the seeded video card IS the shadowing link
   // (`components/video/video-card.tsx`).
-  await page.getByRole("link", { name: "Lessons", exact: true }).click();
+  await page.getByRole("navigation", { name: "Main", exact: true }).getByRole("link", { name: "Lessons", exact: true }).click();
   await expect(page).toHaveURL(/\/en\/shadowing$/, { timeout: 15000 });
   await page.getByRole("link", { name: /E2E Seed Video/ }).click();
   await expect(page).toHaveURL(/\/en\/shadowing\/.+$/, { timeout: 15000 });
