@@ -109,7 +109,7 @@ describe("screen registry invariants", () => {
     }
   });
 
-  it("T13: specRef is present iff spec-only, and matches an allowed citation shape", () => {
+  it("T13: specRef identifies spec-only authority or the Dashboard port design", () => {
     // Only two sources are valid scan targets for Phase 3 (spec §6.1): the
     // product spec and the decision register. A loose `/\.md §/` pattern is
     // deliberately rejected — it would admit capability-map.md, a
@@ -141,6 +141,8 @@ describe("screen registry invariants", () => {
       if (entry.kind === "spec-only") {
         expect(entry.specRef, entry.screenId).not.toBeNull();
         expect(entry.specRef, entry.screenId).toMatch(SPEC_REF_PATTERN);
+      } else if (entry.screenId === "dashboard") {
+        expect(entry.specRef).toBe("docs/superpowers/specs/2026-10-08-port-dashboard-design.md");
       } else {
         expect(entry.specRef, entry.screenId).toBeNull();
       }
@@ -239,7 +241,7 @@ describe("screen registry invariants", () => {
     // is why 2026-08-12 drops by the same one.
     expect(Object.fromEntries(stampedByDate)).toEqual({
       // 69: Ask Korume deleted the `sensei` row (its 215:15164 frame moved to `korume-chat`, 2026-10-03).
-      "2026-08-12": 67,
+      "2026-08-12": 66,
       "2026-08-20": 3,
       "2026-08-23": 8,
       "2026-08-26": 1,
@@ -250,6 +252,7 @@ describe("screen registry invariants", () => {
       "2026-10-03": 1,
       // `profile` (66:166, Task 11) and `edit-profile` (67:595, Task 13): re-compared and ported; two stamps moved off 2026-08-12.
       "2026-10-07": 2,
+      "2026-10-08": 1,
     });
   });
 });

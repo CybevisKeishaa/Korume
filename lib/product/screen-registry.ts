@@ -178,13 +178,13 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     variantOf: null,
     figmaNodeId: "111:515",
     repoOnlyReason: null,
-    figmaCheckedAt: "2026-08-12",
+    figmaCheckedAt: "2026-10-08",
     route: "/dashboard",
     chrome: "app",
     impl: "built",
     navGroup: "learn",
     navOrder: 1,
-    specRef: null,
+    specRef: "docs/superpowers/specs/2026-10-08-port-dashboard-design.md",
   },
   // learn/2 — designed, built. Frame not renamed despite the rename pass
   // targeting it (figma-frame-map.md); name recorded as it stands today.

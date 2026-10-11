@@ -242,7 +242,7 @@ that file's own Layer Responsibility table for the Hub-side half of this split:
 | Gamification | XP, Streak, Progress, Goal completion | — |
 | Companion | Memory, Reflection, Journey meaning | Reacting to XP/streak changes |
 
-Gamification examples (shipped: `StreakCard`):
+Gamification examples (shipped: fact-backed activity and streak presentation):
 
 Bạn đã duy trì 12 ngày học liên tục.
 
