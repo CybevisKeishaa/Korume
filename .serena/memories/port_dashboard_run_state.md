@@ -3,11 +3,13 @@
 > Authority is the branch run state `docs/superpowers/run-state/port-dashboard.md` (on branch `port-dashboard`,
 > worktree `.worktrees/port-dashboard`). This file is the resume pointer for a new session.
 
-## ⭐ MERGED → master `7c0b49e8` 2026-10-13 — ⚠️ owner full Chrome review still OUTSTANDING (only glanced)
+## ⭐ MERGED → master `7c0b49e8`, then owner feedback merged `1f7bb466` — 2026-10-13, OWNER APPROVED in Chrome
 
-Owner feedback round 1 (real Companion art, lesson cover behind Continue) is on branch `dashboard-polish`
-`2a88fbe` (worktree `.worktrees/dashboard-polish`), not merged.
-Resume: owner reviews the Dashboard in Chrome. Owner demo learner (local DB only): `demo.dashboard@korume.local` / `password123`, seeded by `.worktrees/port-dashboard/.superpowers/sdd/2026-10-08-port-dashboard/demo-seed.ts` (vite-node; rerun reseeds). It renames the curriculum fixture titles: run it with `-- --cleanup` BEFORE any E2E. Findings go on a follow-up branch from master.
+Branch `dashboard-polish` (rounds 1+2: real Companion art, lesson cover behind Continue, a page that fills and scales
+like Figma 111:515, its icons, CTAs restored by spec D13) merged `--no-ff` after the owner said "tôi ưng". Lesson
+L-051 records how to port a Figma frame at its own scale. Resetability was never answered explicitly. Owner demo learner
+(local DB only): `demo.dashboard@korume.local` / `password123`, seeded by `.worktrees/port-dashboard/.superpowers/sdd/2026-10-08-port-dashboard/demo-seed.ts`
+(vite-node; rerun reseeds; `-- --cleanup` BEFORE any E2E). Next port: Certification.
 
 ## Where it stood (2026-10-08 end of session)
 
