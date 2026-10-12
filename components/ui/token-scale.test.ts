@@ -136,7 +136,6 @@ describe("Rule #0 — semantic tokens are the API (spec §2)", () => {
   // regress, without widening the scan to all of components/** (spec §7).
   it.each([
     "components/layout/notification-bell.tsx",
-    "components/learning/badges-grid.tsx",
   ])("%s uses no arbitrary font size", (file) => {
     const text = readFileSync(path.join(process.cwd(), file), "utf8");
     expect(/\btext-\[[\d.]+(px|rem|em)\]/.test(text)).toBe(false);

@@ -123,7 +123,18 @@ export async function updateProgress(
     last_watched_position: input.position,
   };
   if (input.completed) {
+    const video = await selectVideoById(supabase, videoId);
+    if (!video) return { ok: false, status: 400 };
     row.completed_at = now.toISOString();
+    // Pre-write (spec M1): a lesson finished on a fresh morning is the cycle's finish_lesson only if the cycle exists
+    // before completed_at changes. Lazy for the same reason as the companion hook below (missions → preferences →
+    // this module would close a static cycle). The load is guarded too: the learner's write must never fail on it.
+    try {
+      const { ensureDailyMission } = await import("@/lib/data/missions");
+      await ensureDailyMission(user.id);
+    } catch (err) {
+      console.error("[missions] ensure before completion failed to load:", err);
+    }
   }
 
   const { data, error } = await supabase
@@ -158,6 +169,12 @@ export async function updateProgress(
       await captureFirstVideoCompleted(user.id, videoId);
     } catch (err) {
       console.error("[companion] first_video_completed hook failed:", err);
+    }
+    try {
+      const { claimActiveMission } = await import("@/lib/data/missions");
+      await claimActiveMission(user.id, now);
+    } catch (err) {
+      console.error("[missions] claim after completion failed to load:", err);
     }
   }
 

@@ -33,7 +33,8 @@ function rig(over: Record<string, RpcResolver> = {}, memoryRow: unknown = { occu
   const track = (name: string, result: unknown): RpcResolver => (args) => { calls.push({ name, args }); return ok(result); };
   const rpcs: Record<string, RpcResolver> = {
     first_known_learning_at: track("first_known_learning_at", "2025-03-01T10:00:00+00:00"),
-    profile_counts: track("profile_counts", [{ video_lessons_completed: 3, words_learned: 40 }]),
+    profile_counts: track("profile_counts", [{ video_lessons_completed: 3 }]),
+    current_mastered_count: track("current_mastered_count", 40),
     profile_journey: track("profile_journey", [{ kind: "first_activity", at: "2025-03-01T10:00:00+00:00", label: null }]),
     favorite_lesson_sources: track("favorite_lesson_sources", [{ slug: "anime", lessons: 3 }, { slug: "nhk", lessons: 2 }]),
     todays_memory: track("todays_memory", [{ id: "m1", line_text_jp: "こんにちは", title: null, occurred_at: "2026-04-01T00:00:00+00:00" }]),
@@ -78,6 +79,7 @@ describe("getProfile", () => {
     expect(result.ok).toBe(true);
     const args = (name: string) => calls.find((c) => c.name === name)?.args;
     expect(args("profile_counts")).toEqual({ p_mastery: MASTERY_THRESHOLD });
+    expect(args("current_mastered_count")).toEqual({ p_mastery: MASTERY_THRESHOLD });
     expect(args("profile_journey")).toEqual({ p_limit: 20, p_include_companion: true });
     expect(args("favorite_lesson_sources")).toEqual({ p_min_total: 3, p_min_per_source: 2, p_limit: 6 });
     expect(args("todays_memory")).toEqual({ p_tz: "Asia/Tokyo" });

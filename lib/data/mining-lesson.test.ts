@@ -6,6 +6,7 @@ import { listMyMiningCardsForVideo } from "./mining";
 
 vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezoneFor: vi.fn().mockResolvedValue("Asia/Ho_Chi_Minh") }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/data/missions", () => ({ ensureDailyMission: vi.fn().mockResolvedValue(null), claimActiveMission: vi.fn().mockResolvedValue(undefined) }));
 
 const VIDEO_ID = "c0000000-0000-0000-0000-000000000001";
 

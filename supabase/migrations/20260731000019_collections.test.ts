@@ -16,7 +16,7 @@ describe("collections SQL contract", () => {
   const seed = normalized("20260807000026_collections_seed.sql");
 
   it("defines kind, goal-only skill focus and membership position in the table definitions", () => {
-    expect(schema).toContain("kind text not null default 'shelf' check (kind in ('shelf', 'path', 'goal'))");
+    expect(schema).toContain("kind text not null default 'shelf' check (kind in ('shelf', 'path', 'goal', 'curriculum'))");
     expect(schema).toContain("skill_focus text check (skill_focus in ('accuracy', 'pitch', 'rhythm'))");
     expect(schema).toContain("check ((kind = 'goal') = (skill_focus is not null))");
     expect(schema).toContain("position int not null default 0, primary key (lesson_id, collection_id)");

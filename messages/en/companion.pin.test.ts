@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import en from "./companion.json";
 import vi from "../vi/companion.json";
 
+describe("companion.json EN — dashboard cues (port-dashboard D6)", () => {
+  it("pins the three fact-grounded cue templates", () => {
+    expect(en.cue.missionCompleted).toBe("You kept all of today's promises.");
+    expect(en.cue.weeklyImproved).toBe("Your {skill} rose {points} points compared with the previous 7 days.");
+    expect(en.cue.weakSkill).toBe("{skill} is at {score}% right now. A few minutes of practice would help.");
+  });
+});
+
 /**
  * Characterization test for `companion.json` (Task 17). Unlike every other
  * `*.pin.test.ts` in this plan, there is no PRE-extraction JSX source to pin

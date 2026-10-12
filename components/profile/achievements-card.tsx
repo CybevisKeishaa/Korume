@@ -7,7 +7,7 @@ export function AchievementsCard({ achievements, className }: { achievements: Pr
   const t = useTranslations("profile");
   const badge = useBadgeCopy();
   return (
-    <section className={`${CARD} ${className ?? ""}`} aria-labelledby="profile-achievements">
+    <section id="achievements" tabIndex={-1} className={`${CARD} ${className ?? ""}`} aria-labelledby="profile-achievements">
       <h2 id="profile-achievements" className={EYEBROW}>{t("achievements.title")}</h2>
       {achievements.length === 0 ? (
         <p className="mt-sm text-sm text-muted-foreground">{t("achievements.empty")}</p>

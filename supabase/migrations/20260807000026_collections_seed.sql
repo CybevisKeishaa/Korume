@@ -24,6 +24,14 @@ insert into collections (slug, title, description, display_order) values
   ('native-fluency', 'Native Fluency',
    'Step into full-speed scenes, podcasts and the details underneath them.', 5);
 
+-- port-dashboard D2b: one curriculum per JLPT level. Membership is authored content applied by sync, never a migration.
+insert into collections (slug, title, description, display_order, kind, curriculum_level) values
+  ('jlpt-n5', 'JLPT N5', null, 100, 'curriculum', 'N5'),
+  ('jlpt-n4', 'JLPT N4', null, 101, 'curriculum', 'N4'),
+  ('jlpt-n3', 'JLPT N3', null, 102, 'curriculum', 'N3'),
+  ('jlpt-n2', 'JLPT N2', null, 103, 'curriculum', 'N2'),
+  ('jlpt-n1', 'JLPT N1', null, 104, 'curriculum', 'N1');
+
 -- Learning paths and practice goals from the Pronunciation Studio frame
 -- (Figma 37:5439, 37:5668). Membership is editorial content tied to real video
 -- ids, so none is seeded here.

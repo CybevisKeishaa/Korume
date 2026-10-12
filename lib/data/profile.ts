@@ -38,7 +38,7 @@ export async function getProfile(): Promise<GetProfileResult> {
   const companion = prefs.companionEnabled;
   const now = new Date();
 
-  const [userRes, statsRes, badgesRes, streak, studyTime, trackedSince, firstRes, countsRes, journeyRes, favRes, meetingRes, memoryRes] =
+  const [userRes, statsRes, badgesRes, streak, studyTime, trackedSince, firstRes, countsRes, masteredRes, journeyRes, favRes, meetingRes, memoryRes] =
     await Promise.all([
       supabase.from("users")
         .select("name, email, username, bio, country, native_language, target_jlpt_level, learning_goal, preferred_practices, avatar_url, avatar_path, created_at, daily_minutes")
@@ -51,6 +51,8 @@ export async function getProfile(): Promise<GetProfileResult> {
       getTrackedSince(),
       supabase.rpc("first_known_learning_at"),
       supabase.rpc("profile_counts", { p_mastery: MASTERY_THRESHOLD }),
+      // port-dashboard S3: distinct lexical items (curated vocab + mined words), the same identity Weekly counts.
+      supabase.rpc("current_mastered_count", { p_mastery: MASTERY_THRESHOLD }),
       supabase.rpc("profile_journey", { p_limit: JOURNEY_LIMIT, p_include_companion: companion }),
       supabase.rpc("favorite_lesson_sources", FAVORITES),
       // Korume off: nothing is read from the companion at all.
@@ -61,14 +63,15 @@ export async function getProfile(): Promise<GetProfileResult> {
       companion ? supabase.rpc("todays_memory", { p_tz: timeZone }) : Promise.resolve(null),
     ]);
 
-  for (const res of [userRes, statsRes, badgesRes, firstRes, countsRes, journeyRes, favRes, meetingRes, memoryRes]) {
+  for (const res of [userRes, statsRes, badgesRes, firstRes, countsRes, masteredRes, journeyRes, favRes, meetingRes, memoryRes]) {
     if (res?.error) throw res.error;
   }
   const row = userRes.data as UserRow | null;
   if (!row) return { ok: false, status: 401 };
 
   const xp = (statsRes.data as { xp: number } | null)?.xp ?? 0;
-  const counts = (countsRes.data as { video_lessons_completed: number; words_learned: number }[] | null)?.[0];
+  const counts = (countsRes.data as { video_lessons_completed: number }[] | null)?.[0];
+  const wordsLearned = (masteredRes.data as number | null) ?? 0;
   const favorites = (favRes.data as { slug: string }[] | null) ?? [];
   const memory = (memoryRes?.data as MemoryRow[] | null)?.[0] ?? null;
 
@@ -88,7 +91,7 @@ export async function getProfile(): Promise<GetProfileResult> {
       },
       stats: {
         streakCurrent: streak.current, level: levelForXp(xp).level, totalXp: xp,
-        videoLessonsCompleted: counts?.video_lessons_completed ?? 0, wordsLearned: counts?.words_learned ?? 0,
+        videoLessonsCompleted: counts?.video_lessons_completed ?? 0, wordsLearned,
         studySeconds: studyTime.totalSeconds, trackedSince,
       },
       journey: mapJourney(journeyRes.data as { kind: string; at: string; label: string | null }[] | null),

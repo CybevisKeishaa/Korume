@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/data/collections", async (importOriginal) => ({
   // The real shelf selection: Explore and the Pronunciation Studio share it.
   selectShadowingCollections: (await importOriginal<typeof import("@/lib/data/collections")>()).selectShadowingCollections,
-  listCollections: vi.fn(),
+  listBrowsableCollections: vi.fn(),
   listCollectionLessons: vi.fn(),
 }));
 vi.mock("@/lib/data/lesson-taxonomy", () => ({ listSituations: vi.fn() }));
@@ -15,7 +15,7 @@ vi.mock("@/lib/japanese/tokenizer", () => ({ tokenize: vi.fn() }));
 vi.mock("@/lib/difficulty", () => ({ contentLemmas: vi.fn() }));
 
 import { getShadowingExplore } from "./shadowing-explore";
-import { listCollections, listCollectionLessons } from "@/lib/data/collections";
+import { listBrowsableCollections, listCollectionLessons } from "@/lib/data/collections";
 import { listSituations } from "@/lib/data/lesson-taxonomy";
 import { getRecommendations } from "@/lib/data/recommendations";
 import { tokenize } from "@/lib/japanese/tokenizer";
@@ -52,7 +52,7 @@ function exploreClient(options: MockSupabaseOptions) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(listCollections).mockResolvedValue([]);
+  vi.mocked(listBrowsableCollections).mockResolvedValue([]);
   vi.mocked(listCollectionLessons).mockResolvedValue([]);
   vi.mocked(listSituations).mockResolvedValue([]);
   vi.mocked(getRecommendations).mockResolvedValue({ ok: true, data: [] });
@@ -66,7 +66,7 @@ describe("getShadowingExplore", () => {
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
 
     await expect(getShadowingExplore()).resolves.toEqual({ ok: false, status: 401 });
-    expect(listCollections).not.toHaveBeenCalled();
+    expect(listBrowsableCollections).not.toHaveBeenCalled();
     expect(getRecommendations).not.toHaveBeenCalled();
   });
 
@@ -81,7 +81,7 @@ describe("getShadowingExplore", () => {
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
     vi.mocked(listSituations).mockResolvedValue([{ id: "s-restaurant", slug: "restaurant", displayOrder: 1 }]);
-    vi.mocked(listCollections).mockResolvedValue([
+    vi.mocked(listBrowsableCollections).mockResolvedValue([
       { id: "c1", slug: "beginner-foundation", title: "Beginner Foundation", description: null, coverImageUrl: null, displayOrder: 1 },
       { id: "c2", slug: "daily-conversation", title: "Daily Conversation", description: null, coverImageUrl: null, displayOrder: 2 },
       { id: "featured", slug: "featured", title: "Featured", description: null, coverImageUrl: null, displayOrder: 0 },
@@ -164,7 +164,7 @@ describe("getShadowingExplore", () => {
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
-    vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
+    vi.mocked(listBrowsableCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
     vi.mocked(listCollectionLessons).mockResolvedValue([lesson("shelf")]);
 
     const result = await getShadowingExplore();
@@ -191,7 +191,7 @@ describe("getShadowingExplore", () => {
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
-    vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
+    vi.mocked(listBrowsableCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
     vi.mocked(listCollectionLessons).mockResolvedValue([{ id: "v1", youtube_video_id: "yt1", title: "Catalogued", duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" }]);
     vi.mocked(tokenize).mockResolvedValue([{ base: "食べる", pos: "動詞" }] as never);
     vi.mocked(contentLemmas).mockReturnValue(["食べる"]);
@@ -219,7 +219,7 @@ describe("getShadowingExplore", () => {
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
-    vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
+    vi.mocked(listBrowsableCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
     vi.mocked(listCollectionLessons).mockResolvedValue([{ id: "v1", youtube_video_id: "yt1", title: "Catalogued", duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" }]);
 
     const result = await getShadowingExplore();
@@ -244,7 +244,7 @@ describe("getShadowingExplore", () => {
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
-    vi.mocked(listCollections).mockResolvedValue([
+    vi.mocked(listBrowsableCollections).mockResolvedValue([
       "beginner-foundation", "daily-conversation", "natural-japanese", "advanced-expression", "native-fluency",
     ].map((slug, index) => ({ id: `c${index}`, slug, title: slug, description: null, coverImageUrl: null, displayOrder: index })));
     vi.mocked(listCollectionLessons).mockImplementation(async (collectionId) => [video(`lesson-${collectionId}`)]);
@@ -271,7 +271,7 @@ describe("getShadowingExplore", () => {
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
-    vi.mocked(listCollections).mockResolvedValue([
+    vi.mocked(listBrowsableCollections).mockResolvedValue([
       { id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 },
       { id: "c2", slug: "daily-conversation", title: "Daily", description: null, coverImageUrl: null, displayOrder: 2 },
     ]);
@@ -295,7 +295,7 @@ describe("getShadowingExplore", () => {
       },
     });
     vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
-    vi.mocked(listCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
+    vi.mocked(listBrowsableCollections).mockResolvedValue([{ id: "c1", slug: "beginner-foundation", title: "Beginner", description: null, coverImageUrl: null, displayOrder: 1 }]);
     vi.mocked(listCollectionLessons).mockResolvedValue(Array.from({ length: 9 }, (_, index): VideoRow => ({ id: `v${index}`, youtube_video_id: `yt${index}`, title: `Lesson ${index}`, duration_seconds: 120, thumbnail_url: null, channel_title: null, jlpt_level_estimate: "N5", added_by_user_id: null, library_access: "FREE", promotion_starred: false, created_at: "2026-09-09T00:00:00Z" })));
 
     const result = await getShadowingExplore();

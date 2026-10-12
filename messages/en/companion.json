@@ -1,5 +1,10 @@
 {
   "backToDashboard": "Back to dashboard",
+  "cue": {
+    "missionCompleted": "You kept all of today's promises.",
+    "weeklyImproved": "Your {skill} rose {points} points compared with the previous 7 days.",
+    "weakSkill": "{skill} is at {score}% right now. A few minutes of practice would help."
+  },
   "memoryTitle": {
     "firstShadow": "The first line you shadowed successfully.",
     "lineMastered": "The line you practiced until you could finally say it.",

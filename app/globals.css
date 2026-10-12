@@ -597,34 +597,6 @@
  * globally), same mechanism as `.stroke-draw` above.
  */
 
-/* Level XP bar: fills 0 -> current progress on mount (level-card.tsx). */
-.level-fill {
-  animation: level-fill-in var(--duration-slow) var(--ease-out-expo) both;
-}
-@keyframes level-fill-in {
-  from {
-    width: 0%;
-  }
-  to {
-    width: var(--level-target, 100%);
-  }
-}
-
-/* Earned badge tiles: subtle settle-in pop, staggered per tile (badges-grid.tsx). */
-.badge-settle {
-  animation: badge-settle-in var(--duration-base) var(--ease-out-expo) both;
-}
-@keyframes badge-settle-in {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 /* Overlay surfaces (components/ui/dialog.tsx, popover.tsx): a quiet fade and
    settle on open, a quicker fade on close. Radix keeps a closing element
    mounted until its `closed` animation ends, so exit needs no JS. Individual
@@ -740,7 +712,7 @@
  *
  * `RevealScope` flips `[data-reveal]` from "pending" to "in" as each section
  * enters view; everything here is plain CSS, the same mechanism `.stroke-draw`
- * and `.level-fill` above already use. Three properties of that choice are
+ * above already uses. Three properties of that choice are
  * load-bearing:
  *
  *  - The reduce-motion blocks below collapse every `animation-duration` to
@@ -1692,6 +1664,53 @@
 /* /profile (port-profile spec 7.1): reflow by the content container, never shrink. DOM order is the reading
    order at every width; the right rail below is placement only. Explicit lines are always given in pairs. */
 .profile-layout { container: profile / inline-size; }
+
+/* /dashboard (port-dashboard spec §7): reflow by the content container, never shrink. */
+.dashboard-layout { container: dashboard / inline-size; max-width: 75rem; margin-inline: auto; }
+.dashboard-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-lg); }
+.dashboard-streak, .dashboard-avatar { display: inline-flex; align-items: center; justify-content: center; border: 1px solid hsl(var(--border)); }
+.dashboard-streak { min-block-size: 2.25rem; border-radius: 9999px; padding-inline: var(--space-sm); font-size: 0.875rem; font-weight: 600; }
+.dashboard-avatar { block-size: 2.5rem; inline-size: 2.5rem; overflow: hidden; border-radius: 9999px; background: hsl(var(--muted)); }
+.dashboard-avatar img { block-size: 100%; inline-size: 100%; object-fit: cover; }
+.dashboard-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
+.dashboard-row { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); align-items: stretch; }
+.dashboard-quick { display: grid; gap: var(--space-sm); grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
+.dashboard-quick-link { display: grid; gap: var(--space-2xs); border-radius: var(--radius-md); background: hsl(var(--muted)); padding: var(--space-md); font-weight: 600; }
+.dashboard-progress, .dashboard-meter { display: block; inline-size: 100%; block-size: 0.375rem; overflow: hidden; border: 0; border-radius: 9999px; background: hsl(var(--muted)); appearance: none; }
+.dashboard-progress::-webkit-progress-bar { border-radius: 9999px; background: hsl(var(--muted)); }
+.dashboard-progress::-webkit-progress-value { border-radius: 9999px; background: hsl(var(--primary)); }
+.dashboard-progress::-moz-progress-bar { border-radius: 9999px; background: hsl(var(--primary)); }
+.dashboard-meter::-webkit-meter-bar { border: 0; border-radius: 9999px; background: hsl(var(--muted)); }
+.dashboard-meter::-webkit-meter-optimum-value { border-radius: 9999px; background: hsl(var(--primary)); }
+.dashboard-meter::-moz-meter-bar { border-radius: 9999px; background: hsl(var(--primary)); }
+.dashboard-journey-nodes { display: flex; align-items: start; }
+.dashboard-journey-nodes li { position: relative; flex: 1; min-inline-size: 0; text-align: center; }
+.dashboard-journey-nodes li:not(:last-child)::after { content: ""; position: absolute; inset-block-start: 1rem; inset-inline-start: calc(50% + 1rem); inline-size: calc(100% - 2rem); block-size: 1px; background: hsl(var(--border)); }
+.dashboard-journey-node { display: inline-flex; align-items: center; justify-content: center; inline-size: 2rem; block-size: 2rem; border: 1px solid hsl(var(--border)); border-radius: 9999px; background: hsl(var(--muted)); font-size: 0.75rem; font-weight: 600; }
+.dashboard-journey-nodes [data-state="current"] .dashboard-journey-node { border-color: hsl(var(--primary)); color: hsl(var(--primary-strong)); background: hsl(var(--card)); }
+.dashboard-journey-nodes [data-state="completed"] .dashboard-journey-node { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary-strong)); }
+.dashboard-achievements { display: grid; gap: var(--space-sm); grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); }
+/* The roving highlight shows only while the activity card holds focus. */
+[data-area="activity"]:focus-within [data-highlighted] { box-shadow: 0 0 0 2px hsl(var(--primary)); }
+.dashboard-achievements > li { padding: var(--space-md); border-radius: var(--radius-md); background: hsl(var(--muted)); }
+[data-area="continue"], [data-area="mission"] { min-block-size: 15rem; }
+[data-area="korume"], [data-area="journey"], [data-area="weakness"] { min-block-size: 12rem; }
+[data-area="weekly"], [data-area="activity"] { min-block-size: 14rem; }
+[data-area="achievements"], [data-area="quick"] { min-block-size: 8rem; }
+@container dashboard (width >= 40rem) {
+  .dashboard-row--three, .dashboard-row--pair, .dashboard-row--lead { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container dashboard (width >= 56.25rem) {
+  .dashboard-row--lead { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .dashboard-row--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dashboard-row--three:not(:has(> [data-area="korume"])) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-row--trend { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+  .dashboard-quick { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@container dashboard (width >= 68.75rem) {
+  .dashboard-row--lead { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .dashboard-row--trend { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+}
 .profile-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
 .profile-rail, .profile-main, .profile-pair { display: grid; gap: var(--space-md); align-content: start; }
 .profile-pair { grid-template-columns: minmax(0, 1fr); }

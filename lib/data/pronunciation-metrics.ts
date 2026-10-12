@@ -3,9 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { JLPT_LEVELS, type JlptLevel } from "@/lib/conversation-types";
 import { addDays, studyDate, studyDayStart } from "@/lib/time/study-day";
 import { getStudyTimezone } from "@/lib/time/study-timezone";
+import { PRONUNCIATION_METRICS, weakestPronunciationMetric, type PronunciationMetric, type PronunciationMetricMeans } from "@/lib/pronunciation/metrics";
 
-export type PronunciationMetric = "accuracy" | "pitch" | "rhythm";
-export type PronunciationMetricMeans = Record<PronunciationMetric, number | null>;
+export { weakestPronunciationMetric, type PronunciationMetric, type PronunciationMetricMeans } from "@/lib/pronunciation/metrics";
 
 interface ScoreMeansRow {
   pronunciation_score: number | string | null;
@@ -18,16 +18,6 @@ const METRIC_COLUMNS: Record<PronunciationMetric, keyof ScoreMeansRow> = {
   pitch: "pitch_score",
   rhythm: "rhythm_score",
 };
-const METRIC_ORDER: readonly PronunciationMetric[] = ["accuracy", "pitch", "rhythm"];
-
-/** The lowest measured score; ties intentionally prefer accuracy, then pitch, then rhythm. */
-export function weakestPronunciationMetric(means: PronunciationMetricMeans): PronunciationMetric | null {
-  return METRIC_ORDER.reduce<PronunciationMetric | null>((weakest, metric) => {
-    const candidate = means[metric];
-    const current = weakest === null ? null : means[weakest];
-    return candidate !== null && (current === null || candidate < current) ? metric : weakest;
-  }, null);
-}
 
 /**
  * A reusable half-open score window. Task 5 reads this same shape for the
@@ -45,7 +35,7 @@ export async function getPronunciationMetricWindow(start: Date, end: Date): Prom
   if (error) throw error;
 
   const row = (data as ScoreMeansRow[] | null)?.[0];
-  const means = Object.fromEntries(METRIC_ORDER.map((metric) => [
+  const means = Object.fromEntries(PRONUNCIATION_METRICS.map((metric) => [
     metric,
     row?.[METRIC_COLUMNS[metric]] === null || row?.[METRIC_COLUMNS[metric]] === undefined
       ? null
@@ -113,7 +103,7 @@ export async function getWeeklyImprovement(now: Date = new Date()): Promise<Week
     }),
   ]);
   if (daily.error) throw daily.error;
-  const deltas = Object.fromEntries(METRIC_ORDER.map((metric) => {
+  const deltas = Object.fromEntries(PRONUNCIATION_METRICS.map((metric) => {
     const [thisWeek, lastWeek] = [current.means[metric], previous.means[metric]];
     return [metric, thisWeek === null || lastWeek === null ? null : Math.round(thisWeek - lastWeek)];
   })) as PronunciationMetricMeans;

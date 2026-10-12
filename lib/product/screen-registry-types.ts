@@ -46,8 +46,7 @@ export interface ScreenEntry {
   impl: ScreenImpl;
   navGroup: NavGroupId | null;
   navOrder: number | null;
-  /** Required when kind === 'spec-only', null otherwise (T13). A citation to
-   *  where the requirement is written (japanese-learning-app-spec.md or
-   *  decision-register.md) — never a ruling, never appearance/behaviour. */
+  /** Required for 'spec-only' requirement citations (product spec or decision register).
+   * Normally null for built entries, except the Dashboard port's explicit design citation (T13). */
   specRef: string | null;
 }

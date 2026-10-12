@@ -2505,6 +2505,8 @@ milestone named) · **`WEAKNESS SNAPSHOT`** · `WEEKLY EVOLUTION` · `LEARNING A
 `RECENT ACHIEVEMENT` · `QUICK ACCESS` (Review · Mining · Vocabulary · Roadmap · Conversation · Lesson
 Library).
 
+The Dashboard is ported under rulings D1–D12 in `docs/superpowers/specs/2026-10-08-port-dashboard-design.md`: its cards use measured learning facts, a real 50 XP daily mission and curated curriculum progress. Journey Point, Grammar weakness, Weekly Report and Weakness Explorer CTAs, search, Roadmap and Vocabulary Quick Access were dropped because they lack a supported source or capability, or remain excluded by A10. The legacy level, streak, due-review and badge cards were removed because the fact-backed cards replace them and no independent route consumes them.
+
 - ⭐ **`Journey Point` is a second currency** beside XP, and it appears nowhere else.
 - ⚠️ **A third skill taxonomy.** `WEAKNESS SNAPSHOT` measures **Listening · Grammar · Pitch Accent** —
   different again from §13.3's two sets. **Three frames, three taxonomies.**

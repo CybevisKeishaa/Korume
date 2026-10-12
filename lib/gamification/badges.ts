@@ -18,7 +18,7 @@ const LEARNING_OUTCOME_SOURCES = [
   "conversation",
 ] as const satisfies readonly LearningOutcomeSource[];
 
-const badgeCriteriaSchema = z.discriminatedUnion("type", [
+export const badgeCriteriaSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("sessions"), count: z.number() }),
   z.object({ type: z.literal("streak"), days: z.number() }),
   z.object({ type: z.literal("kanji_learned"), count: z.number() }),

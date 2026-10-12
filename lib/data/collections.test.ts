@@ -112,10 +112,11 @@ describe("collections", () => {
     const path = { collection: { id: "path", slug: "business", title: "Business Japanese", description: null, coverImageUrl: null, displayOrder: 1, kind: "path" as const, skillFocus: null, icon: null }, total: 3, completed: 0, next: null, started: false, lessonCount: 3, durationMinutes: 30, lessonIds: ["a", "c", "b"] };
     await expect(getSenseiRecommendation([], [path], null)).resolves.toMatchObject({ focus: null, home: { kind: "path", title: "Business Japanese", lessonNumber: 3 } });
   });
-  it("lists collections ordered by display_order", async () => {
+  it("lists only the requested collection kind ordered by display_order", async () => {
     useTables({
       collections: (calls) => {
         expect(calls).toContainEqual({ op: "order", column: "display_order", ascending: true });
+        expect(calls).toContainEqual({ op: "eq", column: "kind", value: "curriculum" });
         return {
           data: [
             { id: "c0", slug: "featured", title: "Featured", description: null, cover_image_url: null, display_order: 0 },
@@ -126,12 +127,24 @@ describe("collections", () => {
       },
     });
     const { listCollections } = await import("@/lib/data/collections");
-    const result = await listCollections();
+    const result = await listCollections({ kind: "curriculum" });
     expect(result.map((c) => c.slug)).toEqual(["featured", "beginner-foundation"]);
     expect(result[1]).toEqual({
       id: "c1", slug: "beginner-foundation", title: "Beginner Foundation",
       description: "Start…", coverImageUrl: null, displayOrder: 1, kind: "shelf", skillFocus: null, icon: null,
     });
+  });
+
+  it("lists only browsable shelf, path, and goal collections", async () => {
+    useTables({
+      collections: (calls) => {
+        expect(calls).toContainEqual({ op: "in", column: "kind", values: ["shelf", "path", "goal"] });
+        return { data: [], error: null };
+      },
+    });
+
+    const { listBrowsableCollections } = await import("@/lib/data/collections");
+    await expect(listBrowsableCollections()).resolves.toEqual([]);
   });
 
   it("returns null for an unknown slug rather than throwing", async () => {

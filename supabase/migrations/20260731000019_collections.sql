@@ -12,15 +12,20 @@ create table collections (
   display_order int not null default 0,
   -- A collection's role: a hub shelf, a learning path (a course), or a
   -- practice goal. A path and a goal are ordered collections, not new entities.
-  kind text not null default 'shelf' check (kind in ('shelf', 'path', 'goal')),
+  kind text not null default 'shelf' check (kind in ('shelf', 'path', 'goal', 'curriculum')),
+  curriculum_level jlpt_level,
   -- Goals only: the persisted score a goal trains (accuracy ->
   -- pronunciation_score, pitch -> pitch_score, rhythm -> rhythm_score).
   skill_focus text check (skill_focus in ('accuracy', 'pitch', 'rhythm')),
   -- A short glyph the path and goal cards show (Figma 37:5450); decorative, so nullable.
   icon text check (char_length(icon) <= 16),
   created_at timestamptz not null default now(),
-  constraint collections_skill_focus_goal_check check ((kind = 'goal') = (skill_focus is not null))
+  constraint collections_skill_focus_goal_check check ((kind = 'goal') = (skill_focus is not null)),
+  -- port-dashboard S1: a curriculum collection belongs to exactly one JLPT level, and only it has one.
+  constraint collections_curriculum_level_check check ((kind = 'curriculum') = (curriculum_level is not null))
 );
+
+create unique index collections_curriculum_level_uq on collections (curriculum_level) where curriculum_level is not null;
 
 create table lesson_collections (
   lesson_id uuid not null references videos (id) on delete cascade,

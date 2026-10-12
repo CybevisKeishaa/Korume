@@ -105,7 +105,8 @@ export async function getAdminStats(now: Date = new Date()): Promise<GetAdminSta
     service.from("grammar_points").select("id"),
     service.from("certification_tests").select("id"),
     service.from("reading_passages").select("id"),
-    service.from("xp_events").select("source_type").gte("created_at", cutoff7),
+    // A mission reward is a meta award, not an activity (P1/D11).
+    service.from("xp_events").select("source_type").gte("created_at", cutoff7).neq("source_type", "daily_mission_complete"),
   ]);
 
   for (const res of [

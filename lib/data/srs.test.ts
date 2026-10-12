@@ -8,6 +8,7 @@ import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 vi.mock("@/lib/data/gamification", () => ({ recordActivity: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/data/missions", () => ({ ensureDailyMission: vi.fn().mockResolvedValue(null), claimActiveMission: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/lib/srs", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/srs")>()),
   reviewItem: vi.fn(),
@@ -34,6 +35,7 @@ async function review(table: string, itemType: "vocab" | "kanji", existing: Reco
   const supabase = createMockSupabase({
     user: { id: "u1" },
     tables: {
+      [itemType]: () => ({ data: { id: "i1" }, error: null }),
       [table]: (calls) => {
         seen = calls;
         return { data: calls.some((c) => c.op === "upsert") ? null : existing, error: null };

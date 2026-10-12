@@ -5,6 +5,7 @@ import { createMiningCard, deleteMiningCard, getMiningQueue } from "./mining";
 
 vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezoneFor: vi.fn().mockResolvedValue("Asia/Ho_Chi_Minh") }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/data/missions", () => ({ ensureDailyMission: vi.fn().mockResolvedValue(null), claimActiveMission: vi.fn().mockResolvedValue(undefined) }));
 
 const LINE_ID = "10000000-0000-4000-8000-000000000001";
 const CARD_ID = "20000000-0000-4000-8000-000000000001";

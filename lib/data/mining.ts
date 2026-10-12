@@ -4,8 +4,11 @@ import { rateLimit } from "@/lib/rate-limit";
 import { fetchAllPages } from "@/lib/data/query-pagination";
 import { requireUser } from "@/lib/data/videos";
 import { recordActivity } from "@/lib/data/gamification";
+import { claimActiveMission, ensureDailyMission } from "@/lib/data/missions";
 import { REVIEW_FREQUENCY_MULTIPLIER, reviewItem, type Quality, type SrsState } from "@/lib/srs";
 import { readPreferences } from "@/lib/data/preferences";
+import { MASTERY_THRESHOLD } from "@/lib/data/difficulty";
+import { masteryTransition } from "@/lib/srs/mastery";
 import type { CreateMiningCardInput, ReviewMiningCardInput } from "@/lib/validation/mining";
 import { normalizeRef } from "@/lib/summary/refs";
 
@@ -179,12 +182,17 @@ export async function reviewMiningCard(
 
   const { data: existing, error: loadError } = await supabase
     .from("sentence_mining_cards")
-    .select("srs_stage, interval_days, ease_factor")
+    .select("srs_stage, interval_days, ease_factor, mastered_at")
     .eq("id", input.cardId)
     .eq("user_id", user.id)
     .maybeSingle();
   if (loadError) throw loadError;
   if (!existing) return { ok: false, status: 400 };
+  try {
+    await ensureDailyMission(user.id);
+  } catch (err) {
+    console.error("[missions] ensure before mining review failed:", err);
+  }
 
   const state: SrsState = {
     repetitions: existing.srs_stage,
@@ -202,6 +210,13 @@ export async function reviewMiningCard(
       ease_factor: next.easeFactor,
       next_review_at: next.nextReviewAt.toISOString(),
       last_reviewed_at: next.lastReviewedAt.toISOString(),
+      // First time this card reached mastery; the DB trigger keeps it once set (port-dashboard S2).
+      mastered_at: masteryTransition({
+        wasMastered: existing.srs_stage >= MASTERY_THRESHOLD,
+        isMastered: next.repetitions >= MASTERY_THRESHOLD,
+        existingMasteredAt: existing.mastered_at ?? null,
+        now,
+      }),
     })
     .eq("id", input.cardId)
     .eq("user_id", user.id);
@@ -213,6 +228,7 @@ export async function reviewMiningCard(
   // Best-effort: gamification never fails a learning-flow request (see
   // lib/data/gamification.ts::recordActivity).
   await recordActivity({ userId: user.id, source: "mining_review", parts: { cardId: input.cardId }, now });
+  await claimActiveMission(user.id, now);
 
   return {
     ok: true,

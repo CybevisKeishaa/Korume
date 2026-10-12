@@ -6,6 +6,10 @@
  */
 import type { LearningOutcomeSource } from "./types";
 
+/** The daily mission reward (port-dashboard D11): awarded once per completed cycle, below what the three missions'
+ * own activities already earn, so the missions never become the point. */
+export const DAILY_MISSION_XP = 50;
+
 /** Flat XP amounts, keyed by outcome source. `jlpt_submit` varies by mode. */
 export const XP_TABLE = {
   srs_review: 5,

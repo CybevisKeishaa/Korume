@@ -22,7 +22,8 @@ export default async function CollectionPage({ params }: { params: { slug: strin
     getLocale(),
     getCollectionBySlug(params.slug),
   ]);
-  if (!collection) notFound();
+  // A curriculum is reached through the Dashboard journey, never as a pronunciation collection (port-dashboard C1).
+  if (!collection || collection.kind === "curriculum") notFound();
   const [lessons, progress] = await Promise.all([listCollectionLessons(collection.id), getCollectionProgress(collection.id)]);
   const meta = collectionMeta(lessons);
   const eyebrow = collection.kind === "path" ? t("hub.course") : collection.kind === "goal" ? t("hub.goal") : t("hub.collection");

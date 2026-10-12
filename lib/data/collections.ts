@@ -18,7 +18,7 @@ export interface Collection {
   description: string | null;
   coverImageUrl: string | null;
   displayOrder: number;
-  kind?: "shelf" | "path" | "goal";
+  kind?: "shelf" | "path" | "goal" | "curriculum";
   skillFocus?: "accuracy" | "pitch" | "rhythm" | null;
   /** A short decorative glyph for path and goal cards. */
   icon?: string | null;
@@ -31,7 +31,7 @@ interface CollectionRow {
   description: string | null;
   cover_image_url: string | null;
   display_order: number;
-  kind?: "shelf" | "path" | "goal";
+  kind?: "shelf" | "path" | "goal" | "curriculum";
   skill_focus?: "accuracy" | "pitch" | "rhythm" | null;
   icon?: string | null;
 }
@@ -52,12 +52,26 @@ function toCollection(row: CollectionRow): Collection {
   };
 }
 
-export async function listCollections(): Promise<Collection[]> {
+export type CollectionKind = "shelf" | "path" | "goal" | "curriculum";
+
+export async function listCollections(options: { kind: CollectionKind }): Promise<Collection[]> {
   const supabase = createClient();
   // Curated admin catalogue: cardinality stays far below PostgREST max_rows.
   const { data, error } = await supabase
     .from("collections")
     .select(COLLECTION_COLUMNS)
+    .eq("kind", options.kind)
+    .order("display_order", { ascending: true });
+  if (error) throw error;
+  return ((data as CollectionRow[] | null) ?? []).map(toCollection);
+}
+
+export async function listBrowsableCollections(): Promise<Collection[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("collections")
+    .select(COLLECTION_COLUMNS)
+    .in("kind", ["shelf", "path", "goal"])
     .order("display_order", { ascending: true });
   if (error) throw error;
   return ((data as CollectionRow[] | null) ?? []).map(toCollection);

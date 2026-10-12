@@ -11,6 +11,11 @@ import { createClient } from "@/lib/supabase/server";
 const companion = vi.hoisted(() => ({ capture: vi.fn() }));
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+// Mission ensure/claim are covered in missions-prewrite.integration.test.ts; here they are inert.
+vi.mock("@/lib/data/missions", () => ({
+  ensureDailyMission: vi.fn().mockResolvedValue(null),
+  claimActiveMission: vi.fn().mockResolvedValue(undefined),
+}));
 // FULL mock, not the partial `importOriginal` idiom used elsewhere (e.g.
 // `lib/data/pronunciation.test.ts`), and deliberately so: `lib/data/companion`
 // imports `requireUser` from THIS module, so `importOriginal("@/lib/data/companion")`
@@ -33,7 +38,10 @@ function mockClient(
   tables: Parameters<typeof createMockSupabase>[0]["tables"],
   user: { id: string } | null,
 ) {
-  const supabase = createMockSupabase({ user, tables });
+  const supabase = createMockSupabase({
+    user,
+    tables: { videos: () => ({ data: { id: VIDEO_ID }, error: null }), ...tables },
+  });
   vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
   return supabase;
 }
@@ -154,7 +162,13 @@ describe("updateProgress", () => {
     try {
       const { createClient: freshCreateClient } = await import("@/lib/supabase/server");
       const { updateProgress: freshUpdateProgress } = await import("./videos");
-      const supabase = createMockSupabase({ user: USER, tables: { user_video_progress: progressTable() } });
+      const supabase = createMockSupabase({
+        user: USER,
+        tables: {
+          videos: () => ({ data: { id: VIDEO_ID }, error: null }),
+          user_video_progress: progressTable(),
+        },
+      });
       vi.mocked(freshCreateClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
 
       // The progress write itself still succeeded, so the learner's request must

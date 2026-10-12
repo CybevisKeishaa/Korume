@@ -25,6 +25,9 @@ create table sentence_mining_cards (
   ease_factor numeric(4, 2) not null default 2.50,
   next_review_at timestamptz,
   last_reviewed_at timestamptz,
+  -- port-dashboard S2: the FIRST time this card reached mastery (lib/srs/mastery.ts decides; the trigger below keeps
+  -- it once set). No backfill: cards mastered before this column existed stay null.
+  mastered_at timestamptz,
   -- Provenance (summary spec 2026-10-04 §6.1). selection = free mining from Look-up or a typed word (repeats
   -- allowed, as before); vocabulary / expression = saved from Summary (one per line + ref); sentence = Review
   -- Tomorrow (one per line). source_ref is the NFKC-normalized surface, null only for a sentence card.
@@ -32,6 +35,9 @@ create table sentence_mining_cards (
   source_ref text,
   check ((source_kind = 'sentence') = (source_ref is null))
 );
+
+create trigger sentence_mining_cards_keep_mastered_at before update on sentence_mining_cards
+  for each row execute function keep_first_mastered_at();
 
 alter table sentence_mining_cards enable row level security;
 

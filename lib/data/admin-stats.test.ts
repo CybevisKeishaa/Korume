@@ -64,6 +64,7 @@ describe("getAdminStats", () => {
           return { data: [{ user_id: "u-cohort" }], error: null };
         }
         if (selectCall?.columns === "source_type") {
+          expect(calls).toContainEqual({ op: "neq", column: "source_type", value: "daily_mission_complete" });
           return {
             data: [{ source_type: "shadowing" }, { source_type: "shadowing" }, { source_type: "srs_review" }],
             error: null,
