@@ -1695,6 +1695,9 @@
 .dashboard-achievements > li { padding: var(--space-md); border-radius: var(--radius-md); background: hsl(var(--muted)); }
 [data-area="continue"], [data-area="mission"] { min-block-size: 15rem; }
 [data-area="korume"], [data-area="journey"], [data-area="weakness"] { min-block-size: 12rem; }
+/* Korume's content fills the stretched card so the Companion can sit on its bottom edge. */
+[data-area="korume"] { display: flex; flex-direction: column; }
+[data-area="korume"] > :last-child { flex: 1; }
 [data-area="weekly"], [data-area="activity"] { min-block-size: 14rem; }
 [data-area="achievements"], [data-area="quick"] { min-block-size: 8rem; }
 @container dashboard (width >= 40rem) {

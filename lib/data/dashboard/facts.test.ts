@@ -127,13 +127,31 @@ describe("dashboard fact loaders", () => {
     ]);
   });
 
+  it("gives the next curriculum lesson its cover when nothing is in progress", async () => {
+    mockClient({
+      tables: {
+        learner_videos: (calls) => calls.some((call) => call.op === "select" && call.columns === "thumbnail_url")
+          ? { data: { thumbnail_url: "https://i.ytimg.com/vi/n/hqdefault.jpg" }, error: null }
+          : { data: null, error: null },
+      },
+    });
+    vi.mocked(getCurriculumJourney).mockResolvedValue({
+      kind: "active", current: "N5", next: { videoId: "next-1", title: "Numbers" }, remaining: 2,
+      plus: { total: 0, accessible: 0 }, nodes: [],
+    });
+
+    await expect(getContinueLearning(context)).resolves.toEqual({
+      kind: "startNext", videoId: "next-1", title: "Numbers", placement: null, thumbnailUrl: "https://i.ytimg.com/vi/n/hqdefault.jpg",
+    });
+  });
+
   it("prefers the newest incomplete lesson and derives progress without inventing tags", async () => {
     const learnerReads: QueryCall[][] = [];
     const supabase = mockClient({
       tables: {
         learner_videos: (calls) => {
           learnerReads.push(calls);
-          return { data: { id: "video-1", title: "Episode", duration_seconds: 600, last_watched_position: 180, jlpt_level_estimate: "N4", situation_id: "s1", source_id: "o1" }, error: null };
+          return { data: { id: "video-1", title: "Episode", thumbnail_url: "https://i.ytimg.com/vi/x/hqdefault.jpg", duration_seconds: 600, last_watched_position: 180, jlpt_level_estimate: "N4", situation_id: "s1", source_id: "o1" }, error: null };
         },
         lesson_situations: () => ({ data: { slug: "restaurant" }, error: null }),
         lesson_sources: () => ({ data: { slug: "podcast" }, error: null }),
@@ -143,9 +161,9 @@ describe("dashboard fact loaders", () => {
 
     await expect(getContinueLearning(context)).resolves.toEqual({
       kind: "continue", videoId: "video-1", title: "Episode", placement: { title: "N5 Foundations", position: 2 },
-      percent: 30, remainingMinutes: 7, tags: [{ kind: "jlpt", value: "N4" }, { kind: "situations", value: "restaurant" }, { kind: "sources", value: "podcast" }],
+      percent: 30, remainingMinutes: 7, tags: [{ kind: "jlpt", value: "N4" }, { kind: "situations", value: "restaurant" }, { kind: "sources", value: "podcast" }], thumbnailUrl: "https://i.ytimg.com/vi/x/hqdefault.jpg",
     });
     expect(supabase).toBeDefined();
-    expect(learnerReads[0]).toContainEqual({ op: "select", columns: "id, title, duration_seconds, last_watched_position, jlpt_level_estimate, situation_id, source_id" });
+    expect(learnerReads[0]).toContainEqual({ op: "select", columns: "id, title, thumbnail_url, duration_seconds, last_watched_position, jlpt_level_estimate, situation_id, source_id" });
   });
 });

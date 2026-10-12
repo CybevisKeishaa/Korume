@@ -1,6 +1,7 @@
 import { Link, useTranslations } from "@/lib/i18n";
 import type { ContinueView } from "@/lib/data/dashboard/facts";
 import { DashboardCard } from "./dashboard-card";
+import Image from "next/image";
 import { buttonStyles } from "@/components/ui/button";
 import type enShadowing from "@/messages/en/shadowing.json";
 
@@ -16,7 +17,12 @@ export function ContinueCard({ view, error = false }: { view: ContinueView; erro
   const href = `/shadowing/${view.videoId}`;
   const primary = view.kind === "continue" ? t("continue.cta.continue") : t("continue.cta.start");
   const percent = view.kind === "continue" && view.percent !== null ? Math.min(100, view.percent) : null;
-  return <DashboardCard id="continue-learning" area="continue" eyebrow={eyebrow}>
+  // The lesson's cover sits behind the right side, softened and faded into the card so the text stays readable.
+  const cover = view.thumbnailUrl ? <>
+    <Image src={view.thumbnailUrl} alt="" fill sizes="(min-width: 1100px) 50vw, 100vw" className="scale-105 object-cover object-center opacity-60 blur-[2px]" />
+    <div className="absolute inset-0 bg-gradient-to-r from-card via-card/90 to-card/40" />
+  </> : undefined;
+  return <DashboardCard id="continue-learning" area="continue" eyebrow={eyebrow} background={cover}>
     <p className="text-title font-semibold leading-tight">{view.title}</p>
     {placement && <p className="text-sm text-muted-foreground">{placement.title} · {t("continue.lessonOrdinal", { position: placement.position })}</p>}
     {percent !== null && <progress className="dashboard-progress mt-md" aria-label={t("continue.percent", { percent })} value={percent} max={100} />}

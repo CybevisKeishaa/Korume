@@ -4,7 +4,7 @@ import { ContinueCard } from "./continue-card";
 
 describe("ContinueCard", () => {
   it("renders a curriculum continuation with the workspace and summary destinations", () => {
-    render(<ContinueCard view={{ kind: "continue", videoId: "v1", title: "At the café", placement: { title: "JLPT N5", position: 2 }, percent: 125, remainingMinutes: 4, tags: [{ kind: "jlpt", value: "N4" }, { kind: "situations", value: "daily-life" }, { kind: "sources", value: "youtube" }] }} />);
+    render(<ContinueCard view={{ kind: "continue", videoId: "v1", title: "At the café", placement: { title: "JLPT N5", position: 2 }, percent: 125, remainingMinutes: 4, tags: [{ kind: "jlpt", value: "N4" }, { kind: "situations", value: "daily-life" }, { kind: "sources", value: "youtube" }], thumbnailUrl: "https://i.ytimg.com/vi/abc/hqdefault.jpg" }} />);
     expect(screen.getByText("JLPT N5 · Lesson 2")).toBeInTheDocument();
     expect(screen.getByText("100% completed")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "100% completed" })).toHaveAttribute("value", "100");
@@ -14,6 +14,10 @@ describe("ContinueCard", () => {
     expect(screen.queryByText(/daily-life|youtube/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Continue learning" })).toHaveAttribute("href", "/en/shadowing/v1");
     expect(screen.getByRole("link", { name: "Review lesson" })).toHaveAttribute("href", "/en/shadowing/v1/summary");
+    // The cover is decoration behind the content: present, unnamed, hidden from assistive tech.
+    const cover = document.querySelector('[data-area="continue"] [aria-hidden="true"] img');
+    expect(cover?.getAttribute("src")).toContain("hqdefault.jpg");
+    expect(cover).toHaveAttribute("alt", "");
   });
 
   it("renders the onboarding state and never invents duration facts", () => {
@@ -24,11 +28,12 @@ describe("ContinueCard", () => {
   });
 
   it("renders start-next and recommended states from the catalog", () => {
-    const { rerender } = render(<ContinueCard view={{ kind: "startNext", videoId: "v2", title: "Next", placement: null }} />);
+    const { rerender } = render(<ContinueCard view={{ kind: "startNext", videoId: "v2", title: "Next", placement: null, thumbnailUrl: null }} />);
+    expect(document.querySelector("img")).toBeNull();
     expect(screen.getByText("Start next lesson")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Start lesson" })).toHaveAttribute("href", "/en/shadowing/v2");
     expect(screen.queryByText(/completed|video left/)).not.toBeInTheDocument();
-    rerender(<ContinueCard view={{ kind: "recommended", videoId: "v3", title: "Suggested" }} />);
+    rerender(<ContinueCard view={{ kind: "recommended", videoId: "v3", title: "Suggested", thumbnailUrl: null }} />);
     expect(screen.getByText("Recommended for you")).toBeInTheDocument();
   });
 
