@@ -5,6 +5,8 @@
 
 ## ⭐ MERGED → master `7c0b49e8` 2026-10-13 — ⚠️ owner full Chrome review still OUTSTANDING (only glanced)
 
+Owner feedback round 1 (real Companion art, lesson cover behind Continue) is on branch `dashboard-polish`
+`2a88fbe` (worktree `.worktrees/dashboard-polish`), not merged.
 Resume: owner reviews the Dashboard in Chrome. Owner demo learner (local DB only): `demo.dashboard@korume.local` / `password123`, seeded by `.worktrees/port-dashboard/.superpowers/sdd/2026-10-08-port-dashboard/demo-seed.ts` (vite-node; rerun reseeds). It renames the curriculum fixture titles: run it with `-- --cleanup` BEFORE any E2E. Findings go on a follow-up branch from master.
 
 ## Where it stood (2026-10-08 end of session)
