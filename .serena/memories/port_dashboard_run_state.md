@@ -3,7 +3,9 @@
 > Authority is the branch run state `docs/superpowers/run-state/port-dashboard.md` (on branch `port-dashboard`,
 > worktree `.worktrees/port-dashboard`). This file is the resume pointer for a new session.
 
-## Where it stands (2026-10-08 end of session)
+## ⭐ MERGED → master `7c0b49e8` 2026-10-13 — history, not a resume point
+
+## Where it stood (2026-10-08 end of session)
 
 - Branch `port-dashboard` from master `b89f49d`; worktree `.worktrees/port-dashboard`. **NOT merged, no code yet.**
 - Spec `docs/superpowers/specs/2026-10-08-port-dashboard-design.md` — `6cb8c70` + owner spec-review corrections

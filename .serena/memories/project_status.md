@@ -1,6 +1,14 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-08 late (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-13 (supersedes every block below)
+>
+> ⭐ **`port-dashboard` MERGED → master `7c0b49e8`** (not pushed — the owner pushes). All 16 tasks; Codex did T7b–T15,
+> then left for good (owner 2026-10-12): **Claude now executes alone, no Codex.** Whole-branch review + fix wave +
+> scoped re-review; owner approved in Chrome. Follow-ups in the branch run state "Contracts and decisions".
+> ▶ Next port per the agreed order: **Certification** → Conversation library → Kanji inspect/review → Companion
+> Diary → FAQ/Quickstart. UX/motion vocabulary pass still deferred by the owner. Web is desktop-only.
+>
+> ## (previous block) 2026-10-08 late
 >
 > ▶ **RESUME HERE: `port-dashboard`** (worktree `.worktrees/port-dashboard`, branch from master `b89f49d`, NOT merged,
 > no code yet) — read `mem:port_dashboard_run_state` first, then the branch run state
