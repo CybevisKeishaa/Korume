@@ -2,7 +2,7 @@
 
 Branch `port-dashboard`, worktree `.worktrees/port-dashboard`, base master `b89f49d`.
 
-- Owner: Codex
+- Owner: Claude
 
 ## Goal and scope
 
@@ -44,14 +44,14 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T13 | accepted (Codex): Korume, Weakness, Weekly, Activity, Achievement cards + two review-fix passes | `ad1287f0` |
 | T14 | accepted (Codex): legacy-card retirement, registry/inventory reconciliation, scoped review + re-review | `ce2cca05` |
 | T15 | accepted (Codex): E2E states, focus, geometry, fan-out, isolation fix + scoped review | `3c369cbf` |
-| T16 | not started | - |
+| T16 | in progress: timezone/visual fixes scoped-reviewed; fresh reset/import and all live gates pass; final unit/browser gates, whole-branch review and owner approvals outstanding | see task-16-current-diff-review.md and task-16-crlf-re-review.md |
 
 ## Contracts and decisions
 
 - Owner rulings D1–D12: spec §1. Schema S1–S7 §2, mission engine M1–M5 §3, curriculum C1–C5 §4, layout L1–L5 §7,
   states/tests/gates E1–E4 §8–§12. Plan-time corrections P1–P9: plan header.
-- Continuation authority (user, 2026-10-09): Codex owns this worktree and implements/checkpoints the remaining
-  packets because Claude's quota is exhausted.
+- Continuation authority (user, 2026-10-09): Codex owned this worktree and implemented/checkpointed T7b–T15;
+  user 2026-10-12: Codex is no longer available, Claude owns and finishes T16 alone.
 - Packets/briefs/reports: `.superpowers/sdd/2026-10-08-port-dashboard/` (git-ignored).
 
 ## Verification
@@ -123,17 +123,40 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 - T15: dashboard E2E, geometry/focus and fan-out coverage passed; final clean provider-none full E2E was 162/162.
   Review found a capped-shelf fixture collision and signup cleanup leak; both were fixed, mutation-checked and
   re-reviewed. Fan-out measured 30 requests with 14 distinct RPC primitives once each; see task-15-report.md.
+- T16: fresh local reset + dictionary import PASS; all 12 `verify:db:*` gates PASS. Full bounded Vitest:
+  3 failed / 5460 passed. Two stale guard pins were corrected and independently approved (9 scoped tests PASS;
+  collection enum mutation RED then restored); the shared SQL/TS timezone-fallback invariant remains RED.
+  Lint exits 0 with warnings; typecheck, protocol, build and diff checks PASS. Fresh provider-none full E2E:
+  162 passed (5.3m). Four desktop state/viewport captures PASS geometry, but visual inspection requires card
+  interior corrections and localized real badge names. No visual approval. Claude Opus whole-branch review
+  attempted read-only from main: exit 1, HTTP 429 usage_limit_reached; no verdict. Raw evidence and exact
+  outstanding owner-review handoff: `.superpowers/sdd/2026-10-08-port-dashboard/task-16-report.md`.
 
 ## Working tree and environment
 
-- Worktree created from master `b89f49d`; clean after `74f2e55` + this file.
+- Worktree created from master `b89f49d`; T16 starting HEAD `ef56de244a20e773833bef22e7f8705dd508c35a`.
+  Acceptance fixes are uncommitted: generated canonical timezone helper, card hierarchy/badge localization,
+  two stale guard pins, and CRLF-safe timezone guard. Scoped review and CRLF re-review approved; preserve this diff.
 - `node_modules` = junction to `.worktrees/port-profile/node_modules`; `.env.local` copied; `verify:protocol` valid.
-- Local Supabase (Docker) was started for T9b; fresh reset and dictionary import completed 2026-10-10.
+- Local Supabase (Docker): started and freshly reset/imported 2026-10-12. All 12 live gates PASS; readback confirms
+  one active snapshot, 218849 entries, 13108 kanji, retained N5/N4 curriculum fixture, and canonical SQL fallback.
+  No app listener on port 3000 at reset. Full bounded Vitest is running; rebuild/start/browser gates follow it.
 
 ## Blockers
 
-None. The owner approved T9b's local reset on 2026-10-10.
+- No open scoped code finding. SQL helper derives from the TS constant; guard retains canonical-body and extra-literal
+  rejection and now accepts LF/CRLF (RED before fix, 27 focused tests PASS; re-review 4/4 PASS).
+- Richer scratch captures seed tracked weekly bars/deltas and real earned/progress badge names; runtime and visual
+  verification are pending. Existing Oct12 final-Vitest log has no summary and is not credited as passing.
+- Required Claude Opus whole-branch review hit its weekly quota (resets Oct 12, 11pm Asia/Ho_Chi_Minh).
+  No completed verdict. Owner resetability reconfirmation and final Chrome approval are not yet obtained.
 
 ## Next actions
 
-1. Continue with T16 from its brief in `.superpowers/sdd/2026-10-08-port-dashboard/`; read its direct dependency graph before dispatch.
+1. Finish current full Vitest (task-16-resume-full-vitest.log), then lint/typecheck/protocol/build and full E2E.
+   Fresh reset/import/all-live-gate chain is complete (task-16-resume-*.log); curriculum sync probes rolled back.
+2. Run richer task-16-capture.ts and inspect all four desktop state/viewport captures against Figma. Record actual
+   rendering, geometry, cleanup and any fix review; commit the accepted acceptance changes and checkpoint.
+3. Obtain the required Claude Opus whole-branch verdict after quota is available, reconcile branch lessons,
+   then obtain owner resetability confirmation and final Chrome review. Run protocol before owner handoff.
+   No merge/push or Owner-line change was performed by T16.
