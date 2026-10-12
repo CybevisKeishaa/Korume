@@ -4,7 +4,8 @@
 >
 > ⭐ **`port-dashboard` MERGED → master `7c0b49e8`** (not pushed — the owner pushes). All 16 tasks; Codex did T7b–T15,
 > then left for good (owner 2026-10-12): **Claude now executes alone, no Codex.** Whole-branch review + fix wave +
-> scoped re-review; owner approved in Chrome. Follow-ups in the branch run state "Contracts and decisions".
+> scoped re-review done. ⚠️ **Owner has only glanced at it** — full Chrome review + resetability confirmation still
+> OUTSTANDING; the merge is local and revertable. Owner demo learner (local DB only): `demo.dashboard@korume.local` / `password123`, seeded by `.worktrees/port-dashboard/.superpowers/sdd/2026-10-08-port-dashboard/demo-seed.ts` (vite-node; rerun reseeds). It renames the curriculum fixture titles: run it with `-- --cleanup` BEFORE any E2E. Follow-ups: branch run state "Contracts and decisions".
 > ▶ Next port per the agreed order: **Certification** → Conversation library → Kanji inspect/review → Companion
 > Diary → FAQ/Quickstart. UX/motion vocabulary pass still deferred by the owner. Web is desktop-only.
 >

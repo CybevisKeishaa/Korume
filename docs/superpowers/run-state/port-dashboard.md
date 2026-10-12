@@ -44,7 +44,7 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 | T13 | accepted (Codex): Korume, Weakness, Weekly, Activity, Achievement cards + two review-fix passes | `ad1287f0` |
 | T14 | accepted (Codex): legacy-card retirement, registry/inventory reconciliation, scoped review + re-review | `ce2cca05` |
 | T15 | accepted (Codex): E2E states, focus, geometry, fan-out, isolation fix + scoped review | `3c369cbf` |
-| T16 | accepted (Claude): gates, whole-branch review + fix wave + scoped re-review, owner Chrome approval 2026-10-13 | see git log |
+| T16 | gates, whole-branch review + fix wave + scoped re-review done (Claude); **owner full Chrome review OUTSTANDING** | see git log |
 
 ## Contracts and decisions
 
@@ -149,7 +149,8 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
   for 7 fixes. Scoped re-review APPROVE WITH NITS; nits 1-3 folded in. Final after the last edit: full bounded
   Vitest 653 files / 5476 tests PASS; typecheck, lint (warnings only), build, protocol PASS; full E2E 162/162 on the
   previous build, dashboard spec 6/6 + four captures (lead row bottom 372/435 at 1280x529, 388/467 at 1440x900).
-  Owner reviewed in Chrome and approved 2026-10-13 ("Được rồi"), which also stood as the resetability answer.
+  Merged 2026-10-13 on the owner's "Được rồi", which the owner then clarified was only a glance: the full Chrome
+  review and the resetability confirmation are still OUTSTANDING (merge is local, not pushed; revertable).
 
 ## Working tree and environment
 
@@ -158,8 +159,9 @@ Weakness Explorer, conversation missions, N5/N4 content curation (spec §12).
 
 ## Blockers
 
-None.
+- Owner full Chrome review of the Dashboard (populated + new) and resetability confirmation.
 
 ## Next actions
 
-1. Merge `--no-ff` into master (Claude), protocol green before. Owner pushes by hand.
+1. Owner reviews in Chrome. Owner demo learner (local DB only): `demo.dashboard@korume.local` / `password123`, seeded by `.worktrees/port-dashboard/.superpowers/sdd/2026-10-08-port-dashboard/demo-seed.ts` (vite-node; rerun reseeds). It renames the curriculum fixture titles: run it with `-- --cleanup` BEFORE any E2E.
+2. Owner findings: fix on a follow-up branch from master (or revert merge `7c0b49e8` if asked).
