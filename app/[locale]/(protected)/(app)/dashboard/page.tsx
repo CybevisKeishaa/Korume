@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
-import { Container } from "@/components/ui/container";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { QuickAccess } from "@/components/dashboard/quick-access";
 import { CardSkeleton } from "@/components/dashboard/dashboard-card";
@@ -95,7 +94,7 @@ export default async function DashboardPage({ params }: { params: { locale: Loca
   const weekday = new Intl.DateTimeFormat(params.locale, { weekday: "long", timeZone }).format(now);
   const missionPromise = getDailyMission();
   return (
-    <Container className="py-xl">
+    <div className="dashboard-page">
       <div className="dashboard-layout">
         <DashboardHeader weekday={weekday} daypart={daypartAt(now, timeZone)} name={context?.name ?? null} avatarUrl={context?.avatarUrl ?? null} streak={streak.kind === "ok" ? streak.data.current : 0} />
         <div className="dashboard-grid">
@@ -115,6 +114,6 @@ export default async function DashboardPage({ params }: { params: { locale: Loca
           </div>
         </div>
       </div>
-    </Container>
+    </div>
   );
 }

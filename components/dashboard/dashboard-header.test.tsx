@@ -10,6 +10,10 @@ describe("DashboardHeader", () => {
     expect(screen.getByText("Tuesday · Evening")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Welcome back, Mika" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "4-day streak" })).toHaveAttribute("href", "#learning-activity");
+    // Lesson search hands off to the Lessons hub: a GET form whose `q` is the hub's own query parameter.
+    const search = screen.getByRole("search");
+    expect(search).toHaveAttribute("action", "/en/shadowing");
+    expect(screen.getByRole("searchbox", { name: "Search lessons" })).toHaveAttribute("name", "q");
   });
 
   it("uses the no-name fallback and hides a zero streak", () => {

@@ -1,7 +1,9 @@
 import { Link, useFormatter, useTranslations } from "@/lib/i18n";
-import type { AchievementSnapshot } from "@/lib/data/dashboard/achievements";
+import type { CSSProperties } from "react";
+import type { AchievementBadge, AchievementSnapshot } from "@/lib/data/dashboard/achievements";
 import { addDays } from "@/lib/time/study-day";
 import { DashboardCard } from "./dashboard-card";
+import { DashboardIcon } from "./dashboard-icon";
 import { useBadgeCopy } from "@/components/learning/use-badge-copy";
 
 export function AchievementCard({ snapshot, today, error = false }: { snapshot: AchievementSnapshot; today: string; error?: boolean }) {
@@ -12,12 +14,15 @@ export function AchievementCard({ snapshot, today, error = false }: { snapshot: 
   const earned = (date: string) => date === today ? t("achievements.earnedToday") : date === addDays(today, -1) ? t("achievements.earnedYesterday")
     : t("achievements.earnedOn", { date: format.dateTime(new Date(`${date}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" }) });
   if (error) return <DashboardCard id="recent-achievement" area="achievements" eyebrow={t("achievements.eyebrow")}><p>{t("card.error")}</p></DashboardCard>;
-  const item = (id: string, name: string, status: string) => <li key={id}><p className="font-medium">{badgeCopy.name(name)}</p><p className="mt-2xs text-xs text-muted-foreground">{status}</p></li>;
-  return <DashboardCard id="recent-achievement" area="achievements" eyebrow={t("achievements.eyebrow")}>
-    {snapshot.earned.length + snapshot.inProgress.length === 0 ? <p>{t("achievements.empty")}</p> : <ul className="dashboard-achievements text-sm">
-      {snapshot.earned.map((badge) => item(badge.id, badge.name, earned(badge.earnedOn)))}
-      {snapshot.inProgress.map((badge) => item(badge.id, badge.name, badge.progress.kind === "streak" ? t("achievements.streakProgress", badge.progress) : `${badge.progress.current}/${badge.progress.target}`))}
+  // The badge's own line art, tinted by a mask; a badge without authored art falls back to the trophy.
+  const icon = (iconUrl: string | null) => iconUrl
+    ? <span aria-hidden="true" className="dashboard-badge-icon" style={{ "--badge": `url("${iconUrl}")` } as CSSProperties} />
+    : <DashboardIcon name="trophy" className="dash-icon dash-icon--lg text-primary" />;
+  const item = (badge: AchievementBadge, status: string) => <li key={badge.id}>{icon(badge.iconUrl)}<p className="mt-[calc(14*var(--d))] font-semibold">{badgeCopy.name(badge.name)}</p><p className="dash-small mt-[calc(4*var(--d))] text-muted-foreground">{status}</p></li>;
+  return <DashboardCard id="recent-achievement" area="achievements" eyebrow={t("achievements.eyebrow")} aside={<Link className="dash-link" href="/profile#achievements">{t("achievements.viewAll")}<DashboardIcon name="chevron" /></Link>}>
+    {snapshot.earned.length + snapshot.inProgress.length === 0 ? <p className="text-muted-foreground">{t("achievements.empty")}</p> : <ul className="dashboard-achievements">
+      {snapshot.earned.map((badge) => item(badge, earned(badge.earnedOn)))}
+      {snapshot.inProgress.map((badge) => item(badge, badge.progress.kind === "streak" ? t("achievements.streakProgress", badge.progress) : `${badge.progress.current}/${badge.progress.target}`))}
     </ul>}
-    <Link className="mt-md inline-block text-sm text-primary-strong hover:underline" href="/profile#achievements">{t("achievements.viewAll")}</Link>
   </DashboardCard>;
 }

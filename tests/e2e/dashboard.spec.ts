@@ -99,7 +99,7 @@ for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900
       // D8: a new account sees the empty state, never 0/N progress.
       await expect(area(page, "achievements").getByRole("listitem")).toHaveCount(0);
       await expect(area(page, "achievements")).toContainText(dashboard.achievements.empty);
-      await expect(area(page, "quick").getByRole("link")).toHaveCount(4);
+      await expect(area(page, "quick").getByRole("link")).toHaveCount(5);
       await expect(area(page, "quick")).toContainText(dashboard.quick.caughtUp);
       await geometry(page);
     });

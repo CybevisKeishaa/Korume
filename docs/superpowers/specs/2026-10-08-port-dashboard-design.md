@@ -81,6 +81,7 @@ Viewport normalization applies: reflow, never shrink (Claude memory `port-viewpo
 | **D10** | **Review** is a smart entry point over due counts (no unified `/review`). The Review mission freezes its due set and counts distinct reviewed items. Roadmap tile dropped. |
 | **D11** | Mission catalog and reward: **50 XP**, stable cycle identity, pinned day boundary, created before qualifying activity, content-scoped frozen targets, reward is never a learning outcome. Conversation dropped from V1 after audit. |
 | **D12** | **A10 stands.** Vocabulary leaves Quick Access; the actionable review set is **Mining + Kanji** only, through one canonical review-surface registry. Curated vocab stays domain/history data. |
+| **D13** | **Owner, 2026-10-13 (feedback round 2), supersedes the CTA clauses of D3, D4, D9 and D10.** The Figma CTAs return: header lesson search (a GET form on the Lessons hub's own `q`, the only search that exists; no ⌘K, bell still in AppNav), "View roadmap" and "Open weakness explorer" → `/roadmap` (Figma `64:2061` holds the explorer), "Open weekly report" → `/weekly-report`, and a Roadmap tile in Quick Access. Those destinations are today's upcoming screens. **A10/D12 still stands**: no Vocabulary tile. Layout L-rules are replaced by §7 below. |
 
 ---
 
@@ -503,10 +504,23 @@ RSC page /dashboard
 
 ## 7. Layout (L1–L5)
 
-Mode chosen by **content container width** (container queries), never viewport width.
+**Owner, 2026-10-13 (supersedes the 2026-10-08 table):** the page fills the main column at every desktop width and
+**scales with it**, the way Figma `111:515` itself is a 1180px layout scaled into its frame. A capped, centred column
+read as "squeezed into the middle" on large screens and when the nav is collapsed; type that ignored the layout read
+as "fat". Mobile is out of scope (the mobile app).
 
-| Mode | Width | Rows |
-|---|---|---|
+- One unit, `--d` = one authored Figma px at a 1180px main column (`100cqi / 1180`, clamped 0.8–1.75px), resolved
+  against `.dashboard-page`. Type, padding, gaps, radii, bars and the Companion art are all written in `--d`; small
+  text keeps a legibility floor (body 11.5px, meta 10.5px, eyebrow/links 10px).
+- Rows, in the frame's ratios: Header · Continue `1.933fr` + Mission `1fr` · Korume / Journey / Weakness (3 equal)
+  · Weekly `1.353fr` + Activity `1fr` · Recent Achievement (3 tiles) · Quick Access (section of tiles, no card).
+- Below a 56rem column (a narrow desktop window): rows 1 and 3 stack, row 2 is two columns. No horizontal scroll.
+- `companion_enabled = false` → row 2 is Journey + Weakness `1fr / 1fr`.
+- No hard heights or min-heights; a row is as tall as its tallest card.
+- **Fold gate (1280×529):** the header and the **row-1 container** sit fully inside the viewport (few-px tolerance).
+- Skeleton, empty and error states share the card chrome. No animation (UX/motion is deferred by the owner).
+
+---|---|---|
 | **Wide** | ≥ 1100px (1440×900), `max-width` ≈ 1200px | Header · Continue `2fr` + Mission `1fr` · Korume / Journey / Weakness (3 equal) · Weekly `1.25fr` + Activity `1fr` · Recent Achievement (3 slots) · Quick Access (4 equal) |
 | **Compact** | 900–1099px (1280×529) | Header ≈ 88px (streak + avatar on the title row) · Continue `3fr` + Mission `2fr` · the same 3-equal row (~315px each) · Weekly `1.15fr` + Activity `1fr` (cells ≈ 22px, type never shrunk) · Recent Achievement · Quick Access (4 equal) |
 | **Narrow window** | < 900px | pinned breakpoints: 2 columns while every card keeps its pinned min-width, then 1 column; no horizontal scroll; no scaling. Desktop narrow-window behaviour, not a mobile design. |

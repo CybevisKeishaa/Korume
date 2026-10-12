@@ -12,6 +12,8 @@ describe("WeaknessCard", () => {
     expect(screen.getByRole("meter", { name: "Listening" })).toHaveAttribute("value", "55");
     expect(screen.queryByRole("link", { name: "Reading" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Listening" })).toHaveAttribute("href", "/en/shadowing/v1/dictation");
+    // The explorer lives on the Roadmap screen (Figma 64:2061); owner ruling 2026-10-13 restores the link.
+    expect(screen.getByRole("link", { name: "Open weakness explorer" })).toHaveAttribute("href", "/en/roadmap");
   });
 
   it("names the pronunciation row by its weakest metric, never twice", () => {

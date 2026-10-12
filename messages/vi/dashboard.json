@@ -5,17 +5,19 @@
     "title": "Chào mừng trở lại, {name}",
     "titleNoName": "Chào mừng trở lại",
     "subtitle": "Cùng tiếp tục hành trình tiếng Nhật của bạn.",
-    "streak": "Chuỗi {count} ngày"
+    "streak": "Chuỗi {count} ngày",
+    "search": "Tìm bài học",
+    "searchPlaceholder": "Tìm bài học…"
   },
   "quick": { "eyebrow": "Truy cập nhanh", "due": "{count} thẻ đến hạn", "caughtUp": "Không có thẻ đến hạn" },
   "card": { "error": "Phần này tạm thời chưa tải được." },
   "continue": { "eyebrow": { "continue": "Tiếp tục học", "startNext": "Bắt đầu bài tiếp theo", "recommended": "Gợi ý cho bạn", "onboarding": "Bắt đầu học" }, "lessonOrdinal": "Bài {position}", "percent": "Đã xong {percent}%", "remaining": "Còn {minutes} phút video", "cta": { "continue": "Học tiếp", "start": "Bắt đầu học", "review": "Xem lại bài", "explore": "Khám phá bài học" }, "onboarding": "Chọn bài đầu tiên, Korume sẽ giữ chỗ cho bạn." },
   "mission": { "eyebrow": "Nhiệm vụ hôm nay", "titleThree": "Ba lời hẹn nhỏ", "titleSome": "Nhiệm vụ hôm nay", "item": { "review": "{target, plural, other {Ôn {target} thẻ}}", "finish": "Hoàn thành {title}", "shadow": "{target, plural, other {Shadow {target} câu}}", "dictation": "{target, plural, other {Chép chính tả {target} câu}}" }, "reward": "Phần thưởng", "rewardXp": "+{xp} XP", "rewardEarned": "Đã nhận +{xp} XP", "onboarding": "Nhiệm vụ đầu tiên sẽ xuất hiện khi bạn bắt đầu học.", "error": "Chưa tải được nhiệm vụ hôm nay." },
-  "journey": { "eyebrow": "Lộ trình học", "state": { "completed": "Đã hoàn thành", "locked": "Chưa mở", "unavailable": "Đang biên soạn" }, "next": "Cột mốc tiếp theo", "remaining": "{count, plural, other {Còn {count} bài}}", "plus": "{count, plural, other {+{count} bài Plus}}", "authoring": "Lộ trình JLPT đang được biên soạn.", "complete": "Đã hoàn thành lộ trình hiện có." },
+  "journey": { "eyebrow": "Lộ trình học", "state": { "completed": "Đã hoàn thành", "locked": "Chưa mở", "unavailable": "Đang biên soạn" }, "next": "Cột mốc tiếp theo", "remaining": "{count, plural, other {Còn {count} bài}}", "plus": "{count, plural, other {+{count} bài Plus}}", "authoring": "Lộ trình JLPT đang được biên soạn.", "complete": "Đã hoàn thành lộ trình hiện có.", "viewRoadmap": "Xem lộ trình" },
   "korume": { "practice": "Luyện ngay", "viewWeakness": "Xem điểm yếu" },
   "skills": { "listening": "Nghe", "reading": "Đọc", "pronunciation": "Phát âm", "accuracy": "Phát âm", "pitch": "Ngữ điệu", "rhythm": "Nhịp điệu" },
-  "weakness": { "eyebrow": "Điểm cần luyện", "empty": "Hãy học thêm để Korume nhận ra điểm cần luyện." },
-  "weekly": { "eyebrow": "Tiến triển hằng tuần", "title": "Một kiểu tiến bộ lặng lẽ", "vocabulary": "{count, plural, other {+{count} từ & cụm từ}}", "points": "{value} điểm", "hours": "{hours, plural, other {{hours, number} giờ học}}", "notTracked": "Chưa ghi nhận", "trackedFrom": "Thời gian học được ghi từ {date}" },
+  "weakness": { "eyebrow": "Điểm cần luyện", "empty": "Hãy học thêm để Korume nhận ra điểm cần luyện.", "explore": "Mở phân tích điểm yếu" },
+  "weekly": { "eyebrow": "Tiến triển hằng tuần", "title": "Một kiểu tiến bộ lặng lẽ", "hours": "{hours, plural, other {{hours, number} giờ học}}", "notTracked": "Chưa ghi nhận", "trackedFrom": "Thời gian học được ghi từ {date}", "stat": { "vocabulary": "{count, plural, other {từ & cụm từ}}", "points": "{value} điểm", "hours": "{hours, plural, other {{hours, number} giờ}}", "studied": "đã học" }, "report": "Mở báo cáo tuần" },
   "activity": { "eyebrow": "Hoạt động học", "caption": "Đều đặn tạo nên sự trôi chảy.", "streak": "Chuỗi {count} ngày", "noStreak": "Chưa có chuỗi học hiện tại", "today": "Hôm nay", "summary": "{streak}. {active} ngày có học trong 56 ngày qua. Ngày nghỉ theo lịch của bạn; ô mờ là trước khi bắt đầu ghi nhận.", "cell": { "active": "{date}: {count, plural, other {{count} hoạt động}}", "empty": "{date}: không có hoạt động", "rest": "{date}: ngày nghỉ", "unavailable": "{date}: chưa ghi nhận" } },
   "achievements": { "eyebrow": "Thành tựu gần đây", "empty": "Thành tựu đầu tiên của bạn sẽ hiện ở đây.", "viewAll": "Xem thành tựu", "earnedToday": "Đạt hôm nay", "earnedYesterday": "Đạt hôm qua", "earnedOn": "Đạt {date}", "streakProgress": "Chuỗi hiện tại {current}/{target}" },
   "title": "Bảng điều khiển"

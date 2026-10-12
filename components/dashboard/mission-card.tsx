@@ -10,15 +10,18 @@ export function MissionCard({ state }: { state: CardState<MissionView> }) {
   if (state.kind === "error") return <DashboardCard id="today-mission" area="mission" eyebrow={t("mission.eyebrow")}><p>{t("mission.error")}</p></DashboardCard>;
   const { items, rewarded } = state.data;
   return <DashboardCard id="today-mission" area="mission" eyebrow={t("mission.eyebrow")}>
-    <h3 className="text-heading font-semibold">{items.length === 3 ? t("mission.titleThree") : t("mission.titleSome")}</h3>
-    <ul className="mt-sm divide-y divide-border">{items.map((item) => {
+    <h3 className="dash-display dash-title">{items.length === 3 ? t("mission.titleThree") : t("mission.titleSome")}</h3>
+    <ul className="mt-[calc(20*var(--d))] space-y-[calc(14*var(--d))]">{items.map((item) => {
       const key = item.type === "finish_lesson" ? "finish" : item.type === "shadow_lines" ? "shadow" : item.type === "dictation_lines" ? "dictation" : "review";
       const label = t(`mission.item.${key}`, { target: item.target, title: item.title ?? "" });
-      return <li className="py-sm" key={item.type}>
-        <div className="flex items-start justify-between gap-sm text-sm"><Link className="min-w-0 hover:underline" href={item.href}>{label}</Link> <span className="shrink-0 tabular-nums text-primary-strong">{item.current}/{item.target}</span></div>
-        {item.type === "finish_lesson" && item.playbackPercent !== null && <progress className="dashboard-progress mt-xs" aria-label={label} value={item.playbackPercent} max={100} />}
+      return <li key={item.type}>
+        <div className="flex items-start justify-between gap-[calc(12*var(--d))] text-muted-foreground">
+          <span className="flex min-w-0 items-start gap-[calc(8*var(--d))]"><span aria-hidden="true" className="dashboard-check mt-[0.3em]" data-done={item.current >= item.target || undefined} /><Link className="min-w-0 hover:text-foreground hover:underline" href={item.href}>{label}</Link></span>{" "}
+          <span className="dash-soft shrink-0 tabular-nums">{item.current}/{item.target}</span>
+        </div>
+        {item.type === "finish_lesson" && item.playbackPercent !== null && <progress className="dashboard-progress mt-[calc(8*var(--d))]" aria-label={label} value={item.playbackPercent} max={100} />}
       </li>;
     })}</ul>
-    <p className="mt-sm flex flex-wrap justify-between gap-xs border-t border-border pt-sm text-sm text-muted-foreground"><span>{t("mission.reward")}: </span><span className="text-primary-strong">{rewarded ? t("mission.rewardEarned", { xp: DAILY_MISSION_XP }) : t("mission.rewardXp", { xp: DAILY_MISSION_XP })}</span></p>
+    <div className="dash-foot"><p className="dash-small flex flex-wrap justify-between gap-[calc(8*var(--d))] border-t border-border pt-[calc(16*var(--d))] text-muted-foreground"><span>{t("mission.reward")}</span><span className="dash-soft font-semibold">{rewarded ? t("mission.rewardEarned", { xp: DAILY_MISSION_XP }) : t("mission.rewardXp", { xp: DAILY_MISSION_XP })}</span></p></div>
   </DashboardCard>;
 }
