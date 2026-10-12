@@ -6,17 +6,19 @@
     "title": "Welcome back, {name}",
     "titleNoName": "Welcome back",
     "subtitle": "Let's continue your Japanese journey.",
-    "streak": "{count}-day streak"
+    "streak": "{count}-day streak",
+    "search": "Search lessons",
+    "searchPlaceholder": "Search lessons…"
   },
   "quick": { "eyebrow": "Quick access", "due": "{count} due", "caughtUp": "All caught up" },
   "card": { "error": "This part couldn't load right now." },
   "continue": { "eyebrow": { "continue": "Continue learning", "startNext": "Start next lesson", "recommended": "Recommended for you", "onboarding": "Start learning" }, "lessonOrdinal": "Lesson {position}", "percent": "{percent}% completed", "remaining": "{minutes} min of video left", "cta": { "continue": "Continue learning", "start": "Start lesson", "review": "Review lesson", "explore": "Explore lessons" }, "onboarding": "Pick a first lesson and Korume will keep your place." },
   "mission": { "eyebrow": "Today's mission", "titleThree": "Three small promises", "titleSome": "Today's missions", "item": { "review": "{target, plural, one {Review {target} card} other {Review {target} cards}}", "finish": "Finish {title}", "shadow": "{target, plural, one {Shadow {target} sentence} other {Shadow {target} sentences}}", "dictation": "{target, plural, one {Dictate {target} line} other {Dictate {target} lines}}" }, "reward": "Reward", "rewardXp": "+{xp} XP", "rewardEarned": "+{xp} XP earned", "onboarding": "Your first missions appear once you start learning.", "error": "Today's missions couldn't load." },
-  "journey": { "eyebrow": "Learning journey", "state": { "completed": "Completed", "locked": "Locked", "unavailable": "Being prepared" }, "next": "Next milestone", "remaining": "{count, plural, one {{count} lesson remaining} other {{count} lessons remaining}}", "plus": "{count, plural, one {+{count} Plus lesson} other {+{count} Plus lessons}}", "authoring": "The JLPT journey is being prepared.", "complete": "You've completed the current journey." },
+  "journey": { "eyebrow": "Learning journey", "state": { "completed": "Completed", "locked": "Locked", "unavailable": "Being prepared" }, "next": "Next milestone", "remaining": "{count, plural, one {{count} lesson remaining} other {{count} lessons remaining}}", "plus": "{count, plural, one {+{count} Plus lesson} other {+{count} Plus lessons}}", "authoring": "The JLPT journey is being prepared.", "complete": "You've completed the current journey.", "viewRoadmap": "View roadmap" },
   "korume": { "practice": "Practice now", "viewWeakness": "View weakness" },
   "skills": { "listening": "Listening", "reading": "Reading", "pronunciation": "Pronunciation", "accuracy": "Pronunciation", "pitch": "Pitch accent", "rhythm": "Rhythm" },
-  "weakness": { "eyebrow": "Weakness snapshot", "empty": "Keep learning so Korume can notice what to practise." },
-  "weekly": { "eyebrow": "Weekly evolution", "title": "A quieter kind of progress", "vocabulary": "{count, plural, one {+{count} vocabulary item} other {+{count} vocabulary items}}", "points": "{value} points", "hours": "{hours, plural, one {{hours, number} hour studied} other {{hours, number} hours studied}}", "notTracked": "Not yet tracked", "trackedFrom": "Study time recorded from {date}" },
+  "weakness": { "eyebrow": "Weakness snapshot", "empty": "Keep learning so Korume can notice what to practise.", "explore": "Open weakness explorer" },
+  "weekly": { "eyebrow": "Weekly evolution", "title": "A quieter kind of progress", "hours": "{hours, plural, one {{hours, number} hour studied} other {{hours, number} hours studied}}", "notTracked": "Not yet tracked", "trackedFrom": "Study time recorded from {date}", "stat": { "vocabulary": "{count, plural, one {vocabulary item} other {vocabulary items}}", "points": "{value} pts", "hours": "{hours, plural, one {{hours, number} hour} other {{hours, number} hours}}", "studied": "studied" }, "report": "Open weekly report" },
   "activity": { "eyebrow": "Learning activity", "caption": "Consistency builds fluency.", "streak": "{count}-day streak", "noStreak": "No active streak", "today": "Today", "summary": "{streak}. {active} active days in the last 56. Rest days follow your schedule; faded days were before tracking began.", "cell": { "active": "{date}: {count, plural, one {{count} activity} other {{count} activities}}", "empty": "{date}: no activity", "rest": "{date}: rest day", "unavailable": "{date}: not yet tracked" } },
   "achievements": { "eyebrow": "Recent achievement", "empty": "Your first achievement will appear here.", "viewAll": "View achievements", "earnedToday": "Earned today", "earnedYesterday": "Earned yesterday", "earnedOn": "Earned {date}", "streakProgress": "Current streak {current}/{target}" }
 }

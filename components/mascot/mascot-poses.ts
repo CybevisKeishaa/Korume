@@ -13,7 +13,11 @@ export type MascotPoseName =
   | "route-error"
   | "settings"
   | "korumeship"
-  | "edit-footer";
+  | "edit-footer"
+  // The Companion's own art, by CompanionPose (companion-sprite.tsx).
+  | "companion-sitting"
+  | "companion-standing"
+  | "companion-reading";
 
 export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number; height: number }> = {
   login: { file: "bye.png", width: 572, height: 436 },
@@ -33,4 +37,7 @@ export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number;
   // The Edit Profile footer (Figma 67:595): the companion holding a glowing charm, beside "Korume will use these choices..." (spec 8.3).
   // Owner review 2026-10-08: replaced holding-memory.png, whose extractor cut read as broken at size sm.
   "edit-footer": { file: "syncing.png", width: 330, height: 300 },
+  "companion-sitting": { file: "happy.png", width: 408, height: 376 },
+  "companion-standing": { file: "neutral.png", width: 436, height: 381 },
+  "companion-reading": { file: "reading-on-the-orb.png", width: 412, height: 454 },
 };

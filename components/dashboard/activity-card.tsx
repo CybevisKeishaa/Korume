@@ -16,8 +16,10 @@ export function ActivityCard({ cells, streak, error = false }: { cells: Activity
   if (error) return <DashboardCard id="learning-activity" area="activity" eyebrow={t("activity.eyebrow")}><p>{t("card.error")}</p></DashboardCard>;
   return <DashboardCard id="learning-activity" area="activity" eyebrow={t("activity.eyebrow")} describedBy="learning-activity-summary" tabIndex={0} onKeyDown={onKeyDown}>
     <p id="learning-activity-summary" className="sr-only">{t("activity.summary", { streak: streakText, active })}</p>
-    <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-1">
-      {cells.map((cell, index) => <span key={cell.date} role="img" aria-label={label(cell)} className={`block aspect-square rounded-sm ${cellClass(cell)}`} data-state={cell.state} data-highlighted={highlight === index || undefined} />)}
-    </div><p className="sr-only" role="status">{cells[highlight] ? label(cells[highlight]) : ""}</p><p className="mt-md text-sm">{streakText}</p><p className="mt-xs text-xs text-muted-foreground">{t("activity.caption")}</p>
+    <div className="dashboard-activity">
+      {cells.map((cell, index) => <span key={cell.date} role="img" aria-label={label(cell)} className={`block ${cellClass(cell)}`} data-state={cell.state} data-highlighted={highlight === index || undefined} />)}
+    </div><p className="sr-only" role="status">{cells[highlight] ? label(cells[highlight]) : ""}</p>
+    <p className="dash-small mt-[calc(18*var(--d))] flex justify-between gap-[calc(12*var(--d))] text-muted-foreground"><span>{streakText}</span><span aria-hidden="true">{t("activity.today")}</span></p>
+    <p className="dash-meta mt-[calc(6*var(--d))] text-muted-foreground">{t("activity.caption")}</p>
   </DashboardCard>;
 }

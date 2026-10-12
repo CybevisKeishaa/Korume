@@ -10,7 +10,7 @@ const PRIMITIVE_COLORS = [
   "--void-950", "--void-900", "--void-850", "--void-800",
   "--slate-800", "--slate-400",
   "--paper-50", "--ink-950",
-  "--ember-500", "--sand-400",
+  "--ember-500", "--ember-300", "--sand-400",
   "--mint-400", "--coral-400", "--coral-300",
   // Shadowing workspace Reading Settings presets and Study Environment places (spec §6).
   "--reading-cream-muted", "--reading-night-surface", "--reading-night-text", "--reading-night-muted",

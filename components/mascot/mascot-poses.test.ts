@@ -14,6 +14,9 @@ describe("MASCOT_POSES", () => {
 
   it("maps exactly the screens the spec names", () => {
     expect(entries.map(([name]) => name).sort()).toEqual([
+      "companion-reading",
+      "companion-sitting",
+      "companion-standing",
       "edit-footer",
       "forgot-password",
       "korumeship",
@@ -39,6 +42,9 @@ describe("MASCOT_POSES", () => {
       settings: "relax.png",
       korumeship: "reading-on-the-orb.png",
       "edit-footer": "syncing.png",
+      "companion-sitting": "happy.png",
+      "companion-standing": "neutral.png",
+      "companion-reading": "reading-on-the-orb.png",
     });
   });
 

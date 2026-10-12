@@ -23,6 +23,6 @@ describe("KorumeCard", () => {
 
   it("labels every resolver skill key from the catalog, pronunciation included", () => {
     render(<KorumeCard enabled cue={{ key: "cue.weeklyImproved", values: { skill: "pronunciation", points: 8 }, practiceHref: null, viewWeakness: false }} />);
-    expect(screen.getByText("Your Pronunciation rose 8 points compared with the previous 7 days.")).toBeInTheDocument();
+    expect(screen.getByText("“Your Pronunciation rose 8 points compared with the previous 7 days.”")).toBeInTheDocument();
   });
 });

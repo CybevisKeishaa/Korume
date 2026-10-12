@@ -17,6 +17,7 @@ describe("JourneyCard", () => {
     expect(screen.getByText("Café")).toBeInTheDocument();
     expect(screen.getByText("2 lessons remaining")).toBeInTheDocument();
     expect(screen.getByText("+3 Plus lessons")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View roadmap" })).toHaveAttribute("href", "/en/roadmap");
     expect(screen.getByText(/N5/)).not.toHaveTextContent("Locked");
     expect(screen.getByText("N5").closest("li")).toHaveAttribute("aria-current", "step");
     expect(screen.getAllByRole("listitem")).toHaveLength(3);

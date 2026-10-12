@@ -99,7 +99,7 @@ for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900
       // D8: a new account sees the empty state, never 0/N progress.
       await expect(area(page, "achievements").getByRole("listitem")).toHaveCount(0);
       await expect(area(page, "achievements")).toContainText(dashboard.achievements.empty);
-      await expect(area(page, "quick").getByRole("link")).toHaveCount(4);
+      await expect(area(page, "quick").getByRole("link")).toHaveCount(5);
       await expect(area(page, "quick")).toContainText(dashboard.quick.caughtUp);
       await geometry(page);
     });
@@ -135,6 +135,10 @@ test("streak, View weakness and trophy move focus to their real targets", async 
   await populate(page);
   await page.locator(".dashboard-streak").click();
   await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe("learning-activity");
+  // The Companion's art sits inside its card (a shrinking wrapper once let it spill into Journey).
+  const korumeBox = await area(page, "korume").boundingBox();
+  const artBox = await area(page, "korume").locator("[data-companion-pose]").boundingBox();
+  expect(korumeBox && artBox && artBox.x >= korumeBox.x && artBox.x + artBox.width <= korumeBox.x + korumeBox.width + 1).toBe(true);
   await area(page, "korume").getByRole("button", { name: dashboard.korume.viewWeakness }).click();
   await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe("weakness-snapshot");
   // Every practice affordance leads somewhere real; the fixture's pronunciation scores yield a non-dictation one.

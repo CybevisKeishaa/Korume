@@ -12,6 +12,10 @@ describe("MissionCard", () => {
     expect(screen.getByRole("heading", { name: "Three small promises" })).toBeInTheDocument();
     expect(screen.getByText("+50 XP earned")).toBeInTheDocument();
     expect(screen.getByText("2/3")).toBeInTheDocument();
+    // The label and its count stay separate words in the row text (the E2E row filter reads /Review 3 cards/).
+    expect(screen.getAllByRole("listitem")[0]).toHaveTextContent(/^Review 3 cards 2\/3$/);
+    // The checkbox glyph marks only a met target.
+    expect(screen.getAllByRole("listitem").map((item) => item.querySelector("[data-done]") !== null)).toEqual([false, true, false]);
     expect(screen.getByRole("progressbar", { name: "Finish Café" })).toHaveAttribute("value", "80");
     expect(screen.getByRole("link", { name: /Finish/ })).toHaveAttribute("href", "/en/shadowing/v1");
   });

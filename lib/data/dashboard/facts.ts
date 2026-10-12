@@ -18,14 +18,14 @@ const cache: <T extends (...args: never[]) => unknown>(fn: T) => T =
 interface ActivityDayRow { day: string; outcomes: number }
 interface WeeklySkillRow { skill: "listening" | "pronunciation"; win: 0 | 1; attempts: number; mean: number | string | null }
 interface PracticeActivityRow { type: string; last_video_id: string | null }
-interface LearnerVideoRow { id: string; title: string; duration_seconds: number | null; last_watched_position: number; jlpt_level_estimate: string | null; situation_id: string | null; source_id: string | null }
+interface LearnerVideoRow { id: string; title: string; thumbnail_url: string | null; duration_seconds: number | null; last_watched_position: number; jlpt_level_estimate: string | null; situation_id: string | null; source_id: string | null }
 /** `situations`/`sources` values are taxonomy slugs labelled by the shadowing catalog; `jlpt` is shown as-is. */
 export interface ContinueTag { kind: "jlpt" | "situations" | "sources"; value: string }
 
 export type ContinueView =
-  | { kind: "continue"; videoId: string; title: string; placement: { title: string; position: number } | null; percent: number | null; remainingMinutes: number | null; tags: ContinueTag[] }
-  | { kind: "startNext"; videoId: string; title: string; placement: { title: string; position: number } | null }
-  | { kind: "recommended"; videoId: string; title: string }
+  | { kind: "continue"; videoId: string; title: string; placement: { title: string; position: number } | null; percent: number | null; remainingMinutes: number | null; tags: ContinueTag[]; thumbnailUrl: string | null }
+  | { kind: "startNext"; videoId: string; title: string; placement: { title: string; position: number } | null; thumbnailUrl: string | null }
+  | { kind: "recommended"; videoId: string; title: string; thumbnailUrl: string | null }
   | { kind: "onboarding" };
 
 export const getStreakFact = cache(async (context: DashboardContext): Promise<Streak> =>
@@ -122,7 +122,7 @@ export const getContinueLearning = cache(async (context: DashboardContext): Prom
   void context;
   const supabase = createClient();
   const { data, error } = await supabase.from("learner_videos")
-    .select("id, title, duration_seconds, last_watched_position, jlpt_level_estimate, situation_id, source_id").eq("in_progress", true)
+    .select("id, title, thumbnail_url, duration_seconds, last_watched_position, jlpt_level_estimate, situation_id, source_id").eq("in_progress", true)
     .order("in_progress_last_watched_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
   if (error) throw error;
   const video = data as LearnerVideoRow | null;
@@ -146,14 +146,19 @@ export const getContinueLearning = cache(async (context: DashboardContext): Prom
       kind: "continue", videoId: video.id, title: video.title, placement,
       percent: validDuration && duration !== null ? Math.min(100, Math.round(100 * position / duration)) : null,
       remainingMinutes: validDuration && duration !== null ? Math.max(0, Math.ceil((duration - position) / 60)) : null,
-      tags,
+      tags, thumbnailUrl: video.thumbnail_url,
     };
   }
   const journey = await getCurriculumJourney();
   if (journey.kind === "active" && journey.next) {
-    return { kind: "startNext", videoId: journey.next.videoId, title: journey.next.title, placement: await getCurriculumPlacement(journey.next.videoId) };
+    const [placement, cover] = await Promise.all([
+      getCurriculumPlacement(journey.next.videoId),
+      supabase.from("learner_videos").select("thumbnail_url").eq("id", journey.next.videoId).maybeSingle(),
+    ]);
+    if (cover.error) throw cover.error;
+    return { kind: "startNext", videoId: journey.next.videoId, title: journey.next.title, placement, thumbnailUrl: (cover.data as { thumbnail_url: string | null } | null)?.thumbnail_url ?? null };
   }
   const recommendations = await getRecommendations({ limit: 1 });
   const recommendation = recommendations.ok ? recommendations.data[0] : null;
-  return recommendation ? { kind: "recommended", videoId: recommendation.videoId, title: recommendation.title } : { kind: "onboarding" };
+  return recommendation ? { kind: "recommended", videoId: recommendation.videoId, title: recommendation.title, thumbnailUrl: recommendation.thumbnailUrl } : { kind: "onboarding" };
 });

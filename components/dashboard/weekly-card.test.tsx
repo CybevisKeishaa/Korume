@@ -3,15 +3,15 @@ import { render, screen } from "@/test/render";
 import { WeeklyCard } from "./weekly-card";
 
 describe("WeeklyCard", () => {
-  it("renders ten bars, points deltas, and no report link", () => {
+  it("renders ten bars, points deltas as value-over-label stats, and the report link", () => {
     render(<WeeklyCard fact={{ bars: [{ index: 0, seconds: 3600 }, ...Array.from({ length: 9 }, (_, index) => ({ index: index + 1, unavailable: true as const }))], hoursW0: 1, trackedSinceDate: null, vocabularyMastered: 2, listeningDelta: 8, pronunciationDelta: -3 }} />);
     expect(screen.getAllByLabelText("Not yet tracked")).toHaveLength(9);
     expect(screen.getAllByLabelText("Not yet tracked")[0]).toHaveAttribute("data-state", "unavailable");
-    expect(screen.getByText("+8 points")).toBeInTheDocument();
-    expect(screen.getByText("−3 points")).toBeInTheDocument();
-    expect(screen.getByText("+8 points").closest("p")).toHaveTextContent(/^Listening\s*\+8 points$/);
-    expect(screen.getByText("−3 points").closest("p")).toHaveTextContent(/^Pronunciation\s*−3 points$/);
-    expect(screen.queryByText(/Weekly Report/)).not.toBeInTheDocument();
+    expect(screen.getByText("+8 pts").closest("div")).toHaveTextContent(/^Listening\s*\+8 pts$/);
+    expect(screen.getByText("−3 pts").closest("div")).toHaveTextContent(/^Pronunciation\s*−3 pts$/);
+    expect(screen.getByText("+8 pts").tagName).toBe("DD");
+    expect(screen.getByText("Listening", { selector: "dt" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open weekly report" })).toHaveAttribute("href", "/en/weekly-report");
   });
 
   it("puts the current window on the right, scales to the busiest window, and labels hours", () => {
@@ -20,8 +20,8 @@ describe("WeeklyCard", () => {
     expect(tracked.map((bar) => bar.getAttribute("aria-label"))).toEqual(["2.6 hours studied", "0 hours studied", "1.3 hours studied"]);
     expect(tracked.map((bar) => bar.style.height)).toEqual(["100%", "", "50%"]);
     expect(tracked.every((bar) => bar.textContent === "")).toBe(true);
-    expect(screen.getByText("1.3 hours studied", { selector: "p" })).toBeInTheDocument();
-    expect(screen.getByText("+1 vocabulary item")).toBeInTheDocument();
+    expect(screen.getByText("1.3 hours", { selector: "dd" }).closest("div")).toHaveTextContent(/^studied\s*1\.3 hours$/);
+    expect(screen.getByText("+1", { selector: "dd" }).closest("div")).toHaveTextContent(/^vocabulary item\s*\+1$/);
   });
 
   it("prints the tracking start as a localized date", () => {

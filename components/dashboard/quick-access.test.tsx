@@ -4,13 +4,13 @@ import nav from "@/messages/en/nav.json";
 import { QuickAccess } from "./quick-access";
 
 describe("QuickAccess", () => {
-  it("uses the canonical four navigation labels and destinations", () => {
+  it("uses the canonical navigation labels and destinations, Roadmap included", () => {
     render(<QuickAccess review={{ href: "/mining/review", due: 3 }} />);
 
     const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(4);
-    expect(links.map((link) => link.querySelector("span")?.textContent)).toEqual([nav.review, nav.mining, nav.speaking, nav.lessons]);
-    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/en/mining/review", "/en/mining", "/en/conversation", "/en/shadowing"]);
+    expect(links).toHaveLength(5);
+    expect(links.map((link) => link.querySelector("span")?.textContent)).toEqual([nav.review, nav.mining, nav.roadmap, nav.speaking, nav.lessons]);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/en/mining/review", "/en/mining", "/en/roadmap", "/en/conversation", "/en/shadowing"]);
     expect(screen.getByText("3 due")).toBeInTheDocument();
   });
 

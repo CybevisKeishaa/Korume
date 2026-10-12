@@ -14,6 +14,8 @@ export interface CompanionAnchorProps {
   /** Optional experience context announced once on mount — the surface says
    * WHAT HAPPENED, never what to say (spec 1 §5.12). */
   context?: ExperienceContext;
+  /** Panel-sized art where a surface hosts the Companion (Dashboard Korume card); inline otherwise. */
+  size?: "sm" | "lg";
 }
 
 /**
@@ -25,7 +27,7 @@ export interface CompanionAnchorProps {
  * `anchor-boundary.test.ts` (§5.4): the Companion cannot appear inside a
  * learning loop.
  */
-export function CompanionAnchor({ surface, pose, context }: CompanionAnchorProps) {
+export function CompanionAnchor({ surface, pose, context, size }: CompanionAnchorProps) {
   const registration = useContext(CompanionAnchorContext);
   const companion = useCompanion();
   const emittedRef = useRef(false);
@@ -53,7 +55,7 @@ export function CompanionAnchor({ surface, pose, context }: CompanionAnchorProps
     // No `gap` here: SpeechBubble owns its own inline offset, so the always-
     // mounted-but-silent live region contributes no phantom spacing.
     <div className="flex items-end" data-companion-surface={surface}>
-      <CompanionSprite pose={pose} onActivate={companion.openJournal} />
+      <CompanionSprite pose={pose} size={size} onActivate={companion.openJournal} />
       {/* Rendered unconditionally — see SpeechBubble: the live region has to
           outlive the address for a screen reader to announce it at all. */}
       <SpeechBubble speechKey={speechKey} onDismiss={dismiss} />

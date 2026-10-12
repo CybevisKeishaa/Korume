@@ -1,4 +1,3 @@
-import { Container } from "@/components/ui/container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CardSkeleton, type DashboardArea } from "@/components/dashboard/dashboard-card";
 
@@ -6,7 +5,7 @@ const AREAS: readonly DashboardArea[] = ["continue", "mission", "korume", "journ
 
 export default function DashboardLoading() {
   return (
-    <Container className="py-xl">
+    <div className="dashboard-page">
       <div className="dashboard-layout" aria-busy="true">
         <div className="dashboard-header"><div><Skeleton className="h-4 w-32" /><Skeleton className="mt-sm h-9 w-64" /></div></div>
         <div className="dashboard-grid">
@@ -17,6 +16,6 @@ export default function DashboardLoading() {
           <div className="dashboard-row">{AREAS.slice(8).map((area) => <CardSkeleton key={area} area={area} />)}</div>
         </div>
       </div>
-    </Container>
+    </div>
   );
 }
