@@ -671,7 +671,7 @@ do $$
 declare f text; r text;
 begin
   foreach f in array array[
-    'ensure_daily_mission(uuid,text[],jsonb,jsonb)', 'claim_daily_mission(uuid,uuid,integer)',
+    'fallback_study_timezone()', 'ensure_daily_mission(uuid,text[],jsonb,jsonb)', 'claim_daily_mission(uuid,uuid,integer)',
     'sync_curriculum_manifest(jsonb)'] loop
     foreach r in array array['anon', 'authenticated'] loop
       if has_function_privilege(r, f, 'execute') then raise exception 'FAIL dashboard % can execute %', r, f; end if;

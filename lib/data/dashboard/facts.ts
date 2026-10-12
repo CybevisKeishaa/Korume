@@ -18,10 +18,12 @@ const cache: <T extends (...args: never[]) => unknown>(fn: T) => T =
 interface ActivityDayRow { day: string; outcomes: number }
 interface WeeklySkillRow { skill: "listening" | "pronunciation"; win: 0 | 1; attempts: number; mean: number | string | null }
 interface PracticeActivityRow { type: string; last_video_id: string | null }
-interface LearnerVideoRow { id: string; title: string; duration_seconds: number | null; last_watched_position: number; situation_id: string | null; source_id: string | null }
+interface LearnerVideoRow { id: string; title: string; duration_seconds: number | null; last_watched_position: number; jlpt_level_estimate: string | null; situation_id: string | null; source_id: string | null }
+/** `situations`/`sources` values are taxonomy slugs labelled by the shadowing catalog; `jlpt` is shown as-is. */
+export interface ContinueTag { kind: "jlpt" | "situations" | "sources"; value: string }
 
 export type ContinueView =
-  | { kind: "continue"; videoId: string; title: string; placement: { title: string; position: number } | null; percent: number | null; remainingMinutes: number | null; tags: string[] }
+  | { kind: "continue"; videoId: string; title: string; placement: { title: string; position: number } | null; percent: number | null; remainingMinutes: number | null; tags: ContinueTag[] }
   | { kind: "startNext"; videoId: string; title: string; placement: { title: string; position: number } | null }
   | { kind: "recommended"; videoId: string; title: string }
   | { kind: "onboarding" };
@@ -58,7 +60,7 @@ export const getStudyTimeFact = cache(async (context: DashboardContext): Promise
   const trackedSinceDate = trackedSince ? studyDate(new Date(trackedSince), context.timeZone) : null;
   const bars = weeklyBars(windows, time.days, trackedSinceDate);
   const current = bars.find((bar) => bar.index === 0);
-  return { bars, hoursW0: current && "seconds" in current ? current.seconds / 3600 : 0, trackedSinceDate };
+  return { bars, hoursW0: current && "seconds" in current ? Math.round(current.seconds / 360) / 10 : 0, trackedSinceDate };
 });
 
 export interface WeeklyFacts extends StudyTimeFact { vocabularyMastered: number; listeningDelta: number | null; pronunciationDelta: number | null }
@@ -112,8 +114,7 @@ export const getWeaknessFacts = cache(async (context: DashboardContext): Promise
   };
   return weaknessRows((scores.data as WeaknessScoreRow[] | null) ?? []).map((row) => {
     const videoId = row.family === "reading" ? null : fallback(row.family);
-    const surface = row.family === "listening" ? "dictation" : "pronunciation";
-    return { ...row, practiceHref: videoId ? `/shadowing/${videoId}/${surface}` : null };
+    return { ...row, score: Math.round(row.score), practiceHref: videoId ? `/shadowing/${videoId}${row.family === "listening" ? "/dictation" : ""}` : null };
   });
 });
 
@@ -121,7 +122,7 @@ export const getContinueLearning = cache(async (context: DashboardContext): Prom
   void context;
   const supabase = createClient();
   const { data, error } = await supabase.from("learner_videos")
-    .select("id, title, duration_seconds, last_watched_position, situation_id, source_id").eq("in_progress", true)
+    .select("id, title, duration_seconds, last_watched_position, jlpt_level_estimate, situation_id, source_id").eq("in_progress", true)
     .order("in_progress_last_watched_at", { ascending: false, nullsFirst: false }).limit(1).maybeSingle();
   if (error) throw error;
   const video = data as LearnerVideoRow | null;
@@ -133,10 +134,11 @@ export const getContinueLearning = cache(async (context: DashboardContext): Prom
     ]);
     if (situation?.error) throw situation.error;
     if (source?.error) throw source.error;
-    const tags = [
-      (situation?.data as { slug: string } | null)?.slug,
-      (source?.data as { slug: string } | null)?.slug,
-    ].filter((slug): slug is string => Boolean(slug));
+    const tags = ([
+      ["jlpt", video.jlpt_level_estimate],
+      ["situations", (situation?.data as { slug: string } | null)?.slug],
+      ["sources", (source?.data as { slug: string } | null)?.slug],
+    ] as const).flatMap(([kind, value]): ContinueTag[] => value ? [{ kind, value }] : []);
     const duration = video.duration_seconds;
     const validDuration = duration !== null && duration > 0;
     const position = Math.max(0, video.last_watched_position);

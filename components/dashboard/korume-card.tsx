@@ -4,21 +4,13 @@ import { Link, useTranslations } from "@/lib/i18n";
 import { CompanionAnchor } from "@/components/companion/companion-anchor";
 import type { DashboardCue } from "@/lib/companion/dashboard-cues";
 import { DashboardCard } from "./dashboard-card";
+import { buttonStyles } from "@/components/ui/button";
+import type enDashboard from "@/messages/en/dashboard.json";
 
 export function KorumeCard({ enabled, cue }: { enabled: boolean; cue: DashboardCue | null }) {
   const t = useTranslations("dashboard");
   const companion = useTranslations("companion");
   if (!enabled) return null;
-  const skillLabel = (skill: string | undefined) => {
-    switch (skill) {
-      case "listening": return t("skills.listening");
-      case "reading": return t("skills.reading");
-      case "accuracy": return t("skills.accuracy");
-      case "pitch": return t("skills.pitch");
-      case "rhythm": return t("skills.rhythm");
-      default: return skill;
-    }
-  };
-  const values = cue ? { ...cue.values, skill: skillLabel(cue.values.skill) } : {};
-  return <DashboardCard id="korume" area="korume" eyebrow="Korume"><CompanionAnchor surface="dashboard" pose="sitting" />{cue && <><p>{companion(cue.key, values)}</p>{cue.practiceHref && <Link href={cue.practiceHref}>{t("korume.practice")}</Link>}{cue.viewWeakness && <button type="button" onClick={() => document.getElementById("weakness-snapshot")?.focus()}>{t("korume.viewWeakness")}</button>}</>}</DashboardCard>;
+  const values = cue ? { ...cue.values, skill: cue.values.skill === undefined ? undefined : t(`skills.${cue.values.skill as keyof typeof enDashboard.skills}`) } : {};
+  return <DashboardCard id="korume" area="korume" eyebrow="Korume"><CompanionAnchor surface="dashboard" pose="sitting" />{cue && <><p className="mt-sm text-body">{companion(cue.key, values)}</p><div className="mt-md flex flex-wrap gap-sm">{cue.practiceHref && <Link className={buttonStyles({ className: "rounded-full" })} href={cue.practiceHref}>{t("korume.practice")}</Link>}{cue.viewWeakness && <button className={buttonStyles({ variant: "ghost", className: "rounded-full" })} type="button" onClick={() => document.getElementById("weakness-snapshot")?.focus()}>{t("korume.viewWeakness")}</button>}</div></>}</DashboardCard>;
 }

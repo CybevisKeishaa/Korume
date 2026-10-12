@@ -55,25 +55,31 @@ export function describeError(error: unknown): string {
  * write proceeds. A cheap RLS read short-circuits when a cycle is active; SQL stays the authority either way. */
 export async function ensureDailyMission(userId: string): Promise<string | null> {
   try {
-    const supabase = createClient();
-    const now = new Date();
-    const active = await supabase.from("daily_missions").select("id").eq("user_id", userId)
-      .lte("window_start", now.toISOString()).gt("window_end", now.toISOString()).maybeSingle();
-    if (active.error) throw active.error;
-    if (active.data) return (active.data as { id: string }).id;
-    const hints = await buildMissionHints(supabase, now);
-    const { data, error } = await createServiceClient().rpc("ensure_daily_mission", {
-      p_user: userId,
-      p_review_decks: exposedReviewSurfaces().map((surface) => surface.deck),
-      p_targets: MISSION_TARGETS,
-      p_hints: hints,
-    });
-    if (error) throw error;
-    return (data as string | null) ?? null;
+    return await ensureDailyMissionOrThrow(userId);
   } catch (error) {
     console.error(JSON.stringify({ event: "mission_ensure_failed", userId, error: describeError(error) }));
     return null;
   }
+}
+
+/** Same ensure for the Dashboard read: failure throws so the card shows its error state, not onboarding (E1).
+ * `null` means no slot qualified. */
+export async function ensureDailyMissionOrThrow(userId: string): Promise<string | null> {
+  const supabase = createClient();
+  const now = new Date();
+  const active = await supabase.from("daily_missions").select("id").eq("user_id", userId)
+    .lte("window_start", now.toISOString()).gt("window_end", now.toISOString()).maybeSingle();
+  if (active.error) throw active.error;
+  if (active.data) return (active.data as { id: string }).id;
+  const hints = await buildMissionHints(supabase, now);
+  const { data, error } = await createServiceClient().rpc("ensure_daily_mission", {
+    p_user: userId,
+    p_review_decks: exposedReviewSurfaces().map((surface) => surface.deck),
+    p_targets: MISSION_TARGETS,
+    p_hints: hints,
+  });
+  if (error) throw error;
+  return (data as string | null) ?? null;
 }
 
 interface ClaimRow { completed: boolean; xp_awarded: number; prev_xp: number | null; next_xp: number | null }

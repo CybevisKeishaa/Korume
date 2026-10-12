@@ -6,6 +6,15 @@ export function JourneyCard({ view, error = false }: { view: JourneyView; error?
   const t = useTranslations("dashboard");
   if (error) return <DashboardCard id="learning-journey" area="journey" eyebrow={t("journey.eyebrow")}><p>{t("card.error")}</p></DashboardCard>;
   if (view.kind === "authoring") return <DashboardCard id="learning-journey" area="journey" eyebrow={t("journey.eyebrow")}><p>{t("journey.authoring")}</p></DashboardCard>;
-  if (view.kind === "complete") return <DashboardCard id="learning-journey" area="journey" eyebrow={t("journey.eyebrow")}><p>{t("journey.complete")}</p></DashboardCard>;
-  return <DashboardCard id="learning-journey" area="journey" eyebrow={t("journey.eyebrow")}><ul>{view.nodes.map((node) => <li key={node.level}>{node.level}{node.state !== "current" && ` · ${t(`journey.state.${node.state}`)}`}{node.percent !== null && ` ${node.percent}%`}</li>)}</ul>{view.next && <p>{t("journey.next")}: {view.next.title}</p>}<p>{t("journey.remaining", { count: view.remaining })}</p>{view.plus.total > 0 && <p>{t("journey.plus", { count: view.plus.total })}</p>}</DashboardCard>;
+  return <DashboardCard id="learning-journey" area="journey" eyebrow={t("journey.eyebrow")}>
+    <ol className="dashboard-journey-nodes">{view.nodes.map((node) => <li key={node.level} data-state={node.state} aria-current={node.state === "current" ? "step" : undefined}>
+      <span className="dashboard-journey-node">{node.level}</span>
+      <span className="mt-xs block text-xs text-muted-foreground">{node.state !== "current" && t(`journey.state.${node.state}`)}{node.percent !== null && <span className="block tabular-nums">{node.percent}%</span>}</span>
+    </li>)}</ol>
+    {view.kind === "complete" ? <p className="mt-md">{t("journey.complete")}</p> : <><div className="mt-md rounded-lg bg-muted p-md">
+      {view.next && <><p className="text-xs text-muted-foreground">{t("journey.next")}</p><p className="mt-xs text-body font-medium">{view.next.title}</p></>}
+      <p className="mt-xs text-sm text-muted-foreground">{t("journey.remaining", { count: view.remaining })}</p>
+    </div>
+    {view.plus.total > 0 && <p className="mt-sm text-sm text-primary-strong">{t("journey.plus", { count: view.plus.total })}</p>}</>}
+  </DashboardCard>;
 }

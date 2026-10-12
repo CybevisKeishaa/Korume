@@ -86,6 +86,8 @@ async function AchievementPanel({ context }: { context: NonNullable<Awaited<Retu
 
 export default async function DashboardPage({ params }: { params: { locale: Locale } }) {
   const contextState = await loadCard("context", getDashboardContext);
+  // Every card reads this context; failing it must not dress the page up as a brand-new account.
+  if (contextState.kind === "error") throw new Error("dashboard context unavailable");
   const context = contextState.kind === "ok" ? contextState.data : null;
   const streak = context ? await loadCard("header_streak", () => getStreakFact(context)) : { kind: "unavailable" } as const;
   const now = context?.now ?? new Date();

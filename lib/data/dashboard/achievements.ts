@@ -5,6 +5,7 @@ import { badgeProgress } from "@/lib/gamification/badge-progress";
 import { createClient } from "@/lib/supabase/server";
 import { getStreakFact } from "./facts";
 import type { DashboardContext } from "./context";
+import { studyDate } from "@/lib/time/study-day";
 
 const cache: <T extends (...args: never[]) => unknown>(fn: T) => T =
   (React as { cache?: <T>(fn: T) => T }).cache ?? ((fn) => fn);
@@ -14,7 +15,8 @@ interface EarnedBadgeRow { badge_id: string; earned_at: string }
 
 export interface AchievementBadge { id: string; name: string; description: string | null; iconUrl: string | null }
 export interface AchievementSnapshot {
-  earned: (AchievementBadge & { earnedAt: string })[];
+  /** `earnedOn` is the study date (learner timezone) the badge was earned. */
+  earned: (AchievementBadge & { earnedOn: string })[];
   inProgress: (AchievementBadge & { progress: NonNullable<ReturnType<typeof badgeProgress>> })[];
 }
 
@@ -40,11 +42,13 @@ export const getAchievementSnapshot = cache(async (context: DashboardContext): P
   const earnedBadges = rows.flatMap((row) => {
     const earnedAtValue = earnedAt.get(row.id);
     return earnedAtValue ? [{ ...toBadge(row), earnedAt: earnedAtValue }] : [];
-  }).sort((left, right) => right.earnedAt.localeCompare(left.earnedAt)).slice(0, 3);
+  }).sort((left, right) => right.earnedAt.localeCompare(left.earnedAt)).slice(0, 3)
+    .map(({ earnedAt: at, ...badge }) => ({ ...badge, earnedOn: studyDate(new Date(at), context.timeZone) }));
   const inProgress = rows.flatMap((row) => {
     if (earnedAt.has(row.id)) return [];
     const progress = badgeProgress(row.criteria, snapshot, { kanji: kanji.count ?? 0 });
-    return progress ? [{ ...toBadge(row), progress }] : [];
+    // D8: a new account shows the empty state, never 0/N.
+    return progress && progress.current > 0 ? [{ ...toBadge(row), progress }] : [];
   }).sort((left, right) => right.progress.current / right.progress.target - left.progress.current / left.progress.target)
     .slice(0, Math.max(0, 3 - earnedBadges.length));
   return { earned: earnedBadges, inProgress };

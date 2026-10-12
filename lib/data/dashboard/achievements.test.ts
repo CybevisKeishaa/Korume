@@ -23,7 +23,7 @@ beforeEach(() => {
 });
 
 describe("getAchievementSnapshot", () => {
-  it("shows newest earned badges first and the three closest meaningful progress badges", async () => {
+  it("shows newest earned badges first on their study date, then progress badges that have started", async () => {
     const supabase = createMockSupabase({
       tables: {
         user_stats: () => ({ data: { xp: 120 }, error: null }),
@@ -32,10 +32,11 @@ describe("getAchievementSnapshot", () => {
           { id: "earned-new", name: "Second", description: null, icon_url: "icon", criteria: { type: "xp", total: 2 } },
           { id: "near", name: "Five sessions", description: null, icon_url: null, criteria: { type: "sessions", count: 5 } },
           { id: "later", name: "Ten sessions", description: null, icon_url: null, criteria: { type: "sessions", count: 10 } },
+          { id: "untouched", name: "First dictation", description: null, icon_url: null, criteria: { type: "outcome_count", source: "dictation", count: 1 } },
           { id: "unsupported", name: "N5", description: null, icon_url: null, criteria: { type: "jlpt_mock", level: "N5" } },
         ], error: null }),
         user_badges: () => ({ data: [
-          { badge_id: "earned-old", earned_at: "2026-01-01T00:00:00Z" },
+          { badge_id: "earned-old", earned_at: "2026-01-01T20:00:00Z" },
           { badge_id: "earned-new", earned_at: "2026-02-01T00:00:00Z" },
         ], error: null }),
         kanji: () => ({ data: [{ id: "k1" }, { id: "k2" }, { id: "k3" }], error: null }),
@@ -45,13 +46,32 @@ describe("getAchievementSnapshot", () => {
 
     await expect(getAchievementSnapshot(context)).resolves.toEqual({
       earned: [
-        { id: "earned-new", name: "Second", description: null, iconUrl: "icon", earnedAt: "2026-02-01T00:00:00Z" },
-        { id: "earned-old", name: "First", description: null, iconUrl: null, earnedAt: "2026-01-01T00:00:00Z" },
+        { id: "earned-new", name: "Second", description: null, iconUrl: "icon", earnedOn: "2026-02-01" },
+        { id: "earned-old", name: "First", description: null, iconUrl: null, earnedOn: "2026-01-02" },
       ],
       inProgress: [
         { id: "near", name: "Five sessions", description: null, iconUrl: null, progress: { current: 3, target: 5, kind: "count" } },
       ],
     });
     expect(buildBadgeSnapshot).toHaveBeenCalledWith(expect.anything(), "u1", 120, 4);
+  });
+
+  it("gives a new account no 0/N progress rows (D8)", async () => {
+    vi.mocked(buildBadgeSnapshot).mockResolvedValue({ totalXp: 0, streakCurrent: 0, kanjiLearned: 0, totalOutcomes: 0, outcomeCounts: {}, jlptMockLevelsCompleted: [] });
+    vi.mocked(getStreakFact).mockResolvedValue({ current: 0, longest: 0, lastActiveDate: null });
+    const supabase = createMockSupabase({
+      tables: {
+        user_stats: () => ({ data: null, error: null }),
+        badges: () => ({ data: [
+          { id: "first", name: "first_steps", description: null, icon_url: null, criteria: { type: "sessions", count: 1 } },
+          { id: "week", name: "week_streak", description: null, icon_url: null, criteria: { type: "streak", days: 7 } },
+        ], error: null }),
+        user_badges: () => ({ data: [], error: null }),
+        kanji: () => ({ data: [], error: null }),
+      },
+    });
+    vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
+
+    await expect(getAchievementSnapshot(context)).resolves.toEqual({ earned: [], inProgress: [] });
   });
 });

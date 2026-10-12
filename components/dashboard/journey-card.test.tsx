@@ -13,10 +13,13 @@ describe("JourneyCard", () => {
     render(<JourneyCard view={{ kind: "active", current: "N5", next: { videoId: "v1", title: "Café" }, remaining: 2, plus: { total: 3, accessible: 1 }, nodes: [
       { level: "N5", state: "current", percent: 50 }, { level: "N4", state: "locked", percent: 0 }, { level: "N3", state: "unavailable", percent: null },
     ] }} />);
-    expect(screen.getByText(/Next milestone: Café/)).toBeInTheDocument();
+    expect(screen.getByText("Next milestone")).toBeInTheDocument();
+    expect(screen.getByText("Café")).toBeInTheDocument();
     expect(screen.getByText("2 lessons remaining")).toBeInTheDocument();
     expect(screen.getByText("+3 Plus lessons")).toBeInTheDocument();
     expect(screen.getByText(/N5/)).not.toHaveTextContent("Locked");
+    expect(screen.getByText("N5").closest("li")).toHaveAttribute("aria-current", "step");
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
     expect(screen.queryByText(/Roadmap/)).not.toBeInTheDocument();
   });
 
@@ -31,8 +34,19 @@ describe("JourneyCard", () => {
   });
 
   it("renders the completed journey state", () => {
-    render(<JourneyCard view={{ kind: "complete", nodes: [] }} />);
+    render(<JourneyCard view={{ kind: "complete", nodes: [
+      { level: "N3", state: "completed", percent: 100 },
+      { level: "N2", state: "completed", percent: 100 },
+      { level: "N1", state: "completed", percent: 100 },
+    ] }} />);
     expect(screen.getByText("You've completed the current journey.")).toBeInTheDocument();
+    const nodes = screen.getAllByRole("listitem");
+    expect(nodes).toHaveLength(3);
+    expect(nodes.map((node) => node.textContent)).toEqual([
+      "N3Completed100%", "N2Completed100%", "N1Completed100%",
+    ]);
+    expect(screen.queryByText("Next milestone")).not.toBeInTheDocument();
+    expect(screen.queryByText(/lessons remaining|Plus lessons/)).not.toBeInTheDocument();
   });
 
   it("hides the next-milestone line when no next lesson exists", () => {

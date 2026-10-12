@@ -20,4 +20,9 @@ describe("KorumeCard", () => {
     fireEvent.click(screen.getByRole("button", { name: "View weakness" }));
     expect(document.activeElement).toHaveAttribute("id", "weakness-snapshot");
   });
+
+  it("labels every resolver skill key from the catalog, pronunciation included", () => {
+    render(<KorumeCard enabled cue={{ key: "cue.weeklyImproved", values: { skill: "pronunciation", points: 8 }, practiceHref: null, viewWeakness: false }} />);
+    expect(screen.getByText("Your Pronunciation rose 8 points compared with the previous 7 days.")).toBeInTheDocument();
+  });
 });

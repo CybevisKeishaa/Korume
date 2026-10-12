@@ -15,9 +15,9 @@ export function ActivityCard({ cells, streak, error = false }: { cells: Activity
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => { const offset = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" ? -14 : event.key === "ArrowDown" ? 14 : 0; if (offset) { event.preventDefault(); setHighlight((value) => Math.max(0, Math.min(cells.length - 1, value + offset))); } };
   if (error) return <DashboardCard id="learning-activity" area="activity" eyebrow={t("activity.eyebrow")}><p>{t("card.error")}</p></DashboardCard>;
   return <DashboardCard id="learning-activity" area="activity" eyebrow={t("activity.eyebrow")} describedBy="learning-activity-summary" tabIndex={0} onKeyDown={onKeyDown}>
-    <p id="learning-activity-summary">{t("activity.summary", { streak: streakText, active })}</p><p>{t("activity.caption")}</p>
+    <p id="learning-activity-summary" className="sr-only">{t("activity.summary", { streak: streakText, active })}</p>
     <div className="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-1">
-      {cells.map((cell, index) => <span key={cell.date} aria-label={label(cell)} className={`block aspect-square rounded-sm ${cellClass(cell)}${highlight === index ? " ring-2 ring-primary" : ""}`} data-state={cell.state} data-highlighted={highlight === index || undefined} />)}
-    </div><p className="sr-only" role="status">{cells[highlight] ? label(cells[highlight]) : ""}</p><p>{streakText}</p>
+      {cells.map((cell, index) => <span key={cell.date} role="img" aria-label={label(cell)} className={`block aspect-square rounded-sm ${cellClass(cell)}`} data-state={cell.state} data-highlighted={highlight === index || undefined} />)}
+    </div><p className="sr-only" role="status">{cells[highlight] ? label(cells[highlight]) : ""}</p><p className="mt-md text-sm">{streakText}</p><p className="mt-xs text-xs text-muted-foreground">{t("activity.caption")}</p>
   </DashboardCard>;
 }

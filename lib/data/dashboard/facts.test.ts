@@ -101,6 +101,13 @@ describe("dashboard fact loaders", () => {
     expect(fact.bars.find((bar) => bar.index === 1)).toEqual({ index: 1, unavailable: true });
   });
 
+  it("rounds current-window hours to one decimal", async () => {
+    mockClient({ tables: {} });
+    vi.mocked(getStudyTime).mockResolvedValue({ totalSeconds: 4620, days: [{ day: "2026-10-10", seconds: 4620 }] });
+
+    await expect(getStudyTimeFact(context)).resolves.toEqual(expect.objectContaining({ hoursW0: 1.3 }));
+  });
+
   it("routes listening and pronunciation weaknesses to the most relevant lesson practice", async () => {
     mockClient({
       tables: {
@@ -109,13 +116,13 @@ describe("dashboard fact loaders", () => {
       rpcs: {
         weakness_scores: () => ({ data: [
           { family: "listening", metric: "accuracy", attempts: 3, score: 50 },
-          { family: "pronunciation", metric: "pitch", attempts: 3, score: 40 },
+          { family: "pronunciation", metric: "pitch", attempts: 3, score: 40.4 },
         ], error: null }),
         practice_activity: () => ({ data: [{ type: "dictation_lines", outcomes: 2, last_at: null, last_video_id: "fallback" }], error: null }),
       },
     });
     await expect(getWeaknessFacts(context)).resolves.toEqual([
-      { family: "pronunciation", metric: "pitch", score: 40, practiceHref: "/shadowing/d5/pronunciation" },
+      { family: "pronunciation", metric: "pitch", score: 40, practiceHref: "/shadowing/d5" },
       { family: "listening", metric: "accuracy", score: 50, practiceHref: "/shadowing/d5/dictation" },
     ]);
   });
@@ -126,7 +133,7 @@ describe("dashboard fact loaders", () => {
       tables: {
         learner_videos: (calls) => {
           learnerReads.push(calls);
-          return { data: { id: "video-1", title: "Episode", duration_seconds: 600, last_watched_position: 180, situation_id: "s1", source_id: "o1" }, error: null };
+          return { data: { id: "video-1", title: "Episode", duration_seconds: 600, last_watched_position: 180, jlpt_level_estimate: "N4", situation_id: "s1", source_id: "o1" }, error: null };
         },
         lesson_situations: () => ({ data: { slug: "restaurant" }, error: null }),
         lesson_sources: () => ({ data: { slug: "podcast" }, error: null }),
@@ -136,9 +143,9 @@ describe("dashboard fact loaders", () => {
 
     await expect(getContinueLearning(context)).resolves.toEqual({
       kind: "continue", videoId: "video-1", title: "Episode", placement: { title: "N5 Foundations", position: 2 },
-      percent: 30, remainingMinutes: 7, tags: ["restaurant", "podcast"],
+      percent: 30, remainingMinutes: 7, tags: [{ kind: "jlpt", value: "N4" }, { kind: "situations", value: "restaurant" }, { kind: "sources", value: "podcast" }],
     });
     expect(supabase).toBeDefined();
-    expect(learnerReads[0]).toContainEqual({ op: "select", columns: "id, title, duration_seconds, last_watched_position, situation_id, source_id" });
+    expect(learnerReads[0]).toContainEqual({ op: "select", columns: "id, title, duration_seconds, last_watched_position, jlpt_level_estimate, situation_id, source_id" });
   });
 });

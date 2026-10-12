@@ -201,6 +201,13 @@ grant execute on function current_transcript_id(uuid) to authenticated, service_
 -- M2: hints are ranked by TS; this function is the authority. It resolves the zone itself, finds the active cycle
 -- by instant, revalidates every hint, recomputes every target from real rows and freezes eligible keys — all under
 -- the per-user XP lock. Inserts nothing when no slot qualifies (onboarding).
+-- The one SQL home of FALLBACK_STUDY_TIMEZONE (lib/time/study-day.ts); lib/time/no-vn-hardcode.test.ts pins it.
+create function fallback_study_timezone() returns text
+  language sql immutable security invoker set search_path = public
+as $$ select 'Asia/Ho_Chi_Minh'::text $$;
+revoke execute on function fallback_study_timezone() from public, anon, authenticated;
+grant execute on function fallback_study_timezone() to service_role;
+
 create function ensure_daily_mission(p_user uuid, p_review_decks text[], p_targets jsonb, p_hints jsonb)
   returns uuid
   language plpgsql security definer set search_path = public
@@ -214,9 +221,9 @@ begin
   select id into v_id from daily_missions where user_id = p_user and window_start <= v_now and v_now < window_end;
   if v_id is not null then return v_id; end if;
 
-  select coalesce(u.study_timezone, 'Asia/Ho_Chi_Minh') into v_tz from users u where u.id = p_user;
+  select coalesce(u.study_timezone, fallback_study_timezone()) into v_tz from users u where u.id = p_user;
   if v_tz is null then raise exception 'ensure_daily_mission: unknown user'; end if;
-  if not exists (select 1 from pg_timezone_names where name = v_tz) then v_tz := 'Asia/Ho_Chi_Minh'; end if;
+  if not exists (select 1 from pg_timezone_names where name = v_tz) then v_tz := fallback_study_timezone(); end if;
   v_local := (v_now at time zone v_tz)::date;
   v_end := (v_local + 1)::timestamp at time zone v_tz;
   v_start := greatest(v_local::timestamp at time zone v_tz,

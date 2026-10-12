@@ -10,7 +10,7 @@ describe("MissionCard", () => {
       { type: "shadow_lines", current: 0, target: 3, title: null, href: "/shadowing/v1", playbackPercent: null },
     ] } }} />);
     expect(screen.getByRole("heading", { name: "Three small promises" })).toBeInTheDocument();
-    expect(screen.getByText(/Reward: \+50 XP earned/)).toBeInTheDocument();
+    expect(screen.getByText("+50 XP earned")).toBeInTheDocument();
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "Finish Café" })).toHaveAttribute("value", "80");
     expect(screen.getByRole("link", { name: /Finish/ })).toHaveAttribute("href", "/en/shadowing/v1");
@@ -29,7 +29,7 @@ describe("MissionCard", () => {
       { type: "shadow_lines", current: 1, target: 3, title: "Cafe", href: "/shadowing/v1", playbackPercent: null },
     ] } }} />);
     expect(screen.getByRole("heading", { name: "Today's missions" })).toBeInTheDocument();
-    expect(screen.getByText(/Reward: \+50 XP$/)).toBeInTheDocument();
+    expect(screen.getByText("+50 XP")).toBeInTheDocument();
   });
 
   it("accepts a structured-cloneable mission view", () => {

@@ -27,7 +27,7 @@ export function DashboardHeader({ weekday, daypart, name, avatarUrl, streak }: D
           {avatarUrl
             // eslint-disable-next-line @next/next/no-img-element -- Profile's shared resolver permits storage and OAuth origins.
             ? <img src={avatarUrl} alt="" />
-            : <span aria-hidden="true">•</span>}
+            : <span aria-hidden="true" className="font-semibold">{(name && Array.from(name)[0]?.toUpperCase()) || "•"}</span>}
         </Link>
       </div>
     </header>

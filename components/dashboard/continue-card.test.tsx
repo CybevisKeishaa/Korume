@@ -4,11 +4,14 @@ import { ContinueCard } from "./continue-card";
 
 describe("ContinueCard", () => {
   it("renders a curriculum continuation with the workspace and summary destinations", () => {
-    render(<ContinueCard view={{ kind: "continue", videoId: "v1", title: "At the café", placement: { title: "JLPT N5", position: 2 }, percent: 125, remainingMinutes: 4, tags: ["restaurant", "podcast"] }} />);
+    render(<ContinueCard view={{ kind: "continue", videoId: "v1", title: "At the café", placement: { title: "JLPT N5", position: 2 }, percent: 125, remainingMinutes: 4, tags: [{ kind: "jlpt", value: "N4" }, { kind: "situations", value: "daily-life" }, { kind: "sources", value: "youtube" }] }} />);
     expect(screen.getByText("JLPT N5 · Lesson 2")).toBeInTheDocument();
     expect(screen.getByText("100% completed")).toBeInTheDocument();
-    expect(screen.getByText("restaurant")).toBeInTheDocument();
-    expect(screen.getByText("podcast")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "100% completed" })).toHaveAttribute("value", "100");
+    expect(screen.getByText("N4")).toBeInTheDocument();
+    expect(screen.getByText("Daily life")).toBeInTheDocument();
+    expect(screen.getByText("YouTube")).toBeInTheDocument();
+    expect(screen.queryByText(/daily-life|youtube/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Continue learning" })).toHaveAttribute("href", "/en/shadowing/v1");
     expect(screen.getByRole("link", { name: "Review lesson" })).toHaveAttribute("href", "/en/shadowing/v1/summary");
   });
@@ -17,6 +20,7 @@ describe("ContinueCard", () => {
     render(<ContinueCard view={{ kind: "onboarding" }} />);
     expect(screen.getByText("Pick a first lesson and Korume will keep your place.")).toBeInTheDocument();
     expect(screen.queryByText(/completed|video left/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 
   it("renders start-next and recommended states from the catalog", () => {

@@ -1,9 +1,10 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { ensureDailyMission, claimActiveMission } from "@/lib/data/missions";
+import { ensureDailyMissionOrThrow, claimActiveMission } from "@/lib/data/missions";
 import { getDashboardContext } from "./context";
 import { getReviewSummary } from "./review";
+import { exposedReviewSurfaces, reviewDestination } from "@/lib/dashboard/review-surfaces";
 import type { MissionType } from "@/lib/dashboard/missions";
 import { loadCard, type CardState } from "@/components/dashboard/card-boundary";
 
@@ -14,12 +15,16 @@ interface LessonRow { id: string; title: string; duration_seconds: number | null
 async function loadDailyMission(): Promise<MissionView | null> {
   const context = await getDashboardContext();
   if (!context) return null;
-  const missionId = await ensureDailyMission(context.userId);
+  const missionId = await ensureDailyMissionOrThrow(context.userId);
   if (!missionId) return null;
   await claimActiveMission(context.userId);
   const supabase = createClient();
   const [review, { data: progress, error }, { data: mission, error: missionError }] = await Promise.all([
-    getReviewSummary(),
+    // A failed due count only loses the smart review destination (as in Quick Access), never the card.
+    getReviewSummary().catch((error: unknown) => {
+      console.error({ event: "dashboard_card_failed", card: "mission_review", error });
+      return reviewDestination([], exposedReviewSurfaces());
+    }),
     supabase.rpc("daily_mission_item_progress", { p_mission_id: missionId }),
     supabase.from("daily_missions").select("rewarded_at").eq("id", missionId).maybeSingle(),
   ]);

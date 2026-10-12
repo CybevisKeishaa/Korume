@@ -90,15 +90,15 @@ for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900
       await expect(area(page, "continue").getByRole("link", { name: dashboard.continue.cta.start })).toBeVisible();
       await expect(area(page, "mission")).toContainText(dashboard.mission.onboarding);
       await expect(area(page, "journey").getByRole("listitem")).toHaveCount(3);
-      await expect(area(page, "journey").getByRole("listitem").first()).toHaveText("N5 0%");
+      await expect(area(page, "journey").getByRole("listitem").first()).toHaveText("N5 0%", { useInnerText: true });
       await expect(area(page, "weakness")).toContainText(dashboard.weakness.empty);
       await expect(area(page, "weekly")).toContainText(dashboard.weekly.notTracked);
       await expect(area(page, "activity")).toContainText(dashboard.activity.noStreak);
       await expect(area(page, "activity").locator('[data-state="active"]')).toHaveCount(0);
       await expect(area(page, "korume").getByRole("button", { name: dashboard.korume.viewWeakness })).toHaveCount(0);
-      const achievements = area(page, "achievements").getByRole("listitem");
-      await expect(achievements).toHaveCount(3);
-      await expect(area(page, "achievements")).not.toContainText(dashboard.achievements.earnedToday);
+      // D8: a new account sees the empty state, never 0/N progress.
+      await expect(area(page, "achievements").getByRole("listitem")).toHaveCount(0);
+      await expect(area(page, "achievements")).toContainText(dashboard.achievements.empty);
       await expect(area(page, "quick").getByRole("link")).toHaveCount(4);
       await expect(area(page, "quick")).toContainText(dashboard.quick.caughtUp);
       await geometry(page);
@@ -108,7 +108,7 @@ for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900
       await populate(page);
       const rows = area(page, "mission").getByRole("listitem");
       await expect(rows).toHaveCount(3);
-      const review = rows.filter({ hasText: dashboard.mission.item.review.replace("{target}", "1") });
+      const review = rows.filter({ hasText: /Review 1 card\b/ });
       await expect(review).toHaveCount(1);
       await expect(review).toContainText("0/1");
       await expect(area(page, "continue")).toContainText(lesson.prefix);
@@ -137,6 +137,10 @@ test("streak, View weakness and trophy move focus to their real targets", async 
   await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe("learning-activity");
   await area(page, "korume").getByRole("button", { name: dashboard.korume.viewWeakness }).click();
   await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe("weakness-snapshot");
+  // Every practice affordance leads somewhere real; the fixture's pronunciation scores yield a non-dictation one.
+  const practiceHrefs = await page.locator('[data-area="weakness"] a, [data-area="korume"] a').evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""));
+  expect(practiceHrefs.some((href) => /\/shadowing\/[^/]+$/.test(href))).toBe(true);
+  for (const href of practiceHrefs) expect((await page.request.get(href)).status(), href).toBe(200);
   await area(page, "achievements").getByRole("link", { name: dashboard.achievements.viewAll }).click();
   await expect(page).toHaveURL(/\/en\/profile#achievements$/);
   await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe("achievements");

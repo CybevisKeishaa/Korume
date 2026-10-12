@@ -25,6 +25,7 @@ import { describe, expect, it } from "vitest";
  */
 const ALLOWLIST = new Set([
   "components/dashboard/korume-card.tsx",
+  "components/dashboard/korume-card.test.tsx",
   "app/[locale]/(protected)/(immersive)/journal/page.tsx",
   "app/[locale]/(protected)/(app)/shadowing/page.tsx",
   "components/companion/journal-view.tsx",

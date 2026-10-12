@@ -48,7 +48,7 @@ describe("resolveDashboardCue", () => {
   it("is deterministic for the same facts", () => {
     const facts: DashboardFacts = {
       ...noFacts,
-      weakest: [{ family: "pronunciation", metric: "pitch", score: 61, practiceHref: "/shadowing/a/pronunciation" }],
+      weakest: [{ family: "pronunciation", metric: "pitch", score: 61, practiceHref: "/shadowing/a" }],
     };
     expect(resolveDashboardCue(facts)).toEqual(resolveDashboardCue(facts));
   });
