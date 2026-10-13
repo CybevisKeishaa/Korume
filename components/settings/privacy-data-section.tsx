@@ -6,6 +6,7 @@ import { useRouter } from "@/lib/i18n/navigation";
 import { Switch } from "@/components/ui/switch";
 import { usePreferences } from "@/components/providers/preferences-provider";
 import type { NewsletterState } from "@/lib/validation/newsletter";
+import { newsletterOptIn, recordNewsletterWrite } from "@/lib/newsletter-tab-writes";
 import { SettingsSection } from "./settings-section";
 import { SettingsRow } from "./settings-row";
 import { usePreferenceSave } from "./use-preference-save";
@@ -177,13 +178,14 @@ function AiTrainingRow({ id, initialConsent }: { id: string; initialConsent: boo
 /**
  * App-footer spec N4: the same `users.newsletter_opt_in_at` the footer writes, through the same route. Like AI
  * Training it is not a `user_preferences` column, so it keeps local state and rolls back only on `"failed"`
- * (see `AiTrainingRow`). A confirmed save refreshes the router so the footer re-reads it (plan P2). The body
+ * (see `AiTrainingRow`). A confirmed save refreshes the router so the footer re-reads it (plan P2), and is
+ * recorded for the tab, since a navigation can discard that refresh (`newsletter-tab-writes`). The body
  * names the full address: this row is where the footer's ellipsized email is read whole (L3).
  */
 function NewsletterRow({ id, initial }: { id: string; initial: NewsletterState }) {
   const t = useTranslations("settings");
   const router = useRouter();
-  const [optedIn, setOptedIn] = useState(initial.optedIn);
+  const [optedIn, setOptedIn] = useState(() => newsletterOptIn(initial.optedIn));
   const save = usePreferenceSave("newsletter", "/api/user/newsletter");
 
   return (
@@ -202,7 +204,9 @@ function NewsletterRow({ id, initial }: { id: string; initial: NewsletterState }
               setOptedIn(checked);
               void save.save({ optIn: checked }, {}).then((outcome) => {
                 if (outcome === "failed") setOptedIn(previous);
-                if (outcome === "saved") router.refresh();
+                if (outcome !== "saved") return;
+                recordNewsletterWrite(checked);
+                router.refresh();
               });
             }}
           />

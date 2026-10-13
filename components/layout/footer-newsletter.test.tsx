@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@/test/render";
 import { FooterNewsletter } from "./footer-newsletter";
+import { resetNewsletterWritesForTests } from "@/lib/newsletter-tab-writes";
 import en from "@/messages/en/marketing.json";
 
 const refresh = vi.fn();
@@ -13,7 +14,10 @@ const copy = en.appFooter.newsletter;
 const EMAIL = "a.very.long.learner.address.for.the.footer.test@korume-example.com";
 
 beforeEach(() => vi.clearAllMocks());
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  resetNewsletterWritesForTests();
+});
 
 function respond(status: number) {
   const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { optedIn: true } }), { status }));
@@ -115,5 +119,27 @@ describe("FooterNewsletter (spec N3/N3a)", () => {
     rerender(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
     expect(screen.getByRole("button", { name: copy.submit })).toBeInTheDocument();
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  // A client navigation started before router.refresh() resolves discards it (Next 14.2 action queue), so the
+  // next visit can mount from the router-cache payload taken BEFORE the save.
+  it("a confirmed save outlives a stale server prop on the next mount", async () => {
+    respond(200);
+    const { unmount } = render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    fireEvent.click(screen.getByRole("button", { name: copy.submit }));
+    await screen.findByText(copy.subscribed);
+    unmount();
+    render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    expect(screen.getByText(copy.subscribed)).toBeInTheDocument();
+  });
+
+  it("a failed save records nothing, so the next mount offers the form again", async () => {
+    respond(500);
+    const { unmount } = render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    fireEvent.click(screen.getByRole("button", { name: copy.submit }));
+    await screen.findByRole("alert");
+    unmount();
+    render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    expect(screen.getByRole("button", { name: copy.submit })).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { Link, useRouter } from "@/lib/i18n/navigation";
+import { newsletterOptIn, recordNewsletterWrite } from "@/lib/newsletter-tab-writes";
 import { AppFooterIcon } from "./app-footer-icon";
 
 type Status = "idle" | "pending" | "subscribed" | "signedOut" | "error";
@@ -17,12 +18,14 @@ type Status = "idle" | "pending" | "subscribed" | "signedOut" | "error";
 export function FooterNewsletter({ email, initialOptedIn }: { email: string; initialOptedIn: boolean }) {
   const t = useTranslations("marketing");
   const router = useRouter();
-  const [status, setStatus] = useState<Status>(initialOptedIn ? "subscribed" : "idle");
+  // The prop can come from a router-cache payload older than this tab's last save (see newsletter-tab-writes).
+  const optedIn = newsletterOptIn(initialOptedIn);
+  const [status, setStatus] = useState<Status>(optedIn ? "subscribed" : "idle");
   // Adjust state when the server prop changes (router.refresh, Settings): React's render-phase pattern.
-  const [seenOptedIn, setSeenOptedIn] = useState(initialOptedIn);
-  if (seenOptedIn !== initialOptedIn) {
-    setSeenOptedIn(initialOptedIn);
-    setStatus(initialOptedIn ? "subscribed" : "idle");
+  const [seenOptedIn, setSeenOptedIn] = useState(optedIn);
+  if (seenOptedIn !== optedIn) {
+    setSeenOptedIn(optedIn);
+    setStatus(optedIn ? "subscribed" : "idle");
   }
   // Focus moves to "Manage" only on a pending -> subscribed transition, never on mount.
   const manageRef = useRef<HTMLAnchorElement>(null);
@@ -43,6 +46,7 @@ export function FooterNewsletter({ email, initialOptedIn }: { email: string; ini
       });
       if (response.status === 401) return setStatus("signedOut");
       if (!response.ok) return setStatus("error");
+      recordNewsletterWrite(true);
       setStatus("subscribed");
       router.refresh();
     } catch {

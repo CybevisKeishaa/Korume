@@ -7,8 +7,8 @@ import nav from "../../messages/en/nav.json";
 
 /**
  * App footer (spec T5 + the runtime half of T2, plan P3). Unit tests prove each surface calls the route; only a
- * real round trip proves the two surfaces agree through `users.newsletter_opt_in_at`, including after a client
- * navigation inside Next's router-cache window (Review Focus 3).
+ * real round trip proves the two surfaces agree through `users.newsletter_opt_in_at`, and that a footer cached
+ * as "subscribed" by a client navigation is not served stale after Settings turns it off (Review Focus 3).
  */
 const copy = marketing.appFooter.newsletter;
 
@@ -40,12 +40,21 @@ test.describe("app footer", () => {
     const toggle = page.getByRole("switch", { name: settings.newsletter.title, exact: true });
     await expect(toggle).toBeChecked();
 
+    // Clicking "Manage" at once discards the footer's router.refresh(), so /shadowing's cached payload is the
+    // one from before the save: only the footer's tab write shows "saved" here. The visit re-caches it as such.
+    const mainNav = page.getByRole("navigation", { name: nav.ariaLabel });
+    await mainNav.getByRole("link", { name: nav.lessons }).click();
+    await expect(page.locator("[data-app-footer]").getByText(copy.subscribed)).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/en\/settings#newsletter$/);
+    await expect(toggle).toBeChecked();
+
     const saved = page.waitForResponse((r) => r.url().endsWith("/api/user/newsletter") && r.request().method() === "PATCH");
     await toggle.click();
     expect((await saved).status()).toBe(200);
 
-    // Client navigation, inside the 30s router-cache window.
-    await page.getByRole("navigation", { name: nav.ariaLabel }).getByRole("link", { name: nav.lessons }).click();
+    // At once, inside the 30s router-cache window: only Settings' tab write keeps the cached "saved" footer away.
+    await mainNav.getByRole("link", { name: nav.lessons }).click();
     await expect(page).toHaveURL(/\/en\/shadowing$/);
     await expect(page.locator("[data-app-footer]").getByRole("button", { name: copy.submit })).toBeVisible();
   });
