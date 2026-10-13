@@ -3,9 +3,10 @@
 - **Status:** design approved in conversation by the owner on 2026-10-13 (rulings F1–F6 below). Written-spec review
   round 1 (2026-10-13) folded in: Home → `/dashboard`, back-to-top target, three sections, legibility-first scale with
   a measured compact mode (L2a/L2b), newsletter honesty + session/sync + SQL hardening (N2–N3b), copy, T2/T3/T6.
-  O1 resolved by the owner (§8). Round 2 (owner): L2/L3 replaced by the single-row adaptive footer — compact mode
-  simplifies content instead of adding a row (L2a–L2e), T1/T6 amended. Awaiting the owner's approval before
-  `writing-plans`.
+  O1 resolved by the owner (§8). Round 2 (owner): always one row. Round 3 (owner): no wide/compact variants —
+  one composition with the frame's sections and space reallocated (L1: 24 · 230 · 24 · 330 · 24 · 361 · 24 at
+  1017), Links in two sub-columns, functionless labels cut except Legal (kept as text), reduction only if measured
+  (L2b), empty `search_path`, email-ellipsis exemption in T6. Awaiting the owner's approval before `writing-plans`.
 - **Branch:** `app-footer`, worktree `.worktrees/app-footer`, base `master` at **`44fc84f0`**.
 - **Frame:** Footer `203:13813` — file `IwFHZDZdHW7qsSFiNbWrkd`
   (`figma.com/design/IwFHZDZdHW7qsSFiNbWrkd/Korume?node-id=203-13813`), 1536x733.
@@ -57,11 +58,11 @@ pathname; no new route group. A test pins the exact set of page files that rende
 | Home | link `/dashboard` — the learner's home inside the app, same target as `AppNav`'s logo. `/` is the marketing page, which does not redirect a signed-in learner (spec review 2026-10-13) |
 | Roadmap | link `/roadmap` |
 | Contact | `mailto:` `SUPPORT_EMAIL` (`lib/contact.ts`) |
-| Support address (`admin@almostgone.vn` in the frame) | `mailto:` `SUPPORT_EMAIL` — the repo constant wins over the frame's literal |
 | Mascot card ("Say hello to Korume", `203:13856`) | link `/companion` |
 | App Store / Google Play badges | external links `APP_STORE_URL` / `PLAY_STORE_URL` (`lib/app-stores.ts`): the stores' front pages, Korume not being published — the owner's 2026-08-28 landing ruling, **re-confirmed for the app footer on 2026-10-13 (O1)** with that fact stated. Frame copy kept as is |
 | "Back to the beginning" | a real button: `window.scrollTo({ top: 0 })` — the `(app)` layout has no scroll container, the window scrolls — smooth unless reduce-motion is on; then focus moves to the `(app)` layout's `<main>`, which gains `id="main-content"` and `tabIndex={-1}`, so it works on a page with no `h1` |
-| Pricing, FAQ, Blog, About, Careers, Privacy Policy, Terms of Service, Discord, Facebook, TikTok | text, no link. Adding the page later is one `href` |
+| Privacy Policy, Terms of Service | text, no link (owner kept the Legal group as text, round 3). Adding the page later is one `href` |
+| Pricing, FAQ, Blog, About, Careers, Discord, Facebook, TikTok, the support address, "A small note" | **not rendered** in the app footer (owner, spec review round 3: functionless labels are cut to make room). Contact already opens mail to `SUPPORT_EMAIL`. Each returns as one entry when its page or URL exists |
 
 **F4 — Newsletter = real per-account opt-in (owner, 2026-10-13).** See §3.
 
@@ -73,95 +74,81 @@ new frame, and the new opt-in states, get new keys under `marketing.appFooter.*`
 **F6 — Mascot art.** The frame's image fill (`203:13857`) is a crop of a pose reference sheet with its captions
 ("NGỦ GỤC", "YÊN BÌNH") and cream background baked in — the extractor-cut kind of art the owner rejected on
 2026-10-08 (`mascot-cleanup`). The slot renders the crisp `public/mascot/actions/sleeping.png` (already the landing
-footer's art) at the frame's box (`215x185` button inside the `310x190` card), transparent, no captions.
+footer's art) in the frame's card composition (`215x185` image button inside a `310x190` card), scaled to the 230-wide Brand column (L1), transparent, no captions.
 **Visible trade-off for the owner's review (L-051):** the two captioned poses are not reproduced.
 
 ## 2. Layout (L-051)
 
-**L1 — Structure** (frame `203:13832`, content `203:13833` 1284 wide):
+**L1 — Structure: the frame's sections, space reallocated (owner, spec review round 3).** The frame spends ≈412 of
+its 1536px on outer padding (≈126 per side) and three 80px gaps, and splits Links into three 125px sub-columns.
+The owner ruled to keep the frame's three sections and their content hierarchy, but reallocate that space instead
+of keeping the frame's widths or switching to a second layout. Design width = the footer at a 1280 viewport with
+the nav open, **1017px**:
 
-1. Top row, **three** sections (`203:13834`, `203:13866`, `203:13960`): brand (`374.7`) · links (`456.1`, three
-   sub-columns of `125.4` with `40` gaps: Explore | Community + Support | Legal + A small note) · app block (`293.2`).
-   Gaps `80`.
-   - Brand: orange `K` tile 36x36 + "Korume" wordmark; tagline; mascot card (§1 F6) with the `ことば · KORUME` tile,
-     the decorative `▣` chip and the sparkle icon (both `aria-hidden`).
-   - Community and Support rows carry their 13x13 icons (Discord, Facebook, TikTok, mail).
-   - App block: eyebrow, heading, body, the two store badges (164x57.6, round icon chip), a rule, then the newsletter
-     form (§3).
+| Part | Target at 1017 |
+|---|---|
+| Outer padding, left / right | 24 |
+| Gap between sections | 24 |
+| Brand | 230 |
+| Links (two sub-columns) | 330 |
+| App + Newsletter | 361 |
+
+(24 + 230 + 24 + 330 + 24 + 361 + 24 = 1017.) These are targets to verify against rendered text and mascot sizes,
+not locked values (L2d).
+
+1. Top row, three sections:
+   - **Brand:** orange `K` tile + "Korume" wordmark; tagline; the mascot card (F6) scaled to the column, with the
+     `ことば · KORUME` tile, the decorative `▣` chip and the sparkle icon (both `aria-hidden`).
+   - **Links**, two sub-columns, every item left-aligned (the frame's centred items are an export artefact):
+     sub-column 1 = Explore (Home, Roadmap); sub-column 2 = Support (Contact, with the frame's mail icon) then Legal
+     (Privacy Policy, Terms of Service as text).
+   - **App + Newsletter:** eyebrow, heading, body, the two store badges side by side (round icon chip as in the
+     frame), a rule, then the newsletter form (§3).
 2. Divider, then the centred closing line, copyright, and "Back to the beginning ↗".
 
-The frame centre-aligns some list items (Pricing, FAQ, Blog, Roadmap, About, Careers, Contact, Terms of Service)
-inside their column while Home and Privacy Policy sit left: an export artefact. Every list item is left-aligned.
-
-**L2 — Single-row adaptive footer (owner, spec review round 2, 2026-10-13; supersedes round 1's two-row compact
-mode).** The three top-row sections stay on **one row** at every supported desktop width, nav expanded or collapsed.
-Priority when they conflict:
+**L2 — One composition, one row, scaled (owner, rounds 2–3, 2026-10-13).** The three sections stay on **one row**
+at every supported desktop width, nav expanded or collapsed, and there is **one** composition and one content set
+(L1) — no wide/compact variants. Priority when they conflict:
 
 1. One row for the three sections.
 2. Essential content legible and operable.
 3. No horizontal overflow, no unintended wrapping.
-4. The frame's ratios, when there is room.
+4. The L1 proportions.
 
-Text is never shrunk below 12px to make content fit. The footer is its own inline-size container
-(`container-type: inline-size`); both modes are chosen by **container queries on the footer's own width**, never by
-viewport breakpoints.
+The footer is its own inline-size container (`container-type: inline-size`). One unit
+`--f = clamp(<floor>, 100cqi / 1017, <ceiling>)` (1017 = the L1 design width); every L1 size — padding, gaps, the
+section widths as a `230fr 330fr 361fr` grid, type, the mascot card, badges — is written as `calc(N * var(--f))`, the
+`.dashboard-page` / `--d` pattern in `app/globals.css`. Text is never below 12px; primary functional labels (links,
+buttons, the email pill) are ≥ 14px. Existing semantic tokens for colour, font and radius. Long descriptions (tagline,
+app body, newsletter purpose) may wrap naturally; nothing is clipped except the email (L3).
 
-**L2a — Wide mode: full composition** (container ≥ `--footer-wide`).
+**L2a — Above the ceiling.** Where `--f` reaches its ceiling (very wide main columns), the grid's `fr` tracks share
+the extra width in the same `230 : 330 : 361` ratio and type stops growing; nothing is centred inside a max-width.
 
-- Three sections Brand · Links · App, with the frame's structure, content, hierarchy and ratios (L1).
-- Mascot card, every navigation label, store badges (F3, O1) and newsletter (§3).
-- Sized with one unit `--f = clamp(<floor>, 100cqi / 1536, <ceiling>)` (1536 = the frame, margins included), every
-  size written as `calc(N * var(--f))`, text floored at 12px — the `.dashboard-page` / `--d` pattern in
-  `app/globals.css`. Existing semantic tokens for colour, font and radius.
-- Long descriptions may wrap naturally as in the frame; nothing is clipped or overflows.
+**L2b — Reduction, only if measured necessary.** If L2d shows the L1 content does not fit at the supported floor,
+content is removed below a measured breakpoint `--footer-reduced`, in this fixed order and only as far as needed:
+(1) the app block's body, (2) the tagline, (3) the mascot card. Never a second row, never a smaller text floor. If
+L1 fits at the floor, `--footer-reduced` does not exist and this clause is recorded as unused.
 
-**L2b — Compact mode: single-row simplified composition** (container < `--footer-wide`).
+**L2c — Supported floor.** The footer's width at a 1280 viewport with the nav open (≈1017px: sidebar
+`224 × density` + 24px rail), measured and pinned. Narrower is outside the desktop contract.
 
-Three columns on one row: **Brand · Essential links · Newsletter**. No section moves to a new row.
+**L2d — Measured, then locked.** The L1 targets, `--f`'s floor and ceiling, and `--footer-reduced` (if any) are
+measured from rendered content at the floor and at 1440/1920, then pinned in the run state and in T1/T6.
 
-| Column | Shows | Hidden |
-|---|---|---|
-| Brand | `K` tile + "Korume" wordmark | tagline, mascot card |
-| Essential links | Home → `/dashboard`, Roadmap → `/roadmap`, Contact → `mailto:SUPPORT_EMAIL` | every label without a destination, the Community/Support/Legal groups, "A small note" |
-| Newsletter | `newsletter.headingCompact` + `newsletter.purposeCompact` (still states purpose and how to leave), account-email pill, submit button; every N3a state | — |
-| App promotion | — | eyebrow, heading, body, both store badges (F3/O1 apply to wide mode only) |
-
-- **Email pill:** the full address is in the DOM (so assistive technology reads all of it) and truncated visually
-  with `text-overflow: ellipsis`; `title` carries it for pointer users; keyboard users see it in full in the Settings
-  newsletter row (N4), which shows the account address unclipped and wrapping. That is the only ellipsis allowed in
-  the footer.
-- **Sizing is independent of the frame's scale:** fixed design targets, not Figma × `--f`. Starting targets for a
-  ≈1017px container (1280 viewport, nav open: sidebar `224 × density` + 24px rail): Brand 192px · Links 288px ·
-  Newsletter the rest; 24px column gap; 24px outer padding each side. These are targets to verify, not locked values.
-- Pending, subscribed, session-expired and error states must not overflow horizontally; the footer may grow in
-  height with its state, never by adding a row for a main section.
-
-**L2c — Compact-reduced mode, only if measured necessary.** If L2d shows the full L2b set does not fit at the
-supported floor, a third mode `compact-reduced` exists below its own measured breakpoint `--footer-compact`, and it
-removes, in this fixed order and only as far as needed: (1) the Roadmap link, (2) `newsletter.headingCompact` (the
-purpose line stays), (3) the wordmark text (the `K` tile stays, with "Korume" as its accessible name). Never a
-second row. If L2b fits at the floor, `compact-reduced` does not exist and this clause is recorded as unused. The
-**supported floor** is the footer's width at a 1280 viewport with the nav open (≈1017px, measured and pinned);
-narrower is outside the desktop contract.
-
-**L2d — Measured, then locked.** `--footer-wide` is the smallest container width at which the full L2a composition
-fits at its floor sizes without overflow or unintended wraps, measured from rendered content; `--footer-compact`
-likewise for L2b, if needed. The modes that exist, their breakpoints, the compact column widths and the exact
-content set of each mode are pinned in the run state and in T1/T6 only after that measurement.
-
-**L2e — Bottom row.** The divider, closing line, copyright and "Back to the beginning" sit below the three sections
-in every mode (the frame's own second band, not a main section). Closing line, copyright and button each stay on
-one line: the closing line is ≈322px at 1536 and ≈the same at its 12px+ floor, well inside a ≈1017px footer, so no
-compact copy is needed (T6 verifies).
+**L2e — Bottom row.** The divider, closing line, copyright and "Back to the beginning" sit below the three
+sections (the frame's own second band, not a main section). Each stays on one line: the closing line is ≈322px at
+1536, well inside a ≈1017px footer (T6 verifies).
 
 **L3 — Overflow and text integrity.**
 
 - No horizontal scrolling.
-- No clipping except the email ellipsis (L2b).
-- The wordmark, navigation labels, control labels and compact headings stay on one line.
-- Text ≥ 12px; primary functional labels (links, buttons, the email pill) ≥ 14px where the mode allows.
-- Hidden content is `display: none` (container query), so it leaves both the accessibility tree and the focus order.
-- The footer may change height with content and state; it never adds a row for a main section.
+- **Email pill:** the full address is in the DOM (assistive technology reads all of it), truncated visually with
+  `text-overflow: ellipsis`, `title` carrying it for pointer users; keyboard users see it in full in the Settings
+  newsletter row (N4). That is the only ellipsis and the only clipping allowed in the footer.
+- The wordmark, navigation labels, control labels and headings stay on one line.
+- Content removed by L2b is `display: none` (container query), so it leaves the accessibility tree and focus order.
+- The footer may change height with content and newsletter state; it never adds a row for a main section.
 
 ## 3. Newsletter opt-in
 
@@ -202,7 +189,7 @@ on the other at the next navigation.
 **N4 — Settings.** A newsletter toggle row in the Privacy & data section (`components/settings/privacy-data-section.tsx`),
 beside the AI-training consent toggle, anchored `#newsletter`. On → `set_newsletter_opt_in(true)`, off →
 `set_newsletter_opt_in(false)`. The row shows the account email in full (wrapping, never clipped) — the place where
-the footer's compact ellipsis (L2b) can be read whole.
+the footer's email ellipsis (L3) can be read whole.
 
 **N5 — Sending is out of scope.** No mail is sent; `EMAIL_PROVIDER=none` stays. The column is the list a future
 sender reads; when sending starts, that branch revisits the copy.
@@ -212,15 +199,11 @@ sender reads; when sending starts, that branch revisits the copy.
 | Key | en (frame) | vi |
 |---|---|---|
 | `tagline` | Your quiet place to grow with Japanese. | Góc yên tĩnh để bạn lớn lên cùng tiếng Nhật. |
-| `note.heading` | A small note | Đôi lời nhỏ |
-| `note.body` | We make space for steady, curious learning. | Một không gian để bạn học đều đặn và luôn tò mò khám phá. |
 | `app.eyebrow` | Continue learning anywhere | Học tiếp ở bất cứ đâu |
 | `app.heading` | Take your next small step with you. | Bước học tiếp theo, ở bất cứ đâu. |
 | `app.body` | Sync your learning across every device, and come back whenever the day leaves a little room. | Đồng bộ việc học trên mọi thiết bị, và quay lại bất cứ khi nào ngày còn chút khoảng trống. |
 | `newsletter.heading` | A gentle note, once in a while. | Thỉnh thoảng, một lá thư nhẹ nhàng. |
 | `newsletter.purpose` | Sign up for occasional notes on new lessons and study tips, once Korume starts sending them. Unsubscribe anytime in Settings. | Đăng ký để nhận thư về bài học mới và mẹo học khi Korume bắt đầu gửi. Hủy bất cứ lúc nào trong Cài đặt. |
-| `newsletter.headingCompact` | A gentle note | Thư nhẹ nhàng |
-| `newsletter.purposeCompact` | Occasional notes once we start sending. Unsubscribe in Settings. | Thư thỉnh thoảng khi Korume bắt đầu gửi. Hủy trong Cài đặt. |
 | `newsletter.emailLabel` | Account email | Email tài khoản |
 | `newsletter.submit` | Subscribe | Đăng ký nhận thư |
 | `newsletter.subscribed` | Your newsletter sign-up is saved. | Đã lưu đăng ký nhận thư của bạn. |
@@ -246,12 +229,10 @@ focus ring. Back-to-top respects reduce-motion.
 
 ## 6. Tests and gates
 
-- **T1 — Component.** One content set per mode that exists after L2d, checked separately. Wide set: every frame
-  label; exactly the F3 elements are interactive, with their hrefs; the rest are text. Compact set: exactly the L2b
-  "Shows" column. `compact-reduced` set (only if L2c is used): the compact set minus the pinned L2c steps, nothing
-  else. A mode never requires a frame label it hides. jsdom cannot evaluate container queries, so
-  T1 asserts each element's mode membership (its wide-only / compact-only / both marker); what is actually visible is
-  T6's job. Mutation: turn one text label into a link → red; mark a hidden label compact-visible → red.
+- **T1 — Component.** The rendered set is exactly the L1 content: every F3 element present is interactive with its
+  href; Privacy Policy and Terms of Service are text; none of F3's "not rendered" labels appear. If L2b is used,
+  the elements it may remove carry a marker and nothing else does (jsdom cannot evaluate container queries; T6
+  checks actual visibility). Mutation: turn a text label into a link → red; render a cut label → red.
 - **T2 — Placement pin.** A test scans every `page.tsx` under `app/[locale]` and compares the set rendering
   `AppFooter` to F1's table exactly (extra or missing → red), and asserts each listed file renders it **exactly once**
   (two footers → red). The `(app)` layout must not render it.
@@ -263,12 +244,12 @@ focus ring. Back-to-top respects reduce-motion.
 - **T4 — Data rights.** Export includes `newsletter_opt_in_at`; erasure leaves no row.
 - **T5 — E2E.** Signed-in learner on `/shadowing`: subscribe in the footer → confirmation; Settings toggle shows on
   → switch off → footer shows the form again.
-- **T6 — Chrome measure (gate).** First measure `--footer-wide`, the compact column widths and the supported floor
-  (L2d) and pin them. Then, **nav expanded and nav collapsed** at each of 1280x529, 1440x900 and a 1920-wide
-  same-origin iframe, record the mode and verify:
+- **T6 — Chrome measure (gate).** First measure and pin the L2d values. Then, **nav expanded and nav collapsed**
+  at each of 1280x529, 1440x900 and a 1920-wide same-origin iframe, verify:
   - the three main sections share one row (equal top edge, ±2px);
-  - the visible content set is exactly that mode's set (T1), and hidden elements are out of the focus order;
-  - wide mode: sections within ±5% of the frame ratios (374.7 : 456.1 : 293.2, gaps 80 on 1284);
+  - sections, gaps and padding within ±5% of the L1 proportions (`230 : 330 : 361`, gaps and padding 24 per 1017);
+  - the visible content set is exactly L1's (minus any pinned L2b step below `--footer-reduced`), and removed
+    elements are out of the focus order;
   - no horizontal scroll; for **every** footer element (columns, headings, link labels, badges, newsletter pill and
     button, each N3a state) `scrollWidth <= clientWidth` and its box stays inside its column; one-line elements
     (L3) render one line;
