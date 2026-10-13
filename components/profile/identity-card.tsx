@@ -78,7 +78,7 @@ export function IdentityCard({
           // eslint-disable-next-line @next/next/no-img-element -- avatar from storage or OAuth, arbitrary origin.
           <img src={identity.avatarUrl} alt={t("identity.avatarAlt", { name: identity.displayName })} className="size-32 rounded-full object-cover" />
         ) : (
-          <span aria-hidden="true" className="flex size-32 items-center justify-center rounded-full bg-primary/30 text-5xl font-bold">
+          <span aria-hidden="true" className="flex size-32 items-center justify-center rounded-full bg-primary/30 text-display font-bold">
             {Array.from(identity.displayName)[0]?.toUpperCase()}
           </span>
         )}
@@ -102,10 +102,10 @@ export function IdentityCard({
           </button>
         )}
       </div>
-      <Name className="text-2xl font-bold [overflow-wrap:anywhere]">{identity.displayName}</Name>
-      {identity.username && <p className="text-sm text-muted-foreground">@{identity.username}</p>}
-      {identity.bio && <p data-identity-bio className="text-sm [overflow-wrap:anywhere]">{identity.bio}</p>}
-      <ul data-identity-rows className="mt-sm grid w-full gap-sm border-t border-border pt-md text-start text-sm">
+      <Name className="text-heading-lg font-bold [overflow-wrap:anywhere]">{identity.displayName}</Name>
+      {identity.username && <p className="text-body text-muted-foreground">@{identity.username}</p>}
+      {identity.bio && <p data-identity-bio className="text-body [overflow-wrap:anywhere]">{identity.bio}</p>}
+      <ul data-identity-rows className="mt-sm grid w-full gap-sm border-t border-border pt-md text-start text-body">
         {rows.map((r) => (
           <li key={r.label}>
             <span className="flex items-center gap-xs text-muted-foreground"><ProfileIcon name={r.icon} />{r.label}</span>

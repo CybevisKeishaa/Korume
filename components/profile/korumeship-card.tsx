@@ -26,8 +26,8 @@ export function KorumeshipCard({ since, timeZone }: { since: string | null; time
     <section className={CARD} aria-labelledby="profile-korume">
       <div className="mb-sm flex justify-center"><MascotPose pose="korumeship" size="md" /></div>
       <p className={EYEBROW}>{t("korume.eyebrow")}</p>
-      <h2 id="profile-korume" className="mt-xs text-2xl font-bold">{t("korume.title")}</h2>
-      <p className="mt-sm text-sm text-muted-foreground">
+      <h2 id="profile-korume" className="mt-xs text-heading font-bold">{t("korume.title")}</h2>
+      <p className="mt-sm text-body text-muted-foreground">
         {since ? t("korume.together", { months: wholeMonths(since, timeZone) }) : t("korume.fresh")}
       </p>
       <Link href="/companion" className={`${LINK} mt-sm inline-block`}>{t("korume.open")} <span aria-hidden="true">▸</span></Link>

@@ -20,7 +20,7 @@ export function HoursInfo({ label, hint }: { label: string; hint: string }) {
         type="button"
         aria-label={label}
         aria-describedby={hintId}
-        className="inline-flex size-6 items-center justify-center rounded-full border border-border text-xs text-muted-foreground"
+        className="inline-flex size-6 items-center justify-center rounded-full border border-border text-caption text-muted-foreground"
       >
         i
       </button>
