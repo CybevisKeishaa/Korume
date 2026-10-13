@@ -20,19 +20,6 @@ import { describe, expect, it } from "vitest";
  *  a pattern is inserted above it. */
 const RADIUS_LITERAL = /\brounded(-[a-z]+)?-\[[\d.]+(px|rem|em)\]/; // rounded-[22px] → rounded-lg
 
-/** A Tailwind default type utility where a rung already exists. `text-sm` IS
- *  `--text-body` (0.875rem) and `text-xs` IS `--text-caption` (0.75rem): two
- *  names for one value means a token change moves some call sites and not
- *  others, which is how the density defect survived a whole branch — changing
- *  the token moved 8 of 40 sites.
- *
- *  `text-base` (16 = body-lg), `text-xl` (20 = heading) and `text-2xl`
- *  (24 = heading-lg) are the same defect and are listed too (whole-branch
- *  review M3). `text-lg` (18), `text-3xl` and up have no rung of their own,
- *  and banning a utility with no replacement only teaches people to escape
- *  it — which is what `text-[8px]` in a screen port already was. */
-const DEFAULT_TYPE_UTILITY = /\btext-(sm|xs|base|xl|2xl)\b/;
-
 const FORBIDDEN = [
   /\btext-\[[\d.]+(px|rem|em)\]/, // text-[12px] → text-caption
   /\b[pm][trblxy]?-\[[\d.]+(px|rem|em)\]/, // p-[10px] → p-sm
@@ -53,6 +40,9 @@ const FORBIDDEN = [
 // legitimately gains or loses a source — and when you bump it, say which file
 // moved. A count that drifts silently is the same defect as a scan that sees
 // nothing.
+// Default Tailwind type utilities are no longer policed here: lib/typography-scan.test.ts (type-normalization
+// spec G1) walks every learner-app directory and maps each role to a token (spec M1), including text-lg and
+// text-3xl, which this file used to leave alone for lack of a rung.
 const SCANNED_DIRS = [
   { dir: "components/ui", rules: FORBIDDEN, sources: 18 },
   { dir: "components/marketing", rules: FORBIDDEN, sources: 25 },
@@ -62,7 +52,7 @@ const SCANNED_DIRS = [
   // still write `text-[8px]` has not been given one source of truth, it has
   // been given a detour. `explore-lesson-card.tsx` had taken that detour four
   // times over before this scope was widened.
-  { dir: "components/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 24 },
+  { dir: "components/shadowing", rules: FORBIDDEN, sources: 24 },
   // Task 4b: shell, mode body, context, playback store, and controller hook.
   // Task 5: + player-adapter.ts and use-progress-persistence.ts.
   // Task 6a: + playback-root, workspace-player, player-glyphs, progress-bar, beat-markers,
@@ -77,28 +67,28 @@ const SCANNED_DIRS = [
   // Part 1b Task 14: + drawer/ai-knowledge-context, drawer/ai-tab, drawer/ai-section, drawer/ai-usage, drawer/section-renderers.
   // Part 1b reframe: - drawer/phrase-card, vocabulary-tab, grammar-tab and the five Task 14 AI files; + drawer/inspector.
   // Summary Task 12: + lesson-header-frame (the header frame shared with the Summary page).
-  { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 45 },
+  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 45 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
-  { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 13 },
+  { dir: "components/layout", rules: FORBIDDEN, sources: 13 },
   // Part 1b Task 12: + kanji-quick-inspect.
-  { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
+  { dir: "components/kanji", rules: FORBIDDEN, sources: 2 },
   // Ask Korume's shared chat core (Task 8): every viewport renders through it.
   // Task 10a: + full chat page, contextual rail and thread menu.
-  { dir: "components/korume", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 10 },
+  { dir: "components/korume", rules: FORBIDDEN, sources: 10 },
   // Summary / Analysis (2026-10-04), Task 13: area, hero, lesson-status-card, next-lesson-card, props, review-list,
   // saved-knowledge-card, section-heading, summary-header, summary-island, summary-page; Task 14 adds five client files, Task 15 adds the clip player; print-vocabulary Task 4 adds english-chip.
-  { dir: "components/lesson-summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 20 },
-  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/summary", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 1 },
-  { dir: "app/[locale]/(protected)/(app)/shadowing", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
-  { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
+  { dir: "components/lesson-summary", rules: FORBIDDEN, sources: 20 },
+  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/summary", rules: FORBIDDEN, sources: 1 },
+  { dir: "app/[locale]/(protected)/(app)/shadowing", rules: FORBIDDEN, sources: 2 },
+  { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: FORBIDDEN, sources: 4 },
   // Task 4b: the workspace route group only; dictation stays outside this scope.
-  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
+  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: FORBIDDEN, sources: 2 },
   // The Shadowing Hub renders into this tree and the first pass missed it:
   // hub-import-section imports VideoImportForm, and both it and
   // hub-library-section import LessonCreationProgress. A calibration screen
   // whose import card still sets a duplicate rung is not consolidated, so the
   // scan has to follow the second hop, not just the page's own imports.
-  { dir: "components/video", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 4 },
+  { dir: "components/video", rules: FORBIDDEN, sources: 4 },
 ];
 
 function collectSources(dir: string, root: string = dir): string[] {

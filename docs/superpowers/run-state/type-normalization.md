@@ -21,6 +21,7 @@ immersive, print sheet, navbar.
 | Task | Status | Commit |
 |---|---|---|
 | 1 | done | ca284bbe |
+| 3 | scan + allowlist committed (see below) | pending review |
 
 ## Baseline / measurements
 
@@ -29,5 +30,8 @@ immersive, print sheet, navbar.
 - log.txt: `every route captured`
 - baseline-v1 was captured before CAPTURE_TIME became required (it used the real clock); Task 11 recaptures both sides with one CAPTURE_TIME.
 - Cleanup confirmed: 0 `e2e_typography` users left in auth.users.
+
+- Task 3 work list (lib/typography-scan.test.ts, step 3 red): 442 unique file:line violations (planning dry-run said 443; same tree) -> .superpowers/typography/work-list-v1.txt (git-ignored). 51 are app/globals.css rules; 391 are TSX. Every violation falls under a prefix of the brief PENDING list; none added, none deleted.
+- Task 3 mutation (settings-row.tsx text-body -> text-sm, file confirmed changed): red line `components/settings/settings-row.tsx:50  text-sm`; restored from .mutbak, green again.
 
 ## Open owner calls
